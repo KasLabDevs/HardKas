@@ -12,5 +12,7 @@ describe("Infrastructure Invariants: UTXO Stability", () => {
 
     expect(result.ok).toBe(true);
     expect(result.iterations).toBe(100);
+    // Payments below ~0.1 KAS are refused (storage mass); most random amounts are not.
+    expect(result.applied).toBeGreaterThan(50);
   });
 });

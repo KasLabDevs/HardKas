@@ -4,7 +4,7 @@ import { toTxBuilderUtxo, TxPlanService, type UtxoProvider, type Utxo } from '@h
 import { WalletUtxoApi } from './utxos.js';
 import { UtxoControlStore } from './stores/utxo-control-store.js';
 import { logger, metrics, tracer } from '@hardkas/observability';
-import { WalletSubscriptionManager, WalletWatchHandler } from './subscriptions.js';
+import { UtxoWatchEngine, type WalletWatchHandle, type WalletWatchListener } from './watch.js';
 import { calculateDynamicFeeRate, FeePriority } from './fee-estimator.js';
 
 metrics.register({
@@ -30,6 +30,8 @@ export interface WalletToolkitOptions {
     rpc?: any; // To support subscriptions
     signer?: any; // HardkasTxPlanSigner instance
     coinbaseMaturity?: bigint;
+    /** The node's wRPC endpoint for watch(). Supplied by the caller (the SDK passes its node's); the toolkit does not resolve configuration. */
+    rpcUrl?: string;
 }
 
 export class WalletToolkit {
@@ -38,7 +40,7 @@ export class WalletToolkit {
     private walletQuery: WalletQuery;
 
     private _utxosApi: WalletUtxoApi;
-    private _subscriptionManager?: WalletSubscriptionManager;
+    private _watch: { engine: UtxoWatchEngine; started: Promise<void> } | undefined;
 
     private constructor(
         public readonly name: string,
@@ -151,19 +153,40 @@ export class WalletToolkit {
         return items;
     }
 
-    public async watch(cb: WalletWatchHandler): Promise<{ unwatch: () => void }> {
-        if (!this.options.rpc || !this.options.rpc.subscribeToUtxosChanged) {
-            throw new Error("RPC client with subscription support is required for watch()");
-        }
-
-        if (!this._subscriptionManager) {
-            this._subscriptionManager = new WalletSubscriptionManager(
-                this.options.rpc,
-                async () => this.receive()
+    /**
+     * Observes the wallet's receive address on a Kaspa node through kaspa-wasm's UtxoContext.
+     * `transaction` events are live activity; after a reconnect one `resync` event carries what
+     * changed while disconnected; the handle's utxos() is the observed state. Watchers of one
+     * wallet share one engine, stopped when the last one unwatches.
+     */
+    public async watch(cb: WalletWatchListener): Promise<WalletWatchHandle> {
+        if (!this.options.rpcUrl) {
+            const err = new Error(
+                "WALLET_WATCH_REQUIRES_NODE: watch() observes a Kaspa node and no node endpoint (rpcUrl) was given. The simulator cannot be watched."
             );
+            (err as any).code = "WALLET_WATCH_REQUIRES_NODE";
+            throw err;
         }
-
-        return this._subscriptionManager.watch(cb);
+        if (!this._watch) {
+            const engine = new UtxoWatchEngine(this.options.rpcUrl, async () => this.receive());
+            const watch = { engine, started: engine.start() };
+            this._watch = watch;
+            watch.started.catch(() => {
+                if (this._watch === watch) this._watch = undefined;
+            });
+        }
+        const watch = this._watch;
+        await watch.started;
+        watch.engine.add(cb);
+        return {
+            unwatch: async () => {
+                if (watch.engine.remove(cb) > 0) return;
+                if (this._watch === watch) this._watch = undefined;
+                await watch.engine.stop();
+            },
+            utxos: () => watch.engine.utxos(),
+            balance: () => watch.engine.balance()
+        };
     }
 
     public async estimateFee(opts: { to: string; amount: bigint; priority?: FeePriority; feeRate?: bigint }): Promise<{ fee: bigint; feeRate: bigint; estimatedMass: bigint; estimatedFee: bigint; totalOut: bigint; plan: any; evidence: "dynamic" | "heuristic"; mempoolSize?: number }> {
@@ -356,6 +379,34 @@ export class WalletToolkit {
         });
     }
 
+    /**
+     * A sweep: every given UTXO into one output at `toAddress`, planned and priced by
+     * the kaspa-wasm `Generator` (`TxPlanService.planConsolidation`).
+     */
+    private async planSweep(params: {
+        fromAddress: string;
+        utxos: any[];
+        toAddress: string;
+        feeRate: bigint;
+        networkId: string | undefined;
+        insufficient: string;
+    }) {
+        const service = new TxPlanService({ async getUtxos() { return []; } });
+        try {
+            const { plan } = await service.planConsolidation({
+                fromAddress: params.fromAddress,
+                selectedUtxos: params.utxos.map((u) => toTxBuilderUtxo(u)),
+                toAddress: params.toAddress,
+                feeRate: params.feeRate,
+                ...(params.networkId !== undefined ? { networkId: params.networkId } : {})
+            });
+            return plan;
+        } catch (e: any) {
+            if (e?.code === "INSUFFICIENT_FUNDS_UPSTREAM") throw new Error(params.insufficient);
+            throw e;
+        }
+    }
+
     public async sweep(opts: { to: string; priority?: FeePriority; feeRate?: bigint }) {
         const addr = await this.receive();
         let availableUtxos = await this.utxos.list();
@@ -368,9 +419,11 @@ export class WalletToolkit {
         }
 
         // Filter immature coinbase UTXOs
+        let networkId: string | undefined;
         if (this.options.rpc?.getBlockDagInfo) {
             try {
                 const dagInfo = await this.options.rpc.getBlockDagInfo();
+                networkId = dagInfo.networkId;
                 const virtualDaaScore = dagInfo.virtualDaaScore;
                 if (virtualDaaScore !== undefined) {
                     if (this.options.coinbaseMaturity === undefined) {
@@ -392,25 +445,15 @@ export class WalletToolkit {
             }
         }
 
-        // Mass and minimum fee from the pinned SDK for the sweep as built.
-        const { planSingleOutputSpend } = await import("@hardkas/tx-builder");
-        let spend;
-        try {
-            spend = planSingleOutputSpend({ inputs: availableUtxos, toAddress: opts.to, feeRateSompiPerMass: finalFeeRate || 1n });
-        } catch (e: any) {
-            if (e?.message?.startsWith("Insufficient funds")) throw new Error("Insufficient funds to cover sweep fee");
-            throw e;
-        }
-        const massRes = { mass: spend.mass };
-        const fee = spend.feeSompi;
-        const sendValue = spend.sendSompi;
-
-        const plan = {
-            inputs: availableUtxos,
-            outputs: [{ address: opts.to, amountSompi: sendValue }],
-            estimatedMass: massRes.mass,
-            estimatedFeeSompi: fee
-        };
+        // The Generator spends every UTXO into one output (a sweep) and prices it.
+        const plan = await this.planSweep({
+            fromAddress: addr,
+            utxos: availableUtxos,
+            toAddress: opts.to,
+            feeRate: finalFeeRate || 1n,
+            networkId,
+            insufficient: "Insufficient funds to cover sweep fee"
+        });
 
         return this.signAndBroadcast(plan);
     }
@@ -439,25 +482,23 @@ export class WalletToolkit {
             finalFeeRate = dynamic.feeRate;
         }
 
-        // Mass and minimum fee from the pinned SDK for the consolidation as built.
-        const { planSingleOutputSpend } = await import("@hardkas/tx-builder");
-        let spend;
-        try {
-            spend = planSingleOutputSpend({ inputs: selectedUtxos, toAddress, feeRateSompiPerMass: finalFeeRate || 1n });
-        } catch (e: any) {
-            if (e?.message?.startsWith("Insufficient funds")) throw new Error("Insufficient funds to cover consolidate fee");
-            throw e;
+        let networkId: string | undefined;
+        if (this.options.rpc?.getBlockDagInfo) {
+            try {
+                networkId = (await this.options.rpc.getBlockDagInfo()).networkId;
+            } catch {
+                // Without DAG info the plan is priced as simnet.
+            }
         }
-        const massRes = { mass: spend.mass };
-        const fee = spend.feeSompi;
-        const sendValue = spend.sendSompi;
 
-        const plan = {
-            inputs: selectedUtxos,
-            outputs: [{ address: toAddress, amountSompi: sendValue }],
-            estimatedMass: massRes.mass,
-            estimatedFeeSompi: fee
-        };
+        const plan = await this.planSweep({
+            fromAddress: addr,
+            utxos: selectedUtxos,
+            toAddress,
+            feeRate: finalFeeRate || 1n,
+            networkId,
+            insufficient: "Insufficient funds to cover consolidate fee"
+        });
 
         return this.signAndBroadcast(plan);
     }

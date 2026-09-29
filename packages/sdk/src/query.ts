@@ -88,7 +88,7 @@ export class HardkasQuery {
 
   /**
    * Synchronizes the query store with the filesystem artifacts.
-   * @deprecated use hardkas.events / hardkas.store in a future release.
+   * @deprecated use hardkas.store in a future release.
    */
   async sync(options?: { force?: boolean }): Promise<any> {
     const fs = await import("node:fs");
@@ -152,7 +152,7 @@ export class HardkasQuery {
 
   /**
    * Fetches events from the query store.
-   * @deprecated use hardkas.events / hardkas.store in a future release.
+   * @deprecated use hardkas.store in a future release.
    */
   async events(filter?: {
     domain?: string;
@@ -181,7 +181,7 @@ export class HardkasQuery {
 
   /**
    * Direct SQL access to the internal Query Store.
-   * @deprecated use hardkas.events / hardkas.store in a future release.
+   * @deprecated use hardkas.store in a future release.
    */
   get store() {
     return {

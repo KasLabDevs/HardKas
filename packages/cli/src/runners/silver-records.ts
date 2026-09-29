@@ -11,11 +11,16 @@ import { ARTIFACT_VERSION, CURRENT_HASH_VERSION, calculateContentHash, writeArti
 // of the authenticated body (IC-1′.2 / N1).
 
 export const SILVER_RECORD_DIR = path.join(".hardkas", "artifacts", "silver");
+/** Runner verdicts on scenario transactions: kept apart from the node-evidenced records. */
+export const SILVER_VM_RECORD_DIR = path.join(".hardkas", "artifacts", "silver-vm");
+
+/** "localnet": evidenced by the canonical node. "vm": the official script engine on a scenario, no node. */
+export type SilverRecordMode = "localnet" | "vm";
 
 export interface SealedSilverRecord {
   [key: string]: unknown;
   version: string;
-  mode: "localnet";
+  mode: SilverRecordMode;
   hashVersion: number;
   contentHash: string;
 }
@@ -27,8 +32,8 @@ export function silverRecordLabel(prefix: string, recordOrHash: string | { conte
 }
 
 /** Seals a record draft as a version-5 artifact (no artifactId, one hash pass). */
-export function sealSilverRecord(record: Record<string, unknown>, _prefix: string): SealedSilverRecord {
-  const draft: Record<string, unknown> = { ...record, version: ARTIFACT_VERSION, mode: "localnet", hashVersion: CURRENT_HASH_VERSION };
+export function sealSilverRecord(record: Record<string, unknown>, _prefix: string, mode: SilverRecordMode = "localnet"): SealedSilverRecord {
+  const draft: Record<string, unknown> = { ...record, version: ARTIFACT_VERSION, mode, hashVersion: CURRENT_HASH_VERSION };
   delete draft.artifactId;
   delete draft.contentHash;
   const contentHash = calculateContentHash(draft, CURRENT_HASH_VERSION);
@@ -39,12 +44,12 @@ export function sealSilverRecord(record: Record<string, unknown>, _prefix: strin
 export async function writeSilverRecord(
   record: Record<string, unknown>,
   prefix: string,
-  explicitOut?: string
+  explicitOut?: string,
+  mode: SilverRecordMode = "localnet"
 ): Promise<{ path: string; record: SealedSilverRecord }> {
-  const full = sealSilverRecord(record, prefix);
-  const target = explicitOut
-    ? path.resolve(explicitOut)
-    : path.resolve(SILVER_RECORD_DIR, `${silverRecordLabel(prefix, full)}.json`);
+  const full = sealSilverRecord(record, prefix, mode);
+  const dir = mode === "vm" ? SILVER_VM_RECORD_DIR : SILVER_RECORD_DIR;
+  const target = explicitOut ? path.resolve(explicitOut) : path.resolve(dir, `${silverRecordLabel(prefix, full)}.json`);
   fs.mkdirSync(path.dirname(target), { recursive: true });
   await writeArtifact(target, full);
   return { path: target, record: full };

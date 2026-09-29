@@ -1,0 +1,11 @@
+﻿[1.0s] funding: mining to A
+[27.6s] funded: 1347 UTXOs, quiet (reads 1283 → 1347 → 1347)
+[28.4s] maturation: mining to C until virtual DAA ≥ 21450
+[52.8s] T0: 1376 UTXOs, quiet (reads 1376 → 1376)
+[56.2s] partition: R 1 disconnect(s), U 1
+[56.4s] gap: submitted a380f3f9b24bc150… spending 2 of A's UTXOs, 1 change output(s) to A
+[71.0s] T_gap: 1375 UTXOs, quiet (reads 1375 → 1375)
+[80.3s] C2: 1375 UTXOs, quiet (reads 1375 → 1375)
+[80.4s] post: submitted 7993e4b840cdd26c… spending 2 of A's UTXOs, 1 change output(s) to A
+[94.8s] C3: 1374 UTXOs, quiet (reads 1374 → 1374)
+[95.0s] verdict: UTXOCONTEXT_REQUIRED — R keeps exactly the inputs spent while it was disconnected and lacks exactly the change; R still applies the post-heal spend live (its C3 difference is only the inherited gap); U equals the fresh truth at C2 and C3

@@ -1,0 +1,54 @@
+﻿Scope: all 62 workspace projects
+Progress: resolved 0, reused 1, downloaded 0, added 0
+Progress: resolved 80, reused 80, downloaded 0, added 0
+Progress: resolved 87, reused 87, downloaded 0, added 0
+Progress: resolved 87, reused 88, downloaded 0, added 0
+Progress: resolved 331, reused 226, downloaded 0, added 0
+Progress: resolved 549, reused 395, downloaded 0, added 0
+Progress: resolved 858, reused 644, downloaded 0, added 0
+Progress: resolved 1279, reused 1064, downloaded 0, added 0
+Progress: resolved 1884, reused 1656, downloaded 0, added 0
+Progress: resolved 2007, reused 1779, downloaded 0, added 0
+ WARN  2 deprecated subdependencies found: glob@10.5.0, uuid@8.3.2
+Already up to date
+Progress: resolved 2008, reused 1780, downloaded 0, added 0
+Progress: resolved 2008, reused 1780, downloaded 0, added 0, done
+
+devDependencies:
++ @eslint/js 10.0.1
++ @hardkas/cli 0.12.0-rc.26 <- packages\cli
++ @hardkas/config 0.12.0-rc.26 <- packages\config
++ @hardkas/core 0.12.0-rc.26 <- packages\core
++ @hardkas/node-runner 0.12.0-rc.26 <- packages\node-runner
++ @hardkas/sdk 0.12.0-rc.26 <- packages\sdk
++ @hardkas/testing 0.12.0-rc.26 <- packages\testing
++ @types/node 22.20.1
++ @vitest/coverage-v8 2.1.9
++ c8 11.0.0
++ eslint 9.39.5
++ eslint-plugin-react 7.37.5
++ eslint-plugin-react-hooks 7.1.1
++ eslint-plugin-react-refresh 0.5.3
++ fast-check 4.9.0
++ globals 17.9.0
++ knip 6.31.0
++ prettier 3.9.6
++ ts-node 10.9.2
++ tsup 8.5.1
++ tsx 4.23.7 (4.23.13 is available)
++ turbo 2.10.8
++ typescript 5.9.3
++ typescript-eslint 8.66.0
++ vitest 2.1.9
++ ws 8.21.2
+
+ WARN  Issues with peer dependencies found
+.
+└─┬ @eslint/js 10.0.1
+  └── ✕ unmet peer eslint@^10.0.0: found 9.39.5
+
+packages/pskt-native
+└─┬ @napi-rs/cli 3.8.2
+  └── ✕ unmet peer @emnapi/runtime@2.0.0-alpha.3: found 1.9.2
+
+Done in 15.1s

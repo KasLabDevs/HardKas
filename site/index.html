@@ -5,2721 +5,625 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1" name="viewport"/>
 <title>HardKAS: Execution-safe development for Kaspa</title>
-<meta content="Plan, execute and replay Kaspa workflows with explicit targets, verifiable artifacts and strict compatibility guards." name="description"/>
+<meta content="Plan, sign, send and verify Kaspa transactions with explicit targets, verifiable artifacts and strict compatibility guards." name="description"/>
 <link href="https://fonts.googleapis.com" rel="preconnect"/>
 <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
 <style>
-      :root {
-        --bg: #05070a;
-        --surface: #0b0f17;
-        --surface-2: #080c14;
-        --surface-3: #0d1321;
-        --border: #1e2633;
-        --border-soft: #141c28;
-        --border-focus: #3b4b66;
-        --text: #e2e8f0;
-        --muted: #7b8797;
-        --muted-2: #536073;
-        --accent: #10b981;
-        --accent-soft: rgba(16, 185, 129, 0.1);
-        --accent-line: rgba(16, 185, 129, 0.28);
-        --warning: #d29922;
-        --danger: #ef4444;
-        --code-bg: #06090e;
-        --code-text: #d6dee8;
-        --radius: 8px;
-        --mono:
-          "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
-          monospace;
-        --sans:
-          "Plus Jakarta Sans", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
-          Helvetica, Arial, sans-serif;
-      }
-
-      [data-theme="light"] {
-        --bg: #f5f2ea;
-        --surface: #fffdf7;
-        --surface-2: #f0eadf;
-        --surface-3: #e8e0d2;
-        --border: #d5cbbb;
-        --border-soft: #e1d8ca;
-        --border-focus: #9f927f;
-        --text: #1d231f;
-        --muted: #5c665f;
-        --muted-2: #7a837d;
-        --accent: #087f5b;
-        --accent-soft: rgba(8, 127, 91, 0.09);
-        --accent-line: rgba(8, 127, 91, 0.24);
-        --warning: #8a6d1b;
-        --danger: #b42318;
-        --code-bg: #ebe4d8;
-        --code-text: #1d231f;
-      }
-
-      * {
-        box-sizing: border-box;
-      }
-      html {
-        scroll-behavior: auto;
-      }
-      body {
-        margin: 0;
-        background:
-          radial-gradient(
-            circle at 20% -10%,
-            rgba(16, 185, 129, 0.08),
-            transparent 34rem
-          ),
-          linear-gradient(180deg, var(--bg), var(--bg));
-        color: var(--text);
-        font-family: var(--sans);
-        font-size: 15px;
-        line-height: 1.62;
-        padding-bottom: 64px;
-      }
-
-      body::before {
-        content: "";
-        position: fixed;
-        inset: 0;
-        pointer-events: none;
-        opacity: 0.15;
-        background-image:
-          linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
-        background-size: 52px 52px;
-        mask-image: linear-gradient(to bottom, black, transparent 72%);
-        z-index: -1;
-      }
-
-      a {
-        color: var(--accent);
-        text-decoration: none;
-      }
-      a:hover {
-        text-decoration: underline;
-      }
-      code,
-      pre {
-        font-family: var(--mono);
-      }
-      code {
-        font-size: 0.9em;
-        background: var(--surface-2);
-        border: 1px solid var(--border-soft);
-        border-radius: 5px;
-        padding: 0.13rem 0.34rem;
-        color: var(--code-text);
-      }
-      pre code {
-        background: transparent;
-        border: 0;
-        padding: 0;
-      }
-      p {
-        margin: 0 0 12px;
-        color: var(--muted);
-      }
-      strong {
-        color: var(--text);
-      }
-      h1,
-      h2,
-      h3,
-      h4 {
-        color: var(--text);
-        line-height: 1.2;
-        margin: 0;
-        font-weight: 700;
-        letter-spacing: -0.025em;
-      }
-      h1 {
-        font-size: clamp(34px, 5vw, 56px);
-        letter-spacing: -0.055em;
-        line-height: 1.03;
-      }
-      h2 {
-        font-size: 25px;
-        padding-bottom: 12px;
-        border-bottom: 1px solid var(--border);
-        margin-bottom: 18px;
-      }
-      h3 {
-        font-size: 17px;
-        margin-bottom: 8px;
-      }
-      h4 {
-        font-size: 14px;
-        margin-bottom: 6px;
-      }
-      ul {
-        margin: 8px 0 0;
-        padding-left: 20px;
-        color: var(--muted);
-      }
-      li {
-        margin: 4px 0;
-      }
-
-      table {
-        width: 100%;
-        border-collapse: collapse;
-        border: 1px solid var(--border);
-        margin: 14px 0 0;
-        font-size: 13px;
-        background: rgba(11, 15, 23, 0.58);
-        border-radius: var(--radius);
-        overflow: hidden;
-      }
-      th,
-      td {
-        padding: 10px 11px;
-        border: 1px solid var(--border);
-        vertical-align: top;
-        text-align: left;
-      }
-      th {
-        color: var(--text);
-        background: var(--surface-3);
-        font-weight: 700;
-      }
-      td {
-        color: var(--muted);
-      }
-      td code {
-        background: transparent;
-        border: none;
-        padding: 0;
-        color: var(--accent);
-        font-size: 12px;
-      }
-
-      .topbar {
-        position: sticky;
-        top: 0;
-        z-index: 20;
-        background: rgba(5, 7, 10, 0.82);
-        backdrop-filter: blur(14px);
-        border-bottom: 1px solid var(--border);
-      }
-      [data-theme="light"] .topbar {
-        background: rgba(245, 242, 234, 0.88);
-      }
-
-      .top-inner {
-        max-width: 1320px;
-        margin: 0 auto;
-        padding: 12px 26px;
-        display: flex;
-        align-items: center;
-        gap: 18px;
-        min-height: 64px;
-      }
-      .brand {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        color: var(--text);
-        min-width: max-content;
-      }
-      .brand-logo {
-        height: 38px;
-        width: auto;
-        display: block;
-        object-fit: contain;
-      }
-      .brand strong {
-        font-size: 17px;
-        letter-spacing: -0.035em;
-      }
-      .brand span {
-        color: var(--accent);
-        font-size: 11px;
-        font-family: var(--mono);
-        background: var(--accent-soft);
-        border: 1px solid var(--accent-line);
-        border-radius: 5px;
-        padding: 2px 6px;
-      }
-
-      nav {
-        display: flex;
-        gap: 18px;
-        margin-left: 4px;
-      }
-      nav a {
-        color: var(--muted);
-        font-size: 13px;
-        font-weight: 600;
-      }
-      nav a:hover {
-        color: var(--text);
-        text-decoration: none;
-      }
-
-      .search {
-        margin-left: auto;
-        width: 270px;
-        max-width: 30vw;
-        border: 1px solid var(--border);
-        border-radius: 8px;
-        padding: 8px 10px;
-        color: var(--muted-2);
-        background: var(--surface);
-        font-size: 13px;
-        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.015);
-      }
-
-      .github,
-      .theme-toggle,
-      .mobile-nav {
-        color: var(--text);
-        border: 1px solid var(--border);
-        border-radius: 8px;
-        padding: 0;
-        font-size: 14px;
-        background: transparent;
-        cursor: pointer;
-        line-height: 1;
-        width: 36px;
-        height: 36px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-      }
-      .github:hover,
-      .theme-toggle:hover,
-      .mobile-nav:hover {
-        border-color: var(--border-focus);
-        text-decoration: none;
-      }
-      .github-icon {
-        width: 16px;
-        height: 16px;
-        display: block;
-      }
-
-      .top-actions {
-        margin-left: auto;
-        width: auto;
-        display: flex;
-        align-items: center;
-        justify-content: flex-start;
-        gap: 10px;
-        padding-left: 12px;
-      }
-      .top-actions .theme-toggle {
-        margin-left: 0;
-      }
-
-      .layout {
-        max-width: 1320px;
-        margin: 0 auto;
-        display: grid;
-        grid-template-columns: 240px minmax(0, 1fr) 190px;
-        gap: 28px;
-        padding: 0 26px;
-      }
-
-      aside.left,
-      aside.right {
-        position: sticky;
-        top: 65px;
-        height: calc(100vh - 65px);
-        overflow: auto;
-        scrollbar-width: thin;
-      }
-      aside.left {
-        padding: 28px 18px 48px 0;
-        border-right: 1px solid var(--border-soft);
-      }
-      aside.right {
-        padding: 28px 0 48px 18px;
-        border-left: 1px solid var(--border-soft);
-      }
-      .side-title {
-        color: var(--muted-2);
-        font-size: 10px;
-        font-weight: 800;
-        text-transform: uppercase;
-        letter-spacing: 0.11em;
-        margin: 18px 0 7px;
-      }
-      .side a,
-      .toc a {
-        display: block;
-        color: var(--muted);
-        padding: 5px 0;
-        font-size: 13px;
-        line-height: 1.25;
-      }
-      .side a:hover,
-      .toc a:hover {
-        color: var(--accent);
-        text-decoration: none;
-      }
-
-      main {
-        padding: 34px 0 72px;
-        min-width: 0;
-      }
-      section {
-        padding-top: 30px;
-        margin-top: 4px;
-        scroll-margin-top: 82px;
-      }
-
-      .header {
-        padding: 42px 0 34px;
-        border-bottom: 1px solid var(--border);
-      }
-      .header-row {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) minmax(330px, 420px);
-        gap: 34px;
-        align-items: center;
-      }
-      .subtitle {
-        color: var(--muted);
-        font-size: 17px;
-        line-height: 1.62;
-        margin: 14px 0 18px;
-        max-width: 780px;
-      }
-      .meta {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        margin: 14px 0 0;
-      }
-      .badge {
-        display: inline-flex;
-        align-items: center;
-        border: 1px solid var(--border);
-        border-radius: 999px;
-        color: var(--muted);
-        padding: 3px 8px;
-        font-size: 12px;
-        line-height: 1.5;
-        background: rgba(255, 255, 255, 0.015);
-      }
-      .badge.accent {
-        color: var(--accent);
-        border-color: var(--accent-line);
-        background: var(--accent-soft);
-      }
-      .actions {
-        display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
-        margin-top: 18px;
-      }
-      .button {
-        display: inline-flex;
-        align-items: center;
-        border: 1px solid var(--border);
-        border-radius: 8px;
-        color: var(--text);
-        padding: 8px 10px;
-        font-size: 13px;
-        font-weight: 650;
-        background: var(--surface);
-      }
-      .button.primary {
-        border-color: var(--accent-line);
-        color: var(--accent);
-        background: var(--accent-soft);
-      }
-      .button:hover {
-        border-color: var(--border-focus);
-        text-decoration: none;
-      }
-
-      .codeblock {
-        border: 1px solid var(--border);
-        border-radius: 10px;
-        background: var(--code-bg);
-        overflow: hidden;
-        margin: 12px 0 0;
-        box-shadow: 0 16px 42px rgba(0, 0, 0, 0.22);
-      }
-      .codebar {
-        border-bottom: 1px solid var(--border);
-        padding: 8px 10px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        color: var(--muted-2);
-        font-size: 12px;
-        font-family: var(--mono);
-        background: var(--surface-3);
-      }
-      .codebar::before {
-        content: "";
-        width: 9px;
-        height: 9px;
-        border-radius: 99px;
-        background: var(--accent);
-        box-shadow:
-          14px 0 0 var(--warning),
-          28px 0 0 var(--danger);
-        margin-right: 28px;
-        opacity: 0.85;
-      }
-      .copy {
-        margin-left: auto;
-        color: var(--muted);
-        border: 1px solid var(--border);
-        background: transparent;
-        border-radius: 5px;
-        padding: 4px 8px;
-        font-size: 12px;
-        cursor: pointer;
-        font-family: var(--sans);
-      }
-      .copy:hover {
-        color: var(--accent);
-        border-color: var(--accent-line);
-      }
-      pre {
-        margin: 0;
-        padding: 15px;
-        overflow: auto;
-        color: var(--code-text);
-        background: var(--code-bg);
-        font-size: 12.5px;
-        line-height: 1.65;
-      }
-      .cmd {
-        color: #34d399;
-      }
-      .flag {
-        color: #94a3b8;
-      }
-      .comment {
-        color: var(--muted-2);
-      }
-      .str {
-        color: #fbbf24;
-      }
-
-      .note,
-      .warning,
-      .danger {
-        border-left: 3px solid var(--accent);
-        padding: 10px 12px;
-        background: var(--accent-soft);
-        color: var(--muted);
-        margin: 14px 0 0;
-        border-radius: 0 8px 8px 0;
-      }
-      .warning {
-        border-left-color: var(--warning);
-        background: rgba(210, 153, 34, 0.07);
-        margin: 14px 0;
-      }
-      .danger {
-        border-left-color: var(--danger);
-        background: rgba(239, 68, 68, 0.075);
-        margin: 14px 0;
-      }
-
-      .grid {
-        display: grid;
-        gap: 14px;
-      }
-      .cols-2 {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-      .cols-3 {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-      }
-      .cols-4 {
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-      }
-
-      .box,
-      .command,
-      details {
-        border: 1px solid var(--border);
-        border-radius: 10px;
-        background: rgba(11, 15, 23, 0.54);
-      }
-      .box {
-        padding: 15px;
-      }
-      .box h3,
-      .box h4 {
-        margin-bottom: 7px;
-      }
-      .box p {
-        margin-bottom: 0;
-      }
-
-      /* Give dense docs a less AI-grid feel: slight stagger, without changing content. */
-      .grid .box:nth-child(3n + 2) {
-        transform: translateY(3px);
-      }
-      .grid .box:nth-child(3n) {
-        transform: translateY(1px);
-      }
-
-      .diagram {
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 14px;
-        margin-top: 12px;
-      }
-      .pipeline {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 9px;
-        margin: 14px 0;
-        align-items: stretch;
-      }
-      .pipe {
-        border: 1px solid var(--border);
-        border-radius: 8px;
-        padding: 8px 10px;
-        color: var(--muted);
-        font-size: 12px;
-        background: rgba(11, 15, 23, 0.54);
-        min-width: 118px;
-      }
-      .pipe strong {
-        display: block;
-        color: var(--text);
-        margin-bottom: 3px;
-      }
-      .pipe .dot {
-        color: var(--accent);
-        font-size: 12px;
-        margin-right: 4px;
-      }
-      .pipe .pending {
-        color: var(--muted-2);
-      }
-      .arrow {
-        align-self: center;
-        color: var(--muted-2);
-        font-family: var(--mono);
-      }
-
-      .accordion {
-        display: grid;
-        gap: 9px;
-        margin-top: 14px;
-      }
-      summary {
-        list-style: none;
-        cursor: pointer;
-        padding: 11px 12px;
-        color: var(--text);
-        font-weight: 700;
-        font-size: 14px;
-      }
-      summary::-webkit-details-marker {
-        display: none;
-      }
-      summary::after {
-        content: "+";
-        float: right;
-        color: var(--muted-2);
-      }
-      details[open] summary::after {
-        content: "–";
-      }
-      .details-body {
-        border-top: 1px solid var(--border);
-        padding: 12px;
-      }
-      .command-grid {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 9px;
-      }
-      .command {
-        border-color: var(--border-soft);
-        padding: 11px;
-      }
-      .command:has(.flags) {
-        grid-column: 1 / -1;
-      }
-      .command code {
-        display: block;
-        width: fit-content;
-        color: var(--accent);
-        margin-bottom: 6px;
-      }
-      .command span {
-        color: var(--muted);
-        font-size: 13px;
-      }
-
-      .flags {
-        margin: 8px 0 2px;
-        font-size: 13px;
-        width: 100%;
-        border-collapse: collapse;
-        background: transparent;
-      }
-      .flags td:first-child {
-        width: 230px;
-        white-space: nowrap;
-        color: var(--accent);
-        font-family: var(--mono);
-        font-size: 12px;
-      }
-      .flags td:last-child {
-        color: var(--muted);
-      }
-      .flags td {
-        padding: 5px 8px;
-        border: none;
-        border-top: 1px solid var(--border);
-      }
-      .flags tr:first-child td {
-        border-top: none;
-      }
-      .command span + .flags {
-        margin-top: 8px;
-        padding-top: 4px;
-        border-top: 1px solid var(--border);
-      }
-
-      .split {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 16px;
-      }
-      .footer {
-        padding: 32px 0 45px;
-        border-top: 1px solid var(--border);
-        color: var(--muted-2);
-        font-size: 13px;
-        margin-top: 32px;
-      }
-      .mobile-nav {
-        display: none;
-      }
-
-      .artifact-pipeline {
-        flex-wrap: nowrap;
-        overflow-x: auto;
-        align-items: stretch;
-        gap: 20px;
-        padding-bottom: 6px;
-      }
-      .artifact-pipeline .pipe {
-        flex: 0 0 auto;
-        position: relative;
-      }
-      .artifact-pipeline .pipe:not(:last-child)::after {
-        content: "→";
-        position: absolute;
-        right: -16px;
-        top: 50%;
-        transform: translateY(-50%);
-        color: var(--muted-2);
-        font-family: var(--mono);
-      }
-
-      .cycle-flow {
-        display: grid;
-        grid-template-columns: 1fr 48px 1fr 48px 1fr;
-        grid-template-rows: auto 54px auto;
-        align-items: center;
-        gap: 0;
-        margin: 16px 0;
-      }
-      .flow-card {
-        background: var(--surface);
-        border: 1px solid var(--border);
-        border-radius: 10px;
-        padding: 13px 16px;
-        min-height: 78px;
-      }
-      .flow-card strong {
-        display: flex;
-        align-items: center;
-        gap: 7px;
-        color: var(--text);
-        font-weight: 750;
-        margin-bottom: 4px;
-      }
-      .flow-card span.desc {
-        display: block;
-        color: var(--muted);
-        font-size: 12px;
-        line-height: 1.45;
-      }
-      .flow-dot {
-        width: 8px;
-        height: 8px;
-        border-radius: 999px;
-        display: inline-block;
-        flex: 0 0 auto;
-        background: var(--accent);
-      }
-      .flow-dot.optional {
-        background: var(--muted-2);
-      }
-      .flow-arrow-h,
-      .flow-arrow-v {
-        position: relative;
-        color: var(--muted-2);
-      }
-      .flow-arrow-h {
-        height: 2px;
-        background: var(--muted-2);
-        margin: 0 10px;
-        opacity: 0.65;
-      }
-      .flow-arrow-h::after {
-        content: "";
-        position: absolute;
-        right: -1px;
-        top: 50%;
-        width: 7px;
-        height: 7px;
-        border-right: 2px solid var(--muted-2);
-        border-top: 2px solid var(--muted-2);
-        transform: translateY(-50%) rotate(45deg);
-        background: transparent;
-      }
-      .flow-arrow-h.left {
-        transform: rotate(180deg);
-      }
-      .flow-arrow-v {
-        justify-self: center;
-        width: 2px;
-        height: 42px;
-        background: var(--muted-2);
-        opacity: 0.65;
-      }
-      .flow-arrow-v::after {
-        content: "";
-        position: absolute;
-        left: 50%;
-        bottom: -1px;
-        width: 7px;
-        height: 7px;
-        border-right: 2px solid var(--muted-2);
-        border-bottom: 2px solid var(--muted-2);
-        transform: translateX(-50%) rotate(45deg);
-        background: transparent;
-      }
-      .flow-return {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        justify-self: center;
-        align-self: stretch;
-      }
-      .flow-return .flow-arrow-v {
-        height: 100%;
-        min-height: 42px;
-      }
-      .flow-return .flow-arrow-v.up::after {
-        top: -1px;
-        bottom: auto;
-        border-right: 2px solid var(--muted-2);
-        border-bottom: 0;
-        border-top: 2px solid var(--muted-2);
-        transform: translateX(-50%) rotate(-45deg);
-      }
-      .flow-return-label,
-      .mobile-return-label {
-        color: var(--muted);
-        font-size: 12px;
-        font-style: italic;
-        white-space: nowrap;
-      }
-      .mobile-return-label {
-        display: none;
-      }
-
-      .cycle-plan {
-        grid-column: 1;
-        grid-row: 1;
-      }
-      .cycle-sign {
-        grid-column: 3;
-        grid-row: 1;
-      }
-      .cycle-broadcast {
-        grid-column: 5;
-        grid-row: 1;
-      }
-      .cycle-receipt {
-        grid-column: 5;
-        grid-row: 3;
-      }
-      .cycle-trace {
-        grid-column: 3;
-        grid-row: 3;
-      }
-      .cycle-verify {
-        grid-column: 1;
-        grid-row: 3;
-      }
-      .arrow-plan-sign {
-        grid-column: 2;
-        grid-row: 1;
-      }
-      .arrow-sign-broadcast {
-        grid-column: 4;
-        grid-row: 1;
-      }
-      .arrow-broadcast-receipt {
-        grid-column: 5;
-        grid-row: 2;
-      }
-      .arrow-receipt-trace {
-        grid-column: 4;
-        grid-row: 3;
-      }
-      .arrow-trace-verify {
-        grid-column: 2;
-        grid-row: 3;
-      }
-      .arrow-verify-plan {
-        grid-column: 1;
-        grid-row: 2;
-      }
-
-      .layer-l1 {
-        border-top: 2px solid var(--accent);
-      }
-      .layer-hardkas {
-        border-top: 2px solid var(--muted-2);
-      }
-      .layer-l2 {
-        border-top: 2px solid var(--warning);
-      }
-      .layer-subtitle {
-        color: var(--muted);
-        font-size: 12px;
-        margin: -2px 0 8px;
-      }
-
-      /* A small “cockpit” touch for the first command block only. */
-      #overview .codeblock {
-        transform: rotate(0.15deg);
-      }
-
-      @media (max-width: 1160px) {
-        .layout {
-          grid-template-columns: 220px minmax(0, 1fr);
-        }
-        aside.right {
-          display: none;
-        }
-        .header-row,
-        .split {
-          grid-template-columns: 1fr;
-        }
-        #overview .codeblock {
-          transform: none;
-        }
-      }
-
-      @media (max-width: 860px) {
-        nav,
-        .search,
-        aside.left {
-          display: none;
-        }
-        .mobile-nav {
-          display: inline-flex;
-          margin-left: 0;
-        }
-        .layout {
-          display: block;
-          padding: 0 16px;
-        }
-        .top-inner {
-          padding: 10px 16px;
-          min-height: 58px;
-        }
-        .brand-logo {
-          height: 32px;
-          max-width: 160px;
-        }
-        h1 {
-          font-size: 34px;
-        }
-        h2 {
-          font-size: 22px;
-        }
-        .header-row,
-        .diagram,
-        .cols-2,
-        .cols-3,
-        .cols-4,
-        .command-grid {
-          grid-template-columns: 1fr;
-        }
-        .grid .box:nth-child(n) {
-          transform: none;
-        }
-        .arrow {
-          display: none;
-        }
-        main {
-          padding-top: 22px;
-        }
-        .top-actions {
-          margin-left: auto;
-          width: auto;
-          padding-left: 0;
-          gap: 8px;
-        }
-
-        body.nav-open aside.left {
-          display: block;
-          position: fixed;
-          top: 58px;
-          left: 0;
-          width: min(86vw, 340px);
-          height: calc(100vh - 58px);
-          overflow: auto;
-          padding: 18px 16px 40px;
-          background: var(--bg);
-          border-right: 1px solid var(--border);
-          z-index: 40;
-          box-shadow: 20px 0 60px rgba(0, 0, 0, 0.36);
-        }
-        body.nav-open::after {
-          content: "";
-          position: fixed;
-          top: 58px;
-          left: min(86vw, 340px);
-          right: 0;
-          bottom: 0;
-          background: rgba(0, 0, 0, 0.45);
-          z-index: 35;
-        }
-      }
-
-      @media (max-width: 640px) {
-        body {
-          font-size: 14px;
-          line-height: 1.52;
-          overflow-x: hidden;
-        }
-        .top-inner {
-          min-height: 54px;
-          padding: 8px 13px;
-          gap: 8px;
-        }
-        .brand-logo {
-          height: 29px;
-          max-width: 145px;
-        }
-        .layout {
-          padding: 0 13px;
-        }
-        main {
-          padding-top: 16px;
-          padding-bottom: 48px;
-        }
-        .header {
-          padding: 24px 0 22px;
-        }
-        .subtitle {
-          font-size: 14px;
-          line-height: 1.55;
-          max-width: 100%;
-        }
-        h1 {
-          font-size: 30px;
-          line-height: 1.08;
-        }
-        h2 {
-          font-size: 21px;
-          margin-bottom: 12px;
-          padding-bottom: 8px;
-        }
-        h3 {
-          font-size: 15px;
-        }
-        section {
-          padding-top: 24px;
-          scroll-margin-top: 64px;
-        }
-        p {
-          margin-bottom: 10px;
-        }
-
-        .meta {
-          gap: 6px;
-        }
-        .badge {
-          font-size: 11px;
-          padding: 2px 6px;
-        }
-        .actions {
-          gap: 8px;
-        }
-        .button {
-          padding: 7px 8px;
-          font-size: 12px;
-        }
-
-        .grid,
-        .split,
-        .diagram,
-        .cols-2,
-        .cols-3,
-        .cols-4,
-        .command-grid {
-          grid-template-columns: 1fr !important;
-          gap: 10px;
-        }
-
-        .box,
-        .command,
-        .note,
-        .warning,
-        .danger {
-          padding: 11px;
-        }
-        .codeblock {
-          margin-top: 10px;
-          max-width: 100%;
-          border-radius: 9px;
-          box-shadow: none;
-        }
-        .codebar {
-          padding: 7px 8px;
-          font-size: 10.8px;
-        }
-        .codebar::before {
-          width: 7px;
-          height: 7px;
-          box-shadow:
-            12px 0 0 var(--warning),
-            24px 0 0 var(--danger);
-          margin-right: 24px;
-        }
-        .copy {
-          padding: 3px 7px;
-          font-size: 11px;
-        }
-        pre {
-          padding: 11px;
-          font-size: 11px;
-          line-height: 1.55;
-          max-width: 100%;
-        }
-        code {
-          overflow-wrap: anywhere;
-          word-break: break-word;
-        }
-        .command code {
-          max-width: 100%;
-          white-space: normal;
-          overflow-wrap: anywhere;
-          word-break: break-word;
-          line-height: 1.45;
-        }
-        .command span {
-          font-size: 12.5px;
-          line-height: 1.45;
-        }
-
-        table {
-          display: block;
-          width: 100%;
-          border: 0;
-          margin-top: 12px;
-          font-size: 12.5px;
-          background: transparent;
-        }
-        thead {
-          display: none;
-        }
-        tbody,
-        tr,
-        td {
-          display: block;
-          width: 100%;
-        }
-        tr {
-          border: 1px solid var(--border);
-          border-radius: 8px;
-          margin-bottom: 10px;
-          overflow: hidden;
-          background: var(--surface);
-        }
-        td {
-          border: 0;
-          border-top: 1px solid var(--border-soft);
-          padding: 9px 10px;
-          color: var(--muted);
-        }
-        td:first-child {
-          border-top: 0;
-          background: var(--surface-3);
-          color: var(--text);
-          font-weight: 700;
-        }
-        td::before {
-          content: attr(data-label);
-          display: block;
-          color: var(--muted-2);
-          font-size: 10px;
-          font-weight: 800;
-          text-transform: uppercase;
-          letter-spacing: 0.055em;
-          margin-bottom: 4px;
-        }
-        .flags,
-        .flags tbody,
-        .flags tr,
-        .flags td {
-          display: block;
-        }
-        .flags tr {
-          border: 0;
-          border-radius: 0;
-          margin: 0;
-          background: transparent;
-        }
-        .flags td {
-          border: 0;
-          border-top: 1px solid var(--border-soft);
-          padding: 6px 0;
-        }
-        .flags td::before {
-          display: none;
-        }
-        .flags td:first-child {
-          width: auto;
-          background: transparent;
-          color: var(--accent);
-          font-size: 11.5px;
-          margin-bottom: 2px;
-        }
-        .flags td:last-child {
-          color: var(--muted);
-        }
-
-        .pipeline,
-        .artifact-pipeline {
-          display: grid;
-          grid-template-columns: 1fr;
-          overflow: visible;
-          gap: 8px;
-          padding-bottom: 0;
-        }
-        .pipe {
-          min-width: 0;
-          width: 100%;
-          padding: 9px 10px;
-        }
-        .artifact-pipeline .pipe::after,
-        .artifact-pipeline .pipe:not(:last-child)::after {
-          content: none;
-        }
-
-        .cycle-flow {
-          display: flex;
-          flex-direction: column;
-          align-items: stretch;
-          gap: 8px;
-        }
-        .flow-card {
-          min-height: 0;
-        }
-        .flow-arrow-h,
-        .flow-arrow-h.left,
-        .flow-return {
-          width: 2px;
-          height: 24px;
-          min-height: 24px;
-          background: var(--muted-2);
-          margin: 0 auto;
-          transform: none;
-          display: block;
-        }
-        .flow-arrow-h::after,
-        .flow-arrow-h.left::after,
-        .flow-return::after {
-          content: "";
-          position: absolute;
-          left: 50%;
-          bottom: -1px;
-          width: 7px;
-          height: 7px;
-          border-right: 2px solid var(--muted-2);
-          border-bottom: 2px solid var(--muted-2);
-          border-top: 0;
-          transform: translateX(-50%) rotate(45deg);
-        }
-        .flow-arrow-v,
-        .flow-return .flow-arrow-v,
-        .flow-return-label {
-          display: none;
-        }
-        .mobile-return-label {
-          display: block;
-        }
-
-        summary {
-          padding: 10px;
-          font-size: 14px;
-        }
-        .details-body {
-          padding: 10px;
-        }
-        .github,
-        .theme-toggle,
-        .mobile-nav {
-          width: 32px;
-          height: 32px;
-        }
-        .footer {
-          margin-top: 24px;
-          padding: 24px 0 34px;
-        }
-      }
-
-      @media (max-width: 420px) {
-        .brand-logo {
-          height: 27px;
-          max-width: 138px;
-        }
-        h1 {
-          font-size: 28px;
-        }
-        h2 {
-          font-size: 20px;
-        }
-        .layout {
-          padding: 0 12px;
-        }
-        .top-inner {
-          padding-left: 12px;
-          padding-right: 12px;
-        }
-        .subtitle {
-          font-size: 13.5px;
-        }
-        pre {
-          font-size: 10.6px;
-        }
-      }
-
-      /* === Desktop visual refinement pass: keep content, improve hero balance === */
-      @media (min-width: 861px) {
-        .layout {
-          max-width: 1260px;
-          grid-template-columns: 220px minmax(0, 1fr) 165px;
-          gap: 22px;
-          padding: 0 24px;
-        }
-
-        main {
-          max-width: 860px;
-          margin: 0 auto;
-        }
-
-        aside.right {
-          padding-left: 14px;
-        }
-
-        .header {
-          padding: 34px 0 38px;
-          margin-bottom: 8px;
-          position: relative;
-        }
-
-        .header-row {
-          grid-template-columns: minmax(360px, 0.88fr) minmax(360px, 0.92fr);
-          gap: 36px;
-          align-items: center;
-        }
-
-        .header h1 {
-          max-width: 560px;
-          font-size: clamp(42px, 4.1vw, 52px);
-          line-height: 1.02;
-          letter-spacing: -0.055em;
-        }
-
-        .subtitle {
-          max-width: 520px;
-          font-size: 16px;
-          line-height: 1.58;
-        }
-
-        .header .actions {
-          margin-top: 18px;
-        }
-
-        .header .meta {
-          max-width: 520px;
-        }
-
-        .header .warning {
-          max-width: 520px;
-          margin-top: 14px;
-        }
-
-        .header-row > .codeblock {
-          margin-top: 0;
-          width: 100%;
-          align-self: center;
-          box-shadow: none;
-          border-color: #1b2636;
-          background: #070b11;
-        }
-
-        .header-row > .codeblock pre {
-          padding: 18px 20px;
-          font-size: 13px;
-          line-height: 1.65;
-        }
-
-        .header-row > .codeblock .codebar {
-          padding: 9px 11px;
-        }
-
-        section {
-          padding-top: 34px;
-        }
-
-        #overview {
-          padding-top: 30px;
-        }
-
-        #overview .grid.cols-3 {
-          grid-template-columns: repeat(3, minmax(0, 1fr));
-          gap: 14px;
-        }
-
-        .box {
-          background: rgba(11, 15, 23, 0.34);
-        }
-
-        .button {
-          background: rgba(15, 23, 42, 0.25);
-        }
-
-        .button.primary {
-          background: rgba(16, 185, 129, 0.08);
-        }
-      }
-
-      @media (min-width: 861px) and (max-width: 1160px) {
-        .layout {
-          max-width: 1040px;
-          grid-template-columns: minmax(0, 1fr) 150px;
-          gap: 18px;
-        }
-
-        aside.left {
-          display: none;
-        }
-
-        aside.right {
-          display: block;
-        }
-
-        main {
-          max-width: 780px;
-        }
-
-        .header-row {
-          grid-template-columns: minmax(0, 1fr) minmax(330px, 420px);
-          gap: 26px;
-        }
-
-        .header h1 {
-          font-size: clamp(38px, 5vw, 48px);
-        }
-      }
-
-      @media (min-width: 861px) and (max-width: 980px) {
-        .layout {
-          display: block;
-          max-width: 840px;
-        }
-
-        aside.left,
-        aside.right {
-          display: none;
-        }
-
-        main {
-          max-width: 100%;
-        }
-
-        .header-row {
-          grid-template-columns: 1fr;
-          gap: 22px;
-        }
-
-        .header-row > .codeblock {
-          max-width: 560px;
-        }
-      }
-
-      /* === Mobile mental-model compaction pass === */
-      @media (max-width: 640px) {
-        #mental-model .cycle-flow {
-          display: grid !important;
-          grid-template-columns: repeat(2, minmax(0, 1fr));
-          gap: 9px;
-          margin: 12px 0 14px;
-        }
-
-        #mental-model .flow-card {
-          padding: 12px 12px;
-          min-height: 0;
-          border-radius: 12px;
-        }
-
-        #mental-model .flow-card strong {
-          font-size: 15px;
-          margin-bottom: 4px;
-          gap: 7px;
-        }
-
-        #mental-model .flow-card span.desc {
-          font-size: 12px;
-          line-height: 1.35;
-        }
-
-        #mental-model .flow-dot {
-          width: 7px;
-          height: 7px;
-        }
-
-        #mental-model .flow-arrow-h,
-        #mental-model .flow-arrow-v,
-        #mental-model .flow-return,
-        #mental-model .mobile-return-label {
-          display: none !important;
-        }
-
-        #mental-model .cycle-plan {
-          order: 1;
-        }
-        #mental-model .cycle-sign {
-          order: 2;
-        }
-        #mental-model .cycle-broadcast {
-          order: 3;
-        }
-        #mental-model .cycle-receipt {
-          order: 4;
-        }
-        #mental-model .cycle-trace {
-          order: 5;
-        }
-        #mental-model .cycle-verify {
-          order: 6;
-        }
-
-        #mental-model .cycle-verify::after {
-          content: "iterate";
-          display: inline-block;
-          margin-top: 6px;
-          color: var(--muted-2);
-          font-size: 11px;
-          font-style: italic;
-        }
-
-        #mental-model .artifact-pipeline {
-          display: grid !important;
-          grid-template-columns: repeat(2, minmax(0, 1fr));
-          gap: 8px;
-          margin-top: 10px;
-        }
-
-        #mental-model .artifact-pipeline::before {
-          content: "Artifacts written by the runtime";
-          grid-column: 1 / -1;
-          color: var(--muted-2);
-          font-size: 10px;
-          font-weight: 800;
-          letter-spacing: 0.07em;
-          text-transform: uppercase;
-          margin: 2px 0 0;
-        }
-
-        #mental-model .artifact-pipeline .pipe {
-          width: auto;
-          min-width: 0;
-          padding: 9px 10px;
-          border-radius: 10px;
-          font-size: 11.5px;
-        }
-
-        #mental-model .artifact-pipeline .pipe strong {
-          font-size: 12px;
-          margin-bottom: 2px;
-        }
-      }
-
-      @media (max-width: 380px) {
-        #mental-model .cycle-flow,
-        #mental-model .artifact-pipeline {
-          grid-template-columns: 1fr;
-        }
-      }
-
-      /* === Final desktop hero balance pass === */
-      @media (min-width: 981px) {
-        .header {
-          padding: 58px 0 52px;
-        }
-
-        .header-row {
-          grid-template-columns: minmax(360px, 470px) minmax(420px, 560px) !important;
-          gap: clamp(28px, 4vw, 54px) !important;
-          align-items: start !important;
-        }
-
-        .header h1 {
-          max-width: 470px;
-          font-size: clamp(48px, 5.2vw, 66px) !important;
-          line-height: 0.96;
-          letter-spacing: -0.055em;
-        }
-
-        .header .subtitle {
-          max-width: 440px;
-          font-size: 16px;
-          line-height: 1.58;
-          margin-top: 18px;
-        }
-
-        .header .actions {
-          max-width: 430px;
-        }
-
-        .header .meta {
-          max-width: 430px;
-        }
-
-        .header .warning {
-          max-width: 430px;
-          margin-top: 14px;
-        }
-
-        .header-row > .codeblock {
-          width: 100%;
-          max-width: 560px;
-          justify-self: start;
-          margin-top: 92px !important;
-          transform: none !important;
-        }
-
-        .header-row > .codeblock pre {
-          font-size: 13px;
-          line-height: 1.65;
-          padding: 18px 20px;
-        }
-      }
-
-      @media (min-width: 1161px) {
-        .layout {
-          max-width: 1320px;
-          grid-template-columns: 220px minmax(0, 1fr) 170px;
-          gap: 24px;
-        }
-
-        aside.left {
-          padding-right: 14px;
-        }
-
-        aside.right {
-          padding-left: 14px;
-        }
-      }
-
-      @media (min-width: 981px) and (max-width: 1160px) {
-        .layout {
-          max-width: 1060px;
-          grid-template-columns: minmax(0, 1fr) 150px;
-          gap: 18px;
-        }
-
-        aside.left {
-          display: none;
-        }
-
-        aside.right {
-          display: block;
-        }
-
-        .header-row {
-          grid-template-columns: minmax(340px, 440px) minmax(360px, 500px) !important;
-          gap: 28px !important;
-        }
-
-        .header-row > .codeblock {
-          margin-top: 74px !important;
-        }
-      }
-
-      @media (min-width: 861px) and (max-width: 980px) {
-        .header-row {
-          grid-template-columns: 1fr !important;
-          gap: 20px !important;
-        }
-
-        .header-row > .codeblock {
-          margin-top: 10px !important;
-          max-width: 640px;
-        }
-
-        .header .subtitle,
-        .header .warning,
-        .header .meta,
-        .header .actions {
-          max-width: 660px;
-        }
-      }
-
-      /* Hero polish pass: only the top overview block. */
-      #overview.header {
-        padding: 60px 0 58px;
-        min-height: 720px;
-        display: flex;
-        align-items: center;
-      }
-
-      #overview .hero-shell {
-        width: 100%;
-        display: grid;
-        grid-template-columns: minmax(0, 520px) minmax(380px, 460px);
-        gap: clamp(42px, 6vw, 72px);
-        align-items: start;
-        position: relative;
-      }
-
-      #overview .hero-copy {
-        position: relative;
-        z-index: 1;
-      }
-
-      #overview .hero-kicker {
-        margin-bottom: 16px;
-        color: var(--accent);
-        font-family: var(--mono);
-        font-size: 11px;
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
-        opacity: 0.88;
-      }
-
-      #overview h1 {
-        max-width: 540px;
-        font-size: clamp(54px, 5.7vw, 76px);
-        line-height: 0.96;
-        letter-spacing: -0.065em;
-        margin-bottom: 22px;
-      }
-
-      #overview .subtitle {
-        max-width: 500px;
-        font-size: 16px;
-        line-height: 1.68;
-        margin: 0 0 20px;
-      }
-
-      #overview .actions {
-        max-width: 470px;
-        margin-top: 18px;
-        gap: 10px;
-      }
-
-      #overview .meta {
-        max-width: 470px;
-        margin-top: 18px;
-      }
-
-      #overview .warning {
-        max-width: 470px;
-        margin-top: 18px;
-        padding: 12px 14px;
-        border-radius: 8px;
-        background: rgba(210, 153, 34, 0.075);
-      }
-
-      #overview .hero-runbook {
-        position: relative;
-        z-index: 1;
-        margin-top: 158px;
-      }
-
-      #overview .hero-runbook::before {
-        content: "";
-        position: absolute;
-        inset: -24px -18px -26px -18px;
-        border: 1px solid rgba(16, 185, 129, 0.08);
-        border-radius: 18px;
-        background:
-          linear-gradient(135deg, rgba(16, 185, 129, 0.06), transparent 38%),
-          linear-gradient(180deg, rgba(255, 255, 255, 0.018), transparent);
-        pointer-events: none;
-      }
-
-      #overview .runbook-topline {
-        position: relative;
-        z-index: 1;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin: 0 0 10px;
-        font-family: var(--mono);
-        font-size: 11px;
-        color: var(--muted-2);
-        letter-spacing: 0.05em;
-        text-transform: uppercase;
-      }
-
-      #overview .runbook-pill {
-        color: var(--accent);
-        border: 1px solid var(--accent-line);
-        background: var(--accent-soft);
-        border-radius: 999px;
-        padding: 2px 8px;
-        letter-spacing: 0;
-        text-transform: none;
-      }
-
-      #overview .hero-runbook .codeblock {
-        position: relative;
-        z-index: 1;
-        margin: 0;
-        border-radius: 12px;
-        box-shadow: 0 26px 80px rgba(0, 0, 0, 0.34);
-        overflow: hidden;
-      }
-
-      #overview .hero-runbook pre {
-        padding: 18px 20px;
-        font-size: 13px;
-        line-height: 1.72;
-      }
-
-      #overview .hero-runbook .codebar {
-        padding: 10px 12px;
-      }
-
-      #overview .runbook-foot {
-        position: relative;
-        z-index: 1;
-        display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: 8px;
-        margin-top: 10px;
-        font-family: var(--mono);
-        font-size: 10.5px;
-        color: var(--muted-2);
-      }
-
-      #overview .runbook-foot span {
-        border: 1px solid var(--border-soft);
-        border-radius: 7px;
-        padding: 6px 7px;
-        text-align: center;
-        background: rgba(255, 255, 255, 0.012);
-      }
-
-      [data-theme="light"] #overview .hero-runbook::before {
-        background:
-          linear-gradient(135deg, rgba(8, 127, 91, 0.07), transparent 38%),
-          linear-gradient(180deg, rgba(255, 255, 255, 0.25), transparent);
-      }
-
-      @media (max-width: 1160px) {
-        #overview.header {
-          min-height: 0;
-          padding: 42px 0 42px;
-          display: block;
-        }
-
-        #overview .hero-shell {
-          grid-template-columns: 1fr;
-          gap: 28px;
-        }
-
-        #overview .hero-runbook {
-          margin-top: 0;
-          max-width: 560px;
-        }
-      }
-
-      @media (max-width: 860px) {
-        #overview.header {
-          padding: 30px 0 28px;
-        }
-
-        #overview h1 {
-          font-size: clamp(38px, 12vw, 56px);
-          letter-spacing: -0.055em;
-        }
-
-        #overview .subtitle,
-        #overview .actions,
-        #overview .meta,
-        #overview .warning {
-          max-width: 100%;
-        }
-
-        #overview .hero-runbook::before,
-        #overview .runbook-topline,
-        #overview .runbook-foot {
-          display: none;
-        }
-
-        #overview .hero-runbook pre {
-          font-size: 11.4px;
-          padding: 12px;
-        }
-      }
-    </style>
-<style id="hero-fix-patch">
-      /* Top hero only: single-column editorial layout, terminal as first-run block. */
-      #overview.header {
-        min-height: 0 !important;
-        padding: 12px 0 66px !important;
-        display: block !important;
-        align-items: initial !important;
-      }
-
-      #overview .hero-shell {
-        display: block !important;
-        max-width: 880px !important;
-        width: 100% !important;
-        margin: 0 auto !important;
-      }
-
-      #overview .hero-copy {
-        max-width: 880px !important;
-      }
-
-      #overview .hero-kicker {
-        margin-bottom: 18px !important;
-      }
-
-      #overview h1 {
-        max-width: 760px !important;
-        font-size: clamp(58px, 6.2vw, 82px) !important;
-        line-height: 0.94 !important;
-        letter-spacing: -0.065em !important;
-        margin-bottom: 22px !important;
-      }
-
-      #overview .subtitle {
-        max-width: 690px !important;
-        font-size: 17px !important;
-        line-height: 1.66 !important;
-        margin-bottom: 22px !important;
-      }
-
-      #overview .actions {
-        max-width: 680px !important;
-        gap: 12px !important;
-        margin-top: 18px !important;
-      }
-
-      #overview .meta {
-        max-width: 720px !important;
-        margin-top: 18px !important;
-      }
-
-      #overview .hero-runbook {
-        max-width: 820px !important;
-        margin-top: 18px !important;
-        position: relative !important;
-        z-index: 1 !important;
-      }
-
-      #overview .hero-runbook::before,
-      #overview .runbook-topline,
-      #overview .runbook-foot {
-        display: none !important;
-      }
-
-      #overview .hero-runbook .codeblock {
-        margin: 0 !important;
-        border-radius: 10px !important;
-        border-color: var(--border) !important;
-        box-shadow: 0 18px 56px rgba(0, 0, 0, 0.28) !important;
-      }
-
-      #overview .hero-runbook .codebar {
-        padding: 9px 12px !important;
-      }
-
-      #overview .hero-runbook pre {
-        padding: 18px 20px !important;
-        font-size: 13.2px !important;
-        line-height: 1.72 !important;
-      }
-
-      #overview .warning {
-        max-width: 820px !important;
-        margin-top: 18px !important;
-        padding: 16px 18px 16px 58px !important;
-        border-left: 0 !important;
-        border: 1px solid rgba(210, 153, 34, 0.34) !important;
-        border-radius: 10px !important;
-        background: linear-gradient(
-          90deg,
-          rgba(210, 153, 34, 0.12),
-          rgba(210, 153, 34, 0.045)
-        ) !important;
-        position: relative !important;
-        font-size: 15px !important;
-        line-height: 1.55 !important;
-      }
-
-      #overview .warning::before {
-        content: "⚠";
-        position: absolute;
-        left: 19px;
-        top: 17px;
-        width: 24px;
-        height: 24px;
-        border: 1px solid rgba(210, 153, 34, 0.55);
-        border-radius: 999px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        color: var(--warning);
-        font-size: 14px;
-        line-height: 1;
-      }
-
-      @media (max-width: 860px) {
-        #overview.header {
-          padding: 34px 0 38px !important;
-        }
-
-        #overview .hero-shell {
-          max-width: 100% !important;
-        }
-
-        #overview h1 {
-          font-size: clamp(40px, 12vw, 58px) !important;
-          max-width: 100% !important;
-        }
-
-        #overview .subtitle {
-          font-size: 15px !important;
-          max-width: 100% !important;
-        }
-
-        #overview .hero-runbook {
-          max-width: 100% !important;
-        }
-
-        #overview .hero-runbook pre {
-          font-size: 11.2px !important;
-          padding: 12px !important;
-        }
-
-        #overview .warning {
-          padding: 12px 12px 12px 42px !important;
-          font-size: 13.5px !important;
-        }
-
-        #overview .warning::before {
-          left: 12px;
-          top: 13px;
-          width: 20px;
-          height: 20px;
-          font-size: 12px;
-        }
-      }
-
-      /* === HardKAS docs layout + light-mode containment patch ===
-   Scope: fix overflow and light-theme readability without changing branding/logo/content. */
-      @media (min-width: 861px) {
-        .layout {
-          max-width: 1320px !important;
-          grid-template-columns: 220px minmax(0, 820px) 210px !important;
-          gap: 28px !important;
-          align-items: start !important;
-        }
-
-        main {
-          width: 100% !important;
-          max-width: 820px !important;
-          min-width: 0 !important;
-          margin: 0 auto !important;
-          overflow: hidden !important;
-        }
-
-        aside.right {
-          width: 210px !important;
-          min-width: 210px !important;
-          max-width: 210px !important;
-          overflow-x: hidden !important;
-          padding-left: 18px !important;
-        }
-
-        .toc a {
-          white-space: normal !important;
-          overflow-wrap: anywhere !important;
-          word-break: break-word !important;
-          line-height: 1.45 !important;
-          padding-right: 4px !important;
-        }
-
-        section,
-        .grid,
-        .split,
-        .diagram,
-        .command-grid,
-        .cycle-flow,
-        .artifact-pipeline,
-        table,
-        .codeblock,
-        .note,
-        .warning,
-        .danger {
-          max-width: 100% !important;
-        }
-
-        .grid,
-        .split,
-        .diagram,
-        .command-grid {
-          min-width: 0 !important;
-        }
-
-        .box,
-        .command,
-        .flow-card,
-        .pipe,
-        details {
-          min-width: 0 !important;
-          overflow-wrap: break-word !important;
-        }
-
-        .codeblock,
-        pre {
-          overflow-x: auto !important;
-        }
-      }
-
-      @media (min-width: 861px) and (max-width: 1160px) {
-        .layout {
-          grid-template-columns: minmax(0, 820px) 200px !important;
-          max-width: 1060px !important;
-        }
-
-        main {
-          max-width: 820px !important;
-        }
-
-        aside.right {
-          width: 200px !important;
-          min-width: 200px !important;
-          max-width: 200px !important;
-        }
-      }
-
-      /* Light theme readability: remove washed dark overlays and restore contrast. */
-      [data-theme="light"] table {
-        background: #fffaf1 !important;
-        border-color: #d4c7b5 !important;
-      }
-
-      [data-theme="light"] th {
-        background: #e9dfcf !important;
-        color: #1d231f !important;
-        border-color: #cfc1ad !important;
-      }
-
-      [data-theme="light"] td {
-        background: #fffaf1 !important;
-        color: #4f5a53 !important;
-        border-color: #d8cbbb !important;
-      }
-
-      [data-theme="light"] .box,
-      [data-theme="light"] .command,
-      [data-theme="light"] .flow-card,
-      [data-theme="light"] details,
-      [data-theme="light"] .pipe {
-        background: #fffaf1 !important;
-        border-color: #d6c9b7 !important;
-        color: #1d231f !important;
-        box-shadow: none !important;
-      }
-
-      [data-theme="light"] .box p,
-      [data-theme="light"] .command span,
-      [data-theme="light"] .flow-card span.desc,
-      [data-theme="light"] .pipe,
-      [data-theme="light"] td,
-      [data-theme="light"] li,
-      [data-theme="light"] p {
-        color: #5c665f !important;
-      }
-
-      [data-theme="light"] .box h3,
-      [data-theme="light"] .box h4,
-      [data-theme="light"] .command h3,
-      [data-theme="light"] .flow-card strong,
-      [data-theme="light"] strong {
-        color: #1d231f !important;
-      }
-
-      [data-theme="light"] .codeblock {
-        background: #f0e7d8 !important;
-        border-color: #d2c3ae !important;
-        box-shadow: 0 10px 30px rgba(38, 28, 16, 0.07) !important;
-      }
-
-      [data-theme="light"] .codebar {
-        background: #e6dac8 !important;
-        border-bottom-color: #d0c0aa !important;
-        color: #68726b !important;
-      }
-
-      [data-theme="light"] pre {
-        background: #f0e7d8 !important;
-        color: #24302a !important;
-      }
-
-      [data-theme="light"] code {
-        background: #eee4d4 !important;
-        border-color: #d3c5b1 !important;
-        color: #1d231f !important;
-      }
-
-      [data-theme="light"] .cmd,
-      [data-theme="light"] .command code,
-      [data-theme="light"] td code {
-        color: #087f5b !important;
-      }
-
-      [data-theme="light"] .flag {
-        color: #7b8da8 !important;
-      }
-
-      [data-theme="light"] .comment {
-        color: #7a837d !important;
-      }
-
-      [data-theme="light"] .warning {
-        background: rgba(210, 153, 34, 0.1) !important;
-        border-color: rgba(138, 109, 27, 0.3) !important;
-        color: #5c665f !important;
-      }
-
-      [data-theme="light"] .danger {
-        background: rgba(180, 35, 24, 0.08) !important;
-        border-color: rgba(180, 35, 24, 0.32) !important;
-        color: #5c665f !important;
-      }
-
-      [data-theme="light"] .note {
-        background: rgba(8, 127, 91, 0.07) !important;
-        border-color: rgba(8, 127, 91, 0.22) !important;
-        color: #5c665f !important;
-      }
-
-      [data-theme="light"] .flow-arrow-h,
-      [data-theme="light"] .flow-arrow-v {
-        background: #9f927f !important;
-        opacity: 0.48 !important;
-      }
-
-      [data-theme="light"] .flow-arrow-h::after,
-      [data-theme="light"] .flow-arrow-v::after {
-        border-color: #9f927f !important;
-      }
-
-      /* Prevent long inline command chips from pushing grids past the content column. */
-      .command code,
-      td code,
-      pre code {
-        white-space: pre-wrap;
-        overflow-wrap: anywhere;
-      }
-    </style>
-<style id="hardkas-final-visual-fix">
-      /* Final containment pass: fix light-mode grey cards and prevent content/TOC collision. */
-      @media (min-width: 861px) {
-        .layout {
-          grid-template-columns: 220px minmax(0, 760px) 190px !important;
-          gap: 30px !important;
-          max-width: 1240px !important;
-        }
-
-        main {
-          width: 100% !important;
-          max-width: 760px !important;
-          min-width: 0 !important;
-          overflow: visible !important;
-        }
-
-        aside.right {
-          width: 190px !important;
-          min-width: 190px !important;
-          max-width: 190px !important;
-          padding-left: 18px !important;
-          overflow-x: hidden !important;
-        }
-
-        .toc a {
-          white-space: normal !important;
-          overflow-wrap: anywhere !important;
-          word-break: normal !important;
-          line-height: 1.45 !important;
-        }
-
-        table {
-          table-layout: fixed !important;
-        }
-
-        th,
-        td {
-          overflow-wrap: anywhere !important;
-        }
-
-        .command-grid {
-          grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-        }
-
-        .command,
-        .box,
-        .flow-card,
-        .pipe {
-          min-width: 0 !important;
-        }
-
-        .command code,
-        td code,
-        pre code {
-          white-space: pre-wrap !important;
-          overflow-wrap: anywhere !important;
-          word-break: break-word !important;
-        }
-      }
-
-      @media (min-width: 861px) and (max-width: 1120px) {
-        .layout {
-          grid-template-columns: minmax(0, 760px) 180px !important;
-          max-width: 980px !important;
-          gap: 24px !important;
-        }
-
-        aside.left {
-          display: none !important;
-        }
-
-        aside.right {
-          width: 180px !important;
-          min-width: 180px !important;
-          max-width: 180px !important;
-        }
-      }
-
-      /* Strong light-theme card cleanup. Applied late to beat older dark card rules. */
-      html[data-theme="light"] .box,
-      html[data-theme="light"] .command,
-      html[data-theme="light"] .flow-card,
-      html[data-theme="light"] details,
-      html[data-theme="light"] .pipe {
-        background: #fffaf1 !important;
-        border-color: #d9ccb9 !important;
-        color: #1d231f !important;
-        box-shadow: none !important;
-      }
-
-      html[data-theme="light"] .command-grid .command {
-        background: #fffaf1 !important;
-      }
-
-      html[data-theme="light"] .box .command {
-        background: #fffdf7 !important;
-      }
-
-      html[data-theme="light"] .codeblock {
-        background: #f1e7d8 !important;
-        border-color: #d5c7b3 !important;
-        box-shadow: 0 8px 22px rgba(62, 45, 22, 0.06) !important;
-      }
-
-      html[data-theme="light"] .codebar {
-        background: #eadfce !important;
-        border-bottom-color: #d1c2ad !important;
-        color: #6b746d !important;
-      }
-
-      html[data-theme="light"] pre {
-        background: #f1e7d8 !important;
-        color: #223028 !important;
-      }
-
-      html[data-theme="light"] table {
-        background: #fffaf1 !important;
-        border-color: #d6c9b7 !important;
-      }
-
-      html[data-theme="light"] th {
-        background: #eadfce !important;
-        color: #1d231f !important;
-        border-color: #cabba6 !important;
-      }
-
-      html[data-theme="light"] td {
-        background: #fffaf1 !important;
-        color: #536057 !important;
-        border-color: #d6c9b7 !important;
-      }
-
-      html[data-theme="light"] .box p,
-      html[data-theme="light"] .command span,
-      html[data-theme="light"] .flow-card span.desc,
-      html[data-theme="light"] .pipe,
-      html[data-theme="light"] td,
-      html[data-theme="light"] li,
-      html[data-theme="light"] p {
-        color: #5d685f !important;
-      }
-
-      html[data-theme="light"] .box h3,
-      html[data-theme="light"] .box h4,
-      html[data-theme="light"] .flow-card strong,
-      html[data-theme="light"] strong {
-        color: #1d231f !important;
-      }
-
-      html[data-theme="light"] code {
-        background: #efe5d5 !important;
-        border-color: #d5c7b3 !important;
-        color: #1d231f !important;
-      }
-
-      html[data-theme="light"] .command code,
-      html[data-theme="light"] td code,
-      html[data-theme="light"] .cmd {
-        color: #087f5b !important;
-      }
-
-      html[data-theme="light"] .flag {
-        color: #7e90aa !important;
-      }
-
-      html[data-theme="light"] .comment {
-        color: #7a837d !important;
-      }
-
-      html[data-theme="light"] .note {
-        background: rgba(8, 127, 91, 0.07) !important;
-        border-color: rgba(8, 127, 91, 0.25) !important;
-      }
-
-      html[data-theme="light"] .warning {
-        background: rgba(210, 153, 34, 0.09) !important;
-        border-color: rgba(138, 109, 27, 0.25) !important;
-      }
-
-      html[data-theme="light"] .danger {
-        background: rgba(180, 35, 24, 0.075) !important;
-        border-color: rgba(180, 35, 24, 0.28) !important;
-      }
-
-      /* Replay command cards look better as compact tiles, not nested dark blocks. */
-      html[data-theme="light"] #replay .box {
-        background: #fffdf7 !important;
-      }
-
-      html[data-theme="light"] #replay .box .command {
-        background: #fffaf1 !important;
-      }
-
-      /* If the OS/browser opens the page in light mode before JS sets data-theme, avoid dark grey islands. */
-      @media (prefers-color-scheme: light) {
-        html:not([data-theme="dark"]) .box,
-        html:not([data-theme="dark"]) .command,
-        html:not([data-theme="dark"]) .flow-card,
-        html:not([data-theme="dark"]) details,
-        html:not([data-theme="dark"]) .pipe {
-          background: #fffaf1 !important;
-          border-color: #d9ccb9 !important;
-          color: #1d231f !important;
-          box-shadow: none !important;
-        }
-
-        html:not([data-theme="dark"]) table {
-          background: #fffaf1 !important;
-        }
-
-        html:not([data-theme="dark"]) th {
-          background: #eadfce !important;
-          color: #1d231f !important;
-        }
-
-        html:not([data-theme="dark"]) td {
-          background: #fffaf1 !important;
-          color: #536057 !important;
-        }
-      }
-    </style>
-<style id="hardkas-premium-docs-polish">
-      /* Premium docs polish: more breathing room, less grey density, no content/TOC collision. */
-      @media (min-width: 861px) {
-        .layout {
-          max-width: 1280px !important;
-          grid-template-columns: 210px minmax(0, 780px) 200px !important;
-          gap: 42px !important;
-        }
-
-        main {
-          max-width: 780px !important;
-          overflow: visible !important;
-        }
-
-        aside.right {
-          width: 200px !important;
-          min-width: 200px !important;
-          max-width: 200px !important;
-          padding-left: 24px !important;
-        }
-
-        .toc a {
-          line-height: 1.72 !important;
-          padding: 3px 0 !important;
-          white-space: normal !important;
-          overflow-wrap: normal !important;
-          word-break: normal !important;
-        }
-
-        section {
-          padding-top: 42px !important;
-        }
-
-        h2 {
-          margin-bottom: 22px !important;
-        }
-
-        .grid,
-        .split,
-        .diagram,
-        .command-grid {
-          gap: 18px !important;
-        }
-
-        .box,
-        .command,
-        .flow-card,
-        details {
-          padding: 18px !important;
-        }
-
-        .command {
-          min-height: 132px !important;
-          display: flex !important;
-          flex-direction: column !important;
-          justify-content: flex-start !important;
-        }
-
-        .command code {
-          margin-bottom: 12px !important;
-          line-height: 1.55 !important;
-        }
-
-        .command span {
-          line-height: 1.65 !important;
-        }
-
-        table {
-          table-layout: fixed !important;
-          margin-top: 18px !important;
-        }
-
-        th,
-        td {
-          padding: 13px 14px !important;
-          line-height: 1.62 !important;
-        }
-      }
-
-      /* Light theme: warm surfaces, no dead grey panels. */
-      html[data-theme="light"] .box,
-      html[data-theme="light"] .command,
-      html[data-theme="light"] .flow-card,
-      html[data-theme="light"] details,
-      html[data-theme="light"] .pipe {
-        background: #fffbf3 !important;
-        border-color: #d8cbb9 !important;
-        color: #202620 !important;
-        box-shadow: none !important;
-      }
-
-      html[data-theme="light"] .command-grid .command,
-      html[data-theme="light"] .box .command {
-        background: #fffdf8 !important;
-      }
-
-      html[data-theme="light"] table {
-        background: #fffbf3 !important;
-        border-color: #d4c6b3 !important;
-      }
-
-      html[data-theme="light"] th {
-        background: #ebe1d2 !important;
-        color: #202620 !important;
-        border-color: #cfc0aa !important;
-      }
-
-      html[data-theme="light"] td {
-        background: #fffbf3 !important;
-        color: #58635b !important;
-        border-color: #d8cbb9 !important;
-      }
-
-      html[data-theme="light"] tr:nth-child(even) td {
-        background: #faf4ea !important;
-      }
-
-      html[data-theme="light"] p,
-      html[data-theme="light"] li,
-      html[data-theme="light"] td,
-      html[data-theme="light"] .box p,
-      html[data-theme="light"] .command span,
-      html[data-theme="light"] .flow-card span.desc,
-      html[data-theme="light"] .pipe {
-        color: #5f6a62 !important;
-      }
-
-      html[data-theme="light"] strong,
-      html[data-theme="light"] h1,
-      html[data-theme="light"] h2,
-      html[data-theme="light"] h3,
-      html[data-theme="light"] h4,
-      html[data-theme="light"] .box h3,
-      html[data-theme="light"] .box h4,
-      html[data-theme="light"] .flow-card strong {
-        color: #202620 !important;
-      }
-
-      html[data-theme="light"] .codeblock {
-        background: #f3eadc !important;
-        border-color: #d6c7b4 !important;
-        box-shadow: 0 10px 28px rgba(54, 38, 18, 0.055) !important;
-      }
-
-      html[data-theme="light"] .codebar {
-        background: #eadfce !important;
-        border-bottom-color: #d0c1ab !important;
-        color: #707a72 !important;
-      }
-
-      html[data-theme="light"] pre {
-        background: #f3eadc !important;
-        color: #26332c !important;
-      }
-
-      html[data-theme="light"] code {
-        background: #efe5d5 !important;
-        border-color: #d5c6b2 !important;
-        color: #202620 !important;
-      }
-
-      html[data-theme="light"] .command code,
-      html[data-theme="light"] td code,
-      html[data-theme="light"] .cmd {
-        color: #087f5b !important;
-      }
-
-      html[data-theme="light"] .flag {
-        color: #7186a3 !important;
-      }
-
-      html[data-theme="light"] .comment {
-        color: #7f887f !important;
-      }
-
-      /* Reduce visual dominance of nested replay cards and make them read like compact spec items. */
-      @media (min-width: 861px) {
-        #replay .split {
-          grid-template-columns: minmax(0, 0.94fr) minmax(0, 1fr) !important;
-          align-items: stretch !important;
-        }
-
-        #replay .command-grid {
-          gap: 12px !important;
-        }
-
-        #replay .command {
-          min-height: 118px !important;
-          padding: 13px !important;
-        }
-
-        #replay .command code {
-          margin-bottom: 8px !important;
-        }
-      }
-
-      html[data-theme="light"] #replay .box {
-        background: #fffdf8 !important;
-      }
-
-      html[data-theme="light"] #replay .command {
-        background: #fffaf1 !important;
-      }
-
-      /* Notes/warnings stay subtle, not highlighter blocks. */
-      html[data-theme="light"] .note {
-        background: rgba(8, 127, 91, 0.055) !important;
-        border-color: rgba(8, 127, 91, 0.22) !important;
-      }
-
-      html[data-theme="light"] .warning {
-        background: rgba(210, 153, 34, 0.075) !important;
-        border-color: rgba(138, 109, 27, 0.22) !important;
-      }
-
-      html[data-theme="light"] .danger {
-        background: rgba(180, 35, 24, 0.065) !important;
-        border-color: rgba(180, 35, 24, 0.25) !important;
-      }
-
-      /* Safety fallback if the browser loads light colors before explicit data-theme is applied. */
-      @media (prefers-color-scheme: light) {
-        html:not([data-theme="dark"]) .box,
-        html:not([data-theme="dark"]) .command,
-        html:not([data-theme="dark"]) .flow-card,
-        html:not([data-theme="dark"]) details,
-        html:not([data-theme="dark"]) .pipe {
-          background: #fffbf3 !important;
-          border-color: #d8cbb9 !important;
-          color: #202620 !important;
-        }
-
-        html:not([data-theme="dark"]) table {
-          background: #fffbf3 !important;
-        }
-
-        html:not([data-theme="dark"]) th {
-          background: #ebe1d2 !important;
-          color: #202620 !important;
-        }
-
-        html:not([data-theme="dark"]) td {
-          background: #fffbf3 !important;
-          color: #58635b !important;
-        }
-      }
-    </style>
+/* HardKAS site theme: IBM Plex, Kaspa teal, one coherent dark theme plus a matching light one.
+   Replaces the four legacy <style> blocks. HTML and copy are untouched.
+   Dark is the default because the page script treats "no data-theme" as dark. */
+
+:root {
+  --bg: #0b0d0e;
+  --bg-elev: #121517;
+  --bg-sunk: #08090a;
+  --line: rgba(255, 255, 255, 0.08);
+  --line-strong: rgba(255, 255, 255, 0.15);
+  --text: #ecebe7;
+  --text-2: #b8b6b0;
+  --muted: #86847e;
+  --accent: #70c7ba;
+  --accent-rgb: 112, 199, 186;
+  --accent-ink: #0a1715;
+  --accent-tint: rgba(112, 199, 186, 0.09);
+  --accent-line: rgba(112, 199, 186, 0.35);
+  --warn: #e0b44f;
+  --warn-tint: rgba(224, 180, 79, 0.09);
+  --danger: #ef7a6a;
+  --danger-tint: rgba(239, 122, 106, 0.09);
+  --chip-bg: rgba(255, 255, 255, 0.055);
+
+  --code-bg: #0e1113;
+  --code-edge: rgba(255, 255, 255, 0.07);
+  --code-text: #d8dbd5;
+  --code-dim: #7a847f;
+  --code-cmd: #70c7ba;
+  --code-flag: #a8b3c6;
+  --code-str: #e2c08d;
+  --code-comment: #66706b;
+
+  --radius: 10px;
+  --radius-sm: 7px;
+  --sans: "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --top-h: 60px;
+  --nav-w: 244px;
+  --content-w: 880px;
+  color-scheme: dark;
+}
+
+:root[data-theme="light"] {
+  --bg: #f6f5f1;
+  --bg-elev: #ffffff;
+  --bg-sunk: #eceae4;
+  --line: rgba(20, 22, 25, 0.1);
+  --line-strong: rgba(20, 22, 25, 0.2);
+  --text: #15171a;
+  --text-2: #3c3f44;
+  --muted: #6c6e72;
+  --accent: #1b7d70;
+  --accent-rgb: 27, 125, 112;
+  --accent-ink: #ffffff;
+  --accent-tint: rgba(27, 125, 112, 0.07);
+  --accent-line: rgba(27, 125, 112, 0.35);
+  --warn: #946500;
+  --warn-tint: rgba(148, 101, 0, 0.07);
+  --danger: #b3412f;
+  --danger-tint: rgba(179, 65, 47, 0.06);
+  --chip-bg: rgba(20, 22, 25, 0.05);
+  --code-edge: rgba(20, 22, 25, 0.14);
+  color-scheme: light;
+}
+
+/* ---------- base ---------- */
+*, *::before, *::after { box-sizing: border-box; }
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: calc(var(--top-h) + 20px);
+  -webkit-text-size-adjust: 100%;
+}
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 400 16px/1.65 var(--sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+::selection { background: var(--accent); color: var(--accent-ink); }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; text-underline-offset: 3px; }
+img { max-width: 100%; }
+h1, h2, h3 { color: var(--text); font-weight: 600; letter-spacing: -0.015em; line-height: 1.2; }
+h3 { font-size: 1rem; margin: 0 0 0.45rem; }
+h4 { font-size: 0.95rem; font-weight: 600; color: var(--text); margin: 1.6rem 0 0.5rem; letter-spacing: -0.005em; }
+p { margin: 0 0 1rem; color: var(--text-2); }
+strong { color: var(--text); font-weight: 600; }
+em { color: var(--text-2); }
+ul, ol { color: var(--text-2); padding-left: 1.25rem; margin: 0 0 1rem; }
+li { margin: 0.3rem 0; }
+li::marker { color: var(--accent); }
+code {
+  font-family: var(--mono);
+  font-size: 0.84em;
+  font-weight: 400;
+  color: var(--text);
+  background: var(--chip-bg);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 0.08em 0.38em;
+}
+pre { margin: 0; }
+pre code { background: none; border: 0; padding: 0; font-size: inherit; color: inherit; }
+a:focus-visible, button:focus-visible, summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ---------- top bar ---------- */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  height: var(--top-h);
+  background: color-mix(in srgb, var(--bg) 84%, transparent);
+  backdrop-filter: saturate(140%) blur(10px);
+  -webkit-backdrop-filter: saturate(140%) blur(10px);
+  border-bottom: 1px solid var(--line);
+}
+.top-inner {
+  height: 100%;
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 0 28px;
+  display: flex;
+  align-items: center;
+  gap: 32px;
+}
+.brand { display: flex; align-items: center; flex: none; }
+.brand-logo { height: 26px; width: auto; display: block; }
+.topbar nav { display: flex; gap: 24px; }
+.topbar nav a { color: var(--muted); font-size: 0.9rem; font-weight: 500; }
+.topbar nav a:hover { color: var(--text); text-decoration: none; }
+.top-actions { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+.theme-toggle, .mobile-nav {
+  appearance: none;
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--text-2);
+  height: 34px;
+  min-width: 34px;
+  padding: 0 8px;
+  border-radius: 8px;
+  font: 400 0.95rem/1 var(--sans);
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.theme-toggle:hover, .mobile-nav:hover { border-color: var(--line-strong); color: var(--text); }
+.github {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 500;
+  height: 34px;
+  padding: 0 4px;
+}
+.github:hover { color: var(--text); text-decoration: none; }
+.github svg { width: 18px; height: 18px; fill: currentColor; }
+.mobile-nav { display: none; }
+
+/* ---------- layout ---------- */
+.layout {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 0 28px;
+  display: grid;
+  grid-template-columns: var(--nav-w) minmax(0, 1fr);
+  gap: 64px;
+}
+aside.left {
+  position: sticky;
+  top: var(--top-h);
+  align-self: start;
+  height: calc(100vh - var(--top-h));
+  overflow-y: auto;
+  padding: 32px 12px 48px 0;
+  border-right: 1px solid var(--line);
+  scrollbar-width: thin;
+}
+.side-title {
+  font: 500 0.68rem/1 var(--mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 26px 0 10px 10px;
+}
+.side-title:first-child { margin-top: 0; }
+aside.left a {
+  display: block;
+  padding: 5px 10px;
+  margin: 1px 0;
+  border-radius: 6px;
+  color: var(--text-2);
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+aside.left a:hover { color: var(--text); background: var(--bg-elev); text-decoration: none; }
+aside.right, .toc { display: none; }
+main {
+  min-width: 0;
+  max-width: var(--content-w);
+  padding: 8px 0 96px;
+  counter-reset: sec;
+}
+
+/* ---------- sections ---------- */
+main section {
+  padding: 72px 0 8px;
+  border-top: 1px solid var(--line);
+}
+main section:not(.header) { counter-increment: sec; }
+main section > h2 {
+  font-size: 1.8rem;
+  letter-spacing: -0.025em;
+  margin: 0 0 1.15rem;
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+}
+main section:not(.header) > h2::before {
+  content: counter(sec, decimal-leading-zero);
+  font: 500 0.76rem/1 var(--mono);
+  letter-spacing: 0.04em;
+  color: var(--accent);
+  transform: translateY(-3px);
+}
+main section > p { max-width: 68ch; }
+main section h3 { margin-top: 0.2rem; }
+
+/* part divider ("Advanced / Reference") */
+main section.header:not(:first-child) {
+  padding-top: 112px;
+  border-top: 1px solid var(--line-strong);
+}
+main section.header:not(:first-child) > h2 {
+  font: 500 0.78rem/1 var(--mono);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0;
+}
+
+/* ---------- hero ---------- */
+main section:first-child { border-top: 0; padding: 88px 0 56px; }
+.hero-shell { display: grid; grid-template-columns: minmax(0, 1fr); gap: 48px; }
+.hero-copy { min-width: 0; }
+.hero-kicker {
+  font: 500 0.72rem/1 var(--mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 26px;
+}
+.hero-copy h1 {
+  font-size: clamp(2.6rem, 5.4vw, 4.4rem);
+  line-height: 1;
+  letter-spacing: -0.045em;
+  font-weight: 600;
+  margin: 0 0 28px;
+  max-width: 13ch;
+}
+.hero-desc {
+  font-size: 1.22rem;
+  line-height: 1.55;
+  color: var(--text);
+  max-width: 54ch;
+  margin-bottom: 26px;
+}
+.hero-desc strong { font-weight: 600; }
+.hero-copy > p { max-width: 62ch; }
+.hero-copy .note {
+  border: 0 !important;
+  border-left: 2px solid var(--accent) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  padding: 2px 0 2px 16px !important;
+  margin: 0 0 22px !important;
+  max-width: 62ch;
+  font-size: 0.95rem;
+}
+.actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 34px 0 26px; }
+.button {
+  display: inline-flex;
+  align-items: center;
+  height: 42px;
+  padding: 0 18px;
+  border-radius: 8px;
+  border: 1px solid var(--line-strong);
+  background: transparent;
+  color: var(--text);
+  font-size: 0.93rem;
+  font-weight: 500;
+  transition: border-color 0.15s, background 0.15s, filter 0.15s;
+}
+.button:hover { border-color: var(--muted); text-decoration: none; }
+.button.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+.button.primary:hover { filter: brightness(1.07); }
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  font: 500 0.76rem/1.8 var(--mono);
+  color: var(--muted);
+}
+.badge { padding: 0; border: 0; background: none; }
+.badge + .badge::before { content: "/"; margin: 0 0.75em; color: var(--line-strong); }
+.badge.accent { color: var(--accent); }
+
+.hero-runbook {
+  margin-top: 44px;
+  background: var(--code-bg);
+  border: 1px solid var(--code-edge);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.runbook-topline, .runbook-foot {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 11px 18px;
+  font: 500 0.7rem/1 var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--code-dim);
+}
+.runbook-topline { justify-content: space-between; border-bottom: 1px solid rgba(255, 255, 255, 0.07); }
+.runbook-foot { border-top: 1px solid rgba(255, 255, 255, 0.07); }
+.runbook-pill { color: var(--code-cmd); }
+.hero-runbook .codeblock { border: 0; border-radius: 0; margin: 0; }
+.hero-runbook .codebar { display: none; }
+.hero-runbook pre { padding: 22px 18px; font-size: 0.9rem; }
+
+/* ---------- code ---------- */
+.codeblock {
+  background: var(--code-bg);
+  border: 1px solid var(--code-edge);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin: 18px 0;
+}
+.codebar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 7px 8px 7px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  font: 500 0.74rem/1 var(--mono);
+  letter-spacing: 0.02em;
+  color: var(--code-dim);
+  white-space: nowrap;
+  min-height: 34px;
+}
+.copy {
+  appearance: none;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #aab2ad;
+  font: 500 0.66rem/1 var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 6px 9px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.copy:hover { color: #ffffff; border-color: rgba(255, 255, 255, 0.28); }
+.codeblock pre {
+  padding: 16px 18px;
+  overflow-x: auto;
+  font: 400 0.84rem/1.75 var(--mono);
+  color: var(--code-text);
+}
+pre .cmd { color: var(--code-cmd); font-weight: 500; }
+pre .flag { color: var(--code-flag); }
+pre .str { color: var(--code-str); }
+pre .comment { color: var(--code-comment); }
+
+/* ---------- cards & grids ---------- */
+.box {
+  background: var(--bg-elev);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 20px 22px;
+  min-width: 0;
+}
+.box h3 { font-size: 0.98rem; }
+.box p { font-size: 0.93rem; margin-bottom: 0.6rem; }
+.box p:last-child { margin-bottom: 0; }
+.box > code {
+  display: block;
+  margin-top: 14px;
+  padding: 0;
+  background: none;
+  border: 0;
+  color: var(--accent);
+  font-size: 0.78rem;
+}
+.grid, .split, .diagram { display: grid; gap: 14px; margin: 24px 0; }
+.cols-2, .split { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.diagram { gap: 8px; grid-template-columns: minmax(0, 1fr); }
+.diagram .box { border-left: 2px solid var(--accent-line); border-radius: 0 var(--radius) var(--radius) 0; }
+
+/* pipeline: vertical numbered stepper (it lives in a half-width card) */
+.pipeline { display: flex; flex-direction: column; margin: 4px 0 0; counter-reset: pipe; }
+.pipe {
+  counter-increment: pipe;
+  position: relative;
+  padding: 11px 0 11px 38px;
+  border-top: 1px solid var(--line);
+  font: 400 0.76rem/1.55 var(--mono);
+  color: var(--muted);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.pipe:first-child { border-top: 0; padding-top: 0; }
+.pipe::before {
+  content: counter(pipe, decimal-leading-zero);
+  position: absolute;
+  left: 0;
+  top: 13px;
+  font: 500 0.68rem/1 var(--mono);
+  color: var(--accent);
+}
+.pipe:first-child::before { top: 2px; }
+.pipe strong { display: block; font: 600 0.92rem/1.35 var(--sans); color: var(--text); margin-bottom: 2px; }
+
+/* execution worlds: three cards with arrows */
+.cycle-flow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 40px minmax(0, 1fr) 40px minmax(0, 1fr);
+  align-items: stretch;
+  margin: 24px 0 8px;
+}
+.flow-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 18px 18px 20px;
+  background: var(--bg-elev);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.flow-card strong { display: flex; align-items: center; gap: 9px; font-size: 1rem; }
+.flow-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); display: inline-block; flex: none; }
+.cycle-plan .flow-dot { opacity: 0.35; }
+.cycle-sign .flow-dot { opacity: 0.65; }
+.flow-card .desc { font-size: 0.86rem; color: var(--muted); }
+.flow-arrow-h { align-self: center; justify-self: center; width: 22px; height: 1px; background: var(--line-strong); position: relative; }
+.flow-arrow-h::after {
+  content: "";
+  position: absolute;
+  right: -1px;
+  top: -4px;
+  border-top: 4.5px solid transparent;
+  border-bottom: 4.5px solid transparent;
+  border-left: 6px solid var(--line-strong);
+}
+.layer-subtitle {
+  font: 500 0.7rem/1 var(--mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 12px 0 0;
+}
+
+/* ---------- callouts ---------- */
+.note, .warning, .danger {
+  border-left: 2px solid var(--accent);
+  background: var(--accent-tint);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  padding: 14px 18px;
+  margin: 22px 0;
+  color: var(--text-2);
+  font-size: 0.94rem;
+  line-height: 1.6;
+}
+.warning { border-left-color: var(--warn); background: var(--warn-tint); }
+.danger { border-left-color: var(--danger); background: var(--danger-tint); }
+
+/* ---------- tables ---------- */
+main table { width: 100%; border-collapse: collapse; margin: 22px 0; font-size: 0.92rem; }
+main th {
+  text-align: left;
+  font: 500 0.68rem/1.4 var(--mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 0 16px 10px 0;
+  border-bottom: 1px solid var(--line-strong);
+}
+main td {
+  padding: 13px 16px 13px 0;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+  color: var(--text-2);
+}
+main td:first-child { color: var(--text); font-weight: 500; }
+main table:not(.flags) td:first-child { min-width: 7.5rem; }
+
+/* ---------- accordion ---------- */
+.accordion { margin: 24px 0; border-top: 1px solid var(--line); }
+details { border-bottom: 1px solid var(--line); }
+summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 17px 2px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  font-weight: 500;
+  color: var(--text);
+}
+summary::-webkit-details-marker { display: none; }
+summary::after { content: "+"; font: 400 1.1rem/1 var(--mono); color: var(--muted); }
+details[open] > summary::after { content: "\2212"; color: var(--accent); }
+summary:hover { color: var(--accent); }
+.details-body { padding: 0 0 22px; }
+
+/* ---------- command reference ---------- */
+.command-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 18px 0; }
+.command {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+  padding: 12px 14px;
+  background: var(--bg-elev);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+}
+.command > code {
+  padding: 0;
+  background: none;
+  border: 0;
+  color: var(--accent);
+  font-size: 0.8rem;
+  overflow-wrap: anywhere;
+}
+.command > span { font-size: 0.86rem; color: var(--muted); line-height: 1.5; }
+.command table.flags { margin: 8px 0 0; font-size: 0.8rem; }
+.command table.flags td { padding: 5px 12px 5px 0; border-bottom: 1px dashed var(--line); }
+.command table.flags tr:last-child td { border-bottom: 0; }
+.command table.flags td:first-child { font-weight: 400; white-space: nowrap; }
+.command table.flags code { background: none; border: 0; padding: 0; color: var(--text); font-size: 0.78rem; }
+
+/* ---------- footer ---------- */
+.footer {
+  margin-top: 96px;
+  padding-top: 28px;
+  border-top: 1px solid var(--line);
+  font: 400 0.78rem/1.8 var(--mono);
+  color: var(--muted);
+}
+
+/* ---------- responsive ---------- */
+@media (max-width: 1024px) {
+  .layout { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .topbar nav { display: none; }
+  .mobile-nav { display: inline-flex; align-items: center; justify-content: center; }
+  aside.left {
+    display: none;
+    position: fixed;
+    inset: var(--top-h) 0 0 0;
+    height: auto;
+    z-index: 40;
+    background: var(--bg);
+    border-right: 0;
+    padding: 24px 28px 48px;
+  }
+  body.nav-open aside.left { display: block; }
+  main { max-width: none; }
+}
+@media (max-width: 760px) {
+  .top-inner, .layout { padding: 0 16px; }
+  .cols-2, .cols-3, .cols-4, .split, .command-grid { grid-template-columns: minmax(0, 1fr); }
+  .pipeline { grid-template-columns: minmax(0, 1fr); }
+  .pipe { border-left: 0; border-top: 1px solid var(--line); }
+  .pipe:first-child { border-top: 0; }
+  .cycle-flow { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .flow-arrow-h { width: 1px; height: 22px; }
+  .flow-arrow-h::after {
+    right: auto; left: -4px; top: auto; bottom: -1px;
+    border-left: 4.5px solid transparent; border-right: 4.5px solid transparent;
+    border-top: 6px solid var(--line-strong); border-bottom: 0;
+  }
+  main section { padding-top: 52px; }
+  main section:first-child { padding-top: 56px; }
+  main section > h2 { font-size: 1.5rem; }
+  .hero-desc { font-size: 1.08rem; }
+  main table thead { display: none; }
+  main table tr { display: block; padding: 10px 0; border-bottom: 1px solid var(--line); }
+  main table td { display: block; border: 0; padding: 3px 0; }
+  main table td[data-label]::before {
+    content: attr(data-label);
+    display: block;
+    font: 500 0.66rem/1.4 var(--mono);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+}
+</style>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -2739,7 +643,7 @@
       "@id": "https://hardkas.dev/#software",
       "name": "HardKAS",
       "applicationCategory": "DeveloperApplication",
-      "description": "Execution-safe development for Kaspa. Plan, execute and replay workflows."
+      "description": "Execution-safe development for Kaspa. Plan, sign, send and verify transactions with verifiable artifacts."
     }
   ]
 }
@@ -2778,7 +682,7 @@
 </header>
 <div class="layout" id="top">
 <aside class="left side">
-<div class="side-title">V3 CORE</div>
+<div class="side-title">CORE</div>
 <a href="#overview">Overview</a>
 <a href="#problem">The Problem</a>
 <a href="#execution-contract">Execution Contract</a>
@@ -2787,7 +691,7 @@
 <a href="#replay">Replay</a>
 <a href="#environments">Execution Environments</a>
 <a href="#capabilities">Capabilities</a>
-<a href="#toccata">Toccata</a>
+<a href="#toccata">SilverScript &amp; covenants</a>
 <a href="#architecture">Architecture</a>
 <a href="#quickstart">Quickstart</a>
 <a href="#examples">Examples &amp; Labs</a>
@@ -2803,7 +707,7 @@
 <a href="#rpc">RPC Diagnostics</a>
 <a href="#cli">CLI Reference</a>
 <a href="#packages">Packages</a>
-<a href="#agent">AGENT.md</a>
+<a href="#agent">Agent rules</a>
 <a href="#faq">FAQ</a>
 </aside>
 <main>
@@ -2813,18 +717,18 @@
 <div class="hero-kicker">HardKAS / local</div>
 <h1>Execution-safe development for Kaspa.</h1>
 <p class="hero-desc">
-                HardKAS is a deterministic, local-first developer operating system for
-                Kaspa/Toccata. Built upon the <strong>Golden Core Qualification Model</strong>.
+                HardKAS is a local-first developer environment for Kaspa L1, including
+                the <strong>SilverScript and covenant</strong> workflows of the Toccata upgrade.
               </p>
 <div class="note" style="margin-top: 1rem; border: 1px solid var(--accent); padding: 1rem; border-radius: 4px; background: rgba(var(--accent-rgb), 0.1);">
 <strong>HardKAS has separate execution worlds.</strong><br/>
                 Synthetic simulation and Kaspa simnet are not the same environment.
               </div>
 <p>
-                Kaspa and Igra workflows. It gives developers a reproducible CLI, local
-                runtime, dashboard, artifact engine, RPC diagnostics, wallet adapters and
-                L1/L2 simulation tools without pretending to be a production wallet,
-                consensus client or trustless bridge.
+                It gives developers a CLI, a managed localnet (a real rusty-kaspa node in
+                Docker), verifiable artifacts for every transaction step, RPC diagnostics and
+                transaction planning on the upstream Kaspa SDK Generator. It does not pretend
+                to be a production wallet, a consensus client or a trustless bridge.
               </p>
 <div class="actions">
 <a class="button primary" href="#quickstart">Get Started</a>
@@ -2833,9 +737,9 @@
 <a class="button" href="https://github.com/KasLabDevs/HardKas" rel="noreferrer" target="_blank">GitHub</a>
 </div>
 <div class="meta">
-<span class="badge accent"><span class="version-string">0.12.0-rc.25</span></span>
+<span class="badge accent"><span class="version-string">0.12.0-rc.26</span></span>
 <span class="badge">Kaspa Native</span>
-<span class="badge">Igra-aware</span>
+<span class="badge">Toccata-aware</span>
 <span class="badge">Local-first</span>
 <span class="badge">Artifact-first</span>
 <span class="badge">Deterministic tooling</span>
@@ -2850,22 +754,27 @@
                     first run
                     
 </div>
-<pre><span class="cmd">hardkas</span> localnet start <span class="flag">--profile</span> toccata-v2
-<span class="cmd">hardkas</span> tx plan <span class="flag">--from</span> alice <span class="flag">--to</span> bob <span class="flag">--amount</span> 10
-<span class="cmd">hardkas</span> verify</pre>
+<pre><span class="cmd">hardkas</span> localnet start <span class="flag">--toccata</span>
+<span class="cmd">hardkas</span> accounts real generate <span class="flag">--name</span> miner <span class="flag">--unsafe-plaintext</span> <span class="flag">--yes</span>
+<span class="cmd">hardkas</span> accounts real generate <span class="flag">--name</span> ana <span class="flag">--unsafe-plaintext</span> <span class="flag">--yes</span>
+<span class="cmd">hardkas</span> localnet fund miner <span class="flag">--keep-miner</span>
+<span class="cmd">hardkas</span> tx plan <span class="flag">--from</span> miner <span class="flag">--to</span> ana <span class="flag">--amount</span> 10 <span class="flag">--network</span> simnet <span class="flag">--out</span> plan.json
+<span class="cmd">hardkas</span> tx sign plan.json <span class="flag">--account</span> miner <span class="flag">--out</span> signed.json
+<span class="cmd">hardkas</span> tx send signed.json <span class="flag">--network</span> simnet <span class="flag">--yes</span>
+<span class="cmd">hardkas</span> verify signed.json</pre>
 </div>
 <div class="runbook-foot">
-<span>CLI</span>
-<span>sessions</span>
+<span>localnet</span>
+<span>accounts</span>
+<span>tx lifecycle</span>
 <span>artifacts</span>
-<span>dashboard</span>
 </div>
 </div>
 <div class="warning">
-<strong>Alpha boundary (<span class="version-string">0.12.0-rc.25</span>).</strong> HardKAS is developer
-                infrastructure. It enforces strict path traversal sandboxing, rule
-                evaluation for <code>hardkas.policy.v1</code>, and strict lineage sequence
-                verification. It is not production custody software.
+<strong>Alpha boundary (<span class="version-string">0.12.0-rc.26</span>).</strong> HardKAS is developer
+                infrastructure, not production custody software. It confines artifact IDs and
+                store paths to the workspace, refuses mainnet signing and broadcast, and verifies
+                artifact lineage strictly.
               </div>
 </div>
 </div>
@@ -2880,44 +789,44 @@
 </div>
 <div class="box">
 <h3>The HardKAS way</h3>
-<p>HardKAS transforms transactions into reproducible workflows. Critical workflow stages produce versioned, verifiable artifacts with explicit lineage.</p>
-<code>intent → artifact → verify → execute → replay</code>
+<p>HardKAS turns a transaction into explicit steps. Each step writes a versioned, verifiable artifact linked to the one before it, so you can check afterwards what happened and why.</p>
+<code>plan → sign → send → observe → verify</code>
 </div>
 </div>
 </section>
 <section id="execution-contract">
 <h2>Execution Contract</h2>
-<p>The <strong>Execution Contract</strong> makes the intended execution boundary explicit, allowing HardKAS to reject incompatible execution contexts. It is represented by a simple tuple that explicitly declares the target environment:</p>
+<p>The <strong>Execution Contract</strong> makes the intended execution boundary explicit, allowing HardKAS to reject incompatible execution contexts. It is a small object that declares the target explicitly:</p>
 <div class="codeblock">
-<div class="codebar">type ExecutionTarget</div>
-<pre>type ExecutionTarget = {
-  mode: "simulator" | "localnet" | "rpc" | "l2-rpc";
-  domain: "kaspa-l1" | "evm-l2";
-  network: string; <span class="comment">// e.g. "simnet", "mainnet"</span>
+<div class="codebar">type HardkasExecutionTarget (@hardkas/core)</div>
+<pre>type HardkasExecutionTarget = {
+  mode: "simulator" | "localnet" | "rpc";
+  domain: "kaspa-l1" | "evm-l2"; <span class="comment">// evm-l2 is reserved: no L2 commands are registered</span>
+  network: string;               <span class="comment">// e.g. "simnet", "testnet-10", "mainnet"</span>
 };</pre>
 </div>
 </section>
 <section id="execution-guard">
 <h2>Execution Guard</h2>
 <p>Before supported execution operations proceed, HardKAS validates the execution target and account compatibility.</p>
-<p><strong>For example:</strong> If you try to sign a transaction with a synthetic simulator account but target a real RPC network, the Guard stops it instantly.</p>
+<p><strong>For example:</strong> if a synthetic simulator account is used against a real RPC target, the execution guard refuses it before anything is signed:</p>
 <div class="warning">
-<strong>EXECUTION MODE MISMATCH</strong><br/>
-Account (kind = synthetic)<br/>
-Target (mode = rpc, domain = kaspa-l1, network = mainnet)<br/>
+<strong>EXECUTION_MODE_MISMATCH</strong><br/>
+Execution mode mismatch. Expected: kaspa, Actual: synthetic<br/>
+Account kind = synthetic · target mode = rpc<br/>
 <strong>✕ DENIED</strong>
 </div>
-<h3>Safety Orchestration</h3>
-<p>The core transaction runner employs <strong>Safety Orchestration</strong> before planning:</p>
+<h3>Safety checks on real-node planning</h3>
+<p>When a plan targets a real node (localnet or RPC), the transaction runner adds these checks:</p>
 <ul>
-<li><strong>Pending-Spends Protection:</strong> Filters UTXOs pending in the local mempool.</li>
-<li><strong>Maturity Policy:</strong> Enforces DAA score thresholds.</li>
-<li><strong>vBefore / vAfter Integrity:</strong> Retries planning if underlying state changes during the operation.</li>
+<li><strong>Pending-spends protection:</strong> skips UTXOs that are already being spent in the connected node's mempool, and fails closed if it cannot check.</li>
+<li><strong>Maturity policy:</strong> enforces DAA score thresholds before a UTXO can be spent.</li>
+<li><strong>Input re-validation:</strong> after planning, re-checks that the selected inputs are still spendable and retries a bounded number of times (<code>SELECTED_UTXO_INVALIDATED</code> if they are not). The virtual-state fingerprints before and after are recorded as evidence.</li>
 </ul>
 </section>
 <section id="artifacts">
 <h2>Artifacts</h2>
-<p>Transactions are not just API calls; they are <strong>Artifacts</strong> (<code>TxPlan</code>, <code>SignedTx</code>, <code>TxReceipt</code>).</p>
+<p>Transactions are not just API calls: every step is an <strong>Artifact</strong>. <code>TxPlan</code> and <code>SignedTx</code>, then <code>TxReceipt</code> in the simulator, or <code>TxSubmission</code> and <code>TxObservation</code> on a real node.</p>
 <div class="grid cols-3">
 <div class="box">
 <h3>Hashes</h3>
@@ -2938,11 +847,11 @@ Target (mode = rpc, domain = kaspa-l1, network = mainnet)<br/>
 <div class="split">
 <div class="box">
 <h3>Why did this transaction behave differently?</h3>
-<p>Instead of guessing, use the HardKAS Replay engine. It reconstructs the recorded local execution context and verifies the transition against the original artifacts and invariants.</p>
+<p>Instead of guessing, use the HardKAS Replay engine. It reconstructs the recorded execution context and verifies the transition against the original artifacts and invariants. Replay works on <strong>simulator transactions only</strong>. For real-node sends, <code>tx status</code> and <code>tx wait</code> record what the node reports as observation artifacts.</p>
 </div>
 <div class="box">
 <div class="pipeline">
-<div class="pipe"><strong>TxReceipt</strong>sourcePlanId, DAA score, lineage</div>
+<div class="pipe"><strong>TxReceipt</strong>sourceSignedId, daaScore, preStateHash</div>
 <div class="pipe"><strong>Reconstruct</strong>reconstructStateAtDaa(receiptDaa - 1)</div>
 <div class="pipe"><strong>Replay Transition</strong></div>
 <div class="pipe"><strong>Verify Invariants</strong>lineage OK, determinism OK, contamination OK</div>
@@ -2964,89 +873,96 @@ Target (mode = rpc, domain = kaspa-l1, network = mainnet)<br/>
 <p class="layer-subtitle">increasing execution fidelity</p>
 <div class="grid cols-2">
 <div class="box">
-<h3>Coherence Simulator (Synthetic)</h3>
-<p>Fast, synthetic coherence testing without a Kaspa node. It currently uses a <strong>Synthetic Planner</strong> that does not perform strict network validation.</p>
+<h3>Simulator (synthetic)</h3>
+<p>Fast feedback without a Kaspa node. Transactions are planned by the same <strong>upstream Kaspa SDK Generator</strong> used on a real node (with simnet parameters), and every result is labelled <code>SYNTHETIC_SIMULATOR</code>. It needs the kaspa-wasm toolchain that <code>hardkas init</code> installs.</p>
 <ul>
-<li><strong>What it validates:</strong> transaction structure, mocked fees, Tx v0/v1 planning, compute budgets, lightweight DAG behavior.</li>
+<li><strong>What it validates:</strong> transaction structure, Generator-computed mass and fees, standard (v0) transaction planning, lightweight DAG behavior.</li>
 <li><strong>What it does NOT claim:</strong> Kaspa VM equivalence, native script execution, native signing, full consensus validation, exact mass parity.</li>
 </ul>
 </div>
 <div class="box">
 <h3>Localnet (Real-node)</h3>
-<p>Localnet executes the workflow across a real `rusty-kaspa` node boundary via RPC. It delegates to the **Upstream Generator (kaspa-wasm)** for actual planning authority.</p>
+<p>Localnet runs the workflow against a real <code>rusty-kaspa</code> node over RPC. Planning is done by the <strong>upstream Kaspa SDK Generator (kaspa-wasm)</strong>, and each submission and observation is recorded as an artifact.</p>
 <ul>
-<li><strong>Important Status:</strong> Planner authority unification between Simulator (Synthetic) and Localnet (Upstream) is currently <strong>in progress (Candidate B)</strong>.</li>
+<li><strong>Start it:</strong> <code>hardkas localnet start --toccata</code> (profile <code>toccata-v2</code>) runs rusty-kaspad v2.1.0 in Docker.</li>
 </ul>
 </div>
 </div>
 </section>
 <section id="capabilities">
 <h2>Capability Honesty</h2>
-<p>HardKAS reports capability state explicitly instead of hiding unavailable or experimental behavior:</p>
+<p>HardKAS states what it claims and what it does not. Its release claims are generated from the code that enforces them (<a href="https://github.com/KasLabDevs/HardKas/blob/main/docs/status/claims.generated.md" rel="noreferrer" target="_blank">claims.generated.md</a>) and use these values:</p>
 <table>
 <thead><tr><th>Status</th><th>Meaning</th></tr></thead>
 <tbody>
-<tr><td>🟢 <strong>SUPPORTED</strong></td><td>HardKAS implements this operation.</td></tr>
-<tr><td>🟡 <strong>EXPERIMENTAL</strong></td><td>Available, but API/schema may change.</td></tr>
-<tr><td>🔴 <strong>BLOCKED_BY_DEPENDENCY</strong></td><td>Architected in HardKAS, but blocked by external dependencies.</td></tr>
+<tr><td>🟢 <strong>READY</strong></td><td>Certified for local development by the release checks.</td></tr>
+<tr><td>🟢 <strong>REAL_NODE_EVIDENCE</strong></td><td>Proven end to end against a real rusty-kaspa node (local simnet), with recorded evidence.</td></tr>
+<tr><td>🟡 <strong>PARTIAL</strong></td><td>Works for some cases; the limits are stated next to it.</td></tr>
+<tr><td>🟡 <strong>EXPERIMENTAL</strong></td><td>Available, but the command or API may change.</td></tr>
+<tr><td>🔴 <strong>BLOCKED_BY_POLICY</strong></td><td>Deliberately not enabled yet (testnet and mainnet readiness).</td></tr>
 <tr><td>⚪ <strong>NOT_CLAIMED</strong></td><td>Explicitly not supported or guaranteed by HardKAS.</td></tr>
 </tbody>
 </table>
 </section>
 <section id="toccata">
-<h2>Toccata Support</h2>
-<p><strong>Toccata support without pretend execution.</strong></p>
-<p>HardKAS exposes upstream capability boundaries rather than replacing unavailable protocol behavior with mocks.</p>
+<h2>SilverScript &amp; covenants (Toccata)</h2>
+<p><strong>What works today on the Toccata upgrade, and what does not.</strong></p>
+<p>Toccata is the Kaspa hard fork, active on mainnet since 30 June 2026, that added transaction v1, covenants and SilverScript. HardKAS drives the official tools (silverc v1.0.0, rusty-kaspa, kaspa-wasm) instead of imitating them. The statuses follow the generated release claims; the proofs run against a local simnet node.</p>
 <table>
-<thead><tr><th>Feature</th><th>Status</th></tr></thead>
+<thead><tr><th>Feature</th><th>Status</th><th>Command</th></tr></thead>
 <tbody>
-<tr><td>Transaction v1 planning</td><td>🟢 SUPPORTED</td></tr>
-<tr><td>Compute budget planning</td><td>🟢 SUPPORTED</td></tr>
-<tr><td>Lane metadata</td><td>🟢 SUPPORTED</td></tr>
-<tr><td>Covenant planning</td><td>🟡 EXPERIMENTAL (False confidence warning)</td></tr>
-<tr><td>Fee estimation</td><td>🟢 SUPPORTED</td></tr>
-<tr><td>Tx Tracing</td><td>❌ DISABLED</td></tr>
-<tr><td>PSKT (Partially Signed)</td><td>🟡 EXPERIMENTAL (Mock-backed)</td></tr>
-<tr><td>Covenant signing</td><td>🔴 BLOCKED_BY_DEPENDENCY</td></tr>
-<tr><td>Covenant execution</td><td>🔴 BLOCKED_BY_DEPENDENCY</td></tr>
-<tr><td>SilverScript tooling</td><td>🟡 EXPERIMENTAL</td></tr>
-<tr><td>ZK corpus</td><td>🟡 EXPERIMENTAL</td></tr>
-<tr><td>VM consensus equivalence</td><td>⚪ NOT_CLAIMED</td></tr>
+<tr><td>SilverScript compile with the official silverc v1.0.0, reproducible byte for byte</td><td>🟢 REAL_NODE_EVIDENCE</td><td><code>silver compile</code> · <code>silver verify</code></td></tr>
+<tr><td>P2SH contract: deploy and spend</td><td>🟢 REAL_NODE_EVIDENCE</td><td><code>silver deploy</code> · <code>silver spend</code></td></tr>
+<tr><td>Relative timelock spend</td><td>🟢 REAL_NODE_EVIDENCE</td><td><code>silver spend --sequence</code></td></tr>
+<tr><td>1:1 covenant: genesis and auth-bound transitions (transaction v1)</td><td>🟢 REAL_NODE_EVIDENCE</td><td><code>silver covenant genesis</code> · <code>silver covenant transition</code></td></tr>
+<tr><td>General covenant support</td><td>⚪ NOT_CLAIMED</td><td>—</td></tr>
+<tr><td>Contract tests on the official SilverScript runner (script engine only, not transaction validity)</td><td>🟡 EXPERIMENTAL</td><td><code>silver test</code></td></tr>
+<tr><td>Transaction v1</td><td>🟡 PARTIAL: built only by the covenant commands; <code>tx plan</code> builds v0</td><td>—</td></tr>
+<tr><td>Compute budget</td><td>🟡 PARTIAL: set by hand with an explicit fee; no estimator exists</td><td><code>--compute-budget</code> · <code>--fee</code></td></tr>
+<tr><td>Fee estimation</td><td>🟡 PARTIAL: automatic for standard payments (Generator); explicit for v1</td><td><code>tx plan</code></td></tr>
+<tr><td>Lane metadata</td><td>⚪ NOT_CLAIMED: schema field only, planning ignores it</td><td>—</td></tr>
+<tr><td>PSKT (partially signed transactions)</td><td>🟡 EXPERIMENTAL: no operation available from the CLI by default</td><td>—</td></tr>
+<tr><td>Transaction tracing</td><td>🟡 PARTIAL: traces are written; the <code>tx trace</code> command is disabled</td><td>—</td></tr>
+<tr><td>ZK corpus</td><td>🟡 EXPERIMENTAL: inspect surface only; on-chain ZK verification is NOT_CLAIMED</td><td>—</td></tr>
+<tr><td>VM / consensus equivalence</td><td>⚪ NOT_CLAIMED</td><td>—</td></tr>
 </tbody>
 </table>
 </section>
 <section id="architecture">
 <h2>Architecture</h2>
-<p>HardKAS enforces a strict layer separation to maintain a clean boundary with the underlying node.</p>
+<p>HardKAS is organised in dependency levels: a lower level never depends on a higher one. This is a convention; no tooling enforces it yet. Only the main packages are shown (the repository has 35).</p>
 <div class="diagram">
 <div class="box">
 <h3>Level 0 (Foundations)</h3>
-<p><code>core</code>, <code>config</code>, <code>observability</code>. Zero external state.</p>
+<p><code>core</code>, <code>observability</code>, <code>config</code>. Shared types, errors, the execution guard, workspace locks and configuration.</p>
 </div>
 <div class="box">
-<h3>Level 1 (Core Primitives)</h3>
-<p><code>artifacts</code>, <code>tx-builder</code>, <code>kaspa-rpc</code>, <code>simulator</code>, <code>localnet</code>. Immutable truth.</p>
+<h3>Level 1 (Transactions and nodes)</h3>
+<p><code>tx-builder</code>, <code>kaspa-rpc</code>, <code>artifacts</code>, <code>simulator</code>, <code>localnet</code>, <code>accounts</code>. Planning on the Kaspa SDK Generator, the official RPC client, artifact schemas and hashing, the simulator, the Docker localnet and dev accounts.</p>
 </div>
 <div class="box">
-<h3>Level 2 (Composition / SDK)</h3>
-<p><code>sdk</code>. Facade unifying primitives into developer workflows.</p>
+<h3>Level 2 (Read model)</h3>
+<p><code>query-store</code>, <code>query</code>. A SQLite index that can always be rebuilt from the artifacts, and the queries on top of it.</p>
 </div>
 <div class="box">
-<h3>Level 3 (Extensions)</h3>
-<p><code>query-store</code>, <code>jobs</code>, <code>pskt-native</code>, <code>escrow</code>, <code>testing</code>.</p>
+<h3>Level 3 (SDK)</h3>
+<p><code>sdk</code>. The main programmatic API for Node.js, built on the levels below.</p>
 </div>
 <div class="box">
-<h3>Level 4 (Presentation)</h3>
-<p><code>cli</code>, <code>dev-server</code>, <code>client</code>.</p>
+<h3>Level 4 (Tools)</h3>
+<p><code>cli</code>, <code>testing</code>, <code>dev-server</code>, <code>client</code>.</p>
 </div>
 </div>
 </section>
 <section id="quickstart">
 <h2>Quickstart</h2>
-<p>The first time a developer can explain a previous transaction from its artifacts instead of from logs.</p>
+<p>A first run in the simulator, with no node and no Docker: create a project, then plan, sign and send a payment and replay it from its artifacts. You need Node.js 22.5 or newer; <code>hardkas init</code> downloads the pinned kaspa-wasm.</p>
 <div class="codeblock">
-<div class="codebar">execution-safe workflow <button class="copy" data-copy="hardkas simulator fund alice --amount 100\nhardkas tx plan --from alice --to bob --amount 10 --network simulated --out tx-plan.json\nhardkas tx sign tx-plan.json --account alice --out tx-signed.json\nhardkas tx send tx-signed.json --network simulated --yes\nhardkas replay verify .hardkas/artifacts">Copy</button></div>
-<pre><span class="comment"># 1. Start with simulated funds (Replay supports simulator only)</span>
+<div class="codebar">execution-safe workflow <button class="copy" data-copy="hardkas init\nhardkas simulator fund alice --amount 100\nhardkas tx plan --from alice --to bob --amount 10 --network simulated --out tx-plan.json\nhardkas tx sign tx-plan.json --account alice --out tx-signed.json\nhardkas tx send tx-signed.json --network simulated --yes">Copy</button></div>
+<pre><span class="comment"># 0. Create the project and install the pinned kaspa-wasm</span>
+<span class="cmd">hardkas</span> init
+
+<span class="comment"># 1. Optional: add simulated funds (init already gives each account 1000 KAS)</span>
 <span class="cmd">hardkas</span> simulator fund alice <span class="flag">--amount</span> 100
 
 <span class="comment"># 2. Create a transaction plan</span>
@@ -3057,14 +973,49 @@ Target (mode = rpc, domain = kaspa-l1, network = mainnet)<br/>
 
 <span class="comment"># 4. Execute the transaction against the simulator</span>
 <span class="cmd">hardkas</span> tx send tx-signed.json <span class="flag">--network</span> simulated <span class="flag">--yes</span>
-<span class="comment"># 5. Verify local replay invariants across the artifact pipeline</span>
-<span class="cmd">hardkas</span> replay verify .hardkas/artifacts</pre>
+
+<span class="comment"># 5. Replay it: use the Artifact ID that tx send printed (the receipt)</span>
+<span class="cmd">hardkas</span> replay verify &lt;receiptArtifactId&gt;</pre>
+</div>
+<div class="codeblock" style="margin-top: 8px">
+<div class="codebar">real output (excerpt)</div>
+<pre><span class="comment">$ hardkas tx send tx-signed.json --network simulated --yes</span>
+
+  ✔ Transaction simulated successfully
+
+  Artifact ID
+    5a890cae794c69abfef6361bcc6a85865985bad2298c8a380844a00c260e141b
+
+  Tx ID
+    synthetic-c84e82a07128512316cf7e65489d2564fa6f3562a852c8be4ce7ee1b363ead8f
+
+  Consensus Validated
+    NO
+
+<span class="comment">$ hardkas replay verify 5a890cae794c69abfef6361bcc6a85865985bad2298c8a380844a00c260e141b</span>
+
+  ✔ Replay Verification: 5a890cae794c69abfef6361bcc6a85865985bad2298c8a380844a00c260e141b
+
+  Artifacts Replayed
+    3
+
+  Lineage Integrity
+    valid
+
+  Deterministic Execution
+    verified
+
+  Network Contamination
+    clean
+
+  Result
+    PASS</pre>
 </div>
 </section>
 <section id="examples">
 <h2>Examples &amp; Builder Labs</h2>
-<p><em>Builder Labs — coming from the existing examples and reference workflows.</em></p>
-<p>Showcase of reference examples and workshops powered by HardKAS: Wallet backends, Checkout systems, Local indexers, etc.</p>
+<p><em>Real commands with their real output, captured on 0.12.0-rc.26 in a fresh simulator project after the Quickstart.</em></p>
+<p>The repository also has reference apps built with HardKAS (wallet backends, a checkout, a local indexer); they are outside the core product.</p>
 <div class="accordion">
 <details open="">
 <summary>Inspect local environment</summary>
@@ -3072,83 +1023,33 @@ Target (mode = rpc, domain = kaspa-l1, network = mainnet)<br/>
 <div class="codeblock">
 <div class="codebar">
                     diagnostics
-                    <button class="copy" data-copy="hardkas doctor --json
-hardkas capabilities --json
-hardkas networks --json
+                    <button class="copy" data-copy="hardkas doctor
+hardkas config networks --json
 hardkas config show --json">
                       Copy
                     </button>
 </div>
-<pre><span class="cmd">hardkas</span> doctor <span class="flag">--json</span>
-<span class="cmd">hardkas</span> capabilities <span class="flag">--json</span>
-<span class="cmd">hardkas</span> networks <span class="flag">--json</span>
+<pre><span class="cmd">hardkas</span> doctor
+<span class="cmd">hardkas</span> config networks <span class="flag">--json</span>
 <span class="cmd">hardkas</span> config show <span class="flag">--json</span></pre>
 </div>
 <div class="codeblock" style="margin-top: 8px">
-<div class="codebar">sample output</div>
-<pre><span class="comment">HardKAS Doctor</span>
+<div class="codebar">real output: hardkas doctor, without Docker (excerpt)</div>
+<pre><span class="comment">HardKAS System Doctor</span>
 
-  <span style="color:#72f2c3">✅</span> Node.js v22.5.0 (≥ 22.5 required)
-  <span style="color:#72f2c3">✅</span> pnpm 9.1.0
-  <span style="color:#72f2c3">✅</span> .hardkas/ exists
-  <span style="color:#72f2c3">✅</span> .gitignore protects .hardkas/
-  <span style="color:#d29922">⚠️</span> store.db not found (run hardkas query store rebuild)
-  <span style="color:#72f2c3">✅</span> No stale locks
-  <span style="color:#f85149">❌</span> Docker not reachable
-  <span style="color:#6e7681">⏭️</span> RPC check skipped (no node running)
+  <span style="color:#72f2c3">✅</span> Node.js version: v24.15.0 (>= 18 required)
+  <span style="color:#72f2c3">✅</span> pnpm: v11.1.3
+  <span style="color:#72f2c3">✅</span> .hardkas/ directory: Exists and is active
+  <span style="color:#72f2c3">✅</span> .gitignore protection: Contains .hardkas/
+  <span style="color:#d29922">⚠️</span> store.db accessibility: store.db not found
+  <span style="color:#72f2c3">✅</span> Workspace locks: No active or stale locks found
+  <span style="color:#72f2c3">✅</span> Events Ledger Stream: 2 events verified
+  <span style="color:#6e7681">⏭️</span> Telemetry Stream: Stream not found
+  <span style="color:#72f2c3">✅</span> Keystore permissions: No keystore found (nothing to secure)
+  <span style="color:#f85149">❌</span> Docker daemon: Not reachable
+  <span style="color:#d29922">⚠️</span> .env file: No .env file found
 
-  Summary: 5 passed, 1 failed, 1 warning, 1 skipped</pre>
-</div>
-<div class="codeblock" style="margin-top: 8px">
-<div class="codebar">sample output (truncated)</div>
-<pre>{
-  <span class="str">"version"</span>: <span class="str">"<span class="version-string">0.12.0-rc.25</span>"</span>,
-  <span class="str">"maturity"</span>: <span class="str">"hardened-alpha"</span>,
-  <span class="str">"capabilities"</span>: {
-    <span class="str">"artifacts"</span>: <span style="color:#72f2c3">true</span>,
-    <span class="str">"deterministicHashing"</span>: <span style="color:#72f2c3">true</span>,
-    <span class="str">"workspaceLocks"</span>: <span style="color:#72f2c3">true</span>,
-    <span class="str">"consensusValidation"</span>: <span style="color:#f85149">false</span>,
-    <span class="str">"silverScript"</span>: <span style="color:#f85149">false</span>
-  }
-}</pre>
-</div>
-</div>
-</details>
-<details>
-<summary>Create and inspect an L2 transaction plan</summary>
-<div class="details-body">
-<div class="codeblock">
-<div class="codebar">
-                    l2 tx
-                    <button class="copy" data-copy="hardkas l2 tx build --network igra --from 0x... --to 0x... --value 0 --data 0x --json
-hardkas l2 tx sign ./artifacts/l2-plan.json --account bob --json
-hardkas l2 tx send ./artifacts/l2-signed.json --yes --json
-hardkas l2 tx receipt &lt;txHash&gt; --json">
-                      Copy
-                    </button>
-</div>
-<pre><span class="cmd">hardkas</span> l2 tx build <span class="flag">--network</span> igra <span class="flag">--from</span> 0x... <span class="flag">--to</span> 0x... <span class="flag">--value</span> 0 <span class="flag">--data</span> 0x <span class="flag">--json</span>
-<span class="cmd">hardkas</span> l2 tx sign ./artifacts/l2-plan.json <span class="flag">--account</span> bob <span class="flag">--json</span>
-<span class="cmd">hardkas</span> l2 tx send ./artifacts/l2-signed.json <span class="flag">--yes</span> <span class="flag">--json</span>
-<span class="cmd">hardkas</span> l2 tx receipt &lt;txHash&gt; <span class="flag">--json</span></pre>
-</div>
-<div class="codeblock" style="margin-top: 8px">
-<div class="codebar">sample output</div>
-<pre><span class="comment">L2 transaction plan:</span>
-  Network: igra
-  From:    0xbob...
-  To:      0xreceiver...
-  Value:   0
-  Status:  <span style="color:#72f2c3">planned</span>
-
-<span class="comment">Signed artifact:</span>
-  Artifact: l2-signed-tx
-  Hash:     sha256:8f2c...
-
-<span class="comment">Send result:</span>
-  Status: <span style="color:#72f2c3">accepted</span>
-  TxHash: 0xa1b2c3d4e5f6...</pre>
+  Summary: 7 passed, 1 failed, 2 warning, 1 skipped</pre>
 </div>
 </div>
 </details>
@@ -3158,62 +1059,81 @@ hardkas l2 tx receipt &lt;txHash&gt; --json">
 <div class="codeblock">
 <div class="codebar">
                     query
-                    <button class="copy" data-copy="hardkas query store sync --strict --json
-hardkas query artifacts list --sort createdAt:desc --limit 20
-hardkas query artifacts inspect &lt;artifactId&gt; --explain full
-hardkas query lineage chain &lt;artifactId&gt; --why">
+                    <button class="copy" data-copy="hardkas query store rebuild --backend sqlite
+hardkas query artifacts list --sort createdAt:desc --limit 20">
                       Copy
                     </button>
 </div>
-<pre><span class="cmd">hardkas</span> query store sync <span class="flag">--strict</span> <span class="flag">--json</span>
+<pre><span class="cmd">hardkas</span> query store rebuild <span class="flag">--backend</span> sqlite
 <span class="cmd">hardkas</span> query artifacts list <span class="flag">--sort</span> createdAt:desc <span class="flag">--limit</span> 20
-<span class="cmd">hardkas</span> query artifacts inspect &lt;artifactId&gt; <span class="flag">--explain</span> full
-<span class="cmd">hardkas</span> query lineage chain &lt;artifactId&gt; <span class="flag">--why</span></pre>
+<span class="cmd">hardkas</span> query lineage chain &lt;receiptArtifactId&gt; <span class="flag">--why</span></pre>
 </div>
 <div class="codeblock" style="margin-top: 8px">
-<div class="codebar">sample output</div>
-<pre><span class="comment">Query store sync</span>
-  Indexed artifacts: 42
-  New records:       3
-  Strict mode:       <span style="color:#72f2c3">passed</span>
+<div class="codebar">real output (excerpt)</div>
+<pre><span class="comment">$ hardkas query store rebuild --backend sqlite</span>
+  ✓ Index rebuilt successfully in 43ms.
 
-<span class="comment">Latest artifacts</span>
-  tx-plan     sha256:91ab...
-  signed-tx   sha256:2f7c...
-  receipt     sha256:19ed...
+  Artifacts: 8/8 indexed (0 corrupted)
 
-<span class="comment">Lineage</span>
-  TxPlan → SignedTx → Receipt → ReplayCheck</pre>
+<span class="comment">$ hardkas query artifacts list --sort createdAt:desc --limit 20</span>
+  Artifacts: 8 found (showing 8)
+
+  hardkas.replayReport.v1  simulated  simulator    3051cfa9cbb2...
+  hardkas.snapshot.v1      simnet     simulator    00c42e9dcc4c...
+  hardkas.txReceipt        simulated  simulator    5a890cae794c... from:kaspa:sim_alice
+  hardkas.txTrace          simulated  simulator    62aebf52daaa...
+  hardkas.signedTx         simulated  simulator    ef78e48aab33... from:kaspa:sim_alice
+  hardkas.txPlan           simulated  simulator    c84e82a07128... from:kaspa:sim_alice
+  hardkas.snapshot.v1      simnet     simulator    44ab9ac0c71f...
+  hardkas.snapshot.v1      simnet     simulator    bcba6f174c6d...
+
+<span class="comment">$ hardkas query lineage chain 5a890cae794c69abfef6361bcc6a85865985bad2298c8a380844a00c260e141b --why</span>
+  ═══ Lineage Chain (ancestors) ═══
+
+  Anchor: 5a890cae794c69abfef6361bcc6a85865985bad2298c8a380844a00c260e141b
+  Complete: ✓ yes
+  Nodes: 3
+
+  ├─ hardkas.txPlan [c84e82a07128...] simulated/simulator
+  ├─ hardkas.signedTx [ef78e48aab33...] simulated/simulator
+  └─ hardkas.txReceipt [5a890cae794c...] simulated/simulator
+
+  Q: Why transition hardkas.txPlan → hardkas.signedTx?
+  A: Causal chain is consistent with HardKAS state transition rules.
+    1. Transition "hardkas.txPlan" → "hardkas.signedTx" is allowed
+    2. Execution context (network, mode) is consistent</pre>
 </div>
 </div>
 </details>
 <details>
-<summary>SQLite query store diagnostics and event tracing</summary>
+<summary>Verify artifacts</summary>
 <div class="details-body">
 <div class="codeblock">
 <div class="codebar">
-                    query store
-                    <button class="copy" data-copy="hardkas query store doctor --migrate\nhardkas query events --domain tx --limit 10\nhardkas query tx 0xa1b2... --explain full">
+                    verify
+                    <button class="copy" data-copy="hardkas verify tx-plan.json\nhardkas verify tx-signed.json">
                       Copy
                     </button>
 </div>
-<pre><span class="cmd">hardkas</span> query store doctor <span class="flag">--migrate</span>
-<span class="cmd">hardkas</span> query events <span class="flag">--domain</span> tx <span class="flag">--limit</span> 10
-<span class="cmd">hardkas</span> query tx 0xa1b2... <span class="flag">--explain</span> full</pre>
+<pre><span class="cmd">hardkas</span> verify tx-plan.json
+<span class="cmd">hardkas</span> verify tx-signed.json</pre>
 </div>
 <div class="codeblock" style="margin-top: 8px">
-<div class="codebar">sample output</div>
-<pre><span class="comment">Store Doctor:</span>
-  Migrations:  <span style="color:#72f2c3">up to date</span>
-  Schema:      v4
-  Health:      <span style="color:#72f2c3">passed</span>
+<div class="codebar">real output: hardkas verify tx-signed.json</div>
+<pre>  ═══ Artifact Verification: tx-signed.json ═══
+  ✔ VERIFICATION SUCCESSFUL
+  Type:    hardkas.signedTx
+  Version: 1.0.0-alpha
+  Hash:    ef78e48aab338541f01048a3269b79f4b1326892d95cb31c0ddc6cdfb4adbf41
+  Scope:   FULL
 
-<span class="comment">Tx Explain:</span>
-  TxId:       0xa1b2...
-  Domain:     tx
-  Events:     [PlanCreated, Signed, Broadcast, ReceiptObserved]
-  Lineage:    Plan → Signature → RPC
-  Replay:     <span style="color:#72f2c3">Deterministic match</span></pre>
+Operational Audit (STRICT):
+  ✔   ✓ Economic &amp; Lineage invariants verified.
+
+Replay Verification:
+
+  ⚠️  WARNING:
+       ⚠ REPLAY UNSUPPORTED (Consensus simulation skipped)</pre>
 </div>
 </div>
 </details>
@@ -3224,122 +1144,114 @@ hardkas query lineage chain &lt;artifactId&gt; --why">
 <div class="grid cols-2">
 <div class="box">
 <h3>Policy Gates</h3>
-<p>HardKAS can enforce policy gates that block mainnet execution by default in supported workflows.</p>
+<p>HardKAS refuses to sign and to broadcast mainnet transactions in this release, and the release claims mark testnet and mainnet readiness as <code>BLOCKED_BY_POLICY</code>.</p>
 </div>
 <div class="box">
 <h3>Infrastructure, not Custody</h3>
 <p>HardKAS is developer infrastructure, not a custody or consensus-security layer.</p>
 </div>
 </div>
-<div class="danger"><strong>Main rule.</strong> If a feature is not reported by <code>hardkas capabilities --json</code>, agents and docs should not imply that it exists.</div>
+<div class="danger"><strong>Main rule.</strong> If a feature is not in the generated release claims (<a href="https://github.com/KasLabDevs/HardKas/blob/main/docs/status/claims.generated.md" rel="noreferrer" target="_blank">claims.generated.md</a>), agents and docs should not imply that it exists.</div>
 </section>
 <section class="header" id="advanced"><h2>Advanced / Reference</h2></section>
 <section id="dag">
 <h2>DAG simulation</h2>
 <p>
-            DAG commands and query views are research/dev tooling. They are useful to
-            inspect conflicts, selected-path movement and local scenarios, but they are
-            not rusty-kaspa validated consensus parity.
+            The simulator keeps a small local DAG built with an approximate GHOSTDAG
+            model (K = 18 by default). It is research/dev tooling to see how the simulated sink
+            moves; it is not rusty-kaspa consensus and proves nothing about the real network.
           </p>
 <div class="command-grid">
 <div class="command">
-<code>hardkas dag status</code><span>View current local simulator DAG status.</span>
+<code>hardkas dag status</code><span>Show the simulator DAG: sink, block count, selected path, accepted and displaced transactions.</span>
 </div>
 <div class="command">
-<code>hardkas dag simulate-reorg --depth 1</code><span>Simulate a local DAG reorg.</span>
-</div>
-<div class="command">
-<code>hardkas query dag conflicts --why</code><span>Explain local double-spend conflict analysis.</span>
-</div>
-<div class="command">
-<code>hardkas query dag sink-path</code><span>Show selected path from genesis to sink.</span>
-</div>
-<div class="command">
-<code>hardkas query dag displaced</code><span>Show displaced transactions.</span>
-</div>
-<div class="command">
-<code>hardkas query dag history &lt;txId&gt; --why</code><span>Trace simulator DAG lifecycle for a transaction.</span>
+<code>hardkas dag simulate-reorg --depth 1</code><span>Add one synthetic side block <code>--depth</code> blocks back on the selected path and move the simulated sink to it.</span>
 </div>
 </div>
+<p>The <code>query dag</code> views (conflicts, sink-path, displaced, history) are not listed: they currently read a state file that nothing writes, so they return nothing. They come back once that is fixed.</p>
 </section>
 <section id="query-store">
 <h2>Query store</h2>
 <p>
-            The query store is a rebuildable SQLite read model over artifacts, lineage,
-            events, replay state and simulator DAG information.
+            The query store is a SQLite index over the artifacts and their lineage. It is
+            disposable: rebuild it from the artifacts at any time. The default filesystem
+            backend reads the files directly and indexes nothing, so build the SQLite
+            store first.
           </p>
 <div class="command-grid">
 <div class="command">
-<code>hardkas query store sync --json</code><span>Synchronize filesystem artifacts into the query index.</span>
+<code>hardkas query store rebuild --backend sqlite</code><span>Build the SQLite index from all the artifacts in the workspace.</span>
 </div>
 <div class="command">
-<code>hardkas query store doctor --migrate</code><span>Check integrity and apply pending migrations.</span>
+<code>hardkas query store sync --json</code><span>Add new artifacts to an existing SQLite index.</span>
 </div>
 <div class="command">
-<code>hardkas query artifacts list --schema txPlan --json</code><span>List artifacts with deterministic filters.</span>
+<code>hardkas query artifacts list --sort createdAt:desc --limit 20</code><span>List artifacts with deterministic filters and sorting.</span>
 </div>
 <div class="command">
-<code>hardkas query tx &lt;txId&gt; --explain full</code><span>Aggregate known data for a transaction.</span>
-</div>
-<div class="command">
-<code>hardkas query lineage chain &lt;anchor&gt; --why</code><span>Explain ancestors or descendants of an artifact.</span>
-</div>
-<div class="command">
-<code>hardkas query events --domain tx --limit 50</code><span>Inspect event log entries.</span>
+<code>hardkas query lineage chain &lt;artifactId&gt; --why</code><span>Walk an artifact's lineage back to its plan (or forward with <code>--direction descendants</code>); <code>--why</code> explains each link.</span>
 </div>
 </div>
+<p>Not listed because of known issues: <code>query events</code> reads the event ledger from the wrong path and finds nothing; <code>query store doctor</code> fails once <code>replay verify</code> has run; <code>query tx</code> and <code>query artifacts inspect</code> report incomplete or contradictory results. They come back once fixed.</p>
 </section>
 <section id="operator">
 <h2>Operator commands</h2>
 <p>
-            HardKAS is designed to fail loudly and recover explicitly. Operator commands
-            exist so developers do not repair runtime state by hand.
+            Operator commands exist so developers do not repair runtime state by hand.
+            The goal is to fail loudly and recover explicitly.
           </p>
 <div class="grid cols-3">
 <div class="box">
 <h4><code>hardkas doctor</code></h4>
 <p>
-                Full workspace diagnostic: locks, JSONL streams, projection health,
-                anomalies, authority status.
+                Workspace diagnostic: Node and pnpm, the <code>.hardkas/</code> folder and its
+                .gitignore, the query store, locks, the event and telemetry streams,
+                keystore permissions and Docker. Known issues: it exits 0 even when a check
+                fails, and its lock check looks in the wrong folder (use
+                <code>hardkas lock doctor</code>).
               </p>
 </div>
 <div class="box">
 <h4><code>hardkas repair</code></h4>
 <p>
-                Recover JSONL tails, clear stale locks, rebuild SQLite, quarantine
-                malformed files. Use <code>--dry-run</code> first.
+                Detects an unterminated JSONL tail and a corrupt query store. Without
+                <code>--force</code> it only reports; with it, it truncates the tail and removes the
+                store. Known issue: it also writes <code>.hardkas/version.json</code>, which then
+                makes <code>hardkas rebuild --from-artifacts</code> fail. For locks, use
+                <code>hardkas lock doctor</code> and <code>hardkas lock clear &lt;name&gt; --if-dead</code>.
               </p>
 </div>
 <div class="box">
 <h4><code>hardkas inspect</code></h4>
 <p>
-                Report stream sizes, archive segments, workspace metadata and operational
-                status.
+                Report the size of the event and telemetry streams and list the archived
+                telemetry segments.
               </p>
 </div>
 <div class="box">
-<h4><code>hardkas rebuild</code></h4>
+<h4><code>hardkas rebuild --from-artifacts</code></h4>
 <p>
-                Rebuild SQLite projections from canonical artifacts.
-                <code>--from-artifacts</code> flag.
+                Wipe and rebuild the SQLite query store from the canonical artifacts. The
+                flag is required; the localnet state is not rebuilt.
               </p>
 </div>
 <div class="box">
 <h4><code>hardkas rotate</code></h4>
 <p>
-                Rotate telemetry archives. Event ledger rotation is intentionally not
-                supported (append-only by contract).
+                Archive the telemetry stream once it reaches 10 MiB (<code>--force</code> archives
+                it now). The event ledger is never rotated: it is append-only by contract.
               </p>
 </div>
 <div class="box">
 <h4><code>hardkas verify</code></h4>
-<p>Validate artifacts, semantic bundles and replay-relevant invariants.</p>
+<p>Verify artifact integrity (hashes, schema) and lineage continuity across the workspace. Cross-subsystem checks live in <code>hardkas verify-semantics</code> (alpha).</p>
 </div>
 </div>
 <div class="warning">
-<strong>No silent recovery.</strong> Any automatic repair emits an anomaly or
-            visible operator message. Quiet corruption handling is treated as a runtime
-            bug.
+<strong>No silent recovery (goal).</strong> Every automatic repair should emit an
+            anomaly or a visible operator message. Quiet corruption handling is treated as
+            a runtime bug.
           </div>
 </section>
 <section id="telemetry">
@@ -3352,17 +1264,17 @@ hardkas query lineage chain &lt;artifactId&gt; --why">
 <h4>Event ledger (<code>events.jsonl</code>)</h4>
 <p>
                 Append-only operational evidence. Never rotated. Each event carries
-                <code>eventId</code>, <code>causationId</code>, <code>domain</code>, and
-                <code>kind</code>. Protected by <code>AppendCoordinator</code> with
-                exclusive locks and fsync.
+                <code>eventId</code>, <code>domain</code> and <code>kind</code>, and
+                optionally a <code>causationId</code>. Protected by <code>AppendCoordinator</code>
+                with exclusive locks and fsync.
               </p>
 </div>
 <div class="box">
 <h4>Telemetry (<code>telemetry.jsonl</code>)</h4>
 <p>
                 Rotatable observability stream. 8 anomaly types: LOCK_CONTENTION,
-                STALE_LOCK_RECOVERY, FS_RETRY, NORMALIZATION_COLLISION, EXTERNAL_MUTATION,
-                PATH_TRAVERSAL_ATTEMPT, ORPHAN_PROJECTION_RECOVERY. Scoped via
+                STALE_LOCK_RECOVERY, FS_RETRY, NORMALIZATION_COLLISION, REPLAY_RECONCILIATION,
+                EXTERNAL_MUTATION, PATH_TRAVERSAL_ATTEMPT, ORPHAN_PROJECTION_RECOVERY. Scoped via
                 <code>AsyncLocalStorage</code>.
               </p>
 </div>
@@ -3376,34 +1288,34 @@ hardkas query lineage chain &lt;artifactId&gt; --why">
 <section id="chaos">
 <h2>Chaos engine <span style="font-size: 0.5em; background: #eab308; color: black; padding: 2px 6px; border-radius: 4px; vertical-align: middle;">EXPERIMENTAL</span></h2>
 <p>
-<code>hardkas chaos</code> formalizes destructive behavior into deterministic,
-            reproducible campaigns. It uses a seeded LCG PRNG (MINSTD) so every campaign
-            is reproducible from its seed.
+<code>hardkas chaos</code> runs destructive campaigns against an isolated workspace
+            to stress-test the runtime. Each run's seed is derived from the campaign seed
+            (seed + 13 × run number) and picks the actor, so a campaign always performs the
+            same actions. The runs share one workspace, so each run sees the state left by
+            the ones before it.
           </p>
 <div class="grid cols-4">
 <div class="box">
 <h4>LockHell</h4>
-<p>Injects stale locks, zero-byte TOCTOU locks, concurrent rebuilds.</p>
+<p>Writes a stale or zero-byte workspace lock, then runs a rebuild.</p>
 </div>
 <div class="box">
 <h4>RotBot</h4>
 <p>
-                Corrupts JSONL streams with truncated JSON, garbage bytes, schema
-                violations.
+                Appends a truncated JSON line or garbage to the event or telemetry stream,
+                then runs doctor.
               </p>
 </div>
 <div class="box">
 <h4>DriftHunter</h4>
 <p>
-                Deletes SQLite, mutates projection inputs, verifies rebuild from
-                artifacts.
+                Deletes the SQLite store (<code>store.db</code>), then runs doctor.
               </p>
 </div>
 <div class="box">
 <h4>HumanChaos</h4>
 <p>
-                Runs invalid commands and operator mistakes to detect raw stack trace
-                leaks.
+                Runs an unknown command and checks that no raw stack trace leaks.
               </p>
 </div>
 </div>
@@ -3411,17 +1323,16 @@ hardkas query lineage chain &lt;artifactId&gt; --why">
 <div class="codebar">
               chaos campaigns
               <button class="copy" data-copy="hardkas chaos --runs 300 --seed 1337 --profile smoke
-hardkas chaos --runs 3000 --seed 1337 --profile targeted
 hardkas chaos --actor LockHell --runs 500 --seed 404
 hardkas chaos replay --run-seed 42">
                 Copy
               </button>
 </div>
 <pre><span class="cmd">hardkas</span> chaos <span class="flag">--runs</span> 300 <span class="flag">--seed</span> 1337 <span class="flag">--profile</span> smoke
-<span class="cmd">hardkas</span> chaos <span class="flag">--runs</span> 3000 <span class="flag">--seed</span> 1337 <span class="flag">--profile</span> targeted
 <span class="cmd">hardkas</span> chaos <span class="flag">--actor</span> LockHell <span class="flag">--runs</span> 500 <span class="flag">--seed</span> 404
 <span class="cmd">hardkas</span> chaos replay <span class="flag">--run-seed</span> 42</pre>
 </div>
+<p>Every run is checked for raw stack traces and unexpected exit codes. The <code>smoke</code>, <code>targeted</code> and <code>full</code> profiles currently use the same actor weights. <code>chaos replay</code> re-runs a single run seed in a fresh workspace and picks the actor from that seed, so runs from an <code>--actor</code> campaign are not reproduced exactly.</p>
 <table>
 <thead>
 <tr>
@@ -3435,12 +1346,8 @@ hardkas chaos replay --run-seed 42">
 <td>No findings.</td>
 </tr>
 <tr>
-<td>1</td>
-<td>Recoverable findings.</td>
-</tr>
-<tr>
 <td>2</td>
-<td>Invariant violation (includes raw stack trace leaks).</td>
+<td>Findings: at least one run leaked a raw stack trace or exited with an unexpected code.</td>
 </tr>
 <tr>
 <td>3</td>
@@ -3475,14 +1382,9 @@ hardkas chaos replay --run-seed 42">
                   and finality via GHOSTDAG / future DAGKnight model.
                 </td>
 <td>
-                  HardKAS queries RPC, manages local wallets and simulates workflows. It
-                  does not validate consensus.
+                  HardKAS talks to the node over RPC, runs a local node, manages dev
+                  accounts and simulates workflows. It does not validate consensus.
                 </td>
-</tr>
-<tr>
-<td>Kasplex L1</td>
-<td>Asset hub for native asset issuance and transfer on Kaspa L1.</td>
-<td>Distinguished from Kasplex L2 architecture terminology.</td>
 </tr>
 <tr>
 <td>Igra L2</td>
@@ -3491,47 +1393,34 @@ hardkas chaos replay --run-seed 42">
                   architectural class.
                 </td>
 <td>
-                  HardKAS provides profiles, RPC health, balance/nonce queries, tx
-                  build/sign/send/status and contract deploy planning.
+                  Not part of the current HardKAS CLI: the L2 transaction, RPC and bridge
+                  commands are not registered. Moving this code to Labs is planned.
                 </td>
 </tr>
 <tr>
 <td>Bridge phases</td>
 <td>Pre-ZK → MPC/committee-style assumptions → ZK exit phase.</td>
 <td>
-                  Pre-ZK bridge workflows are assumption-aware; trustless exit is false
-                  until ZK phase.
+                  Modelled in the unregistered <code>l2</code> package, where
+                  <code>trustlessExit</code> stays false until the ZK phase. No bridge
+                  workflow ships in the CLI.
                 </td>
 </tr>
 </tbody>
 </table>
 <div class="danger">
 <strong>No EVM on Kaspa L1.</strong> HardKAS documentation and examples must
-            preserve this boundary. Execution happens on L2, not on Kaspa L1.
+            preserve this boundary. EVM execution happens on L2 (for example Igra); Kaspa
+            L1 runs Kaspa script, including SilverScript contracts and covenants.
           </div>
 </section>
 <section id="bridge">
-<h2>Bridge local simulation</h2>
+<h2>Bridge assumptions</h2>
 <p>
-            Bridge local commands model developer bridge-entry flows. They are
-            deterministic local simulation utilities, not a production bridge
-            implementation.
+            The bridge-local commands are not registered in the current HardKAS CLI;
+            moving this code to Labs is planned. The assumption model below is kept as
+            architectural context, not as a CLI surface.
           </p>
-<div class="codeblock">
-<div class="codebar">
-              bridge local
-              <button class="copy" data-copy="hardkas bridge local plan --session dev --amount 10 --json
-hardkas bridge local simulate --session dev --amount 10 --prefix abc --json
-hardkas bridge local inspect &lt;txid&gt; --json
-hardkas l2 bridge assumptions --json">
-                Copy
-              </button>
-</div>
-<pre><span class="cmd">hardkas</span> bridge local plan <span class="flag">--session</span> dev <span class="flag">--amount</span> 10 <span class="flag">--json</span>
-<span class="cmd">hardkas</span> bridge local simulate <span class="flag">--session</span> dev <span class="flag">--amount</span> 10 <span class="flag">--prefix</span> abc <span class="flag">--json</span>
-<span class="cmd">hardkas</span> bridge local inspect &lt;txid&gt; <span class="flag">--json</span>
-<span class="cmd">hardkas</span> l2 bridge assumptions <span class="flag">--json</span></pre>
-</div>
 <table>
 <thead>
 <tr>
@@ -3546,10 +1435,10 @@ hardkas l2 bridge assumptions --json">
 </tr>
 <tr>
 <td><code>l2BridgeCorrectness</code></td>
-<td>Unimplemented unless explicitly implemented in source.</td>
+<td>A replay-report field, currently always <code>"unimplemented"</code>.</td>
 </tr>
 <tr>
-<td><code>phase</code></td>
+<td><code>bridgePhase</code></td>
 <td>Used to distinguish current assumption model from future ZK exit.</td>
 </tr>
 </tbody>
@@ -3558,93 +1447,171 @@ hardkas l2 bridge assumptions --json">
 <section id="rpc">
 <h2>RPC diagnostics</h2>
 <p>
-            HardKAS includes L1 and L2 RPC diagnostics so tools and agents can inspect
+            HardKAS includes Kaspa L1 RPC diagnostics so tools and agents can inspect
             runtime readiness instead of guessing.
           </p>
 <div class="command-grid">
 <div class="command">
-<code>hardkas rpc health</code><span>Check Kaspa RPC availability.</span>
+<code>hardkas rpc health</code><span>Check that the local node at ws://127.0.0.1:18210 answers and is ready; it exits non-zero when it is not. It has no <code>--url</code> option.</span>
+<table class="flags">
+<tr>
+<td><code>--wait</code></td>
+<td>Keep checking until the node is ready</td>
+</tr>
+<tr>
+<td><code>--timeout &lt;ms&gt;</code></td>
+<td>Only with <code>--wait</code> (default 60000)</td>
+</tr>
+<tr>
+<td><code>--json</code></td>
+<td>Machine-readable output</td>
+</tr>
+</table>
 </div>
 <div class="command">
-<code>hardkas rpc info</code><span>Show RPC connection information.</span>
+<code>hardkas rpc info</code><span>Show the node's network, server version, sync state, UTXO index and virtual DAA score.</span>
+<table class="flags">
+<tr>
+<td><code>--url &lt;url&gt;</code></td>
+<td>Node wRPC endpoint (default ws://127.0.0.1:18210; http(s):// and host:port are converted)</td>
+</tr>
+<tr>
+<td><code>--json</code></td>
+<td>Machine-readable output</td>
+</tr>
+</table>
 </div>
 <div class="command">
-<code>hardkas rpc doctor --endpoints a,b</code><span>Run endpoint diagnostics.</span>
+<code>hardkas rpc doctor --endpoints &lt;url&gt; &lt;url&gt;</code><span>Diagnose one or more endpoints: TCP reach, wRPC connection, server and DAG info. It always exits 0, even when an endpoint fails (known issue).</span>
+<table class="flags">
+<tr>
+<td><code>--endpoints &lt;urls...&gt;</code></td>
+<td>One or more URLs separated by spaces (commas are not split); a URL without a port is probed on 18210. Default: the default network's rpcUrl in the config</td>
+</tr>
+</table>
 </div>
 <div class="command">
-<code>hardkas rpc dag</code><span>Show DAG information from node.</span>
+<code>hardkas rpc dag</code><span>Show the node's DAG info: network, virtual DAA score, sink and tips.</span>
+<table class="flags">
+<tr>
+<td><code>--url &lt;url&gt;</code></td>
+<td>Node wRPC endpoint (default ws://127.0.0.1:18210)</td>
+</tr>
+<tr>
+<td><code>--json</code></td>
+<td>Machine-readable output</td>
+</tr>
+</table>
 </div>
 <div class="command">
-<code>hardkas rpc mempool [txId]</code><span>Inspect mempool status.</span>
+<code>hardkas rpc mempool [txId]</code><span>Look up one transaction in the node's mempool, or summarise the whole mempool.</span>
+<table class="flags">
+<tr>
+<td><code>[txId]</code></td>
+<td>Transaction ID (64 hex characters); omit it for the whole mempool</td>
+</tr>
+<tr>
+<td><code>--url &lt;url&gt;</code></td>
+<td>Node wRPC endpoint (default ws://127.0.0.1:18210)</td>
+</tr>
+</table>
 </div>
 <div class="command">
-<code>hardkas rpc utxos &lt;address&gt;</code><span>Query UTXOs for an address.</span>
-</div>
-<div class="command">
-<code>hardkas l2 rpc health --network igra --json</code><span>Check Igra RPC health.</span>
-</div>
-<div class="command">
-<code>hardkas l2 profile validate igra --json</code><span>Validate L2 profile configuration.</span>
+<code>hardkas rpc utxos &lt;address&gt;</code><span>List the UTXOs of an address with their amounts and DAA scores.</span>
+<table class="flags">
+<tr>
+<td><code>&lt;address&gt;</code></td>
+<td>Kaspa address for the node's network (account names are not resolved)</td>
+</tr>
+<tr>
+<td><code>--url &lt;url&gt;</code></td>
+<td>Node wRPC endpoint (default ws://127.0.0.1:18210)</td>
+</tr>
+</table>
 </div>
 </div>
 </section>
 <section id="cli">
 <h2>CLI reference</h2>
 <p>
-            The CLI reference is generated from the Commander command tree. Do not
-            maintain flags manually in docs; regenerate from code.
+            The most used commands, with what each argument accepts. Every card was checked
+            against the code of 0.12.0-rc.26. Add <code>--help</code> to any command to list all its
+            options. The complete reference, generated from the command tree, is
+            <a href="https://github.com/KasLabDevs/HardKas/blob/main/docs/reference/cli.md" rel="noreferrer" target="_blank">docs/reference/cli.md</a>.
           </p>
 <div class="accordion">
 <details open="">
 <summary>Core and diagnostics</summary>
 <div class="details-body command-grid">
 <div class="command">
-<code>hardkas doctor</code><span>Full system diagnostic and health report.</span>
+<code>hardkas init [name]</code><span>Create a project: package.json, vitest.config.ts, hardkas.config.ts, a sample test and .gitignore, plus 5 simulated accounts (alice…erin, 1000 KAS each). It also installs the pinned kaspa-wasm 2.1.0.</span>
 <table class="flags">
 <tr>
-<td><code>--json</code></td>
-<td>Machine-readable output</td>
+<td><code>[name]</code></td>
+<td>Folder to create, relative or absolute (default: the current folder)</td>
 </tr>
-</table>
-</div>
-<div class="command">
-<code>hardkas capabilities</code><span>Machine-readable capability and trust-boundary report.</span>
-<table class="flags">
 <tr>
-<td><code>--json</code></td>
-<td>Machine-readable output</td>
+<td><code>--install</code></td>
+<td>Run npm install afterwards (default: off)</td>
 </tr>
-</table>
-</div>
-<div class="command">
-<code>hardkas init [name]</code><span>Initialize HardKAS config in a project.</span>
-</div>
-<div class="command">
-<code>hardkas init &lt;name&gt;</code><span>Create project scaffolding.</span>
-<table class="flags">
 <tr>
-<td><code>--template &lt;type&gt;</code></td>
-<td>Project template (default: basic)</td>
+<td><code>--force</code></td>
+<td>Overwrite an existing hardkas.config.ts</td>
 </tr>
 <tr>
 <td><code>--network &lt;name&gt;</code></td>
-<td>Default network (default: simnet)</td>
+<td><code>simulated</code> (default) creates the simulator state; any other value skips it. The project's default target is always the simulator</td>
 </tr>
 <tr>
-<td><code>--accounts &lt;n&gt;</code></td>
-<td>Number of Synthetic accounts (default: 3)</td>
+<td><code>--skip-toolchain</code></td>
+<td>Do not install kaspa-wasm (planning and signing need it)</td>
 </tr>
 <tr>
-<td><code>--skip-install</code></td>
-<td>Skip pnpm install</td>
+<td><code>--toolchain-from-file &lt;asset&gt;</code></td>
+<td>Install kaspa-wasm from a downloaded kaspa-wasm32-sdk-v2.1.0.zip; its SHA-256 must match the pin</td>
+</tr>
+<tr>
+<td><code>--template</code> · <code>--accounts</code></td>
+<td>Accepted but ignored in this release</td>
 </tr>
 </table>
 </div>
 <div class="command">
-<code>hardkas config show --json</code><span>Show resolved configuration.</span>
+<code>hardkas doctor [module]</code><span>Check the machine and the workspace: Node, pnpm, the .hardkas/ folder, the query store, locks, the event and telemetry streams, keystore permissions and Docker.</span>
+<table class="flags">
+<tr>
+<td><code>[module]</code></td>
+<td>Omit it for the full check; <code>signer</code> checks the kaspa-wasm signing backend; <code>node</code> checks the Docker node and its RPC (ws://127.0.0.1:18210)</td>
+</tr>
+<tr>
+<td><code>--consistency</code></td>
+<td>Also open and check the SQLite query store</td>
+</tr>
+<tr>
+<td><code>--json</code></td>
+<td>Machine-readable output</td>
+</tr>
+<tr>
+<td><code>--strict</code></td>
+<td>Meant to fail on any failed check; it currently still exits 0 (known issue)</td>
+</tr>
+</table>
 </div>
 <div class="command">
-<code>hardkas networks</code><span>List configured networks.</span>
+<code>hardkas config show</code><span>Show the resolved configuration: file path, default network, networks and accounts.</span>
+<table class="flags">
+<tr>
+<td><code>--config &lt;path&gt;</code></td>
+<td>Config file to load (.ts, .mts, .js or .mjs); default: the nearest hardkas.config.* from the current folder up</td>
+</tr>
+<tr>
+<td><code>--json</code></td>
+<td>Machine-readable output</td>
+</tr>
+</table>
+</div>
+<div class="command">
+<code>hardkas config networks</code><span>List the networks: the built-in simulated, simnet, devnet, testnet-10, testnet-11 and mainnet, merged with the ones in hardkas.config.</span>
 <table class="flags">
 <tr>
 <td><code>--json</code></td>
@@ -3658,131 +1625,245 @@ hardkas l2 bridge assumptions --json">
 <summary>Development runtime</summary>
 <div class="details-body command-grid">
 <div class="command">
-<code>hardkas dev doctor --profile igra --json</code><span>Validate Igra/local dev readiness.</span>
-</div>
-<div class="command">
-<code>hardkas dev server</code><span>Start local dev server and dashboard.</span>
+<code>hardkas test [files...]</code><span>Run the project's tests with Vitest and the HardKAS test helpers. Each run writes .hardkas/runs/&lt;runId&gt;/test-results.json.</span>
 <table class="flags">
 <tr>
-<td><code>--port &lt;n&gt;</code></td>
-<td>Server port (default: 7420)</td>
+<td><code>[files...]</code></td>
+<td>Test files or globs (default: test/**/*.test.ts, tests/**/*.test.ts, scenarios/**/*.scenario.ts, scenarios/**/*.test.ts)</td>
 </tr>
 <tr>
-<td><code>--host &lt;host&gt;</code></td>
-<td>Bind host (default: localhost)</td>
+<td><code>--scenario &lt;name&gt;</code></td>
+<td>Only tests whose full name matches this regular expression</td>
 </tr>
 <tr>
-<td><code>--open</code></td>
-<td>Open dashboard in browser</td>
+<td><code>--evidence</code></td>
+<td>Pack the results of <code>scenario()</code> tests as evidence</td>
 </tr>
 <tr>
-<td><code>--unsafe-external</code></td>
-<td>Allow non-localhost connections</td>
+<td><code>--keep-runs</code></td>
+<td>Keep the scenario run folders (deleted by default)</td>
+</tr>
+<tr>
+<td><code>--watch</code></td>
+<td>Passed to Vitest, but the run currently ends after the first pass</td>
+</tr>
+<tr>
+<td><code>--json</code></td>
+<td>Machine-readable output</td>
+</tr>
+<tr>
+<td><code>--network</code> · <code>--mass-*</code></td>
+<td>Accepted but ignored in this release: tests use the config's default network</td>
 </tr>
 </table>
 </div>
 <div class="command">
-<code>hardkas dashboard --start-server</code><span>Open dashboard, starting server when needed.</span>
-</div>
-<div class="command">
-<code>hardkas local wizard --profile igra</code><span>Guided local setup.</span>
-</div>
-<div class="command">
-<code>hardkas console</code><span>Interactive REPL with SDK loaded.</span>
+<code>hardkas run &lt;script&gt;</code><span>Run a .ts or .js script with tsx. On a simulated network it injects a global <code>hardkas</code> test harness; on a node network, a small RPC client. It does not inject the SDK.</span>
 <table class="flags">
 <tr>
+<td><code>&lt;script&gt;</code></td>
+<td>Path to a .ts, .mts, .js or .mjs file</td>
+</tr>
+<tr>
 <td><code>--network &lt;name&gt;</code></td>
-<td>Network name (default: simnet)</td>
+<td>A network from the config (built-in: simulated, simnet, devnet, testnet-10, testnet-11, mainnet); default simnet; an unknown name falls back to simulated</td>
 </tr>
 <tr>
 <td><code>--accounts &lt;n&gt;</code></td>
-<td>Synthetic accounts (default: 3)</td>
+<td>Harness accounts (default 3); only on a simulated network</td>
 </tr>
 <tr>
 <td><code>--balance &lt;sompi&gt;</code></td>
-<td>Initial balance per account</td>
-</tr>
-</table>
-</div>
-<div class="command">
-<code>hardkas run &lt;script&gt;</code><span>Run TS/JS file with HardKAS harness injection.</span>
-<table class="flags">
-<tr>
-<td><code>--network &lt;name&gt;</code></td>
-<td>Network name (default: simnet)</td>
-</tr>
-<tr>
-<td><code>--accounts &lt;n&gt;</code></td>
-<td>Synthetic accounts (default: 3)</td>
-</tr>
-<tr>
-<td><code>--balance &lt;sompi&gt;</code></td>
-<td>Initial balance per account</td>
+<td>Whole sompi per harness account (default 1000 KAS); only on a simulated network</td>
 </tr>
 <tr>
 <td><code>--no-harness</code></td>
-<td>Skip harness injection</td>
+<td>Inject nothing</td>
 </tr>
 </table>
 </div>
 <div class="command">
-<code>hardkas test [pattern]</code><span>Run project tests with HardKAS test helpers.</span>
+<code>hardkas console</code><span>Interactive REPL with an in-memory simulator harness (<code>h</code>) and hash and format helpers. Nothing connects to a network, and the state is lost on exit.</span>
 <table class="flags">
 <tr>
-<td><code>--mass-report</code></td>
-<td>Show mass/fee report after tests</td>
+<td><code>--accounts &lt;n&gt;</code></td>
+<td>alice, bob, carol, dave, erin, then account5… (default 3)</td>
 </tr>
 <tr>
-<td><code>--mass-snapshot &lt;label&gt;</code></td>
-<td>Save mass snapshot for regression</td>
+<td><code>--balance &lt;sompi&gt;</code></td>
+<td>Whole sompi per account, 1 KAS = 100 000 000 (default 1000 KAS)</td>
 </tr>
 <tr>
-<td><code>--mass-compare &lt;label&gt;</code></td>
-<td>Compare against saved snapshot</td>
+<td><code>--network &lt;name&gt;</code></td>
+<td>Only a label for the simulated state (default simnet)</td>
+</tr>
+</table>
+</div>
+<div class="command">
+<code>hardkas dev doctor --profile igra --json</code><span>Check local readiness for an L2 profile (Igra by default): workspace, artifacts, query store, SDK import, dev server and the L2 JSON-RPC. It does not check the Kaspa node.</span>
+<table class="flags">
+<tr>
+<td><code>--profile &lt;name&gt;</code></td>
+<td><code>igra</code> (built-in) or a key of <code>l2.networks</code> in hardkas.config</td>
+</tr>
+<tr>
+<td><code>--rpc-url &lt;url&gt;</code></td>
+<td>EVM JSON-RPC URL (default: the profile's, http://127.0.0.1:8545 for igra)</td>
+</tr>
+<tr>
+<td><code>--json</code></td>
+<td>Machine-readable output</td>
+</tr>
+</table>
+</div>
+<div class="command">
+<code>hardkas local wizard --profile igra</code><span>Guided Igra L2 (EVM) check: it pings the profile's JSON-RPC and looks for an EVM account and its balance. It is not a Kaspa L1 setup.</span>
+<table class="flags">
+<tr>
+<td><code>--profile &lt;name&gt;</code></td>
+<td><code>igra</code> or a name under <code>l2.networks</code> in hardkas.config</td>
+</tr>
+<tr>
+<td><code>--account &lt;name&gt;</code></td>
+<td>EVM account in hardkas.config (default dev_alice); if it is missing, it offers a key for you to add by hand</td>
+</tr>
+<tr>
+<td><code>--non-interactive</code></td>
+<td>Report instead of prompting</td>
 </tr>
 </table>
 </div>
 </div>
 </details>
 <details>
-<summary>Accounts and wallets</summary>
+<summary>Accounts</summary>
 <div class="details-body command-grid">
 <div class="command">
-<code>hardkas session create &lt;name&gt;</code><span>Create a local developer session binding L1/L2 identities.</span>
+<code>hardkas accounts list</code><span>List every account HardKAS can see: simulated (alice…erin), dev and real accounts, and those in hardkas.config. Keys are never printed.</span>
 <table class="flags">
 <tr>
-<td><code>--l1 &lt;wallet&gt;</code></td>
-<td>Name of the Kaspa L1 wallet (required)</td>
+<td><code>--config &lt;path&gt;</code></td>
+<td>Config file to read (default: the nearest hardkas.config.*)</td>
 </tr>
 <tr>
-<td><code>--l2 &lt;account&gt;</code></td>
-<td>Name of the Igra L2 account (required)</td>
+<td><code>--json</code></td>
+<td>Machine-readable output</td>
 </tr>
 </table>
 </div>
 <div class="command">
-<code>hardkas accounts list --json</code><span>List configured accounts.</span>
+<code>hardkas accounts balance &lt;identifier&gt;</code><span>Show an account's balance and UTXO count.</span>
+<table class="flags">
+<tr>
+<td><code>&lt;identifier&gt;</code></td>
+<td>Account name (from hardkas.config or the real-account store) or Kaspa address; simulator names (alice…) only in simulated mode</td>
+</tr>
+<tr>
+<td><code>--network &lt;name&gt;</code></td>
+<td><code>simulated</code> or <code>local</code> read the simulator; simnet, devnet, testnet-10 or mainnet ask a node on 127.0.0.1 (default simnet, even in a simulator project)</td>
+</tr>
+<tr>
+<td><code>--url &lt;url&gt;</code></td>
+<td>Node wRPC endpoint (ws:// or wss://; http(s):// and host:port are converted)</td>
+</tr>
+<tr>
+<td><code>--local</code></td>
+<td>Read the simulator state file (.hardkas/localnet.json)</td>
+</tr>
+<tr>
+<td><code>--json</code></td>
+<td>Machine-readable output</td>
+</tr>
+</table>
 </div>
 <div class="command">
-<code>hardkas accounts balance &lt;identifier&gt; --json</code><span>Show account balance.</span>
+<code>hardkas accounts real init</code><span>Create an empty real-account index (.hardkas/accounts.real.json). Keys are encrypted per account when you generate them.</span>
+<table class="flags">
+<tr>
+<td><code>--force</code></td>
+<td>Replace an existing index (keystore files stay on disk)</td>
+</tr>
+</table>
 </div>
 <div class="command">
-<code>hardkas accounts real init</code><span>Initialize encrypted dev account store.</span>
+<code>hardkas accounts real generate</code><span>Generate dev accounts with kaspa-wasm. Each key is encrypted in .hardkas/keystore/&lt;name&gt;.json.</span>
+<table class="flags">
+<tr>
+<td><code>--name &lt;name&gt;</code></td>
+<td>Letters, digits, _ and -; it must be new (default account0, account1…)</td>
+</tr>
+<tr>
+<td><code>--count &lt;n&gt;</code></td>
+<td>How many (default 1); with more than one, the names become &lt;name&gt;1…&lt;name&gt;N</td>
+</tr>
+<tr>
+<td><code>--network &lt;network&gt;</code></td>
+<td><code>simnet</code> (default), testnet-10 or another testnet-*, or mainnet; devnet currently fails</td>
+</tr>
+<tr>
+<td><code>--password-env &lt;env&gt;</code></td>
+<td>Name of an environment variable holding the keystore password (at least 8 characters)</td>
+</tr>
+<tr>
+<td><code>--password-stdin</code></td>
+<td>Read the password from stdin (default: interactive prompt)</td>
+</tr>
+<tr>
+<td><code>--unsafe-plaintext</code></td>
+<td>Store the key unencrypted in .hardkas/accounts.real.json; needs <code>--yes</code>. Local tests only</td>
+</tr>
+</table>
 </div>
 <div class="command">
-<code>hardkas accounts real generate</code><span>Generate persistent dev accounts.</span>
+<code>hardkas accounts real import</code><span>Import an existing key into the real-account store. Known issue: importing a name that already exists overwrites its keystore file before failing, so always use a new name.</span>
+<table class="flags">
+<tr>
+<td><code>--name &lt;name&gt;</code></td>
+<td>Letters, digits, _ and -; it must be new (default: <code>default</code>)</td>
+</tr>
+<tr>
+<td><code>--address &lt;address&gt;</code></td>
+<td>kaspa:, kaspatest: or kaspasim: address; required unless <code>--fixture</code>. It is not checked against the key</td>
+</tr>
+<tr>
+<td><code>--private-key-env &lt;env&gt;</code></td>
+<td>Name of an environment variable holding the private key</td>
+</tr>
+<tr>
+<td><code>--private-key-stdin</code></td>
+<td>Read the key from stdin (<code>--private-key &lt;hex&gt;</code> still works but is deprecated)</td>
+</tr>
+<tr>
+<td><code>--fixture &lt;name&gt;</code></td>
+<td>Import a built-in test key: default, alice, bob, carol, dave or erin (stored unencrypted)</td>
+</tr>
+</table>
 </div>
 <div class="command">
-<code>hardkas accounts real import</code><span>Import an account safely.</span>
+<code>hardkas accounts real session-open &lt;name&gt;</code><span>Check that an account's encrypted keystore opens with its password (alias <code>unlock</code>). Nothing is recorded.</span>
+<table class="flags">
+<tr>
+<td><code>&lt;name&gt;</code></td>
+<td>Account with an encrypted keystore in .hardkas/keystore/</td>
+</tr>
+<tr>
+<td><code>--password-env &lt;env&gt;</code></td>
+<td>Name of an environment variable holding the password (default: interactive prompt)</td>
+</tr>
+</table>
 </div>
 <div class="command">
-<code>hardkas accounts real session-open &lt;name&gt;</code><span>Verify keystore access and mark local signing intent.</span>
-</div>
-<div class="command">
-<code>hardkas kaspa wallet create &lt;name&gt;</code><span>Create local Kaspa wallet.</span>
-</div>
-<div class="command">
-<code>hardkas metamask network --profile igra</code><span>Show MetaMask local Igra network settings.</span>
+<code>hardkas session create &lt;name&gt; --l1 &lt;wallet&gt; --l2 &lt;account&gt;</code><span>Hidden and experimental: save a named pair of an L1 and an L2 identity in .hardkas/sessions.json.</span>
+<table class="flags">
+<tr>
+<td><code>--l1 &lt;wallet&gt;</code></td>
+<td>HardKAS account name or Kaspa address</td>
+</tr>
+<tr>
+<td><code>--l2 &lt;account&gt;</code></td>
+<td>Account name, Kaspa address or 0x EVM address (an account name stores its Kaspa address, not an EVM one)</td>
+</tr>
+</table>
 </div>
 </div>
 </details>
@@ -3790,51 +1871,421 @@ hardkas l2 bridge assumptions --json">
 <summary>Kaspa L1 and node</summary>
 <div class="details-body command-grid">
 <div class="command">
-<code>hardkas localnet start</code><span>Start Docker Kaspa node.</span>
+<code>hardkas localnet start --toccata</code><span>Start (or adopt) the Docker rusty-kaspad node with the toccata-v2 simnet profile, and create dev accounts alice…erin in .hardkas/dev-accounts. Needs Docker and kaspa-wasm.</span>
+<table class="flags">
+<tr>
+<td><code>--toccata</code></td>
+<td>Shortcut for <code>--profile toccata-v2</code>, the only profile accepted (a plain <code>localnet start</code> fails)</td>
+</tr>
+<tr>
+<td><code>--json</code></td>
+<td>Machine-readable output</td>
+</tr>
+</table>
 </div>
 <div class="command">
-<code>hardkas localnet status --json</code><span>Check node status.</span>
+<code>hardkas localnet status</code><span>Report the toccata-v2 node (RPC on ws://127.0.0.1:18210 and its identity check) and its miner container. Works without Docker.</span>
+<table class="flags">
+<tr>
+<td><code>--json</code></td>
+<td>Machine-readable output</td>
+</tr>
+</table>
 </div>
 <div class="command">
-<code>hardkas kaspa doctor --json</code><span>Verify local Kaspa L1 readiness.</span>
+<code>hardkas localnet fund &lt;identifier&gt; --amount 1000</code><span>Mine to an account on the local node until its mature balance grows by the amount, then stop the miner.</span>
+<table class="flags">
+<tr>
+<td><code>&lt;identifier&gt;</code></td>
+<td>Account name (alice…erin, <code>accounts real generate</code> names, config accounts) or a kaspasim: address</td>
+</tr>
+<tr>
+<td><code>--amount &lt;kas&gt;</code></td>
+<td>KAS to wait for, up to 8 decimals (default 1000); 0 waits for any increase</td>
+</tr>
+<tr>
+<td><code>--timeout &lt;ms&gt;</code></td>
+<td>Limit for the maturity wait (default 300000, 5 minutes)</td>
+</tr>
+<tr>
+<td><code>--keep-miner</code></td>
+<td>Leave the miner running; a missed target is reported as pending instead of failing</td>
+</tr>
+</table>
 </div>
 <div class="command">
-<code>hardkas kaspa wallet send from to --amount 1 --dry-run</code><span>Plan local wallet send.</span>
+<code>hardkas localnet fork --network testnet-10 --at-daa-score &lt;score&gt; --addresses &lt;address&gt;</code><span>Copy the current UTXOs of some addresses from a node into a simulator state file.</span>
+<table class="flags">
+<tr>
+<td><code>--network &lt;name&gt;</code></td>
+<td>A network with an RPC URL: simnet, devnet, testnet-10, testnet-11, mainnet or one from the config</td>
+</tr>
+<tr>
+<td><code>--addresses &lt;addrs...&gt;</code></td>
+<td>One or more Kaspa addresses, separated by spaces</td>
+</tr>
+<tr>
+<td><code>--at-daa-score &lt;score&gt;</code></td>
+<td>Required, but only stored as a label: the UTXOs are always the node's current ones</td>
+</tr>
+<tr>
+<td><code>--output &lt;path&gt;</code></td>
+<td>State file to write (default .hardkas/localnet.json, which is replaced)</td>
+</tr>
+</table>
 </div>
 <div class="command">
-<code>hardkas localnet fund &lt;identifier&gt; --amount 1000</code><span>Local-only funding helper.</span>
-</div>
-<div class="command">
-<code>hardkas localnet fork --network testnet-10 --json</code><span>Fork UTXO state into local simulation preview.</span>
+<code>hardkas kaspa doctor --rpc-url ws://127.0.0.1:18210</code><span>Check one node: reachability, sync state, UTXO index, DAG info and mempool size.</span>
+<table class="flags">
+<tr>
+<td><code>--rpc-url &lt;url&gt;</code></td>
+<td>The node's JSON wRPC endpoint; the HardKAS localnet is ws://127.0.0.1:18210</td>
+</tr>
+<tr>
+<td><code>--json</code></td>
+<td>Machine-readable output; exit 1 when a check fails</td>
+</tr>
+</table>
 </div>
 </div>
 </details>
 <details>
-<summary>Igra L2</summary>
+<summary>Transactions</summary>
 <div class="details-body command-grid">
 <div class="command">
-<code>hardkas l2 networks --json</code><span>List L2 profiles.</span>
+<code>hardkas tx plan --from &lt;account&gt; --to &lt;address&gt; --amount &lt;kas&gt;</code><span>Plan a payment with the Kaspa SDK Generator and write a TxPlan artifact (a copy also goes to .hardkas/artifacts).</span>
+<table class="flags">
+<tr>
+<td><code>--from &lt;accountOrAddress&gt;</code></td>
+<td>Sender: account name (alice…erin, real or config accounts) or Kaspa address; it must suit the target (default alice)</td>
+</tr>
+<tr>
+<td><code>--to &lt;address&gt;</code></td>
+<td>Recipient: Kaspa address or account name (default bob)</td>
+</tr>
+<tr>
+<td><code>--amount &lt;kas&gt;</code></td>
+<td>KAS, up to 8 decimals, e.g. <code>10</code> or <code>0.5</code> (default 1)</td>
+</tr>
+<tr>
+<td><code>--network &lt;name&gt;</code></td>
+<td>simulated, simnet, devnet, testnet-10, testnet-12 or mainnet (default: the config's default target, the simulator in a new project); testnet-11 is refused</td>
+</tr>
+<tr>
+<td><code>--fee-rate &lt;sompiPerMass&gt;</code></td>
+<td>Whole sompi per gram of mass (default 1 in the simulator, 100 on real networks: the network minimum, not a live estimate)</td>
+</tr>
+<tr>
+<td><code>--change &lt;accountOrAddress&gt;</code></td>
+<td>Where the change goes (default: the sender)</td>
+</tr>
+<tr>
+<td><code>--url &lt;url&gt;</code></td>
+<td>Node wRPC endpoint (default ws://127.0.0.1:18210 for simnet and devnet)</td>
+</tr>
+<tr>
+<td><code>--out &lt;path&gt;</code></td>
+<td>Write the plan artifact to this file</td>
+</tr>
+</table>
 </div>
 <div class="command">
-<code>hardkas l2 profile show igra --json</code><span>Show Igra profile details.</span>
+<code>hardkas tx sign &lt;planPath&gt;</code><span>Sign a plan. Simulator plans get a synthetic authorization; real-node plans are signed with kaspa-wasm using the account's key.</span>
+<table class="flags">
+<tr>
+<td><code>&lt;planPath&gt;</code></td>
+<td>Path to a TxPlan JSON (not an artifact ID)</td>
+</tr>
+<tr>
+<td><code>--account &lt;name&gt;</code></td>
+<td>The plan's sender account (default: the plan's from); real plans need an account with a key</td>
+</tr>
+<tr>
+<td><code>--out &lt;path&gt;</code></td>
+<td>Write the signed artifact to this file</td>
+</tr>
+<tr>
+<td><code>--fixture</code></td>
+<td>Sign with the built-in test key (any network except mainnet)</td>
+</tr>
+<tr>
+<td><code>--threshold &lt;n&gt;</code></td>
+<td>Above 1, starts a synthetic multisig for tests; no Kaspa multisig script is produced</td>
+</tr>
+<tr>
+<td><code>--allow-mainnet-signing</code></td>
+<td>No effect in this release: mainnet signing is always refused</td>
+</tr>
+</table>
 </div>
 <div class="command">
-<code>hardkas l2 balance &lt;address&gt; --network igra --json</code><span>Check L2 balance.</span>
+<code>hardkas tx send &lt;signedPath&gt;</code><span>Send a signed artifact: simulated in the simulator, broadcast to its recorded network otherwise. Mainnet broadcast is always blocked.</span>
+<table class="flags">
+<tr>
+<td><code>&lt;signedPath&gt;</code></td>
+<td>Path to a SignedTx JSON (not an artifact ID)</td>
+</tr>
+<tr>
+<td><code>--yes</code></td>
+<td>Confirm the broadcast; required except for simulated and simnet artifacts</td>
+</tr>
+<tr>
+<td><code>--url &lt;url&gt;</code></td>
+<td>Node wRPC endpoint (default: the network's rpcUrl in the config)</td>
+</tr>
+<tr>
+<td><code>--from/--to/--amount</code></td>
+<td>Shortcut: plan, sign and send in one run instead of passing a file</td>
+</tr>
+<tr>
+<td><code>--track &lt;label&gt;</code></td>
+<td>After an accepted broadcast, record it as a deployment in .hardkas/deployments/</td>
+</tr>
+<tr>
+<td><code>--json</code></td>
+<td>Machine-readable output; <code>outcome</code> is submitted, rejected or not_executed</td>
+</tr>
+</table>
 </div>
 <div class="command">
-<code>hardkas l2 nonce &lt;address&gt; --network igra --json</code><span>Check L2 nonce.</span>
+<code>hardkas tx status &lt;txIdOrPath&gt;</code><span>Show a transaction's derived state (SUBMITTED, MEMPOOL_ACCEPTED, ACCEPTED, CONFIRMED, FINALIZED, REORGED…) from the workspace evidence plus one new observation of the node. With a plan or signed file, it shows its signature coverage instead.</span>
+<table class="flags">
+<tr>
+<td><code>&lt;txIdOrPath&gt;</code></td>
+<td>Transaction ID, or path to a plan or signed artifact</td>
+</tr>
+<tr>
+<td><code>--no-observe</code></td>
+<td>Use only the evidence already in the workspace</td>
+</tr>
+<tr>
+<td><code>-n, --network &lt;network&gt;</code></td>
+<td>Network whose node observes (default: the one recorded at submission)</td>
+</tr>
+<tr>
+<td><code>--json</code></td>
+<td>Machine-readable output</td>
+</tr>
+</table>
 </div>
 <div class="command">
-<code>hardkas l2 tx build --from ... --to ... --value 0 --json</code><span>Build L2 transaction plan.</span>
+<code>hardkas tx wait &lt;txId&gt;</code><span>Wait until the transaction is ACCEPTED or CONFIRMED (blue-score depth at least the HardKAS policy), then until the node's UTXO view reflects it.</span>
+<table class="flags">
+<tr>
+<td><code>--until &lt;target&gt;</code></td>
+<td><code>accepted</code> or <code>confirmed</code> (default)</td>
+</tr>
+<tr>
+<td><code>--timeout &lt;seconds&gt;</code></td>
+<td>Default 60</td>
+</tr>
+<tr>
+<td><code>--interval &lt;seconds&gt;</code></td>
+<td>Seconds between observations (default 2)</td>
+</tr>
+<tr>
+<td><code>-n, --network &lt;network&gt;</code></td>
+<td>Network whose node observes (default: the one recorded at submission)</td>
+</tr>
+</table>
 </div>
 <div class="command">
-<code>hardkas l2 tx sign plan.json --account bob</code><span>Sign L2 plan.</span>
+<code>hardkas simulator fund &lt;identifier&gt;</code><span>Add a UTXO to a simulator account. It works while the project's default network is the simulator, as in a new project.</span>
+<table class="flags">
+<tr>
+<td><code>&lt;identifier&gt;</code></td>
+<td>Simulator account (alice…erin, or kaspa:sim_&lt;name&gt;); real addresses are refused</td>
+</tr>
+<tr>
+<td><code>--amount &lt;kas&gt;</code></td>
+<td>KAS, up to 8 decimals (default 1000)</td>
+</tr>
+</table>
+</div>
+</div>
+</details>
+<details>
+<summary>SilverScript and covenants</summary>
+<div class="details-body command-grid">
+<div class="command">
+<code>hardkas silver doctor</code><span>Check the pinned kaspa-wasm and silverc v1.0.0 toolchains and the canonical localnet node, and list which capabilities are ready.</span>
+<table class="flags">
+<tr>
+<td><code>--json</code></td>
+<td>Machine-readable output</td>
+</tr>
+</table>
 </div>
 <div class="command">
-<code>hardkas l2 tx send signed.json --yes</code><span>Submit signed L2 transaction.</span>
+<code>hardkas silver compile &lt;source&gt;</code><span>Compile with the managed silverc v1.0.0 and write a compile record: source hash, compiler digest and the P2SH address of each contract.</span>
+<table class="flags">
+<tr>
+<td><code>&lt;source&gt;</code></td>
+<td>Path to a SilverScript source file</td>
+</tr>
+<tr>
+<td><code>--args &lt;file&gt;</code></td>
+<td>Constructor arguments: a JSON list of <code>{kind, value}</code>; kinds <code>int</code>, <code>bool</code>, <code>byte</code>, <code>bytes</code>, <code>text</code>, <code>array</code>, <code>object</code></td>
+</tr>
+<tr>
+<td><code>--out &lt;file&gt;</code></td>
+<td>Where to write the record (default: <code>.hardkas/artifacts/silver/</code>)</td>
+</tr>
+</table>
 </div>
 <div class="command">
-<code>hardkas l2 contract deploy-plan --bytecode 0x...</code><span>Build L2 contract deployment plan.</span>
+<code>hardkas silver verify &lt;record&gt;</code><span>Recompile a compile record with the managed silverc and check that it matches byte for byte.</span>
+<table class="flags">
+<tr>
+<td><code>&lt;record&gt;</code></td>
+<td>Path to a compile record</td>
+</tr>
+<tr>
+<td><code>--args &lt;file&gt;</code></td>
+<td>The constructor arguments it was compiled with</td>
+</tr>
+</table>
+</div>
+<div class="command">
+<code>hardkas silver deploy &lt;record&gt; --from &lt;account&gt; --amount &lt;kas&gt;</code><span>Fund the contract's P2SH output on the canonical simnet localnet.</span>
+<table class="flags">
+<tr>
+<td><code>&lt;record&gt;</code></td>
+<td>Path to a compile record</td>
+</tr>
+<tr>
+<td><code>--from &lt;account&gt;</code></td>
+<td>Real dev account with a local key that pays (see <code>accounts real generate</code>)</td>
+</tr>
+<tr>
+<td><code>--amount &lt;kas&gt;</code></td>
+<td>KAS locked in the contract, up to 8 decimals (e.g. <code>10</code> or <code>0.5</code>)</td>
+</tr>
+<tr>
+<td><code>--contract &lt;name&gt;</code></td>
+<td>Which contract, when the record has several</td>
+</tr>
+<tr>
+<td><code>--network &lt;network&gt;</code></td>
+<td>Only <code>simnet</code> (default); mainnet is refused</td>
+</tr>
+<tr>
+<td><code>--wait</code></td>
+<td>Wait for confirmation (<code>--timeout</code>, default 120 s)</td>
+</tr>
+</table>
+</div>
+<div class="command">
+<code>hardkas silver spend &lt;deploy-record&gt; --entry &lt;name&gt; --to &lt;address&gt;</code><span>Spend a deployed contract output through one of its entries.</span>
+<table class="flags">
+<tr>
+<td><code>&lt;deploy-record&gt;</code></td>
+<td>The record written by <code>silver deploy</code></td>
+</tr>
+<tr>
+<td><code>--entry &lt;name&gt;</code></td>
+<td>Contract entry to call</td>
+</tr>
+<tr>
+<td><code>--to &lt;address&gt;</code></td>
+<td>Kaspa address that receives the whole value, minus the fee</td>
+</tr>
+<tr>
+<td><code>--args &lt;file&gt;</code></td>
+<td>Entry arguments: a JSON list of <code>{kind, value}</code>; a signature slot is <code>{"kind":"signature","account":"&lt;name&gt;"}</code></td>
+</tr>
+<tr>
+<td><code>--sequence &lt;n&gt;</code></td>
+<td>Input sequence, for relative timelocks</td>
+</tr>
+<tr>
+<td><code>--wait</code></td>
+<td>Wait for confirmation</td>
+</tr>
+</table>
+</div>
+<div class="command">
+<code>hardkas silver covenant genesis &lt;record&gt; --from &lt;account&gt; --amount &lt;kas&gt; --compute-budget &lt;n&gt;</code><span>Create a 1:1 covenant: a new output bound to the covenant id that the Kaspa SDK derives (transaction v1).</span>
+<table class="flags">
+<tr>
+<td><code>&lt;record&gt;</code></td>
+<td>Compile record of the covenant contract</td>
+</tr>
+<tr>
+<td><code>--from &lt;account&gt;</code></td>
+<td>Funding account with a local key</td>
+</tr>
+<tr>
+<td><code>--amount &lt;kas&gt;</code></td>
+<td>KAS locked in the covenant</td>
+</tr>
+<tr>
+<td><code>--compute-budget &lt;n&gt;</code></td>
+<td>Compute budget of the funding input; set it explicitly, no estimator exists</td>
+</tr>
+<tr>
+<td><code>--fee &lt;sompi&gt;</code></td>
+<td>Explicit fee in sompi; required when the compute budget is above 0</td>
+</tr>
+<tr>
+<td><code>--wait</code></td>
+<td>Wait for confirmation and the node's covenant id</td>
+</tr>
+</table>
+</div>
+<div class="command">
+<code>hardkas silver covenant transition &lt;covenant-record&gt; --policy &lt;name&gt; --constructor-args &lt;file&gt; --state-map &lt;json&gt; --next-state &lt;file&gt; --compute-budget &lt;n&gt;</code><span>Advance a 1:1 auth-bound covenant: silverc compiles the successor state and the covenant id stays the same.</span>
+<table class="flags">
+<tr>
+<td><code>&lt;covenant-record&gt;</code></td>
+<td>Record written by the genesis or by the previous transition</td>
+</tr>
+<tr>
+<td><code>--policy &lt;name&gt;</code></td>
+<td>Covenant declaration (policy function) to call</td>
+</tr>
+<tr>
+<td><code>--constructor-args &lt;file&gt;</code></td>
+<td>Constructor arguments of the current state, checked against the record</td>
+</tr>
+<tr>
+<td><code>--state-map &lt;json&gt;</code></td>
+<td>State field to constructor parameter index, e.g. <code>{"value":0}</code></td>
+</tr>
+<tr>
+<td><code>--next-state &lt;file&gt;</code></td>
+<td>Successor state: a JSON object with a <code>{kind, value}</code> per field</td>
+</tr>
+<tr>
+<td><code>--compute-budget &lt;n&gt;</code></td>
+<td>Compute budget of the covenant input; explicit</td>
+</tr>
+<tr>
+<td><code>--fee &lt;sompi&gt;</code></td>
+<td>Explicit fee; required when the compute budget is above 0</td>
+</tr>
+<tr>
+<td><code>--emit-args &lt;file&gt;</code></td>
+<td>Write the successor's constructor arguments here, for the next transition</td>
+</tr>
+</table>
+</div>
+<div class="command">
+<code>hardkas silver test &lt;record&gt; --tests &lt;file&gt;</code><span>Experimental: run a compiled contract's tests on the official SilverScript runner (script engine on scenario transactions, not transaction validity).</span>
+<table class="flags">
+<tr>
+<td><code>&lt;record&gt;</code></td>
+<td>Path to a compile record</td>
+</tr>
+<tr>
+<td><code>--tests &lt;file&gt;</code></td>
+<td>Runner test file (<code>.test.json</code>); a signature argument may be <code>{"signature":"&lt;account&gt;"}</code></td>
+</tr>
+<tr>
+<td><code>--runner &lt;path&gt;</code></td>
+<td>SilverScript runner (cli-debugger) binary; default <code>$HARDKAS_SILVER_RUNNER</code></td>
+</tr>
+</table>
 </div>
 </div>
 </details>
@@ -3842,106 +2293,197 @@ hardkas l2 bridge assumptions --json">
 <summary>Artifacts, query and replay</summary>
 <div class="details-body command-grid">
 <div class="command">
-<code>hardkas deploy track &lt;label&gt;</code><span>Track deployment status and link it to artifacts.</span>
+<code>hardkas verify [path]</code><span>Verify integrity, schema and lineage of every artifact under .hardkas/artifacts, or of the given file or folder. Exits 1 on any failure.</span>
 <table class="flags">
 <tr>
-<td><code>--network &lt;name&gt;</code></td>
-<td>Network where deployed</td>
+<td><code>[path]</code></td>
+<td>File or folder inside the workspace (default .hardkas/artifacts); not an artifact ID</td>
 </tr>
 <tr>
-<td><code>--tx-id &lt;txId&gt;</code></td>
-<td>Transaction ID</td>
-</tr>
-<tr>
-<td><code>--plan &lt;artifactId&gt;</code></td>
-<td>Reference to plan artifact</td>
-</tr>
-<tr>
-<td><code>--status &lt;status&gt;</code></td>
-<td>Deployment status (default: sent)</td>
-</tr>
-<tr>
-<td><code>--notes &lt;text&gt;</code></td>
-<td>Notes</td>
+<td><code>--json</code></td>
+<td>Machine-readable output</td>
 </tr>
 </table>
 </div>
 <div class="command">
-<code>hardkas artifact verify path --strict</code><span>Verify artifact integrity.</span>
+<code>hardkas artifact verify &lt;path&gt;</code><span>Verify one artifact file, or a folder with <code>--recursive</code>: hash, schema and semantics. Artifacts older than 30 days fail as stale.</span>
+<table class="flags">
+<tr>
+<td><code>&lt;path&gt;</code></td>
+<td>Path to an artifact .json (not an ID), or a folder with <code>--recursive</code></td>
+</tr>
+<tr>
+<td><code>--recursive</code></td>
+<td>Verify every .json below the folder</td>
+</tr>
+<tr>
+<td><code>--strict</code></td>
+<td>Also require hash version 5, complete lineage and resolvable references</td>
+</tr>
+<tr>
+<td><code>--json</code></td>
+<td>Machine-readable output</td>
+</tr>
+</table>
 </div>
 <div class="command">
-<code>hardkas query store sync --json</code><span>Index artifacts into SQLite read model.</span>
+<code>hardkas replay verify &lt;receiptArtifactId&gt;</code><span>Replay a simulator transaction from its receipt and check lineage, determinism and contamination. Real-node receipts are not supported.</span>
+<table class="flags">
+<tr>
+<td><code>&lt;artifact&gt;</code></td>
+<td>The receipt's 64-hex artifact ID (<code>tx send</code> prints it as Artifact ID), or a path inside the workspace starting with <code>./</code></td>
+</tr>
+<tr>
+<td><code>--workspace &lt;path&gt;</code></td>
+<td>Workspace folder (default: the current one)</td>
+</tr>
+<tr>
+<td><code>--json</code></td>
+<td>Machine-readable output</td>
+</tr>
+</table>
 </div>
 <div class="command">
-<code>hardkas query artifacts list --limit 100</code><span>List indexed artifacts.</span>
+<code>hardkas query store rebuild --backend sqlite</code><span>Build the SQLite index (.hardkas/store.db) from all the artifacts.</span>
+<table class="flags">
+<tr>
+<td><code>--backend &lt;type&gt;</code></td>
+<td><code>sqlite</code> builds the index; <code>filesystem</code> (the default) indexes nothing</td>
+</tr>
+</table>
 </div>
 <div class="command">
-<code>hardkas query artifacts inspect &lt;target&gt; --explain full</code><span>Deep structural analysis.</span>
+<code>hardkas query store sync --json</code><span>Add new artifacts to an existing SQLite index; without .hardkas/store.db it indexes nothing.</span>
+<table class="flags">
+<tr>
+<td><code>--strict</code></td>
+<td>Stop at the first corrupted artifact (SQLite only)</td>
+</tr>
+<tr>
+<td><code>--json</code></td>
+<td>Machine-readable output</td>
+</tr>
+</table>
 </div>
 <div class="command">
-<code>hardkas query lineage chain &lt;anchor&gt; --why</code><span>Explain artifact lineage.</span>
+<code>hardkas query artifacts list</code><span>List artifacts, newest first, with exact-match filters.</span>
+<table class="flags">
+<tr>
+<td><code>--schema &lt;schema&gt;</code></td>
+<td>Without the <code>hardkas.</code> prefix: txPlan, signedTx, txReceipt, txTrace, snapshot.v1, replayReport.v1…</td>
+</tr>
+<tr>
+<td><code>--network &lt;network&gt;</code></td>
+<td>Exact network ID, e.g. simulated, simnet, testnet-10</td>
+</tr>
+<tr>
+<td><code>--mode &lt;mode&gt;</code></td>
+<td><code>simulator</code>, <code>localnet</code> or <code>rpc</code></td>
+</tr>
+<tr>
+<td><code>--sort &lt;field:dir&gt;</code></td>
+<td>createdAt, schema, networkId, mode, contentHash, amountSompi or status, then <code>:asc</code> or <code>:desc</code> (default createdAt:desc)</td>
+</tr>
+<tr>
+<td><code>--limit &lt;n&gt;</code></td>
+<td>Default 100</td>
+</tr>
+</table>
 </div>
 <div class="command">
-<code>hardkas replay verify path --json</code><span>Verify local replay invariants.</span>
+<code>hardkas query lineage chain &lt;artifactId&gt; --why</code><span>Walk an artifact's lineage: back to its plan by default, or forward.</span>
+<table class="flags">
+<tr>
+<td><code>&lt;artifactId&gt;</code></td>
+<td>contentHash, artifact ID, plan/signed/tx ID, or a path to the artifact JSON</td>
+</tr>
+<tr>
+<td><code>--direction &lt;dir&gt;</code></td>
+<td><code>ancestors</code> (default) or <code>descendants</code></td>
+</tr>
+<tr>
+<td><code>--why</code></td>
+<td>Explain each link</td>
+</tr>
+</table>
+</div>
+<div class="command">
+<code>hardkas deploy track &lt;label&gt; --network &lt;name&gt;</code><span>Record a deployment in .hardkas/deployments/&lt;network&gt;/&lt;label&gt;.json. Purely local: nothing is checked on a node.</span>
+<table class="flags">
+<tr>
+<td><code>&lt;label&gt;</code></td>
+<td>Free text; it becomes the file name</td>
+</tr>
+<tr>
+<td><code>--network &lt;name&gt;</code></td>
+<td>Free-text network label (required)</td>
+</tr>
+<tr>
+<td><code>--tx-id &lt;txId&gt;</code></td>
+<td>Stored as given</td>
+</tr>
+<tr>
+<td><code>--plan &lt;artifactId&gt;</code></td>
+<td>Stored as given, not resolved (same for <code>--receipt</code>)</td>
+</tr>
+<tr>
+<td><code>--status &lt;status&gt;</code></td>
+<td>planned, sent (default), confirmed, failed or unknown</td>
+</tr>
+<tr>
+<td><code>--notes &lt;text&gt;</code></td>
+<td>Free text</td>
+</tr>
+</table>
 </div>
 </div>
 </details>
 <details>
-<summary>Fork state and test deterministic hashing</summary>
+<summary>Check and rebuild a workspace</summary>
 <div class="details-body">
 <div class="codeblock">
 <div class="codebar">
-                    localnet
-                    <button class="copy" data-copy="hardkas localnet fork --network testnet-10\nhardkas tx plan --to qz... --amount 1000\nhardkas tx sign ./artifacts/plan.json --account dev\nhardkas verify --strict">
+                    recovery
+                    <button class="copy" data-copy="hardkas doctor\nhardkas lock doctor\nhardkas rebuild --from-artifacts">
                       Copy
                     </button>
 </div>
-<pre><span class="cmd">hardkas</span> localnet fork <span class="flag">--network</span> testnet-10
-<span class="cmd">hardkas</span> tx plan <span class="flag">--to</span> qz... <span class="flag">--amount</span> 1000
-<span class="cmd">hardkas</span> tx sign ./artifacts/plan.json <span class="flag">--account</span> dev
-<span class="cmd">hardkas</span> verify <span class="flag">--strict</span></pre>
-</div>
-<div class="codeblock" style="margin-top: 8px">
-<div class="codebar">sample output</div>
-<pre><span class="comment">Strict verification:</span>
-  Sorting:     <span style="color:#72f2c3">byte-level deterministic</span>
-  Boundaries:  <span style="color:#72f2c3">enforced (.hardkas/ context)</span>
-  Hash match:  <span style="color:#72f2c3">passed</span></pre>
-</div>
-</div>
-</details>
-<details>
-<summary>Replay causal graph from a crashed workspace</summary>
-<div class="details-body">
-<div class="codeblock">
-<div class="codebar">
-                    replay
-                    <button class="copy" data-copy="hardkas doctor --json\nhardkas repair --dry-run\nhardkas rebuild --from-artifacts\nhardkas replay verify path --json">
-                      Copy
-                    </button>
-</div>
-<pre><span class="cmd">hardkas</span> doctor <span class="flag">--json</span>
-<span class="cmd">hardkas</span> repair <span class="flag">--dry-run</span>
+<pre><span class="cmd">hardkas</span> doctor
+<span class="cmd">hardkas</span> lock doctor
 <span class="cmd">hardkas</span> rebuild <span class="flag">--from-artifacts</span>
-<span class="cmd">hardkas</span> replay verify path <span class="flag">--json</span></pre>
+<span class="cmd">hardkas</span> replay verify &lt;receiptArtifactId&gt; <span class="flag">--json</span></pre>
 </div>
 <div class="codeblock" style="margin-top: 8px">
-<div class="codebar">sample output</div>
-<pre><span class="comment">Rebuild complete:</span>
-  Events parsed:  1542
-  Artifacts:      128
-  Conflicts:      0
+<div class="codebar">real output (excerpt)</div>
+<pre><span class="comment">$ hardkas lock doctor</span>
+  ═══ Lock Doctor Analysis ═══
+  ✓ No locks found. Workspace is clean.
 
-<span class="comment">Replay Verification:</span>
-  Status:         <span style="color:#72f2c3">VERIFIED</span>
-  Causal Graph:   <span style="color:#72f2c3">intact</span></pre>
+<span class="comment">$ hardkas rebuild --from-artifacts</span>
+  ℹ Rebuilding projections from canonical artifacts...
+  ✔ Rebuild complete. Indexed 7 artifacts.
+
+<span class="comment">$ hardkas replay verify 5a890cae794c69abfef6361bcc6a85865985bad2298c8a380844a00c260e141b --json</span>
+{
+  "schemaVersion": "hardkas.replayVerify.v1",
+  "workspace": "5a890cae794c69abfef6361bcc6a85865985bad2298c8a380844a00c260e141b",
+  "artifacts": 3,
+  "lineage": "valid",
+  "determinism": "verified",
+  "contamination": "clean",
+  "result": "passed",
+  "targetTxId": "synthetic-c84e82a07128512316cf7e65489d2564fa6f3562a852c8be4ce7ee1b363ead8f",
+  "deterministic": true
+}</pre>
 </div>
 </div>
 </details>
 </div>
+<p>Not listed: <code>capabilities</code> (hidden; it prints a fixed list that contradicts the release claims), <code>kaspa wallet create</code> (it prints a private key and saves nothing; use <code>accounts real generate</code>), <code>kaspa wallet send</code> (it cannot reach a node with the default config; use <code>tx plan</code>, <code>tx sign</code> and <code>tx send</code>) and <code>query artifacts inspect</code> (it reports contradictory results).</p>
 </section>
 <section id="packages">
 <h2>Package map</h2>
+<p>The main packages (the repository has 35):</p>
 <table>
 <thead>
 <tr>
@@ -3952,54 +2494,77 @@ hardkas l2 bridge assumptions --json">
 <tbody>
 <tr>
 <td><code>@hardkas/cli</code></td>
-<td>Commander-based CLI entrypoint and command groups.</td>
+<td>The <code>hardkas</code> command line.</td>
+</tr>
+<tr>
+<td><code>@hardkas/sdk</code></td>
+<td>The main programmatic API, for Node.js.</td>
+</tr>
+<tr>
+<td><code>@hardkas/testing</code></td>
+<td>Test harness, fixtures, matchers and scenarios for project tests.</td>
 </tr>
 <tr>
 <td><code>@hardkas/core</code></td>
-<td>Shared core utilities and primitives.</td>
+<td>Shared types, errors, the execution guard and workspace locks.</td>
+</tr>
+<tr>
+<td><code>@hardkas/config</code></td>
+<td>Defines, loads and resolves <code>hardkas.config.ts</code> and its networks.</td>
 </tr>
 <tr>
 <td><code>@hardkas/artifacts</code></td>
 <td>Canonical artifact schemas, hashing and verification.</td>
 </tr>
 <tr>
-<td><code>@hardkas/sessions</code></td>
-<td>Local session state and persistence.</td>
+<td><code>@hardkas/tx-builder</code></td>
+<td>Transaction planning on the Kaspa SDK Generator (kaspa-wasm): mass, fees and pending-spend checks.</td>
 </tr>
 <tr>
-<td><code>@hardkas/dev-server</code></td>
-<td>Local Hono server, health endpoints and SSE invalidation.</td>
+<td><code>@hardkas/accounts</code></td>
+<td>Dev accounts: simulated accounts, the local keystore and kaspa-wasm signers.</td>
 </tr>
 <tr>
-<td><code>@hardkas/react</code></td>
-<td>
-                  React hooks and provider integration for local dashboard/runtime use.
-                </td>
+<td><code>@hardkas/kaspa-rpc</code></td>
+<td>RPC client for rusty-kaspa nodes, on the official kaspa-wasm <code>RpcClient</code>.</td>
 </tr>
 <tr>
-<td><code>@hardkas/bridge-local</code></td>
-<td>Deterministic local bridge-entry planning and simulation.</td>
+<td><code>@hardkas/localnet</code></td>
+<td>Local chain state: funding, snapshots, forks, receipts and replay.</td>
+</tr>
+<tr>
+<td><code>@hardkas/simulator</code></td>
+<td>Approximate GHOSTDAG model, mass profiling and scenarios for the simulator.</td>
 </tr>
 <tr>
 <td><code>@hardkas/query-store</code></td>
 <td>SQLite index and query read model.</td>
 </tr>
 <tr>
+<td><code>@hardkas/query</code></td>
+<td>Query engine over artifacts and lineage, with explanations.</td>
+</tr>
+<tr>
+<td><code>@hardkas/dev-server</code></td>
+<td>Local Hono server, health endpoints and SSE invalidation.</td>
+</tr>
+<tr>
+<td><code>@hardkas/client</code> · <code>@hardkas/react</code></td>
+<td>HTTP client for the local dev server, and React hooks and provider for local dashboards.</td>
+</tr>
+<tr>
 <td><code>@hardkas/wallet-adapter</code></td>
 <td>Wallet adapter boundary and local wallet connection helpers.</td>
 </tr>
 <tr>
-<td><code>@hardkas/sdk</code></td>
-<td>
-                  Convenience aggregation surface. Keep browser/runtime boundaries
-                  explicit.
-                </td>
+<td><code>@hardkas/sessions</code> · <code>@hardkas/l2</code> · <code>@hardkas/bridge-local</code></td>
+<td>Experimental or unregistered surfaces (sessions, Igra L2, bridge). Moving the L2 and bridge code to Labs is planned.</td>
 </tr>
 </tbody>
 </table>
 </section>
 <section id="agent">
-<h2>AGENT.md rules</h2>
+<h2>Rules for AI agents</h2>
 <p>
             HardKAS is designed to be readable by AI coding agents without letting them
             invent unsupported behavior.
@@ -4013,7 +2578,7 @@ hardkas l2 bridge assumptions --json">
 </thead>
 <tbody>
 <tr>
-<td>Run <code>hardkas capabilities --json</code> first.</td>
+<td>Read the release claims first (<a href="https://github.com/KasLabDevs/HardKas/blob/main/docs/status/claims.generated.md" rel="noreferrer" target="_blank">claims.generated.md</a>).</td>
 <td>Prevents agents from assuming features that are not implemented.</td>
 </tr>
 <tr>
@@ -4057,8 +2622,8 @@ hardkas l2 bridge assumptions --json">
 <summary>Is the bridge trustless today?</summary>
 <div class="details-body">
 <p>
-                  No. Pre-ZK bridge workflows are assumption-aware. Trustless exit only
-                  applies once the ZK phase exists and is explicitly implemented.
+                  No. No bridge workflow ships in the CLI, and the bridge model keeps
+                  trustless exit false until a ZK phase exists and is explicitly implemented.
                 </p>
 </div>
 </details>
@@ -4075,18 +2640,18 @@ hardkas l2 bridge assumptions --json">
 <summary>Can agents use HardKAS safely?</summary>
 <div class="details-body">
 <p>
-                  Yes, if they follow the AGENT.md pattern: inspect capabilities and
-                  doctor output first, use JSON outputs, and never assume unsupported
-                  capabilities.
+                  As developer tooling, yes, if they follow the rules above: read the
+                  release claims and the doctor output first, use JSON outputs, and never
+                  assume unsupported capabilities.
                 </p>
 </div>
 </details>
 <details>
-<summary>What should be linked from the website?</summary>
+<summary>Where is the full CLI reference?</summary>
 <div class="details-body">
 <p>
-                  README, CLI reference, what-actually-works status page, AGENT.md,
-                  security model, release checklist and examples.
+                  In the repository: <a href="https://github.com/KasLabDevs/HardKas/blob/main/docs/reference/cli.md" rel="noreferrer" target="_blank">docs/reference/cli.md</a>,
+                  generated from the command tree. This page shows the most used commands.
                 </p>
 </div>
 </details>
@@ -4123,14 +2688,14 @@ hardkas l2 bridge assumptions --json">
 
 
 <footer class="footer">
-          HardKAS Documentation · <span class="version-string">0.12.0-rc.25</span> · CLI · SDK · Examples · Security · GitHub ·
+          HardKAS Documentation · <span class="version-string">0.12.0-rc.26</span> · <a href="#cli">CLI</a> · <a href="#packages">SDK</a> · <a href="#examples">Examples</a> · <a href="#security">Security</a> · <a href="https://github.com/KasLabDevs/HardKas" rel="noreferrer" target="_blank">GitHub</a> ·
           MIT License<br/>
           HardKAS is local developer infrastructure in active alpha. It is provided
           without warranty and is not production custody software.
         </footer>
 </main>
 <aside class="right toc">
-<div class="side-title">V3 CORE</div>
+<div class="side-title">CORE</div>
 <a href="#overview">Overview</a>
 <a href="#problem">The Problem</a>
 <a href="#execution-contract">Execution Contract</a>
@@ -4139,7 +2704,7 @@ hardkas l2 bridge assumptions --json">
 <a href="#replay">Replay</a>
 <a href="#environments">Execution Environments</a>
 <a href="#capabilities">Capabilities</a>
-<a href="#toccata">Toccata</a>
+<a href="#toccata">SilverScript &amp; covenants</a>
 <a href="#architecture">Architecture</a>
 <a href="#quickstart">Quickstart</a>
 <a href="#examples">Examples &amp; Labs</a>

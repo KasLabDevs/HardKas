@@ -1,0 +1,49 @@
+﻿{
+  "packs": {
+    "before": 33,
+    "after": 32
+  },
+  "scaffoldDependencies": {
+    "before": {
+      "@hardkas/sdk": "0.12.0-rc.26"
+    },
+    "after": {
+      "@hardkas/sdk": "0.12.0-rc.26"
+    }
+  },
+  "rpcEventsInstalled": {
+    "before": true,
+    "after": false
+  },
+  "instanceHasEvents": {
+    "before": true,
+    "after": false
+  },
+  "hardkasFromRegistry": {
+    "before": 0,
+    "after": 0
+  },
+  "installedPackages": {
+    "before": 162,
+    "after": 161
+  },
+  "npmTest": {
+    "before": "Tests  1 passed (1)",
+    "after": "Tests  1 passed (1)",
+    "bothPassed": true
+  },
+  "steps": {
+    "before": "hardkas init proj=0 | npm install=0 | npm test=0 | import @hardkas/sdk=0 | hardkas accounts list --json=0 | hardkas tx plan=0 | hardkas artifact verify plan.json=0 | hardkas query artifacts list=0",
+    "after": "hardkas init proj=0 | npm install=0 | npm test=0 | import @hardkas/sdk=0 | hardkas accounts list --json=0 | hardkas tx plan=0 | hardkas artifact verify plan.json=0 | hardkas query artifacts list=0",
+    "identical": true
+  }
+}
+node : (node:19696) [DEP0190] DeprecationWarning: Passing args to a child process with shell option true can lead to 
+security vulnerabilities, as the arguments are not escaped, only concatenated.
+En línea: 1 Carácter: 491
++ ... EMP\hk-3a"; node "$d\scaffold-compare.mjs" "$o\before" "$o\after" "$o ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ((node:19696) [D...y concatenated.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+(Use `node --trace-deprecation ...` to show where the warning was created)

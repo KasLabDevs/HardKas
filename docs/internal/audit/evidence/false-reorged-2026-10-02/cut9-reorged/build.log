@@ -1,0 +1,675 @@
+﻿Scope: 33 of 62 workspace projects
+
+> @hardkas/client@0.12.0-rc.26 build C:\Users\jrodr\AppData\Local\Temp\hk-reorg\wt\packages\client
+> tsup src/index.ts --format esm,cjs --dts --clean
+
+CLI Building entry: src/index.ts
+CLI Using tsconfig: tsconfig.json
+CLI tsup v8.5.1
+CLI Target: es2022
+CLI Cleaning output folder
+ESM Build start
+CJS Build start
+ESM dist\index.js 2.02 KB
+ESM ⚡️ Build success in 494ms
+CJS dist\index.cjs 3.05 KB
+CJS ⚡️ Build success in 494ms
+DTS Build start
+DTS ⚡️ Build success in 1169ms
+DTS dist\index.d.ts  1017.00 B
+DTS dist\index.d.cts 1017.00 B
+
+> @hardkas/core@0.12.0-rc.26 build C:\Users\jrodr\AppData\Local\Temp\hk-reorg\wt\packages\core
+> tsup src/index.ts --format esm --dts --clean
+
+CLI Building entry: src/index.ts
+CLI Using tsconfig: tsconfig.json
+CLI tsup v8.5.1
+CLI Target: es2022
+CLI Cleaning output folder
+ESM Build start
+ESM dist\index.js 148.17 KB
+ESM ⚡️ Build success in 183ms
+DTS Build start
+DTS ⚡️ Build success in 2154ms
+DTS dist\index.d.ts 105.51 KB
+
+> @hardkas/observability@0.12.0-rc.26 build C:\Users\jrodr\AppData\Local\Temp\hk-reorg\wt\packages\observability
+> tsup src/index.ts --format esm --dts --clean
+
+CLI Building entry: src/index.ts
+CLI Using tsconfig: tsconfig.json
+CLI tsup v8.5.1
+CLI Using tsup config: C:\Users\jrodr\AppData\Local\Temp\hk-reorg\wt\packages\observability\tsup.config.ts
+CLI Target: es2022
+CLI Cleaning output folder
+ESM Build start
+ESM dist\index.js 5.94 KB
+ESM ⚡️ Build success in 38ms
+DTS Build start
+DTS ⚡️ Build success in 1219ms
+DTS dist\index.d.ts 2.84 KB
+
+> @hardkas/testnet-qualification@0.12.0-rc.26 build C:\Users\jrodr\AppData\Local\Temp\hk-reorg\wt\packages\testnet-qualification
+> tsup src/index.ts --format esm --dts --clean
+
+CLI Building entry: src/index.ts
+CLI Using tsconfig: tsconfig.json
+CLI tsup v8.5.1
+CLI Target: es2022
+CLI Cleaning output folder
+ESM Build start
+ESM dist\index.js 48.67 KB
+ESM ⚡️ Build success in 79ms
+DTS Build start
+DTS ⚡️ Build success in 1551ms
+DTS dist\index.d.ts 48.12 KB
+
+> @hardkas/config@0.12.0-rc.26 build C:\Users\jrodr\AppData\Local\Temp\hk-reorg\wt\packages\config
+> tsup src/index.ts --format esm --dts --clean
+
+CLI Building entry: src/index.ts
+CLI Using tsconfig: tsconfig.json
+CLI tsup v8.5.1
+CLI Target: es2022
+CLI Cleaning output folder
+ESM Build start
+ESM dist\index.js 9.81 KB
+ESM ⚡️ Build success in 108ms
+DTS Build start
+DTS ⚡️ Build success in 1462ms
+DTS dist\index.d.ts 5.14 KB
+
+> @hardkas/escrow@0.12.0-rc.26 build C:\Users\jrodr\AppData\Local\Temp\hk-reorg\wt\packages\escrow
+> tsup src/index.ts --format esm --dts --clean
+
+CLI Building entry: src/index.ts
+CLI Using tsconfig: tsconfig.json
+CLI tsup v8.5.1
+CLI Target: es2022
+CLI Cleaning output folder
+ESM Build start
+ESM dist\index.js 5.37 KB
+ESM ⚡️ Build success in 58ms
+DTS Build start
+DTS ⚡️ Build success in 1295ms
+DTS dist\index.d.ts 5.84 KB
+
+> @hardkas/jobs@0.12.0-rc.26 build C:\Users\jrodr\AppData\Local\Temp\hk-reorg\wt\packages\jobs
+> tsc
+
+
+> @hardkas/kaspa-rpc@0.12.0-rc.26 build C:\Users\jrodr\AppData\Local\Temp\hk-reorg\wt\packages\kaspa-rpc
+> tsup src/index.ts src/adapters/index.ts --format esm --dts --clean
+
+CLI Building entry: src/index.ts, src/adapters/index.ts
+CLI Using tsconfig: tsconfig.json
+CLI tsup v8.5.1
+CLI Target: es2022
+CLI Cleaning output folder
+ESM Build start
+ESM dist\index.js          55.90 KB
+ESM dist\adapters\index.js 0 B
+ESM ⚡️ Build success in 105ms
+DTS Build start
+DTS ⚡️ Build success in 2380ms
+DTS dist\adapters\index.d.ts 13.00 B
+DTS dist\index.d.ts          21.30 KB
+
+> @hardkas/node-orchestrator@0.12.0-rc.26 build C:\Users\jrodr\AppData\Local\Temp\hk-reorg\wt\packages\node-orchestrator
+> tsup src/index.ts --format esm --dts --clean
+
+CLI Building entry: src/index.ts
+CLI Using tsconfig: tsconfig.json
+CLI tsup v8.5.1
+CLI Target: es2022
+CLI Cleaning output folder
+ESM Build start
+ESM dist\index.js 8.16 KB
+ESM ⚡️ Build success in 54ms
+DTS Build start
+DTS ⚡️ Build success in 1361ms
+DTS dist\index.d.ts 2.29 KB
+
+> @hardkas/plugin-local-indexer@0.12.0-rc.26 build C:\Users\jrodr\AppData\Local\Temp\hk-reorg\wt\packages\plugin-local-indexer
+> tsup
+
+CLI Building entry: src/index.ts
+CLI Using tsconfig: tsconfig.json
+CLI tsup v8.5.1
+CLI Using tsup config: C:\Users\jrodr\AppData\Local\Temp\hk-reorg\wt\packages\plugin-local-indexer\tsup.config.ts
+CLI Target: es2022
+CLI Cleaning output folder
+ESM Build start
+ESM dist\index.js 1.86 KB
+ESM ⚡️ Build success in 17ms
+DTS Build start
+DTS ⚡️ Build success in 1220ms
+DTS dist\index.d.ts 510.00 B
+
+> @hardkas/react@0.12.0-rc.26 build C:\Users\jrodr\AppData\Local\Temp\hk-reorg\wt\packages\react
+> tsup src/index.ts --format esm --dts --clean
+
+CLI Building entry: src/index.ts
+CLI Using tsconfig: tsconfig.json
+CLI tsup v8.5.1
+CLI Target: es2022
+CLI Cleaning output folder
+ESM Build start
+ESM dist\index.js 2.67 KB
+ESM ⚡️ Build success in 61ms
+DTS Build start
+DTS ⚡️ Build success in 1394ms
+DTS dist\index.d.ts 1.15 KB
+
+> @hardkas/sessions@0.12.0-rc.26 build C:\Users\jrodr\AppData\Local\Temp\hk-reorg\wt\packages\sessions
+> tsup src/index.ts --format esm --dts --clean
+
+CLI Building entry: src/index.ts
+CLI Using tsconfig: tsconfig.json
+CLI tsup v8.5.1
+CLI Target: es2022
+CLI Cleaning output folder
+ESM Build start
+ESM dist\index.js 3.61 KB
+ESM ⚡️ Build success in 70ms
+DTS Build start
+DTS ⚡️ Build success in 1239ms
+DTS dist\index.d.ts 1.34 KB
+
+> @hardkas/tx-builder@0.12.0-rc.26 build C:\Users\jrodr\AppData\Local\Temp\hk-reorg\wt\packages\tx-builder
+> tsup src/index.ts --format esm --dts --clean
+
+CLI Building entry: src/index.ts
+CLI Using tsconfig: tsconfig.json
+CLI tsup v8.5.1
+CLI Target: es2022
+CLI Cleaning output folder
+ESM Build start
+ESM dist\index.js 47.64 KB
+ESM ⚡️ Build success in 87ms
+DTS Build start
+DTS ⚡️ Build success in 1590ms
+DTS dist\index.d.ts 30.15 KB
+
+> @hardkas/artifacts@0.12.0-rc.26 build C:\Users\jrodr\AppData\Local\Temp\hk-reorg\wt\packages\artifacts
+> tsup src/index.ts --format esm --dts --clean
+
+CLI Building entry: src/index.ts
+CLI Using tsconfig: tsconfig.json
+CLI tsup v8.5.1
+CLI Target: es2022
+CLI Cleaning output folder
+ESM Build start
+ESM dist\index.js 228.10 KB
+ESM ⚡️ Build success in 168ms
+DTS Build start
+DTS ⚡️ Build success in 3941ms
+DTS dist\index.d.ts 473.87 KB
+
+> @hardkas/node-runner@0.12.0-rc.26 build C:\Users\jrodr\AppData\Local\Temp\hk-reorg\wt\packages\node-runner
+> tsup src/index.ts --format esm --dts --clean
+
+CLI Building entry: src/index.ts
+CLI Using tsconfig: tsconfig.json
+CLI tsup v8.5.1
+CLI Target: es2022
+CLI Cleaning output folder
+ESM Build start
+ESM dist\index.js 14.05 KB
+ESM ⚡️ Build success in 72ms
+DTS Build start
+DTS ⚡️ Build success in 1415ms
+DTS dist\index.d.ts 3.70 KB
+
+> @hardkas/simulator@0.12.0-rc.26 build C:\Users\jrodr\AppData\Local\Temp\hk-reorg\wt\packages\simulator
+> tsup src/index.ts --format esm --dts --clean
+
+CLI Building entry: src/index.ts
+CLI Using tsconfig: tsconfig.json
+CLI tsup v8.5.1
+CLI Target: es2022
+CLI Cleaning output folder
+ESM Build start
+ESM dist\index.js 25.15 KB
+ESM ⚡️ Build success in 82ms
+DTS Build start
+DTS ⚡️ Build success in 1491ms
+DTS dist\index.d.ts 13.88 KB
+
+> @hardkas/wallet-adapter@0.12.0-rc.26 build C:\Users\jrodr\AppData\Local\Temp\hk-reorg\wt\packages\wallet-adapter
+> tsup src/index.ts --format esm --dts --clean
+
+CLI Building entry: src/index.ts
+CLI Using tsconfig: tsconfig.json
+CLI tsup v8.5.1
+CLI Target: es2022
+CLI Cleaning output folder
+ESM Build start
+ESM dist\index.js 3.89 KB
+ESM ⚡️ Build success in 55ms
+DTS Build start
+DTS ⚡️ Build success in 1331ms
+DTS dist\index.d.ts 4.18 KB
+
+> @hardkas/l2@0.12.0-rc.26 build C:\Users\jrodr\AppData\Local\Temp\hk-reorg\wt\packages\l2
+> tsup src/index.ts --format esm --dts --clean
+
+CLI Building entry: src/index.ts
+CLI Using tsconfig: tsconfig.json
+CLI tsup v8.5.1
+CLI Target: es2022
+CLI Cleaning output folder
+ESM Build start
+ESM dist\index.js 19.17 KB
+ESM ⚡️ Build success in 76ms
+DTS Build start
+DTS ⚡️ Build success in 2882ms
+DTS dist\index.d.ts 8.51 KB
+
+> @hardkas/localnet@0.12.0-rc.26 build C:\Users\jrodr\AppData\Local\Temp\hk-reorg\wt\packages\localnet
+> tsup src/index.ts --format esm --dts --clean --external kaspa-wasm
+
+CLI Building entry: src/index.ts
+CLI Using tsconfig: tsconfig.json
+CLI tsup v8.5.1
+CLI Target: es2022
+CLI Cleaning output folder
+ESM Build start
+ESM dist\index.js             43.34 KB
+ESM dist\snapshot-4GUK6V5O.js 333.00 B
+ESM dist\receipts-INOOWOPN.js 195.00 B
+ESM dist\chunk-EPMJ5HSS.js    4.46 KB
+ESM dist\chunk-6AICYLVR.js    1.84 KB
+ESM dist\traces-ZUBWSXYB.js   261.00 B
+ESM dist\chunk-TD6USJ3B.js    967.00 B
+ESM ⚡️ Build success in 100ms
+DTS Build start
+DTS ⚡️ Build success in 1930ms
+DTS dist\index.d.ts 21.50 KB
+
+> @hardkas/query-store@0.12.0-rc.26 build C:\Users\jrodr\AppData\Local\Temp\hk-reorg\wt\packages\query-store
+> tsc
+
+
+> @hardkas/accounts@0.12.0-rc.26 build C:\Users\jrodr\AppData\Local\Temp\hk-reorg\wt\packages\accounts
+> tsup src/index.ts src/internal/wasm-rpc-serialization.ts --format esm --dts --clean --external kaspa-wasm
+
+CLI Building entry: src/index.ts, src/internal/wasm-rpc-serialization.ts
+CLI Using tsconfig: tsconfig.json
+CLI tsup v8.5.1
+CLI Target: es2022
+CLI Cleaning output folder
+ESM Build start
+ESM dist\resolve-FO4P46YC.js                301.00 B
+ESM dist\index.js                           47.86 KB
+ESM dist\signer-backend-LHWY7ULI.js         233.00 B
+ESM dist\dev-accounts-JTJKQAPV.js           395.00 B
+ESM dist\chunk-Q22JFUWC.js                  17.03 KB
+ESM dist\keystore-CMWEKGBF.js               87.00 B
+ESM dist\chunk-2UQTGGML.js                  18.77 KB
+ESM dist\chunk-GM2BY4VS.js                  5.80 KB
+ESM dist\chunk-BNF566PS.js                  2.79 KB
+ESM dist\authorizers-YESBCCTJ.js            217.00 B
+ESM dist\chunk-YLG2NIAU.js                  5.54 KB
+ESM dist\chunk-PKDTLCCQ.js                  3.77 KB
+ESM dist\internal\wasm-rpc-serialization.js 90.00 B
+ESM ⚡️ Build success in 140ms
+DTS Build start
+DTS ⚡️ Build success in 2596ms
+DTS dist\index.d.ts                           36.24 KB
+DTS dist\internal\wasm-rpc-serialization.d.ts 337.00 B
+
+> @hardkas/query@0.12.0-rc.26 build C:\Users\jrodr\AppData\Local\Temp\hk-reorg\wt\packages\query
+> tsup src/index.ts --format esm --dts --clean
+
+CLI Building entry: src/index.ts
+CLI Using tsconfig: tsconfig.json
+CLI tsup v8.5.1
+CLI Target: es2022
+CLI Cleaning output folder
+ESM Build start
+ESM dist\index.js 81.38 KB
+ESM ⚡️ Build success in 107ms
+DTS Build start
+DTS ⚡️ Build success in 1788ms
+DTS dist\index.d.ts 25.14 KB
+
+> @hardkas/bridge-local@0.12.0-rc.26 build C:\Users\jrodr\AppData\Local\Temp\hk-reorg\wt\packages\bridge-local
+> tsup src/index.ts --format esm --dts --clean
+
+CLI Building entry: src/index.ts
+CLI Using tsconfig: tsconfig.json
+CLI tsup v8.5.1
+CLI Target: es2022
+CLI Cleaning output folder
+ESM Build start
+ESM dist\index.js 4.89 KB
+ESM ⚡️ Build success in 67ms
+DTS Build start
+DTS ⚡️ Build success in 4450ms
+DTS dist\index.d.ts 2.72 KB
+
+> @hardkas/toolkit@0.12.0-rc.26 build C:\Users\jrodr\AppData\Local\Temp\hk-reorg\wt\packages\toolkit
+> node -e "require('node:fs').rmSync('dist',{recursive:true,force:true})" && tsc
+
+
+> @hardkas/plugin-rpc-backend@0.12.0-rc.26 build C:\Users\jrodr\AppData\Local\Temp\hk-reorg\wt\packages\plugin-rpc-backend
+> tsup
+
+node.exe : ▲ [WARNING] The condition "types" here will never be used as it comes after both "import" and "require" 
+[package.json]
+En C:\Users\jrodr\AppData\Roaming\npm\pnpm.ps1: 24 Carácter: 5
++     & "node$exe"  "$basedir/node_modules/pnpm/bin/pnpm.mjs" $args
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (▲ [WARNING] The... [package.json]:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+
+    package.json:12:6:
+      12 │       "types": "./dist/index.d.ts"
+         ╵       ~~~~~~~
+
+  The "import" condition comes earlier and will be used for all "import" statements:
+
+    package.json:10:6:
+      10 │       "import": "./dist/index.js",
+         ╵       ~~~~~~~~
+
+  The "require" condition comes earlier and will be used for all "require" calls:
+
+    package.json:11:6:
+      11 │       "require": "./dist/index.cjs",
+         ╵       ~~~~~~~~~
+
+CLI Building entry: src/index.ts
+CLI Using tsconfig: tsconfig.json
+CLI tsup v8.5.1
+CLI Using tsup config: C:\Users\jrodr\AppData\Local\Temp\hk-reorg\wt\packages\plugin-rpc-backend\tsup.config.ts
+CLI Target: es2022
+CLI Cleaning output folder
+CJS Build start
+ESM Build start
+
+ WARN  [33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mThe condition "types" here will never be used as it comes 
+after both "import" and "require"[0m [package.json]
+
+    package.json:12:6:
+[37m      12 │       [32m"types"[37m: "./dist/index.d.ts"
+         ╵       [32m~~~~~~~[0m
+
+  The "import" condition comes earlier and will be used for all "import" statements:
+
+    package.json:10:6:
+[37m      10 │       [32m"import"[37m: "./dist/index.js",
+         ╵       [32m~~~~~~~~[0m
+
+  The "require" condition comes earlier and will be used for all "require" calls:
+
+    package.json:11:6:
+[37m      11 │       [32m"require"[37m: "./dist/index.cjs",
+         ╵       [32m~~~~~~~~~[0m
+
+
+
+
+ WARN  [33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mThe condition "types" here will never be used as it comes 
+after both "import" and "require"[0m [package.json]
+
+    package.json:12:6:
+[37m      12 │       [32m"types"[37m: "./dist/index.d.ts"
+         ╵       [32m~~~~~~~[0m
+
+  The "import" condition comes earlier and will be used for all "import" statements:
+
+    package.json:10:6:
+[37m      10 │       [32m"import"[37m: "./dist/index.js",
+         ╵       [32m~~~~~~~~[0m
+
+  The "require" condition comes earlier and will be used for all "require" calls:
+
+    package.json:11:6:
+[37m      11 │       [32m"require"[37m: "./dist/index.cjs",
+         ╵       [32m~~~~~~~~~[0m
+
+
+
+ESM dist\index.js     7.74 KB
+ESM dist\index.js.map 16.83 KB
+ESM ⚡️ Build success in 42ms
+CJS dist\index.cjs     9.31 KB
+CJS dist\index.cjs.map 16.88 KB
+CJS ⚡️ Build success in 42ms
+DTS Build start
+DTS ⚡️ Build success in 1336ms
+DTS dist\index.d.cts 1.39 KB
+DTS dist\index.d.ts  1.39 KB
+
+> @hardkas/sdk@0.12.0-rc.26 build C:\Users\jrodr\AppData\Local\Temp\hk-reorg\wt\packages\sdk
+> tsup src/index.ts src/client.ts --format esm --dts --clean --external @hardkas/pskt-native
+
+CLI Building entry: src/client.ts, src/index.ts
+CLI Using tsconfig: tsconfig.json
+CLI tsup v8.5.1
+CLI Target: es2022
+CLI Cleaning output folder
+ESM Build start
+ESM dist\index.js           231.35 KB
+ESM dist\client.js          125.00 B
+ESM dist\chunk-M246ZPDS.js  4.15 KB
+ESM dist\native-UGVM3C7J.js 9.05 KB
+ESM dist\chunk-MLKGABMK.js  191.00 B
+ESM ⚡️ Build success in 173ms
+DTS Build start
+DTS ⚡️ Build success in 3174ms
+DTS dist\index.d.ts  63.70 KB
+DTS dist\client.d.ts 2.48 KB
+
+> @hardkas/simulator-adapters@0.12.0-rc.26 build C:\Users\jrodr\AppData\Local\Temp\hk-reorg\wt\packages\simulator-adapters
+> tsc
+
+
+> @hardkas/storage-postgres@0.12.0-rc.26 build C:\Users\jrodr\AppData\Local\Temp\hk-reorg\wt\packages\storage-postgres
+> tsup
+
+CLI Building entry: src/index.ts
+CLI Using tsconfig: tsconfig.json
+CLI tsup v8.5.1
+CLI Using tsup config: C:\Users\jrodr\AppData\Local\Temp\hk-reorg\wt\packages\storage-postgres\tsup.config.ts
+CLI Target: es2022
+CLI Cleaning output folder
+CJS Build start
+ESM Build start
+ESM dist\index.js 7.82 KB
+ESM ⚡️ Build success in 41ms
+CJS dist\index.cjs 9.59 KB
+CJS ⚡️ Build success in 41ms
+DTS Build start
+DTS ⚡️ Build success in 1542ms
+DTS dist\index.d.cts 1.58 KB
+DTS dist\index.d.ts  1.58 KB
+
+> @hardkas/storage-sqlite@0.12.0-rc.26 build C:\Users\jrodr\AppData\Local\Temp\hk-reorg\wt\packages\storage-sqlite
+> tsup
+
+CLI Building entry: src/index.ts
+CLI Using tsconfig: tsconfig.json
+CLI tsup v8.5.1
+CLI Using tsup config: C:\Users\jrodr\AppData\Local\Temp\hk-reorg\wt\packages\storage-sqlite\tsup.config.ts
+CLI Target: es2022
+CLI Cleaning output folder
+CJS Build start
+ESM Build start
+CJS dist\index.js 8.00 KB
+CJS ⚡️ Build success in 42ms
+ESM dist\index.mjs 7.23 KB
+ESM ⚡️ Build success in 42ms
+DTS Build start
+DTS ⚡️ Build success in 1329ms
+DTS dist\index.d.ts  1.38 KB
+DTS dist\index.d.mts 1.38 KB
+
+> @hardkas/sync-daemon@0.12.0-rc.26 build C:\Users\jrodr\AppData\Local\Temp\hk-reorg\wt\packages\sync-daemon
+> tsup
+
+CLI Building entry: src/index.ts
+CLI Using tsconfig: tsconfig.json
+CLI tsup v8.5.1
+CLI Using tsup config: C:\Users\jrodr\AppData\Local\Temp\hk-reorg\wt\packages\sync-daemon\tsup.config.ts
+CLI Target: es2022
+CLI Cleaning output folder
+CJS Build start
+ESM Build start
+ESM dist\index.js     5.00 KB
+ESM dist\index.js.map 11.18 KB
+ESM ⚡️ Build success in 23ms
+CJS dist\index.cjs     6.96 KB
+CJS dist\index.cjs.map 11.33 KB
+CJS ⚡️ Build success in 24ms
+DTS Build start
+DTS ⚡️ Build success in 1422ms
+DTS dist\index.d.cts 1008.00 B
+DTS dist\index.d.ts  1008.00 B
+
+> @hardkas/dev-server@0.12.0-rc.26 build C:\Users\jrodr\AppData\Local\Temp\hk-reorg\wt\packages\dev-server
+> tsup src/index.ts --format esm --dts --clean && pnpm build:dashboard
+
+CLI Building entry: src/index.ts
+CLI Using tsconfig: tsconfig.json
+CLI tsup v8.5.1
+CLI Target: es2022
+CLI Cleaning output folder
+ESM Build start
+ESM dist\chunk-Q3LPWLHF.js 1.13 KB
+ESM dist\db-4VZZMREG.js    139.00 B
+ESM dist\index.js          99.59 KB
+ESM ⚡️ Build success in 142ms
+DTS Build start
+DTS ⚡️ Build success in 2454ms
+DTS dist\index.d.ts 1.49 KB
+
+> @hardkas/dev-server@0.12.0-rc.26 build:dashboard C:\Users\jrodr\AppData\Local\Temp\hk-reorg\wt\packages\dev-server
+> node scripts/copy-dashboard.js
+
+⚠️ Warning: Dashboard build not found at C:\Users\jrodr\AppData\Local\Temp\hk-reorg\wt\apps\dashboard\dist. Run 'pnpm 
+build' in apps/dashboard first.
+
+> @hardkas/testing@0.12.0-rc.26 build C:\Users\jrodr\AppData\Local\Temp\hk-reorg\wt\packages\testing
+> tsup src/index.ts src/scenarios.ts src/harness.ts src/setup.ts src/reproducibility.ts src/adversarial-fixtures.ts src/mass-setup.ts --format esm --dts --clean --external vitest --external kaspa
+
+CLI Building entry: src/adversarial-fixtures.ts, src/harness.ts, src/index.ts, src/mass-setup.ts, src/reproducibility.ts, src/scenarios.ts, src/setup.ts
+CLI Using tsconfig: tsconfig.json
+CLI tsup v8.5.1
+CLI Target: es2022
+CLI Cleaning output folder
+ESM Build start
+ESM dist\adversarial-fixtures.js 125.00 B
+ESM dist\chunk-LALAYTVL.js       4.80 KB
+ESM dist\harness.js              287.00 B
+ESM dist\chunk-Q4NLRRZC.js       4.09 KB
+ESM dist\scenarios.js            5.29 KB
+ESM dist\setup.js                169.00 B
+ESM dist\reproducibility.js      175.00 B
+ESM dist\mass-setup.js           187.00 B
+ESM dist\chunk-LAUXD45S.js       3.71 KB
+ESM dist\chunk-AHS4TIKV.js       2.58 KB
+ESM dist\chunk-3RG5ZIWI.js       390.00 B
+ESM dist\index.js                167.67 KB
+ESM ⚡️ Build success in 133ms
+DTS Build start
+DTS ⚡️ Build success in 3281ms
+DTS dist\mass-setup.d.ts           13.00 B
+DTS dist\adversarial-fixtures.d.ts 2.13 KB
+DTS dist\harness.d.ts              1.58 KB
+DTS dist\reproducibility.d.ts      784.00 B
+DTS dist\scenarios.d.ts            301.00 B
+DTS dist\index.d.ts                9.08 KB
+DTS dist\setup.d.ts                13.00 B
+
+> @hardkas/cli@0.12.0-rc.26 build C:\Users\jrodr\AppData\Local\Temp\hk-reorg\wt\packages\cli
+> tsup src/index.ts src/public.ts --format esm --dts --clean --external vitest --external kaspa-wasm
+
+CLI Building entry: src/index.ts, src/public.ts
+CLI Using tsconfig: tsconfig.json
+CLI tsup v8.5.1
+CLI Target: es2022
+CLI Cleaning output folder
+ESM Build start
+ESM dist\telemetry-runners-ORZY2CGS.js           16.09 KB
+ESM dist\chaos-runner-ILHJUHNE.js                10.30 KB
+ESM dist\corpus-verify-runner-SSZUDKNM.js        1.53 KB
+ESM dist\silver-records-4NCHUXIE.js              1.41 KB
+ESM dist\kaspa-doctor-runner-QICDMYLZ.js         5.24 KB
+ESM dist\capabilities-GB5UI72A.js                1.39 KB
+ESM dist\session-runner-KSHXJ2TY.js              4.47 KB
+ESM dist\verify-HXJY2SSR.js                      1.23 KB
+ESM dist\kaspa-wallet-runner-EVYI73C5.js         10.43 KB
+ESM dist\inspect-2OJU6X75.js                     1.86 KB
+ESM dist\dev-init-runner-YIYVHYA7.js             137.00 B
+ESM dist\chunk-PE5FCRMH.js                       1.68 KB
+ESM dist\dev-tx-runners-MTPKD5GS.js              201.00 B
+ESM dist\dev-doctor-runner-5VPNSPE7.js           22.79 KB
+ESM dist\dev-fixture-generate-runner-5KDV3EYX.js 1.88 KB
+ESM dist\dev-accounts-runners-ZCTT7RNP.js        4.76 KB
+ESM dist\dev-tx-generate-runner-2DYTW62G.js      2.55 KB
+ESM dist\local-wizard-runner-QVDBHNYO.js         7.06 KB
+ESM dist\doctor-signer-runner-2JML3D5M.js        1.59 KB
+ESM dist\doctor-node-runner-KI5JYSLA.js          143.00 B
+ESM dist\snapshot-verify-runner-UPORX6MJ.js      2.15 KB
+ESM dist\dev-last-runner-Y7EEDJRY.js             3.64 KB
+ESM dist\snapshot-create-runner-TQUFBKYL.js      1.77 KB
+ESM dist\localnet-account-runners-C7NDQCOT.js    1.24 KB
+ESM dist\dev-env-runner-VKXER7UY.js              165.00 B
+ESM dist\snapshot-replay-runner-D65Y2DW2.js      3.47 KB
+ESM dist\artifact-migrate-runner-TWEALEP3.js     2.51 KB
+ESM dist\dev-create-runner-XMTBJVB3.js           18.95 KB
+ESM dist\replay-diff-runner-UJX7RGJN.js          3.57 KB
+ESM dist\rpc-doctor-runner-W4I6SOBI.js           7.31 KB
+ESM dist\artifact-lineage-runner-BDZPD7UB.js     2.76 KB
+ESM dist\dag-runners-ZNHGL23C.js                 2.52 KB
+ESM dist\replay-verify-runner-CZ6NMXNL.js        177.00 B
+ESM dist\accounts-keystore-runners-OI6QXPJ6.js   7.01 KB
+ESM dist\tx-status-runner-22RQGPHF.js            325.00 B
+ESM dist\accounts-consolidate-runner-23CWPXUB.js 7.12 KB
+ESM dist\tx-batch-runner-4WLEYLL2.js             3.96 KB
+ESM dist\tx-wait-runner-BYNPPMFO.js              6.63 KB
+ESM dist\deployment-runners-NSPO55WV.js          389.00 B
+ESM dist\tx-verify-runner-YNBPKGU5.js            139.00 B
+ESM dist\chunk-RFGSVSDI.js                       4.61 KB
+ESM dist\chunk-MTE77E37.js                       4.23 KB
+ESM dist\tx-compare-runner-23U7AGBU.js           2.65 KB
+ESM dist\artifact-create-runner-MAHP6RTM.js      1.58 KB
+ESM dist\index.js                                2.53 KB
+ESM dist\artifact-inspect-runner-3JCJIF5O.js     4.31 KB
+ESM dist\chunk-YEPVDZON.js                       2.20 KB
+ESM dist\public.js                               19.65 KB
+ESM dist\chunk-Z2BOCJ7V.js                       4.32 KB
+ESM dist\chunk-4CHU6GNA.js                       2.03 KB
+ESM dist\chunk-SPOLNJ2L.js                       1.29 KB
+ESM dist\chunk-OTRU5MW7.js                       1.90 KB
+ESM dist\chunk-RSWKLXKU.js                       4.13 KB
+ESM dist\chunk-GSQCDE7Q.js                       1.92 KB
+ESM dist\chunk-QTY5JWHX.js                       3.79 KB
+ESM dist\chunk-ZM2NBOAE.js                       916.00 B
+ESM dist\chunk-USW325AD.js                       6.53 KB
+ESM dist\chunk-VQN6EBKC.js                       398.30 KB
+ESM dist\output-GPDVYSBP.js                      159.00 B
+ESM dist\chunk-FX777FFF.js                       36.55 KB
+ESM dist\dev-server-runner-WEJLJANL.js           183.00 B
+ESM dist\chunk-P4NN7U65.js                       10.25 KB
+ESM dist\chunk-IUSCVEHM.js                       7.16 KB
+ESM dist\ui-D3CL2BNR.js                          159.00 B
+ESM dist\toolchain-install-4E5IUKZT.js           131.00 B
+ESM dist\cli-errors-T6A2WHEJ.js                  401.00 B
+ESM dist\chunk-VSTNEH5Q.js                       1.29 KB
+ESM dist\chunk-LRKVRGTW.js                       4.31 KB
+ESM dist\next-steps-WOM6FLCS.js                  203.00 B
+ESM dist\chunk-EIVXNJTN.js                       1.80 KB
+ESM dist\mutating-TWNRRWQA.js                    4.48 KB
+ESM dist\torture-runner-RGWMYORY.js              16.99 KB
+ESM dist\chunk-JCVRNOSQ.js                       3.77 KB
+ESM ⚡️ Build success in 538ms
+DTS Build start
+DTS ⚡️ Build success in 8961ms
+DTS dist\index.d.ts  20.00 B
+DTS dist\public.d.ts 2.67 KB

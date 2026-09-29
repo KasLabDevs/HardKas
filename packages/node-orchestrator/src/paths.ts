@@ -1,5 +1,6 @@
 import path from "node:path";
 import fs from "node:fs";
+import { defaultRpcListen } from "@hardkas/core";
 import type { KaspaNodeConfig, KaspaNodeRuntimeConfig, KaspaRealNetwork } from "./types";
 
 export function findWorkspaceRoot(startDir: string = process.cwd()): string {
@@ -60,16 +61,7 @@ export function resolveRuntimeConfig(config: KaspaNodeConfig): KaspaNodeRuntimeC
   };
 }
 
+/** The SDK's default wRPC (JSON) port for the network; simnet is the canonical localnet's. */
 function getDefaultRpcListen(network: KaspaRealNetwork): string {
-  switch (network) {
-    case "mainnet":
-      return "127.0.0.1:18110";
-    case "simnet":
-    case "testnet-10":
-    case "testnet-11":
-    case "testnet-12":
-      return "127.0.0.1:18210";
-    case "devnet":
-      return "127.0.0.1:18310";
-  }
+  return defaultRpcListen(network);
 }

@@ -1,0 +1,809 @@
+﻿{
+  "summary": {
+    "txs": 20,
+    "txsWithTruthChurn": 19,
+    "replacedWhileHeld": 8,
+    "followed": 8,
+    "notFollowed": 0,
+    "linksRecorded": 10,
+    "linksConsistentWithTruth": 8,
+    "linksMatchingHeldBlock": 10,
+    "removalsRecordedByHardkas": 0,
+    "lastLookAgreesWithTruth": 20,
+    "lastStates": {
+      "CONFIRMED": 20
+    }
+  },
+  "rows": [
+    {
+      "index": 1,
+      "txId": "72d0ec49d01f94fbcad870da46262bc4e8914a425850a699757409fb907248d3",
+      "truthAcceptingSequence": [
+        "f6e2f0c6",
+        "f6ee8de0",
+        "f6fbcec8",
+        "fcd8afa3"
+      ],
+      "truthChanges": 3,
+      "hardkasHeldTimeline": [
+        {
+          "observedAt": "2026-10-02T20:40:33.875Z",
+          "block": "f6ee8de0",
+          "via": "chain_accepted",
+          "link": null
+        },
+        {
+          "observedAt": "2026-10-02T20:40:34.969Z",
+          "block": "fcd8afa3",
+          "via": "chain_accepted",
+          "link": "f6ee8de0"
+        }
+      ],
+      "links": [
+        {
+          "observedAt": "2026-10-02T20:40:34.969Z",
+          "removed": "f6ee8de0",
+          "accepting": "fcd8afa3",
+          "linkMatchesHeld": true,
+          "consistentWithTruth": true
+        }
+      ],
+      "removalsRecordedByHardkas": 0,
+      "replacedWhileHeld": [
+        {
+          "at": "2026-10-02T20:40:34.068Z",
+          "from": "f6ee8de0",
+          "to": "f6fbcec8",
+          "hardkasNext": {
+            "observedAt": "2026-10-02T20:40:34.969Z",
+            "type": "chain_accepted",
+            "block": "fcd8afa3",
+            "link": "f6ee8de0"
+          },
+          "followed": true,
+          "removalRecorded": false
+        }
+      ],
+      "atLastLook": {
+        "hardkasHeld": "fcd8afa3",
+        "truthAccepting": "fcd8afa3",
+        "agree": true
+      },
+      "hardkasLastState": "CONFIRMED"
+    },
+    {
+      "index": 2,
+      "txId": "b21ebd334f1477989c40f3a9a05a35e3fceaaf79ab707752c45b6251d5271a16",
+      "truthAcceptingSequence": [
+        "d8068eee",
+        "ed237a67",
+        "f16c35ee",
+        "f8e635bd"
+      ],
+      "truthChanges": 3,
+      "hardkasHeldTimeline": [
+        {
+          "observedAt": "2026-10-02T20:40:49.288Z",
+          "block": "ed237a67",
+          "via": "chain_accepted",
+          "link": null
+        },
+        {
+          "observedAt": "2026-10-02T20:40:50.384Z",
+          "block": "f8e635bd",
+          "via": "chain_accepted",
+          "link": "ed237a67"
+        }
+      ],
+      "links": [
+        {
+          "observedAt": "2026-10-02T20:40:50.384Z",
+          "removed": "ed237a67",
+          "accepting": "f8e635bd",
+          "linkMatchesHeld": true,
+          "consistentWithTruth": true
+        }
+      ],
+      "removalsRecordedByHardkas": 0,
+      "replacedWhileHeld": [
+        {
+          "at": "2026-10-02T20:40:49.737Z",
+          "from": "ed237a67",
+          "to": "f16c35ee",
+          "hardkasNext": {
+            "observedAt": "2026-10-02T20:40:50.384Z",
+            "type": "chain_accepted",
+            "block": "f8e635bd",
+            "link": "ed237a67"
+          },
+          "followed": true,
+          "removalRecorded": false
+        }
+      ],
+      "atLastLook": {
+        "hardkasHeld": "f8e635bd",
+        "truthAccepting": "f8e635bd",
+        "agree": true
+      },
+      "hardkasLastState": "CONFIRMED"
+    },
+    {
+      "index": 3,
+      "txId": "888f87976ab4533e11c32ec97275c9eed95957af0653a7caf7b10e91c5531440",
+      "truthAcceptingSequence": [
+        "b5d19243",
+        "d0f66b87",
+        "f87e9006"
+      ],
+      "truthChanges": 2,
+      "hardkasHeldTimeline": [
+        {
+          "observedAt": "2026-10-02T20:41:05.050Z",
+          "block": "f87e9006",
+          "via": "chain_accepted",
+          "link": null
+        }
+      ],
+      "links": [],
+      "removalsRecordedByHardkas": 0,
+      "replacedWhileHeld": [],
+      "atLastLook": {
+        "hardkasHeld": "f87e9006",
+        "truthAccepting": "f87e9006",
+        "agree": true
+      },
+      "hardkasLastState": "CONFIRMED"
+    },
+    {
+      "index": 4,
+      "txId": "f76e5c58906a780f12789d9a6c19ce93920b86d0103d983047c633308b72c569",
+      "truthAcceptingSequence": [
+        "f0785858",
+        "f835b651"
+      ],
+      "truthChanges": 1,
+      "hardkasHeldTimeline": [
+        {
+          "observedAt": "2026-10-02T20:41:20.055Z",
+          "block": "12e50e41",
+          "via": "chain_accepted",
+          "link": null
+        },
+        {
+          "observedAt": "2026-10-02T20:41:21.188Z",
+          "block": "f835b651",
+          "via": "chain_accepted",
+          "link": "12e50e41"
+        }
+      ],
+      "links": [
+        {
+          "observedAt": "2026-10-02T20:41:21.188Z",
+          "removed": "12e50e41",
+          "accepting": "f835b651",
+          "linkMatchesHeld": true,
+          "consistentWithTruth": false
+        }
+      ],
+      "removalsRecordedByHardkas": 0,
+      "replacedWhileHeld": [],
+      "atLastLook": {
+        "hardkasHeld": "f835b651",
+        "truthAccepting": "f835b651",
+        "agree": true
+      },
+      "hardkasLastState": "CONFIRMED"
+    },
+    {
+      "index": 5,
+      "txId": "6f95126adbfd52dad22e1b2f9d57796c3c7368bacfc8c6478939a596ced5b5e6",
+      "truthAcceptingSequence": [
+        "ff225014"
+      ],
+      "truthChanges": 0,
+      "hardkasHeldTimeline": [
+        {
+          "observedAt": "2026-10-02T20:41:36.411Z",
+          "block": "ff225014",
+          "via": "chain_accepted",
+          "link": null
+        }
+      ],
+      "links": [],
+      "removalsRecordedByHardkas": 0,
+      "replacedWhileHeld": [],
+      "atLastLook": {
+        "hardkasHeld": "ff225014",
+        "truthAccepting": "ff225014",
+        "agree": true
+      },
+      "hardkasLastState": "CONFIRMED"
+    },
+    {
+      "index": 6,
+      "txId": "d163df4fb3ee346aac7efac8c7ac8c0207bde78693791b8bc7e5333bf05454b4",
+      "truthAcceptingSequence": [
+        "ac53250c",
+        "e95a9bad",
+        "f407665b"
+      ],
+      "truthChanges": 2,
+      "hardkasHeldTimeline": [
+        {
+          "observedAt": "2026-10-02T20:41:53.073Z",
+          "block": "d5c2d318",
+          "via": "chain_accepted",
+          "link": null
+        },
+        {
+          "observedAt": "2026-10-02T20:41:54.267Z",
+          "block": "f407665b",
+          "via": "chain_accepted",
+          "link": "d5c2d318"
+        }
+      ],
+      "links": [
+        {
+          "observedAt": "2026-10-02T20:41:54.267Z",
+          "removed": "d5c2d318",
+          "accepting": "f407665b",
+          "linkMatchesHeld": true,
+          "consistentWithTruth": false
+        }
+      ],
+      "removalsRecordedByHardkas": 0,
+      "replacedWhileHeld": [],
+      "atLastLook": {
+        "hardkasHeld": "f407665b",
+        "truthAccepting": "f407665b",
+        "agree": true
+      },
+      "hardkasLastState": "CONFIRMED"
+    },
+    {
+      "index": 7,
+      "txId": "075b63c43b2bbe6ed6757a127127a418c8688ccde8d93c4d81d5b4e020bc91ce",
+      "truthAcceptingSequence": [
+        "fc23ac1e",
+        "fd4d89a0"
+      ],
+      "truthChanges": 1,
+      "hardkasHeldTimeline": [
+        {
+          "observedAt": "2026-10-02T20:42:10.964Z",
+          "block": "fd4d89a0",
+          "via": "chain_accepted",
+          "link": null
+        }
+      ],
+      "links": [],
+      "removalsRecordedByHardkas": 0,
+      "replacedWhileHeld": [],
+      "atLastLook": {
+        "hardkasHeld": "fd4d89a0",
+        "truthAccepting": "fd4d89a0",
+        "agree": true
+      },
+      "hardkasLastState": "CONFIRMED"
+    },
+    {
+      "index": 8,
+      "txId": "88f1cc70a7fe61ab55eb9bd9c0801821ec4b9d6f96c6887a74f9deaf4232337c",
+      "truthAcceptingSequence": [
+        "e93e8e27",
+        "eeefaa25",
+        "f1114685",
+        "f8eff266"
+      ],
+      "truthChanges": 3,
+      "hardkasHeldTimeline": [
+        {
+          "observedAt": "2026-10-02T20:42:25.679Z",
+          "block": "e93e8e27",
+          "via": "chain_accepted",
+          "link": null
+        },
+        {
+          "observedAt": "2026-10-02T20:42:26.923Z",
+          "block": "f8eff266",
+          "via": "chain_accepted",
+          "link": "e93e8e27"
+        }
+      ],
+      "links": [
+        {
+          "observedAt": "2026-10-02T20:42:26.923Z",
+          "removed": "e93e8e27",
+          "accepting": "f8eff266",
+          "linkMatchesHeld": true,
+          "consistentWithTruth": true
+        }
+      ],
+      "removalsRecordedByHardkas": 0,
+      "replacedWhileHeld": [
+        {
+          "at": "2026-10-02T20:42:26.074Z",
+          "from": "e93e8e27",
+          "to": "eeefaa25",
+          "hardkasNext": {
+            "observedAt": "2026-10-02T20:42:26.923Z",
+            "type": "chain_accepted",
+            "block": "f8eff266",
+            "link": "e93e8e27"
+          },
+          "followed": true,
+          "removalRecorded": false
+        }
+      ],
+      "atLastLook": {
+        "hardkasHeld": "f8eff266",
+        "truthAccepting": "f8eff266",
+        "agree": true
+      },
+      "hardkasLastState": "CONFIRMED"
+    },
+    {
+      "index": 9,
+      "txId": "0fc8e5b7fdd581eb68a6cefb5da990beec442ecdf9e6a2a768a48264b58f4ee6",
+      "truthAcceptingSequence": [
+        "f5b9abce",
+        "ff353b4e"
+      ],
+      "truthChanges": 1,
+      "hardkasHeldTimeline": [
+        {
+          "observedAt": "2026-10-02T20:42:42.280Z",
+          "block": "ff353b4e",
+          "via": "chain_accepted",
+          "link": null
+        }
+      ],
+      "links": [],
+      "removalsRecordedByHardkas": 0,
+      "replacedWhileHeld": [],
+      "atLastLook": {
+        "hardkasHeld": "ff353b4e",
+        "truthAccepting": "ff353b4e",
+        "agree": true
+      },
+      "hardkasLastState": "CONFIRMED"
+    },
+    {
+      "index": 10,
+      "txId": "fd96b69e9d94012a53927be768ccdcaa4f1f879e88ca54f348b147b823d3e050",
+      "truthAcceptingSequence": [
+        "27f548a3",
+        "8a3d6c23",
+        "a84f2835"
+      ],
+      "truthChanges": 2,
+      "hardkasHeldTimeline": [
+        {
+          "observedAt": "2026-10-02T20:43:03.305Z",
+          "block": "27f548a3",
+          "via": "chain_accepted",
+          "link": null
+        },
+        {
+          "observedAt": "2026-10-02T20:43:04.549Z",
+          "block": "a84f2835",
+          "via": "chain_accepted",
+          "link": "27f548a3"
+        }
+      ],
+      "links": [
+        {
+          "observedAt": "2026-10-02T20:43:04.549Z",
+          "removed": "27f548a3",
+          "accepting": "a84f2835",
+          "linkMatchesHeld": true,
+          "consistentWithTruth": true
+        }
+      ],
+      "removalsRecordedByHardkas": 0,
+      "replacedWhileHeld": [
+        {
+          "at": "2026-10-02T20:43:03.343Z",
+          "from": "27f548a3",
+          "to": "8a3d6c23",
+          "hardkasNext": {
+            "observedAt": "2026-10-02T20:43:04.549Z",
+            "type": "chain_accepted",
+            "block": "a84f2835",
+            "link": "27f548a3"
+          },
+          "followed": true,
+          "removalRecorded": false
+        }
+      ],
+      "atLastLook": {
+        "hardkasHeld": "a84f2835",
+        "truthAccepting": "a84f2835",
+        "agree": true
+      },
+      "hardkasLastState": "CONFIRMED"
+    },
+    {
+      "index": 11,
+      "txId": "d1ee2fbd5ea9ee8714e16b2ff837f0977f998f7b9fa967788df4f387701f68f9",
+      "truthAcceptingSequence": [
+        "efa5fb35",
+        "fc238d60"
+      ],
+      "truthChanges": 1,
+      "hardkasHeldTimeline": [
+        {
+          "observedAt": "2026-10-02T20:43:25.946Z",
+          "block": "fc238d60",
+          "via": "chain_accepted",
+          "link": null
+        }
+      ],
+      "links": [],
+      "removalsRecordedByHardkas": 0,
+      "replacedWhileHeld": [],
+      "atLastLook": {
+        "hardkasHeld": "fc238d60",
+        "truthAccepting": "fc238d60",
+        "agree": true
+      },
+      "hardkasLastState": "CONFIRMED"
+    },
+    {
+      "index": 12,
+      "txId": "4b786b813fa913bf7d794979afc9648723e9e92e0da73509eff54cc50fe52f32",
+      "truthAcceptingSequence": [
+        "018185fe",
+        "49ff75a8",
+        "6c6d6b50",
+        "c538b41a",
+        "d26f8beb",
+        "e50fb8b4"
+      ],
+      "truthChanges": 5,
+      "hardkasHeldTimeline": [
+        {
+          "observedAt": "2026-10-02T20:43:45.497Z",
+          "block": "49ff75a8",
+          "via": "chain_accepted",
+          "link": null
+        },
+        {
+          "observedAt": "2026-10-02T20:43:46.804Z",
+          "block": "e50fb8b4",
+          "via": "chain_accepted",
+          "link": "49ff75a8"
+        }
+      ],
+      "links": [
+        {
+          "observedAt": "2026-10-02T20:43:46.804Z",
+          "removed": "49ff75a8",
+          "accepting": "e50fb8b4",
+          "linkMatchesHeld": true,
+          "consistentWithTruth": true
+        }
+      ],
+      "removalsRecordedByHardkas": 0,
+      "replacedWhileHeld": [
+        {
+          "at": "2026-10-02T20:43:45.826Z",
+          "from": "49ff75a8",
+          "to": "6c6d6b50",
+          "hardkasNext": {
+            "observedAt": "2026-10-02T20:43:46.804Z",
+            "type": "chain_accepted",
+            "block": "e50fb8b4",
+            "link": "49ff75a8"
+          },
+          "followed": true,
+          "removalRecorded": false
+        }
+      ],
+      "atLastLook": {
+        "hardkasHeld": "e50fb8b4",
+        "truthAccepting": "e50fb8b4",
+        "agree": true
+      },
+      "hardkasLastState": "CONFIRMED"
+    },
+    {
+      "index": 13,
+      "txId": "4d85e59a42936b887de40ab59b5df09865191ccfce3000dc34df9f7a90bd7710",
+      "truthAcceptingSequence": [
+        "4de6b61b",
+        "fc7e0345"
+      ],
+      "truthChanges": 1,
+      "hardkasHeldTimeline": [
+        {
+          "observedAt": "2026-10-02T20:44:07.969Z",
+          "block": "fc7e0345",
+          "via": "chain_accepted",
+          "link": null
+        }
+      ],
+      "links": [],
+      "removalsRecordedByHardkas": 0,
+      "replacedWhileHeld": [],
+      "atLastLook": {
+        "hardkasHeld": "fc7e0345",
+        "truthAccepting": "fc7e0345",
+        "agree": true
+      },
+      "hardkasLastState": "CONFIRMED"
+    },
+    {
+      "index": 14,
+      "txId": "e74a900dc7426e31fde1544c1c71a1771b8b24760cb67a5760d0828dd59f6d87",
+      "truthAcceptingSequence": [
+        "8f4aa822",
+        "ca15b2e0",
+        "d3f2c50d"
+      ],
+      "truthChanges": 2,
+      "hardkasHeldTimeline": [
+        {
+          "observedAt": "2026-10-02T20:44:29.528Z",
+          "block": "d3f2c50d",
+          "via": "chain_accepted",
+          "link": null
+        }
+      ],
+      "links": [],
+      "removalsRecordedByHardkas": 0,
+      "replacedWhileHeld": [],
+      "atLastLook": {
+        "hardkasHeld": "d3f2c50d",
+        "truthAccepting": "d3f2c50d",
+        "agree": true
+      },
+      "hardkasLastState": "CONFIRMED"
+    },
+    {
+      "index": 15,
+      "txId": "c81e0498201b4f8175bbaa3b896bce0144ace7b2c43f3af83c8321d7b06151d5",
+      "truthAcceptingSequence": [
+        "e8c89fe4",
+        "f662dced"
+      ],
+      "truthChanges": 1,
+      "hardkasHeldTimeline": [
+        {
+          "observedAt": "2026-10-02T20:44:51.623Z",
+          "block": "f662dced",
+          "via": "chain_accepted",
+          "link": null
+        }
+      ],
+      "links": [],
+      "removalsRecordedByHardkas": 0,
+      "replacedWhileHeld": [],
+      "atLastLook": {
+        "hardkasHeld": "f662dced",
+        "truthAccepting": "f662dced",
+        "agree": true
+      },
+      "hardkasLastState": "CONFIRMED"
+    },
+    {
+      "index": 16,
+      "txId": "f965ab823be083c51e01a2b017d963bf824f990b1be41e7a26d0529b5a00e819",
+      "truthAcceptingSequence": [
+        "4e8e502b",
+        "c89ae89e",
+        "cae2739c"
+      ],
+      "truthChanges": 2,
+      "hardkasHeldTimeline": [
+        {
+          "observedAt": "2026-10-02T20:45:11.220Z",
+          "block": "c89ae89e",
+          "via": "chain_accepted",
+          "link": null
+        },
+        {
+          "observedAt": "2026-10-02T20:45:12.654Z",
+          "block": "cae2739c",
+          "via": "chain_accepted",
+          "link": "c89ae89e"
+        }
+      ],
+      "links": [
+        {
+          "observedAt": "2026-10-02T20:45:12.654Z",
+          "removed": "c89ae89e",
+          "accepting": "cae2739c",
+          "linkMatchesHeld": true,
+          "consistentWithTruth": true
+        }
+      ],
+      "removalsRecordedByHardkas": 0,
+      "replacedWhileHeld": [
+        {
+          "at": "2026-10-02T20:45:11.464Z",
+          "from": "c89ae89e",
+          "to": "cae2739c",
+          "hardkasNext": {
+            "observedAt": "2026-10-02T20:45:12.654Z",
+            "type": "chain_accepted",
+            "block": "cae2739c",
+            "link": "c89ae89e"
+          },
+          "followed": true,
+          "removalRecorded": false
+        }
+      ],
+      "atLastLook": {
+        "hardkasHeld": "cae2739c",
+        "truthAccepting": "cae2739c",
+        "agree": true
+      },
+      "hardkasLastState": "CONFIRMED"
+    },
+    {
+      "index": 17,
+      "txId": "47c471b852ee743942d784be78b8aa91d511c6902d8b97789367dc1310db979c",
+      "truthAcceptingSequence": [
+        "f49a5f33",
+        "f8fcdc55"
+      ],
+      "truthChanges": 1,
+      "hardkasHeldTimeline": [
+        {
+          "observedAt": "2026-10-02T20:45:35.389Z",
+          "block": "f8fcdc55",
+          "via": "chain_accepted",
+          "link": null
+        }
+      ],
+      "links": [],
+      "removalsRecordedByHardkas": 0,
+      "replacedWhileHeld": [],
+      "atLastLook": {
+        "hardkasHeld": "f8fcdc55",
+        "truthAccepting": "f8fcdc55",
+        "agree": true
+      },
+      "hardkasLastState": "CONFIRMED"
+    },
+    {
+      "index": 18,
+      "txId": "d4648d8fc2df3b3368792e3c4f4f66509d073cb265004ba7d990b9e8a7dc2f7a",
+      "truthAcceptingSequence": [
+        "bce8819d",
+        "ca84e441"
+      ],
+      "truthChanges": 1,
+      "hardkasHeldTimeline": [
+        {
+          "observedAt": "2026-10-02T20:45:57.106Z",
+          "block": "bce8819d",
+          "via": "chain_accepted",
+          "link": null
+        },
+        {
+          "observedAt": "2026-10-02T20:45:58.586Z",
+          "block": "ca84e441",
+          "via": "chain_accepted",
+          "link": "bce8819d"
+        }
+      ],
+      "links": [
+        {
+          "observedAt": "2026-10-02T20:45:58.586Z",
+          "removed": "bce8819d",
+          "accepting": "ca84e441",
+          "linkMatchesHeld": true,
+          "consistentWithTruth": true
+        }
+      ],
+      "removalsRecordedByHardkas": 0,
+      "replacedWhileHeld": [
+        {
+          "at": "2026-10-02T20:45:57.572Z",
+          "from": "bce8819d",
+          "to": "ca84e441",
+          "hardkasNext": {
+            "observedAt": "2026-10-02T20:45:58.586Z",
+            "type": "chain_accepted",
+            "block": "ca84e441",
+            "link": "bce8819d"
+          },
+          "followed": true,
+          "removalRecorded": false
+        }
+      ],
+      "atLastLook": {
+        "hardkasHeld": "ca84e441",
+        "truthAccepting": "ca84e441",
+        "agree": true
+      },
+      "hardkasLastState": "CONFIRMED"
+    },
+    {
+      "index": 19,
+      "txId": "3d1ec6b1da9bb4d7644ce49efec797bb4bce69900b52c77e57431a4e178c3d96",
+      "truthAcceptingSequence": [
+        "8194cd5f",
+        "dc93a776",
+        "dde37967",
+        "f6a414f7"
+      ],
+      "truthChanges": 3,
+      "hardkasHeldTimeline": [
+        {
+          "observedAt": "2026-10-02T20:46:17.854Z",
+          "block": "8194cd5f",
+          "via": "chain_accepted",
+          "link": null
+        },
+        {
+          "observedAt": "2026-10-02T20:46:19.412Z",
+          "block": "f6a414f7",
+          "via": "chain_accepted",
+          "link": "8194cd5f"
+        }
+      ],
+      "links": [
+        {
+          "observedAt": "2026-10-02T20:46:19.412Z",
+          "removed": "8194cd5f",
+          "accepting": "f6a414f7",
+          "linkMatchesHeld": true,
+          "consistentWithTruth": true
+        }
+      ],
+      "removalsRecordedByHardkas": 0,
+      "replacedWhileHeld": [
+        {
+          "at": "2026-10-02T20:46:18.200Z",
+          "from": "8194cd5f",
+          "to": "dc93a776",
+          "hardkasNext": {
+            "observedAt": "2026-10-02T20:46:19.412Z",
+            "type": "chain_accepted",
+            "block": "f6a414f7",
+            "link": "8194cd5f"
+          },
+          "followed": true,
+          "removalRecorded": false
+        }
+      ],
+      "atLastLook": {
+        "hardkasHeld": "f6a414f7",
+        "truthAccepting": "f6a414f7",
+        "agree": true
+      },
+      "hardkasLastState": "CONFIRMED"
+    },
+    {
+      "index": 20,
+      "txId": "d0457acf17a708efb96028499fedc33ab3d26d447d7eeb48d6ae3ba8090e152d",
+      "truthAcceptingSequence": [
+        "2aed41e7",
+        "ba8d8d38",
+        "bdb92816",
+        "d45b1983"
+      ],
+      "truthChanges": 3,
+      "hardkasHeldTimeline": [
+        {
+          "observedAt": "2026-10-02T20:46:40.416Z",
+          "block": "d45b1983",
+          "via": "chain_accepted",
+          "link": null
+        }
+      ],
+      "links": [],
+      "removalsRecordedByHardkas": 0,
+      "replacedWhileHeld": [],
+      "atLastLook": {
+        "hardkasHeld": "d45b1983",
+        "truthAccepting": "d45b1983",
+        "agree": true
+      },
+      "hardkasLastState": "CONFIRMED"
+    }
+  ]
+}

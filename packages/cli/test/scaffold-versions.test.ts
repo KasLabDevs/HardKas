@@ -76,7 +76,6 @@ describe("scaffold-versions — unit", () => {
       dependencies: {
         "@hardkas/sdk": "latest",
         "@hardkas/core": "^0.1.0",
-        "@kaspa/core-lib": "^1.6.5",
         "zod": "^3"
       },
       devDependencies: {
@@ -93,7 +92,6 @@ describe("scaffold-versions — unit", () => {
     coerceHardkasDependencyVersions(pkg);
     expect(pkg.dependencies["@hardkas/sdk"]).toBe(cliVersion);
     expect(pkg.dependencies["@hardkas/core"]).toBe(cliVersion);
-    expect(pkg.dependencies["@kaspa/core-lib"]).toBe("^1.6.5");
     expect(pkg.dependencies["zod"]).toBe("^3");
     expect(pkg.devDependencies["@hardkas/testing"]).toBe(cliVersion);
     expect(pkg.devDependencies["vitest"]).toBe("^2.0.0");
@@ -184,7 +182,15 @@ describe("scaffold-versions — end-to-end via `hardkas init`", () => {
     const b = await readJson(path.join(dirB, "package.json"));
     expect(a.dependencies["@hardkas/sdk"]).toBe(b.dependencies["@hardkas/sdk"]);
     expect(a.devDependencies["@hardkas/testing"]).toBe(b.devDependencies["@hardkas/testing"]);
-    expect(a.dependencies["@kaspa/core-lib"]).toBe(b.dependencies["@kaspa/core-lib"]);
+  });
+
+  it("regression: `hardkas init` does not scaffold @kaspa/core-lib, which nothing in HardKAS uses", { timeout: 20_000 }, async () => {
+    const dir = await tmpDir();
+    runHardkasInit(dir);
+    const pkg = await readJson(path.join(dir, "package.json"));
+    for (const field of ["dependencies", "devDependencies", "peerDependencies", "optionalDependencies"]) {
+      expect(pkg[field]?.["@kaspa/core-lib"], field).toBeUndefined();
+    }
   });
 
   it("regression: `latest` never appears in generated @hardkas/* dep values (bug historically observed on rc.21)", async () => {

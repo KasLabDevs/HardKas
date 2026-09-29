@@ -1,0 +1,1205 @@
+﻿gate-hermetic: HARDKAS_HOME=C:\Users\jrodr\AppData\Local\Temp\hardkas-hermetic-home-773NLY (copy of C:\Users\jrodr\AppData\Local\Temp\hk-v210-gate-home)
+gate-hermetic: DOCKER_HOST=tcp://127.0.0.1:1; preload=C:\Users\jrodr\AppData\Local\Temp\hk-fix2\wt\scripts\hermetic\no-network-preload.cjs
+gate-hermetic: vitest run --coverage.enabled=false --reporter=default --reporter=json --outputFile=C:\Users\jrodr\AppData\Local\Temp\claude\C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo\21f9a2e4-33ac-4300-9366-aff402f85900\scratchpad\cut10-reorged-fix\logs\late-after-gate1.json
+
+ RUN  v2.1.9 C:/Users/jrodr/AppData/Local/Temp/hk-fix2/wt
+
+ ✓ packages/artifacts/test/adversarial/wave2-a-derive-tx-status.test.ts (15 tests) 75ms
+ ✓ packages/tx-builder/test/generator-plan.test.ts (43 tests) 180ms
+ ✓ packages/artifacts/test/adversarial/wave1-3-b1-parent-migrated-forge.test.ts (9 tests) 501ms
+ ✓ packages/testnet-qualification/test/runner.unit.test.ts (8 tests) 81ms
+ ✓ packages/cli/test/demo-cut-t-a14b-tx-status.test.ts (10 tests) 1361ms
+   ✓ Demo-cut · T-A14b · tx status / tx wait present the derived Q4 state > walks SUBMITTED → MEMPOOL_ACCEPTED → ACCEPTED(n) → CONFIRMED(n) → FINALIZED, each equal to sdk.tx.status, nothing asserted beyond it 426ms
+ ✓ packages/artifacts/test/wave6-lineage-cycle-safety.test.ts (17 tests) 9737ms
+   ✓ Wave 6 · LINEAGE-1 · cycle-safe canonical lineage resolver (IC-5′ re-base) > 13. chain exceeding configured depth throws LINEAGE_DEPTH_EXCEEDED 9302ms
+ ✓ packages/cli/test/wave1-3-verify-cli.test.ts (10 tests) 19436ms
+   ✓ Wave 1.3 · hardkas verify / artifact verify / artifact migrate > AUD-07 · artifact verify --json on a broken hash: ok:false, EXIT≠0, ARTIFACT_HASH_MISMATCH; same verdict in human mode 1933ms
+   ✓ Wave 1.3 · hardkas verify / artifact verify / artifact migrate > AUX-03 · artifact verify --json on a valid artifact reports ok:true, EXIT 0 and the authentication scope 963ms
+   ✓ Wave 1.3 · hardkas verify / artifact verify / artifact migrate > AUX-03 · a legacy v4 artifact verifies non-strict with authScope LEGACY and fails under --strict 1929ms
+   ✓ Wave 1.3 · hardkas verify / artifact verify / artifact migrate > AUD-12 · hardkas verify is strict over the workspace: green with only v5 artifacts, red once a legacy artifact is present 2939ms
+   ✓ Wave 1.3 · hardkas verify / artifact verify / artifact migrate > AUX-08 / D-Q20 · hardkas verify <path> verifies that contained path; excess arguments and paths outside the workspace are refused 3832ms
+   ✓ Wave 1.3 · hardkas verify / artifact verify / artifact migrate > AUX-01 · the no-op --deep flag is gone 879ms
+   ✓ Wave 1.3 · hardkas verify / artifact verify / artifact migrate > D-Q1.f · artifact migrate <path> --to 5 re-issues the artifact plus a receipt into the store without touching the source 3656ms
+   ✓ Wave 1.3 · hardkas verify / artifact verify / artifact migrate > review B1 · hardkas verify refuses a forged MigrationReceipt over a ghost parent (PARENT_MISSING, EXIT≠0) 938ms
+   ✓ Wave 1.3 · hardkas verify / artifact verify / artifact migrate > review B1-bis · a v5 child plus a forged receipt does not supersede its legacy root: hardkas verify keeps MIGRATION_REQUIRED, EXIT≠0 1101ms
+   ✓ Wave 1.3 · hardkas verify / artifact verify / artifact migrate > AUD-38 · the repository's valid fixture corpus verifies strict (the check:artifacts gate has something to verify) 1149ms
+ ✓ packages/sdk/test/adversarial/wave2-a-tx-observer.test.ts (7 tests) 966ms
+node.exe : stderr | packages/toolkit/test/wallet-watch-utxocontext.test.ts > Surface Cut 3b · R4: the watch contract 
+on the new engine > a throwing listener does not stop delivery
+En C:\Users\jrodr\AppData\Local\Temp\claude\C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo\21f9a2e4-33ac-4300-
+9366-aff402f85900\scratchpad\cut10-reorged-fix\run-full-wt.ps1: 22 Carácter: 1
++ & node @args_ *> $log
++ ~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (stderr | packag...t stop delivery:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+{"timestamp":"2026-10-02T21:16:46.806Z","level":"error","event":"Wallet watch listener failed","context":{"error":{}}}
+
+ ✓ packages/toolkit/test/wallet-watch-utxocontext.test.ts (13 tests) 22ms
+ ✓ packages/sdk/test/reorged-acceptance-churn.test.ts (6 tests) 1032ms
+stdout | packages/tx-builder/test/determinism.test.ts > P1.12 Deterministic Transaction Canonicalization > Test D: Hardcoded Cross-Platform Hash Fixture & Fixed Metadata Assertions
+[Test D Info] Node Version: v24.15.0
+[Test D Info] OS Platform: win32
+[Test D Info] Canonical Hash version: 3
+[Test D Info] Calculated Canonical Hash: 7aeb49fe1b07d0d8860c2b62cd72f882c550a1642974cbd7b0bedf7cf56d4469
+
+ ✓ packages/tx-builder/test/determinism.test.ts (5 tests) 147ms
+ ✓ packages/artifacts/test/adversarial/wave1-2-resolver.test.ts (11 tests) 364ms
+ ✓ packages/testnet-qualification/test/receipt-redactor.unit.test.ts (16 tests) 144ms
+ ✓ packages/artifacts/test/wave11-resolver-exact-id.test.ts (16 tests) 189ms
+ ✓ packages/simulator/test/ghostdag.test.ts (23 tests) 12ms
+ ✓ packages/artifacts/test/artifact-handle.test.ts (17 tests) 232ms
+ ✓ packages/sdk/test/adversarial/wave1-4-binding.test.ts (10 tests) 764ms
+ ✓ packages/artifacts/test/adversarial/wave2-d-submission-fee.test.ts (9 tests) 27ms
+stdout | packages/sdk/test/lifecycle-trust.test.ts > 0.12.0-rc.26 Lifecycle Integrity & Trust Boundary Tests > 1. Fake policyRefs rehashed must fail verification under strict mode
+TEST 1 DIAGNOSTIC RESULT: {
+  "valid": false,
+  "reason": "reference_hash_mismatch",
+  "message": "Referenced policy 08067ad84ca0eeeab56dda72389db453ba7340ac8d8b9a007376a2b72bc9dca9: 1 candidate(s) for artifact \"08067ad84ca0eeeab56dda72389db453ba7340ac8d8b9a007376a2b72bc9dca9\" do not verify and the lookup fails closed: policy.v1-08067ad84ca0eeeab56dda72389db453ba7340ac8d8b9a007376a2b72bc9dca9.json [ARTIFACT_HASH_MISMATCH]",
+  "artifactId": "13187320d4f91d77b3bbffe871176c1ae907fabcee4000c4ecc7b39451b1bd15",
+  "authScope": "FULL",
+  "unauthenticatedMaterialFields": [],
+  "expected": "13187320d4f91d77b3bbffe871176c1ae907fabcee4000c4ecc7b39451b1bd15",
+  "actual": "13187320d4f91d77b3bbffe871176c1ae907fabcee4000c4ecc7b39451b1bd15",
+  "details": [
+    {
+      "code": "REFERENCE_HASH_MISMATCH",
+      "severity": "error",
+      "message": "Referenced policy 08067ad84ca0eeeab56dda72389db453ba7340ac8d8b9a007376a2b72bc9dca9: 1 candidate(s) for artifact \"08067ad84ca0eeeab56dda72389db453ba7340ac8d8b9a007376a2b72bc9dca9\" do not verify and the lookup fails closed: policy.v1-08067ad84ca0eeeab56dda72389db453ba7340ac8d8b9a007376a2b72bc9dca9.json [ARTIFACT_HASH_MISMATCH]"
+    }
+  ]
+}
+
+ ✓ packages/sdk/test/lifecycle-trust.test.ts (9 tests) 454ms
+ ✓ packages/core/test/silverscript-runner.test.ts (14 tests) 2146ms
+   ✓ runSilverVmTests (stand-in runner) > takes the runner's exit status as the verdict, one process per test 392ms
+   ✓ runSilverVmTests (stand-in runner) > treats a silent success, a timeout and a runner that does not start as errors, never verdicts 1659ms
+ ✓ packages/kaspa-rpc/test/upstream.test.ts (19 tests) 1282ms
+   ✓ upstream session: connection, errors and timeouts > a connection that never opens times out as a connection error 1036ms
+ ✓ packages/sdk/test/adversarial/wave1-3-producers.test.ts (6 tests) 545ms
+ ✓ packages/sdk/test/multisig-adversarial.test.ts (9 tests | 1 skipped) 11586ms
+   ✓ Multisig Adversarial Suite > Case 1 & 4: Should support threshold 2 of 3 and reject append on signed 332ms
+   ✓ Multisig Adversarial Suite > Case 6: Random signature order order-invariance check (100 iterations) 10879ms
+stderr | packages/cli/test/wave2-b-planner-convergence.test.ts > Wave 2(b) · canonical planner in the CLI (AUD-17) and 
+explicit change (AUD-28) > T-A17a · a real network plans through the upstream Generator (KASPA_WASM_GENERATOR) with 
+the CLI read guards intact
+DEPRECATED: 'defaultNetwork: "simulated"' is deprecated. Please migrate to the explicit 'execution' contract in 
+HardkasConfig.
+DEPRECATED: 'defaultNetwork: "simulated"' is deprecated. Please migrate to the explicit 'execution' contract in 
+HardkasConfig.
+
+stderr | packages/cli/test/wave2-b-planner-convergence.test.ts > Wave 2(b) · canonical planner in the CLI (AUD-17) and 
+explicit change (AUD-28) > T-A17b · the same intention through the CLI and the SDK yields the same inputs, fee and mass
+DEPRECATED: 'defaultNetwork: "simulated"' is deprecated. Please migrate to the explicit 'execution' contract in 
+HardkasConfig.
+
+stderr | packages/cli/test/wave2-b-planner-convergence.test.ts > Wave 2(b) · canonical planner in the CLI (AUD-17) and 
+explicit change (AUD-28) > T-A28 · an explicit change destination reaches the plan through the CLI (real and 
+simulator), the SDK and the toolkit
+DEPRECATED: 'defaultNetwork: "simulated"' is deprecated. Please migrate to the explicit 'execution' contract in 
+HardkasConfig.
+
+ ✓ packages/cli/test/wave2-b-planner-convergence.test.ts (4 tests) 459ms
+ ✓ packages/artifacts/test/wave10-receipt-lookup.test.ts (12 tests) 333ms
+ ✓ packages/artifacts/test/adversarial/wave1-3-migration.test.ts (11 tests) 31ms
+ ✓ packages/sdk/test/wave1-def1c-canonical-identity.test.ts (8 tests) 2783ms
+   ✓ DEF-1c · canonical receipt identity is one across runtime/persistence/return > SDK-returned receipt.contentHash equals persisted receipt.contentHash on disk 2252ms
+ ✓ packages/artifacts/test/wave1-h-persistence-failure.test.ts (3 tests) 35ms
+ ✓ packages/artifacts/test/adversarial/wave1-2-references.test.ts (11 tests) 196ms
+ ✓ packages/sdk/test/adversarial/wave2-d-send-fee.test.ts (6 tests) 368ms
+ ✓ packages/artifacts/test/adversarial/wave1-1-canonical-v5.test.ts (12 tests) 21ms
+stderr | packages/cli/test/wave2-c-pending-spend.test.ts > Wave 2(c) · AUD-19 · pending-spend exclusion with mempool 
+evidence > T-A19 · with a mempool transaction spending outpoint A, the CLI plan never selects A and records the 
+evidence it filtered against
+DEPRECATED: 'defaultNetwork: "simulated"' is deprecated. Please migrate to the explicit 'execution' contract in 
+HardkasConfig.
+
+stderr | packages/cli/test/wave2-c-pending-spend.test.ts > Wave 2(c) · AUD-19 · pending-spend exclusion with mempool 
+evidence > T-A19 · a mempool transaction merely PAYING the sender excludes nothing
+DEPRECATED: 'defaultNetwork: "simulated"' is deprecated. Please migrate to the explicit 'execution' contract in 
+HardkasConfig.
+
+stderr | packages/cli/test/wave2-c-pending-spend.test.ts > Wave 2(c) · AUD-19 · pending-spend exclusion with mempool 
+evidence > T-A19 · the SDK applies the same exclusion and refusal; CLI ≡ SDK under the same mempool
+DEPRECATED: 'defaultNetwork: "simulated"' is deprecated. Please migrate to the explicit 'execution' contract in 
+HardkasConfig.
+
+ ✓ packages/cli/test/wave2-c-pending-spend.test.ts (7 tests) 370ms
+ ✓ packages/testnet-qualification/test/submission-guard.unit.test.ts (12 tests) 12ms
+ ✓ packages/artifacts/test/adversarial/wave1-3-domain-digest.test.ts (11 tests) 451ms
+ ✓ packages/testnet-qualification/test/receipt.unit.test.ts (18 tests) 59ms
+ ✓ packages/query/test/phase6-query.test.ts (14 tests) 34ms
+stderr | packages/cli/test/demo-ready-e02-live-dag-planning.test.ts > Demo-ready · E02 · planning on a live DAG is 
+UTXO-scoped > A · the DAG advances several times while one plan is built; inputs intact, mempool clean ⇒ the plan is 
+valid
+DEPRECATED: 'defaultNetwork: "simulated"' is deprecated. Please migrate to the explicit 'execution' contract in 
+HardkasConfig.
+
+stderr | packages/cli/test/demo-ready-e02-live-dag-planning.test.ts > Demo-ready · E02 · planning on a live DAG is 
+UTXO-scoped > control · no block arrives while planning ⇒ one attempt, identical fingerprints, same evidence shape
+DEPRECATED: 'defaultNetwork: "simulated"' is deprecated. Please migrate to the explicit 'execution' contract in 
+HardkasConfig.
+
+stderr | packages/cli/test/demo-ready-e02-live-dag-planning.test.ts > Demo-ready · E02 · planning on a live DAG is 
+UTXO-scoped > B · an input spent between selection and re-validation makes the attempt retry; the retry plans on what 
+is still unspent
+DEPRECATED: 'defaultNetwork: "simulated"' is deprecated. Please migrate to the explicit 'execution' contract in 
+HardkasConfig.
+
+stderr | packages/cli/test/demo-ready-e02-live-dag-planning.test.ts > Demo-ready · E02 · planning on a live DAG is 
+UTXO-scoped > C · once the observed mempool shows the input being spent, the retry excludes it through the 
+pending-spend evidence
+DEPRECATED: 'defaultNetwork: "simulated"' is deprecated. Please migrate to the explicit 'execution' contract in 
+HardkasConfig.
+
+ ✓ packages/cli/test/demo-ready-e02-live-dag-planning.test.ts (6 tests) 475ms
+ ✓ packages/cli/test/scaffold-versions.test.ts (12 tests) 12632ms
+   ✓ scaffold-versions — end-to-end via `hardkas init` > generated package.json for `hardkas init` pins @hardkas/* to the CLI's exact version 2603ms
+   ✓ scaffold-versions — end-to-end via `hardkas init` > scaffold output HardKAS dep set is deterministic across runs on the same CLI 3924ms
+   ✓ scaffold-versions — end-to-end via `hardkas init` > regression: `hardkas init` does not scaffold @kaspa/core-lib, which nothing in HardKAS uses 1908ms
+   ✓ scaffold-versions — end-to-end via `hardkas init` > regression: `latest` never appears in generated @hardkas/* dep values (bug historically observed on rc.21) 1927ms
+   ✓ scaffold-versions — post-publish coherence property > `CLI release X -> hardkas init -> generated @hardkas/* deps === X` 2184ms
+ ✓ packages/localnet/test/wave1-3-domain-digests.test.ts (8 tests) 196ms
+ ✓ packages/core/test/wave3-def15-fund-recipient-semantics.test.ts (23 tests) 9ms
+ ✓ packages/cli/test/l2-smoke.test.ts (13 tests) 56ms
+ ✓ packages/dev-server/test/escrow-fail-closed.test.ts (10 tests) 1137ms
+   ✓ escrow routes fail closed > create never returns a fabricated redeem script 405ms
+   ✓ escrow routes fail closed > sign finds the signer by its x-only key, and still refuses a draft that does not rebuild to its id 496ms
+ ✓ packages/sdk/test/adversarial/wave1-2-sdk-identity.test.ts (6 tests) 537ms
+ ✓ packages/cli/test/e39-toolchain-bootstrap.test.ts (9 tests) 7104ms
+   ✓ E39 · hardkas init and the pinned kaspa-wasm > reuses a verified install of the pin and says so 1178ms
+   ✓ E39 · hardkas init and the pinned kaspa-wasm > with --skip-toolchain on an empty home, creates the project and says what is missing and how to install it 916ms
+   ✓ E39 · hardkas init and the pinned kaspa-wasm > stops with an error that names the retry command when the install fails, after creating the project 921ms
+   ✓ E39 · hardkas init and the pinned kaspa-wasm > --json reports the toolchain step 921ms
+   ✓ E39 · hardkas init and the pinned kaspa-wasm > accounts real generate without the pinned SDK names WASM_TOOLCHAIN_NOT_INSTALLED and the install command 2939ms
+ ✓ packages/testnet-qualification/test/remote-node.unit.test.ts (12 tests) 13ms
+stdout | packages/cli/test/wave1-3-cli-helpers.test.ts > Wave 1.3 · artifact create writes no identity copy (IC-7.3) > the created artifact has a deterministic contentHash as its only identity
+{
+  "type": "test-type",
+  "schemaValid": true,
+  "payload": {
+    "key": "value",
+    "b": 2,
+    "a": 1
+  },
+  "createdAt": 1790975884196,
+  "hashVersion": 5,
+  "contentHash": "c34b27e42fb5c703d9cd97dd77e24e771369725f5584c3f6da5183c7640a655d"
+}
+
+stdout | packages/cli/test/wave1-3-cli-helpers.test.ts > Wave 1.3 · artifact create writes no identity copy (IC-7.3) > the created artifact has a deterministic contentHash as its only identity
+{
+  "type": "test-type",
+  "schemaValid": true,
+  "payload": {
+    "key": "value",
+    "b": 2,
+    "a": 1
+  },
+  "createdAt": 1790975884199,
+  "hashVersion": 5,
+  "contentHash": "c34b27e42fb5c703d9cd97dd77e24e771369725f5584c3f6da5183c7640a655d"
+}
+
+ ✓ packages/cli/test/wave1-3-cli-helpers.test.ts (9 tests) 21ms
+ ↓ packages/cli/test/workflow-corpus.test.ts (5 tests | 5 skipped)
+ ✓ packages/sdk/test/wave7-replay-mode-guard.test.ts (5 tests) 243ms
+ ✓ packages/cli/test/wave8-single-envelope.test.ts (6 tests) 5650ms
+   ✓ Wave 8 · DEF-18 · single authoritative failure envelope (replay verify) > REPLAY_MODE_UNSUPPORTED · stdout parses as exactly one JSON document 969ms
+   ✓ Wave 8 · DEF-18 · single authoritative failure envelope (replay verify) > REPLAY_MODE_UNSUPPORTED · exit code is non-zero 936ms
+   ✓ Wave 8 · DEF-18 · single authoritative failure envelope (replay verify) > ARTIFACT_INPUT_IS_DIRECTORY · stdout parses as exactly one JSON document 907ms
+   ✓ Wave 8 · DEF-18 · single authoritative failure envelope (replay verify) > human-mode typed failure · no JSON document on stdout · one presentation 979ms
+   ✓ Wave 8 · DEF-18 · single authoritative failure envelope (replay verify) > stream ownership · JSON failure envelope on stdout only 933ms
+   ✓ Wave 8 · DEF-18 · single authoritative failure envelope (replay verify) > missing artifact · single envelope with typed code, not UNKNOWN_ERROR 914ms
+ ✓ packages/query-store/test/wave1-2-n2-collision.test.ts (5 tests) 226ms
+ ✓ packages/testnet-qualification/test/daa-observer.unit.test.ts (10 tests) 11ms
+ ✓ packages/artifacts/test/adversarial/wave1-1-producers-immutability.test.ts (6 tests) 35ms
+ ✓ packages/tx-builder/test/mass-upstream.test.ts (9 tests) 115ms
+
+  ⚠️  [SECURITY WARNING] Plaintext private keys detected in legacy account store for: alice
+     Location: C:\Users\jrodr\AppData\Local\Temp\hk-def13-MpAz8D\.hardkas\accounts.real.json
+     Recommendation: Re-import these accounts using encrypted keystores.
+
+stderr | packages/accounts/test/wave0-def13-transactional-import.test.ts > DEF-13 · on-disk store is byte-unchanged on 
+failed second import > collision on a persisted store leaves the file byte-identical
+
+  ⚠️  [SECURITY WARNING] Plaintext private keys detected in legacy account store for: alice
+     Location: C:\Users\jrodr\AppData\Local\Temp\hk-def13-dqYkZl\.hardkas\accounts.real.json
+     Recommendation: Re-import these accounts using encrypted keystores.
+
+
+ ✓ packages/accounts/test/wave0-def13-transactional-import.test.ts (7 tests) 525ms
+ ✓ packages/tx-builder/test/utxo-context-reconnect.test.ts (6 tests) 8ms
+ ✓ packages/artifacts/test/corruption.test.ts (13 tests) 112ms
+stderr | packages/accounts/test/wave0-sec1-secret-boundary.test.ts > SEC-1 · loadRealAccountStoreSync automatically 
+attaches redactors > accounts loaded from disk are self-redacting in console output
+
+  ⚠️  [SECURITY WARNING] Plaintext private keys detected in legacy account store for: alice
+     Location: C:\Users\jrodr\AppData\Local\Temp\hk-sec1-OYvlJn\.hardkas\accounts.real.json
+     Recommendation: Re-import these accounts using encrypted keystores.
+
+
+ ✓ packages/accounts/test/wave0-sec1-secret-boundary.test.ts (11 tests) 19ms
+ ✓ packages/testnet-qualification/test/funding-input.unit.test.ts (13 tests) 11ms
+ ✓ packages/artifacts/test/adversarial/wave1-1-hash-version-gate.test.ts (7 tests) 31ms
+ ✓ packages/artifacts/test/adversarial/wave1-3-verify-fail-closed.test.ts (9 tests) 15ms
+ ✓ packages/cli/test/wave5-discovery-delegation.test.ts (7 tests) 6458ms
+   ✓ Wave 5 · DEF-17 · CLI discovery delegation > hardkas why <artifactId> resolves a receipt nested under receipts/ 949ms
+   ✓ Wave 5 · DEF-17 · CLI discovery delegation > hardkas why <path> resolves a receipt by direct path 911ms
+   ✓ Wave 5 · DEF-17 · CLI discovery delegation > hardkas why <partial-artifactId> is rejected (contract tightening) 937ms
+   ✓ Wave 5 · DEF-17 · CLI discovery delegation > hardkas why --tx <txId> resolves the receipt, never the signed (IC-5′.2) 924ms
+   ✓ Wave 5 · DEF-17 · CLI discovery delegation > hardkas explain <artifactId> resolves a signed nested under signed/ 905ms
+   ✓ Wave 5 · DEF-17 · CLI discovery delegation > hardkas explain <path> resolves by direct path 891ms
+   ✓ Wave 5 · DEF-17 · CLI discovery delegation > hardkas replay verify <directory> is rejected with a typed error 929ms
+ ✓ packages/core/test/toolchains.test.ts (12 tests | 1 skipped) 169ms
+ ✓ packages/sdk/test/hardening.test.ts (6 tests) 196ms
+ ✓ packages/cli/test/wave2-e-send-outcome.test.ts (6 tests) 6705ms
+   ✓ Wave 2(e) · AUX-11 · tx send outcomes are unambiguous > T-AUX11 · shortcut mode without --yes on a non-simulated network: NOT executed, exit 3, nothing written, nothing that reads as success 1019ms
+   ✓ Wave 2(e) · AUX-11 · tx send outcomes are unambiguous > T-AUX11 · the same refusal is machine-readable in --json: ok:false, outcome:not_executed, the code, exit 3 993ms
+   ✓ Wave 2(e) · AUX-11 · tx send outcomes are unambiguous > T-AUX11 · signed-artifact mode without --yes on a non-simulated network is refused the same way, before any RPC 969ms
+   ✓ Wave 2(e) · AUX-11 · tx send outcomes are unambiguous > control · a simulated shortcut send really runs and is `submitted`: ok:true, outcome:submitted, a receipt, exit 0 1172ms
+   ✓ Wave 2(e) · AUX-11 · tx send outcomes are unambiguous > control · the same send in human mode names the receipt it wrote (no 'unknown' artifact behind a success line) 1402ms
+   ✓ Wave 2(e) · AUX-11 · tx send outcomes are unambiguous > T-AUX11 · a shortcut send whose flow fails before broadcasting is `failed`: ok:false, outcome:failed, exit 1, never submitted 1123ms
+ ✓ packages/cli/test/rpc-commands.test.ts (10 tests) 20ms
+ ✓ packages/tx-builder/test/kaspa-wallet-adapter.test.ts (9 tests) 106ms
+ ✓ packages/query/test/dag-adapter.test.ts (10 tests) 27ms
+ ✓ packages/cli/test/wave7-replay-mode-guard.test.ts (3 tests) 2290ms
+   ✓ Wave 7 · REPLAY-MODE-1 · CLI mode guard > hardkas replay verify <realNodeReceiptId> reports REPLAY_MODE_UNSUPPORTED 1143ms
+   ✓ Wave 7 · REPLAY-MODE-1 · CLI mode guard > code is NEVER collapsed into UNKNOWN_ERROR 1133ms
+ ✓ packages/core/test/silverscript.test.ts (10 tests) 40ms
+ ✓ packages/artifacts/test/lineage.test.ts (11 tests) 7ms
+stderr | packages/node-runner/test/docker-kaspad-runner.test.ts > DockerKaspadRunner > fails without Docker unless a 
+simulated node is explicitly allowed
+[DockerKaspadRunner] Docker unavailable (daemon not running). SIMULATED node runner explicitly allowed 
+(allowSimulatedFallback / HARDKAS_ALLOW_SIMULATED_NODE=1): this is not a real node.
+
+ ✓ packages/node-runner/test/docker-kaspad-runner.test.ts (10 tests) 61ms
+ ✓ packages/core/test/silverscript-abi.test.ts (36 tests) 192ms
+ ✓ packages/pskt-native/test/bridge.test.ts (15 tests) 35ms
+ ✓ packages/cli/test/demo-cut-t-a14b-no-false-claims.test.ts (6 tests) 10932ms
+   ✓ Demo-cut · T-A14b · what the built CLI prints for tx status, tx wait and explain > tx status <network txId> --no-observe: SUBMITTED from the recorded submission, with the policy and no claims 3059ms
+   ✓ Demo-cut · T-A14b · what the built CLI prints for tx status, tx wait and explain > tx status <synthetic txId>: SYNTHETIC_EXECUTED; tx wait on it says there is no network and exits 0 3066ms
+   ✓ Demo-cut · T-A14b · what the built CLI prints for tx status, tx wait and explain > tx wait rejects an unknown target with a usage error 1175ms
+   ✓ Demo-cut · T-A14b · what the built CLI prints for tx status, tx wait and explain > tx status <path> keeps the signature-coverage view 1590ms
+   ✓ Demo-cut · T-A14b · what the built CLI prints for tx status, tx wait and explain > explain on the network submission derives its state and makes no consensus claim 1746ms
+ ✓ packages/sdk/test/migration.test.ts (5 tests) 42ms
+ ✓ packages/artifacts/test/adversarial/wave1-4-synthetic-authorization.test.ts (5 tests) 285ms
+ ✓ packages/sdk/test/pskt-adapter.test.ts (8 tests) 8ms
+ ✓ packages/sdk/test/zk-vprogs-0-9-1.test.ts (9 tests) 248ms
+ ✓ packages/kaspa-rpc/test/full-coverage.test.ts (14 tests) 15ms
+ ✓ packages/accounts/test/wave4-def27-deterministic-identity.test.ts (6 tests) 4934ms
+   ✓ Wave 4 · DEF-27 · deterministic identity invariant > ensureDevAccounts provisions all five identities under the workspace 1698ms
+   ✓ Wave 4 · DEF-27 · deterministic identity invariant > advertised === derived === keystore for every identity (private key never exposed) 3135ms
+ ✓ packages/cli/test/l2-tx-runners.test.ts (5 tests) 44ms
+stderr | packages/sdk/test/audit-hardening.test.ts > Audit Hardening Suite (0.12.0-rc.26) > P1.1: Localnet State 
+Naming Compatibility > should migrate localnet-state.json to localnet.json
+[HardKAS] Migrated legacy localnet-state.json to localnet.json. The old file was kept for compatibility.
+
+ ✓ packages/sdk/test/audit-hardening.test.ts (7 tests | 1 skipped) 85ms
+ ✓ packages/testing/test/wave0-def14-fixture-identity.test.ts (17 tests) 1074ms
+   ✓ DEF-14 · HardkasFixtureSigner — bounded fixture identities > fixture addresses are deterministic across fresh Node processes 931ms
+ ✓ packages/artifacts/test/canonical-enumeration.test.ts (4 tests) 97ms
+ ✓ packages/testnet-qualification/test/retry.unit.test.ts (13 tests) 11ms
+ ✓ packages/dev-server/test/wave1-5-narratives.test.ts (5 tests) 469ms
+ ✓ packages/sdk/test/adversarial/wave1-3-b2-workflow-rejected-send.test.ts (3 tests) 592ms
+ ✓ packages/tx-builder/test/wave13-changeaddr.test.ts (7 tests) 126ms
+stdout | packages/toolkit/test/toolkit.test.ts > @hardkas/toolkit V1 > JobsToolkit > should initialize and enqueue jobs
+{"timestamp":"2026-10-02T21:19:30.436Z","level":"info","event":"Job enqueued","context":{"id":"909a2080-b29d-49b6-aa6c-0c05b771b857","type":"test-job"}}
+{"timestamp":"2026-10-02T21:19:30.442Z","level":"info","event":"Job completed","context":{"id":"909a2080-b29d-49b6-aa6c-0c05b771b857","type":"test-job"}}
+
+ ✓ packages/toolkit/test/toolkit.test.ts (8 tests) 521ms
+ ✓ packages/query/test/replay-adapter.test.ts (7 tests) 130ms
+ ✓ packages/artifacts/test/v2-artifacts.test.ts (8 tests) 25ms
+ ✓ packages/accounts/test/keystore.test.ts (10 tests) 7651ms
+   ✓ KeystoreManager > should encrypt and decrypt a payload correctly 866ms
+   ✓ KeystoreManager > should fail with wrong password 802ms
+   ✓ KeystoreManager > should fail with corrupted ciphertext 777ms
+   ✓ KeystoreManager > should fail with corrupted auth tag 698ms
+   ✓ KeystoreManager > should produce different ciphertext for same payload/password (unique salt/nonce) 803ms
+   ✓ KeystoreManager > should support password change 1997ms
+   ✓ KeystoreManager > should not contain private key in plaintext in the keystore JSON 426ms
+   ✓ KeystoreManager > should support loading and saving from filesystem 846ms
+   ✓ KeystoreManager > should reject unsupported version 398ms
+stderr | packages/cli/test/pskt-cli.test.ts > hardkas pskt CLI flow > Capabilities and Gating > fails with 
+PSKT_OPERATION_UNSUPPORTED when using default adapter
+runHardkas failed for args: export --plan plan.json --out sess.json --adapter kaspa-wasm-local --json
+stdout: {
+  "ok": false,
+  "code": "PSKT_OPERATION_UNSUPPORTED",
+  "message": "WASM runtime does not support PSKT export",
+  "mode": "cli"
+}
+
+stderr: 
+
+stderr | packages/cli/test/pskt-cli.test.ts > hardkas pskt CLI flow > End-to-End Fake Flow > refuses to overwrite 
+without --force
+runHardkas failed for args: extract session-finalized.json --out tx.json --json
+stdout: {
+  "ok": false,
+  "code": "INVALID_ARGUMENT",
+  "message": "Output file already exists: tx.json. Use --force to overwrite.",
+  "mode": "cli"
+}
+
+stderr: 
+
+ ✓ packages/cli/test/pskt-cli.test.ts (13 tests) 55105ms
+   ✓ hardkas pskt CLI flow > Capabilities and Gating > reports unsupported capabilities for kaspa-wasm-local 4204ms
+   ✓ hardkas pskt CLI flow > Capabilities and Gating > fails with PSKT_OPERATION_UNSUPPORTED when using default adapter 3863ms
+   ✓ hardkas pskt CLI flow > Capabilities and Gating > reports supported capabilities for test-fake-adapter 5530ms
+   ✓ hardkas pskt CLI flow > End-to-End Fake Flow > exports a session 3078ms
+   ✓ hardkas pskt CLI flow > End-to-End Fake Flow > inspects the exported session 3184ms
+   ✓ hardkas pskt CLI flow > End-to-End Fake Flow > verifies the exported session 3238ms
+   ✓ hardkas pskt CLI flow > End-to-End Fake Flow > signs the session 8773ms
+   ✓ hardkas pskt CLI flow > End-to-End Fake Flow > creates a conflicting signature session-2 3041ms
+   ✓ hardkas pskt CLI flow > End-to-End Fake Flow > merges session-1 and session-2 6236ms
+   ✓ hardkas pskt CLI flow > End-to-End Fake Flow > finalizes the merged session 2816ms
+   ✓ hardkas pskt CLI flow > End-to-End Fake Flow > extracts the Kaspa transaction 3298ms
+   ✓ hardkas pskt CLI flow > End-to-End Fake Flow > refuses to overwrite without --force 4775ms
+   ✓ hardkas pskt CLI flow > End-to-End Fake Flow > overwrites with --force 3063ms
+ ✓ packages/query-store/test/corruption.test.ts (6 tests) 293ms
+ ✓ packages/sdk/test/adversarial/demo-cut-e04-simulator-identity.test.ts (6 tests) 701ms
+ ✓ packages/cli/test/l2-tx-send.test.ts (7 tests) 39ms
+ ✓ packages/query-store/test/rebuild-equivalence.test.ts (4 tests) 2224ms
+   ✓ Query Store Rebuild Equivalence > should be idempotent: sync twice produces same index state 1288ms
+   ✓ Query Store Rebuild Equivalence > should detect additions and deletions during sync 622ms
+ ✓ packages/artifacts/test/wave1-evidence-integrity.test.ts (6 tests) 15ms
+ ✓ packages/cli/test/json-contract.test.ts (5 tests) 32679ms
+   ✓ CLI JSON Contract > tx plan --json produces strict parsable JSON with no stdout pollution 8690ms
+   ✓ CLI JSON Contract > doctor --json produces strict parsable JSON with no stdout pollution 6183ms
+   ✓ CLI JSON Contract > verify --json produces strict parsable JSON 4903ms
+   ✓ CLI JSON Contract > rebuild --json produces strict parsable JSON 6034ms
+   ✓ CLI JSON Contract > capabilities --json produces strict parsable JSON 6868ms
+ ✓ packages/core/test/lock.test.ts (9 tests) 1047ms
+   ✓ HardKAS Lock System > should wait for a lock if wait=true 357ms
+   ✓ HardKAS Lock System > should timeout if lock is not released 625ms
+ ✓ packages/sdk/test/pskt.test.ts (6 tests) 10ms
+ ✓ packages/localnet/test/property.test.ts (4 tests) 1204ms
+   ✓ Localnet Property Tests (fast-check) > should conserve total supply: sum(utxos) + fees == initial_sum 749ms
+   ✓ Localnet Property Tests (fast-check) > should be deterministic: same sequence produces same finalStateHash 425ms
+ ✓ packages/artifacts/test/tx-plan-artifact.test.ts (4 tests) 10ms
+ ✓ packages/cli/test/query-store-security.test.ts (14 tests) 49488ms
+   ✓ Phase 8: Query Store Security > 1. SELECT succeeds by default 2828ms
+   ✓ Phase 8: Query Store Security > 2. WITH SELECT succeeds by default 3632ms
+   ✓ Phase 8: Query Store Security > 3. INSERT blocked by default 3291ms
+   ✓ Phase 8: Query Store Security > 4. UPDATE blocked by default 2863ms
+   ✓ Phase 8: Query Store Security > 5. DELETE blocked by default 2805ms
+   ✓ Phase 8: Query Store Security > 6. DROP blocked by default 2691ms
+   ✓ Phase 8: Query Store Security > 7. CREATE/ALTER blocked by default 3931ms
+   ✓ Phase 8: Query Store Security > 8. VACUUM/PRAGMA mutating blocked by default 2642ms
+   ✓ Phase 8: Query Store Security > 9. Multiple statement attack blocked 3805ms
+   ✓ Phase 8: Query Store Security > 10. Comment-obfuscated mutation blocked 4239ms
+   ✓ Phase 8: Query Store Security > 11. Mutation with only --unsafe-write fails 4802ms
+   ✓ Phase 8: Query Store Security > 12. Mutation with only --yes fails 2691ms
+   ✓ Phase 8: Query Store Security > 13. Mutation with both flags succeeds only in explicit unsafe command path 6351ms
+   ✓ Phase 8: Query Store Security > 14. query store rebuild still works 2914ms
+ ✓ packages/sdk/test/adversarial/first-contact-e01-sign-persists-plan.test.ts (7 tests) 703ms
+ ✓ packages/sdk/test/adversarial/wave1-1-writer-n3.test.ts (4 tests) 332ms
+ ✓ packages/query/test/explain.test.ts (8 tests) 12ms
+ ✓ packages/accounts/test/signer.test.ts (6 tests) 9ms
+ ✓ packages/l2/test/evm-rpc-client.test.ts (10 tests | 1 skipped) 13ms
+ ✓ packages/testing/test/main-entry-without-vitest.test.ts (3 tests) 2008ms
+   ✓ @hardkas/testing: vitest stays an optional peer > the main entry's runtime graph never imports vitest 1184ms
+   ✓ @hardkas/testing: vitest stays an optional peer > the walk does see vitest where it is loaded: ./setup and ./scenarios 821ms
+ ✓ packages/cli/test/wave9-ci-envelope.test.ts (4 tests) 11558ms
+   ✓ Wave 9 · DEF-18 · CI single authoritative failure envelope > human mode · CI_VERIFY_FAILED · typed diagnostic visible · non-zero exit 3978ms
+   ✓ Wave 9 · DEF-18 · CI single authoritative failure envelope > human mode · exit code is non-zero (typed HardkasCliError.exitCode preserved) 3962ms
+   ✓ Wave 9 · DEF-18 · CI single authoritative failure envelope > stdout is not corrupted with envelope duplication (no `{ok:` string) 3607ms
+ ✓ packages/l2/test/viem-igra-signer.test.ts (7 tests) 10ms
+ ✓ packages/artifacts/test/store-path-safety.test.ts (10 tests) 84ms
+  ✔ Tracked deployment: test-reentrancy-deployment (simnet)
+  ✔ Tracked deployment: test-reentrancy-deployment (simnet)
+  ✔ Tracked deployment: test-reentrancy-deployment-fail (simnet)
+  ✔ Tracked deployment: test-reentrancy-deployment-other (simnet)
+  ✔ Tracked deployment: test-reentrancy-deployment-persist (simnet)
+ ✓ packages/cli/test/deployment-locking.test.ts (6 tests) 80ms
+ ✓ packages/core/test/abuse-multiprocess.test.ts (2 tests) 222ms
+ ✓ packages/artifacts/test/adversarial/wave1-1-recompute-declared-version.test.ts (3 tests) 225ms
+ ✓ packages/artifacts/test/adversarial/first-contact-e07-producers.test.ts (7 tests) 26ms
+ ✓ packages/tx-builder/test/planner-dispatch.test.ts (5 tests) 122ms
+ ✓ packages/sessions/test/store.test.ts (7 tests) 397ms
+ ✓ packages/cli/test/execution-guard-runners.test.ts (2 tests) 529ms
+ ✓ packages/accounts/test/accounts.test.ts (12 tests) 16ms
+ ✓ packages/artifacts/test/invariants.test.ts (5 tests) 9ms
+ ✓ packages/core/test/events.test.ts (6 tests) 10ms
+ ✓ packages/artifacts/test/store-root-resolution.test.ts (4 tests) 74ms
+ ✓ packages/query-store/test/indexer_v2.test.ts (3 tests) 3716ms
+   ✓ HardkasIndexer Integrity > should index events idempotently (no duplicates) 628ms
+   ✓ HardkasIndexer Integrity > raw_json should store the full EventEnvelope 1290ms
+   ✓ HardkasIndexer Integrity > should derive traces from workflow events 1797ms
+ ✓ packages/localnet/test/ghostdag-dag.test.ts (5 tests) 8ms
+  ℹ HardKAS: Encrypted keystore is for local developer workflows, not institutional custody.
+  ℹ Do not import mainnet keys unless you fully understand the risks.
+
+  ⚠️  WARNING:
+     LEGACY MODE: Storing private keys in plaintext is unsafe and discouraged.
+stderr | packages/cli/test/account-hardening.test.ts > Account Hardening & Security Guards > should allow unsafe 
+plaintext import with explicit flag
+
+  ⚠️  [SECURITY WARNING] Plaintext private keys detected in legacy account store for: bob
+     Location: C:\Users\jrodr\AppData\Local\Temp\account-hardening-test-O9qc9r\.hardkas\accounts.real.json
+     Recommendation: Re-import these accounts using encrypted keystores.
+
+
+
+  ⚠️  WARNING:
+     CRITICAL: You are signing a transaction for MAINNET.
+  ℹ HardKAS is developer infrastructure, not production custody software.
+  ℹ Do not use high-value mainnet keys in this environment.
+
+  ⚠️  WARNING:
+     CRITICAL: You are signing a transaction for MAINNET.
+  ℹ HardKAS is developer infrastructure, not production custody software.
+  ℹ Do not use high-value mainnet keys in this environment.
+ ✓ packages/cli/test/account-hardening.test.ts (4 tests) 569ms
+   ✓ Account Hardening & Security Guards > should import an account as encrypted by default and set 0600 permissions 545ms
+ ✓ packages/artifacts/test/tx-status-reacceptance.test.ts (4 tests) 21ms
+ ✓ packages/query/test/payment-tracker.test.ts (6 tests) 7ms
+ ✓ packages/localnet/test/simulation-correctness.test.ts (6 tests) 149ms
+ ✓ packages/core/test/money.test.ts (16 tests) 12ms
+ ✓ packages/sdk/test/multisig.test.ts (2 tests) 371ms
+ ✓ packages/kaspa-rpc/test/surface-cut-subscriptions.test.ts (4 tests) 4ms
+ ✓ packages/cli/test/semantic-validation.test.ts (7 tests) 11ms
+ ✓ packages/artifacts/test/fee-correctness.test.ts (6 tests) 136ms
+ ✓ packages/artifacts/test/adversarial/wave1-3-identity-categories.test.ts (4 tests) 11ms
+ ✓ packages/cli/test/demo-cut-aud21-no-secrets-in-json.test.ts (4 tests) 9410ms
+   ✓ Demo-cut · AUD-21 · no secret in JSON output > generate --unsafe-plaintext --json: the stored private key appears nowhere in stdout or stderr 1714ms
+   ✓ Demo-cut · AUD-21 · no secret in JSON output > Demo-ready · the human output of generate --unsafe-plaintext masks the key too (stdout and stderr) 1711ms
+   ✓ Demo-cut · AUD-21 · no secret in JSON output > the same key never leaks through `accounts list --json` either 4050ms
+   ✓ Demo-cut · AUD-21 · no secret in JSON output > an encrypted account reports its keystore, and no key material at all 1932ms
+ ✓ packages/testing/test/replay.test.ts (4 tests) 151ms
+ ✓ packages/testing/test/demo-ready-aud01-packaging.test.ts (4 tests) 6ms
+ ✓ packages/kaspa-rpc/test/storage-mass.test.ts (8 tests) 11ms
+ ✓ packages/cli/test/wave1-2-next-steps.test.ts (4 tests) 270ms
+ ✓ packages/cli/test/replay-divergence.test.ts (4 tests) 16208ms
+   ✓ Adversarial Validation (Corpus Stress) > should detect hash mismatch in artifacts 2599ms
+   ✓ Adversarial Validation (Corpus Stress) > should detect circular lineage 3724ms
+   ✓ Adversarial Validation (Corpus Stress) > should detect cross-network parentage 6439ms
+   ✓ Adversarial Validation (Corpus Stress) > should handle malformed JSONL gracefully 3444ms
+ ✓ packages/query/test/filter.test.ts (15 tests) 8ms
+ ✓ packages/testing/test/golden-corpus.test.ts (12 tests) 18ms
+ ✓ packages/query/test/wave1-3-legacy-status.test.ts (2 tests) 22ms
+ ✓ packages/artifacts/test/integrity-hardening.test.ts (6 tests) 29ms
+ ✓ packages/query-store/test/first-contact-e07-indexer-scope.test.ts (2 tests) 158ms
+ ✓ packages/cli/test/l2-contract-deploy.test.ts (5 tests) 49ms
+ ✓ packages/core/test/fs-atomic.test.ts (7 tests) 95ms
+ ✓ packages/cli/test/wave1-5-narratives-cli.test.ts (3 tests) 7475ms
+   ✓ Wave 1.5 · AUD-14 · CLI narratives report only computed results (simulator) > T-A14a · `explain` of a simulated receipt: computed identity check, replay stated as not run, nothing 'successful' 1217ms
+   ✓ Wave 1.5 · AUD-14 · CLI narratives report only computed results (simulator) > T-A14a · `tx send` in the simulator prints the computed outcome and no replay id or replay verdict 2700ms
+   ✓ Wave 1.5 · AUD-14 · CLI narratives report only computed results (simulator) > T-A14a · manipulated chain: a tampered receipt is refused by `explain` (verified lookup) and nothing is called successful 2623ms
+ ✓ packages/sdk/test/workflow-contract.test.ts (4 tests) 270ms
+stdout | packages/dev-server/test/security.test.ts > Dev Server Security Hardening > Authentication and Host Checks > Test 1 — GET without token rejected (401)
+<-- GET /api/health
+--> GET /api/health 401 6ms
+
+stdout | packages/dev-server/test/security.test.ts > Dev Server Security Hardening > Authentication and Host Checks > Test 2 — GET with wrong token rejected (401)
+<-- GET /api/health
+--> GET /api/health 401 1ms
+
+stdout | packages/dev-server/test/security.test.ts > Dev Server Security Hardening > Authentication and Host Checks > Test 3 — GET with correct token accepted (200)
+<-- GET /api/health
+
+stdout | packages/dev-server/test/security.test.ts > Dev Server Security Hardening > Authentication and Host Checks > Test 3 — GET with correct token accepted (200)
+--> GET /api/health 200 65ms
+
+stdout | packages/dev-server/test/security.test.ts > Dev Server Security Hardening > Authentication and Host Checks > Test 4 — POST with token but missing CSRF header rejected (403)
+<-- POST /api/transactions
+--> POST /api/transactions 403 0ms
+
+stdout | packages/dev-server/test/security.test.ts > Dev Server Security Hardening > Authentication and Host Checks > Test 5 — POST with token + CSRF header accepted or reaches route validation (not 401/403)
+<-- POST /api/transactions
+
+stdout | packages/dev-server/test/security.test.ts > Dev Server Security Hardening > Authentication and Host Checks > Test 5 — POST with token + CSRF header accepted or reaches route validation (not 401/403)
+--> POST /api/transactions 404 12ms
+
+stdout | packages/dev-server/test/security.test.ts > Dev Server Security Hardening > Authentication and Host Checks > Test 6 — hostile Origin rejected (blocked / no CORS approval)
+<-- GET /api/health
+--> GET /api/health 403 0ms
+
+stdout | packages/dev-server/test/security.test.ts > Dev Server Security Hardening > Authentication and Host Checks > Test 7 — DNS rebinding Host rejected (403)
+<-- GET /api/health
+--> GET /api/health 403 0ms
+
+stdout | packages/dev-server/test/security.test.ts > Dev Server Security Hardening > Unsafe External Security Configuration > Test 8 — unsafe-external still requires token (401)
+<-- GET /api/health
+--> GET /api/health 401 0ms
+
+ ✓ packages/dev-server/test/security.test.ts (8 tests) 106ms
+stdout | packages/sdk/test/tamper-detection.test.ts > SDK Tamper Detection & Forensic Regression > should reject tampered signedTx during verify, simulate, and send
+TAMPER RESULT: {
+  "valid": false,
+  "reason": "content_hash_mismatch",
+  "message": "Hash mismatch: expected 1afe888522b385262c9b611306265b02740b0dc091221dbbceda66328d57fabc, got 543c4aa6b2234350c4093e7b623792a0b5125134580a18f98f89f282082326d5, signedId signed-1afe888522b38526 does not derive from the artifact's content hash",
+  "artifactId": "1afe888522b385262c9b611306265b02740b0dc091221dbbceda66328d57fabc",
+  "authScope": "FULL",
+  "unauthenticatedMaterialFields": [],
+  "expected": "1afe888522b385262c9b611306265b02740b0dc091221dbbceda66328d57fabc",
+  "actual": "543c4aa6b2234350c4093e7b623792a0b5125134580a18f98f89f282082326d5",
+  "details": [
+    {
+      "code": "ARTIFACT_HASH_MISMATCH",
+      "severity": "error",
+      "message": "Hash mismatch: expected 1afe888522b385262c9b611306265b02740b0dc091221dbbceda66328d57fabc, got 543c4aa6b2234350c4093e7b623792a0b5125134580a18f98f89f282082326d5"
+    },
+    {
+      "code": "LABEL_MISMATCH",
+      "severity": "error",
+      "message": "signedId signed-1afe888522b38526 does not derive from the artifact's content hash"
+    }
+  ]
+}
+
+stderr | packages/sdk/test/tamper-detection.test.ts > SDK Tamper Detection & Forensic Regression > should pass 
+forensic regression test for forensic-Tamper-Detection-1780477460463.json
+Forensic dump not found, skipping specific regression test.
+
+ ✓ packages/sdk/test/tamper-detection.test.ts (4 tests) 298ms
+ ✓ packages/sdk/test/metadata-propagation.test.ts (2 tests) 254ms
+stderr | packages/config/test/config.test.ts > config > resolveExecutionTarget should use defaultNetwork if no network 
+is passed
+DEPRECATED: 'defaultNetwork: "devnet"' is deprecated. Please migrate to the explicit 'execution' contract in 
+HardkasConfig.
+
+ ✓ packages/config/test/config.test.ts (8 tests) 342ms
+ ✓ packages/l2/test/registry.test.ts (11 tests) 10ms
+ ✓ packages/artifacts/test/property.test.ts (7 tests) 205ms
+ ✓ packages/localnet/test/wave1-2-localnet-identity.test.ts (2 tests) 64ms
+stdout | packages/dev-server/test/server.test.ts > Dev Server > API Endpoints > returns health status
+<-- GET /api/health
+
+stdout | packages/dev-server/test/server.test.ts > Dev Server > API Endpoints > returns health status
+--> GET /api/health 200 96ms
+
+stdout | packages/dev-server/test/server.test.ts > Dev Server > API Endpoints > returns active session (null if none)
+<-- GET /api/session
+--> GET /api/session 200 2ms
+
+stdout | packages/dev-server/test/server.test.ts > Dev Server > API Endpoints > does not expose secrets in health response
+<-- GET /api/health
+
+stdout | packages/dev-server/test/server.test.ts > Dev Server > API Endpoints > does not expose secrets in health response
+--> GET /api/health 200 5ms
+
+ ✓ packages/dev-server/test/server.test.ts (12 tests) 122ms
+ ✓ packages/testing/test/backward-compat.test.ts (2 tests) 73ms
+ ✓ packages/tx-builder/test/mass.test.ts (8 tests) 300ms
+ ✓ packages/accounts/test/kaspa-sdk-real-signer.test.ts (4 tests) 10ms
+ ✓ packages/query/test/wallet-query.test.ts (7 tests) 6ms
+ ✓ packages/sdk/test/workflow-determinism.test.ts (5 tests) 490ms
+ ✓ packages/query-store/test/migrations.test.ts (7 tests) 13ms
+stdout | packages/toolkit/test/snapshot.test.ts > SnapshotToolkit (Time Travel) > should save, mutate, and restore state
+{"timestamp":"2026-10-02T21:24:21.380Z","level":"info","event":"Job enqueued","context":{"id":"658b9a8b-6a9d-47fc-83df-1193ea42146b","type":"payment"}}
+
+stdout | packages/toolkit/test/snapshot.test.ts > SnapshotToolkit (Time Travel) > should save, mutate, and restore state
+{"timestamp":"2026-10-02T21:24:21.394Z","level":"info","event":"Job enqueued","context":{"id":"5536b236-068d-4689-9852-858d0fac340d","type":"payment"}}
+
+stdout | packages/toolkit/test/snapshot.test.ts > SnapshotToolkit (Time Travel) > should handle partial restore failures gracefully
+{"timestamp":"2026-10-02T21:24:21.413Z","level":"info","event":"Job enqueued","context":{"id":"2533ad20-514c-4ede-a89f-6e93bf940998","type":"payment"}}
+
+stdout | packages/toolkit/test/snapshot.test.ts > SnapshotToolkit (Time Travel) > should fail if participant is missing on restore
+{"timestamp":"2026-10-02T21:24:21.516Z","level":"info","event":"Job enqueued","context":{"id":"6b0532ea-0de0-434a-a8bf-fa3fcb66f2eb","type":"payment"}}
+
+stdout | packages/toolkit/test/snapshot.test.ts > SnapshotToolkit (Time Travel) > should generate deterministic diffs and valid filesystem manifests
+{"timestamp":"2026-10-02T21:24:21.530Z","level":"info","event":"Job enqueued","context":{"id":"d2be48e1-a9c0-49f0-aa1a-cbc0fe2db28c","type":"payment"}}
+
+stdout | packages/toolkit/test/snapshot.test.ts > SnapshotToolkit (Time Travel) > should generate deterministic diffs and valid filesystem manifests
+{"timestamp":"2026-10-02T21:24:21.536Z","level":"info","event":"Job enqueued","context":{"id":"5e88ad7a-4ddd-458d-ac5b-4ecf635f2e45","type":"payment"}}
+
+ ✓ packages/toolkit/test/snapshot.test.ts (4 tests) 178ms
+ ✓ packages/artifacts/test/igra-artifacts.test.ts (7 tests) 6ms
+ ✓ packages/localnet/test/transactions.test.ts (4 tests) 118ms
+ ✓ packages/query/test/engine.test.ts (5 tests) 10ms
+ ✓ packages/kaspa-rpc/test/resilience-refined.test.ts (4 tests) 23ms
+stderr | packages/cli/test/e2e-simulated.test.ts > E2E Simulated Happy Path > should fail if insufficient funds
+[runTxFlow catch] Error: Insufficient funds: upstream Generator could not build a transaction for 1000000000 sompi 
+total. (Insufficient funds)
+    at refusal (C:\Users\jrodr\AppData\Local\Temp\hk-fix2\wt\packages\tx-builder\src\generator-plan.ts:205:17)
+    at planWithGenerator 
+(C:\Users\jrodr\AppData\Local\Temp\hk-fix2\wt\packages\tx-builder\src\generator-plan.ts:153:11)
+    at Module.planPaymentWithGenerator 
+(C:\Users\jrodr\AppData\Local\Temp\hk-fix2\wt\packages\tx-builder\src\generator-plan.ts:248:19)
+    at TxPlanService.planPayment 
+(C:\Users\jrodr\AppData\Local\Temp\hk-fix2\wt\packages\tx-builder\src\service.ts:200:18)
+    at Module.runTxPlan 
+(C:\Users\jrodr\AppData\Local\Temp\hk-fix2\wt\packages\cli\src\runners\tx-plan-runner.ts:236:18)
+    at Module.runTxFlow (C:\Users\jrodr\AppData\Local\Temp\hk-fix2\wt\packages\cli\src\runners\tx-flow.ts:213:26)
+    at C:\Users\jrodr\AppData\Local\Temp\hk-fix2\wt\packages\cli\test\e2e-simulated.test.ts:118:20
+    at file:///C:/Users/jrodr/AppData/Local/Temp/hk-fix2/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vites
+t/runner/dist/index.js:533:5
+    at runTest (file:///C:/Users/jrodr/AppData/Local/Temp/hk-fix2/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modul
+es/@vitest/runner/dist/index.js:1056:11)
+    at runSuite (file:///C:/Users/jrodr/AppData/Local/Temp/hk-fix2/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modu
+les/@vitest/runner/dist/index.js:1205:15)
+    at runSuite (file:///C:/Users/jrodr/AppData/Local/Temp/hk-fix2/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modu
+les/@vitest/runner/dist/index.js:1205:15)
+    at runFiles (file:///C:/Users/jrodr/AppData/Local/Temp/hk-fix2/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modu
+les/@vitest/runner/dist/index.js:1262:5)
+    at startTests (file:///C:/Users/jrodr/AppData/Local/Temp/hk-fix2/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_mo
+dules/@vitest/runner/dist/index.js:1271:3)
+    at file:///C:/Users/jrodr/AppData/Local/Temp/hk-fix2/wt/node_modules/.pnpm/vitest@2.1.9_@types+node@22.20.1_jsdom@2
+9.1.1_@noble+hashes@2.2.0__lightningcss@1.32.0_terser@5.51.2/node_modules/vitest/dist/chunks/runBaseTests.3qpJUEJM.js:1
+26:11
+    at withEnv (file:///C:/Users/jrodr/AppData/Local/Temp/hk-fix2/wt/node_modules/.pnpm/vitest@2.1.9_@types+node@22.20.
+1_jsdom@29.1.1_@noble+hashes@2.2.0__lightningcss@1.32.0_terser@5.51.2/node_modules/vitest/dist/chunks/runBaseTests.3qpJ
+UEJM.js:90:5)
+    at run (file:///C:/Users/jrodr/AppData/Local/Temp/hk-fix2/wt/node_modules/.pnpm/vitest@2.1.9_@types+node@22.20.1_js
+dom@29.1.1_@noble+hashes@2.2.0__lightningcss@1.32.0_terser@5.51.2/node_modules/vitest/dist/chunks/runBaseTests.3qpJUEJM
+.js:112:3)
+    at runBaseTests (file:///C:/Users/jrodr/AppData/Local/Temp/hk-fix2/wt/node_modules/.pnpm/vitest@2.1.9_@types+node@2
+2.20.1_jsdom@29.1.1_@noble+hashes@2.2.0__lightningcss@1.32.0_terser@5.51.2/node_modules/vitest/dist/chunks/base.BZZh4cS
+m.js:29:3)
+    at ForksBaseWorker.executeTests (file:///C:/Users/jrodr/AppData/Local/Temp/hk-fix2/wt/node_modules/.pnpm/vitest@2.1
+.9_@types+node@22.20.1_jsdom@29.1.1_@noble+hashes@2.2.0__lightningcss@1.32.0_terser@5.51.2/node_modules/vitest/dist/wor
+kers/forks.js:27:7)
+    at execute (file:///C:/Users/jrodr/AppData/Local/Temp/hk-fix2/wt/node_modules/.pnpm/vitest@2.1.9_@types+node@22.20.
+1_jsdom@29.1.1_@noble+hashes@2.2.0__lightningcss@1.32.0_terser@5.51.2/node_modules/vitest/dist/worker.js:127:5)
+    at onMessage (file:///C:/Users/jrodr/AppData/Local/Temp/hk-fix2/wt/node_modules/.pnpm/tinypool@1.1.1/node_modules/t
+inypool/dist/entry/process.js:39:18) {
+  code: 'INSUFFICIENT_FUNDS_UPSTREAM'
+}
+
+ ✓ packages/cli/test/e2e-simulated.test.ts (2 tests) 2594ms
+   ✓ E2E Simulated Happy Path > should complete a full plan -> sign -> send flow 2545ms
+ ✓ packages/testing/test/gate-subpath-exports.test.ts (6 tests) 14ms
+ ↓ packages/dev-server/test/escrow-resolution-matrix.test.ts (3 tests | 3 skipped)
+ ✓ packages/cli/test/tx-simulated.test.ts (2 tests | 1 skipped) 5601ms
+   ✓ Simnet Transaction Backend Mismatch Regression > should fail with NETWORK_ACCOUNT_MISMATCH when provider rpc is forced on simnet 5596ms
+ ✓ packages/artifacts/test/payment-receipts.test.ts (6 tests) 8ms
+ ✓ packages/kaspa-rpc/test/node-info.test.ts (4 tests) 6ms
+ ✓ packages/toolkit/test/query-api.test.ts (5 tests) 6ms
+ ✓ packages/localnet/test/wave1-1-snapshot-identity.test.ts (3 tests) 11ms
+ ✓ packages/sessions/test/validation.test.ts (6 tests) 29ms
+stderr | packages/sdk/test/v1-sign.test.ts > P84: V1 Sign Blocking > should attempt to sign version 1 plans with WASM 
+v2.x
+DEPRECATED: 'defaultNetwork: "simulated"' is deprecated. Please migrate to the explicit 'execution' contract in 
+HardkasConfig.
+
+ ✓ packages/sdk/test/v1-sign.test.ts (2 tests) 151ms
+ ✓ packages/localnet/test/snapshot-hashing.test.ts (7 tests) 36ms
+ ✓ packages/core/test/node-identity.test.ts (9 tests) 8ms
+ ✓ packages/cli/test/demo-ready-e20-account-names.test.ts (4 tests) 10813ms
+   ✓ Demo-ready · E20 · real account names > --name ana creates exactly `ana` when one account is requested 1268ms
+   ✓ Demo-ready · E20 · real account names > --count 2 --name ben still numbers them: ben1, ben2 1802ms
+   ✓ Demo-ready · E20 · real account names > a taken name is refused and the existing plaintext account is left untouched 3783ms
+   ✓ Demo-ready · E20 · real account names > a taken name in encrypted mode is refused before the existing keystore is touched 3958ms
+ ✓ packages/localnet/test/snapshot-determinism.test.ts (1 test) 118ms
+ ✓ packages/accounts/test/wallet-manager.test.ts (7 tests) 138ms
+ ✓ packages/cli/test/help-truth.test.ts (4 tests) 5ms
+ ✓ packages/tx-builder/test/kaspa-uri.test.ts (12 tests) 7ms
+ ✓ packages/kaspa-rpc/test/health.test.ts (5 tests) 32ms
+ ✓ packages/localnet/test/dag.test.ts (4 tests) 10ms
+ ✓ packages/sdk/test/wave1-mode-inheritance.test.ts (6 tests) 5ms
+ ✓ packages/query/test/format.test.ts (6 tests) 11ms
+ ✓ packages/config/test/resolve-intent.test.ts (8 tests) 9ms
+ ✓ packages/localnet/test/persistent-state.test.ts (6 tests) 74ms
+ ✓ packages/sdk/test/workspace-isolation.test.ts (2 tests) 60ms
+ ✓ packages/localnet/test/dag-simulation.test.ts (2 tests) 9ms
+ ✓ packages/artifacts/test/real-tx-artifact.test.ts (7 tests) 10ms
+ ✓ packages/cli/test/chaos-runner.test.ts (4 tests) 12ms
+ ✓ packages/wallet-adapter/test/adapter.test.ts (7 tests) 11ms
+ ✓ packages/sdk/test/mempool-aware-planning.test.ts (1 test) 130ms
+ ✓ packages/cli/test/l2-bridge.test.ts (4 tests) 46ms
+
+  ✗ Error:
+    Deployment 'dup' already exists on network 'simnet'.
+ ✓ packages/cli/test/deploy.test.ts (6 tests) 41821ms
+   ✓ Deployment tracking > tracks a deployment with label and network 3423ms
+   ✓ Deployment tracking > lists tracked deployments 12054ms
+   ✓ Deployment tracking > inspects a specific deployment 6233ms
+   ✓ Deployment tracking > deployment has valid content hash 7919ms
+   ✓ Deployment tracking > refuses duplicate label on same network 6313ms
+   ✓ Deployment tracking > same label allowed on different networks 5878ms
+ ✓ packages/artifacts/test/hardening.test.ts (4 tests) 9ms
+ ✓ packages/sdk/test/node-api.test.ts (7 tests) 68ms
+ ↓ packages/dev-server/test/escrow-simnet-e2e.test.ts (1 test | 1 skipped)
+ ✓ packages/cli/test/root-commands.test.ts (5 tests) 9330ms
+   ✓ Root Operational Commands > hardkas doctor --json emits parseable deterministic JSON 3809ms
+   ✓ Root Operational Commands > workflow run resolves implicit name and emits JSON 1477ms
+   ✓ Root Operational Commands > hardkas rebuild --from-artifacts --json returns success on empty workspace 1308ms
+   ✓ Root Operational Commands > hardkas rebuild without --from-artifacts fails with usage error 1373ms
+   ✓ Root Operational Commands > hardkas verify --json validates the workspace 1354ms
+ ✓ packages/localnet/test/receipts.test.ts (4 tests) 55ms
+ ✓ packages/artifacts/test/adversarial.test.ts (3 tests) 10ms
+ ✓ packages/cli/test/first-contact-newcomer.test.ts (3 tests) 13079ms
+   ✓ First contact · the documented first steps work as published > docs/start/quickstart.md · SDK Workflow runs verbatim and prints the simulation receipt 1489ms
+   ✓ First contact · the documented first steps work as published > README.md · 30 Second SDK Example runs verbatim and prints the receipt txId 1681ms
+   ✓ First contact · the documented first steps work as published > `hardkas init .` then its generated test passes under vitest in the new project, balance check included 9908ms
+ ✓ packages/simulator/test/scenarios.test.ts (10 tests) 26ms
+ ✓ packages/core/test/confirmation-policy.test.ts (8 tests) 6ms
+ ✓ packages/cli/test/toolchain-archive.test.ts (4 tests) 20ms
+ ✓ packages/sdk/test/policy.test.ts (3 tests) 44ms
+ ✓ packages/dev-server/test/dapp-api.test.ts (4 tests) 18ms
+ ✓ packages/cli/test/accounts-real-query.test.ts (3 tests) 7ms
+ ✓ packages/kaspa-rpc/test/resilience.test.ts (8 tests) 7ms
+ ✓ packages/artifacts/test/golden.test.ts (5 tests) 11ms
+ ✓ packages/simulator/test/differential.test.ts (3 tests) 9ms
+ ✓ packages/artifacts/test/hash-integrity.test.ts (4 tests) 12ms
+stderr | packages/plugin-rpc-backend/test/resilience.test.ts > Resilience Engine > should retry up to maxRetries on 
+failure
+{"timestamp":"2026-10-02T21:26:39.341Z","level":"error","event":"RPC max retries 
+exhausted","context":{"attempt":2,"maxRetries":2,"error":"Network fault"}}
+
+stderr | packages/plugin-rpc-backend/test/resilience.test.ts > Resilience Engine > should not retry on 
+HardkasRpcSemanticError
+{"timestamp":"2026-10-02T21:26:39.344Z","level":"error","event":"RPC semantic error (fatal)","context":{"error":"UTXO 
+index not enabled"}}
+
+stderr | packages/plugin-rpc-backend/test/resilience.test.ts > Resilience Engine > should enforce timeouts and throw 
+HardkasRpcTimeoutError
+{"timestamp":"2026-10-02T21:26:39.409Z","level":"warn","event":"RPC operation timeout","context":{"attempt":0}}
+
+stderr | packages/plugin-rpc-backend/test/resilience.test.ts > Resilience Engine > should enforce timeouts and throw 
+HardkasRpcTimeoutError
+{"timestamp":"2026-10-02T21:26:39.502Z","level":"warn","event":"RPC operation timeout","context":{"attempt":1}}
+{"timestamp":"2026-10-02T21:26:39.502Z","level":"error","event":"RPC max retries 
+exhausted","context":{"attempt":1,"maxRetries":1,"error":"Operation timed out after 50ms"}}
+
+stdout | packages/plugin-rpc-backend/test/resilience.test.ts > Resilience Engine > should attempt reconnect if provided and a network fault occurs
+{"timestamp":"2026-10-02T21:26:39.503Z","level":"info","event":"RPC reconnected successfully"}
+
+ ✓ packages/plugin-rpc-backend/test/resilience.test.ts (5 tests) 270ms
+stderr | packages/plugin-rpc-backend/test/resilience.test.ts > Resilience Engine > should attempt reconnect if 
+provided and a network fault occurs
+{"timestamp":"2026-10-02T21:26:39.533Z","level":"error","event":"RPC max retries 
+exhausted","context":{"attempt":1,"maxRetries":1,"error":"Socket closed"}}
+
+(node:21932) [DEP0190] DeprecationWarning: Passing args to a child process with shell option true can lead to security 
+vulnerabilities, as the arguments are not escaped, only concatenated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+stderr | packages/cli/test/private-key-deprecation.test.ts > Private Key Deprecation > should print a loud warning 
+when using --private-key as an argument
+DEBUG STDOUT: ✓ Successfully imported account 'test-dep-1790976403772' (UNSAFE PLAINTEXT)
+
+DEBUG STDERR: 
+  ⚠️  WARNING:
+     LEGACY MODE: Storing private keys in plaintext is unsafe and discouraged.
+
+  ⚠️  SECURITY WARNING [PRIVATE_KEY_ARG_DEPRECATED]:
+     --private-key may be recorded in shell history, process lists, CI logs, or terminal scrollback.
+
+  💡 Suggestion:
+     Use --private-key-stdin or --private-key-env instead.
+
+
+
+ ✓ packages/cli/test/private-key-deprecation.test.ts (4 tests) 15229ms
+   ✓ Private Key Deprecation > should show deprecation warning in help text 3747ms
+   ✓ Private Key Deprecation > should print a loud warning when using --private-key as an argument 3691ms
+   ✓ Private Key Deprecation > should include machine-readable warning in JSON output 3666ms
+   ✓ Private Key Deprecation > should NOT show warning when using interactive input (simulated via empty call failing) 4123ms
+ ✓ packages/sdk/test/pending-spends.test.ts (2 tests) 294ms
+ ✓ packages/kaspa-rpc/test/json-rpc-client.test.ts (4 tests) 9ms
+ ✓ packages/artifacts/test/signed-tx-artifact.test.ts (5 tests) 15ms
+ ✓ packages/testing/test/harness.test.ts (11 tests) 129ms
+ ↓ packages/dev-server/test/escrow-idempotency.test.ts (4 tests | 4 skipped)
+ ✓ packages/bridge-local/test/bridge.test.ts (5 tests) 32ms
+ ✓ packages/cli/test/first-contact-e03-tasks.test.ts (2 tests) 7366ms
+   ✓ First contact · E03 · custom tasks run as the guide shows > `hardkas task hello --name bob --json` returns the task output and a record that verifies 3676ms
+   ✓ First contact · E03 · custom tasks run as the guide shows > `--evidence` packs the run and `hardkas evidence verify` accepts the package 3688ms
+ ✓ packages/tx-builder/test/qf005-fee-floor-oracle.test.ts (2 tests) 132ms
+ ✓ packages/localnet/test/wave1-trace-lineage-schema.test.ts (2 tests) 22ms
+stdout | packages/dev-server/test/observability.test.ts > Dev Server Observability API Endpoints > GET /api/status returns valid schema
+<-- GET /api/status
+
+stdout | packages/dev-server/test/observability.test.ts > Dev Server Observability API Endpoints > GET /api/status returns valid schema
+--> GET /api/status 200 45ms
+
+stdout | packages/dev-server/test/observability.test.ts > Dev Server Observability API Endpoints > GET /api/lineage returns valid schema
+<-- GET /api/lineage
+
+stdout | packages/dev-server/test/observability.test.ts > Dev Server Observability API Endpoints > GET /api/lineage returns valid schema
+--> GET /api/lineage 200 10ms
+
+stdout | packages/dev-server/test/observability.test.ts > Dev Server Observability API Endpoints > GET /api/quarantine returns valid schema
+<-- GET /api/quarantine
+
+stdout | packages/dev-server/test/observability.test.ts > Dev Server Observability API Endpoints > GET /api/quarantine returns valid schema
+--> GET /api/quarantine 200 5ms
+
+stdout | packages/dev-server/test/observability.test.ts > Dev Server Observability API Endpoints > GET /api/telemetry returns valid schema
+<-- GET /api/telemetry
+
+stdout | packages/dev-server/test/observability.test.ts > Dev Server Observability API Endpoints > GET /api/telemetry returns valid schema
+--> GET /api/telemetry 200 6ms
+
+stdout | packages/dev-server/test/observability.test.ts > Dev Server Observability API Endpoints > GET /api/replay returns valid schema
+<-- GET /api/replay
+
+stdout | packages/dev-server/test/observability.test.ts > Dev Server Observability API Endpoints > GET /api/replay returns valid schema
+--> GET /api/replay 200 6ms
+
+stdout | packages/dev-server/test/observability.test.ts > Dev Server Observability API Endpoints > GET /api/bundles returns valid schema
+<-- GET /api/bundles
+
+stdout | packages/dev-server/test/observability.test.ts > Dev Server Observability API Endpoints > GET /api/bundles returns valid schema
+--> GET /api/bundles 200 4ms
+
+stdout | packages/dev-server/test/observability.test.ts > Dev Server Observability API Endpoints > GET /api/dashboard-health returns valid schema
+<-- GET /api/dashboard-health
+
+stdout | packages/dev-server/test/observability.test.ts > Dev Server Observability API Endpoints > GET /api/dashboard-health returns valid schema
+--> GET /api/dashboard-health 200 8ms
+
+ ✓ packages/dev-server/test/observability.test.ts (7 tests) 110ms
+ ✓ packages/testing/test/historical-artifacts.test.ts (5 tests) 100ms
+ ✓ packages/cli/test/cli-semantics.test.ts (4 tests) 6963ms
+   ✓ CLI Semantic Constraints > fails deterministically on unknown flags with exit code 2 and no raw stack trace 1313ms
+   ✓ CLI Semantic Constraints > JSON stdout is strictly valid and without ANSI escapes 1490ms
+   ✓ CLI Semantic Constraints > respects workspace flag independently of CWD 2271ms
+   ✓ CLI Semantic Constraints > errors in JSON mode go strictly to stderr 1885ms
+ ✓ packages/core/test/append-tail-safety.test.ts (3 tests) 18ms
+ ✓ packages/accounts/test/address-manager.test.ts (6 tests) 108ms
+ ✓ packages/localnet/test/replay-invariants.test.ts (3 tests) 117ms
+ ✓ packages/escrow/test/create-escrow-fail-closed.test.ts (4 tests) 11ms
+ ✓ packages/accounts/test/authorizers.test.ts (2 tests) 6ms
+ ✓ packages/tx-builder/test/verify.test.ts (5 tests) 110ms
+ ✓ packages/core/test/network-params.test.ts (6 tests) 18ms
+ ↓ packages/cli/test/localnet-fund-race.test.ts (1 test | 1 skipped)
+stdout | packages/dev-server/test/watcher.test.ts > Watcher Fallback & Polling Contract > should start chokidar with native fs events by default
+📡 [Watcher] Monitoring C:\Users\jrodr\AppData\Local\Temp\hk-fix2\wt\.hardkas for changes...
+
+stdout | packages/dev-server/test/watcher.test.ts > Watcher Fallback & Polling Contract > should respect HARDKAS_WATCH_POLLING=1 and enable polling
+📡 [Watcher] Monitoring C:\Users\jrodr\AppData\Local\Temp\hk-fix2\wt\.hardkas for changes...
+
+stdout | packages/dev-server/test/watcher.test.ts > Watcher Fallback & Polling Contract > should fall back gracefully to polling when watch setup throws ENOSPC / ENOTSUP
+📡 [Watcher] Monitoring C:\Users\jrodr\AppData\Local\Temp\hk-fix2\wt\.hardkas for changes...
+
+stderr | packages/dev-server/test/watcher.test.ts > Watcher Fallback & Polling Contract > should fall back gracefully 
+to polling when watch setup throws ENOSPC / ENOTSUP
+[Watcher] Native watch failed (ENOSPC). Falling back to polling...
+
+ ✓ packages/dev-server/test/watcher.test.ts (3 tests) 7ms
+stdout | packages/dev-server/test/escrow-session-recovery.test.ts > Session Recovery Matrix > should return 404 for unknown session id
+<-- GET /api/escrows/unknown-id-123
+--> GET /api/escrows/unknown-id-123 404 11ms
+
+ ✓ packages/dev-server/test/escrow-session-recovery.test.ts (2 tests | 1 skipped) 23ms
+ ✓ packages/l2/test/profiles.test.ts (6 tests) 6ms
+ ✓ packages/kaspa-rpc/test/surface-cut-resilient-subscriber.test.ts (4 tests) 7ms
+ ↓ packages/dev-server/test/escrow-negative-matrix.test.ts (3 tests | 3 skipped)
+stdout | packages/jobs/test/jobs.test.ts > @hardkas/jobs V1 > should complete a job and save progress
+{"timestamp":"2026-10-02T21:27:37.149Z","level":"info","event":"Job enqueued","context":{"id":"fde8b3aa-2cbf-4cf6-9bc7-ddfa5aa274ef","type":"test-job"}}
+{"timestamp":"2026-10-02T21:27:37.160Z","level":"info","event":"Job completed","context":{"id":"fde8b3aa-2cbf-4cf6-9bc7-ddfa5aa274ef","type":"test-job"}}
+
+stdout | packages/jobs/test/jobs.test.ts > @hardkas/jobs V1 > should fail a job if it throws
+{"timestamp":"2026-10-02T21:27:37.273Z","level":"info","event":"Job enqueued","context":{"id":"60add08a-d42b-44f8-a63a-1309795895d3","type":"fail-job"}}
+
+stderr | packages/jobs/test/jobs.test.ts > @hardkas/jobs V1 > should fail a job if it throws
+{"timestamp":"2026-10-02T21:27:37.277Z","level":"error","event":"Job 
+failed","context":{"id":"60add08a-d42b-44f8-a63a-1309795895d3","type":"fail-job","error":"Simulation failure"}}
+{"timestamp":"2026-10-02T21:27:37.278Z","level":"error","event":"Span failed: 
+job.run","context":{"traceId":"4hnysg1qy9t","durationMs":3,"error":"Simulation failure"}}
+
+stdout | packages/jobs/test/jobs.test.ts > @hardkas/jobs V1 > should allow retrying within the handler using context
+{"timestamp":"2026-10-02T21:27:37.381Z","level":"info","event":"Job enqueued","context":{"id":"1f504558-7588-43b6-8cd7-82c1b30d722f","type":"retry-job"}}
+
+stdout | packages/jobs/test/jobs.test.ts > @hardkas/jobs V1 > should allow retrying within the handler using context
+{"timestamp":"2026-10-02T21:27:37.489Z","level":"info","event":"Job completed","context":{"id":"1f504558-7588-43b6-8cd7-82c1b30d722f","type":"retry-job"}}
+
+ ✓ packages/jobs/test/jobs.test.ts (3 tests) 558ms
+   ✓ @hardkas/jobs V1 > should allow retrying within the handler using context 317ms
+{"timestamp":"2026-10-02T21:27:41.109Z","level":"info","event":"Running script: C:\\Users\\jrodr\\AppData\\Local\\Temp\\hardkas-test-script-1790976458172.ts","context":{"script":"C:\\Users\\jrodr\\AppData\\Local\\Temp\\hardkas-test-script-1790976458172.ts","network":"simulated"}}
+{"timestamp":"2026-10-02T21:27:49.925Z","level":"info","event":"Running script: C:\\Users\\jrodr\\AppData\\Local\\Temp\\hardkas-test-script-noharness-1790976466920.ts","context":{"script":"C:\\Users\\jrodr\\AppData\\Local\\Temp\\hardkas-test-script-noharness-1790976466920.ts","network":"simnet"}}
+ ✓ packages/cli/test/run-command.test.ts (3 tests) 12865ms
+   ✓ hardkas run > executes a basic script and injects hardkas harness 3789ms
+   ✓ hardkas run > fails gracefully for missing script 4959ms
+   ✓ hardkas run > respects --no-harness and does NOT inject global 4116ms
+ ✓ packages/node-orchestrator/test/args.test.ts (7 tests) 101ms
+ ✓ packages/sdk/test/fees.test.ts (3 tests | 2 skipped) 843ms
+   ✓ HardkasFees > should gracefully fallback to heuristic when RPC fails 839ms
+ ✓ packages/cli/test/smoke.test.ts (7 tests | 1 skipped) 29195ms
+   ✓ CLI Smoke Tests > should show help 4317ms
+   ✓ CLI Smoke Tests > should show init help 4906ms
+   ✓ CLI Smoke Tests > should show rpc doctor help 5894ms
+   ✓ CLI Smoke Tests > should explain an artifact (mocked file) 4582ms
+   ✓ CLI Smoke Tests > should fail to verify corrupted fixtures in strict mode 4666ms
+   ✓ CLI Smoke Tests > should show dag status help 4828ms
+ ✓ packages/core/test/compatibility.test.ts (7 tests) 4ms
+ ✓ packages/localnet/test/reconstruct.test.ts (1 test) 5ms
+ ✓ packages/testing/test/reproducibility.test.ts (13 tests) 36ms
+ ✓ packages/dev-server/test/health.test.ts (2 tests) 324ms
+   ✓ Dev Server Health Route > does not accidentally select mainnet for health check 301ms
+ ✓ packages/artifacts/test/deployment.test.ts (5 tests) 21ms
+ ✓ packages/testing/test/semantics.torture.test.ts (7 tests) 10ms
+ ✓ packages/cli/test/help-integrity.test.ts (7 tests) 24466ms
+   ✓ CLI Help Integrity > should list all expected top-level command groups 3104ms
+   ✓ CLI Help Integrity > should list expected subcommands for 'tx' 3232ms
+   ✓ CLI Help Integrity > should list expected subcommands for 'artifact' 3819ms
+   ✓ CLI Help Integrity > should list expected subcommands for 'rpc' 3131ms
+   ✓ CLI Help Integrity > should list expected subcommands for 'dag' 4702ms
+   ✓ CLI Help Integrity > should list expected subcommands for 'accounts' 2831ms
+   ✓ CLI Help Integrity > should not expose dev-server as a command and treat it as unknown 3646ms
+ ✓ packages/simulator/test/mass-profile.test.ts (8 tests) 117ms
+ ✓ packages/localnet/test/replay.test.ts (1 test) 33ms
+ ✓ packages/accounts/test/execution-guard.test.ts (5 tests) 5ms
+ ✓ packages/cli/test/demo-ready-e21-plan-path.test.ts (2 tests) 13806ms
+   ✓ Demo-ready · E21 · tx plan says where the plan is > without --out it prints the persisted path, which exists, holds the plan and is signable 8720ms
+   ✓ Demo-ready · E21 · tx plan says where the plan is > with --out it still reports the --out file 5084ms
+ ✓ packages/testing/test/simnet-docker-args.test.ts (5 tests) 8ms
+ ✓ packages/sdk/test/programmability-0-9-1.test.ts (2 tests) 39ms
+ ✓ packages/localnet/test/traces.test.ts (3 tests) 38ms
+ ✓ packages/artifacts/test/igra-io.test.ts (5 tests) 10ms
+ ✓ packages/localnet/test/wave1-4-synthetic-txid.test.ts (3 tests) 111ms
+ ✓ packages/localnet/test/replay-determinism.test.ts (1 test) 111ms
+ ✓ packages/cli/test/simulated-isolation.test.ts (3 tests | 1 skipped) 316ms
+ ✓ packages/toolkit/test/surface-cut-subscription-manager.test.ts (3 tests) 4ms
+ ✓ packages/node-runner/test/pr6-docker-network.test.ts (3 tests) 222ms
+ ✓ packages/sdk/test/adversarial/wave1-3-replay-legacy-verdict.test.ts (1 test) 359ms
+   ✓ Wave 1.3 · replay verdict never accepts a legacy receipt > a current receipt replays with a verdict; its v4 twin yields REPLAY_LEGACY_AUTH_SCOPE, never passed 358ms
+ ✓ packages/wallet-adapter/test/wallet.test.ts (4 tests) 5ms
+ ✓ packages/cli/test/demo-ready-e26-simulated-balance-identity.test.ts (2 tests) 10743ms
+   ✓ Demo-ready · E26 · simulated balance shows the identity it queried > by name: the account and the simulator address, never `Unknown` 3105ms
+   ✓ Demo-ready · E26 · simulated balance shows the identity it queried > --json carries the same identity; the synthetic kaspa:sim_ form resolves to the same account 5197ms
+ ✓ packages/toolkit/test/fee-estimator.test.ts (1 test) 108ms
+ ✓ packages/core/test/append-lint.test.ts (1 test) 5124ms
+   ✓ appendFileSync usage static analysis lint check > should not contain raw appendFileSync without // hardkas-append-allow 5122ms
+ ✓ packages/cli/test/first-contact-small-fixes.test.ts (3 tests) 4053ms
+   ✓ First contact · CLI texts tell the truth about accounts > generate prints a clean summary and list labels a plaintext key as plaintext, never as encrypted 4020ms
+ ✓ packages/tx-builder/test/compat-shim-consumers.test.ts (2 tests) 978ms
+   ✓ buildPaymentPlan compatibility shim > has no consumer outside the simulator's synchronous harness 516ms
+   ✓ buildPaymentPlan compatibility shim > planSingleOutputSpend stays deleted 459ms
+stderr | packages/kaspa-rpc/test/wrpc-client.test.ts > KaspaWrpcClient > requests by method name through the official 
+client, with the node's error text
+{"timestamp":"2026-10-02T21:29:50.115Z","level":"error","event":"wRPC error 
+response","context":{"method":"getBlockDagInfo","error":"internal error"}}
+
+ ✓ packages/kaspa-rpc/test/wrpc-client.test.ts (7 tests) 179ms
+ ✓ packages/accounts/test/managed-wasm-loader.test.ts (4 tests) 37ms
+ ✓ packages/core/test/fault-injection.test.ts (3 tests) 19ms
+ ✓ packages/accounts/test/silver-funding.test.ts (2 tests) 112ms
+ ✓ packages/artifacts/test/canonical-path.test.ts (4 tests) 5ms
+ ✓ packages/core/test/append-safety.test.ts (2 tests) 26ms
+ ✓ packages/sdk/test/assumption.test.ts (2 tests) 34ms
+ ✓ packages/kaspa-rpc/test/mappers.test.ts (7 tests) 5ms
+ ✓ packages/sdk/test/sdk-parity-0-9-1.test.ts (2 tests) 618ms
+   ✓ 0.12.0-rc.26 SDK parity surface > exposes localnet.status without requiring CLI shelling 421ms
+
+  ✗ [CONFIG_EXISTS] hardkas.config.ts already exists. Use --force to overwrite.
+
+  ⚠️  WARNING:
+     Config file missing. Generating a new one...
+
+  ✗ Error:
+    Config file is invalid: Failed to load HardKAS config at 
+C:\Users\jrodr\AppData\Local\Temp\hk-fix2\wt\.hardkas-test-config\hardkas.config.ts: ParseError: C:\: Missing 
+semicolon.  
+ C:/Users/jrodr/AppData/Local/Temp/hk-fix2/wt/.hardkas-test-config/hardkas.config.ts:1:7
+
+  ⚠️  WARNING:
+     Backing up and generating a fresh config...
+ ✓ packages/cli/test/config-commands.test.ts (4 tests) 8533ms
+   ✓ Config Commands > should init a config file 1365ms
+   ✓ Config Commands > should refuse to overwrite without --force 2923ms
+   ✓ Config Commands > should repair a missing config file 1958ms
+   ✓ Config Commands > should repair an invalid config file by backing it up 2286ms
+ ✓ packages/sdk/test/agent-mode.test.ts (5 tests) 113ms
+ ✓ packages/accounts/test/qf007-execution-contract-accounts.test.ts (4 tests) 9ms
+ ✓ packages/accounts/test/e39-keygen-toolchain-error.test.ts (3 tests) 15ms
+ ✓ packages/sdk/test/observe-qf006.test.ts (1 test) 4ms
+ ✓ packages/sdk/test/simulated-send.test.ts (2 tests) 368ms
+ ✓ packages/query-store/test/schema.test.ts (2 tests) 80ms
+stderr | packages/cli/test/e2e-real-accounts.test.ts > E2E Real Accounts Management > should initialize, import, list, 
+show and remove an account
+
+  ⚠️  [SECURITY WARNING] Plaintext private keys detected in legacy account store for: test-acc
+     Location: C:\Users\jrodr\AppData\Local\Temp\hk-fix2\wt\.hardkas\accounts.real.json
+     Recommendation: Re-import these accounts using encrypted keystores.
+
+
+  ⚠️  [SECURITY WARNING] Plaintext private keys detected in legacy account store for: test-acc
+     Location: C:\Users\jrodr\AppData\Local\Temp\hk-fix2\wt\.hardkas\accounts.real.json
+     Recommendation: Re-import these accounts using encrypted keystores.
+
+
+  ⚠️  [SECURITY WARNING] Plaintext private keys detected in legacy account store for: test-acc
+     Location: C:\Users\jrodr\AppData\Local\Temp\hk-fix2\wt\.hardkas\accounts.real.json
+     Recommendation: Re-import these accounts using encrypted keystores.
+
+
+  ⚠️  [SECURITY WARNING] Plaintext private keys detected in legacy account store for: test-acc
+     Location: C:\Users\jrodr\AppData\Local\Temp\hk-fix2\wt\.hardkas\accounts.real.json
+     Recommendation: Re-import these accounts using encrypted keystores.
+
+
+ ✓ packages/cli/test/e2e-real-accounts.test.ts (1 test) 29ms
+ ✓ packages/cli/test/demo-ready-localnet-miner-throttle.test.ts (2 tests) 6ms
+ ✓ packages/cli/test/public-surface.test.ts (3 tests) 10369ms
+   ✓ CLI Surface Hardening > should not leak deprecated or experimental commands in the public help menu 1356ms
+   ✓ CLI Surface Hardening > should have snapshot successfully nested under localnet 1419ms
+   ✓ CLI Surface Hardening > should completely reject physically deleted legacy aliases 7593ms
+ ✓ packages/cli/test/demo-cut-e04-cli-balances.test.ts (1 test) 6135ms
+   ✓ Demo-cut · E04 · CLI balances after a simulated send > alice → bob 25 KAS: bob 1025, alice 1000 − 25 − fee, by name and by synthetic identity 5848ms
+ ✓ packages/sdk/test/networkProfile.test.ts (2 tests) 38ms
+ ✓ packages/tx-builder/test/plan.test.ts (1 test) 138ms
+ ✓ packages/testing/test/fuzz-migration.test.ts (1 test) 169ms
+ ✓ packages/localnet/test/accounts.test.ts (6 tests) 7ms
+ ✓ packages/accounts/test/wasm-rpc-storage-mass.test.ts (3 tests) 144ms
+ ✓ packages/artifacts/test/pr7-determinism.test.ts (5 tests) 7ms
+ ✓ packages/core/test/e39-kaspa-wasm-pin-wins.test.ts (1 test) 9ms
+ ✓ packages/accounts/test/evm-export.test.ts (6 tests) 7ms
+ ✓ packages/query/test/determinism.test.ts (7 tests) 8ms
+ ✓ packages/core/test/telemetry-isolation.test.ts (1 test) 56ms
+
+  ═══ HardKAS dApp Creation: existing-dapp ═══
+
+  ═══ HardKAS dApp Initialization ═══
+  ℹ Checking configuration...
+  ✔ Created hardkas.config.ts
+  ✔ Created src/hardkas/client.ts
+  ✔ dApp support initialized successfully!
+  ℹ Run 'hardkas dev' to start the local environment.
+ ✓ packages/cli/test/dev-commands.test.ts (3 tests) 1429ms
+   ✓ CLI dev namespace > dev doctor outputs stable JSON envelope when --json is passed 1413ms
+ ✓ packages/testing/test/fuzz-policy.test.ts (1 test) 2741ms
+   ✓ Phase 6A: Policy Fuzzing > should reject all 10,000 mutated policies 2739ms
+ ✓ packages/testing/test/gate-levels.test.ts (4 tests) 7ms
+(node:26120) [DEP0190] DeprecationWarning: Passing args to a child process with shell option true can lead to security 
+vulnerabilities, as the arguments are not escaped, only concatenated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ packages/cli/test/programmability.test.ts (2 tests) 13507ms
+   ✓ programmability CLI > prints programmability capabilities 6554ms
+   ✓ programmability CLI > plans an app 6952ms
+ ↓ packages/sdk/test/integration.test.ts (1 test | 1 skipped)
+
+⚠️  WARNING: 'capabilities' command is internal/experimental. Set HARDKAS_EXPERIMENTAL=1 to acknowledge.
+
+
+⚠️  WARNING: 'capabilities' command is internal/experimental. Set HARDKAS_EXPERIMENTAL=1 to acknowledge.
+
+ ✓ packages/cli/test/capabilities.test.ts (2 tests) 6464ms
+   ✓ hardkas capabilities > outputs valid JSON with --json 3116ms
+   ✓ hardkas capabilities > human output shows checkmarks 3347ms
+  ℹ Initializing Workflow Runtime in Agent Mode...
+  ℹ Running 1 workflow steps...
+{
+  "schema": "hardkas.workflow.v1",
+  "version": "1.0.0-alpha",
+  "hardkasVersion": "0.12.0-rc.26",
+  "networkId": "simulated",
+  "mode": "simulator",
+  "hashVersion": 5,
+  "createdAt": "2026-10-02T21:31:23.052Z",
+  "workflowId": "wf_c754ff5580c0c8bd",
+  "status": "completed",
+  "steps": [
+    {
+      "type": "network.switch",
+      "status": "success",
+      "startedAt": "2026-10-02T21:31:23.052Z",
+      "completedAt": "2026-10-02T21:31:23.052Z"
+    }
+  ],
+  "parentArtifacts": [],
+  "producedArtifacts": [],
+  "generationRange": {
+    "start": "1790976683052",
+    "end": "1790976683052"
+  },
+  "policy": {
+    "allowNetwork": false,
+    "allowMainnet": false,
+    "allowExternalWallet": false,
+    "requireDryRun": false
+  },
+  "contentHash": "58062ec0b8192f8b53d68d3c94058fd937d32e9f16a736950c664a766302b6db"
+}
+ ✓ packages/cli/test/workflow-simulated.test.ts (1 test) 237ms
+ ✓ packages/cli/test/accounts-balance-local.test.ts (1 test) 196ms
+stdout | packages/core/test/benchmark.test.ts > Benchmark Suite > AppendCoordinator overhead and fsync cost
+{"benchmark":"append_latency","iterations":500,"totalTimeMs":2905.6292,"avgLatencyMs":5.8112584}
+
+ ✓ packages/core/test/benchmark.test.ts (1 test) 2941ms
+   ✓ Benchmark Suite > AppendCoordinator overhead and fsync cost 2908ms
+ ✓ packages/artifacts/test/determinism.test.ts (2 tests) 7ms
+ ✓ packages/testing/test/fuzz-network.test.ts (1 test) 269ms
+ ✓ packages/tx-builder/test/plan.v1.test.ts (1 test) 87ms
+stdout | packages/sync-daemon/test/daemon.test.ts > SyncDaemon > should notify indexer and resume pending jobs on new blocks
+{"timestamp":"2026-10-02T21:31:31.284Z","level":"info","event":"SyncDaemon starting"}
+indexer reload called!
+resumePendingJobs called!
+
+ ✓ packages/sync-daemon/test/daemon.test.ts (1 test) 558ms
+   ✓ SyncDaemon > should notify indexer and resume pending jobs on new blocks 557ms
+ ✓ packages/artifacts/test/cross-platform.test.ts (5 tests) 4ms
+ ✓ packages/artifacts/test/reproducibility.test.ts (2 tests) 6ms
+ ✓ packages/query/test/wiring.test.ts (2 tests) 26ms
+ ✓ packages/l2/test/evm-receipts.test.ts (5 tests) 3ms
+ ✓ packages/tx-builder/test/toccata-fees.test.ts (2 tests) 95ms
+ ✓ packages/config/test/init-cwd.test.ts (3 tests) 36ms
+ ✓ packages/cli/test/broadcast-guard.test.ts (5 tests) 4ms
+ ✓ packages/testing/test/repo-hygiene.test.ts (1 test) 92ms
+ ✓ packages/core/test/registry.test.ts (5 tests) 7ms
+ ✓ packages/cli/test/localnet-fork.test.ts (2 tests) 5ms
+ ✓ packages/core/test/soak-longrun.test.ts (1 test) 4731ms
+   ✓ Long-Run Soak Testing > Continuous appends do not leak file descriptors 4717ms
+ ✓ packages/l2/test/bridge.test.ts (5 tests) 7ms
+ ✓ packages/kaspa-rpc/test/rpc.test.ts (2 tests) 4ms
+stderr | packages/sdk/test/pskt/native-fallback.test.ts > Native Adapter Fallback > should not throw and should not 
+register if native module is missing
+registerNativeAdapter caught error: Error: Cannot find module
+    at Object.probe (C:\Users\jrodr\AppData\Local\Temp\hk-fix2\wt\packages\sdk\test\pskt\native-fallback.test.ts:15:17)
+    at Module.registerNativeAdapter (C:\Users\jrodr\AppData\Local\Temp\hk-fix2\wt\packages\sdk\src\pskt.ts:37:32)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at C:\Users\jrodr\AppData\Local\Temp\hk-fix2\wt\packages\sdk\test\pskt\native-fallback.test.ts:20:21
+    at file:///C:/Users/jrodr/AppData/Local/Temp/hk-fix2/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vites
+t/runner/dist/index.js:533:5
+    at runTest (file:///C:/Users/jrodr/AppData/Local/Temp/hk-fix2/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modul
+es/@vitest/runner/dist/index.js:1056:11)
+    at runSuite (file:///C:/Users/jrodr/AppData/Local/Temp/hk-fix2/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modu
+les/@vitest/runner/dist/index.js:1205:15)
+    at runSuite (file:///C:/Users/jrodr/AppData/Local/Temp/hk-fix2/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modu
+les/@vitest/runner/dist/index.js:1205:15)
+    at runFiles (file:///C:/Users/jrodr/AppData/Local/Temp/hk-fix2/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modu
+les/@vitest/runner/dist/index.js:1262:5)
+    at startTests (file:///C:/Users/jrodr/AppData/Local/Temp/hk-fix2/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_mo
+dules/@vitest/runner/dist/index.js:1271:3)
+registerNativeAdapter limitations: [ 'NATIVE_MODULE_NOT_FOUND' ]
+
+ ✓ packages/sdk/test/pskt/native-fallback.test.ts (1 test) 11ms
+ ✓ packages/l2/test/evm-rpc-health.test.ts (2 tests) 7ms
+ ✓ packages/config/test/provider.test.ts (6 tests) 5ms
+ ✓ packages/cli/test/demo-ready-e27-init-messages.test.ts (1 test) 2265ms
+   ✓ Demo-ready · E27 · init announces what it creates > every `Created: <path>` line names a file that exists, and the test file is payment.test.ts 2264ms
+ ✓ packages/artifacts/test/broadcast.test.ts (3 tests) 4ms
+ ✓ packages/sdk/test/sdk.test.ts (2 tests) 22ms
+ ✓ packages/sdk/test/surface-cut-events.test.ts (2 tests) 21ms
+ ✓ packages/node-orchestrator/test/findRoot.test.ts (2 tests) 8ms
+ ✓ packages/core/test/security.test.ts (3 tests) 3ms
+ ✓ packages/core/test/domain-types.test.ts (3 tests) 3ms
+ ✓ packages/l2/test/metamask.test.ts (3 tests) 5ms
+ ✓ packages/sdk/test/v1-capabilities.test.ts (2 tests) 118ms
+ ✓ packages/cli/test/console.test.ts (1 test) 2177ms
+   ✓ hardkas console > command is registered and shows help 2176ms
+ ✓ packages/artifacts/test/pr6-canonicalization.test.ts (3 tests) 4ms
+ ✓ packages/sdk/test/client.test.ts (2 tests) 1548ms
+   ✓ SDK High-level Client Facade > returns stable envelope on network error 1541ms
+ ✓ packages/testing/test/hygiene.test.ts (1 test) 102ms
+ ✓ packages/testing/test/mass-tracking.test.ts (2 tests) 89ms
+ ✓ packages/cli/test/fund-amount.test.ts (3 tests) 4ms
+ ✓ packages/cli/test/command-modules.test.ts (1 test) 1789ms
+   ✓ Command Modules Side Effects > should not execute program.parse() when importing modules 1788ms
+ ✓ packages/cli/test/program-registration.test.ts (1 test) 3124ms
+   ✓ CLI registration integrity > registers all expected top-level commands 3123ms
+ ✓ packages/node-orchestrator/test/doctor.test.ts (2 tests) 94ms
+ ✓ packages/node-orchestrator/test/clean.test.ts (1 test) 82ms
+ ✓ packages/testing/test/utxo-invariants.test.ts (1 test) 246ms
+ ✓ packages/localnet/test/surface-cut-subscriptions.test.ts (1 test) 3ms
+ ✓ packages/tx-builder/test/tx-builder.test.ts (1 test) 85ms
+ ✓ packages/testing/test/gauntlet.test.ts (1 test) 2ms
+
+ Test Files  352 passed | 7 skipped (359)
+      Tests  2048 passed | 28 skipped (2076)
+   Start at  23:16:04
+   Duration  968.37s (transform 7.41s, setup 0ms, collect 179.01s, tests 623.06s, environment 89ms, prepare 58.37s)
+
+JSON report written to C:/Users/jrodr/AppData/Local/Temp/claude/C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo/21f9a2e4-33ac-4300-9366-aff402f85900/scratchpad/cut10-reorged-fix/logs/late-after-gate1.json
+
+gate-hermetic: vitest exit 0 after 969s
+gate-hermetic: non-loopback attempts (each one fails the gate): 0
+gate-hermetic: loopback connection targets (review for dependencies on local services):
+  127.0.0.1:18210 x3
+  127.0.0.1:19999 x1
+  127.0.0.1:7420 x2
+  127.0.0.1:8545 x9
+gate-hermetic: PASS

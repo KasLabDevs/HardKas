@@ -59,11 +59,11 @@ export function registerInitCommands(program: Command) {
     .command("init")
     .description(`Initialize a new HardKAS project ${UI.maturity("stable")}`)
     .argument("[name]", "Project name or directory")
-    .option("--force", "Overwrite existing hardkas.config.ts (in-place only)", false)
-    .option("--template <type>", "Project template for new projects", "basic")
-    .option("--network <name>", "Default network for new projects", "simulated")
-    .option("--accounts <n>", "Number of simulated accounts for new projects", "3")
-    .option("--install", "Run pnpm/npm install automatically after scaffolding", false)
+    .option("--force", "Overwrite an existing hardkas.config.ts (the other scaffold files are kept)", false)
+    .option("--template <type>", "No effect in this release (for templates use 'hardkas create')")
+    .option("--network <name>", "'simulated' pre-creates the simulator state (5 accounts, 1000 KAS each); other values skip it. The project's default target is always the simulator", "simulated")
+    .option("--accounts <n>", "No effect in this release: init always creates the 5 simulated accounts alice…erin")
+    .option("--install", "Run npm install after scaffolding", false)
     .option("--skip-toolchain", "Do not install the pinned kaspa-wasm (signing, planning and the generated test need it)", false)
     .option("--toolchain-from-file <asset>", "Install the pinned kaspa-wasm from its official release asset already on disk")
     .option("--json", "Output results as JSON", false)
@@ -111,8 +111,7 @@ export function registerInitCommands(program: Command) {
                   test: "vitest run"
                 },
                 dependencies: {
-                  "@hardkas/sdk": hardkasVersion,
-                  "@kaspa/core-lib": "^1.6.5"
+                  "@hardkas/sdk": hardkasVersion
                 },
                 devDependencies: {
                   "@hardkas/testing": hardkasVersion,
@@ -155,7 +154,7 @@ export default defineConfig({
             const template = `import { defineHardkasConfig } from "@hardkas/sdk";
 
 export default defineHardkasConfig({
-  // HardKAS v0.12.0-rc.25 Configuration
+  // HardKAS v0.12.0-rc.26 Configuration
   execution: {
     default: "simulator",
     targets: {
@@ -302,7 +301,7 @@ scenario("payment flow", async ({ hk }) => {
                 `HardKAS project '${name || "current"}' initialized successfully.`
               );
               if (name) UI.info(`Project folder: ${targetDir}`);
-              UI.info(`Created: hardkas.config.ts (0.12.0-rc.25)`);
+              UI.info(`Created: hardkas.config.ts (0.12.0-rc.26)`);
               UI.footer(`Next steps:\n  ` + (name ? `cd ${name}\n  ` : "") + (options.install ? "" : "npm install\n  ") + "npm test");
             }
           }

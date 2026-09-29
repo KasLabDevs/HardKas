@@ -1,0 +1,588 @@
+﻿{
+  "summary": {
+    "transfers": 20,
+    "sent": 20,
+    "sendFailures": 0,
+    "txsWithAcceptingBlockChanges": 19,
+    "txsThatLostAcceptance": 0,
+    "txsWithReorgedClaims": 0,
+    "falseReorgedTxs": 0,
+    "trueReorgedTxs": 0,
+    "M1": 0,
+    "M2": 0,
+    "recoveredAfterReorged": 0,
+    "finalTruthAccepted": 20,
+    "finalTruthOutputsPresent": 20,
+    "mempoolGapsBeforeAcceptance": 20,
+    "errors": 0
+  },
+  "results": [
+    {
+      "index": 1,
+      "txId": "72d0ec49d01f94fbcad870da46262bc4e8914a425850a699757409fb907248d3",
+      "hardkasSequence": [
+        "ACCEPTED@42.2s(tx wait)",
+        "CONFIRMED@46.5s(tx wait)"
+      ],
+      "hardkasRecovered": null,
+      "truth": {
+        "firstAcceptedAt": 41819,
+        "acceptingBlockChanges": 3,
+        "acceptanceLost": 0,
+        "final": {
+          "accepting": "fcd8afa316f35890ca60c9c3f24fc58f521dfeecc1f4bda680c6c4dbb0abd989",
+          "outputs": 1,
+          "mempool": "absent",
+          "daa": "1748"
+        },
+        "mempoolGapsBeforeAcceptance": 1
+      },
+      "reorgedClaims": [],
+      "removals": [],
+      "scansAfterRemoval": [],
+      "mechanisms": {
+        "M1": false,
+        "M2": false
+      }
+    },
+    {
+      "index": 2,
+      "txId": "b21ebd334f1477989c40f3a9a05a35e3fceaaf79ab707752c45b6251d5271a16",
+      "hardkasSequence": [
+        "ACCEPTED@57.6s(tx wait)",
+        "CONFIRMED@61.0s(tx wait)"
+      ],
+      "hardkasRecovered": null,
+      "truth": {
+        "firstAcceptedAt": 57241,
+        "acceptingBlockChanges": 3,
+        "acceptanceLost": 0,
+        "final": {
+          "accepting": "f8e635bd979971461b20200c2cdcc5e9503fb2acb80ad2956015879e3214f283",
+          "outputs": 1,
+          "mempool": "absent",
+          "daa": "2351"
+        },
+        "mempoolGapsBeforeAcceptance": 1
+      },
+      "reorgedClaims": [],
+      "removals": [],
+      "scansAfterRemoval": [],
+      "mechanisms": {
+        "M1": false,
+        "M2": false
+      }
+    },
+    {
+      "index": 3,
+      "txId": "888f87976ab4533e11c32ec97275c9eed95957af0653a7caf7b10e91c5531440",
+      "hardkasSequence": [
+        "SUBMITTED@72.3s(tx wait)",
+        "ACCEPTED@73.4s(tx wait)",
+        "CONFIRMED@76.7s(tx wait)"
+      ],
+      "hardkasRecovered": null,
+      "truth": {
+        "firstAcceptedAt": 72758,
+        "acceptingBlockChanges": 2,
+        "acceptanceLost": 0,
+        "final": {
+          "accepting": "f87e9006219ff6d8a06c135b069b974e9384853a8bb5f54ed4537b2f5573a288",
+          "outputs": 1,
+          "mempool": "absent",
+          "daa": "2999"
+        },
+        "mempoolGapsBeforeAcceptance": 1
+      },
+      "reorgedClaims": [],
+      "removals": [],
+      "scansAfterRemoval": [],
+      "mechanisms": {
+        "M1": false,
+        "M2": false
+      }
+    },
+    {
+      "index": 4,
+      "txId": "f76e5c58906a780f12789d9a6c19ce93920b86d0103d983047c633308b72c569",
+      "hardkasSequence": [
+        "ACCEPTED@88.4s(tx wait)",
+        "CONFIRMED@91.8s(tx wait)"
+      ],
+      "hardkasRecovered": null,
+      "truth": {
+        "firstAcceptedAt": 88553,
+        "acceptingBlockChanges": 1,
+        "acceptanceLost": 0,
+        "final": {
+          "accepting": "f835b6517037d7a10c3676157519ecdfc1a228415bdf278413f98c8f1adc0a27",
+          "outputs": 1,
+          "mempool": "absent",
+          "daa": "3601"
+        },
+        "mempoolGapsBeforeAcceptance": 1
+      },
+      "reorgedClaims": [],
+      "removals": [],
+      "scansAfterRemoval": [],
+      "mechanisms": {
+        "M1": false,
+        "M2": false
+      }
+    },
+    {
+      "index": 5,
+      "txId": "6f95126adbfd52dad22e1b2f9d57796c3c7368bacfc8c6478939a596ced5b5e6",
+      "hardkasSequence": [
+        "SUBMITTED@103.6s(tx wait)",
+        "ACCEPTED@104.8s(tx wait)",
+        "CONFIRMED@109.4s(tx wait)"
+      ],
+      "hardkasRecovered": null,
+      "truth": {
+        "firstAcceptedAt": 104012,
+        "acceptingBlockChanges": 0,
+        "acceptanceLost": 0,
+        "final": {
+          "accepting": "ff225014d29ef347959d52650be71b9adaccb37f47eeba44d4690b86acabcb5a",
+          "outputs": 1,
+          "mempool": "absent",
+          "daa": "4320"
+        },
+        "mempoolGapsBeforeAcceptance": 1
+      },
+      "reorgedClaims": [],
+      "removals": [],
+      "scansAfterRemoval": [],
+      "mechanisms": {
+        "M1": false,
+        "M2": false
+      }
+    },
+    {
+      "index": 6,
+      "txId": "d163df4fb3ee346aac7efac8c7ac8c0207bde78693791b8bc7e5333bf05454b4",
+      "hardkasSequence": [
+        "ACCEPTED@121.4s(tx wait)",
+        "CONFIRMED@125.0s(tx wait)"
+      ],
+      "hardkasRecovered": null,
+      "truth": {
+        "firstAcceptedAt": 121161,
+        "acceptingBlockChanges": 2,
+        "acceptanceLost": 0,
+        "final": {
+          "accepting": "f407665b407a329dd884c46b952f50fb848029949baa9b2a609fb5d7502b3e70",
+          "outputs": 1,
+          "mempool": "absent",
+          "daa": "4950"
+        },
+        "mempoolGapsBeforeAcceptance": 1
+      },
+      "reorgedClaims": [],
+      "removals": [],
+      "scansAfterRemoval": [],
+      "mechanisms": {
+        "M1": false,
+        "M2": false
+      }
+    },
+    {
+      "index": 7,
+      "txId": "075b63c43b2bbe6ed6757a127127a418c8688ccde8d93c4d81d5b4e020bc91ce",
+      "hardkasSequence": [
+        "SUBMITTED@137.9s(tx wait)",
+        "ACCEPTED@139.3s(tx wait)",
+        "CONFIRMED@141.7s(tx wait)"
+      ],
+      "hardkasRecovered": null,
+      "truth": {
+        "firstAcceptedAt": 138661,
+        "acceptingBlockChanges": 1,
+        "acceptanceLost": 0,
+        "final": {
+          "accepting": "fd4d89a0a24192e8056c35c1483cdb8cfed1e19fe215c15f1e6a2f9463c9ce56",
+          "outputs": 1,
+          "mempool": "absent",
+          "daa": "5617"
+        },
+        "mempoolGapsBeforeAcceptance": 1
+      },
+      "reorgedClaims": [],
+      "removals": [],
+      "scansAfterRemoval": [],
+      "mechanisms": {
+        "M1": false,
+        "M2": false
+      }
+    },
+    {
+      "index": 8,
+      "txId": "88f1cc70a7fe61ab55eb9bd9c0801821ec4b9d6f96c6887a74f9deaf4232337c",
+      "hardkasSequence": [
+        "ACCEPTED@154.0s(tx wait)",
+        "CONFIRMED@157.7s(tx wait)"
+      ],
+      "hardkasRecovered": null,
+      "truth": {
+        "firstAcceptedAt": 154105,
+        "acceptingBlockChanges": 3,
+        "acceptanceLost": 0,
+        "final": {
+          "accepting": "f8eff266b82462601bac356a778239c8f7ce2b08c02ebcd30694112ebf84b50e",
+          "outputs": 1,
+          "mempool": "absent",
+          "daa": "6108"
+        },
+        "mempoolGapsBeforeAcceptance": 1
+      },
+      "reorgedClaims": [],
+      "removals": [],
+      "scansAfterRemoval": [],
+      "mechanisms": {
+        "M1": false,
+        "M2": false
+      }
+    },
+    {
+      "index": 9,
+      "txId": "0fc8e5b7fdd581eb68a6cefb5da990beec442ecdf9e6a2a768a48264b58f4ee6",
+      "hardkasSequence": [
+        "SUBMITTED@169.4s(tx wait)",
+        "ACCEPTED@170.7s(tx wait)",
+        "CONFIRMED@180.5s(tx wait)"
+      ],
+      "hardkasRecovered": null,
+      "truth": {
+        "firstAcceptedAt": 169721,
+        "acceptingBlockChanges": 1,
+        "acceptanceLost": 0,
+        "final": {
+          "accepting": "ff353b4ea5c4f57f39d473b1d6dd617dbbe8a55b525419ee071d7d2d6864e3a0",
+          "outputs": 1,
+          "mempool": "absent",
+          "daa": "6365"
+        },
+        "mempoolGapsBeforeAcceptance": 1
+      },
+      "reorgedClaims": [],
+      "removals": [],
+      "scansAfterRemoval": [],
+      "mechanisms": {
+        "M1": false,
+        "M2": false
+      }
+    },
+    {
+      "index": 10,
+      "txId": "fd96b69e9d94012a53927be768ccdcaa4f1f879e88ca54f348b147b823d3e050",
+      "hardkasSequence": [
+        "ACCEPTED@191.6s(tx wait)",
+        "CONFIRMED@201.7s(tx wait)"
+      ],
+      "hardkasRecovered": null,
+      "truth": {
+        "firstAcceptedAt": 191410,
+        "acceptingBlockChanges": 2,
+        "acceptanceLost": 0,
+        "final": {
+          "accepting": "a84f2835ab49aa00c3bee8d29dde9569fb07e56719506d23960b291e96e99456",
+          "outputs": 1,
+          "mempool": "absent",
+          "daa": "6608"
+        },
+        "mempoolGapsBeforeAcceptance": 1
+      },
+      "reorgedClaims": [],
+      "removals": [],
+      "scansAfterRemoval": [],
+      "mechanisms": {
+        "M1": false,
+        "M2": false
+      }
+    },
+    {
+      "index": 11,
+      "txId": "d1ee2fbd5ea9ee8714e16b2ff837f0977f998f7b9fa967788df4f387701f68f9",
+      "hardkasSequence": [
+        "SUBMITTED@213.0s(tx wait)",
+        "ACCEPTED@214.3s(tx wait)",
+        "CONFIRMED@222.1s(tx wait)"
+      ],
+      "hardkasRecovered": null,
+      "truth": {
+        "firstAcceptedAt": 213223,
+        "acceptingBlockChanges": 1,
+        "acceptanceLost": 0,
+        "final": {
+          "accepting": "fc238d606f45f016d795e7eba2d97b914de3768166467161233d0fee6f552033",
+          "outputs": 1,
+          "mempool": "absent",
+          "daa": "6868"
+        },
+        "mempoolGapsBeforeAcceptance": 1
+      },
+      "reorgedClaims": [],
+      "removals": [],
+      "scansAfterRemoval": [],
+      "mechanisms": {
+        "M1": false,
+        "M2": false
+      }
+    },
+    {
+      "index": 12,
+      "txId": "4b786b813fa913bf7d794979afc9648723e9e92e0da73509eff54cc50fe52f32",
+      "hardkasSequence": [
+        "ACCEPTED@233.8s(tx wait)",
+        "CONFIRMED@243.1s(tx wait)"
+      ],
+      "hardkasRecovered": null,
+      "truth": {
+        "firstAcceptedAt": 233611,
+        "acceptingBlockChanges": 5,
+        "acceptanceLost": 0,
+        "final": {
+          "accepting": "e50fb8b4d397c11a1e72a5b5e9542e54ee3b6a1ab682abc89c36333afb57095a",
+          "outputs": 1,
+          "mempool": "absent",
+          "daa": "7129"
+        },
+        "mempoolGapsBeforeAcceptance": 1
+      },
+      "reorgedClaims": [],
+      "removals": [],
+      "scansAfterRemoval": [],
+      "mechanisms": {
+        "M1": false,
+        "M2": false
+      }
+    },
+    {
+      "index": 13,
+      "txId": "4d85e59a42936b887de40ab59b5df09865191ccfce3000dc34df9f7a90bd7710",
+      "hardkasSequence": [
+        "SUBMITTED@255.0s(tx wait)",
+        "ACCEPTED@256.3s(tx wait)",
+        "CONFIRMED@265.7s(tx wait)"
+      ],
+      "hardkasRecovered": null,
+      "truth": {
+        "firstAcceptedAt": 255375,
+        "acceptingBlockChanges": 1,
+        "acceptanceLost": 0,
+        "final": {
+          "accepting": "fc7e0345c6ae3b7dac2895b56d8f8bb706e7dbb6f57235386a92c28ca9e399a9",
+          "outputs": 1,
+          "mempool": "absent",
+          "daa": "7408"
+        },
+        "mempoolGapsBeforeAcceptance": 1
+      },
+      "reorgedClaims": [],
+      "removals": [],
+      "scansAfterRemoval": [],
+      "mechanisms": {
+        "M1": false,
+        "M2": false
+      }
+    },
+    {
+      "index": 14,
+      "txId": "e74a900dc7426e31fde1544c1c71a1771b8b24760cb67a5760d0828dd59f6d87",
+      "hardkasSequence": [
+        "ACCEPTED@277.9s(tx wait)",
+        "CONFIRMED@287.5s(tx wait)"
+      ],
+      "hardkasRecovered": null,
+      "truth": {
+        "firstAcceptedAt": 277097,
+        "acceptingBlockChanges": 2,
+        "acceptanceLost": 0,
+        "final": {
+          "accepting": "d3f2c50d131683e1baaa7ec9e7fa7981ad657e9344ab423fa06da79981f1f908",
+          "outputs": 1,
+          "mempool": "absent",
+          "daa": "7668"
+        },
+        "mempoolGapsBeforeAcceptance": 1
+      },
+      "reorgedClaims": [],
+      "removals": [],
+      "scansAfterRemoval": [],
+      "mechanisms": {
+        "M1": false,
+        "M2": false
+      }
+    },
+    {
+      "index": 15,
+      "txId": "c81e0498201b4f8175bbaa3b896bce0144ace7b2c43f3af83c8321d7b06151d5",
+      "hardkasSequence": [
+        "ACCEPTED@300.0s(tx wait)",
+        "CONFIRMED@307.0s(tx wait)"
+      ],
+      "hardkasRecovered": null,
+      "truth": {
+        "firstAcceptedAt": 299080,
+        "acceptingBlockChanges": 1,
+        "acceptanceLost": 0,
+        "final": {
+          "accepting": "f662dced4a3383727ac00f9215d1e1482e68da4ece536b82c10cfd70f6185ea4",
+          "outputs": 1,
+          "mempool": "absent",
+          "daa": "7921"
+        },
+        "mempoolGapsBeforeAcceptance": 1
+      },
+      "reorgedClaims": [],
+      "removals": [],
+      "scansAfterRemoval": [],
+      "mechanisms": {
+        "M1": false,
+        "M2": false
+      }
+    },
+    {
+      "index": 16,
+      "txId": "f965ab823be083c51e01a2b017d963bf824f990b1be41e7a26d0529b5a00e819",
+      "hardkasSequence": [
+        "ACCEPTED@319.6s(tx wait)",
+        "CONFIRMED@329.7s(tx wait)"
+      ],
+      "hardkasRecovered": null,
+      "truth": {
+        "firstAcceptedAt": 319265,
+        "acceptingBlockChanges": 2,
+        "acceptanceLost": 0,
+        "final": {
+          "accepting": "cae2739ca0efb0053fedff5c4fdd6800ffc95b3a424c255e9f05a4f290c81555",
+          "outputs": 1,
+          "mempool": "absent",
+          "daa": "8223"
+        },
+        "mempoolGapsBeforeAcceptance": 1
+      },
+      "reorgedClaims": [],
+      "removals": [],
+      "scansAfterRemoval": [],
+      "mechanisms": {
+        "M1": false,
+        "M2": false
+      }
+    },
+    {
+      "index": 17,
+      "txId": "47c471b852ee743942d784be78b8aa91d511c6902d8b97789367dc1310db979c",
+      "hardkasSequence": [
+        "SUBMITTED@342.3s(tx wait)",
+        "ACCEPTED@343.7s(tx wait)",
+        "CONFIRMED@352.6s(tx wait)"
+      ],
+      "hardkasRecovered": null,
+      "truth": {
+        "firstAcceptedAt": 342538,
+        "acceptingBlockChanges": 1,
+        "acceptanceLost": 0,
+        "final": {
+          "accepting": "f8fcdc55c1197ea576d45113d6357585282e576080b1577232579e16e2a88f4d",
+          "outputs": 1,
+          "mempool": "absent",
+          "daa": "8525"
+        },
+        "mempoolGapsBeforeAcceptance": 1
+      },
+      "reorgedClaims": [],
+      "removals": [],
+      "scansAfterRemoval": [],
+      "mechanisms": {
+        "M1": false,
+        "M2": false
+      }
+    },
+    {
+      "index": 18,
+      "txId": "d4648d8fc2df3b3368792e3c4f4f66509d073cb265004ba7d990b9e8a7dc2f7a",
+      "hardkasSequence": [
+        "ACCEPTED@365.4s(tx wait)",
+        "CONFIRMED@373.0s(tx wait)"
+      ],
+      "hardkasRecovered": null,
+      "truth": {
+        "firstAcceptedAt": 364564,
+        "acceptingBlockChanges": 1,
+        "acceptanceLost": 0,
+        "final": {
+          "accepting": "ca84e44175e02ea95ac76d27f585a23768eb9b02fca7e2ce826ff4241885dd05",
+          "outputs": 1,
+          "mempool": "absent",
+          "daa": "8798"
+        },
+        "mempoolGapsBeforeAcceptance": 1
+      },
+      "reorgedClaims": [],
+      "removals": [],
+      "scansAfterRemoval": [],
+      "mechanisms": {
+        "M1": false,
+        "M2": false
+      }
+    },
+    {
+      "index": 19,
+      "txId": "3d1ec6b1da9bb4d7644ce49efec797bb4bce69900b52c77e57431a4e178c3d96",
+      "hardkasSequence": [
+        "ACCEPTED@386.2s(tx wait)",
+        "CONFIRMED@395.4s(tx wait)"
+      ],
+      "hardkasRecovered": null,
+      "truth": {
+        "firstAcceptedAt": 386261,
+        "acceptingBlockChanges": 3,
+        "acceptanceLost": 0,
+        "final": {
+          "accepting": "f6a414f763c99b6ef27be830a1211e26b7ce6231ab8f951d4b7d11f2dee63da1",
+          "outputs": 1,
+          "mempool": "absent",
+          "daa": "9095"
+        },
+        "mempoolGapsBeforeAcceptance": 1
+      },
+      "reorgedClaims": [],
+      "removals": [],
+      "scansAfterRemoval": [],
+      "mechanisms": {
+        "M1": false,
+        "M2": false
+      }
+    },
+    {
+      "index": 20,
+      "txId": "d0457acf17a708efb96028499fedc33ab3d26d447d7eeb48d6ae3ba8090e152d",
+      "hardkasSequence": [
+        "ACCEPTED@408.8s(tx wait)",
+        "CONFIRMED@417.9s(tx wait)"
+      ],
+      "hardkasRecovered": null,
+      "truth": {
+        "firstAcceptedAt": 407972,
+        "acceptingBlockChanges": 3,
+        "acceptanceLost": 0,
+        "final": {
+          "accepting": "d45b19833b6b4baa37ee5eb9c6cb7055b4c768820989dca8656c06b410f0c201",
+          "outputs": 1,
+          "mempool": "absent",
+          "daa": "9405"
+        },
+        "mempoolGapsBeforeAcceptance": 1
+      },
+      "reorgedClaims": [],
+      "removals": [],
+      "scansAfterRemoval": [],
+      "mechanisms": {
+        "M1": false,
+        "M2": false
+      }
+    }
+  ]
+}

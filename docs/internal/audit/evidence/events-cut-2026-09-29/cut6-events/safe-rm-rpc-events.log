@@ -1,0 +1,10 @@
+﻿{
+  "removed": "C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\\packages\\rpc-events",
+  "links": [
+    "node_modules\\@hardkas\\core -> C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\\packages\\core",
+    "node_modules\\typescript -> C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\\node_modules\\.pnpm\\typescript@5.9.3\\node_modules\\typescript",
+    "node_modules\\vitest -> C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\\node_modules\\.pnpm\\vitest@2.1.9_@types+node@26.1.2_jsdom@29.1.1_@noble+hashes@2.2.0__lightningcss@1.32.0_terser@5.51.2\\node_modules\\vitest"
+  ],
+  "files": 114,
+  "dirs": 22
+}

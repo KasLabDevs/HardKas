@@ -1,0 +1,20 @@
+worktree=C:\Users\jrodr\AppData\Local\Temp\hk-fix\wt
+HEAD=0f4c2f26be69b6ade17cd2aa8a9c6a8faade82d3
+status:
+ M packages/artifacts/src/schemas.ts
+ M packages/artifacts/src/tx-observation.ts
+ M packages/artifacts/src/tx-status.ts
+ M packages/artifacts/test/adversarial/__snapshots__/wave1-1-canonical-v5.test.ts.snap
+ M packages/sdk/src/tx-observer.ts
+ M packages/sdk/src/tx.ts
+?? packages/artifacts/test/tx-status-reacceptance.test.ts
+?? packages/sdk/test/reorged-acceptance-churn.test.ts
+sha256 of the changed and new files:
+f416fae3eee1e444ce0bf1384c429044fe64519e497442dedd7ac242bf8db7f1  packages/artifacts/src/schemas.ts
+7044edeec2d49df40da1ef80ac3dab685bb58ed22dbb6d836b98b87b3debad60  packages/artifacts/src/tx-observation.ts
+98179ef570858ef4f4d853b2a9fd8750be9fb98f3b916a6276d327769eb8e6d2  packages/artifacts/src/tx-status.ts
+01823201bf63dc8e644c0b602af488bc23a56a4357bc47617c232f2b863fa14e  packages/sdk/src/tx-observer.ts
+17367ab6848ddc4737819bdd9dc6a9070655f4ec228edd130a9e13f2e18b5f71  packages/sdk/src/tx.ts
+06f53bd730024319bba3812a658f9e464d89806f36542fc3e4a550881d83799b  packages/artifacts/test/tx-status-reacceptance.test.ts
+d1b44da39f84faf6c1f7e159eda087c8408563dd0c7eaa27656eb234a7b9bb3b  packages/sdk/test/reorged-acceptance-churn.test.ts
+built: sdk dist 2026-10-02T21:49:53, artifacts dist 2026-10-02T21:48:48, cli dist 2026-10-02T21:50:52

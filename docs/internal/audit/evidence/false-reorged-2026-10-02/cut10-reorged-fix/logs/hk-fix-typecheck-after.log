@@ -1,0 +1,8 @@
+﻿Scope: 2 of 62 workspace projects
+packages/sdk typecheck$ tsc --noEmit
+packages/sdk typecheck: src/tx-observer.ts(245,75): error TS2345: Argument of type '{ type: "mempool_entry"; isOrphan: boolean; feeSompi?: string | undefined; } | { type: "mempool_absent"; } | { type: "chain_removed"; acceptingBlockHash: string; } | { type: "finality_reached"; acceptingBlockHash: string; acceptingBlueScore: string; confirmationsBlue: string; finalityDepth: string; } | { ...; } | { ...' is not assignable to parameter of type '{ type: "mempool_entry"; isOrphan: boolean; feeSompi?: string | undefined; } | { type: "mempool_absent"; } | { type: "chain_accepted"; acceptingBlockHash: string; acceptingBlueScore: string; confirmationsBlue: string; acceptingDaaScore?: string | undefined; confirmationsDaa?: string | undefined; } | ... 4 more ... |...'.
+packages/sdk typecheck:   Object literal may only specify known properties, but 'removedAcceptingBlockHash' does not exist in type '{ type: "chain_accepted"; acceptingBlockHash: string; acceptingBlueScore: string; confirmationsBlue: string; acceptingDaaScore?: string | undefined; confirmationsDaa?: string | undefined; }'. Did you mean to write 'acceptingBlockHash'?
+packages/sdk typecheck: Failed
+C:\Users\jrodr\AppData\Local\Temp\hk-fix\wt\packages\sdk:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @hardkas/sdk@0.12.0-rc.26 typecheck: `tsc --noEmit`
+Exit status 2

@@ -126,6 +126,20 @@ the local simulation boundary.
 reliably, but has no resilient connection pooling and no retry jitter. If the
 node disconnects, restart the script.
 
+### Node on Windows: the SDK uses the `ws` WebSocket
+
+HardKAS talks to the node through the official kaspa-wasm `RpcClient`. That
+client opens its connection through the global W3C `WebSocket`. With Node's
+built-in `WebSocket` on Windows, a process that opens and closes four or more
+connections and then calls `process.exit` aborts
+(`Assertion failed: !(handle->flags & UV_HANDLE_CLOSING)`). We reproduced this
+with the bare SDK, without HardKAS code. So `@hardkas/kaspa-rpc` sets the global
+to the `ws` package's `WebSocket`, as kaspa-wasm's Node instructions do, unless
+something else replaced the global after HardKAS loaded. This is a compatibility
+shim, not a HardKAS transport: the SDK still drives the connection. It comes out
+once the upstream combination is fixed (see
+`packages/kaspa-rpc/src/upstream/node-websocket-compat.ts`).
+
 ## Related
 
 - [Release Claims](./claims.generated.md) — the generated, authoritative values.

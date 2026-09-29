@@ -1,0 +1,60 @@
+﻿{
+  "label": "before",
+  "packs": 33,
+  "packLeaks": [],
+  "npm": {
+    "install": 0,
+    "hardkasInstalled": 25,
+    "hardkasFromRegistry": 0,
+    "thirdParty": 145,
+    "workspaceLeak": false,
+    "importsOk": 31,
+    "importsFailed": [
+      "@hardkas/testing/setup → ERR_MODULE_NOT_FOUND: Cannot find package 'vitest' imported from C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-3a\\before\\npm-consumer\\node_modules\\@hardkas\\testing\\dist\\setup.js",
+      "@hardkas/testing/scenarios → ERR_MODULE_NOT_FOUND: Cannot find package 'vitest' imported from C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-3a\\before\\npm-consumer\\node_modules\\@hardkas\\testing\\dist\\scenarios.js"
+    ],
+    "version": "0.12.0-rc.26",
+    "steps": [
+      "OK  hardkas --version",
+      "OK  hardkas capabilities --json",
+      "OK  hardkas init smoke-proj --json",
+      "OK  hardkas accounts list --json",
+      "OK  hardkas tx plan --from alice --to bob --amount 1 --out plan.json --json",
+      "OK  hardkas artifact verify plan.json --json",
+      "OK  hardkas query artifacts list --json"
+    ],
+    "planSchema": "hardkas.txPlan"
+  },
+  "pnpm": {
+    "install": 0,
+    "hardkasInstalled": 33,
+    "hardkasFromRegistry": 0,
+    "thirdParty": 150,
+    "workspaceLeak": false,
+    "importsOk": 39,
+    "importsFailed": [
+      "@hardkas/testing/setup → ERR_MODULE_NOT_FOUND: Cannot find package 'vitest' imported from C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-3a\\before\\pnpm-consumer\\node_modules\\.pnpm\\@hardkas+testing@file+..+ta_c68dcf457b79915f1d1c8b0eda907762\\node_modules\\@ha",
+      "@hardkas/testing/scenarios → ERR_MODULE_NOT_FOUND: Cannot find package 'vitest' imported from C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-3a\\before\\pnpm-consumer\\node_modules\\.pnpm\\@hardkas+testing@file+..+ta_c68dcf457b79915f1d1c8b0eda907762\\node_modules\\@ha"
+    ],
+    "version": "0.12.0-rc.26",
+    "steps": [
+      "OK  hardkas --version",
+      "OK  hardkas capabilities --json",
+      "OK  hardkas init smoke-proj --json",
+      "OK  hardkas accounts list --json",
+      "OK  hardkas tx plan --from alice --to bob --amount 1 --out plan.json --json",
+      "OK  hardkas artifact verify plan.json --json",
+      "OK  hardkas query artifacts list --json"
+    ],
+    "planSchema": "hardkas.txPlan"
+  }
+}
+node : (node:15100) [DEP0190] DeprecationWarning: Passing args to a child process with shell option true can lead to 
+security vulnerabilities, as the arguments are not escaped, only concatenated.
+En línea: 1 Carácter: 518
++ ... EMP\hk-3a"; node $s . $o before consume *> "$o\before-consume.log"; " ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ((node:15100) [D...y concatenated.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+(Use `node --trace-deprecation ...` to show where the warning was created)

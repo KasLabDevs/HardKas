@@ -20,19 +20,19 @@ export function registerChaosCommands(program: Command) {
     )
     .option("--runs <number>", "Number of chaos iterations to run", "300")
     .option("--seed <number>", "Deterministic PRNG seed", "1337")
-    .option("--profile <smoke|targeted|full>", "Fuzzing distribution profile", "smoke")
+    .option("--profile <smoke|targeted|full>", "Actor weight profile (smoke, targeted and full currently use the same weights)", "smoke")
     .option(
       "--actor <LockHell|RotBot|DriftHunter|HumanChaos>",
       "Target a specific chaos actor instead of using a profile"
     )
     .option(
       "--isolate",
-      "Run the chaos engine in a dedicated temporary workspace (Default)",
+      "Always on: chaos runs in ./.hardkas-chaos-workspace (the flag has no effect)",
       true
     )
     .option(
       "--unsafe-current-dir",
-      "Run chaos in the current directory (DANGEROUS)",
+      "Request a run in the current directory (DANGEROUS; needs HARDKAS_ALLOW_UNSAFE_CHAOS=1). Known issue: only the safety checks run, the campaign stays in the isolated workspace",
       false
     )
     .option("--force-ci-chaos", "Allow unsafe chaos in CI environments", false)
@@ -56,9 +56,9 @@ export function registerChaosCommands(program: Command) {
 
   chaosCmd
     .command("replay")
-    .description("Replay a specific chaos run deterministically")
+    .description("Re-run one chaos run seed in a fresh isolated workspace (the actor is derived from the seed, so runs from an --actor campaign are not reproduced)")
     .requiredOption("--run-seed <number>", "The run seed to replay")
-    .option("--isolate", "Run in isolated workspace", true)
+    .option("--isolate", "Always on (the flag has no effect)", true)
     .action(async (options) => {
       try {
         const { replayChaosRun } = await import("../runners/chaos-runner.js");

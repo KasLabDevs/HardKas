@@ -38,7 +38,10 @@ export interface LocalnetFundOptions {
   profile?: string;
   json?: boolean;
   timeoutMs?: number;
+  /** Keep mining to the funded account after funding (its balance keeps growing). */
   keepMiner?: boolean;
+  /** Leave the chain stopped after funding: no liveness miner, no new blocks. */
+  stopMiner?: boolean;
   workspaceRoot?: string;
 }
 
@@ -125,21 +128,74 @@ export async function runLocalnetStart(opts: LocalnetStartOptions): Promise<void
 export async function runLocalnetStop(opts: { json?: boolean; profile?: string; workspaceRoot?: string }): Promise<void> {
   const profile = opts.profile || TOCCATA_PROFILE;
 
+  // The only localnet HardKAS manages is the Docker toccata-v2 node. "simulated" (the alpha default) has nothing to
+  // stop, and answering it with a success is how a running node used to be reported as stopped.
   if (profile !== TOCCATA_PROFILE) {
-    if (!opts.json) {
-      UI.info("Simulated localnet state is managed in-memory.");
-    }
-    return;
+    const { HardkasCliError, HardkasExitCode } = await import("../cli-errors.js");
+    throw new HardkasCliError(
+      "LOCALNET_PROFILE_UNSUPPORTED",
+      `'${profile}' is not a localnet that can be stopped: the only localnet is the Docker ${TOCCATA_PROFILE} node ('hardkas localnet stop').`,
+      { exitCode: HardkasExitCode.USAGE_ERROR }
+    );
   }
 
-  await execa("docker", ["stop", TOCCATA_NODE_CONTAINER]).catch(() => {});
-  await stopToccataMiner();
+  // STOP-TRUTH-1: a stop is reported only once the node is verified not running. Whatever Docker cannot confirm is an
+  // error, never a success; a node that was already down is an idempotent success of its own.
+  const before = await toccataContainerState(TOCCATA_NODE_CONTAINER);
+  if (before.up) await stopToccataContainerVerified(TOCCATA_NODE_CONTAINER);
+  // The miner shares the node's network namespace and normally dies with it; one still up is stopped and checked too.
+  const miner = await toccataContainerState(TOCCATA_MINER_CONTAINER);
+  if (miner.up) await stopToccataContainerVerified(TOCCATA_MINER_CONTAINER);
+  const node = await toccataContainerState(TOCCATA_NODE_CONTAINER);
+  const status = before.up ? "TOCCATA_NODE_STOPPED" : "TOCCATA_NODE_ALREADY_STOPPED";
 
   if (opts.json) {
-    getOutput().writeJson({ schema: HardkasSchemas.LocalnetStatusV1, profile, status: "TOCCATA_NODE_STOPPED" });
-  } else {
+    getOutput().writeJson({ schema: HardkasSchemas.LocalnetStatusV1, profile, status, node: { container: TOCCATA_NODE_CONTAINER, state: node.state } });
+  } else if (before.up) {
     UI.success("Localnet stopped");
+  } else {
+    UI.info(`Localnet already stopped: ${TOCCATA_NODE_CONTAINER} is ${node.state}`);
   }
+}
+
+/** A canonical container's state as Docker reports it; "absent" when it does not exist. Docker unreachable throws. */
+async function toccataContainerState(name: string): Promise<{ state: string; up: boolean }> {
+  try {
+    const { stdout } = await execa("docker", ["inspect", "--format", "{{.State.Status}}", name]);
+    const state = stdout.trim();
+    return { state, up: state === "running" || state === "paused" || state === "restarting" };
+  } catch (e: any) {
+    const detail = `${e?.stderr ?? ""} ${e?.message ?? ""}`;
+    if (/No such (object|container)/i.test(detail)) return { state: "absent", up: false };
+    const { HardkasCliError } = await import("../cli-errors.js");
+    throw new HardkasCliError(
+      "LOCALNET_DOCKER_UNAVAILABLE",
+      `Docker could not report the state of ${name}, so nothing about the localnet can be confirmed: ${firstLine(detail)}`
+    );
+  }
+}
+
+/** `docker stop`, then the postcondition: the container must no longer be up. */
+async function stopToccataContainerVerified(name: string): Promise<void> {
+  try {
+    await execa("docker", ["stop", name]);
+  } catch (e: any) {
+    const detail = `${e?.stderr ?? ""} ${e?.message ?? ""}`;
+    // gone in the meantime satisfies the postcondition; any other failure is the stop failing
+    if (!/No such (object|container)/i.test(detail)) {
+      const { HardkasCliError } = await import("../cli-errors.js");
+      throw new HardkasCliError("LOCALNET_STOP_FAILED", `docker stop ${name} failed: ${firstLine(detail)}`);
+    }
+  }
+  const after = await toccataContainerState(name);
+  if (after.up) {
+    const { HardkasCliError } = await import("../cli-errors.js");
+    throw new HardkasCliError("LOCALNET_STOP_FAILED", `${name} is still ${after.state} after docker stop`);
+  }
+}
+
+function firstLine(text: string): string {
+  return text.trim().split(/\r?\n/).find((l) => l.trim()) ?? "unknown error";
 }
 
 export async function runLocalnetStatus(opts: LocalnetStatusOptions): Promise<void> {
@@ -178,6 +234,14 @@ export async function runLocalnetFund(opts: LocalnetFundOptions): Promise<void> 
   const profile = opts.profile || TOCCATA_PROFILE;
   if (profile !== TOCCATA_PROFILE) {
     throw new Error(`Unsupported localnet funding profile: ${profile}`);
+  }
+  if (opts.keepMiner && opts.stopMiner) {
+    const { HardkasCliError, HardkasExitCode } = await import("../cli-errors.js");
+    throw new HardkasCliError(
+      "LOCALNET_FUND_MINER_FLAGS_CONFLICT",
+      "--keep-miner and --stop-miner are mutually exclusive: keep mining to the funded account, or leave the chain stopped.",
+      { exitCode: HardkasExitCode.USAGE_ERROR }
+    );
   }
 
   const { config } = await loadHardkasConfig({});
@@ -262,6 +326,15 @@ export async function runLocalnetFund(opts: LocalnetFundOptions): Promise<void> 
       ? "TOCCATA_ACCOUNT_FUNDED"
       : "TOCCATA_FUNDING_PENDING_MATURITY";
 
+  // FUND-LIVENESS-1 (AUD-16): after fund the localnet keeps producing blocks unless --stop-miner. The result above
+  // was measured on the stopped, settled chain; only now does a miner start again, and it never rewards the funded
+  // account: its coinbase goes to an address nobody controls.
+  let minerRewardAddress: string | undefined = opts.keepMiner ? address : undefined;
+  if (!opts.keepMiner && !opts.stopMiner) {
+    minerRewardAddress = await livenessMinerRewardAddress();
+    await restartToccataMiner(minerRewardAddress);
+  }
+
   const payload = {
     schema: HardkasSchemas.LocalnetFundingV1,
     profile,
@@ -269,11 +342,12 @@ export async function runLocalnetFund(opts: LocalnetFundOptions): Promise<void> 
     address,
     before,
     after: current,
-    miner: await inspectDockerContainer(TOCCATA_MINER_CONTAINER)
+    miner: await inspectDockerContainer(TOCCATA_MINER_CONTAINER),
+    ...(minerRewardAddress ? { minerRewardAddress } : {})
   };
 
   if (opts.json) {
-    getOutput().writeLine(JSON.stringify(payload, bigintReplacer, 2));
+    getOutput().writeJson(payload);
     return;
   }
 
@@ -284,6 +358,25 @@ export async function runLocalnetFund(opts: LocalnetFundOptions): Promise<void> 
   }
   UI.info(`Address: ${address}`);
   UI.info(`Mature balance: ${current.matureBalanceSompi.toString()} sompi`);
+  UI.info(
+    opts.stopMiner
+      ? "Miner: stopped (--stop-miner): no new blocks until you mine again"
+      : opts.keepMiner
+        ? "Miner: still mining to this account (--keep-miner)"
+        : "Miner: running for block production; its rewards go to an unspendable address"
+  );
+}
+
+/**
+ * Reward address of the liveness miner `localnet fund` leaves running (FUND-LIVENESS-1): P2SH of the one-byte script
+ * OP_RETURN. Spending it means revealing that script, whose execution always fails, so its coinbase is spendable by
+ * nobody: no account, key or secret exists. Built from the pinned SDK, never hard-coded.
+ */
+async function livenessMinerRewardAddress(): Promise<string> {
+  const { loadKaspaWasm } = await import("@hardkas/accounts");
+  const k = await loadKaspaWasm();
+  const redeemScript = new k.ScriptBuilder().addOp(k.Opcodes.OpReturn).toString();
+  return k.addressFromScriptPublicKey(k.payToScriptHashScript(redeemScript), "simnet").toString();
 }
 
 interface VirtualFingerprint {

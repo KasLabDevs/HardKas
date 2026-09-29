@@ -1,8 +1,11 @@
 // SAFETY_LEVEL: SIMULATION_ONLY
 //
 // Semantic assertion matchers for HardKAS transaction testing.
-
-import { expect } from "vitest";
+//
+// No runtime import of vitest here: the main entry re-exports this module and
+// vitest is an optional peer (only ./setup and ./scenarios load it). The type-only
+// import anchors the augmentation below and is always erased.
+import type { Assertion } from "vitest";
 
 export interface HardKasMatchers<R = void> {
   /** Assert a receipt has status "accepted". */

@@ -1,0 +1,41 @@
+﻿gate-hermetic: HARDKAS_HOME=C:\Users\jrodr\AppData\Local\Temp\hardkas-hermetic-home-dTdxba (copy of C:\Users\jrodr\AppData\Local\Temp\hk-v210-gate-home)
+gate-hermetic: DOCKER_HOST=tcp://127.0.0.1:1; preload=C:\Users\jrodr\AppData\Local\Temp\hk-3c1\wt\scripts\hermetic\no-network-preload.cjs
+gate-hermetic: vitest run --coverage.enabled=false --reporter=default --reporter=json --outputFile=C:\Users\jrodr\AppData\Local\Temp\claude\C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo\21f9a2e4-33ac-4300-9366-aff402f85900\scratchpad\cut7-3c1\logs\3c1-after1-targeted.json packages/kaspa-rpc/test/surface-cut-resilient-subscriber.test.ts packages/toolkit/test/surface-cut-subscription-manager.test.ts packages/testing/test/gate-subpath-exports.test.ts packages/toolkit/test/wallet-watch-utxocontext.test.ts packages/tx-builder/test/utxo-context-reconnect.test.ts packages/sdk/test/surface-cut-events.test.ts packages/toolkit/test/toolkit.test.ts packages/kaspa-rpc/test/subscriptions.test.ts
+
+ RUN  v2.1.9 C:/Users/jrodr/AppData/Local/Temp/hk-3c1/wt
+
+node.exe : stderr | packages/toolkit/test/wallet-watch-utxocontext.test.ts > Surface Cut 3b · R4: the watch contract 
+on the new engine > a throwing listener does not stop delivery
+En C:\Users\jrodr\AppData\Local\Temp\claude\C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo\21f9a2e4-33ac-4300-
+9366-aff402f85900\scratchpad\cut7-3c1\run-files-wt.ps1: 22 Carácter: 1
++ & node @args_ *> $log
++ ~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (stderr | packag...t stop delivery:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+{"timestamp":"2026-10-02T10:14:24.824Z","level":"error","event":"Wallet watch listener failed","context":{"error":{}}}
+
+ ✓ packages/toolkit/test/wallet-watch-utxocontext.test.ts (13 tests) 24ms
+ ✓ packages/kaspa-rpc/test/subscriptions.test.ts (9 tests) 13ms
+ ✓ packages/tx-builder/test/utxo-context-reconnect.test.ts (6 tests) 7ms
+stdout | packages/toolkit/test/toolkit.test.ts > @hardkas/toolkit V1 > JobsToolkit > should initialize and enqueue jobs
+{"timestamp":"2026-10-02T10:14:27.308Z","level":"info","event":"Job enqueued","context":{"id":"8aea1180-fcbf-4fc8-8894-49d237f77967","type":"test-job"}}
+{"timestamp":"2026-10-02T10:14:27.312Z","level":"info","event":"Job completed","context":{"id":"8aea1180-fcbf-4fc8-8894-49d237f77967","type":"test-job"}}
+
+ ✓ packages/toolkit/test/toolkit.test.ts (8 tests) 239ms
+ ✓ packages/testing/test/gate-subpath-exports.test.ts (6 tests) 9ms
+ ✓ packages/kaspa-rpc/test/surface-cut-resilient-subscriber.test.ts (4 tests) 6ms
+ ✓ packages/toolkit/test/surface-cut-subscription-manager.test.ts (3 tests) 3ms
+ ✓ packages/sdk/test/surface-cut-events.test.ts (2 tests) 104ms
+
+ Test Files  8 passed (8)
+      Tests  51 passed (51)
+   Start at  12:14:21
+   Duration  10.96s (transform 1.68s, setup 0ms, collect 7.90s, tests 405ms, environment 2ms, prepare 913ms)
+
+JSON report written to C:/Users/jrodr/AppData/Local/Temp/claude/C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo/21f9a2e4-33ac-4300-9366-aff402f85900/scratchpad/cut7-3c1/logs/3c1-after1-targeted.json
+
+gate-hermetic: vitest exit 0 after 12s
+gate-hermetic: non-loopback attempts (each one fails the gate): 0
+gate-hermetic: loopback connection targets (review for dependencies on local services):
+gate-hermetic: PASS

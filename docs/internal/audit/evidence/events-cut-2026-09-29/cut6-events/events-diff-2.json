@@ -1,0 +1,345 @@
+{
+  "address": "kaspasim:qr8um83efu3smxzt2xm5nvkjdtwg75x7xz9xcn8ghsckrx0r9wwdxn92ca7pz",
+  "rpcUrl": "ws://127.0.0.1:18210",
+  "phaseSeconds": 30,
+  "marks": {
+    "restartAt": 40925,
+    "nodeBackAt": 46370,
+    "nodeBack": true
+  },
+  "groundTruth": {
+    "phase1": {
+      "first": 717,
+      "second": 825,
+      "stable": false
+    },
+    "rightAfterRestart": {
+      "size": 2523,
+      "phase1Kept": 643,
+      "phase1Gone": 182,
+      "appeared": 1880
+    },
+    "phase2": {
+      "first": 3272,
+      "second": 3455,
+      "stable": false,
+      "newSincePhase1": 2812
+    },
+    "controlAddedAfterBack": 5153
+  },
+  "observers": {
+    "hkEventsAsWired": {
+      "notifications": {
+        "beforeRestart": 0,
+        "duringRestart": 0,
+        "afterBack": 0
+      },
+      "phase1Coverage": "0/825",
+      "afterBackCoverage": {
+        "ofControl": "0/5153",
+        "ofNodeNew": "0/2812"
+      },
+      "transportSpy": {
+        "remoteSubscribeCalls": 0,
+        "deliveries": {
+          "beforeRestart": 0,
+          "afterBack": 0
+        },
+        "phase1Coverage": "0/825",
+        "filter": null
+      }
+    },
+    "hkEventsConnected": {
+      "notifications": {
+        "beforeRestart": 0,
+        "duringRestart": 0,
+        "afterBack": 0
+      },
+      "phase1Coverage": "0/825",
+      "afterBackCoverage": {
+        "ofControl": "0/5153",
+        "ofNodeNew": "0/2812"
+      },
+      "transportSpy": {
+        "remoteSubscribeCalls": 1,
+        "deliveries": {
+          "beforeRestart": 0,
+          "afterBack": 0
+        },
+        "phase1Coverage": "0/825",
+        "filter": null
+      }
+    },
+    "toolkitWatch": {
+      "notifications": {
+        "beforeRestart": 146,
+        "duringRestart": 4,
+        "afterBack": 0
+      },
+      "phase1Coverage": "825/825",
+      "afterBackCoverage": {
+        "ofControl": "0/5153",
+        "ofNodeNew": "0/2812"
+      }
+    },
+    "kaspaRpc": {
+      "notifications": {
+        "beforeRestart": 217,
+        "duringRestart": 5,
+        "afterBack": 0
+      },
+      "phase1Coverage": "825/825",
+      "afterBackCoverage": {
+        "ofControl": "0/5153",
+        "ofNodeNew": "0/2812"
+      },
+      "atSnapshot1": {
+        "kind": "reconstructed (added − removed)",
+        "held": 825,
+        "node": 825,
+        "missing": 0,
+        "extra": 0
+      },
+      "atEnd": {
+        "kind": "reconstructed (added − removed)",
+        "held": 781,
+        "node": 3455,
+        "missing": 2674,
+        "extra": 0
+      },
+      "sessionConnectedAtEnd": false
+    },
+    "kaspaRpcTraffic": {
+      "notifications": {
+        "beforeRestart": 216,
+        "duringRestart": 0,
+        "afterBack": 245
+      },
+      "phase1Coverage": "794/825",
+      "afterBackCoverage": {
+        "ofControl": "5153/5153",
+        "ofNodeNew": "932/2812"
+      },
+      "atSnapshot1": {
+        "kind": "reconstructed (added − removed)",
+        "held": 818,
+        "node": 825,
+        "missing": 825,
+        "extra": 818
+      },
+      "atEnd": {
+        "kind": "reconstructed (added − removed)",
+        "held": 1665,
+        "node": 3455,
+        "missing": 2642,
+        "extra": 852
+      },
+      "sessionConnectedAtEnd": true
+    },
+    "utxoContext": {
+      "notifications": {
+        "beforeRestart": 2026,
+        "duringRestart": 10,
+        "afterBack": 2108
+      },
+      "phase1Coverage": "794/825",
+      "afterBackCoverage": {
+        "ofControl": "5153/5153",
+        "ofNodeNew": "2812/2812"
+      },
+      "atSnapshot1": {
+        "kind": "context",
+        "mature": 818,
+        "pending": 0,
+        "stasisPerBalanceEvent": 0,
+        "balanceCountTotal": 818,
+        "node": 825,
+        "listedNotOnNode": 818,
+        "onNodeNotListed": 825
+      },
+      "atEnd": {
+        "kind": "context",
+        "mature": 3460,
+        "pending": 0,
+        "stasisPerBalanceEvent": 0,
+        "balanceCountTotal": 3460,
+        "node": 3455,
+        "listedNotOnNode": 34,
+        "onNodeNotListed": 29
+      },
+      "reconnect": {
+        "connects": [
+          46287
+        ],
+        "disconnects": [
+          43258
+        ]
+      },
+      "eventTypes": {
+        "server-status": 2,
+        "utxo-proc-start": 2,
+        "sync-state": 1,
+        "balance": 542,
+        "daa-score-change": 1407,
+        "stasis": 162,
+        "pending": 1968,
+        "reorg": 209,
+        "maturity": 1741,
+        "disconnect": 1,
+        "utxo-proc-stop": 1,
+        "connect": 1,
+        "discovery": 64
+      }
+    },
+    "utxoContextNoReReg": {
+      "notifications": {
+        "beforeRestart": 2026,
+        "duringRestart": 0,
+        "afterBack": 0
+      },
+      "phase1Coverage": "794/825",
+      "afterBackCoverage": {
+        "ofControl": "0/5153",
+        "ofNodeNew": "0/2812"
+      },
+      "atSnapshot1": {
+        "kind": "context",
+        "mature": 818,
+        "pending": 0,
+        "stasisPerBalanceEvent": 0,
+        "balanceCountTotal": 818,
+        "node": 825,
+        "listedNotOnNode": 818,
+        "onNodeNotListed": 825
+      },
+      "atEnd": {
+        "kind": "context",
+        "mature": 818,
+        "pending": 0,
+        "stasisPerBalanceEvent": 0,
+        "balanceCountTotal": 818,
+        "node": 3455,
+        "listedNotOnNode": 818,
+        "onNodeNotListed": 3455
+      },
+      "reconnect": {
+        "connects": [
+          46335
+        ],
+        "disconnects": [
+          43301
+        ]
+      },
+      "eventTypes": {
+        "server-status": 2,
+        "utxo-proc-start": 2,
+        "sync-state": 1,
+        "balance": 236,
+        "daa-score-change": 1407,
+        "stasis": 80,
+        "pending": 980,
+        "reorg": 119,
+        "maturity": 847,
+        "disconnect": 1,
+        "utxo-proc-stop": 1,
+        "connect": 1
+      }
+    },
+    "rawRpc": {
+      "notifications": {
+        "beforeRestart": 216,
+        "duringRestart": 0,
+        "afterBack": 0
+      },
+      "phase1Coverage": "794/825",
+      "afterBackCoverage": {
+        "ofControl": "0/5153",
+        "ofNodeNew": "0/2812"
+      },
+      "atSnapshot1": {
+        "kind": "reconstructed (added − removed)",
+        "held": 818,
+        "node": 825,
+        "missing": 825,
+        "extra": 818
+      },
+      "atEnd": {
+        "kind": "reconstructed (added − removed)",
+        "held": 818,
+        "node": 3455,
+        "missing": 3455,
+        "extra": 818
+      },
+      "reconnect": {
+        "connects": [
+          1232,
+          46330
+        ],
+        "disconnects": [
+          43300
+        ]
+      }
+    },
+    "rawRpcResub": {
+      "notifications": {
+        "beforeRestart": 216,
+        "duringRestart": 0,
+        "afterBack": 245
+      },
+      "phase1Coverage": "794/825",
+      "afterBackCoverage": {
+        "ofControl": "5153/5153",
+        "ofNodeNew": "932/2812"
+      },
+      "atSnapshot1": {
+        "kind": "reconstructed (added − removed)",
+        "held": 818,
+        "node": 825,
+        "missing": 825,
+        "extra": 818
+      },
+      "atEnd": {
+        "kind": "reconstructed (added − removed)",
+        "held": 1665,
+        "node": 3455,
+        "missing": 2642,
+        "extra": 852
+      },
+      "reconnect": {
+        "connects": [
+          1236,
+          46331
+        ],
+        "disconnects": [
+          43300
+        ]
+      }
+    },
+    "control": {
+      "notifications": {
+        "beforeRestart": 0,
+        "duringRestart": 0,
+        "afterBack": 245
+      },
+      "phase1Coverage": "0/825",
+      "afterBackCoverage": {
+        "ofControl": "5153/5153",
+        "ofNodeNew": "932/2812"
+      },
+      "atEnd": {
+        "kind": "reconstructed (added − removed)",
+        "held": 847,
+        "node": 3455,
+        "missing": 2642,
+        "extra": 34
+      },
+      "reconnect": {
+        "connects": [
+          46442
+        ],
+        "disconnects": []
+      }
+    }
+  },
+  "errors": []
+}

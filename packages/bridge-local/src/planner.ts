@@ -1,4 +1,4 @@
-import { buildPaymentPlan, TxPlan, Utxo } from "@hardkas/tx-builder";
+import { planPaymentWithGenerator, TxPlan, Utxo } from "@hardkas/tx-builder";
 import { serializeBridgePayload, BridgeEntryPayload } from "./payload.js";
 import { NetworkId } from "@hardkas/core";
 
@@ -15,7 +15,12 @@ export interface BridgePlan extends TxPlan {
   readonly serializedPayload: string;
 }
 
-export function planBridgeEntry(request: BridgePlanRequest): BridgePlan {
+/**
+ * Plans a local bridge entry: a payment carrying the bridge payload, planned and
+ * priced (payload included) by the kaspa-wasm Generator. Local simulation only: the
+ * identities are planned as the simulator's.
+ */
+export async function planBridgeEntry(request: BridgePlanRequest): Promise<BridgePlan> {
   const bridgePayload: BridgeEntryPayload = {
     marker: "IGRA",
     targetEvmAddress: request.targetEvmAddress,
@@ -24,17 +29,16 @@ export function planBridgeEntry(request: BridgePlanRequest): BridgePlan {
   };
 
   const serializedPayload = serializeBridgePayload(bridgePayload);
-  const payloadBytes = serializedPayload.length / 2;
 
-  const txPlan = buildPaymentPlan({
-    fromAddress: request.fromAddress,
+  const txPlan = await planPaymentWithGenerator({
+    utxos: request.availableUtxos,
     outputs: [
       // In a real bridge, this might be a specific bridge multisig or script
       { address: request.fromAddress, amountSompi: request.amountSompi }
     ],
-    availableUtxos: request.availableUtxos,
-    feeRateSompiPerMass: 1n,
-    payloadBytes
+    changeAddress: request.fromAddress,
+    payload: serializedPayload,
+    syntheticIdentities: true
   });
 
   return {

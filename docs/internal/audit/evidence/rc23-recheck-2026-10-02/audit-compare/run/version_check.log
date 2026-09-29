@@ -1,0 +1,12 @@
+﻿
+> hardkas-monorepo@0.12.0-rc.26 version:check C:\Users\jrodr\Documents\kaslabdevs\GitHub\HardKas-repo
+> node scripts/check-versions.mjs
+
+Checking version synchronization across workspace...
+Expected version (from root package.json): 0.12.0-rc.26
+   (exempt) @hardkas/docs 0.1.0 — private Docusaurus app (apps/docs); never published; Q13(a) 2026-09-25 / AUD-37
+
+Version freeze: no reference newer than 0.12.0-rc.26; manifests and package sources pinned to it exactly.
+   scanned 4589 text files (143 manifests, 673 package/script sources, 3773 other)
+
+✨ All workspace packages match version 0.12.0-rc.26 and the tree references no newer version.

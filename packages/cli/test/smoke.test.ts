@@ -34,7 +34,7 @@ describe("CLI Smoke Tests", () => {
   it("should show rpc doctor help", () => {
     const result = runHardkas("rpc doctor --help");
     expect(result.ok).toBe(true);
-    expect(result.stdout).toContain("Run comprehensive RPC diagnostics");
+    expect(result.stdout).toContain("Probe RPC endpoints");
   });
 
   it("should explain an artifact (mocked file)", () => {

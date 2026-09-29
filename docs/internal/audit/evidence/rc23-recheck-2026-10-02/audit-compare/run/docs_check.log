@@ -1,0 +1,14 @@
+﻿
+> hardkas-monorepo@0.12.0-rc.26 docs:check C:\Users\jrodr\Documents\kaslabdevs\GitHub\HardKas-repo
+> node scripts/docs-check.mjs
+
+node.exe : ❌ [CONTRIBUTING.md] Broken link: SECURITY.md
+En C:\Users\jrodr\AppData\Roaming\npm\pnpm.ps1: 24 Carácter: 5
++     & "node$exe"  "$basedir/node_modules/pnpm/bin/pnpm.mjs" $args
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (❌ [CONTRIBUTING...nk: SECURITY.md:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+
+docs:check FAILED!
+ ELIFECYCLE  Command failed with exit code 1.

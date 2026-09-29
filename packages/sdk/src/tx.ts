@@ -2,7 +2,6 @@ import { systemRuntimeContext, deterministicCompare, getCoinbaseMaturity, Hardka
 import { pollCondition } from "./waiters.js";
 import { Hardkas } from "./index.js";
 import {
-  buildPaymentPlan,
   Utxo as BuilderUtxo,
   verifySignedTxSemantics
 } from "@hardkas/tx-builder";
@@ -102,6 +101,11 @@ export interface SignTxOptions {
    * its recomputed identity is the artifact's `lineage.parentArtifactId`.
    */
   plan?: TxPlanArtifact;
+  /**
+   * The password of the signing account's encrypted keystore. Kept in memory for this call only:
+   * never stored, logged or written into any artifact. A development account needs none.
+   */
+  keystorePassword?: string;
 }
 
 /**
@@ -112,6 +116,8 @@ export interface LegacySignTxOptions {
   threshold?: number;
   requiredSigners?: string[];
   authorizers?: any;
+  /** See SignTxOptions.keystorePassword. */
+  keystorePassword?: string;
 }
 
 function isSignTxOptions(value: unknown): value is SignTxOptions {
@@ -120,7 +126,8 @@ function isSignTxOptions(value: unknown): value is SignTxOptions {
     value !== null &&
     ("authorizers" in value ||
       "account" in value ||
-      "requiredSigners" in value)
+      "requiredSigners" in value ||
+      "keystorePassword" in value)
   );
 }
 
@@ -147,17 +154,29 @@ export class HardkasTx {
     const store = new ProjectArtifactStore(this.sdk.workspace.root);
     const submission = await this.findSubmissionForTxId(txId);
     const previous = store.listObservationsByTxId(txId).observations as any[];
-    previous.sort((a, b) => (BigInt(a.point.sinkBlueScore) < BigInt(b.point.sinkBlueScore) ? -1 : 1));
+    // The same order deriveTxStatus reads a history in: point, then time, then id (two looks at one
+    // sink are not interchangeable — the later one holds the cursor).
+    previous.sort((a, b) => {
+      const pa = BigInt(a.point.sinkBlueScore);
+      const pb = BigInt(b.point.sinkBlueScore);
+      if (pa !== pb) return pa < pb ? -1 : 1;
+      if (a.observedAt !== b.observedAt) return a.observedAt < b.observedAt ? -1 : 1;
+      return a.contentHash < b.contentHash ? -1 : a.contentHash > b.contentHash ? 1 : 0;
+    });
     const latest = previous[previous.length - 1];
     // The block currently established as accepting (none after a REORGED derivation).
     const soFar = deriveTxStatus({ txId, ...(submission ? { submission } : {}), observations: previous });
     const currentAccepting =
       soFar.status === "ACCEPTED" || soFar.status === "CONFIRMED" || soFar.status === "FINALIZED" ? soFar.acceptingBlockHash : undefined;
-    // Cursor: an explicit `since`, else where the last scan stopped, else the last
-    // observation point, else the submit point; the observer falls back to the pruning point.
+    // Cursor: an explicit `since`, else where the last scan stopped, else — after the accepting
+    // block left the chain — that block (the node answers from the common ancestor, so a later
+    // re-acceptance anywhere on the new chain stays reachable; the removal look's sink could
+    // already be past it), else the last observation point, else the submit point; the observer
+    // falls back to the pruning point.
     const since =
       options.since ??
       (latest?.finding?.type === "not_found" && typeof latest.finding.scannedTo === "string" ? (latest.finding.scannedTo as string) : undefined) ??
+      (latest?.finding?.type === "chain_removed" && typeof latest.finding.acceptingBlockHash === "string" ? (latest.finding.acceptingBlockHash as string) : undefined) ??
       (latest?.point?.sinkHash as string | undefined) ??
       ((submission as any)?.submitPoint?.sinkHash as string | undefined);
     const networkId = ((submission as any)?.networkId ?? this.sdk.network) as TxObservation["networkId"];
@@ -641,6 +660,8 @@ export class HardkasTx {
       fromAddress: resolvedAccount?.address as string,
       selectedUtxos: options.selectedUtxos,
       toAddress: options.destination,
+      networkId: activeNetwork,
+      simulated: isSimulated,
       ...(options.feeRate !== undefined ? { feeRate: options.feeRate } : {})
     });
 
@@ -1108,7 +1129,8 @@ export class HardkasTx {
           account: resolvedAccount as HardkasAccount,
           ...(actualAuthorizers ? { authorizers: actualAuthorizers } : {}),
           config: this.sdk.config.config,
-          allowMainnet: false
+          allowMainnet: false,
+          ...(actualOptions.keystorePassword !== undefined ? { keystorePassword: actualOptions.keystorePassword } : {})
         });
       }
     } else {

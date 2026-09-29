@@ -1,0 +1,102 @@
+﻿Scope: all 62 workspace projects
+Lockfile is up to date, resolution step is skipped
+Progress: resolved 1, reused 0, downloaded 0, added 0
+Packages: +1786
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Progress: resolved 1786, reused 171, downloaded 0, added 0
+Progress: resolved 1786, reused 172, downloaded 0, added 0
+Progress: resolved 1786, reused 494, downloaded 0, added 0
+Progress: resolved 1786, reused 523, downloaded 0, added 0
+Progress: resolved 1786, reused 524, downloaded 0, added 0
+Progress: resolved 1786, reused 649, downloaded 0, added 0
+Progress: resolved 1786, reused 735, downloaded 0, added 0
+Progress: resolved 1786, reused 869, downloaded 0, added 0
+Progress: resolved 1786, reused 1126, downloaded 0, added 0
+Progress: resolved 1786, reused 1265, downloaded 0, added 0
+Progress: resolved 1786, reused 1501, downloaded 0, added 0
+Progress: resolved 1786, reused 1634, downloaded 0, added 0
+Progress: resolved 1786, reused 1760, downloaded 0, added 0
+Progress: resolved 1786, reused 1771, downloaded 0, added 11
+Progress: resolved 1786, reused 1771, downloaded 0, added 44
+Progress: resolved 1786, reused 1771, downloaded 0, added 45
+Progress: resolved 1786, reused 1771, downloaded 0, added 112
+Progress: resolved 1786, reused 1772, downloaded 0, added 154
+Progress: resolved 1786, reused 1772, downloaded 0, added 260
+Progress: resolved 1786, reused 1772, downloaded 0, added 309
+Progress: resolved 1786, reused 1772, downloaded 0, added 337
+Progress: resolved 1786, reused 1772, downloaded 0, added 366
+Progress: resolved 1786, reused 1772, downloaded 0, added 400
+Progress: resolved 1786, reused 1772, downloaded 0, added 496
+Progress: resolved 1786, reused 1772, downloaded 0, added 627
+Progress: resolved 1786, reused 1772, downloaded 0, added 713
+Progress: resolved 1786, reused 1772, downloaded 0, added 789
+Progress: resolved 1786, reused 1772, downloaded 0, added 971
+Progress: resolved 1786, reused 1772, downloaded 0, added 1029
+Progress: resolved 1786, reused 1772, downloaded 0, added 1079
+Progress: resolved 1786, reused 1772, downloaded 0, added 1125
+Progress: resolved 1786, reused 1772, downloaded 0, added 1176
+Progress: resolved 1786, reused 1772, downloaded 0, added 1194
+Progress: resolved 1786, reused 1772, downloaded 0, added 1215
+Progress: resolved 1786, reused 1772, downloaded 0, added 1238
+Progress: resolved 1786, reused 1772, downloaded 0, added 1241
+Progress: resolved 1786, reused 1772, downloaded 0, added 1244
+Progress: resolved 1786, reused 1772, downloaded 0, added 1253
+Progress: resolved 1786, reused 1772, downloaded 0, added 1254
+Progress: resolved 1786, reused 1772, downloaded 0, added 1262
+Progress: resolved 1786, reused 1772, downloaded 0, added 1294
+Progress: resolved 1786, reused 1772, downloaded 0, added 1341
+Progress: resolved 1786, reused 1772, downloaded 0, added 1374
+Progress: resolved 1786, reused 1772, downloaded 0, added 1483
+Progress: resolved 1786, reused 1772, downloaded 0, added 1512
+Progress: resolved 1786, reused 1772, downloaded 0, added 1523
+Progress: resolved 1786, reused 1772, downloaded 0, added 1533
+Progress: resolved 1786, reused 1772, downloaded 0, added 1561
+Progress: resolved 1786, reused 1772, downloaded 0, added 1574
+Progress: resolved 1786, reused 1772, downloaded 0, added 1582
+Progress: resolved 1786, reused 1772, downloaded 0, added 1619
+Progress: resolved 1786, reused 1772, downloaded 0, added 1662
+Progress: resolved 1786, reused 1772, downloaded 0, added 1731
+Progress: resolved 1786, reused 1772, downloaded 0, added 1771
+Progress: resolved 1786, reused 1772, downloaded 0, added 1780
+Progress: resolved 1786, reused 1772, downloaded 0, added 1781
+Progress: resolved 1786, reused 1772, downloaded 0, added 1782
+Progress: resolved 1786, reused 1772, downloaded 0, added 1783
+Progress: resolved 1786, reused 1772, downloaded 0, added 1784
+Progress: resolved 1786, reused 1772, downloaded 0, added 1785
+Progress: resolved 1786, reused 1772, downloaded 0, added 1786, done
+ WARN  Failed to create bin at C:\Users\jrodr\AppData\Local\Temp\hk-3c1\wt\labs\showcase-suite\apps\cli-studio\node_modules\.bin\hardkas. ENOENT: no such file or directory, stat 'C:\Users\jrodr\AppData\Local\Temp\hk-3c1\wt\packages\cli\dist\index.js.EXE'
+ WARN  Failed to create bin at C:\Users\jrodr\AppData\Local\Temp\hk-3c1\wt\labs\bl-001-offline-multisig\node_modules\.bin\hardkas. ENOENT: no such file or directory, stat 'C:\Users\jrodr\AppData\Local\Temp\hk-3c1\wt\packages\cli\dist\index.js.EXE'
+ WARN  Failed to create bin at C:\Users\jrodr\AppData\Local\Temp\hk-3c1\wt\node_modules\.bin\hardkas. ENOENT: no such file or directory, stat 'C:\Users\jrodr\AppData\Local\Temp\hk-3c1\wt\node_modules\@hardkas\cli\dist\index.js.EXE'
+
+devDependencies:
++ @eslint/js 10.0.1
++ @hardkas/cli 0.12.0-rc.26 <- packages\cli
++ @hardkas/config 0.12.0-rc.26 <- packages\config
++ @hardkas/core 0.12.0-rc.26 <- packages\core
++ @hardkas/node-runner 0.12.0-rc.26 <- packages\node-runner
++ @hardkas/sdk 0.12.0-rc.26 <- packages\sdk
++ @hardkas/testing 0.12.0-rc.26 <- packages\testing
++ @types/node 22.20.1
++ @vitest/coverage-v8 2.1.9
++ c8 11.0.0
++ eslint 9.39.5
++ eslint-plugin-react 7.37.5
++ eslint-plugin-react-hooks 7.1.1
++ eslint-plugin-react-refresh 0.5.3
++ fast-check 4.9.0
++ globals 17.9.0
++ knip 6.31.0
++ prettier 3.9.6
++ ts-node 10.9.2
++ tsup 8.5.1
++ tsx 4.23.7
++ turbo 2.10.8
++ typescript 5.9.3
++ typescript-eslint 8.66.0
++ vitest 2.1.9
++ ws 8.21.2
+
+ WARN  Failed to create bin at C:\Users\jrodr\AppData\Local\Temp\hk-3c1\wt\labs\bl-001-offline-multisig\node_modules\.bin\hardkas. ENOENT: no such file or directory, stat 'C:\Users\jrodr\AppData\Local\Temp\hk-3c1\wt\labs\bl-001-offline-multisig\node_modules\@hardkas\cli\dist\index.js.EXE'
+ WARN  Failed to create bin at C:\Users\jrodr\AppData\Local\Temp\hk-3c1\wt\labs\showcase-suite\apps\cli-studio\node_modules\.bin\hardkas. ENOENT: no such file or directory, stat 'C:\Users\jrodr\AppData\Local\Temp\hk-3c1\wt\labs\showcase-suite\apps\cli-studio\node_modules\@hardkas\cli\dist\index.js.EXE'
+ WARN  Failed to create bin at C:\Users\jrodr\AppData\Local\Temp\hk-3c1\wt\node_modules\.bin\hardkas. ENOENT: no such file or directory, stat 'C:\Users\jrodr\AppData\Local\Temp\hk-3c1\wt\node_modules\@hardkas\cli\dist\index.js.EXE'
+Done in 1m 55.8s

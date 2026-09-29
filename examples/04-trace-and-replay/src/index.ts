@@ -10,7 +10,7 @@ import {
   HARDKAS_VERSION,
   writeArtifact,
   createTxPlanArtifact,
-  buildPaymentPlan,
+  planPaymentWithGenerator,
   signTxPlanArtifact
 } from "@hardkas/sdk";
 import { systemRuntimeContext } from "@hardkas/core";
@@ -72,19 +72,18 @@ async function main() {
     totalSompi: mockUtxo.amountSompi.toString()
   });
 
-  // 3. Phase: Build Transaction Plan
+  // 3. Phase: Build Transaction Plan (the kaspa-wasm Generator, over simulator identities)
   addTrace("build-plan", "start");
-  const builderPlan = buildPaymentPlan({
-    fromAddress: alice.address!,
-    availableUtxos: [mockUtxo],
+  const builderPlan = await planPaymentWithGenerator({
+    utxos: [mockUtxo],
     outputs: [
       {
         address: bob.address!,
         amountSompi: amount
       }
     ],
-    feeRateSompiPerMass: 1n,
-    coinbaseMaturity: 100n
+    changeAddress: alice.address!,
+    syntheticIdentities: true
   });
 
   const planArtifact = createTxPlanArtifact({
@@ -180,17 +179,16 @@ async function main() {
   addTrace("replay", "start");
 
   // Rebuild the plan from the same mock data
-  const replayedBuilderPlan = buildPaymentPlan({
-    fromAddress: alice.address!,
-    availableUtxos: [mockUtxo],
+  const replayedBuilderPlan = await planPaymentWithGenerator({
+    utxos: [mockUtxo],
     outputs: [
       {
         address: bob.address!,
         amountSompi: amount
       }
     ],
-    feeRateSompiPerMass: 1n,
-    coinbaseMaturity: 100n
+    changeAddress: alice.address!,
+    syntheticIdentities: true
   });
 
   const originalFee = BigInt(planArtifact.estimatedFeeSompi);

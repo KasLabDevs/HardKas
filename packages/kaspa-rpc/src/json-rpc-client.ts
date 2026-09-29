@@ -7,27 +7,20 @@ import {
   MempoolEntry,
   BlockDagInfo,
   ServerInfo,
-  UtxosChangedEvent,
-  VirtualChainChangedEvent,
-  KaspaSubscription,
   KaspaRpcTransaction,
   KaspaSubmitTransactionResult
 } from "./index.js";
-import { normalizeRpcStorageMass } from "./internal/storage-mass.js";
 import { type NetworkId } from "@hardkas/core";
 import {
   RpcError,
-  RpcTimeoutError,
-  RpcUnavailableError,
   RpcCircuitOpenError,
-  RpcRateLimitError,
   RpcValidationError,
-  RpcIndexError,
-  RpcNotFoundError,
-  normalizeRpcError
+  RpcNotFoundError
 } from "./errors.js";
 import { calculateConfidence } from "./resilience.js";
 import { coreEvents } from "@hardkas/core";
+import { OfficialRpcSession, type OfficialRpcFactory } from "./upstream/session.js";
+import { toOfficialTransaction } from "./upstream/wire.js";
 
 export enum CircuitState {
   CLOSED = "CLOSED",
@@ -51,15 +44,21 @@ export interface RpcClientOptions {
   timeoutMs?: number | undefined;
   retry?: Partial<RetryOptions>;
   circuitBreaker?: Partial<CircuitBreakerOptions>;
-  fetcher?: typeof fetch;
+  /** Builds the official client for a URL; defaults to the pinned kaspa-wasm `RpcClient` (tests pass a stand-in). */
+  rpcFactory?: OfficialRpcFactory;
 }
 
+/**
+ * A Kaspa RPC client with retries, a circuit breaker and health scoring. Calls go
+ * through the official kaspa-wasm RpcClient to the node's wRPC JSON endpoint; an
+ * http(s):// URL names that endpoint (it is used as ws(s)://).
+ */
 export class KaspaJsonRpcClient implements KaspaRpcClient {
   public readonly url: string;
   private readonly timeoutMs: number;
   private readonly retry: RetryOptions;
   private readonly circuitBreaker: CircuitBreakerOptions;
-  private readonly fetcher: typeof fetch;
+  private readonly session: OfficialRpcSession;
 
   // State & Metrics
   private circuitState: CircuitState = CircuitState.CLOSED;
@@ -85,19 +84,11 @@ export class KaspaJsonRpcClient implements KaspaRpcClient {
       failureThreshold: options.circuitBreaker?.failureThreshold ?? 5,
       resetTimeoutMs: options.circuitBreaker?.resetTimeoutMs ?? 15000,
     };
-    this.fetcher = options.fetcher || fetch;
+    this.session = new OfficialRpcSession(this.url, this.timeoutMs, options.rpcFactory);
   }
 
   async call<TResponse = unknown>(method: string, params?: any): Promise<TResponse> {
     return this.callRpc<TResponse>(method, params);
-  }
-
-  on(event: string, handler: (data: any) => void): void {
-    // HTTP client doesn't support push notifications
-  }
-
-  off(event: string, handler: (data: any) => void): void {
-    // HTTP client doesn't support push notifications
   }
 
   async healthCheck(): Promise<KaspaRpcHealth> {
@@ -229,12 +220,13 @@ export class KaspaJsonRpcClient implements KaspaRpcClient {
 
   async getBlockDagInfo(): Promise<BlockDagInfo> {
     const data = (await this.callRpc("getBlockDagInfoRequest")) as {
-      networkId: string;
+      networkId?: string;
+      network?: string;
       tipHashes: string[];
       virtualDaaScore?: string | number;
     };
     const dagInfo = {
-      networkId: data.networkId as NetworkId,
+      networkId: (data.networkId ?? data.network) as NetworkId,
       tipHashes: data.tipHashes,
       ...(data.virtualDaaScore !== undefined
         ? { virtualDaaScore: BigInt(data.virtualDaaScore) }
@@ -278,7 +270,7 @@ export class KaspaJsonRpcClient implements KaspaRpcClient {
     return await this.callRpc("getVirtualSelectedParentBlueScoreRequest", {});
   }
 
-  async getVirtualChainFromBlockV2(options: { startHash: string; dataVerbosityLevel?: import("./contracts/read").RpcDataVerbosityLevel; minConfirmationCount?: string }): Promise<any> {
+  async getVirtualChainFromBlockV2(options: { startHash: string; dataVerbosityLevel?: import("./index.js").RpcDataVerbosityLevel; minConfirmationCount?: string }): Promise<any> {
     return await this.callRpc("getVirtualChainFromBlockV2Request", options);
   }
 
@@ -288,14 +280,6 @@ export class KaspaJsonRpcClient implements KaspaRpcClient {
 
   async getHeaders(): Promise<any> {
     return await this.callRpc("getBlockHeadersRequest", {});
-  }
-
-  async subscribeToUtxosChanged(addresses: readonly string[], handler: (event: UtxosChangedEvent) => void): Promise<KaspaSubscription> {
-    throw new Error("RPC_SUBSCRIPTIONS_UNSUPPORTED");
-  }
-
-  async subscribeToVirtualChainChanged(options: { includeAcceptedTransactionIds: boolean }, handler: (event: VirtualChainChangedEvent) => void): Promise<KaspaSubscription> {
-    throw new Error("RPC_SUBSCRIPTIONS_UNSUPPORTED");
   }
 
   async getUtxosByAddress(address: string): Promise<KaspaRpcUtxo[]> {
@@ -343,11 +327,11 @@ export class KaspaJsonRpcClient implements KaspaRpcClient {
 
   async getBalanceByAddress(address: string): Promise<KaspaAddressBalance> {
     const data = (await this.callRpc("getBalanceByAddressRequest", { address })) as {
-      address: string;
+      address?: string;
       balance: string | number;
     };
     return {
-      address: data.address,
+      address: data.address ?? address,
       balanceSompi: BigInt(data.balance)
     };
   }
@@ -355,12 +339,14 @@ export class KaspaJsonRpcClient implements KaspaRpcClient {
   async getMempoolEntry(txId: string): Promise<MempoolEntry | null> {
     try {
       const result = (await this.callRpc("getMempoolEntryRequest", {
-        txId,
-        includeOrphanPool: true
-      })) as { entry: { acceptedAt: number } };
+        transactionId: txId,
+        includeOrphanPool: true,
+        filterTransactionPool: false
+      })) as { mempoolEntry?: { acceptedAt?: number }; entry?: { acceptedAt?: number } } | null;
+      const entry = result?.mempoolEntry ?? result?.entry;
       return {
         txId,
-        acceptedAt: String(result.entry.acceptedAt)
+        acceptedAt: entry?.acceptedAt !== undefined ? String(entry.acceptedAt) : undefined
       };
     } catch (e) {
       if (e instanceof RpcNotFoundError) return null;
@@ -371,8 +357,9 @@ export class KaspaJsonRpcClient implements KaspaRpcClient {
   async checkMempoolPresence(txId: string): Promise<{ status: 'present' } | { status: 'absent' }> {
     try {
       await this.callRpc("getMempoolEntryRequest", {
-        txId,
-        includeOrphanPool: true
+        transactionId: txId,
+        includeOrphanPool: true,
+        filterTransactionPool: false
       });
       return { status: 'present' };
     } catch (e: any) {
@@ -396,73 +383,12 @@ export class KaspaJsonRpcClient implements KaspaRpcClient {
   }
 
   async submitTransaction(transaction: KaspaRpcTransaction | any, options?: any): Promise<KaspaSubmitTransactionResult> {
-    let txObj = transaction;
-    try {
-      while (typeof txObj === "string" && txObj.startsWith("{")) {
-        const parsed = JSON.parse(txObj);
-        if (parsed && typeof parsed === "object") {
-          if ("tx" in parsed) txObj = parsed.tx;
-          else if ("inner" in parsed) txObj = parsed.inner;
-          else txObj = parsed;
-        } else {
-          txObj = parsed;
-        }
-      }
-
-      // One final check for POJO nested inner/tx in case it wasn't a string at a nested level
-      while (
-        txObj &&
-        typeof txObj === "object" &&
-        !Array.isArray(txObj) &&
-        ("tx" in txObj || "inner" in txObj)
-      ) {
-        if ("tx" in txObj) txObj = (txObj as any).tx;
-        else if ("inner" in txObj) txObj = (txObj as any).inner;
-      }
-
-      const txAny = txObj as any;
-      if (txAny && typeof txAny === "object") {
-        // Normalize top-level numeric fields that may arrive as strings from the NAPI bridge
-        if (typeof txAny.version === "string") txAny.version = Number(txAny.version);
-        if (typeof txAny.lockTime === "string") txAny.lockTime = Number(txAny.lockTime);
-        if (typeof txAny.lock_time === "string") txAny.lock_time = Number(txAny.lock_time);
-        if (typeof txAny.gas === "string") txAny.gas = Number(txAny.gas);
-        if (txAny.payload === undefined) txAny.payload = "";
-
-        if (txAny.outputs && Array.isArray(txAny.outputs)) {
-          txAny.outputs.forEach((output: any) => {
-            const amount = output.amount !== undefined ? output.amount : output.value;
-            output.value = typeof amount === "string" ? Number(amount) : amount;
-            delete output.amount;
-
-            if (output.scriptPublicKey && typeof output.scriptPublicKey === "object") {
-              const spk = output.scriptPublicKey;
-              const versionHex = (spk.version || 0).toString(16).padStart(4, "0");
-              const scriptHex = spk.script || spk.scriptPublicKey || "";
-              output.scriptPublicKey = versionHex + scriptHex;
-            }
-          });
-        }
-
-        if (txAny.inputs && Array.isArray(txAny.inputs)) {
-          txAny.inputs.forEach((input: any) => {
-            if (typeof input.sequence === "string")
-              input.sequence = Number(input.sequence);
-            if (typeof input.sigOpCount === "string")
-              input.sigOpCount = Number(input.sigOpCount);
-          });
-        }
-      }
-    } catch (e) {
-      // Ignored
-    }
-    // Outside the lenient block above: a bad mass commitment must not be swallowed.
-    if (txObj && typeof txObj === "object") normalizeRpcStorageMass(txObj as Record<string, unknown>);
-
+    // Converted (and its storage mass commitment checked) before the retry loop:
+    // a malformed transaction is refused once, never retried against the node.
+    const txObj = toOfficialTransaction(transaction);
     const result = (await this.callRpc("submitTransactionRequest", {
       transaction: txObj,
-      allowOrphan: options?.allowOrphan ?? false,
-      allow_orphan: options?.allowOrphan ?? false
+      allowOrphan: options?.allowOrphan ?? false
     })) as { transactionId: string };
     return { transactionId: result.transactionId };
   }
@@ -478,7 +404,7 @@ export class KaspaJsonRpcClient implements KaspaRpcClient {
   }
 
   async close(): Promise<void> {
-    // No-op for HTTP
+    await this.session.close();
   }
 
   private async callRpc<T>(method: string, params: unknown = {}): Promise<T> {
@@ -542,43 +468,7 @@ export class KaspaJsonRpcClient implements KaspaRpcClient {
   }
 
   private async internalCall<T>(method: string, params: unknown): Promise<T> {
-    const controller = new AbortController();
-    const id = setTimeout(() => controller.abort(), this.timeoutMs);
-
-    try {
-      const response = await this.fetcher(this.url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          jsonrpc: "2.0",
-          id: Date.now(),
-          method,
-          params
-        }),
-        signal: controller.signal
-      });
-
-      clearTimeout(id);
-
-      if (response.status === 429) {
-        throw new RpcRateLimitError();
-      }
-
-      if (!response.ok) {
-        throw new RpcUnavailableError(`HTTP Error ${response.status}`, response.status);
-      }
-
-      const body = await response.json();
-      if (body.error) {
-        throw normalizeRpcError(new RpcError(body.error.message, body.error.code, body.error.data), { method, params });
-      }
-
-      return body.result;
-    } catch (e: unknown) {
-      clearTimeout(id);
-      if (e instanceof Error && ((e as any).name) === "AbortError") throw new RpcTimeoutError();
-      throw normalizeRpcError(e, { method, params });
-    }
+    return this.session.request<T>(method, params, this.timeoutMs);
   }
 
   private checkCircuit() {

@@ -1,5 +1,6 @@
 import {
   loadOrCreateRealAccountStore,
+  loadRealAccountStoreSync,
   saveRealAccountStore,
   importRealDevAccount,
   KaspaSdkKeyGenerator,
@@ -19,6 +20,8 @@ export interface AccountsRealGenerateOptions {
   passwordStdin?: boolean;
   passwordEnv?: string;
   yes?: boolean;
+  /** Machine-readable output: never prompts. */
+  json?: boolean;
   workspaceRoot?: string;
 }
 
@@ -33,8 +36,17 @@ export async function runAccountsRealGenerate(
   );
   const count = options.count || 1;
 
+  // AUD-20: a mainnet key is never written in plaintext; refused before anything is generated.
+  if (options.unsafePlaintext && (options.networkId ?? "simnet") === "mainnet") {
+    const { HardkasCliError, HardkasExitCode } = await import("../cli-errors.js");
+    throw new HardkasCliError(
+      "PLAINTEXT_MAINNET_FORBIDDEN",
+      "Plaintext storage is refused for mainnet keys. Nothing was generated; generate an encrypted account (--password-env <VAR> or --password-stdin).",
+      { exitCode: HardkasExitCode.USAGE_ERROR }
+    );
+  }
+
   const cwd = options.workspaceRoot || process.cwd();
-  let store = await loadOrCreateRealAccountStore({ cwd });
   const generatedAccounts: RealDevAccount[] = [];
 
   // Demo-ready · E20: one requested account gets exactly the requested name; several are numbered.
@@ -45,9 +57,10 @@ export async function runAccountsRealGenerate(
   // the keystore file used to be written first, overwriting the existing account's keystore,
   // and only then did the store refuse the duplicate name (the account kept pointing at a
   // keystore holding another key).
+  const existing = loadRealAccountStoreSync({ cwd })?.accounts ?? [];
   const taken = names.filter(
     (n) =>
-      store.accounts.some((a) => a.name.toLowerCase() === n.toLowerCase()) ||
+      existing.some((a) => a.name.toLowerCase() === n.toLowerCase()) ||
       (!options.unsafePlaintext && fs.existsSync(path.join(cwd, ".hardkas", "keystore", `${n}.json`)))
   );
   if (taken.length > 0) {
@@ -59,11 +72,14 @@ export async function runAccountsRealGenerate(
     );
   }
 
+  // The password (or the plaintext confirmation) comes before anything is written: without one the
+  // command fails here, with no store, keystore or account left behind.
   let password = "";
   if (!options.unsafePlaintext) {
     password = await acquirePassword({
       stdin: options.passwordStdin,
       env: options.passwordEnv,
+      interactive: !options.json,
       message: `Enter password to encrypt ${count} new account(s):`
     });
     if (!password) throw new Error("Password is required for encrypted storage.");
@@ -76,6 +92,8 @@ export async function runAccountsRealGenerate(
       if (!confirmed) throw new Error("Generation cancelled.");
     }
   }
+
+  let store = await loadOrCreateRealAccountStore({ cwd });
 
   for (let i = 0; i < count; i++) {
     const name = names[i]!;

@@ -1,0 +1,7 @@
+7bd8b18eeaf13c19d5521a743a443706cd30a448  sha256:52AF75C645111898  packages/kaspa-rpc/src/index.ts
+f49543258e3fde1d2d2007f06fcc5b81c261f05f  sha256:5A14BA105615CC4C  packages/kaspa-rpc/src/json-rpc-client.ts
+c2c3bbac2a4677c44323bccbbfe3c92bc4035b70  sha256:C9B0BDC00ADDEC83  packages/kaspa-rpc/src/provider.ts
+b099232b51b004a458017579457723e79f7c876c  sha256:0328BF7D787B26C3  packages/kaspa-rpc/src/upstream/session.ts
+48f770358b03f25e41e8cb79e413d8864e157b4e  sha256:38E1101A9BBD3444  packages/localnet/src/provider.ts
+142e473f860fe1ed735ca074b513be3803909b96  sha256:90195A8645CC23DE  packages/kaspa-rpc/test/surface-cut-subscriptions.test.ts
+e5b3a05e832a405438aceb1322327cca67b07aff  sha256:4651B37C38772945  packages/localnet/test/surface-cut-subscriptions.test.ts

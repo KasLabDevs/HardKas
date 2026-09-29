@@ -115,7 +115,7 @@ LOG_LEVEL=info
     .option("--receipt <artifactId>", "Reference to receipt artifact")
     .option("--status <status>", "Deployment status", "sent")
     .option("--notes <text>", "Notes about this deployment")
-    .option("--json", "Output as JSON", false)
+    .option("--json", "Not implemented yet: no JSON is printed", false)
     .action(async (label, opts) => {
       const { UI } = await import("../ui.js");
       await trackDeployment({ label, ...opts, workspaceRoot: process.cwd() });

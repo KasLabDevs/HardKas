@@ -1,14 +1,27 @@
 import { loadHardkasConfig } from "@hardkas/config";
 import { resolveHardkasAccountAddress } from "@hardkas/accounts";
+import { parseKasToSompi } from "@hardkas/core";
 import {
   loadOrCreateLocalnetState,
   saveLocalnetState,
   fundAddress
 } from "@hardkas/localnet";
+import { HardkasCliError, HardkasExitCode } from "../cli-errors.js";
 
 export interface AccountsFundOptions {
   identifier: string;
   amountSompi?: bigint;
+}
+
+/** `--amount` of the synthetic fund commands: KAS with up to 8 decimals, above 0. */
+export function parseFundAmount(amount: string): bigint {
+  const sompi = parseKasToSompi(amount);
+  if (sompi <= 0n) {
+    throw new HardkasCliError("INVALID_KAS_AMOUNT", "--amount must be greater than 0", {
+      exitCode: HardkasExitCode.USAGE_ERROR
+    });
+  }
+  return sompi;
 }
 
 export async function runAccountsFund(options: AccountsFundOptions) {
@@ -39,7 +52,7 @@ export async function runAccountsFund(options: AccountsFundOptions) {
   if (isSimulated) {
     const { formatSompiToKas } = await import("@hardkas/core");
     const state = await loadOrCreateLocalnetState();
-    const amount = options.amountSompi || 1000n * 100_000_000n; // Default 1000 KAS
+    const amount = options.amountSompi ?? 1000n * 100_000_000n; // Default 1000 KAS
     const newState = fundAddress(state, { address, amountSompi: amount });
     await saveLocalnetState(newState);
 
@@ -54,10 +67,10 @@ export async function runAccountsFund(options: AccountsFundOptions) {
 
   // 3. Handle Docker/Real simnet
   if (networkId === "simnet" || networkId === "dev") {
-    // For now, we inform the user. In future versions, we can automate mining.
+    // Real simnet funds come from mining, which `hardkas localnet fund` drives.
     throw new Error(
       `Funding for real simnet (Docker) via faucet requires a miner account. \n` +
-        `Hint: Start your node with 'hardkas node start --miningaddr ${address}' to mine coins directly to this account.`
+        `Hint: run 'hardkas localnet fund ${options.identifier}' to mine coins to this account on the toccata-v2 node.`
     );
   }
 

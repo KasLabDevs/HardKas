@@ -8,11 +8,11 @@ export function registerRunCommand(program: Command): void {
   program
     .command("run <script>")
     .description(
-      `Execute a TypeScript or JavaScript file with HardKAS SDK injected ${UI.maturity("stable")}`
+      `Run a TypeScript or JavaScript file with tsx and a global 'hardkas': a simulator test harness on simulated networks, an RPC client otherwise (not the SDK) ${UI.maturity("stable")}`
     )
-    .option("--network <name>", "Network name", "simnet")
-    .option("--accounts <n>", "Number of simulated accounts", "3")
-    .option("--balance <sompi>", "Initial balance per account in sompi", "100000000000")
+    .option("--network <name>", "Network from the config (unknown names fall back to simulated)", "simnet")
+    .option("--accounts <n>", "Number of harness accounts (simulated networks only)", "3")
+    .option("--balance <sompi>", "Initial balance per harness account, whole sompi (simulated networks only)", "100000000000")
     .option("--no-harness", "Skip automatic harness creation")
     .option("--json", "Output results as JSON", false)
     .action(async (script: string, opts: any) => {

@@ -18,6 +18,13 @@ import { checkTxObservationCoherence } from "./tx-observation.js";
 // within one observer (`observer.observerId`). Across observers nothing is
 // causal: agreement reinforces, disagreement is `CONFLICTING_OBSERVATIONS` with
 // `observer_views_disagree`, never a reorg and never an observed finality violation.
+//
+// Invariant (2026-10-02, false REORGED under accepting-block churn): the replacement
+// of the accepting block is not, by itself, the withdrawal of the transaction.
+// REORGED requires evidence that the acceptance was lost, not merely that the
+// accepting block observed before left the selected chain. One answer that shows
+// both is one fact: `chain_accepted` naming the new block, with
+// `removedAcceptingBlockHash` naming the one it replaced.
 
 export type TxStatusKind =
   | "REJECTED_BY_NODE"
@@ -237,6 +244,18 @@ function deriveObserverHistory(observerId: string, group: ValidObservation[], po
   for (const x of sorted) {
     const f = x.o.finding;
     if (f.type === "chain_accepted") {
+      if (f.removedAcceptingBlockHash !== undefined) {
+        // One answer said both: the previous accepting block left this observer's selected chain, and
+        // this block accepts the transaction. The acceptance moved; nothing was reorganised out.
+        if (finalized && finalized.o.finding.type === "finality_reached" && finalized.o.finding.acceptingBlockHash === f.removedAcceptingBlockHash) {
+          return {
+            ...base,
+            status: "CONFLICTING_OBSERVATIONS",
+            reasons: [`this observer reported block ${f.removedAcceptingBlockHash} final and later replaced on its selected chain by ${f.acceptingBlockHash}: its own history is incoherent`]
+          };
+        }
+        accepted.delete(f.removedAcceptingBlockHash);
+      }
       accepted.set(f.acceptingBlockHash, x);
       everAccepted.add(f.acceptingBlockHash);
     } else if (f.type === "finality_reached") {

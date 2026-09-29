@@ -1,4 +1,4 @@
-import { measureUpstreamMass } from "@hardkas/tx-builder";
+import { measureRelayFee, measureUpstreamMass, type UpstreamMassInput } from "@hardkas/tx-builder";
 import { TxPlan, SignedTx, TxReceipt } from "./schemas.js";
 import { HardkasSchemas } from "@hardkas/core";
 
@@ -13,10 +13,10 @@ export interface FeeAuditResult {
   issues: string[];
 }
 
-/** SDK mass of the plan's own transaction; undefined for a plan without inputs (it has no mass). */
-function planMass(plan: TxPlan) {
+/** The plan's own transaction, as the SDK prices it; undefined for a plan without inputs (it has no mass). */
+function planMassInput(plan: TxPlan): UpstreamMassInput | undefined {
   if (!plan.inputs || plan.inputs.length === 0) return undefined;
-  return measureUpstreamMass({
+  return {
     networkId: plan.networkId,
     version: (plan as any).txVersion === 1 ? 1 : 0,
     inputs: (plan.inputs || []).map((i: any) => ({
@@ -28,7 +28,13 @@ function planMass(plan: TxPlan) {
       ...(plan.outputs || []).map((o: any) => ({ amountSompi: BigInt(o.amountSompi || 0), address: o.address, scriptPublicKey: o.scriptPublicKey })),
       ...(plan.change ? [{ amountSompi: BigInt(plan.change.amountSompi || 0), address: plan.change.address }] : [])
     ]
-  });
+  };
+}
+
+/** SDK mass of the plan's own transaction; undefined for a plan without inputs (it has no mass). */
+function planMass(plan: TxPlan) {
+  const input = planMassInput(plan);
+  return input ? measureUpstreamMass(input) : undefined;
 }
 
 /**
@@ -105,7 +111,14 @@ export function verifyFeeSemantics(artifact: any): FeeAuditResult {
     } else if (!upstream.standard) {
       issues.push(`Mass ${upstream.mass} exceeds the maximum standard mass ${upstream.maximumStandardMass}: the node will not relay it`);
     } else if (artifactFee < upstream.minimumFeeSompi) {
-      issues.push(`Fee below network minimum: artifact pays ${artifactFee}, the node requires ${upstream.minimumFeeSompi}`);
+      // The SDK's figure prices storage mass too; the node relays at its minimum rate
+      // per gram of compute mass.
+      const relay = measureRelayFee(planMassInput(artifact as TxPlan)!);
+      if (artifactFee < relay.relayFeeSompi) {
+        issues.push(
+          `Fee below network minimum: artifact pays ${artifactFee}, the node requires ${relay.relayFeeSompi} for compute mass ${relay.computeMass}`
+        );
+      }
     }
   }
 

@@ -25,9 +25,6 @@ describe("T-A04: workspace subpath exports resolve in the gate", () => {
     expect(rel(resolveWorkspaceSource("@hardkas/sdk/client"))).toBe("packages/sdk/src/client.ts");
     expect(rel(resolveWorkspaceSource("@hardkas/testing/scenarios"))).toBe("packages/testing/src/scenarios.ts");
     expect(rel(resolveWorkspaceSource("@hardkas/kaspa-rpc/adapters"))).toBe("packages/kaspa-rpc/src/adapters/index.ts");
-    expect(rel(resolveWorkspaceSource("@hardkas/kaspa-rpc/internal/notifications"))).toBe(
-      "packages/kaspa-rpc/src/internal/notifications.ts"
-    );
     expect(rel(resolveWorkspaceSource("@hardkas/accounts/internal/wasm-rpc-serialization.js"))).toBe(
       "packages/accounts/src/internal/wasm-rpc-serialization.ts"
     );
@@ -36,7 +33,7 @@ describe("T-A04: workspace subpath exports resolve in the gate", () => {
 
   it("resolves packages without an exports map through main", () => {
     expect(rel(resolveWorkspaceSource("@hardkas/pskt-native"))).toBe("packages/pskt-native/index.js");
-    expect(rel(resolveWorkspaceSource("@hardkas/rpc-events"))).toBe("packages/rpc-events/src/index.ts");
+    expect(rel(resolveWorkspaceSource("@hardkas/jobs"))).toBe("packages/jobs/src/index.ts");
   });
 
   it("refuses subpaths a package does not declare instead of inventing a file", () => {

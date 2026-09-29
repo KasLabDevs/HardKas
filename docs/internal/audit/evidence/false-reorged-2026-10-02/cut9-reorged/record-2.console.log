@@ -1,0 +1,45 @@
+﻿[0.3s] node hardkas-kaspad-toccata-v2 was stopped: started it for the run (it is stopped again at the end)
+[3.7s] accounts: sender reorg1 kaspasim:qrffpcsrtgkdv77d6kklsgxar4qj2k7vcmlen95gq2y88tuskau6ge7vaegqa, recipient reorg2 kaspasim:qq5xypl8af94llun8nfn8744flkxj4d0nacf7yc8252lzckwcuyfz6gllnr05
+[106.9s] fund: code 0 
+[109.9s] tx 1: d952bfe30008c332a9b8effea53d4f66d16c329bfa991f9f0e41d2dc0b5ad4ae submitted
+[129.2s] tx 1: wait code 0, HardKAS states SUBMITTED → ACCEPTED → CONFIRMED, last CONFIRMED; truth accepting-block changes 3, final accepted true, outputs 1
+[131.5s] tx 2: eedff568be3ddca734dbf45809b3ca0dd48e36b7ab36d771f26227537c1bd5ae submitted
+[151.7s] tx 2: wait code 0, HardKAS states SUBMITTED → ACCEPTED → CONFIRMED, last CONFIRMED; truth accepting-block changes 2, final accepted true, outputs 1
+[154.2s] tx 3: c4c1a1bd57a491fc7a17736dc9b94478dc82e75e12d8cfcb1a73abc2762e8e7d submitted
+[171.3s] tx 3: wait code 0, HardKAS states SUBMITTED → ACCEPTED → CONFIRMED, last CONFIRMED; truth accepting-block changes 3, final accepted true, outputs 1
+[173.9s] tx 4: d66be5304237236fb2c09595b772055db7b2b635031572a35b07e4bef62b354d submitted
+[191.9s] tx 4: wait code 0, HardKAS states SUBMITTED → ACCEPTED → CONFIRMED, last CONFIRMED; truth accepting-block changes 2, final accepted true, outputs 1
+[194.6s] tx 5: 1e145004e8dce680178e38987cb061122e6bb1e9e9bb456a02c281e16c03fd91 submitted
+[214.2s] tx 5: wait code 0, HardKAS states SUBMITTED → ACCEPTED → CONFIRMED, last CONFIRMED; truth accepting-block changes 2, final accepted true, outputs 1
+[216.9s] tx 6: bc7d376b8bd236b32f18509a296c2b2acc80059f1eca6d7ba6a0f539b91d958a submitted
+[239.1s] tx 6: wait code 0, HardKAS states SUBMITTED → ACCEPTED → CONFIRMED, last CONFIRMED; truth accepting-block changes 1, final accepted true, outputs 1
+[241.9s] tx 7: fb696772682e43a7216836cf96b8d4ab8bfa0eadab46eba92cfb7e9de5b69d09 submitted
+[441.2s] tx 7: wait code 1, HardKAS states SUBMITTED → ACCEPTED → REORGED [REORGED seen], last REORGED; truth accepting-block changes 2, final accepted true, outputs 1
+[444.6s] tx 8: 8574332814780e9fc77ea4b26849ecc8bd507238bf18e168398728dc0a24ae09 submitted
+[464.4s] tx 8: wait code 0, HardKAS states SUBMITTED → ACCEPTED → CONFIRMED, last CONFIRMED; truth accepting-block changes 4, final accepted true, outputs 1
+[467.9s] tx 9: 01fc498b249921e49719b72b6309426997dfa4ce3648f4482c370b506c541e4b submitted
+[486.4s] tx 9: wait code 0, HardKAS states SUBMITTED → ACCEPTED → CONFIRMED, last CONFIRMED; truth accepting-block changes 3, final accepted true, outputs 1
+[489.8s] tx 10: 76f2476bc9be7d84195b703db29910ba26e67462e6881493a4f132fd965846ec submitted
+[510.3s] tx 10: wait code 0, HardKAS states SUBMITTED → ACCEPTED → CONFIRMED, last CONFIRMED; truth accepting-block changes 3, final accepted true, outputs 1
+[513.8s] tx 11: 58c7a419729a9e9aa56d11d43ca3ac22e25e5bb9d5582173dd80e4b73efb2648 submitted
+[537.5s] tx 11: wait code 0, HardKAS states SUBMITTED → ACCEPTED → CONFIRMED, last CONFIRMED; truth accepting-block changes 2, final accepted true, outputs 1
+[541.0s] tx 12: 07b8108d13e1d6aa9a1b1826e5bd5c6c741dbca3b0888cc7fa5408d24fdac614 submitted
+[559.0s] tx 12: wait code 0, HardKAS states SUBMITTED → ACCEPTED → CONFIRMED, last CONFIRMED; truth accepting-block changes 2, final accepted true, outputs 1
+[563.8s] tx 13: da08b696b1d304e70e8f1eb322bac6dd647e0855b73eef93b2f94ada2fe9e5b2 submitted
+[584.8s] tx 13: wait code 0, HardKAS states SUBMITTED → ACCEPTED → CONFIRMED, last CONFIRMED; truth accepting-block changes 2, final accepted true, outputs 1
+[588.4s] tx 14: d4f2475ff6dcfaed2d6eccd81dc147a33e2e1f581440fc2749bf2164bde8c056 submitted
+[610.2s] tx 14: wait code 0, HardKAS states SUBMITTED → ACCEPTED → CONFIRMED, last CONFIRMED; truth accepting-block changes 2, final accepted true, outputs 1
+[613.9s] tx 15: b08d90e0c36fc67d91ace3a341a034efd480eec23db63de9b717fda306b0daaf submitted
+[635.5s] tx 15: wait code 0, HardKAS states SUBMITTED → ACCEPTED → CONFIRMED, last CONFIRMED; truth accepting-block changes 1, final accepted true, outputs 1
+[639.3s] tx 16: c1999d091e71c1800c5a229372b28e102328fa8137078c4083e664375c2ff6c1 submitted
+[661.6s] tx 16: wait code 0, HardKAS states SUBMITTED → ACCEPTED → CONFIRMED, last CONFIRMED; truth accepting-block changes 4, final accepted true, outputs 1
+[665.4s] tx 17: 83d3b3001b7ae1ec2b4acf32023ff3b5f7f79b4a2f337fd935785229413a4d66 submitted
+[685.8s] tx 17: wait code 0, HardKAS states SUBMITTED → ACCEPTED → CONFIRMED, last CONFIRMED; truth accepting-block changes 2, final accepted true, outputs 1
+[689.7s] tx 18: c49c1588fec786d95a0fd9acd84384176e55f99332dd23e6b408b0690ebabc65 submitted
+[710.7s] tx 18: wait code 0, HardKAS states SUBMITTED → ACCEPTED → CONFIRMED, last CONFIRMED; truth accepting-block changes 2, final accepted true, outputs 1
+[714.6s] tx 19: 74e6f0e602e75ddeceec7758433ea4a64dcb121ea8028cc611471d92c37563f3 submitted
+[737.6s] tx 19: wait code 0, HardKAS states SUBMITTED → ACCEPTED → CONFIRMED, last CONFIRMED; truth accepting-block changes 3, final accepted true, outputs 1
+[741.5s] tx 20: e380a890c392d9d4e7e978110c9f604d2171fe4819b5e8300870f670cdf2433c submitted
+[762.8s] tx 20: wait code 0, HardKAS states SUBMITTED → ACCEPTED → CONFIRMED, last CONFIRMED; truth accepting-block changes 2, final accepted true, outputs 1
+[764.9s] demo miner restored: -a kaspasim:qqk76knnj4u5taza3fx3w9jrfenxmj0g9hu7dp7wtdnspgg5u7guvgg9f2xkg -s 127.0.0.1 -p 16210 --mine-when-not-synced -t 1 --throttle 12
+[764.9s] done

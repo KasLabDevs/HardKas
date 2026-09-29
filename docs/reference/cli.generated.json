@@ -1,7 +1,7 @@
 {
   "schema": "hardkas.cliReference.v1",
   "generatedAt": "deterministic",
-  "totalCommands": 235,
+  "totalCommands": 233,
   "flatSurface": [
     "hardkas accounts",
     "hardkas accounts balance",
@@ -183,14 +183,12 @@
     "hardkas silver doctor",
     "hardkas silver inspect",
     "hardkas silver spend",
+    "hardkas silver test",
     "hardkas silver verify",
     "hardkas simulator",
     "hardkas simulator account",
     "hardkas simulator account create",
     "hardkas simulator fund",
-    "hardkas simulator silver",
-    "hardkas simulator silver deploy",
-    "hardkas simulator silver spend",
     "hardkas status",
     "hardkas task",
     "hardkas task <name>",
@@ -285,7 +283,7 @@
             },
             {
               "flags": "--local",
-              "description": "Query local query-store instead of remote RPC (for simulated networks)",
+              "description": "Read the simulator state file (.hardkas/localnet.json) instead of a node",
               "default": false,
               "required": false,
               "mandatory": false
@@ -571,7 +569,7 @@
               "options": [
                 {
                   "flags": "--name <name>",
-                  "description": "Account name",
+                  "description": "Account name: letters, digits, _ and - (default: default)",
                   "default": null,
                   "required": true,
                   "mandatory": false
@@ -725,7 +723,7 @@
               "aliases": [
                 "unlock"
               ],
-              "description": "Verify keystore access and record signing intent internal",
+              "description": "Check that an account's encrypted keystore opens with its password; nothing is recorded internal",
               "usage": "hardkas accounts real session-open [options] <name>",
               "arguments": [
                 {
@@ -1053,7 +1051,7 @@
         },
         {
           "flags": "--profile <smoke|targeted|full>",
-          "description": "Fuzzing distribution profile",
+          "description": "Actor weight profile (smoke, targeted and full currently use the same weights)",
           "default": "smoke",
           "required": true,
           "mandatory": false
@@ -1067,14 +1065,14 @@
         },
         {
           "flags": "--isolate",
-          "description": "Run the chaos engine in a dedicated temporary workspace (Default)",
+          "description": "Always on: chaos runs in ./.hardkas-chaos-workspace (the flag has no effect)",
           "default": true,
           "required": false,
           "mandatory": false
         },
         {
           "flags": "--unsafe-current-dir",
-          "description": "Run chaos in the current directory (DANGEROUS)",
+          "description": "Request a run in the current directory (DANGEROUS; needs HARDKAS_ALLOW_UNSAFE_CHAOS=1). Known issue: only the safety checks run, the campaign stays in the isolated workspace",
           "default": false,
           "required": false,
           "mandatory": false
@@ -1099,7 +1097,7 @@
           "path": "hardkas chaos replay",
           "name": "replay",
           "aliases": [],
-          "description": "Replay a specific chaos run deterministically",
+          "description": "Re-run one chaos run seed in a fresh isolated workspace (the actor is derived from the seed, so runs from an --actor campaign are not reproduced)",
           "usage": "hardkas chaos replay [options]",
           "arguments": [],
           "options": [
@@ -1112,7 +1110,7 @@
             },
             {
               "flags": "--isolate",
-              "description": "Run in isolated workspace",
+              "description": "Always on (the flag has no effect)",
               "default": true,
               "required": false,
               "mandatory": false
@@ -1244,13 +1242,13 @@
       "path": "hardkas console",
       "name": "console",
       "aliases": [],
-      "description": "Open an interactive REPL with HardKAS SDK pre-loaded stable",
+      "description": "Open an interactive REPL with an in-memory simulator harness (h) and hash/format helpers; no network is contacted stable",
       "usage": "hardkas console [options]",
       "arguments": [],
       "options": [
         {
           "flags": "--network <name>",
-          "description": "Network name",
+          "description": "Network label for the simulated state (nothing connects to it)",
           "default": "simnet",
           "required": true,
           "mandatory": false
@@ -1579,7 +1577,7 @@
             },
             {
               "flags": "--json",
-              "description": "Output as JSON",
+              "description": "Not implemented yet: no JSON is printed",
               "default": false,
               "required": false,
               "mandatory": false
@@ -1691,7 +1689,7 @@
           "path": "hardkas dev doctor",
           "name": "doctor",
           "aliases": [],
-          "description": "Validate local dev environment readiness stable",
+          "description": "Check local dev readiness for an L2 profile (Igra by default): workspace, artifacts, query store, SDK import, dev server and the L2 JSON-RPC; the Kaspa node is not checked stable",
           "usage": "hardkas dev doctor [options]",
           "arguments": [],
           "options": [
@@ -1711,7 +1709,7 @@
             },
             {
               "flags": "--account <name>",
-              "description": "Local EVM account name to verify balance",
+              "description": "EVM account that must exist in hardkas.config (its balance is not checked)",
               "default": null,
               "required": true,
               "mandatory": false
@@ -1945,7 +1943,7 @@
         },
         {
           "flags": "--capabilities",
-          "description": "Report local node capabilities (RPC, network, DAA)",
+          "description": "With 'doctor node': report the node's capabilities (RPC, network, DAA advance) as JSON",
           "default": false,
           "required": false,
           "mandatory": false
@@ -2155,35 +2153,35 @@
       "options": [
         {
           "flags": "--force",
-          "description": "Overwrite existing hardkas.config.ts (in-place only)",
+          "description": "Overwrite an existing hardkas.config.ts (the other scaffold files are kept)",
           "default": false,
           "required": false,
           "mandatory": false
         },
         {
           "flags": "--template <type>",
-          "description": "Project template for new projects",
-          "default": "basic",
+          "description": "No effect in this release (for templates use 'hardkas create')",
+          "default": null,
           "required": true,
           "mandatory": false
         },
         {
           "flags": "--network <name>",
-          "description": "Default network for new projects",
+          "description": "'simulated' pre-creates the simulator state (5 accounts, 1000 KAS each); other values skip it. The project's default target is always the simulator",
           "default": "simulated",
           "required": true,
           "mandatory": false
         },
         {
           "flags": "--accounts <n>",
-          "description": "Number of simulated accounts for new projects",
-          "default": "3",
+          "description": "No effect in this release: init always creates the 5 simulated accounts alice…erin",
+          "default": null,
           "required": true,
           "mandatory": false
         },
         {
           "flags": "--install",
-          "description": "Run pnpm/npm install automatically after scaffolding",
+          "description": "Run npm install after scaffolding",
           "default": false,
           "required": false,
           "mandatory": false
@@ -2243,14 +2241,14 @@
           "path": "hardkas kaspa doctor",
           "name": "doctor",
           "aliases": [],
-          "description": "Verify local Kaspa L1 environment readiness stable",
+          "description": "Check one Kaspa node at --rpc-url: reachability, sync state, UTXO index, DAG info and mempool stable",
           "usage": "hardkas kaspa doctor [options]",
           "arguments": [],
           "options": [
             {
               "flags": "--rpc-url <url>",
-              "description": "Kaspa RPC URL",
-              "default": "http://127.0.0.1:16110",
+              "description": "Node wRPC endpoint (default: the canonical localnet, ws://127.0.0.1:18210)",
+              "default": "ws://127.0.0.1:18210",
               "required": true,
               "mandatory": false
             },
@@ -2303,8 +2301,8 @@
               "options": [
                 {
                   "flags": "--rpc-url <url>",
-                  "description": "Kaspa RPC URL",
-                  "default": "http://127.0.0.1:16110",
+                  "description": "Node wRPC endpoint (default: the canonical localnet, ws://127.0.0.1:18210)",
+                  "default": "ws://127.0.0.1:18210",
                   "required": true,
                   "mandatory": false
                 },
@@ -2322,7 +2320,7 @@
               "path": "hardkas kaspa wallet create",
               "name": "create",
               "aliases": [],
-              "description": "Create a new local Kaspa wallet stable",
+              "description": "Generate a key pair and print it (address, config snippet and private key); nothing is saved. For stored dev accounts use 'accounts real generate' stable",
               "usage": "hardkas kaspa wallet create [options] <name>",
               "arguments": [
                 {
@@ -2363,7 +2361,7 @@
               "path": "hardkas kaspa wallet send",
               "name": "send",
               "aliases": [],
-              "description": "Send Kaspa between local wallets stable",
+              "description": "Plan, confirm (y/N), sign and submit a payment over --rpc-url; the network and target come from hardkas.config stable",
               "usage": "hardkas kaspa wallet send [options] <from> <to>",
               "arguments": [
                 {
@@ -2392,8 +2390,8 @@
                 },
                 {
                   "flags": "--rpc-url <url>",
-                  "description": "Kaspa RPC URL",
-                  "default": "http://127.0.0.1:16110",
+                  "description": "Node wRPC endpoint (default: the canonical localnet, ws://127.0.0.1:18210)",
+                  "default": "ws://127.0.0.1:18210",
                   "required": true,
                   "mandatory": false
                 }
@@ -2417,7 +2415,7 @@
           "path": "hardkas local wizard",
           "name": "wizard",
           "aliases": [],
-          "description": "Guided setup for local development stable",
+          "description": "Guided Igra L2 (EVM) check: JSON-RPC, EVM account and its balance; not a Kaspa L1 setup stable",
           "usage": "hardkas local wizard [options]",
           "arguments": [],
           "options": [
@@ -2430,7 +2428,7 @@
             },
             {
               "flags": "--account <name>",
-              "description": "New or existing EVM account name",
+              "description": "EVM account name in hardkas.config (if it is missing, a key is printed for you to add)",
               "default": "dev_alice",
               "required": true,
               "mandatory": false
@@ -2501,7 +2499,7 @@
           "path": "hardkas localnet fork",
           "name": "fork",
           "aliases": [],
-          "description": "Fork state from a real Kaspa network for local simulation preview",
+          "description": "Copy the current UTXOs of some addresses from a node into a simulator state file preview",
           "usage": "hardkas localnet fork [options]",
           "arguments": [],
           "options": [
@@ -2514,28 +2512,28 @@
             },
             {
               "flags": "--addresses <addrs...>",
-              "description": "Only fetch UTXOs for these addresses",
+              "description": "Addresses whose UTXOs are copied, separated by spaces",
               "default": null,
               "required": true,
               "mandatory": false
             },
             {
               "flags": "--at-daa-score <score>",
-              "description": "Fork at specific DAA score (implicit latest is forbidden)",
+              "description": "Required label recorded with the snapshot; the UTXOs copied are always the node's current ones",
               "default": null,
               "required": true,
               "mandatory": true
             },
             {
               "flags": "--output <path>",
-              "description": "Save fork snapshot to file",
+              "description": "State file to write (default: .hardkas/localnet.json, replaced)",
               "default": null,
               "required": true,
               "mandatory": false
             },
             {
               "flags": "--json",
-              "description": "Output as JSON",
+              "description": "Not implemented yet: no JSON is printed",
               "default": false,
               "required": false,
               "mandatory": false
@@ -2565,7 +2563,7 @@
             },
             {
               "flags": "--amount <kas>",
-              "description": "Target mining amount hint in KAS",
+              "description": "KAS to wait for: mine until the mature balance grows by this amount",
               "default": "1000",
               "required": true,
               "mandatory": false
@@ -2685,14 +2683,14 @@
           "path": "hardkas localnet start",
           "name": "start",
           "aliases": [],
-          "description": "Start localnet profile alpha",
+          "description": "Start (or adopt) the Docker rusty-kaspad node for the toccata-v2 profile and create dev accounts alice…erin; needs Docker alpha",
           "usage": "hardkas localnet start [options]",
           "arguments": [],
           "options": [
             {
               "flags": "--profile <name>",
-              "description": "Localnet profile",
-              "default": "simulated",
+              "description": "Localnet profile: toccata-v2 (the only one, required; or use --toccata)",
+              "default": null,
               "required": true,
               "mandatory": false
             },
@@ -2705,7 +2703,7 @@
             },
             {
               "flags": "--detached",
-              "description": "Run in background",
+              "description": "No effect: the node always runs as a detached Docker container",
               "default": false,
               "required": false,
               "mandatory": false
@@ -2822,7 +2820,7 @@
           "path": "hardkas lock doctor",
           "name": "doctor",
           "aliases": [],
-          "description": "Analyze locks and identify stale or corrupted ones stable",
+          "description": "Report stale locks (process no longer running on this host) in .hardkas/locks stable",
           "usage": "hardkas lock doctor [options]",
           "arguments": [],
           "options": [],
@@ -3685,7 +3683,7 @@
                 },
                 {
                   "flags": "--explain [level]",
-                  "description": "Attach explain chains (brief|full)",
+                  "description": "Attach explain chains (brief and full currently give the same output)",
                   "default": null,
                   "required": false,
                   "mandatory": false
@@ -3719,7 +3717,7 @@
                 },
                 {
                   "flags": "--mode <mode>",
-                  "description": "Filter by mode (simulated/real)",
+                  "description": "Filter by mode: simulator, localnet or rpc",
                   "default": null,
                   "required": true,
                   "mandatory": false
@@ -3761,7 +3759,7 @@
                 },
                 {
                   "flags": "--explain [level]",
-                  "description": "Attach explain chains (brief|full)",
+                  "description": "Attach explain chains (brief and full currently give the same output)",
                   "default": null,
                   "required": false,
                   "mandatory": false
@@ -3797,7 +3795,7 @@
                 },
                 {
                   "flags": "--explain [level]",
-                  "description": "Attach explain chains (brief|full)",
+                  "description": "Attach explain chains (brief and full currently give the same output)",
                   "default": null,
                   "required": false,
                   "mandatory": false
@@ -3822,7 +3820,7 @@
                 },
                 {
                   "flags": "--explain [level]",
-                  "description": "Attach explain chains (brief|full)",
+                  "description": "Attach explain chains (brief and full currently give the same output)",
                   "default": null,
                   "required": false,
                   "mandatory": false
@@ -3854,7 +3852,7 @@
                 },
                 {
                   "flags": "--explain [level]",
-                  "description": "Attach explain chains (brief|full)",
+                  "description": "Attach explain chains (brief and full currently give the same output)",
                   "default": null,
                   "required": false,
                   "mandatory": false
@@ -3884,7 +3882,7 @@
                 },
                 {
                   "flags": "--explain [level]",
-                  "description": "Attach explain chains (brief|full)",
+                  "description": "Attach explain chains (brief and full currently give the same output)",
                   "default": null,
                   "required": false,
                   "mandatory": false
@@ -4017,7 +4015,7 @@
                 },
                 {
                   "flags": "--explain [level]",
-                  "description": "Attach explain chains (brief|full)",
+                  "description": "Attach explain chains (brief and full currently give the same output)",
                   "default": null,
                   "required": false,
                   "mandatory": false
@@ -4049,7 +4047,7 @@
                 },
                 {
                   "flags": "--explain [level]",
-                  "description": "Attach explain chains (brief|full)",
+                  "description": "Attach explain chains (brief and full currently give the same output)",
                   "default": null,
                   "required": false,
                   "mandatory": false
@@ -4081,7 +4079,7 @@
                 },
                 {
                   "flags": "--explain [level]",
-                  "description": "Attach explain chains (brief|full)",
+                  "description": "Attach explain chains (brief and full currently give the same output)",
                   "default": null,
                   "required": false,
                   "mandatory": false
@@ -4124,7 +4122,7 @@
                 },
                 {
                   "flags": "--explain [level]",
-                  "description": "Attach explain chains (brief|full)",
+                  "description": "Attach explain chains (brief and full currently give the same output)",
                   "default": null,
                   "required": false,
                   "mandatory": false
@@ -4154,7 +4152,7 @@
                 },
                 {
                   "flags": "--explain [level]",
-                  "description": "Attach explain chains (brief|full)",
+                  "description": "Attach explain chains (brief and full currently give the same output)",
                   "default": null,
                   "required": false,
                   "mandatory": false
@@ -4247,7 +4245,7 @@
                 },
                 {
                   "flags": "--wait-lock",
-                  "description": "Wait for workspace lock if held",
+                  "description": "With --migrate: wait for the query-store lock if held",
                   "default": false,
                   "required": false,
                   "mandatory": false
@@ -4290,7 +4288,7 @@
               "options": [
                 {
                   "flags": "--wait-lock",
-                  "description": "Wait for workspace lock if held",
+                  "description": "Wait for the query-store lock if held",
                   "default": false,
                   "required": false,
                   "mandatory": false
@@ -4315,7 +4313,7 @@
               "options": [
                 {
                   "flags": "--backend <type>",
-                  "description": "Backend to use (sqlite/filesystem)",
+                  "description": "sqlite creates .hardkas/store.db; filesystem indexes nothing (default: sqlite only if store.db already exists)",
                   "default": null,
                   "required": true,
                   "mandatory": false
@@ -4329,7 +4327,7 @@
                 },
                 {
                   "flags": "--wait-lock",
-                  "description": "Wait for workspace lock if held",
+                  "description": "Wait for the query-store lock if held",
                   "default": false,
                   "required": false,
                   "mandatory": false
@@ -4394,7 +4392,7 @@
               "aliases": [
                 "index"
               ],
-              "description": "Synchronize the filesystem artifacts with the query store index",
+              "description": "Index new artifacts into the SQLite query store (needs .hardkas/store.db: run 'query store rebuild --backend sqlite' first)",
               "usage": "hardkas query store sync [options]",
               "arguments": [],
               "options": [
@@ -4407,7 +4405,7 @@
                 },
                 {
                   "flags": "--wait-lock",
-                  "description": "Wait for workspace lock if held",
+                  "description": "Wait for the query-store lock if held",
                   "default": false,
                   "required": false,
                   "mandatory": false
@@ -4467,13 +4465,13 @@
       "path": "hardkas rebuild",
       "name": "rebuild",
       "aliases": [],
-      "description": "Reconstruct projections from committed canonical artifacts stable",
+      "description": "Wipe and rebuild the SQLite query store from the committed artifacts stable",
       "usage": "hardkas rebuild [options]",
       "arguments": [],
       "options": [
         {
           "flags": "--from-artifacts",
-          "description": "Rebuild the query-store and localnet projection from artifacts",
+          "description": "Required: rebuild the query store from the artifacts (the localnet state is not rebuilt)",
           "default": false,
           "required": false,
           "mandatory": false
@@ -4492,7 +4490,7 @@
       "path": "hardkas repair",
       "name": "repair",
       "aliases": [],
-      "description": "Attempt automatic recovery of corrupt projections or append tails beta",
+      "description": "Report an outdated workspace, lock files in .hardkas/, torn JSONL tails and a corrupt query store; --force repairs them beta",
       "usage": "hardkas repair [options]",
       "arguments": [],
       "options": [
@@ -4505,7 +4503,7 @@
         },
         {
           "flags": "--force",
-          "description": "Repair without prompting for confirmation",
+          "description": "Apply the repairs (without it, repair only reports). Removes lock files without checking whether their process is alive",
           "default": false,
           "required": false,
           "mandatory": false
@@ -4553,7 +4551,7 @@
           "path": "hardkas replay verify",
           "name": "verify",
           "aliases": [],
-          "description": "Verify deterministic simulator-mode replay for a receipt by exact artifactId or artifact file path. Real-node (kaspa consensus) receipts are not currently supported and will report REPLAY_MODE_UNSUPPORTED. stable",
+          "description": "Verify deterministic simulator-mode replay for a receipt (required) by exact artifactId or a workspace path such as ./receipt.json. Real-node sends are not supported: they record a TxSubmission, not a TxReceipt. stable",
           "usage": "hardkas replay verify [options] [artifact]",
           "arguments": [
             {
@@ -4585,7 +4583,7 @@
       "path": "hardkas rotate",
       "name": "rotate",
       "aliases": [],
-      "description": "Rotate and archive telemetry streams beta",
+      "description": "Archive the telemetry stream (.hardkas/telemetry/telemetry.jsonl) once it reaches 10 MiB beta",
       "usage": "hardkas rotate [options]",
       "arguments": [],
       "options": [
@@ -4619,23 +4617,38 @@
           "path": "hardkas rpc dag",
           "name": "dag",
           "aliases": [],
-          "description": "Show DAG information from node",
+          "description": "Show the node's DAG: network, virtual DAA score, sink and tips",
           "usage": "hardkas rpc dag [options]",
           "arguments": [],
-          "options": [],
+          "options": [
+            {
+              "flags": "--url <url>",
+              "description": "Node wRPC endpoint (default: the canonical localnet, ws://127.0.0.1:18210)",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
           "subcommands": []
         },
         {
           "path": "hardkas rpc doctor",
           "name": "doctor",
           "aliases": [],
-          "description": "Run comprehensive RPC diagnostics",
+          "description": "Probe RPC endpoints: TCP, wRPC connection, server and DAG info (http:// endpoints without port 18210 are probed as EVM JSON-RPC)",
           "usage": "hardkas rpc doctor [options]",
           "arguments": [],
           "options": [
             {
               "flags": "--endpoints <urls...>",
-              "description": "Specific endpoints to audit",
+              "description": "Endpoints to probe, separated by spaces (commas are not split)",
               "default": null,
               "required": true,
               "mandatory": false
@@ -4647,7 +4660,7 @@
           "path": "hardkas rpc health",
           "name": "health",
           "aliases": [],
-          "description": "Check RPC health",
+          "description": "Check that the canonical localnet node (ws://127.0.0.1:18210) answers and is ready",
           "usage": "hardkas rpc health [options]",
           "arguments": [],
           "options": [
@@ -4660,7 +4673,7 @@
             },
             {
               "flags": "--timeout <ms>",
-              "description": "Timeout in ms",
+              "description": "With --wait: how long to wait in ms (default: 60000)",
               "default": null,
               "required": true,
               "mandatory": false
@@ -4679,17 +4692,32 @@
           "path": "hardkas rpc info",
           "name": "info",
           "aliases": [],
-          "description": "Show RPC connection info",
+          "description": "Show the node's network, version, sync state and UTXO index",
           "usage": "hardkas rpc info [options]",
           "arguments": [],
-          "options": [],
+          "options": [
+            {
+              "flags": "--url <url>",
+              "description": "Node wRPC endpoint (default: the canonical localnet, ws://127.0.0.1:18210)",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
           "subcommands": []
         },
         {
           "path": "hardkas rpc mempool",
           "name": "mempool",
           "aliases": [],
-          "description": "Show mempool status from node",
+          "description": "Look up a transaction in the node's mempool, or list what the mempool holds",
           "usage": "hardkas rpc mempool [options] [txId]",
           "arguments": [
             {
@@ -4697,14 +4725,29 @@
               "description": ""
             }
           ],
-          "options": [],
+          "options": [
+            {
+              "flags": "--url <url>",
+              "description": "Node wRPC endpoint (default: the canonical localnet, ws://127.0.0.1:18210)",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
           "subcommands": []
         },
         {
           "path": "hardkas rpc utxos",
           "name": "utxos",
           "aliases": [],
-          "description": "Show UTXOs for an address from node",
+          "description": "Show the UTXOs the node holds for an address",
           "usage": "hardkas rpc utxos [options] <address>",
           "arguments": [
             {
@@ -4712,7 +4755,22 @@
               "description": ""
             }
           ],
-          "options": [],
+          "options": [
+            {
+              "flags": "--url <url>",
+              "description": "Node wRPC endpoint (default: the canonical localnet, ws://127.0.0.1:18210)",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
           "subcommands": []
         }
       ]
@@ -4721,7 +4779,7 @@
       "path": "hardkas run",
       "name": "run",
       "aliases": [],
-      "description": "Execute a TypeScript or JavaScript file with HardKAS SDK injected stable",
+      "description": "Run a TypeScript or JavaScript file with tsx and a global 'hardkas': a simulator test harness on simulated networks, an RPC client otherwise (not the SDK) stable",
       "usage": "hardkas run [options] <script>",
       "arguments": [
         {
@@ -4732,21 +4790,21 @@
       "options": [
         {
           "flags": "--network <name>",
-          "description": "Network name",
+          "description": "Network from the config (unknown names fall back to simulated)",
           "default": "simnet",
           "required": true,
           "mandatory": false
         },
         {
           "flags": "--accounts <n>",
-          "description": "Number of simulated accounts",
+          "description": "Number of harness accounts (simulated networks only)",
           "default": "3",
           "required": true,
           "mandatory": false
         },
         {
           "flags": "--balance <sompi>",
-          "description": "Initial balance per account in sompi",
+          "description": "Initial balance per harness account, whole sompi (simulated networks only)",
           "default": "100000000000",
           "required": true,
           "mandatory": false
@@ -4867,21 +4925,21 @@
           "options": [
             {
               "flags": "--l1 <wallet>",
-              "description": "Name of the Kaspa L1 wallet",
+              "description": "HardKAS account name or Kaspa address",
               "default": null,
               "required": true,
               "mandatory": true
             },
             {
               "flags": "--l2 <account>",
-              "description": "Name of the Igra L2 account",
+              "description": "Account name, Kaspa address or 0x EVM address (an account name stores its Kaspa address)",
               "default": null,
               "required": true,
               "mandatory": true
             },
             {
               "flags": "--json",
-              "description": "Output results as JSON",
+              "description": "Not implemented yet: the output is text only",
               "default": false,
               "required": false,
               "mandatory": false
@@ -5351,6 +5409,64 @@
           "subcommands": []
         },
         {
+          "path": "hardkas silver test",
+          "name": "test",
+          "aliases": [],
+          "description": "Run a compiled contract's tests on the official SilverScript runner experimental (script engine on scenario transactions; not transaction validity)",
+          "usage": "hardkas silver test [options] <record>",
+          "arguments": [
+            {
+              "name": "record",
+              "description": ""
+            }
+          ],
+          "options": [
+            {
+              "flags": "--tests <file>",
+              "description": "Runner test file (.test.json); a sig argument may be {\"signature\":\"<account>\"}",
+              "default": null,
+              "required": true,
+              "mandatory": true
+            },
+            {
+              "flags": "--args <file>",
+              "description": "The constructor arguments the record was compiled with",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--contract <name>",
+              "description": "Contract, when the artifact has several",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--runner <path>",
+              "description": "SilverScript runner (cli-debugger) binary (default: $HARDKAS_SILVER_RUNNER)",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--out <file>",
+              "description": "Record path (default .hardkas/artifacts/silver-vm/)",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        },
+        {
           "path": "hardkas silver verify",
           "name": "verify",
           "aliases": [],
@@ -5429,7 +5545,7 @@
           "path": "hardkas simulator fund",
           "name": "fund",
           "aliases": [],
-          "description": "Fund a synthetic simulated account stable",
+          "description": "Fund a synthetic simulated account (the project's default network must be the simulator) stable",
           "usage": "hardkas simulator fund [options] <identifier>",
           "arguments": [
             {
@@ -5440,7 +5556,7 @@
           "options": [
             {
               "flags": "--amount <kas>",
-              "description": "Amount in KAS to fund",
+              "description": "Amount in KAS, up to 8 decimals, above 0",
               "default": "1000",
               "required": true,
               "mandatory": false
@@ -5454,47 +5570,6 @@
             }
           ],
           "subcommands": []
-        },
-        {
-          "path": "hardkas simulator silver",
-          "name": "silver",
-          "aliases": [],
-          "description": "SilverScript P2SH bookkeeping simulator experimental (never evidence)",
-          "usage": "hardkas simulator silver [options] [command]",
-          "arguments": [],
-          "options": [],
-          "subcommands": [
-            {
-              "path": "hardkas simulator silver deploy",
-              "name": "deploy",
-              "aliases": [],
-              "description": "Simulate a SilverScript deploy plan without a node",
-              "usage": "hardkas simulator silver deploy [options] <deploy-plan>",
-              "arguments": [
-                {
-                  "name": "deploy-plan",
-                  "description": ""
-                }
-              ],
-              "options": [],
-              "subcommands": []
-            },
-            {
-              "path": "hardkas simulator silver spend",
-              "name": "spend",
-              "aliases": [],
-              "description": "Simulate spending a simulated SilverScript output",
-              "usage": "hardkas simulator silver spend [options] <spend-plan>",
-              "arguments": [
-                {
-                  "name": "spend-plan",
-                  "description": ""
-                }
-              ],
-              "options": [],
-              "subcommands": []
-            }
-          ]
         }
       ]
     },
@@ -5605,7 +5680,7 @@
       "path": "hardkas test",
       "name": "test",
       "aliases": [],
-      "description": "Run HardKAS tests against localnet stable",
+      "description": "Run the project's tests with Vitest and the HardKAS test helpers stable",
       "usage": "hardkas test [options] [files...]",
       "arguments": [
         {
@@ -5616,35 +5691,35 @@
       "options": [
         {
           "flags": "--network <network>",
-          "description": "Network to test against",
+          "description": "Only recorded in the results: tests use the config's default network",
           "default": "simnet",
           "required": true,
           "mandatory": false
         },
         {
           "flags": "--watch",
-          "description": "Watch for changes",
+          "description": "Passed to Vitest, but the CLI exits after the first run (watch does not persist)",
           "default": false,
           "required": false,
           "mandatory": false
         },
         {
           "flags": "--mass-report",
-          "description": "Show mass/fee report after scenario execution",
+          "description": "No effect in this release",
           "default": false,
           "required": false,
           "mandatory": false
         },
         {
           "flags": "--mass-snapshot <label>",
-          "description": "Save mass snapshot for regression detection",
+          "description": "No effect in this release",
           "default": null,
           "required": true,
           "mandatory": false
         },
         {
           "flags": "--mass-compare <label>",
-          "description": "Compare against saved mass snapshot",
+          "description": "No effect in this release",
           "default": null,
           "required": true,
           "mandatory": false
@@ -5672,7 +5747,7 @@
         },
         {
           "flags": "--scenario <name>",
-          "description": "Run specific scenario by name",
+          "description": "Only run tests whose full name matches this regular expression",
           "default": null,
           "required": true,
           "mandatory": false
@@ -5935,35 +6010,35 @@
             },
             {
               "flags": "--from <accountOrAddress>",
-              "description": "Sender account name or address",
+              "description": "Sender account name or address (default: alice)",
               "default": null,
               "required": true,
               "mandatory": false
             },
             {
               "flags": "--to <address>",
-              "description": "Recipient address",
+              "description": "Recipient address or account name (default: bob)",
               "default": null,
               "required": true,
               "mandatory": false
             },
             {
               "flags": "--amount <kas>",
-              "description": "Amount in KAS",
+              "description": "Amount in KAS, up to 8 decimals (default: 1)",
               "default": null,
               "required": true,
               "mandatory": false
             },
             {
               "flags": "--network <name>",
-              "description": "Kaspa network name",
+              "description": "simulated, simnet, devnet, testnet-10, testnet-12 or mainnet (default: the config's default target)",
               "default": null,
               "required": true,
               "mandatory": false
             },
             {
               "flags": "--fee-rate <sompiPerMass>",
-              "description": "Fee rate in sompi per mass",
+              "description": "Whole sompi per gram of mass (default: 1 in the simulator, 100 on real networks; not a live estimate)",
               "default": null,
               "required": true,
               "mandatory": false
@@ -5984,7 +6059,7 @@
             },
             {
               "flags": "--url <url>",
-              "description": "RPC URL (optional override)",
+              "description": "Node wRPC URL (default: ws://127.0.0.1:18210 for simnet and devnet; the config's rpcUrl is not used)",
               "default": null,
               "required": true,
               "mandatory": false
@@ -6102,7 +6177,7 @@
           "options": [
             {
               "flags": "--target <name>",
-              "description": "Named execution target from hardkas.config.ts",
+              "description": "Named execution target from hardkas.config.ts (signed-artifact mode: it must match the artifact and never redirects the send)",
               "default": null,
               "required": true,
               "mandatory": false
@@ -6144,7 +6219,7 @@
             },
             {
               "flags": "--provider <type>",
-              "description": "Provider mode (auto, rpc, simulated)",
+              "description": "Provider mode (auto, rpc, simulated; signed-artifact mode only)",
               "default": "auto",
               "required": true,
               "mandatory": false
@@ -6158,7 +6233,7 @@
             },
             {
               "flags": "--yes",
-              "description": "Confirm broadcast. Required on any non-simulated network: without it the send is refused (NOT EXECUTED, exit 3) and nothing is written",
+              "description": "Confirm broadcast. Required unless the network is simulated or simnet (in shortcut mode, unless --network simulated or simnet is given): without it the send is refused (NOT EXECUTED, exit 3) and nothing is written",
               "default": false,
               "required": false,
               "mandatory": false
@@ -6186,7 +6261,7 @@
             },
             {
               "flags": "--track <label>",
-              "description": "Auto-track deployment with this label",
+              "description": "Signed-artifact mode: after an accepted broadcast, record a deployment with this label",
               "default": null,
               "required": true,
               "mandatory": false
@@ -6223,28 +6298,28 @@
             },
             {
               "flags": "--fixture",
-              "description": "Use fixture signer for Docker testing on simnet",
+              "description": "Sign with the built-in fixture test key (any network except mainnet)",
               "default": false,
               "required": false,
               "mandatory": false
             },
             {
               "flags": "--allow-mainnet-signing",
-              "description": "Allow signing for mainnet",
+              "description": "Mainnet signing stays refused in this release; the flag only lets synthetic --threshold entries through",
               "default": false,
               "required": false,
               "mandatory": false
             },
             {
               "flags": "--threshold <number>",
-              "description": "Multisig threshold",
+              "description": "Synthetic multisig threshold for tests (no Kaspa multisig script is produced)",
               "default": null,
               "required": true,
               "mandatory": false
             },
             {
               "flags": "--required-signers <list>",
-              "description": "Comma-separated list of required signers",
+              "description": "Comma-separated signers, no spaces (with --threshold above 1)",
               "default": null,
               "required": true,
               "mandatory": false

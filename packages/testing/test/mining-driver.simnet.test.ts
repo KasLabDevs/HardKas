@@ -23,7 +23,8 @@ async function runRegression() {
       await node.mining.mineBlock({ payAddress: "kaspasim:qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqx0r8j" });
       throw new Error("Regression FAIL: Invalid address should have thrown");
     } catch (e: any) {
-      if (!e.message.includes("Block rejected") && !e.message.includes("request deserialization error")) {
+      // Rejected by the node, or earlier by the official SDK's address check.
+      if (!e.message.includes("Block rejected") && !e.message.includes("request deserialization error") && !e.message.includes("address checksum is invalid")) {
          throw new Error("Unexpected error for invalid address: " + e.message);
       }
       console.log("? Invalid address rejected.");

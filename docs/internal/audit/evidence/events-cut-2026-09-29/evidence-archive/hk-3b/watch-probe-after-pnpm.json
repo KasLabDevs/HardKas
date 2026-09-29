@@ -1,0 +1,1 @@
+﻿{"toolkitWithoutNode":"WALLET_WATCH_REQUIRES_NODE","sdkNetwork":"simulated","sdkSimulatedWatch":"WALLET_WATCH_REQUIRES_NODE","toolkitDeclares":{"WalletWatchHandle":true,"WalletWatchEvent":true,"resync":true,"rpcUrl":true,"WalletSubscriptionManager":true},"txBuilderDeclares":{"onResync":true,"resyncing":true,"onError":true,"createUtxoContext":true}}

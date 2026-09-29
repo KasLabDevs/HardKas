@@ -1,7 +1,7 @@
 import { initializeHardKAS } from '@showcase/shared-backend';
 import { writeEvidence } from '@showcase/shared-testkit';
 import { PaymentToolkit } from '@hardkas/toolkit';
-import { buildPaymentPlan, estimateMass, createMockUtxo } from '@hardkas/tx-builder';
+import { planPaymentWithGenerator, estimateMass, createMockUtxo } from '@hardkas/tx-builder';
 async function run() {
     console.log('[Merchant Terminal] Starting Gauntlet Execution...');
     const { storage } = await initializeHardKAS('merchant-terminal-gauntlet');
@@ -45,7 +45,7 @@ async function run() {
     }
     try {
         createMockUtxo(null);
-        buildPaymentPlan(null);
+        await planPaymentWithGenerator(null).catch(() => { });
         estimateMass(null);
     }
     catch (e) { }
@@ -61,7 +61,7 @@ async function run() {
         networkSettlementReal: false,
         fallbackUsed: true,
         packagesExercised: ['@hardkas/toolkit', '@hardkas/accounts', '@hardkas/tx-builder', '@hardkas/core'],
-        publicApisExercised: ['PaymentToolkit.createInvoice', 'PaymentToolkit.listInvoices', 'PaymentToolkit.processPayment', 'buildPaymentPlan', 'estimateMass', 'createMockUtxo'],
+        publicApisExercised: ['PaymentToolkit.createInvoice', 'PaymentToolkit.listInvoices', 'PaymentToolkit.processPayment', 'planPaymentWithGenerator', 'estimateMass', 'createMockUtxo'],
         errors,
         expectedGuards: [],
         unsupportedCapabilities: []

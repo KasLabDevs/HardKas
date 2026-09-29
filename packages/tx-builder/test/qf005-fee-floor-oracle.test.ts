@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
+import { loadManagedKaspaWasmSync } from "@hardkas/core";
 import { calculateConsensusNonContextualMass, estimateTransactionMass } from "../src/mass.js";
-import { estimateFee } from "../src/fee-estimator.js";
+import { planWithGenerator } from "../src/generator-plan.js";
 
 /**
  * QF-005 Oracle Test Suite
@@ -14,17 +15,16 @@ import { estimateFee } from "../src/fee-estimator.js";
  * value (HardKAS's former formula gave 2052 here).
  */
 describe("QF-005: Node Relay Fee Floor Oracle Suite", () => {
-  it("QF-005-A1: Historical RC17 Compute-Dominated Rejection Fixture (2036 mass * 100 = 203600 sompi)", () => {
+  it("QF-005-A1: Historical RC17 Compute-Dominated Rejection Fixture (2036 mass * 100 = 203600 sompi)", async () => {
     // Frozen historical RC17 transaction shape:
     // 1 P2PK coinbase input (~66 byte Schnorr sig script)
     // 2 P2PK outputs (recipient + change)
     // Node rejection message: "transaction has 106000 fees which is under the required amount of 203600 for compute mass 2036"
+    const recipient = "kaspasim:qryj23rch0n5rc7klfug58zcrnuc966qljwgzpu3mflqgxu6w2pjg6n575980";
+    const change = "kaspasim:qqlpk9rs7yag6eqj3lttzqd8vgvssz8l8fxlpdag4h7zx2rjjr8lkkerwkezn";
     const computeDominatedTx = {
       inputCount: 1,
-      outputs: [
-        { address: "kaspasim:qryj23rch0n5rc7klfug58zcrnuc966qljwgzpu3mflqgxu6w2pjg6n575980" },
-        { address: "kaspasim:qqlpk9rs7yag6eqj3lttzqd8vgvssz8l8fxlpdag4h7zx2rjjr8lkkerwkezn" }
-      ],
+      outputs: [{ address: recipient }, { address: change }],
       payloadBytes: 0
     };
 
@@ -32,17 +32,26 @@ describe("QF-005: Node Relay Fee Floor Oracle Suite", () => {
     expect(massResult.computeMass).toBe(2036n);
     expect(massResult.feeMass).toBe(2036n);
 
-    const feeResult = estimateFee({
-      inputs: 1,
-      outputs: 2,
-      feeRateSompiPerMass: 100n,
-      txDetails: computeDominatedTx
+    // The planner (the Generator) pays exactly the amount the node required for this shape.
+    const k: any = loadManagedKaspaWasmSync();
+    const plan = await planWithGenerator({
+      networkId: "simnet",
+      utxos: [
+        {
+          outpoint: { transactionId: "ab".repeat(32), index: 0 },
+          address: change,
+          amountSompi: 10_000_000n * 100_000_000n,
+          scriptPublicKey: String(k.payToAddressScript(change).script)
+        }
+      ],
+      outputs: [{ address: recipient, amountSompi: 9_000_000n * 100_000_000n }],
+      changeAddress: change
     });
-
-    expect(feeResult.estimatedFeeSompi).toBe(203600n);
+    expect(plan.mass).toBe(2036n);
+    expect(plan.feeSompi).toBe(203600n);
   });
 
-  it("QF-005-A2: payload-heavy fixture: the fee floor is the SDK's minimum for the whole transaction", () => {
+  it("QF-005-A2: payload-heavy fixture: the payload adds mass", () => {
     const payloadHeavyTx = {
       inputCount: 1,
       outputs: [{ address: "kaspasim:qryj23rch0n5rc7klfug58zcrnuc966qljwgzpu3mflqgxu6w2pjg6n575980" }],
@@ -51,9 +60,6 @@ describe("QF-005: Node Relay Fee Floor Oracle Suite", () => {
     const withoutPayload = estimateTransactionMass({ ...payloadHeavyTx, payloadBytes: 0 });
     const withPayload = estimateTransactionMass(payloadHeavyTx);
     expect(withPayload.mass).toBeGreaterThan(withoutPayload.mass);
-
-    const feeResult = estimateFee({ inputs: 1, outputs: 1, feeRateSompiPerMass: 100n, txDetails: payloadHeavyTx });
-    expect(feeResult.relayFloorSompi).toBe(withPayload.feeSompi);
-    expect(feeResult.estimatedFeeSompi).toBe(withPayload.feeSompi);
+    expect(withPayload.feeSompi).toBeGreaterThan(withoutPayload.feeSompi);
   });
 });

@@ -33,8 +33,6 @@ import { HardkasCovenants } from "./covenants.js";
 import { HardkasUtxos } from "./utxos.js";
 import { WalletToolkit, WalletToolkitOptions } from "@hardkas/toolkit";
 import { HardkasNodeApi, FundDevWalletsOptions } from "./node.js";
-import { DefaultReactiveEventProvider, ReactiveEventProvider } from "@hardkas/rpc-events";
-import { KaspaRpcTransportAdapter } from "./observe/transport.js";
 export type { FundDevWalletsOptions } from "./node.js";
 
 // Curated explicit exports only. No `export *`
@@ -101,7 +99,7 @@ export type {
 export type { SilverCompileOptions, SilverP2sh } from "./silver.js";
 export { defineHardkasConfig } from "@hardkas/config";
 export { defineTask, type TaskContext, type TaskArgs } from "./tasks.js";
-export { buildPaymentPlan } from "@hardkas/tx-builder";
+export { planPaymentWithGenerator } from "@hardkas/tx-builder";
 export { signTxPlanArtifact } from "@hardkas/accounts";
 export {
   writeArtifact,
@@ -179,7 +177,6 @@ export class Hardkas {
   public readonly workflow: HardkasWorkflow;
   public readonly observe: HardkasObserve;
   public readonly query: HardkasQuery;
-  public readonly events: ReactiveEventProvider;
 
   public readonly wallet = {
     open: (name: string, opts?: Omit<WalletToolkitOptions, "rpc" | "signer">) => {
@@ -190,6 +187,8 @@ export class Hardkas {
         rpc: this.rpc,
         signer: this.signer,
         coinbaseMaturity,
+        // watch() needs the node endpoint; only a node client has one (the simulator does not).
+        ...(this.rpc instanceof JsonWrpcKaspaClient ? { rpcUrl: this.resolveRpcUrl() } : {}),
         ...opts
       });
     }
@@ -243,7 +242,6 @@ export class Hardkas {
     this.workflow = new HardkasWorkflow(this);
     this.observe = new HardkasObserve(this);
     this.query = new HardkasQuery(this);
-    this.events = new DefaultReactiveEventProvider(new KaspaRpcTransportAdapter(this.rpc));
   }
 
   private resolveRpcUrl(): string {

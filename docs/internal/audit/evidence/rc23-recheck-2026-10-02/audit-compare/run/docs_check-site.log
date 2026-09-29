@@ -1,0 +1,98 @@
+﻿
+> hardkas-monorepo@0.12.0-rc.26 docs:check-site C:\Users\jrodr\Documents\kaslabdevs\GitHub\HardKas-repo
+> node scripts/check-site-map.mjs
+
+[site] Public URLs defined by the IA map: 17
+[site] Pages with front matter:           3/71
+[site] Public URLs backed by a page:      0/17
+
+[site] Public URLs with no page yet (17):
+         /
+         /artifacts
+         /capabilities
+         /execution-contract
+         /execution-guard
+         /localnet
+         /policies
+         /programmability
+         /quickstart
+         /replay
+         /rpc
+         /sdk
+         /silver
+         /simulator
+         /toccata
+         /vprogs
+         /zk
+
+[site] Pages still without front matter (68):
+         README.md
+         concepts/accounts.md
+         concepts/architecture.md
+         concepts/artifact-lifecycle.md
+         concepts/artifacts-and-evidence.md
+         concepts/artifacts.md
+         concepts/correct-vs-incorrect-flows.md
+         concepts/determinism.md
+         concepts/evidence.md
+         concepts/execution-worlds.md
+         concepts/invariants.md
+         concepts/kaspa-node.md
+         concepts/localnet-and-boundaries.md
+         concepts/mental-model.md
+         concepts/providers.md
+         concepts/security-model.md
+         concepts/toolkit-layer.md
+         concepts/transaction-lifecycle.md
+         concepts/utxo-management.md
+         concepts/what-hardkas-is.md
+         concepts/why-hardkas.md
+         guides/artifact-auditing.md
+         guides/building-apps.md
+         guides/cli-wallet.md
+         guides/cli.md
+         guides/debugging.md
+         guides/jobs.md
+         guides/large-wallet-consolidation.md
+         guides/plugins.md
+         guides/real-node-transfer.md
+         guides/replay-verification.md
+         guides/runtime-docker.md
+         guides/sdk-wallet.md
+         guides/sdk.md
+         guides/snapshot-time-travel.md
+         guides/tasks.md
+         guides/templates.md
+         guides/troubleshooting.md
+         guides/wallet-utxos.md
+         guides/your-first-test.md
+         migrations/0.11-to-0.12.md
+         migrations/0.12.md
+         reference/artifact-schema.md
+         reference/cli.md
+         reference/client.md
+         reference/error-recovery.md
+         reference/errors.md
+         reference/sdk.md
+         start/configuration.md
+         start/first-scenario.md
+         start/first-transaction.md
+         start/install-and-init.md
+         start/quickstart-10min.md
+         start/quickstart-cli.md
+         start/quickstart.md
+         status/capability-matrix.md
+         status/covenants-status.md
+         status/programmability-surface.md
+         status/release-claims.md
+         status/security-claims.md
+         status/threat-model.md
+         status/tx-v1-status.md
+         status/tx-version-compatibility.md
+         status/versioning.md
+         tutorials/full-stack-demo.md
+         tutorials/merchant-checkout.md
+         tutorials/payment-service.md
+         tutorials/wallet-app.md
+
+[site] No contradictions. 0 URL(s) mapped, 68 page(s) pending.

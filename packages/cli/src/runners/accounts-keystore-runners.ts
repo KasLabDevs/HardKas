@@ -46,6 +46,16 @@ export async function runAccountsKeystoreImport(options: {
     options.yes = true;
   }
 
+  // AUD-20: a mainnet key is never written in plaintext; refused before the key is even read.
+  if (options.unsafePlaintext && address && address.startsWith("kaspa:") && !address.startsWith("kaspa:sim_")) {
+    const { HardkasCliError, HardkasExitCode } = await import("../cli-errors.js");
+    throw new HardkasCliError(
+      "PLAINTEXT_MAINNET_FORBIDDEN",
+      "Plaintext storage is refused for mainnet keys. Nothing was imported; import it encrypted (--password-env <VAR> or --password-stdin).",
+      { exitCode: HardkasExitCode.USAGE_ERROR }
+    );
+  }
+
   if (options.unsafePlaintext) {
     UI.warning(
       "LEGACY MODE: Storing private keys in plaintext is unsafe and discouraged."
@@ -84,6 +94,7 @@ export async function runAccountsKeystoreImport(options: {
     finalKey = await acquirePrivateKey({
       stdin: !!options.privateKeyStdin,
       env: options.privateKeyEnv,
+      interactive: !options.json,
       message: `Enter private key for account '${name}':`
     });
   } else if (options.privateKey) {
@@ -91,6 +102,7 @@ export async function runAccountsKeystoreImport(options: {
     privateKeyUsedAsArg = true;
   } else {
     finalKey = await acquirePrivateKey({
+      interactive: !options.json,
       message: `Enter private key for account '${name}':`
     });
   }
@@ -116,6 +128,7 @@ export async function runAccountsKeystoreImport(options: {
     const password = await acquirePassword({
       stdin: !!options.passwordStdin,
       env: options.passwordEnv,
+      interactive: !options.json,
       message: `Enter new keystore password for account '${name}':`
     });
 

@@ -158,7 +158,8 @@ export function listHardkasAccounts(config?: HardkasConfig, executionTarget?: im
                 kind: "synthetic",
                 executionMode: "simulator",
                 address: `kaspa:sim_${name}`,
-                keystorePath: path.join(devAccountsDir, file)
+                keystorePath: path.join(devAccountsDir, file),
+                keystoreKind: "dev-account"
               } as HardkasAccount);
             } else {
               accounts.set(name, {
@@ -166,7 +167,8 @@ export function listHardkasAccounts(config?: HardkasConfig, executionTarget?: im
                 kind: "kaspa",
                 network: keystore.metadata.network,
                 address: keystore.payload?.address || keystore.metadata?.address,
-                keystorePath: path.join(devAccountsDir, file)
+                keystorePath: path.join(devAccountsDir, file),
+                keystoreKind: "dev-account"
               } as HardkasAccount);
             }
           }
@@ -226,8 +228,10 @@ export function listHardkasAccounts(config?: HardkasConfig, executionTarget?: im
     }
   }
 
-  // Add from encrypted keystore directory
-  const keystoreDir = path.join(process.cwd(), ".hardkas", "keystore");
+  // Add from encrypted keystore directory: the workspace's, like every source above (SDK-WORKSPACE-KEYSTORE-1:
+  // the process cwd is not HardKAS state; reading it here let another directory's keystores pass for this
+  // workspace's accounts).
+  const keystoreDir = path.join(workspaceRoot, ".hardkas", "keystore");
   if (fs.existsSync(keystoreDir)) {
     const files = fs.readdirSync(keystoreDir);
     for (const file of files) {

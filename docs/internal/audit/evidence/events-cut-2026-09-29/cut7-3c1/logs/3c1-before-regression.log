@@ -1,0 +1,162 @@
+﻿gate-hermetic: HARDKAS_HOME=C:\Users\jrodr\AppData\Local\Temp\hardkas-hermetic-home-LabOep (copy of C:\Users\jrodr\AppData\Local\Temp\hk-v210-gate-home)
+gate-hermetic: DOCKER_HOST=tcp://127.0.0.1:1; preload=C:\Users\jrodr\AppData\Local\Temp\hk-3c1\wt\scripts\hermetic\no-network-preload.cjs
+gate-hermetic: vitest run --coverage.enabled=false --reporter=default --reporter=json --outputFile=C:\Users\jrodr\AppData\Local\Temp\claude\C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo\21f9a2e4-33ac-4300-9366-aff402f85900\scratchpad\cut7-3c1\logs\3c1-before-regression.json packages/kaspa-rpc/test/surface-cut-resilient-subscriber.test.ts packages/toolkit/test/surface-cut-subscription-manager.test.ts packages/kaspa-rpc/test/resilient-subscriber.test.ts packages/toolkit/test/wallet-watch.test.ts packages/testing/test/gate-subpath-exports.test.ts
+
+ RUN  v2.1.9 C:/Users/jrodr/AppData/Local/Temp/hk-3c1/wt
+
+stdout | packages/kaspa-rpc/test/resilient-subscriber.test.ts > ResilientSubscriptionClient > should reconnect and resubscribe automatically on disconnect
+{"timestamp":"2026-10-02T09:55:33.583Z","level":"info","event":"ResilientSubscriptionClient reconnected successfully."}
+
+stdout | packages/kaspa-rpc/test/resilient-subscriber.test.ts > ResilientSubscriptionClient > should reconnect via heartbeat if silent drop occurs
+{"timestamp":"2026-10-02T09:55:38.589Z","level":"info","event":"ResilientSubscriptionClient reconnected successfully."}
+
+node.exe : stderr | packages/kaspa-rpc/test/resilient-subscriber.test.ts > ResilientSubscriptionClient > should 
+reconnect via heartbeat if silent drop occurs
+En C:\Users\jrodr\AppData\Local\Temp\claude\C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo\21f9a2e4-33ac-4300-
+9366-aff402f85900\scratchpad\cut7-3c1\run-files-wt.ps1: 22 Carácter: 1
++ & node @args_ *> $log
++ ~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (stderr | packag...ent drop occurs:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+{"timestamp":"2026-10-02T09:55:38.589Z","level":"warn","event":"ResilientSubscriptionClient heartbeat failed. 
+Triggering reconnect."}
+
+ ✓ packages/kaspa-rpc/test/resilient-subscriber.test.ts (2 tests) 10ms
+ ✓ packages/testing/test/gate-subpath-exports.test.ts (6 tests) 9ms
+stderr | packages/toolkit/test/wallet-watch.test.ts > Wallet Subscription Subsystem > should survive if callback throws
+{"timestamp":"2026-10-02T09:55:45.549Z","level":"error","event":"Wallet watch sync handler threw 
+error","context":{"error":{}}}
+
+ ✓ packages/toolkit/test/wallet-watch.test.ts (3 tests) 9ms
+ ❯ packages/kaspa-rpc/test/surface-cut-resilient-subscriber.test.ts (4 tests | 3 failed) 15ms
+   × Surface Cut 3c-1: no internal/resilient-subscriber > @hardkas/kaspa-rpc publishes no internal/* subpath 10ms
+     → expected [ './internal/*' ] to deeply equal []
+   × Surface Cut 3c-1: no internal/resilient-subscriber > the build emits no internal entry point 3ms
+     → expected 'tsup src/index.ts src/adapters/index.…' not to contain 'src/internal/'
+   × Surface Cut 3c-1: no internal/resilient-subscriber > stays deleted 1ms
+     → expected [ …(3) ] to deeply equal []
+ ❯ packages/toolkit/test/surface-cut-subscription-manager.test.ts (3 tests | 2 failed) 11ms
+   × Surface Cut 3c-1: no WalletSubscriptionManager > the toolkit's public entry does not export it 8ms
+     → expected true to be false // Object.is equality
+   × Surface Cut 3c-1: no WalletSubscriptionManager > the class and its two types stay deleted 2ms
+     → expected [ …(2) ] to deeply equal []
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  packages/kaspa-rpc/test/surface-cut-resilient-subscriber.test.ts > Surface Cut 3c-1: no 
+internal/resilient-subscriber > @hardkas/kaspa-rpc publishes no internal/* subpath
+AssertionError: expected [ './internal/*' ] to deeply equal []
+
+- Expected
++ Received
+
+- Array []
++ Array [
++   "./internal/*",
++ ]
+
+ ❯ packages/kaspa-rpc/test/surface-cut-resilient-subscriber.test.ts:50:89
+     48| 
+     49|   it("@hardkas/kaspa-rpc publishes no internal/* subpath", () => {
+     50|     expect(Object.keys(manifest.exports).filter((key) => key.startsWit…
+       |                                                                                         ^
+     51|   });
+     52| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯
+
+ FAIL  packages/kaspa-rpc/test/surface-cut-resilient-subscriber.test.ts > Surface Cut 3c-1: no 
+internal/resilient-subscriber > the build emits no internal entry point
+AssertionError: expected 'tsup src/index.ts src/adapters/index.…' not to contain 'src/internal/'
+
+Expected: "src/internal/"
+Received: "tsup src/index.ts src/adapters/index.ts src/internal/resilient-subscriber.ts --format esm --dts --clean"
+
+ ❯ packages/kaspa-rpc/test/surface-cut-resilient-subscriber.test.ts:54:40
+     52| 
+     53|   it("the build emits no internal entry point", () => {
+     54|     expect(manifest.scripts.build).not.toContain("src/internal/");
+       |                                        ^
+     55|   });
+     56| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/5]⎯
+
+ FAIL  packages/kaspa-rpc/test/surface-cut-resilient-subscriber.test.ts > Surface Cut 3c-1: no 
+internal/resilient-subscriber > stays deleted
+AssertionError: expected [ …(3) ] to deeply equal []
+
+- Expected
++ Received
+
+- Array []
++ Array [
++   "packages/kaspa-rpc/src/internal/resilient-subscriber.ts",
++   "packages/kaspa-rpc/test/resilient-subscriber.test.ts",
++   "packages/testing/test/gate-subpath-exports.test.ts",
++ ]
+
+ ❯ packages/kaspa-rpc/test/surface-cut-resilient-subscriber.test.ts:62:52
+     60| 
+     61|   it("stays deleted", () => {
+     62|     expect(mentions.filter((rel) => rel !== SELF)).toEqual([]);
+       |                                                    ^
+     63|   });
+     64| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/5]⎯
+
+ FAIL  packages/toolkit/test/surface-cut-subscription-manager.test.ts > Surface Cut 3c-1: no WalletSubscriptionManager 
+> the toolkit's public entry does not export it
+AssertionError: expected true to be false // Object.is equality
+
+- Expected
++ Received
+
+- false
++ true
+
+ ❯ packages/toolkit/test/surface-cut-subscription-manager.test.ts:44:52
+     42| 
+     43|   it("the toolkit's public entry does not export it", () => {
+     44|     expect("WalletSubscriptionManager" in toolkit).toBe(false);
+       |                                                    ^
+     45|   });
+     46| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/5]⎯
+
+ FAIL  packages/toolkit/test/surface-cut-subscription-manager.test.ts > Surface Cut 3c-1: no WalletSubscriptionManager 
+> the class and its two types stay deleted
+AssertionError: expected [ …(2) ] to deeply equal []
+
+- Expected
++ Received
+
+- Array []
++ Array [
++   "packages/toolkit/src/subscriptions.ts",
++   "packages/toolkit/test/wallet-watch.test.ts",
++ ]
+
+ ❯ packages/toolkit/test/surface-cut-subscription-manager.test.ts:52:52
+     50| 
+     51|   it("the class and its two types stay deleted", () => {
+     52|     expect(mentions.filter((rel) => rel !== SELF)).toEqual([]);
+       |                                                    ^
+     53|   });
+     54| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/5]⎯
+
+ Test Files  2 failed | 3 passed (5)
+      Tests  5 failed | 13 passed (18)
+   Start at  11:55:31
+   Duration  16.08s (transform 1.77s, setup 0ms, collect 13.40s, tests 56ms, environment 1ms, prepare 1.25s)
+
+JSON report written to C:/Users/jrodr/AppData/Local/Temp/claude/C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo/21f9a2e4-33ac-4300-9366-aff402f85900/scratchpad/cut7-3c1/logs/3c1-before-regression.json
+
+gate-hermetic: vitest exit 1 after 18s
+gate-hermetic: non-loopback attempts (each one fails the gate): 0
+gate-hermetic: loopback connection targets (review for dependencies on local services):

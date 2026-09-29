@@ -1,0 +1,339 @@
+﻿gate-hermetic: HARDKAS_HOME=C:\Users\jrodr\AppData\Local\Temp\hardkas-hermetic-home-I1Ogkn (copy of C:\Users\jrodr\AppData\Local\Temp\hk-v210-gate-home)
+gate-hermetic: DOCKER_HOST=tcp://127.0.0.1:1; preload=C:\Users\jrodr\AppData\Local\Temp\hk-3c1\wt\scripts\hermetic\no-network-preload.cjs
+gate-hermetic: vitest run --coverage.enabled=false --reporter=dot packages/dev-server/test/ packages/artifacts/test/wave10-receipt-lookup.test.ts packages/sdk/test/ packages/localnet/test/ packages/kaspa-rpc/test/ packages/cli/test/rpc-commands.test.ts packages/config/test/
+
+ RUN  v2.1.9 C:/Users/jrodr/AppData/Local/Temp/hk-3c1/wt
+
+ ✓ packages/sdk/test/adversarial/wave2-a-tx-observer.test.ts (7 tests) 1023ms
+ ✓ packages/sdk/test/adversarial/wave1-4-binding.test.ts (10 tests) 743ms
+stdout | packages/sdk/test/lifecycle-trust.test.ts > 0.12.0-rc.26 Lifecycle Integrity & Trust Boundary Tests > 1. Fake policyRefs rehashed must fail verification under strict mode
+TEST 1 DIAGNOSTIC RESULT: {
+  "valid": false,
+  "reason": "reference_hash_mismatch",
+  "message": "Referenced policy 08067ad84ca0eeeab56dda72389db453ba7340ac8d8b9a007376a2b72bc9dca9: 1 candidate(s) for artifact \"08067ad84ca0eeeab56dda72389db453ba7340ac8d8b9a007376a2b72bc9dca9\" do not verify and the lookup fails closed: policy.v1-08067ad84ca0eeeab56dda72389db453ba7340ac8d8b9a007376a2b72bc9dca9.json [ARTIFACT_HASH_MISMATCH]",
+  "artifactId": "13187320d4f91d77b3bbffe871176c1ae907fabcee4000c4ecc7b39451b1bd15",
+  "authScope": "FULL",
+  "unauthenticatedMaterialFields": [],
+  "expected": "13187320d4f91d77b3bbffe871176c1ae907fabcee4000c4ecc7b39451b1bd15",
+  "actual": "13187320d4f91d77b3bbffe871176c1ae907fabcee4000c4ecc7b39451b1bd15",
+  "details": [
+    {
+      "code": "REFERENCE_HASH_MISMATCH",
+      "severity": "error",
+      "message": "Referenced policy 08067ad84ca0eeeab56dda72389db453ba7340ac8d8b9a007376a2b72bc9dca9: 1 candidate(s) for artifact \"08067ad84ca0eeeab56dda72389db453ba7340ac8d8b9a007376a2b72bc9dca9\" do not verify and the lookup fails closed: policy.v1-08067ad84ca0eeeab56dda72389db453ba7340ac8d8b9a007376a2b72bc9dca9.json [ARTIFACT_HASH_MISMATCH]"
+    }
+  ]
+}
+
+ ✓ packages/sdk/test/lifecycle-trust.test.ts (9 tests) 446ms
+ ✓ packages/kaspa-rpc/test/upstream.test.ts (19 tests) 1295ms
+   ✓ upstream session: connection, errors and timeouts > a connection that never opens times out as a connection error 1043ms
+ ✓ packages/sdk/test/adversarial/wave1-3-producers.test.ts (6 tests) 527ms
+ ✓ packages/sdk/test/multisig-adversarial.test.ts (9 tests | 1 skipped) 15343ms
+   ✓ Multisig Adversarial Suite > Case 1 & 4: Should support threshold 2 of 3 and reject append on signed 342ms
+   ✓ Multisig Adversarial Suite > Case 6: Random signature order order-invariance check (100 iterations) 14666ms
+ ✓ packages/artifacts/test/wave10-receipt-lookup.test.ts (12 tests) 103ms
+ ✓ packages/sdk/test/wave1-def1c-canonical-identity.test.ts (8 tests) 2162ms
+   ✓ DEF-1c · canonical receipt identity is one across runtime/persistence/return > SDK-returned receipt.contentHash equals persisted receipt.contentHash on disk 1670ms
+ ✓ packages/sdk/test/adversarial/wave2-d-send-fee.test.ts (6 tests) 1059ms
+   ✓ Wave 2(d) · the submission records a derived fee or insufficient evidence; a divergent signed is refused > the plan's destination scripts derived without WASM equal what kaspa-wasm builds for the same addresses 711ms
+ ✓ packages/localnet/test/wave1-3-domain-digests.test.ts (8 tests) 120ms
+ ✓ packages/dev-server/test/escrow-fail-closed.test.ts (10 tests) 1749ms
+   ✓ escrow routes fail closed > create never returns a fabricated redeem script 1005ms
+   ✓ escrow routes fail closed > sign finds the signer by its x-only key, and still refuses a draft that does not rebuild to its id 505ms
+ ✓ packages/sdk/test/adversarial/wave1-2-sdk-identity.test.ts (6 tests) 944ms
+   ✓ Wave 1.2 · SDK identity resolution > T-S2 · labels and txIds need their namespace; tx never returns the signed; warm ≡ cold 388ms
+ ✓ packages/sdk/test/wave7-replay-mode-guard.test.ts (5 tests) 375ms
+ ✓ packages/sdk/test/hardening.test.ts (6 tests) 749ms
+   ✓ Core Hardening Sprint Regressions > [VULN-03] should produce an immutable receipt and seal tracePath before hashing 642ms
+ ✓ packages/cli/test/rpc-commands.test.ts (10 tests) 19ms
+ ✓ packages/sdk/test/migration.test.ts (5 tests) 28ms
+ ✓ packages/sdk/test/pskt-adapter.test.ts (8 tests) 9ms
+ ✓ packages/sdk/test/zk-vprogs-0-9-1.test.ts (9 tests) 166ms
+ ✓ packages/kaspa-rpc/test/full-coverage.test.ts (14 tests) 12ms
+node.exe : stderr | packages/sdk/test/audit-hardening.test.ts > Audit Hardening Suite (0.12.0-rc.26) > P1.1: Localnet 
+State Naming Compatibility > should migrate localnet-state.json to localnet.json
+En línea: 1 Carácter: 827
++ ... ig/test/"); & node scripts/gate-hermetic.mjs --home "$env:TEMP\hk-v21 ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (stderr | packag...o localnet.json:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+[HardKAS] Migrated legacy localnet-state.json to localnet.json. The old file was kept for compatibility.
+
+ ✓ packages/sdk/test/audit-hardening.test.ts (7 tests | 1 skipped) 39ms
+ ✓ packages/dev-server/test/wave1-5-narratives.test.ts (5 tests) 323ms
+ ✓ packages/sdk/test/adversarial/wave1-3-b2-workflow-rejected-send.test.ts (3 tests) 340ms
+ ✓ packages/sdk/test/adversarial/demo-cut-e04-simulator-identity.test.ts (6 tests) 529ms
+ ✓ packages/sdk/test/pskt.test.ts (6 tests) 9ms
+ ✓ packages/localnet/test/property.test.ts (4 tests) 895ms
+   ✓ Localnet Property Tests (fast-check) > should conserve total supply: sum(utxos) + fees == initial_sum 560ms
+   ✓ Localnet Property Tests (fast-check) > should be deterministic: same sequence produces same finalStateHash 308ms
+ ✓ packages/sdk/test/adversarial/first-contact-e01-sign-persists-plan.test.ts (7 tests) 618ms
+ ✓ packages/sdk/test/adversarial/wave1-1-writer-n3.test.ts (4 tests) 213ms
+ ✓ packages/localnet/test/ghostdag-dag.test.ts (5 tests) 7ms
+ ✓ packages/localnet/test/simulation-correctness.test.ts (6 tests) 108ms
+ ✓ packages/sdk/test/multisig.test.ts (2 tests) 352ms
+ ✓ packages/kaspa-rpc/test/surface-cut-subscriptions.test.ts (4 tests) 4ms
+ ✓ packages/kaspa-rpc/test/storage-mass.test.ts (8 tests) 8ms
+ ✓ packages/sdk/test/workflow-contract.test.ts (4 tests) 208ms
+stdout | packages/dev-server/test/security.test.ts > Dev Server Security Hardening > Authentication and Host Checks > Test 1 — GET without token rejected (401)
+<-- GET /api/health
+--> GET /api/health 401 3ms
+
+stdout | packages/dev-server/test/security.test.ts > Dev Server Security Hardening > Authentication and Host Checks > Test 2 — GET with wrong token rejected (401)
+<-- GET /api/health
+--> GET /api/health 401 0ms
+
+stdout | packages/dev-server/test/security.test.ts > Dev Server Security Hardening > Authentication and Host Checks > Test 3 — GET with correct token accepted (200)
+<-- GET /api/health
+
+stdout | packages/dev-server/test/security.test.ts > Dev Server Security Hardening > Authentication and Host Checks > Test 3 — GET with correct token accepted (200)
+--> GET /api/health 200 48ms
+
+stdout | packages/dev-server/test/security.test.ts > Dev Server Security Hardening > Authentication and Host Checks > Test 4 — POST with token but missing CSRF header rejected (403)
+<-- POST /api/transactions
+--> POST /api/transactions 403 0ms
+
+stdout | packages/dev-server/test/security.test.ts > Dev Server Security Hardening > Authentication and Host Checks > Test 5 — POST with token + CSRF header accepted or reaches route validation (not 401/403)
+<-- POST /api/transactions
+
+stdout | packages/dev-server/test/security.test.ts > Dev Server Security Hardening > Authentication and Host Checks > Test 5 — POST with token + CSRF header accepted or reaches route validation (not 401/403)
+--> POST /api/transactions 404 7ms
+
+stdout | packages/dev-server/test/security.test.ts > Dev Server Security Hardening > Authentication and Host Checks > Test 6 — hostile Origin rejected (blocked / no CORS approval)
+<-- GET /api/health
+--> GET /api/health 403 1ms
+
+stdout | packages/dev-server/test/security.test.ts > Dev Server Security Hardening > Authentication and Host Checks > Test 7 — DNS rebinding Host rejected (403)
+<-- GET /api/health
+--> GET /api/health 403 0ms
+
+stdout | packages/dev-server/test/security.test.ts > Dev Server Security Hardening > Unsafe External Security Configuration > Test 8 — unsafe-external still requires token (401)
+<-- GET /api/health
+--> GET /api/health 401 0ms
+
+ ✓ packages/dev-server/test/security.test.ts (8 tests) 78ms
+stdout | packages/sdk/test/tamper-detection.test.ts > SDK Tamper Detection & Forensic Regression > should reject tampered signedTx during verify, simulate, and send
+TAMPER RESULT: {
+  "valid": false,
+  "reason": "content_hash_mismatch",
+  "message": "Hash mismatch: expected 1afe888522b385262c9b611306265b02740b0dc091221dbbceda66328d57fabc, got 543c4aa6b2234350c4093e7b623792a0b5125134580a18f98f89f282082326d5, signedId signed-1afe888522b38526 does not derive from the artifact's content hash",
+  "artifactId": "1afe888522b385262c9b611306265b02740b0dc091221dbbceda66328d57fabc",
+  "authScope": "FULL",
+  "unauthenticatedMaterialFields": [],
+  "expected": "1afe888522b385262c9b611306265b02740b0dc091221dbbceda66328d57fabc",
+  "actual": "543c4aa6b2234350c4093e7b623792a0b5125134580a18f98f89f282082326d5",
+  "details": [
+    {
+      "code": "ARTIFACT_HASH_MISMATCH",
+      "severity": "error",
+      "message": "Hash mismatch: expected 1afe888522b385262c9b611306265b02740b0dc091221dbbceda66328d57fabc, got 543c4aa6b2234350c4093e7b623792a0b5125134580a18f98f89f282082326d5"
+    },
+    {
+      "code": "LABEL_MISMATCH",
+      "severity": "error",
+      "message": "signedId signed-1afe888522b38526 does not derive from the artifact's content hash"
+    }
+  ]
+}
+
+stderr | packages/sdk/test/tamper-detection.test.ts > SDK Tamper Detection & Forensic Regression > should pass 
+forensic regression test for forensic-Tamper-Detection-1780477460463.json
+Forensic dump not found, skipping specific regression test.
+
+ ✓ packages/sdk/test/tamper-detection.test.ts (4 tests) 219ms
+ ✓ packages/sdk/test/metadata-propagation.test.ts (2 tests) 268ms
+stderr | packages/config/test/config.test.ts > config > resolveExecutionTarget should use defaultNetwork if no network 
+is passed
+DEPRECATED: 'defaultNetwork: "devnet"' is deprecated. Please migrate to the explicit 'execution' contract in 
+HardkasConfig.
+
+ ✓ packages/config/test/config.test.ts (8 tests) 281ms
+ ✓ packages/localnet/test/wave1-2-localnet-identity.test.ts (2 tests) 66ms
+stdout | packages/dev-server/test/server.test.ts > Dev Server > API Endpoints > returns health status
+<-- GET /api/health
+
+stdout | packages/dev-server/test/server.test.ts > Dev Server > API Endpoints > returns health status
+--> GET /api/health 200 46ms
+
+stdout | packages/dev-server/test/server.test.ts > Dev Server > API Endpoints > returns active session (null if none)
+<-- GET /api/session
+--> GET /api/session 200 1ms
+
+stdout | packages/dev-server/test/server.test.ts > Dev Server > API Endpoints > does not expose secrets in health response
+<-- GET /api/health
+
+stdout | packages/dev-server/test/server.test.ts > Dev Server > API Endpoints > does not expose secrets in health response
+--> GET /api/health 200 5ms
+
+ ✓ packages/dev-server/test/server.test.ts (12 tests) 71ms
+ ✓ packages/sdk/test/workflow-determinism.test.ts (5 tests) 401ms
+ ✓ packages/localnet/test/transactions.test.ts (4 tests) 98ms
+ ✓ packages/kaspa-rpc/test/resilience-refined.test.ts (4 tests) 22ms
+ ↓ packages/dev-server/test/escrow-resolution-matrix.test.ts (3 tests | 3 skipped)
+ ✓ packages/kaspa-rpc/test/node-info.test.ts (4 tests) 5ms
+ ✓ packages/localnet/test/wave1-1-snapshot-identity.test.ts (3 tests) 14ms
+stderr | packages/sdk/test/v1-sign.test.ts > P84: V1 Sign Blocking > should attempt to sign version 1 plans with WASM 
+v2.x
+DEPRECATED: 'defaultNetwork: "simulated"' is deprecated. Please migrate to the explicit 'execution' contract in 
+HardkasConfig.
+
+ ✓ packages/sdk/test/v1-sign.test.ts (2 tests) 27ms
+ ✓ packages/localnet/test/snapshot-hashing.test.ts (7 tests) 32ms
+ ✓ packages/localnet/test/snapshot-determinism.test.ts (1 test) 141ms
+ ✓ packages/kaspa-rpc/test/health.test.ts (5 tests) 32ms
+ ✓ packages/localnet/test/dag.test.ts (4 tests) 6ms
+ ✓ packages/sdk/test/wave1-mode-inheritance.test.ts (6 tests) 4ms
+ ✓ packages/config/test/resolve-intent.test.ts (8 tests) 5ms
+ ✓ packages/localnet/test/persistent-state.test.ts (6 tests) 57ms
+ ✓ packages/sdk/test/workspace-isolation.test.ts (2 tests) 169ms
+ ✓ packages/localnet/test/dag-simulation.test.ts (2 tests) 7ms
+ ✓ packages/sdk/test/mempool-aware-planning.test.ts (1 test) 95ms
+ ✓ packages/sdk/test/node-api.test.ts (7 tests) 52ms
+ ↓ packages/dev-server/test/escrow-simnet-e2e.test.ts (1 test | 1 skipped)
+ ✓ packages/localnet/test/receipts.test.ts (4 tests) 38ms
+ ✓ packages/sdk/test/policy.test.ts (3 tests) 29ms
+ ✓ packages/dev-server/test/dapp-api.test.ts (4 tests) 13ms
+ ✓ packages/kaspa-rpc/test/resilience.test.ts (8 tests) 5ms
+ ✓ packages/sdk/test/pending-spends.test.ts (2 tests) 291ms
+ ✓ packages/kaspa-rpc/test/json-rpc-client.test.ts (4 tests) 8ms
+ ↓ packages/dev-server/test/escrow-idempotency.test.ts (4 tests | 4 skipped)
+ ✓ packages/localnet/test/wave1-trace-lineage-schema.test.ts (2 tests) 16ms
+stdout | packages/dev-server/test/observability.test.ts > Dev Server Observability API Endpoints > GET /api/status returns valid schema
+<-- GET /api/status
+
+stdout | packages/dev-server/test/observability.test.ts > Dev Server Observability API Endpoints > GET /api/status returns valid schema
+--> GET /api/status 200 30ms
+
+stdout | packages/dev-server/test/observability.test.ts > Dev Server Observability API Endpoints > GET /api/lineage returns valid schema
+<-- GET /api/lineage
+
+stdout | packages/dev-server/test/observability.test.ts > Dev Server Observability API Endpoints > GET /api/lineage returns valid schema
+--> GET /api/lineage 200 4ms
+
+stdout | packages/dev-server/test/observability.test.ts > Dev Server Observability API Endpoints > GET /api/quarantine returns valid schema
+<-- GET /api/quarantine
+
+stdout | packages/dev-server/test/observability.test.ts > Dev Server Observability API Endpoints > GET /api/quarantine returns valid schema
+--> GET /api/quarantine 200 3ms
+
+stdout | packages/dev-server/test/observability.test.ts > Dev Server Observability API Endpoints > GET /api/telemetry returns valid schema
+<-- GET /api/telemetry
+
+stdout | packages/dev-server/test/observability.test.ts > Dev Server Observability API Endpoints > GET /api/telemetry returns valid schema
+--> GET /api/telemetry 200 3ms
+
+stdout | packages/dev-server/test/observability.test.ts > Dev Server Observability API Endpoints > GET /api/replay returns valid schema
+<-- GET /api/replay
+
+stdout | packages/dev-server/test/observability.test.ts > Dev Server Observability API Endpoints > GET /api/replay returns valid schema
+--> GET /api/replay 200 4ms
+
+stdout | packages/dev-server/test/observability.test.ts > Dev Server Observability API Endpoints > GET /api/bundles returns valid schema
+<-- GET /api/bundles
+
+stdout | packages/dev-server/test/observability.test.ts > Dev Server Observability API Endpoints > GET /api/bundles returns valid schema
+--> GET /api/bundles 200 3ms
+
+stdout | packages/dev-server/test/observability.test.ts > Dev Server Observability API Endpoints > GET /api/dashboard-health returns valid schema
+<-- GET /api/dashboard-health
+
+stdout | packages/dev-server/test/observability.test.ts > Dev Server Observability API Endpoints > GET /api/dashboard-health returns valid schema
+--> GET /api/dashboard-health 200 5ms
+
+ ✓ packages/dev-server/test/observability.test.ts (7 tests) 67ms
+ ✓ packages/localnet/test/replay-invariants.test.ts (3 tests) 95ms
+stdout | packages/dev-server/test/watcher.test.ts > Watcher Fallback & Polling Contract > should start chokidar with native fs events by default
+📡 [Watcher] Monitoring C:\Users\jrodr\AppData\Local\Temp\hk-3c1\wt\.hardkas for changes...
+
+stdout | packages/dev-server/test/watcher.test.ts > Watcher Fallback & Polling Contract > should respect HARDKAS_WATCH_POLLING=1 and enable polling
+📡 [Watcher] Monitoring C:\Users\jrodr\AppData\Local\Temp\hk-3c1\wt\.hardkas for changes...
+
+stdout | packages/dev-server/test/watcher.test.ts > Watcher Fallback & Polling Contract > should fall back gracefully to polling when watch setup throws ENOSPC / ENOTSUP
+📡 [Watcher] Monitoring C:\Users\jrodr\AppData\Local\Temp\hk-3c1\wt\.hardkas for changes...
+
+stderr | packages/dev-server/test/watcher.test.ts > Watcher Fallback & Polling Contract > should fall back gracefully 
+to polling when watch setup throws ENOSPC / ENOTSUP
+[Watcher] Native watch failed (ENOSPC). Falling back to polling...
+
+ ✓ packages/dev-server/test/watcher.test.ts (3 tests) 5ms
+stdout | packages/dev-server/test/escrow-session-recovery.test.ts > Session Recovery Matrix > should return 404 for unknown session id
+<-- GET /api/escrows/unknown-id-123
+--> GET /api/escrows/unknown-id-123 404 9ms
+
+ ✓ packages/dev-server/test/escrow-session-recovery.test.ts (2 tests | 1 skipped) 20ms
+ ↓ packages/dev-server/test/escrow-negative-matrix.test.ts (3 tests | 3 skipped)
+ ✓ packages/kaspa-rpc/test/surface-cut-resilient-subscriber.test.ts (4 tests) 5ms
+ ✓ packages/sdk/test/fees.test.ts (3 tests | 2 skipped) 594ms
+   ✓ HardkasFees > should gracefully fallback to heuristic when RPC fails 593ms
+ ✓ packages/localnet/test/reconstruct.test.ts (1 test) 4ms
+ ✓ packages/dev-server/test/health.test.ts (2 tests) 149ms
+ ✓ packages/localnet/test/replay.test.ts (1 test) 25ms
+ ✓ packages/sdk/test/programmability-0-9-1.test.ts (2 tests) 27ms
+ ✓ packages/localnet/test/traces.test.ts (3 tests) 35ms
+ ✓ packages/localnet/test/wave1-4-synthetic-txid.test.ts (3 tests) 88ms
+ ✓ packages/localnet/test/replay-determinism.test.ts (1 test) 87ms
+ ✓ packages/sdk/test/adversarial/wave1-3-replay-legacy-verdict.test.ts (1 test) 301ms
+   ✓ Wave 1.3 · replay verdict never accepts a legacy receipt > a current receipt replays with a verdict; its v4 twin yields REPLAY_LEGACY_AUTH_SCOPE, never passed 300ms
+stderr | packages/kaspa-rpc/test/wrpc-client.test.ts > KaspaWrpcClient > requests by method name through the official 
+client, with the node's error text
+{"timestamp":"2026-10-02T12:04:27.356Z","level":"error","event":"wRPC error 
+response","context":{"method":"getBlockDagInfo","error":"internal error"}}
+
+ ✓ packages/kaspa-rpc/test/wrpc-client.test.ts (7 tests) 122ms
+ ✓ packages/sdk/test/assumption.test.ts (2 tests) 29ms
+ ✓ packages/kaspa-rpc/test/mappers.test.ts (7 tests) 4ms
+ ✓ packages/sdk/test/sdk-parity-0-9-1.test.ts (2 tests) 382ms
+ ✓ packages/sdk/test/agent-mode.test.ts (5 tests) 81ms
+ ✓ packages/sdk/test/observe-qf006.test.ts (1 test) 5ms
+ ✓ packages/sdk/test/simulated-send.test.ts (2 tests) 231ms
+ ✓ packages/sdk/test/networkProfile.test.ts (2 tests) 27ms
+ ✓ packages/localnet/test/accounts.test.ts (6 tests) 5ms
+ ↓ packages/sdk/test/integration.test.ts (1 test | 1 skipped)
+ ✓ packages/config/test/init-cwd.test.ts (3 tests) 35ms
+ ✓ packages/kaspa-rpc/test/rpc.test.ts (2 tests) 3ms
+stderr | packages/sdk/test/pskt/native-fallback.test.ts > Native Adapter Fallback > should not throw and should not 
+register if native module is missing
+registerNativeAdapter caught error: Error: Cannot find module
+    at Object.probe (C:\Users\jrodr\AppData\Local\Temp\hk-3c1\wt\packages\sdk\test\pskt\native-fallback.test.ts:15:17)
+    at Module.registerNativeAdapter (C:\Users\jrodr\AppData\Local\Temp\hk-3c1\wt\packages\sdk\src\pskt.ts:37:32)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at C:\Users\jrodr\AppData\Local\Temp\hk-3c1\wt\packages\sdk\test\pskt\native-fallback.test.ts:20:21
+    at file:///C:/Users/jrodr/AppData/Local/Temp/hk-3c1/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest
+/runner/dist/index.js:533:5
+    at runTest (file:///C:/Users/jrodr/AppData/Local/Temp/hk-3c1/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_module
+s/@vitest/runner/dist/index.js:1056:11)
+    at runSuite (file:///C:/Users/jrodr/AppData/Local/Temp/hk-3c1/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modul
+es/@vitest/runner/dist/index.js:1205:15)
+    at runSuite (file:///C:/Users/jrodr/AppData/Local/Temp/hk-3c1/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modul
+es/@vitest/runner/dist/index.js:1205:15)
+    at runFiles (file:///C:/Users/jrodr/AppData/Local/Temp/hk-3c1/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modul
+es/@vitest/runner/dist/index.js:1262:5)
+    at startTests (file:///C:/Users/jrodr/AppData/Local/Temp/hk-3c1/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_mod
+ules/@vitest/runner/dist/index.js:1271:3)
+registerNativeAdapter limitations: [ 'NATIVE_MODULE_NOT_FOUND' ]
+
+ ✓ packages/sdk/test/pskt/native-fallback.test.ts (1 test) 9ms
+ ✓ packages/config/test/provider.test.ts (6 tests) 4ms
+ ✓ packages/sdk/test/sdk.test.ts (2 tests) 22ms
+ ✓ packages/sdk/test/surface-cut-events.test.ts (2 tests) 20ms
+ ✓ packages/sdk/test/v1-capabilities.test.ts (2 tests) 127ms
+ ✓ packages/sdk/test/client.test.ts (2 tests) 1385ms
+   ✓ SDK High-level Client Facade > returns stable envelope on network error 1380ms
+ ✓ packages/localnet/test/surface-cut-subscriptions.test.ts (1 test) 3ms
+
+ Test Files  95 passed | 5 skipped (100)
+      Tests  458 passed | 17 skipped (475)
+   Start at  14:02:25
+   Duration  142.50s (transform 2.61s, setup 0ms, collect 68.18s, tests 37.08s, environment 21ms, prepare 12.82s)
+
+
+gate-hermetic: vitest exit 0 after 143s
+gate-hermetic: non-loopback attempts (each one fails the gate): 0
+gate-hermetic: loopback connection targets (review for dependencies on local services):
+  127.0.0.1:18210 x3
+  127.0.0.1:19999 x1
+  127.0.0.1:8545 x5
+gate-hermetic: kept HARDKAS_HOME at C:\Users\jrodr\AppData\Local\Temp\hardkas-hermetic-home-I1Ogkn
+gate-hermetic: PASS

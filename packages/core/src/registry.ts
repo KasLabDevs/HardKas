@@ -67,7 +67,10 @@ export const HardkasSchemas = {
   L2BridgeAssumptionsV1: "hardkas.l2BridgeAssumptions.v1",
   IgraStatusV1: "hardkas.igraStatus.v1",
 
-  // --- SilverScript ---
+  // --- SilverScript (legacy) ---
+  // Read compatibility only: nothing produces these any more (the legacy Silver
+  // commands and the Silver simulator are gone). They stay so historical
+  // artifacts still verify; removing them needs an explicit migration decision.
   SilverCompile: "hardkas.silver.compile",
   SilverTest: "hardkas.silver.test",
   SilverDeployPlan: "hardkas.silver.deployPlan",
@@ -83,6 +86,8 @@ export const HardkasSchemas = {
   SilverDeployV1: "hardkas.silverDeploy.v1",
   SilverSpendV1: "hardkas.silverSpend.v1",
   SilverCovenantV1: "hardkas.silverCovenant.v1",
+  /** The official SilverScript runner's verdicts on scenario transactions (contract execution, never node evidence). */
+  SilverVmTestV1: "hardkas.silverVmTest.v1",
   SilverCorpusV1: "hardkas.silverCorpus.v1",
   SilverCorpusCaseV1: "hardkas.silverCorpusCase.v1",
   SilverCorpusVerifyV1: "hardkas.silverCorpusVerify.v1",

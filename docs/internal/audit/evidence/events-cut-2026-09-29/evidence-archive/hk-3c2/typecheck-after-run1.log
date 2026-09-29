@@ -1,0 +1,10 @@
+﻿Scope: 2 of 62 workspace projects
+packages/kaspa-rpc typecheck$ tsc --noEmit
+packages/kaspa-rpc typecheck: Done
+packages/localnet typecheck$ tsc --noEmit
+packages/localnet typecheck: src/provider.ts(17,14): error TS2420: Class 'LocalnetSimulatedProvider' incorrectly implements interface 'KaspaRpcClient'.
+packages/localnet typecheck:   Type 'LocalnetSimulatedProvider' is missing the following properties from type 'KaspaRpcClient': subscribeToUtxosChanged, subscribeToVirtualChainChanged, on, off
+packages/localnet typecheck: Failed
+C:\Users\jrodr\AppData\Local\Temp\hk-3c1\wt\packages\localnet:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @hardkas/localnet@0.12.0-rc.26 typecheck: `tsc --noEmit`
+Exit status 2

@@ -1,0 +1,46 @@
+﻿{
+  "hk-3a": {
+    "files": 32,
+    "bytes": 347667,
+    "sets": {
+      "after": 32,
+      "before": 33,
+      "scaffold": 0
+    },
+    "skippedDirs": [
+      "typedoc-after",
+      "typedoc-before"
+    ]
+  },
+  "hk-3b": {
+    "files": 23,
+    "bytes": 364170,
+    "sets": {
+      "after": 32,
+      "before": 32
+    },
+    "skippedDirs": []
+  },
+  "hk-3c1": {
+    "files": 44,
+    "bytes": 280142,
+    "sets": {
+      "after1": 32,
+      "after2": 32,
+      "before": 32
+    },
+    "skippedDirs": []
+  },
+  "hk-3c2": {
+    "files": 37,
+    "bytes": 223697,
+    "sets": {
+      "after": 32,
+      "after-incremental": 32,
+      "before": 32
+    },
+    "skippedDirs": [
+      "after-files"
+    ]
+  }
+}

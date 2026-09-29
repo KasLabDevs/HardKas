@@ -1,0 +1,78 @@
+﻿gate-hermetic: HARDKAS_HOME=C:\Users\jrodr\AppData\Local\Temp\hardkas-hermetic-home-LLzEdB (copy of C:\Users\jrodr\AppData\Local\Temp\hk-v210-gate-home)
+gate-hermetic: DOCKER_HOST=tcp://127.0.0.1:1; preload=C:\Users\jrodr\AppData\Local\Temp\hk-3c1\wt\scripts\hermetic\no-network-preload.cjs
+gate-hermetic: vitest run --coverage.enabled=false --reporter=default --reporter=json --outputFile=C:\Users\jrodr\AppData\Local\Temp\claude\C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo\21f9a2e4-33ac-4300-9366-aff402f85900\scratchpad\cut7-3c1\logs\3c1-after1-packages.json packages/kaspa-rpc/test/ packages/toolkit/test/ packages/testing/test/gate-subpath-exports.test.ts
+
+ RUN  v2.1.9 C:/Users/jrodr/AppData/Local/Temp/hk-3c1/wt
+
+node.exe : stderr | packages/toolkit/test/wallet-watch-utxocontext.test.ts > Surface Cut 3b · R4: the watch contract 
+on the new engine > a throwing listener does not stop delivery
+En C:\Users\jrodr\AppData\Local\Temp\claude\C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo\21f9a2e4-33ac-4300-
+9366-aff402f85900\scratchpad\cut7-3c1\run-files-wt.ps1: 22 Carácter: 1
++ & node @args_ *> $log
++ ~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (stderr | packag...t stop delivery:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+{"timestamp":"2026-10-02T10:14:45.428Z","level":"error","event":"Wallet watch listener failed","context":{"error":{}}}
+
+ ✓ packages/toolkit/test/wallet-watch-utxocontext.test.ts (13 tests) 23ms
+ ✓ packages/kaspa-rpc/test/upstream.test.ts (19 tests) 1313ms
+   ✓ upstream session: connection, errors and timeouts > a connection that never opens times out as a connection error 1023ms
+ ✓ packages/kaspa-rpc/test/subscriptions.test.ts (9 tests) 13ms
+ ✓ packages/kaspa-rpc/test/full-coverage.test.ts (14 tests) 11ms
+stdout | packages/toolkit/test/toolkit.test.ts > @hardkas/toolkit V1 > JobsToolkit > should initialize and enqueue jobs
+{"timestamp":"2026-10-02T10:14:50.008Z","level":"info","event":"Job enqueued","context":{"id":"b382f50a-563d-4719-bb71-a871af24a24b","type":"test-job"}}
+{"timestamp":"2026-10-02T10:14:50.011Z","level":"info","event":"Job completed","context":{"id":"b382f50a-563d-4719-bb71-a871af24a24b","type":"test-job"}}
+
+ ✓ packages/toolkit/test/toolkit.test.ts (8 tests) 160ms
+ ✓ packages/kaspa-rpc/test/storage-mass.test.ts (8 tests) 8ms
+stdout | packages/toolkit/test/snapshot.test.ts > SnapshotToolkit (Time Travel) > should save, mutate, and restore state
+{"timestamp":"2026-10-02T10:14:50.951Z","level":"info","event":"Job enqueued","context":{"id":"bf08f518-20e9-4d17-8e03-ab7184289c54","type":"payment"}}
+
+stdout | packages/toolkit/test/snapshot.test.ts > SnapshotToolkit (Time Travel) > should save, mutate, and restore state
+{"timestamp":"2026-10-02T10:14:50.960Z","level":"info","event":"Job enqueued","context":{"id":"38b329a4-4980-47bc-8ecc-ba4f937d18e3","type":"payment"}}
+
+stdout | packages/toolkit/test/snapshot.test.ts > SnapshotToolkit (Time Travel) > should handle partial restore failures gracefully
+{"timestamp":"2026-10-02T10:14:50.975Z","level":"info","event":"Job enqueued","context":{"id":"37fafc08-b7d3-4cc3-af87-59f41f069009","type":"payment"}}
+
+stdout | packages/toolkit/test/snapshot.test.ts > SnapshotToolkit (Time Travel) > should fail if participant is missing on restore
+{"timestamp":"2026-10-02T10:14:50.992Z","level":"info","event":"Job enqueued","context":{"id":"bcee5db1-6a9c-4b57-a629-fdc75aa90fa9","type":"payment"}}
+
+stdout | packages/toolkit/test/snapshot.test.ts > SnapshotToolkit (Time Travel) > should generate deterministic diffs and valid filesystem manifests
+{"timestamp":"2026-10-02T10:14:51.001Z","level":"info","event":"Job enqueued","context":{"id":"957a8ee2-d307-4654-82d8-74b09ce88765","type":"payment"}}
+
+stdout | packages/toolkit/test/snapshot.test.ts > SnapshotToolkit (Time Travel) > should generate deterministic diffs and valid filesystem manifests
+{"timestamp":"2026-10-02T10:14:51.006Z","level":"info","event":"Job enqueued","context":{"id":"97d1df51-aab4-4961-975e-b930ded48dd6","type":"payment"}}
+
+ ✓ packages/toolkit/test/snapshot.test.ts (4 tests) 72ms
+ ✓ packages/kaspa-rpc/test/resilience-refined.test.ts (4 tests) 10ms
+ ✓ packages/testing/test/gate-subpath-exports.test.ts (6 tests) 9ms
+ ✓ packages/kaspa-rpc/test/node-info.test.ts (4 tests) 5ms
+ ✓ packages/toolkit/test/query-api.test.ts (5 tests) 5ms
+ ✓ packages/kaspa-rpc/test/health.test.ts (5 tests) 30ms
+ ✓ packages/kaspa-rpc/test/resilience.test.ts (8 tests) 5ms
+ ✓ packages/kaspa-rpc/test/json-rpc-client.test.ts (4 tests) 7ms
+ ✓ packages/kaspa-rpc/test/surface-cut-resilient-subscriber.test.ts (4 tests) 5ms
+ ✓ packages/toolkit/test/surface-cut-subscription-manager.test.ts (3 tests) 3ms
+ ✓ packages/toolkit/test/fee-estimator.test.ts (1 test) 84ms
+stderr | packages/kaspa-rpc/test/wrpc-client.test.ts > KaspaWrpcClient > requests by method name through the official 
+client, with the node's error text
+{"timestamp":"2026-10-02T10:14:58.719Z","level":"error","event":"wRPC error 
+response","context":{"method":"getBlockDagInfo","error":"internal error"}}
+
+ ✓ packages/kaspa-rpc/test/wrpc-client.test.ts (7 tests) 113ms
+ ✓ packages/kaspa-rpc/test/mappers.test.ts (7 tests) 4ms
+ ✓ packages/kaspa-rpc/test/rpc.test.ts (2 tests) 3ms
+
+ Test Files  20 passed (20)
+      Tests  135 passed (135)
+   Start at  12:14:43
+   Duration  16.20s (transform 1.66s, setup 0ms, collect 8.05s, tests 1.88s, environment 4ms, prepare 2.18s)
+
+JSON report written to C:/Users/jrodr/AppData/Local/Temp/claude/C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo/21f9a2e4-33ac-4300-9366-aff402f85900/scratchpad/cut7-3c1/logs/3c1-after1-packages.json
+
+gate-hermetic: vitest exit 0 after 17s
+gate-hermetic: non-loopback attempts (each one fails the gate): 0
+gate-hermetic: loopback connection targets (review for dependencies on local services):
+  127.0.0.1:19999 x1
+gate-hermetic: PASS

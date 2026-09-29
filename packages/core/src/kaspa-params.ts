@@ -2,6 +2,9 @@
 // to DERIVE transaction states. Every number here is copied from upstream with its
 // provenance; none is a HardKAS choice. HardKAS product choices (such as the default
 // `minConfirmations`) live in the tx-status POLICY, never in this table.
+//
+// Only what no upstream API exposes is copied: the finality depth above all.
+// Maturities come from the SDK (network-params.ts), never from here.
 
 export const KASPA_CONSENSUS_PARAMS_PROVENANCE = Object.freeze({
   source: "kaspanet/rusty-kaspa",
@@ -33,13 +36,9 @@ export interface KaspaNetworkParams {
   readonly finalityDepth: number;
   readonly pruningDurationSeconds: number;
   readonly mergeDepth: number;
-  /** DAA score a coinbase output needs before it is spendable (consensus). */
-  readonly coinbaseMaturityDaa: number;
-  /** DAA score the reference wallet waits before spending a user output (wallet policy, NOT consensus). */
-  readonly walletUserTxMaturityDaa: number;
 }
 
-const tenBps = (networkId: string, walletUserTxMaturityDaa: number): KaspaNetworkParams =>
+const tenBps = (networkId: string): KaspaNetworkParams =>
   Object.freeze({
     networkId,
     bps: 10,
@@ -47,9 +46,7 @@ const tenBps = (networkId: string, walletUserTxMaturityDaa: number): KaspaNetwor
     finalityDurationSeconds: 43_200,
     finalityDepth: 10 * 43_200,
     pruningDurationSeconds: 108_000,
-    mergeDepth: 10 * 3600,
-    coinbaseMaturityDaa: 10 * 100,
-    walletUserTxMaturityDaa
+    mergeDepth: 10 * 3600
   });
 
 /**
@@ -58,11 +55,11 @@ const tenBps = (networkId: string, walletUserTxMaturityDaa: number): KaspaNetwor
  * derivation says so instead of guessing). `simulated` is not a Kaspa network.
  */
 export const KASPA_NETWORK_PARAMS: Readonly<Record<string, KaspaNetworkParams>> = Object.freeze({
-  mainnet: tenBps("mainnet", 100),
-  testnet: tenBps("testnet", 100),
-  "testnet-10": tenBps("testnet-10", 100),
-  simnet: tenBps("simnet", 100),
-  devnet: tenBps("devnet", 10)
+  mainnet: tenBps("mainnet"),
+  testnet: tenBps("testnet"),
+  "testnet-10": tenBps("testnet-10"),
+  simnet: tenBps("simnet"),
+  devnet: tenBps("devnet")
 });
 
 export function kaspaParamsFor(networkId: string | undefined): KaspaNetworkParams | undefined {

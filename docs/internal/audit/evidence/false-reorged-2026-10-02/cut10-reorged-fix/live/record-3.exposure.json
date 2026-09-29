@@ -1,0 +1,330 @@
+﻿[
+  {
+    "index": 1,
+    "hardkasHeld": [
+      "f6ee8de0",
+      "fcd8afa3"
+    ],
+    "truthAcceptingSequence": [
+      "f6e2f0c6",
+      "f6ee8de0",
+      "f6fbcec8",
+      "fcd8afa3"
+    ],
+    "truthChanges": 3,
+    "changesBeforeFirstHardkasAcceptance": 1,
+    "hardkasHeldTheFinalBlock": true,
+    "replacedWhileHeld": 1,
+    "removalsRecordedByHardkas": 0
+  },
+  {
+    "index": 2,
+    "hardkasHeld": [
+      "ed237a67",
+      "f8e635bd"
+    ],
+    "truthAcceptingSequence": [
+      "d8068eee",
+      "ed237a67",
+      "f16c35ee",
+      "f8e635bd"
+    ],
+    "truthChanges": 3,
+    "changesBeforeFirstHardkasAcceptance": 1,
+    "hardkasHeldTheFinalBlock": true,
+    "replacedWhileHeld": 1,
+    "removalsRecordedByHardkas": 0
+  },
+  {
+    "index": 3,
+    "hardkasHeld": [
+      "f87e9006"
+    ],
+    "truthAcceptingSequence": [
+      "b5d19243",
+      "d0f66b87",
+      "f87e9006"
+    ],
+    "truthChanges": 2,
+    "changesBeforeFirstHardkasAcceptance": 2,
+    "hardkasHeldTheFinalBlock": true,
+    "replacedWhileHeld": 0,
+    "removalsRecordedByHardkas": 0
+  },
+  {
+    "index": 4,
+    "hardkasHeld": [
+      "12e50e41",
+      "f835b651"
+    ],
+    "truthAcceptingSequence": [
+      "f0785858",
+      "f835b651"
+    ],
+    "truthChanges": 1,
+    "changesBeforeFirstHardkasAcceptance": 0,
+    "hardkasHeldTheFinalBlock": true,
+    "replacedWhileHeld": 0,
+    "removalsRecordedByHardkas": 0
+  },
+  {
+    "index": 5,
+    "hardkasHeld": [
+      "ff225014"
+    ],
+    "truthAcceptingSequence": [
+      "ff225014"
+    ],
+    "truthChanges": 0,
+    "changesBeforeFirstHardkasAcceptance": 0,
+    "hardkasHeldTheFinalBlock": true,
+    "replacedWhileHeld": 0,
+    "removalsRecordedByHardkas": 0
+  },
+  {
+    "index": 6,
+    "hardkasHeld": [
+      "d5c2d318",
+      "f407665b"
+    ],
+    "truthAcceptingSequence": [
+      "ac53250c",
+      "e95a9bad",
+      "f407665b"
+    ],
+    "truthChanges": 2,
+    "changesBeforeFirstHardkasAcceptance": 0,
+    "hardkasHeldTheFinalBlock": true,
+    "replacedWhileHeld": 0,
+    "removalsRecordedByHardkas": 0
+  },
+  {
+    "index": 7,
+    "hardkasHeld": [
+      "fd4d89a0"
+    ],
+    "truthAcceptingSequence": [
+      "fc23ac1e",
+      "fd4d89a0"
+    ],
+    "truthChanges": 1,
+    "changesBeforeFirstHardkasAcceptance": 1,
+    "hardkasHeldTheFinalBlock": true,
+    "replacedWhileHeld": 0,
+    "removalsRecordedByHardkas": 0
+  },
+  {
+    "index": 8,
+    "hardkasHeld": [
+      "e93e8e27",
+      "f8eff266"
+    ],
+    "truthAcceptingSequence": [
+      "e93e8e27",
+      "eeefaa25",
+      "f1114685",
+      "f8eff266"
+    ],
+    "truthChanges": 3,
+    "changesBeforeFirstHardkasAcceptance": 0,
+    "hardkasHeldTheFinalBlock": true,
+    "replacedWhileHeld": 1,
+    "removalsRecordedByHardkas": 0
+  },
+  {
+    "index": 9,
+    "hardkasHeld": [
+      "ff353b4e"
+    ],
+    "truthAcceptingSequence": [
+      "f5b9abce",
+      "ff353b4e"
+    ],
+    "truthChanges": 1,
+    "changesBeforeFirstHardkasAcceptance": 1,
+    "hardkasHeldTheFinalBlock": true,
+    "replacedWhileHeld": 0,
+    "removalsRecordedByHardkas": 0
+  },
+  {
+    "index": 10,
+    "hardkasHeld": [
+      "27f548a3",
+      "a84f2835"
+    ],
+    "truthAcceptingSequence": [
+      "27f548a3",
+      "8a3d6c23",
+      "a84f2835"
+    ],
+    "truthChanges": 2,
+    "changesBeforeFirstHardkasAcceptance": 0,
+    "hardkasHeldTheFinalBlock": true,
+    "replacedWhileHeld": 1,
+    "removalsRecordedByHardkas": 0
+  },
+  {
+    "index": 11,
+    "hardkasHeld": [
+      "fc238d60"
+    ],
+    "truthAcceptingSequence": [
+      "efa5fb35",
+      "fc238d60"
+    ],
+    "truthChanges": 1,
+    "changesBeforeFirstHardkasAcceptance": 1,
+    "hardkasHeldTheFinalBlock": true,
+    "replacedWhileHeld": 0,
+    "removalsRecordedByHardkas": 0
+  },
+  {
+    "index": 12,
+    "hardkasHeld": [
+      "49ff75a8",
+      "e50fb8b4"
+    ],
+    "truthAcceptingSequence": [
+      "018185fe",
+      "49ff75a8",
+      "6c6d6b50",
+      "c538b41a",
+      "d26f8beb",
+      "e50fb8b4"
+    ],
+    "truthChanges": 5,
+    "changesBeforeFirstHardkasAcceptance": 0,
+    "hardkasHeldTheFinalBlock": true,
+    "replacedWhileHeld": 1,
+    "removalsRecordedByHardkas": 0
+  },
+  {
+    "index": 13,
+    "hardkasHeld": [
+      "fc7e0345"
+    ],
+    "truthAcceptingSequence": [
+      "4de6b61b",
+      "fc7e0345"
+    ],
+    "truthChanges": 1,
+    "changesBeforeFirstHardkasAcceptance": 1,
+    "hardkasHeldTheFinalBlock": true,
+    "replacedWhileHeld": 0,
+    "removalsRecordedByHardkas": 0
+  },
+  {
+    "index": 14,
+    "hardkasHeld": [
+      "d3f2c50d"
+    ],
+    "truthAcceptingSequence": [
+      "8f4aa822",
+      "ca15b2e0",
+      "d3f2c50d"
+    ],
+    "truthChanges": 2,
+    "changesBeforeFirstHardkasAcceptance": 1,
+    "hardkasHeldTheFinalBlock": true,
+    "replacedWhileHeld": 0,
+    "removalsRecordedByHardkas": 0
+  },
+  {
+    "index": 15,
+    "hardkasHeld": [
+      "f662dced"
+    ],
+    "truthAcceptingSequence": [
+      "e8c89fe4",
+      "f662dced"
+    ],
+    "truthChanges": 1,
+    "changesBeforeFirstHardkasAcceptance": 1,
+    "hardkasHeldTheFinalBlock": true,
+    "replacedWhileHeld": 0,
+    "removalsRecordedByHardkas": 0
+  },
+  {
+    "index": 16,
+    "hardkasHeld": [
+      "c89ae89e",
+      "cae2739c"
+    ],
+    "truthAcceptingSequence": [
+      "4e8e502b",
+      "c89ae89e",
+      "cae2739c"
+    ],
+    "truthChanges": 2,
+    "changesBeforeFirstHardkasAcceptance": 1,
+    "hardkasHeldTheFinalBlock": true,
+    "replacedWhileHeld": 1,
+    "removalsRecordedByHardkas": 0
+  },
+  {
+    "index": 17,
+    "hardkasHeld": [
+      "f8fcdc55"
+    ],
+    "truthAcceptingSequence": [
+      "f49a5f33",
+      "f8fcdc55"
+    ],
+    "truthChanges": 1,
+    "changesBeforeFirstHardkasAcceptance": 1,
+    "hardkasHeldTheFinalBlock": true,
+    "replacedWhileHeld": 0,
+    "removalsRecordedByHardkas": 0
+  },
+  {
+    "index": 18,
+    "hardkasHeld": [
+      "bce8819d",
+      "ca84e441"
+    ],
+    "truthAcceptingSequence": [
+      "bce8819d",
+      "ca84e441"
+    ],
+    "truthChanges": 1,
+    "changesBeforeFirstHardkasAcceptance": 0,
+    "hardkasHeldTheFinalBlock": true,
+    "replacedWhileHeld": 1,
+    "removalsRecordedByHardkas": 0
+  },
+  {
+    "index": 19,
+    "hardkasHeld": [
+      "8194cd5f",
+      "f6a414f7"
+    ],
+    "truthAcceptingSequence": [
+      "8194cd5f",
+      "dc93a776",
+      "dde37967",
+      "f6a414f7"
+    ],
+    "truthChanges": 3,
+    "changesBeforeFirstHardkasAcceptance": 0,
+    "hardkasHeldTheFinalBlock": true,
+    "replacedWhileHeld": 1,
+    "removalsRecordedByHardkas": 0
+  },
+  {
+    "index": 20,
+    "hardkasHeld": [
+      "d45b1983"
+    ],
+    "truthAcceptingSequence": [
+      "2aed41e7",
+      "ba8d8d38",
+      "bdb92816",
+      "d45b1983"
+    ],
+    "truthChanges": 3,
+    "changesBeforeFirstHardkasAcceptance": 2,
+    "hardkasHeldTheFinalBlock": true,
+    "replacedWhileHeld": 0,
+    "removalsRecordedByHardkas": 0
+  }
+]

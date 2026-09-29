@@ -17,9 +17,9 @@ export function registerSessionCommands(program: Command) {
   sessionCmd
     .command("create <name>")
     .description(`Create a new L1/L2 session linkage ${UI.maturity("alpha")}`)
-    .requiredOption("--l1 <wallet>", "Name of the Kaspa L1 wallet")
-    .requiredOption("--l2 <account>", "Name of the Igra L2 account")
-    .option("--json", "Output results as JSON", false)
+    .requiredOption("--l1 <wallet>", "HardKAS account name or Kaspa address")
+    .requiredOption("--l2 <account>", "Account name, Kaspa address or 0x EVM address (an account name stores its Kaspa address)")
+    .option("--json", "Not implemented yet: the output is text only", false)
     .action(async (name: string, options: any) => {
       const { runSessionCreate } = await import("../runners/session-runner.js");
       await runSessionCreate(name, options);

@@ -8,6 +8,6 @@ export * from './dag/index.js';
 export * from './snapshot/index.js';
 // SilverScript lives in @hardkas/core (managed silverc v1.0.0 + Kaspa SDK) and
 // `hardkas silver`; the toolkit carries no Silver compiler, simulator or evidence.
-export * from './subscriptions.js';
+export type { WalletOutpoint, WalletWatchUtxo, WalletWatchEvent, WalletWatchListener, WalletWatchHandle } from './watch.js';
 export * from './fee-estimator.js';
 export * from './query-api.js';

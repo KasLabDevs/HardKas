@@ -1,0 +1,2 @@
+# Evidence: keep the exact bytes that MANIFEST.sha256 hashes (no end-of-line conversion).
+* -text

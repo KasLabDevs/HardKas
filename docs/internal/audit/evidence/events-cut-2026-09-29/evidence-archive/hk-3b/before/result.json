@@ -1,0 +1,1585 @@
+{
+  "label": "before",
+  "startedAt": "2026-09-29T20:07:46.534Z",
+  "node": "v24.15.0",
+  "packs": [
+    {
+      "name": "@hardkas/accounts",
+      "version": "0.12.0-rc.26",
+      "tarball": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-3b\\before\\tarballs\\hardkas-accounts-0.12.0-rc.26.tgz",
+      "dependencies": {
+        "hash-wasm": "^4.12.0",
+        "@hardkas/artifacts": "0.12.0-rc.26",
+        "@hardkas/config": "0.12.0-rc.26",
+        "@hardkas/localnet": "0.12.0-rc.26",
+        "@hardkas/core": "0.12.0-rc.26",
+        "@hardkas/tx-builder": "0.12.0-rc.26"
+      },
+      "optionalDependencies": {},
+      "peerDependencies": {},
+      "exports": {
+        ".": {
+          "types": "./dist/index.d.ts",
+          "import": "./dist/index.js",
+          "default": "./dist/index.js"
+        },
+        "./internal/wasm-rpc-serialization.js": {
+          "types": "./dist/internal/wasm-rpc-serialization.d.ts",
+          "import": "./dist/internal/wasm-rpc-serialization.js",
+          "default": "./dist/internal/wasm-rpc-serialization.js"
+        }
+      },
+      "bin": null,
+      "workspaceLeak": false
+    },
+    {
+      "name": "@hardkas/artifacts",
+      "version": "0.12.0-rc.26",
+      "tarball": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-3b\\before\\tarballs\\hardkas-artifacts-0.12.0-rc.26.tgz",
+      "dependencies": {
+        "zod": "^3.24.1",
+        "@hardkas/core": "0.12.0-rc.26",
+        "@hardkas/tx-builder": "0.12.0-rc.26"
+      },
+      "optionalDependencies": {},
+      "peerDependencies": {},
+      "exports": {
+        ".": {
+          "types": "./dist/index.d.ts",
+          "import": "./dist/index.js",
+          "default": "./dist/index.js"
+        }
+      },
+      "bin": null,
+      "workspaceLeak": false
+    },
+    {
+      "name": "@hardkas/bridge-local",
+      "version": "0.12.0-rc.26",
+      "tarball": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-3b\\before\\tarballs\\hardkas-bridge-local-0.12.0-rc.26.tgz",
+      "dependencies": {
+        "@hardkas/accounts": "0.12.0-rc.26",
+        "@hardkas/config": "0.12.0-rc.26",
+        "@hardkas/core": "0.12.0-rc.26",
+        "@hardkas/tx-builder": "0.12.0-rc.26",
+        "@hardkas/sessions": "0.12.0-rc.26",
+        "@hardkas/artifacts": "0.12.0-rc.26"
+      },
+      "optionalDependencies": {},
+      "peerDependencies": {},
+      "exports": {
+        ".": {
+          "types": "./dist/index.d.ts",
+          "import": "./dist/index.js",
+          "default": "./dist/index.js"
+        }
+      },
+      "bin": null,
+      "workspaceLeak": false
+    },
+    {
+      "name": "@hardkas/cli",
+      "version": "0.12.0-rc.26",
+      "tarball": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-3b\\before\\tarballs\\hardkas-cli-0.12.0-rc.26.tgz",
+      "dependencies": {
+        "commander": "^12.1.0",
+        "enquirer": "^2.4.1",
+        "execa": "^9.5.2",
+        "express": "^5.2.1",
+        "fflate": "^0.8.3",
+        "picocolors": "^1.1.1",
+        "viem": "^2.21.32",
+        "zod": "^3.23.8",
+        "@hardkas/config": "0.12.0-rc.26",
+        "@hardkas/accounts": "0.12.0-rc.26",
+        "@hardkas/bridge-local": "0.12.0-rc.26",
+        "@hardkas/core": "0.12.0-rc.26",
+        "@hardkas/dev-server": "0.12.0-rc.26",
+        "@hardkas/artifacts": "0.12.0-rc.26",
+        "@hardkas/kaspa-rpc": "0.12.0-rc.26",
+        "@hardkas/node-orchestrator": "0.12.0-rc.26",
+        "@hardkas/l2": "0.12.0-rc.26",
+        "@hardkas/node-runner": "0.12.0-rc.26",
+        "@hardkas/query": "0.12.0-rc.26",
+        "@hardkas/localnet": "0.12.0-rc.26",
+        "@hardkas/query-store": "0.12.0-rc.26",
+        "@hardkas/sdk": "0.12.0-rc.26",
+        "@hardkas/observability": "0.12.0-rc.26",
+        "@hardkas/simulator": "0.12.0-rc.26",
+        "@hardkas/sessions": "0.12.0-rc.26",
+        "@hardkas/testing": "0.12.0-rc.26",
+        "@hardkas/tx-builder": "0.12.0-rc.26"
+      },
+      "optionalDependencies": {},
+      "peerDependencies": {},
+      "exports": {
+        ".": {
+          "types": "./dist/index.d.ts",
+          "import": "./dist/index.js",
+          "default": "./dist/index.js"
+        },
+        "./public": {
+          "types": "./dist/public.d.ts",
+          "import": "./dist/public.js",
+          "default": "./dist/public.js"
+        },
+        "./bin": "./dist/index.js"
+      },
+      "bin": {
+        "hardkas": "./dist/index.js"
+      },
+      "workspaceLeak": false
+    },
+    {
+      "name": "@hardkas/client",
+      "version": "0.12.0-rc.26",
+      "tarball": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-3b\\before\\tarballs\\hardkas-client-0.12.0-rc.26.tgz",
+      "dependencies": {},
+      "optionalDependencies": {},
+      "peerDependencies": {},
+      "exports": {
+        ".": {
+          "types": "./dist/index.d.ts",
+          "import": "./dist/index.js",
+          "default": "./dist/index.js"
+        }
+      },
+      "bin": null,
+      "workspaceLeak": false
+    },
+    {
+      "name": "@hardkas/config",
+      "version": "0.12.0-rc.26",
+      "tarball": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-3b\\before\\tarballs\\hardkas-config-0.12.0-rc.26.tgz",
+      "dependencies": {
+        "jiti": "^2.4.2",
+        "@hardkas/core": "0.12.0-rc.26"
+      },
+      "optionalDependencies": {},
+      "peerDependencies": {},
+      "exports": {
+        ".": {
+          "types": "./dist/index.d.ts",
+          "import": "./dist/index.js",
+          "require": "./dist/index.js",
+          "default": "./dist/index.js"
+        }
+      },
+      "bin": null,
+      "workspaceLeak": false
+    },
+    {
+      "name": "@hardkas/core",
+      "version": "0.12.0-rc.26",
+      "tarball": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-3b\\before\\tarballs\\hardkas-core-0.12.0-rc.26.tgz",
+      "dependencies": {
+        "@noble/hashes": "^2.2.0",
+        "@types/node": "^20.0.0",
+        "zod": "^3.24.1"
+      },
+      "optionalDependencies": {},
+      "peerDependencies": {},
+      "exports": {
+        ".": {
+          "types": "./dist/index.d.ts",
+          "import": "./dist/index.js",
+          "require": "./dist/index.js",
+          "default": "./dist/index.js"
+        }
+      },
+      "bin": null,
+      "workspaceLeak": false
+    },
+    {
+      "name": "@hardkas/dev-server",
+      "version": "0.12.0-rc.26",
+      "tarball": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-3b\\before\\tarballs\\hardkas-dev-server-0.12.0-rc.26.tgz",
+      "dependencies": {
+        "@hono/node-server": "^1.13.7",
+        "chokidar": "^3.5.3",
+        "hono": "^4.6.12",
+        "open": "^11.0.0",
+        "@hardkas/core": "0.12.0-rc.26",
+        "@hardkas/accounts": "0.12.0-rc.26",
+        "@hardkas/artifacts": "0.12.0-rc.26",
+        "@hardkas/config": "0.12.0-rc.26",
+        "@hardkas/bridge-local": "0.12.0-rc.26",
+        "@hardkas/escrow": "0.12.0-rc.26",
+        "@hardkas/kaspa-rpc": "0.12.0-rc.26",
+        "@hardkas/localnet": "0.12.0-rc.26",
+        "@hardkas/node-runner": "0.12.0-rc.26",
+        "@hardkas/query-store": "0.12.0-rc.26",
+        "@hardkas/sessions": "0.12.0-rc.26",
+        "@hardkas/tx-builder": "0.12.0-rc.26",
+        "@hardkas/sdk": "0.12.0-rc.26"
+      },
+      "optionalDependencies": {},
+      "peerDependencies": {},
+      "exports": {
+        ".": {
+          "types": "./dist/index.d.ts",
+          "import": "./dist/index.js",
+          "default": "./dist/index.js"
+        }
+      },
+      "bin": null,
+      "workspaceLeak": false
+    },
+    {
+      "name": "@hardkas/escrow",
+      "version": "0.12.0-rc.26",
+      "tarball": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-3b\\before\\tarballs\\hardkas-escrow-0.12.0-rc.26.tgz",
+      "dependencies": {
+        "zod": "^3.24.1",
+        "@hardkas/core": "0.12.0-rc.26"
+      },
+      "optionalDependencies": {},
+      "peerDependencies": {},
+      "exports": {
+        ".": {
+          "types": "./dist/index.d.ts",
+          "import": "./dist/index.js",
+          "require": "./dist/index.js",
+          "default": "./dist/index.js"
+        }
+      },
+      "bin": null,
+      "workspaceLeak": false
+    },
+    {
+      "name": "@hardkas/jobs",
+      "version": "0.12.0-rc.26",
+      "tarball": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-3b\\before\\tarballs\\hardkas-jobs-0.12.0-rc.26.tgz",
+      "dependencies": {
+        "@hardkas/observability": "0.12.0-rc.26"
+      },
+      "optionalDependencies": {},
+      "peerDependencies": {},
+      "exports": null,
+      "bin": null,
+      "workspaceLeak": false
+    },
+    {
+      "name": "@hardkas/kaspa-rpc",
+      "version": "0.12.0-rc.26",
+      "tarball": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-3b\\before\\tarballs\\hardkas-kaspa-rpc-0.12.0-rc.26.tgz",
+      "dependencies": {
+        "ws": "^8.18.0",
+        "@hardkas/core": "0.12.0-rc.26",
+        "@hardkas/observability": "0.12.0-rc.26"
+      },
+      "optionalDependencies": {},
+      "peerDependencies": {},
+      "exports": {
+        ".": {
+          "types": "./dist/index.d.ts",
+          "import": "./dist/index.js",
+          "default": "./dist/index.js"
+        },
+        "./adapters": {
+          "types": "./dist/adapters/index.d.ts",
+          "import": "./dist/adapters/index.js",
+          "default": "./dist/adapters/index.js"
+        },
+        "./internal/*": {
+          "types": "./dist/internal/*.d.ts",
+          "import": "./dist/internal/*.js",
+          "default": "./dist/internal/*.js"
+        }
+      },
+      "bin": null,
+      "workspaceLeak": false
+    },
+    {
+      "name": "@hardkas/l2",
+      "version": "0.12.0-rc.26",
+      "tarball": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-3b\\before\\tarballs\\hardkas-l2-0.12.0-rc.26.tgz",
+      "dependencies": {
+        "viem": "^2.48.8",
+        "@hardkas/artifacts": "0.12.0-rc.26"
+      },
+      "optionalDependencies": {},
+      "peerDependencies": {},
+      "exports": {
+        ".": {
+          "types": "./dist/index.d.ts",
+          "import": "./dist/index.js",
+          "default": "./dist/index.js"
+        }
+      },
+      "bin": null,
+      "workspaceLeak": false
+    },
+    {
+      "name": "@hardkas/localnet",
+      "version": "0.12.0-rc.26",
+      "tarball": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-3b\\before\\tarballs\\hardkas-localnet-0.12.0-rc.26.tgz",
+      "dependencies": {
+        "@hardkas/artifacts": "0.12.0-rc.26",
+        "@hardkas/core": "0.12.0-rc.26",
+        "@hardkas/simulator": "0.12.0-rc.26",
+        "@hardkas/kaspa-rpc": "0.12.0-rc.26",
+        "@hardkas/tx-builder": "0.12.0-rc.26"
+      },
+      "optionalDependencies": {},
+      "peerDependencies": {},
+      "exports": {
+        ".": {
+          "types": "./dist/index.d.ts",
+          "import": "./dist/index.js",
+          "default": "./dist/index.js"
+        }
+      },
+      "bin": null,
+      "workspaceLeak": false
+    },
+    {
+      "name": "@hardkas/node-orchestrator",
+      "version": "0.12.0-rc.26",
+      "tarball": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-3b\\before\\tarballs\\hardkas-node-orchestrator-0.12.0-rc.26.tgz",
+      "dependencies": {
+        "@hardkas/core": "0.12.0-rc.26"
+      },
+      "optionalDependencies": {},
+      "peerDependencies": {},
+      "exports": {
+        ".": {
+          "types": "./dist/index.d.ts",
+          "import": "./dist/index.js",
+          "default": "./dist/index.js"
+        }
+      },
+      "bin": null,
+      "workspaceLeak": false
+    },
+    {
+      "name": "@hardkas/node-runner",
+      "version": "0.12.0-rc.26",
+      "tarball": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-3b\\before\\tarballs\\hardkas-node-runner-0.12.0-rc.26.tgz",
+      "dependencies": {
+        "execa": "^9.5.2",
+        "@hardkas/core": "0.12.0-rc.26",
+        "@hardkas/kaspa-rpc": "0.12.0-rc.26"
+      },
+      "optionalDependencies": {},
+      "peerDependencies": {},
+      "exports": {
+        ".": {
+          "types": "./dist/index.d.ts",
+          "import": "./dist/index.js",
+          "default": "./dist/index.js"
+        }
+      },
+      "bin": null,
+      "workspaceLeak": false
+    },
+    {
+      "name": "@hardkas/observability",
+      "version": "0.12.0-rc.26",
+      "tarball": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-3b\\before\\tarballs\\hardkas-observability-0.12.0-rc.26.tgz",
+      "dependencies": {},
+      "optionalDependencies": {},
+      "peerDependencies": {},
+      "exports": {
+        ".": {
+          "types": "./dist/index.d.ts",
+          "import": "./dist/index.js",
+          "require": "./dist/index.js"
+        }
+      },
+      "bin": null,
+      "workspaceLeak": false
+    },
+    {
+      "name": "@hardkas/plugin-local-indexer",
+      "version": "0.12.0-rc.26",
+      "tarball": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-3b\\before\\tarballs\\hardkas-plugin-local-indexer-0.12.0-rc.26.tgz",
+      "dependencies": {
+        "@hardkas/core": "0.12.0-rc.26"
+      },
+      "optionalDependencies": {},
+      "peerDependencies": {},
+      "exports": {
+        ".": {
+          "types": "./dist/index.d.ts",
+          "import": "./dist/index.js",
+          "require": "./dist/index.js"
+        }
+      },
+      "bin": null,
+      "workspaceLeak": false
+    },
+    {
+      "name": "@hardkas/plugin-rpc-backend",
+      "version": "0.12.0-rc.26",
+      "tarball": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-3b\\before\\tarballs\\hardkas-plugin-rpc-backend-0.12.0-rc.26.tgz",
+      "dependencies": {
+        "@hardkas/kaspa-rpc": "0.12.0-rc.26",
+        "@hardkas/toolkit": "0.12.0-rc.26",
+        "@hardkas/observability": "0.12.0-rc.26"
+      },
+      "optionalDependencies": {},
+      "peerDependencies": {},
+      "exports": {
+        ".": {
+          "import": "./dist/index.js",
+          "require": "./dist/index.cjs",
+          "types": "./dist/index.d.ts"
+        }
+      },
+      "bin": null,
+      "workspaceLeak": false
+    },
+    {
+      "name": "@hardkas/pskt-native",
+      "version": "0.12.0-rc.26",
+      "tarball": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-3b\\before\\tarballs\\hardkas-pskt-native-0.12.0-rc.26.tgz",
+      "dependencies": {},
+      "optionalDependencies": {},
+      "peerDependencies": {},
+      "exports": null,
+      "bin": null,
+      "workspaceLeak": false
+    },
+    {
+      "name": "@hardkas/query",
+      "version": "0.12.0-rc.26",
+      "tarball": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-3b\\before\\tarballs\\hardkas-query-0.12.0-rc.26.tgz",
+      "dependencies": {
+        "@hardkas/artifacts": "0.12.0-rc.26",
+        "@hardkas/query-store": "0.12.0-rc.26",
+        "@hardkas/core": "0.12.0-rc.26"
+      },
+      "optionalDependencies": {},
+      "peerDependencies": {},
+      "exports": {
+        ".": {
+          "types": "./dist/index.d.ts",
+          "import": "./dist/index.js",
+          "default": "./dist/index.js"
+        },
+        "./*": "./dist/*.js"
+      },
+      "bin": null,
+      "workspaceLeak": false
+    },
+    {
+      "name": "@hardkas/query-store",
+      "version": "0.12.0-rc.26",
+      "tarball": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-3b\\before\\tarballs\\hardkas-query-store-0.12.0-rc.26.tgz",
+      "dependencies": {
+        "@hardkas/artifacts": "0.12.0-rc.26",
+        "@hardkas/core": "0.12.0-rc.26"
+      },
+      "optionalDependencies": {},
+      "peerDependencies": {},
+      "exports": {
+        ".": {
+          "types": "./dist/index.d.ts",
+          "import": "./dist/index.js",
+          "default": "./dist/index.js"
+        }
+      },
+      "bin": null,
+      "workspaceLeak": false
+    },
+    {
+      "name": "@hardkas/react",
+      "version": "0.12.0-rc.26",
+      "tarball": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-3b\\before\\tarballs\\hardkas-react-0.12.0-rc.26.tgz",
+      "dependencies": {
+        "@hardkas/client": "0.12.0-rc.26"
+      },
+      "optionalDependencies": {},
+      "peerDependencies": {
+        "react": ">=18",
+        "react-dom": ">=18"
+      },
+      "exports": {
+        ".": {
+          "types": "./dist/index.d.ts",
+          "import": "./dist/index.js",
+          "default": "./dist/index.js"
+        }
+      },
+      "bin": null,
+      "workspaceLeak": false
+    },
+    {
+      "name": "@hardkas/sdk",
+      "version": "0.12.0-rc.26",
+      "tarball": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-3b\\before\\tarballs\\hardkas-sdk-0.12.0-rc.26.tgz",
+      "dependencies": {
+        "@hardkas/accounts": "0.12.0-rc.26",
+        "@hardkas/artifacts": "0.12.0-rc.26",
+        "@hardkas/l2": "0.12.0-rc.26",
+        "@hardkas/core": "0.12.0-rc.26",
+        "@hardkas/query": "0.12.0-rc.26",
+        "@hardkas/config": "0.12.0-rc.26",
+        "@hardkas/localnet": "0.12.0-rc.26",
+        "@hardkas/kaspa-rpc": "0.12.0-rc.26",
+        "@hardkas/query-store": "0.12.0-rc.26",
+        "@hardkas/simulator": "0.12.0-rc.26",
+        "@hardkas/node-runner": "0.12.0-rc.26",
+        "@hardkas/toolkit": "0.12.0-rc.26",
+        "@hardkas/tx-builder": "0.12.0-rc.26"
+      },
+      "optionalDependencies": {
+        "@hardkas/pskt-native": "0.12.0-rc.26"
+      },
+      "peerDependencies": {},
+      "exports": {
+        ".": {
+          "types": "./dist/index.d.ts",
+          "import": "./dist/index.js",
+          "require": "./dist/index.js",
+          "default": "./dist/index.js"
+        },
+        "./client": {
+          "types": "./dist/client.d.ts",
+          "import": "./dist/client.js",
+          "require": "./dist/client.js",
+          "default": "./dist/client.js"
+        }
+      },
+      "bin": null,
+      "workspaceLeak": false
+    },
+    {
+      "name": "@hardkas/sessions",
+      "version": "0.12.0-rc.26",
+      "tarball": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-3b\\before\\tarballs\\hardkas-sessions-0.12.0-rc.26.tgz",
+      "dependencies": {
+        "@hardkas/core": "0.12.0-rc.26"
+      },
+      "optionalDependencies": {},
+      "peerDependencies": {},
+      "exports": {
+        ".": {
+          "types": "./dist/index.d.ts",
+          "import": "./dist/index.js",
+          "default": "./dist/index.js"
+        }
+      },
+      "bin": null,
+      "workspaceLeak": false
+    },
+    {
+      "name": "@hardkas/simulator",
+      "version": "0.12.0-rc.26",
+      "tarball": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-3b\\before\\tarballs\\hardkas-simulator-0.12.0-rc.26.tgz",
+      "dependencies": {
+        "@hardkas/core": "0.12.0-rc.26",
+        "@hardkas/tx-builder": "0.12.0-rc.26"
+      },
+      "optionalDependencies": {},
+      "peerDependencies": {},
+      "exports": {
+        ".": {
+          "types": "./dist/index.d.ts",
+          "import": "./dist/index.js",
+          "default": "./dist/index.js"
+        }
+      },
+      "bin": null,
+      "workspaceLeak": false
+    },
+    {
+      "name": "@hardkas/simulator-adapters",
+      "version": "0.12.0-rc.26",
+      "tarball": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-3b\\before\\tarballs\\hardkas-simulator-adapters-0.12.0-rc.26.tgz",
+      "dependencies": {
+        "@tanstack/react-query": "^5.100.14",
+        "react": "^19.2.6",
+        "@hardkas/bridge-local": "0.12.0-rc.26"
+      },
+      "optionalDependencies": {},
+      "peerDependencies": {},
+      "exports": {
+        ".": {
+          "types": "./dist/index.d.ts",
+          "import": "./dist/index.js",
+          "default": "./dist/index.js"
+        }
+      },
+      "bin": null,
+      "workspaceLeak": false
+    },
+    {
+      "name": "@hardkas/storage-postgres",
+      "version": "0.12.0-rc.26",
+      "tarball": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-3b\\before\\tarballs\\hardkas-storage-postgres-0.12.0-rc.26.tgz",
+      "dependencies": {
+        "postgres": "^3.4.4",
+        "@hardkas/jobs": "0.12.0-rc.26",
+        "@hardkas/toolkit": "0.12.0-rc.26"
+      },
+      "optionalDependencies": {},
+      "peerDependencies": {},
+      "exports": null,
+      "bin": null,
+      "workspaceLeak": false
+    },
+    {
+      "name": "@hardkas/sync-daemon",
+      "version": "0.12.0-rc.26",
+      "tarball": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-3b\\before\\tarballs\\hardkas-sync-daemon-0.12.0-rc.26.tgz",
+      "dependencies": {
+        "@hardkas/core": "0.12.0-rc.26",
+        "@hardkas/toolkit": "0.12.0-rc.26",
+        "@hardkas/observability": "0.12.0-rc.26"
+      },
+      "optionalDependencies": {},
+      "peerDependencies": {},
+      "exports": {
+        ".": {
+          "types": "./dist/index.d.ts",
+          "import": "./dist/index.js",
+          "require": "./dist/index.cjs"
+        }
+      },
+      "bin": null,
+      "workspaceLeak": false
+    },
+    {
+      "name": "@hardkas/testing",
+      "version": "0.12.0-rc.26",
+      "tarball": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-3b\\before\\tarballs\\hardkas-testing-0.12.0-rc.26.tgz",
+      "dependencies": {
+        "@hardkas/accounts": "0.12.0-rc.26",
+        "@hardkas/core": "0.12.0-rc.26",
+        "@hardkas/node-runner": "0.12.0-rc.26",
+        "@hardkas/kaspa-rpc": "0.12.0-rc.26",
+        "@hardkas/query-store": "0.12.0-rc.26",
+        "@hardkas/artifacts": "0.12.0-rc.26",
+        "@hardkas/sdk": "0.12.0-rc.26",
+        "@hardkas/localnet": "0.12.0-rc.26",
+        "@hardkas/simulator": "0.12.0-rc.26",
+        "@hardkas/tx-builder": "0.12.0-rc.26"
+      },
+      "optionalDependencies": {},
+      "peerDependencies": {
+        "vitest": "^2.0.0"
+      },
+      "exports": {
+        ".": {
+          "types": "./dist/index.d.ts",
+          "import": "./dist/index.js",
+          "default": "./dist/index.js"
+        },
+        "./harness": {
+          "types": "./dist/harness.d.ts",
+          "import": "./dist/harness.js",
+          "default": "./dist/harness.js"
+        },
+        "./setup": {
+          "types": "./dist/setup.d.ts",
+          "import": "./dist/setup.js",
+          "default": "./dist/setup.js"
+        },
+        "./adversarial-fixtures": {
+          "types": "./dist/adversarial-fixtures.d.ts",
+          "import": "./dist/adversarial-fixtures.js",
+          "default": "./dist/adversarial-fixtures.js"
+        },
+        "./mass-setup": {
+          "types": "./dist/mass-setup.d.ts",
+          "import": "./dist/mass-setup.js",
+          "default": "./dist/mass-setup.js"
+        },
+        "./scenarios": {
+          "types": "./dist/scenarios.d.ts",
+          "import": "./dist/scenarios.js",
+          "default": "./dist/scenarios.js"
+        }
+      },
+      "bin": null,
+      "workspaceLeak": false
+    },
+    {
+      "name": "@hardkas/toolkit",
+      "version": "0.12.0-rc.26",
+      "tarball": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-3b\\before\\tarballs\\hardkas-toolkit-0.12.0-rc.26.tgz",
+      "dependencies": {
+        "fs-extra": "^11.2.0",
+        "@hardkas/accounts": "0.12.0-rc.26",
+        "@hardkas/artifacts": "0.12.0-rc.26",
+        "@hardkas/core": "0.12.0-rc.26",
+        "@hardkas/jobs": "0.12.0-rc.26",
+        "@hardkas/observability": "0.12.0-rc.26",
+        "@hardkas/kaspa-rpc": "0.12.0-rc.26",
+        "@hardkas/query": "0.12.0-rc.26",
+        "@hardkas/tx-builder": "0.12.0-rc.26",
+        "@hardkas/query-store": "0.12.0-rc.26"
+      },
+      "optionalDependencies": {},
+      "peerDependencies": {},
+      "exports": {
+        ".": {
+          "types": "./dist/index.d.ts",
+          "import": "./dist/index.js",
+          "require": "./dist/index.js",
+          "default": "./dist/index.js"
+        }
+      },
+      "bin": null,
+      "workspaceLeak": false
+    },
+    {
+      "name": "@hardkas/tx-builder",
+      "version": "0.12.0-rc.26",
+      "tarball": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-3b\\before\\tarballs\\hardkas-tx-builder-0.12.0-rc.26.tgz",
+      "dependencies": {
+        "@hardkas/core": "0.12.0-rc.26"
+      },
+      "optionalDependencies": {},
+      "peerDependencies": {},
+      "exports": {
+        ".": {
+          "types": "./dist/index.d.ts",
+          "import": "./dist/index.js",
+          "default": "./dist/index.js"
+        }
+      },
+      "bin": null,
+      "workspaceLeak": false
+    },
+    {
+      "name": "@hardkas/wallet-adapter",
+      "version": "0.12.0-rc.26",
+      "tarball": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-3b\\before\\tarballs\\hardkas-wallet-adapter-0.12.0-rc.26.tgz",
+      "dependencies": {
+        "@hardkas/core": "0.12.0-rc.26",
+        "@hardkas/tx-builder": "0.12.0-rc.26",
+        "@hardkas/kaspa-rpc": "0.12.0-rc.26"
+      },
+      "optionalDependencies": {},
+      "peerDependencies": {},
+      "exports": {
+        ".": {
+          "types": "./dist/index.d.ts",
+          "import": "./dist/index.js",
+          "default": "./dist/index.js"
+        }
+      },
+      "bin": null,
+      "workspaceLeak": false
+    }
+  ],
+  "consumers": {
+    "npm": {
+      "dir": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-3b\\before\\npm-consumer",
+      "home": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-3b\\before\\npm-hardkas-home",
+      "steps": [
+        {
+          "cmd": "hardkas --version",
+          "status": 0,
+          "ms": 881,
+          "ok": true,
+          "jsonOk": null,
+          "out": "0.12.0-rc.26",
+          "err": ""
+        },
+        {
+          "cmd": "hardkas capabilities --json",
+          "status": 0,
+          "ms": 853,
+          "ok": true,
+          "jsonOk": null,
+          "out": "    \"l2Bridge\": \"pre-zk-assumptions\"\n  }\n}",
+          "err": "⚠️  WARNING: 'capabilities' command is internal/experimental. Set HARDKAS_EXPERIMENTAL=1 to acknowledge."
+        },
+        {
+          "cmd": "hardkas init smoke-proj --json",
+          "status": 0,
+          "ms": 4848,
+          "ok": true,
+          "jsonOk": true,
+          "out": "    ]\n  }\n}",
+          "err": ""
+        },
+        {
+          "cmd": "hardkas accounts list --json",
+          "status": 0,
+          "ms": 1077,
+          "ok": true,
+          "jsonOk": null,
+          "out": "    \"address\": \"kaspa:sim_erin\"\n  }\n]",
+          "err": ""
+        },
+        {
+          "cmd": "hardkas tx plan --from alice --to bob --amount 1 --out plan.json --json",
+          "status": 0,
+          "ms": 1037,
+          "ok": true,
+          "jsonOk": null,
+          "out": "  \"contentHash\": \"a990b2df0ada1f0845c3f8bfd905f08906d407dc1dfc891602bbafad4d56cd43\",\n  \"planId\": \"plan-a990b2df0ada1f08\"\n}",
+          "err": ""
+        },
+        {
+          "cmd": "hardkas artifact verify plan.json --json",
+          "status": 0,
+          "ms": 980,
+          "ok": true,
+          "jsonOk": true,
+          "out": "    \"actualHash\": \"a990b2df0ada1f0845c3f8bfd905f08906d407dc1dfc891602bbafad4d56cd43\"\n  }\n}",
+          "err": ""
+        },
+        {
+          "cmd": "hardkas query artifacts list --json",
+          "status": 0,
+          "ms": 884,
+          "ok": true,
+          "jsonOk": true,
+          "out": "    }\n  }\n}",
+          "err": ""
+        }
+      ],
+      "install": {
+        "status": 0,
+        "ms": 36043,
+        "tail": "added 179 packages in 36s"
+      },
+      "hardkasFromRegistry": [],
+      "hardkasInstalled": [
+        "@hardkas/accounts",
+        "@hardkas/artifacts",
+        "@hardkas/bridge-local",
+        "@hardkas/cli",
+        "@hardkas/config",
+        "@hardkas/core",
+        "@hardkas/dev-server",
+        "@hardkas/escrow",
+        "@hardkas/jobs",
+        "@hardkas/kaspa-rpc",
+        "@hardkas/l2",
+        "@hardkas/localnet",
+        "@hardkas/node-orchestrator",
+        "@hardkas/node-runner",
+        "@hardkas/observability",
+        "@hardkas/pskt-native",
+        "@hardkas/query",
+        "@hardkas/query-store",
+        "@hardkas/sdk",
+        "@hardkas/sessions",
+        "@hardkas/simulator",
+        "@hardkas/testing",
+        "@hardkas/toolkit",
+        "@hardkas/tx-builder"
+      ],
+      "thirdParty": [
+        "@adraffy/ens-normalize",
+        "@hono/node-server",
+        "@noble/ciphers",
+        "@noble/curves",
+        "@noble/hashes",
+        "@scure/base",
+        "@scure/bip32",
+        "@scure/bip39",
+        "@sec-ant/readable-stream",
+        "@sindresorhus/merge-streams",
+        "@types/node",
+        "abitype",
+        "accepts",
+        "ansi-colors",
+        "ansi-regex",
+        "anymatch",
+        "binary-extensions",
+        "body-parser",
+        "braces",
+        "bundle-name",
+        "bytes",
+        "call-bind-apply-helpers",
+        "call-bound",
+        "chokidar",
+        "commander",
+        "content-disposition",
+        "content-type",
+        "cookie",
+        "cookie-signature",
+        "cross-spawn",
+        "debug",
+        "default-browser",
+        "default-browser-id",
+        "define-lazy-prop",
+        "depd",
+        "dunder-proto",
+        "ee-first",
+        "encodeurl",
+        "enquirer",
+        "es-define-property",
+        "es-errors",
+        "es-object-atoms",
+        "escape-html",
+        "etag",
+        "eventemitter3",
+        "execa",
+        "express",
+        "fflate",
+        "figures",
+        "fill-range",
+        "finalhandler",
+        "forwarded",
+        "fresh",
+        "fs-extra",
+        "fsevents",
+        "function-bind",
+        "get-intrinsic",
+        "get-proto",
+        "get-stream",
+        "glob-parent",
+        "gopd",
+        "graceful-fs",
+        "has-symbols",
+        "hash-wasm",
+        "hasown",
+        "hono",
+        "http-errors",
+        "human-signals",
+        "iconv-lite",
+        "inherits",
+        "ipaddr.js",
+        "is-binary-path",
+        "is-docker",
+        "is-extglob",
+        "is-glob",
+        "is-in-ssh",
+        "is-inside-container",
+        "is-number",
+        "is-plain-obj",
+        "is-promise",
+        "is-stream",
+        "is-unicode-supported",
+        "is-wsl",
+        "isexe",
+        "isows",
+        "jiti",
+        "jsonfile",
+        "math-intrinsics",
+        "media-typer",
+        "merge-descriptors",
+        "mime-db",
+        "mime-types",
+        "ms",
+        "negotiator",
+        "normalize-path",
+        "npm-run-path",
+        "object-inspect",
+        "on-finished",
+        "once",
+        "open",
+        "ox",
+        "parse-ms",
+        "parseurl",
+        "path-key",
+        "path-to-regexp",
+        "picocolors",
+        "picomatch",
+        "powershell-utils",
+        "pretty-ms",
+        "proxy-addr",
+        "qs",
+        "range-parser",
+        "raw-body",
+        "readdirp",
+        "router",
+        "run-applescript",
+        "safer-buffer",
+        "send",
+        "serve-static",
+        "setprototypeof",
+        "shebang-command",
+        "shebang-regex",
+        "side-channel",
+        "side-channel-list",
+        "side-channel-map",
+        "side-channel-weakmap",
+        "signal-exit",
+        "statuses",
+        "strip-ansi",
+        "strip-final-newline",
+        "to-regex-range",
+        "toidentifier",
+        "type-is",
+        "undici-types",
+        "unicorn-magic",
+        "universalify",
+        "unpipe",
+        "vary",
+        "viem",
+        "which",
+        "wrappy",
+        "ws",
+        "wsl-utils",
+        "yoctocolors",
+        "zod"
+      ],
+      "workspaceLeak": false,
+      "imports": [
+        {
+          "spec": "@hardkas/accounts",
+          "ok": true
+        },
+        {
+          "spec": "@hardkas/accounts/internal/wasm-rpc-serialization.js",
+          "ok": true
+        },
+        {
+          "spec": "@hardkas/artifacts",
+          "ok": true
+        },
+        {
+          "spec": "@hardkas/bridge-local",
+          "ok": true
+        },
+        {
+          "spec": "@hardkas/cli/public",
+          "ok": true
+        },
+        {
+          "spec": "@hardkas/config",
+          "ok": true
+        },
+        {
+          "spec": "@hardkas/core",
+          "ok": true
+        },
+        {
+          "spec": "@hardkas/dev-server",
+          "ok": true
+        },
+        {
+          "spec": "@hardkas/escrow",
+          "ok": true
+        },
+        {
+          "spec": "@hardkas/jobs",
+          "ok": true
+        },
+        {
+          "spec": "@hardkas/kaspa-rpc",
+          "ok": true
+        },
+        {
+          "spec": "@hardkas/kaspa-rpc/adapters",
+          "ok": true
+        },
+        {
+          "spec": "@hardkas/l2",
+          "ok": true
+        },
+        {
+          "spec": "@hardkas/localnet",
+          "ok": true
+        },
+        {
+          "spec": "@hardkas/node-orchestrator",
+          "ok": true
+        },
+        {
+          "spec": "@hardkas/node-runner",
+          "ok": true
+        },
+        {
+          "spec": "@hardkas/observability",
+          "ok": true
+        },
+        {
+          "spec": "@hardkas/pskt-native",
+          "ok": true
+        },
+        {
+          "spec": "@hardkas/query",
+          "ok": true
+        },
+        {
+          "spec": "@hardkas/query-store",
+          "ok": true
+        },
+        {
+          "spec": "@hardkas/sdk",
+          "ok": true
+        },
+        {
+          "spec": "@hardkas/sdk/client",
+          "ok": true
+        },
+        {
+          "spec": "@hardkas/sessions",
+          "ok": true
+        },
+        {
+          "spec": "@hardkas/simulator",
+          "ok": true
+        },
+        {
+          "spec": "@hardkas/testing",
+          "ok": true
+        },
+        {
+          "spec": "@hardkas/testing/harness",
+          "ok": true
+        },
+        {
+          "spec": "@hardkas/testing/setup",
+          "ok": false,
+          "error": "ERR_MODULE_NOT_FOUND: Cannot find package 'vitest' imported from C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-3b\\before\\npm-consumer\\node_modules\\@hardkas\\testing\\dist\\setup.js"
+        },
+        {
+          "spec": "@hardkas/testing/adversarial-fixtures",
+          "ok": true
+        },
+        {
+          "spec": "@hardkas/testing/mass-setup",
+          "ok": true
+        },
+        {
+          "spec": "@hardkas/testing/scenarios",
+          "ok": false,
+          "error": "ERR_MODULE_NOT_FOUND: Cannot find package 'vitest' imported from C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-3b\\before\\npm-consumer\\node_modules\\@hardkas\\testing\\dist\\scenarios.js"
+        },
+        {
+          "spec": "@hardkas/toolkit",
+          "ok": true
+        },
+        {
+          "spec": "@hardkas/tx-builder",
+          "ok": true
+        }
+      ],
+      "version": "0.12.0-rc.26",
+      "toolchainInstalled": true,
+      "planSchema": "hardkas.txPlan"
+    },
+    "pnpm": {
+      "dir": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-3b\\before\\pnpm-consumer",
+      "home": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-3b\\before\\pnpm-hardkas-home",
+      "steps": [
+        {
+          "cmd": "hardkas --version",
+          "status": 0,
+          "ms": 1056,
+          "ok": true,
+          "jsonOk": null,
+          "out": "0.12.0-rc.26",
+          "err": ""
+        },
+        {
+          "cmd": "hardkas capabilities --json",
+          "status": 0,
+          "ms": 1135,
+          "ok": true,
+          "jsonOk": null,
+          "out": "    \"l2Bridge\": \"pre-zk-assumptions\"\n  }\n}",
+          "err": "⚠️  WARNING: 'capabilities' command is internal/experimental. Set HARDKAS_EXPERIMENTAL=1 to acknowledge."
+        },
+        {
+          "cmd": "hardkas init smoke-proj --json",
+          "status": 0,
+          "ms": 4756,
+          "ok": true,
+          "jsonOk": true,
+          "out": "    ]\n  }\n}",
+          "err": ""
+        },
+        {
+          "cmd": "hardkas accounts list --json",
+          "status": 0,
+          "ms": 1195,
+          "ok": true,
+          "jsonOk": null,
+          "out": "    \"address\": \"kaspa:sim_erin\"\n  }\n]",
+          "err": ""
+        },
+        {
+          "cmd": "hardkas tx plan --from alice --to bob --amount 1 --out plan.json --json",
+          "status": 0,
+          "ms": 1206,
+          "ok": true,
+          "jsonOk": null,
+          "out": "  \"contentHash\": \"a990b2df0ada1f0845c3f8bfd905f08906d407dc1dfc891602bbafad4d56cd43\",\n  \"planId\": \"plan-a990b2df0ada1f08\"\n}",
+          "err": ""
+        },
+        {
+          "cmd": "hardkas artifact verify plan.json --json",
+          "status": 0,
+          "ms": 1133,
+          "ok": true,
+          "jsonOk": true,
+          "out": "    \"actualHash\": \"a990b2df0ada1f0845c3f8bfd905f08906d407dc1dfc891602bbafad4d56cd43\"\n  }\n}",
+          "err": ""
+        },
+        {
+          "cmd": "hardkas query artifacts list --json",
+          "status": 0,
+          "ms": 1043,
+          "ok": true,
+          "jsonOk": true,
+          "out": "    }\n  }\n}",
+          "err": ""
+        }
+      ],
+      "install": {
+        "status": 0,
+        "ms": 16014,
+        "tail": "+ @hardkas/sdk 0.12.0-rc.26\n+ @hardkas/sessions 0.12.0-rc.26\n+ @hardkas/simulator 0.12.0-rc.26\n+ @hardkas/simulator-adapters 0.12.0-rc.26\n+ @hardkas/storage-postgres 0.12.0-rc.26\n+ @hardkas/sync-daemon 0.12.0-rc.26\n+ @hardkas/testing 0.12.0-rc.26\n+ @hardkas/toolkit 0.12.0-rc.26\n+ @hardkas/tx-builder 0.12.0-rc.26\n+ @hardkas/wallet-adapter 0.12.0-rc.26\n\nDone in 15.8s using pnpm v11.1.3"
+      },
+      "hardkasInstalled": [
+        "@hardkas/accounts",
+        "@hardkas/artifacts",
+        "@hardkas/bridge-local",
+        "@hardkas/cli",
+        "@hardkas/client",
+        "@hardkas/config",
+        "@hardkas/core",
+        "@hardkas/dev-server",
+        "@hardkas/escrow",
+        "@hardkas/jobs",
+        "@hardkas/kaspa-rpc",
+        "@hardkas/l2",
+        "@hardkas/localnet",
+        "@hardkas/node-orchestrator",
+        "@hardkas/node-runner",
+        "@hardkas/observability",
+        "@hardkas/plugin-local-index_de509864fca49876c6c0eeb630442ef4",
+        "@hardkas/plugin-rpc-backend_d8145a9db96e05752d5a5221d6b5d8ff",
+        "@hardkas/pskt-native",
+        "@hardkas/query",
+        "@hardkas/query-store",
+        "@hardkas/react",
+        "@hardkas/sdk",
+        "@hardkas/sessions",
+        "@hardkas/simulator",
+        "@hardkas/simulator-adapters_ad4731ce9b0c46b7a03f53dea96b0afc",
+        "@hardkas/storage-postgres",
+        "@hardkas/sync-daemon",
+        "@hardkas/testing",
+        "@hardkas/toolkit",
+        "@hardkas/tx-builder",
+        "@hardkas/wallet-adapter"
+      ],
+      "hardkasFromRegistry": [],
+      "thirdParty": [
+        "@adraffy/ens-normalize",
+        "@hono/node-server",
+        "@noble/ciphers",
+        "@noble/curves",
+        "@noble/hashes",
+        "@scure/base",
+        "@scure/bip32",
+        "@scure/bip39",
+        "@sec-ant/readable-stream",
+        "@sindresorhus/merge-streams",
+        "@tanstack/query-core",
+        "@tanstack/react-query",
+        "@types/node",
+        "abitype",
+        "accepts",
+        "ansi-colors",
+        "ansi-regex",
+        "anymatch",
+        "binary-extensions",
+        "body-parser",
+        "braces",
+        "bundle-name",
+        "bytes",
+        "call-bind-apply-helpers",
+        "call-bound",
+        "chokidar",
+        "commander",
+        "content-disposition",
+        "content-type",
+        "cookie",
+        "cookie-signature",
+        "cross-spawn",
+        "debug",
+        "default-browser",
+        "default-browser-id",
+        "define-lazy-prop",
+        "depd",
+        "dunder-proto",
+        "ee-first",
+        "encodeurl",
+        "enquirer",
+        "es-define-property",
+        "es-errors",
+        "es-object-atoms",
+        "escape-html",
+        "etag",
+        "eventemitter3",
+        "execa",
+        "express",
+        "fflate",
+        "figures",
+        "fill-range",
+        "finalhandler",
+        "forwarded",
+        "fresh",
+        "fs-extra",
+        "function-bind",
+        "get-intrinsic",
+        "get-proto",
+        "get-stream",
+        "glob-parent",
+        "gopd",
+        "graceful-fs",
+        "has-symbols",
+        "hash-wasm",
+        "hasown",
+        "hono",
+        "http-errors",
+        "human-signals",
+        "iconv-lite",
+        "inherits",
+        "ipaddr.js",
+        "is-binary-path",
+        "is-docker",
+        "is-extglob",
+        "is-glob",
+        "is-in-ssh",
+        "is-inside-container",
+        "is-number",
+        "is-plain-obj",
+        "is-promise",
+        "is-stream",
+        "is-unicode-supported",
+        "is-wsl",
+        "isexe",
+        "isows",
+        "jiti",
+        "jsonfile",
+        "math-intrinsics",
+        "media-typer",
+        "merge-descriptors",
+        "mime-db",
+        "mime-types",
+        "ms",
+        "negotiator",
+        "normalize-path",
+        "npm-run-path",
+        "object-inspect",
+        "on-finished",
+        "once",
+        "open",
+        "ox",
+        "parse-ms",
+        "parseurl",
+        "path-key",
+        "path-to-regexp",
+        "picocolors",
+        "picomatch",
+        "postgres",
+        "powershell-utils",
+        "pretty-ms",
+        "proxy-addr",
+        "qs",
+        "range-parser",
+        "raw-body",
+        "react",
+        "react-dom",
+        "readdirp",
+        "router",
+        "run-applescript",
+        "safer-buffer",
+        "scheduler",
+        "send",
+        "serve-static",
+        "setprototypeof",
+        "shebang-command",
+        "shebang-regex",
+        "side-channel",
+        "side-channel-list",
+        "side-channel-map",
+        "side-channel-weakmap",
+        "signal-exit",
+        "statuses",
+        "strip-ansi",
+        "strip-final-newline",
+        "to-regex-range",
+        "toidentifier",
+        "type-is",
+        "undici-types",
+        "unicorn-magic",
+        "universalify",
+        "unpipe",
+        "vary",
+        "viem",
+        "which",
+        "wrappy",
+        "ws",
+        "wsl-utils",
+        "yoctocolors",
+        "zod"
+      ],
+      "workspaceLeak": false,
+      "imports": [
+        {
+          "spec": "@hardkas/accounts",
+          "ok": true
+        },
+        {
+          "spec": "@hardkas/accounts/internal/wasm-rpc-serialization.js",
+          "ok": true
+        },
+        {
+          "spec": "@hardkas/artifacts",
+          "ok": true
+        },
+        {
+          "spec": "@hardkas/bridge-local",
+          "ok": true
+        },
+        {
+          "spec": "@hardkas/cli/public",
+          "ok": true
+        },
+        {
+          "spec": "@hardkas/client",
+          "ok": true
+        },
+        {
+          "spec": "@hardkas/config",
+          "ok": true
+        },
+        {
+          "spec": "@hardkas/core",
+          "ok": true
+        },
+        {
+          "spec": "@hardkas/dev-server",
+          "ok": true
+        },
+        {
+          "spec": "@hardkas/escrow",
+          "ok": true
+        },
+        {
+          "spec": "@hardkas/jobs",
+          "ok": true
+        },
+        {
+          "spec": "@hardkas/kaspa-rpc",
+          "ok": true
+        },
+        {
+          "spec": "@hardkas/kaspa-rpc/adapters",
+          "ok": true
+        },
+        {
+          "spec": "@hardkas/l2",
+          "ok": true
+        },
+        {
+          "spec": "@hardkas/localnet",
+          "ok": true
+        },
+        {
+          "spec": "@hardkas/node-orchestrator",
+          "ok": true
+        },
+        {
+          "spec": "@hardkas/node-runner",
+          "ok": true
+        },
+        {
+          "spec": "@hardkas/observability",
+          "ok": true
+        },
+        {
+          "spec": "@hardkas/plugin-local-indexer",
+          "ok": true
+        },
+        {
+          "spec": "@hardkas/plugin-rpc-backend",
+          "ok": true
+        },
+        {
+          "spec": "@hardkas/pskt-native",
+          "ok": true
+        },
+        {
+          "spec": "@hardkas/query",
+          "ok": true
+        },
+        {
+          "spec": "@hardkas/query-store",
+          "ok": true
+        },
+        {
+          "spec": "@hardkas/react",
+          "ok": true
+        },
+        {
+          "spec": "@hardkas/sdk",
+          "ok": true
+        },
+        {
+          "spec": "@hardkas/sdk/client",
+          "ok": true
+        },
+        {
+          "spec": "@hardkas/sessions",
+          "ok": true
+        },
+        {
+          "spec": "@hardkas/simulator",
+          "ok": true
+        },
+        {
+          "spec": "@hardkas/simulator-adapters",
+          "ok": true
+        },
+        {
+          "spec": "@hardkas/storage-postgres",
+          "ok": true
+        },
+        {
+          "spec": "@hardkas/sync-daemon",
+          "ok": true
+        },
+        {
+          "spec": "@hardkas/testing",
+          "ok": true
+        },
+        {
+          "spec": "@hardkas/testing/harness",
+          "ok": true
+        },
+        {
+          "spec": "@hardkas/testing/setup",
+          "ok": false,
+          "error": "ERR_MODULE_NOT_FOUND: Cannot find package 'vitest' imported from C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-3b\\before\\pnpm-consumer\\node_modules\\.pnpm\\@hardkas+testing@file+..+ta_c68dcf457b79915f1d1c8b0eda907762\\node_modules\\@ha"
+        },
+        {
+          "spec": "@hardkas/testing/adversarial-fixtures",
+          "ok": true
+        },
+        {
+          "spec": "@hardkas/testing/mass-setup",
+          "ok": true
+        },
+        {
+          "spec": "@hardkas/testing/scenarios",
+          "ok": false,
+          "error": "ERR_MODULE_NOT_FOUND: Cannot find package 'vitest' imported from C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-3b\\before\\pnpm-consumer\\node_modules\\.pnpm\\@hardkas+testing@file+..+ta_c68dcf457b79915f1d1c8b0eda907762\\node_modules\\@ha"
+        },
+        {
+          "spec": "@hardkas/toolkit",
+          "ok": true
+        },
+        {
+          "spec": "@hardkas/tx-builder",
+          "ok": true
+        },
+        {
+          "spec": "@hardkas/wallet-adapter",
+          "ok": true
+        }
+      ],
+      "version": "0.12.0-rc.26",
+      "toolchainInstalled": true,
+      "planSchema": "hardkas.txPlan"
+    }
+  },
+  "finishedAt": "2026-09-29T20:31:41.997Z"
+}

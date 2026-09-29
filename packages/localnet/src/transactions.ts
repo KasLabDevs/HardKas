@@ -74,6 +74,10 @@ export const DUST_LIMIT_SOMPI = 600n;
 
 /**
  * Applies a simulated payment to the localnet state with atomic safety and validation.
+ *
+ * Synchronous, so it prices through the compatibility shim `buildPaymentPlan` (its only
+ * consumer) until this API and the harness's `send()` migrate. `tx plan` and the SDK plan
+ * with the kaspa-wasm Generator and execute with {@link applySimulatedPlan}.
  */
 export function applySimulatedPayment(
   state: LocalnetState,

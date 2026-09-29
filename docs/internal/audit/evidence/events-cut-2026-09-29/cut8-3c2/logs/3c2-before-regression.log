@@ -1,0 +1,213 @@
+﻿gate-hermetic: HARDKAS_HOME=C:\Users\jrodr\AppData\Local\Temp\hardkas-hermetic-home-K8NzeQ (copy of C:\Users\jrodr\AppData\Local\Temp\hk-v210-gate-home)
+gate-hermetic: DOCKER_HOST=tcp://127.0.0.1:1; preload=C:\Users\jrodr\AppData\Local\Temp\hk-3c1\wt\scripts\hermetic\no-network-preload.cjs
+gate-hermetic: vitest run --coverage.enabled=false --reporter=default --reporter=json --outputFile=C:\Users\jrodr\AppData\Local\Temp\claude\C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo\21f9a2e4-33ac-4300-9366-aff402f85900\scratchpad\cut8-3c2\logs\3c2-before-regression.json packages/kaspa-rpc/test/surface-cut-subscriptions.test.ts packages/localnet/test/surface-cut-subscriptions.test.ts packages/kaspa-rpc/test/subscriptions.test.ts packages/kaspa-rpc/test/upstream.test.ts packages/toolkit/test/wallet-watch-utxocontext.test.ts packages/kaspa-rpc/test/surface-cut-resilient-subscriber.test.ts packages/toolkit/test/surface-cut-subscription-manager.test.ts
+
+ RUN  v2.1.9 C:/Users/jrodr/AppData/Local/Temp/hk-3c1/wt
+
+node.exe : stderr | packages/toolkit/test/wallet-watch-utxocontext.test.ts > Surface Cut 3b · R4: the watch contract 
+on the new engine > a throwing listener does not stop delivery
+En C:\Users\jrodr\AppData\Local\Temp\claude\C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo\21f9a2e4-33ac-4300-
+9366-aff402f85900\scratchpad\cut8-3c2\run-files-wt.ps1: 22 Carácter: 1
++ & node @args_ *> $log
++ ~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (stderr | packag...t stop delivery:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+{"timestamp":"2026-10-02T11:22:51.331Z","level":"error","event":"Wallet watch listener failed","context":{"error":{}}}
+
+ ✓ packages/toolkit/test/wallet-watch-utxocontext.test.ts (13 tests) 28ms
+ ✓ packages/kaspa-rpc/test/upstream.test.ts (19 tests) 1377ms
+   ✓ upstream session: connection, errors and timeouts > a connection that never opens times out as a connection error 1028ms
+ ✓ packages/kaspa-rpc/test/subscriptions.test.ts (9 tests) 15ms
+ ❯ packages/kaspa-rpc/test/surface-cut-subscriptions.test.ts (4 tests | 3 failed) 15ms
+   × Surface Cut 3c-2: KaspaRpcClient is request/response only > no kaspa-rpc client has subscribeTo*, on or off 12ms
+     → expected { JsonWrpcKaspaClient: [ …(4) ], …(3) } to deeply equal { JsonWrpcKaspaClient: [], …(3) }
+   × Surface Cut 3c-2: KaspaRpcClient is request/response only > the session does not re-attach listeners on a new connection 1ms
+     → expected true to be false // Object.is equality
+   × Surface Cut 3c-2: KaspaRpcClient is request/response only > stays deleted 1ms
+     → expected [ …(5) ] to deeply equal []
+ ✓ packages/kaspa-rpc/test/surface-cut-resilient-subscriber.test.ts (4 tests) 5ms
+ ❯ packages/toolkit/test/surface-cut-subscription-manager.test.ts (3 tests | 2 failed) 13ms
+   × Surface Cut 3c-1: no WalletSubscriptionManager > no code outside its own module and tests uses it or its types 10ms
+     → expected [ Array(1) ] to deeply equal []
+   × Surface Cut 3c-1: no WalletSubscriptionManager > the class and its two types stay deleted 1ms
+     → expected [ Array(1) ] to deeply equal []
+ ❯ packages/localnet/test/surface-cut-subscriptions.test.ts (1 test | 1 failed) 12ms
+   × Surface Cut 3c-2: LocalnetSimulatedProvider is request/response only > has no subscribeTo*, on or off 11ms
+     → expected [ 'subscribeToUtxosChanged', …(3) ] to deeply equal []
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  packages/kaspa-rpc/test/surface-cut-subscriptions.test.ts > Surface Cut 3c-2: KaspaRpcClient is 
+request/response only > no kaspa-rpc client has subscribeTo*, on or off
+AssertionError: expected { JsonWrpcKaspaClient: [ …(4) ], …(3) } to deeply equal { JsonWrpcKaspaClient: [], …(3) }
+
+- Expected
++ Received
+
+  Object {
+-   "JsonWrpcKaspaClient": Array [],
+-   "KaspaJsonRpcClient": Array [],
+-   "LoadBalancedRpcProvider": Array [],
+-   "MockKaspaRpcClient": Array [],
++   "JsonWrpcKaspaClient": Array [
++     "subscribeToUtxosChanged",
++     "subscribeToVirtualChainChanged",
++     "on",
++     "off",
++   ],
++   "KaspaJsonRpcClient": Array [
++     "subscribeToUtxosChanged",
++     "subscribeToVirtualChainChanged",
++     "on",
++     "off",
++   ],
++   "LoadBalancedRpcProvider": Array [
++     "subscribeToUtxosChanged",
++     "subscribeToVirtualChainChanged",
++     "on",
++     "off",
++   ],
++   "MockKaspaRpcClient": Array [
++     "subscribeToUtxosChanged",
++     "subscribeToVirtualChainChanged",
++     "on",
++     "off",
++   ],
+  }
+
+ ❯ packages/kaspa-rpc/test/surface-cut-subscriptions.test.ts:72:21
+     70|       ])
+     71|     );
+     72|     expect(present).toEqual({ JsonWrpcKaspaClient: [], KaspaJsonRpcCli…
+       |                     ^
+     73|   });
+     74| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/6]⎯
+
+ FAIL  packages/kaspa-rpc/test/surface-cut-subscriptions.test.ts > Surface Cut 3c-2: KaspaRpcClient is 
+request/response only > the session does not re-attach listeners on a new connection
+AssertionError: expected true to be false // Object.is equality
+
+- Expected
++ Received
+
+- false
++ true
+
+ ❯ packages/kaspa-rpc/test/surface-cut-subscriptions.test.ts:76:57
+     74| 
+     75|   it("the session does not re-attach listeners on a new connection", (…
+     76|     expect("onConnect" in OfficialRpcSession.prototype).toBe(false);
+       |                                                         ^
+     77|   });
+     78| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/6]⎯
+
+ FAIL  packages/kaspa-rpc/test/surface-cut-subscriptions.test.ts > Surface Cut 3c-2: KaspaRpcClient is 
+request/response only > stays deleted
+AssertionError: expected [ …(5) ] to deeply equal []
+
+- Expected
++ Received
+
+- Array []
++ Array [
++   "packages/kaspa-rpc/src/index.ts",
++   "packages/kaspa-rpc/src/json-rpc-client.ts",
++   "packages/kaspa-rpc/src/provider.ts",
++   "packages/kaspa-rpc/test/subscriptions.test.ts",
++   "packages/localnet/src/provider.ts",
++ ]
+
+ ❯ packages/kaspa-rpc/test/surface-cut-subscriptions.test.ts:84:88
+     82| 
+     83|   it("stays deleted", () => {
+     84|     expect(mentions.filter((rel) => !REGRESSIONS.includes(rel) && rel …
+       |                                                                                        ^
+     85|   });
+     86| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/6]⎯
+
+ FAIL  packages/localnet/test/surface-cut-subscriptions.test.ts > Surface Cut 3c-2: LocalnetSimulatedProvider is 
+request/response only > has no subscribeTo*, on or off
+AssertionError: expected [ 'subscribeToUtxosChanged', …(3) ] to deeply equal []
+
+- Expected
++ Received
+
+- Array []
++ Array [
++   "subscribeToUtxosChanged",
++   "subscribeToVirtualChainChanged",
++   "on",
++   "off",
++ ]
+
+ ❯ packages/localnet/test/surface-cut-subscriptions.test.ts:10:87
+      8|   it("has no subscribeTo*, on or off", () => {
+      9|     const members = ["subscribeToUtxosChanged", "subscribeToVirtualCha…
+     10|     expect(members.filter((member) => member in LocalnetSimulatedProvi…
+       |                                                                                       ^
+     11|   });
+     12| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/6]⎯
+
+ FAIL  packages/toolkit/test/surface-cut-subscription-manager.test.ts > Surface Cut 3c-1: no WalletSubscriptionManager 
+> no code outside its own module and tests uses it or its types
+AssertionError: expected [ Array(1) ] to deeply equal []
+
+- Expected
++ Received
+
+- Array []
++ Array [
++   "packages/kaspa-rpc/test/surface-cut-subscriptions.test.ts",
++ ]
+
+ ❯ packages/toolkit/test/surface-cut-subscription-manager.test.ts:48:58
+     46| 
+     47|   it("no code outside its own module and tests uses it or its types", …
+     48|     expect(mentions.filter((rel) => !OWN.includes(rel))).toEqual([]);
+       |                                                          ^
+     49|   });
+     50| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/6]⎯
+
+ FAIL  packages/toolkit/test/surface-cut-subscription-manager.test.ts > Surface Cut 3c-1: no WalletSubscriptionManager 
+> the class and its two types stay deleted
+AssertionError: expected [ Array(1) ] to deeply equal []
+
+- Expected
++ Received
+
+- Array []
++ Array [
++   "packages/kaspa-rpc/test/surface-cut-subscriptions.test.ts",
++ ]
+
+ ❯ packages/toolkit/test/surface-cut-subscription-manager.test.ts:52:52
+     50| 
+     51|   it("the class and its two types stay deleted", () => {
+     52|     expect(mentions.filter((rel) => rel !== SELF)).toEqual([]);
+       |                                                    ^
+     53|   });
+     54| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/6]⎯
+
+ Test Files  3 failed | 4 passed (7)
+      Tests  6 failed | 47 passed (53)
+   Start at  13:22:48
+   Duration  9.64s (transform 1.81s, setup 0ms, collect 5.05s, tests 1.46s, environment 2ms, prepare 1.09s)
+
+JSON report written to C:/Users/jrodr/AppData/Local/Temp/claude/C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo/21f9a2e4-33ac-4300-9366-aff402f85900/scratchpad/cut8-3c2/logs/3c2-before-regression.json
+
+gate-hermetic: vitest exit 1 after 11s
+gate-hermetic: non-loopback attempts (each one fails the gate): 0
+gate-hermetic: loopback connection targets (review for dependencies on local services):

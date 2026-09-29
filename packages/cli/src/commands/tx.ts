@@ -100,14 +100,14 @@ export function registerTxCommands(program: Command) {
   tx.command("plan [from] [to]")
     .description(`Build a transaction plan artifact ${UI.maturity("stable")}`)
     .option("--target <name>", "Named execution target from hardkas.config.ts")
-    .option("--from <accountOrAddress>", "Sender account name or address")
-    .option("--to <address>", "Recipient address")
-    .option("--amount <kas>", "Amount in KAS")
-    .option("--network <name>", "Kaspa network name")
-    .option("--fee-rate <sompiPerMass>", "Fee rate in sompi per mass")
+    .option("--from <accountOrAddress>", "Sender account name or address (default: alice)")
+    .option("--to <address>", "Recipient address or account name (default: bob)")
+    .option("--amount <kas>", "Amount in KAS, up to 8 decimals (default: 1)")
+    .option("--network <name>", "simulated, simnet, devnet, testnet-10, testnet-12 or mainnet (default: the config's default target)")
+    .option("--fee-rate <sompiPerMass>", "Whole sompi per gram of mass (default: 1 in the simulator, 100 on real networks; not a live estimate)")
     .option("--change <accountOrAddress>", "Change destination (account name or address); default: the sender")
     .option("--provider <type>", "Provider mode (auto, rpc, simulated)", "auto")
-    .option("--url <url>", "RPC URL (optional override)")
+    .option("--url <url>", "Node wRPC URL (default: ws://127.0.0.1:18210 for simnet and devnet; the config's rpcUrl is not used)")
     .option("--out <path>", "Save plan as artifact JSON")
     .option("--save <path>", "Alias for --out (Save plan as artifact JSON)")
     .option("--workflow-id <id>", "Optional deterministic workflow ID override")
@@ -226,12 +226,14 @@ export function registerTxCommands(program: Command) {
     .description(`Sign a transaction plan artifact ${UI.maturity("stable")}`)
     .option("--account <name>", "Account name to sign with")
     .option("--out <path>", "Save signed artifact JSON")
-    .option("--fixture", "Use fixture signer for Docker testing on simnet", false)
-    .option("--allow-mainnet-signing", "Allow signing for mainnet", false)
-    .option("--threshold <number>", "Multisig threshold")
-    .option("--required-signers <list>", "Comma-separated list of required signers")
+    .option("--fixture", "Sign with the built-in fixture test key (any network except mainnet)", false)
+    .option("--allow-mainnet-signing", "Mainnet signing stays refused in this release; the flag only lets synthetic --threshold entries through", false)
+    .option("--threshold <number>", "Synthetic multisig threshold for tests (no Kaspa multisig script is produced)")
+    .option("--required-signers <list>", "Comma-separated signers, no spaces (with --threshold above 1)")
     .option("--append", "Append signature to a partially signed transaction", false)
     .option("--target <name>", "Named execution target from hardkas.config.ts")
+    .option("--password-env <env>", "Read the encrypted account's keystore password from this environment variable")
+    .option("--password-stdin", "Read the encrypted account's keystore password from stdin", false)
     .option("--wait-lock", "Wait for workspace lock if held", false)
     .option("--lock-timeout <ms>", "Lock wait timeout in ms", "30000")
     .option("--json", "Output as JSON", false)
@@ -247,6 +249,8 @@ export function registerTxCommands(program: Command) {
           requiredSigners?: string;
           append: boolean;
           target?: string;
+          passwordEnv?: string;
+          passwordStdin: boolean;
           waitLock: boolean;
           lockTimeout: string;
           json: boolean;
@@ -302,7 +306,10 @@ export function registerTxCommands(program: Command) {
                   : {}),
                 ...(options.requiredSigners !== undefined
                   ? { requiredSigners: options.requiredSigners.split(",") }
-                  : {})
+                  : {}),
+                ...(options.passwordEnv ? { passwordEnv: options.passwordEnv } : {}),
+                passwordStdin: options.passwordStdin,
+                json: options.json
               });
 
               if (options.out) await writeArtifact(options.out, signedArtifact);
@@ -414,23 +421,23 @@ export function registerTxCommands(program: Command) {
     .description(
       `Broadcast a signed transaction or send directly ${UI.maturity("stable")}`
     )
-    .option("--target <name>", "Named execution target from hardkas.config.ts")
+    .option("--target <name>", "Named execution target from hardkas.config.ts (signed-artifact mode: it must match the artifact and never redirects the send)")
     .option("--from <accountOrAddress>", "Sender (shortcut mode)")
     .option("--to <address>", "Recipient (shortcut mode)")
     .option("--amount <kas>", "Amount in KAS (shortcut mode)")
     .option("--network <name>", "Network name")
     .option("--fee-rate <sompiPerMass>", "Fee rate in sompi per mass (shortcut mode)")
-    .option("--provider <type>", "Provider mode (auto, rpc, simulated)", "auto")
+    .option("--provider <type>", "Provider mode (auto, rpc, simulated; signed-artifact mode only)", "auto")
     .option("--url <url>", "RPC URL (optional override)")
     .option(
       "--yes",
-      "Confirm broadcast. Required on any non-simulated network: without it the send is refused (NOT EXECUTED, exit 3) and nothing is written",
+      "Confirm broadcast. Required unless the network is simulated or simnet (in shortcut mode, unless --network simulated or simnet is given): without it the send is refused (NOT EXECUTED, exit 3) and nothing is written",
       false
     )
     .option("--wait-lock", "Wait for workspace lock if held", false)
     .option("--lock-timeout <ms>", "Lock wait timeout in ms", "30000")
     .option("--json", "Output as JSON", false)
-    .option("--track <label>", "Auto-track deployment with this label")
+    .option("--track <label>", "Signed-artifact mode: after an accepted broadcast, record a deployment with this label")
     .action(
       async (
         signedPath: string | undefined,

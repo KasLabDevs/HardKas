@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/sdk",
-  "version": "0.12.0-rc.25",
+  "version": "0.12.0-rc.26",
   "type": "module",
   "files": [
     "dist",
@@ -43,9 +43,7 @@
     "@hardkas/simulator": "workspace:*",
     "@hardkas/tx-builder": "workspace:*",
     "@hardkas/toolkit": "workspace:*",
-    "@hardkas/node-runner": "workspace:*",
-    "@hardkas/rpc-events": "workspace:*",
-    "@kaspa/core-lib": "^1.6.5"
+    "@hardkas/node-runner": "workspace:*"
   },
   "optionalDependencies": {
     "@hardkas/pskt-native": "workspace:*"

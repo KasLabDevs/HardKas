@@ -11,7 +11,7 @@ const { KASPAD_REFERENCE_IMAGE, CPUMINER_REFERENCE_IMAGE, CANONICAL_LOCALNET } =
 
 const cli = path.join(root, "packages", "cli", "dist", "index.js");
 const realNodeDir = path.join(root, "packages", "cli", "test-gauntlet", "real-node");
-const reportPath = path.join(root, "TOCCATA_GAUNTLET_RESULT.json");
+const reportPath = path.join(root, "docs", "internal", "audit", "gauntlet", "TOCCATA_GAUNTLET_RESULT.json");
 const phases = [];
 
 if (process.argv.includes("--help") || process.argv.includes("-h")) {
@@ -82,6 +82,7 @@ function writeReport(status, details = {}) {
     phases,
     ...details
   };
+  fs.mkdirSync(path.dirname(reportPath), { recursive: true });
   fs.writeFileSync(reportPath, `${JSON.stringify(report, null, 2)}\n`, "utf8");
 }
 
@@ -333,6 +334,7 @@ async function main() {
     },
     phases
   };
+  fs.mkdirSync(path.dirname(reportPath), { recursive: true });
   fs.writeFileSync(reportPath, `${JSON.stringify(report, null, 2)}\n`, "utf8");
   console.log("HARDKAS_TOCCATA_BASELINE_READY");
 }

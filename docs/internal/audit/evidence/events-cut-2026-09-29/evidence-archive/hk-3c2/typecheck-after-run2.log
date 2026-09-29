@@ -1,0 +1,5 @@
+﻿Scope: 2 of 62 workspace projects
+packages/kaspa-rpc typecheck$ tsc --noEmit
+packages/kaspa-rpc typecheck: Done
+packages/localnet typecheck$ tsc --noEmit
+packages/localnet typecheck: Done

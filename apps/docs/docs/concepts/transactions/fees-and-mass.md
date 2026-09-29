@@ -9,12 +9,10 @@ During the planning phase, HardKAS calculates the exact geometric properties of 
 
 ## Ownership of Math
 
-The authority that calculates mass and fees depends entirely on the planner implementation (see [Planning](./planning.md)).
+The pinned `kaspa-wasm` Generator calculates mass and fee on every surface, CLI and SDK, simulator and real node (see [Planning](./planning.md)):
 
-- **SDK Real-Node Path**: The upstream `kaspa-wasm Generator` acts as the definitive authority for mass and fee calculation based on network consensus parameters.
-- **CLI / Simulator Path**: The internal HardKAS planner (`buildPaymentPlan`) estimates mass synthetically based on input/output counts (`marginFeePerInput`) and computes the fee against the requested `feeRate`.
-
-*Note: Storage mass properties (where relevant for L2/Toccata) are handled dynamically by the respective planner.*
+- **Fee**: the requested `feeRate` (sompi per gram) times the transaction's compute mass, never below the network minimum.
+- **Storage mass (KIP-9)**: small outputs make a transaction non-standard. When the change a payment would leave is too small for a standard output, the plan is refused (`CHANGE_BELOW_STANDARD_OUTPUT`: adjust the amount, or send the whole balance); the remainder is not turned into fee. A payment output that is too small is refused as `OUTPUT_BELOW_STANDARD_AMOUNT`.
 
 ## Change Address
 

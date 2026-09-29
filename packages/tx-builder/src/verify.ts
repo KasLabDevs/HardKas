@@ -1,5 +1,5 @@
 import { TxPlan, TxOutput } from "./index.js";
-import { measureUpstreamMass } from "./mass.js";
+import { measureRelayFee, measureUpstreamMass, type UpstreamMassInput } from "./mass.js";
 
 /**
  * Kaspa dust threshold in sompi.
@@ -130,7 +130,7 @@ export function verifyTxPlanSemantics(
   // 3. Mass & Fee Consistency: recomputed by the pinned SDK over the plan's own
   //    unsigned transaction (real amounts, so storage mass is included). A plan
   //    without inputs has no mass; ZERO_INPUTS above already reports it.
-  const upstream = plan.inputs.length === 0 ? undefined : measureUpstreamMass({
+  const massInput: UpstreamMassInput = {
     networkId: ePlan.networkId,
     version: plan.version,
     inputs: plan.inputs.map((i) => ({
@@ -142,7 +142,8 @@ export function verifyTxPlanSemantics(
       ...plan.outputs.map((o) => ({ amountSompi: BigInt(o.amountSompi), address: o.address, scriptPublicKey: o.scriptPublicKey })),
       ...(plan.change ? [{ amountSompi: BigInt(plan.change.amountSompi), address: plan.change.address }] : [])
     ]
-  });
+  };
+  const upstream = plan.inputs.length === 0 ? undefined : measureUpstreamMass(massInput);
   const recomputedMass = upstream ? upstream.mass : 0n;
 
   if (upstream && recomputedMass !== BigInt(plan.estimatedMass)) {
@@ -162,11 +163,16 @@ export function verifyTxPlanSemantics(
       `Mass ${recomputedMass} exceeds the maximum standard transaction mass ${upstream.maximumStandardMass}: the node will not relay it`
     );
   } else if (recomputedFeeSompi < upstream.minimumFeeSompi) {
-    addIssue(
-      "FEE_BELOW_NETWORK_MINIMUM",
-      "critical",
-      `Fee ${recomputedFeeSompi} sompi is below the ${upstream.minimumFeeSompi} sompi the node requires for mass ${recomputedMass}`
-    );
+    // The SDK's figure prices storage mass too; the node relays at its minimum rate per
+    // gram of compute mass.
+    const relay = measureRelayFee(massInput);
+    if (recomputedFeeSompi < relay.relayFeeSompi) {
+      addIssue(
+        "FEE_BELOW_NETWORK_MINIMUM",
+        "critical",
+        `Fee ${recomputedFeeSompi} sompi is below the ${relay.relayFeeSompi} sompi the node requires for compute mass ${relay.computeMass}`
+      );
+    }
   }
 
   if (planFeeSompi !== recomputedFeeSompi) {

@@ -106,7 +106,7 @@ export async function runAccountsConsolidate(options: AccountsConsolidateOptions
 
   if (options.batchSize > 512) {
     throw new Error(
-      "Batch size cannot exceed 512 inputs to avoid TOO_MANY_INPUTS_FOR_SINGLE_TX errors."
+      "Batch size cannot exceed 512 inputs."
     );
   }
 
@@ -143,20 +143,14 @@ export async function runAccountsConsolidate(options: AccountsConsolidateOptions
 
   if (options.dryRun || !options.execute) {
     if (options.json) {
-      getOutput().writeLine(
-        JSON.stringify(
-          {
-            account: resolvedAccount.name,
-            before: beforeCount,
-            afterEstimate,
-            batches: batches.length,
-            maxInputs: options.batchSize,
-            strategy: "smallest-first"
-          },
-          null,
-          2
-        )
-      );
+      getOutput().writeJson({
+        account: resolvedAccount.name,
+        before: beforeCount,
+        afterEstimate,
+        batches: batches.length,
+        maxInputs: options.batchSize,
+        strategy: "smallest-first"
+      });
     } else {
       getOutput().writeLine(`HardKAS UTXO Consolidation\n`);
       getOutput().writeLine(`Account:\n ${resolvedAccount.name}\n`);
@@ -225,21 +219,15 @@ export async function runAccountsConsolidate(options: AccountsConsolidateOptions
   const finalUtxos = getSpendableUtxos(localState, resolvedAccount.address!);
 
   if (options.json) {
-    getOutput().writeLine(
-      JSON.stringify(
-        {
-          account: resolvedAccount.name,
-          before: beforeCount,
-          afterEstimate,
-          batches: batches.length,
-          maxInputs: options.batchSize,
-          strategy: "smallest-first",
-          receipts
-        },
-        null,
-        2
-      )
-    );
+    getOutput().writeJson({
+      account: resolvedAccount.name,
+      before: beforeCount,
+      afterEstimate,
+      batches: batches.length,
+      maxInputs: options.batchSize,
+      strategy: "smallest-first",
+      receipts
+    });
   } else {
     getOutput().writeLine(`\nConsolidation complete.`);
     getOutput().writeLine(`Receipts generated: ${receipts.length}`);

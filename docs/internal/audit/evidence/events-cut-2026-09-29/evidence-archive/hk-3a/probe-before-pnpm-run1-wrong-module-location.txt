@@ -1,0 +1,27 @@
+﻿node : node:internal/modules/package_json_reader:301
+En línea: 1 Carácter: 651
++ ... ocation $c; node "$d\sdk-surface-probe.mjs" $repo *> "$o\probe-before ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (node:internal/m...json_reader:301:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  throw new ERR_MODULE_NOT_FOUND(packageName, fileURLToPath(base), null);
+        ^
+
+Error [ERR_MODULE_NOT_FOUND]: Cannot find package '@hardkas/sdk' imported from C:\Users\jrodr\AppData\Local\Temp\claude
+\C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo\21f9a2e4-33ac-4300-9366-aff402f85900\scratchpad\cut6-events\sd
+k-surface-probe.mjs
+    at Object.getPackageJSONURL (node:internal/modules/package_json_reader:301:9)
+    at packageResolve (node:internal/modules/esm/resolve:764:81)
+    at moduleResolve (node:internal/modules/esm/resolve:855:18)
+    at defaultResolve (node:internal/modules/esm/resolve:988:11)
+    at #cachedDefaultResolve (node:internal/modules/esm/loader:697:20)
+    at #resolveAndMaybeBlockOnLoaderThread (node:internal/modules/esm/loader:714:38)
+    at ModuleLoader.resolveSync (node:internal/modules/esm/loader:746:52)
+    at #resolve (node:internal/modules/esm/loader:679:17)
+    at ModuleLoader.getOrCreateModuleJob (node:internal/modules/esm/loader:599:35)
+    at node:internal/modules/esm/loader:628:32 {
+  code: 'ERR_MODULE_NOT_FOUND'
+}
+
+Node.js v24.15.0

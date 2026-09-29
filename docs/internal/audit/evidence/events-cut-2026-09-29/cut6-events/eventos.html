@@ -1,0 +1,353 @@
+<title>Eventos y UtxoContext</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700&family=Source+Sans+3:wght@400;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: one reading column, same series as the earlier Surface Cut reports: verdict, live result, what fails and why, what substitutes, runs kept, side findings, proposed cut. */
+:root {
+  --bg: #f5f7f7;
+  --panel: #ffffff;
+  --fg: #16201f;
+  --muted: #56615f;
+  --line: #d6dddc;
+  --accent: #1f8a7e;
+  --accent-soft: #e2f1ef;
+  --ok: #1d7a45;
+  --warn: #9a5b00;
+  --bad: #b3261e;
+  --display: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1514; --panel: #161e1d; --fg: #e3ebea; --muted: #9aa8a6; --line: #2a3634;
+    --accent: #5cc4b6; --accent-soft: #19302d; --ok: #5ccf8c; --warn: #e2a64a; --bad: #f08a80;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1514; --panel: #161e1d; --fg: #e3ebea; --muted: #9aa8a6; --line: #2a3634;
+  --accent: #5cc4b6; --accent-soft: #19302d; --ok: #5ccf8c; --warn: #e2a64a; --bad: #f08a80;
+  color-scheme: dark;
+}
+body { background: var(--bg); color: var(--fg); font: 16px/1.55 var(--body); }
+.wrap { max-width: 54rem; margin: 0 auto; padding-inline: 16px; padding-block: 2.5rem 4rem; display: grid; gap: 2.25rem; }
+header { display: grid; gap: .6rem; }
+.eyebrow { font: 600 .75rem/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+h1 { font: 700 2.1rem/1.1 var(--display); margin: 0; text-wrap: balance; }
+h2 { font: 700 1.2rem/1.25 var(--display); margin: 0; text-wrap: balance; }
+h3 { font: 700 1rem/1.3 var(--display); margin: 0; }
+p { margin: 0; max-width: 68ch; }
+.lede { color: var(--muted); }
+.verdict { display: flex; flex-wrap: wrap; gap: .6rem; }
+.chip { display: inline-flex; align-items: baseline; gap: .45rem; padding: .45rem .7rem; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); font: 600 .85rem/1.2 var(--mono); font-variant-numeric: tabular-nums; }
+.chip.ok b { color: var(--ok); }
+.chip.warn b { color: var(--warn); }
+.chip.bad b { color: var(--bad); }
+section { display: grid; gap: .9rem; min-width: 0; }
+ul { margin: 0; padding-left: 1.2rem; display: grid; gap: .45rem; max-width: 72ch; }
+code { font-family: var(--mono); font-size: .86em; background: var(--accent-soft); padding: .05em .3em; border-radius: 3px; overflow-wrap: anywhere; }
+.table-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); }
+table { border-collapse: collapse; width: 100%; font-size: .9rem; }
+th, td { text-align: left; padding: .55rem .75rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font: 600 .72rem/1.2 var(--mono); letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
+tr:last-child td { border-bottom: 0; }
+td.num { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+td.num.bad { color: var(--bad); font-weight: 600; }
+td.num.ok { color: var(--ok); font-weight: 600; }
+td.group { font: 600 .72rem/1.2 var(--mono); letter-spacing: .05em; text-transform: uppercase; color: var(--accent); background: var(--accent-soft); }
+.note { color: var(--muted); font-size: .88rem; max-width: 72ch; }
+.steps { display: grid; gap: .8rem; }
+.step { display: grid; gap: .45rem; padding: .9rem 1rem; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); min-width: 0; }
+.step .tag { font: 600 .72rem/1 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--accent); }
+footer { color: var(--muted); font-size: .88rem; display: grid; gap: .35rem; border-top: 1px solid var(--line); padding-top: 1rem; }
+@media (max-width: 30rem) { h1 { font-size: 1.7rem; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Recortes siguientes · punto 3 de 6 · 29 sep – 2 oct 2026</div>
+    <h1>Eventos y UtxoContext</h1>
+    <p class="lede">Antes de recortar la capa de eventos de HardKAS, hemos demostrado en vivo qué funciona y qué la sustituye. Diez observadores vigilan la misma dirección en el localnet canónico. Primero se mina, después se reinicia el nodo y se vuelve a minar. La prueba en vivo no tocó el repo. Después se ha cortado paso a paso, con el visto bueno del revisor. 3a y 3b están commiteados. 3c-1 y 3c-2 están hechos y sin commit.</p>
+    <div class="verdict">
+      <span class="chip bad"><code>hardkas.events</code> <b>0 eventos</b></span>
+      <span class="chip bad">toolkit watch tras reiniciar <b>0</b></span>
+      <span class="chip ok">UtxoContext upstream <b>= nodo</b></span>
+      <span class="chip ok">3a <b>hecho · gate 2014 / 0 / 28</b></span>
+      <span class="chip ok">Prueba de 3b <b>hace falta UtxoContext</b></span>
+      <span class="chip ok">3b <b>hecho · gate 2040 / 0 / 28</b></span>
+      <span class="chip ok">3c-1 <b>hecho · gate 2042 / 0 / 28</b></span>
+      <span class="chip ok">3c-2 <b>hecho · gate 2038 / 0 / 28</b></span>
+    </div>
+  </header>
+
+  <section>
+    <h2>3c-2 hecho: <code>KaspaRpcClient</code> pasa a ser solo petición/respuesta</h2>
+    <p>La base es el árbol cualificado de 3c-1, todavía sin commit. Se trabajó en el mismo worktree aislado y al final se copió al checkout byte a byte. 3c-2 no toca ningún fichero de 3c-1, así que se pueden commitear por separado.</p>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Paso</th><th>Resultado</th></tr></thead>
+        <tbody>
+          <tr><td>Qué se quita</td><td><code>subscribeToUtxosChanged</code>, <code>subscribeToVirtualChainChanged</code>, <code>on</code> y <code>off</code>, junto con 4 tipos. Salen de la interfaz y de sus 5 implementaciones (cuatro en kaspa-rpc y la de localnet). También se van el reenganche <code>onConnect</code> de la sesión, que no era público, y los 9 tests de suscripciones.</td></tr>
+          <tr><td>Regresión primero</td><td>La primera ejecución se conserva. Tuvo 2 fallos de más: mi comentario nombraba una clase que la guarda de 3c-1 prohíbe, y la guarda tenía razón. En la segunda fallan solo los 4 de «sigue publicado». La comprobación «sin consumidores» pasa.</td></tr>
+          <tr><td>Primer typecheck</td><td>localnet falló porque leía los tipos del <code>dist</code> viejo de kaspa-rpc. Era orden de build; tras la build pasa.</td></tr>
+          <tr><td><code>dist</code> limpio</td><td>Se borraron todos los <code>packages/*/dist</code> y se reconstruyó. Los tarballs salen idénticos a los de la build incremental normal.</td></tr>
+          <tr><td>Tarballs</td><td>Solo cambian <code>dist/index.js</code> e <code>index.d.ts</code> de kaspa-rpc y localnet. La lista pública de kaspa-rpc pasa de 64 a 60 nombres: salen exactamente los 4 tipos. Ningún fichero menciona ya lo retirado.</td></tr>
+          <tr><td>Consumidores npm y pnpm estricto</td><td>Son idénticos a antes salvo los 4 miembros. Siguen funcionando la petición/respuesta, el mock, <code>LoadBalancedRpcProvider</code>, <code>Hardkas.open()</code>, <code>watch()</code> y <code>createUtxoContext</code>.</td></tr>
+          <tr><td>Gate completo</td><td class="num ok">2038 / 0 / 28 a la primera</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <ul>
+      <li><b>Un dato revisado:</b> los intentos locales a <code>18210</code> bajaron de 5 a 3. No es el corte. El mismo árbol de 3c-1 dio 5 en un gate y 3 en otro. Los hacen <code>dev-server/health.test.ts</code> y <code>sdk-parity-0-9-1.test.ts</code>, atribuidos con traza.</li>
+      <li><b>Es una ruptura respecto a rc.25,</b> también para <code>hk.rpc</code> del SDK. El texto para las notas de versión está en el ledger.</li>
+      <li><b>No se ha tocado:</b> la clase <code>LoadBalancedRpcProvider</code> (solo pierde los 4 miembros y su getter privado <code>primary</code>), <code>@hardkas/query</code> <code>./*</code> ni <code>packages/cli/out/</code>.</li>
+      <li><b>Visto y fuera de alcance:</b> <code>KaspaWrpcClient.onNotification</code>, un gancho de notificaciones con 0 consumidores.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>3c-1 hecho: fuera <code>resilient-subscriber</code> y <code>WalletSubscriptionManager</code></h2>
+    <p>La base es <code>a1e774f6e</code>. Otra sesión estaba tocando el checkout del propietario, así que todo se ha construido, empaquetado y probado en un worktree aislado. Al final se copió al checkout byte a byte. No hay commit.</p>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Paso</th><th>Resultado</th></tr></thead>
+        <tbody>
+          <tr><td>Regresión primero, sobre HEAD</td><td>Fallan las 5 aserciones de «sigue publicado» y pasan las 2 de «sin consumidores». El gate da 2042 / 5 / 28, que reproduce los 2040 de la base.</td></tr>
+          <tr><td>Corte</td><td>Se borran 4 ficheros: las dos piezas y sus tests. Se editan el export <code>./internal/*</code>, su entrada de build, la reexportación del toolkit y una aserción del test del resolver.</td></tr>
+          <tr><td>Tarballs, primer resultado (se conserva)</td><td>kaspa-rpc sale limpio. toolkit seguía empaquetando <code>dist/subscriptions.*</code>, porque compila con <code>tsc</code>, que no limpia <code>dist</code>.</td></tr>
+          <tr><td>Arreglo de 1 línea</td><td>La build de toolkit borra <code>dist</code> antes de <code>tsc</code>. Es un comando de <code>node</code>, que funciona en <code>cmd.exe</code> y en sh.</td></tr>
+          <tr><td>Tarballs finales</td><td>De 32 paquetes, 19 son idénticos byte a byte y 11 solo cambian el orden del <code>package.json</code>. kaspa-rpc pierde 3 ficheros y toolkit 4. Ningún fichero menciona los nombres retirados.</td></tr>
+          <tr><td>Consumidores npm y pnpm estricto</td><td>Son idénticos a antes salvo el <code>exports</code> de kaspa-rpc. El subpath da <code>ERR_PACKAGE_PATH_NOT_EXPORTED</code>.</td></tr>
+          <tr><td>Gate completo</td><td class="num ok">2042 / 0 / 28 a la primera</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <ul>
+      <li><b>No se ha tocado:</b> <code>createUtxoContext</code>, <code>watch()</code>, las suscripciones de <code>KaspaRpcClient</code> (que son 3c-2), <code>LoadBalancedRpcProvider</code>, <code>Hardkas.open()</code> ni <code>packages/cli/out/</code>.</li>
+      <li>El arreglo de toolkit también quita del próximo tarball <code>dist/silver/*</code>. Son restos del corte de Silver que siguen en el checkout del propietario. rc.26 no está publicada, así que todavía no ha salido nada de eso.</li>
+      <li><b>Fuera de 3c-1:</b> <code>@hardkas/query</code> exporta <code>./*</code>, pero solo publica <code>index</code>. Desde npm, <code>@hardkas/query/engine</code> da <code>ERR_MODULE_NOT_FOUND</code>.</li>
+      <li><b>Siguiente:</b> 3c-2, ya hecho (ver arriba).</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>3c: inventario en solo lectura (3c-1 y 3c-2 ya hechos)</h2>
+    <p>La base es el commit <code>a1e774f6e</code>: 3b ya commiteado y publicado, que coincide exactamente con el árbol cualificado (2040 / 0 / 28). <code>createUtxoContext</code> queda fuera de 3c, porque ahora es el envoltorio canónico.</p>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Pieza</th><th>Quién la usa en producción</th><th>Qué se publica</th><th>Tests</th></tr></thead>
+        <tbody>
+          <tr><td><code>resilient-subscriber</code> (kaspa-rpc, 226 líneas)</td><td class="num bad">nadie</td><td><code>@hardkas/kaspa-rpc/internal/resilient-subscriber</code>, el único fichero bajo <code>./internal/*</code></td><td class="num">2 + 1 aserción</td></tr>
+          <tr><td>Suscripciones de <code>KaspaRpcClient</code>: <code>subscribeTo*</code>, <code>on</code>, <code>off</code> y 4 tipos</td><td class="num bad">nadie (su único cliente era <code>WalletSubscriptionManager</code>)</td><td>La entrada principal de kaspa-rpc. Tiene 6 implementaciones en kaspa-rpc y localnet; la de localnet no hace nada.</td><td class="num">9</td></tr>
+          <tr><td><code>WalletSubscriptionManager</code> y 2 tipos (toolkit)</td><td class="num bad">nadie desde 3b</td><td>La entrada principal del toolkit</td><td class="num">3</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <ul>
+      <li>La documentación pública no menciona ninguna de estas piezas. Están publicadas en npm, así que el uso externo es desconocido.</li>
+      <li><b>No queda nada sin cubrir:</b> <code>tx wait</code> y <code>tx status</code> sondean, <code>watch()</code> va sobre <code>UtxoContext</code>, y para flujos crudos de notificaciones está el <code>RpcClient</code> de kaspa-wasm.</li>
+      <li><b>Opciones:</b>
+        <ul>
+          <li><b>3c-1:</b> quitar <code>resilient-subscriber</code> y <code>WalletSubscriptionManager</code>, sin tocar la interfaz.</li>
+          <li><b>3c-2:</b> quitar las suscripciones de <code>KaspaRpcClient</code> y de sus 6 implementaciones.</li>
+        </ul>
+        Recomiendo 1 y después 2, cada uno con su regresión, la prueba con tarballs y el gate.</li>
+      <li><b>Fuera de 3c:</b> <code>LoadBalancedRpcProvider</code> tampoco tiene consumidores, y <code>packages/cli/out/</code> versiona 380 ficheros de compilación antigua.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>3b hecho: <code>WalletToolkit.watch()</code> sobre <code>UtxoContext</code></h2>
+    <p>Sin commit. <code>createUtxoContext</code> aplica ahora la regla de upstream: en cada reconexión, <code>clear()</code> → <code>trackAddresses()</code>. Hace una pasada cada vez, agrupa las reconexiones que llegan mientras tanto y no registra nada después de <code>stop()</code>.</p>
+    <p><code>watch()</code> se apoya en esa regla con su propio cliente:</p>
+    <ul>
+      <li><code>transaction</code> solo para actividad observada en directo;</li>
+      <li>un <code>resync</code> con <code>reason: "reconnect"</code> tras cada reconexión;</li>
+      <li><code>utxos()</code> y <code>balance()</code> como estado observado;</li>
+      <li>error <code>WALLET_WATCH_REQUIRES_NODE</code> si no hay nodo.</li>
+    </ul>
+    <p>No se han tocado kaspa-rpc, <code>Hardkas.open()</code>, 3c ni otras suscripciones.</p>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Paso</th><th>Resultado</th></tr></thead>
+        <tbody>
+          <tr><td>Regresiones R1–R4 sobre HEAD, antes de tocar producción</td><td>17 de 18 fallan, cada una por su motivo previsto. Se ejecutaron dos veces y se conservan ambas.</td></tr>
+          <tr><td>La carrera pedida: dos reconexiones con el resync retenido y después <code>unwatch()</code></td><td>Un solo resync a la vez, ningún <code>trackAddresses()</code> ni ningún evento después de <code>unwatch()</code></td></tr>
+          <tr><td>Tests dirigidos, paquetes afectados y typecheck</td><td class="num ok">31 / 31 · 344 / 0 / 5 · 54 / 54</td></tr>
+          <tr><td>Tarballs en consumidores externos npm y pnpm estricto</td><td>«Antes» y «después» idénticos, salvo <code>watch()</code>: sin nodo ahora falla con un error claro. Antes, a través del SDK en la red simulada, no hacía nada.</td></tr>
+          <tr><td>Corte real con W = <code>watch()</code> cargado desde los tarballs</td><td><b>PASS a la primera.</b> <code>utxos()</code> coincide con el nodo en outpoints e importes, tras el resync y tras el gasto posterior. Hay un solo <code>resync</code>, igual a +cambio / −entradas gastadas. El hueco nunca aparece como <code>transaction</code>. La comprobación independiente da 19 de 19.</td></tr>
+          <tr><td>Gate completo</td><td class="num ok">2040 / 0 / 28 a la primera (los 2021 de HEAD + 19 tests nuevos)</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <ul>
+      <li><b>Encontrado durante la implementación:</b>
+        <ul>
+          <li>Upstream no emite un evento «external». Un gasto hecho fuera llega como <code>maturity</code> de tipo <code>external</code>, identificado por la transacción que creó los outputs gastados. El falso de los tests se corrigió a esa forma antes de tocar producción.</li>
+          <li>Con el nodo caído, la primera versión de <code>watch()</code> se quedaba colgada. La regresión R5 lo demostró primero, y ahora la conexión inicial se corta a los 30 s con <code>WALLET_WATCH_NODE_UNREACHABLE</code>.</li>
+        </ul>
+      </li>
+      <li><b>Límite conocido:</b> si un re-snapshot falla con la conexión todavía activa, <code>watch()</code> lo registra y espera a la siguiente reconexión.</li>
+      <li><b>Lo siguiente es 3c y no se ha empezado.</b> <code>WalletSubscriptionManager</code> y <code>resilient-subscriber</code> se quedan sin consumidores en tiempo de ejecución. <code>createUtxoContext</code> se conserva como el envoltorio.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Prueba de 3b: ¿basta volver a suscribirse?</h2>
+    <p>La pregunta era esta: si el nodo cambia mientras el cliente está desconectado, ¿basta con volver a suscribirse, o hace falta que <code>UtxoContext</code> rehaga la foto con <code>clear()</code> → <code>trackAddresses()</code>?</p>
+    <p>Para comprobarlo, un proxy corta a los candidatos mientras el nodo sigue funcionando. Durante el corte se hace un gasto conocido desde la dirección vigilada A: 2 entradas y 1 cambio que vuelve a A. Tras reconectar se hace un segundo gasto de control.</p>
+    <p>El criterio se fijó antes del run. Antes hubo un gate sobre HEAD <code>07354a24b</code>: PASS, 2021 / 0 / 28. Se hizo una única ejecución de registro.</p>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Candidato</th><th>Antes del corte</th><th>Durante el corte</th><th>Tras reconectar</th><th>Tras el gasto de control</th></tr></thead>
+        <tbody>
+          <tr><td><b>R</b> · <code>RpcClient</code> que solo vuelve a suscribirse</td><td class="num ok">exacto</td><td class="num bad">+2 / −1</td><td class="num bad">+2 / −1</td><td class="num bad">+2 / −1</td></tr>
+          <tr><td><b>U</b> · <code>UtxoContext</code> con <code>clear()</code> → <code>trackAddresses()</code></td><td class="num ok">exacto</td><td class="num bad">+2 / −1</td><td class="num ok">exacto</td><td class="num ok">exacto</td></tr>
+          <tr><td><b>L</b> · control conectado directo al nodo, nunca cortado</td><td class="num ok">exacto</td><td class="num ok">exacto</td><td class="num ok">exacto</td><td class="num ok">exacto</td></tr>
+          <tr><td>K · kaspa-rpc con su restauración actual (diagnóstico)</td><td class="num ok">exacto</td><td class="num bad">+2 / −1</td><td class="num bad">+2 / −1</td><td class="num bad">+2 / −1</td></tr>
+          <tr><td>U0 · <code>UtxoContext</code> sin la regla (diagnóstico)</td><td class="num ok">exacto</td><td class="num bad">+2 / −1</td><td class="num bad">+2 / −1</td><td class="num bad">+4 / −2</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note">«+2 / −1» significa que al candidato le sobran exactamente las 2 entradas gastadas durante el corte y le falta exactamente el cambio. La referencia es una consulta fresca al nodo, comparando outpoints e importes; en todas las fotos los importes coinciden.</p>
+    <ul>
+      <li><b>Veredicto: hace falta <code>UtxoContext</code> (UTXOCONTEXT_REQUIRED).</b> Las 7 condiciones de validez se cumplen y no hubo errores. Durante el corte no hubo ninguna conexión por el proxy.</li>
+      <li>R vuelve a estar vivo: aplica en directo el gasto de control. Aun así, conserva para siempre lo que cambió mientras estuvo fuera, un saldo fantasma más un cambio que no ve. La restauración actual de kaspa-rpc hace exactamente lo mismo.</li>
+      <li><code>UtxoContext</code> con la regla vuelve a leer el estado y queda exacto, tanto tras reconectar como después.</li>
+      <li><b>Comprobación independiente:</b> un script aparte rehace la aritmética de conjuntos sobre las fotos completas, sin usar la función del veredicto, y confirma cada hecho. Las fotos completas y los outpoints esperados están guardados.</li>
+      <li><b>3b no se ha empezado.</b> Primero va este informe y su revisión; después, una decisión explícita de implementación.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>3a hecho: <code>hardkas.events</code> y <code>@hardkas/rpc-events</code> retirados</h2>
+    <p>Sin commit. Solo se ha borrado lo autorizado: <code>packages/rpc-events/</code> y <code>sdk/src/observe/transport.ts</code>. Cada criterio de cierre se ha medido frente a la línea base «antes», HEAD <code>fdc1d2ddc</code>: los mismos tarballs, los mismos consumidores externos y un HARDKAS_HOME vacío en cada uno.</p>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Criterio de cierre</th><th>Antes</th><th>Después</th></tr></thead>
+        <tbody>
+          <tr><td>¿El sdk empaquetado expone <code>events</code>?</td><td>Sí</td><td>No. Es el único miembro que desaparece. Los 49 exports y el prototipo son idénticos, y el <code>d.ts</code> ya no lo menciona.</td></tr>
+          <tr><td>Paquetes publicados que requieren rpc-events</td><td>El sdk: en el manifiesto, en <code>dist/index.js</code> y en <code>dist/index.d.ts</code></td><td>Ninguno: 0 menciones en 32 tarballs y 488 ficheros, incluido el bundle de la CLI</td></tr>
+          <tr><td>¿Un consumidor externo puede resolverlo?</td><td>Sí, desde el consumidor y desde el sdk</td><td>No: <code>ERR_MODULE_NOT_FOUND</code> y <code>MODULE_NOT_FOUND</code>. Ninguna ruta de búsqueda de Node cae dentro del monorepo y NODE_PATH está vacío.</td></tr>
+          <tr><td>Resto del SDK y la CLI, en npm y en pnpm estricto</td><td>CLI 7/7; imports 31 y 39</td><td>CLI 7/7 con salida idéntica; imports 30 y 38, donde solo falta rpc-events; los mismos paquetes de terceros y el mismo <code>plan.json</code></td></tr>
+          <tr><td>Proyecto recién creado con <code>hardkas init</code></td><td>162 paquetes; <code>npm test</code> 1/1</td><td>161, solo falta rpc-events; <code>npm test</code> 1/1; los 8 pasos iguales</td></tr>
+          <tr><td>Gate hermético completo</td><td class="num">2022 / 0 / 28</td><td class="num ok">2014 / 0 / 28 a la primera</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <ul>
+      <li>El gate da exactamente lo previsto: 2022 − 10 tests de rpc-events + 2 de la regresión nueva, <code>surface-cut-events</code>. Esa regresión falla en HEAD por sus dos motivos.</li>
+      <li>El lockfile cambia en exactamente 16 líneas, todas eliminadas: el importer de rpc-events y el enlace desde el sdk. El typecheck pasa en 54/54 tareas del sdk y de todo lo que depende de él.</li>
+      <li>El borrado desenlazó sin seguirlos los 3 junctions de pnpm que había dentro. <code>packages/core</code> quedó intacto.</li>
+      <li>Tres runs de las sondas fallaron por el arnés y se conservan: el script resolvía los módulos desde su propia carpeta, la comparación consumía un iterador y además era sensible al orden de las claves.</li>
+      <li>La referencia generada (<code>apps/docs</code>) y <code>PUBLIC_API_SURFACE.md</code> las regenera el flujo de versión. La diferencia de typedoc queda guardada: se va la propiedad <code>events</code> y cambian las 3 notas de <code>HardkasQuery</code>.</li>
+      <li>Durante el trabajo apareció un cambio ajeno en <code>packages/cli/src/commands/accounts.ts</code>: textos de ayuda de la sesión paralela, escritos 12 s después de acabar el gate. No lo he tocado y no forma parte de 3a.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Resultado del run limpio</h2>
+    <p>Se hicieron 4 runs y se conservan todos. Aquí va el run 4: minero canónico, nodo estable en las tres fotos y ningún error del arnés. La cobertura tras el reinicio se mide contra un control, una suscripción nueva abierta después del reinicio.</p>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Observador</th><th>Fase 1</th><th>Tras reiniciar</th><th>Estado final frente al nodo (2468)</th></tr></thead>
+        <tbody>
+          <tr><td class="group" colspan="4">HardKAS</td></tr>
+          <tr><td><code>hardkas.events</code> tal como lo cablea el SDK</td><td class="num bad">0 / 1268</td><td class="num bad">0 / 1200</td><td>Nunca se suscribe al nodo</td></tr>
+          <tr><td><code>hardkas.events</code> tras <code>connect()</code></td><td class="num bad">0 / 1268</td><td class="num bad">0 / 1200</td><td>Le llegan 1019 notificaciones (1268/1268 UTXOs) y las descarta todas</td></tr>
+          <tr><td>toolkit <code>watch()</code></td><td class="num">1268 / 1268</td><td class="num bad">0 / 1200</td><td>Se queda muerto</td></tr>
+          <tr><td>kaspa-rpc, cliente sin otras llamadas</td><td class="num">1268 / 1268</td><td class="num bad">0 / 1200</td><td>1268: desfasado</td></tr>
+          <tr><td>kaspa-rpc con una llamada cada 2 s</td><td class="num">1268 / 1268</td><td class="num">1200 / 1200</td><td class="num ok">2468 = nodo</td></tr>
+          <tr><td class="group" colspan="4">Upstream (kaspa-wasm 2.1.0)</td></tr>
+          <tr><td><code>UtxoContext</code> con la regla documentada de reconexión</td><td class="num">751 / 1268 ¹</td><td class="num">683 / 1200 ¹</td><td class="num ok">1951 + 517 en stasis = nodo</td></tr>
+          <tr><td><code>UtxoContext</code> sin la regla</td><td class="num">751 / 1268 ¹</td><td class="num bad">0 / 1200</td><td>1268: desfasado</td></tr>
+          <tr><td><code>RpcClient</code>, sin volver a suscribirse</td><td class="num">1268 / 1268</td><td class="num bad">0 / 1200</td><td>1268: desfasado</td></tr>
+          <tr><td><code>RpcClient</code>, se vuelve a suscribir al conectar</td><td class="num">1268 / 1268</td><td class="num">1200 / 1200</td><td class="num ok">2468 = nodo</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note">¹ <code>UtxoContext</code> solo emite eventos cuando un coinbase sale de stasis: 751 = 1268 − 517 y 683 = 1200 − 517. Así lo documenta upstream. Su estado sí incluye las entradas en stasis. En el run 3 cuadró igual de exacto: 294 + 484 + 535 = 1313 y 1515 + 501 + 548 = 2564.</p>
+  </section>
+
+  <section>
+    <h2>Qué falla en HardKAS y por qué</h2>
+    <ul>
+      <li><b><code>hardkas.events</code> nunca entrega un evento de un nodo real.</b> Como lo cablea el SDK, no llega a suscribirse: el proveedor solo se suscribe si está «conectado», y el SDK nunca llama a <code>connect()</code>. Con <code>connect()</code>, las notificaciones llegan al transporte, pero el filtro por dirección (<code>reactive-event-provider.ts:161</code>) compara la dirección con <code>scriptPublicKey.scriptPublicKey</code>. En un UTXO de HardKAS eso es <code>undefined</code>, así que descarta todo; la línea siguiente lleva el comentario «Hack for sim». Tampoco se reconecta, y la reconciliación está simulada. Sus tests solo corren contra un transporte simulado. No hay comportamiento que conservar.</li>
+      <li><b>Las suscripciones de kaspa-rpc mueren en silencio si se reinicia el nodo.</b> La sesión conecta con la estrategia <code>fallback</code> y solo se reconecta en la siguiente llamada RPC. Su propio test lo da por hecho: «the next call opens a new official client». Un watcher que solo escucha nunca hace esa llamada. <code>WalletToolkit.watch()</code> hereda el problema y se quedó en 0 tras el reinicio en los 4 runs.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Qué lo sustituye</h2>
+    <ul>
+      <li><b><code>UtxoProcessor</code> + <code>UtxoContext</code> de kaspa-wasm, con la regla documentada.</b> La regla es llamar a <code>clear()</code> y después a <code>trackAddresses()</code> cada vez que vuelve a conectar; kaspa.d.ts la marca como «IMPORTANT». Con ella sigue vivo tras el reinicio, y su estado coincide con el nodo en cada foto, stasis incluido. Además aporta madurez, reorgs y balance, que HardKAS no tiene. Sin la regla se queda desfasado, como advierte upstream.</li>
+      <li><b>Arreglo mínimo, si se quisiera conservar la suscripción de kaspa-rpc.</b> El <code>RpcClient</code> oficial ya reconecta solo, pero el nodo olvida la suscripción. Volver a suscribirse en el evento <code>connect</code> la recupera entera.</li>
+      <li><b>Falta una prueba.</b> <code>trackAddresses</code> vuelve a leer el estado al registrarse; una simple re-suscripción no lo hace. Eso solo importa si algo cambia mientras el cliente está desconectado, y en el run 4 el reinicio no cambió nada. Si hay que elegir entre las dos opciones del paso 3b, puedo preparar una prueba determinista de ese hueco.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Runs fallidos: se conservan y se clasifican</h2>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Run</th><th>Qué pasó</th><th>Causa</th></tr></thead>
+        <tbody>
+          <tr><td class="num">1</td><td>Los observadores upstream leen 0, aunque llegaron 1416 eventos</td><td>Arnés: los eventos son objetos WASM (<code>TransactionRecord</code> necesita <code>serialize()</code>) y el extractor solo recorría objetos planos. La señal de kaspa-rpc y toolkit era válida.</td></tr>
+          <tr><td class="num">2</td><td>La verdad de referencia no se estabiliza: 717 → 825 en 3 s, 2523 tras el reinicio</td><td>Arnés: el minero iba sin <code>--throttle 5</code>, al contrario que el localnet canónico, y el nodo se quedaba atrás. La vivacidad frente al control sí vale: 5153/5153 frente a 0.</td></tr>
+          <tr><td class="num">3</td><td>Todos los conjuntos reconstruidos dan 0</td><td>Arnés: aplicaba <code>added</code> antes que <code>removed</code>. El nodo reemite un outpoint cuando cambia su DAA score, como eliminado y añadido en la misma notificación: 11134 de 11134, misma cantidad. Hay que aplicar primero lo eliminado. Ningún código de HardKAS reconstruye conjuntos así.</td></tr>
+          <tr><td class="num">2–3</td><td><code>hardkas.events</code> recibía 0 incluso por debajo del filtro</td><td>El SDK estaba hablando con el simulador, no con el nodo. Ver el primer hallazgo aparte. El run 4 abre el SDK con <code>network: "simnet"</code>.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Hallazgos aparte (no son de este corte)</h2>
+    <ul>
+      <li><b>El SDK ignora el contrato <code>execution</code> del config.</b> Con <code>execution.default: "localnet"</code> (simnet), <code>Hardkas.open(dir)</code> devuelve <code>network: "simulated"</code> y <code>hardkas.rpc</code> es <code>LocalnetSimulatedProvider</code>. El motivo: lee <code>defaultNetwork</code>, que por defecto vale «simulated» y que config declara obsoleto (<code>sdk/src/index.ts:268</code>). La CLI sí resuelve con <code>execution</code>. Un proyecto recién creado es coherente, porque <code>init</code> genera <code>"simulator"</code>. Pero quien cambie a localnet por la vía documentada sigue en el simulador desde el SDK. Merece su propio ticket.</li>
+      <li><b>Higiene:</b> <code>packages/rpc-events</code> versiona 26 ficheros compilados (<code>.js</code> y <code>.d.ts</code>) dentro de <code>src/</code> y <code>test/</code>. Si se aprueba el paso 3a, se van con el paquete.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Corte propuesto, pendiente de vuestra decisión</h2>
+    <p>Cada paso será atómico, con su regresión, la prueba con tarballs en un consumidor externo (la regla permanente) y el gate.</p>
+    <div class="steps">
+      <div class="step">
+        <span class="tag">3a · API pública · hecho, sin commit</span>
+        <h3>Quitar <code>hardkas.events</code>, <code>@hardkas/rpc-events</code> y el adaptador de transporte del SDK</h3>
+        <p>No funciona nada que haya que conservar y nadie lo llama por dentro. Quien necesite vigilar direcciones tiene <code>UtxoContext</code> con la regla, y lo documentaríamos en el SDK. Alcance:</p>
+        <ul>
+          <li>el campo <code>events</code> del SDK y su dependencia;</li>
+          <li>el paquete entero: 41 ficheros versionados;</li>
+          <li>las notas de <code>query.ts</code> que remiten a <code>hardkas.events</code>;</li>
+          <li>la línea en <code>gate-subpath-exports.test.ts</code>;</li>
+          <li><code>PUBLIC_API_SURFACE.md</code>, la documentación generada y el lockfile.</li>
+        </ul>
+        <p>Deprecar el paquete en npm te corresponde a ti.</p>
+      </div>
+      <div class="step">
+        <span class="tag">3b · opción (i) · hecho, sin commit</span>
+        <h3>Que <code>WalletToolkit.watch()</code> sobreviva a un reinicio</h3>
+        <p>Recomiendo la opción (i): apoyarlo en <code>UtxoContext</code> con la regla, que es la pieza upstream pensada para carteras. La alternativa (ii) es arreglar kaspa-rpc para que reconecte y se vuelva a suscribir, con una regresión que reinicie el nodo de verdad. Con 3a y la opción (i), la superficie de suscripciones de kaspa-rpc se queda sin llamadas reales, y entonces decidiríamos aparte qué hacer con ella.</p>
+      </div>
+      <div class="step">
+        <span class="tag">3c · piezas muertas</span>
+        <h3><code>resilient-subscriber</code> y <code>createUtxoContext</code></h3>
+        <ul>
+          <li><code>kaspa-rpc/internal/resilient-subscriber.ts</code> solo lo usan tests, pero se publica por <code>./internal/*</code>. Se quitaría con su test.</li>
+          <li><code>createUtxoContext</code> (tx-builder) también lo usa solo su test. O pasa a ser el único helper de HardKAS que envuelve <code>UtxoContext</code> con la regla, y lo usaría 3b(i), o se borra.</li>
+        </ul>
+      </div>
+    </div>
+    <p class="note">Orden recomendado: 3a → 3b → 3c. Quedan fuera <code>sync-daemon</code>, que solo usan apps de labs, e <code>IndexerToolkit.watch</code>, que es un bus local y no RPC.</p>
+  </section>
+
+  <footer>
+    <span>Base: HEAD <code>fdc1d2ddc</code>, con el contrato de <code>@hardkas/testing</code> ya commiteado. Nodo y WASM 2.1.0 fijados; HARDKAS_HOME aislado, el del gate, que solo contiene kaspa-wasm 2.1.0 y silverc 1.0.0. El localnet quedó parado y el minero eliminado.</span>
+    <span>Evidencia en la sesión (<code>cut6-events/</code>): scripts <code>events-diff*.mjs</code>, resultados <code>events-diff-1…4</code>, las sondas y <code>CUT-EVENTS-LEDGER.md</code>. Ni commit, ni push, ni cambio de versión.</span>
+    <span>3c-1: <code>cut7-3c1/LEDGER-3c1.md</code> y los logs del gate en la sesión. Los tarballs, los consumidores y las sondas de antes, después-1 y después-2 están en <code>%TEMP%\hk-3c1</code>, y el worktree cualificado en <code>%TEMP%\hk-3c1\wt</code>.</span>
+    <span>3c-2: <code>cut8-3c2/LEDGER-3c2.md</code> y los logs del gate, incluidas las trazas de los intentos a 18210. Los tarballs, los consumidores y las sondas de antes y después están en <code>%TEMP%\hk-3c2</code>.</span>
+  </footer>
+</div>

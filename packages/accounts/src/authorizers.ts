@@ -104,15 +104,12 @@ export class LazyAccountAuthorizer implements TxInputAuthorizer {
     }
 
     if (!pkValue && (account as any).keystorePath) {
-      try {
-        const { KeystoreManager } = await import("./keystore.js");
-        const { DEV_ACCOUNTS_PASSWORD } = await import("./dev-accounts.js");
-        const keystore = await KeystoreManager.loadEncryptedKeystore((account as any).keystorePath);
-        const unlock = await KeystoreManager.decryptEncryptedKeystore(keystore, DEV_ACCOUNTS_PASSWORD);
-        if (unlock.success && unlock.payload) {
-          pkValue = unlock.payload.privateKey;
-        }
-      } catch (e) {}
+      // Development accounts only open with the development password; this path takes no other.
+      const { unlockAccountKeystore } = await import("./kaspa-wasm-signer.js");
+      pkValue = await unlockAccountKeystore(
+        { name: this.accountName, keystorePath: (account as any).keystorePath, keystoreKind: (account as any).keystoreKind },
+        undefined
+      );
     }
 
     if (!pkValue) {

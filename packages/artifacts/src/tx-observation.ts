@@ -25,6 +25,7 @@ const big = (s: unknown): bigint | undefined => {
  * Pure coherence rules of ONE observation against itself and the upstream
  * parameters (no store, no RPC):
  *  - `chain_accepted` / `finality_reached`: `confirmationsBlue = point.sinkBlueScore − acceptingBlueScore`;
+ *  - `chain_accepted`: a `removedAcceptingBlockHash` is not the accepting block itself;
  *  - `finality_reached`: `finalityDepth` is the network's verified depth and `confirmationsBlue ≥ finalityDepth`;
  *  - `synthetic_executed` ⇔ `observer.kind = "synthetic"`;
  *  - `mempool_entry`/chain findings need an `rpc` observer.
@@ -55,6 +56,9 @@ export function checkTxObservationCoherence(observation: unknown): TxObservation
     }
     if (confirmations !== sinkBlue - acceptingBlue) {
       return { ok: false, message: `confirmationsBlue must be sinkBlueScore − acceptingBlueScore (${(sinkBlue - acceptingBlue).toString()})`, path: "finding.confirmationsBlue" };
+    }
+    if (f.type === "chain_accepted" && f.removedAcceptingBlockHash === f.acceptingBlockHash) {
+      return { ok: false, message: "removedAcceptingBlockHash names the accepting block itself", path: "finding.removedAcceptingBlockHash" };
     }
     if (f.type === "chain_accepted" && f.acceptingDaaScore !== undefined && f.confirmationsDaa !== undefined) {
       const daa = big(o.point.virtualDaaScore)! - big(f.acceptingDaaScore)!;
