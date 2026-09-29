@@ -31,9 +31,9 @@ export function registerRpcCommands(program: Command) {
 
   rpcCmd
     .command("health")
-    .description("Check RPC health")
+    .description("Check that the canonical localnet node (ws://127.0.0.1:18210) answers and is ready")
     .option("--wait", "Wait until healthy")
-    .option("--timeout <ms>", "Timeout in ms")
+    .option("--timeout <ms>", "With --wait: how long to wait in ms (default: 60000)")
     .option("--json", "Output as JSON", false)
     .action(async (options: { wait?: boolean; timeout?: string; json: boolean }) => {
       try {
@@ -57,8 +57,8 @@ export function registerRpcCommands(program: Command) {
 
   rpcCmd
     .command("doctor")
-    .description("Run comprehensive RPC diagnostics")
-    .option("--endpoints <urls...>", "Specific endpoints to audit")
+    .description("Probe RPC endpoints: TCP, wRPC connection, server and DAG info (http:// endpoints without port 18210 are probed as EVM JSON-RPC)")
+    .option("--endpoints <urls...>", "Endpoints to probe, separated by spaces (commas are not split)")
     .action(async (options: { endpoints?: string[] }) => {
       const { runRpcDoctor } = await import("../runners/rpc-doctor-runner.js");
       try {

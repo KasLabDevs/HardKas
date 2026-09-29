@@ -5,16 +5,16 @@ import { runTest } from "../runners/test-runner.js";
 export function registerTestCommands(program: Command) {
   program
     .command("test [files...]")
-    .description(`Run HardKAS tests against localnet ${UI.maturity("stable")}`)
-    .option("--network <network>", "Network to test against", "simnet")
-    .option("--watch", "Watch for changes", false)
-    .option("--mass-report", "Show mass/fee report after scenario execution", false)
-    .option("--mass-snapshot <label>", "Save mass snapshot for regression detection")
-    .option("--mass-compare <label>", "Compare against saved mass snapshot")
+    .description(`Run the project's tests with Vitest and the HardKAS test helpers ${UI.maturity("stable")}`)
+    .option("--network <network>", "Only recorded in the results: tests use the config's default network", "simnet")
+    .option("--watch", "Passed to Vitest, but the CLI exits after the first run (watch does not persist)", false)
+    .option("--mass-report", "No effect in this release", false)
+    .option("--mass-snapshot <label>", "No effect in this release")
+    .option("--mass-compare <label>", "No effect in this release")
     .option("--json", "Output results as JSON", false)
     .option("--keep-runs", "Keep temporary scenario workspaces for debugging", false)
     .option("--evidence", "Automatically package evidence into .hke.json", false)
-    .option("--scenario <name>", "Run specific scenario by name")
+    .option("--scenario <name>", "Only run tests whose full name matches this regular expression")
     .action(
       async (
         files: string[],

@@ -4,7 +4,7 @@ import { UI } from "../ui.js";
 import { runAccountsRealInit } from "../runners/accounts-real-init-runner.js";
 import { runAccountsRealGenerate } from "../runners/accounts-real-generate-runner.js";
 import { runAccountsBalance } from "../runners/accounts-balance-runner.js";
-import { runAccountsFund } from "../runners/accounts-fund-runner.js";
+import { runAccountsFund, parseFundAmount } from "../runners/accounts-fund-runner.js";
 
 export function registerAccountsCommands(program: Command) {
   const accountsCmd = program.command("accounts").description("Manage HardKAS accounts");
@@ -347,7 +347,7 @@ export function registerAccountsCommands(program: Command) {
         getOutput().writeLine(`  For real local UTXOs:`);
         getOutput().writeLine(`    hardkas localnet fund ${identifier}\n`);
 
-        const amountSompi = BigInt(parseFloat(options.amount) * 100_000_000);
+        const amountSompi = parseFundAmount(options.amount);
         const result = await runAccountsFund({ identifier, amountSompi });
         getOutput().writeLine(result.formatted);
       } catch (e) {

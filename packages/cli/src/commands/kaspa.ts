@@ -52,7 +52,7 @@ export function registerKaspaCommands(program: Command) {
 
   walletCmd
     .command("send <from> <to>")
-    .description(`Send Kaspa between local wallets ${UI.maturity("stable")}`)
+    .description(`Plan, confirm (y/N), sign and submit a payment over --rpc-url; the network and target come from hardkas.config ${UI.maturity("stable")}`)
     .option("--amount <kas>", "Amount in KAS to send")
     .option("--dry-run", "Plan but do not sign or broadcast", false)
     .option("--rpc-url <url>", RPC_URL_OPTION, DEFAULT_RPC_URL)

@@ -53,7 +53,7 @@ hardkas accounts balance [options] <identifier>
 | `--network <name>` | Kaspa network name | simnet |
 | `--provider <type>` | Provider mode (auto, rpc, simulated) | auto |
 | `--url <url>` | RPC URL (optional override) |  |
-| `--local` | Query local query-store instead of remote RPC (for simulated networks) | false |
+| `--local` | Read the simulator state file (.hardkas/localnet.json) instead of a node | false |
 | `--json` | Output as JSON | false |
 
 ### Arguments
@@ -244,7 +244,7 @@ hardkas accounts real import [options]
 
 | Flag | Description | Default |
 | :--- | :--- | :--- |
-| `--name <name>` | Account name |  |
+| `--name <name>` | Account name: letters, digits, _ and - (default: default) |  |
 | `--address <address>` | Kaspa address |  |
 | `--private-key <hex>` | Deprecated. Unsafe: may leak through shell history. Prefer --private-key-stdin or --private-key-env. |  |
 | `--private-key-stdin` | Read private key from stdin | false |
@@ -317,7 +317,7 @@ No options.
 
 **Aliases:** unlock
 
-Verify keystore access and record signing intent internal
+Check that an account's encrypted keystore opens with its password; nothing is recorded internal
 
 ### Usage
 
@@ -568,10 +568,10 @@ hardkas chaos [options] [command]
 | :--- | :--- | :--- |
 | `--runs <number>` | Number of chaos iterations to run | 300 |
 | `--seed <number>` | Deterministic PRNG seed | 1337 |
-| `--profile <smoke|targeted|full>` | Fuzzing distribution profile | smoke |
+| `--profile <smoke|targeted|full>` | Actor weight profile (smoke, targeted and full currently use the same weights) | smoke |
 | `--actor <LockHell|RotBot|DriftHunter|HumanChaos>` | Target a specific chaos actor instead of using a profile |  |
-| `--isolate` | Run the chaos engine in a dedicated temporary workspace (Default) | true |
-| `--unsafe-current-dir` | Run chaos in the current directory (DANGEROUS) | false |
+| `--isolate` | Always on: chaos runs in ./.hardkas-chaos-workspace (the flag has no effect) | true |
+| `--unsafe-current-dir` | Request a run in the current directory (DANGEROUS; needs HARDKAS_ALLOW_UNSAFE_CHAOS=1). Known issue: only the safety checks run, the campaign stays in the isolated workspace | false |
 | `--force-ci-chaos` | Allow unsafe chaos in CI environments | false |
 | `--force-chaos-destructive` | Bypass workspace protection guards | false |
 
@@ -587,7 +587,7 @@ No arguments.
 
 ## hardkas chaos replay
 
-Replay a specific chaos run deterministically
+Re-run one chaos run seed in a fresh isolated workspace (the actor is derived from the seed, so runs from an --actor campaign are not reproduced)
 
 ### Usage
 
@@ -600,7 +600,7 @@ hardkas chaos replay [options]
 | Flag | Description | Default |
 | :--- | :--- | :--- |
 | `--run-seed <number>` | The run seed to replay |  |
-| `--isolate` | Run in isolated workspace | true |
+| `--isolate` | Always on (the flag has no effect) | true |
 
 ### Arguments
 
@@ -771,7 +771,7 @@ No arguments.
 
 ## hardkas console
 
-Open an interactive REPL with HardKAS SDK pre-loaded stable
+Open an interactive REPL with an in-memory simulator harness (h) and hash/format helpers; no network is contacted stable
 
 ### Usage
 
@@ -783,7 +783,7 @@ hardkas console [options]
 
 | Flag | Description | Default |
 | :--- | :--- | :--- |
-| `--network <name>` | Network name | simnet |
+| `--network <name>` | Network label for the simulated state (nothing connects to it) | simnet |
 | `--accounts <n>` | Number of simulated accounts | 3 |
 | `--balance <sompi>` | Initial balance per account in sompi | 100000000000 |
 
@@ -1101,7 +1101,7 @@ hardkas deploy track [options] <label>
 | `--receipt <artifactId>` | Reference to receipt artifact |  |
 | `--status <status>` | Deployment status | sent |
 | `--notes <text>` | Notes about this deployment |  |
-| `--json` | Output as JSON | false |
+| `--json` | Not implemented yet: no JSON is printed | false |
 
 ### Arguments
 
@@ -1260,7 +1260,7 @@ No options.
 
 ## hardkas dev doctor
 
-Validate local dev environment readiness stable
+Check local dev readiness for an L2 profile (Igra by default): workspace, artifacts, query store, SDK import, dev server and the L2 JSON-RPC; the Kaspa node is not checked stable
 
 ### Usage
 
@@ -1274,7 +1274,7 @@ hardkas dev doctor [options]
 | :--- | :--- | :--- |
 | `--profile <name>` | L2 network profile name | igra |
 | `--rpc-url <url>` | Explicit Igra RPC URL to check |  |
-| `--account <name>` | Local EVM account name to verify balance |  |
+| `--account <name>` | EVM account that must exist in hardkas.config (its balance is not checked) |  |
 | `--timeout <ms>` | RPC timeout in milliseconds | 3000 |
 | `--json` | Output as JSON |  |
 | `--release` | Run strict release gate checks |  |
@@ -1468,7 +1468,7 @@ hardkas doctor [options] [module]
 | Flag | Description | Default |
 | :--- | :--- | :--- |
 | `--json` | Output results as stable JSON schema | false |
-| `--capabilities` | Report local node capabilities (RPC, network, DAA) | false |
+| `--capabilities` | With 'doctor node': report the node's capabilities (RPC, network, DAA advance) as JSON | false |
 | `--consistency` | Run advanced deterministic consistency checks | false |
 | `--strict` | Fail strictly (exit 1) if invariants or consistency checks fail | false |
 
@@ -1667,11 +1667,11 @@ hardkas init [options] [name]
 
 | Flag | Description | Default |
 | :--- | :--- | :--- |
-| `--force` | Overwrite existing hardkas.config.ts (in-place only) | false |
-| `--template <type>` | Project template for new projects | basic |
-| `--network <name>` | Default network for new projects | simulated |
-| `--accounts <n>` | Number of simulated accounts for new projects | 3 |
-| `--install` | Run pnpm/npm install automatically after scaffolding | false |
+| `--force` | Overwrite an existing hardkas.config.ts (the other scaffold files are kept) | false |
+| `--template <type>` | No effect in this release (for templates use 'hardkas create') |  |
+| `--network <name>` | 'simulated' pre-creates the simulator state (5 accounts, 1000 KAS each); other values skip it. The project's default target is always the simulator | simulated |
+| `--accounts <n>` | No effect in this release: init always creates the 5 simulated accounts alice…erin |  |
+| `--install` | Run npm install after scaffolding | false |
 | `--skip-toolchain` | Do not install the pinned kaspa-wasm (signing, planning and the generated test need it) | false |
 | `--toolchain-from-file <asset>` | Install the pinned kaspa-wasm from its official release asset already on disk |  |
 | `--json` | Output results as JSON | false |
@@ -1733,7 +1733,7 @@ No arguments.
 
 ## hardkas kaspa doctor
 
-Verify local Kaspa L1 environment readiness stable
+Check one Kaspa node at --rpc-url: reachability, sync state, UTXO index, DAG info and mempool stable
 
 ### Usage
 
@@ -1745,7 +1745,7 @@ hardkas kaspa doctor [options]
 
 | Flag | Description | Default |
 | :--- | :--- | :--- |
-| `--rpc-url <url>` | Kaspa RPC URL | http://127.0.0.1:16110 |
+| `--rpc-url <url>` | Node wRPC endpoint (default: the canonical localnet, ws://127.0.0.1:18210) | ws://127.0.0.1:18210 |
 | `--json` | Output as JSON | false |
 
 ### Arguments
@@ -1818,7 +1818,7 @@ hardkas kaspa wallet balance [options] <name>
 
 | Flag | Description | Default |
 | :--- | :--- | :--- |
-| `--rpc-url <url>` | Kaspa RPC URL | http://127.0.0.1:16110 |
+| `--rpc-url <url>` | Node wRPC endpoint (default: the canonical localnet, ws://127.0.0.1:18210) | ws://127.0.0.1:18210 |
 | `--json` | Output as JSON | false |
 
 ### Arguments
@@ -1831,7 +1831,7 @@ hardkas kaspa wallet balance [options] <name>
 
 ## hardkas kaspa wallet create
 
-Create a new local Kaspa wallet stable
+Generate a key pair and print it (address, config snippet and private key); nothing is saved. For stored dev accounts use 'accounts real generate' stable
 
 ### Usage
 
@@ -1877,7 +1877,7 @@ No arguments.
 
 ## hardkas kaspa wallet send
 
-Send Kaspa between local wallets stable
+Plan, confirm (y/N), sign and submit a payment over --rpc-url; the network and target come from hardkas.config stable
 
 ### Usage
 
@@ -1891,7 +1891,7 @@ hardkas kaspa wallet send [options] <from> <to>
 | :--- | :--- | :--- |
 | `--amount <kas>` | Amount in KAS to send |  |
 | `--dry-run` | Plan but do not sign or broadcast | false |
-| `--rpc-url <url>` | Kaspa RPC URL | http://127.0.0.1:16110 |
+| `--rpc-url <url>` | Node wRPC endpoint (default: the canonical localnet, ws://127.0.0.1:18210) | ws://127.0.0.1:18210 |
 
 ### Arguments
 
@@ -1928,7 +1928,7 @@ No arguments.
 
 ## hardkas local wizard
 
-Guided setup for local development stable
+Guided Igra L2 (EVM) check: JSON-RPC, EVM account and its balance; not a Kaspa L1 setup stable
 
 ### Usage
 
@@ -1941,7 +1941,7 @@ hardkas local wizard [options]
 | Flag | Description | Default |
 | :--- | :--- | :--- |
 | `--profile <name>` | L2 network profile name | igra |
-| `--account <name>` | New or existing EVM account name | dev_alice |
+| `--account <name>` | EVM account name in hardkas.config (if it is missing, a key is printed for you to add) | dev_alice |
 | `--non-interactive` | Skip interactive prompts (will fail if input required) | false |
 | `--json` | Output as JSON | false |
 
@@ -2031,7 +2031,7 @@ hardkas localnet account create [options] <name>
 
 ## hardkas localnet fork
 
-Fork state from a real Kaspa network for local simulation preview
+Copy the current UTXOs of some addresses from a node into a simulator state file preview
 
 ### Usage
 
@@ -2044,10 +2044,10 @@ hardkas localnet fork [options]
 | Flag | Description | Default |
 | :--- | :--- | :--- |
 | `--network <name>` | Network to fork from |  |
-| `--addresses <addrs...>` | Only fetch UTXOs for these addresses |  |
-| `--at-daa-score <score>` | Fork at specific DAA score (implicit latest is forbidden) |  |
-| `--output <path>` | Save fork snapshot to file |  |
-| `--json` | Output as JSON | false |
+| `--addresses <addrs...>` | Addresses whose UTXOs are copied, separated by spaces |  |
+| `--at-daa-score <score>` | Required label recorded with the snapshot; the UTXOs copied are always the node's current ones |  |
+| `--output <path>` | State file to write (default: .hardkas/localnet.json, replaced) |  |
+| `--json` | Not implemented yet: no JSON is printed | false |
 
 ### Arguments
 
@@ -2070,7 +2070,7 @@ hardkas localnet fund [options] <identifier>
 | Flag | Description | Default |
 | :--- | :--- | :--- |
 | `--profile <name>` | Funding profile | toccata-v2 |
-| `--amount <kas>` | Target mining amount hint in KAS | 1000 |
+| `--amount <kas>` | KAS to wait for: mine until the mature balance grows by this amount | 1000 |
 | `--timeout <ms>` | Funding/maturity wait timeout in ms | 300000 |
 | `--keep-miner` | Leave the companion miner running | false |
 | `--json` | Output as JSON | false |
@@ -2184,7 +2184,7 @@ hardkas localnet snapshot verify [options] <idOrName>
 
 ## hardkas localnet start
 
-Start localnet profile alpha
+Start (or adopt) the Docker rusty-kaspad node for the toccata-v2 profile and create dev accounts alice…erin; needs Docker alpha
 
 ### Usage
 
@@ -2196,9 +2196,9 @@ hardkas localnet start [options]
 
 | Flag | Description | Default |
 | :--- | :--- | :--- |
-| `--profile <name>` | Localnet profile | simulated |
+| `--profile <name>` | Localnet profile: toccata-v2 (the only one, required; or use --toccata) |  |
 | `--toccata` | Shortcut for --profile toccata-v2 | false |
-| `--detached` | Run in background | false |
+| `--detached` | No effect: the node always runs as a detached Docker container | false |
 | `--json` | Output as JSON | false |
 
 ### Arguments
@@ -2308,7 +2308,7 @@ hardkas lock clear [options] <name>
 
 ## hardkas lock doctor
 
-Analyze locks and identify stale or corrupted ones stable
+Report stale locks (process no longer running on this host) in .hardkas/locks stable
 
 ### Usage
 
@@ -3124,7 +3124,7 @@ hardkas query artifacts inspect [options] <target>
 | Flag | Description | Default |
 | :--- | :--- | :--- |
 | `--json` | Output as JSON | false |
-| `--explain [level]` | Attach explain chains (brief|full) |  |
+| `--explain [level]` | Attach explain chains (brief and full currently give the same output) |  |
 
 ### Arguments
 
@@ -3152,13 +3152,13 @@ hardkas query artifacts list [options]
 | :--- | :--- | :--- |
 | `--schema <schema>` | Filter by artifact schema (e.g. txPlan, signedTx) |  |
 | `--network <network>` | Filter by network ID |  |
-| `--mode <mode>` | Filter by mode (simulated/real) |  |
+| `--mode <mode>` | Filter by mode: simulator, localnet or rpc |  |
 | `--from <address>` | Filter by sender address |  |
 | `--to <address>` | Filter by recipient address |  |
 | `--sort <field:dir>` | Sort field and direction (e.g. createdAt:desc) |  |
 | `--limit <n>` | Max results | 100 |
 | `--json` | Output as deterministic JSON | false |
-| `--explain [level]` | Attach explain chains (brief|full) |  |
+| `--explain [level]` | Attach explain chains (brief and full currently give the same output) |  |
 
 ### Arguments
 
@@ -3209,7 +3209,7 @@ hardkas query dag anomalies [options]
 | Flag | Description | Default |
 | :--- | :--- | :--- |
 | `--json` | Output as JSON | false |
-| `--explain [level]` | Attach explain chains (brief|full) |  |
+| `--explain [level]` | Attach explain chains (brief and full currently give the same output) |  |
 
 ### Arguments
 
@@ -3232,7 +3232,7 @@ hardkas query dag conflicts [options]
 | Flag | Description | Default |
 | :--- | :--- | :--- |
 | `--json` | Output as JSON | false |
-| `--explain [level]` | Attach explain chains (brief|full) |  |
+| `--explain [level]` | Attach explain chains (brief and full currently give the same output) |  |
 | `--why` | Shorthand for --explain full |  |
 
 ### Arguments
@@ -3256,7 +3256,7 @@ hardkas query dag displaced [options]
 | Flag | Description | Default |
 | :--- | :--- | :--- |
 | `--json` | Output as JSON | false |
-| `--explain [level]` | Attach explain chains (brief|full) |  |
+| `--explain [level]` | Attach explain chains (brief and full currently give the same output) |  |
 
 ### Arguments
 
@@ -3279,7 +3279,7 @@ hardkas query dag history [options] <txId>
 | Flag | Description | Default |
 | :--- | :--- | :--- |
 | `--json` | Output as JSON | false |
-| `--explain [level]` | Attach explain chains (brief|full) |  |
+| `--explain [level]` | Attach explain chains (brief and full currently give the same output) |  |
 | `--why` | Shorthand for --explain full |  |
 
 ### Arguments
@@ -3382,7 +3382,7 @@ hardkas query lineage chain [options] <anchor>
 | :--- | :--- | :--- |
 | `--direction <dir>` | Traversal direction: ancestors or descendants | ancestors |
 | `--json` | Output as JSON | false |
-| `--explain [level]` | Attach explain chains (brief|full) |  |
+| `--explain [level]` | Attach explain chains (brief and full currently give the same output) |  |
 | `--why` | Shorthand for --explain full |  |
 
 ### Arguments
@@ -3408,7 +3408,7 @@ hardkas query lineage orphans [options]
 | Flag | Description | Default |
 | :--- | :--- | :--- |
 | `--json` | Output as JSON | false |
-| `--explain [level]` | Attach explain chains (brief|full) |  |
+| `--explain [level]` | Attach explain chains (brief and full currently give the same output) |  |
 
 ### Arguments
 
@@ -3432,7 +3432,7 @@ hardkas query lineage transitions [options]
 | :--- | :--- | :--- |
 | `--root <hash>` | Filter by root artifact ID |  |
 | `--json` | Output as JSON | false |
-| `--explain [level]` | Attach explain chains (brief|full) |  |
+| `--explain [level]` | Attach explain chains (brief and full currently give the same output) |  |
 | `--why` | Shorthand for --explain full |  |
 
 ### Arguments
@@ -3483,7 +3483,7 @@ hardkas query replay divergences [options]
 | Flag | Description | Default |
 | :--- | :--- | :--- |
 | `--json` | Output as JSON | false |
-| `--explain [level]` | Attach explain chains (brief|full) |  |
+| `--explain [level]` | Attach explain chains (brief and full currently give the same output) |  |
 
 ### Arguments
 
@@ -3506,7 +3506,7 @@ hardkas query replay invariants [options] <txId>
 | Flag | Description | Default |
 | :--- | :--- | :--- |
 | `--json` | Output as JSON | false |
-| `--explain [level]` | Attach explain chains (brief|full) |  |
+| `--explain [level]` | Attach explain chains (brief and full currently give the same output) |  |
 
 ### Arguments
 
@@ -3610,7 +3610,7 @@ hardkas query store doctor [options]
 | Flag | Description | Default |
 | :--- | :--- | :--- |
 | `--migrate` | Apply pending migrations if found | false |
-| `--wait-lock` | Wait for workspace lock if held | false |
+| `--wait-lock` | With --migrate: wait for the query-store lock if held | false |
 | `--lock-timeout <ms>` | Lock wait timeout in ms | 30000 |
 
 ### Arguments
@@ -3655,7 +3655,7 @@ hardkas query store migrate [options]
 
 | Flag | Description | Default |
 | :--- | :--- | :--- |
-| `--wait-lock` | Wait for workspace lock if held | false |
+| `--wait-lock` | Wait for the query-store lock if held | false |
 | `--lock-timeout <ms>` | Lock wait timeout in ms | 30000 |
 
 ### Arguments
@@ -3678,9 +3678,9 @@ hardkas query store rebuild [options]
 
 | Flag | Description | Default |
 | :--- | :--- | :--- |
-| `--backend <type>` | Backend to use (sqlite/filesystem) |  |
+| `--backend <type>` | sqlite creates .hardkas/store.db; filesystem indexes nothing (default: sqlite only if store.db already exists) |  |
 | `--strict` | Fail on any corrupted data | false |
-| `--wait-lock` | Wait for workspace lock if held | false |
+| `--wait-lock` | Wait for the query-store lock if held | false |
 | `--lock-timeout <ms>` | Lock wait timeout in ms | 30000 |
 | `--json` | Output as JSON | false |
 
@@ -3720,7 +3720,7 @@ hardkas query store sql [options] <query>
 
 **Aliases:** index
 
-Synchronize the filesystem artifacts with the query store index
+Index new artifacts into the SQLite query store (needs .hardkas/store.db: run 'query store rebuild --backend sqlite' first)
 
 ### Usage
 
@@ -3733,7 +3733,7 @@ hardkas query store sync [options]
 | Flag | Description | Default |
 | :--- | :--- | :--- |
 | `--strict` | Fail on any corrupted data | false |
-| `--wait-lock` | Wait for workspace lock if held | false |
+| `--wait-lock` | Wait for the query-store lock if held | false |
 | `--lock-timeout <ms>` | Lock wait timeout in ms | 30000 |
 | `--json` | Output as JSON | false |
 
@@ -3770,7 +3770,7 @@ hardkas query tx [options] <txId>
 
 ## hardkas rebuild
 
-Reconstruct projections from committed canonical artifacts stable
+Wipe and rebuild the SQLite query store from the committed artifacts stable
 
 ### Usage
 
@@ -3782,7 +3782,7 @@ hardkas rebuild [options]
 
 | Flag | Description | Default |
 | :--- | :--- | :--- |
-| `--from-artifacts` | Rebuild the query-store and localnet projection from artifacts | false |
+| `--from-artifacts` | Required: rebuild the query store from the artifacts (the localnet state is not rebuilt) | false |
 | `--json` | Output machine-readable JSON | false |
 
 ### Arguments
@@ -3793,7 +3793,7 @@ No arguments.
 
 ## hardkas repair
 
-Attempt automatic recovery of corrupt projections or append tails beta
+Report an outdated workspace, lock files in .hardkas/, torn JSONL tails and a corrupt query store; --force repairs them beta
 
 ### Usage
 
@@ -3806,7 +3806,7 @@ hardkas repair [options]
 | Flag | Description | Default |
 | :--- | :--- | :--- |
 | `--json` | Output results as stable JSON schema | false |
-| `--force` | Repair without prompting for confirmation | false |
+| `--force` | Apply the repairs (without it, repair only reports). Removes lock files without checking whether their process is alive | false |
 
 ### Arguments
 
@@ -3866,7 +3866,7 @@ hardkas replay diff [options] <idA> <idB>
 
 ## hardkas replay verify
 
-Verify deterministic simulator-mode replay for a receipt by exact artifactId or artifact file path. Real-node (kaspa consensus) receipts are not currently supported and will report REPLAY_MODE_UNSUPPORTED. stable
+Verify deterministic simulator-mode replay for a receipt (required) by exact artifactId or a workspace path such as ./receipt.json. Real-node sends are not supported: they record a TxSubmission, not a TxReceipt. stable
 
 ### Usage
 
@@ -3891,7 +3891,7 @@ hardkas replay verify [options] [artifact]
 
 ## hardkas rotate
 
-Rotate and archive telemetry streams beta
+Archive the telemetry stream (.hardkas/telemetry/telemetry.jsonl) once it reaches 10 MiB beta
 
 ### Usage
 
@@ -3966,7 +3966,7 @@ No arguments.
 
 ## hardkas rpc doctor
 
-Run comprehensive RPC diagnostics
+Probe RPC endpoints: TCP, wRPC connection, server and DAG info (http:// endpoints without port 18210 are probed as EVM JSON-RPC)
 
 ### Usage
 
@@ -3978,7 +3978,7 @@ hardkas rpc doctor [options]
 
 | Flag | Description | Default |
 | :--- | :--- | :--- |
-| `--endpoints <urls...>` | Specific endpoints to audit |  |
+| `--endpoints <urls...>` | Endpoints to probe, separated by spaces (commas are not split) |  |
 
 ### Arguments
 
@@ -3988,7 +3988,7 @@ No arguments.
 
 ## hardkas rpc health
 
-Check RPC health
+Check that the canonical localnet node (ws://127.0.0.1:18210) answers and is ready
 
 ### Usage
 
@@ -4001,7 +4001,7 @@ hardkas rpc health [options]
 | Flag | Description | Default |
 | :--- | :--- | :--- |
 | `--wait` | Wait until healthy |  |
-| `--timeout <ms>` | Timeout in ms |  |
+| `--timeout <ms>` | With --wait: how long to wait in ms (default: 60000) |  |
 | `--json` | Output as JSON | false |
 
 ### Arguments
@@ -4085,7 +4085,7 @@ hardkas rpc utxos [options] <address>
 
 ## hardkas run
 
-Execute a TypeScript or JavaScript file with HardKAS SDK injected stable
+Run a TypeScript or JavaScript file with tsx and a global 'hardkas': a simulator test harness on simulated networks, an RPC client otherwise (not the SDK) stable
 
 ### Usage
 
@@ -4097,9 +4097,9 @@ hardkas run [options] <script>
 
 | Flag | Description | Default |
 | :--- | :--- | :--- |
-| `--network <name>` | Network name | simnet |
-| `--accounts <n>` | Number of simulated accounts | 3 |
-| `--balance <sompi>` | Initial balance per account in sompi | 100000000000 |
+| `--network <name>` | Network from the config (unknown names fall back to simulated) | simnet |
+| `--accounts <n>` | Number of harness accounts (simulated networks only) | 3 |
+| `--balance <sompi>` | Initial balance per harness account, whole sompi (simulated networks only) | 100000000000 |
 | `--no-harness` | Skip automatic harness creation |  |
 | `--json` | Output results as JSON | false |
 
@@ -4224,9 +4224,9 @@ hardkas session create [options] <name>
 
 | Flag | Description | Default |
 | :--- | :--- | :--- |
-| `--l1 <wallet>` | Name of the Kaspa L1 wallet |  |
-| `--l2 <account>` | Name of the Igra L2 account |  |
-| `--json` | Output results as JSON | false |
+| `--l1 <wallet>` | HardKAS account name or Kaspa address |  |
+| `--l2 <account>` | Account name, Kaspa address or 0x EVM address (an account name stores its Kaspa address) |  |
+| `--json` | Not implemented yet: the output is text only | false |
 
 ### Arguments
 
@@ -4687,7 +4687,7 @@ hardkas simulator account create [options] <name>
 
 ## hardkas simulator fund
 
-Fund a synthetic simulated account stable
+Fund a synthetic simulated account (the project's default network must be the simulator) stable
 
 ### Usage
 
@@ -4699,7 +4699,7 @@ hardkas simulator fund [options] <identifier>
 
 | Flag | Description | Default |
 | :--- | :--- | :--- |
-| `--amount <kas>` | Amount in KAS to fund | 1000 |
+| `--amount <kas>` | Amount in KAS, up to 8 decimals, above 0 | 1000 |
 | `--json` | Output as JSON | false |
 
 ### Arguments
@@ -4869,7 +4869,7 @@ No arguments.
 
 ## hardkas test
 
-Run HardKAS tests against localnet stable
+Run the project's tests with Vitest and the HardKAS test helpers stable
 
 ### Usage
 
@@ -4881,15 +4881,15 @@ hardkas test [options] [files...]
 
 | Flag | Description | Default |
 | :--- | :--- | :--- |
-| `--network <network>` | Network to test against | simnet |
-| `--watch` | Watch for changes | false |
-| `--mass-report` | Show mass/fee report after scenario execution | false |
-| `--mass-snapshot <label>` | Save mass snapshot for regression detection |  |
-| `--mass-compare <label>` | Compare against saved mass snapshot |  |
+| `--network <network>` | Only recorded in the results: tests use the config's default network | simnet |
+| `--watch` | Passed to Vitest, but the CLI exits after the first run (watch does not persist) | false |
+| `--mass-report` | No effect in this release | false |
+| `--mass-snapshot <label>` | No effect in this release |  |
+| `--mass-compare <label>` | No effect in this release |  |
 | `--json` | Output results as JSON | false |
 | `--keep-runs` | Keep temporary scenario workspaces for debugging | false |
 | `--evidence` | Automatically package evidence into .hke.json | false |
-| `--scenario <name>` | Run specific scenario by name |  |
+| `--scenario <name>` | Only run tests whose full name matches this regular expression |  |
 
 ### Arguments
 
@@ -5145,14 +5145,14 @@ hardkas tx plan [options] [from] [to]
 | Flag | Description | Default |
 | :--- | :--- | :--- |
 | `--target <name>` | Named execution target from hardkas.config.ts |  |
-| `--from <accountOrAddress>` | Sender account name or address |  |
-| `--to <address>` | Recipient address |  |
-| `--amount <kas>` | Amount in KAS |  |
-| `--network <name>` | Kaspa network name |  |
-| `--fee-rate <sompiPerMass>` | Fee rate in sompi per mass |  |
+| `--from <accountOrAddress>` | Sender account name or address (default: alice) |  |
+| `--to <address>` | Recipient address or account name (default: bob) |  |
+| `--amount <kas>` | Amount in KAS, up to 8 decimals (default: 1) |  |
+| `--network <name>` | simulated, simnet, devnet, testnet-10, testnet-12 or mainnet (default: the config's default target) |  |
+| `--fee-rate <sompiPerMass>` | Whole sompi per gram of mass (default: 1 in the simulator, 100 on real networks; not a live estimate) |  |
 | `--change <accountOrAddress>` | Change destination (account name or address); default: the sender |  |
 | `--provider <type>` | Provider mode (auto, rpc, simulated) | auto |
-| `--url <url>` | RPC URL (optional override) |  |
+| `--url <url>` | Node wRPC URL (default: ws://127.0.0.1:18210 for simnet and devnet; the config's rpcUrl is not used) |  |
 | `--out <path>` | Save plan as artifact JSON |  |
 | `--save <path>` | Alias for --out (Save plan as artifact JSON) |  |
 | `--workflow-id <id>` | Optional deterministic workflow ID override |  |
@@ -5232,19 +5232,19 @@ hardkas tx send [options] [signedPath]
 
 | Flag | Description | Default |
 | :--- | :--- | :--- |
-| `--target <name>` | Named execution target from hardkas.config.ts |  |
+| `--target <name>` | Named execution target from hardkas.config.ts (signed-artifact mode: it must match the artifact and never redirects the send) |  |
 | `--from <accountOrAddress>` | Sender (shortcut mode) |  |
 | `--to <address>` | Recipient (shortcut mode) |  |
 | `--amount <kas>` | Amount in KAS (shortcut mode) |  |
 | `--network <name>` | Network name |  |
 | `--fee-rate <sompiPerMass>` | Fee rate in sompi per mass (shortcut mode) |  |
-| `--provider <type>` | Provider mode (auto, rpc, simulated) | auto |
+| `--provider <type>` | Provider mode (auto, rpc, simulated; signed-artifact mode only) | auto |
 | `--url <url>` | RPC URL (optional override) |  |
-| `--yes` | Confirm broadcast. Required on any non-simulated network: without it the send is refused (NOT EXECUTED, exit 3) and nothing is written | false |
+| `--yes` | Confirm broadcast. Required unless the network is simulated or simnet (in shortcut mode, unless --network simulated or simnet is given): without it the send is refused (NOT EXECUTED, exit 3) and nothing is written | false |
 | `--wait-lock` | Wait for workspace lock if held | false |
 | `--lock-timeout <ms>` | Lock wait timeout in ms | 30000 |
 | `--json` | Output as JSON | false |
-| `--track <label>` | Auto-track deployment with this label |  |
+| `--track <label>` | Signed-artifact mode: after an accepted broadcast, record a deployment with this label |  |
 
 ### Arguments
 
@@ -5270,10 +5270,10 @@ hardkas tx sign [options] <planPath>
 | :--- | :--- | :--- |
 | `--account <name>` | Account name to sign with |  |
 | `--out <path>` | Save signed artifact JSON |  |
-| `--fixture` | Use fixture signer for Docker testing on simnet | false |
-| `--allow-mainnet-signing` | Allow signing for mainnet | false |
-| `--threshold <number>` | Multisig threshold |  |
-| `--required-signers <list>` | Comma-separated list of required signers |  |
+| `--fixture` | Sign with the built-in fixture test key (any network except mainnet) | false |
+| `--allow-mainnet-signing` | Mainnet signing stays refused in this release; the flag only lets synthetic --threshold entries through | false |
+| `--threshold <number>` | Synthetic multisig threshold for tests (no Kaspa multisig script is produced) |  |
+| `--required-signers <list>` | Comma-separated signers, no spaces (with --threshold above 1) |  |
 | `--append` | Append signature to a partially signed transaction | false |
 | `--target <name>` | Named execution target from hardkas.config.ts |  |
 | `--wait-lock` | Wait for workspace lock if held | false |
