@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { CANONICAL_LOCALNET, defaultRpcListen } from "@hardkas/core";
 import { defineHardkasConfig } from "../src/define";
 import { resolveExecutionTarget } from "../src/resolve";
 import { DEFAULT_HARDKAS_CONFIG } from "../src/defaults";
@@ -41,6 +42,13 @@ describe("config", () => {
     expect(() => resolveExecutionTarget({ config: {}, network: "non-existent" })).toThrow(
       /Unknown HardKAS network 'non-existent'/
     );
+  });
+
+  it("default node endpoints: the SDK's port on devnet, the canonical localnet on simnet", () => {
+    // The former default sent devnet to 18310, which no kaspad listens on by default.
+    const networks = DEFAULT_HARDKAS_CONFIG.networks as Record<string, { rpcUrl?: string }>;
+    expect(networks.devnet?.rpcUrl).toBe(`ws://${defaultRpcListen("devnet")}`);
+    expect(networks.simnet?.rpcUrl).toBe(`ws://${CANONICAL_LOCALNET.host}:${CANONICAL_LOCALNET.ports.jsonRpc}`);
   });
 
   it("loadHardkasConfig should deep merge custom config with default config", async () => {

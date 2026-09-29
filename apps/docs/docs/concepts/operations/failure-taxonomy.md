@@ -24,7 +24,7 @@ When a command fails, match the returned error code to its operational boundary.
 ### 4. Planning & UTXO Management
 * **`INSUFFICIENT_FUNDS`**: The UTXOs available to the account do not cover the requested amount + fee.
 * **`FEE_CONVERGENCE_ERROR`**: The transaction planner could not stabilize a UTXO selection for the required fee (often occurs with severe UTXO fragmentation and high network fees).
-* **`COINBASE_MATURITY_UNRESOLVED`**: Attempted to spend a minted coinbase UTXO that hasn't reached the required DAA block depth (maturity).
+* **`COINBASE_MATURITY_UNRESOLVED`**: The network's coinbase maturity could not be resolved. HardKAS reads it from the pinned Kaspa SDK, which has no parameters for that network (for example the retired `testnet-11`), and the config gives no `consensusParams.coinbaseMaturity` override. Immature coinbase outputs themselves are simply left out of planning.
 
 ### 5. Artifacts & Evidence
 * **`INTEGRITY_FAILED`**: The `contentHash` of the artifact does not match its contents, implying the file was manually edited or corrupted.

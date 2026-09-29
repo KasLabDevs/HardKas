@@ -16,7 +16,7 @@
  *
  * Authority order: wallet-core (rusty-kaspa) > pinned kaspa-wasm (managed) > here.
  */
-import { KASPA_WASM_REFERENCE, loadManagedKaspaWasmSync } from "@hardkas/core";
+import { KASPA_WASM_REFERENCE, getCoinbaseMaturity, loadManagedKaspaWasmSync } from "@hardkas/core";
 
 /** The managed WASM SDK, opaque to HardKAS callers. */
 type KaspaWasm = ReturnType<typeof loadManagedKaspaWasmSync>;
@@ -84,9 +84,10 @@ export async function estimateTransactionsUpstream(input: GeneratorSettingsInput
 }
 
 /**
- * `getNetworkParams(networkId)` — dust threshold, min-relay, coinbase maturity
- * and other per-network parameters. Replaces every HardKAS hardcoded constant
- * (dust=600n, min-relay=100n, coinbase-maturity=1000n) once callers migrate.
+ * `getNetworkParams(networkId)` as the SDK returns it: coinbase and user
+ * maturity, coinbase stasis and additional compound-transaction mass. It has no
+ * dust or minimum-relay value. HardKAS reads maturities through
+ * `@hardkas/core` `sdkNetworkParams` / `getCoinbaseMaturity`.
  */
 export function networkParamsUpstream(networkId: string): any {
   const k: KaspaWasm = loadManagedKaspaWasmSync();
@@ -256,14 +257,7 @@ function defaultReadEntry(u: any): { blockDaaScore: bigint; isCoinbase: boolean 
 
 /** Coinbase maturity in DAA blocks, from the SDK's network parameters (no HardKAS default). */
 function coinbaseMaturityOf(networkId: string): bigint {
-  const k: KaspaWasm = loadManagedKaspaWasmSync();
-  const period = k.getNetworkParams(networkId)?.coinbaseTransactionMaturityPeriodDaa;
-  if (period === undefined || period === null) {
-    const err = new Error(`KASPA_WALLET_ADAPTER_NO_MATURITY: the SDK gives no coinbase maturity for network '${networkId}'`);
-    (err as any).code = "KASPA_WALLET_ADAPTER_NO_MATURITY";
-    throw err;
-  }
-  return BigInt(period);
+  return getCoinbaseMaturity(networkId);
 }
 
 export function filterMatureUtxos<T = any>(input: FilterMatureUtxosInput): FilterMatureUtxosResult<T> {

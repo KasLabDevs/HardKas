@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { CANONICAL_LOCALNET, defaultRpcListen } from "@hardkas/core";
 import { buildKaspadArgs } from "../src/args";
 import { resolveRuntimeConfig } from "../src/paths";
 import type { KaspaNodeConfig } from "../src/types";
@@ -48,5 +49,12 @@ describe("node-orchestrator args", () => {
     const runtime = resolveRuntimeConfig(config);
     const args = buildKaspadArgs(config, runtime);
     expect(args).toContain("--rpclisten-json=0.0.0.0:1234");
+  });
+
+  it("defaults the RPC listen address to the SDK's port (the canonical localnet for simnet)", () => {
+    // The former table sent devnet to 18310; the SDK's devnet default is 18610.
+    expect(resolveRuntimeConfig({ network: "devnet" }).rpcListen).toBe(defaultRpcListen("devnet"));
+    expect(resolveRuntimeConfig({ network: "mainnet" }).rpcListen).toBe("127.0.0.1:18110");
+    expect(resolveRuntimeConfig({ network: "simnet" }).rpcUrl).toBe(`ws://${CANONICAL_LOCALNET.host}:${CANONICAL_LOCALNET.ports.jsonRpc}`);
   });
 });

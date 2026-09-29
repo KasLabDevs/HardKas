@@ -31,6 +31,11 @@ import { silverP2shLock, silverSigFromInputSignature } from "./silverscript-abi.
  * source and constructor arguments); a `sig` argument may name a local account
  * and is signed over the scenario transaction the runner builds; each test runs
  * in its own runner process and its verdict is that process's exit status.
+ *
+ * The signing rebuilds that transaction the way the pinned release's runner
+ * does. A runner that builds it differently makes every signature invalid:
+ * positive signed tests then fail, but negative ones pass for the wrong reason,
+ * so negative signed tests prove something only next to a positive one.
  */
 
 function runnerError(code: string, message: string): Error {
