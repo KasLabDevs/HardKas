@@ -17,7 +17,7 @@ const ctx = systemRuntimeContext;
 
 const state: any = {
   schema: "hardkas.localnetState.v1",
-  hardkasVersion: "0.12.0-rc.25",
+  hardkasVersion: "0.12.0-rc.26",
   version: "1.0.0-alpha",
   networkId: "simnet",
   mode: "simulator",

@@ -16,7 +16,9 @@ export const DEFAULT_HARDKAS_CONFIG: HardkasConfig = {
     devnet: {
       kind: "kaspa-node",
       network: "devnet",
-      rpcUrl: "ws://127.0.0.1:18310"
+      // The SDK's default devnet wRPC (JSON) port. These defaults are built on import,
+      // possibly before kaspa-wasm is installed, so a test pins it to the SDK instead.
+      rpcUrl: "ws://127.0.0.1:18610"
     },
     "testnet-10": {
       kind: "kaspa-rpc",

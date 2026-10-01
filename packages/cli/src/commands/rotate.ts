@@ -7,7 +7,7 @@ import { TelemetryRotator } from "@hardkas/core";
 export function registerRotateCommand(program: Command) {
   program
     .command("rotate")
-    .description(`Rotate and archive telemetry streams ${UI.maturity("beta")}`)
+    .description(`Archive the telemetry stream (.hardkas/telemetry/telemetry.jsonl) once it reaches 10 MiB ${UI.maturity("beta")}`)
     .option("--json", "Output results as stable JSON schema", false)
     .option("--force", "Force rotation even if file size is below threshold", false)
     .action(async (opts) => {

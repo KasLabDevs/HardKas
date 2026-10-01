@@ -5,6 +5,7 @@ import path from "node:path";
 import pc from "picocolors";
 import { getOutput } from "../output.js";
 import { HardkasCliError, HardkasExitCode } from "../cli-errors.js";
+import { UI } from "../ui.js";
 
 /**
  * `hardkas silver` — SilverScript v1 through upstream authorities only.
@@ -16,10 +17,16 @@ import { HardkasCliError, HardkasExitCode } from "../cli-errors.js";
  *
  * Capabilities, each evidenced independently: silver.compile.v1,
  * silver.p2sh.deploy-spend.v1, toccata.covenant.auth-1to1-transition.v1.
- * Simulation lives under `hardkas simulator silver` and is never evidence.
+ * Contract tests (`hardkas silver test`, experimental) run on the official
+ * SilverScript runner: contract execution on scenario transactions, recorded
+ * apart and never counted as node evidence. HardKAS has no Silver simulator of
+ * its own.
  */
 
 const NETWORK = "simnet";
+const VM_SCOPE =
+  "Official SilverScript runner (Kaspa script engine) on synthetic scenario transactions, with the runner's own compilation " +
+  "and argument encoding: contract execution only. Not transaction validity, not node or consensus evidence.";
 
 const sha256 = (data: Uint8Array | string) => createHash("sha256").update(data).digest("hex");
 const out = () => getOutput();
@@ -45,10 +52,17 @@ function readFileOrFail(file: string, what: string): Buffer {
 }
 
 /** Wave 1.3 · IC-1′ / IC-7.3: records are version-5 artifacts; the label is derived, not stored. */
-async function writeRecord(record: Record<string, unknown>, prefix: string, explicitOut?: string): Promise<{ path: string; record: any }> {
+async function writeRecord(
+  record: Record<string, unknown>,
+  prefix: string,
+  explicitOut?: string,
+  mode: "localnet" | "vm" = "localnet"
+): Promise<{ path: string; record: any }> {
   const { writeSilverRecord } = await import("../runners/silver-records.js");
-  return writeSilverRecord(record, prefix, explicitOut);
+  return writeSilverRecord(record, prefix, explicitOut, mode);
 }
+
+const relativePath = (file: string) => path.relative(process.cwd(), path.resolve(file)).replace(/\\/g, "/");
 
 async function readRecord(file: string, schema: string): Promise<any> {
   const { checkArtifactIdentity } = await import("@hardkas/artifacts");
@@ -258,6 +272,14 @@ export function registerSilverCommand(program: Command) {
       } catch (e: any) {
         node = { ok: false, detail: String(e?.message ?? e) };
       }
+      // Optional and experimental: no release binary exists, so it never gates the capabilities above.
+      let runner: { ok: boolean; detail: string };
+      try {
+        const r = core.resolveSilverRunner();
+        runner = { ok: true, detail: `${r.path} sha256 ${r.binarySha256} (unmanaged local build)` };
+      } catch (e: any) {
+        runner = { ok: false, detail: String(e?.code ?? e?.message) };
+      }
       const report = {
         schema: "hardkas.silverDoctor.v1",
         silverscript: { releaseTag: core.SILVERSCRIPT_RELEASE.releaseTag, languageVersion: core.SILVERSCRIPT_RELEASE.languageVersion },
@@ -267,6 +289,10 @@ export function registerSilverCommand(program: Command) {
           "silver.compile.v1": silverc.ok,
           "silver.p2sh.deploy-spend.v1": silverc.ok && wasm.ok && node.ok,
           "toccata.covenant.auth-1to1-transition.v1": silverc.ok && wasm.ok && node.ok
+        },
+        experimental: {
+          "silver-runner": runner,
+          "silver test": silverc.ok && wasm.ok && runner.ok
         }
       };
       if (opts.json) return out().writeJson(report);
@@ -276,6 +302,7 @@ export function registerSilverCommand(program: Command) {
       row(silverc.ok, "silverc", silverc.detail);
       row(node.ok, "canonical node", node.detail);
       for (const [cap, ok] of Object.entries(report.ready)) row(ok, cap, ok ? "ready" : "not ready");
+      row(runner.ok, "silver runner (experimental, optional)", runner.detail);
     });
 
   // ---------------------------------------------------------------- compile
@@ -368,6 +395,99 @@ export function registerSilverCommand(program: Command) {
       else if (result.reproduced) out().writeLine(`${pc.green("REPRODUCED")} ${record.provenance.artifactSha256} with silverc ${again.provenance.compiler.releaseTag}`);
       else for (const p of problems) out().error(pc.red(`- ${p}`));
       if (!result.reproduced) fail("SILVER_VERIFY_FAILED", problems.join("; "), HardkasExitCode.CORRUPTION_DETECTED);
+    });
+
+  // ---------------------------------------------------------------- test
+  silver
+    .command("test <record>")
+    .description(`Run a compiled contract's tests on the official SilverScript runner ${UI.maturity("experimental")} (script engine on scenario transactions; not transaction validity)`)
+    .requiredOption("--tests <file>", 'Runner test file (.test.json); a sig argument may be {"signature":"<account>"}')
+    .option("--args <file>", "The constructor arguments the record was compiled with")
+    .option("--contract <name>", "Contract, when the artifact has several")
+    .option("--runner <path>", "SilverScript runner (cli-debugger) binary (default: $HARDKAS_SILVER_RUNNER)")
+    .option("--out <file>", "Record path (default .hardkas/artifacts/silver-vm/)")
+    .option("--json", "Output as JSON", false)
+    .action(async (file: string, opts: any) => {
+      const core = await import("@hardkas/core");
+      const { HARDKAS_VERSION } = await import("@hardkas/artifacts");
+      const S = await schemas();
+      const compileRecord = await readRecord(file, S.SilverCompileV1);
+      const artifact = await loadCompiled(compileRecord);
+      if (sha256(compileRecord.source.text) !== compileRecord.provenance.sourceSha256) {
+        fail("SILVER_RECORD_TAMPERED", "compile record source does not match its provenance", HardkasExitCode.CORRUPTION_DETECTED);
+      }
+      const ctor = opts.args ? await argsFromFile(opts.args) : { values: [], canonical: "[]" };
+      if (sha256(ctor.canonical) !== compileRecord.provenance.constructorArgsSha256) {
+        fail("SILVER_CONSTRUCTOR_ARGS_MISMATCH", "these constructor arguments are not the ones the record was compiled with (pass them with --args)", HardkasExitCode.USAGE_ERROR);
+      }
+      const testsBytes = readFileOrFail(opts.tests, "test file");
+      let tests: unknown;
+      try {
+        tests = JSON.parse(testsBytes.toString("utf8"));
+      } catch {
+        fail("SILVER_TEST_FILE_INVALID", `${opts.tests} is not JSON`, HardkasExitCode.USAGE_ERROR);
+      }
+      let runner!: Awaited<ReturnType<typeof core.resolveSilverRunner>>;
+      let prepared!: Awaited<ReturnType<typeof core.prepareSilverVmTests>>;
+      try {
+        runner = core.resolveSilverRunner(opts.runner);
+        prepared = await core.prepareSilverVmTests({
+          artifact,
+          contractName: opts.contract,
+          constructorArgs: ctor.values,
+          tests,
+          signer: async (account) => (await accountKey(account)).privateKey
+        });
+      } catch (e: any) {
+        // A test file, value or runner the user has to fix: a usage error, not a runtime one.
+        if (typeof e?.code === "string" && /^SILVER_(TEST_|RUNNER_NOT_|CONTRACT_)/.test(e.code)) {
+          fail(e.code, String(e.message).replace(`${e.code}: `, ""), HardkasExitCode.USAGE_ERROR);
+        }
+        throw e;
+      }
+      const results = await core.runSilverVmTests({ runner, source: compileRecord.source.text, prepared });
+      const failed = results.filter((r) => r.outcome === "FAIL").length;
+      const { path: recordPath, record } = await writeRecord(
+        {
+          schema: S.SilverVmTestV1,
+          hardkasVersion: HARDKAS_VERSION,
+          createdAt: new Date().toISOString(),
+          networkId: NETWORK,
+          evidence: "official-vm-scenario",
+          scope: VM_SCOPE,
+          compileRecord: { path: relativePath(file), contentHash: compileRecord.contentHash, artifactSha256: compileRecord.provenance.artifactSha256 },
+          contract: prepared.contract,
+          runner: { binarySha256: runner.binarySha256, size: runner.size, provenance: runner.provenance, expectedSource: { ...core.SILVER_RUNNER_SOURCE } },
+          testFile: { path: relativePath(opts.tests), sha256: sha256(testsBytes) },
+          runnerInputSha256: sha256(prepared.runnerTestFile),
+          // The runner's output can print argument values: only its digest is recorded.
+          results: results.map((r) => ({
+            name: r.name,
+            function: r.function,
+            expect: r.expect,
+            outcome: r.outcome,
+            runnerStatus: r.runnerStatus,
+            exitCode: r.exitCode,
+            signedArgs: r.signedArgs.length,
+            outputSha256: sha256(`${r.stdout}\u0000${r.stderr}`)
+          })),
+          summary: { total: results.length, passed: results.length - failed, failed },
+          status: failed === 0 ? "PASS" : "FAIL"
+        },
+        "silverVmTest",
+        opts.out,
+        "vm"
+      );
+      const lines = [
+        `${pc.bold("SilverScript runner")} ${pc.dim(`(experimental; unmanaged local build ${runner.binarySha256.slice(0, 16)}…)`)}`,
+        ...results.flatMap((r) => [
+          `  ${r.outcome === "PASS" ? pc.green("PASS") : pc.red("FAIL")}  ${r.name}${r.runnerStatus === "PASS (expected failure)" ? pc.dim("  (expected failure)") : ""}`,
+          ...(r.outcome === "FAIL" ? r.stderr.trim().split(/\r?\n/).filter(Boolean).map((l) => pc.dim(`        ${l}`)) : [])
+        ]),
+        `${results.length} tests: ${results.length - failed} passed, ${failed} failed ${pc.dim("· contract execution only: not transaction validity, not node evidence")}`
+      ];
+      print(opts.json, record, recordPath, lines);
+      if (failed > 0) fail("SILVER_TEST_FAILED", `${failed} of ${results.length} tests failed on the SilverScript runner`);
     });
 
   // ---------------------------------------------------------------- deploy

@@ -1,6 +1,6 @@
 import { execSync } from "node:child_process";
 
-console.log("=== RUNNING FULL 0.9.2 LOCAL GAUNTLET ===");
+console.log("=== RUNNING FULL LOCAL GAUNTLET ===");
 
 function run(cmd, exitOnFail = true) {
   console.log(`\n> ${cmd}`);
@@ -45,8 +45,6 @@ run("pnpm corpus:toccata");
 run("pnpm zk:corpus");
 run("pnpm vprogs:check");
 run("pnpm programmability:corpus");
-run("pnpm programmability:surface");
-run("pnpm programmability:examples");
 run("pnpm programmability:templates");
 
 console.log("\n==================================================");

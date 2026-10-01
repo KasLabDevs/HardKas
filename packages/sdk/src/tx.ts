@@ -2,7 +2,6 @@ import { systemRuntimeContext, deterministicCompare, getCoinbaseMaturity, Hardka
 import { pollCondition } from "./waiters.js";
 import { Hardkas } from "./index.js";
 import {
-  buildPaymentPlan,
   Utxo as BuilderUtxo,
   verifySignedTxSemantics
 } from "@hardkas/tx-builder";
@@ -641,6 +640,8 @@ export class HardkasTx {
       fromAddress: resolvedAccount?.address as string,
       selectedUtxos: options.selectedUtxos,
       toAddress: options.destination,
+      networkId: activeNetwork,
+      simulated: isSimulated,
       ...(options.feeRate !== undefined ? { feeRate: options.feeRate } : {})
     });
 

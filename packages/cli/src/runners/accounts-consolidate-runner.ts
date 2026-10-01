@@ -106,7 +106,7 @@ export async function runAccountsConsolidate(options: AccountsConsolidateOptions
 
   if (options.batchSize > 512) {
     throw new Error(
-      "Batch size cannot exceed 512 inputs to avoid TOO_MANY_INPUTS_FOR_SINGLE_TX errors."
+      "Batch size cannot exceed 512 inputs."
     );
   }
 

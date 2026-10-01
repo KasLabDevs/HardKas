@@ -200,7 +200,7 @@ export class ResilientSubscriptionClient implements KaspaRpcClient {
     return this.client.getVirtualSelectedParentBlueScore();
   }
 
-  async getVirtualChainFromBlockV2(options: { startHash: string; dataVerbosityLevel?: import("../contracts/read").RpcDataVerbosityLevel; minConfirmationCount?: string }): Promise<any> {
+  async getVirtualChainFromBlockV2(options: { startHash: string; dataVerbosityLevel?: import("../index.js").RpcDataVerbosityLevel; minConfirmationCount?: string }): Promise<any> {
     if (!this.client) throw new Error("Client is reconnecting");
     return this.client.getVirtualChainFromBlockV2(options);
   }

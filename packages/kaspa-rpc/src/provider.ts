@@ -147,7 +147,7 @@ export class LoadBalancedRpcProvider implements KaspaRpcClient {
     return this.withFailover((c) => c.getVirtualSelectedParentBlueScore());
   }
 
-  async getVirtualChainFromBlockV2(options: { startHash: string; dataVerbosityLevel?: import("./contracts/read").RpcDataVerbosityLevel; minConfirmationCount?: string }): Promise<any> {
+  async getVirtualChainFromBlockV2(options: { startHash: string; dataVerbosityLevel?: import("./index.js").RpcDataVerbosityLevel; minConfirmationCount?: string }): Promise<any> {
     if (options.dataVerbosityLevel !== "NONE" && options.dataVerbosityLevel !== "LEGACY_RECOVERY" && options.dataVerbosityLevel !== undefined) {
       throw new RpcError(`dataVerbosityLevel '${options.dataVerbosityLevel}' is not supported by the legacy compatibility transport binding. Supported subsets: 'NONE' | 'LEGACY_RECOVERY'`, "RPC_CAPABILITY_UNSUPPORTED");
     }

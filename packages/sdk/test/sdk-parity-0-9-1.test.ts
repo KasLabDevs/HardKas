@@ -17,7 +17,7 @@ function repoRoot(): string {
   throw new Error("repo root not found");
 }
 
-describe("0.12.0-rc.25 SDK parity surface", () => {
+describe("0.12.0-rc.26 SDK parity surface", () => {
   let workspaceRoot: string;
 
   beforeEach(() => {
@@ -36,7 +36,7 @@ describe("0.12.0-rc.25 SDK parity surface", () => {
     });
     const capabilities = await sdk.capabilities.get("hardkas-1.0-alpha");
 
-    expect(capabilities.version).toBe("0.12.0-rc.25");
+    expect(capabilities.version).toBe("0.12.0-rc.26");
     expect(capabilities.capabilities.mainnetGuards).toBe(true);
     expect(capabilities.capabilities.consensusValidation).toBe(false);
     expect(capabilities.capabilities.productionWallet).toBe(false);

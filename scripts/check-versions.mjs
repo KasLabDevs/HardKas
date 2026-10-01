@@ -76,14 +76,14 @@ if (!versionShape) {
 const [, major, minor, patch, tag, currentNumber] = versionShape ?? [];
 const line = versionShape ? `${major}.${minor}.${patch}` : null;
 const escape = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-// Full tokens of the product line, e.g. 0.12.0-rc.25
+// Full tokens of the product line, e.g. 0.12.0-rc.26
 const fullToken = versionShape ? new RegExp(`\\b${escape(line)}-${tag}\\.(\\d+)\\b`, "g") : null;
 // Bare pre-release mentions, e.g. rc.24 / rc24 (docs and prose)
 const bareToken = versionShape ? new RegExp(`\\b${tag}\\.?(\\d+)\\b`, "gi") : null;
 
 const SKIP_DIRS = new Set(["node_modules", "dist", "dist-release", "coverage", "target", "build"]);
-// Hidden directories are tool state, except the two that can carry version references.
-const SCANNED_HIDDEN_DIRS = new Set([".github", ".changeset"]);
+// Hidden directories are tool state, except .github, which can carry version references.
+const SCANNED_HIDDEN_DIRS = new Set([".github"]);
 const TEXT_EXT = new Set([".ts", ".tsx", ".js", ".mjs", ".cjs", ".json", ".md", ".mdx", ".yml", ".yaml", ".txt", ".html"]);
 
 function* walk(dir) {

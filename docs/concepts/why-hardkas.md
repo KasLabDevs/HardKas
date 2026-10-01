@@ -52,4 +52,4 @@ HardKAS ensures that keys only exist as transient string primitives. They are pu
 
 ### 4. Stability (UTXO Selection Happens Before Signing)
 
-Kaspa transactions have a maximum mass. If a mining wallet has 50,000 UTXOs, loading all of them into a signing context will cause a Node.js V8 Out-of-Memory crash. HardKAS's Planner strictly enforces a largest-first selection limit. By the time the payload reaches the Signer, it is guaranteed to be within safe memory and network mass limits.
+Kaspa transactions have a maximum mass. If a mining wallet has 50,000 UTXOs, loading all of them into a signing context will cause a Node.js V8 Out-of-Memory crash. HardKAS's Planner hands the UTXOs to the official `kaspa-wasm` Generator, which selects only what one standard transaction can hold, and refuses a payment that would need several transactions. By the time the payload reaches the Signer, it is within safe memory and network mass limits.

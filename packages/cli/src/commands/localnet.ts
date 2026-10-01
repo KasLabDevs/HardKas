@@ -16,10 +16,10 @@ export function registerLocalnetCommands(program: Command): void {
 
   localnet
     .command("start")
-    .description(`Start localnet profile ${UI.maturity("alpha")}`)
-    .option("--profile <name>", "Localnet profile", "simulated")
+    .description(`Start (or adopt) the Docker rusty-kaspad node for the toccata-v2 profile and create dev accounts alice…erin; needs Docker ${UI.maturity("alpha")}`)
+    .option("--profile <name>", "Localnet profile: toccata-v2 (the only one, required; or use --toccata)")
     .option("--toccata", "Shortcut for --profile toccata-v2", false)
-    .option("--detached", "Run in background", false)
+    .option("--detached", "No effect: the node always runs as a detached Docker container", false)
     .option("--json", "Output as JSON", false)
     .action(async (opts) => {
       await runLocalnetStart({
@@ -58,7 +58,7 @@ export function registerLocalnetCommands(program: Command): void {
     .command("fund <identifier>")
     .description(`Fund a local Toccata/simnet account ${UI.maturity("alpha")}`)
     .option("--profile <name>", "Funding profile", "toccata-v2")
-    .option("--amount <kas>", "Target mining amount hint in KAS", "1000")
+    .option("--amount <kas>", "KAS to wait for: mine until the mature balance grows by this amount", "1000")
     .option("--timeout <ms>", "Funding/maturity wait timeout in ms", "300000")
     .option("--keep-miner", "Leave the companion miner running", false)
     .option("--json", "Output as JSON", false)
@@ -91,16 +91,16 @@ export function registerLocalnetCommands(program: Command): void {
   localnet
     .command("fork")
     .description(
-      `Fork state from a real Kaspa network for local simulation ${UI.maturity("preview")}`
+      `Copy the current UTXOs of some addresses from a node into a simulator state file ${UI.maturity("preview")}`
     )
     .requiredOption("--network <name>", "Network to fork from")
-    .option("--addresses <addrs...>", "Only fetch UTXOs for these addresses")
+    .option("--addresses <addrs...>", "Addresses whose UTXOs are copied, separated by spaces")
     .requiredOption(
       "--at-daa-score <score>",
-      "Fork at specific DAA score (implicit latest is forbidden)"
+      "Required label recorded with the snapshot; the UTXOs copied are always the node's current ones"
     )
-    .option("--output <path>", "Save fork snapshot to file")
-    .option("--json", "Output as JSON", false)
+    .option("--output <path>", "State file to write (default: .hardkas/localnet.json, replaced)")
+    .option("--json", "Not implemented yet: no JSON is printed", false)
     .action(async (opts) => {
       await runLocalnetFork({
         network: opts.network,

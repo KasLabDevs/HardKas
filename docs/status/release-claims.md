@@ -79,9 +79,10 @@ node packages/cli/dist/index.js capabilities --json
 - Machine-verifiable golden corpus (`fixtures/toccata-v2/silver`), recorded from real execution.
 - Mainnet guard: SILVERSCRIPT_MAINNET_NOT_ENABLED.
 
-The experimental `hardkas simulator silver` bookkeeping simulator is not part of
-the baseline: SIMULATED_ACCEPTED never satisfies a compile, deploy, spend, verify
-or certification step.
+The experimental `hardkas silver test` runs contract tests on the official
+SilverScript runner and is not part of the baseline: its `vm` records are contract
+execution on scenario transactions and never satisfy a compile, deploy, spend,
+verify or certification step. HardKAS no longer has a Silver simulator.
 
 ## Known Limitation
 

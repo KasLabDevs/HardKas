@@ -44,7 +44,8 @@ import {
   SilverCompileV1Schema,
   SilverDeployV1Schema,
   SilverSpendV1Schema,
-  SilverCovenantV1Schema
+  SilverCovenantV1Schema,
+  SilverVmTestV1Schema
 } from "./schemas.js";
 
 export interface Clock {
@@ -346,6 +347,9 @@ export function verifyArtifactIntegritySync(
         break;
       case HardkasSchemas.SilverCovenantV1:
         schema = SilverCovenantV1Schema;
+        break;
+      case HardkasSchemas.SilverVmTestV1:
+        schema = SilverVmTestV1Schema;
         break;
     }
 

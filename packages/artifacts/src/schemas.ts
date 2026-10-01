@@ -688,6 +688,10 @@ export const RuntimeSessionSchema = BaseArtifactSchema.extend({
 
 export type RuntimeSession = z.infer<typeof RuntimeSessionSchema>;
 
+// Legacy SilverScript artifacts, from SilverCompile to SilverTest below: read
+// compatibility only. Nothing produces them any more (the legacy Silver commands
+// and the Silver simulator are gone); they stay so historical artifacts still
+// verify. Removing them needs an explicit migration decision.
 export const SilverCompileArtifactSchema = BaseArtifactSchema.extend({
   schema: z.literal(HardkasSchemas.SilverCompile),
   sourcePath: z.string(),
@@ -957,6 +961,44 @@ export const SilverCovenantV1Schema = SilverOnChainSchema.extend({
   valueSompi: z.string().regex(/^\d+$/),
   computeBudget: z.number().int().nonnegative()
 }).passthrough();
+
+// `hardkas silver test`: the official SilverScript runner's verdicts on synthetic
+// scenario transactions. Contract execution only, never transaction validity or
+// node evidence: its mode is "vm", never "localnet", and it claims no capability.
+// The runner's output can print argument values, so results carry its digest.
+export const SilverVmTestV1Schema = BaseArtifactSchema.omit({ mode: true }).extend({
+  schema: z.literal(HardkasSchemas.SilverVmTestV1),
+  mode: z.literal("vm"),
+  networkId: z.literal("simnet"),
+  evidence: z.literal("official-vm-scenario"),
+  scope: z.string(),
+  compileRecord: SilverRecordRefSchema,
+  contract: z.string(),
+  runner: z.object({
+    binarySha256: Hex64,
+    size: z.number().int().positive(),
+    provenance: z.literal("unmanaged-local-build"),
+    expectedSource: z.object({ repository: z.string(), releaseTag: z.string(), commit: z.string(), package: z.literal("cli-debugger") })
+  }),
+  testFile: z.object({ path: z.string(), sha256: Hex64 }),
+  runnerInputSha256: Hex64,
+  results: z
+    .array(
+      z.object({
+        name: z.string(),
+        function: z.string(),
+        expect: z.enum(["pass", "fail"]),
+        outcome: z.enum(["PASS", "FAIL"]),
+        runnerStatus: z.string().nullable(),
+        exitCode: z.number().int(),
+        signedArgs: z.number().int().nonnegative(),
+        outputSha256: Hex64
+      })
+    )
+    .min(1),
+  summary: z.object({ total: z.number().int().positive(), passed: z.number().int().nonnegative(), failed: z.number().int().nonnegative() }),
+  status: z.enum(["PASS", "FAIL"])
+});
 
 export const ProgrammabilityClaimsSchema = z.object({
   artifactCoherence: z.literal("READY_MATCH"),

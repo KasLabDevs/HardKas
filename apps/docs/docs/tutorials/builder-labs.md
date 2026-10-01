@@ -38,7 +38,7 @@ HardKAS Doctor
 
 ```typescript
 {
-  "version": "0.12.0-rc.25",
+  "version": "0.12.0-rc.26",
   "maturity": "hardened-alpha",
   "capabilities": {
     "artifacts": true,

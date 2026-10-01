@@ -10,8 +10,7 @@ const config: KnipConfig = {
         "scripts/**/*.{ts,js,mjs}",
         "docs/examples/**/*.{ts,tsx}",
         "templates/**/*",
-        "benchmarks/**/*.{ts,tsx,js,mjs}",
-        "migrations/**/*"
+        "benchmarks/**/*.{ts,tsx,js,mjs}"
       ],
       project: ["**/*.{ts,tsx,js,mjs}"]
     },
@@ -26,13 +25,6 @@ const config: KnipConfig = {
         "dummy-project/**/*"
       ],
       project: ["src/**/*.{ts,tsx,js,mjs}", "test/**/*.{ts,tsx,js,mjs}", "tests/**/*.{ts,tsx,js,mjs}"]
-    },
-    "examples/showcase-suite/apps/*": {
-      entry: [
-        "src/**/*.{ts,tsx}",
-        "vite.config.ts"
-      ],
-      project: ["src/**/*.{ts,tsx}"]
     }
   },
   ignore: [

@@ -10,8 +10,9 @@ The Transaction Plane encounters various failure states, which HardKAS models ex
 ## Planning Errors
 
 - **`SELECTED_UTXO_INVALIDATED`** (`SelectedUtxoInvalidatedError`): Thrown by CLI planning against a real node when, in every bounded retry, an input the planner selected was no longer in the address UTXO set or was being spent by a transaction in the node's mempool. The DAG advancing while the plan is built is never a reason for it. Plan again once the competing transaction is accepted or dropped.
-- **`TOO_MANY_INPUTS_FOR_SINGLE_TX`**: Thrown if the required inputs exceed the safe mass limit (e.g., `512` inputs). The developer should run `hardkas accounts consolidate` to merge dust UTXOs before attempting the transaction again.
-- **`FeeSelectionDidNotConvergeError`**: Thrown if the legacy planner fails to find a stable UTXO selection that can cover both the principal amount and the iteratively estimated fee.
+- **`MULTI_TRANSACTION_PLAN_REQUIRED`**: Thrown when the inputs needed do not fit in one standard transaction (the Generator would build several). Run `hardkas accounts consolidate` to merge small UTXOs, then plan again; a consolidation that hits it needs smaller batches.
+- **`CHANGE_BELOW_STANDARD_OUTPUT`**: Thrown when the change the payment would leave is too small for a standard output (storage mass, KIP-9). Adjust the amount, or send the whole balance.
+- **`OUTPUT_BELOW_STANDARD_AMOUNT`**: Thrown when a payment output is too small for a standard output from the selected UTXOs. Send a larger amount.
 - **`Insufficient funds`**: Thrown when the available mature, unspent UTXOs (after safety filtering and pending-spend exclusions) cannot cover the requested amount plus the network fee.
 
 ## Execution Errors

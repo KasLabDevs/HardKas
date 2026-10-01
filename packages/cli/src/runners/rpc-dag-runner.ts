@@ -1,35 +1,42 @@
-import { KaspaJsonRpcClient, BlockDagInfo } from "@hardkas/kaspa-rpc";
+import { JsonWrpcKaspaClient, BlockDagInfo } from "@hardkas/kaspa-rpc";
+import { nodeRpcUrl } from "@hardkas/core";
 
 export interface RpcDagOptions {
-  url?: string;
+  /** Node wRPC endpoint; defaults to the canonical localnet. */
+  url?: string | undefined;
 }
 
 export async function runRpcDag(options: RpcDagOptions = {}): Promise<{
+  url: string;
   dag: BlockDagInfo;
   formatted: string;
 }> {
-  const client = new KaspaJsonRpcClient({ url: options.url || "http://127.0.0.1:18210" });
-  const dag = await client.getBlockDagInfo();
+  const url = options.url || nodeRpcUrl();
+  const client = new JsonWrpcKaspaClient({ rpcUrl: url, timeoutMs: 10000 });
+  try {
+    const dag = await client.getBlockDagInfo();
+    const tips = dag.tipHashes ?? [];
 
-  const lines = [
-    "Kaspa DAG info",
-    "",
-    `Network:        ${dag.networkId}`,
-    `Virtual DAA:    ${dag.virtualDaaScore?.toString() || "unknown"}`,
-    `Tips:           ${dag.tipHashes?.length || 0}`
-  ];
+    const lines = [
+      "Kaspa DAG info",
+      "",
+      `Network:        ${dag.networkId}`,
+      `Virtual DAA:    ${dag.virtualDaaScore?.toString() || "unknown"}`,
+      `Sink:           ${dag.sink || "unknown"}`,
+      `Tips:           ${tips.length}`
+    ];
 
-  if (dag.tipHashes && dag.tipHashes.length > 0) {
-    lines.push("");
-    lines.push("Tips:");
-    dag.tipHashes.slice(0, 5).forEach((hash) => lines.push(`  - ${hash}`));
-    if (dag.tipHashes.length > 5) {
-      lines.push(`  ... and ${dag.tipHashes.length - 5} more`);
+    if (tips.length > 0) {
+      lines.push("");
+      lines.push("Tips:");
+      tips.slice(0, 5).forEach((hash) => lines.push(`  - ${hash}`));
+      if (tips.length > 5) {
+        lines.push(`  ... and ${tips.length - 5} more`);
+      }
     }
-  }
 
-  return {
-    dag,
-    formatted: lines.join("\n")
-  };
+    return { url, dag, formatted: lines.join("\n") };
+  } finally {
+    await client.close();
+  }
 }

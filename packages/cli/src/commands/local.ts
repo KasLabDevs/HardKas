@@ -8,9 +8,9 @@ export function registerLocalCommands(program: Command) {
 
   localCmd
     .command("wizard")
-    .description(`Guided setup for local development ${UI.maturity("stable")}`)
+    .description(`Guided Igra L2 (EVM) check: JSON-RPC, EVM account and its balance; not a Kaspa L1 setup ${UI.maturity("stable")}`)
     .option("--profile <name>", "L2 network profile name", "igra")
-    .option("--account <name>", "New or existing EVM account name", "dev_alice")
+    .option("--account <name>", "EVM account name in hardkas.config (if it is missing, a key is printed for you to add)", "dev_alice")
     .option(
       "--non-interactive",
       "Skip interactive prompts (will fail if input required)",

@@ -138,7 +138,8 @@ async function main() {
     ...ledger.map(l => `| ${l.section} | \`/docs/${l.file}\` |`)
   ].join('\n');
   
-  const ledgerPath = path.join(ROOT_DIR, 'hardkas-docs-migration-ledger.md');
+  const ledgerPath = path.join(ROOT_DIR, 'docs', 'internal', 'history', 'docs-platform', 'hardkas-docs-migration-ledger.md');
+  await fs.mkdir(path.dirname(ledgerPath), { recursive: true });
   await fs.writeFile(ledgerPath, ledgerMd, 'utf-8');
 }
 

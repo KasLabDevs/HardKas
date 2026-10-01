@@ -44,7 +44,7 @@ function makePlan(amount = 500n) {
 function policy(decision: "ALLOW" | "DENY", extra: Record<string, unknown> = {}) {
   const p: any = {
     schema: "hardkas.policy.v1",
-    hardkasVersion: "0.12.0-rc.25",
+    hardkasVersion: "0.12.0-rc.26",
     version: "1.0.0-alpha",
     hashVersion: CURRENT_HASH_VERSION,
     networkId: "simnet",
@@ -159,7 +159,7 @@ describe("Wave 1.2 · N1 · Silver nested references are checked against the tar
   const compileRecord = (artifactJson: string, extra: Record<string, unknown> = {}) => {
     const rec: any = {
       schema: "hardkas.silverCompile.v1",
-      hardkasVersion: "0.12.0-rc.25",
+      hardkasVersion: "0.12.0-rc.26",
       version: "1.0.0-alpha",
       mode: "localnet",
       hashVersion: 4,

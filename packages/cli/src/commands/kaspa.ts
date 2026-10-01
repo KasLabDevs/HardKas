@@ -1,6 +1,10 @@
 import { Command } from "commander";
 import { UI } from "../ui.js";
 
+// The JSON wRPC endpoint of the canonical localnet, as for the `rpc` commands.
+const DEFAULT_RPC_URL = "ws://127.0.0.1:18210";
+const RPC_URL_OPTION = "Node wRPC endpoint (default: the canonical localnet, ws://127.0.0.1:18210)";
+
 export function registerKaspaCommands(program: Command) {
   const kaspaCmd = program
     .command("kaspa")
@@ -12,7 +16,7 @@ export function registerKaspaCommands(program: Command) {
 
   walletCmd
     .command("create <name>")
-    .description(`Create a new local Kaspa wallet ${UI.maturity("stable")}`)
+    .description(`Generate a key pair and print it (address, config snippet and private key); nothing is saved. For stored dev accounts use 'accounts real generate' ${UI.maturity("stable")}`)
     .option("--network <id>", "Kaspa network ID", "simnet")
     .action(async (name: string, options: any) => {
       const { runKaspaWalletCreate } = await import("../runners/kaspa-wallet-runner.js");
@@ -39,7 +43,7 @@ export function registerKaspaCommands(program: Command) {
   walletCmd
     .command("balance <name>")
     .description(`Show balance of a local Kaspa wallet ${UI.maturity("stable")}`)
-    .option("--rpc-url <url>", "Kaspa RPC URL", "http://127.0.0.1:16110")
+    .option("--rpc-url <url>", RPC_URL_OPTION, DEFAULT_RPC_URL)
     .option("--json", "Output as JSON", false)
     .action(async (name: string, options: any) => {
       const { runKaspaWalletBalance } = await import("../runners/kaspa-wallet-runner.js");
@@ -48,10 +52,10 @@ export function registerKaspaCommands(program: Command) {
 
   walletCmd
     .command("send <from> <to>")
-    .description(`Send Kaspa between local wallets ${UI.maturity("stable")}`)
+    .description(`Plan, confirm (y/N), sign and submit a payment over --rpc-url; the network and target come from hardkas.config ${UI.maturity("stable")}`)
     .option("--amount <kas>", "Amount in KAS to send")
     .option("--dry-run", "Plan but do not sign or broadcast", false)
-    .option("--rpc-url <url>", "Kaspa RPC URL", "http://127.0.0.1:16110")
+    .option("--rpc-url <url>", RPC_URL_OPTION, DEFAULT_RPC_URL)
     .action(async (from: string, to: string, options: any) => {
       const { runKaspaWalletSend } = await import("../runners/kaspa-wallet-runner.js");
       await runKaspaWalletSend(from, to, options);
@@ -59,8 +63,8 @@ export function registerKaspaCommands(program: Command) {
 
   kaspaCmd
     .command("doctor")
-    .description(`Verify local Kaspa L1 environment readiness ${UI.maturity("stable")}`)
-    .option("--rpc-url <url>", "Kaspa RPC URL", "http://127.0.0.1:16110")
+    .description(`Check one Kaspa node at --rpc-url: reachability, sync state, UTXO index, DAG info and mempool ${UI.maturity("stable")}`)
+    .option("--rpc-url <url>", RPC_URL_OPTION, DEFAULT_RPC_URL)
     .option("--json", "Output as JSON", false)
     .action(async (options: any) => {
       const { runKaspaDoctor } = await import("../runners/kaspa-doctor-runner.js");

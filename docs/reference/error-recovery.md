@@ -41,10 +41,10 @@ Key material crossed an execution boundary as a runtime object, usually with a W
 Resolution:
 Never serialize raw Kaspa WASM classes. Export encrypted keystore JSON or primitive key data, then recreate runtime key objects inside the signing process.
 
-## `TOO_MANY_INPUTS_FOR_SINGLE_TX`
+## `MULTI_TRANSACTION_PLAN_REQUIRED`
 
 Meaning:
-The planner would need more UTXOs than the transaction mass limit allows.
+The payment needs more UTXOs than one standard transaction can hold: the Generator would split it into several transactions, and HardKAS plans one transaction at a time.
 
 Common cause:
 A mining or test wallet has many small UTXOs and tries to send a large amount in one transaction.
@@ -55,6 +55,24 @@ Use the consolidation workflow before sending:
 ```bash
 hardkas accounts consolidate --execute --yes
 ```
+
+If `accounts consolidate` itself reports it, use a smaller `--batch-size`.
+
+## `CHANGE_BELOW_STANDARD_OUTPUT`
+
+Meaning:
+The change the payment would leave is too small for a standard output (its storage mass, KIP-9, exceeds the maximum standard transaction mass). HardKAS refuses the plan instead of turning the remainder into fee.
+
+Resolution:
+Adjust the amount, or send the whole balance.
+
+## `OUTPUT_BELOW_STANDARD_AMOUNT`
+
+Meaning:
+A payment output is too small for a standard output from the selected UTXOs (storage mass, KIP-9).
+
+Resolution:
+Send a larger amount.
 
 ## `DEV_ACCOUNT_KEY_UNAVAILABLE`
 

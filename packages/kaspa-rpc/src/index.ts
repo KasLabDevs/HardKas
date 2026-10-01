@@ -1,8 +1,7 @@
 import type { NetworkId } from "@hardkas/core";
-import { WebSocket } from "ws";
-import { NOTIFY_UTXOS_CHANGED_REQUEST, STOP_NOTIFYING_UTXOS_CHANGED_REQUEST, UTXOS_CHANGED_NOTIFICATION, NOTIFY_VIRTUAL_CHAIN_CHANGED_REQUEST, VIRTUAL_CHAIN_CHANGED_NOTIFICATION } from "./internal/notifications.js";
-import { normalizeRpcError, RpcError, RpcNotFoundError } from "./errors.js";
-import { normalizeRpcStorageMass } from "./internal/storage-mass.js";
+import { RpcError, RpcNotFoundError } from "./errors.js";
+import { OfficialRpcSession, type OfficialRpcFactory } from "./upstream/session.js";
+import { toWire, utxoReferenceToWire } from "./upstream/wire.js";
 
 export interface KaspaNodeInfo {
   serverVersion?: string | undefined;
@@ -88,6 +87,8 @@ export interface KaspaRpcTransaction {
 export interface JsonWrpcKaspaClientOptions {
   rpcUrl: string;
   timeoutMs?: number;
+  /** Builds the official client for a URL; defaults to the pinned kaspa-wasm `RpcClient` (tests pass a stand-in). */
+  rpcFactory?: OfficialRpcFactory;
 }
 
 export interface BlockDagInfo {
@@ -144,6 +145,9 @@ export interface SubmitTransactionOptions {
   allowOrphan?: boolean;
 }
 
+/** Data verbosity of `getVirtualChainFromBlockV2`; HardKAS clients accept NONE and LEGACY_RECOVERY. */
+export type RpcDataVerbosityLevel = "NONE" | "LOW" | "HIGH" | "FULL" | "LEGACY_RECOVERY";
+
 export interface KaspaRpcClient {
   getInfo(): Promise<KaspaNodeInfo>;
   healthCheck(): Promise<KaspaRpcHealth>;
@@ -164,7 +168,7 @@ export interface KaspaRpcClient {
   getCurrentNetwork(): Promise<any>;
   getSyncStatus(): Promise<any>;
   getVirtualSelectedParentBlueScore(): Promise<any>;
-  getVirtualChainFromBlockV2(options: { startHash: string; dataVerbosityLevel?: import("./contracts/read").RpcDataVerbosityLevel; minConfirmationCount?: string }): Promise<any>;
+  getVirtualChainFromBlockV2(options: { startHash: string; dataVerbosityLevel?: RpcDataVerbosityLevel; minConfirmationCount?: string }): Promise<any>;
   getSinkBlueScore(): Promise<any>;
   getHeaders(): Promise<any>;
   subscribeToUtxosChanged(addresses: readonly string[], handler: (event: UtxosChangedEvent) => void): Promise<KaspaSubscription>;
@@ -175,12 +179,37 @@ export interface KaspaRpcClient {
   close(): void | Promise<void>;
 }
 
+// The node's JSON notification names, and the official client's event for each.
+const OFFICIAL_EVENTS: Record<string, string> = {
+  utxosChangedNotification: "utxos-changed",
+  virtualChainChangedNotification: "virtual-chain-changed",
+  blockAddedNotification: "block-added",
+  sinkBlueScoreChangedNotification: "sink-blue-score-changed",
+  virtualDaaScoreChangedNotification: "virtual-daa-score-changed",
+  finalityConflictNotification: "finality-conflict",
+  finalityConflictResolvedNotification: "finality-conflict-resolved",
+  newBlockTemplateNotification: "new-block-template",
+  pruningPointUtxoSetOverrideNotification: "pruning-point-utxo-set-override"
+};
+
+interface ActiveListener {
+  event: string;
+  listener: (event: any) => void;
+}
+
+/**
+ * HardKAS's Kaspa RPC client over the node's wRPC JSON endpoint. The transport is
+ * the official kaspa-wasm `RpcClient`; this class keeps HardKAS's interface, typed
+ * errors and result shapes on top of it.
+ */
 export class JsonWrpcKaspaClient implements KaspaRpcClient {
-  private socket: WebSocket | null = null;
+  private readonly session: OfficialRpcSession;
   private readonly rpcUrl: string;
-  private readonly timeoutMs: number;
-  private requestId = 1;
-  private messageListeners: Array<{ event: string, handler: (data: any) => void }> = [];
+  private subscriptionCounter = 0;
+  private readonly rawListeners: Array<{ event: string; handler: (data: any) => void; listener: (event: any) => void }> = [];
+  private readonly subscriptions = new Map<string, ActiveListener>();
+  private readonly utxoAddressRefs = new Map<string, number>();
+  private virtualChain: { count: number; includeAcceptedTransactionIds: boolean } = { count: 0, includeAcceptedTransactionIds: false };
 
   public readonly capabilities = {
     virtualChainFromBlockV2: 'compatibility' as const
@@ -188,63 +217,90 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
 
   constructor(options: JsonWrpcKaspaClientOptions) {
     this.rpcUrl = options.rpcUrl;
-    this.timeoutMs = options.timeoutMs ?? 30000;
+    this.session = new OfficialRpcSession(options.rpcUrl, options.timeoutMs ?? 30000, options.rpcFactory);
+    // A new connection is a new official client: listeners and node-side subscriptions are restored on it.
+    this.session.onConnect((client) => {
+      for (const l of this.rawListeners) client.addEventListener(OFFICIAL_EVENTS[l.event] ?? l.event, l.listener);
+      for (const s of this.subscriptions.values()) client.addEventListener(s.event, s.listener);
+      const addresses = [...this.utxoAddressRefs.keys()];
+      if (addresses.length) void Promise.resolve(client.subscribeUtxosChanged(addresses)).catch(() => {});
+      if (this.virtualChain.count > 0) {
+        void Promise.resolve(client.subscribeVirtualChainChanged(this.virtualChain.includeAcceptedTransactionIds)).catch(() => {});
+      }
+    });
   }
 
   async call<TResponse = unknown>(method: string, params: any = {}): Promise<TResponse> {
-    await this.detectFlavor();
-    let actualMethod = method;
-    if (this.rpcFlavor === "legacy" && !method.endsWith("Request")) {
-       actualMethod = method + "Request";
-    } else if (this.rpcFlavor === "wrpc" && method.endsWith("Request")) {
-       actualMethod = method.slice(0, -"Request".length);
-    }
-    return this.requestRaw(actualMethod, params) as Promise<TResponse>;
+    return this.session.request<TResponse>(method, params);
   }
 
   on(event: string, handler: (data: any) => void): void {
-    for (const listener of this.messageListeners) {
-      if (listener.event === event && listener.handler === handler) return;
-    }
-    this.messageListeners.push({ event, handler });
+    if (this.rawListeners.some((l) => l.event === event && l.handler === handler)) return;
+    const listener = (e: any) => handler(toWire(e?.data ?? e));
+    this.rawListeners.push({ event, handler, listener });
+    this.session.current()?.addEventListener(OFFICIAL_EVENTS[event] ?? event, listener);
   }
 
   off(event: string, handler: (data: any) => void): void {
-    this.messageListeners = this.messageListeners.filter(
-      (l) => !(l.event === event && l.handler === handler)
-    );
+    const i = this.rawListeners.findIndex((l) => l.event === event && l.handler === handler);
+    if (i < 0) return;
+    const [l] = this.rawListeners.splice(i, 1);
+    this.session.current()?.removeEventListener(OFFICIAL_EVENTS[event] ?? event, l!.listener);
   }
 
-  private subscriptionCounter = 0;
+  private track(id: string, active: ActiveListener): void {
+    this.subscriptions.set(id, active);
+    this.session.current()?.addEventListener(active.event, active.listener);
+  }
+
+  private untrack(id: string): void {
+    const active = this.subscriptions.get(id);
+    if (!active) return;
+    this.subscriptions.delete(id);
+    this.session.current()?.removeEventListener(active.event, active.listener);
+  }
 
   async subscribeToUtxosChanged(
     addresses: readonly string[],
     handler: (event: UtxosChangedEvent) => void
   ): Promise<KaspaSubscription> {
-    await this.detectFlavor();
-
-    // In HTTP JSON-RPC, throw unsupported
-    // But since this is JsonWrpcKaspaClient (WebSocket based), we can do subscriptions
-    // Though if we determine it's not supported, we could throw.
-    // Here we'll just implement it with notifyUtxosChangedRequest
-
+    await this.session.connected();
     const subId = `sub_${this.subscriptionCounter++}`;
+    const watched = new Set(addresses);
     let isClosed = false;
+    const pick = (list: unknown) =>
+      mapKaspaRpcUtxos((Array.isArray(list) ? list : []).map(utxoReferenceToWire), "").filter((u) => !u.address || watched.has(u.address));
+    this.track(subId, {
+      event: "utxos-changed",
+      listener: (e: any) => {
+        if (isClosed) return;
+        const data = e?.data ?? e;
+        handler({ added: pick(data?.added), removed: pick(data?.removed) });
+      }
+    });
 
-    // We use the JSON-RPC notify method
-    await this.callMethod("notifyUtxosChanged", NOTIFY_UTXOS_CHANGED_REQUEST, { addresses: [...addresses] });
-
-    const msgHandler = (data: any) => {
-      if (isClosed) return;
-      const added = data?.added || data?.utxosAdded || [];
-      const removed = data?.removed || data?.utxosRemoved || [];
-      handler({
-        added: mapKaspaRpcUtxos(added, ""),
-        removed: mapKaspaRpcUtxos(removed, "")
-      });
+    // The node subscription is per address and per connection: subscribe only addresses not already watched.
+    const fresh = addresses.filter((a) => !this.utxoAddressRefs.has(a));
+    for (const a of addresses) this.utxoAddressRefs.set(a, (this.utxoAddressRefs.get(a) ?? 0) + 1);
+    const release = (): string[] => {
+      const released: string[] = [];
+      for (const a of addresses) {
+        const n = (this.utxoAddressRefs.get(a) ?? 1) - 1;
+        if (n <= 0) {
+          this.utxoAddressRefs.delete(a);
+          released.push(a);
+        } else this.utxoAddressRefs.set(a, n);
+      }
+      return released;
     };
-
-    this.on(UTXOS_CHANGED_NOTIFICATION, msgHandler);
+    try {
+      if (fresh.length) await this.session.request("subscribeUtxosChanged", fresh);
+    } catch (e) {
+      isClosed = true;
+      this.untrack(subId);
+      release();
+      throw e;
+    }
 
     return {
       id: subId,
@@ -252,12 +308,14 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
       unsubscribe: async () => {
         if (isClosed) return;
         isClosed = true;
-        this.off(UTXOS_CHANGED_NOTIFICATION, msgHandler);
-        // Fire stop request
-        try {
-            await this.callMethod("stopNotifyingUtxosChanged", STOP_NOTIFYING_UTXOS_CHANGED_REQUEST, { addresses: [...addresses] });
-        } catch(e) {
-            // Ignore error if connection is dead
+        this.untrack(subId);
+        const released = release();
+        if (released.length && this.session.current()) {
+          try {
+            await this.session.request("unsubscribeUtxosChanged", released);
+          } catch {
+            // The connection may already be gone; nothing is left to stop.
+          }
         }
       }
     };
@@ -267,46 +325,40 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
     options: { includeAcceptedTransactionIds: boolean },
     handler: (event: VirtualChainChangedEvent) => void
   ): Promise<KaspaSubscription> {
-    await this.detectFlavor();
-
+    await this.session.connected();
     const subId = `sub_${this.subscriptionCounter++}`;
     let isClosed = false;
-
-    await this.callMethod(
-      "notifyVirtualChainChanged",
-      NOTIFY_VIRTUAL_CHAIN_CHANGED_REQUEST,
-      { includeAcceptedTransactionIds: options.includeAcceptedTransactionIds }
-    );
-
-    const msgHandler = (data: any) => {
-      if (isClosed) return;
-      
-      const removed = data?.removedChainBlockHashes || [];
-      const added = data?.addedChainBlockHashes || [];
-      const acceptedRaw = data?.acceptedTransactionIds || [];
-      
-      let accepted: RpcAcceptedTransactionIds[] | undefined = undefined;
-      
-      if (options.includeAcceptedTransactionIds && Array.isArray(acceptedRaw)) {
-        accepted = acceptedRaw.map((a: any) => ({
-          acceptingBlockHash: a.acceptingBlockHash || "",
-          acceptedTransactionIds: a.acceptedTransactionIds || []
-        }));
+    this.track(subId, {
+      event: "virtual-chain-changed",
+      listener: (e: any) => {
+        if (isClosed) return;
+        const data: any = toWire(e?.data ?? e);
+        const payload: VirtualChainChangedEvent = {
+          removedChainBlockHashes: data?.removedChainBlockHashes || [],
+          addedChainBlockHashes: data?.addedChainBlockHashes || []
+        };
+        if (options.includeAcceptedTransactionIds && Array.isArray(data?.acceptedTransactionIds)) {
+          payload.acceptedTransactionIds = data.acceptedTransactionIds.map((a: any) => ({
+            acceptingBlockHash: a.acceptingBlockHash || "",
+            acceptedTransactionIds: a.acceptedTransactionIds || []
+          }));
+        }
+        handler(payload);
       }
+    });
 
-      let payload: VirtualChainChangedEvent = {
-        removedChainBlockHashes: removed,
-        addedChainBlockHashes: added
-      };
-      
-      if (accepted !== undefined) {
-        payload.acceptedTransactionIds = accepted;
+    // One node subscription per connection, shared by every subscriber.
+    if (this.virtualChain.count === 0) {
+      this.virtualChain = { count: 0, includeAcceptedTransactionIds: options.includeAcceptedTransactionIds };
+      try {
+        await this.session.request("subscribeVirtualChainChanged", options.includeAcceptedTransactionIds);
+      } catch (e) {
+        isClosed = true;
+        this.untrack(subId);
+        throw e;
       }
-
-      handler(payload);
-    };
-
-    this.on(VIRTUAL_CHAIN_CHANGED_NOTIFICATION, msgHandler);
+    }
+    this.virtualChain.count++;
 
     return {
       id: subId,
@@ -314,52 +366,21 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
       unsubscribe: async () => {
         if (isClosed) return;
         isClosed = true;
-        this.off(VIRTUAL_CHAIN_CHANGED_NOTIFICATION, msgHandler);
-        // Unlike UtxosChanged, there doesn't seem to be a stopNotifyingVirtualChainChangedRequest in kaspa proto.
-        // It's a connection-wide subscription. Just removing the listener is sufficient for the client wrapper.
+        this.untrack(subId);
+        this.virtualChain.count--;
+        if (this.virtualChain.count === 0 && this.session.current()) {
+          try {
+            await this.session.request("unsubscribeVirtualChainChanged", this.virtualChain.includeAcceptedTransactionIds);
+          } catch {
+            // The connection may already be gone; nothing is left to stop.
+          }
+        }
       }
     };
   }
 
-  private rpcFlavor: "legacy" | "wrpc" | null = null;
-  private preflightPromise: Promise<void> | null = null;
-
-  private async detectFlavor(): Promise<void> {
-    if (this.rpcFlavor) return;
-    if (this.preflightPromise) return this.preflightPromise;
-
-    this.preflightPromise = (async () => {
-      try {
-        const ws = await this.connect();
-        // Send getServerInfo first because wrpc accepts it, and legacy returns Method Not Found.
-        // If we sent getServerInfoRequest first, wrpc would close the connection.
-        const res = await this.requestRaw("getServerInfo", {});
-        this.rpcFlavor = "wrpc";
-      } catch (e: unknown) {
-        const errMsg = e instanceof Error ? ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) : String(e);
-        if (errMsg.includes("Method not found")) {
-          this.rpcFlavor = "legacy";
-        } else {
-          // If connection closed or timed out, default to wrpc and let it fail naturally later
-          this.rpcFlavor = "wrpc";
-        }
-      }
-    })();
-    return this.preflightPromise;
-  }
-
-  private async callMethod(
-    wrpcName: string,
-    legacyName: string,
-    params: any = {}
-  ): Promise<unknown> {
-    await this.detectFlavor();
-    const method = this.rpcFlavor === "legacy" ? legacyName : wrpcName;
-    return this.requestRaw(method, params);
-  }
-
   async getInfo(): Promise<KaspaNodeInfo> {
-    const response = await this.callMethod("getInfo", "getInfoRequest");
+    const response = await this.session.request("getInfo");
     const info = mapKaspaNodeInfo(response);
 
     // QF-004: Enrich networkId authoritatively from getServerInfo if missing natively
@@ -409,34 +430,14 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
   }
 
   async getBalanceByAddress(address: string): Promise<KaspaAddressBalance> {
-    await this.detectFlavor();
-    // For wrpc, we must use getBalancesByAddresses with { addresses: [address] }
-    // For legacy, getBalanceByAddressRequest with { address } works
-    let response;
-    if (this.rpcFlavor === "legacy") {
-      response = await this.callMethod(
-        "getBalanceByAddress",
-        "getBalanceByAddressRequest",
-        { address }
-      );
-    } else {
-      response = await this.callMethod(
-        "getBalancesByAddresses",
-        "getBalancesByAddressesRequest",
-        { addresses: [address] }
-      );
-    }
+    const response = await this.session.request("getBalancesByAddresses", { addresses: [address] });
     return mapKaspaAddressBalance(response, address);
   }
 
   async getUtxosByAddress(address: string): Promise<KaspaRpcUtxo[]> {
     let response: any;
     try {
-      response = await this.callMethod(
-        "getUtxosByAddresses",
-        "getUtxosByAddressesRequest",
-        { addresses: [address] }
-      ) as any;
+      response = await this.session.request("getUtxosByAddresses", { addresses: [address] });
     } catch (e) {
       if (e instanceof RpcNotFoundError) return [];
       throw e;
@@ -450,111 +451,29 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
   }
 
   async getUtxosByAddresses(addresses: string[]): Promise<any> {
-    return await this.callMethod(
-      "getUtxosByAddresses",
-      "getUtxosByAddressesRequest",
-      { addresses }
-    );
+    return this.session.request("getUtxosByAddresses", { addresses });
   }
 
   async getBlocks(options: { includeBlocks?: boolean; includeTransactions?: boolean } = {}): Promise<any> {
-    return await this.callMethod(
-      "getBlocks",
-      "getBlocksRequest",
-      options
-    );
+    return this.session.request("getBlocks", { includeBlocks: false, includeTransactions: false, ...options });
   }
 
   async submitTransaction(transaction: KaspaRpcTransaction, options?: SubmitTransactionOptions): Promise<KaspaSubmitTransactionResult> {
-    let txObj: any = transaction;
-    try {
-      while (typeof txObj === "string" && txObj.startsWith("{")) {
-        const parsed = JSON.parse(txObj);
-        if (parsed && typeof parsed === "object") {
-          if ("tx" in parsed) txObj = parsed.tx;
-          else if ("inner" in parsed) txObj = parsed.inner;
-          else txObj = parsed;
-        } else {
-          txObj = parsed;
-        }
-      }
-
-      // One final check for POJO nested inner/tx in case it wasn't a string at a nested level
-      while (
-        txObj &&
-        typeof txObj === "object" &&
-        !Array.isArray(txObj) &&
-        ("tx" in txObj || "inner" in txObj)
-      ) {
-        if ("tx" in txObj) txObj = (txObj as any).tx;
-        else if ("inner" in txObj) txObj = (txObj as any).inner;
-      }
-
-      // Fix types for wRPC (it expects numbers for amounts/values)
-      const txAny = txObj as any;
-      if (txAny && typeof txAny === "object") {
-        // Normalize top-level numeric fields that may arrive as strings from the NAPI bridge
-        if (typeof txAny.version === "string") txAny.version = Number(txAny.version);
-        if (typeof txAny.lockTime === "string") txAny.lockTime = Number(txAny.lockTime);
-        if (typeof txAny.lock_time === "string") txAny.lock_time = Number(txAny.lock_time);
-        if (typeof txAny.gas === "string") txAny.gas = Number(txAny.gas);
-        if (txAny.outputs && Array.isArray(txAny.outputs)) {
-          txAny.outputs.forEach((output: any) => {
-            // Kaspad wRPC expects "value", not "amount"
-            if (output.amount !== undefined && output.value === undefined) {
-              output.value = output.amount;
-              delete output.amount;
-            }
-            if (typeof output.amount === "string") output.amount = Number(output.amount);
-            if (typeof output.value === "string") output.value = Number(output.value);
-
-            if (output.scriptPublicKey && typeof output.scriptPublicKey === "object") {
-              const spk = output.scriptPublicKey;
-              // kaspad wRPC expects the field as "script", not "scriptPublicKey"
-              if (spk.scriptPublicKey !== undefined && spk.script === undefined) {
-                spk.script = spk.scriptPublicKey;
-                delete spk.scriptPublicKey;
-              }
-            }
-          });
-        }
-        if (txAny.inputs && Array.isArray(txAny.inputs)) {
-          txAny.inputs.forEach((input: any) => {
-            if (typeof input.sequence === "string")
-              input.sequence = Number(input.sequence);
-            if (typeof input.sigOpCount === "string")
-              input.sigOpCount = Number(input.sigOpCount);
-          });
-        }
-      }
-    } catch (e) {
-      // Ignored
-    }
-    // Outside the lenient block above: a bad mass commitment must not be swallowed.
-    if (txObj && typeof txObj === "object") normalizeRpcStorageMass(txObj as Record<string, unknown>);
-
-    // Both flavors accept the transaction wrapped in an object
-    const req: any = { 
-      transaction: txObj, 
-      allowOrphan: options?.allowOrphan ?? false,
-      allow_orphan: options?.allowOrphan ?? false
-    };
-
-    const response = await this.callMethod(
-      "submitTransaction",
-      "submitTransactionRequest",
-      req
-    );
+    // The storage mass commitment is checked before anything is sent (see upstream/wire.ts).
+    const response = await this.session.request("submitTransaction", {
+      transaction,
+      allowOrphan: options?.allowOrphan ?? false
+    });
     return mapKaspaSubmitTransactionResult(response);
   }
 
   async getMempoolEntry(txId: string): Promise<MempoolEntry | null> {
     try {
-      const response = await this.callMethod(
-        "getMempoolEntry",
-        "getMempoolEntryRequest",
-        { transactionId: txId, includeOrphanPool: true, filterTransactionPool: false }
-      );
+      const response = await this.session.request("getMempoolEntry", {
+        transactionId: txId,
+        includeOrphanPool: true,
+        filterTransactionPool: false
+      });
       if (!response) return null;
       const resObj = response as Record<string, unknown>;
       return {
@@ -578,16 +497,15 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
    */
   async checkMempoolPresence(txId: string): Promise<{ status: 'present' } | { status: 'absent' }> {
     try {
-      const response = await this.callMethod(
-        "getMempoolEntry",
-        "getMempoolEntryRequest",
-        { transactionId: txId, includeOrphanPool: true, filterTransactionPool: false }
-      );
+      await this.session.request("getMempoolEntry", {
+        transactionId: txId,
+        includeOrphanPool: true,
+        filterTransactionPool: false
+      });
       return { status: 'present' };
     } catch (e: any) {
       // Distinguish 'not found' from real errors
       const msg = (e?.message || '').toLowerCase();
-      console.log(`[DEBUG] checkMempoolPresence caught error:`, e.message);
       if (msg.includes('not found') || msg.includes('no_data') || msg.includes('entry not found')) {
         return { status: 'absent' };
       }
@@ -598,18 +516,16 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
 
   async getTransaction(txId: string): Promise<unknown | null> {
     try {
-      return await this.callMethod("getTransaction", "getTransactionRequest", {
-        transactionId: txId
-      });
+      return await this.session.request("getTransaction", { transactionId: txId });
     } catch (e) {
+      // The node serves no transaction lookup without a transaction index.
       if (e instanceof RpcNotFoundError) return null;
       throw e;
     }
   }
 
   async getBlockDagInfo(): Promise<BlockDagInfo> {
-    const response = await this.callMethod("getBlockDagInfo", "getBlockDagInfoRequest");
-    const dagData: any = response;
+    const dagData: any = await this.session.request("getBlockDagInfo");
     return {
       networkId: (dagData?.networkName || dagData?.network || "unknown") as NetworkId,
       virtualDaaScore: dagData?.virtualDaaScore !== undefined ? BigInt(dagData.virtualDaaScore) : 0n,
@@ -621,12 +537,14 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
 
   async getServerInfo(): Promise<ServerInfo> {
     try {
-      const response: any = await this.callMethod("getServerInfo", "getServerInfoRequest");
+      const response: any = await this.session.request("getServerInfo");
       const result: any = {
         networkId: (response?.networkId || "unknown") as NetworkId
       };
       if (response?.serverVersion !== undefined) result.serverVersion = response.serverVersion;
       if (response?.isSynced !== undefined) result.isSynced = response.isSynced;
+      if (response?.hasUtxoIndex !== undefined) result.hasUtxoIndex = response.hasUtxoIndex;
+      if (response?.virtualDaaScore !== undefined) result.virtualDaaScore = BigInt(response.virtualDaaScore);
       return result as ServerInfo;
     } catch (e) {
       // Fallback to getInfo
@@ -641,157 +559,53 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
   }
 
   async getMempoolEntries(options?: any): Promise<any> {
-    return this.callMethod("getMempoolEntries", "getMempoolEntriesRequest", options || {});
+    return this.session.request("getMempoolEntries", { includeOrphanPool: false, filterTransactionPool: false, ...(options || {}) });
   }
   async getMempoolEntriesByAddresses(options: any): Promise<any> {
-    return this.callMethod("getMempoolEntriesByAddresses", "getMempoolEntriesByAddressesRequest", options);
+    return this.session.request("getMempoolEntriesByAddresses", options);
   }
 
   async getFeeEstimate(): Promise<any> {
-    return this.callMethod("getFeeEstimate", "getFeeEstimateRequest", {});
+    return this.session.request("getFeeEstimate", {});
   }
 
   async getFeeEstimateExperimental(): Promise<any> {
-    return this.callMethod("getFeeEstimateExperimental", "getFeeEstimateExperimentalRequest", {});
+    return this.session.request("getFeeEstimateExperimental", { verbose: false });
   }
 
   async getCurrentNetwork(): Promise<any> {
-    return this.callMethod("getCurrentNetwork", "getCurrentNetworkRequest", {});
+    return this.session.request("getCurrentNetwork", {});
   }
 
   async getSyncStatus(): Promise<any> {
-    return this.callMethod("getSyncStatus", "getSyncStatusRequest", {});
+    return this.session.request("getSyncStatus", {});
   }
 
   async getVirtualSelectedParentBlueScore(): Promise<any> {
-    return this.callMethod("getVirtualSelectedParentBlueScore", "getVirtualSelectedParentBlueScoreRequest", {});
+    // The node serves the selected parent's blue score as the sink blue score.
+    return this.session.request("getVirtualSelectedParentBlueScore", {});
   }
 
-  async getVirtualChainFromBlockV2(options: { startHash: string; dataVerbosityLevel?: import("./contracts/read").RpcDataVerbosityLevel; minConfirmationCount?: string }): Promise<any> {
+  async getVirtualChainFromBlockV2(options: { startHash: string; dataVerbosityLevel?: RpcDataVerbosityLevel; minConfirmationCount?: string }): Promise<any> {
     if (options.dataVerbosityLevel !== "NONE" && options.dataVerbosityLevel !== "LEGACY_RECOVERY" && options.dataVerbosityLevel !== undefined) {
       throw new RpcError(`dataVerbosityLevel '${options.dataVerbosityLevel}' is not supported by the legacy compatibility transport binding. Supported subsets: 'NONE' | 'LEGACY_RECOVERY'`, "RPC_CAPABILITY_UNSUPPORTED");
     }
     if (options.minConfirmationCount !== undefined && options.minConfirmationCount !== "0") {
       throw new RpcError("minConfirmationCount is not supported by the current transport binding", "RPC_CAPABILITY_UNSUPPORTED");
     }
-    const payload = {
-      startHash: options.startHash,
-      includeAcceptedTransactionIds: options.dataVerbosityLevel === "LEGACY_RECOVERY"
-    };
-    return this.callMethod("getVirtualChainFromBlockV2", "getVirtualChainFromBlockV2Request", payload);
+    return this.session.request("getVirtualChainFromBlockV2", { startHash: options.startHash });
   }
 
   async getSinkBlueScore(): Promise<any> {
-    return this.callMethod("getSinkBlueScore", "getSinkBlueScoreRequest", {});
+    return this.session.request("getSinkBlueScore", {});
   }
 
   async getHeaders(): Promise<any> {
-    return this.callMethod("getBlockHeaders", "getBlockHeadersRequest", {}); // or getHeaders depending on Kaspa flavor
+    return this.session.request("getHeaders", {});
   }
 
   async close(): Promise<void> {
-    if (this.socket) {
-      this.socket.close();
-      this.socket = null;
-    }
-  }
-
-  private async requestRaw(method: string, params: unknown = {}): Promise<unknown> {
-    const ws = await this.connect();
-    const id = this.requestId++;
-    const payload = JSON.stringify({
-      jsonrpc: "2.0",
-      id,
-      method,
-      params
-    });
-
-    return new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        cleanup();
-        reject(new Error(`RPC request timed out after ${this.timeoutMs}ms`));
-      }, this.timeoutMs);
-
-      const onMessage = (data: any) => {
-        try {
-          const raw = data.toString();
-          const response = JSON.parse(raw);
-          if (String(response.id) === String(id)) {
-            cleanup();
-            if (response.error) {
-              const err = response.error;
-              let msg = typeof err === "string" ? err : (err.message || JSON.stringify(err));
-              if (err instanceof Error) msg = err.message;
-              reject(normalizeRpcError(new RpcError(msg, err.code || -32603, err.data), { method, params }));
-            } else {
-              resolve(response.result !== undefined ? response.result : response.params);
-            }
-          }
-        } catch (e) {}
-      };
-
-      const onError = (err: Error) => {
-        cleanup();
-        reject(normalizeRpcError(err, { method, params }));
-      };
-
-      const cleanup = () => {
-        clearTimeout(timeout);
-        ws.removeListener("message", onMessage);
-        ws.removeListener("error", onError);
-      };
-
-      ws.on("message", onMessage);
-      ws.on("error", onError);
-      ws.send(payload);
-    });
-  }
-
-  private async connect(): Promise<WebSocket> {
-    if (this.socket && this.socket.readyState === WebSocket.OPEN) {
-      return this.socket;
-    }
-
-    return new Promise((resolve, reject) => {
-      const ws = new WebSocket(this.rpcUrl);
-      const timeout = setTimeout(() => {
-        ws.close();
-        reject(
-          new Error(
-            `Cannot connect to Kaspa RPC at ${this.rpcUrl}. Connection timed out.`
-          )
-        );
-      }, this.timeoutMs);
-
-      ws.on("open", () => {
-        clearTimeout(timeout);
-        this.socket = ws;
-        resolve(ws);
-      });
-
-      ws.on("message", (data: any) => {
-        try {
-          const parsed = JSON.parse(data.toString());
-          // If it doesn't have an ID, it's likely a notification
-          if (!parsed.id && parsed.method) {
-             for (const listener of this.messageListeners) {
-                if (listener.event === parsed.method) {
-                   listener.handler(parsed.params);
-                }
-             }
-          }
-        } catch (e) {}
-      });
-
-      ws.on("error", (err: any) => {
-        clearTimeout(timeout);
-        let message = `Cannot connect to Kaspa RPC at ${this.rpcUrl}. Is kaspad running with --rpclisten-json?`;
-        if (((err as any).code) === "ECONNREFUSED") {
-          message = `Connection refused at ${this.rpcUrl}. Ensure kaspad is running and --rpclisten-json is enabled.`;
-        }
-        reject(new Error(message));
-      });
-    });
+    await this.session.close();
   }
 }
 
@@ -1048,17 +862,8 @@ export { KaspaWrpcClient } from "./wrpc-client.js";
 export * from "./health.js";
 
 export * from "./errors.js";
+// The transport: the official kaspa-wasm RpcClient, and the factory seam tests use to stand in for it.
+export { officialRpcFactory, toWrpcUrl, type OfficialRpcClientLike, type OfficialRpcFactory } from "./upstream/session.js";
 export * from "./provider.js";
 export * from "./resilience.js";
 export * from "./wrpc-client.js";
-
-// New RPC Architecture
-export * from "./transport/transport.js";
-export * from "./transport/json-wrpc-transport.js";
-export * from "./contracts/read.js";
-export * from "./clients/read-rpc-client.js";
-export * from "./contracts/mempool.js";
-export * from "./clients/mempool-rpc-client.js";
-export * from "./manifest/types.js";
-export * from "./manifest/snapshot.js";
-export * from "./manifest/coverage-report.js";

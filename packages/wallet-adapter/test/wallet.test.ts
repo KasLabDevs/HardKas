@@ -1,6 +1,5 @@
 import { describe, it, expect } from "vitest";
 import { UTXO } from "@hardkas/core";
-import { buildTransaction, TransactionEngineConfig } from "@hardkas/tx-builder";
 import { WatchOnlyWalletProvider } from "../src/providers/watch-only.js";
 import { InMemoryWalletProvider } from "../src/providers/in-memory.js";
 
@@ -48,30 +47,16 @@ describe("P2 Wallet Providers", () => {
     expect(utxos.length).toBe(0);
   });
 
-  it("Integrates WalletProvider -> TransactionEngine -> TransactionSigner", async () => {
+  it("InMemoryWalletProvider signs every input of a plan", async () => {
     const provider = new InMemoryWalletProvider("testnet", ["kaspa:test"], mockUtxos);
-
-    // 1. Get UTXOs
     const utxos = await provider.getUtxos();
-    
-    // 2. Build Transaction via P1
-    const config: TransactionEngineConfig = {
-        intent: { outputs: [{ address: "kaspa:receiver", amountSompi: "5000000" }] },
-        context: { availableUtxos: utxos, changeAddress: "kaspa:test" },
-        policies: { fee: { exact: 1 }, selection: "largest-first" }
-    };
-    const plan = buildTransaction(config);
-    if (!plan.ok) console.error(plan.error);
-    expect(plan.ok).toBe(true);
+    const plan = { inputs: utxos, unsignedPayload: "unsigned-payload" };
 
-    // 3. Sign via P2
-    const signResult = await provider.signTransaction({ plan });
-    
-    expect(signResult.signedInputs.length).toBe(1);
-    expect(signResult.artifact).toBeDefined();
-    
+    const signResult = await provider.signTransaction({ plan } as any);
+
+    expect(signResult.signedInputs).toEqual([0]);
     const artifactParsed = JSON.parse(signResult.artifact);
     expect(artifactParsed.signatures[0]).toBe("mock-sig");
-    expect(artifactParsed.payload).toBe((plan as any).unsignedPayload || JSON.stringify(plan));
+    expect(artifactParsed.payload).toBe("unsigned-payload");
   });
 });

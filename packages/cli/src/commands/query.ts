@@ -28,7 +28,7 @@ export function registerQueryCommands(program: Command) {
     .command("doctor")
     .description("Integrity and freshness check of the query store index")
     .option("--migrate", "Apply pending migrations if found", false)
-    .option("--wait-lock", "Wait for workspace lock if held", false)
+    .option("--wait-lock", "With --migrate: wait for the query-store lock if held", false)
     .option("--lock-timeout <ms>", "Lock wait timeout in ms", "30000")
     .action(async (options) => {
       const { withLock } = await import("@hardkas/core");
@@ -99,7 +99,7 @@ export function registerQueryCommands(program: Command) {
   storeCmd
     .command("migrate")
     .description("Apply pending schema migrations to the query store")
-    .option("--wait-lock", "Wait for workspace lock if held", false)
+    .option("--wait-lock", "Wait for the query-store lock if held", false)
     .option("--lock-timeout <ms>", "Lock wait timeout in ms", "30000")
     .action(async (options) => {
       const { withLock } = await import("@hardkas/core");
@@ -133,9 +133,9 @@ export function registerQueryCommands(program: Command) {
   storeCmd
     .command("sync")
     .alias("index")
-    .description("Synchronize the filesystem artifacts with the query store index")
+    .description("Index new artifacts into the SQLite query store (needs .hardkas/store.db: run 'query store rebuild --backend sqlite' first)")
     .option("--strict", "Fail on any corrupted data", false)
-    .option("--wait-lock", "Wait for workspace lock if held", false)
+    .option("--wait-lock", "Wait for the query-store lock if held", false)
     .option("--lock-timeout <ms>", "Lock wait timeout in ms", "30000")
     .option("--json", "Output as JSON", false)
     .action(async (options) => {
@@ -200,9 +200,9 @@ export function registerQueryCommands(program: Command) {
   storeCmd
     .command("rebuild")
     .description("Force a complete rebuild of the query store index")
-    .option("--backend <type>", "Backend to use (sqlite/filesystem)")
+    .option("--backend <type>", "sqlite creates .hardkas/store.db; filesystem indexes nothing (default: sqlite only if store.db already exists)")
     .option("--strict", "Fail on any corrupted data", false)
-    .option("--wait-lock", "Wait for workspace lock if held", false)
+    .option("--wait-lock", "Wait for the query-store lock if held", false)
     .option("--lock-timeout <ms>", "Lock wait timeout in ms", "30000")
     .option("--json", "Output as JSON", false)
     .action(async (options) => {
@@ -346,13 +346,13 @@ export function registerQueryCommands(program: Command) {
     .description("List artifacts matching filters")
     .option("--schema <schema>", "Filter by artifact schema (e.g. txPlan, signedTx)")
     .option("--network <network>", "Filter by network ID")
-    .option("--mode <mode>", "Filter by mode (simulated/real)")
+    .option("--mode <mode>", "Filter by mode: simulator, localnet or rpc")
     .option("--from <address>", "Filter by sender address")
     .option("--to <address>", "Filter by recipient address")
     .option("--sort <field:dir>", "Sort field and direction (e.g. createdAt:desc)")
     .option("--limit <n>", "Max results", "100")
     .option("--json", "Output as deterministic JSON", false)
-    .option("--explain [level]", "Attach explain chains (brief|full)")
+    .option("--explain [level]", "Attach explain chains (brief and full currently give the same output)")
     .action(async (options) => {
       try {
         const { createQueryRequest } = await import("@hardkas/query");
@@ -401,7 +401,7 @@ export function registerQueryCommands(program: Command) {
     .command("inspect <target>")
     .description("Deep structural analysis of an artifact (path or contentHash)")
     .option("--json", "Output as JSON", false)
-    .option("--explain [level]", "Attach explain chains (brief|full)")
+    .option("--explain [level]", "Attach explain chains (brief and full currently give the same output)")
     .action(async (target, options) => {
       try {
         const { createQueryRequest } = await import("@hardkas/query");
@@ -472,7 +472,7 @@ export function registerQueryCommands(program: Command) {
       "ancestors"
     )
     .option("--json", "Output as JSON", false)
-    .option("--explain [level]", "Attach explain chains (brief|full)")
+    .option("--explain [level]", "Attach explain chains (brief and full currently give the same output)")
     .option("--why", "Shorthand for --explain full")
     .action(async (anchor, options) => {
       try {
@@ -510,7 +510,7 @@ export function registerQueryCommands(program: Command) {
     .description("List all lineage transitions")
     .option("--root <hash>", "Filter by root artifact ID")
     .option("--json", "Output as JSON", false)
-    .option("--explain [level]", "Attach explain chains (brief|full)")
+    .option("--explain [level]", "Attach explain chains (brief and full currently give the same output)")
     .option("--why", "Shorthand for --explain full")
     .action(async (options) => {
       try {
@@ -547,7 +547,7 @@ export function registerQueryCommands(program: Command) {
     .command("orphans")
     .description("Find artifacts with broken lineage references")
     .option("--json", "Output as JSON", false)
-    .option("--explain [level]", "Attach explain chains (brief|full)")
+    .option("--explain [level]", "Attach explain chains (brief and full currently give the same output)")
     .action(async (options) => {
       try {
         const { createQueryRequest } = await import("@hardkas/query");
@@ -644,7 +644,7 @@ export function registerQueryCommands(program: Command) {
     .command("divergences")
     .description("Detect receipts with replay divergence indicators")
     .option("--json", "Output as JSON", false)
-    .option("--explain [level]", "Attach explain chains (brief|full)")
+    .option("--explain [level]", "Attach explain chains (brief and full currently give the same output)")
     .action(async (options) => {
       try {
         const { createQueryRequest } = await import("@hardkas/query");
@@ -672,7 +672,7 @@ export function registerQueryCommands(program: Command) {
     .command("invariants <txId>")
     .description("Check replay invariants for a specific transaction")
     .option("--json", "Output as JSON", false)
-    .option("--explain [level]", "Attach explain chains (brief|full)")
+    .option("--explain [level]", "Attach explain chains (brief and full currently give the same output)")
     .action(async (txId, options) => {
       try {
         const { createQueryRequest } = await import("@hardkas/query");
@@ -709,7 +709,7 @@ export function registerQueryCommands(program: Command) {
     .command("conflicts")
     .description("Show double-spend conflict analysis")
     .option("--json", "Output as JSON", false)
-    .option("--explain [level]", "Attach explain chains (brief|full)")
+    .option("--explain [level]", "Attach explain chains (brief and full currently give the same output)")
     .option("--why", "Shorthand for --explain full")
     .action(async (options) => {
       try {
@@ -737,7 +737,7 @@ export function registerQueryCommands(program: Command) {
     .command("displaced")
     .description("Show displaced transactions")
     .option("--json", "Output as JSON", false)
-    .option("--explain [level]", "Attach explain chains (brief|full)")
+    .option("--explain [level]", "Attach explain chains (brief and full currently give the same output)")
     .action(async (options) => {
       try {
         const { createQueryRequest } = await import("@hardkas/query");
@@ -761,7 +761,7 @@ export function registerQueryCommands(program: Command) {
     .command("history <txId>")
     .description("Full lifecycle of a transaction through the DAG")
     .option("--json", "Output as JSON", false)
-    .option("--explain [level]", "Attach explain chains (brief|full)")
+    .option("--explain [level]", "Attach explain chains (brief and full currently give the same output)")
     .option("--why", "Shorthand for --explain full")
     .action(async (txId, options) => {
       try {
@@ -815,7 +815,7 @@ export function registerQueryCommands(program: Command) {
     .command("anomalies")
     .description("Find transactions or blocks in unexpected states")
     .option("--json", "Output as JSON", false)
-    .option("--explain [level]", "Attach explain chains (brief|full)")
+    .option("--explain [level]", "Attach explain chains (brief and full currently give the same output)")
     .action(async (options) => {
       try {
         const { createQueryRequest } = await import("@hardkas/query");

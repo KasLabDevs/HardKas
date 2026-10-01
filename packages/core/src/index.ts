@@ -17,20 +17,7 @@ export const kaspaNetworkIdSchema = z.enum([
 
 export type NetworkId = Brand<z.infer<typeof kaspaNetworkIdSchema>, "NetworkId">;
 
-export function getCoinbaseMaturity(networkId?: string, overrideParams?: { coinbaseMaturity?: bigint | number }): bigint {
-  if (overrideParams?.coinbaseMaturity !== undefined) {
-    return BigInt(overrideParams.coinbaseMaturity);
-  }
-  
-  if (networkId === "mainnet") return 244n;
-  if (networkId === "testnet-10" || networkId === "testnet-11" || networkId === "testnet-12") return 100n;
-  if (networkId && networkId.startsWith("simnet")) return 1000n;
-  if (networkId === "devnet" || networkId === "simulated") return 100n;
-  
-  const e = new Error(`COINBASE_MATURITY_UNRESOLVED: Cannot resolve canonical coinbase maturity for network: ${networkId || "unknown"}. Provide an explicit override.`);
-  (e as any).code = "COINBASE_MATURITY_UNRESOLVED";
-  throw e;
-}
+// getCoinbaseMaturity: from the SDK's network parameters, see network-params.ts.
 
 export function getNetworkPrefix(networkId?: string): string {
   if (!networkId) return "simnet";
@@ -112,10 +99,12 @@ export * from "./node-images.js";
 export * from "./node-identity.js";
 export * from "./toolchains.js";
 export * from "./kaspa-wasm.js";
+export * from "./network-params.js";
 export * from "./silverscript.js";
 export * from "./silverscript-abi.js";
 export * from "./silverscript-covenant.js";
 export * from "./silverscript-corpus.js";
+export * from "./silverscript-runner.js";
 
 export function parseHardkasConfig(input: unknown): HardkasConfig {
   const result = hardkasConfigSchema.safeParse(input);

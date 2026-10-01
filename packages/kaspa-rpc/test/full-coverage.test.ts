@@ -1,101 +1,119 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect } from "vitest";
 import { KaspaJsonRpcClient, RpcIndexError, RpcConnectionError, RpcProtocolError, RpcNotFoundError, JsonWrpcKaspaClient } from "../src/index.js";
+import { fakeOfficialRpc, nodeError } from "./helpers/fake-official-rpc.js";
 
 describe("Kaspa RPC Full Coverage", () => {
   describe("RpcIndexError Integration", () => {
     it("should throw RpcIndexError when node returns utxoindex not enabled", async () => {
-      const fetcher = vi.fn().mockResolvedValue({
-        ok: true,
-        status: 200,
-        json: async () => ({
-          error: { message: "Method not enabled: utxoindex must be enabled", code: -32000 }
-        })
+      const rpc = fakeOfficialRpc({
+        getUtxosByAddresses: () => {
+          throw nodeError("Method not enabled: utxoindex must be enabled");
+        }
       });
-
-      const client = new KaspaJsonRpcClient({ url: "mock", fetcher, retry: { maxRetries: 0 } });
+      const client = new KaspaJsonRpcClient({ url: "ws://mock", rpcFactory: rpc.factory, retry: { maxRetries: 0 } });
       await expect(client.getUtxosByAddress("kaspa:123")).rejects.toThrow(RpcIndexError);
     });
 
     it("should throw RpcIndexError when node returns txindex not enabled", async () => {
-      const fetcher = vi.fn().mockResolvedValue({
-        ok: true,
-        status: 200,
-        json: async () => ({
-          error: { message: "Method not enabled: txindex must be enabled", code: -32000 }
-        })
+      const rpc = fakeOfficialRpc({
+        getTransaction: () => {
+          throw nodeError("Method not enabled: txindex must be enabled");
+        }
       });
-
-      const client = new KaspaJsonRpcClient({ url: "mock", fetcher, retry: { maxRetries: 0 } });
+      const client = new KaspaJsonRpcClient({ url: "ws://mock", rpcFactory: rpc.factory, retry: { maxRetries: 0 } });
       await expect(client.getTransaction("tx123")).rejects.toThrow(RpcIndexError);
     });
 
     it("should return null when transaction is not found", async () => {
-      const fetcher = vi.fn().mockResolvedValue({
-        ok: true,
-        status: 200,
-        json: async () => ({
-          error: { message: "Transaction tx123 not found", code: -32601 }
-        })
+      const rpc = fakeOfficialRpc({
+        getTransaction: () => {
+          throw nodeError("Transaction tx123 not found");
+        }
       });
-
-      const client = new KaspaJsonRpcClient({ url: "mock", fetcher, retry: { maxRetries: 0 } });
+      const client = new KaspaJsonRpcClient({ url: "ws://mock", rpcFactory: rpc.factory, retry: { maxRetries: 0 } });
       const result = await client.getTransaction("tx123");
       expect(result).toBeNull();
     });
 
-    it("should throw RpcConnectionError on fetch failure (e.g., ECONNREFUSED)", async () => {
-      const fetcher = vi.fn().mockRejectedValue(new Error("ECONNREFUSED"));
-      const client = new KaspaJsonRpcClient({ url: "mock", fetcher, retry: { maxRetries: 0 } });
+    it("returns null for a transaction lookup the node does not serve (the official client has no getTransaction)", async () => {
+      const rpc = fakeOfficialRpc({});
+      const client = new KaspaJsonRpcClient({ url: "ws://mock", rpcFactory: rpc.factory, retry: { maxRetries: 0 } });
+      expect(await client.getTransaction("tx123")).toBeNull();
+      expect(rpc.calls).toEqual([]);
+    });
+
+    it("should throw RpcConnectionError when the node cannot be reached (e.g., ECONNREFUSED)", async () => {
+      const rpc = fakeOfficialRpc({}, { connectError: "wRPC -> WebSocket -> Unable to connect to ws://mock" });
+      const client = new KaspaJsonRpcClient({ url: "ws://mock", rpcFactory: rpc.factory, retry: { maxRetries: 0 } });
       await expect(client.getTransaction("tx123")).rejects.toThrow(RpcConnectionError);
     });
 
     it("should throw RpcProtocolError on malformed response", async () => {
-      const fetcher = vi.fn().mockResolvedValue({
-        ok: true,
-        status: 200,
-        json: async () => { throw new Error("Unexpected token < in JSON at position 0 (parse error)"); }
+      const rpc = fakeOfficialRpc({
+        getTransaction: () => {
+          throw new Error("Unexpected token < in JSON at position 0 (parse error)");
+        }
       });
-      const client = new KaspaJsonRpcClient({ url: "mock", fetcher, retry: { maxRetries: 0 } });
+      const client = new KaspaJsonRpcClient({ url: "ws://mock", rpcFactory: rpc.factory, retry: { maxRetries: 0 } });
       await expect(client.getTransaction("tx123")).rejects.toThrow(RpcProtocolError);
     });
 
     it("should return [] when UTXOs are not found", async () => {
-      const fetcher = vi.fn().mockResolvedValue({
-        ok: true,
-        status: 200,
-        json: async () => ({
-          error: { message: "not found", code: -32601 }
-        })
+      const rpc = fakeOfficialRpc({
+        getUtxosByAddresses: () => {
+          throw nodeError("not found");
+        }
       });
-
-      const client = new KaspaJsonRpcClient({ url: "mock", fetcher, retry: { maxRetries: 0 } });
+      const client = new KaspaJsonRpcClient({ url: "ws://mock", rpcFactory: rpc.factory, retry: { maxRetries: 0 } });
       const result = await client.getUtxosByAddress("kaspa:123");
       expect(result).toEqual([]);
+    });
+
+    it("reports the node's own text, not the official client's wrapper", async () => {
+      const rpc = fakeOfficialRpc({
+        getMempoolEntry: () => {
+          throw nodeError("Transaction abc not found");
+        }
+      });
+      const client = new JsonWrpcKaspaClient({ rpcUrl: "ws://mock", rpcFactory: rpc.factory });
+      await expect(client.call("getMempoolEntry", { transactionId: "abc" })).rejects.toMatchObject({
+        name: "RpcNotFoundError",
+        message: "Transaction abc not found"
+      });
+      await expect(client.call("getMempoolEntry", { transactionId: "abc" })).rejects.toBeInstanceOf(RpcNotFoundError);
     });
   });
 
   describe("New RPC Methods Implementation (JsonWrpcKaspaClient)", () => {
     it("should map getFeeEstimate correctly", async () => {
-      const client = new JsonWrpcKaspaClient({ rpcUrl: "ws://mock" });
-      const mockResult = { estimate: { priorityBucket: { feeRate: 10 } } };
-      vi.spyOn(client as any, "callMethod").mockResolvedValue(mockResult);
+      const mockResult = { estimate: { priorityBucket: { feerate: 10 } } };
+      const rpc = fakeOfficialRpc({ getFeeEstimate: () => mockResult });
+      const client = new JsonWrpcKaspaClient({ rpcUrl: "ws://mock", rpcFactory: rpc.factory });
 
       const result = await client.getFeeEstimate();
       expect(result).toEqual(mockResult);
-      expect(client["callMethod"]).toHaveBeenCalledWith("getFeeEstimate", "getFeeEstimateRequest", {});
+      expect(rpc.calls).toEqual([{ method: "getFeeEstimate", request: {} }]);
     });
 
-    it("should map getSinkBlueScore correctly", async () => {
-      const client = new JsonWrpcKaspaClient({ rpcUrl: "ws://mock" });
-      vi.spyOn(client as any, "callMethod").mockResolvedValue({ blueScore: "1000" });
+    it("should map getSinkBlueScore correctly (u64 as a JSON number)", async () => {
+      const rpc = fakeOfficialRpc({ getSinkBlueScore: () => ({ blueScore: 1000n }) });
+      const client = new JsonWrpcKaspaClient({ rpcUrl: "ws://mock", rpcFactory: rpc.factory });
 
       const result = await client.getSinkBlueScore();
-      expect(result.blueScore).toBe("1000");
+      expect(result.blueScore).toBe(1000);
+    });
+
+    it("serves getVirtualSelectedParentBlueScore as the node's sink blue score", async () => {
+      const rpc = fakeOfficialRpc({ getSinkBlueScore: () => ({ blueScore: 7n }) });
+      const client = new JsonWrpcKaspaClient({ rpcUrl: "ws://mock", rpcFactory: rpc.factory });
+
+      expect(await client.getVirtualSelectedParentBlueScore()).toEqual({ blueScore: 7 });
+      expect(rpc.calls[0]!.method).toBe("getSinkBlueScore");
     });
 
     it("should map getSyncStatus correctly", async () => {
-      const client = new JsonWrpcKaspaClient({ rpcUrl: "ws://mock" });
-      vi.spyOn(client as any, "callMethod").mockResolvedValue({ isSynced: true });
+      const rpc = fakeOfficialRpc({ getSyncStatus: () => ({ isSynced: true }) });
+      const client = new JsonWrpcKaspaClient({ rpcUrl: "ws://mock", rpcFactory: rpc.factory });
 
       const result = await client.getSyncStatus();
       expect(result.isSynced).toBe(true);
@@ -104,25 +122,17 @@ describe("Kaspa RPC Full Coverage", () => {
 
   describe("New RPC Methods Implementation (KaspaJsonRpcClient)", () => {
     it("should map getFeeEstimate correctly", async () => {
-      const fetcher = vi.fn().mockResolvedValue({
-        ok: true,
-        status: 200,
-        json: async () => ({ result: { estimate: { priorityBucket: { feeRate: 10 } } } })
-      });
-      const client = new KaspaJsonRpcClient({ url: "mock", fetcher });
+      const rpc = fakeOfficialRpc({ getFeeEstimate: () => ({ estimate: { priorityBucket: { feerate: 10 } } }) });
+      const client = new KaspaJsonRpcClient({ url: "ws://mock", rpcFactory: rpc.factory });
       const result = await client.getFeeEstimate();
-      expect(result.estimate.priorityBucket.feeRate).toBe(10);
+      expect(result.estimate.priorityBucket.feerate).toBe(10);
     });
 
     it("should map getSinkBlueScore correctly", async () => {
-      const fetcher = vi.fn().mockResolvedValue({
-        ok: true,
-        status: 200,
-        json: async () => ({ result: { blueScore: "2000" } })
-      });
-      const client = new KaspaJsonRpcClient({ url: "mock", fetcher });
+      const rpc = fakeOfficialRpc({ getSinkBlueScore: () => ({ blueScore: 2000n }) });
+      const client = new KaspaJsonRpcClient({ url: "ws://mock", rpcFactory: rpc.factory });
       const result = await client.getSinkBlueScore();
-      expect(result.blueScore).toBe("2000");
+      expect(result.blueScore).toBe(2000);
     });
   });
 });

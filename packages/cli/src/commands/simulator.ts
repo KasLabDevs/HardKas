@@ -1,15 +1,12 @@
 import { Command } from "commander";
 import { UI } from "../ui.js";
 import { runSimulatorAccountCreate } from "../runners/simulator-runners.js";
-import { runAccountsFund } from "../runners/accounts-fund-runner.js";
-import { getSimulatorSilverCommand } from "./simulator-silver.js";
+import { runAccountsFund, parseFundAmount } from "../runners/accounts-fund-runner.js";
 
 export function registerSimulatorCommands(program: Command) {
   const simulatorCmd = program
     .command("simulator")
     .description("HardKAS Simulator management");
-
-  simulatorCmd.addCommand(getSimulatorSilverCommand());
 
   const accountCmd = simulatorCmd.command("account").description("Manage synthetic simulated accounts");
   
@@ -39,8 +36,8 @@ export function registerSimulatorCommands(program: Command) {
 
   simulatorCmd
     .command("fund <identifier>")
-    .description(`Fund a synthetic simulated account ${UI.maturity("stable")}`)
-    .option("--amount <kas>", "Amount in KAS to fund", "1000")
+    .description(`Fund a synthetic simulated account (the project's default network must be the simulator) ${UI.maturity("stable")}`)
+    .option("--amount <kas>", "Amount in KAS, up to 8 decimals, above 0", "1000")
     .option("--json", "Output as JSON", false)
     .action(async (identifier: string, options: any) => {
       try {
@@ -68,7 +65,7 @@ export function registerSimulatorCommands(program: Command) {
           });
         }
 
-        const amountSompi = BigInt(parseFloat(options.amount) * 100_000_000);
+        const amountSompi = parseFundAmount(options.amount);
         
         // Reusing accounts fund logic which is already synthetic
         const result = await runAccountsFund({ identifier, amountSompi });

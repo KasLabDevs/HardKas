@@ -48,10 +48,10 @@ export function registerDevCommands(program: Command) {
 
   devCmd
     .command("doctor")
-    .description(`Validate local dev environment readiness ${UI.maturity("stable")}`)
+    .description(`Check local dev readiness for an L2 profile (Igra by default): workspace, artifacts, query store, SDK import, dev server and the L2 JSON-RPC; the Kaspa node is not checked ${UI.maturity("stable")}`)
     .option("--profile <name>", "L2 network profile name", "igra")
     .option("--rpc-url <url>", "Explicit Igra RPC URL to check")
-    .option("--account <name>", "Local EVM account name to verify balance")
+    .option("--account <name>", "EVM account that must exist in hardkas.config (its balance is not checked)")
     .option("--timeout <ms>", "RPC timeout in milliseconds", "3000")
     .option("--json", "Output as JSON")
     .option("--release", "Run strict release gate checks")
