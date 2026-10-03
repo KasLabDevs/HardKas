@@ -153,7 +153,7 @@ export function registerLocalnetCommands(program: Command): void {
   snapshotCmd
     .command("replay <name>")
     .description(
-      `Replay and rebuild deterministic state from a snapshot ${UI.maturity("alpha")}`
+      `Restore a snapshot's missing artifacts into the workspace; never removes or overwrites one ${UI.maturity("alpha")}`
     )
     .option("--json", "Output as JSON", false)
     .action(async (name: string, options: { json: boolean }) => {

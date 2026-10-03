@@ -1,4 +1,5 @@
 import fs from "node:fs/promises";
+import type { Dirent } from "node:fs";
 import path from "node:path";
 
 export interface SnapshotManifest {
@@ -36,33 +37,43 @@ export async function createSnapshot(
   let excluded = 0;
   let corrupted = 0;
 
-  // 1. Copy artifacts (authority)
+  // 1. Copy artifacts (authority). SNAPSHOT-COMPLETE-1: every artifact in the store, recursively, at its relative path
+  // (the store keeps plans/, signed/, receipts/, … in subfolders). Regular files only: links are never followed.
   const artifactsDir = path.join(hardkasDir, "artifacts");
-  try {
-    const list = await fs.readdir(artifactsDir);
-    for (const f of list) {
-      if (f.endsWith(".json")) {
-        const src = path.join(artifactsDir, f);
-        const dest = path.join(outputDir, "artifacts", f);
+  const copyArtifacts = async (rel: string): Promise<void> => {
+    let entries: Dirent[];
+    try {
+      entries = await fs.readdir(path.join(artifactsDir, rel), { withFileTypes: true });
+    } catch {
+      return; // the store might not exist yet
+    }
+    for (const entry of entries) {
+      const relPath = path.join(rel, entry.name);
+      if (entry.isDirectory()) {
+        await copyArtifacts(relPath);
+        continue;
+      }
+      if (!entry.isFile() || !entry.name.endsWith(".json")) continue;
+      const src = path.join(artifactsDir, relPath);
+      const dest = path.join(outputDir, "artifacts", relPath);
 
-        try {
-          const content = await fs.readFile(src, "utf-8");
-          const parsed = JSON.parse(content);
-          if (parsed.schema && parsed.schema.startsWith("hardkas.")) {
-            // Note: A real snapshot would verify integrity here
-            await fs.copyFile(src, dest);
-            included++;
-          } else {
-            excluded++;
-          }
-        } catch {
-          corrupted++;
+      try {
+        const content = await fs.readFile(src, "utf-8");
+        const parsed = JSON.parse(content);
+        if (parsed.schema && parsed.schema.startsWith("hardkas.")) {
+          // Note: A real snapshot would verify integrity here
+          await fs.mkdir(path.dirname(dest), { recursive: true });
+          await fs.copyFile(src, dest);
+          included++;
+        } else {
+          excluded++;
         }
+      } catch {
+        corrupted++;
       }
     }
-  } catch {
-    // Receipts dir might not exist
-  }
+  };
+  await copyArtifacts("");
 
   // 2. Copy events append-log
   try {
