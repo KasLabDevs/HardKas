@@ -2,6 +2,7 @@ import { HardkasSchemas } from "./registry.js";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
+import { AsyncLocalStorage } from "node:async_hooks";
 import { HardkasError } from "./index.js";
 import { EnvironmentTelemetry } from "./telemetry.js";
 
@@ -36,6 +37,79 @@ export interface AcquireLockArgs {
 }
 
 /**
+ * ARTIFACT-LOCK-REENTRANCY-1: one lock file held by this process. Its handles are shares of it, released once each, and
+ * the file goes with the last share — only if it is still exactly the file this holding wrote. Holdings are visible to
+ * the call chain running inside them (withLock/withLocks) through one AsyncLocalStorage shared by every copy of this
+ * module in the process: a nested acquisition joins, while another process or an independent operation of this same
+ * process is excluded as before.
+ */
+interface Holding {
+  readonly key: string;
+  readonly lockPath: string;
+  readonly content: string;
+  readonly metadata: LockMetadata;
+  shares: number;
+}
+
+const HOLDING_SCOPE = Symbol.for("@hardkas/core/lock-holding-scope.v1");
+const HOLDING_OF = Symbol.for("@hardkas/core/lock-holding.v1");
+const holdingScope: AsyncLocalStorage<ReadonlyMap<string, Holding>> =
+  ((globalThis as any)[HOLDING_SCOPE] ??= new AsyncLocalStorage<ReadonlyMap<string, Holding>>());
+
+/** Canonical identity of a lock: the real path of the workspace's lock directory plus the lock name. */
+function holdingKey(lockDir: string, name: string): string {
+  let dir = lockDir;
+  try {
+    dir = fs.realpathSync.native(lockDir);
+  } catch {
+    // keep the resolved path
+  }
+  return path.join(dir, `${name}.lock`);
+}
+
+function readLockFile(lockPath: string): string | undefined {
+  try {
+    return fs.readFileSync(lockPath, "utf-8");
+  } catch {
+    return undefined;
+  }
+}
+
+function shareOf(holding: Holding): LockHandle {
+  let released = false;
+  const handle: LockHandle = {
+    path: holding.lockPath,
+    metadata: holding.metadata,
+    release: async () => {
+      if (released) return; // a share is released once; a repeated release never drops another share
+      released = true;
+      holding.shares--;
+      if (holding.shares > 0) return;
+      // never remove a file this holding did not write (replaced or recovered by someone else)
+      if (readLockFile(holding.lockPath) === holding.content) {
+        try {
+          fs.unlinkSync(holding.lockPath);
+        } catch {
+          // as before: a failed unlink leaves a lock naming this (live) process
+        }
+      }
+    }
+  };
+  Object.defineProperty(handle, HOLDING_OF, { value: holding, enumerable: false });
+  return handle;
+}
+
+/** Runs fn inside the holdings of these handles, so acquisitions in its call chain join them. */
+function runInHoldings<T>(handles: LockHandle[], fn: () => Promise<T>): Promise<T> {
+  const scope = new Map(holdingScope.getStore() ?? []);
+  for (const handle of handles) {
+    const holding = (handle as any)[HOLDING_OF] as Holding | undefined;
+    if (holding) scope.set(holding.key, holding);
+  }
+  return holdingScope.run(scope, fn);
+}
+
+/**
  * Deterministic lock ordering to avoid deadlocks.
  * workspace > node > accounts > artifacts > events > query-store
  */
@@ -65,6 +139,20 @@ export async function acquireLock(args: AcquireLockArgs): Promise<LockHandle> {
     fs.mkdirSync(lockDir, { recursive: true });
   }
 
+  // ARTIFACT-LOCK-REENTRANCY-1: an acquisition made inside a holding of this lock (its call chain) joins it
+  const key = holdingKey(lockDir, args.name);
+  const held = holdingScope.getStore()?.get(key);
+  if (held && held.shares > 0) {
+    if (readLockFile(lockPath) !== held.content) {
+      throw new HardkasError(
+        "LOCK_LOST",
+        `Lock ${args.name} at ${lockPath} was removed or replaced from outside while this process held it; a nested acquisition cannot join it`
+      );
+    }
+    held.shares++;
+    return shareOf(held);
+  }
+
   while (true) {
     try {
       // 1. Attempt atomic creation
@@ -79,28 +167,12 @@ export async function acquireLock(args: AcquireLockArgs): Promise<LockHandle> {
         expiresAt: null
       };
 
+      const content = JSON.stringify(metadata, null, 2);
       const fd = fs.openSync(lockPath, "wx");
-      fs.writeSync(fd, JSON.stringify(metadata, null, 2));
+      fs.writeSync(fd, content);
       fs.closeSync(fd);
 
-      return {
-        path: lockPath,
-        metadata,
-        release: async () => {
-          if (fs.existsSync(lockPath)) {
-            try {
-              const current = JSON.parse(
-                fs.readFileSync(lockPath, "utf-8")
-              ) as LockMetadata;
-              if (current.pid === process.pid) {
-                fs.unlinkSync(lockPath);
-              }
-            } catch (e) {
-              // Ignore invalid metadata on release, but don't delete if not ours
-            }
-          }
-        }
-      };
+      return shareOf({ key, lockPath, content, metadata, shares: 1 });
     } catch (e: unknown) {
       if ((e as NodeJS.ErrnoException).code === "EEXIST") {
         // Lock exists. Check liveness/staleness.
@@ -222,7 +294,7 @@ export async function withLock<T>(
 ): Promise<T> {
   const handle = await acquireLock(args);
   try {
-    return await fn(handle);
+    return await runInHoldings([handle], () => fn(handle));
   } finally {
     await handle.release();
   }
@@ -249,7 +321,7 @@ export async function withLocks<T>(
     for (const name of sortedNames) {
       handles.push(await acquireLock({ rootDir, name, ...options }));
     }
-    return await fn();
+    return await runInHoldings(handles, fn);
   } finally {
     // Release in reverse order
     for (const handle of handles.reverse()) {
