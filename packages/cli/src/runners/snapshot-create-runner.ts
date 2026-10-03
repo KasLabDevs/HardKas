@@ -45,6 +45,9 @@ export async function runSnapshotCreate(options: SnapshotCreateOptions) {
     });
   } catch (err: any) {
     const { HardkasCliError } = await import("../cli-errors.js");
+    if (err?.code === "SNAPSHOT_EXISTS") {
+      throw new HardkasCliError("SNAPSHOT_EXISTS", err.message, { exitCode: 1, cause: err });
+    }
     throw new HardkasCliError(
       "SNAPSHOT_CREATE_FAILED",
       `Snapshot creation failed: ${((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err))}`,
