@@ -92,8 +92,10 @@ export class EvidenceManager {
     };
 
     const targetName = options.outPath || path.join(options.workspaceRoot, `${scenarioResult.scenarioName.replace(/[^a-z0-9]/gi, "_").toLowerCase()}.hke.json`);
-    
-    fs.writeFileSync(targetName, JSON.stringify(pkg, null, 2), "utf-8");
+    const data = JSON.stringify(pkg, null, 2);
+    // an --out inside the artifact store goes through the store's gate (ARTIFACT-MUTATION-1)
+    const { writeFileRespectingStore } = await import("@hardkas/artifacts");
+    await writeFileRespectingStore(targetName, data, () => fs.writeFileSync(targetName, data, "utf-8"));
 
     return targetName;
   }

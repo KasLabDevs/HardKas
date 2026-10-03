@@ -135,13 +135,13 @@ export class HardkasArtifactsManager {
       };
     }
 
-    const { ProjectArtifactStore, writeArtifact } = await import("@hardkas/artifacts");
+    const { ProjectArtifactStore, writeArtifact, ensureDirRespectingStore } = await import("@hardkas/artifacts");
 
     let absolutePath: string;
     if (options.outputDir) {
-      // Explicit export
+      // Explicit export (through the store's gate when outputDir is in the store, ARTIFACT-MUTATION-1)
       if (!fs.existsSync(options.outputDir)) {
-        fs.mkdirSync(options.outputDir, { recursive: true });
+        await ensureDirRespectingStore(options.outputDir);
       }
       const schema = record.schema || "artifact";
       const shortSchema = schema.replace("hardkas.", "");

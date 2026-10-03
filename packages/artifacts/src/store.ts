@@ -2,7 +2,8 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { TxPlan, SignedTx, TxReceipt } from "./schemas.js";
 import { calculateContentHash, CURRENT_HASH_VERSION, MIN_HASH_VERSION, readDeclaredHashVersion } from "./canonical.js";
-import { writeFileAtomic, HardkasSchemas } from "@hardkas/core";
+import { HardkasSchemas } from "@hardkas/core";
+import { ArtifactStoreMutation } from "./store-mutation.js";
 import { assertSafeFileId, codedError as storeError, schemaFilePrefix } from "./file-id.js";
 import { checkTxObservationCoherence } from "./tx-observation.js";
 import { LineageError } from "./lineage-error.js";
@@ -69,12 +70,6 @@ export class ProjectArtifactStore {
     throw storeError("PATH_TRAVERSAL", `Artifact with ID ${id} is outside the workspace boundary`);
   }
 
-  private async ensureDir(dirPath: string): Promise<void> {
-    try {
-      await fs.mkdir(dirPath, { recursive: true });
-    } catch (e) {}
-  }
-
   async writeArtifact(artifact: any): Promise<string> {
     // Identifier safety first (path traversal is refused before anything else).
     const id = resolveStoreId(artifact);
@@ -109,8 +104,6 @@ export class ProjectArtifactStore {
     }
 
     const dirPath = path.join(this.artifactsDir, subDir);
-    await this.ensureDir(dirPath);
-
     const filename = `${prefix}-${id}.json`;
     const targetPath = path.join(dirPath, filename);
     if (path.dirname(targetPath) !== dirPath) {
@@ -118,8 +111,9 @@ export class ProjectArtifactStore {
     }
 
     const content = JSON.stringify(artifact, bigIntReplacer, 2) + "\n";
-    await writeFileAtomic(targetPath, content);
-    
+    // ARTIFACT-MUTATION-1: the canonical write goes through the store's single mutation gate (artifacts lock)
+    await new ArtifactStoreMutation(this.workspaceRoot).writeFile(path.join(subDir, filename), content);
+
     return targetPath;
   }
 

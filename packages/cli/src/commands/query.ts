@@ -328,7 +328,9 @@ export function registerQueryCommands(program: Command) {
 
         if (options.output) {
           const fs = await import("node:fs");
-          fs.writeFileSync(options.output, json);
+          // an --output inside the artifact store goes through the store's gate (ARTIFACT-MUTATION-1)
+          const { writeFileRespectingStore } = await import("@hardkas/artifacts");
+          await writeFileRespectingStore(options.output, json, () => fs.writeFileSync(options.output, json));
           UI.success(`Store exported to ${options.output}`);
         } else {
           const { getOutput } = await import("../output.js");

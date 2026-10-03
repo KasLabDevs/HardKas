@@ -6,6 +6,7 @@ import { verifyArtifact } from "./verify.js";
 import { writeFileAtomic } from "@hardkas/core";
 
 import { ProjectArtifactStore } from "./store.js";
+import { ArtifactStoreMutation } from "./store-mutation.js";
 import { assertSafeFileId, schemaFilePrefix } from "./file-id.js";
 
 export const bigIntReplacer = (_key: string, value: unknown) =>
@@ -34,7 +35,14 @@ export async function writeArtifact(filePath: string, artifact: unknown): Promis
     finalPath = path.join(filePath, basename);
   }
 
-  await writeFileAtomic(finalPath, JSON.stringify(artifact, bigIntReplacer, 2));
+  const data = JSON.stringify(artifact, bigIntReplacer, 2);
+  // ARTIFACT-MUTATION-1: a target inside an artifact store is written through the store's gate
+  const inStore = ArtifactStoreMutation.forPath(finalPath);
+  if (inStore && inStore.relPath) {
+    await inStore.store.writeFile(inStore.relPath, data);
+    return;
+  }
+  await writeFileAtomic(finalPath, data);
 }
 
 export function getDefaultReceiptPath(txId: string, cwd: string = process.cwd()): string {

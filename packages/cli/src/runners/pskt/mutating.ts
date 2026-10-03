@@ -5,6 +5,7 @@ import { getOutput } from "../../output.js";
 import { loadSession, saveSession } from "./fs.js";
 import { HardkasCliError, HardkasExitCode } from "../../cli-errors.js";
 import { pskt } from "@hardkas/sdk";
+import { ArtifactStoreMutation } from "@hardkas/artifacts";
 
 export async function runPsktExport(options: { plan: string, out: string, adapter?: string, force: boolean, json: boolean }) {
   if (options.json) UI.setJsonMode(true);
@@ -107,6 +108,20 @@ export async function runPsktExtract(sessionPath: string, options: { out: string
       if (e.code !== "ENOENT" && !(e instanceof HardkasCliError)) throw e;
       if (e instanceof HardkasCliError) throw e;
     }
+  }
+
+  // An output inside the artifact store goes through the store's gate (ARTIFACT-MUTATION-1)
+  const inStore = ArtifactStoreMutation.forPath(outPath);
+  if (inStore && inStore.relPath) {
+    try {
+      await inStore.store.writeFile(inStore.relPath, JSON.stringify(tx, null, 2) + "\n", { mode: 0o600 });
+    } catch (err: any) {
+      throw new HardkasCliError("SAVE_FAILED", `Failed to save extracted transaction: ${err.message}`, { exitCode: HardkasExitCode.RUNTIME_FAILURE });
+    }
+    if (!options.json) {
+      UI.success(`Transaction extracted to ${options.out}`);
+    }
+    return;
   }
 
   const tempPath = `${outPath}.tmp.${Date.now()}`;

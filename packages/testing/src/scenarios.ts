@@ -70,8 +70,11 @@ export const scenario = isVitest ? vitestTest.extend<{ hk: HardkasEnvironment }>
     } finally {
       unsubscribe();
 
-      const mainArtifactsDir = path.join(process.cwd(), ".hardkas", "artifacts");
-      fs.mkdirSync(mainArtifactsDir, { recursive: true });
+      // ARTIFACT-MUTATION-1: everything this teardown puts into the workspace's store goes through the store's gate
+      const { ArtifactStoreMutation } = await import("@hardkas/artifacts");
+      const storeGate = new ArtifactStoreMutation(process.cwd());
+      const mainArtifactsDir = storeGate.storeDir;
+      await storeGate.ensureDir();
 
       // Fallback scan of the run directory artifacts
       const runArtifactsDir = path.join(runsDir, "artifacts");
@@ -84,10 +87,7 @@ export const scenario = isVitest ? vitestTest.extend<{ hk: HardkasEnvironment }>
                generatedArtifacts.add(id);
             }
             // Copy artifact to the main artifacts folder so evidence pack works
-            fs.copyFileSync(
-              path.join(runArtifactsDir, file),
-              path.join(mainArtifactsDir, file)
-            );
+            await storeGate.writeFile(file, fs.readFileSync(path.join(runArtifactsDir, file)));
           }
         }
       }
@@ -136,10 +136,7 @@ export const scenario = isVitest ? vitestTest.extend<{ hk: HardkasEnvironment }>
       );
 
       const resultPath = path.join(mainArtifactsDir, `${safeScenarioName}.scenario-result.json`);
-      fs.writeFileSync(
-        resultPath,
-        JSON.stringify(scenarioResult, null, 2)
-      );
+      await storeGate.writeFile(`${safeScenarioName}.scenario-result.json`, JSON.stringify(scenarioResult, null, 2));
       
       coreEvents.normalizeAndEmit({
         kind: "artifact.created",

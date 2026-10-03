@@ -22,7 +22,7 @@ import {
 import crypto from "node:crypto";
 import path from "path";
 import fs from "fs";
-import { HardkasSchemas } from "@hardkas/artifacts";
+import { HardkasSchemas, ensureDirRespectingStore, writeFileRespectingStore } from "@hardkas/artifacts";
 
 export interface TxFlowInput {
   from: string;
@@ -110,7 +110,7 @@ export async function runTxFlow(input: TxFlowInput): Promise<TxFlowResult> {
     actualOutDir = outDir || path.join(cwd, ".hardkas", "artifacts");
   }
   if (!fs.existsSync(actualOutDir)) {
-    fs.mkdirSync(actualOutDir, { recursive: true });
+    await ensureDirRespectingStore(actualOutDir); // through the store's gate when it is the store (ARTIFACT-MUTATION-1)
   }
 
   // Validation
@@ -476,7 +476,7 @@ async function saveArtifact(
   amount: string
 ): Promise<string> {
   if (!fs.existsSync(outDir)) {
-    fs.mkdirSync(outDir, { recursive: true });
+    await ensureDirRespectingStore(outDir);
   }
 
   let fileName = "";
@@ -504,8 +504,9 @@ async function saveArtifact(
     }
     return canonicalRes.absolutePath;
   } else {
-    // Fallback: write artifact directly without SDK
-    fs.writeFileSync(fullPath, JSON.stringify(artifact, null, 2), "utf-8");
+    // Fallback: write artifact directly without SDK (through the store's gate when the path is in the store)
+    const data = JSON.stringify(artifact, null, 2);
+    await writeFileRespectingStore(fullPath, data, () => fs.writeFileSync(fullPath, data, "utf-8"));
   }
   return fullPath;
 }

@@ -22,10 +22,12 @@ export async function saveLocalnetState(
   const targetPath = filePath ?? getDefaultLocalnetStatePath();
   const dir = path.dirname(targetPath);
 
-  await fs.mkdir(dir, { recursive: true });
-  await writeFileAtomic(targetPath, JSON.stringify(state, null, 2), {
-    encoding: "utf-8"
-  });
+  // the state file normally lives outside the artifact store; one pointed inside it goes through the store's gate
+  // (ARTIFACT-MUTATION-1)
+  const { ensureDirRespectingStore, writeFileRespectingStore } = await import("@hardkas/artifacts");
+  const data = JSON.stringify(state, null, 2);
+  await ensureDirRespectingStore(dir);
+  await writeFileRespectingStore(targetPath, data, () => writeFileAtomic(targetPath, data, { encoding: "utf-8" }));
 
   // Also persist as canonical snapshot artifact for lineage resolution
   let workspaceRoot = dir;

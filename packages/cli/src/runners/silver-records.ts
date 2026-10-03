@@ -1,4 +1,3 @@
-import fs from "node:fs";
 import path from "node:path";
 import { ARTIFACT_VERSION, CURRENT_HASH_VERSION, calculateContentHash, writeArtifact } from "@hardkas/artifacts";
 
@@ -50,7 +49,7 @@ export async function writeSilverRecord(
   const full = sealSilverRecord(record, prefix, mode);
   const dir = mode === "vm" ? SILVER_VM_RECORD_DIR : SILVER_RECORD_DIR;
   const target = explicitOut ? path.resolve(explicitOut) : path.resolve(dir, `${silverRecordLabel(prefix, full)}.json`);
-  fs.mkdirSync(path.dirname(target), { recursive: true });
+  // the parent directory is created by the writer: the store's gate inside the store, writeFileAtomic elsewhere
   await writeArtifact(target, full);
   return { path: target, record: full };
 }

@@ -760,7 +760,13 @@ export function registerSilverCommand(program: Command) {
         const outpoint = { transactionId: txId, index: 0 };
         const confirmed = opts.wait ? await waitForUtxo(rpc, successorAddress, outpoint, Number(opts.timeout)) : undefined;
         if (confirmed && confirmed.covenantId !== prev.covenantId) fail("SILVER_COVENANT_LINEAGE_BROKEN", `successor carries ${confirmed.covenantId}, expected ${prev.covenantId}`);
-        if (opts.emitArgs) fs.writeFileSync(path.resolve(opts.emitArgs), core.serializeSilArtifactValues(next.successorConstructorArgs));
+        if (opts.emitArgs) {
+          // an --emit-args inside the artifact store goes through the store's gate (ARTIFACT-MUTATION-1)
+          const emitPath = path.resolve(opts.emitArgs);
+          const emitted = core.serializeSilArtifactValues(next.successorConstructorArgs);
+          const { writeFileRespectingStore } = await import("@hardkas/artifacts");
+          await writeFileRespectingStore(emitPath, emitted, () => fs.writeFileSync(emitPath, emitted));
+        }
         // The successor state's own compile record, so the covenant can advance again.
         const successorCompile = await writeRecord(
           {

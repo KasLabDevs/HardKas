@@ -1,7 +1,8 @@
 import path from "node:path";
-import { constants as fsConstants, existsSync } from "node:fs";
+import { existsSync } from "node:fs";
 import pc from "picocolors";
 import { readSnapshotManifest } from "@hardkas/core";
+import { ArtifactStoreMutation } from "@hardkas/artifacts";
 import { UI, handleError } from "../ui.js";
 import { getOutput } from "../output.js";
 import { runReplayVerify } from "./replay-verify-runner.js";
@@ -65,12 +66,13 @@ export async function runSnapshotReplay(options: SnapshotReplayOptions) {
     const inSnapshot = new Set(snapshotFiles);
     const localOnlyKept = (await listArtifactFiles(wsArtifactsDir)).filter((rel) => !inSnapshot.has(rel)).length;
 
-    // 3. Restore what is missing; an artifact already in the store is never overwritten.
+    // 3. Restore what is missing through the store's gate (ARTIFACT-MUTATION-1). `exclusive` keeps COPYFILE_EXCL's
+    // promise: an artifact already in the store is never overwritten (EEXIST).
     if (!options.json) console.log(pc.yellow("  Restoring missing artifacts to workspace..."));
     for (const rel of missing) {
-      const dest = path.join(wsArtifactsDir, rel);
-      await fs.mkdir(path.dirname(dest), { recursive: true });
-      await fs.copyFile(path.join(snapArtifactsDir, rel), dest, fsConstants.COPYFILE_EXCL);
+      const gate = ArtifactStoreMutation.forPath(path.join(wsArtifactsDir, rel));
+      if (!gate || !gate.relPath) throw new Error(`${wsArtifactsDir} is not an artifact store (<workspace>/.hardkas/artifacts)`);
+      await gate.store.writeFile(gate.relPath, await fs.readFile(path.join(snapArtifactsDir, rel)), { exclusive: true });
     }
 
     // 4. The query store is rebuilt only when the workspace already has one: without .hardkas/store.db the query

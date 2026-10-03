@@ -184,8 +184,7 @@ export function registerTxCommands(program: Command) {
                   (await import("node:path")).join(process.cwd(), ".hardkas")
                 )
               ) {
-                if (!fsNode.existsSync(artifactsDir))
-                  fsNode.mkdirSync(artifactsDir, { recursive: true });
+                // the store directory is created by the store's gate when the lattice copy is written (ARTIFACT-MUTATION-1)
                 const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
                 const planId = artifact.planId || "unknown";
                 const latticeFile = (await import("node:path")).join(

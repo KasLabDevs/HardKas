@@ -1,7 +1,7 @@
 import pc from "picocolors";
 import { UI, handleError } from "../ui.js";
 import { loadHardkasConfig } from "@hardkas/config";
-import { writeArtifact } from "@hardkas/artifacts";
+import { writeArtifact, ArtifactStoreMutation } from "@hardkas/artifacts";
 import path from "node:path";
 import fs from "node:fs";
 import { HardkasSchemas } from "@hardkas/artifacts";
@@ -91,7 +91,7 @@ export async function runBridgeLocalPlan(options: {
     // Persist bridge plan artifact
     const cwd = process.cwd();
     const artifactsDir = path.join(cwd, ".hardkas", "artifacts");
-    if (!fs.existsSync(artifactsDir)) fs.mkdirSync(artifactsDir, { recursive: true });
+    if (!fs.existsSync(artifactsDir)) await new ArtifactStoreMutation(cwd).ensureDir();
     const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
     const artifactPath = path.join(artifactsDir, `${timestamp}-bridge-local-plan.json`);
     const artifactData = {
@@ -221,7 +221,7 @@ export async function runBridgeLocalSimulate(options: {
     // Persist bridge simulation artifact
     const cwd = process.cwd();
     const artifactsDir = path.join(cwd, ".hardkas", "artifacts");
-    if (!fs.existsSync(artifactsDir)) fs.mkdirSync(artifactsDir, { recursive: true });
+    if (!fs.existsSync(artifactsDir)) await new ArtifactStoreMutation(cwd).ensureDir();
     const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
     const artifactPath = path.join(
       artifactsDir,

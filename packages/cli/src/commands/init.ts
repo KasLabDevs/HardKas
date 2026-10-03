@@ -259,10 +259,11 @@ scenario("payment flow", async ({ hk }) => {
                 const { loadOrCreateLocalnetState } = await import("@hardkas/localnet");
                 await loadOrCreateLocalnetState({ cwd: targetDir });
 
-                // Also create artifacts directory eagerly
+                // Also create artifacts directory eagerly, through the store's gate (ARTIFACT-MUTATION-1)
                 const artifactsDir = path.join(targetDir, ".hardkas", "artifacts");
                 if (!fs.existsSync(artifactsDir)) {
-                  fs.mkdirSync(artifactsDir, { recursive: true });
+                  const { ArtifactStoreMutation } = await import("@hardkas/artifacts");
+                  await new ArtifactStoreMutation(targetDir).ensureDir();
                 }
 
                 if (!options.json) UI.info(

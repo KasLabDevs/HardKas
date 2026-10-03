@@ -7,7 +7,7 @@ import pc from "picocolors";
 import { UI } from "../ui.js";
 import { getAllTortureBuckets, LcgPrng, TortureCaseResult } from "@hardkas/testing";
 import { EnvironmentTelemetry, AnomalyEvent, AppendCoordinator } from "@hardkas/core";
-import { HardkasSchemas } from "@hardkas/artifacts";
+import { HardkasSchemas, ensureDirRespectingStore, writeFileRespectingStore } from "@hardkas/artifacts";
 
 export interface TortureMatrixOptions {
   iterations: number;
@@ -466,7 +466,7 @@ export async function runTortureMatrix(options: TortureMatrixOptions) {
   try {
     const dir = path.dirname(reportPath);
     if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
+      await ensureDirRespectingStore(dir);
     }
 
     const finalReport = {
@@ -487,7 +487,9 @@ export async function runTortureMatrix(options: TortureMatrixOptions) {
       cases: results
     };
 
-    fs.writeFileSync(reportPath, JSON.stringify(finalReport, null, 2), "utf-8");
+    const reportData = JSON.stringify(finalReport, null, 2);
+    // a --report inside the artifact store goes through the store's gate (ARTIFACT-MUTATION-1)
+    await writeFileRespectingStore(reportPath, reportData, () => fs.writeFileSync(reportPath, reportData, "utf-8"));
     UI.info(`\nðŸ’¾ Saved machine-readable JSON report to: ${pc.cyan(reportPath)}`);
   } catch (err: any) {
     UI.info(`\nâš ï¸  Failed to save JSON report: ${((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err))}`);

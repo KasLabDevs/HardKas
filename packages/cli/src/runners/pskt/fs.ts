@@ -3,6 +3,7 @@ import path from "node:path";
 import crypto from "node:crypto";
 import { pskt } from "@hardkas/sdk";
 import type { PortableSigningSession } from "@hardkas/core";
+import { ArtifactStoreMutation } from "@hardkas/artifacts";
 import { HardkasCliError, HardkasExitCode } from "../../cli-errors.js";
 
 /**
@@ -38,6 +39,17 @@ export async function saveSession(session: PortableSigningSession, filePath: str
       }
       if (e instanceof HardkasCliError) throw e;
     }
+  }
+
+  // A session file inside the artifact store goes through the store's gate (ARTIFACT-MUTATION-1)
+  const inStore = ArtifactStoreMutation.forPath(absolutePath);
+  if (inStore && inStore.relPath) {
+    try {
+      await inStore.store.writeFile(inStore.relPath, JSON.stringify(session, null, 2) + "\n", { mode: 0o600 });
+    } catch (err: any) {
+      throw new HardkasCliError("SAVE_FAILED", `Failed to save session: ${err.message}`, { exitCode: HardkasExitCode.RUNTIME_FAILURE });
+    }
+    return;
   }
 
   // Atomic write via temp file
