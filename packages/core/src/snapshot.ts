@@ -3,6 +3,7 @@ import type { Dirent } from "node:fs";
 import path from "node:path";
 import { randomBytes } from "node:crypto";
 import { HardkasError } from "./errors.js";
+import { withLock } from "./lock.js";
 
 export interface SnapshotManifest {
   snapshotVersion: number;
@@ -26,8 +27,10 @@ export interface CreateSnapshotOptions {
 /**
  * SNAPSHOT-CREATE-ATOMIC-1: succeeds only when it publishes a complete snapshot of the artifacts enumerated during
  * this call, as one generation, under a name that did not exist; a failure publishes nothing and never modifies an
- * existing snapshot. The snapshot is built in a sibling temp directory and moved into place last. Writers running
- * concurrently with the walk are not excluded here (SNAPSHOT-CREATE-CONCURRENCY-1).
+ * existing snapshot. The snapshot is built in a sibling temp directory and moved into place last.
+ * SNAPSHOT-CREATE-CONCURRENCY-1: the walk of the artifact store is one holding of the workspace's `artifacts` lock, so
+ * no cooperative writer modifies the store while it is captured and the published artifacts are exactly the bytes
+ * captured during that holding. events.jsonl, store.db, the manifest and the publication stay outside the holding.
  */
 export async function createSnapshot(
   options: CreateSnapshotOptions
@@ -108,7 +111,12 @@ async function writeSnapshot(
       included++;
     }
   };
-  await copyArtifacts("");
+  // SNAPSHOT-CREATE-CONCURRENCY-1: enumeration, reads and copies are one holding of the store (a writer of the store
+  // waits for it, and the walk waits for a writer that already holds it)
+  await withLock(
+    { rootDir: path.dirname(hardkasDir), name: "artifacts", command: "localnet snapshot create", wait: true },
+    () => copyArtifacts("")
+  );
 
   // 2. Copy events append-log and 3. sqlite database (projection cache); a file that is absent is not part of the store
   await copyIfPresent(path.join(hardkasDir, "events.jsonl"), path.join(dir, "events", "events.jsonl"));
