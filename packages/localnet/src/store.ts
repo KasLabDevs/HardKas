@@ -3,7 +3,7 @@ import path from "node:path";
 import { AsyncLocalStorage } from "node:async_hooks";
 import type { LocalnetState } from "./types.js";
 import { createInitialLocalnetState } from "./state.js";
-import { withLock, writeFileAtomic } from "@hardkas/core";
+import { HardkasError, withLock, writeFileAtomic } from "@hardkas/core";
 
 /** The lock that serializes a workspace's simulated state (SIMULATOR-EXECUTION-UNIT-1). */
 export const SIMULATOR_STATE_LOCK = "simulator-state";
@@ -40,6 +40,14 @@ function simulatedStateWorkspace(statePath: string): string | undefined {
   return path.basename(dir) === ".hardkas" ? path.dirname(dir) : undefined;
 }
 
+/** The workspace whose `.hardkas` directory holds a state file at any depth (the nearest); undefined outside every one. */
+function enclosingWorkspace(statePath: string): string | undefined {
+  for (let dir = path.dirname(path.resolve(statePath)); dir !== path.dirname(dir); dir = path.dirname(dir)) {
+    if (path.basename(dir) === ".hardkas") return path.dirname(dir);
+  }
+  return undefined;
+}
+
 export function getDefaultLocalnetDir(cwd: string = process.cwd(), overrideHardkasDir?: string): string {
   if (overrideHardkasDir) {
     return overrideHardkasDir;
@@ -60,12 +68,18 @@ export async function saveLocalnetState(
   // state read before it was settled (a copy carried by `...state`) never brings it back
   const { pendingExecution: _carried, ...plain } = state;
   const workspace = simulatedStateWorkspace(targetPath);
-  if (!workspace) return writeLocalnetState(plain, targetPath); // a copy elsewhere (an export) is no workspace's state
+  if (!workspace) {
+    // not a workspace's own state file: no simulator-state unit. Its snapshot still goes first to the store of the
+    // workspace whose `.hardkas` holds the file (a scenario run's state under `.hardkas/runs/<id>/`); a file outside every
+    // `.hardkas` (an export) gets none, never the filesystem root's (STATE-EXPORT-ROOT-SNAPSHOT-1 decides later)
+    const enclosing = enclosingWorkspace(targetPath);
+    return enclosing ? writeLocalnetState(plain, targetPath, enclosing) : writeLocalnetLedger(plain, targetPath);
+  }
   // SIMULATOR-EXECUTION-UNIT-1: under `simulator-state` (joined when the caller holds it for a whole read → modify →
   // write), with the store taken before the state moves, so the state snapshot below is written at once
   const { ArtifactStoreMutation } = await import("@hardkas/artifacts");
   return withSimulatorState(workspace, () =>
-    new ArtifactStoreMutation(workspace).hold(() => writeLocalnetState(plain, targetPath), "simulated state")
+    new ArtifactStoreMutation(workspace).hold(() => writeLocalnetState(plain, targetPath, workspace), "simulated state")
   );
 }
 
@@ -79,29 +93,68 @@ export async function writeLocalnetLedger(state: LocalnetState, targetPath: stri
   await writeFileRespectingStore(targetPath, data, () => writeFileAtomic(targetPath, data, { encoding: "utf-8" }));
 }
 
-async function writeLocalnetState(state: LocalnetState, targetPath: string): Promise<void> {
-  const dir = path.dirname(targetPath);
+/**
+ * SIMULATOR-STATE-EVIDENCE-1: a workspace's simulated state never becomes durable before its exact state snapshot
+ * artifact is durable. The snapshot is published (or found) first; any failure there propagates, so the state file is
+ * not written and the ledger stays as it was. (A simulated transaction's state goes through SIMULATOR-DURABLE-EXECUTION-1
+ * instead, never through here.)
+ */
+async function writeLocalnetState(state: LocalnetState, targetPath: string, workspaceRoot: string): Promise<void> {
+  await publishStateSnapshot(workspaceRoot, state);
   await writeLocalnetLedger(state, targetPath);
+}
 
-  // Also persist as canonical snapshot artifact for lineage resolution
-  let workspaceRoot = dir;
-  while(workspaceRoot !== path.dirname(workspaceRoot)) {
-    if (path.basename(workspaceRoot) === ".hardkas") {
-      workspaceRoot = path.dirname(workspaceRoot);
-      break;
+/**
+ * The state snapshot artifact of `state` in the workspace's store (`misc/snapshot-<id>.json`, its identity is a function
+ * of the state alone).
+ * - Absent: built with the current clock (and the state's hardkasVersion) and written atomically through the gate.
+ * - Present: it must first be a valid state snapshot (it verifies) of exactly this state (its identity). Then the two
+ *   fields outside that identity, createdAt and hardkasVersion, are taken from it: the durable artifact, not the process
+ *   that meets the state again (a retry, a reset, another HardKAS version), is their authority. The expected bytes are
+ *   rebuilt with them and must be exactly the file's: then it is kept, never rewritten.
+ * - Anything else at that path → STATE_SNAPSHOT_CONFLICT, and nothing is written.
+ */
+async function publishStateSnapshot(workspaceRoot: string, state: LocalnetState): Promise<void> {
+  const { ArtifactStoreMutation, storeEntryFor } = await import("@hardkas/artifacts");
+  const { buildStateSnapshotArtifact, verifySnapshot } = await import("./snapshot.js");
+  const gate = new ArtifactStoreMutation(workspaceRoot);
+  await gate.hold(async () => {
+    const snapshot = buildStateSnapshotArtifact(state, new Date().toISOString());
+    const { rel, content } = storeEntryFor(snapshot);
+    let existing: string;
+    try {
+      existing = await fs.readFile(path.join(gate.storeDir, rel), "utf-8");
+    } catch (err: any) {
+      if (err?.code !== "ENOENT") throw err;
+      await gate.writeFile(rel, content);
+      return;
     }
-    workspaceRoot = path.dirname(workspaceRoot);
-  }
-  const { ProjectArtifactStore } = await import("@hardkas/artifacts");
-
-  try {
-    const store = new ProjectArtifactStore(workspaceRoot);
-    const { buildStateSnapshotArtifact } = await import("./snapshot.js");
-    // Write it as an artifact so the resolver can find it via lineage
-    await store.writeArtifact(buildStateSnapshotArtifact(state, new Date().toISOString()));
-  } catch (e) {
-    // Ignore if not in a full HardKAS project workspace
-  }
+    const refuse = (what: string) =>
+      new HardkasError("STATE_SNAPSHOT_CONFLICT", `${rel} already holds ${what}; it was left as it is and the simulated state was not changed`);
+    let found: any;
+    try {
+      found = JSON.parse(existing);
+    } catch {
+      throw refuse("content that is not JSON");
+    }
+    if (found?.schema !== snapshot.schema) throw refuse("other content");
+    let verifies = false;
+    try {
+      verifies = verifySnapshot(found).ok;
+    } catch {
+      verifies = false;
+    }
+    if (!verifies) throw refuse("a state snapshot that does not verify");
+    if (found.contentHash !== snapshot.contentHash) throw refuse("another state's snapshot");
+    const { createdAt, hardkasVersion } = found;
+    if (typeof createdAt !== "string" || Number.isNaN(Date.parse(createdAt)) || typeof hardkasVersion !== "string" || hardkasVersion === "") {
+      throw refuse("this state's snapshot with an invalid createdAt or hardkasVersion");
+    }
+    if (storeEntryFor(buildStateSnapshotArtifact({ ...state, hardkasVersion }, createdAt)).content !== existing) {
+      throw refuse("this state's identity with other bytes");
+    }
+    // this state was evidenced before: its snapshot is kept exactly as it is
+  }, "simulated state snapshot");
 }
 
 export async function loadLocalnetState(
