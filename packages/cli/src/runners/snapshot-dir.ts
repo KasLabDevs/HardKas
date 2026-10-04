@@ -1,4 +1,5 @@
 import path from "node:path";
+import { plainChildPath } from "@hardkas/core";
 import { HardkasCliError, HardkasExitCode } from "../cli-errors.js";
 
 /**
@@ -8,10 +9,8 @@ import { HardkasCliError, HardkasExitCode } from "../cli-errors.js";
  */
 export function snapshotDirFor(workspaceRoot: string, name: string): string {
   const snapshotsDir = path.resolve(workspaceRoot, "snapshots");
-  const dir = path.resolve(snapshotsDir, String(name));
-  const oneSegment =
-    typeof name === "string" && name !== "" && name !== "." && name !== ".." && !/[\\/:\0]/.test(name) && path.dirname(dir) === snapshotsDir;
-  if (!oneSegment) {
+  const dir = plainChildPath(snapshotsDir, name);
+  if (!dir) {
     throw new HardkasCliError(
       "SNAPSHOT_NAME_INVALID",
       `${JSON.stringify(name)} is not a snapshot name: use one plain name (no '/', '\\', ':', '.' or '..'), stored under ${snapshotsDir}; nothing was read or written`,

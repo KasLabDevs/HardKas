@@ -138,6 +138,19 @@ export function readJsonFileSync<T = unknown>(filePath: string): T {
 }
 
 /**
+ * A user-chosen name used as ONE plain path component directly under `baseDir`: the resolved child path, or undefined
+ * when the name is not a string, is empty, "." or "..", holds a separator ('/' or '\'), a colon (a drive or an NTFS
+ * stream) or NUL, or would not resolve directly under baseDir. A logical check only, with no I/O: a caller that touches
+ * the disk also refuses a link out of its own root.
+ */
+export function plainChildPath(baseDir: string, name: unknown): string | undefined {
+  if (typeof name !== "string" || name === "" || name === "." || name === ".." || /[\\/:\0]/.test(name)) return undefined;
+  const base = path.resolve(baseDir);
+  const child = path.resolve(base, name);
+  return path.dirname(child) === base ? child : undefined;
+}
+
+/**
  * Synchronous version of writeFileAtomic.
  */
 export function writeFileAtomicSync(
