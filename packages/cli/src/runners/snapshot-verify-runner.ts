@@ -35,14 +35,14 @@ export async function runSnapshotVerify(options: SnapshotVerifyOptions) {
     if (result.ok) {
       UI.success("Snapshot Integrity Verified");
       console.log(
-        `  Accounts Hash:  âœ“ MATCH (${snapshot.accountsHash?.slice(0, 8)}...)`
+        `  Accounts Hash:  ✓ MATCH (${snapshot.accountsHash?.slice(0, 8)}...)`
       );
       console.log(
-        `  UTXO Set Hash:  âœ“ MATCH (${snapshot.utxoSetHash?.slice(0, 8)}...)`
+        `  UTXO Set Hash:  ✓ MATCH (${snapshot.utxoSetHash?.slice(0, 8)}...)`
       );
-      console.log(`  State Hash:     âœ“ MATCH (${snapshot.stateHash?.slice(0, 8)}...)`);
+      console.log(`  State Hash:     ✓ MATCH (${snapshot.stateHash?.slice(0, 8)}...)`);
       console.log(
-        `  Content Hash:   âœ“ MATCH (${snapshot.contentHash?.slice(0, 8)}...)`
+        `  Content Hash:   ✓ MATCH (${snapshot.contentHash?.slice(0, 8)}...)`
       );
     } else {
       result.errors.forEach((err) => console.log(`  [!] ${err}`));

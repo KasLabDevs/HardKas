@@ -49,13 +49,13 @@ export async function runTelemetryInspect(options: { limit: string }) {
 
   console.log(
     pc.bold(
-      "\nâ”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”"
+      "\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     )
   );
-  console.log(pc.bold(`HardKAS â€¢ Telemetry Source Inspector`));
+  console.log(pc.bold(`HardKAS • Telemetry Source Inspector`));
   console.log(
     pc.bold(
-      "â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”\n"
+      "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
     )
   );
 
@@ -129,7 +129,7 @@ export async function runTelemetryInspect(options: { limit: string }) {
   const recent = events.slice(-limit);
   console.log(`\n${pc.bold(`Recent Events (Last ${recent.length}):`)}`);
   console.log(
-    "â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€"
+    "────────────────────────────────────────────────────────────────────────────────"
   );
   for (const ev of recent) {
     const time = new Date(ev.timestamp).toLocaleTimeString();
@@ -145,7 +145,7 @@ export async function runTelemetryInspect(options: { limit: string }) {
     );
   }
   console.log(
-    "â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€\n"
+    "────────────────────────────────────────────────────────────────────────────────\n"
   );
 }
 
@@ -157,13 +157,13 @@ export async function runTelemetryVerify() {
 
   console.log(
     pc.bold(
-      "\nâ”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”"
+      "\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     )
   );
-  console.log(pc.bold(`HardKAS â€¢ Telemetry Source Schema Verifier`));
+  console.log(pc.bold(`HardKAS • Telemetry Source Schema Verifier`));
   console.log(
     pc.bold(
-      "â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”\n"
+      "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
     )
   );
 
@@ -195,7 +195,7 @@ export async function runTelemetryVerify() {
       event = JSON.parse(line);
     } catch (e: unknown) {
       console.log(
-        `${pc.red("âœ— Line " + (i + 1) + ":")} Invalid JSON structure (${((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e))})`
+        `${pc.red("✗ Line " + (i + 1) + ":")} Invalid JSON structure (${((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e))})`
       );
       console.log(`  Raw Content: ${pc.dim(line.slice(0, 100))}`);
       invalidCount++;
@@ -226,7 +226,7 @@ export async function runTelemetryVerify() {
     if (event.payload === undefined) errors.push(`Missing payload`);
 
     if (errors.length > 0) {
-      console.log(`${pc.red("âœ— Line " + (i + 1) + ":")} Schema violation`);
+      console.log(`${pc.red("✗ Line " + (i + 1) + ":")} Schema violation`);
       for (const err of errors) {
         console.log(`    - ${err}`);
       }
@@ -238,14 +238,14 @@ export async function runTelemetryVerify() {
 
   console.log("\nVerification Summary:");
   console.log(
-    "â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€"
+    "─────────────────────────────────────────────────"
   );
   console.log(`  Valid events checked:   ${pc.green(validCount)}`);
   console.log(
     `  Schema violations:      ${invalidCount > 0 ? pc.red(invalidCount) : pc.green(0)}`
   );
   console.log(
-    "â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€"
+    "─────────────────────────────────────────────────"
   );
 
   if (invalidCount > 0) {

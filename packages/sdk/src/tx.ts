@@ -1,4 +1,4 @@
-import { systemRuntimeContext, deterministicCompare, getCoinbaseMaturity, HardkasError } from "@hardkas/core";
+import { systemRuntimeContext, deterministicCompare, getCoinbaseMaturity, HardkasError, stripBom } from "@hardkas/core";
 import { pollCondition } from "./waiters.js";
 import { Hardkas } from "./index.js";
 import {
@@ -1222,7 +1222,7 @@ export class HardkasTx {
     for (const artifact of executed === plan ? [plan] : [plan, executed]) {
       const at = nodePath.join(this.sdk.workspace.root, ".hardkas", "artifacts", storeEntryFor(artifact).rel);
       if (nodeFs.existsSync(at)) {
-        const check = checkArtifactIdentity(JSON.parse(nodeFs.readFileSync(at, "utf-8")));
+        const check = checkArtifactIdentity(JSON.parse(stripBom(nodeFs.readFileSync(at, "utf-8"))));
         if (check.ok && check.artifactId === artifactIdentity(artifact)) continue;
         throw new HardkasError(
           "EXECUTION_MATERIAL_INVALID",

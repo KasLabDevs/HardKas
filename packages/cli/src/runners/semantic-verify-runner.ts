@@ -4,6 +4,7 @@ import crypto from "node:crypto";
 import pc from "picocolors";
 import { UI } from "../ui.js";
 import { HardkasSchemas } from "@hardkas/artifacts";
+import { stripBom } from "@hardkas/core";
 
 export interface SemanticVerifyOptions {
   ciMode: boolean;
@@ -73,7 +74,7 @@ export async function runSemanticVerify(options: SemanticVerifyOptions) {
     const filePath = path.join(reportsDir, file);
     try {
       const content = fs.readFileSync(filePath, "utf-8");
-      const report = JSON.parse(content);
+      const report = JSON.parse(stripBom(content));
 
       if (!report.cases || !Array.isArray(report.cases)) continue;
 

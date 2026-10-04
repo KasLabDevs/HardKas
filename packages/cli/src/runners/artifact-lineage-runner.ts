@@ -2,6 +2,7 @@
 import { UI } from "../ui.js";
 import fs from "node:fs";
 import path from "node:path";
+import { stripBom } from "@hardkas/core";
 
 export interface ArtifactLineageOptions {
   path: string;
@@ -21,7 +22,7 @@ export async function runArtifactLineage(options: ArtifactLineageOptions) {
   }
 
   const content = fs.readFileSync(absolutePath, "utf-8");
-  const artifact = JSON.parse(content);
+  const artifact = JSON.parse(stripBom(content));
 
   UI.header(`Artifact Lineage: ${path.basename(options.path)}`);
 
@@ -32,7 +33,7 @@ export async function runArtifactLineage(options: ArtifactLineageOptions) {
     return;
   }
 
-  console.log("â•".repeat(60));
+  console.log("═".repeat(60));
   console.log(`Lineage ID:    ${lineage.lineageId}`);
   console.log(`Root Artifact: ${lineage.rootArtifactId}`);
   console.log(`Current ID:    ${lineage.artifactId}`);
@@ -40,7 +41,7 @@ export async function runArtifactLineage(options: ArtifactLineageOptions) {
   if (lineage.sequence !== undefined) {
     console.log(`Sequence:      ${lineage.sequence}`);
   }
-  console.log("â•".repeat(60));
+  console.log("═".repeat(60));
 
   // Trace visualization (conceptual)
   console.log("\nPROVENANCE CHAIN:");
@@ -49,9 +50,9 @@ export async function runArtifactLineage(options: ArtifactLineageOptions) {
     chain.push(`[ROOT] ${artifact.schema} (${lineage.artifactId.slice(0, 8)}...)`);
   } else {
     chain.push(`[ROOT] ${lineage.rootArtifactId.slice(0, 8)}...`);
-    chain.push(`  â†“    (Intermediate Artifacts)`);
+    chain.push(`  ↓    (Intermediate Artifacts)`);
     if (lineage.parentArtifactId) {
-      chain.push(`  â†“    ${lineage.parentArtifactId.slice(0, 8)}... (Parent)`);
+      chain.push(`  ↓    ${lineage.parentArtifactId.slice(0, 8)}... (Parent)`);
     }
     chain.push(`[HERE] ${artifact.schema} (${lineage.artifactId.slice(0, 8)}...)`);
   }
@@ -64,12 +65,12 @@ export async function runArtifactLineage(options: ArtifactLineageOptions) {
   if (!result.ok) {
     console.log("\nLineage Violations:");
     result.issues.forEach((i) => {
-      const prefix = i.severity === "error" ? "âœ—" : "âš ";
+      const prefix = i.severity === "error" ? "✗" : "⚠";
       console.log(`  ${prefix} [${i.code}] ${i.message}`);
     });
     failed = true;
   } else {
-    console.log("\nâœ“ Internal lineage structure is consistent.");
+    console.log("\n✓ Internal lineage structure is consistent.");
   }
 
   UI.footer("Operational Provenance Complete");

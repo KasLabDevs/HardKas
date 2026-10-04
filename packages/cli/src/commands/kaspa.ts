@@ -1,9 +1,10 @@
 import { Command } from "commander";
+import { nodeRpcUrl } from "@hardkas/core";
 import { UI } from "../ui.js";
 
-// The JSON wRPC endpoint of the canonical localnet, as for the `rpc` commands.
-const DEFAULT_RPC_URL = "ws://127.0.0.1:18210";
-const RPC_URL_OPTION = "Node wRPC endpoint (default: the canonical localnet, ws://127.0.0.1:18210)";
+// The JSON wRPC endpoint of the canonical localnet, as for the `rpc` commands: the one definition, never a copy.
+const DEFAULT_RPC_URL = nodeRpcUrl();
+const RPC_URL_OPTION = `Node wRPC endpoint (default: the canonical localnet, ${DEFAULT_RPC_URL})`;
 
 export function registerKaspaCommands(program: Command) {
   const kaspaCmd = program

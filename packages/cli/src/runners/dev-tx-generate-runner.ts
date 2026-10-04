@@ -2,6 +2,7 @@ import { runTxFlow } from "./tx-flow.js";
 import { loadHardkasConfig } from "@hardkas/config";
 import { UI } from "../ui.js";
 import { systemRuntimeContext } from "@hardkas/core";
+import { HardkasCliError, HardkasExitCode } from "../cli-errors.js";
 
 export async function runDevTxGenerate(options: any) {
   const { count, network = "simulated", json, workspace } = options;
@@ -64,7 +65,8 @@ export async function runDevTxGenerate(options: any) {
         result: flowResult.result,
         planError: flowResult.steps.plan.error,
         signError: flowResult.steps.sign.error,
-        sendError: flowResult.steps.send.error
+        sendError: flowResult.steps.send.error,
+        ...(flowResult.steps.send.artifact?.accepted === false ? { sendRejected: true } : {})
       });
     } catch (e) {
       failCount++;
@@ -78,6 +80,7 @@ export async function runDevTxGenerate(options: any) {
 
   if (json) {
     UI.writeJson({
+      ok: failCount === 0,
       generated: numCount,
       successCount,
       failCount,
@@ -92,5 +95,11 @@ export async function runDevTxGenerate(options: any) {
     );
     console.log(`Success: ${successCount}`);
     console.log(`Failed:  ${failCount}`);
+  }
+  // F3: any failed transaction makes the command fail (exit 1); the per-transaction detail is in the output above
+  if (failCount > 0) {
+    throw new HardkasCliError("DEV_TX_GENERATE_FAILED", `${failCount} of ${numCount} generated transaction(s) failed`, {
+      exitCode: HardkasExitCode.RUNTIME_FAILURE
+    });
   }
 }

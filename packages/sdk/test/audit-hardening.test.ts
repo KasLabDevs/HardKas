@@ -105,10 +105,11 @@ describe("Audit Hardening Suite (0.12.0-rc.26)", () => {
 
       if (fs.existsSync(localnetPath)) fs.unlinkSync(localnetPath);
 
-      fs.writeFileSync(localnetStatePath, JSON.stringify({ migrated: true }));
+      // a real legacy state (the migration now goes through the state writer, which evidences the state it writes)
+      const { loadLocalnetState, createInitialLocalnetState } = await import("@hardkas/localnet");
+      fs.writeFileSync(localnetStatePath, JSON.stringify({ ...createInitialLocalnetState(), migrated: true }));
 
       // Load through store.ts
-      const { loadLocalnetState } = await import("@hardkas/localnet");
       const state = await loadLocalnetState(localnetPath);
 
       expect(state).toBeTruthy();

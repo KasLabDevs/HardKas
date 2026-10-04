@@ -7,6 +7,7 @@ import { UI } from "../ui.js";
 import path from "node:path";
 import fs from "node:fs";
 import { HardkasSchemas } from "@hardkas/artifacts";
+import { stripBom } from "@hardkas/core";
 
 export interface ArtifactVerifyOptions {
   path: string;
@@ -94,7 +95,7 @@ export async function runArtifactVerify(options: ArtifactVerifyOptions) {
     workspaceRoot: options.workspaceRoot
   });
 
-  const artifact = JSON.parse(fs.readFileSync(absolutePath, "utf-8"));
+  const artifact = JSON.parse(stripBom(fs.readFileSync(absolutePath, "utf-8")));
   const semanticResult = verifyArtifactSemantics(artifact, {
     strict,
     workspaceRoot: options.workspaceRoot
@@ -197,7 +198,7 @@ async function runRecursiveVerify(dir: string, options: ArtifactVerifyOptions & 
     });
 
     // 2. Semantic & Lineage Audit
-    const artifact = JSON.parse(fs.readFileSync(file, "utf-8"));
+    const artifact = JSON.parse(stripBom(fs.readFileSync(file, "utf-8")));
 
     // Source-side migration tolerance (review B1), store verification only: the
     // ONLY error may be MIGRATION_REQUIRED, and every supersession condition must
@@ -235,7 +236,7 @@ async function runRecursiveVerify(dir: string, options: ArtifactVerifyOptions & 
       resolveArtifact: (id) => {
         for (const f of files) {
           try {
-            const obj = JSON.parse(fs.readFileSync(f, "utf-8"));
+            const obj = JSON.parse(stripBom(fs.readFileSync(f, "utf-8")));
             const identity = checkArtifactIdentity(obj);
             if (identity.ok && identity.artifactId === id) return obj;
           } catch {}

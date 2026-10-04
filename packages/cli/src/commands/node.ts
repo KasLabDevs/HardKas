@@ -110,10 +110,23 @@ export function registerNodeCommands(program: Command) {
     .option("--json", "Output results as JSON", false)
     .action(async (options) => {
       const { withLock } = await import("@hardkas/core");
+      // AUD-24: the reset acts on the workspace whose hardkas.config.* it runs under (its `.hardkas/kaspad` and its
+      // lock); with no workspace it fails, and never falls back to the current directory
+      const { loadHardkasConfig } = await import("@hardkas/config");
+      const workspace = await loadHardkasConfig();
+      if (!workspace.path) {
+        const { HardkasCliError, HardkasExitCode } = await import("../cli-errors.js");
+        throw new HardkasCliError(
+          "WORKSPACE_NOT_FOUND",
+          `No HardKAS workspace (hardkas.config.*) at or above ${process.cwd()}; 'node reset' deletes a workspace's node data and runs only inside one. Nothing was reset.`,
+          { exitCode: HardkasExitCode.USAGE_ERROR }
+        );
+      }
+      const root = workspace.cwd;
       try {
         await withLock(
           {
-            rootDir: process.cwd(),
+            rootDir: root,
             name: "node",
             command: "hardkas node reset",
             wait: options.waitLock,
@@ -130,12 +143,12 @@ export function registerNodeCommands(program: Command) {
               }
             }
 
-            const result = await runNodeReset({ removeData: true });
+            const result = await runNodeReset({ removeData: true, cwd: root });
             UI.success(result.formatted);
 
             if (options.start) {
               UI.info("Starting node...");
-              const startResult = await runNodeStart({});
+              const startResult = await runNodeStart({ cwd: root });
               console.log(startResult.formatted);
             }
           }

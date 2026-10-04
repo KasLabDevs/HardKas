@@ -61,7 +61,12 @@ export async function runTxVerify(options: TxVerifyOptions) {
       ) {
         throw new Error("Invalid artifact: missing or invalid inputs/outputs arrays");
       }
-      result = verifyTxPlanSemantics(artifact as unknown as TxPlan);
+      // the artifact's `version` is its FORMAT version ("1.0.0-alpha"); the plan's `version` is the transaction version,
+      // which the artifact keeps in `txVersion` (the mapping of the fee check, artifacts/src/feeVerify.ts)
+      result = verifyTxPlanSemantics({
+        ...(artifact as unknown as TxPlan),
+        version: (artifactRecord["txVersion"] as unknown) === 1 ? 1 : 0
+      } as TxPlan);
     }
 
     if (options.json) {

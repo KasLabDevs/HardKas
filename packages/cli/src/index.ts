@@ -35,9 +35,10 @@ async function main() {
 
   try {
     await program.parseAsync(process.argv);
-    process.exit(0);
+    // F3: a command that finished normally may have set a nonzero exit code; it is never discarded
+    process.exit(process.exitCode ?? 0);
   } catch (err: any) {
-    const { handleError } = await import("./ui.js");
+    const { handleError, errorCodeOf } = await import("./ui.js");
     handleError(err);
 
     // For HardkasCliError in JSON mode, produce the structured error envelope
@@ -57,7 +58,7 @@ async function main() {
     const exitCode =
       err instanceof HardkasCliError
         ? err.exitCode
-        : ((err as any).code) === "POLICY_DENIED"
+        : errorCodeOf(err) === "POLICY_DENIED"
           ? HardkasExitCode.POLICY_DENIED
           : HardkasExitCode.RUNTIME_FAILURE;
     process.exit(exitCode);
@@ -65,7 +66,7 @@ async function main() {
 }
 
 main().catch(async (err) => {
-  const { handleError } = await import("./ui.js");
+  const { handleError, errorCodeOf } = await import("./ui.js");
   handleError(err, "Fatal error");
   if (((err as any).stack)) {
     const { maskSecrets } = await import("@hardkas/core");
@@ -75,7 +76,7 @@ main().catch(async (err) => {
   const exitCode =
     err instanceof HardkasCliError
       ? err.exitCode
-      : ((err as any).code) === "POLICY_DENIED"
+      : errorCodeOf(err) === "POLICY_DENIED"
         ? HardkasExitCode.POLICY_DENIED
         : HardkasExitCode.RUNTIME_FAILURE;
   process.exit(exitCode);

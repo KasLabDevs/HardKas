@@ -117,13 +117,10 @@ export function registerDevCommands(program: Command) {
     .option("--workspace <path>", "Override workspace root directory")
     .option("--json", "Output as JSON", false)
     .action(async (options: any) => {
-      try {
-        if (options.json) UI.setJsonMode(true);
-        const { runDevTxGenerate } = await import("../runners/dev-tx-generate-runner.js");
-        await runDevTxGenerate(options);
-      } catch (e) {
-        throw new Error("Dev tx generate failed");
-      }
+      if (options.json) UI.setJsonMode(true);
+      const { runDevTxGenerate } = await import("../runners/dev-tx-generate-runner.js");
+      // the runner's own error (and its code) reaches the top-level renderer unchanged
+      await runDevTxGenerate(options);
     });
 
   devCmd

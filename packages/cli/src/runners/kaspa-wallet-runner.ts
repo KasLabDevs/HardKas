@@ -10,18 +10,18 @@ export async function runKaspaWalletCreate(name: string, options: { network: str
     const { createLocalKaspaWallet } = await import("@hardkas/accounts");
 
     console.log(
-      pc.bold("\nâ”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”")
+      pc.bold("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
     );
-    console.log(pc.bold(`HardKAS â€¢ Kaspa Wallet Creation`));
+    console.log(pc.bold(`HardKAS • Kaspa Wallet Creation`));
     console.log(
-      pc.bold("â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”\n")
+      pc.bold("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n")
     );
 
     const wallet = await createLocalKaspaWallet({
       networkId: options.network as "mainnet" | "testnet-10" | "simnet"
     });
 
-    console.log(`  ${pc.green("âœ“")} New Kaspa L1 wallet generated:`);
+    console.log(`  ${pc.green("✓")} New Kaspa L1 wallet generated:`);
     console.log(`    Name:    ${pc.white(name)}`);
     console.log(`    Address: ${pc.white(wallet.address)}`);
     console.log(`    Network: ${pc.white(options.network)}`);
@@ -245,7 +245,7 @@ export async function runKaspaWalletSend(
       config: config.config
     });
 
-    console.log(`  ${pc.green("âœ“")} Transaction signed.`);
+    console.log(`  ${pc.green("✓")} Transaction signed.`);
 
     // 3. Broadcast
     if (!signedArtifact.signedTransaction) {
@@ -258,7 +258,7 @@ export async function runKaspaWalletSend(
     );
 
     if (submitResult.accepted) {
-      console.log(`  ${pc.green("âœ“")} Transaction accepted by node.`);
+      console.log(`  ${pc.green("✓")} Transaction accepted by node.`);
       console.log(`  TXID: ${pc.bold(pc.white(submitResult.transactionId))}\n`);
     } else {
       const { HardkasCliError } = await import("../cli-errors.js");

@@ -4,6 +4,7 @@ import path from "node:path";
 import { UI, handleError } from "../ui.js";
 import type { WorkflowArtifact } from "@hardkas/artifacts";
 import { HardkasSchemas } from "@hardkas/artifacts";
+import { stripBom } from "@hardkas/core";
 
 export async function runWorkflowRun(
   file: string,
@@ -44,7 +45,7 @@ export async function runWorkflowRun(
     }
 
     const content = fs.readFileSync(fullPath, "utf8");
-    const def = JSON.parse(content);
+    const def = JSON.parse(stripBom(content));
 
     if (!def.steps || !Array.isArray(def.steps)) {
       throw new Error("Invalid workflow definition: missing 'steps' array");

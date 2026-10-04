@@ -3,7 +3,7 @@ import path from "node:path";
 import { AsyncLocalStorage } from "node:async_hooks";
 import type { LocalnetState } from "./types.js";
 import { createInitialLocalnetState } from "./state.js";
-import { HardkasError, withLock, writeFileAtomic } from "@hardkas/core";
+import { HardkasError, stripBom, withLock, writeFileAtomic } from "@hardkas/core";
 
 /** The lock that serializes a workspace's simulated state (SIMULATOR-EXECUTION-UNIT-1). */
 export const SIMULATOR_STATE_LOCK = "simulator-state";
@@ -157,28 +157,49 @@ async function publishStateSnapshot(workspaceRoot: string, state: LocalnetState)
   }, "simulated state snapshot");
 }
 
+/**
+ * The simulated state in a state file, or null when there is none. Only a MISSING file is absent: a file that cannot be
+ * read or parsed is refused (LOCALNET_STATE_UNREADABLE or the read error) and left as it is, never taken as absent, so
+ * nothing replaces it. A leading UTF-8 BOM is not content. When `localnet.json` is missing and the legacy
+ * `localnet-state.json` exists, the legacy state is migrated through the state writer (its snapshot first).
+ */
 export async function loadLocalnetState(
   filePath?: string
 ): Promise<LocalnetState | null> {
   const targetPath = filePath ?? getDefaultLocalnetStatePath();
 
+  const content = await readIfPresent(targetPath);
+  if (content !== undefined) return parseLocalnetState(content, targetPath);
+
+  const legacyPath = path.join(path.dirname(targetPath), "localnet-state.json");
+  const legacyContent = await readIfPresent(legacyPath);
+  if (legacyContent === undefined) return null; // neither exists
+  const legacy = parseLocalnetState(legacyContent, legacyPath);
+  await saveLocalnetState(legacy, targetPath);
+  console.warn(
+    `[HardKAS] Migrated legacy localnet-state.json to localnet.json. The old file was kept for compatibility.`
+  );
+  return legacy;
+}
+
+async function readIfPresent(filePath: string): Promise<string | undefined> {
   try {
-    const content = await fs.readFile(targetPath, "utf-8");
-    return JSON.parse(content) as LocalnetState;
-  } catch (error) {
-    // If localnet.json not found, try migrating localnet-state.json
-    try {
-      const legacyPath = path.join(path.dirname(targetPath), "localnet-state.json");
-      const legacyContent = await fs.readFile(legacyPath, "utf-8");
-      // Migrate it over
-      await fs.writeFile(targetPath, legacyContent, "utf-8");
-      console.warn(
-        `[HardKAS] Migrated legacy localnet-state.json to localnet.json. The old file was kept for compatibility.`
-      );
-      return JSON.parse(legacyContent) as LocalnetState;
-    } catch {
-      return null; // neither exists
-    }
+    return await fs.readFile(filePath, "utf-8");
+  } catch (err: any) {
+    if (err?.code === "ENOENT") return undefined;
+    throw err;
+  }
+}
+
+function parseLocalnetState(content: string, filePath: string): LocalnetState {
+  try {
+    return JSON.parse(stripBom(content)) as LocalnetState;
+  } catch (err) {
+    throw new HardkasError(
+      "LOCALNET_STATE_UNREADABLE",
+      `${filePath} is not valid JSON (${err instanceof Error ? err.message : String(err)}); it was left as it is and nothing replaced it — repair or move it`,
+      { cause: err }
+    );
   }
 }
 

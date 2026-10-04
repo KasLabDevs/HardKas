@@ -200,6 +200,17 @@ export const UI = {
   }
 };
 
+/**
+ * The machine-readable code of an error: its `code`, else a leading `CODE_X:` of its message (many HardKAS errors are
+ * thrown as `new Error("CODE_X: …")` without a `code`), else UNKNOWN_ERROR.
+ */
+export function errorCodeOf(e: unknown): string {
+  const code = (e as any)?.code;
+  if (code) return code;
+  const message = e instanceof Error ? e.message : String(e);
+  return /^([A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+):\s/.exec(message)?.[1] ?? "UNKNOWN_ERROR";
+}
+
 export function handleError(e: unknown, context?: string) {
   if (e instanceof Error && (e as any).code === "REPLAY_DIVERGED") {
     const report = (e as any).report;
@@ -240,7 +251,7 @@ export function handleError(e: unknown, context?: string) {
     if (!getOutput().jsonWritten) {
       getOutput().writeJson({
         ok: false,
-        code: errorObj.code || "UNKNOWN_ERROR",
+        code: errorCodeOf(e),
         message: context ? `${context}: ${msg}` : msg,
         mode: "cli"
       });
@@ -300,7 +311,7 @@ export function handleError(e: unknown, context?: string) {
  * Specialized error handler for lock-related errors.
  */
 export function handleLockError(e: any) {
-  const code = ((e as any).code) || "UNKNOWN_ERROR";
+  const code = errorCodeOf(e);
   const meta = e.cause as any;
 
   if (UI.isJsonMode()) {

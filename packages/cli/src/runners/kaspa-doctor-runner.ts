@@ -118,20 +118,20 @@ export async function runKaspaDoctor(options: { rpcUrl: string; json: boolean })
 
     // Aesthetic Output
     console.log(
-      pc.bold("\nâ”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”")
+      pc.bold("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
     );
-    console.log(pc.bold(`HardKAS â€¢ Kaspa Doctor (L1)`));
+    console.log(pc.bold(`HardKAS • Kaspa Doctor (L1)`));
     console.log(
-      pc.bold("â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”\n")
+      pc.bold("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n")
     );
 
     for (const check of checks) {
       const icon =
         check.status === "success"
-          ? pc.green("âœ“")
+          ? pc.green("✓")
           : check.status === "warning"
-            ? pc.yellow("âš ")
-            : pc.red("âœ—");
+            ? pc.yellow("⚠")
+            : pc.red("✗");
       console.log(`${icon} ${pc.bold(check.name)}: ${check.message}`);
     }
 

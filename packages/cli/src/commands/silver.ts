@@ -6,6 +6,7 @@ import pc from "picocolors";
 import { getOutput } from "../output.js";
 import { HardkasCliError, HardkasExitCode } from "../cli-errors.js";
 import { UI } from "../ui.js";
+import { stripBom } from "@hardkas/core";
 
 /**
  * `hardkas silver` — SilverScript v1 through upstream authorities only.
@@ -68,7 +69,7 @@ async function readRecord(file: string, schema: string): Promise<any> {
   const { checkArtifactIdentity } = await import("@hardkas/artifacts");
   let record: any;
   try {
-    record = JSON.parse(readFileOrFail(file, "record").toString("utf8"));
+    record = JSON.parse(stripBom(readFileOrFail(file, "record").toString("utf8")));
   } catch (e: any) {
     if (e instanceof HardkasCliError) throw e;
     fail("SILVER_RECORD_INVALID", `${file} is not JSON`, HardkasExitCode.USAGE_ERROR);
@@ -212,7 +213,7 @@ function parseKas(amount: string): bigint {
 async function entryArgs(file: string | undefined) {
   if (!file) return [];
   const text = readFileOrFail(file, "arguments file").toString("utf8");
-  const raw = JSON.parse(text);
+  const raw = JSON.parse(stripBom(text));
   if (!Array.isArray(raw)) fail("SILVER_ARGS_INVALID", "arguments must be a JSON list", HardkasExitCode.USAGE_ERROR);
   const { parseSilArtifactValuesJson } = await import("@hardkas/core");
   const out: any[] = [];
@@ -423,7 +424,7 @@ export function registerSilverCommand(program: Command) {
       const testsBytes = readFileOrFail(opts.tests, "test file");
       let tests: unknown;
       try {
-        tests = JSON.parse(testsBytes.toString("utf8"));
+        tests = JSON.parse(stripBom(testsBytes.toString("utf8")));
       } catch {
         fail("SILVER_TEST_FILE_INVALID", `${opts.tests} is not JSON`, HardkasExitCode.USAGE_ERROR);
       }
@@ -725,7 +726,7 @@ export function registerSilverCommand(program: Command) {
         fail("SILVER_CONSTRUCTOR_ARGS_MISMATCH", "these constructor arguments are not the ones the current state was compiled with", HardkasExitCode.USAGE_ERROR);
       }
       const stateMap = JSON.parse(opts.stateMap);
-      const nextRaw = JSON.parse(readFileOrFail(opts.nextState, "next-state file").toString("utf8"));
+      const nextRaw = JSON.parse(stripBom(readFileOrFail(opts.nextState, "next-state file").toString("utf8")));
       const nextState = Object.fromEntries(Object.entries(nextRaw).map(([k, v]) => [k, core.parseSilArtifactValuesJson(JSON.stringify([v]))[0]!]));
       const next = await core.compileSilverSuccessor({ source: compileRecord.source.text, constructorArgs: ctor.values, contractName: prev.contract, stateToConstructorArg: stateMap, nextState });
       if (Buffer.from(next.current.artifactBytes).toString("utf8") !== compileRecord.artifactJson) {

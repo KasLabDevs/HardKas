@@ -4,6 +4,8 @@ import path from "node:path";
 import { runTxFlow } from "./tx-flow.js";
 import { loadHardkasConfig } from "@hardkas/config";
 import { UI } from "../ui.js";
+import { HardkasCliError, HardkasExitCode } from "../cli-errors.js";
+import { stripBom } from "@hardkas/core";
 
 export async function runTxBatch(options: any) {
   const { file, network = "simulated", json, workspace } = options;
@@ -18,7 +20,7 @@ export async function runTxBatch(options: any) {
   let payments: any[];
   try {
     const content = await fs.readFile(filePath, "utf-8");
-    const parsed = JSON.parse(content);
+    const parsed = JSON.parse(stripBom(content));
     // Accept both flat array and { payments: [...] } wrapper
     if (Array.isArray(parsed)) {
       payments = parsed;
@@ -93,7 +95,8 @@ export async function runTxBatch(options: any) {
         result: flowResult.result,
         planError: flowResult.steps.plan.error,
         signError: flowResult.steps.sign.error,
-        sendError: flowResult.steps.send.error
+        sendError: flowResult.steps.send.error,
+        ...(flowResult.steps.send.artifact?.accepted === false ? { sendRejected: true } : {})
       });
       if (flowResult.ok) {
         successCount++;
@@ -115,6 +118,7 @@ export async function runTxBatch(options: any) {
 
   if (json) {
     UI.writeJson({
+      ok: failCount === 0,
       batchSize: payments.length,
       successCount,
       failCount,
@@ -124,5 +128,11 @@ export async function runTxBatch(options: any) {
     getOutput().writeLine(`\nBatch processing complete.`);
     getOutput().writeLine(`Successful: ${successCount}`);
     getOutput().writeLine(`Failed:     ${failCount}`);
+  }
+  // F3: a batch with any failed payment is a failed command (exit 1); the per-payment detail is in the output above
+  if (failCount > 0) {
+    throw new HardkasCliError("TX_BATCH_FAILED", `${failCount} of ${payments.length} batch payment(s) failed`, {
+      exitCode: HardkasExitCode.RUNTIME_FAILURE
+    });
   }
 }

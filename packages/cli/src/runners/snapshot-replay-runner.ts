@@ -6,6 +6,7 @@ import { ArtifactStoreMutation } from "@hardkas/artifacts";
 import { UI, handleError } from "../ui.js";
 import { getOutput } from "../output.js";
 import { runReplayVerify } from "./replay-verify-runner.js";
+import { snapshotDirFor } from "./snapshot-dir.js";
 
 export interface SnapshotReplayOptions {
   name: string;
@@ -14,12 +15,13 @@ export interface SnapshotReplayOptions {
 }
 
 export async function runSnapshotReplay(options: SnapshotReplayOptions) {
+  snapshotDirFor(options.workspaceRoot ?? process.cwd(), options.name); // refused before the workspace is even opened
   try {
     const { Hardkas } = await import("@hardkas/sdk");
     const sdk = await Hardkas.open(
       options.workspaceRoot ? { cwd: options.workspaceRoot } : {}
     );
-    const snapshotDir = sdk.workspace.resolvePath("snapshots", options.name);
+    const snapshotDir = snapshotDirFor(sdk.workspace.root, options.name);
 
     // 1. Read Manifest
     let manifest;

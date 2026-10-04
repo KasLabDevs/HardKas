@@ -6,13 +6,14 @@ import { loadSession, saveSession } from "./fs.js";
 import { HardkasCliError, HardkasExitCode } from "../../cli-errors.js";
 import { pskt } from "@hardkas/sdk";
 import { ArtifactStoreMutation } from "@hardkas/artifacts";
+import { stripBom } from "@hardkas/core";
 
 export async function runPsktExport(options: { plan: string, out: string, adapter?: string, force: boolean, json: boolean }) {
   if (options.json) UI.setJsonMode(true);
   
   const planPath = path.resolve(options.plan);
   const planStr = await fs.readFile(planPath, "utf8");
-  const plan = JSON.parse(planStr);
+  const plan = JSON.parse(stripBom(planStr));
 
   const session = await pskt.exportSession(plan, options.adapter);
   

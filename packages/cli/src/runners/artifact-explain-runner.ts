@@ -2,7 +2,7 @@
 import { UI } from "../ui.js";
 import fs from "node:fs";
 import path from "node:path";
-import { formatSompiToKas, formatSignedSompiToKas } from "@hardkas/core";
+import { formatSompiToKas, formatSignedSompiToKas, stripBom } from "@hardkas/core";
 
 export interface ArtifactExplainOptions {
   path: string;
@@ -24,25 +24,25 @@ export async function runArtifactExplain(options: {
     });
   }
 
-  const rawArtifact = JSON.parse(fs.readFileSync(absolutePath, "utf-8"));
+  const rawArtifact = JSON.parse(stripBom(fs.readFileSync(absolutePath, "utf-8")));
   const explanation = await explainArtifact(rawArtifact);
 
   UI.header(`Operational Audit: ${path.basename(options.path)}`);
 
   // 1. Summary Section
   console.log(
-    "â”Œâ”€â”€ SUMMARY â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€"
+    "┌── SUMMARY ───────────────────────────────────────────────────"
   );
-  console.log(`â”‚ TYPE:      ${explanation.summary.type.padEnd(48)} â”‚`);
-  console.log(`â”‚ VERSION:   ${explanation.summary.version.padEnd(48)} â”‚`);
-  console.log(`â”‚ NETWORK:   ${explanation.summary.network.padEnd(48)} â”‚`);
-  console.log(`â”‚ MODE:      ${explanation.summary.mode.toUpperCase().padEnd(48)} â”‚`);
-  console.log(`â”‚ CREATED:   ${explanation.summary.createdAt.padEnd(48)} â”‚`);
+  console.log(`│ TYPE:      ${explanation.summary.type.padEnd(48)} │`);
+  console.log(`│ VERSION:   ${explanation.summary.version.padEnd(48)} │`);
+  console.log(`│ NETWORK:   ${explanation.summary.network.padEnd(48)} │`);
+  console.log(`│ MODE:      ${explanation.summary.mode.toUpperCase().padEnd(48)} │`);
+  console.log(`│ CREATED:   ${explanation.summary.createdAt.padEnd(48)} │`);
   console.log(
-    `â”‚ STATUS:    ${explanation.summary.status.toUpperCase().padEnd(48)} â”‚`
+    `│ STATUS:    ${explanation.summary.status.toUpperCase().padEnd(48)} │`
   );
   console.log(
-    "â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€"
+    "└──────────────────────────────────────────────────────────────"
   );
 
   // 2. Identity Section
@@ -61,9 +61,9 @@ export async function runArtifactExplain(options: {
   if (explanation.economics) {
     console.log("\n[ ECONOMIC AUDIT ]");
     if (explanation.economics.ok) {
-      UI.success("  âœ“ Economic invariants verified.");
+      UI.success("  ✓ Economic invariants verified.");
     } else {
-      UI.error("  âœ— Economic invariants VIOLATED.");
+      UI.error("  ✗ Economic invariants VIOLATED.");
     }
 
     console.log(`\n  Mass:`);
@@ -107,16 +107,16 @@ export async function runArtifactExplain(options: {
   // 4. Security Section
   console.log("\n[ SECURITY & INTEGRITY ]");
   if (explanation.security.strictOk) {
-    UI.success("  âœ“ No critical integrity violations detected.");
+    UI.success("  ✓ No critical integrity violations detected.");
   } else {
     const hasErrors = explanation.security.issues.some(
       (i: any) => i.severity === "critical" || i.severity === "error"
     );
     if (hasErrors) {
-      UI.error("  âœ— SECURITY WARNINGS DETECTED.");
+      UI.error("  ✗ SECURITY WARNINGS DETECTED.");
       // Will throw at the end of the function to preserve cleanup/output
     } else {
-      UI.warning("  âš  SECURITY WARNINGS DETECTED.");
+      UI.warning("  ⚠ SECURITY WARNINGS DETECTED.");
     }
   }
 
@@ -128,7 +128,7 @@ export async function runArtifactExplain(options: {
           : issue.severity === "error"
             ? "ERROR"
             : "WARNING";
-      console.log(`  â€¢ [${prefix}] [${issue.code}] ${issue.message}`);
+      console.log(`  • [${prefix}] [${issue.code}] ${issue.message}`);
     });
   }
 

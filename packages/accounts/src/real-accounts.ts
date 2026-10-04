@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import util from "node:util";
 import type { NetworkId } from "@hardkas/core";
-import { writeFileAtomicSync } from "@hardkas/core";
+import { writeFileAtomicSync, stripBom } from "@hardkas/core";
 import {
   HardkasArtifactBase,
   HARDKAS_VERSION,
@@ -110,7 +110,7 @@ export function loadRealAccountStoreSync(options?: {
 
   try {
     const data = fs.readFileSync(filePath, "utf-8");
-    const store = JSON.parse(data) as RealAccountStore;
+    const store = JSON.parse(stripBom(data)) as RealAccountStore;
 
     // Validate accounts for corrupted private keys
     for (const a of store.accounts) {

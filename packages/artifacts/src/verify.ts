@@ -367,11 +367,11 @@ export function verifyArtifactIntegritySync(
             result.issues.push({
               code: "ARTIFACT_SCHEMA_INVALID" as CorruptionCode,
               severity: zodSeverity,
-              message: `${pathStr}: ${((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e))}`,
+              message: `${pathStr}: ${e.message}`,
               ...(pathStr ? { path: pathStr } : {})
             });
           } else {
-            addError("ARTIFACT_SCHEMA_INVALID", `${pathStr}: ${((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e))}`, pathStr);
+            addError("ARTIFACT_SCHEMA_INVALID", `${pathStr}: ${e.message}`, pathStr);
           }
         });
       }

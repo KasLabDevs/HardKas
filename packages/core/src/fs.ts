@@ -122,6 +122,21 @@ export async function writeFileAtomic(
   }
 }
 
+/** The text without one leading UTF-8 BOM (U+FEFF), which editors such as Notepad and PowerShell 5 write: it is not content. */
+export function stripBom(text: string): string {
+  return text.charCodeAt(0) === 0xfeff ? text.slice(1) : text;
+}
+
+/** Reads a JSON file a user may have written by hand: a leading BOM is ignored; read and parse errors are kept as they are. */
+export async function readJsonFile<T = unknown>(filePath: string): Promise<T> {
+  return JSON.parse(stripBom(await fs.promises.readFile(filePath, "utf-8"))) as T;
+}
+
+/** Synchronous version of readJsonFile. */
+export function readJsonFileSync<T = unknown>(filePath: string): T {
+  return JSON.parse(stripBom(fs.readFileSync(filePath, "utf-8"))) as T;
+}
+
 /**
  * Synchronous version of writeFileAtomic.
  */

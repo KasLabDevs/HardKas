@@ -436,6 +436,9 @@ export async function runTxFlow(input: TxFlowInput): Promise<TxFlowResult> {
 
           flowResult.steps.send = { status: "ok", artifact: sendResult };
           flowResult.result = "broadcast";
+          // F3: the send step ran, but a submission the node rejected is a failed flow (`tx send` reports it as
+          // "rejected" from the send artifact itself)
+          if (sendResult.accepted === false) flowResult.ok = false;
         }
       }
     } else {
@@ -451,8 +454,7 @@ export async function runTxFlow(input: TxFlowInput): Promise<TxFlowResult> {
   } catch (error) {
     flowResult.ok = false;
     const msg = error instanceof Error ? error.message : String(error);
-    console.error("[runTxFlow catch]", error);
-    // Find where it failed
+    // Find where it failed (the error is reported in that step's result)
     if (flowResult.steps.plan.status !== "ok") {
       flowResult.steps.plan = { status: "error", error: msg };
     } else if (shouldSign && flowResult.steps.sign.status !== "ok") {

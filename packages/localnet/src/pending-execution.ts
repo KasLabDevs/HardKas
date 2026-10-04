@@ -10,7 +10,7 @@ import {
   resolveArtifactSync,
   storeEntryFor
 } from "@hardkas/artifacts";
-import { HardkasError, systemRuntimeContext } from "@hardkas/core";
+import { HardkasError, stripBom, systemRuntimeContext } from "@hardkas/core";
 import type { LocalnetState } from "./types.js";
 import { applySimulatedPlan } from "./transactions.js";
 import { buildStateSnapshotArtifact, calculateStateHash } from "./snapshot.js";
@@ -255,7 +255,7 @@ export async function recoverPendingExecution(workspaceRoot: string): Promise<Pe
   const statePath = getDefaultLocalnetStatePath(workspaceRoot);
   let ledger: any;
   try {
-    ledger = JSON.parse(await fs.readFile(statePath, "utf-8"));
+    ledger = JSON.parse(stripBom(await fs.readFile(statePath, "utf-8"))); // a BOM is not content (PAPERCUTS-1)
   } catch (err: any) {
     if (err?.code === "ENOENT") return { state: "no-ledger" };
     throw err;

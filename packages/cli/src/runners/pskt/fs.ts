@@ -5,6 +5,7 @@ import { pskt } from "@hardkas/sdk";
 import type { PortableSigningSession } from "@hardkas/core";
 import { ArtifactStoreMutation } from "@hardkas/artifacts";
 import { HardkasCliError, HardkasExitCode } from "../../cli-errors.js";
+import { stripBom } from "@hardkas/core";
 
 /**
  * Safely loads a PortableSigningSession from a file.
@@ -13,7 +14,7 @@ import { HardkasCliError, HardkasExitCode } from "../../cli-errors.js";
 export async function loadSession(filePath: string): Promise<PortableSigningSession> {
   try {
     const content = await fs.readFile(path.resolve(filePath), "utf8");
-    return pskt.deserializeSession(content);
+    return pskt.deserializeSession(stripBom(content));
   } catch (err: any) {
     if (err instanceof Error && err.message.includes("ENOENT")) {
       throw new HardkasCliError("FILE_NOT_FOUND", `Session file not found: ${filePath}`, { exitCode: HardkasExitCode.USAGE_ERROR });

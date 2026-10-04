@@ -3,7 +3,7 @@ import path from "node:path";
 import type { HardkasConfig } from "@hardkas/config";
 import { createDeterministicAccounts } from "@hardkas/localnet";
 import type { HardkasAccount, HardkasSyntheticAccount } from "./types.js";
-import { CrossWorldAccountCollisionError, AccountNetworkMismatchError } from "@hardkas/core";
+import { CrossWorldAccountCollisionError, AccountNetworkMismatchError, stripBom } from "@hardkas/core";
 import {
   loadRealAccountStoreSync,
   getRealDevAccount,
@@ -147,7 +147,7 @@ export function listHardkasAccounts(config?: HardkasConfig, executionTarget?: im
         try {
           const name = path.basename(file, ".json");
           const data = fs.readFileSync(path.join(devAccountsDir, file), "utf-8");
-          const keystore = JSON.parse(data);
+          const keystore = JSON.parse(stripBom(data));
           if (keystore.type === "hardkas.encryptedKeystore.v2") {
             if (!keystore.metadata?.network) {
               throw new AccountNetworkMismatchError({ expected: "known network", actual: "undefined", detail: `at ${path.join(devAccountsDir, file)}` });
@@ -185,7 +185,7 @@ export function listHardkasAccounts(config?: HardkasConfig, executionTarget?: im
   if (fs.existsSync(keystoreJsonPath)) {
     try {
       const data = fs.readFileSync(keystoreJsonPath, "utf-8");
-      const ks = JSON.parse(data);
+      const ks = JSON.parse(stripBom(data));
       for (const [name, acc] of Object.entries(ks)) {
         if ((acc as any).type === "simulated") {
           if (targetMode === "simulator") {
@@ -239,7 +239,7 @@ export function listHardkasAccounts(config?: HardkasConfig, executionTarget?: im
         try {
           const name = path.basename(file, ".json");
           const data = fs.readFileSync(path.join(keystoreDir, file), "utf-8");
-          const keystore = JSON.parse(data);
+          const keystore = JSON.parse(stripBom(data));
           if (keystore.type === "hardkas.encryptedKeystore.v2") {
             if (!keystore.metadata?.network) {
               throw new AccountNetworkMismatchError({ expected: "known network", actual: "undefined", detail: `at ${path.join(keystoreDir, file)}` });

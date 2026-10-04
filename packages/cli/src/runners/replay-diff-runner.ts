@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import pc from "picocolors";
-import { diffReplays, LayeredReplayDiff } from "@hardkas/core";
+import { diffReplays, LayeredReplayDiff, stripBom } from "@hardkas/core";
 import { UI } from "../ui.js";
 
 export interface ReplayDiffOptions {
@@ -24,14 +24,14 @@ export async function runReplayDiff(options: ReplayDiffOptions) {
 
   try {
     const contentA = await fs.readFile(pathA, "utf-8");
-    replayA = JSON.parse(contentA);
+    replayA = JSON.parse(stripBom(contentA));
   } catch {
     throw new Error(`Could not read replay artifact A: ${options.idA} at ${pathA}`);
   }
 
   try {
     const contentB = await fs.readFile(pathB, "utf-8");
-    replayB = JSON.parse(contentB);
+    replayB = JSON.parse(stripBom(contentB));
   } catch {
     throw new Error(`Could not read replay artifact B: ${options.idB} at ${pathB}`);
   }

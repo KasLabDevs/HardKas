@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import pc from "picocolors";
 import { UI, handleError } from "../ui.js";
-import { HardkasError } from "@hardkas/core";
+import { HardkasError, stripBom } from "@hardkas/core";
 import { HardkasCliError } from "../cli-errors.js";
 import { HardkasSchemas } from "@hardkas/artifacts";
 
@@ -48,7 +48,7 @@ export async function runArtifactInspect(options: ArtifactInspectOptions) {
   const content = fs.readFileSync(targetPath, "utf-8");
   let artifact: any;
   try {
-    artifact = JSON.parse(content);
+    artifact = JSON.parse(stripBom(content));
   } catch (e) {
     throw new HardkasError("INVALID_JSON", `File ${targetPath} is not valid JSON.`);
   }
