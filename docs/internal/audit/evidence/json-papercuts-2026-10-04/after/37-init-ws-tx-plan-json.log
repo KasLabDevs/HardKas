@@ -1,0 +1,81 @@
+$ hardkas tx plan --from alice --to bob --amount 1 --network simulated --json   (cwd ws-after)
+exit=0 stdout_is_single_json=true
+--- stdout ---
+{
+  "schema": "hardkas.txPlan",
+  "hardkasVersion": "0.12.0-rc.26",
+  "schemaVersion": "hardkas.artifact.v1",
+  "version": "1.0.0-alpha",
+  "hashVersion": 5,
+  "createdAt": "2026-10-04T22:05:25.556Z",
+  "networkId": "simulated",
+  "mode": "simulator",
+  "execution": {
+    "mode": "simulator",
+    "domain": "kaspa-l1",
+    "network": "simulated"
+  },
+  "from": {
+    "address": "kaspa:sim_alice",
+    "input": "alice"
+  },
+  "to": {
+    "address": "kaspa:sim_bob",
+    "input": "bob"
+  },
+  "amountSompi": "100000000",
+  "estimatedFeeSompi": "315400",
+  "estimatedMass": "9985",
+  "inputs": [
+    {
+      "outpoint": {
+        "transactionId": "synthetic-c84e82a07128512316cf7e65489d2564fa6f3562a852c8be4ce7ee1b363ead8f",
+        "index": 1
+      },
+      "amountSompi": "98999796400",
+      "address": "kaspa:sim_alice",
+      "scriptPublicKey": "mock-script"
+    },
+    {
+      "outpoint": {
+        "transactionId": "synthetic-85707e24a8dcd4499aee0fa30b1ab3df2f437253d8d3ae7f8027b557e99ed3ad",
+        "index": 1
+      },
+      "amountSompi": "98899796400",
+      "address": "kaspa:sim_alice",
+      "scriptPublicKey": "mock-script"
+    }
+  ],
+  "outputs": [
+    {
+      "address": "kaspa:sim_bob",
+      "amountSompi": "100000000"
+    }
+  ],
+  "rpcUrl": "simulated://local",
+  "lineage": {
+    "artifactId": "ed678c6d056cbc2e3adc194e73b83c0cc59e2c76c50be0304470b774e9c4371a",
+    "sequence": 1
+  },
+  "workflowId": "wf_91f03fe37daeb7a1",
+  "metadata": {
+    "schema": "hardkas.artifact.v1",
+    "utxoSelection": {
+      "totalUtxosSeen": 2,
+      "selectedUtxos": 2,
+      "selectionStrategy": "upstream-generator"
+    }
+  },
+  "assumptionLevel": "local-simulated",
+  "plannerAuthority": "SYNTHETIC_SIMULATOR",
+  "plannerAuthorityDetail": "hardkas.simulator/kaspa-wasm@2.1.0",
+  "txVersion": 0,
+  "change": {
+    "address": "kaspa:sim_alice",
+    "amountSompi": "197799277400"
+  },
+  "contentHash": "ed678c6d056cbc2e3adc194e73b83c0cc59e2c76c50be0304470b774e9c4371a",
+  "planId": "plan-ed678c6d056cbc2e"
+}
+--- stderr ---
+

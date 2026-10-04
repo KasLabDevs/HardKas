@@ -1101,7 +1101,7 @@ hardkas deploy track [options] <label>
 | `--receipt <artifactId>` | Reference to receipt artifact |  |
 | `--status <status>` | Deployment status | sent |
 | `--notes <text>` | Notes about this deployment |  |
-| `--json` | Not implemented yet: no JSON is printed | false |
+| `--json` | Output as JSON | false |
 
 ### Arguments
 
@@ -2072,7 +2072,8 @@ hardkas localnet fund [options] <identifier>
 | `--profile <name>` | Funding profile | toccata-v2 |
 | `--amount <kas>` | KAS to wait for: mine until the mature balance grows by this amount | 1000 |
 | `--timeout <ms>` | Funding/maturity wait timeout in ms | 300000 |
-| `--keep-miner` | Leave the companion miner running | false |
+| `--keep-miner` | Keep mining to the funded account after funding (its balance keeps growing) | false |
+| `--stop-miner` | Leave the chain stopped after funding: no new blocks until you mine again | false |
 | `--json` | Output as JSON | false |
 
 ### Arguments
@@ -2136,7 +2137,7 @@ hardkas localnet snapshot create [options] <name>
 
 ## hardkas localnet snapshot replay
 
-Replay and rebuild deterministic state from a snapshot alpha
+Restore a snapshot's missing artifacts into the workspace; never removes or overwrites one alpha
 
 ### Usage
 
@@ -2231,7 +2232,7 @@ No arguments.
 
 ## hardkas localnet stop
 
-Stop localnet profile alpha
+Stop the Docker rusty-kaspad node of the toccata-v2 profile and its miner; needs Docker alpha
 
 ### Usage
 
@@ -2243,7 +2244,7 @@ hardkas localnet stop [options]
 
 | Flag | Description | Default |
 | :--- | :--- | :--- |
-| `--profile <name>` | Localnet profile | simulated |
+| `--profile <name>` | Localnet profile: toccata-v2 (the only one) | toccata-v2 |
 | `--toccata` | Shortcut for --profile toccata-v2 | false |
 | `--json` | Output as JSON | false |
 
@@ -5157,8 +5158,8 @@ hardkas tx plan [options] [from] [to]
 | `--save <path>` | Alias for --out (Save plan as artifact JSON) |  |
 | `--workflow-id <id>` | Optional deterministic workflow ID override |  |
 | `--assumption-level <level>` | Optional assumption level override |  |
-| `--wait-lock` | Wait for workspace lock if held | false |
-| `--lock-timeout <ms>` | Lock wait timeout in ms | 30000 |
+| `--wait-lock` | No effect, kept for compatibility: the command takes no lock of its own, and each store write waits for the store (up to 30 s) | false |
+| `--lock-timeout <ms>` | No effect, kept for compatibility (see --wait-lock) | 30000 |
 | `--json` | Output as JSON | false |
 
 ### Arguments
@@ -5241,8 +5242,8 @@ hardkas tx send [options] [signedPath]
 | `--provider <type>` | Provider mode (auto, rpc, simulated; signed-artifact mode only) | auto |
 | `--url <url>` | RPC URL (optional override) |  |
 | `--yes` | Confirm broadcast. Required unless the network is simulated or simnet (in shortcut mode, unless --network simulated or simnet is given): without it the send is refused (NOT EXECUTED, exit 3) and nothing is written | false |
-| `--wait-lock` | Wait for workspace lock if held | false |
-| `--lock-timeout <ms>` | Lock wait timeout in ms | 30000 |
+| `--wait-lock` | No effect, kept for compatibility: the command takes no lock of its own, and each store write waits for the store (up to 30 s) | false |
+| `--lock-timeout <ms>` | No effect, kept for compatibility (see --wait-lock) | 30000 |
 | `--json` | Output as JSON | false |
 | `--track <label>` | Signed-artifact mode: after an accepted broadcast, record a deployment with this label |  |
 
@@ -5276,8 +5277,10 @@ hardkas tx sign [options] <planPath>
 | `--required-signers <list>` | Comma-separated signers, no spaces (with --threshold above 1) |  |
 | `--append` | Append signature to a partially signed transaction | false |
 | `--target <name>` | Named execution target from hardkas.config.ts |  |
-| `--wait-lock` | Wait for workspace lock if held | false |
-| `--lock-timeout <ms>` | Lock wait timeout in ms | 30000 |
+| `--password-env <env>` | Read the encrypted account's keystore password from this environment variable |  |
+| `--password-stdin` | Read the encrypted account's keystore password from stdin | false |
+| `--wait-lock` | No effect, kept for compatibility: the command takes no lock of its own, and each store write waits for the store (up to 30 s) | false |
+| `--lock-timeout <ms>` | No effect, kept for compatibility (see --wait-lock) | 30000 |
 | `--json` | Output as JSON | false |
 
 ### Arguments

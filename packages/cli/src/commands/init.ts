@@ -114,6 +114,8 @@ export function registerInitCommands(program: Command) {
                   "@hardkas/sdk": hardkasVersion
                 },
                 devDependencies: {
+                  // PAPERCUTS #35: the project runs `hardkas …` from its own node_modules (npx / scripts).
+                  "@hardkas/cli": hardkasVersion,
                   "@hardkas/testing": hardkasVersion,
                   "vitest": "^2.0.0",
                   "typescript": "^5.0.0"

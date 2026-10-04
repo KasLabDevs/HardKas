@@ -1,0 +1,17 @@
+$ hardkas localnet snapshot create snap-after --json   (cwd ws-after)
+exit=0 stdout_is_single_json=true
+--- stdout ---
+{
+  "snapshotVersion": 1,
+  "createdAt": "2026-10-04T22:05:40.498Z",
+  "hardkasVersion": "0.12.0-rc.26",
+  "stateAuthority": "filesystem",
+  "projectionAuthority": "sqlite",
+  "deterministicScope": "local-only",
+  "consensusValidated": false,
+  "includedArtifacts": 17,
+  "excludedArtifacts": 0,
+  "corruptedArtifacts": 0
+}
+--- stderr ---
+

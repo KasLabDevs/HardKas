@@ -116,6 +116,13 @@ async function loadConfigFile(
       plugins: userConfig.plugins || []
     };
 
+    // PAPERCUTS #37: a config that still declares the legacy `defaultNetwork` and no `execution`
+    // keeps resolving through its own key (and gets the deprecation warning for it); the built-in
+    // execution default must not shadow it.
+    if (userConfig.execution === undefined && userConfig.defaultNetwork !== undefined) {
+      delete mergedConfig.execution;
+    }
+
     validateHardkasConfig(mergedConfig);
 
     return {

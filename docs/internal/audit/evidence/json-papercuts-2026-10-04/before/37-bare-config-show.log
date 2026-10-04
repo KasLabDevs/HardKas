@@ -1,0 +1,19 @@
+$ hardkas config show   (cwd bare-before)
+exit=0 stdout_is_single_json=false
+--- stdout ---
+HardKAS config
+
+Path: defaults
+Default network: simulated
+
+Networks:
+  simulated (simulated)
+  simnet (kaspa-node)
+  devnet (kaspa-node)
+  testnet-10 (kaspa-rpc)
+  testnet-11 (kaspa-rpc)
+  mainnet (kaspa-rpc)
+
+Accounts:
+--- stderr ---
+

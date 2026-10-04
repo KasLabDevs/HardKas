@@ -1,6 +1,6 @@
 import { getOutput } from "../output.js";
 import { Command } from "commander";
-import { handleError, UI } from "../ui.js";
+import { errorCodeOf, handleError, UI } from "../ui.js";
 import { bigIntReplacer } from "@hardkas/artifacts";
 import { runTxProfile } from "../runners/tx-profile-runner.js";
 import { runTxPlan } from "../runners/tx-plan-runner.js";
@@ -44,6 +44,48 @@ async function declineUnconfirmedSend(args: {
     exitCode: HardkasExitCode.POLICY_DENIED,
     suggestion: args.retry,
     context: { network: args.network }
+  });
+}
+
+/**
+ * JSON-PAPERCUTS #19 / DEPLOYMENT-PATH-CONTAINMENT-1 — a `--track` label that cannot be recorded
+ * (not a plain name, or already recorded on this network) is refused BEFORE anything is broadcast,
+ * so a bad label never costs a transaction. Nothing is planned, signed, broadcast or written.
+ */
+async function refuseUnrecordableTrackLabel(args: {
+  label: string;
+  network: string;
+  json: boolean;
+}): Promise<void> {
+  const { loadDeployment } = await import("@hardkas/artifacts");
+  const { HardkasCliError, HardkasExitCode } = await import("../cli-errors.js");
+  let existing: unknown = null;
+  let invalid: { code: string; message: string } | null = null;
+  try {
+    existing = await loadDeployment(process.cwd(), args.network, args.label);
+  } catch (e: unknown) {
+    invalid = { code: errorCodeOf(e), message: e instanceof Error ? e.message : String(e) };
+  }
+  if (!invalid && !existing) return;
+  const code = invalid ? invalid.code : "DEPLOYMENT_EXISTS";
+  const message = invalid
+    ? `NOT EXECUTED: '--track ${args.label}' cannot be recorded (${invalid.message}). Nothing was broadcast or written.`
+    : `NOT EXECUTED: deployment '${args.label}' already exists on network '${args.network}'. Nothing was broadcast or written: choose another label, or inspect the record with 'hardkas deploy inspect ${args.label} --network ${args.network}'.`;
+  if (args.json) {
+    UI.writeJson({
+      ok: false,
+      command: "tx send",
+      mode: "cli",
+      outcome: "not_executed",
+      code,
+      message,
+      network: args.network,
+      label: args.label
+    });
+  }
+  throw new HardkasCliError(code, message, {
+    exitCode: invalid ? HardkasExitCode.USAGE_ERROR : HardkasExitCode.RUNTIME_FAILURE,
+    context: { network: args.network, label: args.label }
   });
 }
 
@@ -459,6 +501,14 @@ export function registerTxCommands(program: Command) {
               });
             }
 
+            if (options.track) {
+              await refuseUnrecordableTrackLabel({
+                label: options.track,
+                network: options.network ?? String(signedArtifact.networkId),
+                json: options.json
+              });
+            }
+
             const result = await runTxSend({
               ...(options.target ? { targetName: options.target } : {}),
               signedArtifact: signedArtifact as any,
@@ -473,6 +523,55 @@ export function registerTxCommands(program: Command) {
             // Wave 1.3 · R-iii: the verdict comes from the authenticated outcome.
             const { nextStepsAfterSend, receiptArtifactId, sendExplanation, sendOutcome } = await import("../runners/next-steps.js");
             const outcome = sendOutcome(result.receipt);
+
+            // JSON-PAPERCUTS #19: the deployment record (`--track`) is written BEFORE anything is
+            // printed, so the one JSON envelope (or the human block) states whether it was recorded.
+            // A record that could not be written never turns the broadcast into a failure exit
+            // (AUX-11: submitted = exit 0; a non-zero exit reads as "not sent" and invites a
+            // re-send): it is reported as `tracking.recorded: false` with the typed code, a warning
+            // and the exact `deploy track` command to re-run.
+            type TrackingOutcome =
+              | { requested: true; label: string; recorded: true; record: unknown }
+              | { requested: true; label: string; recorded: false; code: string; message: string; retry: string };
+            let tracking: TrackingOutcome | undefined;
+            if (options.track && result.accepted) {
+              const label = options.track;
+              // Only an authenticated `confirmed` status counts; a submission is "sent".
+              const trackStatus =
+                outcome.kind === "receipt" && outcome.decided && outcome.status === "confirmed" ? "confirmed" : "sent";
+              const retry =
+                `hardkas deploy track ${label} --network ${result.networkName}` +
+                (result.txId ? ` --tx-id ${result.txId}` : "") +
+                (signedArtifact.sourcePlanId ? ` --plan ${signedArtifact.sourcePlanId}` : "") +
+                ` --status ${trackStatus}`;
+              try {
+                const { trackDeploymentInternal } = await import("../runners/deployment-runners.js");
+                // the record goes under the deployments' own lock, as `deploy track` does; already broadcast, it waits for
+                // that lock instead of failing on it
+                const { withLock } = await import("@hardkas/core");
+                const record = await withLock(
+                  { rootDir: process.cwd(), name: "deployments", command: "hardkas tx send --track", wait: true },
+                  () =>
+                    trackDeploymentInternal(process.cwd(), {
+                      label,
+                      network: result.networkName,
+                      txId: result.txId,
+                      plan: signedArtifact.sourcePlanId,
+                      status: trackStatus,
+                      silent: true
+                    })
+                );
+                tracking = { requested: true, label, recorded: true, record };
+              } catch (e: unknown) {
+                const message = e instanceof Error ? e.message : String(e);
+                tracking = { requested: true, label, recorded: false, code: errorCodeOf(e), message, retry };
+              }
+            }
+            const trackingWarning =
+              tracking && !tracking.recorded
+                ? `DEPLOYMENT_TRACK_FAILED: the transaction was broadcast, but the deployment record '${tracking.label}' was not written (${tracking.code}: ${tracking.message}). Re-run: ${tracking.retry}`
+                : null;
+
             if (options.json) {
               UI.writeJson({
                 ok: result.accepted,
@@ -483,9 +582,10 @@ export function registerTxCommands(program: Command) {
                   signed: signedArtifact,
                   receipt: result.receipt,
                   artifacts: [signedArtifact, result.receipt],
-                  warnings: [],
+                  warnings: trackingWarning ? [trackingWarning] : [],
                   explanation: sendExplanation({ receipt: result.receipt, txId: result.txId })
                 },
+                ...(tracking ? { tracking } : {}),
                 meta: {
                   network: result.networkName,
                   workspace: process.cwd(),
@@ -536,6 +636,11 @@ export function registerTxCommands(program: Command) {
                 ],
                 !isSimulated && !result.accepted ? "fail" : "ok"
               );
+              if (tracking?.recorded) {
+                UI.success(`Tracked deployment: ${tracking.label} (${result.networkName})`);
+              } else if (trackingWarning) {
+                UI.warning(trackingWarning);
+              }
             }
 
             if (!result.accepted) {
@@ -544,25 +649,6 @@ export function registerTxCommands(program: Command) {
                 "TX_SUBMISSION_REJECTED",
                 `The node did not accept the transaction (${(result.receipt as any)?.submitResult?.error ?? "no reason returned"}); the submission was recorded as ${receiptArtifactId(result.receipt) ?? "unknown"}.`,
                 { exitCode: 1 }
-              );
-            }
-
-            if (options.track && result.accepted) {
-              const { trackDeploymentInternal } =
-                await import("../runners/deployment-runners.js");
-              // the record goes under the deployments' own lock, as `deploy track` does; already broadcast, it waits for
-              // that lock instead of failing on it
-              const { withLock } = await import("@hardkas/core");
-              await withLock({ rootDir: process.cwd(), name: "deployments", command: "hardkas tx send --track", wait: true }, () =>
-                trackDeploymentInternal(process.cwd(), {
-                  label: options.track!,
-                  network: result.networkName,
-                  txId: result.txId,
-                  plan: signedArtifact.sourcePlanId,
-                  // Only an authenticated `confirmed` status counts; a submission is "sent".
-                  status: outcome.kind === "receipt" && outcome.decided && outcome.status === "confirmed" ? "confirmed" : "sent",
-                  silent: options.json
-                })
               );
             }
           } else if (options.from && options.to && options.amount) {

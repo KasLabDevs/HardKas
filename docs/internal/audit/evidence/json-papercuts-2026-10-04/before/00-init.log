@@ -1,0 +1,17 @@
+$ hardkas init
+exit=0 stdout_is_single_json=false json_docs_on_stdout=0
+--- stdout ---
+  ℹ Created: package.json
+  ℹ Created: vitest.config.ts
+  ℹ Created: test/payment.test.ts
+  ℹ Created: .gitignore
+  ℹ Created: .hardkas/localnet.json (simulated accounts funded: 1000 KAS each)
+  ℹ kaspa-wasm 2.1.0 already installed and verified at C:\Users\jrodr\.hardkas\toolchains\kaspa-wasm\2.1.0
+  ✔ HardKAS project 'current' initialized successfully.
+  ℹ Created: hardkas.config.ts (0.12.0-rc.26)
+
+  Hint: Next steps:
+  npm install
+  npm test
+--- stderr ---
+

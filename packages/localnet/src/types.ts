@@ -106,6 +106,11 @@ export interface ReplayVerificationReport {
   createdAt?: string;
   contentHash?: string;
   txId: string;
+  /**
+   * EVIDENCE-DIFF-REDACTION-1: the receipt was compared on its raw values. A report without it was made by the earlier
+   * masked comparison, and its verdict is legacy (not an authority for determinism).
+   */
+  receiptComparison?: "raw";
   planOk: boolean;
   receiptOk: boolean;
   invariantsOk: boolean;
@@ -120,10 +125,12 @@ export interface ReplayVerificationReport {
     l2BridgeCorrectness: "unimplemented" | "partial" | "skipped";
   };
 
+  /** A divergence on public data carries its values; one on a secret field only `status: "differs"` and its path. */
   divergences: Array<{
     path: string;
-    expected: any;
-    actual: any;
+    expected?: any;
+    actual?: any;
+    status?: "differs";
   }>;
 
   errors: string[];

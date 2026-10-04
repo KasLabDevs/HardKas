@@ -9,9 +9,35 @@ import { HardkasSchemas } from "@hardkas/artifacts";
 export interface TxProfileOptions {
   path: string;
   workspaceRoot: string;
+  /** JSON-PAPERCUTS #40: with `--json` the profile is ONE JSON document on stdout and nothing else is printed. */
+  json?: boolean;
 }
 
-export async function runTxProfile(options: TxProfileOptions) {
+/** The machine-readable profile (`result` of the `--json` envelope). Sompi and mass are decimal strings. */
+export interface TxProfileResult {
+  path: string;
+  planId: string;
+  artifactId: string | null;
+  networkId: string;
+  mode: string | null;
+  amountSompi: string;
+  estimatedFeeSompi: string;
+  mass: {
+    total: string;
+    base: string;
+    inputs: string;
+    outputs: string;
+    payload: string;
+  };
+  structure: {
+    inputs: Array<{ index: number; outpoint: { transactionId: string; index: number }; amountSompi: string }>;
+    outputs: Array<{ index: number; address: string; amountSompi: string }>;
+    change: { address: string; amountSompi: string } | null;
+  };
+  warnings: string[];
+}
+
+export async function runTxProfile(options: TxProfileOptions): Promise<TxProfileResult> {
   const { Hardkas } = await import("@hardkas/sdk");
   const sdk = await Hardkas.open({ cwd: options.workspaceRoot });
   const absolutePath = sdk.workspace.resolvePath(options.path);
@@ -39,6 +65,38 @@ export async function runTxProfile(options: TxProfileOptions) {
     ]
   });
   result.mass = upstream.mass;
+
+  const profile: TxProfileResult = {
+    path: options.path,
+    planId: plan.planId,
+    artifactId: typeof planObj.contentHash === "string" ? (planObj.contentHash as string) : null,
+    networkId: plan.networkId,
+    mode: typeof planObj.mode === "string" ? (planObj.mode as string) : null,
+    amountSompi: String(plan.amountSompi),
+    estimatedFeeSompi: String(plan.estimatedFeeSompi),
+    mass: {
+      total: result.mass.toString(),
+      base: result.breakdown.base.toString(),
+      inputs: result.breakdown.inputs.toString(),
+      outputs: result.breakdown.outputs.toString(),
+      payload: result.breakdown.payload.toString()
+    },
+    structure: {
+      inputs: plan.inputs.map((i, index) => ({
+        index,
+        outpoint: { transactionId: i.outpoint.transactionId, index: i.outpoint.index },
+        amountSompi: String(i.amountSompi)
+      })),
+      outputs: plan.outputs.map((o, index) => ({ index, address: o.address, amountSompi: String(o.amountSompi) })),
+      change: plan.change ? { address: plan.change.address, amountSompi: String(plan.change.amountSompi) } : null
+    },
+    warnings: [...result.warnings]
+  };
+
+  if (options.json) {
+    getOutput().writeJson({ ok: true, command: "tx profile", mode: "cli", result: profile });
+    return profile;
+  }
 
   UI.header(`Transaction Profile: ${path.basename(options.path)}`);
 
@@ -99,4 +157,5 @@ export async function runTxProfile(options: TxProfileOptions) {
   getOutput().writeLine(
     "\nNote: Mass estimation is protocol-aware (0.12.0-rc.26 best-effort)."
   );
+  return profile;
 }

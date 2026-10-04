@@ -49,6 +49,34 @@ export function maskSecrets(data: any): any {
 }
 
 /**
+ * EVIDENCE-DIFF-REDACTION-1: the field names that hold secret material in HardKAS structures, by exact name (any
+ * case), never by the shape of a value. Structured evidence uses this list to decide what it may record; the shape-based
+ * `maskSecrets` above stays a safety net for free text (messages, logs, stack traces) and never decides equality.
+ */
+const SECRET_FIELD_NAMES: ReadonlySet<string> = new Set([
+  "privatekey",
+  "privatekeyhex",
+  "privatekeywif",
+  "mnemonic",
+  "seed",
+  "seedphrase",
+  "password",
+  "passphrase",
+  "keystorepassword",
+  "secret",
+  "secretkey",
+  "apikey",
+  "token",
+  "accesstoken",
+  "authtoken"
+]);
+
+/** Whether a field of that name holds secret material (see SECRET_FIELD_NAMES). */
+export function isSecretFieldName(name: string): boolean {
+  return SECRET_FIELD_NAMES.has(name.toLowerCase());
+}
+
+/**
  * Legacy single-value redaction for backward compatibility.
  */
 export function redactSecret(value: string): string {

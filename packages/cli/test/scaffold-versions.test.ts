@@ -128,6 +128,29 @@ describe("scaffold-versions — static templates", () => {
     }
   });
 
+  it("PAPERCUTS #35: every workspace template (one that uses the SDK or the scenarios) ships @hardkas/cli as a devDependency, so `npx hardkas` works in the created project", async () => {
+    const templatesRoot = path.resolve(path.dirname(CLI_PKG_PATH), "templates");
+    const entries = await fs.readdir(templatesRoot, { withFileTypes: true });
+    const checked: string[] = [];
+    for (const entry of entries) {
+      if (!entry.isDirectory()) continue;
+      const pkgFile = path.join(templatesRoot, entry.name, "package.json");
+      let pkg: any;
+      try {
+        pkg = await readJson(pkgFile);
+      } catch (err: any) {
+        if (err.code === "ENOENT") continue;
+        throw err;
+      }
+      // The Builder Lab app templates (fastify services on the toolkit packages) never run the CLI.
+      const isWorkspace = Boolean(pkg.dependencies?.["@hardkas/sdk"] || pkg.devDependencies?.["@hardkas/testing"]);
+      if (!isWorkspace) continue;
+      expect(pkg.devDependencies?.["@hardkas/cli"], `${entry.name}/package.json devDependencies[@hardkas/cli]`).toBe(SCAFFOLD_VERSION_PLACEHOLDER);
+      checked.push(entry.name);
+    }
+    expect(checked.sort()).toEqual(["batch-payments", "local-indexer", "payment-app"]);
+  });
+
   it("`create.ts` post-processor produces coherent versions regardless of template on-disk shape", async () => {
     // `create.ts` runs `coerceHardkasDependencyVersions` after copying. Any
     // template pattern (SCAFFOLD_VERSION_PLACEHOLDER, `^X.Y.Z`, exact version,
@@ -159,6 +182,8 @@ describe("scaffold-versions — end-to-end via `hardkas init`", () => {
     const cliVersion = hardkasScaffoldDependencySpec();
     expect(pkg.dependencies["@hardkas/sdk"]).toBe(cliVersion);
     expect(pkg.devDependencies["@hardkas/testing"]).toBe(cliVersion);
+    // PAPERCUTS #35: the project can run `hardkas …` from its own node_modules.
+    expect(pkg.devDependencies["@hardkas/cli"]).toBe(cliVersion);
     // Belt-and-braces: no floating tag survives anywhere in the generated file.
     for (const field of ["dependencies", "devDependencies", "peerDependencies", "optionalDependencies"]) {
       const deps = pkg[field] || {};

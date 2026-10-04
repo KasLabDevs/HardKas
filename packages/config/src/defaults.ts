@@ -1,6 +1,25 @@
 import type { HardkasConfig } from "./types";
 
+/**
+ * The built-in configuration: what a workspace without hardkas.config.ts runs with, and what fills
+ * the fields a hardkas.config.ts leaves out (see load.ts).
+ *
+ * PAPERCUTS #37: the built-in default target is declared through the `execution` contract (the
+ * simulator, with the canonical localnet as a named target), never through the deprecated
+ * `defaultNetwork`. The `defaultNetwork` below is only the mirror of that default for the SDK and
+ * CLI paths that still read the legacy key (`config.defaultNetwork || …`): it is not a declaration,
+ * the resolver never warns about it (an execution target is always present), and it goes away once
+ * those readers follow the resolved execution target.
+ */
 export const DEFAULT_HARDKAS_CONFIG: HardkasConfig = {
+  execution: {
+    default: "simulator",
+    targets: {
+      simulator: { mode: "simulator", domain: "kaspa-l1", network: "simulated" },
+      localnet: { mode: "localnet", domain: "kaspa-l1", network: "simnet" }
+    }
+  },
+  /** Legacy mirror of `execution.targets[execution.default].network`; see the note above. */
   defaultNetwork: "simulated",
   networks: {
     simulated: {

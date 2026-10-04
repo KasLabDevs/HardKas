@@ -1,0 +1,6 @@
+$ hardkas config init   (cwd cfginit-before)
+exit=0 stdout_is_single_json=false
+--- stdout ---
+  ✔ Created hardkas.config.ts
+--- stderr ---
+

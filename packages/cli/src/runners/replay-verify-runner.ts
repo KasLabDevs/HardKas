@@ -92,7 +92,12 @@ export async function runReplayVerify(options: ReplayVerifyOptions) {
   // double-JSON-block anomaly observed on the Wave 7 real qualification.
   if (result.passed) {
     if (options.json) {
+      // JSON-PAPERCUTS: the success envelope carries `ok` like every other verdict of the CLI
+      // (the failure envelope of main() already does), so a consumer never has to infer it.
       const successEnvelope = {
+        ok: true,
+        command: "replay verify",
+        mode: "cli",
         schemaVersion: HardkasSchemas.ReplayVerifyV1,
         workspace: options.path,
         artifacts: result.artifactsScanned,

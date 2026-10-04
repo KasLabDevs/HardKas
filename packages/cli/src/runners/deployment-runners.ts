@@ -1,4 +1,5 @@
 import { UI } from "../ui.js";
+import { HardkasCliError } from "../cli-errors.js";
 import { withLock } from "@hardkas/core";
 import {
   DeploymentRecord,
@@ -19,22 +20,30 @@ import { JsonWrpcKaspaClient } from "@hardkas/kaspa-rpc";
 
 
 
+/** JSON-PAPERCUTS #39: the record that was written is returned, so `deploy track --json` can print it. */
 export async function trackDeployment(opts: {
   label: string;
   network: string;
   txId?: string;
+  plan?: string;
+  receipt?: string;
+  status?: string;
+  notes?: string;
   script?: string;
+  silent?: boolean;
   workspaceRoot?: string;
-}) {
+}): Promise<DeploymentRecord> {
   const rootDir = opts.workspaceRoot || process.cwd();
 
   // deployments live in .hardkas/deployments/**, outside the artifact store: their own lock, not the store's (phase 2B)
+  let record: DeploymentRecord | undefined;
   await withLock(
     { rootDir, name: "deployments", command: "hardkas deploy track" },
     async () => {
-      await trackDeploymentInternal(rootDir, opts);
+      record = await trackDeploymentInternal(rootDir, opts);
     }
   );
+  return record!;
 }
 
 export async function trackDeploymentInternal(
@@ -49,11 +58,14 @@ export async function trackDeploymentInternal(
     notes?: string;
     silent?: boolean;
   }
-): Promise<void> {
+): Promise<DeploymentRecord> {
   const existing = await loadDeployment(rootDir, opts.network, opts.label);
   if (existing) {
-    throw new Error(
-      `Deployment '${opts.label}' already exists on network '${opts.network}'.`
+    // Typed, so `--json` reports DEPLOYMENT_EXISTS instead of UNKNOWN_ERROR.
+    throw new HardkasCliError(
+      "DEPLOYMENT_EXISTS",
+      `Deployment '${opts.label}' already exists on network '${opts.network}'.`,
+      { exitCode: 1, suggestion: "Choose another label, or inspect the existing record with 'hardkas deploy inspect'." }
     );
   }
 
@@ -71,6 +83,7 @@ export async function trackDeploymentInternal(
   if (!opts.silent) {
     UI.success(`Tracked deployment: ${opts.label} (${opts.network})`);
   }
+  return record;
 }
 
 

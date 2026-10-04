@@ -1577,7 +1577,7 @@
             },
             {
               "flags": "--json",
-              "description": "Not implemented yet: no JSON is printed",
+              "description": "Output as JSON",
               "default": false,
               "required": false,
               "mandatory": false
@@ -2577,7 +2577,14 @@
             },
             {
               "flags": "--keep-miner",
-              "description": "Leave the companion miner running",
+              "description": "Keep mining to the funded account after funding (its balance keeps growing)",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            },
+            {
+              "flags": "--stop-miner",
+              "description": "Leave the chain stopped after funding: no new blocks until you mine again",
               "default": false,
               "required": false,
               "mandatory": false
@@ -2635,7 +2642,7 @@
               "path": "hardkas localnet snapshot replay",
               "name": "replay",
               "aliases": [],
-              "description": "Replay and rebuild deterministic state from a snapshot alpha",
+              "description": "Restore a snapshot's missing artifacts into the workspace; never removes or overwrites one alpha",
               "usage": "hardkas localnet snapshot replay [options] <name>",
               "arguments": [
                 {
@@ -2740,14 +2747,14 @@
           "path": "hardkas localnet stop",
           "name": "stop",
           "aliases": [],
-          "description": "Stop localnet profile alpha",
+          "description": "Stop the Docker rusty-kaspad node of the toccata-v2 profile and its miner; needs Docker alpha",
           "usage": "hardkas localnet stop [options]",
           "arguments": [],
           "options": [
             {
               "flags": "--profile <name>",
-              "description": "Localnet profile",
-              "default": "simulated",
+              "description": "Localnet profile: toccata-v2 (the only one)",
+              "default": "toccata-v2",
               "required": true,
               "mandatory": false
             },
@@ -6094,14 +6101,14 @@
             },
             {
               "flags": "--wait-lock",
-              "description": "Wait for workspace lock if held",
+              "description": "No effect, kept for compatibility: the command takes no lock of its own, and each store write waits for the store (up to 30 s)",
               "default": false,
               "required": false,
               "mandatory": false
             },
             {
               "flags": "--lock-timeout <ms>",
-              "description": "Lock wait timeout in ms",
+              "description": "No effect, kept for compatibility (see --wait-lock)",
               "default": "30000",
               "required": true,
               "mandatory": false
@@ -6240,14 +6247,14 @@
             },
             {
               "flags": "--wait-lock",
-              "description": "Wait for workspace lock if held",
+              "description": "No effect, kept for compatibility: the command takes no lock of its own, and each store write waits for the store (up to 30 s)",
               "default": false,
               "required": false,
               "mandatory": false
             },
             {
               "flags": "--lock-timeout <ms>",
-              "description": "Lock wait timeout in ms",
+              "description": "No effect, kept for compatibility (see --wait-lock)",
               "default": "30000",
               "required": true,
               "mandatory": false
@@ -6339,15 +6346,29 @@
               "mandatory": false
             },
             {
+              "flags": "--password-env <env>",
+              "description": "Read the encrypted account's keystore password from this environment variable",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--password-stdin",
+              "description": "Read the encrypted account's keystore password from stdin",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            },
+            {
               "flags": "--wait-lock",
-              "description": "Wait for workspace lock if held",
+              "description": "No effect, kept for compatibility: the command takes no lock of its own, and each store write waits for the store (up to 30 s)",
               "default": false,
               "required": false,
               "mandatory": false
             },
             {
               "flags": "--lock-timeout <ms>",
-              "description": "Lock wait timeout in ms",
+              "description": "No effect, kept for compatibility (see --wait-lock)",
               "default": "30000",
               "required": true,
               "mandatory": false

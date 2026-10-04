@@ -115,10 +115,15 @@ LOG_LEVEL=info
     .option("--receipt <artifactId>", "Reference to receipt artifact")
     .option("--status <status>", "Deployment status", "sent")
     .option("--notes <text>", "Notes about this deployment")
-    .option("--json", "Not implemented yet: no JSON is printed", false)
+    .option("--json", "Output as JSON", false)
     .action(async (label, opts) => {
-      const { UI } = await import("../ui.js");
-      await trackDeployment({ label, ...opts, workspaceRoot: process.cwd() });
+      // JSON-PAPERCUTS #39: one envelope on stdout with the record that was written; the
+      // human confirmation line stays out of JSON mode.
+      const record = await trackDeployment({ label, ...opts, silent: Boolean(opts.json), workspaceRoot: process.cwd() });
+      if (opts.json) {
+        const { getOutput } = await import("../output.js");
+        getOutput().writeJson({ ok: true, command: "deploy track", mode: "cli", result: record });
+      }
     });
 
   deployCmd

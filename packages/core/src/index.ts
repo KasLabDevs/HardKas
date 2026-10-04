@@ -125,7 +125,7 @@ export * from "./money.js";
 export * from "./events.js";
 export * from "./domain-types.js";
 export * from "./branded.js";
-export { maskSecrets, redactSecret } from "./security.js";
+export { maskSecrets, redactSecret, isSecretFieldName } from "./security.js";
 export * from "./fs.js";
 export * from "./corruption.js";
 export { task, TaskBuilder, types } from "./tasks.js";

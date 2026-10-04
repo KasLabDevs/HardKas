@@ -1,0 +1,20 @@
+$ hardkas deploy inspect papercut-ok --network simulated --json
+exit=0 stdout_is_single_json=true json_docs_on_stdout=1
+--- stdout ---
+{
+  "schema": "hardkas.deployment.v1",
+  "label": "papercut-ok",
+  "networkId": "simulated",
+  "status": "sent",
+  "deployedAt": "2026-10-04T22:13:52.194Z",
+  "hardkasVersion": "0.12.0-rc.26",
+  "version": "1.0.0-alpha",
+  "hashVersion": 5,
+  "createdAt": "2026-10-04T22:13:52.194Z",
+  "mode": "real",
+  "txId": "synthetic-033799555593d2a27562d233b9b30c70dad2e4cdd9737283eed94d10099791ce",
+  "planArtifactId": "plan-033799555593d2a2",
+  "contentHash": "d56703fcb01b3596f089d0a34b1fd5548668744e4c7b3b936bb162bb64ce09ef"
+}
+--- stderr ---
+

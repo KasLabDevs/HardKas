@@ -11,6 +11,7 @@
     "@hardkas/sdk": "0.0.0-scaffold-placeholder-do-not-install-directly"
   },
   "devDependencies": {
+    "@hardkas/cli": "0.0.0-scaffold-placeholder-do-not-install-directly",
     "@hardkas/testing": "0.0.0-scaffold-placeholder-do-not-install-directly",
     "tsx": "^4.0.0",
     "typescript": "^5.0.0",

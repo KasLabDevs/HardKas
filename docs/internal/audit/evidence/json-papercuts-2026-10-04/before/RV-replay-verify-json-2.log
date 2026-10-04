@@ -1,0 +1,16 @@
+$ hardkas replay verify 49915299afb5ce4ed50d508210e191679fe85e06669752b3fac79b0f188ed914 --json
+exit=0 stdout_is_single_json=true json_docs_on_stdout=1
+--- stdout ---
+{
+  "schemaVersion": "hardkas.replayVerify.v1",
+  "workspace": "49915299afb5ce4ed50d508210e191679fe85e06669752b3fac79b0f188ed914",
+  "artifacts": 3,
+  "lineage": "valid",
+  "determinism": "verified",
+  "contamination": "clean",
+  "result": "passed",
+  "targetTxId": "synthetic-85707e24a8dcd4499aee0fa30b1ab3df2f437253d8d3ae7f8027b557e99ed3ad",
+  "deterministic": true
+}
+--- stderr ---
+

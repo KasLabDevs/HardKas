@@ -39,11 +39,12 @@ describe("--help says what the CLI does", () => {
     for (const [path, long] of noEffect) expect(option(path, long).description).toMatch(/no effect/i);
 
     const noJson: Array<[string, string]> = [
-      ["deploy track", "--json"],
       ["localnet fork", "--json"],
       ["session create", "--json"]
     ];
     for (const [path, long] of noJson) expect(option(path, long).description).toMatch(/not implemented yet/i);
+    // JSON-PAPERCUTS #39: `deploy track --json` prints the record now, so its help no longer disclaims it.
+    expect(option("deploy track", "--json").description).toBe("Output as JSON");
   });
 
   it("does not advertise defaults that the code does not apply", () => {

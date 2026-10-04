@@ -1,0 +1,230 @@
+$ hardkas tx send signed2.json --network simulated --track papercut-ok --json
+exit=0 stdout_is_single_json=true json_docs_on_stdout=1
+--- stdout ---
+{
+  "ok": true,
+  "outcome": "submitted",
+  "data": {
+    "signed": {
+      "schema": "hardkas.signedTx",
+      "schemaVersion": "hardkas.artifact.v1",
+      "hardkasVersion": "0.12.0-rc.26",
+      "version": "1.0.0-alpha",
+      "hashVersion": 5,
+      "createdAt": "2026-10-04T21:48:29.731Z",
+      "status": "signed",
+      "sourcePlanId": "plan-85707e24a8dcd449",
+      "networkId": "simulated",
+      "mode": "simulator",
+      "from": {
+        "address": "kaspa:sim_alice"
+      },
+      "to": {
+        "address": "kaspa:sim_bob"
+      },
+      "amountSompi": "1100000000",
+      "txId": "synthetic-85707e24a8dcd4499aee0fa30b1ab3df2f437253d8d3ae7f8027b557e99ed3ad",
+      "authorization": {
+        "kind": "synthetic",
+        "planArtifactId": "85707e24a8dcd4499aee0fa30b1ab3df2f437253d8d3ae7f8027b557e99ed3ad",
+        "signers": [
+          "kaspa:sim_alice"
+        ]
+      },
+      "signedTransaction": {
+        "format": "synthetic-authorization",
+        "payload": "85707e24a8dcd4499aee0fa30b1ab3df2f437253d8d3ae7f8027b557e99ed3ad"
+      },
+      "lineage": {
+        "artifactId": "72c43037ea5b4c7cd596ed39456c8e4873951f28ed42fe5e320a8eba451bcbf2",
+        "lineageId": "85707e24a8dcd4499aee0fa30b1ab3df2f437253d8d3ae7f8027b557e99ed3ad",
+        "parentArtifactId": "85707e24a8dcd4499aee0fa30b1ab3df2f437253d8d3ae7f8027b557e99ed3ad",
+        "rootArtifactId": "85707e24a8dcd4499aee0fa30b1ab3df2f437253d8d3ae7f8027b557e99ed3ad",
+        "sequence": 2
+      },
+      "execution": {
+        "mode": "simulator",
+        "domain": "kaspa-l1",
+        "network": "simulated"
+      },
+      "workflowId": "wf_77352adbd5e7bb8f",
+      "assumptionLevel": "local-simulated",
+      "signedId": "signed-72c43037ea5b4c7c",
+      "contentHash": "72c43037ea5b4c7cd596ed39456c8e4873951f28ed42fe5e320a8eba451bcbf2"
+    },
+    "receipt": {
+      "schema": "hardkas.txReceipt",
+      "schemaVersion": "hardkas.txReceipt.v1",
+      "hardkasVersion": "0.12.0-rc.26",
+      "version": "1.0.0-alpha",
+      "hashVersion": 5,
+      "createdAt": "2026-10-04T21:48:33.121Z",
+      "txId": "synthetic-85707e24a8dcd4499aee0fa30b1ab3df2f437253d8d3ae7f8027b557e99ed3ad",
+      "status": "accepted",
+      "mode": "simulator",
+      "networkId": "simulated",
+      "from": {
+        "address": "kaspa:sim_alice"
+      },
+      "to": {
+        "address": "kaspa:sim_bob"
+      },
+      "amountSompi": "1100000000",
+      "feeSompi": "203600",
+      "mass": "2036",
+      "changeSompi": "98899796400",
+      "spentUtxoIds": [
+        "faucet:im_alice:1:0"
+      ],
+      "createdUtxoIds": [
+        "synthetic-85707e24a8dcd4499aee0fa30b1ab3df2f437253d8d3ae7f8027b557e99ed3ad:0",
+        "synthetic-85707e24a8dcd4499aee0fa30b1ab3df2f437253d8d3ae7f8027b557e99ed3ad:1"
+      ],
+      "daaScore": "3",
+      "preStateHash": "6cdebbd226a0d3eb72ee872914fd5fecdcad477ebd19127490b98dfa60f7119b",
+      "postStateHash": "1ab4ffc5deedfb710cad835aaa4d7f93893d7af4ca5c6bd6e39454f761da84a3",
+      "dagContext": {
+        "mode": "linear",
+        "sink": "linear-pseudo-sink"
+      },
+      "lineage": {
+        "artifactId": "49915299afb5ce4ed50d508210e191679fe85e06669752b3fac79b0f188ed914",
+        "lineageId": "85707e24a8dcd4499aee0fa30b1ab3df2f437253d8d3ae7f8027b557e99ed3ad",
+        "parentArtifactId": "72c43037ea5b4c7cd596ed39456c8e4873951f28ed42fe5e320a8eba451bcbf2",
+        "rootArtifactId": "85707e24a8dcd4499aee0fa30b1ab3df2f437253d8d3ae7f8027b557e99ed3ad",
+        "sequence": 3
+      },
+      "execution": {
+        "mode": "simulator",
+        "domain": "kaspa-l1",
+        "network": "simulated"
+      },
+      "workflowId": "wf_77352adbd5e7bb8f",
+      "assumptionLevel": "local-simulated",
+      "submittedAt": "2026-10-04T21:48:33.121Z",
+      "confirmedAt": "2026-10-04T21:48:33.121Z",
+      "rpcUrl": "simulated://local",
+      "tracePath": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\claude\\C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo\\178242cc-c0b4-4452-b344-f35b49dc3d1f\\scratchpad\\json-papercuts\\ws-before\\.hardkas\\artifacts\\synthetic-85707e24a8dcd4499aee0fa30b1ab3df2f437253d8d3ae7f8027b557e99ed3ad.trace.json",
+      "sourceSignedId": "signed-72c43037ea5b4c7c",
+      "contentHash": "49915299afb5ce4ed50d508210e191679fe85e06669752b3fac79b0f188ed914"
+    },
+    "artifacts": [
+      {
+        "schema": "hardkas.signedTx",
+        "schemaVersion": "hardkas.artifact.v1",
+        "hardkasVersion": "0.12.0-rc.26",
+        "version": "1.0.0-alpha",
+        "hashVersion": 5,
+        "createdAt": "2026-10-04T21:48:29.731Z",
+        "status": "signed",
+        "sourcePlanId": "plan-85707e24a8dcd449",
+        "networkId": "simulated",
+        "mode": "simulator",
+        "from": {
+          "address": "kaspa:sim_alice"
+        },
+        "to": {
+          "address": "kaspa:sim_bob"
+        },
+        "amountSompi": "1100000000",
+        "txId": "synthetic-85707e24a8dcd4499aee0fa30b1ab3df2f437253d8d3ae7f8027b557e99ed3ad",
+        "authorization": {
+          "kind": "synthetic",
+          "planArtifactId": "85707e24a8dcd4499aee0fa30b1ab3df2f437253d8d3ae7f8027b557e99ed3ad",
+          "signers": [
+            "kaspa:sim_alice"
+          ]
+        },
+        "signedTransaction": {
+          "format": "synthetic-authorization",
+          "payload": "85707e24a8dcd4499aee0fa30b1ab3df2f437253d8d3ae7f8027b557e99ed3ad"
+        },
+        "lineage": {
+          "artifactId": "72c43037ea5b4c7cd596ed39456c8e4873951f28ed42fe5e320a8eba451bcbf2",
+          "lineageId": "85707e24a8dcd4499aee0fa30b1ab3df2f437253d8d3ae7f8027b557e99ed3ad",
+          "parentArtifactId": "85707e24a8dcd4499aee0fa30b1ab3df2f437253d8d3ae7f8027b557e99ed3ad",
+          "rootArtifactId": "85707e24a8dcd4499aee0fa30b1ab3df2f437253d8d3ae7f8027b557e99ed3ad",
+          "sequence": 2
+        },
+        "execution": {
+          "mode": "simulator",
+          "domain": "kaspa-l1",
+          "network": "simulated"
+        },
+        "workflowId": "wf_77352adbd5e7bb8f",
+        "assumptionLevel": "local-simulated",
+        "signedId": "signed-72c43037ea5b4c7c",
+        "contentHash": "72c43037ea5b4c7cd596ed39456c8e4873951f28ed42fe5e320a8eba451bcbf2"
+      },
+      {
+        "schema": "hardkas.txReceipt",
+        "schemaVersion": "hardkas.txReceipt.v1",
+        "hardkasVersion": "0.12.0-rc.26",
+        "version": "1.0.0-alpha",
+        "hashVersion": 5,
+        "createdAt": "2026-10-04T21:48:33.121Z",
+        "txId": "synthetic-85707e24a8dcd4499aee0fa30b1ab3df2f437253d8d3ae7f8027b557e99ed3ad",
+        "status": "accepted",
+        "mode": "simulator",
+        "networkId": "simulated",
+        "from": {
+          "address": "kaspa:sim_alice"
+        },
+        "to": {
+          "address": "kaspa:sim_bob"
+        },
+        "amountSompi": "1100000000",
+        "feeSompi": "203600",
+        "mass": "2036",
+        "changeSompi": "98899796400",
+        "spentUtxoIds": [
+          "faucet:im_alice:1:0"
+        ],
+        "createdUtxoIds": [
+          "synthetic-85707e24a8dcd4499aee0fa30b1ab3df2f437253d8d3ae7f8027b557e99ed3ad:0",
+          "synthetic-85707e24a8dcd4499aee0fa30b1ab3df2f437253d8d3ae7f8027b557e99ed3ad:1"
+        ],
+        "daaScore": "3",
+        "preStateHash": "6cdebbd226a0d3eb72ee872914fd5fecdcad477ebd19127490b98dfa60f7119b",
+        "postStateHash": "1ab4ffc5deedfb710cad835aaa4d7f93893d7af4ca5c6bd6e39454f761da84a3",
+        "dagContext": {
+          "mode": "linear",
+          "sink": "linear-pseudo-sink"
+        },
+        "lineage": {
+          "artifactId": "49915299afb5ce4ed50d508210e191679fe85e06669752b3fac79b0f188ed914",
+          "lineageId": "85707e24a8dcd4499aee0fa30b1ab3df2f437253d8d3ae7f8027b557e99ed3ad",
+          "parentArtifactId": "72c43037ea5b4c7cd596ed39456c8e4873951f28ed42fe5e320a8eba451bcbf2",
+          "rootArtifactId": "85707e24a8dcd4499aee0fa30b1ab3df2f437253d8d3ae7f8027b557e99ed3ad",
+          "sequence": 3
+        },
+        "execution": {
+          "mode": "simulator",
+          "domain": "kaspa-l1",
+          "network": "simulated"
+        },
+        "workflowId": "wf_77352adbd5e7bb8f",
+        "assumptionLevel": "local-simulated",
+        "submittedAt": "2026-10-04T21:48:33.121Z",
+        "confirmedAt": "2026-10-04T21:48:33.121Z",
+        "rpcUrl": "simulated://local",
+        "tracePath": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\claude\\C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo\\178242cc-c0b4-4452-b344-f35b49dc3d1f\\scratchpad\\json-papercuts\\ws-before\\.hardkas\\artifacts\\synthetic-85707e24a8dcd4499aee0fa30b1ab3df2f437253d8d3ae7f8027b557e99ed3ad.trace.json",
+        "sourceSignedId": "signed-72c43037ea5b4c7c",
+        "contentHash": "49915299afb5ce4ed50d508210e191679fe85e06669752b3fac79b0f188ed914"
+      }
+    ],
+    "warnings": [],
+    "explanation": {
+      "available": true,
+      "artifactId": "49915299afb5ce4ed50d508210e191679fe85e06669752b3fac79b0f188ed914",
+      "txId": "synthetic-85707e24a8dcd4499aee0fa30b1ab3df2f437253d8d3ae7f8027b557e99ed3ad"
+    }
+  },
+  "meta": {
+    "network": "simulated",
+    "workspace": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\claude\\C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo\\178242cc-c0b4-4452-b344-f35b49dc3d1f\\scratchpad\\json-papercuts\\ws-before",
+    "mode": "developer"
+  }
+}
+--- stderr ---
+

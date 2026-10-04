@@ -108,11 +108,18 @@ export function verifyReplay(
   });
   const replayReceipt = result.receipt;
 
-  // 3. Semantic Diffing (Divergence detection)
+  // 3. Semantic Diffing (Divergence detection). EVIDENCE-DIFF-REDACTION-1: the verdict rests on the RAW comparison
+  // (diffArtifacts masks nothing); what the report and the events record is its evidence-safe form: a public value in
+  // full, a secret field only as "differs" with its path.
   const diff = diffArtifacts(originalReceipt, replayReceipt);
 
   if (!diff.identical) {
     for (const entry of diff.entries) {
+      if (entry.secret) {
+        reportDivergences.push({ path: `receipt.${entry.path}`, status: "differs" });
+        errors.push(`Receipt divergence at ${entry.path}: differs (a secret field; its values are not recorded)`);
+        continue;
+      }
       reportDivergences.push({
         path: `receipt.${entry.path}`,
         expected: entry.left,
@@ -130,8 +137,8 @@ export function verifyReplay(
       kind: "replay.divergence",
       txId: originalReceipt.txId,
       field: div.path,
-      expected: String(div.expected),
-      actual: String(div.actual)
+      expected: div.status === "differs" ? "differs" : String(div.expected),
+      actual: div.status === "differs" ? "differs" : String(div.actual)
     });
   }
 
@@ -155,6 +162,8 @@ export function verifyReplay(
     mode: (originalReceipt.mode as string) || "simulator",
     createdAt: new Date(ctx.clock.now()).toISOString(),
     txId: originalReceipt.txId,
+    // reports made before EVIDENCE-DIFF-REDACTION-1 (masked comparison) lack this field: their verdict is legacy
+    receiptComparison: "raw",
     planOk,
     receiptOk: !diff.entries.some((e) => !e.path.startsWith("plan")),
     invariantsOk,

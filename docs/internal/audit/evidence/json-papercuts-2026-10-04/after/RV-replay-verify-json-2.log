@@ -1,0 +1,19 @@
+$ hardkas replay verify b9a3fc8be8941a9ab31e7753e5599ea15629ce3b8f8acf2be01ac95673671dfe --json
+exit=0 stdout_is_single_json=true json_docs_on_stdout=1
+--- stdout ---
+{
+  "ok": true,
+  "command": "replay verify",
+  "mode": "cli",
+  "schemaVersion": "hardkas.replayVerify.v1",
+  "workspace": "b9a3fc8be8941a9ab31e7753e5599ea15629ce3b8f8acf2be01ac95673671dfe",
+  "artifacts": 3,
+  "lineage": "valid",
+  "determinism": "verified",
+  "contamination": "clean",
+  "result": "passed",
+  "targetTxId": "synthetic-033799555593d2a27562d233b9b30c70dad2e4cdd9737283eed94d10099791ce",
+  "deterministic": true
+}
+--- stderr ---
+

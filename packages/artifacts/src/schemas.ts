@@ -485,6 +485,8 @@ export const TxObservationSchema = BaseArtifactSchema.extend({
 export const ReplayReportSchema = BaseArtifactSchema.extend({
   schema: z.literal(HardkasSchemas.ReplayReportV1),
   txId: z.string(),
+  // EVIDENCE-DIFF-REDACTION-1: present on reports whose receipt was compared raw; absent on legacy (masked) ones
+  receiptComparison: z.literal("raw").optional(),
   planOk: z.boolean(),
   receiptOk: z.boolean(),
   invariantsOk: z.boolean(),

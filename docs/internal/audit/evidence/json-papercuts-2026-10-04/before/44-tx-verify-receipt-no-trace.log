@@ -1,0 +1,15 @@
+$ hardkas tx verify receipt-without-trace.json --json   (cwd ws-before)
+exit=0 stdout_is_single_json=true
+--- stdout ---
+{
+  "ok": true,
+  "inputTotalSompi": "1100000000",
+  "outputTotalSompi": "1100000000",
+  "changeAmountSompi": "0",
+  "recomputedFeeSompi": "0",
+  "recomputedMass": "0",
+  "issues": []
+}
+--- stderr ---
+
+  ═══ Transaction Verification: receipt-without-trace.json ═══

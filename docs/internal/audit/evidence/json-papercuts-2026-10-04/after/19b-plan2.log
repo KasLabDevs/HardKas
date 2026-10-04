@@ -1,0 +1,72 @@
+$ hardkas tx plan --from alice --to bob --amount 11 --network simulated --out plan2.json --json
+exit=0 stdout_is_single_json=true json_docs_on_stdout=1
+--- stdout ---
+{
+  "schema": "hardkas.txPlan",
+  "hardkasVersion": "0.12.0-rc.26",
+  "schemaVersion": "hardkas.artifact.v1",
+  "version": "1.0.0-alpha",
+  "hashVersion": 5,
+  "createdAt": "2026-10-04T22:13:47.231Z",
+  "networkId": "simulated",
+  "mode": "simulator",
+  "execution": {
+    "mode": "simulator",
+    "domain": "kaspa-l1",
+    "network": "simulated"
+  },
+  "from": {
+    "address": "kaspa:sim_alice",
+    "input": "alice"
+  },
+  "to": {
+    "address": "kaspa:sim_bob",
+    "input": "bob"
+  },
+  "amountSompi": "1100000000",
+  "estimatedFeeSompi": "203600",
+  "estimatedMass": "2036",
+  "inputs": [
+    {
+      "outpoint": {
+        "transactionId": "18b20b15966a9302af6b1a03cae7438bb26b6445c2ba66c7aed9a0b0bb7a547d",
+        "index": 0
+      },
+      "amountSompi": "100000000000",
+      "address": "kaspa:sim_alice",
+      "scriptPublicKey": "mock-script"
+    }
+  ],
+  "outputs": [
+    {
+      "address": "kaspa:sim_bob",
+      "amountSompi": "1100000000"
+    }
+  ],
+  "rpcUrl": "simulated://local",
+  "lineage": {
+    "artifactId": "033799555593d2a27562d233b9b30c70dad2e4cdd9737283eed94d10099791ce",
+    "sequence": 1
+  },
+  "workflowId": "wf_888d5f35164251a0",
+  "metadata": {
+    "schema": "hardkas.artifact.v1",
+    "utxoSelection": {
+      "totalUtxosSeen": 2,
+      "selectedUtxos": 1,
+      "selectionStrategy": "upstream-generator"
+    }
+  },
+  "assumptionLevel": "local-simulated",
+  "plannerAuthority": "SYNTHETIC_SIMULATOR",
+  "plannerAuthorityDetail": "hardkas.simulator/kaspa-wasm@2.1.0",
+  "txVersion": 0,
+  "change": {
+    "address": "kaspa:sim_alice",
+    "amountSompi": "98899796400"
+  },
+  "contentHash": "033799555593d2a27562d233b9b30c70dad2e4cdd9737283eed94d10099791ce",
+  "planId": "plan-033799555593d2a2"
+}
+--- stderr ---
+

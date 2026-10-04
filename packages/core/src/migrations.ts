@@ -2,8 +2,9 @@ import { HardkasError } from "./index.js";
 import { getTelemetry } from "./telemetry.js";
 import fs from "node:fs";
 import path from "node:path";
+import { HARDKAS_RUNTIME_VERSION } from "./version.js";
 
-export const CURRENT_RUNTIME_VERSION = "0.12.0-rc.26";
+export const CURRENT_RUNTIME_VERSION = HARDKAS_RUNTIME_VERSION;
 export const MIN_SUPPORTED_VERSION = "0.5.0-alpha";
 
 export interface MigrationStatus {

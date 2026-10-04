@@ -4,6 +4,7 @@ import path from "node:path";
 import { randomBytes } from "node:crypto";
 import { HardkasError } from "./errors.js";
 import { withLock } from "./lock.js";
+import { HARDKAS_RUNTIME_VERSION } from "./version.js";
 
 export interface SnapshotManifest {
   snapshotVersion: number;
@@ -125,7 +126,8 @@ async function writeSnapshot(
   const manifest: SnapshotManifest = {
     snapshotVersion: 1,
     createdAt: new Date().toISOString(),
-    hardkasVersion: "0.12.0-rc.26",
+    // PAPERCUTS #45: the runtime's own version, never a literal of its own.
+    hardkasVersion: HARDKAS_RUNTIME_VERSION,
     stateAuthority: "filesystem",
     projectionAuthority: "sqlite",
     deterministicScope,

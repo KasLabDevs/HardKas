@@ -2,7 +2,12 @@ import { defineHardkasConfig } from "@hardkas/sdk";
 import { task, types } from "@hardkas/core";
 
 export default defineHardkasConfig({
-  defaultNetwork: "simulated",
+  execution: {
+    default: "simulator",
+    targets: {
+      simulator: { mode: "simulator", domain: "kaspa-l1", network: "simulated" }
+    }
+  },
   network: { allowPublic: false },
   artifacts: { deterministic: true },
   networks: {
