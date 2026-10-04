@@ -10,6 +10,7 @@ export * from "./snapshot.js";
 export * from "./transactions.js";
 export * from "./receipts.js";
 export * from "./traces.js";
+export * from "./pending-execution.js";
 export * from "./replay.js";
 export * from "./dag.js";
 export * from "./fork.js";

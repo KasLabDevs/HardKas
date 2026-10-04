@@ -67,6 +67,35 @@ export function calculateStateHash(state: LocalnetState, options?: DomainDigestO
 }
 
 /**
+ * The state snapshot artifact the store keeps for a simulated state (`misc/snapshot-<id>.json`, for lineage
+ * resolution): everything but `createdAt`, which is outside its hash, is a function of the state.
+ */
+export function buildStateSnapshotArtifact(state: LocalnetState, createdAt: string): any {
+  const snapshotArtifact: any = {
+    schema: "hardkas.snapshot.v1",
+    hashVersion: CURRENT_HASH_VERSION,
+    createdAt,
+    daaScore: state.daaScore,
+    accountsHash: calculateAccountsHash(state.accounts),
+    utxoSetHash: calculateUtxoSetHash(state.utxos),
+    hardkasVersion: state.hardkasVersion,
+    version: state.version,
+    networkId: state.networkId,
+    mode: state.mode,
+    accounts: [...state.accounts].sort((a, b) => {
+      if (a.address > b.address) return 1;
+      if (a.address < b.address) return -1;
+      return 0;
+    }),
+    utxos: sortUtxosByOutpoint(state.utxos)
+  };
+  snapshotArtifact.stateHash = calculateStateHash(state);
+  // One pass, nothing added afterwards (IC-1′.4). The snapshot's identity is its contentHash.
+  snapshotArtifact.contentHash = calculateContentHash(snapshotArtifact, CURRENT_HASH_VERSION);
+  return snapshotArtifact;
+}
+
+/**
  * Creates a canonical deterministic snapshot.
  */
 export function createLocalnetSnapshot(

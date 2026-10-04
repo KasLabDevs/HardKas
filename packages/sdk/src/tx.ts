@@ -7,7 +7,6 @@ import {
 } from "@hardkas/tx-builder";
 import {
   ARTIFACT_SCHEMAS,
-  ArtifactStoreMutation,
   CURRENT_HASH_VERSION,
   calculateContentHash,
   SignedTxArtifact,
@@ -44,6 +43,13 @@ import {
 import { parseKasToSompi, type NetworkId } from "@hardkas/core";
 import { TxPlanService, type UtxoProvider } from "@hardkas/tx-builder";
 import { HardkasSchemas } from "@hardkas/artifacts";
+
+/** An artifact's identity: its declared 64-hex contentHash, or the hash of its body when it declares none. */
+function artifactIdentity(artifact: any): string {
+  return typeof artifact?.contentHash === "string" && /^[0-9a-f]{64}$/.test(artifact.contentHash)
+    ? artifact.contentHash
+    : calculateContentHash(artifact, CURRENT_HASH_VERSION);
+}
 
 function normalizeSimulatedPlanInput(target: any, fallbackId: string): TxPlanArtifact {
   if (target.schema === ARTIFACT_SCHEMAS.TX_PLAN && Array.isArray(target.inputs)) {
@@ -1204,6 +1210,29 @@ export class HardkasTx {
     await this.sdk.artifacts.write(plan);
   }
 
+  /**
+   * SIMULATOR-DURABLE-EXECUTION-1: what a recovery reads back (the executed artifact and its plan) is in the store, under
+   * its verified identity, before the ledger moves. Each is looked up at its canonical store path; a copy there that
+   * does not verify as that identity is never overwritten, and nothing is executed.
+   */
+  private async persistExecutionMaterial(executed: any, plan: any): Promise<void> {
+    const { storeEntryFor, checkArtifactIdentity } = await import("@hardkas/artifacts");
+    const nodeFs = await import("node:fs");
+    const nodePath = await import("node:path");
+    for (const artifact of executed === plan ? [plan] : [plan, executed]) {
+      const at = nodePath.join(this.sdk.workspace.root, ".hardkas", "artifacts", storeEntryFor(artifact).rel);
+      if (nodeFs.existsSync(at)) {
+        const check = checkArtifactIdentity(JSON.parse(nodeFs.readFileSync(at, "utf-8")));
+        if (check.ok && check.artifactId === artifactIdentity(artifact)) continue;
+        throw new HardkasError(
+          "EXECUTION_MATERIAL_INVALID",
+          `${at} does not verify as ${artifactIdentity(artifact)}; nothing was executed`
+        );
+      }
+      await this.sdk.artifacts.write(artifact);
+    }
+  }
+
   private async findExistingSubmission(
     executedArtifactId: string
   ): Promise<{ receipt: TxReceiptArtifact; receiptPath: string } | null> {
@@ -1297,23 +1326,20 @@ export class HardkasTx {
     }
     const {
       loadOrCreateLocalnetState,
-      saveLocalnetState,
-      getDefaultLocalnetStatePath,
-      applySimulatedPlan,
-      saveSimulatedReceipt,
-      saveSimulatedTrace
+      applySimulatedExecution,
+      buildSimulatedExecutionEvidence,
+      commitSimulatedExecution,
+      currentEvidenceFormat,
+      getTracePath,
+      PENDING_EXECUTION_SCHEMA
     } = await import("@hardkas/localnet");
-    const path = await import("node:path");
 
     const state = await loadOrCreateLocalnetState({ cwd: this.sdk.workspace.root });
 
+    // the trace's start (one of the execution's five clock reads, SIMULATOR-DURABLE-EXECUTION-1)
     const startTime = Date.now();
-    const events: any[] = [
-      { type: "phase.started", phase: "send", timestamp: startTime }
-    ];
 
     let planArtifact: any;
-    let signedId = "unknown";
     let sourcePlanId = "unknown";
     let txId: string;
     let targetObj: any = target;
@@ -1331,7 +1357,6 @@ export class HardkasTx {
     }
 
     if (targetObj.schema === ARTIFACT_SCHEMAS.SIGNED_TX) {
-      signedId = targetObj.signedId || targetObj.id || "unknown";
       sourcePlanId = targetObj.sourcePlanId || "unknown";
       // Wave 1.4 · IC-6′.2: the plan is resolved ONLY by the artifactId the
       // authorization names (authenticated), from the store by verified identity —
@@ -1395,8 +1420,9 @@ export class HardkasTx {
     // `getTracePath` helper — no dependency on the receipt's own persisted
     // filename, which is written after hashing.
     const nowIso = new Date(systemRuntimeContext.clock.now()).toISOString();
-    const { getTracePath } = await import("@hardkas/localnet");
-    const precomputedTracePath = getTracePath(txId, this.sdk.workspace.root);
+    // SIMULATOR-DURABLE-EXECUTION-1: the receipt's createdAt is read here rather than inside the receipt builder, so the
+    // same value can be committed with the ledger transition and the receipt rebuilt byte for byte after an interruption
+    const receiptCreatedAt = new Date(systemRuntimeContext.clock.now()).toISOString();
 
     // Parent artifact for the receipt lineage: the artifact that was actually
     // executed/submitted. If the caller passed a signed artifact, that is the
@@ -1406,29 +1432,16 @@ export class HardkasTx {
       targetObj &&
       typeof targetObj === "object" &&
       (targetObj as any).schema === ARTIFACT_SCHEMAS.SIGNED_TX;
-    const parentArtifactOverride = isSignedInput
-      ? {
-          contentHash: (targetObj as any).contentHash,
-          lineage: (targetObj as any).lineage
-        }
-      : undefined;
+    const executed = isSignedInput ? targetObj : planArtifact;
 
-    const simResult = applySimulatedPlan(
+    const simResult = applySimulatedExecution({
       state,
-      normalizedPlan as any,
-      systemRuntimeContext,
-      {
-        txId,
-        receiptExtra: {
-          submittedAt: nowIso,
-          confirmedAt: nowIso,
-          rpcUrl: "simulated://local",
-          tracePath: precomputedTracePath,
-          ...(isSignedInput && signedId !== "unknown" ? { sourceSignedId: signedId } : {}),
-          ...(parentArtifactOverride ? { parentArtifact: parentArtifactOverride } : {})
-        }
-      }
-    );
+      plan: normalizedPlan,
+      executed,
+      txId,
+      workspaceRoot: this.sdk.workspace.root,
+      clock: { submittedAt: nowIso, receiptCreatedAt }
+    });
 
     if (!simResult.ok) {
       throw new Error(`Strict validation failed: ${simResult.errors?.join(", ")}`);
@@ -1440,78 +1453,43 @@ export class HardkasTx {
       endpoint: "simulated://local"
     } as unknown as Parameters<typeof coreEvents.normalizeAndEmit>[0]);
 
-    events.push({ type: "phase.completed", phase: "send", timestamp: Date.now() });
+    const completedAt = Date.now();
 
-    // The canonical receipt: single identity for the simulator lifecycle.
-    // The `receipt` alias exists purely to keep downstream code paths readable
-    // — it is the SAME object reference `simResult.receipt` returned by
-    // `applySimulatedPlan`; no wrapping, no rehashing, no fork.
+    // The canonical receipt: single identity for the simulator lifecycle (no wrapping, no rehashing, no fork).
     const receipt = simResult.receipt as any;
-
-    // Trace path stays consistent with the pre-computed value used inside the
-    // canonical receipt's `tracePath` field. Both point at the deterministic
-    // per-txId location the trace will be written to below.
-    const tracePath = precomputedTracePath;
-
-    // Convert events to steps
-    const traceSteps = events.map((ev) => ({
-      phase: ev.phase || ((ev as Record<string, unknown>).message as string) || "unknown",
-      status: ev.type.includes("completed")
-        ? "completed"
-        : ev.type.includes("failed")
-          ? "failed"
-          : "started",
-      timestamp: new Date(ev.timestamp).toISOString(),
-      details:
-        ev.type === "note"
-          ? { message: (ev as Record<string, unknown>).message as string }
-          : undefined
-    }));
-
-    // DEF-1a: the trace hangs off the CANONICAL receipt. Now that `receipt`
-    // and the persisted simulator receipt are the same object with the same
-    // contentHash (DEF-1c fix, above), the trace's parent hash unambiguously
-    // resolves in the artifact store after process restart.
-    const traceBase: any = {
-      schema: ARTIFACT_SCHEMAS.TX_TRACE,
-      hardkasVersion: HARDKAS_VERSION,
-      version: ARTIFACT_VERSION,
-      hashVersion: CURRENT_HASH_VERSION,
-      createdAt: receipt.createdAt,
-      txId: receipt.txId,
-      mode: receipt.mode ?? "simulator",
-      networkId: receipt.networkId,
-      steps: traceSteps,
-      // The raw events are part of the evidence and therefore of the hashed body
-      // (under v5 nothing nested is dropped by name); receiptPath is an
-      // operational locator and stays outside the hash by contract.
-      events,
-      ...(receipt.workflowId ? { workflowId: receipt.workflowId } : {}),
-      ...(receipt.assumptionLevel ? { assumptionLevel: receipt.assumptionLevel } : {}),
-      lineage: {
-        artifactId: "",
-        lineageId: receipt.lineage?.lineageId || receipt.contentHash || "0".repeat(64),
-        parentArtifactId: receipt.contentHash || "0".repeat(64),
-        rootArtifactId: receipt.lineage?.rootArtifactId || receipt.contentHash || "0".repeat(64),
-        sequence: (receipt.lineage?.sequence || 1) + 1
-      }
-    };
-    // One pass: lineage.artifactId is a self reference excluded by exact path.
-    traceBase.contentHash = calculateContentHash(traceBase, CURRENT_HASH_VERSION);
-    if (traceBase.lineage) traceBase.lineage.artifactId = traceBase.contentHash;
+    const tracePath = getTracePath(txId, this.sdk.workspace.root);
 
     let receiptPath: string | undefined;
     if (persist) {
-      // The unit's writes, in one holding of the store taken before the state moves: a store held elsewhere delays the
-      // whole execution instead of leaving the state moved without its evidence (the writes below join this holding).
-      receiptPath = await new ArtifactStoreMutation(this.sdk.workspace.root).hold(async () => {
-        await saveLocalnetState(simResult.state, getDefaultLocalnetStatePath(this.sdk.workspace.root));
-        const written = await saveSimulatedReceipt(receipt as Parameters<typeof saveSimulatedReceipt>[0], {
-          cwd: this.sdk.workspace.root
-        });
-        await saveSimulatedTrace({ ...traceBase, receiptPath: written }, { cwd: this.sdk.workspace.root });
-        return written;
-      }, "simulated execution");
+      // SIMULATOR-DURABLE-EXECUTION-1: the executed artifact and its plan are in the store before the ledger moves (the
+      // record names them); post-state + record are then committed in one ledger write, the evidence is published and
+      // the record cleared. The store is held for the whole sequence: a store held elsewhere delays the execution
+      // instead of leaving the state moved without its evidence.
+      await this.persistExecutionMaterial(executed, planArtifact);
+      const clock = {
+        traceStartedAtMs: startTime,
+        submittedAt: nowIso,
+        receiptCreatedAt,
+        traceCompletedAtMs: completedAt,
+        snapshotCreatedAt: new Date(systemRuntimeContext.clock.now()).toISOString()
+      };
+      const evidence = buildSimulatedExecutionEvidence({ postState: simResult.state, receipt, workspaceRoot: this.sdk.workspace.root, clock });
+      await commitSimulatedExecution(this.sdk.workspace.root, {
+        postState: simResult.state,
+        record: {
+          schema: PENDING_EXECUTION_SCHEMA,
+          txId: receipt.txId,
+          executedArtifactId: artifactIdentity(executed),
+          preStateHash: receipt.preStateHash,
+          postStateHash: receipt.postStateHash,
+          clock,
+          workspaceRoot: this.sdk.workspace.root,
+          format: currentEvidenceFormat(),
+          expected: { receipt: receipt.contentHash, stateSnapshot: evidence.stateSnapshot.contentHash, trace: evidence.trace.contentHash }
+        },
+        evidence
+      });
+      receiptPath = evidence.receiptPath;
     }
 
     // P1.1 Emit dashboard/query-store events for local/simulated transactions

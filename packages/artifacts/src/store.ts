@@ -47,6 +47,30 @@ function resolveStoreId(artifact: any): string {
   return Date.now().toString(36);
 }
 
+/**
+ * Where the store keeps an artifact (its path relative to `.hardkas/artifacts`) and the exact bytes it writes: the one
+ * definition `writeArtifact` uses, shared with anything that must reproduce or recognise those bytes
+ * (SIMULATOR-DURABLE-EXECUTION-1).
+ */
+export function storeEntryFor(artifact: any): { rel: string; content: string } {
+  const id = resolveStoreId(artifact);
+  const prefix = schemaFilePrefix(artifact.schema, 1, "artifact");
+  let subDir = "misc";
+  if (typeof artifact.schema === "string") {
+    const s = artifact.schema.toLowerCase();
+    if (s.includes("txplan")) subDir = "plans";
+    else if (s.includes("signedtx")) subDir = "signed";
+    else if (s.includes("txobservation")) subDir = "observations";
+    else if (s.includes("txreceipt") || s.includes("txsubmission")) subDir = "receipts";
+    else if (s.includes("lineage")) subDir = "lineage";
+  }
+  const filename = `${prefix}-${id}.json`;
+  if (path.basename(filename) !== filename) {
+    throw storeError("PATH_TRAVERSAL", `Artifact file name ${filename} escapes ${subDir}/`);
+  }
+  return { rel: path.join(subDir, filename), content: JSON.stringify(artifact, bigIntReplacer, 2) + "\n" };
+}
+
 export class ProjectArtifactStore {
   private artifactsDir: string;
   private workspaceRoot: string;
@@ -72,7 +96,7 @@ export class ProjectArtifactStore {
 
   async writeArtifact(artifact: any): Promise<string> {
     // Identifier safety first (path traversal is refused before anything else).
-    const id = resolveStoreId(artifact);
+    resolveStoreId(artifact);
     // IC-1′.3–4 / N3: the store never completes or reshapes an artifact. It must
     // declare the hash version it was hashed with, and its body must still hash
     // to the identity it claims.
@@ -92,27 +116,11 @@ export class ProjectArtifactStore {
         );
       }
     }
-    const prefix = schemaFilePrefix(artifact.schema, 1, "artifact");
-    let subDir = "misc";
-    if (typeof artifact.schema === "string") {
-      const s = artifact.schema.toLowerCase();
-      if (s.includes("txplan")) subDir = "plans";
-      else if (s.includes("signedtx")) subDir = "signed";
-      else if (s.includes("txobservation")) subDir = "observations";
-      else if (s.includes("txreceipt") || s.includes("txsubmission")) subDir = "receipts";
-      else if (s.includes("lineage")) subDir = "lineage";
-    }
+    const { rel, content } = storeEntryFor(artifact);
+    const targetPath = path.join(this.artifactsDir, rel);
 
-    const dirPath = path.join(this.artifactsDir, subDir);
-    const filename = `${prefix}-${id}.json`;
-    const targetPath = path.join(dirPath, filename);
-    if (path.dirname(targetPath) !== dirPath) {
-      throw storeError("PATH_TRAVERSAL", `Artifact file name ${filename} escapes ${dirPath}`);
-    }
-
-    const content = JSON.stringify(artifact, bigIntReplacer, 2) + "\n";
     // ARTIFACT-MUTATION-1: the canonical write goes through the store's single mutation gate (artifacts lock)
-    await new ArtifactStoreMutation(this.workspaceRoot).writeFile(path.join(subDir, filename), content);
+    await new ArtifactStoreMutation(this.workspaceRoot).writeFile(rel, content);
 
     return targetPath;
   }

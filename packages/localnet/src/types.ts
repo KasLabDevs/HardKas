@@ -1,5 +1,6 @@
 import { HardkasArtifactBase, Snapshot } from "@hardkas/artifacts";
 import { NetworkId, ExecutionMode } from "@hardkas/core";
+import type { PendingExecutionRecord } from "./pending-execution.js";
 
 export interface LocalnetAccount {
   name: string;
@@ -36,6 +37,11 @@ export interface LocalnetState extends HardkasArtifactBase {
     forkedAt: string;
     addresses: string[];
   };
+  /**
+   * SIMULATOR-DURABLE-EXECUTION-1: set only between a simulated execution's ledger commit and the publication of its
+   * evidence (written in the same atomic write as the transition). Never part of the simulated state itself.
+   */
+  pendingExecution?: PendingExecutionRecord;
 }
 
 export interface SimulatedBlock {
