@@ -234,8 +234,9 @@ describe("ARTIFACT-LOCK-REENTRANCY-1 · what must not change", () => {
     });
   });
 
-  it("LOCK_ORDER is unchanged", () => {
-    expect(LOCK_ORDER).toEqual(["workspace", "node", "accounts", "artifacts", "events", "pending-spends", "query-store"]);
+  it("LOCK_ORDER: phase 1 left it unchanged; phase 2B adds simulator-state before artifacts", () => {
+    // SIMULATOR-EXECUTION-UNIT-1: a simulated execution holds simulator-state and takes artifacts inside it for its writes
+    expect(LOCK_ORDER).toEqual(["workspace", "node", "accounts", "simulator-state", "artifacts", "events", "pending-spends", "query-store"]);
   });
 });
 

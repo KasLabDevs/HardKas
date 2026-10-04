@@ -4,7 +4,8 @@ import { parseKasToSompi } from "@hardkas/core";
 import {
   loadOrCreateLocalnetState,
   saveLocalnetState,
-  fundAddress
+  fundAddress,
+  withSimulatorState
 } from "@hardkas/localnet";
 import { HardkasCliError, HardkasExitCode } from "../cli-errors.js";
 
@@ -51,10 +52,13 @@ export async function runAccountsFund(options: AccountsFundOptions) {
   // 2. Handle Simulated Environment
   if (isSimulated) {
     const { formatSompiToKas } = await import("@hardkas/core");
-    const state = await loadOrCreateLocalnetState();
     const amount = options.amountSompi ?? 1000n * 100_000_000n; // Default 1000 KAS
-    const newState = fundAddress(state, { address, amountSompi: amount });
-    await saveLocalnetState(newState);
+    // SIMULATOR-EXECUTION-UNIT-1: read → fund → write of the simulated state as one unit
+    await withSimulatorState(process.cwd(), async () => {
+      const state = await loadOrCreateLocalnetState();
+      const newState = fundAddress(state, { address, amountSompi: amount });
+      await saveLocalnetState(newState);
+    });
 
     return {
       success: true,

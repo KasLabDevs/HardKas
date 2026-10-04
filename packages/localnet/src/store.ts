@@ -2,7 +2,26 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import type { LocalnetState } from "./types.js";
 import { createInitialLocalnetState } from "./state.js";
-import { writeFileAtomic } from "@hardkas/core";
+import { withLock, writeFileAtomic } from "@hardkas/core";
+
+/** The lock that serializes a workspace's simulated state (SIMULATOR-EXECUTION-UNIT-1). */
+export const SIMULATOR_STATE_LOCK = "simulator-state";
+
+/**
+ * SIMULATOR-EXECUTION-UNIT-1: two cooperative operations never interleave the read → modify → write of the same
+ * simulated state (`<workspace>/.hardkas/localnet.json`) nor its derived evidence. fn runs as one unit under the
+ * workspace's `simulator-state` lock, which the writes it makes join (reentrant within its call chain). In LOCK_ORDER it
+ * comes before `artifacts`: never take it while holding the store.
+ */
+export function withSimulatorState<T>(workspaceRoot: string, fn: () => Promise<T>): Promise<T> {
+  return withLock({ rootDir: workspaceRoot, name: SIMULATOR_STATE_LOCK, command: "simulated state", wait: true }, fn);
+}
+
+/** The workspace whose simulated state a state file is (`<workspace>/.hardkas/localnet.json`); undefined for a copy elsewhere. */
+function simulatedStateWorkspace(statePath: string): string | undefined {
+  const dir = path.dirname(path.resolve(statePath));
+  return path.basename(dir) === ".hardkas" ? path.dirname(dir) : undefined;
+}
 
 export function getDefaultLocalnetDir(cwd: string = process.cwd(), overrideHardkasDir?: string): string {
   if (overrideHardkasDir) {
@@ -20,6 +39,17 @@ export async function saveLocalnetState(
   filePath?: string
 ): Promise<void> {
   const targetPath = filePath ?? getDefaultLocalnetStatePath();
+  const workspace = simulatedStateWorkspace(targetPath);
+  if (!workspace) return writeLocalnetState(state, targetPath); // a copy elsewhere (an export) is no workspace's state
+  // SIMULATOR-EXECUTION-UNIT-1: under `simulator-state` (joined when the caller holds it for a whole read → modify →
+  // write), with the store taken before the state moves, so the state snapshot below is written at once
+  const { ArtifactStoreMutation } = await import("@hardkas/artifacts");
+  return withSimulatorState(workspace, () =>
+    new ArtifactStoreMutation(workspace).hold(() => writeLocalnetState(state, targetPath), "simulated state")
+  );
+}
+
+async function writeLocalnetState(state: LocalnetState, targetPath: string): Promise<void> {
   const dir = path.dirname(targetPath);
 
   // the state file normally lives outside the artifact store; one pointed inside it goes through the store's gate
@@ -113,11 +143,19 @@ export async function loadOrCreateLocalnetState(
   let state = await loadLocalnetState(statePath);
 
   if (!state) {
-    state = createInitialLocalnetState({
-      accounts: options.accounts,
-      initialBalanceSompi: options.initialBalanceSompi
-    });
-    await saveLocalnetState(state, statePath);
+    const create = async (): Promise<LocalnetState> => {
+      // read again under the lock: a state another cooperative writer created meanwhile is kept, never replaced
+      const existing = await loadLocalnetState(statePath);
+      if (existing) return existing;
+      const created = createInitialLocalnetState({
+        accounts: options.accounts,
+        initialBalanceSompi: options.initialBalanceSompi
+      });
+      await saveLocalnetState(created, statePath);
+      return created;
+    };
+    const workspace = simulatedStateWorkspace(statePath);
+    state = workspace ? await withSimulatorState(workspace, create) : await create();
   }
 
   return state;

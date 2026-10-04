@@ -37,43 +37,50 @@ export async function runSnapshotReplay(options: SnapshotReplayOptions) {
       console.log("");
     }
 
-    // 2. Plan the restore before touching the store. SNAPSHOT-NONDESTRUCTIVE-1: replay never removes an artifact.
-    // SNAPSHOT-CONFLICT-1: a path both sides hold with different bytes fails the replay before anything is written.
     const hardkasDir = sdk.workspace.hardkasDir;
     const wsArtifactsDir = path.join(hardkasDir, "artifacts");
     const snapArtifactsDir = path.join(snapshotDir, "artifacts");
     const fs = await import("node:fs/promises");
 
-    const snapshotFiles = await listArtifactFiles(snapArtifactsDir);
-    const missing: string[] = [];
-    const conflicts: string[] = [];
-    let identical = 0;
-    for (const rel of snapshotFiles) {
-      const local = await readIfPresent(path.join(wsArtifactsDir, rel));
-      if (local === undefined) missing.push(rel);
-      else if (local.equals(await fs.readFile(path.join(snapArtifactsDir, rel)))) identical++;
-      else conflicts.push(rel);
-    }
-    if (conflicts.length > 0) {
-      const { HardkasCliError } = await import("../cli-errors.js");
-      const shown = conflicts.slice(0, 5).map(toPosix).join(", ");
-      throw new HardkasCliError(
-        "SNAPSHOT_REPLAY_CONFLICT",
-        `Snapshot ${options.name} and the workspace hold different bytes at ${conflicts.length} artifact path(s) (${shown}${conflicts.length > 5 ? ", …" : ""}); nothing was restored`,
-        { exitCode: 1 }
-      );
-    }
-    const inSnapshot = new Set(snapshotFiles);
-    const localOnlyKept = (await listArtifactFiles(wsArtifactsDir)).filter((rel) => !inSnapshot.has(rel)).length;
+    // 2–3 · SNAPSHOT-REPLAY-UNIT-1: from the check to the last restore the replay holds the store, so no cooperative
+    // writer introduces a mutation between them and no cooperative reader sees a partial restore (a receipt restored
+    // before the signed artifact it descends from). The projection rebuild below is outside the unit.
+    const unit = ArtifactStoreMutation.forPath(wsArtifactsDir)?.store ?? new ArtifactStoreMutation(sdk.workspace.root);
+    const { missing, identical, localOnlyKept } = await unit.hold(async () => {
+      // 2. Plan the restore before touching the store. SNAPSHOT-NONDESTRUCTIVE-1: replay never removes an artifact.
+      // SNAPSHOT-CONFLICT-1: a path both sides hold with different bytes fails the replay before anything is written.
+      const snapshotFiles = await listArtifactFiles(snapArtifactsDir);
+      const missing: string[] = [];
+      const conflicts: string[] = [];
+      let identical = 0;
+      for (const rel of snapshotFiles) {
+        const local = await readIfPresent(path.join(wsArtifactsDir, rel));
+        if (local === undefined) missing.push(rel);
+        else if (local.equals(await fs.readFile(path.join(snapArtifactsDir, rel)))) identical++;
+        else conflicts.push(rel);
+      }
+      if (conflicts.length > 0) {
+        const { HardkasCliError } = await import("../cli-errors.js");
+        const shown = conflicts.slice(0, 5).map(toPosix).join(", ");
+        throw new HardkasCliError(
+          "SNAPSHOT_REPLAY_CONFLICT",
+          `Snapshot ${options.name} and the workspace hold different bytes at ${conflicts.length} artifact path(s) (${shown}${conflicts.length > 5 ? ", …" : ""}); nothing was restored`,
+          { exitCode: 1 }
+        );
+      }
+      const inSnapshot = new Set(snapshotFiles);
+      const localOnlyKept = (await listArtifactFiles(wsArtifactsDir)).filter((rel) => !inSnapshot.has(rel)).length;
 
-    // 3. Restore what is missing through the store's gate (ARTIFACT-MUTATION-1). `exclusive` keeps COPYFILE_EXCL's
-    // promise: an artifact already in the store is never overwritten (EEXIST).
-    if (!options.json) console.log(pc.yellow("  Restoring missing artifacts to workspace..."));
-    for (const rel of missing) {
-      const gate = ArtifactStoreMutation.forPath(path.join(wsArtifactsDir, rel));
-      if (!gate || !gate.relPath) throw new Error(`${wsArtifactsDir} is not an artifact store (<workspace>/.hardkas/artifacts)`);
-      await gate.store.writeFile(gate.relPath, await fs.readFile(path.join(snapArtifactsDir, rel)), { exclusive: true });
-    }
+      // 3. Restore what is missing through the store's gate (ARTIFACT-MUTATION-1); each write joins this holding.
+      // `exclusive` keeps COPYFILE_EXCL's promise: an artifact already in the store is never overwritten (EEXIST).
+      if (!options.json) console.log(pc.yellow("  Restoring missing artifacts to workspace..."));
+      for (const rel of missing) {
+        const gate = ArtifactStoreMutation.forPath(path.join(wsArtifactsDir, rel));
+        if (!gate || !gate.relPath) throw new Error(`${wsArtifactsDir} is not an artifact store (<workspace>/.hardkas/artifacts)`);
+        await gate.store.writeFile(gate.relPath, await fs.readFile(path.join(snapArtifactsDir, rel)), { exclusive: true });
+      }
+      return { missing, identical, localOnlyKept };
+    }, "localnet snapshot replay");
 
     // 4. The query store is rebuilt only when the workspace already has one: without .hardkas/store.db the query
     // engine reads the artifact files directly, and replay never creates the store.

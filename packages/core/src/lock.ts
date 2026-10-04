@@ -111,12 +111,14 @@ function runInHoldings<T>(handles: LockHandle[], fn: () => Promise<T>): Promise<
 
 /**
  * Deterministic lock ordering to avoid deadlocks.
- * workspace > node > accounts > artifacts > events > query-store
+ * workspace > node > accounts > simulator-state > artifacts > events > query-store
+ * (a simulated execution holds simulator-state and takes artifacts inside it for its writes: SIMULATOR-EXECUTION-UNIT-1)
  */
 export const LOCK_ORDER = [
   "workspace",
   "node",
   "accounts",
+  "simulator-state",
   "artifacts",
   "events",
   "pending-spends",

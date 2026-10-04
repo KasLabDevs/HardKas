@@ -28,8 +28,9 @@ export async function trackDeployment(opts: {
 }) {
   const rootDir = opts.workspaceRoot || process.cwd();
 
+  // deployments live in .hardkas/deployments/**, outside the artifact store: their own lock, not the store's (phase 2B)
   await withLock(
-    { rootDir, name: "artifacts", command: "hardkas deploy track" },
+    { rootDir, name: "deployments", command: "hardkas deploy track" },
     async () => {
       await trackDeploymentInternal(rootDir, opts);
     }
@@ -221,7 +222,7 @@ export async function verifyDeploymentStatus(opts: {
 
       if (newStatus !== record.status) {
         await withLock(
-          { rootDir, name: "artifacts", command: "hardkas deploy status" },
+          { rootDir, name: "deployments", command: "hardkas deploy status" },
           async () => {
             const updated = updateDeploymentStatus(record, newStatus);
             await saveDeployment(rootDir, updated);

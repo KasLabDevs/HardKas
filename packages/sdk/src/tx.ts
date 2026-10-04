@@ -7,6 +7,7 @@ import {
 } from "@hardkas/tx-builder";
 import {
   ARTIFACT_SCHEMAS,
+  ArtifactStoreMutation,
   CURRENT_HASH_VERSION,
   calculateContentHash,
   SignedTxArtifact,
@@ -1274,6 +1275,19 @@ export class HardkasTx {
       }
     }
     const persist = options.persist ?? true;
+    // SIMULATOR-EXECUTION-UNIT-1: a persisted execution reads the simulated state, checks idempotency and its inputs,
+    // applies the transition and writes the state with its evidence as one unit under `simulator-state`.
+    if (!persist) return this.simulateUnit(target, explicitPlan, persist);
+    const { withSimulatorState } = await import("@hardkas/localnet");
+    return withSimulatorState(this.sdk.workspace.root, () => this.simulateUnit(target, explicitPlan, persist));
+  }
+
+  /** The body of `simulate`, run inside its unit when it persists (SIMULATOR-EXECUTION-UNIT-1). */
+  private async simulateUnit(
+    target: string | Partial<TxPlanArtifact> | SignedTxArtifact,
+    explicitPlan: TxPlanArtifact | undefined,
+    persist: boolean
+  ): Promise<{ receipt: TxReceiptArtifact; receiptPath?: string; tracePath?: string }> {
     if (typeof target === "object" && target !== null && typeof (target as any).contentHash === "string") {
       // Idempotency by the executed artifact's identity (IC-5′.10), never by txId.
       const existing = await this.findExistingSubmission((target as any).contentHash);
@@ -1434,18 +1448,6 @@ export class HardkasTx {
     // `applySimulatedPlan`; no wrapping, no rehashing, no fork.
     const receipt = simResult.receipt as any;
 
-    let receiptPath: string | undefined;
-    if (persist) {
-      await saveLocalnetState(
-        simResult.state,
-        getDefaultLocalnetStatePath(this.sdk.workspace.root)
-      );
-      receiptPath = await saveSimulatedReceipt(
-        receipt as Parameters<typeof saveSimulatedReceipt>[0],
-        { cwd: this.sdk.workspace.root }
-      );
-    }
-
     // Trace path stays consistent with the pre-computed value used inside the
     // canonical receipt's `tracePath` field. Both point at the deterministic
     // per-txId location the trace will be written to below.
@@ -1498,14 +1500,18 @@ export class HardkasTx {
     traceBase.contentHash = calculateContentHash(traceBase, CURRENT_HASH_VERSION);
     if (traceBase.lineage) traceBase.lineage.artifactId = traceBase.contentHash;
 
+    let receiptPath: string | undefined;
     if (persist) {
-      await saveSimulatedTrace(
-        {
-          ...traceBase,
-          receiptPath: receiptPath!
-        },
-        { cwd: this.sdk.workspace.root }
-      );
+      // The unit's writes, in one holding of the store taken before the state moves: a store held elsewhere delays the
+      // whole execution instead of leaving the state moved without its evidence (the writes below join this holding).
+      receiptPath = await new ArtifactStoreMutation(this.sdk.workspace.root).hold(async () => {
+        await saveLocalnetState(simResult.state, getDefaultLocalnetStatePath(this.sdk.workspace.root));
+        const written = await saveSimulatedReceipt(receipt as Parameters<typeof saveSimulatedReceipt>[0], {
+          cwd: this.sdk.workspace.root
+        });
+        await saveSimulatedTrace({ ...traceBase, receiptPath: written }, { cwd: this.sdk.workspace.root });
+        return written;
+      }, "simulated execution");
     }
 
     // P1.1 Emit dashboard/query-store events for local/simulated transactions

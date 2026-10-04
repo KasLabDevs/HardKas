@@ -5,9 +5,9 @@ import { HardkasError, withLock, writeFileAtomic } from "@hardkas/core";
 
 /**
  * ARTIFACT-MUTATION-1: every mutation of `<workspace>/.hardkas/artifacts/**` made by cooperative HardKAS code goes
- * through this gate and happens under the workspace's `artifacts` lock, taken reentrantly (a caller that already holds
- * it, such as `tx send`, joins its holding). This module is the only code that touches the store's files and
- * directories physically; packages/artifacts/test/artifact-mutation-guard.test.ts keeps it that way.
+ * through this gate and happens under the workspace's `artifacts` lock, taken reentrantly (writes made inside a unit
+ * held with `hold` join its holding). This module is the only code that touches the store's files and directories
+ * physically; packages/artifacts/test/artifact-mutation-guard.test.ts keeps it that way.
  */
 export class ArtifactStoreMutation {
   /** The workspace whose store this is; its `artifacts` lock lives in `<workspace>/.hardkas/locks`. */
@@ -64,8 +64,16 @@ export class ArtifactStoreMutation {
     });
   }
 
-  private underLock<T>(fn: () => Promise<T>): Promise<T> {
-    return withLock({ rootDir: this.workspaceRoot, name: "artifacts", command: "artifact store mutation", wait: true }, fn);
+  /**
+   * Runs fn as one unit of the store: inside a single holding of `artifacts`, which the gate's writes made from fn join.
+   * No other cooperative writer or reader of the store can come in between fn's reads and writes.
+   */
+  async hold<T>(fn: () => Promise<T>, command = "artifact store unit"): Promise<T> {
+    return await this.underLock(fn, command);
+  }
+
+  private underLock<T>(fn: () => Promise<T>, command = "artifact store mutation"): Promise<T> {
+    return withLock({ rootDir: this.workspaceRoot, name: "artifacts", command, wait: true }, fn);
   }
 
   private resolveInside(relPath: string, allowStoreItself: boolean): string {
