@@ -1,5 +1,10 @@
 import { defineHardkasConfig } from "@hardkas/config";
 
 export default defineHardkasConfig({
-  defaultNetwork: "simulated"
+  execution: {
+    default: "simulator",
+    targets: {
+      simulator: { mode: "simulator", domain: "kaspa-l1", network: "simulated" }
+    }
+  }
 });

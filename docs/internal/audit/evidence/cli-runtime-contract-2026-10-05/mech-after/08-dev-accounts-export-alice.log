@@ -1,0 +1,10 @@
+$ hardkas dev accounts export kasware --alias alice   (cwd mech-ws-after)
+exit=2 stdout_is_single_json=false
+--- stdout ---
+
+--- stderr ---
+
+  ✗ [DEV_ACCOUNT_NOT_FOUND] Dev account alias 'alice' not found.
+
+  💡 Suggestion:
+    No dev accounts exist yet (hardkas dev accounts list)

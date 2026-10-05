@@ -1,0 +1,10 @@
+$ hardkas rpc info --url ws://127.0.0.1:1 --json   (cwd ws-before)
+exit=1 stdout_is_single_json=true
+--- stdout ---
+{
+  "ok": false,
+  "url": "ws://127.0.0.1:1",
+  "error": "Cannot connect to Kaspa RPC at ws://127.0.0.1:1. Is kaspad running with --rpclisten-json? (wRPC -> WebSocket -> Unable to connect to ws://127.0.0.1:1)"
+}
+--- stderr ---
+

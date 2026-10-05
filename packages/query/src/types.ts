@@ -237,7 +237,18 @@ export interface ArtifactInspectResult {
     readonly stale: boolean;
     readonly classification: "fresh" | "aging" | "stale" | "expired";
   };
+  /**
+   * valid: the structure holds AND the parent was resolved in the workspace store (or it is a root) · orphan: the
+   * structure is broken or the parent is missing/invalid · missing: no lineage block (EVIDENCE-TRUST-1: the same answer
+   * `hardkas verify` gives).
+   */
   readonly lineageStatus: "valid" | "orphan" | "missing" | "unknown";
+  /** EVIDENCE-TRUST-1: what looking the parent up in the workspace store found. */
+  readonly parent?: {
+    readonly status: "resolved" | "missing" | "invalid" | "unresolved" | "root";
+    readonly artifactId?: string;
+    readonly detail?: string;
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -245,10 +256,19 @@ export interface ArtifactInspectResult {
 // ---------------------------------------------------------------------------
 
 export interface ArtifactDiffEntry {
+  /** The path of the difference (`lineage.parentArtifactId`, `inputs[0].amountSompi`). */
   readonly field: string;
+  /** JSON of the left value (absent for an addition, and for a secret field). */
   readonly left: string | undefined;
+  /** JSON of the right value (absent for a removal, and for a secret field). */
   readonly right: string | undefined;
   readonly kind: "value-change" | "added" | "removed" | "type-change";
+  /** EVIDENCE-TRUST-1: whether the field is inside what the content hash covers (on either side). */
+  readonly authenticated: boolean;
+  /** A field named as a secret differs: its values are never shown, only that it differs. */
+  readonly secret?: true;
+  /** The values shown had URL credentials redacted (the raw values were compared). */
+  readonly redacted?: true;
 }
 
 export interface ArtifactDiffResult {
@@ -256,7 +276,13 @@ export interface ArtifactDiffResult {
   readonly rightPath: string;
   readonly leftSchema: string;
   readonly rightSchema: string;
+  /** EVIDENCE-TRUST-1: nothing differs, every field compared on its raw value (identity fields and lineage included). */
   readonly identical: boolean;
+  /** The two recomputed identities (content hashes under each declared hash version) are the same. */
+  readonly sameIdentity: boolean;
+  /** Each side's recomputed identity, or null when it cannot be established (no valid hashVersion). */
+  readonly leftIdentity: string | null;
+  readonly rightIdentity: string | null;
   readonly entries: readonly ArtifactDiffEntry[];
 }
 

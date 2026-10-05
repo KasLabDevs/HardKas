@@ -32,6 +32,34 @@ export function minerContainerNameFor(nodeContainerName: string): string {
     : `${nodeContainerName}-miner`;
 }
 
+// CLI-RUNTIME-CONTRACT-1 · the runner's typed errors: a `code` for programs and the same code as a
+// `[CODE]` prefix for humans and older callers. The runner never reports what Docker could not do.
+export const NODE_ERROR_DOCKER_UNAVAILABLE = "DOCKER_UNAVAILABLE";
+export const NODE_ERROR_CONTAINER_NOT_FOUND = "NODE_CONTAINER_NOT_FOUND";
+export const NODE_ERROR_LOGS_FAILED = "NODE_LOGS_FAILED";
+
+export function nodeRunnerError(code: string, message: string, cause?: unknown): Error & { code: string } {
+  return Object.assign(new Error(`[${code}] ${message}`), { code, cause });
+}
+
+function errorText(e: unknown): string {
+  const err = e as any;
+  return [err?.shortMessage, err?.message, err?.stderr].filter((s) => typeof s === "string").join("\n");
+}
+
+/** Docker itself (the CLI or its daemon) cannot be used — not a container that merely does not exist. */
+export function isDockerUnavailableError(e: unknown): boolean {
+  if ((e as any)?.code === "ENOENT") return true;
+  return /ENOENT|is not recognized as an internal or external command|cannot find the file specified|error during connect|Cannot connect to the Docker daemon|docker daemon is not running|Is the docker daemon running|pipe\/docker_engine|connection refused|actively refused/i.test(
+    errorText(e)
+  );
+}
+
+/** The container (or object) named does not exist; Docker itself answered. */
+export function isNoSuchContainerError(e: unknown): boolean {
+  return /No such (object|container)/i.test(errorText(e));
+}
+
 interface InternalDockerKaspadOptions extends Required<
   Omit<DockerKaspadOptions, "ports" | "mineTo">
 > {
@@ -80,6 +108,23 @@ export class DockerKaspadRunner {
     return expected ? verifyNodeIdentity({ expected }) : undefined;
   }
 
+  /** Runs a docker command; a Docker that cannot be used is the typed DOCKER_UNAVAILABLE, anything else is the original error. */
+  private async docker(args: string[]): Promise<{ stdout: string }> {
+    try {
+      const r = await execa("docker", args);
+      return { stdout: typeof r?.stdout === "string" ? r.stdout : "" };
+    } catch (e: unknown) {
+      if (isDockerUnavailableError(e)) {
+        throw nodeRunnerError(
+          NODE_ERROR_DOCKER_UNAVAILABLE,
+          `Docker is not available (docker ${args[0]} failed). Install or start Docker to run a real Kaspa node. Details: ${(e as any)?.shortMessage ?? (e as any)?.message ?? String(e)}`,
+          e
+        );
+      }
+      throw e;
+    }
+  }
+
   private async requireIdentity(context: string): Promise<void> {
     const expected = this.expectedIdentity();
     if (!expected) return;
@@ -113,8 +158,10 @@ export class DockerKaspadRunner {
         (this as any)._simulated = true;
         return this.status();
       }
-      throw new Error(
-        `[DOCKER_UNAVAILABLE] Docker is not available. Please install Docker to run a real Kaspa node. Details: ${e.message}`
+      throw nodeRunnerError(
+        NODE_ERROR_DOCKER_UNAVAILABLE,
+        `Docker is not available. Please install Docker to run a real Kaspa node. Details: ${e.message}`,
+        e
       );
     }
 
@@ -290,21 +337,27 @@ export class DockerKaspadRunner {
       (this as any)._simulated = false;
       return stat;
     }
-    try {
-      await execa("docker", ["stop", this.options.containerName]);
-      await execa("docker", ["rm", this.options.containerName]);
-    } catch (e) {
-      // Ignore errors if container doesn't exist or is already stopped
+    // CLI-RUNTIME-CONTRACT-1: ask Docker first (DOCKER_UNAVAILABLE propagates), stop only what exists,
+    // and let a `docker stop`/`rm` that fails for a real reason fail the call. Nothing is "stopped" by
+    // assumption.
+    const before = await this.status();
+    let stopped = false;
+    if (before.statusText !== "not-found") {
+      await this.docker(["stop", this.options.containerName]);
+      await this.docker(["rm", this.options.containerName]);
+      stopped = true;
     }
 
     if (this.options.mineTo) {
       const minerContainerName = minerContainerNameFor(this.options.containerName);
       try {
-        await execa("docker", ["stop", minerContainerName]);
-        await execa("docker", ["rm", minerContainerName]);
-      } catch (e) {}
+        await this.docker(["stop", minerContainerName]);
+        await this.docker(["rm", minerContainerName]);
+      } catch (e) {
+        if (!isNoSuchContainerError(e)) throw e;
+      }
     }
-    return this.status();
+    return { ...(await this.status()), stopped };
   }
 
   private async checkTransportReady(port: number): Promise<boolean> {
@@ -328,7 +381,8 @@ export class DockerKaspadRunner {
   }
 
   async status(): Promise<KaspadNodeStatus> {
-    const rpcUrl = `http://127.0.0.1:${this.options.ports.jsonRpc}`;
+    // CANONICAL-RPC-URL: the node's JSON endpoint is a wRPC WebSocket; it is reported in that form.
+    const rpcUrl = `ws://${CANONICAL_LOCALNET.host}:${this.options.ports.jsonRpc}`;
 
     if ((this as any)._simulated) {
       return {
@@ -350,13 +404,33 @@ export class DockerKaspadRunner {
       };
     }
 
+    let inspect: { stdout: string };
     try {
-      const { stdout } = await execa("docker", [
-        "inspect",
-        "--format",
-        "{{.State.Status}}",
-        this.options.containerName
-      ]);
+      inspect = await this.docker(["inspect", "--format", "{{.State.Status}}", this.options.containerName]);
+    } catch (e) {
+      // CLI-RUNTIME-CONTRACT-1: only a container that does not exist is "not-found"; a Docker that
+      // cannot be asked (DOCKER_UNAVAILABLE), or any other real failure, is an error.
+      if (!isNoSuchContainerError(e)) throw e;
+      return {
+        containerName: this.options.containerName,
+        image: this.options.image,
+        network: this.options.network,
+        running: false,
+        statusText: "not-found",
+        ports: this.options.ports,
+        dataDir: this.options.dataDir,
+        rpcUrl,
+        rpcReady: false,
+        transports: {
+          grpc: { port: this.options.ports.rpc, ready: false },
+          borsh: { port: this.options.ports.borshRpc, ready: false },
+          json: { port: this.options.ports.jsonRpc, ready: false, url: rpcUrl }
+        },
+        lastError: "Container not found"
+      };
+    }
+    {
+      const stdout = inspect.stdout;
       const running = stdout.trim() === "running";
 
       let jsonReady = false;
@@ -392,24 +466,6 @@ export class DockerKaspadRunner {
           json: { port: this.options.ports.jsonRpc, ready: jsonReady, url: rpcUrl }
         },
         lastError
-      };
-    } catch (e) {
-      return {
-        containerName: this.options.containerName,
-        image: this.options.image,
-        network: this.options.network,
-        running: false,
-        statusText: "not-found",
-        ports: this.options.ports,
-        dataDir: this.options.dataDir,
-        rpcUrl,
-        rpcReady: false,
-        transports: {
-          grpc: { port: this.options.ports.rpc, ready: false },
-          borsh: { port: this.options.ports.borshRpc, ready: false },
-          json: { port: this.options.ports.jsonRpc, ready: false, url: rpcUrl }
-        },
-        lastError: "Container not found"
       };
     }
   }
@@ -452,8 +508,25 @@ export class DockerKaspadRunner {
       const { stdout } = await execa("docker", [...args, this.options.containerName]);
       return stdout;
     } catch (e) {
-      throw new Error(
-        `Could not get logs for container ${this.options.containerName}. Is it running?`
+      // CLI-RUNTIME-CONTRACT-1: typed, with the cause kept.
+      if (isDockerUnavailableError(e)) {
+        throw nodeRunnerError(
+          NODE_ERROR_DOCKER_UNAVAILABLE,
+          `Docker is not available (docker logs failed). Install or start Docker to run a real Kaspa node. Details: ${(e as any)?.shortMessage ?? (e as any)?.message ?? String(e)}`,
+          e
+        );
+      }
+      if (isNoSuchContainerError(e)) {
+        throw nodeRunnerError(
+          NODE_ERROR_CONTAINER_NOT_FOUND,
+          `No container '${this.options.containerName}' to read logs from. Start the node first (hardkas node start).`,
+          e
+        );
+      }
+      throw nodeRunnerError(
+        NODE_ERROR_LOGS_FAILED,
+        `Could not get logs for container ${this.options.containerName}: ${(e as any)?.shortMessage ?? (e as any)?.message ?? String(e)}`,
+        e
       );
     }
   }

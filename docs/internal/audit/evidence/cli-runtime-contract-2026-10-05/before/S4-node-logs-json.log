@@ -1,0 +1,11 @@
+$ hardkas node logs --json   (cwd ws-before, DOCKER_HOST=tcp://127.0.0.1:1)
+exit=0 stdout_is_single_json=true
+--- stdout ---
+{
+  "ok": false,
+  "code": "UNKNOWN_ERROR",
+  "message": "Could not get logs for container hardkas-kaspad-toccata-v2. Is it running?",
+  "mode": "cli"
+}
+--- stderr ---
+

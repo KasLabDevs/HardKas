@@ -1,4 +1,4 @@
-import { verifyArtifactIntegrity, verifyLineage } from "@hardkas/artifacts";
+import { verifyLineage, resolveLineageChain } from "@hardkas/artifacts";
 import { UI } from "../ui.js";
 import { getOutput } from "../output.js";
 import fs from "node:fs";
@@ -24,8 +24,19 @@ export interface ArtifactLineageResult {
     sequence: number | null;
   } | null;
   orphan: boolean;
-  /** The provenance chain as the human output draws it (root → … → this artifact). */
-  chain: Array<{ role: "root" | "parent" | "here"; artifactId: string | null; schema?: string }>;
+  /**
+   * The provenance chain (root → … → this artifact) as RESOLVED in the workspace store (EVIDENCE-TRUST-1): each ancestor
+   * with what looking it up found. A chain that stops before a root ends with the link that could not be resolved.
+   */
+  chain: Array<{
+    role: "root" | "parent" | "here";
+    artifactId: string | null;
+    schema?: string;
+    status: "here" | "resolved" | "missing" | "invalid" | "unresolved";
+    detail?: string;
+  }>;
+  /** True only when every ancestor was resolved up to the declared root and every link holds. */
+  complete: boolean;
   verification: { ok: boolean; issues: Array<{ code: string; severity: string; message: string }> } | null;
   warnings: string[];
 }
@@ -57,6 +68,7 @@ export async function runArtifactLineage(options: ArtifactLineageOptions): Promi
       lineage: null,
       orphan: true,
       chain: [],
+      complete: false,
       verification: null,
       warnings: [
         "No lineage metadata found in this artifact.",
@@ -73,17 +85,45 @@ export async function runArtifactLineage(options: ArtifactLineageOptions): Promi
   }
 
   const out = getOutput();
-  const chain: ArtifactLineageResult["chain"] = [];
-  if (lineage.rootArtifactId === lineage.artifactId) {
-    chain.push({ role: "root", artifactId: lineage.artifactId ?? null, ...(schema ? { schema } : {}) });
-  } else {
-    chain.push({ role: "root", artifactId: lineage.rootArtifactId ?? null });
-    if (lineage.parentArtifactId) chain.push({ role: "parent", artifactId: lineage.parentArtifactId });
-    chain.push({ role: "here", artifactId: lineage.artifactId ?? null, ...(schema ? { schema } : {}) });
-  }
 
-  // Validation
-  const verification = verifyLineage(artifact);
+  // Validation: the internal structure, then the chain as RESOLVED in the workspace store (EVIDENCE-TRUST-1, ET-C2) —
+  // the same verified resolver `hardkas verify` uses. Provenance is complete only if that walk reached the declared root.
+  const structure = verifyLineage(artifact);
+  const resolved = resolveLineageChain(artifact, { workspaceRoot: sdk.workspace.root });
+  const stopped = resolved.links.length > 1 && resolved.links[resolved.links.length - 1]!.status !== "resolved"
+    ? resolved.links[resolved.links.length - 1]!
+    : undefined;
+  const chainIssues = [...resolved.issues];
+  if (stopped) {
+    chainIssues.unshift({
+      code: stopped.status === "missing" ? "PARENT_MISSING" : stopped.status === "invalid" ? "PARENT_INVALID" : "PARENT_UNRESOLVED",
+      severity: "error",
+      message:
+        stopped.status === "missing"
+          ? `Ancestor ${stopped.artifactId} is not in the workspace store`
+          : stopped.status === "invalid"
+            ? `Ancestor ${stopped.artifactId} is in the workspace store but does not verify as that identity${stopped.detail ? ` (${stopped.detail})` : ""}`
+            : `Ancestor ${stopped.artifactId} was not resolved${stopped.detail ? ` (${stopped.detail})` : ""}`
+    });
+  }
+  const complete = resolved.complete && !stopped;
+  const chain: ArtifactLineageResult["chain"] = resolved.links
+    .map((link, i) => ({
+      role: (resolved.links.length === 1 && !stopped
+        ? "root"
+        : i === 0
+          ? "here"
+          : i === resolved.links.length - 1 && !stopped
+            ? "root"
+            : "parent") as "root" | "parent" | "here",
+      artifactId: link.artifactId,
+      ...(link.schema ? { schema: link.schema } : {}),
+      status: link.status,
+      ...(link.detail ? { detail: link.detail } : {})
+    }))
+    .reverse();
+  const issues = [...structure.issues, ...chainIssues];
+  const ok = structure.ok && complete;
   const result: ArtifactLineageResult = {
     path: options.path,
     schema,
@@ -96,27 +136,26 @@ export async function runArtifactLineage(options: ArtifactLineageOptions): Promi
     },
     orphan: false,
     chain,
+    complete,
     verification: {
-      ok: verification.ok,
-      issues: verification.issues.map((i) => ({ code: i.code, severity: i.severity, message: i.message }))
+      ok,
+      issues: issues.map((i) => ({ code: i.code, severity: i.severity, message: i.message }))
     },
     warnings: []
   };
+  const failure = !structure.ok
+    ? { code: "LINEAGE_VIOLATIONS", message: "Lineage structure is inconsistent." }
+    : !complete
+      ? { code: "LINEAGE_INCOMPLETE", message: "The provenance chain could not be resolved in the workspace store." }
+      : undefined;
 
   if (json) {
     // One document, whatever the verdict: on violations the envelope carries the typed code
     // and the exit code comes from the error below (the top-level handler writes nothing more).
-    if (verification.ok) {
+    if (!failure) {
       out.writeJson({ ok: true, command: "artifact lineage", mode: "cli", result });
     } else {
-      out.writeJson({
-        ok: false,
-        command: "artifact lineage",
-        mode: "cli",
-        code: "LINEAGE_VIOLATIONS",
-        message: "Lineage structure is inconsistent.",
-        result
-      });
+      out.writeJson({ ok: false, command: "artifact lineage", mode: "cli", code: failure.code, message: failure.message, result });
     }
   } else {
     out.writeLine("═".repeat(60));
@@ -129,41 +168,32 @@ export async function runArtifactLineage(options: ArtifactLineageOptions): Promi
     }
     out.writeLine("═".repeat(60));
 
-    // Trace visualization (conceptual)
-    out.writeLine("\nPROVENANCE CHAIN:");
-    const lines: string[] = [];
-    if (lineage.rootArtifactId === lineage.artifactId) {
-      lines.push(`[ROOT] ${artifact.schema} (${lineage.artifactId.slice(0, 8)}...)`);
-    } else {
-      lines.push(`[ROOT] ${lineage.rootArtifactId.slice(0, 8)}...`);
-      lines.push(`  ↓    (Intermediate Artifacts)`);
-      if (lineage.parentArtifactId) {
-        lines.push(`  ↓    ${lineage.parentArtifactId.slice(0, 8)}... (Parent)`);
-      }
-      lines.push(`[HERE] ${artifact.schema} (${lineage.artifactId.slice(0, 8)}...)`);
+    out.writeLine("\nPROVENANCE CHAIN (resolved in the workspace store):");
+    for (const link of chain) {
+      const tag = link.role === "root" ? "[ROOT]" : link.role === "here" ? "[HERE]" : "  ↑   ";
+      const what =
+        link.status === "here" || link.status === "resolved"
+          ? `${link.schema ?? "artifact"} (${link.artifactId ?? "?"})`
+          : `${link.artifactId ?? "?"} — ${link.status.toUpperCase()}${link.detail ? ` (${link.detail})` : ""}`;
+      out.writeLine(`  ${tag} ${what}`);
     }
-    lines.forEach((step) => out.writeLine(`  ${step}`));
 
-    if (!verification.ok) {
-      out.writeLine("\nLineage Violations:");
-      verification.issues.forEach((i) => {
+    if (issues.length > 0) {
+      out.writeLine(complete && structure.ok ? "\nLineage warnings:" : "\nLineage Violations:");
+      issues.forEach((i) => {
         const prefix = i.severity === "error" ? "✗" : "⚠";
         out.writeLine(`  ${prefix} [${i.code}] ${i.message}`);
       });
-    } else {
-      out.writeLine("\n✓ Internal lineage structure is consistent.");
     }
-
-    UI.footer("Operational Provenance Complete");
+    if (!failure) {
+      out.writeLine("\n✓ Every ancestor was resolved and verified in the workspace store, up to the declared root.");
+      UI.footer("Operational Provenance Complete");
+    }
   }
 
-  if (!verification.ok) {
+  if (failure) {
     const { HardkasCliError } = await import("../cli-errors.js");
-    throw new HardkasCliError(
-      "LINEAGE_VIOLATIONS",
-      "Lineage structure is inconsistent.",
-      { exitCode: 1 }
-    );
+    throw new HardkasCliError(failure.code, failure.message, { exitCode: 1 });
   }
   return result;
 }

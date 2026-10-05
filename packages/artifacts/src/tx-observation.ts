@@ -1,4 +1,4 @@
-import { HardkasSchemas, finalityDepthFor } from "@hardkas/core";
+import { HardkasSchemas, finalityDepthFor, redactUrlCredentials } from "@hardkas/core";
 import type { RuntimeContext } from "@hardkas/core";
 import { ARTIFACT_VERSION, TxObservationSchema } from "./schemas.js";
 import type { TxObservation, TxObservationFinding, TxObservationPoint } from "./schemas.js";
@@ -132,7 +132,8 @@ export function createTxObservationArtifact(input: TxObservationInput, ctx: Runt
     finding: input.finding,
     evidence: input.evidence,
     observedAt: new Date(ctx.clock.now()).toISOString(),
-    ...(input.rpcUrl ? { rpcUrl: input.rpcUrl } : {}),
+    // EVIDENCE-TRUST-1 (ET-C4): the locator without its credentials (D5)
+    ...(input.rpcUrl ? { rpcUrl: redactUrlCredentials(input.rpcUrl) } : {}),
     ...(input.workflowId ? { workflowId: input.workflowId } : {}),
     ...(input.assumptionLevel ? { assumptionLevel: input.assumptionLevel } : {})
   };

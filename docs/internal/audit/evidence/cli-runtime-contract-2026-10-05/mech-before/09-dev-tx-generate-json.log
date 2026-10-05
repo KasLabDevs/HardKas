@@ -1,0 +1,28 @@
+$ hardkas dev tx generate --count 2 --json   (cwd mech-ws-before)
+exit=1 stdout_is_single_json=true
+--- stdout ---
+{
+  "ok": false,
+  "generated": 2,
+  "successCount": 0,
+  "failCount": 2,
+  "mode": "simulator",
+  "purpose": "load-test",
+  "securityModel": "mock-fixture",
+  "results": [
+    {
+      "index": 0,
+      "ok": false,
+      "result": "planned-only",
+      "planError": "OUTPUT_BELOW_STANDARD_AMOUNT: the amount 1000000 sompi is too small for a standard output from these UTXOs (storage mass above the maximum standard transaction mass). Send a larger amount. (Generator: Storage mass exceeds maximum)"
+    },
+    {
+      "index": 1,
+      "ok": false,
+      "result": "planned-only",
+      "planError": "OUTPUT_BELOW_STANDARD_AMOUNT: the amount 1100000 sompi is too small for a standard output from these UTXOs (storage mass above the maximum standard transaction mass). Send a larger amount. (Generator: Storage mass exceeds maximum)"
+    }
+  ]
+}
+--- stderr ---
+

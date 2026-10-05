@@ -10,7 +10,7 @@ import {
   KaspaRpcTransaction,
   KaspaSubmitTransactionResult
 } from "./index.js";
-import { type NetworkId } from "@hardkas/core";
+import { type NetworkId, nodeRpcUrl } from "@hardkas/core";
 import {
   RpcError,
   RpcCircuitOpenError,
@@ -73,7 +73,8 @@ export class KaspaJsonRpcClient implements KaspaRpcClient {
   private retriesCount: number = 0;
 
   constructor(options: RpcClientOptions) {
-    this.url = options.url || "http://127.0.0.1:18210";
+    // CANONICAL-RPC-URL: the canonical localnet endpoint (ws://) from @hardkas/core, never a copy.
+    this.url = options.url || nodeRpcUrl();
     this.timeoutMs = options.timeoutMs || 10000;
     this.retry = {
       maxRetries: options.retry?.maxRetries ?? 3,

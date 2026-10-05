@@ -43,6 +43,13 @@ export interface WriteArtifactResult {
   absolutePath?: string;
   dryRun: boolean;
   contentHash: string;
+  /**
+   * EVIDENCE-TRUST-1 (D2): the artifact exactly as the store holds it — the earlier copy when this identity was already
+   * published (a published identity is write-once). Absent for a dry run and for an explicit export (`outputDir`).
+   */
+  artifact?: any;
+  /** false when the store already held this identity and nothing was written. */
+  written?: boolean;
 }
 
 /**
@@ -138,6 +145,7 @@ export class HardkasArtifactsManager {
     const { ProjectArtifactStore, writeArtifact, ensureDirRespectingStore } = await import("@hardkas/artifacts");
 
     let absolutePath: string;
+    let stored: { artifact: any; written: boolean } | undefined;
     if (options.outputDir) {
       // Explicit export (through the store's gate when outputDir is in the store, ARTIFACT-MUTATION-1)
       if (!fs.existsSync(options.outputDir)) {
@@ -149,12 +157,14 @@ export class HardkasArtifactsManager {
       absolutePath = path.join(options.outputDir, fileName);
       await writeArtifact(absolutePath, artifact);
     } else {
-      // Canonical store
+      // Canonical store. EVIDENCE-TRUST-1: write-once; an identity already published is kept and returned as stored.
       const store = new ProjectArtifactStore(this.sdk.workspace.root);
-      absolutePath = await store.writeArtifact(artifact);
-      // Now on disk: memoise under its recomputed identity (IC-5′.8).
+      const published = await store.publishArtifact(artifact);
+      absolutePath = published.path;
+      stored = { artifact: published.artifact, written: published.written };
+      // Now on disk: memoise under its recomputed identity (IC-5′.8), as the store holds it.
       if (typeof record.contentHash === "string" && record.contentHash.length > 0) {
-        this.cache.set(record.contentHash, artifact);
+        this.cache.set(record.contentHash, published.artifact);
       }
     }
 
@@ -194,13 +204,14 @@ export class HardkasArtifactsManager {
 
     if (!options.bypassHooks) {
       // Intentionally not awaiting so it runs asynchronously/observational, or we await it but it's guaranteed to handle errors via plugin manager.
-      await this.sdk.plugins.onArtifactWritten({ artifact, absolutePath });
+      await this.sdk.plugins.onArtifactWritten({ artifact: stored?.artifact ?? artifact, absolutePath });
     }
 
     return {
       absolutePath,
       dryRun: false,
-      contentHash: hash
+      contentHash: hash,
+      ...(stored ? { artifact: stored.artifact, written: stored.written } : {})
     };
   }
 

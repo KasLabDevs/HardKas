@@ -1,0 +1,21 @@
+scenario	command	exit	json	expected (contract)
+00-init	init --skip-toolchain --json	0	json ok=true	exit 0 (control)
+S1-node-start-json	node start --json	0	json ok=false code=UNKNOWN_ERROR	exit!=0, code DOCKER_UNAVAILABLE, no success
+S1-node-start-human	node start	0	no json	exit!=0, [DOCKER_UNAVAILABLE], no 'started'
+S2-node-stop-human	node stop	0	no json	exit!=0, no 'Node stopped'
+S2-node-stop-json	node stop --json	0	no json	exit!=0, one envelope ok:false code DOCKER_UNAVAILABLE
+S3-node-status-json	node status --json	0	json ok=undefined	exit!=0, no docker.available:true
+S3-node-status-human	node status	0	no json	exit!=0, [DOCKER_UNAVAILABLE]
+S4-node-logs-json	node logs --json	0	json ok=false code=UNKNOWN_ERROR	exit!=0, typed code (not UNKNOWN_ERROR)
+S5-node-reset-json	node reset --yes --json	0	no json	exit!=0, chain data kept
+S6-node-restart-json	node restart --json	0	json ok=false code=UNKNOWN_ERROR	exit!=0, code DOCKER_UNAVAILABLE
+S7-dev-init-human	dev init	1	no json	exit!=0, NOT_NODE_PROJECT + 'No package.json found' (not 'Dev init failed')
+S8-replay-diff-json	replay diff aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb --json	1	json ok=false code=UNKNOWN_ERROR	exit!=0, the original message (not 'Command failed')
+S9-explain-usage-json	explain --plan aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa --signed bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb --json	1	no json	exit 2, code LOOKUP_USAGE
+S9-why-usage-human	why --plan aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa --signed bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb	0	no json	exit 2, LOOKUP_USAGE in output
+S10-rpc-info-json	rpc info --url ws://127.0.0.1:1 --json	1	json ok=false	exit!=0, json ok:false with code
+S11-rpc-health-json	rpc health --json	1	json ok=undefined	exit!=0, json ok:false code RPC_NOT_READY
+S12-lock-list-json	lock list --json	0	json ok=true	exit 0, ok:true
+S12-tx-plan-json	tx plan --from alice --to bob --amount 1 --network simulated --json	0	json ok=undefined	exit 0
+S12-node-status-real-docker	node status --json	0	json ok=undefined	exit 0 (Docker reachable, read-only inspect)
+S12-doctor-json	doctor --json	0	json ok=undefined	exit 0 or its own verdict; one JSON

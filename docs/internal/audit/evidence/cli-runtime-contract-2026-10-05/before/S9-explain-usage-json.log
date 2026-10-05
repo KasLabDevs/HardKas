@@ -1,0 +1,25 @@
+$ hardkas explain --plan aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa --signed bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb --json   (cwd ws-before)
+exit=1 stdout_is_single_json=false
+--- stdout ---
+
+--- stderr ---
+error: unknown option '--json'
+
+Usage: hardkas explain [options] [artifact]
+
+Provide a narrative causal explanation of an artifact resolved by exact
+artifactId, artifact file path, or a namespaced identifier (--plan, --signed,
+--tx, --workflow) stable
+
+Options:
+  --artifact <id-or-path>  64-hex artifactId or workspace path (same as the
+                           positional)
+  --plan <planId>          Resolve a plan by its derived label (verified
+                           against its hash)
+  --signed <signedId>      Resolve a signed transaction by its derived label
+                           (verified)
+  --tx <txId>              Resolve the submission receipt for a txId (never the
+                           signed)
+  --workflow <workflowId>  Resolve a workflow run by its correlation id
+  --workspace <path>       Override workspace root directory
+  -h, --help               display help for command

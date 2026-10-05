@@ -6,7 +6,7 @@ import {
 import { resolveHardkasAccount, HardkasAccount } from "@hardkas/accounts";
 import { ExternalHardkasSigner } from "@hardkas/artifacts";
 import { JsonWrpcKaspaClient, KaspaRpcClient } from "@hardkas/kaspa-rpc";
-import { NetworkId, HardkasError, getCoinbaseMaturity } from "@hardkas/core";
+import { NetworkId, HardkasError, getCoinbaseMaturity, nodeRpcUrl } from "@hardkas/core";
 import { assertPublicNetworkAllowed } from "./policy.js";
 import { HardkasAccounts } from "./accounts.js";
 import { HardkasTx } from "./tx.js";
@@ -251,7 +251,8 @@ export class Hardkas {
     if (target && "rpcUrl" in target && typeof target.rpcUrl === "string") {
       return target.rpcUrl;
     }
-    return "ws://127.0.0.1:18210";
+    // CANONICAL-RPC-URL: the canonical localnet endpoint from @hardkas/core, never a copy.
+    return nodeRpcUrl();
   }
 
   /**

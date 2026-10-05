@@ -16,6 +16,8 @@ describe("CLI error envelope · the code of an error", () => {
 
   afterEach(() => {
     setGlobalOutput(createCommandOutput({ mode: "human" }));
+    // CLI-RUNTIME-CONTRACT-1: handleError now records the failure in process.exitCode; keep the worker clean.
+    process.exitCode = undefined;
   });
 
   const envelope = () => JSON.parse(stdout.join(""));

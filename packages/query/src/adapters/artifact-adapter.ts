@@ -8,12 +8,17 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import {
   recomputeDeclaredContentHash,
+  readDeclaredHashVersion,
+  isAuthenticatedPath,
+  resolveParentReference,
   verifyArtifactIntegrity,
   verifyArtifactSemantics,
   verifyFeeSemantics,
   verifyLineage,
-  ARTIFACT_SCHEMAS
+  ARTIFACT_SCHEMAS,
+  CURRENT_HASH_VERSION
 } from "@hardkas/artifacts";
+import { isSecretFieldName, redactUrlCredentialsInText } from "@hardkas/core";
 import { evaluateFilters } from "../filter.js";
 import { computeQueryHash } from "../serialize.js";
 import { paginateAndFormatResult } from "../format.js";
@@ -171,9 +176,11 @@ export class ArtifactQueryAdapter implements QueryAdapter {
 
     const item = toArtifactQueryItem(raw, filePath);
 
-    // Integrity
-    const integrityResult = await verifyArtifactIntegrity(raw);
-    const semanticResult = verifyArtifactSemantics(raw, { strict: true });
+    // Integrity. EVIDENCE-TRUST-1 (ET-C2): references are looked up in the workspace store this engine serves, as
+    // `hardkas verify` does — a parent is never "not found in workspace" without the workspace being searched.
+    const integrityResult = await verifyArtifactIntegrity(raw, { workspaceRoot: this.rootDir });
+    const semanticResult = verifyArtifactSemantics(raw, { strict: true, workspaceRoot: this.rootDir });
+    const parent = resolveParentReference(raw, { workspaceRoot: this.rootDir });
     let hashMatch = true;
     if (raw.contentHash) {
       try {
@@ -213,11 +220,11 @@ export class ArtifactQueryAdapter implements QueryAdapter {
       classification: classifyStaleness(ageHours)
     };
 
-    // Lineage status
+    // Lineage status: the structure AND the parent as found in the workspace store (EVIDENCE-TRUST-1).
     const lineageResult = verifyLineage(raw);
     const lineageStatus = !raw.lineage
       ? ("missing" as const)
-      : lineageResult.ok
+      : lineageResult.ok && (parent.status === "resolved" || parent.status === "root")
         ? ("valid" as const)
         : ("orphan" as const);
 
@@ -236,7 +243,12 @@ export class ArtifactQueryAdapter implements QueryAdapter {
       },
       economics,
       staleness,
-      lineageStatus
+      lineageStatus,
+      parent: {
+        status: parent.status,
+        ...(parent.artifactId ? { artifactId: parent.artifactId } : {}),
+        ...(parent.detail ? { detail: parent.detail } : {})
+      }
     };
 
     let why: WhyBlock[] | undefined;
@@ -279,30 +291,24 @@ export class ArtifactQueryAdapter implements QueryAdapter {
     if (!leftRaw) throw new Error(`Cannot read left artifact: ${leftPath}`);
     if (!rightRaw) throw new Error(`Cannot read right artifact: ${rightPath}`);
 
+    // EVIDENCE-TRUST-1 (ET-C3): the comparison of two pieces of evidence decides on their RAW values, every field
+    // included — `lineage`, `artifactId` and `contentHash` too (lineage is authenticated under hash version 5). Each
+    // difference says whether the content hash covers it; `sameIdentity` compares the recomputed identities. This is not
+    // the replay comparison (diffArtifacts), whose exclusions are deliberate for replay.
+    const versions = [readDeclaredHashVersion(leftRaw), readDeclaredHashVersion(rightRaw)].filter(
+      (v): v is number => v !== null
+    );
     const entries: ArtifactDiffEntry[] = [];
-    const allKeys = new Set([...Object.keys(leftRaw), ...Object.keys(rightRaw)]);
-
-    // Exclude computed fields from diff
-    const excluded = new Set(["contentHash", "artifactId", "lineage"]);
-
-    for (const key of [...allKeys].sort()) {
-      if (excluded.has(key)) continue;
-
-      const leftVal = leftRaw[key];
-      const rightVal = rightRaw[key];
-      const leftStr = leftVal !== undefined ? JSON.stringify(leftVal) : undefined;
-      const rightStr = rightVal !== undefined ? JSON.stringify(rightVal) : undefined;
-
-      if (leftStr === rightStr) continue;
-
-      let kind: ArtifactDiffEntry["kind"];
-      if (leftStr === undefined) kind = "added";
-      else if (rightStr === undefined) kind = "removed";
-      else if (typeof leftVal !== typeof rightVal) kind = "type-change";
-      else kind = "value-change";
-
-      entries.push({ field: key, left: leftStr, right: rightStr, kind });
-    }
+    diffEvidence(leftRaw, rightRaw, [], "", entries, versions.length > 0 ? versions : [CURRENT_HASH_VERSION], false);
+    const identityOf = (a: unknown): string | null => {
+      try {
+        return recomputeDeclaredContentHash(a);
+      } catch {
+        return null;
+      }
+    };
+    const leftIdentity = identityOf(leftRaw);
+    const rightIdentity = identityOf(rightRaw);
 
     const result: ArtifactDiffResult = {
       leftPath,
@@ -310,6 +316,9 @@ export class ArtifactQueryAdapter implements QueryAdapter {
       leftSchema: leftRaw.schema || "unknown",
       rightSchema: rightRaw.schema || "unknown",
       identical: entries.length === 0,
+      sameIdentity: leftIdentity !== null && leftIdentity === rightIdentity,
+      leftIdentity,
+      rightIdentity,
       entries
     };
 
@@ -429,6 +438,89 @@ export class ArtifactQueryAdapter implements QueryAdapter {
     // Stable tie-breaker: contentHash (determinism guarantee)
     return sorted;
   }
+}
+
+// ---------------------------------------------------------------------------
+// Evidence diff (EVIDENCE-TRUST-1, ET-C3)
+// ---------------------------------------------------------------------------
+
+/** A field named as a secret, compared without case and without "_" or "-". */
+const isSecretName = (key: string) => isSecretFieldName(key.toLowerCase().replace(/[_-]/g, ""));
+
+const isPlainObject = (v: unknown): v is Record<string, unknown> =>
+  typeof v === "object" && v !== null && !Array.isArray(v);
+
+const typeName = (v: unknown) => (v === null ? "null" : Array.isArray(v) ? "array" : typeof v);
+
+function holdsSecretField(value: unknown): boolean {
+  if (Array.isArray(value)) return value.some(holdsSecretField);
+  if (!isPlainObject(value)) return false;
+  return Object.keys(value).some((k) => isSecretName(k) || holdsSecretField(value[k]));
+}
+
+/** A value as shown in a difference: its strings with URL credentials redacted (the raw values were compared). */
+function shown(value: unknown): string | undefined {
+  if (value === undefined) return undefined;
+  const redact = (v: unknown): unknown =>
+    typeof v === "string"
+      ? redactUrlCredentialsInText(v)
+      : Array.isArray(v)
+        ? v.map(redact)
+        : isPlainObject(v)
+          ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, redact(x)]))
+          : v;
+  return JSON.stringify(redact(value));
+}
+
+/**
+ * Records every difference between two JSON values, path by path, deciding on the raw values. A difference inside a
+ * field named as a secret carries no values; values holding URL credentials are shown redacted.
+ */
+function diffEvidence(
+  left: unknown,
+  right: unknown,
+  canonicalPath: Array<string | null>,
+  displayPath: string,
+  entries: ArtifactDiffEntry[],
+  versions: number[],
+  inSecret: boolean
+): void {
+  if (left === right) return;
+  if (isPlainObject(left) && isPlainObject(right)) {
+    const keys = [...new Set([...Object.keys(left), ...Object.keys(right)])].sort();
+    for (const key of keys) {
+      diffEvidence(
+        left[key],
+        right[key],
+        [...canonicalPath, key],
+        displayPath ? `${displayPath}.${key}` : key,
+        entries,
+        versions,
+        inSecret || isSecretName(key)
+      );
+    }
+    return;
+  }
+  if (Array.isArray(left) && Array.isArray(right)) {
+    const n = Math.max(left.length, right.length);
+    for (let i = 0; i < n; i++) {
+      diffEvidence(left[i], right[i], [...canonicalPath, null], `${displayPath}[${i}]`, entries, versions, inSecret);
+    }
+    return;
+  }
+  if (typeName(left) === typeName(right) && JSON.stringify(left) === JSON.stringify(right)) return;
+  const kind: ArtifactDiffEntry["kind"] =
+    left === undefined ? "added" : right === undefined ? "removed" : typeName(left) !== typeName(right) ? "type-change" : "value-change";
+  const authenticated = versions.some((v) => isAuthenticatedPath(canonicalPath, v));
+  if (inSecret || holdsSecretField(left) || holdsSecretField(right)) {
+    entries.push({ field: displayPath, left: undefined, right: undefined, kind, authenticated, secret: true });
+    return;
+  }
+  const l = shown(left);
+  const r = shown(right);
+  const redacted =
+    (left !== undefined && l !== JSON.stringify(left)) || (right !== undefined && r !== JSON.stringify(right));
+  entries.push({ field: displayPath, left: l, right: r, kind, authenticated, ...(redacted ? { redacted: true as const } : {}) });
 }
 
 // ---------------------------------------------------------------------------

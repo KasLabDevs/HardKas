@@ -1,0 +1,11 @@
+$ hardkas accounts balance alice --json   (cwd mech-ws-before)
+exit=1 stdout_is_single_json=true
+--- stdout ---
+{
+  "ok": false,
+  "code": "UNKNOWN_ERROR",
+  "message": "Cannot connect to Kaspa RPC at ws://127.0.0.1:18210. Is kaspad running with --rpclisten-json? (wRPC -> WebSocket -> Unable to connect to ws://127.0.0.1:18210)",
+  "mode": "cli"
+}
+--- stderr ---
+

@@ -65,8 +65,9 @@ export function registerChaosCommands(program: Command) {
         await replayChaosRun(options);
       } catch (err: unknown) {
         if ((err as any).exitCode !== undefined) throw err;
+        // CLI-RUNTIME-CONTRACT-1: rendered once here, rethrown as itself (code and context kept).
         handleError(err);
-        throw new Error("Chaos Internal Failure");
+        throw err;
       }
     });
 }
@@ -113,7 +114,8 @@ async function enforceSafetyGuards(options: any) {
           };
         }
       } catch (e: unknown) {
-        if ((e as any).exitCode) throw new Error("Command failed"); // bubble up
+        // bubble the refusal up as itself, so its exit code (UNSAFE_CONFIG_REFUSED) survives
+        if ((e as any).exitCode) throw e;
         // File doesn't exist, which is good
       }
     }

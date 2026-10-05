@@ -1,6 +1,8 @@
 import { KaspaJsonRpcClient } from "./json-rpc-client.js";
 import { KaspaWrpcClient } from "./wrpc-client.js";
 import { RpcHealthState } from "./resilience.js";
+// CANONICAL-RPC-URL: the canonical localnet endpoint from @hardkas/core, never a copy.
+import { nodeRpcUrl } from "@hardkas/core";
 
 export interface RpcHealthCheckOptions {
   readonly url?: string | undefined;
@@ -34,7 +36,7 @@ export interface RpcHealthResult {
 export async function checkKaspaRpcHealth(
   options?: RpcHealthCheckOptions
 ): Promise<RpcHealthResult> {
-  const url = options?.url || "ws://127.0.0.1:18210";
+  const url = options?.url || nodeRpcUrl();
   const checkedAt = new Date().toISOString();
   const timeoutMs = options?.timeoutMs || 2000;
 
@@ -148,8 +150,8 @@ export async function waitForKaspaRpcReady(
 
   return (
     lastResult || {
-      endpoint: options?.url || "ws://127.0.0.1:18210",
-      protocol: (options?.url || "ws://127.0.0.1:18210").startsWith("ws")
+      endpoint: options?.url || nodeRpcUrl(),
+      protocol: (options?.url || nodeRpcUrl()).startsWith("ws")
         ? "WebSocket"
         : "JSON-RPC",
       status: "unreachable",

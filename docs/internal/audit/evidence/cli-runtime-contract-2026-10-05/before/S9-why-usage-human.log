@@ -1,0 +1,23 @@
+$ hardkas why --plan aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa --signed bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb   (cwd ws-before)
+exit=0 stdout_is_single_json=false
+--- stdout ---
+
+--- stderr ---
+
+  ✗ Usage
+
+  Cause:
+    Pass exactly one target (got plan=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa, signed=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb)
+
+  Invariant Violated:
+    identity contract
+
+  Consequence:
+    one target per call
+
+  Remediation:
+    pass an artifactId, a path, or exactly one of --plan/--signed/--tx/--workflow
+
+
+  ✗ Error:
+    Why Error: Command failed

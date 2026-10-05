@@ -1,3 +1,10 @@
+import { redactUrlCredentialsInText } from "@hardkas/core";
+
+// EVIDENCE-TRUST-1 (ET-C5): this is the presentation boundary of the CLI. Every line and every JSON document it writes
+// has the credentials carried by URLs redacted (userinfo removed, secret-named query values replaced by a marker —
+// core's `redactUrlCredentialsInText`). Redaction happens here, at presentation only: it never takes part in an
+// identity, an equality, a verification or a replay decision, all of which see the raw values.
+
 export type OutputMode = "human" | "json" | "silent";
 
 export interface CommandOutputOptions {
@@ -17,8 +24,10 @@ export interface CommandOutput {
 }
 
 export function createCommandOutput(options: CommandOutputOptions): CommandOutput {
-  const stdout = options.stdout || process.stdout;
-  const stderr = options.stderr || process.stderr;
+  const rawStdout = options.stdout || process.stdout;
+  const rawStderr = options.stderr || process.stderr;
+  const stdout = { write: (message: string) => rawStdout.write(redactUrlCredentialsInText(message)) };
+  const stderr = { write: (message: string) => rawStderr.write(redactUrlCredentialsInText(message)) };
   const mode = options.mode;
 
   return {
@@ -41,7 +50,8 @@ export function createCommandOutput(options: CommandOutputOptions): CommandOutpu
     },
     jsonWritten: false,
     writeJson(value: unknown): void {
-      const replacer = (k: string, v: unknown) => typeof v === "bigint" ? v.toString() : v;
+      const replacer = (k: string, v: unknown) =>
+        typeof v === "bigint" ? v.toString() : typeof v === "string" ? redactUrlCredentialsInText(v) : v;
       if (mode === "human") {
         stdout.write(JSON.stringify(value, replacer, 2) + "\n");
       } else if (mode === "json") {
@@ -74,4 +84,22 @@ export function setGlobalOutput(out: CommandOutput) {
 
 export function getOutput(): CommandOutput {
   return globalOutput;
+}
+
+const CONSOLE_GUARD = Symbol.for("@hardkas/cli/console-url-redaction.v1");
+
+/**
+ * EVIDENCE-TRUST-1 (ET-C5): the same presentation boundary for what the CLI process prints straight to the console —
+ * printers that do not go through `getOutput()`, and servers it hosts in-process (the dev server's access log). String
+ * arguments have their URL credentials redacted; nothing else changes. Installed once, by the CLI entry point only.
+ */
+export function installConsoleRedaction(): void {
+  const c = console as any;
+  if (c[CONSOLE_GUARD]) return;
+  for (const method of ["log", "info", "warn", "error", "debug"] as const) {
+    const original = c[method].bind(console);
+    c[method] = (...args: unknown[]) =>
+      original(...args.map((a) => (typeof a === "string" ? redactUrlCredentialsInText(a) : a)));
+  }
+  c[CONSOLE_GUARD] = true;
 }

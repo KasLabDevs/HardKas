@@ -1,0 +1,11 @@
+$ hardkas replay diff aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb --json   (cwd ws-before)
+exit=1 stdout_is_single_json=true
+--- stdout ---
+{
+  "ok": false,
+  "code": "UNKNOWN_ERROR",
+  "message": "Command failed",
+  "mode": "cli"
+}
+--- stderr ---
+

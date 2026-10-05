@@ -1,0 +1,9 @@
+$ hardkas dev init   (cwd empty-before)
+exit=1 stdout_is_single_json=false
+--- stdout ---
+
+  ═══ HardKAS dApp Initialization ═══
+--- stderr ---
+
+  ✗ Error:
+    Dev init failed

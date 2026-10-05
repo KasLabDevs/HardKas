@@ -87,7 +87,8 @@ export async function runAccountsConsolidate(options: AccountsConsolidateOptions
       (err as any).code = "RPC_CONNECTION_FAILED";
       throw err;
     }
-    throw new Error("Command failed");
+    // CLI-RUNTIME-CONTRACT-1: the original error (and its code) is the one reported.
+    throw e;
   }
 
   if (options.minUtxo) {

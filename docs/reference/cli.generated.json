@@ -262,8 +262,8 @@
           "options": [
             {
               "flags": "--network <name>",
-              "description": "Kaspa network name",
-              "default": "simnet",
+              "description": "Kaspa network name (default: the workspace's default target)",
+              "default": null,
               "required": true,
               "mandatory": false
             },
@@ -1624,11 +1624,11 @@
               "path": "hardkas dev accounts export",
               "name": "export",
               "aliases": [],
-              "description": "Export dev account in format suitable for Kasware manual import",
-              "usage": "hardkas dev accounts export [options] <kasware>",
+              "description": "Export a dev account for a wallet's manual import; format: kasware",
+              "usage": "hardkas dev accounts export [options] <format>",
               "arguments": [
                 {
-                  "name": "kasware",
+                  "name": "format",
                   "description": ""
                 }
               ],
@@ -1978,10 +1978,18 @@
           "path": "hardkas env check",
           "name": "check",
           "aliases": [],
-          "description": "Validate the .env file against known HardKAS production variables",
+          "description": "Check the HARDKAS_* environment variables (process and .env): the ones HardKAS honours, and any it does not know",
           "usage": "hardkas env check [options]",
           "arguments": [],
-          "options": [],
+          "options": [
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
           "subcommands": []
         }
       ]

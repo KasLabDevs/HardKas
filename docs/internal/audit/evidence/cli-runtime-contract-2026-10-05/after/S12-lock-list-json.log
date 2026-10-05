@@ -1,0 +1,11 @@
+$ hardkas lock list --json   (cwd ws-after)
+exit=0 stdout_is_single_json=true
+--- stdout ---
+{
+  "ok": true,
+  "command": "lock list",
+  "mode": "cli",
+  "result": []
+}
+--- stderr ---
+

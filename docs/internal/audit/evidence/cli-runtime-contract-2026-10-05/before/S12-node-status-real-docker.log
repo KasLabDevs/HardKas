@@ -1,0 +1,59 @@
+$ hardkas node status --json   (cwd ws-before)
+exit=0 stdout_is_single_json=true
+--- stdout ---
+{
+  "schema": "hardkas.nodeStatus.v1",
+  "docker": {
+    "available": true,
+    "daemonReady": true
+  },
+  "container": {
+    "exists": true,
+    "running": false,
+    "name": "hardkas-kaspad-toccata-v2",
+    "image": "kaspanet/rusty-kaspad:v2.1.0@sha256:f85da74b9514584451f83a2cbea3aa93f700248302fe7e3e0ab17288f93c905b"
+  },
+  "rpc": {
+    "url": "http://127.0.0.1:18210",
+    "ready": false,
+    "lastError": null,
+    "transports": {
+      "grpc": {
+        "port": 16210,
+        "ready": false
+      },
+      "borsh": {
+        "port": 17210,
+        "ready": false
+      },
+      "json": {
+        "port": 18210,
+        "ready": false,
+        "url": "http://127.0.0.1:18210"
+      }
+    }
+  },
+  "ports": [
+    {
+      "protocol": "grpc",
+      "host": "127.0.0.1",
+      "port": 16210,
+      "ready": false
+    },
+    {
+      "protocol": "borsh",
+      "host": "127.0.0.1",
+      "port": 17210,
+      "ready": false
+    },
+    {
+      "protocol": "json",
+      "host": "127.0.0.1",
+      "port": 18210,
+      "ready": false
+    }
+  ],
+  "dataDir": ".hardkas\\kaspad"
+}
+--- stderr ---
+

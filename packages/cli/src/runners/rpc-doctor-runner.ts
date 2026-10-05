@@ -183,7 +183,8 @@ export async function runRpcDoctor(options: RpcDoctorOptions) {
     if (networkObj && typeof networkObj.rpcUrl === "string") {
       endpoints = [networkObj.rpcUrl];
     } else {
-      endpoints = ["ws://127.0.0.1:18210"];
+      const { nodeRpcUrl } = await import("@hardkas/core");
+      endpoints = [nodeRpcUrl()];
     }
   }
 

@@ -1,6 +1,10 @@
 import { Command } from "commander";
 import { UI } from "../ui.js";
 
+// CLI-RUNTIME-CONTRACT-1: the runners' own errors (and their codes) reach the top-level renderer
+// unchanged. The former `catch (e) { throw new Error("Dev … failed") }` wrappers destroyed them
+// (a NOT_NODE_PROJECT became "Dev init failed" / UNKNOWN_ERROR).
+
 export function registerDevCommands(program: Command) {
   const devCmd = program
     .command("dev")
@@ -12,24 +16,16 @@ export function registerDevCommands(program: Command) {
     )
     .option("--headless", "Run headlessly (no UI open)", false)
     .action(async (options: any) => {
-      try {
-        const { runDevEnv } = await import("../runners/dev-env-runner.js");
-        await runDevEnv(options);
-      } catch (e) {
-        throw new Error("Dev environment bootstrap failed");
-      }
+      const { runDevEnv } = await import("../runners/dev-env-runner.js");
+      await runDevEnv(options);
     });
 
   devCmd
     .command("create <name>")
     .description(`Create a new dApp project from a template ${UI.maturity("stable")}`)
     .action(async (name: string) => {
-      try {
-        const { runDevCreate } = await import("../runners/dev-create-runner.js");
-        await runDevCreate(name);
-      } catch (e) {
-        throw new Error("Dev create failed");
-      }
+      const { runDevCreate } = await import("../runners/dev-create-runner.js");
+      await runDevCreate(name);
     });
 
   devCmd
@@ -38,12 +34,8 @@ export function registerDevCommands(program: Command) {
       `Initialize dApp support in the current workspace ${UI.maturity("stable")}`
     )
     .action(async () => {
-      try {
-        const { runDevInit } = await import("../runners/dev-init-runner.js");
-        await runDevInit();
-      } catch (e) {
-        throw new Error("Dev init failed");
-      }
+      const { runDevInit } = await import("../runners/dev-init-runner.js");
+      await runDevInit();
     });
 
   devCmd
@@ -56,12 +48,8 @@ export function registerDevCommands(program: Command) {
     .option("--json", "Output as JSON")
     .option("--release", "Run strict release gate checks")
     .action(async (options: any) => {
-      try {
-        const { runDevDoctor } = await import("../runners/dev-doctor-runner.js");
-        await runDevDoctor(options);
-      } catch (e) {
-        throw new Error("Dev doctor failed");
-      }
+      const { runDevDoctor } = await import("../runners/dev-doctor-runner.js");
+      await runDevDoctor(options);
     });
 
 
@@ -86,10 +74,18 @@ export function registerDevCommands(program: Command) {
     });
 
   accountsCmd
-    .command("export kasware")
-    .description("Export dev account in format suitable for Kasware manual import")
+    .command("export <format>")
+    .description("Export a dev account for a wallet's manual import; format: kasware")
     .option("--alias <alias>", "Alias to export", "alice")
-    .action(async (options: any) => {
+    .action(async (format: string, options: any) => {
+      // #8/#33: `.command("export kasware")` made "kasware" a positional the action received as its
+      // options, so `--alias` was always undefined ("alias 'undefined' not found", exit 0).
+      if (format !== "kasware") {
+        const { HardkasCliError, HardkasExitCode } = await import("../cli-errors.js");
+        throw new HardkasCliError("DEV_EXPORT_FORMAT_UNKNOWN", `Unknown export format '${format}': the only format is kasware`, {
+          exitCode: HardkasExitCode.USAGE_ERROR
+        });
+      }
       const { runDevAccountsExport } = await import("../runners/dev-accounts-runners.js");
       await runDevAccountsExport(options.alias);
     });
@@ -132,15 +128,10 @@ export function registerDevCommands(program: Command) {
     .option("--out <path>", "Save fixture as JSON to this file")
     .option("--json", "Output as JSON", false)
     .action(async (options: any) => {
-      try {
-        if (options.json) UI.setJsonMode(true);
-        const { runDevFixtureGenerate } =
-          await import("../runners/dev-fixture-generate-runner.js");
-        await runDevFixtureGenerate(options);
-      } catch (e) {
-        if (e instanceof Error) throw e;
-        throw new Error("Dev fixture generate failed");
-      }
+      if (options.json) UI.setJsonMode(true);
+      const { runDevFixtureGenerate } =
+        await import("../runners/dev-fixture-generate-runner.js");
+      await runDevFixtureGenerate(options);
     });
 
   devCmd
@@ -151,12 +142,8 @@ export function registerDevCommands(program: Command) {
     .option("--explain", "Explain the latest workflow", false)
     .option("--workspace <path>", "Override workspace root directory")
     .action(async (options: any) => {
-      try {
-        if (options.workspace) options.workspaceRoot = options.workspace;
-        const { runDevLast } = await import("../runners/dev-last-runner.js");
-        await runDevLast(options);
-      } catch (e) {
-        throw new Error("Dev last failed");
-      }
+      if (options.workspace) options.workspaceRoot = options.workspace;
+      const { runDevLast } = await import("../runners/dev-last-runner.js");
+      await runDevLast(options);
     });
 }

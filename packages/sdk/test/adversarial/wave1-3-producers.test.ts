@@ -12,8 +12,9 @@ import { calculateContentHash, CURRENT_HASH_VERSION, verifyArtifactIntegritySync
 //   R-iii part 1   a real `send` records an immutable hardkas.txSubmission.v1:
 //                  authenticated reference to the signed (by artifactId), the txId the
 //                  node returned and the submit result; NO post-send state. The endpoint
-//                  normalisation is ARCHITECTURE_BLOCKED: the raw locator stays in the
-//                  unauthenticated `rpcUrl`, no `endpoint` field is written;
+//                  normalisation is ARCHITECTURE_BLOCKED: the locator stays in the
+//                  unauthenticated `rpcUrl` (without its credentials, EVIDENCE-TRUST-1),
+//                  no `endpoint` field is written;
 //   D-Q1.f         sdk.artifacts.migrate re-issues a legacy artifact as v5 plus a receipt,
 //                  never rewriting the source.
 
@@ -123,8 +124,9 @@ describe("Wave 1.3 · SDK producers", () => {
     for (const forbidden of ["status", "confirmedAt", "dagContext", "acceptingBlockHash", "confirmations", "observedAtDaaScore", "endpoint"]) {
       expect(submission, forbidden).not.toHaveProperty(forbidden);
     }
-    // The raw locator is unauthenticated (ratified `rpcUrl`); the endpoint normalisation is blocked.
-    expect(submission.rpcUrl).toBe("http://127.0.0.1:16110/?token=secret");
+    // The locator is unauthenticated (ratified `rpcUrl`); the endpoint normalisation is blocked. EVIDENCE-TRUST-1 (D5):
+    // it is recorded without its credentials — the secret-named query value is replaced by a marker, the rest kept.
+    expect(submission.rpcUrl).toBe("http://127.0.0.1:16110/?token=REDACTED");
     expect(calculateContentHash({ ...submission, rpcUrl: "redacted" }, CURRENT_HASH_VERSION)).toBe(submission.contentHash);
     // The reference and the result ARE authenticated.
     expect(calculateContentHash({ ...submission, signedArtifactId: "0".repeat(64) }, CURRENT_HASH_VERSION)).not.toBe(submission.contentHash);

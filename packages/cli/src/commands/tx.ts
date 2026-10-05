@@ -2,6 +2,7 @@ import { getOutput } from "../output.js";
 import { Command } from "commander";
 import { errorCodeOf, handleError, UI } from "../ui.js";
 import { bigIntReplacer } from "@hardkas/artifacts";
+import { nodeRpcUrl } from "@hardkas/core";
 import { runTxProfile } from "../runners/tx-profile-runner.js";
 import { runTxPlan } from "../runners/tx-plan-runner.js";
 import { runTxSign } from "../runners/tx-sign-runner.js";
@@ -149,7 +150,7 @@ export function registerTxCommands(program: Command) {
     .option("--fee-rate <sompiPerMass>", "Whole sompi per gram of mass (default: 1 in the simulator, 100 on real networks; not a live estimate)")
     .option("--change <accountOrAddress>", "Change destination (account name or address); default: the sender")
     .option("--provider <type>", "Provider mode (auto, rpc, simulated)", "auto")
-    .option("--url <url>", "Node wRPC URL (default: ws://127.0.0.1:18210 for simnet and devnet; the config's rpcUrl is not used)")
+    .option("--url <url>", `Node wRPC URL (default: ${nodeRpcUrl()} for simnet and devnet; the config's rpcUrl is not used)`)
     .option("--out <path>", "Save plan as artifact JSON")
     .option("--save <path>", "Alias for --out (Save plan as artifact JSON)")
     .option("--workflow-id <id>", "Optional deterministic workflow ID override")
@@ -804,10 +805,13 @@ export function registerTxCommands(program: Command) {
               );
             }
           } else {
-            getOutput().error(
-              "Provide a path to a signed artifact or use --from, --to, --amount."
+            // CLI-RUNTIME-CONTRACT-1: a usage error with its code and exit code (was an untyped "Command failed").
+            const { HardkasCliError, HardkasExitCode } = await import("../cli-errors.js");
+            throw new HardkasCliError(
+              "TX_SEND_USAGE",
+              "Provide a path to a signed artifact or use --from, --to, --amount.",
+              { exitCode: HardkasExitCode.USAGE_ERROR }
             );
-            throw new Error("Command failed");
           }
         } catch (e) {
           throw e;

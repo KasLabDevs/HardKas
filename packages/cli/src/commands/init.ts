@@ -2,6 +2,7 @@ import type { Command } from "commander";
 import { UI, handleError } from "../ui.js";
 import { runUp } from "../runners/up-runner.js";
 import { hardkasScaffoldDependencySpec } from "../lib/scaffold-versions.js";
+import { nodeRpcUrl } from "@hardkas/core";
 
 /**
  * E39 · The generated test, signing and planning load the kaspa-wasm this
@@ -191,7 +192,7 @@ export default defineHardkasConfig({
     simnet: {
       kind: "kaspa-node",
       network: "simnet",
-      rpcUrl: "ws://127.0.0.1:18210",
+      rpcUrl: "${nodeRpcUrl()}",
       description: "Local Docker kaspad on simnet — requires hardkas node start"
     }
   }
@@ -326,10 +327,8 @@ scenario("payment flow", async ({ hk }) => {
     )
     .option("--json", "Output results as JSON", false)
     .action(async () => {
-      try {
-        await runUp();
-      } catch (e) {
-        throw new Error("Bootstrap failed");
-      }
+      // CLI-RUNTIME-CONTRACT-1: the runner's own error (and its code) reaches the top-level renderer
+      // unchanged; the former `throw new Error("Bootstrap failed")` destroyed it.
+      await runUp();
     });
 }

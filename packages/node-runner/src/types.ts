@@ -44,4 +44,9 @@ export interface KaspadNodeStatus {
     };
   };
   readonly lastError?: string | null;
+  /**
+   * Set by `stop()`: true when a container of this runner existed and was stopped and removed,
+   * false when there was nothing to stop. Never claimed when Docker could not be asked.
+   */
+  readonly stopped?: boolean;
 }

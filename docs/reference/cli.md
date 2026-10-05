@@ -50,7 +50,7 @@ hardkas accounts balance [options] <identifier>
 
 | Flag | Description | Default |
 | :--- | :--- | :--- |
-| `--network <name>` | Kaspa network name | simnet |
+| `--network <name>` | Kaspa network name (default: the workspace's default target) |  |
 | `--provider <type>` | Provider mode (auto, rpc, simulated) | auto |
 | `--url <url>` | RPC URL (optional override) |  |
 | `--local` | Read the simulator state file (.hardkas/localnet.json) instead of a node | false |
@@ -1172,12 +1172,12 @@ No arguments.
 
 ## hardkas dev accounts export
 
-Export dev account in format suitable for Kasware manual import
+Export a dev account for a wallet's manual import; format: kasware
 
 ### Usage
 
 ```bash
-hardkas dev accounts export [options] <kasware>
+hardkas dev accounts export [options] <format>
 ```
 
 ### Options
@@ -1190,7 +1190,7 @@ hardkas dev accounts export [options] <kasware>
 
 | Argument | Description |
 | :--- | :--- |
-| `kasware` |  |
+| `format` |  |
 
 ---
 
@@ -1506,7 +1506,7 @@ No arguments.
 
 ## hardkas env check
 
-Validate the .env file against known HardKAS production variables
+Check the HARDKAS_* environment variables (process and .env): the ones HardKAS honours, and any it does not know
 
 ### Usage
 
@@ -1516,7 +1516,9 @@ hardkas env check [options]
 
 ### Options
 
-No options.
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--json` | Output as JSON | false |
 
 ### Arguments
 

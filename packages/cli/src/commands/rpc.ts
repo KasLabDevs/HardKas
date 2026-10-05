@@ -6,7 +6,10 @@ import { runRpcDag } from "../runners/rpc-dag-runner.js";
 import { runRpcUtxos } from "../runners/rpc-utxos-runner.js";
 import { runRpcMempool } from "../runners/rpc-mempool-runner.js";
 
-const URL_OPTION = "Node wRPC endpoint (default: the canonical localnet, ws://127.0.0.1:18210)";
+import { nodeRpcUrl } from "@hardkas/core";
+
+// CANONICAL-RPC-URL: the help names the endpoint @hardkas/core declares canonical, never a copy.
+const URL_OPTION = `Node wRPC endpoint (default: the canonical localnet, ${nodeRpcUrl()})`;
 
 export function registerRpcCommands(program: Command) {
   const rpcCmd = program.command("rpc").description("Kaspa RPC diagnostics and queries");
@@ -20,18 +23,24 @@ export function registerRpcCommands(program: Command) {
       const { getOutput } = await import("../output.js");
       const res = await runRpcInfo({ url: options.url });
       if (options.json) {
-        getOutput().writeJson(res.info ? { ok: true, url: res.url, info: res.info } : { ok: false, url: res.url, error: res.error });
+        getOutput().writeJson(
+          res.info
+            ? { ok: true, url: res.url, info: res.info }
+            : { ok: false, code: "RPC_INFO_UNAVAILABLE", url: res.url, error: res.error, message: res.error }
+        );
       } else {
         getOutput().writeLine(res.formatted);
       }
       if (!res.info) {
-        throw new Error("Command failed");
+        // CLI-RUNTIME-CONTRACT-1: the verdict is typed (was an untyped "Command failed").
+        const { HardkasCliError } = await import("../cli-errors.js");
+        throw new HardkasCliError("RPC_INFO_UNAVAILABLE", `The node at ${res.url} did not answer: ${res.error ?? "unknown error"}`, { exitCode: 1 });
       }
     });
 
   rpcCmd
     .command("health")
-    .description("Check that the canonical localnet node (ws://127.0.0.1:18210) answers and is ready")
+    .description(`Check that the canonical localnet node (${nodeRpcUrl()}) answers and is ready`)
     .option("--wait", "Wait until healthy")
     .option("--timeout <ms>", "With --wait: how long to wait in ms (default: 60000)")
     .option("--json", "Output as JSON", false)
@@ -43,12 +52,17 @@ export function registerRpcCommands(program: Command) {
           timeout: options.timeout ? parseInt(options.timeout, 10) / 1000 : 60
         });
         if (options.json) {
-          getOutput().writeJson(res.result);
+          // CLI-RUNTIME-CONTRACT-1: the verdict carries `ok` (and a code when not ready); the
+          // health fields are unchanged.
+          getOutput().writeJson(
+            res.result.ready ? { ok: true, ...res.result } : { ok: false, code: "RPC_NOT_READY", ...res.result }
+          );
         } else {
           getOutput().writeLine(res.formatted);
         }
         if (!res.result.ready) {
-          throw new Error("Command failed");
+          const { HardkasCliError } = await import("../cli-errors.js");
+          throw new HardkasCliError("RPC_NOT_READY", `The Kaspa RPC at ${res.result.endpoint ?? "the configured endpoint"} is not ready`, { exitCode: 1 });
         }
       } catch (e) {
         throw e;

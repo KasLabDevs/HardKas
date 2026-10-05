@@ -4,6 +4,7 @@ import {
   RpcHealthResult
 } from "@hardkas/kaspa-rpc";
 import { classifyRpcError, humanReadableRpcError } from "../cli-errors.js";
+import { nodeRpcUrl } from "@hardkas/core";
 
 export interface RpcHealthRunnerOptions {
   url?: string;
@@ -22,7 +23,7 @@ export async function runRpcHealth(options: RpcHealthRunnerOptions): Promise<{
 
   if (options.wait) {
     console.log(
-      `Waiting for Kaspa RPC at ${options.url || "http://127.0.0.1:18210"} ...`
+      `Waiting for Kaspa RPC at ${options.url || nodeRpcUrl()} ...`
     );
     result = await waitForKaspaRpcReady({
       url: options.url,

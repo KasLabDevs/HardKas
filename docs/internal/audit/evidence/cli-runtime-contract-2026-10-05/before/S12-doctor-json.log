@@ -1,0 +1,98 @@
+$ hardkas doctor --json   (cwd ws-before)
+exit=0 stdout_is_single_json=true
+--- stdout ---
+{
+  "version": "0.12.0-rc.26",
+  "timestamp": "2026-10-04T22:45:42.119Z",
+  "checks": [
+    {
+      "name": "Node.js version",
+      "category": "runtime",
+      "status": "pass",
+      "message": "v24.15.0 (>= 18 required)"
+    },
+    {
+      "name": "pnpm",
+      "category": "runtime",
+      "status": "pass",
+      "message": "v11.1.3"
+    },
+    {
+      "name": ".hardkas/ directory",
+      "category": "persistence",
+      "status": "pass",
+      "message": "Exists and is active"
+    },
+    {
+      "name": ".gitignore protection",
+      "category": "persistence",
+      "status": "pass",
+      "message": "Contains .hardkas/"
+    },
+    {
+      "name": "store.db accessibility",
+      "category": "persistence",
+      "status": "warn",
+      "message": "store.db not found",
+      "suggestion": "Run 'hardkas query store rebuild' to populate the index."
+    },
+    {
+      "name": "Workspace locks",
+      "category": "persistence",
+      "status": "pass",
+      "message": "No active or stale locks found"
+    },
+    {
+      "name": "Events Ledger Stream",
+      "category": "persistence",
+      "status": "skip",
+      "message": "Stream not found"
+    },
+    {
+      "name": "Telemetry Stream",
+      "category": "persistence",
+      "status": "skip",
+      "message": "Stream not found"
+    },
+    {
+      "name": "Keystore permissions",
+      "category": "security",
+      "status": "pass",
+      "message": "No keystore found (nothing to secure)"
+    },
+    {
+      "name": "Docker daemon",
+      "category": "docker",
+      "status": "pass",
+      "message": "Reachable"
+    },
+    {
+      "name": "kaspad image",
+      "category": "docker",
+      "status": "pass",
+      "message": "kaspanet/rusty-kaspad:v2.1.0@sha256:f85da74b9514584451f83a2cbea3aa93f700248302fe7e3e0ab17288f93c905b"
+    },
+    {
+      "name": "Local node RPC",
+      "category": "network",
+      "status": "skip",
+      "message": "Node is not running"
+    },
+    {
+      "name": ".env file",
+      "category": "env",
+      "status": "warn",
+      "message": "No .env file found",
+      "suggestion": "Create a .env file for production deployment."
+    }
+  ],
+  "summary": {
+    "total": 13,
+    "passed": 8,
+    "failed": 0,
+    "warnings": 2,
+    "skipped": 3
+  }
+}
+--- stderr ---
+

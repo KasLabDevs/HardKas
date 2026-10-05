@@ -287,8 +287,10 @@ export async function runTxFlow(input: TxFlowInput): Promise<TxFlowResult> {
 
     // 2. Sign
     if (shouldSign) {
-      // Security guard: require --yes for real signing if we are in a flow that intended to --send
-      if (shouldSend && !yes && planArtifact.mode !== "simulated") {
+      // Security guard: require --yes for real signing if we are in a flow that intended to --send.
+      // #7: a simulator plan is `mode: "simulator"` (the old `"simulated"` matched nothing, so the
+      // guard also stopped simulator flows that gave no `yes`; every CLI caller passes it).
+      if (shouldSend && !yes && planArtifact.mode !== "simulator") {
         flowResult.steps.sign = {
           status: "blocked",
           reason: "--yes is required before signing/sending a real transaction flow."
@@ -501,7 +503,8 @@ async function saveArtifact(
   if (sdk && sdk.artifacts && typeof sdk.artifacts.write === "function") {
     const canonicalRes = await sdk.artifacts.write(artifact);
     if (outDir !== sdk.workspace.artifactsDir || baseName) {
-      await sdk.artifacts.write(artifact, { outputDir: outDir, fileName });
+      // EVIDENCE-TRUST-1 (D2): the exported copy is exactly the stored one (an identity published before is kept)
+      await sdk.artifacts.write(canonicalRes.artifact ?? artifact, { outputDir: outDir, fileName });
       return path.join(outDir, fileName);
     }
     return canonicalRes.absolutePath;

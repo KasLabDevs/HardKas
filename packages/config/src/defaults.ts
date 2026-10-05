@@ -1,4 +1,5 @@
 import type { HardkasConfig } from "./types";
+import { CANONICAL_LOCALNET } from "@hardkas/core";
 
 /**
  * The built-in configuration: what a workspace without hardkas.config.ts runs with, and what fills
@@ -29,7 +30,9 @@ export const DEFAULT_HARDKAS_CONFIG: HardkasConfig = {
     simnet: {
       kind: "kaspa-node",
       network: "simnet",
-      rpcUrl: "ws://127.0.0.1:18210",
+      // CANONICAL-RPC-URL: the canonical localnet endpoint from @hardkas/core (a plain constant,
+      // safe before kaspa-wasm is installed), never a copy.
+      rpcUrl: `ws://${CANONICAL_LOCALNET.host}:${CANONICAL_LOCALNET.ports.jsonRpc}`,
       description: "Local Docker kaspad on simnet — requires hardkas node start"
     },
     devnet: {

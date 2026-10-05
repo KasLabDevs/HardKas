@@ -296,7 +296,8 @@ export function registerAccountsCommands(program: Command) {
   accountsCmd
     .command("balance <identifier>")
     .description(`Show account balance ${UI.maturity("stable")}`)
-    .option("--network <name>", "Kaspa network name", "simnet")
+    // #3: no hardcoded simnet default; without --network the workspace's default target decides.
+    .option("--network <name>", "Kaspa network name (default: the workspace's default target)")
     .option("--provider <type>", "Provider mode (auto, rpc, simulated)", "auto")
     .option("--url <url>", "RPC URL (optional override)")
     .option(
@@ -309,7 +310,7 @@ export function registerAccountsCommands(program: Command) {
       try {
         const result = await runAccountsBalance({
           identifier,
-          network: options.network ?? "simnet",
+          ...(options.network ? { network: options.network } : {}),
           provider: options.provider ?? "auto",
           url: options.url ?? "",
           local: options.local

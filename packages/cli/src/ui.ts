@@ -21,8 +21,9 @@ export const UI = {
   },
 
   header(text: string) {
-    const masked = maskSecrets(text);
-    this.logHuman(pc.bold(pc.magenta(`\n  ═══ ${masked} ═══`)));
+    // EVIDENCE-TRUST-1 (D8): a title names things (a file, an id): identity text is never shape-masked — a 64-hex
+    // content hash is not a secret. URL credentials are redacted by the output itself (output.ts).
+    this.logHuman(pc.bold(pc.magenta(`\n  ═══ ${text} ═══`)));
   },
 
   divider() {
@@ -100,8 +101,9 @@ export const UI = {
   },
 
   field(label: string, value: string | number | boolean | undefined | null) {
+    // EVIDENCE-TRUST-1 (D8): a field is structured output (hashes, ids): no shape mask.
     const val =
-      value === undefined || value === null ? pc.dim("none") : maskSecrets(String(value));
+      value === undefined || value === null ? pc.dim("none") : String(value);
     this.logHuman(`  ${pc.dim(label.padEnd(16))} ${pc.white(val)}`);
   },
 
@@ -201,17 +203,81 @@ export const UI = {
 };
 
 /**
- * The machine-readable code of an error: its `code`, else a leading `CODE_X:` of its message (many HardKAS errors are
- * thrown as `new Error("CODE_X: …")` without a `code`), else UNKNOWN_ERROR.
+ * The machine-readable code of an error: its `code`, else a leading `CODE_X:` or `[CODE_X]` of its message
+ * (HardKAS errors are thrown in both spellings without a `code`), else UNKNOWN_ERROR — the one parser of codes.
  */
 export function errorCodeOf(e: unknown): string {
   const code = (e as any)?.code;
-  if (code) return code;
+  if (code) return String(code);
   const message = e instanceof Error ? e.message : String(e);
-  return /^([A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+):\s/.exec(message)?.[1] ?? "UNKNOWN_ERROR";
+  return (
+    /^([A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+):\s/.exec(message)?.[1] ??
+    /^\[([A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+)\]/.exec(message)?.[1] ??
+    "UNKNOWN_ERROR"
+  );
 }
 
+/**
+ * CLI-RUNTIME-CONTRACT-1 · the exit code an error means for the process: the error's own `exitCode`
+ * (HardkasCliError, chaos verdicts), POLICY_DENIED for that code, else RUNTIME_FAILURE.
+ */
+export function exitCodeOf(e: unknown): number {
+  const own = (e as any)?.exitCode;
+  if (typeof own === "number" && Number.isInteger(own) && own > 0) return own;
+  return errorCodeOf(e) === "POLICY_DENIED" ? 3 : 1;
+}
+
+/**
+ * CLI-RUNTIME-CONTRACT-1 · a rendered error is a failure of the run: the process can never end with
+ * exit 0 after it, whether the command rethrows or returns. The first nonzero exit code is kept.
+ */
+export function recordFailure(e: unknown): void {
+  const current = process.exitCode;
+  if (typeof current === "number" && current !== 0) return;
+  process.exitCode = exitCodeOf(e);
+}
+
+// An error is rendered once, however many handlers see it on its way out (a command's catch, then main()).
+const RENDERED = Symbol.for("hardkas.cli.error.rendered");
+function alreadyRendered(e: unknown): boolean {
+  return typeof e === "object" && e !== null && (e as any)[RENDERED] === true;
+}
+function markRendered(e: unknown): void {
+  if (typeof e !== "object" || e === null) return;
+  try {
+    Object.defineProperty(e, RENDERED, { value: true, enumerable: false, configurable: true });
+  } catch {
+    /* frozen objects stay unmarked and may render twice */
+  }
+}
+
+/**
+ * The one owner of a failure's presentation: records the exit code, writes the single JSON envelope
+ * (every error type, typed or not) and renders the human form — once per error.
+ */
 export function handleError(e: unknown, context?: string) {
+  recordFailure(e);
+  if (alreadyRendered(e)) return;
+  markRendered(e);
+
+  const rawMsg = e instanceof Error ? e.message : String(e);
+  // EVIDENCE-TRUST-1 (D8): the shape-based mask is a safety net for the free text a human reads; the JSON envelope is
+  // structured output and keeps identities (content hashes, txIds) whole. URL credentials are redacted in both, by the
+  // output itself (output.ts).
+  const msg = maskSecrets(rawMsg);
+  const errorObj = e as any;
+
+  // JSON mode: exactly one failure envelope on stdout, whoever renders first. Previously a typed
+  // error that a command swallowed left no envelope at all (and exit 0).
+  if (UI.isJsonMode() && !getOutput().jsonWritten) {
+    getOutput().writeJson({
+      ok: false,
+      code: errorCodeOf(e),
+      message: context ? `${context}: ${rawMsg}` : rawMsg,
+      mode: "cli"
+    });
+  }
+
   if (e instanceof Error && (e as any).code === "REPLAY_DIVERGED") {
     const report = (e as any).report;
     UI.semanticError(
@@ -227,6 +293,12 @@ export function handleError(e: unknown, context?: string) {
       getOutput().error(pc.bold("\n  Divergences found:"));
       for (const div of report.divergences) {
         getOutput().error(`    ${pc.cyan(div.path)}:`);
+        if (div?.secret === true) {
+          // A divergence at a secret field carries no values (diffArtifacts redacts them): say so,
+          // never print `undefined` as if it were the content.
+          getOutput().error(`      ${pc.dim("(secret field: the values differ and are not shown)")}`);
+          continue;
+        }
         getOutput().error(`      Expected: ${pc.green(JSON.stringify(div.expected))}`);
         getOutput().error(`      Actual:   ${pc.red(JSON.stringify(div.actual))}`);
       }
@@ -234,30 +306,19 @@ export function handleError(e: unknown, context?: string) {
     return;
   }
 
-  const rawMsg = e instanceof Error ? e.message : String(e);
-  const msg = maskSecrets ? maskSecrets(rawMsg) : rawMsg;
-  const errorObj = e as any;
-
-  // HardkasCliError is structured — the top-level handler in index.ts
-  // produces the error envelope. Don't double-write JSON to stdout.
+  // HardkasCliError is structured: code, message and (optionally) a suggestion.
   if (errorObj.name === "HardkasCliError") {
     if (!UI.isJsonMode()) {
       getOutput().error(`\n  ✗ [${errorObj.code}] ${msg}`);
+      if (errorObj.suggestion) {
+        getOutput().error(pc.cyan(`\n  💡 Suggestion:`));
+        getOutput().error(pc.cyan(`    ${maskSecrets(String(errorObj.suggestion))}`));
+      }
     }
     return;
   }
 
-  if (UI.isJsonMode()) {
-    if (!getOutput().jsonWritten) {
-      getOutput().writeJson({
-        ok: false,
-        code: errorCodeOf(e),
-        message: context ? `${context}: ${msg}` : msg,
-        mode: "cli"
-      });
-    }
-    return;
-  }
+  if (UI.isJsonMode()) return;
 
   let reason = maskSecrets ? maskSecrets(errorObj.reason) : errorObj.reason;
   let suggestion = maskSecrets ? maskSecrets(errorObj.suggestion) : errorObj.suggestion;
@@ -312,20 +373,31 @@ export function handleError(e: unknown, context?: string) {
  */
 export function handleLockError(e: any) {
   const code = errorCodeOf(e);
-  const meta = e.cause as any;
-
-  if (UI.isJsonMode()) {
-    getOutput().writeJson({
-      ok: false,
-      code,
-      message: e.message || "Lock error",
-      mode: "cli",
-      meta
-    });
+  if (code !== "LOCK_HELD" && code !== "LOCK_TIMEOUT" && code !== "STALE_LOCK") {
+    handleError(e);
     return;
   }
 
-  if (code === "LOCK_HELD" || code === "LOCK_TIMEOUT" || code === "STALE_LOCK") {
+  // CLI-RUNTIME-CONTRACT-1: a lock conflict is a failure of the run too, rendered once.
+  recordFailure(e);
+  if (alreadyRendered(e)) return;
+  markRendered(e);
+  const meta = e.cause as any;
+
+  if (UI.isJsonMode()) {
+    if (!getOutput().jsonWritten) {
+      getOutput().writeJson({
+        ok: false,
+        code,
+        message: e.message || "Lock error",
+        mode: "cli",
+        meta
+      });
+    }
+    return;
+  }
+
+  {
     const title =
       code === "STALE_LOCK"
         ? "Stale Workspace Lock Detected"
@@ -355,8 +427,5 @@ export function handleLockError(e: any) {
       getOutput().error(`    hardkas lock clear ${meta?.name} --if-dead`);
     }
     getOutput().error("");
-    return;
   }
-
-  handleError(e);
 }

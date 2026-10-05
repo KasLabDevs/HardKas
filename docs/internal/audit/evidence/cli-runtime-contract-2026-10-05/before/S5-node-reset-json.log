@@ -1,0 +1,6 @@
+$ hardkas node reset --yes --json   (cwd ws-before, DOCKER_HOST=tcp://127.0.0.1:1)
+exit=0 stdout_is_single_json=false
+--- stdout ---
+
+--- stderr ---
+  ✔ Kaspa node reset complete. Data removed: true. Node is currently stopped.

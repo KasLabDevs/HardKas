@@ -3,7 +3,7 @@ import { DockerKaspadRunner } from "@hardkas/node-runner";
 import { JsonWrpcKaspaClient } from "@hardkas/kaspa-rpc";
 import { execa } from "execa";
 import { HardkasFixtureSigner } from "@hardkas/testing";
-import { formatSompiToKas } from "@hardkas/core";
+import { formatSompiToKas, nodeRpcUrl, CANONICAL_LOCALNET } from "@hardkas/core";
 
 export async function runDoctorNode(opts: { json?: boolean; capabilities?: boolean }) {
   if (opts.json) UI.setJsonMode(true);
@@ -29,7 +29,7 @@ export async function runDoctorNode(opts: { json?: boolean; capabilities?: boole
 
   // 2. RPC check
   if (status.rpcReady) {
-    UI.logHuman(`  ✅ RPC: READY (127.0.0.1:18210)`);
+    UI.logHuman(`  ✅ RPC: READY (${CANONICAL_LOCALNET.host}:${CANONICAL_LOCALNET.ports.jsonRpc})`);
   } else {
     const { HardkasCliError } = await import("../cli-errors.js");
     throw new HardkasCliError("RPC_NOT_READY", "RPC: NOT READY", { exitCode: 1 });
@@ -47,7 +47,7 @@ export async function runDoctorNode(opts: { json?: boolean; capabilities?: boole
   // 4. Mining check (CHAIN_ADVANCING)
   let client: JsonWrpcKaspaClient | null = null;
   try {
-    client = new JsonWrpcKaspaClient({ rpcUrl: "ws://127.0.0.1:18210" });
+    client = new JsonWrpcKaspaClient({ rpcUrl: nodeRpcUrl() });
     const info1 = await client.getBlockDagInfo();
     const score1 = info1.virtualDaaScore || 0n;
 
@@ -71,7 +71,7 @@ export async function runDoctorNode(opts: { json?: boolean; capabilities?: boole
   try {
     const signer = new HardkasFixtureSigner("simnet");
     const address = await signer.getAddress();
-    const client = new JsonWrpcKaspaClient({ rpcUrl: "ws://127.0.0.1:18210" });
+    const client = new JsonWrpcKaspaClient({ rpcUrl: nodeRpcUrl() });
     const utxos = await client.getUtxosByAddress(address);
     const balanceRes = await client.getBalanceByAddress(address);
     const balance = balanceRes?.balanceSompi || 0n;

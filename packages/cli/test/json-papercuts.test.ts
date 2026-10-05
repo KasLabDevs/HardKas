@@ -105,7 +105,13 @@ describe("JSON-PAPERCUTS · --json is one JSON document with a verdict", () => {
     expect(env.result.lineage.artifactId).toBe(signed.contentHash);
     expect(env.result.lineage.parentArtifactId).toBe(plan.contentHash);
     expect(env.result.lineage.rootArtifactId).toBe(plan.contentHash);
-    expect(env.result.chain.map((c: any) => c.role)).toEqual(["root", "parent", "here"]);
+    // EVIDENCE-TRUST-1 (D3): the chain is the one RESOLVED in the workspace store, each artifact once — the plan is this
+    // signed artifact's parent and its root, so it appears once, as the root.
+    expect(env.result.chain.map((c: any) => [c.role, c.artifactId, c.status])).toEqual([
+      ["root", plan.contentHash, "resolved"],
+      ["here", signed.contentHash, "here"]
+    ]);
+    expect(env.result.complete).toBe(true);
     expect(env.result.verification).toEqual({ ok: true, issues: [] });
     expect(r.out).not.toMatch(/PROVENANCE CHAIN|Lineage ID:/);
 

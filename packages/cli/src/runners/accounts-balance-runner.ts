@@ -45,9 +45,17 @@ export async function runAccountsBalance(
   }
 
   // 2. Setup RPC Client or Local Backend
-  const { resolveProvider } = await import("@hardkas/config");
+  // #3 (accounts balance network): without --network the workspace's own default target decides
+  // (its `execution` contract, else its legacy `defaultNetwork`), never a hardcoded simnet.
+  const { resolveProvider, resolveNewIntentTarget } = await import("@hardkas/config");
+  let configuredNetwork = "simulated";
+  try {
+    configuredNetwork = resolveNewIntentTarget({ config: loadedConfig.config }).network;
+  } catch {
+    // no target declared anywhere: the simulator, as everywhere else in HardKAS
+  }
   const provider = resolveProvider({
-    network: options.network ?? loadedConfig.config.defaultNetwork ?? "simnet",
+    network: options.network ?? configuredNetwork,
     provider: options.provider,
     url: options.url
   });

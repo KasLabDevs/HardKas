@@ -1,0 +1,22 @@
+$ hardkas init --skip-toolchain --json   (cwd mech-ws-before)
+exit=0 stdout_is_single_json=true
+--- stdout ---
+{
+  "ok": true,
+  "command": "init",
+  "mode": "cli",
+  "result": {
+    "toolchain": {
+      "id": "kaspa-wasm",
+      "version": "2.1.0",
+      "status": "already-installed",
+      "dir": "C:\\Users\\jrodr\\.hardkas\\toolchains\\kaspa-wasm\\2.1.0"
+    },
+    "nextSteps": [
+      "npm install",
+      "npm test"
+    ]
+  }
+}
+--- stderr ---
+

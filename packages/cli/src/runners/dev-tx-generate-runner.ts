@@ -35,8 +35,10 @@ export async function runDevTxGenerate(options: any) {
     const toIndex = (i + 1) % devAccounts.length;
     const from = "alice";
     const to = devAccounts[toIndex] === "alice" ? "bob" : devAccounts[toIndex]!;
-    // amount varies slightly
-    const amount = (0.01 + (i % 10) * 0.001).toFixed(3);
+    // #9: whole-KAS amounts. Sub-KAS outputs from the simulator's large UTXOs carry a storage mass
+    // (KIP-9) above the standard transaction mass, so the planner refused every one
+    // (OUTPUT_BELOW_STANDARD_AMOUNT) and the generator never produced a transaction.
+    const amount = (1 + (i % 10) * 0.1).toFixed(1);
 
     try {
       const flowResult = await runTxFlow({

@@ -28,6 +28,7 @@ export * from "./igra-artifacts.js";
 export * from "./igra-io.js";
 export * from "./feeVerify.js";
 export * from "./lineage.js";
+export * from "./lineage-chain.js";
 export * from "./diff.js";
 export * from "./deployment.js";
 export * from "./deployment-store.js";

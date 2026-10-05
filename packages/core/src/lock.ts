@@ -51,6 +51,20 @@ interface Holding {
   shares: number;
 }
 
+/**
+ * EVIDENCE-TRUST-1 (D9): what a lock records about its holder when the caller names no command — the executable, the
+ * script and at most two command words (`tx send`), never the arguments. A lock needs no credentials to do its job, and
+ * an argument can carry one (`--url https://user:password@…`) that would outlive a crash in `.hardkas/locks`.
+ */
+export function lockCommandOf(argv: readonly string[]): string {
+  const words: string[] = [];
+  for (const token of argv.slice(2)) {
+    if (words.length === 2 || !/^[a-z][a-z0-9-]*$/.test(token)) break;
+    words.push(token);
+  }
+  return [...argv.slice(0, 2), ...words].join(" ");
+}
+
 const HOLDING_SCOPE = Symbol.for("@hardkas/core/lock-holding-scope.v1");
 const HOLDING_OF = Symbol.for("@hardkas/core/lock-holding.v1");
 const holdingScope: AsyncLocalStorage<ReadonlyMap<string, Holding>> =
@@ -162,7 +176,7 @@ export async function acquireLock(args: AcquireLockArgs): Promise<LockHandle> {
         schema: HardkasSchemas.LockV1,
         name: args.name,
         pid: process.pid,
-        command: args.command || process.argv.join(" "),
+        command: args.command || lockCommandOf(process.argv),
         cwd: process.cwd(),
         hostname: os.hostname(),
         createdAt: new Date().toISOString(),

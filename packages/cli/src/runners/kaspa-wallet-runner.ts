@@ -56,7 +56,10 @@ export async function runKaspaWalletList(options: { json: boolean }) {
     );
 
     if (options.json) {
-      console.log(JSON.stringify(accounts, null, 2));
+      // EVIDENCE-TRUST-1 (D9): a listing reveals no secret. A plaintext account's privateKey (and any other field named
+      // as a secret) is left out; revealing a key is the job of the commands whose contract is to reveal or export it.
+      const { redactSecretFields } = await import("@hardkas/core");
+      console.log(JSON.stringify(redactSecretFields(accounts.map((a) => ({ ...a })), "drop"), null, 2));
       return;
     }
 

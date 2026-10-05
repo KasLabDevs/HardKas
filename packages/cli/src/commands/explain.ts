@@ -63,7 +63,9 @@ export function registerExplainCommand(program: Command) {
         } catch (e: any) {
           if (e instanceof LookupUsageError) {
             UI.semanticError("Usage", e.message, "identity contract", "one target per call", "pass an artifactId, a path, or exactly one of --plan/--signed/--tx/--workflow");
-            throw new Error("Command failed");
+            // CLI-RUNTIME-CONTRACT-1: a usage error keeps its code (LOOKUP_USAGE) and exits 2.
+            const { HardkasCliError, HardkasExitCode } = await import("../cli-errors.js");
+            throw new HardkasCliError(e.code, e.message, { exitCode: HardkasExitCode.USAGE_ERROR, cause: e });
           }
           throw e;
         }
@@ -92,7 +94,9 @@ export function registerExplainCommand(program: Command) {
                     ? "pass a 64-hex artifactId or a workspace path to an artifact .json file"
                     : "verify the artifactId or path and ensure you are in the correct HardKAS workspace"
           );
-          throw new Error("Command failed");
+          // CLI-RUNTIME-CONTRACT-1: the resolver's code (ARTIFACT_NOT_FOUND, NAMESPACE_REQUIRED, …) is the verdict.
+          const { HardkasCliError } = await import("../cli-errors.js");
+          throw new HardkasCliError(code, e?.message || `Could not resolve '${lookup.input}'`, { exitCode: 1, cause: e });
         }
 
         const artifact = handle.artifact as Record<string, unknown>;

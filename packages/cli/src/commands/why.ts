@@ -45,7 +45,9 @@ export function registerWhyCommand(program: Command) {
           } catch (e: any) {
             if (e instanceof LookupUsageError) {
               UI.semanticError("Usage", e.message, "identity contract", "one target per call", "pass an artifactId, a path, or exactly one of --plan/--signed/--tx/--workflow");
-              throw new Error("Command failed");
+              // CLI-RUNTIME-CONTRACT-1: a usage error keeps its code (LOOKUP_USAGE) and exits 2.
+              const { HardkasCliError, HardkasExitCode } = await import("../cli-errors.js");
+              throw new HardkasCliError(e.code, e.message, { exitCode: HardkasExitCode.USAGE_ERROR, cause: e });
             }
             throw e;
           }

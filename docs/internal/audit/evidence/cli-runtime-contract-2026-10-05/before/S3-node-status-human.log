@@ -1,0 +1,23 @@
+$ hardkas node status   (cwd ws-before, DOCKER_HOST=tcp://127.0.0.1:1)
+exit=0 stdout_is_single_json=false
+--- stdout ---
+Kaspa node status
+
+Backend:   Docker
+Status:    ✗ stopped
+
+RPC Readiness:
+  gRPC:     ✗ not ready (port 16210)
+  Borsh:    ✗ not ready (port 17210)
+  JSON RPC: ✗ not ready (port 18210)
+
+Node Information:
+  Container: hardkas-kaspad-toccata-v2
+  Image:     kaspanet/rusty-kaspad:v2.1.0@sha256:f85da74b9514584451f83a2cbea3aa93f700248302fe7e3e0ab17288f93c905b
+  Network:   simnet
+  Data Dir:  .hardkas\kaspad
+
+Last Error:
+  Container not found
+--- stderr ---
+

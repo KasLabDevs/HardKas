@@ -1,0 +1,8 @@
+$ hardkas dev init   (cwd empty-after)
+exit=1 stdout_is_single_json=false
+--- stdout ---
+
+  ═══ HardKAS dApp Initialization ═══
+--- stderr ---
+
+  ✗ [NOT_NODE_PROJECT] No package.json found. Are you in a Node.js project?

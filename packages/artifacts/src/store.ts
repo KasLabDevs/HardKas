@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { TxPlan, SignedTx, TxReceipt } from "./schemas.js";
 import { calculateContentHash, CURRENT_HASH_VERSION, MIN_HASH_VERSION, readDeclaredHashVersion } from "./canonical.js";
-import { HardkasSchemas } from "@hardkas/core";
+import { HardkasSchemas, stripBom } from "@hardkas/core";
 import { ArtifactStoreMutation } from "./store-mutation.js";
 import { assertSafeFileId, codedError as storeError, schemaFilePrefix } from "./file-id.js";
 import { checkTxObservationCoherence } from "./tx-observation.js";
@@ -71,6 +71,16 @@ export function storeEntryFor(artifact: any): { rel: string; content: string } {
   return { rel: path.join(subDir, filename), content: JSON.stringify(artifact, bigIntReplacer, 2) + "\n" };
 }
 
+/** What publishing an artifact into the store did (EVIDENCE-TRUST-1, write-once). */
+export interface PublishedArtifact {
+  /** The absolute path of the store entry. */
+  path: string;
+  /** The artifact exactly as the store holds it: the earlier copy when the identity was already published. */
+  artifact: any;
+  /** false when nothing was written because the store already held this identity. */
+  written: boolean;
+}
+
 export class ProjectArtifactStore {
   private artifactsDir: string;
   private workspaceRoot: string;
@@ -94,7 +104,22 @@ export class ProjectArtifactStore {
     throw storeError("PATH_TRAVERSAL", `Artifact with ID ${id} is outside the workspace boundary`);
   }
 
+  /** Publishes an artifact (see `publishArtifact`) and returns the path of its store entry. */
   async writeArtifact(artifact: any): Promise<string> {
+    return (await this.publishArtifact(artifact)).path;
+  }
+
+  /**
+   * EVIDENCE-TRUST-1 (ET-C1): a published evidence identity is write-once.
+   * - No entry for the identity → the artifact is written (atomically, through the store's gate).
+   * - The entry holds a copy that verifies as this same identity → it is kept byte for byte and returned: the durable
+   *   copy is the authority for the fields outside the identity (createdAt, hardkasVersion, …), as for state snapshots.
+   * - Anything else (not JSON, a copy that does not verify — tampered —, another identity, or other bytes for an
+   *   artifact without contentHash) → ARTIFACT_IDENTITY_CONFLICT, and not a byte is touched: a second write never
+   *   "repairs" evidence that was changed.
+   * The check and the write happen in one holding of the store, so no cooperative writer comes in between.
+   */
+  async publishArtifact(artifact: any): Promise<PublishedArtifact> {
     // Identifier safety first (path traversal is refused before anything else).
     resolveStoreId(artifact);
     // IC-1′.3–4 / N3: the store never completes or reshapes an artifact. It must
@@ -118,11 +143,44 @@ export class ProjectArtifactStore {
     }
     const { rel, content } = storeEntryFor(artifact);
     const targetPath = path.join(this.artifactsDir, rel);
+    const identity =
+      typeof artifact?.contentHash === "string" && artifact.contentHash.length > 0 ? (artifact.contentHash as string) : undefined;
 
     // ARTIFACT-MUTATION-1: the canonical write goes through the store's single mutation gate (artifacts lock)
-    await new ArtifactStoreMutation(this.workspaceRoot).writeFile(rel, content);
-
-    return targetPath;
+    const gate = new ArtifactStoreMutation(this.workspaceRoot);
+    return await gate.hold(async (): Promise<PublishedArtifact> => {
+      let existing: string;
+      try {
+        existing = await fs.readFile(targetPath, "utf-8");
+      } catch (e: any) {
+        if (e?.code !== "ENOENT") throw e;
+        await gate.writeFile(rel, content);
+        return { path: targetPath, artifact, written: true };
+      }
+      if (existing === content) return { path: targetPath, artifact, written: false };
+      const conflict = (what: string) =>
+        storeError(
+          "ARTIFACT_IDENTITY_CONFLICT",
+          `${rel.replace(/\\/g, "/")} already holds ${what}; it was left exactly as it is and nothing was written`
+        );
+      let found: any;
+      try {
+        found = JSON.parse(stripBom(existing));
+      } catch {
+        throw conflict("content that is not JSON");
+      }
+      if (!identity) throw conflict("other bytes (this artifact has no contentHash, so only identical bytes are the same artifact)");
+      let check: ReturnType<typeof checkArtifactIdentity>;
+      try {
+        check = checkArtifactIdentity(found);
+      } catch {
+        check = { ok: false, issues: [{ code: "NOT_CANONICALIZABLE", severity: "error", message: "not canonicalizable" }] };
+      }
+      if (!check.ok) throw conflict(`a copy that does not verify (${check.issues.map((i) => i.code).join(", ")})`);
+      if (check.artifactId !== identity) throw conflict(`another artifact (${check.artifactId})`);
+      // The same identity, published before: the stored copy is the evidence and is what the caller gets back.
+      return { path: targetPath, artifact: found, written: false };
+    }, "artifact publication");
   }
 
   /**

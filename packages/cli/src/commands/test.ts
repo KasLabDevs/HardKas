@@ -47,8 +47,9 @@ export function registerTestCommands(program: Command) {
             ...(options.massCompare ? { massCompare: options.massCompare } : {})
           });
         } catch (e) {
+          // CLI-RUNTIME-CONTRACT-1: rendered once here, rethrown as itself (code and context kept).
           handleError(e, "Test execution failed");
-          throw new Error("Command failed");
+          throw e;
         }
       }
     );

@@ -1,4 +1,12 @@
-import { systemRuntimeContext, deterministicCompare, getCoinbaseMaturity, HardkasError, stripBom } from "@hardkas/core";
+import {
+  systemRuntimeContext,
+  deterministicCompare,
+  getCoinbaseMaturity,
+  HardkasError,
+  stripBom,
+  redactUrlCredentials,
+  redactUrlCredentialsInText
+} from "@hardkas/core";
 import { pollCondition } from "./waiters.js";
 import { Hardkas } from "./index.js";
 import {
@@ -189,7 +197,7 @@ export class HardkasTx {
     const networkId = ((submission as any)?.networkId ?? this.sdk.network) as TxObservation["networkId"];
     const mode = ((submission as any)?.mode ?? "rpc") as TxObservation["mode"];
 
-    const observation = await observeTxOnce(
+    let observation = await observeTxOnce(
       rpcObserverFor(this.sdk.rpc),
       {
         txId,
@@ -209,7 +217,10 @@ export class HardkasTx {
     );
     let observationPath: string | undefined;
     if (options.persist ?? true) {
-      observationPath = (await this.sdk.artifacts.write(observation as any)).absolutePath;
+      // EVIDENCE-TRUST-1 (D2): an observation already published under this identity is returned as stored.
+      const written = await this.sdk.artifacts.write(observation as any);
+      observationPath = written.absolutePath;
+      if (written.artifact) observation = written.artifact;
     }
     const derived = deriveTxStatus({
       txId,
@@ -867,12 +878,15 @@ export class HardkasTx {
     }
 
     if (this.sdk.signer && plan.schema === HardkasSchemas.TxPlan) {
-      const signedArtifact = await this.sdk.signer.signTransaction(
+      const produced = await this.sdk.signer.signTransaction(
         plan as TxPlanArtifact
       );
 
       await this.persistAuthorizedPlan(plan);
-      const { absolutePath } = await this.sdk.artifacts.write(signedArtifact);
+      // EVIDENCE-TRUST-1 (D2): what is returned is exactly what the store holds (the earlier copy of an identity signed before).
+      const written = await this.sdk.artifacts.write(produced);
+      const absolutePath = written.absolutePath;
+      const signedArtifact: typeof produced = written.artifact ?? produced;
       const { coreEvents } = await import("@hardkas/core");
       const signedRecord = signedArtifact as unknown as Record<string, string>;
       // IC-5′.11: events carry the canonical identity (content hash), never a label.
@@ -1146,7 +1160,10 @@ export class HardkasTx {
 
     // Persist and emit events. E01: the authorized plan first, then the signed.
     await this.persistAuthorizedPlan(plan);
-    const { absolutePath } = await this.sdk.artifacts.write(signedArtifact);
+    // EVIDENCE-TRUST-1 (D2): what is returned is exactly what the store holds (the earlier copy of an identity signed before).
+    const written = await this.sdk.artifacts.write(signedArtifact);
+    const absolutePath = written.absolutePath;
+    if (written.artifact) signedArtifact = written.artifact;
 
     const { coreEvents } = await import("@hardkas/core");
     const signedRecord = signedArtifact as unknown as Record<string, string>;
@@ -1714,10 +1731,11 @@ export class HardkasTx {
     coreEvents.normalizeAndEmit({
       kind: "workflow.submitted",
       txId: localTxId,
-      endpoint: url || "real"
+      endpoint: url ? redactUrlCredentials(url) : "real"
     } as unknown as Parameters<typeof coreEvents.normalizeAndEmit>[0]);
 
-    // The submit call's result is recorded as returned, accepted or not.
+    // The submit call's result is recorded as returned, accepted or not. EVIDENCE-TRUST-1 (ET-C4): the result is
+    // authenticated, so a credential the RPC layer put into its error text (it names the URL) is redacted BEFORE hashing.
     let submitResult: { accepted: boolean; transactionId?: string; error?: string };
     try {
       const answer: any = await this.sdk.rpc.submitTransaction(broadcastable.rawTransaction as any);
@@ -1726,7 +1744,7 @@ export class HardkasTx {
         ...(typeof answer?.transactionId === "string" ? { transactionId: answer.transactionId } : {})
       };
     } catch (e: unknown) {
-      submitResult = { accepted: false, error: e instanceof Error ? e.message : String(e) };
+      submitResult = { accepted: false, error: redactUrlCredentialsInText(e instanceof Error ? e.message : String(e)) };
     }
 
     // DEF-1b: `mode` describes the EXECUTION SEMANTICS of the lifecycle, fixed
@@ -1740,10 +1758,12 @@ export class HardkasTx {
       (isExplicitRpc ? "rpc" : "localnet");
     const nowIso = new Date().toISOString();
     // Authenticated: the signed reference, the txId, the submit result (IC-2′.2).
-    // Unauthenticated: submittedAt and the raw locator `rpcUrl` (IC-1′.1b). The
-    // normalised `endpoint` is ARCHITECTURE_BLOCKED (its normalisation is not
-    // ratified), so no `endpoint` field is written and the endpoint provenance of
-    // a submission is NOT authenticated yet. No post-send state lives here.
+    // Unauthenticated: submittedAt and the locator `rpcUrl` (IC-1′.1b), recorded
+    // without its credentials (EVIDENCE-TRUST-1 D5: no userinfo, secret-named query
+    // values replaced by a marker, path and public query kept). The normalised
+    // `endpoint` is ARCHITECTURE_BLOCKED (its normalisation is not ratified), so no
+    // `endpoint` field is written and the endpoint provenance of a submission is NOT
+    // authenticated yet. No post-send state lives here.
     const submissionBase: any = {
       schema: HardkasSchemas.TxSubmissionV1,
       hardkasVersion: HARDKAS_VERSION,
@@ -1759,7 +1779,7 @@ export class HardkasTx {
       ...(submitPoint ? { submitPoint } : {}),
       fee: feeEvidence,
       submittedAt: nowIso,
-      ...(url ? { rpcUrl: url } : {}),
+      ...(url ? { rpcUrl: redactUrlCredentials(url) } : {}),
       ...(signedArtifact.workflowId ? { workflowId: signedArtifact.workflowId } : {}),
       ...(signedArtifact.assumptionLevel
         ? { assumptionLevel: signedArtifact.assumptionLevel }
@@ -1776,10 +1796,12 @@ export class HardkasTx {
     // One pass: lineage.artifactId is a self reference excluded by exact path.
     submissionBase.contentHash = calculateContentHash(submissionBase, CURRENT_HASH_VERSION);
     submissionBase.lineage.artifactId = submissionBase.contentHash;
-    const submission: TxSubmissionArtifact = Object.freeze(submissionBase);
+    const produced: TxSubmissionArtifact = Object.freeze(submissionBase);
 
-    const { absolutePath } = await this.sdk.artifacts.write(submission);
-    const receiptPath = absolutePath;
+    // EVIDENCE-TRUST-1 (D2): what is returned is exactly what the store holds (the earlier copy of this identity, if any).
+    const written = await this.sdk.artifacts.write(produced);
+    const receiptPath = written.absolutePath;
+    const submission: TxSubmissionArtifact = written.artifact ? Object.freeze(written.artifact) : produced;
 
     // Reuse the signedTxId from the start of the method
     await this.sdk.plugins.onTxSent({ signedTxId, receiptArtifact: submission });

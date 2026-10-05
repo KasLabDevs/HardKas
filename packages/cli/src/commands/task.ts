@@ -166,8 +166,10 @@ export function registerTaskCommands(program: Command, loadedConfig?: LoadedHard
 
       } catch (e: any) {
         if (e instanceof HardkasCliError) throw e;
+        // CLI-RUNTIME-CONTRACT-1: rendered once here with the task as context, rethrown as itself
+        // (its own code and message, instead of a TASK_FAILED "Command failed").
         handleError(e, `Failed to execute task ${name}`);
-        throw new HardkasCliError("TASK_FAILED", "Command failed", { exitCode: 1 });
+        throw e;
       }
     });
   }

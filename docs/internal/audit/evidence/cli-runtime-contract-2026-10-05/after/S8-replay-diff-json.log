@@ -1,0 +1,11 @@
+$ hardkas replay diff aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb --json   (cwd ws-after)
+exit=1 stdout_is_single_json=true
+--- stdout ---
+{
+  "ok": false,
+  "code": "UNKNOWN_ERROR",
+  "message": "Could not read replay artifact A: aaaaaa...aaaa [REDACTED] at C:\\Users\\jrodr\\AppData\\Local\\Temp\\claude\\C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo\\178242cc-c0b4-4452-b344-f35b49dc3d1f\\scratchpad\\crc1\\ws-after\\.hardkas\\artifacts\\aaaaaa...aaaa [REDACTED].json",
+  "mode": "cli"
+}
+--- stderr ---
+

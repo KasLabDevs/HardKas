@@ -71,7 +71,13 @@ export function registerQueryCommands(program: Command) {
             console.log(
               `\n  ${UI.warning("Recommendation:")} Run 'hardkas query store ${cmd}' to fix issues.\n`
             );
-            throw new Error("Command failed");
+            // CLI-RUNTIME-CONTRACT-1: the verdict is typed (was an untyped "Command failed").
+            const { HardkasCliError } = await import("../cli-errors.js");
+            throw new HardkasCliError(
+              "QUERY_STORE_UNHEALTHY",
+              `The query store has issues; run 'hardkas query store ${cmd}' to fix them.`,
+              { exitCode: 1 }
+            );
           } else {
             console.log("\n  ✓ Everything looks good.\n");
           }
@@ -962,6 +968,10 @@ function printInspectResult(result: any): void {
   console.log(`  Hash:       ${item.item.contentHash || "none"}`);
   console.log(`  Integrity:  ${item.integrity.ok ? "✓ VALID" : "✗ INVALID"}`);
   console.log(`  Lineage:    ${item.lineageStatus}`);
+  // EVIDENCE-TRUST-1: what looking the parent up in the workspace store found
+  if (item.parent && item.parent.status !== "root") {
+    console.log(`  Parent:     ${item.parent.status}${item.parent.artifactId ? ` (${item.parent.artifactId})` : ""}`);
+  }
   console.log(
     `  Staleness:  ${item.staleness.classification} (${item.staleness.ageHours}h)`
   );
@@ -984,6 +994,12 @@ function printDiffResult(result: any): void {
   console.log(`\n  ═══ Artifact Diff ═══\n`);
   console.log(`  Left:  ${diff.leftSchema} (${diff.leftPath})`);
   console.log(`  Right: ${diff.rightSchema} (${diff.rightPath})`);
+  // EVIDENCE-TRUST-1 (ET-C3): the identity verdict, then every raw difference with whether the hash covers it.
+  console.log(
+    diff.sameIdentity
+      ? `  Identity: same (${diff.leftIdentity})`
+      : `  Identity: different (left ${diff.leftIdentity ?? "not recomputable"}, right ${diff.rightIdentity ?? "not recomputable"})`
+  );
   if (diff.identical) {
     console.log(`\n  ✓ Artifacts are identical.\n`);
     return;
@@ -991,9 +1007,11 @@ function printDiffResult(result: any): void {
   console.log(`\n  ${diff.entries.length} difference(s):\n`);
   for (const entry of diff.entries) {
     const marker = entry.kind === "added" ? "+" : entry.kind === "removed" ? "-" : "~";
-    console.log(
-      `  ${marker} ${entry.field}: ${entry.left ?? "(absent)"} → ${entry.right ?? "(absent)"} [${entry.kind}]`
-    );
+    const scope = entry.authenticated ? "authenticated" : "not authenticated";
+    const values = entry.secret
+      ? "(secret field: the values differ and are not shown)"
+      : `${entry.left ?? "(absent)"} → ${entry.right ?? "(absent)"}${entry.redacted ? " (credentials redacted)" : ""}`;
+    console.log(`  ${marker} ${entry.field}: ${values} [${entry.kind}, ${scope}]`);
   }
   console.log("");
 }

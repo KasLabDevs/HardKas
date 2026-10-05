@@ -25,7 +25,8 @@ export async function runArtifactExplain(options: {
   }
 
   const rawArtifact = JSON.parse(stripBom(fs.readFileSync(absolutePath, "utf-8")));
-  const explanation = await explainArtifact(rawArtifact);
+  // EVIDENCE-TRUST-1 (ET-C2): references are looked up in this workspace's store, as `hardkas verify` does.
+  const explanation = await explainArtifact(rawArtifact, { workspaceRoot: sdk.workspace.root });
 
   UI.header(`Operational Audit: ${path.basename(options.path)}`);
 
@@ -55,6 +56,18 @@ export async function runArtifactExplain(options: {
     console.log(
       `  ParentId:   ${explanation.identity.parentArtifactId || "None (Root)"}`
     );
+  }
+  const parent = explanation.identity.parent;
+  if (parent.status !== "root") {
+    const found =
+      parent.status === "resolved"
+        ? "resolved (a verified copy is in the workspace store)"
+        : parent.status === "missing"
+          ? "MISSING from the workspace store"
+          : parent.status === "invalid"
+            ? `INVALID (a copy is there but does not verify${parent.detail ? `: ${parent.detail}` : ""})`
+            : `not resolved${parent.detail ? ` (${parent.detail})` : ""}`;
+    console.log(`  Parent:     ${found}`);
   }
 
   // 3. Economics Section

@@ -1,0 +1,16 @@
+$ hardkas rpc health --json   (cwd ws-after)
+exit=1 stdout_is_single_json=true
+--- stdout ---
+{
+  "ok": false,
+  "code": "RPC_NOT_READY",
+  "endpoint": "ws://127.0.0.1:18210",
+  "protocol": "WebSocket",
+  "status": "unreachable",
+  "ready": false,
+  "checkedAt": "2026-10-04T23:02:00.620Z",
+  "error": "Cannot connect to Kaspa RPC at ws://127.0.0.1:18210. Is kaspad running with --rpclisten-json? (wRPC -> WebSocket -> Unable to connect to ws://127.0.0.1:18210)",
+  "lastError": "Cannot connect to Kaspa RPC at ws://127.0.0.1:18210. Is kaspad running with --rpclisten-json? (wRPC -> WebSocket -> Unable to connect to ws://127.0.0.1:18210)"
+}
+--- stderr ---
+

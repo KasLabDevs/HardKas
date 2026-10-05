@@ -1,0 +1,17 @@
+$ hardkas accounts balance alice --json   (cwd mech-ws-after)
+exit=0 stdout_is_single_json=true
+--- stdout ---
+{
+  "ok": true,
+  "command": "accounts balance",
+  "mode": "cli",
+  "result": {
+    "name": "alice",
+    "address": "kaspasim:qqlpk9rs7yag6eqj3lttzqd8vgvssz8l8fxlpdag4h7zx2rjjr8lkkerwkezn",
+    "balanceSompi": "100000000000",
+    "utxoCount": 1,
+    "network": "simulated"
+  }
+}
+--- stderr ---
+

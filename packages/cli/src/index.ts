@@ -4,15 +4,15 @@ import { buildHardkasProgram } from "./program.js";
 import { attachLedgerAppender } from "@hardkas/core";
 import path from "node:path";
 
-import { HardkasCliError, HardkasExitCode } from "./cli-errors.js";
-
 async function main() {
   const isJson = process.argv.includes("--json");
   const isSilent = process.argv.includes("--silent") || process.argv.includes("--quiet");
 
-  const { setGlobalOutput, createCommandOutput } = await import("./output.js");
+  const { setGlobalOutput, createCommandOutput, installConsoleRedaction } = await import("./output.js");
   const mode = isSilent ? "silent" : isJson ? "json" : "human";
   setGlobalOutput(createCommandOutput({ mode }));
+  // EVIDENCE-TRUST-1 (ET-C5): no URL credential reaches the terminal through a direct console print either.
+  installConsoleRedaction();
 
   const wsArgIndex = process.argv.indexOf("--workspace");
   const workspaceRoot =
@@ -35,49 +35,25 @@ async function main() {
 
   try {
     await program.parseAsync(process.argv);
-    // F3: a command that finished normally may have set a nonzero exit code; it is never discarded
+    // F3: a command that finished normally may have set a nonzero exit code; it is never discarded.
+    // CLI-RUNTIME-CONTRACT-1: an error a command rendered and then swallowed set that code too.
     process.exit(process.exitCode ?? 0);
   } catch (err: any) {
-    const { handleError, errorCodeOf } = await import("./ui.js");
+    // CLI-RUNTIME-CONTRACT-1: the renderer owns the failure (one human rendering, one JSON envelope,
+    // the typed code preserved) and the exit code follows the error — in one place, for every error type.
+    const { handleError, exitCodeOf } = await import("./ui.js");
     handleError(err);
-
-    // For HardkasCliError in JSON mode, produce the structured error envelope
-    // ONLY if the command didn't already write one.
-    if (err instanceof HardkasCliError && isJson) {
-      const { getOutput } = await import("./output.js");
-      if (!getOutput().jsonWritten) {
-        getOutput().writeJson({
-          ok: false,
-          code: err.code,
-          message: err.message,
-          mode: "cli"
-        });
-      }
-    }
-
-    const exitCode =
-      err instanceof HardkasCliError
-        ? err.exitCode
-        : errorCodeOf(err) === "POLICY_DENIED"
-          ? HardkasExitCode.POLICY_DENIED
-          : HardkasExitCode.RUNTIME_FAILURE;
-    process.exit(exitCode);
+    process.exit(exitCodeOf(err));
   }
 }
 
 main().catch(async (err) => {
-  const { handleError, errorCodeOf } = await import("./ui.js");
+  const { handleError, exitCodeOf } = await import("./ui.js");
   handleError(err, "Fatal error");
   if (((err as any).stack)) {
     const { maskSecrets } = await import("@hardkas/core");
     const { getOutput } = await import("./output.js");
     getOutput().error(maskSecrets(((err as any).stack)));
   }
-  const exitCode =
-    err instanceof HardkasCliError
-      ? err.exitCode
-      : errorCodeOf(err) === "POLICY_DENIED"
-        ? HardkasExitCode.POLICY_DENIED
-        : HardkasExitCode.RUNTIME_FAILURE;
-  process.exit(exitCode);
+  process.exit(exitCodeOf(err));
 });

@@ -1,3 +1,5 @@
+import { nodeRpcUrl } from "@hardkas/core";
+
 export type ProviderMode = "simulator" | "rpc";
 
 export interface ResolveProviderOptions {
@@ -56,7 +58,8 @@ export function resolveProvider(options: ResolveProviderOptions): ResolvedProvid
       return { mode: "simulator", network };
     }
     if (options.executionMode === "localnet") {
-      return { mode: "rpc", network, endpoint: "http://127.0.0.1:18210" };
+      // CANONICAL-RPC-URL: the canonical localnet endpoint from @hardkas/core, never a copy.
+      return { mode: "rpc", network, endpoint: nodeRpcUrl() };
     }
   }
 
