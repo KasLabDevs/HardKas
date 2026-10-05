@@ -3,7 +3,8 @@ import path from "node:path";
 import fs from "node:fs/promises";
 import pc from "picocolors";
 import { handleError, UI } from "../ui.js";
-import { TelemetryRotator } from "@hardkas/core";
+import { TelemetryRotator, eventLedgerPath } from "@hardkas/core";
+import { invocationWorkspaceRoot } from "../workspace-root.js";
 
 export function registerInspectCommand(program: Command) {
   program
@@ -26,7 +27,8 @@ async function runInspect(opts: { json?: boolean }) {
     UI.box("HardKAS Inspect", "Stream Analytics");
   }
 
-  const rootDir = process.cwd();
+  // WORKSPACE-AUTHORITY-1 (WA-I0): the invocation's one workspace root
+  const rootDir = invocationWorkspaceRoot();
 
   const report: any = {
     streams: {},
@@ -50,7 +52,7 @@ async function runInspect(opts: { json?: boolean }) {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   };
 
-  const eventsPath = path.join(rootDir, "events.jsonl");
+  const eventsPath = eventLedgerPath(rootDir);
   const telemetryPath = path.join(rootDir, ".hardkas", "telemetry", "telemetry.jsonl");
 
   const eventsSize = await getFileSize(eventsPath);

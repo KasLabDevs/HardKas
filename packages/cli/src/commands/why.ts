@@ -1,5 +1,5 @@
 import { Command } from "commander";
-import path from "path";
+import { explicitWorkspaceOrCwd } from "../workspace-root.js";
 import { UI, handleError } from "../ui.js";
 import { HardkasSchemas } from "@hardkas/artifacts";
 import { LookupUsageError, lookupFromArgs, namespaceRequiredHint } from "../runners/lookup-args.js";
@@ -29,9 +29,7 @@ export function registerWhyCommand(program: Command) {
       ) => {
         UI.setJsonMode(!!options.json);
         try {
-          const workspaceRoot = options.workspace
-            ? path.resolve(options.workspace)
-            : process.cwd();
+          const workspaceRoot = explicitWorkspaceOrCwd(); // --workspace is resolved once (WORKSPACE-AUTHORITY-1)
 
           // Wave 5 · DEF-17: single delegation point. Wave 1.2 · IC-5′: namespaced,
           // verified lookups (see packages/artifacts/src/resolve.ts).

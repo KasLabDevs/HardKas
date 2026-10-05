@@ -1,6 +1,6 @@
 import { Command } from "commander";
 import pc from "picocolors";
-import path from "node:path";
+import { explicitWorkspaceOrCwd } from "../workspace-root.js";
 import { UI } from "../ui.js";
 import { LookupUsageError, lookupFromArgs, namespaceRequiredHint } from "../runners/lookup-args.js";
 
@@ -49,9 +49,7 @@ export function registerExplainCommand(program: Command) {
         artifactInput: string | undefined,
         options: { workspace?: string; artifact?: string; plan?: string; signed?: string; tx?: string; workflow?: string }
       ) => {
-        const workspaceRoot = options.workspace
-          ? path.resolve(options.workspace)
-          : process.cwd();
+        const workspaceRoot = explicitWorkspaceOrCwd(); // --workspace is resolved once (WORKSPACE-AUTHORITY-1)
 
         // Wave 5 · DEF-17: single delegation point. Wave 1.2 · IC-5′: namespaced,
         // verified lookups; an untyped input is only a path or a 64-hex artifactId.

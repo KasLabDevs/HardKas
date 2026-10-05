@@ -291,12 +291,29 @@ export type UnknownEventPayload = {
 };
 
 /**
+ * WORKSPACE-AUTHORITY-1 (WA-I1) · the one place that says where a workspace's event ledger lives: `<root>/events.jsonl`,
+ * where the ledger appender has always written and where every existing workspace keeps its history. The writer and
+ * every reader (query, the indexer, snapshots, doctors, the dev server) take the path from here.
+ */
+export function eventLedgerPath(workspaceRoot: string): string {
+  return path.join(workspaceRoot, "events.jsonl");
+}
+
+/**
+ * A ledger some earlier code wrote under `.hardkas/` (the retired query-store appender). It is never the authority and is
+ * never merged into it: readers only warn that it exists.
+ */
+export function legacyEventLedgerPath(workspaceRoot: string): string {
+  return path.join(workspaceRoot, ".hardkas", "events.jsonl");
+}
+
+/**
  * Attaches the canonical Event Ledger appender to the core event bus.
  * This guarantees that all formal EventEnvelopes are persisted to events.jsonl.
  */
 export function attachLedgerAppender(workspaceRoot: string): () => void {
   const seenEventIds = new Set<string>();
-  const eventsFile = path.join(workspaceRoot, "events.jsonl");
+  const eventsFile = eventLedgerPath(workspaceRoot);
 
   return coreEvents.on((event) => {
     // 1. Idempotency check: prevent duplicate flush in same session

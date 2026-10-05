@@ -3681,7 +3681,7 @@ hardkas query store rebuild [options]
 
 | Flag | Description | Default |
 | :--- | :--- | :--- |
-| `--backend <type>` | sqlite creates .hardkas/store.db; filesystem indexes nothing (default: sqlite only if store.db already exists) |  |
+| `--backend <type>` | sqlite (the default) builds .hardkas/store.db from the workspace; filesystem keeps no index, so it has nothing to rebuild |  |
 | `--strict` | Fail on any corrupted data | false |
 | `--wait-lock` | Wait for the query-store lock if held | false |
 | `--lock-timeout <ms>` | Lock wait timeout in ms | 30000 |
@@ -3723,7 +3723,7 @@ hardkas query store sql [options] <query>
 
 **Aliases:** index
 
-Index new artifacts into the SQLite query store (needs .hardkas/store.db: run 'query store rebuild --backend sqlite' first)
+Index new artifacts into the SQLite query store (needs .hardkas/store.db: run 'query store rebuild' first)
 
 ### Usage
 

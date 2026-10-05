@@ -89,7 +89,9 @@ export async function runDevDoctor(options: {
 
         // Artifact Corruption and Append Integrity Checks
         try {
-          const eventsPath = path.join(artifactDir, "events.jsonl");
+          // WORKSPACE-AUTHORITY-1 (A): the workspace's one event ledger
+          const { eventLedgerPath } = await import("@hardkas/core");
+          const eventsPath = eventLedgerPath(config.cwd);
           if (fs.existsSync(eventsPath)) {
             const stat = fs.statSync(eventsPath);
             if (stat.size > 0) {

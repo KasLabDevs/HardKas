@@ -46,9 +46,9 @@ function isWithin(root: string, target: string): boolean {
 }
 
 export async function runArtifactVerify(options: ArtifactVerifyOptions) {
-  const { Hardkas } = await import("@hardkas/sdk");
-  const sdk = await Hardkas.open({ cwd: options.workspaceRoot });
-  const absolutePath = sdk.workspace.resolvePath(options.path);
+  // WORKSPACE-AUTHORITY-1 (WA-I3): verifying reads; it never opens (and so never bootstraps) a workspace. The target is
+  // resolved against the workspace root, as before.
+  const absolutePath = path.resolve(options.workspaceRoot, options.path);
   const command = options.command ?? "artifact verify";
   const strict = options.strict ?? false;
 

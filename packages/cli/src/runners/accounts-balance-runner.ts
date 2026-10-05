@@ -3,6 +3,8 @@ import { loadRealAccountStore, getRealDevAccount } from "@hardkas/accounts";
 import { JsonWrpcKaspaClient } from "@hardkas/kaspa-rpc";
 import { formatSompiToKas, type NetworkId } from "@hardkas/core";
 import { resolveRuntimeConfig } from "@hardkas/node-orchestrator";
+import { invocationWorkspaceRoot, requireExistingWorkspace } from "../workspace-root.js";
+import { HardkasCliError, HardkasExitCode } from "../cli-errors.js";
 
 export interface AccountBalanceResult {
   name: string;
@@ -27,16 +29,17 @@ export async function runAccountsBalance(
   let address = options.identifier;
   let name = "Unknown";
 
-  // Try to find in project config
-  const loadedConfig = await loadHardkasConfig({});
+  // Try to find in project config · WORKSPACE-AUTHORITY-1 (WA-I0): the invocation's one workspace
+  const workspaceRoot = invocationWorkspaceRoot();
+  const loadedConfig = await loadHardkasConfig({ workspaceRoot });
   const projectAccount = loadedConfig.config.accounts?.[options.identifier];
 
   if (projectAccount) {
     address = projectAccount.address ?? "";
     name = options.identifier;
   } else {
-    // Try to find in real store
-    const store = await loadRealAccountStore();
+    // Try to find in the same workspace's real account store (read only; absent → null)
+    const store = await loadRealAccountStore({ cwd: workspaceRoot });
     const realAccount = store ? getRealDevAccount(store, options.identifier) : null;
     if (realAccount) {
       address = realAccount.address ?? "";
@@ -64,9 +67,20 @@ export async function runAccountsBalance(
   const isSimulated = options.local || provider.mode === "simulator";
 
   if (isSimulated) {
-    const { loadOrCreateLocalnetState, getSpendableUtxos, resolveMatchAddress } =
+    // WORKSPACE-AUTHORITY-1: the simulator state of the invocation's one workspace (WA-I0), from any of its directories,
+    // read without ever creating it (WA-I3): a balance is never computed from a state made up for the occasion.
+    const { loadLocalnetState, getDefaultLocalnetStatePath, getSpendableUtxos, resolveMatchAddress } =
       await import("@hardkas/localnet");
-    const localState = await loadOrCreateLocalnetState({ cwd: process.cwd() });
+    const workspace = requireExistingWorkspace("accounts balance");
+    const statePath = getDefaultLocalnetStatePath(workspace.root);
+    const localState = await loadLocalnetState(statePath);
+    if (!localState) {
+      throw new HardkasCliError(
+        "SIMULATOR_STATE_NOT_FOUND",
+        `There is no simulator state in ${workspace.root} (${statePath} does not exist); 'accounts balance' reads it and creates none. 'hardkas init' or the first simulated transaction creates it.`,
+        { exitCode: HardkasExitCode.RUNTIME_FAILURE }
+      );
+    }
     const utxos = getSpendableUtxos(localState, address);
     const balanceSompi = utxos.reduce((acc, u) => acc + BigInt(u.amountSompi), 0n);
     // Demo-ready · E26: report the identity the query used — the simulator state's account and

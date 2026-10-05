@@ -13,6 +13,7 @@ import { calculateContentHash, CURRENT_HASH_VERSION } from "@hardkas/artifacts";
 describe("Query Store Rebuild Equivalence", () => {
   let tempDir: string;
   let hkDir: string;
+  let artDir: string;
   let store: HardkasStore;
   let db: DatabaseSync;
 
@@ -20,6 +21,9 @@ describe("Query Store Rebuild Equivalence", () => {
     tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "hardkas-rebuild-eq-"));
     hkDir = path.join(tempDir, ".hardkas");
     fs.mkdirSync(hkDir);
+    // WORKSPACE-AUTHORITY-1 (C1): the projection indexes the artifact store the resolver reads
+    artDir = path.join(hkDir, "artifacts");
+    fs.mkdirSync(artDir);
     const dbPath = path.join(hkDir, "store.db");
 
     store = new HardkasStore({ dbPath });
@@ -79,7 +83,7 @@ describe("Query Store Rebuild Equivalence", () => {
   };
 
   it("should be idempotent: sync twice produces same index state", async () => {
-    const artPath = path.join(hkDir, "art1.json");
+    const artPath = path.join(artDir, "art1.json");
     fs.writeFileSync(artPath, createMockArtifact("art1"));
 
     const indexer = new HardkasIndexer(db, { cwd: tempDir });
@@ -96,7 +100,7 @@ describe("Query Store Rebuild Equivalence", () => {
   it("should be equivalent: rebuild after wipe matches original sync", async () => {
     // Generate 5 artifacts
     for (let i = 0; i < 5; i++) {
-      fs.writeFileSync(path.join(hkDir, `art${i}.json`), createMockArtifact(`art${i}`));
+      fs.writeFileSync(path.join(artDir, `art${i}.json`), createMockArtifact(`art${i}`));
     }
 
     const indexer = new HardkasIndexer(db, { cwd: tempDir });
@@ -115,12 +119,12 @@ describe("Query Store Rebuild Equivalence", () => {
     const indexer = new HardkasIndexer(db, { cwd: tempDir });
 
     // 1. Initial
-    fs.writeFileSync(path.join(hkDir, "a.json"), createMockArtifact("a"));
+    fs.writeFileSync(path.join(artDir, "a.json"), createMockArtifact("a"));
     await indexer.sync();
     expect(indexer.doctor().zombieArtifacts).toBe(0);
 
     // 2. Add
-    fs.writeFileSync(path.join(hkDir, "b.json"), createMockArtifact("b"));
+    fs.writeFileSync(path.join(artDir, "b.json"), createMockArtifact("b"));
     await indexer.sync();
     const countAfterAdd = db.prepare("SELECT COUNT(*) as c FROM artifacts").get() as {
       c: number;
@@ -128,7 +132,7 @@ describe("Query Store Rebuild Equivalence", () => {
     expect(countAfterAdd.c).toBe(2);
 
     // 3. Delete
-    fs.unlinkSync(path.join(hkDir, "a.json"));
+    fs.unlinkSync(path.join(artDir, "a.json"));
     await indexer.sync(); // Cleanup should happen here
     const countAfterDel = db.prepare("SELECT COUNT(*) as c FROM artifacts").get() as {
       c: number;
@@ -145,7 +149,7 @@ describe("Query Store Rebuild Equivalence", () => {
     expect(migrationResult.status).toBe("ok");
 
     // 2. Add data
-    fs.writeFileSync(path.join(hkDir, "seq1.json"), createMockArtifact("seq1"));
+    fs.writeFileSync(path.join(artDir, "seq1.json"), createMockArtifact("seq1"));
     await indexer.sync();
 
     // 3. Rebuild

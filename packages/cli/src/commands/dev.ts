@@ -1,5 +1,6 @@
 import { Command } from "commander";
 import { UI } from "../ui.js";
+import { invocationWorkspace } from "../workspace-root.js";
 
 // CLI-RUNTIME-CONTRACT-1: the runners' own errors (and their codes) reach the top-level renderer
 // unchanged. The former `catch (e) { throw new Error("Dev … failed") }` wrappers destroyed them
@@ -100,7 +101,9 @@ export function registerDevCommands(program: Command) {
     .option("--amount <kas>", "Amount in KAS")
     .option("--workspace <path>", "Override workspace root directory")
     .action(async (options: any) => {
-      if (options.workspace) options.workspaceRoot = options.workspace;
+      // --workspace is resolved once (WORKSPACE-AUTHORITY-1); without it this command keeps its default directory
+      const ws = invocationWorkspace();
+      if (ws.explicit !== undefined) options.workspaceRoot = ws.root;
       const { runDevTxSend } = await import("../runners/dev-tx-runners.js");
       await runDevTxSend(options);
     });
@@ -114,6 +117,9 @@ export function registerDevCommands(program: Command) {
     .option("--json", "Output as JSON", false)
     .action(async (options: any) => {
       if (options.json) UI.setJsonMode(true);
+      // --workspace is resolved once (WORKSPACE-AUTHORITY-1); without it this command keeps its default directory
+      const ws = invocationWorkspace();
+      if (ws.explicit !== undefined) options.workspace = ws.root;
       const { runDevTxGenerate } = await import("../runners/dev-tx-generate-runner.js");
       // the runner's own error (and its code) reaches the top-level renderer unchanged
       await runDevTxGenerate(options);
@@ -142,7 +148,9 @@ export function registerDevCommands(program: Command) {
     .option("--explain", "Explain the latest workflow", false)
     .option("--workspace <path>", "Override workspace root directory")
     .action(async (options: any) => {
-      if (options.workspace) options.workspaceRoot = options.workspace;
+      // --workspace is resolved once (WORKSPACE-AUTHORITY-1); without it this command keeps its default directory
+      const ws = invocationWorkspace();
+      if (ws.explicit !== undefined) options.workspaceRoot = ws.root;
       const { runDevLast } = await import("../runners/dev-last-runner.js");
       await runDevLast(options);
     });

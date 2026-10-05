@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import fs from "node:fs";
 import path from "node:path";
 import { getQueryBackend } from "../db.js";
+import { eventLedgerPath } from "@hardkas/core";
 
 export const observabilityRoutes = new Hono();
 
@@ -346,7 +347,7 @@ observabilityRoutes.get("/quarantine", async (c) => {
 observabilityRoutes.get("/telemetry", async (c) => {
   const now = new Date().toISOString();
   const telemetryFile = path.join(hardkasDir(), "telemetry", "telemetry.jsonl");
-  const eventsFile = path.join(hardkasDir(), "events.jsonl");
+  const eventsFile = eventLedgerPath(path.dirname(hardkasDir())); // WORKSPACE-AUTHORITY-1 (A3): the one ledger path
 
   if (fs.existsSync(telemetryFile)) {
     const parsed = tryReadJsonl(telemetryFile);
@@ -603,7 +604,7 @@ observabilityRoutes.get("/dashboard-health", async (c) => {
   const hd = hardkasDir();
   const rootDir = process.env.HARDKAS_ROOT || process.cwd();
 
-  const eventsFile = path.join(rootDir, "events.jsonl");
+  const eventsFile = eventLedgerPath(rootDir); // WORKSPACE-AUTHORITY-1 (A3): the one ledger path
   const telemetryFile = path.join(hd, "telemetry", "telemetry.jsonl");
   const storeDb = path.join(hd, "store.db");
   const artifactsDir = path.join(hd, "artifacts");

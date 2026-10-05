@@ -18,11 +18,15 @@ import { withLock } from "@hardkas/core";
 import fs from "node:fs";
 import path from "node:path";
 
-import type { QueryBackendSelection, QueryBackendMode } from "./types.js";
+import type { QueryBackendSelection, QueryBackendMode, QueryProjectionStatus, QueryStoreStatus } from "./types.js";
 import { QueryBackendInitializationError } from "./errors.js";
 
 export interface QueryBackendLoader {
   loadSqlite(options: { databasePath?: string }): Promise<QueryBackend>;
+  /** The loaded projection's state against the workspace (WORKSPACE-AUTHORITY-1); without it freshness is unverified. */
+  projectionStatus?(backend: QueryBackend, workspaceRoot: string): Promise<QueryProjectionStatus>;
+  /** Releases a loaded projection the engine decided not to use. */
+  release?(backend: QueryBackend): Promise<void>;
 }
 
 const defaultLoader: QueryBackendLoader = {
@@ -31,15 +35,18 @@ const defaultLoader: QueryBackendLoader = {
       throw new Error("databasePath is required when loading sqlite backend");
     }
     const { HardkasStore, SqliteQueryBackend } = await import("@hardkas/query-store");
-    const dbPath = options.databasePath;
-    
-    if (!fs.existsSync(path.dirname(dbPath))) {
-        fs.mkdirSync(path.dirname(dbPath), { recursive: true });
-    }
-
-    const store = new HardkasStore({ dbPath });
+    // WORKSPACE-AUTHORITY-1 (WA-I3): a query never creates, migrates or reconfigures the projection (nor its directory)
+    const store = HardkasStore.openExisting(options.databasePath);
+    if (!store) throw new Error(`There is no query projection at ${options.databasePath}`);
     return new SqliteQueryBackend(store);
   },
+  async projectionStatus(backend, workspaceRoot) {
+    const { projectionStatusOf } = await import("@hardkas/query-store");
+    return projectionStatusOf((backend as any).store, workspaceRoot);
+  },
+  async release(backend) {
+    (backend as any).store?.disconnect?.();
+  }
 };
 
 export interface QueryEngineOptions {
@@ -83,44 +90,49 @@ export class QueryEngine {
 
         if (mode === "auto" && !fs.existsSync(checkDbPath)) {
             backend = new FilesystemQueryBackend(options.artifactDir);
-            backendSelection = { 
-                requested: mode, 
+            backendSelection = {
+                requested: mode,
                 selected: "filesystem",
-                fallback: { code: "SQLITE_MISSING", causeName: "StoreNotFound" }
+                fallback: { code: "SQLITE_MISSING", causeName: "StoreNotFound" },
+                projection: { state: "absent", dbPath: checkDbPath, reason: "there is no projection file; queries read the workspace" }
             };
         } else if (mode === "filesystem") {
             backend = new FilesystemQueryBackend(options.artifactDir);
             backendSelection = { requested: mode, selected: "filesystem" };
         } else {
         // mode is "sqlite" or "auto"
+        let loaded: QueryBackend | undefined;
         try {
-            backend = await loader.loadSqlite({ databasePath: checkDbPath });
-            
+            loaded = await loader.loadSqlite({ databasePath: checkDbPath });
+
             // Handle autoSync logic specifically for Sqlite backend
-            if (options.autoSync && 'store' in backend) {
+            if (options.autoSync && 'store' in loaded) {
+                const sqlite = loaded;
                 await withLock(
                   {
                     rootDir: options.artifactDir,
                     name: "query-store",
                     command: "query-engine-auto-sync",
                     wait: options.waitLock ?? false,
-                    timeoutMs: 5000 
+                    timeoutMs: 5000
                   },
                   async () => {
-                    const store = (backend as any).store;
+                    const store = (sqlite as any).store;
                     store.connect({ autoMigrate: true });
                     // Requires dynamically importing HardkasIndexer for sync
                     const { HardkasIndexer } = await import("@hardkas/query-store");
-                    const indexer = new HardkasIndexer(store.getDatabase());
+                    const indexer = new HardkasIndexer(store.getDatabase(), { cwd: options.artifactDir });
                     await indexer.sync();
                   }
                 );
-            } else if ('store' in backend) {
-                ((backend as any).store).connect();
+            } else if ('store' in loaded) {
+                ((loaded as any).store).connect();
             }
-
-            backendSelection = { requested: mode, selected: "sqlite" };
         } catch (error: any) {
+            if (loaded) {
+                await loader.release?.(loaded);
+                loaded = undefined;
+            }
             if (mode === "sqlite") {
                 throw new QueryBackendInitializationError("sqlite", options.databasePath, { cause: error });
             } else {
@@ -134,6 +146,37 @@ export class QueryEngine {
                         causeName: error?.name || "UnknownError"
                     }
                 };
+            }
+        }
+
+        if (loaded) {
+            // WORKSPACE-AUTHORITY-1 (WA-I2): a projection never becomes the truth merely because it exists. AUTO uses it
+            // only when it is proven built from exactly the workspace's current artifacts and ledger; otherwise the
+            // workspace answers and the projection's state is reported. An explicit `sqlite` request is honoured even
+            // when stale, and the answer says so (never a silent switch to the workspace).
+            let projection: QueryProjectionStatus;
+            try {
+                projection = loader.projectionStatus
+                    ? await loader.projectionStatus(loaded, options.artifactDir)
+                    : { state: "unverified", reason: "this backend reports no freshness" };
+            } catch (error: any) {
+                projection = { state: "unreadable", reason: error?.message ?? String(error) };
+            }
+            if (mode === "auto" && projection.state !== "fresh") {
+                await loader.release?.(loaded);
+                backend = new FilesystemQueryBackend(options.artifactDir);
+                backendSelection = {
+                    requested: mode,
+                    selected: "filesystem",
+                    fallback: {
+                        code: `PROJECTION_${projection.state.toUpperCase()}` as "PROJECTION_STALE",
+                        causeName: "ProjectionNotFresh"
+                    },
+                    projection
+                };
+            } else {
+                backend = loaded;
+                backendSelection = { requested: mode, selected: "sqlite", projection };
             }
         }
     }
@@ -188,9 +231,18 @@ export class QueryEngine {
 
     const result = await adapter.execute(request);
 
-    // Inject freshness and backend info into annotations
-    const freshness = await this.backend.getStoreStatus();
+    // Inject freshness and backend info into annotations. WORKSPACE-AUTHORITY-1: a projection's freshness is the one its
+    // selection proved (or failed to prove) against the workspace, never a guess from file timestamps.
     const backendUsed = this.backend.kind();
+    const projection = this.backendSelection.projection;
+    const freshness: QueryStoreStatus =
+      backendUsed === "sqlite" && projection
+        ? projection.state === "fresh"
+          ? "fresh"
+          : projection.state === "unverified"
+            ? "unknown"
+            : "stale"
+        : ((await this.backend.getStoreStatus()) as QueryStoreStatus);
 
     let explain: any = undefined;
     if (request.explain) {
@@ -205,7 +257,7 @@ export class QueryEngine {
         warnings:
           freshness === "stale"
             ? [
-                "Index is STALE. mtime mismatch detected. Run 'hardkas query store rebuild'."
+                `The query projection is STALE (${projection?.reason ?? "it does not match the workspace"}); this answer came from it because sqlite was requested. Run 'hardkas query store rebuild'.`
               ]
             : []
       };
@@ -217,7 +269,8 @@ export class QueryEngine {
       annotations: {
         ...result.annotations,
         backendUsed,
-        freshness
+        freshness,
+        ...(projection ? { projection: { ...projection, used: backendUsed === "sqlite" } } : {})
       }
     } as QueryResult<T>;
   }

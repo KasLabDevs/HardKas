@@ -9,6 +9,8 @@ import os from "node:os";
 import { QueryEngine, createQueryRequest } from "../src/engine.js";
 import { evaluateFilter, evaluateFilters } from "../src/filter.js";
 import { serializeQueryResult } from "../src/serialize.js";
+import { calculateContentHash, CURRENT_HASH_VERSION } from "@hardkas/artifacts";
+import { eventLedgerPath } from "@hardkas/core";
 
 // ---------------------------------------------------------------------------
 // Test fixtures
@@ -88,17 +90,24 @@ beforeAll(() => {
       workflowId: "wf-test-2"
     })
   ];
-  fs.writeFileSync(path.join(hardkasDir, "events.jsonl"), events.join("\n") + "\n");
+  fs.writeFileSync(eventLedgerPath(tmpDir), events.join("\n") + "\n");
 
-  // Create artifact files
-  fs.writeFileSync(
-    path.join(hardkasDir, "plan-1.json"),
-    makeArtifact("hardkas.txPlan", { txId: "tx-abc" })
-  );
-  fs.writeFileSync(
-    path.join(hardkasDir, "signed-1.json"),
-    makeArtifact("hardkas.signedTx", { txId: "tx-abc" })
-  );
+  // A sealed plan → signed → receipt chain in the artifact store: the receipt answers the tx namespace for tx-abc, and
+  // its authenticated lineage reaches the signed artifact and the plan.
+  const seal = (body: Record<string, unknown>) => {
+    const a: any = { ...body, hashVersion: CURRENT_HASH_VERSION };
+    a.contentHash = calculateContentHash(a, CURRENT_HASH_VERSION);
+    return a;
+  };
+  const common = { version: "2.0.0", networkId: "kaspa-testnet-11", mode: "simulator", createdAt: "2025-01-15T10:00:00.000Z" };
+  const plan = seal({ schema: "hardkas.txPlan", ...common });
+  const signed = seal({ schema: "hardkas.signedTx", ...common, txId: "tx-abc", lineage: { parentArtifactId: plan.contentHash } });
+  const receipt = seal({ schema: "hardkas.txReceipt", ...common, txId: "tx-abc", status: "confirmed", lineage: { parentArtifactId: signed.contentHash } });
+  const store = path.join(hardkasDir, "artifacts");
+  for (const [sub, a] of [["plans", plan], ["signed", signed], ["receipts", receipt]] as const) {
+    fs.mkdirSync(path.join(store, sub), { recursive: true });
+    fs.writeFileSync(path.join(store, sub, `${a.contentHash}.json`), JSON.stringify(a, null, 2));
+  }
 });
 
 afterAll(() => {

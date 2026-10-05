@@ -1,6 +1,6 @@
 import { Command } from "commander";
 import { UI } from "../ui.js";
-import path from "node:path";
+import { explicitWorkspaceOrCwd } from "../workspace-root.js";
 
 export function registerReplayCommands(program: Command) {
   const replayCmd = program
@@ -23,9 +23,7 @@ export function registerReplayCommands(program: Command) {
       // typed error propagate makes the top-level renderer the single
       // owner of the final failure envelope.
       const { runReplayVerify } = await import("../runners/replay-verify-runner.js");
-      const workspaceRoot = options.workspace
-        ? path.resolve(options.workspace)
-        : process.cwd();
+      const workspaceRoot = explicitWorkspaceOrCwd(); // --workspace is resolved once (WORKSPACE-AUTHORITY-1)
       await runReplayVerify({ path: targetPath || "", ...options, workspaceRoot });
     });
   replayCmd

@@ -1,6 +1,5 @@
-import fs from "node:fs";
 import path from "node:path";
-import { coreEvents, type EventEnvelope, AppendCoordinator } from "@hardkas/core";
+import { attachLedgerAppender as attachWorkspaceLedgerAppender } from "@hardkas/core";
 
 export interface LedgerAppenderOptions {
   cwd?: string;
@@ -9,39 +8,17 @@ export interface LedgerAppenderOptions {
 let appenderUnsubscribe: (() => void) | null = null;
 
 /**
- * Attaches a listener to the core in-memory event bus to persist
- * all emitted events to the deterministic event ledger (.hardkas/events.jsonl).
+ * @deprecated WORKSPACE-AUTHORITY-1 (A2): a workspace has ONE event ledger, `<root>/events.jsonl`, and one writer for it,
+ * `@hardkas/core`'s `attachLedgerAppender`. This entry point (never used by HardKAS itself) used to write a second ledger
+ * under `.hardkas/events.jsonl`; it is kept only so its importers keep working, and it attaches that same writer.
  */
 export function attachLedgerAppender(options: LedgerAppenderOptions = {}): () => void {
   // Prevent duplicate attachments in the same process
   if (appenderUnsubscribe) {
     return appenderUnsubscribe;
   }
-
-  const cwd = options.cwd || process.cwd();
-  const hardkasDir = path.join(cwd, ".hardkas");
-  const ledgerPath = path.join(hardkasDir, "events.jsonl");
-
-  // Ensure directory exists
-  if (!fs.existsSync(hardkasDir)) {
-    fs.mkdirSync(hardkasDir, { recursive: true });
-  }
-
-  const listener = (event: EventEnvelope) => {
-    try {
-      const line = JSON.stringify(event);
-      AppendCoordinator.appendAtomic(ledgerPath, line, cwd);
-    } catch (e) {
-      // Intentionally swallow errors so the appender doesn't crash the main process.
-      // But in dev mode, we might want to log it.
-      if (process.env.DEBUG) {
-        console.error("Failed to append event to ledger:", e);
-      }
-    }
-  };
-
-  appenderUnsubscribe = coreEvents.on(listener);
-  return appenderUnsubscribe!;
+  appenderUnsubscribe = attachWorkspaceLedgerAppender(path.resolve(options.cwd || process.cwd()));
+  return appenderUnsubscribe;
 }
 
 /**

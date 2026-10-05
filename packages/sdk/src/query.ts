@@ -128,11 +128,16 @@ export class HardkasQuery {
         },
         async () => {
           store.connect({ autoMigrate: true });
-          const indexer = new HardkasIndexer(store.getDatabase());
-          if (options?.force) {
-            stats = await indexer.rebuild();
-          } else {
-            stats = await indexer.sync();
+          try {
+            // WORKSPACE-AUTHORITY-1: the projection indexes this SDK's workspace, never the process's current directory
+            const indexer = new HardkasIndexer(store.getDatabase(), { cwd: this.sdk.workspace.root });
+            if (options?.force) {
+              stats = await indexer.rebuild();
+            } else {
+              stats = await indexer.sync();
+            }
+          } finally {
+            store.disconnect();
           }
         }
       );

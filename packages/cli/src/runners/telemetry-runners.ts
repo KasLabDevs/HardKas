@@ -3,9 +3,11 @@ import path from "node:path";
 import pc from "picocolors";
 import { UI } from "../ui.js";
 import { HardkasSchemas } from "@hardkas/artifacts";
+import { invocationWorkspaceRoot } from "../workspace-root.js";
 
 function telemetryPath(): string {
-  return path.join(process.cwd(), ".hardkas", "telemetry", "telemetry.jsonl");
+  // WORKSPACE-AUTHORITY-1 (WA-I0): the invocation's one workspace root, not the directory the command ran from
+  return path.join(invocationWorkspaceRoot(), ".hardkas", "telemetry", "telemetry.jsonl");
 }
 
 function tryReadJsonl(p: string): {
@@ -168,12 +170,11 @@ export async function runTelemetryVerify() {
   );
 
   if (!fs.existsSync(p)) {
-    const { HardkasCliError } = await import("../cli-errors.js");
-    throw new HardkasCliError(
-      "TELEMETRY_FILE_NOT_FOUND",
-      `Verification FAILED: Telemetry file does not exist at ${p}`,
-      { exitCode: 1 }
-    );
+    // WORKSPACE-AUTHORITY-1 (F3): the runtime writes this stream only when it records an anomaly, so no stream means no
+    // anomalies were recorded — nothing violates the contract.
+    UI.success(`No anomalies recorded: there is no telemetry stream at ${p}. Verification PASSED.`);
+    console.log("");
+    return;
   }
 
   const raw = fs.readFileSync(p, "utf-8").trim();

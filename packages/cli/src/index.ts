@@ -2,7 +2,6 @@
 
 import { buildHardkasProgram } from "./program.js";
 import { attachLedgerAppender } from "@hardkas/core";
-import path from "node:path";
 
 async function main() {
   const isJson = process.argv.includes("--json");
@@ -14,15 +13,16 @@ async function main() {
   // EVIDENCE-TRUST-1 (ET-C5): no URL credential reaches the terminal through a direct console print either.
   installConsoleRedaction();
 
-  const wsArgIndex = process.argv.indexOf("--workspace");
-  const workspaceRoot =
-    wsArgIndex !== -1 && process.argv[wsArgIndex + 1]
-      ? path.resolve(process.argv[wsArgIndex + 1] as string)
-      : process.cwd();
+  // WORKSPACE-AUTHORITY-1 (WA-I0): the workspace root is resolved once, here, and the event ledger, the config and every
+  // workspace-aware command use that one root.
+  const { resolveWorkspaceRoot, loadHardkasConfig } = await import("@hardkas/config");
+  const { workspaceArgFrom, fixInvocationWorkspace } = await import("./workspace-root.js");
+  const workspace = resolveWorkspaceRoot({ explicit: workspaceArgFrom(process.argv) });
+  fixInvocationWorkspace(workspace);
+  const workspaceRoot = workspace.root;
 
   attachLedgerAppender(workspaceRoot);
 
-  const { loadHardkasConfig } = await import("@hardkas/config");
   let loadedConfig;
   try {
     loadedConfig = await loadHardkasConfig({ workspaceRoot });

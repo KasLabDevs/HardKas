@@ -13,9 +13,10 @@ export async function runArtifactExplain(options: {
   path: string;
   workspaceRoot: string;
 }) {
-  const { Hardkas } = await import("@hardkas/sdk");
-  const sdk = await Hardkas.open({ cwd: options.workspaceRoot });
-  const absolutePath = sdk.workspace.resolvePath(options.path);
+  // WORKSPACE-AUTHORITY-1 (WA-I3): explaining reads; it never opens (and so never bootstraps) a workspace. The path is
+  // resolved against the workspace root, as before; an artifact outside any workspace can be explained too.
+  const absolutePath = path.resolve(options.workspaceRoot, options.path);
+  const storeRoot = fs.existsSync(path.join(options.workspaceRoot, ".hardkas")) ? options.workspaceRoot : undefined;
 
   if (!fs.existsSync(absolutePath)) {
     const { HardkasCliError } = await import("../cli-errors.js");
@@ -25,8 +26,9 @@ export async function runArtifactExplain(options: {
   }
 
   const rawArtifact = JSON.parse(stripBom(fs.readFileSync(absolutePath, "utf-8")));
-  // EVIDENCE-TRUST-1 (ET-C2): references are looked up in this workspace's store, as `hardkas verify` does.
-  const explanation = await explainArtifact(rawArtifact, { workspaceRoot: sdk.workspace.root });
+  // EVIDENCE-TRUST-1 (ET-C2): references are looked up in this workspace's store, as `hardkas verify` does. With no store
+  // there, nothing is searched and the references say so ("not resolved"), never "missing".
+  const explanation = await explainArtifact(rawArtifact, storeRoot ? { workspaceRoot: storeRoot } : {});
 
   UI.header(`Operational Audit: ${path.basename(options.path)}`);
 

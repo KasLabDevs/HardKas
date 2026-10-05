@@ -1,7 +1,7 @@
 /**
  * Events Query Adapter.
  *
- * Reads events from .hardkas/events.jsonl (filesystem fallback).
+ * Reads the workspace's event ledger (<root>/events.jsonl, WORKSPACE-AUTHORITY-1) through the backend.
  * Provides: list operations with deterministic ordering.
  */
 import fs from "node:fs/promises";
@@ -64,7 +64,6 @@ export class EventsQueryAdapter implements QueryAdapter {
     const start = Date.now();
     const events = await this.loadEvents();
     const backendUsed = this.backend.kind();
-    const eventsPath = path.join(this.rootDir, ".hardkas", "events.jsonl");
 
     // Apply filters
     const filtered: EventItem[] = [];

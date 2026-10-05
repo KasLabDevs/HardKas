@@ -47,7 +47,7 @@ describe("Wave 1.3 · replay queries never decide on a legacy status", () => {
 
   beforeAll(async () => {
     tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "hk-w13-query-"));
-    const receiptsDir = path.join(tmpDir, ".hardkas", "receipts");
+    const receiptsDir = path.join(tmpDir, ".hardkas", "artifacts", "receipts"); // WORKSPACE-AUTHORITY-1 (C1)
     await fs.mkdir(receiptsDir, { recursive: true });
     // Same content, two authentication scopes: `status: confirmed` with pre === post
     // is a state-transition divergence ONLY when the status is authenticated.

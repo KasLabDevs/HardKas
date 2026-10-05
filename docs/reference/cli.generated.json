@@ -4328,7 +4328,7 @@
               "options": [
                 {
                   "flags": "--backend <type>",
-                  "description": "sqlite creates .hardkas/store.db; filesystem indexes nothing (default: sqlite only if store.db already exists)",
+                  "description": "sqlite (the default) builds .hardkas/store.db from the workspace; filesystem keeps no index, so it has nothing to rebuild",
                   "default": null,
                   "required": true,
                   "mandatory": false
@@ -4407,7 +4407,7 @@
               "aliases": [
                 "index"
               ],
-              "description": "Index new artifacts into the SQLite query store (needs .hardkas/store.db: run 'query store rebuild --backend sqlite' first)",
+              "description": "Index new artifacts into the SQLite query store (needs .hardkas/store.db: run 'query store rebuild' first)",
               "usage": "hardkas query store sync [options]",
               "arguments": [],
               "options": [

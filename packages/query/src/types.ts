@@ -24,9 +24,17 @@ export interface QueryBackendSelection {
   readonly requested: QueryBackendMode;
   readonly selected: "sqlite" | "filesystem";
   readonly fallback?: {
-    readonly code: "SQLITE_INITIALIZATION_FAILED" | "SQLITE_MISSING";
+    readonly code:
+      | "SQLITE_INITIALIZATION_FAILED"
+      | "SQLITE_MISSING"
+      | "PROJECTION_STALE"
+      | "PROJECTION_ABSENT"
+      | "PROJECTION_UNREADABLE"
+      | "PROJECTION_UNVERIFIED";
     readonly causeName: string;
   };
+  /** WORKSPACE-AUTHORITY-1: the projection's state when one was looked at (auto and sqlite modes). */
+  readonly projection?: QueryProjectionStatus;
 }
 
 // ---------------------------------------------------------------------------
@@ -119,13 +127,29 @@ export interface QueryResult<T = unknown> {
 
 export type QueryStoreStatus = "fresh" | "stale" | "rebuilding" | "unknown";
 
+/**
+ * WORKSPACE-AUTHORITY-1 (WA-I2) · what is known about the SQLite projection (.hardkas/store.db) a query could use.
+ * fresh: built from exactly the workspace's current artifacts and ledger · stale: the workspace changed since, or
+ * freshness cannot be shown · absent: no projection · unreadable: a file that cannot be read as one · unverified: a
+ * custom backend whose freshness nobody could check.
+ */
+export interface QueryProjectionStatus {
+  readonly state: "fresh" | "stale" | "absent" | "unreadable" | "unverified";
+  readonly reason: string;
+  readonly dbPath?: string | undefined;
+  readonly indexedAt?: string | null | undefined;
+}
+
 /** Non-deterministic metadata, always isolated from deterministic fields. */
 export interface QueryAnnotations {
   readonly executedAt: string;
   readonly executionMs: number;
   readonly filesScanned?: number | undefined;
   readonly backendUsed?: string | undefined;
+  /** The freshness of the data this answer came from: the workspace itself always is; a projection only when proven. */
   readonly freshness?: QueryStoreStatus | undefined;
+  /** The projection's state, and whether this answer came from it. */
+  readonly projection?: (QueryProjectionStatus & { readonly used: boolean }) | undefined;
 }
 
 // ---------------------------------------------------------------------------

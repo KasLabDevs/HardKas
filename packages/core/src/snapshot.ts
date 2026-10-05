@@ -5,6 +5,7 @@ import { randomBytes } from "node:crypto";
 import { HardkasError } from "./errors.js";
 import { withLock } from "./lock.js";
 import { HARDKAS_RUNTIME_VERSION } from "./version.js";
+import { eventLedgerPath } from "./events.js";
 
 export interface SnapshotManifest {
   snapshotVersion: number;
@@ -120,7 +121,8 @@ async function writeSnapshot(
   );
 
   // 2. Copy events append-log and 3. sqlite database (projection cache); a file that is absent is not part of the store
-  await copyIfPresent(path.join(hardkasDir, "events.jsonl"), path.join(dir, "events", "events.jsonl"));
+  // WORKSPACE-AUTHORITY-1 (A): the workspace's one event ledger (<root>/events.jsonl), the one the CLI writes
+  await copyIfPresent(eventLedgerPath(path.dirname(hardkasDir)), path.join(dir, "events", "events.jsonl"));
   await copyIfPresent(path.join(hardkasDir, "store.db"), path.join(dir, "projections", "store.db"));
 
   const manifest: SnapshotManifest = {

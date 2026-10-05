@@ -42,9 +42,10 @@ export interface ArtifactLineageResult {
 }
 
 export async function runArtifactLineage(options: ArtifactLineageOptions): Promise<ArtifactLineageResult> {
-  const { Hardkas } = await import("@hardkas/sdk");
-  const sdk = await Hardkas.open({ cwd: options.workspaceRoot });
-  const absolutePath = sdk.workspace.resolvePath(options.path);
+  // WORKSPACE-AUTHORITY-1 (WA-I3): reading a lineage never opens (and so never bootstraps) a workspace. The path is
+  // resolved against the workspace root, as before; with no store there, ancestors are "unresolved", never "missing".
+  const absolutePath = path.resolve(options.workspaceRoot, options.path);
+  const storeRoot = fs.existsSync(path.join(options.workspaceRoot, ".hardkas")) ? options.workspaceRoot : undefined;
   const json = options.json === true;
 
   if (!fs.existsSync(absolutePath)) {
@@ -89,7 +90,7 @@ export async function runArtifactLineage(options: ArtifactLineageOptions): Promi
   // Validation: the internal structure, then the chain as RESOLVED in the workspace store (EVIDENCE-TRUST-1, ET-C2) —
   // the same verified resolver `hardkas verify` uses. Provenance is complete only if that walk reached the declared root.
   const structure = verifyLineage(artifact);
-  const resolved = resolveLineageChain(artifact, { workspaceRoot: sdk.workspace.root });
+  const resolved = resolveLineageChain(artifact, storeRoot ? { workspaceRoot: storeRoot } : {});
   const stopped = resolved.links.length > 1 && resolved.links[resolved.links.length - 1]!.status !== "resolved"
     ? resolved.links[resolved.links.length - 1]!
     : undefined;

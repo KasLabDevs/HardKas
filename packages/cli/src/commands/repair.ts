@@ -3,7 +3,8 @@ import path from "node:path";
 import fs from "node:fs/promises";
 import pc from "picocolors";
 import { handleError, UI } from "../ui.js";
-import { AppendCoordinator, MigrationManager } from "@hardkas/core";
+import { AppendCoordinator, MigrationManager, eventLedgerPath } from "@hardkas/core";
+import { invocationWorkspaceRoot } from "../workspace-root.js";
 import { HardkasStore, HardkasIndexer } from "@hardkas/query-store";
 
 export function registerRepairCommand(program: Command) {
@@ -30,7 +31,8 @@ async function runRepair(opts: { json?: boolean; force?: boolean }) {
     UI.box("HardKAS Repair", "Automated Corruption Recovery");
   }
 
-  const rootDir = process.cwd();
+  // WORKSPACE-AUTHORITY-1 (WA-I0): the invocation's one workspace root
+  const rootDir = invocationWorkspaceRoot();
   const hardkasDir = path.join(rootDir, ".hardkas");
   let repairedCount = 0;
 
@@ -73,7 +75,7 @@ async function runRepair(opts: { json?: boolean; force?: boolean }) {
 
   // 3. Repair Append Tails
   const streams = [
-    { name: "Event Ledger", path: path.join(rootDir, "events.jsonl") },
+    { name: "Event Ledger", path: eventLedgerPath(rootDir) },
     { name: "Telemetry", path: path.join(hardkasDir, "telemetry", "telemetry.jsonl") }
   ];
 
@@ -117,11 +119,12 @@ async function runRepair(opts: { json?: boolean; force?: boolean }) {
     }
   }
 
-  // 4. Rebuild SQLite Projection
+  // 4. Rebuild SQLite Projection · WORKSPACE-AUTHORITY-1 (WA-I3): reporting never creates or migrates the projection;
+  // only --force acts on it (by deleting a corrupt one)
   try {
     const dbPath = path.join(hardkasDir, "store.db");
-    const store = new HardkasStore({ dbPath });
-    store.connect({ autoMigrate: true });
+    const store = HardkasStore.openExisting(dbPath);
+    if (!store) throw new Error("no query projection");
 
     const indexer = new HardkasIndexer(store.getDatabase(), {
       cwd: rootDir,

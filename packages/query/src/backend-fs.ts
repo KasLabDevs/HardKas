@@ -1,12 +1,12 @@
 import fs from "node:fs/promises";
-import path from "node:path";
 import type {
   QueryBackend,
   ArtifactDocument,
   EventDocument,
   LineageEdgeDocument
 } from "./backend.js";
-import { ExecutionMode, NetworkId } from "@hardkas/core";
+import { ExecutionMode, NetworkId, eventLedgerPath } from "@hardkas/core";
+import { distinctWorkspaceArtifactsSync } from "@hardkas/artifacts";
 
 export class FilesystemQueryBackend implements QueryBackend {
   private readonly rootDir: string;
@@ -28,11 +28,14 @@ export class FilesystemQueryBackend implements QueryBackend {
     mode?: string;
     networkId?: string;
   }): Promise<ArtifactDocument[]> {
-    const files = await this.scanFiles(this.rootDir);
+    // WORKSPACE-AUTHORITY-1 (C1): the workspace's artifacts are its artifact store as the verified resolver reads it —
+    // never every JSON file under the workspace (a user's --out copy, a snapshot's capture, localnet.json, deployments) —
+    // one per identity, by the same copy the projection keeps, so both backends give the same answer.
     const docs: ArtifactDocument[] = [];
 
-    for (const f of files) {
-      const raw = await this.readJson(f);
+    for (const entry of distinctWorkspaceArtifactsSync(this.rootDir)) {
+      const f = entry.path;
+      const raw = entry.artifact;
       if (!raw || !raw.schema) continue;
 
       if (filters?.schema && raw.schema !== filters.schema) continue;
@@ -71,7 +74,8 @@ export class FilesystemQueryBackend implements QueryBackend {
   }
 
   async getEvents(filters?: { kind?: string; txId?: string }): Promise<EventDocument[]> {
-    const eventsPath = path.join(this.rootDir, ".hardkas", "events.jsonl");
+    // WORKSPACE-AUTHORITY-1 (A): the workspace's one event ledger
+    const eventsPath = eventLedgerPath(this.rootDir);
     const docs: EventDocument[] = [];
     try {
       const content = await fs.readFile(eventsPath, "utf-8");
@@ -180,35 +184,4 @@ export class FilesystemQueryBackend implements QueryBackend {
     );
   }
 
-  private async scanFiles(dir: string): Promise<string[]> {
-    const results: string[] = [];
-    try {
-      const entries = await fs.readdir(dir, { withFileTypes: true });
-      for (const entry of entries) {
-        const fullPath = path.join(dir, entry.name);
-        if (entry.isDirectory()) {
-          if (entry.name === "node_modules" || entry.name === ".git") continue;
-          results.push(...(await this.scanFiles(fullPath)));
-        } else if (
-          entry.name.endsWith(".json") &&
-          !entry.name.endsWith(".enc.json") &&
-          entry.name !== "events.jsonl"
-        ) {
-          results.push(fullPath);
-        }
-      }
-    } catch {
-      // Ignore
-    }
-    return results;
-  }
-
-  private async readJson(file: string): Promise<any> {
-    try {
-      const content = await fs.readFile(file, "utf-8");
-      return JSON.parse(content);
-    } catch {
-      return null;
-    }
-  }
 }

@@ -177,39 +177,37 @@ function realpathOr(p: string): string {
   }
 }
 
+export interface WorkspaceStoreFile {
+  path: string;
+  relativeSubpath: string;
+  subDir: string;
+}
+
 /**
- * Every parseable `.json` artifact under `<workspaceRoot>/.hardkas/artifacts` (root
- * and canonical subdirectories), contained by real path, deduplicated, in a stable
- * order. Unparseable files are not artifacts and cannot claim an identity.
+ * WORKSPACE-AUTHORITY-1 (WA-I1) · every `.json` regular file of the artifact store the resolver reads — the store root
+ * and its canonical subdirectories, contained by real path, deduplicated, in a stable order — whether or not it parses.
+ * The resolver keeps the parseable ones (`enumerateWorkspaceArtifactsSync`); the query projection indexes exactly this
+ * set, so a file that does not parse is reported as corrupted instead of silently ignored.
  */
-export function enumerateWorkspaceArtifactsSync(workspaceRoot: string): WorkspaceArtifactEntry[] {
+export function listWorkspaceStoreFilesSync(workspaceRoot: string): WorkspaceStoreFile[] {
   const artifactsDir = path.join(path.resolve(workspaceRoot), ".hardkas", "artifacts");
   const resolvedBase = realpathOr(artifactsDir);
-  const entries: WorkspaceArtifactEntry[] = [];
+  const files: WorkspaceStoreFile[] = [];
   const seen = new Set<string>();
 
   const scan = (dirPath: string, subDir: string) => {
-    let files: string[];
+    let names: string[];
     try {
-      files = fs.readdirSync(dirPath);
+      names = fs.readdirSync(dirPath);
     } catch {
       return;
     }
-    for (const file of files) {
+    for (const file of names) {
       if (!file.endsWith(".json")) continue;
       const real = path.resolve(realpathOr(path.join(dirPath, file)));
       const rel = path.relative(resolvedBase, real);
       const contained = rel !== "" && rel !== ".." && !rel.startsWith(`..${path.sep}`) && !path.isAbsolute(rel);
       if (!contained || seen.has(real)) continue;
-      let artifact: unknown;
-      try {
-        let content = fs.readFileSync(real, "utf-8");
-        if (content.charCodeAt(0) === 0xfeff) content = content.slice(1);
-        artifact = JSON.parse(content);
-      } catch {
-        continue;
-      }
-      if (!artifact || typeof artifact !== "object" || Array.isArray(artifact)) continue;
       let stat: fs.Stats;
       try {
         stat = fs.statSync(real);
@@ -218,14 +216,83 @@ export function enumerateWorkspaceArtifactsSync(workspaceRoot: string): Workspac
       }
       if (!stat.isFile()) continue;
       seen.add(real);
-      entries.push({ path: real, relativeSubpath: rel.replace(/\\/g, "/"), subDir, artifact });
+      files.push({ path: real, relativeSubpath: rel.replace(/\\/g, "/"), subDir });
     }
   };
 
   scan(artifactsDir, "root");
   for (const sub of CANONICAL_STORE_SUBDIRS) scan(path.join(artifactsDir, sub), sub);
-  entries.sort((a, b) => (a.relativeSubpath < b.relativeSubpath ? -1 : a.relativeSubpath > b.relativeSubpath ? 1 : 0));
+  files.sort((a, b) => (a.relativeSubpath < b.relativeSubpath ? -1 : a.relativeSubpath > b.relativeSubpath ? 1 : 0));
+  return files;
+}
+
+/**
+ * Every parseable `.json` artifact under `<workspaceRoot>/.hardkas/artifacts` (root
+ * and canonical subdirectories), contained by real path, deduplicated, in a stable
+ * order. Unparseable files are not artifacts and cannot claim an identity.
+ */
+export function enumerateWorkspaceArtifactsSync(workspaceRoot: string): WorkspaceArtifactEntry[] {
+  const entries: WorkspaceArtifactEntry[] = [];
+  for (const file of listWorkspaceStoreFilesSync(workspaceRoot)) {
+    let artifact: unknown;
+    try {
+      let content = fs.readFileSync(file.path, "utf-8");
+      if (content.charCodeAt(0) === 0xfeff) content = content.slice(1);
+      artifact = JSON.parse(content);
+    } catch {
+      continue;
+    }
+    if (!artifact || typeof artifact !== "object" || Array.isArray(artifact)) continue;
+    entries.push({ ...file, artifact });
+  }
   return entries;
+}
+
+/**
+ * WORKSPACE-AUTHORITY-1 (C1) · which copy represents an identity the store holds at several paths: a copy in a canonical
+ * subdirectory (where `publishArtifact` writes it once) before a copy at the store root (such as the `tx plan` lattice
+ * copy), then by path. The query projection and the filesystem query backend both apply it, so they answer with the same
+ * file for the same artifact.
+ */
+export function compareStoreCopies(a: string, b: string): number {
+  const atStoreRoot = (p: string) => (path.basename(path.dirname(p)) === "artifacts" ? 1 : 0);
+  return atStoreRoot(a) - atStoreRoot(b) || (a < b ? -1 : a > b ? 1 : 0);
+}
+
+/** The store's entries, each with the identity it verifies as (none when it does not verify). */
+function verifiedWorkspaceEntriesSync(workspaceRoot: string): Array<{ entry: WorkspaceArtifactEntry; artifactId?: string }> {
+  return enumerateWorkspaceArtifactsSync(workspaceRoot).map((entry) => {
+    const check = checkArtifactIdentity(entry.artifact);
+    return check.ok ? { entry, artifactId: check.artifactId } : { entry };
+  });
+}
+
+/**
+ * WORKSPACE-AUTHORITY-1 (C1) · the store's artifacts as distinct identities, which is what every count and list of
+ * "artifacts" shows: one entry per verified identity, the copy `compareStoreCopies` puts first, and every entry that does
+ * not verify on its own (it has no identity to share). In the resolver's order.
+ */
+export function distinctWorkspaceArtifactsSync(workspaceRoot: string): WorkspaceArtifactEntry[] {
+  const verified = verifiedWorkspaceEntriesSync(workspaceRoot);
+  const representative = new Map<string, WorkspaceArtifactEntry>();
+  for (const { entry, artifactId } of verified) {
+    if (!artifactId) continue;
+    const current = representative.get(artifactId);
+    if (!current || compareStoreCopies(entry.path, current.path) < 0) representative.set(artifactId, entry);
+  }
+  return verified.filter(({ entry, artifactId }) => !artifactId || representative.get(artifactId) === entry).map(({ entry }) => entry);
+}
+
+/**
+ * WORKSPACE-AUTHORITY-1 (C1) · what "Artifacts" counts: the distinct canonical identities among the store's entries (the
+ * `tx plan` lattice copy of a plan is the same artifact as the plan). An entry that does not verify has no identity to
+ * share and counts on its own, under its path. `entries` is the number of store files the resolver reads.
+ */
+export function countWorkspaceArtifactsSync(workspaceRoot: string): { artifacts: number; entries: number; unverified: number } {
+  const verified = verifiedWorkspaceEntriesSync(workspaceRoot);
+  const identities = new Set(verified.flatMap(({ artifactId }) => (artifactId ? [artifactId] : [])));
+  const unverified = verified.filter(({ artifactId }) => !artifactId).length;
+  return { artifacts: identities.size + unverified, entries: verified.length, unverified };
 }
 
 // -----------------------------------------------------------------------------

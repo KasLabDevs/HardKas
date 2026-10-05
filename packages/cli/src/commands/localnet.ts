@@ -8,6 +8,7 @@ import {
   runLocalnetStop
 } from "../runners/localnet-runners.js";
 import { parseKasToSompi } from "@hardkas/core";
+import { invocationWorkspaceRoot } from "../workspace-root.js";
 
 export function registerLocalnetCommands(program: Command): void {
   const localnet = program
@@ -123,7 +124,8 @@ export function registerLocalnetCommands(program: Command): void {
     .option("--json", "Output as JSON", false)
     .action(async (idOrName: string, options: { json: boolean }) => {
       const { runSnapshotVerify } = await import("../runners/snapshot-verify-runner.js");
-      await runSnapshotVerify({ idOrName, ...options, workspaceRoot: process.cwd() });
+      // WORKSPACE-AUTHORITY-1 (WA-I0): the snapshot commands act on the invocation's one workspace root
+      await runSnapshotVerify({ idOrName, ...options, workspaceRoot: invocationWorkspaceRoot() });
     });
 
   snapshotCmd
@@ -145,7 +147,7 @@ export function registerLocalnetCommands(program: Command): void {
           name,
           consensusValidated: options.consensusValidated,
           json: options.json,
-          workspaceRoot: process.cwd()
+          workspaceRoot: invocationWorkspaceRoot()
         });
       }
     );
@@ -158,6 +160,6 @@ export function registerLocalnetCommands(program: Command): void {
     .option("--json", "Output as JSON", false)
     .action(async (name: string, options: { json: boolean }) => {
       const { runSnapshotReplay } = await import("../runners/snapshot-replay-runner.js");
-      await runSnapshotReplay({ name, json: options.json, workspaceRoot: process.cwd() });
+      await runSnapshotReplay({ name, json: options.json, workspaceRoot: invocationWorkspaceRoot() });
     });
 }

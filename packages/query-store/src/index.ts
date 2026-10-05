@@ -4,4 +4,5 @@ export * from "./indexer.js";
 export * from "./backend.js";
 export * from "./ledger-appender.js";
 export * from "./projection-store.js";
+export * from "./projection-status.js";
 export * from "./domain-store.js";

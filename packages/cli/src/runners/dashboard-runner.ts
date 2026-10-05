@@ -2,6 +2,7 @@
 import path from "node:path";
 import http from "node:http";
 import { UI } from "../ui.js";
+import { eventLedgerPath } from "@hardkas/core";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -147,7 +148,7 @@ function handleStatus(_url: URL, res: http.ServerResponse) {
 function handleTelemetry(_url: URL, res: http.ServerResponse) {
   const now = new Date().toISOString();
   const telemetryFile = path.join(hardkasDir(), "telemetry", "telemetry.jsonl");
-  const eventsFile = path.join(hardkasDir(), "events.jsonl");
+  const eventsFile = eventLedgerPath(path.dirname(hardkasDir())); // WORKSPACE-AUTHORITY-1 (A3): the one ledger path
 
   // Priority 1: telemetry.jsonl
   if (fs.existsSync(telemetryFile)) {
@@ -585,7 +586,7 @@ function handleDashboardHealth(_url: URL, res: http.ServerResponse) {
     hardkasDirExists: fs.existsSync(hd),
     queryStoreExists: fs.existsSync(path.join(hd, "store.db")),
     telemetryExists: fs.existsSync(path.join(hd, "telemetry", "telemetry.jsonl")),
-    eventsExists: fs.existsSync(path.join(hd, "events.jsonl")),
+    eventsExists: fs.existsSync(eventLedgerPath(path.dirname(hd))),
     semanticBundleExists: fs.existsSync(bundlePath()),
     artifactsDirExists: fs.existsSync(path.join(hd, "artifacts")),
     quarantineDirExists: fs.existsSync(path.join(hd, "quarantine")),

@@ -278,7 +278,11 @@ export class Hardkas {
     }
 
     const fs = await import("node:fs");
-    const hardkasDir = options.hardkasDir || path.join(cwd, ".hardkas");
+    // WORKSPACE-AUTHORITY-1 (WA-I0): the workspace is the one the config walk found (`loaded.cwd`, the directory of the
+    // nearest hardkas.config.*, else `cwd`). Its bootstrap and its simulated provider live there too, never in the
+    // unwalked `cwd` a command happened to run from.
+    const root = loaded.cwd;
+    const hardkasDir = options.hardkasDir || path.join(root, ".hardkas");
 
     if (autoBootstrap) {
       if (!isSimulated) {
@@ -297,7 +301,7 @@ export class Hardkas {
         try {
           const { loadOrCreateLocalnetState } = await import("@hardkas/localnet");
           await loadOrCreateLocalnetState({
-            cwd,
+            cwd: root,
             ...(options.hardkasDir ? { hardkasDir: options.hardkasDir } : {})
           });
 
@@ -324,7 +328,7 @@ export class Hardkas {
     let provider: KaspaRpcClient | undefined;
     if (isSimulated) {
       const { LocalnetSimulatedProvider } = await import("@hardkas/localnet");
-      provider = new LocalnetSimulatedProvider(cwd);
+      provider = new LocalnetSimulatedProvider(root);
     }
 
     const hk = new Hardkas(loaded, options, provider);

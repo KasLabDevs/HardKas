@@ -4,15 +4,18 @@ import { HardkasSchemas } from "@hardkas/artifacts";
 import { createRequire } from "node:module";
 const require = createRequire(import.meta.url);
 const { DatabaseSync } = require("node:sqlite");
-import { verifyArtifactIntegrity } from "@hardkas/artifacts";
+import { verifyArtifactIntegrity, listWorkspaceStoreFilesSync, compareStoreCopies } from "@hardkas/artifacts";
 import {
   validateEventEnvelope,
   type EventEnvelope,
   type CorruptionIssue,
   formatCorruptionIssue,
   type CorruptionCode,
-  EnvironmentTelemetry
+  EnvironmentTelemetry,
+  eventLedgerPath,
+  legacyEventLedgerPath
 } from "@hardkas/core";
+import { computeAuthorityFingerprint, recordProjectionAuthority } from "./projection-status.js";
 
 export interface IndexerOptions {
   cwd?: string;
@@ -58,12 +61,14 @@ interface IndexerArtifactRow {
 
 export class HardkasIndexer {
   private db: any;
+  private workspaceRoot: string;
   private hardkasDir: string;
   private strict: boolean;
 
   constructor(db: any, options: IndexerOptions = {}) {
     this.db = db;
-    this.hardkasDir = path.join(options.cwd || process.cwd(), ".hardkas");
+    this.workspaceRoot = path.resolve(options.cwd || process.cwd());
+    this.hardkasDir = path.join(this.workspaceRoot, ".hardkas");
     this.strict = options.strict || false;
   }
 
@@ -86,11 +91,16 @@ export class HardkasIndexer {
       return result;
     }
 
+    // WORKSPACE-AUTHORITY-1 (WA-I2): the authority this sync derives from, taken BEFORE anything is read, so a change
+    // that lands while it runs can only make the projection look stale, never fresh.
+    const fingerprint = computeAuthorityFingerprint(this.workspaceRoot);
+
     // HardKAS Policy: Do not nest transactions.
     // Sync handles its own transaction.
     this.db.exec("BEGIN TRANSACTION;");
     try {
       await this._syncInternal(result);
+      recordProjectionAuthority(this.db, fingerprint);
       this.db.exec("COMMIT;");
     } catch (e: unknown) {
       this.db.exec("ROLLBACK;");
@@ -109,10 +119,14 @@ export class HardkasIndexer {
     result: SyncResult,
     specificPaths?: string[]
   ): Promise<void> {
-    await this.syncArtifacts(result, specificPaths);
+    // WORKSPACE-AUTHORITY-1 (C1): the projection indexes exactly the artifact store the resolver reads (its root and its
+    // canonical subdirectories), never every JSON file under .hardkas/. A targeted sync only takes paths of that set.
+    const canonical = listWorkspaceStoreFilesSync(this.workspaceRoot).map((f) => f.path);
+    const files = specificPaths ? this.inCanonicalSet(specificPaths, canonical) : canonical;
+    await this.syncArtifacts(result, files, !specificPaths);
     this.syncEvents(result);
     this.syncTraces();
-    this.cleanupZombies();
+    this.cleanupZombies(specificPaths ? undefined : new Set(canonical));
 
     // Mark last sync
     this.db
@@ -207,6 +221,8 @@ export class HardkasIndexer {
     }
 
     try {
+      // WORKSPACE-AUTHORITY-1 (WA-I2): taken before the store is read (see sync)
+      const fingerprint = computeAuthorityFingerprint(this.workspaceRoot);
       this.db.exec("BEGIN TRANSACTION;");
       try {
         this._wipeInternal();
@@ -214,6 +230,7 @@ export class HardkasIndexer {
         if (fs.existsSync(this.hardkasDir)) {
           await this._syncInternal(result);
         }
+        recordProjectionAuthority(this.db, fingerprint);
         this.db.exec("COMMIT;");
       } catch (e: unknown) {
         this.db.exec("ROLLBACK;");
@@ -236,7 +253,7 @@ export class HardkasIndexer {
     } catch {} // v3+ table
     this.db.exec("DELETE FROM lineage_edges;");
     this.db.exec("DELETE FROM artifacts;");
-    this.db.exec("DELETE FROM metadata WHERE key = 'last_indexed_at';");
+    this.db.exec("DELETE FROM metadata WHERE key IN ('last_indexed_at', 'authority_fingerprint', 'projection_contract');");
     try {
       this.db.exec("DELETE FROM lineage_stats;");
     } catch {} // v3+ table
@@ -323,7 +340,9 @@ export class HardkasIndexer {
       .all() as { file_path: string }[];
     report.corruptedFiles = corruptedRows.map((r) => r.file_path);
 
-    // 6. Duplicate Event Sequences (should be prevented by DB constraints, but good to verify)
+    // 6. Event sequence positions shared by DISTINCT events. WORKSPACE-AUTHORITY-1 (A): the index keeps one row per event
+    // identity, so these are the ledger's own data (e.g. every standalone SDK `artifact.written` is wf_unknown_standalone/1),
+    // reported for producers, never a projection defect: they do not make the projection unhealthy.
     const duplicateSequences = this.db
       .prepare(
         `
@@ -354,7 +373,6 @@ export class HardkasIndexer {
       report.orphanEdges === 0 &&
       report.duplicateProjections === 0 &&
       report.brokenReplayDependencies === 0 &&
-      report.duplicateEventSequences === 0 &&
       report.orphanEvents === 0 &&
       report.corruptedFiles.length === 0;
 
@@ -362,38 +380,38 @@ export class HardkasIndexer {
   }
 
   /**
-   * Checks if a file needs re-indexing based on mtime comparison.
-   * Returns true if the file has changed since last indexing.
+   * Whether the indexed row of a file already holds exactly its current content. WORKSPACE-AUTHORITY-1 (WA-I2): an equal
+   * mtime alone is not proof (a rewrite within the clock's resolution keeps it), and a projection that claims freshness
+   * must hold what the files hold.
    */
-  private needsReindex(filePath: string, currentMtimeMs: number): boolean {
+  private isIndexedAsIs(filePath: string, currentMtimeMs: number, content: string): boolean {
     try {
       const row = this.db
-        .prepare("SELECT file_mtime_ms FROM artifacts WHERE file_path = ?")
-        .get(filePath) as { file_mtime_ms: number | null } | undefined;
-
-      if (!row || row.file_mtime_ms === null) return true;
-      return row.file_mtime_ms !== currentMtimeMs;
+        .prepare("SELECT file_mtime_ms, raw_json FROM artifacts WHERE file_path = ?")
+        .get(filePath) as { file_mtime_ms: number | null; raw_json: string } | undefined;
+      return !!row && row.file_mtime_ms === currentMtimeMs && row.raw_json === content;
     } catch {
-      return true;
+      return false;
     }
   }
 
-  private async syncArtifacts(result: SyncResult, specificPaths?: string[]) {
-    // Sort files to ensure deterministic indexing order
-    const files = specificPaths
-      ? specificPaths
-          .filter(
-            (p) =>
-              fs.existsSync(p) &&
-              p.endsWith(".json") &&
-              !p.endsWith("events.jsonl") &&
-              !p.includes("dev-accounts") &&
-              !p.includes("keystore") &&
-              !p.includes("accounts.real.json") &&
-              !p.includes("sessions.json")
-          )
-          .sort()
-      : this.walk(this.hardkasDir).sort();
+  /** The given paths that belong to the canonical store set (compared by real path), sorted. */
+  private inCanonicalSet(paths: string[], canonical: string[]): string[] {
+    const set = new Set(canonical);
+    const real = (p: string) => {
+      try {
+        return path.resolve(fs.realpathSync(p));
+      } catch {
+        return path.resolve(p);
+      }
+    };
+    return [...new Set(paths.map(real).filter((p) => set.has(p)))].sort();
+  }
+
+  private async syncArtifacts(result: SyncResult, canonicalFiles: string[], incremental: boolean) {
+    // Sort files to ensure deterministic indexing order. WORKSPACE-AUTHORITY-1 (C1): an identity's canonical copy comes
+    // first, so it is the one its row keeps (the filesystem backend shows the same copy).
+    const files = [...canonicalFiles].sort(compareStoreCopies);
 
     const indexedAt = new Date().toISOString(); // hardkas-determinism-allow: index time metadata
 
@@ -426,10 +444,17 @@ export class HardkasIndexer {
 
     for (const file of files) {
       result.artifacts.scanned++;
-      const stat = fs.statSync(file);
+      let stat: fs.Stats;
+      let currentContent: string;
+      try {
+        stat = fs.statSync(file);
+        currentContent = fs.readFileSync(file, "utf-8");
+      } catch {
+        continue; // gone since it was listed; the zombie cleanup drops its row
+      }
 
-      // Incremental sync optimization: skip unchanged files
-      if (!specificPaths && !this.needsReindex(file, stat.mtimeMs)) {
+      // Incremental sync optimization: skip files whose row already holds exactly their content
+      if (incremental && this.isIndexedAsIs(file, stat.mtimeMs, currentContent)) {
         skipped++;
         continue;
       }
@@ -467,7 +492,7 @@ export class HardkasIndexer {
           }
         }
 
-        const content = fs.readFileSync(file, "utf-8");
+        const content = currentContent;
         // Wave 1.2 · N2 / IC-5′.9: the index key is the RECOMPUTED artifactId (the
         // verifier's actualHash under the declared version). A file that does not
         // verify is stored as CORRUPTED under a path-derived key, never under the
@@ -509,7 +534,13 @@ export class HardkasIndexer {
           .get(artifactId) as { content_hash: string; file_path: string | null } | undefined;
         if (existing && existing.file_path !== file) {
           if (existing.content_hash === hash && existing.file_path && fs.existsSync(existing.file_path)) {
-            // An identical copy of an artifact already indexed from another file.
+            // An identical copy of an artifact already indexed from another file. The row keeps the canonical copy
+            // (compareStoreCopies), whichever of the two was indexed first.
+            if (compareStoreCopies(file, existing.file_path) < 0) {
+              this.db
+                .prepare("UPDATE artifacts SET file_path = ?, file_mtime_ms = ?, raw_json = ? WHERE artifact_id = ?")
+                .run(file, stat.mtimeMs, content, artifactId);
+            }
             result.artifacts.duplicates++;
             continue;
           }
@@ -659,7 +690,15 @@ export class HardkasIndexer {
   }
 
   private syncEvents(result: SyncResult) {
-    const eventsPath = path.join(this.hardkasDir, "events.jsonl");
+    // WORKSPACE-AUTHORITY-1 (A): the workspace's one event ledger (`eventLedgerPath`), never a file under .hardkas/. A
+    // legacy `.hardkas/events.jsonl` is never merged into it: it is only reported.
+    const eventsPath = eventLedgerPath(this.workspaceRoot);
+    const legacyPath = legacyEventLedgerPath(this.workspaceRoot);
+    if (fs.existsSync(legacyPath)) {
+      result.warnings.push(
+        `A legacy event ledger exists at ${legacyPath}; it is not this workspace's ledger (${eventsPath}) and was not indexed or merged.`
+      );
+    }
     if (!fs.existsSync(eventsPath)) return;
 
     const stat = fs.statSync(eventsPath);
@@ -668,12 +707,17 @@ export class HardkasIndexer {
     const content = fs.readFileSync(eventsPath, "utf-8");
     const lines = content.split("\n");
 
+    // The index mirrors the ledger: one row per event identity (eventId), every event of the ledger and nothing else.
+    this.db.exec("CREATE TEMP TABLE IF NOT EXISTS ledger_event_ids (event_id TEXT PRIMARY KEY); DELETE FROM ledger_event_ids;");
+    const markSeen = this.db.prepare("INSERT OR IGNORE INTO ledger_event_ids (event_id) VALUES (?)");
     const upsertEvent = this.db.prepare(`
-      INSERT INTO events 
+      INSERT INTO events
       (event_id, kind, domain, timestamp, emitted_at, workflow_id, correlation_id, causation_id, tx_id, artifact_id, network_id, sequence_number, global_offset, source_subsystem, raw_json, file_path, file_mtime_ms, indexed_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      ON CONFLICT(correlation_id, sequence_number, kind) DO UPDATE SET
-        event_id = excluded.event_id,
+      ON CONFLICT(event_id) DO UPDATE SET
+        kind = excluded.kind,
+        correlation_id = excluded.correlation_id,
+        sequence_number = excluded.sequence_number,
         domain = excluded.domain,
         timestamp = excluded.timestamp,
         emitted_at = excluded.emitted_at,
@@ -734,7 +778,9 @@ export class HardkasIndexer {
           stat.mtimeMs,
           indexedAt
         );
-        result.events.indexed++;
+        // the same event appended twice is one event
+        if (markSeen.run(parsed.eventId).changes === 0) result.events.duplicates++;
+        else result.events.indexed++;
       } catch (e: unknown) {
         result.events.corrupted++;
         const issue: CorruptionIssue = {
@@ -751,6 +797,9 @@ export class HardkasIndexer {
         result.warnings.push(formatCorruptionIssue(issue));
       }
     }
+
+    // an event that is no longer in the ledger (a truncated tail) is no longer in the index
+    this.db.exec("DELETE FROM events WHERE event_id NOT IN (SELECT event_id FROM ledger_event_ids);");
   }
 
   private syncTraces() {
@@ -788,124 +837,34 @@ export class HardkasIndexer {
     upsertTrace.run();
   }
 
-  private cleanupZombies() {
+  /**
+   * Drops the rows of files that are gone and, after a full sync, of files outside the canonical store set (the
+   * projection holds that set and nothing else). With no ledger, there are no events.
+   */
+  private cleanupZombies(canonical?: Set<string>) {
     const rows = this.db
       .prepare("SELECT artifact_id, file_path FROM artifacts")
       .all() as { artifact_id: string; file_path: string | null }[];
     const deleteArtifact = this.db.prepare("DELETE FROM artifacts WHERE artifact_id = ?");
 
     for (const row of rows) {
-      if (!row.file_path || !fs.existsSync(row.file_path)) {
-        EnvironmentTelemetry.logAnomaly(
-          "EXTERNAL_MUTATION",
-          "high",
-          "query-store",
-          `Zombie artifact cleaned up: ${row.artifact_id}`
-        );
+      const gone = !row.file_path || !fs.existsSync(row.file_path);
+      if (gone || (canonical && !canonical.has(row.file_path!))) {
+        if (gone) {
+          EnvironmentTelemetry.logAnomaly(
+            "EXTERNAL_MUTATION",
+            "high",
+            "query-store",
+            `Zombie artifact cleaned up: ${row.artifact_id}`
+          );
+        }
         deleteArtifact.run(row.artifact_id);
       }
     }
 
-    // Events cleanup (if file gone, all events gone)
-    const eventsPath = path.join(this.hardkasDir, "events.jsonl");
-    if (!fs.existsSync(eventsPath)) {
+    // Events cleanup (if the workspace's ledger is gone, all events are gone)
+    if (!fs.existsSync(eventLedgerPath(this.workspaceRoot))) {
       this.db.exec("DELETE FROM events;");
     }
-  }
-
-  private walk(dir: string, visited: Set<string> = new Set()): string[] {
-    let results: string[] = [];
-    let realDir: string;
-    try {
-      realDir = fs.realpathSync(dir);
-    } catch {
-      return results;
-    }
-
-    if (visited.has(realDir)) return results;
-    visited.add(realDir);
-
-    let realHardkasDir: string;
-    try {
-      realHardkasDir = fs.realpathSync(this.hardkasDir);
-    } catch {
-      return results;
-    }
-
-    const isInside = (child: string, parent: string) => {
-      // Handle windows casing
-      const c = child.toLowerCase();
-      const p = parent.toLowerCase();
-      if (c === p) return true;
-      const parentWithSep = p.endsWith(path.sep) ? p : p + path.sep;
-      const result = c.startsWith(parentWithSep);
-      return result;
-    };
-
-    if (!isInside(realDir, realHardkasDir)) {
-      return results;
-    }
-
-    let list: string[];
-    try {
-      list = fs.readdirSync(dir);
-    } catch {
-      return results;
-    }
-
-    for (const file of list) {
-      const filePath = path.join(dir, file);
-      let stat;
-      try {
-        stat = fs.lstatSync(filePath);
-      } catch {
-        continue;
-      }
-
-      let isDir = stat.isDirectory();
-      if (stat.isSymbolicLink()) {
-        try {
-          const real = fs.realpathSync(filePath);
-          if (!isInside(real, realHardkasDir)) {
-            continue;
-          }
-          isDir = fs.statSync(real).isDirectory();
-        } catch {
-          continue;
-        }
-      }
-
-      if (isDir) {
-        if (
-          file === "node_modules" ||
-          file === ".git" ||
-          file === "keystore" ||
-          file === "dev-accounts" ||
-          file === "snapshots" ||
-          // First contact · E07: operational output, never canonical artifacts —
-          // test-run bookkeeping, torture/chaos reports, deployment tracking records
-          // and the managed node's data directory.
-          file === "runs" ||
-          file === "reports" ||
-          file === "deployments" ||
-          file === "kaspad"
-        )
-          continue;
-        results = results.concat(this.walk(filePath, visited));
-      } else if (
-        file.endsWith(".json") &&
-        !file.endsWith("events.jsonl") &&
-        file !== "state.json" &&
-        file !== "keystore.json" &&
-        !file.endsWith("localnet.json") &&
-        !file.endsWith("localnet-state.json") &&
-        !file.endsWith("localnet-indexer.json") &&
-        !file.endsWith("accounts.real.json") &&
-        !file.endsWith("sessions.json")
-      ) {
-        results.push(filePath);
-      }
-    }
-    return results;
   }
 }

@@ -10,6 +10,7 @@ import { runTxSend } from "../runners/tx-send-runner.js";
 import { runTxFlow } from "../runners/tx-flow.js";
 import { runTxReceipt } from "../runners/tx-receipt-runner.js";
 import { HardkasSchemas } from "@hardkas/artifacts";
+import { invocationWorkspace, invocationWorkspaceRoot } from "../workspace-root.js";
 
 /**
  * Wave 2(e) · AUX-11 — `tx send` ends in exactly one of three unambiguous outcomes:
@@ -101,7 +102,7 @@ async function networkSendState(txId: string | undefined, network: string): Prom
   if (!txId || !/^[0-9a-f]{64}$/.test(txId)) return "not derivable: the node returned no txId";
   try {
     const { runTxStatus, stateHeadline } = await import("../runners/tx-status-runner.js");
-    const r = await runTxStatus({ txId, observe: false, network, workspaceRoot: process.cwd() });
+    const r = await runTxStatus({ txId, observe: false, network, workspaceRoot: invocationWorkspaceRoot() });
     return `${stateHeadline(r.derived)} — ${r.derived.reasons.join(" · ")}`;
   } catch (e: any) {
     return `not derivable here (${e?.message ?? String(e)}); run \`hardkas tx status ${txId}\``;
@@ -118,7 +119,7 @@ export function registerTxCommands(program: Command) {
     .option("--json", "Output as JSON", false)
     .action(async (path: string, options: { json: boolean }) => {
       try {
-        await runTxProfile({ path, ...options, workspaceRoot: process.cwd() });
+        await runTxProfile({ path, ...options, workspaceRoot: invocationWorkspaceRoot() });
       } catch (e) {
         throw e;
       }
@@ -134,7 +135,9 @@ export function registerTxCommands(program: Command) {
       try {
         const { runTxBatch } = await import("../runners/tx-batch-runner.js");
         if (options.json) UI.setJsonMode(true);
-        await runTxBatch(options);
+        // --workspace is resolved once (WORKSPACE-AUTHORITY-1); without it this command keeps its default directory
+        const ws = invocationWorkspace();
+        await runTxBatch({ ...options, ...(ws.explicit !== undefined ? { workspace: ws.root } : {}) });
       } catch (e) {
         throw e;
       }
@@ -185,7 +188,9 @@ export function registerTxCommands(program: Command) {
           const { writeArtifact, formatTxPlanArtifact } =
             await import("@hardkas/artifacts");
 
-          const loaded = await loadHardkasConfig({ workspaceRoot: process.cwd() });
+          // WORKSPACE-AUTHORITY-1 (WA-I0): the config, the simulator state and the store are the invocation's one root's
+          const workspaceRoot = invocationWorkspaceRoot();
+          const loaded = await loadHardkasConfig({ workspaceRoot });
           const artifact = await runTxPlan({
             ...(options.target ? { targetName: options.target } : {}),
             from: options.from || positionalFrom || "alice",
@@ -200,7 +205,8 @@ export function registerTxCommands(program: Command) {
             ...(options.assumptionLevel
               ? { assumptionLevel: options.assumptionLevel }
               : {}),
-            ...(options.url ? { url: options.url } : {})
+            ...(options.url ? { url: options.url } : {}),
+            workspaceRoot
           });
 
           const outPath = options.out || options.save;
@@ -208,7 +214,7 @@ export function registerTxCommands(program: Command) {
 
           // Always persist to .hardkas/artifacts/ for lattice indexing
           const artifactsDir = (await import("node:path")).join(
-            process.cwd(),
+            workspaceRoot,
             ".hardkas",
             "artifacts"
           );
@@ -216,7 +222,7 @@ export function registerTxCommands(program: Command) {
           let persistedPlanPath: string | undefined;
           if (
             fsNode.existsSync(
-              (await import("node:path")).join(process.cwd(), ".hardkas")
+              (await import("node:path")).join(workspaceRoot, ".hardkas")
             )
           ) {
             // the store directory is created by the store's gate when the lattice copy is written (ARTIFACT-MUTATION-1)
@@ -308,7 +314,9 @@ export function registerTxCommands(program: Command) {
           } else {
             planArtifact = await readTxPlanArtifact(planPath);
           }
-          const loaded = await loadHardkasConfig({ workspaceRoot: process.cwd() });
+          // WORKSPACE-AUTHORITY-1 (WA-I0): the config, the simulator state and the store are the invocation's one root's
+          const workspaceRoot = invocationWorkspaceRoot();
+          const loaded = await loadHardkasConfig({ workspaceRoot });
 
           let signer;
           if (options.fixture) {
@@ -333,7 +341,8 @@ export function registerTxCommands(program: Command) {
               : {}),
             ...(options.passwordEnv ? { passwordEnv: options.passwordEnv } : {}),
             passwordStdin: options.passwordStdin,
-            json: options.json
+            json: options.json,
+            workspaceRoot
           });
 
           if (options.out) await writeArtifact(options.out, signedArtifact);
@@ -369,7 +378,7 @@ export function registerTxCommands(program: Command) {
             txId: artifactPath,
             observe: options.observe !== false,
             ...(options.network ? { network: options.network } : {}),
-            workspaceRoot: process.cwd()
+            workspaceRoot: invocationWorkspaceRoot()
           });
           if (options.json) {
             UI.writeJson(txStatusJson(r));
@@ -484,7 +493,19 @@ export function registerTxCommands(program: Command) {
           // ARTIFACT-MUTATION-UNITS (phase 2B): no command-level hold of the store; each store write takes it through the
           // gate. The command used to hold it across planner RPC calls, password prompts and the broadcast.
           const { loadHardkasConfig } = await import("@hardkas/config");
-          const loaded = await loadHardkasConfig({ workspaceRoot: process.cwd() });
+          // WORKSPACE-AUTHORITY-1 (WA-I0): the config, the simulator state and the store are the invocation's one root's
+          const workspaceRoot = invocationWorkspaceRoot();
+          // --track still records the deployment under the current directory's workspace (deployments are outside this
+          // wave): with an explicit --workspace one send would span two roots, so it is refused before anything is done
+          if (options.track && invocationWorkspace().explicit !== undefined) {
+            const { HardkasCliError, HardkasExitCode } = await import("../cli-errors.js");
+            throw new HardkasCliError(
+              "WORKSPACE_OPTION_UNSUPPORTED",
+              "'hardkas tx send --track' records the deployment in the workspace of the current directory and does not take --workspace. Nothing was read, broadcast or written.",
+              { exitCode: HardkasExitCode.USAGE_ERROR, suggestion: `Run it from the workspace's directory (${workspaceRoot}) without --workspace.` }
+            );
+          }
+          const loaded = await loadHardkasConfig({ workspaceRoot });
 
           if (signedPath) {
             const { readSignedTxArtifact } = await import("@hardkas/artifacts");
@@ -516,7 +537,8 @@ export function registerTxCommands(program: Command) {
               ...(options.network ? { network: options.network } : {}),
               provider: options.provider,
               config: loaded.config,
-              ...(options.url ? { url: options.url } : {})
+              ...(options.url ? { url: options.url } : {}),
+              workspaceRoot
             });
 
             // Wave 1.2 · CLI-NEXTSTEPS-1 / IC-5′.11: artifactId is the receipt's
@@ -589,7 +611,7 @@ export function registerTxCommands(program: Command) {
                 ...(tracking ? { tracking } : {}),
                 meta: {
                   network: result.networkName,
-                  workspace: process.cwd(),
+                  workspace: workspaceRoot,
                   mode: "developer"
                 }
               });
@@ -677,7 +699,8 @@ export function registerTxCommands(program: Command) {
               config: loaded.config,
               ...(options.network ? { network: options.network } : {}),
               ...(options.feeRate ? { feeRate: options.feeRate } : {}),
-              ...(options.url ? { url: options.url } : {})
+              ...(options.url ? { url: options.url } : {}),
+              workspaceRoot
             });
 
             const { nextStepsAfterSend, receiptArtifactId, sendExplanation } = await import("../runners/next-steps.js");
@@ -743,7 +766,7 @@ export function registerTxCommands(program: Command) {
                 },
                 meta: {
                   network: options.network || "simulated",
-                  workspace: process.cwd(),
+                  workspace: workspaceRoot,
                   mode: "developer"
                 }
               });
@@ -862,7 +885,7 @@ export function registerTxCommands(program: Command) {
         timeoutMs: Math.max(0, Number(options.timeout)) * 1000,
         intervalMs: Math.max(0.2, Number(options.interval)) * 1000,
         ...(options.network ? { network: options.network } : {}),
-        workspaceRoot: process.cwd(),
+        workspaceRoot: invocationWorkspaceRoot(),
         onUpdate: (line) => {
           if (!options.json) UI.logHuman(`  • ${line}`);
         }
@@ -916,7 +939,7 @@ export function registerTxCommands(program: Command) {
     .action(async (path, options) => {
       try {
         const { runTxVerify } = await import("../runners/tx-verify-runner.js");
-        await runTxVerify({ path, json: options.json, workspaceRoot: process.cwd() });
+        await runTxVerify({ path, json: options.json, workspaceRoot: invocationWorkspaceRoot() });
       } catch (e) {
         throw e;
       }
