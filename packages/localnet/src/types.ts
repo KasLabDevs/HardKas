@@ -105,6 +105,20 @@ export interface ReplayVerificationReport {
   mode?: string;
   createdAt?: string;
   contentHash?: string;
+  /**
+   * REPLAY-TRUST-2 (RT-I3): the report is a lineage child of the receipt it verified (`parentArtifactId` = that
+   * receipt's verified identity), in the receipt's workflow and assumption level. Absent only when the receipt given
+   * does not verify as an identity: no parent is claimed without one.
+   */
+  lineage?: {
+    artifactId: string;
+    lineageId: string;
+    parentArtifactId: string;
+    rootArtifactId: string;
+    sequence: number;
+  };
+  workflowId?: string;
+  assumptionLevel?: string;
   txId: string;
   /**
    * EVIDENCE-DIFF-REDACTION-1: the receipt was compared on its raw values. A report without it was made by the earlier

@@ -77,6 +77,8 @@ export class HardkasReplay {
     let lineageOk = true;
     let determinismOk = true;
     let contaminationOk = true;
+    // REPLAY-TRUST-2 (RT-I4): the inputs that do not pass integrity, decided before anything runs
+    const invalidInputs: string[] = [];
 
     const isContaminated = (artifact: any): boolean => {
       if (
@@ -111,7 +113,14 @@ export class HardkasReplay {
         for (const item of lineage) {
           if (isContaminated(item)) contaminationOk = false;
           const integrity = await verifyArtifactIntegrity(item);
-          if (!integrity.ok) determinismOk = false;
+          if (!integrity.ok) {
+            determinismOk = false;
+            const reasons = integrity.issues
+              .filter((i) => i.severity === "error" || i.severity === "critical")
+              .map((i) => `${i.code}: ${i.message}`)
+              .join("; ");
+            invalidInputs.push(`${String(item.schema)} ${String(item.contentHash)} (${reasons || "does not verify"})`);
+          }
 
           if (item.schema === HardkasSchemas.TxPlan) plan = item;
           if (item.schema === HardkasSchemas.TxReceipt) receipt = item;
@@ -176,6 +185,23 @@ export class HardkasReplay {
             `Replay execution for receipt mode "${observedMode}" is not ` +
             `supported; current replay execution supports ${supportedModes}-mode receipts only.`,
           code: "REPLAY_MODE_UNSUPPORTED"
+        };
+      }
+
+      // REPLAY-TRUST-2 (RT-I4, D-RT2): every input is decided before anything runs. An input that does not pass
+      // integrity is not executed and leaves no report: a replay of it would decide nothing about the evidence asked
+      // about, and a report would be a claim about an artifact that is not what it says it is. (A legacy scope or an
+      // unsupported mode is refused above: nothing runs for them either.)
+      if (!verifyErrorMsg && invalidInputs.length > 0) {
+        return {
+          passed: false,
+          artifactsScanned: artifactCount,
+          lineage: "valid",
+          determinism: "failed",
+          contamination: contaminationOk ? "clean" : "contaminated",
+          report: null,
+          error: `Replay input invalid: ${invalidInputs.join(" | ")}. Nothing was executed and no report was written.`,
+          code: "REPLAY_INPUT_INVALID"
         };
       }
 

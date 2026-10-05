@@ -183,7 +183,8 @@ export function verifyLineage(
         HardkasSchemas.SignedTx,
         HardkasSchemas.MigrationReceiptV1
       ],
-      [HardkasSchemas.TxReceipt]: [HardkasSchemas.TxTrace, HardkasSchemas.MigrationReceiptV1],
+      // REPLAY-TRUST-2 (RT-I3): a replay report is evidence about the receipt it verified, so it is that receipt's child
+      [HardkasSchemas.TxReceipt]: [HardkasSchemas.TxTrace, HardkasSchemas.ReplayReportV1, HardkasSchemas.MigrationReceiptV1],
       // IC-2′.5: plan → signed → submission; observations reference, they do not descend.
       [HardkasSchemas.TxSubmissionV1]: [HardkasSchemas.MigrationReceiptV1]
     };

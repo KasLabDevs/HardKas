@@ -15,17 +15,30 @@ export interface ArtifactDiff {
   entries: DiffEntry[];
 }
 
+export interface DiffOptions {
+  /**
+   * REPLAY-TRUST-2 · which keys are not compared. Without it: the frozen legacy SEMANTIC_EXCLUSIONS, dropped by name at
+   * any depth (the historical behaviour, unchanged). With `topLevel`: everything is compared raw at every depth except
+   * those top-level keys; no name is dropped below the top level.
+   */
+  exclude?: { topLevel: readonly string[] };
+}
+
 /**
  * Performs a semantic diff between two artifacts on their RAW values, ignoring volatile metadata (SEMANTIC_EXCLUSIONS
- * only). EVIDENCE-DIFF-REDACTION-1: nothing is masked before comparing, so two values that differ anywhere are a
- * difference; the decision never sees a redacted form. The entries are safe to record as evidence: public values
- * (hashes, ids, amounts, addresses) are carried in full, while a difference in a secret field (named by
- * `isSecretFieldName`, or a value holding one) carries no value at all, only `secret: true`. Presentation may redact
- * further; it never decides equality.
+ * only, unless `options.exclude` names the top-level keys instead). EVIDENCE-DIFF-REDACTION-1: nothing is masked before
+ * comparing, so two values that differ anywhere are a difference; the decision never sees a redacted form. The entries
+ * are safe to record as evidence: public values (hashes, ids, amounts, addresses) are carried in full, while a
+ * difference in a secret field (named by `isSecretFieldName`, or a value holding one) carries no value at all, only
+ * `secret: true`. Presentation may redact further; it never decides equality.
  */
-export function diffArtifacts(left: any, right: any): ArtifactDiff {
+export function diffArtifacts(left: any, right: any, options: DiffOptions = {}): ArtifactDiff {
   const entries: DiffEntry[] = [];
-  compareRecursive(left, right, "$", entries, false);
+  const topLevel = options.exclude ? new Set(options.exclude.topLevel) : undefined;
+  const excluded = topLevel
+    ? (key: string, path: string) => path === "$" && topLevel.has(key)
+    : (key: string) => SEMANTIC_EXCLUSIONS.has(key);
+  compareRecursive(left, right, "$", entries, false, excluded);
 
   return {
     identical: entries.length === 0,
@@ -52,7 +65,14 @@ function holdsSecret(value: any): boolean {
   return Object.keys(value).some((k) => isSecretFieldName(k) || holdsSecret(value[k]));
 }
 
-function compareRecursive(left: any, right: any, path: string, entries: DiffEntry[], inSecret: boolean) {
+function compareRecursive(
+  left: any,
+  right: any,
+  path: string,
+  entries: DiffEntry[],
+  inSecret: boolean,
+  excluded: (key: string, path: string) => boolean
+) {
   // Handle primitives and nulls
   if (isPrimitive(left) || isPrimitive(right)) {
     if (left !== right) {
@@ -75,15 +95,15 @@ function compareRecursive(left: any, right: any, path: string, entries: DiffEntr
       } else if (i >= right.length) {
         record(entries, `${path}[${i}]`, "removed", left[i], undefined, inSecret);
       } else {
-        compareRecursive(left[i], right[i], `${path}[${i}]`, entries, inSecret);
+        compareRecursive(left[i], right[i], `${path}[${i}]`, entries, inSecret, excluded);
       }
     }
     return;
   }
 
   // Handle objects
-  const leftKeys = Object.keys(left).filter((k) => !SEMANTIC_EXCLUSIONS.has(k));
-  const rightKeys = Object.keys(right).filter((k) => !SEMANTIC_EXCLUSIONS.has(k));
+  const leftKeys = Object.keys(left).filter((k) => !excluded(k, path));
+  const rightKeys = Object.keys(right).filter((k) => !excluded(k, path));
   const allKeys = new Set([...leftKeys, ...rightKeys]);
 
   for (const key of allKeys) {
@@ -94,7 +114,7 @@ function compareRecursive(left: any, right: any, path: string, entries: DiffEntr
     } else if (!rightKeys.includes(key)) {
       record(entries, nextPath, "removed", left[key], undefined, secret);
     } else {
-      compareRecursive(left[key], right[key], nextPath, entries, secret);
+      compareRecursive(left[key], right[key], nextPath, entries, secret, excluded);
     }
   }
 }
