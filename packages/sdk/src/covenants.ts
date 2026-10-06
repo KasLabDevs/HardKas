@@ -1,4 +1,5 @@
 import { HardkasSchemas } from "@hardkas/artifacts";
+import { HardkasError } from "@hardkas/core";
 import type { Hardkas } from "./index.js";
 
 // ---------------------------------------------------------------------------
@@ -111,10 +112,11 @@ export interface CovenantArtifact {
  * This is NOT experimental — covenants are live on Kaspa mainnet since
  * DAA score 474,165,565 (June 30, 2026).
  *
- * **Current limitations (0.12.0-rc.26):**
- * - TX V1 signing requires kaspa-wasm V1 support (see P82)
- * - Plan/sign/send pipeline for covenants will be implemented in P84
- * - For now, capability checks and inspection are available
+ * **Current limitations:**
+ * - The SDK does not plan, inspect or query covenants yet: `planDeploy()`, `planSpend()`, `inspect()` and
+ *   `getState()` refuse with a typed error (SURFACE-TRUTH-1A). They never fall back to an ordinary payment.
+ * - Real 1:1 auth-bound covenant transactions are built by `hardkas silver covenant genesis|transition`
+ *   (`@hardkas/accounts` `buildCovenantGenesis` / `buildCovenantTransition`).
  *
  * @see https://github.com/kaspanet/rusty-kaspa/blob/master/docs/toccata-guide.md
  */
@@ -154,61 +156,58 @@ export class HardkasCovenants {
   /**
    * Inspect a covenant by its 32-byte covenant ID.
    *
-   * This is a read-only RPC operation that does not require TX V1 signing.
-   *
-   * @throws {Error} COVENANT_INSPECT_NOT_IMPLEMENTED — will be implemented
-   *   when RPC integration for covenant queries is complete.
+   * @throws {HardkasError} COVENANT_INSPECT_UNSUPPORTED — the SDK has no covenant query over RPC yet.
    */
   async inspect(covenantId: string): Promise<CovenantInfo> {
-    throw new Error(
-      "COVENANT_INSPECT_NOT_IMPLEMENTED: " +
-      "Covenant inspection via RPC requires GetUtxosByAddresses with covenant ID filtering. " +
-      "This will be implemented when the Toccata RPC surface is integrated (P84)."
+    throw new HardkasError(
+      "COVENANT_INSPECT_UNSUPPORTED",
+      "Covenant inspection is not supported by the SDK: it needs UTXO queries filtered by covenant id, which the SDK does not have.",
+      { metadata: { covenantId } }
     );
   }
 
+  /**
+   * Plan a covenant deployment.
+   *
+   * SURFACE-TRUTH-1A (ST-I3): refused until the SDK plans real v1 covenant transactions. The former body planned an
+   * ordinary self-payment and dropped the script, which signed and sent like any payment.
+   *
+   * @throws {HardkasError} COVENANT_PLAN_UNSUPPORTED
+   */
   async planDeploy(options: CovenantDeployOptions): Promise<any> {
-    const amountSompi = typeof options.amount === "bigint" ? options.amount : BigInt(options.amount);
-    return this.sdk.tx.plan({
-      from: options.from,
-      to: options.from, // Initially deploy to self
-      amount: amountSompi,
-      
-      ...(options.computeBudget !== undefined && { computeBudget: options.computeBudget }),
-      ...(options.lane !== undefined && { lane: options.lane })
-      // TODO (P84 follow-up): Inject compiled script as P2SH/P2SC output script once kaspa-wasm supports it.
-    });
+    throw new HardkasError(
+      "COVENANT_PLAN_UNSUPPORTED",
+      "Covenant deployment planning is not supported by the SDK: it cannot carry a covenant script into a v1 plan, and it never substitutes an ordinary payment. Build real covenant transactions with `hardkas silver covenant genesis`.",
+      { metadata: { from: options.from } }
+    );
   }
 
   /**
-   * Plan a covenant spend transaction.
+   * Plan a covenant spend.
    *
-   * Creates a TX V1 plan that satisfies the covenant's spending rules.
-   * The plan must be signed and broadcast separately.
+   * SURFACE-TRUTH-1A (ST-I3): refused until the SDK plans real v1 covenant transactions. The former body planned an
+   * ordinary payment to `to` and dropped the covenant id and the witness data.
+   *
+   * @throws {HardkasError} COVENANT_PLAN_UNSUPPORTED
    */
   async planSpend(options: CovenantSpendOptions): Promise<any> {
-    const amountSompi = typeof options.amount === "bigint" ? options.amount : BigInt(options.amount);
-    return this.sdk.tx.plan({
-      from: options.from,
-      to: options.to,
-      amount: amountSompi,
-      
-      ...(options.computeBudget !== undefined && { computeBudget: options.computeBudget }),
-      ...(options.lane !== undefined && { lane: options.lane })
-      // TODO (P84 follow-up): Inject covenantId in inputs and witnessData once kaspa-wasm supports it.
-    });
+    throw new HardkasError(
+      "COVENANT_PLAN_UNSUPPORTED",
+      "Covenant spend planning is not supported by the SDK: it cannot carry the covenant id and witness data into a v1 plan, and it never substitutes an ordinary payment. Advance covenants with `hardkas silver covenant transition`.",
+      { metadata: { covenantId: options.covenantId, from: options.from } }
+    );
   }
 
   /**
    * Get the current state of a covenant from the UTXO set.
    *
-   * @throws {Error} COVENANT_STATE_NOT_IMPLEMENTED — requires Toccata RPC integration.
+   * @throws {HardkasError} COVENANT_STATE_UNSUPPORTED — the SDK has no covenant query over RPC yet.
    */
   async getState(covenantId: string): Promise<CovenantState> {
-    throw new Error(
-      "COVENANT_STATE_NOT_IMPLEMENTED: " +
-      "Covenant state queries require UTXO set filtering by covenant ID. " +
-      "This will be implemented when the Toccata RPC surface is integrated (P84)."
+    throw new HardkasError(
+      "COVENANT_STATE_UNSUPPORTED",
+      "Covenant state queries are not supported by the SDK: they need UTXO queries filtered by covenant id, which the SDK does not have.",
+      { metadata: { covenantId } }
     );
   }
 

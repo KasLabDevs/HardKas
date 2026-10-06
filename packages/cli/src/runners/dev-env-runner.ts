@@ -37,8 +37,10 @@ export async function runDevEnv(options: any) {
   const path = await import("node:path");
   const fs = await import("node:fs");
   const artifactDir = path.join(process.cwd(), ".hardkas", "artifacts");
+  // SURFACE-TRUTH-1A: this checks only that the folder exists, so it says so (it said "health: OK"); `dev doctor`
+  // verifies the artifacts.
   if (fs.existsSync(artifactDir)) {
-    UI.success(`Artifact folder health: OK (${artifactDir})`);
+    UI.success(`Artifact folder: present (${artifactDir})`);
   } else {
     UI.info(
       `Artifact folder: Not found (will be created automatically on first transaction)`
@@ -58,12 +60,15 @@ export async function runDevEnv(options: any) {
 
   // We reuse the existing dev-server runner instead of inventing a new orchestrator.
   // The dev-server runner already starts the watcher and binds ports.
+  // SURFACE-TRUTH-1A: `--once` reaches the runner (it used to be dropped here, so `dev --once` started the server and
+  // never exited), and a `--once` run never opens a browser.
   await runDevServer({
     port: options.port || "7420",
     host: options.host || "localhost",
-    open: !options.headless,
+    open: !options.headless && !options.once,
     unsafeExternal: !!options.unsafeExternal,
     showToken: false,
-    json: false
+    json: false,
+    once: !!options.once
   });
 }

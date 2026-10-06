@@ -2,7 +2,6 @@ import { Command } from "commander";
 import { runArtifactVerify } from "../runners/artifact-verify-runner.js";
 import { runSemanticVerify } from "../runners/semantic-verify-runner.js";
 import { UI, handleError } from "../ui.js";
-import { HardkasCliError } from "../cli-errors.js";
 import { requireExistingWorkspace } from "../workspace-root.js";
 
 export function registerVerifyCommand(program: Command) {
@@ -68,14 +67,12 @@ export function registerVerifyCommand(program: Command) {
     .option("--json", "Output machine-readable JSON", false)
     .option("--ci-mode", "Verify semantic truth equivalence across OS boundaries", false)
     .action(async (opts) => {
-      try {
-        if (opts.json) UI.setJsonMode(true);
-        await runSemanticVerify({
-          json: opts.json,
-          ciMode: opts.ciMode
-        });
-      } catch (err: any) {
-        throw new HardkasCliError("SEMANTIC_DRIFT", ((err instanceof Error) ? err.message : String(err)), { exitCode: 1 });
-      }
+      if (opts.json) UI.setJsonMode(true);
+      // SURFACE-TRUTH-1A: the runner's typed error reaches the renderer unchanged. Rewrapping every error as
+      // SEMANTIC_DRIFT reported usage errors and missing input as detected drift.
+      await runSemanticVerify({
+        json: opts.json,
+        ciMode: opts.ciMode
+      });
     });
 }

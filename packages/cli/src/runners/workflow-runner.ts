@@ -6,6 +6,21 @@ import type { WorkflowArtifact } from "@hardkas/artifacts";
 import { HardkasSchemas } from "@hardkas/artifacts";
 import { stripBom } from "@hardkas/core";
 
+/**
+ * SURFACE-TRUTH-1A: `latest` is the newest workflow artifact in the canonical store, where `workflow run` writes it
+ * (`misc/`). The former lookup used `sdk.artifacts.list()`, which reads only the store's top level, so it never found
+ * one. It resolves to the artifact's own identity (its contentHash), not to the workflowId runs of one definition share.
+ */
+async function latestWorkflowIdentity(workspaceRoot: string): Promise<string> {
+  const { enumerateWorkspaceArtifactsSync } = await import("@hardkas/artifacts");
+  const workflows = enumerateWorkspaceArtifactsSync(workspaceRoot)
+    .map((entry) => entry.artifact as any)
+    .filter((a) => a?.schema === HardkasSchemas.WorkflowV1 && typeof a.contentHash === "string")
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  if (workflows.length === 0) throw new Error("No workflow artifacts found to resolve 'latest'.");
+  return workflows[0].contentHash;
+}
+
 export async function runWorkflowRun(
   file: string,
   options: {
@@ -96,7 +111,7 @@ export async function runWorkflowRun(
       const { HardkasCliError } = await import("../cli-errors.js");
       throw new HardkasCliError(
         "WORKFLOW_FAILED",
-        `Workflow failed: ${result.errorEnvelope?.message}`,
+        `Workflow failed (${result.errorEnvelope?.code ?? "unknown"}): ${result.errorEnvelope?.message}`,
         { exitCode: 1 }
       );
     }
@@ -112,7 +127,9 @@ export async function runWorkflowRun(
   } catch (e: unknown) {
     if (((e as any).name) === "HardkasCliError") throw e;
     const { HardkasCliError } = await import("../cli-errors.js");
-    throw new HardkasCliError("WORKFLOW_ERROR", ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) || "Unknown error", {
+    // a typed SDK error (e.g. POLICY_VIOLATION) keeps its code
+    const code = (e as any)?.name === "HardkasError" && typeof (e as any).code === "string" ? (e as any).code : "WORKFLOW_ERROR";
+    throw new HardkasCliError(code, ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) || "Unknown error", {
       exitCode: 1,
       cause: e
     });
@@ -132,17 +149,8 @@ export async function runWorkflowInspect(
 
     let targetId = id;
     if (id === "latest") {
-      const allArtifacts = await sdk.artifacts.list();
-      const workflows = allArtifacts
-        .filter((a: any) => a.schema === HardkasSchemas.WorkflowV1)
-        .sort(
-          (a: any, b: any) =>
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        );
-      if (workflows.length === 0)
-        throw new Error("No workflow artifacts found to resolve 'latest'.");
-      targetId = workflows[0].workflowId || workflows[0].contentHash;
-      UI.info(`Resolved 'latest' to workflow: ${targetId}`);
+      targetId = await latestWorkflowIdentity(sdk.workspace.root);
+      UI.info(`Resolved 'latest' to workflow artifact: ${targetId}`);
     }
 
     // IC-5′.2: a workflowId is the `workflow` namespace; a 64-hex id or a path is the artifact namespace.
@@ -173,50 +181,18 @@ export async function runWorkflowInspect(
   }
 }
 
-export async function runWorkflowReplay(id: string, options: any) {
-  try {
-    const sdk = await Hardkas.open({ cwd: options.workspaceRoot });
-
-    let targetId = id;
-    if (id === "latest") {
-      const allArtifacts = await sdk.artifacts.list();
-      const workflows = allArtifacts
-        .filter((a: any) => a.schema === HardkasSchemas.WorkflowV1)
-        .sort(
-          (a: any, b: any) =>
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        );
-      if (workflows.length === 0)
-        throw new Error("No workflow artifacts found to resolve 'latest'.");
-      targetId = workflows[0].id || workflows[0].workflowId || workflows[0].contentHash;
-      UI.info(`Resolved 'latest' to workflow: ${targetId}`);
-    }
-
-    UI.info(`Replaying workflow lineage for ${targetId}...`);
-
-    const result = await sdk.replay.verify({ workflowId: targetId });
-
-    if (!result.passed) {
-      const { HardkasCliError } = await import("../cli-errors.js");
-      throw new HardkasCliError(
-        "WORKFLOW_REPLAY_FAILED",
-        `Workflow replay failed: ${result.error || "Integrity verification failed"}`,
-        { exitCode: 1 }
-      );
-    }
-
-    UI.success("Workflow replay verification passed (cryptographically secured).");
-    console.log(`  Artifacts scanned: ${result.artifactsScanned}`);
-    console.log(`  Determinism: ${result.determinism}`);
-    console.log(`  Contamination: ${result.contamination}`);
-  } catch (e: unknown) {
-    if (((e as any).name) === "HardkasCliError") throw e;
-    const { HardkasCliError } = await import("../cli-errors.js");
-    throw new HardkasCliError("WORKFLOW_REPLAY_ERROR", ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) || "Unknown error", {
-      exitCode: 1,
-      cause: e
-    });
-  }
+/**
+ * SURFACE-TRUTH-1A (ST-I3): there is no workflow replay. The former runner asked `sdk.replay.verify({ workflowId })`,
+ * which always answers "Workflow Replay via ID not supported", behind a success line that claimed a "cryptographically
+ * secured" replay. The command is hidden and refuses until a real replay of a workflow's steps exists.
+ */
+export async function runWorkflowReplay(_id: string, _options: any): Promise<never> {
+  const { HardkasCliError } = await import("../cli-errors.js");
+  throw new HardkasCliError(
+    "WORKFLOW_REPLAY_UNSUPPORTED",
+    "Workflow replay is not supported: no replay of a workflow's steps exists. A simulated receipt can be replayed with `hardkas replay verify <receipt>`. Nothing was replayed.",
+    { exitCode: 1 }
+  );
 }
 
 export async function runWorkflowDiff(
@@ -229,21 +205,7 @@ export async function runWorkflowDiff(
       ...(options.workspaceRoot ? { cwd: options.workspaceRoot } : {})
     } as HardkasOptions);
 
-    const resolveAlias = async (id: string) => {
-      if (id === "latest") {
-        const allArtifacts = await sdk.artifacts.list();
-        const workflows = allArtifacts
-          .filter((a: any) => a.schema === HardkasSchemas.WorkflowV1)
-          .sort(
-            (a: any, b: any) =>
-              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-          );
-        if (workflows.length === 0)
-          throw new Error("No workflow artifacts found to resolve 'latest'.");
-        return workflows[0].workflowId || workflows[0].contentHash;
-      }
-      return id;
-    };
+    const resolveAlias = async (id: string) => (id === "latest" ? latestWorkflowIdentity(sdk.workspace.root) : id);
     const asLookup = (id: string) =>
       /^[0-9a-f]{64}$/.test(id) || /[\\/]/.test(id) ? id : { workflow: id };
 

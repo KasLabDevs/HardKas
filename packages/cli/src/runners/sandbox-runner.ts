@@ -13,6 +13,18 @@ export async function runSandbox(options: {
   port?: string;
   host?: string;
 }) {
+  // SURFACE-TRUTH-1A (ST-I3): `--with-node` is refused before anything is created. It used to spawn a detached
+  // `pnpm hardkas node start --miningaddr …` (an option `node start` does not have), discard its output, and print
+  // "Node: running" / "Mining: enabled" without checking anything.
+  if (options.withNode) {
+    const { HardkasCliError } = await import("../cli-errors.js");
+    throw new HardkasCliError(
+      "SANDBOX_WITH_NODE_UNSUPPORTED",
+      "sandbox --with-node is not supported: the sandbox starts no node. Start the Docker localnet with `hardkas localnet start`.",
+      { exitCode: 1 }
+    );
+  }
+
   try {
     const tmpdir = os.tmpdir();
     const sandboxRoot = fs.mkdtempSync(path.join(tmpdir, "hardkas-sandbox-"));
@@ -39,39 +51,18 @@ export async function runSandbox(options: {
       workspaceRoot: sandboxRoot,
       sandboxMode: true,
       quietHeader: true,
-      preventTeardown: true,
-      withNode: options.withNode
+      preventTeardown: true
     } as any);
 
-    const isNodeRunning = devCtx?.isNodeRunning || false;
-    const miningAlias = devCtx?.miningAlias || "alice";
-
-    // Main Sandbox Banner
+    // Main Sandbox Banner (SURFACE-TRUTH-1A: only what this run did; no hard-coded network, node, mining or health)
     console.log(pc.bold("\nHardKAS Sandbox Runtime"));
     console.log(pc.dim("━━━━━━━━━━━━━━━━━━━━━━━\n"));
 
     console.log(pc.bold("Workspace:"));
     console.log(`  ${sandboxRoot}\n`);
 
-    console.log(pc.bold("Network:"));
-    console.log(`  simnet\n`);
-
     console.log(pc.bold("Mode:"));
     console.log(`  ephemeral\n`);
-
-    console.log(pc.bold("Node:"));
-    if (isNodeRunning) {
-      console.log(`  ${pc.green("running")}\n`);
-      console.log(pc.bold("Mining:"));
-      console.log(`  enabled → ${pc.blue(miningAlias)}\n`);
-    } else {
-      console.log(`  not running`);
-      console.log(
-        pc.dim(
-          `  Tip: run \`hardkas sandbox --with-node\` for full localnet + autofunding.\n`
-        )
-      );
-    }
 
     console.log(pc.bold("Dashboard:"));
     console.log(`  http://${host}:${port}\n`);
@@ -80,7 +71,7 @@ export async function runSandbox(options: {
     console.log(`  ephemeral\n`);
 
     console.log(pc.bold("Projection:"));
-    console.log(`  healthy\n`);
+    console.log(`  rebuilt from the sandbox artifacts\n`);
 
     console.log(pc.bold("Quick Start"));
     console.log(pc.dim("━━━━━━━━━━━━━━━━━━━━━━━\n"));
@@ -162,6 +153,10 @@ export async function runSandbox(options: {
 
     process.on("SIGINT", () => handleTeardown("SIGINT"));
     process.on("SIGTERM", () => handleTeardown("SIGTERM"));
+
+    // SURFACE-TRUTH-1A: the sandbox lives until it is interrupted, as the dashboard it announced and "destroyed on
+    // exit" say. Returning here let the CLI exit at once: the dashboard stopped answering and nothing was cleaned up.
+    await new Promise(() => {});
   } catch (e: unknown) {
     const { HardkasCliError } = await import("../cli-errors.js");
     throw new HardkasCliError(

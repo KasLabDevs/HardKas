@@ -6,6 +6,7 @@
 // vitest is an optional peer (only ./setup and ./scenarios load it). The type-only
 // import anchors the augmentation below and is always erased.
 import type { Assertion } from "vitest";
+import { verifyLineage } from "@hardkas/artifacts";
 
 export interface HardKasMatchers<R = void> {
   /** Assert a receipt has status "accepted". */
@@ -88,14 +89,21 @@ export const hardKasMatchers = {
   },
 
   toPassLineageCheck(received: any) {
-    // For simulation purposes, we check if lineage array exists and is not empty if required
-    const pass = Array.isArray(received?.lineage) && received.lineage.length > 0;
+    // SURFACE-TRUTH-1A: the canonical structural lineage check (`verifyLineage`, strict, no parent to compare): the
+    // block HardKAS writes, an object, is well formed and names the artifact's own identity. The former check wanted a
+    // non-empty array, which no HardKAS artifact carries, so it failed on every real artifact.
+    const result =
+      received && typeof received === "object"
+        ? verifyLineage(received, undefined, { strict: true })
+        : { ok: false, issues: [{ code: "NOT_AN_ARTIFACT", severity: "error" as const, message: "not an artifact object" }] };
+    const pass = result.ok;
+    const codes = result.issues.filter((i) => i.severity === "error").map((i) => i.code);
     return {
       pass,
       message: () =>
         pass
           ? `Expected artifact NOT to pass lineage check`
-          : `Expected artifact to pass lineage check (missing or empty lineage)`
+          : `Expected artifact to pass lineage check (${codes.join(", ") || "invalid lineage"})`
     };
   },
 

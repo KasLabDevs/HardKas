@@ -11,8 +11,54 @@ export interface WorkflowRunOptions {
   dryRun?: boolean;
 }
 
+/** The step types this runtime executes; anything else is refused before the first step runs. */
+const EXECUTED_STEP_TYPES = ["simulate-failure", "script", "network.switch", "tx.plan", "tx.simulate", "tx.send"] as const;
+
 export class HardkasWorkflow {
   constructor(private readonly sdk: Hardkas) {}
+
+  /**
+   * SURFACE-TRUTH-1A (ST-I3, ST-I4): the whole definition is checked before any step runs. Returns the first step the
+   * runtime refuses, with its typed error, or undefined.
+   * - an unknown step type (it used to fall through every branch and be recorded as `success`);
+   * - `network.switch` to a network other than the one the workflow runs on (it used to be recorded as `success` while
+   *   the steps after it kept running on the old network); a switch to mainnet keeps answering with the mainnet policy;
+   * - a `script` step under containment (agent mode, `dryRun`, a policy without network): the script runs arbitrary code
+   *   in this process with every Node global, so neither the dry run nor the network policy applies to it.
+   */
+  private refusedStep(options: WorkflowRunOptions): { step: WorkflowRunOptions["steps"][number]; error: HardkasError } | undefined {
+    for (const step of options.steps) {
+      try {
+        if (!(EXECUTED_STEP_TYPES as readonly string[]).includes(step.type)) {
+          throw new HardkasError(
+            "WORKFLOW_STEP_UNKNOWN",
+            `Workflow step type '${String(step.type)}' is not one this runtime executes (${EXECUTED_STEP_TYPES.join(", ")}); nothing ran.`
+          );
+        }
+        if (step.type === "network.switch") {
+          const target = step.args?.network || step.network;
+          if (target === "mainnet") {
+            this.sdk.enforcePolicy("mainnet", "Workflow requested network switch to mainnet");
+          }
+          if (target !== this.sdk.network) {
+            throw new HardkasError(
+              "WORKFLOW_STEP_UNSUPPORTED",
+              `network.switch cannot move a running workflow from '${String(this.sdk.network)}' to '${String(target)}': the steps after it would still run on '${String(this.sdk.network)}'. Run the workflow on the network it needs; nothing ran.`
+            );
+          }
+        }
+        if (step.type === "script" && (this.sdk.mode === "agent" || options.dryRun === true || this.sdk.policy.allowNetwork === false)) {
+          throw new HardkasError(
+            "WORKFLOW_SCRIPT_REFUSED",
+            "A script step runs arbitrary code in this process, outside the agent policy, the dry run and the network policy, so it is refused under any of them; nothing ran."
+          );
+        }
+      } catch (e: unknown) {
+        return { step, error: e instanceof HardkasError ? e : new HardkasError("WORKFLOW_STEP_INVALID", e instanceof Error ? e.message : String(e)) };
+      }
+    }
+    return undefined;
+  }
 
   /**
    * Executes a sequence of declarative steps and returns a definitive WorkflowArtifact.
@@ -77,8 +123,17 @@ export class HardkasWorkflow {
 
     const stepsResults: Record<string, any> = {};
 
+    // SURFACE-TRUTH-1A: a definition with a refused step fails as a whole, before any step runs.
+    const refused = this.refusedStep(options);
+    if (refused) {
+      const at = new Date().toISOString(); // hardkas-determinism-allow: refusal timestamp
+      status = "failed";
+      errorEnvelope = { code: refused.error.code, message: refused.error.message, redacted: false };
+      artifactSteps.push({ type: refused.step.type, status: "failed", startedAt: at, completedAt: at, error: refused.error.message });
+    }
+
     // Real Execution Routing
-    for (const step of options.steps) {
+    for (const step of refused ? [] : options.steps) {
       const startedAt = new Date().toISOString(); // hardkas-determinism-allow: step start timestamp
       try {
         if (step.type === "simulate-failure") {

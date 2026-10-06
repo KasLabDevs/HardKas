@@ -35,6 +35,12 @@ async function runRepair(opts: { json?: boolean; force?: boolean }) {
   const rootDir = invocationWorkspaceRoot();
   const hardkasDir = path.join(rootDir, ".hardkas");
   let repairedCount = 0;
+  // SURFACE-TRUTH-1A (ST-I2): what this run found and whether it repaired it; the JSON status is derived from it
+  // (it was a constant "success", also when a problem was found and left in place).
+  const findings: Array<{ kind: string; target: string; repaired: boolean }> = [];
+  const found = (kind: string, target: string, repaired: boolean) => {
+    findings.push({ kind, target, repaired });
+  };
 
   // 1. Check Version/Migrations
   try {
@@ -50,9 +56,11 @@ async function runRepair(opts: { json?: boolean; force?: boolean }) {
       } else {
         UI.logHuman(`   Run with --force to execute migration.`);
       }
+      found("workspace-migration", rootDir, !!opts.force);
     }
   } catch (err: any) {
     UI.logHuman(`${pc.red("❌")} Version check failed: ${((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err))}`);
+    found("version-check-failed", rootDir, false);
   }
 
   // 2. Clear Stale Locks
@@ -68,6 +76,7 @@ async function runRepair(opts: { json?: boolean; force?: boolean }) {
       } else {
         UI.logHuman(`${pc.yellow("⚠️")} Found lock: ${lock}. Run with --force to clear.`);
       }
+      found("lock-file", lockPath, !!opts.force);
     }
   } catch {
     // Ignore if dir doesn't exist
@@ -97,6 +106,7 @@ async function runRepair(opts: { json?: boolean; force?: boolean }) {
         const tail = buffer.toString("utf-8", 0, readSize);
         if (!tail.endsWith("\n")) {
           UI.logHuman(`${pc.yellow("⚠️")} ${stream.name} has a corrupt tail.`);
+          let truncated = false;
           if (opts.force) {
             // naive truncate to last newline
             const lastNewline = tail.lastIndexOf("\n");
@@ -107,10 +117,12 @@ async function runRepair(opts: { json?: boolean; force?: boolean }) {
                 `${pc.green("✅")} Truncated ${stream.name} at byte ${truncateTo}.`
               );
               repairedCount++;
+              truncated = true;
             }
           } else {
             UI.logHuman(`   Run with --force to truncate corrupt tail.`);
           }
+          found("corrupt-tail", stream.path, truncated);
         }
       }
       await fd.close();
@@ -145,6 +157,7 @@ async function runRepair(opts: { json?: boolean; force?: boolean }) {
       } else {
         UI.logHuman(`   Run with --force to rebuild SQLite projection.`);
       }
+      found("corrupt-projection", dbPath, !!opts.force);
     } else {
       store.disconnect();
     }
@@ -153,7 +166,8 @@ async function runRepair(opts: { json?: boolean; force?: boolean }) {
   }
 
   if (opts.json) {
-    UI.writeJson({ status: "success", repairedCount });
+    const left = findings.filter((f) => !f.repaired).length;
+    UI.writeJson({ status: left > 0 ? "issues_found" : "success", repairedCount, unrepairedCount: left, findings });
   } else {
     UI.divider();
     UI.logHuman(`Repair cycle complete. Actions taken: ${repairedCount}`);
