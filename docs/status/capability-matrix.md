@@ -49,7 +49,7 @@ Coverage:
 
 - Stable commands show help and fail cleanly.
 - Local transaction commands work end to end.
-- `query store sync`, `verify --deep`, and `artifact verify --strict` work on generated local data.
+- `query store sync`, `verify`, and `artifact verify --strict` work on generated local data.
 - Preview and research commands are clearly marked.
 
 ## SDK Surface

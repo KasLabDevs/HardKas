@@ -197,8 +197,14 @@ ${table(flattenProgrammability(p.programmability))}
 ## Capability flags
 
 Source: \`createHardkasCapabilities()\` in \`packages/sdk/src/capabilities.ts\`.
-These are the static defaults; \`hardkas capabilities\` probes the environment and
-may enable \`silverScript\`, \`covenants\`, and \`transactionV1\` at runtime.
+These describe what the build contains and probe nothing. \`silverScript\`,
+\`covenants\` and \`transactionV1\` depend on the environment, so they are false
+here; the SDK's \`capabilities.get()\` derives them from the checks
+\`hardkas silver doctor\` reports and from the kaspa-wasm the signer loads.
+\`covenants\` covers the real builders only (1:1 auth-bound transitions,
+\`hardkas silver covenant genesis|transition\`) and also needs the canonical node
+to prove its identity. \`sdkCovenantPlanning\` is false: the SDK's
+\`covenants.planDeploy/planSpend\` refuse.
 
 Enabled:
 

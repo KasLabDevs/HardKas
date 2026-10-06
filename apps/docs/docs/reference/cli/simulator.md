@@ -24,7 +24,7 @@ title: hardkas simulator
 
 ### Synopsis (Generated)
 
-**Purpose:** Fund a synthetic simulated account stable
+**Purpose:** Fund a synthetic simulated account (the project's default network must be the simulator) stable
 
 #### Arguments
 
@@ -32,7 +32,7 @@ title: hardkas simulator
 
 #### Options
 
-- `--amount &lt;kas&gt;` (Default: `1000`): Amount in KAS to fund
+- `--amount &lt;kas&gt;` (Default: `1000`): Amount in KAS, up to 8 decimals, above 0
 - `--json` (Default: `false`): Output as JSON
 
 ---

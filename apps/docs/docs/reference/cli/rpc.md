@@ -8,7 +8,12 @@ title: hardkas rpc
 
 ### Synopsis (Generated)
 
-**Purpose:** Show RPC connection info
+**Purpose:** Show the node's network, version, sync state and UTXO index
+
+#### Options
+
+- `--url &lt;url&gt;`: Node wRPC endpoint (default: the canonical localnet, ws://127.0.0.1:18210)
+- `--json` (Default: `false`): Output as JSON
 
 ---
 
@@ -16,12 +21,12 @@ title: hardkas rpc
 
 ### Synopsis (Generated)
 
-**Purpose:** Check RPC health
+**Purpose:** Check that the canonical localnet node (ws://127.0.0.1:18210) answers and is ready
 
 #### Options
 
 - `--wait`: Wait until healthy
-- `--timeout &lt;ms&gt;`: Timeout in ms
+- `--timeout &lt;ms&gt;`: With --wait: how long to wait in ms (default: 60000)
 - `--json` (Default: `false`): Output as JSON
 
 ---
@@ -30,11 +35,11 @@ title: hardkas rpc
 
 ### Synopsis (Generated)
 
-**Purpose:** Run comprehensive RPC diagnostics
+**Purpose:** Probe RPC endpoints: TCP, wRPC connection, server and DAG info (http:// endpoints without port 18210 are probed as EVM JSON-RPC)
 
 #### Options
 
-- `--endpoints &lt;urls...&gt;`: Specific endpoints to audit
+- `--endpoints &lt;urls...&gt;`: Endpoints to probe, separated by spaces (commas are not split)
 
 ---
 
@@ -42,7 +47,12 @@ title: hardkas rpc
 
 ### Synopsis (Generated)
 
-**Purpose:** Show DAG information from node
+**Purpose:** Show the node's DAG: network, virtual DAA score, sink and tips
+
+#### Options
+
+- `--url &lt;url&gt;`: Node wRPC endpoint (default: the canonical localnet, ws://127.0.0.1:18210)
+- `--json` (Default: `false`): Output as JSON
 
 ---
 
@@ -50,11 +60,16 @@ title: hardkas rpc
 
 ### Synopsis (Generated)
 
-**Purpose:** Show UTXOs for an address from node
+**Purpose:** Show the UTXOs the node holds for an address
 
 #### Arguments
 
 - `&lt;address&gt;` (Required): 
+
+#### Options
+
+- `--url &lt;url&gt;`: Node wRPC endpoint (default: the canonical localnet, ws://127.0.0.1:18210)
+- `--json` (Default: `false`): Output as JSON
 
 ---
 
@@ -62,11 +77,16 @@ title: hardkas rpc
 
 ### Synopsis (Generated)
 
-**Purpose:** Show mempool status from node
+**Purpose:** Look up a transaction in the node's mempool, or list what the mempool holds
 
 #### Arguments
 
 - `&lt;txId&gt;` (Optional): 
+
+#### Options
+
+- `--url &lt;url&gt;`: Node wRPC endpoint (default: the canonical localnet, ws://127.0.0.1:18210)
+- `--json` (Default: `false`): Output as JSON
 
 ---
 

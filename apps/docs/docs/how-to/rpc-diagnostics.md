@@ -2,7 +2,7 @@
 title: RPC diagnostics
 ---
 
-HardKAS includes L1 and L2 RPC diagnostics so tools and agents can inspect runtime readiness instead of guessing.
+HardKAS includes L1 RPC diagnostics so tools and agents can inspect runtime readiness instead of guessing.
 
 `hardkas rpc health`Check Kaspa RPC availability.
 
@@ -16,6 +16,4 @@ HardKAS includes L1 and L2 RPC diagnostics so tools and agents can inspect runti
 
 `hardkas rpc utxos <address>`Query UTXOs for an address.
 
-`hardkas l2 rpc health --network igra --json`Check Igra RPC health.
-
-`hardkas l2 profile validate igra --json`Validate L2 profile configuration.
+The Igra L2 checks are a Lab, not part of the L1 CLI (it registers no `l2` command group); `hardkas dev doctor` and `hardkas local wizard` check an Igra JSON-RPC endpoint.

@@ -486,36 +486,29 @@ export async function runDoctorChecks(
       message: "Present in workspace"
     });
 
-    const parsedEnv: Record<string, string> = {};
-    envContent.split("\n").forEach(line => {
-      const match = line.match(/^\s*([\w.-]+)\s*=\s*(.*)?\s*$/);
-      if (match && match[1]) {
-         parsedEnv[match[1]] = match[2] || "";
-      }
-    });
-
-    const mergedEnv = { ...process.env, ...parsedEnv };
-    const requiredVars = ["NETWORK", "KASPAD_URL", "HARDKAS_DATA_DIR", "HARDKAS_KASPAD_IMAGE", "LOG_LEVEL"];
-    const missing: string[] = [];
-    
-    for (const req of requiredVars) {
-      if (!mergedEnv[req] || mergedEnv[req].trim() === "") missing.push(req);
-    }
-
-    if (missing.length === 0) {
+    // SURFACE-TRUTH-1B (ST-J): the contract of `hardkas env check` (one registry, `checkEnvironment`). The former check
+    // required the deployment profile (NETWORK, KASPAD_URL, HARDKAS_DATA_DIR, HARDKAS_KASPAD_IMAGE, LOG_LEVEL) of any .env,
+    // although HardKAS reads none of them but HARDKAS_KASPAD_IMAGE, so `ci verify` failed in every workspace whose .env
+    // only held the app's variables.
+    const { checkEnvironment, parseDotEnv } = await import("./env.js");
+    const report = checkEnvironment(process.env, parseDotEnv(envContent));
+    const profile = report.deployProfile
+      ? `; deployment profile (informational): ${report.deployProfile.missing.length ? `${report.deployProfile.missing.join(", ")} not set` : "complete"}`
+      : "";
+    if (report.unknown.length === 0) {
       addCheck({
-        name: "Production .env variables",
+        name: "HARDKAS_* environment",
         category: "env",
         status: "pass",
-        message: "All required variables present"
+        message: `Every HARDKAS_* variable set is one HardKAS reads${profile}`
       });
     } else {
       addCheck({
-        name: "Production .env variables",
+        name: "HARDKAS_* environment",
         category: "env",
         status: "fail",
-        message: `Missing: ${missing.join(", ")}`,
-        suggestion: "Run 'hardkas env check' or configure .env correctly."
+        message: `Not variables HardKAS reads: ${report.unknown.join(", ")}${profile}`,
+        suggestion: "Run 'hardkas env check' to see the variables HardKAS honours."
       });
     }
   } catch {
@@ -717,7 +710,7 @@ export async function runDoctorChecks(
     UI.logHuman(
       `  Summary: ${report.summary.passed} passed, ${report.summary.failed} failed, ${report.summary.warnings} warning, ${report.summary.skipped} skipped`
     );
-    UI.footer("Use 'hardkas capabilities' to see supported features.");
+    // SURFACE-TRUTH-1B: the footer named `capabilities`, a hidden command; hidden means not advertised.
   }
 
   if (opts.strict && report.summary.failed > 0) {

@@ -301,8 +301,9 @@ export function createDevServer(config: DevServerConfig) {
         };
         server.on("error", (err: any) => {
           if (((err as any).code) === "EADDRINUSE") {
+            // SURFACE-TRUTH-1B: `dev` has no `server` subcommand and no --port; `sandbox` takes --port
             console.error(
-              `\nPort ${config.port} is already in use. Try: hardkas dev server --port ${config.port + 1}\n`
+              `\nPort ${config.port} is already in use: stop the process that holds it (\`hardkas sandbox\` takes --port).\n`
             );
             throw new Error("Command failed");
           }
@@ -312,7 +313,7 @@ export function createDevServer(config: DevServerConfig) {
       } catch (err: any) {
         if (((err as any).code) === "EADDRINUSE") {
           console.error(
-            `\nPort ${config.port} is already in use. Try: hardkas dev server --port ${config.port + 1}\n`
+            `\nPort ${config.port} is already in use: stop the process that holds it (\`hardkas sandbox\` takes --port).\n`
           );
           throw new Error("Command failed");
         }

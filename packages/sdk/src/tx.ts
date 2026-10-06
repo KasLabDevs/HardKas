@@ -389,7 +389,7 @@ export class HardkasTx {
 
     if (amountSompi === 0n) {
       throw new Error(
-        "Kaspa value-transfer outputs require amount > 0.\nFor metadata/notary/DID marker transactions use --amount 1.\nFuture: hardkas tx anchor."
+        "Kaspa value-transfer outputs require amount > 0.\nFor metadata/notary/DID marker transactions use --amount 1."
       );
     }
 
@@ -775,12 +775,30 @@ export class HardkasTx {
       (plan as any).schema === HardkasSchemas.SignedTxV1 ||
       (plan as any).txVersion === 1
     ) {
-      // WASM v0.13 does not support V1 artifacts natively in our SDK adapters yet
-      const wasmProvider = this.sdk.config.config.wasm?.provider || "npm";
-      if (wasmProvider !== "local") {
-        const e = new Error("The configured WASM runtime does not support TX V1 signing. Upgrade to WASM v2.x.");
-        (e as any).code = "BLOCKED_BY_DEPENDENCY";
-        throw e;
+      // SURFACE-TRUTH-1B: decided by what would sign the plan, never by a provider name. The former check counted an unset
+      // `wasm.provider` as "npm" and refused every provider but "local" with "Upgrade to WASM v2.x", while the default
+      // (managed, the pinned kaspa-wasm) signs v1 and the capability probe said so.
+      if ((plan as any).mode === "simulator") {
+        // The simulator authorizes and applies payments without modelling the transaction version: it would drop the v1
+        // fields (compute budget, covenant outputs, storage mass) silently.
+        throw new HardkasError(
+          "TX_V1_SIMULATION_UNSUPPORTED",
+          "The simulator does not model transaction v1 (compute budget, covenant outputs, storage mass): it authorizes and applies version-0 payments only. Sign v1 plans for a node network.",
+          { metadata: { planId: (plan as any).planId ?? null } }
+        );
+      }
+      if (!this.sdk.signer) {
+        // The runtime the signer loads (`signTxPlanArtifact`), with the check the signer itself applies. A runtime that
+        // does not load is reported by the signer.
+        const { getKaspaSigningBackendStatus } = await import("@hardkas/accounts");
+        const runtime = await getKaspaSigningBackendStatus(this.sdk.config.config.wasm);
+        if (runtime.available && !runtime.capabilities?.transactionV1Signing) {
+          throw new HardkasError(
+            "BLOCKED_BY_DEPENDENCY",
+            `The loaded kaspa-wasm (${runtime.version}) does not sign transaction v1.`,
+            { metadata: { runtimeVersion: runtime.version } }
+          );
+        }
       }
     }
 

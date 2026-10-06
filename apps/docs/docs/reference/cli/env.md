@@ -8,7 +8,11 @@ title: hardkas env
 
 ### Synopsis (Generated)
 
-**Purpose:** Validate the .env file against known HardKAS production variables
+**Purpose:** Check the HARDKAS_* environment variables (process and .env): the ones HardKAS honours, and any it does not know
+
+#### Options
+
+- `--json` (Default: `false`): Output as JSON
 
 ---
 

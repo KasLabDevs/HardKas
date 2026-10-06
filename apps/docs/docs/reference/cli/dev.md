@@ -8,7 +8,7 @@ title: hardkas dev
 
 ### Synopsis (Generated)
 
-**Purpose:** Local development and Igra-native environment tools
+**Purpose:** Local development tools: dev environment, dApp templates, simnet dev accounts (`dev doctor` is an Igra L2 lab check)
 
 #### Options
 
@@ -41,13 +41,13 @@ title: hardkas dev
 
 ### Synopsis (Generated)
 
-**Purpose:** Validate local dev environment readiness stable
+**Purpose:** Igra L2 lab, not the L1 core: check local dev readiness for an L2 profile (Igra by default): workspace, artifacts, query store, SDK import, dev server and the L2 JSON-RPC; the Kaspa node is not checked experimental
 
 #### Options
 
 - `--profile &lt;name&gt;` (Default: `igra`): L2 network profile name
 - `--rpc-url &lt;url&gt;`: Explicit Igra RPC URL to check
-- `--account &lt;name&gt;`: Local EVM account name to verify balance
+- `--account &lt;name&gt;`: EVM account that must exist in hardkas.config (its balance is not checked)
 - `--timeout &lt;ms&gt;` (Default: `3000`): RPC timeout in milliseconds
 - `--json`: Output as JSON
 - `--release`: Run strict release gate checks
@@ -78,11 +78,11 @@ title: hardkas dev
 
 ### Synopsis (Generated)
 
-**Purpose:** Export dev account in format suitable for Kasware manual import
+**Purpose:** Export a dev account for a wallet's manual import; format: kasware
 
 #### Arguments
 
-- `&lt;kasware&gt;` (Required): 
+- `&lt;format&gt;` (Required): 
 
 #### Options
 
@@ -138,13 +138,13 @@ title: hardkas dev
 
 ### Synopsis (Generated)
 
-**Purpose:** Interact with the latest local workflow
+**Purpose:** Act on the latest transaction artifact of the workspace store
 
 #### Options
 
-- `--inspect` (Default: `false`): Inspect the latest artifact
-- `--replay` (Default: `false`): Replay the latest workflow
-- `--explain` (Default: `false`): Explain the latest workflow
+- `--inspect` (Default: `false`): Print the latest artifact
+- `--replay` (Default: `false`): Show the latest receipt, or verify the latest plan or signed transaction (no replay is run)
+- `--explain` (Default: `false`): Print the `hardkas why` command for the latest artifact
 - `--workspace &lt;path&gt;`: Override workspace root directory
 
 ---

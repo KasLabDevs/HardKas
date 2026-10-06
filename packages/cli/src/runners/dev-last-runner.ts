@@ -4,8 +4,16 @@ import { runTxVerify } from "./tx-verify-runner.js";
 import fs from "node:fs";
 import path from "node:path";
 import { loadHardkasConfig } from "@hardkas/config";
-import { HardkasSchemas } from "@hardkas/artifacts";
+import { HardkasSchemas, enumerateWorkspaceArtifactsSync } from "@hardkas/artifacts";
+import { HardkasCliError, HardkasExitCode } from "../cli-errors.js";
 
+// SURFACE-TRUTH-1B (ST-I):
+// - the latest transaction artifact is looked up in the canonical store enumeration (`plans/`, `signed/`, `receipts/`, …).
+//   The runner read only the top level of `.hardkas/artifacts`, where the current layout writes nothing, so it answered
+//   "No recent transaction artifacts found" in workspaces that had them;
+// - an error is a failure (typed, exit ≠ 0). Every error path here used to render a message and exit 0;
+// - `--replay` says what it does: it shows the latest receipt, or verifies the latest plan or signed transaction. It
+//   runs no replay (`hardkas replay verify` replays a simulator receipt).
 export async function runDevLast(options: {
   inspect: boolean;
   replay: boolean;
@@ -15,31 +23,15 @@ export async function runDevLast(options: {
   const loaded = await loadHardkasConfig(
     options.workspaceRoot ? { cwd: options.workspaceRoot } : {}
   );
-  const artifactsDir = path.join(loaded.cwd, ".hardkas", "artifacts");
 
-  if (!fs.existsSync(artifactsDir)) {
-    UI.error("No artifacts found in workspace.");
-    return;
-  }
-
-  // Find latest receipt or txPlan by reading schemas
-  const files = fs
-    .readdirSync(artifactsDir)
-    .filter((f) => f.endsWith(".json"))
-    .map((f) => {
-      const fullPath = path.join(artifactsDir, f);
-      const stat = fs.statSync(fullPath);
-      let schema = "";
-      try {
-        const content = JSON.parse(fs.readFileSync(fullPath, "utf-8"));
-        schema = content.schema || "";
-      } catch (e) {}
-      return {
-        name: f,
-        time: stat.mtime.getTime(),
-        schema
-      };
-    })
+  const files = enumerateWorkspaceArtifactsSync(loaded.cwd)
+    .map((entry) => ({
+      name: path.basename(entry.path),
+      path: entry.path,
+      time: fs.statSync(entry.path).mtime.getTime(),
+      schema: typeof entry.artifact?.schema === "string" ? (entry.artifact.schema as string) : "",
+      artifact: entry.artifact
+    }))
     .sort((a, b) => b.time - a.time);
 
   // Preference order: replay > receipt > signedTx > txPlan
@@ -62,11 +54,14 @@ export async function runDevLast(options: {
     : latestReplay || latestReceipt || latestSigned || latestPlan;
 
   if (!target) {
-    UI.error("No recent transaction artifacts found.");
-    return;
+    throw new HardkasCliError(
+      "DEV_LAST_NOTHING_FOUND",
+      "No recent transaction artifacts found in this workspace's store (.hardkas/artifacts).",
+      { exitCode: HardkasExitCode.USAGE_ERROR }
+    );
   }
 
-  const targetPath = path.join(artifactsDir, target.name);
+  const targetPath = target.path;
   UI.info(`Targeting latest artifact: ${target.name}`);
 
   const wsSuffix = options.workspaceRoot ? ` --workspace ${options.workspaceRoot}` : "";
@@ -81,13 +76,9 @@ export async function runDevLast(options: {
   }
 
   if (options.inspect) {
-    try {
-      const data = fs.readFileSync(targetPath, "utf-8");
-      console.log(JSON.stringify(JSON.parse(data), null, 2));
-      UI.printNextSteps([`hardkas why ${whyTarget}${wsSuffix}`]);
-    } catch (e) {
-      UI.error("Failed to inspect artifact: " + e);
-    }
+    const data = fs.readFileSync(targetPath, "utf-8");
+    console.log(JSON.stringify(JSON.parse(data), null, 2));
+    UI.printNextSteps([`hardkas why ${whyTarget}${wsSuffix}`]);
     return;
   }
 
@@ -96,25 +87,20 @@ export async function runDevLast(options: {
       target.schema.startsWith(HardkasSchemas.TxReceipt) ||
       target.name.startsWith("receipt_")
     ) {
-      // For receipt, we show it
-      console.log("\nReplaying receipt...");
-      const txId = target.name.replace("receipt_", "").replace(".json", "");
-      try {
-        const result = await runTxReceipt({ txId, cwd: loaded.cwd });
-        console.log(result.formatted);
-        UI.printNextSteps([`hardkas why --tx ${txId}${wsSuffix}`]);
-      } catch (e) {
-        UI.error("Replay failed: " + e);
-      }
+      // For a receipt, we show it
+      console.log("\nShowing the latest receipt (no replay is run)...");
+      const txId =
+        typeof target.artifact?.txId === "string" && target.artifact.txId
+          ? (target.artifact.txId as string)
+          : target.name.replace("receipt_", "").replace(".json", "");
+      const result = await runTxReceipt({ txId, cwd: loaded.cwd });
+      console.log(result.formatted);
+      UI.printNextSteps([`hardkas why --tx ${txId}${wsSuffix}`]);
     } else {
-      // For plan or signed, we verify it
-      console.log(`\nReplaying transaction semantics for ${target.name}...`);
-      try {
-        await runTxVerify({ path: targetPath, json: false, workspaceRoot: loaded.cwd });
-        UI.printNextSteps([`hardkas why ${whyTarget}${wsSuffix}`]);
-      } catch (e) {
-        UI.error("Replay verification failed: " + e);
-      }
+      // For a plan or a signed transaction, we verify it
+      console.log(`\nVerifying ${target.name} (no replay is run)...`);
+      await runTxVerify({ path: targetPath, json: false, workspaceRoot: loaded.cwd });
+      UI.printNextSteps([`hardkas why ${whyTarget}${wsSuffix}`]);
     }
     return;
   }

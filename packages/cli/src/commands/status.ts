@@ -32,18 +32,18 @@ export function registerStatusCommands(program: Command) {
 
         UI.box("Workspace", root);
 
-        // 2. Node & Server Status (Offline check)
-        // We do a fast check by trying to connect to the dev-server
+        // 2. Dev server (offline check). SURFACE-TRUTH-1B: the dev server `hardkas dev` starts (localhost:7420). This used
+        // to ask the old dashboard (localhost:3333, a command the CLI does not register), and to report the Kaspa node
+        // "Online (Simulated)" whenever that answered, without checking any node; `status` checks no node.
         let serverOnline = false;
         try {
-          const res = await fetch("http://localhost:3333/api/dashboard-health", {
+          const res = await fetch("http://localhost:7420/api/health", {
             signal: AbortSignal.timeout(500)
           });
           if (res.ok) serverOnline = true;
         } catch {}
 
         UI.field("Dev Server", serverOnline ? "🟢 Online" : "🔴 Offline");
-        UI.field("Kaspa Node", serverOnline ? "🟢 Online (Simulated)" : "🔴 Offline");
 
         UI.emptyLine();
 
@@ -116,7 +116,9 @@ export function registerStatusCommands(program: Command) {
         const wsSuffix = workspace.explicit !== undefined ? ` --workspace ${workspace.explicit}` : "";
 
         if (!serverOnline) {
-          nextSteps.push(`hardkas dev --with-node${wsSuffix}`);
+          // `dev` has no --with-node (the hint named an option it does not register), and it takes no --workspace: it
+          // runs in the current directory
+          nextSteps.push(`hardkas dev --headless`);
         } else {
           nextSteps.push(
             `hardkas dev tx send --from alice --to bob --amount 1${wsSuffix}`

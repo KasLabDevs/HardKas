@@ -146,11 +146,12 @@ overviewRoutes.get("/", async (c) => {
   } else if (replayCount > 0 && pendingReplays === 0 && corruptedCount === 0) {
     runtimeState = "VERIFIED";
     runtimeReason = "Local deterministic runtime is consistent.";
-    recommendedAction = "hardkas dashboard";
+    // SURFACE-TRUTH-1B: the CLI registers no `dashboard` command (this page is the dashboard)
+    recommendedAction = "hardkas status";
   } else if (artifactCount > 0 && eventCount === 0) {
     runtimeState = "ACTIVE";
     runtimeReason = "causal_events_not_recorded";
-    recommendedAction = "hardkas dashboard";
+    recommendedAction = "hardkas status";
   }
 
   const guarantees = {

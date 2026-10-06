@@ -12,13 +12,15 @@ export class WasmPsktAdapter implements PsktRuntimeAdapter {
   readonly id: string;
   readonly kind = "wasm";
   
+  // SURFACE-TRUTH-1B (ST-C): it implements no operation (see `probe`), so it verifies, encrypts and authenticates
+  // nothing; it used to claim all three.
   readonly trustProfile: PsktAdapterTrustProfile = {
     processBoundary: "same-process",
     privateKeysLeaveProcess: false,
     payloadLeavesProcess: false,
-    verifiesUnsignedTxIdentity: true,
-    transportEncrypted: true,
-    adapterAuthenticated: true
+    verifiesUnsignedTxIdentity: false,
+    transportEncrypted: false,
+    adapterAuthenticated: false
   };
 
   constructor(id: string = "kaspa-wasm-local") {

@@ -7,13 +7,14 @@ import { Hardkas } from "../src/index.js";
 
 vi.setConfig({ testTimeout: 120_000, hookTimeout: 120_000 });
 
-// SURFACE-TRUTH-1 (investigation, 2026-10-06, base 7e7cf630f) · BEFORE on the SDK, in a simulated workspace, the part
-// SURFACE-TRUTH-1A fixes:
+// SURFACE-TRUTH-1 (investigation, 2026-10-06, base 7e7cf630f) · BEFORE on the SDK, in a simulated workspace:
 // - ST-B · `hardkas.covenants.planSpend/planDeploy` return ordinary payment plans: the covenant id, the script and the
 //   witness data they were asked for are dropped, and the plan signs and simulates as a plain payment;
+// - ST-B · the SDK answers "are covenants supported?" twice, differently (`covenants.isSupported()` vs
+//   `capabilities.get()`), and `tx.sign` refuses a v1 plan as "runtime too old" while its own probe says the runtime
+//   signs v1;
+// - ST-A · `capabilities.get()` reports the node as Toccata/covenant-capable without reaching any node;
 // - ST-F · `workflow.run` records unknown step types and `network.switch` as success.
-// The investigation's other tests here (`covenants.isSupported()` vs `capabilities.get()`, `tx.sign` refusing v1 as
-// "runtime too old", the node capability matrix) belong to SURFACE-TRUTH-1B and are added with it.
 // Written against the property: a surface that refuses with a typed error satisfies them as well as one that works.
 
 describe("SURFACE-TRUTH-1 · BEFORE · SDK surfaces", () => {
@@ -62,6 +63,29 @@ describe("SURFACE-TRUTH-1 · BEFORE · SDK surfaces", () => {
       const plain: any = await sdk.tx.plan({ from: "alice", to: "alice", amount: 100_000_000n } as any);
       const firstOutput = (p: any) => JSON.stringify((p?.outputs ?? [])[0] ?? null);
       expect(firstOutput(r.value)).not.toBe(firstOutput(plain));
+    });
+
+    it("`covenants.isSupported()` and `capabilities.get()` give the same answer", async () => {
+      const supported = await sdk.covenants.isSupported();
+      const caps = await sdk.capabilities.get();
+      expect(caps.capabilities.covenants).toBe(supported);
+    });
+
+    it("`tx.sign` does not refuse a v1 plan as 'runtime too old' when the SDK's own probe says the runtime signs v1", async () => {
+      const env = await sdk.capabilities.probeEnvironment();
+      if (!env.kaspa.signingV1) return;
+      const plan: any = await sdk.tx.plan({ from: "alice", to: "bob", amount: "1" });
+      const r: any = await attempt(() => sdk.tx.sign({ ...plan, txVersion: 1 }));
+      expect(r.error?.code === "BLOCKED_BY_DEPENDENCY" && /Upgrade to WASM v2/i.test(r.error.message)).toBe(false);
+    });
+  });
+
+  describe("ST-A · capabilities", () => {
+    it("`capabilities.get()` does not report the node as Toccata- or covenant-capable when no node was reached", async () => {
+      const caps: any = await sdk.capabilities.get();
+      const node = caps.runtimeMatrix?.node ?? {};
+      if (node.version !== "unknown") return;
+      expect({ toccata: node.toccata, covenants: node.covenants }).toEqual({ toccata: false, covenants: false });
     });
   });
 

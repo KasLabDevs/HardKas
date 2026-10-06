@@ -25,11 +25,11 @@ Treat PSKT files as sensitive financial metadata. While they cannot be used to s
 
 What happens if a malicious Coordinator alters a PSKT before giving it to a Signer?
 
-1. **Changing Amounts or Recipients:** If the Coordinator changes an output, the transaction hash changes. Any signatures produced will commit to the *new* hash. The Signer *must* inspect the PSKT (`hardkas pskt inspect`) to verify the outputs before signing.
+1. **Changing Amounts or Recipients:** If the Coordinator changes an output, the transaction hash changes. Any signatures produced will commit to the *new* hash. The Signer *must* verify the outputs with a tool that decodes the PSKT payload before signing. `hardkas pskt inspect` is not such a tool: it shows the session metadata only (no inputs, outputs, amounts or recipients).
 2. **Changing Inputs:** If an input is changed, the Signer's signature will commit to the new input set.
 3. **Artifact Integrity:** HardKAS hashes the PSKT payload (`payloadHash`). This is an *artifact integrity check*, not a cryptographic transaction check. Modifying the PSKT legitimately (by adding a signature) inherently changes the artifact hash.
 
-**Signer Trust Model:** The Signer does not need network access (they can be offline), but they **must trust their local inspection tool**. They must independently verify the PSKT outputs before signing, as the Coordinator could have handed them a maliciously constructed PSKT.
+**Signer Trust Model:** The Signer does not need network access (they can be offline), but they **must trust their local inspection tool**. They must independently verify the PSKT outputs before signing, as the Coordinator could have handed them a maliciously constructed PSKT. This build of HardKAS provides no such tool (PSKT is unavailable in it).
 
 ## Air-gap vs Offline
 

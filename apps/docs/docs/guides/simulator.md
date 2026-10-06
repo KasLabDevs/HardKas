@@ -37,7 +37,7 @@ Because this is the Simulator, the keys are synthetic and HardKAS handles the cr
 ## 4. Execute
 
 ```bash
-hardkas tx send signed.json --out receipt.json
+hardkas tx send signed.json
 ```
 
 The transaction is instantly applied to the virtual DAG. The resulting `receipt.json` contains the cryptographic proof of execution.

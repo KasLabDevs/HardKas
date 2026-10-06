@@ -1,5 +1,9 @@
 # Multi-Party Signing (Combine)
 
+:::warning Unavailable in this build
+No PSKT adapter implements an operation in this build, so the commands below refuse with a typed error. See [PSKT](../../concepts/pskt/index.md).
+:::
+
 PSKT enables decentralized, multi-party coordination. 
 
 For example, if a transaction spends from a 2-of-3 Multisig address, or spends two different inputs owned by two different people, the signing process is distributed.
@@ -35,8 +39,8 @@ Alice and Bob send their partially signed PSKTs back to the Coordinator. The Coo
 hardkas pskt merge alice_signed.json bob_signed.json --out merged_session.json
 ```
 
-**Merge Semantics:**
-* HardKAS delegates to the upstream native Kaspa Combiner.
+**Merge Semantics (with an adapter; none in this build):**
+* The adapter delegates to the upstream native Kaspa Combiner.
 * The Combiner verifies that both PSKTs represent the *exact same underlying transaction*. If Alice and Bob signed PSKTs with different outputs or inputs, the merge will strictly fail.
 * The Combiner aggregates the partial signatures from both files.
 
@@ -46,5 +50,5 @@ The `merged_session.json` now contains both signatures. The Coordinator can fina
 
 ```bash
 hardkas pskt finalize merged_session.json --out final.json
-hardkas pskt extract final.json --network simnet --out tx.json
+hardkas pskt extract final.json --out tx.json
 ```

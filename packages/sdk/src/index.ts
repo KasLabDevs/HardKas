@@ -47,7 +47,8 @@ export { HardkasReplay } from "./replay.js";
 export { HardkasLineage } from "./lineage.js";
 export { HardkasWorkspace } from "./workspace.js";
 export { HardkasArtifactsManager } from "./artifacts-manager.js";
-export { HardkasCapabilitiesApi, createHardkasCapabilities } from "./capabilities.js";
+export { HardkasCapabilitiesApi, createHardkasCapabilities, probeSilverReadiness } from "./capabilities.js";
+export type { SilverReadiness, ReadinessCheck } from "./capabilities.js";
 export { HardkasCorpus, verifyToccataCorpus } from "./corpus.js";
 export { HardkasSilver } from "./silver.js";
 export {

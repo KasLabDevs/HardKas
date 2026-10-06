@@ -332,12 +332,13 @@ export function handleError(e: unknown, context?: string) {
   }
 
   if (!suggestion) {
+    // SURFACE-TRUTH-1B: suggestions name registered commands (there is no `localnet reset` and no `faucet`)
     if (msg.includes("Localnet state not found")) {
       suggestion =
-        "Run 'hardkas localnet reset' to initialize the simulated environment.";
+        "Fund an account ('hardkas simulator fund <name>') or run a transaction to initialize the simulated environment.";
     } else if (msg.includes("Insufficient funds")) {
       suggestion =
-        "Use 'hardkas faucet <address> <amount>' to add funds to your account.";
+        "Fund the account: 'hardkas simulator fund <name>' (simulated) or 'hardkas localnet fund <name>' (the Docker localnet).";
     } else if (msg.includes("Account not found")) {
       suggestion = "Check your 'hardkas.config.ts' or use a full Kaspa address.";
     } else if (msg.includes("Docker") || msg.includes("container")) {

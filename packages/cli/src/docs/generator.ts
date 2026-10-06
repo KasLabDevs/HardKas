@@ -30,6 +30,13 @@ export interface CliReference {
 }
 
 /**
+ * SURFACE-TRUTH-1B (ST-I5): hidden means not documented as usable. Hidden commands (`capabilities`, `session`,
+ * `tx trace`, `workflow create`, `workflow replay`, …) and their subcommands are left out of the reference; it used to
+ * list them like any other command.
+ */
+const isListed = (cmd: any): boolean => !cmd._hidden;
+
+/**
  * Extracts metadata from a Commander command tree.
  */
 export function extractCliReference(
@@ -37,6 +44,7 @@ export function extractCliReference(
   options?: { deterministic?: boolean }
 ): CliReference {
   const commands = program.commands
+    .filter(isListed)
     .map((cmd) => extractCommand(cmd, program.name()))
     .sort((a, b) => deterministicCompare(a.path, b.path));
 
@@ -91,6 +99,7 @@ function extractCommand(cmd: any, parentPath: string): CliCommandReference {
       mandatory: opt.mandatory || false
     })),
     subcommands: cmd.commands
+      .filter(isListed)
       .map((sub: any) => extractCommand(sub, currentPath))
       .sort((a: any, b: any) => deterministicCompare(a.path, b.path))
   };

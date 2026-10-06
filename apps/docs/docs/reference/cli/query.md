@@ -16,13 +16,13 @@ title: hardkas query
 
 - `--schema &lt;schema&gt;`: Filter by artifact schema (e.g. txPlan, signedTx)
 - `--network &lt;network&gt;`: Filter by network ID
-- `--mode &lt;mode&gt;`: Filter by mode (simulated/real)
+- `--mode &lt;mode&gt;`: Filter by mode: simulator, localnet or rpc
 - `--from &lt;address&gt;`: Filter by sender address
 - `--to &lt;address&gt;`: Filter by recipient address
 - `--sort &lt;field:dir&gt;`: Sort field and direction (e.g. createdAt:desc)
 - `--limit &lt;n&gt;` (Default: `100`): Max results
 - `--json` (Default: `false`): Output as deterministic JSON
-- `--explain [level]`: Attach explain chains (brief|full)
+- `--explain [level]`: Attach explain chains (brief and full currently give the same output)
 
 ---
 
@@ -39,7 +39,7 @@ title: hardkas query
 #### Options
 
 - `--json` (Default: `false`): Output as JSON
-- `--explain [level]`: Attach explain chains (brief|full)
+- `--explain [level]`: Attach explain chains (brief and full currently give the same output)
 
 ---
 
@@ -69,7 +69,7 @@ title: hardkas query
 #### Options
 
 - `--migrate` (Default: `false`): Apply pending migrations if found
-- `--wait-lock` (Default: `false`): Wait for workspace lock if held
+- `--wait-lock` (Default: `false`): With --migrate: wait for the query-store lock if held
 - `--lock-timeout &lt;ms&gt;` (Default: `30000`): Lock wait timeout in ms
 
 ---
@@ -82,7 +82,7 @@ title: hardkas query
 
 #### Options
 
-- `--wait-lock` (Default: `false`): Wait for workspace lock if held
+- `--wait-lock` (Default: `false`): Wait for the query-store lock if held
 - `--lock-timeout &lt;ms&gt;` (Default: `30000`): Lock wait timeout in ms
 
 ---
@@ -91,14 +91,14 @@ title: hardkas query
 
 ### Synopsis (Generated)
 
-**Purpose:** Synchronize the filesystem artifacts with the query store index
+**Purpose:** Index new artifacts into the SQLite query store (needs .hardkas/store.db: run 'query store rebuild' first)
 
 **Aliases:** `index`
 
 #### Options
 
 - `--strict` (Default: `false`): Fail on any corrupted data
-- `--wait-lock` (Default: `false`): Wait for workspace lock if held
+- `--wait-lock` (Default: `false`): Wait for the query-store lock if held
 - `--lock-timeout &lt;ms&gt;` (Default: `30000`): Lock wait timeout in ms
 - `--json` (Default: `false`): Output as JSON
 
@@ -120,9 +120,9 @@ title: hardkas query
 
 #### Options
 
-- `--backend &lt;type&gt;`: Backend to use (sqlite/filesystem)
+- `--backend &lt;type&gt;`: sqlite (the default) builds .hardkas/store.db from the workspace; filesystem keeps no index, so it has nothing to rebuild
 - `--strict` (Default: `false`): Fail on any corrupted data
-- `--wait-lock` (Default: `false`): Wait for workspace lock if held
+- `--wait-lock` (Default: `false`): Wait for the query-store lock if held
 - `--lock-timeout &lt;ms&gt;` (Default: `30000`): Lock wait timeout in ms
 - `--json` (Default: `false`): Output as JSON
 
@@ -172,7 +172,7 @@ title: hardkas query
 
 - `--direction &lt;dir&gt;` (Default: `ancestors`): Traversal direction: ancestors or descendants
 - `--json` (Default: `false`): Output as JSON
-- `--explain [level]`: Attach explain chains (brief|full)
+- `--explain [level]`: Attach explain chains (brief and full currently give the same output)
 - `--why`: Shorthand for --explain full
 
 ---
@@ -187,7 +187,7 @@ title: hardkas query
 
 - `--root &lt;hash&gt;`: Filter by root artifact ID
 - `--json` (Default: `false`): Output as JSON
-- `--explain [level]`: Attach explain chains (brief|full)
+- `--explain [level]`: Attach explain chains (brief and full currently give the same output)
 - `--why`: Shorthand for --explain full
 
 ---
@@ -201,7 +201,7 @@ title: hardkas query
 #### Options
 
 - `--json` (Default: `false`): Output as JSON
-- `--explain [level]`: Attach explain chains (brief|full)
+- `--explain [level]`: Attach explain chains (brief and full currently give the same output)
 
 ---
 
@@ -246,7 +246,7 @@ title: hardkas query
 #### Options
 
 - `--json` (Default: `false`): Output as JSON
-- `--explain [level]`: Attach explain chains (brief|full)
+- `--explain [level]`: Attach explain chains (brief and full currently give the same output)
 
 ---
 
@@ -263,7 +263,7 @@ title: hardkas query
 #### Options
 
 - `--json` (Default: `false`): Output as JSON
-- `--explain [level]`: Attach explain chains (brief|full)
+- `--explain [level]`: Attach explain chains (brief and full currently give the same output)
 
 ---
 
@@ -276,7 +276,7 @@ title: hardkas query
 #### Options
 
 - `--json` (Default: `false`): Output as JSON
-- `--explain [level]`: Attach explain chains (brief|full)
+- `--explain [level]`: Attach explain chains (brief and full currently give the same output)
 - `--why`: Shorthand for --explain full
 
 ---
@@ -290,7 +290,7 @@ title: hardkas query
 #### Options
 
 - `--json` (Default: `false`): Output as JSON
-- `--explain [level]`: Attach explain chains (brief|full)
+- `--explain [level]`: Attach explain chains (brief and full currently give the same output)
 
 ---
 
@@ -307,7 +307,7 @@ title: hardkas query
 #### Options
 
 - `--json` (Default: `false`): Output as JSON
-- `--explain [level]`: Attach explain chains (brief|full)
+- `--explain [level]`: Attach explain chains (brief and full currently give the same output)
 - `--why`: Shorthand for --explain full
 
 ---
@@ -333,7 +333,7 @@ title: hardkas query
 #### Options
 
 - `--json` (Default: `false`): Output as JSON
-- `--explain [level]`: Attach explain chains (brief|full)
+- `--explain [level]`: Attach explain chains (brief and full currently give the same output)
 
 ---
 

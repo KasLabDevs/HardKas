@@ -5,27 +5,34 @@ import path from "node:path";
 import http from "node:http";
 import net from "node:net";
 import { spawn, spawnSync, type ChildProcess } from "node:child_process";
+import { fileURLToPath } from "node:url";
 import type { Command } from "commander";
 import { Hardkas } from "@hardkas/sdk";
-import { createScenarioResultArtifact, enumerateWorkspaceArtifactsSync } from "@hardkas/artifacts";
+import { CURRENT_HASH_VERSION, createScenarioResultArtifact, enumerateWorkspaceArtifactsSync } from "@hardkas/artifacts";
 import { buildHardkasProgram } from "../src/program.js";
 import { cliDist, childEnv } from "./first-contact-helpers.js";
 
 vi.setConfig({ testTimeout: 240_000, hookTimeout: 240_000 });
 
 // SURFACE-TRUTH-1 (investigation, 2026-10-06, base 7e7cf630f) · BEFORE on the real CLI (built dist) and its command
-// tree, the part SURFACE-TRUTH-1A fixes. Each assertion is about a surface that claimed something the build did not do:
+// tree. Each assertion is about a surface that claims something the build does not do, or denies something it does:
+// - ST-A · `capabilities` is literal tables, not checks: it contradicts the SDK report and the registered commands;
 // - ST-E · verifiers that answer OK without verifying: `evidence verify`, `verify-semantics`, `repair --json`, `dev doctor`;
 // - ST-F · workflows: unknown step types, `network.switch`, `--dry-run` and `--offline` are recorded as success;
-// - ST-G · `dev --once` never exits; `sandbox` prints a node and a dashboard that do not exist.
-// The investigation's ST-A/C/D/H/I/J tests and its ST-G hints test belong to SURFACE-TRUTH-1B and are added with it.
+// - ST-G · `dev --once` never exits; `sandbox` prints a node and a dashboard that do not exist; hints to unknown options;
+// - ST-H/I/J · advertised-but-disabled commands, exit-0 failures, the environment contract;
+// - ST-C · the shipped CLI completes a PSKT session on a test double;
+// - ST-D · the published CLI reference that says it is generated from the command tree.
 // The assertions are written against the property, not a fix: a surface that is retired (unknown command) satisfies
 // every "never claims" assertion too.
+
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 
 const cli = (args: string[], cwd: string, env: Record<string, string> = {}, timeout = 120_000) => {
   const r = spawnSync(process.execPath, [cliDist, ...args], { cwd, env: childEnv(env), encoding: "utf8", timeout });
   return { status: r.status, stdout: r.stdout ?? "", all: `${r.stdout ?? ""}\n${r.stderr ?? ""}` };
 };
+const unknownCommand = (r: { status: number | null; all: string }) => r.status !== 0 && /unknown command/i.test(r.all);
 const json = (s: string) => {
   try {
     return JSON.parse(s);
@@ -106,6 +113,9 @@ function resolveCommand(text: string): { ok: boolean; path: string; hidden: bool
   }
   return { ok: true, path: names.join(" "), hidden };
 }
+/** `hardkas …` suggestions inside a text (the words, then the options). */
+const suggestionsIn = (text: string) =>
+  [...new Set([...text.matchAll(/hardkas((?: [a-z][\w-]*)+(?: --[a-z][\w-]*)*)/g)].map((m) => m[1]!.trim()))];
 
 describe("SURFACE-TRUTH-1 · BEFORE · what the CLI claims about itself and its results", () => {
   let parent: string;
@@ -138,6 +148,60 @@ describe("SURFACE-TRUTH-1 · BEFORE · what the CLI claims about itself and its 
 
   afterAll(() => {
     fs.rmSync(parent, { recursive: true, force: true });
+  });
+
+  // ───────────────────────────── ST-A · capabilities ─────────────────────────────
+  describe("ST-A · `capabilities`", () => {
+    it("control: the JSON report names the hash version the store writes", () => {
+      const r = cli(["capabilities", "--json"], ws);
+      if (unknownCommand(r)) return;
+      expect(json(r.stdout)?.hashVersion).toBe(CURRENT_HASH_VERSION);
+    });
+
+    it("the JSON report and the SDK's `capabilities.get()` agree on every capability they both report", async () => {
+      const r = cli(["capabilities", "--json"], ws);
+      if (unknownCommand(r)) return;
+      const fromCli: Record<string, unknown> = json(r.stdout)?.capabilities ?? {};
+      const sdk = await Hardkas.open({ cwd: ws });
+      const fromSdk = (await sdk.capabilities.get()).capabilities as unknown as Record<string, unknown>;
+      const disagree = Object.keys(fromCli)
+        .filter((k) => k in fromSdk && fromCli[k] !== fromSdk[k])
+        .map((k) => `${k}: cli ${fromCli[k]} · sdk ${fromSdk[k]}`);
+      expect(disagree, disagree.join("; ")).toEqual([]);
+    });
+
+    it("it reports no L2 profiles or bridge model while `l2` and `bridge` are not commands", () => {
+      const r = cli(["capabilities", "--json"], ws);
+      if (unknownCommand(r)) return;
+      const caps = json(r.stdout)?.capabilities ?? {};
+      expect({
+        l2Profiles: caps.l2Profiles === true && !resolveCommand("l2").ok,
+        l2BridgeAssumptions: caps.l2BridgeAssumptions === true && !resolveCommand("bridge").ok
+      }).toEqual({ l2Profiles: false, l2BridgeAssumptions: false });
+    });
+
+    it("the human report does not list SilverScript or covenants as not implemented while `silver compile` and `silver covenant genesis` are commands", () => {
+      const r = cli(["capabilities"], ws);
+      if (unknownCommand(r)) return;
+      const denied = r.stdout.split(/\r?\n/).filter((l) => /❌|not (yet )?implemented/i.test(l));
+      expect({
+        silverScript: denied.some((l) => /SilverScript/i.test(l)) && resolveCommand("silver compile").ok,
+        covenants: denied.some((l) => /covenant/i.test(l)) && resolveCommand("silver covenant genesis").ok
+      }).toEqual({ silverScript: false, covenants: false });
+    });
+
+    it("the human report names the hash version the JSON report and the store use", () => {
+      const r = cli(["capabilities"], ws);
+      if (unknownCommand(r)) return;
+      const named = [...r.stdout.matchAll(/hashing v(\d+)/gi)].map((m) => Number(m[1]));
+      expect(named.filter((v) => v !== CURRENT_HASH_VERSION)).toEqual([]);
+    });
+
+    it("it does not call the DAG conflict ordering GHOSTDAG-aligned (the only ordering the CLI runs is the light model `query dag` labels NOT GHOSTDAG)", () => {
+      const r = cli(["capabilities"], ws);
+      if (unknownCommand(r)) return;
+      expect(/GHOSTDAG-aligned/i.test(r.all)).toBe(false);
+    });
   });
 
   // ───────────────────────────── ST-E · verifiers that do not verify ─────────────────────────────
@@ -328,7 +392,7 @@ describe("SURFACE-TRUTH-1 · BEFORE · what the CLI claims about itself and its 
     });
   });
 
-  // ───────────────────────────── ST-G · dev / sandbox ─────────────────────────────
+  // ───────────────────────────── ST-G · dev / sandbox / hints ─────────────────────────────
   describe("ST-G · long-running commands and what they print", () => {
     it("`dev --once --headless` (\"run health checks, and exit\") exits on its own, without starting the server", async () => {
       const dir = await fresh("dev-once");
@@ -387,6 +451,76 @@ describe("SURFACE-TRUTH-1 · BEFORE · what the CLI claims about itself and its 
       });
       for (let waited = 0; sawDashboard && answer === "never checked" && waited < 8_000; waited += 250) await new Promise((res) => setTimeout(res, 250));
       expect({ sawDashboard, answer: answer.startsWith("HTTP ") }, `${answer}\n${r.all.slice(-800)}`).toEqual({ sawDashboard: true, answer: true });
+    });
+
+    it("no hint `status` or `dev last --replay` prints names a command or an option the CLI does not register", () => {
+      const printed = [cli(["status"], ws).all, cli(["dev", "last", "--replay"], ws).all].join("\n");
+      const bad = suggestionsIn(printed)
+        .map((s) => ({ s, r: resolveCommand(s) }))
+        .filter((x) => !x.r.ok)
+        .map((x) => `hardkas ${x.s} → ${x.r.error}`);
+      expect(bad, bad.join("\n")).toEqual([]);
+    });
+  });
+
+  // ───────────────────────────── ST-H/I/J/C ─────────────────────────────
+  describe("ST-H/I/J/C · advertised commands, exit codes, the environment contract, PSKT", () => {
+    it("ST-H · a command `tx --help` lists does not refuse every call as disabled", () => {
+      const listed = resolveCommand("tx trace");
+      if (!listed.ok || listed.hidden) return;
+      expect(/TX_TRACE_DISABLED/.test(cli(["tx", "trace", receipt.txId], ws).all)).toBe(false);
+    });
+
+    it("ST-I · `dev accounts reveal` of an alias that does not exist exits non-zero", () => {
+      const r = cli(["dev", "accounts", "reveal", "nobody-here"], ws);
+      expect(r.all).toMatch(/not found/i);
+      expect(r.status).not.toBe(0);
+    });
+
+    it("ST-I · `dev last --replay` in a workspace without transactions exits non-zero", async () => {
+      const dir = await fresh("dev-last-empty");
+      const r = cli(["dev", "last", "--replay"], dir);
+      expect(r.all).toMatch(/No recent transaction artifacts/i);
+      expect(r.status).not.toBe(0);
+    });
+
+    it("ST-J · `env check` and `doctor` agree on whether HardKAS reads HARDKAS_DATA_DIR", async () => {
+      const dir = await fresh("env-contract");
+      const e = cli(["env", "check"], dir, { HARDKAS_DATA_DIR: path.join(dir, "data") });
+      const envSaysUnread = e.status !== 0 && /HARDKAS_DATA_DIR/.test(e.all);
+      fs.writeFileSync(path.join(dir, ".env"), "APP_NAME=demo\n");
+      const d = cli(["doctor", "--json"], dir, {}, 180_000);
+      const doctorDemands = /Missing:[^"]*HARDKAS_DATA_DIR/.test(d.stdout);
+      expect({ envSaysUnread, doctorDemands }).not.toEqual({ envSaysUnread: true, doctorDemands: true });
+    });
+
+    it("ST-J · HARDKAS_EXPERIMENTAL changes the command surface, as `env check` says it does", () => {
+      const e = cli(["env", "check"], ws, { HARDKAS_EXPERIMENTAL: "1" });
+      if (!/HARDKAS_EXPERIMENTAL=1[^\n]*expose/i.test(e.all)) return;
+      expect(cli(["--help"], ws, { HARDKAS_EXPERIMENTAL: "1" }).stdout).not.toBe(cli(["--help"], ws).stdout);
+    });
+
+    it("ST-C · the shipped CLI does not complete a PSKT session on a test double (NODE_ENV=test, as test runners set it)", () => {
+      const r = cli(["pskt", "export", "--plan", "a-plan.json", "--adapter", "test-fake-adapter", "--out", "fake-session.json", "--json"], ws, { NODE_ENV: "test" });
+      expect(r.status, r.all.slice(0, 400)).not.toBe(0);
+    });
+  });
+
+  // ───────────────────────────── ST-D · published reference ─────────────────────────────
+  describe("ST-D · docs", () => {
+    it("the CLI reference that says it is generated from the command tree names only registered commands and options", () => {
+      const file = path.join(repoRoot, "apps", "docs", "docs", "reference", "cli.md");
+      const text = fs.readFileSync(file, "utf8");
+      if (!/generated from the Commander command tree/i.test(text)) return;
+      const refs = [
+        ...[...text.matchAll(/`hardkas ([^`]+)`/g)].map((m) => m[1]!),
+        ...text.split(/\r?\n/).filter((l) => /^\s*hardkas\s/.test(l)).map((l) => l.trim().replace(/^hardkas\s+/, ""))
+      ];
+      const bad = [...new Set(refs)]
+        .map((t) => ({ t, r: resolveCommand(t) }))
+        .filter((x) => !x.r.ok)
+        .map((x) => `hardkas ${x.t} → ${x.r.error}`);
+      expect(bad, bad.join("\n")).toEqual([]);
     });
   });
 });

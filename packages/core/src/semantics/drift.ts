@@ -33,7 +33,8 @@ export function detectSemanticDrift(
       return {
         hasDrift: true,
         conflictingSubsystem: subsystem,
-        exactReplayCommand: `hardkas verify-replay --artifact ${referenceView.artifactId}`,
+        // SURFACE-TRUTH-1B: there is no `verify-replay` command; `replay verify` takes the artifact
+        exactReplayCommand: `hardkas replay verify ${referenceView.artifactId}`,
         severity: "CRITICAL",
         details: `Hash mismatch: ${subsystem} (${view.semanticHash}) vs Reference (${referenceView.semanticHash})`
       };
@@ -50,7 +51,7 @@ export function detectSemanticDrift(
         return {
           hasDrift: true,
           conflictingSubsystem: subsystem,
-          exactReplayCommand: `hardkas verify-replay --artifact ${referenceView.artifactId}`,
+          exactReplayCommand: `hardkas replay verify ${referenceView.artifactId}`,
           severity: "CRITICAL",
           details: `Dashboard claims VERIFIED but Replay claims STALE.`
         };

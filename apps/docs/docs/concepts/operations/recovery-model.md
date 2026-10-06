@@ -10,8 +10,7 @@ The `Query Store` is a pure read-model projection indexing your artifacts. If th
 
 **Safe Recovery:**
 ```bash
-hardkas query reset
-hardkas query rebuild
+hardkas query store rebuild
 ```
 *What it does:* Flushes the local SQLite index and rebuilds it by parsing all files in `.hardkas/artifacts/`. Zero canonical data is lost.
 
@@ -23,7 +22,7 @@ If the local Docker node crashes, halts, or forks unexpectedly, and you do not c
 ```bash
 hardkas node stop
 hardkas node reset
-hardkas node start --profile toccata-v2
+hardkas localnet start --profile toccata-v2
 ```
 *What it does:* Destroys the local DAG data volume. 
 *Data Lost:* All localnet balances, deployments, and unmined mempool transactions. 
@@ -44,7 +43,7 @@ If `hardkas artifact verify <file>` throws `INTEGRITY_FAILED`, it means the file
 If you lose or corrupt `.hardkas/accounts.real.json`:
 
 **Recovery:**
-* If you generated the accounts deterministically from a mnemonic seed phrase (or have it backed up), you can restore them via `hardkas accounts import`.
+* If you generated the accounts deterministically from a mnemonic seed phrase (or have it backed up), you can restore them via `hardkas accounts real import`.
 * If you generated random private keys and did not back them up: **The funds are permanently lost.** HardKAS cannot recover keys.
 
 ## Virtual State Instability

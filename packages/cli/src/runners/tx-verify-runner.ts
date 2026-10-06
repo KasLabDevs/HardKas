@@ -105,8 +105,9 @@ export async function runTxVerify(options: TxVerifyOptions) {
         : `--plan ${artifact.planId}`;
     if (result.ok) {
       UI.success("SEMANTIC VERIFICATION PASSED");
+      // SURFACE-TRUTH-1B: `tx sign` takes the plan file (`dev tx` has no `sign`)
       UI.printNextSteps([
-        `hardkas dev tx sign ${artifact.planId}`,
+        `hardkas tx sign ${options.path}`,
         `hardkas why ${whyTarget}`
       ]);
     } else {

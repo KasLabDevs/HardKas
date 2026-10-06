@@ -2,6 +2,10 @@
 
 Welcome to the HardKAS PSKT documentation.
 
+:::warning Unavailable in this build
+No PSKT adapter implements an operation in this build: `hardkas pskt export`, `import`, `sign`, `merge`, `finalize` and `extract` refuse with a typed error, and `hardkas pskt capabilities` reports every operation as unavailable. `hardkas pskt inspect` shows a session file's metadata only: it does not decode the payload, so it shows no inputs, outputs, amounts or recipients and is no pre-signing check. These pages describe the upstream protocol, not something this build runs.
+:::
+
 PSKT (Partially Signed Kaspa Transactions) is the upstream Kaspa protocol for coordinating distributed cryptographic authority.
 
 * **[What is PSKT?](./what-is-pskt.md):** Understand the difference between PSKT (a transport container) and Multisig (a spending condition).
@@ -10,15 +14,15 @@ PSKT (Partially Signed Kaspa Transactions) is the upstream Kaspa protocol for co
 
 ## Upstream vs HardKAS Evidence
 
-HardKAS acts as an orchestration wrapper around the native Kaspa Rust implementation.
+HardKAS would wrap the upstream implementation through an adapter; this build has none that works.
 
-| Capability | Upstream Kaspa Primitive | HardKAS Wrapper | Status |
+| Capability | Upstream Kaspa Primitive | HardKAS Command | Status in this build |
 | :--- | :--- | :--- | :--- |
-| **Inspect** | `psktInspect` | `hardkas pskt inspect` | IMPLEMENTED |
-| **Sign** | `psktSign` | `hardkas pskt sign` | IMPLEMENTED |
-| **Combine** | `psktCombine` | `hardkas pskt merge` | IMPLEMENTED |
-| **Finalize** | `psktFinalize` | `hardkas pskt finalize` | IMPLEMENTED |
-| **Extract** | `psktExtract` | `hardkas pskt extract` | IMPLEMENTED |
+| **Inspect** | `psktInspect` | `hardkas pskt inspect` | session metadata only (the payload is not decoded) |
+| **Sign** | `psktSign` | `hardkas pskt sign` | UNAVAILABLE (refuses) |
+| **Combine** | `psktCombine` | `hardkas pskt merge` | UNAVAILABLE (refuses) |
+| **Finalize** | `psktFinalize` | `hardkas pskt finalize` | UNAVAILABLE (refuses) |
+| **Extract** | `psktExtract` | `hardkas pskt extract` | UNAVAILABLE (refuses) |
 
 ## PSKT vs Normal Signing
 

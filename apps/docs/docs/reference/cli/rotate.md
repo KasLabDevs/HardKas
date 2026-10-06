@@ -8,7 +8,7 @@ title: hardkas rotate
 
 ### Synopsis (Generated)
 
-**Purpose:** Rotate and archive telemetry streams beta
+**Purpose:** Archive the telemetry stream (.hardkas/telemetry/telemetry.jsonl) once it reaches 10 MiB beta
 
 #### Options
 

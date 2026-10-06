@@ -12,19 +12,17 @@ import {
 import { DefaultPsktAdapterRegistry, PsktAdapterRegistry } from "./pskt/registry.js";
 import { WasmPsktAdapter } from "./pskt/adapters/wasm.js";
 import { UnavailablePsktAdapter } from "./pskt/adapters/unavailable.js";
-import { TestFakeAdapter } from "./pskt/adapters/test-fake.js";
 
 // Global registry instance for the SDK
 export const adapterRegistry: PsktAdapterRegistry = new DefaultPsktAdapterRegistry();
 
-// Register built-in adapters
+// Register built-in adapters. Neither implements a PSKT operation in this build: every mutating call refuses.
+// SURFACE-TRUTH-1B (ST-C): no test double is registered here. The SDK used to register one whenever NODE_ENV was
+// "test" (as every test runner sets it), so a shipped CLI or SDK under a test runner completed whole sessions on it
+// ("extracting" `fake-tx-id`). Tests that need one register it themselves.
 adapterRegistry.register(new WasmPsktAdapter("kaspa-wasm-local"));
 adapterRegistry.register(new UnavailablePsktAdapter({ reason: "Fallback unavailable adapter" }));
 adapterRegistry.setDefault("kaspa-wasm-local");
-
-if (process.env.NODE_ENV === "test") {
-  adapterRegistry.register(new TestFakeAdapter());
-}
 
 /**
  * Attempts to load and register the native PSKT adapter.

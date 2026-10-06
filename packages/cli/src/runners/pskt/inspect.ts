@@ -32,6 +32,8 @@ export async function runPsktInspect(sessionPath: string, options: { json: boole
   UI.field("Network", session.networkId);
   UI.field("State", session.state);
   UI.field("Revision", session.revision);
+  // SURFACE-TRUTH-1B (ST-C): the payload is never decoded here, so nothing below can be checked before signing.
+  UI.field("Payload", `${session.payload.payloadHash} (not decoded: inputs, outputs and amounts are not shown)`);
   UI.logHuman("");
   
   if (session.runtimeBinding) {

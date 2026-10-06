@@ -11,6 +11,7 @@ import {
   normalizeEvmTransactionReceipt
 } from "@hardkas/l2";
 import { loadHardkasConfig } from "@hardkas/config";
+import { redactUrlCredentials } from "@hardkas/core";
 import {
   IgraTxPlanArtifact,
   IgraSignedTxArtifact,
@@ -465,7 +466,9 @@ export async function runL2TxSend(options: L2TxSendOptions): Promise<void> {
     sourceSignedPath: options.signedPath,
     l2Network: artifact.l2Network,
     chainId: artifact.chainId,
-    rpcUrl,
+    // SURFACE-TRUTH-1B (ST-D): persisted without credentials, as `saveIgraTxReceiptArtifact` does (this runner belongs
+    // to the `l2` group, which the L1 CLI does not register).
+    rpcUrl: redactUrlCredentials(rpcUrl),
     status: "submitted"
   };
 

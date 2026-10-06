@@ -4,7 +4,7 @@ import { UI } from "../../ui.js";
 export function registerSignCommand(pskt: Command) {
   pskt
     .command("sign <sessionPath>")
-    .description(`Sign a PSKT session payload ${UI.maturity("alpha")}`)
+    .description(`Sign a PSKT session payload ${UI.maturity("unavailable")}`)
     .option("--account <name>", "Name of the HardKAS L1 account to sign with")
     .option("--keystore <path>", "Path to a HardKAS keystore JSON file")
     .option("--key-stdin", "Read private key from standard input")

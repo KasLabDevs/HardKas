@@ -180,15 +180,11 @@ export async function runLocalWizard(options: {
     }
 
     if (result.status === "success") {
-      console.log(`\n${pc.cyan(pc.bold("4. MetaMask Onboarding"))}`);
-      console.log(`  ${pc.dim("To add this network to MetaMask, run:")}`);
-      console.log(`  ${pc.white("hardkas metamask snippet")}`);
-
-      console.log(`\n${pc.bold(pc.green("READY!"))} Local environment is set up.`);
-      console.log(`\n${pc.cyan("Final step:")} Import your account into MetaMask:`);
-      console.log(
-        `  hardkas metamask account ${pc.white(options.account)} --show-private-key\n`
-      );
+      // SURFACE-TRUTH-1B: the L1 CLI registers no `metamask` group, so the wizard no longer sends you to
+      // `hardkas metamask snippet|account`; it prints what a wallet needs.
+      console.log(`\n${pc.cyan(pc.bold("4. Wallet"))}`);
+      console.log(`  ${pc.dim("Add the network to your EVM wallet by hand:")} chain ID ${profile?.chainId}, RPC ${profile?.rpcUrl}`);
+      console.log(`\n${pc.bold(pc.green("READY!"))} The Igra L2 checks passed.\n`);
     }
   } catch (e) {
     handleError(e);

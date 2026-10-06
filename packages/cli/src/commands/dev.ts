@@ -9,7 +9,8 @@ import { invocationWorkspace } from "../workspace-root.js";
 export function registerDevCommands(program: Command) {
   const devCmd = program
     .command("dev")
-    .description("Local development and Igra-native environment tools")
+    // SURFACE-TRUTH-1B (ST-D): the group is the L1 dev environment; Igra is a Lab, not "native" to it.
+    .description("Local development tools: dev environment, dApp templates, simnet dev accounts (`dev doctor` is an Igra L2 lab check)")
     .option(
       "--once",
       "Initialize dev environment, run health checks, and exit (headless)",
@@ -41,7 +42,8 @@ export function registerDevCommands(program: Command) {
 
   devCmd
     .command("doctor")
-    .description(`Check local dev readiness for an L2 profile (Igra by default): workspace, artifacts, query store, SDK import, dev server and the L2 JSON-RPC; the Kaspa node is not checked ${UI.maturity("stable")}`)
+    // SURFACE-TRUTH-1B (ST-D): an Igra L2 lab check, not a stable L1 command.
+    .description(`Igra L2 lab, not the L1 core: check local dev readiness for an L2 profile (Igra by default): workspace, artifacts, query store, SDK import, dev server and the L2 JSON-RPC; the Kaspa node is not checked ${UI.maturity("experimental")}`)
     .option("--profile <name>", "L2 network profile name", "igra")
     .option("--rpc-url <url>", "Explicit Igra RPC URL to check")
     .option("--account <name>", "EVM account that must exist in hardkas.config (its balance is not checked)")
@@ -142,10 +144,10 @@ export function registerDevCommands(program: Command) {
 
   devCmd
     .command("last")
-    .description("Interact with the latest local workflow")
-    .option("--inspect", "Inspect the latest artifact", false)
-    .option("--replay", "Replay the latest workflow", false)
-    .option("--explain", "Explain the latest workflow", false)
+    .description("Act on the latest transaction artifact of the workspace store")
+    .option("--inspect", "Print the latest artifact", false)
+    .option("--replay", "Show the latest receipt, or verify the latest plan or signed transaction (no replay is run)", false)
+    .option("--explain", "Print the `hardkas why` command for the latest artifact", false)
     .option("--workspace <path>", "Override workspace root directory")
     .action(async (options: any) => {
       // --workspace is resolved once (WORKSPACE-AUTHORITY-1); without it this command keeps its default directory

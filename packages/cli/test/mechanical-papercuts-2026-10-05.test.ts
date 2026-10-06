@@ -80,7 +80,8 @@ describe("#10 · env check", () => {
     expect(report.deployProfile).toBeNull();
 
     const withProfile = checkEnvironment({}, parseDotEnv("NETWORK=testnet\nKASPAD_URL=\n# comment\nHARDKAS_KASPAD_IMAGE=img\n"));
-    expect(withProfile.deployProfile).toEqual({ present: ["NETWORK", "HARDKAS_KASPAD_IMAGE"], missing: ["KASPAD_URL", "HARDKAS_DATA_DIR", "LOG_LEVEL"] });
+    // SURFACE-TRUTH-1B (ST-J): HARDKAS_DATA_DIR left the profile (HardKAS reads no such variable).
+    expect(withProfile.deployProfile).toEqual({ present: ["NETWORK", "HARDKAS_KASPAD_IMAGE"], missing: ["KASPAD_URL", "LOG_LEVEL"] });
     expect(withProfile.known.map((k) => k.name)).toEqual(["HARDKAS_KASPAD_IMAGE"]);
     expect(withProfile.known[0]!.source).toBe(".env");
     expect(HARDKAS_ENV_VARIABLES.map((v) => v.name)).toContain("HARDKAS_KASPAD_IMAGE");

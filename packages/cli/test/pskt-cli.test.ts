@@ -5,7 +5,9 @@ import { execSync } from "node:child_process";
 import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 
 describe("hardkas pskt CLI flow", () => {
-  const cliPath = resolve(__dirname, "../src/index.ts");
+  // SURFACE-TRUTH-1B (ST-C): the CLI with the test double registered by this test's own entry point; the product
+  // registers none (NODE_ENV=test no longer adds one).
+  const cliPath = resolve(__dirname, "helpers/pskt-cli-with-test-double.ts");
   const tsxBin = resolve(__dirname, "../../../node_modules/.bin/tsx");
   const actualTsx = existsSync(tsxBin) ? tsxBin : "npx tsx";
   // Outside the repository: a run that dies before cleanup must not leave files a commit can pick up.

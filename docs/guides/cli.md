@@ -65,11 +65,9 @@ hardkas query store rebuild
 
 ```bash
 hardkas replay verify
-hardkas verify --deep
-hardkas verify-semantics
+hardkas verify
 hardkas doctor
-hardkas dashboard
 ```
 
-Use `verify --deep` for workspace-level integrity and `artifact verify --strict`
+Use `verify` for workspace-level integrity and `artifact verify --strict`
 for a specific artifact or directory.

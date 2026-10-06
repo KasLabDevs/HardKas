@@ -2,18 +2,20 @@
 
 The `bridge-local` package acts as an offline, deterministic laboratory for Kaspa L1 -> Igra L2 bridge interactions. It is **not** a production bridge client; it is an assumption-aware simulator.
 
+> It belongs to the Igra L2 Lab, not to the HardKAS L1 core: the L1 CLI registers no `bridge` command group, so the `bridge local …` flows below are this package's API, not `hardkas` commands you can run.
+
 ## 1. Bridge Simulation Variants
 
 In HardKAS, "bridging" involves generating deterministic payloads and analyzing cross-chain logic without actually burning funds on mainnet or waiting for finality.
 
-### Flow: Local Plan (`hardkas bridge local plan`)
+### Flow: Local Plan (`bridge local plan`)
 
 1. Fetches current UTXO balances from the local Kaspa simnet node.
 2. Constructs an L1 Kaspa transaction that pays to the simulated bridge contract address.
 3. Attaches an OP_RETURN payload containing the L2 Igra receiver address.
 4. Persists a `BridgePlan` artifact, logging the L1 and L2 linkage.
 
-### Variant: Prefix Mining Simulation (`hardkas bridge local simulate --prefix abc`)
+### Variant: Prefix Mining Simulation (`bridge local simulate --prefix abc`)
 
 To test how bridge indexing reacts to specific transaction IDs:
 

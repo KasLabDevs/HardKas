@@ -1,5 +1,9 @@
 # The PSKT Authority Lifecycle
 
+:::warning Unavailable in this build
+This page describes the upstream PSKT lifecycle. In this build no PSKT adapter implements it: `hardkas pskt export`, `sign`, `merge`, `finalize` and `extract` refuse with a typed error. See [PSKT](./index.md).
+:::
+
 The PSKT lifecycle maps exactly to how cryptographic authority is accumulated and satisfied.
 
 ## 1. Creation (`pskt export`)
@@ -20,7 +24,7 @@ The PSKT lifecycle maps exactly to how cryptographic authority is accumulated an
 ## 3. Combination (`pskt merge`)
 **State:** `Partially Signed` (Aggregated)
 * If multiple signers signed copies of the same original PSKT, their outputs must be combined.
-* HardKAS delegates to the upstream Kaspa Combiner to merge the partial signatures into a single PSKT envelope.
+* An adapter would delegate to the upstream Kaspa Combiner to merge the partial signatures into a single PSKT envelope (none does in this build).
 * **New Authority/Evidence:** None inherently, but previously isolated authorities are now consolidated in one artifact.
 
 ## 4. Finalization (`pskt finalize`)

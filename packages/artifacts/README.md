@@ -37,7 +37,7 @@ The relationship is stored through artifact identifiers, content hashes, and lin
 CLI checks:
 
 ```bash
-hardkas verify --deep
+hardkas verify
 hardkas artifact verify <artifact-path> --strict
 ```
 

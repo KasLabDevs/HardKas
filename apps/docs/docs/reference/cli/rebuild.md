@@ -8,11 +8,11 @@ title: hardkas rebuild
 
 ### Synopsis (Generated)
 
-**Purpose:** Reconstruct projections from committed canonical artifacts stable
+**Purpose:** Wipe and rebuild the SQLite query store from the committed artifacts stable
 
 #### Options
 
-- `--from-artifacts` (Default: `false`): Rebuild the query-store and localnet projection from artifacts
+- `--from-artifacts` (Default: `false`): Required: rebuild the query store from the artifacts (the localnet state is not rebuilt)
 - `--json` (Default: `false`): Output machine-readable JSON
 
 ---

@@ -181,10 +181,12 @@ export function registerWhyCommand(program: Command) {
 
           const nextSteps: string[] = [];
           const targetNode = chain[0];
+          // SURFACE-TRUTH-1B: the commands that sign and send a file (`dev tx` has no `sign`, and `dev tx send` takes no
+          // artifact: it plans, signs and sends from --from/--to/--amount).
           if (targetNode?.schema === HardkasSchemas.TxPlanV1) {
-            nextSteps.push("hardkas dev tx sign " + targetId);
+            nextSteps.push("hardkas tx sign <plan-file>");
           } else if (targetNode?.schema === HardkasSchemas.SignedTxV1) {
-            nextSteps.push("hardkas dev tx send " + targetId);
+            nextSteps.push("hardkas tx send <signed-file>");
           } else if (targetNode?.schema === HardkasSchemas.TxReceiptV1) {
             nextSteps.push("hardkas dev last --replay");
           } else if (targetNode?.schema === HardkasSchemas.ReplayV1) {

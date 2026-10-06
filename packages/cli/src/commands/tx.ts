@@ -945,10 +945,10 @@ export function registerTxCommands(program: Command) {
       }
     });
 
-  tx.command("trace <txId>")
-    .description(
-      `Reconstruct the full operational trace of a transaction ${UI.maturity("research")}`
-    )
+  // SURFACE-TRUTH-1B (ST-H): disabled in this build, so it is hidden and refuses (it used to be listed by `tx --help`
+  // with a description of what it would do, and refused every call).
+  tx.command("trace <txId>", { hidden: true })
+    .description("Disabled in this build: refuses with TX_TRACE_DISABLED")
     .action(async (txId: string) => {
       const { HardkasCliError } = await import("../cli-errors.js");
       throw new HardkasCliError("TX_TRACE_DISABLED", "Tracing is temporarily disabled while the query API stabilizes.");

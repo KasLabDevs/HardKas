@@ -18,7 +18,11 @@ describe("P84: V1 Sign Blocking", () => {
     vi.restoreAllMocks();
   });
 
-  it("should block sign for version 1 plans with WASM v0.13", async () => {
+  // SURFACE-TRUTH-1B: this test pinned "The configured WASM runtime does not support TX V1 signing. Upgrade to WASM
+  // v2.x." for the default runtime, which is the pinned kaspa-wasm 2.x and signs v1. A simulator plan is refused for
+  // the true reason: the simulator does not model transaction v1. (A v1 plan for a node network is signed by the
+  // managed runtime: surface-truth-1b-contract.test.ts.)
+  it("refuses a version 1 simulator plan because the simulator does not model v1, not as 'runtime too old'", async () => {
     const v1Plan: any = {
       schema: "hardkas.txPlan",
       version: "1.0.0-alpha",
@@ -49,11 +53,8 @@ describe("P84: V1 Sign Blocking", () => {
     }
 
     expect(error).toBeDefined();
-    if (error.code !== "BLOCKED_BY_DEPENDENCY") {
-      console.log("UNEXPECTED ERROR:", error.message, error.details);
-    }
-    expect(error.code).toBe("BLOCKED_BY_DEPENDENCY");
-    expect(error.message).toContain("The configured WASM runtime does not support TX V1 signing.");
+    expect(error.code).toBe("TX_V1_SIMULATION_UNSUPPORTED");
+    expect(error.message).not.toMatch(/Upgrade to WASM/i);
   });
 
   it("should attempt to sign version 1 plans with WASM v2.x", async () => {

@@ -103,9 +103,9 @@ For the authoritative list of what this release does and does not claim, see
 [Release Claims](../status/claims.generated.md).
 
 > [!NOTE]
-> You may see `hardkas capabilities` referenced elsewhere. It prints a richer
-> feature matrix, but it is marked internal/experimental and asks you to set
-> `HARDKAS_EXPERIMENTAL=1`. Prefer `doctor` for routine checks.
+> The capability report (what this build contains, and what is ready in this
+> environment) is the SDK's `capabilities.get()`. Use `doctor` for routine checks
+> and `silver doctor` for SilverScript and covenant readiness.
 
 ## A note on WASM
 

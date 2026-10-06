@@ -1,61 +1,14 @@
 import { Command } from "commander";
 import pc from "picocolors";
-import { HARDKAS_VERSION, CURRENT_HASH_VERSION } from "@hardkas/artifacts";
+import type { HardkasCapabilities } from "@hardkas/sdk";
 import { getOutput } from "../output.js";
 
-export interface HardKasCapabilities {
-  version: string;
-  maturity: "alpha" | "hardened-alpha" | "beta" | "stable";
-  proofVersion: string;
-  hashVersion: number;
-  capabilities: {
-    // Core systems
-    artifacts: boolean;
-    lineageVerification: boolean;
-    deterministicHashing: boolean;
-    atomicPersistence: boolean;
-    workspaceLocks: boolean;
-    corruptionDetection: boolean;
-    secretRedaction: boolean;
-    mainnetGuards: boolean;
+// SURFACE-TRUTH-1B (ST-A, D-ST1): the report is the SDK's (`HardkasCapabilitiesApi.get()`), derived from the checks the
+// features themselves use. This command renders it and keeps no table of its own: it used to keep two literal ones (the
+// JSON and a separate human table) that denied SilverScript and covenants, claimed L2 profiles and a bridge model the
+// L1 core does not register, "hashing v3" and a "GHOSTDAG-aligned" ordering.
 
-    // Simulation
-    localnetSimulation: boolean;
-    ghostdagSimulation: boolean;
-    dagConflictResolution: boolean;
-    massProfiler: boolean;
-    simulationScenarios: boolean;
-
-    // Query & Replay
-    queryStore: boolean;
-    replayVerification: boolean;
-    schemaMigrations: boolean;
-
-    // Infrastructure
-    dockerNode: boolean;
-    scriptRunner: boolean;
-    testingFramework: boolean;
-
-    // L2
-    l2Profiles: boolean;
-    l2BridgeAssumptions: boolean;
-
-    // NOT yet implemented
-    consensusValidation: boolean;
-    productionWallet: boolean;
-    silverScript: boolean;
-    covenants: boolean;
-    trustlessExit: boolean;
-    differentialDagValidation: boolean;
-  };
-  trustBoundaries: {
-    replay: "local-workflow-only";
-    artifacts: "internal-integrity-only";
-    simulator: "local-simulation-only";
-    queryStore: "rebuildable-read-model";
-    l2Bridge: "pre-zk-assumptions";
-  };
-}
+type CapabilityKey = keyof HardkasCapabilities["capabilities"];
 
 export function registerCapabilitiesCommand(program: Command) {
   const capsCmd = program
@@ -71,54 +24,17 @@ export function registerCapabilitiesCommand(program: Command) {
   });
 
   capsCmd.option("--json", "Output as stable JSON schema", false).action(async (opts) => {
-    const caps: HardKasCapabilities = {
-      version: HARDKAS_VERSION,
-      maturity: "hardened-alpha",
-      proofVersion: "repro-v0",
-      hashVersion: CURRENT_HASH_VERSION,
-      capabilities: {
-        artifacts: true,
-        lineageVerification: true,
-        deterministicHashing: true,
-        atomicPersistence: true,
-        workspaceLocks: true,
-        corruptionDetection: true,
-        secretRedaction: true,
-        mainnetGuards: true,
-
-        localnetSimulation: true,
-        ghostdagSimulation: true,
-        dagConflictResolution: true,
-        massProfiler: true,
-        simulationScenarios: true,
-
-        queryStore: true,
-        replayVerification: true,
-        schemaMigrations: true,
-
-        dockerNode: true,
-        scriptRunner: true,
-        testingFramework: true,
-
-        l2Profiles: true,
-        l2BridgeAssumptions: true,
-
-        consensusValidation: false,
-        productionWallet: false,
-        silverScript: false,
-        covenants: false,
-        trustlessExit: false,
-        differentialDagValidation: false
-      },
-      trustBoundaries: {
-        replay: "local-workflow-only",
-        artifacts: "internal-integrity-only",
-        simulator: "local-simulation-only",
-        queryStore: "rebuildable-read-model",
-        l2Bridge: "pre-zk-assumptions"
-      }
-    };
-
+    const { HardkasCapabilitiesApi } = await import("@hardkas/sdk");
+    // The workspace configuration, when there is one, as `Hardkas.open` would read it (a custom kaspa-wasm, an Igra
+    // RPC URL); this command never bootstraps a workspace.
+    let workspace: { config: unknown } | undefined;
+    try {
+      const { loadHardkasConfig } = await import("@hardkas/config");
+      workspace = { config: await loadHardkasConfig() };
+    } catch {
+      workspace = undefined;
+    }
+    const caps = await new HardkasCapabilitiesApi(workspace).get();
     if (opts.json) {
       getOutput().writeJson(caps);
     } else {
@@ -127,79 +43,117 @@ export function registerCapabilitiesCommand(program: Command) {
   });
 }
 
-function renderHumanReadable(caps: HardKasCapabilities) {
-  getOutput().writeLine(
-    `${pc.bold("HardKAS")} ${pc.cyan("v" + caps.version)} — ${pc.green("Hardened Alpha")}\n`
-  );
+/** Static entries: what this build contains. `hashVersion` is filled from the report. */
+const BUILD_GROUPS = (caps: HardkasCapabilities): Array<[string, Array<[CapabilityKey, string, string]>]> => [
+  [
+    "Core",
+    [
+      ["artifacts", "Artifacts", `Canonical hashing v${caps.hashVersion} (NFC + newline normalization)`],
+      ["lineageVerification", "Lineage", "Contamination detection, monotonic sequences"],
+      ["deterministicHashing", "Determinism", "Reproducibility proof v0 (@hardkas/testing): same code + inputs, same contentHash"],
+      ["atomicPersistence", "Atomic writes", "Temp-file-and-rename with fsync"],
+      ["workspaceLocks", "Workspace locks", "O_EXCL + PID liveness + deadlock ordering"],
+      ["corruptionDetection", "Corruption", "Machine-readable issue codes (hardkas verify, hardkas repair)"],
+      ["secretRedaction", "Secret redaction", "Credentials redacted before they are persisted or printed"],
+      ["mainnetGuards", "Mainnet guards", "Mainnet signing refused in this release"]
+    ]
+  ],
+  [
+    "Simulation",
+    [
+      ["localnetSimulation", "Localnet", "Simulated UTXO state + transactions"],
+      ["ghostdagSimulation", "GHOSTDAG", "Approximate engine (research; no equivalence with rusty-kaspa claimed)"],
+      ["dagConflictResolution", "DAG conflicts", "Double-spend conflict analysis on the light model (NOT GHOSTDAG)"],
+      ["massProfiler", "Mass profiler", "@hardkas/simulator profiles + snapshots (library; `test --mass-*` has no effect)"],
+      ["simulationScenarios", "Scenarios", "Linear, wide, fork, diamond"]
+    ]
+  ],
+  [
+    "Query & Replay",
+    [
+      ["queryStore", "Query store", "SQLite with forward-only migrations"],
+      ["replayVerification", "Replay", "Simulator-mode receipts replayed locally (hardkas replay verify)"],
+      ["schemaMigrations", "Migrations", "Checksummed, transactional"]
+    ]
+  ],
+  [
+    "Infrastructure",
+    [
+      ["dockerNode", "Docker node", "Pinned kaspad image on simnet"],
+      ["scriptRunner", "Script runner", "hardkas run script.ts via tsx"],
+      ["testingFramework", "Testing", "Harness + 11 semantic matchers"]
+    ]
+  ]
+];
 
-  const printGroup = (title: string, items: [string, string, boolean][]) => {
-    getOutput().writeLine(`  ${pc.bold(title)}`);
-    for (const [name, desc, enabled] of items) {
-      const icon = enabled ? pc.green("✅") : pc.red("❌");
-      const label = enabled ? pc.white(name.padEnd(16)) : pc.dim(name.padEnd(16));
-      getOutput().writeLine(`    ${icon} ${label} ${pc.dim(desc)}`);
+/** Entries checked in this environment: false means "not ready here" (with the reason), never "not implemented". */
+/**
+ * Entries checked in this environment, each with the concrete surface it covers (the report's `scopes`): the compiler,
+ * the real covenant builders, and, on the covenant line, the SDK planning that is not supported. Never a generic
+ * "covenants supported".
+ */
+const CHECKED = (caps: HardkasCapabilities): Array<[CapabilityKey & keyof NonNullable<HardkasCapabilities["reasons"]>, string, string]> => [
+  ["silverScript", "SilverScript", caps.scopes?.silverScript ?? "managed silverc (hardkas silver compile)"],
+  [
+    "covenants",
+    "Covenants",
+    `${caps.scopes?.covenants ?? "1:1 auth-bound transitions (hardkas silver covenant genesis|transition)"}; SDK planning ${caps.scopes?.sdkCovenantPlanning ?? "not supported"}`
+  ],
+  ["transactionV1", "Transaction v1", "the loaded kaspa-wasm signs v1"]
+];
+
+const NOT_IN_THIS_BUILD: Array<[CapabilityKey, string, string]> = [
+  ["consensusValidation", "Consensus validation", ""],
+  ["productionWallet", "Production wallet", ""],
+  ["trustlessExit", "Trustless exit", ""],
+  ["differentialDagValidation", "Differential DAG validation", ""],
+  ["l2Profiles", "L2 profiles", "Igra is a Lab, not the L1 core (the SDK still lists its profiles; L2 operations refuse)"],
+  ["l2BridgeAssumptions", "Bridge model", "a Lab, not the L1 core"]
+];
+
+function renderHumanReadable(caps: HardkasCapabilities) {
+  const out = getOutput();
+  out.writeLine(`${pc.bold("HardKAS")} ${pc.cyan("v" + caps.version)} — ${pc.green("Hardened Alpha")}\n`);
+
+  const line = (icon: string, name: string, desc: string, dim = false) =>
+    out.writeLine(`    ${icon} ${dim ? pc.dim(name.padEnd(16)) : pc.white(name.padEnd(16))} ${pc.dim(desc)}`);
+
+  for (const [title, rows] of BUILD_GROUPS(caps)) {
+    out.writeLine(`  ${pc.bold(title)}`);
+    for (const [key, name, desc] of rows) {
+      line(caps.capabilities[key] ? pc.green("✅") : pc.red("❌"), name, desc, !caps.capabilities[key]);
     }
-    getOutput().writeLine("");
-  };
+    out.writeLine("");
+  }
 
-  printGroup("Core", [
-    ["Artifacts", "Canonical hashing v3 (NFC + newline normalization)", true],
-    ["Lineage", "Contamination detection, monotonic sequences", true],
-    ["Determinism", "Reproducibility proof v0 (cross-platform CI)", true],
-    ["Atomic writes", "Temp-file-and-rename with fsync", true],
-    ["Workspace locks", "O_EXCL + PID liveness + deadlock ordering", true],
-    ["Corruption", "27 machine-readable issue codes", true],
-    ["Secret redaction", "All error paths masked", true],
-    ["Mainnet guards", "Hard refusal without --allow-mainnet-signing", true]
-  ]);
+  out.writeLine(`  ${pc.bold("Programmability (checked here)")}`);
+  for (const [key, name, desc] of CHECKED(caps)) {
+    if (caps.capabilities[key]) line(pc.green("✅"), name, desc);
+    else line(pc.yellow("○ "), name, `${desc}; not ready here: ${caps.reasons?.[key] ?? "not checked"}`);
+  }
+  out.writeLine("");
 
-  printGroup("Simulation", [
-    ["Localnet", "Simulated UTXO state + transactions", true],
-    ["GHOSTDAG", "Approximate engine (RESEARCH_EXPERIMENTAL)", true],
-    ["DAG conflicts", "GHOSTDAG-aligned blue/red ordering", true],
-    ["Mass profiler", "Regression detection + snapshots", true],
-    ["Scenarios", "Linear, wide, fork, diamond", true]
-  ]);
+  const node = caps.runtimeMatrix?.node;
+  if (node) {
+    out.writeLine(`  ${pc.bold("Canonical node")}`);
+    out.writeLine(
+      node.version === "unknown"
+        ? `    ${pc.dim("not observed: no node proved its identity, so none is reported as Toccata-capable")}`
+        : `    rusty-kaspad ${node.version}: Toccata ${node.toccata ? "yes" : "no"}, covenants ${node.covenants ? "yes" : "no"}`
+    );
+    out.writeLine("");
+  }
 
-  printGroup("Query & Replay", [
-    ["Query store", "SQLite with forward-only migrations", true],
-    ["Replay", "Local workflow verification", true],
-    ["Migrations", "Checksummed, transactional", true]
-  ]);
+  out.writeLine(`  ${pc.bold("Not in this build")}`);
+  for (const [key, name, desc] of NOT_IN_THIS_BUILD) {
+    line(caps.capabilities[key] ? pc.green("✅") : pc.red("❌"), name, desc, !caps.capabilities[key]);
+  }
+  out.writeLine("");
 
-  printGroup("Infrastructure", [
-    ["Docker node", "Pinned kaspad image on simnet", true],
-    ["Script runner", "hardkas run script.ts via tsx", true],
-    ["Testing", "Harness + 11 semantic matchers", true]
-  ]);
-
-  printGroup("L2", [
-    ["Igra profiles", "Built-in + user config registry", true],
-    ["Bridge model", "Pre-ZK phase awareness", true]
-  ]);
-
-  printGroup("Not Yet Implemented", [
-    ["Consensus validation", "", false],
-    ["Production wallet", "", false],
-    ["SilverScript / covenants", "", false],
-    ["Trustless exit", "(requires ZK bridge)", false],
-    ["Differential DAG validation", "", false]
-  ]);
-
-  getOutput().writeLine(`  ${pc.bold("Trust Boundaries")}`);
-  getOutput().writeLine(
-    `    Replay:      ${pc.dim(caps.trustBoundaries.replay.replace(/-/g, " "))}`
-  );
-  getOutput().writeLine(
-    `    Artifacts:   ${pc.dim(caps.trustBoundaries.artifacts.replace(/-/g, " "))}`
-  );
-  getOutput().writeLine(
-    `    Simulator:   ${pc.dim(caps.trustBoundaries.simulator.replace(/-/g, " "))}`
-  );
-  getOutput().writeLine(
-    `    Query store: ${pc.dim(caps.trustBoundaries.queryStore.replace(/-/g, " "))}`
-  );
-  getOutput().writeLine(
-    `    L2 bridge:   ${pc.dim(caps.trustBoundaries.l2Bridge.replace(/-/g, " "))}`
-  );
+  out.writeLine(`  ${pc.bold("Trust Boundaries")}`);
+  out.writeLine(`    Replay:      ${pc.dim(caps.trustBoundaries.replay.replace(/-/g, " "))}`);
+  out.writeLine(`    Artifacts:   ${pc.dim(caps.trustBoundaries.artifacts.replace(/-/g, " "))}`);
+  out.writeLine(`    Simulator:   ${pc.dim(caps.trustBoundaries.simulator.replace(/-/g, " "))}`);
+  out.writeLine(`    Query store: ${pc.dim(caps.trustBoundaries.queryStore.replace(/-/g, " "))}`);
+  out.writeLine(`    L2 bridge:   ${pc.dim(`${caps.trustBoundaries.l2Bridge.replace(/-/g, " ")} (a Lab, not the L1 core)`)}`);
 }

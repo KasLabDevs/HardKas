@@ -73,14 +73,18 @@ export interface CovenantState {
  * Result of a covenant capability check.
  */
 export interface CovenantCapabilityResult {
-  /** Whether the connected node supports covenants (Toccata-enabled) */
+  /** Whether the canonical node proved its identity (the pinned Toccata reference node); false when none was observed */
   nodeSupportsCovenants: boolean;
   /** Whether kaspa-wasm can sign TX V1 (required for covenant transactions) */
   wasmSupportsV1Signing: boolean;
-  /** Whether the full covenant lifecycle is operational */
+  /** Whether covenant transactions can be built and submitted here (`capabilities.get().capabilities.covenants`) */
   fullyOperational: boolean;
-  /** Human-readable status */
-  status: "READY" | "NODE_MISSING_SUPPORT" | "WASM_V1_BLOCKED" | "BLOCKED_BY_DEPENDENCY";
+  /**
+   * Human-readable status. `NODE_UNVERIFIED`: the toolchains are ready but no node proved its identity (none observed,
+   * or not the canonical one). `NODE_MISSING_SUPPORT` is not produced by this build: it never observes a node that
+   * lacks Toccata.
+   */
+  status: "READY" | "NODE_MISSING_SUPPORT" | "NODE_UNVERIFIED" | "WASM_V1_BLOCKED" | "BLOCKED_BY_DEPENDENCY";
   /** Reason if not fully operational */
   reason?: string;
 }
@@ -124,29 +128,41 @@ export class HardkasCovenants {
   constructor(private sdk: Hardkas) {}
 
   /**
-   * Check whether the runtime environment supports covenants.
+   * Check whether covenant transactions can be built and submitted in this environment.
    *
-   * Checks:
-   * 1. Connected node is Toccata-enabled (supports TX V1)
-   * 2. kaspa-wasm can sign TX V1 transactions
+   * SURFACE-TRUTH-1B (D-ST1): read from `sdk.capabilities` (one authority, the checks `hardkas silver doctor` reports):
+   * 1. the managed silverc resolves;
+   * 2. the managed kaspa-wasm is verified and signs TX V1;
+   * 3. the canonical node proves its identity (the pinned Toccata reference node). A node that was not observed is
+   *    never reported as covenant-capable.
+   *
+   * This class does not plan covenant transactions itself (`planDeploy`/`planSpend` refuse);
+   * `hardkas silver covenant genesis|transition` builds them.
    */
   async checkCapabilities(): Promise<CovenantCapabilityResult> {
-    // Phase 1 (P81): Return honest "blocked" status.
-    // Phase 2 (P82): Will probe kaspa-wasm for V1 signing.
-    // Phase 3 (P84): Will return READY when full pipeline works.
+    const caps = await this.sdk.capabilities.get();
+    const readiness = await this.sdk.capabilities.silverReadiness();
+    const wasmSupportsV1Signing = caps.runtimeMatrix?.wasm.signingV1 === true;
+    const fullyOperational = caps.capabilities.covenants;
+    const status: CovenantCapabilityResult["status"] = fullyOperational
+      ? "READY"
+      : !readiness.toolchains.silverc.ok
+        ? "BLOCKED_BY_DEPENDENCY"
+        : !readiness.toolchains["kaspa-wasm"].ok || !wasmSupportsV1Signing
+          ? "WASM_V1_BLOCKED"
+          : "NODE_UNVERIFIED";
     return {
-      nodeSupportsCovenants: false,
-      wasmSupportsV1Signing: false,
-      fullyOperational: false,
-      status: "BLOCKED_BY_DEPENDENCY",
-      reason:
-        "TX V1 signing support has not been verified yet. " +
-        "Run the P82 kaspa-wasm capability probe to determine V1 readiness."
+      nodeSupportsCovenants: caps.runtimeMatrix?.node.covenants === true,
+      wasmSupportsV1Signing,
+      fullyOperational,
+      status,
+      ...(fullyOperational ? {} : { reason: caps.reasons?.covenants ?? "covenants are not ready here" })
     };
   }
 
   /**
-   * Check if the connected node supports covenants (convenience shorthand).
+   * Whether covenant transactions can be built and submitted here: the same answer as
+   * `capabilities.get().capabilities.covenants` and `checkCapabilities().fullyOperational`.
    */
   async isSupported(): Promise<boolean> {
     const caps = await this.checkCapabilities();
@@ -214,8 +230,9 @@ export class HardkasCovenants {
   /**
    * Build a covenant artifact (legacy compatibility).
    *
-   * @deprecated Use `planDeploy()` instead. This method exists for backward
-   * compatibility with code that used `hardkas.experimental.toccata.buildCovenant()`.
+   * @deprecated Legacy compatibility only, for code that used `hardkas.experimental.toccata.buildCovenant()`. The SDK
+   * plans no covenant deployment (`planDeploy()` refuses with COVENANT_PLAN_UNSUPPORTED); create covenants with
+   * `hardkas silver covenant genesis`.
    */
   async buildCovenant(options: {
     scriptHash: string;

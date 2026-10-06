@@ -2,18 +2,19 @@
 
 This document outlines the current support boundary for Kaspa L1 Covenants (KIP-17/KIP-20) in HardKAS.
 
-## Supported (Architecture Phase)
-- ✅ **Covenant Artifact Generation**: Supported. Builders can architect covenants and inspect properties structurally.
-- ✅ **Covenant Deploy Plan**: Supported via `hardkas.covenants.planDeploy()`. Constructs a valid `TxPlan` with `version: 1` and corresponding covenant output fields.
-- ✅ **Covenant Spend Plan**: Supported via `hardkas.covenants.planSpend()`. Constructs a valid `TxPlan` with `version: 1` and corresponding covenant inputs.
+## Supported
+- ✅ **1:1 auth-bound covenants through the CLI**: `hardkas silver covenant genesis` creates a covenant and `hardkas silver covenant transition` advances it, as transaction v1 against the canonical localnet (`toccata.covenant.auth-1to1-transition.v1`, evidenced on a real node). `hardkas silver doctor` reports whether the toolchains and the canonical node are ready.
+- ✅ **Covenant Artifact Generation**: builders can architect covenants and inspect properties structurally (`hardkas.covenants.buildCovenant()`, legacy).
+- ✅ **Transaction v1 signing**: `hardkas.tx.sign()` signs a v1 plan for a node network with the managed kaspa-wasm, which signs v1.
 
-## Blocked (Execution Phase)
-- ❌ **Covenant Execution & Signing**: **NOT SUPPORTED YET**. Blocked by the underlying `kaspa-wasm` inability to sign V1 transactions. Calling `hardkas.tx.sign()` on a covenant plan will explicitly throw a `BLOCKED_BY_DEPENDENCY` error.
-- ❌ **Covenant RPC Queries**: **BLOCKED**. Pending `kaspa-rpc` Toccata query surface upgrades (e.g., filtering `getUtxosByAddresses` by `covenantId`).
+## Not supported by the SDK
+- ❌ **Covenant Deploy / Spend Plans**: `hardkas.covenants.planDeploy()` and `planSpend()` refuse with `COVENANT_PLAN_UNSUPPORTED`: the SDK cannot carry a covenant script, id or witness data into a v1 plan, and it never substitutes an ordinary payment.
+- ❌ **Covenant RPC Queries**: `hardkas.covenants.inspect()` and `getState()` refuse with `COVENANT_INSPECT_UNSUPPORTED` / `COVENANT_STATE_UNSUPPORTED`, pending UTXO queries filtered by `covenantId`.
+- ❌ **v1 plans in the simulator**: `hardkas.tx.sign()` refuses them with `TX_V1_SIMULATION_UNSUPPORTED`; the simulator does not model transaction v1.
+
+`hardkas.covenants.isSupported()` answers whether covenant transactions can be built and submitted here: the managed silverc resolves, the managed kaspa-wasm is verified and signs v1, and the canonical node proves its identity (the checks `hardkas silver doctor` reports).
 
 ## Builder Lab Guardrails
-We adhere strictly to the principle of "No Simulated Product Labs" or "Smoke and Mirrors". 
+We adhere strictly to the principle of "No Simulated Product Labs" or "Smoke and Mirrors".
 
-We will not build simulated Covenant Vaults or products that falsely claim to execute covenant logic when the underlying protocol layers do not yet support it. Developer lab activities regarding covenants are currently restricted to structural planning and artifact inspection. 
-
-Real Builder Labs involving Covenants will commence only when real signing capabilities are introduced.
+We will not build simulated Covenant Vaults or products that falsely claim to execute covenant logic when the underlying protocol layers do not yet support it.

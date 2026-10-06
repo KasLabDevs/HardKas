@@ -16,8 +16,9 @@ export const HARDKAS_ENV_VARIABLES: ReadonlyArray<{ name: string; meaning: strin
   { name: "HARDKAS_ALLOW_UNVERIFIED_NODE", meaning: "testing harness: accept a node whose identity does not verify" },
   { name: "HARDKAS_TOCCATA_MINER_THROTTLE_MS", meaning: "pause between blocks of the localnet miner" },
   { name: "HARDKAS_ALLOW_UNSAFE_CHAOS", meaning: "1: allow a chaos campaign in the current directory" },
-  { name: "HARDKAS_EXPERIMENTAL", meaning: "1: expose the experimental command groups" },
-  { name: "HARDKAS_EXPERIMENTAL_VPROGS", meaning: "1: expose the vProgs experiments" },
+  // SURFACE-TRUTH-1B (ST-J): what it does, not what it was meant to do. It "exposed the experimental command groups",
+  // but it never changed the command tree; HARDKAS_EXPERIMENTAL_VPROGS was read by nothing and is no longer listed.
+  { name: "HARDKAS_EXPERIMENTAL", meaning: "1: silence the warning of the internal or unavailable groups (capabilities, pskt, session); the commands are the same" },
   { name: "HARDKAS_PROJECTION_BACKEND", meaning: "query store backend (sqlite or filesystem)" },
   { name: "HARDKAS_QUERY_STORE_PATH", meaning: "path of the query store database" },
   { name: "HARDKAS_ROOT", meaning: "workspace root used by the dev server" },
@@ -35,8 +36,13 @@ export const HARDKAS_ENV_VARIABLES: ReadonlyArray<{ name: string; meaning: strin
   { name: "HARDKAS_HERMETIC_TRACE", meaning: "hermetic gate: trace every connection attempt" }
 ];
 
-/** The deployment profile `hardkas deploy init` writes to .env.example; informational only. */
-const DEPLOY_PROFILE_VARIABLES = ["NETWORK", "KASPAD_URL", "HARDKAS_DATA_DIR", "HARDKAS_KASPAD_IMAGE", "LOG_LEVEL", "DATABASE_URL", "PROMETHEUS_PORT"];
+/**
+ * The deployment profile `hardkas deploy init` writes to .env.example; informational only (the deployed app's variables,
+ * and HARDKAS_KASPAD_IMAGE). SURFACE-TRUTH-1B (ST-J): one contract for `env check`, `doctor` and `deploy init`.
+ * HARDKAS_DATA_DIR is not in it: HardKAS reads no such variable (the workspace's `.hardkas` holds its data), so `env
+ * check` reports it as unknown, `deploy init` no longer writes it and `doctor` no longer demands it.
+ */
+export const DEPLOY_PROFILE_VARIABLES = ["NETWORK", "KASPAD_URL", "HARDKAS_KASPAD_IMAGE", "LOG_LEVEL", "DATABASE_URL", "PROMETHEUS_PORT"];
 
 export function parseDotEnv(content: string): Record<string, string> {
   const parsed: Record<string, string> = {};
@@ -75,7 +81,7 @@ export function checkEnvironment(processEnv: NodeJS.ProcessEnv, dotEnv: Record<s
   const deployProfile = declares
     ? {
         present: DEPLOY_PROFILE_VARIABLES.filter((v) => (dotEnv![v] ?? "") !== ""),
-        missing: ["NETWORK", "KASPAD_URL", "HARDKAS_DATA_DIR", "LOG_LEVEL"].filter((v) => (dotEnv![v] ?? "") === "")
+        missing: ["NETWORK", "KASPAD_URL", "LOG_LEVEL"].filter((v) => (dotEnv![v] ?? "") === "")
       }
     : null;
 

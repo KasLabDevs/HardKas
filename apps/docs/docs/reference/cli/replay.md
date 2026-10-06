@@ -8,7 +8,7 @@ title: hardkas replay
 
 ### Synopsis (Generated)
 
-**Purpose:** Verify deterministic simulator-mode replay for a receipt by exact artifactId or artifact file path. Real-node (kaspa consensus) receipts are not currently supported and will report REPLAY_MODE_UNSUPPORTED. stable
+**Purpose:** Verify deterministic simulator-mode replay for a receipt (required) by exact artifactId or a workspace path such as ./receipt.json. Real-node sends are not supported: they record a TxSubmission, not a TxReceipt. stable
 
 #### Arguments
 

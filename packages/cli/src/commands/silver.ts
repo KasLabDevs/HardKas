@@ -257,22 +257,12 @@ export function registerSilverCommand(program: Command) {
     .option("--json", "Output as JSON", false)
     .action(async (opts: { json: boolean }) => {
       const core = await import("@hardkas/core");
-      const wasm = core.verifyManagedToolchainSync(core.KASPA_WASM_REFERENCE);
-      let silverc: { ok: boolean; detail: string };
-      try {
-        const s = core.resolveManagedSilverc();
-        silverc = { ok: true, detail: `${s.ref.assetName} ${s.ref.files[s.ref.entry]!.sha256}` };
-      } catch (e: any) {
-        silverc = { ok: false, detail: String(e?.code ?? e?.message) };
-      }
-      let node: { ok: boolean; detail: string };
-      try {
-        const { verifyNodeIdentity } = await import("@hardkas/node-runner");
-        const id = await verifyNodeIdentity();
-        node = { ok: id.verified, detail: id.verified ? `${id.observed.container?.name} rusty-kaspad ${id.observed.server?.serverVersion}` : id.problems.join("; ") };
-      } catch (e: any) {
-        node = { ok: false, detail: String(e?.message ?? e) };
-      }
+      // SURFACE-TRUTH-1B (D-ST1): the same checks the capability report derives `silverScript`, `covenants` and the
+      // node matrix from (one authority, `probeSilverReadiness`).
+      const { probeSilverReadiness } = await import("@hardkas/sdk");
+      const readiness = await probeSilverReadiness();
+      const silverc = readiness.toolchains.silverc;
+      const node = { ok: readiness.node.ok, detail: readiness.node.detail };
       // Optional and experimental: no release binary exists, so it never gates the capabilities above.
       let runner: { ok: boolean; detail: string };
       try {
@@ -284,22 +274,18 @@ export function registerSilverCommand(program: Command) {
       const report = {
         schema: "hardkas.silverDoctor.v1",
         silverscript: { releaseTag: core.SILVERSCRIPT_RELEASE.releaseTag, languageVersion: core.SILVERSCRIPT_RELEASE.languageVersion },
-        toolchains: { "kaspa-wasm": { ok: wasm.ok, detail: wasm.ok ? core.KASPA_WASM_REFERENCE.version : wasm.problems.join("; ") }, silverc },
+        toolchains: readiness.toolchains,
         node,
-        ready: {
-          "silver.compile.v1": silverc.ok,
-          "silver.p2sh.deploy-spend.v1": silverc.ok && wasm.ok && node.ok,
-          "toccata.covenant.auth-1to1-transition.v1": silverc.ok && wasm.ok && node.ok
-        },
+        ready: readiness.ready,
         experimental: {
           "silver-runner": runner,
-          "silver test": silverc.ok && wasm.ok && runner.ok
+          "silver test": silverc.ok && readiness.toolchains["kaspa-wasm"].ok && runner.ok
         }
       };
       if (opts.json) return out().writeJson(report);
       out().writeLine(pc.bold(`SilverScript ${report.silverscript.releaseTag} (language ${report.silverscript.languageVersion})`));
       const row = (ok: boolean, label: string, detail: string) => out().writeLine(`  ${ok ? pc.green("OK  ") : pc.red("MISS")} ${label}  ${pc.dim(detail)}`);
-      row(wasm.ok, "kaspa-wasm", report.toolchains["kaspa-wasm"].detail);
+      row(report.toolchains["kaspa-wasm"].ok, "kaspa-wasm", report.toolchains["kaspa-wasm"].detail);
       row(silverc.ok, "silverc", silverc.detail);
       row(node.ok, "canonical node", node.detail);
       for (const [cap, ok] of Object.entries(report.ready)) row(ok, cap, ok ? "ready" : "not ready");

@@ -33,8 +33,13 @@ describe("hardkas capabilities", () => {
     expect(parsed.maturity).toBe("hardened-alpha");
     expect(parsed.capabilities.artifacts).toBe(true);
     expect(parsed.capabilities.consensusValidation).toBe(false);
-    expect(parsed.capabilities.silverScript).toBe(false);
-    expect(parsed.trustBoundaries.replay).toBe("local-workflow-only");
+    // SURFACE-TRUTH-1B (ST-A): silverScript is derived from this environment (the managed silverc resolving, as
+    // `hardkas silver doctor` reports), so the derivation is pinned, not a value. The old pin, `false`, was the literal
+    // denial ST-A removed. L2 is not part of the L1 core.
+    expect(typeof parsed.capabilities.silverScript).toBe("boolean");
+    if (!parsed.capabilities.silverScript) expect(parsed.reasons?.silverScript).toBeTruthy();
+    expect(parsed.capabilities.l2Profiles).toBe(false);
+    expect(parsed.trustBoundaries.replay).toBe("local-simulator-only");
   });
 
   it("human output shows checkmarks", () => {

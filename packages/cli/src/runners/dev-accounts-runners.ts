@@ -57,14 +57,23 @@ export async function runDevAccountsReveal(alias: string) {
         }
       });
     } catch (e: any) {
-      UI.error(`Execution incompatibility: ${e.message}`);
-      return;
+      // SURFACE-TRUTH-1B (ST-I): a refused reveal is a failure (typed, exit ≠ 0), as `export` already is (#8); the three
+      // refusals below used to render an error and exit 0.
+      const { HardkasCliError, HardkasExitCode } = await import("../cli-errors.js");
+      throw new HardkasCliError("DEV_REVEAL_INCOMPATIBLE", `Execution incompatibility: ${e.message}`, {
+        exitCode: HardkasExitCode.POLICY_DENIED,
+        cause: e
+      });
     }
   } else {
     // Fallback if not mapped
     if (execution.network !== "simnet" && execution.network !== "simulated") {
-      UI.error("Reveal dev accounts is ONLY allowed on simnet or simulated for safety.");
-      return;
+      const { HardkasCliError, HardkasExitCode } = await import("../cli-errors.js");
+      throw new HardkasCliError(
+        "DEV_REVEAL_NOT_ALLOWED",
+        "Reveal dev accounts is ONLY allowed on simnet or simulated for safety.",
+        { exitCode: HardkasExitCode.POLICY_DENIED }
+      );
     }
   }
 
@@ -73,8 +82,11 @@ export async function runDevAccountsReveal(alias: string) {
     (a) => a.name === alias || a.name === alias.toString()
   );
   if (index === -1) {
-    UI.error(`Dev account alias '${alias}' not found.`);
-    return;
+    const { HardkasCliError, HardkasExitCode } = await import("../cli-errors.js");
+    throw new HardkasCliError("DEV_ACCOUNT_NOT_FOUND", `Dev account alias '${alias}' not found.`, {
+      exitCode: HardkasExitCode.USAGE_ERROR,
+      suggestion: accounts.length ? `Known dev accounts: ${accounts.map((a) => a.name).join(", ")}` : "No dev accounts exist yet (hardkas dev accounts list)"
+    });
   }
 
   const acc = await getOrCreateDevAccount(loaded.cwd, index, alias);

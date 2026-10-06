@@ -141,7 +141,8 @@ export async function runSnapshotReplay(options: SnapshotReplayOptions) {
           manifest.deterministicScope === "consensus-validated" ? "YES" : "NO",
         Notice: "Replay restores the snapshot's missing artifacts; it never removes or overwrites one"
       },
-      ["hardkas doctor --strict", "hardkas dashboard"]
+      // SURFACE-TRUTH-1B: the CLI registers no `dashboard` command
+      ["hardkas doctor --strict"]
     );
   } catch (err: any) {
     const { HardkasCliError } = await import("../cli-errors.js");

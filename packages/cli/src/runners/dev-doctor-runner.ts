@@ -123,8 +123,9 @@ export async function runDevDoctor(options: {
             status: "error",
             message: "events.jsonl tail corruption detected",
             code: "APPEND_CORRUPTION",
+            // SURFACE-TRUTH-1B: `repair` has no --tail; it reports the corrupt tail, and --force truncates it
             suggestion:
-              "Run 'hardkas repair --tail' to truncate the corrupted events.jsonl suffix."
+              "Run 'hardkas repair' to see the corrupt events.jsonl tail, then 'hardkas repair --force' to truncate it."
           });
           finalStatus = "failed";
         }
@@ -182,8 +183,9 @@ export async function runDevDoctor(options: {
           status: "warning",
           message: "Not found (will be created automatically)",
           code: "ARTIFACT_FOLDER_MISSING",
+          // SURFACE-TRUTH-1B: `dev` has no `server` subcommand
           suggestion:
-            "Run a transaction or 'hardkas dev server' to generate the artifact folder."
+            "Run a transaction (e.g. 'hardkas tx send') to generate the artifact folder."
         });
         if (finalStatus === "ready") finalStatus = "warning";
       }

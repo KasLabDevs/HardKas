@@ -19,7 +19,7 @@ hardkas rpc health
 **Evidence to Inspect:** Check if the Docker container is running (`docker ps`) or if the `kaspad` process is active. Check `.hardkas/localnet/` for crash logs.
 **Safe Recovery:** 
 ```bash
-hardkas node start --profile toccata-v2
+hardkas localnet start --profile toccata-v2
 ```
 
 ## Symptom 2: Insufficient Funds / UTXO Selection Fails
@@ -34,7 +34,7 @@ $ hardkas tx plan ...
 ```bash
 hardkas accounts balance alice
 # AND
-hardkas query utxos --address <alice_address>
+hardkas rpc utxos <alice_address>
 ```
 **Evidence to Inspect:** Verify the account actually holds mature Kaspa. If the UTXOs are locked in pending transactions, they will not be selectable.
 **Safe Recovery:** Fund the account, or wait for pending transactions to mine (`hardkas tx wait`).

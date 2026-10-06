@@ -12,13 +12,14 @@ export class UnavailablePsktAdapter implements PsktRuntimeAdapter {
   readonly id = "unavailable";
   readonly kind = "unavailable";
   
+  // SURFACE-TRUTH-1B (ST-C): it implements nothing, so it encrypts and authenticates nothing either.
   readonly trustProfile: PsktAdapterTrustProfile = {
     processBoundary: "same-process",
     privateKeysLeaveProcess: false,
     payloadLeavesProcess: false,
     verifiesUnsignedTxIdentity: false,
-    transportEncrypted: true,
-    adapterAuthenticated: true
+    transportEncrypted: false,
+    adapterAuthenticated: false
   };
 
   private readonly reason: string;

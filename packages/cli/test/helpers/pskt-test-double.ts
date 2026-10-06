@@ -16,10 +16,10 @@ function makePayload(data: string): PortableSigningPayload {
 }
 
 /**
- * Test-only fake PSKT adapter.
+ * Test-only fake PSKT adapter, for the CLI orchestration test (`pskt-cli.test.ts`).
  *
- * NON-CANONICAL — must never ship as default runtime.
- * Used exclusively for CLI orchestration tests.
+ * SURFACE-TRUTH-1B (ST-C): it lives with the tests and only `pskt-cli-with-test-double.ts` registers it. It used to
+ * ship in `@hardkas/sdk` `src`, registered whenever NODE_ENV was "test".
  */
 export class TestFakeAdapter implements PsktRuntimeAdapter {
   id = "test-fake-adapter";
@@ -29,9 +29,9 @@ export class TestFakeAdapter implements PsktRuntimeAdapter {
     processBoundary: "same-process",
     privateKeysLeaveProcess: false,
     payloadLeavesProcess: false,
-    verifiesUnsignedTxIdentity: true,
-    transportEncrypted: true,
-    adapterAuthenticated: true
+    verifiesUnsignedTxIdentity: false,
+    transportEncrypted: false,
+    adapterAuthenticated: false
   };
 
   async probe(): Promise<PsktRuntimeCapabilities> {
