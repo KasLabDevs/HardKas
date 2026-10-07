@@ -10,7 +10,7 @@
 
 Defined in: [packages/config/src/schema.ts:6](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/config/src/schema.ts#L6)
 
-Enforces strict configuration schema for 0.12.0-rc.26+
+Enforces strict configuration schema for 0.12.0-rc.27+
 
 ## Parameters
 

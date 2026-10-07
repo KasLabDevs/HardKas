@@ -42,7 +42,7 @@ describe("Query Store Rebuild Equivalence", () => {
       version: "1.0.0-alpha",
       // IC-1′.3: the producer declares the hash version before hashing.
       hashVersion: CURRENT_HASH_VERSION,
-      hardkasVersion: "0.12.0-rc.26",
+      hardkasVersion: "0.12.0-rc.27",
       networkId: "simnet",
       mode: "rpc",
       // IC-7.3 (Wave 1.3): a version-5 artifact carries no top-level artifactId; the
