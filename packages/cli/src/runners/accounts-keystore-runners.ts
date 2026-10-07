@@ -10,6 +10,8 @@ import {
 } from "@hardkas/accounts";
 import { UI } from "../ui.js";
 import { acquirePassword, acquirePrivateKey } from "./secrets.js";
+import { withSdk } from "./with-sdk.js";
+import { assertAccountName, assertAccountNamesFree, keystorePathIn } from "./keystore-names.js";
 
 /**
  * Runner for 'hardkas accounts import --encrypted'
@@ -44,6 +46,29 @@ export async function runAccountsKeystoreImport(options: {
     name = options.fixture;
     options.unsafePlaintext = true;
     options.yes = true;
+  }
+
+  // CONTAINMENT-2 (R1-I1, R1-I2): the name is decided before any key or password is read and before anything is
+  // written: a valid account name, not taken in this workspace (in any case) and, for an encrypted import, ONE plain
+  // keystore file of this workspace's keystore directory. An existing account's keystore is never replaced.
+  assertAccountName(name);
+  const keystoreTarget = options.unsafePlaintext
+    ? undefined
+    : await withSdk({ cwd: options.workspaceRoot }, (sdk) => ({
+        dir: sdk.workspace.keystoreDir,
+        root: sdk.workspace.root,
+        path: keystorePathIn(sdk, name)
+      }));
+  assertAccountNamesFree([name], (await loadRealAccountStore({ cwd: options.workspaceRoot }))?.accounts ?? [], keystoreTarget?.dir, "imported");
+
+  // AUD-20: a mainnet key is never written in plaintext; refused before the key is even read.
+  if (options.unsafePlaintext && address && address.startsWith("kaspa:") && !address.startsWith("kaspa:sim_")) {
+    const { HardkasCliError, HardkasExitCode } = await import("../cli-errors.js");
+    throw new HardkasCliError(
+      "PLAINTEXT_MAINNET_FORBIDDEN",
+      "Plaintext storage is refused for mainnet keys. Nothing was imported; import it encrypted (--password-env <VAR> or --password-stdin).",
+      { exitCode: HardkasExitCode.USAGE_ERROR }
+    );
   }
 
   if (options.unsafePlaintext) {
@@ -84,6 +109,7 @@ export async function runAccountsKeystoreImport(options: {
     finalKey = await acquirePrivateKey({
       stdin: !!options.privateKeyStdin,
       env: options.privateKeyEnv,
+      interactive: !options.json,
       message: `Enter private key for account '${name}':`
     });
   } else if (options.privateKey) {
@@ -91,6 +117,7 @@ export async function runAccountsKeystoreImport(options: {
     privateKeyUsedAsArg = true;
   } else {
     finalKey = await acquirePrivateKey({
+      interactive: !options.json,
       message: `Enter private key for account '${name}':`
     });
   }
@@ -116,6 +143,7 @@ export async function runAccountsKeystoreImport(options: {
     const password = await acquirePassword({
       stdin: !!options.passwordStdin,
       env: options.passwordEnv,
+      interactive: !options.json,
       message: `Enter new keystore password for account '${name}':`
     });
 
@@ -143,15 +171,10 @@ export async function runAccountsKeystoreImport(options: {
       }
     );
 
-    // Save to .hardkas/keystore/<name>.json
-    const { Hardkas } = await import("@hardkas/sdk");
-    const sdk = await Hardkas.open({ cwd: options.workspaceRoot });
-    const keystoreDir = sdk.workspace.keystoreDir;
-    if (!fs.existsSync(keystoreDir)) fs.mkdirSync(keystoreDir, { recursive: true });
-
-    const filePath = sdk.workspace.resolvePath(".hardkas", "keystore", `${name}.json`);
-    await KeystoreManager.saveEncryptedKeystore(filePath, keystore);
-    keystoreRef = `.hardkas/keystore/${name}.json`;
+    // Save to <keystoreDir>/<name>.json: the path decided (and contained) before anything was read
+    if (!fs.existsSync(keystoreTarget!.dir)) fs.mkdirSync(keystoreTarget!.dir, { recursive: true });
+    await KeystoreManager.saveEncryptedKeystore(keystoreTarget!.path, keystore);
+    keystoreRef = path.relative(keystoreTarget!.root, keystoreTarget!.path).split(path.sep).join("/");
   }
 
   // DEF-13: transactional store update. Load without side effects, validate via
@@ -201,9 +224,10 @@ export async function runAccountsSessionOpen(options: {
   workspaceRoot: string;
 }) {
   const { name } = options;
-  const { Hardkas } = await import("@hardkas/sdk");
-  const sdk = await Hardkas.open({ cwd: options.workspaceRoot });
-  const filePath = sdk.workspace.resolvePath(".hardkas", "keystore", `${name}.json`);
+  // CONTAINMENT-2 (R1-I1): the name is checked before anything else happens (opening the workspace included), then
+  // its one plain keystore file of this workspace is decided before anything is read
+  assertAccountName(name);
+  const filePath = await withSdk({ cwd: options.workspaceRoot }, (sdk) => keystorePathIn(sdk, name));
 
   if (!fs.existsSync(filePath)) {
     throw new Error(`Keystore for account '${name}' not found at ${filePath}`);
@@ -236,9 +260,10 @@ export async function runAccountsKeystoreChangePassword(options: {
   workspaceRoot: string;
 }) {
   const { name } = options;
-  const { Hardkas } = await import("@hardkas/sdk");
-  const sdk = await Hardkas.open({ cwd: options.workspaceRoot });
-  const filePath = sdk.workspace.resolvePath(".hardkas", "keystore", `${name}.json`);
+  // CONTAINMENT-2 (R1-I1): the name is checked before anything else happens (opening the workspace included), then
+  // its one plain keystore file of this workspace is decided before anything is read or prompted for
+  assertAccountName(name);
+  const filePath = await withSdk({ cwd: options.workspaceRoot }, (sdk) => keystorePathIn(sdk, name));
 
   const keystore = await KeystoreManager.loadEncryptedKeystore(filePath);
 

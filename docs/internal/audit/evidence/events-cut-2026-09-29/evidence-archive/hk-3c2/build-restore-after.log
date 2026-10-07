@@ -1,0 +1,35 @@
+﻿Scope: 2 of 62 workspace projects
+packages/kaspa-rpc build$ tsup src/index.ts src/adapters/index.ts --format esm --dts --clean
+packages/kaspa-rpc build: CLI Building entry: src/index.ts, src/adapters/index.ts
+packages/kaspa-rpc build: CLI Using tsconfig: tsconfig.json
+packages/kaspa-rpc build: CLI tsup v8.5.1
+packages/kaspa-rpc build: CLI Target: es2022
+packages/kaspa-rpc build: CLI Cleaning output folder
+packages/kaspa-rpc build: ESM Build start
+packages/kaspa-rpc build: ESM dist\adapters\index.js 0 B
+packages/kaspa-rpc build: ESM dist\index.js          55.90 KB
+packages/kaspa-rpc build: ESM ⚡️ Build success in 73ms
+packages/kaspa-rpc build: DTS Build start
+packages/kaspa-rpc build: DTS ⚡️ Build success in 2581ms
+packages/kaspa-rpc build: DTS dist\adapters\index.d.ts 13.00 B
+packages/kaspa-rpc build: DTS dist\index.d.ts          21.30 KB
+packages/kaspa-rpc build: Done
+packages/localnet build$ tsup src/index.ts --format esm --dts --clean --external kaspa-wasm
+packages/localnet build: CLI Building entry: src/index.ts
+packages/localnet build: CLI Using tsconfig: tsconfig.json
+packages/localnet build: CLI tsup v8.5.1
+packages/localnet build: CLI Target: es2022
+packages/localnet build: CLI Cleaning output folder
+packages/localnet build: ESM Build start
+packages/localnet build: ESM dist\index.js             43.34 KB
+packages/localnet build: ESM dist\snapshot-4GUK6V5O.js 333.00 B
+packages/localnet build: ESM dist\receipts-INOOWOPN.js 195.00 B
+packages/localnet build: ESM dist\chunk-EPMJ5HSS.js    4.46 KB
+packages/localnet build: ESM dist\chunk-6AICYLVR.js    1.84 KB
+packages/localnet build: ESM dist\traces-ZUBWSXYB.js   261.00 B
+packages/localnet build: ESM dist\chunk-TD6USJ3B.js    967.00 B
+packages/localnet build: ESM ⚡️ Build success in 74ms
+packages/localnet build: DTS Build start
+packages/localnet build: DTS ⚡️ Build success in 1973ms
+packages/localnet build: DTS dist\index.d.ts 21.50 KB
+packages/localnet build: Done

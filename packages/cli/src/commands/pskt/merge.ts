@@ -4,7 +4,7 @@ import { UI } from "../../ui.js";
 export function registerMergeCommand(pskt: Command) {
   pskt
     .command("merge <sessionA> <sessionB>")
-    .description(`Merge two PSKT sessions ${UI.maturity("alpha")}`)
+    .description(`Merge two PSKT sessions ${UI.maturity("unavailable")}`)
     .requiredOption("--out <outputPath>", "Path to write the merged PSKT session JSON")
     .option("--force", "Overwrite the output file if it exists", false)
     .option("--json", "Output results as JSON", false)

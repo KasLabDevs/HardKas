@@ -1,0 +1,69 @@
+﻿{
+  "passed": 14,
+  "failed": 0,
+  "results": [
+    {
+      "name": "round trip through the proxy",
+      "ok": true
+    },
+    {
+      "name": "partition closes the live client",
+      "ok": true
+    },
+    {
+      "name": "no piped socket left after partition",
+      "ok": true,
+      "detail": {
+        "active": 0
+      }
+    },
+    {
+      "name": "new connections are refused while partitioned",
+      "ok": true
+    },
+    {
+      "name": "heal listens on the same port",
+      "ok": true,
+      "detail": {
+        "before": 60974,
+        "after": 60974
+      }
+    },
+    {
+      "name": "round trip after heal",
+      "ok": true
+    },
+    {
+      "name": "criterion: R converges → RESUBSCRIBE_SUFFICIENT",
+      "ok": true
+    },
+    {
+      "name": "criterion: R misses exactly the gap, U converges → UTXOCONTEXT_REQUIRED",
+      "ok": true
+    },
+    {
+      "name": "criterion: U also wrong → INCONCLUSIVE",
+      "ok": true
+    },
+    {
+      "name": "criterion: R's difference is not exactly the gap → INCONCLUSIVE",
+      "ok": true
+    },
+    {
+      "name": "criterion: R dead after heal (C3 not just the inherited gap) → INCONCLUSIVE",
+      "ok": true
+    },
+    {
+      "name": "criterion: any failed validity check → INVALID",
+      "ok": true
+    },
+    {
+      "name": "an amount mismatch is not exact",
+      "ok": true
+    },
+    {
+      "name": "entryMap reads kaspa-wasm and HardKAS shapes",
+      "ok": true
+    }
+  ]
+}

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { withLock } from "@hardkas/core";
+import { acquireLock, withLock } from "@hardkas/core";
 import {
   trackDeployment,
   trackDeploymentInternal
@@ -28,9 +28,9 @@ describe("Deployment Locking", () => {
   });
 
   it("trackDeploymentInternal can be used safely inside an outer lock", async () => {
-    // Acquire the artifacts lock first
+    // Acquire the deployments lock first
     await withLock(
-      { rootDir, name: "artifacts", command: "test outer lock" },
+      { rootDir, name: "deployments", command: "test outer lock" },
       async () => {
         // While holding the lock, call the internal tracker
         await trackDeploymentInternal(rootDir, {
@@ -62,19 +62,47 @@ describe("Deployment Locking", () => {
     expect(record?.txId).toBe("simtx_5678");
   });
 
-  it("trackDeployment fails with lock error if outer lock is already held", async () => {
-    await expect(
-      withLock(
-        { rootDir, name: "artifacts", command: "test outer lock", wait: false },
-        async () => {
-          // This should throw because trackDeployment tries to acquire the same lock without wait
-          await trackDeployment({
-            label: testLabel,
-            network: testNetwork
-          });
-        }
-      )
-    ).rejects.toThrow(/Workspace is locked/);
+  it("trackDeployment fails with lock error while another operation holds the deployments lock", async () => {
+    // a bare handle taken outside any holding is an independent operation: trackDeployment must not get in
+    const other = await acquireLock({ rootDir, name: "deployments", command: "another operation" });
+    try {
+      await expect(
+        trackDeployment({
+          label: testLabel,
+          network: testNetwork
+        })
+      ).rejects.toThrow(/Workspace is locked/);
+    } finally {
+      await other.release();
+    }
+  });
+
+  it("a holder of the artifact store does not block trackDeployment: deployments are not in the store (phase 2B)", async () => {
+    // deploy writes .hardkas/deployments/** and nothing under .hardkas/artifacts/**, so the store's lock is not its own
+    const store = await acquireLock({ rootDir, name: "artifacts", command: "another operation" });
+    try {
+      await trackDeployment({ label: testLabel, network: testNetwork, txId: "simtx_store_held" });
+    } finally {
+      await store.release();
+    }
+    const record = await loadDeployment(rootDir, testNetwork, testLabel);
+    expect(record?.txId).toBe("simtx_store_held");
+  });
+
+  it("trackDeployment called inside its caller's deployments holding joins it (ARTIFACT-LOCK-REENTRANCY-1)", async () => {
+    await withLock(
+      { rootDir, name: "deployments", command: "test outer lock", wait: false },
+      async () => {
+        await trackDeployment({
+          label: testLabel,
+          network: testNetwork,
+          txId: "simtx_nested"
+        });
+      }
+    );
+
+    const record = await loadDeployment(rootDir, testNetwork, testLabel);
+    expect(record?.txId).toBe("simtx_nested");
   });
 
   it("lock released correctly after tracking failure", async () => {
@@ -97,7 +125,7 @@ describe("Deployment Locking", () => {
     // Verify the lock is released and we can immediately acquire it again
     let lockAcquired = false;
     await withLock(
-      { rootDir, name: "artifacts", command: "test release verification", wait: false },
+      { rootDir, name: "deployments", command: "test release verification", wait: false },
       async () => {
         lockAcquired = true;
       }
@@ -115,7 +143,7 @@ describe("Deployment Locking", () => {
         wait: false
       },
       async () => {
-        // trackDeployment uses the 'artifacts' lock, so it should succeed even if 'different-lock-name' is held!
+        // trackDeployment uses the 'deployments' lock, so it should succeed even if 'different-lock-name' is held!
         await trackDeployment({
           label: testLabel + "-other",
           network: testNetwork,

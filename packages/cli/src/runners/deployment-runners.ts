@@ -1,4 +1,5 @@
 import { UI } from "../ui.js";
+import { HardkasCliError } from "../cli-errors.js";
 import { withLock } from "@hardkas/core";
 import {
   DeploymentRecord,
@@ -19,21 +20,30 @@ import { JsonWrpcKaspaClient } from "@hardkas/kaspa-rpc";
 
 
 
+/** JSON-PAPERCUTS #39: the record that was written is returned, so `deploy track --json` can print it. */
 export async function trackDeployment(opts: {
   label: string;
   network: string;
   txId?: string;
+  plan?: string;
+  receipt?: string;
+  status?: string;
+  notes?: string;
   script?: string;
+  silent?: boolean;
   workspaceRoot?: string;
-}) {
+}): Promise<DeploymentRecord> {
   const rootDir = opts.workspaceRoot || process.cwd();
 
+  // deployments live in .hardkas/deployments/**, outside the artifact store: their own lock, not the store's (phase 2B)
+  let record: DeploymentRecord | undefined;
   await withLock(
-    { rootDir, name: "artifacts", command: "hardkas deploy track" },
+    { rootDir, name: "deployments", command: "hardkas deploy track" },
     async () => {
-      await trackDeploymentInternal(rootDir, opts);
+      record = await trackDeploymentInternal(rootDir, opts);
     }
   );
+  return record!;
 }
 
 export async function trackDeploymentInternal(
@@ -48,11 +58,14 @@ export async function trackDeploymentInternal(
     notes?: string;
     silent?: boolean;
   }
-): Promise<void> {
+): Promise<DeploymentRecord> {
   const existing = await loadDeployment(rootDir, opts.network, opts.label);
   if (existing) {
-    throw new Error(
-      `Deployment '${opts.label}' already exists on network '${opts.network}'.`
+    // Typed, so `--json` reports DEPLOYMENT_EXISTS instead of UNKNOWN_ERROR.
+    throw new HardkasCliError(
+      "DEPLOYMENT_EXISTS",
+      `Deployment '${opts.label}' already exists on network '${opts.network}'.`,
+      { exitCode: 1, suggestion: "Choose another label, or inspect the existing record with 'hardkas deploy inspect'." }
     );
   }
 
@@ -70,6 +83,7 @@ export async function trackDeploymentInternal(
   if (!opts.silent) {
     UI.success(`Tracked deployment: ${opts.label} (${opts.network})`);
   }
+  return record;
 }
 
 
@@ -197,8 +211,9 @@ export async function verifyDeploymentStatus(opts: {
   } else if (!rpcUrl) {
     UI.error("  No RPC URL configured for this network.");
   } else {
+    let client: JsonWrpcKaspaClient | undefined;
     try {
-      const client = new JsonWrpcKaspaClient({ rpcUrl: rpcUrl });
+      client = new JsonWrpcKaspaClient({ rpcUrl: rpcUrl });
       const tx = (await client.getTransaction(record.txId)) as Record<
         string,
         unknown
@@ -221,7 +236,7 @@ export async function verifyDeploymentStatus(opts: {
 
       if (newStatus !== record.status) {
         await withLock(
-          { rootDir, name: "artifacts", command: "hardkas deploy status" },
+          { rootDir, name: "deployments", command: "hardkas deploy status" },
           async () => {
             const updated = updateDeploymentStatus(record, newStatus);
             await saveDeployment(rootDir, updated);
@@ -231,10 +246,11 @@ export async function verifyDeploymentStatus(opts: {
       } else {
         UI.info(`  Status remains: ${record.status}`);
       }
-
-      await client.close();
     } catch (e: unknown) {
       UI.error(`  RPC check failed: ${((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e))}`);
+    } finally {
+      // RESOURCE-LIFECYCLE-1 (RL-I3): released on the error path too.
+      await client?.close();
     }
   }
 }

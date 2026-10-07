@@ -16,9 +16,9 @@ You can use a PSKT for a perfectly normal, single-signature transaction if you w
 
 ## Upstream Integration
 
-HardKAS does not invent its own PSKT format. It delegates directly to the **upstream `rusty-kaspa` PSKT implementation**.
+HardKAS does not invent its own PSKT format: a PSKT adapter would delegate to the **upstream `rusty-kaspa` PSKT implementation**.
 
-When you run `hardkas pskt combine` or `hardkas pskt finalize`, HardKAS passes the binary payloads directly into the native Kaspa Rust codebase to ensure 100% protocol compatibility.
+No adapter does in this build: `hardkas pskt merge` and `hardkas pskt finalize` refuse with a typed error (there is no `pskt combine` command; merging is `pskt merge`). See [PSKT](./index.md).
 
 ## The Problem PSKT Solves
 

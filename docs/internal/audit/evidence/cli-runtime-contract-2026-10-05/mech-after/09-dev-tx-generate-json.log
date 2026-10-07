@@ -1,0 +1,26 @@
+$ hardkas dev tx generate --count 2 --json   (cwd mech-ws-after)
+exit=0 stdout_is_single_json=true
+--- stdout ---
+{
+  "ok": true,
+  "generated": 2,
+  "successCount": 2,
+  "failCount": 0,
+  "mode": "simulator",
+  "purpose": "load-test",
+  "securityModel": "mock-fixture",
+  "results": [
+    {
+      "index": 0,
+      "ok": true,
+      "result": "broadcast"
+    },
+    {
+      "index": 1,
+      "ok": true,
+      "result": "broadcast"
+    }
+  ]
+}
+--- stderr ---
+

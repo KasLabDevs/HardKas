@@ -1,0 +1,8 @@
+$ hardkas env check   (cwd mech-bare-after)
+exit=0 stdout_is_single_json=false
+--- stdout ---
+Environment check (process only, no .env)
+
+  ✅ HARDKAS_TEST_IGNORE_STALENESS=1  (process; tests only: skip the staleness check of artifacts)
+--- stderr ---
+

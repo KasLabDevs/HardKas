@@ -1,0 +1,87 @@
+﻿Scope: all 62 workspace projects
+Lockfile is up to date, resolution step is skipped
+Progress: resolved 1, reused 0, downloaded 0, added 0
+Packages: +1786
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Progress: resolved 1786, reused 206, downloaded 0, added 0
+Progress: resolved 1786, reused 475, downloaded 0, added 0
+Progress: resolved 1786, reused 753, downloaded 0, added 0
+Progress: resolved 1786, reused 1147, downloaded 0, added 0
+Progress: resolved 1786, reused 1313, downloaded 0, added 0
+Progress: resolved 1786, reused 1523, downloaded 0, added 0
+Progress: resolved 1786, reused 1757, downloaded 0, added 0
+Progress: resolved 1786, reused 1771, downloaded 0, added 44
+Progress: resolved 1786, reused 1771, downloaded 0, added 66
+Progress: resolved 1786, reused 1771, downloaded 0, added 93
+Progress: resolved 1786, reused 1772, downloaded 0, added 133
+Progress: resolved 1786, reused 1772, downloaded 0, added 180
+Progress: resolved 1786, reused 1772, downloaded 0, added 277
+Progress: resolved 1786, reused 1772, downloaded 0, added 352
+Progress: resolved 1786, reused 1772, downloaded 0, added 425
+Progress: resolved 1786, reused 1772, downloaded 0, added 476
+Progress: resolved 1786, reused 1772, downloaded 0, added 570
+Progress: resolved 1786, reused 1772, downloaded 0, added 588
+Progress: resolved 1786, reused 1772, downloaded 0, added 758
+Progress: resolved 1786, reused 1772, downloaded 0, added 899
+Progress: resolved 1786, reused 1772, downloaded 0, added 997
+Progress: resolved 1786, reused 1772, downloaded 0, added 1096
+Progress: resolved 1786, reused 1772, downloaded 0, added 1149
+Progress: resolved 1786, reused 1772, downloaded 0, added 1192
+Progress: resolved 1786, reused 1772, downloaded 0, added 1250
+Progress: resolved 1786, reused 1772, downloaded 0, added 1271
+Progress: resolved 1786, reused 1772, downloaded 0, added 1289
+Progress: resolved 1786, reused 1772, downloaded 0, added 1325
+Progress: resolved 1786, reused 1772, downloaded 0, added 1367
+Progress: resolved 1786, reused 1772, downloaded 0, added 1449
+Progress: resolved 1786, reused 1772, downloaded 0, added 1512
+Progress: resolved 1786, reused 1772, downloaded 0, added 1558
+Progress: resolved 1786, reused 1772, downloaded 0, added 1569
+Progress: resolved 1786, reused 1772, downloaded 0, added 1577
+Progress: resolved 1786, reused 1772, downloaded 0, added 1589
+Progress: resolved 1786, reused 1772, downloaded 0, added 1641
+Progress: resolved 1786, reused 1772, downloaded 0, added 1700
+Progress: resolved 1786, reused 1772, downloaded 0, added 1752
+Progress: resolved 1786, reused 1772, downloaded 0, added 1779
+Progress: resolved 1786, reused 1772, downloaded 0, added 1780
+Progress: resolved 1786, reused 1772, downloaded 0, added 1781
+Progress: resolved 1786, reused 1772, downloaded 0, added 1782
+Progress: resolved 1786, reused 1772, downloaded 0, added 1783
+Progress: resolved 1786, reused 1772, downloaded 0, added 1784
+Progress: resolved 1786, reused 1772, downloaded 0, added 1785
+Progress: resolved 1786, reused 1772, downloaded 0, added 1786, done
+ WARN  Failed to create bin at C:\Users\jrodr\AppData\Local\Temp\hk-fix2\wt\labs\showcase-suite\apps\cli-studio\node_modules\.bin\hardkas. ENOENT: no such file or directory, stat 'C:\Users\jrodr\AppData\Local\Temp\hk-fix2\wt\packages\cli\dist\index.js.EXE'
+ WARN  Failed to create bin at C:\Users\jrodr\AppData\Local\Temp\hk-fix2\wt\labs\bl-001-offline-multisig\node_modules\.bin\hardkas. ENOENT: no such file or directory, stat 'C:\Users\jrodr\AppData\Local\Temp\hk-fix2\wt\packages\cli\dist\index.js.EXE'
+ WARN  Failed to create bin at C:\Users\jrodr\AppData\Local\Temp\hk-fix2\wt\node_modules\.bin\hardkas. ENOENT: no such file or directory, stat 'C:\Users\jrodr\AppData\Local\Temp\hk-fix2\wt\node_modules\@hardkas\cli\dist\index.js.EXE'
+
+devDependencies:
++ @eslint/js 10.0.1
++ @hardkas/cli 0.12.0-rc.26 <- packages\cli
++ @hardkas/config 0.12.0-rc.26 <- packages\config
++ @hardkas/core 0.12.0-rc.26 <- packages\core
++ @hardkas/node-runner 0.12.0-rc.26 <- packages\node-runner
++ @hardkas/sdk 0.12.0-rc.26 <- packages\sdk
++ @hardkas/testing 0.12.0-rc.26 <- packages\testing
++ @types/node 22.20.1
++ @vitest/coverage-v8 2.1.9
++ c8 11.0.0
++ eslint 9.39.5
++ eslint-plugin-react 7.37.5
++ eslint-plugin-react-hooks 7.1.1
++ eslint-plugin-react-refresh 0.5.3
++ fast-check 4.9.0
++ globals 17.9.0
++ knip 6.31.0
++ prettier 3.9.6
++ ts-node 10.9.2
++ tsup 8.5.1
++ tsx 4.23.7
++ turbo 2.10.8
++ typescript 5.9.3
++ typescript-eslint 8.66.0
++ vitest 2.1.9
++ ws 8.21.2
+
+ WARN  Failed to create bin at C:\Users\jrodr\AppData\Local\Temp\hk-fix2\wt\labs\bl-001-offline-multisig\node_modules\.bin\hardkas. ENOENT: no such file or directory, stat 'C:\Users\jrodr\AppData\Local\Temp\hk-fix2\wt\labs\bl-001-offline-multisig\node_modules\@hardkas\cli\dist\index.js.EXE'
+ WARN  Failed to create bin at C:\Users\jrodr\AppData\Local\Temp\hk-fix2\wt\labs\showcase-suite\apps\cli-studio\node_modules\.bin\hardkas. ENOENT: no such file or directory, stat 'C:\Users\jrodr\AppData\Local\Temp\hk-fix2\wt\labs\showcase-suite\apps\cli-studio\node_modules\@hardkas\cli\dist\index.js.EXE'
+ WARN  Failed to create bin at C:\Users\jrodr\AppData\Local\Temp\hk-fix2\wt\node_modules\.bin\hardkas. ENOENT: no such file or directory, stat 'C:\Users\jrodr\AppData\Local\Temp\hk-fix2\wt\node_modules\@hardkas\cli\dist\index.js.EXE'
+Done in 1m 12.5s

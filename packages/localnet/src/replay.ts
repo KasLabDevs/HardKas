@@ -4,6 +4,8 @@ import {
   recomputeDeclaredContentHash,
   readDeclaredHashVersion,
   diffArtifacts,
+  checkArtifactIdentity,
+  createLineageTransition,
   calculateContentHash,
   CURRENT_HASH_VERSION,
   HARDKAS_VERSION,
@@ -13,8 +15,18 @@ import { applySimulatedPlan } from "./transactions.js";
 import { LocalnetState, ReplayVerificationReport } from "./types.js";
 import { StoredSimulatedTxTrace } from "./traces.js";
 import { calculateStateHash } from "./snapshot.js";
-import { coreEvents } from "@hardkas/core";
-import type { RuntimeContext } from "@hardkas/core";
+import {
+  coreEvents,
+  createEventEnvelope,
+  asWorkflowId,
+  asCorrelationId,
+  asTxId,
+  asArtifactId,
+  asLineageId,
+  asEventSequence,
+  REPLAY_UNREPRODUCIBLE_RECEIPT_FIELDS
+} from "@hardkas/core";
+import type { RuntimeContext, EventPayloadByKind, NetworkId } from "@hardkas/core";
 
 export interface SimulatedReplaySummary {
   receipt: TxReceipt;
@@ -101,18 +113,25 @@ export function verifyReplay(
     });
   }
 
-  // 3. Execute Replay in simulated environment
-  const result = applySimulatedPlan(state, originalPlan, ctx, {
-    txId: originalReceipt.txId,
-    digestHashVersion
-  });
+  // 3. Execute Replay in simulated environment. REPLAY-TRUST-2 (RT-I2): the txId is the one the plan derives, never the
+  // one the receipt claims, so the comparison below can tell a receipt that names another transaction.
+  const result = applySimulatedPlan(state, originalPlan, ctx, { digestHashVersion });
   const replayReceipt = result.receipt;
 
-  // 3. Semantic Diffing (Divergence detection)
-  const diff = diffArtifacts(originalReceipt, replayReceipt);
+  // 3. Semantic Diffing (Divergence detection). EVIDENCE-DIFF-REDACTION-1: the verdict rests on the RAW comparison
+  // (diffArtifacts masks nothing); what the report and the events record is its evidence-safe form: a public value in
+  // full, a secret field only as "differs" with its path. REPLAY-TRUST-2 (RT-I2): everything the receipt asserts is
+  // compared, at every depth, except the top-level fields a replay demonstrably cannot reproduce; no name-based
+  // exclusion applies below the top level.
+  const diff = diffArtifacts(originalReceipt, replayReceipt, { exclude: { topLevel: REPLAY_UNREPRODUCIBLE_RECEIPT_FIELDS } });
 
   if (!diff.identical) {
     for (const entry of diff.entries) {
+      if (entry.secret) {
+        reportDivergences.push({ path: `receipt.${entry.path}`, status: "differs" });
+        errors.push(`Receipt divergence at ${entry.path}: differs (a secret field; its values are not recorded)`);
+        continue;
+      }
       reportDivergences.push({
         path: `receipt.${entry.path}`,
         expected: entry.left,
@@ -124,23 +143,54 @@ export function verifyReplay(
     }
   }
 
-  // 4. Emit Events for Divergence Tracking
+  // REPLAY-TRUST-2 (RT-I3, D-RT3): the report is evidence about ONE receipt, the one verified here: a lineage child of
+  // its verified identity (never of an identity it only claims), in its workflow and assumption level.
+  const receiptIdentity = checkArtifactIdentity(originalReceipt);
+  const lineage = receiptIdentity.ok
+    ? { ...createLineageTransition({ ...originalReceipt, contentHash: receiptIdentity.artifactId }, "hardkas.replayReport.v1"), artifactId: "" }
+    : undefined;
+  const receiptWorkflowId = (originalReceipt as any).workflowId;
+  const receiptAssumptionLevel = (originalReceipt as any).assumptionLevel;
+  const networkId = (originalReceipt.networkId as string) || state.networkId || "simnet";
+
+  // 4. Emit Events for Divergence Tracking. REPLAY-TRUST-2 (RT-I6): as envelopes the bus accepts (it drops a raw
+  // object), so the ledger records the replay's outcome. The payload is the report's evidence-safe form: a public value
+  // in full, a secret field only as "differs".
+  const workflowId = asWorkflowId(
+    typeof receiptWorkflowId === "string" && receiptWorkflowId ? receiptWorkflowId : `replay-${originalReceipt.txId}`
+  );
+  let sequence = 0;
+  const emit = <K extends "replay.divergence" | "replay.verified">(kind: K, payload: EventPayloadByKind[K]) =>
+    coreEvents.emit(
+      createEventEnvelope({
+        kind,
+        domain: "replay",
+        workflowId,
+        correlationId: asCorrelationId(workflowId),
+        networkId: networkId as NetworkId,
+        payload,
+        txId: asTxId(originalReceipt.txId),
+        ...(receiptIdentity.ok ? { artifactId: asArtifactId(receiptIdentity.artifactId) } : {}),
+        sequenceNumber: asEventSequence(sequence++),
+        sourceSubsystem: "localnet:replay"
+      })
+    );
+  const asText = (value: unknown) => (typeof value === "string" ? value : JSON.stringify(value));
   for (const div of reportDivergences) {
-    coreEvents.normalizeAndEmit({
-      kind: "replay.divergence",
-      txId: originalReceipt.txId,
+    emit("replay.divergence", {
+      txId: asTxId(originalReceipt.txId),
       field: div.path,
-      expected: String(div.expected),
-      actual: String(div.actual)
+      expected: div.status === "differs" ? "differs" : asText(div.expected),
+      actual: div.status === "differs" ? "differs" : asText(div.actual)
     });
   }
 
   const invariantsOk = errors.length === 0;
 
   if (invariantsOk) {
-    coreEvents.normalizeAndEmit({
-      kind: "replay.verified",
-      txId: originalReceipt.txId
+    emit("replay.verified", {
+      txId: asTxId(originalReceipt.txId),
+      lineageId: asLineageId(lineage?.lineageId ?? (receiptIdentity.ok ? receiptIdentity.artifactId : originalReceipt.txId))
     });
   }
 
@@ -154,7 +204,12 @@ export function verifyReplay(
     networkId: (originalReceipt.networkId as string) || state.networkId || "simnet",
     mode: (originalReceipt.mode as string) || "simulator",
     createdAt: new Date(ctx.clock.now()).toISOString(),
+    ...(lineage ? { lineage } : {}),
+    ...(typeof receiptWorkflowId === "string" && receiptWorkflowId ? { workflowId: receiptWorkflowId } : {}),
+    ...(typeof receiptAssumptionLevel === "string" && receiptAssumptionLevel ? { assumptionLevel: receiptAssumptionLevel } : {}),
     txId: originalReceipt.txId,
+    // reports made before EVIDENCE-DIFF-REDACTION-1 (masked comparison) lack this field: their verdict is legacy
+    receiptComparison: "raw",
     planOk,
     receiptOk: !diff.entries.some((e) => !e.path.startsWith("plan")),
     invariantsOk,
@@ -167,6 +222,7 @@ export function verifyReplay(
     errors
   };
   report.contentHash = calculateContentHash(report, CURRENT_HASH_VERSION);
+  if (report.lineage) report.lineage.artifactId = report.contentHash;
   return report;
 }
 

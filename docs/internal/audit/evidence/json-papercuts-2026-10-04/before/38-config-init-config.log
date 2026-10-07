@@ -1,0 +1,13 @@
+config init → uses defaultNetwork: true · uses execution: false
+---
+import { defineHardkasConfig } from "@hardkas/config";
+
+export default defineHardkasConfig({
+  defaultNetwork: "simulated",
+  networks: {
+    simulated: { kind: "simulated" }
+  },
+  accounts: {
+    alice: { kind: "simulated", address: "kaspa:sim_alice" }
+  }
+});

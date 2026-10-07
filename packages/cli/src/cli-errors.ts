@@ -50,7 +50,7 @@ export class WorkspaceNotFoundError extends HardkasCliError {
   constructor(path: string) {
     super("WORKSPACE_NOT_FOUND", `Directory is not a HardKAS workspace: ${path}`, {
       suggestion:
-        "Run 'hardkas new <name>' to create a workspace, or " +
+        "Run 'hardkas init' to initialize one, or " +
         "'hardkas replay verify <path>' from a workspace directory."
     });
     this.name = "WorkspaceNotFoundError";

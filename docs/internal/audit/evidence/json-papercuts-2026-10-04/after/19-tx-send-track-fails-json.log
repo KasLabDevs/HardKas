@@ -1,0 +1,15 @@
+$ hardkas tx send signed.json --network simulated --track papercut --json
+exit=1 stdout_is_single_json=true json_docs_on_stdout=1
+--- stdout ---
+{
+  "ok": false,
+  "command": "tx send",
+  "mode": "cli",
+  "outcome": "not_executed",
+  "code": "DEPLOYMENT_EXISTS",
+  "message": "NOT EXECUTED: deployment 'papercut' already exists on network 'simulated'. Nothing was broadcast or written: choose another label, or inspect the record with 'hardkas deploy inspect papercut --network simulated'.",
+  "network": "simulated",
+  "label": "papercut"
+}
+--- stderr ---
+

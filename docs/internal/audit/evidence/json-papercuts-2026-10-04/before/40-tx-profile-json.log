@@ -1,0 +1,29 @@
+$ hardkas tx profile plan.json --json
+exit=0 stdout_is_single_json=false json_docs_on_stdout=0
+--- stdout ---
+
+--- stderr ---
+
+  ═══ Transaction Profile: plan.json ═══
+Summary:
+  Plan ID:    plan-c84e82a071285123
+  Network:    simulated
+  Amount:     10 (1000000000 sompi)
+  Total Mass: 2036
+  Est. Fee:   0.002036 (203600 sompi)
+
+Mass Breakdown:
+  Base Transaction:     94
+  Inputs (1):        1118
+  Outputs (2):        824
+  -----------------------
+  Total:              2036
+
+Structure:
+  Inputs:  1
+    [0] 18b20b15...:0 (1000)
+  Outputs: 2
+    [0] kaspa:sim_bob... (10)
+    [C] kaspa:sim_alice... (989.997964) [CHANGE]
+
+Note: Mass estimation is protocol-aware (0.12.0-rc.26 best-effort).

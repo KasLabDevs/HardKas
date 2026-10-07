@@ -58,12 +58,9 @@ jobs:
         env:
           BENCHMARK_CI: true
 
-      - name: Generate Global Semantic Hash
-        id: verify
-        run: |
-          pnpm hardkas verify-semantics --ci-mode > semantic_output.txt
-          cat semantic_output.txt
-        shell: bash
+      # SURFACE-TRUTH-1: there is no semantic-hash comparison. `verify-semantics` refuses
+      # (VERIFY_SEMANTICS_UNSUPPORTED) instead of writing synthetic hashes, and this job never
+      # compared them across platforms anyway, so the step that only generated them is gone.
 
       - name: Upload Telemetry and Reports
         uses: actions/upload-artifact@v4
@@ -73,4 +70,3 @@ jobs:
           path: |
             .hardkas/reports/
             .hardkas/telemetry/telemetry.jsonl
-            semantic_output.txt

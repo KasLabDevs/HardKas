@@ -38,7 +38,7 @@ export interface LocalnetStatusResult {
 export interface LocalnetControlResult {
   schema: typeof HardkasSchemas.LocalnetControlV1;
   profile: string;
-  status: "SIMULATED_LOCALNET_READY" | "SDK_LOCALNET_CONTROL_UNSUPPORTED";
+  status: "SIMULATED_LOCALNET_READY" | "SIMULATED_LOCALNET_NO_PROCESS" | "SDK_LOCALNET_CONTROL_UNSUPPORTED";
   message: string;
 }
 
@@ -124,12 +124,14 @@ export class HardkasLocalnet {
   async stop(options: LocalnetProfileOptions = {}): Promise<LocalnetControlResult> {
     const profile = options.profile || "simulated";
     if (profile === "simulated") {
-      // In-memory simulation doesn't run background processes, but we could clear the state here if needed
+      // #4: the simulator runs no process, so there is nothing to stop; say so instead of claiming a
+      // stop that never happened. Its state stays on disk (`reset()` clears it).
       return {
         schema: HardkasSchemas.LocalnetControlV1,
         profile,
-        status: "SIMULATED_LOCALNET_READY",
-        message: "Simulated localnet stopped (in-memory state preserved)."
+        status: "SIMULATED_LOCALNET_NO_PROCESS",
+        message:
+          "Nothing was stopped: the simulated localnet runs no process. Its state file is kept; use reset() to clear it."
       };
     }
 

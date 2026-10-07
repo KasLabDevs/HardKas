@@ -246,6 +246,8 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
     rpcUrl = "simulated://local";
   } else {
     mode = execution.mode === "localnet" ? "kaspa-node" : "kaspa-rpc";
+    // RESOURCE-LIFECYCLE-1 (RL-I1/RL-I3): releases the client this planner creates, on success and on every refusal.
+    let release: (() => Promise<void>) | undefined;
     try {
       const { JsonWrpcKaspaClient } = await import("@hardkas/kaspa-rpc");
       const { resolveRuntimeConfig } = await import("@hardkas/node-orchestrator");
@@ -258,6 +260,7 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
       if (!rpcUrl) throw new Error("Could not resolve RPC URL");
 
       const client = new JsonWrpcKaspaClient({ rpcUrl });
+      release = () => client.close();
       const MAX_PLAN_RETRIES = 3;
       let planSuccess = false;
 
@@ -396,8 +399,6 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
         break;
       }
 
-      await client.close();
-
       if (!planSuccess) {
         throw new SelectedUtxoInvalidatedError({
           address: fromAddress,
@@ -434,6 +435,8 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
         errorCode: errCode,
         rawError: ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e))
       });
+    } finally {
+      await release?.();
     }
   }
 

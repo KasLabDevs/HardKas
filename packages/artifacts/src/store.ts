@@ -2,7 +2,8 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { TxPlan, SignedTx, TxReceipt } from "./schemas.js";
 import { calculateContentHash, CURRENT_HASH_VERSION, MIN_HASH_VERSION, readDeclaredHashVersion } from "./canonical.js";
-import { writeFileAtomic, HardkasSchemas } from "@hardkas/core";
+import { HardkasSchemas, stripBom } from "@hardkas/core";
+import { ArtifactStoreMutation } from "./store-mutation.js";
 import { assertSafeFileId, codedError as storeError, schemaFilePrefix } from "./file-id.js";
 import { checkTxObservationCoherence } from "./tx-observation.js";
 import { LineageError } from "./lineage-error.js";
@@ -46,6 +47,40 @@ function resolveStoreId(artifact: any): string {
   return Date.now().toString(36);
 }
 
+/**
+ * Where the store keeps an artifact (its path relative to `.hardkas/artifacts`) and the exact bytes it writes: the one
+ * definition `writeArtifact` uses, shared with anything that must reproduce or recognise those bytes
+ * (SIMULATOR-DURABLE-EXECUTION-1).
+ */
+export function storeEntryFor(artifact: any): { rel: string; content: string } {
+  const id = resolveStoreId(artifact);
+  const prefix = schemaFilePrefix(artifact.schema, 1, "artifact");
+  let subDir = "misc";
+  if (typeof artifact.schema === "string") {
+    const s = artifact.schema.toLowerCase();
+    if (s.includes("txplan")) subDir = "plans";
+    else if (s.includes("signedtx")) subDir = "signed";
+    else if (s.includes("txobservation")) subDir = "observations";
+    else if (s.includes("txreceipt") || s.includes("txsubmission")) subDir = "receipts";
+    else if (s.includes("lineage")) subDir = "lineage";
+  }
+  const filename = `${prefix}-${id}.json`;
+  if (path.basename(filename) !== filename) {
+    throw storeError("PATH_TRAVERSAL", `Artifact file name ${filename} escapes ${subDir}/`);
+  }
+  return { rel: path.join(subDir, filename), content: JSON.stringify(artifact, bigIntReplacer, 2) + "\n" };
+}
+
+/** What publishing an artifact into the store did (EVIDENCE-TRUST-1, write-once). */
+export interface PublishedArtifact {
+  /** The absolute path of the store entry. */
+  path: string;
+  /** The artifact exactly as the store holds it: the earlier copy when the identity was already published. */
+  artifact: any;
+  /** false when nothing was written because the store already held this identity. */
+  written: boolean;
+}
+
 export class ProjectArtifactStore {
   private artifactsDir: string;
   private workspaceRoot: string;
@@ -69,15 +104,24 @@ export class ProjectArtifactStore {
     throw storeError("PATH_TRAVERSAL", `Artifact with ID ${id} is outside the workspace boundary`);
   }
 
-  private async ensureDir(dirPath: string): Promise<void> {
-    try {
-      await fs.mkdir(dirPath, { recursive: true });
-    } catch (e) {}
+  /** Publishes an artifact (see `publishArtifact`) and returns the path of its store entry. */
+  async writeArtifact(artifact: any): Promise<string> {
+    return (await this.publishArtifact(artifact)).path;
   }
 
-  async writeArtifact(artifact: any): Promise<string> {
+  /**
+   * EVIDENCE-TRUST-1 (ET-C1): a published evidence identity is write-once.
+   * - No entry for the identity → the artifact is written (atomically, through the store's gate).
+   * - The entry holds a copy that verifies as this same identity → it is kept byte for byte and returned: the durable
+   *   copy is the authority for the fields outside the identity (createdAt, hardkasVersion, …), as for state snapshots.
+   * - Anything else (not JSON, a copy that does not verify — tampered —, another identity, or other bytes for an
+   *   artifact without contentHash) → ARTIFACT_IDENTITY_CONFLICT, and not a byte is touched: a second write never
+   *   "repairs" evidence that was changed.
+   * The check and the write happen in one holding of the store, so no cooperative writer comes in between.
+   */
+  async publishArtifact(artifact: any): Promise<PublishedArtifact> {
     // Identifier safety first (path traversal is refused before anything else).
-    const id = resolveStoreId(artifact);
+    resolveStoreId(artifact);
     // IC-1′.3–4 / N3: the store never completes or reshapes an artifact. It must
     // declare the hash version it was hashed with, and its body must still hash
     // to the identity it claims.
@@ -97,30 +141,46 @@ export class ProjectArtifactStore {
         );
       }
     }
-    const prefix = schemaFilePrefix(artifact.schema, 1, "artifact");
-    let subDir = "misc";
-    if (typeof artifact.schema === "string") {
-      const s = artifact.schema.toLowerCase();
-      if (s.includes("txplan")) subDir = "plans";
-      else if (s.includes("signedtx")) subDir = "signed";
-      else if (s.includes("txobservation")) subDir = "observations";
-      else if (s.includes("txreceipt") || s.includes("txsubmission")) subDir = "receipts";
-      else if (s.includes("lineage")) subDir = "lineage";
-    }
+    const { rel, content } = storeEntryFor(artifact);
+    const targetPath = path.join(this.artifactsDir, rel);
+    const identity =
+      typeof artifact?.contentHash === "string" && artifact.contentHash.length > 0 ? (artifact.contentHash as string) : undefined;
 
-    const dirPath = path.join(this.artifactsDir, subDir);
-    await this.ensureDir(dirPath);
-
-    const filename = `${prefix}-${id}.json`;
-    const targetPath = path.join(dirPath, filename);
-    if (path.dirname(targetPath) !== dirPath) {
-      throw storeError("PATH_TRAVERSAL", `Artifact file name ${filename} escapes ${dirPath}`);
-    }
-
-    const content = JSON.stringify(artifact, bigIntReplacer, 2) + "\n";
-    await writeFileAtomic(targetPath, content);
-    
-    return targetPath;
+    // ARTIFACT-MUTATION-1: the canonical write goes through the store's single mutation gate (artifacts lock)
+    const gate = new ArtifactStoreMutation(this.workspaceRoot);
+    return await gate.hold(async (): Promise<PublishedArtifact> => {
+      let existing: string;
+      try {
+        existing = await fs.readFile(targetPath, "utf-8");
+      } catch (e: any) {
+        if (e?.code !== "ENOENT") throw e;
+        await gate.writeFile(rel, content);
+        return { path: targetPath, artifact, written: true };
+      }
+      if (existing === content) return { path: targetPath, artifact, written: false };
+      const conflict = (what: string) =>
+        storeError(
+          "ARTIFACT_IDENTITY_CONFLICT",
+          `${rel.replace(/\\/g, "/")} already holds ${what}; it was left exactly as it is and nothing was written`
+        );
+      let found: any;
+      try {
+        found = JSON.parse(stripBom(existing));
+      } catch {
+        throw conflict("content that is not JSON");
+      }
+      if (!identity) throw conflict("other bytes (this artifact has no contentHash, so only identical bytes are the same artifact)");
+      let check: ReturnType<typeof checkArtifactIdentity>;
+      try {
+        check = checkArtifactIdentity(found);
+      } catch {
+        check = { ok: false, issues: [{ code: "NOT_CANONICALIZABLE", severity: "error", message: "not canonicalizable" }] };
+      }
+      if (!check.ok) throw conflict(`a copy that does not verify (${check.issues.map((i) => i.code).join(", ")})`);
+      if (check.artifactId !== identity) throw conflict(`another artifact (${check.artifactId})`);
+      // The same identity, published before: the stored copy is the evidence and is what the caller gets back.
+      return { path: targetPath, artifact: found, written: false };
+    }, "artifact publication");
   }
 
   /**

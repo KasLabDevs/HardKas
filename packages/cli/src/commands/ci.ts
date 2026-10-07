@@ -1,9 +1,9 @@
 import { Command } from "commander";
 import { UI } from "../ui.js";
 import { runDoctorChecks } from "./doctor.js";
-import { HardkasStore } from "@hardkas/query-store";
 import fs from "fs";
 import path from "path";
+import { invocationWorkspaceRoot } from "../workspace-root.js";
 
 export function registerCiCommand(program: Command) {
   const ciCmd = program
@@ -19,7 +19,8 @@ export function registerCiCommand(program: Command) {
       try {
         UI.header("CI Workspace Verification");
 
-        const root = process.cwd();
+        // WORKSPACE-AUTHORITY-1 (WA-I0): the invocation's one root
+        const root = invocationWorkspaceRoot();
         const hardkasDir = path.join(root, ".hardkas");
         const artifactsDir = path.join(hardkasDir, "artifacts");
 
@@ -45,39 +46,34 @@ export function registerCiCommand(program: Command) {
         if (!fs.existsSync(artifactsDir)) {
           UI.warning("No artifacts directory found. Skipping lattice scan.");
         } else {
-          const files = fs.readdirSync(artifactsDir).filter((f) => f.endsWith(".json"));
-          const ids = new Set<string>();
-          let duplicates = 0;
-          for (const f of files) {
-            const id = f.replace(".json", "");
-            if (ids.has(id)) {
-              duplicates++;
-              hasErrors = true;
-              UI.error(`Duplicate or malformed artifact ID detected: ${id}`);
-            }
-            ids.add(id);
-          }
-          if (duplicates === 0) {
-            UI.success(`Scanned ${files.length} artifacts cleanly.`);
+          // WORKSPACE-AUTHORITY-1 (C1): the artifact store the resolver reads (all its canonical subdirectories), counted
+          // as distinct identities; its files are counted apart.
+          const { countWorkspaceArtifactsSync } = await import("@hardkas/artifacts");
+          const counts = countWorkspaceArtifactsSync(root);
+          if (counts.unverified === 0) {
+            UI.success(`Scanned ${counts.artifacts} artifacts cleanly (${counts.entries} store files).`);
+          } else {
+            UI.warning(
+              `Scanned ${counts.artifacts} artifacts (${counts.entries} store files); ${counts.unverified} store file(s) do not verify as an artifact identity. Run 'hardkas verify' for details.`
+            );
           }
         }
 
-        // 3. Projection consistency
+        // 3. Projection consistency · WORKSPACE-AUTHORITY-1: the projection is observed, never created or opened for
+        // writing (WA-I3), and reported fresh only when proven built from the workspace's current state (WA-I2). A stale
+        // projection is not corruption — the query commands read the workspace instead — so it warns; an unreadable one fails.
         UI.step(3, "Verifying projection index...");
-        if (!fs.existsSync(hardkasDir)) {
-          UI.warning("No projection database found. Skipping projection checks.");
+        const { readProjectionStatus } = await import("@hardkas/query-store");
+        const projection = readProjectionStatus(root, path.join(hardkasDir, "store.db"));
+        if (projection.state === "absent") {
+          UI.warning("No projection database found (the query commands read the workspace). Skipping projection checks.");
+        } else if (projection.state === "fresh") {
+          UI.success("Projection is fresh: built from the workspace's current artifacts and event ledger.");
+        } else if (projection.state === "stale") {
+          UI.warning(`Projection is stale (${projection.reason}); the query commands read the workspace. Run 'hardkas query store rebuild'.`);
         } else {
-          try {
-            const store = new HardkasStore({ dbPath: path.join(hardkasDir, "store.db") });
-            store.connect();
-            const { SqliteQueryBackend } = await import("@hardkas/query-store");
-            const backend = new SqliteQueryBackend(store);
-            const projectionOk = !!backend; // Just a dummy check, HardkasStore connects cleanly
-            UI.success(`Projection database is healthy and reachable.`);
-          } catch (e: unknown) {
-            UI.error(`Projection index is degraded or corrupted: ${((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e))}`);
-            hasErrors = true;
-          }
+          UI.error(`Projection index is unreadable: ${projection.reason}`);
+          hasErrors = true;
         }
 
         UI.emptyLine();

@@ -6,7 +6,7 @@ import {
 import { resolveHardkasAccount, HardkasAccount } from "@hardkas/accounts";
 import { ExternalHardkasSigner } from "@hardkas/artifacts";
 import { JsonWrpcKaspaClient, KaspaRpcClient } from "@hardkas/kaspa-rpc";
-import { NetworkId, HardkasError, getCoinbaseMaturity } from "@hardkas/core";
+import { NetworkId, HardkasError, getCoinbaseMaturity, nodeRpcUrl } from "@hardkas/core";
 import { assertPublicNetworkAllowed } from "./policy.js";
 import { HardkasAccounts } from "./accounts.js";
 import { HardkasTx } from "./tx.js";
@@ -47,7 +47,8 @@ export { HardkasReplay } from "./replay.js";
 export { HardkasLineage } from "./lineage.js";
 export { HardkasWorkspace } from "./workspace.js";
 export { HardkasArtifactsManager } from "./artifacts-manager.js";
-export { HardkasCapabilitiesApi, createHardkasCapabilities } from "./capabilities.js";
+export { HardkasCapabilitiesApi, createHardkasCapabilities, probeSilverReadiness } from "./capabilities.js";
+export type { SilverReadiness, ReadinessCheck } from "./capabilities.js";
 export { HardkasCorpus, verifyToccataCorpus } from "./corpus.js";
 export { HardkasSilver } from "./silver.js";
 export {
@@ -201,10 +202,18 @@ export class Hardkas {
 
   public readonly rpc: KaspaRpcClient;
 
+  /**
+   * RESOURCE-LIFECYCLE-1 (RL-I1/RL-I2): the RPC client this instance owns, and so releases in close(). Marked when it
+   * is created, never inferred from a type or a state: the default client the constructor creates, or the one open()
+   * created for it. A client handed in from outside, or assigned to `rpc` later, is never this instance's.
+   */
+  private readonly ownedRpc: KaspaRpcClient | undefined;
+
   private constructor(
     public readonly config: LoadedConfig,
     options?: HardkasOptions,
-    rpc?: KaspaRpcClient
+    rpc?: KaspaRpcClient,
+    rpcOwnership: "owned" | "borrowed" = "borrowed"
   ) {
     this.mode = options?.mode || "developer";
     this.policy = {
@@ -216,11 +225,15 @@ export class Hardkas {
     };
 
     // Default to the standard client if none provided
-    this.rpc =
-      rpc ||
-      new JsonWrpcKaspaClient({
+    if (rpc) {
+      this.rpc = rpc;
+      this.ownedRpc = rpcOwnership === "owned" ? rpc : undefined;
+    } else {
+      this.rpc = new JsonWrpcKaspaClient({
         rpcUrl: this.resolveRpcUrl()
       });
+      this.ownedRpc = this.rpc;
+    }
 
     this.workspace = new HardkasWorkspace(this.config.cwd, options?.hardkasDir);
     this.artifacts = new HardkasArtifactsManager(this);
@@ -251,7 +264,8 @@ export class Hardkas {
     if (target && "rpcUrl" in target && typeof target.rpcUrl === "string") {
       return target.rpcUrl;
     }
-    return "ws://127.0.0.1:18210";
+    // CANONICAL-RPC-URL: the canonical localnet endpoint from @hardkas/core, never a copy.
+    return nodeRpcUrl();
   }
 
   /**
@@ -277,7 +291,11 @@ export class Hardkas {
     }
 
     const fs = await import("node:fs");
-    const hardkasDir = options.hardkasDir || path.join(cwd, ".hardkas");
+    // WORKSPACE-AUTHORITY-1 (WA-I0): the workspace is the one the config walk found (`loaded.cwd`, the directory of the
+    // nearest hardkas.config.*, else `cwd`). Its bootstrap and its simulated provider live there too, never in the
+    // unwalked `cwd` a command happened to run from.
+    const root = loaded.cwd;
+    const hardkasDir = options.hardkasDir || path.join(root, ".hardkas");
 
     if (autoBootstrap) {
       if (!isSimulated) {
@@ -296,7 +314,7 @@ export class Hardkas {
         try {
           const { loadOrCreateLocalnetState } = await import("@hardkas/localnet");
           await loadOrCreateLocalnetState({
-            cwd,
+            cwd: root,
             ...(options.hardkasDir ? { hardkasDir: options.hardkasDir } : {})
           });
 
@@ -323,12 +341,29 @@ export class Hardkas {
     let provider: KaspaRpcClient | undefined;
     if (isSimulated) {
       const { LocalnetSimulatedProvider } = await import("@hardkas/localnet");
-      provider = new LocalnetSimulatedProvider(cwd);
+      provider = new LocalnetSimulatedProvider(root);
     }
 
-    const hk = new Hardkas(loaded, options, provider);
+    // open() created the simulated provider for this instance: the instance owns it.
+    const hk = new Hardkas(loaded, options, provider, "owned");
     hk.plugins.loadPlugins();
     return hk;
+  }
+
+  /**
+   * Releases what this instance created (its own RPC client), so a process that is done with the SDK can end by
+   * itself. Never a client it was given, or one assigned to `rpc` afterwards: that one is its caller's. Idempotent; it
+   * never throws, so it fits a `finally`. A later call that needs the node opens a new connection, which a later
+   * close() releases.
+   */
+  async close(): Promise<void> {
+    const own = this.ownedRpc;
+    if (!own) return;
+    try {
+      await own.close();
+    } catch {
+      // nothing left to release
+    }
   }
 
   /**

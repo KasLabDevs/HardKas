@@ -13,7 +13,6 @@ The CLI is organized into strict functional domains.
 
 - [hardkas accounts](./accounts.md)
 - [hardkas artifact](./artifact.md)
-- [hardkas capabilities](./capabilities.md)
 - [hardkas chaos](./chaos.md)
 - [hardkas ci](./ci.md)
 - [hardkas config](./config.md)
@@ -45,7 +44,6 @@ The CLI is organized into strict functional domains.
 - [hardkas run](./run.md)
 - [hardkas sandbox](./sandbox.md)
 - [hardkas security](./security.md)
-- [hardkas session](./session.md)
 - [hardkas silver](./silver.md)
 - [hardkas simulator](./simulator.md)
 - [hardkas status](./status.md)

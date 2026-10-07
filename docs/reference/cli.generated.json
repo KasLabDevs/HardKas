@@ -1,7 +1,7 @@
 {
   "schema": "hardkas.cliReference.v1",
   "generatedAt": "deterministic",
-  "totalCommands": 233,
+  "totalCommands": 224,
   "flatSurface": [
     "hardkas accounts",
     "hardkas accounts balance",
@@ -22,7 +22,6 @@
     "hardkas artifact lineage",
     "hardkas artifact migrate",
     "hardkas artifact verify",
-    "hardkas capabilities",
     "hardkas chaos",
     "hardkas chaos replay",
     "hardkas ci",
@@ -169,11 +168,6 @@
     "hardkas sandbox",
     "hardkas security",
     "hardkas security audit",
-    "hardkas session",
-    "hardkas session create",
-    "hardkas session list",
-    "hardkas session status",
-    "hardkas session use",
     "hardkas silver",
     "hardkas silver compile",
     "hardkas silver covenant",
@@ -212,7 +206,6 @@
     "hardkas tx send",
     "hardkas tx sign",
     "hardkas tx status",
-    "hardkas tx trace",
     "hardkas tx verify",
     "hardkas tx wait",
     "hardkas up",
@@ -224,10 +217,8 @@
     "hardkas vprogs status",
     "hardkas why",
     "hardkas workflow",
-    "hardkas workflow create",
     "hardkas workflow diff",
     "hardkas workflow inspect",
-    "hardkas workflow replay",
     "hardkas workflow run",
     "hardkas zk",
     "hardkas zk capabilities",
@@ -262,8 +253,8 @@
           "options": [
             {
               "flags": "--network <name>",
-              "description": "Kaspa network name",
-              "default": "simnet",
+              "description": "Kaspa network name (default: the workspace's default target)",
+              "default": null,
               "required": true,
               "mandatory": false
             },
@@ -1010,24 +1001,6 @@
       ]
     },
     {
-      "path": "hardkas capabilities",
-      "name": "capabilities",
-      "aliases": [],
-      "description": "Show HardKAS capabilities and maturity level",
-      "usage": "hardkas capabilities [options]",
-      "arguments": [],
-      "options": [
-        {
-          "flags": "--json",
-          "description": "Output as stable JSON schema",
-          "default": false,
-          "required": false,
-          "mandatory": false
-        }
-      ],
-      "subcommands": []
-    },
-    {
       "path": "hardkas chaos",
       "name": "chaos",
       "aliases": [],
@@ -1577,7 +1550,7 @@
             },
             {
               "flags": "--json",
-              "description": "Not implemented yet: no JSON is printed",
+              "description": "Output as JSON",
               "default": false,
               "required": false,
               "mandatory": false
@@ -1591,7 +1564,7 @@
       "path": "hardkas dev",
       "name": "dev",
       "aliases": [],
-      "description": "Local development and Igra-native environment tools",
+      "description": "Local development tools: dev environment, dApp templates, simnet dev accounts (`dev doctor` is an Igra L2 lab check)",
       "usage": "hardkas dev [options] [command]",
       "arguments": [],
       "options": [
@@ -1624,11 +1597,11 @@
               "path": "hardkas dev accounts export",
               "name": "export",
               "aliases": [],
-              "description": "Export dev account in format suitable for Kasware manual import",
-              "usage": "hardkas dev accounts export [options] <kasware>",
+              "description": "Export a dev account for a wallet's manual import; format: kasware",
+              "usage": "hardkas dev accounts export [options] <format>",
               "arguments": [
                 {
-                  "name": "kasware",
+                  "name": "format",
                   "description": ""
                 }
               ],
@@ -1689,7 +1662,7 @@
           "path": "hardkas dev doctor",
           "name": "doctor",
           "aliases": [],
-          "description": "Check local dev readiness for an L2 profile (Igra by default): workspace, artifacts, query store, SDK import, dev server and the L2 JSON-RPC; the Kaspa node is not checked stable",
+          "description": "Igra L2 lab, not the L1 core: check local dev readiness for an L2 profile (Igra by default): workspace, artifacts, query store, SDK import, dev server and the L2 JSON-RPC; the Kaspa node is not checked experimental",
           "usage": "hardkas dev doctor [options]",
           "arguments": [],
           "options": [
@@ -1795,27 +1768,27 @@
           "path": "hardkas dev last",
           "name": "last",
           "aliases": [],
-          "description": "Interact with the latest local workflow",
+          "description": "Act on the latest transaction artifact of the workspace store",
           "usage": "hardkas dev last [options]",
           "arguments": [],
           "options": [
             {
               "flags": "--inspect",
-              "description": "Inspect the latest artifact",
+              "description": "Print the latest artifact",
               "default": false,
               "required": false,
               "mandatory": false
             },
             {
               "flags": "--replay",
-              "description": "Replay the latest workflow",
+              "description": "Show the latest receipt, or verify the latest plan or signed transaction (no replay is run)",
               "default": false,
               "required": false,
               "mandatory": false
             },
             {
               "flags": "--explain",
-              "description": "Explain the latest workflow",
+              "description": "Print the `hardkas why` command for the latest artifact",
               "default": false,
               "required": false,
               "mandatory": false
@@ -1978,10 +1951,18 @@
           "path": "hardkas env check",
           "name": "check",
           "aliases": [],
-          "description": "Validate the .env file against known HardKAS production variables",
+          "description": "Check the HARDKAS_* environment variables (process and .env): the ones HardKAS honours, and any it does not know",
           "usage": "hardkas env check [options]",
           "arguments": [],
-          "options": [],
+          "options": [
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
           "subcommands": []
         }
       ]
@@ -2415,7 +2396,7 @@
           "path": "hardkas local wizard",
           "name": "wizard",
           "aliases": [],
-          "description": "Guided Igra L2 (EVM) check: JSON-RPC, EVM account and its balance; not a Kaspa L1 setup stable",
+          "description": "Guided Igra L2 (EVM) check, an L2 lab: JSON-RPC, EVM account and its balance; not a Kaspa L1 setup experimental",
           "usage": "hardkas local wizard [options]",
           "arguments": [],
           "options": [
@@ -2577,7 +2558,14 @@
             },
             {
               "flags": "--keep-miner",
-              "description": "Leave the companion miner running",
+              "description": "Keep mining to the funded account after funding (its balance keeps growing)",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            },
+            {
+              "flags": "--stop-miner",
+              "description": "Leave the chain stopped after funding: no new blocks until you mine again",
               "default": false,
               "required": false,
               "mandatory": false
@@ -2635,7 +2623,7 @@
               "path": "hardkas localnet snapshot replay",
               "name": "replay",
               "aliases": [],
-              "description": "Replay and rebuild deterministic state from a snapshot alpha",
+              "description": "Restore a snapshot's missing artifacts into the workspace; never removes or overwrites one alpha",
               "usage": "hardkas localnet snapshot replay [options] <name>",
               "arguments": [
                 {
@@ -2740,14 +2728,14 @@
           "path": "hardkas localnet stop",
           "name": "stop",
           "aliases": [],
-          "description": "Stop localnet profile alpha",
+          "description": "Stop the Docker rusty-kaspad node of the toccata-v2 profile and its miner; needs Docker alpha",
           "usage": "hardkas localnet stop [options]",
           "arguments": [],
           "options": [
             {
               "flags": "--profile <name>",
-              "description": "Localnet profile",
-              "default": "simulated",
+              "description": "Localnet profile: toccata-v2 (the only one)",
+              "default": "toccata-v2",
               "required": true,
               "mandatory": false
             },
@@ -3266,7 +3254,7 @@
       "path": "hardkas pskt",
       "name": "pskt",
       "aliases": [],
-      "description": "Portable Signing Sessions (PSKT) offline coordination",
+      "description": "Portable Signing Sessions (PSKT): unavailable in this build. No adapter implements PSKT operations, so export, import, sign, merge, finalize and extract refuse",
       "usage": "hardkas pskt [options] [command]",
       "arguments": [],
       "options": [],
@@ -3300,7 +3288,7 @@
           "path": "hardkas pskt export",
           "name": "export",
           "aliases": [],
-          "description": "Export a TxPlan as a Portable Signing Session alpha",
+          "description": "Export a TxPlan as a Portable Signing Session unavailable",
           "usage": "hardkas pskt export [options]",
           "arguments": [],
           "options": [
@@ -3346,7 +3334,7 @@
           "path": "hardkas pskt extract",
           "name": "extract",
           "aliases": [],
-          "description": "Extract KaspaRpcTransaction from a finalized PSKT session alpha",
+          "description": "Extract KaspaRpcTransaction from a finalized PSKT session unavailable",
           "usage": "hardkas pskt extract [options] <sessionPath>",
           "arguments": [
             {
@@ -3383,7 +3371,7 @@
           "path": "hardkas pskt finalize",
           "name": "finalize",
           "aliases": [],
-          "description": "Finalize a PSKT session alpha",
+          "description": "Finalize a PSKT session unavailable",
           "usage": "hardkas pskt finalize [options] <sessionPath>",
           "arguments": [
             {
@@ -3420,7 +3408,7 @@
           "path": "hardkas pskt import",
           "name": "import",
           "aliases": [],
-          "description": "Import a raw payload into a PSKT session alpha",
+          "description": "Import a raw payload into a PSKT session unavailable",
           "usage": "hardkas pskt import [options]",
           "arguments": [],
           "options": [
@@ -3466,7 +3454,7 @@
           "path": "hardkas pskt inspect",
           "name": "inspect",
           "aliases": [],
-          "description": "Inspect a PSKT session payload and metadata alpha",
+          "description": "Show a PSKT session file's metadata. It does not decode the payload: no inputs, outputs, amounts or recipients, so it is no pre-signing check alpha",
           "usage": "hardkas pskt inspect [options] <sessionPath>",
           "arguments": [
             {
@@ -3489,7 +3477,7 @@
           "path": "hardkas pskt merge",
           "name": "merge",
           "aliases": [],
-          "description": "Merge two PSKT sessions alpha",
+          "description": "Merge two PSKT sessions unavailable",
           "usage": "hardkas pskt merge [options] <sessionA> <sessionB>",
           "arguments": [
             {
@@ -3530,7 +3518,7 @@
           "path": "hardkas pskt sign",
           "name": "sign",
           "aliases": [],
-          "description": "Sign a PSKT session payload alpha",
+          "description": "Sign a PSKT session payload unavailable",
           "usage": "hardkas pskt sign [options] <sessionPath>",
           "arguments": [
             {
@@ -4313,7 +4301,7 @@
               "options": [
                 {
                   "flags": "--backend <type>",
-                  "description": "sqlite creates .hardkas/store.db; filesystem indexes nothing (default: sqlite only if store.db already exists)",
+                  "description": "sqlite (the default) builds .hardkas/store.db from the workspace; filesystem keeps no index, so it has nothing to rebuild",
                   "default": null,
                   "required": true,
                   "mandatory": false
@@ -4392,7 +4380,7 @@
               "aliases": [
                 "index"
               ],
-              "description": "Index new artifacts into the SQLite query store (needs .hardkas/store.db: run 'query store rebuild --backend sqlite' first)",
+              "description": "Index new artifacts into the SQLite query store (needs .hardkas/store.db: run 'query store rebuild' first)",
               "usage": "hardkas query store sync [options]",
               "arguments": [],
               "options": [
@@ -4836,7 +4824,7 @@
       "options": [
         {
           "flags": "--with-node",
-          "description": "Start a simulated Kaspa node in the background with mining",
+          "description": "Not supported: the sandbox starts no node (refuses with SANDBOX_WITH_NODE_UNSUPPORTED)",
           "default": null,
           "required": false,
           "mandatory": false
@@ -4894,113 +4882,6 @@
               "description": "Extra path to include in search",
               "default": null,
               "required": true,
-              "mandatory": false
-            }
-          ],
-          "subcommands": []
-        }
-      ]
-    },
-    {
-      "path": "hardkas session",
-      "name": "session",
-      "aliases": [],
-      "description": "L1/L2 developer identity linkage and sessions",
-      "usage": "hardkas session [options] [command]",
-      "arguments": [],
-      "options": [],
-      "subcommands": [
-        {
-          "path": "hardkas session create",
-          "name": "create",
-          "aliases": [],
-          "description": "Create a new L1/L2 session linkage alpha",
-          "usage": "hardkas session create [options] <name>",
-          "arguments": [
-            {
-              "name": "name",
-              "description": ""
-            }
-          ],
-          "options": [
-            {
-              "flags": "--l1 <wallet>",
-              "description": "HardKAS account name or Kaspa address",
-              "default": null,
-              "required": true,
-              "mandatory": true
-            },
-            {
-              "flags": "--l2 <account>",
-              "description": "Account name, Kaspa address or 0x EVM address (an account name stores its Kaspa address)",
-              "default": null,
-              "required": true,
-              "mandatory": true
-            },
-            {
-              "flags": "--json",
-              "description": "Not implemented yet: the output is text only",
-              "default": false,
-              "required": false,
-              "mandatory": false
-            }
-          ],
-          "subcommands": []
-        },
-        {
-          "path": "hardkas session list",
-          "name": "list",
-          "aliases": [],
-          "description": "List all configured sessions alpha",
-          "usage": "hardkas session list [options]",
-          "arguments": [],
-          "options": [
-            {
-              "flags": "--json",
-              "description": "Output results as JSON",
-              "default": false,
-              "required": false,
-              "mandatory": false
-            }
-          ],
-          "subcommands": []
-        },
-        {
-          "path": "hardkas session status",
-          "name": "status",
-          "aliases": [],
-          "description": "Show active session linkage alpha",
-          "usage": "hardkas session status [options]",
-          "arguments": [],
-          "options": [
-            {
-              "flags": "--json",
-              "description": "Output results as JSON",
-              "default": false,
-              "required": false,
-              "mandatory": false
-            }
-          ],
-          "subcommands": []
-        },
-        {
-          "path": "hardkas session use",
-          "name": "use",
-          "aliases": [],
-          "description": "Set the active session alpha",
-          "usage": "hardkas session use [options] <name>",
-          "arguments": [
-            {
-              "name": "name",
-              "description": ""
-            }
-          ],
-          "options": [
-            {
-              "flags": "--json",
-              "description": "Output results as JSON",
-              "default": false,
-              "required": false,
               "mandatory": false
             }
           ],
@@ -6094,14 +5975,14 @@
             },
             {
               "flags": "--wait-lock",
-              "description": "Wait for workspace lock if held",
+              "description": "No effect, kept for compatibility: the command takes no lock of its own, and each store write waits for the store (up to 30 s)",
               "default": false,
               "required": false,
               "mandatory": false
             },
             {
               "flags": "--lock-timeout <ms>",
-              "description": "Lock wait timeout in ms",
+              "description": "No effect, kept for compatibility (see --wait-lock)",
               "default": "30000",
               "required": true,
               "mandatory": false
@@ -6240,14 +6121,14 @@
             },
             {
               "flags": "--wait-lock",
-              "description": "Wait for workspace lock if held",
+              "description": "No effect, kept for compatibility: the command takes no lock of its own, and each store write waits for the store (up to 30 s)",
               "default": false,
               "required": false,
               "mandatory": false
             },
             {
               "flags": "--lock-timeout <ms>",
-              "description": "Lock wait timeout in ms",
+              "description": "No effect, kept for compatibility (see --wait-lock)",
               "default": "30000",
               "required": true,
               "mandatory": false
@@ -6339,15 +6220,29 @@
               "mandatory": false
             },
             {
+              "flags": "--password-env <env>",
+              "description": "Read the encrypted account's keystore password from this environment variable",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--password-stdin",
+              "description": "Read the encrypted account's keystore password from stdin",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            },
+            {
               "flags": "--wait-lock",
-              "description": "Wait for workspace lock if held",
+              "description": "No effect, kept for compatibility: the command takes no lock of its own, and each store write waits for the store (up to 30 s)",
               "default": false,
               "required": false,
               "mandatory": false
             },
             {
               "flags": "--lock-timeout <ms>",
-              "description": "Lock wait timeout in ms",
+              "description": "No effect, kept for compatibility (see --wait-lock)",
               "default": "30000",
               "required": true,
               "mandatory": false
@@ -6397,21 +6292,6 @@
               "mandatory": false
             }
           ],
-          "subcommands": []
-        },
-        {
-          "path": "hardkas tx trace",
-          "name": "trace",
-          "aliases": [],
-          "description": "Reconstruct the full operational trace of a transaction research",
-          "usage": "hardkas tx trace [options] <txId>",
-          "arguments": [
-            {
-              "name": "txId",
-              "description": ""
-            }
-          ],
-          "options": [],
           "subcommands": []
         },
         {
@@ -6701,50 +6581,6 @@
       "options": [],
       "subcommands": [
         {
-          "path": "hardkas workflow create",
-          "name": "create",
-          "aliases": [],
-          "description": "Create a deterministic workflow from a template",
-          "usage": "hardkas workflow create [options] <name>",
-          "arguments": [
-            {
-              "name": "name",
-              "description": ""
-            }
-          ],
-          "options": [
-            {
-              "flags": "--template <name>",
-              "description": "Embedded template name",
-              "default": null,
-              "required": true,
-              "mandatory": false
-            },
-            {
-              "flags": "--out <path>",
-              "description": "Output artifact file path",
-              "default": null,
-              "required": true,
-              "mandatory": false
-            },
-            {
-              "flags": "--json",
-              "description": "Output the final workflow artifact as JSON",
-              "default": false,
-              "required": false,
-              "mandatory": false
-            },
-            {
-              "flags": "--workspace <path>",
-              "description": "Override workspace root directory",
-              "default": null,
-              "required": true,
-              "mandatory": false
-            }
-          ],
-          "subcommands": []
-        },
-        {
           "path": "hardkas workflow diff",
           "name": "diff",
           "aliases": [],
@@ -6784,21 +6620,6 @@
               "mandatory": false
             }
           ],
-          "subcommands": []
-        },
-        {
-          "path": "hardkas workflow replay",
-          "name": "replay",
-          "aliases": [],
-          "description": "Deterministically replay and verify a workflow's lineage",
-          "usage": "hardkas workflow replay [options] <id>",
-          "arguments": [
-            {
-              "name": "id",
-              "description": ""
-            }
-          ],
-          "options": [],
           "subcommands": []
         },
         {

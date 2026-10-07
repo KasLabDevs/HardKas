@@ -1,0 +1,15 @@
+﻿
+> hardkas-monorepo@0.12.0-rc.26 docs:check-claims C:\Users\jrodr\Documents\kaslabdevs\GitHub\HardKas-repo
+> node scripts/generate-claims-docs.mjs --check
+
+node.exe : [claims] Generated claim docs are out of date:
+En C:\Users\jrodr\AppData\Roaming\npm\pnpm.ps1: 24 Carácter: 5
++     & "node$exe"  "$basedir/node_modules/pnpm/bin/pnpm.mjs" $args
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([claims] Genera...re out of date::String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+         docs\status\claims.generated.md
+         docs\status\claims.generated.json
+[claims] Run 'pnpm docs:generate-claims' and commit the result.
+ ELIFECYCLE  Command failed with exit code 1.

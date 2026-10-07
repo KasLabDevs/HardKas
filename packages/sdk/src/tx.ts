@@ -1,4 +1,12 @@
-import { systemRuntimeContext, deterministicCompare, getCoinbaseMaturity, HardkasError } from "@hardkas/core";
+import {
+  systemRuntimeContext,
+  deterministicCompare,
+  getCoinbaseMaturity,
+  HardkasError,
+  stripBom,
+  redactUrlCredentials,
+  redactUrlCredentialsInText
+} from "@hardkas/core";
 import { pollCondition } from "./waiters.js";
 import { Hardkas } from "./index.js";
 import {
@@ -43,6 +51,13 @@ import {
 import { parseKasToSompi, type NetworkId } from "@hardkas/core";
 import { TxPlanService, type UtxoProvider } from "@hardkas/tx-builder";
 import { HardkasSchemas } from "@hardkas/artifacts";
+
+/** An artifact's identity: its declared 64-hex contentHash, or the hash of its body when it declares none. */
+function artifactIdentity(artifact: any): string {
+  return typeof artifact?.contentHash === "string" && /^[0-9a-f]{64}$/.test(artifact.contentHash)
+    ? artifact.contentHash
+    : calculateContentHash(artifact, CURRENT_HASH_VERSION);
+}
 
 function normalizeSimulatedPlanInput(target: any, fallbackId: string): TxPlanArtifact {
   if (target.schema === ARTIFACT_SCHEMAS.TX_PLAN && Array.isArray(target.inputs)) {
@@ -101,6 +116,11 @@ export interface SignTxOptions {
    * its recomputed identity is the artifact's `lineage.parentArtifactId`.
    */
   plan?: TxPlanArtifact;
+  /**
+   * The password of the signing account's encrypted keystore. Kept in memory for this call only:
+   * never stored, logged or written into any artifact. A development account needs none.
+   */
+  keystorePassword?: string;
 }
 
 /**
@@ -111,6 +131,8 @@ export interface LegacySignTxOptions {
   threshold?: number;
   requiredSigners?: string[];
   authorizers?: any;
+  /** See SignTxOptions.keystorePassword. */
+  keystorePassword?: string;
 }
 
 function isSignTxOptions(value: unknown): value is SignTxOptions {
@@ -119,7 +141,8 @@ function isSignTxOptions(value: unknown): value is SignTxOptions {
     value !== null &&
     ("authorizers" in value ||
       "account" in value ||
-      "requiredSigners" in value)
+      "requiredSigners" in value ||
+      "keystorePassword" in value)
   );
 }
 
@@ -146,23 +169,35 @@ export class HardkasTx {
     const store = new ProjectArtifactStore(this.sdk.workspace.root);
     const submission = await this.findSubmissionForTxId(txId);
     const previous = store.listObservationsByTxId(txId).observations as any[];
-    previous.sort((a, b) => (BigInt(a.point.sinkBlueScore) < BigInt(b.point.sinkBlueScore) ? -1 : 1));
+    // The same order deriveTxStatus reads a history in: point, then time, then id (two looks at one
+    // sink are not interchangeable — the later one holds the cursor).
+    previous.sort((a, b) => {
+      const pa = BigInt(a.point.sinkBlueScore);
+      const pb = BigInt(b.point.sinkBlueScore);
+      if (pa !== pb) return pa < pb ? -1 : 1;
+      if (a.observedAt !== b.observedAt) return a.observedAt < b.observedAt ? -1 : 1;
+      return a.contentHash < b.contentHash ? -1 : a.contentHash > b.contentHash ? 1 : 0;
+    });
     const latest = previous[previous.length - 1];
     // The block currently established as accepting (none after a REORGED derivation).
     const soFar = deriveTxStatus({ txId, ...(submission ? { submission } : {}), observations: previous });
     const currentAccepting =
       soFar.status === "ACCEPTED" || soFar.status === "CONFIRMED" || soFar.status === "FINALIZED" ? soFar.acceptingBlockHash : undefined;
-    // Cursor: an explicit `since`, else where the last scan stopped, else the last
-    // observation point, else the submit point; the observer falls back to the pruning point.
+    // Cursor: an explicit `since`, else where the last scan stopped, else — after the accepting
+    // block left the chain — that block (the node answers from the common ancestor, so a later
+    // re-acceptance anywhere on the new chain stays reachable; the removal look's sink could
+    // already be past it), else the last observation point, else the submit point; the observer
+    // falls back to the pruning point.
     const since =
       options.since ??
       (latest?.finding?.type === "not_found" && typeof latest.finding.scannedTo === "string" ? (latest.finding.scannedTo as string) : undefined) ??
+      (latest?.finding?.type === "chain_removed" && typeof latest.finding.acceptingBlockHash === "string" ? (latest.finding.acceptingBlockHash as string) : undefined) ??
       (latest?.point?.sinkHash as string | undefined) ??
       ((submission as any)?.submitPoint?.sinkHash as string | undefined);
     const networkId = ((submission as any)?.networkId ?? this.sdk.network) as TxObservation["networkId"];
     const mode = ((submission as any)?.mode ?? "rpc") as TxObservation["mode"];
 
-    const observation = await observeTxOnce(
+    let observation = await observeTxOnce(
       rpcObserverFor(this.sdk.rpc),
       {
         txId,
@@ -182,7 +217,10 @@ export class HardkasTx {
     );
     let observationPath: string | undefined;
     if (options.persist ?? true) {
-      observationPath = (await this.sdk.artifacts.write(observation as any)).absolutePath;
+      // EVIDENCE-TRUST-1 (D2): an observation already published under this identity is returned as stored.
+      const written = await this.sdk.artifacts.write(observation as any);
+      observationPath = written.absolutePath;
+      if (written.artifact) observation = written.artifact;
     }
     const derived = deriveTxStatus({
       txId,
@@ -351,7 +389,7 @@ export class HardkasTx {
 
     if (amountSompi === 0n) {
       throw new Error(
-        "Kaspa value-transfer outputs require amount > 0.\nFor metadata/notary/DID marker transactions use --amount 1.\nFuture: hardkas tx anchor."
+        "Kaspa value-transfer outputs require amount > 0.\nFor metadata/notary/DID marker transactions use --amount 1."
       );
     }
 
@@ -737,12 +775,30 @@ export class HardkasTx {
       (plan as any).schema === HardkasSchemas.SignedTxV1 ||
       (plan as any).txVersion === 1
     ) {
-      // WASM v0.13 does not support V1 artifacts natively in our SDK adapters yet
-      const wasmProvider = this.sdk.config.config.wasm?.provider || "npm";
-      if (wasmProvider !== "local") {
-        const e = new Error("The configured WASM runtime does not support TX V1 signing. Upgrade to WASM v2.x.");
-        (e as any).code = "BLOCKED_BY_DEPENDENCY";
-        throw e;
+      // SURFACE-TRUTH-1B: decided by what would sign the plan, never by a provider name. The former check counted an unset
+      // `wasm.provider` as "npm" and refused every provider but "local" with "Upgrade to WASM v2.x", while the default
+      // (managed, the pinned kaspa-wasm) signs v1 and the capability probe said so.
+      if ((plan as any).mode === "simulator") {
+        // The simulator authorizes and applies payments without modelling the transaction version: it would drop the v1
+        // fields (compute budget, covenant outputs, storage mass) silently.
+        throw new HardkasError(
+          "TX_V1_SIMULATION_UNSUPPORTED",
+          "The simulator does not model transaction v1 (compute budget, covenant outputs, storage mass): it authorizes and applies version-0 payments only. Sign v1 plans for a node network.",
+          { metadata: { planId: (plan as any).planId ?? null } }
+        );
+      }
+      if (!this.sdk.signer) {
+        // The runtime the signer loads (`signTxPlanArtifact`), with the check the signer itself applies. A runtime that
+        // does not load is reported by the signer.
+        const { getKaspaSigningBackendStatus } = await import("@hardkas/accounts");
+        const runtime = await getKaspaSigningBackendStatus(this.sdk.config.config.wasm);
+        if (runtime.available && !runtime.capabilities?.transactionV1Signing) {
+          throw new HardkasError(
+            "BLOCKED_BY_DEPENDENCY",
+            `The loaded kaspa-wasm (${runtime.version}) does not sign transaction v1.`,
+            { metadata: { runtimeVersion: runtime.version } }
+          );
+        }
       }
     }
 
@@ -840,12 +896,15 @@ export class HardkasTx {
     }
 
     if (this.sdk.signer && plan.schema === HardkasSchemas.TxPlan) {
-      const signedArtifact = await this.sdk.signer.signTransaction(
+      const produced = await this.sdk.signer.signTransaction(
         plan as TxPlanArtifact
       );
 
       await this.persistAuthorizedPlan(plan);
-      const { absolutePath } = await this.sdk.artifacts.write(signedArtifact);
+      // EVIDENCE-TRUST-1 (D2): what is returned is exactly what the store holds (the earlier copy of an identity signed before).
+      const written = await this.sdk.artifacts.write(produced);
+      const absolutePath = written.absolutePath;
+      const signedArtifact: typeof produced = written.artifact ?? produced;
       const { coreEvents } = await import("@hardkas/core");
       const signedRecord = signedArtifact as unknown as Record<string, string>;
       // IC-5′.11: events carry the canonical identity (content hash), never a label.
@@ -1109,7 +1168,8 @@ export class HardkasTx {
           account: resolvedAccount as HardkasAccount,
           ...(actualAuthorizers ? { authorizers: actualAuthorizers } : {}),
           config: this.sdk.config.config,
-          allowMainnet: false
+          allowMainnet: false,
+          ...(actualOptions.keystorePassword !== undefined ? { keystorePassword: actualOptions.keystorePassword } : {})
         });
       }
     } else {
@@ -1118,7 +1178,10 @@ export class HardkasTx {
 
     // Persist and emit events. E01: the authorized plan first, then the signed.
     await this.persistAuthorizedPlan(plan);
-    const { absolutePath } = await this.sdk.artifacts.write(signedArtifact);
+    // EVIDENCE-TRUST-1 (D2): what is returned is exactly what the store holds (the earlier copy of an identity signed before).
+    const written = await this.sdk.artifacts.write(signedArtifact);
+    const absolutePath = written.absolutePath;
+    if (written.artifact) signedArtifact = written.artifact;
 
     const { coreEvents } = await import("@hardkas/core");
     const signedRecord = signedArtifact as unknown as Record<string, string>;
@@ -1180,6 +1243,29 @@ export class HardkasTx {
       if (e?.code !== "ARTIFACT_NOT_FOUND") throw e;
     }
     await this.sdk.artifacts.write(plan);
+  }
+
+  /**
+   * SIMULATOR-DURABLE-EXECUTION-1: what a recovery reads back (the executed artifact and its plan) is in the store, under
+   * its verified identity, before the ledger moves. Each is looked up at its canonical store path; a copy there that
+   * does not verify as that identity is never overwritten, and nothing is executed.
+   */
+  private async persistExecutionMaterial(executed: any, plan: any): Promise<void> {
+    const { storeEntryFor, checkArtifactIdentity } = await import("@hardkas/artifacts");
+    const nodeFs = await import("node:fs");
+    const nodePath = await import("node:path");
+    for (const artifact of executed === plan ? [plan] : [plan, executed]) {
+      const at = nodePath.join(this.sdk.workspace.root, ".hardkas", "artifacts", storeEntryFor(artifact).rel);
+      if (nodeFs.existsSync(at)) {
+        const check = checkArtifactIdentity(JSON.parse(stripBom(nodeFs.readFileSync(at, "utf-8"))));
+        if (check.ok && check.artifactId === artifactIdentity(artifact)) continue;
+        throw new HardkasError(
+          "EXECUTION_MATERIAL_INVALID",
+          `${at} does not verify as ${artifactIdentity(artifact)}; nothing was executed`
+        );
+      }
+      await this.sdk.artifacts.write(artifact);
+    }
   }
 
   private async findExistingSubmission(
@@ -1253,6 +1339,19 @@ export class HardkasTx {
       }
     }
     const persist = options.persist ?? true;
+    // SIMULATOR-EXECUTION-UNIT-1: a persisted execution reads the simulated state, checks idempotency and its inputs,
+    // applies the transition and writes the state with its evidence as one unit under `simulator-state`.
+    if (!persist) return this.simulateUnit(target, explicitPlan, persist);
+    const { withSimulatorState } = await import("@hardkas/localnet");
+    return withSimulatorState(this.sdk.workspace.root, () => this.simulateUnit(target, explicitPlan, persist));
+  }
+
+  /** The body of `simulate`, run inside its unit when it persists (SIMULATOR-EXECUTION-UNIT-1). */
+  private async simulateUnit(
+    target: string | Partial<TxPlanArtifact> | SignedTxArtifact,
+    explicitPlan: TxPlanArtifact | undefined,
+    persist: boolean
+  ): Promise<{ receipt: TxReceiptArtifact; receiptPath?: string; tracePath?: string }> {
     if (typeof target === "object" && target !== null && typeof (target as any).contentHash === "string") {
       // Idempotency by the executed artifact's identity (IC-5′.10), never by txId.
       const existing = await this.findExistingSubmission((target as any).contentHash);
@@ -1262,23 +1361,20 @@ export class HardkasTx {
     }
     const {
       loadOrCreateLocalnetState,
-      saveLocalnetState,
-      getDefaultLocalnetStatePath,
-      applySimulatedPlan,
-      saveSimulatedReceipt,
-      saveSimulatedTrace
+      applySimulatedExecution,
+      buildSimulatedExecutionEvidence,
+      commitSimulatedExecution,
+      currentEvidenceFormat,
+      getTracePath,
+      PENDING_EXECUTION_SCHEMA
     } = await import("@hardkas/localnet");
-    const path = await import("node:path");
 
     const state = await loadOrCreateLocalnetState({ cwd: this.sdk.workspace.root });
 
+    // the trace's start (one of the execution's five clock reads, SIMULATOR-DURABLE-EXECUTION-1)
     const startTime = Date.now();
-    const events: any[] = [
-      { type: "phase.started", phase: "send", timestamp: startTime }
-    ];
 
     let planArtifact: any;
-    let signedId = "unknown";
     let sourcePlanId = "unknown";
     let txId: string;
     let targetObj: any = target;
@@ -1296,7 +1392,6 @@ export class HardkasTx {
     }
 
     if (targetObj.schema === ARTIFACT_SCHEMAS.SIGNED_TX) {
-      signedId = targetObj.signedId || targetObj.id || "unknown";
       sourcePlanId = targetObj.sourcePlanId || "unknown";
       // Wave 1.4 · IC-6′.2: the plan is resolved ONLY by the artifactId the
       // authorization names (authenticated), from the store by verified identity —
@@ -1360,8 +1455,9 @@ export class HardkasTx {
     // `getTracePath` helper — no dependency on the receipt's own persisted
     // filename, which is written after hashing.
     const nowIso = new Date(systemRuntimeContext.clock.now()).toISOString();
-    const { getTracePath } = await import("@hardkas/localnet");
-    const precomputedTracePath = getTracePath(txId, this.sdk.workspace.root);
+    // SIMULATOR-DURABLE-EXECUTION-1: the receipt's createdAt is read here rather than inside the receipt builder, so the
+    // same value can be committed with the ledger transition and the receipt rebuilt byte for byte after an interruption
+    const receiptCreatedAt = new Date(systemRuntimeContext.clock.now()).toISOString();
 
     // Parent artifact for the receipt lineage: the artifact that was actually
     // executed/submitted. If the caller passed a signed artifact, that is the
@@ -1371,29 +1467,16 @@ export class HardkasTx {
       targetObj &&
       typeof targetObj === "object" &&
       (targetObj as any).schema === ARTIFACT_SCHEMAS.SIGNED_TX;
-    const parentArtifactOverride = isSignedInput
-      ? {
-          contentHash: (targetObj as any).contentHash,
-          lineage: (targetObj as any).lineage
-        }
-      : undefined;
+    const executed = isSignedInput ? targetObj : planArtifact;
 
-    const simResult = applySimulatedPlan(
+    const simResult = applySimulatedExecution({
       state,
-      normalizedPlan as any,
-      systemRuntimeContext,
-      {
-        txId,
-        receiptExtra: {
-          submittedAt: nowIso,
-          confirmedAt: nowIso,
-          rpcUrl: "simulated://local",
-          tracePath: precomputedTracePath,
-          ...(isSignedInput && signedId !== "unknown" ? { sourceSignedId: signedId } : {}),
-          ...(parentArtifactOverride ? { parentArtifact: parentArtifactOverride } : {})
-        }
-      }
-    );
+      plan: normalizedPlan,
+      executed,
+      txId,
+      workspaceRoot: this.sdk.workspace.root,
+      clock: { submittedAt: nowIso, receiptCreatedAt }
+    });
 
     if (!simResult.ok) {
       throw new Error(`Strict validation failed: ${simResult.errors?.join(", ")}`);
@@ -1405,86 +1488,43 @@ export class HardkasTx {
       endpoint: "simulated://local"
     } as unknown as Parameters<typeof coreEvents.normalizeAndEmit>[0]);
 
-    events.push({ type: "phase.completed", phase: "send", timestamp: Date.now() });
+    const completedAt = Date.now();
 
-    // The canonical receipt: single identity for the simulator lifecycle.
-    // The `receipt` alias exists purely to keep downstream code paths readable
-    // — it is the SAME object reference `simResult.receipt` returned by
-    // `applySimulatedPlan`; no wrapping, no rehashing, no fork.
+    // The canonical receipt: single identity for the simulator lifecycle (no wrapping, no rehashing, no fork).
     const receipt = simResult.receipt as any;
+    const tracePath = getTracePath(txId, this.sdk.workspace.root);
 
     let receiptPath: string | undefined;
     if (persist) {
-      await saveLocalnetState(
-        simResult.state,
-        getDefaultLocalnetStatePath(this.sdk.workspace.root)
-      );
-      receiptPath = await saveSimulatedReceipt(
-        receipt as Parameters<typeof saveSimulatedReceipt>[0],
-        { cwd: this.sdk.workspace.root }
-      );
-    }
-
-    // Trace path stays consistent with the pre-computed value used inside the
-    // canonical receipt's `tracePath` field. Both point at the deterministic
-    // per-txId location the trace will be written to below.
-    const tracePath = precomputedTracePath;
-
-    // Convert events to steps
-    const traceSteps = events.map((ev) => ({
-      phase: ev.phase || ((ev as Record<string, unknown>).message as string) || "unknown",
-      status: ev.type.includes("completed")
-        ? "completed"
-        : ev.type.includes("failed")
-          ? "failed"
-          : "started",
-      timestamp: new Date(ev.timestamp).toISOString(),
-      details:
-        ev.type === "note"
-          ? { message: (ev as Record<string, unknown>).message as string }
-          : undefined
-    }));
-
-    // DEF-1a: the trace hangs off the CANONICAL receipt. Now that `receipt`
-    // and the persisted simulator receipt are the same object with the same
-    // contentHash (DEF-1c fix, above), the trace's parent hash unambiguously
-    // resolves in the artifact store after process restart.
-    const traceBase: any = {
-      schema: ARTIFACT_SCHEMAS.TX_TRACE,
-      hardkasVersion: HARDKAS_VERSION,
-      version: ARTIFACT_VERSION,
-      hashVersion: CURRENT_HASH_VERSION,
-      createdAt: receipt.createdAt,
-      txId: receipt.txId,
-      mode: receipt.mode ?? "simulator",
-      networkId: receipt.networkId,
-      steps: traceSteps,
-      // The raw events are part of the evidence and therefore of the hashed body
-      // (under v5 nothing nested is dropped by name); receiptPath is an
-      // operational locator and stays outside the hash by contract.
-      events,
-      ...(receipt.workflowId ? { workflowId: receipt.workflowId } : {}),
-      ...(receipt.assumptionLevel ? { assumptionLevel: receipt.assumptionLevel } : {}),
-      lineage: {
-        artifactId: "",
-        lineageId: receipt.lineage?.lineageId || receipt.contentHash || "0".repeat(64),
-        parentArtifactId: receipt.contentHash || "0".repeat(64),
-        rootArtifactId: receipt.lineage?.rootArtifactId || receipt.contentHash || "0".repeat(64),
-        sequence: (receipt.lineage?.sequence || 1) + 1
-      }
-    };
-    // One pass: lineage.artifactId is a self reference excluded by exact path.
-    traceBase.contentHash = calculateContentHash(traceBase, CURRENT_HASH_VERSION);
-    if (traceBase.lineage) traceBase.lineage.artifactId = traceBase.contentHash;
-
-    if (persist) {
-      await saveSimulatedTrace(
-        {
-          ...traceBase,
-          receiptPath: receiptPath!
+      // SIMULATOR-DURABLE-EXECUTION-1: the executed artifact and its plan are in the store before the ledger moves (the
+      // record names them); post-state + record are then committed in one ledger write, the evidence is published and
+      // the record cleared. The store is held for the whole sequence: a store held elsewhere delays the execution
+      // instead of leaving the state moved without its evidence.
+      await this.persistExecutionMaterial(executed, planArtifact);
+      const clock = {
+        traceStartedAtMs: startTime,
+        submittedAt: nowIso,
+        receiptCreatedAt,
+        traceCompletedAtMs: completedAt,
+        snapshotCreatedAt: new Date(systemRuntimeContext.clock.now()).toISOString()
+      };
+      const evidence = buildSimulatedExecutionEvidence({ postState: simResult.state, receipt, workspaceRoot: this.sdk.workspace.root, clock });
+      await commitSimulatedExecution(this.sdk.workspace.root, {
+        postState: simResult.state,
+        record: {
+          schema: PENDING_EXECUTION_SCHEMA,
+          txId: receipt.txId,
+          executedArtifactId: artifactIdentity(executed),
+          preStateHash: receipt.preStateHash,
+          postStateHash: receipt.postStateHash,
+          clock,
+          workspaceRoot: this.sdk.workspace.root,
+          format: currentEvidenceFormat(),
+          expected: { receipt: receipt.contentHash, stateSnapshot: evidence.stateSnapshot.contentHash, trace: evidence.trace.contentHash }
         },
-        { cwd: this.sdk.workspace.root }
-      );
+        evidence
+      });
+      receiptPath = evidence.receiptPath;
     }
 
     // P1.1 Emit dashboard/query-store events for local/simulated transactions
@@ -1709,10 +1749,11 @@ export class HardkasTx {
     coreEvents.normalizeAndEmit({
       kind: "workflow.submitted",
       txId: localTxId,
-      endpoint: url || "real"
+      endpoint: url ? redactUrlCredentials(url) : "real"
     } as unknown as Parameters<typeof coreEvents.normalizeAndEmit>[0]);
 
-    // The submit call's result is recorded as returned, accepted or not.
+    // The submit call's result is recorded as returned, accepted or not. EVIDENCE-TRUST-1 (ET-C4): the result is
+    // authenticated, so a credential the RPC layer put into its error text (it names the URL) is redacted BEFORE hashing.
     let submitResult: { accepted: boolean; transactionId?: string; error?: string };
     try {
       const answer: any = await this.sdk.rpc.submitTransaction(broadcastable.rawTransaction as any);
@@ -1721,7 +1762,7 @@ export class HardkasTx {
         ...(typeof answer?.transactionId === "string" ? { transactionId: answer.transactionId } : {})
       };
     } catch (e: unknown) {
-      submitResult = { accepted: false, error: e instanceof Error ? e.message : String(e) };
+      submitResult = { accepted: false, error: redactUrlCredentialsInText(e instanceof Error ? e.message : String(e)) };
     }
 
     // DEF-1b: `mode` describes the EXECUTION SEMANTICS of the lifecycle, fixed
@@ -1735,10 +1776,12 @@ export class HardkasTx {
       (isExplicitRpc ? "rpc" : "localnet");
     const nowIso = new Date().toISOString();
     // Authenticated: the signed reference, the txId, the submit result (IC-2′.2).
-    // Unauthenticated: submittedAt and the raw locator `rpcUrl` (IC-1′.1b). The
-    // normalised `endpoint` is ARCHITECTURE_BLOCKED (its normalisation is not
-    // ratified), so no `endpoint` field is written and the endpoint provenance of
-    // a submission is NOT authenticated yet. No post-send state lives here.
+    // Unauthenticated: submittedAt and the locator `rpcUrl` (IC-1′.1b), recorded
+    // without its credentials (EVIDENCE-TRUST-1 D5: no userinfo, secret-named query
+    // values replaced by a marker, path and public query kept). The normalised
+    // `endpoint` is ARCHITECTURE_BLOCKED (its normalisation is not ratified), so no
+    // `endpoint` field is written and the endpoint provenance of a submission is NOT
+    // authenticated yet. No post-send state lives here.
     const submissionBase: any = {
       schema: HardkasSchemas.TxSubmissionV1,
       hardkasVersion: HARDKAS_VERSION,
@@ -1754,7 +1797,7 @@ export class HardkasTx {
       ...(submitPoint ? { submitPoint } : {}),
       fee: feeEvidence,
       submittedAt: nowIso,
-      ...(url ? { rpcUrl: url } : {}),
+      ...(url ? { rpcUrl: redactUrlCredentials(url) } : {}),
       ...(signedArtifact.workflowId ? { workflowId: signedArtifact.workflowId } : {}),
       ...(signedArtifact.assumptionLevel
         ? { assumptionLevel: signedArtifact.assumptionLevel }
@@ -1771,10 +1814,12 @@ export class HardkasTx {
     // One pass: lineage.artifactId is a self reference excluded by exact path.
     submissionBase.contentHash = calculateContentHash(submissionBase, CURRENT_HASH_VERSION);
     submissionBase.lineage.artifactId = submissionBase.contentHash;
-    const submission: TxSubmissionArtifact = Object.freeze(submissionBase);
+    const produced: TxSubmissionArtifact = Object.freeze(submissionBase);
 
-    const { absolutePath } = await this.sdk.artifacts.write(submission);
-    const receiptPath = absolutePath;
+    // EVIDENCE-TRUST-1 (D2): what is returned is exactly what the store holds (the earlier copy of this identity, if any).
+    const written = await this.sdk.artifacts.write(produced);
+    const receiptPath = written.absolutePath;
+    const submission: TxSubmissionArtifact = written.artifact ? Object.freeze(written.artifact) : produced;
 
     // Reuse the signedTxId from the start of the method
     await this.sdk.plugins.onTxSent({ signedTxId, receiptArtifact: submission });

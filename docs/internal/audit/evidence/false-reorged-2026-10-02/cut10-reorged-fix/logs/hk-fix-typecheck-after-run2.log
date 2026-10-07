@@ -1,0 +1,3 @@
+﻿Scope: 2 of 62 workspace projects
+packages/sdk typecheck$ tsc --noEmit
+packages/sdk typecheck: Done

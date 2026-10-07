@@ -1,0 +1,1607 @@
+﻿{
+  "summary": {
+    "transfers": 20,
+    "sent": 20,
+    "sendFailures": 0,
+    "txsWithAcceptingBlockChanges": 18,
+    "txsThatLostAcceptance": 0,
+    "txsWithReorgedClaims": 1,
+    "falseReorgedTxs": 1,
+    "trueReorgedTxs": 0,
+    "M1": 1,
+    "M2": 1,
+    "recoveredAfterReorged": 1,
+    "finalTruthAccepted": 20,
+    "finalTruthOutputsPresent": 20,
+    "mempoolGapsBeforeAcceptance": 19,
+    "errors": 0
+  },
+  "results": [
+    {
+      "index": 1,
+      "txId": "d952bfe30008c332a9b8effea53d4f66d16c329bfa991f9f0e41d2dc0b5ad4ae",
+      "hardkasSequence": [
+        "SUBMITTED@112.9s(tx wait)",
+        "ACCEPTED@114.1s(tx wait)",
+        "CONFIRMED@123.6s(tx wait)"
+      ],
+      "hardkasRecovered": null,
+      "truth": {
+        "firstAcceptedAt": 112586,
+        "acceptingBlockChanges": 2,
+        "acceptanceLost": 0,
+        "final": {
+          "accepting": "ea3062aeda9619a3b4fc86cda57eec5a2a482511dea3761ba61d33581557ab94",
+          "outputs": 1,
+          "mempool": "absent",
+          "daa": "83509"
+        },
+        "mempoolGapsBeforeAcceptance": 1
+      },
+      "reorgedClaims": [],
+      "removals": [],
+      "scansAfterRemoval": [],
+      "mechanisms": {
+        "M1": false,
+        "M2": false
+      }
+    },
+    {
+      "index": 2,
+      "txId": "eedff568be3ddca734dbf45809b3ca0dd48e36b7ab36d771f26227537c1bd5ae",
+      "hardkasSequence": [
+        "SUBMITTED@133.8s(tx wait)",
+        "ACCEPTED@135.0s(tx wait)",
+        "CONFIRMED@146.1s(tx wait)"
+      ],
+      "hardkasRecovered": null,
+      "truth": {
+        "firstAcceptedAt": 134428,
+        "acceptingBlockChanges": 1,
+        "acceptanceLost": 0,
+        "final": {
+          "accepting": "fddcb04b93483de77f3443a169a457b8a54a3f4928517ad880ca618ec53898f0",
+          "outputs": 1,
+          "mempool": "absent",
+          "daa": "83731"
+        },
+        "mempoolGapsBeforeAcceptance": 1
+      },
+      "reorgedClaims": [],
+      "removals": [],
+      "scansAfterRemoval": [],
+      "mechanisms": {
+        "M1": false,
+        "M2": false
+      }
+    },
+    {
+      "index": 3,
+      "txId": "c4c1a1bd57a491fc7a17736dc9b94478dc82e75e12d8cfcb1a73abc2762e8e7d",
+      "hardkasSequence": [
+        "SUBMITTED@156.5s(tx wait)",
+        "ACCEPTED@157.7s(tx wait)",
+        "CONFIRMED@165.7s(tx wait)"
+      ],
+      "hardkasRecovered": null,
+      "truth": {
+        "firstAcceptedAt": 156274,
+        "acceptingBlockChanges": 2,
+        "acceptanceLost": 0,
+        "final": {
+          "accepting": "fd47f5bf4c12da904cb72e84d2dc406f1eca1b8103a3102c20ae17072e044266",
+          "outputs": 1,
+          "mempool": "absent",
+          "daa": "83944"
+        },
+        "mempoolGapsBeforeAcceptance": 1
+      },
+      "reorgedClaims": [],
+      "removals": [],
+      "scansAfterRemoval": [],
+      "mechanisms": {
+        "M1": false,
+        "M2": false
+      }
+    },
+    {
+      "index": 4,
+      "txId": "d66be5304237236fb2c09595b772055db7b2b635031572a35b07e4bef62b354d",
+      "hardkasSequence": [
+        "SUBMITTED@176.4s(tx wait)",
+        "ACCEPTED@177.6s(tx wait)",
+        "CONFIRMED@185.9s(tx wait)"
+      ],
+      "hardkasRecovered": null,
+      "truth": {
+        "firstAcceptedAt": 176571,
+        "acceptingBlockChanges": 1,
+        "acceptanceLost": 0,
+        "final": {
+          "accepting": "fc9de26b674d60cd126ec48e02d238107e14b0cf786022ff6425c54b9bc896a0",
+          "outputs": 1,
+          "mempool": "absent",
+          "daa": "84170"
+        },
+        "mempoolGapsBeforeAcceptance": 1
+      },
+      "reorgedClaims": [],
+      "removals": [],
+      "scansAfterRemoval": [],
+      "mechanisms": {
+        "M1": false,
+        "M2": false
+      }
+    },
+    {
+      "index": 5,
+      "txId": "1e145004e8dce680178e38987cb061122e6bb1e9e9bb456a02c281e16c03fd91",
+      "hardkasSequence": [
+        "SUBMITTED@197.1s(tx wait)",
+        "ACCEPTED@198.3s(tx wait)",
+        "CONFIRMED@208.1s(tx wait)"
+      ],
+      "hardkasRecovered": null,
+      "truth": {
+        "firstAcceptedAt": 196770,
+        "acceptingBlockChanges": 1,
+        "acceptanceLost": 0,
+        "final": {
+          "accepting": "f2d511a818d85eae4adfe54158f447a9bcca67c19f760cdcecfbab3094c0eb70",
+          "outputs": 1,
+          "mempool": "absent",
+          "daa": "84406"
+        },
+        "mempoolGapsBeforeAcceptance": 1
+      },
+      "reorgedClaims": [],
+      "removals": [],
+      "scansAfterRemoval": [],
+      "mechanisms": {
+        "M1": false,
+        "M2": false
+      }
+    },
+    {
+      "index": 6,
+      "txId": "bc7d376b8bd236b32f18509a296c2b2acc80059f1eca6d7ba6a0f539b91d958a",
+      "hardkasSequence": [
+        "SUBMITTED@219.3s(tx wait)",
+        "ACCEPTED@220.6s(tx wait)",
+        "CONFIRMED@233.0s(tx wait)"
+      ],
+      "hardkasRecovered": null,
+      "truth": {
+        "firstAcceptedAt": 220056,
+        "acceptingBlockChanges": 0,
+        "acceptanceLost": 0,
+        "final": {
+          "accepting": "f1b19e967c8c3b734b89f151b8f373f223842448bd48ff301184ea9a22364f17",
+          "outputs": 1,
+          "mempool": "absent",
+          "daa": "84636"
+        },
+        "mempoolGapsBeforeAcceptance": 1
+      },
+      "reorgedClaims": [],
+      "removals": [],
+      "scansAfterRemoval": [],
+      "mechanisms": {
+        "M1": false,
+        "M2": false
+      }
+    },
+    {
+      "index": 7,
+      "txId": "fb696772682e43a7216836cf96b8d4ab8bfa0eadab46eba92cfb7e9de5b69d09",
+      "hardkasSequence": [
+        "SUBMITTED@244.5s(tx wait)",
+        "ACCEPTED@245.9s(tx wait)",
+        "REORGED@247.1s(tx wait)",
+        "CONFIRMED@395.2s(tx wait exit)",
+        "REORGED@398.6s(tx status)"
+      ],
+      "hardkasRecovered": true,
+      "truth": {
+        "firstAcceptedAt": 245114,
+        "acceptingBlockChanges": 1,
+        "acceptanceLost": 0,
+        "final": {
+          "accepting": "fbdd76bd35529f5d8ec338a4053eb6009820175b5e16d80e1c3d7b2221dc98bc",
+          "outputs": 1,
+          "mempool": "absent",
+          "daa": "86618"
+        },
+        "mempoolGapsBeforeAcceptance": 1
+      },
+      "reorgedClaims": [
+        {
+          "at": 247129,
+          "from": "tx wait",
+          "verdict": "FALSE_REORGED",
+          "truthAtT": {
+            "accepting": "fbdd76bd35529f5d8ec338a4053eb6009820175b5e16d80e1c3d7b2221dc98bc",
+            "outputs": 1,
+            "mempool": "absent",
+            "daa": "84727"
+          },
+          "laterAccepted": true,
+          "laterOutputs": true
+        },
+        {
+          "at": 398557,
+          "from": "tx status",
+          "verdict": "FALSE_REORGED",
+          "truthAtT": {
+            "accepting": "fbdd76bd35529f5d8ec338a4053eb6009820175b5e16d80e1c3d7b2221dc98bc",
+            "outputs": 1,
+            "mempool": "absent",
+            "daa": "86230"
+          },
+          "laterAccepted": true,
+          "laterOutputs": true
+        },
+        {
+          "at": 405036,
+          "from": "tx status",
+          "verdict": "FALSE_REORGED",
+          "truthAtT": {
+            "accepting": "fbdd76bd35529f5d8ec338a4053eb6009820175b5e16d80e1c3d7b2221dc98bc",
+            "outputs": 1,
+            "mempool": "absent",
+            "daa": "86294"
+          },
+          "laterAccepted": true,
+          "laterOutputs": true
+        },
+        {
+          "at": 411426,
+          "from": "tx status",
+          "verdict": "FALSE_REORGED",
+          "truthAtT": {
+            "accepting": "fbdd76bd35529f5d8ec338a4053eb6009820175b5e16d80e1c3d7b2221dc98bc",
+            "outputs": 1,
+            "mempool": "absent",
+            "daa": "86355"
+          },
+          "laterAccepted": true,
+          "laterOutputs": true
+        },
+        {
+          "at": 417882,
+          "from": "tx status",
+          "verdict": "FALSE_REORGED",
+          "truthAtT": {
+            "accepting": "fbdd76bd35529f5d8ec338a4053eb6009820175b5e16d80e1c3d7b2221dc98bc",
+            "outputs": 1,
+            "mempool": "absent",
+            "daa": "86420"
+          },
+          "laterAccepted": true,
+          "laterOutputs": true
+        },
+        {
+          "at": 424300,
+          "from": "tx status",
+          "verdict": "FALSE_REORGED",
+          "truthAtT": {
+            "accepting": "fbdd76bd35529f5d8ec338a4053eb6009820175b5e16d80e1c3d7b2221dc98bc",
+            "outputs": 1,
+            "mempool": "absent",
+            "daa": "86481"
+          },
+          "laterAccepted": true,
+          "laterOutputs": true
+        },
+        {
+          "at": 431047,
+          "from": "tx status",
+          "verdict": "FALSE_REORGED",
+          "truthAtT": {
+            "accepting": "fbdd76bd35529f5d8ec338a4053eb6009820175b5e16d80e1c3d7b2221dc98bc",
+            "outputs": 1,
+            "mempool": "absent",
+            "daa": "86533"
+          },
+          "laterAccepted": true,
+          "laterOutputs": true
+        },
+        {
+          "at": 437634,
+          "from": "tx status",
+          "verdict": "FALSE_REORGED",
+          "truthAtT": {
+            "accepting": "fbdd76bd35529f5d8ec338a4053eb6009820175b5e16d80e1c3d7b2221dc98bc",
+            "outputs": 1,
+            "mempool": "absent",
+            "daa": "86594"
+          },
+          "laterAccepted": true,
+          "laterOutputs": true
+        }
+      ],
+      "removals": [
+        {
+          "observedAt": "2026-10-02T18:43:58.448Z",
+          "removedBlock": "dbe9bbba09b6bdf0cff6478793abbf4df92119894fb1d160fb8c0c45683aed40",
+          "truthAcceptingThen": "fbdd76bd35529f5d8ec338a4053eb6009820175b5e16d80e1c3d7b2221dc98bc",
+          "truthOutputsThen": 1,
+          "nodeAnswerFromA": {
+            "prevInRemoved": true,
+            "removed": [
+              "dbe9bbba09b6bdf0cff6478793abbf4df92119894fb1d160fb8c0c45683aed40"
+            ],
+            "addedCount": 1,
+            "reAcceptedIn": "fbdd76bd35529f5d8ec338a4053eb6009820175b5e16d80e1c3d7b2221dc98bc",
+            "reAcceptedOnAddedChain": true
+          },
+          "newAcceptingBlock": "fbdd76bd35529f5d8ec338a4053eb6009820175b5e16d80e1c3d7b2221dc98bc",
+          "M1": true
+        }
+      ],
+      "scansAfterRemoval": [
+        {
+          "observedAt": "2026-10-02T18:43:59.715Z",
+          "finding": "not_found",
+          "cursor": "cc654f11fec7e637970530ee10a76fdc7cec2bf98497a6d8098aa3ac95a89d2c",
+          "cursorBlueScore": "82778",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:44:01.003Z",
+          "finding": "not_found",
+          "cursor": "c5729e034147c2b5cc96c50b206653c863f7f7d7d8e4238bbb95145bc7aa163f",
+          "cursorBlueScore": "82789",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:44:02.301Z",
+          "finding": "not_found",
+          "cursor": "de8655d26ea878e2027692dd96fdcf75cf9909ace7c01568568883263201b97b",
+          "cursorBlueScore": "82809",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:44:03.606Z",
+          "finding": "not_found",
+          "cursor": "e68b6490e248394226382435a696ac30d4b9dcc6be7f9212b4a956cbe094aeb9",
+          "cursorBlueScore": "82809",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:44:04.901Z",
+          "finding": "not_found",
+          "cursor": "fcc81845ba4f34e7a45f7b95d038418143bf0ea0ee8e14a3845dd2c2c50621e5",
+          "cursorBlueScore": "82823",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:44:06.183Z",
+          "finding": "not_found",
+          "cursor": "fde9b88205bf29fe97b2526b7c556ff59fc4c780ca7c6496ae33690e373810dc",
+          "cursorBlueScore": "82838",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:44:07.458Z",
+          "finding": "not_found",
+          "cursor": "db198fa6cd5f723a028762fa91c811483dc971e4142ae2c6536a717e6f6d0958",
+          "cursorBlueScore": "82850",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:44:08.838Z",
+          "finding": "not_found",
+          "cursor": "f7d20dcebab86428e29f231d10f99bd776f39f514efc1159a19f24bcadf85f4c",
+          "cursorBlueScore": "82869",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:44:10.109Z",
+          "finding": "not_found",
+          "cursor": "ebf4390b99b1674ad31ae43d8107946607e2ed2a150ac7136d2a11416a8bef45",
+          "cursorBlueScore": "82890",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:44:11.401Z",
+          "finding": "not_found",
+          "cursor": "ebf4390b99b1674ad31ae43d8107946607e2ed2a150ac7136d2a11416a8bef45",
+          "cursorBlueScore": "82890",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:44:12.671Z",
+          "finding": "not_found",
+          "cursor": "ef3905db17ae116583209e68268873cd4c912afb1f8b5f28d2aa542d6ebbb2cc",
+          "cursorBlueScore": "82911",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:44:14.036Z",
+          "finding": "not_found",
+          "cursor": "e466155db20fe32168993173fe59a7b06cff3e30b7b0e29f22eda99da7012f37",
+          "cursorBlueScore": "82920",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:44:15.348Z",
+          "finding": "not_found",
+          "cursor": "d593a532d4ca391234b26b4f1fc63f88efbc7ad32064f10cf0377ab05b232944",
+          "cursorBlueScore": "82941",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:44:16.672Z",
+          "finding": "not_found",
+          "cursor": "cb9a11cb61e44e6088fd903fb00dac5788eca1da6b8eb5f6f440c61d44810ab4",
+          "cursorBlueScore": "82958",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:44:17.990Z",
+          "finding": "not_found",
+          "cursor": "fffb865a9b3013735c557339f60663b2d29253ab7ac0f847f6ed22fbdf38bf3e",
+          "cursorBlueScore": "82974",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:44:19.286Z",
+          "finding": "not_found",
+          "cursor": "fffb865a9b3013735c557339f60663b2d29253ab7ac0f847f6ed22fbdf38bf3e",
+          "cursorBlueScore": "82974",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:44:20.594Z",
+          "finding": "not_found",
+          "cursor": "fdc6ca0c9afb2b4c3614b22b740f9acdb862aeba35b6a717b531813a7231f410",
+          "cursorBlueScore": "82994",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:44:21.889Z",
+          "finding": "not_found",
+          "cursor": "b9b3b3f2db1e7afc1b2b6ca3b6012468bc9eb3802d92f202737c27fa58def619",
+          "cursorBlueScore": "83006",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:44:23.199Z",
+          "finding": "not_found",
+          "cursor": "f6426755c5fc066c05ff3175e56c949233cde4a58eb36a3c9584ab3c72cbcf8e",
+          "cursorBlueScore": "83023",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:44:24.537Z",
+          "finding": "not_found",
+          "cursor": "f9053320ba9f4bef6e462cee7139d21bb492c3cf9701a210b2c5138e09649227",
+          "cursorBlueScore": "83047",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:44:25.849Z",
+          "finding": "not_found",
+          "cursor": "f96624529cd550f85bd57480a1f75938ba7e6c177f4f3fe862d1e74012b4dfaf",
+          "cursorBlueScore": "83065",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:44:27.157Z",
+          "finding": "not_found",
+          "cursor": "f96624529cd550f85bd57480a1f75938ba7e6c177f4f3fe862d1e74012b4dfaf",
+          "cursorBlueScore": "83065",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:44:28.464Z",
+          "finding": "not_found",
+          "cursor": "e70828d101490b87eae442607c77c130dfa55b64cc51067cd86115d2f079ace4",
+          "cursorBlueScore": "83090",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:44:29.807Z",
+          "finding": "not_found",
+          "cursor": "fd2ed0f003a7d7ee2a46b9dbd4942d7278027d4b45f873c6ac81db0f853a04b0",
+          "cursorBlueScore": "83106",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:44:31.124Z",
+          "finding": "not_found",
+          "cursor": "f09cf938dffe83bb94501b96c613eaf0d57f3bdf603faef1e99db9ec8d0e19eb",
+          "cursorBlueScore": "83122",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:44:32.482Z",
+          "finding": "not_found",
+          "cursor": "f1e872eb537c0089cb798583e5a94dea5bddccec53b7d2b3e1b696512c3a23c7",
+          "cursorBlueScore": "83136",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:44:33.876Z",
+          "finding": "not_found",
+          "cursor": "87a3e36a1202e73502acdd9866ecfae68c19d6be9110cfd7334cecc26ecd5028",
+          "cursorBlueScore": "83157",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:44:35.220Z",
+          "finding": "not_found",
+          "cursor": "cc072100d2abab76fb86a7f4c667c8d5bbf7999fd6f16227a150ff408b635e79",
+          "cursorBlueScore": "83179",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:44:36.575Z",
+          "finding": "not_found",
+          "cursor": "cc072100d2abab76fb86a7f4c667c8d5bbf7999fd6f16227a150ff408b635e79",
+          "cursorBlueScore": "83179",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:44:37.927Z",
+          "finding": "not_found",
+          "cursor": "f53dab6e478056977fe00a5eb87605a4605662f4ca2e77d124f632465d6ac745",
+          "cursorBlueScore": "83197",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:44:39.278Z",
+          "finding": "not_found",
+          "cursor": "d8a9c253fbc6cd0b385c20b0297f1d1f27631e32707e613594c17f996e77246a",
+          "cursorBlueScore": "83216",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:44:40.624Z",
+          "finding": "not_found",
+          "cursor": "df38e7983dbd65b8cd0ad02c5bee389f90765ab60cf307f2ee6b0d5c290c42ed",
+          "cursorBlueScore": "83224",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:44:42.062Z",
+          "finding": "not_found",
+          "cursor": "fdcc4f306151a6f8c0662c1fc1973fe9bc537d2d3efa8b5b006d957d31d295ac",
+          "cursorBlueScore": "83243",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:44:43.442Z",
+          "finding": "not_found",
+          "cursor": "82a48d0db7f39e2cecccc1e83c6a1d8477ae633be99de8c906082faf6cfb23f6",
+          "cursorBlueScore": "83262",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:44:44.838Z",
+          "finding": "not_found",
+          "cursor": "e0ce4ddf1e2feb36c3f3e8742aa0bf304c824712243c7870ea2f9c1eccb7640f",
+          "cursorBlueScore": "83274",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:44:46.389Z",
+          "finding": "not_found",
+          "cursor": "fb7eee18b463e397d2969c5a9f1ec88d4f3083e4158771d5963a6464aa2573a5",
+          "cursorBlueScore": "83283",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:44:47.799Z",
+          "finding": "not_found",
+          "cursor": "7b119339a49675052808517c536560574725355a7549536177312a51e1de4eb8",
+          "cursorBlueScore": "83301",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:44:49.233Z",
+          "finding": "not_found",
+          "cursor": "7b119339a49675052808517c536560574725355a7549536177312a51e1de4eb8",
+          "cursorBlueScore": "83301",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:44:51.076Z",
+          "finding": "not_found",
+          "cursor": "fa658bec0769436bcae509c3fedc4f0a812574e41872357816630a0ba911dbca",
+          "cursorBlueScore": "83311",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:44:52.828Z",
+          "finding": "not_found",
+          "cursor": "ab0b2ee4456051656f975e5c327dbe2dcfa1fbf4552efff267030d247ae9d716",
+          "cursorBlueScore": "83335",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:44:54.314Z",
+          "finding": "not_found",
+          "cursor": "f8ef1c1fab851edb6af8edbfd11c85dba43bc44bc387c055c42bb3f7d130952e",
+          "cursorBlueScore": "83345",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:44:55.709Z",
+          "finding": "not_found",
+          "cursor": "c22ad59953bd1b5580303eb9dbb5d63f6febca8132397dbae45507c726e1d9ec",
+          "cursorBlueScore": "83360",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:44:57.449Z",
+          "finding": "not_found",
+          "cursor": "ec775097180af20564e989c8631b48654bc391b94eff7d8538f1bca20a75710e",
+          "cursorBlueScore": "83372",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:44:58.831Z",
+          "finding": "not_found",
+          "cursor": "f51422c8d3962794143d79716b375326e50497d8f257271bb62250993c9d4b13",
+          "cursorBlueScore": "83381",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:45:00.679Z",
+          "finding": "not_found",
+          "cursor": "2012aa975e60f73c193262383deefcbfd3076198036310a1bc154ff55604bfa7",
+          "cursorBlueScore": "83398",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:45:02.133Z",
+          "finding": "not_found",
+          "cursor": "db1c62ac46c0a90c0ef893e8840295586b1e9778aa1f3ef1cb469388de796543",
+          "cursorBlueScore": "83410",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:45:03.699Z",
+          "finding": "not_found",
+          "cursor": "f3e4516d4f50209ff467b95ab22914eb05966bfc3da2fe468d89d1ad0c2a2d65",
+          "cursorBlueScore": "83433",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:45:05.097Z",
+          "finding": "not_found",
+          "cursor": "f35690599a015cfd5fc5ca468fdc1ff494b9a1490011659621dc7191c5dc494a",
+          "cursorBlueScore": "83454",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:45:06.513Z",
+          "finding": "not_found",
+          "cursor": "1b6e461879c07da19d3f9d8c1e8bd3c87c6d56b81cca67b6db4165f60e1b750e",
+          "cursorBlueScore": "83470",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:45:07.919Z",
+          "finding": "not_found",
+          "cursor": "cbec9ce196b93b2f55ad663f89e7a339e44db49e45d5ba5162a24d8e196ba672",
+          "cursorBlueScore": "83484",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:45:09.281Z",
+          "finding": "not_found",
+          "cursor": "e696874e413c65ddebd0c416058d1dbae131a646961d1c5bd29d6100bcbdd622",
+          "cursorBlueScore": "83498",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:45:10.693Z",
+          "finding": "not_found",
+          "cursor": "e696874e413c65ddebd0c416058d1dbae131a646961d1c5bd29d6100bcbdd622",
+          "cursorBlueScore": "83498",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:45:12.107Z",
+          "finding": "not_found",
+          "cursor": "c7fff07f762e4c8c3d8a2357e32d82597c66cfa0a4f4e67c1a01f54e4d55ef62",
+          "cursorBlueScore": "83518",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:45:13.527Z",
+          "finding": "not_found",
+          "cursor": "e540bacf23adeacfbab353643962e9567d01539bc220f294dba1ad759cc164d0",
+          "cursorBlueScore": "83534",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:45:14.922Z",
+          "finding": "not_found",
+          "cursor": "ef84c87382d64158ad4c3f4a97d780d744f1b42e438c3a07e454f7e3dc29c656",
+          "cursorBlueScore": "83551",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:45:16.342Z",
+          "finding": "not_found",
+          "cursor": "bd8bf5c3d96a448b4961344094cf26117c93dc44e01e184534d325971c69613d",
+          "cursorBlueScore": "83567",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:45:17.768Z",
+          "finding": "not_found",
+          "cursor": "f4990f3e1346bcf80525b9fff273f2fd646394b73a1e95a44ade98062b4b4358",
+          "cursorBlueScore": "83586",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:45:19.192Z",
+          "finding": "not_found",
+          "cursor": "dd18a7471c8e262280f478171ac1527284db011a6df349d7f81596325130b59e",
+          "cursorBlueScore": "83602",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:45:20.598Z",
+          "finding": "not_found",
+          "cursor": "fb2639a6446cc7dd0e75f0c944d6e99e3e77feb8263d9354d0015c5310fc73e1",
+          "cursorBlueScore": "83611",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:45:22.029Z",
+          "finding": "not_found",
+          "cursor": "6b894a58ec6686442fa660834b38994d4bde3e7016da452a321b68b76575bc3f",
+          "cursorBlueScore": "83629",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:45:23.459Z",
+          "finding": "not_found",
+          "cursor": "0a2f87e9e499d7063038603fb9c906bda1694491c476e2e058d27590aa4dc414",
+          "cursorBlueScore": "83647",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:45:24.889Z",
+          "finding": "not_found",
+          "cursor": "ec55dbd6512556fe81c3103f528a2dfbacf3eae8f5f7ed141090eae39be2503b",
+          "cursorBlueScore": "83647",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:45:26.349Z",
+          "finding": "not_found",
+          "cursor": "ecd307f822e7e32bdf5aa39a0ce923c0281eb6dafdb88a0b5d64a4ce9dfdc1f9",
+          "cursorBlueScore": "83661",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:45:27.799Z",
+          "finding": "not_found",
+          "cursor": "fc0ca0df454b9c2bcb42a56f2991bced561102531ac80b8a4677ba4fbc679bff",
+          "cursorBlueScore": "83681",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:45:29.251Z",
+          "finding": "not_found",
+          "cursor": "c55c5d80d34395e70ee630c1f3f1a10cf5620f1a057a2548033260d6cae1963c",
+          "cursorBlueScore": "83703",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:45:30.694Z",
+          "finding": "not_found",
+          "cursor": "e22e472907e714e667e563a271e2d64c2a8423224e53531565f03d6c89b9f1c2",
+          "cursorBlueScore": "83711",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:45:32.131Z",
+          "finding": "not_found",
+          "cursor": "ff289a1118a33f986f6670ee3dde5cd53bdb4822efe5d8b6cded23c437f53a3f",
+          "cursorBlueScore": "83725",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:45:33.575Z",
+          "finding": "not_found",
+          "cursor": "aff9fa95a0c32f4b06f8ff52051c1cbed8205978bd57c355e4c906703e8d9430",
+          "cursorBlueScore": "83745",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:45:35.085Z",
+          "finding": "not_found",
+          "cursor": "c30ecabd52cc831aad98e3241fe4769683ab86f198799252b7bccddaf5fe69f9",
+          "cursorBlueScore": "83766",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:45:36.539Z",
+          "finding": "not_found",
+          "cursor": "e8cff91afd0b3e99125625871ec457604b4743d804ec5553987cd95cd7d51134",
+          "cursorBlueScore": "83779",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:45:38.141Z",
+          "finding": "not_found",
+          "cursor": "c1b7924ed133002c7bdec4afe3a28c82ca16c261e45c537f0e93733ff835dd90",
+          "cursorBlueScore": "83802",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:45:39.591Z",
+          "finding": "not_found",
+          "cursor": "e2cc4e1d5707c5d15b3d6ed76f226972c788a6770c54f98c640837c1bfd5718c",
+          "cursorBlueScore": "83815",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:45:41.056Z",
+          "finding": "not_found",
+          "cursor": "a8e5ef7aaf02f306ae74d04496aaebd4402647362f08cf2f8181b4e385a18a30",
+          "cursorBlueScore": "83831",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:45:42.531Z",
+          "finding": "not_found",
+          "cursor": "bf5046123d61b413a0ca9a86f96820f9f4b1468f0771ddfbf4e3af42bc530d9e",
+          "cursorBlueScore": "83846",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:45:44.085Z",
+          "finding": "not_found",
+          "cursor": "ea845e9f9d07c04b202c20f7595a1a72a73b33f82c02ff19814af0f1562477bf",
+          "cursorBlueScore": "83860",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:45:45.538Z",
+          "finding": "not_found",
+          "cursor": "b2a085e3bffd0fcebe34e7b399239474cd0553f0b2715711a4298ce090762404",
+          "cursorBlueScore": "83878",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:45:47.011Z",
+          "finding": "not_found",
+          "cursor": "c27733853369fb02402529be2310e210a4ebed6d115201e0e34e315d93d6bff5",
+          "cursorBlueScore": "83891",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:45:48.510Z",
+          "finding": "not_found",
+          "cursor": "9d623e569bdb1f1c51ddabf8ddd179d08337699b54aa3a3bd699c18df76bc2ca",
+          "cursorBlueScore": "83899",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:45:49.970Z",
+          "finding": "not_found",
+          "cursor": "bbbfbfbc35904c25694269fb9f89c5071e0b8dedfbd51d625894917be4c1065e",
+          "cursorBlueScore": "83915",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:45:51.452Z",
+          "finding": "not_found",
+          "cursor": "e8c78d9a7e3c558b21b695344a9c2e6d572293c2d973434170ee6cdead4e12de",
+          "cursorBlueScore": "83915",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:45:52.928Z",
+          "finding": "not_found",
+          "cursor": "e9a65968ebfd2b09637de65826f03f68204bcca0277ec30bbdcf5090766dfee5",
+          "cursorBlueScore": "83929",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:45:54.445Z",
+          "finding": "not_found",
+          "cursor": "f3b989b703b87b227d9f0e7c3c803f88723a9f0cf94cbe89b96514b3a0b617e2",
+          "cursorBlueScore": "83942",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:45:55.924Z",
+          "finding": "not_found",
+          "cursor": "fbc34b14adccfe218f0f9cdbe8be88ef28bf294ff201728708fc5219a52610b0",
+          "cursorBlueScore": "83954",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:45:57.390Z",
+          "finding": "not_found",
+          "cursor": "e108e0b8421df6749af4000154d339285be8c9ab1fe7f36e7f775fc64531f5e0",
+          "cursorBlueScore": "83974",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:45:58.878Z",
+          "finding": "not_found",
+          "cursor": "ff95ec9bb1b35553d6b8981c7ecd97d63d972ad25e78e568346d495922e02f49",
+          "cursorBlueScore": "83986",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:46:00.370Z",
+          "finding": "not_found",
+          "cursor": "e543d82df4ec075a3f4a7afc0ac1ba7b5a41c81fa08d72239759acd27b126a71",
+          "cursorBlueScore": "83998",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:46:01.869Z",
+          "finding": "not_found",
+          "cursor": "f03bac94acd64dc2d867a0d579e081171dabc4246553402db7cd4a0c3a02db87",
+          "cursorBlueScore": "84012",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:46:03.354Z",
+          "finding": "not_found",
+          "cursor": "f2cf614ff046b5a14dada979fcc3d75a80af8199c8884eca92c385f31f8ed691",
+          "cursorBlueScore": "84026",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:46:04.859Z",
+          "finding": "not_found",
+          "cursor": "fafcce6f6c48c9ae3bc1258a5a2e5edcde90d193f5d293aabcf9d6f13cf142ad",
+          "cursorBlueScore": "84041",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:46:06.398Z",
+          "finding": "not_found",
+          "cursor": "db37e66750fc5c52ca7ef1fd2ffefc23e348865e6607f5f9faad6cf451c375d9",
+          "cursorBlueScore": "84053",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:46:07.901Z",
+          "finding": "not_found",
+          "cursor": "cd8e1f2902399015e23051efa4a754d8587ba1bc7456e4938518d6e7d87f5968",
+          "cursorBlueScore": "84065",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:46:09.442Z",
+          "finding": "not_found",
+          "cursor": "ecaadbb17081fdd4439d2559ded2d98369f7435ca8039c1395170ed99e2b6127",
+          "cursorBlueScore": "84078",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:46:10.973Z",
+          "finding": "not_found",
+          "cursor": "bf5748e548031b43f67cc43f6dad8bae529b693e566f07caa6f6fe1f210692bf",
+          "cursorBlueScore": "84088",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:46:12.484Z",
+          "finding": "not_found",
+          "cursor": "e84ce2ceed5e0ae18b0648e7484f4757c720d5199635cacce005f904f76b1673",
+          "cursorBlueScore": "84100",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:46:14.044Z",
+          "finding": "not_found",
+          "cursor": "fb76488245eb6398356c4b6a817917cdb7755b6298d4964bff263d66a6ef176f",
+          "cursorBlueScore": "84119",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:46:15.561Z",
+          "finding": "not_found",
+          "cursor": "af1431612e68114c5d8c2ffe9bdd02dc2d54635a71bc50f2641287705f88439e",
+          "cursorBlueScore": "84140",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:46:17.100Z",
+          "finding": "not_found",
+          "cursor": "e9d6412a14c65c11a3514ad94ba4bc6be0c208817b08ddac6885c23b34cf9160",
+          "cursorBlueScore": "84149",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:46:18.761Z",
+          "finding": "not_found",
+          "cursor": "f15274930f1148354ec7bf222d664443b1effd9051d82f0696bb68fda88a0c2c",
+          "cursorBlueScore": "84161",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:46:20.280Z",
+          "finding": "not_found",
+          "cursor": "e1e513415a69aae62b09faeffce1805e188daecdc96560d126946debac35a81c",
+          "cursorBlueScore": "84184",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:46:21.836Z",
+          "finding": "not_found",
+          "cursor": "dbbfec5dedcfbd978703c95d39db5b7a6b9eee769ee07c953d4bad4acd59354a",
+          "cursorBlueScore": "84198",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:46:23.347Z",
+          "finding": "not_found",
+          "cursor": "e77b0d4bb1f965852899cc47d08f9445bd2b4ef4dd41c49525c16e995f54ce2e",
+          "cursorBlueScore": "84212",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:46:24.938Z",
+          "finding": "not_found",
+          "cursor": "b28d58cd29f0158ba5401751e6cfebc205d4f78527db9e7fde55b71b7d05709b",
+          "cursorBlueScore": "84224",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:46:26.474Z",
+          "finding": "not_found",
+          "cursor": "d141bb25b7fa332c07c2352ab762b724b7d88b241aeac782d6436d6176c64b14",
+          "cursorBlueScore": "84235",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:46:29.312Z",
+          "finding": "not_found",
+          "cursor": "c4c2e0acf047317a1a2dece9dc5fac89888f9217efe5cfa8306a600f60ffd415",
+          "cursorBlueScore": "84248",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:46:35.752Z",
+          "finding": "not_found",
+          "cursor": "fb4c41d3b2180f48c454c862dadd2234f2a1ad087bf35fc7892afa49cc880825",
+          "cursorBlueScore": "84276",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:46:42.176Z",
+          "finding": "not_found",
+          "cursor": "d580898245d1b42050fb8e4aa6fb2a5913b7751975e2aa9926c286ad832b46f4",
+          "cursorBlueScore": "84332",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:46:48.620Z",
+          "finding": "not_found",
+          "cursor": "e1d473a961ec3549248c3c840f169ff7bf9772a8da9bd2ca28d8edaefb7a77cd",
+          "cursorBlueScore": "84398",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:46:55.040Z",
+          "finding": "not_found",
+          "cursor": "f83b1b8389c0c1b228dad292f8890103f6451b5ebbeb46c7583b9ff72a7e7600",
+          "cursorBlueScore": "84458",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:47:01.753Z",
+          "finding": "not_found",
+          "cursor": "e9fe1badfd3088ec41bc6dfdbae68a8949a18b24341a8d484d3eb46ca43dacae",
+          "cursorBlueScore": "84520",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        },
+        {
+          "observedAt": "2026-10-02T18:47:08.299Z",
+          "finding": "not_found",
+          "cursor": "e8b3bbe25e0f2922ba88a138da47f5c1b0d495ca6bc73bad9cee68aeb05e37ce",
+          "cursorBlueScore": "84580",
+          "reAcceptingBlueScore": "82754",
+          "cursorAtOrAfterReAcceptance": true
+        }
+      ],
+      "mechanisms": {
+        "M1": true,
+        "M2": true
+      }
+    },
+    {
+      "index": 8,
+      "txId": "8574332814780e9fc77ea4b26849ecc8bd507238bf18e168398728dc0a24ae09",
+      "hardkasSequence": [
+        "SUBMITTED@447.7s(tx wait)",
+        "ACCEPTED@449.3s(tx wait)",
+        "CONFIRMED@457.0s(tx wait)"
+      ],
+      "hardkasRecovered": null,
+      "truth": {
+        "firstAcceptedAt": 447548,
+        "acceptingBlockChanges": 3,
+        "acceptanceLost": 0,
+        "final": {
+          "accepting": "e9fe1f5f7b3243a9237ae02c8b11eee50091c5b46c78fa75c4969e6f72bc1c43",
+          "outputs": 1,
+          "mempool": "absent",
+          "daa": "86886"
+        },
+        "mempoolGapsBeforeAcceptance": 1
+      },
+      "reorgedClaims": [],
+      "removals": [],
+      "scansAfterRemoval": [],
+      "mechanisms": {
+        "M1": false,
+        "M2": false
+      }
+    },
+    {
+      "index": 9,
+      "txId": "01fc498b249921e49719b72b6309426997dfa4ce3648f4482c370b506c541e4b",
+      "hardkasSequence": [
+        "SUBMITTED@470.8s(tx wait)",
+        "ACCEPTED@472.5s(tx wait)",
+        "CONFIRMED@478.9s(tx wait)"
+      ],
+      "hardkasRecovered": null,
+      "truth": {
+        "firstAcceptedAt": 469451,
+        "acceptingBlockChanges": 2,
+        "acceptanceLost": 0,
+        "final": {
+          "accepting": "fc6be284a06e7c9a6ea62484c392361032dfebdcceb61aeb4cbeb2ae495a168f",
+          "outputs": 1,
+          "mempool": "absent",
+          "daa": "87116"
+        },
+        "mempoolGapsBeforeAcceptance": 0
+      },
+      "reorgedClaims": [],
+      "removals": [],
+      "scansAfterRemoval": [],
+      "mechanisms": {
+        "M1": false,
+        "M2": false
+      }
+    },
+    {
+      "index": 10,
+      "txId": "76f2476bc9be7d84195b703db29910ba26e67462e6881493a4f132fd965846ec",
+      "hardkasSequence": [
+        "SUBMITTED@492.9s(tx wait)",
+        "ACCEPTED@494.6s(tx wait)",
+        "CONFIRMED@502.8s(tx wait)"
+      ],
+      "hardkasRecovered": null,
+      "truth": {
+        "firstAcceptedAt": 492971,
+        "acceptingBlockChanges": 2,
+        "acceptanceLost": 0,
+        "final": {
+          "accepting": "f2d530cec3ae5ea5117f3c0d7d9885c89cf540f1aecb097051b9101350f90ace",
+          "outputs": 1,
+          "mempool": "absent",
+          "daa": "87381"
+        },
+        "mempoolGapsBeforeAcceptance": 1
+      },
+      "reorgedClaims": [],
+      "removals": [],
+      "scansAfterRemoval": [],
+      "mechanisms": {
+        "M1": false,
+        "M2": false
+      }
+    },
+    {
+      "index": 11,
+      "txId": "58c7a419729a9e9aa56d11d43ca3ac22e25e5bb9d5582173dd80e4b73efb2648",
+      "hardkasSequence": [
+        "SUBMITTED@516.9s(tx wait)",
+        "ACCEPTED@518.6s(tx wait)",
+        "CONFIRMED@530.0s(tx wait)"
+      ],
+      "hardkasRecovered": null,
+      "truth": {
+        "firstAcceptedAt": 516195,
+        "acceptingBlockChanges": 1,
+        "acceptanceLost": 0,
+        "final": {
+          "accepting": "ed2ee6aa36dee84c5a525b279d7b10883fccefc55d082ea31d97cc96cda8aed9",
+          "outputs": 1,
+          "mempool": "absent",
+          "daa": "87634"
+        },
+        "mempoolGapsBeforeAcceptance": 1
+      },
+      "reorgedClaims": [],
+      "removals": [],
+      "scansAfterRemoval": [],
+      "mechanisms": {
+        "M1": false,
+        "M2": false
+      }
+    },
+    {
+      "index": 12,
+      "txId": "07b8108d13e1d6aa9a1b1826e5bd5c6c741dbca3b0888cc7fa5408d24fdac614",
+      "hardkasSequence": [
+        "SUBMITTED@544.2s(tx wait)",
+        "ACCEPTED@545.9s(tx wait)",
+        "CONFIRMED@550.9s(tx wait)"
+      ],
+      "hardkasRecovered": null,
+      "truth": {
+        "firstAcceptedAt": 542847,
+        "acceptingBlockChanges": 1,
+        "acceptanceLost": 0,
+        "final": {
+          "accepting": "fe30de817d879503e09e04a3f17c6a9b8bfb617049e7e6aaf4da5253c0b78dff",
+          "outputs": 1,
+          "mempool": "absent",
+          "daa": "87861"
+        },
+        "mempoolGapsBeforeAcceptance": 1
+      },
+      "reorgedClaims": [],
+      "removals": [],
+      "scansAfterRemoval": [],
+      "mechanisms": {
+        "M1": false,
+        "M2": false
+      }
+    },
+    {
+      "index": 13,
+      "txId": "da08b696b1d304e70e8f1eb322bac6dd647e0855b73eef93b2f94ada2fe9e5b2",
+      "hardkasSequence": [
+        "SUBMITTED@567.0s(tx wait)",
+        "ACCEPTED@568.8s(tx wait)",
+        "CONFIRMED@577.2s(tx wait)"
+      ],
+      "hardkasRecovered": null,
+      "truth": {
+        "firstAcceptedAt": 566180,
+        "acceptingBlockChanges": 1,
+        "acceptanceLost": 0,
+        "final": {
+          "accepting": "fb85a045dd8994628d3f579435d32ee154d2b908c91cc3f6794112ea899e2f5d",
+          "outputs": 1,
+          "mempool": "absent",
+          "daa": "88109"
+        },
+        "mempoolGapsBeforeAcceptance": 1
+      },
+      "reorgedClaims": [],
+      "removals": [],
+      "scansAfterRemoval": [],
+      "mechanisms": {
+        "M1": false,
+        "M2": false
+      }
+    },
+    {
+      "index": 14,
+      "txId": "d4f2475ff6dcfaed2d6eccd81dc147a33e2e1f581440fc2749bf2164bde8c056",
+      "hardkasSequence": [
+        "SUBMITTED@591.7s(tx wait)",
+        "ACCEPTED@593.6s(tx wait)",
+        "CONFIRMED@602.2s(tx wait)"
+      ],
+      "hardkasRecovered": null,
+      "truth": {
+        "firstAcceptedAt": 591086,
+        "acceptingBlockChanges": 1,
+        "acceptanceLost": 0,
+        "final": {
+          "accepting": "ef696afc73ac007a7f0d197ec9e842aa0b67ac6379ec17aabe60ed4b74e6ffcb",
+          "outputs": 1,
+          "mempool": "absent",
+          "daa": "88346"
+        },
+        "mempoolGapsBeforeAcceptance": 1
+      },
+      "reorgedClaims": [],
+      "removals": [],
+      "scansAfterRemoval": [],
+      "mechanisms": {
+        "M1": false,
+        "M2": false
+      }
+    },
+    {
+      "index": 15,
+      "txId": "b08d90e0c36fc67d91ace3a341a034efd480eec23db63de9b717fda306b0daaf",
+      "hardkasSequence": [
+        "SUBMITTED@617.1s(tx wait)",
+        "ACCEPTED@618.9s(tx wait)",
+        "CONFIRMED@627.5s(tx wait)"
+      ],
+      "hardkasRecovered": null,
+      "truth": {
+        "firstAcceptedAt": 616026,
+        "acceptingBlockChanges": 0,
+        "acceptanceLost": 0,
+        "final": {
+          "accepting": "fa9d287369fe49204bf0c2d5dab75b1b54bfa3ddfc33186a81cd4ba16ced7c56",
+          "outputs": 1,
+          "mempool": "absent",
+          "daa": "88619"
+        },
+        "mempoolGapsBeforeAcceptance": 1
+      },
+      "reorgedClaims": [],
+      "removals": [],
+      "scansAfterRemoval": [],
+      "mechanisms": {
+        "M1": false,
+        "M2": false
+      }
+    },
+    {
+      "index": 16,
+      "txId": "c1999d091e71c1800c5a229372b28e102328fa8137078c4083e664375c2ff6c1",
+      "hardkasSequence": [
+        "SUBMITTED@642.9s(tx wait)",
+        "ACCEPTED@644.7s(tx wait)",
+        "CONFIRMED@653.6s(tx wait)"
+      ],
+      "hardkasRecovered": null,
+      "truth": {
+        "firstAcceptedAt": 642269,
+        "acceptingBlockChanges": 3,
+        "acceptanceLost": 0,
+        "final": {
+          "accepting": "fa492ff020bb02b6159caeb0f6164de0f5f2fcf18ce5ca63870506f05db336e6",
+          "outputs": 1,
+          "mempool": "absent",
+          "daa": "88877"
+        },
+        "mempoolGapsBeforeAcceptance": 1
+      },
+      "reorgedClaims": [],
+      "removals": [],
+      "scansAfterRemoval": [],
+      "mechanisms": {
+        "M1": false,
+        "M2": false
+      }
+    },
+    {
+      "index": 17,
+      "txId": "83d3b3001b7ae1ec2b4acf32023ff3b5f7f79b4a2f337fd935785229413a4d66",
+      "hardkasSequence": [
+        "SUBMITTED@668.7s(tx wait)",
+        "ACCEPTED@670.6s(tx wait)",
+        "CONFIRMED@677.7s(tx wait)"
+      ],
+      "hardkasRecovered": null,
+      "truth": {
+        "firstAcceptedAt": 667228,
+        "acceptingBlockChanges": 1,
+        "acceptanceLost": 0,
+        "final": {
+          "accepting": "f168d34be07190bec897d4377db10710c0742343f6261698c9b6413a536f8fed",
+          "outputs": 1,
+          "mempool": "absent",
+          "daa": "89120"
+        },
+        "mempoolGapsBeforeAcceptance": 1
+      },
+      "reorgedClaims": [],
+      "removals": [],
+      "scansAfterRemoval": [],
+      "mechanisms": {
+        "M1": false,
+        "M2": false
+      }
+    },
+    {
+      "index": 18,
+      "txId": "c49c1588fec786d95a0fd9acd84384176e55f99332dd23e6b408b0690ebabc65",
+      "hardkasSequence": [
+        "SUBMITTED@693.2s(tx wait)",
+        "ACCEPTED@695.1s(tx wait)",
+        "CONFIRMED@702.4s(tx wait)"
+      ],
+      "hardkasRecovered": null,
+      "truth": {
+        "firstAcceptedAt": 692112,
+        "acceptingBlockChanges": 1,
+        "acceptanceLost": 0,
+        "final": {
+          "accepting": "fdaa5fbb2cd2930d171896785a1f9d82e7e0f090ebf7b53647b7b014e9aaa09f",
+          "outputs": 1,
+          "mempool": "absent",
+          "daa": "89403"
+        },
+        "mempoolGapsBeforeAcceptance": 1
+      },
+      "reorgedClaims": [],
+      "removals": [],
+      "scansAfterRemoval": [],
+      "mechanisms": {
+        "M1": false,
+        "M2": false
+      }
+    },
+    {
+      "index": 19,
+      "txId": "74e6f0e602e75ddeceec7758433ea4a64dcb121ea8028cc611471d92c37563f3",
+      "hardkasSequence": [
+        "SUBMITTED@718.0s(tx wait)",
+        "ACCEPTED@720.0s(tx wait)",
+        "CONFIRMED@729.3s(tx wait)"
+      ],
+      "hardkasRecovered": null,
+      "truth": {
+        "firstAcceptedAt": 717014,
+        "acceptingBlockChanges": 2,
+        "acceptanceLost": 0,
+        "final": {
+          "accepting": "fda2784e4219c22a5f1151e5f0a49108f1b274ac4a8bf2ac1670d3d15a24f6a0",
+          "outputs": 1,
+          "mempool": "absent",
+          "daa": "89661"
+        },
+        "mempoolGapsBeforeAcceptance": 1
+      },
+      "reorgedClaims": [],
+      "removals": [],
+      "scansAfterRemoval": [],
+      "mechanisms": {
+        "M1": false,
+        "M2": false
+      }
+    },
+    {
+      "index": 20,
+      "txId": "e380a890c392d9d4e7e978110c9f604d2171fe4819b5e8300870f670cdf2433c",
+      "hardkasSequence": [
+        "SUBMITTED@745.0s(tx wait)",
+        "ACCEPTED@746.9s(tx wait)",
+        "CONFIRMED@754.5s(tx wait)"
+      ],
+      "hardkasRecovered": null,
+      "truth": {
+        "firstAcceptedAt": 743606,
+        "acceptingBlockChanges": 1,
+        "acceptanceLost": 0,
+        "final": {
+          "accepting": "d0e4734642aa1d1951628e2d1aea24c2e5f5aa0fa3fc3b25fcf5564de0c0a4fe",
+          "outputs": 1,
+          "mempool": "absent",
+          "daa": "89929"
+        },
+        "mempoolGapsBeforeAcceptance": 1
+      },
+      "reorgedClaims": [],
+      "removals": [],
+      "scansAfterRemoval": [],
+      "mechanisms": {
+        "M1": false,
+        "M2": false
+      }
+    }
+  ]
+}

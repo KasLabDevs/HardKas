@@ -18,7 +18,7 @@ Operational mistakes in HardKAS can lead to permanent financial loss or severe p
 
 * **The Trap:** You receive a PSKT file (`session.pskt`) from a Coordinator and sign it immediately using `hardkas pskt sign`.
 * **The Failure:** The Coordinator maliciously altered the outputs. Your signature authorizes the transfer of funds to the attacker instead of the intended recipient.
-* **The Rule:** Always run `hardkas pskt inspect` to independently verify the amounts and recipients *before* signing.
+* **The Rule:** Always verify the amounts and recipients with a tool that decodes the PSKT payload *before* signing. `hardkas pskt inspect` shows the session metadata only and is no such check (and PSKT is unavailable in this build).
 
 ## 4. Wrong Workspace Context
 

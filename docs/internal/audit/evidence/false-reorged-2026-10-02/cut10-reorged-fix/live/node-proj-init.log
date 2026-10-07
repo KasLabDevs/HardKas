@@ -1,0 +1,18 @@
+﻿{
+  "ok": true,
+  "command": "init",
+  "mode": "cli",
+  "result": {
+    "toolchain": {
+      "id": "kaspa-wasm",
+      "version": "2.1.0",
+      "status": "already-installed",
+      "dir": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-fix\\home-live\\toolchains\\kaspa-wasm\\2.1.0"
+    },
+    "nextSteps": [
+      "cd node-proj",
+      "npm install",
+      "npm test"
+    ]
+  }
+}

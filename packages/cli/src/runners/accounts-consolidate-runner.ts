@@ -19,7 +19,18 @@ export interface AccountsConsolidateOptions {
 
 export async function runAccountsConsolidate(options: AccountsConsolidateOptions) {
   const sdk = await Hardkas.open({ cwd: process.cwd() });
+  // RESOURCE-LIFECYCLE-1 (RL-I1/RL-I3): this command opened the SDK and may hand it a client of its own; both are
+  // released whatever the command ends with. sdk.close() releases only the SDK's own client, never the handed one.
+  const created: Array<{ close(): void | Promise<void> }> = [];
+  try {
+    return await consolidate(options, sdk, created);
+  } finally {
+    for (const client of created) await client.close();
+    await sdk.close();
+  }
+}
 
+async function consolidate(options: AccountsConsolidateOptions, sdk: Hardkas, created: Array<{ close(): void | Promise<void> }>) {
   const resolvedName = options.network || sdk.config.config.defaultNetwork || "simnet";
 
   if (resolvedName === "mainnet" && options.execute && !options.allowMainnet) {
@@ -39,7 +50,9 @@ export async function runAccountsConsolidate(options: AccountsConsolidateOptions
 
   if (provider.mode !== "simulator") {
     const { JsonWrpcKaspaClient } = await import("@hardkas/kaspa-rpc");
-    (sdk as any).rpc = new JsonWrpcKaspaClient({ rpcUrl: provider.endpoint! });
+    const client = new JsonWrpcKaspaClient({ rpcUrl: provider.endpoint! });
+    created.push(client);
+    (sdk as any).rpc = client;
   }
 
   const resolvedAccount = await sdk.accounts.resolve(options.account);
@@ -87,7 +100,8 @@ export async function runAccountsConsolidate(options: AccountsConsolidateOptions
       (err as any).code = "RPC_CONNECTION_FAILED";
       throw err;
     }
-    throw new Error("Command failed");
+    // CLI-RUNTIME-CONTRACT-1: the original error (and its code) is the one reported.
+    throw e;
   }
 
   if (options.minUtxo) {
@@ -143,20 +157,14 @@ export async function runAccountsConsolidate(options: AccountsConsolidateOptions
 
   if (options.dryRun || !options.execute) {
     if (options.json) {
-      getOutput().writeLine(
-        JSON.stringify(
-          {
-            account: resolvedAccount.name,
-            before: beforeCount,
-            afterEstimate,
-            batches: batches.length,
-            maxInputs: options.batchSize,
-            strategy: "smallest-first"
-          },
-          null,
-          2
-        )
-      );
+      getOutput().writeJson({
+        account: resolvedAccount.name,
+        before: beforeCount,
+        afterEstimate,
+        batches: batches.length,
+        maxInputs: options.batchSize,
+        strategy: "smallest-first"
+      });
     } else {
       getOutput().writeLine(`HardKAS UTXO Consolidation\n`);
       getOutput().writeLine(`Account:\n ${resolvedAccount.name}\n`);
@@ -225,21 +233,15 @@ export async function runAccountsConsolidate(options: AccountsConsolidateOptions
   const finalUtxos = getSpendableUtxos(localState, resolvedAccount.address!);
 
   if (options.json) {
-    getOutput().writeLine(
-      JSON.stringify(
-        {
-          account: resolvedAccount.name,
-          before: beforeCount,
-          afterEstimate,
-          batches: batches.length,
-          maxInputs: options.batchSize,
-          strategy: "smallest-first",
-          receipts
-        },
-        null,
-        2
-      )
-    );
+    getOutput().writeJson({
+      account: resolvedAccount.name,
+      before: beforeCount,
+      afterEstimate,
+      batches: batches.length,
+      maxInputs: options.batchSize,
+      strategy: "smallest-first",
+      receipts
+    });
   } else {
     getOutput().writeLine(`\nConsolidation complete.`);
     getOutput().writeLine(`Receipts generated: ${receipts.length}`);

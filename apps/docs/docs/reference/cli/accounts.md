@@ -40,7 +40,7 @@ title: hardkas accounts
 
 #### Options
 
-- `--name &lt;name&gt;`: Account name
+- `--name &lt;name&gt;`: Account name: letters, digits, _ and - (default: default)
 - `--address &lt;address&gt;`: Kaspa address
 - `--private-key &lt;hex&gt;`: Deprecated. Unsafe: may leak through shell history. Prefer --private-key-stdin or --private-key-env.
 - `--private-key-stdin` (Default: `false`): Read private key from stdin
@@ -60,7 +60,7 @@ title: hardkas accounts
 
 ### Synopsis (Generated)
 
-**Purpose:** Verify keystore access and record signing intent internal
+**Purpose:** Check that an account's encrypted keystore opens with its password; nothing is recorded internal
 
 **Aliases:** `unlock`
 
@@ -141,10 +141,10 @@ title: hardkas accounts
 
 #### Options
 
-- `--network &lt;name&gt;` (Default: `simnet`): Kaspa network name
+- `--network &lt;name&gt;`: Kaspa network name (default: the workspace's default target)
 - `--provider &lt;type&gt;` (Default: `auto`): Provider mode (auto, rpc, simulated)
 - `--url &lt;url&gt;`: RPC URL (optional override)
-- `--local` (Default: `false`): Query local query-store instead of remote RPC (for simulated networks)
+- `--local` (Default: `false`): Read the simulator state file (.hardkas/localnet.json) instead of a node
 - `--json` (Default: `false`): Output as JSON
 
 ---

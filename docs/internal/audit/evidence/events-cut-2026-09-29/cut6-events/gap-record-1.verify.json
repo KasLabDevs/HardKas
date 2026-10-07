@@ -1,0 +1,298 @@
+﻿{
+  "decisiveAllTrue": true,
+  "facts": [
+    {
+      "ok": true,
+      "name": "node: T_gap = T0 − gapInputs + gapChange",
+      "detail": {
+        "removed": [
+          "1378b41a2b117a2fa3da73da4b9f79462fd70f43386bbd0cc6efa8e42283bc50:0",
+          "1378b41a2b117a2fa3da73da4b9f79462fd70f43386bbd0cc6efa8e42283bc50:1"
+        ],
+        "added": [
+          "a380f3f9b24bc150ad8fb09420e3c780c69f70ca356fd63d004652cc93bb8a07:1"
+        ]
+      }
+    },
+    {
+      "ok": true,
+      "name": "node: unchanged UTXOs keep their amounts across the gap"
+    },
+    {
+      "ok": true,
+      "name": "node: nothing moved between the end of the gap and the reconnect"
+    },
+    {
+      "ok": true,
+      "name": "node: T3 = T2 − postInputs + postChange"
+    },
+    {
+      "ok": true,
+      "name": "before-gap · L: extra 0, missing 0",
+      "detail": {
+        "extra": [],
+        "missing": [],
+        "amountsAgree": true
+      }
+    },
+    {
+      "ok": true,
+      "name": "before-gap · R: extra 0, missing 0",
+      "detail": {
+        "extra": [],
+        "missing": [],
+        "amountsAgree": true
+      }
+    },
+    {
+      "ok": true,
+      "name": "before-gap · U: extra 0, missing 0",
+      "detail": {
+        "extra": [],
+        "missing": [],
+        "amountsAgree": true
+      }
+    },
+    {
+      "ok": true,
+      "name": "before-gap · K: extra 0, missing 0",
+      "detail": {
+        "extra": [],
+        "missing": [],
+        "amountsAgree": true
+      }
+    },
+    {
+      "ok": true,
+      "name": "before-gap · U0: extra 0, missing 0",
+      "detail": {
+        "extra": [],
+        "missing": [],
+        "amountsAgree": true
+      }
+    },
+    {
+      "ok": true,
+      "name": "during-gap · L: extra 0, missing 0",
+      "detail": {
+        "extra": [],
+        "missing": [],
+        "amountsAgree": true
+      }
+    },
+    {
+      "ok": true,
+      "name": "during-gap · R: extra 2, missing 1",
+      "detail": {
+        "extra": [
+          "1378b41a2b117a2fa3da73da4b9f79462fd70f43386bbd0cc6efa8e42283bc50:0",
+          "1378b41a2b117a2fa3da73da4b9f79462fd70f43386bbd0cc6efa8e42283bc50:1"
+        ],
+        "missing": [
+          "a380f3f9b24bc150ad8fb09420e3c780c69f70ca356fd63d004652cc93bb8a07:1"
+        ],
+        "amountsAgree": true
+      }
+    },
+    {
+      "ok": true,
+      "name": "during-gap · U: extra 2, missing 1",
+      "detail": {
+        "extra": [
+          "1378b41a2b117a2fa3da73da4b9f79462fd70f43386bbd0cc6efa8e42283bc50:0",
+          "1378b41a2b117a2fa3da73da4b9f79462fd70f43386bbd0cc6efa8e42283bc50:1"
+        ],
+        "missing": [
+          "a380f3f9b24bc150ad8fb09420e3c780c69f70ca356fd63d004652cc93bb8a07:1"
+        ],
+        "amountsAgree": true
+      }
+    },
+    {
+      "ok": true,
+      "name": "during-gap · K: extra 2, missing 1",
+      "detail": {
+        "extra": [
+          "1378b41a2b117a2fa3da73da4b9f79462fd70f43386bbd0cc6efa8e42283bc50:0",
+          "1378b41a2b117a2fa3da73da4b9f79462fd70f43386bbd0cc6efa8e42283bc50:1"
+        ],
+        "missing": [
+          "a380f3f9b24bc150ad8fb09420e3c780c69f70ca356fd63d004652cc93bb8a07:1"
+        ],
+        "amountsAgree": true
+      }
+    },
+    {
+      "ok": true,
+      "name": "during-gap · U0: extra 2, missing 1",
+      "detail": {
+        "extra": [
+          "1378b41a2b117a2fa3da73da4b9f79462fd70f43386bbd0cc6efa8e42283bc50:0",
+          "1378b41a2b117a2fa3da73da4b9f79462fd70f43386bbd0cc6efa8e42283bc50:1"
+        ],
+        "missing": [
+          "a380f3f9b24bc150ad8fb09420e3c780c69f70ca356fd63d004652cc93bb8a07:1"
+        ],
+        "amountsAgree": true
+      }
+    },
+    {
+      "ok": true,
+      "name": "after-reconnect · L: extra 0, missing 0",
+      "detail": {
+        "extra": [],
+        "missing": [],
+        "amountsAgree": true
+      }
+    },
+    {
+      "ok": true,
+      "name": "after-reconnect · R: extra 2, missing 1",
+      "detail": {
+        "extra": [
+          "1378b41a2b117a2fa3da73da4b9f79462fd70f43386bbd0cc6efa8e42283bc50:0",
+          "1378b41a2b117a2fa3da73da4b9f79462fd70f43386bbd0cc6efa8e42283bc50:1"
+        ],
+        "missing": [
+          "a380f3f9b24bc150ad8fb09420e3c780c69f70ca356fd63d004652cc93bb8a07:1"
+        ],
+        "amountsAgree": true
+      }
+    },
+    {
+      "ok": true,
+      "name": "after-reconnect · U: extra 0, missing 0",
+      "detail": {
+        "extra": [],
+        "missing": [],
+        "amountsAgree": true
+      }
+    },
+    {
+      "ok": true,
+      "name": "after-reconnect · K: extra 2, missing 1",
+      "detail": {
+        "extra": [
+          "1378b41a2b117a2fa3da73da4b9f79462fd70f43386bbd0cc6efa8e42283bc50:0",
+          "1378b41a2b117a2fa3da73da4b9f79462fd70f43386bbd0cc6efa8e42283bc50:1"
+        ],
+        "missing": [
+          "a380f3f9b24bc150ad8fb09420e3c780c69f70ca356fd63d004652cc93bb8a07:1"
+        ],
+        "amountsAgree": true
+      }
+    },
+    {
+      "ok": true,
+      "name": "after-reconnect · U0: extra 2, missing 1",
+      "detail": {
+        "extra": [
+          "1378b41a2b117a2fa3da73da4b9f79462fd70f43386bbd0cc6efa8e42283bc50:0",
+          "1378b41a2b117a2fa3da73da4b9f79462fd70f43386bbd0cc6efa8e42283bc50:1"
+        ],
+        "missing": [
+          "a380f3f9b24bc150ad8fb09420e3c780c69f70ca356fd63d004652cc93bb8a07:1"
+        ],
+        "amountsAgree": true
+      }
+    },
+    {
+      "ok": true,
+      "name": "after-control-spend · L: extra 0, missing 0",
+      "detail": {
+        "extra": [],
+        "missing": [],
+        "amountsAgree": true
+      }
+    },
+    {
+      "ok": true,
+      "name": "after-control-spend · R: extra 2, missing 1",
+      "detail": {
+        "extra": [
+          "1378b41a2b117a2fa3da73da4b9f79462fd70f43386bbd0cc6efa8e42283bc50:0",
+          "1378b41a2b117a2fa3da73da4b9f79462fd70f43386bbd0cc6efa8e42283bc50:1"
+        ],
+        "missing": [
+          "a380f3f9b24bc150ad8fb09420e3c780c69f70ca356fd63d004652cc93bb8a07:1"
+        ],
+        "amountsAgree": true
+      }
+    },
+    {
+      "ok": true,
+      "name": "after-control-spend · U: extra 0, missing 0",
+      "detail": {
+        "extra": [],
+        "missing": [],
+        "amountsAgree": true
+      }
+    },
+    {
+      "ok": true,
+      "name": "after-control-spend · K: extra 2, missing 1",
+      "detail": {
+        "extra": [
+          "1378b41a2b117a2fa3da73da4b9f79462fd70f43386bbd0cc6efa8e42283bc50:0",
+          "1378b41a2b117a2fa3da73da4b9f79462fd70f43386bbd0cc6efa8e42283bc50:1"
+        ],
+        "missing": [
+          "a380f3f9b24bc150ad8fb09420e3c780c69f70ca356fd63d004652cc93bb8a07:1"
+        ],
+        "amountsAgree": true
+      }
+    },
+    {
+      "ok": true,
+      "name": "after-control-spend · U0: extra 4, missing 2",
+      "detail": {
+        "extra": [
+          "1378b41a2b117a2fa3da73da4b9f79462fd70f43386bbd0cc6efa8e42283bc50:0",
+          "1378b41a2b117a2fa3da73da4b9f79462fd70f43386bbd0cc6efa8e42283bc50:1",
+          "1378b41a2b117a2fa3da73da4b9f79462fd70f43386bbd0cc6efa8e42283bc50:10",
+          "1378b41a2b117a2fa3da73da4b9f79462fd70f43386bbd0cc6efa8e42283bc50:11"
+        ],
+        "missing": [
+          "7993e4b840cdd26c036b720baeb257ffe224b0f4282ed1340d997e3538ecc330:1",
+          "a380f3f9b24bc150ad8fb09420e3c780c69f70ca356fd63d004652cc93bb8a07:1"
+        ],
+        "amountsAgree": true
+      }
+    },
+    {
+      "ok": true,
+      "name": "L (live control) equals the truth at every checkpoint"
+    },
+    {
+      "ok": true,
+      "name": "R after reconnect: extra = exactly the gap inputs",
+      "detail": [
+        "1378b41a2b117a2fa3da73da4b9f79462fd70f43386bbd0cc6efa8e42283bc50:0",
+        "1378b41a2b117a2fa3da73da4b9f79462fd70f43386bbd0cc6efa8e42283bc50:1"
+      ]
+    },
+    {
+      "ok": true,
+      "name": "R after reconnect: missing = exactly the gap change",
+      "detail": [
+        "a380f3f9b24bc150ad8fb09420e3c780c69f70ca356fd63d004652cc93bb8a07:1"
+      ]
+    },
+    {
+      "ok": true,
+      "name": "U after reconnect equals the truth (outpoints and amounts)"
+    },
+    {
+      "ok": true,
+      "name": "R after the control spend: the post-heal spend applied live (inputs gone, change present)"
+    },
+    {
+      "ok": true,
+      "name": "R after the control spend: still exactly the inherited gap"
+    },
+    {
+      "ok": true,
+      "name": "U after the control spend equals the truth"
+    }
+  ]
+}

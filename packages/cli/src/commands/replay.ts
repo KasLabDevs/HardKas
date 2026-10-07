@@ -1,6 +1,6 @@
 import { Command } from "commander";
 import { UI } from "../ui.js";
-import path from "node:path";
+import { explicitWorkspaceOrCwd } from "../workspace-root.js";
 
 export function registerReplayCommands(program: Command) {
   const replayCmd = program
@@ -23,9 +23,7 @@ export function registerReplayCommands(program: Command) {
       // typed error propagate makes the top-level renderer the single
       // owner of the final failure envelope.
       const { runReplayVerify } = await import("../runners/replay-verify-runner.js");
-      const workspaceRoot = options.workspace
-        ? path.resolve(options.workspace)
-        : process.cwd();
+      const workspaceRoot = explicitWorkspaceOrCwd(); // --workspace is resolved once (WORKSPACE-AUTHORITY-1)
       await runReplayVerify({ path: targetPath || "", ...options, workspaceRoot });
     });
   replayCmd
@@ -35,17 +33,15 @@ export function registerReplayCommands(program: Command) {
     )
     .option("--json", "Output as JSON", false)
     .action(async (idA: string, idB: string, options: { json: boolean }) => {
-      try {
-        const { runReplayDiff } = await import("../runners/replay-diff-runner.js");
-        await runReplayDiff({
-          idA,
-          idB,
-          ...options,
-          network: "simnet",
-          workspaceRoot: process.cwd()
-        });
-      } catch (e: unknown) {
-        throw new Error("Command failed");
-      }
+      // CLI-RUNTIME-CONTRACT-1: the runner's own error (and its code) reaches the top-level renderer
+      // unchanged; the former `throw new Error("Command failed")` destroyed it.
+      const { runReplayDiff } = await import("../runners/replay-diff-runner.js");
+      await runReplayDiff({
+        idA,
+        idB,
+        ...options,
+        network: "simnet",
+        workspaceRoot: process.cwd()
+      });
     });
 }

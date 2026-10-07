@@ -1,0 +1,151 @@
+﻿{
+  "before": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-3a\\before",
+  "after": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-3a\\after",
+  "packs": {
+    "before": 33,
+    "after": 32,
+    "removed": [
+      "@hardkas/rpc-events"
+    ],
+    "added": []
+  },
+  "manifests": [
+    {
+      "package": "@hardkas/sdk",
+      "field": "dependencies",
+      "removed": [
+        "@hardkas/rpc-events"
+      ],
+      "added": [],
+      "changed": []
+    }
+  ],
+  "consumers": {
+    "npm": {
+      "install": {
+        "before": 0,
+        "after": 0
+      },
+      "hardkasInstalled": {
+        "before": 25,
+        "after": 24,
+        "removed": [
+          "@hardkas/rpc-events"
+        ],
+        "added": []
+      },
+      "thirdParty": {
+        "before": 145,
+        "after": 145,
+        "removed": [],
+        "added": []
+      },
+      "hardkasFromRegistry": {
+        "before": 0,
+        "after": 0
+      },
+      "workspaceLeak": {
+        "before": false,
+        "after": false
+      },
+      "version": {
+        "before": "0.12.0-rc.26",
+        "after": "0.12.0-rc.26"
+      },
+      "imports": {
+        "before": {
+          "ok": 31,
+          "failed": 2
+        },
+        "after": {
+          "ok": 30,
+          "failed": 2
+        },
+        "removedSpecs": [
+          "@hardkas/rpc-events"
+        ],
+        "addedSpecs": [],
+        "changed": [],
+        "failedBoth": [
+          "@hardkas/testing/setup → ERR_MODULE_NOT_FOUND vitest",
+          "@hardkas/testing/scenarios → ERR_MODULE_NOT_FOUND vitest"
+        ]
+      },
+      "steps": {
+        "before": 7,
+        "after": 7,
+        "allOkBefore": true,
+        "allOkAfter": true,
+        "differences": []
+      },
+      "planJson": {
+        "before": true,
+        "after": true,
+        "identicalAfterNormalising": true
+      }
+    },
+    "pnpm": {
+      "install": {
+        "before": 0,
+        "after": 0
+      },
+      "hardkasInstalled": {
+        "before": 33,
+        "after": 32,
+        "removed": [
+          "@hardkas/rpc-events"
+        ],
+        "added": []
+      },
+      "thirdParty": {
+        "before": 150,
+        "after": 150,
+        "removed": [],
+        "added": []
+      },
+      "hardkasFromRegistry": {
+        "before": 0,
+        "after": 0
+      },
+      "workspaceLeak": {
+        "before": false,
+        "after": false
+      },
+      "version": {
+        "before": "0.12.0-rc.26",
+        "after": "0.12.0-rc.26"
+      },
+      "imports": {
+        "before": {
+          "ok": 39,
+          "failed": 2
+        },
+        "after": {
+          "ok": 38,
+          "failed": 2
+        },
+        "removedSpecs": [
+          "@hardkas/rpc-events"
+        ],
+        "addedSpecs": [],
+        "changed": [],
+        "failedBoth": [
+          "@hardkas/testing/setup → ERR_MODULE_NOT_FOUND vitest",
+          "@hardkas/testing/scenarios → ERR_MODULE_NOT_FOUND vitest"
+        ]
+      },
+      "steps": {
+        "before": 7,
+        "after": 7,
+        "allOkBefore": true,
+        "allOkAfter": true,
+        "differences": []
+      },
+      "planJson": {
+        "before": true,
+        "after": true,
+        "identicalAfterNormalising": true
+      }
+    }
+  }
+}

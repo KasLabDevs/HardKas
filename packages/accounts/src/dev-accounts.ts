@@ -3,7 +3,7 @@ import path from "node:path";
 import crypto from "node:crypto";
 import { KeystoreManager } from "./keystore.js";
 import type { GeneratedKaspaDevAccount } from "./real-keygen.js";
-import { deterministicCompare, getNetworkPrefix } from "@hardkas/core";
+import { deterministicCompare, getNetworkPrefix, stripBom } from "@hardkas/core";
 import { resolveHardkasAccount } from "./resolve.js";
 import { KaspaWasmPrivateKeySigner } from "./kaspa-wasm-signer.js";
 import type { HardkasTxPlanSigner } from "./types.js";
@@ -124,7 +124,7 @@ export function listDevAccountsSync(
       const name = path.basename(file, ".json");
       try {
         const data = fs.readFileSync(path.join(devAccountsDir, file), "utf-8");
-        const keystore = JSON.parse(data);
+        const keystore = JSON.parse(stripBom(data));
         if (keystore.type === "hardkas.encryptedKeystore.v2") {
           accounts.push({
             name,

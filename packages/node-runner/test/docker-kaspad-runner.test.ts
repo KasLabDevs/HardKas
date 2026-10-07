@@ -162,10 +162,79 @@ describe("DockerKaspadRunner", () => {
     const runner = new DockerKaspadRunner({ containerName: "stop-me" });
     vi.mocked(execa).mockResolvedValue({} as any);
 
-    await runner.stop();
+    const status = await runner.stop();
 
     expect(execa).toHaveBeenCalledWith("docker", ["stop", "stop-me"]);
     // (no miner configured, so only the node is stopped)
     expect(execa).toHaveBeenCalledWith("docker", ["rm", "stop-me"]);
+    expect(status.stopped).toBe(true);
+  });
+
+  // CLI-RUNTIME-CONTRACT-1: the runner never reports what Docker could not do.
+  describe("CLI-RUNTIME-CONTRACT-1 · truthful stop/status/logs/reset", () => {
+    const daemonDown = () =>
+      vi.mocked(execa).mockImplementation(
+        (() => Promise.reject(Object.assign(new Error("error during connect: Get \"http://127.0.0.1:1/v1.47/containers/json\": connection refused"), { exitCode: 1 }))) as any
+      );
+    const noSuchContainer = () =>
+      vi.mocked(execa).mockImplementation(
+        (() => Promise.reject(Object.assign(new Error("Error response from daemon: No such container: x"), { exitCode: 1, stderr: "Error: No such object: x" }))) as any
+      );
+
+    it("stop(): Docker unavailable is DOCKER_UNAVAILABLE and nothing is stopped or removed", async () => {
+      daemonDown();
+      await expect(new DockerKaspadRunner({ containerName: "n" }).stop()).rejects.toMatchObject({ code: "DOCKER_UNAVAILABLE" });
+      expect(vi.mocked(execa).mock.calls.find((c) => c[1]?.[0] === "stop" || c[1]?.[0] === "rm")).toBeUndefined();
+    });
+
+    it("stop(): no container is `stopped: false` and no docker stop/rm is attempted", async () => {
+      noSuchContainer();
+      const status = await new DockerKaspadRunner({ containerName: "n" }).stop();
+      expect(status.stopped).toBe(false);
+      expect(status.statusText).toBe("not-found");
+      expect(vi.mocked(execa).mock.calls.find((c) => c[1]?.[0] === "stop" || c[1]?.[0] === "rm")).toBeUndefined();
+    });
+
+    it("stop(): a `docker stop` that fails for a real reason is an error, never a success", async () => {
+      vi.mocked(execa).mockImplementation(((file: string, args: string[]) =>
+        args?.[0] === "inspect" ? Promise.resolve({ stdout: "running" } as any) : Promise.reject(Object.assign(new Error("permission denied"), { exitCode: 1 }))) as any);
+      vi.mocked(checkKaspaRpcHealth).mockResolvedValue({ ready: false } as any);
+      await expect(new DockerKaspadRunner({ containerName: "n" }).stop()).rejects.toThrow(/permission denied/);
+    });
+
+    it("status(): Docker unavailable is an error, not a 'not-found' container", async () => {
+      daemonDown();
+      await expect(new DockerKaspadRunner().status()).rejects.toMatchObject({ code: "DOCKER_UNAVAILABLE" });
+    });
+
+    it("logs(): typed codes for a missing container and for Docker unavailable", async () => {
+      noSuchContainer();
+      await expect(new DockerKaspadRunner({ containerName: "n" }).logs()).rejects.toMatchObject({ code: "NODE_CONTAINER_NOT_FOUND" });
+      daemonDown();
+      await expect(new DockerKaspadRunner({ containerName: "n" }).logs()).rejects.toMatchObject({ code: "DOCKER_UNAVAILABLE" });
+    });
+
+    it("reset(): with Docker unavailable the chain data is not removed", async () => {
+      const fsSync = await import("node:fs");
+      const os = await import("node:os");
+      const path = await import("node:path");
+      const cwd = fsSync.mkdtempSync(path.join(os.tmpdir(), "hk-node-runner-reset-"));
+      try {
+        const marker = path.join(cwd, ".hardkas", "kaspad", "marker.txt");
+        fsSync.mkdirSync(path.dirname(marker), { recursive: true });
+        fsSync.writeFileSync(marker, "chain data\n");
+        daemonDown();
+        await expect(new DockerKaspadRunner({ cwd, containerName: "n" }).reset({ removeData: true })).rejects.toMatchObject({ code: "DOCKER_UNAVAILABLE" });
+        expect(fsSync.existsSync(marker)).toBe(true);
+      } finally {
+        fsSync.rmSync(cwd, { recursive: true, force: true });
+      }
+    });
+
+    it("start(): the Docker check keeps the [DOCKER_UNAVAILABLE] message and carries the code", async () => {
+      vi.mocked(execa).mockImplementation(((file: string, args: string[]) =>
+        args?.[0] === "version" ? Promise.reject(new Error("daemon not running")) : Promise.reject(new Error("No such object"))) as any);
+      await expect(new DockerKaspadRunner().start()).rejects.toMatchObject({ code: "DOCKER_UNAVAILABLE" });
+    });
   });
 });

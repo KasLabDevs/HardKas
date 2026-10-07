@@ -2,7 +2,8 @@ import {
   loadOrCreateLocalnetState,
   saveLocalnetState,
   createSimulatedDag,
-  moveSink
+  moveSink,
+  withSimulatorState
 } from "@hardkas/localnet";
 import { UI } from "../ui.js";
 
@@ -45,6 +46,11 @@ export async function runDagStatus() {
  * Runner for 'hardkas dag simulate-reorg --depth <n>'
  */
 export async function runDagSimulateReorg(options: { depth: number }) {
+  // SIMULATOR-EXECUTION-UNIT-1: the reorg reads, changes and writes the simulated state as one unit
+  await withSimulatorState(process.cwd(), () => simulateReorg(options));
+}
+
+async function simulateReorg(options: { depth: number }) {
   const state = await loadOrCreateLocalnetState();
 
   if (!state.dag) {

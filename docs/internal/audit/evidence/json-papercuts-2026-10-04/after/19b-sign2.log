@@ -1,0 +1,52 @@
+$ hardkas tx sign plan2.json --account alice --out signed2.json --json
+exit=0 stdout_is_single_json=true json_docs_on_stdout=1
+--- stdout ---
+{
+  "schema": "hardkas.signedTx",
+  "schemaVersion": "hardkas.artifact.v1",
+  "hardkasVersion": "0.12.0-rc.26",
+  "version": "1.0.0-alpha",
+  "hashVersion": 5,
+  "createdAt": "2026-10-04T22:13:49.592Z",
+  "status": "signed",
+  "sourcePlanId": "plan-033799555593d2a2",
+  "networkId": "simulated",
+  "mode": "simulator",
+  "from": {
+    "address": "kaspa:sim_alice"
+  },
+  "to": {
+    "address": "kaspa:sim_bob"
+  },
+  "amountSompi": "1100000000",
+  "txId": "synthetic-033799555593d2a27562d233b9b30c70dad2e4cdd9737283eed94d10099791ce",
+  "authorization": {
+    "kind": "synthetic",
+    "planArtifactId": "033799555593d2a27562d233b9b30c70dad2e4cdd9737283eed94d10099791ce",
+    "signers": [
+      "kaspa:sim_alice"
+    ]
+  },
+  "signedTransaction": {
+    "format": "synthetic-authorization",
+    "payload": "033799555593d2a27562d233b9b30c70dad2e4cdd9737283eed94d10099791ce"
+  },
+  "lineage": {
+    "artifactId": "f6da6ca6f65172f22086a76f9bbb5a04823b4c42cc5730b65c0d581c7d9f0aac",
+    "lineageId": "033799555593d2a27562d233b9b30c70dad2e4cdd9737283eed94d10099791ce",
+    "parentArtifactId": "033799555593d2a27562d233b9b30c70dad2e4cdd9737283eed94d10099791ce",
+    "rootArtifactId": "033799555593d2a27562d233b9b30c70dad2e4cdd9737283eed94d10099791ce",
+    "sequence": 2
+  },
+  "execution": {
+    "mode": "simulator",
+    "domain": "kaspa-l1",
+    "network": "simulated"
+  },
+  "workflowId": "wf_888d5f35164251a0",
+  "assumptionLevel": "local-simulated",
+  "signedId": "signed-f6da6ca6f65172f2",
+  "contentHash": "f6da6ca6f65172f22086a76f9bbb5a04823b4c42cc5730b65c0d581c7d9f0aac"
+}
+--- stderr ---
+

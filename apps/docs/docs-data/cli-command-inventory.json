@@ -12,28 +12,35 @@
     "options": [
       {
         "flags": "--force",
-        "description": "Overwrite existing hardkas.config.ts (in-place only)",
+        "description": "Overwrite an existing hardkas.config.ts (the other scaffold files are kept)",
         "defaultValue": false
       },
       {
         "flags": "--template <type>",
-        "description": "Project template for new projects",
-        "defaultValue": "basic"
+        "description": "No effect in this release (for templates use 'hardkas create')"
       },
       {
         "flags": "--network <name>",
-        "description": "Default network for new projects",
+        "description": "'simulated' pre-creates the simulator state (5 accounts, 1000 KAS each); other values skip it. The project's default target is always the simulator",
         "defaultValue": "simulated"
       },
       {
         "flags": "--accounts <n>",
-        "description": "Number of simulated accounts for new projects",
-        "defaultValue": "3"
+        "description": "No effect in this release: init always creates the 5 simulated accounts alice…erin"
       },
       {
         "flags": "--install",
-        "description": "Run pnpm/npm install automatically after scaffolding",
+        "description": "Run npm install after scaffolding",
         "defaultValue": false
+      },
+      {
+        "flags": "--skip-toolchain",
+        "description": "Do not install the pinned kaspa-wasm (signing, planning and the generated test need it)",
+        "defaultValue": false
+      },
+      {
+        "flags": "--toolchain-from-file <asset>",
+        "description": "Install the pinned kaspa-wasm from its official release asset already on disk"
       },
       {
         "flags": "--json",
@@ -161,23 +168,27 @@
       },
       {
         "flags": "--from <accountOrAddress>",
-        "description": "Sender account name or address"
+        "description": "Sender account name or address (default: alice)"
       },
       {
         "flags": "--to <address>",
-        "description": "Recipient address"
+        "description": "Recipient address or account name (default: bob)"
       },
       {
         "flags": "--amount <kas>",
-        "description": "Amount in KAS"
+        "description": "Amount in KAS, up to 8 decimals (default: 1)"
       },
       {
         "flags": "--network <name>",
-        "description": "Kaspa network name"
+        "description": "simulated, simnet, devnet, testnet-10, testnet-12 or mainnet (default: the config's default target)"
       },
       {
         "flags": "--fee-rate <sompiPerMass>",
-        "description": "Fee rate in sompi per mass"
+        "description": "Whole sompi per gram of mass (default: 1 in the simulator, 100 on real networks; not a live estimate)"
+      },
+      {
+        "flags": "--change <accountOrAddress>",
+        "description": "Change destination (account name or address); default: the sender"
       },
       {
         "flags": "--provider <type>",
@@ -186,7 +197,7 @@
       },
       {
         "flags": "--url <url>",
-        "description": "RPC URL (optional override)"
+        "description": "Node wRPC URL (default: ws://127.0.0.1:18210 for simnet and devnet; the config's rpcUrl is not used)"
       },
       {
         "flags": "--out <path>",
@@ -206,12 +217,12 @@
       },
       {
         "flags": "--wait-lock",
-        "description": "Wait for workspace lock if held",
+        "description": "No effect, kept for compatibility: the command takes no lock of its own, and each store write waits for the store (up to 30 s)",
         "defaultValue": false
       },
       {
         "flags": "--lock-timeout <ms>",
-        "description": "Lock wait timeout in ms",
+        "description": "No effect, kept for compatibility (see --wait-lock)",
         "defaultValue": "30000"
       },
       {
@@ -245,21 +256,21 @@
       },
       {
         "flags": "--fixture",
-        "description": "Use fixture signer for Docker testing on simnet",
+        "description": "Sign with the built-in fixture test key (any network except mainnet)",
         "defaultValue": false
       },
       {
         "flags": "--allow-mainnet-signing",
-        "description": "Allow signing for mainnet",
+        "description": "Mainnet signing stays refused in this release; the flag only lets synthetic --threshold entries through",
         "defaultValue": false
       },
       {
         "flags": "--threshold <number>",
-        "description": "Multisig threshold"
+        "description": "Synthetic multisig threshold for tests (no Kaspa multisig script is produced)"
       },
       {
         "flags": "--required-signers <list>",
-        "description": "Comma-separated list of required signers"
+        "description": "Comma-separated signers, no spaces (with --threshold above 1)"
       },
       {
         "flags": "--append",
@@ -271,13 +282,22 @@
         "description": "Named execution target from hardkas.config.ts"
       },
       {
+        "flags": "--password-env <env>",
+        "description": "Read the encrypted account's keystore password from this environment variable"
+      },
+      {
+        "flags": "--password-stdin",
+        "description": "Read the encrypted account's keystore password from stdin",
+        "defaultValue": false
+      },
+      {
         "flags": "--wait-lock",
-        "description": "Wait for workspace lock if held",
+        "description": "No effect, kept for compatibility: the command takes no lock of its own, and each store write waits for the store (up to 30 s)",
         "defaultValue": false
       },
       {
         "flags": "--lock-timeout <ms>",
-        "description": "Lock wait timeout in ms",
+        "description": "No effect, kept for compatibility (see --wait-lock)",
         "defaultValue": "30000"
       },
       {
@@ -292,15 +312,23 @@
   },
   {
     "commandPath": "hardkas tx status",
-    "description": "Show the signature coverage and status of a transaction artifact",
+    "description": "Show the derived state of a txId (SUBMITTED, MEMPOOL_ACCEPTED, ACCEPTED, CONFIRMED, FINALIZED, REORGED, …) from the workspace evidence plus one new observation, or the signature coverage of a plan/signed artifact path",
     "arguments": [
       {
-        "name": "path",
+        "name": "txIdOrPath",
         "required": true,
         "description": ""
       }
     ],
     "options": [
+      {
+        "flags": "--no-observe",
+        "description": "Derive from the evidence already in the workspace; take no new observation"
+      },
+      {
+        "flags": "-n, --network <network>",
+        "description": "Network whose configured node observes (default: the network of the recorded submission)"
+      },
       {
         "flags": "--json",
         "description": "Output as JSON",
@@ -324,7 +352,7 @@
     "options": [
       {
         "flags": "--target <name>",
-        "description": "Named execution target from hardkas.config.ts"
+        "description": "Named execution target from hardkas.config.ts (signed-artifact mode: it must match the artifact and never redirects the send)"
       },
       {
         "flags": "--from <accountOrAddress>",
@@ -348,7 +376,7 @@
       },
       {
         "flags": "--provider <type>",
-        "description": "Provider mode (auto, rpc, simulated)",
+        "description": "Provider mode (auto, rpc, simulated; signed-artifact mode only)",
         "defaultValue": "auto"
       },
       {
@@ -357,17 +385,17 @@
       },
       {
         "flags": "--yes",
-        "description": "Confirm broadcast",
+        "description": "Confirm broadcast. Required unless the network is simulated or simnet (in shortcut mode, unless --network simulated or simnet is given): without it the send is refused (NOT EXECUTED, exit 3) and nothing is written",
         "defaultValue": false
       },
       {
         "flags": "--wait-lock",
-        "description": "Wait for workspace lock if held",
+        "description": "No effect, kept for compatibility: the command takes no lock of its own, and each store write waits for the store (up to 30 s)",
         "defaultValue": false
       },
       {
         "flags": "--lock-timeout <ms>",
-        "description": "Lock wait timeout in ms",
+        "description": "No effect, kept for compatibility (see --wait-lock)",
         "defaultValue": "30000"
       },
       {
@@ -377,7 +405,7 @@
       },
       {
         "flags": "--track <label>",
-        "description": "Auto-track deployment with this label"
+        "description": "Signed-artifact mode: after an accepted broadcast, record a deployment with this label"
       }
     ],
     "aliases": [],
@@ -407,7 +435,7 @@
   },
   {
     "commandPath": "hardkas tx wait",
-    "description": "Wait for transaction to be confirmed stable",
+    "description": "Wait until the derived state of a txId reaches ACCEPTED or CONFIRMED (blue-score depth ≥ the HardKAS policy), observing the configured node, then until that node's UTXO view reflects it stable",
     "arguments": [
       {
         "name": "txId",
@@ -417,21 +445,28 @@
     ],
     "options": [
       {
+        "flags": "--until <target>",
+        "description": "accepted or confirmed",
+        "defaultValue": "confirmed"
+      },
+      {
         "flags": "--timeout <seconds>",
         "description": "Timeout in seconds",
         "defaultValue": "60"
       },
       {
-        "flags": "--url <url>",
-        "description": "Override RPC URL"
+        "flags": "--interval <seconds>",
+        "description": "Seconds between observations",
+        "defaultValue": "2"
       },
       {
         "flags": "-n, --network <network>",
-        "description": "Network to use"
+        "description": "Network whose configured node observes (default: the network of the recorded submission)"
       },
       {
-        "flags": "--address <address>",
-        "description": "Recipient address to verify UTXO maturity"
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
       }
     ],
     "aliases": [],
@@ -455,21 +490,6 @@
         "defaultValue": false
       }
     ],
-    "aliases": [],
-    "category": "Tx",
-    "status": "REGISTERED"
-  },
-  {
-    "commandPath": "hardkas tx trace",
-    "description": "Reconstruct the full operational trace of a transaction research",
-    "arguments": [
-      {
-        "name": "txId",
-        "required": true,
-        "description": ""
-      }
-    ],
-    "options": [],
     "aliases": [],
     "category": "Tx",
     "status": "REGISTERED"
@@ -588,6 +608,39 @@
     "status": "REGISTERED"
   },
   {
+    "commandPath": "hardkas artifact migrate",
+    "description": "Re-issue a legacy artifact as hashVersion 5 plus a MigrationReceipt (never in place) alpha",
+    "arguments": [
+      {
+        "name": "path",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--to <hashVersion>",
+        "description": "Target hash version (only 5 is supported)"
+      },
+      {
+        "flags": "--migration-id <id>",
+        "description": "Migration identifier recorded in the receipt"
+      },
+      {
+        "flags": "--json",
+        "description": "Output results as JSON",
+        "defaultValue": false
+      },
+      {
+        "flags": "--workspace <path>",
+        "description": "Override workspace root directory"
+      }
+    ],
+    "aliases": [],
+    "category": "Artifact",
+    "status": "REGISTERED"
+  },
+  {
     "commandPath": "hardkas artifact explain",
     "description": "Provide a human-readable operational summary of an artifact stable",
     "arguments": [
@@ -644,7 +697,7 @@
   },
   {
     "commandPath": "hardkas replay verify",
-    "description": "Verify deterministic simulator-mode replay for a receipt by exact artifactId or artifact file path. Real-node (kaspa consensus) receipts are not currently supported and will report REPLAY_MODE_UNSUPPORTED. stable",
+    "description": "Verify deterministic simulator-mode replay for a receipt (required) by exact artifactId or a workspace path such as ./receipt.json. Real-node sends are not supported: they record a TxSubmission, not a TxReceipt. stable",
     "arguments": [
       {
         "name": "artifact",
@@ -695,16 +748,26 @@
   },
   {
     "commandPath": "hardkas rpc info",
-    "description": "Show RPC connection info",
+    "description": "Show the node's network, version, sync state and UTXO index",
     "arguments": [],
-    "options": [],
+    "options": [
+      {
+        "flags": "--url <url>",
+        "description": "Node wRPC endpoint (default: the canonical localnet, ws://127.0.0.1:18210)"
+      },
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
     "aliases": [],
     "category": "Rpc",
     "status": "REGISTERED"
   },
   {
     "commandPath": "hardkas rpc health",
-    "description": "Check RPC health",
+    "description": "Check that the canonical localnet node (ws://127.0.0.1:18210) answers and is ready",
     "arguments": [],
     "options": [
       {
@@ -713,7 +776,7 @@
       },
       {
         "flags": "--timeout <ms>",
-        "description": "Timeout in ms"
+        "description": "With --wait: how long to wait in ms (default: 60000)"
       },
       {
         "flags": "--json",
@@ -727,12 +790,12 @@
   },
   {
     "commandPath": "hardkas rpc doctor",
-    "description": "Run comprehensive RPC diagnostics",
+    "description": "Probe RPC endpoints: TCP, wRPC connection, server and DAG info (http:// endpoints without port 18210 are probed as EVM JSON-RPC)",
     "arguments": [],
     "options": [
       {
         "flags": "--endpoints <urls...>",
-        "description": "Specific endpoints to audit"
+        "description": "Endpoints to probe, separated by spaces (commas are not split)"
       }
     ],
     "aliases": [],
@@ -741,16 +804,26 @@
   },
   {
     "commandPath": "hardkas rpc dag",
-    "description": "Show DAG information from node",
+    "description": "Show the node's DAG: network, virtual DAA score, sink and tips",
     "arguments": [],
-    "options": [],
+    "options": [
+      {
+        "flags": "--url <url>",
+        "description": "Node wRPC endpoint (default: the canonical localnet, ws://127.0.0.1:18210)"
+      },
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
     "aliases": [],
     "category": "Rpc",
     "status": "REGISTERED"
   },
   {
     "commandPath": "hardkas rpc utxos",
-    "description": "Show UTXOs for an address from node",
+    "description": "Show the UTXOs the node holds for an address",
     "arguments": [
       {
         "name": "address",
@@ -758,14 +831,24 @@
         "description": ""
       }
     ],
-    "options": [],
+    "options": [
+      {
+        "flags": "--url <url>",
+        "description": "Node wRPC endpoint (default: the canonical localnet, ws://127.0.0.1:18210)"
+      },
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
     "aliases": [],
     "category": "Rpc",
     "status": "REGISTERED"
   },
   {
     "commandPath": "hardkas rpc mempool",
-    "description": "Show mempool status from node",
+    "description": "Look up a transaction in the node's mempool, or list what the mempool holds",
     "arguments": [
       {
         "name": "txId",
@@ -773,7 +856,17 @@
         "description": ""
       }
     ],
-    "options": [],
+    "options": [
+      {
+        "flags": "--url <url>",
+        "description": "Node wRPC endpoint (default: the canonical localnet, ws://127.0.0.1:18210)"
+      },
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
     "aliases": [],
     "category": "Rpc",
     "status": "REGISTERED"
@@ -858,7 +951,7 @@
     "options": [
       {
         "flags": "--name <name>",
-        "description": "Account name"
+        "description": "Account name: letters, digits, _ and - (default: default)"
       },
       {
         "flags": "--address <address>",
@@ -922,7 +1015,7 @@
   },
   {
     "commandPath": "hardkas accounts real session-open",
-    "description": "Verify keystore access and record signing intent internal",
+    "description": "Check that an account's encrypted keystore opens with its password; nothing is recorded internal",
     "arguments": [
       {
         "name": "name",
@@ -1071,8 +1164,7 @@
     "options": [
       {
         "flags": "--network <name>",
-        "description": "Kaspa network name",
-        "defaultValue": "simnet"
+        "description": "Kaspa network name (default: the workspace's default target)"
       },
       {
         "flags": "--provider <type>",
@@ -1085,7 +1177,7 @@
       },
       {
         "flags": "--local",
-        "description": "Query local query-store instead of remote RPC (for simulated networks)",
+        "description": "Read the simulator state file (.hardkas/localnet.json) instead of a node",
         "defaultValue": false
       },
       {
@@ -1426,7 +1518,7 @@
       },
       {
         "flags": "--mode <mode>",
-        "description": "Filter by mode (simulated/real)"
+        "description": "Filter by mode: simulator, localnet or rpc"
       },
       {
         "flags": "--from <address>",
@@ -1452,7 +1544,7 @@
       },
       {
         "flags": "--explain [level]",
-        "description": "Attach explain chains (brief|full)"
+        "description": "Attach explain chains (brief and full currently give the same output)"
       }
     ],
     "aliases": [
@@ -1479,7 +1571,7 @@
       },
       {
         "flags": "--explain [level]",
-        "description": "Attach explain chains (brief|full)"
+        "description": "Attach explain chains (brief and full currently give the same output)"
       }
     ],
     "aliases": [],
@@ -1524,7 +1616,7 @@
       },
       {
         "flags": "--wait-lock",
-        "description": "Wait for workspace lock if held",
+        "description": "With --migrate: wait for the query-store lock if held",
         "defaultValue": false
       },
       {
@@ -1544,7 +1636,7 @@
     "options": [
       {
         "flags": "--wait-lock",
-        "description": "Wait for workspace lock if held",
+        "description": "Wait for the query-store lock if held",
         "defaultValue": false
       },
       {
@@ -1559,7 +1651,7 @@
   },
   {
     "commandPath": "hardkas query store sync",
-    "description": "Synchronize the filesystem artifacts with the query store index",
+    "description": "Index new artifacts into the SQLite query store (needs .hardkas/store.db: run 'query store rebuild' first)",
     "arguments": [],
     "options": [
       {
@@ -1569,7 +1661,7 @@
       },
       {
         "flags": "--wait-lock",
-        "description": "Wait for workspace lock if held",
+        "description": "Wait for the query-store lock if held",
         "defaultValue": false
       },
       {
@@ -1596,7 +1688,7 @@
     "options": [
       {
         "flags": "--backend <type>",
-        "description": "Backend to use (sqlite/filesystem)"
+        "description": "sqlite (the default) builds .hardkas/store.db from the workspace; filesystem keeps no index, so it has nothing to rebuild"
       },
       {
         "flags": "--strict",
@@ -1605,7 +1697,7 @@
       },
       {
         "flags": "--wait-lock",
-        "description": "Wait for workspace lock if held",
+        "description": "Wait for the query-store lock if held",
         "defaultValue": false
       },
       {
@@ -1691,7 +1783,7 @@
       },
       {
         "flags": "--explain [level]",
-        "description": "Attach explain chains (brief|full)"
+        "description": "Attach explain chains (brief and full currently give the same output)"
       },
       {
         "flags": "--why",
@@ -1718,7 +1810,7 @@
       },
       {
         "flags": "--explain [level]",
-        "description": "Attach explain chains (brief|full)"
+        "description": "Attach explain chains (brief and full currently give the same output)"
       },
       {
         "flags": "--why",
@@ -1741,7 +1833,7 @@
       },
       {
         "flags": "--explain [level]",
-        "description": "Attach explain chains (brief|full)"
+        "description": "Attach explain chains (brief and full currently give the same output)"
       }
     ],
     "aliases": [],
@@ -1807,7 +1899,7 @@
       },
       {
         "flags": "--explain [level]",
-        "description": "Attach explain chains (brief|full)"
+        "description": "Attach explain chains (brief and full currently give the same output)"
       }
     ],
     "aliases": [],
@@ -1832,7 +1924,7 @@
       },
       {
         "flags": "--explain [level]",
-        "description": "Attach explain chains (brief|full)"
+        "description": "Attach explain chains (brief and full currently give the same output)"
       }
     ],
     "aliases": [],
@@ -1851,7 +1943,7 @@
       },
       {
         "flags": "--explain [level]",
-        "description": "Attach explain chains (brief|full)"
+        "description": "Attach explain chains (brief and full currently give the same output)"
       },
       {
         "flags": "--why",
@@ -1874,7 +1966,7 @@
       },
       {
         "flags": "--explain [level]",
-        "description": "Attach explain chains (brief|full)"
+        "description": "Attach explain chains (brief and full currently give the same output)"
       }
     ],
     "aliases": [],
@@ -1899,7 +1991,7 @@
       },
       {
         "flags": "--explain [level]",
-        "description": "Attach explain chains (brief|full)"
+        "description": "Attach explain chains (brief and full currently give the same output)"
       },
       {
         "flags": "--why",
@@ -1937,7 +2029,7 @@
       },
       {
         "flags": "--explain [level]",
-        "description": "Attach explain chains (brief|full)"
+        "description": "Attach explain chains (brief and full currently give the same output)"
       }
     ],
     "aliases": [],
@@ -2011,7 +2103,7 @@
   },
   {
     "commandPath": "hardkas test",
-    "description": "Run HardKAS tests against localnet stable",
+    "description": "Run the project's tests with Vitest and the HardKAS test helpers stable",
     "arguments": [
       {
         "name": "files",
@@ -2022,26 +2114,26 @@
     "options": [
       {
         "flags": "--network <network>",
-        "description": "Network to test against",
+        "description": "Only recorded in the results: tests use the config's default network",
         "defaultValue": "simnet"
       },
       {
         "flags": "--watch",
-        "description": "Watch for changes",
+        "description": "Passed to Vitest, but the CLI exits after the first run (watch does not persist)",
         "defaultValue": false
       },
       {
         "flags": "--mass-report",
-        "description": "Show mass/fee report after scenario execution",
+        "description": "No effect in this release",
         "defaultValue": false
       },
       {
         "flags": "--mass-snapshot <label>",
-        "description": "Save mass snapshot for regression detection"
+        "description": "No effect in this release"
       },
       {
         "flags": "--mass-compare <label>",
-        "description": "Compare against saved mass snapshot"
+        "description": "No effect in this release"
       },
       {
         "flags": "--json",
@@ -2060,7 +2152,7 @@
       },
       {
         "flags": "--scenario <name>",
-        "description": "Run specific scenario by name"
+        "description": "Only run tests whose full name matches this regular expression"
       }
     ],
     "aliases": [],
@@ -2085,7 +2177,7 @@
       },
       {
         "flags": "--capabilities",
-        "description": "Report local node capabilities (RPC, network, DAA)",
+        "description": "With 'doctor node': report the node's capabilities (RPC, network, DAA advance) as JSON",
         "defaultValue": false
       },
       {
@@ -2106,13 +2198,14 @@
   {
     "commandPath": "hardkas verify",
     "description": "Verify artifact integrity and lineage continuity across the workspace stable",
-    "arguments": [],
-    "options": [
+    "arguments": [
       {
-        "flags": "--deep",
-        "description": "Perform a deep validation of signatures and causality",
-        "defaultValue": false
-      },
+        "name": "path",
+        "required": false,
+        "description": "Workspace-contained artifact file or directory to verify (default: .hardkas/artifacts)"
+      }
+    ],
+    "options": [
       {
         "flags": "--json",
         "description": "Output machine-readable JSON",
@@ -2145,12 +2238,12 @@
   },
   {
     "commandPath": "hardkas rebuild",
-    "description": "Reconstruct projections from committed canonical artifacts stable",
+    "description": "Wipe and rebuild the SQLite query store from the committed artifacts stable",
     "arguments": [],
     "options": [
       {
         "flags": "--from-artifacts",
-        "description": "Rebuild the query-store and localnet projection from artifacts",
+        "description": "Required: rebuild the query store from the artifacts (the localnet state is not rebuilt)",
         "defaultValue": false
       },
       {
@@ -2165,7 +2258,7 @@
   },
   {
     "commandPath": "hardkas run",
-    "description": "Execute a TypeScript or JavaScript file with HardKAS SDK injected stable",
+    "description": "Run a TypeScript or JavaScript file with tsx and a global 'hardkas': a simulator test harness on simulated networks, an RPC client otherwise (not the SDK) stable",
     "arguments": [
       {
         "name": "script",
@@ -2176,17 +2269,17 @@
     "options": [
       {
         "flags": "--network <name>",
-        "description": "Network name",
+        "description": "Network from the config (unknown names fall back to simulated)",
         "defaultValue": "simnet"
       },
       {
         "flags": "--accounts <n>",
-        "description": "Number of simulated accounts",
+        "description": "Number of harness accounts (simulated networks only)",
         "defaultValue": "3"
       },
       {
         "flags": "--balance <sompi>",
-        "description": "Initial balance per account in sompi",
+        "description": "Initial balance per harness account, whole sompi (simulated networks only)",
         "defaultValue": "100000000000"
       },
       {
@@ -2235,7 +2328,7 @@
   },
   {
     "commandPath": "hardkas lock doctor",
-    "description": "Analyze locks and identify stale or corrupted ones stable",
+    "description": "Report stale locks (process no longer running on this host) in .hardkas/locks stable",
     "arguments": [],
     "options": [],
     "aliases": [],
@@ -2274,28 +2367,13 @@
     "status": "REGISTERED"
   },
   {
-    "commandPath": "hardkas capabilities",
-    "description": "Show HardKAS capabilities and maturity level",
-    "arguments": [],
-    "options": [
-      {
-        "flags": "--json",
-        "description": "Output as stable JSON schema",
-        "defaultValue": false
-      }
-    ],
-    "aliases": [],
-    "category": "Capabilities",
-    "status": "REGISTERED"
-  },
-  {
     "commandPath": "hardkas console",
-    "description": "Open an interactive REPL with HardKAS SDK pre-loaded stable",
+    "description": "Open an interactive REPL with an in-memory simulator harness (h) and hash/format helpers; no network is contacted stable",
     "arguments": [],
     "options": [
       {
         "flags": "--network <name>",
-        "description": "Network name",
+        "description": "Network label for the simulated state (nothing connects to it)",
         "defaultValue": "simnet"
       },
       {
@@ -2315,13 +2393,12 @@
   },
   {
     "commandPath": "hardkas localnet start",
-    "description": "Start localnet profile alpha",
+    "description": "Start (or adopt) the Docker rusty-kaspad node for the toccata-v2 profile and create dev accounts alice…erin; needs Docker alpha",
     "arguments": [],
     "options": [
       {
         "flags": "--profile <name>",
-        "description": "Localnet profile",
-        "defaultValue": "simulated"
+        "description": "Localnet profile: toccata-v2 (the only one, required; or use --toccata)"
       },
       {
         "flags": "--toccata",
@@ -2330,7 +2407,7 @@
       },
       {
         "flags": "--detached",
-        "description": "Run in background",
+        "description": "No effect: the node always runs as a detached Docker container",
         "defaultValue": false
       },
       {
@@ -2345,13 +2422,13 @@
   },
   {
     "commandPath": "hardkas localnet stop",
-    "description": "Stop localnet profile alpha",
+    "description": "Stop the Docker rusty-kaspad node of the toccata-v2 profile and its miner; needs Docker alpha",
     "arguments": [],
     "options": [
       {
         "flags": "--profile <name>",
-        "description": "Localnet profile",
-        "defaultValue": "simulated"
+        "description": "Localnet profile: toccata-v2 (the only one)",
+        "defaultValue": "toccata-v2"
       },
       {
         "flags": "--toccata",
@@ -2401,7 +2478,7 @@
       },
       {
         "flags": "--amount <kas>",
-        "description": "Target mining amount hint in KAS",
+        "description": "KAS to wait for: mine until the mature balance grows by this amount",
         "defaultValue": "1000"
       },
       {
@@ -2411,7 +2488,12 @@
       },
       {
         "flags": "--keep-miner",
-        "description": "Leave the companion miner running",
+        "description": "Keep mining to the funded account after funding (its balance keeps growing)",
+        "defaultValue": false
+      },
+      {
+        "flags": "--stop-miner",
+        "description": "Leave the chain stopped after funding: no new blocks until you mine again",
         "defaultValue": false
       },
       {
@@ -2447,7 +2529,7 @@
   },
   {
     "commandPath": "hardkas localnet fork",
-    "description": "Fork state from a real Kaspa network for local simulation preview",
+    "description": "Copy the current UTXOs of some addresses from a node into a simulator state file preview",
     "arguments": [],
     "options": [
       {
@@ -2456,19 +2538,19 @@
       },
       {
         "flags": "--addresses <addrs...>",
-        "description": "Only fetch UTXOs for these addresses"
+        "description": "Addresses whose UTXOs are copied, separated by spaces"
       },
       {
         "flags": "--at-daa-score <score>",
-        "description": "Fork at specific DAA score (implicit latest is forbidden)"
+        "description": "Required label recorded with the snapshot; the UTXOs copied are always the node's current ones"
       },
       {
         "flags": "--output <path>",
-        "description": "Save fork snapshot to file"
+        "description": "State file to write (default: .hardkas/localnet.json, replaced)"
       },
       {
         "flags": "--json",
-        "description": "Output as JSON",
+        "description": "Not implemented yet: no JSON is printed",
         "defaultValue": false
       }
     ],
@@ -2525,7 +2607,7 @@
   },
   {
     "commandPath": "hardkas localnet snapshot replay",
-    "description": "Replay and rebuild deterministic state from a snapshot alpha",
+    "description": "Restore a snapshot's missing artifacts into the workspace; never removes or overwrites one alpha",
     "arguments": [
       {
         "name": "name",
@@ -2567,7 +2649,7 @@
   },
   {
     "commandPath": "hardkas simulator fund",
-    "description": "Fund a synthetic simulated account stable",
+    "description": "Fund a synthetic simulated account (the project's default network must be the simulator) stable",
     "arguments": [
       {
         "name": "identifier",
@@ -2578,7 +2660,7 @@
     "options": [
       {
         "flags": "--amount <kas>",
-        "description": "Amount in KAS to fund",
+        "description": "Amount in KAS, up to 8 decimals, above 0",
         "defaultValue": "1000"
       },
       {
@@ -2741,7 +2823,7 @@
   },
   {
     "commandPath": "hardkas dev",
-    "description": "Local development and Igra-native environment tools",
+    "description": "Local development tools: dev environment, dApp templates, simnet dev accounts (`dev doctor` is an Igra L2 lab check)",
     "arguments": [],
     "options": [
       {
@@ -2785,7 +2867,7 @@
   },
   {
     "commandPath": "hardkas dev doctor",
-    "description": "Validate local dev environment readiness stable",
+    "description": "Igra L2 lab, not the L1 core: check local dev readiness for an L2 profile (Igra by default): workspace, artifacts, query store, SDK import, dev server and the L2 JSON-RPC; the Kaspa node is not checked experimental",
     "arguments": [],
     "options": [
       {
@@ -2799,7 +2881,7 @@
       },
       {
         "flags": "--account <name>",
-        "description": "Local EVM account name to verify balance"
+        "description": "EVM account that must exist in hardkas.config (its balance is not checked)"
       },
       {
         "flags": "--timeout <ms>",
@@ -2845,10 +2927,10 @@
   },
   {
     "commandPath": "hardkas dev accounts export",
-    "description": "Export dev account in format suitable for Kasware manual import",
+    "description": "Export a dev account for a wallet's manual import; format: kasware",
     "arguments": [
       {
-        "name": "kasware",
+        "name": "format",
         "required": true,
         "description": ""
       }
@@ -2943,22 +3025,22 @@
   },
   {
     "commandPath": "hardkas dev last",
-    "description": "Interact with the latest local workflow",
+    "description": "Act on the latest transaction artifact of the workspace store",
     "arguments": [],
     "options": [
       {
         "flags": "--inspect",
-        "description": "Inspect the latest artifact",
+        "description": "Print the latest artifact",
         "defaultValue": false
       },
       {
         "flags": "--replay",
-        "description": "Replay the latest workflow",
+        "description": "Show the latest receipt, or verify the latest plan or signed transaction (no replay is run)",
         "defaultValue": false
       },
       {
         "flags": "--explain",
-        "description": "Explain the latest workflow",
+        "description": "Print the `hardkas why` command for the latest artifact",
         "defaultValue": false
       },
       {
@@ -2972,7 +3054,7 @@
   },
   {
     "commandPath": "hardkas local wizard",
-    "description": "Guided setup for local development stable",
+    "description": "Guided Igra L2 (EVM) check, an L2 lab: JSON-RPC, EVM account and its balance; not a Kaspa L1 setup experimental",
     "arguments": [],
     "options": [
       {
@@ -2982,7 +3064,7 @@
       },
       {
         "flags": "--account <name>",
-        "description": "New or existing EVM account name",
+        "description": "EVM account name in hardkas.config (if it is missing, a key is printed for you to add)",
         "defaultValue": "dev_alice"
       },
       {
@@ -3002,7 +3084,7 @@
   },
   {
     "commandPath": "hardkas kaspa wallet create",
-    "description": "Create a new local Kaspa wallet stable",
+    "description": "Generate a key pair and print it (address, config snippet and private key); nothing is saved. For stored dev accounts use 'accounts real generate' stable",
     "arguments": [
       {
         "name": "name",
@@ -3064,8 +3146,8 @@
     "options": [
       {
         "flags": "--rpc-url <url>",
-        "description": "Kaspa RPC URL",
-        "defaultValue": "http://127.0.0.1:16110"
+        "description": "Node wRPC endpoint (default: the canonical localnet, ws://127.0.0.1:18210)",
+        "defaultValue": "ws://127.0.0.1:18210"
       },
       {
         "flags": "--json",
@@ -3079,7 +3161,7 @@
   },
   {
     "commandPath": "hardkas kaspa wallet send",
-    "description": "Send Kaspa between local wallets stable",
+    "description": "Plan, confirm (y/N), sign and submit a payment over --rpc-url; the network and target come from hardkas.config stable",
     "arguments": [
       {
         "name": "from",
@@ -3104,8 +3186,8 @@
       },
       {
         "flags": "--rpc-url <url>",
-        "description": "Kaspa RPC URL",
-        "defaultValue": "http://127.0.0.1:16110"
+        "description": "Node wRPC endpoint (default: the canonical localnet, ws://127.0.0.1:18210)",
+        "defaultValue": "ws://127.0.0.1:18210"
       }
     ],
     "aliases": [],
@@ -3114,13 +3196,13 @@
   },
   {
     "commandPath": "hardkas kaspa doctor",
-    "description": "Verify local Kaspa L1 environment readiness stable",
+    "description": "Check one Kaspa node at --rpc-url: reachability, sync state, UTXO index, DAG info and mempool stable",
     "arguments": [],
     "options": [
       {
         "flags": "--rpc-url <url>",
-        "description": "Kaspa RPC URL",
-        "defaultValue": "http://127.0.0.1:16110"
+        "description": "Node wRPC endpoint (default: the canonical localnet, ws://127.0.0.1:18210)",
+        "defaultValue": "ws://127.0.0.1:18210"
       },
       {
         "flags": "--json",
@@ -3130,86 +3212,6 @@
     ],
     "aliases": [],
     "category": "Kaspa",
-    "status": "REGISTERED"
-  },
-  {
-    "commandPath": "hardkas session create",
-    "description": "Create a new L1/L2 session linkage alpha",
-    "arguments": [
-      {
-        "name": "name",
-        "required": true,
-        "description": ""
-      }
-    ],
-    "options": [
-      {
-        "flags": "--l1 <wallet>",
-        "description": "Name of the Kaspa L1 wallet"
-      },
-      {
-        "flags": "--l2 <account>",
-        "description": "Name of the Igra L2 account"
-      },
-      {
-        "flags": "--json",
-        "description": "Output results as JSON",
-        "defaultValue": false
-      }
-    ],
-    "aliases": [],
-    "category": "Session",
-    "status": "REGISTERED"
-  },
-  {
-    "commandPath": "hardkas session list",
-    "description": "List all configured sessions alpha",
-    "arguments": [],
-    "options": [
-      {
-        "flags": "--json",
-        "description": "Output results as JSON",
-        "defaultValue": false
-      }
-    ],
-    "aliases": [],
-    "category": "Session",
-    "status": "REGISTERED"
-  },
-  {
-    "commandPath": "hardkas session status",
-    "description": "Show active session linkage alpha",
-    "arguments": [],
-    "options": [
-      {
-        "flags": "--json",
-        "description": "Output results as JSON",
-        "defaultValue": false
-      }
-    ],
-    "aliases": [],
-    "category": "Session",
-    "status": "REGISTERED"
-  },
-  {
-    "commandPath": "hardkas session use",
-    "description": "Set the active session alpha",
-    "arguments": [
-      {
-        "name": "name",
-        "required": true,
-        "description": ""
-      }
-    ],
-    "options": [
-      {
-        "flags": "--json",
-        "description": "Output results as JSON",
-        "defaultValue": false
-      }
-    ],
-    "aliases": [],
-    "category": "Session",
     "status": "REGISTERED"
   },
   {
@@ -3233,7 +3235,7 @@
   },
   {
     "commandPath": "hardkas pskt inspect",
-    "description": "Inspect a PSKT session payload and metadata alpha",
+    "description": "Show a PSKT session file's metadata. It does not decode the payload: no inputs, outputs, amounts or recipients, so it is no pre-signing check alpha",
     "arguments": [
       {
         "name": "sessionPath",
@@ -3275,7 +3277,7 @@
   },
   {
     "commandPath": "hardkas pskt export",
-    "description": "Export a TxPlan as a Portable Signing Session alpha",
+    "description": "Export a TxPlan as a Portable Signing Session unavailable",
     "arguments": [],
     "options": [
       {
@@ -3307,7 +3309,7 @@
   },
   {
     "commandPath": "hardkas pskt import",
-    "description": "Import a raw payload into a PSKT session alpha",
+    "description": "Import a raw payload into a PSKT session unavailable",
     "arguments": [],
     "options": [
       {
@@ -3339,7 +3341,7 @@
   },
   {
     "commandPath": "hardkas pskt sign",
-    "description": "Sign a PSKT session payload alpha",
+    "description": "Sign a PSKT session payload unavailable",
     "arguments": [
       {
         "name": "sessionPath",
@@ -3385,7 +3387,7 @@
   },
   {
     "commandPath": "hardkas pskt merge",
-    "description": "Merge two PSKT sessions alpha",
+    "description": "Merge two PSKT sessions unavailable",
     "arguments": [
       {
         "name": "sessionA",
@@ -3420,7 +3422,7 @@
   },
   {
     "commandPath": "hardkas pskt finalize",
-    "description": "Finalize a PSKT session alpha",
+    "description": "Finalize a PSKT session unavailable",
     "arguments": [
       {
         "name": "sessionPath",
@@ -3450,7 +3452,7 @@
   },
   {
     "commandPath": "hardkas pskt extract",
-    "description": "Extract KaspaRpcTransaction from a finalized PSKT session alpha",
+    "description": "Extract KaspaRpcTransaction from a finalized PSKT session unavailable",
     "arguments": [
       {
         "name": "sessionPath",
@@ -3480,15 +3482,35 @@
   },
   {
     "commandPath": "hardkas explain",
-    "description": "Provide a narrative causal explanation of an artifact resolved by exact artifactId or artifact file path stable",
+    "description": "Provide a narrative causal explanation of an artifact resolved by exact artifactId, artifact file path, or a namespaced identifier (--plan, --signed, --tx, --workflow) stable",
     "arguments": [
       {
         "name": "artifact",
-        "required": true,
+        "required": false,
         "description": ""
       }
     ],
     "options": [
+      {
+        "flags": "--artifact <id-or-path>",
+        "description": "64-hex artifactId or workspace path (same as the positional)"
+      },
+      {
+        "flags": "--plan <planId>",
+        "description": "Resolve a plan by its derived label (verified against its hash)"
+      },
+      {
+        "flags": "--signed <signedId>",
+        "description": "Resolve a signed transaction by its derived label (verified)"
+      },
+      {
+        "flags": "--tx <txId>",
+        "description": "Resolve the submission receipt for a txId (never the signed)"
+      },
+      {
+        "flags": "--workflow <workflowId>",
+        "description": "Resolve a workflow run by its correlation id"
+      },
       {
         "flags": "--workspace <path>",
         "description": "Override workspace root directory"
@@ -3603,7 +3625,7 @@
   },
   {
     "commandPath": "hardkas repair",
-    "description": "Attempt automatic recovery of corrupt projections or append tails beta",
+    "description": "Report an outdated workspace, lock files in .hardkas/, torn JSONL tails and a corrupt query store; --force repairs them beta",
     "arguments": [],
     "options": [
       {
@@ -3613,7 +3635,7 @@
       },
       {
         "flags": "--force",
-        "description": "Repair without prompting for confirmation",
+        "description": "Apply the repairs (without it, repair only reports). Removes lock files without checking whether their process is alive",
         "defaultValue": false
       }
     ],
@@ -3623,7 +3645,7 @@
   },
   {
     "commandPath": "hardkas rotate",
-    "description": "Rotate and archive telemetry streams beta",
+    "description": "Archive the telemetry stream (.hardkas/telemetry/telemetry.jsonl) once it reaches 10 MiB beta",
     "arguments": [],
     "options": [
       {
@@ -3673,7 +3695,7 @@
       },
       {
         "flags": "--profile <smoke|targeted|full>",
-        "description": "Fuzzing distribution profile",
+        "description": "Actor weight profile (smoke, targeted and full currently use the same weights)",
         "defaultValue": "smoke"
       },
       {
@@ -3682,12 +3704,12 @@
       },
       {
         "flags": "--isolate",
-        "description": "Run the chaos engine in a dedicated temporary workspace (Default)",
+        "description": "Always on: chaos runs in ./.hardkas-chaos-workspace (the flag has no effect)",
         "defaultValue": true
       },
       {
         "flags": "--unsafe-current-dir",
-        "description": "Run chaos in the current directory (DANGEROUS)",
+        "description": "Request a run in the current directory (DANGEROUS; needs HARDKAS_ALLOW_UNSAFE_CHAOS=1). Known issue: only the safety checks run, the campaign stays in the isolated workspace",
         "defaultValue": false
       },
       {
@@ -3707,7 +3729,7 @@
   },
   {
     "commandPath": "hardkas chaos replay",
-    "description": "Replay a specific chaos run deterministically",
+    "description": "Re-run one chaos run seed in a fresh isolated workspace (the actor is derived from the seed, so runs from an --actor campaign are not reproduced)",
     "arguments": [],
     "options": [
       {
@@ -3716,7 +3738,7 @@
       },
       {
         "flags": "--isolate",
-        "description": "Run in isolated workspace",
+        "description": "Always on (the flag has no effect)",
         "defaultValue": true
       }
     ],
@@ -3740,15 +3762,35 @@
   },
   {
     "commandPath": "hardkas why",
-    "description": "Explain the causal lineage of an artifact resolved by exact artifactId or artifact file path",
+    "description": "Explain the causal lineage of an artifact resolved by exact artifactId, artifact file path, or a namespaced identifier (--plan, --signed, --tx, --workflow)",
     "arguments": [
       {
         "name": "artifact",
-        "required": true,
-        "description": "Exact 64-hex artifactId (lineage.artifactId) or absolute/workspace-relative path to the artifact .json file"
+        "required": false,
+        "description": "Exact 64-hex artifactId (the recomputed contentHash) or absolute/workspace-relative path to the artifact .json file"
       }
     ],
     "options": [
+      {
+        "flags": "--artifact <id-or-path>",
+        "description": "64-hex artifactId or workspace path (same as the positional)"
+      },
+      {
+        "flags": "--plan <planId>",
+        "description": "Resolve a plan by its derived label (verified against its hash)"
+      },
+      {
+        "flags": "--signed <signedId>",
+        "description": "Resolve a signed transaction by its derived label (verified)"
+      },
+      {
+        "flags": "--tx <txId>",
+        "description": "Resolve the submission receipt for a txId (never the signed)"
+      },
+      {
+        "flags": "--workflow <workflowId>",
+        "description": "Resolve a workflow run by its correlation id"
+      },
       {
         "flags": "--json",
         "description": "Output lineage graph in JSON format"
@@ -3778,7 +3820,7 @@
     "options": [
       {
         "flags": "--with-node",
-        "description": "Start a simulated Kaspa node in the background with mining"
+        "description": "Not supported: the sandbox starts no node (refuses with SANDBOX_WITH_NODE_UNSUPPORTED)"
       },
       {
         "flags": "--recipe <name>",
@@ -4445,9 +4487,15 @@
   },
   {
     "commandPath": "hardkas env check",
-    "description": "Validate the .env file against known HardKAS production variables",
+    "description": "Check the HARDKAS_* environment variables (process and .env): the ones HardKAS honours, and any it does not know",
     "arguments": [],
-    "options": [],
+    "options": [
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
     "aliases": [],
     "category": "Env",
     "status": "REGISTERED"
@@ -4507,39 +4555,6 @@
     "status": "REGISTERED"
   },
   {
-    "commandPath": "hardkas workflow create",
-    "description": "Create a deterministic workflow from a template",
-    "arguments": [
-      {
-        "name": "name",
-        "required": true,
-        "description": ""
-      }
-    ],
-    "options": [
-      {
-        "flags": "--template <name>",
-        "description": "Embedded template name"
-      },
-      {
-        "flags": "--out <path>",
-        "description": "Output artifact file path"
-      },
-      {
-        "flags": "--json",
-        "description": "Output the final workflow artifact as JSON",
-        "defaultValue": false
-      },
-      {
-        "flags": "--workspace <path>",
-        "description": "Override workspace root directory"
-      }
-    ],
-    "aliases": [],
-    "category": "Workflow",
-    "status": "REGISTERED"
-  },
-  {
     "commandPath": "hardkas workflow run",
     "description": "Execute a workflow JSON definition in Agent mode",
     "arguments": [
@@ -4595,21 +4610,6 @@
         "defaultValue": false
       }
     ],
-    "aliases": [],
-    "category": "Workflow",
-    "status": "REGISTERED"
-  },
-  {
-    "commandPath": "hardkas workflow replay",
-    "description": "Deterministically replay and verify a workflow's lineage",
-    "arguments": [
-      {
-        "name": "id",
-        "required": true,
-        "description": ""
-      }
-    ],
-    "options": [],
     "aliases": [],
     "category": "Workflow",
     "status": "REGISTERED"

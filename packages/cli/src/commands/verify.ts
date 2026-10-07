@@ -2,7 +2,7 @@ import { Command } from "commander";
 import { runArtifactVerify } from "../runners/artifact-verify-runner.js";
 import { runSemanticVerify } from "../runners/semantic-verify-runner.js";
 import { UI, handleError } from "../ui.js";
-import { HardkasCliError } from "../cli-errors.js";
+import { requireExistingWorkspace } from "../workspace-root.js";
 
 export function registerVerifyCommand(program: Command) {
   program
@@ -18,13 +18,14 @@ export function registerVerifyCommand(program: Command) {
     .action(async (targetPath: string | undefined, opts) => {
       try {
         if (opts.json) UI.setJsonMode(true);
-        const workspaceRoot = process.cwd();
+        // WORKSPACE-AUTHORITY-1: the invocation's one workspace root (WA-I0); verifying reads an existing workspace and
+        // never creates one (WA-I3)
+        const workspaceRoot = requireExistingWorkspace("verify").root;
 
         if (targetPath === undefined) {
           // By default, verify acts on the canonical artifacts directory
-          const { Hardkas } = await import("@hardkas/sdk");
-          const sdk = await Hardkas.open({ cwd: workspaceRoot });
-          const artifactsPath = sdk.workspace.resolvePath(".hardkas/artifacts");
+          const path = await import("node:path");
+          const artifactsPath = path.join(workspaceRoot, ".hardkas", "artifacts");
 
           const fs = await import("fs");
           if (!fs.existsSync(artifactsPath)) {
@@ -66,14 +67,12 @@ export function registerVerifyCommand(program: Command) {
     .option("--json", "Output machine-readable JSON", false)
     .option("--ci-mode", "Verify semantic truth equivalence across OS boundaries", false)
     .action(async (opts) => {
-      try {
-        if (opts.json) UI.setJsonMode(true);
-        await runSemanticVerify({
-          json: opts.json,
-          ciMode: opts.ciMode
-        });
-      } catch (err: any) {
-        throw new HardkasCliError("SEMANTIC_DRIFT", ((err instanceof Error) ? err.message : String(err)), { exitCode: 1 });
-      }
+      if (opts.json) UI.setJsonMode(true);
+      // SURFACE-TRUTH-1A: the runner's typed error reaches the renderer unchanged. Rewrapping every error as
+      // SEMANTIC_DRIFT reported usage errors and missing input as detected drift.
+      await runSemanticVerify({
+        json: opts.json,
+        ciMode: opts.ciMode
+      });
     });
 }

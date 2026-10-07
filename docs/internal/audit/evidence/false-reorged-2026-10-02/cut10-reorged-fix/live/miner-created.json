@@ -1,0 +1,207 @@
+[
+    {
+        "Id": "7538e24b175102c83807343032f4ccca8c5f74172fe22c9e8bda14564ea66cc0",
+        "Created": "2026-10-02T20:01:57.53609197Z",
+        "Path": "kaspa-miner",
+        "Args": [
+            "-a",
+            "kaspasim:qp6wmrysf95v2jtum5jt96y5gyqffwe853dyah8qxzlvpp5jwpc9vektjnlrq",
+            "-s",
+            "127.0.0.1",
+            "-p",
+            "16210",
+            "--mine-when-not-synced",
+            "-t",
+            "1",
+            "--throttle",
+            "5"
+        ],
+        "State": {
+            "Status": "exited",
+            "Running": false,
+            "Paused": false,
+            "Restarting": false,
+            "OOMKilled": false,
+            "Dead": false,
+            "Pid": 0,
+            "ExitCode": 1,
+            "Error": "",
+            "StartedAt": "2026-10-02T20:01:57.741716105Z",
+            "FinishedAt": "2026-10-02T20:02:50.484487466Z"
+        },
+        "Image": "sha256:60f78ab2828ab24b249c99210eee5a2825303a5226154260dd021ff26d46748b",
+        "ResolvConfPath": "/var/lib/docker/containers/577648be02c2dae2db8bf0223ba72eb3dbbb654ffd4b28ac7d3590fea39b6e12/resolv.conf",
+        "HostnamePath": "/var/lib/docker/containers/577648be02c2dae2db8bf0223ba72eb3dbbb654ffd4b28ac7d3590fea39b6e12/hostname",
+        "HostsPath": "/var/lib/docker/containers/577648be02c2dae2db8bf0223ba72eb3dbbb654ffd4b28ac7d3590fea39b6e12/hosts",
+        "LogPath": "/var/lib/docker/containers/7538e24b175102c83807343032f4ccca8c5f74172fe22c9e8bda14564ea66cc0/7538e24b175102c83807343032f4ccca8c5f74172fe22c9e8bda14564ea66cc0-json.log",
+        "Name": "/hardkas-toccata-miner",
+        "RestartCount": 0,
+        "Driver": "overlayfs",
+        "Platform": "linux",
+        "MountLabel": "",
+        "ProcessLabel": "",
+        "AppArmorProfile": "",
+        "ExecIDs": null,
+        "HostConfig": {
+            "Binds": null,
+            "ContainerIDFile": "",
+            "LogConfig": {
+                "Type": "json-file",
+                "Config": {}
+            },
+            "NetworkMode": "container:577648be02c2dae2db8bf0223ba72eb3dbbb654ffd4b28ac7d3590fea39b6e12",
+            "PortBindings": {},
+            "RestartPolicy": {
+                "Name": "no",
+                "MaximumRetryCount": 0
+            },
+            "AutoRemove": false,
+            "VolumeDriver": "",
+            "VolumesFrom": null,
+            "ConsoleSize": [
+                0,
+                0
+            ],
+            "CapAdd": null,
+            "CapDrop": null,
+            "CgroupnsMode": "private",
+            "Dns": null,
+            "DnsOptions": [],
+            "DnsSearch": [],
+            "ExtraHosts": null,
+            "GroupAdd": null,
+            "IpcMode": "private",
+            "Cgroup": "",
+            "Links": null,
+            "OomScoreAdj": 0,
+            "PidMode": "",
+            "Privileged": false,
+            "PublishAllPorts": false,
+            "ReadonlyRootfs": false,
+            "SecurityOpt": null,
+            "UTSMode": "",
+            "UsernsMode": "",
+            "ShmSize": 67108864,
+            "Runtime": "runc",
+            "Isolation": "",
+            "CpuShares": 0,
+            "Memory": 0,
+            "NanoCpus": 0,
+            "CgroupParent": "",
+            "BlkioWeight": 0,
+            "BlkioWeightDevice": [],
+            "BlkioDeviceReadBps": [],
+            "BlkioDeviceWriteBps": [],
+            "BlkioDeviceReadIOps": [],
+            "BlkioDeviceWriteIOps": [],
+            "CpuPeriod": 0,
+            "CpuQuota": 0,
+            "CpuRealtimePeriod": 0,
+            "CpuRealtimeRuntime": 0,
+            "CpusetCpus": "",
+            "CpusetMems": "",
+            "Devices": [],
+            "DeviceCgroupRules": null,
+            "DeviceRequests": null,
+            "MemoryReservation": 0,
+            "MemorySwap": 0,
+            "MemorySwappiness": null,
+            "OomKillDisable": null,
+            "PidsLimit": null,
+            "Ulimits": [],
+            "CpuCount": 0,
+            "CpuPercent": 0,
+            "IOMaximumIOps": 0,
+            "IOMaximumBandwidth": 0,
+            "MaskedPaths": [
+                "/proc/acpi",
+                "/proc/asound",
+                "/proc/interrupts",
+                "/proc/kcore",
+                "/proc/keys",
+                "/proc/latency_stats",
+                "/proc/sched_debug",
+                "/proc/scsi",
+                "/proc/timer_list",
+                "/proc/timer_stats",
+                "/sys/devices/virtual/powercap",
+                "/sys/firmware"
+            ],
+            "ReadonlyPaths": [
+                "/proc/bus",
+                "/proc/fs",
+                "/proc/irq",
+                "/proc/sys",
+                "/proc/sysrq-trigger"
+            ]
+        },
+        "Storage": {
+            "RootFS": {
+                "Snapshot": {
+                    "Name": "overlayfs"
+                }
+            }
+        },
+        "Mounts": [],
+        "Config": {
+            "Hostname": "577648be02c2",
+            "Domainname": "",
+            "User": "13337:13337",
+            "AttachStdin": false,
+            "AttachStdout": false,
+            "AttachStderr": false,
+            "Tty": false,
+            "OpenStdin": false,
+            "StdinOnce": false,
+            "Env": [
+                "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+                "VERSION=v0.2.7"
+            ],
+            "Cmd": [
+                "-a",
+                "kaspasim:qp6wmrysf95v2jtum5jt96y5gyqffwe853dyah8qxzlvpp5jwpc9vektjnlrq",
+                "-s",
+                "127.0.0.1",
+                "-p",
+                "16210",
+                "--mine-when-not-synced",
+                "-t",
+                "1",
+                "--throttle",
+                "5"
+            ],
+            "Image": "kaspanet/cpuminer@sha256:60f78ab2828ab24b249c99210eee5a2825303a5226154260dd021ff26d46748b",
+            "Volumes": null,
+            "WorkingDir": "/",
+            "Entrypoint": [
+                "kaspa-miner"
+            ],
+            "Labels": {
+                "org.opencontainers.image.created": "2026-05-01T10:58:35.876Z",
+                "org.opencontainers.image.description": "A fast CPU miner for Kaspa",
+                "org.opencontainers.image.licenses": "Apache-2.0",
+                "org.opencontainers.image.revision": "55dbbefef56fb6e87e2cf98e648d9769d03defd5",
+                "org.opencontainers.image.source": "https://github.com/supertypo/cpuminer",
+                "org.opencontainers.image.title": "cpuminer",
+                "org.opencontainers.image.url": "https://github.com/supertypo/cpuminer",
+                "org.opencontainers.image.version": "v0.2.7"
+            },
+            "StopTimeout": 1
+        },
+        "NetworkSettings": {
+            "SandboxID": "",
+            "SandboxKey": "",
+            "Ports": {},
+            "Networks": {}
+        },
+        "ImageManifestDescriptor": {
+            "mediaType": "application/vnd.oci.image.manifest.v1+json",
+            "digest": "sha256:01f90d5ca90efa3d32b420eb1a308f46632df6cac97822dbbe07d3c6c15f5a32",
+            "size": 673,
+            "platform": {
+                "architecture": "amd64",
+                "os": "linux"
+            }
+        }
+    }
+]

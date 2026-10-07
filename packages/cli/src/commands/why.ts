@@ -1,5 +1,5 @@
 import { Command } from "commander";
-import path from "path";
+import { explicitWorkspaceOrCwd } from "../workspace-root.js";
 import { UI, handleError } from "../ui.js";
 import { HardkasSchemas } from "@hardkas/artifacts";
 import { LookupUsageError, lookupFromArgs, namespaceRequiredHint } from "../runners/lookup-args.js";
@@ -29,9 +29,7 @@ export function registerWhyCommand(program: Command) {
       ) => {
         UI.setJsonMode(!!options.json);
         try {
-          const workspaceRoot = options.workspace
-            ? path.resolve(options.workspace)
-            : process.cwd();
+          const workspaceRoot = explicitWorkspaceOrCwd(); // --workspace is resolved once (WORKSPACE-AUTHORITY-1)
 
           // Wave 5 · DEF-17: single delegation point. Wave 1.2 · IC-5′: namespaced,
           // verified lookups (see packages/artifacts/src/resolve.ts).
@@ -45,7 +43,9 @@ export function registerWhyCommand(program: Command) {
           } catch (e: any) {
             if (e instanceof LookupUsageError) {
               UI.semanticError("Usage", e.message, "identity contract", "one target per call", "pass an artifactId, a path, or exactly one of --plan/--signed/--tx/--workflow");
-              throw new Error("Command failed");
+              // CLI-RUNTIME-CONTRACT-1: a usage error keeps its code (LOOKUP_USAGE) and exits 2.
+              const { HardkasCliError, HardkasExitCode } = await import("../cli-errors.js");
+              throw new HardkasCliError(e.code, e.message, { exitCode: HardkasExitCode.USAGE_ERROR, cause: e });
             }
             throw e;
           }
@@ -181,10 +181,12 @@ export function registerWhyCommand(program: Command) {
 
           const nextSteps: string[] = [];
           const targetNode = chain[0];
+          // SURFACE-TRUTH-1B: the commands that sign and send a file (`dev tx` has no `sign`, and `dev tx send` takes no
+          // artifact: it plans, signs and sends from --from/--to/--amount).
           if (targetNode?.schema === HardkasSchemas.TxPlanV1) {
-            nextSteps.push("hardkas dev tx sign " + targetId);
+            nextSteps.push("hardkas tx sign <plan-file>");
           } else if (targetNode?.schema === HardkasSchemas.SignedTxV1) {
-            nextSteps.push("hardkas dev tx send " + targetId);
+            nextSteps.push("hardkas tx send <signed-file>");
           } else if (targetNode?.schema === HardkasSchemas.TxReceiptV1) {
             nextSteps.push("hardkas dev last --replay");
           } else if (targetNode?.schema === HardkasSchemas.ReplayV1) {

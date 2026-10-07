@@ -49,19 +49,20 @@ title: hardkas tx
 #### Options
 
 - `--target &lt;name&gt;`: Named execution target from hardkas.config.ts
-- `--from &lt;accountOrAddress&gt;`: Sender account name or address
-- `--to &lt;address&gt;`: Recipient address
-- `--amount &lt;kas&gt;`: Amount in KAS
-- `--network &lt;name&gt;`: Kaspa network name
-- `--fee-rate &lt;sompiPerMass&gt;`: Fee rate in sompi per mass
+- `--from &lt;accountOrAddress&gt;`: Sender account name or address (default: alice)
+- `--to &lt;address&gt;`: Recipient address or account name (default: bob)
+- `--amount &lt;kas&gt;`: Amount in KAS, up to 8 decimals (default: 1)
+- `--network &lt;name&gt;`: simulated, simnet, devnet, testnet-10, testnet-12 or mainnet (default: the config's default target)
+- `--fee-rate &lt;sompiPerMass&gt;`: Whole sompi per gram of mass (default: 1 in the simulator, 100 on real networks; not a live estimate)
+- `--change &lt;accountOrAddress&gt;`: Change destination (account name or address); default: the sender
 - `--provider &lt;type&gt;` (Default: `auto`): Provider mode (auto, rpc, simulated)
-- `--url &lt;url&gt;`: RPC URL (optional override)
+- `--url &lt;url&gt;`: Node wRPC URL (default: ws://127.0.0.1:18210 for simnet and devnet; the config's rpcUrl is not used)
 - `--out &lt;path&gt;`: Save plan as artifact JSON
 - `--save &lt;path&gt;`: Alias for --out (Save plan as artifact JSON)
 - `--workflow-id &lt;id&gt;`: Optional deterministic workflow ID override
 - `--assumption-level &lt;level&gt;`: Optional assumption level override
-- `--wait-lock` (Default: `false`): Wait for workspace lock if held
-- `--lock-timeout &lt;ms&gt;` (Default: `30000`): Lock wait timeout in ms
+- `--wait-lock` (Default: `false`): No effect, kept for compatibility: the command takes no lock of its own, and each store write waits for the store (up to 30 s)
+- `--lock-timeout &lt;ms&gt;` (Default: `30000`): No effect, kept for compatibility (see --wait-lock)
 - `--json` (Default: `false`): Output as JSON
 
 ### Semantic Contract (Curated)
@@ -98,14 +99,16 @@ title: hardkas tx
 
 - `--account &lt;name&gt;`: Account name to sign with
 - `--out &lt;path&gt;`: Save signed artifact JSON
-- `--fixture` (Default: `false`): Use fixture signer for Docker testing on simnet
-- `--allow-mainnet-signing` (Default: `false`): Allow signing for mainnet
-- `--threshold &lt;number&gt;`: Multisig threshold
-- `--required-signers &lt;list&gt;`: Comma-separated list of required signers
+- `--fixture` (Default: `false`): Sign with the built-in fixture test key (any network except mainnet)
+- `--allow-mainnet-signing` (Default: `false`): Mainnet signing stays refused in this release; the flag only lets synthetic --threshold entries through
+- `--threshold &lt;number&gt;`: Synthetic multisig threshold for tests (no Kaspa multisig script is produced)
+- `--required-signers &lt;list&gt;`: Comma-separated signers, no spaces (with --threshold above 1)
 - `--append` (Default: `false`): Append signature to a partially signed transaction
 - `--target &lt;name&gt;`: Named execution target from hardkas.config.ts
-- `--wait-lock` (Default: `false`): Wait for workspace lock if held
-- `--lock-timeout &lt;ms&gt;` (Default: `30000`): Lock wait timeout in ms
+- `--password-env &lt;env&gt;`: Read the encrypted account's keystore password from this environment variable
+- `--password-stdin` (Default: `false`): Read the encrypted account's keystore password from stdin
+- `--wait-lock` (Default: `false`): No effect, kept for compatibility: the command takes no lock of its own, and each store write waits for the store (up to 30 s)
+- `--lock-timeout &lt;ms&gt;` (Default: `30000`): No effect, kept for compatibility (see --wait-lock)
 - `--json` (Default: `false`): Output as JSON
 
 ### Semantic Contract (Curated)
@@ -128,14 +131,16 @@ title: hardkas tx
 
 ### Synopsis (Generated)
 
-**Purpose:** Show the signature coverage and status of a transaction artifact
+**Purpose:** Show the derived state of a txId (SUBMITTED, MEMPOOL_ACCEPTED, ACCEPTED, CONFIRMED, FINALIZED, REORGED, …) from the workspace evidence plus one new observation, or the signature coverage of a plan/signed artifact path
 
 #### Arguments
 
-- `&lt;path&gt;` (Required): 
+- `&lt;txIdOrPath&gt;` (Required): 
 
 #### Options
 
+- `--no-observe`: Derive from the evidence already in the workspace; take no new observation
+- `-n, --network &lt;network&gt;`: Network whose configured node observes (default: the network of the recorded submission)
 - `--json` (Default: `false`): Output as JSON
 
 ---
@@ -152,19 +157,19 @@ title: hardkas tx
 
 #### Options
 
-- `--target &lt;name&gt;`: Named execution target from hardkas.config.ts
+- `--target &lt;name&gt;`: Named execution target from hardkas.config.ts (signed-artifact mode: it must match the artifact and never redirects the send)
 - `--from &lt;accountOrAddress&gt;`: Sender (shortcut mode)
 - `--to &lt;address&gt;`: Recipient (shortcut mode)
 - `--amount &lt;kas&gt;`: Amount in KAS (shortcut mode)
 - `--network &lt;name&gt;`: Network name
 - `--fee-rate &lt;sompiPerMass&gt;`: Fee rate in sompi per mass (shortcut mode)
-- `--provider &lt;type&gt;` (Default: `auto`): Provider mode (auto, rpc, simulated)
+- `--provider &lt;type&gt;` (Default: `auto`): Provider mode (auto, rpc, simulated; signed-artifact mode only)
 - `--url &lt;url&gt;`: RPC URL (optional override)
-- `--yes` (Default: `false`): Confirm broadcast
-- `--wait-lock` (Default: `false`): Wait for workspace lock if held
-- `--lock-timeout &lt;ms&gt;` (Default: `30000`): Lock wait timeout in ms
+- `--yes` (Default: `false`): Confirm broadcast. Required unless the network is simulated or simnet (in shortcut mode, unless --network simulated or simnet is given): without it the send is refused (NOT EXECUTED, exit 3) and nothing is written
+- `--wait-lock` (Default: `false`): No effect, kept for compatibility: the command takes no lock of its own, and each store write waits for the store (up to 30 s)
+- `--lock-timeout &lt;ms&gt;` (Default: `30000`): No effect, kept for compatibility (see --wait-lock)
 - `--json` (Default: `false`): Output as JSON
-- `--track &lt;label&gt;`: Auto-track deployment with this label
+- `--track &lt;label&gt;`: Signed-artifact mode: after an accepted broadcast, record a deployment with this label
 
 ### Semantic Contract (Curated)
 
@@ -205,7 +210,7 @@ title: hardkas tx
 
 ### Synopsis (Generated)
 
-**Purpose:** Wait for transaction to be confirmed stable
+**Purpose:** Wait until the derived state of a txId reaches ACCEPTED or CONFIRMED (blue-score depth ≥ the HardKAS policy), observing the configured node, then until that node's UTXO view reflects it stable
 
 #### Arguments
 
@@ -213,10 +218,11 @@ title: hardkas tx
 
 #### Options
 
+- `--until &lt;target&gt;` (Default: `confirmed`): accepted or confirmed
 - `--timeout &lt;seconds&gt;` (Default: `60`): Timeout in seconds
-- `--url &lt;url&gt;`: Override RPC URL
-- `-n, --network &lt;network&gt;`: Network to use
-- `--address &lt;address&gt;`: Recipient address to verify UTXO maturity
+- `--interval &lt;seconds&gt;` (Default: `2`): Seconds between observations
+- `-n, --network &lt;network&gt;`: Network whose configured node observes (default: the network of the recorded submission)
+- `--json` (Default: `false`): Output as JSON
 
 ---
 
@@ -233,25 +239,6 @@ title: hardkas tx
 #### Options
 
 - `--json` (Default: `false`): Output as JSON
-
----
-
-## `hardkas tx trace`
-
-> **⚠️ DISABLED:** Tracing is temporarily disabled while the query API stabilizes.
-
-### Synopsis (Generated)
-
-**Purpose:** Reconstruct the full operational trace of a transaction research
-
-#### Arguments
-
-- `&lt;txId&gt;` (Required): 
-
-### Semantic Contract (Curated)
-
-
-#### Known Limitations
 
 ---
 

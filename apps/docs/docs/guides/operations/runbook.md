@@ -45,7 +45,7 @@ hardkas artifact inspect plan.json
 Submit the signed transaction and extract the receipt.
 
 ```bash
-hardkas tx send signed_tx.json --out receipt.json
+hardkas tx send signed_tx.json
 hardkas artifact explain receipt.json
 ```
 *Expected Evidence:* The command returns a valid `txid`, and the explanation confirms the network accepted the payload.

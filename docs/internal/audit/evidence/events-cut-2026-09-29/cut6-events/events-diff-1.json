@@ -1,0 +1,136 @@
+{
+  "address": "kaspasim:qzxn3aqwz7dj2mlktqtcthkxlz6vrr4sws4yfsp6tcw30hs4tgnxqu95zz9zm",
+  "rpcUrl": "ws://127.0.0.1:18210",
+  "phaseSeconds": 30,
+  "nodeBackAfterRestart": true,
+  "groundTruth": {
+    "phase1": 802,
+    "phase2New": 3505,
+    "final": 3614
+  },
+  "observers": {
+    "hkEventsAsWired": {
+      "phase1": {
+        "seen": 0,
+        "of": 802,
+        "notifications": 0
+      },
+      "phase2": {
+        "seen": 0,
+        "of": 3505,
+        "notifications": 0
+      },
+      "notInGroundTruth": 0
+    },
+    "hkEventsConnected": {
+      "phase1": {
+        "seen": 0,
+        "of": 802,
+        "notifications": 0
+      },
+      "phase2": {
+        "seen": 0,
+        "of": 3505,
+        "notifications": 0
+      },
+      "notInGroundTruth": 0
+    },
+    "toolkitWatch": {
+      "phase1": {
+        "seen": 802,
+        "of": 802,
+        "notifications": 128
+      },
+      "phase2": {
+        "seen": 33,
+        "of": 3505,
+        "notifications": 1
+      },
+      "notInGroundTruth": 2536
+    },
+    "kaspaRpc": {
+      "phase1": {
+        "seen": 802,
+        "of": 802,
+        "notifications": 222
+      },
+      "phase2": {
+        "seen": 33,
+        "of": 3505,
+        "notifications": 3
+      },
+      "notInGroundTruth": 2536
+    },
+    "utxoContext": {
+      "phase1": {
+        "seen": 0,
+        "of": 802,
+        "notifications": 1416
+      },
+      "phase2": {
+        "seen": 0,
+        "of": 3505,
+        "notifications": 1908
+      },
+      "notInGroundTruth": 0,
+      "eventTypes": {
+        "server-status": 2,
+        "utxo-proc-start": 2,
+        "sync-state": 2,
+        "balance": 554,
+        "daa-score-change": 1640,
+        "stasis": 119,
+        "pending": 1661,
+        "reorg": 159,
+        "maturity": 1477,
+        "disconnect": 1,
+        "utxo-proc-stop": 1,
+        "connect": 1,
+        "discovery": 67
+      },
+      "contextHoldsFinal": 0
+    },
+    "utxoContextNoReReg": {
+      "phase1": {
+        "seen": 0,
+        "of": 802,
+        "notifications": 1416
+      },
+      "phase2": {
+        "seen": 0,
+        "of": 3505,
+        "notifications": 44
+      },
+      "notInGroundTruth": 0,
+      "eventTypes": {
+        "server-status": 2,
+        "utxo-proc-start": 2,
+        "sync-state": 2,
+        "balance": 237,
+        "daa-score-change": 1640,
+        "stasis": 36,
+        "pending": 753,
+        "reorg": 64,
+        "maturity": 671,
+        "disconnect": 1,
+        "utxo-proc-stop": 1,
+        "connect": 1
+      },
+      "contextHoldsFinal": 0
+    },
+    "rawRpc": {
+      "phase1": {
+        "seen": 0,
+        "of": 802,
+        "notifications": 221
+      },
+      "phase2": {
+        "seen": 0,
+        "of": 3505,
+        "notifications": 3
+      },
+      "notInGroundTruth": 0
+    }
+  },
+  "errors": []
+}

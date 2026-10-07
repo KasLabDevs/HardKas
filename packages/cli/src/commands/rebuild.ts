@@ -1,5 +1,5 @@
 import { Command } from "commander";
-import { UI } from "../ui.js";
+import { UI, errorCodeOf } from "../ui.js";
 import { HardkasCliError, HardkasExitCode } from "../cli-errors.js";
 
 export function registerRebuildCommand(program: Command) {
@@ -88,7 +88,7 @@ export function registerRebuildCommand(program: Command) {
           UI.writeJson({
             error: "REBUILD_FAILED",
             message: ((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err)),
-            code: ((err as any).code) || "UNKNOWN_ERROR"
+            code: errorCodeOf(err)
           });
           throw err;
         } else {

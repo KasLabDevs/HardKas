@@ -47,9 +47,10 @@ export function registerWorkflowCommands(program: Command) {
       await runWorkflowInspect(id, options);
     });
 
+  // SURFACE-TRUTH-1A: hidden; it refuses (WORKFLOW_REPLAY_UNSUPPORTED) until a real replay of a workflow's steps exists
   workflowCmd
-    .command("replay <id>")
-    .description("Deterministically replay and verify a workflow's lineage")
+    .command("replay <id>", { hidden: true })
+    .description("Not supported: there is no workflow replay (refuses with WORKFLOW_REPLAY_UNSUPPORTED)")
     .action(async (id: string, options: any) => {
       await runWorkflowReplay(id, options);
     });

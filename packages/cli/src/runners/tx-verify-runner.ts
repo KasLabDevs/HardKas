@@ -8,6 +8,7 @@ import {
 import { UI } from "../ui.js";
 import { formatSompiToKas } from "@hardkas/core";
 import path from "node:path";
+import { withSdk } from "./with-sdk.js";
 
 export interface TxVerifyOptions {
   path: string;
@@ -17,9 +18,7 @@ export interface TxVerifyOptions {
 
 export async function runTxVerify(options: TxVerifyOptions) {
   if (options.json) UI.setJsonMode(true);
-  const { Hardkas } = await import("@hardkas/sdk");
-  const sdk = await Hardkas.open({ cwd: options.workspaceRoot });
-  const absolutePath = sdk.workspace.resolvePath(options.path);
+  const absolutePath = await withSdk({ cwd: options.workspaceRoot }, (sdk) => sdk.workspace.resolvePath(options.path));
 
   UI.header(`Transaction Verification: ${path.basename(options.path)}`);
 
@@ -61,7 +60,12 @@ export async function runTxVerify(options: TxVerifyOptions) {
       ) {
         throw new Error("Invalid artifact: missing or invalid inputs/outputs arrays");
       }
-      result = verifyTxPlanSemantics(artifact as unknown as TxPlan);
+      // the artifact's `version` is its FORMAT version ("1.0.0-alpha"); the plan's `version` is the transaction version,
+      // which the artifact keeps in `txVersion` (the mapping of the fee check, artifacts/src/feeVerify.ts)
+      result = verifyTxPlanSemantics({
+        ...(artifact as unknown as TxPlan),
+        version: (artifactRecord["txVersion"] as unknown) === 1 ? 1 : 0
+      } as TxPlan);
     }
 
     if (options.json) {
@@ -100,8 +104,9 @@ export async function runTxVerify(options: TxVerifyOptions) {
         : `--plan ${artifact.planId}`;
     if (result.ok) {
       UI.success("SEMANTIC VERIFICATION PASSED");
+      // SURFACE-TRUTH-1B: `tx sign` takes the plan file (`dev tx` has no `sign`)
       UI.printNextSteps([
-        `hardkas dev tx sign ${artifact.planId}`,
+        `hardkas tx sign ${options.path}`,
         `hardkas why ${whyTarget}`
       ]);
     } else {

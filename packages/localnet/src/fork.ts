@@ -1,6 +1,6 @@
 import { KaspaRpcClient } from "@hardkas/kaspa-rpc";
 import { LocalnetState, LocalnetUtxo } from "./types.js";
-import { NetworkId, ExecutionMode } from "@hardkas/core";
+import { NetworkId, ExecutionMode, redactUrlCredentials } from "@hardkas/core";
 import { ARTIFACT_SCHEMAS, HARDKAS_VERSION, ARTIFACT_VERSION } from "@hardkas/artifacts";
 
 export interface ForkOptions {
@@ -56,7 +56,8 @@ export async function forkFromNetwork(
     utxos,
     forkSource: {
       network: opts.network,
-      rpcUrl: opts.rpcUrl,
+      // EVIDENCE-TRUST-1 (ET-C4): state records the source locator without its credentials (D5)
+      rpcUrl: redactUrlCredentials(opts.rpcUrl),
       daaScore: targetDaaScore,
       forkedAt: new Date().toISOString(), // hardkas-determinism-allow: fork source timestamp
       addresses: opts.addresses

@@ -1,0 +1,42 @@
+$ hardkas artifact lineage signed.json --json
+exit=0 stdout_is_single_json=true json_docs_on_stdout=1
+--- stdout ---
+{
+  "ok": true,
+  "command": "artifact lineage",
+  "mode": "cli",
+  "result": {
+    "path": "signed.json",
+    "schema": "hardkas.signedTx",
+    "lineage": {
+      "lineageId": "c84e82a07128512316cf7e65489d2564fa6f3562a852c8be4ce7ee1b363ead8f",
+      "rootArtifactId": "c84e82a07128512316cf7e65489d2564fa6f3562a852c8be4ce7ee1b363ead8f",
+      "artifactId": "ef78e48aab338541f01048a3269b79f4b1326892d95cb31c0ddc6cdfb4adbf41",
+      "parentArtifactId": "c84e82a07128512316cf7e65489d2564fa6f3562a852c8be4ce7ee1b363ead8f",
+      "sequence": 2
+    },
+    "orphan": false,
+    "chain": [
+      {
+        "role": "root",
+        "artifactId": "c84e82a07128512316cf7e65489d2564fa6f3562a852c8be4ce7ee1b363ead8f"
+      },
+      {
+        "role": "parent",
+        "artifactId": "c84e82a07128512316cf7e65489d2564fa6f3562a852c8be4ce7ee1b363ead8f"
+      },
+      {
+        "role": "here",
+        "artifactId": "ef78e48aab338541f01048a3269b79f4b1326892d95cb31c0ddc6cdfb4adbf41",
+        "schema": "hardkas.signedTx"
+      }
+    ],
+    "verification": {
+      "ok": true,
+      "issues": []
+    },
+    "warnings": []
+  }
+}
+--- stderr ---
+

@@ -40,6 +40,6 @@ A recurring question is whether HardKAS CLI commands returning private keys cons
 
 **Classification:** `INTENTIONAL_EXPORT` / `DEVELOPMENT_ONLY`.
 
-HardKAS intentionally allows extracting the raw private keys of development accounts (e.g., via `hardkas accounts real export` or programmatic SDK methods) because developers often need to import these disposable keys into third-party wallets (like Kaspium or KasWare) to test DApp integrations locally.
+HardKAS intentionally allows extracting the raw private keys of development accounts (e.g., via `hardkas dev accounts reveal <alias>` or programmatic SDK methods) because developers often need to import these disposable keys into third-party wallets (like Kaspium or KasWare) to test DApp integrations locally.
 
 This is expected behavior. The security boundary is enforced by policy: developers are instructed to never import production Mainnet keys into a local HardKAS workspace. While HardKAS theoretically allows encrypted keystores for Mainnet, production deployments should defer signing authority to a true custody system via PSKT to maintain strict key isolation.

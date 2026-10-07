@@ -5,6 +5,7 @@ import { createJiti } from "jiti";
 import { DEFAULT_HARDKAS_CONFIG } from "./defaults.js";
 import { validateHardkasConfig } from "./schema.js";
 import type { LoadedHardkasConfig, HardkasConfig } from "./types.js";
+import { findHardkasConfigFile } from "./workspace-root.js";
 
 export interface LoadHardkasConfigOptions {
   cwd?: string;
@@ -29,27 +30,11 @@ export async function loadHardkasConfig(
     return loadConfigFile(absolutePath, cwd);
   }
 
-  const indicators = [
-    "hardkas.config.ts",
-    "hardkas.config.mts",
-    "hardkas.config.js",
-    "hardkas.config.mjs"
-  ];
-
-  let current = options.workspaceRoot ?? cwd;
-  const stopAt = options.workspaceRoot ? path.resolve(options.workspaceRoot) : path.parse(current).root;
-
-  while (true) {
-    for (const indicator of indicators) {
-      const p = path.join(current, indicator);
-      if (fs.existsSync(p)) {
-        return loadConfigFile(p, current);
-      }
-    }
-    if (current === stopAt) break;
-    const parent = path.dirname(current);
-    if (parent === current) break;
-    current = parent;
+  // WORKSPACE-AUTHORITY-1: the same walk (and file list) as `resolveWorkspaceRoot`, so a config and a root never disagree
+  const start = options.workspaceRoot ?? cwd;
+  const found = findHardkasConfigFile(start, options.workspaceRoot);
+  if (found) {
+    return loadConfigFile(found, path.dirname(found));
   }
 
   return {
@@ -115,6 +100,13 @@ async function loadConfigFile(
       },
       plugins: userConfig.plugins || []
     };
+
+    // PAPERCUTS #37: a config that still declares the legacy `defaultNetwork` and no `execution`
+    // keeps resolving through its own key (and gets the deprecation warning for it); the built-in
+    // execution default must not shadow it.
+    if (userConfig.execution === undefined && userConfig.defaultNetwork !== undefined) {
+      delete mergedConfig.execution;
+    }
 
     validateHardkasConfig(mergedConfig);
 

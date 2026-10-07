@@ -17,10 +17,13 @@ export interface KaspaDoctorResult {
 export async function runKaspaDoctor(options: { rpcUrl: string; json: boolean }) {
   const checks: KaspaDoctorCheck[] = [];
   let finalStatus: "ready" | "warning" | "failed" = "ready";
+  // RESOURCE-LIFECYCLE-1 (RL-I1): releases the client this command creates, in the finally below.
+  let release: (() => Promise<void>) | undefined;
 
   try {
     const { JsonWrpcKaspaClient } = await import("@hardkas/kaspa-rpc");
     const client = new JsonWrpcKaspaClient({ rpcUrl: options.rpcUrl, timeoutMs: 3000 });
+    release = () => client.close();
 
     // 1. RPC Reachability
     try {
@@ -118,20 +121,20 @@ export async function runKaspaDoctor(options: { rpcUrl: string; json: boolean })
 
     // Aesthetic Output
     console.log(
-      pc.bold("\nâ”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”")
+      pc.bold("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
     );
-    console.log(pc.bold(`HardKAS â€¢ Kaspa Doctor (L1)`));
+    console.log(pc.bold(`HardKAS • Kaspa Doctor (L1)`));
     console.log(
-      pc.bold("â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”\n")
+      pc.bold("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n")
     );
 
     for (const check of checks) {
       const icon =
         check.status === "success"
-          ? pc.green("âœ“")
+          ? pc.green("✓")
           : check.status === "warning"
-            ? pc.yellow("âš ")
-            : pc.red("âœ—");
+            ? pc.yellow("⚠")
+            : pc.red("✗");
       console.log(`${icon} ${pc.bold(check.name)}: ${check.message}`);
     }
 
@@ -165,5 +168,7 @@ export async function runKaspaDoctor(options: { rpcUrl: string; json: boolean })
       exitCode: 1,
       cause: e
     });
+  } finally {
+    await release?.();
   }
 }

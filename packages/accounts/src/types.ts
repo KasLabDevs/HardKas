@@ -69,6 +69,12 @@ export interface HardkasKaspaAccount extends HardkasBaseAccount {
   privateKeyEnv?: string;
   privateKey?: string;
   keystorePath?: string;
+  /**
+   * Set by the resolver for the workspace's development accounts (`.hardkas/dev-accounts/`), whose
+   * keystores use the published development password. Any other keystore opens only with its owner's
+   * password, given explicitly.
+   */
+  keystoreKind?: "dev-account";
   address: string;
 }
 

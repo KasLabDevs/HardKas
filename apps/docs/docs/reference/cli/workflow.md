@@ -4,25 +4,6 @@ title: hardkas workflow
 
 # `hardkas workflow`
 
-## `hardkas workflow create`
-
-### Synopsis (Generated)
-
-**Purpose:** Create a deterministic workflow from a template
-
-#### Arguments
-
-- `&lt;name&gt;` (Required): 
-
-#### Options
-
-- `--template &lt;name&gt;`: Embedded template name
-- `--out &lt;path&gt;`: Output artifact file path
-- `--json` (Default: `false`): Output the final workflow artifact as JSON
-- `--workspace &lt;path&gt;`: Override workspace root directory
-
----
-
 ## `hardkas workflow run`
 
 ### Synopsis (Generated)
@@ -56,18 +37,6 @@ title: hardkas workflow
 #### Options
 
 - `--json` (Default: `false`): Output full artifact as JSON
-
----
-
-## `hardkas workflow replay`
-
-### Synopsis (Generated)
-
-**Purpose:** Deterministically replay and verify a workflow's lineage
-
-#### Arguments
-
-- `&lt;id&gt;` (Required): 
 
 ---
 

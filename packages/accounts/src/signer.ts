@@ -49,6 +49,8 @@ export async function signTxPlanArtifact(input: {
   authorizers?: Readonly<Record<number, TxInputAuthorizer>>;
   config?: HardkasConfig;
   allowMainnet?: boolean;
+  /** The password of the account's keystore, in memory only: never stored, logged or echoed. */
+  keystorePassword?: string;
 }): Promise<SignedTxArtifact> {
   const { target, planArtifact, account, authorizers } = input;
 
@@ -120,6 +122,9 @@ export async function signTxPlanArtifact(input: {
     };
     if (input.config?.wasm) {
       signerOptions.wasmConfig = input.config.wasm;
+    }
+    if (input.keystorePassword !== undefined) {
+      signerOptions.keystorePassword = input.keystorePassword;
     }
 
     const signer = new KaspaWasmPrivateKeySigner(signerOptions);

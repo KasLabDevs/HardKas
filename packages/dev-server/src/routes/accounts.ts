@@ -33,7 +33,8 @@ accountsRoutes.get("/", async (c) => {
 
     if (!localState) {
       warning =
-        "Localnet state not found. Run 'hardkas accounts fund <alias> --amount 1000' or execute a transaction to initialize it.";
+        // SURFACE-TRUTH-1B: the funding command that is not deprecated
+        "Localnet state not found. Run 'hardkas simulator fund <alias> --amount 1000' or execute a transaction to initialize it.";
     }
 
     const result = rawAccounts.map((acc) => {

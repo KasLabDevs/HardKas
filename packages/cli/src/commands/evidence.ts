@@ -1,7 +1,7 @@
 import { Command } from "commander";
 import { UI } from "../ui.js";
 import { EvidenceManager } from "@hardkas/sdk";
-import path from "node:path";
+import { explicitWorkspaceOrCwd } from "../workspace-root.js";
 import { getOutput } from "../output.js";
 
 export function registerEvidenceCommands(program: Command) {
@@ -17,9 +17,7 @@ export function registerEvidenceCommands(program: Command) {
     .option("--json", "Output results as JSON", false)
     .action(async (scenarioResultPath: string, options: any) => {
       try {
-        const workspaceRoot = options.workspace
-          ? path.resolve(options.workspace)
-          : process.cwd();
+        const workspaceRoot = explicitWorkspaceOrCwd(); // --workspace is resolved once (WORKSPACE-AUTHORITY-1)
         
         const pkgPath = await EvidenceManager.pack({
           scenarioResultPath,

@@ -1,0 +1,49 @@
+$ hardkas config show --json   (cwd bare-before)
+exit=0 stdout_is_single_json=true
+--- stdout ---
+{
+  "ok": true,
+  "command": "config show",
+  "mode": "cli",
+  "result": {
+    "cwd": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\claude\\C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo\\178242cc-c0b4-4452-b344-f35b49dc3d1f\\scratchpad\\json-papercuts\\bare-before",
+    "config": {
+      "defaultNetwork": "simulated",
+      "networks": {
+        "simulated": {
+          "kind": "simulated",
+          "description": "Pure local simulation — no Docker, no RPC, no node"
+        },
+        "simnet": {
+          "kind": "kaspa-node",
+          "network": "simnet",
+          "rpcUrl": "ws://127.0.0.1:18210",
+          "description": "Local Docker kaspad on simnet — requires hardkas node start"
+        },
+        "devnet": {
+          "kind": "kaspa-node",
+          "network": "devnet",
+          "rpcUrl": "ws://127.0.0.1:18610"
+        },
+        "testnet-10": {
+          "kind": "kaspa-rpc",
+          "network": "testnet-10",
+          "rpcUrl": "wss://tn10.kaspa.stream:443"
+        },
+        "testnet-11": {
+          "kind": "kaspa-rpc",
+          "network": "testnet-11",
+          "rpcUrl": "wss://tn11.kaspa.stream:443"
+        },
+        "mainnet": {
+          "kind": "kaspa-rpc",
+          "network": "mainnet",
+          "rpcUrl": "wss://kaspa.stream:443"
+        }
+      },
+      "accounts": {}
+    }
+  }
+}
+--- stderr ---
+

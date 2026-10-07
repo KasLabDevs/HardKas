@@ -11,6 +11,8 @@ function extractInventory() {
   const inventory: any[] = [];
 
   function walk(cmd: Command, parentName = "") {
+    // SURFACE-TRUTH-1B (ST-I5): hidden means not documented as usable; a hidden command and its subcommands are left out.
+    if ((cmd as any)._hidden) return;
     const fullName = parentName ? `${parentName} ${cmd.name()}` : cmd.name();
 
     if (fullName !== "hardkas" && (cmd.commands.length === 0 || (cmd as any)._actionHandler)) {

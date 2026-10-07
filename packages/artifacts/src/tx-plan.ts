@@ -5,7 +5,7 @@ import { calculateContentHash, CURRENT_HASH_VERSION } from "./canonical.js";
 import { deriveWorkflowId } from "./workflow-id.js";
 import { HARDKAS_VERSION } from "./constants.js";
 import type { RuntimeContext } from "@hardkas/core";
-import { HardkasSchemas } from "@hardkas/core";
+import { HardkasSchemas, redactUrlCredentials } from "@hardkas/core";
 
 export interface CreateTxPlanArtifactOptions {
   networkId: NetworkId;
@@ -133,7 +133,8 @@ export function createTxPlanArtifact(options: CreateTxPlanArtifactOptions): TxPl
       amountSompi: o.amountSompi.toString(),
       ...(o.covenant !== undefined ? { covenant: { covenantId: o.covenant.covenantId, authorizingInput: o.covenant.authorizingInput } } : {})
     })),
-    rpcUrl: options.rpcUrl,
+    // EVIDENCE-TRUST-1 (ET-C4): the locator without its credentials (D5); outside the identity, as before
+    rpcUrl: options.rpcUrl ? redactUrlCredentials(options.rpcUrl) : options.rpcUrl,
     lineage: {
       artifactId: "",
       sequence: 1

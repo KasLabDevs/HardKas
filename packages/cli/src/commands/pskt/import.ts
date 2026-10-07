@@ -4,7 +4,7 @@ import { UI } from "../../ui.js";
 export function registerImportCommand(pskt: Command) {
   pskt
     .command("import")
-    .description(`Import a raw payload into a PSKT session ${UI.maturity("alpha")}`)
+    .description(`Import a raw payload into a PSKT session ${UI.maturity("unavailable")}`)
     .requiredOption("--file <sessionPath>", "Path to the PSKT session JSON")
     .requiredOption("--payload <payloadPath>", "Path to the raw payload file")
     .requiredOption("--out <outputPath>", "Path to write the updated PSKT session JSON")

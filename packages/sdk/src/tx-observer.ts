@@ -217,9 +217,15 @@ export async function observeTxOnce(
     };
   };
 
+  const maxBatches = options.maxBatches ?? 20;
+
   // 1. A block previously observed as accepting: is it still on the selected chain?
-  //    If so, its depth is re-measured from the current sink; if the node reports
-  //    it removed, that is the finding. If the node cannot answer, fall through.
+  //    If so, its depth is re-measured from the current sink. If the node reports it
+  //    removed, the same answer lists the chain blocks that replaced it: when one of
+  //    them (or one in the answers that continue it, within the batch bound) accepts
+  //    the transaction, the acceptance moved to that block and the finding says so;
+  //    only when none does is the removal the finding. If the node cannot answer the
+  //    first question, fall through.
   if (options.previousAcceptingBlockHash) {
     const prev = options.previousAcceptingBlockHash;
     let fromPrevious: Awaited<ReturnType<TxObserverRpc["getVirtualChainFromBlock"]>> | undefined;
@@ -230,6 +236,19 @@ export async function observeTxOnce(
     }
     if (fromPrevious) {
       if (fromPrevious.removedChainBlockHashes.includes(prev)) {
+        let chain = fromPrevious;
+        let cursor = prev;
+        for (let batch = 1; ; batch++) {
+          const hit = chain.acceptedTransactionIds.find((a) => a.acceptedTransactionIds.includes(options.txId));
+          if (hit) {
+            const finding = await acceptedBy(hit.acceptingBlockHash);
+            return seal(finding.type === "chain_accepted" ? { ...finding, removedAcceptingBlockHash: prev } : finding);
+          }
+          const last = chain.addedChainBlockHashes[chain.addedChainBlockHashes.length - 1];
+          if (!last || last === cursor || batch >= maxBatches) break;
+          cursor = last;
+          chain = await rpc.getVirtualChainFromBlock(cursor);
+        }
         return seal({ type: "chain_removed", acceptingBlockHash: prev });
       }
       return seal(await acceptedBy(prev));
@@ -244,7 +263,6 @@ export async function observeTxOnce(
 
   // 3. Virtual chain from the cursor, in bounded batches.
   const start = options.since ?? dag.pruningPointHash;
-  const maxBatches = options.maxBatches ?? 20;
   let scanned = 0;
   let cursor = start;
   if (start) {

@@ -4,7 +4,8 @@ import {
   verifyArtifactIntegrity,
   writeArtifact,
   ProjectArtifactStore,
-  CURRENT_HASH_VERSION
+  CURRENT_HASH_VERSION,
+  SYNTHETIC_TXID_PATTERN
 } from "@hardkas/artifacts";
 import { deterministicCompare } from "@hardkas/core";
 import type { Hardkas } from "./index.js";
@@ -42,6 +43,10 @@ export interface ReplayVerifyResult {
 // therefore fail-closes at this boundary with `REPLAY_MODE_UNSUPPORTED`.
 const REPLAY_SUPPORTED_MODES = new Set<string>(["simulator"]);
 
+/** A network transaction id (64 hex) or a simulator one (synthetic-<64 hex>). */
+const isTransactionId = (value: unknown): boolean =>
+  typeof value === "string" && (/^[0-9a-f]{64}$/.test(value) || SYNTHETIC_TXID_PATTERN.test(value));
+
 export class HardkasReplay {
   constructor(private sdk: Hardkas) {}
 
@@ -77,6 +82,8 @@ export class HardkasReplay {
     let lineageOk = true;
     let determinismOk = true;
     let contaminationOk = true;
+    // REPLAY-TRUST-2 (RT-I4): the inputs that do not pass integrity, decided before anything runs
+    const invalidInputs: string[] = [];
 
     const isContaminated = (artifact: any): boolean => {
       if (
@@ -111,7 +118,14 @@ export class HardkasReplay {
         for (const item of lineage) {
           if (isContaminated(item)) contaminationOk = false;
           const integrity = await verifyArtifactIntegrity(item);
-          if (!integrity.ok) determinismOk = false;
+          if (!integrity.ok) {
+            determinismOk = false;
+            const reasons = integrity.issues
+              .filter((i) => i.severity === "error" || i.severity === "critical")
+              .map((i) => `${i.code}: ${i.message}`)
+              .join("; ");
+            invalidInputs.push(`${String(item.schema)} ${String(item.contentHash)} (${reasons || "does not verify"})`);
+          }
 
           if (item.schema === HardkasSchemas.TxPlan) plan = item;
           if (item.schema === HardkasSchemas.TxReceipt) receipt = item;
@@ -176,6 +190,33 @@ export class HardkasReplay {
             `Replay execution for receipt mode "${observedMode}" is not ` +
             `supported; current replay execution supports ${supportedModes}-mode receipts only.`,
           code: "REPLAY_MODE_UNSUPPORTED"
+        };
+      }
+
+      // CONTAINMENT-2 (D2): the report is named after the receipt's txId, so a txId the receipt declares must be a
+      // transaction id (64 hex, or synthetic-<64 hex>) before it becomes part of a file name. Otherwise the receipt is an
+      // invalid input: nothing runs and no report is written. No other identity stands in for it (a txId is not a
+      // contentHash).
+      if (!verifyErrorMsg && receipt && receipt.txId !== undefined && receipt.txId !== null && !isTransactionId(receipt.txId)) {
+        invalidInputs.push(
+          `${String(receipt.schema)} ${String(receipt.contentHash)} (txId ${JSON.stringify(String(receipt.txId).slice(0, 80))} is not a transaction id)`
+        );
+      }
+
+      // REPLAY-TRUST-2 (RT-I4, D-RT2): every input is decided before anything runs. An input that does not pass
+      // integrity is not executed and leaves no report: a replay of it would decide nothing about the evidence asked
+      // about, and a report would be a claim about an artifact that is not what it says it is. (A legacy scope or an
+      // unsupported mode is refused above: nothing runs for them either.)
+      if (!verifyErrorMsg && invalidInputs.length > 0) {
+        return {
+          passed: false,
+          artifactsScanned: artifactCount,
+          lineage: "valid",
+          determinism: "failed",
+          contamination: contaminationOk ? "clean" : "contaminated",
+          report: null,
+          error: `Replay input invalid: ${invalidInputs.join(" | ")}. Nothing was executed and no report was written.`,
+          code: "REPLAY_INPUT_INVALID"
         };
       }
 

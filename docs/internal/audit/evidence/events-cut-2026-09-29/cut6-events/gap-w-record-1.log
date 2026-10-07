@@ -1,0 +1,12 @@
+﻿[0.9s] funding: mining to A
+[30.6s] funded: 1177 UTXOs, quiet (reads 753 → 1168 → 1177 → 1177)
+[31.3s] maturation: mining to C until virtual DAA ≥ 30388
+[53.8s] T0: 1193 UTXOs, quiet (reads 1193 → 1193)
+[57.7s] partition: R 1 disconnect(s), U 1
+[58.1s] gap: submitted 59880b653d9fcb7e… spending 2 of A's UTXOs, 1 change output(s) to A
+[72.3s] T_gap: 1192 UTXOs, quiet (reads 1192 → 1192)
+[81.9s] C2: 1192 UTXOs, quiet (reads 1192 → 1192)
+[82.0s] post: submitted 4fd2ed733fd0a70b… spending 2 of A's UTXOs, 1 change output(s) to A
+[96.4s] C3: 1191 UTXOs, quiet (reads 1191 → 1191)
+[96.7s] verdict: UTXOCONTEXT_REQUIRED — R keeps exactly the inputs spent while it was disconnected and lacks exactly the change; R still applies the post-heal spend live (its C3 difference is only the inherited gap); U equals the fresh truth at C2 and C3
+[96.7s] 3b closure (W): PASS {"C2exact":true,"C3exact":true,"resyncsAfterHeal":1,"resyncRemovedIsGapInputs":true,"resyncAddedIsGapChange":true,"resyncAmountsFromNode":true,"gapNeverAsTransaction":true,"postSpendLive":{"removed":["0179f0d408dbaf354b7d909328861751f7b2af76d689e43f789c68f6294cd246:10","0179f0d408dbaf354b7d909328861751f7b2af76d689e43f789c68f6294cd246:11"],"added":["4fd2ed733fd0a70b6aa918b8d042c287f424584167150eb544324e252ebac416:1"],"matchesSpend":true},"pass":true}

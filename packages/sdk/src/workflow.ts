@@ -11,8 +11,54 @@ export interface WorkflowRunOptions {
   dryRun?: boolean;
 }
 
+/** The step types this runtime executes; anything else is refused before the first step runs. */
+const EXECUTED_STEP_TYPES = ["simulate-failure", "script", "network.switch", "tx.plan", "tx.simulate", "tx.send"] as const;
+
 export class HardkasWorkflow {
   constructor(private readonly sdk: Hardkas) {}
+
+  /**
+   * SURFACE-TRUTH-1A (ST-I3, ST-I4): the whole definition is checked before any step runs. Returns the first step the
+   * runtime refuses, with its typed error, or undefined.
+   * - an unknown step type (it used to fall through every branch and be recorded as `success`);
+   * - `network.switch` to a network other than the one the workflow runs on (it used to be recorded as `success` while
+   *   the steps after it kept running on the old network); a switch to mainnet keeps answering with the mainnet policy;
+   * - a `script` step under containment (agent mode, `dryRun`, a policy without network): the script runs arbitrary code
+   *   in this process with every Node global, so neither the dry run nor the network policy applies to it.
+   */
+  private refusedStep(options: WorkflowRunOptions): { step: WorkflowRunOptions["steps"][number]; error: HardkasError } | undefined {
+    for (const step of options.steps) {
+      try {
+        if (!(EXECUTED_STEP_TYPES as readonly string[]).includes(step.type)) {
+          throw new HardkasError(
+            "WORKFLOW_STEP_UNKNOWN",
+            `Workflow step type '${String(step.type)}' is not one this runtime executes (${EXECUTED_STEP_TYPES.join(", ")}); nothing ran.`
+          );
+        }
+        if (step.type === "network.switch") {
+          const target = step.args?.network || step.network;
+          if (target === "mainnet") {
+            this.sdk.enforcePolicy("mainnet", "Workflow requested network switch to mainnet");
+          }
+          if (target !== this.sdk.network) {
+            throw new HardkasError(
+              "WORKFLOW_STEP_UNSUPPORTED",
+              `network.switch cannot move a running workflow from '${String(this.sdk.network)}' to '${String(target)}': the steps after it would still run on '${String(this.sdk.network)}'. Run the workflow on the network it needs; nothing ran.`
+            );
+          }
+        }
+        if (step.type === "script" && (this.sdk.mode === "agent" || options.dryRun === true || this.sdk.policy.allowNetwork === false)) {
+          throw new HardkasError(
+            "WORKFLOW_SCRIPT_REFUSED",
+            "A script step runs arbitrary code in this process, outside the agent policy, the dry run and the network policy, so it is refused under any of them; nothing ran."
+          );
+        }
+      } catch (e: unknown) {
+        return { step, error: e instanceof HardkasError ? e : new HardkasError("WORKFLOW_STEP_INVALID", e instanceof Error ? e.message : String(e)) };
+      }
+    }
+    return undefined;
+  }
 
   /**
    * Executes a sequence of declarative steps and returns a definitive WorkflowArtifact.
@@ -77,8 +123,17 @@ export class HardkasWorkflow {
 
     const stepsResults: Record<string, any> = {};
 
+    // SURFACE-TRUTH-1A: a definition with a refused step fails as a whole, before any step runs.
+    const refused = this.refusedStep(options);
+    if (refused) {
+      const at = new Date().toISOString(); // hardkas-determinism-allow: refusal timestamp
+      status = "failed";
+      errorEnvelope = { code: refused.error.code, message: refused.error.message, redacted: false };
+      artifactSteps.push({ type: refused.step.type, status: "failed", startedAt: at, completedAt: at, error: refused.error.message });
+    }
+
     // Real Execution Routing
-    for (const step of options.steps) {
+    for (const step of refused ? [] : options.steps) {
       const startedAt = new Date().toISOString(); // hardkas-determinism-allow: step start timestamp
       try {
         if (step.type === "simulate-failure") {
@@ -107,8 +162,9 @@ export class HardkasWorkflow {
                     "Workflow script requested transaction planning"
                   );
                 }
-                const plan = await this.sdk.tx.plan({ ...opts, workflowId });
-                await this.sdk.artifacts.write(plan, { dryRun: options.dryRun ?? false });
+                const produced = await this.sdk.tx.plan({ ...opts, workflowId });
+                // EVIDENCE-TRUST-1 (D2): the plan handed on is exactly the stored one (an identity published before is kept)
+                const plan = (await this.sdk.artifacts.write(produced, { dryRun: options.dryRun ?? false })).artifact ?? produced;
                 const planRecord = plan as unknown as Record<string, string>;
                 const id = planRecord.contentHash || planRecord.artifactId || plan.planId;
                 if (id) producedArtifacts.push(id);
@@ -116,10 +172,9 @@ export class HardkasWorkflow {
                 return plan;
               },
               sign: async (plan: any, account?: any) => {
-                const signed = await this.sdk.tx.sign(plan, account);
-                await this.sdk.artifacts.write(signed, {
-                  dryRun: options.dryRun ?? false
-                });
+                const producedSigned = await this.sdk.tx.sign(plan, account);
+                const signed =
+                  (await this.sdk.artifacts.write(producedSigned, { dryRun: options.dryRun ?? false })).artifact ?? producedSigned;
                 const signedRecord = signed as unknown as Record<string, string>;
                 const id =
                   signedRecord.contentHash || signedRecord.artifactId || signed.signedId;
@@ -132,14 +187,13 @@ export class HardkasWorkflow {
                   "mutation",
                   "Workflow script requested real broadcast"
                 );
-                const res =
+                const sent: any =
                   this.sdk.network === "simulated"
                     ? await this.sdk.tx.simulate(signed, parentHint(signed))
                     : await this.sdk.tx.send(signed, parentHint(signed));
-                assertBroadcastAccepted(res);
-                await this.sdk.artifacts.write(res.receipt, {
-                  dryRun: options.dryRun ?? false
-                });
+                assertBroadcastAccepted(sent);
+                const storedReceipt = (await this.sdk.artifacts.write(sent.receipt, { dryRun: options.dryRun ?? false })).artifact;
+                const res = storedReceipt ? { ...sent, receipt: storedReceipt } : sent;
                 const receiptRecord = res.receipt as unknown as Record<string, string>;
                 const id =
                   receiptRecord.contentHash ||
@@ -149,10 +203,9 @@ export class HardkasWorkflow {
                 return res;
               },
               simulate: async (signed: any) => {
-                const res = await this.sdk.tx.simulate(signed, parentHint(signed));
-                await this.sdk.artifacts.write(res.receipt, {
-                  dryRun: options.dryRun ?? false
-                });
+                const simulated: any = await this.sdk.tx.simulate(signed, parentHint(signed));
+                const storedReceipt = (await this.sdk.artifacts.write(simulated.receipt, { dryRun: options.dryRun ?? false })).artifact;
+                const res = storedReceipt ? { ...simulated, receipt: storedReceipt } : simulated;
                 const receiptRecord = res.receipt as unknown as Record<string, string>;
                 const id =
                   receiptRecord.contentHash ||
@@ -178,13 +231,14 @@ export class HardkasWorkflow {
           if (this.sdk.network !== "simulated") {
             this.sdk.enforcePolicy("network", "Workflow requested transaction planning");
           }
-          lastPlan = await this.sdk.tx.plan({
+          const producedPlan = await this.sdk.tx.plan({
             from: step.args?.from || step.from,
             to: step.args?.to || step.to,
             amount: step.args?.amount || step.amount,
             workflowId
           });
-          await this.sdk.artifacts.write(lastPlan, { dryRun: options.dryRun ?? false });
+          // EVIDENCE-TRUST-1 (D2): carry on with exactly the stored copy
+          lastPlan = (await this.sdk.artifacts.write(producedPlan, { dryRun: options.dryRun ?? false })).artifact ?? producedPlan;
           const planRecord = lastPlan as unknown as Record<string, string>;
           producedArtifactId =
             planRecord.contentHash || planRecord.artifactId || lastPlan.planId;
@@ -201,16 +255,17 @@ export class HardkasWorkflow {
             );
           }
 
-          lastSigned = await this.sdk.tx.sign(lastPlan);
-          await this.sdk.artifacts.write(lastSigned, { dryRun: options.dryRun ?? false });
+          const producedSigned = await this.sdk.tx.sign(lastPlan);
+          lastSigned = (await this.sdk.artifacts.write(producedSigned, { dryRun: options.dryRun ?? false })).artifact ?? producedSigned;
           const signedRecord = lastSigned as unknown as Record<string, string>;
           const signedId =
             signedRecord.contentHash || signedRecord.artifactId || lastSigned.signedId;
           if (signedId) producedArtifacts.push(signedId);
 
           if (step.type === "tx.simulate") {
-            const { receipt } = await this.sdk.tx.simulate(lastSigned, parentHint(lastSigned));
-            await this.sdk.artifacts.write(receipt, { dryRun: options.dryRun ?? false });
+            const { receipt: producedReceipt } = await this.sdk.tx.simulate(lastSigned, parentHint(lastSigned));
+            const receipt =
+              (await this.sdk.artifacts.write(producedReceipt, { dryRun: options.dryRun ?? false })).artifact ?? producedReceipt;
             const receiptRecord = receipt as unknown as Record<string, string>;
             producedArtifactId =
               receiptRecord.contentHash || receiptRecord.artifactId || receiptRecord.txId;
@@ -222,8 +277,8 @@ export class HardkasWorkflow {
                 ? await this.sdk.tx.simulate(lastSigned, parentHint(lastSigned))
                 : await this.sdk.tx.send(lastSigned, parentHint(lastSigned));
             assertBroadcastAccepted(sendResult);
-            const receipt = sendResult.receipt;
-            await this.sdk.artifacts.write(receipt, { dryRun: options.dryRun ?? false });
+            const receipt =
+              (await this.sdk.artifacts.write(sendResult.receipt, { dryRun: options.dryRun ?? false })).artifact ?? sendResult.receipt;
             const receiptRecord = receipt as unknown as Record<string, string>;
             producedArtifactId =
               receiptRecord.contentHash || receiptRecord.artifactId || receiptRecord.txId;

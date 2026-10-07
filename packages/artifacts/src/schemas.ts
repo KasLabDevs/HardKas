@@ -409,7 +409,12 @@ export const TxObservationFindingSchema = z.discriminatedUnion("type", [
     acceptingBlueScore: decimalString,
     acceptingDaaScore: decimalString.optional(),
     confirmationsBlue: decimalString,
-    confirmationsDaa: decimalString.optional()
+    confirmationsDaa: decimalString.optional(),
+    /**
+     * The block this observer previously saw accepting the transaction, which the SAME node answer
+     * reported off the selected chain: the acceptance moved to `acceptingBlockHash`, it was not lost.
+     */
+    removedAcceptingBlockHash: z.string().optional()
   }),
   z.object({ type: z.literal("chain_removed"), acceptingBlockHash: z.string() }),
   z.object({
@@ -480,6 +485,8 @@ export const TxObservationSchema = BaseArtifactSchema.extend({
 export const ReplayReportSchema = BaseArtifactSchema.extend({
   schema: z.literal(HardkasSchemas.ReplayReportV1),
   txId: z.string(),
+  // EVIDENCE-DIFF-REDACTION-1: present on reports whose receipt was compared raw; absent on legacy (masked) ones
+  receiptComparison: z.literal("raw").optional(),
   planOk: z.boolean(),
   receiptOk: z.boolean(),
   invariantsOk: z.boolean(),

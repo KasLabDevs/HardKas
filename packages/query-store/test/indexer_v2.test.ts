@@ -9,7 +9,8 @@ import {
   asWorkflowId,
   asCorrelationId,
   asNetworkId,
-  asEventSequence
+  asEventSequence,
+  eventLedgerPath
 } from "@hardkas/core";
 
 describe("HardkasIndexer Integrity", () => {
@@ -46,7 +47,7 @@ describe("HardkasIndexer Integrity", () => {
       payload: { workflowId: asWorkflowId("wf-1"), network: asNetworkId("testnet-10") }
     });
 
-    const eventsPath = path.join(tmpDir, ".hardkas", "events.jsonl");
+    const eventsPath = eventLedgerPath(tmpDir); // WORKSPACE-AUTHORITY-1 (A1): the workspace's one event ledger
     // hardkas-append-allow
     fs.appendFileSync(eventsPath, JSON.stringify(event) + "\n");
 
@@ -82,7 +83,7 @@ describe("HardkasIndexer Integrity", () => {
       payload: { workflowId: asWorkflowId("wf-1"), network: asNetworkId("testnet-10") }
     });
 
-    const eventsPath = path.join(tmpDir, ".hardkas", "events.jsonl");
+    const eventsPath = eventLedgerPath(tmpDir); // WORKSPACE-AUTHORITY-1 (A1): the workspace's one event ledger
     // hardkas-append-allow
     fs.appendFileSync(eventsPath, JSON.stringify(event) + "\n");
 
@@ -113,7 +114,7 @@ describe("HardkasIndexer Integrity", () => {
       payload: { workflowId: wfId, network: asNetworkId("testnet-10") }
     });
 
-    const eventsPath = path.join(tmpDir, ".hardkas", "events.jsonl");
+    const eventsPath = eventLedgerPath(tmpDir); // WORKSPACE-AUTHORITY-1 (A1): the workspace's one event ledger
     // hardkas-append-allow
     fs.appendFileSync(eventsPath, JSON.stringify(e1) + "\n");
 

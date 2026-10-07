@@ -1,0 +1,222 @@
+﻿{
+  "before": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-3c1\\after2",
+  "after": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-3c2\\before",
+  "packages": {
+    "before": 32,
+    "after": 32
+  },
+  "packagesRemoved": [],
+  "packagesAdded": [],
+  "changed": {
+    "@hardkas/accounts": {
+      "files": {
+        "before": 17,
+        "after": 17
+      },
+      "removed": [],
+      "added": [],
+      "modified": [
+        "package/package.json"
+      ]
+    },
+    "@hardkas/artifacts": {
+      "files": {
+        "before": 5,
+        "after": 5
+      },
+      "removed": [],
+      "added": [],
+      "modified": [
+        "package/package.json"
+      ]
+    },
+    "@hardkas/bridge-local": {
+      "files": {
+        "before": 5,
+        "after": 5
+      },
+      "removed": [],
+      "added": [],
+      "modified": [
+        "package/package.json"
+      ]
+    },
+    "@hardkas/cli": {
+      "files": {
+        "before": 125,
+        "after": 125
+      },
+      "removed": [],
+      "added": [],
+      "modified": [
+        "package/package.json"
+      ]
+    },
+    "@hardkas/dev-server": {
+      "files": {
+        "before": 11,
+        "after": 11
+      },
+      "removed": [],
+      "added": [],
+      "modified": [
+        "package/package.json"
+      ]
+    },
+    "@hardkas/kaspa-rpc": {
+      "files": {
+        "before": 6,
+        "after": 6
+      },
+      "removed": [],
+      "added": [],
+      "modified": [
+        "package/package.json"
+      ]
+    },
+    "@hardkas/localnet": {
+      "files": {
+        "before": 10,
+        "after": 10
+      },
+      "removed": [],
+      "added": [],
+      "modified": [
+        "package/package.json"
+      ]
+    },
+    "@hardkas/plugin-rpc-backend": {
+      "files": {
+        "before": 8,
+        "after": 8
+      },
+      "removed": [],
+      "added": [],
+      "modified": [
+        "package/package.json"
+      ]
+    },
+    "@hardkas/sdk": {
+      "files": {
+        "before": 10,
+        "after": 10
+      },
+      "removed": [],
+      "added": [],
+      "modified": [
+        "package/package.json"
+      ]
+    },
+    "@hardkas/sync-daemon": {
+      "files": {
+        "before": 8,
+        "after": 8
+      },
+      "removed": [],
+      "added": [],
+      "modified": [
+        "package/package.json"
+      ]
+    },
+    "@hardkas/testing": {
+      "files": {
+        "before": 22,
+        "after": 22
+      },
+      "removed": [],
+      "added": [],
+      "modified": [
+        "package/package.json"
+      ]
+    },
+    "@hardkas/toolkit": {
+      "files": {
+        "before": 86,
+        "after": 86
+      },
+      "removed": [],
+      "added": [],
+      "modified": [
+        "package/package.json"
+      ]
+    },
+    "@hardkas/wallet-adapter": {
+      "files": {
+        "before": 4,
+        "after": 4
+      },
+      "removed": [],
+      "added": [],
+      "modified": [
+        "package/package.json"
+      ]
+    }
+  },
+  "identical": [
+    "@hardkas/client",
+    "@hardkas/config",
+    "@hardkas/core",
+    "@hardkas/escrow",
+    "@hardkas/jobs",
+    "@hardkas/l2",
+    "@hardkas/node-orchestrator",
+    "@hardkas/node-runner",
+    "@hardkas/observability",
+    "@hardkas/plugin-local-indexer",
+    "@hardkas/pskt-native",
+    "@hardkas/query",
+    "@hardkas/query-store",
+    "@hardkas/react",
+    "@hardkas/sessions",
+    "@hardkas/simulator",
+    "@hardkas/simulator-adapters",
+    "@hardkas/storage-postgres",
+    "@hardkas/tx-builder"
+  ],
+  "afterMentions": [
+    {
+      "package": "@hardkas/kaspa-rpc",
+      "file": "package/dist/index.d.ts",
+      "found": [
+        "subscribeToUtxosChanged",
+        "subscribeToVirtualChainChanged",
+        "UtxosChangedEvent",
+        "VirtualChainChangedEvent",
+        "RpcAcceptedTransactionIds",
+        "KaspaSubscription"
+      ]
+    },
+    {
+      "package": "@hardkas/kaspa-rpc",
+      "file": "package/dist/index.js",
+      "found": [
+        "subscribeToUtxosChanged",
+        "subscribeToVirtualChainChanged",
+        "OFFICIAL_EVENTS",
+        "RPC_SUBSCRIPTIONS_UNSUPPORTED",
+        "subscribeUtxosChanged",
+        "subscribeVirtualChainChanged"
+      ]
+    },
+    {
+      "package": "@hardkas/localnet",
+      "file": "package/dist/index.d.ts",
+      "found": [
+        "subscribeToUtxosChanged",
+        "subscribeToVirtualChainChanged",
+        "UtxosChangedEvent",
+        "VirtualChainChangedEvent",
+        "KaspaSubscription"
+      ]
+    },
+    {
+      "package": "@hardkas/localnet",
+      "file": "package/dist/index.js",
+      "found": [
+        "subscribeToUtxosChanged",
+        "subscribeToVirtualChainChanged"
+      ]
+    }
+  ],
+  "identicalCount": 19
+}

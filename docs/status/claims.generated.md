@@ -8,7 +8,7 @@ description: What HardKAS claims, what it explicitly does not claim, and the cap
 
 # Release Claims
 
-HardKAS `0.12.0-rc.26` (`hardened-alpha`, proof `repro-v0`, hash version `4`).
+HardKAS `0.12.0-rc.26` (`hardened-alpha`, proof `repro-v0`, hash version `5`).
 
 This page is generated from the code that enforces these claims. Every value
 below is read from `packages/sdk` at generation time, so prose elsewhere in
@@ -76,8 +76,14 @@ compile error.
 ## Capability flags
 
 Source: `createHardkasCapabilities()` in `packages/sdk/src/capabilities.ts`.
-These are the static defaults; `hardkas capabilities` probes the environment and
-may enable `silverScript`, `covenants`, and `transactionV1` at runtime.
+These describe what the build contains and probe nothing. `silverScript`,
+`covenants` and `transactionV1` depend on the environment, so they are false
+here; the SDK's `capabilities.get()` derives them from the checks
+`hardkas silver doctor` reports and from the kaspa-wasm the signer loads.
+`covenants` covers the real builders only (1:1 auth-bound transitions,
+`hardkas silver covenant genesis|transition`) and also needs the canonical node
+to prove its identity. `sdkCovenantPlanning` is false: the SDK's
+`covenants.planDeploy/planSpend` refuse.
 
 Enabled:
 
@@ -100,15 +106,16 @@ Enabled:
 - `dockerNode`
 - `scriptRunner`
 - `testingFramework`
-- `l2Profiles`
-- `l2BridgeAssumptions`
 
 Disabled:
 
+- `l2Profiles`
+- `l2BridgeAssumptions`
 - `consensusValidation`
 - `productionWallet`
 - `silverScript`
 - `covenants`
+- `sdkCovenantPlanning`
 - `transactionV1`
 - `trustlessExit`
 - `differentialDagValidation`
@@ -117,7 +124,7 @@ Disabled:
 
 | Surface | Boundary |
 | :------ | :------- |
-| `replay` | `local-workflow-only` |
+| `replay` | `local-simulator-only` |
 | `artifacts` | `internal-integrity-only` |
 | `simulator` | `local-simulation-only` |
 | `queryStore` | `rebuildable-read-model` |

@@ -20,8 +20,9 @@ describe("ReplayQueryAdapter", () => {
 
   beforeAll(async () => {
     tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "hardkas-replay-"));
-    const receiptsDir = path.join(tmpDir, ".hardkas", "receipts");
-    const tracesDir = path.join(tmpDir, ".hardkas", "traces");
+    // WORKSPACE-AUTHORITY-1 (C1): the artifact store the resolver reads (receipts/ and the store root for traces)
+    const receiptsDir = path.join(tmpDir, ".hardkas", "artifacts", "receipts");
+    const tracesDir = path.join(tmpDir, ".hardkas", "artifacts");
     await fs.mkdir(receiptsDir, { recursive: true });
     await fs.mkdir(tracesDir, { recursive: true });
 

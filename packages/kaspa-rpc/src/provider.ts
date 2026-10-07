@@ -8,8 +8,6 @@ import {
   MempoolEntry,
   BlockDagInfo,
   ServerInfo,
-  UtxosChangedEvent,
-  KaspaSubscription,
   KaspaRpcTransaction,
   SubmitTransactionOptions
 } from "./index.js";
@@ -36,21 +34,8 @@ export class LoadBalancedRpcProvider implements KaspaRpcClient {
     }
   }
 
-  private get primary(): KaspaRpcClient {
-    return this.clients[this.currentIndex]!;
-  }
-
   async call<TResponse = unknown>(method: string, params?: unknown): Promise<TResponse> {
     return this.withFailover((c) => c.call<TResponse>(method, params));
-  }
-
-  on(event: string, handler: (data: unknown) => void): void {
-    // Only attaches to primary
-    this.primary.on(event, handler);
-  }
-
-  off(event: string, handler: (data: unknown) => void): void {
-    this.clients.forEach(c => c.off(event, handler));
   }
 
   async getInfo(): Promise<KaspaNodeInfo> {
@@ -168,36 +153,6 @@ export class LoadBalancedRpcProvider implements KaspaRpcClient {
 
   async getHeaders(): Promise<any> {
     return this.withFailover((c) => c.getHeaders());
-  }
-
-  async subscribeToUtxosChanged(addresses: readonly string[], handler: (event: UtxosChangedEvent) => void): Promise<KaspaSubscription> {
-    // In a robust implementation, the LB would track active subscriptions and resubscribe upon failover.
-    // For now, we wrap the initial successful subscription.
-    let activeSub = await this.withFailover((c) => c.subscribeToUtxosChanged(addresses, handler));
-    let isClosed = false;
-    
-    return {
-      get id() { return "lb_" + activeSub.id; },
-      get closed() { return isClosed || activeSub.closed; },
-      unsubscribe: async () => {
-        isClosed = true;
-        await activeSub.unsubscribe().catch(() => {});
-      }
-    };
-  }
-
-  async subscribeToVirtualChainChanged(options: { includeAcceptedTransactionIds: boolean }, handler: (event: any) => void): Promise<KaspaSubscription> {
-    let activeSub = await this.withFailover((c) => c.subscribeToVirtualChainChanged(options, handler));
-    let isClosed = false;
-    
-    return {
-      get id() { return "lb_" + activeSub.id; },
-      get closed() { return isClosed || activeSub.closed; },
-      unsubscribe: async () => {
-        isClosed = true;
-        await activeSub.unsubscribe().catch(() => {});
-      }
-    };
   }
 
   async close(): Promise<void> {

@@ -1,0 +1,24 @@
+$ hardkas why --plan aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa --signed bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb --json   (cwd ws-after)
+exit=2 stdout_is_single_json=true
+--- stdout ---
+{
+  "ok": false,
+  "code": "LOOKUP_USAGE",
+  "message": "Why Error: Pass exactly one target (got plan=aaaaaa...aaaa [REDACTED], signed=bbbbbb...bbbb [REDACTED])",
+  "mode": "cli"
+}
+--- stderr ---
+
+  ✗ Usage
+
+  Cause:
+    Pass exactly one target (got plan=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa, signed=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb)
+
+  Invariant Violated:
+    identity contract
+
+  Consequence:
+    one target per call
+
+  Remediation:
+    pass an artifactId, a path, or exactly one of --plan/--signed/--tx/--workflow

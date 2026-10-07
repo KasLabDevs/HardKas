@@ -1,0 +1,18 @@
+﻿{
+  "dryRun": false,
+  "temp": "C:\\Users\\jrodr\\AppData\\Local\\Temp",
+  "roots": [
+    "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-3a",
+    "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-3b",
+    "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-3c1",
+    "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-3c2"
+  ],
+  "minAgeHours": 2,
+  "dirsTargeted": 4345,
+  "links": 0,
+  "files": 217315,
+  "dirs": 32693,
+  "bytes": 1616783657,
+  "errors": [],
+  "mb": 1542
+}

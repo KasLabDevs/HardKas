@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { calculateContentHash, CURRENT_HASH_VERSION } from "@hardkas/artifacts";
+import { calculateContentHash, CURRENT_HASH_VERSION, writeFileRespectingStore } from "@hardkas/artifacts";
 import { systemRuntimeContext } from "@hardkas/core";
 import { UI } from "../ui.js";
 
@@ -52,7 +52,9 @@ export async function runArtifactCreate(options: ArtifactCreateOptions) {
 
   if (options.out) {
     const outPath = path.resolve(options.workspaceRoot, options.out);
-    await fs.writeFile(outPath, JSON.stringify(finalArtifact, null, 2), "utf-8");
+    const data = JSON.stringify(finalArtifact, null, 2);
+    // an --out inside the artifact store goes through the store's gate (ARTIFACT-MUTATION-1)
+    await writeFileRespectingStore(outPath, data, () => fs.writeFile(outPath, data, "utf-8"));
   }
 
   if (options.json) {

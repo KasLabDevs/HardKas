@@ -17,7 +17,7 @@ title: hardkas doctor
 #### Options
 
 - `--json` (Default: `false`): Output results as stable JSON schema
-- `--capabilities` (Default: `false`): Report local node capabilities (RPC, network, DAA)
+- `--capabilities` (Default: `false`): With 'doctor node': report the node's capabilities (RPC, network, DAA advance) as JSON
 - `--consistency` (Default: `false`): Run advanced deterministic consistency checks
 - `--strict` (Default: `false`): Fail strictly (exit 1) if invariants or consistency checks fail
 

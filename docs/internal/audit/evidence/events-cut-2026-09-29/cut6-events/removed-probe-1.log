@@ -1,0 +1,26 @@
+﻿{
+  "stats": {
+    "notifications": 412,
+    "sameArrayObject": 0,
+    "addedTotal": 11259,
+    "removedTotal": 10835,
+    "removedAlsoAddedInSameNotification": 10835,
+    "removedNeverSeenAdded": 0,
+    "removedSeenAddedEarlier": 0,
+    "removedAddressIsA": 10835,
+    "removedAddressOther": 0,
+    "addedAddressOther": 0
+  },
+  "sample": {
+    "addedLen": 5,
+    "removedLen": 5,
+    "firstAdded": "1f9e3ffcc8722412c5821b2033d50521d1a9eee0f3a42b11929ad89d0199827d:0",
+    "firstRemoved": "1f9e3ffcc8722412c5821b2033d50521d1a9eee0f3a42b11929ad89d0199827d:3",
+    "removedEqualsAdded": false
+  },
+  "node": 429,
+  "reconstructed": 0,
+  "everAdded": 429,
+  "nodeNotEverAdded": 0,
+  "nodeInReconstructed": 0
+}

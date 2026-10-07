@@ -1,0 +1,158 @@
+﻿{
+  "before": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-3c2\\after-incremental",
+  "after": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-3c2\\after",
+  "packages": {
+    "before": 32,
+    "after": 32
+  },
+  "packagesRemoved": [],
+  "packagesAdded": [],
+  "changed": {
+    "@hardkas/bridge-local": {
+      "files": {
+        "before": 5,
+        "after": 5
+      },
+      "removed": [],
+      "added": [],
+      "modified": [
+        "package/package.json"
+      ]
+    },
+    "@hardkas/cli": {
+      "files": {
+        "before": 125,
+        "after": 125
+      },
+      "removed": [],
+      "added": [],
+      "modified": [
+        "package/package.json"
+      ]
+    },
+    "@hardkas/dev-server": {
+      "files": {
+        "before": 11,
+        "after": 11
+      },
+      "removed": [],
+      "added": [],
+      "modified": [
+        "package/package.json"
+      ]
+    },
+    "@hardkas/localnet": {
+      "files": {
+        "before": 10,
+        "after": 10
+      },
+      "removed": [],
+      "added": [],
+      "modified": [
+        "package/package.json"
+      ]
+    },
+    "@hardkas/plugin-rpc-backend": {
+      "files": {
+        "before": 8,
+        "after": 8
+      },
+      "removed": [],
+      "added": [],
+      "modified": [
+        "package/package.json"
+      ]
+    },
+    "@hardkas/sdk": {
+      "files": {
+        "before": 10,
+        "after": 10
+      },
+      "removed": [],
+      "added": [],
+      "modified": [
+        "package/package.json"
+      ]
+    },
+    "@hardkas/simulator": {
+      "files": {
+        "before": 4,
+        "after": 4
+      },
+      "removed": [],
+      "added": [],
+      "modified": [
+        "package/package.json"
+      ]
+    },
+    "@hardkas/storage-postgres": {
+      "files": {
+        "before": 6,
+        "after": 6
+      },
+      "removed": [],
+      "added": [],
+      "modified": [
+        "package/package.json"
+      ]
+    },
+    "@hardkas/testing": {
+      "files": {
+        "before": 22,
+        "after": 22
+      },
+      "removed": [],
+      "added": [],
+      "modified": [
+        "package/package.json"
+      ]
+    },
+    "@hardkas/toolkit": {
+      "files": {
+        "before": 86,
+        "after": 86
+      },
+      "removed": [],
+      "added": [],
+      "modified": [
+        "package/package.json"
+      ]
+    },
+    "@hardkas/wallet-adapter": {
+      "files": {
+        "before": 4,
+        "after": 4
+      },
+      "removed": [],
+      "added": [],
+      "modified": [
+        "package/package.json"
+      ]
+    }
+  },
+  "identical": [
+    "@hardkas/accounts",
+    "@hardkas/artifacts",
+    "@hardkas/client",
+    "@hardkas/config",
+    "@hardkas/core",
+    "@hardkas/escrow",
+    "@hardkas/jobs",
+    "@hardkas/kaspa-rpc",
+    "@hardkas/l2",
+    "@hardkas/node-orchestrator",
+    "@hardkas/node-runner",
+    "@hardkas/observability",
+    "@hardkas/plugin-local-indexer",
+    "@hardkas/pskt-native",
+    "@hardkas/query",
+    "@hardkas/query-store",
+    "@hardkas/react",
+    "@hardkas/sessions",
+    "@hardkas/simulator-adapters",
+    "@hardkas/sync-daemon",
+    "@hardkas/tx-builder"
+  ],
+  "afterMentions": [],
+  "identicalCount": 21
+}

@@ -1,0 +1,268 @@
+[
+    {
+        "Id": "bf94bdd890e6318c290fa5c762fd7f8e8136a968ff31b11d14950e9397b7c5e1",
+        "Created": "2026-10-02T20:39:28.773595036Z",
+        "Path": "entrypoint.sh",
+        "Args": [
+            "kaspad",
+            "--yes",
+            "--nologfiles",
+            "--disable-upnp",
+            "--utxoindex",
+            "--simnet",
+            "--rpclisten=0.0.0.0:16210",
+            "--rpclisten-borsh=0.0.0.0:17210",
+            "--rpclisten-json=0.0.0.0:18210",
+            "--enable-unsynced-mining"
+        ],
+        "State": {
+            "Status": "exited",
+            "Running": false,
+            "Paused": false,
+            "Restarting": false,
+            "OOMKilled": false,
+            "Dead": false,
+            "Pid": 0,
+            "ExitCode": 0,
+            "Error": "",
+            "StartedAt": "2026-10-02T20:39:28.920939937Z",
+            "FinishedAt": "2026-10-02T20:46:58.502322288Z"
+        },
+        "Image": "sha256:f85da74b9514584451f83a2cbea3aa93f700248302fe7e3e0ab17288f93c905b",
+        "ResolvConfPath": "/var/lib/docker/containers/bf94bdd890e6318c290fa5c762fd7f8e8136a968ff31b11d14950e9397b7c5e1/resolv.conf",
+        "HostnamePath": "/var/lib/docker/containers/bf94bdd890e6318c290fa5c762fd7f8e8136a968ff31b11d14950e9397b7c5e1/hostname",
+        "HostsPath": "/var/lib/docker/containers/bf94bdd890e6318c290fa5c762fd7f8e8136a968ff31b11d14950e9397b7c5e1/hosts",
+        "LogPath": "/var/lib/docker/containers/bf94bdd890e6318c290fa5c762fd7f8e8136a968ff31b11d14950e9397b7c5e1/bf94bdd890e6318c290fa5c762fd7f8e8136a968ff31b11d14950e9397b7c5e1-json.log",
+        "Name": "/hardkas-kaspad-toccata-v2",
+        "RestartCount": 0,
+        "Driver": "overlayfs",
+        "Platform": "linux",
+        "MountLabel": "",
+        "ProcessLabel": "",
+        "AppArmorProfile": "",
+        "ExecIDs": null,
+        "HostConfig": {
+            "Binds": [
+                "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-fix\\node-proj\\.hardkas\\kaspad:/app/data"
+            ],
+            "ContainerIDFile": "",
+            "LogConfig": {
+                "Type": "json-file",
+                "Config": {}
+            },
+            "NetworkMode": "bridge",
+            "PortBindings": {
+                "16210/tcp": [
+                    {
+                        "HostIp": "127.0.0.1",
+                        "HostPort": "16210"
+                    }
+                ],
+                "17210/tcp": [
+                    {
+                        "HostIp": "127.0.0.1",
+                        "HostPort": "17210"
+                    }
+                ],
+                "18210/tcp": [
+                    {
+                        "HostIp": "127.0.0.1",
+                        "HostPort": "18210"
+                    }
+                ]
+            },
+            "RestartPolicy": {
+                "Name": "no",
+                "MaximumRetryCount": 0
+            },
+            "AutoRemove": false,
+            "VolumeDriver": "",
+            "VolumesFrom": null,
+            "ConsoleSize": [
+                0,
+                0
+            ],
+            "CapAdd": null,
+            "CapDrop": null,
+            "CgroupnsMode": "private",
+            "Dns": null,
+            "DnsOptions": [],
+            "DnsSearch": [],
+            "ExtraHosts": null,
+            "GroupAdd": null,
+            "IpcMode": "private",
+            "Cgroup": "",
+            "Links": null,
+            "OomScoreAdj": 0,
+            "PidMode": "",
+            "Privileged": false,
+            "PublishAllPorts": false,
+            "ReadonlyRootfs": false,
+            "SecurityOpt": null,
+            "UTSMode": "",
+            "UsernsMode": "",
+            "ShmSize": 67108864,
+            "Runtime": "runc",
+            "Isolation": "",
+            "CpuShares": 0,
+            "Memory": 0,
+            "NanoCpus": 0,
+            "CgroupParent": "",
+            "BlkioWeight": 0,
+            "BlkioWeightDevice": [],
+            "BlkioDeviceReadBps": [],
+            "BlkioDeviceWriteBps": [],
+            "BlkioDeviceReadIOps": [],
+            "BlkioDeviceWriteIOps": [],
+            "CpuPeriod": 0,
+            "CpuQuota": 0,
+            "CpuRealtimePeriod": 0,
+            "CpuRealtimeRuntime": 0,
+            "CpusetCpus": "",
+            "CpusetMems": "",
+            "Devices": [],
+            "DeviceCgroupRules": null,
+            "DeviceRequests": null,
+            "MemoryReservation": 0,
+            "MemorySwap": 0,
+            "MemorySwappiness": null,
+            "OomKillDisable": null,
+            "PidsLimit": null,
+            "Ulimits": [],
+            "CpuCount": 0,
+            "CpuPercent": 0,
+            "IOMaximumIOps": 0,
+            "IOMaximumBandwidth": 0,
+            "MaskedPaths": [
+                "/proc/acpi",
+                "/proc/asound",
+                "/proc/interrupts",
+                "/proc/kcore",
+                "/proc/keys",
+                "/proc/latency_stats",
+                "/proc/sched_debug",
+                "/proc/scsi",
+                "/proc/timer_list",
+                "/proc/timer_stats",
+                "/sys/devices/virtual/powercap",
+                "/sys/firmware"
+            ],
+            "ReadonlyPaths": [
+                "/proc/bus",
+                "/proc/fs",
+                "/proc/irq",
+                "/proc/sys",
+                "/proc/sysrq-trigger"
+            ]
+        },
+        "Storage": {
+            "RootFS": {
+                "Snapshot": {
+                    "Name": "overlayfs"
+                }
+            }
+        },
+        "Mounts": [
+            {
+                "Type": "bind",
+                "Source": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-fix\\node-proj\\.hardkas\\kaspad",
+                "Destination": "/app/data",
+                "Mode": "",
+                "RW": true,
+                "Propagation": "rprivate"
+            }
+        ],
+        "Config": {
+            "Hostname": "bf94bdd890e6",
+            "Domainname": "",
+            "User": "",
+            "AttachStdin": false,
+            "AttachStdout": false,
+            "AttachStderr": false,
+            "ExposedPorts": {
+                "16110/tcp": {},
+                "16111/tcp": {},
+                "16210/tcp": {},
+                "17110/tcp": {},
+                "17210/tcp": {},
+                "18110/tcp": {},
+                "18210/tcp": {}
+            },
+            "Tty": false,
+            "OpenStdin": false,
+            "StdinOnce": false,
+            "Env": [
+                "PATH=/app:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+                "REPO_URL=kaspanet/rusty-kaspa",
+                "RUSTY_VERSION=v2.1.0",
+                "RUSTY_USER=kaspa",
+                "RUSTY_HOME=/app/data",
+                "RUSTY_UID=50051"
+            ],
+            "Cmd": [
+                "kaspad",
+                "--yes",
+                "--nologfiles",
+                "--disable-upnp",
+                "--utxoindex",
+                "--simnet",
+                "--rpclisten=0.0.0.0:16210",
+                "--rpclisten-borsh=0.0.0.0:17210",
+                "--rpclisten-json=0.0.0.0:18210",
+                "--enable-unsynced-mining"
+            ],
+            "Image": "kaspanet/rusty-kaspad:v2.1.0@sha256:f85da74b9514584451f83a2cbea3aa93f700248302fe7e3e0ab17288f93c905b",
+            "Volumes": {
+                "/app/data": {}
+            },
+            "WorkingDir": "/",
+            "Entrypoint": [
+                "entrypoint.sh"
+            ],
+            "Labels": {
+                "org.opencontainers.image.created": "2026-09-22T14:06:33.747Z",
+                "org.opencontainers.image.description": "",
+                "org.opencontainers.image.licenses": "ISC",
+                "org.opencontainers.image.revision": "a164a239538b9c344be19ef046500f9972be35c6",
+                "org.opencontainers.image.source": "https://github.com/supertypo/docker-rusty-kaspa",
+                "org.opencontainers.image.title": "docker-rusty-kaspa",
+                "org.opencontainers.image.url": "https://github.com/supertypo/docker-rusty-kaspa",
+                "org.opencontainers.image.version": "v2.1.0"
+            },
+            "StopTimeout": 1
+        },
+        "NetworkSettings": {
+            "SandboxID": "",
+            "SandboxKey": "",
+            "Ports": {},
+            "Networks": {
+                "bridge": {
+                    "IPAMConfig": null,
+                    "Links": null,
+                    "Aliases": null,
+                    "DriverOpts": null,
+                    "GwPriority": 0,
+                    "NetworkID": "5ec86cceaf9802e8dd3fea91d3a1fd014cbd4263f67f7fff53fbd3b5549d7b90",
+                    "EndpointID": "",
+                    "Gateway": "",
+                    "IPAddress": "",
+                    "MacAddress": "",
+                    "IPPrefixLen": 0,
+                    "IPv6Gateway": "",
+                    "GlobalIPv6Address": "",
+                    "GlobalIPv6PrefixLen": 0,
+                    "DNSNames": null
+                }
+            }
+        },
+        "ImageManifestDescriptor": {
+            "mediaType": "application/vnd.oci.image.manifest.v1+json",
+            "digest": "sha256:557eeff43d5af633b15a7737a854f23739890dd5cb02002147a02f16ab0744b6",
+            "size": 1434,
+            "platform": {
+                "architecture": "amd64",
+                "os": "linux"
+            }
+        }
+    }
+]

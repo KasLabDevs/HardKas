@@ -56,6 +56,7 @@ import { registerToolchainCommands } from "./commands/toolchain.js";
 import { HARDKAS_VERSION } from "@hardkas/artifacts";
 
 import { registerTaskCommands } from "./commands/task.js";
+import { noteParsedWorkspace, refuseIgnoredWorkspace } from "./workspace-root.js";
 import { LoadedHardkasConfig } from "@hardkas/config";
 
 /**
@@ -73,7 +74,18 @@ export function buildHardkasProgram(options?: { forDocs?: boolean, loadedConfig?
     .showSuggestionAfterError(true)
     // AUX-08: excess positional arguments are a usage error for every command
     // registered below (inherited by subcommands), never silently ignored.
-    .allowExcessArguments(false);
+    .allowExcessArguments(false)
+    // WORKSPACE-AUTHORITY-1 (WA-I0): one explicit override of the workspace root, before or after the subcommand. It is
+    // resolved once (src/workspace-root.ts); commands never read it from their own options. A command that does not take
+    // its workspace from it refuses it (never ignores it).
+    .option(
+      "--workspace <path>",
+      "Workspace root: the nearest hardkas.config.* at or above this directory, else the directory itself (default: from the current directory). Commands that act on the current directory refuse it"
+    )
+    .hook("preAction", (thisCommand, actionCommand) => {
+      noteParsedWorkspace(thisCommand.opts().workspace);
+      refuseIgnoredWorkspace(actionCommand);
+    });
 
   // Register modular command groups
   registerInitCommands(program);

@@ -138,7 +138,7 @@ export async function runChaosEngine(options: any) {
       const failureReason = hasRawStack
         ? "Raw stack trace detected!"
         : `Unexpected exit code ${exitCode}!`;
-      console.log(pc.red(`âœ– Run ${i} FAILED (${actorName}) - ${failureReason}`));
+      console.log(pc.red(`✖ Run ${i} FAILED (${actorName}) - ${failureReason}`));
     } else {
       process.stdout.write(pc.green("."));
     }

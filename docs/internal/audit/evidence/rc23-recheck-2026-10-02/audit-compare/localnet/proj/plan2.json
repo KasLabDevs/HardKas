@@ -1,0 +1,101 @@
+{
+  "schema": "hardkas.txPlan",
+  "hardkasVersion": "0.12.0-rc.26",
+  "schemaVersion": "hardkas.artifact.v1",
+  "version": "1.0.0-alpha",
+  "hashVersion": 5,
+  "createdAt": "2026-10-02T20:00:46.680Z",
+  "networkId": "simnet",
+  "mode": "localnet",
+  "execution": {
+    "mode": "localnet",
+    "domain": "kaspa-l1",
+    "network": "simnet"
+  },
+  "from": {
+    "address": "kaspasim:qp6wmrysf95v2jtum5jt96y5gyqffwe853dyah8qxzlvpp5jwpc9vektjnlrq",
+    "input": "alice_pt"
+  },
+  "to": {
+    "address": "kaspasim:qrced0xr3qakt9y6jpme78ewgrk0v79gd9uy5qee9nq42jhv5jtz6mgpp7w6g",
+    "input": "bob_real"
+  },
+  "amountSompi": "1000000000",
+  "estimatedFeeSompi": "203600",
+  "estimatedMass": "2036",
+  "inputs": [
+    {
+      "outpoint": {
+        "transactionId": "2b11728d4312d563f7e534a1c9561e648ff807da96f94b9762032a42ee4bfd4b",
+        "index": 59
+      },
+      "amountSompi": "5000000000",
+      "address": "kaspasim:qp6wmrysf95v2jtum5jt96y5gyqffwe853dyah8qxzlvpp5jwpc9vektjnlrq",
+      "scriptPublicKey": "00002074ed8c904968c5497cdd24b2e894410094bb27a45a4edce030bec08692707056ac",
+      "blockDaaScore": "1455",
+      "isCoinbase": true
+    }
+  ],
+  "outputs": [
+    {
+      "address": "kaspasim:qrced0xr3qakt9y6jpme78ewgrk0v79gd9uy5qee9nq42jhv5jtz6mgpp7w6g",
+      "amountSompi": "1000000000"
+    }
+  ],
+  "rpcUrl": "http://127.0.0.1:18210",
+  "lineage": {
+    "artifactId": "fa27c09890b938edd875fc99605e3fec31c104c6e979b8e8daa2669a47548eae",
+    "sequence": 1
+  },
+  "workflowId": "wf_e0aa1b41e4365ffd",
+  "metadata": {
+    "schema": "hardkas.artifact.v1",
+    "utxoSelection": {
+      "totalUtxosSeen": 74,
+      "selectedUtxos": 1,
+      "selectionStrategy": "upstream-generator",
+      "warnings": [
+        "1 outpoint(s) excluded from candidate set before Generator"
+      ]
+    },
+    "pendingSpendEvidence": {
+      "source": "mempool",
+      "scope": "observer-local",
+      "address": "kaspasim:qp6wmrysf95v2jtum5jt96y5gyqffwe853dyah8qxzlvpp5jwpc9vektjnlrq",
+      "observedAtDaaScore": "2520",
+      "sendingEntries": 1,
+      "excludedOutpoints": [
+        "2b11728d4312d563f7e534a1c9561e648ff807da96f94b9762032a42ee4bfd4b:47"
+      ],
+      "guarantee": "local-orchestration-only: outpoints spent by transactions in the observer's mempool at the observation point were excluded; absence from that mempool does not prove absence of a competing spend on the network"
+    },
+    "planningWindow": {
+      "validity": "utxo-scoped",
+      "attempts": 1,
+      "before": {
+        "virtualDaaScore": "2520",
+        "virtualStateFingerprint": "95a7ce02dc0420cc23e147993b9a8b054d87d40a7135097d85edc2e8238e9540"
+      },
+      "after": {
+        "virtualDaaScore": "2520",
+        "virtualStateFingerprint": "95a7ce02dc0420cc23e147993b9a8b054d87d40a7135097d85edc2e8238e9540"
+      },
+      "revalidation": {
+        "scope": "observer-local",
+        "selectedInputs": 1,
+        "presentInUtxoSet": 1,
+        "pendingInObservedMempool": 0
+      }
+    }
+  },
+  "assumptionLevel": "simnet",
+  "plannerAuthority": "KASPA_WASM_GENERATOR",
+  "plannerAuthorityDetail": "kaspa-wasm@2.1.0",
+  "txVersion": 0,
+  "change": {
+    "address": "kaspasim:qp6wmrysf95v2jtum5jt96y5gyqffwe853dyah8qxzlvpp5jwpc9vektjnlrq",
+    "amountSompi": "3999796400"
+  },
+  "contentHash": "fa27c09890b938edd875fc99605e3fec31c104c6e979b8e8daa2669a47548eae",
+  "planId": "plan-fa27c09890b938ed"
+}

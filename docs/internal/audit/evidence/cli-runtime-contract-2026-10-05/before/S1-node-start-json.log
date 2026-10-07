@@ -1,0 +1,11 @@
+$ hardkas node start --json   (cwd ws-before, DOCKER_HOST=tcp://127.0.0.1:1)
+exit=0 stdout_is_single_json=true
+--- stdout ---
+{
+  "ok": false,
+  "code": "UNKNOWN_ERROR",
+  "message": "[DOCKER_UNAVAILABLE] Docker is not available. Please install Docker to run a real Kaspa node. Details: Command failed with exit code 1: docker version\n\nerror during connect: Get \"http://127.0.0.1:1/v1.54/version\": dial tcp 127.0.0.1:1: connectex: No connection could be made because the target machine actively refused it.\n\nClient:\n Version:           29.4.2\n API version:       1.54\n Go version:        go1.26.2\n Git commit:        055a478\n Built:             Fri May  1 01:27:10 2026\n OS/Arch:           windows/amd64\n Context:           default",
+  "mode": "cli"
+}
+--- stderr ---
+  ℹ Starting Kaspa node (Docker)...

@@ -1,5 +1,6 @@
 import { HardkasArtifactBase, Snapshot } from "@hardkas/artifacts";
 import { NetworkId, ExecutionMode } from "@hardkas/core";
+import type { PendingExecutionRecord } from "./pending-execution.js";
 
 export interface LocalnetAccount {
   name: string;
@@ -36,6 +37,11 @@ export interface LocalnetState extends HardkasArtifactBase {
     forkedAt: string;
     addresses: string[];
   };
+  /**
+   * SIMULATOR-DURABLE-EXECUTION-1: set only between a simulated execution's ledger commit and the publication of its
+   * evidence (written in the same atomic write as the transition). Never part of the simulated state itself.
+   */
+  pendingExecution?: PendingExecutionRecord;
 }
 
 export interface SimulatedBlock {
@@ -99,7 +105,26 @@ export interface ReplayVerificationReport {
   mode?: string;
   createdAt?: string;
   contentHash?: string;
+  /**
+   * REPLAY-TRUST-2 (RT-I3): the report is a lineage child of the receipt it verified (`parentArtifactId` = that
+   * receipt's verified identity), in the receipt's workflow and assumption level. Absent only when the receipt given
+   * does not verify as an identity: no parent is claimed without one.
+   */
+  lineage?: {
+    artifactId: string;
+    lineageId: string;
+    parentArtifactId: string;
+    rootArtifactId: string;
+    sequence: number;
+  };
+  workflowId?: string;
+  assumptionLevel?: string;
   txId: string;
+  /**
+   * EVIDENCE-DIFF-REDACTION-1: the receipt was compared on its raw values. A report without it was made by the earlier
+   * masked comparison, and its verdict is legacy (not an authority for determinism).
+   */
+  receiptComparison?: "raw";
   planOk: boolean;
   receiptOk: boolean;
   invariantsOk: boolean;
@@ -114,10 +139,12 @@ export interface ReplayVerificationReport {
     l2BridgeCorrectness: "unimplemented" | "partial" | "skipped";
   };
 
+  /** A divergence on public data carries its values; one on a secret field only `status: "differs"` and its path. */
   divergences: Array<{
     path: string;
-    expected: any;
-    actual: any;
+    expected?: any;
+    actual?: any;
+    status?: "differs";
   }>;
 
   errors: string[];

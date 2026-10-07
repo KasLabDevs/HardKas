@@ -1,0 +1,354 @@
+{
+  "address": "kaspasim:qpzldtxxs3a9v6d5q0uugl353wswtgcr4wnzzrly339r3vwen62ascqqg3g2f",
+  "rpcUrl": "ws://127.0.0.1:18210",
+  "phaseSeconds": 30,
+  "marks": {
+    "restartAt": 35455,
+    "nodeBackAt": 39362,
+    "nodeBack": true
+  },
+  "groundTruth": {
+    "phase1": {
+      "size": 1313,
+      "reads": [
+        1313,
+        1313
+      ],
+      "stable": true,
+      "quietAfterMs": 3131
+    },
+    "rightAfterRestart": {
+      "size": 1313,
+      "reads": [
+        1313,
+        1313
+      ],
+      "stable": true,
+      "phase1Kept": 1313,
+      "phase1Gone": 0,
+      "appeared": 0
+    },
+    "phase2": {
+      "size": 2564,
+      "reads": [
+        2564,
+        2564
+      ],
+      "stable": true,
+      "quietAfterMs": 3120,
+      "newSincePhase1": 1251
+    },
+    "controlAddedAfterBack": 1251
+  },
+  "observers": {
+    "hkEventsAsWired": {
+      "notifications": {
+        "beforeRestart": 0,
+        "duringRestart": 0,
+        "afterBack": 0
+      },
+      "phase1Coverage": "0/1313",
+      "afterBackCoverage": {
+        "ofControl": "0/1251",
+        "ofNodeNew": "0/1251"
+      },
+      "transportSpy": {
+        "remoteSubscribeCalls": 0,
+        "deliveries": {
+          "beforeRestart": 0,
+          "afterBack": 0
+        },
+        "phase1Coverage": "0/1313",
+        "filter": null
+      }
+    },
+    "hkEventsConnected": {
+      "notifications": {
+        "beforeRestart": 0,
+        "duringRestart": 0,
+        "afterBack": 0
+      },
+      "phase1Coverage": "0/1313",
+      "afterBackCoverage": {
+        "ofControl": "0/1251",
+        "ofNodeNew": "0/1251"
+      },
+      "transportSpy": {
+        "remoteSubscribeCalls": 1,
+        "deliveries": {
+          "beforeRestart": 0,
+          "afterBack": 0
+        },
+        "phase1Coverage": "0/1313",
+        "filter": null
+      }
+    },
+    "toolkitWatch": {
+      "notifications": {
+        "beforeRestart": 45,
+        "duringRestart": 0,
+        "afterBack": 0
+      },
+      "phase1Coverage": "1313/1313",
+      "afterBackCoverage": {
+        "ofControl": "0/1251",
+        "ofNodeNew": "0/1251"
+      }
+    },
+    "kaspaRpc": {
+      "notifications": {
+        "beforeRestart": 1259,
+        "duringRestart": 0,
+        "afterBack": 0
+      },
+      "phase1Coverage": "1313/1313",
+      "afterBackCoverage": {
+        "ofControl": "0/1251",
+        "ofNodeNew": "0/1251"
+      },
+      "atSnapshot1": {
+        "kind": "reconstructed (added − removed)",
+        "held": 0,
+        "node": 1313,
+        "missing": 1313,
+        "extra": 0
+      },
+      "atEnd": {
+        "kind": "reconstructed (added − removed)",
+        "held": 0,
+        "node": 2564,
+        "missing": 2564,
+        "extra": 0
+      },
+      "sessionConnectedAtEnd": false
+    },
+    "kaspaRpcTraffic": {
+      "notifications": {
+        "beforeRestart": 1259,
+        "duringRestart": 0,
+        "afterBack": 1133
+      },
+      "phase1Coverage": "1313/1313",
+      "afterBackCoverage": {
+        "ofControl": "1251/1251",
+        "ofNodeNew": "1251/1251"
+      },
+      "atSnapshot1": {
+        "kind": "reconstructed (added − removed)",
+        "held": 0,
+        "node": 1313,
+        "missing": 1313,
+        "extra": 0
+      },
+      "atEnd": {
+        "kind": "reconstructed (added − removed)",
+        "held": 0,
+        "node": 2564,
+        "missing": 2564,
+        "extra": 0
+      },
+      "sessionConnectedAtEnd": true
+    },
+    "utxoContext": {
+      "notifications": {
+        "beforeRestart": 37,
+        "duringRestart": 0,
+        "afterBack": 112
+      },
+      "phase1Coverage": "778/1313",
+      "afterBackCoverage": {
+        "ofControl": "703/1251",
+        "ofNodeNew": "703/1251"
+      },
+      "atSnapshot1": {
+        "kind": "context",
+        "mature": 294,
+        "pending": 484,
+        "stasisPerBalanceEvent": 535,
+        "balanceCountTotal": 1313,
+        "node": 1313,
+        "listedNotOnNode": 0,
+        "onNodeNotListed": 535
+      },
+      "atEnd": {
+        "kind": "context",
+        "mature": 1515,
+        "pending": 501,
+        "stasisPerBalanceEvent": 548,
+        "balanceCountTotal": 2564,
+        "node": 2564,
+        "listedNotOnNode": 0,
+        "onNodeNotListed": 548
+      },
+      "reconnect": {
+        "connects": [
+          39337
+        ],
+        "disconnects": [
+          37298
+        ]
+      },
+      "eventTypes": {
+        "server-status": 2,
+        "utxo-proc-start": 2,
+        "sync-state": 1,
+        "balance": 2510,
+        "daa-score-change": 2420,
+        "pending": 70,
+        "maturity": 52,
+        "disconnect": 1,
+        "utxo-proc-stop": 1,
+        "connect": 1,
+        "discovery": 27
+      }
+    },
+    "utxoContextNoReReg": {
+      "notifications": {
+        "beforeRestart": 37,
+        "duringRestart": 0,
+        "afterBack": 0
+      },
+      "phase1Coverage": "778/1313",
+      "afterBackCoverage": {
+        "ofControl": "0/1251",
+        "ofNodeNew": "0/1251"
+      },
+      "atSnapshot1": {
+        "kind": "context",
+        "mature": 294,
+        "pending": 484,
+        "stasisPerBalanceEvent": 535,
+        "balanceCountTotal": 1313,
+        "node": 1313,
+        "listedNotOnNode": 0,
+        "onNodeNotListed": 535
+      },
+      "atEnd": {
+        "kind": "context",
+        "mature": 294,
+        "pending": 484,
+        "stasisPerBalanceEvent": 535,
+        "balanceCountTotal": 1313,
+        "node": 2564,
+        "listedNotOnNode": 0,
+        "onNodeNotListed": 1786
+      },
+      "reconnect": {
+        "connects": [
+          39339
+        ],
+        "disconnects": [
+          37297
+        ]
+      },
+      "eventTypes": {
+        "server-status": 2,
+        "utxo-proc-start": 2,
+        "sync-state": 1,
+        "balance": 1297,
+        "daa-score-change": 2420,
+        "pending": 27,
+        "maturity": 10,
+        "disconnect": 1,
+        "utxo-proc-stop": 1,
+        "connect": 1
+      }
+    },
+    "rawRpc": {
+      "notifications": {
+        "beforeRestart": 1259,
+        "duringRestart": 0,
+        "afterBack": 0
+      },
+      "phase1Coverage": "1313/1313",
+      "afterBackCoverage": {
+        "ofControl": "0/1251",
+        "ofNodeNew": "0/1251"
+      },
+      "atSnapshot1": {
+        "kind": "reconstructed (added − removed)",
+        "held": 0,
+        "node": 1313,
+        "missing": 1313,
+        "extra": 0
+      },
+      "atEnd": {
+        "kind": "reconstructed (added − removed)",
+        "held": 0,
+        "node": 2564,
+        "missing": 2564,
+        "extra": 0
+      },
+      "reconnect": {
+        "connects": [
+          1158,
+          39337
+        ],
+        "disconnects": [
+          37298
+        ]
+      }
+    },
+    "rawRpcResub": {
+      "notifications": {
+        "beforeRestart": 1259,
+        "duringRestart": 0,
+        "afterBack": 1133
+      },
+      "phase1Coverage": "1313/1313",
+      "afterBackCoverage": {
+        "ofControl": "1251/1251",
+        "ofNodeNew": "1251/1251"
+      },
+      "atSnapshot1": {
+        "kind": "reconstructed (added − removed)",
+        "held": 0,
+        "node": 1313,
+        "missing": 1313,
+        "extra": 0
+      },
+      "atEnd": {
+        "kind": "reconstructed (added − removed)",
+        "held": 0,
+        "node": 2564,
+        "missing": 2564,
+        "extra": 0
+      },
+      "reconnect": {
+        "connects": [
+          1168,
+          39335
+        ],
+        "disconnects": [
+          37298
+        ]
+      }
+    },
+    "control": {
+      "notifications": {
+        "beforeRestart": 0,
+        "duringRestart": 0,
+        "afterBack": 1133
+      },
+      "phase1Coverage": "0/1313",
+      "afterBackCoverage": {
+        "ofControl": "1251/1251",
+        "ofNodeNew": "1251/1251"
+      },
+      "atEnd": {
+        "kind": "reconstructed (added − removed)",
+        "held": 0,
+        "node": 2564,
+        "missing": 2564,
+        "extra": 0
+      },
+      "reconnect": {
+        "connects": [
+          39372
+        ],
+        "disconnects": []
+      }
+    }
+  },
+  "errors": []
+}

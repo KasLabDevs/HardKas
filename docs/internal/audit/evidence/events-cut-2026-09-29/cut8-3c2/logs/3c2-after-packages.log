@@ -1,0 +1,234 @@
+﻿gate-hermetic: HARDKAS_HOME=C:\Users\jrodr\AppData\Local\Temp\hardkas-hermetic-home-TDr0Yn (copy of C:\Users\jrodr\AppData\Local\Temp\hk-v210-gate-home)
+gate-hermetic: DOCKER_HOST=tcp://127.0.0.1:1; preload=C:\Users\jrodr\AppData\Local\Temp\hk-3c1\wt\scripts\hermetic\no-network-preload.cjs
+gate-hermetic: vitest run --coverage.enabled=false --reporter=default --reporter=json --outputFile=C:\Users\jrodr\AppData\Local\Temp\claude\C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo\21f9a2e4-33ac-4300-9366-aff402f85900\scratchpad\cut8-3c2\logs\3c2-after-packages.json packages/kaspa-rpc/test/ packages/localnet/test/ packages/toolkit/test/ packages/sdk/test/
+
+ RUN  v2.1.9 C:/Users/jrodr/AppData/Local/Temp/hk-3c1/wt
+
+ ✓ packages/sdk/test/adversarial/wave2-a-tx-observer.test.ts (7 tests) 1505ms
+   ✓ Wave 2(a) · SDK: submission cursor, persisted observations, derived status, blue-score waits > observe persists FULL observations under observations/ and status follows the evidence: MEMPOOL_ACCEPTED → ACCEPTED → CONFIRMED(policy) 727ms
+node.exe : stderr | packages/toolkit/test/wallet-watch-utxocontext.test.ts > Surface Cut 3b · R4: the watch contract 
+on the new engine > a throwing listener does not stop delivery
+En C:\Users\jrodr\AppData\Local\Temp\claude\C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo\21f9a2e4-33ac-4300-
+9366-aff402f85900\scratchpad\cut8-3c2\run-files-wt.ps1: 22 Carácter: 1
++ & node @args_ *> $log
++ ~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (stderr | packag...t stop delivery:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+{"timestamp":"2026-10-02T11:40:25.882Z","level":"error","event":"Wallet watch listener failed","context":{"error":{}}}
+
+ ✓ packages/toolkit/test/wallet-watch-utxocontext.test.ts (13 tests) 23ms
+ ✓ packages/sdk/test/adversarial/wave1-4-binding.test.ts (10 tests) 778ms
+stdout | packages/sdk/test/lifecycle-trust.test.ts > 0.12.0-rc.26 Lifecycle Integrity & Trust Boundary Tests > 1. Fake policyRefs rehashed must fail verification under strict mode
+TEST 1 DIAGNOSTIC RESULT: {
+  "valid": false,
+  "reason": "reference_hash_mismatch",
+  "message": "Referenced policy 08067ad84ca0eeeab56dda72389db453ba7340ac8d8b9a007376a2b72bc9dca9: 1 candidate(s) for artifact \"08067ad84ca0eeeab56dda72389db453ba7340ac8d8b9a007376a2b72bc9dca9\" do not verify and the lookup fails closed: policy.v1-08067ad84ca0eeeab56dda72389db453ba7340ac8d8b9a007376a2b72bc9dca9.json [ARTIFACT_HASH_MISMATCH]",
+  "artifactId": "13187320d4f91d77b3bbffe871176c1ae907fabcee4000c4ecc7b39451b1bd15",
+  "authScope": "FULL",
+  "unauthenticatedMaterialFields": [],
+  "expected": "13187320d4f91d77b3bbffe871176c1ae907fabcee4000c4ecc7b39451b1bd15",
+  "actual": "13187320d4f91d77b3bbffe871176c1ae907fabcee4000c4ecc7b39451b1bd15",
+  "details": [
+    {
+      "code": "REFERENCE_HASH_MISMATCH",
+      "severity": "error",
+      "message": "Referenced policy 08067ad84ca0eeeab56dda72389db453ba7340ac8d8b9a007376a2b72bc9dca9: 1 candidate(s) for artifact \"08067ad84ca0eeeab56dda72389db453ba7340ac8d8b9a007376a2b72bc9dca9\" do not verify and the lookup fails closed: policy.v1-08067ad84ca0eeeab56dda72389db453ba7340ac8d8b9a007376a2b72bc9dca9.json [ARTIFACT_HASH_MISMATCH]"
+    }
+  ]
+}
+
+ ✓ packages/sdk/test/lifecycle-trust.test.ts (9 tests) 1052ms
+   ✓ 0.12.0-rc.26 Lifecycle Integrity & Trust Boundary Tests > 1. Fake policyRefs rehashed must fail verification under strict mode 706ms
+ ✓ packages/kaspa-rpc/test/upstream.test.ts (19 tests) 1299ms
+   ✓ upstream session: connection, errors and timeouts > a connection that never opens times out as a connection error 1026ms
+ ✓ packages/sdk/test/adversarial/wave1-3-producers.test.ts (6 tests) 543ms
+ ✓ packages/sdk/test/multisig-adversarial.test.ts (9 tests | 1 skipped) 11363ms
+   ✓ Multisig Adversarial Suite > Case 1 & 4: Should support threshold 2 of 3 and reject append on signed 324ms
+   ✓ Multisig Adversarial Suite > Case 6: Random signature order order-invariance check (100 iterations) 10661ms
+ ✓ packages/sdk/test/wave1-def1c-canonical-identity.test.ts (8 tests) 2117ms
+   ✓ DEF-1c · canonical receipt identity is one across runtime/persistence/return > SDK-returned receipt.contentHash equals persisted receipt.contentHash on disk 1610ms
+ ✓ packages/sdk/test/adversarial/wave2-d-send-fee.test.ts (6 tests) 340ms
+ ✓ packages/localnet/test/wave1-3-domain-digests.test.ts (8 tests) 100ms
+ ✓ packages/sdk/test/adversarial/wave1-2-sdk-identity.test.ts (6 tests) 838ms
+   ✓ Wave 1.2 · SDK identity resolution > T-S2 · labels and txIds need their namespace; tx never returns the signed; warm ≡ cold 520ms
+ ✓ packages/sdk/test/wave7-replay-mode-guard.test.ts (5 tests) 245ms
+ ✓ packages/sdk/test/hardening.test.ts (6 tests) 205ms
+ ✓ packages/sdk/test/migration.test.ts (5 tests) 27ms
+ ✓ packages/sdk/test/pskt-adapter.test.ts (8 tests) 7ms
+ ✓ packages/sdk/test/zk-vprogs-0-9-1.test.ts (9 tests) 166ms
+ ✓ packages/kaspa-rpc/test/full-coverage.test.ts (14 tests) 11ms
+stderr | packages/sdk/test/audit-hardening.test.ts > Audit Hardening Suite (0.12.0-rc.26) > P1.1: Localnet State 
+Naming Compatibility > should migrate localnet-state.json to localnet.json
+[HardKAS] Migrated legacy localnet-state.json to localnet.json. The old file was kept for compatibility.
+
+ ✓ packages/sdk/test/audit-hardening.test.ts (7 tests | 1 skipped) 39ms
+ ✓ packages/sdk/test/adversarial/wave1-3-b2-workflow-rejected-send.test.ts (3 tests) 384ms
+stdout | packages/toolkit/test/toolkit.test.ts > @hardkas/toolkit V1 > JobsToolkit > should initialize and enqueue jobs
+{"timestamp":"2026-10-02T11:41:08.284Z","level":"info","event":"Job enqueued","context":{"id":"4ceb1861-35f8-40de-b466-ec2929c34c35","type":"test-job"}}
+{"timestamp":"2026-10-02T11:41:08.288Z","level":"info","event":"Job completed","context":{"id":"4ceb1861-35f8-40de-b466-ec2929c34c35","type":"test-job"}}
+
+ ✓ packages/toolkit/test/toolkit.test.ts (8 tests) 167ms
+ ✓ packages/sdk/test/adversarial/demo-cut-e04-simulator-identity.test.ts (6 tests) 527ms
+ ✓ packages/sdk/test/pskt.test.ts (6 tests) 9ms
+ ✓ packages/localnet/test/property.test.ts (4 tests) 921ms
+   ✓ Localnet Property Tests (fast-check) > should conserve total supply: sum(utxos) + fees == initial_sum 502ms
+   ✓ Localnet Property Tests (fast-check) > should be deterministic: same sequence produces same finalStateHash 358ms
+ ✓ packages/sdk/test/adversarial/first-contact-e01-sign-persists-plan.test.ts (7 tests) 549ms
+ ✓ packages/sdk/test/adversarial/wave1-1-writer-n3.test.ts (4 tests) 205ms
+ ✓ packages/localnet/test/ghostdag-dag.test.ts (5 tests) 6ms
+ ✓ packages/localnet/test/simulation-correctness.test.ts (6 tests) 94ms
+ ✓ packages/sdk/test/multisig.test.ts (2 tests) 257ms
+ ✓ packages/kaspa-rpc/test/surface-cut-subscriptions.test.ts (4 tests) 3ms
+ ✓ packages/kaspa-rpc/test/storage-mass.test.ts (8 tests) 8ms
+ ✓ packages/sdk/test/workflow-contract.test.ts (4 tests) 226ms
+stdout | packages/sdk/test/tamper-detection.test.ts > SDK Tamper Detection & Forensic Regression > should reject tampered signedTx during verify, simulate, and send
+TAMPER RESULT: {
+  "valid": false,
+  "reason": "content_hash_mismatch",
+  "message": "Hash mismatch: expected 1afe888522b385262c9b611306265b02740b0dc091221dbbceda66328d57fabc, got 543c4aa6b2234350c4093e7b623792a0b5125134580a18f98f89f282082326d5, signedId signed-1afe888522b38526 does not derive from the artifact's content hash",
+  "artifactId": "1afe888522b385262c9b611306265b02740b0dc091221dbbceda66328d57fabc",
+  "authScope": "FULL",
+  "unauthenticatedMaterialFields": [],
+  "expected": "1afe888522b385262c9b611306265b02740b0dc091221dbbceda66328d57fabc",
+  "actual": "543c4aa6b2234350c4093e7b623792a0b5125134580a18f98f89f282082326d5",
+  "details": [
+    {
+      "code": "ARTIFACT_HASH_MISMATCH",
+      "severity": "error",
+      "message": "Hash mismatch: expected 1afe888522b385262c9b611306265b02740b0dc091221dbbceda66328d57fabc, got 543c4aa6b2234350c4093e7b623792a0b5125134580a18f98f89f282082326d5"
+    },
+    {
+      "code": "LABEL_MISMATCH",
+      "severity": "error",
+      "message": "signedId signed-1afe888522b38526 does not derive from the artifact's content hash"
+    }
+  ]
+}
+
+stderr | packages/sdk/test/tamper-detection.test.ts > SDK Tamper Detection & Forensic Regression > should pass 
+forensic regression test for forensic-Tamper-Detection-1780477460463.json
+Forensic dump not found, skipping specific regression test.
+
+ ✓ packages/sdk/test/tamper-detection.test.ts (4 tests) 202ms
+ ✓ packages/sdk/test/metadata-propagation.test.ts (2 tests) 205ms
+ ✓ packages/localnet/test/wave1-2-localnet-identity.test.ts (2 tests) 63ms
+ ✓ packages/sdk/test/workflow-determinism.test.ts (5 tests) 378ms
+stdout | packages/toolkit/test/snapshot.test.ts > SnapshotToolkit (Time Travel) > should save, mutate, and restore state
+{"timestamp":"2026-10-02T11:41:28.055Z","level":"info","event":"Job enqueued","context":{"id":"161c2f86-20ec-4ed2-9aee-0bbfd518b7d3","type":"payment"}}
+
+stdout | packages/toolkit/test/snapshot.test.ts > SnapshotToolkit (Time Travel) > should save, mutate, and restore state
+{"timestamp":"2026-10-02T11:41:28.064Z","level":"info","event":"Job enqueued","context":{"id":"0a3a096a-d184-4e6a-aa75-4718b61f6ea7","type":"payment"}}
+
+stdout | packages/toolkit/test/snapshot.test.ts > SnapshotToolkit (Time Travel) > should handle partial restore failures gracefully
+{"timestamp":"2026-10-02T11:41:28.079Z","level":"info","event":"Job enqueued","context":{"id":"750ceaee-1688-4884-814f-1b62cc79ca23","type":"payment"}}
+
+stdout | packages/toolkit/test/snapshot.test.ts > SnapshotToolkit (Time Travel) > should fail if participant is missing on restore
+{"timestamp":"2026-10-02T11:41:28.095Z","level":"info","event":"Job enqueued","context":{"id":"0cdcf305-368d-4c3a-acea-52b333fbc9d3","type":"payment"}}
+
+stdout | packages/toolkit/test/snapshot.test.ts > SnapshotToolkit (Time Travel) > should generate deterministic diffs and valid filesystem manifests
+{"timestamp":"2026-10-02T11:41:28.106Z","level":"info","event":"Job enqueued","context":{"id":"f9efc29e-43a7-4d0d-96d0-8a5fceb04908","type":"payment"}}
+
+stdout | packages/toolkit/test/snapshot.test.ts > SnapshotToolkit (Time Travel) > should generate deterministic diffs and valid filesystem manifests
+{"timestamp":"2026-10-02T11:41:28.111Z","level":"info","event":"Job enqueued","context":{"id":"b15e64fc-a133-4d3b-96ba-30a7e37dd28f","type":"payment"}}
+
+ ✓ packages/toolkit/test/snapshot.test.ts (4 tests) 72ms
+ ✓ packages/localnet/test/transactions.test.ts (4 tests) 98ms
+ ✓ packages/kaspa-rpc/test/resilience-refined.test.ts (4 tests) 19ms
+ ✓ packages/kaspa-rpc/test/node-info.test.ts (4 tests) 5ms
+ ✓ packages/toolkit/test/query-api.test.ts (5 tests) 5ms
+ ✓ packages/localnet/test/wave1-1-snapshot-identity.test.ts (3 tests) 12ms
+stderr | packages/sdk/test/v1-sign.test.ts > P84: V1 Sign Blocking > should attempt to sign version 1 plans with WASM 
+v2.x
+DEPRECATED: 'defaultNetwork: "simulated"' is deprecated. Please migrate to the explicit 'execution' contract in 
+HardkasConfig.
+
+ ✓ packages/sdk/test/v1-sign.test.ts (2 tests) 28ms
+ ✓ packages/localnet/test/snapshot-hashing.test.ts (7 tests) 31ms
+ ✓ packages/localnet/test/snapshot-determinism.test.ts (1 test) 120ms
+ ✓ packages/kaspa-rpc/test/health.test.ts (5 tests) 31ms
+ ✓ packages/localnet/test/dag.test.ts (4 tests) 6ms
+ ✓ packages/sdk/test/wave1-mode-inheritance.test.ts (6 tests) 4ms
+ ✓ packages/localnet/test/persistent-state.test.ts (6 tests) 64ms
+ ✓ packages/sdk/test/workspace-isolation.test.ts (2 tests) 40ms
+ ✓ packages/localnet/test/dag-simulation.test.ts (2 tests) 7ms
+ ✓ packages/sdk/test/mempool-aware-planning.test.ts (1 test) 97ms
+ ✓ packages/sdk/test/node-api.test.ts (7 tests) 51ms
+ ✓ packages/localnet/test/receipts.test.ts (4 tests) 38ms
+ ✓ packages/sdk/test/policy.test.ts (3 tests) 30ms
+ ✓ packages/kaspa-rpc/test/resilience.test.ts (8 tests) 5ms
+ ✓ packages/sdk/test/pending-spends.test.ts (2 tests) 290ms
+ ✓ packages/kaspa-rpc/test/json-rpc-client.test.ts (4 tests) 7ms
+ ✓ packages/localnet/test/wave1-trace-lineage-schema.test.ts (2 tests) 16ms
+ ✓ packages/localnet/test/replay-invariants.test.ts (3 tests) 92ms
+ ✓ packages/kaspa-rpc/test/surface-cut-resilient-subscriber.test.ts (4 tests) 6ms
+ ✓ packages/sdk/test/fees.test.ts (3 tests | 2 skipped) 550ms
+   ✓ HardkasFees > should gracefully fallback to heuristic when RPC fails 549ms
+ ✓ packages/localnet/test/reconstruct.test.ts (1 test) 4ms
+ ✓ packages/localnet/test/replay.test.ts (1 test) 25ms
+ ✓ packages/sdk/test/programmability-0-9-1.test.ts (2 tests) 28ms
+ ✓ packages/localnet/test/traces.test.ts (3 tests) 31ms
+ ✓ packages/localnet/test/wave1-4-synthetic-txid.test.ts (3 tests) 90ms
+ ✓ packages/localnet/test/replay-determinism.test.ts (1 test) 93ms
+ ✓ packages/sdk/test/adversarial/wave1-3-replay-legacy-verdict.test.ts (1 test) 279ms
+ ✓ packages/toolkit/test/surface-cut-subscription-manager.test.ts (3 tests) 3ms
+ ✓ packages/toolkit/test/fee-estimator.test.ts (1 test) 86ms
+stderr | packages/kaspa-rpc/test/wrpc-client.test.ts > KaspaWrpcClient > requests by method name through the official 
+client, with the node's error text
+{"timestamp":"2026-10-02T11:41:55.919Z","level":"error","event":"wRPC error 
+response","context":{"method":"getBlockDagInfo","error":"internal error"}}
+
+ ✓ packages/kaspa-rpc/test/wrpc-client.test.ts (7 tests) 115ms
+ ✓ packages/sdk/test/assumption.test.ts (2 tests) 29ms
+ ✓ packages/kaspa-rpc/test/mappers.test.ts (7 tests) 4ms
+ ✓ packages/sdk/test/sdk-parity-0-9-1.test.ts (2 tests) 435ms
+   ✓ 0.12.0-rc.26 SDK parity surface > exposes localnet.status without requiring CLI shelling 319ms
+ ✓ packages/sdk/test/agent-mode.test.ts (5 tests) 72ms
+ ✓ packages/sdk/test/observe-qf006.test.ts (1 test) 3ms
+ ✓ packages/sdk/test/simulated-send.test.ts (2 tests) 240ms
+ ✓ packages/sdk/test/networkProfile.test.ts (2 tests) 29ms
+ ✓ packages/localnet/test/accounts.test.ts (6 tests) 6ms
+ ↓ packages/sdk/test/integration.test.ts (1 test | 1 skipped)
+ ✓ packages/kaspa-rpc/test/rpc.test.ts (2 tests) 4ms
+stderr | packages/sdk/test/pskt/native-fallback.test.ts > Native Adapter Fallback > should not throw and should not 
+register if native module is missing
+registerNativeAdapter caught error: Error: Cannot find module
+    at Object.probe (C:\Users\jrodr\AppData\Local\Temp\hk-3c1\wt\packages\sdk\test\pskt\native-fallback.test.ts:15:17)
+    at Module.registerNativeAdapter (C:\Users\jrodr\AppData\Local\Temp\hk-3c1\wt\packages\sdk\src\pskt.ts:37:32)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at C:\Users\jrodr\AppData\Local\Temp\hk-3c1\wt\packages\sdk\test\pskt\native-fallback.test.ts:20:21
+    at file:///C:/Users/jrodr/AppData/Local/Temp/hk-3c1/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest
+/runner/dist/index.js:533:5
+    at runTest (file:///C:/Users/jrodr/AppData/Local/Temp/hk-3c1/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_module
+s/@vitest/runner/dist/index.js:1056:11)
+    at runSuite (file:///C:/Users/jrodr/AppData/Local/Temp/hk-3c1/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modul
+es/@vitest/runner/dist/index.js:1205:15)
+    at runSuite (file:///C:/Users/jrodr/AppData/Local/Temp/hk-3c1/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modul
+es/@vitest/runner/dist/index.js:1205:15)
+    at runFiles (file:///C:/Users/jrodr/AppData/Local/Temp/hk-3c1/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modul
+es/@vitest/runner/dist/index.js:1262:5)
+    at startTests (file:///C:/Users/jrodr/AppData/Local/Temp/hk-3c1/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_mod
+ules/@vitest/runner/dist/index.js:1271:3)
+registerNativeAdapter limitations: [ 'NATIVE_MODULE_NOT_FOUND' ]
+
+ ✓ packages/sdk/test/pskt/native-fallback.test.ts (1 test) 10ms
+ ✓ packages/sdk/test/sdk.test.ts (2 tests) 22ms
+ ✓ packages/sdk/test/surface-cut-events.test.ts (2 tests) 20ms
+ ✓ packages/sdk/test/v1-capabilities.test.ts (2 tests) 121ms
+ ✓ packages/sdk/test/client.test.ts (2 tests) 1333ms
+   ✓ SDK High-level Client Facade > returns stable envelope on network error 1328ms
+ ✓ packages/localnet/test/surface-cut-subscriptions.test.ts (1 test) 2ms
+
+ Test Files  86 passed | 1 skipped (87)
+      Tests  393 passed | 5 skipped (398)
+   Start at  13:40:20
+   Duration  114.94s (transform 2.13s, setup 0ms, collect 56.51s, tests 29.67s, environment 17ms, prepare 10.16s)
+
+JSON report written to C:/Users/jrodr/AppData/Local/Temp/claude/C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo/21f9a2e4-33ac-4300-9366-aff402f85900/scratchpad/cut8-3c2/logs/3c2-after-packages.json
+
+gate-hermetic: vitest exit 0 after 116s
+gate-hermetic: non-loopback attempts (each one fails the gate): 0
+gate-hermetic: loopback connection targets (review for dependencies on local services):
+  127.0.0.1:18210 x2
+  127.0.0.1:19999 x1
+gate-hermetic: PASS

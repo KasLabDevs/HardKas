@@ -5,6 +5,16 @@ import {
 } from "./verify.js";
 import { verifyFeeSemantics } from "./feeVerify.js";
 import { verifyLineage } from "./lineage.js";
+import { resolveParentReference, type ParentResolution } from "./lineage-chain.js";
+
+/**
+ * Where `explainArtifact` may look for what the artifact references (EVIDENCE-TRUST-1): the workspace whose store is
+ * searched, and/or a resolver. Without either, a parent is reported "unresolved", never "missing".
+ */
+export interface ExplainContext {
+  workspaceRoot?: string;
+  resolveArtifact?: (artifactId: string) => any;
+}
 
 export interface ArtifactExplanation {
   summary: {
@@ -21,6 +31,11 @@ export interface ArtifactExplanation {
     lineageId?: string;
     rootArtifactId?: string;
     parentArtifactId?: string;
+    /**
+     * EVIDENCE-TRUST-1: what looking the parent up found — resolved (a verified copy), missing (searched, not there),
+     * invalid (a copy there does not verify as that identity), unresolved (nowhere was searched), or root (no parent).
+     */
+    parent: ParentResolution;
   };
   economics?: {
     ok: boolean;
@@ -40,18 +55,26 @@ export interface ArtifactExplanation {
 }
 
 /**
- * Generates a deep operational explanation of a HardKAS artifact.
+ * Generates a deep operational explanation of a HardKAS artifact. With `context` the references are looked up there
+ * (the workspace store, as `hardkas verify` does); without it nothing is searched and a parent is "unresolved".
  */
 export async function explainArtifact(
-  artifactUnknown: unknown
+  artifactUnknown: unknown,
+  context: ExplainContext = {}
 ): Promise<ArtifactExplanation> {
   const artifact = artifactUnknown as Record<string, unknown>;
   const schema = (artifact.schema as string) || "unknown";
   const type = schema.split(".")[1] || "unknown";
+  const lookup = {
+    ...(context.workspaceRoot ? { workspaceRoot: context.workspaceRoot } : {}),
+    ...(context.resolveArtifact ? { resolveArtifact: context.resolveArtifact } : {})
+  };
 
   // 1. Integrity & Semantic Audit
-  const integrity = await verifyArtifactIntegrity(artifact);
-  const semantic = verifyArtifactSemantics(artifact, { strict: true });
+  const integrity = await verifyArtifactIntegrity(artifact, lookup);
+  const semantic = verifyArtifactSemantics(artifact, { strict: true, ...lookup });
+  const parent = resolveParentReference(artifact, lookup);
+  // structure only: the chain checks against the resolved parent are part of the semantic audit above
   const lineage = verifyLineage(artifact);
 
   const status = integrity.ok && semantic.ok && lineage.ok ? "valid" : "corrupted";
@@ -73,7 +96,8 @@ export async function explainArtifact(
       rootArtifactId: (artifact.lineage as Record<string, unknown>)
         ?.rootArtifactId as string,
       parentArtifactId: (artifact.lineage as Record<string, unknown>)
-        ?.parentArtifactId as string
+        ?.parentArtifactId as string,
+      parent: { status: parent.status, ...(parent.artifactId ? { artifactId: parent.artifactId } : {}), ...(parent.detail ? { detail: parent.detail } : {}) }
     },
     security: {
       strictOk: status === "valid",

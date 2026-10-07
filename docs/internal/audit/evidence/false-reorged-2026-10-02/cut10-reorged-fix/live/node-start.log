@@ -1,0 +1,86 @@
+﻿{
+  "schema": "hardkas.localnetStatus.v1",
+  "profile": "toccata-v2",
+  "status": "TOCCATA_NODE_READY",
+  "node": {
+    "containerName": "hardkas-kaspad-toccata-v2",
+    "image": "kaspanet/rusty-kaspad:v2.1.0@sha256:f85da74b9514584451f83a2cbea3aa93f700248302fe7e3e0ab17288f93c905b",
+    "network": "simnet",
+    "running": true,
+    "statusText": "running",
+    "ports": {
+      "rpc": 16210,
+      "borshRpc": 17210,
+      "jsonRpc": 18210
+    },
+    "dataDir": ".hardkas\\kaspad",
+    "rpcUrl": "http://127.0.0.1:18210",
+    "rpcReady": true,
+    "transports": {
+      "grpc": {
+        "port": 16210,
+        "ready": true
+      },
+      "borsh": {
+        "port": 17210,
+        "ready": true
+      },
+      "json": {
+        "port": 18210,
+        "ready": true,
+        "url": "http://127.0.0.1:18210"
+      }
+    },
+    "lastError": null
+  },
+  "identity": {
+    "schema": "hardkas.nodeIdentity.v1",
+    "verified": true,
+    "problems": [],
+    "expected": {
+      "containerName": "hardkas-kaspad-toccata-v2",
+      "image": "kaspanet/rusty-kaspad:v2.1.0@sha256:f85da74b9514584451f83a2cbea3aa93f700248302fe7e3e0ab17288f93c905b",
+      "imageDigest": "sha256:f85da74b9514584451f83a2cbea3aa93f700248302fe7e3e0ab17288f93c905b",
+      "network": "simnet",
+      "serverVersion": "2.1.0",
+      "host": "127.0.0.1",
+      "rpcPort": 18210
+    },
+    "observed": {
+      "container": {
+        "name": "hardkas-kaspad-toccata-v2",
+        "id": "bf94bdd890e6318c290fa5c762fd7f8e8136a968ff31b11d14950e9397b7c5e1",
+        "running": true,
+        "imageId": "sha256:f85da74b9514584451f83a2cbea3aa93f700248302fe7e3e0ab17288f93c905b",
+        "repoDigests": [
+          "kaspanet/rusty-kaspad@sha256:f85da74b9514584451f83a2cbea3aa93f700248302fe7e3e0ab17288f93c905b"
+        ],
+        "publishedPorts": [
+          {
+            "containerPort": "16210/tcp",
+            "hostIp": "127.0.0.1",
+            "hostPort": 16210
+          },
+          {
+            "containerPort": "17210/tcp",
+            "hostIp": "127.0.0.1",
+            "hostPort": 17210
+          },
+          {
+            "containerPort": "18210/tcp",
+            "hostIp": "127.0.0.1",
+            "hostPort": 18210
+          }
+        ]
+      },
+      "server": {
+        "url": "ws://127.0.0.1:18210",
+        "networkId": "simnet",
+        "serverVersion": "2.1.0",
+        "isSynced": false
+      },
+      "probeErrors": []
+    },
+    "checkedAt": "2026-10-02T20:39:31.648Z"
+  }
+}

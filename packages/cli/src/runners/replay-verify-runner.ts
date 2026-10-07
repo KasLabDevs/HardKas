@@ -13,42 +13,49 @@ export interface ReplayVerifyOptions {
 export async function runReplayVerify(options: ReplayVerifyOptions) {
   const { Hardkas } = await import("@hardkas/sdk");
   const sdk = await Hardkas.open({ cwd: options.workspaceRoot });
-  const effectivePath = options.path || undefined;
-  const targetDir = effectivePath
-    ? sdk.workspace.resolvePath(effectivePath)
-    : options.workspaceRoot;
+  let targetDir: string;
+  let result;
+  try {
+    const effectivePath = options.path || undefined;
+    targetDir = effectivePath
+      ? sdk.workspace.resolvePath(effectivePath)
+      : options.workspaceRoot;
 
-  const verifyOptions: any = {};
-  if (effectivePath) {
-    // Wave 5 · DEF-17: replay verify operates on ONE receipt/artifact
-    // (exact artifactId or artifact file path). Resolve the input through
-    // the canonical façade before entering the SDK. Directory inputs are
-    // rejected here with a typed error rather than being forwarded into
-    // the SDK where they surface as an untyped "not found in store" and
-    // get double-wrapped as UNKNOWN_ERROR (that separate envelope defect
-    // is DEF-18 and remains open).
-    const { resolveArtifactHandle } = await import("@hardkas/artifacts");
-    try {
-      const handle = await resolveArtifactHandle(
-        effectivePath,
-        options.workspaceRoot
-      );
-      // Pass the resolved absolute path to the SDK. The SDK's readArtifact
-      // treats file paths as direct reads, so this bypasses any legacy
-      // substring resolver for the initial lookup while leaving parent
-      // lineage walking (which is an internal store operation) untouched.
-      verifyOptions.path = handle.path;
-    } catch (e: any) {
-      // Wave 8 · DEF-18: failure serialization is owned by the top-level
-      // renderer. The runner no longer emits a failure JSON envelope here;
-      // it throws a typed HardkasCliError that survives the command wrapper
-      // and is serialized exactly once by main() / handleError.
-      const code = e?.code || "ARTIFACT_INPUT_UNRECOGNIZED";
-      const message = e?.message || `Could not resolve '${effectivePath}'`;
-      throw new HardkasCliError(code, message, { exitCode: 1 });
+    const verifyOptions: any = {};
+    if (effectivePath) {
+      // Wave 5 · DEF-17: replay verify operates on ONE receipt/artifact
+      // (exact artifactId or artifact file path). Resolve the input through
+      // the canonical façade before entering the SDK. Directory inputs are
+      // rejected here with a typed error rather than being forwarded into
+      // the SDK where they surface as an untyped "not found in store" and
+      // get double-wrapped as UNKNOWN_ERROR (that separate envelope defect
+      // is DEF-18 and remains open).
+      const { resolveArtifactHandle } = await import("@hardkas/artifacts");
+      try {
+        const handle = await resolveArtifactHandle(
+          effectivePath,
+          options.workspaceRoot
+        );
+        // Pass the resolved absolute path to the SDK. The SDK's readArtifact
+        // treats file paths as direct reads, so this bypasses any legacy
+        // substring resolver for the initial lookup while leaving parent
+        // lineage walking (which is an internal store operation) untouched.
+        verifyOptions.path = handle.path;
+      } catch (e: any) {
+        // Wave 8 · DEF-18: failure serialization is owned by the top-level
+        // renderer. The runner no longer emits a failure JSON envelope here;
+        // it throws a typed HardkasCliError that survives the command wrapper
+        // and is serialized exactly once by main() / handleError.
+        const code = e?.code || "ARTIFACT_INPUT_UNRECOGNIZED";
+        const message = e?.message || `Could not resolve '${effectivePath}'`;
+        throw new HardkasCliError(code, message, { exitCode: 1 });
+      }
     }
+    result = await sdk.replay.verify(verifyOptions);
+  } finally {
+    // RESOURCE-LIFECYCLE-1 (RL-I1/RL-I3): the SDK opened above is released here, also when the input is refused.
+    await sdk.close();
   }
-  const result = await sdk.replay.verify(verifyOptions);
 
   // Map result to requested literal status
   let finalStatus:
@@ -92,7 +99,12 @@ export async function runReplayVerify(options: ReplayVerifyOptions) {
   // double-JSON-block anomaly observed on the Wave 7 real qualification.
   if (result.passed) {
     if (options.json) {
+      // JSON-PAPERCUTS: the success envelope carries `ok` like every other verdict of the CLI
+      // (the failure envelope of main() already does), so a consumer never has to infer it.
       const successEnvelope = {
+        ok: true,
+        command: "replay verify",
+        mode: "cli",
         schemaVersion: HardkasSchemas.ReplayVerifyV1,
         workspace: options.path,
         artifacts: result.artifactsScanned,

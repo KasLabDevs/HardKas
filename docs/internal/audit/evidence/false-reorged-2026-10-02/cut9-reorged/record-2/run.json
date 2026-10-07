@@ -1,0 +1,244 @@
+{
+  "startedAt": "2026-10-02T18:39:51.667Z",
+  "wt": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-reorg\\wt",
+  "cliHead": "0f4c2f26be69b6ade17cd2aa8a9c6a8faade82d3",
+  "N": 20,
+  "setup": {
+    "init": {
+      "code": 0,
+      "ms": 983
+    },
+    "generate": {
+      "code": 0,
+      "accounts": [
+        {
+          "name": "reorg1",
+          "address": "kaspasim:qrffpcsrtgkdv77d6kklsgxar4qj2k7vcmlen95gq2y88tuskau6ge7vaegqa",
+          "storage": "plaintext"
+        },
+        {
+          "name": "reorg2",
+          "address": "kaspasim:qq5xypl8af94llun8nfn8744flkxj4d0nacf7yc8252lzckwcuyfz6gllnr05",
+          "storage": "plaintext"
+        }
+      ]
+    },
+    "fund": {
+      "code": 0,
+      "ms": 103177,
+      "result": "",
+      "stderr": "sgxar4qj2k7vcmlen95gq2y88tuskau6ge7vaegqa\",\n  \"before\": {\n    \"balanceSompi\": \"0\",\n    \"matureBalanceSompi\": \"0\",\n    \"utxoCount\": 0,\n    \"matureUtxoCount\": 0,\n    \"virtualDaaScore\": \"82263\"\n  },\n  \"after\": {\n    \"balanceSompi\": \"5195000000000\",\n    \"matureBalanceSompi\": \"50000000000\",\n    \"utxoCount\": 1039,\n    \"matureUtxoCount\": 10,\n    \"virtualDaaScore\": \"83308\"\n  },\n  \"miner\": {\n    \"exists\": true,\n    \"running\": true,\n    \"status\": \"running\",\n    \"image\": \"kaspanet/cpuminer@sha256:60f78ab2828ab24b249c99210eee5a2825303a5226154260dd021ff26d46748b\",\n    \"name\": \"hardkas-toccata-miner\"\n  }\n}\n"
+    },
+    "miner": {
+      "address": "kaspasim:qpdlvmx7ge4xrswlfad7l0cr5yggl25pvuw2yqcd5jdmucgc6eyw50mr7qd9c",
+      "throttleMs": 12,
+      "note": "burner address, key discarded"
+    }
+  },
+  "txs": [
+    {
+      "index": 1,
+      "txId": "d952bfe30008c332a9b8effea53d4f66d16c329bfa991f9f0e41d2dc0b5ad4ae",
+      "file": "tx-01.json",
+      "sawReorged": false,
+      "waitCode": 0,
+      "lastState": "CONFIRMED",
+      "acceptingChanges": 3
+    },
+    {
+      "index": 2,
+      "txId": "eedff568be3ddca734dbf45809b3ca0dd48e36b7ab36d771f26227537c1bd5ae",
+      "file": "tx-02.json",
+      "sawReorged": false,
+      "waitCode": 0,
+      "lastState": "CONFIRMED",
+      "acceptingChanges": 2
+    },
+    {
+      "index": 3,
+      "txId": "c4c1a1bd57a491fc7a17736dc9b94478dc82e75e12d8cfcb1a73abc2762e8e7d",
+      "file": "tx-03.json",
+      "sawReorged": false,
+      "waitCode": 0,
+      "lastState": "CONFIRMED",
+      "acceptingChanges": 3
+    },
+    {
+      "index": 4,
+      "txId": "d66be5304237236fb2c09595b772055db7b2b635031572a35b07e4bef62b354d",
+      "file": "tx-04.json",
+      "sawReorged": false,
+      "waitCode": 0,
+      "lastState": "CONFIRMED",
+      "acceptingChanges": 2
+    },
+    {
+      "index": 5,
+      "txId": "1e145004e8dce680178e38987cb061122e6bb1e9e9bb456a02c281e16c03fd91",
+      "file": "tx-05.json",
+      "sawReorged": false,
+      "waitCode": 0,
+      "lastState": "CONFIRMED",
+      "acceptingChanges": 2
+    },
+    {
+      "index": 6,
+      "txId": "bc7d376b8bd236b32f18509a296c2b2acc80059f1eca6d7ba6a0f539b91d958a",
+      "file": "tx-06.json",
+      "sawReorged": false,
+      "waitCode": 0,
+      "lastState": "CONFIRMED",
+      "acceptingChanges": 1
+    },
+    {
+      "index": 7,
+      "txId": "fb696772682e43a7216836cf96b8d4ab8bfa0eadab46eba92cfb7e9de5b69d09",
+      "file": "tx-07.json",
+      "sawReorged": true,
+      "waitCode": 1,
+      "lastState": "REORGED",
+      "acceptingChanges": 2
+    },
+    {
+      "index": 8,
+      "txId": "8574332814780e9fc77ea4b26849ecc8bd507238bf18e168398728dc0a24ae09",
+      "file": "tx-08.json",
+      "sawReorged": false,
+      "waitCode": 0,
+      "lastState": "CONFIRMED",
+      "acceptingChanges": 4
+    },
+    {
+      "index": 9,
+      "txId": "01fc498b249921e49719b72b6309426997dfa4ce3648f4482c370b506c541e4b",
+      "file": "tx-09.json",
+      "sawReorged": false,
+      "waitCode": 0,
+      "lastState": "CONFIRMED",
+      "acceptingChanges": 3
+    },
+    {
+      "index": 10,
+      "txId": "76f2476bc9be7d84195b703db29910ba26e67462e6881493a4f132fd965846ec",
+      "file": "tx-10.json",
+      "sawReorged": false,
+      "waitCode": 0,
+      "lastState": "CONFIRMED",
+      "acceptingChanges": 3
+    },
+    {
+      "index": 11,
+      "txId": "58c7a419729a9e9aa56d11d43ca3ac22e25e5bb9d5582173dd80e4b73efb2648",
+      "file": "tx-11.json",
+      "sawReorged": false,
+      "waitCode": 0,
+      "lastState": "CONFIRMED",
+      "acceptingChanges": 2
+    },
+    {
+      "index": 12,
+      "txId": "07b8108d13e1d6aa9a1b1826e5bd5c6c741dbca3b0888cc7fa5408d24fdac614",
+      "file": "tx-12.json",
+      "sawReorged": false,
+      "waitCode": 0,
+      "lastState": "CONFIRMED",
+      "acceptingChanges": 2
+    },
+    {
+      "index": 13,
+      "txId": "da08b696b1d304e70e8f1eb322bac6dd647e0855b73eef93b2f94ada2fe9e5b2",
+      "file": "tx-13.json",
+      "sawReorged": false,
+      "waitCode": 0,
+      "lastState": "CONFIRMED",
+      "acceptingChanges": 2
+    },
+    {
+      "index": 14,
+      "txId": "d4f2475ff6dcfaed2d6eccd81dc147a33e2e1f581440fc2749bf2164bde8c056",
+      "file": "tx-14.json",
+      "sawReorged": false,
+      "waitCode": 0,
+      "lastState": "CONFIRMED",
+      "acceptingChanges": 2
+    },
+    {
+      "index": 15,
+      "txId": "b08d90e0c36fc67d91ace3a341a034efd480eec23db63de9b717fda306b0daaf",
+      "file": "tx-15.json",
+      "sawReorged": false,
+      "waitCode": 0,
+      "lastState": "CONFIRMED",
+      "acceptingChanges": 1
+    },
+    {
+      "index": 16,
+      "txId": "c1999d091e71c1800c5a229372b28e102328fa8137078c4083e664375c2ff6c1",
+      "file": "tx-16.json",
+      "sawReorged": false,
+      "waitCode": 0,
+      "lastState": "CONFIRMED",
+      "acceptingChanges": 4
+    },
+    {
+      "index": 17,
+      "txId": "83d3b3001b7ae1ec2b4acf32023ff3b5f7f79b4a2f337fd935785229413a4d66",
+      "file": "tx-17.json",
+      "sawReorged": false,
+      "waitCode": 0,
+      "lastState": "CONFIRMED",
+      "acceptingChanges": 2
+    },
+    {
+      "index": 18,
+      "txId": "c49c1588fec786d95a0fd9acd84384176e55f99332dd23e6b408b0690ebabc65",
+      "file": "tx-18.json",
+      "sawReorged": false,
+      "waitCode": 0,
+      "lastState": "CONFIRMED",
+      "acceptingChanges": 2
+    },
+    {
+      "index": 19,
+      "txId": "74e6f0e602e75ddeceec7758433ea4a64dcb121ea8028cc611471d92c37563f3",
+      "file": "tx-19.json",
+      "sawReorged": false,
+      "waitCode": 0,
+      "lastState": "CONFIRMED",
+      "acceptingChanges": 3
+    },
+    {
+      "index": 20,
+      "txId": "e380a890c392d9d4e7e978110c9f604d2171fe4819b5e8300870f670cdf2433c",
+      "file": "tx-20.json",
+      "sawReorged": false,
+      "waitCode": 0,
+      "lastState": "CONFIRMED",
+      "acceptingChanges": 2
+    }
+  ],
+  "errors": [],
+  "node": {
+    "serverVersion": "2.1.0",
+    "networkId": "simnet"
+  },
+  "restoredMiner": {
+    "image": "kaspanet/cpuminer@sha256:60f78ab2828ab24b249c99210eee5a2825303a5226154260dd021ff26d46748b",
+    "cmd": [
+      "-a",
+      "kaspasim:qqk76knnj4u5taza3fx3w9jrfenxmj0g9hu7dp7wtdnspgg5u7guvgg9f2xkg",
+      "-s",
+      "127.0.0.1",
+      "-p",
+      "16210",
+      "--mine-when-not-synced",
+      "-t",
+      "1",
+      "--throttle",
+      "12"
+    ],
+    "started": false,
+    "nodeStoppedAgain": true
+  },
+  "finishedAt": "2026-10-02T18:52:36.228Z"
+}

@@ -8,7 +8,7 @@ title: hardkas kaspa
 
 ### Synopsis (Generated)
 
-**Purpose:** Create a new local Kaspa wallet stable
+**Purpose:** Generate a key pair and print it (address, config snippet and private key); nothing is saved. For stored dev accounts use 'accounts real generate' stable
 
 #### Arguments
 
@@ -56,7 +56,7 @@ title: hardkas kaspa
 
 #### Options
 
-- `--rpc-url &lt;url&gt;` (Default: `http://127.0.0.1:16110`): Kaspa RPC URL
+- `--rpc-url &lt;url&gt;` (Default: `ws://127.0.0.1:18210`): Node wRPC endpoint (default: the canonical localnet, ws://127.0.0.1:18210)
 - `--json` (Default: `false`): Output as JSON
 
 ---
@@ -65,7 +65,7 @@ title: hardkas kaspa
 
 ### Synopsis (Generated)
 
-**Purpose:** Send Kaspa between local wallets stable
+**Purpose:** Plan, confirm (y/N), sign and submit a payment over --rpc-url; the network and target come from hardkas.config stable
 
 #### Arguments
 
@@ -76,7 +76,7 @@ title: hardkas kaspa
 
 - `--amount &lt;kas&gt;`: Amount in KAS to send
 - `--dry-run` (Default: `false`): Plan but do not sign or broadcast
-- `--rpc-url &lt;url&gt;` (Default: `http://127.0.0.1:16110`): Kaspa RPC URL
+- `--rpc-url &lt;url&gt;` (Default: `ws://127.0.0.1:18210`): Node wRPC endpoint (default: the canonical localnet, ws://127.0.0.1:18210)
 
 ---
 
@@ -84,11 +84,11 @@ title: hardkas kaspa
 
 ### Synopsis (Generated)
 
-**Purpose:** Verify local Kaspa L1 environment readiness stable
+**Purpose:** Check one Kaspa node at --rpc-url: reachability, sync state, UTXO index, DAG info and mempool stable
 
 #### Options
 
-- `--rpc-url &lt;url&gt;` (Default: `http://127.0.0.1:16110`): Kaspa RPC URL
+- `--rpc-url &lt;url&gt;` (Default: `ws://127.0.0.1:18210`): Node wRPC endpoint (default: the canonical localnet, ws://127.0.0.1:18210)
 - `--json` (Default: `false`): Output as JSON
 
 ---

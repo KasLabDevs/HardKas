@@ -8,17 +8,22 @@ import os from "node:os";
 import { HardkasIndexer } from "../src/indexer.js";
 import { HardkasStore } from "../src/db.js";
 import { CURRENT_HASH_VERSION } from "@hardkas/artifacts";
+import { eventLedgerPath } from "@hardkas/core";
 
 describe("HardkasIndexer Corruption Diagnostics", () => {
   let tempDir: string;
   let db: DatabaseSync;
   let hardkasDir: string;
+  let artifactsDir: string;
   let store: HardkasStore;
 
   beforeEach(() => {
     tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "hardkas-corruption-test-"));
     hardkasDir = path.join(tempDir, ".hardkas");
     fs.mkdirSync(hardkasDir);
+    // WORKSPACE-AUTHORITY-1 (C1): the projection indexes the artifact store the resolver reads
+    artifactsDir = path.join(hardkasDir, "artifacts");
+    fs.mkdirSync(artifactsDir);
 
     const dbPath = path.join(tempDir, "test.db");
     store = new HardkasStore({ dbPath });
@@ -32,7 +37,7 @@ describe("HardkasIndexer Corruption Diagnostics", () => {
   });
 
   it("should detect and report invalid JSON artifact", async () => {
-    const filePath = path.join(hardkasDir, "bad.json");
+    const filePath = path.join(artifactsDir, "bad.json");
     fs.writeFileSync(filePath, "{ invalid json }");
 
     const indexer = new HardkasIndexer(db, { cwd: tempDir });
@@ -48,7 +53,7 @@ describe("HardkasIndexer Corruption Diagnostics", () => {
   });
 
   it("should detect and report artifact hash mismatch", async () => {
-    const filePath = path.join(hardkasDir, "mismatch.json");
+    const filePath = path.join(artifactsDir, "mismatch.json");
     const artifact = {
       schema: "hardkas.txPlan",
       version: "1.0.0-alpha",
@@ -73,7 +78,7 @@ describe("HardkasIndexer Corruption Diagnostics", () => {
   it("should report an artifact without a declared hashVersion as corrupted (IC-4′.2)", async () => {
     // Wave 1.1: no reader falls back to an implicit hash version. An artifact that
     // declares none cannot be recomputed, so the indexer never assigns it an identity.
-    const filePath = path.join(hardkasDir, "undeclared.json");
+    const filePath = path.join(artifactsDir, "undeclared.json");
     const artifact = {
       schema: "hardkas.txPlan",
       version: "1.0.0-alpha",
@@ -104,7 +109,8 @@ describe("HardkasIndexer Corruption Diagnostics", () => {
   });
 
   it("should detect and report line-specific event corruption", async () => {
-    const eventsPath = path.join(hardkasDir, "events.jsonl");
+    // WORKSPACE-AUTHORITY-1 (A1): the workspace's one event ledger
+    const eventsPath = eventLedgerPath(tempDir);
     const validEvent = JSON.stringify({
       schema: "hardkas.event",
       version: "1.0.0",
@@ -150,7 +156,7 @@ describe("HardkasIndexer Corruption Diagnostics", () => {
   });
 
   it("should fail-fast in strict mode when corruption is found", async () => {
-    const filePath = path.join(hardkasDir, "bad.json");
+    const filePath = path.join(artifactsDir, "bad.json");
     fs.writeFileSync(filePath, "{ invalid json }");
 
     const indexer = new HardkasIndexer(db, { cwd: tempDir, strict: true });

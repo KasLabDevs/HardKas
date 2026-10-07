@@ -367,11 +367,11 @@ export function verifyArtifactIntegritySync(
             result.issues.push({
               code: "ARTIFACT_SCHEMA_INVALID" as CorruptionCode,
               severity: zodSeverity,
-              message: `${pathStr}: ${((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e))}`,
+              message: `${pathStr}: ${e.message}`,
               ...(pathStr ? { path: pathStr } : {})
             });
           } else {
-            addError("ARTIFACT_SCHEMA_INVALID", `${pathStr}: ${((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e))}`, pathStr);
+            addError("ARTIFACT_SCHEMA_INVALID", `${pathStr}: ${e.message}`, pathStr);
           }
         });
       }
@@ -495,7 +495,9 @@ export function verifyArtifactSemantics(
       context.workspaceRoot ??
       (context.artifactsDir ? path.resolve(context.artifactsDir, "..", "..") : undefined);
 
-    type ReferenceOutcome = { obj: any } | { issue: VerificationIssue };
+    // `searched` says where a reference was looked for (EVIDENCE-TRUST-1): an issue from a search that never happened
+    // (no workspace root, no resolver) is "unresolved", never "missing".
+    type ReferenceOutcome = { obj: any } | { issue: VerificationIssue; searched: "workspace" | "resolver" | "nowhere" };
     const resolveReference = (ref: unknown, kind: string): ReferenceOutcome => {
       if (typeof ref !== "string" || !/^[0-9a-f]{64}$/.test(ref)) {
         return {
@@ -503,7 +505,8 @@ export function verifyArtifactSemantics(
             code: "REFERENCE_INVALID",
             severity: "error",
             message: `Referenced ${kind} ${String(ref)} is not a 64-hex artifactId; a persisted reference is never a label, txId or path`
-          }
+          },
+          searched: "nowhere"
         };
       }
       const fromContext = context.resolveArtifact ? context.resolveArtifact(ref) : null;
@@ -513,8 +516,11 @@ export function verifyArtifactSemantics(
           issue: {
             code: "REFERENCE_MISSING",
             severity: "error",
-            message: `Referenced ${kind} ${ref} cannot be resolved: no workspace root was given`
-          }
+            message: context.resolveArtifact
+              ? `Referenced ${kind} ${ref} was not found by the given resolver (no workspace root was given)`
+              : `Referenced ${kind} ${ref} cannot be resolved: no workspace root was given`
+          },
+          searched: context.resolveArtifact ? "resolver" : "nowhere"
         };
       }
       try {
@@ -531,7 +537,8 @@ export function verifyArtifactSemantics(
                 ? "REFERENCE_HASH_MISMATCH"
                 : "REFERENCE_CORRUPT";
         return {
-          issue: { code, severity: "error", message: `Referenced ${kind} ${ref}: ${e?.message ?? String(e)}` }
+          issue: { code, severity: "error", message: `Referenced ${kind} ${ref}: ${e?.message ?? String(e)}` },
+          searched: "workspace"
         };
       }
     };
@@ -653,7 +660,15 @@ export function verifyArtifactSemantics(
       }
       if (!outcome) outcome = resolveReference(parentId, "parent");
       if ("issue" in outcome) {
-        if (outcome.issue.code === "REFERENCE_MISSING") {
+        if (outcome.issue.code === "REFERENCE_MISSING" && outcome.searched === "nowhere") {
+          // EVIDENCE-TRUST-1: nothing was searched (no workspace root, no resolver). The parent is unresolved, which
+          // strict verification still refuses — but it is never reported as missing from a workspace nobody looked at.
+          addIssue({
+            code: "PARENT_UNRESOLVED",
+            severity: strict ? "error" : "warning",
+            message: `Parent artifact ${parentId} was not resolved: no workspace root or resolver was given, so no workspace was searched`
+          });
+        } else if (outcome.issue.code === "REFERENCE_MISSING") {
           // IC-5′.6: a reference that resolves to nothing is missing, whatever any
           // other artifact claims about it. A MigrationReceipt confers no authority
           // here (Wave 1.3 security review B1); a re-issued artifact's legacy source
@@ -661,7 +676,10 @@ export function verifyArtifactSemantics(
           addIssue({
             code: "PARENT_MISSING",
             severity: strict ? "error" : "warning",
-            message: `Parent artifact ${parentId} not found in workspace`
+            message:
+              outcome.searched === "resolver"
+                ? `Parent artifact ${parentId} not found by the given resolver`
+                : `Parent artifact ${parentId} not found in workspace`
           });
         } else {
           addIssue({ code: "PARENT_CORRUPT", severity: "error", message: outcome.issue.message });

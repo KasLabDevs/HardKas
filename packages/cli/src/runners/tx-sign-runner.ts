@@ -15,6 +15,11 @@ export interface TxSignRunnerInput {
   workspaceRoot?: string;
   targetName?: string;
   signer?: any;
+  /** Where an encrypted account's keystore password comes from (never from argv). */
+  passwordEnv?: string;
+  passwordStdin?: boolean;
+  /** Machine-readable output: never prompts. */
+  json?: boolean;
 }
 
 /**
@@ -107,16 +112,37 @@ export async function runTxSign(input: TxSignRunnerInput): Promise<SignedTxArtif
     }
   }
 
+  // An encrypted real account opens only with its owner's password, read before anything is
+  // signed or written: from the named variable, from stdin, or prompted on a terminal. It stays in
+  // memory for this call. Development accounts (`.hardkas/dev-accounts/`) need none.
+  let keystorePassword: string | undefined;
+  const acc: any = account;
+  if (!signer && acc.kind === "kaspa" && acc.keystorePath && acc.keystoreKind !== "dev-account" && !acc.privateKey && !acc.privateKeyEnv) {
+    const { acquirePassword } = await import("./secrets.js");
+    keystorePassword = await acquirePassword({
+      env: input.passwordEnv,
+      stdin: input.passwordStdin,
+      interactive: !input.json,
+      message: `Enter the keystore password of account '${acc.name}':`
+    });
+  }
+
   // Open the SDK to perform transaction signing & event emission & SQLite indexing
   const sdk = await Hardkas.open({ cwd: workspaceRoot || process.cwd(), signer });
 
-  const signedArtifact = await sdk.tx.sign(planArtifact as any, accountName, {
-    ...(append !== undefined ? { append } : {}),
-    ...(threshold !== undefined ? { threshold } : {}),
-    ...(requiredSigners !== undefined ? { requiredSigners } : {})
-  });
+  try {
+    const signedArtifact = await sdk.tx.sign(planArtifact as any, accountName, {
+      ...(append !== undefined ? { append } : {}),
+      ...(threshold !== undefined ? { threshold } : {}),
+      ...(requiredSigners !== undefined ? { requiredSigners } : {}),
+      ...(keystorePassword !== undefined ? { keystorePassword } : {})
+    });
 
-  return signedArtifact;
+    return signedArtifact;
+  } finally {
+    // RESOURCE-LIFECYCLE-1 (RL-I1/RL-I3): the SDK opened above is released here; the signer handed to it is not its own.
+    await sdk.close();
+  }
 }
 
 export function getNetworkFromAddress(address: string): string {

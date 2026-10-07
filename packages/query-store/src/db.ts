@@ -19,6 +19,32 @@ export class HardkasStore {
     }
   }
 
+  /**
+   * WORKSPACE-AUTHORITY-1 (WA-I3) · opens a projection that already exists, for reading, with no side effect: it never
+   * creates the file or its directory, never migrates, never switches the journal mode. A plain connection is used on
+   * purpose: node:sqlite's read-only connection leaves `-wal`/`-shm` files behind, while this one has SQLite remove them
+   * when it closes (on `disconnect()`, or when the process exits). Absent → null.
+   */
+  public static openExisting(dbPath: string): HardkasStore | null {
+    if (!fs.existsSync(dbPath)) return null;
+    const store = new HardkasStore({ dbPath });
+    try {
+      store.db = new DatabaseSync(dbPath);
+      store.db.exec("PRAGMA busy_timeout = 15000;");
+    } catch (err: any) {
+      store.db = null;
+      throw new HardkasError(
+        "PROJECTION_UNREADABLE",
+        `Failed to open query projection ${dbPath}: ${err instanceof Error ? err.message : String(err)}`
+      );
+    }
+    store.closeOnExit = () => store.disconnect();
+    process.once("exit", store.closeOnExit);
+    return store;
+  }
+
+  private closeOnExit: (() => void) | null = null;
+
   public connect(
     options: { autoMigrate?: boolean; readOnly?: boolean } = { autoMigrate: false }
   ) {
@@ -53,10 +79,19 @@ export class HardkasStore {
   }
 
   public disconnect() {
+    if (this.closeOnExit) {
+      process.removeListener("exit", this.closeOnExit);
+      this.closeOnExit = null;
+    }
     if (this.db) {
       this.db.close();
       this.db = null;
     }
+  }
+
+  /** The projection file this store reads or writes. */
+  public get path(): string {
+    return this.dbPath;
   }
 
   public getDatabase(): any {

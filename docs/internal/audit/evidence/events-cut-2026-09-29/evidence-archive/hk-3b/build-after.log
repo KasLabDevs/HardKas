@@ -1,0 +1,893 @@
+﻿
+> hardkas-monorepo@0.12.0-rc.26 build C:\Users\jrodr\Documents\kaslabdevs\GitHub\HardKas-repo
+> turbo build --concurrency 1
+
+node.exe : • turbo 2.10.8
+En C:\Users\jrodr\AppData\Roaming\npm\pnpm.ps1: 24 Carácter: 5
++     & "node$exe"  "$basedir/node_modules/pnpm/bin/pnpm.mjs" $args
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (• turbo 2.10.8:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+
+   • Packages in scope: @examples/rpc-node-health, @examples/snapshot-restore, @examples/trace-and-replay, @hardkas-examples/hello-kaspa, @hardkas/accounts, @hardkas/artifacts, @hardkas/bridge-local, @hardkas/cli, @hardkas/client, @hardkas/config, @hardkas/core, @hardkas/dashboard, @hardkas/dev-server, @hardkas/docs, @hardkas/escrow, @hardkas/example-02-basic-transfer, @hardkas/example-03-localnet-demo, @hardkas/example-bl-001-offline-multisig, @hardkas/jobs, @hardkas/kaspa-rpc, @hardkas/l2, @hardkas/localnet, @hardkas/node-orchestrator, @hardkas/node-runner, @hardkas/observability, @hardkas/plugin-local-indexer, @hardkas/plugin-rpc-backend, @hardkas/pskt-native, @hardkas/query, @hardkas/query-store, @hardkas/react, @hardkas/sdk, @hardkas/sessions, @hardkas/simulator, @hardkas/simulator-adapters, @hardkas/storage-postgres, @hardkas/storage-sqlite, @hardkas/sync-daemon, @hardkas/testing, @hardkas/testnet-qualification, @hardkas/toolkit, @hardkas/tx-builder, @hardkas/wallet-adapter, @showcase/cli-studio, @showcase/explorer-live, @showcase/localnet-studio, @showcase/merchant-terminal, @showcase/mission-control, @showcase/shared-backend, @showcase/shared-testkit, @showcase/shared-ui, @showcase/silver-playground, @showcase/time-travel-lab, @showcase/treasury-console, @showcase/wallet-pro, exchange-backend-ref, merchant-backend-ref, merchant-checkout, showcase-suite, testnet-runner, treasury-ref
+   • Running build in 61 packages
+   • Remote caching disabled
+
+@hardkas/observability:build: cache hit, replaying logs 6b9bf620fd0a5a1c
+@hardkas/observability:build: 
+@hardkas/observability:build: > @hardkas/observability@0.12.0-rc.26 build C:\Users\jrodr\Documents\kaslabdevs\GitHub\HardKas-repo\packages\observability
+@hardkas/observability:build: > tsup src/index.ts --format esm --dts --clean
+@hardkas/observability:build: 
+@hardkas/observability:build: CLI Building entry: src/index.ts
+@hardkas/observability:build: CLI Using tsconfig: tsconfig.json
+@hardkas/observability:build: CLI tsup v8.5.1
+@hardkas/observability:build: CLI Using tsup config: C:\Users\jrodr\Documents\kaslabdevs\GitHub\HardKas-repo\packages\observability\tsup.config.ts
+@hardkas/observability:build: CLI Target: es2022
+@hardkas/observability:build: CLI Cleaning output folder
+@hardkas/observability:build: ESM Build start
+@hardkas/observability:build: ESM dist\index.js 5.94 KB
+@hardkas/observability:build: ESM ⚡️ Build success in 120ms
+@hardkas/observability:build: DTS Build start
+@hardkas/observability:build: DTS ⚡️ Build success in 3150ms
+@hardkas/observability:build: DTS dist\index.d.ts 2.84 KB
+@hardkas/client:build: cache hit, replaying logs f1e1f7f6c781196c
+@hardkas/client:build: 
+@hardkas/client:build: > @hardkas/client@0.12.0-rc.26 build C:\Users\jrodr\Documents\kaslabdevs\GitHub\HardKas-repo\packages\client
+@hardkas/client:build: > tsup src/index.ts --format esm,cjs --dts --clean
+@hardkas/client:build: 
+@hardkas/client:build: CLI Building entry: src/index.ts
+@hardkas/client:build: CLI Using tsconfig: tsconfig.json
+@hardkas/client:build: CLI tsup v8.5.1
+@hardkas/client:build: CLI Target: es2022
+@hardkas/client:build: CLI Cleaning output folder
+@hardkas/client:build: ESM Build start
+@hardkas/client:build: CJS Build start
+@hardkas/client:build: CJS dist\index.cjs 3.05 KB
+@hardkas/client:build: CJS ⚡️ Build success in 186ms
+@hardkas/client:build: ESM dist\index.js 2.02 KB
+@hardkas/client:build: ESM ⚡️ Build success in 186ms
+@hardkas/client:build: DTS Build start
+@hardkas/client:build: DTS ⚡️ Build success in 2921ms
+@hardkas/client:build: DTS dist\index.d.ts  1017.00 B
+@hardkas/client:build: DTS dist\index.d.cts 1017.00 B
+@hardkas/testnet-qualification:build: cache miss, executing a9206e0e11915c5e
+@hardkas/testnet-qualification:build: 
+@hardkas/testnet-qualification:build: > @hardkas/testnet-qualification@0.12.0-rc.26 build C:\Users\jrodr\Documents\kaslabdevs\GitHub\HardKas-repo\packages\testnet-qualification
+@hardkas/testnet-qualification:build: > tsup src/index.ts --format esm --dts --clean
+@hardkas/testnet-qualification:build: 
+@hardkas/testnet-qualification:build: CLI Building entry: src/index.ts
+@hardkas/testnet-qualification:build: CLI Using tsconfig: tsconfig.json
+@hardkas/testnet-qualification:build: CLI tsup v8.5.1
+@hardkas/testnet-qualification:build: CLI Target: es2022
+@hardkas/testnet-qualification:build: CLI Cleaning output folder
+@hardkas/testnet-qualification:build: ESM Build start
+@hardkas/testnet-qualification:build: ESM dist\index.js 48.67 KB
+@hardkas/testnet-qualification:build: ESM ⚡️ Build success in 47ms
+@hardkas/testnet-qualification:build: DTS Build start
+@hardkas/testnet-qualification:build: DTS ⚡️ Build success in 1513ms
+@hardkas/testnet-qualification:build: DTS dist\index.d.ts 48.12 KB
+@hardkas/docs:build: cache miss, executing 00e4f51b755e97ee
+@hardkas/docs:build: 
+@hardkas/docs:build: > @hardkas/docs@0.1.0 build C:\Users\jrodr\Documents\kaslabdevs\GitHub\HardKas-repo\apps\docs
+@hardkas/docs:build: > docusaurus build
+@hardkas/docs:build: 
+@hardkas/docs:build: [WARNING] The `siteConfig.onBrokenMarkdownLinks` config option is deprecated and will be removed in Docusaurus v4.
+@hardkas/docs:build: Please migrate and move this option to `siteConfig.markdown.hooks.onBrokenMarkdownLinks` instead.
+@hardkas/docs:build: [INFO] [en] Creating an optimized production build...
+@hardkas/docs:build: [WARNING] The `siteConfig.onBrokenMarkdownLinks` config option is deprecated and will be removed in Docusaurus v4.
+@hardkas/docs:build: Please migrate and move this option to `siteConfig.markdown.hooks.onBrokenMarkdownLinks` instead.
+@hardkas/docs:build: [webpackbar] i Compiling Client
+@hardkas/docs:build: [webpackbar] i Compiling Server
+@hardkas/docs:build: [webpackbar] √ Server: Compiled successfully in 3.88s
+@hardkas/docs:build: [webpackbar] √ Client: Compiled successfully in 10.47s
+@hardkas/docs:build: [SUCCESS] Generated static files in "build".
+@hardkas/docs:build: [INFO] Use `npm run serve` command to test your build locally.
+@hardkas/core:build: cache hit, replaying logs 4dfe87199d056d0d
+@hardkas/core:build: 
+@hardkas/core:build: > @hardkas/core@0.12.0-rc.26 build C:\Users\jrodr\Documents\kaslabdevs\GitHub\HardKas-repo\packages\core
+@hardkas/core:build: > tsup src/index.ts --format esm --dts --clean
+@hardkas/core:build: 
+@hardkas/core:build: CLI Building entry: src/index.ts
+@hardkas/core:build: CLI Using tsconfig: tsconfig.json
+@hardkas/core:build: CLI tsup v8.5.1
+@hardkas/core:build: CLI Target: es2022
+@hardkas/core:build: CLI Cleaning output folder
+@hardkas/core:build: ESM Build start
+@hardkas/core:build: ESM dist\index.js 148.17 KB
+@hardkas/core:build: ESM ⚡️ Build success in 1317ms
+@hardkas/core:build: DTS Build start
+@hardkas/core:build: DTS ⚡️ Build success in 7197ms
+@hardkas/core:build: DTS dist\index.d.ts 105.51 KB
+@hardkas/pskt-native:build: cache hit, replaying logs adb0ea8cf1a3dc3b
+@hardkas/pskt-native:build: 
+@hardkas/pskt-native:build: > @hardkas/pskt-native@0.12.0-rc.26 build C:\Users\jrodr\Documents\kaslabdevs\GitHub\HardKas-repo\packages\pskt-native
+@hardkas/pskt-native:build: > napi build --platform --release
+@hardkas/pskt-native:build: 
+@hardkas/pskt-native:build: [DEPRECATED] napi.name is deprecated, use napi.binaryName instead.
+@hardkas/pskt-native:build: [DEPRECATED] napi.triples is deprecated, use napi.targets instead.
+@hardkas/pskt-native:build:    Compiling hardkas-pskt-native v0.1.0 (C:\Users\jrodr\Documents\kaslabdevs\GitHub\HardKas-repo\packages\pskt-native)
+@hardkas/pskt-native:build:     Finished `release` profile [optimized] target(s) in 15.80s
+@hardkas/jobs:build: cache hit, replaying logs b9012e1d1682af43
+@hardkas/jobs:build: 
+@hardkas/jobs:build: > @hardkas/jobs@0.12.0-rc.26 build C:\Users\jrodr\Documents\kaslabdevs\GitHub\HardKas-repo\packages\jobs
+@hardkas/jobs:build: > tsc
+@hardkas/jobs:build: 
+@hardkas/react:build: cache hit, replaying logs c833712424659115
+@hardkas/react:build: 
+@hardkas/react:build: > @hardkas/react@0.12.0-rc.26 build C:\Users\jrodr\Documents\kaslabdevs\GitHub\HardKas-repo\packages\react
+@hardkas/react:build: > tsup src/index.ts --format esm --dts --clean
+@hardkas/react:build: 
+@hardkas/react:build: CLI Building entry: src/index.ts
+@hardkas/react:build: CLI Using tsconfig: tsconfig.json
+@hardkas/react:build: CLI tsup v8.5.1
+@hardkas/react:build: CLI Target: es2022
+@hardkas/react:build: CLI Cleaning output folder
+@hardkas/react:build: ESM Build start
+@hardkas/react:build: ESM dist\index.js 2.67 KB
+@hardkas/react:build: ESM ⚡️ Build success in 1122ms
+@hardkas/react:build: DTS Build start
+@hardkas/react:build: DTS ⚡️ Build success in 4188ms
+@hardkas/react:build: DTS dist\index.d.ts 1.15 KB
+@hardkas/config:build: cache hit, replaying logs 7ac85cd1928f54be
+@hardkas/config:build: 
+@hardkas/config:build: > @hardkas/config@0.12.0-rc.26 build C:\Users\jrodr\Documents\kaslabdevs\GitHub\HardKas-repo\packages\config
+@hardkas/config:build: > tsup src/index.ts --format esm --dts --clean
+@hardkas/config:build: 
+@hardkas/config:build: CLI Building entry: src/index.ts
+@hardkas/config:build: CLI Using tsconfig: tsconfig.json
+@hardkas/config:build: CLI tsup v8.5.1
+@hardkas/config:build: CLI Target: es2022
+@hardkas/config:build: CLI Cleaning output folder
+@hardkas/config:build: ESM Build start
+@hardkas/config:build: ESM dist\index.js 9.81 KB
+@hardkas/config:build: ESM ⚡️ Build success in 714ms
+@hardkas/config:build: DTS Build start
+@hardkas/config:build: DTS ⚡️ Build success in 6819ms
+@hardkas/config:build: DTS dist\index.d.ts 5.14 KB
+@hardkas/sessions:build: cache hit, replaying logs cd4b4668111e45ac
+@hardkas/sessions:build: 
+@hardkas/sessions:build: > @hardkas/sessions@0.12.0-rc.26 build C:\Users\jrodr\Documents\kaslabdevs\GitHub\HardKas-repo\packages\sessions
+@hardkas/sessions:build: > tsup src/index.ts --format esm --dts --clean
+@hardkas/sessions:build: 
+@hardkas/sessions:build: CLI Building entry: src/index.ts
+@hardkas/sessions:build: CLI Using tsconfig: tsconfig.json
+@hardkas/sessions:build: CLI tsup v8.5.1
+@hardkas/sessions:build: CLI Target: es2022
+@hardkas/sessions:build: CLI Cleaning output folder
+@hardkas/sessions:build: ESM Build start
+@hardkas/sessions:build: ESM dist\index.js 3.61 KB
+@hardkas/sessions:build: ESM ⚡️ Build success in 684ms
+@hardkas/sessions:build: DTS Build start
+@hardkas/sessions:build: DTS ⚡️ Build success in 4910ms
+@hardkas/sessions:build: DTS dist\index.d.ts 1.34 KB
+@hardkas/node-orchestrator:build: cache hit, replaying logs 0293cb4c8a7466e0
+@hardkas/node-orchestrator:build: 
+@hardkas/node-orchestrator:build: > @hardkas/node-orchestrator@0.12.0-rc.26 build C:\Users\jrodr\Documents\kaslabdevs\GitHub\HardKas-repo\packages\node-orchestrator
+@hardkas/node-orchestrator:build: > tsup src/index.ts --format esm --dts --clean
+@hardkas/node-orchestrator:build: 
+@hardkas/node-orchestrator:build: CLI Building entry: src/index.ts
+@hardkas/node-orchestrator:build: CLI Using tsconfig: tsconfig.json
+@hardkas/node-orchestrator:build: CLI tsup v8.5.1
+@hardkas/node-orchestrator:build: CLI Target: es2022
+@hardkas/node-orchestrator:build: CLI Cleaning output folder
+@hardkas/node-orchestrator:build: ESM Build start
+@hardkas/node-orchestrator:build: ESM dist\index.js 8.16 KB
+@hardkas/node-orchestrator:build: ESM ⚡️ Build success in 602ms
+@hardkas/node-orchestrator:build: DTS Build start
+@hardkas/node-orchestrator:build: DTS ⚡️ Build success in 6068ms
+@hardkas/node-orchestrator:build: DTS dist\index.d.ts 2.29 KB
+@hardkas/plugin-local-indexer:build: cache hit, replaying logs 94f9433e43e29dea
+@hardkas/plugin-local-indexer:build: 
+@hardkas/plugin-local-indexer:build: > @hardkas/plugin-local-indexer@0.12.0-rc.26 build C:\Users\jrodr\Documents\kaslabdevs\GitHub\HardKas-repo\packages\plugin-local-indexer
+@hardkas/plugin-local-indexer:build: > tsup
+@hardkas/plugin-local-indexer:build: 
+@hardkas/plugin-local-indexer:build: CLI Building entry: src/index.ts
+@hardkas/plugin-local-indexer:build: CLI Using tsconfig: tsconfig.json
+@hardkas/plugin-local-indexer:build: CLI tsup v8.5.1
+@hardkas/plugin-local-indexer:build: CLI Using tsup config: C:\Users\jrodr\Documents\kaslabdevs\GitHub\HardKas-repo\packages\plugin-local-indexer\tsup.config.ts
+@hardkas/plugin-local-indexer:build: CLI Target: es2022
+@hardkas/plugin-local-indexer:build: CLI Cleaning output folder
+@hardkas/plugin-local-indexer:build: ESM Build start
+@hardkas/plugin-local-indexer:build: ESM dist\index.js 1.86 KB
+@hardkas/plugin-local-indexer:build: ESM ⚡️ Build success in 1079ms
+@hardkas/plugin-local-indexer:build: DTS Build start
+@hardkas/plugin-local-indexer:build: DTS ⚡️ Build success in 3977ms
+@hardkas/plugin-local-indexer:build: DTS dist\index.d.ts 510.00 B
+@hardkas/kaspa-rpc:build: cache hit, replaying logs ca1167db0b6c4b5c
+@hardkas/kaspa-rpc:build: 
+@hardkas/kaspa-rpc:build: > @hardkas/kaspa-rpc@0.12.0-rc.26 build C:\Users\jrodr\Documents\kaslabdevs\GitHub\HardKas-repo\packages\kaspa-rpc
+@hardkas/kaspa-rpc:build: > tsup src/index.ts src/adapters/index.ts src/internal/resilient-subscriber.ts --format esm --dts --clean
+@hardkas/kaspa-rpc:build: 
+@hardkas/kaspa-rpc:build: CLI Building entry: src/index.ts, src/adapters/index.ts, src/internal/resilient-subscriber.ts
+@hardkas/kaspa-rpc:build: CLI Using tsconfig: tsconfig.json
+@hardkas/kaspa-rpc:build: CLI tsup v8.5.1
+@hardkas/kaspa-rpc:build: CLI Target: es2022
+@hardkas/kaspa-rpc:build: CLI Cleaning output folder
+@hardkas/kaspa-rpc:build: ESM Build start
+@hardkas/kaspa-rpc:build: ESM dist\index.js                         1.17 KB
+@hardkas/kaspa-rpc:build: ESM dist\chunk-IXYYBT7R.js                63.87 KB
+@hardkas/kaspa-rpc:build: ESM dist\adapters\index.js                0 B
+@hardkas/kaspa-rpc:build: ESM dist\internal\resilient-subscriber.js 7.29 KB
+@hardkas/kaspa-rpc:build: ESM ⚡️ Build success in 1276ms
+@hardkas/kaspa-rpc:build: DTS Build start
+@hardkas/kaspa-rpc:build: DTS ⚡️ Build success in 13623ms
+@hardkas/kaspa-rpc:build: DTS dist\adapters\index.d.ts                13.00 B
+@hardkas/kaspa-rpc:build: DTS dist\internal\resilient-subscriber.d.ts 2.95 KB
+@hardkas/kaspa-rpc:build: DTS dist\index.d.ts                         24.24 KB
+@hardkas/tx-builder:build: cache hit, replaying logs 7a56de5667a8211b
+@hardkas/tx-builder:build: 
+@hardkas/tx-builder:build: > @hardkas/tx-builder@0.12.0-rc.26 build C:\Users\jrodr\Documents\kaslabdevs\GitHub\HardKas-repo\packages\tx-builder
+@hardkas/tx-builder:build: > tsup src/index.ts --format esm --dts --clean
+@hardkas/tx-builder:build: 
+@hardkas/tx-builder:build: CLI Building entry: src/index.ts
+@hardkas/tx-builder:build: CLI Using tsconfig: tsconfig.json
+@hardkas/tx-builder:build: CLI tsup v8.5.1
+@hardkas/tx-builder:build: CLI Target: es2022
+@hardkas/tx-builder:build: CLI Cleaning output folder
+@hardkas/tx-builder:build: ESM Build start
+@hardkas/tx-builder:build: ESM dist\index.js 47.64 KB
+@hardkas/tx-builder:build: ESM ⚡️ Build success in 1058ms
+@hardkas/tx-builder:build: DTS Build start
+@hardkas/tx-builder:build: DTS ⚡️ Build success in 5792ms
+@hardkas/tx-builder:build: DTS dist\index.d.ts 30.15 KB
+@hardkas/escrow:build: cache hit, replaying logs b1a522a72bd19d1c
+@hardkas/escrow:build: 
+@hardkas/escrow:build: > @hardkas/escrow@0.12.0-rc.26 build C:\Users\jrodr\Documents\kaslabdevs\GitHub\HardKas-repo\packages\escrow
+@hardkas/escrow:build: > tsup src/index.ts --format esm --dts --clean
+@hardkas/escrow:build: 
+@hardkas/escrow:build: CLI Building entry: src/index.ts
+@hardkas/escrow:build: CLI Using tsconfig: tsconfig.json
+@hardkas/escrow:build: CLI tsup v8.5.1
+@hardkas/escrow:build: CLI Target: es2022
+@hardkas/escrow:build: CLI Cleaning output folder
+@hardkas/escrow:build: ESM Build start
+@hardkas/escrow:build: ESM dist\index.js 5.37 KB
+@hardkas/escrow:build: ESM ⚡️ Build success in 491ms
+@hardkas/escrow:build: DTS Build start
+@hardkas/escrow:build: DTS ⚡️ Build success in 6096ms
+@hardkas/escrow:build: DTS dist\index.d.ts 5.84 KB
+@hardkas/dashboard:build: cache miss, executing 4890e36c2bbb521a
+@hardkas/dashboard:build: 
+@hardkas/dashboard:build: > @hardkas/dashboard@0.12.0-rc.26 build C:\Users\jrodr\Documents\kaslabdevs\GitHub\HardKas-repo\apps\dashboard
+@hardkas/dashboard:build: > vite build
+@hardkas/dashboard:build: 
+@hardkas/dashboard:build: vite v6.4.3 building for production...
+@hardkas/dashboard:build: transforming...
+@hardkas/dashboard:build: ✓ 1603 modules transformed.
+@hardkas/dashboard:build: rendering chunks...
+@hardkas/dashboard:build: computing gzip size...
+@hardkas/dashboard:build: ../../packages/cli/dashboard-dist/index.html                   0.46 kB │ gzip:  0.30 kB
+@hardkas/dashboard:build: ../../packages/cli/dashboard-dist/assets/index-B39jkw7f.css   62.86 kB │ gzip: 10.57 kB
+@hardkas/dashboard:build: ../../packages/cli/dashboard-dist/assets/index-_8-dMJ1m.js   317.01 kB │ gzip: 91.74 kB
+@hardkas/dashboard:build: ✓ built in 3.17s
+@hardkas/node-runner:build: cache hit, replaying logs 8f156f20202c5c80
+@hardkas/node-runner:build: 
+@hardkas/node-runner:build: > @hardkas/node-runner@0.12.0-rc.26 build C:\Users\jrodr\Documents\kaslabdevs\GitHub\HardKas-repo\packages\node-runner
+@hardkas/node-runner:build: > tsup src/index.ts --format esm --dts --clean
+@hardkas/node-runner:build: 
+@hardkas/node-runner:build: CLI Building entry: src/index.ts
+@hardkas/node-runner:build: CLI Using tsconfig: tsconfig.json
+@hardkas/node-runner:build: CLI tsup v8.5.1
+@hardkas/node-runner:build: CLI Target: es2022
+@hardkas/node-runner:build: CLI Cleaning output folder
+@hardkas/node-runner:build: ESM Build start
+@hardkas/node-runner:build: ESM dist\index.js 14.05 KB
+@hardkas/node-runner:build: ESM ⚡️ Build success in 195ms
+@hardkas/node-runner:build: DTS Build start
+@hardkas/node-runner:build: DTS ⚡️ Build success in 3256ms
+@hardkas/node-runner:build: DTS dist\index.d.ts 3.70 KB
+@hardkas/artifacts:build: cache hit, replaying logs 3ce47eeae3691994
+@hardkas/artifacts:build: 
+@hardkas/artifacts:build: > @hardkas/artifacts@0.12.0-rc.26 build C:\Users\jrodr\Documents\kaslabdevs\GitHub\HardKas-repo\packages\artifacts
+@hardkas/artifacts:build: > tsup src/index.ts --format esm --dts --clean
+@hardkas/artifacts:build: 
+@hardkas/artifacts:build: CLI Building entry: src/index.ts
+@hardkas/artifacts:build: CLI Using tsconfig: tsconfig.json
+@hardkas/artifacts:build: CLI tsup v8.5.1
+@hardkas/artifacts:build: CLI Target: es2022
+@hardkas/artifacts:build: CLI Cleaning output folder
+@hardkas/artifacts:build: ESM Build start
+@hardkas/artifacts:build: ESM dist\index.js 228.10 KB
+@hardkas/artifacts:build: ESM ⚡️ Build success in 1786ms
+@hardkas/artifacts:build: DTS Build start
+@hardkas/artifacts:build: DTS ⚡️ Build success in 10488ms
+@hardkas/artifacts:build: DTS dist\index.d.ts 473.87 KB
+@hardkas/simulator:build: cache hit, replaying logs aa122cc3acbb3fed
+@hardkas/simulator:build: 
+@hardkas/simulator:build: > @hardkas/simulator@0.12.0-rc.26 build C:\Users\jrodr\Documents\kaslabdevs\GitHub\HardKas-repo\packages\simulator
+@hardkas/simulator:build: > tsup src/index.ts --format esm --dts --clean
+@hardkas/simulator:build: 
+@hardkas/simulator:build: CLI Building entry: src/index.ts
+@hardkas/simulator:build: CLI Using tsconfig: tsconfig.json
+@hardkas/simulator:build: CLI tsup v8.5.1
+@hardkas/simulator:build: CLI Target: es2022
+@hardkas/simulator:build: CLI Cleaning output folder
+@hardkas/simulator:build: ESM Build start
+@hardkas/simulator:build: ESM dist\index.js 25.15 KB
+@hardkas/simulator:build: ESM ⚡️ Build success in 931ms
+@hardkas/simulator:build: DTS Build start
+@hardkas/simulator:build: DTS ⚡️ Build success in 5878ms
+@hardkas/simulator:build: DTS dist\index.d.ts 13.88 KB
+@hardkas/wallet-adapter:build: cache hit, replaying logs 763aff0c01eb850d
+@hardkas/wallet-adapter:build: 
+@hardkas/wallet-adapter:build: > @hardkas/wallet-adapter@0.12.0-rc.26 build C:\Users\jrodr\Documents\kaslabdevs\GitHub\HardKas-repo\packages\wallet-adapter
+@hardkas/wallet-adapter:build: > tsup src/index.ts --format esm --dts --clean
+@hardkas/wallet-adapter:build: 
+@hardkas/wallet-adapter:build: CLI Building entry: src/index.ts
+@hardkas/wallet-adapter:build: CLI Using tsconfig: tsconfig.json
+@hardkas/wallet-adapter:build: CLI tsup v8.5.1
+@hardkas/wallet-adapter:build: CLI Target: es2022
+@hardkas/wallet-adapter:build: CLI Cleaning output folder
+@hardkas/wallet-adapter:build: ESM Build start
+@hardkas/wallet-adapter:build: ESM dist\index.js 3.89 KB
+@hardkas/wallet-adapter:build: ESM ⚡️ Build success in 223ms
+@hardkas/wallet-adapter:build: DTS Build start
+@hardkas/wallet-adapter:build: DTS ⚡️ Build success in 2888ms
+@hardkas/wallet-adapter:build: DTS dist\index.d.ts 4.18 KB
+@hardkas/l2:build: cache hit, replaying logs bbf493923cc665b9
+@hardkas/l2:build: 
+@hardkas/l2:build: > @hardkas/l2@0.12.0-rc.26 build C:\Users\jrodr\Documents\kaslabdevs\GitHub\HardKas-repo\packages\l2
+@hardkas/l2:build: > tsup src/index.ts --format esm --dts --clean
+@hardkas/l2:build: 
+@hardkas/l2:build: CLI Building entry: src/index.ts
+@hardkas/l2:build: CLI Using tsconfig: tsconfig.json
+@hardkas/l2:build: CLI tsup v8.5.1
+@hardkas/l2:build: CLI Target: es2022
+@hardkas/l2:build: CLI Cleaning output folder
+@hardkas/l2:build: ESM Build start
+@hardkas/l2:build: ESM dist\index.js 19.17 KB
+@hardkas/l2:build: ESM ⚡️ Build success in 203ms
+@hardkas/l2:build: DTS Build start
+@hardkas/l2:build: DTS ⚡️ Build success in 5492ms
+@hardkas/l2:build: DTS dist\index.d.ts 8.51 KB
+@hardkas/query-store:build: cache hit, replaying logs d5193fc0369d62bc
+@hardkas/query-store:build: 
+@hardkas/query-store:build: > @hardkas/query-store@0.12.0-rc.26 build C:\Users\jrodr\Documents\kaslabdevs\GitHub\HardKas-repo\packages\query-store
+@hardkas/query-store:build: > tsc
+@hardkas/query-store:build: 
+@hardkas/localnet:build: cache hit, replaying logs 5d7d79f9729e6d67
+@hardkas/localnet:build: 
+@hardkas/localnet:build: > @hardkas/localnet@0.12.0-rc.26 build C:\Users\jrodr\Documents\kaslabdevs\GitHub\HardKas-repo\packages\localnet
+@hardkas/localnet:build: > tsup src/index.ts --format esm --dts --clean --external kaspa-wasm
+@hardkas/localnet:build: 
+@hardkas/localnet:build: CLI Building entry: src/index.ts
+@hardkas/localnet:build: CLI Using tsconfig: tsconfig.json
+@hardkas/localnet:build: CLI tsup v8.5.1
+@hardkas/localnet:build: CLI Target: es2022
+@hardkas/localnet:build: CLI Cleaning output folder
+@hardkas/localnet:build: ESM Build start
+@hardkas/localnet:build: ESM dist\receipts-INOOWOPN.js 195.00 B
+@hardkas/localnet:build: ESM dist\snapshot-4GUK6V5O.js 333.00 B
+@hardkas/localnet:build: ESM dist\index.js             43.88 KB
+@hardkas/localnet:build: ESM dist\traces-ZUBWSXYB.js   261.00 B
+@hardkas/localnet:build: ESM dist\chunk-EPMJ5HSS.js    4.46 KB
+@hardkas/localnet:build: ESM dist\chunk-TD6USJ3B.js    967.00 B
+@hardkas/localnet:build: ESM dist\chunk-6AICYLVR.js    1.84 KB
+@hardkas/localnet:build: ESM ⚡️ Build success in 167ms
+@hardkas/localnet:build: DTS Build start
+@hardkas/localnet:build: DTS ⚡️ Build success in 3079ms
+@hardkas/localnet:build: DTS dist\index.d.ts 21.98 KB
+@hardkas/query:build: cache hit, replaying logs a17a03a85dada208
+@hardkas/query:build: 
+@hardkas/query:build: > @hardkas/query@0.12.0-rc.26 build C:\Users\jrodr\Documents\kaslabdevs\GitHub\HardKas-repo\packages\query
+@hardkas/query:build: > tsup src/index.ts --format esm --dts --clean
+@hardkas/query:build: 
+@hardkas/query:build: CLI Building entry: src/index.ts
+@hardkas/query:build: CLI Using tsconfig: tsconfig.json
+@hardkas/query:build: CLI tsup v8.5.1
+@hardkas/query:build: CLI Target: es2022
+@hardkas/query:build: CLI Cleaning output folder
+@hardkas/query:build: ESM Build start
+@hardkas/query:build: ESM dist\index.js 81.38 KB
+@hardkas/query:build: ESM ⚡️ Build success in 302ms
+@hardkas/query:build: DTS Build start
+@hardkas/query:build: DTS ⚡️ Build success in 3260ms
+@hardkas/query:build: DTS dist\index.d.ts 25.14 KB
+@hardkas/accounts:build: cache hit, replaying logs 0260b13aa613d8da
+@hardkas/accounts:build: 
+@hardkas/accounts:build: > @hardkas/accounts@0.12.0-rc.26 build C:\Users\jrodr\Documents\kaslabdevs\GitHub\HardKas-repo\packages\accounts
+@hardkas/accounts:build: > tsup src/index.ts src/internal/wasm-rpc-serialization.ts --format esm --dts --clean --external kaspa-wasm
+@hardkas/accounts:build: 
+@hardkas/accounts:build: CLI Building entry: src/index.ts, src/internal/wasm-rpc-serialization.ts
+@hardkas/accounts:build: CLI Using tsconfig: tsconfig.json
+@hardkas/accounts:build: CLI tsup v8.5.1
+@hardkas/accounts:build: CLI Target: es2022
+@hardkas/accounts:build: CLI Cleaning output folder
+@hardkas/accounts:build: ESM Build start
+@hardkas/accounts:build: ESM dist\internal\wasm-rpc-serialization.js 90.00 B
+@hardkas/accounts:build: ESM dist\index.js                           47.86 KB
+@hardkas/accounts:build: ESM dist\keystore-CMWEKGBF.js               87.00 B
+@hardkas/accounts:build: ESM dist\dev-accounts-JTJKQAPV.js           395.00 B
+@hardkas/accounts:build: ESM dist\signer-backend-LHWY7ULI.js         233.00 B
+@hardkas/accounts:build: ESM dist\chunk-Q22JFUWC.js                  17.03 KB
+@hardkas/accounts:build: ESM dist\chunk-GM2BY4VS.js                  5.80 KB
+@hardkas/accounts:build: ESM dist\chunk-YLG2NIAU.js                  5.54 KB
+@hardkas/accounts:build: ESM dist\chunk-BNF566PS.js                  2.79 KB
+@hardkas/accounts:build: ESM dist\resolve-FO4P46YC.js                301.00 B
+@hardkas/accounts:build: ESM dist\chunk-PKDTLCCQ.js                  3.77 KB
+@hardkas/accounts:build: ESM dist\authorizers-YESBCCTJ.js            217.00 B
+@hardkas/accounts:build: ESM dist\chunk-2UQTGGML.js                  18.77 KB
+@hardkas/accounts:build: ESM ⚡️ Build success in 253ms
+@hardkas/accounts:build: DTS Build start
+@hardkas/accounts:build: DTS ⚡️ Build success in 3081ms
+@hardkas/accounts:build: DTS dist\index.d.ts                           36.24 KB
+@hardkas/accounts:build: DTS dist\internal\wasm-rpc-serialization.d.ts 337.00 B
+@hardkas/toolkit:build: cache hit, replaying logs b13137a61b454bd7
+@hardkas/toolkit:build: 
+@hardkas/toolkit:build: > @hardkas/toolkit@0.12.0-rc.26 build C:\Users\jrodr\Documents\kaslabdevs\GitHub\HardKas-repo\packages\toolkit
+@hardkas/toolkit:build: > tsc
+@hardkas/toolkit:build: 
+@hardkas/bridge-local:build: cache hit, replaying logs 2296f1073a31703f
+@hardkas/bridge-local:build: 
+@hardkas/bridge-local:build: > @hardkas/bridge-local@0.12.0-rc.26 build C:\Users\jrodr\Documents\kaslabdevs\GitHub\HardKas-repo\packages\bridge-local
+@hardkas/bridge-local:build: > tsup src/index.ts --format esm --dts --clean
+@hardkas/bridge-local:build: 
+@hardkas/bridge-local:build: CLI Building entry: src/index.ts
+@hardkas/bridge-local:build: CLI Using tsconfig: tsconfig.json
+@hardkas/bridge-local:build: CLI tsup v8.5.1
+@hardkas/bridge-local:build: CLI Target: es2022
+@hardkas/bridge-local:build: CLI Cleaning output folder
+@hardkas/bridge-local:build: ESM Build start
+@hardkas/bridge-local:build: ESM dist\index.js 4.89 KB
+@hardkas/bridge-local:build: ESM ⚡️ Build success in 54ms
+@hardkas/bridge-local:build: DTS Build start
+@hardkas/bridge-local:build: DTS ⚡️ Build success in 11903ms
+@hardkas/bridge-local:build: DTS dist\index.d.ts 2.72 KB
+merchant-checkout:build: cache miss, executing f6de1e2067d258a1
+merchant-checkout:build: 
+merchant-checkout:build: > merchant-checkout@0.12.0-rc.26 build C:\Users\jrodr\Documents\kaslabdevs\GitHub\HardKas-repo\labs\02-merchant-checkout
+merchant-checkout:build: > tsc
+merchant-checkout:build: 
+@showcase/localnet-studio:build: cache miss, executing 331bcb01e206668d
+@showcase/localnet-studio:build: 
+@showcase/localnet-studio:build: > @showcase/localnet-studio@0.12.0-rc.26 build C:\Users\jrodr\Documents\kaslabdevs\GitHub\HardKas-repo\labs\showcase-suite\apps\localnet-studio
+@showcase/localnet-studio:build: > tsc && vite build
+@showcase/localnet-studio:build: 
+@showcase/localnet-studio:build: vite v5.4.21 building for production...
+@showcase/localnet-studio:build: transforming...
+@showcase/localnet-studio:build: ✓ 35 modules transformed.
+@showcase/localnet-studio:build: rendering chunks...
+@showcase/localnet-studio:build: computing gzip size...
+@showcase/localnet-studio:build: dist/index.html                   0.68 kB │ gzip:  0.39 kB
+@showcase/localnet-studio:build: dist/assets/index-BCw7mP8I.css    4.68 kB │ gzip:  1.50 kB
+@showcase/localnet-studio:build: dist/assets/index-DT89rV2O.js   150.31 kB │ gzip: 48.13 kB
+@showcase/localnet-studio:build: ✓ built in 741ms
+@hardkas/plugin-rpc-backend:build: cache hit, replaying logs de46514d8e955c2e
+@hardkas/plugin-rpc-backend:build: 
+@hardkas/plugin-rpc-backend:build: > @hardkas/plugin-rpc-backend@0.12.0-rc.26 build C:\Users\jrodr\Documents\kaslabdevs\GitHub\HardKas-repo\packages\plugin-rpc-backend
+@hardkas/plugin-rpc-backend:build: > tsup
+@hardkas/plugin-rpc-backend:build: 
+@hardkas/plugin-rpc-backend:build: ▲ [WARNING] The condition "types" here will never be used as it comes after both "import" and "require" [package.json]
+@hardkas/plugin-rpc-backend:build: 
+@hardkas/plugin-rpc-backend:build:     package.json:12:6:
+@hardkas/plugin-rpc-backend:build:       12 │       "types": "./dist/index.d.ts"
+@hardkas/plugin-rpc-backend:build:          ╵       ~~~~~~~
+@hardkas/plugin-rpc-backend:build: 
+@hardkas/plugin-rpc-backend:build:   The "import" condition comes earlier and will be used for all "import" statements:
+@hardkas/plugin-rpc-backend:build: 
+@hardkas/plugin-rpc-backend:build:     package.json:10:6:
+@hardkas/plugin-rpc-backend:build:       10 │       "import": "./dist/index.js",
+@hardkas/plugin-rpc-backend:build:          ╵       ~~~~~~~~
+@hardkas/plugin-rpc-backend:build: 
+@hardkas/plugin-rpc-backend:build:   The "require" condition comes earlier and will be used for all "require" calls:
+@hardkas/plugin-rpc-backend:build: 
+@hardkas/plugin-rpc-backend:build:     package.json:11:6:
+@hardkas/plugin-rpc-backend:build:       11 │       "require": "./dist/index.cjs",
+@hardkas/plugin-rpc-backend:build:          ╵       ~~~~~~~~~
+@hardkas/plugin-rpc-backend:build: 
+@hardkas/plugin-rpc-backend:build: CLI Building entry: src/index.ts
+@hardkas/plugin-rpc-backend:build: CLI Using tsconfig: tsconfig.json
+@hardkas/plugin-rpc-backend:build: CLI tsup v8.5.1
+@hardkas/plugin-rpc-backend:build: CLI Using tsup config: C:\Users\jrodr\Documents\kaslabdevs\GitHub\HardKas-repo\packages\plugin-rpc-backend\tsup.config.ts
+@hardkas/plugin-rpc-backend:build: CLI Target: es2022
+@hardkas/plugin-rpc-backend:build: CLI Cleaning output folder
+@hardkas/plugin-rpc-backend:build: CJS Build start
+@hardkas/plugin-rpc-backend:build: ESM Build start
+@hardkas/plugin-rpc-backend:build: 
+@hardkas/plugin-rpc-backend:build:  WARN  [33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mThe condition "types" here will never be used as it comes after both "import" and "require"[0m [package.json]
+@hardkas/plugin-rpc-backend:build: 
+@hardkas/plugin-rpc-backend:build:     package.json:12:6:
+@hardkas/plugin-rpc-backend:build: [37m      12 │       [32m"types"[37m: "./dist/index.d.ts"
+@hardkas/plugin-rpc-backend:build:          ╵       [32m~~~~~~~[0m
+@hardkas/plugin-rpc-backend:build: 
+@hardkas/plugin-rpc-backend:build:   The "import" condition comes earlier and will be used for all "import" statements:
+@hardkas/plugin-rpc-backend:build: 
+@hardkas/plugin-rpc-backend:build:     package.json:10:6:
+@hardkas/plugin-rpc-backend:build: [37m      10 │       [32m"import"[37m: "./dist/index.js",
+@hardkas/plugin-rpc-backend:build:          ╵       [32m~~~~~~~~[0m
+@hardkas/plugin-rpc-backend:build: 
+@hardkas/plugin-rpc-backend:build:   The "require" condition comes earlier and will be used for all "require" calls:
+@hardkas/plugin-rpc-backend:build: 
+@hardkas/plugin-rpc-backend:build:     package.json:11:6:
+@hardkas/plugin-rpc-backend:build: [37m      11 │       [32m"require"[37m: "./dist/index.cjs",
+@hardkas/plugin-rpc-backend:build:          ╵       [32m~~~~~~~~~[0m
+@hardkas/plugin-rpc-backend:build: 
+@hardkas/plugin-rpc-backend:build: 
+@hardkas/plugin-rpc-backend:build: 
+@hardkas/plugin-rpc-backend:build: 
+@hardkas/plugin-rpc-backend:build:  WARN  [33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mThe condition "types" here will never be used as it comes after both "import" and "require"[0m [package.json]
+@hardkas/plugin-rpc-backend:build: 
+@hardkas/plugin-rpc-backend:build:     package.json:12:6:
+@hardkas/plugin-rpc-backend:build: [37m      12 │       [32m"types"[37m: "./dist/index.d.ts"
+@hardkas/plugin-rpc-backend:build:          ╵       [32m~~~~~~~[0m
+@hardkas/plugin-rpc-backend:build: 
+@hardkas/plugin-rpc-backend:build:   The "import" condition comes earlier and will be used for all "import" statements:
+@hardkas/plugin-rpc-backend:build: 
+@hardkas/plugin-rpc-backend:build:     package.json:10:6:
+@hardkas/plugin-rpc-backend:build: [37m      10 │       [32m"import"[37m: "./dist/index.js",
+@hardkas/plugin-rpc-backend:build:          ╵       [32m~~~~~~~~[0m
+@hardkas/plugin-rpc-backend:build: 
+@hardkas/plugin-rpc-backend:build:   The "require" condition comes earlier and will be used for all "require" calls:
+@hardkas/plugin-rpc-backend:build: 
+@hardkas/plugin-rpc-backend:build:     package.json:11:6:
+@hardkas/plugin-rpc-backend:build: [37m      11 │       [32m"require"[37m: "./dist/index.cjs",
+@hardkas/plugin-rpc-backend:build:          ╵       [32m~~~~~~~~~[0m
+@hardkas/plugin-rpc-backend:build: 
+@hardkas/plugin-rpc-backend:build: 
+@hardkas/plugin-rpc-backend:build: 
+@hardkas/plugin-rpc-backend:build: CJS dist\index.cjs     9.31 KB
+@hardkas/plugin-rpc-backend:build: CJS dist\index.cjs.map 16.88 KB
+@hardkas/plugin-rpc-backend:build: CJS ⚡️ Build success in 1034ms
+@hardkas/plugin-rpc-backend:build: ESM dist\index.js     7.74 KB
+@hardkas/plugin-rpc-backend:build: ESM dist\index.js.map 16.83 KB
+@hardkas/plugin-rpc-backend:build: ESM ⚡️ Build success in 1035ms
+@hardkas/plugin-rpc-backend:build: DTS Build start
+@hardkas/plugin-rpc-backend:build: DTS ⚡️ Build success in 6403ms
+@hardkas/plugin-rpc-backend:build: DTS dist\index.d.cts 1.39 KB
+@hardkas/plugin-rpc-backend:build: DTS dist\index.d.ts  1.39 KB
+@hardkas/storage-sqlite:build: cache hit, replaying logs c37496479a08aae8
+@hardkas/storage-sqlite:build: 
+@hardkas/storage-sqlite:build: > @hardkas/storage-sqlite@0.12.0-rc.26 build C:\Users\jrodr\Documents\kaslabdevs\GitHub\HardKas-repo\packages\storage-sqlite
+@hardkas/storage-sqlite:build: > tsup
+@hardkas/storage-sqlite:build: 
+@hardkas/storage-sqlite:build: CLI Building entry: src/index.ts
+@hardkas/storage-sqlite:build: CLI Using tsconfig: tsconfig.json
+@hardkas/storage-sqlite:build: CLI tsup v8.5.1
+@hardkas/storage-sqlite:build: CLI Using tsup config: C:\Users\jrodr\Documents\kaslabdevs\GitHub\HardKas-repo\packages\storage-sqlite\tsup.config.ts
+@hardkas/storage-sqlite:build: CLI Target: es2022
+@hardkas/storage-sqlite:build: CLI Cleaning output folder
+@hardkas/storage-sqlite:build: CJS Build start
+@hardkas/storage-sqlite:build: ESM Build start
+@hardkas/storage-sqlite:build: CJS dist\index.js 8.00 KB
+@hardkas/storage-sqlite:build: CJS ⚡️ Build success in 1504ms
+@hardkas/storage-sqlite:build: ESM dist\index.mjs 7.23 KB
+@hardkas/storage-sqlite:build: ESM ⚡️ Build success in 1908ms
+@hardkas/storage-sqlite:build: DTS Build start
+@hardkas/storage-sqlite:build: DTS ⚡️ Build success in 4656ms
+@hardkas/storage-sqlite:build: DTS dist\index.d.ts  1.38 KB
+@hardkas/storage-sqlite:build: DTS dist\index.d.mts 1.38 KB
+@hardkas/storage-postgres:build: cache hit, replaying logs 992adc91cb1633c2
+@hardkas/storage-postgres:build: 
+@hardkas/storage-postgres:build: > @hardkas/storage-postgres@0.12.0-rc.26 build C:\Users\jrodr\Documents\kaslabdevs\GitHub\HardKas-repo\packages\storage-postgres
+@hardkas/storage-postgres:build: > tsup
+@hardkas/storage-postgres:build: 
+@hardkas/storage-postgres:build: CLI Building entry: src/index.ts
+@hardkas/storage-postgres:build: CLI Using tsconfig: tsconfig.json
+@hardkas/storage-postgres:build: CLI tsup v8.5.1
+@hardkas/storage-postgres:build: CLI Using tsup config: C:\Users\jrodr\Documents\kaslabdevs\GitHub\HardKas-repo\packages\storage-postgres\tsup.config.ts
+@hardkas/storage-postgres:build: CLI Target: es2022
+@hardkas/storage-postgres:build: CLI Cleaning output folder
+@hardkas/storage-postgres:build: CJS Build start
+@hardkas/storage-postgres:build: ESM Build start
+@hardkas/storage-postgres:build: CJS dist\index.cjs 9.59 KB
+@hardkas/storage-postgres:build: CJS ⚡️ Build success in 1357ms
+@hardkas/storage-postgres:build: ESM dist\index.js 7.82 KB
+@hardkas/storage-postgres:build: ESM ⚡️ Build success in 1357ms
+@hardkas/storage-postgres:build: DTS Build start
+@hardkas/storage-postgres:build: DTS ⚡️ Build success in 5535ms
+@hardkas/storage-postgres:build: DTS dist\index.d.cts 1.58 KB
+@hardkas/storage-postgres:build: DTS dist\index.d.ts  1.58 KB
+@hardkas/sdk:build: cache hit, replaying logs e63e7e6662327d49
+@hardkas/sdk:build: 
+@hardkas/sdk:build: > @hardkas/sdk@0.12.0-rc.26 build C:\Users\jrodr\Documents\kaslabdevs\GitHub\HardKas-repo\packages\sdk
+@hardkas/sdk:build: > tsup src/index.ts src/client.ts --format esm --dts --clean --external @hardkas/pskt-native
+@hardkas/sdk:build: 
+@hardkas/sdk:build: CLI Building entry: src/client.ts, src/index.ts
+@hardkas/sdk:build: CLI Using tsconfig: tsconfig.json
+@hardkas/sdk:build: CLI tsup v8.5.1
+@hardkas/sdk:build: CLI Target: es2022
+@hardkas/sdk:build: CLI Cleaning output folder
+@hardkas/sdk:build: ESM Build start
+@hardkas/sdk:build: DTS Build start
+@hardkas/sdk:build: ESM dist\client.js          125.00 B
+@hardkas/sdk:build: ESM dist\native-UGVM3C7J.js 9.05 KB
+@hardkas/sdk:build: ESM dist\index.js           231.35 KB
+@hardkas/sdk:build: ESM dist\chunk-M246ZPDS.js  4.15 KB
+@hardkas/sdk:build: ESM dist\chunk-MLKGABMK.js  191.00 B
+@hardkas/sdk:build: ESM ⚡️ Build success in 3075ms
+@hardkas/sdk:build: DTS ⚡️ Build success in 8000ms
+@hardkas/sdk:build: DTS dist\index.d.ts  63.70 KB
+@hardkas/sdk:build: DTS dist\client.d.ts 2.48 KB
+@hardkas/sync-daemon:build: cache hit, replaying logs ee276957719ecaac
+@hardkas/sync-daemon:build: 
+@hardkas/sync-daemon:build: > @hardkas/sync-daemon@0.12.0-rc.26 build C:\Users\jrodr\Documents\kaslabdevs\GitHub\HardKas-repo\packages\sync-daemon
+@hardkas/sync-daemon:build: > tsup
+@hardkas/sync-daemon:build: 
+@hardkas/sync-daemon:build: CLI Building entry: src/index.ts
+@hardkas/sync-daemon:build: CLI Using tsconfig: tsconfig.json
+@hardkas/sync-daemon:build: CLI tsup v8.5.1
+@hardkas/sync-daemon:build: CLI Using tsup config: C:\Users\jrodr\Documents\kaslabdevs\GitHub\HardKas-repo\packages\sync-daemon\tsup.config.ts
+@hardkas/sync-daemon:build: CLI Target: es2022
+@hardkas/sync-daemon:build: CLI Cleaning output folder
+@hardkas/sync-daemon:build: CJS Build start
+@hardkas/sync-daemon:build: ESM Build start
+@hardkas/sync-daemon:build: ESM dist\index.js     5.00 KB
+@hardkas/sync-daemon:build: ESM dist\index.js.map 11.18 KB
+@hardkas/sync-daemon:build: ESM ⚡️ Build success in 1397ms
+@hardkas/sync-daemon:build: CJS dist\index.cjs     6.96 KB
+@hardkas/sync-daemon:build: CJS dist\index.cjs.map 11.33 KB
+@hardkas/sync-daemon:build: CJS ⚡️ Build success in 1398ms
+@hardkas/sync-daemon:build: DTS Build start
+@hardkas/sync-daemon:build: DTS ⚡️ Build success in 5549ms
+@hardkas/sync-daemon:build: DTS dist\index.d.cts 1008.00 B
+@hardkas/sync-daemon:build: DTS dist\index.d.ts  1008.00 B
+@hardkas/simulator-adapters:build: cache miss, executing b0d03f959bbb21b8
+@hardkas/simulator-adapters:build: 
+@hardkas/simulator-adapters:build: > @hardkas/simulator-adapters@0.12.0-rc.26 build C:\Users\jrodr\Documents\kaslabdevs\GitHub\HardKas-repo\packages\simulator-adapters
+@hardkas/simulator-adapters:build: > tsc
+@hardkas/simulator-adapters:build: 
+@hardkas/testing:build: cache hit, replaying logs 53281a4ca022a6b3
+@hardkas/testing:build: 
+@hardkas/testing:build: > @hardkas/testing@0.12.0-rc.26 build C:\Users\jrodr\Documents\kaslabdevs\GitHub\HardKas-repo\packages\testing
+@hardkas/testing:build: > tsup src/index.ts src/scenarios.ts src/harness.ts src/setup.ts src/reproducibility.ts src/adversarial-fixtures.ts src/mass-setup.ts --format esm --dts --clean --external vitest --external kaspa
+@hardkas/testing:build: 
+@hardkas/testing:build: CLI Building entry: src/adversarial-fixtures.ts, src/harness.ts, src/index.ts, src/mass-setup.ts, src/reproducibility.ts, src/scenarios.ts, src/setup.ts
+@hardkas/testing:build: CLI Using tsconfig: tsconfig.json
+@hardkas/testing:build: CLI tsup v8.5.1
+@hardkas/testing:build: CLI Target: es2022
+@hardkas/testing:build: CLI Cleaning output folder
+@hardkas/testing:build: ESM Build start
+@hardkas/testing:build: ESM dist\harness.js              287.00 B
+@hardkas/testing:build: ESM dist\adversarial-fixtures.js 125.00 B
+@hardkas/testing:build: ESM dist\chunk-LALAYTVL.js       4.80 KB
+@hardkas/testing:build: ESM dist\index.js                167.67 KB
+@hardkas/testing:build: ESM dist\chunk-Q4NLRRZC.js       4.09 KB
+@hardkas/testing:build: ESM dist\reproducibility.js      175.00 B
+@hardkas/testing:build: ESM dist\setup.js                169.00 B
+@hardkas/testing:build: ESM dist\mass-setup.js           187.00 B
+@hardkas/testing:build: ESM dist\chunk-LAUXD45S.js       3.71 KB
+@hardkas/testing:build: ESM dist\chunk-AHS4TIKV.js       2.58 KB
+@hardkas/testing:build: ESM dist\scenarios.js            5.29 KB
+@hardkas/testing:build: ESM dist\chunk-3RG5ZIWI.js       390.00 B
+@hardkas/testing:build: ESM ⚡️ Build success in 229ms
+@hardkas/testing:build: DTS Build start
+@hardkas/testing:build: DTS ⚡️ Build success in 4935ms
+@hardkas/testing:build: DTS dist\mass-setup.d.ts           13.00 B
+@hardkas/testing:build: DTS dist\adversarial-fixtures.d.ts 2.13 KB
+@hardkas/testing:build: DTS dist\harness.d.ts              1.58 KB
+@hardkas/testing:build: DTS dist\reproducibility.d.ts      784.00 B
+@hardkas/testing:build: DTS dist\scenarios.d.ts            301.00 B
+@hardkas/testing:build: DTS dist\index.d.ts                9.08 KB
+@hardkas/testing:build: DTS dist\setup.d.ts                13.00 B
+@hardkas/dev-server:build: cache hit, replaying logs 50a19e89e6cf7fb8
+@hardkas/dev-server:build: 
+@hardkas/dev-server:build: > @hardkas/dev-server@0.12.0-rc.26 build C:\Users\jrodr\Documents\kaslabdevs\GitHub\HardKas-repo\packages\dev-server
+@hardkas/dev-server:build: > tsup src/index.ts --format esm --dts --clean && pnpm build:dashboard
+@hardkas/dev-server:build: 
+@hardkas/dev-server:build: CLI Building entry: src/index.ts
+@hardkas/dev-server:build: CLI Using tsconfig: tsconfig.json
+@hardkas/dev-server:build: CLI tsup v8.5.1
+@hardkas/dev-server:build: CLI Target: es2022
+@hardkas/dev-server:build: CLI Cleaning output folder
+@hardkas/dev-server:build: ESM Build start
+@hardkas/dev-server:build: ESM dist\db-4VZZMREG.js    139.00 B
+@hardkas/dev-server:build: ESM dist\chunk-Q3LPWLHF.js 1.13 KB
+@hardkas/dev-server:build: ESM dist\index.js          99.59 KB
+@hardkas/dev-server:build: ESM ⚡️ Build success in 233ms
+@hardkas/dev-server:build: DTS Build start
+@hardkas/dev-server:build: DTS ⚡️ Build success in 4158ms
+@hardkas/dev-server:build: DTS dist\index.d.ts 1.49 KB
+@hardkas/dev-server:build: 
+@hardkas/dev-server:build: > @hardkas/dev-server@0.12.0-rc.26 build:dashboard C:\Users\jrodr\Documents\kaslabdevs\GitHub\HardKas-repo\packages\dev-server
+@hardkas/dev-server:build: > node scripts/copy-dashboard.js
+@hardkas/dev-server:build: 
+@hardkas/dev-server:build: ⚠️ Warning: Dashboard build not found at C:\Users\jrodr\Documents\kaslabdevs\GitHub\HardKas-repo\apps\dashboard\dist. Run 'pnpm build' in apps/dashboard first.
+@showcase/time-travel-lab:build: cache miss, executing 92b9a1c8472ed673
+@showcase/time-travel-lab:build: 
+@showcase/time-travel-lab:build: > @showcase/time-travel-lab@0.12.0-rc.26 build C:\Users\jrodr\Documents\kaslabdevs\GitHub\HardKas-repo\labs\showcase-suite\apps\time-travel-lab
+@showcase/time-travel-lab:build: > tsc && vite build
+@showcase/time-travel-lab:build: 
+@showcase/time-travel-lab:build: vite v5.4.21 building for production...
+@showcase/time-travel-lab:build: transforming...
+@showcase/time-travel-lab:build: ✓ 36 modules transformed.
+@showcase/time-travel-lab:build: rendering chunks...
+@showcase/time-travel-lab:build: computing gzip size...
+@showcase/time-travel-lab:build: dist/index.html                   0.47 kB │ gzip:  0.33 kB
+@showcase/time-travel-lab:build: dist/assets/index-Xl_LEyyn.css    6.17 kB │ gzip:  1.83 kB
+@showcase/time-travel-lab:build: dist/assets/index-BAv00ktm.js   151.62 kB │ gzip: 48.67 kB
+@showcase/time-travel-lab:build: ✓ built in 1.48s
+@showcase/silver-playground:build: cache miss, executing 9de070fae4190ba9
+@showcase/silver-playground:build: 
+@showcase/silver-playground:build: > @showcase/silver-playground@0.12.0-rc.26 build C:\Users\jrodr\Documents\kaslabdevs\GitHub\HardKas-repo\labs\showcase-suite\apps\silver-playground
+@showcase/silver-playground:build: > tsc && vite build
+@showcase/silver-playground:build: 
+@showcase/silver-playground:build: vite v5.4.21 building for production...
+@showcase/silver-playground:build: transforming...
+@showcase/silver-playground:build: ✓ 36 modules transformed.
+@showcase/silver-playground:build: rendering chunks...
+@showcase/silver-playground:build: computing gzip size...
+@showcase/silver-playground:build: dist/index.html                   0.48 kB │ gzip:  0.33 kB
+@showcase/silver-playground:build: dist/assets/index-CiYxPlNF.css    6.69 kB │ gzip:  1.98 kB
+@showcase/silver-playground:build: dist/assets/index-CfOzKxZU.js   151.68 kB │ gzip: 48.74 kB
+@showcase/silver-playground:build: ✓ built in 1.49s
+@showcase/mission-control:build: cache miss, executing b6092d9e6d961045
+@showcase/mission-control:build: 
+@showcase/mission-control:build: > @showcase/mission-control@0.12.0-rc.26 build C:\Users\jrodr\Documents\kaslabdevs\GitHub\HardKas-repo\labs\showcase-suite\apps\mission-control
+@showcase/mission-control:build: > tsc && vite build
+@showcase/mission-control:build: 
+@showcase/mission-control:build: vite v5.4.21 building for production...
+@showcase/mission-control:build: transforming...
+@showcase/mission-control:build: ✓ 36 modules transformed.
+@showcase/mission-control:build: rendering chunks...
+@showcase/mission-control:build: computing gzip size...
+@showcase/mission-control:build: dist/index.html                   0.47 kB │ gzip:  0.33 kB
+@showcase/mission-control:build: dist/assets/index-DYTnJeoe.css    6.40 kB │ gzip:  1.86 kB
+@showcase/mission-control:build: dist/assets/index-BwpUYSKE.js   152.27 kB │ gzip: 48.74 kB
+@showcase/mission-control:build: ✓ built in 1.50s
+@showcase/treasury-console:build: cache miss, executing e8c069872fc7ce6b
+@showcase/treasury-console:build: 
+@showcase/treasury-console:build: > @showcase/treasury-console@0.12.0-rc.26 build C:\Users\jrodr\Documents\kaslabdevs\GitHub\HardKas-repo\labs\showcase-suite\apps\treasury-console
+@showcase/treasury-console:build: > tsc && vite build
+@showcase/treasury-console:build: 
+@showcase/treasury-console:build: vite v5.4.21 building for production...
+@showcase/treasury-console:build: transforming...
+@showcase/treasury-console:build: ✓ 36 modules transformed.
+@showcase/treasury-console:build: rendering chunks...
+@showcase/treasury-console:build: computing gzip size...
+@showcase/treasury-console:build: dist/index.html                   0.48 kB │ gzip:  0.33 kB
+@showcase/treasury-console:build: dist/assets/index-Uv41b2EU.css    7.03 kB │ gzip:  1.96 kB
+@showcase/treasury-console:build: dist/assets/index-CuHjL4RF.js   152.01 kB │ gzip: 48.79 kB
+@showcase/treasury-console:build: ✓ built in 1.48s
+@showcase/explorer-live:build: cache miss, executing eb23fbe1a3e5fc28
+@showcase/explorer-live:build: 
+@showcase/explorer-live:build: > @showcase/explorer-live@0.12.0-rc.26 build C:\Users\jrodr\Documents\kaslabdevs\GitHub\HardKas-repo\labs\showcase-suite\apps\explorer-live
+@showcase/explorer-live:build: > tsc && vite build
+@showcase/explorer-live:build: 
+@showcase/explorer-live:build: vite v5.4.21 building for production...
+@showcase/explorer-live:build: transforming...
+@showcase/explorer-live:build: ✓ 36 modules transformed.
+@showcase/explorer-live:build: rendering chunks...
+@showcase/explorer-live:build: computing gzip size...
+@showcase/explorer-live:build: dist/index.html                   0.47 kB │ gzip:  0.33 kB
+@showcase/explorer-live:build: dist/assets/index-8Dl-9x2g.css    7.30 kB │ gzip:  2.07 kB
+@showcase/explorer-live:build: dist/assets/index-CU-26UkU.js   151.73 kB │ gzip: 48.57 kB
+@showcase/explorer-live:build: ✓ built in 1.49s
+@showcase/merchant-terminal:build: cache miss, executing 2bff92c2c54e7685
+@showcase/merchant-terminal:build: 
+@showcase/merchant-terminal:build: > @showcase/merchant-terminal@0.12.0-rc.26 build C:\Users\jrodr\Documents\kaslabdevs\GitHub\HardKas-repo\labs\showcase-suite\apps\merchant-terminal
+@showcase/merchant-terminal:build: > tsc && vite build
+@showcase/merchant-terminal:build: 
+@showcase/merchant-terminal:build: vite v5.4.21 building for production...
+@showcase/merchant-terminal:build: transforming...
+@showcase/merchant-terminal:build: ✓ 36 modules transformed.
+@showcase/merchant-terminal:build: rendering chunks...
+@showcase/merchant-terminal:build: computing gzip size...
+@showcase/merchant-terminal:build: dist/index.html                   0.48 kB │ gzip:  0.33 kB
+@showcase/merchant-terminal:build: dist/assets/index-B-7nseTq.css    6.87 kB │ gzip:  1.97 kB
+@showcase/merchant-terminal:build: dist/assets/index-BLQA35CU.js   151.72 kB │ gzip: 48.71 kB
+@showcase/merchant-terminal:build: ✓ built in 1.49s
+@showcase/wallet-pro:build: cache miss, executing 8d9caa9941b14588
+@showcase/wallet-pro:build: 
+@showcase/wallet-pro:build: > @showcase/wallet-pro@0.12.0-rc.26 build C:\Users\jrodr\Documents\kaslabdevs\GitHub\HardKas-repo\labs\showcase-suite\apps\wallet-pro
+@showcase/wallet-pro:build: > tsc && vite build
+@showcase/wallet-pro:build: 
+@showcase/wallet-pro:build: vite v5.4.21 building for production...
+@showcase/wallet-pro:build: transforming...
+@showcase/wallet-pro:build: ✓ 36 modules transformed.
+@showcase/wallet-pro:build: rendering chunks...
+@showcase/wallet-pro:build: computing gzip size...
+@showcase/wallet-pro:build: dist/index.html                   0.47 kB │ gzip:  0.33 kB
+@showcase/wallet-pro:build: dist/assets/index-drX059ij.css    6.64 kB │ gzip:  1.91 kB
+@showcase/wallet-pro:build: dist/assets/index-DPTZCZNP.js   151.60 kB │ gzip: 48.65 kB
+@showcase/wallet-pro:build: ✓ built in 1.47s
+@hardkas/cli:build: cache hit, replaying logs 4fbc822390ec1f37
+@hardkas/cli:build: 
+@hardkas/cli:build: > @hardkas/cli@0.12.0-rc.26 build C:\Users\jrodr\Documents\kaslabdevs\GitHub\HardKas-repo\packages\cli
+@hardkas/cli:build: > tsup src/index.ts src/public.ts --format esm --dts --clean --external vitest --external kaspa-wasm
+@hardkas/cli:build: 
+@hardkas/cli:build: CLI Building entry: src/index.ts, src/public.ts
+@hardkas/cli:build: CLI Using tsconfig: tsconfig.json
+@hardkas/cli:build: CLI tsup v8.5.1
+@hardkas/cli:build: CLI Target: es2022
+@hardkas/cli:build: CLI Cleaning output folder
+@hardkas/cli:build: ESM Build start
+@hardkas/cli:build: ESM dist\chaos-runner-ILHJUHNE.js                10.30 KB
+@hardkas/cli:build: ESM dist\silver-records-4NCHUXIE.js              1.41 KB
+@hardkas/cli:build: ESM dist\telemetry-runners-ORZY2CGS.js           16.09 KB
+@hardkas/cli:build: ESM dist\corpus-verify-runner-SSZUDKNM.js        1.53 KB
+@hardkas/cli:build: ESM dist\session-runner-KSHXJ2TY.js              4.47 KB
+@hardkas/cli:build: ESM dist\kaspa-doctor-runner-QICDMYLZ.js         5.24 KB
+@hardkas/cli:build: ESM dist\kaspa-wallet-runner-EVYI73C5.js         10.43 KB
+@hardkas/cli:build: ESM dist\mutating-TWNRRWQA.js                    4.48 KB
+@hardkas/cli:build: ESM dist\capabilities-GB5UI72A.js                1.39 KB
+@hardkas/cli:build: ESM dist\torture-runner-RGWMYORY.js              16.99 KB
+@hardkas/cli:build: ESM dist\verify-HXJY2SSR.js                      1.23 KB
+@hardkas/cli:build: ESM dist\dev-init-runner-YIYVHYA7.js             137.00 B
+@hardkas/cli:build: ESM dist\dev-accounts-runners-ZCTT7RNP.js        4.76 KB
+@hardkas/cli:build: ESM dist\dev-tx-generate-runner-2DYTW62G.js      2.55 KB
+@hardkas/cli:build: ESM dist\dev-doctor-runner-5VPNSPE7.js           22.79 KB
+@hardkas/cli:build: ESM dist\inspect-2OJU6X75.js                     1.86 KB
+@hardkas/cli:build: ESM dist\dev-last-runner-Y7EEDJRY.js             3.64 KB
+@hardkas/cli:build: ESM dist\dev-tx-runners-MTPKD5GS.js              201.00 B
+@hardkas/cli:build: ESM dist\dev-fixture-generate-runner-5KDV3EYX.js 1.88 KB
+@hardkas/cli:build: ESM dist\doctor-signer-runner-2JML3D5M.js        1.59 KB
+@hardkas/cli:build: ESM dist\doctor-node-runner-KI5JYSLA.js          143.00 B
+@hardkas/cli:build: ESM dist\snapshot-create-runner-TQUFBKYL.js      1.77 KB
+@hardkas/cli:build: ESM dist\localnet-account-runners-C7NDQCOT.js    1.24 KB
+@hardkas/cli:build: ESM dist\local-wizard-runner-QVDBHNYO.js         7.06 KB
+@hardkas/cli:build: ESM dist\dev-env-runner-VKXER7UY.js              165.00 B
+@hardkas/cli:build: ESM dist\snapshot-verify-runner-UPORX6MJ.js      2.15 KB
+@hardkas/cli:build: ESM dist\artifact-lineage-runner-BDZPD7UB.js     2.76 KB
+@hardkas/cli:build: ESM dist\snapshot-replay-runner-D65Y2DW2.js      3.47 KB
+@hardkas/cli:build: ESM dist\replay-verify-runner-CZ6NMXNL.js        177.00 B
+@hardkas/cli:build: ESM dist\dev-create-runner-XMTBJVB3.js           18.95 KB
+@hardkas/cli:build: ESM dist\replay-diff-runner-UJX7RGJN.js          3.57 KB
+@hardkas/cli:build: ESM dist\rpc-doctor-runner-W4I6SOBI.js           7.31 KB
+@hardkas/cli:build: ESM dist\dag-runners-ZNHGL23C.js                 2.52 KB
+@hardkas/cli:build: ESM dist\chunk-PE5FCRMH.js                       1.68 KB
+@hardkas/cli:build: ESM dist\accounts-consolidate-runner-23CWPXUB.js 7.12 KB
+@hardkas/cli:build: ESM dist\artifact-migrate-runner-TWEALEP3.js     2.51 KB
+@hardkas/cli:build: ESM dist\accounts-keystore-runners-OI6QXPJ6.js   7.01 KB
+@hardkas/cli:build: ESM dist\tx-batch-runner-4WLEYLL2.js             3.96 KB
+@hardkas/cli:build: ESM dist\tx-verify-runner-YNBPKGU5.js            139.00 B
+@hardkas/cli:build: ESM dist\tx-wait-runner-BYNPPMFO.js              6.63 KB
+@hardkas/cli:build: ESM dist\tx-status-runner-22RQGPHF.js            325.00 B
+@hardkas/cli:build: ESM dist\chunk-MTE77E37.js                       4.23 KB
+@hardkas/cli:build: ESM dist\tx-compare-runner-23U7AGBU.js           2.65 KB
+@hardkas/cli:build: ESM dist\chunk-RFGSVSDI.js                       4.61 KB
+@hardkas/cli:build: ESM dist\artifact-create-runner-MAHP6RTM.js      1.58 KB
+@hardkas/cli:build: ESM dist\deployment-runners-NSPO55WV.js          389.00 B
+@hardkas/cli:build: ESM dist\artifact-inspect-runner-3JCJIF5O.js     4.31 KB
+@hardkas/cli:build: ESM dist\index.js                                2.53 KB
+@hardkas/cli:build: ESM dist\public.js                               19.65 KB
+@hardkas/cli:build: ESM dist\chunk-Z2BOCJ7V.js                       4.32 KB
+@hardkas/cli:build: ESM dist\chunk-RSWKLXKU.js                       4.13 KB
+@hardkas/cli:build: ESM dist\chunk-SPOLNJ2L.js                       1.29 KB
+@hardkas/cli:build: ESM dist\chunk-4CHU6GNA.js                       2.03 KB
+@hardkas/cli:build: ESM dist\chunk-OTRU5MW7.js                       1.90 KB
+@hardkas/cli:build: ESM dist\chunk-GSQCDE7Q.js                       1.92 KB
+@hardkas/cli:build: ESM dist\chunk-QTY5JWHX.js                       3.79 KB
+@hardkas/cli:build: ESM dist\output-GPDVYSBP.js                      159.00 B
+@hardkas/cli:build: ESM dist\chunk-USW325AD.js                       6.53 KB
+@hardkas/cli:build: ESM dist\chunk-IUSCVEHM.js                       7.16 KB
+@hardkas/cli:build: ESM dist\chunk-ZM2NBOAE.js                       916.00 B
+@hardkas/cli:build: ESM dist\chunk-VQN6EBKC.js                       398.30 KB
+@hardkas/cli:build: ESM dist\dev-server-runner-WEJLJANL.js           183.00 B
+@hardkas/cli:build: ESM dist\chunk-FX777FFF.js                       36.55 KB
+@hardkas/cli:build: ESM dist\chunk-P4NN7U65.js                       10.25 KB
+@hardkas/cli:build: ESM dist\chunk-VSTNEH5Q.js                       1.29 KB
+@hardkas/cli:build: ESM dist\ui-D3CL2BNR.js                          159.00 B
+@hardkas/cli:build: ESM dist\cli-errors-T6A2WHEJ.js                  401.00 B
+@hardkas/cli:build: ESM dist\next-steps-WOM6FLCS.js                  203.00 B
+@hardkas/cli:build: ESM dist\toolchain-install-4E5IUKZT.js           131.00 B
+@hardkas/cli:build: ESM dist\chunk-JCVRNOSQ.js                       3.77 KB
+@hardkas/cli:build: ESM dist\chunk-LRKVRGTW.js                       4.31 KB
+@hardkas/cli:build: ESM dist\chunk-EIVXNJTN.js                       1.80 KB
+@hardkas/cli:build: ESM dist\chunk-YEPVDZON.js                       2.20 KB
+@hardkas/cli:build: ESM ⚡️ Build success in 303ms
+@hardkas/cli:build: DTS Build start
+@hardkas/cli:build: DTS ⚡️ Build success in 9916ms
+@hardkas/cli:build: DTS dist\index.d.ts  20.00 B
+@hardkas/cli:build: DTS dist\public.d.ts 2.67 KB
+@showcase/cli-studio:build: cache miss, executing 929f89f879f0ebb0
+@showcase/cli-studio:build: 
+@showcase/cli-studio:build: > @showcase/cli-studio@0.12.0-rc.26 build C:\Users\jrodr\Documents\kaslabdevs\GitHub\HardKas-repo\labs\showcase-suite\apps\cli-studio
+@showcase/cli-studio:build: > tsc && vite build
+@showcase/cli-studio:build: 
+@showcase/cli-studio:build: vite v5.4.21 building for production...
+@showcase/cli-studio:build: transforming...
+@showcase/cli-studio:build: ✓ 36 modules transformed.
+@showcase/cli-studio:build: rendering chunks...
+@showcase/cli-studio:build: computing gzip size...
+@showcase/cli-studio:build: dist/index.html                   0.47 kB │ gzip:  0.32 kB
+@showcase/cli-studio:build: dist/assets/index-BZmY0YYE.css    6.06 kB │ gzip:  1.81 kB
+@showcase/cli-studio:build: dist/assets/index-CueTQZsc.js   151.24 kB │ gzip: 48.58 kB
+@showcase/cli-studio:build: ✓ built in 1.48s
+
+ Tasks:    46 successful, 46 total
+Cached:    32 cached, 46 total
+  Time:    1m31.916s 
+
+ WARNING  no output files found for task @hardkas/dashboard#build. Please check your `outputs` key in `turbo.json`
+ WARNING  no output files found for task @hardkas/docs#build. Please check your `outputs` key in `turbo.json`

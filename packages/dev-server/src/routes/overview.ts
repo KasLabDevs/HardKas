@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { loadHardkasConfig } from "@hardkas/config";
 import { getQueryBackend } from "../db.js";
 import { listHardkasAccounts } from "@hardkas/accounts";
+import { overallReplayStatus } from "../replay-status.js";
 import path from "node:path";
 
 export const overviewRoutes = new Hono();
@@ -28,12 +29,8 @@ overviewRoutes.get("/", async (c) => {
     const receipts = await queryBackend.findArtifacts({ schema: "hardkas.txReceipt.v1" });
 
     replayCount = replays.length;
-    if (replays.length > 0) {
-      const allPassed = replays.every(
-        (r) => r.payload.planOk && r.payload.receiptOk && r.payload.invariantsOk
-      );
-      replayStatus = allPassed ? "PASS" : "FAIL";
-    }
+    // REPLAY-TRUST-2 (D-RT4): each receipt's latest report that verifies; legacy and unverifiable reports are never a PASS
+    replayStatus = overallReplayStatus(replays);
 
     const replayTxIds = new Set(replays.map((r) => r.payload.txId));
     pendingReplays = receipts.filter(
@@ -149,17 +146,19 @@ overviewRoutes.get("/", async (c) => {
   } else if (replayCount > 0 && pendingReplays === 0 && corruptedCount === 0) {
     runtimeState = "VERIFIED";
     runtimeReason = "Local deterministic runtime is consistent.";
-    recommendedAction = "hardkas dashboard";
+    // SURFACE-TRUTH-1B: the CLI registers no `dashboard` command (this page is the dashboard)
+    recommendedAction = "hardkas status";
   } else if (artifactCount > 0 && eventCount === 0) {
     runtimeState = "ACTIVE";
     runtimeReason = "causal_events_not_recorded";
-    recommendedAction = "hardkas dashboard";
+    recommendedAction = "hardkas status";
   }
 
   const guarantees = {
     artifactIntegrity: corruptedCount === 0 ? "available" : "failed",
+    // REPLAY-TRUST-2 (D-RT4): a legacy verdict is neither verified nor failed; reports that do not verify count as none
     localReplay:
-      replayCount > 0 ? (replayStatus === "PASS" ? "verified" : "failed") : "not_checked",
+      replayStatus === "PASS" ? "verified" : replayStatus === "FAIL" ? "failed" : replayStatus === "LEGACY" ? "legacy" : "not_checked",
     consensusValidated: false,
     networkFinality: false
   };

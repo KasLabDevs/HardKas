@@ -8,9 +8,6 @@ import type {
   MempoolEntry,
   BlockDagInfo,
   ServerInfo,
-  KaspaSubscription,
-  UtxosChangedEvent,
-  VirtualChainChangedEvent,
   KaspaRpcTransaction
 } from "@hardkas/kaspa-rpc";
 import { getAddressBalanceSompi, getSpendableUtxos } from "./balance.js";
@@ -23,9 +20,6 @@ export class LocalnetSimulatedProvider implements KaspaRpcClient {
   async call<TResponse = unknown>(method: string, params?: any): Promise<TResponse> {
     return null as TResponse;
   }
-
-  on(event: string, handler: (data: any) => void): void {}
-  off(event: string, handler: (data: any) => void): void {}
 
   async getInfo(): Promise<KaspaNodeInfo> {
     return {
@@ -138,24 +132,6 @@ export class LocalnetSimulatedProvider implements KaspaRpcClient {
       networkId: "simnet" as NetworkId,
       serverVersion: "hardkas-localnet-mock",
       isSynced: true
-    };
-  }
-
-  async subscribeToUtxosChanged(addresses: readonly string[], handler: (event: UtxosChangedEvent) => void): Promise<KaspaSubscription> {
-    let closed = false;
-    return {
-      id: "simulated_sub",
-      get closed() { return closed; },
-      unsubscribe: async () => { closed = true; }
-    };
-  }
-
-  async subscribeToVirtualChainChanged(options: { includeAcceptedTransactionIds: boolean }, handler: (event: VirtualChainChangedEvent) => void): Promise<KaspaSubscription> {
-    let closed = false;
-    return {
-      id: "simulated_sub_vc",
-      get closed() { return closed; },
-      unsubscribe: async () => { closed = true; }
     };
   }
 

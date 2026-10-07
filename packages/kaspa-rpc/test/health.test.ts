@@ -98,7 +98,8 @@ describe("RPC Health API", () => {
           isSynced: true
         },
         latencyMs: 10
-      })
+      }),
+      close: vi.fn().mockResolvedValue(undefined)
     };
 
     vi.mocked(KaspaJsonRpcClient).mockReturnValue(mockClient as any);
@@ -109,5 +110,7 @@ describe("RPC Health API", () => {
     expect(result.networkId).toBe("mainnet");
     expect(result.virtualDaaScore).toBe("456");
     expect(KaspaJsonRpcClient).toHaveBeenCalledTimes(1);
+    // RESOURCE-LIFECYCLE-1: the check created the client, so it releases it.
+    expect(mockClient.close).toHaveBeenCalledTimes(1);
   });
 });

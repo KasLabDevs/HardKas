@@ -1,0 +1,445 @@
+﻿{
+  "before": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-3a\\before",
+  "after": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-3a\\after",
+  "packs": {
+    "before": 33,
+    "after": 32,
+    "removed": [
+      "@hardkas/artifacts",
+      "@hardkas/bridge-local",
+      "@hardkas/cli",
+      "@hardkas/client",
+      "@hardkas/config",
+      "@hardkas/core",
+      "@hardkas/dev-server",
+      "@hardkas/escrow",
+      "@hardkas/jobs",
+      "@hardkas/kaspa-rpc",
+      "@hardkas/l2",
+      "@hardkas/localnet",
+      "@hardkas/node-orchestrator",
+      "@hardkas/node-runner",
+      "@hardkas/observability",
+      "@hardkas/plugin-local-indexer",
+      "@hardkas/plugin-rpc-backend",
+      "@hardkas/pskt-native",
+      "@hardkas/query",
+      "@hardkas/query-store",
+      "@hardkas/react",
+      "@hardkas/rpc-events",
+      "@hardkas/sdk",
+      "@hardkas/sessions",
+      "@hardkas/simulator",
+      "@hardkas/simulator-adapters",
+      "@hardkas/storage-postgres",
+      "@hardkas/sync-daemon",
+      "@hardkas/testing",
+      "@hardkas/toolkit",
+      "@hardkas/tx-builder",
+      "@hardkas/wallet-adapter"
+    ],
+    "added": [
+      "@hardkas/artifacts",
+      "@hardkas/bridge-local",
+      "@hardkas/cli",
+      "@hardkas/client",
+      "@hardkas/config",
+      "@hardkas/core",
+      "@hardkas/dev-server",
+      "@hardkas/escrow",
+      "@hardkas/jobs",
+      "@hardkas/kaspa-rpc",
+      "@hardkas/l2",
+      "@hardkas/localnet",
+      "@hardkas/node-orchestrator",
+      "@hardkas/node-runner",
+      "@hardkas/observability",
+      "@hardkas/plugin-local-indexer",
+      "@hardkas/plugin-rpc-backend",
+      "@hardkas/pskt-native",
+      "@hardkas/query",
+      "@hardkas/query-store",
+      "@hardkas/react",
+      "@hardkas/sdk",
+      "@hardkas/sessions",
+      "@hardkas/simulator",
+      "@hardkas/simulator-adapters",
+      "@hardkas/storage-postgres",
+      "@hardkas/sync-daemon",
+      "@hardkas/testing",
+      "@hardkas/toolkit",
+      "@hardkas/tx-builder",
+      "@hardkas/wallet-adapter"
+    ]
+  },
+  "manifests": [
+    {
+      "package": "@hardkas/accounts",
+      "field": "dependencies",
+      "removed": [],
+      "added": [],
+      "changed": []
+    },
+    {
+      "package": "@hardkas/artifacts",
+      "field": "dependencies",
+      "removed": [],
+      "added": [],
+      "changed": []
+    },
+    {
+      "package": "@hardkas/bridge-local",
+      "field": "dependencies",
+      "removed": [],
+      "added": [],
+      "changed": []
+    },
+    {
+      "package": "@hardkas/cli",
+      "field": "dependencies",
+      "removed": [],
+      "added": [],
+      "changed": []
+    },
+    {
+      "package": "@hardkas/dev-server",
+      "field": "dependencies",
+      "removed": [],
+      "added": [],
+      "changed": []
+    },
+    {
+      "package": "@hardkas/kaspa-rpc",
+      "field": "dependencies",
+      "removed": [],
+      "added": [],
+      "changed": []
+    },
+    {
+      "package": "@hardkas/localnet",
+      "field": "dependencies",
+      "removed": [],
+      "added": [],
+      "changed": []
+    },
+    {
+      "package": "@hardkas/query",
+      "field": "dependencies",
+      "removed": [],
+      "added": [],
+      "changed": []
+    },
+    {
+      "package": "@hardkas/sdk",
+      "field": "dependencies",
+      "removed": [
+        "@hardkas/rpc-events"
+      ],
+      "added": [],
+      "changed": []
+    },
+    {
+      "package": "@hardkas/testing",
+      "field": "dependencies",
+      "removed": [],
+      "added": [],
+      "changed": []
+    },
+    {
+      "package": "@hardkas/toolkit",
+      "field": "dependencies",
+      "removed": [],
+      "added": [],
+      "changed": []
+    }
+  ],
+  "consumers": {
+    "npm": {
+      "install": {
+        "before": 0,
+        "after": 0
+      },
+      "hardkasInstalled": {
+        "before": 25,
+        "after": 24,
+        "removed": [
+          "@hardkas/rpc-events"
+        ],
+        "added": []
+      },
+      "thirdParty": {
+        "before": 145,
+        "after": 145,
+        "removed": [],
+        "added": []
+      },
+      "hardkasFromRegistry": {
+        "before": 0,
+        "after": 0
+      },
+      "workspaceLeak": {
+        "before": false,
+        "after": false
+      },
+      "version": {
+        "before": "0.12.0-rc.26",
+        "after": "0.12.0-rc.26"
+      },
+      "imports": {
+        "before": {
+          "ok": 31,
+          "failed": 2
+        },
+        "after": {
+          "ok": 30,
+          "failed": 2
+        },
+        "removedSpecs": [
+          "@hardkas/accounts/internal/wasm-rpc-serialization.js",
+          "@hardkas/artifacts",
+          "@hardkas/bridge-local",
+          "@hardkas/cli/public",
+          "@hardkas/config",
+          "@hardkas/core",
+          "@hardkas/dev-server",
+          "@hardkas/escrow",
+          "@hardkas/jobs",
+          "@hardkas/kaspa-rpc",
+          "@hardkas/kaspa-rpc/adapters",
+          "@hardkas/l2",
+          "@hardkas/localnet",
+          "@hardkas/node-orchestrator",
+          "@hardkas/node-runner",
+          "@hardkas/observability",
+          "@hardkas/pskt-native",
+          "@hardkas/query",
+          "@hardkas/query-store",
+          "@hardkas/rpc-events",
+          "@hardkas/sdk",
+          "@hardkas/sdk/client",
+          "@hardkas/sessions",
+          "@hardkas/simulator",
+          "@hardkas/testing",
+          "@hardkas/testing/harness",
+          "@hardkas/testing/setup",
+          "@hardkas/testing/adversarial-fixtures",
+          "@hardkas/testing/mass-setup",
+          "@hardkas/testing/scenarios",
+          "@hardkas/toolkit",
+          "@hardkas/tx-builder"
+        ],
+        "addedSpecs": [
+          "@hardkas/accounts/internal/wasm-rpc-serialization.js",
+          "@hardkas/artifacts",
+          "@hardkas/bridge-local",
+          "@hardkas/cli/public",
+          "@hardkas/config",
+          "@hardkas/core",
+          "@hardkas/dev-server",
+          "@hardkas/escrow",
+          "@hardkas/jobs",
+          "@hardkas/kaspa-rpc",
+          "@hardkas/kaspa-rpc/adapters",
+          "@hardkas/l2",
+          "@hardkas/localnet",
+          "@hardkas/node-orchestrator",
+          "@hardkas/node-runner",
+          "@hardkas/observability",
+          "@hardkas/pskt-native",
+          "@hardkas/query",
+          "@hardkas/query-store",
+          "@hardkas/sdk",
+          "@hardkas/sdk/client",
+          "@hardkas/sessions",
+          "@hardkas/simulator",
+          "@hardkas/testing",
+          "@hardkas/testing/harness",
+          "@hardkas/testing/setup",
+          "@hardkas/testing/adversarial-fixtures",
+          "@hardkas/testing/mass-setup",
+          "@hardkas/testing/scenarios",
+          "@hardkas/toolkit",
+          "@hardkas/tx-builder"
+        ],
+        "changed": []
+      },
+      "steps": {
+        "before": 7,
+        "after": 7,
+        "allOkBefore": true,
+        "allOkAfter": true,
+        "differences": []
+      },
+      "planJson": {
+        "before": true,
+        "after": true,
+        "identicalAfterNormalising": true
+      }
+    },
+    "pnpm": {
+      "install": {
+        "before": 0,
+        "after": 0
+      },
+      "hardkasInstalled": {
+        "before": 33,
+        "after": 32,
+        "removed": [
+          "@hardkas/rpc-events"
+        ],
+        "added": []
+      },
+      "thirdParty": {
+        "before": 150,
+        "after": 150,
+        "removed": [],
+        "added": []
+      },
+      "hardkasFromRegistry": {
+        "before": 0,
+        "after": 0
+      },
+      "workspaceLeak": {
+        "before": false,
+        "after": false
+      },
+      "version": {
+        "before": "0.12.0-rc.26",
+        "after": "0.12.0-rc.26"
+      },
+      "imports": {
+        "before": {
+          "ok": 39,
+          "failed": 2
+        },
+        "after": {
+          "ok": 38,
+          "failed": 2
+        },
+        "removedSpecs": [
+          "@hardkas/accounts/internal/wasm-rpc-serialization.js",
+          "@hardkas/artifacts",
+          "@hardkas/bridge-local",
+          "@hardkas/cli/public",
+          "@hardkas/client",
+          "@hardkas/config",
+          "@hardkas/core",
+          "@hardkas/dev-server",
+          "@hardkas/escrow",
+          "@hardkas/jobs",
+          "@hardkas/kaspa-rpc",
+          "@hardkas/kaspa-rpc/adapters",
+          "@hardkas/l2",
+          "@hardkas/localnet",
+          "@hardkas/node-orchestrator",
+          "@hardkas/node-runner",
+          "@hardkas/observability",
+          "@hardkas/plugin-local-indexer",
+          "@hardkas/plugin-rpc-backend",
+          "@hardkas/pskt-native",
+          "@hardkas/query",
+          "@hardkas/query-store",
+          "@hardkas/react",
+          "@hardkas/rpc-events",
+          "@hardkas/sdk",
+          "@hardkas/sdk/client",
+          "@hardkas/sessions",
+          "@hardkas/simulator",
+          "@hardkas/simulator-adapters",
+          "@hardkas/storage-postgres",
+          "@hardkas/sync-daemon",
+          "@hardkas/testing",
+          "@hardkas/testing/harness",
+          "@hardkas/testing/setup",
+          "@hardkas/testing/adversarial-fixtures",
+          "@hardkas/testing/mass-setup",
+          "@hardkas/testing/scenarios",
+          "@hardkas/toolkit",
+          "@hardkas/tx-builder",
+          "@hardkas/wallet-adapter"
+        ],
+        "addedSpecs": [
+          "@hardkas/accounts/internal/wasm-rpc-serialization.js",
+          "@hardkas/artifacts",
+          "@hardkas/bridge-local",
+          "@hardkas/cli/public",
+          "@hardkas/client",
+          "@hardkas/config",
+          "@hardkas/core",
+          "@hardkas/dev-server",
+          "@hardkas/escrow",
+          "@hardkas/jobs",
+          "@hardkas/kaspa-rpc",
+          "@hardkas/kaspa-rpc/adapters",
+          "@hardkas/l2",
+          "@hardkas/localnet",
+          "@hardkas/node-orchestrator",
+          "@hardkas/node-runner",
+          "@hardkas/observability",
+          "@hardkas/plugin-local-indexer",
+          "@hardkas/plugin-rpc-backend",
+          "@hardkas/pskt-native",
+          "@hardkas/query",
+          "@hardkas/query-store",
+          "@hardkas/react",
+          "@hardkas/sdk",
+          "@hardkas/sdk/client",
+          "@hardkas/sessions",
+          "@hardkas/simulator",
+          "@hardkas/simulator-adapters",
+          "@hardkas/storage-postgres",
+          "@hardkas/sync-daemon",
+          "@hardkas/testing",
+          "@hardkas/testing/harness",
+          "@hardkas/testing/setup",
+          "@hardkas/testing/adversarial-fixtures",
+          "@hardkas/testing/mass-setup",
+          "@hardkas/testing/scenarios",
+          "@hardkas/toolkit",
+          "@hardkas/tx-builder",
+          "@hardkas/wallet-adapter"
+        ],
+        "changed": [
+          {
+            "spec": "@hardkas/testing/setup",
+            "before": {
+              "spec": "@hardkas/testing/setup",
+              "ok": false,
+              "error": "ERR_MODULE_NOT_FOUND: Cannot find package 'vitest' imported from C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-3a\\before\\pnpm-consumer\\node_modules\\.pnpm\\@hardkas+testing@file+..+ta_c68dcf457b79915f1d1c8b0eda907762\\node_modules\\@ha"
+            },
+            "after": {
+              "spec": "@hardkas/testing/setup",
+              "ok": false,
+              "error": "ERR_MODULE_NOT_FOUND: Cannot find package 'vitest' imported from C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-3a\\after\\pnpm-consumer\\node_modules\\.pnpm\\@hardkas+testing@file+..+ta_c68dcf457b79915f1d1c8b0eda907762\\node_modules\\@har"
+            }
+          },
+          {
+            "spec": "@hardkas/testing/scenarios",
+            "before": {
+              "spec": "@hardkas/testing/scenarios",
+              "ok": false,
+              "error": "ERR_MODULE_NOT_FOUND: Cannot find package 'vitest' imported from C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-3a\\before\\pnpm-consumer\\node_modules\\.pnpm\\@hardkas+testing@file+..+ta_c68dcf457b79915f1d1c8b0eda907762\\node_modules\\@ha"
+            },
+            "after": {
+              "spec": "@hardkas/testing/scenarios",
+              "ok": false,
+              "error": "ERR_MODULE_NOT_FOUND: Cannot find package 'vitest' imported from C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-3a\\after\\pnpm-consumer\\node_modules\\.pnpm\\@hardkas+testing@file+..+ta_c68dcf457b79915f1d1c8b0eda907762\\node_modules\\@har"
+            }
+          }
+        ]
+      },
+      "steps": {
+        "before": 7,
+        "after": 7,
+        "allOkBefore": true,
+        "allOkAfter": true,
+        "differences": []
+      },
+      "planJson": {
+        "before": true,
+        "after": true,
+        "identicalAfterNormalising": true
+      }
+    }
+  }
+}

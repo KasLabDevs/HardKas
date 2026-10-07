@@ -3,7 +3,7 @@ import path from "node:path";
 import type { HardkasConfig } from "@hardkas/config";
 import { createDeterministicAccounts } from "@hardkas/localnet";
 import type { HardkasAccount, HardkasSyntheticAccount } from "./types.js";
-import { CrossWorldAccountCollisionError, AccountNetworkMismatchError } from "@hardkas/core";
+import { CrossWorldAccountCollisionError, AccountNetworkMismatchError, stripBom } from "@hardkas/core";
 import {
   loadRealAccountStoreSync,
   getRealDevAccount,
@@ -147,7 +147,7 @@ export function listHardkasAccounts(config?: HardkasConfig, executionTarget?: im
         try {
           const name = path.basename(file, ".json");
           const data = fs.readFileSync(path.join(devAccountsDir, file), "utf-8");
-          const keystore = JSON.parse(data);
+          const keystore = JSON.parse(stripBom(data));
           if (keystore.type === "hardkas.encryptedKeystore.v2") {
             if (!keystore.metadata?.network) {
               throw new AccountNetworkMismatchError({ expected: "known network", actual: "undefined", detail: `at ${path.join(devAccountsDir, file)}` });
@@ -158,7 +158,8 @@ export function listHardkasAccounts(config?: HardkasConfig, executionTarget?: im
                 kind: "synthetic",
                 executionMode: "simulator",
                 address: `kaspa:sim_${name}`,
-                keystorePath: path.join(devAccountsDir, file)
+                keystorePath: path.join(devAccountsDir, file),
+                keystoreKind: "dev-account"
               } as HardkasAccount);
             } else {
               accounts.set(name, {
@@ -166,7 +167,8 @@ export function listHardkasAccounts(config?: HardkasConfig, executionTarget?: im
                 kind: "kaspa",
                 network: keystore.metadata.network,
                 address: keystore.payload?.address || keystore.metadata?.address,
-                keystorePath: path.join(devAccountsDir, file)
+                keystorePath: path.join(devAccountsDir, file),
+                keystoreKind: "dev-account"
               } as HardkasAccount);
             }
           }
@@ -183,7 +185,7 @@ export function listHardkasAccounts(config?: HardkasConfig, executionTarget?: im
   if (fs.existsSync(keystoreJsonPath)) {
     try {
       const data = fs.readFileSync(keystoreJsonPath, "utf-8");
-      const ks = JSON.parse(data);
+      const ks = JSON.parse(stripBom(data));
       for (const [name, acc] of Object.entries(ks)) {
         if ((acc as any).type === "simulated") {
           if (targetMode === "simulator") {
@@ -226,8 +228,10 @@ export function listHardkasAccounts(config?: HardkasConfig, executionTarget?: im
     }
   }
 
-  // Add from encrypted keystore directory
-  const keystoreDir = path.join(process.cwd(), ".hardkas", "keystore");
+  // Add from encrypted keystore directory: the workspace's, like every source above (SDK-WORKSPACE-KEYSTORE-1:
+  // the process cwd is not HardKAS state; reading it here let another directory's keystores pass for this
+  // workspace's accounts).
+  const keystoreDir = path.join(workspaceRoot, ".hardkas", "keystore");
   if (fs.existsSync(keystoreDir)) {
     const files = fs.readdirSync(keystoreDir);
     for (const file of files) {
@@ -235,7 +239,7 @@ export function listHardkasAccounts(config?: HardkasConfig, executionTarget?: im
         try {
           const name = path.basename(file, ".json");
           const data = fs.readFileSync(path.join(keystoreDir, file), "utf-8");
-          const keystore = JSON.parse(data);
+          const keystore = JSON.parse(stripBom(data));
           if (keystore.type === "hardkas.encryptedKeystore.v2") {
             if (!keystore.metadata?.network) {
               throw new AccountNetworkMismatchError({ expected: "known network", actual: "undefined", detail: `at ${path.join(keystoreDir, file)}` });

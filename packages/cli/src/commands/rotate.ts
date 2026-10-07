@@ -3,6 +3,7 @@ import path from "node:path";
 import pc from "picocolors";
 import { handleError, UI } from "../ui.js";
 import { TelemetryRotator } from "@hardkas/core";
+import { invocationWorkspaceRoot } from "../workspace-root.js";
 
 export function registerRotateCommand(program: Command) {
   program
@@ -26,7 +27,8 @@ async function runRotate(opts: { json?: boolean; force?: boolean }) {
     UI.box("HardKAS Rotate", "Telemetry Archival");
   }
 
-  const rootDir = process.cwd();
+  // WORKSPACE-AUTHORITY-1 (WA-I0): the invocation's one workspace root
+  const rootDir = invocationWorkspaceRoot();
 
   const result = opts.force
     ? TelemetryRotator.forceRotate(rootDir)

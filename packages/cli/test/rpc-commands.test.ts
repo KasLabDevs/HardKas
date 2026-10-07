@@ -113,10 +113,12 @@ describe("hardkas rpc info", () => {
     const r = await hardkas(["info"]);
     expect(r.stdout).toContain("Status:   unreachable");
     expect(r.stdout).toContain("Cannot connect to Kaspa RPC at ws://127.0.0.1:18210");
-    expect(String((r.error as Error)?.message)).toBe("Command failed");
+    // CLI-RUNTIME-CONTRACT-1: the verdict is typed (RPC_INFO_UNAVAILABLE), no longer an untyped "Command failed".
+    expect((r.error as any)?.code).toBe("RPC_INFO_UNAVAILABLE");
+    expect(String((r.error as Error)?.message)).toContain("did not answer");
     const j = await hardkas(["info", "--json"], "json");
-    expect(JSON.parse(j.stdout)).toMatchObject({ ok: false, url: "ws://127.0.0.1:18210" });
-    expect(j.error).toBeDefined();
+    expect(JSON.parse(j.stdout)).toMatchObject({ ok: false, code: "RPC_INFO_UNAVAILABLE", url: "ws://127.0.0.1:18210" });
+    expect((j.error as any)?.code).toBe("RPC_INFO_UNAVAILABLE");
   });
 });
 

@@ -10,12 +10,19 @@ import { registerFinalizeCommand } from "./finalize.js";
 import { registerExtractCommand } from "./extract.js";
 
 export function registerPsktCommands(program: Command) {
-  const pskt = program.command("pskt").description("Portable Signing Sessions (PSKT) offline coordination");
+  // SURFACE-TRUTH-1B (ST-C): unavailable in this build. No PSKT adapter implements an operation (the default kaspa-wasm
+  // adapter maps none, the native one is never registered), so every command that would create or change a session
+  // refuses with a typed code; `capabilities`, `inspect` and `verify` only read what exists.
+  const pskt = program
+    .command("pskt")
+    .description(
+      "Portable Signing Sessions (PSKT): unavailable in this build. No adapter implements PSKT operations, so export, import, sign, merge, finalize and extract refuse"
+    );
 
   pskt.hook("preAction", () => {
     if (!process.env.HARDKAS_EXPERIMENTAL) {
       console.warn(
-        "\n⚠️  WARNING: 'pskt' commands are highly experimental and unsupported. Set HARDKAS_EXPERIMENTAL=1 to acknowledge.\n"
+        "\n⚠️  WARNING: 'pskt' is unavailable in this build: no adapter implements PSKT operations (see `hardkas pskt capabilities`). Set HARDKAS_EXPERIMENTAL=1 to silence this warning.\n"
       );
     }
   });

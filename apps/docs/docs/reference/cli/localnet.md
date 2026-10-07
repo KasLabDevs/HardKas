@@ -8,13 +8,13 @@ title: hardkas localnet
 
 ### Synopsis (Generated)
 
-**Purpose:** Start localnet profile alpha
+**Purpose:** Start (or adopt) the Docker rusty-kaspad node for the toccata-v2 profile and create dev accounts alice…erin; needs Docker alpha
 
 #### Options
 
-- `--profile &lt;name&gt;` (Default: `simulated`): Localnet profile
+- `--profile &lt;name&gt;`: Localnet profile: toccata-v2 (the only one, required; or use --toccata)
 - `--toccata` (Default: `false`): Shortcut for --profile toccata-v2
-- `--detached` (Default: `false`): Run in background
+- `--detached` (Default: `false`): No effect: the node always runs as a detached Docker container
 - `--json` (Default: `false`): Output as JSON
 
 ---
@@ -23,11 +23,11 @@ title: hardkas localnet
 
 ### Synopsis (Generated)
 
-**Purpose:** Stop localnet profile alpha
+**Purpose:** Stop the Docker rusty-kaspad node of the toccata-v2 profile and its miner; needs Docker alpha
 
 #### Options
 
-- `--profile &lt;name&gt;` (Default: `simulated`): Localnet profile
+- `--profile &lt;name&gt;` (Default: `toccata-v2`): Localnet profile: toccata-v2 (the only one)
 - `--toccata` (Default: `false`): Shortcut for --profile toccata-v2
 - `--json` (Default: `false`): Output as JSON
 
@@ -58,9 +58,10 @@ title: hardkas localnet
 #### Options
 
 - `--profile &lt;name&gt;` (Default: `toccata-v2`): Funding profile
-- `--amount &lt;kas&gt;` (Default: `1000`): Target mining amount hint in KAS
+- `--amount &lt;kas&gt;` (Default: `1000`): KAS to wait for: mine until the mature balance grows by this amount
 - `--timeout &lt;ms&gt;` (Default: `300000`): Funding/maturity wait timeout in ms
-- `--keep-miner` (Default: `false`): Leave the companion miner running
+- `--keep-miner` (Default: `false`): Keep mining to the funded account after funding (its balance keeps growing)
+- `--stop-miner` (Default: `false`): Leave the chain stopped after funding: no new blocks until you mine again
 - `--json` (Default: `false`): Output as JSON
 
 ---
@@ -85,15 +86,15 @@ title: hardkas localnet
 
 ### Synopsis (Generated)
 
-**Purpose:** Fork state from a real Kaspa network for local simulation preview
+**Purpose:** Copy the current UTXOs of some addresses from a node into a simulator state file preview
 
 #### Options
 
 - `--network &lt;name&gt;`: Network to fork from
-- `--addresses &lt;addrs...&gt;`: Only fetch UTXOs for these addresses
-- `--at-daa-score &lt;score&gt;`: Fork at specific DAA score (implicit latest is forbidden)
-- `--output &lt;path&gt;`: Save fork snapshot to file
-- `--json` (Default: `false`): Output as JSON
+- `--addresses &lt;addrs...&gt;`: Addresses whose UTXOs are copied, separated by spaces
+- `--at-daa-score &lt;score&gt;`: Required label recorded with the snapshot; the UTXOs copied are always the node's current ones
+- `--output &lt;path&gt;`: State file to write (default: .hardkas/localnet.json, replaced)
+- `--json` (Default: `false`): Not implemented yet: no JSON is printed
 
 ---
 
@@ -134,7 +135,7 @@ title: hardkas localnet
 
 ### Synopsis (Generated)
 
-**Purpose:** Replay and rebuild deterministic state from a snapshot alpha
+**Purpose:** Restore a snapshot's missing artifacts into the workspace; never removes or overwrites one alpha
 
 #### Arguments
 

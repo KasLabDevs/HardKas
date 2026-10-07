@@ -10,9 +10,10 @@ import { HardkasStore } from "@hardkas/query-store";
 import { DockerKaspadRunner } from "@hardkas/node-runner";
 import { execa } from "execa";
 import { HARDKAS_VERSION } from "@hardkas/artifacts";
-import { HardkasSchemas } from "@hardkas/core";
+import { HardkasSchemas, eventLedgerPath, legacyEventLedgerPath } from "@hardkas/core";
 import readline from "node:readline";
 import fsSync from "node:fs";
+import { invocationWorkspaceRoot } from "../workspace-root.js";
 
 export function registerDoctorCommand(program: Command) {
   program
@@ -37,7 +38,8 @@ export function registerDoctorCommand(program: Command) {
           const { runDoctorNode } = await import("../runners/doctor-node-runner.js");
           await runDoctorNode(opts);
         } else {
-          await runDoctorChecks(process.cwd(), opts);
+          // WORKSPACE-AUTHORITY-1 (WA-I0): the invocation's one workspace root
+          await runDoctorChecks(invocationWorkspaceRoot(), opts);
         }
       } catch (err) {
         handleError(err);
@@ -143,7 +145,7 @@ export async function runDoctorChecks(
   }
 
   // --- 2. Persistence Checks ---
-  const hardkasDir = path.join(process.cwd(), ".hardkas");
+  const hardkasDir = path.join(root, ".hardkas");
   let dirExists = false;
   try {
     const stats = await fs.stat(hardkasDir);
@@ -166,7 +168,7 @@ export async function runDoctorChecks(
 
   if (dirExists) {
     try {
-      const gitignorePath = path.join(process.cwd(), ".gitignore");
+      const gitignorePath = path.join(root, ".gitignore");
       const gitignore = await fs.readFile(gitignorePath, "utf-8");
       if (gitignore.includes(".hardkas")) {
         addCheck({
@@ -324,9 +326,20 @@ export async function runDoctorChecks(
 
     await checkStream(
       "Events Ledger",
-      path.join(process.cwd(), "events.jsonl"),
+      eventLedgerPath(root),
       (p) => p && p.schema === HardkasSchemas.Event
     );
+    // WORKSPACE-AUTHORITY-1 (A2): a ledger under .hardkas/ is never this workspace's ledger; it is reported, never read
+    // or merged
+    if (fsSync.existsSync(legacyEventLedgerPath(root))) {
+      addCheck({
+        name: "Legacy event ledger",
+        category: "persistence",
+        status: "warn",
+        message: `${legacyEventLedgerPath(root)} is not this workspace's event ledger (${eventLedgerPath(root)}); it is never read or merged`,
+        suggestion: "Inspect it, and move it out of .hardkas/ if it holds history you want to keep."
+      });
+    }
     await checkStream(
       "Telemetry",
       path.join(hardkasDir, "telemetry", "telemetry.jsonl"),
@@ -465,7 +478,7 @@ export async function runDoctorChecks(
   // --- 4.5. Environment Checks ---
   let envContent = "";
   try {
-    envContent = await fs.readFile(path.join(process.cwd(), ".env"), "utf8");
+    envContent = await fs.readFile(path.join(root, ".env"), "utf8");
     addCheck({
       name: ".env file",
       category: "env",
@@ -473,36 +486,29 @@ export async function runDoctorChecks(
       message: "Present in workspace"
     });
 
-    const parsedEnv: Record<string, string> = {};
-    envContent.split("\n").forEach(line => {
-      const match = line.match(/^\s*([\w.-]+)\s*=\s*(.*)?\s*$/);
-      if (match && match[1]) {
-         parsedEnv[match[1]] = match[2] || "";
-      }
-    });
-
-    const mergedEnv = { ...process.env, ...parsedEnv };
-    const requiredVars = ["NETWORK", "KASPAD_URL", "HARDKAS_DATA_DIR", "HARDKAS_KASPAD_IMAGE", "LOG_LEVEL"];
-    const missing: string[] = [];
-    
-    for (const req of requiredVars) {
-      if (!mergedEnv[req] || mergedEnv[req].trim() === "") missing.push(req);
-    }
-
-    if (missing.length === 0) {
+    // SURFACE-TRUTH-1B (ST-J): the contract of `hardkas env check` (one registry, `checkEnvironment`). The former check
+    // required the deployment profile (NETWORK, KASPAD_URL, HARDKAS_DATA_DIR, HARDKAS_KASPAD_IMAGE, LOG_LEVEL) of any .env,
+    // although HardKAS reads none of them but HARDKAS_KASPAD_IMAGE, so `ci verify` failed in every workspace whose .env
+    // only held the app's variables.
+    const { checkEnvironment, parseDotEnv } = await import("./env.js");
+    const report = checkEnvironment(process.env, parseDotEnv(envContent));
+    const profile = report.deployProfile
+      ? `; deployment profile (informational): ${report.deployProfile.missing.length ? `${report.deployProfile.missing.join(", ")} not set` : "complete"}`
+      : "";
+    if (report.unknown.length === 0) {
       addCheck({
-        name: "Production .env variables",
+        name: "HARDKAS_* environment",
         category: "env",
         status: "pass",
-        message: "All required variables present"
+        message: `Every HARDKAS_* variable set is one HardKAS reads${profile}`
       });
     } else {
       addCheck({
-        name: "Production .env variables",
+        name: "HARDKAS_* environment",
         category: "env",
         status: "fail",
-        message: `Missing: ${missing.join(", ")}`,
-        suggestion: "Run 'hardkas env check' or configure .env correctly."
+        message: `Not variables HardKAS reads: ${report.unknown.join(", ")}${profile}`,
+        suggestion: "Run 'hardkas env check' to see the variables HardKAS honours."
       });
     }
   } catch {
@@ -517,17 +523,21 @@ export async function runDoctorChecks(
 
   // --- 5. Consistency Checks ---
   if (opts.consistency && dirExists) {
+    // WORKSPACE-AUTHORITY-1 (WA-I3): the projection is observed, never created or migrated by a diagnosis
+    let consistencyStore: any = null;
     try {
       const { HardkasStore } = await import("@hardkas/query-store");
-      const path = await import("node:path");
-      const store = new HardkasStore({
-        dbPath: path.join(process.cwd(), ".hardkas", "store.db")
-      });
-      store.connect({ autoMigrate: true });
+      consistencyStore = HardkasStore.openExisting(path.join(root, ".hardkas", "store.db"));
+      if (!consistencyStore) {
+        throw Object.assign(
+          new Error("There is no query projection to check: the query commands read the workspace directly."),
+          { code: "PROJECTION_ABSENT" }
+        );
+      }
 
       const { HardkasIndexer } = await import("@hardkas/query-store");
-      const indexer = new HardkasIndexer(store.getDatabase(), {
-        cwd: process.cwd(),
+      const indexer = new HardkasIndexer(consistencyStore.getDatabase(), {
+        cwd: root,
         strict: opts.strict ? true : false
       });
       const idxReport = indexer.doctor();
@@ -601,13 +611,15 @@ export async function runDoctorChecks(
       }
 
       if (idxReport.duplicateEventSequences > 0) {
+        // WORKSPACE-AUTHORITY-1 (A): the index keeps one row per event identity, so distinct events that share a
+        // (correlation, sequence, kind) position are the ledger's own data, not a projection defect
         addCheck({
           name: "Event Deduplication",
           category: "consistency",
-          status: "fail",
-          message: `${idxReport.duplicateEventSequences} duplicate event sequence(s)`,
+          status: "warn",
+          message: `${idxReport.duplicateEventSequences} sequence position(s) shared by distinct events (each event is indexed)`,
           suggestion:
-            "Duplicate sequence numbers within a correlation ID. Indexer rebuild required."
+            "The producers of these events reuse a sequence number within a correlation ID; no rebuild is needed."
         });
       } else {
         addCheck({
@@ -635,16 +647,22 @@ export async function runDoctorChecks(
         });
       }
     } catch (err: any) {
-      addCheck({
-        name: "Consistency Engine",
-        category: "consistency",
-        status: "fail",
-        message: `Failed to run consistency checks: ${((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err))}`
-      });
+      addCheck(
+        err?.code === "PROJECTION_ABSENT"
+          ? { name: "Consistency Engine", category: "consistency", status: "skip", message: err.message }
+          : {
+              name: "Consistency Engine",
+              category: "consistency",
+              status: "fail",
+              message: `Failed to run consistency checks: ${((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err))}`
+            }
+      );
+    } finally {
+      consistencyStore?.disconnect();
     }
 
     // 6. Snapshot Integrity Checks
-    const snapshotsDir = path.join(process.cwd(), "snapshots");
+    const snapshotsDir = path.join(root, "snapshots");
     try {
       const { readSnapshotManifest } = await import("@hardkas/core");
       const fs = await import("node:fs/promises");
@@ -692,7 +710,7 @@ export async function runDoctorChecks(
     UI.logHuman(
       `  Summary: ${report.summary.passed} passed, ${report.summary.failed} failed, ${report.summary.warnings} warning, ${report.summary.skipped} skipped`
     );
-    UI.footer("Use 'hardkas capabilities' to see supported features.");
+    // SURFACE-TRUTH-1B: the footer named `capabilities`, a hidden command; hidden means not advertised.
   }
 
   if (opts.strict && report.summary.failed > 0) {

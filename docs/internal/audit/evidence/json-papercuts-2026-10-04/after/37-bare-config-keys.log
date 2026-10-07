@@ -1,0 +1,2 @@
+config keys (no config file): execution, defaultNetwork, networks, accounts
+defaultNetwork=simulated execution={"default":"simulator","targets":{"simulator":{"mode":"simulator","domain":"kaspa-l1","network":"simulated"},"localnet":{"mode":"localnet","domain":"kaspa-l1","network":"simnet"}}}

@@ -32,8 +32,13 @@ export async function runAccountsRealBalance(
   }
 
   const client = new JsonWrpcKaspaClient({ rpcUrl });
-  const balance = await client.getBalanceByAddress(account.address);
-  await client.close();
+  let balance;
+  try {
+    balance = await client.getBalanceByAddress(account.address);
+  } finally {
+    // RESOURCE-LIFECYCLE-1 (RL-I3): released when the read fails too.
+    await client.close();
+  }
 
   const formatted = `${account.name} balance: ${formatSompiToKas(balance.balanceSompi)} (${account.address})`;
 

@@ -1,0 +1,455 @@
+﻿{
+  "proc server-status": {
+    "type": "string",
+    "data": {
+      "networkId": "string",
+      "serverVersion": "string",
+      "isSynced": "boolean",
+      "url": "string"
+    }
+  },
+  "proc utxo-proc-start": {
+    "type": "string"
+  },
+  "proc sync-state": {
+    "type": "string",
+    "data": {
+      "syncState": {
+        "type": "string"
+      }
+    }
+  },
+  "proc balance": {
+    "type": "string",
+    "data": {
+      "balance": {
+        "mature": "number",
+        "pending": "number",
+        "outgoing": "number",
+        "matureUtxoCount": "number",
+        "pendingUtxoCount": "number",
+        "stasisUtxoCount": "number"
+      },
+      "id": "hex64"
+    }
+  },
+  "proc daa-score-change": {
+    "type": "string",
+    "data": {
+      "currentDaaScore": "number"
+    }
+  },
+  "rawRpc utxos-changed event": {
+    "type": "string",
+    "data": {
+      "added": [
+        {
+          "<UtxoEntryReference>": {
+            "isCoinbase": "boolean",
+            "blockDaaScore": "bigint",
+            "scriptPublicKey": {
+              "<ScriptPublicKey>": {
+                "version": "number",
+                "script": "string"
+              }
+            },
+            "entry": {
+              "<UtxoEntry>": {
+                "address": {
+                  "<Address>": {
+                    "prefix": "string",
+                    "payload": "string",
+                    "version": "string"
+                  }
+                },
+                "outpoint": {
+                  "<TransactionOutpoint>": {
+                    "transactionId": "hex64",
+                    "index": "number"
+                  }
+                },
+                "amount": "bigint",
+                "scriptPublicKey": {
+                  "<ScriptPublicKey>": {
+                    "version": "number",
+                    "script": "string"
+                  }
+                },
+                "blockDaaScore": "bigint",
+                "isCoinbase": "boolean",
+                "covenantId": "undefined"
+              }
+            },
+            "amount": "bigint",
+            "address": {
+              "<Address>": {
+                "prefix": "string",
+                "payload": "string",
+                "version": "string"
+              }
+            },
+            "outpoint": {
+              "<TransactionOutpoint>": {
+                "transactionId": "hex64",
+                "index": "number"
+              }
+            }
+          }
+        },
+        "(len 1)"
+      ],
+      "removed": "[]"
+    }
+  },
+  "rawRpc added[0]": {
+    "<UtxoEntryReference>": {
+      "isCoinbase": "boolean",
+      "blockDaaScore": "bigint",
+      "scriptPublicKey": {
+        "<ScriptPublicKey>": {
+          "version": "number",
+          "script": "string"
+        }
+      },
+      "entry": {
+        "<UtxoEntry>": {
+          "address": {
+            "<Address>": {
+              "prefix": "string",
+              "payload": "string",
+              "version": "string"
+            }
+          },
+          "outpoint": {
+            "<TransactionOutpoint>": {
+              "transactionId": "hex64",
+              "index": "number"
+            }
+          },
+          "amount": "bigint",
+          "scriptPublicKey": {
+            "<ScriptPublicKey>": {
+              "version": "number",
+              "script": "string"
+            }
+          },
+          "blockDaaScore": "bigint",
+          "isCoinbase": "boolean",
+          "covenantId": "undefined"
+        }
+      },
+      "amount": "bigint",
+      "address": {
+        "<Address>": {
+          "prefix": "string",
+          "payload": "string",
+          "version": "string"
+        }
+      },
+      "outpoint": {
+        "<TransactionOutpoint>": {
+          "transactionId": "hex64",
+          "index": "number"
+        }
+      }
+    }
+  },
+  "proc stasis": {
+    "<TransactionRecordNotification>": {
+      "type": "string",
+      "data": {
+        "<TransactionRecord>": {
+          "id": {
+            "<Hash>": {
+              "__wbg_ptr": "number"
+            }
+          },
+          "unixtimeMsec": "bigint",
+          "network": {
+            "<NetworkId>": {
+              "type": "number",
+              "suffix": "undefined",
+              "id": "string"
+            }
+          },
+          "note": "undefined",
+          "metadata": "undefined",
+          "data": {
+            "utxoEntries": [
+              {
+                "address": "string",
+                "index": "number",
+                "amount": "number",
+                "scriptPubKey": "string",
+                "isCoinbase": "boolean"
+              },
+              "(len 1)"
+            ],
+            "value": "number"
+          },
+          "value": "bigint",
+          "binding": {
+            "type": "string",
+            "id": "hex64"
+          },
+          "blockDaaScore": "bigint",
+          "type": "string"
+        }
+      }
+    }
+  },
+  "proc stasis data.serialize()": {
+    "id": "hex64",
+    "unixtimeMsec": "number",
+    "value": "number",
+    "binding": {
+      "type": "string",
+      "id": "hex64"
+    },
+    "blockDaaScore": "number",
+    "network": "string",
+    "data": {
+      "type": "string",
+      "data": {
+        "utxoEntries": [
+          {
+            "address": "string",
+            "index": "number",
+            "amount": "number",
+            "scriptPubKey": "string",
+            "isCoinbase": "boolean"
+          },
+          "(len 1)"
+        ],
+        "value": "number"
+      }
+    }
+  },
+  "proc pending": {
+    "<TransactionRecordNotification>": {
+      "type": "string",
+      "data": {
+        "<TransactionRecord>": {
+          "id": {
+            "<Hash>": {
+              "__wbg_ptr": "number"
+            }
+          },
+          "unixtimeMsec": "bigint",
+          "network": {
+            "<NetworkId>": {
+              "type": "number",
+              "suffix": "undefined",
+              "id": "string"
+            }
+          },
+          "note": "undefined",
+          "metadata": "undefined",
+          "data": {
+            "utxoEntries": [
+              {
+                "address": "string",
+                "index": "number",
+                "amount": "number",
+                "scriptPubKey": "string",
+                "isCoinbase": "boolean"
+              },
+              "(len 1)"
+            ],
+            "value": "number"
+          },
+          "value": "bigint",
+          "binding": {
+            "type": "string",
+            "id": "hex64"
+          },
+          "blockDaaScore": "bigint",
+          "type": "string"
+        }
+      }
+    }
+  },
+  "proc pending data.serialize()": {
+    "id": "hex64",
+    "unixtimeMsec": "number",
+    "value": "number",
+    "binding": {
+      "type": "string",
+      "id": "hex64"
+    },
+    "blockDaaScore": "number",
+    "network": "string",
+    "data": {
+      "type": "string",
+      "data": {
+        "utxoEntries": [
+          {
+            "address": "string",
+            "index": "number",
+            "amount": "number",
+            "scriptPubKey": "string",
+            "isCoinbase": "boolean"
+          },
+          "(len 1)"
+        ],
+        "value": "number"
+      }
+    }
+  },
+  "proc reorg": {
+    "<TransactionRecordNotification>": {
+      "type": "string",
+      "data": {
+        "<TransactionRecord>": {
+          "id": {
+            "<Hash>": {
+              "__wbg_ptr": "number"
+            }
+          },
+          "unixtimeMsec": "bigint",
+          "network": {
+            "<NetworkId>": {
+              "type": "number",
+              "suffix": "undefined",
+              "id": "string"
+            }
+          },
+          "note": "undefined",
+          "metadata": "undefined",
+          "data": {
+            "utxoEntries": [
+              {
+                "address": "string",
+                "index": "number",
+                "amount": "number",
+                "scriptPubKey": "string",
+                "isCoinbase": "boolean"
+              },
+              "(len 31)"
+            ],
+            "value": "number"
+          },
+          "value": "bigint",
+          "binding": {
+            "type": "string",
+            "id": "hex64"
+          },
+          "blockDaaScore": "bigint",
+          "type": "string"
+        }
+      }
+    }
+  },
+  "ctx.getPending()[0]": {
+    "<UtxoEntryReference>": {
+      "isCoinbase": "boolean",
+      "blockDaaScore": "bigint",
+      "scriptPublicKey": {
+        "<ScriptPublicKey>": {
+          "version": "number",
+          "script": "string"
+        }
+      },
+      "entry": {
+        "<UtxoEntry>": {
+          "address": {
+            "<Address>": {
+              "prefix": "string",
+              "payload": "string",
+              "version": "string"
+            }
+          },
+          "outpoint": {
+            "<TransactionOutpoint>": {
+              "transactionId": "hex64",
+              "index": "number"
+            }
+          },
+          "amount": "bigint",
+          "scriptPublicKey": {
+            "<ScriptPublicKey>": {
+              "version": "number",
+              "script": "string"
+            }
+          },
+          "blockDaaScore": "bigint",
+          "isCoinbase": "boolean",
+          "covenantId": "undefined"
+        }
+      },
+      "amount": "bigint",
+      "address": {
+        "<Address>": {
+          "prefix": "string",
+          "payload": "string",
+          "version": "string"
+        }
+      },
+      "outpoint": {
+        "<TransactionOutpoint>": {
+          "transactionId": "hex64",
+          "index": "number"
+        }
+      }
+    }
+  },
+  "ctx.getMatureRange(0,1)[0]": "null",
+  "ctx counts": {
+    "matureLength": 0,
+    "pending": 291
+  },
+  "getUtxosByAddresses entries[0]": {
+    "<UtxoEntryReference>": {
+      "isCoinbase": "boolean",
+      "blockDaaScore": "bigint",
+      "scriptPublicKey": {
+        "<ScriptPublicKey>": {
+          "version": "number",
+          "script": "string"
+        }
+      },
+      "entry": {
+        "<UtxoEntry>": {
+          "address": {
+            "<Address>": {
+              "prefix": "string",
+              "payload": "string",
+              "version": "string"
+            }
+          },
+          "outpoint": {
+            "<TransactionOutpoint>": {
+              "transactionId": "hex64",
+              "index": "number"
+            }
+          },
+          "amount": "bigint",
+          "scriptPublicKey": {
+            "<ScriptPublicKey>": {
+              "version": "number",
+              "script": "string"
+            }
+          },
+          "blockDaaScore": "bigint",
+          "isCoinbase": "boolean",
+          "covenantId": "undefined"
+        }
+      },
+      "amount": "bigint",
+      "address": {
+        "<Address>": {
+          "prefix": "string",
+          "payload": "string",
+          "version": "string"
+        }
+      },
+      "outpoint": {
+        "<TransactionOutpoint>": {
+          "transactionId": "hex64",
+          "index": "number"
+        }
+      }
+    }
+  },
+  "getUtxosByAddresses count": 461
+}

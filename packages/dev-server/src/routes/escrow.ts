@@ -10,6 +10,7 @@ import {
 } from "@hardkas/escrow";
 import crypto from "node:crypto";
 import { JsonWrpcKaspaClient } from "@hardkas/kaspa-rpc";
+import { nodeRpcUrl } from "@hardkas/core";
 
 export type EscrowDomainState =
   | "CREATED"
@@ -28,7 +29,8 @@ const resolutionPolicy = {
   releaseToSeller: { requiredSigners: ["seller", "arbiter"], recipient: "seller", amountKey: "releaseAmount" }
 };
 
-const RPC_URL = "ws://127.0.0.1:18210";
+// CANONICAL-RPC-URL: the canonical localnet endpoint comes from @hardkas/core, never a copy.
+const RPC_URL = nodeRpcUrl();
 const NETWORK_ID = "simnet";
 
 export interface EscrowRecord {

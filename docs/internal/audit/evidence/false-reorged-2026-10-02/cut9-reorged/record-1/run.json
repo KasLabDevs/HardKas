@@ -1,0 +1,160 @@
+{
+  "startedAt": "2026-10-02T17:54:24.319Z",
+  "wt": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-reorg\\wt",
+  "cliHead": "0f4c2f26be69b6ade17cd2aa8a9c6a8faade82d3",
+  "N": 20,
+  "setup": {
+    "init": {
+      "code": 0,
+      "ms": 1017
+    },
+    "generate": {
+      "code": 0,
+      "accounts": [
+        {
+          "name": "reorg1",
+          "address": "kaspasim:qp6kvlhc39naegrlxdh3e4z8ghxjs4ky6lqscvf4r7na32gslw33zuea9r6ff",
+          "storage": "plaintext"
+        },
+        {
+          "name": "reorg2",
+          "address": "kaspasim:qqty4cz2k676xkmkwsew8832kx4mqz2lanvm9y500mfak605sj25kmlm28uuy",
+          "storage": "plaintext"
+        }
+      ]
+    },
+    "fund": {
+      "code": 0,
+      "ms": 87655,
+      "result": "",
+      "stderr": "4z8ghxjs4ky6lqscvf4r7na32gslw33zuea9r6ff\",\n  \"before\": {\n    \"balanceSompi\": \"0\",\n    \"matureBalanceSompi\": \"0\",\n    \"utxoCount\": 0,\n    \"matureUtxoCount\": 0,\n    \"virtualDaaScore\": \"49358\"\n  },\n  \"after\": {\n    \"balanceSompi\": \"5295000000000\",\n    \"matureBalanceSompi\": \"215000000000\",\n    \"utxoCount\": 1059,\n    \"matureUtxoCount\": 43,\n    \"virtualDaaScore\": \"50432\"\n  },\n  \"miner\": {\n    \"exists\": true,\n    \"running\": true,\n    \"status\": \"running\",\n    \"image\": \"kaspanet/cpuminer@sha256:60f78ab2828ab24b249c99210eee5a2825303a5226154260dd021ff26d46748b\",\n    \"name\": \"hardkas-toccata-miner\"\n  }\n}\n"
+    },
+    "miner": {
+      "address": "kaspasim:qqsazv6gwksz22nzy6tyr5ttk0pkwng2lwa7tjvv7x6wpmstzwxyg9p560sa8",
+      "throttleMs": 12,
+      "note": "burner address, key discarded"
+    }
+  },
+  "txs": [
+    {
+      "index": 1,
+      "txId": "758c76cb81fb0a5cb92d5c472ab688c921e496978958d81e460fc4ec3adb2339",
+      "file": "tx-01.json",
+      "sawReorged": false,
+      "waitCode": 1,
+      "lastState": "INSUFFICIENT_EVIDENCE",
+      "acceptingChanges": 0
+    },
+    {
+      "index": 2,
+      "txId": "38a660c1ac845347efbe7f66e235fcbaeda2b81be38dec0c3d37a0fc98ffb93d",
+      "file": "tx-02.json",
+      "sawReorged": false,
+      "waitCode": 1,
+      "lastState": "INSUFFICIENT_EVIDENCE",
+      "acceptingChanges": 0
+    },
+    {
+      "index": 3,
+      "txId": "207736c95f2cd896efa0feade1d2f341518f87741db0fd59fb1686db2550c650",
+      "file": "tx-03.json",
+      "sawReorged": false,
+      "waitCode": 1,
+      "lastState": "INSUFFICIENT_EVIDENCE",
+      "acceptingChanges": 0
+    },
+    {
+      "index": 4,
+      "txId": "8eefb30abc695ce5f58e3c6688217eec43ff9cee3a199675e0e7bf46a8626d3f",
+      "file": "tx-04.json",
+      "sawReorged": false,
+      "waitCode": 1,
+      "lastState": "INSUFFICIENT_EVIDENCE",
+      "acceptingChanges": 0
+    },
+    {
+      "index": 5,
+      "txId": "8e24609e4c2d8d93d3fb8c743152fd01916dde77ad48ca04a66aeaa20c98b079",
+      "file": "tx-05.json",
+      "sawReorged": false,
+      "waitCode": 1,
+      "lastState": "INSUFFICIENT_EVIDENCE",
+      "acceptingChanges": 0
+    },
+    {
+      "index": 6,
+      "txId": "61a68daf447a151e7e6a4b5649dfd020b6fde37b2f20cdce5f4f7e99f114dae8",
+      "file": "tx-06.json",
+      "sawReorged": false,
+      "waitCode": 1,
+      "lastState": "INSUFFICIENT_EVIDENCE",
+      "acceptingChanges": 0
+    },
+    {
+      "index": 7,
+      "txId": "36f18320502e605611c8fae7e7fe26b7b4e671562757dd8a3ab541f51fca7ed4",
+      "file": "tx-07.json",
+      "sawReorged": false,
+      "waitCode": 1,
+      "lastState": "INSUFFICIENT_EVIDENCE",
+      "acceptingChanges": 0
+    },
+    {
+      "index": 8,
+      "txId": "47e43d5dadbcd5a34cbbaed1a06ac2d90171bd8a641d4043291cc939e88085a9",
+      "file": "tx-08.json",
+      "sawReorged": false,
+      "waitCode": 1,
+      "lastState": "INSUFFICIENT_EVIDENCE",
+      "acceptingChanges": 0
+    },
+    {
+      "index": 9,
+      "txId": "52f9fdc430d1842d4f199224930d65be2114c773892bbde973f71289eed83f07",
+      "file": "tx-09.json",
+      "sawReorged": false,
+      "waitCode": 1,
+      "lastState": "INSUFFICIENT_EVIDENCE",
+      "acceptingChanges": 0
+    },
+    {
+      "index": 10,
+      "txId": "61a68daf447a151e7e6a4b5649dfd020b6fde37b2f20cdce5f4f7e99f114dae8",
+      "file": "tx-10.json",
+      "sawReorged": false,
+      "waitCode": 1,
+      "lastState": "INSUFFICIENT_EVIDENCE",
+      "acceptingChanges": 0
+    },
+    {
+      "index": 11,
+      "txId": "d9309fff05df2d630d2c72d5c3bbc6610bfcd8f5195692ad8e0959f0ba2af978",
+      "file": "tx-11.json",
+      "sawReorged": false,
+      "waitCode": 1,
+      "lastState": "INSUFFICIENT_EVIDENCE",
+      "acceptingChanges": 0
+    },
+    {
+      "index": 12,
+      "txId": "1f2b7cbf3ddeb6e06021fe713dfc35c2f50c954960c8b2ad0d4d7919e569cb61",
+      "file": "tx-12.json",
+      "sawReorged": false,
+      "waitCode": 1,
+      "lastState": "INSUFFICIENT_EVIDENCE",
+      "acceptingChanges": 0
+    }
+  ],
+  "errors": [
+    {
+      "at": 2589273,
+      "where": "restoreDemoMiner",
+      "error": "Unexpected token ' ', \" [ { \"... is not valid JSON"
+    }
+  ],
+  "node": {
+    "serverVersion": "2.1.0",
+    "networkId": "simnet"
+  },
+  "finishedAt": "2026-10-02T18:37:29.100Z"
+}

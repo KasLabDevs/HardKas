@@ -6,6 +6,7 @@ import pc from "picocolors";
 import { getOutput } from "../output.js";
 import { HardkasCliError, HardkasExitCode } from "../cli-errors.js";
 import { UI } from "../ui.js";
+import { stripBom } from "@hardkas/core";
 
 /**
  * `hardkas silver` — SilverScript v1 through upstream authorities only.
@@ -68,7 +69,7 @@ async function readRecord(file: string, schema: string): Promise<any> {
   const { checkArtifactIdentity } = await import("@hardkas/artifacts");
   let record: any;
   try {
-    record = JSON.parse(readFileOrFail(file, "record").toString("utf8"));
+    record = JSON.parse(stripBom(readFileOrFail(file, "record").toString("utf8")));
   } catch (e: any) {
     if (e instanceof HardkasCliError) throw e;
     fail("SILVER_RECORD_INVALID", `${file} is not JSON`, HardkasExitCode.USAGE_ERROR);
@@ -212,7 +213,7 @@ function parseKas(amount: string): bigint {
 async function entryArgs(file: string | undefined) {
   if (!file) return [];
   const text = readFileOrFail(file, "arguments file").toString("utf8");
-  const raw = JSON.parse(text);
+  const raw = JSON.parse(stripBom(text));
   if (!Array.isArray(raw)) fail("SILVER_ARGS_INVALID", "arguments must be a JSON list", HardkasExitCode.USAGE_ERROR);
   const { parseSilArtifactValuesJson } = await import("@hardkas/core");
   const out: any[] = [];
@@ -256,22 +257,12 @@ export function registerSilverCommand(program: Command) {
     .option("--json", "Output as JSON", false)
     .action(async (opts: { json: boolean }) => {
       const core = await import("@hardkas/core");
-      const wasm = core.verifyManagedToolchainSync(core.KASPA_WASM_REFERENCE);
-      let silverc: { ok: boolean; detail: string };
-      try {
-        const s = core.resolveManagedSilverc();
-        silverc = { ok: true, detail: `${s.ref.assetName} ${s.ref.files[s.ref.entry]!.sha256}` };
-      } catch (e: any) {
-        silverc = { ok: false, detail: String(e?.code ?? e?.message) };
-      }
-      let node: { ok: boolean; detail: string };
-      try {
-        const { verifyNodeIdentity } = await import("@hardkas/node-runner");
-        const id = await verifyNodeIdentity();
-        node = { ok: id.verified, detail: id.verified ? `${id.observed.container?.name} rusty-kaspad ${id.observed.server?.serverVersion}` : id.problems.join("; ") };
-      } catch (e: any) {
-        node = { ok: false, detail: String(e?.message ?? e) };
-      }
+      // SURFACE-TRUTH-1B (D-ST1): the same checks the capability report derives `silverScript`, `covenants` and the
+      // node matrix from (one authority, `probeSilverReadiness`).
+      const { probeSilverReadiness } = await import("@hardkas/sdk");
+      const readiness = await probeSilverReadiness();
+      const silverc = readiness.toolchains.silverc;
+      const node = { ok: readiness.node.ok, detail: readiness.node.detail };
       // Optional and experimental: no release binary exists, so it never gates the capabilities above.
       let runner: { ok: boolean; detail: string };
       try {
@@ -283,22 +274,18 @@ export function registerSilverCommand(program: Command) {
       const report = {
         schema: "hardkas.silverDoctor.v1",
         silverscript: { releaseTag: core.SILVERSCRIPT_RELEASE.releaseTag, languageVersion: core.SILVERSCRIPT_RELEASE.languageVersion },
-        toolchains: { "kaspa-wasm": { ok: wasm.ok, detail: wasm.ok ? core.KASPA_WASM_REFERENCE.version : wasm.problems.join("; ") }, silverc },
+        toolchains: readiness.toolchains,
         node,
-        ready: {
-          "silver.compile.v1": silverc.ok,
-          "silver.p2sh.deploy-spend.v1": silverc.ok && wasm.ok && node.ok,
-          "toccata.covenant.auth-1to1-transition.v1": silverc.ok && wasm.ok && node.ok
-        },
+        ready: readiness.ready,
         experimental: {
           "silver-runner": runner,
-          "silver test": silverc.ok && wasm.ok && runner.ok
+          "silver test": silverc.ok && readiness.toolchains["kaspa-wasm"].ok && runner.ok
         }
       };
       if (opts.json) return out().writeJson(report);
       out().writeLine(pc.bold(`SilverScript ${report.silverscript.releaseTag} (language ${report.silverscript.languageVersion})`));
       const row = (ok: boolean, label: string, detail: string) => out().writeLine(`  ${ok ? pc.green("OK  ") : pc.red("MISS")} ${label}  ${pc.dim(detail)}`);
-      row(wasm.ok, "kaspa-wasm", report.toolchains["kaspa-wasm"].detail);
+      row(report.toolchains["kaspa-wasm"].ok, "kaspa-wasm", report.toolchains["kaspa-wasm"].detail);
       row(silverc.ok, "silverc", silverc.detail);
       row(node.ok, "canonical node", node.detail);
       for (const [cap, ok] of Object.entries(report.ready)) row(ok, cap, ok ? "ready" : "not ready");
@@ -423,7 +410,7 @@ export function registerSilverCommand(program: Command) {
       const testsBytes = readFileOrFail(opts.tests, "test file");
       let tests: unknown;
       try {
-        tests = JSON.parse(testsBytes.toString("utf8"));
+        tests = JSON.parse(stripBom(testsBytes.toString("utf8")));
       } catch {
         fail("SILVER_TEST_FILE_INVALID", `${opts.tests} is not JSON`, HardkasExitCode.USAGE_ERROR);
       }
@@ -725,7 +712,7 @@ export function registerSilverCommand(program: Command) {
         fail("SILVER_CONSTRUCTOR_ARGS_MISMATCH", "these constructor arguments are not the ones the current state was compiled with", HardkasExitCode.USAGE_ERROR);
       }
       const stateMap = JSON.parse(opts.stateMap);
-      const nextRaw = JSON.parse(readFileOrFail(opts.nextState, "next-state file").toString("utf8"));
+      const nextRaw = JSON.parse(stripBom(readFileOrFail(opts.nextState, "next-state file").toString("utf8")));
       const nextState = Object.fromEntries(Object.entries(nextRaw).map(([k, v]) => [k, core.parseSilArtifactValuesJson(JSON.stringify([v]))[0]!]));
       const next = await core.compileSilverSuccessor({ source: compileRecord.source.text, constructorArgs: ctor.values, contractName: prev.contract, stateToConstructorArg: stateMap, nextState });
       if (Buffer.from(next.current.artifactBytes).toString("utf8") !== compileRecord.artifactJson) {
@@ -760,7 +747,13 @@ export function registerSilverCommand(program: Command) {
         const outpoint = { transactionId: txId, index: 0 };
         const confirmed = opts.wait ? await waitForUtxo(rpc, successorAddress, outpoint, Number(opts.timeout)) : undefined;
         if (confirmed && confirmed.covenantId !== prev.covenantId) fail("SILVER_COVENANT_LINEAGE_BROKEN", `successor carries ${confirmed.covenantId}, expected ${prev.covenantId}`);
-        if (opts.emitArgs) fs.writeFileSync(path.resolve(opts.emitArgs), core.serializeSilArtifactValues(next.successorConstructorArgs));
+        if (opts.emitArgs) {
+          // an --emit-args inside the artifact store goes through the store's gate (ARTIFACT-MUTATION-1)
+          const emitPath = path.resolve(opts.emitArgs);
+          const emitted = core.serializeSilArtifactValues(next.successorConstructorArgs);
+          const { writeFileRespectingStore } = await import("@hardkas/artifacts");
+          await writeFileRespectingStore(emitPath, emitted, () => fs.writeFileSync(emitPath, emitted));
+        }
         // The successor state's own compile record, so the covenant can advance again.
         const successorCompile = await writeRecord(
           {

@@ -1,0 +1,156 @@
+﻿gate-hermetic: HARDKAS_HOME=C:\Users\jrodr\AppData\Local\Temp\hardkas-hermetic-home-9AlifM (copy of C:\Users\jrodr\AppData\Local\Temp\hk-v210-gate-home)
+gate-hermetic: DOCKER_HOST=tcp://127.0.0.1:1; preload=C:\Users\jrodr\AppData\Local\Temp\hk-fix\wt\scripts\hermetic\no-network-preload.cjs
+gate-hermetic: vitest run --coverage.enabled=false --reporter=default --reporter=json --outputFile=C:\Users\jrodr\AppData\Local\Temp\claude\C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo\21f9a2e4-33ac-4300-9366-aff402f85900\scratchpad\cut10-reorged-fix\logs\fix-before-regression.json packages/sdk/test/reorged-acceptance-churn.test.ts packages/artifacts/test/tx-status-reacceptance.test.ts packages/sdk/test/adversarial/wave2-a-tx-observer.test.ts packages/artifacts/test/adversarial/wave2-a-derive-tx-status.test.ts packages/cli/test/demo-cut-t-a14b-tx-status.test.ts
+
+ RUN  v2.1.9 C:/Users/jrodr/AppData/Local/Temp/hk-fix/wt
+
+ ✓ packages/artifacts/test/adversarial/wave2-a-derive-tx-status.test.ts (15 tests) 80ms
+ ✓ packages/cli/test/demo-cut-t-a14b-tx-status.test.ts (10 tests) 1868ms
+   ✓ Demo-cut · T-A14b · tx status / tx wait present the derived Q4 state > walks SUBMITTED → MEMPOOL_ACCEPTED → ACCEPTED(n) → CONFIRMED(n) → FINALIZED, each equal to sdk.tx.status, nothing asserted beyond it 641ms
+ ✓ packages/sdk/test/adversarial/wave2-a-tx-observer.test.ts (7 tests) 1125ms
+ ❯ packages/sdk/test/reorged-acceptance-churn.test.ts (5 tests | 3 failed) 1356ms
+   × False REORGED · accepting-block churn (live 2026-10-02 record run 2, tx 7) > R1 · the answer that removes the accepting block A also shows B accepting the tx: the state follows B, never REORGED 722ms
+     → expected 'REORGED' to be 'ACCEPTED' // Object.is equality
+   × False REORGED · accepting-block churn (live 2026-10-02 record run 2, tx 7) > R2 · after A leaves, the next looks scan from A: a re-accepting block the removal look did not reach is still found 249ms
+     → [{"type":"chain_removed","acceptingBlockHash":"000000000000000000000000000000000000000000000000000000000000000a"},{"type":"not_found","scannedFrom":"0000000000000000000000000000000000000000000000000000000000000103","scannedChainBlocks":0},{"type":"not_found","scannedFrom":"0000000000000000000000000000000000000000000000000000000000000103","scannedChainBlocks":0},{"type":"not_found","scannedFrom":"0000000000000000000000000000000000000000000000000000000000000103","scannedChainBlocks":0},{"type":"not_found","scannedFrom":"0000000000000000000000000000000000000000000000000000000000000103","scannedChainBlocks":0}]: expected [ 'REORGED', 'REORGED', …(3) ] to include 'ACCEPTED'
+   × False REORGED · accepting-block churn (live 2026-10-02 record run 2, tx 7) > control · churn A → B → C across looks, then two replacements between two looks: the state follows the tx, never REORGED 98ms
+     → expected '0000000000000000000000000000000000000…' to be '0000000000000000000000000000000000000…' // Object.is equality
+ ❯ packages/artifacts/test/tx-status-reacceptance.test.ts (4 tests | 3 failed) 30ms
+   × False REORGED · a re-acceptance in the same answer replaces the accepting block > chain_accepted(B) naming A as removed: the observer's accepting block is B (ACCEPTED, then CONFIRMED), never two blocks 19ms
+     → expected 'CONFLICTING_OBSERVATIONS' to be 'ACCEPTED' // Object.is equality
+   × False REORGED · a re-acceptance in the same answer replaces the accepting block > a block this observer saw final cannot be replaced: that history is CONFLICTING_OBSERVATIONS (as a removal of it is) 3ms
+     → expected 'FINALIZED' to be 'CONFLICTING_OBSERVATIONS' // Object.is equality
+   × False REORGED · a re-acceptance in the same answer replaces the accepting block > coherence: an observation cannot name its own accepting block as the removed one 4ms
+     → expected [Function] to throw an error
+
+node.exe : ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+En C:\Users\jrodr\AppData\Local\Temp\claude\C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo\21f9a2e4-33ac-4300-
+9366-aff402f85900\scratchpad\cut10-reorged-fix\run-files-wt.ps1: 22 Carácter: 1
++ & node @args_ *> $log
++ ~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+
+ FAIL  packages/artifacts/test/tx-status-reacceptance.test.ts > False REORGED · a re-acceptance in the same answer 
+replaces the accepting block > chain_accepted(B) naming A as removed: the observer's accepting block is B (ACCEPTED, 
+then CONFIRMED), never two blocks
+AssertionError: expected 'CONFLICTING_OBSERVATIONS' to be 'ACCEPTED' // Object.is equality
+
+Expected: "ACCEPTED"
+Received: "CONFLICTING_OBSERVATIONS"
+
+ ❯ packages/artifacts/test/tx-status-reacceptance.test.ts:68:28
+     66|   it("chain_accepted(B) naming A as removed: the observer's accepting …
+     67|     const shallow = deriveTxStatus({ txId: TX, submission: submission(…
+     68|     expect(shallow.status).toBe("ACCEPTED");
+       |                            ^
+     69|     expect(shallow.acceptingBlockHash).toBe(B);
+     70|     const deep = deriveTxStatus({ txId: TX, submission: submission(), …
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/6]⎯
+
+ FAIL  packages/artifacts/test/tx-status-reacceptance.test.ts > False REORGED · a re-acceptance in the same answer 
+replaces the accepting block > a block this observer saw final cannot be replaced: that history is 
+CONFLICTING_OBSERVATIONS (as a removal of it is)
+AssertionError: expected 'FINALIZED' to be 'CONFLICTING_OBSERVATIONS' // Object.is equality
+
+Expected: "CONFLICTING_OBSERVATIONS"
+Received: "FINALIZED"
+
+ ❯ packages/artifacts/test/tx-status-reacceptance.test.ts:84:22
+     82|     const fin = obs({ type: "finality_reached", acceptingBlockHash: A,…
+     83|     const r = deriveTxStatus({ txId: TX, submission: submission(), obs…
+     84|     expect(r.status).toBe("CONFLICTING_OBSERVATIONS");
+       |                      ^
+     85|   });
+     86| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/6]⎯
+
+ FAIL  packages/artifacts/test/tx-status-reacceptance.test.ts > False REORGED · a re-acceptance in the same answer 
+replaces the accepting block > coherence: an observation cannot name its own accepting block as the removed one
+AssertionError: expected [Function] to throw an error
+
+- Expected: 
+null
+
++ Received: 
+undefined
+
+ ❯ packages/artifacts/test/tx-status-reacceptance.test.ts:88:76
+     86| 
+     87|   it("coherence: an observation cannot name its own accepting block as…
+     88|     expect(() => accepted(A, 5000n, 3n, { removedAcceptingBlockHash: A…
+       |                                                                            ^
+     89|   });
+     90| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/6]⎯
+
+ FAIL  packages/sdk/test/reorged-acceptance-churn.test.ts > False REORGED · accepting-block churn (live 2026-10-02 
+record run 2, tx 7) > R1 · the answer that removes the accepting block A also shows B accepting the tx: the state 
+follows B, never REORGED
+AssertionError: expected 'REORGED' to be 'ACCEPTED' // Object.is equality
+
+Expected: "ACCEPTED"
+Received: "REORGED"
+
+ ❯ packages/sdk/test/reorged-acceptance-churn.test.ts:157:35
+    155|     node.advance(2n);
+    156|     const second = await sdk.tx.observe(txId);
+    157|     expect(second.derived.status).toBe("ACCEPTED");
+       |                                   ^
+    158|     expect(second.derived.acceptingBlockHash).toBe(B);
+    159|     expect(second.observation.finding).toMatchObject({ type: "chain_ac…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/6]⎯
+
+ FAIL  packages/sdk/test/reorged-acceptance-churn.test.ts > False REORGED · accepting-block churn (live 2026-10-02 
+record run 2, tx 7) > R2 · after A leaves, the next looks scan from A: a re-accepting block the removal look did not 
+reach is still found
+AssertionError: [{"type":"chain_removed","acceptingBlockHash":"00000000000000000000000000000000000000000000000000000000
+0000000a"},{"type":"not_found","scannedFrom":"0000000000000000000000000000000000000000000000000000000000000103","scanne
+dChainBlocks":0},{"type":"not_found","scannedFrom":"0000000000000000000000000000000000000000000000000000000000000103","
+scannedChainBlocks":0},{"type":"not_found","scannedFrom":"0000000000000000000000000000000000000000000000000000000000000
+103","scannedChainBlocks":0},{"type":"not_found","scannedFrom":"0000000000000000000000000000000000000000000000000000000
+000000103","scannedChainBlocks":0}]: expected [ 'REORGED', 'REORGED', …(3) ] to include 'ACCEPTED'
+ ❯ packages/sdk/test/reorged-acceptance-churn.test.ts:187:105
+    185|     for (let i = 0; i < 5; i++) looks.push(await sdk.tx.observe(txId, …
+    186|     const last = looks[looks.length - 1]!;
+    187|     expect(looks.map((l) => l.derived.status), JSON.stringify(looks.ma…
+       |                                                                                                         ^
+    188|     expect(last.derived.status).toBe("ACCEPTED");
+    189|     expect(last.derived.acceptingBlockHash).toBe(B);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/6]⎯
+
+ FAIL  packages/sdk/test/reorged-acceptance-churn.test.ts > False REORGED · accepting-block churn (live 2026-10-02 
+record run 2, tx 7) > control · churn A → B → C across looks, then two replacements between two looks: the state 
+follows the tx, never REORGED
+AssertionError: expected '0000000000000000000000000000000000000…' to be '0000000000000000000000000000000000000…' // 
+Object.is equality
+
+Expected: "000000000000000000000000000000000000000000000000000000000000000b"
+Received: "000000000000000000000000000000000000000000000000000000000000000a"
+
+ ❯ packages/sdk/test/reorged-acceptance-churn.test.ts:243:55
+    241|     node.reorgFrom(A);
+    242|     node.add(B, [txId]);
+    243|     expect((await look()).derived.acceptingBlockHash).toBe(B);
+       |                                                       ^
+    244|     node.reorgFrom(B);
+    245|     node.add(C, [txId]);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/6]⎯
+
+ Test Files  2 failed | 3 passed (5)
+      Tests  6 failed | 35 passed (41)
+   Start at  21:39:54
+   Duration  16.03s (transform 3.66s, setup 0ms, collect 8.50s, tests 4.46s, environment 1ms, prepare 1.35s)
+
+JSON report written to C:/Users/jrodr/AppData/Local/Temp/claude/C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo/21f9a2e4-33ac-4300-9366-aff402f85900/scratchpad/cut10-reorged-fix/logs/fix-before-regression.json
+
+gate-hermetic: vitest exit 1 after 18s
+gate-hermetic: non-loopback attempts (each one fails the gate): 0
+gate-hermetic: loopback connection targets (review for dependencies on local services):

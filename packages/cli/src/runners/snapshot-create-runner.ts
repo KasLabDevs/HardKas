@@ -2,6 +2,8 @@
 import pc from "picocolors";
 import { createSnapshot } from "@hardkas/core";
 import { UI, handleError } from "../ui.js";
+import { snapshotDirFor } from "./snapshot-dir.js";
+import { withSdk } from "./with-sdk.js";
 
 export interface SnapshotCreateOptions {
   name: string;
@@ -12,12 +14,13 @@ export interface SnapshotCreateOptions {
 
 export async function runSnapshotCreate(options: SnapshotCreateOptions) {
   const { name, workspaceRoot } = options;
+  snapshotDirFor(workspaceRoot, name); // refused before the workspace is even opened
 
   try {
-    const { Hardkas } = await import("@hardkas/sdk");
-    const sdk = await Hardkas.open({ cwd: workspaceRoot });
-    const hardkasDir = sdk.workspace.hardkasDir;
-    const outputDir = sdk.workspace.resolvePath("snapshots", options.name);
+    const { hardkasDir, outputDir } = await withSdk({ cwd: workspaceRoot }, (sdk) => ({
+      hardkasDir: sdk.workspace.hardkasDir,
+      outputDir: snapshotDirFor(sdk.workspace.root, options.name)
+    }));
 
     const manifest = await createSnapshot({
       hardkasDir,
@@ -45,6 +48,9 @@ export async function runSnapshotCreate(options: SnapshotCreateOptions) {
     });
   } catch (err: any) {
     const { HardkasCliError } = await import("../cli-errors.js");
+    if (err?.code === "SNAPSHOT_EXISTS") {
+      throw new HardkasCliError("SNAPSHOT_EXISTS", err.message, { exitCode: 1, cause: err });
+    }
     throw new HardkasCliError(
       "SNAPSHOT_CREATE_FAILED",
       `Snapshot creation failed: ${((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err))}`,

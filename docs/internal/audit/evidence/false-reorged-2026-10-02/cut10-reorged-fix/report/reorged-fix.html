@@ -1,0 +1,219 @@
+<title>Arreglo del falso REORGED</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap">
+<style>
+/* Layout: one reading column (report), with a before/after pair and wide tables scrolling in their own boxes. */
+:root {
+  --bg: #f4f7f6;
+  --surface: #ffffff;
+  --fg: #16211e;
+  --muted: #586864;
+  --line: #d6e0dd;
+  --accent: #0b6f60;
+  --accent-soft: #e2f3ef;
+  --ok: #1c7445;
+  --ok-soft: #e4f4ea;
+  --bad: #a8321f;
+  --bad-soft: #fbe9e5;
+  --code-bg: #eef3f1;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1614; --surface: #16201d; --fg: #e3ece9; --muted: #98aba6; --line: #2a3834;
+    --accent: #49eacb; --accent-soft: #143a33; --ok: #6fd69a; --ok-soft: #173326; --bad: #ff9a85; --bad-soft: #3a1d17;
+    --code-bg: #1c2825; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1614; --surface: #16201d; --fg: #e3ece9; --muted: #98aba6; --line: #2a3834;
+  --accent: #49eacb; --accent-soft: #143a33; --ok: #6fd69a; --ok-soft: #173326; --bad: #ff9a85; --bad-soft: #3a1d17;
+  --code-bg: #1c2825; color-scheme: dark;
+}
+body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 16px; line-height: 1.6; }
+.page { max-width: 820px; margin: 0 auto; padding-inline: 20px; padding-block: 40px 64px; display: grid; gap: 40px; }
+header { display: grid; gap: 12px; }
+.eyebrow { font-family: var(--font-mono); font-size: 12.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+h1 { font-size: clamp(28px, 5vw, 38px); line-height: 1.15; margin: 0; font-weight: 700; text-wrap: balance; }
+h2 { font-size: 22px; line-height: 1.25; margin: 0; font-weight: 600; text-wrap: balance; }
+h3 { font-size: 16px; margin: 0; font-weight: 600; }
+p { margin: 0; max-width: 68ch; }
+.lead { font-size: 18px; color: var(--muted); max-width: 64ch; }
+section { display: grid; gap: 14px; }
+code, .mono { font-family: var(--font-mono); font-size: .88em; }
+code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; overflow-wrap: anywhere; }
+ul, ol { margin: 0; padding-left: 22px; display: grid; gap: 6px; max-width: 70ch; }
+.verdict { background: var(--accent-soft); border: 1px solid var(--line); border-radius: 10px; padding: 18px 20px; display: grid; gap: 10px; }
+.verdict h2 { color: var(--accent); font-size: 18px; }
+.pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; display: grid; gap: 8px; min-width: 0; align-content: start; }
+.card .tag { justify-self: start; font-family: var(--font-mono); font-size: 12px; padding: 2px 8px; border-radius: 999px; }
+.tag.bad { background: var(--bad-soft); color: var(--bad); }
+.tag.ok { background: var(--ok-soft); color: var(--ok); }
+.big { font-size: 28px; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.big.bad { color: var(--bad); }
+.big.ok { color: var(--ok); }
+.small { font-size: 14px; color: var(--muted); }
+.scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-weight: 600; color: var(--muted); font-size: 12.5px; letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.chain { font-family: var(--font-mono); font-size: 13px; white-space: nowrap; }
+.chain b { font-weight: 500; color: var(--accent); }
+.status-ok { color: var(--ok); font-weight: 600; white-space: nowrap; }
+.status-bad { color: var(--bad); font-weight: 600; white-space: nowrap; }
+.decisions { counter-reset: d; list-style: none; padding: 0; display: grid; gap: 10px; }
+.decisions li { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 16px; display: grid; gap: 4px; }
+.decisions li strong { font-weight: 600; }
+footer { font-size: 13.5px; color: var(--muted); display: grid; gap: 6px; border-top: 1px solid var(--line); padding-top: 16px; }
+@media (max-width: 480px) { .page { padding-inline: 16px; } th, td { padding: 8px 10px; } }
+</style>
+
+<div class="page">
+  <header>
+    <div class="eyebrow">HardKAS · tx wait / tx status · 2 oct 2026 · árbol 0f4c2f26b + 7 ficheros</div>
+    <h1>Falso REORGED: arreglado y probado en vivo</h1>
+    <p class="lead">El fallo se debía a que el bloque que acepta la transacción cambia muy rápido con un minero rápido. El observador ya no lo confunde con una reorganización: cuando cambia el bloque, sigue a la transacción.</p>
+  </header>
+
+  <div class="verdict">
+    <h2>Veredicto</h2>
+    <ul>
+      <li>Experimento en vivo repetido con el mismo script: <strong>0 REORGED falsos</strong>; 20 de 20 transferencias en CONFIRMED.</li>
+      <li>El nodo reemplazó <strong>8 veces</strong> el bloque que HardKAS tenía mientras seguía mirando. HardKAS siguió la transacción <strong>las 8</strong> y nunca registró una retirada.</li>
+      <li>Después le pregunté al nodo directamente por cada cambio que registró HardKAS: <strong>10 de 10</strong> correctos.</li>
+      <li>Añadido el test que pidió el revisor, la <strong>consulta tardía</strong>: si B ya es final, el resultado es FINALIZED y nunca REORGED. Falla sobre el código actual y pasa con el arreglo.</li>
+      <li>El <strong>invariante</strong> queda escrito en la cabecera de reglas de <code>tx-status.ts</code>.</li>
+      <li>Gate hermético sobre los bytes exactos del commit: <strong>2048 bien, 0 fallos, 28 omitidos</strong>. Son los 2038 de antes más 10 tests nuevos.</li>
+      <li>En el checkout del propietario, <strong>sin commit</strong>: 5 ficheros modificados (+65 −7) y 2 tests nuevos. Nada más.</li>
+    </ul>
+  </div>
+
+  <section>
+    <h2>Antes y después</h2>
+    <div class="pair">
+      <div class="card">
+        <span class="tag bad">run 2 · código actual</span>
+        <div class="big bad">1 de 1</div>
+        <p>bloque reemplazado mientras HardKAS lo tenía acabó en un REORGED falso (tx 7). La respuesta del nodo que quitaba el bloque A ya mostraba otro bloque B aceptando la transacción. Las 110 miradas siguientes empezaron después de B. No se recuperó en los 150 s de <code>tx wait</code> ni en 8 <code>tx status</code> posteriores.</p>
+      </div>
+      <div class="card">
+        <span class="tag ok">run 3 · con el arreglo</span>
+        <div class="big ok">8 de 8</div>
+        <p>bloques reemplazados mientras HardKAS los tenía, seguidos. Cada vez, la mirada siguiente registró el bloque nuevo y el que salía (<code>removedAcceptingBlockHash</code>). Hubo 0 REORGED y 0 retiradas registradas. En su última mirada, HardKAS tenía el mismo bloque que el registrador en las 20 transacciones.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Qué cambia</h2>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Fichero</th><th>Cambio</th></tr></thead>
+        <tbody>
+          <tr><td><code>artifacts/src/schemas.ts</code></td><td><code>chain_accepted</code> admite un campo opcional, <code>removedAcceptingBlockHash</code>. Es el bloque que este observador tenía y que la misma respuesta del nodo dio por fuera de la cadena.</td></tr>
+          <tr><td><code>artifacts/src/tx-observation.ts</code></td><td>Regla de coherencia: el campo no puede nombrar al propio bloque que acepta.</td></tr>
+          <tr><td><code>artifacts/src/tx-status.ts</code></td><td>En el historial de un observador, el campo sustituye al bloque nombrado: la aceptación se movió, no se perdió. Sustituir un bloque que ese observador ya vio final da CONFLICTING. Dos bloques sin enlace siguen dando CONFLICTING (esa guardia no cambia). La cabecera de reglas recoge el invariante: la sustitución del bloque aceptante no es por sí misma la retirada de la transacción, y REORGED exige evidencia de que se perdió la aceptación.</td></tr>
+          <tr><td><code>sdk/src/tx-observer.ts</code></td><td>Cuando el nodo informa que el bloque A salió de la cadena, se lee esa misma respuesta y las que la continúan, dentro del límite de 20 lecturas que ya existía, buscando un bloque que acepte la tx. Si lo hay, el hallazgo es <code>chain_accepted(B)</code> más el enlace a A. Solo si no lo hay es <code>chain_removed(A)</code>, el REORGED legítimo.</td></tr>
+          <tr><td><code>sdk/src/tx.ts</code></td><td>Cursor: tras <code>chain_removed(A)</code> la siguiente mirada busca desde A, así que una re-aceptación posterior sigue siendo alcanzable. El historial se ordena como lo ordena la derivación: punto, hora e id. Antes, con dos miradas en el mismo punto, «la última» era arbitraria.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Cómo se probó</h2>
+    <h3>1 · Primero la regresión, que falla sobre el código actual</h3>
+    <p>En la primera ronda hubo 9 tests nuevos. <code>sdk/test/reorged-acceptance-churn.test.ts</code> recorre todo el camino, de <code>sdk.tx.observe</code> a la derivación, contra un nodo simulado cuya punta de cadena se puede reorganizar:</p>
+    <ul>
+      <li><strong>R1</strong>: la respuesta que quita A muestra a B aceptando. Se sigue a B, nunca hay REORGED y luego llega CONFIRMED.</li>
+      <li><strong>R2</strong>, el cursor: B queda fuera del alcance de la mirada de la retirada y aun así se encuentra después.</li>
+      <li><strong>Control</strong>: A sale y nadie re-acepta. Primero REORGED, que aquí es legítimo; luego MEMPOOL_ACCEPTED y, al re-minarse, ACCEPTED.</li>
+      <li><strong>Control</strong>: mempool, aceptado y confirmado, sin cambios de bloque.</li>
+      <li><strong>Control</strong>: cambios A→B→C entre miradas, y dos reemplazos entre dos miradas. Se sigue la tx y no hay REORGED.</li>
+    </ul>
+    <p><code>artifacts/test/tx-status-reacceptance.test.ts</code> cubre 4 casos: la derivación con el enlace, la guardia sin enlace, un bloque final que se reemplaza y la coherencia.</p>
+    <p>Sobre el código actual fallaron exactamente los 6 esperados: R1, R2, el control A→B→C y 3 de los 4 de derivación. Pasaron la guardia sin enlace, los otros 2 controles y todos los tests que ya existían. Ese primer resultado se conserva. Después hice R2 determinista (cada mirada en su propio punto) y lo volví a comprobar contra el código actual: los mismos 6 fallos.</p>
+    <h3>2 · Después del arreglo</h3>
+    <ul>
+      <li>Los 41 tests afectados: 41 bien.</li>
+      <li>Todo sdk y artifacts: 560 tests, 555 bien, 0 fallos, 5 omitidos.</li>
+      <li>Typecheck: la primera pasada falló porque el sdk lee los tipos de artifacts desde su <code>dist</code>, que aún era el anterior. Ese resultado se conserva. Tras el build, pasa.</li>
+      <li>Gate hermético completo: 913 ficheros, 2075 tests, 2047 bien, 0 fallos, 28 omitidos. 0 intentos de conexión fuera de loopback. PASS en 871 s.</li>
+    </ul>
+    <h3>3 · Segunda ronda: consulta tardía e invariante</h3>
+    <p>El test nuevo está en el mismo fichero de regresiones, así que el commit sigue siendo de 7 ficheros. A través de <code>sdk.tx.observe</code> la red de prueba es «simulated», que no tiene profundidad de finalidad. Por eso el test usa el observador directamente sobre simnet, con las mismas lecturas que hace el SDK. En la mirada tardía le pasa <code>previousAcceptingBlockHash: A</code>, igual que el SDK cuando el historial dice ACCEPTED(A), y deriva el estado con <code>deriveTxStatus</code>.</p>
+    <ul>
+      <li>Worktree nuevo en 0f4c2f26b, compilado primero con el código actual.</li>
+      <li>BEFORE sobre el código actual: 42 tests, 35 bien, <strong>7 fallos</strong>, que es lo esperado. Son los 6 de antes más el tardío: la mirada tardía sella <code>chain_removed(A)</code>, que se deriva REORGED, en vez de <code>finality_reached(B)</code>. Este resultado se conserva.</li>
+      <li>AFTER: 42 de 42 bien.</li>
+      <li>Typecheck: bien.</li>
+      <li><code>version:check</code>: bien.</li>
+      <li>Gate completo: 2076 tests, 2048 bien, 0 fallos, 28 omitidos. PASS en 969 s. Las conexiones de loopback son exactamente las de la línea base. Las dos de más que salieron en el primer gate coinciden con el nodo que otra sesión tuvo arriba esos minutos.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Experimento en vivo (run 3)</h2>
+    <p>Repetí el mismo script y los mismos argumentos que el run 2: 20 transferencias, minero con throttle 12, <code>tx wait --interval 1</code>, cuentas desechables nuevas y el CLI con el arreglo. Clasifica un registrador independiente que pregunta al nodo con kaspa-wasm <code>RpcClient</code>, sin código de HardKAS; los estados de HardKAS solo se registran. El criterio se fijó antes de correrlo: 0 REORGED falsos, y que HardKAS siga la transacción cuando cambia el bloque. Se corrió una sola vez.</p>
+    <ul>
+      <li>Hubo cambio de bloque aceptante en 19 de 20 transacciones, y ninguna perdió nunca la aceptación.</li>
+      <li>HardKAS emitió 0 REORGED. 20 de 20 acabaron aceptadas, con su salida en la cuenta destino.</li>
+      <li>Casos en que el nodo reemplazó un bloque mientras HardKAS lo tenía: 8, frente a 1 en el run 2. Los 8 se siguieron.</li>
+    </ul>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>tx</th><th>HardKAS tenía</th><th>Lo que vio el registrador</th><th>Siguiente mirada de HardKAS</th></tr></thead>
+        <tbody>
+          <tr><td class="num">1</td><td class="chain">f6ee8de0</td><td class="chain">f6ee8de0 → f6fbcec8 → <b>fcd8afa3</b></td><td class="status-ok">fcd8afa3 · enlace f6ee8de0</td></tr>
+          <tr><td class="num">2</td><td class="chain">ed237a67</td><td class="chain">ed237a67 → f16c35ee → <b>f8e635bd</b></td><td class="status-ok">f8e635bd · enlace ed237a67</td></tr>
+          <tr><td class="num">8</td><td class="chain">e93e8e27</td><td class="chain">e93e8e27 → eeefaa25 → f1114685 → <b>f8eff266</b></td><td class="status-ok">f8eff266 · enlace e93e8e27</td></tr>
+          <tr><td class="num">10</td><td class="chain">27f548a3</td><td class="chain">27f548a3 → 8a3d6c23 → <b>a84f2835</b></td><td class="status-ok">a84f2835 · enlace 27f548a3</td></tr>
+          <tr><td class="num">12</td><td class="chain">49ff75a8</td><td class="chain">49ff75a8 → 6c6d6b50 → c538b41a → d26f8beb → <b>e50fb8b4</b></td><td class="status-ok">e50fb8b4 · enlace 49ff75a8</td></tr>
+          <tr><td class="num">16</td><td class="chain">c89ae89e</td><td class="chain">c89ae89e → <b>cae2739c</b></td><td class="status-ok">cae2739c · enlace c89ae89e</td></tr>
+          <tr><td class="num">18</td><td class="chain">bce8819d</td><td class="chain">bce8819d → <b>ca84e441</b></td><td class="status-ok">ca84e441 · enlace bce8819d</td></tr>
+          <tr><td class="num">19</td><td class="chain">8194cd5f</td><td class="chain">8194cd5f → dc93a776 → dde37967 → <b>f6a414f7</b></td><td class="status-ok">f6a414f7 · enlace 8194cd5f</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="small">El registrador mira el nodo cada 266 ms (mediana). Varias veces vio un bloque intermedio que HardKAS saltó en una sola mirada: el caso A→B→C. La mirada siguiente de HardKAS llegó entre 0,6 y 1,2 s después del reemplazo. En los 10 enlaces del run, la re-aceptación estaba en la misma respuesta que daba la retirada: bastó una sola lectura.</p>
+    <p>HardKAS registró además 2 enlaces sobre bloques que el registrador no llegó a muestrear porque duraron menos que un intervalo: tx 4 <span class="mono">12e50e41 → f835b651</span> y tx 6 <span class="mono">d5c2d318 → f407665b</span>. Para descartar que HardKAS se inventara algo, al acabar arranqué el nodo un momento y le pregunté por los 10 enlaces. En los 10, el nodo conoce el bloque reemplazado, ese bloque ya no es de la cadena y el propio nodo lo da por retirado. El bloque que hoy acepta la transacción es justo el que registró HardKAS.</p>
+    <p class="small">El run 2 corrió sobre la cadena de la demo (blue score de unos 82 k). El run 3 corrió sobre una cadena nueva, por decisión del propietario (ver abajo). El mecanismo no depende de la altura. En cadena nueva hubo más reemplazos mientras HardKAS miraba: 8 frente a 1.</p>
+  </section>
+
+  <section>
+    <h2>Límites y casos aparte</h2>
+    <ul>
+      <li><strong>Residual, por diseño.</strong> Si en las 20 respuestas del nodo que ya limita cada mirada no aparece la re-aceptación, se sella <code>chain_removed(A)</code>. Eso da un REORGED transitorio, y el cursor encuentra la re-aceptación en una mirada posterior (lo cubre R2). En el run 3 nunca hizo falta más de una respuesta.</li>
+      <li><strong>Consulta mucho después.</strong> Si B ya es final cuando se vuelve a mirar, se sella <code>finality_reached(B)</code> sin enlace y la derivación da FINALIZED. El código actual daba REORGED. Ahora lo fija un test (ver la segunda ronda).</li>
+      <li><strong>Compatibilidad, por lectura del código, no ejecutado.</strong> Una versión anterior de HardKAS que lea observaciones escritas por esta descarta el campo nuevo. Para esas transacciones daría CONFLICTING_OBSERVATIONS en vez de REORGED. El hash de las observaciones no cambia, así que no hay error de integridad. Va en las notas de versión.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Localnet</h2>
+    <p>Mientras corría mi gate, otra sesión lanzó un gate completo en el checkout del propietario. Cinco segundos después, a las 21:56:53, se borró el contenedor del nodo de la demo y se creó otro. Luego se crearon tres mineros, que acabaron parados, y a las 22:02:51 se borró también ese nodo. Los datos de la demo no se tocaron. Los ficheros de test que corrían en mi gate a esas horas no mencionan Docker ni el localnet. De los gates anteriores, Docker solo cambió en uno: el minero, mientras se usaba la demo.</p>
+    <p>El propietario eligió «cadena nueva». Creé el nodo desde cero en un proyecto desechable con <code>hardkas localnet start --toccata</code>, corrí el experimento, lo verifiqué y borré ese nodo. El minero quedó con la misma imagen y los mismos argumentos que encontré, sin arrancar. También se borraron el proyecto desechable con sus claves de prueba y el worktree temporal.</p>
+  </section>
+
+  <section>
+    <h2>Siguiente, en el orden del revisor</h2>
+    <ol class="decisions">
+      <li><strong>Commit del propietario</strong>, solo con estos 7 ficheros. <code>git status</code> muestra exactamente 5 modificados y 2 nuevos. Para correr los tests del sdk en ese checkout hace falta antes un build, porque el <code>dist</code> de artifacts es el anterior.</li>
+      <li><strong>Archivar la evidencia</strong> en el árbol de auditoría persistente, separado de la documentación pública. El paquete mínimo: ledger, BEFORE y AFTER, clasificación de los runs 2 y 3, verificación de enlaces, parámetros exactos y resultado del gate. Los logs grandes quedan fuera, con su hash y origen en un manifiesto. El scratchpad está en %TEMP%, que Windows vacía a los ~7 días.</li>
+      <li><strong>Prueba en vivo permanente</strong> en <code>tests/localnet/tx-acceptance-churn/</code>, fuera del gate hermético. Opcional y contra el localnet: crea sus cuentas, registra la verdad con kaspa-wasm, clasifica sola y limpia lo que crea.</li>
+      <li><strong>Notas de versión</strong>: el campo opcional nuevo y el aviso de compatibilidad.</li>
+      <li><strong>Publicación.</strong></li>
+      <li><strong>Demo</strong>: quitar <code>recoverReorged</code> cuando consuma una versión publicada con el arreglo, no antes.</li>
+    </ol>
+  </section>
+
+  <footer>
+    <div>Evidencia en el scratchpad de la sesión: <code>cut10-reorged-fix/</code> (<code>LEDGER-fix.md</code>, <code>live/record-3/</code> con la clasificación, la exposición, el seguimiento y la verificación de enlaces, y <code>logs/</code> antes y después) y <code>cut9-reorged/</code> (runs 1 y 2).</div>
+    <div>No se hizo commit, push, publicación, changeset ni cambio de versión.</div>
+  </footer>
+</div>

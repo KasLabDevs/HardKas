@@ -33,7 +33,9 @@ export default async function runReplayFailureRecipe(sandboxRoot: string) {
     // Mutate deterministic field (networkId) to break signature/replay integrity
     data.networkId = "mainnet";
 
-    fs.writeFileSync(signedPath, JSON.stringify(data, null, 2));
+    // the deliberate tamper is still a store mutation: it goes through the store's gate (ARTIFACT-MUTATION-1)
+    const { ArtifactStoreMutation } = await import("@hardkas/artifacts");
+    await new ArtifactStoreMutation(sandboxRoot).writeFile(signedFile, JSON.stringify(data, null, 2));
 
     await new Promise((r) => setTimeout(r, 1000)); // wait for watcher to pick up the change
   }

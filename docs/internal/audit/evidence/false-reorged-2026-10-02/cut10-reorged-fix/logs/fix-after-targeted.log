@@ -1,0 +1,24 @@
+﻿gate-hermetic: HARDKAS_HOME=C:\Users\jrodr\AppData\Local\Temp\hardkas-hermetic-home-R980B9 (copy of C:\Users\jrodr\AppData\Local\Temp\hk-v210-gate-home)
+gate-hermetic: DOCKER_HOST=tcp://127.0.0.1:1; preload=C:\Users\jrodr\AppData\Local\Temp\hk-fix\wt\scripts\hermetic\no-network-preload.cjs
+gate-hermetic: vitest run --coverage.enabled=false --reporter=default --reporter=json --outputFile=C:\Users\jrodr\AppData\Local\Temp\claude\C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo\21f9a2e4-33ac-4300-9366-aff402f85900\scratchpad\cut10-reorged-fix\logs\fix-after-targeted.json packages/sdk/test/reorged-acceptance-churn.test.ts packages/artifacts/test/tx-status-reacceptance.test.ts packages/sdk/test/adversarial/wave2-a-tx-observer.test.ts packages/artifacts/test/adversarial/wave2-a-derive-tx-status.test.ts packages/cli/test/demo-cut-t-a14b-tx-status.test.ts
+
+ RUN  v2.1.9 C:/Users/jrodr/AppData/Local/Temp/hk-fix/wt
+
+ ✓ packages/artifacts/test/adversarial/wave2-a-derive-tx-status.test.ts (15 tests) 63ms
+ ✓ packages/cli/test/demo-cut-t-a14b-tx-status.test.ts (10 tests) 1463ms
+   ✓ Demo-cut · T-A14b · tx status / tx wait present the derived Q4 state > walks SUBMITTED → MEMPOOL_ACCEPTED → ACCEPTED(n) → CONFIRMED(n) → FINALIZED, each equal to sdk.tx.status, nothing asserted beyond it 511ms
+ ✓ packages/sdk/test/adversarial/wave2-a-tx-observer.test.ts (7 tests) 841ms
+ ✓ packages/sdk/test/reorged-acceptance-churn.test.ts (5 tests) 893ms
+ ✓ packages/artifacts/test/tx-status-reacceptance.test.ts (4 tests) 15ms
+
+ Test Files  5 passed (5)
+      Tests  41 passed (41)
+   Start at  21:43:00
+   Duration  10.67s (transform 1.61s, setup 0ms, collect 5.75s, tests 3.27s, environment 1ms, prepare 580ms)
+
+JSON report written to C:/Users/jrodr/AppData/Local/Temp/claude/C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo/21f9a2e4-33ac-4300-9366-aff402f85900/scratchpad/cut10-reorged-fix/logs/fix-after-targeted.json
+
+gate-hermetic: vitest exit 0 after 11s
+gate-hermetic: non-loopback attempts (each one fails the gate): 0
+gate-hermetic: loopback connection targets (review for dependencies on local services):
+gate-hermetic: PASS

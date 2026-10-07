@@ -1,0 +1,11 @@
+$ hardkas node start --json   (cwd ws-after, DOCKER_HOST=tcp://127.0.0.1:1)
+exit=1 stdout_is_single_json=true
+--- stdout ---
+{
+  "ok": false,
+  "code": "DOCKER_UNAVAILABLE",
+  "message": "[DOCKER_UNAVAILABLE] Docker is not available (docker inspect failed). Install or start Docker to run a real Kaspa node. Details: Command failed with exit code 1: docker inspect --format \"{{.State.Status}}\" hardkas-kaspad-toccata-v2",
+  "mode": "cli"
+}
+--- stderr ---
+  ℹ Starting Kaspa node (Docker)...

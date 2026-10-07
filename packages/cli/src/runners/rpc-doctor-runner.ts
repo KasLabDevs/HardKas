@@ -79,7 +79,7 @@ async function checkKaspaEndpoint(rpcUrl: string): Promise<LayeredHealthResult> 
   try {
     await client.connect(3000);
   } catch (err) {
-    client.disconnect();
+    await client.disconnect();
     return {
       tcpReachable: true,
       protocolReachable: false,
@@ -94,7 +94,7 @@ async function checkKaspaEndpoint(rpcUrl: string): Promise<LayeredHealthResult> 
     const info = (await client.getServerInfo()) as KaspaRpcInfo;
     const dagInfo = (await client.getBlockDagInfo()) as KaspaRpcInfo;
     const latencyMs = Date.now() - start;
-    client.disconnect();
+    await client.disconnect();
     return {
       tcpReachable: true,
       protocolReachable: true,
@@ -111,7 +111,7 @@ async function checkKaspaEndpoint(rpcUrl: string): Promise<LayeredHealthResult> 
       version: info?.serverVersion || info?.server_version || "unknown"
     };
   } catch (err) {
-    client.disconnect();
+    await client.disconnect();
     return {
       tcpReachable: true,
       protocolReachable: true,
@@ -183,7 +183,8 @@ export async function runRpcDoctor(options: RpcDoctorOptions) {
     if (networkObj && typeof networkObj.rpcUrl === "string") {
       endpoints = [networkObj.rpcUrl];
     } else {
-      endpoints = ["ws://127.0.0.1:18210"];
+      const { nodeRpcUrl } = await import("@hardkas/core");
+      endpoints = [nodeRpcUrl()];
     }
   }
 

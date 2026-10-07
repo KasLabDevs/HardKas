@@ -131,10 +131,18 @@ export function registerLockCommands(program: Command) {
           if (!confirmed) return;
         }
 
-        const result = clearLock(process.cwd(), name, {
-          force: options.force,
-          ifDead: options.ifDead
-        });
+        let result;
+        try {
+          result = clearLock(process.cwd(), name, {
+            force: options.force,
+            ifDead: options.ifDead
+          });
+        } catch (e: any) {
+          // CONTAINMENT-2: a name that is not a lock of .hardkas/locks is a usage error; nothing was read or removed
+          if (e?.code !== "LOCK_NAME_INVALID") throw e;
+          const { HardkasCliError, HardkasExitCode } = await import("../cli-errors.js");
+          throw new HardkasCliError("LOCK_NAME_INVALID", e.message, { exitCode: HardkasExitCode.USAGE_ERROR, cause: e });
+        }
 
         if (result.cleared) {
           UI.success(`Lock '${name}' cleared.`);

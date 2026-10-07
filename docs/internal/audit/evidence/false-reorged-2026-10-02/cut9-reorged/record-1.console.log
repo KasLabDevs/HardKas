@@ -1,0 +1,29 @@
+﻿[1.5s] node hardkas-kaspad-toccata-v2 was stopped: started it for the run (it is stopped again at the end)
+[8.7s] accounts: sender reorg1 kaspasim:qp6kvlhc39naegrlxdh3e4z8ghxjs4ky6lqscvf4r7na32gslw33zuea9r6ff, recipient reorg2 kaspasim:qqty4cz2k676xkmkwsew8832kx4mqz2lanvm9y500mfak605sj25kmlm28uuy
+[96.4s] fund: code 0 
+[99.5s] tx 1: 758c76cb81fb0a5cb92d5c472ab688c921e496978958d81e460fc4ec3adb2339 submitted
+[299.7s] tx 1: wait code 1, HardKAS states INSUFFICIENT_EVIDENCE, last INSUFFICIENT_EVIDENCE; truth accepting-block changes 0, final accepted false, outputs 0
+[302.6s] tx 2: 38a660c1ac845347efbe7f66e235fcbaeda2b81be38dec0c3d37a0fc98ffb93d submitted
+[503.0s] tx 2: wait code 1, HardKAS states INSUFFICIENT_EVIDENCE, last INSUFFICIENT_EVIDENCE; truth accepting-block changes 0, final accepted false, outputs 0
+[506.8s] tx 3: 207736c95f2cd896efa0feade1d2f341518f87741db0fd59fb1686db2550c650 submitted
+[711.6s] tx 3: wait code 1, HardKAS states INSUFFICIENT_EVIDENCE, last INSUFFICIENT_EVIDENCE; truth accepting-block changes 0, final accepted false, outputs 0
+[715.2s] tx 4: 8eefb30abc695ce5f58e3c6688217eec43ff9cee3a199675e0e7bf46a8626d3f submitted
+[915.6s] tx 4: wait code 1, HardKAS states INSUFFICIENT_EVIDENCE, last INSUFFICIENT_EVIDENCE; truth accepting-block changes 0, final accepted false, outputs 0
+[919.5s] tx 5: 8e24609e4c2d8d93d3fb8c743152fd01916dde77ad48ca04a66aeaa20c98b079 submitted
+[1122.9s] tx 5: wait code 1, HardKAS states INSUFFICIENT_EVIDENCE, last INSUFFICIENT_EVIDENCE; truth accepting-block changes 0, final accepted false, outputs 0
+[1127.3s] tx 6: 61a68daf447a151e7e6a4b5649dfd020b6fde37b2f20cdce5f4f7e99f114dae8 submitted
+[1331.8s] tx 6: wait code 1, HardKAS states INSUFFICIENT_EVIDENCE, last INSUFFICIENT_EVIDENCE; truth accepting-block changes 0, final accepted false, outputs 0
+[1336.3s] tx 7: 36f18320502e605611c8fae7e7fe26b7b4e671562757dd8a3ab541f51fca7ed4 submitted
+[1536.2s] tx 7: wait code 1, HardKAS states INSUFFICIENT_EVIDENCE, last INSUFFICIENT_EVIDENCE; truth accepting-block changes 0, final accepted false, outputs 0
+[1541.2s] tx 8: 47e43d5dadbcd5a34cbbaed1a06ac2d90171bd8a641d4043291cc939e88085a9 submitted
+[1742.6s] tx 8: wait code 1, HardKAS states INSUFFICIENT_EVIDENCE, last INSUFFICIENT_EVIDENCE; truth accepting-block changes 0, final accepted false, outputs 0
+[1747.5s] tx 9: 52f9fdc430d1842d4f199224930d65be2114c773892bbde973f71289eed83f07 submitted
+[1951.6s] tx 9: wait code 1, HardKAS states INSUFFICIENT_EVIDENCE, last INSUFFICIENT_EVIDENCE; truth accepting-block changes 0, final accepted false, outputs 0
+[1957.1s] tx 10: 61a68daf447a151e7e6a4b5649dfd020b6fde37b2f20cdce5f4f7e99f114dae8 submitted
+[2162.0s] tx 10: wait code 1, HardKAS states INSUFFICIENT_EVIDENCE, last INSUFFICIENT_EVIDENCE; truth accepting-block changes 0, final accepted false, outputs 0
+[2167.3s] tx 11: d9309fff05df2d630d2c72d5c3bbc6610bfcd8f5195692ad8e0959f0ba2af978 submitted
+[2374.8s] tx 11: wait code 1, HardKAS states INSUFFICIENT_EVIDENCE, last INSUFFICIENT_EVIDENCE; truth accepting-block changes 0, final accepted false, outputs 0
+[2380.2s] tx 12: 1f2b7cbf3ddeb6e06021fe713dfc35c2f50c954960c8b2ad0d4d7919e569cb61 submitted
+[2589.3s] tx 12: wait code 1, HardKAS states INSUFFICIENT_EVIDENCE, last INSUFFICIENT_EVIDENCE; truth accepting-block changes 0, final accepted false, outputs 0
+[2589.3s] MINER RESTORE FAILED: Unexpected token ' ', " [ { "... is not valid JSON
+[2589.3s] done

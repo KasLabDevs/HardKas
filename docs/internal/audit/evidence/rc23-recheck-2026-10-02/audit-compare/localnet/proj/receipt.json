@@ -1,0 +1,42 @@
+{
+  "schema": "hardkas.txSubmission.v1",
+  "hardkasVersion": "0.12.0-rc.26",
+  "version": "1.0.0-alpha",
+  "hashVersion": 5,
+  "networkId": "simnet",
+  "mode": "localnet",
+  "createdAt": "2026-10-02T20:00:21.784Z",
+  "execution": {
+    "mode": "localnet",
+    "domain": "kaspa-l1",
+    "network": "simnet"
+  },
+  "signedArtifactId": "d94de15a3157dad3af027827bce1ae24adf416c09838191e259afb87a6c383e1",
+  "txId": "91eb27245a768f14e3000bb6b929353401eb848ebbb9ed264e2a2755eec9feab",
+  "submitResult": {
+    "accepted": true,
+    "transactionId": "91eb27245a768f14e3000bb6b929353401eb848ebbb9ed264e2a2755eec9feab"
+  },
+  "fee": {
+    "status": "derived",
+    "method": "inputs-minus-outputs",
+    "inputsSompi": "5000000000",
+    "outputsSompi": "4999796400",
+    "feeSompi": "203600",
+    "inputCount": 1,
+    "outputCount": 2,
+    "planArtifactId": "df8ecea503fe79f1f6d5a8e51985c8552dc9dd86b6225d5f70d40435647df345"
+  },
+  "submittedAt": "2026-10-02T20:00:21.784Z",
+  "rpcUrl": "ws://127.0.0.1:18210",
+  "workflowId": "wf_4851bcf26ff83167",
+  "assumptionLevel": "simnet",
+  "lineage": {
+    "artifactId": "42edb69a997549111acfd93b5e03f96c3b459452b61e0e5d59612d094c6bc31d",
+    "lineageId": "df8ecea503fe79f1f6d5a8e51985c8552dc9dd86b6225d5f70d40435647df345",
+    "parentArtifactId": "d94de15a3157dad3af027827bce1ae24adf416c09838191e259afb87a6c383e1",
+    "rootArtifactId": "df8ecea503fe79f1f6d5a8e51985c8552dc9dd86b6225d5f70d40435647df345",
+    "sequence": 3
+  },
+  "contentHash": "42edb69a997549111acfd93b5e03f96c3b459452b61e0e5d59612d094c6bc31d"
+}

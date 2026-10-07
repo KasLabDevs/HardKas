@@ -7,13 +7,10 @@ import {
   MempoolEntry,
   BlockDagInfo,
   ServerInfo,
-  UtxosChangedEvent,
-  VirtualChainChangedEvent,
-  KaspaSubscription,
   KaspaRpcTransaction,
   KaspaSubmitTransactionResult
 } from "./index.js";
-import { type NetworkId } from "@hardkas/core";
+import { type NetworkId, nodeRpcUrl } from "@hardkas/core";
 import {
   RpcError,
   RpcCircuitOpenError,
@@ -76,7 +73,8 @@ export class KaspaJsonRpcClient implements KaspaRpcClient {
   private retriesCount: number = 0;
 
   constructor(options: RpcClientOptions) {
-    this.url = options.url || "http://127.0.0.1:18210";
+    // CANONICAL-RPC-URL: the canonical localnet endpoint (ws://) from @hardkas/core, never a copy.
+    this.url = options.url || nodeRpcUrl();
     this.timeoutMs = options.timeoutMs || 10000;
     this.retry = {
       maxRetries: options.retry?.maxRetries ?? 3,
@@ -92,14 +90,6 @@ export class KaspaJsonRpcClient implements KaspaRpcClient {
 
   async call<TResponse = unknown>(method: string, params?: any): Promise<TResponse> {
     return this.callRpc<TResponse>(method, params);
-  }
-
-  on(event: string, handler: (data: any) => void): void {
-    // Request/response only: notifications are JsonWrpcKaspaClient's.
-  }
-
-  off(event: string, handler: (data: any) => void): void {
-    // Request/response only: notifications are JsonWrpcKaspaClient's.
   }
 
   async healthCheck(): Promise<KaspaRpcHealth> {
@@ -291,14 +281,6 @@ export class KaspaJsonRpcClient implements KaspaRpcClient {
 
   async getHeaders(): Promise<any> {
     return await this.callRpc("getBlockHeadersRequest", {});
-  }
-
-  async subscribeToUtxosChanged(addresses: readonly string[], handler: (event: UtxosChangedEvent) => void): Promise<KaspaSubscription> {
-    throw new Error("RPC_SUBSCRIPTIONS_UNSUPPORTED");
-  }
-
-  async subscribeToVirtualChainChanged(options: { includeAcceptedTransactionIds: boolean }, handler: (event: VirtualChainChangedEvent) => void): Promise<KaspaSubscription> {
-    throw new Error("RPC_SUBSCRIPTIONS_UNSUPPORTED");
   }
 
   async getUtxosByAddress(address: string): Promise<KaspaRpcUtxo[]> {

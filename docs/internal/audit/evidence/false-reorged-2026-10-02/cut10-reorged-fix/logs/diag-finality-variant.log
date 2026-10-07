@@ -1,0 +1,2 @@
+﻿fixed observer's finding  [chain_accepted(A), finality_reached(B)]: FINALIZED (dddd…) — final according to the observed Kaspa virtual-chain finality rule at sink blue score 437002 (this observer's view)
+HEAD observer's finding   [chain_accepted(A), chain_removed(A)]    : REORGED (cccc…) — the accepting block cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc left this observer's selected chain and no new acceptance was observed by it

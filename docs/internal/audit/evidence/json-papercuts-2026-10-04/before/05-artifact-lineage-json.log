@@ -1,0 +1,23 @@
+$ hardkas artifact lineage signed.json --json
+exit=0 stdout_is_single_json=false json_docs_on_stdout=0
+--- stdout ---
+════════════════════════════════════════════════════════════
+Lineage ID:    c84e82a07128512316cf7e65489d2564fa6f3562a852c8be4ce7ee1b363ead8f
+Root Artifact: c84e82a07128512316cf7e65489d2564fa6f3562a852c8be4ce7ee1b363ead8f
+Current ID:    ef78e48aab338541f01048a3269b79f4b1326892d95cb31c0ddc6cdfb4adbf41
+Parent ID:     c84e82a07128512316cf7e65489d2564fa6f3562a852c8be4ce7ee1b363ead8f
+Sequence:      2
+════════════════════════════════════════════════════════════
+
+PROVENANCE CHAIN:
+  [ROOT] c84e82a0...
+    ↓    (Intermediate Artifacts)
+    ↓    c84e82a0... (Parent)
+  [HERE] hardkas.signedTx (ef78e48a...)
+
+✓ Internal lineage structure is consistent.
+--- stderr ---
+
+  ═══ Artifact Lineage: signed.json ═══
+
+  Hint: Operational Provenance Complete

@@ -1,0 +1,10 @@
+$ hardkas env check   (cwd mech-bare-after, env {"HARDKAS_HOEM":"oops"})
+exit=2 stdout_is_single_json=false
+--- stdout ---
+Environment check (process only, no .env)
+
+  ✅ HARDKAS_TEST_IGNORE_STALENESS=1  (process; tests only: skip the staleness check of artifacts)
+  ❌ HARDKAS_HOEM: not a variable HardKAS reads (a typo?)
+--- stderr ---
+
+  ✗ [ENV_UNKNOWN_VARIABLE] Unknown HARDKAS_* variable(s): HARDKAS_HOEM (HardKAS does not read them; check the spelling)

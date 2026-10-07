@@ -1,0 +1,32 @@
+﻿{
+  "stats": {
+    "notifications": 371,
+    "sameArrayObject": 0,
+    "addedTotal": 11573,
+    "removedTotal": 11134,
+    "removedAlsoAddedInSameNotification": 11134,
+    "removedNeverSeenAdded": 0,
+    "removedSeenAddedEarlier": 0,
+    "removedAddressIsA": 11134,
+    "removedAddressOther": 0,
+    "addedAddressOther": 0
+  },
+  "daa": {
+    "overlapSameDaaScore": 0,
+    "overlapDifferentDaaScore": 11134,
+    "overlapSameAmount": 11134,
+    "overlapDifferentAmount": 0
+  },
+  "sample": {
+    "addedLen": 28,
+    "removedLen": 28,
+    "firstAdded": "aeb00c6bed55ba16f4511d8fdbf14e566e36b1779b0c991b90db7363a1fc17cc:14",
+    "firstRemoved": "aeb00c6bed55ba16f4511d8fdbf14e566e36b1779b0c991b90db7363a1fc17cc:5",
+    "removedEqualsAdded": false
+  },
+  "node": 439,
+  "reconstructed": 0,
+  "everAdded": 439,
+  "nodeNotEverAdded": 0,
+  "nodeInReconstructed": 0
+}

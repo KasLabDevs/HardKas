@@ -1,0 +1,115 @@
+﻿{
+  "allTrue": true,
+  "facts": [
+    {
+      "ok": true,
+      "name": "node: T_gap = T0 − gapInputs + gapChange"
+    },
+    {
+      "ok": true,
+      "name": "node: nothing moved between the end of the gap and the reconnect"
+    },
+    {
+      "ok": true,
+      "name": "node: T3 = T2 − postInputs + postChange"
+    },
+    {
+      "ok": true,
+      "name": "L equals the truth at before-gap"
+    },
+    {
+      "ok": true,
+      "name": "L equals the truth at during-gap"
+    },
+    {
+      "ok": true,
+      "name": "L equals the truth at after-reconnect"
+    },
+    {
+      "ok": true,
+      "name": "L equals the truth at after-control-spend"
+    },
+    {
+      "ok": true,
+      "name": "W equals the truth before the gap (outpoints and amounts)"
+    },
+    {
+      "ok": true,
+      "name": "W.utxos() equals the fresh node snapshot after the resync (outpoints and amounts)",
+      "detail": {
+        "extra": [],
+        "missing": []
+      }
+    },
+    {
+      "ok": true,
+      "name": "W.utxos() equals the fresh node snapshot after the later spend (outpoints and amounts)",
+      "detail": {
+        "extra": [],
+        "missing": []
+      }
+    },
+    {
+      "ok": true,
+      "name": "exactly one resync event after the heal",
+      "detail": 1
+    },
+    {
+      "ok": true,
+      "name": "resync.removed = exactly the inputs spent during the cut",
+      "detail": [
+        "0179f0d408dbaf354b7d909328861751f7b2af76d689e43f789c68f6294cd246:0",
+        "0179f0d408dbaf354b7d909328861751f7b2af76d689e43f789c68f6294cd246:1"
+      ]
+    },
+    {
+      "ok": true,
+      "name": "resync.added = exactly the change created during the cut",
+      "detail": [
+        "59880b653d9fcb7e18bfcfc008321099f247810bb91cad7128374379ca104681:1"
+      ]
+    },
+    {
+      "ok": true,
+      "name": "resync amounts are the node's (removed from T0, added from T2)"
+    },
+    {
+      "ok": true,
+      "name": "resync.reason is \"reconnect\""
+    },
+    {
+      "ok": true,
+      "name": "the cut never appears as a transaction event",
+      "detail": 0
+    },
+    {
+      "ok": true,
+      "name": "the later spend arrives live as transaction events: removed = its inputs, added = its change",
+      "detail": [
+        {
+          "txid": "0179f0d408dbaf354b7d909328861751f7b2af76d689e43f789c68f6294cd246",
+          "removed": [
+            "0179f0d408dbaf354b7d909328861751f7b2af76d689e43f789c68f6294cd246:10",
+            "0179f0d408dbaf354b7d909328861751f7b2af76d689e43f789c68f6294cd246:11"
+          ],
+          "added": []
+        },
+        {
+          "txid": "4fd2ed733fd0a70b6aa918b8d042c287f424584167150eb544324e252ebac416",
+          "removed": [],
+          "added": [
+            "4fd2ed733fd0a70b6aa918b8d042c287f424584167150eb544324e252ebac416:1"
+          ]
+        }
+      ]
+    },
+    {
+      "ok": true,
+      "name": "replication: R keeps exactly the gap inputs and lacks exactly the change after the reconnect"
+    },
+    {
+      "ok": true,
+      "name": "replication: U equals the truth after the reconnect"
+    }
+  ]
+}

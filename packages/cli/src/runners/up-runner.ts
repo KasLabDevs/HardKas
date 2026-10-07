@@ -31,7 +31,8 @@ export async function runUp() {
 
     // 3. Check RPC
     const target = loaded.config.networks?.[networkId];
-    let rpcUrl = "ws://127.0.0.1:18210";
+    const { nodeRpcUrl } = await import("@hardkas/core");
+    let rpcUrl = nodeRpcUrl();
     if (target) {
       if (target.kind === "kaspa-rpc" || target.kind === "igra") {
         rpcUrl = target.rpcUrl;

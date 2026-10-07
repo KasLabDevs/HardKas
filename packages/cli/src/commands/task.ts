@@ -63,13 +63,17 @@ export function registerTaskCommands(program: Command, loadedConfig?: LoadedHard
     cmd.option("--json", "Output results as JSON", false);
 
     cmd.action(async (options) => {
+      // RESOURCE-LIFECYCLE-1 (RL-I1/RL-I3): the SDK this command opens and lends to the task is released once the task
+      // and its recording are done, whatever they end with. What the task creates itself is the task's (RL-I2).
+      let release: (() => Promise<void>) | undefined;
       try {
         const { Hardkas } = await import("@hardkas/sdk");
-        const hk = await Hardkas.open({ 
+        const hk = await Hardkas.open({
           cwd: ".",
           mode: "developer",
           network: options.network || loadedConfig?.config?.defaultNetwork || "simulated"
         });
+        release = () => hk.close();
 
         // Type conversion based on param definitions
         const typedArgs: Record<string, any> = {};
@@ -166,8 +170,12 @@ export function registerTaskCommands(program: Command, loadedConfig?: LoadedHard
 
       } catch (e: any) {
         if (e instanceof HardkasCliError) throw e;
+        // CLI-RUNTIME-CONTRACT-1: rendered once here with the task as context, rethrown as itself
+        // (its own code and message, instead of a TASK_FAILED "Command failed").
         handleError(e, `Failed to execute task ${name}`);
-        throw new HardkasCliError("TASK_FAILED", "Command failed", { exitCode: 1 });
+        throw e;
+      } finally {
+        await release?.();
       }
     });
   }

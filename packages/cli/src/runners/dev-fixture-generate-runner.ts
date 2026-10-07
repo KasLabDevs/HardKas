@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { UI } from "../ui.js";
-import { calculateContentHash, CURRENT_HASH_VERSION } from "@hardkas/artifacts";
+import { calculateContentHash, CURRENT_HASH_VERSION, writeFileRespectingStore } from "@hardkas/artifacts";
 
 export async function runDevFixtureGenerate(options: any) {
   const { type, out, json } = options;
@@ -56,7 +56,9 @@ export async function runDevFixtureGenerate(options: any) {
 
   if (out) {
     const fullPath = path.resolve(process.cwd(), out);
-    await fs.writeFile(fullPath, JSON.stringify(payload, null, 2), "utf-8");
+    const data = JSON.stringify(payload, null, 2);
+    // an --out inside the artifact store goes through the store's gate (ARTIFACT-MUTATION-1)
+    await writeFileRespectingStore(fullPath, data, () => fs.writeFile(fullPath, data, "utf-8"));
     if (!json) {
       console.log(`Fixture generated and saved to ${out}`);
     }

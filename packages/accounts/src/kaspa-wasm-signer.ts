@@ -17,6 +17,35 @@ export interface KaspaWasmSignerOptions {
   account?: HardkasKaspaAccount;
   allowMainnet?: boolean;
   wasmConfig?: WasmProviderConfig;
+  /** The password of the account's keystore, in memory only: never stored, logged or echoed. */
+  keystorePassword?: string;
+}
+
+const keystoreError = (code: string, message: string) => Object.assign(new Error(`${code}: ${message}`), { code });
+
+/**
+ * Opens the keystore of `account` and returns its private key. A development account (marked by the
+ * resolver for `.hardkas/dev-accounts/`) opens with the published development password; any other
+ * keystore only with `password`, its owner's, given explicitly. Nothing is tried silently: a missing
+ * password is KEYSTORE_PASSWORD_REQUIRED, one that does not open the keystore KEYSTORE_PASSWORD_INVALID.
+ */
+export async function unlockAccountKeystore(
+  account: { name: string; keystorePath: string; keystoreKind?: "dev-account" | undefined },
+  password: string | undefined
+): Promise<string> {
+  const devAccount = account.keystoreKind === "dev-account";
+  const secret = devAccount ? DEV_ACCOUNTS_PASSWORD : password;
+  if (!secret) {
+    throw keystoreError("KEYSTORE_PASSWORD_REQUIRED", `account '${account.name}' is an encrypted keystore and no password was given to open it.`);
+  }
+  const keystore = await KeystoreManager.loadEncryptedKeystore(account.keystorePath);
+  const unlock = await KeystoreManager.decryptEncryptedKeystore(keystore, secret);
+  if (!unlock.success || !unlock.payload?.privateKey) {
+    throw devAccount
+      ? keystoreError("DEV_ACCOUNT_KEY_UNAVAILABLE", `the development keystore of account '${account.name}' does not open.`)
+      : keystoreError("KEYSTORE_PASSWORD_INVALID", `the password does not open the keystore of account '${account.name}' (wrong password, or a damaged keystore).`);
+  }
+  return unlock.payload.privateKey;
 }
 
 
@@ -69,15 +98,10 @@ export class KaspaWasmPrivateKeySigner implements HardkasTxPlanSigner {
         }
 
         if (!pkValue && account.keystorePath) {
-          try {
-            const KeystoreManager = (await import("./keystore.js")).KeystoreManager;
-            const DEV_ACCOUNTS_PASSWORD = (await import("./dev-accounts.js")).DEV_ACCOUNTS_PASSWORD;
-            const keystore = await KeystoreManager.loadEncryptedKeystore(account.keystorePath);
-            const unlock = await KeystoreManager.decryptEncryptedKeystore(keystore, DEV_ACCOUNTS_PASSWORD);
-            if (unlock.success && unlock.payload) {
-              pkValue = unlock.payload.privateKey;
-            }
-          } catch (e) {}
+          pkValue = await unlockAccountKeystore(
+            { name: account.name, keystorePath: account.keystorePath, keystoreKind: account.keystoreKind },
+            this.options.keystorePassword
+          );
         }
 
         if (!pkValue) {

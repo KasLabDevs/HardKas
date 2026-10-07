@@ -28,6 +28,7 @@ export * from "./igra-artifacts.js";
 export * from "./igra-io.js";
 export * from "./feeVerify.js";
 export * from "./lineage.js";
+export * from "./lineage-chain.js";
 export * from "./diff.js";
 export * from "./deployment.js";
 export * from "./deployment-store.js";
@@ -62,6 +63,7 @@ export type {
 } from "./schemas.js";
 
 export * from "./store.js";
+export * from "./store-mutation.js";
 export * from "./resolve.js";
 export * from "./silver-refs.js";
 export * from "./artifact-handle.js";

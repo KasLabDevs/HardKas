@@ -1,0 +1,50 @@
+$ hardkas tx profile plan.json --json
+exit=0 stdout_is_single_json=true json_docs_on_stdout=1
+--- stdout ---
+{
+  "ok": true,
+  "command": "tx profile",
+  "mode": "cli",
+  "result": {
+    "path": "plan.json",
+    "planId": "plan-c84e82a071285123",
+    "artifactId": "c84e82a07128512316cf7e65489d2564fa6f3562a852c8be4ce7ee1b363ead8f",
+    "networkId": "simulated",
+    "mode": "simulator",
+    "amountSompi": "1000000000",
+    "estimatedFeeSompi": "203600",
+    "mass": {
+      "total": "2036",
+      "base": "94",
+      "inputs": "1118",
+      "outputs": "824",
+      "payload": "0"
+    },
+    "structure": {
+      "inputs": [
+        {
+          "index": 0,
+          "outpoint": {
+            "transactionId": "18b20b15966a9302af6b1a03cae7438bb26b6445c2ba66c7aed9a0b0bb7a547d",
+            "index": 0
+          },
+          "amountSompi": "100000000000"
+        }
+      ],
+      "outputs": [
+        {
+          "index": 0,
+          "address": "kaspa:sim_bob",
+          "amountSompi": "1000000000"
+        }
+      ],
+      "change": {
+        "address": "kaspa:sim_alice",
+        "amountSompi": "98999796400"
+      }
+    },
+    "warnings": []
+  }
+}
+--- stderr ---
+

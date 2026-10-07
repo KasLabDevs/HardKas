@@ -1,0 +1,14 @@
+$ hardkas env check   (cwd mech-bare-before, env {"HARDKAS_HOEM":"oops"})
+exit=1 stdout_is_single_json=false
+--- stdout ---
+Checking environment variables...
+Ensure you have a .env file configured properly for deployment.
+--- stderr ---
+Missing required environment variables:
+  - NETWORK
+  - KASPAD_URL
+  - HARDKAS_DATA_DIR
+  - HARDKAS_KASPAD_IMAGE
+  - LOG_LEVEL
+
+  ✗ [ENV_VALIDATION_FAILED] Missing required environment variables

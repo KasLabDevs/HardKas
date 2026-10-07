@@ -1,0 +1,16 @@
+$ hardkas accounts fund alice --amount 1000
+exit=0 stdout_is_single_json=false json_docs_on_stdout=0
+--- stdout ---
+
+  [33mDEPRECATED:[0m
+  This command performs synthetic funding only.
+  
+  Use:
+    hardkas simulator fund alice
+  
+  For real local UTXOs:
+    hardkas localnet fund alice
+
+Successfully funded alice (kaspa:sim_alice) with 1000 KAS (Simulated)
+--- stderr ---
+

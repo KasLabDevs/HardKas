@@ -1,0 +1,12 @@
+$ hardkas tx verify plan-simulator-on-mainnet.json --json   (cwd ws-after)
+exit=1 stdout_is_single_json=true
+--- stdout ---
+{
+  "ok": false,
+  "code": "VERIFICATION_ERROR",
+  "message": "Verification error: Invalid TxPlan artifact: Hash mismatch: expected c84e82a07128512316cf7e65489d2564fa6f3562a852c8be4ce7ee1b363ead8f, got f5b5e23fa2c3f273439d9c951396a837ec9e2cd20fcf63103e6a8207758a4592, planId plan-c84e82a071285123 does not derive from the artifact's content hash",
+  "mode": "cli"
+}
+--- stderr ---
+
+  ═══ Transaction Verification: plan-simulator-on-mainnet.json ═══

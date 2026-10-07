@@ -1,5 +1,7 @@
 import path from "node:path";
 import fs from "node:fs";
+import { HardkasError, plainChildPath } from "@hardkas/core";
+import { validateAccountName } from "@hardkas/accounts";
 
 /**
  * Deterministic Workspace Abstraction.
@@ -32,6 +34,33 @@ export class HardkasWorkspace {
 
   get keystoreDir(): string {
     return path.join(this.hardkasDir, "keystore");
+  }
+
+  /**
+   * CONTAINMENT-2 (R1-I1): the keystore file of account `name`, decided before anything is read or written: `name` is
+   * a valid account name and its keystore is ONE plain file directly in keystoreDir (which honours a configured
+   * hardkasDir). An existing entry there that is not a plain file (a link or a directory) is refused too, so nothing
+   * is ever read or replaced through it. Refusals are ACCOUNT_NAME_INVALID.
+   */
+  keystorePath(name: unknown): string {
+    const refuse = (why: string) =>
+      new HardkasError("ACCOUNT_NAME_INVALID", `${JSON.stringify(name)} is not an account name: ${why}. Nothing was read or written.`);
+    if (typeof name !== "string") throw refuse("an account name is a string");
+    try {
+      validateAccountName(name);
+    } catch (e) {
+      throw refuse(e instanceof Error ? e.message : String(e));
+    }
+    const file = plainChildPath(this.keystoreDir, `${name}.json`);
+    if (!file) throw refuse(`its keystore would not be one plain file in ${this.keystoreDir}`);
+    let entry: fs.Stats | undefined;
+    try {
+      entry = fs.lstatSync(file);
+    } catch {
+      entry = undefined;
+    }
+    if (entry && !entry.isFile()) throw refuse(`${file} exists and is not a plain file`);
+    return file;
   }
 
   /**

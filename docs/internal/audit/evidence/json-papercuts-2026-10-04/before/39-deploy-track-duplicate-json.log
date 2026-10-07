@@ -1,0 +1,11 @@
+$ hardkas deploy track papercut --network simulated --tx-id synthetic-c84e82a07128512316cf7e65489d2564fa6f3562a852c8be4ce7ee1b363ead8f --status sent --json
+exit=1 stdout_is_single_json=true json_docs_on_stdout=1
+--- stdout ---
+{
+  "ok": false,
+  "code": "UNKNOWN_ERROR",
+  "message": "Deployment 'papercut' already exists on network 'simulated'.",
+  "mode": "cli"
+}
+--- stderr ---
+

@@ -8,6 +8,7 @@ import {
   runLocalnetStop
 } from "../runners/localnet-runners.js";
 import { parseKasToSompi } from "@hardkas/core";
+import { invocationWorkspaceRoot } from "../workspace-root.js";
 
 export function registerLocalnetCommands(program: Command): void {
   const localnet = program
@@ -31,8 +32,8 @@ export function registerLocalnetCommands(program: Command): void {
 
   localnet
     .command("stop")
-    .description(`Stop localnet profile ${UI.maturity("alpha")}`)
-    .option("--profile <name>", "Localnet profile", "simulated")
+    .description(`Stop the Docker rusty-kaspad node of the toccata-v2 profile and its miner; needs Docker ${UI.maturity("alpha")}`)
+    .option("--profile <name>", "Localnet profile: toccata-v2 (the only one)", "toccata-v2")
     .option("--toccata", "Shortcut for --profile toccata-v2", false)
     .option("--json", "Output as JSON", false)
     .action(async (opts) => {
@@ -60,7 +61,8 @@ export function registerLocalnetCommands(program: Command): void {
     .option("--profile <name>", "Funding profile", "toccata-v2")
     .option("--amount <kas>", "KAS to wait for: mine until the mature balance grows by this amount", "1000")
     .option("--timeout <ms>", "Funding/maturity wait timeout in ms", "300000")
-    .option("--keep-miner", "Leave the companion miner running", false)
+    .option("--keep-miner", "Keep mining to the funded account after funding (its balance keeps growing)", false)
+    .option("--stop-miner", "Leave the chain stopped after funding: no new blocks until you mine again", false)
     .option("--json", "Output as JSON", false)
     .action(async (identifier, opts) => {
       await runLocalnetFund({
@@ -69,6 +71,7 @@ export function registerLocalnetCommands(program: Command): void {
         profile: opts.profile,
         timeoutMs: parseInt(opts.timeout, 10),
         keepMiner: opts.keepMiner,
+        stopMiner: opts.stopMiner,
         json: opts.json,
         workspaceRoot: process.cwd()
       });
@@ -121,7 +124,8 @@ export function registerLocalnetCommands(program: Command): void {
     .option("--json", "Output as JSON", false)
     .action(async (idOrName: string, options: { json: boolean }) => {
       const { runSnapshotVerify } = await import("../runners/snapshot-verify-runner.js");
-      await runSnapshotVerify({ idOrName, ...options, workspaceRoot: process.cwd() });
+      // WORKSPACE-AUTHORITY-1 (WA-I0): the snapshot commands act on the invocation's one workspace root
+      await runSnapshotVerify({ idOrName, ...options, workspaceRoot: invocationWorkspaceRoot() });
     });
 
   snapshotCmd
@@ -143,7 +147,7 @@ export function registerLocalnetCommands(program: Command): void {
           name,
           consensusValidated: options.consensusValidated,
           json: options.json,
-          workspaceRoot: process.cwd()
+          workspaceRoot: invocationWorkspaceRoot()
         });
       }
     );
@@ -151,11 +155,11 @@ export function registerLocalnetCommands(program: Command): void {
   snapshotCmd
     .command("replay <name>")
     .description(
-      `Replay and rebuild deterministic state from a snapshot ${UI.maturity("alpha")}`
+      `Restore a snapshot's missing artifacts into the workspace; never removes or overwrites one ${UI.maturity("alpha")}`
     )
     .option("--json", "Output as JSON", false)
     .action(async (name: string, options: { json: boolean }) => {
       const { runSnapshotReplay } = await import("../runners/snapshot-replay-runner.js");
-      await runSnapshotReplay({ name, json: options.json, workspaceRoot: process.cwd() });
+      await runSnapshotReplay({ name, json: options.json, workspaceRoot: invocationWorkspaceRoot() });
     });
 }

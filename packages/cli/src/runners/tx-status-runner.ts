@@ -54,6 +54,8 @@ export async function openSdkForTx(txId: string, workspaceRoot: string, network?
   }
   const target = network ?? recorded ?? String(probe.network);
   if (target === String(probe.network)) return { sdk: probe, network: target };
+  // RESOURCE-LIFECYCLE-1: the probe is not handed out, so it is released here; the caller owns the SDK returned.
+  await probe.close();
   return { sdk: await Hardkas.open({ cwd: workspaceRoot, network: target }), network: target };
 }
 
@@ -70,7 +72,15 @@ export async function runTxStatus(input: {
     ? { sdk: input.sdk, network: String(input.network ?? input.sdk.network) }
     : await openSdkForTx(input.txId, workspaceRoot, input.network);
   const { sdk, network } = opened;
+  // RESOURCE-LIFECYCLE-1: an SDK opened here is released here (RL-I1); an injected one is its caller's (RL-I2).
+  try {
+    return await lookAndDerive(input, sdk, network);
+  } finally {
+    if (!input.sdk) await sdk.close();
+  }
+}
 
+async function lookAndDerive(input: { txId: string; observe?: boolean }, sdk: Sdk, network: string): Promise<TxStatusRunnerResult> {
   let look: TxStatusLook;
   if (SYNTHETIC_TXID.test(input.txId)) {
     look = { taken: false, reason: "a simulator txId: there is no network to observe; the state derives from the simulator receipt" };

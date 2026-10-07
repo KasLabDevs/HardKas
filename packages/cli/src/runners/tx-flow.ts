@@ -22,7 +22,7 @@ import {
 import crypto from "node:crypto";
 import path from "path";
 import fs from "fs";
-import { HardkasSchemas } from "@hardkas/artifacts";
+import { HardkasSchemas, ensureDirRespectingStore, writeFileRespectingStore } from "@hardkas/artifacts";
 
 export interface TxFlowInput {
   from: string;
@@ -70,6 +70,16 @@ export interface TxFlowResult {
  * Orchestrates the full transaction workflow: plan -> sign -> send.
  */
 export async function runTxFlow(input: TxFlowInput): Promise<TxFlowResult> {
+  // RESOURCE-LIFECYCLE-1 (RL-I1/RL-I3): the SDK the flow opens is released whatever the flow ends with.
+  const opened: { sdk?: { close(): Promise<void> } } = {};
+  try {
+    return await txFlow(input, opened);
+  } finally {
+    await opened.sdk?.close();
+  }
+}
+
+async function txFlow(input: TxFlowInput, opened: { sdk?: { close(): Promise<void> } }): Promise<TxFlowResult> {
   const {
     from,
     to,
@@ -103,6 +113,7 @@ export async function runTxFlow(input: TxFlowInput): Promise<TxFlowResult> {
   let actualOutDir: string;
   try {
     sdk = await Hardkas.open({ cwd: workspaceRoot || process.cwd() });
+    opened.sdk = sdk;
     actualOutDir = outDir || sdk.workspace.artifactsDir;
   } catch {
     // SDK not available (e.g. standalone CLI install) — use default artifacts dir
@@ -110,7 +121,7 @@ export async function runTxFlow(input: TxFlowInput): Promise<TxFlowResult> {
     actualOutDir = outDir || path.join(cwd, ".hardkas", "artifacts");
   }
   if (!fs.existsSync(actualOutDir)) {
-    fs.mkdirSync(actualOutDir, { recursive: true });
+    await ensureDirRespectingStore(actualOutDir); // through the store's gate when it is the store (ARTIFACT-MUTATION-1)
   }
 
   // Validation
@@ -287,8 +298,10 @@ export async function runTxFlow(input: TxFlowInput): Promise<TxFlowResult> {
 
     // 2. Sign
     if (shouldSign) {
-      // Security guard: require --yes for real signing if we are in a flow that intended to --send
-      if (shouldSend && !yes && planArtifact.mode !== "simulated") {
+      // Security guard: require --yes for real signing if we are in a flow that intended to --send.
+      // #7: a simulator plan is `mode: "simulator"` (the old `"simulated"` matched nothing, so the
+      // guard also stopped simulator flows that gave no `yes`; every CLI caller passes it).
+      if (shouldSend && !yes && planArtifact.mode !== "simulator") {
         flowResult.steps.sign = {
           status: "blocked",
           reason: "--yes is required before signing/sending a real transaction flow."
@@ -436,6 +449,9 @@ export async function runTxFlow(input: TxFlowInput): Promise<TxFlowResult> {
 
           flowResult.steps.send = { status: "ok", artifact: sendResult };
           flowResult.result = "broadcast";
+          // F3: the send step ran, but a submission the node rejected is a failed flow (`tx send` reports it as
+          // "rejected" from the send artifact itself)
+          if (sendResult.accepted === false) flowResult.ok = false;
         }
       }
     } else {
@@ -451,8 +467,7 @@ export async function runTxFlow(input: TxFlowInput): Promise<TxFlowResult> {
   } catch (error) {
     flowResult.ok = false;
     const msg = error instanceof Error ? error.message : String(error);
-    console.error("[runTxFlow catch]", error);
-    // Find where it failed
+    // Find where it failed (the error is reported in that step's result)
     if (flowResult.steps.plan.status !== "ok") {
       flowResult.steps.plan = { status: "error", error: msg };
     } else if (shouldSign && flowResult.steps.sign.status !== "ok") {
@@ -476,7 +491,7 @@ async function saveArtifact(
   amount: string
 ): Promise<string> {
   if (!fs.existsSync(outDir)) {
-    fs.mkdirSync(outDir, { recursive: true });
+    await ensureDirRespectingStore(outDir);
   }
 
   let fileName = "";
@@ -499,13 +514,15 @@ async function saveArtifact(
   if (sdk && sdk.artifacts && typeof sdk.artifacts.write === "function") {
     const canonicalRes = await sdk.artifacts.write(artifact);
     if (outDir !== sdk.workspace.artifactsDir || baseName) {
-      await sdk.artifacts.write(artifact, { outputDir: outDir, fileName });
+      // EVIDENCE-TRUST-1 (D2): the exported copy is exactly the stored one (an identity published before is kept)
+      await sdk.artifacts.write(canonicalRes.artifact ?? artifact, { outputDir: outDir, fileName });
       return path.join(outDir, fileName);
     }
     return canonicalRes.absolutePath;
   } else {
-    // Fallback: write artifact directly without SDK
-    fs.writeFileSync(fullPath, JSON.stringify(artifact, null, 2), "utf-8");
+    // Fallback: write artifact directly without SDK (through the store's gate when the path is in the store)
+    const data = JSON.stringify(artifact, null, 2);
+    await writeFileRespectingStore(fullPath, data, () => fs.writeFileSync(fullPath, data, "utf-8"));
   }
   return fullPath;
 }

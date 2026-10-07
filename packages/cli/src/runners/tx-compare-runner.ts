@@ -2,6 +2,7 @@ import { getOutput } from "../output.js";
 import { UI } from "../ui.js";
 import fs from "node:fs/promises";
 import pc from "picocolors";
+import { stripBom } from "@hardkas/core";
 
 export interface TxCompareRunnerInput {
   simulatedPath: string;
@@ -23,8 +24,8 @@ export async function runTxCompare(input: TxCompareRunnerInput): Promise<void> {
     throw new Error(`Failed to read real receipt: ${realPath}`);
   }
 
-  const sim = JSON.parse(simRaw);
-  const real = JSON.parse(realRaw);
+  const sim = JSON.parse(stripBom(simRaw));
+  const real = JSON.parse(stripBom(realRaw));
 
   UI.box("Simulation Fidelity", "Comparative Analysis (Phase 9)");
   getOutput().writeLine("");
@@ -49,10 +50,10 @@ export async function runTxCompare(input: TxCompareRunnerInput): Promise<void> {
   getOutput().writeLine(pc.bold("  Semantic Matches (Must Match)"));
   for (const item of semanticMatches) {
     if (item.a === item.b) {
-      getOutput().writeLine(`  ${pc.green("âœ“")} ${item.name.padEnd(25)} : ${item.a}`);
+      getOutput().writeLine(`  ${pc.green("✓")} ${item.name.padEnd(25)} : ${item.a}`);
     } else {
       getOutput().writeLine(
-        `  ${pc.red("âœ—")} ${item.name.padEnd(25)} : SIM: ${item.a}  |  REAL: ${item.b}`
+        `  ${pc.red("✗")} ${item.name.padEnd(25)} : SIM: ${item.a}  |  REAL: ${item.b}`
       );
       matchesFail = true;
     }
@@ -79,7 +80,7 @@ export async function runTxCompare(input: TxCompareRunnerInput): Promise<void> {
     const isSame = item.a === item.b;
     const color = isSame ? pc.green : pc.yellow;
     getOutput().writeLine(
-      `  ${color("Î”")} ${item.name.padEnd(25)} : SIM: ${item.a || "N/A"}  |  REAL: ${item.b || "N/A"}`
+      `  ${color("Δ")} ${item.name.padEnd(25)} : SIM: ${item.a || "N/A"}  |  REAL: ${item.b || "N/A"}`
     );
   }
 
@@ -90,6 +91,6 @@ export async function runTxCompare(input: TxCompareRunnerInput): Promise<void> {
       exitCode: 1
     });
   } else {
-    UI.logHuman(`  âœ… Simulation Fidelity: DELTA_ACCEPTABLE`);
+    UI.logHuman(`  ✅ Simulation Fidelity: DELTA_ACCEPTABLE`);
   }
 }

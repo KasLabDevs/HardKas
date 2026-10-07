@@ -1,7 +1,8 @@
 import { Command } from "commander";
 import { handleError, UI } from "../ui.js";
 import pc from "picocolors";
-import { getQueryEngine } from "./query/engine-factory.js";
+import { getQueryEngine, queryStorePath } from "./query/engine-factory.js";
+import { invocationWorkspaceRoot } from "../workspace-root.js";
 
 export function registerQueryCommands(program: Command) {
   const queryCmd = program
@@ -24,6 +25,10 @@ export function registerQueryCommands(program: Command) {
     .command("store")
     .description(`Manage query store index ${UI.maturity("stable")}`);
 
+  // WORKSPACE-AUTHORITY-1 · the query store (.hardkas/store.db) is a projection DERIVED from the workspace's artifacts
+  // and event ledger (WA-I1). Observing it never creates or migrates it (WA-I3); it is healthy only when it is proven
+  // built from exactly the workspace's current state (WA-I2); rebuilding it is an explicit write that really builds it.
+
   storeCmd
     .command("doctor")
     .description("Integrity and freshness check of the query store index")
@@ -32,46 +37,79 @@ export function registerQueryCommands(program: Command) {
     .option("--lock-timeout <ms>", "Lock wait timeout in ms", "30000")
     .action(async (options) => {
       const { withLock } = await import("@hardkas/core");
+      const root = invocationWorkspaceRoot();
+      const dbPath = queryStorePath(root);
       try {
         const action = async () => {
-          const engine = await getQueryEngine();
+          const { HardkasStore, HardkasIndexer, readProjectionStatus } = await import("@hardkas/query-store");
+          const fs = await import("node:fs");
 
-          if (options.migrate) {
+          if (options.migrate && fs.existsSync(dbPath)) {
             console.log("\n  Checking and applying migrations...");
-            await engine.backend.migrate();
+            const writable = new HardkasStore({ dbPath });
+            writable.connect();
+            try {
+              writable.migrate();
+            } finally {
+              writable.disconnect();
+            }
           }
 
-          const report = await engine.backend.doctor();
-
+          const status = readProjectionStatus(root, dbPath);
           console.log("\n  ═══ Query Store Doctor ═══\n");
-          console.log(`  Backend:      ${engine.backend.kind()}`);
-          console.log(
-            `  Overall:      ${report.ok ? pc.green("✓ HEALTHY") : pc.red("✗ STALE / ISSUES")}`
-          );
-          console.log(`  Last Indexed: ${report.lastIndexedAt || "never"}`);
+          console.log(`  Projection:   ${dbPath}`);
+          console.log(`  State:        ${status.state} (${status.reason})`);
 
-          if (report.storeIssues && report.storeIssues.length > 0) {
+          if (status.state === "absent") {
+            console.log("\n  There is no projection: the query commands read the workspace directly. Nothing to check.\n");
+            return;
+          }
+
+          let ok = status.state === "fresh";
+          let report: any = null;
+          let storeIssues: any[] = [];
+          if (status.state === "fresh") {
+            const store = HardkasStore.openExisting(dbPath)!;
+            try {
+              report = new HardkasIndexer(store.getDatabase(), { cwd: root }).doctor();
+              storeIssues = store.checkHealth().issues;
+              ok = report.ok && storeIssues.length === 0;
+            } finally {
+              store.disconnect();
+            }
+          }
+
+          console.log(
+            `  Overall:      ${ok ? pc.green("✓ HEALTHY") : pc.red(status.state === "fresh" ? "✗ ISSUES" : `✗ ${status.state.toUpperCase()}`)}`
+          );
+          console.log(`  Last Indexed: ${report?.lastIndexedAt || status.indexedAt || "never"}`);
+
+          if (storeIssues.length > 0) {
             console.log("\n  Store Issues:");
-            for (const issue of report.storeIssues) {
+            for (const issue of storeIssues) {
               const icon = issue.severity === "error" ? pc.red("✗") : pc.yellow("⚠");
               console.log(`    ${icon} [${issue.code}] ${issue.message}`);
               if (issue.suggestion) console.log(`      Suggestion: ${issue.suggestion}`);
             }
           }
 
-          if (report.corruptedFiles?.length > 0) {
+          if (report?.corruptedFiles?.length > 0) {
             console.log("\n  Corrupted Files:");
             for (const f of report.corruptedFiles) console.log(`    ${pc.red("✗")} ${f}`);
           }
 
-          if (!report.ok) {
-            const cmd = report.storeIssues?.some((i: any) => i.code.includes("MIGRATION"))
-              ? "migrate"
-              : "rebuild";
-            console.log(
-              `\n  ${UI.warning("Recommendation:")} Run 'hardkas query store ${cmd}' to fix issues.\n`
+          if (!ok) {
+            const cmd = storeIssues.some((i: any) => i.code.includes("MIGRATION")) ? "migrate" : "rebuild";
+            console.log(`\n  Recommendation: Run 'hardkas query store ${cmd}' to fix issues.\n`);
+            // CLI-RUNTIME-CONTRACT-1: the verdict is typed (was an untyped "Command failed").
+            const { HardkasCliError } = await import("../cli-errors.js");
+            throw new HardkasCliError(
+              "QUERY_STORE_UNHEALTHY",
+              status.state === "fresh"
+                ? `The query store has issues; run 'hardkas query store ${cmd}' to fix them.`
+                : `The query store is ${status.state} (${status.reason}); run 'hardkas query store rebuild'.`,
+              { exitCode: 1 }
             );
-            throw new Error("Command failed");
           } else {
             console.log("\n  ✓ Everything looks good.\n");
           }
@@ -80,7 +118,7 @@ export function registerQueryCommands(program: Command) {
         if (options.migrate) {
           await withLock(
             {
-              rootDir: process.cwd(),
+              rootDir: root,
               name: "query-store",
               command: "hardkas query store doctor --migrate",
               wait: options.waitLock,
@@ -103,10 +141,12 @@ export function registerQueryCommands(program: Command) {
     .option("--lock-timeout <ms>", "Lock wait timeout in ms", "30000")
     .action(async (options) => {
       const { withLock } = await import("@hardkas/core");
+      const root = invocationWorkspaceRoot();
+      const dbPath = queryStorePath(root);
       try {
         await withLock(
           {
-            rootDir: process.cwd(),
+            rootDir: root,
             name: "query-store",
             command: "hardkas query store migrate",
             wait: options.waitLock,
@@ -114,8 +154,21 @@ export function registerQueryCommands(program: Command) {
           },
           async () => {
             console.log("\n  Checking for pending migrations...");
-            const engine = await getQueryEngine();
-            const result = await engine.backend.migrate();
+            const fs = await import("node:fs");
+            if (!fs.existsSync(dbPath)) {
+              UI.info("There is no query store to migrate (the query commands read the workspace directly).");
+              console.log("");
+              return;
+            }
+            const { HardkasStore } = await import("@hardkas/query-store");
+            const store = new HardkasStore({ dbPath });
+            store.connect();
+            let result: { applied: number };
+            try {
+              result = store.migrate();
+            } finally {
+              store.disconnect();
+            }
 
             if (result.applied > 0) {
               UI.success(`Applied ${result.applied} migration(s). Store is up to date.`);
@@ -133,27 +186,45 @@ export function registerQueryCommands(program: Command) {
   storeCmd
     .command("sync")
     .alias("index")
-    .description("Index new artifacts into the SQLite query store (needs .hardkas/store.db: run 'query store rebuild --backend sqlite' first)")
+    .description("Index new artifacts into the SQLite query store (needs .hardkas/store.db: run 'query store rebuild' first)")
     .option("--strict", "Fail on any corrupted data", false)
     .option("--wait-lock", "Wait for the query-store lock if held", false)
     .option("--lock-timeout <ms>", "Lock wait timeout in ms", "30000")
     .option("--json", "Output as JSON", false)
     .action(async (options) => {
       const { withLock } = await import("@hardkas/core");
+      const root = invocationWorkspaceRoot();
+      const dbPath = queryStorePath(root);
       try {
         await withLock(
           {
-            rootDir: process.cwd(),
+            rootDir: root,
             name: "query-store",
             command: "hardkas query store sync",
             wait: options.waitLock,
             timeoutMs: parseInt(options.lockTimeout)
           },
           async () => {
+            const fs = await import("node:fs");
+            if (!fs.existsSync(dbPath)) {
+              const { HardkasCliError } = await import("../cli-errors.js");
+              throw new HardkasCliError(
+                "QUERY_STORE_ABSENT",
+                `There is no query store to sync at ${dbPath}; build it with 'hardkas query store rebuild'. Nothing was written.`,
+                { exitCode: 1 }
+              );
+            }
             if (!options.json) console.log("\n  Synchronizing query store index...");
-            const engine = await getQueryEngine();
+            const { HardkasStore, HardkasIndexer } = await import("@hardkas/query-store");
             const start = Date.now();
-            const result = await engine.backend.sync({ strict: options.strict });
+            const store = new HardkasStore({ dbPath });
+            store.connect({ autoMigrate: true });
+            let result: any;
+            try {
+              result = await new HardkasIndexer(store.getDatabase(), { cwd: root, strict: options.strict }).sync();
+            } finally {
+              store.disconnect();
+            }
 
             if (!result.ok) {
               const { HardkasCliError } = await import("../cli-errors.js");
@@ -200,19 +271,28 @@ export function registerQueryCommands(program: Command) {
   storeCmd
     .command("rebuild")
     .description("Force a complete rebuild of the query store index")
-    .option("--backend <type>", "sqlite creates .hardkas/store.db; filesystem indexes nothing (default: sqlite only if store.db already exists)")
+    .option("--backend <type>", "sqlite (the default) builds .hardkas/store.db from the workspace; filesystem keeps no index, so it has nothing to rebuild")
     .option("--strict", "Fail on any corrupted data", false)
     .option("--wait-lock", "Wait for the query-store lock if held", false)
     .option("--lock-timeout <ms>", "Lock wait timeout in ms", "30000")
     .option("--json", "Output as JSON", false)
     .action(async (options) => {
-      if (options.backend) process.env.HARDKAS_PROJECTION_BACKEND = options.backend;
       if (options.json) UI.setJsonMode(true);
+      if (options.backend !== undefined && options.backend !== "sqlite") {
+        const { HardkasCliError, HardkasExitCode } = await import("../cli-errors.js");
+        throw new HardkasCliError(
+          "QUERY_STORE_REBUILD_UNSUPPORTED",
+          `'--backend ${options.backend}' keeps no index, so there is nothing to rebuild: the query commands read the workspace directly. Run 'hardkas query store rebuild' (sqlite) to build .hardkas/store.db. Nothing was written.`,
+          { exitCode: HardkasExitCode.USAGE_ERROR }
+        );
+      }
       const { withLock } = await import("@hardkas/core");
+      const root = invocationWorkspaceRoot();
+      const dbPath = queryStorePath(root);
       try {
         await withLock(
           {
-            rootDir: process.cwd(),
+            rootDir: root,
             name: "query-store",
             command: "hardkas query store rebuild",
             wait: options.waitLock,
@@ -220,9 +300,17 @@ export function registerQueryCommands(program: Command) {
           },
           async () => {
             if (!options.json) UI.logHuman("\n  Rebuilding query store index...");
-            const engine = await getQueryEngine();
+            const { HardkasStore, HardkasIndexer } = await import("@hardkas/query-store");
             const start = Date.now();
-            const result = await engine.backend.rebuild({ strict: options.strict });
+            // an explicit write: the projection is created (and migrated) here, then built from the workspace
+            const store = new HardkasStore({ dbPath });
+            store.connect({ autoMigrate: true });
+            let result: any;
+            try {
+              result = await new HardkasIndexer(store.getDatabase(), { cwd: root, strict: options.strict }).rebuild();
+            } finally {
+              store.disconnect();
+            }
 
             if (!result.ok) {
               const { HardkasCliError } = await import("../cli-errors.js");
@@ -274,27 +362,24 @@ export function registerQueryCommands(program: Command) {
     .option("--yes", "Confirm mutating SQL (DANGEROUS)", false)
     .action(async (query: string, options) => {
       try {
-        const engine = await getQueryEngine();
-
-        if (engine.backend.kind() === "filesystem") {
-          throw new Error(
-            "Raw SQL execution is not supported by the Filesystem backend.\nPlease switch to SQLite by running: hardkas query store rebuild --backend sqlite"
-          );
-        }
-
-        // This requires the backend to expose raw SQL execution,
-        // but for now we'll assume it can or we'll add it.
-        if (typeof (engine.backend as any).executeRawSql !== "function") {
-          throw new Error("Raw SQL execution not supported by current backend");
-        }
-        const result = await (engine.backend as any).executeRawSql(query, {
+        // SQL exists only on the projection: this is an explicit request for it, answered even when it is stale, and the
+        // answer says so (WORKSPACE-AUTHORITY-1, B2). It never creates the projection.
+        const { openProjectionForCommand } = await import("./query/projection-access.js");
+        const { store, status } = await openProjectionForCommand("query store sql");
+        const { SqliteQueryBackend } = await import("@hardkas/query-store");
+        let result: any[];
+        try {
+          result = await new SqliteQueryBackend(store).executeRawSql(query, {
             unsafeWrite: options.unsafeWrite,
             yes: options.yes
-        });
+          });
+        } finally {
+          store.disconnect();
+        }
 
         if (options.json) {
           const { getOutput } = await import("../output.js");
-          getOutput().writeJson({ ok: true, command: "query store sql", mode: "cli", result });
+          getOutput().writeJson({ ok: true, command: "query store sql", mode: "cli", projection: status, result });
         } else {
           if (result.length === 0) {
             console.log("\n  No results.\n");
@@ -313,28 +398,32 @@ export function registerQueryCommands(program: Command) {
     .option("--output <path>", "Output file path")
     .action(async (options) => {
       try {
-        const { HardkasStore } = await import("@hardkas/query-store");
-        const store = new HardkasStore();
-        store.connect({ autoMigrate: true });
-        const db = store.getDatabase();
-
-        const artifacts = db
-          .prepare("SELECT * FROM artifacts ORDER BY artifact_id ASC")
-          .all();
-        const events = db.prepare("SELECT * FROM events ORDER BY event_id ASC").all();
-
-        const dump = { artifacts, events };
+        // an explicit request for the projection's content: never creates it, and says when it is stale (B2)
+        const { openProjectionForCommand } = await import("./query/projection-access.js");
+        const { store, status } = await openProjectionForCommand("query store export");
+        let dump: { artifacts: unknown[]; events: unknown[] };
+        try {
+          const db = store.getDatabase();
+          const artifacts = db
+            .prepare("SELECT * FROM artifacts ORDER BY artifact_id ASC")
+            .all();
+          const events = db.prepare("SELECT * FROM events ORDER BY event_id ASC").all();
+          dump = { artifacts, events };
+        } finally {
+          store.disconnect();
+        }
         const json = JSON.stringify(dump, null, 2);
 
         if (options.output) {
           const fs = await import("node:fs");
-          fs.writeFileSync(options.output, json);
+          // an --output inside the artifact store goes through the store's gate (ARTIFACT-MUTATION-1)
+          const { writeFileRespectingStore } = await import("@hardkas/artifacts");
+          await writeFileRespectingStore(options.output, json, () => fs.writeFileSync(options.output, json));
           UI.success(`Store exported to ${options.output}`);
         } else {
           const { getOutput } = await import("../output.js");
-          getOutput().writeJson({ ok: true, command: "query store export", mode: "cli", result: dump });
+          getOutput().writeJson({ ok: true, command: "query store export", mode: "cli", projection: status, result: dump });
         }
-        store.disconnect();
       } catch (e) {
         throw e;
       }
@@ -939,8 +1028,12 @@ function printArtifactList(result: any): void {
   const freshness = result.annotations.freshness
     ? ` | ${result.annotations.freshness}`
     : "";
+  // WORKSPACE-AUTHORITY-1: the projection's state is part of every answer (STALE when the answer came from a stale one)
+  const projection = result.annotations.projection
+    ? ` | projection:${result.annotations.projection.used && result.annotations.projection.state !== "fresh" ? result.annotations.projection.state.toUpperCase() : result.annotations.projection.state}`
+    : "";
   console.log(
-    `  ${result.annotations.executionMs}ms | backend:${backend}${freshness} | ${result.annotations.filesScanned ?? 0} files scanned\n`
+    `  ${result.annotations.executionMs}ms | backend:${backend}${freshness}${projection} | ${result.annotations.filesScanned ?? 0} files scanned\n`
   );
   printExplain(result.explain);
   printWhy(result.why);
@@ -960,6 +1053,10 @@ function printInspectResult(result: any): void {
   console.log(`  Hash:       ${item.item.contentHash || "none"}`);
   console.log(`  Integrity:  ${item.integrity.ok ? "✓ VALID" : "✗ INVALID"}`);
   console.log(`  Lineage:    ${item.lineageStatus}`);
+  // EVIDENCE-TRUST-1: what looking the parent up in the workspace store found
+  if (item.parent && item.parent.status !== "root") {
+    console.log(`  Parent:     ${item.parent.status}${item.parent.artifactId ? ` (${item.parent.artifactId})` : ""}`);
+  }
   console.log(
     `  Staleness:  ${item.staleness.classification} (${item.staleness.ageHours}h)`
   );
@@ -982,6 +1079,12 @@ function printDiffResult(result: any): void {
   console.log(`\n  ═══ Artifact Diff ═══\n`);
   console.log(`  Left:  ${diff.leftSchema} (${diff.leftPath})`);
   console.log(`  Right: ${diff.rightSchema} (${diff.rightPath})`);
+  // EVIDENCE-TRUST-1 (ET-C3): the identity verdict, then every raw difference with whether the hash covers it.
+  console.log(
+    diff.sameIdentity
+      ? `  Identity: same (${diff.leftIdentity})`
+      : `  Identity: different (left ${diff.leftIdentity ?? "not recomputable"}, right ${diff.rightIdentity ?? "not recomputable"})`
+  );
   if (diff.identical) {
     console.log(`\n  ✓ Artifacts are identical.\n`);
     return;
@@ -989,9 +1092,11 @@ function printDiffResult(result: any): void {
   console.log(`\n  ${diff.entries.length} difference(s):\n`);
   for (const entry of diff.entries) {
     const marker = entry.kind === "added" ? "+" : entry.kind === "removed" ? "-" : "~";
-    console.log(
-      `  ${marker} ${entry.field}: ${entry.left ?? "(absent)"} → ${entry.right ?? "(absent)"} [${entry.kind}]`
-    );
+    const scope = entry.authenticated ? "authenticated" : "not authenticated";
+    const values = entry.secret
+      ? "(secret field: the values differ and are not shown)"
+      : `${entry.left ?? "(absent)"} → ${entry.right ?? "(absent)"}${entry.redacted ? " (credentials redacted)" : ""}`;
+    console.log(`  ${marker} ${entry.field}: ${values} [${entry.kind}, ${scope}]`);
   }
   console.log("");
 }

@@ -5,7 +5,7 @@ import {
   assertValidIgraTxReceiptArtifact
 } from "./igra-artifacts.js";
 import { writeArtifact, readArtifact } from "./io.js";
-import { deterministicCompare } from "@hardkas/core";
+import { deterministicCompare, redactUrlCredentials } from "@hardkas/core";
 import { HardkasSchemas } from "@hardkas/core";
 
 export function getDefaultL2ReceiptsDir(cwd: string = process.cwd()): string {
@@ -22,9 +22,13 @@ export async function saveIgraTxReceiptArtifact(
   receipt: IgraTxReceiptArtifact,
   options?: { cwd?: string }
 ): Promise<string> {
+  // SURFACE-TRUTH-1B (ST-D): the URL secret boundary (EVIDENCE-TRUST-1) holds here too. The URL is persisted without its
+  // credentials (userinfo, secret query values); this public writer used to keep them. The receipt carries no content
+  // hash, so nothing sealed changes.
   assertValidIgraTxReceiptArtifact(receipt);
-  const filePath = getL2ReceiptPath(receipt.txHash, options);
-  await writeArtifact(filePath, receipt);
+  const persisted: IgraTxReceiptArtifact = { ...receipt, rpcUrl: redactUrlCredentials(receipt.rpcUrl) };
+  const filePath = getL2ReceiptPath(persisted.txHash, options);
+  await writeArtifact(filePath, persisted);
   return filePath;
 }
 

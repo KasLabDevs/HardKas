@@ -1,0 +1,101 @@
+﻿Scope: all 62 workspace projects
+Lockfile is up to date, resolution step is skipped
+Progress: resolved 1, reused 0, downloaded 0, added 0
+Packages: +1786
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Progress: resolved 1786, reused 218, downloaded 0, added 0
+Progress: resolved 1786, reused 491, downloaded 0, added 0
+Progress: resolved 1786, reused 492, downloaded 0, added 0
+
+   ╭──────────────────────────────────────────────────────────────────╮
+   │                                                                  │
+   │                Update available! 9.15.4 → 12.8.1.                │
+   │   Changelog: https://github.com/pnpm/pnpm/releases/tag/v12.8.1   │
+   │                Run "pnpm self-update" to update.                 │
+   │                                                                  │
+   ╰──────────────────────────────────────────────────────────────────╯
+
+Progress: resolved 1786, reused 935, downloaded 0, added 0
+Progress: resolved 1786, reused 1255, downloaded 0, added 0
+Progress: resolved 1786, reused 1512, downloaded 0, added 0
+Progress: resolved 1786, reused 1717, downloaded 0, added 0
+Progress: resolved 1786, reused 1770, downloaded 0, added 0
+Progress: resolved 1786, reused 1771, downloaded 0, added 44
+Progress: resolved 1786, reused 1771, downloaded 0, added 45
+Progress: resolved 1786, reused 1771, downloaded 0, added 86
+Progress: resolved 1786, reused 1772, downloaded 0, added 131
+Progress: resolved 1786, reused 1772, downloaded 0, added 185
+Progress: resolved 1786, reused 1772, downloaded 0, added 263
+Progress: resolved 1786, reused 1772, downloaded 0, added 411
+Progress: resolved 1786, reused 1772, downloaded 0, added 478
+Progress: resolved 1786, reused 1772, downloaded 0, added 541
+Progress: resolved 1786, reused 1772, downloaded 0, added 654
+Progress: resolved 1786, reused 1772, downloaded 0, added 765
+Progress: resolved 1786, reused 1772, downloaded 0, added 920
+Progress: resolved 1786, reused 1772, downloaded 0, added 1072
+Progress: resolved 1786, reused 1772, downloaded 0, added 1098
+Progress: resolved 1786, reused 1772, downloaded 0, added 1148
+Progress: resolved 1786, reused 1772, downloaded 0, added 1194
+Progress: resolved 1786, reused 1772, downloaded 0, added 1245
+Progress: resolved 1786, reused 1772, downloaded 0, added 1271
+Progress: resolved 1786, reused 1772, downloaded 0, added 1287
+Progress: resolved 1786, reused 1772, downloaded 0, added 1290
+Progress: resolved 1786, reused 1772, downloaded 0, added 1296
+Progress: resolved 1786, reused 1772, downloaded 0, added 1297
+Progress: resolved 1786, reused 1772, downloaded 0, added 1324
+Progress: resolved 1786, reused 1772, downloaded 0, added 1341
+Progress: resolved 1786, reused 1772, downloaded 0, added 1431
+Progress: resolved 1786, reused 1772, downloaded 0, added 1443
+Progress: resolved 1786, reused 1772, downloaded 0, added 1505
+Progress: resolved 1786, reused 1772, downloaded 0, added 1541
+Progress: resolved 1786, reused 1772, downloaded 0, added 1566
+Progress: resolved 1786, reused 1772, downloaded 0, added 1574
+Progress: resolved 1786, reused 1772, downloaded 0, added 1585
+Progress: resolved 1786, reused 1772, downloaded 0, added 1624
+Progress: resolved 1786, reused 1772, downloaded 0, added 1645
+Progress: resolved 1786, reused 1772, downloaded 0, added 1714
+Progress: resolved 1786, reused 1772, downloaded 0, added 1758
+Progress: resolved 1786, reused 1772, downloaded 0, added 1769
+Progress: resolved 1786, reused 1772, downloaded 0, added 1780
+Progress: resolved 1786, reused 1772, downloaded 0, added 1781
+Progress: resolved 1786, reused 1772, downloaded 0, added 1782
+Progress: resolved 1786, reused 1772, downloaded 0, added 1783
+Progress: resolved 1786, reused 1772, downloaded 0, added 1784
+Progress: resolved 1786, reused 1772, downloaded 0, added 1785
+Progress: resolved 1786, reused 1772, downloaded 0, added 1786, done
+ WARN  Failed to create bin at C:\Users\jrodr\AppData\Local\Temp\hk-fix\wt\labs\bl-001-offline-multisig\node_modules\.bin\hardkas. ENOENT: no such file or directory, stat 'C:\Users\jrodr\AppData\Local\Temp\hk-fix\wt\packages\cli\dist\index.js.EXE'
+ WARN  Failed to create bin at C:\Users\jrodr\AppData\Local\Temp\hk-fix\wt\labs\showcase-suite\apps\cli-studio\node_modules\.bin\hardkas. ENOENT: no such file or directory, stat 'C:\Users\jrodr\AppData\Local\Temp\hk-fix\wt\packages\cli\dist\index.js.EXE'
+ WARN  Failed to create bin at C:\Users\jrodr\AppData\Local\Temp\hk-fix\wt\node_modules\.bin\hardkas. ENOENT: no such file or directory, stat 'C:\Users\jrodr\AppData\Local\Temp\hk-fix\wt\node_modules\@hardkas\cli\dist\index.js.EXE'
+
+devDependencies:
++ @eslint/js 10.0.1
++ @hardkas/cli 0.12.0-rc.26 <- packages\cli
++ @hardkas/config 0.12.0-rc.26 <- packages\config
++ @hardkas/core 0.12.0-rc.26 <- packages\core
++ @hardkas/node-runner 0.12.0-rc.26 <- packages\node-runner
++ @hardkas/sdk 0.12.0-rc.26 <- packages\sdk
++ @hardkas/testing 0.12.0-rc.26 <- packages\testing
++ @types/node 22.20.1
++ @vitest/coverage-v8 2.1.9
++ c8 11.0.0
++ eslint 9.39.5
++ eslint-plugin-react 7.37.5
++ eslint-plugin-react-hooks 7.1.1
++ eslint-plugin-react-refresh 0.5.3
++ fast-check 4.9.0
++ globals 17.9.0
++ knip 6.31.0
++ prettier 3.9.6
++ ts-node 10.9.2
++ tsup 8.5.1
++ tsx 4.23.7
++ turbo 2.10.8
++ typescript 5.9.3
++ typescript-eslint 8.66.0
++ vitest 2.1.9
++ ws 8.21.2
+
+ WARN  Failed to create bin at C:\Users\jrodr\AppData\Local\Temp\hk-fix\wt\node_modules\.bin\hardkas. ENOENT: no such file or directory, stat 'C:\Users\jrodr\AppData\Local\Temp\hk-fix\wt\node_modules\@hardkas\cli\dist\index.js.EXE'
+ WARN  Failed to create bin at C:\Users\jrodr\AppData\Local\Temp\hk-fix\wt\labs\bl-001-offline-multisig\node_modules\.bin\hardkas. ENOENT: no such file or directory, stat 'C:\Users\jrodr\AppData\Local\Temp\hk-fix\wt\labs\bl-001-offline-multisig\node_modules\@hardkas\cli\dist\index.js.EXE'
+ WARN  Failed to create bin at C:\Users\jrodr\AppData\Local\Temp\hk-fix\wt\labs\showcase-suite\apps\cli-studio\node_modules\.bin\hardkas. ENOENT: no such file or directory, stat 'C:\Users\jrodr\AppData\Local\Temp\hk-fix\wt\labs\showcase-suite\apps\cli-studio\node_modules\@hardkas\cli\dist\index.js.EXE'
+Done in 1m 21.6s

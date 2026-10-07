@@ -1,0 +1,24 @@
+$ hardkas deploy track papercut --network simulated --tx-id synthetic-c84e82a07128512316cf7e65489d2564fa6f3562a852c8be4ce7ee1b363ead8f --status sent --json
+exit=0 stdout_is_single_json=true json_docs_on_stdout=1
+--- stdout ---
+{
+  "ok": true,
+  "command": "deploy track",
+  "mode": "cli",
+  "result": {
+    "schema": "hardkas.deployment.v1",
+    "label": "papercut",
+    "networkId": "simulated",
+    "status": "sent",
+    "deployedAt": "2026-10-04T22:13:38.871Z",
+    "hardkasVersion": "0.12.0-rc.26",
+    "version": "1.0.0-alpha",
+    "hashVersion": 5,
+    "createdAt": "2026-10-04T22:13:38.871Z",
+    "mode": "real",
+    "txId": "synthetic-c84e82a07128512316cf7e65489d2564fa6f3562a852c8be4ce7ee1b363ead8f",
+    "contentHash": "a6edba6d4ba214b6809a31bea018936f252f1ef6e565b37410e63b63fed0ef27"
+  }
+}
+--- stderr ---
+

@@ -1,0 +1,39 @@
+{
+  "schema": "hardkas.signedTx",
+  "hardkasVersion": "0.12.0-rc.26",
+  "version": "1.0.0-alpha",
+  "hashVersion": 5,
+  "status": "signed",
+  "createdAt": "2026-10-02T20:00:12.256Z",
+  "txId": "91eb27245a768f14e3000bb6b929353401eb848ebbb9ed264e2a2755eec9feab",
+  "sourcePlanId": "plan-df8ecea503fe79f1",
+  "networkId": "simnet",
+  "mode": "localnet",
+  "from": {
+    "address": "kaspasim:qp6wmrysf95v2jtum5jt96y5gyqffwe853dyah8qxzlvpp5jwpc9vektjnlrq"
+  },
+  "to": {
+    "address": "kaspasim:qrced0xr3qakt9y6jpme78ewgrk0v79gd9uy5qee9nq42jhv5jtz6mgpp7w6g"
+  },
+  "amountSompi": "1000000000",
+  "signedTransaction": {
+    "format": "hex",
+    "payload": "{\"version\":0,\"inputs\":[{\"previousOutpoint\":{\"transactionId\":\"2b11728d4312d563f7e534a1c9561e648ff807da96f94b9762032a42ee4bfd4b\",\"index\":47},\"signatureScript\":\"41365e234fe67eeade99df260086807fed66a9578c23312578815ece8ef389e6b81d12c9b901c0d5d22121012c08d6987805c03a9fa0d776f512a13c8dce52f2a901\",\"sequence\":0,\"sigOpCount\":1,\"computeBudget\":0}],\"outputs\":[{\"amount\":\"1000000000\",\"scriptPublicKey\":{\"version\":0,\"scriptPublicKey\":\"20f196bcc3883b65949a90779f1f2e40ecf678a869784a03392cc1554aeca4962dac\"}},{\"amount\":\"3999796400\",\"scriptPublicKey\":{\"version\":0,\"scriptPublicKey\":\"2074ed8c904968c5497cdd24b2e894410094bb27a45a4edce030bec08692707056ac\"}}],\"lockTime\":0,\"subnetworkId\":\"0000000000000000000000000000000000000000\",\"gas\":0,\"storageMass\":0,\"payload\":\"\"}"
+  },
+  "lineage": {
+    "artifactId": "d94de15a3157dad3af027827bce1ae24adf416c09838191e259afb87a6c383e1",
+    "lineageId": "df8ecea503fe79f1f6d5a8e51985c8552dc9dd86b6225d5f70d40435647df345",
+    "parentArtifactId": "df8ecea503fe79f1f6d5a8e51985c8552dc9dd86b6225d5f70d40435647df345",
+    "rootArtifactId": "df8ecea503fe79f1f6d5a8e51985c8552dc9dd86b6225d5f70d40435647df345",
+    "sequence": 2
+  },
+  "execution": {
+    "mode": "localnet",
+    "domain": "kaspa-l1",
+    "network": "simnet"
+  },
+  "workflowId": "wf_4851bcf26ff83167",
+  "assumptionLevel": "simnet",
+  "signedId": "signed-d94de15a3157dad3",
+  "contentHash": "d94de15a3157dad3af027827bce1ae24adf416c09838191e259afb87a6c383e1"
+}

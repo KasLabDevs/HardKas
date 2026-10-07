@@ -1,0 +1,8 @@
+$ hardkas dev accounts export kasware --alias nobody   (cwd mech-ws-before)
+exit=0 stdout_is_single_json=false
+--- stdout ---
+
+--- stderr ---
+
+  ✗ Error:
+    Dev account alias 'undefined' not found.

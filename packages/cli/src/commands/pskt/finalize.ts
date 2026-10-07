@@ -4,7 +4,7 @@ import { UI } from "../../ui.js";
 export function registerFinalizeCommand(pskt: Command) {
   pskt
     .command("finalize <sessionPath>")
-    .description(`Finalize a PSKT session ${UI.maturity("alpha")}`)
+    .description(`Finalize a PSKT session ${UI.maturity("unavailable")}`)
     .requiredOption("--out <outputPath>", "Path to write the finalized PSKT session JSON")
     .option("--force", "Overwrite the output file if it exists", false)
     .option("--json", "Output results as JSON", false)

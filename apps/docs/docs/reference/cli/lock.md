@@ -32,7 +32,7 @@ title: hardkas lock
 
 ### Synopsis (Generated)
 
-**Purpose:** Analyze locks and identify stale or corrupted ones stable
+**Purpose:** Report stale locks (process no longer running on this host) in .hardkas/locks stable
 
 ---
 

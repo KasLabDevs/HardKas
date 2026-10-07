@@ -22,10 +22,16 @@ export async function runDevInit() {
   UI.info("Checking configuration...");
 
   if (!fs.existsSync(configFile)) {
+    // PAPERCUTS #38: generated configs declare their target through the `execution` contract.
     const template = `import { defineHardkasConfig } from "@hardkas/config";
 
 export default defineHardkasConfig({
-  defaultNetwork: "simulated",
+  execution: {
+    default: "simulator",
+    targets: {
+      simulator: { mode: "simulator", domain: "kaspa-l1", network: "simulated" }
+    }
+  },
   networks: {
     simulated: {
       kind: "simulated",

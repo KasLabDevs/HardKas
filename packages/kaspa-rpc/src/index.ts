@@ -1,7 +1,6 @@
 import type { NetworkId } from "@hardkas/core";
 import { RpcError, RpcNotFoundError } from "./errors.js";
 import { OfficialRpcSession, type OfficialRpcFactory } from "./upstream/session.js";
-import { toWire, utxoReferenceToWire } from "./upstream/wire.js";
 
 export interface KaspaNodeInfo {
   serverVersion?: string | undefined;
@@ -118,29 +117,6 @@ export interface KaspaSubmitTransactionResult {
   raw?: unknown;
 }
 
-export interface UtxosChangedEvent {
-  added: KaspaRpcUtxo[];
-  removed: KaspaRpcUtxo[];
-}
-
-export interface RpcAcceptedTransactionIds {
-  acceptingBlockHash: string;
-  acceptedTransactionIds: string[];
-}
-
-export interface VirtualChainChangedEvent {
-  removedChainBlockHashes: string[];
-  addedChainBlockHashes: string[];
-  acceptedTransactionIds?: RpcAcceptedTransactionIds[];
-}
-
-
-export interface KaspaSubscription {
-  readonly id: string;
-  readonly closed: boolean;
-  unsubscribe(): Promise<void>;
-}
-
 export interface SubmitTransactionOptions {
   allowOrphan?: boolean;
 }
@@ -171,30 +147,8 @@ export interface KaspaRpcClient {
   getVirtualChainFromBlockV2(options: { startHash: string; dataVerbosityLevel?: RpcDataVerbosityLevel; minConfirmationCount?: string }): Promise<any>;
   getSinkBlueScore(): Promise<any>;
   getHeaders(): Promise<any>;
-  subscribeToUtxosChanged(addresses: readonly string[], handler: (event: UtxosChangedEvent) => void): Promise<KaspaSubscription>;
-  subscribeToVirtualChainChanged(options: { includeAcceptedTransactionIds: boolean }, handler: (event: VirtualChainChangedEvent) => void): Promise<KaspaSubscription>;
   call<TResponse = unknown>(method: string, params?: unknown): Promise<TResponse>;
-  on(event: string, handler: (data: unknown) => void): void;
-  off(event: string, handler: (data: unknown) => void): void;
   close(): void | Promise<void>;
-}
-
-// The node's JSON notification names, and the official client's event for each.
-const OFFICIAL_EVENTS: Record<string, string> = {
-  utxosChangedNotification: "utxos-changed",
-  virtualChainChangedNotification: "virtual-chain-changed",
-  blockAddedNotification: "block-added",
-  sinkBlueScoreChangedNotification: "sink-blue-score-changed",
-  virtualDaaScoreChangedNotification: "virtual-daa-score-changed",
-  finalityConflictNotification: "finality-conflict",
-  finalityConflictResolvedNotification: "finality-conflict-resolved",
-  newBlockTemplateNotification: "new-block-template",
-  pruningPointUtxoSetOverrideNotification: "pruning-point-utxo-set-override"
-};
-
-interface ActiveListener {
-  event: string;
-  listener: (event: any) => void;
 }
 
 /**
@@ -205,11 +159,6 @@ interface ActiveListener {
 export class JsonWrpcKaspaClient implements KaspaRpcClient {
   private readonly session: OfficialRpcSession;
   private readonly rpcUrl: string;
-  private subscriptionCounter = 0;
-  private readonly rawListeners: Array<{ event: string; handler: (data: any) => void; listener: (event: any) => void }> = [];
-  private readonly subscriptions = new Map<string, ActiveListener>();
-  private readonly utxoAddressRefs = new Map<string, number>();
-  private virtualChain: { count: number; includeAcceptedTransactionIds: boolean } = { count: 0, includeAcceptedTransactionIds: false };
 
   public readonly capabilities = {
     virtualChainFromBlockV2: 'compatibility' as const
@@ -218,165 +167,10 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
   constructor(options: JsonWrpcKaspaClientOptions) {
     this.rpcUrl = options.rpcUrl;
     this.session = new OfficialRpcSession(options.rpcUrl, options.timeoutMs ?? 30000, options.rpcFactory);
-    // A new connection is a new official client: listeners and node-side subscriptions are restored on it.
-    this.session.onConnect((client) => {
-      for (const l of this.rawListeners) client.addEventListener(OFFICIAL_EVENTS[l.event] ?? l.event, l.listener);
-      for (const s of this.subscriptions.values()) client.addEventListener(s.event, s.listener);
-      const addresses = [...this.utxoAddressRefs.keys()];
-      if (addresses.length) void Promise.resolve(client.subscribeUtxosChanged(addresses)).catch(() => {});
-      if (this.virtualChain.count > 0) {
-        void Promise.resolve(client.subscribeVirtualChainChanged(this.virtualChain.includeAcceptedTransactionIds)).catch(() => {});
-      }
-    });
   }
 
   async call<TResponse = unknown>(method: string, params: any = {}): Promise<TResponse> {
     return this.session.request<TResponse>(method, params);
-  }
-
-  on(event: string, handler: (data: any) => void): void {
-    if (this.rawListeners.some((l) => l.event === event && l.handler === handler)) return;
-    const listener = (e: any) => handler(toWire(e?.data ?? e));
-    this.rawListeners.push({ event, handler, listener });
-    this.session.current()?.addEventListener(OFFICIAL_EVENTS[event] ?? event, listener);
-  }
-
-  off(event: string, handler: (data: any) => void): void {
-    const i = this.rawListeners.findIndex((l) => l.event === event && l.handler === handler);
-    if (i < 0) return;
-    const [l] = this.rawListeners.splice(i, 1);
-    this.session.current()?.removeEventListener(OFFICIAL_EVENTS[event] ?? event, l!.listener);
-  }
-
-  private track(id: string, active: ActiveListener): void {
-    this.subscriptions.set(id, active);
-    this.session.current()?.addEventListener(active.event, active.listener);
-  }
-
-  private untrack(id: string): void {
-    const active = this.subscriptions.get(id);
-    if (!active) return;
-    this.subscriptions.delete(id);
-    this.session.current()?.removeEventListener(active.event, active.listener);
-  }
-
-  async subscribeToUtxosChanged(
-    addresses: readonly string[],
-    handler: (event: UtxosChangedEvent) => void
-  ): Promise<KaspaSubscription> {
-    await this.session.connected();
-    const subId = `sub_${this.subscriptionCounter++}`;
-    const watched = new Set(addresses);
-    let isClosed = false;
-    const pick = (list: unknown) =>
-      mapKaspaRpcUtxos((Array.isArray(list) ? list : []).map(utxoReferenceToWire), "").filter((u) => !u.address || watched.has(u.address));
-    this.track(subId, {
-      event: "utxos-changed",
-      listener: (e: any) => {
-        if (isClosed) return;
-        const data = e?.data ?? e;
-        handler({ added: pick(data?.added), removed: pick(data?.removed) });
-      }
-    });
-
-    // The node subscription is per address and per connection: subscribe only addresses not already watched.
-    const fresh = addresses.filter((a) => !this.utxoAddressRefs.has(a));
-    for (const a of addresses) this.utxoAddressRefs.set(a, (this.utxoAddressRefs.get(a) ?? 0) + 1);
-    const release = (): string[] => {
-      const released: string[] = [];
-      for (const a of addresses) {
-        const n = (this.utxoAddressRefs.get(a) ?? 1) - 1;
-        if (n <= 0) {
-          this.utxoAddressRefs.delete(a);
-          released.push(a);
-        } else this.utxoAddressRefs.set(a, n);
-      }
-      return released;
-    };
-    try {
-      if (fresh.length) await this.session.request("subscribeUtxosChanged", fresh);
-    } catch (e) {
-      isClosed = true;
-      this.untrack(subId);
-      release();
-      throw e;
-    }
-
-    return {
-      id: subId,
-      get closed() { return isClosed; },
-      unsubscribe: async () => {
-        if (isClosed) return;
-        isClosed = true;
-        this.untrack(subId);
-        const released = release();
-        if (released.length && this.session.current()) {
-          try {
-            await this.session.request("unsubscribeUtxosChanged", released);
-          } catch {
-            // The connection may already be gone; nothing is left to stop.
-          }
-        }
-      }
-    };
-  }
-
-  async subscribeToVirtualChainChanged(
-    options: { includeAcceptedTransactionIds: boolean },
-    handler: (event: VirtualChainChangedEvent) => void
-  ): Promise<KaspaSubscription> {
-    await this.session.connected();
-    const subId = `sub_${this.subscriptionCounter++}`;
-    let isClosed = false;
-    this.track(subId, {
-      event: "virtual-chain-changed",
-      listener: (e: any) => {
-        if (isClosed) return;
-        const data: any = toWire(e?.data ?? e);
-        const payload: VirtualChainChangedEvent = {
-          removedChainBlockHashes: data?.removedChainBlockHashes || [],
-          addedChainBlockHashes: data?.addedChainBlockHashes || []
-        };
-        if (options.includeAcceptedTransactionIds && Array.isArray(data?.acceptedTransactionIds)) {
-          payload.acceptedTransactionIds = data.acceptedTransactionIds.map((a: any) => ({
-            acceptingBlockHash: a.acceptingBlockHash || "",
-            acceptedTransactionIds: a.acceptedTransactionIds || []
-          }));
-        }
-        handler(payload);
-      }
-    });
-
-    // One node subscription per connection, shared by every subscriber.
-    if (this.virtualChain.count === 0) {
-      this.virtualChain = { count: 0, includeAcceptedTransactionIds: options.includeAcceptedTransactionIds };
-      try {
-        await this.session.request("subscribeVirtualChainChanged", options.includeAcceptedTransactionIds);
-      } catch (e) {
-        isClosed = true;
-        this.untrack(subId);
-        throw e;
-      }
-    }
-    this.virtualChain.count++;
-
-    return {
-      id: subId,
-      get closed() { return isClosed; },
-      unsubscribe: async () => {
-        if (isClosed) return;
-        isClosed = true;
-        this.untrack(subId);
-        this.virtualChain.count--;
-        if (this.virtualChain.count === 0 && this.session.current()) {
-          try {
-            await this.session.request("unsubscribeVirtualChainChanged", this.virtualChain.includeAcceptedTransactionIds);
-          } catch {
-            // The connection may already be gone; nothing is left to stop.
-          }
-        }
-      }
-    };
   }
 
   async getInfo(): Promise<KaspaNodeInfo> {
@@ -747,27 +541,6 @@ export class MockKaspaRpcClient implements KaspaRpcClient {
 
   async call<TResponse = unknown>(method: string, params?: unknown): Promise<TResponse> {
     return null as TResponse;
-  }
-
-  on(event: string, handler: (data: unknown) => void): void {}
-  off(event: string, handler: (data: unknown) => void): void {}
-
-  async subscribeToUtxosChanged(addresses: readonly string[], handler: (event: UtxosChangedEvent) => void): Promise<KaspaSubscription> {
-    let closed = false;
-    return {
-      id: "mock_sub",
-      get closed() { return closed; },
-      unsubscribe: async () => { closed = true; }
-    };
-  }
-
-  async subscribeToVirtualChainChanged(options: { includeAcceptedTransactionIds: boolean }, handler: (event: VirtualChainChangedEvent) => void): Promise<KaspaSubscription> {
-    let closed = false;
-    return {
-      id: "mock_sub_vc",
-      get closed() { return closed; },
-      unsubscribe: async () => { closed = true; }
-    };
   }
 
   async getMempoolEntries(options?: any): Promise<any> { return []; }

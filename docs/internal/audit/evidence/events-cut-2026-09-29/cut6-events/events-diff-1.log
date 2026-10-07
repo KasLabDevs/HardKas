@@ -1,0 +1,14 @@
+﻿[1.1s] observers ready for kaspasim:qzxn3aqwz7d…
+[2.2s] phase 1: mining
+[38.4s] phase 1 ground truth: 802 UTXOs
+[38.4s] phase 2: restarting the node
+[43.0s] node back: true
+[51.9s] phase 2: mining
+[87.8s] phase 2 ground truth: 3614 UTXOs
+hkEventsAsWired      phase1 0/802  phase2 0/3505
+hkEventsConnected    phase1 0/802  phase2 0/3505
+toolkitWatch         phase1 802/802  phase2 33/3505
+kaspaRpc             phase1 802/802  phase2 33/3505
+utxoContext          phase1 0/802  phase2 0/3505
+utxoContextNoReReg   phase1 0/802  phase2 0/3505
+rawRpc               phase1 0/802  phase2 0/3505

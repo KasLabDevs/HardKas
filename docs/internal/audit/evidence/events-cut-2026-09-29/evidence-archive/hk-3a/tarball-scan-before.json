@@ -1,0 +1,103 @@
+﻿{
+  "labelDir": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-3a\\before",
+  "packages": 33,
+  "rpcEventsTarball": true,
+  "manifestHits": [
+    "@hardkas/sdk dependencies"
+  ],
+  "fileHits": [
+    {
+      "package": "@hardkas/rpc-events",
+      "file": "package/dist/contracts/subscriptions.d.ts",
+      "found": [
+        "ReactiveEventProvider"
+      ]
+    },
+    {
+      "package": "@hardkas/rpc-events",
+      "file": "package/dist/provider/reactive-event-provider.d.ts",
+      "found": [
+        "ReactiveEventProvider",
+        "DefaultReactiveEventProvider"
+      ]
+    },
+    {
+      "package": "@hardkas/rpc-events",
+      "file": "package/dist/provider/reactive-event-provider.js",
+      "found": [
+        "ReactiveEventProvider",
+        "DefaultReactiveEventProvider"
+      ]
+    },
+    {
+      "package": "@hardkas/rpc-events",
+      "file": "package/dist/test/connection.test.js",
+      "found": [
+        "ReactiveEventProvider",
+        "DefaultReactiveEventProvider"
+      ]
+    },
+    {
+      "package": "@hardkas/rpc-events",
+      "file": "package/dist/test/lifecycle.test.js",
+      "found": [
+        "ReactiveEventProvider",
+        "DefaultReactiveEventProvider"
+      ]
+    },
+    {
+      "package": "@hardkas/rpc-events",
+      "file": "package/dist/test/reconciliation.test.js",
+      "found": [
+        "ReactiveEventProvider",
+        "DefaultReactiveEventProvider"
+      ]
+    },
+    {
+      "package": "@hardkas/rpc-events",
+      "file": "package/dist/test/subscriptions.test.js",
+      "found": [
+        "ReactiveEventProvider",
+        "DefaultReactiveEventProvider"
+      ]
+    },
+    {
+      "package": "@hardkas/rpc-events",
+      "file": "package/package.json",
+      "found": [
+        "@hardkas/rpc-events",
+        "rpc-events"
+      ]
+    },
+    {
+      "package": "@hardkas/sdk",
+      "file": "package/dist/index.d.ts",
+      "found": [
+        "@hardkas/rpc-events",
+        "rpc-events",
+        "ReactiveEventProvider"
+      ]
+    },
+    {
+      "package": "@hardkas/sdk",
+      "file": "package/dist/index.js",
+      "found": [
+        "@hardkas/rpc-events",
+        "rpc-events",
+        "ReactiveEventProvider",
+        "DefaultReactiveEventProvider",
+        "KaspaRpcTransportAdapter"
+      ]
+    },
+    {
+      "package": "@hardkas/sdk",
+      "file": "package/package.json",
+      "found": [
+        "@hardkas/rpc-events",
+        "rpc-events"
+      ]
+    }
+  ],
+  "filesScanned": 542,
+  "clean": false
+}

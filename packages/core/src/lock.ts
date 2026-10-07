@@ -2,8 +2,10 @@ import { HardkasSchemas } from "./registry.js";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
+import { AsyncLocalStorage } from "node:async_hooks";
 import { HardkasError } from "./index.js";
 import { EnvironmentTelemetry } from "./telemetry.js";
+import { plainChildPath } from "./fs.js";
 
 /**
  * HardKAS Lock Metadata schema v1
@@ -36,13 +38,102 @@ export interface AcquireLockArgs {
 }
 
 /**
+ * ARTIFACT-LOCK-REENTRANCY-1: one lock file held by this process. Its handles are shares of it, released once each, and
+ * the file goes with the last share — only if it is still exactly the file this holding wrote. Holdings are visible to
+ * the call chain running inside them (withLock/withLocks) through one AsyncLocalStorage shared by every copy of this
+ * module in the process: a nested acquisition joins, while another process or an independent operation of this same
+ * process is excluded as before.
+ */
+interface Holding {
+  readonly key: string;
+  readonly lockPath: string;
+  readonly content: string;
+  readonly metadata: LockMetadata;
+  shares: number;
+}
+
+/**
+ * EVIDENCE-TRUST-1 (D9): what a lock records about its holder when the caller names no command — the executable, the
+ * script and at most two command words (`tx send`), never the arguments. A lock needs no credentials to do its job, and
+ * an argument can carry one (`--url https://user:password@…`) that would outlive a crash in `.hardkas/locks`.
+ */
+export function lockCommandOf(argv: readonly string[]): string {
+  const words: string[] = [];
+  for (const token of argv.slice(2)) {
+    if (words.length === 2 || !/^[a-z][a-z0-9-]*$/.test(token)) break;
+    words.push(token);
+  }
+  return [...argv.slice(0, 2), ...words].join(" ");
+}
+
+const HOLDING_SCOPE = Symbol.for("@hardkas/core/lock-holding-scope.v1");
+const HOLDING_OF = Symbol.for("@hardkas/core/lock-holding.v1");
+const holdingScope: AsyncLocalStorage<ReadonlyMap<string, Holding>> =
+  ((globalThis as any)[HOLDING_SCOPE] ??= new AsyncLocalStorage<ReadonlyMap<string, Holding>>());
+
+/** Canonical identity of a lock: the real path of the workspace's lock directory plus the lock name. */
+function holdingKey(lockDir: string, name: string): string {
+  let dir = lockDir;
+  try {
+    dir = fs.realpathSync.native(lockDir);
+  } catch {
+    // keep the resolved path
+  }
+  return path.join(dir, `${name}.lock`);
+}
+
+function readLockFile(lockPath: string): string | undefined {
+  try {
+    return fs.readFileSync(lockPath, "utf-8");
+  } catch {
+    return undefined;
+  }
+}
+
+function shareOf(holding: Holding): LockHandle {
+  let released = false;
+  const handle: LockHandle = {
+    path: holding.lockPath,
+    metadata: holding.metadata,
+    release: async () => {
+      if (released) return; // a share is released once; a repeated release never drops another share
+      released = true;
+      holding.shares--;
+      if (holding.shares > 0) return;
+      // never remove a file this holding did not write (replaced or recovered by someone else)
+      if (readLockFile(holding.lockPath) === holding.content) {
+        try {
+          fs.unlinkSync(holding.lockPath);
+        } catch {
+          // as before: a failed unlink leaves a lock naming this (live) process
+        }
+      }
+    }
+  };
+  Object.defineProperty(handle, HOLDING_OF, { value: holding, enumerable: false });
+  return handle;
+}
+
+/** Runs fn inside the holdings of these handles, so acquisitions in its call chain join them. */
+function runInHoldings<T>(handles: LockHandle[], fn: () => Promise<T>): Promise<T> {
+  const scope = new Map(holdingScope.getStore() ?? []);
+  for (const handle of handles) {
+    const holding = (handle as any)[HOLDING_OF] as Holding | undefined;
+    if (holding) scope.set(holding.key, holding);
+  }
+  return holdingScope.run(scope, fn);
+}
+
+/**
  * Deterministic lock ordering to avoid deadlocks.
- * workspace > node > accounts > artifacts > events > query-store
+ * workspace > node > accounts > simulator-state > artifacts > events > query-store
+ * (a simulated execution holds simulator-state and takes artifacts inside it for its writes: SIMULATOR-EXECUTION-UNIT-1)
  */
 export const LOCK_ORDER = [
   "workspace",
   "node",
   "accounts",
+  "simulator-state",
   "artifacts",
   "events",
   "pending-spends",
@@ -65,6 +156,20 @@ export async function acquireLock(args: AcquireLockArgs): Promise<LockHandle> {
     fs.mkdirSync(lockDir, { recursive: true });
   }
 
+  // ARTIFACT-LOCK-REENTRANCY-1: an acquisition made inside a holding of this lock (its call chain) joins it
+  const key = holdingKey(lockDir, args.name);
+  const held = holdingScope.getStore()?.get(key);
+  if (held && held.shares > 0) {
+    if (readLockFile(lockPath) !== held.content) {
+      throw new HardkasError(
+        "LOCK_LOST",
+        `Lock ${args.name} at ${lockPath} was removed or replaced from outside while this process held it; a nested acquisition cannot join it`
+      );
+    }
+    held.shares++;
+    return shareOf(held);
+  }
+
   while (true) {
     try {
       // 1. Attempt atomic creation
@@ -72,35 +177,19 @@ export async function acquireLock(args: AcquireLockArgs): Promise<LockHandle> {
         schema: HardkasSchemas.LockV1,
         name: args.name,
         pid: process.pid,
-        command: args.command || process.argv.join(" "),
+        command: args.command || lockCommandOf(process.argv),
         cwd: process.cwd(),
         hostname: os.hostname(),
         createdAt: new Date().toISOString(),
         expiresAt: null
       };
 
+      const content = JSON.stringify(metadata, null, 2);
       const fd = fs.openSync(lockPath, "wx");
-      fs.writeSync(fd, JSON.stringify(metadata, null, 2));
+      fs.writeSync(fd, content);
       fs.closeSync(fd);
 
-      return {
-        path: lockPath,
-        metadata,
-        release: async () => {
-          if (fs.existsSync(lockPath)) {
-            try {
-              const current = JSON.parse(
-                fs.readFileSync(lockPath, "utf-8")
-              ) as LockMetadata;
-              if (current.pid === process.pid) {
-                fs.unlinkSync(lockPath);
-              }
-            } catch (e) {
-              // Ignore invalid metadata on release, but don't delete if not ours
-            }
-          }
-        }
-      };
+      return shareOf({ key, lockPath, content, metadata, shares: 1 });
     } catch (e: unknown) {
       if ((e as NodeJS.ErrnoException).code === "EEXIST") {
         // Lock exists. Check liveness/staleness.
@@ -222,7 +311,7 @@ export async function withLock<T>(
 ): Promise<T> {
   const handle = await acquireLock(args);
   try {
-    return await fn(handle);
+    return await runInHoldings([handle], () => fn(handle));
   } finally {
     await handle.release();
   }
@@ -249,7 +338,7 @@ export async function withLocks<T>(
     for (const name of sortedNames) {
       handles.push(await acquireLock({ rootDir, name, ...options }));
     }
-    return await fn();
+    return await runInHoldings(handles, fn);
   } finally {
     // Release in reverse order
     for (const handle of handles.reverse()) {
@@ -313,9 +402,22 @@ export function clearLock(
   options: { force?: boolean; ifDead?: boolean } = {}
 ): { cleared: boolean; reason?: string } {
   const lockDir = path.join(rootDir, ".hardkas", "locks");
-  const lockPath = path.join(lockDir, `${name}.lock`);
+  // CONTAINMENT-2 (R1-I1): `name` names ONE plain lock file directly in .hardkas/locks. That, and the entry found
+  // there being a plain file that physically lives in that directory, is decided before anything is read or removed.
+  const lockPath = plainChildPath(lockDir, `${name}.lock`);
+  const refuse = (why: string) =>
+    new HardkasError("LOCK_NAME_INVALID", `${JSON.stringify(name)} is not a lock of ${lockDir}: ${why}. Nothing was read or removed.`);
+  if (!lockPath) throw refuse("a lock name is one plain file name, without separators, '..' or device names");
 
-  if (!fs.existsSync(lockPath)) return { cleared: false, reason: "Lock not found" };
+  let entry: fs.Stats;
+  try {
+    entry = fs.lstatSync(lockPath);
+  } catch {
+    return { cleared: false, reason: "Lock not found" };
+  }
+  if (!entry.isFile() || path.dirname(fs.realpathSync.native(lockPath)) !== fs.realpathSync.native(lockDir)) {
+    throw refuse(`${lockPath} is not a plain file of that directory`);
+  }
 
   let metadata: LockMetadata;
   try {

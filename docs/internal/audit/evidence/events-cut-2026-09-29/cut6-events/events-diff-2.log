@@ -1,0 +1,18 @@
+﻿[1.2s] observers ready for kaspasim:qr8um83efu3…
+[2.0s] phase 1: mining
+[40.9s] phase 1 ground truth: 717 → 825 UTXOs (still moving)
+[40.9s] phase 2: restarting the node
+[46.4s] node back: true
+[46.4s] ground truth right after the restart: 2523 UTXOs
+[55.1s] phase 2: mining
+[93.9s] phase 2 ground truth: 3272 → 3455 UTXOs (still moving)
+hkEventsAsWired     p1 0/825       afterBack 0/5153      notif 0/0  
+hkEventsConnected   p1 0/825       afterBack 0/5153      notif 0/0  
+toolkitWatch        p1 825/825     afterBack 0/5153      notif 146/0  
+kaspaRpc            p1 825/825     afterBack 0/5153      notif 217/0  end set 781 vs node 3455 (missing 2674, extra 0)
+kaspaRpcTraffic     p1 794/825     afterBack 5153/5153   notif 216/245  end set 1665 vs node 3455 (missing 2642, extra 852)
+utxoContext         p1 794/825     afterBack 5153/5153   notif 2026/2108  end listed 3460+stasis 0 vs node 3455 (not on node 34)
+utxoContextNoReReg  p1 794/825     afterBack 0/5153      notif 2026/0  end listed 818+stasis 0 vs node 3455 (not on node 818)
+rawRpc              p1 794/825     afterBack 0/5153      notif 216/0  end set 818 vs node 3455 (missing 3455, extra 818)
+rawRpcResub         p1 794/825     afterBack 5153/5153   notif 216/245  end set 1665 vs node 3455 (missing 2642, extra 852)
+control             p1 0/825       afterBack 5153/5153   notif 0/245  end set 847 vs node 3455 (missing 2642, extra 34)

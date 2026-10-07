@@ -1,6 +1,92 @@
 import { Command } from "commander";
 import { getOutput } from "../output.js";
-import { HardkasCliError } from "../cli-errors.js";
+import { HardkasCliError, HardkasExitCode } from "../cli-errors.js";
+
+// #10 (env check): the command used to REQUIRE the deployment profile of `hardkas deploy init`
+// (NETWORK, KASPAD_URL, HARDKAS_DATA_DIR, HARDKAS_KASPAD_IMAGE, LOG_LEVEL) and failed in every
+// workspace without that .env, although HardKAS itself reads none of them but HARDKAS_KASPAD_IMAGE.
+// It now checks the variables HardKAS honours, flags HARDKAS_* names it does not know (a typo is
+// a silent misconfiguration), and only reports the deployment profile when a .env declares it.
+
+/** The environment variables HardKAS reads, with what they do. */
+export const HARDKAS_ENV_VARIABLES: ReadonlyArray<{ name: string; meaning: string }> = [
+  { name: "HARDKAS_HOME", meaning: "home of the managed toolchains (kaspa-wasm, silverc)" },
+  { name: "HARDKAS_KASPAD_IMAGE", meaning: "Docker image of the local node (default: the pinned rusty-kaspad)" },
+  { name: "HARDKAS_ALLOW_SIMULATED_NODE", meaning: "1: report a simulated node when Docker is unavailable (never a real node)" },
+  { name: "HARDKAS_ALLOW_UNVERIFIED_NODE", meaning: "testing harness: accept a node whose identity does not verify" },
+  { name: "HARDKAS_TOCCATA_MINER_THROTTLE_MS", meaning: "pause between blocks of the localnet miner" },
+  { name: "HARDKAS_ALLOW_UNSAFE_CHAOS", meaning: "1: allow a chaos campaign in the current directory" },
+  // SURFACE-TRUTH-1B (ST-J): what it does, not what it was meant to do. It "exposed the experimental command groups",
+  // but it never changed the command tree; HARDKAS_EXPERIMENTAL_VPROGS was read by nothing and is no longer listed.
+  { name: "HARDKAS_EXPERIMENTAL", meaning: "1: silence the warning of the internal or unavailable groups (capabilities, pskt, session); the commands are the same" },
+  { name: "HARDKAS_PROJECTION_BACKEND", meaning: "query store backend (sqlite or filesystem)" },
+  { name: "HARDKAS_QUERY_STORE_PATH", meaning: "path of the query store database" },
+  { name: "HARDKAS_ROOT", meaning: "workspace root used by the dev server" },
+  { name: "HARDKAS_DEV_TOKEN", meaning: "dev server access token" },
+  { name: "HARDKAS_WATCH_POLLING", meaning: "dev server: poll the filesystem instead of watching it" },
+  { name: "HARDKAS_NETWORK", meaning: "dev server: network of the simnet routes" },
+  { name: "HARDKAS_KEYSTORE_LOCK_STALE_MS", meaning: "age after which a keystore lock is stale" },
+  { name: "HARDKAS_KEYSTORE_LOCK_TIMEOUT_MS", meaning: "how long to wait for a keystore lock" },
+  { name: "HARDKAS_KEEP_RUNS", meaning: "hardkas test: keep the scenario workspaces" },
+  { name: "HARDKAS_TEST_RUN_DIR", meaning: "hardkas test: where the scenario workspaces are created" },
+  { name: "HARDKAS_MASS_TRACKING", meaning: "hardkas test: record mass measurements" },
+  { name: "HARDKAS_TEST_IGNORE_STALENESS", meaning: "tests only: skip the staleness check of artifacts" },
+  { name: "HARDKAS_HERMETIC_LOG", meaning: "hermetic gate: where attempted non-loopback connections are logged" },
+  { name: "HARDKAS_HERMETIC_DENY_PORTS", meaning: "hermetic gate: loopback ports refused on purpose" },
+  { name: "HARDKAS_HERMETIC_TRACE", meaning: "hermetic gate: trace every connection attempt" }
+];
+
+/**
+ * The deployment profile `hardkas deploy init` writes to .env.example; informational only (the deployed app's variables,
+ * and HARDKAS_KASPAD_IMAGE). SURFACE-TRUTH-1B (ST-J): one contract for `env check`, `doctor` and `deploy init`.
+ * HARDKAS_DATA_DIR is not in it: HardKAS reads no such variable (the workspace's `.hardkas` holds its data), so `env
+ * check` reports it as unknown, `deploy init` no longer writes it and `doctor` no longer demands it.
+ */
+export const DEPLOY_PROFILE_VARIABLES = ["NETWORK", "KASPAD_URL", "HARDKAS_KASPAD_IMAGE", "LOG_LEVEL", "DATABASE_URL", "PROMETHEUS_PORT"];
+
+export function parseDotEnv(content: string): Record<string, string> {
+  const parsed: Record<string, string> = {};
+  for (const line of content.split(/\r?\n/)) {
+    const match = line.match(/^\s*([\w.-]+)\s*=\s*(.*)?\s*$/);
+    if (match && match[1] && !line.trim().startsWith("#")) parsed[match[1]] = (match[2] || "").trim();
+  }
+  return parsed;
+}
+
+export interface EnvCheckReport {
+  dotEnv: string | null;
+  known: Array<{ name: string; value: string; source: "process" | ".env"; meaning: string }>;
+  unknown: string[];
+  deployProfile: { present: string[]; missing: string[] } | null;
+}
+
+export function checkEnvironment(processEnv: NodeJS.ProcessEnv, dotEnv: Record<string, string> | null): EnvCheckReport {
+  const merged: Record<string, { value: string; source: "process" | ".env" }> = {};
+  for (const [k, v] of Object.entries(processEnv)) if (typeof v === "string") merged[k] = { value: v, source: "process" };
+  for (const [k, v] of Object.entries(dotEnv ?? {})) merged[k] = { value: v, source: ".env" };
+
+  const knownNames = new Set(HARDKAS_ENV_VARIABLES.map((v) => v.name));
+  const known = HARDKAS_ENV_VARIABLES.filter((v) => merged[v.name] !== undefined && merged[v.name]!.value !== "").map((v) => ({
+    name: v.name,
+    value: merged[v.name]!.value,
+    source: merged[v.name]!.source,
+    meaning: v.meaning
+  }));
+  const unknown = Object.keys(merged)
+    .filter((k) => k.startsWith("HARDKAS_") && !knownNames.has(k) && !k.startsWith("HARDKAS_TEST_") && !k.startsWith("HARDKAS_HARNESS_") && !k.startsWith("HARDKAS_ESCROW_") && !k.startsWith("HARDKAS_DEV_SERVER_"))
+    .sort();
+
+  // The deployment profile is only a topic when a .env declares any of it.
+  const declares = dotEnv ? DEPLOY_PROFILE_VARIABLES.some((v) => dotEnv[v] !== undefined) : false;
+  const deployProfile = declares
+    ? {
+        present: DEPLOY_PROFILE_VARIABLES.filter((v) => (dotEnv![v] ?? "") !== ""),
+        missing: ["NETWORK", "KASPAD_URL", "LOG_LEVEL"].filter((v) => (dotEnv![v] ?? "") === "")
+      }
+    : null;
+
+  return { dotEnv: null, known, unknown, deployProfile };
+}
 
 export function registerEnvCommands(program: Command) {
   const envCmd = program
@@ -9,59 +95,39 @@ export function registerEnvCommands(program: Command) {
 
   envCmd
     .command("check")
-    .description("Validate the .env file against known HardKAS production variables")
-    .action(async () => {
+    .description("Check the HARDKAS_* environment variables (process and .env): the ones HardKAS honours, and any it does not know")
+    .option("--json", "Output as JSON", false)
+    .action(async (options: { json: boolean }) => {
       const out = getOutput();
-      out.writeLine("Checking environment variables...");
+      const { readFileSync, existsSync } = await import("node:fs");
+      const { join } = await import("node:path");
+      const dotEnvPath = join(process.cwd(), ".env");
+      const dotEnv = existsSync(dotEnvPath) ? parseDotEnv(readFileSync(dotEnvPath, "utf8")) : null;
+      const report = checkEnvironment(process.env, dotEnv);
+      report.dotEnv = dotEnv ? dotEnvPath : null;
 
-      let envContent = "";
-      try {
-        const { readFileSync } = await import("fs");
-        const { join } = await import("path");
-        envContent = readFileSync(join(process.cwd(), ".env"), "utf8");
-      } catch (e) {
-        // No .env file, we will just rely on process.env
-      }
-
-      // Parse basic key=value from envContent
-      const parsedEnv: Record<string, string> = {};
-      envContent.split("\n").forEach(line => {
-        const match = line.match(/^\s*([\w.-]+)\s*=\s*(.*)?\s*$/);
-        if (match && match[1]) {
-           parsedEnv[match[1]] = match[2] || "";
-        }
-      });
-
-      // Merge with process.env
-      const mergedEnv = { ...process.env, ...parsedEnv };
-
-      const requiredVars = ["NETWORK", "KASPAD_URL", "HARDKAS_DATA_DIR", "HARDKAS_KASPAD_IMAGE", "LOG_LEVEL"];
-      const optionalVars = ["DATABASE_URL", "PROMETHEUS_PORT"];
-
-      const missing: string[] = [];
-      const present: string[] = [];
-
-      for (const req of requiredVars) {
-        if (!mergedEnv[req] || mergedEnv[req].trim() === "") {
-          missing.push(req);
-        } else {
-          present.push(req);
+      if (options.json) {
+        out.writeJson({ ok: report.unknown.length === 0, command: "env check", mode: "cli", ...(report.unknown.length ? { code: "ENV_UNKNOWN_VARIABLE" } : {}), result: report });
+      } else {
+        out.writeLine(`Environment check (${report.dotEnv ? `.env at ${report.dotEnv} + process` : "process only, no .env"})`);
+        out.writeLine("");
+        if (report.known.length === 0) out.writeLine("  No HARDKAS_* variable is set: the defaults apply.");
+        for (const v of report.known) out.writeLine(`  ✅ ${v.name}=${v.value}  (${v.source}; ${v.meaning})`);
+        for (const name of report.unknown) out.writeLine(`  ❌ ${name}: not a variable HardKAS reads (a typo?)`);
+        if (report.deployProfile) {
+          out.writeLine("");
+          out.writeLine("  Deployment profile (.env of 'hardkas deploy init'; informational):");
+          for (const v of report.deployProfile.present) out.writeLine(`    • ${v} set`);
+          for (const v of report.deployProfile.missing) out.writeLine(`    • ${v} not set`);
         }
       }
 
-      for (const opt of optionalVars) {
-        if (mergedEnv[opt] && mergedEnv[opt].trim() !== "") {
-          present.push(`${opt} (optional)`);
-        }
+      if (report.unknown.length > 0) {
+        throw new HardkasCliError(
+          "ENV_UNKNOWN_VARIABLE",
+          `Unknown HARDKAS_* variable(s): ${report.unknown.join(", ")} (HardKAS does not read them; check the spelling)`,
+          { exitCode: HardkasExitCode.USAGE_ERROR }
+        );
       }
-
-      if (missing.length > 0) {
-        out.error(`Missing required environment variables:\n  - ${missing.join("\n  - ")}`);
-        out.writeLine("Ensure you have a .env file configured properly for deployment.");
-        throw new HardkasCliError("ENV_VALIDATION_FAILED", "Missing required environment variables", { exitCode: 1 });
-      }
-
-      out.writeLine(`Environment is valid! Found ${present.length} variables.`);
-      present.forEach(p => out.writeLine(`  ✅ ${p}`));
     });
 }

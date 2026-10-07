@@ -69,13 +69,18 @@ export function verifyTxPlanSemantics(
     issues.push({ code, severity, message, ...(path ? { path } : {}) });
   };
 
-  // A. Simulation vs Real separation
+  // A. Simulation vs Real separation. PAPERCUTS #44: artifacts record the simulator as
+  // `mode: "simulator"` (legacy artifacts: "simulated"), and the simulator's network is
+  // "simulated" (legacy artifacts: "simnet"). The old check compared the mode with a value no
+  // artifact carries, so a simulator plan claiming a real network was never reported.
   const ePlan = plan as ExtendedPlan;
-  if (ePlan.mode === "simulated" && ePlan.networkId !== "simnet") {
+  const planMode = (ePlan as { mode?: unknown }).mode;
+  const simulatorPlan = planMode === "simulator" || planMode === "simulated";
+  if (simulatorPlan && ePlan.networkId !== "simulated" && ePlan.networkId !== "simnet") {
     addIssue(
       "ENV_CONSISTENCY_FAILURE",
       "error",
-      `Environment mismatch: simulated plan must target 'simnet', but targets '${ePlan.networkId}'`
+      `Environment mismatch: a simulator plan must target 'simulated' (legacy artifacts: 'simnet'), but targets '${ePlan.networkId}'`
     );
   }
 
@@ -361,7 +366,9 @@ export function verifyTxReceiptSemantics(receipt: any): {
     addIssue("MISSING_TXID", "error", "Accepted receipt is missing transaction ID");
   }
 
-  if (receipt.mode === "simulated" && !receipt.tracePath) {
+  // PAPERCUTS #44: simulator receipts are `mode: "simulator"` (legacy: "simulated"); the old check
+  // compared the mode with a value no receipt carries, so MISSING_TRACE could never be reported.
+  if ((receipt.mode === "simulator" || receipt.mode === "simulated") && !receipt.tracePath) {
     addIssue("MISSING_TRACE", "warning", "Simulated receipt is missing trace path");
   }
 

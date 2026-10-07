@@ -2,16 +2,9 @@
 title: Bridge local simulation
 ---
 
-Bridge local commands model developer bridge-entry flows. They are deterministic local simulation utilities, not a production bridge implementation.
+The local bridge simulation (`@hardkas/bridge-local`) belongs to the Igra L2 Lab, not to the HardKAS L1 core: the L1 CLI registers no `bridge` or `l2` command group, so there are no `hardkas bridge …` or `hardkas l2 …` commands to run.
 
-**bridge local Copy**
-
-```typescript
-hardkas bridge local plan --session dev --amount 10 --json
-hardkas bridge local simulate --session dev --amount 10 --prefix abc --json
-hardkas bridge local inspect <txid> --json
-hardkas l2 bridge assumptions --json
-```
+The Lab models developer bridge-entry flows as deterministic local simulation utilities, never as a production bridge implementation. Its bridge model is pre-ZK:
 
 Field
 

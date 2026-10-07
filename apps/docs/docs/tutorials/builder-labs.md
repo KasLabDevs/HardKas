@@ -12,8 +12,7 @@ Inspect local environment
 
 ```typescript
 hardkas doctor --json
-hardkas capabilities --json
-hardkas networks --json
+hardkas config networks
 hardkas config show --json
 ```
 
@@ -34,51 +33,7 @@ HardKAS Doctor
   Summary: 5 passed, 1 failed, 1 warning, 1 skipped
 ```
 
-**sample output (truncated)**
-
-```typescript
-{
-  "version": "0.12.0-rc.26",
-  "maturity": "hardened-alpha",
-  "capabilities": {
-    "artifacts": true,
-    "deterministicHashing": true,
-    "workspaceLocks": true,
-    "consensusValidation": false,
-    "silverScript": false
-  }
-}
-```
-
-Create and inspect an L2 transaction plan
-
-**l2 tx Copy**
-
-```typescript
-hardkas l2 tx build --network igra --from 0x... --to 0x... --value 0 --data 0x --json
-hardkas l2 tx sign ./artifacts/l2-plan.json --account bob --json
-hardkas l2 tx send ./artifacts/l2-signed.json --yes --json
-hardkas l2 tx receipt <txHash> --json
-```
-
-**sample output**
-
-```typescript
-L2 transaction plan:
-  Network: igra
-  From:    0xbob...
-  To:      0xreceiver...
-  Value:   0
-  Status:  planned
-
-Signed artifact:
-  Artifact: l2-signed-tx
-  Hash:     sha256:8f2c...
-
-Send result:
-  Status: accepted
-  TxHash: 0xa1b2c3d4e5f6...
-```
+L2 transactions (Igra) are not part of the HardKAS L1 CLI: the `l2` command group belongs to the Igra Lab and the L1 CLI does not register it.
 
 Index and explain artifacts
 

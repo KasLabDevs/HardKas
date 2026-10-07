@@ -3,6 +3,7 @@ import { serve } from "@hono/node-server";
 import { logger } from "hono/logger";
 import { cors } from "hono/cors";
 import crypto from "node:crypto";
+import { redactUrlCredentialsInText } from "@hardkas/core";
 import { sessionRoutes } from "./routes/session.js";
 import { healthRoutes } from "./routes/health.js";
 import { bridgeRoutes } from "./routes/bridge.js";
@@ -77,7 +78,15 @@ export function createDevServer(config: DevServerConfig) {
   const devServerToken =
     process.env.HARDKAS_DEV_TOKEN || crypto.randomBytes(32).toString("hex");
 
-  app.use("*", logger());
+  // EVIDENCE-TRUST-1 (ET-C5): the access log never prints a credential. The API accepts its session token as `?token=`
+  // (an EventSource cannot send headers), so every logged request path goes through the same redaction as the CLI's
+  // output: secret-named query values are replaced by a marker, accepted token or not.
+  app.use(
+    "*",
+    logger((message: string, ...rest: string[]) =>
+      console.log(redactUrlCredentialsInText(message), ...rest.map((part) => redactUrlCredentialsInText(part)))
+    )
+  );
 
   // 1. Host Header Validation (DNS Rebinding Defense)
   app.use("*", async (c, next) => {
@@ -292,8 +301,9 @@ export function createDevServer(config: DevServerConfig) {
         };
         server.on("error", (err: any) => {
           if (((err as any).code) === "EADDRINUSE") {
+            // SURFACE-TRUTH-1B: `dev` has no `server` subcommand and no --port; `sandbox` takes --port
             console.error(
-              `\nPort ${config.port} is already in use. Try: hardkas dev server --port ${config.port + 1}\n`
+              `\nPort ${config.port} is already in use: stop the process that holds it (\`hardkas sandbox\` takes --port).\n`
             );
             throw new Error("Command failed");
           }
@@ -303,7 +313,7 @@ export function createDevServer(config: DevServerConfig) {
       } catch (err: any) {
         if (((err as any).code) === "EADDRINUSE") {
           console.error(
-            `\nPort ${config.port} is already in use. Try: hardkas dev server --port ${config.port + 1}\n`
+            `\nPort ${config.port} is already in use: stop the process that holds it (\`hardkas sandbox\` takes --port).\n`
           );
           throw new Error("Command failed");
         }

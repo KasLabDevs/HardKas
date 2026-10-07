@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { getQueryBackend } from "../db.js";
 import { formatSompiToKas } from "@hardkas/core";
+import { replayStatusOf } from "../replay-status.js";
 
 export const transactionsRoutes = new Hono();
 
@@ -166,9 +167,8 @@ transactionsRoutes.get("/", async (c) => {
       utx.stalenessReasons = [];
       const txId = utx.txId || utx.planId || utx.signedId;
       if (txId) {
-        const replay = replays.find(
-          (r) => r.payload.txId === txId || r.txId === txId || r.artifactId === txId
-        );
+        // REPLAY-TRUST-2 (D-RT4): a report that verifies, names this receipt, latest first; legacy is never a PASS
+        const { status, report: replay } = replayStatusOf(replays, utx.receiptId, utx.txId);
 
         utx.sourceTimestamp = utx.timestamp;
 
@@ -176,10 +176,7 @@ transactionsRoutes.get("/", async (c) => {
           utx.lastReplayTimestamp =
             replay.createdAt || (replay as any).timestamp || replay.payload?.createdAt;
 
-          const planOk = replay.payload.planOk !== false;
-          const receiptOk = replay.payload.receiptOk !== false;
-          const invariantsOk = replay.payload.invariantsOk !== false;
-          utx.replayStatus = planOk && receiptOk && invariantsOk ? "PASS" : "FAIL";
+          if (status) utx.replayStatus = status;
 
           const srcTime = new Date(utx.sourceTimestamp).getTime();
           const repTime = new Date(utx.lastReplayTimestamp!).getTime();
@@ -301,15 +298,10 @@ transactionsRoutes.get("/:id", async (c) => {
       const replays = await queryBackend.findArtifacts({
         schema: "hardkas.replayReport.v1"
       });
-      replay = replays.find(
-        (r) => r.payload.txId === txId || r.txId === txId || r.artifactId === txId
-      );
-      if (replay) {
-        const planOk = replay.payload.planOk !== false;
-        const receiptOk = replay.payload.receiptOk !== false;
-        const invariantsOk = replay.payload.invariantsOk !== false;
-        replayStatus = planOk && receiptOk && invariantsOk ? "PASS" : "FAIL";
-      }
+      // REPLAY-TRUST-2 (D-RT4): a report that verifies, names this receipt, latest first; legacy is never a PASS
+      const derived = replayStatusOf(replays, receipt?.artifactId, txId);
+      replay = derived.report ?? null;
+      replayStatus = derived.status;
     }
 
     if (!plan && !signed && !receipt) {

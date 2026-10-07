@@ -3,7 +3,7 @@ import { DockerKaspadRunner } from "@hardkas/node-runner";
 import { JsonWrpcKaspaClient } from "@hardkas/kaspa-rpc";
 import { execa } from "execa";
 import { HardkasFixtureSigner } from "@hardkas/testing";
-import { formatSompiToKas } from "@hardkas/core";
+import { formatSompiToKas, nodeRpcUrl, CANONICAL_LOCALNET } from "@hardkas/core";
 
 export async function runDoctorNode(opts: { json?: boolean; capabilities?: boolean }) {
   if (opts.json) UI.setJsonMode(true);
@@ -21,7 +21,7 @@ export async function runDoctorNode(opts: { json?: boolean; capabilities?: boole
   const status = await runner.status();
 
   if (status.running) {
-    UI.logHuman(`  âœ… Node: READY (${status.containerName})`);
+    UI.logHuman(`  ✅ Node: READY (${status.containerName})`);
   } else {
     const { HardkasCliError } = await import("../cli-errors.js");
     throw new HardkasCliError("NODE_NOT_RUNNING", "Node: NOT RUNNING", { exitCode: 1 });
@@ -29,7 +29,7 @@ export async function runDoctorNode(opts: { json?: boolean; capabilities?: boole
 
   // 2. RPC check
   if (status.rpcReady) {
-    UI.logHuman(`  âœ… RPC: READY (127.0.0.1:18210)`);
+    UI.logHuman(`  ✅ RPC: READY (${CANONICAL_LOCALNET.host}:${CANONICAL_LOCALNET.ports.jsonRpc})`);
   } else {
     const { HardkasCliError } = await import("../cli-errors.js");
     throw new HardkasCliError("RPC_NOT_READY", "RPC: NOT READY", { exitCode: 1 });
@@ -39,15 +39,15 @@ export async function runDoctorNode(opts: { json?: boolean; capabilities?: boole
   try {
     const signer = new HardkasFixtureSigner("simnet");
     await signer.getAddress();
-    UI.logHuman(`  âœ… Signer: kaspa-wasm READY`);
+    UI.logHuman(`  ✅ Signer: kaspa-wasm READY`);
   } catch (err: any) {
-    UI.logHuman(`  âŒ Signer: UNAVAILABLE (${((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err))})`);
+    UI.logHuman(`  ❌ Signer: UNAVAILABLE (${((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err))})`);
   }
 
   // 4. Mining check (CHAIN_ADVANCING)
   let client: JsonWrpcKaspaClient | null = null;
   try {
-    client = new JsonWrpcKaspaClient({ rpcUrl: "ws://127.0.0.1:18210" });
+    client = new JsonWrpcKaspaClient({ rpcUrl: nodeRpcUrl() });
     const info1 = await client.getBlockDagInfo();
     const score1 = info1.virtualDaaScore || 0n;
 
@@ -57,35 +57,39 @@ export async function runDoctorNode(opts: { json?: boolean; capabilities?: boole
     const score2 = info2.virtualDaaScore || 0n;
 
     if (score2 > score1) {
-      UI.logHuman(`  âœ… Miner: CHAIN_ADVANCING (DAA Score: ${score1} -> ${score2})`);
+      UI.logHuman(`  ✅ Miner: CHAIN_ADVANCING (DAA Score: ${score1} -> ${score2})`);
     } else {
-      UI.logHuman(`  âŒ Miner: INACTIVE (DAA Score stalled at ${score1})`);
+      UI.logHuman(`  ❌ Miner: INACTIVE (DAA Score stalled at ${score1})`);
     }
   } catch (err: any) {
-    UI.logHuman(`  âŒ Miner: UNAVAILABLE (${((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err))})`);
+    UI.logHuman(`  ❌ Miner: UNAVAILABLE (${((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err))})`);
   } finally {
     if (client) await client.close();
   }
 
   // 5. Fixture balance check
+  let balanceClient: JsonWrpcKaspaClient | null = null;
   try {
     const signer = new HardkasFixtureSigner("simnet");
     const address = await signer.getAddress();
-    const client = new JsonWrpcKaspaClient({ rpcUrl: "ws://127.0.0.1:18210" });
+    const client = new JsonWrpcKaspaClient({ rpcUrl: nodeRpcUrl() });
+    balanceClient = client;
     const utxos = await client.getUtxosByAddress(address);
     const balanceRes = await client.getBalanceByAddress(address);
     const balance = balanceRes?.balanceSompi || 0n;
 
     if (balance > 0n) {
       UI.logHuman(
-        `  âœ… Fixture balance: > 0 (${formatSompiToKas(balance)} KAS, ${utxos.length} UTXOs)`
+        `  ✅ Fixture balance: > 0 (${formatSompiToKas(balance)} KAS, ${utxos.length} UTXOs)`
       );
     } else {
-      UI.logHuman(`  âŒ Fixture balance: 0 KAS`);
+      UI.logHuman(`  ❌ Fixture balance: 0 KAS`);
     }
-    await client.close();
   } catch (err: any) {
-    UI.logHuman(`  âŒ Fixture balance: ERROR (${((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err))})`);
+    UI.logHuman(`  ❌ Fixture balance: ERROR (${((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err))})`);
+  } finally {
+    // RESOURCE-LIFECYCLE-1 (RL-I3): released on the error path too, like step 4's client.
+    if (balanceClient) await balanceClient.close();
   }
 }
 

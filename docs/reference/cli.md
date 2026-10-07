@@ -50,7 +50,7 @@ hardkas accounts balance [options] <identifier>
 
 | Flag | Description | Default |
 | :--- | :--- | :--- |
-| `--network <name>` | Kaspa network name | simnet |
+| `--network <name>` | Kaspa network name (default: the workspace's default target) |  |
 | `--provider <type>` | Provider mode (auto, rpc, simulated) | auto |
 | `--url <url>` | RPC URL (optional override) |  |
 | `--local` | Read the simulator state file (.hardkas/localnet.json) instead of a node | false |
@@ -527,28 +527,6 @@ hardkas artifact verify [options] <path>
 | Argument | Description |
 | :--- | :--- |
 | `path` |  |
-
----
-
-## hardkas capabilities
-
-Show HardKAS capabilities and maturity level
-
-### Usage
-
-```bash
-hardkas capabilities [options]
-```
-
-### Options
-
-| Flag | Description | Default |
-| :--- | :--- | :--- |
-| `--json` | Output as stable JSON schema | false |
-
-### Arguments
-
-No arguments.
 
 ---
 
@@ -1101,7 +1079,7 @@ hardkas deploy track [options] <label>
 | `--receipt <artifactId>` | Reference to receipt artifact |  |
 | `--status <status>` | Deployment status | sent |
 | `--notes <text>` | Notes about this deployment |  |
-| `--json` | Not implemented yet: no JSON is printed | false |
+| `--json` | Output as JSON | false |
 
 ### Arguments
 
@@ -1113,7 +1091,7 @@ hardkas deploy track [options] <label>
 
 ## hardkas dev
 
-Local development and Igra-native environment tools
+Local development tools: dev environment, dApp templates, simnet dev accounts (`dev doctor` is an Igra L2 lab check)
 
 ### Usage
 
@@ -1172,12 +1150,12 @@ No arguments.
 
 ## hardkas dev accounts export
 
-Export dev account in format suitable for Kasware manual import
+Export a dev account for a wallet's manual import; format: kasware
 
 ### Usage
 
 ```bash
-hardkas dev accounts export [options] <kasware>
+hardkas dev accounts export [options] <format>
 ```
 
 ### Options
@@ -1190,7 +1168,7 @@ hardkas dev accounts export [options] <kasware>
 
 | Argument | Description |
 | :--- | :--- |
-| `kasware` |  |
+| `format` |  |
 
 ---
 
@@ -1260,7 +1238,7 @@ No options.
 
 ## hardkas dev doctor
 
-Check local dev readiness for an L2 profile (Igra by default): workspace, artifacts, query store, SDK import, dev server and the L2 JSON-RPC; the Kaspa node is not checked stable
+Igra L2 lab, not the L1 core: check local dev readiness for an L2 profile (Igra by default): workspace, artifacts, query store, SDK import, dev server and the L2 JSON-RPC; the Kaspa node is not checked experimental
 
 ### Usage
 
@@ -1355,7 +1333,7 @@ No arguments.
 
 ## hardkas dev last
 
-Interact with the latest local workflow
+Act on the latest transaction artifact of the workspace store
 
 ### Usage
 
@@ -1367,9 +1345,9 @@ hardkas dev last [options]
 
 | Flag | Description | Default |
 | :--- | :--- | :--- |
-| `--inspect` | Inspect the latest artifact | false |
-| `--replay` | Replay the latest workflow | false |
-| `--explain` | Explain the latest workflow | false |
+| `--inspect` | Print the latest artifact | false |
+| `--replay` | Show the latest receipt, or verify the latest plan or signed transaction (no replay is run) | false |
+| `--explain` | Print the `hardkas why` command for the latest artifact | false |
 | `--workspace <path>` | Override workspace root directory |  |
 
 ### Arguments
@@ -1506,7 +1484,7 @@ No arguments.
 
 ## hardkas env check
 
-Validate the .env file against known HardKAS production variables
+Check the HARDKAS_* environment variables (process and .env): the ones HardKAS honours, and any it does not know
 
 ### Usage
 
@@ -1516,7 +1494,9 @@ hardkas env check [options]
 
 ### Options
 
-No options.
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--json` | Output as JSON | false |
 
 ### Arguments
 
@@ -1928,7 +1908,7 @@ No arguments.
 
 ## hardkas local wizard
 
-Guided Igra L2 (EVM) check: JSON-RPC, EVM account and its balance; not a Kaspa L1 setup stable
+Guided Igra L2 (EVM) check, an L2 lab: JSON-RPC, EVM account and its balance; not a Kaspa L1 setup experimental
 
 ### Usage
 
@@ -2072,7 +2052,8 @@ hardkas localnet fund [options] <identifier>
 | `--profile <name>` | Funding profile | toccata-v2 |
 | `--amount <kas>` | KAS to wait for: mine until the mature balance grows by this amount | 1000 |
 | `--timeout <ms>` | Funding/maturity wait timeout in ms | 300000 |
-| `--keep-miner` | Leave the companion miner running | false |
+| `--keep-miner` | Keep mining to the funded account after funding (its balance keeps growing) | false |
+| `--stop-miner` | Leave the chain stopped after funding: no new blocks until you mine again | false |
 | `--json` | Output as JSON | false |
 
 ### Arguments
@@ -2136,7 +2117,7 @@ hardkas localnet snapshot create [options] <name>
 
 ## hardkas localnet snapshot replay
 
-Replay and rebuild deterministic state from a snapshot alpha
+Restore a snapshot's missing artifacts into the workspace; never removes or overwrites one alpha
 
 ### Usage
 
@@ -2231,7 +2212,7 @@ No arguments.
 
 ## hardkas localnet stop
 
-Stop localnet profile alpha
+Stop the Docker rusty-kaspad node of the toccata-v2 profile and its miner; needs Docker alpha
 
 ### Usage
 
@@ -2243,7 +2224,7 @@ hardkas localnet stop [options]
 
 | Flag | Description | Default |
 | :--- | :--- | :--- |
-| `--profile <name>` | Localnet profile | simulated |
+| `--profile <name>` | Localnet profile: toccata-v2 (the only one) | toccata-v2 |
 | `--toccata` | Shortcut for --profile toccata-v2 | false |
 | `--json` | Output as JSON | false |
 
@@ -2766,7 +2747,7 @@ hardkas programmability verify [options] <path>
 
 ## hardkas pskt
 
-Portable Signing Sessions (PSKT) offline coordination
+Portable Signing Sessions (PSKT): unavailable in this build. No adapter implements PSKT operations, so export, import, sign, merge, finalize and extract refuse
 
 ### Usage
 
@@ -2821,7 +2802,7 @@ No arguments.
 
 ## hardkas pskt export
 
-Export a TxPlan as a Portable Signing Session alpha
+Export a TxPlan as a Portable Signing Session unavailable
 
 ### Usage
 
@@ -2847,7 +2828,7 @@ No arguments.
 
 ## hardkas pskt extract
 
-Extract KaspaRpcTransaction from a finalized PSKT session alpha
+Extract KaspaRpcTransaction from a finalized PSKT session unavailable
 
 ### Usage
 
@@ -2873,7 +2854,7 @@ hardkas pskt extract [options] <sessionPath>
 
 ## hardkas pskt finalize
 
-Finalize a PSKT session alpha
+Finalize a PSKT session unavailable
 
 ### Usage
 
@@ -2899,7 +2880,7 @@ hardkas pskt finalize [options] <sessionPath>
 
 ## hardkas pskt import
 
-Import a raw payload into a PSKT session alpha
+Import a raw payload into a PSKT session unavailable
 
 ### Usage
 
@@ -2925,7 +2906,7 @@ No arguments.
 
 ## hardkas pskt inspect
 
-Inspect a PSKT session payload and metadata alpha
+Show a PSKT session file's metadata. It does not decode the payload: no inputs, outputs, amounts or recipients, so it is no pre-signing check alpha
 
 ### Usage
 
@@ -2949,7 +2930,7 @@ hardkas pskt inspect [options] <sessionPath>
 
 ## hardkas pskt merge
 
-Merge two PSKT sessions alpha
+Merge two PSKT sessions unavailable
 
 ### Usage
 
@@ -2976,7 +2957,7 @@ hardkas pskt merge [options] <sessionA> <sessionB>
 
 ## hardkas pskt sign
 
-Sign a PSKT session payload alpha
+Sign a PSKT session payload unavailable
 
 ### Usage
 
@@ -3678,7 +3659,7 @@ hardkas query store rebuild [options]
 
 | Flag | Description | Default |
 | :--- | :--- | :--- |
-| `--backend <type>` | sqlite creates .hardkas/store.db; filesystem indexes nothing (default: sqlite only if store.db already exists) |  |
+| `--backend <type>` | sqlite (the default) builds .hardkas/store.db from the workspace; filesystem keeps no index, so it has nothing to rebuild |  |
 | `--strict` | Fail on any corrupted data | false |
 | `--wait-lock` | Wait for the query-store lock if held | false |
 | `--lock-timeout <ms>` | Lock wait timeout in ms | 30000 |
@@ -3720,7 +3701,7 @@ hardkas query store sql [options] <query>
 
 **Aliases:** index
 
-Index new artifacts into the SQLite query store (needs .hardkas/store.db: run 'query store rebuild --backend sqlite' first)
+Index new artifacts into the SQLite query store (needs .hardkas/store.db: run 'query store rebuild' first)
 
 ### Usage
 
@@ -4125,7 +4106,7 @@ hardkas sandbox [options]
 
 | Flag | Description | Default |
 | :--- | :--- | :--- |
-| `--with-node` | Start a simulated Kaspa node in the background with mining |  |
+| `--with-node` | Not supported: the sandbox starts no node (refuses with SANDBOX_WITH_NODE_UNSUPPORTED) |  |
 | `--recipe <name>` | Run an initial recipe/template inside the sandbox |  |
 | `-p, --port <port>` | Port for dashboard | 3000 |
 | `-h, --host <host>` | Host for dashboard | localhost |
@@ -4180,127 +4161,6 @@ hardkas security audit [options]
 ### Arguments
 
 No arguments.
-
----
-
-## hardkas session
-
-L1/L2 developer identity linkage and sessions
-
-### Usage
-
-```bash
-hardkas session [options] [command]
-```
-
-### Options
-
-No options.
-
-### Arguments
-
-No arguments.
-
-### Subcommands
-
-- [hardkas session create](#hardkas-session-create)
-- [hardkas session list](#hardkas-session-list)
-- [hardkas session status](#hardkas-session-status)
-- [hardkas session use](#hardkas-session-use)
-
----
-
-## hardkas session create
-
-Create a new L1/L2 session linkage alpha
-
-### Usage
-
-```bash
-hardkas session create [options] <name>
-```
-
-### Options
-
-| Flag | Description | Default |
-| :--- | :--- | :--- |
-| `--l1 <wallet>` | HardKAS account name or Kaspa address |  |
-| `--l2 <account>` | Account name, Kaspa address or 0x EVM address (an account name stores its Kaspa address) |  |
-| `--json` | Not implemented yet: the output is text only | false |
-
-### Arguments
-
-| Argument | Description |
-| :--- | :--- |
-| `name` |  |
-
----
-
-## hardkas session list
-
-List all configured sessions alpha
-
-### Usage
-
-```bash
-hardkas session list [options]
-```
-
-### Options
-
-| Flag | Description | Default |
-| :--- | :--- | :--- |
-| `--json` | Output results as JSON | false |
-
-### Arguments
-
-No arguments.
-
----
-
-## hardkas session status
-
-Show active session linkage alpha
-
-### Usage
-
-```bash
-hardkas session status [options]
-```
-
-### Options
-
-| Flag | Description | Default |
-| :--- | :--- | :--- |
-| `--json` | Output results as JSON | false |
-
-### Arguments
-
-No arguments.
-
----
-
-## hardkas session use
-
-Set the active session alpha
-
-### Usage
-
-```bash
-hardkas session use [options] <name>
-```
-
-### Options
-
-| Flag | Description | Default |
-| :--- | :--- | :--- |
-| `--json` | Output results as JSON | false |
-
-### Arguments
-
-| Argument | Description |
-| :--- | :--- |
-| `name` |  |
 
 ---
 
@@ -5076,7 +4936,6 @@ No arguments.
 - [hardkas tx send](#hardkas-tx-send)
 - [hardkas tx sign](#hardkas-tx-sign)
 - [hardkas tx status](#hardkas-tx-status)
-- [hardkas tx trace](#hardkas-tx-trace)
 - [hardkas tx verify](#hardkas-tx-verify)
 - [hardkas tx wait](#hardkas-tx-wait)
 
@@ -5157,8 +5016,8 @@ hardkas tx plan [options] [from] [to]
 | `--save <path>` | Alias for --out (Save plan as artifact JSON) |  |
 | `--workflow-id <id>` | Optional deterministic workflow ID override |  |
 | `--assumption-level <level>` | Optional assumption level override |  |
-| `--wait-lock` | Wait for workspace lock if held | false |
-| `--lock-timeout <ms>` | Lock wait timeout in ms | 30000 |
+| `--wait-lock` | No effect, kept for compatibility: the command takes no lock of its own, and each store write waits for the store (up to 30 s) | false |
+| `--lock-timeout <ms>` | No effect, kept for compatibility (see --wait-lock) | 30000 |
 | `--json` | Output as JSON | false |
 
 ### Arguments
@@ -5241,8 +5100,8 @@ hardkas tx send [options] [signedPath]
 | `--provider <type>` | Provider mode (auto, rpc, simulated; signed-artifact mode only) | auto |
 | `--url <url>` | RPC URL (optional override) |  |
 | `--yes` | Confirm broadcast. Required unless the network is simulated or simnet (in shortcut mode, unless --network simulated or simnet is given): without it the send is refused (NOT EXECUTED, exit 3) and nothing is written | false |
-| `--wait-lock` | Wait for workspace lock if held | false |
-| `--lock-timeout <ms>` | Lock wait timeout in ms | 30000 |
+| `--wait-lock` | No effect, kept for compatibility: the command takes no lock of its own, and each store write waits for the store (up to 30 s) | false |
+| `--lock-timeout <ms>` | No effect, kept for compatibility (see --wait-lock) | 30000 |
 | `--json` | Output as JSON | false |
 | `--track <label>` | Signed-artifact mode: after an accepted broadcast, record a deployment with this label |  |
 
@@ -5276,8 +5135,10 @@ hardkas tx sign [options] <planPath>
 | `--required-signers <list>` | Comma-separated signers, no spaces (with --threshold above 1) |  |
 | `--append` | Append signature to a partially signed transaction | false |
 | `--target <name>` | Named execution target from hardkas.config.ts |  |
-| `--wait-lock` | Wait for workspace lock if held | false |
-| `--lock-timeout <ms>` | Lock wait timeout in ms | 30000 |
+| `--password-env <env>` | Read the encrypted account's keystore password from this environment variable |  |
+| `--password-stdin` | Read the encrypted account's keystore password from stdin | false |
+| `--wait-lock` | No effect, kept for compatibility: the command takes no lock of its own, and each store write waits for the store (up to 30 s) | false |
+| `--lock-timeout <ms>` | No effect, kept for compatibility (see --wait-lock) | 30000 |
 | `--json` | Output as JSON | false |
 
 ### Arguments
@@ -5311,28 +5172,6 @@ hardkas tx status [options] <txIdOrPath>
 | Argument | Description |
 | :--- | :--- |
 | `txIdOrPath` |  |
-
----
-
-## hardkas tx trace
-
-Reconstruct the full operational trace of a transaction research
-
-### Usage
-
-```bash
-hardkas tx trace [options] <txId>
-```
-
-### Options
-
-No options.
-
-### Arguments
-
-| Argument | Description |
-| :--- | :--- |
-| `txId` |  |
 
 ---
 
@@ -5601,38 +5440,9 @@ No arguments.
 
 ### Subcommands
 
-- [hardkas workflow create](#hardkas-workflow-create)
 - [hardkas workflow diff](#hardkas-workflow-diff)
 - [hardkas workflow inspect](#hardkas-workflow-inspect)
-- [hardkas workflow replay](#hardkas-workflow-replay)
 - [hardkas workflow run](#hardkas-workflow-run)
-
----
-
-## hardkas workflow create
-
-Create a deterministic workflow from a template
-
-### Usage
-
-```bash
-hardkas workflow create [options] <name>
-```
-
-### Options
-
-| Flag | Description | Default |
-| :--- | :--- | :--- |
-| `--template <name>` | Embedded template name |  |
-| `--out <path>` | Output artifact file path |  |
-| `--json` | Output the final workflow artifact as JSON | false |
-| `--workspace <path>` | Override workspace root directory |  |
-
-### Arguments
-
-| Argument | Description |
-| :--- | :--- |
-| `name` |  |
 
 ---
 
@@ -5674,28 +5484,6 @@ hardkas workflow inspect [options] <id>
 | Flag | Description | Default |
 | :--- | :--- | :--- |
 | `--json` | Output full artifact as JSON | false |
-
-### Arguments
-
-| Argument | Description |
-| :--- | :--- |
-| `id` |  |
-
----
-
-## hardkas workflow replay
-
-Deterministically replay and verify a workflow's lineage
-
-### Usage
-
-```bash
-hardkas workflow replay [options] <id>
-```
-
-### Options
-
-No options.
 
 ### Arguments
 

@@ -63,7 +63,7 @@ hardkas tx sign plan.json --account alice_real --out signed.json
 ### Submit & Wait for Finality
 
 ```bash
-hardkas tx send signed.json --out receipt.json
+hardkas tx send signed.json
 ```
 
 ## 5. The Replay Asymmetry
@@ -73,8 +73,8 @@ If you attempt to run `hardkas verify receipt.json` now, HardKAS will successful
 **However**, if you attempt a full stateful `replay` of a Real Node transaction, HardKAS will intentionally **fail closed**:
 
 ```bash
-hardkas replay receipt.json
-# ✗ Error: REPLAY_NOT_SUPPORTED_ON_REAL_NODE
+hardkas replay verify receipt.json
+# ✗ REPLAY_MODE_UNSUPPORTED (real-node sends record a TxSubmission, not a TxReceipt)
 ```
 
 ### Why?

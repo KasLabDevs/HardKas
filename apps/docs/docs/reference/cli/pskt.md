@@ -21,7 +21,7 @@ title: hardkas pskt
 
 ### Synopsis (Generated)
 
-**Purpose:** Inspect a PSKT session payload and metadata alpha
+**Purpose:** Show a PSKT session file's metadata. It does not decode the payload: no inputs, outputs, amounts or recipients, so it is no pre-signing check alpha
 
 #### Arguments
 
@@ -53,7 +53,7 @@ title: hardkas pskt
 
 ### Synopsis (Generated)
 
-**Purpose:** Export a TxPlan as a Portable Signing Session alpha
+**Purpose:** Export a TxPlan as a Portable Signing Session unavailable
 
 #### Options
 
@@ -69,7 +69,7 @@ title: hardkas pskt
 
 ### Synopsis (Generated)
 
-**Purpose:** Import a raw payload into a PSKT session alpha
+**Purpose:** Import a raw payload into a PSKT session unavailable
 
 #### Options
 
@@ -85,7 +85,7 @@ title: hardkas pskt
 
 ### Synopsis (Generated)
 
-**Purpose:** Sign a PSKT session payload alpha
+**Purpose:** Sign a PSKT session payload unavailable
 
 #### Arguments
 
@@ -107,7 +107,7 @@ title: hardkas pskt
 
 ### Synopsis (Generated)
 
-**Purpose:** Merge two PSKT sessions alpha
+**Purpose:** Merge two PSKT sessions unavailable
 
 #### Arguments
 
@@ -126,7 +126,7 @@ title: hardkas pskt
 
 ### Synopsis (Generated)
 
-**Purpose:** Finalize a PSKT session alpha
+**Purpose:** Finalize a PSKT session unavailable
 
 #### Arguments
 
@@ -144,7 +144,7 @@ title: hardkas pskt
 
 ### Synopsis (Generated)
 
-**Purpose:** Extract KaspaRpcTransaction from a finalized PSKT session alpha
+**Purpose:** Extract KaspaRpcTransaction from a finalized PSKT session unavailable
 
 #### Arguments
 

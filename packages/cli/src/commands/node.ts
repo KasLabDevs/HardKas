@@ -1,6 +1,7 @@
 import { handleLockError } from "../ui.js";
 import { Command } from "commander";
 import { handleError, UI } from "../ui.js";
+import { getOutput } from "../output.js";
 import { runNodeStart } from "../runners/node-start-runner.js";
 import { runNodeStatus } from "../runners/node-status-runner.js";
 import { runNodeStop } from "../runners/node-stop-runner.js";
@@ -8,6 +9,10 @@ import { runNodeRestart } from "../runners/node-restart-runner.js";
 import { runNodeReset } from "../runners/node-reset-runner.js";
 import { runNodeLogs } from "../runners/node-logs-runner.js";
 import { HardkasSchemas } from "@hardkas/artifacts";
+
+// CLI-RUNTIME-CONTRACT-1: every node command says what Docker really did. A Docker that cannot be
+// asked is the typed DOCKER_UNAVAILABLE from the runner (exit ≠ 0, one envelope in --json), never a
+// "stopped" / "not found" that was not observed. With --json the result is one envelope on stdout.
 
 export function registerNodeCommands(program: Command) {
   const nodeCmd = program.command("node").description("Kaspa node management (Docker)");
@@ -38,7 +43,11 @@ export function registerNodeCommands(program: Command) {
           async () => {
             UI.info("Starting Kaspa node (Docker)...");
             const result = await runNodeStart(options);
-            console.log(result.formatted);
+            if (options.json) {
+              getOutput().writeJson({ ok: true, command: "node start", mode: "cli", result: result.status });
+            } else {
+              console.log(result.formatted);
+            }
           }
         );
       } catch (e) {
@@ -65,7 +74,13 @@ export function registerNodeCommands(program: Command) {
           },
           async () => {
             const result = await runNodeStop({});
-            UI.success(`Node stopped (Container: ${result.containerName})`);
+            if (options.json) {
+              getOutput().writeJson({ ok: true, command: "node stop", mode: "cli", result });
+            } else if (result.stopped) {
+              UI.success(`Node stopped (Container: ${result.containerName})`);
+            } else {
+              UI.info(`No node container '${result.containerName}' to stop (nothing was running).`);
+            }
           }
         );
       } catch (e) {
@@ -92,7 +107,11 @@ export function registerNodeCommands(program: Command) {
           },
           async () => {
             const result = await runNodeRestart({});
-            console.log(result.formatted);
+            if (options.json) {
+              getOutput().writeJson({ ok: true, command: "node restart", mode: "cli", result: result.status });
+            } else {
+              console.log(result.formatted);
+            }
           }
         );
       } catch (e) {
@@ -110,10 +129,23 @@ export function registerNodeCommands(program: Command) {
     .option("--json", "Output results as JSON", false)
     .action(async (options) => {
       const { withLock } = await import("@hardkas/core");
+      // AUD-24: the reset acts on the workspace whose hardkas.config.* it runs under (its `.hardkas/kaspad` and its
+      // lock); with no workspace it fails, and never falls back to the current directory
+      const { loadHardkasConfig } = await import("@hardkas/config");
+      const workspace = await loadHardkasConfig();
+      if (!workspace.path) {
+        const { HardkasCliError, HardkasExitCode } = await import("../cli-errors.js");
+        throw new HardkasCliError(
+          "WORKSPACE_NOT_FOUND",
+          `No HardKAS workspace (hardkas.config.*) at or above ${process.cwd()}; 'node reset' deletes a workspace's node data and runs only inside one. Nothing was reset.`,
+          { exitCode: HardkasExitCode.USAGE_ERROR }
+        );
+      }
+      const root = workspace.cwd;
       try {
         await withLock(
           {
-            rootDir: process.cwd(),
+            rootDir: root,
             name: "node",
             command: "hardkas node reset",
             wait: options.waitLock,
@@ -130,13 +162,22 @@ export function registerNodeCommands(program: Command) {
               }
             }
 
-            const result = await runNodeReset({ removeData: true });
-            UI.success(result.formatted);
-
+            const result = await runNodeReset({ removeData: true, cwd: root });
+            let started = undefined;
             if (options.start) {
               UI.info("Starting node...");
-              const startResult = await runNodeStart({});
-              console.log(startResult.formatted);
+              started = await runNodeStart({ cwd: root });
+            }
+            if (options.json) {
+              getOutput().writeJson({
+                ok: true,
+                command: "node reset",
+                mode: "cli",
+                result: { ...result.status, ...(started ? { started: started.status } : {}) }
+              });
+            } else {
+              UI.success(result.formatted);
+              if (started) console.log(started.formatted);
             }
           }
         );
@@ -158,7 +199,9 @@ export function registerNodeCommands(program: Command) {
               {
                 schema: HardkasSchemas.NodeStatusV1,
                 docker: {
-                  available: true, // If we reached here, docker CLI at least worked in runner
+                  // The runner now fails with DOCKER_UNAVAILABLE when Docker cannot be asked, so a
+                  // status that was produced did come from a reachable Docker.
+                  available: true,
                   daemonReady: result.status.statusText !== "not-found"
                 },
                 container: {

@@ -1,4 +1,5 @@
 import { HardkasSchemas } from "@hardkas/artifacts";
+import { HardkasError } from "@hardkas/core";
 import type { Hardkas } from "./index.js";
 
 // ---------------------------------------------------------------------------
@@ -72,14 +73,18 @@ export interface CovenantState {
  * Result of a covenant capability check.
  */
 export interface CovenantCapabilityResult {
-  /** Whether the connected node supports covenants (Toccata-enabled) */
+  /** Whether the canonical node proved its identity (the pinned Toccata reference node); false when none was observed */
   nodeSupportsCovenants: boolean;
   /** Whether kaspa-wasm can sign TX V1 (required for covenant transactions) */
   wasmSupportsV1Signing: boolean;
-  /** Whether the full covenant lifecycle is operational */
+  /** Whether covenant transactions can be built and submitted here (`capabilities.get().capabilities.covenants`) */
   fullyOperational: boolean;
-  /** Human-readable status */
-  status: "READY" | "NODE_MISSING_SUPPORT" | "WASM_V1_BLOCKED" | "BLOCKED_BY_DEPENDENCY";
+  /**
+   * Human-readable status. `NODE_UNVERIFIED`: the toolchains are ready but no node proved its identity (none observed,
+   * or not the canonical one). `NODE_MISSING_SUPPORT` is not produced by this build: it never observes a node that
+   * lacks Toccata.
+   */
+  status: "READY" | "NODE_MISSING_SUPPORT" | "NODE_UNVERIFIED" | "WASM_V1_BLOCKED" | "BLOCKED_BY_DEPENDENCY";
   /** Reason if not fully operational */
   reason?: string;
 }
@@ -111,10 +116,11 @@ export interface CovenantArtifact {
  * This is NOT experimental — covenants are live on Kaspa mainnet since
  * DAA score 474,165,565 (June 30, 2026).
  *
- * **Current limitations (0.12.0-rc.26):**
- * - TX V1 signing requires kaspa-wasm V1 support (see P82)
- * - Plan/sign/send pipeline for covenants will be implemented in P84
- * - For now, capability checks and inspection are available
+ * **Current limitations:**
+ * - The SDK does not plan, inspect or query covenants yet: `planDeploy()`, `planSpend()`, `inspect()` and
+ *   `getState()` refuse with a typed error (SURFACE-TRUTH-1A). They never fall back to an ordinary payment.
+ * - Real 1:1 auth-bound covenant transactions are built by `hardkas silver covenant genesis|transition`
+ *   (`@hardkas/accounts` `buildCovenantGenesis` / `buildCovenantTransition`).
  *
  * @see https://github.com/kaspanet/rusty-kaspa/blob/master/docs/toccata-guide.md
  */
@@ -122,29 +128,41 @@ export class HardkasCovenants {
   constructor(private sdk: Hardkas) {}
 
   /**
-   * Check whether the runtime environment supports covenants.
+   * Check whether covenant transactions can be built and submitted in this environment.
    *
-   * Checks:
-   * 1. Connected node is Toccata-enabled (supports TX V1)
-   * 2. kaspa-wasm can sign TX V1 transactions
+   * SURFACE-TRUTH-1B (D-ST1): read from `sdk.capabilities` (one authority, the checks `hardkas silver doctor` reports):
+   * 1. the managed silverc resolves;
+   * 2. the managed kaspa-wasm is verified and signs TX V1;
+   * 3. the canonical node proves its identity (the pinned Toccata reference node). A node that was not observed is
+   *    never reported as covenant-capable.
+   *
+   * This class does not plan covenant transactions itself (`planDeploy`/`planSpend` refuse);
+   * `hardkas silver covenant genesis|transition` builds them.
    */
   async checkCapabilities(): Promise<CovenantCapabilityResult> {
-    // Phase 1 (P81): Return honest "blocked" status.
-    // Phase 2 (P82): Will probe kaspa-wasm for V1 signing.
-    // Phase 3 (P84): Will return READY when full pipeline works.
+    const caps = await this.sdk.capabilities.get();
+    const readiness = await this.sdk.capabilities.silverReadiness();
+    const wasmSupportsV1Signing = caps.runtimeMatrix?.wasm.signingV1 === true;
+    const fullyOperational = caps.capabilities.covenants;
+    const status: CovenantCapabilityResult["status"] = fullyOperational
+      ? "READY"
+      : !readiness.toolchains.silverc.ok
+        ? "BLOCKED_BY_DEPENDENCY"
+        : !readiness.toolchains["kaspa-wasm"].ok || !wasmSupportsV1Signing
+          ? "WASM_V1_BLOCKED"
+          : "NODE_UNVERIFIED";
     return {
-      nodeSupportsCovenants: false,
-      wasmSupportsV1Signing: false,
-      fullyOperational: false,
-      status: "BLOCKED_BY_DEPENDENCY",
-      reason:
-        "TX V1 signing support has not been verified yet. " +
-        "Run the P82 kaspa-wasm capability probe to determine V1 readiness."
+      nodeSupportsCovenants: caps.runtimeMatrix?.node.covenants === true,
+      wasmSupportsV1Signing,
+      fullyOperational,
+      status,
+      ...(fullyOperational ? {} : { reason: caps.reasons?.covenants ?? "covenants are not ready here" })
     };
   }
 
   /**
-   * Check if the connected node supports covenants (convenience shorthand).
+   * Whether covenant transactions can be built and submitted here: the same answer as
+   * `capabilities.get().capabilities.covenants` and `checkCapabilities().fullyOperational`.
    */
   async isSupported(): Promise<boolean> {
     const caps = await this.checkCapabilities();
@@ -154,69 +172,67 @@ export class HardkasCovenants {
   /**
    * Inspect a covenant by its 32-byte covenant ID.
    *
-   * This is a read-only RPC operation that does not require TX V1 signing.
-   *
-   * @throws {Error} COVENANT_INSPECT_NOT_IMPLEMENTED — will be implemented
-   *   when RPC integration for covenant queries is complete.
+   * @throws {HardkasError} COVENANT_INSPECT_UNSUPPORTED — the SDK has no covenant query over RPC yet.
    */
   async inspect(covenantId: string): Promise<CovenantInfo> {
-    throw new Error(
-      "COVENANT_INSPECT_NOT_IMPLEMENTED: " +
-      "Covenant inspection via RPC requires GetUtxosByAddresses with covenant ID filtering. " +
-      "This will be implemented when the Toccata RPC surface is integrated (P84)."
+    throw new HardkasError(
+      "COVENANT_INSPECT_UNSUPPORTED",
+      "Covenant inspection is not supported by the SDK: it needs UTXO queries filtered by covenant id, which the SDK does not have.",
+      { metadata: { covenantId } }
     );
   }
 
+  /**
+   * Plan a covenant deployment.
+   *
+   * SURFACE-TRUTH-1A (ST-I3): refused until the SDK plans real v1 covenant transactions. The former body planned an
+   * ordinary self-payment and dropped the script, which signed and sent like any payment.
+   *
+   * @throws {HardkasError} COVENANT_PLAN_UNSUPPORTED
+   */
   async planDeploy(options: CovenantDeployOptions): Promise<any> {
-    const amountSompi = typeof options.amount === "bigint" ? options.amount : BigInt(options.amount);
-    return this.sdk.tx.plan({
-      from: options.from,
-      to: options.from, // Initially deploy to self
-      amount: amountSompi,
-      
-      ...(options.computeBudget !== undefined && { computeBudget: options.computeBudget }),
-      ...(options.lane !== undefined && { lane: options.lane })
-      // TODO (P84 follow-up): Inject compiled script as P2SH/P2SC output script once kaspa-wasm supports it.
-    });
+    throw new HardkasError(
+      "COVENANT_PLAN_UNSUPPORTED",
+      "Covenant deployment planning is not supported by the SDK: it cannot carry a covenant script into a v1 plan, and it never substitutes an ordinary payment. Build real covenant transactions with `hardkas silver covenant genesis`.",
+      { metadata: { from: options.from } }
+    );
   }
 
   /**
-   * Plan a covenant spend transaction.
+   * Plan a covenant spend.
    *
-   * Creates a TX V1 plan that satisfies the covenant's spending rules.
-   * The plan must be signed and broadcast separately.
+   * SURFACE-TRUTH-1A (ST-I3): refused until the SDK plans real v1 covenant transactions. The former body planned an
+   * ordinary payment to `to` and dropped the covenant id and the witness data.
+   *
+   * @throws {HardkasError} COVENANT_PLAN_UNSUPPORTED
    */
   async planSpend(options: CovenantSpendOptions): Promise<any> {
-    const amountSompi = typeof options.amount === "bigint" ? options.amount : BigInt(options.amount);
-    return this.sdk.tx.plan({
-      from: options.from,
-      to: options.to,
-      amount: amountSompi,
-      
-      ...(options.computeBudget !== undefined && { computeBudget: options.computeBudget }),
-      ...(options.lane !== undefined && { lane: options.lane })
-      // TODO (P84 follow-up): Inject covenantId in inputs and witnessData once kaspa-wasm supports it.
-    });
+    throw new HardkasError(
+      "COVENANT_PLAN_UNSUPPORTED",
+      "Covenant spend planning is not supported by the SDK: it cannot carry the covenant id and witness data into a v1 plan, and it never substitutes an ordinary payment. Advance covenants with `hardkas silver covenant transition`.",
+      { metadata: { covenantId: options.covenantId, from: options.from } }
+    );
   }
 
   /**
    * Get the current state of a covenant from the UTXO set.
    *
-   * @throws {Error} COVENANT_STATE_NOT_IMPLEMENTED — requires Toccata RPC integration.
+   * @throws {HardkasError} COVENANT_STATE_UNSUPPORTED — the SDK has no covenant query over RPC yet.
    */
   async getState(covenantId: string): Promise<CovenantState> {
-    throw new Error(
-      "COVENANT_STATE_NOT_IMPLEMENTED: " +
-      "Covenant state queries require UTXO set filtering by covenant ID. " +
-      "This will be implemented when the Toccata RPC surface is integrated (P84)."
+    throw new HardkasError(
+      "COVENANT_STATE_UNSUPPORTED",
+      "Covenant state queries are not supported by the SDK: they need UTXO queries filtered by covenant id, which the SDK does not have.",
+      { metadata: { covenantId } }
     );
   }
 
   /**
    * Build a covenant artifact (legacy compatibility).
    *
-   * @deprecated Use `planDeploy()` instead. This method exists for backward
-   * compatibility with code that used `hardkas.experimental.toccata.buildCovenant()`.
+   * @deprecated Legacy compatibility only, for code that used `hardkas.experimental.toccata.buildCovenant()`. The SDK
+   * plans no covenant deployment (`planDeploy()` refuses with COVENANT_PLAN_UNSUPPORTED); create covenants with
+   * `hardkas silver covenant genesis`.
    */
   async buildCovenant(options: {
     scriptHash: string;

@@ -1,5 +1,6 @@
 import {
   loadOrCreateRealAccountStore,
+  loadRealAccountStoreSync,
   saveRealAccountStore,
   importRealDevAccount,
   KaspaSdkKeyGenerator,
@@ -10,6 +11,8 @@ import path from "node:path";
 import fs from "node:fs";
 import { acquirePassword } from "./secrets.js";
 import { UI } from "../ui.js";
+import { withSdk } from "./with-sdk.js";
+import { assertAccountName, assertAccountNamesFree, keystorePathIn } from "./keystore-names.js";
 
 export interface AccountsRealGenerateOptions {
   name?: string;
@@ -19,6 +22,8 @@ export interface AccountsRealGenerateOptions {
   passwordStdin?: boolean;
   passwordEnv?: string;
   yes?: boolean;
+  /** Machine-readable output: never prompts. */
+  json?: boolean;
   workspaceRoot?: string;
 }
 
@@ -33,37 +38,48 @@ export async function runAccountsRealGenerate(
   );
   const count = options.count || 1;
 
+  // AUD-20: a mainnet key is never written in plaintext; refused before anything is generated.
+  if (options.unsafePlaintext && (options.networkId ?? "simnet") === "mainnet") {
+    const { HardkasCliError, HardkasExitCode } = await import("../cli-errors.js");
+    throw new HardkasCliError(
+      "PLAINTEXT_MAINNET_FORBIDDEN",
+      "Plaintext storage is refused for mainnet keys. Nothing was generated; generate an encrypted account (--password-env <VAR> or --password-stdin).",
+      { exitCode: HardkasExitCode.USAGE_ERROR }
+    );
+  }
+
   const cwd = options.workspaceRoot || process.cwd();
-  let store = await loadOrCreateRealAccountStore({ cwd });
   const generatedAccounts: RealDevAccount[] = [];
 
   // Demo-ready · E20: one requested account gets exactly the requested name; several are numbered.
   const names = Array.from({ length: count }, (_, i) =>
     count === 1 && options.name ? options.name : options.name ? `${options.name}${i + 1}` : `account${i}`
   );
+  // CONTAINMENT-2 (R1-I1): every name is decided before anything is prompted for, read or written: a valid account
+  // name and, for an encrypted account, ONE plain keystore file of this workspace's keystore directory.
+  names.forEach(assertAccountName);
+  const keystoreTarget = options.unsafePlaintext
+    ? undefined
+    : await withSdk(options.workspaceRoot ? { cwd: options.workspaceRoot } : {}, (sdk) => ({
+        dir: sdk.workspace.keystoreDir,
+        root: sdk.workspace.root,
+        paths: names.map((n) => keystorePathIn(sdk, n))
+      }));
   // A taken name is refused before anything is prompted for or written: in encrypted mode
   // the keystore file used to be written first, overwriting the existing account's keystore,
   // and only then did the store refuse the duplicate name (the account kept pointing at a
   // keystore holding another key).
-  const taken = names.filter(
-    (n) =>
-      store.accounts.some((a) => a.name.toLowerCase() === n.toLowerCase()) ||
-      (!options.unsafePlaintext && fs.existsSync(path.join(cwd, ".hardkas", "keystore", `${n}.json`)))
-  );
-  if (taken.length > 0) {
-    const { HardkasCliError, HardkasExitCode } = await import("../cli-errors.js");
-    throw new HardkasCliError(
-      "ACCOUNT_NAME_TAKEN",
-      `An account named ${taken.map((n) => `'${n}'`).join(", ")} already exists in this workspace (.hardkas/accounts.real.json or .hardkas/keystore/). Nothing was generated; choose another --name.`,
-      { exitCode: HardkasExitCode.USAGE_ERROR }
-    );
-  }
+  const existing = loadRealAccountStoreSync({ cwd })?.accounts ?? [];
+  assertAccountNamesFree(names, existing, keystoreTarget?.dir, "generated");
 
+  // The password (or the plaintext confirmation) comes before anything is written: without one the
+  // command fails here, with no store, keystore or account left behind.
   let password = "";
   if (!options.unsafePlaintext) {
     password = await acquirePassword({
       stdin: options.passwordStdin,
       env: options.passwordEnv,
+      interactive: !options.json,
       message: `Enter password to encrypt ${count} new account(s):`
     });
     if (!password) throw new Error("Password is required for encrypted storage.");
@@ -76,6 +92,8 @@ export async function runAccountsRealGenerate(
       if (!confirmed) throw new Error("Generation cancelled.");
     }
   }
+
+  let store = await loadOrCreateRealAccountStore({ cwd });
 
   for (let i = 0; i < count; i++) {
     const name = names[i]!;
@@ -101,16 +119,11 @@ export async function runAccountsRealGenerate(
         }
       );
 
-      const { Hardkas } = await import("@hardkas/sdk");
-      const sdk = await Hardkas.open(
-        options.workspaceRoot ? { cwd: options.workspaceRoot } : {}
-      );
-      const keystoreDir = sdk.workspace.keystoreDir;
-      if (!fs.existsSync(keystoreDir)) fs.mkdirSync(keystoreDir, { recursive: true });
-
-      const filePath = sdk.workspace.resolvePath(".hardkas", "keystore", `${name}.json`);
+      // the path decided (and contained) before anything was prompted for
+      const filePath = keystoreTarget!.paths[i]!;
+      if (!fs.existsSync(keystoreTarget!.dir)) fs.mkdirSync(keystoreTarget!.dir, { recursive: true });
       await KeystoreManager.saveEncryptedKeystore(filePath, keystore);
-      keystoreRef = `.hardkas/keystore/${name}.json`;
+      keystoreRef = path.relative(keystoreTarget!.root, filePath).split(path.sep).join("/");
     }
 
     store = importRealDevAccount(store, {

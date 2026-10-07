@@ -2,7 +2,7 @@ import { Command } from "commander";
 import { handleError, UI } from "../ui.js";
 import { runArtifactVerify } from "../runners/artifact-verify-runner.js";
 import { runArtifactExplain } from "../runners/artifact-explain-runner.js";
-import path from "node:path";
+import { invocationWorkspaceRoot } from "../workspace-root.js";
 
 export function registerArtifactCommands(program: Command) {
   const artifactCmd = program.command("artifact").alias("artifacts").description("Manage HardKAS artifacts");
@@ -18,9 +18,7 @@ export function registerArtifactCommands(program: Command) {
       try {
         const { runArtifactCreate } =
           await import("../runners/artifact-create-runner.js");
-        const workspaceRoot = options.workspace
-          ? path.resolve(options.workspace)
-          : process.cwd();
+        const workspaceRoot = invocationWorkspaceRoot(); // WORKSPACE-AUTHORITY-1 (WA-I0)
         await runArtifactCreate({ type, ...options, workspaceRoot });
       } catch (e) {
         throw e;
@@ -36,9 +34,7 @@ export function registerArtifactCommands(program: Command) {
       try {
         const { runArtifactInspect } =
           await import("../runners/artifact-inspect-runner.js");
-        const workspaceRoot = options.workspace
-          ? path.resolve(options.workspace)
-          : process.cwd();
+        const workspaceRoot = invocationWorkspaceRoot(); // WORKSPACE-AUTHORITY-1 (WA-I0)
         await runArtifactInspect({ idOrPath, ...options, workspaceRoot });
       } catch (e) {
         throw e;
@@ -58,9 +54,7 @@ export function registerArtifactCommands(program: Command) {
     .option("--workspace <path>", "Override workspace root directory")
     .action(async (targetPath: string, options: any) => {
       try {
-        const workspaceRoot = options.workspace
-          ? path.resolve(options.workspace)
-          : process.cwd();
+        const workspaceRoot = invocationWorkspaceRoot(); // WORKSPACE-AUTHORITY-1 (WA-I0)
         await runArtifactVerify({ path: targetPath, ...options, workspaceRoot });
       } catch (e) {
         throw e;
@@ -79,9 +73,7 @@ export function registerArtifactCommands(program: Command) {
     .action(async (targetPath: string, options: any) => {
       try {
         const { runArtifactMigrate } = await import("../runners/artifact-migrate-runner.js");
-        const workspaceRoot = options.workspace
-          ? path.resolve(options.workspace)
-          : process.cwd();
+        const workspaceRoot = invocationWorkspaceRoot(); // WORKSPACE-AUTHORITY-1 (WA-I0)
         await runArtifactMigrate({
           path: targetPath,
           to: String(options.to),
@@ -108,9 +100,7 @@ export function registerArtifactCommands(program: Command) {
     .option("--workspace <path>", "Override workspace root directory")
     .action(async (targetPath: string, options: any) => {
       try {
-        const workspaceRoot = options.workspace
-          ? path.resolve(options.workspace)
-          : process.cwd();
+        const workspaceRoot = invocationWorkspaceRoot(); // WORKSPACE-AUTHORITY-1 (WA-I0)
         await runArtifactExplain({ path: targetPath, ...options, workspaceRoot });
       } catch (e) {
         throw e;
@@ -128,9 +118,7 @@ export function registerArtifactCommands(program: Command) {
       try {
         const { runArtifactLineage } =
           await import("../runners/artifact-lineage-runner.js");
-        const workspaceRoot = options.workspace
-          ? path.resolve(options.workspace)
-          : process.cwd();
+        const workspaceRoot = invocationWorkspaceRoot(); // WORKSPACE-AUTHORITY-1 (WA-I0)
         await runArtifactLineage({ path: targetPath, workspaceRoot, ...options });
       } catch (e) {
         throw e;

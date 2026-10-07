@@ -24,6 +24,9 @@ export function registerDeployCommands(program: Command) {
       
       out.writeLine("Generating deployment artifacts...");
 
+      // SURFACE-TRUTH-1B (ST-J): the variables of the one contract `hardkas env check` and `doctor` apply. HardKAS reads no
+      // HARDKAS_DATA_DIR (the profile used to set it to /app/data and mount the volume there); its data is the
+      // workspace's `.hardkas`, so that is what the volume keeps.
       const dockerCompose = `version: '3.8'
 services:
   app:
@@ -33,12 +36,11 @@ services:
     environment:
       - NETWORK=\${NETWORK:-testnet}
       - KASPAD_URL=\${KASPAD_URL}
-      - HARDKAS_DATA_DIR=/app/data
       - HARDKAS_KASPAD_IMAGE=\${HARDKAS_KASPAD_IMAGE:-kaspanet/kaspad:latest}
       - LOG_LEVEL=\${LOG_LEVEL:-info}
       - DATABASE_URL=\${DATABASE_URL}
     volumes:
-      - hardkas_data:/app/data
+      - hardkas_data:/app/.hardkas
 
 volumes:
   hardkas_data:
@@ -60,7 +62,6 @@ COPY . .
 # RUN pnpm run build
 
 ENV NODE_ENV=production
-ENV HARDKAS_DATA_DIR=/app/data
 
 EXPOSE 3000
 
@@ -71,7 +72,6 @@ CMD ["pnpm", "start"]
 
       const envExample = `NETWORK=testnet
 KASPAD_URL=127.0.0.1:16210
-HARDKAS_DATA_DIR=./.hardkas
 HARDKAS_KASPAD_IMAGE=kaspanet/kaspad:latest
 LOG_LEVEL=info
 
@@ -115,10 +115,15 @@ LOG_LEVEL=info
     .option("--receipt <artifactId>", "Reference to receipt artifact")
     .option("--status <status>", "Deployment status", "sent")
     .option("--notes <text>", "Notes about this deployment")
-    .option("--json", "Not implemented yet: no JSON is printed", false)
+    .option("--json", "Output as JSON", false)
     .action(async (label, opts) => {
-      const { UI } = await import("../ui.js");
-      await trackDeployment({ label, ...opts, workspaceRoot: process.cwd() });
+      // JSON-PAPERCUTS #39: one envelope on stdout with the record that was written; the
+      // human confirmation line stays out of JSON mode.
+      const record = await trackDeployment({ label, ...opts, silent: Boolean(opts.json), workspaceRoot: process.cwd() });
+      if (opts.json) {
+        const { getOutput } = await import("../output.js");
+        getOutput().writeJson({ ok: true, command: "deploy track", mode: "cli", result: record });
+      }
     });
 
   deployCmd

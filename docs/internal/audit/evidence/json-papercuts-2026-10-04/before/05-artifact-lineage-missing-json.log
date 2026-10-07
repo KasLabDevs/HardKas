@@ -1,0 +1,11 @@
+$ hardkas artifact lineage missing.json --json
+exit=1 stdout_is_single_json=true json_docs_on_stdout=1
+--- stdout ---
+{
+  "ok": false,
+  "code": "FILE_NOT_FOUND",
+  "message": "File not found: missing.json",
+  "mode": "cli"
+}
+--- stderr ---
+

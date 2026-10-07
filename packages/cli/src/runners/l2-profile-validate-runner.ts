@@ -52,7 +52,7 @@ export async function runL2ProfileValidate(
   }
 
   if (finalOk) {
-    console.log(`âœ“ L2 profile '${profile.name}' (${profile.source}) is VALID.`);
+    console.log(`✓ L2 profile '${profile.name}' (${profile.source}) is VALID.`);
     if (rpcVerified) {
       console.log(`  RPC connectivity verified for chainId ${profile.chainId}`);
     } else if (profile.rpcUrl) {
@@ -61,7 +61,7 @@ export async function runL2ProfileValidate(
       );
     }
   } else {
-    console.log(`âœ— L2 profile '${profile.name}' is INVALID:`);
+    console.log(`✗ L2 profile '${profile.name}' is INVALID:`);
     for (const err of errors) {
       console.log(`  - ${err}`);
     }

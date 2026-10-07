@@ -4,7 +4,7 @@ import crypto from "node:crypto";
 import { argon2id } from "hash-wasm";
 import { EncryptedKeystoreV2, KeystorePayload, KeystoreUnlockResult } from "./types.js";
 
-import { writeFileAtomic } from "@hardkas/core";
+import { writeFileAtomic, stripBom } from "@hardkas/core";
 
 /**
  * HardKAS Keystore V2 Implementation
@@ -180,7 +180,7 @@ export class KeystoreManager {
   static async loadEncryptedKeystore(filePath: string): Promise<EncryptedKeystoreV2> {
     try {
       const data = await fs.promises.readFile(filePath, "utf-8");
-      const keystore = JSON.parse(data);
+      const keystore = JSON.parse(stripBom(data));
       if (keystore.type !== this.KEYSTORE_FORMAT_TYPE) {
         throw new Error(`Invalid keystore type: ${keystore.type}`);
       }

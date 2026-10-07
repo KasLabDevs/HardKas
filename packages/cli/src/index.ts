@@ -2,27 +2,27 @@
 
 import { buildHardkasProgram } from "./program.js";
 import { attachLedgerAppender } from "@hardkas/core";
-import path from "node:path";
-
-import { HardkasCliError, HardkasExitCode } from "./cli-errors.js";
 
 async function main() {
   const isJson = process.argv.includes("--json");
   const isSilent = process.argv.includes("--silent") || process.argv.includes("--quiet");
 
-  const { setGlobalOutput, createCommandOutput } = await import("./output.js");
+  const { setGlobalOutput, createCommandOutput, installConsoleRedaction } = await import("./output.js");
   const mode = isSilent ? "silent" : isJson ? "json" : "human";
   setGlobalOutput(createCommandOutput({ mode }));
+  // EVIDENCE-TRUST-1 (ET-C5): no URL credential reaches the terminal through a direct console print either.
+  installConsoleRedaction();
 
-  const wsArgIndex = process.argv.indexOf("--workspace");
-  const workspaceRoot =
-    wsArgIndex !== -1 && process.argv[wsArgIndex + 1]
-      ? path.resolve(process.argv[wsArgIndex + 1] as string)
-      : process.cwd();
+  // WORKSPACE-AUTHORITY-1 (WA-I0): the workspace root is resolved once, here, and the event ledger, the config and every
+  // workspace-aware command use that one root.
+  const { resolveWorkspaceRoot, loadHardkasConfig } = await import("@hardkas/config");
+  const { workspaceArgFrom, fixInvocationWorkspace } = await import("./workspace-root.js");
+  const workspace = resolveWorkspaceRoot({ explicit: workspaceArgFrom(process.argv) });
+  fixInvocationWorkspace(workspace);
+  const workspaceRoot = workspace.root;
 
   attachLedgerAppender(workspaceRoot);
 
-  const { loadHardkasConfig } = await import("@hardkas/config");
   let loadedConfig;
   try {
     loadedConfig = await loadHardkasConfig({ workspaceRoot });
@@ -33,50 +33,30 @@ async function main() {
 
   const program = buildHardkasProgram({ loadedConfig });
 
+  // R0-I1: a command's result is its exit status, never an abrupt termination. The entry sets the status and returns;
+  // the runtime then closes naturally, after draining its pending work (an abrupt process.exit() raced V8's background
+  // WebAssembly compilation and aborted a finished command on Windows: VERIFY-EXIT-CRASH).
   try {
     await program.parseAsync(process.argv);
-    process.exit(0);
+    // F3: a command that finished normally may have set a nonzero exit code; it is never discarded.
+    // CLI-RUNTIME-CONTRACT-1: an error a command rendered and then swallowed set that code too.
+    process.exitCode = process.exitCode ?? 0;
   } catch (err: any) {
-    const { handleError } = await import("./ui.js");
+    // CLI-RUNTIME-CONTRACT-1: the renderer owns the failure (one human rendering, one JSON envelope,
+    // the typed code preserved) and the exit code follows the error — in one place, for every error type.
+    const { handleError, exitCodeOf } = await import("./ui.js");
     handleError(err);
-
-    // For HardkasCliError in JSON mode, produce the structured error envelope
-    // ONLY if the command didn't already write one.
-    if (err instanceof HardkasCliError && isJson) {
-      const { getOutput } = await import("./output.js");
-      if (!getOutput().jsonWritten) {
-        getOutput().writeJson({
-          ok: false,
-          code: err.code,
-          message: err.message,
-          mode: "cli"
-        });
-      }
-    }
-
-    const exitCode =
-      err instanceof HardkasCliError
-        ? err.exitCode
-        : ((err as any).code) === "POLICY_DENIED"
-          ? HardkasExitCode.POLICY_DENIED
-          : HardkasExitCode.RUNTIME_FAILURE;
-    process.exit(exitCode);
+    process.exitCode = exitCodeOf(err);
   }
 }
 
 main().catch(async (err) => {
-  const { handleError } = await import("./ui.js");
+  const { handleError, exitCodeOf } = await import("./ui.js");
   handleError(err, "Fatal error");
   if (((err as any).stack)) {
     const { maskSecrets } = await import("@hardkas/core");
     const { getOutput } = await import("./output.js");
     getOutput().error(maskSecrets(((err as any).stack)));
   }
-  const exitCode =
-    err instanceof HardkasCliError
-      ? err.exitCode
-      : ((err as any).code) === "POLICY_DENIED"
-        ? HardkasExitCode.POLICY_DENIED
-        : HardkasExitCode.RUNTIME_FAILURE;
-  process.exit(exitCode);
+  process.exitCode = exitCodeOf(err);
 });

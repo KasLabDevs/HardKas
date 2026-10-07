@@ -210,6 +210,26 @@ function isExcluded(key: string, version: number, depth: number, parentKey: stri
   return exclusions.has(key);
 }
 
+/**
+ * EVIDENCE-TRUST-1: whether the field at `path` is part of what the content hash covers under `version` — the inverse
+ * of what the serializer drops, by the same rule. `path` lists the keys from the artifact's top level down, with `null`
+ * for an array index. A field below a dropped key is outside the hash too. (`contentHash` and `lineage.artifactId` are
+ * the identity itself, never inside it.)
+ */
+export function isAuthenticatedPath(path: ReadonlyArray<string | null>, version: number): boolean {
+  let parentKey: string | undefined;
+  for (let depth = 0; depth < path.length; depth++) {
+    const key = path[depth];
+    if (key === null || key === undefined) {
+      parentKey = undefined; // an array element: one level deeper, with no enclosing key
+      continue;
+    }
+    if (isExcluded(key, version, depth, parentKey)) return false;
+    parentKey = key;
+  }
+  return true;
+}
+
 function serialize(
   obj: unknown,
   version: number,

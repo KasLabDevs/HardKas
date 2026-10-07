@@ -1,0 +1,131 @@
+﻿{
+  "before": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-3c2\\before",
+  "after": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-3c2\\after",
+  "packs": {
+    "before": 32,
+    "after": 32,
+    "removed": [],
+    "added": []
+  },
+  "manifests": [],
+  "consumers": {
+    "npm": {
+      "install": {
+        "before": 0,
+        "after": 0
+      },
+      "hardkasInstalled": {
+        "before": 24,
+        "after": 24,
+        "removed": [],
+        "added": []
+      },
+      "thirdParty": {
+        "before": 145,
+        "after": 145,
+        "removed": [],
+        "added": []
+      },
+      "hardkasFromRegistry": {
+        "before": 0,
+        "after": 0
+      },
+      "workspaceLeak": {
+        "before": false,
+        "after": false
+      },
+      "version": {
+        "before": "0.12.0-rc.26",
+        "after": "0.12.0-rc.26"
+      },
+      "imports": {
+        "before": {
+          "ok": 30,
+          "failed": 2
+        },
+        "after": {
+          "ok": 30,
+          "failed": 2
+        },
+        "removedSpecs": [],
+        "addedSpecs": [],
+        "changed": [],
+        "failedBoth": [
+          "@hardkas/testing/setup â†’ ERR_MODULE_NOT_FOUND vitest",
+          "@hardkas/testing/scenarios â†’ ERR_MODULE_NOT_FOUND vitest"
+        ]
+      },
+      "steps": {
+        "before": 7,
+        "after": 7,
+        "allOkBefore": true,
+        "allOkAfter": true,
+        "differences": []
+      },
+      "planJson": {
+        "before": true,
+        "after": true,
+        "identicalAfterNormalising": true
+      }
+    },
+    "pnpm": {
+      "install": {
+        "before": 0,
+        "after": 0
+      },
+      "hardkasInstalled": {
+        "before": 32,
+        "after": 32,
+        "removed": [],
+        "added": []
+      },
+      "thirdParty": {
+        "before": 150,
+        "after": 150,
+        "removed": [],
+        "added": []
+      },
+      "hardkasFromRegistry": {
+        "before": 0,
+        "after": 0
+      },
+      "workspaceLeak": {
+        "before": false,
+        "after": false
+      },
+      "version": {
+        "before": "0.12.0-rc.26",
+        "after": "0.12.0-rc.26"
+      },
+      "imports": {
+        "before": {
+          "ok": 38,
+          "failed": 2
+        },
+        "after": {
+          "ok": 38,
+          "failed": 2
+        },
+        "removedSpecs": [],
+        "addedSpecs": [],
+        "changed": [],
+        "failedBoth": [
+          "@hardkas/testing/setup â†’ ERR_MODULE_NOT_FOUND vitest",
+          "@hardkas/testing/scenarios â†’ ERR_MODULE_NOT_FOUND vitest"
+        ]
+      },
+      "steps": {
+        "before": 7,
+        "after": 7,
+        "allOkBefore": true,
+        "allOkAfter": true,
+        "differences": []
+      },
+      "planJson": {
+        "before": true,
+        "after": true,
+        "identicalAfterNormalising": true
+      }
+    }
+  }
+}

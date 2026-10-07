@@ -1,0 +1,29 @@
+$ hardkas artifact verify receipt-without-trace.json --strict --json   (cwd ws-after)
+exit=0 stdout_is_single_json=true
+--- stdout ---
+{
+  "ok": true,
+  "command": "artifact verify",
+  "mode": "cli",
+  "result": {
+    "ok": true,
+    "authScope": "FULL",
+    "unauthenticatedMaterialFields": [],
+    "errors": [
+      "Replay verification (consensus) unsupported"
+    ],
+    "issues": [
+      {
+        "code": "REPLAY_UNSUPPORTED_CHECK",
+        "severity": "warning",
+        "message": "Replay verification (full consensus simulation) is currently unsupported in this build."
+      }
+    ],
+    "artifactType": "hardkas.txReceipt",
+    "version": "1.0.0-alpha",
+    "expectedHash": "49915299afb5ce4ed50d508210e191679fe85e06669752b3fac79b0f188ed914",
+    "actualHash": "49915299afb5ce4ed50d508210e191679fe85e06669752b3fac79b0f188ed914"
+  }
+}
+--- stderr ---
+

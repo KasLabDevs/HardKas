@@ -8,7 +8,7 @@ Rule
 
 Reason
 
-Run `hardkas capabilities --json` first.
+Read the capability report first: the SDK's `capabilities.get()`; from the CLI, `hardkas silver doctor --json` for SilverScript and covenant readiness.
 
 Prevents agents from assuming features that are not implemented.
 

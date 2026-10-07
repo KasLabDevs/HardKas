@@ -20,6 +20,16 @@ export async function runDevServer(options: {
 }) {
   const wsRoot = options.workspaceRoot || process.cwd();
 
+  // SURFACE-TRUTH-1A (ST-I3): this runner starts no node; a request for one is refused, never ignored
+  if ((options as { withNode?: boolean }).withNode) {
+    const { HardkasCliError } = await import("../cli-errors.js");
+    throw new HardkasCliError(
+      "DEV_WITH_NODE_UNSUPPORTED",
+      "The dev server does not start a node. Start the Docker localnet with `hardkas localnet start`.",
+      { exitCode: 1 }
+    );
+  }
+
   // Set env var so dev-server watcher and other modules resolve to the correct root
   process.env.HARDKAS_ROOT = wsRoot;
 
@@ -65,7 +75,8 @@ export async function runDevServer(options: {
 
     const serverObj = server as Record<string, unknown>;
     const token = typeof serverObj.token === "string" ? serverObj.token : undefined;
-    if (token) {
+    // a `--once` run starts no server, so it leaves no token behind
+    if (token && !options.once) {
       fs.writeFileSync(path.join(hardkasDir, "dev-server-token"), token, { mode: 0o600 });
     }
 
@@ -101,9 +112,6 @@ export async function runDevServer(options: {
     }
 
 
-    let isNodeRunning = false;
-    let miningAlias = "";
-    let miningAddress = "";
     let devAccounts: any[] = [];
 
     if (options.json) {
@@ -122,23 +130,10 @@ export async function runDevServer(options: {
       await ensureDevAccounts(wsRoot);
       devAccounts = listDevAccountsSync(wsRoot);
 
-      if ((options as any).withNode) {
-        if (devAccounts.length > 0) {
-          miningAlias = devAccounts[0]!.name;
-          miningAddress = devAccounts[0]!.address;
-        }
-
-        // Spawn localnet node in background
-        const { spawn } = await import("node:child_process");
-        const nodeArgs = ["hardkas", "node", "start"];
-        if (miningAddress) {
-          nodeArgs.push("--miningaddr", miningAddress);
-        }
-        // Run dettached so it runs independently
-        spawn("pnpm", nodeArgs, { stdio: "ignore", detached: true, cwd: wsRoot }).unref();
-        isNodeRunning = true;
-      }
-
+      // SURFACE-TRUTH-1A (ST-I3): the banner states only what this run did or checked. Gone: a hard-coded
+      // "Network: simnet"; "Node: running" / "Mining: enabled", set after spawning a detached
+      // `pnpm hardkas node start --miningaddr …` (an option `node start` does not have) without checking anything;
+      // "Node: not running", which nothing checked either; and a "Canonical Ledger: healthy" no check backed.
       if (!options.quietHeader && !options.json) {
         console.log(pc.bold("\nHardKAS Local Runtime"));
         console.log(pc.dim("━━━━━━━━━━━━━━━━━━━━━━\n"));
@@ -146,28 +141,8 @@ export async function runDevServer(options: {
         console.log(pc.bold("Workspace:"));
         console.log(`  ${wsRoot}\n`);
 
-        console.log(pc.bold("Network:"));
-        console.log(`  simnet\n`);
-
-        console.log(pc.bold("Node:"));
-        if (isNodeRunning) {
-          console.log(`  ${pc.green("running")}\n`);
-          console.log(pc.bold("Mining:"));
-          console.log(`  enabled → ${pc.blue(miningAlias)}\n`);
-        } else {
-          console.log(`  not running`);
-          console.log(
-            pc.dim(
-              `  Tip: run \`hardkas dev --with-node\` for full localnet + autofunding.\n`
-            )
-          );
-        }
-
         console.log(pc.bold("Projection:"));
-        console.log(`  healthy\n`);
-
-        console.log(pc.bold("Canonical Ledger:"));
-        console.log(`  healthy\n`);
+        console.log(`  rebuilt from the workspace artifacts\n`);
 
         console.log(pc.bold("Dashboard:"));
         console.log(`  http://localhost:${port}\n`);
@@ -178,11 +153,8 @@ export async function runDevServer(options: {
         devAccounts.forEach((acc, index) => {
           console.log(`[${index}] ${pc.blue(acc.name)}`);
           console.log(`Address: ${acc.address}`);
-          // We do not fake balance, we leave it to dashboard or say 'Check dashboard for balance'
-          // since we don't have a sync RPC call here directly without delaying startup
-          console.log(
-            `Balance: ${isNodeRunning ? "Syncing..." : "FundingStatus: unknown/unsupported"}\n`
-          );
+          // We do not fake balance: no balance is looked up here, the dashboard shows it
+          console.log(`Balance: see the dashboard\n`);
         });
 
         UI.printNextSteps([
@@ -204,8 +176,6 @@ export async function runDevServer(options: {
         store,
         nodeServer,
         stopHardkasWatcher,
-        isNodeRunning,
-        miningAlias,
         port,
         devAccounts
       };

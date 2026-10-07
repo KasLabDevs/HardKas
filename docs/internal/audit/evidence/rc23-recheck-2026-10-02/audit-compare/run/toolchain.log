@@ -1,0 +1,4 @@
+﻿Downloading kaspa-wasm32-sdk-v2.1.0.zip from https://github.com/kaspanet/rusty-kaspa/releases/download/v2.1.0/kaspa-wasm32-sdk-v2.1.0.zip ...
+✔ Installed kaspa-wasm 2.1.0 at C:\Users\jrodr\AppData\Local\Temp\claude\audit-compare\run\home-wasm\toolchains\kaspa-wasm\2.1.0
+  asset   kaspa-wasm32-sdk-v2.1.0.zip sha256 ba674e109ff5dd8bedc4dc2ee8a5ecdf4b600b1178a541d77888ec58310b6124
+  source  https://github.com/kaspanet/rusty-kaspa/releases/download/v2.1.0/kaspa-wasm32-sdk-v2.1.0.zip

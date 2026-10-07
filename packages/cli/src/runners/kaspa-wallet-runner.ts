@@ -10,18 +10,18 @@ export async function runKaspaWalletCreate(name: string, options: { network: str
     const { createLocalKaspaWallet } = await import("@hardkas/accounts");
 
     console.log(
-      pc.bold("\nâ”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”")
+      pc.bold("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
     );
-    console.log(pc.bold(`HardKAS â€¢ Kaspa Wallet Creation`));
+    console.log(pc.bold(`HardKAS • Kaspa Wallet Creation`));
     console.log(
-      pc.bold("â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”\n")
+      pc.bold("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n")
     );
 
     const wallet = await createLocalKaspaWallet({
       networkId: options.network as "mainnet" | "testnet-10" | "simnet"
     });
 
-    console.log(`  ${pc.green("âœ“")} New Kaspa L1 wallet generated:`);
+    console.log(`  ${pc.green("✓")} New Kaspa L1 wallet generated:`);
     console.log(`    Name:    ${pc.white(name)}`);
     console.log(`    Address: ${pc.white(wallet.address)}`);
     console.log(`    Network: ${pc.white(options.network)}`);
@@ -56,7 +56,10 @@ export async function runKaspaWalletList(options: { json: boolean }) {
     );
 
     if (options.json) {
-      console.log(JSON.stringify(accounts, null, 2));
+      // EVIDENCE-TRUST-1 (D9): a listing reveals no secret. A plaintext account's privateKey (and any other field named
+      // as a secret) is left out; revealing a key is the job of the commands whose contract is to reveal or export it.
+      const { redactSecretFields } = await import("@hardkas/core");
+      console.log(JSON.stringify(redactSecretFields(accounts.map((a) => ({ ...a })), "drop"), null, 2));
       return;
     }
 
@@ -93,6 +96,8 @@ export async function runKaspaWalletBalance(
   name: string,
   options: { rpcUrl: string; json: boolean }
 ) {
+  // RESOURCE-LIFECYCLE-1 (RL-I1): releases the client this command creates, in the finally below.
+  let release: (() => Promise<void>) | undefined;
   try {
     const config = await loadHardkasConfig();
     const { resolveHardkasAccountAddress } = await import("@hardkas/accounts");
@@ -101,6 +106,7 @@ export async function runKaspaWalletBalance(
 
     const address = await resolveHardkasAccountAddress(name, config.config);
     const client = new JsonWrpcKaspaClient({ rpcUrl: options.rpcUrl });
+    release = () => client.close();
     const balance = await client.getBalanceByAddress(address);
 
     if (options.json) {
@@ -120,6 +126,8 @@ export async function runKaspaWalletBalance(
       exitCode: 1,
       cause: e
     });
+  } finally {
+    await release?.();
   }
 }
 
@@ -128,6 +136,8 @@ export async function runKaspaWalletSend(
   to: string,
   options: { amount: string; dryRun: boolean; rpcUrl: string }
 ) {
+  // RESOURCE-LIFECYCLE-1 (RL-I1): releases the client this command creates, in the finally below.
+  let release: (() => Promise<void>) | undefined;
   try {
     const config = await loadHardkasConfig();
     const { resolveHardkasAccount, resolveHardkasAccountAddress } =
@@ -156,6 +166,7 @@ export async function runKaspaWalletSend(
     const amountSompi = parseKasToSompi(options.amount);
 
     const client = new JsonWrpcKaspaClient({ rpcUrl: options.rpcUrl });
+    release = () => client.close();
     const utxos = await client.getUtxosByAddress(sender.address!);
 
     // 1. Build Plan: the kaspa-wasm Generator selects the inputs, prices the
@@ -245,7 +256,7 @@ export async function runKaspaWalletSend(
       config: config.config
     });
 
-    console.log(`  ${pc.green("âœ“")} Transaction signed.`);
+    console.log(`  ${pc.green("✓")} Transaction signed.`);
 
     // 3. Broadcast
     if (!signedArtifact.signedTransaction) {
@@ -258,7 +269,7 @@ export async function runKaspaWalletSend(
     );
 
     if (submitResult.accepted) {
-      console.log(`  ${pc.green("âœ“")} Transaction accepted by node.`);
+      console.log(`  ${pc.green("✓")} Transaction accepted by node.`);
       console.log(`  TXID: ${pc.bold(pc.white(submitResult.transactionId))}\n`);
     } else {
       const { HardkasCliError } = await import("../cli-errors.js");
@@ -275,5 +286,7 @@ export async function runKaspaWalletSend(
       exitCode: 1,
       cause: e
     });
+  } finally {
+    await release?.();
   }
 }

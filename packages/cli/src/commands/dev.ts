@@ -1,10 +1,16 @@
 import { Command } from "commander";
 import { UI } from "../ui.js";
+import { invocationWorkspace } from "../workspace-root.js";
+
+// CLI-RUNTIME-CONTRACT-1: the runners' own errors (and their codes) reach the top-level renderer
+// unchanged. The former `catch (e) { throw new Error("Dev … failed") }` wrappers destroyed them
+// (a NOT_NODE_PROJECT became "Dev init failed" / UNKNOWN_ERROR).
 
 export function registerDevCommands(program: Command) {
   const devCmd = program
     .command("dev")
-    .description("Local development and Igra-native environment tools")
+    // SURFACE-TRUTH-1B (ST-D): the group is the L1 dev environment; Igra is a Lab, not "native" to it.
+    .description("Local development tools: dev environment, dApp templates, simnet dev accounts (`dev doctor` is an Igra L2 lab check)")
     .option(
       "--once",
       "Initialize dev environment, run health checks, and exit (headless)",
@@ -12,24 +18,16 @@ export function registerDevCommands(program: Command) {
     )
     .option("--headless", "Run headlessly (no UI open)", false)
     .action(async (options: any) => {
-      try {
-        const { runDevEnv } = await import("../runners/dev-env-runner.js");
-        await runDevEnv(options);
-      } catch (e) {
-        throw new Error("Dev environment bootstrap failed");
-      }
+      const { runDevEnv } = await import("../runners/dev-env-runner.js");
+      await runDevEnv(options);
     });
 
   devCmd
     .command("create <name>")
     .description(`Create a new dApp project from a template ${UI.maturity("stable")}`)
     .action(async (name: string) => {
-      try {
-        const { runDevCreate } = await import("../runners/dev-create-runner.js");
-        await runDevCreate(name);
-      } catch (e) {
-        throw new Error("Dev create failed");
-      }
+      const { runDevCreate } = await import("../runners/dev-create-runner.js");
+      await runDevCreate(name);
     });
 
   devCmd
@@ -38,17 +36,14 @@ export function registerDevCommands(program: Command) {
       `Initialize dApp support in the current workspace ${UI.maturity("stable")}`
     )
     .action(async () => {
-      try {
-        const { runDevInit } = await import("../runners/dev-init-runner.js");
-        await runDevInit();
-      } catch (e) {
-        throw new Error("Dev init failed");
-      }
+      const { runDevInit } = await import("../runners/dev-init-runner.js");
+      await runDevInit();
     });
 
   devCmd
     .command("doctor")
-    .description(`Check local dev readiness for an L2 profile (Igra by default): workspace, artifacts, query store, SDK import, dev server and the L2 JSON-RPC; the Kaspa node is not checked ${UI.maturity("stable")}`)
+    // SURFACE-TRUTH-1B (ST-D): an Igra L2 lab check, not a stable L1 command.
+    .description(`Igra L2 lab, not the L1 core: check local dev readiness for an L2 profile (Igra by default): workspace, artifacts, query store, SDK import, dev server and the L2 JSON-RPC; the Kaspa node is not checked ${UI.maturity("experimental")}`)
     .option("--profile <name>", "L2 network profile name", "igra")
     .option("--rpc-url <url>", "Explicit Igra RPC URL to check")
     .option("--account <name>", "EVM account that must exist in hardkas.config (its balance is not checked)")
@@ -56,12 +51,8 @@ export function registerDevCommands(program: Command) {
     .option("--json", "Output as JSON")
     .option("--release", "Run strict release gate checks")
     .action(async (options: any) => {
-      try {
-        const { runDevDoctor } = await import("../runners/dev-doctor-runner.js");
-        await runDevDoctor(options);
-      } catch (e) {
-        throw new Error("Dev doctor failed");
-      }
+      const { runDevDoctor } = await import("../runners/dev-doctor-runner.js");
+      await runDevDoctor(options);
     });
 
 
@@ -86,10 +77,18 @@ export function registerDevCommands(program: Command) {
     });
 
   accountsCmd
-    .command("export kasware")
-    .description("Export dev account in format suitable for Kasware manual import")
+    .command("export <format>")
+    .description("Export a dev account for a wallet's manual import; format: kasware")
     .option("--alias <alias>", "Alias to export", "alice")
-    .action(async (options: any) => {
+    .action(async (format: string, options: any) => {
+      // #8/#33: `.command("export kasware")` made "kasware" a positional the action received as its
+      // options, so `--alias` was always undefined ("alias 'undefined' not found", exit 0).
+      if (format !== "kasware") {
+        const { HardkasCliError, HardkasExitCode } = await import("../cli-errors.js");
+        throw new HardkasCliError("DEV_EXPORT_FORMAT_UNKNOWN", `Unknown export format '${format}': the only format is kasware`, {
+          exitCode: HardkasExitCode.USAGE_ERROR
+        });
+      }
       const { runDevAccountsExport } = await import("../runners/dev-accounts-runners.js");
       await runDevAccountsExport(options.alias);
     });
@@ -104,7 +103,9 @@ export function registerDevCommands(program: Command) {
     .option("--amount <kas>", "Amount in KAS")
     .option("--workspace <path>", "Override workspace root directory")
     .action(async (options: any) => {
-      if (options.workspace) options.workspaceRoot = options.workspace;
+      // --workspace is resolved once (WORKSPACE-AUTHORITY-1); without it this command keeps its default directory
+      const ws = invocationWorkspace();
+      if (ws.explicit !== undefined) options.workspaceRoot = ws.root;
       const { runDevTxSend } = await import("../runners/dev-tx-runners.js");
       await runDevTxSend(options);
     });
@@ -117,13 +118,13 @@ export function registerDevCommands(program: Command) {
     .option("--workspace <path>", "Override workspace root directory")
     .option("--json", "Output as JSON", false)
     .action(async (options: any) => {
-      try {
-        if (options.json) UI.setJsonMode(true);
-        const { runDevTxGenerate } = await import("../runners/dev-tx-generate-runner.js");
-        await runDevTxGenerate(options);
-      } catch (e) {
-        throw new Error("Dev tx generate failed");
-      }
+      if (options.json) UI.setJsonMode(true);
+      // --workspace is resolved once (WORKSPACE-AUTHORITY-1); without it this command keeps its default directory
+      const ws = invocationWorkspace();
+      if (ws.explicit !== undefined) options.workspace = ws.root;
+      const { runDevTxGenerate } = await import("../runners/dev-tx-generate-runner.js");
+      // the runner's own error (and its code) reaches the top-level renderer unchanged
+      await runDevTxGenerate(options);
     });
 
   devCmd
@@ -135,31 +136,24 @@ export function registerDevCommands(program: Command) {
     .option("--out <path>", "Save fixture as JSON to this file")
     .option("--json", "Output as JSON", false)
     .action(async (options: any) => {
-      try {
-        if (options.json) UI.setJsonMode(true);
-        const { runDevFixtureGenerate } =
-          await import("../runners/dev-fixture-generate-runner.js");
-        await runDevFixtureGenerate(options);
-      } catch (e) {
-        if (e instanceof Error) throw e;
-        throw new Error("Dev fixture generate failed");
-      }
+      if (options.json) UI.setJsonMode(true);
+      const { runDevFixtureGenerate } =
+        await import("../runners/dev-fixture-generate-runner.js");
+      await runDevFixtureGenerate(options);
     });
 
   devCmd
     .command("last")
-    .description("Interact with the latest local workflow")
-    .option("--inspect", "Inspect the latest artifact", false)
-    .option("--replay", "Replay the latest workflow", false)
-    .option("--explain", "Explain the latest workflow", false)
+    .description("Act on the latest transaction artifact of the workspace store")
+    .option("--inspect", "Print the latest artifact", false)
+    .option("--replay", "Show the latest receipt, or verify the latest plan or signed transaction (no replay is run)", false)
+    .option("--explain", "Print the `hardkas why` command for the latest artifact", false)
     .option("--workspace <path>", "Override workspace root directory")
     .action(async (options: any) => {
-      try {
-        if (options.workspace) options.workspaceRoot = options.workspace;
-        const { runDevLast } = await import("../runners/dev-last-runner.js");
-        await runDevLast(options);
-      } catch (e) {
-        throw new Error("Dev last failed");
-      }
+      // --workspace is resolved once (WORKSPACE-AUTHORITY-1); without it this command keeps its default directory
+      const ws = invocationWorkspace();
+      if (ws.explicit !== undefined) options.workspaceRoot = ws.root;
+      const { runDevLast } = await import("../runners/dev-last-runner.js");
+      await runDevLast(options);
     });
 }

@@ -18,7 +18,10 @@ export function registerConfigCommands(program: Command) {
 
         if (options.json) {
           const { getOutput } = await import("../output.js");
-          getOutput().writeJson({ ok: true, command: "config show", mode: "cli", result: loaded });
+          const { redactSecretFields } = await import("@hardkas/core");
+          // EVIDENCE-TRUST-1 (D9): showing the configuration reveals no secret written into it (an inline privateKey,
+          // a password): the field stays, its value is "[REDACTED]".
+          getOutput().writeJson({ ok: true, command: "config show", mode: "cli", result: redactSecretFields(loaded, "mask") });
           return;
         }
 
@@ -58,7 +61,9 @@ export function registerConfigCommands(program: Command) {
 
       if (opts.json) {
         const { getOutput } = await import("../output.js");
-        getOutput().writeJson({ ok: true, command: "config networks", mode: "cli", result: networks });
+        const { redactSecretFields } = await import("@hardkas/core");
+        // EVIDENCE-TRUST-1 (D9): no secret written into the configuration is shown.
+        getOutput().writeJson({ ok: true, command: "config networks", mode: "cli", result: redactSecretFields(networks, "mask") });
         return;
       }
 
@@ -92,10 +97,16 @@ export function registerConfigCommands(program: Command) {
         throw new HardkasCliError("CONFIG_EXISTS", "hardkas.config.ts already exists. Use --force to overwrite.");
       }
 
+      // PAPERCUTS #38: generated configs declare their target through the `execution` contract.
       const template = `import { defineHardkasConfig } from "@hardkas/config";
 
 export default defineHardkasConfig({
-  defaultNetwork: "simulated",
+  execution: {
+    default: "simulator",
+    targets: {
+      simulator: { mode: "simulator", domain: "kaspa-l1", network: "simulated" }
+    }
+  },
   networks: {
     simulated: { kind: "simulated" }
   },
@@ -123,7 +134,8 @@ export default defineHardkasConfig({
       const path = await import("node:path");
       const configPath = path.join(process.cwd(), "hardkas.config.ts");
 
-      const template = `import { defineHardkasConfig } from "@hardkas/config";\n\nexport default defineHardkasConfig({\n  defaultNetwork: "simulated",\n  networks: {\n    simulated: { kind: "simulated" }\n  }\n});\n`;
+      // PAPERCUTS #38: generated configs declare their target through the `execution` contract.
+      const template = `import { defineHardkasConfig } from "@hardkas/config";\n\nexport default defineHardkasConfig({\n  execution: {\n    default: "simulator",\n    targets: {\n      simulator: { mode: "simulator", domain: "kaspa-l1", network: "simulated" }\n    }\n  },\n  networks: {\n    simulated: { kind: "simulated" }\n  }\n});\n`;
 
       if (!fs.existsSync(configPath)) {
         UI.warning("Config file missing. Generating a new one...");

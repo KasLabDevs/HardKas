@@ -10,13 +10,19 @@ Make sure your local node is running and exposes WRPC on the expected simnet end
 ws://127.0.0.1:18210
 ```
 
-Your `hardkas.config.ts` can declare both the default simulated network and the explicit simnet RPC target:
+Your `hardkas.config.ts` can declare both the default simulator target and the explicit simnet node target:
 
 ```typescript
 import { defineHardkasConfig } from "@hardkas/sdk";
 
 export default defineHardkasConfig({
-  defaultNetwork: "simulated",
+  execution: {
+    default: "simulator",
+    targets: {
+      simulator: { mode: "simulator", domain: "kaspa-l1", network: "simulated" },
+      localnet: { mode: "localnet", domain: "kaspa-l1", network: "simnet" }
+    }
+  },
   networks: {
     simulated: {
       kind: "simulated"
