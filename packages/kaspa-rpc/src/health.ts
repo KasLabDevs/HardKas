@@ -54,7 +54,7 @@ export async function checkKaspaRpcHealth(
       const info = (await client.getServerInfo()) as any;
       const dagInfo = (await client.getBlockDagInfo()) as any;
       const latencyMs = Date.now() - start;
-      client.disconnect();
+      await client.disconnect();
 
       return {
         endpoint: url,
@@ -71,7 +71,7 @@ export async function checkKaspaRpcHealth(
         stale: !(info?.isSynced ?? true)
       };
     } catch (e: unknown) {
-      client.disconnect();
+      await client.disconnect();
       return {
         endpoint: url,
         protocol: url.startsWith("ws") ? "WebSocket" : "JSON-RPC",
@@ -121,6 +121,9 @@ export async function checkKaspaRpcHealth(
       error: e instanceof Error ? ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) : String(e),
       lastError: e instanceof Error ? ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) : String(e)
     };
+  } finally {
+    // RESOURCE-LIFECYCLE-1: this check created the client, so it releases it.
+    await client.close();
   }
 }
 

@@ -1,5 +1,7 @@
 import { Command } from "commander";
+import type { HardkasProgrammability } from "@hardkas/sdk";
 import { getOutput } from "../output.js";
+import { withSdk } from "../runners/with-sdk.js";
 
 type ProgramKind = "silver" | "zk" | "vprog" | "full-lab";
 
@@ -13,10 +15,7 @@ export function registerProgrammabilityCommands(program: Command) {
     .description("Show local programmability capabilities")
     .option("--json", "Output as JSON", false)
     .action(async () => {
-      const sdk = await createSdk();
-      const { HardkasProgrammability } = await import("@hardkas/sdk");
-      const prog = new HardkasProgrammability(sdk);
-      const result = await prog.capabilities();
+      const result = await withProgrammability((prog) => prog.capabilities());
       getOutput().writeJson({ ok: true, command: "programmability capabilities", mode: "cli", result });
     });
 
@@ -48,11 +47,10 @@ export function registerProgrammabilityCommands(program: Command) {
     .requiredOption("--kind <kind>", "Artifact kind: silver, zk, or vprog")
     .option("--json", "Output as JSON", false)
     .action(async (targetPath: string, options) => {
-      const sdk = await createSdk();
-      const kind = normalizeInspectKind(options.kind);
-      const { HardkasProgrammability } = await import("@hardkas/sdk");
-      const prog = new HardkasProgrammability(sdk);
-      const result = await prog.inspect({ kind, path: targetPath });
+      const result = await withProgrammability((prog) => {
+        const kind = normalizeInspectKind(options.kind);
+        return prog.inspect({ kind, path: targetPath });
+      });
       getOutput().writeJson({ ok: result.ok, command: "programmability inspect", mode: "cli", result });
       if (!result.ok) {
         const { HardkasCliError } = await import("../cli-errors.js");
@@ -68,11 +66,10 @@ export function registerProgrammabilityCommands(program: Command) {
     .requiredOption("--kind <kind>", "Artifact kind: silver, zk, or vprog")
     .option("--json", "Output as JSON", false)
     .action(async (targetPath: string, options) => {
-      const sdk = await createSdk();
-      const kind = normalizeInspectKind(options.kind);
-      const { HardkasProgrammability } = await import("@hardkas/sdk");
-      const prog = new HardkasProgrammability(sdk);
-      const result = await prog.verify({ kind, path: targetPath });
+      const result = await withProgrammability((prog) => {
+        const kind = normalizeInspectKind(options.kind);
+        return prog.verify({ kind, path: targetPath });
+      });
       getOutput().writeJson({ ok: result.ok, command: "programmability verify", mode: "cli", result });
       if (!result.ok && result.status !== "PROGRAMMABILITY_VERIFY_PARTIAL") {
         const { HardkasCliError } = await import("../cli-errors.js");
@@ -91,10 +88,7 @@ export function registerProgrammabilityCommands(program: Command) {
     .description("Verify the root Toccata programmability corpus")
     .option("--json", "Output as JSON", false)
     .action(async (targetPath: string) => {
-      const sdk = await createSdk();
-      const { HardkasProgrammability } = await import("@hardkas/sdk");
-      const prog = new HardkasProgrammability(sdk);
-      const result = await prog.corpus.verify({ path: targetPath });
+      const result = await withProgrammability((prog) => prog.corpus.verify({ path: targetPath }));
       getOutput().writeJson({ ok: result.ok, command: "programmability corpus verify", mode: "cli", result });
       if (!result.ok) {
         const { HardkasCliError } = await import("../cli-errors.js");
@@ -113,22 +107,18 @@ export function registerProgrammabilityCommands(program: Command) {
     .option("--template <path>", "Template path")
     .option("--json", "Output as JSON", false)
     .action(async (options) => {
-      const sdk = await createSdk();
-      const kind = normalizeKind(options.kind, true) as ProgramKind;
-      const { HardkasProgrammability } = await import("@hardkas/sdk");
-      const prog = new HardkasProgrammability(sdk);
-      const result = prog.app.plan({ kind, template: options.template });
+      const result = await withProgrammability((prog) => {
+        const kind = normalizeKind(options.kind, true) as ProgramKind;
+        return prog.app.plan({ kind, template: options.template });
+      });
       getOutput().writeJson({ ok: true, command: "programmability app plan", mode: "cli", result });
     });
 }
 
-async function createSdk() {
-  const { Hardkas } = await import("@hardkas/sdk");
-  return Hardkas.create({
-    cwd: process.cwd(),
-    network: "simulated",
-    autoBootstrap: true
-  });
+/** RESOURCE-LIFECYCLE-1 (RL-I1): the SDK a command opens for its programmability call is released after it. */
+async function withProgrammability<T>(use: (prog: HardkasProgrammability) => T | Promise<T>): Promise<T> {
+  const { HardkasProgrammability } = await import("@hardkas/sdk");
+  return withSdk({ cwd: process.cwd(), network: "simulated", autoBootstrap: true }, (sdk) => use(new HardkasProgrammability(sdk)));
 }
 
 function normalizeInspectKind(kind: string): Exclude<ProgramKind, "full-lab"> {

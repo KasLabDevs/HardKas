@@ -19,7 +19,18 @@ export interface AccountsConsolidateOptions {
 
 export async function runAccountsConsolidate(options: AccountsConsolidateOptions) {
   const sdk = await Hardkas.open({ cwd: process.cwd() });
+  // RESOURCE-LIFECYCLE-1 (RL-I1/RL-I3): this command opened the SDK and may hand it a client of its own; both are
+  // released whatever the command ends with. sdk.close() releases only the SDK's own client, never the handed one.
+  const created: Array<{ close(): void | Promise<void> }> = [];
+  try {
+    return await consolidate(options, sdk, created);
+  } finally {
+    for (const client of created) await client.close();
+    await sdk.close();
+  }
+}
 
+async function consolidate(options: AccountsConsolidateOptions, sdk: Hardkas, created: Array<{ close(): void | Promise<void> }>) {
   const resolvedName = options.network || sdk.config.config.defaultNetwork || "simnet";
 
   if (resolvedName === "mainnet" && options.execute && !options.allowMainnet) {
@@ -39,7 +50,9 @@ export async function runAccountsConsolidate(options: AccountsConsolidateOptions
 
   if (provider.mode !== "simulator") {
     const { JsonWrpcKaspaClient } = await import("@hardkas/kaspa-rpc");
-    (sdk as any).rpc = new JsonWrpcKaspaClient({ rpcUrl: provider.endpoint! });
+    const client = new JsonWrpcKaspaClient({ rpcUrl: provider.endpoint! });
+    created.push(client);
+    (sdk as any).rpc = client;
   }
 
   const resolvedAccount = await sdk.accounts.resolve(options.account);

@@ -29,8 +29,13 @@ export async function runAccountsRealUtxos(options: AccountsRealUtxosOptions): P
   }
 
   const client = new JsonWrpcKaspaClient({ rpcUrl });
-  const utxos = await client.getUtxosByAddress(account.address);
-  await client.close();
+  let utxos;
+  try {
+    utxos = await client.getUtxosByAddress(account.address);
+  } finally {
+    // RESOURCE-LIFECYCLE-1 (RL-I3): released when the read fails too.
+    await client.close();
+  }
 
   const lines = [
     `UTXOs for ${account.name} (${account.address})`,

@@ -3,6 +3,7 @@ import pc from "picocolors";
 import { createSnapshot } from "@hardkas/core";
 import { UI, handleError } from "../ui.js";
 import { snapshotDirFor } from "./snapshot-dir.js";
+import { withSdk } from "./with-sdk.js";
 
 export interface SnapshotCreateOptions {
   name: string;
@@ -16,10 +17,10 @@ export async function runSnapshotCreate(options: SnapshotCreateOptions) {
   snapshotDirFor(workspaceRoot, name); // refused before the workspace is even opened
 
   try {
-    const { Hardkas } = await import("@hardkas/sdk");
-    const sdk = await Hardkas.open({ cwd: workspaceRoot });
-    const hardkasDir = sdk.workspace.hardkasDir;
-    const outputDir = snapshotDirFor(sdk.workspace.root, options.name);
+    const { hardkasDir, outputDir } = await withSdk({ cwd: workspaceRoot }, (sdk) => ({
+      hardkasDir: sdk.workspace.hardkasDir,
+      outputDir: snapshotDirFor(sdk.workspace.root, options.name)
+    }));
 
     const manifest = await createSnapshot({
       hardkasDir,

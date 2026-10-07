@@ -3,7 +3,7 @@
 // The transport is the official kaspa-wasm RpcClient (see upstream/session.ts).
 
 import { logger, metrics } from "@hardkas/observability";
-import { OfficialRpcSession, toWrpcUrl, type OfficialRpcFactory } from "./upstream/session.js";
+import { OfficialRpcSession, rpcClientClosedError, toWrpcUrl, type OfficialRpcFactory } from "./upstream/session.js";
 import { toWire } from "./upstream/wire.js";
 
 metrics.register({
@@ -45,6 +45,8 @@ export interface KaspaWrpcClientOptions {
 export class KaspaWrpcClient {
   private url: string;
   private session: OfficialRpcSession | null = null;
+  /** The session whose connect() has not completed yet: disconnect() closes it too (RL-I4). */
+  private opening: OfficialRpcSession | null = null;
 
   /** Receives every node notification as `{ method: <event>, params: <payload> }`. */
   public onNotification?: (msg: WrpcResponse) => void;
@@ -59,9 +61,18 @@ export class KaspaWrpcClient {
   }
 
   async connect(timeoutMs = 5000): Promise<void> {
-    this.disconnect();
+    // The previous connection is detached and the new session registered before anything is awaited, so a
+    // disconnect() from this point on closes the new session too (RL-I4).
+    const released = this.disconnect();
     const session = new OfficialRpcSession(this.url, timeoutMs, this.options.rpcFactory);
-    const client = await session.connected();
+    this.opening = session;
+    await released;
+    if (this.opening !== session) throw rpcClientClosedError(this.url);
+    const client = await session.connected().finally(() => {
+      if (this.opening === session) this.opening = null;
+    });
+    // disconnect() (or a newer connect()) ran while this connection was being established: it closed this session.
+    if (session.current() !== client) throw rpcClientClosedError(this.url);
     this.session = session;
     // The one-argument form of the official addEventListener receives every event.
     (client as unknown as { addEventListener(callback: (event: any) => void): void }).addEventListener((event: any) => {
@@ -124,9 +135,11 @@ export class KaspaWrpcClient {
     }
   }
 
-  disconnect(): void {
-    const session = this.session;
+  /** Releases the connection, including one connect() is still opening; resolves once it is released. Never throws. */
+  async disconnect(): Promise<void> {
+    const sessions = [this.session, this.opening].filter((s): s is OfficialRpcSession => s !== null);
     this.session = null;
-    if (session) void session.close();
+    this.opening = null;
+    await Promise.all(sessions.map((s) => s.close()));
   }
 }

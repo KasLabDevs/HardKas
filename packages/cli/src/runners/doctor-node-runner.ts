@@ -68,10 +68,12 @@ export async function runDoctorNode(opts: { json?: boolean; capabilities?: boole
   }
 
   // 5. Fixture balance check
+  let balanceClient: JsonWrpcKaspaClient | null = null;
   try {
     const signer = new HardkasFixtureSigner("simnet");
     const address = await signer.getAddress();
     const client = new JsonWrpcKaspaClient({ rpcUrl: nodeRpcUrl() });
+    balanceClient = client;
     const utxos = await client.getUtxosByAddress(address);
     const balanceRes = await client.getBalanceByAddress(address);
     const balance = balanceRes?.balanceSompi || 0n;
@@ -83,9 +85,11 @@ export async function runDoctorNode(opts: { json?: boolean; capabilities?: boole
     } else {
       UI.logHuman(`  ❌ Fixture balance: 0 KAS`);
     }
-    await client.close();
   } catch (err: any) {
     UI.logHuman(`  ❌ Fixture balance: ERROR (${((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err))})`);
+  } finally {
+    // RESOURCE-LIFECYCLE-1 (RL-I3): released on the error path too, like step 4's client.
+    if (balanceClient) await balanceClient.close();
   }
 }
 

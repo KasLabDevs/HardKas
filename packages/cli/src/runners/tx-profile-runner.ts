@@ -5,6 +5,7 @@ import { UI } from "../ui.js";
 import { formatSompiToKas } from "@hardkas/core";
 import path from "node:path";
 import { HardkasSchemas } from "@hardkas/artifacts";
+import { withSdk } from "./with-sdk.js";
 
 export interface TxProfileOptions {
   path: string;
@@ -38,9 +39,7 @@ export interface TxProfileResult {
 }
 
 export async function runTxProfile(options: TxProfileOptions): Promise<TxProfileResult> {
-  const { Hardkas } = await import("@hardkas/sdk");
-  const sdk = await Hardkas.open({ cwd: options.workspaceRoot });
-  const absolutePath = sdk.workspace.resolvePath(options.path);
+  const absolutePath = await withSdk({ cwd: options.workspaceRoot }, (sdk) => sdk.workspace.resolvePath(options.path));
   const plan = (await readArtifact(absolutePath)) as TxPlanArtifact;
 
   const planObj = plan as unknown as Record<string, unknown>;

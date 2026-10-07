@@ -39,6 +39,9 @@ export async function runArtifactMigrate(options: ArtifactMigrateOptions) {
   } catch (e: any) {
     const code = typeof e?.code === "string" ? e.code : "MIGRATION_FAILED";
     throw new HardkasCliError(code, e?.message ?? String(e), { exitCode: 1 });
+  } finally {
+    // RESOURCE-LIFECYCLE-1 (RL-I1): the SDK opened above is released here.
+    await sdk.close();
   }
 
   const rel = (p: string | undefined) => (p ? path.relative(options.workspaceRoot, p).replace(/\\/g, "/") : undefined);

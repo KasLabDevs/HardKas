@@ -202,10 +202,18 @@ export class Hardkas {
 
   public readonly rpc: KaspaRpcClient;
 
+  /**
+   * RESOURCE-LIFECYCLE-1 (RL-I1/RL-I2): the RPC client this instance owns, and so releases in close(). Marked when it
+   * is created, never inferred from a type or a state: the default client the constructor creates, or the one open()
+   * created for it. A client handed in from outside, or assigned to `rpc` later, is never this instance's.
+   */
+  private readonly ownedRpc: KaspaRpcClient | undefined;
+
   private constructor(
     public readonly config: LoadedConfig,
     options?: HardkasOptions,
-    rpc?: KaspaRpcClient
+    rpc?: KaspaRpcClient,
+    rpcOwnership: "owned" | "borrowed" = "borrowed"
   ) {
     this.mode = options?.mode || "developer";
     this.policy = {
@@ -217,11 +225,15 @@ export class Hardkas {
     };
 
     // Default to the standard client if none provided
-    this.rpc =
-      rpc ||
-      new JsonWrpcKaspaClient({
+    if (rpc) {
+      this.rpc = rpc;
+      this.ownedRpc = rpcOwnership === "owned" ? rpc : undefined;
+    } else {
+      this.rpc = new JsonWrpcKaspaClient({
         rpcUrl: this.resolveRpcUrl()
       });
+      this.ownedRpc = this.rpc;
+    }
 
     this.workspace = new HardkasWorkspace(this.config.cwd, options?.hardkasDir);
     this.artifacts = new HardkasArtifactsManager(this);
@@ -332,9 +344,26 @@ export class Hardkas {
       provider = new LocalnetSimulatedProvider(root);
     }
 
-    const hk = new Hardkas(loaded, options, provider);
+    // open() created the simulated provider for this instance: the instance owns it.
+    const hk = new Hardkas(loaded, options, provider, "owned");
     hk.plugins.loadPlugins();
     return hk;
+  }
+
+  /**
+   * Releases what this instance created (its own RPC client), so a process that is done with the SDK can end by
+   * itself. Never a client it was given, or one assigned to `rpc` afterwards: that one is its caller's. Idempotent; it
+   * never throws, so it fits a `finally`. A later call that needs the node opens a new connection, which a later
+   * close() releases.
+   */
+  async close(): Promise<void> {
+    const own = this.ownedRpc;
+    if (!own) return;
+    try {
+      await own.close();
+    } catch {
+      // nothing left to release
+    }
   }
 
   /**

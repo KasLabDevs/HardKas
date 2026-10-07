@@ -144,12 +144,22 @@ export function targetReached(derived: DerivedTxStatus, until: TxWaitTarget): bo
 }
 
 export async function runTxWait(input: TxWaitRunnerInput): Promise<TxWaitRunnerResult> {
-  const { HardkasCliError, HardkasExitCode } = await import("../cli-errors.js");
   const workspaceRoot = input.workspaceRoot ?? process.cwd();
   const opened = input.sdk
     ? { sdk: input.sdk, network: String(input.network ?? input.sdk.network) }
     : await openSdkForTx(input.txId, workspaceRoot, input.network);
   const { sdk, network } = opened;
+  // RESOURCE-LIFECYCLE-1: an SDK opened here is released here, whatever the wait ends with (RL-I1/RL-I3); an injected
+  // one is its caller's (RL-I2).
+  try {
+    return await waitOn(input, sdk, network);
+  } finally {
+    if (!input.sdk) await sdk.close();
+  }
+}
+
+async function waitOn(input: TxWaitRunnerInput, sdk: any, network: string): Promise<TxWaitRunnerResult> {
+  const { HardkasCliError, HardkasExitCode } = await import("../cli-errors.js");
   const sleep = input.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)));
   const now = input.now ?? (() => Date.now());
   const start = now();

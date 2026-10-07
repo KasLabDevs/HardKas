@@ -298,25 +298,31 @@ export async function runLocalnetFund(opts: LocalnetFundOptions): Promise<void> 
     ? before.matureBalanceSompi + opts.amountSompi
     : before.matureBalanceSompi + 1n; // wait for any increase
 
+  // RESOURCE-LIFECYCLE-1 (RL-I1/RL-I3): the SDK opened above is released once the wait and the settling are done,
+  // whatever they end with.
   try {
-    await sdk.utxos.waitForSpendableFunding({
-      address,
-      minSpendableSompi: targetAmount,
-      timeoutMs
-    });
-  } catch (e: any) {
-    if (e.code !== "LOCALNET_FUND_MATURITY_TIMEOUT") {
+    try {
+      await sdk.utxos.waitForSpendableFunding({
+        address,
+        minSpendableSompi: targetAmount,
+        timeoutMs
+      });
+    } catch (e: any) {
+      if (e.code !== "LOCALNET_FUND_MATURITY_TIMEOUT") {
+        if (!opts.keepMiner) {
+          await stopToccataMiner();
+          await waitForFundingSpendability(sdk.rpc, { address, minSpendableSompi: targetAmount });
+        }
+        throw e;
+      }
+    } finally {
       if (!opts.keepMiner) {
         await stopToccataMiner();
         await waitForFundingSpendability(sdk.rpc, { address, minSpendableSompi: targetAmount });
       }
-      throw e;
     }
   } finally {
-    if (!opts.keepMiner) {
-      await stopToccataMiner();
-      await waitForFundingSpendability(sdk.rpc, { address, minSpendableSompi: targetAmount });
-    }
+    await sdk.close();
   }
 
   const current = await getAddressFundingState(address, !!opts.json);

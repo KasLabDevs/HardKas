@@ -50,7 +50,8 @@ vi.mock("@hardkas/sdk", () => ({
       rpc: {
         getBlockDagInfo: async () => ({ virtualDaaScore: 5000n, virtualParentHashes: ["aa"], sink: "bb" }),
         getUtxosByAddress: async () => [matureUtxo]
-      }
+      },
+      close: vi.fn(async () => {})
     }))
   }
 }));

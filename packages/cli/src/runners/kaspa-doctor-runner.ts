@@ -17,10 +17,13 @@ export interface KaspaDoctorResult {
 export async function runKaspaDoctor(options: { rpcUrl: string; json: boolean }) {
   const checks: KaspaDoctorCheck[] = [];
   let finalStatus: "ready" | "warning" | "failed" = "ready";
+  // RESOURCE-LIFECYCLE-1 (RL-I1): releases the client this command creates, in the finally below.
+  let release: (() => Promise<void>) | undefined;
 
   try {
     const { JsonWrpcKaspaClient } = await import("@hardkas/kaspa-rpc");
     const client = new JsonWrpcKaspaClient({ rpcUrl: options.rpcUrl, timeoutMs: 3000 });
+    release = () => client.close();
 
     // 1. RPC Reachability
     try {
@@ -165,5 +168,7 @@ export async function runKaspaDoctor(options: { rpcUrl: string; json: boolean })
       exitCode: 1,
       cause: e
     });
+  } finally {
+    await release?.();
   }
 }

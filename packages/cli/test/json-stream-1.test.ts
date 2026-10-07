@@ -49,7 +49,8 @@ vi.mock("@hardkas/sdk", () => {
       createConsolidationPlan: async () => ({ schema: "hardkas.txPlan" }),
       sign: async (plan: unknown) => ({ schema: "hardkas.signedTx", plan }),
       simulate: async () => ({ receipt: { txId: "cd".repeat(32) } })
-    }
+    },
+    close: async () => {}
   };
   return { Hardkas: { create: async () => fake, open: async () => fake } };
 });

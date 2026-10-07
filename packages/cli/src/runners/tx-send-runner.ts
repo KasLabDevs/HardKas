@@ -100,65 +100,71 @@ export async function runTxSend(input: TxSendRunnerInput): Promise<TxSendRunnerR
   // Initialize the SDK
   const sdk = await Hardkas.open({ cwd: input.workspaceRoot || process.cwd(), network: resolvedName });
 
-  // 1. Simulated Mode
-  if (provider.mode === "simulator" && signedArtifact.mode !== "real") {
-    const { receipt, receiptPath } = await sdk.tx.simulate(signedArtifact);
-
-    return {
-      accepted: sendOutcome(receipt).accepted,
-      txId: receipt.txId,
-      rpcUrl: url || "simulated://local",
-      networkName: resolvedName,
-      receipt,
-      receiptPath,
-      executionId: `exec_${Date.now().toString(36)}`
-    };
-  }
-
-  // 2. Real Mode (Node/RPC)
-  assertBroadcastNetworkAllowed({
-    artifactNetworkId: signedArtifact.networkId,
-    selectedNetwork: networkName
-  });
-
-  const targetRecord = target as unknown as Record<string, unknown>;
-  const targetRpcUrl =
-    typeof targetRecord["rpcUrl"] === "string" ? targetRecord["rpcUrl"] : undefined;
-  const rpcUrl = url || targetRpcUrl || provider.endpoint;
-  if (!rpcUrl) throw new Error(`No RPC URL found for network '${networkName}'.`);
-
-  // Override the SDK RPC client for real mode since default simnet creates a simulated provider
-  const { JsonWrpcKaspaClient, KaspaWrpcClient } = await import("@hardkas/kaspa-rpc");
-  const isWebSocket = rpcUrl.startsWith("ws://") || rpcUrl.startsWith("wss://");
-  const rpcClient = isWebSocket
-    ? new KaspaWrpcClient(rpcUrl)
-    : new JsonWrpcKaspaClient({ rpcUrl: rpcUrl });
-  if (isWebSocket) {
-    await (rpcClient as InstanceType<typeof KaspaWrpcClient>).connect();
-  }
-  (sdk as any).rpc = rpcClient;
-
   try {
-    const { receipt, receiptPath } = await sdk.tx.send(signedArtifact, rpcUrl);
+    // 1. Simulated Mode
+    if (provider.mode === "simulator" && signedArtifact.mode !== "real") {
+      const { receipt, receiptPath } = await sdk.tx.simulate(signedArtifact);
 
-    // R-iii part 1 / IC-2′.8: the outcome comes from the submission's
-    // authenticated submit result, never from a status field.
-    return {
-      accepted: sendOutcome(receipt).accepted,
-      txId: receipt.txId,
-      rpcUrl,
-      networkName: resolvedName,
-      receipt,
-      receiptPath,
-      executionId: `exec_${Date.now().toString(36)}`
-    };
-  } finally {
-    if (rpcClient) {
-      if ("disconnect" in rpcClient && typeof (rpcClient as any).disconnect === "function") {
-        await (rpcClient as any).disconnect();
-      } else if ("close" in rpcClient && typeof (rpcClient as any).close === "function") {
-        await (rpcClient as any).close();
+      return {
+        accepted: sendOutcome(receipt).accepted,
+        txId: receipt.txId,
+        rpcUrl: url || "simulated://local",
+        networkName: resolvedName,
+        receipt,
+        receiptPath,
+        executionId: `exec_${Date.now().toString(36)}`
+      };
+    }
+
+    // 2. Real Mode (Node/RPC)
+    assertBroadcastNetworkAllowed({
+      artifactNetworkId: signedArtifact.networkId,
+      selectedNetwork: networkName
+    });
+
+    const targetRecord = target as unknown as Record<string, unknown>;
+    const targetRpcUrl =
+      typeof targetRecord["rpcUrl"] === "string" ? targetRecord["rpcUrl"] : undefined;
+    const rpcUrl = url || targetRpcUrl || provider.endpoint;
+    if (!rpcUrl) throw new Error(`No RPC URL found for network '${networkName}'.`);
+
+    // Override the SDK RPC client for real mode since default simnet creates a simulated provider
+    const { JsonWrpcKaspaClient, KaspaWrpcClient } = await import("@hardkas/kaspa-rpc");
+    const isWebSocket = rpcUrl.startsWith("ws://") || rpcUrl.startsWith("wss://");
+    const rpcClient = isWebSocket
+      ? new KaspaWrpcClient(rpcUrl)
+      : new JsonWrpcKaspaClient({ rpcUrl: rpcUrl });
+    if (isWebSocket) {
+      await (rpcClient as InstanceType<typeof KaspaWrpcClient>).connect();
+    }
+    (sdk as any).rpc = rpcClient;
+
+    try {
+      const { receipt, receiptPath } = await sdk.tx.send(signedArtifact, rpcUrl);
+
+      // R-iii part 1 / IC-2′.8: the outcome comes from the submission's
+      // authenticated submit result, never from a status field.
+      return {
+        accepted: sendOutcome(receipt).accepted,
+        txId: receipt.txId,
+        rpcUrl,
+        networkName: resolvedName,
+        receipt,
+        receiptPath,
+        executionId: `exec_${Date.now().toString(36)}`
+      };
+    } finally {
+      if (rpcClient) {
+        if ("disconnect" in rpcClient && typeof (rpcClient as any).disconnect === "function") {
+          await (rpcClient as any).disconnect();
+        } else if ("close" in rpcClient && typeof (rpcClient as any).close === "function") {
+          await (rpcClient as any).close();
+        }
       }
     }
+  } finally {
+    // RESOURCE-LIFECYCLE-1 (RL-I1/RL-I3): the SDK opened above is released whatever the send ends with; the client
+    // handed to it above is released by the inner finally, never by sdk.close().
+    await sdk.close();
   }
 }

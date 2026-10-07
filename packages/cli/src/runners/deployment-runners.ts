@@ -211,8 +211,9 @@ export async function verifyDeploymentStatus(opts: {
   } else if (!rpcUrl) {
     UI.error("  No RPC URL configured for this network.");
   } else {
+    let client: JsonWrpcKaspaClient | undefined;
     try {
-      const client = new JsonWrpcKaspaClient({ rpcUrl: rpcUrl });
+      client = new JsonWrpcKaspaClient({ rpcUrl: rpcUrl });
       const tx = (await client.getTransaction(record.txId)) as Record<
         string,
         unknown
@@ -245,10 +246,11 @@ export async function verifyDeploymentStatus(opts: {
       } else {
         UI.info(`  Status remains: ${record.status}`);
       }
-
-      await client.close();
     } catch (e: unknown) {
       UI.error(`  RPC check failed: ${((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e))}`);
+    } finally {
+      // RESOURCE-LIFECYCLE-1 (RL-I3): released on the error path too.
+      await client?.close();
     }
   }
 }

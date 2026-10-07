@@ -79,10 +79,28 @@ function withTimeout<T>(promise: Promise<T>, ms: number, onTimeout: () => Error)
   return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
 }
 
+/** Releases an official client; never throws (its binding may throw synchronously as well as reject). */
+async function release(client: OfficialRpcClientLike): Promise<void> {
+  try {
+    await client.disconnect();
+  } catch {
+    // nothing left to release
+  }
+}
+
+/** A connection closed while it was being opened: not retryable, its owner closed it on purpose. */
+export function rpcClientClosedError(url: string): RpcError {
+  return new RpcError(`The Kaspa RPC connection to ${url} was closed while it was being opened.`, "RPC_CLIENT_CLOSED", undefined, false);
+}
+
 export class OfficialRpcSession {
   readonly url: string;
   private client: OfficialRpcClientLike | null = null;
   private connecting: Promise<OfficialRpcClientLike> | null = null;
+  // RESOURCE-LIFECYCLE-1 (RL-I4): every close() starts a new epoch. A connection whose opening began in an earlier
+  // epoch never becomes the session's client: open() releases it as soon as it is established.
+  private epoch = 0;
+  private closing: Promise<void> | null = null;
 
   constructor(
     url: string,
@@ -101,17 +119,19 @@ export class OfficialRpcSession {
   async connected(): Promise<OfficialRpcClientLike> {
     if (this.client && this.client.isConnected !== false) return this.client;
     if (!this.connecting) {
-      this.connecting = this.open().finally(() => {
-        this.connecting = null;
+      const connecting: Promise<OfficialRpcClientLike> = this.open().finally(() => {
+        if (this.connecting === connecting) this.connecting = null;
       });
+      this.connecting = connecting;
     }
     return this.connecting;
   }
 
   private async open(): Promise<OfficialRpcClientLike> {
+    const epoch = this.epoch;
     const stale = this.client;
     this.client = null;
-    if (stale) await stale.disconnect().catch(() => {});
+    if (stale) await release(stale);
     const client = this.factory(this.url);
     try {
       await withTimeout(
@@ -120,9 +140,14 @@ export class OfficialRpcSession {
         () => new RpcConnectionError(`Cannot connect to Kaspa RPC at ${this.url}. Connection timed out.`)
       );
     } catch (e) {
-      await client.disconnect().catch(() => {});
+      await release(client);
       if (e instanceof RpcConnectionError) throw e;
       throw new RpcConnectionError(`Cannot connect to Kaspa RPC at ${this.url}. Is kaspad running with --rpclisten-json? (${messageOf(e)})`);
+    }
+    if (epoch !== this.epoch) {
+      // close() ran while this connection was being opened: it is released here and never handed out.
+      await release(client);
+      throw rpcClientClosedError(this.url);
     }
     this.client = client;
     return client;
@@ -151,7 +176,7 @@ export class OfficialRpcSession {
       if (NOT_CONNECTED.test(raw)) {
         // Drop the dead client (the next call opens a new one) and release what it still holds.
         if (this.client === client) this.client = null;
-        await client.disconnect().catch(() => {});
+        await release(client);
         throw new RpcConnectionError(`Connection to Kaspa RPC at ${this.url} was lost: ${raw}`);
       }
       const err = new Error(nodeMessage(raw));
@@ -159,9 +184,29 @@ export class OfficialRpcSession {
     }
   }
 
+  /**
+   * Releases the connection, including one still being opened (RL-I4). That one is not interrupted mid-handshake (the
+   * `ws` WebSocket under the official client raises an unhandled 'error' when closed before it is established): it is
+   * established or times out, open() releases it, and only then does close() return. Idempotent, also when calls
+   * overlap; never throws. A later request opens a new connection, which a later close() releases.
+   */
   async close(): Promise<void> {
+    this.epoch++;
     const client = this.client;
+    const connecting = this.connecting;
+    const previous = this.closing;
     this.client = null;
-    if (client) await client.disconnect().catch(() => {});
+    this.connecting = null;
+    const closing = (async () => {
+      if (client) await release(client);
+      if (connecting) await connecting.catch(() => {});
+      if (previous) await previous;
+    })();
+    this.closing = closing;
+    try {
+      await closing;
+    } finally {
+      if (this.closing === closing) this.closing = null;
+    }
   }
 }

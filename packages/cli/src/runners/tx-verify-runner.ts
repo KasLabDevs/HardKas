@@ -8,6 +8,7 @@ import {
 import { UI } from "../ui.js";
 import { formatSompiToKas } from "@hardkas/core";
 import path from "node:path";
+import { withSdk } from "./with-sdk.js";
 
 export interface TxVerifyOptions {
   path: string;
@@ -17,9 +18,7 @@ export interface TxVerifyOptions {
 
 export async function runTxVerify(options: TxVerifyOptions) {
   if (options.json) UI.setJsonMode(true);
-  const { Hardkas } = await import("@hardkas/sdk");
-  const sdk = await Hardkas.open({ cwd: options.workspaceRoot });
-  const absolutePath = sdk.workspace.resolvePath(options.path);
+  const absolutePath = await withSdk({ cwd: options.workspaceRoot }, (sdk) => sdk.workspace.resolvePath(options.path));
 
   UI.header(`Transaction Verification: ${path.basename(options.path)}`);
 

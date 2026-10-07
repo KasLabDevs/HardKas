@@ -82,16 +82,25 @@ export async function runWorkflowRun(
 
     UI.info(`Running ${def.steps.length} workflow steps...`);
 
-    let resultPromise = sdk.workflow.run({
+    const run = sdk.workflow.run({
       steps: def.steps,
       ...(options.dryRun !== undefined && { dryRun: options.dryRun })
     });
+    // RESOURCE-LIFECYCLE-1 (RL-I1): the SDK is released once the run itself settles, never while it still runs: on
+    // --timeout the command reports first and the abandoned run keeps its SDK until it ends
+    // (WORKFLOW-TIMEOUT-CANCELLATION-1).
+    void run.then(
+      () => sdk.close(),
+      () => sdk.close()
+    );
+    let resultPromise = run;
 
+    let timer: ReturnType<typeof setTimeout> | undefined;
     if (options.timeout) {
       const timeoutMs = parseInt(options.timeout, 10);
       if (!isNaN(timeoutMs)) {
         const timeoutPromise = new Promise<any>((_, reject) => {
-          setTimeout(
+          timer = setTimeout(
             () => reject(new Error(`Workflow execution timed out after ${timeoutMs}ms`)),
             timeoutMs
           );
@@ -100,7 +109,13 @@ export async function runWorkflowRun(
       }
     }
 
-    const result = await resultPromise;
+    let result;
+    try {
+      result = await resultPromise;
+    } finally {
+      // RESOURCE-LIFECYCLE-1 (RL-I1): the timeout timer is this command's; once the race is decided it is cleared.
+      clearTimeout(timer);
+    }
 
     if (result.status === "failed") {
       if (options.json) {
@@ -140,12 +155,15 @@ export async function runWorkflowInspect(
   id: string,
   options: { workspaceRoot?: string; json?: boolean }
 ) {
+  // RESOURCE-LIFECYCLE-1 (RL-I1/RL-I3): releases the SDK this command opens, in the finally below.
+  let release: (() => Promise<void>) | undefined;
   try {
     if (options.json) UI.setJsonMode(true);
     const sdk = await Hardkas.open({
       ...(options.workspaceRoot ? { cwd: options.workspaceRoot } : {}),
       mode: "agent"
     });
+    release = () => sdk.close();
 
     let targetId = id;
     if (id === "latest") {
@@ -178,6 +196,8 @@ export async function runWorkflowInspect(
       exitCode: 1,
       cause: e
     });
+  } finally {
+    await release?.();
   }
 }
 
@@ -200,10 +220,13 @@ export async function runWorkflowDiff(
   idB: string,
   options: { workspaceRoot?: string }
 ) {
+  // RESOURCE-LIFECYCLE-1 (RL-I1/RL-I3): releases the SDK this command opens, in the finally below.
+  let release: (() => Promise<void>) | undefined;
   try {
     const sdk = await Hardkas.open({
       ...(options.workspaceRoot ? { cwd: options.workspaceRoot } : {})
     } as HardkasOptions);
+    release = () => sdk.close();
 
     const resolveAlias = async (id: string) => (id === "latest" ? latestWorkflowIdentity(sdk.workspace.root) : id);
     const asLookup = (id: string) =>
@@ -243,5 +266,7 @@ export async function runWorkflowDiff(
       exitCode: 1,
       cause: e
     });
+  } finally {
+    await release?.();
   }
 }

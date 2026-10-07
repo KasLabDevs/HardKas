@@ -23,7 +23,8 @@ vi.mock("@hardkas/sdk", async () => {
           root: h.root,
           hardkasDir: p.join(h.root, ".hardkas"),
           resolvePath: (...segments: string[]) => p.resolve(h.root, ...segments)
-        }
+        },
+        close: async () => {}
       })
     }
   };

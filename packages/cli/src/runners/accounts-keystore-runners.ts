@@ -10,6 +10,7 @@ import {
 } from "@hardkas/accounts";
 import { UI } from "../ui.js";
 import { acquirePassword, acquirePrivateKey } from "./secrets.js";
+import { withSdk } from "./with-sdk.js";
 
 /**
  * Runner for 'hardkas accounts import --encrypted'
@@ -157,12 +158,11 @@ export async function runAccountsKeystoreImport(options: {
     );
 
     // Save to .hardkas/keystore/<name>.json
-    const { Hardkas } = await import("@hardkas/sdk");
-    const sdk = await Hardkas.open({ cwd: options.workspaceRoot });
-    const keystoreDir = sdk.workspace.keystoreDir;
-    if (!fs.existsSync(keystoreDir)) fs.mkdirSync(keystoreDir, { recursive: true });
-
-    const filePath = sdk.workspace.resolvePath(".hardkas", "keystore", `${name}.json`);
+    const filePath = await withSdk({ cwd: options.workspaceRoot }, (sdk) => {
+      const keystoreDir = sdk.workspace.keystoreDir;
+      if (!fs.existsSync(keystoreDir)) fs.mkdirSync(keystoreDir, { recursive: true });
+      return sdk.workspace.resolvePath(".hardkas", "keystore", `${name}.json`);
+    });
     await KeystoreManager.saveEncryptedKeystore(filePath, keystore);
     keystoreRef = `.hardkas/keystore/${name}.json`;
   }
@@ -214,9 +214,7 @@ export async function runAccountsSessionOpen(options: {
   workspaceRoot: string;
 }) {
   const { name } = options;
-  const { Hardkas } = await import("@hardkas/sdk");
-  const sdk = await Hardkas.open({ cwd: options.workspaceRoot });
-  const filePath = sdk.workspace.resolvePath(".hardkas", "keystore", `${name}.json`);
+  const filePath = await withSdk({ cwd: options.workspaceRoot }, (sdk) => sdk.workspace.resolvePath(".hardkas", "keystore", `${name}.json`));
 
   if (!fs.existsSync(filePath)) {
     throw new Error(`Keystore for account '${name}' not found at ${filePath}`);
@@ -249,9 +247,7 @@ export async function runAccountsKeystoreChangePassword(options: {
   workspaceRoot: string;
 }) {
   const { name } = options;
-  const { Hardkas } = await import("@hardkas/sdk");
-  const sdk = await Hardkas.open({ cwd: options.workspaceRoot });
-  const filePath = sdk.workspace.resolvePath(".hardkas", "keystore", `${name}.json`);
+  const filePath = await withSdk({ cwd: options.workspaceRoot }, (sdk) => sdk.workspace.resolvePath(".hardkas", "keystore", `${name}.json`));
 
   const keystore = await KeystoreManager.loadEncryptedKeystore(filePath);
 

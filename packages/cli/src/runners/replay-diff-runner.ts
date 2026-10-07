@@ -3,6 +3,7 @@ import path from "node:path";
 import pc from "picocolors";
 import { diffReplays, LayeredReplayDiff, stripBom } from "@hardkas/core";
 import { UI } from "../ui.js";
+import { withSdk } from "./with-sdk.js";
 
 export interface ReplayDiffOptions {
   idA: string;
@@ -13,9 +14,7 @@ export interface ReplayDiffOptions {
 }
 
 export async function runReplayDiff(options: ReplayDiffOptions) {
-  const { Hardkas } = await import("@hardkas/sdk");
-  const sdk = await Hardkas.open({ cwd: options.workspaceRoot });
-  const artifactDir = sdk.workspace.artifactsDir;
+  const artifactDir = await withSdk({ cwd: options.workspaceRoot }, (sdk) => sdk.workspace.artifactsDir);
 
   const pathA = path.join(artifactDir, `${options.idA}.json`);
   const pathB = path.join(artifactDir, `${options.idB}.json`);

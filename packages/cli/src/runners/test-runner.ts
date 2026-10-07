@@ -36,6 +36,8 @@ export async function runTest(options: TestRunnerOptions): Promise<void> {
   let hardkas;
   try {
     hardkas = await Hardkas.open(".");
+    // RESOURCE-LIFECYCLE-1 (RL-I1): it only proves the project here, so it is released at once.
+    await hardkas.close();
   } catch (e) {
     throw new Error("Could not find a valid HardKAS project in this directory.");
   }

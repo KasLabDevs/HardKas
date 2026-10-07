@@ -33,17 +33,20 @@ async function main() {
 
   const program = buildHardkasProgram({ loadedConfig });
 
+  // R0-I1: a command's result is its exit status, never an abrupt termination. The entry sets the status and returns;
+  // the runtime then closes naturally, after draining its pending work (an abrupt process.exit() raced V8's background
+  // WebAssembly compilation and aborted a finished command on Windows: VERIFY-EXIT-CRASH).
   try {
     await program.parseAsync(process.argv);
     // F3: a command that finished normally may have set a nonzero exit code; it is never discarded.
     // CLI-RUNTIME-CONTRACT-1: an error a command rendered and then swallowed set that code too.
-    process.exit(process.exitCode ?? 0);
+    process.exitCode = process.exitCode ?? 0;
   } catch (err: any) {
     // CLI-RUNTIME-CONTRACT-1: the renderer owns the failure (one human rendering, one JSON envelope,
     // the typed code preserved) and the exit code follows the error — in one place, for every error type.
     const { handleError, exitCodeOf } = await import("./ui.js");
     handleError(err);
-    process.exit(exitCodeOf(err));
+    process.exitCode = exitCodeOf(err);
   }
 }
 
@@ -55,5 +58,5 @@ main().catch(async (err) => {
     const { getOutput } = await import("./output.js");
     getOutput().error(maskSecrets(((err as any).stack)));
   }
-  process.exit(exitCodeOf(err));
+  process.exitCode = exitCodeOf(err);
 });

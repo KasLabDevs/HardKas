@@ -70,6 +70,16 @@ export interface TxFlowResult {
  * Orchestrates the full transaction workflow: plan -> sign -> send.
  */
 export async function runTxFlow(input: TxFlowInput): Promise<TxFlowResult> {
+  // RESOURCE-LIFECYCLE-1 (RL-I1/RL-I3): the SDK the flow opens is released whatever the flow ends with.
+  const opened: { sdk?: { close(): Promise<void> } } = {};
+  try {
+    return await txFlow(input, opened);
+  } finally {
+    await opened.sdk?.close();
+  }
+}
+
+async function txFlow(input: TxFlowInput, opened: { sdk?: { close(): Promise<void> } }): Promise<TxFlowResult> {
   const {
     from,
     to,
@@ -103,6 +113,7 @@ export async function runTxFlow(input: TxFlowInput): Promise<TxFlowResult> {
   let actualOutDir: string;
   try {
     sdk = await Hardkas.open({ cwd: workspaceRoot || process.cwd() });
+    opened.sdk = sdk;
     actualOutDir = outDir || sdk.workspace.artifactsDir;
   } catch {
     // SDK not available (e.g. standalone CLI install) — use default artifacts dir

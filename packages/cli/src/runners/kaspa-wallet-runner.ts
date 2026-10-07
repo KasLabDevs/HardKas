@@ -96,6 +96,8 @@ export async function runKaspaWalletBalance(
   name: string,
   options: { rpcUrl: string; json: boolean }
 ) {
+  // RESOURCE-LIFECYCLE-1 (RL-I1): releases the client this command creates, in the finally below.
+  let release: (() => Promise<void>) | undefined;
   try {
     const config = await loadHardkasConfig();
     const { resolveHardkasAccountAddress } = await import("@hardkas/accounts");
@@ -104,6 +106,7 @@ export async function runKaspaWalletBalance(
 
     const address = await resolveHardkasAccountAddress(name, config.config);
     const client = new JsonWrpcKaspaClient({ rpcUrl: options.rpcUrl });
+    release = () => client.close();
     const balance = await client.getBalanceByAddress(address);
 
     if (options.json) {
@@ -123,6 +126,8 @@ export async function runKaspaWalletBalance(
       exitCode: 1,
       cause: e
     });
+  } finally {
+    await release?.();
   }
 }
 
@@ -131,6 +136,8 @@ export async function runKaspaWalletSend(
   to: string,
   options: { amount: string; dryRun: boolean; rpcUrl: string }
 ) {
+  // RESOURCE-LIFECYCLE-1 (RL-I1): releases the client this command creates, in the finally below.
+  let release: (() => Promise<void>) | undefined;
   try {
     const config = await loadHardkasConfig();
     const { resolveHardkasAccount, resolveHardkasAccountAddress } =
@@ -159,6 +166,7 @@ export async function runKaspaWalletSend(
     const amountSompi = parseKasToSompi(options.amount);
 
     const client = new JsonWrpcKaspaClient({ rpcUrl: options.rpcUrl });
+    release = () => client.close();
     const utxos = await client.getUtxosByAddress(sender.address!);
 
     // 1. Build Plan: the kaspa-wasm Generator selects the inputs, prices the
@@ -278,5 +286,7 @@ export async function runKaspaWalletSend(
       exitCode: 1,
       cause: e
     });
+  } finally {
+    await release?.();
   }
 }

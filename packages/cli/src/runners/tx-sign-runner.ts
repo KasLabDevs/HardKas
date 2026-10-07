@@ -130,14 +130,19 @@ export async function runTxSign(input: TxSignRunnerInput): Promise<SignedTxArtif
   // Open the SDK to perform transaction signing & event emission & SQLite indexing
   const sdk = await Hardkas.open({ cwd: workspaceRoot || process.cwd(), signer });
 
-  const signedArtifact = await sdk.tx.sign(planArtifact as any, accountName, {
-    ...(append !== undefined ? { append } : {}),
-    ...(threshold !== undefined ? { threshold } : {}),
-    ...(requiredSigners !== undefined ? { requiredSigners } : {}),
-    ...(keystorePassword !== undefined ? { keystorePassword } : {})
-  });
+  try {
+    const signedArtifact = await sdk.tx.sign(planArtifact as any, accountName, {
+      ...(append !== undefined ? { append } : {}),
+      ...(threshold !== undefined ? { threshold } : {}),
+      ...(requiredSigners !== undefined ? { requiredSigners } : {}),
+      ...(keystorePassword !== undefined ? { keystorePassword } : {})
+    });
 
-  return signedArtifact;
+    return signedArtifact;
+  } finally {
+    // RESOURCE-LIFECYCLE-1 (RL-I1/RL-I3): the SDK opened above is released here; the signer handed to it is not its own.
+    await sdk.close();
+  }
 }
 
 export function getNetworkFromAddress(address: string): string {

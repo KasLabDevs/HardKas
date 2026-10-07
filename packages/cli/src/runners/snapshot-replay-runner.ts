@@ -7,6 +7,7 @@ import { UI, handleError } from "../ui.js";
 import { getOutput } from "../output.js";
 import { runReplayVerify } from "./replay-verify-runner.js";
 import { snapshotDirFor } from "./snapshot-dir.js";
+import { withSdk } from "./with-sdk.js";
 
 export interface SnapshotReplayOptions {
   name: string;
@@ -17,11 +18,11 @@ export interface SnapshotReplayOptions {
 export async function runSnapshotReplay(options: SnapshotReplayOptions) {
   snapshotDirFor(options.workspaceRoot ?? process.cwd(), options.name); // refused before the workspace is even opened
   try {
-    const { Hardkas } = await import("@hardkas/sdk");
-    const sdk = await Hardkas.open(
-      options.workspaceRoot ? { cwd: options.workspaceRoot } : {}
-    );
-    const snapshotDir = snapshotDirFor(sdk.workspace.root, options.name);
+    const workspace = await withSdk(options.workspaceRoot ? { cwd: options.workspaceRoot } : {}, (sdk) => ({
+      root: sdk.workspace.root,
+      hardkasDir: sdk.workspace.hardkasDir
+    }));
+    const snapshotDir = snapshotDirFor(workspace.root, options.name);
 
     // 1. Read Manifest
     let manifest;
@@ -39,7 +40,7 @@ export async function runSnapshotReplay(options: SnapshotReplayOptions) {
       console.log("");
     }
 
-    const hardkasDir = sdk.workspace.hardkasDir;
+    const hardkasDir = workspace.hardkasDir;
     const wsArtifactsDir = path.join(hardkasDir, "artifacts");
     const snapArtifactsDir = path.join(snapshotDir, "artifacts");
     const fs = await import("node:fs/promises");
@@ -47,7 +48,7 @@ export async function runSnapshotReplay(options: SnapshotReplayOptions) {
     // 2–3 · SNAPSHOT-REPLAY-UNIT-1: from the check to the last restore the replay holds the store, so no cooperative
     // writer introduces a mutation between them and no cooperative reader sees a partial restore (a receipt restored
     // before the signed artifact it descends from). The projection rebuild below is outside the unit.
-    const unit = ArtifactStoreMutation.forPath(wsArtifactsDir)?.store ?? new ArtifactStoreMutation(sdk.workspace.root);
+    const unit = ArtifactStoreMutation.forPath(wsArtifactsDir)?.store ?? new ArtifactStoreMutation(workspace.root);
     const { missing, identical, localOnlyKept } = await unit.hold(async () => {
       // 2. Plan the restore before touching the store. SNAPSHOT-NONDESTRUCTIVE-1: replay never removes an artifact.
       // SNAPSHOT-CONFLICT-1: a path both sides hold with different bytes fails the replay before anything is written.
