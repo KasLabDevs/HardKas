@@ -36,7 +36,7 @@ function forgedSigned(): any {
   return sealV5(
     {
       schema: "hardkas.signedTx",
-      hardkasVersion: "0.12.0-rc.26",
+      hardkasVersion: "0.12.0-rc.27",
       version: "1.0.0-alpha",
       networkId: "simnet",
       mode: "simulator",
@@ -60,7 +60,7 @@ function forgedSigned(): any {
 function forgedReceipt(oldHash: string, newHash: string, fromSchema = "hardkas.signedTx"): any {
   return sealV5({
     schema: "hardkas.migrationReceipt.v1",
-    hardkasVersion: "0.12.0-rc.26",
+    hardkasVersion: "0.12.0-rc.27",
     version: "1.0.0-alpha",
     networkId: "simnet",
     mode: "simulator",
@@ -203,7 +203,7 @@ describe("B1 · a MigrationReceipt never turns a missing parent into a valid one
     const stranger = sealV5(
       {
         schema: "hardkas.policy.v1",
-        hardkasVersion: "0.12.0-rc.26",
+        hardkasVersion: "0.12.0-rc.27",
         version: "1.0.0-alpha",
         networkId: "simnet",
         mode: "simulator",
@@ -297,7 +297,7 @@ describe("B1-bis · a descendant is not a re-issue: supersession requires schema
     const child: any = sealV5(
       {
         schema: "hardkas.signedTx",
-        hardkasVersion: "0.12.0-rc.26",
+        hardkasVersion: "0.12.0-rc.27",
         version: "1.0.0-alpha",
         networkId: legacy.networkId,
         mode: legacy.mode,
@@ -329,7 +329,7 @@ describe("B1-bis · a descendant is not a re-issue: supersession requires schema
     const { legacy, child } = await legacyRootWithChild();
     const receipt = sealV5({
       schema: "hardkas.migrationReceipt.v1",
-      hardkasVersion: "0.12.0-rc.26",
+      hardkasVersion: "0.12.0-rc.27",
       version: "1.0.0-alpha",
       networkId: "simnet",
       mode: "simulator",

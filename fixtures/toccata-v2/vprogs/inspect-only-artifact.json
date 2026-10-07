@@ -11,5 +11,5 @@
     "vmConsensusEquivalence": "NOT_CLAIMED",
     "mainnet": "BLOCKED_BY_POLICY"
   },
-  "note": "Inspect-only fixture for the 0.12.0-rc.26 experimental vProgs lab scaffold."
+  "note": "Inspect-only fixture for the 0.12.0-rc.27 experimental vProgs lab scaffold."
 }

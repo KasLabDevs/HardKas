@@ -32,7 +32,7 @@ describe("Wave 1.1 · SDK writer (N3) and lifecycle self-consistency", () => {
 
   it("T-N3: write() refuses an artifact without hashVersion instead of completing it", async () => {
     const policy: any = {
-      schema: "hardkas.policy.v1", hardkasVersion: "0.12.0-rc.26", version: "1.0.0-alpha",
+      schema: "hardkas.policy.v1", hardkasVersion: "0.12.0-rc.27", version: "1.0.0-alpha",
       networkId: "simnet", mode: "simulator", createdAt: "2026-09-25T00:00:00.000Z", decision: "ALLOW", rules: []
     };
     policy.contentHash = calculateContentHash(policy, CURRENT_HASH_VERSION);
@@ -42,7 +42,7 @@ describe("Wave 1.1 · SDK writer (N3) and lifecycle self-consistency", () => {
 
   it("T-N3: write() refuses an artifact whose body was changed after hashing", async () => {
     const policy: any = {
-      schema: "hardkas.policy.v1", hardkasVersion: "0.12.0-rc.26", version: "1.0.0-alpha", hashVersion: CURRENT_HASH_VERSION,
+      schema: "hardkas.policy.v1", hardkasVersion: "0.12.0-rc.27", version: "1.0.0-alpha", hashVersion: CURRENT_HASH_VERSION,
       networkId: "simnet", mode: "simulator", createdAt: "2026-09-25T00:00:00.000Z", decision: "ALLOW", rules: []
     };
     policy.contentHash = calculateContentHash(policy, CURRENT_HASH_VERSION);
@@ -52,7 +52,7 @@ describe("Wave 1.1 · SDK writer (N3) and lifecycle self-consistency", () => {
 
   it("T-N3: a complete artifact writes, and the file holds exactly the declared identity", async () => {
     const policy: any = {
-      schema: "hardkas.policy.v1", hardkasVersion: "0.12.0-rc.26", version: "1.0.0-alpha", hashVersion: CURRENT_HASH_VERSION,
+      schema: "hardkas.policy.v1", hardkasVersion: "0.12.0-rc.27", version: "1.0.0-alpha", hashVersion: CURRENT_HASH_VERSION,
       networkId: "simnet", mode: "simulator", createdAt: "2026-09-25T00:00:00.000Z", decision: "ALLOW", rules: []
     };
     policy.contentHash = calculateContentHash(policy, CURRENT_HASH_VERSION);

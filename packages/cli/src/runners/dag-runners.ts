@@ -60,7 +60,7 @@ async function simulateReorg(options: { depth: number }) {
 
   UI.info(`Simulating reorg at depth ${options.depth}...`);
 
-  // Minimal 0.12.0-rc.26 implementation:
+  // Minimal 0.12.0-rc.27 implementation:
   // 1. Create a side-branch starting 'depth' blocks back.
   // 2. Move sink to that side-branch.
 

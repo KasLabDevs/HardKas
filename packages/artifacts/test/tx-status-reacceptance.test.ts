@@ -19,7 +19,7 @@ const OBS = deriveObserverId({ kind: "rpc", target: "simnet", locator: "ws://nod
 function submission(): any {
   const s: any = {
     schema: "hardkas.txSubmission.v1",
-    hardkasVersion: "0.12.0-rc.26",
+    hardkasVersion: "0.12.0-rc.27",
     version: "1.0.0-alpha",
     hashVersion: CURRENT_HASH_VERSION,
     networkId: "simnet",

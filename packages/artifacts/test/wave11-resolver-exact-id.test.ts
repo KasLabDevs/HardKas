@@ -193,7 +193,7 @@ describe("Wave 11 · RESOLVER-1 · content-verified store lookups (IC-5′ re-ba
     // by category, AUD-45) makes the recomputed contentHash the identity of every artifact.
     const snapshot: any = {
       schema: "hardkas.snapshot.v1",
-      hardkasVersion: "0.12.0-rc.26",
+      hardkasVersion: "0.12.0-rc.27",
       version: "1.0.0-alpha",
       hashVersion: CURRENT_HASH_VERSION,
       networkId: "simnet",
