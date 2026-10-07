@@ -3,7 +3,7 @@ import fs from "node:fs";
 import type { HardkasWorkspace } from "./workspace.js";
 import { writeArtifact, checkArtifactIdentity, ARTIFACT_ID_PATTERN } from "@hardkas/artifacts";
 import type { HardkasArtifactBase, LookupInput } from "@hardkas/artifacts";
-import { HardkasError } from "@hardkas/core";
+import { HardkasError, plainChildPath } from "@hardkas/core";
 import type { Hardkas } from "./index.js";
 import { assertPublicNetworkAllowed } from "./policy.js";
 
@@ -147,14 +147,30 @@ export class HardkasArtifactsManager {
     let absolutePath: string;
     let stored: { artifact: any; written: boolean } | undefined;
     if (options.outputDir) {
+      // CONTAINMENT-2 (R1-I1): the file name, given or derived from the schema, may come from artifact content (a replay
+      // report is named after a txId). It is ONE plain file directly in outputDir, and an existing entry there is a
+      // plain file (writing to a directory would pick another name inside it), decided before anything is created.
+      const schema = record.schema || "artifact";
+      const shortSchema = schema.replace("hardkas.", "");
+      const fileName = options.fileName || `${shortSchema}-${hash}.json`;
+      const target = plainChildPath(options.outputDir, fileName);
+      let entry: fs.Stats | undefined;
+      try {
+        entry = target ? fs.lstatSync(target) : undefined;
+      } catch {
+        entry = undefined;
+      }
+      if (!target || (entry && !entry.isFile())) {
+        throw new HardkasError(
+          "ARTIFACT_FILE_NAME_INVALID",
+          `${JSON.stringify(fileName)} is not one plain file name directly inside ${options.outputDir}. Nothing was written.`
+        );
+      }
       // Explicit export (through the store's gate when outputDir is in the store, ARTIFACT-MUTATION-1)
       if (!fs.existsSync(options.outputDir)) {
         await ensureDirRespectingStore(options.outputDir);
       }
-      const schema = record.schema || "artifact";
-      const shortSchema = schema.replace("hardkas.", "");
-      const fileName = options.fileName || `${shortSchema}-${hash}.json`;
-      absolutePath = path.join(options.outputDir, fileName);
+      absolutePath = target;
       await writeArtifact(absolutePath, artifact);
     } else {
       // Canonical store. EVIDENCE-TRUST-1: write-once; an identity already published is kept and returned as stored.

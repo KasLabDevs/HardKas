@@ -5,6 +5,7 @@ import os from "node:os";
 import { AsyncLocalStorage } from "node:async_hooks";
 import { HardkasError } from "./index.js";
 import { EnvironmentTelemetry } from "./telemetry.js";
+import { plainChildPath } from "./fs.js";
 
 /**
  * HardKAS Lock Metadata schema v1
@@ -401,9 +402,22 @@ export function clearLock(
   options: { force?: boolean; ifDead?: boolean } = {}
 ): { cleared: boolean; reason?: string } {
   const lockDir = path.join(rootDir, ".hardkas", "locks");
-  const lockPath = path.join(lockDir, `${name}.lock`);
+  // CONTAINMENT-2 (R1-I1): `name` names ONE plain lock file directly in .hardkas/locks. That, and the entry found
+  // there being a plain file that physically lives in that directory, is decided before anything is read or removed.
+  const lockPath = plainChildPath(lockDir, `${name}.lock`);
+  const refuse = (why: string) =>
+    new HardkasError("LOCK_NAME_INVALID", `${JSON.stringify(name)} is not a lock of ${lockDir}: ${why}. Nothing was read or removed.`);
+  if (!lockPath) throw refuse("a lock name is one plain file name, without separators, '..' or device names");
 
-  if (!fs.existsSync(lockPath)) return { cleared: false, reason: "Lock not found" };
+  let entry: fs.Stats;
+  try {
+    entry = fs.lstatSync(lockPath);
+  } catch {
+    return { cleared: false, reason: "Lock not found" };
+  }
+  if (!entry.isFile() || path.dirname(fs.realpathSync.native(lockPath)) !== fs.realpathSync.native(lockDir)) {
+    throw refuse(`${lockPath} is not a plain file of that directory`);
+  }
 
   let metadata: LockMetadata;
   try {

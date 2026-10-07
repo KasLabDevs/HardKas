@@ -12,7 +12,7 @@ import {
 } from "@hardkas/artifacts";
 import { NetworkId, ExecutionMode } from "@hardkas/core";
 
-import { deterministicCompare } from "@hardkas/core";
+import { deterministicCompare, plainChildPath } from "@hardkas/core";
 
 export type StoredTraceEvent =
   | {
@@ -74,7 +74,9 @@ export function getTracePath(txId: string, cwd?: string): string {
 }
 
 function validateTxId(txId: string): void {
-  if (txId.includes("/") || txId.includes("\\") || txId.includes("..")) {
+  // CONTAINMENT-2: the trace file `<txId>.trace.json` is one plain file of the store root (no separator, ':' or NUL,
+  // no Windows device name), checked before it is read or written.
+  if (txId.includes("/") || txId.includes("\\") || txId.includes("..") || !plainChildPath(getDefaultTracesDir(), `${txId}.trace.json`)) {
     throw new Error(`Invalid txId: ${txId}`);
   }
 }

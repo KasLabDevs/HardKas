@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import util from "node:util";
 import type { NetworkId } from "@hardkas/core";
-import { writeFileAtomicSync, stripBom } from "@hardkas/core";
+import { writeFileAtomicSync, stripBom, isWindowsHostileName } from "@hardkas/core";
 import {
   HardkasArtifactBase,
   HARDKAS_VERSION,
@@ -210,6 +210,10 @@ export function validateAccountName(name: string): void {
     throw new Error(
       `Invalid account name '${name}'. Only letters, numbers, dashes and underscores are allowed.`
     );
+  }
+  // CONTAINMENT-2 (D1): the name also names its keystore file, which must be a plain file on every platform.
+  if (isWindowsHostileName(name)) {
+    throw new Error(`Invalid account name '${name}'. It is a reserved device name on Windows; choose another name.`);
   }
 }
 

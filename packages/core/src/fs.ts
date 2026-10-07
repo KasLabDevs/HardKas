@@ -137,14 +137,27 @@ export function readJsonFileSync<T = unknown>(filePath: string): T {
   return JSON.parse(stripBom(fs.readFileSync(filePath, "utf-8"))) as T;
 }
 
+// CONTAINMENT-2 (D1): the names Windows maps to a device, with or without an extension and in any case.
+const WINDOWS_DEVICE_STEM = /^(con|prn|aux|nul|com[0-9¹²³]|lpt[0-9¹²³]|conin\$|conout\$)$/i;
+
+/**
+ * A name Windows does not treat as a plain file: a device name (CON, PRN, AUX, NUL, COM0-9, LPT0-9, COM¹²³, LPT¹²³,
+ * CONIN$, CONOUT$), with or without an extension and in any case, or a name ending in a dot or a space (Win32 strips
+ * them, so the name aliases another file). CONTAINMENT-2 (D1): refused on every platform, so a workspace stays portable.
+ */
+export function isWindowsHostileName(name: string): boolean {
+  return WINDOWS_DEVICE_STEM.test(name.split(".")[0]!) || /[. ]$/.test(name);
+}
+
 /**
  * A user-chosen name used as ONE plain path component directly under `baseDir`: the resolved child path, or undefined
  * when the name is not a string, is empty, "." or "..", holds a separator ('/' or '\'), a colon (a drive or an NTFS
- * stream) or NUL, or would not resolve directly under baseDir. A logical check only, with no I/O: a caller that touches
- * the disk also refuses a link out of its own root.
+ * stream) or NUL, is a Windows-hostile name (see isWindowsHostileName), or would not resolve directly under baseDir.
+ * A logical check only, with no I/O: a caller that touches the disk also refuses a link out of its own root.
  */
 export function plainChildPath(baseDir: string, name: unknown): string | undefined {
   if (typeof name !== "string" || name === "" || name === "." || name === ".." || /[\\/:\0]/.test(name)) return undefined;
+  if (isWindowsHostileName(name)) return undefined;
   const base = path.resolve(baseDir);
   const child = path.resolve(base, name);
   return path.dirname(child) === base ? child : undefined;
