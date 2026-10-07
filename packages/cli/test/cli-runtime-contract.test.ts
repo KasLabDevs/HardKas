@@ -125,7 +125,8 @@ describe("CLI-RUNTIME-CONTRACT-1 · the renderer is the one owner of the failure
       report: { errors: ["differs"], divergences: [{ path: "/receipt/rpcUrl", secret: true }, { path: "/plan/amountSompi", expected: "1", actual: "2" }] }
     });
     handleError(e);
-    const text = stderr.join("");
+    // the text as read, whatever the terminal: picocolors colours the values when the environment allows it (CI=true)
+    const text = stderr.join("").replace(/\u001b\[[0-9;]*m/g, "");
     expect(text).not.toMatch(/undefined/);
     expect(text).toMatch(/\/receipt\/rpcUrl/);
     expect(text).toMatch(/secret/i);
