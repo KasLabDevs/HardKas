@@ -57,10 +57,14 @@ export async function runAccountsBalance(
   } catch {
     // no target declared anywhere: the simulator, as everywhere else in HardKAS
   }
+  const balanceNetwork = options.network ?? configuredNetwork;
+  const declaredRpcUrl = (loadedConfig.config.networks as Record<string, { rpcUrl?: unknown }> | undefined)?.[balanceNetwork]?.rpcUrl;
   const provider = resolveProvider({
-    network: options.network ?? configuredNetwork,
+    network: balanceNetwork,
     provider: options.provider,
-    url: options.url
+    url: options.url,
+    // WORKSPACE-AUTHORITY-2 (closeout): the endpoint the network declares, the same the SDK uses
+    networkRpcUrl: typeof declaredRpcUrl === "string" ? declaredRpcUrl : undefined
   });
 
   const network = provider.network;

@@ -1,0 +1,15 @@
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/before/logs/run-files-wt.ps1
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/before/logs/wa2-before-1.exit
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/before/logs/wa2-before-1.head
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/before/logs/wa2-before-1.json
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/before/logs/wa2-before-1.log
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/before/logs/wa2-before-1.status
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/before/logs/wa2-before-2.exit
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/before/logs/wa2-before-2.head
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/before/logs/wa2-before-2.json
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/before/logs/wa2-before-2.log
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/before/logs/wa2-before-2.status
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/before/tests/cli-workspace-authority-2.test.ts
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/before/tests/sdk-workspace-authority-2.test.ts
+?? packages/cli/test/workspace-authority-2.test.ts
+?? packages/sdk/test/workspace-authority-2.test.ts

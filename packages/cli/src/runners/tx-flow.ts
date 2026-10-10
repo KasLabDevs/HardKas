@@ -119,15 +119,10 @@ async function txFlow(input: TxFlowInput, opened: { sdk?: { close(): Promise<voi
     workspaceRoot
   } = input;
 
-  // Resolve effective network from execution contract
-  const resolvedNetwork = (() => {
-    if (network) return network;
-    const exec = config.execution as any;
-    if (exec?.default && exec?.targets?.[exec.default]?.network) {
-      return exec.targets[exec.default].network;
-    }
-    return config.defaultNetwork || "simnet";
-  })();
+  // WORKSPACE-AUTHORITY-2: the effective network comes from the one resolver the steps and the SDK use (`--network` as
+  // a network id, else the workspace's `execution` contract); an unknown name is a typed refusal before anything runs.
+  const { resolveWorkspaceExecution } = await import("@hardkas/config");
+  const resolvedNetwork: string = resolveWorkspaceExecution({ config, ...(network ? { network } : {}) }).networkId;
 
   const { Hardkas } = await import("@hardkas/sdk");
   let sdk: any = null;

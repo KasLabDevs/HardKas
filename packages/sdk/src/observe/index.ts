@@ -7,6 +7,7 @@ import {
   HardkasObserveWatchOptions
 } from "./types.js";
 import { ARTIFACT_SCHEMAS, calculateContentHash, CURRENT_HASH_VERSION, HARDKAS_VERSION } from "@hardkas/artifacts";
+import { HardkasError } from "@hardkas/core";
 
 export class HardkasObserve {
   constructor(private sdk: Hardkas) {}
@@ -15,13 +16,25 @@ export class HardkasObserve {
    * Fetches a one-shot observation of a Kaspa address (mempool + UTXOs).
    */
   async address(options: HardkasObserveAddressOptions): Promise<AddressObservationSnapshot> {
-    const target = options.target || this.sdk.config.config.defaultNetwork || "simnet";
-    const networkConfig = this.sdk.config.config.networks?.[target];
-    
-    if (options.target && !networkConfig && target !== "simnet" && target !== "mainnet" && target !== "testnet") {
-      const error = new Error(`OBSERVATION_UNKNOWN_TARGET: Unknown execution target '${options.target}'`);
-      (error as any).code = "OBSERVATION_UNKNOWN_TARGET";
-      throw error;
+    const target = options.target || (this.sdk.network as string);
+
+    if (options.target !== undefined) {
+      // WORKSPACE-AUTHORITY-2 (closeout): an explicit target is resolved by the shared resolver and must be THIS
+      // instance's world — an observation of another world through this instance's provider would carry that world's
+      // label over data the provider never saw. Another world needs an instance opened on it.
+      const { resolveWorkspaceExecution } = await import("@hardkas/config");
+      let requested: string;
+      try {
+        requested = resolveWorkspaceExecution({ config: this.sdk.config.config, network: options.target }).networkId;
+      } catch (e: unknown) {
+        throw new HardkasError("OBSERVATION_UNKNOWN_TARGET", `Unknown execution target '${options.target}': ${e instanceof Error ? e.message : String(e)}`, { cause: e });
+      }
+      if (requested !== (this.sdk.network as string)) {
+        throw new HardkasError(
+          "OBSERVATION_TARGET_MISMATCH",
+          `This instance observes '${this.sdk.network}' (${this.sdk.execution.mode}) through its own provider; an observation of '${options.target}' needs an instance opened on it. Nothing was observed.`
+        );
+      }
     }
 
     const allowMainnet = (this.sdk.config.config.networks?.mainnet as any)?.allowMainnet === true;
@@ -38,7 +51,8 @@ export class HardkasObserve {
       throw e;
     }
 
-    const backend = resolveObserverBackend(this.sdk, target);
+    // the instance's own world, through its own provider (the target above equals it)
+    const backend = resolveObserverBackend(this.sdk);
     const snapshot = await backend.observeAddress(options.address);
 
     if (options.produceArtifact) {

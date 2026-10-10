@@ -1,0 +1,87 @@
+gate-hermetic: HARDKAS_HOME=C:\Users\jrodr\AppData\Local\Temp\hardkas-hermetic-home-O4VOGh (copy of C:\Users\jrodr\AppData\Local\Temp\hk-v210-gate-home)
+gate-hermetic: DOCKER_HOST=tcp://127.0.0.1:1; preload=C:\Users\jrodr\AppData\Local\Temp\hk-ra\wt\scripts\hermetic\no-network-preload.cjs
+gate-hermetic: vitest run --coverage.enabled=false --reporter=default --reporter=json --outputFile=C:\Users\jrodr\AppData\Local\Temp\claude\C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo\21f9a2e4-33ac-4300-9366-aff402f85900\scratchpad\cut48-workspace-authority-2\logs\wa2-after-1.json packages/sdk/test/workspace-authority-2.test.ts packages/cli/test/workspace-authority-2.test.ts
+
+ RUN  v2.1.9 C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt
+
+ ❯ packages/sdk/test/workspace-authority-2.test.ts (22 tests | 2 failed) 813ms
+   × WORKSPACE-AUTHORITY-2 · BEFORE · the workspace declares its execution target, the SDK runs another > WA2-A7 · downstream of the mixed plan: a simulator plan over a kaspa identity is never signed and executed into a receipt 23ms
+     → Cannot connect to Kaspa RPC at ws://127.0.0.1:18210. Is kaspad running with --rpclisten-json? (wRPC -> WebSocket -> Unable to connect to ws://127.0.0.1:18210)
+   × WORKSPACE-AUTHORITY-2 · controls (green before and after) > C5 · without allowPublic, the target name 'localnet' as `network` is stopped — by the public-network guard, i.e. for the wrong reason 16ms
+     → expected { kind: 'refused', …(2) } to match object { kind: 'refused', …(1) }
+(1 matching property omitted from actual)
+ ✓ packages/cli/test/workspace-authority-2.test.ts (5 tests) 8260ms
+   ✓ WORKSPACE-AUTHORITY-2 · controls · the CLI follows the workspace's execution target > execution.default = localnet: `tx plan` does not plan in the simulator (it asks the node, unreachable here) 1121ms
+   ✓ WORKSPACE-AUTHORITY-2 · controls · the CLI follows the workspace's execution target > the scaffold default (simulator): `tx plan --json` plans in the simulator over synthetic identities 1126ms
+   ✓ WORKSPACE-AUTHORITY-2 · AFTER · the CLI shares the resolver > `--target simulator` in a localnet-default workspace plans in the simulator (the named target wins) 1224ms
+   ✓ WORKSPACE-AUTHORITY-2 · AFTER · the CLI shares the resolver > `--target nope` is EXECUTION_TARGET_NOT_FOUND; `--network nonsense` is UNKNOWN_NETWORK; `--target localnet --network simulated` is EXECUTION_NETWORK_MISMATCH 2793ms
+   ✓ WORKSPACE-AUTHORITY-2 · AFTER · the CLI shares the resolver > `--network simulated` names the simulator's target of the same workspace: a simulator plan; `--network localnet` (a target name) is refused as a network 1994ms
+
+node.exe : ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+En C:\Users\jrodr\AppData\Local\Temp\claude\C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo\21f9a2e4-33ac-4300-
+9366-aff402f85900\scratchpad\cut48-workspace-authority-2\run-files-wt.ps1: 22 Carácter: 1
++ & node @args_ *> $log
++ ~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+
+ FAIL  packages/sdk/test/workspace-authority-2.test.ts > WORKSPACE-AUTHORITY-2 · BEFORE · the workspace declares its 
+execution target, the SDK runs another > WA2-A7 · downstream of the mixed plan: a simulator plan over a kaspa identity 
+is never signed and executed into a receipt
+RpcConnectionError: Cannot connect to Kaspa RPC at ws://127.0.0.1:18210. Is kaspad running with --rpclisten-json? 
+(wRPC -> WebSocket -> Unable to connect to ws://127.0.0.1:18210)
+ ❯ OfficialRpcSession.open packages/kaspa-rpc/src/upstream/session.ts:145:13
+    143|       await release(client);
+    144|       if (e instanceof RpcConnectionError) throw e;
+    145|       throw new RpcConnectionError(`Cannot connect to Kaspa RPC at ${t…
+       |             ^
+    146|     }
+    147|     if (epoch !== this.epoch) {
+ ❯ OfficialRpcSession.request packages/kaspa-rpc/src/upstream/session.ts:161:20
+ ❯ JsonWrpcKaspaClient.getUtxosByAddress packages/kaspa-rpc/src/index.ts:234:18
+ ❯ QueryToolkit.utxos packages/toolkit/src/query-api.ts:44:18
+ ❯ QueryToolkit.spendableUtxos packages/toolkit/src/query-api.ts:68:21
+ ❯ Object.getUtxos packages/sdk/src/tx.ts:470:23
+ ❯ TxPlanService.planPayment packages/tx-builder/src/service.ts:161:22
+ ❯ HardkasTx.plan packages/sdk/src/tx.ts:549:16
+ ❯ packages/sdk/test/workspace-authority-2.test.ts:163:27
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  packages/sdk/test/workspace-authority-2.test.ts > WORKSPACE-AUTHORITY-2 · controls (green before and after) > 
+C5 · without allowPublic, the target name 'localnet' as `network` is stopped — by the public-network guard, i.e. for 
+the wrong reason
+AssertionError: expected { kind: 'refused', …(2) } to match object { kind: 'refused', …(1) }
+(1 matching property omitted from actual)
+
+- Expected
++ Received
+
+  Object {
+-   "code": "PUBLIC_NETWORK_BLOCKED",
++   "code": "UNKNOWN_NETWORK",
+    "kind": "refused",
+  }
+
+ ❯ packages/sdk/test/workspace-authority-2.test.ts:258:23
+    256|         () => ({})
+    257|       );
+    258|       expect(outcome).toMatchObject({ kind: "refused", code: "PUBLIC_N…
+       |                       ^
+    259|     } finally {
+    260|       remove(dir);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  2 failed | 25 passed (27)
+   Start at  15:06:34
+   Duration  12.77s (transform 1.57s, setup 0ms, collect 3.07s, tests 9.07s, environment 1ms, prepare 223ms)
+
+JSON report written to C:/Users/jrodr/AppData/Local/Temp/claude/C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo/21f9a2e4-33ac-4300-9366-aff402f85900/scratchpad/cut48-workspace-authority-2/logs/wa2-after-1.json
+
+gate-hermetic: vitest exit 1 after 14s
+gate-hermetic: non-loopback attempts (each one fails the gate): 0
+gate-hermetic: loopback connection targets (review for dependencies on local services):
+  127.0.0.1:18210 x13

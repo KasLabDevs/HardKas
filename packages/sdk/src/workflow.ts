@@ -360,11 +360,8 @@ export class HardkasWorkflow {
       }
     }
 
-    const isSimulated =
-      this.sdk.network === "simulated" ||
-      this.sdk.config.config.networks?.[this.sdk.network]?.kind === "simulated";
-    const networkConfig = this.sdk.config.config.networks?.[this.sdk.network];
-    const executionMode = isSimulated ? "simulator" : (networkConfig?.kind === "kaspa-node" ? "localnet" : "rpc");
+    // the workflow records the mode of this instance's resolved execution target (WORKSPACE-AUTHORITY-2)
+    const executionMode = this.sdk.execution.mode;
 
     const artifact: any = {
       schema: HardkasSchemas.WorkflowV1,

@@ -1,0 +1,268 @@
+gate-hermetic: HARDKAS_HOME=C:\Users\jrodr\AppData\Local\Temp\hardkas-hermetic-home-YusFMc (copy of C:\Users\jrodr\AppData\Local\Temp\hk-v210-gate-home)
+gate-hermetic: DOCKER_HOST=tcp://127.0.0.1:1; preload=C:\Users\jrodr\AppData\Local\Temp\hk-ra\wt\scripts\hermetic\no-network-preload.cjs
+gate-hermetic: vitest run --coverage.enabled=false --reporter=default --reporter=json --outputFile=C:\Users\jrodr\AppData\Local\Temp\claude\C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo\21f9a2e4-33ac-4300-9366-aff402f85900\scratchpad\cut48-workspace-authority-2\logs\wa2-closeout-before-1.json packages/sdk/test/workspace-authority-2.test.ts packages/cli/test/workspace-authority-2.test.ts
+
+ RUN  v2.1.9 C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt
+
+stdout | packages/sdk/test/workspace-authority-2.test.ts > WORKSPACE-AUTHORITY-2 · AFTER · one workspace, one execution authority > closeout · a per-call override never moves an instance to another world; the endpoint is the resolved one > X6 · observation: a `target` of another world is refused, typed; the instance's own target (or none) observes through its own provider, labelled as its own world; an unknown target is typed
+[DEBUG] Using RpcObserverBackend for network simnet
+
+ ❯ packages/sdk/test/workspace-authority-2.test.ts (29 tests | 7 failed) 960ms
+   × WORKSPACE-AUTHORITY-2 · AFTER · one workspace, one execution authority > closeout · a per-call override never moves an instance to another world; the endpoint is the resolved one > X1 · P1: a simulated instance, an identity of simnet, real UTXOs and `network: simnet` → refused before any plan, nothing written 35ms
+     → {"kind":"ok","mode":"localnet","networkId":"simnet","from":"kaspasim:qpumuen7l8wthtz45p3ftn58pvrs9xlumvkuu2xet8egzkcklqtes65ue9mw6","inputs":2}: expected { kind: 'ok', mode: 'localnet', …(3) } to match object { kind: 'refused', …(1) }
+(4 matching properties omitted from actual)
+   × WORKSPACE-AUTHORITY-2 · AFTER · one workspace, one execution authority > closeout · a per-call override never moves an instance to another world; the endpoint is the resolved one > X2 · P2: the same identity without an override → the account/world rule refuses it (ACCOUNT_NETWORK_MISMATCH), nothing written 30ms
+     → {"kind":"ok","mode":"simulator","networkId":"simulated","from":"kaspasim:qpumuen7l8wthtz45p3ftn58pvrs9xlumvkuu2xet8egzkcklqtes65ue9mw6","inputs":2}: expected { kind: 'ok', mode: 'simulator', …(3) } to match object { kind: 'refused', …(1) }
+(4 matching properties omitted from actual)
+   × WORKSPACE-AUTHORITY-2 · AFTER · one workspace, one execution authority > closeout · a per-call override never moves an instance to another world; the endpoint is the resolved one > X3 · P3: the instance's own alice with `network: simnet` → EXECUTION_NETWORK_MISMATCH; an unknown network → UNKNOWN_NETWORK; nothing written 29ms
+     → expected { kind: 'refused', code: null, …(1) } to match object { kind: 'refused', …(1) }
+(1 matching property omitted from actual)
+   × WORKSPACE-AUTHORITY-2 · AFTER · one workspace, one execution authority > closeout · a per-call override never moves an instance to another world; the endpoint is the resolved one > X4 · UTXOs that are not the account's own are refused before any plan (UTXO_ACCOUNT_MISMATCH) 27ms
+     → {"kind":"ok","mode":"simulator","networkId":"simulated","from":"kaspa:sim_alice","inputs":2}: expected { kind: 'ok', mode: 'simulator', …(3) } to match object { kind: 'refused', …(1) }
+(4 matching properties omitted from actual)
+   × WORKSPACE-AUTHORITY-2 · AFTER · one workspace, one execution authority > closeout · a per-call override never moves an instance to another world; the endpoint is the resolved one > X5 · control: an instance opened on simnet consolidates a simnet identity's own UTXOs into a localnet plan, with or without naming its own network 11ms
+     → expected { kind: 'ok', mode: 'simulator', …(3) } to match object { kind: 'refused', …(1) }
+(4 matching properties omitted from actual)
+   × WORKSPACE-AUTHORITY-2 · AFTER · one workspace, one execution authority > closeout · a per-call override never moves an instance to another world; the endpoint is the resolved one > X6 · observation: a `target` of another world is refused, typed; the instance's own target (or none) observes through its own provider, labelled as its own world; an unknown target is typed 29ms
+     → expected { kind: 'ok', mode: 'localnet', …(1) } to match object { kind: 'refused', …(1) }
+(2 matching properties omitted from actual)
+   × WORKSPACE-AUTHORITY-2 · AFTER · one workspace, one execution authority > closeout · a per-call override never moves an instance to another world; the endpoint is the resolved one > X7 · the endpoint is part of the chain: SDK and CLI agree; a declared URL wins over the canonical default (devnet, a custom simnet URL); the default simnet stays canonical; an explicit url still wins 10ms
+     → expected { …(4) } to deeply equal { …(4) }
+ ❯ packages/cli/test/workspace-authority-2.test.ts (6 tests | 1 failed) 9274ms
+   ✓ WORKSPACE-AUTHORITY-2 · controls · the CLI follows the workspace's execution target > execution.default = localnet: `tx plan` does not plan in the simulator (it asks the node, unreachable here) 1146ms
+   ✓ WORKSPACE-AUTHORITY-2 · controls · the CLI follows the workspace's execution target > the scaffold default (simulator): `tx plan --json` plans in the simulator over synthetic identities 1145ms
+   ✓ WORKSPACE-AUTHORITY-2 · AFTER · the CLI shares the resolver > `--target simulator` in a localnet-default workspace plans in the simulator (the named target wins) 1133ms
+   ✓ WORKSPACE-AUTHORITY-2 · AFTER · the CLI shares the resolver > `--target nope` is EXECUTION_TARGET_NOT_FOUND; `--network nonsense` is UNKNOWN_NETWORK; `--target localnet --network simulated` is EXECUTION_NETWORK_MISMATCH 2710ms
+   × WORKSPACE-AUTHORITY-2 · AFTER · the CLI shares the resolver > closeout · the CLI contacts the endpoint the resolved network declares: a custom networks.simnet.rpcUrl under a localnet default is what `tx plan` names, never the canonical substitute 1118ms
+     → the declared endpoint: expected '{\n  "ok": false,\n  "code": "UNKNOWN…' to match /ws:\/\/127\.0\.0\.1:1\b/\
+   ✓ WORKSPACE-AUTHORITY-2 · AFTER · the CLI shares the resolver > `--network simulated` names the simulator's target of the same workspace: a simulator plan; `--network localnet` (a target name) is refused as a network 2020ms
+
+node.exe : ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 8 ⎯⎯⎯⎯⎯⎯⎯
+En C:\Users\jrodr\AppData\Local\Temp\claude\C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo\21f9a2e4-33ac-4300-
+9366-aff402f85900\scratchpad\cut48-workspace-authority-2\run-files-wt.ps1: 22 Carácter: 1
++ & node @args_ *> $log
++ ~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (⎯⎯⎯⎯⎯⎯⎯ Failed Tests 8 ⎯⎯⎯⎯⎯⎯⎯:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+
+ FAIL  packages/cli/test/workspace-authority-2.test.ts > WORKSPACE-AUTHORITY-2 · AFTER · the CLI shares the resolver > 
+closeout · the CLI contacts the endpoint the resolved network declares: a custom networks.simnet.rpcUrl under a 
+localnet default is what `tx plan` names, never the canonical substitute
+AssertionError: the declared endpoint: expected '{\n  "ok": false,\n  "code": "UNKNOWN…' to match 
+/ws:\/\/127\.0\.0\.1:1\b/\
+
+- Expected: 
+/ws:\/\/127\.0\.0\.1:1\b/
+
++ Received: 
+"{
+  \"ok\": false,
+  \"code\": \"UNKNOWN\",
+  \"message\": \"Unknown connection error: Cannot connect to Kaspa RPC at ws://127.0.0.1:18210. Is kaspad running with 
+--rpclisten-json? (wRPC -> WebSocket -> Unable to connect to ws://127.0.0.1:18210)\",
+  \"mode\": \"cli\"
+}
+
+"
+
+ ❯ packages/cli/test/workspace-authority-2.test.ts:94:44
+     92|     const r = plan([]);
+     93|     expect(r.status, r.all).not.toBe(0);
+     94|     expect(r.all, "the declared endpoint").toMatch(/ws:\/\/127\.0\.0\.…
+       |                                            ^
+     95|     expect(r.all, "never the canonical substitute").not.toMatch(/18210…
+     96|     expect(r.all).not.toMatch(/"mode":\s*"simulator"/);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/8]⎯
+
+ FAIL  packages/sdk/test/workspace-authority-2.test.ts > WORKSPACE-AUTHORITY-2 · AFTER · one workspace, one execution 
+authority > closeout · a per-call override never moves an instance to another world; the endpoint is the resolved one 
+> X1 · P1: a simulated instance, an identity of simnet, real UTXOs and `network: simnet` → refused before any plan, 
+nothing written
+AssertionError: {"kind":"ok","mode":"localnet","networkId":"simnet","from":"kaspasim:qpumuen7l8wthtz45p3ftn58pvrs9xlumv
+kuu2xet8egzkcklqtes65ue9mw6","inputs":2}: expected { kind: 'ok', mode: 'localnet', …(3) } to match object { kind: 
+'refused', …(1) }
+(4 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  Object {
+-   "code": "EXECUTION_NETWORK_MISMATCH",
+-   "kind": "refused",
++   "kind": "ok",
+  }
+
+ ❯ packages/sdk/test/workspace-authority-2.test.ts:492:52
+    490|           const before = tree(dir);
+    491|           const outcome = await consolidation(sdk, { account: external…
+    492|           expect(outcome, JSON.stringify(outcome)).toMatchObject({ kin…
+       |                                                    ^
+    493|           expect(tree(dir)).toEqual(before);
+    494|         } finally {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/8]⎯
+
+ FAIL  packages/sdk/test/workspace-authority-2.test.ts > WORKSPACE-AUTHORITY-2 · AFTER · one workspace, one execution 
+authority > closeout · a per-call override never moves an instance to another world; the endpoint is the resolved one 
+> X2 · P2: the same identity without an override → the account/world rule refuses it (ACCOUNT_NETWORK_MISMATCH), 
+nothing written
+AssertionError: {"kind":"ok","mode":"simulator","networkId":"simulated","from":"kaspasim:qpumuen7l8wthtz45p3ftn58pvrs9x
+lumvkuu2xet8egzkcklqtes65ue9mw6","inputs":2}: expected { kind: 'ok', mode: 'simulator', …(3) } to match object { kind: 
+'refused', …(1) }
+(4 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  Object {
+-   "code": "ACCOUNT_NETWORK_MISMATCH",
+-   "kind": "refused",
++   "kind": "ok",
+  }
+
+ ❯ packages/sdk/test/workspace-authority-2.test.ts:509:52
+    507|           const before = tree(dir);
+    508|           const outcome = await consolidation(sdk, { account: external…
+    509|           expect(outcome, JSON.stringify(outcome)).toMatchObject({ kin…
+       |                                                    ^
+    510|           expect(tree(dir)).toEqual(before);
+    511|         } finally {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/8]⎯
+
+ FAIL  packages/sdk/test/workspace-authority-2.test.ts > WORKSPACE-AUTHORITY-2 · AFTER · one workspace, one execution 
+authority > closeout · a per-call override never moves an instance to another world; the endpoint is the resolved one 
+> X3 · P3: the instance's own alice with `network: simnet` → EXECUTION_NETWORK_MISMATCH; an unknown network → 
+UNKNOWN_NETWORK; nothing written
+AssertionError: expected { kind: 'refused', code: null, …(1) } to match object { kind: 'refused', …(1) }
+(1 matching property omitted from actual)
+
+- Expected
++ Received
+
+  Object {
+-   "code": "EXECUTION_NETWORK_MISMATCH",
++   "code": null,
+    "kind": "refused",
+  }
+
+ ❯ packages/sdk/test/workspace-authority-2.test.ts:525:143
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/8]⎯
+
+ FAIL  packages/sdk/test/workspace-authority-2.test.ts > WORKSPACE-AUTHORITY-2 · AFTER · one workspace, one execution 
+authority > closeout · a per-call override never moves an instance to another world; the endpoint is the resolved one 
+> X4 · UTXOs that are not the account's own are refused before any plan (UTXO_ACCOUNT_MISMATCH)
+AssertionError: {"kind":"ok","mode":"simulator","networkId":"simulated","from":"kaspa:sim_alice","inputs":2}: expected 
+{ kind: 'ok', mode: 'simulator', …(3) } to match object { kind: 'refused', …(1) }
+(4 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  Object {
+-   "code": "UTXO_ACCOUNT_MISMATCH",
+-   "kind": "refused",
++   "kind": "ok",
+  }
+
+ ❯ packages/sdk/test/workspace-authority-2.test.ts:543:52
+    541|           const before = tree(dir);
+    542|           const outcome = await consolidation(sdk, { account: "alice",…
+    543|           expect(outcome, JSON.stringify(outcome)).toMatchObject({ kin…
+       |                                                    ^
+    544|           expect(tree(dir)).toEqual(before);
+    545|         } finally {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/8]⎯
+
+ FAIL  packages/sdk/test/workspace-authority-2.test.ts > WORKSPACE-AUTHORITY-2 · AFTER · one workspace, one execution 
+authority > closeout · a per-call override never moves an instance to another world; the endpoint is the resolved one 
+> X5 · control: an instance opened on simnet consolidates a simnet identity's own UTXOs into a localnet plan, with or 
+without naming its own network
+AssertionError: expected { kind: 'ok', mode: 'simulator', …(3) } to match object { kind: 'refused', …(1) }
+(4 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  Object {
+-   "code": "EXECUTION_NETWORK_MISMATCH",
+-   "kind": "refused",
++   "kind": "ok",
+  }
+
+ ❯ packages/sdk/test/workspace-authority-2.test.ts:563:134
+
+ Test Files  2 failed (2)
+      Tests  8 failed | 27 passed (35)
+   Start at  18:07:49
+   Duration  14.02s (transform 1.66s, setup 0ms, collect 3.16s, tests 10.23s, environment 0ms, prepare 226ms)
+
+JSON report written to C:/Users/jrodr/AppData/Local/Temp/claude/C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo/21f9a2e4-33ac-4300-9366-aff402f85900/scratchpad/cut48-workspace-authority-2/logs/wa2-closeout-before-1.json
+
+gate-hermetic: vitest exit 1 after 15s
+gate-hermetic: non-loopback attempts (each one fails the gate): 0
+gate-hermetic: loopback connection targets (review for dependencies on local services):
+  127.0.0.1:18210 x14
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/8]⎯
+
+ FAIL  packages/sdk/test/workspace-authority-2.test.ts > WORKSPACE-AUTHORITY-2 · AFTER · one workspace, one execution 
+authority > closeout · a per-call override never moves an instance to another world; the endpoint is the resolved one 
+> X6 · observation: a `target` of another world is refused, typed; the instance's own target (or none) observes 
+through its own provider, labelled as its own world; an unknown target is typed
+AssertionError: expected { kind: 'ok', mode: 'localnet', …(1) } to match object { kind: 'refused', …(1) }
+(2 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  Object {
+-   "code": "OBSERVATION_TARGET_MISMATCH",
+-   "kind": "refused",
++   "kind": "ok",
+  }
+
+ ❯ packages/sdk/test/workspace-authority-2.test.ts:579:55
+    577|           const observe = (opts: Record<string, unknown>) =>
+    578|             outcomeOf(sdk.observe.address({ address: "kaspa:sim_alice"…
+    579|           expect(await observe({ target: "simnet" })).toMatchObject({ …
+       |                                                       ^
+    580|           expect(await observe({ target: "simulated" })).toMatchObject…
+    581|           expect(await observe({})).toMatchObject({ kind: "ok", mode: …
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/8]⎯
+
+ FAIL  packages/sdk/test/workspace-authority-2.test.ts > WORKSPACE-AUTHORITY-2 · AFTER · one workspace, one execution 
+authority > closeout · a per-call override never moves an instance to another world; the endpoint is the resolved one 
+> X7 · the endpoint is part of the chain: SDK and CLI agree; a declared URL wins over the canonical default (devnet, a 
+custom simnet URL); the default simnet stays canonical; an explicit url still wins
+AssertionError: expected { …(4) } to deeply equal { …(4) }
+
+- Expected
++ Received
+
+  Object {
+-   "cli": "ws://127.0.0.1:18610",
++   "cli": "ws://127.0.0.1:18210",
+    "label": "scaffold + network devnet",
+-   "resolver": "ws://127.0.0.1:18610",
++   "resolver": undefined,
+    "sdk": "ws://127.0.0.1:18610",
+  }
+
+ ❯ packages/sdk/test/workspace-authority-2.test.ts:610:112
+    608|           const sdk = await Hardkas.open({ cwd: dir, ...override });
+    609|           try {
+    610|             expect({ label, resolver: resolved.rpcUrl, cli: cli.endpoi…
+       |                                                                                                               
+ ^
+    611|           } finally {
+    612|             await sdk.close();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/8]⎯
+

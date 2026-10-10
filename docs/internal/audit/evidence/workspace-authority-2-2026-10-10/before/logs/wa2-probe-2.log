@@ -1,0 +1,4 @@
+A5 allowPublic:true network=localnet -> {"kind":"refused","code":null,"message":"Failed to load HardKAS config at C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-wa2-p-RDuDWx\\hardkas.config.ts: HARDKAS_CONFIG_ERROR: network.allowPublic=true requires experimental=true in hardkas.config.ts"}
+A7 plan -> {"mode":"simulator","networkId":"simulated","from":"kaspasim:qqlpk9rs7yag6eqj3lttzqd8vgvssz8l8fxlpdag4h7zx2rjjr8lkkerwkezn","to":"kaspasim:qryj23rch0n5rc7klfug58zcrnuc966qljwgzpu3mflqgxu6w2pjg6n575980","inputs":1,"amount":"100000000","fee":"1000000","authority":"SYNTHETIC_SIMULATOR"}
+A7 sign -> {"kind":"refused","code":"SIGNER_MISMATCH","message":"The signer kaspa:sim_alice is not the plan's from kaspasim:qqlpk9rs7yag6eqj3lttzqd8vgvssz8l8fxlpdag4h7zx2rjjr8lkkerwkezn: only the account that owns the plan's from can authorize it"}
+A7 alice balance (as the SDK sees it) -> {"kind":"ok","balance":"[object Object]"}

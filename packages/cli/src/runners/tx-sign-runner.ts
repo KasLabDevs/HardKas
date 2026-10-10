@@ -64,14 +64,9 @@ export async function runTxSign(input: TxSignRunnerInput): Promise<SignedTxArtif
   }
 
   if (targetName) {
-    const { resolveNewIntentTarget } = await import("@hardkas/config");
-    let explicitTarget: import("@hardkas/core").HardkasExecutionTarget | undefined = undefined;
-    if (config.execution && "targets" in config.execution) {
-      explicitTarget = (config.execution.targets as any)[targetName];
-    }
-    if (!explicitTarget) {
-      throw new Error(`Execution target '${targetName}' not found in hardkas.config.ts`);
-    }
+    // WORKSPACE-AUTHORITY-2: the named target is looked up by the shared resolver (typed EXECUTION_TARGET_NOT_FOUND)
+    const { resolveWorkspaceExecution } = await import("@hardkas/config");
+    const explicitTarget = resolveWorkspaceExecution({ config, target: targetName }).execution;
 
     if (
       executionTarget.domain !== explicitTarget.domain ||

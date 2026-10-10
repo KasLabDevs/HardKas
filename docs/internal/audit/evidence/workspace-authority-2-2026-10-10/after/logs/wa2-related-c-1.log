@@ -1,0 +1,63 @@
+gate-hermetic: HARDKAS_HOME=C:\Users\jrodr\AppData\Local\Temp\hardkas-hermetic-home-pHtIDO (copy of C:\Users\jrodr\AppData\Local\Temp\hk-v210-gate-home)
+gate-hermetic: DOCKER_HOST=tcp://127.0.0.1:1; preload=C:\Users\jrodr\AppData\Local\Temp\hk-ra\wt\scripts\hermetic\no-network-preload.cjs
+gate-hermetic: vitest run --coverage.enabled=false --reporter=default --reporter=json --outputFile=C:\Users\jrodr\AppData\Local\Temp\claude\C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo\21f9a2e4-33ac-4300-9366-aff402f85900\scratchpad\cut48-workspace-authority-2\logs\wa2-related-c-1.json packages/sdk/test/adversarial/wave2-d-send-fee.test.ts packages/cli/test/wave2-b-planner-convergence.test.ts packages/cli/test/wave2-c-pending-spend.test.ts
+
+ RUN  v2.1.9 C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt
+
+node.exe : stderr | packages/cli/test/wave2-b-planner-convergence.test.ts > Wave 2(b) · canonical planner in the CLI 
+(AUD-17) and explicit change (AUD-28) > T-A17a · a real network plans through the upstream Generator 
+(KASPA_WASM_GENERATOR) with the CLI read guards intact
+En C:\Users\jrodr\AppData\Local\Temp\claude\C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo\21f9a2e4-33ac-4300-
+9366-aff402f85900\scratchpad\cut48-workspace-authority-2\run-files-wt.ps1: 22 Carácter: 1
++ & node @args_ *> $log
++ ~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (stderr | packag...d guards intact:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+DEPRECATED: 'defaultNetwork: "simulated"' is deprecated. Please migrate to the explicit 'execution' contract in 
+HardkasConfig.
+DEPRECATED: 'defaultNetwork: "simulated"' is deprecated. Please migrate to the explicit 'execution' contract in 
+HardkasConfig.
+
+stderr | packages/cli/test/wave2-b-planner-convergence.test.ts > Wave 2(b) · canonical planner in the CLI (AUD-17) and 
+explicit change (AUD-28) > T-A17b · the same intention through the CLI and the SDK yields the same inputs, fee and mass
+DEPRECATED: 'defaultNetwork: "simulated"' is deprecated. Please migrate to the explicit 'execution' contract in 
+HardkasConfig.
+
+stderr | packages/cli/test/wave2-b-planner-convergence.test.ts > Wave 2(b) · canonical planner in the CLI (AUD-17) and 
+explicit change (AUD-28) > T-A28 · an explicit change destination reaches the plan through the CLI (real and 
+simulator), the SDK and the toolkit
+DEPRECATED: 'defaultNetwork: "simulated"' is deprecated. Please migrate to the explicit 'execution' contract in 
+HardkasConfig.
+
+ ✓ packages/cli/test/wave2-b-planner-convergence.test.ts (4 tests) 432ms
+ ✓ packages/sdk/test/adversarial/wave2-d-send-fee.test.ts (6 tests) 351ms
+stderr | packages/cli/test/wave2-c-pending-spend.test.ts > Wave 2(c) · AUD-19 · pending-spend exclusion with mempool 
+evidence > T-A19 · with a mempool transaction spending outpoint A, the CLI plan never selects A and records the 
+evidence it filtered against
+DEPRECATED: 'defaultNetwork: "simulated"' is deprecated. Please migrate to the explicit 'execution' contract in 
+HardkasConfig.
+
+stderr | packages/cli/test/wave2-c-pending-spend.test.ts > Wave 2(c) · AUD-19 · pending-spend exclusion with mempool 
+evidence > T-A19 · a mempool transaction merely PAYING the sender excludes nothing
+DEPRECATED: 'defaultNetwork: "simulated"' is deprecated. Please migrate to the explicit 'execution' contract in 
+HardkasConfig.
+
+stderr | packages/cli/test/wave2-c-pending-spend.test.ts > Wave 2(c) · AUD-19 · pending-spend exclusion with mempool 
+evidence > T-A19 · the SDK applies the same exclusion and refusal; CLI ≡ SDK under the same mempool
+DEPRECATED: 'defaultNetwork: "simulated"' is deprecated. Please migrate to the explicit 'execution' contract in 
+HardkasConfig.
+
+ ✓ packages/cli/test/wave2-c-pending-spend.test.ts (7 tests) 315ms
+
+ Test Files  3 passed (3)
+      Tests  17 passed (17)
+   Start at  15:22:24
+   Duration  7.51s (transform 1.63s, setup 0ms, collect 5.48s, tests 1.10s, environment 1ms, prepare 331ms)
+
+JSON report written to C:/Users/jrodr/AppData/Local/Temp/claude/C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo/21f9a2e4-33ac-4300-9366-aff402f85900/scratchpad/cut48-workspace-authority-2/logs/wa2-related-c-1.json
+
+gate-hermetic: vitest exit 0 after 8s
+gate-hermetic: non-loopback attempts (each one fails the gate): 0
+gate-hermetic: loopback connection targets (review for dependencies on local services):
+gate-hermetic: PASS

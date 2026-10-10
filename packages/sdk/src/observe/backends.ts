@@ -208,14 +208,18 @@ export function resolveObserverBackend(
   sdk: Hardkas, 
   target?: string
 ): HardkasObserverBackend {
-  // Resolve execution target
+  // Resolve execution target: without an explicit network, the one this instance runs on (WORKSPACE-AUTHORITY-2);
+  // with one, the mode its declaration implies
   let mode = "rpc";
   let domain = "kaspa-l1";
-  let network = target || sdk.config.config.defaultNetwork || "simnet";
+  let network = target || (sdk.network as string);
 
   const networkConfig = sdk.config.config.networks?.[network];
-  
-  if (networkConfig?.kind === "simulated" || network === "simulated") {
+
+  if (!target) {
+    mode = sdk.execution.mode;
+    domain = sdk.execution.domain;
+  } else if (networkConfig?.kind === "simulated" || network === "simulated") {
     mode = "simulator";
   } else if (networkConfig?.kind === "kaspa-node") {
     mode = "localnet";

@@ -75,48 +75,21 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
   const amountSompi = parseKasToSompi(amount);
   const feeRateSompiPerMass = feeRate ? BigInt(feeRate) : undefined;
 
-  const { resolveNewIntentTarget, resolveProvider } = await import("@hardkas/config");
+  const { resolveWorkspaceExecution, resolveProvider } = await import("@hardkas/config");
   const { assertAccountCompatible, resolveHardkasAccount } = await import("@hardkas/accounts");
 
-  if (!targetName && !networkId && !resolvedConfig.execution && !(resolvedConfig as any).defaultNetwork && !(resolvedConfig as any).defaultTarget) {
-    throw new Error("EXECUTION_NETWORK_MISMATCH: No target or network specified, and no default target found in config.");
-  }
-
-  let explicitTarget: import("@hardkas/core").HardkasExecutionTarget | undefined = undefined;
-  if (targetName) {
-    if (resolvedConfig.execution && "targets" in resolvedConfig.execution) {
-      explicitTarget = (resolvedConfig.execution.targets as any)[targetName];
-    }
-    if (!explicitTarget) {
-      throw new Error(`Execution target '${targetName}' not found in hardkas.config.ts`);
-    }
-  } else if (networkId) {
-    // If config has execution targets, find the target matching this networkId
-    const execConfig = resolvedConfig.execution as any;
-    if (execConfig?.targets) {
-      const matchingTarget = Object.values(execConfig.targets).find(
-        (t: any) => t.network === networkId
-      ) as import("@hardkas/core").HardkasExecutionTarget | undefined;
-      if (matchingTarget) {
-        explicitTarget = matchingTarget;
-      }
-    }
-    // Legacy fallback: infer mode from networkId name
-    if (!explicitTarget) {
-      let mode: "simulator" | "localnet" | "rpc" = "rpc";
-      let domain: "kaspa-l1" | "evm-l2" = "kaspa-l1";
-      if (networkId === "simulated") mode = "simulator";
-      else if (networkId === "simnet" || networkId === "devnet") mode = "localnet";
-      explicitTarget = { mode, domain, network: networkId };
-    }
-  }
-
-  const execution = resolveNewIntentTarget({
+  // WORKSPACE-AUTHORITY-2 (WA2-I1): the one resolution the SDK uses too — a named target (`--target`), else a network
+  // id (`--network`, never a target name: a declared target for that network, else the mode the network implies), else
+  // the workspace's `execution` contract. Unknown names, missing targets and a target/network disagreement are typed
+  // refusals (EXECUTION_TARGET_NOT_FOUND, UNKNOWN_NETWORK, EXECUTION_NETWORK_MISMATCH); there is no fallback.
+  const resolvedExecution = resolveWorkspaceExecution({
     config: resolvedConfig,
-    ...(explicitTarget ? { explicitTarget } : {})
+    ...(targetName ? { target: targetName } : {}),
+    ...(networkId ? { network: networkId } : {})
   });
+  const execution = resolvedExecution.execution;
 
-  const resolvedTargetName = targetName || execution.network;
+  const resolvedTargetName = resolvedExecution.targetName ?? execution.network;
 
   // Resolve and assert account compatibility BEFORE doing address validation
   const fromAccount = resolveHardkasAccount({ nameOrAddress: from, config: resolvedConfig, executionTarget: execution });
@@ -139,15 +112,7 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
     changeAddressResolved = changeAccount.address as string;
   }
 
-  let effectiveNetworkId = networkId;
-  if (networkId === "simnet" && resolvedConfig.networks?.simnet?.kind === "simulated") {
-    effectiveNetworkId = "simulated";
-  }
-
-  if (effectiveNetworkId && execution.network !== effectiveNetworkId) {
-    throw new Error(`EXECUTION_NETWORK_MISMATCH: Target '${resolvedTargetName}' specifies network '${execution.network}', but command was called with legacy --network '${networkId}'.`);
-  }
-
+  // (a `--network` that disagrees with the target was refused by the resolver above)
   const resolvedNetworkId = execution.network;
   const networkDef = config.networks?.[resolvedNetworkId];
 
@@ -158,7 +123,9 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
     provider: input.provider,
     url,
     configNetworkKind,
-    executionMode: execution.mode
+    executionMode: execution.mode,
+    // WORKSPACE-AUTHORITY-2 (closeout): the endpoint the resolved network declares, the same the SDK uses
+    networkRpcUrl: resolvedExecution.rpcUrl
   });
 
   const resolvedNetwork = providerConfig.network;

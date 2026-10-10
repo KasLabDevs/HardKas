@@ -59,6 +59,7 @@ import {
 } from "@hardkas/core";
 import {
   HardkasAccount,
+  assertAccountCompatible,
   signTxPlanArtifact,
   validateAddressNetwork
 } from "@hardkas/accounts";
@@ -251,7 +252,7 @@ export class HardkasTx {
    * observer ⇒ one history; a different node configuration is a different observer.
    */
   observerId(): string {
-    const target = this.sdk.config.config.defaultNetwork || "simnet";
+    const target = this.sdk.network as string;
     const locator = (this.sdk.config.config.networks as any)?.[target]?.rpcUrl;
     return deriveObserverId({ kind: "rpc", target, ...(typeof locator === "string" ? { locator } : {}) });
   }
@@ -367,21 +368,34 @@ export class HardkasTx {
     /** AUD-28: explicit change destination; default = the sender's address. Validated, then forwarded to the planner. */
     changeAddress?: string;
   }): Promise<TxPlanArtifact> {
+    // WORKSPACE-AUTHORITY-2 (WA2-I2): the identities and the world of a plan come from the ONE resolved execution target
+    // of this instance, and their compatibility is decided before any plan exists — the CLI's rule, shared from
+    // @hardkas/accounts (`assertAccountCompatible`), never a world-mixing artifact caught later by the signer.
+    const world = this.sdk.execution;
     const fromAccount =
       typeof options.from === "string"
-        ? await this.sdk.accounts.resolve(options.from)
+        ? await this.sdk.accounts.resolve(options.from, world)
         : options.from;
     const toAccount =
       typeof options.to === "string"
-        ? await this.sdk.accounts.resolve(options.to)
+        ? await this.sdk.accounts.resolve(options.to, world)
         : options.to;
+    assertAccountCompatible(fromAccount, world);
+    assertAccountCompatible(toAccount, world);
 
     if (!fromAccount.address)
       throw new Error(`From account ${fromAccount.name} has no address.`);
     if (!toAccount.address)
       throw new Error(`To account ${toAccount.name} has no address.`);
 
-    const activeNetwork = options.networkProfile || this.sdk.config.config.defaultNetwork || "simnet";
+    const activeNetwork = options.networkProfile || (this.sdk.network as string);
+    // the world of this plan: the resolved execution target's mode when planning on this instance's network (the
+    // authority; a `{ mode: "simulator", network: "simnet" }` target is the simulator whatever the label says), else
+    // what the explicit network's declaration implies
+    const simulatedWorld =
+      activeNetwork === (this.sdk.network as string)
+        ? this.sdk.execution.mode === "simulator"
+        : activeNetwork === "simulated" || this.sdk.config.config.networks?.[activeNetwork]?.kind === "simulated";
 
     if (typeof options.amount === "string" && options.amount.toLowerCase() === "all") {
       const res = await this.sdk.query.getSpendableUtxos({ address: fromAccount.address, excludePending: true });
@@ -427,10 +441,7 @@ export class HardkasTx {
     // Create UtxoProvider
     const utxoProvider: UtxoProvider = {
       getUtxos: async (address: string) => {
-        if (
-          activeNetwork === "simulated" ||
-          this.sdk.config.config.networks?.[activeNetwork]?.kind === "simulated"
-        ) {
+        if (simulatedWorld) {
           const { loadOrCreateLocalnetState, getSpendableUtxos } =
             await import("@hardkas/localnet");
           const localState = await loadOrCreateLocalnetState({
@@ -482,10 +493,7 @@ export class HardkasTx {
         }
       },
       getVirtualDaaScore: async () => {
-        if (
-          activeNetwork === "simulated" ||
-          this.sdk.config.config.networks?.[activeNetwork]?.kind === "simulated"
-        ) {
+        if (simulatedWorld) {
           return 1000000n; // Arbitrary high score for simulator
         } else {
           try {
@@ -525,9 +533,7 @@ export class HardkasTx {
     // path to the synthetic path: an upstream failure surfaces to the caller
     // rather than being silently downgraded to synthetic. This preserves the
     // real-network authority claim while keeping the `mode: simulated` DX.
-    const isSimulatedForPlan =
-      activeNetwork === "simulated" ||
-      this.sdk.config.config.networks?.[activeNetwork]?.kind === "simulated";
+    const isSimulatedForPlan = simulatedWorld;
     const planService = new TxPlanService(utxoProvider, { coinbaseMaturity });
     let result;
     if (isSimulatedForPlan) {
@@ -553,8 +559,9 @@ export class HardkasTx {
     const builderPlan = result.plan;
 
     const isSimulated =
-      activeNetwork === "simulated" ||
-      this.sdk.config.config.networks?.[activeNetwork]?.kind === "simulated";
+      activeNetwork === (this.sdk.network as string)
+        ? this.sdk.execution.mode === "simulator"
+        : activeNetwork === "simulated" || this.sdk.config.config.networks?.[activeNetwork]?.kind === "simulated";
     let resolvedAssumptionLevel = options.assumption;
     if (!resolvedAssumptionLevel) {
       if (isSimulated) {
@@ -568,7 +575,9 @@ export class HardkasTx {
 
     const basePlan = createTxPlanArtifact({
       networkId: activeNetwork as NetworkId,
-      mode: isSimulated ? "simulator" : (networkConfig?.kind === "kaspa-node" ? "localnet" : "rpc"),
+      // the plan records the mode of the resolved execution target (WORKSPACE-AUTHORITY-2), never one re-inferred from
+      // the network's kind
+      mode: isSimulated ? "simulator" : activeNetwork === (this.sdk.network as string) ? this.sdk.execution.mode : (networkConfig?.kind === "kaspa-node" ? "localnet" : "rpc"),
       from: {
         input: fromAccount.name || fromAccount.address,
         address: fromAccount.address,
@@ -675,11 +684,35 @@ export class HardkasTx {
       );
     }
 
-    const activeNetwork =
-      options.network || this.sdk.config.config.defaultNetwork || "simnet";
-    const isSimulated =
-      activeNetwork === "simulated" ||
-      this.sdk.config.config.networks?.[activeNetwork]?.kind === "simulated";
+    // WORKSPACE-AUTHORITY-2 (closeout): this instance's resolved execution target is the authority of a consolidation
+    // too. A per-call `network` is validated by the shared resolver and must be THIS instance's world (an instance is
+    // never re-pointed by one call); the account, the destination and the UTXOs are checked against that world before
+    // any plan exists — the rules `tx.plan` applies (shared from @hardkas/accounts), never a cross-world artifact.
+    const world = this.sdk.execution;
+    if (options.network !== undefined) {
+      const { resolveWorkspaceExecution } = await import("@hardkas/config");
+      const requested = resolveWorkspaceExecution({ config: this.sdk.config.config, network: options.network }).networkId;
+      if (requested !== (this.sdk.network as string)) {
+        throw new HardkasError(
+          "EXECUTION_NETWORK_MISMATCH",
+          `This instance runs on '${this.sdk.network}' (${world.mode}); a consolidation on '${options.network}' needs an instance opened on it (Hardkas.open({ network: "${options.network}" }) or a target). Nothing was planned.`
+        );
+      }
+    }
+    assertAccountCompatible(resolvedAccount, world);
+    const destinationAccount = await this.sdk.accounts.resolve(options.destination, world);
+    assertAccountCompatible(destinationAccount, world);
+    const selected = Array.isArray(options.selectedUtxos) ? options.selectedUtxos : [];
+    const foreign = selected.filter((u: any) => u?.address !== resolvedAccount.address);
+    if (foreign.length > 0) {
+      throw new HardkasError(
+        "UTXO_ACCOUNT_MISMATCH",
+        `${foreign.length} of ${selected.length} selected UTXOs do not belong to '${resolvedAccount.name}' (${resolvedAccount.address}): a consolidation spends the account's own UTXOs only. Nothing was planned.`
+      );
+    }
+
+    const activeNetwork = this.sdk.network as string;
+    const isSimulated = world.mode === "simulator";
 
     const dummyProvider: UtxoProvider = {
       getUtxos: async () => []
@@ -708,7 +741,7 @@ export class HardkasTx {
 
     const basePlan = createTxPlanArtifact({
       networkId: activeNetwork as any,
-      mode: isSimulated ? "simulator" : (networkConfig?.kind === "kaspa-node" ? "localnet" : "rpc"),
+      mode: world.mode,
       from: {
         input: resolvedAccount?.name || (resolvedAccount?.address as string),
         address: resolvedAccount?.address as string,
@@ -1561,17 +1594,15 @@ export class HardkasTx {
     submitted?: boolean;
     txId?: string;
   }> {
-    const activeNetwork = this.sdk.config.config.defaultNetwork || "simnet";
+    const activeNetwork = this.sdk.network as string;
     const isExplicitRpc =
       typeof urlOrOptions === "string" &&
       (urlOrOptions.startsWith("ws://") ||
         urlOrOptions.startsWith("http://") ||
         urlOrOptions.startsWith("wss://") ||
         urlOrOptions.startsWith("https://"));
-    const isSimulated =
-      !isExplicitRpc &&
-      (activeNetwork === "simulated" ||
-        this.sdk.config.config.networks?.[activeNetwork]?.kind === "simulated");
+    // the world this instance runs on decides (WORKSPACE-AUTHORITY-2), unless an explicit RPC endpoint was given
+    const isSimulated = !isExplicitRpc && this.sdk.execution.mode === "simulator";
 
     if (isSimulated) {
       // Wave 1.4 · IC-6′.5: in the simulator only a coherent synthetic authorization

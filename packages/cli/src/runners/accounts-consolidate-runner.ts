@@ -18,7 +18,10 @@ export interface AccountsConsolidateOptions {
 }
 
 export async function runAccountsConsolidate(options: AccountsConsolidateOptions) {
-  const sdk = await Hardkas.open({ cwd: process.cwd() });
+  // WORKSPACE-AUTHORITY-2 (closeout): the SDK instance is opened on the network the command works on — an instance is
+  // never re-pointed by a per-call option, so `--network` decides at open (as `tx send` does), else the workspace's
+  // execution contract.
+  const sdk = await Hardkas.open({ cwd: process.cwd(), ...(options.network ? { network: options.network } : {}) });
   // RESOURCE-LIFECYCLE-1 (RL-I1/RL-I3): this command opened the SDK and may hand it a client of its own; both are
   // released whatever the command ends with. sdk.close() releases only the SDK's own client, never the handed one.
   const created: Array<{ close(): void | Promise<void> }> = [];
@@ -42,10 +45,15 @@ async function consolidate(options: AccountsConsolidateOptions, sdk: Hardkas, cr
   }
 
   const { resolveProvider } = await import("@hardkas/config");
+  const declaredRpcUrl = (sdk.config.config.networks as Record<string, { rpcUrl?: unknown }> | undefined)?.[resolvedName]?.rpcUrl;
   const provider = resolveProvider({
     network: resolvedName,
     provider: options.provider,
-    url: options.url
+    url: options.url,
+    // the instance's resolved mode (every SDK instance carries one; a test double standing in for the SDK may not)
+    executionMode: sdk.execution?.mode,
+    // WORKSPACE-AUTHORITY-2 (closeout): the endpoint the network declares, the same the SDK uses
+    networkRpcUrl: typeof declaredRpcUrl === "string" ? declaredRpcUrl : undefined
   });
 
   if (provider.mode !== "simulator") {

@@ -1,12 +1,14 @@
 import {
   loadHardkasConfig as loadConfig,
   LoadedHardkasConfig as LoadedConfig,
-  defineHardkasConfig
+  defineHardkasConfig,
+  resolveWorkspaceExecution,
+  type ResolvedWorkspaceExecution
 } from "@hardkas/config";
 import { resolveHardkasAccount, HardkasAccount } from "@hardkas/accounts";
 import { ExternalHardkasSigner } from "@hardkas/artifacts";
 import { JsonWrpcKaspaClient, KaspaRpcClient } from "@hardkas/kaspa-rpc";
-import { NetworkId, HardkasError, getCoinbaseMaturity, nodeRpcUrl } from "@hardkas/core";
+import { NetworkId, HardkasError, getCoinbaseMaturity, nodeRpcUrl, type HardkasExecutionTarget } from "@hardkas/core";
 import { assertPublicNetworkAllowed } from "./policy.js";
 import { HardkasAccounts } from "./accounts.js";
 import { HardkasTx } from "./tx.js";
@@ -131,7 +133,17 @@ export interface HardkasOptions {
   workspaceRoot?: string;
   hardkasDir?: string;
   mode?: "developer" | "agent";
+  /**
+   * A network id (a key of the config's `networks`, built-ins included: simulated, simnet, devnet, testnet-10, mainnet…)
+   * to run on instead of the workspace's default execution target. Validated as a network id — never read as a target
+   * name; with `target` it must be that target's network.
+   */
   network?: string;
+  /**
+   * WORKSPACE-AUTHORITY-2: a named execution target of the config (`execution.targets[name]`, as `--target` in the
+   * CLI). Without `target` and `network` the workspace's `execution.default` (or its single `execution`) decides.
+   */
+  target?: string;
   autoBootstrap?: boolean;
   signer?: ExternalHardkasSigner;
   logger?: {
@@ -203,6 +215,17 @@ export class Hardkas {
   public readonly rpc: KaspaRpcClient;
 
   /**
+   * WORKSPACE-AUTHORITY-2 (WA2-I1): the execution target this instance runs on — resolved once, at open, by the
+   * resolver the CLI uses too (`resolveWorkspaceExecution`, @hardkas/config): the `target` option, else the `network`
+   * option, else the workspace's `execution` contract (else its legacy `defaultNetwork`). Every reader of "which world"
+   * in the SDK follows it: `network`, the provider, the accounts, the plans, the workflows, the observers.
+   */
+  public readonly execution: HardkasExecutionTarget;
+  /** What decided `execution`: "target", "network", "execution" or "defaultNetwork". */
+  public readonly executionSource: ResolvedWorkspaceExecution["source"];
+  private readonly activeNetwork: string;
+
+  /**
    * RESOURCE-LIFECYCLE-1 (RL-I1/RL-I2): the RPC client this instance owns, and so releases in close(). Marked when it
    * is created, never inferred from a type or a state: the default client the constructor creates, or the one open()
    * created for it. A client handed in from outside, or assigned to `rpc` later, is never this instance's.
@@ -213,8 +236,15 @@ export class Hardkas {
     public readonly config: LoadedConfig,
     options?: HardkasOptions,
     rpc?: KaspaRpcClient,
-    rpcOwnership: "owned" | "borrowed" = "borrowed"
+    rpcOwnership: "owned" | "borrowed" = "borrowed",
+    resolved?: ResolvedWorkspaceExecution
   ) {
+    // decided before anything that depends on the world (the RPC endpoint below included)
+    const resolvedExecution = resolved ?? resolveWorkspaceExecution({ config: config.config });
+    this.execution = resolvedExecution.execution;
+    this.executionSource = resolvedExecution.source;
+    this.activeNetwork = resolvedExecution.networkId;
+
     this.mode = options?.mode || "developer";
     this.policy = {
       allowNetwork: options?.policy?.allowNetwork ?? this.mode === "developer",
@@ -258,7 +288,7 @@ export class Hardkas {
   }
 
   private resolveRpcUrl(): string {
-    const networkId = this.config.config.defaultNetwork || "simnet";
+    const networkId = this.activeNetwork;
     const target = this.config.config.networks?.[networkId];
 
     if (target && "rpcUrl" in target && typeof target.rpcUrl === "string") {
@@ -275,12 +305,22 @@ export class Hardkas {
     const path = await import("node:path");
     const cwd = path.resolve(typeof dirOrOptions === "string" ? dirOrOptions : (dirOrOptions.cwd || process.cwd()));
     const options = typeof dirOrOptions === "string" ? { cwd } : { ...dirOrOptions, cwd };
-    const loaded = await loadConfig(options);
+    const loadedConfig = await loadConfig(options);
+    // A workspace without hardkas.config.ts loads the shared built-in object: this instance's adjustments below (the
+    // mirror, `wasm`) are made on a copy, never on the module constant every later load would inherit.
+    const loaded: LoadedConfig = loadedConfig.path ? loadedConfig : { ...loadedConfig, config: { ...loadedConfig.config } };
 
-    const activeNetwork = options.network || loaded.config.defaultNetwork || "simnet";
-    const isSimulated =
-      activeNetwork === "simulated" ||
-      loaded.config.networks?.[activeNetwork]?.kind === "simulated";
+    // WORKSPACE-AUTHORITY-2 (WA2-I1): one resolver for the SDK and the CLI. `target` names an execution target;
+    // `network` is a network id (never a target name); without either the workspace's `execution` contract decides.
+    // Unknown names, missing targets and a target/network disagreement are typed refusals — no fallback to the
+    // simulator (`resolveWorkspaceExecution`, @hardkas/config).
+    const resolved = resolveWorkspaceExecution({
+      config: loaded.config,
+      ...(options.target !== undefined ? { target: options.target } : {}),
+      ...(options.network !== undefined ? { network: options.network } : {})
+    });
+    const activeNetwork = resolved.networkId;
+    const isSimulated = resolved.execution.mode === "simulator";
     const autoBootstrap = options.autoBootstrap ?? (isSimulated ? true : false);
 
     const effectiveAllowPublic = options.policy?.allowPublic ?? loaded.config.network?.allowPublic;
@@ -333,10 +373,9 @@ export class Hardkas {
       }
     }
 
-    // Pass the overridden network back into config for downstream use if needed
-    if (options.network) {
-      loaded.config.defaultNetwork = options.network;
-    }
+    // The legacy key is this instance's in-memory mirror of the resolved authority (the readers of `defaultNetwork`
+    // outside this class then follow the same world); it is never a second authority and never written to disk.
+    loaded.config.defaultNetwork = activeNetwork;
 
     let provider: KaspaRpcClient | undefined;
     if (isSimulated) {
@@ -345,7 +384,7 @@ export class Hardkas {
     }
 
     // open() created the simulated provider for this instance: the instance owns it.
-    const hk = new Hardkas(loaded, options, provider, "owned");
+    const hk = new Hardkas(loaded, options, provider, "owned", resolved);
     hk.plugins.loadPlugins();
     return hk;
   }
@@ -374,10 +413,11 @@ export class Hardkas {
   }
 
   /**
-   * Current active network name.
+   * The network this instance runs on: the network of its resolved execution target (WORKSPACE-AUTHORITY-2), not a
+   * reading of the legacy `defaultNetwork` key.
    */
   get network(): NetworkId {
-    return (this.sdkConfig.defaultNetwork as NetworkId) || ("simnet" as NetworkId);
+    return this.activeNetwork as NetworkId;
   }
 
   get sdkConfig() {

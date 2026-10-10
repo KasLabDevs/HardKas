@@ -55,13 +55,9 @@ export async function runTxSend(input: TxSendRunnerInput): Promise<TxSendRunnerR
   }
 
   if (targetName) {
-    let explicitTarget: import("@hardkas/core").HardkasExecutionTarget | undefined = undefined;
-    if (config.execution && "targets" in config.execution) {
-      explicitTarget = (config.execution.targets as any)[targetName];
-    }
-    if (!explicitTarget) {
-      throw new Error(`Execution target '${targetName}' not found in hardkas.config.ts`);
-    }
+    // WORKSPACE-AUTHORITY-2: the named target is looked up by the shared resolver (typed EXECUTION_TARGET_NOT_FOUND)
+    const { resolveWorkspaceExecution } = await import("@hardkas/config");
+    const explicitTarget = resolveWorkspaceExecution({ config, target: targetName }).execution;
 
     if (
       execution.domain !== explicitTarget.domain ||
@@ -86,7 +82,9 @@ export async function runTxSend(input: TxSendRunnerInput): Promise<TxSendRunnerR
     network: resolvedName,
     provider: input.provider,
     url,
-    executionMode: execution.mode
+    executionMode: execution.mode,
+    // WORKSPACE-AUTHORITY-2 (closeout): the endpoint the resolved network declares, the same the SDK uses
+    networkRpcUrl: typeof (target as { rpcUrl?: unknown })?.rpcUrl === "string" ? (target as { rpcUrl: string }).rpcUrl : undefined
   });
 
   // ENFORCE EXECUTION COMPATIBILITY FOR BROADCASTING/SIMULATION
