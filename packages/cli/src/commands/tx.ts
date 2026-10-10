@@ -92,11 +92,36 @@ async function refuseUnrecordableTrackLabel(args: {
 }
 
 /**
+ * EVENT-LEDGER-2 final closeout (A1) · a ledger failure that stops `tx send` keeps its typed code; in JSON mode the one
+ * envelope also carries the AUX-11 outcome of what the send had done (`metadata.effect`), so automation never reads
+ * "not sent" after a broadcast or an execution. The error is rethrown either way.
+ */
+async function rethrowSendLedgerFailure(e: unknown, json: boolean | undefined, network: string): Promise<never> {
+  const { isEventLedgerAppendFailure } = await import("@hardkas/core");
+  if (json && isEventLedgerAppendFailure(e)) {
+    const { outcomeOfEffect } = await import("../runners/next-steps.js");
+    const effect = e.metadata?.effect;
+    UI.writeJson({
+      ok: false,
+      command: "tx send",
+      mode: "cli",
+      outcome: outcomeOfEffect(effect),
+      code: e.code,
+      message: e.message,
+      network,
+      ...(effect ? { effect } : {})
+    });
+  }
+  throw e;
+}
+
+/**
  * Demo-cut step 2 · T-A14b — what a network send may say about the transaction:
  * the state DERIVED from the evidence just recorded (the submission, plus any
  * observation already in the workspace), through `sdk.tx.status`. Right after a send
  * that is SUBMITTED (submitTransaction succeeded at that instant on the responding
- * node) or REJECTED_BY_NODE — never a claim of consensus validation.
+ * node), REJECTED_BY_NODE, or — for a submit call that failed without an answer —
+ * INSUFFICIENT_EVIDENCE; never a claim of consensus validation.
  */
 async function networkSendState(txId: string | undefined, network: string): Promise<string> {
   if (!txId || !/^[0-9a-f]{64}$/.test(txId)) return "not derivable: the node returned no txId";
@@ -209,8 +234,19 @@ export function registerTxCommands(program: Command) {
             workspaceRoot
           });
 
+          // EVENT-LEDGER-2 (D4): a plan this command writes is announced in the ledger like every artifact HardKAS
+          // writes (its identity is the content hash, its correlation the plan's own workflowId), or the write fails.
+          const { emitArtifactWritten } = await import("@hardkas/core");
+          const announcePlan = (absolutePath: string) =>
+            emitArtifactWritten({
+              artifactId: (artifact as any).contentHash || "unknown",
+              absolutePath,
+              sourceSubsystem: "cli:tx-plan",
+              workflowId: typeof (artifact as any).workflowId === "string" ? (artifact as any).workflowId : undefined,
+              networkId: artifact.networkId
+            });
           const outPath = options.out || options.save;
-          if (outPath) await writeArtifact(outPath, artifact);
+          if (outPath) announcePlan(await writeArtifact(outPath, artifact));
 
           // Always persist to .hardkas/artifacts/ for lattice indexing
           const artifactsDir = (await import("node:path")).join(
@@ -232,7 +268,7 @@ export function registerTxCommands(program: Command) {
               artifactsDir,
               `${timestamp}-${planId}.plan.json`
             );
-            await writeArtifact(latticeFile, artifact);
+            announcePlan(await writeArtifact(latticeFile, artifact));
             persistedPlanPath = latticeFile;
           }
 
@@ -345,7 +381,17 @@ export function registerTxCommands(program: Command) {
             workspaceRoot
           });
 
-          if (options.out) await writeArtifact(options.out, signedArtifact);
+          if (options.out) {
+            // EVENT-LEDGER-2 (D4): the exported copy is announced like the store's copy (sdk.tx.sign announced that one)
+            const { emitArtifactWritten } = await import("@hardkas/core");
+            emitArtifactWritten({
+              artifactId: (signedArtifact as any).contentHash || "unknown",
+              absolutePath: await writeArtifact(options.out, signedArtifact),
+              sourceSubsystem: "cli:tx-sign",
+              workflowId: typeof (signedArtifact as any).workflowId === "string" ? (signedArtifact as any).workflowId : undefined,
+              networkId: (signedArtifact as any).networkId
+            });
+          }
           if (options.json) {
             UI.writeJson(signedArtifact);
           } else {
@@ -539,12 +585,13 @@ export function registerTxCommands(program: Command) {
               config: loaded.config,
               ...(options.url ? { url: options.url } : {}),
               workspaceRoot
-            });
+            }).catch((e: unknown) => rethrowSendLedgerFailure(e, options.json, String(signedArtifact.networkId)));
 
             // Wave 1.2 · CLI-NEXTSTEPS-1 / IC-5′.11: artifactId is the receipt's
             // canonical identity; the txId is labelled as a txId.
             // Wave 1.3 · R-iii: the verdict comes from the authenticated outcome.
-            const { nextStepsAfterSend, receiptArtifactId, sendExplanation, sendOutcome } = await import("../runners/next-steps.js");
+            const { nextStepsAfterSend, receiptArtifactId, sendExplanation, sendOutcome, sendOutcomeLabel, notAcceptedFailure } =
+              await import("../runners/next-steps.js");
             const outcome = sendOutcome(result.receipt);
 
             // JSON-PAPERCUTS #19: the deployment record (`--track`) is written BEFORE anything is
@@ -598,8 +645,9 @@ export function registerTxCommands(program: Command) {
             if (options.json) {
               UI.writeJson({
                 ok: result.accepted,
-                // AUX-11: one of three unambiguous outcomes (submitted | rejected | not_executed).
-                outcome: result.accepted ? "submitted" : "rejected",
+                // AUX-11: one of three unambiguous outcomes (submitted | rejected | not_executed); EVENT-LEDGER-2 final
+                // closeout: `unknown` for a submit call that failed without an answer (never reported as rejected).
+                outcome: sendOutcomeLabel(result.receipt, result.accepted),
                 data: {
                   plan: undefined,
                   signed: signedArtifact,
@@ -640,7 +688,7 @@ export function registerTxCommands(program: Command) {
                   ? "Transaction simulated successfully"
                   : result.accepted
                     ? "Transaction submitted to the node"
-                    : "Transaction NOT accepted by the node",
+                    : notAcceptedFailure(result.receipt, result.txId).title,
                 {
                   "Execution ID": result.executionId,
                   "Artifact ID": receiptArtifactId(result.receipt) ?? "unknown",
@@ -668,11 +716,8 @@ export function registerTxCommands(program: Command) {
 
             if (!result.accepted) {
               const { HardkasCliError } = await import("../cli-errors.js");
-              throw new HardkasCliError(
-                "TX_SUBMISSION_REJECTED",
-                `The node did not accept the transaction (${(result.receipt as any)?.submitResult?.error ?? "no reason returned"}); the submission was recorded as ${receiptArtifactId(result.receipt) ?? "unknown"}.`,
-                { exitCode: 1 }
-              );
+              const failure = notAcceptedFailure(result.receipt, result.txId);
+              throw new HardkasCliError(failure.code, failure.message, { exitCode: 1 });
             }
           } else if (options.from && options.to && options.amount) {
             // AUX-11: the confirmation policy of `tx send` — required unless the network is
@@ -689,6 +734,7 @@ export function registerTxCommands(program: Command) {
               });
             }
 
+            // a ledger failure that stops the flow itself (before its first step) is reported with its outcome too
             const result = await runTxFlow({
               amount: options.amount!,
               from: options.from!,
@@ -701,9 +747,10 @@ export function registerTxCommands(program: Command) {
               ...(options.feeRate ? { feeRate: options.feeRate } : {}),
               ...(options.url ? { url: options.url } : {}),
               workspaceRoot
-            });
+            }).catch((e: unknown) => rethrowSendLedgerFailure(e, options.json, String(options.network ?? loaded.config.defaultNetwork ?? "simulated")));
 
-            const { nextStepsAfterSend, receiptArtifactId, sendExplanation } = await import("../runners/next-steps.js");
+            const { nextStepsAfterSend, receiptArtifactId, sendExplanation, sendOutcomeLabel, notAcceptedFailure, outcomeOfEffect, effectSummary } =
+              await import("../runners/next-steps.js");
             // R-iii: when the flow broadcast, the verdict is the runner's authenticated outcome.
             // AUX-11: only a send step that ran ("ok") can be submitted or rejected. A step the
             // flow blocked or skipped is NOT executed; a step (or an earlier step) that errored
@@ -719,6 +766,40 @@ export function registerTxCommands(program: Command) {
               const erroredStep = (["plan", "sign", "send"] as const).find(
                 (k) => result.steps[k].status === "error"
               );
+              // EVENT-LEDGER-2 final closeout (A1): a ledger failure keeps its typed code, and what the send step had
+              // already done decides the outcome — a broadcast or an execution that took place never reads as "did not
+              // broadcast", and the partial results stay in the output
+              const errored = erroredStep ? result.steps[erroredStep] : undefined;
+              const effect = errored?.effect;
+              const ledgerFailure = errored?.code === "EVENT_LEDGER_APPEND_FAILED";
+              if (ledgerFailure || (effect !== undefined && effect.outcome !== "not-performed")) {
+                const code = ledgerFailure ? "EVENT_LEDGER_APPEND_FAILED" : "TX_SEND_FAILED";
+                const message = ledgerFailure
+                  ? (errored?.error ?? "the event ledger could not record the flow")
+                  : `FAILED after the send step ran (${effectSummary(effect!)}): ${erroredStep} step failed: ${errored?.error ?? "no error message"}`;
+                if (options.json) {
+                  UI.writeJson({
+                    ok: false,
+                    command: "tx send",
+                    mode: "cli",
+                    outcome: outcomeOfEffect(effect),
+                    code,
+                    message,
+                    network: result.networkId,
+                    steps: stepStatuses,
+                    ...(effect ? { effect } : {}),
+                    data: {
+                      plan: result.steps.plan.artifact,
+                      signed: result.steps.sign.artifact,
+                      receipt: flowSend.artifact?.receipt
+                    }
+                  });
+                }
+                throw new HardkasCliError(code, message, {
+                  exitCode: HardkasExitCode.RUNTIME_FAILURE,
+                  context: { network: result.networkId, ...stepStatuses }
+                });
+              }
               const notExecuted = erroredStep === undefined;
               const reason = erroredStep
                 ? `${erroredStep} step failed: ${result.steps[erroredStep].error ?? "no error message"}`
@@ -747,8 +828,9 @@ export function registerTxCommands(program: Command) {
               const sendResult = result.steps.send;
               UI.writeJson({
                 ok: flowAccepted,
-                // AUX-11: one of three unambiguous outcomes (submitted | rejected | not_executed).
-                outcome: flowAccepted ? "submitted" : "rejected",
+                // AUX-11: one of three unambiguous outcomes (submitted | rejected | not_executed); EVENT-LEDGER-2 final
+                // closeout: `unknown` for a submit call that failed without an answer (never reported as rejected).
+                outcome: sendOutcomeLabel(sendResult?.artifact?.receipt, flowAccepted),
                 data: {
                   plan: result.steps.plan.artifact,
                   signed: result.steps.sign.artifact,
@@ -794,7 +876,7 @@ export function registerTxCommands(program: Command) {
                   ? "Transaction simulated successfully"
                   : flowAccepted
                     ? "Transaction submitted to the node"
-                    : "Transaction NOT accepted by the node",
+                    : notAcceptedFailure(sendResult?.artifact?.receipt, sendResult?.artifact?.txId).title,
                 {
                   // Wave 1.5 · AUD-14 (simulator part): no replay ran here, so no
                   // replay id or replay verdict is printed.
@@ -821,11 +903,8 @@ export function registerTxCommands(program: Command) {
             }
             if (!flowAccepted) {
               const { HardkasCliError } = await import("../cli-errors.js");
-              throw new HardkasCliError(
-                "TX_SUBMISSION_REJECTED",
-                `The node did not accept the transaction; the submission was recorded as ${receiptArtifactId(flowSend?.artifact?.receipt) ?? "unknown"}.`,
-                { exitCode: 1 }
-              );
+              const failure = notAcceptedFailure(flowSend?.artifact?.receipt, flowSend?.artifact?.txId);
+              throw new HardkasCliError(failure.code, failure.message, { exitCode: 1 });
             }
           } else {
             // CLI-RUNTIME-CONTRACT-1: a usage error with its code and exit code (was an untyped "Command failed").

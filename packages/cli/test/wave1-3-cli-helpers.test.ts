@@ -89,7 +89,10 @@ describe("Wave 1.3 · send outcome decisions", () => {
     expect(text).toMatch(/submitted/i);
     expect(text).toContain("b".repeat(64));
     expect(text).toMatch(/no observation|not observed/i);
-    const rejected = describeWhyNode(submission({ submitResult: { accepted: false, error: "orphan" } }))!;
+    // the node's rejection as it arrives (rusty-kaspa's RejectedTransaction error; fixtures/toccata-v2 record real ones)
+    const rejected = describeWhyNode(
+      submission({ submitResult: { accepted: false, error: `Rejected transaction ${"b".repeat(64)}: transaction ${"b".repeat(64)} is an orphan where orphan is disallowed` } })
+    )!;
     expect(rejected).toMatch(/rejected|not accepted/i);
     expect(rejected).toContain("orphan");
   });

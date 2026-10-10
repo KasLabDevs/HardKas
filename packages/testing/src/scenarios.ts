@@ -49,17 +49,17 @@ export const scenario = isVitest ? vitestTest.extend<{ hk: HardkasEnvironment }>
     hk.tx = hardkas.tx as any;
     hk.artifacts = hardkas.artifacts as any;
 
-    const { coreEvents, HardkasSchemas } = await import("@hardkas/core");
+    const { coreEvents, emitArtifactWritten } = await import("@hardkas/core");
 
     const generatedArtifacts = new Set<string>();
-    const onCreated = (ev: any) => {
-      if (ev.kind === "artifact.created" || ev.kind === "artifact.written") {
-        if (ev.artifactId) {
-          generatedArtifacts.add(ev.artifactId);
-        }
+    // every artifact HardKAS writes is announced as `artifact.written` (EVENT-LEDGER-2 D4); the event's artifactId is
+    // the content hash
+    const onWritten = (ev: any) => {
+      if (ev.kind === "artifact.written" && ev.artifactId) {
+        generatedArtifacts.add(ev.artifactId);
       }
     };
-    const unsubscribe = coreEvents.on(onCreated);
+    const unsubscribe = coreEvents.on(onWritten);
 
     // Provide hk to the test
     let scenarioError: any = null;
@@ -138,14 +138,14 @@ export const scenario = isVitest ? vitestTest.extend<{ hk: HardkasEnvironment }>
       const resultPath = path.join(mainArtifactsDir, `${safeScenarioName}.scenario-result.json`);
       await storeGate.writeFile(`${safeScenarioName}.scenario-result.json`, JSON.stringify(scenarioResult, null, 2));
       
-      coreEvents.normalizeAndEmit({
-        kind: "artifact.created",
-        schema: (HardkasSchemas as any).ScenarioResultV1 || "hardkas.scenarioResult.v1",
-        artifactId: safeScenarioName,
-        network: hardkas.network,
-        mode: "test",
-        path: resultPath
-      } as any);
+      // EVENT-LEDGER-2 (D4): the scenario result written above is announced through the one artifact boundary,
+      // under its content hash (the raw `artifact.created` object used here was discarded by normalizeAndEmit).
+      emitArtifactWritten({
+        artifactId: (scenarioResult as any).contentHash || "unknown",
+        absolutePath: resultPath,
+        sourceSubsystem: "testing:scenario",
+        networkId: network
+      });
 
       // Record for the test runner to pick up
       const testRunDir = process.env.HARDKAS_TEST_RUN_DIR;

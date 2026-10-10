@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { streamSSE } from "hono/streaming";
 import { coreEvents } from "@hardkas/core";
+import { artifactFileNotices } from "../stream.js";
 
 export const streamRoutes = new Hono();
 
@@ -20,43 +21,49 @@ streamRoutes.get("/artifacts/stream", async (c) => {
       })
     });
 
-    const listener = async (eventEnv: any) => {
-      if (!active) return;
-      if (eventEnv.kind === "artifact.written") {
-        const payload = eventEnv.payload;
-        if (!payload) return;
+    // The same stream envelope for the two sources: a formal `artifact.written` event emitted in this process (its
+    // payload is {artifactId, path}) and the watcher's notice of an artifact file on disk (the parsed artifact).
+    const forward = async (payload: any) => {
+      if (!active || !payload) return;
 
-        if (typeFilter && payload.schema !== typeFilter && payload.kind !== typeFilter)
-          return;
-        if (lineageFilter === "true" && !payload.lineage) return;
+      if (typeFilter && payload.schema !== typeFilter && payload.kind !== typeFilter)
+        return;
+      if (lineageFilter === "true" && !payload.lineage) return;
 
-        const parentArtifactIds =
-          payload.parents ||
-          (payload.lineage?.parentArtifactId ? [payload.lineage.parentArtifactId] : []);
-        const stableEnvelope = {
-          type: payload.schema || payload.kind || "artifact",
-          artifactId: payload.artifactId || payload.txId || payload.id,
-          parentArtifactIds,
-          timestamp: payload.createdAt || new Date().toISOString(),
-          status: "created",
-          meta: {
-            network: "local",
-            warnings: [
-              "Missed stream events must be recovered by fetching from /api/artifacts"
-            ]
-          },
-          data: payload
-        };
+      const parentArtifactIds =
+        payload.parents ||
+        (payload.lineage?.parentArtifactId ? [payload.lineage.parentArtifactId] : []);
+      const stableEnvelope = {
+        type: payload.schema || payload.kind || "artifact",
+        artifactId: payload.artifactId || payload.txId || payload.id,
+        parentArtifactIds,
+        timestamp: payload.createdAt || new Date().toISOString(),
+        status: "created",
+        meta: {
+          network: "local",
+          warnings: [
+            "Missed stream events must be recovered by fetching from /api/artifacts"
+          ]
+        },
+        data: payload
+      };
 
-        await stream.writeSSE({
-          event: "artifact",
-          data: JSON.stringify(stableEnvelope)
-        });
-      }
+      await stream.writeSSE({
+        event: "artifact",
+        data: JSON.stringify(stableEnvelope)
+      });
     };
 
-    // Use on which returns an unsubscribe function
+    const listener = async (eventEnv: any) => {
+      if (eventEnv.kind === "artifact.written") await forward(eventEnv.payload);
+    };
+
+    // Both return an unsubscribe function
     const unsubscribe = coreEvents.on(listener);
+    // EVENT-LEDGER-2 (EVENT-EMISSION-1): the watcher no longer puts a fake envelope on the core bus; its notices come here
+    const unsubscribeNotices = artifactFileNotices.subscribe((notice) => {
+      void forward(notice.artifact);
+    });
 
     // Keep alive and handle disconnect
     while (active) {
@@ -66,6 +73,7 @@ streamRoutes.get("/artifacts/stream", async (c) => {
       } catch (e) {
         active = false;
         unsubscribe();
+        unsubscribeNotices();
         break;
       }
     }

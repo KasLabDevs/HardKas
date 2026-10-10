@@ -1,0 +1,193 @@
+﻿gate-hermetic: HARDKAS_HOME=C:\Users\jrodr\AppData\Local\Temp\hardkas-hermetic-home-BCpe82 (copy of C:\Users\jrodr\AppData\Local\Temp\hk-v210-gate-home)
+gate-hermetic: DOCKER_HOST=tcp://127.0.0.1:1; preload=C:\Users\jrodr\AppData\Local\Temp\hk-ra\wt\scripts\hermetic\no-network-preload.cjs
+gate-hermetic: vitest run --coverage.enabled=false --reporter=default --reporter=json --outputFile=C:\Users\jrodr\AppData\Local\Temp\claude\C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo\21f9a2e4-33ac-4300-9366-aff402f85900\scratchpad\cut46-event-ledger-2\logs\fc-related-2.json packages/sdk/test/simulator-durable-execution.test.ts packages/cli/test/simulator-durable-execution-cli.test.ts packages/cli/test/json-papercuts.test.ts packages/cli/test/wave1-5-narratives-cli.test.ts packages/cli/test/tx-command-lock-scope.test.ts packages/cli/test/r0b-resource-lifecycle.test.ts packages/cli/test/r0-cli-lifecycle.test.ts packages/cli/test/surface-truth-1b-contract.test.ts packages/cli/test/surface-truth-1a-contract.test.ts packages/cli/test/surface-truth-1.test.ts packages/cli/test/verify-exit-crash.test.ts packages/cli/test/evidence-trust-1.test.ts packages/cli/test/evidence-trust-1-contract.test.ts packages/core/test/evidence-trust-secret-boundary.test.ts packages/cli/test/demo-cut-e04-cli-balances.test.ts packages/cli/test/replay-trust-2.test.ts packages/cli/test/wa1-root-reads.test.ts packages/cli/test/workspace-authority-1.test.ts packages/cli/test/deploy-path-containment.test.ts packages/cli/test/localnet-fund-race.test.ts
+
+ RUN  v2.1.9 C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt
+
+ ✓ packages/cli/test/surface-truth-1.test.ts (34 tests) 51083ms
+   ✓ SURFACE-TRUTH-1 · BEFORE · what the CLI claims about itself and its results > ST-A · `capabilities` > control: the JSON report names the hash version the store writes 1135ms
+   ✓ SURFACE-TRUTH-1 · BEFORE · what the CLI claims about itself and its results > ST-A · `capabilities` > the JSON report and the SDK's `capabilities.get()` agree on every capability they both report 1481ms
+   ✓ SURFACE-TRUTH-1 · BEFORE · what the CLI claims about itself and its results > ST-A · `capabilities` > it reports no L2 profiles or bridge model while `l2` and `bridge` are not commands 1179ms
+   ✓ SURFACE-TRUTH-1 · BEFORE · what the CLI claims about itself and its results > ST-A · `capabilities` > the human report does not list SilverScript or covenants as not implemented while `silver compile` and `silver covenant genesis` are commands 1227ms
+   ✓ SURFACE-TRUTH-1 · BEFORE · what the CLI claims about itself and its results > ST-A · `capabilities` > the human report names the hash version the JSON report and the store use 1150ms
+   ✓ SURFACE-TRUTH-1 · BEFORE · what the CLI claims about itself and its results > ST-A · `capabilities` > it does not call the DAG conflict ordering GHOSTDAG-aligned (the only ordering the CLI runs is the light model `query dag` labels NOT GHOSTDAG) 1131ms
+   ✓ SURFACE-TRUTH-1 · BEFORE · what the CLI claims about itself and its results > ST-E · verifiers > control: the package of a scenario that names its receipt verifies 1864ms
+   ✓ SURFACE-TRUTH-1 · BEFORE · what the CLI claims about itself and its results > ST-E · verifiers > `evidence verify` rejects a package whose scenario verdict was edited (failed → passed) 1867ms
+   ✓ SURFACE-TRUTH-1 · BEFORE · what the CLI claims about itself and its results > ST-E · verifiers > `evidence verify` rejects a package whose artifacts were removed 1886ms
+   ✓ SURFACE-TRUTH-1 · BEFORE · what the CLI claims about itself and its results > ST-E · verifiers > `evidence pack` does not present the whole store as the evidence of a scenario that names none, without saying so 1924ms
+   ✓ SURFACE-TRUTH-1 · BEFORE · what the CLI claims about itself and its results > ST-E · verifiers > contract (D-ST5): with passing torture checks too, `verify-semantics` refuses with a typed code and writes no bundle 1009ms
+   ✓ SURFACE-TRUTH-1 · BEFORE · what the CLI claims about itself and its results > ST-E · verifiers > `verify-semantics --ci-mode` does not pass when torture checks failed 932ms
+   ✓ SURFACE-TRUTH-1 · BEFORE · what the CLI claims about itself and its results > ST-E · verifiers > a usage or missing-input error of `verify-semantics` is not reported as semantic drift 1907ms
+   ✓ SURFACE-TRUTH-1 · BEFORE · what the CLI claims about itself and its results > ST-E · verifiers > control: `repair --json` on a clean workspace reports success 924ms
+   ✓ SURFACE-TRUTH-1 · BEFORE · what the CLI claims about itself and its results > ST-E · verifiers > control: `repair` (human) reports the corrupt tail it finds 943ms
+   ✓ SURFACE-TRUTH-1 · BEFORE · what the CLI claims about itself and its results > ST-E · verifiers > `repair --json` does not report success while it leaves in place the corrupt tail it found 919ms
+   ✓ SURFACE-TRUTH-1 · BEFORE · what the CLI claims about itself and its results > ST-E · verifiers > `dev doctor` does not report artifacts the CLI wrote, and `hardkas verify` accepts, as malformed 2000ms
+   ✓ SURFACE-TRUTH-1 · BEFORE · what the CLI claims about itself and its results > ST-F · `workflow run` > control: a tx.plan + tx.simulate workflow completes 1277ms
+   ✓ SURFACE-TRUTH-1 · BEFORE · what the CLI claims about itself and its results > ST-F · `workflow run` > a step type the runtime does not know fails the workflow 941ms
+   ✓ SURFACE-TRUTH-1 · BEFORE · what the CLI claims about itself and its results > ST-F · `workflow run` > `network.switch` changes the network of the steps after it, or the workflow refuses it 926ms
+   ✓ SURFACE-TRUTH-1 · BEFORE · what the CLI claims about itself and its results > ST-F · `workflow run` > `--dry-run` never lets a step write to the filesystem 914ms
+   ✓ SURFACE-TRUTH-1 · BEFORE · what the CLI claims about itself and its results > ST-F · `workflow run` > `--offline` never lets a step open a connection 1081ms
+   ✓ SURFACE-TRUTH-1 · BEFORE · what the CLI claims about itself and its results > ST-F · `workflow run` > `workflow inspect latest` and `workflow replay latest` reach the workflow `run` just wrote 2197ms
+   ✓ SURFACE-TRUTH-1 · BEFORE · what the CLI claims about itself and its results > ST-G · long-running commands and what they print > `dev --once --headless` ("run health checks, and exit") exits on its own, without starting the server 1132ms
+   ✓ SURFACE-TRUTH-1 · BEFORE · what the CLI claims about itself and its results > ST-G · long-running commands and what they print > `sandbox --with-node` does not say a node is running and mining when none was started (Docker is unreachable) 914ms
+   ✓ SURFACE-TRUTH-1 · BEFORE · what the CLI claims about itself and its results > ST-G · long-running commands and what they print > `sandbox` ("start a temporary … environment") is still running, its dashboard answering, 3 s after it prints the dashboard URL 5595ms
+   ✓ SURFACE-TRUTH-1 · BEFORE · what the CLI claims about itself and its results > ST-G · long-running commands and what they print > no hint `status` or `dev last --replay` prints names a command or an option the CLI does not register 1895ms
+   ✓ SURFACE-TRUTH-1 · BEFORE · what the CLI claims about itself and its results > ST-H/I/J/C · advertised commands, exit codes, the environment contract, PSKT > ST-I · `dev accounts reveal` of an alias that does not exist exits non-zero 1118ms
+   ✓ SURFACE-TRUTH-1 · BEFORE · what the CLI claims about itself and its results > ST-H/I/J/C · advertised commands, exit codes, the environment contract, PSKT > ST-I · `dev last --replay` in a workspace without transactions exits non-zero 1075ms
+   ✓ SURFACE-TRUTH-1 · BEFORE · what the CLI claims about itself and its results > ST-H/I/J/C · advertised commands, exit codes, the environment contract, PSKT > ST-J · `env check` and `doctor` agree on whether HardKAS reads HARDKAS_DATA_DIR 2933ms
+   ✓ SURFACE-TRUTH-1 · BEFORE · what the CLI claims about itself and its results > ST-H/I/J/C · advertised commands, exit codes, the environment contract, PSKT > ST-J · HARDKAS_EXPERIMENTAL changes the command surface, as `env check` says it does 1127ms
+   ✓ SURFACE-TRUTH-1 · BEFORE · what the CLI claims about itself and its results > ST-H/I/J/C · advertised commands, exit codes, the environment contract, PSKT > ST-C · the shipped CLI does not complete a PSKT session on a test double (NODE_ENV=test, as test runners set it) 892ms
+ ✓ packages/sdk/test/simulator-durable-execution.test.ts (21 tests) 4282ms
+   ✓ SIMULATOR-DURABLE-EXECUTION-1 · an interrupted simulated execution is finished, never applied twice > all evidence published, the pending record not cleared: recovery publishes exactly the bytes of an uninterrupted execution and the same final ledger 523ms
+ ✓ packages/cli/test/workspace-authority-1.test.ts (25 tests) 72825ms
+   ✓ WORKSPACE-AUTHORITY-1 · BEFORE > A · one event ledger: what the CLI records is what the readers read > `query events` returns the events the workspace recorded 863ms
+   ✓ WORKSPACE-AUTHORITY-1 · BEFORE > A · one event ledger: what the CLI records is what the readers read > `query store rebuild --backend sqlite` indexes the events the workspace recorded 934ms
+   ✓ WORKSPACE-AUTHORITY-1 · BEFORE > A · one event ledger: what the CLI records is what the readers read > the projection holds every event of the ledger (two distinct events are two rows) 1850ms
+   ✓ WORKSPACE-AUTHORITY-1 · BEFORE > A · one event ledger: what the CLI records is what the readers read > `localnet snapshot create` captures the events the workspace recorded 924ms
+   ✓ WORKSPACE-AUTHORITY-1 · BEFORE > B · the query store is derived from the workspace, never its authority > control: with no store.db the query commands answer from the workspace 4983ms
+   ✓ WORKSPACE-AUTHORITY-1 · BEFORE > B · the query store is derived from the workspace, never its authority > `status` (an observation) creates nothing in the workspace 5290ms
+   ✓ WORKSPACE-AUTHORITY-1 · BEFORE > B · the query store is derived from the workspace, never its authority > the query commands still answer after `status` ran 9020ms
+   ✓ WORKSPACE-AUTHORITY-1 · BEFORE > B · the query store is derived from the workspace, never its authority > `query store rebuild` does not report success while it indexed nothing and the workspace holds artifacts 3874ms
+   ✓ WORKSPACE-AUTHORITY-1 · BEFORE > B · the query store is derived from the workspace, never its authority > a projection that misses the workspace's newer artifacts is not answered as the truth, nor reported healthy 9429ms
+   ✓ WORKSPACE-AUTHORITY-1 · BEFORE > C · counters see the artifacts the workspace holds > control: `hardkas verify` scans every artifact the resolver holds 997ms
+   ✓ WORKSPACE-AUTHORITY-1 · BEFORE > C · counters see the artifacts the workspace holds > `status` counts the artifacts the resolver holds 906ms
+   ✓ WORKSPACE-AUTHORITY-1 · BEFORE > C · counters see the artifacts the workspace holds > `ci verify` scans the artifacts the resolver holds 2430ms
+   ✓ WORKSPACE-AUTHORITY-1 · BEFORE > E · one snapshot model > `localnet snapshot verify` finds the snapshot `localnet snapshot create` just made 4784ms
+   ✓ WORKSPACE-AUTHORITY-1 · BEFORE > F · a read-only command never creates a workspace > `verify --json` run from a subdirectory of a workspace creates no .hardkas there 825ms
+   ✓ WORKSPACE-AUTHORITY-1 · BEFORE > F · a read-only command never creates a workspace > `artifact explain` run from a subdirectory of a workspace creates no .hardkas there 842ms
+   ✓ WORKSPACE-AUTHORITY-1 · BEFORE > F · a read-only command never creates a workspace > `artifact lineage --json` run from a subdirectory of a workspace creates no .hardkas there 829ms
+   ✓ WORKSPACE-AUTHORITY-1 · BEFORE > F · a read-only command never creates a workspace > control: `status` from a subdirectory creates nothing 838ms
+   ✓ WORKSPACE-AUTHORITY-1 · BEFORE > F · a configured project has one simulator state, wherever a command runs from > control: the balance read at the project root reflects the payment 843ms
+   ✓ WORKSPACE-AUTHORITY-1 · BEFORE > F · a configured project has one simulator state, wherever a command runs from > `accounts balance` from a subdirectory reports the project's balance 3347ms
+   ✓ WORKSPACE-AUTHORITY-1 · BEFORE > F · a configured project has one simulator state, wherever a command runs from > a payment run from a subdirectory spends from the project's state 2934ms
+ ✓ packages/cli/test/json-papercuts.test.ts (9 tests) 32525ms
+   ✓ JSON-PAPERCUTS · --json is one JSON document with a verdict > #40 · tx profile --json: the profile is the envelope's result; the text rendering is not printed 1842ms
+   ✓ JSON-PAPERCUTS · --json is one JSON document with a verdict > #5 · artifact lineage --json: lineage, chain and verification in one envelope; the text is not printed 1679ms
+   ✓ JSON-PAPERCUTS · --json is one JSON document with a verdict > #5 · an orphan (no lineage block) is ok:true with orphan:true, exit 0 834ms
+   ✓ JSON-PAPERCUTS · --json is one JSON document with a verdict > #5 · an inconsistent lineage is ONE envelope: ok:false, LINEAGE_VIOLATIONS, the issues, exit 1 1752ms
+   ✓ JSON-PAPERCUTS · --json is one JSON document with a verdict > #39 · deploy track --json prints the record it wrote; a taken label is DEPLOYMENT_EXISTS 3470ms
+   ✓ JSON-PAPERCUTS · --json is one JSON document with a verdict > #19 · a --track label that cannot be recorded is refused BEFORE anything is broadcast: ok:false, not_executed, typed code, no receipt 2525ms
+   ✓ JSON-PAPERCUTS · --json is one JSON document with a verdict > #19 · a record that fails AFTER the broadcast is stated in the one envelope; the broadcast stays `submitted`, exit 0 5908ms
+   ✓ JSON-PAPERCUTS · --json is one JSON document with a verdict > #19 · control: a fresh label is recorded, and the envelope says so 10667ms
+   ✓ JSON-PAPERCUTS · --json is one JSON document with a verdict > replay verify --json: the success envelope carries ok:true (the failure envelope already did) 1890ms
+ ✓ packages/cli/test/evidence-trust-1.test.ts (16 tests) 24442ms
+   ✓ EVIDENCE-TRUST-1 · CLI > a stored artifact is never rewritten > a second `tx sign` of the same plan leaves the stored signed artifact's bytes as they were 4033ms
+   ✓ EVIDENCE-TRUST-1 · CLI > a stored artifact is never rewritten > a stored signed artifact that was tampered with is not overwritten by the next `tx sign` 2896ms
+   ✓ EVIDENCE-TRUST-1 · CLI > lineage claims match the workspace > `artifact explain` of a receipt whose parent is in the store reports no PARENT_MISSING 952ms
+   ✓ EVIDENCE-TRUST-1 · CLI > lineage claims match the workspace > control: `artifact explain` reports PARENT_MISSING when the parent is really absent 877ms
+   ✓ EVIDENCE-TRUST-1 · CLI > lineage claims match the workspace > `query artifacts inspect` of that receipt does not say its parent is missing from the workspace 961ms
+   ✓ EVIDENCE-TRUST-1 · CLI > `query artifacts diff` decides on the identity > control: an artifact and its exact copy are identical 846ms
+   ✓ EVIDENCE-TRUST-1 · CLI > `query artifacts diff` decides on the identity > control: a different amount is a difference 853ms
+   ✓ EVIDENCE-TRUST-1 · CLI > `query artifacts diff` decides on the identity > two artifacts whose lineage differs (so do their content hashes) are not identical 927ms
+   ✓ EVIDENCE-TRUST-1 · CLI > `query artifacts diff` decides on the identity > the human output does not call two different identities identical 852ms
+   ✓ EVIDENCE-TRUST-1 · CLI > `query artifacts diff` decides on the identity > a token inside a differing rpcUrl is never printed 1697ms
+   ✓ EVIDENCE-TRUST-1 · CLI > a credential inside an RPC URL is never printed > rpc info --json, ?token= 957ms
+   ✓ EVIDENCE-TRUST-1 · CLI > a credential inside an RPC URL is never printed > rpc info, user:password@ 947ms
+   ✓ EVIDENCE-TRUST-1 · CLI > a credential inside an RPC URL is never printed > rpc doctor, ?token= 848ms
+   ✓ EVIDENCE-TRUST-1 · CLI > a credential inside an RPC URL is never printed > tx plan --json, ?token= 955ms
+   ✓ EVIDENCE-TRUST-1 · CLI > a private key is never printed by a listing > `kaspa wallet list --json` does not print a plaintext account's private key 1837ms
+   ✓ EVIDENCE-TRUST-1 · CLI > presentation keeps public identities > `artifact explain` names the file it explains (its content hash is not shown as [REDACTED]) 959ms
+ ✓ packages/cli/test/r0b-resource-lifecycle.test.ts (14 tests) 17945ms
+   ✓ RESOURCE-LIFECYCLE-1 · a finite command closes what it opened and ends by itself > kaspa doctor (runner-created client): ends by itself with exit 1 DOCTOR_FAILED 982ms
+   ✓ RESOURCE-LIFECYCLE-1 · a finite command closes what it opened and ends by itself > tx status <txId> (the SDK's own client, opened by the runner): ends by itself with exit 0 1025ms
+   ✓ RESOURCE-LIFECYCLE-1 · a finite command closes what it opened and ends by itself > tx wait <txId> (the SDK's own client, opened by the runner): ends by itself with exit 1 TX_WAIT_TIMEOUT 5069ms
+   ✓ RESOURCE-LIFECYCLE-1 · a finite command closes what it opened and ends by itself > accounts consolidate (the runner's own client swapped into sdk.rpc): ends by itself with exit 1 UNKNOWN_ERROR 997ms
+   ✓ RESOURCE-LIFECYCLE-1 · a finite command closes what it opened and ends by itself > kaspa wallet balance (runner-created client): ends by itself with exit 1 WALLET_OPERATION_FAILED 980ms
+   ✓ RESOURCE-LIFECYCLE-1 · a finite command closes what it opened and ends by itself > kaspa wallet send --dry-run (runner-created client): ends by itself with exit 1 WALLET_OPERATION_FAILED 989ms
+   ✓ RESOURCE-LIFECYCLE-1 · a finite command closes what it opened and ends by itself > tx plan error path (runner-created client): ends by itself with exit 1 UNKNOWN 978ms
+   ✓ RESOURCE-LIFECYCLE-1 · a finite command closes what it opened and ends by itself > tx send --from/--to/--amount error path (through tx plan): ends by itself with exit 1 TX_SEND_FAILED 1084ms
+   ✓ RESOURCE-LIFECYCLE-1 · a finite command closes what it opened and ends by itself > control: accounts balance --url (already closed in a finally): ends by itself with exit 1 UNKNOWN_ERROR 1116ms
+   ✓ RESOURCE-LIFECYCLE-1 · a finite command closes what it opened and ends by itself > control: rpc info --url (already closed in a finally): ends by itself with exit 1 RPC_INFO_UNAVAILABLE 969ms
+   ✓ RESOURCE-LIFECYCLE-1 · a finite command closes what it opened and ends by itself > control: deploy status --verify (closed before): ends by itself with exit 0 983ms
+   ✓ RESOURCE-LIFECYCLE-1 · a finite command closes what it opened and ends by itself > workflow run --timeout: a run that finishes first leaves no timer behind; the command ends by itself 967ms
+ ✓ packages/cli/test/evidence-trust-1-contract.test.ts (8 tests) 18726ms
+   ✓ EVIDENCE-TRUST-1 · CLI contract > D2 · a second `tx sign` prints the stored signed artifact (the first createdAt), byte-identical to the store 4102ms
+   ✓ EVIDENCE-TRUST-1 · CLI contract > D1 · signing over a stored copy that was changed fails with ARTIFACT_IDENTITY_CONFLICT and leaves it as it is 2853ms
+   ✓ EVIDENCE-TRUST-1 · CLI contract > lineage and diff over one simulated payment > D3 · `artifact lineage` resolves receipt → signed → plan and only then says Operational Provenance Complete 1719ms
+   ✓ EVIDENCE-TRUST-1 · CLI contract > lineage and diff over one simulated payment > D3 · with the parent gone, `artifact lineage` is LINEAGE_INCOMPLETE (exit 1) and never claims completeness 1706ms
+   ✓ EVIDENCE-TRUST-1 · CLI contract > lineage and diff over one simulated payment > D3 · `artifact explain` says the parent was resolved in the workspace store 942ms
+   ✓ EVIDENCE-TRUST-1 · CLI contract > lineage and diff over one simulated payment > D4 · a lineage-only difference: not identical, not the same identity, the entry is authenticated 839ms
+   ✓ EVIDENCE-TRUST-1 · CLI contract > lineage and diff over one simulated payment > D4 · a createdAt-only difference: not identical but the same identity; the entry is not authenticated 1671ms
+   ✓ EVIDENCE-TRUST-1 · CLI contract > D9 · `config show --json` and `config networks` reveal no secret written into the configuration 1845ms
+ ✓ packages/cli/test/surface-truth-1b-contract.test.ts (10 tests) 18451ms
+   ✓ SURFACE-TRUTH-1B · contract · CLI > capabilities and silver doctor answer from the same checks; a false derived entry says why 2116ms
+   ✓ SURFACE-TRUTH-1B · contract · CLI > capabilities names the concrete covenant surface: the real builders, and the SDK planning that is not supported 2136ms
+   ✓ SURFACE-TRUTH-1B · contract · CLI > pskt is declared unavailable, and the default adapter refuses with a typed code 1825ms
+   ✓ SURFACE-TRUTH-1B · contract · CLI > tx trace is hidden and refuses with TX_TRACE_DISABLED 1658ms
+   ✓ SURFACE-TRUTH-1B · contract · CLI > dev accounts reveal of an unknown alias fails with DEV_ACCOUNT_NOT_FOUND (exit 2) 843ms
+   ✓ SURFACE-TRUTH-1B · contract · CLI > dev last finds the transaction the store holds; with none it fails with DEV_LAST_NOTHING_FOUND (exit 2) 1779ms
+   ✓ SURFACE-TRUTH-1B · contract · CLI > one environment contract: doctor demands no variable HardKAS does not read, and flags the HARDKAS_* names env check flags 4572ms
+   ✓ SURFACE-TRUTH-1B · contract · CLI > deploy init writes no HARDKAS_DATA_DIR (HardKAS reads none) 1284ms
+   ✓ SURFACE-TRUTH-1B · contract · CLI > status claims no node and points an offline dev server at a registered command 945ms
+ ✓ packages/cli/test/replay-trust-2.test.ts (11 tests) 9965ms
+   ✓ REPLAY-TRUST-2 · BEFORE · replay on the real CLI > control: before any replay, `hardkas verify` passes 950ms
+   ✓ REPLAY-TRUST-2 · BEFORE · replay on the real CLI > control: the genuine receipt replays as reproduced, and its report is persisted 952ms
+   ✓ REPLAY-TRUST-2 · BEFORE · replay on the real CLI > §4b · after that replay, `hardkas verify` still passes 995ms
+   ✓ REPLAY-TRUST-2 · BEFORE · replay on the real CLI > control: a re-sealed receipt with another amount diverges (REPLAY_DIVERGED) 934ms
+   ✓ REPLAY-TRUST-2 · BEFORE · replay on the real CLI > REPLAY-DIFF-SCOPE-1 · a re-sealed receipt that says the transaction failed does not replay as reproduced 1066ms
+   ✓ REPLAY-TRUST-2 · BEFORE · replay on the real CLI > a re-sealed receipt that fails integrity (schema) leaves no persisted report claiming it was reproduced 955ms
+   ✓ REPLAY-TRUST-2 · BEFORE · replay on the real CLI > REPLAY-DIFF-SCOPE-1 · `replay diff` tells a reproduced report from a diverged one 839ms
+ ✓ packages/cli/test/surface-truth-1a-contract.test.ts (8 tests) 17189ms
+   ✓ SURFACE-TRUTH-1A · contract · CLI > evidence > pack refuses an unsealed scenario result and one that names an artifact the store does not hold 1676ms
+   ✓ SURFACE-TRUTH-1A · contract · CLI > evidence > verify names what broke: the verdict, the membership, the package's own copy of the run 4264ms
+   ✓ SURFACE-TRUTH-1A · contract · CLI > evidence > a scenario that names no artifact packs none, and that package verifies 1729ms
+   ✓ SURFACE-TRUTH-1A · contract · CLI > verify-semantics refuses with VERIFY_SEMANTICS_UNSUPPORTED in every mode 1817ms
+   ✓ SURFACE-TRUTH-1A · contract · CLI > repair --json reports what it found and whether it repaired it 1731ms
+   ✓ SURFACE-TRUTH-1A · contract · CLI > dev --once leaves no dev-server token behind 1077ms
+   ✓ SURFACE-TRUTH-1A · contract · CLI > sandbox --with-node refuses before creating a sandbox 836ms
+   ✓ SURFACE-TRUTH-1A · contract · CLI > workflow replay is hidden and refuses with WORKFLOW_REPLAY_UNSUPPORTED 845ms
+ ✓ packages/core/test/evidence-trust-secret-boundary.test.ts (34 tests) 16ms
+ ✓ packages/cli/test/simulator-durable-execution-cli.test.ts (5 tests) 18819ms
+   ✓ SIMULATOR-DURABLE-EXECUTION-1 · real crashes of the CLI > tx send <signed> killed after the ledger moved: the same command again returns its receipt and pays once 3885ms
+   ✓ SIMULATOR-DURABLE-EXECUTION-1 · real crashes of the CLI > tx send --from --to --amount killed after the ledger moved, then run again: every payment has its receipt 2180ms
+   ✓ SIMULATOR-DURABLE-EXECUTION-1 · real crashes of the CLI > a recovery killed while publishing is finished by the next command, still without paying twice 4844ms
+   ✓ SIMULATOR-DURABLE-EXECUTION-1 · real crashes of the CLI > dag simulate-reorg after a killed execution settles that execution first, then reorganizes 3904ms
+   ✓ SIMULATOR-DURABLE-EXECUTION-1 · real crashes of the CLI > simulator fund after a killed execution settles that execution first, then funds 4006ms
+ ✓ packages/cli/test/deploy-path-containment.test.ts (7 tests) 8598ms
+   ✓ DEPLOYMENT-PATH-CONTAINMENT-1 · CLI entry points > deploy track refuses a label that leaves the workspace, and writes nothing there 852ms
+   ✓ DEPLOYMENT-PATH-CONTAINMENT-1 · CLI entry points > deploy track refuses a network that reaches into the artifact store, and writes nothing there 853ms
+   ✓ DEPLOYMENT-PATH-CONTAINMENT-1 · CLI entry points > deploy inspect refuses a path into the artifact store and shows nothing from it 835ms
+   ✓ DEPLOYMENT-PATH-CONTAINMENT-1 · CLI entry points > deploy status refuses a path into the artifact store and shows nothing from it 825ms
+   ✓ DEPLOYMENT-PATH-CONTAINMENT-1 · CLI entry points > deploy list refuses a path into the artifact store and shows nothing from it 840ms
+   ✓ DEPLOYMENT-PATH-CONTAINMENT-1 · CLI entry points > tx send --track refuses a label that reaches into the artifact store, and writes no record there 2749ms
+   ✓ DEPLOYMENT-PATH-CONTAINMENT-1 · CLI entry points > control: a plain label and network are tracked and inspected as before 1643ms
+ ✓ packages/cli/test/tx-command-lock-scope.test.ts (3 tests) 4759ms
+   ✓ tx plan / sign / send · no command-level hold of the artifact store > tx plan is not refused by a holder of the store: it waits for the store at its write, then completes 1191ms
+   ✓ tx plan / sign / send · no command-level hold of the artifact store > tx sign is not refused by a holder of the store: it waits for the store at its write, then completes 1193ms
+   ✓ tx plan / sign / send · no command-level hold of the artifact store > tx send is not refused by a holder of the store: it waits for the store at its write, then completes 1370ms
+ ✓ packages/cli/test/wave1-5-narratives-cli.test.ts (3 tests) 4322ms
+   ✓ Wave 1.5 · AUD-14 · CLI narratives report only computed results (simulator) > T-A14a · `explain` of a simulated receipt: computed identity check, replay stated as not run, nothing 'successful' 864ms
+   ✓ Wave 1.5 · AUD-14 · CLI narratives report only computed results (simulator) > T-A14a · `tx send` in the simulator prints the computed outcome and no replay id or replay verdict 1210ms
+   ✓ Wave 1.5 · AUD-14 · CLI narratives report only computed results (simulator) > T-A14a · manipulated chain: a tampered receipt is refused by `explain` (verified lookup) and nothing is called successful 1918ms
+ ✓ packages/cli/test/verify-exit-crash.test.ts (4 tests) 15053ms
+   ✓ VERIFY-EXIT-CRASH · a verification that reports success exits 0 > `verify --json` after `replay verify`: ok:true and exit 0, three runs out of three 3100ms
+   ✓ VERIFY-EXIT-CRASH · a verification that reports success exits 0 > the same store-wide verification through `artifact verify .hardkas/artifacts --recursive --strict --json` exits 0 971ms
+   ✓ VERIFY-EXIT-CRASH · a verification that reports success exits 0 > `verify` in human mode after `replay verify` exits 0 940ms
+   ✓ VERIFY-EXIT-CRASH · a verification that reports success exits 0 > control: `verify --json` without a replay report exits 0 920ms
+ ✓ packages/cli/test/wa1-root-reads.test.ts (2 tests) 4259ms
+   ✓ WORKSPACE-AUTHORITY-1 · one root for every read of a command > accounts balance resolves a real-account name in the project's store: from the root, a subdirectory and --workspace 3264ms
+   ✓ WORKSPACE-AUTHORITY-1 · one root for every read of a command > tx send --track refuses an explicit --workspace before reading, broadcasting or writing anything 815ms
+ ✓ packages/cli/test/r0-cli-lifecycle.test.ts (3 tests) 6367ms
+   ✓ R0 · CLI lifecycle: exit status set, natural close > every reported exit code reaches the process: 0, usage 2, runtime 1, policy 3, a rendered-and-swallowed error 4132ms
+   ✓ R0 · CLI lifecycle: exit status set, natural close > a command that returns ends by itself: `dev --once` exits 0 without being killed 1012ms
+ ↓ packages/cli/test/localnet-fund-race.test.ts (1 test | 1 skipped)
+ ✓ packages/cli/test/demo-cut-e04-cli-balances.test.ts (1 test) 3549ms
+   ✓ Demo-cut · E04 · CLI balances after a simulated send > alice → bob 25 KAS: bob 1025, alice 1000 − 25 − fee, by name and by synthetic identity 3520ms
+
+ Test Files  19 passed | 1 skipped (20)
+      Tests  218 passed | 1 skipped (219)
+   Start at  18:29:58
+   Duration  363.23s (transform 2.74s, setup 0ms, collect 24.16s, tests 333.17s, environment 4ms, prepare 2.16s)
+
+JSON report written to C:/Users/jrodr/AppData/Local/Temp/claude/C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo/21f9a2e4-33ac-4300-9366-aff402f85900/scratchpad/cut46-event-ledger-2/logs/fc-related-2.json
+
+gate-hermetic: vitest exit 0 after 2296s
+gate-hermetic: non-loopback attempts (each one fails the gate): 0
+gate-hermetic: loopback connection targets (review for dependencies on local services):
+  127.0.0.1:18210 x22
+  127.0.0.1:60909 x11
+  127.0.0.1:7420 x4
+  127.0.0.1:9 x6
+  localhost:49523 x1
+  localhost:7420 x7
+gate-hermetic: PASS

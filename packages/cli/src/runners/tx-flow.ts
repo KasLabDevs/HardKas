@@ -6,18 +6,22 @@ import {
   SignedTxArtifact,
   writeArtifact,
   deriveWorkflowId,
+  submitOutcomeOf,
   HARDKAS_VERSION
 } from "@hardkas/artifacts";
 import { HardkasConfig } from "@hardkas/config";
 import {
   coreEvents,
   createEventEnvelope,
+  isEventLedgerAppendFailure,
+  rethrowWithLedgerEffect,
   asEventSequence,
   asArtifactId,
   asWorkflowId,
   asCorrelationId,
   asNetworkId,
-  asTxId
+  asTxId,
+  type LedgerFailureEffect
 } from "@hardkas/core";
 import crypto from "node:crypto";
 import path from "path";
@@ -52,6 +56,23 @@ export interface TxFlowStepResult<T> {
   artifactPath?: string;
   error?: string;
   reason?: string;
+  /** EVENT-LEDGER-2 final closeout (A1): the typed code of the step's error, when it has one. */
+  code?: string;
+  /** What the flow had already sent or executed when the step failed (a ledger failure, or any failure after the send). */
+  effect?: LedgerFailureEffect;
+}
+
+/** EVENT-LEDGER-2 final closeout (A1) · what a send step that ran did: a broadcast (with its recorded outcome) or a simulated execution. */
+function sendEffectOf(sent: TxSendRunnerResult): LedgerFailureEffect {
+  const receipt: any = sent.receipt;
+  const broadcast = receipt?.schema === HardkasSchemas.TxSubmissionV1;
+  return {
+    operation: broadcast ? "broadcast" : "simulated-execution",
+    outcome: broadcast ? submitOutcomeOf(receipt?.submitResult) : "executed",
+    txId: sent.txId,
+    artifactId: typeof receipt?.contentHash === "string" ? receipt.contentHash : undefined,
+    artifactPath: sent.receiptPath
+  };
 }
 
 export interface TxFlowResult {
@@ -182,19 +203,29 @@ async function txFlow(input: TxFlowInput, opened: { sdk?: { close(): Promise<voi
 
   const netId = asNetworkId(resolvedNetwork);
 
-  coreEvents.emit(
-    createEventEnvelope({
-      kind: "workflow.started",
-      domain: "workflow",
-      workflowId,
-      correlationId: asCorrelationId(workflowId),
-      networkId: netId,
-      payload: { workflowId, network: netId },
-      sequenceNumber: asEventSequence(1),
-      globalOffset: globalOffset++,
-      sourceSubsystem: "cli:tx-flow"
-    })
-  );
+  // EVENT-LEDGER-2 final closeout (A1): until the send step runs, a ledger failure of a flow that was to send says that
+  // nothing was sent (or executed, in the simulator); once it ran, the failure names what it did (sendEffectOf).
+  let sendOperation: LedgerFailureEffect["operation"] = resolvedNetwork === "simulated" ? "simulated-execution" : "broadcast";
+  const notPerformed = (): LedgerFailureEffect => ({ operation: sendOperation, outcome: "not-performed" });
+
+  try {
+    coreEvents.emit(
+      createEventEnvelope({
+        kind: "workflow.started",
+        domain: "workflow",
+        workflowId,
+        correlationId: asCorrelationId(workflowId),
+        networkId: netId,
+        payload: { workflowId, network: netId },
+        sequenceNumber: asEventSequence(1),
+        globalOffset: globalOffset++,
+        sourceSubsystem: "cli:tx-flow"
+      })
+    );
+  } catch (e: unknown) {
+    if (shouldSend) rethrowWithLedgerEffect(e, notPerformed());
+    throw e;
+  }
 
   const flowResult: TxFlowResult = {
     ok: true,
@@ -207,6 +238,10 @@ async function txFlow(input: TxFlowInput, opened: { sdk?: { close(): Promise<voi
     },
     result: "planned-only"
   };
+
+  // the step a failure belongs to (a step's own announcements included), and what the send step returned once it ran
+  let current: "plan" | "sign" | "send" = "plan";
+  let sendResult: TxSendRunnerResult | undefined;
 
   try {
     // 1. Plan
@@ -222,6 +257,7 @@ async function txFlow(input: TxFlowInput, opened: { sdk?: { close(): Promise<voi
     if (workspaceRoot) planInput.workspaceRoot = workspaceRoot;
 
     const planArtifact = await runTxPlan(planInput);
+    sendOperation = planArtifact.mode === "simulator" ? "simulated-execution" : "broadcast";
 
     flowResult.mode = planArtifact.mode;
     flowResult.networkId = planArtifact.networkId;
@@ -312,6 +348,7 @@ async function txFlow(input: TxFlowInput, opened: { sdk?: { close(): Promise<voi
         return flowResult;
       }
 
+      current = "sign";
       const signedArtifact = await runTxSign({
         planArtifact,
         config,
@@ -379,12 +416,15 @@ async function txFlow(input: TxFlowInput, opened: { sdk?: { close(): Promise<voi
           flowResult.result = "signed";
           flowResult.ok = false;
         } else {
-          const sendResult = await runTxSend({
+          current = "send";
+          sendResult = await runTxSend({
             signedArtifact,
             config,
             ...(url ? { url } : {}),
             ...(workspaceRoot ? { workspaceRoot } : {})
           });
+          // the send step ran: whatever fails after this point fails after a broadcast or an execution
+          flowResult.result = "broadcast";
 
           if (actualOutDir && sendResult.receipt) {
             const receiptPath = await saveArtifact(
@@ -412,24 +452,30 @@ async function txFlow(input: TxFlowInput, opened: { sdk?: { close(): Promise<voi
               : outcome.kind === "receipt" && outcome.status === "confirmed"
                 ? "finalized"
                 : "accepted";
+            // EVENT-LEDGER-2 final closeout (decision 2): a submission whose outcome is unknown (the submit call failed
+            // without an answer) has no receipt status to announce — "failed" would read as a rejection; its submission
+            // artifact is still announced below
+            const outcomeUnknown = sendEffectOf(sendResult).outcome === "unknown";
 
-            coreEvents.emit(
-              createEventEnvelope({
-                kind: "workflow.receipt",
-                domain: "workflow",
-                workflowId,
-                correlationId: asCorrelationId(workflowId),
-                networkId: receiptNetId,
-                payload: {
-                  txId: asTxId(sendResult.receipt.txId),
-                  status: eventStatus
-                },
-                sequenceNumber: asEventSequence(6),
-                globalOffset: globalOffset++,
-                sourceSubsystem: "cli:tx-flow",
-                artifactId: receiptId
-              })
-            );
+            if (!outcomeUnknown) {
+              coreEvents.emit(
+                createEventEnvelope({
+                  kind: "workflow.receipt",
+                  domain: "workflow",
+                  workflowId,
+                  correlationId: asCorrelationId(workflowId),
+                  networkId: receiptNetId,
+                  payload: {
+                    txId: asTxId(sendResult.receipt.txId),
+                    status: eventStatus
+                  },
+                  sequenceNumber: asEventSequence(6),
+                  globalOffset: globalOffset++,
+                  sourceSubsystem: "cli:tx-flow",
+                  artifactId: receiptId
+                })
+              );
+            }
 
             coreEvents.emit(
               createEventEnvelope({
@@ -466,15 +512,31 @@ async function txFlow(input: TxFlowInput, opened: { sdk?: { close(): Promise<voi
     }
   } catch (error) {
     flowResult.ok = false;
-    const msg = error instanceof Error ? error.message : String(error);
-    // Find where it failed (the error is reported in that step's result)
-    if (flowResult.steps.plan.status !== "ok") {
-      flowResult.steps.plan = { status: "error", error: msg };
-    } else if (shouldSign && flowResult.steps.sign.status !== "ok") {
-      flowResult.steps.sign = { status: "error", error: msg };
-    } else if (shouldSend && flowResult.steps.send.status !== "ok") {
-      flowResult.steps.send = { status: "error", error: msg };
+    // EVENT-LEDGER-2 final closeout (A1): the error is reported on the step it belongs to (its announcements included),
+    // with its typed code, what the flow had already sent or executed, and what that step had produced — never as a
+    // generic step error that reads as "nothing was sent"
+    const done = sendResult ? sendEffectOf(sendResult) : undefined;
+    // nothing was sent while the send step had not started; inside it, only the effect the SDK named is reported
+    const beforeTheSend = shouldSend && current !== "send";
+    let failure: unknown = error;
+    if (isEventLedgerAppendFailure(error) && (done || beforeTheSend)) {
+      try {
+        rethrowWithLedgerEffect(error, done ?? notPerformed());
+      } catch (named) {
+        failure = named;
+      }
     }
+    const msg = failure instanceof Error ? failure.message : String(failure);
+    const code = typeof (failure as any)?.code === "string" ? ((failure as any).code as string) : undefined;
+    const effect: LedgerFailureEffect | undefined = (failure as any)?.metadata?.effect ?? done;
+    const entry = { status: "error" as const, error: msg, ...(code ? { code } : {}), ...(effect ? { effect } : {}) };
+    const kept = <T>(step: TxFlowStepResult<T>) => ({
+      ...(step.artifact ? { artifact: step.artifact } : {}),
+      ...(step.artifactPath ? { artifactPath: step.artifactPath } : {})
+    });
+    if (current === "plan") flowResult.steps.plan = { ...kept(flowResult.steps.plan), ...entry };
+    else if (current === "sign") flowResult.steps.sign = { ...kept(flowResult.steps.sign), ...entry };
+    else flowResult.steps.send = { ...(sendResult ? { artifact: sendResult } : {}), ...entry };
   }
 
   return flowResult;

@@ -1,0 +1,496 @@
+﻿node.exe : • turbo 2.10.8
+En C:\Users\jrodr\AppData\Roaming\npm\pnpm.ps1: 24 Carácter: 5
++     & "node$exe"  "$basedir/node_modules/pnpm/bin/pnpm.mjs" $args
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (• turbo 2.10.8:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+
+   • Packages in scope: @hardkas/cli, @hardkas/core, @hardkas/sdk
+   • Running build in 3 packages
+   • Remote caching disabled, using shared worktree cache
+
+@hardkas/observability:build: cache miss, executing 3fe772b390c47d04
+@hardkas/pskt-native:build: cache miss, executing 2d25b05754a93bb4
+@hardkas/core:build: cache miss, executing e4addbd36e64b193
+@hardkas/observability:build: 
+@hardkas/observability:build: > @hardkas/observability@0.12.0-rc.27 build C:\Users\jrodr\AppData\Local\Temp\hk-ra\wt\packages\observability
+@hardkas/observability:build: > tsup src/index.ts --format esm --dts --clean
+@hardkas/observability:build: 
+@hardkas/pskt-native:build: 
+@hardkas/pskt-native:build: > @hardkas/pskt-native@0.12.0-rc.27 build C:\Users\jrodr\AppData\Local\Temp\hk-ra\wt\packages\pskt-native
+@hardkas/pskt-native:build: > napi build --platform --release
+@hardkas/pskt-native:build: 
+@hardkas/core:build: 
+@hardkas/core:build: > @hardkas/core@0.12.0-rc.27 build C:\Users\jrodr\AppData\Local\Temp\hk-ra\wt\packages\core
+@hardkas/core:build: > tsup src/index.ts --format esm --dts --clean
+@hardkas/core:build: 
+@hardkas/observability:build: CLI Building entry: src/index.ts
+@hardkas/observability:build: CLI Using tsconfig: tsconfig.json
+@hardkas/observability:build: CLI tsup v8.5.1
+@hardkas/observability:build: CLI Using tsup config: C:\Users\jrodr\AppData\Local\Temp\hk-ra\wt\packages\observability\tsup.config.ts
+@hardkas/observability:build: CLI Target: es2022
+@hardkas/observability:build: CLI Cleaning output folder
+@hardkas/core:build: CLI Building entry: src/index.ts
+@hardkas/observability:build: ESM Build start
+@hardkas/core:build: CLI Using tsconfig: tsconfig.json
+@hardkas/core:build: CLI tsup v8.5.1
+@hardkas/core:build: CLI Target: es2022
+@hardkas/core:build: CLI Cleaning output folder
+@hardkas/core:build: ESM Build start
+@hardkas/observability:build: ESM dist\index.js 5.94 KB
+@hardkas/observability:build: ESM ⚡️ Build success in 42ms
+@hardkas/core:build: ESM dist\index.js 173.38 KB
+@hardkas/core:build: ESM ⚡️ Build success in 130ms
+@hardkas/core:build: DTS Build start
+@hardkas/observability:build: DTS Build start
+@hardkas/pskt-native:build: [DEPRECATED] napi.name is deprecated, use napi.binaryName instead.
+@hardkas/pskt-native:build: [DEPRECATED] napi.triples is deprecated, use napi.targets instead.
+@hardkas/observability:build: DTS ⚡️ Build success in 1414ms
+@hardkas/observability:build: DTS dist\index.d.ts 2.84 KB
+@hardkas/jobs:build: cache miss, executing 94eeed639d7abcb0
+@hardkas/pskt-native:build:    Compiling hardkas-pskt-native v0.1.0 (C:\Users\jrodr\AppData\Local\Temp\hk-ra\wt\packages\pskt-native)
+@hardkas/jobs:build: 
+@hardkas/jobs:build: > @hardkas/jobs@0.12.0-rc.27 build C:\Users\jrodr\AppData\Local\Temp\hk-ra\wt\packages\jobs
+@hardkas/jobs:build: > tsc
+@hardkas/jobs:build: 
+@hardkas/core:build: DTS ⚡️ Build success in 2919ms
+@hardkas/core:build: DTS dist\index.d.ts 121.19 KB
+@hardkas/config:build: cache miss, executing 2e2b910828d6c58d
+@hardkas/tx-builder:build: cache miss, executing 4e0093464b5ad711
+@hardkas/escrow:build: cache miss, executing 279363427ac733e0
+@hardkas/sessions:build: cache miss, executing ec41addae41bf621
+@hardkas/node-orchestrator:build: cache miss, executing 71d2470be51576f3
+@hardkas/kaspa-rpc:build: cache miss, executing 0d008aa76c5710ec
+@hardkas/tx-builder:build: 
+@hardkas/tx-builder:build: > @hardkas/tx-builder@0.12.0-rc.27 build C:\Users\jrodr\AppData\Local\Temp\hk-ra\wt\packages\tx-builder
+@hardkas/tx-builder:build: > tsup src/index.ts --format esm --dts --clean
+@hardkas/tx-builder:build: 
+@hardkas/config:build: 
+@hardkas/config:build: > @hardkas/config@0.12.0-rc.27 build C:\Users\jrodr\AppData\Local\Temp\hk-ra\wt\packages\config
+@hardkas/config:build: > tsup src/index.ts --format esm --dts --clean
+@hardkas/config:build: 
+@hardkas/escrow:build: 
+@hardkas/escrow:build: > @hardkas/escrow@0.12.0-rc.27 build C:\Users\jrodr\AppData\Local\Temp\hk-ra\wt\packages\escrow
+@hardkas/escrow:build: > tsup src/index.ts --format esm --dts --clean
+@hardkas/escrow:build: 
+@hardkas/node-orchestrator:build: 
+@hardkas/node-orchestrator:build: > @hardkas/node-orchestrator@0.12.0-rc.27 build C:\Users\jrodr\AppData\Local\Temp\hk-ra\wt\packages\node-orchestrator
+@hardkas/node-orchestrator:build: > tsup src/index.ts --format esm --dts --clean
+@hardkas/node-orchestrator:build: 
+@hardkas/kaspa-rpc:build: 
+@hardkas/kaspa-rpc:build: > @hardkas/kaspa-rpc@0.12.0-rc.27 build C:\Users\jrodr\AppData\Local\Temp\hk-ra\wt\packages\kaspa-rpc
+@hardkas/kaspa-rpc:build: > tsup src/index.ts src/adapters/index.ts --format esm --dts --clean
+@hardkas/kaspa-rpc:build: 
+@hardkas/sessions:build: 
+@hardkas/sessions:build: > @hardkas/sessions@0.12.0-rc.27 build C:\Users\jrodr\AppData\Local\Temp\hk-ra\wt\packages\sessions
+@hardkas/sessions:build: > tsup src/index.ts --format esm --dts --clean
+@hardkas/sessions:build: 
+@hardkas/config:build: CLI Building entry: src/index.ts
+@hardkas/config:build: CLI Using tsconfig: tsconfig.json
+@hardkas/config:build: CLI tsup v8.5.1
+@hardkas/config:build: CLI Target: es2022
+@hardkas/config:build: CLI Cleaning output folder
+@hardkas/config:build: ESM Build start
+@hardkas/node-orchestrator:build: CLI Building entry: src/index.ts
+@hardkas/node-orchestrator:build: CLI Using tsconfig: tsconfig.json
+@hardkas/node-orchestrator:build: CLI tsup v8.5.1
+@hardkas/node-orchestrator:build: CLI Target: es2022
+@hardkas/node-orchestrator:build: CLI Cleaning output folder
+@hardkas/node-orchestrator:build: ESM Build start
+@hardkas/tx-builder:build: CLI Building entry: src/index.ts
+@hardkas/tx-builder:build: CLI Using tsconfig: tsconfig.json
+@hardkas/tx-builder:build: CLI tsup v8.5.1
+@hardkas/tx-builder:build: CLI Target: es2022
+@hardkas/tx-builder:build: CLI Cleaning output folder
+@hardkas/tx-builder:build: ESM Build start
+@hardkas/kaspa-rpc:build: CLI Building entry: src/index.ts, src/adapters/index.ts
+@hardkas/kaspa-rpc:build: CLI Using tsconfig: tsconfig.json
+@hardkas/kaspa-rpc:build: CLI tsup v8.5.1
+@hardkas/kaspa-rpc:build: CLI Target: es2022
+@hardkas/kaspa-rpc:build: CLI Cleaning output folder
+@hardkas/kaspa-rpc:build: ESM Build start
+@hardkas/escrow:build: CLI Building entry: src/index.ts
+@hardkas/escrow:build: CLI Using tsconfig: tsconfig.json
+@hardkas/escrow:build: CLI tsup v8.5.1
+@hardkas/escrow:build: CLI Target: es2022
+@hardkas/escrow:build: CLI Cleaning output folder
+@hardkas/escrow:build: ESM Build start
+@hardkas/sessions:build: CLI Building entry: src/index.ts
+@hardkas/sessions:build: CLI Using tsconfig: tsconfig.json
+@hardkas/sessions:build: CLI tsup v8.5.1
+@hardkas/sessions:build: CLI Target: es2022
+@hardkas/sessions:build: CLI Cleaning output folder
+@hardkas/sessions:build: ESM Build start
+@hardkas/node-orchestrator:build: ESM dist\index.js 8.16 KB
+@hardkas/node-orchestrator:build: ESM ⚡️ Build success in 1784ms
+@hardkas/escrow:build: ESM dist\index.js 5.37 KB
+@hardkas/escrow:build: ESM ⚡️ Build success in 1363ms
+@hardkas/config:build: ESM dist\index.js 11.49 KB
+@hardkas/config:build: ESM ⚡️ Build success in 2016ms
+@hardkas/tx-builder:build: ESM dist\index.js 47.84 KB
+@hardkas/tx-builder:build: ESM ⚡️ Build success in 1941ms
+@hardkas/kaspa-rpc:build: ESM dist\adapters\index.js 0 B
+@hardkas/kaspa-rpc:build: ESM dist\index.js          57.34 KB
+@hardkas/kaspa-rpc:build: ESM ⚡️ Build success in 1779ms
+@hardkas/config:build: DTS Build start
+@hardkas/node-orchestrator:build: DTS Build start
+@hardkas/sessions:build: ESM dist\index.js 3.61 KB
+@hardkas/sessions:build: ESM ⚡️ Build success in 1004ms
+@hardkas/tx-builder:build: DTS Build start
+@hardkas/kaspa-rpc:build: DTS Build start
+@hardkas/escrow:build: DTS Build start
+@hardkas/sessions:build: DTS Build start
+@hardkas/pskt-native:build:     Finished `release` profile [optimized] target(s) in 12.93s
+@hardkas/escrow:build: DTS ⚡️ Build success in 4861ms
+@hardkas/escrow:build: DTS dist\index.d.ts 5.84 KB
+@hardkas/config:build: DTS ⚡️ Build success in 5327ms
+@hardkas/config:build: DTS dist\index.d.ts 7.63 KB
+@hardkas/node-orchestrator:build: DTS ⚡️ Build success in 5388ms
+@hardkas/node-orchestrator:build: DTS dist\index.d.ts 2.29 KB
+@hardkas/sessions:build: DTS ⚡️ Build success in 4504ms
+@hardkas/sessions:build: DTS dist\index.d.ts 1.34 KB
+@hardkas/tx-builder:build: DTS ⚡️ Build success in 5539ms
+@hardkas/tx-builder:build: DTS dist\index.d.ts 30.15 KB
+@hardkas/simulator:build: cache miss, executing b5503e3291c4e585
+@hardkas/artifacts:build: cache miss, executing 3844a71a341fa793
+@hardkas/simulator:build: 
+@hardkas/simulator:build: > @hardkas/simulator@0.12.0-rc.27 build C:\Users\jrodr\AppData\Local\Temp\hk-ra\wt\packages\simulator
+@hardkas/simulator:build: > tsup src/index.ts --format esm --dts --clean
+@hardkas/simulator:build: 
+@hardkas/artifacts:build: 
+@hardkas/artifacts:build: > @hardkas/artifacts@0.12.0-rc.27 build C:\Users\jrodr\AppData\Local\Temp\hk-ra\wt\packages\artifacts
+@hardkas/artifacts:build: > tsup src/index.ts --format esm --dts --clean
+@hardkas/artifacts:build: 
+@hardkas/kaspa-rpc:build: DTS ⚡️ Build success in 9283ms
+@hardkas/kaspa-rpc:build: DTS dist\adapters\index.d.ts 13.00 B
+@hardkas/kaspa-rpc:build: DTS dist\index.d.ts          21.54 KB
+@hardkas/artifacts:build: CLI Building entry: src/index.ts
+@hardkas/simulator:build: CLI Building entry: src/index.ts
+@hardkas/artifacts:build: CLI Using tsconfig: tsconfig.json
+@hardkas/artifacts:build: CLI tsup v8.5.1
+@hardkas/simulator:build: CLI Using tsconfig: tsconfig.json
+@hardkas/simulator:build: CLI tsup v8.5.1
+@hardkas/artifacts:build: CLI Target: es2022
+@hardkas/artifacts:build: CLI Cleaning output folder
+@hardkas/artifacts:build: ESM Build start
+@hardkas/simulator:build: CLI Target: es2022
+@hardkas/simulator:build: CLI Cleaning output folder
+@hardkas/simulator:build: ESM Build start
+@hardkas/node-runner:build: cache miss, executing 12678592b643cabe
+@hardkas/simulator:build: ESM dist\index.js 25.15 KB
+@hardkas/simulator:build: ESM ⚡️ Build success in 222ms
+@hardkas/artifacts:build: ESM dist\index.js 246.73 KB
+@hardkas/artifacts:build: ESM ⚡️ Build success in 302ms
+@hardkas/artifacts:build: DTS Build start
+@hardkas/simulator:build: DTS Build start
+@hardkas/node-runner:build: 
+@hardkas/node-runner:build: > @hardkas/node-runner@0.12.0-rc.27 build C:\Users\jrodr\AppData\Local\Temp\hk-ra\wt\packages\node-runner
+@hardkas/node-runner:build: > tsup src/index.ts --format esm --dts --clean
+@hardkas/node-runner:build: 
+@hardkas/node-runner:build: CLI Building entry: src/index.ts
+@hardkas/node-runner:build: CLI Using tsconfig: tsconfig.json
+@hardkas/node-runner:build: CLI tsup v8.5.1
+@hardkas/node-runner:build: CLI Target: es2022
+@hardkas/node-runner:build: CLI Cleaning output folder
+@hardkas/node-runner:build: ESM Build start
+@hardkas/node-runner:build: ESM dist\index.js 16.64 KB
+@hardkas/node-runner:build: ESM ⚡️ Build success in 110ms
+@hardkas/node-runner:build: DTS Build start
+@hardkas/simulator:build: DTS ⚡️ Build success in 2424ms
+@hardkas/simulator:build: DTS dist\index.d.ts 13.88 KB
+@hardkas/node-runner:build: DTS ⚡️ Build success in 1952ms
+@hardkas/node-runner:build: DTS dist\index.d.ts 4.84 KB
+@hardkas/artifacts:build: DTS ⚡️ Build success in 5386ms
+@hardkas/artifacts:build: DTS dist\index.d.ts 486.60 KB
+@hardkas/localnet:build: cache miss, executing bb55e632c6fc5eaf
+@hardkas/query-store:build: cache miss, executing d95d1e42a2d140a9
+@hardkas/l2:build: cache miss, executing 7fbcafb385a9a9e1
+@hardkas/localnet:build: 
+@hardkas/localnet:build: > @hardkas/localnet@0.12.0-rc.27 build C:\Users\jrodr\AppData\Local\Temp\hk-ra\wt\packages\localnet
+@hardkas/localnet:build: > tsup src/index.ts --format esm --dts --clean --external kaspa-wasm
+@hardkas/localnet:build: 
+@hardkas/query-store:build: 
+@hardkas/query-store:build: > @hardkas/query-store@0.12.0-rc.27 build C:\Users\jrodr\AppData\Local\Temp\hk-ra\wt\packages\query-store
+@hardkas/query-store:build: > tsc
+@hardkas/query-store:build: 
+@hardkas/l2:build: 
+@hardkas/l2:build: > @hardkas/l2@0.12.0-rc.27 build C:\Users\jrodr\AppData\Local\Temp\hk-ra\wt\packages\l2
+@hardkas/l2:build: > tsup src/index.ts --format esm --dts --clean
+@hardkas/l2:build: 
+@hardkas/localnet:build: CLI Building entry: src/index.ts
+@hardkas/localnet:build: CLI Using tsconfig: tsconfig.json
+@hardkas/localnet:build: CLI tsup v8.5.1
+@hardkas/localnet:build: CLI Target: es2022
+@hardkas/localnet:build: CLI Cleaning output folder
+@hardkas/localnet:build: ESM Build start
+@hardkas/l2:build: CLI Building entry: src/index.ts
+@hardkas/l2:build: CLI Using tsconfig: tsconfig.json
+@hardkas/l2:build: CLI tsup v8.5.1
+@hardkas/l2:build: CLI Target: es2022
+@hardkas/l2:build: CLI Cleaning output folder
+@hardkas/l2:build: ESM Build start
+@hardkas/localnet:build: ESM dist\index.js                      28.24 KB
+@hardkas/localnet:build: ESM dist\traces-522CKVEW.js            339.00 B
+@hardkas/localnet:build: ESM dist\snapshot-V7JMOA2W.js          393.00 B
+@hardkas/localnet:build: ESM dist\pending-execution-UOYKW7I3.js 507.00 B
+@hardkas/localnet:build: ESM dist\chunk-ZBVCDETJ.js             5.30 KB
+@hardkas/localnet:build: ESM dist\chunk-7X7UE2JS.js             32.76 KB
+@hardkas/localnet:build: ESM dist\chunk-ZGWIHC5L.js             3.87 KB
+@hardkas/localnet:build: ESM dist\receipts-INOOWOPN.js          195.00 B
+@hardkas/localnet:build: ESM dist\chunk-TD6USJ3B.js             967.00 B
+@hardkas/localnet:build: ESM ⚡️ Build success in 107ms
+@hardkas/l2:build: ESM dist\index.js 19.17 KB
+@hardkas/l2:build: ESM ⚡️ Build success in 102ms
+@hardkas/localnet:build: DTS Build start
+@hardkas/l2:build: DTS Build start
+@hardkas/query:build: cache miss, executing 3ce0ed73cd935343
+@hardkas/query:build: 
+@hardkas/query:build: > @hardkas/query@0.12.0-rc.27 build C:\Users\jrodr\AppData\Local\Temp\hk-ra\wt\packages\query
+@hardkas/query:build: > tsup src/index.ts --format esm --dts --clean
+@hardkas/query:build: 
+@hardkas/query:build: CLI Building entry: src/index.ts
+@hardkas/query:build: CLI Using tsconfig: tsconfig.json
+@hardkas/query:build: CLI tsup v8.5.1
+@hardkas/query:build: CLI Target: es2022
+@hardkas/query:build: CLI Cleaning output folder
+@hardkas/query:build: ESM Build start
+@hardkas/localnet:build: DTS ⚡️ Build success in 2131ms
+@hardkas/localnet:build: DTS dist\index.d.ts 30.47 KB
+@hardkas/query:build: ESM dist\index.js 88.98 KB
+@hardkas/query:build: ESM ⚡️ Build success in 335ms
+@hardkas/accounts:build: cache miss, executing b3e0d2ea98baff2e
+@hardkas/query:build: DTS Build start
+@hardkas/accounts:build: 
+@hardkas/accounts:build: > @hardkas/accounts@0.12.0-rc.27 build C:\Users\jrodr\AppData\Local\Temp\hk-ra\wt\packages\accounts
+@hardkas/accounts:build: > tsup src/index.ts src/internal/wasm-rpc-serialization.ts --format esm --dts --clean --external kaspa-wasm
+@hardkas/accounts:build: 
+@hardkas/l2:build: DTS ⚡️ Build success in 3384ms
+@hardkas/l2:build: DTS dist\index.d.ts 8.51 KB
+@hardkas/accounts:build: CLI Building entry: src/index.ts, src/internal/wasm-rpc-serialization.ts
+@hardkas/accounts:build: CLI Using tsconfig: tsconfig.json
+@hardkas/accounts:build: CLI tsup v8.5.1
+@hardkas/accounts:build: CLI Target: es2022
+@hardkas/accounts:build: CLI Cleaning output folder
+@hardkas/accounts:build: ESM Build start
+@hardkas/accounts:build: ESM dist\internal\wasm-rpc-serialization.js 90.00 B
+@hardkas/accounts:build: ESM dist\signer-backend-LHWY7ULI.js         233.00 B
+@hardkas/accounts:build: ESM dist\index.js                           47.98 KB
+@hardkas/accounts:build: ESM dist\resolve-DKYE4CCI.js                301.00 B
+@hardkas/accounts:build: ESM dist\chunk-5NJSLTWR.js                  3.54 KB
+@hardkas/accounts:build: ESM dist\kaspa-wasm-signer-F23BRVM3.js      309.00 B
+@hardkas/accounts:build: ESM dist\chunk-QR5JCBXF.js                  23.21 KB
+@hardkas/accounts:build: ESM dist\chunk-5HHED646.js                  19.11 KB
+@hardkas/accounts:build: ESM dist\authorizers-JX7RUMUE.js            217.00 B
+@hardkas/accounts:build: ESM dist\chunk-GM2BY4VS.js                  5.80 KB
+@hardkas/accounts:build: ESM dist\chunk-BNF566PS.js                  2.79 KB
+@hardkas/accounts:build: ESM ⚡️ Build success in 82ms
+@hardkas/accounts:build: DTS Build start
+@hardkas/query:build: DTS ⚡️ Build success in 2107ms
+@hardkas/query:build: DTS dist\index.d.ts 29.00 KB
+@hardkas/accounts:build: DTS ⚡️ Build success in 2542ms
+@hardkas/accounts:build: DTS dist\index.d.ts                           37.40 KB
+@hardkas/accounts:build: DTS dist\internal\wasm-rpc-serialization.d.ts 337.00 B
+@hardkas/bridge-local:build: cache miss, executing b5465945e3045037
+@hardkas/toolkit:build: cache miss, executing ad3fc42b8b1f5392
+@hardkas/bridge-local:build: 
+@hardkas/bridge-local:build: > @hardkas/bridge-local@0.12.0-rc.27 build C:\Users\jrodr\AppData\Local\Temp\hk-ra\wt\packages\bridge-local
+@hardkas/bridge-local:build: > tsup src/index.ts --format esm --dts --clean
+@hardkas/bridge-local:build: 
+@hardkas/toolkit:build: 
+@hardkas/toolkit:build: > @hardkas/toolkit@0.12.0-rc.27 build C:\Users\jrodr\AppData\Local\Temp\hk-ra\wt\packages\toolkit
+@hardkas/toolkit:build: > node -e "require('node:fs').rmSync('dist',{recursive:true,force:true})" && tsc
+@hardkas/toolkit:build: 
+@hardkas/bridge-local:build: CLI Building entry: src/index.ts
+@hardkas/bridge-local:build: CLI Using tsconfig: tsconfig.json
+@hardkas/bridge-local:build: CLI tsup v8.5.1
+@hardkas/bridge-local:build: CLI Target: es2022
+@hardkas/bridge-local:build: CLI Cleaning output folder
+@hardkas/bridge-local:build: ESM Build start
+@hardkas/bridge-local:build: ESM dist\index.js 4.89 KB
+@hardkas/bridge-local:build: ESM ⚡️ Build success in 71ms
+@hardkas/bridge-local:build: DTS Build start
+@hardkas/sdk:build: cache miss, executing 933f78fe70bf6912
+@hardkas/sdk:build: 
+@hardkas/sdk:build: > @hardkas/sdk@0.12.0-rc.27 build C:\Users\jrodr\AppData\Local\Temp\hk-ra\wt\packages\sdk
+@hardkas/sdk:build: > tsup src/index.ts src/client.ts --format esm --dts --clean --external @hardkas/pskt-native
+@hardkas/sdk:build: 
+@hardkas/sdk:build: CLI Building entry: src/client.ts, src/index.ts
+@hardkas/sdk:build: CLI Using tsconfig: tsconfig.json
+@hardkas/sdk:build: CLI tsup v8.5.1
+@hardkas/sdk:build: CLI Target: es2022
+@hardkas/sdk:build: CLI Cleaning output folder
+@hardkas/sdk:build: ESM Build start
+@hardkas/sdk:build: ESM dist\client.js          125.00 B
+@hardkas/sdk:build: ESM dist\index.js           247.76 KB
+@hardkas/sdk:build: ESM dist\chunk-M246ZPDS.js  4.15 KB
+@hardkas/sdk:build: ESM dist\native-UGVM3C7J.js 9.05 KB
+@hardkas/sdk:build: ESM dist\chunk-MLKGABMK.js  191.00 B
+@hardkas/sdk:build: ESM ⚡️ Build success in 145ms
+@hardkas/sdk:build: DTS Build start
+@hardkas/bridge-local:build: DTS ⚡️ Build success in 4471ms
+@hardkas/bridge-local:build: DTS dist\index.d.ts 2.72 KB
+@hardkas/sdk:build: DTS ⚡️ Build success in 3248ms
+@hardkas/sdk:build: DTS dist\index.d.ts  71.90 KB
+@hardkas/sdk:build: DTS dist\client.d.ts 2.48 KB
+@hardkas/testing:build: cache miss, executing 330ef9b1755051f3
+@hardkas/dev-server:build: cache miss, executing 07d2c5070b144dbf
+@hardkas/testing:build: 
+@hardkas/testing:build: > @hardkas/testing@0.12.0-rc.27 build C:\Users\jrodr\AppData\Local\Temp\hk-ra\wt\packages\testing
+@hardkas/testing:build: > tsup src/index.ts src/scenarios.ts src/harness.ts src/setup.ts src/reproducibility.ts src/adversarial-fixtures.ts src/mass-setup.ts --format esm --dts --clean --external vitest --external kaspa
+@hardkas/testing:build: 
+@hardkas/dev-server:build: 
+@hardkas/dev-server:build: > @hardkas/dev-server@0.12.0-rc.27 build C:\Users\jrodr\AppData\Local\Temp\hk-ra\wt\packages\dev-server
+@hardkas/dev-server:build: > tsup src/index.ts --format esm --dts --clean && pnpm build:dashboard
+@hardkas/dev-server:build: 
+@hardkas/testing:build: CLI Building entry: src/adversarial-fixtures.ts, src/harness.ts, src/index.ts, src/mass-setup.ts, src/reproducibility.ts, src/scenarios.ts, src/setup.ts
+@hardkas/testing:build: CLI Using tsconfig: tsconfig.json
+@hardkas/testing:build: CLI tsup v8.5.1
+@hardkas/testing:build: CLI Target: es2022
+@hardkas/testing:build: CLI Cleaning output folder
+@hardkas/testing:build: ESM Build start
+@hardkas/dev-server:build: CLI Building entry: src/index.ts
+@hardkas/dev-server:build: CLI Using tsconfig: tsconfig.json
+@hardkas/dev-server:build: CLI tsup v8.5.1
+@hardkas/dev-server:build: CLI Target: es2022
+@hardkas/dev-server:build: CLI Cleaning output folder
+@hardkas/dev-server:build: ESM Build start
+@hardkas/testing:build: ESM dist\adversarial-fixtures.js 125.00 B
+@hardkas/testing:build: ESM dist\index.js                167.67 KB
+@hardkas/testing:build: ESM dist\chunk-LALAYTVL.js       4.80 KB
+@hardkas/testing:build: ESM dist\chunk-Q4NLRRZC.js       4.09 KB
+@hardkas/testing:build: ESM dist\harness.js              287.00 B
+@hardkas/testing:build: ESM dist\reproducibility.js      175.00 B
+@hardkas/testing:build: ESM dist\setup.js                169.00 B
+@hardkas/testing:build: ESM dist\chunk-AHS4TIKV.js       2.58 KB
+@hardkas/testing:build: ESM dist\mass-setup.js           187.00 B
+@hardkas/testing:build: ESM dist\scenarios.js            5.22 KB
+@hardkas/testing:build: ESM dist\chunk-SKGKF5FG.js       4.03 KB
+@hardkas/testing:build: ESM dist\chunk-3RG5ZIWI.js       390.00 B
+@hardkas/testing:build: ESM ⚡️ Build success in 112ms
+@hardkas/dev-server:build: ESM dist\db-4VZZMREG.js    139.00 B
+@hardkas/dev-server:build: ESM dist\chunk-Q3LPWLHF.js 1.13 KB
+@hardkas/dev-server:build: ESM dist\index.js          101.56 KB
+@hardkas/dev-server:build: ESM ⚡️ Build success in 135ms
+@hardkas/testing:build: DTS Build start
+@hardkas/dev-server:build: DTS Build start
+@hardkas/dev-server:build: DTS ⚡️ Build success in 2561ms
+@hardkas/dev-server:build: DTS dist\index.d.ts 2.30 KB
+@hardkas/dev-server:build: 
+@hardkas/dev-server:build: > @hardkas/dev-server@0.12.0-rc.27 build:dashboard C:\Users\jrodr\AppData\Local\Temp\hk-ra\wt\packages\dev-server
+@hardkas/dev-server:build: > node scripts/copy-dashboard.js
+@hardkas/dev-server:build: 
+@hardkas/dev-server:build: ⚠️ Warning: Dashboard build not found at C:\Users\jrodr\AppData\Local\Temp\hk-ra\wt\apps\dashboard\dist. Run 'pnpm build' in apps/dashboard first.
+@hardkas/testing:build: DTS ⚡️ Build success in 3299ms
+@hardkas/testing:build: DTS dist\mass-setup.d.ts           13.00 B
+@hardkas/testing:build: DTS dist\adversarial-fixtures.d.ts 2.13 KB
+@hardkas/testing:build: DTS dist\harness.d.ts              1.58 KB
+@hardkas/testing:build: DTS dist\reproducibility.d.ts      784.00 B
+@hardkas/testing:build: DTS dist\scenarios.d.ts            301.00 B
+@hardkas/testing:build: DTS dist\index.d.ts                8.97 KB
+@hardkas/testing:build: DTS dist\setup.d.ts                13.00 B
+@hardkas/cli:build: cache miss, executing 06273f02297aa854
+@hardkas/cli:build: 
+@hardkas/cli:build: > @hardkas/cli@0.12.0-rc.27 build C:\Users\jrodr\AppData\Local\Temp\hk-ra\wt\packages\cli
+@hardkas/cli:build: > tsup src/index.ts src/public.ts --format esm --dts --clean --external vitest --external kaspa-wasm
+@hardkas/cli:build: 
+@hardkas/cli:build: CLI Building entry: src/index.ts, src/public.ts
+@hardkas/cli:build: CLI Using tsconfig: tsconfig.json
+@hardkas/cli:build: CLI tsup v8.5.1
+@hardkas/cli:build: CLI Target: es2022
+@hardkas/cli:build: CLI Cleaning output folder
+@hardkas/cli:build: ESM Build start
+@hardkas/cli:build: ESM dist\chunk-YMRTFCNX.js                       2.17 KB
+@hardkas/cli:build: ESM dist\verify-625PSTM7.js                      1.23 KB
+@hardkas/cli:build: ESM dist\inspect-W5MDGJPM.js                     1.97 KB
+@hardkas/cli:build: ESM dist\mutating-ZQYVTMWW.js                    5.07 KB
+@hardkas/cli:build: ESM dist\silver-records-BJWFQ7MW.js              1.33 KB
+@hardkas/cli:build: ESM dist\chaos-runner-32YNHDD3.js                10.29 KB
+@hardkas/cli:build: ESM dist\telemetry-runners-N3S6VPBR.js           12.01 KB
+@hardkas/cli:build: ESM dist\torture-runner-6JOHWDDQ.js              16.96 KB
+@hardkas/cli:build: ESM dist\dev-tx-generate-runner-BKEFHZLY.js      2.91 KB
+@hardkas/cli:build: ESM dist\dev-last-runner-EQMYBBS2.js             3.42 KB
+@hardkas/cli:build: ESM dist\kaspa-doctor-runner-L2EUYFMD.js         4.82 KB
+@hardkas/cli:build: ESM dist\kaspa-wallet-runner-G6I7DKZW.js         10.21 KB
+@hardkas/cli:build: ESM dist\corpus-verify-runner-THOO6WYZ.js        1.53 KB
+@hardkas/cli:build: ESM dist\dev-fixture-generate-runner-PN26QRCY.js 1.98 KB
+@hardkas/cli:build: ESM dist\local-wizard-runner-XIZWZ2WF.js         6.85 KB
+@hardkas/cli:build: ESM dist\snapshot-create-runner-4NE4DTPF.js      2.05 KB
+@hardkas/cli:build: ESM dist\snapshot-replay-runner-G44C7DWI.js      6.61 KB
+@hardkas/cli:build: ESM dist\session-runner-EHWYVUOZ.js              4.47 KB
+@hardkas/cli:build: ESM dist\dev-env-runner-2ZUETE7A.js              165.00 B
+@hardkas/cli:build: ESM dist\dev-create-runner-LCCG5BDY.js           19.07 KB
+@hardkas/cli:build: ESM dist\dev-init-runner-CRMWCOXN.js             137.00 B
+@hardkas/cli:build: ESM dist\dev-accounts-runners-NTYBNWAS.js        6.19 KB
+@hardkas/cli:build: ESM dist\dev-tx-runners-CPWUJE2D.js              201.00 B
+@hardkas/cli:build: ESM dist\accounts-keystore-runners-GBJ3AN5P.js   7.84 KB
+@hardkas/cli:build: ESM dist\accounts-consolidate-runner-5H636W6S.js 7.17 KB
+@hardkas/cli:build: ESM dist\doctor-node-runner-6TJEPC4H.js          143.00 B
+@hardkas/cli:build: ESM dist\capabilities-WUR2KYBR.js                1.39 KB
+@hardkas/cli:build: ESM dist\projection-access-Y26Z6OWL.js           1.31 KB
+@hardkas/cli:build: ESM dist\dev-doctor-runner-ASSPF7VB.js           19.70 KB
+@hardkas/cli:build: ESM dist\doctor-signer-runner-J4QFRP2U.js        1.59 KB
+@hardkas/cli:build: ESM dist\env-YJVZYCGO.js                         331.00 B
+@hardkas/cli:build: ESM dist\localnet-account-runners-NJOU35SB.js    1.24 KB
+@hardkas/cli:build: ESM dist\snapshot-verify-runner-EC3RJF6W.js      4.43 KB
+@hardkas/cli:build: ESM dist\chunk-KFL56A75.js                       665.00 B
+@hardkas/cli:build: ESM dist\artifact-inspect-runner-UBZ6QS63.js     4.33 KB
+@hardkas/cli:build: ESM dist\artifact-migrate-runner-DUGJYQFU.js     2.55 KB
+@hardkas/cli:build: ESM dist\artifact-create-runner-2FKF4JFQ.js      1.68 KB
+@hardkas/cli:build: ESM dist\replay-verify-runner-GAN5FSGY.js        177.00 B
+@hardkas/cli:build: ESM dist\artifact-lineage-runner-L2OKNSRP.js     5.79 KB
+@hardkas/cli:build: ESM dist\replay-diff-runner-S5B2UXB4.js          3.59 KB
+@hardkas/cli:build: ESM dist\rpc-doctor-runner-ORR5AH56.js           7.37 KB
+@hardkas/cli:build: ESM dist\dag-runners-W3NYUHTS.js                 2.65 KB
+@hardkas/cli:build: ESM dist\next-steps-WOM6FLCS.js                  203.00 B
+@hardkas/cli:build: ESM dist\deployment-runners-KN4FOFPZ.js          419.00 B
+@hardkas/cli:build: ESM dist\tx-status-runner-YHELYKPB.js            325.00 B
+@hardkas/cli:build: ESM dist\tx-wait-runner-IZY27SFH.js              6.78 KB
+@hardkas/cli:build: ESM dist\tx-batch-runner-CGZZHZDX.js             4.37 KB
+@hardkas/cli:build: ESM dist\chunk-FS7ZDG53.js                       4.80 KB
+@hardkas/cli:build: ESM dist\workspace-root-OMFUH57Z.js              573.00 B
+@hardkas/cli:build: ESM dist\chunk-CBYW4MBE.js                       4.29 KB
+@hardkas/cli:build: ESM dist\tx-verify-runner-UJRWNIMK.js            169.00 B
+@hardkas/cli:build: ESM dist\tx-compare-runner-JBGXA4EL.js           2.68 KB
+@hardkas/cli:build: ESM dist\chunk-L2SQSIIE.js                       2.32 KB
+@hardkas/cli:build: ESM dist\public.js                               19.83 KB
+@hardkas/cli:build: ESM dist\chunk-7DRPTSMM.js                       2.07 KB
+@hardkas/cli:build: ESM dist\index.js                                2.25 KB
+@hardkas/cli:build: ESM dist\chunk-3BFRVKQ5.js                       4.07 KB
+@hardkas/cli:build: ESM dist\chunk-ZRKBBDIX.js                       4.38 KB
+@hardkas/cli:build: ESM dist\chunk-2VH6E3CW.js                       1.90 KB
+@hardkas/cli:build: ESM dist\chunk-56FKNBBV.js                       6.37 KB
+@hardkas/cli:build: ESM dist\chunk-MOQTC5BI.js                       3.96 KB
+@hardkas/cli:build: ESM dist\chunk-IQX7CIA6.js                       411.62 KB
+@hardkas/cli:build: ESM dist\chunk-EYHKQQIH.js                       37.46 KB
+@hardkas/cli:build: ESM dist\chunk-GSQCDE7Q.js                       1.92 KB
+@hardkas/cli:build: ESM dist\chunk-EIVXNJTN.js                       1.80 KB
+@hardkas/cli:build: ESM dist\output-HKXOQLZS.js                      213.00 B
+@hardkas/cli:build: ESM dist\chunk-2XTZMMA7.js                       262.00 B
+@hardkas/cli:build: ESM dist\ui-E7RCA7HY.js                          251.00 B
+@hardkas/cli:build: ESM dist\chunk-NZS7J5S2.js                       6.82 KB
+@hardkas/cli:build: ESM dist\cli-errors-E5FIRYOW.js                  401.00 B
+@hardkas/cli:build: ESM dist\chunk-4PUVUPXN.js                       6.19 KB
+@hardkas/cli:build: ESM dist\dev-server-runner-6RZLEHFI.js           183.00 B
+@hardkas/cli:build: ESM dist\toolchain-install-46OFAS4Z.js           131.00 B
+@hardkas/cli:build: ESM dist\chunk-AUHTFJNR.js                       11.84 KB
+@hardkas/cli:build: ESM dist\chunk-LFZFQRKG.js                       2.06 KB
+@hardkas/cli:build: ESM dist\chunk-A6L6TSVD.js                       4.31 KB
+@hardkas/cli:build: ESM dist\chunk-SPOLNJ2L.js                       1.29 KB
+@hardkas/cli:build: ESM dist\secrets-7LUUFYLG.js                     159.00 B
+@hardkas/cli:build: ESM dist\chunk-Y2IFRMLN.js                       1.94 KB
+@hardkas/cli:build: ESM dist\chunk-IDSCKG3M.js                       3.76 KB
+@hardkas/cli:build: ESM dist\chunk-QX56J22Q.js                       1.58 KB
+@hardkas/cli:build: ESM dist\chunk-725JRV74.js                       1.66 KB
+@hardkas/cli:build: ESM dist\chunk-4N4CBO6J.js                       3.07 KB
+@hardkas/cli:build: ESM ⚡️ Build success in 222ms
+@hardkas/cli:build: DTS Build start
+@hardkas/cli:build: DTS ⚡️ Build success in 8638ms
+@hardkas/cli:build: DTS dist\index.d.ts  20.00 B
+@hardkas/cli:build: DTS dist\public.d.ts 2.67 KB
+
+ Tasks:    24 successful, 24 total
+Cached:    0 cached, 24 total
+  Time:    1m0.809s 
+
+ WARNING  no output files found for task @hardkas/pskt-native#build. Please check your `outputs` key in `turbo.json`

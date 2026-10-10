@@ -1,0 +1,96 @@
+﻿gate-hermetic: HARDKAS_HOME=C:\Users\jrodr\AppData\Local\Temp\hardkas-hermetic-home-dbyMd5 (copy of C:\Users\jrodr\AppData\Local\Temp\hk-v210-gate-home)
+gate-hermetic: DOCKER_HOST=tcp://127.0.0.1:1; preload=C:\Users\jrodr\AppData\Local\Temp\hk-ra\wt\scripts\hermetic\no-network-preload.cjs
+gate-hermetic: vitest run --coverage.enabled=false --reporter=default --reporter=json --outputFile=C:\Users\jrodr\AppData\Local\Temp\claude\C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo\21f9a2e4-33ac-4300-9366-aff402f85900\scratchpad\cut46-event-ledger-2\logs\fc-after-2.json packages/core/test/event-ledger-2-closeout.test.ts packages/core/test/event-ledger-2.test.ts packages/core/test/event-ledger-2-effect.test.ts packages/core/test/event-emission-guard.test.ts packages/sdk/test/event-ledger-2-effect.test.ts packages/sdk/test/event-ledger-2-submission.test.ts packages/artifacts/test/event-ledger-2-submit-outcome.test.ts packages/cli/test/event-ledger-2-flow.test.ts packages/cli/test/event-ledger-2-report.test.ts packages/cli/test/event-ledger-2.test.ts packages/cli/test/demo-cut-t-a14b-tx-status.test.ts packages/cli/test/wave1-3-cli-helpers.test.ts packages/cli/test/tx-flow-outcome.test.ts packages/cli/test/wave2-e-send-outcome.test.ts packages/cli/test/demo-cut-t-a14b-no-false-claims.test.ts packages/cli/test/json-papercuts.test.ts
+
+ RUN  v2.1.9 C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt
+
+ ✓ packages/core/test/event-ledger-2.test.ts (19 tests) 17617ms
+   ✓ EVENT-LEDGER-2 · controls (must hold before and after) > a lock held by a LIVE process is waited for, never taken over: the event lands after the holder releases it 1596ms
+   ✓ EVENT-LEDGER-2 · AFTER · no silent loss (D2, EL2-I0) > a live holder past the wait: typed failure naming the holder, in about the wait, and the holder's lock is never taken over 15094ms
+ ✓ packages/cli/test/demo-cut-t-a14b-tx-status.test.ts (10 tests) 1627ms
+   ✓ Demo-cut · T-A14b · tx status / tx wait present the derived Q4 state > walks SUBMITTED → MEMPOOL_ACCEPTED → ACCEPTED(n) → CONFIRMED(n) → FINALIZED, each equal to sdk.tx.status, nothing asserted beyond it 506ms
+ ✓ packages/cli/test/json-papercuts.test.ts (9 tests) 33931ms
+   ✓ JSON-PAPERCUTS · --json is one JSON document with a verdict > #40 · tx profile --json: the profile is the envelope's result; the text rendering is not printed 1915ms
+   ✓ JSON-PAPERCUTS · --json is one JSON document with a verdict > #5 · artifact lineage --json: lineage, chain and verification in one envelope; the text is not printed 1719ms
+   ✓ JSON-PAPERCUTS · --json is one JSON document with a verdict > #5 · an orphan (no lineage block) is ok:true with orphan:true, exit 0 1006ms
+   ✓ JSON-PAPERCUTS · --json is one JSON document with a verdict > #5 · an inconsistent lineage is ONE envelope: ok:false, LINEAGE_VIOLATIONS, the issues, exit 1 1859ms
+   ✓ JSON-PAPERCUTS · --json is one JSON document with a verdict > #39 · deploy track --json prints the record it wrote; a taken label is DEPLOYMENT_EXISTS 3873ms
+   ✓ JSON-PAPERCUTS · --json is one JSON document with a verdict > #19 · a --track label that cannot be recorded is refused BEFORE anything is broadcast: ok:false, not_executed, typed code, no receipt 2757ms
+   ✓ JSON-PAPERCUTS · --json is one JSON document with a verdict > #19 · a record that fails AFTER the broadcast is stated in the one envelope; the broadcast stays `submitted`, exit 0 5949ms
+   ✓ JSON-PAPERCUTS · --json is one JSON document with a verdict > #19 · control: a fresh label is recorded, and the envelope says so 10911ms
+   ✓ JSON-PAPERCUTS · --json is one JSON document with a verdict > replay verify --json: the success envelope carries ok:true (the failure envelope already did) 1930ms
+ ✓ packages/core/test/event-ledger-2-closeout.test.ts (4 tests) 19236ms
+   ✓ EVENT-LEDGER-2 closeout · CL-3 a lock naming this process's own pid is held by a live process > a worker thread of this process holding the append lock is waited for, never taken over; the event lands after it releases 1571ms
+   ✓ EVENT-LEDGER-2 closeout · CL-4 a recovery that is still valid is never taken over > a recoverer that is alive keeps its recovery lock however old it is: the append waits and fails typed, the lock intact 10239ms
+   ✓ EVENT-LEDGER-2 closeout · CL-4 a recovery that is still valid is never taken over > a recoverer suspended between its check and its unlink never removes the lock of a holder that came after it 7236ms
+ ✓ packages/cli/test/event-ledger-2.test.ts (8 tests) 23590ms
+   ✓ EVENT-LEDGER-2 · the CLI's event ledger > control · a shortcut tx send records its events in events.jsonl and leaves no lock 1182ms
+   ✓ EVENT-LEDGER-2 · the CLI's event ledger > EL2-I1 · with an append lock left by a dead process, tx send still records its events, without the 10 s wait, and no stale lock survives 1240ms
+   ✓ EVENT-LEDGER-2 · the CLI's event ledger > EL2-I2 · while a live process holds the append lock for the whole command, tx send fails with EVENT_LEDGER_APPEND_FAILED, and the holder keeps its lock 11319ms
+   ✓ EVENT-LEDGER-2 · the CLI's event ledger > EL2-I4 · the plan artifact tx plan writes is announced in the ledger, under the plan's own workflowId 1037ms
+   ✓ EVENT-LEDGER-2 · the CLI's event ledger > EL2-I4 · the copy tx sign --out writes is announced like the store's copy 2135ms
+   ✓ EVENT-LEDGER-2 · the CLI's event ledger > D7 · lock list / lock doctor call a dead holder's append lock stale, and the next command recovers it 3700ms
+   ✓ EVENT-LEDGER-2 · the CLI's event ledger > D7 · an append lock without a hostname (an earlier HardKAS) is reported as unverifiable, never as live 1818ms
+   ✓ EVENT-LEDGER-2 · the CLI's event ledger > D6 · a dead telemetry lock costs no wait and no anomaly: the telemetry appends recover it like the ledger does 1157ms
+ ✓ packages/sdk/test/event-ledger-2-effect.test.ts (7 tests) 649ms
+stdout | packages/cli/test/wave1-3-cli-helpers.test.ts > Wave 1.3 · artifact create writes no identity copy (IC-7.3) > the created artifact has a deterministic contentHash as its only identity
+{
+  "type": "test-type",
+  "schemaValid": true,
+  "payload": {
+    "key": "value",
+    "b": 2,
+    "a": 1
+  },
+  "createdAt": 1791565964740,
+  "hashVersion": 5,
+  "contentHash": "c34b27e42fb5c703d9cd97dd77e24e771369725f5584c3f6da5183c7640a655d"
+}
+
+stdout | packages/cli/test/wave1-3-cli-helpers.test.ts > Wave 1.3 · artifact create writes no identity copy (IC-7.3) > the created artifact has a deterministic contentHash as its only identity
+{
+  "type": "test-type",
+  "schemaValid": true,
+  "payload": {
+    "key": "value",
+    "b": 2,
+    "a": 1
+  },
+  "createdAt": 1791565964743,
+  "hashVersion": 5,
+  "contentHash": "c34b27e42fb5c703d9cd97dd77e24e771369725f5584c3f6da5183c7640a655d"
+}
+
+ ✓ packages/cli/test/wave1-3-cli-helpers.test.ts (9 tests) 22ms
+ ✓ packages/cli/test/event-ledger-2-flow.test.ts (7 tests) 118ms
+ ✓ packages/sdk/test/event-ledger-2-submission.test.ts (6 tests) 669ms
+ ✓ packages/cli/test/wave2-e-send-outcome.test.ts (6 tests) 6051ms
+   ✓ Wave 2(e) · AUX-11 · tx send outcomes are unambiguous > T-AUX11 · shortcut mode without --yes on a non-simulated network: NOT executed, exit 3, nothing written, nothing that reads as success 873ms
+   ✓ Wave 2(e) · AUX-11 · tx send outcomes are unambiguous > T-AUX11 · the same refusal is machine-readable in --json: ok:false, outcome:not_executed, the code, exit 3 1007ms
+   ✓ Wave 2(e) · AUX-11 · tx send outcomes are unambiguous > T-AUX11 · signed-artifact mode without --yes on a non-simulated network is refused the same way, before any RPC 914ms
+   ✓ Wave 2(e) · AUX-11 · tx send outcomes are unambiguous > control · a simulated shortcut send really runs and is `submitted`: ok:true, outcome:submitted, a receipt, exit 0 1106ms
+   ✓ Wave 2(e) · AUX-11 · tx send outcomes are unambiguous > control · the same send in human mode names the receipt it wrote (no 'unknown' artifact behind a success line) 1152ms
+   ✓ Wave 2(e) · AUX-11 · tx send outcomes are unambiguous > T-AUX11 · a shortcut send whose flow fails before broadcasting is `failed`: ok:false, outcome:failed, exit 1, never submitted 967ms
+ ✓ packages/cli/test/demo-cut-t-a14b-no-false-claims.test.ts (6 tests) 7041ms
+   ✓ Demo-cut · T-A14b · what the built CLI prints for tx status, tx wait and explain > tx status <network txId> --no-observe: SUBMITTED from the recorded submission, with the policy and no claims 1852ms
+   ✓ Demo-cut · T-A14b · what the built CLI prints for tx status, tx wait and explain > tx status <synthetic txId>: SYNTHETIC_EXECUTED; tx wait on it says there is no network and exits 0 2034ms
+   ✓ Demo-cut · T-A14b · what the built CLI prints for tx status, tx wait and explain > tx wait rejects an unknown target with a usage error 934ms
+   ✓ Demo-cut · T-A14b · what the built CLI prints for tx status, tx wait and explain > tx status <path> keeps the signature-coverage view 939ms
+   ✓ Demo-cut · T-A14b · what the built CLI prints for tx status, tx wait and explain > explain on the network submission derives its state and makes no consensus claim 1004ms
+ ✓ packages/core/test/event-ledger-2-effect.test.ts (3 tests) 5ms
+ ✓ packages/cli/test/event-ledger-2-report.test.ts (3 tests) 6ms
+ ✓ packages/core/test/event-emission-guard.test.ts (3 tests) 173ms
+ ✓ packages/cli/test/tx-flow-outcome.test.ts (3 tests) 50ms
+ ✓ packages/artifacts/test/event-ledger-2-submit-outcome.test.ts (3 tests) 10ms
+
+ Test Files  16 passed (16)
+      Tests  106 passed (106)
+   Start at  19:10:58
+   Duration  127.67s (transform 1.93s, setup 0ms, collect 11.94s, tests 110.80s, environment 3ms, prepare 1.78s)
+
+JSON report written to C:/Users/jrodr/AppData/Local/Temp/claude/C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo/21f9a2e4-33ac-4300-9366-aff402f85900/scratchpad/cut46-event-ledger-2/logs/fc-after-2.json
+
+gate-hermetic: vitest exit 0 after 128s
+gate-hermetic: non-loopback attempts (each one fails the gate): 0
+gate-hermetic: loopback connection targets (review for dependencies on local services):
+gate-hermetic: PASS

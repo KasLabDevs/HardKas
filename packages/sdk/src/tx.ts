@@ -36,13 +36,27 @@ import {
   deriveSubmissionFee,
   deriveTxStatus,
   deriveObserverId,
+  submitOutcomeOf,
   TX_STATUS_POLICY_HARDKAS_DEFAULT_V1,
   type DerivedTxStatus,
   type TxStatusPolicy,
   type TxObservation
 } from "@hardkas/artifacts";
 import { observeTxOnce, rpcObserverFor } from "./tx-observer.js";
-import { coreEvents } from "@hardkas/core";
+import {
+  coreEvents,
+  createEventEnvelope,
+  emitArtifactWritten,
+  rethrowWithLedgerEffect,
+  STANDALONE_WORKFLOW_ID,
+  asArtifactId,
+  asCorrelationId,
+  asEventSequence,
+  asNetworkId,
+  asRpcEndpointId,
+  asTxId,
+  asWorkflowId
+} from "@hardkas/core";
 import {
   HardkasAccount,
   signTxPlanArtifact,
@@ -903,29 +917,10 @@ export class HardkasTx {
       await this.persistAuthorizedPlan(plan);
       // EVIDENCE-TRUST-1 (D2): what is returned is exactly what the store holds (the earlier copy of an identity signed before).
       const written = await this.sdk.artifacts.write(produced);
-      const absolutePath = written.absolutePath;
       const signedArtifact: typeof produced = written.artifact ?? produced;
-      const { coreEvents } = await import("@hardkas/core");
-      const signedRecord = signedArtifact as unknown as Record<string, string>;
-      // IC-5′.11: events carry the canonical identity (content hash), never a label.
-      const artifactId = signedRecord.contentHash || signedArtifact.signedId;
-
-      coreEvents.normalizeAndEmit({
-        kind: "artifact.created",
-        schema: signedArtifact.schema,
-        artifactId: artifactId,
-        network: signedArtifact.networkId,
-        mode: signedArtifact.mode,
-        path: absolutePath
-      } as unknown as Parameters<typeof coreEvents.normalizeAndEmit>[0]);
-
-      coreEvents.normalizeAndEmit({
-        kind: "tx.signed",
-        txId: signedArtifact.txId || artifactId,
-        network: signedArtifact.networkId,
-        mode: signedArtifact.mode,
-        amountSompi: signedArtifact.amountSompi
-      } as unknown as Parameters<typeof coreEvents.normalizeAndEmit>[0]);
+      // EVENT-LEDGER-2 (EVENT-EMISSION-1): the store write above is announced by the artifact manager
+      // (`artifact.written`, under the signed artifact's own workflowId). The raw `artifact.created` / `tx.signed`
+      // objects once handed to normalizeAndEmit here duplicated it without a correlation and were discarded: gone.
 
       return signedArtifact;
     }
@@ -1180,30 +1175,10 @@ export class HardkasTx {
     await this.persistAuthorizedPlan(plan);
     // EVIDENCE-TRUST-1 (D2): what is returned is exactly what the store holds (the earlier copy of an identity signed before).
     const written = await this.sdk.artifacts.write(signedArtifact);
-    const absolutePath = written.absolutePath;
     if (written.artifact) signedArtifact = written.artifact;
-
-    const { coreEvents } = await import("@hardkas/core");
-    const signedRecord = signedArtifact as unknown as Record<string, string>;
-    // IC-5′.11: events carry the canonical identity (content hash), never a label.
-    const artifactId = signedRecord.contentHash || signedArtifact.signedId;
-
-    coreEvents.normalizeAndEmit({
-      kind: "artifact.created",
-      schema: signedArtifact.schema,
-      artifactId: artifactId,
-      network: signedArtifact.networkId,
-      mode: signedArtifact.mode,
-      path: absolutePath
-    } as unknown as Parameters<typeof coreEvents.normalizeAndEmit>[0]);
-
-    coreEvents.normalizeAndEmit({
-      kind: "tx.signed",
-      txId: signedArtifact.txId || artifactId,
-      network: signedArtifact.networkId,
-      mode: signedArtifact.mode,
-      amountSompi: signedArtifact.amountSompi
-    } as unknown as Parameters<typeof coreEvents.normalizeAndEmit>[0]);
+    // EVENT-LEDGER-2 (EVENT-EMISSION-1): the store write above is announced by the artifact manager
+    // (`artifact.written`, under the signed artifact's own workflowId). The raw `artifact.created` / `tx.signed`
+    // objects once handed to normalizeAndEmit here duplicated it without a correlation and were discarded: gone.
 
     // Fire non-blocking after hook
     // Do not await, or await but let plugin manager catch failure
@@ -1422,7 +1397,10 @@ export class HardkasTx {
 
       // If persist is true and it's a new in-memory plan (no ID), we write it
       if (persist && !planArtifact.planId) {
-        const savedPlanResult = await this.sdk.artifacts.write(planArtifact);
+        // A1: a ledger failure here comes before the simulator runs anything
+        await this.sdk.artifacts.write(planArtifact).catch((e: unknown) =>
+          rethrowWithLedgerEffect(e, { operation: "simulated-execution", outcome: "not-performed" })
+        );
         sourcePlanId = planArtifact.planId || "unknown";
       }
       // D-Q2.a / N4: the synthetic txId IS the executed plan's identity.
@@ -1482,11 +1460,9 @@ export class HardkasTx {
       throw new Error(`Strict validation failed: ${simResult.errors?.join(", ")}`);
     }
 
-    coreEvents.normalizeAndEmit({
-      kind: "workflow.submitted",
-      txId: simResult.receipt.txId,
-      endpoint: "simulated://local"
-    } as unknown as Parameters<typeof coreEvents.normalizeAndEmit>[0]);
+    // EVENT-LEDGER-2 (EVENT-EMISSION-1): the raw `workflow.submitted` to "simulated://local" and `tx.submitted`
+    // objects once handed to normalizeAndEmit here (no correlation, an invented endpoint) were discarded: gone. The
+    // simulator's evidence is the receipt the durable commit publishes, announced below (D4).
 
     const completedAt = Date.now();
 
@@ -1500,7 +1476,10 @@ export class HardkasTx {
       // record names them); post-state + record are then committed in one ledger write, the evidence is published and
       // the record cleared. The store is held for the whole sequence: a store held elsewhere delays the execution
       // instead of leaving the state moved without its evidence.
-      await this.persistExecutionMaterial(executed, planArtifact);
+      // A1: a ledger failure while the material is stored comes before the state moves: nothing was executed
+      await this.persistExecutionMaterial(executed, planArtifact).catch((e: unknown) =>
+        rethrowWithLedgerEffect(e, { operation: "simulated-execution", outcome: "not-performed", txId: receipt.txId })
+      );
       const clock = {
         traceStartedAtMs: startTime,
         submittedAt: nowIso,
@@ -1527,26 +1506,29 @@ export class HardkasTx {
       receiptPath = evidence.receiptPath;
     }
 
-    // P1.1 Emit dashboard/query-store events for local/simulated transactions
-    if (persist) {
-      coreEvents.normalizeAndEmit({
-        kind: "artifact.created",
-        schema: receipt.schema,
-        artifactId: receipt.txId,
-        network: receipt.networkId,
-        mode: receipt.mode,
-        path: receiptPath!
-      } as unknown as Parameters<typeof coreEvents.normalizeAndEmit>[0]);
+    // EVENT-LEDGER-2 (D4): the receipt the durable commit published is announced through the one artifact boundary,
+    // under its content hash and its own workflowId (the plan's). The trace and the state snapshot of the same
+    // commit are not announced yet (ARTIFACT-ANNOUNCE-2).
+    if (persist && receiptPath) {
+      try {
+        emitArtifactWritten({
+          artifactId: typeof receipt.contentHash === "string" ? receipt.contentHash : "unknown",
+          absolutePath: receiptPath,
+          sourceSubsystem: "sdk:tx-simulate",
+          workflowId: typeof receipt.workflowId === "string" ? receipt.workflowId : undefined,
+          networkId: receipt.networkId
+        });
+      } catch (e: unknown) {
+        // A1: the commit above already moved the simulated state: the failure names that execution and its receipt
+        rethrowWithLedgerEffect(e, {
+          operation: "simulated-execution",
+          outcome: "executed",
+          txId: receipt.txId,
+          artifactId: typeof receipt.contentHash === "string" ? receipt.contentHash : undefined,
+          artifactPath: receiptPath
+        });
+      }
     }
-
-    coreEvents.normalizeAndEmit({
-      kind: "tx.submitted",
-      txId: receipt.txId,
-      network: receipt.networkId,
-      mode: receipt.mode,
-      amountSompi: receipt.amountSompi,
-      feeSompi: receipt.feeSompi
-    } as unknown as Parameters<typeof coreEvents.normalizeAndEmit>[0]);
     const result: {
       receipt: TxReceiptArtifact;
       receiptPath?: string;
@@ -1627,7 +1609,16 @@ export class HardkasTx {
     }
 
     const signedTxId = signedArtifact.txId || signedArtifact.signedId || signedArtifact.contentHash || "unknown";
-    await this.sdk.plugins.onBeforeTxSend({ signedTxId, from: signedArtifact.from?.accountName || signedArtifact.from?.address || "unknown" });
+    try {
+      await this.sdk.plugins.onBeforeTxSend({ signedTxId, from: signedArtifact.from?.accountName || signedArtifact.from?.address || "unknown" });
+    } catch (e: unknown) {
+      // A1: a ledger failure here (a plugin's blocking decision being recorded) comes before anything is sent or executed
+      rethrowWithLedgerEffect(e, {
+        operation: isSimulated ? "simulated-execution" : "broadcast",
+        outcome: "not-performed",
+        txId: typeof signedArtifact.txId === "string" ? signedArtifact.txId : undefined
+      });
+    }
 
     if (isSimulated) {
       const persistOpt = typeof urlOrOptions === "object" ? urlOrOptions.persist : true;
@@ -1746,11 +1737,14 @@ export class HardkasTx {
       unknown
     >;
     const localTxId = (broadcastRecord.id as string) || "unknown";
-    coreEvents.normalizeAndEmit({
-      kind: "workflow.submitted",
-      txId: localTxId,
-      endpoint: url ? redactUrlCredentials(url) : "real"
-    } as unknown as Parameters<typeof coreEvents.normalizeAndEmit>[0]);
+    // EVENT-LEDGER-2 closeout (CL-2): the submission's EVENT is decided by its RESULT, recorded after the submit call
+    // answered (below): `workflow.submitted` only for a submission the node accepted, `workflow.failed` for one that
+    // failed or was refused. An intent to submit is not a submission (a catalog kind for the intent is a proposal).
+    const submissionWorkflowId =
+      typeof signedArtifact.workflowId === "string" && signedArtifact.workflowId ? signedArtifact.workflowId : STANDALONE_WORKFLOW_ID;
+    // the endpoint: the explicit one, else the one the SDK's client was opened with (a stand-in may name none)
+    const clientUrl = (this.sdk.rpc as { url?: unknown }).url;
+    const endpoint = url ?? (typeof clientUrl === "string" ? clientUrl : "");
 
     // The submit call's result is recorded as returned, accepted or not. EVIDENCE-TRUST-1 (ET-C4): the result is
     // authenticated, so a credential the RPC layer put into its error text (it names the URL) is redacted BEFORE hashing.
@@ -1764,6 +1758,9 @@ export class HardkasTx {
     } catch (e: unknown) {
       submitResult = { accepted: false, error: redactUrlCredentialsInText(e instanceof Error ? e.message : String(e)) };
     }
+    // EVENT-LEDGER-2 final closeout: from here on the broadcast has happened, or its outcome is unknown — what the
+    // recorded result establishes (accepted request, the node's rejection, or no answer), never a consensus state
+    const submitOutcome = submitOutcomeOf(submitResult);
 
     // DEF-1b: `mode` describes the EXECUTION SEMANTICS of the lifecycle, fixed
     // at plan/sign time. It is NOT a property of the transport (URL scheme).
@@ -1815,14 +1812,74 @@ export class HardkasTx {
     submissionBase.contentHash = calculateContentHash(submissionBase, CURRENT_HASH_VERSION);
     submissionBase.lineage.artifactId = submissionBase.contentHash;
     const produced: TxSubmissionArtifact = Object.freeze(submissionBase);
+    // the transaction that was sent: the node's txId, else the signed artifact's (a failed call records "unknown")
+    const sentTxId = [produced.txId, signedArtifact.txId].find((t) => typeof t === "string" && /^[0-9a-f]{64}$/.test(t)) as
+      | string
+      | undefined;
 
-    // EVIDENCE-TRUST-1 (D2): what is returned is exactly what the store holds (the earlier copy of this identity, if any).
-    const written = await this.sdk.artifacts.write(produced);
-    const receiptPath = written.absolutePath;
-    const submission: TxSubmissionArtifact = written.artifact ? Object.freeze(written.artifact) : produced;
+    let receiptPath: string | undefined;
+    let submission: TxSubmissionArtifact = produced;
+    try {
+      // EVIDENCE-TRUST-1 (D2): what is returned is exactly what the store holds (the earlier copy of this identity, if any).
+      const written = await this.sdk.artifacts.write(produced);
+      receiptPath = written.absolutePath;
+      if (written.artifact) submission = Object.freeze(written.artifact);
 
-    // Reuse the signedTxId from the start of the method
-    await this.sdk.plugins.onTxSent({ signedTxId, receiptArtifact: submission });
+      // EVENT-LEDGER-2 closeout (CL-2; final closeout, decision 2): the submission's RESULT, once the call returned or
+      // failed, under the signed artifact's own workflowId (never a derived one), naming the submission artifact that
+      // records it: `workflow.submitted` for a submission request the node accepted, `workflow.failed` for the node's
+      // rejection and, for a call that failed without an answer, `rpc.error` — the outcome is unknown, so neither a
+      // submission nor a rejection is declared. Existing kinds only; no consensus state.
+      const resultEvent = {
+        domain: "workflow" as const,
+        workflowId: asWorkflowId(submissionWorkflowId),
+        correlationId: asCorrelationId(submissionWorkflowId),
+        networkId: asNetworkId(this.sdk.network),
+        sequenceNumber: asEventSequence(1),
+        globalOffset: 0,
+        sourceSubsystem: "sdk:tx-send",
+        txId: asTxId(submission.txId),
+        artifactId: asArtifactId(submission.contentHash as string)
+      };
+      const rpcUrl = endpoint ? redactUrlCredentials(endpoint) : "";
+      coreEvents.emit(
+        submitOutcome === "accepted"
+          ? createEventEnvelope({ ...resultEvent, kind: "workflow.submitted", payload: { txId: asTxId(submission.txId), rpcUrl } })
+          : submitOutcome === "rejected"
+            ? createEventEnvelope({
+                ...resultEvent,
+                kind: "workflow.failed",
+                payload: {
+                  workflowId: asWorkflowId(submissionWorkflowId),
+                  error: `the node rejected the submission: ${submitResult.error ?? "it answered accepted: false"}`
+                }
+              })
+            : createEventEnvelope({
+                ...resultEvent,
+                domain: "rpc",
+                kind: "rpc.error",
+                payload: {
+                  endpoint: asRpcEndpointId(rpcUrl || "unknown"),
+                  error:
+                    `submitTransaction failed without an answer from the node (${submitResult.error ?? "no answer"}): the outcome ` +
+                    `of the submission is unknown, and the node may have received transaction ${sentTxId ?? submission.txId}`,
+                  retriable: false
+                }
+              })
+      );
+
+      // Reuse the signedTxId from the start of the method
+      await this.sdk.plugins.onTxSent({ signedTxId, receiptArtifact: submission });
+    } catch (e: unknown) {
+      // A1: a ledger failure after the broadcast names what was sent, never reads as "not sent"
+      rethrowWithLedgerEffect(e, {
+        operation: "broadcast",
+        outcome: submitOutcome,
+        txId: sentTxId,
+        artifactId: produced.contentHash as string,
+        artifactPath: receiptPath
+      });
+    }
 
     return {
       receipt: submission,

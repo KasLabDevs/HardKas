@@ -2,8 +2,7 @@ import path from "node:path";
 import fs from "node:fs";
 import chokidar from "chokidar";
 import { getQueryBackend } from "./db.js";
-import { devServerEmitter } from "./stream.js";
-import { coreEvents } from "@hardkas/core";
+import { artifactFileNotices, devServerEmitter } from "./stream.js";
 
 let debounceTimer: NodeJS.Timeout | null = null;
 const bufferedPaths = new Set<string>();
@@ -113,12 +112,10 @@ export function startHardkasWatcher() {
             delete parsed.artifactId;
           }
 
-          coreEvents.emit({
-            kind: "artifact.written",
-            payload: parsed
-          } as any);
+          // EVENT-LEDGER-2 (EVENT-EMISSION-1): a dev-server notice, never a fake `artifact.written` on the core bus
+          artifactFileNotices.emit({ absolutePath, artifact: parsed });
         } catch (e) {
-          console.error("[Watcher] Failed to emit synthetic event:", e);
+          console.error("[Watcher] Failed to announce the artifact file:", e);
         }
       }
 

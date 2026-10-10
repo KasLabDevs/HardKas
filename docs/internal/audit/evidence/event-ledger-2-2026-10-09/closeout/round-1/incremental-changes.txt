@@ -1,0 +1,6 @@
+﻿M	packages/core/README.md
+M	packages/core/src/append-coordinator.ts
+A	packages/core/test/event-ledger-2-closeout.test.ts
+M	packages/core/test/event-ledger-2.test.ts
+M	packages/sdk/src/tx.ts
+A	packages/sdk/test/event-ledger-2-submission.test.ts

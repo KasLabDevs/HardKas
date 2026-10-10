@@ -2,6 +2,7 @@ import { getOutput } from "../output.js";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { runTxFlow } from "./tx-flow.js";
+import { sendOutcomeLabel } from "./next-steps.js";
 import { loadHardkasConfig } from "@hardkas/config";
 import { UI } from "../ui.js";
 import { HardkasCliError, HardkasExitCode } from "../cli-errors.js";
@@ -96,7 +97,12 @@ export async function runTxBatch(options: any) {
         planError: flowResult.steps.plan.error,
         signError: flowResult.steps.sign.error,
         sendError: flowResult.steps.send.error,
-        ...(flowResult.steps.send.artifact?.accepted === false ? { sendRejected: true } : {})
+        // EVENT-LEDGER-2 final closeout: a submit call that failed without an answer is not a rejection
+        ...(flowResult.steps.send.artifact?.accepted === false
+          ? sendOutcomeLabel(flowResult.steps.send.artifact.receipt, false) === "unknown"
+            ? { sendOutcomeUnknown: true }
+            : { sendRejected: true }
+          : {})
       });
       if (flowResult.ok) {
         successCount++;

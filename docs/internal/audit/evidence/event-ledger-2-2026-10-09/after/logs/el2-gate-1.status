@@ -1,0 +1,53 @@
+﻿ M packages/artifacts/src/io.ts
+ M packages/artifacts/test/adversarial/__snapshots__/wave1-1-canonical-v5.test.ts.snap
+ M packages/cli/src/commands/lock.ts
+ M packages/cli/src/commands/tx.ts
+ M packages/cli/src/runners/tx-plan-runner.ts
+ M packages/core/README.md
+ M packages/core/src/append-coordinator.ts
+ M packages/core/src/events.ts
+ M packages/dev-server/src/routes/stream.ts
+ M packages/dev-server/src/stream.ts
+ M packages/dev-server/src/watcher.ts
+ M packages/kaspa-rpc/src/json-rpc-client.ts
+ M packages/sdk/src/artifacts-manager.ts
+ M packages/sdk/src/tx.ts
+ M packages/testing/src/scenarios.ts
+?? docs/internal/audit/evidence/event-ledger-2-2026-10-09/LEDGER.md
+?? docs/internal/audit/evidence/event-ledger-2-2026-10-09/after/logs/manifest.ps1
+?? docs/internal/audit/evidence/event-ledger-2-2026-10-09/after/logs/run-files-wt.ps1
+?? docs/internal/audit/evidence/event-ledger-2-2026-10-09/after/probes/after-1-p.log
+?? docs/internal/audit/evidence/event-ledger-2-2026-10-09/after/probes/after-1-p.results.json
+?? docs/internal/audit/evidence/event-ledger-2-2026-10-09/after/probes/after-1-x.log
+?? docs/internal/audit/evidence/event-ledger-2-2026-10-09/after/probes/after-1-x.results.json
+?? docs/internal/audit/evidence/event-ledger-2-2026-10-09/after/probes/after-1.head
+?? docs/internal/audit/evidence/event-ledger-2-2026-10-09/after/probes/after-2-x.log
+?? docs/internal/audit/evidence/event-ledger-2-2026-10-09/after/probes/after-2-x.results.json
+?? docs/internal/audit/evidence/event-ledger-2-2026-10-09/after/probes/compare-probes.mjs
+?? docs/internal/audit/evidence/event-ledger-2-2026-10-09/after/probes/el2-after-extra.mjs
+?? docs/internal/audit/evidence/event-ledger-2-2026-10-09/after/probes/run-probes.ps1
+?? docs/internal/audit/evidence/event-ledger-2-2026-10-09/before/INVESTIGATION.md
+?? docs/internal/audit/evidence/event-ledger-2-2026-10-09/before/logs/el2-before-1.exit
+?? docs/internal/audit/evidence/event-ledger-2-2026-10-09/before/logs/el2-before-1.head
+?? docs/internal/audit/evidence/event-ledger-2-2026-10-09/before/logs/el2-before-1.json
+?? docs/internal/audit/evidence/event-ledger-2-2026-10-09/before/logs/el2-before-1.log
+?? docs/internal/audit/evidence/event-ledger-2-2026-10-09/before/logs/el2-before-1.status
+?? docs/internal/audit/evidence/event-ledger-2-2026-10-09/before/logs/el2-before-2.exit
+?? docs/internal/audit/evidence/event-ledger-2-2026-10-09/before/logs/el2-before-2.head
+?? docs/internal/audit/evidence/event-ledger-2-2026-10-09/before/logs/el2-before-2.log
+?? docs/internal/audit/evidence/event-ledger-2-2026-10-09/before/logs/el2-before-2.status
+?? docs/internal/audit/evidence/event-ledger-2-2026-10-09/before/logs/el2-before-3.exit
+?? docs/internal/audit/evidence/event-ledger-2-2026-10-09/before/logs/el2-before-3.head
+?? docs/internal/audit/evidence/event-ledger-2-2026-10-09/before/logs/el2-before-3.json
+?? docs/internal/audit/evidence/event-ledger-2-2026-10-09/before/logs/el2-before-3.log
+?? docs/internal/audit/evidence/event-ledger-2-2026-10-09/before/logs/el2-before-3.status
+?? docs/internal/audit/evidence/event-ledger-2-2026-10-09/before/logs/prep-wt.ps1
+?? docs/internal/audit/evidence/event-ledger-2-2026-10-09/before/logs/run-files-wt.ps1
+?? docs/internal/audit/evidence/event-ledger-2-2026-10-09/before/probes/el2-probes.mjs
+?? docs/internal/audit/evidence/event-ledger-2-2026-10-09/before/probes/probes-1.log
+?? docs/internal/audit/evidence/event-ledger-2-2026-10-09/before/probes/probes-1.results.json
+?? docs/internal/audit/evidence/event-ledger-2-2026-10-09/before/tests/cli-event-ledger-2.test.ts
+?? docs/internal/audit/evidence/event-ledger-2-2026-10-09/before/tests/core-event-ledger-2.test.ts
+?? packages/cli/test/event-ledger-2.test.ts
+?? packages/core/test/event-emission-guard.test.ts
+?? packages/core/test/event-ledger-2.test.ts

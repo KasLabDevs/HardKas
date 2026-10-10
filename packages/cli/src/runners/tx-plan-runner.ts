@@ -10,7 +10,7 @@ import {
   type UtxoProvider
 } from "@hardkas/tx-builder";
 import { createTxPlanArtifact, TxPlanArtifact } from "@hardkas/artifacts";
-import { coreEvents, getCoinbaseMaturity, sha256hex, SelectedUtxoInvalidatedError } from "@hardkas/core";
+import { getCoinbaseMaturity, sha256hex, SelectedUtxoInvalidatedError } from "@hardkas/core";
 import type { RuntimeContext } from "@hardkas/core";
 import { resolveExecutionTarget, HardkasConfig } from "@hardkas/config";
 
@@ -480,13 +480,9 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
     }
   }) as unknown as TxPlanArtifact;
 
-  coreEvents.normalizeAndEmit({
-    kind: "workflow.plan.created",
-    planId: artifact.planId,
-    planHash: artifact.contentHash || "unknown",
-    network: artifact.networkId,
-    mode: artifact.mode
-  });
-
+  // EVENT-LEDGER-2 (EVENT-EMISSION-1): the raw `workflow.plan.created` object this runner handed to normalizeAndEmit
+  // was discarded by it (no envelope, no correlation). It is gone: the formal `workflow.plan.created` belongs to the
+  // owner of a workflow (tx-flow emits it under its workflowId), and a plan `tx plan` writes is announced as
+  // `artifact.written` by the command, under the plan's own workflowId (D4).
   return artifact;
 }

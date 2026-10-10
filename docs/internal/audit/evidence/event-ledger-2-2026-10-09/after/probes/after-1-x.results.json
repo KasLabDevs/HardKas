@@ -1,0 +1,131 @@
+{
+  "wt": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-ra\\wt",
+  "head": "71ff614f96b1a3bbbe7fc80607fefb08ee60e3e7",
+  "at": "2026-10-09T10:02:34.102Z",
+  "network": {
+    "refused": [],
+    "loopback": {}
+  },
+  "results": [
+    {
+      "id": "EL2-A6-LIVE-HOLDER",
+      "area": "durability",
+      "claim": "a live process holds the events append lock for the whole command: typed failure, no takeover, one wait",
+      "ms": 12067,
+      "verdict": "OK",
+      "why": "exit 1 in 11168 ms; code EVENT_LEDGER_APPEND_FAILED; holder lock intact: true; ledger 0 → 0; message: The event workflow.started (d5a6cf16-ebb9-4930-a0fb-e8d631130978) could not be recorded in C:\\Users\\jrodr\\AppData\\Local\\Temp\\claude\\C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo\\178242cc-c0b4-4452-b344-f35b49dc3d1f\\scratchpad\\el2\\runs\\after-1-x\\ws-a6",
+      "evidence": {
+        "run": {
+          "cmd": "hardkas tx send --from alice --to bob --amount 1 --network simulated --json",
+          "exit": 1,
+          "signal": null,
+          "ms": 11168,
+          "stdout": "{\n  \"ok\": false,\n  \"code\": \"EVENT_LEDGER_APPEND_FAILED\",\n  \"message\": \"The event workflow.started (d5a6cf16-ebb9-4930-a0fb-e8d631130978) could not be recorded in C:\\\\Users\\\\jrodr\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo\\\\178242cc-c0b4-4452-b344-f35b49dc3d1f\\\\scratchpad\\\\el2\\\\runs\\\\after-1-x\\\\ws-a6\\\\events.jsonl: Could not take the append lock of events.jsonl (C:\\\\Users\\\\jrodr\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo\\\\178242cc-c0b4-4452-b344-f35b49dc3d1f\\\\scratchpad\\\\el2\\\\runs\\\\after-1-x\\\\ws-a6\\\\.hardkas\\\\locks\\\\append-events.jsonl.lock) within 10000 ms: held by process 5628, which is running on this host. A lock whose holder may be alive is never taken over. If that holder is gone, 'hardkas lock doctor' reports it and 'hardkas lock clear append-events.jsonl --if-dead' removes it. The step that produced this event may already have taken effect; only its ledger entry is missing. Nothing was spooled: this event is lost unless the step is repeated. Free the ledger first ('hardkas lock doctor') and check the workspace evidence before repeating anything.\",\n  \"mode\": \"cli\"\n}\n",
+          "stderr": ""
+        }
+      }
+    },
+    {
+      "id": "EL2-A7-LOCK-TOOLS-TRUTH",
+      "area": "operability",
+      "claim": "the coordinator's record of a dead holder: lock list / lock doctor say stale; the next command recovers it",
+      "ms": 6510,
+      "verdict": "OK",
+      "why": "lock list: liveness stale, isAlive false, host jrodrg92; doctor: \"  ✗ Stale lock found: append-events.jsonl (PID: 20448; process 20448 is not running on this host) |   1 lock(s): 0 live, 1 stale, 0 unverifiable.\"; legacy telemetry lock: unverifiable; next command exit 0 in 1520 ms; events lock left: false; telemetry lock left: false; locks after: []",
+      "evidence": {
+        "list": {
+          "cmd": "hardkas lock list --json",
+          "exit": 0,
+          "signal": null,
+          "ms": 1012,
+          "stdout": "{\n  \"ok\": true,\n  \"command\": \"lock list\",\n  \"mode\": \"cli\",\n  \"result\": [\n    {\n      \"name\": \"append-events.jsonl\",\n      \"metadata\": {\n        \"schema\": \"hardkas.lock.v1\",\n        \"name\": \"append-events.jsonl\",\n        \"pid\": 20448,\n        \"command\": \"node hardkas tx send\",\n        \"cwd\": \"C:\\\\Users\\\\jrodr\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo\\\\178242cc-c0b4-4452-b344-f35b49dc3d1f\\\\scratchpad\\\\el2\\\\runs\\\\after-1-x\\\\ws-a7\",\n        \"hostname\": \"jrodrg92\",\n        \"createdAt\": \"2026-10-09T09:02:24.420Z\",\n        \"expiresAt\": null\n      },\n      \"path\": \"C:\\\\Users\\\\jrodr\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo\\\\178242cc-c0b4-4452-b344-f35b49dc3d1f\\\\scratchpad\\\\el2\\\\runs\\\\after-1-x\\\\ws-a7\\\\.hardka…[+160]",
+          "stderr": ""
+        },
+        "doctor": {
+          "cmd": "hardkas lock doctor",
+          "exit": 0,
+          "signal": null,
+          "ms": 1405,
+          "stdout": "\n  ═══ Lock Doctor Analysis ═══\n  ✗ Stale lock found: append-events.jsonl (PID: 20448; process 20448 is not running on this host)\n    Suggestion: Run 'hardkas lock clear append-events.jsonl --if-dead'\n\n  1 lock(s): 0 live, 1 stale, 0 unverifiable.\n\n",
+          "stderr": ""
+        },
+        "list2": {
+          "cmd": "hardkas lock list --json",
+          "exit": 0,
+          "signal": null,
+          "ms": 1437,
+          "stdout": "{\n  \"ok\": true,\n  \"command\": \"lock list\",\n  \"mode\": \"cli\",\n  \"result\": [\n    {\n      \"name\": \"append-events.jsonl\",\n      \"metadata\": {\n        \"schema\": \"hardkas.lock.v1\",\n        \"name\": \"append-events.jsonl\",\n        \"pid\": 20448,\n        \"command\": \"node hardkas tx send\",\n        \"cwd\": \"C:\\\\Users\\\\jrodr\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo\\\\178242cc-c0b4-4452-b344-f35b49dc3d1f\\\\scratchpad\\\\el2\\\\runs\\\\after-1-x\\\\ws-a7\",\n        \"hostname\": \"jrodrg92\",\n        \"createdAt\": \"2026-10-09T09:02:24.420Z\",\n        \"expiresAt\": null\n      },\n      \"path\": \"C:\\\\Users\\\\jrodr\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo\\\\178242cc-c0b4-4452-b344-f35b49dc3d1f\\\\scratchpad\\\\el2\\\\runs\\\\after-1-x\\\\ws-a7\\\\.hardka…[+727]",
+          "stderr": ""
+        },
+        "next": {
+          "cmd": "hardkas tx plan --from alice --to bob --amount 1 --network simulated --out p.json --json",
+          "exit": 0,
+          "signal": null,
+          "ms": 1520,
+          "stdout": "{\n  \"schema\": \"hardkas.txPlan\",\n  \"hardkasVersion\": \"0.12.0-rc.27\",\n  \"schemaVersion\": \"hardkas.artifact.v1\",\n  \"version\": \"1.0.0-alpha\",\n  \"hashVersion\": 5,\n  \"createdAt\": \"2026-10-09T10:02:29.790Z\",\n  \"networkId\": \"simulated\",\n  \"mode\": \"simulator\",\n  \"execution\": {\n    \"mode\": \"simulator\",\n    \"d…[+1426]",
+          "stderr": ""
+        }
+      }
+    },
+    {
+      "id": "EL2-A8-ANNOUNCED-ARTIFACTS",
+      "area": "evidence",
+      "claim": "plan → sign --out → send: every artifact written is announced (artifact.written) under its own workflowId",
+      "ms": 3215,
+      "verdict": "DEFECT",
+      "sev": "medium",
+      "why": "exits 0,0,0; kinds {\"artifact.written\":6}; plan announced ×3 (p-plan.json by cli:tx-plan, .hardkas/artifacts/2026-10-09T10-02-31-871Z-plan-a990b2df0ada1f08.plan.json by cli:tx-plan, .hardkas/artifacts/plans/txPlan-a990b2df0ada1f0845c3f8bfd905f08906d407dc1dfc891602bbafad4d56cd43.json by sdk:artifacts-manager); signed ×2 (.hardkas/artifacts/signed/signedTx-4f7ccf94113dea3803c1e96736320def05d70f145230ae1eec35d5251a82bbc4.json by sdk:artifacts-manager, p-signed.json by cli:tx-sign); receipt ? ×0 (); plan workflowId in events: true",
+      "evidence": {
+        "written": [
+          {
+            "id": "a990b2df0ada",
+            "file": "p-plan.json",
+            "wf": "wf_c5e0d0449f49e72e",
+            "src": "cli:tx-plan"
+          },
+          {
+            "id": "a990b2df0ada",
+            "file": ".hardkas/artifacts/2026-10-09T10-02-31-871Z-plan-a990b2df0ada1f08.plan.json",
+            "wf": "wf_c5e0d0449f49e72e",
+            "src": "cli:tx-plan"
+          },
+          {
+            "id": "4f7ccf94113d",
+            "file": ".hardkas/artifacts/signed/signedTx-4f7ccf94113dea3803c1e96736320def05d70f145230ae1eec35d5251a82bbc4.json",
+            "wf": "wf_c5e0d0449f49e72e",
+            "src": "sdk:artifacts-manager"
+          },
+          {
+            "id": "4f7ccf94113d",
+            "file": "p-signed.json",
+            "wf": "wf_c5e0d0449f49e72e",
+            "src": "cli:tx-sign"
+          },
+          {
+            "id": "a990b2df0ada",
+            "file": ".hardkas/artifacts/plans/txPlan-a990b2df0ada1f0845c3f8bfd905f08906d407dc1dfc891602bbafad4d56cd43.json",
+            "wf": "wf_c5e0d0449f49e72e",
+            "src": "sdk:artifacts-manager"
+          },
+          {
+            "id": "328be1acc631",
+            "file": ".hardkas/artifacts/receipts/txReceipt-328be1acc631061f3a1b943a59e2f4670e9903afa3fd6006eb08121552f68f6b.json",
+            "wf": "wf_c5e0d0449f49e72e",
+            "src": "sdk:tx-simulate"
+          }
+        ],
+        "kinds": {
+          "artifact.written": 6
+        },
+        "send": {
+          "cmd": "hardkas tx send p-signed.json --network simulated --json",
+          "exit": 0,
+          "signal": null,
+          "ms": 1074,
+          "stdout": "{\n  \"ok\": true,\n  \"outcome\": \"submitted\",\n  \"data\": {\n    \"signed\": {\n      \"schema\": \"hardkas.signedTx\",\n      \"schemaVersion\": \"hardkas.artifact.v1\",\n      \"hardkasVersion\": \"0.12.0-rc.27\",\n      \"version\": \"1.0.0-alpha\",\n      \"hashVersion\": 5,\n      \"createdAt\": \"2026-10-09T10:02:32.910Z\",\n      \"status\": \"signed\",\n      \"sourcePlanId\": \"plan-a990b2df0ada1f08\",\n      \"networkId\": \"simulated\",\n      \"mode\": \"simulator\",\n      \"from\": {\n        \"address\": \"kaspa:sim_alice\"\n      },\n      \"to\":…[+8837]",
+          "stderr": ""
+        }
+      }
+    }
+  ]
+}

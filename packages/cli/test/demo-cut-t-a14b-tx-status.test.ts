@@ -222,7 +222,8 @@ describe("Demo-cut · T-A14b · tx status / tx wait present the derived Q4 state
     await realSend();
     await resealSubmission((s) => {
       asSimnet(s);
-      s.submitResult = { accepted: false, error: "transaction is already in the mempool" };
+      // the node's rejection as it arrives (rusty-kaspa's RejectedTransaction error; fixtures/toccata-v2 record real ones)
+      s.submitResult = { accepted: false, error: `Rejected transaction ${TX}: transaction ${TX} is already in the mempool` };
     });
     expect((await runTxStatus({ txId: TX, sdk, observe: false })).derived.status).toBe("REJECTED_BY_NODE");
     const err: any = await runTxWait({ txId: TX, sdk, until: "accepted", timeoutMs: 10_000, intervalMs: 1, sleep: async () => undefined }).catch((e) => e);

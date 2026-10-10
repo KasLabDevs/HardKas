@@ -184,39 +184,19 @@ export class HardkasArtifactsManager {
       }
     }
 
-    // Emit the event so localnet and query-store can index it.
-    const {
-      coreEvents,
-      createEventEnvelope,
-      asWorkflowId,
-      asCorrelationId,
-      asNetworkId,
-      asArtifactId,
-      asEventSequence
-    } = await import("@hardkas/core");
-    // If no workflowId is provided, this artifact is standalone.
-    // "wf_unknown_standalone" is a sentinel value for tracking provenance of loose artifacts.
-    // It is NOT a replayable causal workflow identity.
-    const wId = options.workflowId || "wf_unknown_standalone";
-    const cId = options.correlationId || wId;
-    const netId = options.networkId || record.networkId || "unknown";
-    // IC-5′.11: events carry the canonical identity (the content hash), never a label.
-    const artifactId = hash;
-
-    coreEvents.emit(
-      createEventEnvelope({
-        kind: "artifact.written",
-        domain: "integrity",
-        workflowId: asWorkflowId(wId),
-        correlationId: asCorrelationId(cId),
-        networkId: asNetworkId(netId),
-        payload: { artifactId: asArtifactId(artifactId), path: absolutePath },
-        sequenceNumber: asEventSequence(1),
-        globalOffset: 0,
-        sourceSubsystem: "sdk:artifacts-manager",
-        artifactId: asArtifactId(artifactId)
-      })
-    );
+    // EVENT-LEDGER-2 (D4): announced through the one artifact boundary (the envelope every writer emits), so localnet
+    // and the query store can index it, and the ledger records it or the write fails loudly (EL2-I0). The correlation
+    // is the caller's, else the artifact's own workflowId, else the standalone marker: never derived or invented here.
+    // IC-5′.11: the identity announced is the content hash, never a label.
+    const { emitArtifactWritten } = await import("@hardkas/core");
+    emitArtifactWritten({
+      artifactId: hash,
+      absolutePath,
+      sourceSubsystem: "sdk:artifacts-manager",
+      workflowId: options.workflowId || (typeof record.workflowId === "string" ? record.workflowId : undefined),
+      correlationId: options.correlationId,
+      networkId: options.networkId || record.networkId
+    });
 
     if (!options.bypassHooks) {
       // Intentionally not awaiting so it runs asynchronously/observational, or we await it but it's guaranteed to handle errors via plugin manager.

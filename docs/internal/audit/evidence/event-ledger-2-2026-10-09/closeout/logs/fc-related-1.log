@@ -1,0 +1,47 @@
+﻿gate-hermetic: HARDKAS_HOME=C:\Users\jrodr\AppData\Local\Temp\hardkas-hermetic-home-z72pf7 (copy of C:\Users\jrodr\AppData\Local\Temp\hk-v210-gate-home)
+gate-hermetic: DOCKER_HOST=tcp://127.0.0.1:1; preload=C:\Users\jrodr\AppData\Local\Temp\hk-ra\wt\scripts\hermetic\no-network-preload.cjs
+gate-hermetic: vitest run --coverage.enabled=false --reporter=default --reporter=json --outputFile=C:\Users\jrodr\AppData\Local\Temp\claude\C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo\21f9a2e4-33ac-4300-9366-aff402f85900\scratchpad\cut46-event-ledger-2\logs\fc-related-1.json packages/sdk/test/adversarial/wave1-3-b2-workflow-rejected-send.test.ts packages/sdk/test/adversarial/wave1-3-producers.test.ts packages/sdk/test/adversarial/wave1-2-sdk-identity.test.ts packages/sdk/test/evidence-trust-1.test.ts packages/sdk/test/workflow-contract.test.ts packages/sdk/test/workflow-determinism.test.ts packages/sdk/test/surface-truth-1.test.ts packages/sdk/test/surface-truth-1a-contract.test.ts packages/artifacts/test/adversarial/wave2-a-derive-tx-status.test.ts packages/cli/test/tx-flow-outcome.test.ts packages/cli/test/wave2-e-send-outcome.test.ts packages/cli/test/demo-cut-t-a14b-no-false-claims.test.ts packages/cli/test/wave1-2-next-steps.test.ts packages/cli/test/workflow-corpus.test.ts packages/testing/test/surface-truth-1.test.ts
+
+ RUN  v2.1.9 C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt
+
+ ✓ packages/artifacts/test/adversarial/wave2-a-derive-tx-status.test.ts (15 tests) 73ms
+ ✓ packages/sdk/test/adversarial/wave1-3-producers.test.ts (6 tests) 726ms
+   ✓ Wave 1.3 · SDK producers > N6 · the workflow artifact is a version-5 artifact without a top-level artifactId, resolvable warm and cold 330ms
+ ✓ packages/sdk/test/adversarial/wave1-2-sdk-identity.test.ts (6 tests) 699ms
+ ↓ packages/cli/test/workflow-corpus.test.ts (5 tests | 5 skipped)
+ ✓ packages/cli/test/wave2-e-send-outcome.test.ts (6 tests) 6077ms
+   ✓ Wave 2(e) · AUX-11 · tx send outcomes are unambiguous > T-AUX11 · shortcut mode without --yes on a non-simulated network: NOT executed, exit 3, nothing written, nothing that reads as success 870ms
+   ✓ Wave 2(e) · AUX-11 · tx send outcomes are unambiguous > T-AUX11 · the same refusal is machine-readable in --json: ok:false, outcome:not_executed, the code, exit 3 924ms
+   ✓ Wave 2(e) · AUX-11 · tx send outcomes are unambiguous > T-AUX11 · signed-artifact mode without --yes on a non-simulated network is refused the same way, before any RPC 897ms
+   ✓ Wave 2(e) · AUX-11 · tx send outcomes are unambiguous > control · a simulated shortcut send really runs and is `submitted`: ok:true, outcome:submitted, a receipt, exit 0 1129ms
+   ✓ Wave 2(e) · AUX-11 · tx send outcomes are unambiguous > control · the same send in human mode names the receipt it wrote (no 'unknown' artifact behind a success line) 1218ms
+   ✓ Wave 2(e) · AUX-11 · tx send outcomes are unambiguous > T-AUX11 · a shortcut send whose flow fails before broadcasting is `failed`: ok:false, outcome:failed, exit 1, never submitted 1006ms
+ ✓ packages/cli/test/demo-cut-t-a14b-no-false-claims.test.ts (6 tests) 6987ms
+   ✓ Demo-cut · T-A14b · what the built CLI prints for tx status, tx wait and explain > tx status <network txId> --no-observe: SUBMITTED from the recorded submission, with the policy and no claims 1987ms
+   ✓ Demo-cut · T-A14b · what the built CLI prints for tx status, tx wait and explain > tx status <synthetic txId>: SYNTHETIC_EXECUTED; tx wait on it says there is no network and exits 0 1842ms
+   ✓ Demo-cut · T-A14b · what the built CLI prints for tx status, tx wait and explain > tx wait rejects an unknown target with a usage error 938ms
+   ✓ Demo-cut · T-A14b · what the built CLI prints for tx status, tx wait and explain > tx status <path> keeps the signature-coverage view 974ms
+   ✓ Demo-cut · T-A14b · what the built CLI prints for tx status, tx wait and explain > explain on the network submission derives its state and makes no consensus claim 952ms
+ ✓ packages/sdk/test/evidence-trust-1.test.ts (6 tests) 1647ms
+   ✓ EVIDENCE-TRUST-1 · SDK > a stored artifact is never rewritten > signing the same plan again leaves the stored signed artifact's bytes as they were 1169ms
+ ✓ packages/sdk/test/adversarial/wave1-3-b2-workflow-rejected-send.test.ts (3 tests) 451ms
+ ✓ packages/sdk/test/surface-truth-1.test.ts (9 tests) 564ms
+ ✓ packages/sdk/test/surface-truth-1a-contract.test.ts (5 tests) 380ms
+ ✓ packages/cli/test/wave1-2-next-steps.test.ts (4 tests) 231ms
+ ✓ packages/sdk/test/workflow-contract.test.ts (4 tests) 274ms
+ ✓ packages/sdk/test/workflow-determinism.test.ts (5 tests) 376ms
+ ✓ packages/cli/test/tx-flow-outcome.test.ts (3 tests) 53ms
+ ✓ packages/testing/test/surface-truth-1.test.ts (2 tests) 392ms
+
+ Test Files  14 passed | 1 skipped (15)
+      Tests  80 passed | 5 skipped (85)
+   Start at  18:28:40
+   Duration  41.53s (transform 1.75s, setup 0ms, collect 17.73s, tests 18.93s, environment 3ms, prepare 1.71s)
+
+JSON report written to C:/Users/jrodr/AppData/Local/Temp/claude/C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo/21f9a2e4-33ac-4300-9366-aff402f85900/scratchpad/cut46-event-ledger-2/logs/fc-related-1.json
+
+gate-hermetic: vitest exit 0 after 42s
+gate-hermetic: non-loopback attempts (each one fails the gate): 0
+gate-hermetic: loopback connection targets (review for dependencies on local services):
+  127.0.0.1:18210 x2
+gate-hermetic: PASS

@@ -12,7 +12,9 @@ import {
   CorrelationId,
   EventSequence
 } from "./domain-types.js";
+import { asArtifactId, asCorrelationId, asEventSequence, asNetworkId, asWorkflowId } from "./domain-types.js";
 import { AppendCoordinator } from "./append-coordinator.js";
+import { HardkasError } from "./errors.js";
 import path from "node:path";
 
 /**
@@ -184,11 +186,20 @@ export type StampedEvent = EventEnvelope;
 
 export type CoreEventListener = (event: EventEnvelope) => void;
 
+/** EVENT-LEDGER-2 · a persistence sink: where an emitted envelope is made durable (the workspace event ledger). */
+export type EventPersistenceSink = (event: EventEnvelope) => void;
+
 /**
  * Lightweight in-memory Event Bus.
+ *
+ * EVENT-LEDGER-2 (EL2-I0): an emitted envelope is first handed to every persistence sink (the ledger attached with
+ * attachLedgerAppender), then to the listeners. A listener's failure stays its own (fire-and-forget, as always); a
+ * sink's failure is the emitter's: `emit` throws it (EVENT_LEDGER_APPEND_FAILED), so no caller can report a clean
+ * success after a formal event that had to persist was lost. `emit` stays synchronous.
  */
 class CoreEventBus {
   private listeners: CoreEventListener[] = [];
+  private sinks: EventPersistenceSink[] = [];
 
   on(listener: CoreEventListener): () => void {
     this.listeners.push(listener);
@@ -197,38 +208,266 @@ class CoreEventBus {
     };
   }
 
-  /**
-   * Emits a formal event envelope.
-   */
-  emit<K extends EventKind>(envelope: EventEnvelope<K>): void {
-    for (const listener of this.listeners) {
-      try {
-        listener(envelope);
-      } catch {
-        // Fire-and-forget.
-      }
-    }
+  /** Registers a persistence sink and returns its detach. Attached by attachLedgerAppender, never by an observer. */
+  persistWith(sink: EventPersistenceSink): () => void {
+    this.sinks.push(sink);
+    return () => {
+      this.sinks = this.sinks.filter((s) => s !== sink);
+    };
+  }
+
+  /** Whether a persistence sink (a ledger) is attached: an event emitted now is made durable, or the emit fails. */
+  get persists(): boolean {
+    return this.sinks.length > 0;
   }
 
   /**
-   * Normalizes and emits an event.
-   * Useful for incremental migration from raw events.
+   * Emits a formal event envelope: persisted first (a sink's failure propagates), then observed (a listener's
+   * failure does not — except a nested emit the ledger could not persist, which is still a lost formal event).
+   */
+  emit<K extends EventKind>(envelope: EventEnvelope<K>): void {
+    for (const sink of this.sinks) sink(envelope);
+    let lost: unknown;
+    for (const listener of this.listeners) {
+      try {
+        listener(envelope);
+      } catch (e) {
+        if (lost === undefined && isEventLedgerAppendFailure(e)) lost = e;
+      }
+    }
+    if (lost !== undefined) throw lost;
+  }
+
+  /**
+   * Emits an event that is already a formal envelope. EVENT-EMISSION-1: anything else is refused with
+   * EVENT_ENVELOPE_INVALID, never dropped silently — a raw `{ kind, ... }` object is not an event HardKAS recorded.
+   * Build envelopes with createEventEnvelope (or emitArtifactWritten for an artifact write).
    */
   normalizeAndEmit(event: any): void {
     if (validateEventEnvelope(event)) {
       this.emit(event as EventEnvelope);
-    } else {
-      // TODO: Implement legacy transformation if needed.
-      // For now, we only emit if it satisfies the envelope structure.
+      return;
     }
+    const kind = event && typeof event === "object" && typeof event.kind === "string" ? event.kind : typeof event;
+    throw new HardkasError(
+      "EVENT_ENVELOPE_INVALID",
+      `Refusing to emit "${kind}": it is not a formal event envelope (missing ${missingEnvelopeFields(event).join(", ")}). ` +
+        `Build the envelope with createEventEnvelope and emit it; a raw event is never recorded.`
+    );
   }
 
   removeAll(): void {
     this.listeners = [];
+    this.sinks = [];
   }
 }
 
 export const coreEvents = new CoreEventBus();
+
+function missingEnvelopeFields(event: any): string[] {
+  if (!event || typeof event !== "object") return ["an object"];
+  const missing: string[] = [];
+  if (event.schema !== HardkasSchemas.Event) missing.push(`schema ${JSON.stringify(HardkasSchemas.Event)}`);
+  for (const field of ["eventId", "domain", "kind", "workflowId", "correlationId", "networkId"]) {
+    if (!event[field]) missing.push(field);
+  }
+  if (typeof event.payload !== "object") missing.push("payload");
+  return missing;
+}
+
+/**
+ * The correlation of an artifact nobody placed in a workflow: a documented marker, NOT a replayable causal workflow
+ * identity (it is never derived from anything). An artifact that names its own workflowId is announced under it.
+ */
+export const STANDALONE_WORKFLOW_ID = "wf_unknown_standalone";
+
+export interface ArtifactWrittenInput {
+  /** The artifact's canonical identity (its content hash), never a label. */
+  artifactId: string;
+  /** Where the bytes were written. */
+  absolutePath: string;
+  /** Who wrote it (e.g. "sdk:artifacts-manager", "cli:tx-plan"). */
+  sourceSubsystem: string;
+  /** The artifact's own workflowId when it names one, or a caller's; STANDALONE_WORKFLOW_ID otherwise. */
+  workflowId?: string | undefined;
+  correlationId?: string | undefined;
+  networkId?: string | undefined;
+}
+
+/**
+ * EVENT-LEDGER-2 (D4) · the one boundary that announces an artifact HardKAS wrote: every writer (the SDK's artifact
+ * manager, the CLI's direct writes, the scenario bridge) builds the same `artifact.written` envelope here and emits
+ * it — persisted when a ledger is attached, or the emit fails (EL2-I0). Returns the envelope emitted.
+ */
+export function emitArtifactWritten(input: ArtifactWrittenInput): EventEnvelope<"artifact.written"> {
+  const workflowId = input.workflowId || STANDALONE_WORKFLOW_ID;
+  const envelope = createEventEnvelope({
+    kind: "artifact.written",
+    domain: "integrity",
+    workflowId: asWorkflowId(workflowId),
+    correlationId: asCorrelationId(input.correlationId || workflowId),
+    networkId: asNetworkId(input.networkId || "unknown"),
+    payload: { artifactId: asArtifactId(input.artifactId), path: input.absolutePath },
+    sequenceNumber: asEventSequence(1),
+    globalOffset: 0,
+    sourceSubsystem: input.sourceSubsystem,
+    artifactId: asArtifactId(input.artifactId)
+  });
+  coreEvents.emit(envelope);
+  return envelope;
+}
+
+/** The identity of an event the ledger could not persist: what the failure names. */
+export interface LostEventIdentity {
+  kind: string;
+  eventId: string;
+  workflowId: string;
+  txId?: string;
+  artifactId?: string;
+  path?: string;
+}
+
+function lostEventIdentity(envelope: EventEnvelope): LostEventIdentity {
+  const payload: any = envelope.payload ?? {};
+  const txId = envelope.txId ?? (typeof payload.txId === "string" ? payload.txId : undefined);
+  const artifactId = envelope.artifactId ?? (typeof payload.artifactId === "string" ? payload.artifactId : undefined);
+  return {
+    kind: String(envelope.kind),
+    eventId: String(envelope.eventId),
+    workflowId: String(envelope.workflowId),
+    ...(txId ? { txId: String(txId) } : {}),
+    ...(artifactId ? { artifactId: String(artifactId) } : {}),
+    ...(typeof payload.path === "string" ? { path: payload.path } : {})
+  };
+}
+
+/**
+ * EVENT-LEDGER-2 closeout (A1) · what the step whose event the ledger could not take had already done outside the
+ * workspace, as the execution or broadcast boundary that raised the failure knows it. The failure is then reported
+ * next to that effect, never as an operation that did not happen:
+ *  - `accepted`: the node accepted the submission request — RPC acceptance, not acceptance or confirmation in the DAG;
+ *  - `rejected`: the node answered with a rejection;
+ *  - `unknown`: the submit call failed without an answer from the node, which may have received the transaction;
+ *  - `executed`: the simulator executed it (the simulated state changed);
+ *  - `not-performed`: the ledger failed before anything was sent or executed.
+ */
+export interface LedgerFailureEffect {
+  operation: "broadcast" | "simulated-execution";
+  outcome: "accepted" | "rejected" | "unknown" | "executed" | "not-performed";
+  txId?: string | undefined;
+  /** The submission (broadcast) or receipt (simulated execution) that records the effect, once it was written. */
+  artifactId?: string | undefined;
+  artifactPath?: string | undefined;
+}
+
+function describeEffect(effect: LedgerFailureEffect): string {
+  const tx = effect.txId ? `transaction ${effect.txId}` : "the transaction";
+  const recorded = effect.artifactId
+    ? ` It is recorded as artifact ${effect.artifactId}${effect.artifactPath ? ` at ${effect.artifactPath}` : ""}.`
+    : "";
+  switch (effect.outcome) {
+    case "accepted":
+      return (
+        `The node ACCEPTED the submission of ${tx} (acceptance of the request by the RPC, not acceptance or confirmation ` +
+        `in the DAG): it WAS sent.${recorded} Do not send it again${effect.txId ? `; follow it with 'hardkas tx status ${effect.txId}'` : ""}.`
+      );
+    case "rejected":
+      return `The node REJECTED ${tx} with an explicit answer.${recorded}`;
+    case "unknown":
+      return (
+        `The outcome of sending ${tx} is UNKNOWN: the submit call failed without an answer from the node, which may have ` +
+        `received it.${recorded} Do not send it again before checking it${effect.txId ? ` ('hardkas tx status ${effect.txId}')` : ""}.`
+      );
+    case "executed":
+      return `The simulator EXECUTED ${tx}: the simulated state changed.${recorded} Do not execute it again.`;
+    case "not-performed":
+      return effect.operation === "broadcast"
+        ? `Nothing was sent: the ledger failed before ${tx} was broadcast.`
+        : `Nothing was executed: the ledger failed before the simulator ran ${tx}.`;
+  }
+}
+
+/**
+ * EVENT-LEDGER-2 (D2) · what the failure says: the EVIDENCE was not persisted, while the EFFECT of the step that
+ * produced the event may already have taken place. The two are kept apart so that a non-zero exit is never read as
+ * "the transaction was not sent" and repeated blindly; what is known (txId, artifact, path) is named, never a success.
+ * Closeout (A1): when the boundary knows the effect, the failure leads with it.
+ */
+function describeLostEvent(ledgerPath: string, event: LostEventIdentity, cause: unknown, known?: LedgerFailureEffect): string {
+  const why = cause instanceof Error ? cause.message : String(cause);
+  const lost = `The event ${event.kind} (${event.eventId}) could not be recorded in ${ledgerPath}: ${why}`;
+  const written =
+    event.kind === "artifact.written" && event.path
+      ? `The artifact ${event.artifactId ?? "(unknown identity)"} WAS written at ${event.path}; only its ledger entry is missing.`
+      : undefined;
+  if (known) {
+    const tail =
+      known.outcome === "not-performed"
+        ? `Nothing was spooled. Free the ledger ('hardkas lock doctor'), then run the command again.`
+        : `Nothing was spooled: that ledger entry stays missing${known.artifactId || written ? ", and the artifact named here is the evidence of what happened" : ""}. ` +
+          `Free the ledger ('hardkas lock doctor') before running anything else in this workspace.`;
+    return `${describeEffect(known)} ${lost} ${written ?? "Only its ledger entry is missing."} ${tail}`;
+  }
+  const effect =
+    written ??
+    (event.txId
+      ? `Transaction ${event.txId} may already have been executed or submitted: do not send it again before checking it ` +
+        `('hardkas tx status ${event.txId}'). Only its ledger entry is missing.`
+      : event.artifactId
+        ? `The artifact ${event.artifactId} may already exist in the workspace; only its ledger entry is missing.`
+        : `The step that produced this event may already have taken effect; only its ledger entry is missing.`);
+  return (
+    `${lost} ${effect} ` +
+    `Nothing was spooled: this event is lost unless the step is repeated. Free the ledger first ('hardkas lock doctor') ` +
+    `and check the workspace evidence before repeating anything.`
+  );
+}
+
+/** EVENT-LEDGER-2 (D2) · a formal event the attached ledger could not persist. Code EVENT_LEDGER_APPEND_FAILED. */
+export class EventLedgerAppendError extends HardkasError {
+  readonly ledgerPath: string;
+  readonly event: LostEventIdentity;
+  /** Closeout (A1): what the step had already done, when the boundary that raised the failure knew it. */
+  readonly effect: LedgerFailureEffect | undefined;
+
+  constructor(ledgerPath: string, envelope: EventEnvelope | LostEventIdentity, cause: unknown, effect?: LedgerFailureEffect) {
+    const event = "payload" in envelope ? lostEventIdentity(envelope) : envelope;
+    super("EVENT_LEDGER_APPEND_FAILED", describeLostEvent(ledgerPath, event, cause, effect), {
+      cause,
+      metadata: {
+        ledgerPath,
+        event,
+        cause: { ...(typeof (cause as any)?.code === "string" ? { code: (cause as any).code } : {}), message: cause instanceof Error ? cause.message : String(cause) },
+        ...(effect ? { effect } : {})
+      }
+    });
+    this.name = "EventLedgerAppendError";
+    this.ledgerPath = ledgerPath;
+    this.event = event;
+    this.effect = effect;
+  }
+}
+
+export function isEventLedgerAppendFailure(e: unknown): e is EventLedgerAppendError {
+  return typeof e === "object" && e !== null && (e as any).code === "EVENT_LEDGER_APPEND_FAILED";
+}
+
+/**
+ * EVENT-LEDGER-2 closeout (A1) · at an execution or broadcast boundary: a ledger failure is rethrown naming what the
+ * step had already done — same code, same lost event, same cause. An effect already named closer to the boundary is
+ * kept; any other error is rethrown as it is.
+ */
+export function rethrowWithLedgerEffect(e: unknown, effect: LedgerFailureEffect): never {
+  if (isEventLedgerAppendFailure(e) && e.effect === undefined && typeof e.ledgerPath === "string" && e.event) {
+    throw new EventLedgerAppendError(e.ledgerPath, e.event, e.cause, effect);
+  }
+  throw e;
+}
+
+/** One ledger line: the envelope as JSON, bigint payload values (amountSompi …) as decimal strings. */
+export function serializeEventForLedger(event: EventEnvelope): string {
+  return JSON.stringify(event, (_key, value) => (typeof value === "bigint" ? value.toString() : value)) + "\n";
+}
 
 /**
  * Creates a formal event envelope with required metadata.
@@ -308,34 +547,32 @@ export function legacyEventLedgerPath(workspaceRoot: string): string {
 }
 
 /**
- * Attaches the canonical Event Ledger appender to the core event bus.
- * This guarantees that all formal EventEnvelopes are persisted to events.jsonl.
+ * Attaches the workspace event ledger (`<root>/events.jsonl`) to the core event bus as its persistence sink.
+ *
+ * EVENT-LEDGER-2: every formal envelope emitted while it is attached is appended durably (AppendCoordinator: one
+ * writer at a time, fsync, an abandoned lock recovered) BEFORE any listener sees it — or the emit fails with
+ * EVENT_LEDGER_APPEND_FAILED (EventLedgerAppendError), naming the event and what may already have taken effect.
+ * Nothing is spooled and nothing is dropped silently (EL2-I0). Idempotent per eventId within one attachment, and an
+ * event counts as seen only once it is persisted (a failed append can be retried by emitting it again).
  */
 export function attachLedgerAppender(workspaceRoot: string): () => void {
   const seenEventIds = new Set<string>();
   const eventsFile = eventLedgerPath(workspaceRoot);
 
-  return coreEvents.on((event) => {
-    // 1. Idempotency check: prevent duplicate flush in same session
-    if (seenEventIds.has(event.eventId)) {
-      return;
-    }
-    seenEventIds.add(event.eventId);
+  return coreEvents.persistWith((event) => {
+    if (seenEventIds.has(event.eventId)) return;
 
-    // 2. Prevent unbounded memory growth of seen events
+    try {
+      AppendCoordinator.appendAtomic(eventsFile, serializeEventForLedger(event), workspaceRoot);
+    } catch (e) {
+      throw new EventLedgerAppendError(eventsFile, event, e);
+    }
+
+    seenEventIds.add(event.eventId);
+    // Prevent unbounded memory growth of seen events
     if (seenEventIds.size > 100000) {
       const iterator = seenEventIds.keys();
       for (let i = 0; i < 10000; i++) seenEventIds.delete(iterator.next().value!);
-    }
-
-    // 3. Serialize and flush atomically via physical locks
-    const payload = JSON.stringify(event) + "\n";
-
-    try {
-      AppendCoordinator.appendAtomic(eventsFile, payload, workspaceRoot);
-    } catch (e) {
-      // Fire-and-forget for now, but a robust system might enqueue failed appends.
-      // AppendCoordinator throws on EACCES or irrecoverable lock states.
     }
   });
 }

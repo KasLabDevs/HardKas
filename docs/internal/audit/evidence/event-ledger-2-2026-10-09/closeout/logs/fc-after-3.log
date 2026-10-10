@@ -1,0 +1,21 @@
+﻿gate-hermetic: HARDKAS_HOME=C:\Users\jrodr\AppData\Local\Temp\hardkas-hermetic-home-nQ3CMQ (copy of C:\Users\jrodr\AppData\Local\Temp\hk-v210-gate-home)
+gate-hermetic: DOCKER_HOST=tcp://127.0.0.1:1; preload=C:\Users\jrodr\AppData\Local\Temp\hk-ra\wt\scripts\hermetic\no-network-preload.cjs
+gate-hermetic: vitest run --coverage.enabled=false --reporter=default --reporter=json --outputFile=C:\Users\jrodr\AppData\Local\Temp\claude\C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo\21f9a2e4-33ac-4300-9366-aff402f85900\scratchpad\cut46-event-ledger-2\logs\fc-after-3.json packages/artifacts/test/event-ledger-2-submit-outcome.test.ts packages/cli/test/event-ledger-2-report.test.ts packages/cli/test/event-ledger-2-flow.test.ts
+
+ RUN  v2.1.9 C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt
+
+ ✓ packages/cli/test/event-ledger-2-flow.test.ts (7 tests) 121ms
+ ✓ packages/cli/test/event-ledger-2-report.test.ts (3 tests) 6ms
+ ✓ packages/artifacts/test/event-ledger-2-submit-outcome.test.ts (3 tests) 9ms
+
+ Test Files  3 passed (3)
+      Tests  13 passed (13)
+   Start at  19:14:43
+   Duration  3.10s (transform 745ms, setup 0ms, collect 1.58s, tests 137ms, environment 1ms, prepare 529ms)
+
+JSON report written to C:/Users/jrodr/AppData/Local/Temp/claude/C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo/21f9a2e4-33ac-4300-9366-aff402f85900/scratchpad/cut46-event-ledger-2/logs/fc-after-3.json
+
+gate-hermetic: vitest exit 0 after 4s
+gate-hermetic: non-loopback attempts (each one fails the gate): 0
+gate-hermetic: loopback connection targets (review for dependencies on local services):
+gate-hermetic: PASS

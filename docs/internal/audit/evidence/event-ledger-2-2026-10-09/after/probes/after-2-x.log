@@ -1,0 +1,5 @@
+﻿EL2-A8-ANNOUNCED-ARTIFACTS     OK           exits 0,0,0; kinds {"artifact.written":6}; plan announced ×3 (p-plan.json by cli:tx-plan, .hardkas/artifacts/2026-10-09T10-03-55-604Z-plan-a990b2df0ada1f08.plan.json by cli:tx-plan, .hardkas/artifacts/plans/txPlan-a990b2df0ada1f0845c3f8bfd905f08906d407dc1dfc891602bbafad4d56cd43.json by sdk:artifacts-manager); signed ×2 (.hardkas/artifacts/signed/signedTx-4f7ccf94113dea3803c1e96736320def05d70f145230ae1eec35d5251a82bbc4.json by sdk:artifacts-manager, p-signed.json by cli:tx-sign); receipt 328be1acc631 ×1 (.hardkas/artifacts/receipts/txReceipt-328be1acc631061f3a1b943a59e2f4670e9903afa3fd6006eb08121552f68f6b.json by sdk:tx-simulate); plan workflowId in
+
+verdicts: DEFECT 0 · OK 1 · NOTE 0 · INCONCLUSIVE 0
+network: refused 0 ; non-loopback 0; loopback {}
+results → C:\Users\jrodr\AppData\Local\Temp\claude\C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo\178242cc-c0b4-4452-b344-f35b49dc3d1f\scratchpad\el2\runs\after-2-x\results.json

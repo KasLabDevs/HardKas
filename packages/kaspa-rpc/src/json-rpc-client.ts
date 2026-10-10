@@ -18,7 +18,6 @@ import {
   RpcNotFoundError
 } from "./errors.js";
 import { calculateConfidence } from "./resilience.js";
-import { coreEvents } from "@hardkas/core";
 import { OfficialRpcSession, type OfficialRpcFactory } from "./upstream/session.js";
 import { toOfficialTransaction } from "./upstream/wire.js";
 
@@ -125,15 +124,9 @@ export class KaspaJsonRpcClient implements KaspaRpcClient {
         circuitOpen: this.circuitState === CircuitState.OPEN
       });
 
-      coreEvents.normalizeAndEmit({
-        kind: "rpc.health",
-        endpoint: this.url,
-        state: resilience.state,
-        score: resilience.score,
-        latencyMs: latency,
-        issues: resilience.issues
-      });
-
+      // EVENT-LEDGER-2 (EVENT-EMISSION-1): the raw `rpc.health` / `rpc.error` objects this client handed to
+      // normalizeAndEmit carried no workflow or correlation and were discarded by it; they are gone, not converted
+      // (a transport diagnostic is not workspace evidence). The result below is what the caller gets.
       return {
         reachable: true,
         rpcUrl: this.url,
@@ -156,15 +149,6 @@ export class KaspaJsonRpcClient implements KaspaRpcClient {
         stale: false,
         reachable: false,
         circuitOpen: this.circuitState === CircuitState.OPEN
-      });
-
-      coreEvents.normalizeAndEmit({
-        kind: "rpc.health",
-        endpoint: this.url,
-        state: resilience.state,
-        score: resilience.score,
-        latencyMs: -1,
-        issues: resilience.issues
       });
 
       return {
@@ -432,12 +416,6 @@ export class KaspaJsonRpcClient implements KaspaRpcClient {
         lastErr = e;
 
         const isRetriable = e instanceof RpcError ? e.isRetriable : true;
-        coreEvents.normalizeAndEmit({
-          kind: "rpc.error",
-          endpoint: this.url,
-          error: e instanceof Error ? ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) : String(e),
-          retriable: isRetriable
-        });
 
         // Increment total retries count for health reporting
         if (attempt < this.retry.maxRetries && isRetriable) {

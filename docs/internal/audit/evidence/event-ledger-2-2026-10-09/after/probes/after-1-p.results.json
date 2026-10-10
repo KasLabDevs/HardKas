@@ -1,0 +1,109 @@
+{
+  "wt": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-ra\\wt",
+  "head": "71ff614f96b1a3bbbe7fc80607fefb08ee60e3e7",
+  "at": "2026-10-09T10:02:12.099Z",
+  "network": {
+    "refused": [],
+    "loopback": {}
+  },
+  "results": [
+    {
+      "id": "EL2-P1-STALE-EVENTS-LOCK",
+      "area": "durability",
+      "claim": "a leftover events append lock (dead holder): time, events lost, output, what is left",
+      "ms": 4252,
+      "verdict": "NOTE",
+      "why": "reference send: exit 0 1271 ms, 12 ledger lines after it; with the stale lock: exit 0 in 1186 ms, ledger 12 → 24, ok:true, stderr \"\"; lock still there: false; the next command (tx plan): exit 0 in 1016 ms, ledger → 26",
+      "evidence": {
+        "stale": {
+          "cmd": "hardkas tx send --from alice --to bob --amount 1 --network simulated --json",
+          "exit": 0,
+          "signal": null,
+          "ms": 1186,
+          "stdout": "{\n  \"ok\": true,\n  \"outcome\": \"submitted\",\n  \"data\": {\n    \"plan\": {\n      \"schema\": \"hardkas.txPlan\",\n      \"hardkasVersion\": \"0.12.0-rc.27\",\n      \"schemaVersion\": \"hardkas.artifact.v1\",\n      \"version\": \"1.0.0-alpha\",\n      \"hashVersion\": 5,\n      \"createdAt\": \"2026-10-09T10:02:01.440Z\",\n      \"networkId\": \"simulated\",\n      \"mode\": \"simulator\",\n      \"execution\": {\n        \"mode\": \"simulator\",\n…[+13107]",
+          "stderr": ""
+        },
+        "next": {
+          "cmd": "hardkas tx plan --from alice --to bob --amount 1 --network simulated --out p.json --json",
+          "exit": 0,
+          "signal": null,
+          "ms": 1016,
+          "stdout": "{\n  \"schema\": \"hardkas.txPlan\",\n  \"hardkasVersion\": \"0.12.0-rc.27\",\n  \"schemaVersion\": \"hardkas.artifact.v1\",\n  \"version\": \"1.0.0-alpha\",\n  \"hashVersion\": 5,\n  \"createdAt\": \"2026-10-09T10:02:02.613Z\",\n  \"networkId\": \"simulated\",\n  \"mode\": \"simulator\",\n  \"execution\": {\n    \"mode\": \"simulator\",\n    \"d…[+1435]",
+          "stderr": ""
+        }
+      }
+    },
+    {
+      "id": "EL2-P2-LOCK-TOOLS",
+      "area": "operability",
+      "claim": "what lock list / lock doctor say about a stale events append lock",
+      "ms": 2758,
+      "verdict": "NOTE",
+      "why": "lock list --json exit 0: {\"ok\":true,\"command\":\"lock list\",\"mode\":\"cli\",\"result\":[{\"name\":\"append-events.jsonl\",\"metadata\":{\"pid\":18356,\"time\":\"2026-10-09T09:02:02.735Z\"},\"path\":\"C:\\\\Users\\\\jrodr\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo\\\\178242cc-c0b4-4452-b344-f35b49dc3d1f\\\\scra · lock doctor --json exit 1: \"\"",
+      "evidence": {
+        "list": {
+          "cmd": "hardkas lock list --json",
+          "exit": 0,
+          "signal": null,
+          "ms": 887,
+          "stdout": "{\n  \"ok\": true,\n  \"command\": \"lock list\",\n  \"mode\": \"cli\",\n  \"result\": [\n    {\n      \"name\": \"append-events.jsonl\",\n      \"metadata\": {\n        \"pid\": 18356,\n        \"time\": \"2026-10-09T09:02:02.735Z\"\n      },\n      \"path\": \"C:\\\\Users\\\\jrodr\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo\\\\178242cc-c0b4-4452-b344-f35b49dc3d1f\\\\scratchpad\\\\el2\\\\runs\\\\after-1-p\\\\ws-p2\\\\.hardkas\\\\locks\\\\append-events.jsonl.lock\",\n      \"isAlive\": true,\n      \"liveness\": \"unverifiable\",\n      \"detail\": \"no hostname recorded (a lock written by an earlier HardKAS): its process …[+40]",
+          "stderr": ""
+        },
+        "doctor": {
+          "cmd": "hardkas lock doctor --json",
+          "exit": 1,
+          "signal": null,
+          "ms": 888,
+          "stdout": "",
+          "stderr": "error: unknown option '--json'\n\nUsage: hardkas lock doctor [options]\n\nReport stale locks (process no longer running on this host) in .hardkas/locks\nstable\n\nOptions:\n  -h, --help  display help for command\n"
+        },
+        "listHuman": {
+          "cmd": "hardkas lock list",
+          "exit": 0,
+          "signal": null,
+          "ms": 909,
+          "stdout": "\n  ═══ Active Workspace Locks ═══\n  append-events.jsonl PID: 18356  State: UNVERIFIABLE\n    Command: undefined\n    Created: undefined\n    Why:     no hostname recorded (a lock written by an earlier HardKAS): its process cannot be placed on a host\n\n",
+          "stderr": ""
+        }
+      }
+    },
+    {
+      "id": "EL2-P3-STALE-TELEMETRY-LOCK",
+      "area": "durability",
+      "claim": "the same coordinator on telemetry.jsonl: a stale telemetry lock, then commands that write telemetry",
+      "ms": 2216,
+      "verdict": "NOTE",
+      "why": "reference plan 1026 ms; telemetry files none; with stale telemetry + artifacts locks: plan exit 0 in 1057 ms; telemetry -; telemetry lock still there: false",
+      "evidence": {
+        "run": {
+          "cmd": "hardkas tx plan --from alice --to bob --amount 1 --network simulated --out b.json --json",
+          "exit": 0,
+          "signal": null,
+          "ms": 1057,
+          "stdout": "{\n  \"schema\": \"hardkas.txPlan\",\n  \"hardkasVersion\": \"0.12.0-rc.27\",\n  \"schemaVersion\": \"hardkas.artifact.v1\",\n  \"version\": \"1.0.0-alpha\",\n  \"hashVersion\": 5,\n  \"createdAt\": \"2026-10-09T10:02:07.571Z\",\n  \"networkId\": \"simulated\",\n  \"mode\": \"simulator\",\n  \"execution\": {\n    \"mode\": \"simulator\",\n    \"d…[+1426]",
+          "stderr": ""
+        }
+      }
+    },
+    {
+      "id": "EL2-P4-EVENT-KINDS",
+      "area": "evidence",
+      "claim": "EVENT-EMISSION-1: event kinds after plan → sign → send, and after a shortcut send",
+      "ms": 4408,
+      "verdict": "NOTE",
+      "why": "after plan → sign → send: {\"artifact.written\":6}; after a shortcut send as well: {\"artifact.written\":14,\"workflow.started\":1,\"workflow.plan.created\":1,\"workflow.signed\":1,\"workflow.receipt\":1}",
+      "evidence": {
+        "afterFlow": {
+          "artifact.written": 6
+        },
+        "afterShortcut": {
+          "artifact.written": 14,
+          "workflow.started": 1,
+          "workflow.plan.created": 1,
+          "workflow.signed": 1,
+          "workflow.receipt": 1
+        }
+      }
+    }
+  ]
+}
