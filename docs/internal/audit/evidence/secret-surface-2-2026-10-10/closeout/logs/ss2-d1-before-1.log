@@ -1,0 +1,885 @@
+gate-hermetic: HARDKAS_HOME=C:\Users\jrodr\AppData\Local\Temp\hardkas-hermetic-home-JEqA1H (copy of C:\Users\jrodr\AppData\Local\Temp\hk-v210-gate-home)
+gate-hermetic: DOCKER_HOST=tcp://127.0.0.1:1; preload=C:\Users\jrodr\AppData\Local\Temp\hk-ra\wt\scripts\hermetic\no-network-preload.cjs
+gate-hermetic: vitest run --coverage.enabled=false --reporter=default --reporter=json --outputFile=C:\Users\jrodr\AppData\Local\Temp\claude\C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo\21f9a2e4-33ac-4300-9366-aff402f85900\scratchpad\cut47-secret-surface-2\logs\ss2-d1-before-1.json packages/cli/test/secret-surface-2.test.ts packages/core/test/secret-surface-2.test.ts packages/cli/test/secret-surface-2-wallet-create.test.ts
+
+ RUN  v2.1.9 C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt
+
+ ❯ packages/cli/test/secret-surface-2.test.ts (48 tests | 14 failed) 63674ms
+   ✓ SECRET-SURFACE-2 · BEFORE > SS2-A · security audit finds the plaintext keys HardKAS writes > control · a clean workspace passes 1015ms
+   ✓ SECRET-SURFACE-2 · BEFORE > SS2-A · security audit finds the plaintext keys HardKAS writes > the key `localnet account create` stores in plaintext fails the audit, naming the file 2128ms
+   ✓ SECRET-SURFACE-2 · BEFORE > SS2-A · security audit finds the plaintext keys HardKAS writes > a mnemonic in plaintext under .hardkas fails the audit 1036ms
+   ✓ SECRET-SURFACE-2 · BEFORE > SS2-A · security audit finds the plaintext keys HardKAS writes > control · a dev-account config that holds only a privateKeyRef is not a leak 1026ms
+   × SECRET-SURFACE-2 · BEFORE > SS2-B · a mainnet private key is not printed by default > kaspa wallet create <name> --network mainnet refuses (WALLET_KEY_OUTPUT_REQUIRED, exit 2): no key, no address, the two ways out named 1113ms
+     → 
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+HardKAS • Kaspa Wallet Creation
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ✓ New Kaspa L1 wallet generated:
+    Name:    vault
+    Address: kaspa:qrzem2mn8znc5yxf54n7suh0chty08jx23shcqj62mlk339ztjw9zke7l0nrm
+    Network: mainnet
+
+  Action Required: Add this to your hardkas.config.ts:
+  ----------------------------------------
+  accounts: {
+    vault: {
+      kind: "kaspa-private-key",
+      address: "kaspa:qrzem2mn8znc5yxf54n7suh0chty08jx23shcqj62mlk339ztjw9zke7l0nrm",
+      privateKeyEnv: "VAULT_PRIVATE_KEY"
+    }
+  }
+  ----------------------------------------
+
+  Set your private key in .env:
+  VAULT_PRIVATE_KEY=<64hex-redacted>
+
+HardKAS never auto-writes secrets for your protection.
+
+: expected { exit: +0, code: false } to deeply equal { exit: 2, code: true }
+   ✓ SECRET-SURFACE-2 · BEFORE > SS2-C · env check does not print the dev server token > human output names the variable as set without its value 1022ms
+   ✓ SECRET-SURFACE-2 · BEFORE > SS2-C · env check does not print the dev server token > --json reports the variable without its value 1020ms
+   ✓ SECRET-SURFACE-2 · BEFORE > SS2-D · URL credentials are redacted even when the output is coloured > control · colours off: kaspa doctor never prints the URL's password 1236ms
+   ✓ SECRET-SURFACE-2 · BEFORE > SS2-D · URL credentials are redacted even when the output is coloured > colours on (every Windows terminal by default): the password must be redacted all the same 1204ms
+   ✓ SECRET-SURFACE-2 · BEFORE > SS2-D · URL credentials are redacted even when the output is coloured > AFTER · colours on, --json: the one document carries no password either 1219ms
+   ✓ SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > finds: JSON, a space after the colon (the store's format) 1162ms
+   ✓ SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > finds: JSON, no spaces 1132ms
+   ✓ SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > finds: a TS object with single quotes 1051ms
+   ✓ SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > finds: privateKeyHex under YAML-style spacing 1068ms
+   ✓ SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > finds: the .env line kaspa wallet create recommends, in a log 1072ms
+   ✓ SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > finds: a 12-word mnemonic under a field 1076ms
+   ✓ SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > finds: a 24-word seed phrase under seedPhrase 1123ms
+   ✓ SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > finds: a mnemonic in a variable line 1108ms
+   ✓ SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > finds: an extended private key anywhere 1059ms
+   ✓ SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > finds: an extra path given with --include 1096ms
+   ✓ SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > passes: content hashes and txIds (64 hex under identity names) 1040ms
+   ✓ SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > passes: an encrypted keystore (ciphertext, salt, nonce) 1069ms
+   ✓ SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > passes: an account that names its key's environment variable 1345ms
+   ✓ SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > passes: a dev-account config that references its key file (the documented exemption) 1071ms
+   ✓ SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > passes: the dev server token file (a bare value: no private key) 1573ms
+   ✓ SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > passes: twelve ordinary words of prose, not under a phrase-bearing name 2334ms
+   ✓ SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > passes: a 64-hex under a secret name split across a newline is still a key; but a 63-hex is not 1711ms
+   ✓ SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > the exemption is delimited: a dev-account config that carries a key besides its reference is a finding 1448ms
+   ✓ SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > a simnet account is not exempt for being simnet: the plaintext store of localnet account create is a finding, with the way out 2073ms
+   ✓ SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > the .key files of dev accounts are not searched (their permissions are checked instead) 1029ms
+   ✓ SECRET-SURFACE-2 · AFTER > D3 · env check reports a secret-bearing variable as configured, never its value > --json: value [REDACTED], configured: true, secret: true; a non-secret variable keeps its value 1040ms
+   ✓ SECRET-SURFACE-2 · AFTER > D3 · env check reports a secret-bearing variable as configured, never its value > human: the line says configured and shows the marker; the same when the token comes from .env 1083ms
+   ✓ SECRET-SURFACE-2 · AFTER > D3 · env check reports a secret-bearing variable as configured, never its value > the token file the server writes is not touched by env check 1042ms
+   × SECRET-SURFACE-2 · AFTER > D1 · kaspa wallet create: the key goes where the user says, decided before anything is generated > refuses by default on simnet (the default): exit 2, WALLET_KEY_OUTPUT_REQUIRED, no key, no address, nothing written 1130ms
+     → 
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+HardKAS • Kaspa Wallet Creation
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ✓ New Kaspa L1 wallet generated:
+    Name:    vault
+    Address: kaspasim:qq480mr4czdr0zp2z3a6gtpzzvyyzv0qxgzyxcagfsev6yldx8vc76zudmpw4
+    Network: simnet
+
+  Action Required: Add this to your hardkas.config.ts:
+  ----------------------------------------
+  accounts: {
+    vault: {
+      kind: "kaspa-private-key",
+      address: "kaspasim:qq480mr4czdr0zp2z3a6gtpzzvyyzv0qxgzyxcagfsev6yldx8vc76zudmpw4",
+      privateKeyEnv: "VAULT_PRIVATE_KEY"
+    }
+  }
+  ----------------------------------------
+
+  Set your private key in .env:
+  VAULT_PRIVATE_KEY=<64hex-redacted>
+
+HardKAS never auto-writes secrets for your protection.
+
+: expected { exit: +0, code: false } to deeply equal { exit: 2, code: true }
+   × SECRET-SURFACE-2 · AFTER > D1 · kaspa wallet create: the key goes where the user says, decided before anything is generated > refuses by default on testnet-10: exit 2, WALLET_KEY_OUTPUT_REQUIRED, no key, no address, nothing written 1185ms
+     → 
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+HardKAS • Kaspa Wallet Creation
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ✓ New Kaspa L1 wallet generated:
+    Name:    vault
+    Address: kaspatest:qpzj52clw3c3a8jeggk90rnetjepq70f7nd8x53ykhrrm97md4y9jmymlqym0
+    Network: testnet-10
+
+  Action Required: Add this to your hardkas.config.ts:
+  ----------------------------------------
+  accounts: {
+    vault: {
+      kind: "kaspa-private-key",
+      address: "kaspatest:qpzj52clw3c3a8jeggk90rnetjepq70f7nd8x53ykhrrm97md4y9jmymlqym0",
+      privateKeyEnv: "VAULT_PRIVATE_KEY"
+    }
+  }
+  ----------------------------------------
+
+  Set your private key in .env:
+  VAULT_PRIVATE_KEY=<64hex-redacted>
+
+HardKAS never auto-writes secrets for your protection.
+
+: expected { exit: +0, code: false } to deeply equal { exit: 2, code: true }
+   × SECRET-SURFACE-2 · AFTER > D1 · kaspa wallet create: the key goes where the user says, decided before anything is generated > refuses by default on mainnet: exit 2, WALLET_KEY_OUTPUT_REQUIRED, no key, no address, nothing written 1253ms
+     → 
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+HardKAS • Kaspa Wallet Creation
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ✓ New Kaspa L1 wallet generated:
+    Name:    vault
+    Address: kaspa:qr5zfy83zkxmhqxjadzlpt8j043anfksnu8vp5pkgv5ztymlvwhkxhkge55gm
+    Network: mainnet
+
+  Action Required: Add this to your hardkas.config.ts:
+  ----------------------------------------
+  accounts: {
+    vault: {
+      kind: "kaspa-private-key",
+      address: "kaspa:qr5zfy83zkxmhqxjadzlpt8j043anfksnu8vp5pkgv5ztymlvwhkxhkge55gm",
+      privateKeyEnv: "VAULT_PRIVATE_KEY"
+    }
+  }
+  ----------------------------------------
+
+  Set your private key in .env:
+  VAULT_PRIVATE_KEY=<64hex-redacted>
+
+HardKAS never auto-writes secrets for your protection.
+
+: expected { exit: +0, code: false } to deeply equal { exit: 2, code: true }
+   × SECRET-SURFACE-2 · AFTER > D1 · kaspa wallet create: the key goes where the user says, decided before anything is generated > --json without the flag: exactly one JSON document (ok: false, the code), exit 2, no secret, nothing written 1215ms
+     → 
+error: unknown option '--json'
+
+Usage: hardkas kaspa wallet create [options] <name>
+
+Generate a key pair and print it (address, config snippet and private key);
+nothing is saved. For stored dev accounts use 'accounts real generate' stable
+
+Options:
+  --network <id>  Kaspa network ID (default: "simnet")
+  -h, --help      display help for command
+: expected 1 to be 2 // Object.is equality
+   × SECRET-SURFACE-2 · AFTER > D1 · kaspa wallet create: the key goes where the user says, decided before anything is generated > --show-private-key on simnet (the default): the address, the snippet and the key printed once, after the warning; nothing written 1006ms
+     → 
+error: unknown option '--show-private-key'
+
+Usage: hardkas kaspa wallet create [options] <name>
+
+Generate a key pair and print it (address, config snippet and private key);
+nothing is saved. For stored dev accounts use 'accounts real generate' stable
+
+Options:
+  --network <id>  Kaspa network ID (default: "simnet")
+  -h, --help      display help for command
+: expected 1 to be +0 // Object.is equality
+   × SECRET-SURFACE-2 · AFTER > D1 · kaspa wallet create: the key goes where the user says, decided before anything is generated > --show-private-key on testnet-10: the address, the snippet and the key printed once, after the warning; nothing written 984ms
+     → 
+error: unknown option '--show-private-key'
+
+Usage: hardkas kaspa wallet create [options] <name>
+
+Generate a key pair and print it (address, config snippet and private key);
+nothing is saved. For stored dev accounts use 'accounts real generate' stable
+
+Options:
+  --network <id>  Kaspa network ID (default: "simnet")
+  -h, --help      display help for command
+: expected 1 to be +0 // Object.is equality
+   × SECRET-SURFACE-2 · AFTER > D1 · kaspa wallet create: the key goes where the user says, decided before anything is generated > --show-private-key on mainnet: the address, the snippet and the key printed once, after the warning; nothing written 999ms
+     → 
+error: unknown option '--show-private-key'
+
+Usage: hardkas kaspa wallet create [options] <name>
+
+Generate a key pair and print it (address, config snippet and private key);
+nothing is saved. For stored dev accounts use 'accounts real generate' stable
+
+Options:
+  --network <id>  Kaspa network ID (default: "simnet")
+  -h, --help      display help for command
+: expected 1 to be +0 // Object.is equality
+   × SECRET-SURFACE-2 · AFTER > D1 · kaspa wallet create: the key goes where the user says, decided before anything is generated > --show-private-key --json: one document carrying the key (once), the warning on stderr, nothing written 1026ms
+     → 
+error: unknown option '--show-private-key'
+
+Usage: hardkas kaspa wallet create [options] <name>
+
+Generate a key pair and print it (address, config snippet and private key);
+nothing is saved. For stored dev accounts use 'accounts real generate' stable
+
+Options:
+  --network <id>  Kaspa network ID (default: "simnet")
+  -h, --help      display help for command
+: expected 1 to be +0 // Object.is equality
+   × SECRET-SURFACE-2 · AFTER > D1 · kaspa wallet create: the key goes where the user says, decided before anything is generated > the help says so: the key only with --show-private-key; nothing is saved 1033ms
+     → expected 'Usage: hardkas kaspa wallet create [o…' to match /--show-private-key/
+   ✓ SECRET-SURFACE-2 · AFTER > D1 · kaspa wallet create: the key goes where the user says, decided before anything is generated > the way out the refusal names is real and recoverable: accounts real generate --password-env (mainnet) writes an encrypted keystore v2 the CLI opens again with the password, holding the key of that address; the key is never printed; the workspace passes the audit 6908ms
+   × SECRET-SURFACE-2 · AFTER > D2 + D4 · secrets obfuscated by whitespace and escape sequences are found, and never echoed > finds: a captured coloured console line: spaces around the colon, the value split by escapes 1062ms
+     → Mainnet Firewall: {"mainnet":"BLOCKED_BY_POLICY"}
+Security audit passed. No secret leaks or policy violations detected.
+
+: expected { exit: +0, failed: false } to deeply equal { exit: 1, failed: true }
+   × SECRET-SURFACE-2 · AFTER > D2 + D4 · secrets obfuscated by whitespace and escape sequences are found, and never echoed > finds: the .env line with spaces around = and a coloured value 1013ms
+     → Mainnet Firewall: {"mainnet":"BLOCKED_BY_POLICY"}
+Security audit passed. No secret leaks or policy violations detected.
+
+: expected { exit: +0, failed: false } to deeply equal { exit: 1, failed: true }
+   × SECRET-SURFACE-2 · AFTER > D2 + D4 · secrets obfuscated by whitespace and escape sequences are found, and never echoed > finds: a serialised log: the textual \u001b form around a mnemonic 1970ms
+     → expected '{\n  "ok": false,\n  "code": "SECURIT…' to match /mnemonic .*serialised\.json .*field "…/
+   × SECRET-SURFACE-2 · AFTER > D2 + D4 · secrets obfuscated by whitespace and escape sequences are found, and never echoed > finds: an escape after every character of the key, tabs around the separator 1003ms
+     → Mainnet Firewall: {"mainnet":"BLOCKED_BY_POLICY"}
+Security audit passed. No secret leaks or policy violations detected.
+
+: expected { exit: +0, failed: false } to deeply equal { exit: 1, failed: true }
+   ✓ SECRET-SURFACE-2 · AFTER > D2 + D4 · secrets obfuscated by whitespace and escape sequences are found, and never echoed > passes: a coloured log without a secret (a txId under its name, an address, amounts) 1058ms
+ ✓ packages/core/test/secret-surface-2.test.ts (26 tests) 9ms
+stdout | packages/cli/test/secret-surface-2-wallet-create.test.ts > SECRET-SURFACE-2 · D1 · the refusal happens before any key exists > without --show-private-key: a typed usage refusal, the generator never called, nothing printed (human)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+HardKAS • Kaspa Wallet Creation
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ✓ New Kaspa L1 wallet generated:
+    Name:    vault
+    Address: kaspasim:qtestaddress
+    Network: mainnet
+
+  Action Required: Add this to your hardkas.config.ts:
+  ----------------------------------------
+  accounts: {
+    vault: {
+      kind: "kaspa-private-key",
+      address: "kaspasim:qtestaddress",
+      privateKeyEnv: "VAULT_PRIVATE_KEY"
+    }
+  }
+  ----------------------------------------
+
+  Set your private key in .env:
+  VAULT_PRIVATE_KEY=cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd
+
+HardKAS never auto-writes secrets for your protection.
+
+stdout | packages/cli/test/secret-surface-2-wallet-create.test.ts > SECRET-SURFACE-2 · D1 · the refusal happens before any key exists > without --show-private-key, --json: the same refusal, the generator never called, nothing printed by the runner
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+HardKAS • Kaspa Wallet Creation
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ✓ New Kaspa L1 wallet generated:
+    Name:    vault
+    Address: kaspasim:qtestaddress
+    Network: simnet
+
+  Action Required: Add this to your hardkas.config.ts:
+  ----------------------------------------
+  accounts: {
+    vault: {
+      kind: "kaspa-private-key",
+      address: "kaspasim:qtestaddress",
+      privateKeyEnv: "VAULT_PRIVATE_KEY"
+    }
+  }
+  ----------------------------------------
+
+  Set your private key in .env:
+  VAULT_PRIVATE_KEY=cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd
+
+HardKAS never auto-writes secrets for your protection.
+
+stdout | packages/cli/test/secret-surface-2-wallet-create.test.ts > SECRET-SURFACE-2 · D1 · the refusal happens before any key exists > the refusal names the two ways out and says nothing was generated, without any value
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+HardKAS • Kaspa Wallet Creation
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ✓ New Kaspa L1 wallet generated:
+    Name:    vault
+    Address: kaspasim:qtestaddress
+    Network: testnet-10
+
+  Action Required: Add this to your hardkas.config.ts:
+  ----------------------------------------
+  accounts: {
+    vault: {
+      kind: "kaspa-private-key",
+      address: "kaspasim:qtestaddress",
+      privateKeyEnv: "VAULT_PRIVATE_KEY"
+    }
+  }
+  ----------------------------------------
+
+  Set your private key in .env:
+  VAULT_PRIVATE_KEY=cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd
+
+HardKAS never auto-writes secrets for your protection.
+
+stdout | packages/cli/test/secret-surface-2-wallet-create.test.ts > SECRET-SURFACE-2 · D1 · the refusal happens before any key exists > with --show-private-key: the generator runs once, the key is printed once, after the warning (human)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+HardKAS • Kaspa Wallet Creation
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ✓ New Kaspa L1 wallet generated:
+    Name:    vault
+    Address: kaspasim:qtestaddress
+    Network: simnet
+
+  Action Required: Add this to your hardkas.config.ts:
+  ----------------------------------------
+  accounts: {
+    vault: {
+      kind: "kaspa-private-key",
+      address: "kaspasim:qtestaddress",
+      privateKeyEnv: "VAULT_PRIVATE_KEY"
+    }
+  }
+  ----------------------------------------
+
+  Set your private key in .env:
+  VAULT_PRIVATE_KEY=cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd
+
+HardKAS never auto-writes secrets for your protection.
+
+stdout | packages/cli/test/secret-surface-2-wallet-create.test.ts > SECRET-SURFACE-2 · D1 · the refusal happens before any key exists > with --show-private-key --json: one document on stdout with the key, the warning on stderr, the key once in all
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+HardKAS • Kaspa Wallet Creation
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ✓ New Kaspa L1 wallet generated:
+    Name:    vault
+    Address: kaspasim:qtestaddress
+    Network: mainnet
+
+  Action Required: Add this to your hardkas.config.ts:
+  ----------------------------------------
+  accounts: {
+    vault: {
+      kind: "kaspa-private-key",
+      address: "kaspasim:qtestaddress",
+      privateKeyEnv: "VAULT_PRIVATE_KEY"
+    }
+  }
+  ----------------------------------------
+
+  Set your private key in .env:
+  VAULT_PRIVATE_KEY=cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd
+
+HardKAS never auto-writes secrets for your protection.
+
+ ❯ packages/cli/test/secret-surface-2-wallet-create.test.ts (5 tests | 5 failed) 386ms
+   × SECRET-SURFACE-2 · D1 · the refusal happens before any key exists > without --show-private-key: a typed usage refusal, the generator never called, nothing printed (human) 378ms
+     → promise resolved "undefined" instead of rejecting
+   × SECRET-SURFACE-2 · D1 · the refusal happens before any key exists > without --show-private-key, --json: the same refusal, the generator never called, nothing printed by the runner 1ms
+     → promise resolved "undefined" instead of rejecting
+   × SECRET-SURFACE-2 · D1 · the refusal happens before any key exists > the refusal names the two ways out and says nothing was generated, without any value 1ms
+     → Cannot read properties of undefined (reading 'message')
+   × SECRET-SURFACE-2 · D1 · the refusal happens before any key exists > with --show-private-key: the generator runs once, the key is printed once, after the warning (human) 3ms
+     → once: expected +0 to be 1 // Object.is equality
+   × SECRET-SURFACE-2 · D1 · the refusal happens before any key exists > with --show-private-key --json: one document on stdout with the key, the warning on stderr, the key once in all 1ms
+     → Unexpected end of JSON input
+
+node.exe : ⎯⎯⎯⎯⎯⎯ Failed Tests 19 ⎯⎯⎯⎯⎯⎯⎯
+En C:\Users\jrodr\AppData\Local\Temp\claude\C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo\21f9a2e4-33ac-4300-
+9366-aff402f85900\scratchpad\cut47-secret-surface-2\run-files-wt.ps1: 22 Carácter: 1
++ & node @args_ *> $log
++ ~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (⎯⎯⎯⎯⎯⎯ Failed Tests 19 ⎯⎯⎯⎯⎯⎯⎯:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+
+ FAIL  packages/cli/test/secret-surface-2-wallet-create.test.ts > SECRET-SURFACE-2 · D1 · the refusal happens before 
+any key exists > without --show-private-key: a typed usage refusal, the generator never called, nothing printed (human)
+AssertionError: promise resolved "undefined" instead of rejecting
+
+- Expected: 
+[Error: rejected promise]
+
++ Received: 
+undefined
+
+ ❯ packages/cli/test/secret-surface-2-wallet-create.test.ts:35:71
+     33|     const io = capture("human");
+     34|     const { runKaspaWalletCreate } = await runner();
+     35|     await expect(runKaspaWalletCreate("vault", { network: "mainnet" })…
+       |                                                                       ^
+     36|       name: "HardkasCliError",
+     37|       code: "WALLET_KEY_OUTPUT_REQUIRED",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/19]⎯
+
+ FAIL  packages/cli/test/secret-surface-2-wallet-create.test.ts > SECRET-SURFACE-2 · D1 · the refusal happens before 
+any key exists > without --show-private-key, --json: the same refusal, the generator never called, nothing printed by 
+the runner
+AssertionError: promise resolved "undefined" instead of rejecting
+
+- Expected: 
+[Error: rejected promise]
+
++ Received: 
+undefined
+
+ ❯ packages/cli/test/secret-surface-2-wallet-create.test.ts:47:82
+     45|     const io = capture("json");
+     46|     const { runKaspaWalletCreate } = await runner();
+     47|     await expect(runKaspaWalletCreate("vault", { network: "simnet", js…
+       |                                                                                  ^
+     48|     expect(generate).not.toHaveBeenCalled();
+     49|     expect(io.out() + io.err()).toBe("");
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/19]⎯
+
+ FAIL  packages/cli/test/secret-surface-2-wallet-create.test.ts > SECRET-SURFACE-2 · D1 · the refusal happens before 
+any key exists > the refusal names the two ways out and says nothing was generated, without any value
+TypeError: Cannot read properties of undefined (reading 'message')
+ ❯ packages/cli/test/secret-surface-2-wallet-create.test.ts:55:23
+     53|     const { runKaspaWalletCreate } = await runner();
+     54|     const e: any = await runKaspaWalletCreate("vault", { network: "tes…
+     55|     const text = `${e.message}\n${e.suggestion ?? ""}`;
+       |                       ^
+     56|     expect(text).toMatch(/--show-private-key/);
+     57|     expect(text).toMatch(/accounts real generate --name vault --networ…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/19]⎯
+
+ FAIL  packages/cli/test/secret-surface-2-wallet-create.test.ts > SECRET-SURFACE-2 · D1 · the refusal happens before 
+any key exists > with --show-private-key: the generator runs once, the key is printed once, after the warning (human)
+AssertionError: once: expected +0 to be 1 // Object.is equality
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ packages/cli/test/secret-surface-2-wallet-create.test.ts:68:48
+     66|     expect(generate).toHaveBeenCalledTimes(1);
+     67|     const text = io.out();
+     68|     expect(text.split(KEY).length - 1, "once").toBe(1);
+       |                                                ^
+     69|     expect(text).toMatch(/VAULT_PRIVATE_KEY=/);
+     70|     expect(text).toMatch(/only copy/i);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/19]⎯
+
+ FAIL  packages/cli/test/secret-surface-2-wallet-create.test.ts > SECRET-SURFACE-2 · D1 · the refusal happens before 
+any key exists > with --show-private-key --json: one document on stdout with the key, the warning on stderr, the key 
+once in all
+SyntaxError: Unexpected end of JSON input
+ ❯ packages/cli/test/secret-surface-2-wallet-create.test.ts:81:22
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/19]⎯
+
+ FAIL  packages/cli/test/secret-surface-2.test.ts > SECRET-SURFACE-2 · BEFORE > SS2-B · a mainnet private key is not 
+printed by default > kaspa wallet create <name> --network mainnet refuses (WALLET_KEY_OUTPUT_REQUIRED, exit 2): no 
+key, no address, the two ways out named
+AssertionError: 
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+HardKAS • Kaspa Wallet Creation
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ✓ New Kaspa L1 wallet generated:
+    Name:    vault
+    Address: kaspa:qrzem2mn8znc5yxf54n7suh0chty08jx23shcqj62mlk339ztjw9zke7l0nrm
+    Network: mainnet
+
+  Action Required: Add this to your hardkas.config.ts:
+  ----------------------------------------
+  accounts: {
+    vault: {
+      kind: "kaspa-private-key",
+      address: "kaspa:qrzem2mn8znc5yxf54n7suh0chty08jx23shcqj62mlk339ztjw9zke7l0nrm",
+      privateKeyEnv: "VAULT_PRIVATE_KEY"
+    }
+  }
+  ----------------------------------------
+
+  Set your private key in .env:
+  VAULT_PRIVATE_KEY=<64hex-redacted>
+
+HardKAS never auto-writes secrets for your protection.
+
+: expected { exit: +0, code: false } to deeply equal { exit: 2, code: true }
+
+- Expected
++ Received
+
+  Object {
+-   "code": true,
+-   "exit": 2,
++   "code": false,
++   "exit": 0,
+  }
+
+ ❯ packages/cli/test/secret-surface-2.test.ts:124:88
+    122|       const r = run(["kaspa", "wallet", "create", "vault", "--network"…
+    123|       const text = stripAnsi(r.all);
+    124|       expect({ exit: r.status, code: /WALLET_KEY_OUTPUT_REQUIRED/.test…
+       |                                                                                        ^
+    125|       expect(text, "no 64-hex value (the private key) in stdout or std…
+    126|       expect(text, "no address either: nothing was generated").not.toM…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/19]⎯
+
+ FAIL  packages/cli/test/secret-surface-2.test.ts > SECRET-SURFACE-2 · AFTER > D1 · kaspa wallet create: the key goes 
+where the user says, decided before anything is generated > refuses by default on simnet (the default): exit 2, 
+WALLET_KEY_OUTPUT_REQUIRED, no key, no address, nothing written
+AssertionError: 
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+HardKAS • Kaspa Wallet Creation
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ✓ New Kaspa L1 wallet generated:
+    Name:    vault
+    Address: kaspasim:qq480mr4czdr0zp2z3a6gtpzzvyyzv0qxgzyxcagfsev6yldx8vc76zudmpw4
+    Network: simnet
+
+  Action Required: Add this to your hardkas.config.ts:
+  ----------------------------------------
+  accounts: {
+    vault: {
+      kind: "kaspa-private-key",
+      address: "kaspasim:qq480mr4czdr0zp2z3a6gtpzzvyyzv0qxgzyxcagfsev6yldx8vc76zudmpw4",
+      privateKeyEnv: "VAULT_PRIVATE_KEY"
+    }
+  }
+  ----------------------------------------
+
+  Set your private key in .env:
+  VAULT_PRIVATE_KEY=<64hex-redacted>
+
+HardKAS never auto-writes secrets for your protection.
+
+: expected { exit: +0, code: false } to deeply equal { exit: 2, code: true }
+
+- Expected
++ Received
+
+  Object {
+-   "code": true,
+-   "exit": 2,
++   "code": false,
++   "exit": 0,
+  }
+
+ ❯ packages/cli/test/secret-surface-2.test.ts:321:90
+    319|         const r = run(["kaspa", "wallet", "create", "vault", ...netArg…
+    320|         const text = stripAnsi(r.all);
+    321|         expect({ exit: r.status, code: /WALLET_KEY_OUTPUT_REQUIRED/.te…
+       |                                                                                          ^
+    322|         expect(text).not.toMatch(HEX64);
+    323|         expect(text).not.toMatch(ADDRESS);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/19]⎯
+
+ FAIL  packages/cli/test/secret-surface-2.test.ts > SECRET-SURFACE-2 · AFTER > D1 · kaspa wallet create: the key goes 
+where the user says, decided before anything is generated > refuses by default on testnet-10: exit 2, 
+WALLET_KEY_OUTPUT_REQUIRED, no key, no address, nothing written
+AssertionError: 
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+HardKAS • Kaspa Wallet Creation
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ✓ New Kaspa L1 wallet generated:
+    Name:    vault
+    Address: kaspatest:qpzj52clw3c3a8jeggk90rnetjepq70f7nd8x53ykhrrm97md4y9jmymlqym0
+    Network: testnet-10
+
+  Action Required: Add this to your hardkas.config.ts:
+  ----------------------------------------
+  accounts: {
+    vault: {
+      kind: "kaspa-private-key",
+      address: "kaspatest:qpzj52clw3c3a8jeggk90rnetjepq70f7nd8x53ykhrrm97md4y9jmymlqym0",
+      privateKeyEnv: "VAULT_PRIVATE_KEY"
+    }
+  }
+  ----------------------------------------
+
+  Set your private key in .env:
+  VAULT_PRIVATE_KEY=<64hex-redacted>
+
+HardKAS never auto-writes secrets for your protection.
+
+: expected { exit: +0, code: false } to deeply equal { exit: 2, code: true }
+
+- Expected
++ Received
+
+  Object {
+-   "code": true,
+-   "exit": 2,
++   "code": false,
++   "exit": 0,
+  }
+
+ ❯ packages/cli/test/secret-surface-2.test.ts:321:90
+    319|         const r = run(["kaspa", "wallet", "create", "vault", ...netArg…
+    320|         const text = stripAnsi(r.all);
+    321|         expect({ exit: r.status, code: /WALLET_KEY_OUTPUT_REQUIRED/.te…
+       |                                                                                          ^
+    322|         expect(text).not.toMatch(HEX64);
+    323|         expect(text).not.toMatch(ADDRESS);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/19]⎯
+
+ FAIL  packages/cli/test/secret-surface-2.test.ts > SECRET-SURFACE-2 · AFTER > D1 · kaspa wallet create: the key goes 
+where the user says, decided before anything is generated > refuses by default on mainnet: exit 2, 
+WALLET_KEY_OUTPUT_REQUIRED, no key, no address, nothing written
+AssertionError: 
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+HardKAS • Kaspa Wallet Creation
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ✓ New Kaspa L1 wallet generated:
+    Name:    vault
+    Address: kaspa:qr5zfy83zkxmhqxjadzlpt8j043anfksnu8vp5pkgv5ztymlvwhkxhkge55gm
+    Network: mainnet
+
+  Action Required: Add this to your hardkas.config.ts:
+  ----------------------------------------
+  accounts: {
+    vault: {
+      kind: "kaspa-private-key",
+      address: "kaspa:qr5zfy83zkxmhqxjadzlpt8j043anfksnu8vp5pkgv5ztymlvwhkxhkge55gm",
+      privateKeyEnv: "VAULT_PRIVATE_KEY"
+    }
+  }
+  ----------------------------------------
+
+  Set your private key in .env:
+  VAULT_PRIVATE_KEY=<64hex-redacted>
+
+HardKAS never auto-writes secrets for your protection.
+
+: expected { exit: +0, code: false } to deeply equal { exit: 2, code: true }
+
+- Expected
++ Received
+
+  Object {
+-   "code": true,
+-   "exit": 2,
++   "code": false,
++   "exit": 0,
+  }
+
+ ❯ packages/cli/test/secret-surface-2.test.ts:321:90
+    319|         const r = run(["kaspa", "wallet", "create", "vault", ...netArg…
+    320|         const text = stripAnsi(r.all);
+    321|         expect({ exit: r.status, code: /WALLET_KEY_OUTPUT_REQUIRED/.te…
+       |                                                                                          ^
+    322|         expect(text).not.toMatch(HEX64);
+    323|         expect(text).not.toMatch(ADDRESS);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/19]⎯
+
+ FAIL  packages/cli/test/secret-surface-2.test.ts > SECRET-SURFACE-2 · AFTER > D1 · kaspa wallet create: the key goes 
+where the user says, decided before anything is generated > --json without the flag: exactly one JSON document (ok: 
+false, the code), exit 2, no secret, nothing written
+AssertionError: 
+error: unknown option '--json'
+
+Usage: hardkas kaspa wallet create [options] <name>
+
+Generate a key pair and print it (address, config snippet and private key);
+nothing is saved. For stored dev accounts use 'accounts real generate' stable
+
+Options:
+  --network <id>  Kaspa network ID (default: "simnet")
+  -h, --help      display help for command
+: expected 1 to be 2 // Object.is equality
+
+- Expected
++ Received
+
+- 2
++ 1
+
+ ❯ packages/cli/test/secret-surface-2.test.ts:331:31
+    329|       const before = snapshot();
+    330|       const r = run(["kaspa", "wallet", "create", "vault", "--network"…
+    331|       expect(r.status, r.all).toBe(2);
+       |                               ^
+    332|       const doc = JSON.parse(r.stdout.trim()); // a second document on…
+    333|       expect(doc).toMatchObject({ ok: false, code: "WALLET_KEY_OUTPUT_…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/19]⎯
+
+ FAIL  packages/cli/test/secret-surface-2.test.ts > SECRET-SURFACE-2 · AFTER > D1 · kaspa wallet create: the key goes 
+where the user says, decided before anything is generated > --show-private-key on simnet (the default): the address, 
+the snippet and the key printed once, after the warning; nothing written
+ FAIL  packages/cli/test/secret-surface-2.test.ts > SECRET-SURFACE-2 · AFTER > D1 · kaspa wallet create: the key goes 
+where the user says, decided before anything is generated > --show-private-key on testnet-10: the address, the snippet 
+and the key printed once, after the warning; nothing written
+ FAIL  packages/cli/test/secret-surface-2.test.ts > SECRET-SURFACE-2 · AFTER > D1 · kaspa wallet create: the key goes 
+where the user says, decided before anything is generated > --show-private-key on mainnet: the address, the snippet 
+and the key printed once, after the warning; nothing written
+AssertionError: 
+error: unknown option '--show-private-key'
+
+Usage: hardkas kaspa wallet create [options] <name>
+
+Generate a key pair and print it (address, config snippet and private key);
+nothing is saved. For stored dev accounts use 'accounts real generate' stable
+
+Options:
+  --network <id>  Kaspa network ID (default: "simnet")
+  -h, --help      display help for command
+: expected 1 to be +0 // Object.is equality
+
+- Expected
++ Received
+
+- 0
++ 1
+
+ ❯ packages/cli/test/secret-surface-2.test.ts:344:33
+    342|         const r = run(["kaspa", "wallet", "create", "vault", ...netArg…
+    343|         const text = stripAnsi(r.all);
+    344|         expect(r.status, r.all).toBe(0);
+       |                                 ^
+    345|         expect(/Address:\s+(\S+)/.exec(text)?.[1], text).toMatch(prefi…
+    346|         expect(text, "the config snippet").toContain("privateKeyEnv");
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/19]⎯
+
+ FAIL  packages/cli/test/secret-surface-2.test.ts > SECRET-SURFACE-2 · AFTER > D1 · kaspa wallet create: the key goes 
+where the user says, decided before anything is generated > --show-private-key --json: one document carrying the key 
+(once), the warning on stderr, nothing written
+AssertionError: 
+error: unknown option '--show-private-key'
+
+Usage: hardkas kaspa wallet create [options] <name>
+
+Generate a key pair and print it (address, config snippet and private key);
+nothing is saved. For stored dev accounts use 'accounts real generate' stable
+
+Options:
+  --network <id>  Kaspa network ID (default: "simnet")
+  -h, --help      display help for command
+: expected 1 to be +0 // Object.is equality
+
+- Expected
++ Received
+
+- 0
++ 1
+
+ ❯ packages/cli/test/secret-surface-2.test.ts:359:31
+    357|       const before = snapshot();
+    358|       const r = run(["kaspa", "wallet", "create", "vault", "--network"…
+    359|       expect(r.status, r.all).toBe(0);
+       |                               ^
+    360|       const doc = JSON.parse(r.stdout.trim());
+    361|       expect(doc).toMatchObject({
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/19]⎯
+
+ FAIL  packages/cli/test/secret-surface-2.test.ts > SECRET-SURFACE-2 · AFTER > D1 · kaspa wallet create: the key goes 
+where the user says, decided before anything is generated > the help says so: the key only with --show-private-key; 
+nothing is saved
+AssertionError: expected 'Usage: hardkas kaspa wallet create [o…' to match /--show-private-key/
+
+ Test Files  2 failed | 1 passed (3)
+- Expected: 
+/--show-private-key/
+
++ Received: 
+"Usage: hardkas kaspa wallet create [options] <name>
+
+Generate a key pair and print it (address, config snippet and private key);
+nothing is saved. For stored dev accounts use 'accounts real generate' stable
+
+Options:
+  --network <id>  Kaspa network ID (default: \"simnet\")
+  -h, --help      display help for command
+"
+
+ ❯ packages/cli/test/secret-surface-2.test.ts:376:24
+    374|       const r = run(["kaspa", "wallet", "create", "--help"], ws);
+    375|       expect(r.status, r.all).toBe(0);
+    376|       expect(r.stdout).toMatch(/--show-private-key/);
+       |                        ^
+    377|       expect(r.stdout).toMatch(/nothing is saved/);
+    378|     });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/19]⎯
+
+ FAIL  packages/cli/test/secret-surface-2.test.ts > SECRET-SURFACE-2 · AFTER > D2 + D4 · secrets obfuscated by 
+whitespace and escape sequences are found, and never echoed > finds: a captured coloured console line: spaces around 
+the colon, the value split by escapes
+ FAIL  packages/cli/test/secret-surface-2.test.ts > SECRET-SURFACE-2 · AFTER > D2 + D4 · secrets obfuscated by 
+whitespace and escape sequences are found, and never echoed > finds: the .env line with spaces around = and a coloured 
+value
+ FAIL  packages/cli/test/secret-surface-2.test.ts > SECRET-SURFACE-2 · AFTER > D2 + D4 · secrets obfuscated by 
+whitespace and escape sequences are found, and never echoed > finds: an escape after every character of the key, tabs 
+around the separator
+AssertionError: Mainnet Firewall: {"mainnet":"BLOCKED_BY_POLICY"}
+Security audit passed. No secret leaks or policy violations detected.
+
+: expected { exit: +0, failed: false } to deeply equal { exit: 1, failed: true }
+
+- Expected
++ Received
+
+  Object {
+-   "exit": 1,
+-   "failed": true,
++   "exit": 0,
++   "failed": false,
+  }
+
+ ❯ packages/cli/test/secret-surface-2.test.ts:464:90
+    462|         for (const args of [[], ["--json"]]) {
+    463|           const r = audit(args);
+    464|           expect({ exit: r.status, failed: /SECURITY_AUDIT_FAILED/.tes…
+       |                                                                                          ^
+    465|           expect(r.all).toMatch(expectation);
+    466|           expect(r.all, "never the value").not.toContain(K);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/19]⎯
+
+ FAIL  packages/cli/test/secret-surface-2.test.ts > SECRET-SURFACE-2 · AFTER > D2 + D4 · secrets obfuscated by 
+whitespace and escape sequences are found, and never echoed > finds: a serialised log: the textual \u001b form around 
+a mnemonic
+AssertionError: expected '{\n  "ok": false,\n  "code": "SECURIT…' to match /mnemonic .*serialised\.json .*field "…/
+
+- Expected: 
+/mnemonic .*serialised\.json .*field "mnemonic"/
+
++ Received: 
+"{
+  \"ok\": false,
+  \"code\": \"SECURITY_AUDIT_FAILED\",
+  \"message\": \"Security audit failed:\\n- Plaintext mnemonic in reports/serialised.json (field \\\"mnemonic\\\")\",
+  \"mode\": \"cli\"
+}
+
+"
+
+ ❯ packages/cli/test/secret-surface-2.test.ts:465:25
+    463|           const r = audit(args);
+    464|           expect({ exit: r.status, failed: /SECURITY_AUDIT_FAILED/.tes…
+    465|           expect(r.all).toMatch(expectation);
+       |                         ^
+    466|           expect(r.all, "never the value").not.toContain(K);
+    467|           for (let i = 0; i + 12 <= K.length; i += 4) {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[15/19]⎯
+
+      Tests  19 failed | 60 passed (79)
+   Start at  12:48:57
+   Duration  65.25s (transform 1.09s, setup 0ms, collect 249ms, tests 64.07s, environment 1ms, prepare 337ms)
+
+JSON report written to C:/Users/jrodr/AppData/Local/Temp/claude/C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo/21f9a2e4-33ac-4300-9366-aff402f85900/scratchpad/cut47-secret-surface-2/logs/ss2-d1-before-1.json
+
+gate-hermetic: vitest exit 1 after 66s
+gate-hermetic: non-loopback attempts (each one fails the gate): 0
+gate-hermetic: loopback connection targets (review for dependencies on local services):
+  127.0.0.1:1 x3

@@ -1811,7 +1811,7 @@ hardkas kaspa wallet balance [options] <name>
 
 ## hardkas kaspa wallet create
 
-Generate a key pair and print it (address, config snippet and private key); nothing is saved. For stored dev accounts use 'accounts real generate' stable
+Generate a key pair and print its address and config snippet; the private key is printed once, only with --show-private-key; nothing is saved. For a stored, encrypted account use 'accounts real generate' stable
 
 ### Usage
 
@@ -1824,6 +1824,8 @@ hardkas kaspa wallet create [options] <name>
 | Flag | Description | Default |
 | :--- | :--- | :--- |
 | `--network <id>` | Kaspa network ID | simnet |
+| `--show-private-key` | Print the new private key once; you keep the only copy (HardKAS stores nothing and cannot recover it). Without it the command refuses before generating anything | false |
+| `--json` | Output as JSON (the private key is included only with --show-private-key) | false |
 
 ### Arguments
 

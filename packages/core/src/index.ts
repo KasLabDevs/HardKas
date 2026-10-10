@@ -133,6 +133,7 @@ export {
   redactUrlCredentials,
   redactUrlCredentialsInText,
   redactSecretFields,
+  stripAnsi,
   URL_SECRET_MARKER
 } from "./security.js";
 export * from "./fs.js";

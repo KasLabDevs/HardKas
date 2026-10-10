@@ -1,0 +1,143 @@
+﻿gate-hermetic: HARDKAS_HOME=C:\Users\jrodr\AppData\Local\Temp\hardkas-hermetic-home-QjBCYP (copy of C:\Users\jrodr\AppData\Local\Temp\hk-v210-gate-home)
+gate-hermetic: DOCKER_HOST=tcp://127.0.0.1:1; preload=C:\Users\jrodr\AppData\Local\Temp\hk-ra\wt\scripts\hermetic\no-network-preload.cjs
+gate-hermetic: vitest run --coverage.enabled=false --reporter=default --reporter=json --outputFile=C:\Users\jrodr\AppData\Local\Temp\claude\C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo\21f9a2e4-33ac-4300-9366-aff402f85900\scratchpad\cut47-secret-surface-2\logs\ss2-related-1.json packages/core/test/security.test.ts packages/core/test/evidence-trust-secret-boundary.test.ts packages/artifacts/test/evidence-diff-redaction.test.ts packages/accounts/test/wave0-sec1-secret-boundary.test.ts packages/accounts/test/accounts.test.ts packages/cli/test/mechanical-papercuts-2026-10-05.test.ts packages/cli/test/surface-truth-1b-contract.test.ts packages/cli/test/demo-cut-aud21-no-secrets-in-json.test.ts packages/cli/test/accounts-secrets-wave.test.ts packages/cli/test/evidence-trust-1.test.ts packages/cli/test/evidence-trust-1-contract.test.ts packages/cli/test/kaspa-rpc-url.test.ts packages/cli/test/help-truth.test.ts packages/dev-server/test/evidence-trust-1.test.ts packages/sdk/test/evidence-trust-1.test.ts packages/cli/test/surface-truth-1.test.ts
+
+ RUN  v2.1.9 C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt
+
+ ✓ packages/cli/test/surface-truth-1.test.ts (34 tests) 48074ms
+   ✓ SURFACE-TRUTH-1 · BEFORE · what the CLI claims about itself and its results > ST-A · `capabilities` > control: the JSON report names the hash version the store writes 1122ms
+   ✓ SURFACE-TRUTH-1 · BEFORE · what the CLI claims about itself and its results > ST-A · `capabilities` > the JSON report and the SDK's `capabilities.get()` agree on every capability they both report 1309ms
+   ✓ SURFACE-TRUTH-1 · BEFORE · what the CLI claims about itself and its results > ST-A · `capabilities` > it reports no L2 profiles or bridge model while `l2` and `bridge` are not commands 1088ms
+   ✓ SURFACE-TRUTH-1 · BEFORE · what the CLI claims about itself and its results > ST-A · `capabilities` > the human report does not list SilverScript or covenants as not implemented while `silver compile` and `silver covenant genesis` are commands 1097ms
+   ✓ SURFACE-TRUTH-1 · BEFORE · what the CLI claims about itself and its results > ST-A · `capabilities` > the human report names the hash version the JSON report and the store use 1091ms
+   ✓ SURFACE-TRUTH-1 · BEFORE · what the CLI claims about itself and its results > ST-A · `capabilities` > it does not call the DAG conflict ordering GHOSTDAG-aligned (the only ordering the CLI runs is the light model `query dag` labels NOT GHOSTDAG) 1089ms
+   ✓ SURFACE-TRUTH-1 · BEFORE · what the CLI claims about itself and its results > ST-E · verifiers > control: the package of a scenario that names its receipt verifies 1778ms
+   ✓ SURFACE-TRUTH-1 · BEFORE · what the CLI claims about itself and its results > ST-E · verifiers > `evidence verify` rejects a package whose scenario verdict was edited (failed → passed) 1723ms
+   ✓ SURFACE-TRUTH-1 · BEFORE · what the CLI claims about itself and its results > ST-E · verifiers > `evidence verify` rejects a package whose artifacts were removed 1729ms
+   ✓ SURFACE-TRUTH-1 · BEFORE · what the CLI claims about itself and its results > ST-E · verifiers > `evidence pack` does not present the whole store as the evidence of a scenario that names none, without saying so 1790ms
+   ✓ SURFACE-TRUTH-1 · BEFORE · what the CLI claims about itself and its results > ST-E · verifiers > contract (D-ST5): with passing torture checks too, `verify-semantics` refuses with a typed code and writes no bundle 924ms
+   ✓ SURFACE-TRUTH-1 · BEFORE · what the CLI claims about itself and its results > ST-E · verifiers > `verify-semantics --ci-mode` does not pass when torture checks failed 977ms
+   ✓ SURFACE-TRUTH-1 · BEFORE · what the CLI claims about itself and its results > ST-E · verifiers > a usage or missing-input error of `verify-semantics` is not reported as semantic drift 1854ms
+   ✓ SURFACE-TRUTH-1 · BEFORE · what the CLI claims about itself and its results > ST-E · verifiers > control: `repair --json` on a clean workspace reports success 910ms
+   ✓ SURFACE-TRUTH-1 · BEFORE · what the CLI claims about itself and its results > ST-E · verifiers > control: `repair` (human) reports the corrupt tail it finds 885ms
+   ✓ SURFACE-TRUTH-1 · BEFORE · what the CLI claims about itself and its results > ST-E · verifiers > `repair --json` does not report success while it leaves in place the corrupt tail it found 887ms
+   ✓ SURFACE-TRUTH-1 · BEFORE · what the CLI claims about itself and its results > ST-E · verifiers > `dev doctor` does not report artifacts the CLI wrote, and `hardkas verify` accepts, as malformed 1878ms
+   ✓ SURFACE-TRUTH-1 · BEFORE · what the CLI claims about itself and its results > ST-F · `workflow run` > control: a tx.plan + tx.simulate workflow completes 1096ms
+   ✓ SURFACE-TRUTH-1 · BEFORE · what the CLI claims about itself and its results > ST-F · `workflow run` > a step type the runtime does not know fails the workflow 888ms
+   ✓ SURFACE-TRUTH-1 · BEFORE · what the CLI claims about itself and its results > ST-F · `workflow run` > `network.switch` changes the network of the steps after it, or the workflow refuses it 873ms
+   ✓ SURFACE-TRUTH-1 · BEFORE · what the CLI claims about itself and its results > ST-F · `workflow run` > `--dry-run` never lets a step write to the filesystem 876ms
+   ✓ SURFACE-TRUTH-1 · BEFORE · what the CLI claims about itself and its results > ST-F · `workflow run` > `--offline` never lets a step open a connection 920ms
+   ✓ SURFACE-TRUTH-1 · BEFORE · what the CLI claims about itself and its results > ST-F · `workflow run` > `workflow inspect latest` and `workflow replay latest` reach the workflow `run` just wrote 2010ms
+   ✓ SURFACE-TRUTH-1 · BEFORE · what the CLI claims about itself and its results > ST-G · long-running commands and what they print > `dev --once --headless` ("run health checks, and exit") exits on its own, without starting the server 1076ms
+   ✓ SURFACE-TRUTH-1 · BEFORE · what the CLI claims about itself and its results > ST-G · long-running commands and what they print > `sandbox --with-node` does not say a node is running and mining when none was started (Docker is unreachable) 885ms
+   ✓ SURFACE-TRUTH-1 · BEFORE · what the CLI claims about itself and its results > ST-G · long-running commands and what they print > `sandbox` ("start a temporary … environment") is still running, its dashboard answering, 3 s after it prints the dashboard URL 5373ms
+   ✓ SURFACE-TRUTH-1 · BEFORE · what the CLI claims about itself and its results > ST-G · long-running commands and what they print > no hint `status` or `dev last --replay` prints names a command or an option the CLI does not register 1862ms
+   ✓ SURFACE-TRUTH-1 · BEFORE · what the CLI claims about itself and its results > ST-H/I/J/C · advertised commands, exit codes, the environment contract, PSKT > ST-I · `dev accounts reveal` of an alias that does not exist exits non-zero 887ms
+   ✓ SURFACE-TRUTH-1 · BEFORE · what the CLI claims about itself and its results > ST-H/I/J/C · advertised commands, exit codes, the environment contract, PSKT > ST-I · `dev last --replay` in a workspace without transactions exits non-zero 880ms
+   ✓ SURFACE-TRUTH-1 · BEFORE · what the CLI claims about itself and its results > ST-H/I/J/C · advertised commands, exit codes, the environment contract, PSKT > ST-J · `env check` and `doctor` agree on whether HardKAS reads HARDKAS_DATA_DIR 3329ms
+   ✓ SURFACE-TRUTH-1 · BEFORE · what the CLI claims about itself and its results > ST-H/I/J/C · advertised commands, exit codes, the environment contract, PSKT > ST-J · HARDKAS_EXPERIMENTAL changes the command surface, as `env check` says it does 864ms
+   ✓ SURFACE-TRUTH-1 · BEFORE · what the CLI claims about itself and its results > ST-H/I/J/C · advertised commands, exit codes, the environment contract, PSKT > ST-C · the shipped CLI does not complete a PSKT session on a test double (NODE_ENV=test, as test runners set it) 858ms
+ ✓ packages/cli/test/accounts-secrets-wave.test.ts (14 tests) 32086ms
+   ✓ Accounts wave · encrypted real accounts sign with the user's password, given explicitly > --password-env: signs; the password appears in no output and no file 3769ms
+   ✓ Accounts wave · encrypted real accounts sign with the user's password, given explicitly > --password-stdin: signs, and the password is not echoed 3633ms
+   ✓ Accounts wave · encrypted real accounts sign with the user's password, given explicitly > a wrong password fails with KEYSTORE_PASSWORD_INVALID: nothing signed, the attempt not echoed 3535ms
+   ✓ Accounts wave · encrypted real accounts sign with the user's password, given explicitly > no password and no terminal: KEYSTORE_PASSWORD_REQUIRED at once, no prompt, nothing signed, no lock 3218ms
+   ✓ Accounts wave · encrypted real accounts sign with the user's password, given explicitly > a real account encrypted with the development password is not unlocked silently; given explicitly it signs 4430ms
+   ✓ Accounts wave · encrypted real accounts sign with the user's password, given explicitly > control · development accounts (.hardkas/dev-accounts) still sign with no password at all 3582ms
+   ✓ Accounts wave · `accounts real generate` without a terminal fails closed > no password source: exit != 0 with KEYSTORE_PASSWORD_REQUIRED; no keystore, no store, no lock 1068ms
+   ✓ Accounts wave · `accounts real generate` without a terminal fails closed > --json: a JSON error, never a prompt 1051ms
+   ✓ Accounts wave · `accounts real generate` without a terminal fails closed > stdin left open (automation): fails at once instead of hanging 1041ms
+   ✓ Accounts wave · `accounts real generate` without a terminal fails closed > --password-env naming an unset variable: KEYSTORE_PASSWORD_REQUIRED, never a fallback prompt 1056ms
+   ✓ Accounts wave · `accounts real generate` without a terminal fails closed > control · --password-env and --password-stdin still create encrypted accounts and release the lock 2597ms
+   ✓ Accounts wave · AUD-20 · plaintext is never written for mainnet > generate --network mainnet --unsafe-plaintext: PLAINTEXT_MAINNET_FORBIDDEN before anything is written 1002ms
+   ✓ Accounts wave · AUD-20 · plaintext is never written for mainnet > import of a mainnet key with --unsafe-plaintext: refused the same way, the key written nowhere 1019ms
+   ✓ Accounts wave · AUD-20 · plaintext is never written for mainnet > control · plaintext on simnet, asked for explicitly, still works 1082ms
+ ✓ packages/cli/test/evidence-trust-1.test.ts (16 tests) 25046ms
+   ✓ EVIDENCE-TRUST-1 · CLI > a stored artifact is never rewritten > a second `tx sign` of the same plan leaves the stored signed artifact's bytes as they were 4073ms
+   ✓ EVIDENCE-TRUST-1 · CLI > a stored artifact is never rewritten > a stored signed artifact that was tampered with is not overwritten by the next `tx sign` 3158ms
+   ✓ EVIDENCE-TRUST-1 · CLI > lineage claims match the workspace > `artifact explain` of a receipt whose parent is in the store reports no PARENT_MISSING 970ms
+   ✓ EVIDENCE-TRUST-1 · CLI > lineage claims match the workspace > control: `artifact explain` reports PARENT_MISSING when the parent is really absent 907ms
+   ✓ EVIDENCE-TRUST-1 · CLI > lineage claims match the workspace > `query artifacts inspect` of that receipt does not say its parent is missing from the workspace 978ms
+   ✓ EVIDENCE-TRUST-1 · CLI > `query artifacts diff` decides on the identity > control: an artifact and its exact copy are identical 878ms
+   ✓ EVIDENCE-TRUST-1 · CLI > `query artifacts diff` decides on the identity > control: a different amount is a difference 877ms
+   ✓ EVIDENCE-TRUST-1 · CLI > `query artifacts diff` decides on the identity > two artifacts whose lineage differs (so do their content hashes) are not identical 860ms
+   ✓ EVIDENCE-TRUST-1 · CLI > `query artifacts diff` decides on the identity > the human output does not call two different identities identical 878ms
+   ✓ EVIDENCE-TRUST-1 · CLI > `query artifacts diff` decides on the identity > a token inside a differing rpcUrl is never printed 1741ms
+   ✓ EVIDENCE-TRUST-1 · CLI > a credential inside an RPC URL is never printed > rpc info --json, ?token= 980ms
+   ✓ EVIDENCE-TRUST-1 · CLI > a credential inside an RPC URL is never printed > rpc info, user:password@ 981ms
+   ✓ EVIDENCE-TRUST-1 · CLI > a credential inside an RPC URL is never printed > rpc doctor, ?token= 864ms
+   ✓ EVIDENCE-TRUST-1 · CLI > a credential inside an RPC URL is never printed > tx plan --json, ?token= 1006ms
+   ✓ EVIDENCE-TRUST-1 · CLI > a private key is never printed by a listing > `kaspa wallet list --json` does not print a plaintext account's private key 1864ms
+   ✓ EVIDENCE-TRUST-1 · CLI > presentation keeps public identities > `artifact explain` names the file it explains (its content hash is not shown as [REDACTED]) 975ms
+ ✓ packages/cli/test/evidence-trust-1-contract.test.ts (8 tests) 19731ms
+   ✓ EVIDENCE-TRUST-1 · CLI contract > D2 · a second `tx sign` prints the stored signed artifact (the first createdAt), byte-identical to the store 4184ms
+   ✓ EVIDENCE-TRUST-1 · CLI contract > D1 · signing over a stored copy that was changed fails with ARTIFACT_IDENTITY_CONFLICT and leaves it as it is 2993ms
+   ✓ EVIDENCE-TRUST-1 · CLI contract > lineage and diff over one simulated payment > D3 · `artifact lineage` resolves receipt → signed → plan and only then says Operational Provenance Complete 1764ms
+   ✓ EVIDENCE-TRUST-1 · CLI contract > lineage and diff over one simulated payment > D3 · with the parent gone, `artifact lineage` is LINEAGE_INCOMPLETE (exit 1) and never claims completeness 2157ms
+   ✓ EVIDENCE-TRUST-1 · CLI contract > lineage and diff over one simulated payment > D3 · `artifact explain` says the parent was resolved in the workspace store 971ms
+   ✓ EVIDENCE-TRUST-1 · CLI contract > lineage and diff over one simulated payment > D4 · a lineage-only difference: not identical, not the same identity, the entry is authenticated 882ms
+   ✓ EVIDENCE-TRUST-1 · CLI contract > lineage and diff over one simulated payment > D4 · a createdAt-only difference: not identical but the same identity; the entry is not authenticated 1720ms
+   ✓ EVIDENCE-TRUST-1 · CLI contract > D9 · `config show --json` and `config networks` reveal no secret written into the configuration 1898ms
+ ✓ packages/cli/test/surface-truth-1b-contract.test.ts (10 tests) 18971ms
+   ✓ SURFACE-TRUTH-1B · contract · CLI > capabilities and silver doctor answer from the same checks; a false derived entry says why 2176ms
+   ✓ SURFACE-TRUTH-1B · contract · CLI > capabilities names the concrete covenant surface: the real builders, and the SDK planning that is not supported 2207ms
+   ✓ SURFACE-TRUTH-1B · contract · CLI > pskt is declared unavailable, and the default adapter refuses with a typed code 1888ms
+   ✓ SURFACE-TRUTH-1B · contract · CLI > tx trace is hidden and refuses with TX_TRACE_DISABLED 1834ms
+   ✓ SURFACE-TRUTH-1B · contract · CLI > dev accounts reveal of an unknown alias fails with DEV_ACCOUNT_NOT_FOUND (exit 2) 891ms
+   ✓ SURFACE-TRUTH-1B · contract · CLI > dev last finds the transaction the store holds; with none it fails with DEV_LAST_NOTHING_FOUND (exit 2) 1876ms
+   ✓ SURFACE-TRUTH-1B · contract · CLI > one environment contract: doctor demands no variable HardKAS does not read, and flags the HARDKAS_* names env check flags 4900ms
+   ✓ SURFACE-TRUTH-1B · contract · CLI > deploy init writes no HARDKAS_DATA_DIR (HardKAS reads none) 910ms
+   ✓ SURFACE-TRUTH-1B · contract · CLI > status claims no node and points an offline dev server at a registered command 932ms
+node.exe : stderr | packages/accounts/test/wave0-sec1-secret-boundary.test.ts > SEC-1 · loadRealAccountStoreSync 
+automatically attaches redactors > accounts loaded from disk are self-redacting in console output
+En C:\Users\jrodr\AppData\Local\Temp\claude\C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo\21f9a2e4-33ac-4300-
+9366-aff402f85900\scratchpad\cut47-secret-surface-2\run-files-wt.ps1: 22 Carácter: 1
++ & node @args_ *> $log
++ ~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (stderr | packag... console output:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+
+  ⚠️  [SECURITY WARNING] Plaintext private keys detected in legacy account store for: alice
+     Location: C:\Users\jrodr\AppData\Local\Temp\hk-sec1-TflfHP\.hardkas\accounts.real.json
+     Recommendation: Re-import these accounts using encrypted keystores.
+
+
+ ✓ packages/accounts/test/wave0-sec1-secret-boundary.test.ts (11 tests) 18ms
+ ✓ packages/core/test/evidence-trust-secret-boundary.test.ts (34 tests) 16ms
+ ✓ packages/sdk/test/evidence-trust-1.test.ts (6 tests) 1635ms
+   ✓ EVIDENCE-TRUST-1 · SDK > a stored artifact is never rewritten > signing the same plan again leaves the stored signed artifact's bytes as they were 1165ms
+ ✓ packages/cli/test/mechanical-papercuts-2026-10-05.test.ts (5 tests) 13829ms
+   ✓ mechanical papercuts · simulated workspace > #3 · accounts balance without --network reads the workspace's default target (the simulator), never simnet 3977ms
+   ✓ mechanical papercuts · simulated workspace > #9 · dev tx generate produces every requested transaction in a fresh simulated workspace 2453ms
+   ✓ mechanical papercuts · simulated workspace > #8 · dev accounts export parses `kasware` and --alias; an unknown alias or format is a typed failure, exit ≠ 0 3707ms
+   ✓ #10 · env check > e2e · a workspace without a deployment .env passes (exit 0); a typo in a HARDKAS_* name fails with ENV_UNKNOWN_VARIABLE 2695ms
+ ✓ packages/artifacts/test/evidence-diff-redaction.test.ts (22 tests) 9ms
+ ✓ packages/accounts/test/accounts.test.ts (12 tests) 16ms
+ ✓ packages/cli/test/demo-cut-aud21-no-secrets-in-json.test.ts (4 tests) 5862ms
+   ✓ Demo-cut · AUD-21 · no secret in JSON output > generate --unsafe-plaintext --json: the stored private key appears nowhere in stdout or stderr 1137ms
+   ✓ Demo-cut · AUD-21 · no secret in JSON output > Demo-ready · the human output of generate --unsafe-plaintext masks the key too (stdout and stderr) 1182ms
+   ✓ Demo-cut · AUD-21 · no secret in JSON output > the same key never leaks through `accounts list --json` either 2048ms
+   ✓ Demo-cut · AUD-21 · no secret in JSON output > an encrypted account reports its keystore, and no key material at all 1494ms
+ ✓ packages/cli/test/help-truth.test.ts (4 tests) 4ms
+ ✓ packages/dev-server/test/evidence-trust-1.test.ts (3 tests) 61ms
+ ✓ packages/core/test/security.test.ts (3 tests) 4ms
+ ✓ packages/cli/test/kaspa-rpc-url.test.ts (3 tests) 5ms
+
+ Test Files  16 passed (16)
+      Tests  189 passed (189)
+   Start at  11:50:25
+   Duration  184.31s (transform 2.74s, setup 0ms, collect 14.12s, tests 165.36s, environment 3ms, prepare 1.77s)
+
+JSON report written to C:/Users/jrodr/AppData/Local/Temp/claude/C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo/21f9a2e4-33ac-4300-9366-aff402f85900/scratchpad/cut47-secret-surface-2/logs/ss2-related-1.json
+
+gate-hermetic: vitest exit 0 after 185s
+gate-hermetic: non-loopback attempts (each one fails the gate): 0
+gate-hermetic: loopback connection targets (review for dependencies on local services):
+  127.0.0.1:18210 x22
+  127.0.0.1:7420 x2
+  127.0.0.1:8545 x2
+  127.0.0.1:9 x6
+  localhost:53716 x1
+  localhost:7420 x2
+gate-hermetic: PASS

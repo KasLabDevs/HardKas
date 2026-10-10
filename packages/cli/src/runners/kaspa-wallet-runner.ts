@@ -1,47 +1,113 @@
 import pc from "picocolors";
 import { UI, handleError } from "../ui.js";
+import { getOutput } from "../output.js";
+import { HardkasCliError, HardkasExitCode } from "../cli-errors.js";
 import { loadHardkasConfig } from "@hardkas/config";
 import type { NetworkId, KaspaAddress } from "@hardkas/core";
 import type { TxPlanArtifact } from "@hardkas/artifacts";
 import { HardkasSchemas } from "@hardkas/artifacts";
 
-export async function runKaspaWalletCreate(name: string, options: { network: string }) {
+type WalletNetwork = "mainnet" | "testnet-10" | "simnet";
+
+export interface KaspaWalletCreateOptions {
+  network: string;
+  /** SECRET-SURFACE-2 (D1): the explicit choice to receive the new private key on the terminal, once. */
+  showPrivateKey?: boolean;
+  json?: boolean;
+}
+
+export const WALLET_KEY_OUTPUT_REQUIRED = "WALLET_KEY_OUTPUT_REQUIRED";
+
+/** The environment variable the printed config snippet names for the key. */
+const privateKeyEnvOf = (name: string) => `${name.toUpperCase()}_PRIVATE_KEY`;
+
+/**
+ * SECRET-SURFACE-2 (D1 / P1): `kaspa wallet create` generates a key that HardKAS does not store — no file, no keystore,
+ * no mnemonic — so the printed line is the only copy there will ever be. Where that copy goes is therefore decided
+ * BEFORE the key exists: without `--show-private-key` the command refuses with a typed usage error and nothing is
+ * generated (a key nobody chose a destination for would be lost the moment it was created); the stored, encrypted,
+ * recoverable alternative is `accounts real generate --password-env`. Every network, JSON mode included.
+ */
+export function assertWalletKeyOutputChosen(name: string, options: Pick<KaspaWalletCreateOptions, "network" | "showPrivateKey">): void {
+  if (options.showPrivateKey) return;
+  throw new HardkasCliError(
+    WALLET_KEY_OUTPUT_REQUIRED,
+    "kaspa wallet create generates a private key that HardKAS does not store, so where it goes is decided before it is created. Nothing was generated.",
+    {
+      exitCode: HardkasExitCode.USAGE_ERROR,
+      suggestion:
+        `Print it once with 'hardkas kaspa wallet create ${name} --network ${options.network} --show-private-key' (you keep the only copy), ` +
+        `or create a stored, encrypted account instead: 'hardkas accounts real generate --name ${name} --network ${options.network} --password-env <VAR>'.`
+    }
+  );
+}
+
+const ONLY_COPY_WARNING = (name: string, network: string) => [
+  "The private key below is the ONLY copy: HardKAS stores nothing and cannot recover it.",
+  "Keep it somewhere safe before leaving this screen. For a stored, encrypted account use",
+  `'hardkas accounts real generate --name ${name} --network ${network} --password-env <VAR>'.`
+];
+
+export async function runKaspaWalletCreate(name: string, options: KaspaWalletCreateOptions) {
+  // D1: decided before the accounts package is even loaded — no key, no file, no output but the typed error.
+  assertWalletKeyOutputChosen(name, options);
   try {
     const { createLocalKaspaWallet } = await import("@hardkas/accounts");
+    const out = getOutput();
+    const network = options.network as WalletNetwork;
+    const privateKeyEnv = privateKeyEnvOf(name);
 
-    console.log(
-      pc.bold("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-    );
-    console.log(pc.bold(`HardKAS • Kaspa Wallet Creation`));
-    console.log(
-      pc.bold("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n")
-    );
+    if (options.json) {
+      const wallet = await createLocalKaspaWallet({ networkId: network });
+      // the warning reaches the user on stderr; stdout carries exactly one document, the key in it once (asked for)
+      for (const line of ONLY_COPY_WARNING(name, options.network)) out.warn(`${pc.yellow("⚠")} ${line}`);
+      out.writeJson({
+        ok: true,
+        command: "kaspa wallet create",
+        mode: "cli",
+        result: {
+          name,
+          network: options.network,
+          address: wallet.address,
+          ...(wallet.publicKey ? { publicKey: wallet.publicKey } : {}),
+          privateKeyEnv,
+          privateKey: wallet.privateKey,
+          persisted: false
+        }
+      });
+      return;
+    }
 
-    const wallet = await createLocalKaspaWallet({
-      networkId: options.network as "mainnet" | "testnet-10" | "simnet"
-    });
+    out.writeLine(pc.bold("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"));
+    out.writeLine(pc.bold(`HardKAS • Kaspa Wallet Creation`));
+    out.writeLine(pc.bold("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"));
 
-    console.log(`  ${pc.green("✓")} New Kaspa L1 wallet generated:`);
-    console.log(`    Name:    ${pc.white(name)}`);
-    console.log(`    Address: ${pc.white(wallet.address)}`);
-    console.log(`    Network: ${pc.white(options.network)}`);
+    const wallet = await createLocalKaspaWallet({ networkId: network });
 
-    console.log(
-      `\n  ${pc.yellow("Action Required:")} Add this to your ${pc.white("hardkas.config.ts")}:`
-    );
-    console.log(pc.gray("  ----------------------------------------"));
-    console.log(pc.white(`  accounts: {`));
-    console.log(pc.white(`    ${name}: {`));
-    console.log(pc.white(`      kind: "kaspa-private-key",`));
-    console.log(pc.white(`      address: "${wallet.address}",`));
-    console.log(pc.white(`      privateKeyEnv: "${name.toUpperCase()}_PRIVATE_KEY"`));
-    console.log(pc.white(`    }`));
-    console.log(pc.white(`  }`));
-    console.log(pc.gray("  ----------------------------------------"));
-    console.log(`\n  ${pc.dim("Set your private key in .env:")}`);
-    console.log(`  ${name.toUpperCase()}_PRIVATE_KEY=${wallet.privateKey}\n`);
+    out.writeLine(`  ${pc.green("✓")} New Kaspa L1 wallet generated:`);
+    out.writeLine(`    Name:    ${pc.white(name)}`);
+    out.writeLine(`    Address: ${pc.white(wallet.address)}`);
+    out.writeLine(`    Network: ${pc.white(options.network)}`);
 
-    console.log(`${pc.dim("HardKAS never auto-writes secrets for your protection.")}`);
+    out.writeLine(`\n  ${pc.yellow("Action Required:")} Add this to your ${pc.white("hardkas.config.ts")}:`);
+    out.writeLine(pc.gray("  ----------------------------------------"));
+    out.writeLine(pc.white(`  accounts: {`));
+    out.writeLine(pc.white(`    ${name}: {`));
+    out.writeLine(pc.white(`      kind: "kaspa-private-key",`));
+    out.writeLine(pc.white(`      address: "${wallet.address}",`));
+    out.writeLine(pc.white(`      privateKeyEnv: "${privateKeyEnv}"`));
+    out.writeLine(pc.white(`    }`));
+    out.writeLine(pc.white(`  }`));
+    out.writeLine(pc.gray("  ----------------------------------------"));
+
+    // the warning first, then the key — printed once, here only (never through handleError, an event or evidence)
+    const [first, ...rest] = ONLY_COPY_WARNING(name, options.network);
+    out.writeLine(`\n  ${pc.red("⚠")} ${pc.red(pc.bold(first!))}`);
+    for (const line of rest) out.writeLine(`    ${pc.red(line)}`);
+    out.writeLine(`\n  ${pc.dim("Set your private key in .env:")}`);
+    out.writeLine(`  ${privateKeyEnv}=${wallet.privateKey}\n`);
+
+    out.writeLine(`${pc.dim("HardKAS never auto-writes secrets for your protection.")}`);
   } catch (e) {
     handleError(e);
   }

@@ -2301,7 +2301,7 @@
               "path": "hardkas kaspa wallet create",
               "name": "create",
               "aliases": [],
-              "description": "Generate a key pair and print it (address, config snippet and private key); nothing is saved. For stored dev accounts use 'accounts real generate' stable",
+              "description": "Generate a key pair and print its address and config snippet; the private key is printed once, only with --show-private-key; nothing is saved. For a stored, encrypted account use 'accounts real generate' stable",
               "usage": "hardkas kaspa wallet create [options] <name>",
               "arguments": [
                 {
@@ -2315,6 +2315,20 @@
                   "description": "Kaspa network ID",
                   "default": "simnet",
                   "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--show-private-key",
+                  "description": "Print the new private key once; you keep the only copy (HardKAS stores nothing and cannot recover it). Without it the command refuses before generating anything",
+                  "default": false,
+                  "required": false,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--json",
+                  "description": "Output as JSON (the private key is included only with --show-private-key)",
+                  "default": false,
+                  "required": false,
                   "mandatory": false
                 }
               ],
