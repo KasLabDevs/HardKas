@@ -1,0 +1,53 @@
+ M packages/artifacts/test/adversarial/__snapshots__/wave1-1-canonical-v5.test.ts.snap
+ M packages/cli/src/commands/tx.ts
+ M packages/cli/src/runners/dev-tx-runners.ts
+ M packages/cli/src/runners/test-runner.ts
+?? docs/internal/audit/evidence/cli-contract-2-2026-10-10/INVESTIGATION.md
+?? docs/internal/audit/evidence/cli-contract-2-2026-10-10/LEDGER.md
+?? docs/internal/audit/evidence/cli-contract-2-2026-10-10/MANIFEST.sha256
+?? docs/internal/audit/evidence/cli-contract-2-2026-10-10/after/logs/build-cc2a-1.log
+?? docs/internal/audit/evidence/cli-contract-2-2026-10-10/after/logs/cc2a-after-1.exit
+?? docs/internal/audit/evidence/cli-contract-2-2026-10-10/after/logs/cc2a-after-1.failures.txt
+?? docs/internal/audit/evidence/cli-contract-2-2026-10-10/after/logs/cc2a-after-1.head
+?? docs/internal/audit/evidence/cli-contract-2-2026-10-10/after/logs/cc2a-after-1.json
+?? docs/internal/audit/evidence/cli-contract-2-2026-10-10/after/logs/cc2a-after-1.log
+?? docs/internal/audit/evidence/cli-contract-2-2026-10-10/after/logs/cc2a-after-1.status
+?? docs/internal/audit/evidence/cli-contract-2-2026-10-10/after/logs/cc2a-after-2.exit
+?? docs/internal/audit/evidence/cli-contract-2-2026-10-10/after/logs/cc2a-after-2.head
+?? docs/internal/audit/evidence/cli-contract-2-2026-10-10/after/logs/cc2a-after-2.json
+?? docs/internal/audit/evidence/cli-contract-2-2026-10-10/after/logs/cc2a-after-2.log
+?? docs/internal/audit/evidence/cli-contract-2-2026-10-10/after/logs/cc2a-after-2.status
+?? docs/internal/audit/evidence/cli-contract-2-2026-10-10/after/logs/cc2a-related-1.exit
+?? docs/internal/audit/evidence/cli-contract-2-2026-10-10/after/logs/cc2a-related-1.head
+?? docs/internal/audit/evidence/cli-contract-2-2026-10-10/after/logs/cc2a-related-1.json
+?? docs/internal/audit/evidence/cli-contract-2-2026-10-10/after/logs/cc2a-related-1.log
+?? docs/internal/audit/evidence/cli-contract-2-2026-10-10/after/logs/cc2a-related-1.status
+?? docs/internal/audit/evidence/cli-contract-2-2026-10-10/after/scripts/copy-after-evidence.ps1
+?? docs/internal/audit/evidence/cli-contract-2-2026-10-10/after/scripts/manifest-cc2.ps1
+?? docs/internal/audit/evidence/cli-contract-2-2026-10-10/after/scripts/run-after-chain-cc2a.ps1
+?? docs/internal/audit/evidence/cli-contract-2-2026-10-10/after/scripts/run-files-wt.ps1
+?? docs/internal/audit/evidence/cli-contract-2-2026-10-10/after/tests/cli-contract-2.test.ts
+?? docs/internal/audit/evidence/cli-contract-2-2026-10-10/after/tests/cli-contract-2a.test.ts
+?? docs/internal/audit/evidence/cli-contract-2-2026-10-10/before/logs/cc2-before-1.exit
+?? docs/internal/audit/evidence/cli-contract-2-2026-10-10/before/logs/cc2-before-1.failures.txt
+?? docs/internal/audit/evidence/cli-contract-2-2026-10-10/before/logs/cc2-before-1.head
+?? docs/internal/audit/evidence/cli-contract-2-2026-10-10/before/logs/cc2-before-1.json
+?? docs/internal/audit/evidence/cli-contract-2-2026-10-10/before/logs/cc2-before-1.log
+?? docs/internal/audit/evidence/cli-contract-2-2026-10-10/before/logs/cc2-before-1.status
+?? docs/internal/audit/evidence/cli-contract-2-2026-10-10/before/logs/manual-A4.txt
+?? docs/internal/audit/evidence/cli-contract-2-2026-10-10/before/probes/adv-sweep.mjs
+?? docs/internal/audit/evidence/cli-contract-2-2026-10-10/before/probes/adv-test.mjs
+?? docs/internal/audit/evidence/cli-contract-2-2026-10-10/before/probes/harness.mjs
+?? docs/internal/audit/evidence/cli-contract-2-2026-10-10/before/probes/sweep-2-network.log
+?? docs/internal/audit/evidence/cli-contract-2-2026-10-10/before/probes/sweep-2-results.json
+?? docs/internal/audit/evidence/cli-contract-2-2026-10-10/before/probes/sweep-2.exit
+?? docs/internal/audit/evidence/cli-contract-2-2026-10-10/before/probes/sweep-2.log
+?? docs/internal/audit/evidence/cli-contract-2-2026-10-10/before/probes/test-2-results.json
+?? docs/internal/audit/evidence/cli-contract-2-2026-10-10/before/probes/test-2.exit
+?? docs/internal/audit/evidence/cli-contract-2-2026-10-10/before/probes/test-2.log
+?? docs/internal/audit/evidence/cli-contract-2-2026-10-10/before/scripts/copy-before-evidence.ps1
+?? docs/internal/audit/evidence/cli-contract-2-2026-10-10/before/scripts/run-files-wt.ps1
+?? docs/internal/audit/evidence/cli-contract-2-2026-10-10/before/scripts/run-probe.ps1
+?? docs/internal/audit/evidence/cli-contract-2-2026-10-10/before/tests/cli-contract-2.test.ts
+?? packages/cli/test/cli-contract-2.test.ts
+?? packages/cli/test/cli-contract-2a.test.ts

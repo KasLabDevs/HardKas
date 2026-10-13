@@ -18,6 +18,76 @@ export interface TestRunnerOptions {
   scenario?: string;
 }
 
+/** CLI-CONTRACT-2A · the counts of one run, read from the runner's own task tree: what was collected, executed, passed, failed, skipped. */
+export interface TestRunCounts {
+  collected: number;
+  executed: number;
+  passed: number;
+  failed: number;
+  skipped: number;
+  todo: number;
+  filesTotal: number;
+  filesFailed: number;
+}
+
+type TaskLike = { type?: string; mode?: string; result?: { state?: string }; tasks?: TaskLike[] };
+
+/** Walks the files the runner reports (suites hold `tasks`, tests do not) and counts every test by its own result. */
+export function countTestRun(files: TaskLike[]): TestRunCounts {
+  const c: TestRunCounts = { collected: 0, executed: 0, passed: 0, failed: 0, skipped: 0, todo: 0, filesTotal: files.length, filesFailed: 0 };
+  const walk = (t: TaskLike) => {
+    if (Array.isArray(t.tasks)) {
+      for (const child of t.tasks) walk(child);
+      return;
+    }
+    if (t.type !== "test" && t.type !== "custom") return;
+    c.collected++;
+    const state = t.result?.state;
+    if (state === "pass") c.passed++;
+    else if (state === "fail") c.failed++;
+    else if (t.mode === "todo" || state === "todo") c.todo++;
+    else c.skipped++; // skipped by `.skip`, by a name filter, or never run
+  };
+  for (const f of files) {
+    if (f.result?.state === "fail") c.filesFailed++;
+    walk(f);
+  }
+  c.executed = c.passed + c.failed;
+  return c;
+}
+
+/**
+ * CLI-CONTRACT-2A · the verdict of a run. A pass needs executed tests and no failure; zero collected (NO_TESTS_FOUND),
+ * zero executed (NO_TESTS_EXECUTED: every collected test skipped or filtered out) and any failure (TESTS_FAILED, a
+ * failing test or a file that could not run) are three typed failures, never a pass. `every()` over the file states
+ * used to say "pass" for an empty run and "fail" for an all-skipped one.
+ */
+export function testRunVerdict(
+  counts: TestRunCounts,
+  selection: { patterns: string[]; scenario?: string | undefined }
+): { ok: true; code?: undefined; message?: undefined } | { ok: false; code: string; message: string } {
+  if (counts.failed > 0 || counts.filesFailed > 0) {
+    const files = counts.filesFailed > 0 ? `; ${counts.filesFailed} test file(s) could not run` : "";
+    return { ok: false, code: "TESTS_FAILED", message: `${counts.failed} of ${counts.executed} executed test(s) failed${files}.` };
+  }
+  if (counts.collected === 0) {
+    return {
+      ok: false,
+      code: "NO_TESTS_FOUND",
+      message: `No test was collected: no test file matched ${selection.patterns.join(", ")}. Nothing ran, so this is not a pass.`
+    };
+  }
+  if (counts.executed === 0) {
+    const why = selection.scenario ? `--scenario ${selection.scenario} selected none of them` : `${counts.skipped} skipped, ${counts.todo} todo`;
+    return {
+      ok: false,
+      code: "NO_TESTS_EXECUTED",
+      message: `${counts.collected} test(s) collected, none executed (${why}). Nothing ran, so this is not a pass.`
+    };
+  }
+  return { ok: true };
+}
+
 /**
  * HardKAS Scenario Runner (v1)
  *
@@ -64,10 +134,14 @@ export async function runTest(options: TestRunnerOptions): Promise<void> {
     // For this audit/hardening phase, we implement the discovery and setup logic.
     const { startVitest } = await import("vitest/node");
 
+    // CLI-CONTRACT-2A: the runner's own JSON report goes to a file in the run directory, never to stdout (`--json`
+    // prints exactly one document, the envelope); the human reporter stays in human mode.
+    const vitestJsonPath = path.join(testRunDir, "vitest-report.json");
     const vitestOptions: any = {
       run: !watch,
       watch: !!watch,
-      reporter: json ? "json" : reporter || "default",
+      reporter: json ? ["json"] : [reporter || "default", "json"],
+      outputFile: { json: vitestJsonPath },
       globals: true,
       environment: "node",
       include: searchPatterns,
@@ -90,11 +164,11 @@ export async function runTest(options: TestRunnerOptions): Promise<void> {
       throw new Error("Failed to initialize test engine.");
     }
 
-    // Vitest process will handle its own output and exit codes if run as a process,
-    // but here we are using the programmatic API.
-    // In programmatic API without watch, it resolves after tests complete.
-    const filesState = vitest.state.getFiles();
-    const passed = filesState.every(f => f.result?.state === "pass");
+    // CLI-CONTRACT-2A: the verdict comes from the runner's own task tree (collected, executed, passed, failed, skipped),
+    // never from `every()` over the file states, which answered "pass" for an empty run and "fail" for an all-skipped one.
+    const counts = countTestRun(vitest.state.getFiles() as unknown as TaskLike[]);
+    const verdict = testRunVerdict(counts, { patterns: searchPatterns, scenario: options.scenario });
+    const passed = verdict.ok;
 
     // Gather scenario results
     let scenarioResults: string[] = [];
@@ -111,19 +185,30 @@ export async function runTest(options: TestRunnerOptions): Promise<void> {
       // ignore
     }
 
+    const vitestReportExists = await fs.stat(vitestJsonPath).then(() => true, () => false);
     const testReport = {
       testRunId,
       network,
+      // CLI-CONTRACT-2A: what ran, from the runner's own results; `passed` keeps its name and now means the verdict.
+      tests: { collected: counts.collected, executed: counts.executed, passed: counts.passed, failed: counts.failed, skipped: counts.skipped, todo: counts.todo },
+      files: { total: counts.filesTotal, failed: counts.filesFailed },
+      verdict: passed ? "PASS" : verdict.code,
       scenariosExecuted: scenarioResults.length,
       passed,
       scenarios: scenarioResults,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      ...(vitestReportExists ? { vitestReport: path.relative(workspaceRoot, vitestJsonPath).replace(/\\/g, "/") } : {})
     };
     await fs.writeFile(testResultsPath, JSON.stringify(testReport, null, 2));
 
     if (!json) {
       UI.divider();
-      UI.success(`Scenario execution completed! Report saved to .hardkas/runs/${testRunId}/test-results.json`);
+      UI.info(
+        `Tests: ${counts.collected} collected, ${counts.passed} passed, ${counts.failed} failed, ${counts.skipped} skipped` +
+          `${counts.todo ? `, ${counts.todo} todo` : ""}${counts.filesFailed ? `; ${counts.filesFailed} file(s) could not run` : ""}`
+      );
+      UI.info(`Report saved to .hardkas/runs/${testRunId}/test-results.json`);
+      if (passed) UI.success("All executed tests passed.");
     }
 
     // Auto-package evidence
@@ -144,22 +229,21 @@ export async function runTest(options: TestRunnerOptions): Promise<void> {
     }
 
     if (json) {
+      // CLI-CONTRACT-2A: one envelope, the verdict's code and message inside it when the run is not a pass (the typed
+      // error thrown below is then rendered nowhere else: the renderer never writes a second document).
       const { getOutput } = await import("../output.js");
       getOutput().writeJson({
         ok: passed,
+        ...(passed ? {} : { code: verdict.code, message: verdict.message }),
         command: "test",
         mode: "cli",
         result: testReport
       });
     }
 
-    if (!passed) {
+    if (!verdict.ok) {
       const { HardkasCliError } = await import("../cli-errors.js");
-      throw new HardkasCliError(
-        "TESTS_FAILED",
-        "One or more scenarios failed.",
-        { exitCode: 1 }
-      );
+      throw new HardkasCliError(verdict.code, verdict.message, { exitCode: 1 });
     }
 
   } catch (e) {

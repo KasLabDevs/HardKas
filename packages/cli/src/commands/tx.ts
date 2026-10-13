@@ -207,6 +207,22 @@ export function registerTxCommands(program: Command) {
 
         try {
           if (options.json) UI.setJsonMode(true);
+          // CLI-CONTRACT-2A: a value that was given but is empty (or blank) is refused before anything is planned; only an
+          // omitted option takes its documented default (alice, bob, 1 KAS). `||` used to turn "" into that default silently.
+          const given: Array<[string, unknown]> = [
+            ["--from", options.from ?? positionalFrom],
+            ["--to", options.to ?? positionalTo],
+            ["--amount", options.amount]
+          ];
+          const empty = given.filter(([, v]) => typeof v === "string" && v.trim() === "").map(([flag]) => flag);
+          if (empty.length > 0) {
+            const { HardkasCliError, HardkasExitCode } = await import("../cli-errors.js");
+            throw new HardkasCliError(
+              "TX_PLAN_USAGE",
+              `${empty.join(", ")} ${empty.length > 1 ? "were" : "was"} given but empty. Pass a value, or omit the option for its default. Nothing was planned.`,
+              { exitCode: HardkasExitCode.USAGE_ERROR }
+            );
+          }
           // ARTIFACT-MUTATION-UNITS (phase 2B): no command-level hold of the store; each store write takes it through the
           // gate. The command used to hold it across planner RPC calls, password prompts and the broadcast.
           const { loadHardkasConfig } = await import("@hardkas/config");
@@ -218,9 +234,9 @@ export function registerTxCommands(program: Command) {
           const loaded = await loadHardkasConfig({ workspaceRoot });
           const artifact = await runTxPlan({
             ...(options.target ? { targetName: options.target } : {}),
-            from: options.from || positionalFrom || "alice",
-            to: options.to || positionalTo || "bob",
-            amount: options.amount || "1",
+            from: options.from ?? positionalFrom ?? "alice",
+            to: options.to ?? positionalTo ?? "bob",
+            amount: options.amount ?? "1",
             ...(options.network ? { networkId: options.network } : {}),
             provider: options.provider || "auto",
             ...(options.feeRate ? { feeRate: options.feeRate } : {}),

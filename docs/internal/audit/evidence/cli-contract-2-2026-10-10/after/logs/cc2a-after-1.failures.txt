@@ -1,0 +1,501 @@
+########## CLI-CONTRACT-2 Â· A Â· the `hardkas test` verdict (TEST-VACUOUS-PASS) A3 Â· a file whose only test is skipped: nothing failed, so the verdict is never TESTS_FAILED
+AssertionError: exit 1
+stdout: JSON report written to C:/Users/jrodr/AppData/Local/Temp/hk-cc2-test-gkupbU/.hardkas/runs/run_1791656946174_flzkp/vitest-report.json
+{
+  "ok": false,
+  "code": "NO_TESTS_EXECUTED",
+  "message": "1 test(s) collected, none executed (1 skipped, 0 todo). Nothing ran, so this is not a pass.",
+  "command": "test",
+  "mode": "cli",
+  "result": {
+    "testRunId": "run_1791656946174_flzkp",
+    "network": "simnet",
+    "tests": {
+      "collected": 1,
+      "executed": 0,
+      "passed": 0,
+      "failed": 0,
+      "skipped": 1,
+      "todo": 0
+    },
+    "files": {
+      "total": 1,
+      "failed": 0
+    },
+    "verdict": "NO_TESTS_EXECUTED",
+    "scenariosExecuted": 0,
+    "passed": false,
+    "scenarios": [],
+    "createdAt": "2026-10-10T18:29:07.122Z",
+    "vitestReport": ".hardkas/runs/run_1791656946174_flzkp/vitest-report.json"
+  }
+}
+
+stderr: : expected { code: 'NO_TESTS_EXECUTED', â€¦(1) } to deeply equal { code: null, claimsFailure: false }
+    at C:\Users\jrodr\AppData\Local\Temp\hk-ra\wt\packages\cli\test\cli-contract-2.test.ts:134:75
+    at file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:146:14
+    at file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:11
+    at runWithTimeout (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:39:7)
+    at runTest (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:17)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at runSuite (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1205:15)
+    at runSuite (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1205:15)
+    at runFiles (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1262:5)
+    at startTests (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1271:3)
+
+########## CLI-CONTRACT-2 Â· A Â· the `hardkas test` verdict (TEST-VACUOUS-PASS) A6 Â· the report names the world the tests ran in (this workspace executes in the simulator), not an option default
+AssertionError: exit 0
+stdout: JSON report written to C:/Users/jrodr/AppData/Local/Temp/hk-cc2-test-praLpF/.hardkas/runs/run_1791656952513_wwc0s/vitest-report.json
+{
+  "ok": true,
+  "command": "test",
+  "mode": "cli",
+  "result": {
+    "testRunId": "run_1791656952513_wwc0s",
+    "network": "simnet",
+    "tests": {
+      "collected": 1,
+      "executed": 1,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "files": {
+      "total": 1,
+      "failed": 0
+    },
+    "verdict": "PASS",
+    "scenariosExecuted": 0,
+    "passed": true,
+    "scenarios": [],
+    "createdAt": "2026-10-10T18:29:13.442Z",
+    "vitestReport": ".hardkas/runs/run_1791656952513_wwc0s/vitest-report.json"
+  }
+}
+
+stderr: : expected 'simnet' to be 'simulated' // Object.is equality
+    at C:\Users\jrodr\AppData\Local\Temp\hk-ra\wt\packages\cli\test\cli-contract-2.test.ts:163:42
+    at file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:146:14
+    at file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:11
+    at runWithTimeout (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:39:7)
+    at runTest (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:17)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at runSuite (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1205:15)
+    at runSuite (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1205:15)
+    at runFiles (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1262:5)
+    at startTests (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1271:3)
+
+########## CLI-CONTRACT-2 Â· B Â· one unreachable node, one typed code B1 Â· `tx plan --json` against a node that refuses: a typed connection code, never UNKNOWN
+AssertionError: exit 1
+stdout: {
+  "ok": false,
+  "code": "UNKNOWN",
+  "message": "Unknown connection error: Cannot connect to Kaspa RPC at ws://127.0.0.1:18210. Is kaspad running with --rpclisten-json? (wRPC -> WebSocket -> Unable to connect to ws://127.0.0.1:18210)",
+  "mode": "cli"
+}
+
+stderr: : expected 'UNKNOWN' not to match /^UNKNOWN(_ERROR)?$/
+    at C:\Users\jrodr\AppData\Local\Temp\hk-ra\wt\packages\cli\test\cli-contract-2.test.ts:185:37
+    at file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:146:14
+    at file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:11
+    at runWithTimeout (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:39:7)
+    at runTest (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:17)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at runSuite (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1205:15)
+    at runSuite (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1205:15)
+    at runFiles (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1262:5)
+    at startTests (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1271:3)
+
+########## CLI-CONTRACT-2 Â· B Â· one unreachable node, one typed code B2 Â· `accounts balance alice --json` against the same node: typed, never UNKNOWN_ERROR
+AssertionError: exit 1
+stdout: {
+  "ok": false,
+  "code": "UNKNOWN_ERROR",
+  "message": "Cannot connect to Kaspa RPC at ws://127.0.0.1:18210. Is kaspad running with --rpclisten-json? (wRPC -> WebSocket -> Unable to connect to ws://127.0.0.1:18210)",
+  "mode": "cli"
+}
+
+stderr: : expected 'UNKNOWN_ERROR' not to match /^UNKNOWN(_ERROR)?$/
+    at C:\Users\jrodr\AppData\Local\Temp\hk-ra\wt\packages\cli\test\cli-contract-2.test.ts:192:37
+    at file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:146:14
+    at file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:11
+    at runWithTimeout (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:39:7)
+    at runTest (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:17)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at runSuite (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1205:15)
+    at runSuite (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1205:15)
+    at runFiles (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1262:5)
+    at startTests (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1271:3)
+
+########## CLI-CONTRACT-2 Â· B Â· one unreachable node, one typed code B4 Â· the three commands name one failure (the node refuses) with one code
+AssertionError: tx plan / accounts balance / rpc health â†’ UNKNOWN / UNKNOWN_ERROR / RPC_NOT_READY: expected 3 to be 1 // Object.is equality
+    at C:\Users\jrodr\AppData\Local\Temp\hk-ra\wt\packages\cli\test\cli-contract-2.test.ts:208:99
+    at file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:146:14
+    at file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:11
+    at runWithTimeout (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:39:7)
+    at runTest (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:17)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at runSuite (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1205:15)
+    at runSuite (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1205:15)
+    at runFiles (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1262:5)
+    at startTests (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1271:3)
+
+########## CLI-CONTRACT-2 Â· C Â· an error shown is a failure of the run; a claim is backed by an effect C3 Â· `create <unknown template> <dest> --json`: exit â‰  0 and the CLI's one envelope shape ({ ok:false, code })
+AssertionError: exit 0
+stdout: {
+  "ok": false,
+  "error": {
+    "code": "TEMPLATE_CREATE_FAILED",
+    "message": "Template 'no-such-template' not found."
+  }
+}
+
+stderr: : expected { failed: false, topLevelCode: false } to deeply equal { failed: true, topLevelCode: true }
+    at C:\Users\jrodr\AppData\Local\Temp\hk-ra\wt\packages\cli\test\cli-contract-2.test.ts:238:93
+    at file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:146:14
+    at file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:11
+    at runWithTimeout (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:39:7)
+    at runTest (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:17)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at runSuite (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1205:15)
+    at runSuite (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1205:15)
+    at runFiles (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1262:5)
+    at startTests (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1271:3)
+
+########## CLI-CONTRACT-2 Â· C Â· an error shown is a failure of the run; a claim is backed by an effect C4 Â· `status` reports a hardkas.config.ts that cannot load, instead of describing the workspace as if nothing were wrong
+AssertionError: exit 0
+stdout: 
+  â•â•â• HardKAS Workspace Status â•â•â•
+  â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—
+  â•‘              Workspace               â•‘
+  â•‘C:\Users\jrodr\AppData\Local\Temp\hk-cc2-claims-BjXN0uâ•‘
+  â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+
+  Dev Server       ðŸ”´ Offline
+
+  Artifacts        0 (no artifacts directory)
+
+  Projection       none (queries read the workspace)
+
+  â„¹ No Dev Accounts found.
+
+  ðŸ’¡ Next Steps:
+     > hardkas dev --headless
+
+
+stderr: : expected false to be true // Object.is equality
+    at C:\Users\jrodr\AppData\Local\Temp\hk-ra\wt\packages\cli\test\cli-contract-2.test.ts:244:63
+    at file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:146:14
+    at file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:11
+    at runWithTimeout (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:39:7)
+    at runTest (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:17)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at runSuite (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1205:15)
+    at runSuite (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1205:15)
+    at runFiles (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1262:5)
+    at startTests (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1271:3)
+
+########## CLI-CONTRACT-2 Â· C Â· an error shown is a failure of the run; a claim is backed by an effect C4b Â· `status` in a directory that holds a hardkas.config.ts but no .hardkas/ does not call it 'no workspace' (WA-1: the config is the root)
+AssertionError: exit 0
+stdout: 
+  â•â•â• HardKAS Workspace Status â•â•â•
+  â„¹ No HardKAS workspace detected in current directory.
+
+  ðŸ’¡ Next Steps:
+     > hardkas init
+
+
+stderr: : expected '\n  â•â•â• HardKAS Workspace Status â•â•â•\â€¦' not to match /No HardKAS workspace detected/
+    at C:\Users\jrodr\AppData\Local\Temp\hk-ra\wt\packages\cli\test\cli-contract-2.test.ts:250:33
+    at file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:146:14
+    at file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:11
+    at runWithTimeout (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:39:7)
+    at runTest (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:17)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at runSuite (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1205:15)
+    at runSuite (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1205:15)
+    at runFiles (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1262:5)
+    at startTests (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1271:3)
+
+########## CLI-CONTRACT-2 Â· C Â· an error shown is a failure of the run; a claim is backed by an effect C5 Â· `ci verify` in a pristine simulator workspace when only Docker is down: no 'corrupted workspace' verdict
+AssertionError: exit 1
+stdout: 
+  â•â•â• CI Workspace Verification â•â•â•
+  1. Running environment doctor checks...
+  2. Scanning artifact lattice integrity...
+  3. Verifying projection index...
+
+
+
+stderr: 
+  âœ— Error:
+    Environment doctor checks failed.
+
+  âš ï¸  WARNING:
+     No artifacts directory found. Skipping lattice scan.
+
+  âš ï¸  WARNING:
+     No projection database found (the query commands read the workspace). Skipping projection checks.
+
+  âœ— [CI_VERIFY_FAILED] CI Verification Failed. Workspace is corrupted or incorrectly configured.
+: expected '\n  â•â•â• CI Workspace Verification â•â•â•â€¦' not to match /corrupted|incorrectly configured/i
+    at C:\Users\jrodr\AppData\Local\Temp\hk-ra\wt\packages\cli\test\cli-contract-2.test.ts:255:53
+    at file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:146:14
+    at file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:11
+    at runWithTimeout (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:39:7)
+    at runTest (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:17)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at runSuite (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1205:15)
+    at runSuite (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1205:15)
+    at runFiles (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1262:5)
+    at startTests (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1271:3)
+
+########## CLI-CONTRACT-2 Â· C Â· an error shown is a failure of the run; a claim is backed by an effect C6 Â· `doctor --json`: failed checks and the exit code agree (a verdict that reports failures does not exit 0)
+AssertionError: exit 0
+stdout: {
+  "version": "0.12.0-rc.27",
+  "timestamp": "2026-10-10T18:29:30.315Z",
+  "checks": [
+    {
+      "name": "Node.js version",
+      "category": "runtime",
+      "status": "pass",
+      "message": "v24.15.0 (>= 18 required)"
+    },
+    {
+      "name": "pnpm",
+      "category": "runtime",
+      "status": "pass",
+      "message": "v11.1.3"
+    },
+    {
+      "name": ".hardkas/ directory",
+      "category": "persistence",
+      "status": "pass",
+      "message": "Exists and is active"
+    },
+    {
+      "name": ".gitignore protection",
+      "category": "persistence",
+      "status": "skip",
+      "message": ".gitignore not found"
+    },
+    {
+      "name": "store.db accessibility",
+      "category": "persistence",
+      "status": "warn",
+      "message": "store.db not found",
+      "suggestion": "Run 'hardkas query store rebuild' to populate the index."
+    },
+    {
+      "name": "Workspace locks",
+      "category": "persistence",
+      "status": "pass",
+      "message": "No active or stale locks found"
+    },
+    {
+      "name": "Events Ledger Stream",
+      "category": "persistence",
+      "status": "skip",
+      "message": "Stream not found"
+    },
+    {
+      "name": "Telemetry Stream",
+      "category": "persistence",
+      "status": "skip",
+      "message": "Stream not found"
+    },
+    {
+      "name": "Keystore permissions",
+      "category": "security",
+      "status": "pass",
+      "message": "No keystore found (nothing to secure)"
+    },
+    {
+      "name": "Docker da
+stderr: : expected { failedChecks: 1, exit: +0 } to satisfy [Function]
+    at Proxy.<anonymous> (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+expect@2.1.9/node_modules/@vitest/expect/dist/index.js:1734:20)
+    at Proxy.<anonymous> (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+expect@2.1.9/node_modules/@vitest/expect/dist/index.js:972:17)
+    at Proxy.methodWrapper (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/chai@5.3.3/node_modules/chai/index.js:1686:25)
+    at C:\Users\jrodr\AppData\Local\Temp\hk-ra\wt\packages\cli\test\cli-contract-2.test.ts:263:64
+    at file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:146:14
+    at file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:11
+    at runWithTimeout (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:39:7)
+    at runTest (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:17)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at runSuite (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1205:15)
+
+########## CLI-CONTRACT-2 Â· C Â· an error shown is a failure of the run; a claim is backed by an effect C7 Â· re-sending an already applied signed transaction: the answer never reads as a fresh submission without saying it was already applied
+AssertionError: exit 0
+stdout: {
+  "ok": true,
+  "outcome": "submitted",
+  "data": {
+    "signed": {
+      "schema": "hardkas.signedTx",
+      "schemaVersion": "hardkas.artifact.v1",
+      "hardkasVersion": "0.12.0-rc.27",
+      "version": "1.0.0-alpha",
+      "hashVersion": 5,
+      "createdAt": "2026-10-10T18:29:33.534Z",
+      "status": "signed",
+      "sourcePlanId": "plan-a990b2df0ada1f08",
+      "networkId": "simulated",
+      "mode": "simulator",
+      "from": {
+        "address": "kaspa:sim_alice"
+      },
+      "to": {
+        "address": "kaspa:sim_bob"
+      },
+      "amountSompi": "100000000",
+      "txId": "synthetic-a990b2df0ada1f0845c3f8bfd905f08906d407dc1dfc891602bbafad4d56cd43",
+      "authorization": {
+        "kind": "synthetic",
+        "planArtifactId": "a990b2df0ada1f0845c3f8bfd905f08906d407dc1dfc891602bbafad4d56cd43",
+        "signers": [
+          "kaspa:sim_alice"
+        ]
+      },
+      "signedTransaction": {
+        "format": "synthetic-authorization",
+        "payload": "a990b2df0ada1f0845c3f8bfd905f08906d407dc1dfc891602bbafad4d56cd43"
+      },
+      "lineage": {
+        "artifactId": "4f7ccf94113dea3803c1e96736320def05d70f145230ae1eec35d5251a82bbc4",
+        "lineageId": "a990b2df0ada1f0845c3f8bfd905f08906d407dc1dfc891602bbafad4d56cd43",
+        "parentArtifactId": "a990b2df0ada1f0845c3f8bfd905f08906d407dc1dfc891602bbafad4d56cd43",
+        "rootArtifactId": "a990b2df0ada1f0845c3f8bfd905f08906d407dc1dfc891602bbafad4d56cd43",
+        "sequence": 2
+      },
+      "execution": {
+  
+stderr: : expected { receiptsAfterFirst: 1, â€¦(2) } to match object { markedAsAlreadyApplied: true }
+(2 matching properties omitted from actual)
+    at Proxy.<anonymous> (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+expect@2.1.9/node_modules/@vitest/expect/dist/index.js:1134:13)
+    at Proxy.<anonymous> (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+expect@2.1.9/node_modules/@vitest/expect/dist/index.js:972:17)
+    at Proxy.methodWrapper (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/chai@5.3.3/node_modules/chai/index.js:1686:25)
+    at C:\Users\jrodr\AppData\Local\Temp\hk-ra\wt\packages\cli\test\cli-contract-2.test.ts:279:7
+    at file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:146:14
+    at file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:11
+    at runWithTimeout (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:39:7)
+    at runTest (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:17)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at runSuite (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1205:15)
+
+########## CLI-CONTRACT-2 Â· D Â· `--json` answers with exactly one envelope, usage errors included D1 Â· an unknown option under --json: one { ok:false } envelope on stdout and the usage exit code (2)
+AssertionError: exit 1
+stdout: 
+stderr: error: unknown option '--no-such-option'
+
+Usage: hardkas tx plan [options] [from] [to]
+
+Build a transaction plan artifact stable
+
+Options:
+  --target <name>              Named execution target from hardkas.config.ts
+  --from <accountOrAddress>    Sender account name or address (default: alice)
+  --to <address>               Recipient address or account name (default: bob)
+  --amount <kas>               Amount in KAS, up to 8 decimals (default: 1)
+  --network <name>             simulated, simnet, devnet, testnet-10,
+                               testnet-12 or mainnet (default: the config's
+                               default target)
+  --fee-rate <sompiPerMass>    Whole sompi per gram of mass (default: 1 in the
+                               simulator, 100 on real networks; not a live
+                               estimate)
+  --change <accountOrAddress>  Change destination (account na: expected { docs: +0, exit: 1 } to deeply equal { docs: 1, exit: 2 }
+    at C:\Users\jrodr\AppData\Local\Temp\hk-ra\wt\packages\cli\test\cli-contract-2.test.ts:293:63
+    at file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:146:14
+    at file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:11
+    at runWithTimeout (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:39:7)
+    at runTest (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:17)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at runSuite (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1205:15)
+    at runSuite (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1205:15)
+    at runFiles (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1262:5)
+    at startTests (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1271:3)
+
+########## CLI-CONTRACT-2 Â· D Â· `--json` answers with exactly one envelope, usage errors included D2 Â· a missing required argument under --json (`artifact verify --json`): the same
+AssertionError: exit 1
+stdout: 
+stderr: error: missing required argument 'path'
+
+Usage: hardkas artifact verify [options] <path>
+
+Verify an artifact's integrity and schema stable
+
+Options:
+  --json              Output results as JSON (default: false)
+  --recursive         Recursively verify all artifacts in a directory (default:
+                      false)
+  --strict            Perform deep semantic and operational safety verification
+                      (default: false)
+  --workspace <path>  Override workspace root directory
+  -h, --help          display help for command
+: expected { docs: +0, exit: 1 } to deeply equal { docs: 1, exit: 2 }
+    at C:\Users\jrodr\AppData\Local\Temp\hk-ra\wt\packages\cli\test\cli-contract-2.test.ts:298:63
+    at file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:146:14
+    at file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:11
+    at runWithTimeout (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:39:7)
+    at runTest (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:17)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at runSuite (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1205:15)
+    at runSuite (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1205:15)
+    at runFiles (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1262:5)
+    at startTests (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1271:3)
+
+########## CLI-CONTRACT-2 Â· D Â· `--json` answers with exactly one envelope, usage errors included D3 Â· `run <missing file> --json`: one document, not two
+AssertionError: exit 1
+stdout: {"timestamp":"2026-10-10T18:29:38.826Z","level":"info","event":"Running script: no-such-script.ts","context":{"script":"no-such-script.ts","network":"simnet"}}
+{
+  "ok": false,
+  "code": "SCRIPT_NOT_FOUND",
+  "message": "Run failed: Script not found: C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-cc2-json-eANnYJ\\no-such-script.ts",
+  "mode": "cli"
+}
+
+stderr: : expected 2 to be 1 // Object.is equality
+    at C:\Users\jrodr\AppData\Local\Temp\hk-ra\wt\packages\cli\test\cli-contract-2.test.ts:303:37
+    at file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:146:14
+    at file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:11
+    at runWithTimeout (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:39:7)
+    at runTest (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:17)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at runSuite (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1205:15)
+    at runSuite (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1205:15)
+    at runFiles (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1262:5)
+    at startTests (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1271:3)
+
+########## CLI-CONTRACT-2 Â· D Â· `--json` answers with exactly one envelope, usage errors included D4 Â· `kaspa doctor --json`: one document, not two
+AssertionError: exit 1
+stdout: {
+  "schema": "hardkas.kaspaDoctor.v1",
+  "status": "failed",
+  "checks": [
+    {
+      "name": "RPC Reachability",
+      "status": "error",
+      "message": "Failed to connect: Cannot connect to Kaspa RPC at ws://127.0.0.1:18210. Is kaspad running with --rpclisten-json? (wRPC -> WebSocket -> Unable to connect to ws://127.0.0.1:18210)"
+    }
+  ]
+}
+{
+  "ok": false,
+  "code": "DOCTOR_FAILED",
+  "message": "Doctor checks failed",
+  "mode": "cli"
+}
+
+stderr: : expected 2 to be 1 // Object.is equality
+    at C:\Users\jrodr\AppData\Local\Temp\hk-ra\wt\packages\cli\test\cli-contract-2.test.ts:308:37
+    at file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:146:14
+    at file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:11
+    at runWithTimeout (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:39:7)
+    at runTest (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:17)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at runSuite (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1205:15)
+    at runSuite (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1205:15)
+    at runFiles (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1262:5)
+    at startTests (file:///C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1271:3)
+
