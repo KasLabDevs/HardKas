@@ -1,0 +1,15 @@
+{
+  "tag": "rn-2-verify-json",
+  "cwd": "C:\\Users\\jrodr\\hkl1\\teu\\realnode-ws",
+  "argv": [
+    "evidence",
+    "verify",
+    "C:\\Users\\jrodr\\hkl1\\teu\\realnode-ws\\paycheck.hke.json",
+    "--json"
+  ],
+  "exit": 0,
+  "timedOut": false,
+  "ms": 1240,
+  "stdout": "{\n  \"ok\": true,\n  \"command\": \"evidence verify\",\n  \"mode\": \"cli\",\n  \"result\": {\n    \"status\": \"EVIDENCE_VERIFIED\",\n    \"scope\": {\n      \"artifacts\": 5,\n      \"claim\": \"payment\",\n      \"verdict\": \"passed\",\n      \"lineage\": \"closed\",\n      \"unresolved\": [],\n      \"payments\": [\n        {\n          \"txId\": \"a9c742ee694d5e3ca09d0bf04d7eada1613f0deac7800a0be25e59322b258bc8\",\n          \"lineageClosed\": true,\n          \"plan\": \"8eb6cc25536db364db23adaea07896c11cb0e163120c0d6042c8a17a000c7bae\",\n          \"signed\": \"d60d58035fcd8e0a05c14f488ae64a471bb15b9b1f90714a8f388ea1bae3f517\",\n          \"submission\": \"4faffa528a95dae62d791f7af052b2ccc71e839f886308ad910e9db80169d045\",\n          \"submitAccepted\": true,\n          \"rpcObservationsReported\": [\n            {\n              \"artifactId\": \"764a7cfb2d6ed7b021096cbe2983af866190bf09d27fc6dce6ece8ce14004073\",\n              \"finding\": \"mempool_entry\",\n              \"confirmationsBlue\": null,\n              \"observer\": \"rpc\"\n            },\n            {\n              \"artifactId\": \"57ae5c0ab9d51cc193f703c96df5c9ce9ae6c06cb005a20b4bf8e3269f194a13\",\n              \"finding\": \"chain_accepted\",\n              \"confirmationsBlue\": \"130\",\n              \"observer\": \"rpc\"\n            }\n          ],\n          \"problems\": []\n        }\n      ],\n      \"statement\": \"Integrity and internal consistency of an unsigned package: each artifact hashes to its identity and they are exactly the ones its sealed scenario result names, and each claimed payment's lineage (plan, signed, submission) closes inside it. Not a proof of inclusion on chain, nor of who produced the package; an observation records what one RPC observer reported.\"\n    }\n  }\n}\n",
+  "stderr": ""
+}

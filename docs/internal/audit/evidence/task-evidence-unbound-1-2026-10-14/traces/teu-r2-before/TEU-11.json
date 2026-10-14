@@ -1,0 +1,38 @@
+{
+  "json": {
+    "ok": true,
+    "command": "evidence verify",
+    "mode": "cli",
+    "result": {
+      "status": "EVIDENCE_VERIFIED",
+      "scope": {
+        "artifacts": 4,
+        "claim": "payment",
+        "verdict": "passed",
+        "lineage": "closed",
+        "unresolved": [],
+        "payments": [
+          {
+            "txId": "a60faafb97e48c96d8ffdfe26c5fc08234bd2938db939c1e47de7e736bc82779",
+            "complete": true,
+            "plan": "5174b2760243fdcef3a43b9ad755edf2d07897c9b3420a10debd8c88b2df7988",
+            "signed": "68030a5fd04238bf0ad4cd2e1f13b6c02452eb349d52c5f003b46bf26b832285",
+            "submission": "b13c006aeb58ffc3142208207dba7bbc7e635fd5313dc9e7c49b9594ed4a46e7",
+            "submitAccepted": true,
+            "observations": [
+              {
+                "artifactId": "634ad9c6ce0761e9135931d0aff5ed688226b6c0c4e3f83c1be8f3e3a63d2630",
+                "finding": "not_found",
+                "confirmationsBlue": null,
+                "observer": "rpc"
+              }
+            ],
+            "problems": []
+          }
+        ],
+        "statement": "Integrity and internal consistency of an unsigned package: each artifact hashes to its identity and they are exactly the ones its sealed scenario result names, and each claimed payment's lineage (plan, signed, submission) closes inside it. Not a proof of inclusion on chain, nor of who produced the package; an observation records what one RPC observer reported."
+      }
+    }
+  },
+  "human": "EVIDENCE_VERIFIED: 4 artifacts, claim payment, run passed, lineage closed; 1 payment(s): a60faafb97e48c96d8ffdfe26c5fc08234bd2938db939c1e47de7e736bc82779 (lineage closed, observed: not_found).\nIntegrity and internal consistency of an unsigned package: each artifact hashes to its identity and they are exactly the ones its sealed scenario result names, and each claimed payment's lineage (plan, signed, submission) closes inside it. Not a proof of inclusion on chain, nor of who produced the package; an observation records what one RPC observer reported.\n"
+}

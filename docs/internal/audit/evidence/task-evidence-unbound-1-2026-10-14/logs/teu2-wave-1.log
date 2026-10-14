@@ -1,0 +1,25 @@
+
+ RUN  v2.1.9 C:/Users/jrodr/hkl1/teu2/src
+
+ ✓ packages/cli/test/task-evidence-unbound-1.test.ts > TASK-EVIDENCE-UNBOUND-1 · the task's evidence package and the payment it made > TEU-1 `task pay --evidence`: the package carries plan, signed, submission and observation, names them, and verifies as a closed, observed payment 1846ms
+ ✓ packages/cli/test/task-evidence-unbound-1.test.ts > TASK-EVIDENCE-UNBOUND-1 · the task's evidence package and the payment it made > TEU-2 the scenario result and the package record the execution mode the task ran in (rpc), not a label derived from the network 1729ms
+ ✓ packages/cli/test/task-evidence-unbound-1.test.ts > TASK-EVIDENCE-UNBOUND-1 · the task's evidence package and the payment it made > TEU-3 a package that cannot be written fails the command (non-zero exit, typed code), never `ok: true`; the scenario result stays 1789ms
+ ✓ packages/cli/test/task-evidence-unbound-1.test.ts > TASK-EVIDENCE-UNBOUND-1 · a payment claim needs its closed lineage (D-TEU-1); other packages keep verifying > TEU-8a a payment package with one payment artifact omitted (consistently re-sealed): not verified as that payment 1787ms
+ ✓ packages/cli/test/task-evidence-unbound-1.test.ts > TASK-EVIDENCE-UNBOUND-1 · a payment claim needs its closed lineage (D-TEU-1); other packages keep verifying > TEU-8b a payment package whose lineage was manipulated (signed re-parented and every artifact re-sealed): not verified as that payment 1930ms
+ ✓ packages/cli/test/task-evidence-unbound-1.test.ts > TASK-EVIDENCE-UNBOUND-1 · a payment claim needs its closed lineage (D-TEU-1); other packages keep verifying > TEU-8c a package that names nothing and does not declare itself empty (the E1′ shape) is not EVIDENCE_VERIFIED
+ ✓ packages/cli/test/task-evidence-unbound-1.test.ts > TASK-EVIDENCE-UNBOUND-1 · a payment claim needs its closed lineage (D-TEU-1); other packages keep verifying > TEU-8d a package that makes no payment claim keeps verifying with an open lineage, and says so 1810ms
+ ✓ packages/cli/test/task-evidence-unbound-1.test.ts > TASK-EVIDENCE-UNBOUND-1 · a payment claim needs its closed lineage (D-TEU-1); other packages keep verifying > TEU-4 unchanged guarantees: an edited artifact and a dropped one are refused; a fully re-sealed forgery of a closed chain verifies (unsigned: authorship is not proven) 1691ms
+ ✓ packages/cli/test/task-evidence-unbound-1.test.ts > TASK-EVIDENCE-UNBOUND-1 · only this run, and the kinds of task > TEU-7 another SDK instance of the same process writing in the same workspace during the task: its artifact is not named 1658ms
+ ✓ packages/cli/test/task-evidence-unbound-1.test.ts > TASK-EVIDENCE-UNBOUND-1 · only this run, and the kinds of task > TEU-9 a task that writes nothing (noop, or a plan never signed) declares an empty package; one that signs without sending claims artifacts, not a payment 4110ms
+ ✓ packages/cli/test/task-evidence-unbound-1.test.ts > TASK-EVIDENCE-UNBOUND-1 · only this run, and the kinds of task > TEU-10 a failed task keeps sealed evidence of the failure (status failed, what it wrote, no secret) and the command still fails 1571ms
+ ✓ packages/cli/test/task-evidence-unbound-1.test.ts > TASK-EVIDENCE-UNBOUND-1 · only this run, and the kinds of task > TEU-13 two runs recording on the SAME SDK instance at once: refused explicitly (typed), never crossed evidence; one after the other they stay separate 1530ms
+ ✓ packages/cli/test/task-evidence-unbound-1.test.ts > TASK-EVIDENCE-UNBOUND-1 · only this run, and the kinds of task > TEU-6 the task without --network runs on the workspace's default and records its effective mode 1885ms
+ ✓ packages/cli/test/task-evidence-unbound-1.test.ts > TASK-EVIDENCE-UNBOUND-1 · what the verifier says (D-TEU-3) and where the version comes from > TEU-11 `evidence verify` states its scope: artifacts, claim, lineage, and that it is not a proof of chain inclusion 3686ms
+ ✓ packages/cli/test/task-evidence-unbound-1.test.ts > TASK-EVIDENCE-UNBOUND-1 · what the verifier says (D-TEU-3) and where the version comes from > TEU-12 the package's hardkasVersion is the product version from its one source 1125ms
+
+ Test Files  1 passed (1)
+      Tests  15 passed (15)
+   Start at  11:36:21
+   Duration  36.17s (transform 1.77s, setup 0ms, collect 118ms, tests 35.57s, environment 0ms, prepare 149ms)
+
+JSON report written to C:/Users/jrodr/AppData/Local/Temp/claude/C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo/ecaf7e92-a2ba-49b0-aafc-c62b4cb5eda0/scratchpad/l1-reality-1/teu/logs/teu2-wave-1.json

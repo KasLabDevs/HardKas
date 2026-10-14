@@ -1594,6 +1594,8 @@ export class HardkasTx {
           workflowId: typeof receipt.workflowId === "string" ? receipt.workflowId : undefined,
           networkId: receipt.networkId
         });
+        // TASK-EVIDENCE-UNBOUND-1: what this instance put in the store, for a recording open on it
+        this.sdk.artifacts.noteStored(receipt.contentHash);
       } catch (e: unknown) {
         // A1: the commit above already moved the simulated state: the failure names that execution and its receipt
         rethrowWithLedgerEffect(e, {

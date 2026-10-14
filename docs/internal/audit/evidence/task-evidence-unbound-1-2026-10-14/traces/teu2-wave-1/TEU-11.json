@@ -1,0 +1,38 @@
+{
+  "json": {
+    "ok": true,
+    "command": "evidence verify",
+    "mode": "cli",
+    "result": {
+      "status": "EVIDENCE_VERIFIED",
+      "scope": {
+        "artifacts": 4,
+        "claim": "payment",
+        "verdict": "passed",
+        "lineage": "closed",
+        "unresolved": [],
+        "payments": [
+          {
+            "txId": "726c2396320e7d9fcc410fcf84db74c68452adcc2db3051fa1b211a185512995",
+            "lineageClosed": true,
+            "plan": "52f1db60f6db7a708c997dea75ad98ab3b53bb83e4b44f555a8db78aa3bc9d2b",
+            "signed": "c4712f14e022e1fade41b14320e3b5ce64391fca80e517a213e07169b1d0d340",
+            "submission": "bb86f6017da6f72f2bcf8534be44f199237399d9f9689d5827a5a98baf04f007",
+            "submitAccepted": true,
+            "rpcObservationsReported": [
+              {
+                "artifactId": "7b8167ab995d8ac714f76cbced73445b6fb59b0fe07f2e4bb60e7e96dac3514c",
+                "finding": "not_found",
+                "confirmationsBlue": null,
+                "observer": "rpc"
+              }
+            ],
+            "problems": []
+          }
+        ],
+        "statement": "Integrity and internal consistency of an unsigned package: each artifact hashes to its identity and they are exactly the ones its sealed scenario result names, and each claimed payment's lineage (plan, signed, submission) closes inside it. Not a proof of inclusion on chain, nor of who produced the package; an observation records what one RPC observer reported."
+      }
+    }
+  },
+  "human": "EVIDENCE_VERIFIED: 4 artifacts, claim payment, run passed, lineage closed.\nPayment 726c2396320e7d9fcc410fcf84db74c68452adcc2db3051fa1b211a185512995: plan, signed and submission linked inside the package; the node accepted the request when it was submitted.\nRPC observations carried, as one observer reported them (not checked against the network by this command): 726c2396320e7d9fcc410fcf84db74c68452adcc2db3051fa1b211a185512995: not_found (rpc).\nIntegrity and internal consistency of an unsigned package: each artifact hashes to its identity and they are exactly the ones its sealed scenario result names, and each claimed payment's lineage (plan, signed, submission) closes inside it. Not a proof of inclusion on chain, nor of who produced the package; an observation records what one RPC observer "
+}

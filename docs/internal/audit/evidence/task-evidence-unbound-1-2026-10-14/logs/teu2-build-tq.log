@@ -1,0 +1,975 @@
+• turbo 2.10.8
+
+   • Packages in scope: @hardkas/accounts, @hardkas/artifacts, @hardkas/bridge-local, @hardkas/cli, @hardkas/config, @hardkas/core, @hardkas/dev-server, @hardkas/escrow, @hardkas/jobs, @hardkas/kaspa-rpc, @hardkas/l2, @hardkas/localnet, @hardkas/node-orchestrator, @hardkas/node-runner, @hardkas/observability, @hardkas/pskt-native, @hardkas/query, @hardkas/query-store, @hardkas/sdk, @hardkas/sessions, @hardkas/simulator, @hardkas/testing, @hardkas/testnet-qualification, @hardkas/toolkit, @hardkas/tx-builder
+   • Running build in 25 packages
+   • Remote caching disabled
+
+@hardkas/pskt-native:build: cache hit, replaying logs 21bd728a70cf136c
+@hardkas/pskt-native:build: 
+@hardkas/pskt-native:build: > @hardkas/pskt-native@0.12.0-rc.27 build C:\Users\jrodr\hkl1\teu2\src\packages\pskt-native
+@hardkas/pskt-native:build: > napi build --platform --release
+@hardkas/pskt-native:build: 
+@hardkas/pskt-native:build: [DEPRECATED] napi.name is deprecated, use napi.binaryName instead.
+@hardkas/pskt-native:build: [DEPRECATED] napi.triples is deprecated, use napi.targets instead.
+@hardkas/pskt-native:build:    Compiling proc-macro2 v1.0.107
+@hardkas/pskt-native:build:    Compiling unicode-ident v1.0.24
+@hardkas/pskt-native:build:    Compiling quote v1.0.47
+@hardkas/pskt-native:build:    Compiling cfg-if v1.0.4
+@hardkas/pskt-native:build:    Compiling version_check v0.9.5
+@hardkas/pskt-native:build:    Compiling serde_core v1.0.229
+@hardkas/pskt-native:build:    Compiling getrandom v0.2.17
+@hardkas/pskt-native:build:    Compiling typenum v1.20.1
+@hardkas/pskt-native:build:    Compiling rand_core v0.6.4
+@hardkas/pskt-native:build:    Compiling windows-link v0.2.1
+@hardkas/pskt-native:build:    Compiling generic-array v0.14.7
+@hardkas/pskt-native:build:    Compiling serde v1.0.229
+@hardkas/pskt-native:build:    Compiling once_cell v1.21.4
+@hardkas/pskt-native:build:    Compiling subtle v2.6.1
+@hardkas/pskt-native:build:    Compiling pin-project-lite v0.2.17
+@hardkas/pskt-native:build:    Compiling windows-sys v0.61.2
+@hardkas/pskt-native:build:    Compiling autocfg v1.5.1
+@hardkas/pskt-native:build:    Compiling crossbeam-utils v0.8.22
+@hardkas/pskt-native:build:    Compiling rustversion v1.0.23
+@hardkas/pskt-native:build:    Compiling syn v2.0.119
+@hardkas/pskt-native:build:    Compiling syn v3.0.3
+@hardkas/pskt-native:build:    Compiling const-oid v0.9.6
+@hardkas/pskt-native:build:    Compiling zerocopy v0.8.55
+@hardkas/pskt-native:build:    Compiling futures-core v0.3.33
+@hardkas/pskt-native:build:    Compiling value-bag v1.13.1
+@hardkas/pskt-native:build:    Compiling wasm-bindgen-shared v0.2.100
+@hardkas/pskt-native:build:    Compiling num-traits v0.2.19
+@hardkas/pskt-native:build:    Compiling log v0.4.33
+@hardkas/pskt-native:build:    Compiling cpufeatures v0.2.17
+@hardkas/pskt-native:build:    Compiling futures-io v0.3.33
+@hardkas/pskt-native:build:    Compiling bumpalo v3.20.3
+@hardkas/pskt-native:build:    Compiling memchr v2.8.3
+@hardkas/pskt-native:build:    Compiling slab v0.4.12
+@hardkas/pskt-native:build:    Compiling bytes v1.12.1
+@hardkas/pskt-native:build:    Compiling shlex v2.0.1
+@hardkas/pskt-native:build:    Compiling find-msvc-tools v0.1.9
+@hardkas/pskt-native:build:    Compiling wasm-bindgen-backend v0.2.100
+@hardkas/pskt-native:build:    Compiling cc v1.4.0
+@hardkas/pskt-native:build:    Compiling serde_derive v1.0.229
+@hardkas/pskt-native:build:    Compiling futures-sink v0.3.33
+@hardkas/pskt-native:build:    Compiling syn v1.0.109
+@hardkas/pskt-native:build:    Compiling wasm-bindgen-macro-support v0.2.100
+@hardkas/pskt-native:build:    Compiling wasm-bindgen v0.2.100
+@hardkas/pskt-native:build:    Compiling zeroize_derive v1.5.0
+@hardkas/pskt-native:build:    Compiling zerocopy-derive v0.8.55
+@hardkas/pskt-native:build:    Compiling tokio-macros v2.7.1
+@hardkas/pskt-native:build:    Compiling zeroize v1.9.0
+@hardkas/pskt-native:build:    Compiling wasm-bindgen-macro v0.2.100
+@hardkas/pskt-native:build:    Compiling futures-channel v0.3.33
+@hardkas/pskt-native:build:    Compiling mio v1.2.2
+@hardkas/pskt-native:build:    Compiling socket2 v0.6.5
+@hardkas/pskt-native:build:    Compiling crypto-common v0.1.7
+@hardkas/pskt-native:build:    Compiling block-buffer v0.10.4
+@hardkas/pskt-native:build:    Compiling digest v0.10.7
+@hardkas/pskt-native:build:    Compiling concurrent-queue v2.5.0
+@hardkas/pskt-native:build:    Compiling zmij v1.0.23
+@hardkas/pskt-native:build:    Compiling anyhow v1.0.104
+@hardkas/pskt-native:build:    Compiling tokio v1.53.1
+@hardkas/pskt-native:build:    Compiling futures-macro v0.3.33
+@hardkas/pskt-native:build:    Compiling semver v1.0.28
+@hardkas/pskt-native:build:    Compiling hashbrown v0.17.1
+@hardkas/pskt-native:build:    Compiling thiserror v1.0.69
+@hardkas/pskt-native:build:    Compiling winnow v1.0.4
+@hardkas/pskt-native:build:    Compiling futures-task v0.3.33
+@hardkas/pskt-native:build:    Compiling parking v2.2.1
+@hardkas/pskt-native:build:    Compiling equivalent v1.0.2
+@hardkas/pskt-native:build:    Compiling indexmap v2.14.0
+@hardkas/pskt-native:build:    Compiling futures-util v0.3.33
+@hardkas/pskt-native:build:    Compiling smallvec v1.15.2
+@hardkas/pskt-native:build:    Compiling toml_parser v1.1.2+spec-1.1.0
+@hardkas/pskt-native:build:    Compiling aho-corasick v1.1.4
+@hardkas/pskt-native:build:    Compiling ppv-lite86 v0.2.21
+@hardkas/pskt-native:build:    Compiling regex-syntax v0.8.11
+@hardkas/pskt-native:build:    Compiling toml_datetime v1.1.1+spec-1.1.0
+@hardkas/pskt-native:build:    Compiling rand_chacha v0.3.1
+@hardkas/pskt-native:build:    Compiling spin v0.9.9
+@hardkas/pskt-native:build:    Compiling rand v0.8.7
+@hardkas/pskt-native:build:    Compiling lazy_static v1.5.0
+@hardkas/pskt-native:build:    Compiling toml_edit v0.25.13+spec-1.1.0
+@hardkas/pskt-native:build:    Compiling thiserror-impl v1.0.69
+@hardkas/pskt-native:build:    Compiling proc-macro-error-attr v1.0.4
+@hardkas/pskt-native:build:    Compiling regex-automata v0.4.16
+@hardkas/pskt-native:build:    Compiling atomic-waker v1.1.2
+@hardkas/pskt-native:build:    Compiling libc v0.2.189
+@hardkas/pskt-native:build:    Compiling cfg_aliases v0.2.2
+@hardkas/pskt-native:build:    Compiling proc-macro-crate v3.5.0
+@hardkas/pskt-native:build:    Compiling borsh v1.8.0
+@hardkas/pskt-native:build:    Compiling proc-macro-error v1.0.4
+@hardkas/pskt-native:build:    Compiling borsh-derive v1.8.0
+@hardkas/pskt-native:build:    Compiling event-listener v5.4.1
+@hardkas/pskt-native:build:    Compiling js-sys v0.3.77
+@hardkas/pskt-native:build:    Compiling rustc_version v0.4.1
+@hardkas/pskt-native:build:    Compiling sha2 v0.10.9
+@hardkas/pskt-native:build:    Compiling regex v1.13.1
+@hardkas/pskt-native:build:    Compiling bitflags v2.13.1
+@hardkas/pskt-native:build:    Compiling unicode-segmentation v1.13.3
+@hardkas/pskt-native:build:    Compiling windows_x86_64_msvc v0.52.6
+@hardkas/pskt-native:build:    Compiling fastrand v2.5.0
+@hardkas/pskt-native:build:    Compiling winapi v0.3.9
+@hardkas/pskt-native:build:    Compiling convert_case v0.6.0
+@hardkas/pskt-native:build:    Compiling event-listener-strategy v0.5.4
+@hardkas/pskt-native:build:    Compiling camino v1.2.4
+@hardkas/pskt-native:build:    Compiling windows_x86_64_msvc v0.48.5
+@hardkas/pskt-native:build:    Compiling serde_json v1.0.151
+@hardkas/pskt-native:build:    Compiling futures-lite v2.6.1
+@hardkas/pskt-native:build:    Compiling parse-variants-derive v1.0.2
+@hardkas/pskt-native:build:    Compiling itoa v1.0.18
+@hardkas/pskt-native:build:    Compiling rustix v1.1.4
+@hardkas/pskt-native:build:    Compiling parse-variants v1.0.8
+@hardkas/pskt-native:build:    Compiling cargo-platform v0.1.9
+@hardkas/pskt-native:build:    Compiling windows-targets v0.52.6
+@hardkas/pskt-native:build:    Compiling async-channel v2.5.0
+@hardkas/pskt-native:build:    Compiling errno v0.3.14
+@hardkas/pskt-native:build:    Compiling winapi-util v0.1.11
+@hardkas/pskt-native:build:    Compiling vergen v8.3.2
+@hardkas/pskt-native:build:    Compiling async-io v2.6.0
+@hardkas/pskt-native:build:    Compiling either v1.16.0
+@hardkas/pskt-native:build:    Compiling powerfmt v0.2.0
+@hardkas/pskt-native:build:    Compiling async-task v4.7.1
+@hardkas/pskt-native:build:    Compiling time-core v0.1.9
+@hardkas/pskt-native:build:    Compiling num-conv v0.2.2
+@hardkas/pskt-native:build:    Compiling getrandom v0.3.4
+@hardkas/pskt-native:build:    Compiling deranged v0.5.8
+@hardkas/pskt-native:build:    Compiling termcolor v1.4.1
+@hardkas/pskt-native:build:    Compiling cargo_metadata v0.18.1
+@hardkas/pskt-native:build:    Compiling windows-targets v0.48.5
+@hardkas/pskt-native:build:    Compiling windows-sys v0.59.0
+@hardkas/pskt-native:build:    Compiling atty v0.2.14
+@hardkas/pskt-native:build:    Compiling piper v0.2.5
+@hardkas/pskt-native:build:    Compiling time v0.3.54
+@hardkas/pskt-native:build:    Compiling web-sys v0.3.77
+@hardkas/pskt-native:build:    Compiling polling v3.11.0
+@hardkas/pskt-native:build:    Compiling unicode-width v0.2.2
+@hardkas/pskt-native:build:    Compiling encode_unicode v1.0.0
+@hardkas/pskt-native:build:    Compiling console v0.15.11
+@hardkas/pskt-native:build:    Compiling blocking v1.6.2
+@hardkas/pskt-native:build:    Compiling hexplay v0.3.0
+@hardkas/pskt-native:build:    Compiling windows-sys v0.48.0
+@hardkas/pskt-native:build:    Compiling async-executor v1.14.0
+@hardkas/pskt-native:build:    Compiling workflow-macro-tools v0.18.0
+@hardkas/pskt-native:build:    Compiling async-lock v3.4.2
+@hardkas/pskt-native:build:    Compiling chrono v0.4.45
+@hardkas/pskt-native:build:    Compiling allocator-api2 v0.2.21
+@hardkas/pskt-native:build:    Compiling option-ext v0.2.0
+@hardkas/pskt-native:build:    Compiling downcast v0.11.0
+@hardkas/pskt-native:build:    Compiling event-listener v2.5.3
+@hardkas/pskt-native:build:    Compiling triggered v0.1.3
+@hardkas/pskt-native:build:    Compiling rlimit v0.10.2
+@hardkas/pskt-native:build:    Compiling async-channel v1.9.0
+@hardkas/pskt-native:build:    Compiling workflow-log v0.18.0
+@hardkas/pskt-native:build:    Compiling dirs-sys v0.4.1
+@hardkas/pskt-native:build:    Compiling workflow-core v0.18.0
+@hardkas/pskt-native:build:    Compiling async-global-executor v2.4.1
+@hardkas/pskt-native:build:    Compiling futures-executor v0.3.33
+@hardkas/pskt-native:build:    Compiling async-attributes v1.1.2
+@hardkas/pskt-native:build:    Compiling faster-hex v0.9.0
+@hardkas/pskt-native:build:    Compiling kv-log-macro v1.0.7
+@hardkas/pskt-native:build:    Compiling pin-utils v0.1.0
+@hardkas/pskt-native:build:    Compiling async-std v1.13.2
+@hardkas/pskt-native:build:    Compiling futures v0.3.33
+@hardkas/pskt-native:build:    Compiling dirs v5.0.1
+@hardkas/pskt-native:build:    Compiling workflow-core-macros v0.18.0
+@hardkas/pskt-native:build:    Compiling serde-wasm-bindgen v0.6.5
+@hardkas/pskt-native:build:    Compiling bs58 v0.5.1
+@hardkas/pskt-native:build:    Compiling instant v0.1.13
+@hardkas/pskt-native:build:    Compiling wasm-bindgen-futures v0.4.50
+@hardkas/pskt-native:build:    Compiling thiserror v2.0.19
+@hardkas/pskt-native:build:    Compiling workflow-panic-hook v0.18.0
+@hardkas/pskt-native:build:    Compiling thiserror-impl v2.0.19
+@hardkas/pskt-native:build:    Compiling tracing-core v0.1.36
+@hardkas/pskt-native:build:    Compiling cpufeatures v0.3.0
+@hardkas/pskt-native:build:    Compiling parking_lot_core v0.9.12
+@hardkas/pskt-native:build:    Compiling ahash v0.8.12
+@hardkas/pskt-native:build:    Compiling crossbeam-epoch v0.9.20
+@hardkas/pskt-native:build:    Compiling scopeguard v1.2.0
+@hardkas/pskt-native:build:    Compiling getrandom v0.4.3
+@hardkas/pskt-native:build:    Compiling rand_core v0.10.1
+@hardkas/pskt-native:build:    Compiling lock_api v0.4.14
+@hardkas/pskt-native:build:    Compiling tracing-attributes v0.1.31
+@hardkas/pskt-native:build:    Compiling crossbeam-deque v0.8.7
+@hardkas/pskt-native:build:    Compiling ipnet v2.12.0
+@hardkas/pskt-native:build:    Compiling workflow-wasm-macros v0.18.0
+@hardkas/pskt-native:build:    Compiling chacha20 v0.10.1
+@hardkas/pskt-native:build:    Compiling bytemuck_derive v1.11.0
+@hardkas/pskt-native:build:    Compiling tracing v0.1.44
+@hardkas/pskt-native:build:    Compiling ryu v1.0.23
+@hardkas/pskt-native:build:    Compiling rayon-core v1.13.0
+@hardkas/pskt-native:build:    Compiling rand v0.10.2
+@hardkas/pskt-native:build:    Compiling parking_lot v0.12.5
+@hardkas/pskt-native:build:    Compiling bytemuck v1.25.2
+@hardkas/pskt-native:build:    Compiling rand_core v0.9.5
+@hardkas/pskt-native:build:    Compiling uuid v1.24.0
+@hardkas/pskt-native:build:    Compiling itertools v0.14.0
+@hardkas/pskt-native:build:    Compiling fnv v1.0.7
+@hardkas/pskt-native:build:    Compiling rayon v1.12.0
+@hardkas/pskt-native:build:    Compiling num-integer v0.1.46
+@hardkas/pskt-native:build:    Compiling itertools v0.13.0
+@hardkas/pskt-native:build:    Compiling blake3 v1.8.5
+@hardkas/pskt-native:build:    Compiling enum-ordinalize-derive v4.4.1
+@hardkas/pskt-native:build:    Compiling arrayvec v0.7.8
+@hardkas/pskt-native:build:    Compiling constant_time_eq v0.4.2
+@hardkas/pskt-native:build:    Compiling arrayref v0.3.9
+@hardkas/pskt-native:build:    Compiling enum-ordinalize v4.4.1
+@hardkas/pskt-native:build:    Compiling num-bigint v0.4.8
+@hardkas/pskt-native:build:    Compiling kaspa-utils v2.0.1 (https://github.com/kaspanet/rusty-kaspa?rev=78257f273a26c4be085bab0f79437dee99ca8835#78257f27)
+@hardkas/pskt-native:build:    Compiling kaspa-hashes v2.0.1 (https://github.com/kaspanet/rusty-kaspa?rev=78257f273a26c4be085bab0f79437dee99ca8835#78257f27)
+@hardkas/pskt-native:build:    Compiling ark-std v0.6.0
+@hardkas/pskt-native:build:    Compiling ark-serialize-derive v0.6.0
+@hardkas/pskt-native:build:    Compiling synstructure v0.13.2
+@hardkas/pskt-native:build:    Compiling libm v0.2.16
+@hardkas/pskt-native:build:    Compiling byteorder v1.5.0
+@hardkas/pskt-native:build:    Compiling ark-ff-macros v0.6.0
+@hardkas/pskt-native:build:    Compiling ark-serialize v0.6.0
+@hardkas/pskt-native:build:    Compiling educe v0.6.0
+@hardkas/pskt-native:build:    Compiling blake2b_simd v1.0.4
+@hardkas/pskt-native:build:    Compiling workflow-wasm v0.18.0
+@hardkas/pskt-native:build:    Compiling ark-ff-asm v0.6.0
+@hardkas/pskt-native:build:    Compiling unicode-xid v0.2.6
+@hardkas/pskt-native:build:    Compiling foldhash v0.2.0
+@hardkas/pskt-native:build:    Compiling crc32fast v1.5.0
+@hardkas/pskt-native:build:    Compiling sha2-const-stable v0.1.0
+@hardkas/pskt-native:build:    Compiling hashbrown v0.16.1
+@hardkas/pskt-native:build:    Compiling derive_more-impl v2.1.1
+@hardkas/pskt-native:build:    Compiling ark-ff v0.6.0
+@hardkas/pskt-native:build:    Compiling zerofrom-derive v0.1.7
+@hardkas/pskt-native:build:    Compiling safe_arch v1.1.0
+@hardkas/pskt-native:build:    Compiling secp256k1-sys v0.10.1
+@hardkas/pskt-native:build:    Compiling malachite-nz v0.9.2
+@hardkas/pskt-native:build:    Compiling destructure_traitobject v0.2.0
+@hardkas/pskt-native:build:    Compiling adler2 v2.0.1
+@hardkas/pskt-native:build:    Compiling stable_deref_trait v1.2.1
+@hardkas/pskt-native:build:    Compiling simd-adler32 v0.3.10
+@hardkas/pskt-native:build:    Compiling zerofrom v0.1.8
+@hardkas/pskt-native:build:    Compiling unsafe-any-ors v1.0.0
+@hardkas/pskt-native:build:    Compiling miniz_oxide v0.8.9
+@hardkas/pskt-native:build:    Compiling derive_more v2.1.1
+@hardkas/pskt-native:build:    Compiling wide v1.5.0
+@hardkas/pskt-native:build:    Compiling malachite-base v0.9.2
+@hardkas/pskt-native:build:    Compiling yoke-derive v0.8.2
+@hardkas/pskt-native:build:    Compiling rand_chacha v0.9.0
+@hardkas/pskt-native:build:    Compiling blake2 v0.10.6
+@hardkas/pskt-native:build:    Compiling ordered-float v2.10.1
+@hardkas/pskt-native:build:    Compiling unsafe-libyaml v0.2.11
+@hardkas/pskt-native:build:    Compiling paste v1.0.15
+@hardkas/pskt-native:build:    Compiling serde-value v0.7.0
+@hardkas/pskt-native:build:    Compiling serde_yaml v0.9.34+deprecated
+@hardkas/pskt-native:build:    Compiling yoke v0.8.3
+@hardkas/pskt-native:build:    Compiling rand v0.9.5
+@hardkas/pskt-native:build:    Compiling flate2 v1.1.9
+@hardkas/pskt-native:build:    Compiling kaspa-smt v2.0.1 (https://github.com/kaspanet/rusty-kaspa?rev=78257f273a26c4be085bab0f79437dee99ca8835#78257f27)
+@hardkas/pskt-native:build:    Compiling typemap-ors v1.0.0
+@hardkas/pskt-native:build:    Compiling tracing-log v0.2.0
+@hardkas/pskt-native:build:    Compiling sharded-slab v0.1.7
+@hardkas/pskt-native:build:    Compiling num_enum_derive v0.7.6
+@hardkas/pskt-native:build:    Compiling async-trait v0.1.91
+@hardkas/pskt-native:build:    Compiling thread-id v5.1.0
+@hardkas/pskt-native:build:    Compiling nu-ansi-term v0.50.3
+@hardkas/pskt-native:build:    Compiling arc-swap v1.9.2
+@hardkas/pskt-native:build:    Compiling thread_local v1.1.10
+@hardkas/pskt-native:build:    Compiling mock_instant v0.6.1
+@hardkas/pskt-native:build:    Compiling log-mdc v0.1.0
+@hardkas/pskt-native:build:    Compiling humantime v2.4.0
+@hardkas/pskt-native:build:    Compiling log4rs v1.4.0
+@hardkas/pskt-native:build:    Compiling tracing-subscriber v0.3.23
+@hardkas/pskt-native:build:    Compiling num_enum v0.7.6
+@hardkas/pskt-native:build:    Compiling ark-poly v0.6.0
+@hardkas/pskt-native:build:    Compiling secp256k1 v0.29.1
+@hardkas/pskt-native:build:    Compiling zerovec-derive v0.11.3
+@hardkas/pskt-native:build:    Compiling stability v0.2.1
+@hardkas/pskt-native:build:    Compiling ctrlc v3.5.2
+@hardkas/pskt-native:build:    Compiling num_cpus v1.17.0
+@hardkas/pskt-native:build:    Compiling risc0-zkp v3.0.4
+@hardkas/pskt-native:build:    Compiling foldhash v0.1.5
+@hardkas/pskt-native:build:    Compiling zerovec v0.11.6
+@hardkas/pskt-native:build:    Compiling ark-relations v0.6.0
+@hardkas/pskt-native:build:    Compiling kaspa-core v2.0.1 (https://github.com/kaspanet/rusty-kaspa?rev=78257f273a26c4be085bab0f79437dee99ca8835#78257f27)
+@hardkas/pskt-native:build:    Compiling risc0-zkvm-platform v2.2.2
+@hardkas/pskt-native:build:    Compiling ark-ec v0.6.0
+@hardkas/pskt-native:build:    Compiling kaspa-txscript-errors v2.0.1 (https://github.com/kaspanet/rusty-kaspa?rev=78257f273a26c4be085bab0f79437dee99ca8835#78257f27)
+@hardkas/pskt-native:build:    Compiling kaspa-merkle v2.0.1 (https://github.com/kaspanet/rusty-kaspa?rev=78257f273a26c4be085bab0f79437dee99ca8835#78257f27)
+@hardkas/pskt-native:build:    Compiling kaspa-addresses v2.0.1 (https://github.com/kaspanet/rusty-kaspa?rev=78257f273a26c4be085bab0f79437dee99ca8835#78257f27)
+@hardkas/pskt-native:build:    Compiling risc0-core v3.0.1
+@hardkas/pskt-native:build:    Compiling workflow-serializer v0.18.0
+@hardkas/pskt-native:build:    Compiling http v1.4.2
+@hardkas/pskt-native:build:    Compiling hex v0.4.3
+@hardkas/pskt-native:build:    Compiling ring v0.17.14
+@hardkas/pskt-native:build:    Compiling displaydoc v0.2.6
+@hardkas/pskt-native:build:    Compiling keccak v0.1.6
+@hardkas/pskt-native:build:    Compiling hex-literal v0.4.1
+@hardkas/pskt-native:build:    Compiling merlin v3.0.0
+@hardkas/pskt-native:build:    Compiling risc0-circuit-recursion v4.0.4
+@hardkas/pskt-native:build:    Compiling ark-snark v0.6.0
+@hardkas/pskt-native:build:    Compiling cobs v0.3.0
+@hardkas/pskt-native:build:    Compiling derivative v2.2.0
+@hardkas/pskt-native:build:    Compiling rustls-pki-types v1.15.1
+@hardkas/pskt-native:build:    Compiling ark-crypto-primitives-macros v0.5.0
+@hardkas/pskt-native:build:    Compiling ruint-macro v1.2.1
+@hardkas/pskt-native:build:    Compiling postcard v1.1.3
+@hardkas/pskt-native:build:    Compiling ark-crypto-primitives v0.6.0
+@hardkas/pskt-native:build:    Compiling ruint v1.19.0
+@hardkas/pskt-native:build:    Compiling elf v0.7.4
+@hardkas/pskt-native:build:    Compiling kaspa-math v2.0.1 (https://github.com/kaspanet/rusty-kaspa?rev=78257f273a26c4be085bab0f79437dee99ca8835#78257f27)
+@hardkas/pskt-native:build:    Compiling untrusted v0.9.0
+@hardkas/pskt-native:build:    Compiling httparse v1.10.1
+@hardkas/pskt-native:build:    Compiling kaspa-muhash v2.0.1 (https://github.com/kaspanet/rusty-kaspa?rev=78257f273a26c4be085bab0f79437dee99ca8835#78257f27)
+@hardkas/pskt-native:build:    Compiling risc0-binfmt v3.0.4
+@hardkas/pskt-native:build:    Compiling kaspa-consensus-core v2.0.1 (https://github.com/kaspanet/rusty-kaspa?rev=78257f273a26c4be085bab0f79437dee99ca8835#78257f27)
+@hardkas/pskt-native:build:    Compiling ark-groth16 v0.6.0
+@hardkas/pskt-native:build:    Compiling tinystr v0.8.3
+@hardkas/pskt-native:build:    Compiling ark-bn254 v0.6.0
+@hardkas/pskt-native:build:    Compiling writeable v0.6.3
+@hardkas/pskt-native:build:    Compiling litemap v0.8.2
+@hardkas/pskt-native:build:    Compiling rustls v0.23.42
+@hardkas/pskt-native:build:    Compiling kaspa-txscript v2.0.1 (https://github.com/kaspanet/rusty-kaspa?rev=78257f273a26c4be085bab0f79437dee99ca8835#78257f27)
+@hardkas/pskt-native:build:    Compiling icu_locale_core v2.2.0
+@hardkas/pskt-native:build:    Compiling rustls-webpki v0.103.13
+@hardkas/pskt-native:build:    Compiling zerotrie v0.2.4
+@hardkas/pskt-native:build:    Compiling potential_utf v0.1.5
+@hardkas/pskt-native:build:    Compiling icu_properties_data v2.2.0
+@hardkas/pskt-native:build:    Compiling utf8_iter v1.0.4
+@hardkas/pskt-native:build:    Compiling icu_normalizer_data v2.2.0
+@hardkas/pskt-native:build:    Compiling icu_collections v2.2.0
+@hardkas/pskt-native:build:    Compiling icu_provider v2.2.0
+@hardkas/pskt-native:build:    Compiling percent-encoding v2.3.2
+@hardkas/pskt-native:build:    Compiling webpki-roots v1.0.9
+@hardkas/pskt-native:build:    Compiling http-body v1.1.0
+@hardkas/pskt-native:build:    Compiling icu_normalizer v2.2.0
+@hardkas/pskt-native:build:    Compiling kaspa-wasm-core v2.0.1 (https://github.com/kaspanet/rusty-kaspa?rev=78257f273a26c4be085bab0f79437dee99ca8835#78257f27)
+@hardkas/pskt-native:build:    Compiling tokio-util v0.7.19
+@hardkas/pskt-native:build:    Compiling inout v0.1.4
+@hardkas/pskt-native:build:    Compiling tower-service v0.3.3
+@hardkas/pskt-native:build:    Compiling convert_case v0.4.0
+@hardkas/pskt-native:build:    Compiling icu_properties v2.2.0
+@hardkas/pskt-native:build:    Compiling try-lock v0.2.5
+@hardkas/pskt-native:build:    Compiling derive_more v0.99.20
+@hardkas/pskt-native:build:    Compiling want v0.3.1
+@hardkas/pskt-native:build:    Compiling cipher v0.4.4
+@hardkas/pskt-native:build:    Compiling h2 v0.4.15
+@hardkas/pskt-native:build:    Compiling tokio-rustls v0.26.4
+@hardkas/pskt-native:build:    Compiling idna_adapter v1.2.2
+@hardkas/pskt-native:build:    Compiling form_urlencoded v1.2.2
+@hardkas/pskt-native:build:    Compiling workflow-task-macros v0.18.0
+@hardkas/pskt-native:build:    Compiling windows-strings v0.5.1
+@hardkas/pskt-native:build:    Compiling windows-result v0.4.1
+@hardkas/pskt-native:build:    Compiling base64 v0.22.1
+@hardkas/pskt-native:build:    Compiling ident_case v1.0.1
+@hardkas/pskt-native:build:    Compiling strsim v0.11.1
+@hardkas/pskt-native:build:    Compiling darling_core v0.20.11
+@hardkas/pskt-native:build:    Compiling windows-registry v0.6.1
+@hardkas/pskt-native:build:    Compiling hyper v1.11.0
+@hardkas/pskt-native:build:    Compiling workflow-task v0.18.0
+@hardkas/pskt-native:build:    Compiling idna v1.1.0
+@hardkas/pskt-native:build:    Compiling kaspa-notify v2.0.1 (https://github.com/kaspanet/rusty-kaspa?rev=78257f273a26c4be085bab0f79437dee99ca8835#78257f27)
+@hardkas/pskt-native:build:    Compiling kaspa-consensus-client v2.0.1 (https://github.com/kaspanet/rusty-kaspa?rev=78257f273a26c4be085bab0f79437dee99ca8835#78257f27)
+@hardkas/pskt-native:build:    Compiling sha1 v0.10.7
+@hardkas/pskt-native:build:    Compiling macroific_core v1.0.2
+@hardkas/pskt-native:build:    Compiling macroific_attr_parse v1.3.0
+@hardkas/pskt-native:build:    Compiling sync_wrapper v1.0.2
+@hardkas/pskt-native:build:    Compiling tower-layer v0.3.3
+@hardkas/pskt-native:build:    Compiling utf-8 v0.7.6
+@hardkas/pskt-native:build:    Compiling data-encoding v2.11.0
+@hardkas/pskt-native:build:    Compiling tungstenite v0.23.0
+@hardkas/pskt-native:build:    Compiling tower v0.5.3
+@hardkas/pskt-native:build:    Compiling macroific_macro v1.1.0
+@hardkas/pskt-native:build:    Compiling url v2.5.8
+@hardkas/pskt-native:build:    Compiling darling_macro v0.20.11
+@hardkas/pskt-native:build:    Compiling hyper-util v0.1.20
+@hardkas/pskt-native:build:    Compiling webpki-roots v0.26.11
+@hardkas/pskt-native:build:    Compiling hyper-rustls v0.27.9
+@hardkas/pskt-native:build:    Compiling tokio-tungstenite v0.23.1
+@hardkas/pskt-native:build:    Compiling darling v0.20.11
+@hardkas/pskt-native:build:    Compiling tower-http v0.6.11
+@hardkas/pskt-native:build:    Compiling macroific v1.3.1
+@hardkas/pskt-native:build:    Compiling kaspa-consensus-wasm v2.0.1 (https://github.com/kaspanet/rusty-kaspa?rev=78257f273a26c4be085bab0f79437dee99ca8835#78257f27)
+@hardkas/pskt-native:build:    Compiling kaspa-index-core v2.0.1 (https://github.com/kaspanet/rusty-kaspa?rev=78257f273a26c4be085bab0f79437dee99ca8835#78257f27)
+@hardkas/pskt-native:build:    Compiling kaspa-consensus-notify v2.0.1 (https://github.com/kaspanet/rusty-kaspa?rev=78257f273a26c4be085bab0f79437dee99ca8835#78257f27)
+@hardkas/pskt-native:build:    Compiling serde_urlencoded v0.7.1
+@hardkas/pskt-native:build:    Compiling http-body-util v0.1.4
+@hardkas/pskt-native:build:    Compiling kaspa-mining-errors v2.0.1 (https://github.com/kaspanet/rusty-kaspa?rev=78257f273a26c4be085bab0f79437dee99ca8835#78257f27)
+@hardkas/pskt-native:build:    Compiling kaspa-rpc-macros v2.0.1 (https://github.com/kaspanet/rusty-kaspa?rev=78257f273a26c4be085bab0f79437dee99ca8835#78257f27)
+@hardkas/pskt-native:build:    Compiling serde_spanned v0.6.9
+@hardkas/pskt-native:build:    Compiling toml_datetime v0.6.11
+@hardkas/pskt-native:build:    Compiling hmac v0.12.1
+@hardkas/pskt-native:build:    Compiling universal-hash v0.5.1
+@hardkas/pskt-native:build:    Compiling encoding_rs v0.8.35
+@hardkas/pskt-native:build:    Compiling mime v0.3.17
+@hardkas/pskt-native:build:    Compiling downcast-rs v1.2.1
+@hardkas/pskt-native:build:    Compiling opaque-debug v0.3.1
+@hardkas/pskt-native:build:    Compiling winnow v0.7.15
+@hardkas/pskt-native:build:    Compiling toml_write v0.1.2
+@hardkas/pskt-native:build:    Compiling workflow-websocket v0.18.0
+@hardkas/pskt-native:build:    Compiling poly1305 v0.8.0
+@hardkas/pskt-native:build:    Compiling reqwest v0.12.28
+@hardkas/pskt-native:build:    Compiling toml_edit v0.22.27
+@hardkas/pskt-native:build:    Compiling kaspa-rpc-core v2.0.1 (https://github.com/kaspanet/rusty-kaspa?rev=78257f273a26c4be085bab0f79437dee99ca8835#78257f27)
+@hardkas/pskt-native:build:    Compiling pbkdf2 v0.12.2
+@hardkas/pskt-native:build:    Compiling derive_builder_core v0.20.2
+@hardkas/pskt-native:build:    Compiling chacha20 v0.9.1
+@hardkas/pskt-native:build:    Compiling workflow-rpc-macros v0.18.0
+@hardkas/pskt-native:build:    Compiling curve25519-dalek v4.1.3
+@hardkas/pskt-native:build:    Compiling manual_future v0.1.4
+@hardkas/pskt-native:build:    Compiling ripemd v0.1.3
+@hardkas/pskt-native:build:    Compiling aead v0.5.2
+@hardkas/pskt-native:build:    Compiling hybrid-array v0.4.13
+@hardkas/pskt-native:build:    Compiling cfg-if v0.1.10
+@hardkas/pskt-native:build:    Compiling node-sys v0.4.2
+@hardkas/pskt-native:build:    Compiling kaspa-bip32 v2.0.1 (https://github.com/kaspanet/rusty-kaspa?rev=78257f273a26c4be085bab0f79437dee99ca8835#78257f27)
+@hardkas/pskt-native:build:    Compiling workflow-rpc v0.18.0
+@hardkas/pskt-native:build:    Compiling workflow-dom v0.18.0
+@hardkas/pskt-native:build:    Compiling derive_builder_macro v0.20.2
+@hardkas/pskt-native:build:    Compiling toml v0.8.23
+@hardkas/pskt-native:build:    Compiling salsa20 v0.10.2
+@hardkas/pskt-native:build:    Compiling chrome-sys v0.2.0
+@hardkas/pskt-native:build:    Compiling curve25519-dalek-derive v0.1.1
+@hardkas/pskt-native:build:    Compiling separator v0.4.1
+@hardkas/pskt-native:build:    Compiling base64ct v1.8.3
+@hardkas/pskt-native:build:    Compiling heapless v0.8.0
+@hardkas/pskt-native:build:    Compiling workflow-node v0.18.0
+@hardkas/pskt-native:build:    Compiling password-hash v0.5.0
+@hardkas/pskt-native:build:    Compiling workflow-chrome v0.18.0
+@hardkas/pskt-native:build:    Compiling crypto_secretbox v0.1.1
+@hardkas/pskt-native:build:    Compiling derive_builder v0.20.2
+@hardkas/pskt-native:build:    Compiling crypto-common v0.2.2
+@hardkas/pskt-native:build:    Compiling block-buffer v0.12.1
+@hardkas/pskt-native:build:    Compiling fancy_constructor v1.3.0
+@hardkas/pskt-native:build:    Compiling delegate-display v2.1.1
+@hardkas/pskt-native:build:    Compiling accessory v1.3.1
+@hardkas/pskt-native:build:    Compiling hash32 v0.3.1
+@hardkas/pskt-native:build:    Compiling nanoid v0.4.0
+@hardkas/pskt-native:build:    Compiling bincode v1.3.3
+@hardkas/pskt-native:build:    Compiling serde_repr v0.1.21
+@hardkas/pskt-native:build:    Compiling home v0.5.12
+@hardkas/pskt-native:build:    Compiling libloading v0.8.9
+@hardkas/pskt-native:build:    Compiling filetime v0.2.29
+@hardkas/pskt-native:build:    Compiling napi-build v2.3.2
+@hardkas/pskt-native:build:    Compiling hashbrown v0.14.5
+@hardkas/pskt-native:build:    Compiling unicode-width v0.1.14
+@hardkas/pskt-native:build:    Compiling xxhash-rust v0.8.18
+@hardkas/pskt-native:build:    Compiling deunicode v1.6.2
+@hardkas/pskt-native:build:    Compiling convert_case v0.5.0
+@hardkas/pskt-native:build:    Compiling const-oid v0.10.2
+@hardkas/pskt-native:build:    Compiling slugify-rs v0.0.3
+@hardkas/pskt-native:build:    Compiling kaspa-wallet-macros v2.0.1 (https://github.com/kaspanet/rusty-kaspa?rev=78257f273a26c4be085bab0f79437dee99ca8835#78257f27)
+@hardkas/pskt-native:build:    Compiling dashmap v6.2.1
+@hardkas/pskt-native:build:    Compiling digest v0.11.3
+@hardkas/pskt-native:build:    Compiling pad v0.1.6
+@hardkas/pskt-native:build:    Compiling workflow-store v0.18.0
+@hardkas/pskt-native:build:    Compiling hardkas-pskt-native v0.1.0 (C:\Users\jrodr\hkl1\teu2\src\packages\pskt-native)
+@hardkas/pskt-native:build:    Compiling napi-sys v2.4.0
+@hardkas/pskt-native:build:    Compiling kaspa-wallet-pskt v2.0.1 (https://github.com/kaspanet/rusty-kaspa?rev=78257f273a26c4be085bab0f79437dee99ca8835#78257f27)
+@hardkas/pskt-native:build:    Compiling indexed_db_futures v0.5.0
+@hardkas/pskt-native:build:    Compiling crypto_box v0.9.1
+@hardkas/pskt-native:build:    Compiling argon2 v0.5.3
+@hardkas/pskt-native:build:    Compiling workflow-http v0.18.0
+@hardkas/pskt-native:build:    Compiling kaspa-metrics-core v2.0.1 (https://github.com/kaspanet/rusty-kaspa?rev=78257f273a26c4be085bab0f79437dee99ca8835#78257f27)
+@hardkas/pskt-native:build:    Compiling kaspa-wallet-keys v2.0.1 (https://github.com/kaspanet/rusty-kaspa?rev=78257f273a26c4be085bab0f79437dee99ca8835#78257f27)
+@hardkas/pskt-native:build:    Compiling chacha20poly1305 v0.10.1
+@hardkas/pskt-native:build:    Compiling aes v0.8.4
+@hardkas/pskt-native:build:    Compiling kaspa-wrpc-client v2.0.1 (https://github.com/kaspanet/rusty-kaspa?rev=78257f273a26c4be085bab0f79437dee99ca8835#78257f27)
+@hardkas/pskt-native:build:    Compiling cfb-mode v0.8.2
+@hardkas/pskt-native:build:    Compiling napi-derive-backend v1.0.75
+@hardkas/pskt-native:build:    Compiling fixedstr v0.5.11
+@hardkas/pskt-native:build:    Compiling md-5 v0.10.6
+@hardkas/pskt-native:build:    Compiling evpkdf v0.2.0
+@hardkas/pskt-native:build:    Compiling ctor v0.2.9
+@hardkas/pskt-native:build:    Compiling sorted-insert v0.2.7
+@hardkas/pskt-native:build:    Compiling napi v2.16.17
+@hardkas/pskt-native:build:    Compiling sha2 v0.11.0
+@hardkas/pskt-native:build:    Compiling napi-derive v2.16.13
+@hardkas/pskt-native:build:    Compiling kaspa-wrpc-wasm v2.0.1 (https://github.com/kaspanet/rusty-kaspa?rev=78257f273a26c4be085bab0f79437dee99ca8835#78257f27)
+@hardkas/pskt-native:build:    Compiling kaspa-wallet-core v2.0.1 (https://github.com/kaspanet/rusty-kaspa?rev=78257f273a26c4be085bab0f79437dee99ca8835#78257f27)
+@hardkas/pskt-native:build:     Finished `release` profile [optimized] target(s) in 6m 32s
+@hardkas/testnet-qualification:build: cache miss, executing d29cf92c4e88444a
+@hardkas/testnet-qualification:build: 
+@hardkas/testnet-qualification:build: > @hardkas/testnet-qualification@0.12.0-rc.27 build C:\Users\jrodr\hkl1\teu2\src\packages\testnet-qualification
+@hardkas/testnet-qualification:build: > tsup src/index.ts --format esm --dts --clean
+@hardkas/testnet-qualification:build: 
+@hardkas/testnet-qualification:build: CLI Building entry: src/index.ts
+@hardkas/testnet-qualification:build: CLI Using tsconfig: tsconfig.json
+@hardkas/testnet-qualification:build: CLI tsup v8.5.1
+@hardkas/testnet-qualification:build: CLI Target: es2022
+@hardkas/testnet-qualification:build: CLI Cleaning output folder
+@hardkas/testnet-qualification:build: ESM Build start
+@hardkas/testnet-qualification:build: ESM dist\index.js 50.28 KB
+@hardkas/testnet-qualification:build: ESM ⚡️ Build success in 43ms
+@hardkas/testnet-qualification:build: DTS Build start
+@hardkas/testnet-qualification:build: DTS ⚡️ Build success in 1427ms
+@hardkas/testnet-qualification:build: DTS dist\index.d.ts 47.91 KB
+@hardkas/observability:build: cache hit, replaying logs 86b70ca80af3f8ad
+@hardkas/observability:build: 
+@hardkas/observability:build: > @hardkas/observability@0.12.0-rc.27 build C:\Users\jrodr\hkl1\teu2\src\packages\observability
+@hardkas/observability:build: > tsup src/index.ts --format esm --dts --clean
+@hardkas/observability:build: 
+@hardkas/observability:build: CLI Building entry: src/index.ts
+@hardkas/observability:build: CLI Using tsconfig: tsconfig.json
+@hardkas/observability:build: CLI tsup v8.5.1
+@hardkas/observability:build: CLI Using tsup config: C:\Users\jrodr\hkl1\teu2\src\packages\observability\tsup.config.ts
+@hardkas/observability:build: CLI Target: es2022
+@hardkas/observability:build: CLI Cleaning output folder
+@hardkas/observability:build: ESM Build start
+@hardkas/observability:build: ESM dist\index.js 5.94 KB
+@hardkas/observability:build: ESM ⚡️ Build success in 20ms
+@hardkas/observability:build: DTS Build start
+@hardkas/observability:build: DTS ⚡️ Build success in 1536ms
+@hardkas/observability:build: DTS dist\index.d.ts 2.84 KB
+@hardkas/core:build: cache hit, replaying logs c9430c3f1cec2021
+@hardkas/core:build: 
+@hardkas/core:build: > @hardkas/core@0.12.0-rc.27 build C:\Users\jrodr\hkl1\teu2\src\packages\core
+@hardkas/core:build: > tsup src/index.ts --format esm --dts --clean
+@hardkas/core:build: 
+@hardkas/core:build: CLI Building entry: src/index.ts
+@hardkas/core:build: CLI Using tsconfig: tsconfig.json
+@hardkas/core:build: CLI tsup v8.5.1
+@hardkas/core:build: CLI Target: es2022
+@hardkas/core:build: CLI Cleaning output folder
+@hardkas/core:build: ESM Build start
+@hardkas/core:build: ESM dist\index.js 179.24 KB
+@hardkas/core:build: ESM ⚡️ Build success in 73ms
+@hardkas/core:build: DTS Build start
+@hardkas/core:build: DTS ⚡️ Build success in 4503ms
+@hardkas/core:build: DTS dist\index.d.ts 124.40 KB
+@hardkas/jobs:build: cache hit, replaying logs 10fd428790c05744
+@hardkas/jobs:build: 
+@hardkas/jobs:build: > @hardkas/jobs@0.12.0-rc.27 build C:\Users\jrodr\hkl1\teu2\src\packages\jobs
+@hardkas/jobs:build: > tsc
+@hardkas/jobs:build: 
+@hardkas/tx-builder:build: cache hit, replaying logs da70e4018ca51ea7
+@hardkas/tx-builder:build: 
+@hardkas/tx-builder:build: > @hardkas/tx-builder@0.12.0-rc.27 build C:\Users\jrodr\hkl1\teu2\src\packages\tx-builder
+@hardkas/tx-builder:build: > tsup src/index.ts --format esm --dts --clean
+@hardkas/tx-builder:build: 
+@hardkas/tx-builder:build: CLI Building entry: src/index.ts
+@hardkas/tx-builder:build: CLI Using tsconfig: tsconfig.json
+@hardkas/tx-builder:build: CLI tsup v8.5.1
+@hardkas/tx-builder:build: CLI Target: es2022
+@hardkas/tx-builder:build: CLI Cleaning output folder
+@hardkas/tx-builder:build: ESM Build start
+@hardkas/tx-builder:build: ESM dist\index.js 47.84 KB
+@hardkas/tx-builder:build: ESM ⚡️ Build success in 47ms
+@hardkas/tx-builder:build: DTS Build start
+@hardkas/tx-builder:build: DTS ⚡️ Build success in 1621ms
+@hardkas/tx-builder:build: DTS dist\index.d.ts 30.15 KB
+@hardkas/config:build: cache hit, replaying logs 458c1b600b37aefc
+@hardkas/config:build: 
+@hardkas/config:build: > @hardkas/config@0.12.0-rc.27 build C:\Users\jrodr\hkl1\teu2\src\packages\config
+@hardkas/config:build: > tsup src/index.ts --format esm --dts --clean
+@hardkas/config:build: 
+@hardkas/config:build: CLI Building entry: src/index.ts
+@hardkas/config:build: CLI Using tsconfig: tsconfig.json
+@hardkas/config:build: CLI tsup v8.5.1
+@hardkas/config:build: CLI Target: es2022
+@hardkas/config:build: CLI Cleaning output folder
+@hardkas/config:build: ESM Build start
+@hardkas/config:build: ESM dist\index.js 15.90 KB
+@hardkas/config:build: ESM ⚡️ Build success in 81ms
+@hardkas/config:build: DTS Build start
+@hardkas/config:build: DTS ⚡️ Build success in 1433ms
+@hardkas/config:build: DTS dist\index.d.ts 10.13 KB
+@hardkas/node-orchestrator:build: cache hit, replaying logs 6309a1ce2c30e2e7
+@hardkas/node-orchestrator:build: 
+@hardkas/node-orchestrator:build: > @hardkas/node-orchestrator@0.12.0-rc.27 build C:\Users\jrodr\hkl1\teu2\src\packages\node-orchestrator
+@hardkas/node-orchestrator:build: > tsup src/index.ts --format esm --dts --clean
+@hardkas/node-orchestrator:build: 
+@hardkas/node-orchestrator:build: CLI Building entry: src/index.ts
+@hardkas/node-orchestrator:build: CLI Using tsconfig: tsconfig.json
+@hardkas/node-orchestrator:build: CLI tsup v8.5.1
+@hardkas/node-orchestrator:build: CLI Target: es2022
+@hardkas/node-orchestrator:build: CLI Cleaning output folder
+@hardkas/node-orchestrator:build: ESM Build start
+@hardkas/node-orchestrator:build: ESM dist\index.js 8.16 KB
+@hardkas/node-orchestrator:build: ESM ⚡️ Build success in 46ms
+@hardkas/node-orchestrator:build: DTS Build start
+@hardkas/node-orchestrator:build: DTS ⚡️ Build success in 1334ms
+@hardkas/node-orchestrator:build: DTS dist\index.d.ts 2.29 KB
+@hardkas/sessions:build: cache hit, replaying logs ceb2ea301115648e
+@hardkas/sessions:build: 
+@hardkas/sessions:build: > @hardkas/sessions@0.12.0-rc.27 build C:\Users\jrodr\hkl1\teu2\src\packages\sessions
+@hardkas/sessions:build: > tsup src/index.ts --format esm --dts --clean
+@hardkas/sessions:build: 
+@hardkas/sessions:build: CLI Building entry: src/index.ts
+@hardkas/sessions:build: CLI Using tsconfig: tsconfig.json
+@hardkas/sessions:build: CLI tsup v8.5.1
+@hardkas/sessions:build: CLI Target: es2022
+@hardkas/sessions:build: CLI Cleaning output folder
+@hardkas/sessions:build: ESM Build start
+@hardkas/sessions:build: ESM dist\index.js 3.61 KB
+@hardkas/sessions:build: ESM ⚡️ Build success in 37ms
+@hardkas/sessions:build: DTS Build start
+@hardkas/sessions:build: DTS ⚡️ Build success in 2103ms
+@hardkas/sessions:build: DTS dist\index.d.ts 1.34 KB
+@hardkas/escrow:build: cache hit, replaying logs d347dd6188864a1f
+@hardkas/escrow:build: 
+@hardkas/escrow:build: > @hardkas/escrow@0.12.0-rc.27 build C:\Users\jrodr\hkl1\teu2\src\packages\escrow
+@hardkas/escrow:build: > tsup src/index.ts --format esm --dts --clean
+@hardkas/escrow:build: 
+@hardkas/escrow:build: CLI Building entry: src/index.ts
+@hardkas/escrow:build: CLI Using tsconfig: tsconfig.json
+@hardkas/escrow:build: CLI tsup v8.5.1
+@hardkas/escrow:build: CLI Target: es2022
+@hardkas/escrow:build: CLI Cleaning output folder
+@hardkas/escrow:build: ESM Build start
+@hardkas/escrow:build: ESM dist\index.js 5.37 KB
+@hardkas/escrow:build: ESM ⚡️ Build success in 61ms
+@hardkas/escrow:build: DTS Build start
+@hardkas/escrow:build: DTS ⚡️ Build success in 1295ms
+@hardkas/escrow:build: DTS dist\index.d.ts 5.84 KB
+@hardkas/kaspa-rpc:build: cache hit, replaying logs 8fd048d892ecb2a3
+@hardkas/kaspa-rpc:build: 
+@hardkas/kaspa-rpc:build: > @hardkas/kaspa-rpc@0.12.0-rc.27 build C:\Users\jrodr\hkl1\teu2\src\packages\kaspa-rpc
+@hardkas/kaspa-rpc:build: > tsup src/index.ts src/adapters/index.ts --format esm --dts --clean
+@hardkas/kaspa-rpc:build: 
+@hardkas/kaspa-rpc:build: CLI Building entry: src/index.ts, src/adapters/index.ts
+@hardkas/kaspa-rpc:build: CLI Using tsconfig: tsconfig.json
+@hardkas/kaspa-rpc:build: CLI tsup v8.5.1
+@hardkas/kaspa-rpc:build: CLI Target: es2022
+@hardkas/kaspa-rpc:build: CLI Cleaning output folder
+@hardkas/kaspa-rpc:build: ESM Build start
+@hardkas/kaspa-rpc:build: ESM dist\index.js          65.19 KB
+@hardkas/kaspa-rpc:build: ESM dist\adapters\index.js 0 B
+@hardkas/kaspa-rpc:build: ESM ⚡️ Build success in 49ms
+@hardkas/kaspa-rpc:build: DTS Build start
+@hardkas/kaspa-rpc:build: DTS ⚡️ Build success in 2375ms
+@hardkas/kaspa-rpc:build: DTS dist\adapters\index.d.ts 13.00 B
+@hardkas/kaspa-rpc:build: DTS dist\index.d.ts          24.43 KB
+@hardkas/simulator:build: cache hit, replaying logs 0149066514d3d886
+@hardkas/simulator:build: 
+@hardkas/simulator:build: > @hardkas/simulator@0.12.0-rc.27 build C:\Users\jrodr\hkl1\teu2\src\packages\simulator
+@hardkas/simulator:build: > tsup src/index.ts --format esm --dts --clean
+@hardkas/simulator:build: 
+@hardkas/simulator:build: CLI Building entry: src/index.ts
+@hardkas/simulator:build: CLI Using tsconfig: tsconfig.json
+@hardkas/simulator:build: CLI tsup v8.5.1
+@hardkas/simulator:build: CLI Target: es2022
+@hardkas/simulator:build: CLI Cleaning output folder
+@hardkas/simulator:build: ESM Build start
+@hardkas/simulator:build: ESM dist\index.js 25.15 KB
+@hardkas/simulator:build: ESM ⚡️ Build success in 131ms
+@hardkas/simulator:build: DTS Build start
+@hardkas/simulator:build: DTS ⚡️ Build success in 1758ms
+@hardkas/simulator:build: DTS dist\index.d.ts 13.88 KB
+@hardkas/artifacts:build: cache hit, replaying logs de8f36eefeb7b8a6
+@hardkas/artifacts:build: 
+@hardkas/artifacts:build: > @hardkas/artifacts@0.12.0-rc.27 build C:\Users\jrodr\hkl1\teu2\src\packages\artifacts
+@hardkas/artifacts:build: > tsup src/index.ts --format esm --dts --clean
+@hardkas/artifacts:build: 
+@hardkas/artifacts:build: CLI Building entry: src/index.ts
+@hardkas/artifacts:build: CLI Using tsconfig: tsconfig.json
+@hardkas/artifacts:build: CLI tsup v8.5.1
+@hardkas/artifacts:build: CLI Target: es2022
+@hardkas/artifacts:build: CLI Cleaning output folder
+@hardkas/artifacts:build: ESM Build start
+@hardkas/artifacts:build: ESM dist\index.js 248.15 KB
+@hardkas/artifacts:build: ESM ⚡️ Build success in 76ms
+@hardkas/artifacts:build: DTS Build start
+@hardkas/artifacts:build: DTS ⚡️ Build success in 5237ms
+@hardkas/artifacts:build: DTS dist\index.d.ts 489.80 KB
+@hardkas/node-runner:build: cache hit, replaying logs 09119f1193351510
+@hardkas/node-runner:build: 
+@hardkas/node-runner:build: > @hardkas/node-runner@0.12.0-rc.27 build C:\Users\jrodr\hkl1\teu2\src\packages\node-runner
+@hardkas/node-runner:build: > tsup src/index.ts --format esm --dts --clean
+@hardkas/node-runner:build: 
+@hardkas/node-runner:build: CLI Building entry: src/index.ts
+@hardkas/node-runner:build: CLI Using tsconfig: tsconfig.json
+@hardkas/node-runner:build: CLI tsup v8.5.1
+@hardkas/node-runner:build: CLI Target: es2022
+@hardkas/node-runner:build: CLI Cleaning output folder
+@hardkas/node-runner:build: ESM Build start
+@hardkas/node-runner:build: ESM dist\index.js 16.64 KB
+@hardkas/node-runner:build: ESM ⚡️ Build success in 40ms
+@hardkas/node-runner:build: DTS Build start
+@hardkas/node-runner:build: DTS ⚡️ Build success in 1660ms
+@hardkas/node-runner:build: DTS dist\index.d.ts 4.84 KB
+@hardkas/localnet:build: cache hit, replaying logs c1defb29a0ec836d
+@hardkas/localnet:build: 
+@hardkas/localnet:build: > @hardkas/localnet@0.12.0-rc.27 build C:\Users\jrodr\hkl1\teu2\src\packages\localnet
+@hardkas/localnet:build: > tsup src/index.ts --format esm --dts --clean --external kaspa-wasm
+@hardkas/localnet:build: 
+@hardkas/localnet:build: CLI Building entry: src/index.ts
+@hardkas/localnet:build: CLI Using tsconfig: tsconfig.json
+@hardkas/localnet:build: CLI tsup v8.5.1
+@hardkas/localnet:build: CLI Target: es2022
+@hardkas/localnet:build: CLI Cleaning output folder
+@hardkas/localnet:build: ESM Build start
+@hardkas/localnet:build: ESM dist\index.js                      28.24 KB
+@hardkas/localnet:build: ESM dist\traces-522CKVEW.js            339.00 B
+@hardkas/localnet:build: ESM dist\snapshot-V7JMOA2W.js          393.00 B
+@hardkas/localnet:build: ESM dist\pending-execution-UOYKW7I3.js 507.00 B
+@hardkas/localnet:build: ESM dist\chunk-7X7UE2JS.js             32.76 KB
+@hardkas/localnet:build: ESM dist\receipts-INOOWOPN.js          195.00 B
+@hardkas/localnet:build: ESM dist\chunk-ZGWIHC5L.js             3.87 KB
+@hardkas/localnet:build: ESM dist\chunk-ZBVCDETJ.js             5.30 KB
+@hardkas/localnet:build: ESM dist\chunk-TD6USJ3B.js             967.00 B
+@hardkas/localnet:build: ESM ⚡️ Build success in 79ms
+@hardkas/localnet:build: DTS Build start
+@hardkas/localnet:build: DTS ⚡️ Build success in 1928ms
+@hardkas/localnet:build: DTS dist\index.d.ts 30.47 KB
+@hardkas/l2:build: cache hit, replaying logs cf0b3e23a312366a
+@hardkas/l2:build: 
+@hardkas/l2:build: > @hardkas/l2@0.12.0-rc.27 build C:\Users\jrodr\hkl1\teu2\src\packages\l2
+@hardkas/l2:build: > tsup src/index.ts --format esm --dts --clean
+@hardkas/l2:build: 
+@hardkas/l2:build: CLI Building entry: src/index.ts
+@hardkas/l2:build: CLI Using tsconfig: tsconfig.json
+@hardkas/l2:build: CLI tsup v8.5.1
+@hardkas/l2:build: CLI Target: es2022
+@hardkas/l2:build: CLI Cleaning output folder
+@hardkas/l2:build: ESM Build start
+@hardkas/l2:build: ESM dist\index.js 19.17 KB
+@hardkas/l2:build: ESM ⚡️ Build success in 40ms
+@hardkas/l2:build: DTS Build start
+@hardkas/l2:build: DTS ⚡️ Build success in 2677ms
+@hardkas/l2:build: DTS dist\index.d.ts 8.51 KB
+@hardkas/query-store:build: cache hit, replaying logs 82190fd38f9d3bfc
+@hardkas/query-store:build: 
+@hardkas/query-store:build: > @hardkas/query-store@0.12.0-rc.27 build C:\Users\jrodr\hkl1\teu2\src\packages\query-store
+@hardkas/query-store:build: > tsc
+@hardkas/query-store:build: 
+@hardkas/accounts:build: cache hit, replaying logs 36854a6a75e6facb
+@hardkas/accounts:build: 
+@hardkas/accounts:build: > @hardkas/accounts@0.12.0-rc.27 build C:\Users\jrodr\hkl1\teu2\src\packages\accounts
+@hardkas/accounts:build: > tsup src/index.ts src/internal/wasm-rpc-serialization.ts --format esm --dts --clean --external kaspa-wasm
+@hardkas/accounts:build: 
+@hardkas/accounts:build: CLI Building entry: src/index.ts, src/internal/wasm-rpc-serialization.ts
+@hardkas/accounts:build: CLI Using tsconfig: tsconfig.json
+@hardkas/accounts:build: CLI tsup v8.5.1
+@hardkas/accounts:build: CLI Target: es2022
+@hardkas/accounts:build: CLI Cleaning output folder
+@hardkas/accounts:build: ESM Build start
+@hardkas/accounts:build: ESM dist\index.js                           47.96 KB
+@hardkas/accounts:build: ESM dist\signer-backend-LHWY7ULI.js         233.00 B
+@hardkas/accounts:build: ESM dist\kaspa-wasm-signer-IA72TT2B.js      309.00 B
+@hardkas/accounts:build: ESM dist\authorizers-XHVZZ7IK.js            217.00 B
+@hardkas/accounts:build: ESM dist\resolve-DKYE4CCI.js                301.00 B
+@hardkas/accounts:build: ESM dist\chunk-GM2BY4VS.js                  5.80 KB
+@hardkas/accounts:build: ESM dist\chunk-BNF566PS.js                  2.79 KB
+@hardkas/accounts:build: ESM dist\chunk-DYWLUZIX.js                  23.13 KB
+@hardkas/accounts:build: ESM dist\chunk-ZVFSD65T.js                  3.54 KB
+@hardkas/accounts:build: ESM dist\chunk-5HHED646.js                  19.11 KB
+@hardkas/accounts:build: ESM dist\internal\wasm-rpc-serialization.js 90.00 B
+@hardkas/accounts:build: ESM ⚡️ Build success in 63ms
+@hardkas/accounts:build: DTS Build start
+@hardkas/accounts:build: DTS ⚡️ Build success in 2785ms
+@hardkas/accounts:build: DTS dist\index.d.ts                           37.40 KB
+@hardkas/accounts:build: DTS dist\internal\wasm-rpc-serialization.d.ts 337.00 B
+@hardkas/query:build: cache hit, replaying logs 6e1af5588c8d4a11
+@hardkas/query:build: 
+@hardkas/query:build: > @hardkas/query@0.12.0-rc.27 build C:\Users\jrodr\hkl1\teu2\src\packages\query
+@hardkas/query:build: > tsup src/index.ts --format esm --dts --clean
+@hardkas/query:build: 
+@hardkas/query:build: CLI Building entry: src/index.ts
+@hardkas/query:build: CLI Using tsconfig: tsconfig.json
+@hardkas/query:build: CLI tsup v8.5.1
+@hardkas/query:build: CLI Target: es2022
+@hardkas/query:build: CLI Cleaning output folder
+@hardkas/query:build: ESM Build start
+@hardkas/query:build: ESM dist\index.js 88.98 KB
+@hardkas/query:build: ESM ⚡️ Build success in 53ms
+@hardkas/query:build: DTS Build start
+@hardkas/query:build: DTS ⚡️ Build success in 1761ms
+@hardkas/query:build: DTS dist\index.d.ts 29.00 KB
+@hardkas/bridge-local:build: cache hit, replaying logs d4819da0b78aa2d4
+@hardkas/bridge-local:build: 
+@hardkas/bridge-local:build: > @hardkas/bridge-local@0.12.0-rc.27 build C:\Users\jrodr\hkl1\teu2\src\packages\bridge-local
+@hardkas/bridge-local:build: > tsup src/index.ts --format esm --dts --clean
+@hardkas/bridge-local:build: 
+@hardkas/bridge-local:build: CLI Building entry: src/index.ts
+@hardkas/bridge-local:build: CLI Using tsconfig: tsconfig.json
+@hardkas/bridge-local:build: CLI tsup v8.5.1
+@hardkas/bridge-local:build: CLI Target: es2022
+@hardkas/bridge-local:build: CLI Cleaning output folder
+@hardkas/bridge-local:build: ESM Build start
+@hardkas/bridge-local:build: ESM dist\index.js 4.89 KB
+@hardkas/bridge-local:build: ESM ⚡️ Build success in 39ms
+@hardkas/bridge-local:build: DTS Build start
+@hardkas/bridge-local:build: DTS ⚡️ Build success in 4374ms
+@hardkas/bridge-local:build: DTS dist\index.d.ts 2.72 KB
+@hardkas/toolkit:build: cache hit, replaying logs 00fef78af676d25e
+@hardkas/toolkit:build: 
+@hardkas/toolkit:build: > @hardkas/toolkit@0.12.0-rc.27 build C:\Users\jrodr\hkl1\teu2\src\packages\toolkit
+@hardkas/toolkit:build: > node -e "require('node:fs').rmSync('dist',{recursive:true,force:true})" && tsc
+@hardkas/toolkit:build: 
+@hardkas/sdk:build: cache hit, replaying logs bb11b5fe4e884d02
+@hardkas/sdk:build: 
+@hardkas/sdk:build: > @hardkas/sdk@0.12.0-rc.27 build C:\Users\jrodr\hkl1\teu2\src\packages\sdk
+@hardkas/sdk:build: > tsup src/index.ts src/client.ts --format esm --dts --clean --external @hardkas/pskt-native
+@hardkas/sdk:build: 
+@hardkas/sdk:build: CLI Building entry: src/client.ts, src/index.ts
+@hardkas/sdk:build: CLI Using tsconfig: tsconfig.json
+@hardkas/sdk:build: CLI tsup v8.5.1
+@hardkas/sdk:build: CLI Target: es2022
+@hardkas/sdk:build: CLI Cleaning output folder
+@hardkas/sdk:build: ESM Build start
+@hardkas/sdk:build: ESM dist\chunk-M246ZPDS.js  4.15 KB
+@hardkas/sdk:build: ESM dist\index.js           266.52 KB
+@hardkas/sdk:build: ESM dist\native-UGVM3C7J.js 9.05 KB
+@hardkas/sdk:build: ESM dist\client.js          125.00 B
+@hardkas/sdk:build: ESM dist\chunk-MLKGABMK.js  191.00 B
+@hardkas/sdk:build: ESM ⚡️ Build success in 75ms
+@hardkas/sdk:build: DTS Build start
+@hardkas/sdk:build: DTS ⚡️ Build success in 3149ms
+@hardkas/sdk:build: DTS dist\index.d.ts  76.86 KB
+@hardkas/sdk:build: DTS dist\client.d.ts 2.48 KB
+@hardkas/dev-server:build: cache hit, replaying logs 7cef9d935eb5133a
+@hardkas/dev-server:build: 
+@hardkas/dev-server:build: > @hardkas/dev-server@0.12.0-rc.27 build C:\Users\jrodr\hkl1\teu2\src\packages\dev-server
+@hardkas/dev-server:build: > tsup src/index.ts --format esm --dts --clean && pnpm build:dashboard
+@hardkas/dev-server:build: 
+@hardkas/dev-server:build: CLI Building entry: src/index.ts
+@hardkas/dev-server:build: CLI Using tsconfig: tsconfig.json
+@hardkas/dev-server:build: CLI tsup v8.5.1
+@hardkas/dev-server:build: CLI Target: es2022
+@hardkas/dev-server:build: CLI Cleaning output folder
+@hardkas/dev-server:build: ESM Build start
+@hardkas/dev-server:build: ESM dist\db-4VZZMREG.js    139.00 B
+@hardkas/dev-server:build: ESM dist\chunk-Q3LPWLHF.js 1.13 KB
+@hardkas/dev-server:build: ESM dist\index.js          101.56 KB
+@hardkas/dev-server:build: ESM ⚡️ Build success in 57ms
+@hardkas/dev-server:build: DTS Build start
+@hardkas/dev-server:build: DTS ⚡️ Build success in 2397ms
+@hardkas/dev-server:build: DTS dist\index.d.ts 2.30 KB
+@hardkas/dev-server:build: 
+@hardkas/dev-server:build: > @hardkas/dev-server@0.12.0-rc.27 build:dashboard C:\Users\jrodr\hkl1\teu2\src\packages\dev-server
+@hardkas/dev-server:build: > node scripts/copy-dashboard.js
+@hardkas/dev-server:build: 
+@hardkas/dev-server:build: ⚠️ Warning: Dashboard build not found at C:\Users\jrodr\hkl1\teu2\src\apps\dashboard\dist. Run 'pnpm build' in apps/dashboard first.
+@hardkas/testing:build: cache hit, replaying logs 64304162dbf96a3b
+@hardkas/testing:build: 
+@hardkas/testing:build: > @hardkas/testing@0.12.0-rc.27 build C:\Users\jrodr\hkl1\teu2\src\packages\testing
+@hardkas/testing:build: > tsup src/index.ts src/scenarios.ts src/harness.ts src/setup.ts src/reproducibility.ts src/adversarial-fixtures.ts src/mass-setup.ts --format esm --dts --clean --external vitest --external kaspa
+@hardkas/testing:build: 
+@hardkas/testing:build: CLI Building entry: src/adversarial-fixtures.ts, src/harness.ts, src/index.ts, src/mass-setup.ts, src/reproducibility.ts, src/scenarios.ts, src/setup.ts
+@hardkas/testing:build: CLI Using tsconfig: tsconfig.json
+@hardkas/testing:build: CLI tsup v8.5.1
+@hardkas/testing:build: CLI Target: es2022
+@hardkas/testing:build: CLI Cleaning output folder
+@hardkas/testing:build: ESM Build start
+@hardkas/testing:build: ESM dist\harness.js              287.00 B
+@hardkas/testing:build: ESM dist\chunk-LALAYTVL.js       4.80 KB
+@hardkas/testing:build: ESM dist\mass-setup.js           187.00 B
+@hardkas/testing:build: ESM dist\index.js                167.67 KB
+@hardkas/testing:build: ESM dist\adversarial-fixtures.js 125.00 B
+@hardkas/testing:build: ESM dist\reproducibility.js      175.00 B
+@hardkas/testing:build: ESM dist\setup.js                169.00 B
+@hardkas/testing:build: ESM dist\scenarios.js            5.22 KB
+@hardkas/testing:build: ESM dist\chunk-SKGKF5FG.js       4.03 KB
+@hardkas/testing:build: ESM dist\chunk-AHS4TIKV.js       2.58 KB
+@hardkas/testing:build: ESM dist\chunk-Q4NLRRZC.js       4.09 KB
+@hardkas/testing:build: ESM dist\chunk-3RG5ZIWI.js       390.00 B
+@hardkas/testing:build: ESM ⚡️ Build success in 75ms
+@hardkas/testing:build: DTS Build start
+@hardkas/testing:build: DTS ⚡️ Build success in 3997ms
+@hardkas/testing:build: DTS dist\mass-setup.d.ts           13.00 B
+@hardkas/testing:build: DTS dist\adversarial-fixtures.d.ts 2.13 KB
+@hardkas/testing:build: DTS dist\harness.d.ts              1.58 KB
+@hardkas/testing:build: DTS dist\reproducibility.d.ts      784.00 B
+@hardkas/testing:build: DTS dist\scenarios.d.ts            301.00 B
+@hardkas/testing:build: DTS dist\index.d.ts                8.97 KB
+@hardkas/testing:build: DTS dist\setup.d.ts                13.00 B
+@hardkas/cli:build: cache hit, replaying logs 624d2525079c76f5
+@hardkas/cli:build: 
+@hardkas/cli:build: > @hardkas/cli@0.12.0-rc.27 build C:\Users\jrodr\hkl1\teu2\src\packages\cli
+@hardkas/cli:build: > tsup src/index.ts src/public.ts --format esm --dts --clean --external vitest --external kaspa-wasm
+@hardkas/cli:build: 
+@hardkas/cli:build: CLI Building entry: src/index.ts, src/public.ts
+@hardkas/cli:build: CLI Using tsconfig: tsconfig.json
+@hardkas/cli:build: CLI tsup v8.5.1
+@hardkas/cli:build: CLI Target: es2022
+@hardkas/cli:build: CLI Cleaning output folder
+@hardkas/cli:build: ESM Build start
+@hardkas/cli:build: ESM dist\verify-OSK3G5ZM.js                      1.23 KB
+@hardkas/cli:build: ESM dist\mutating-VGFABSLN.js                    5.07 KB
+@hardkas/cli:build: ESM dist\inspect-3LXMPGKZ.js                     1.97 KB
+@hardkas/cli:build: ESM dist\chunk-YMRTFCNX.js                       2.17 KB
+@hardkas/cli:build: ESM dist\torture-runner-DENGNXII.js              16.96 KB
+@hardkas/cli:build: ESM dist\chaos-runner-UI6GB6QP.js                10.29 KB
+@hardkas/cli:build: ESM dist\telemetry-runners-WV73CQ3V.js           12.01 KB
+@hardkas/cli:build: ESM dist\corpus-verify-runner-THOO6WYZ.js        1.53 KB
+@hardkas/cli:build: ESM dist\silver-records-BJWFQ7MW.js              1.33 KB
+@hardkas/cli:build: ESM dist\dev-fixture-generate-runner-6D6UBBXK.js 1.98 KB
+@hardkas/cli:build: ESM dist\dev-last-runner-EB6N5AP7.js             3.42 KB
+@hardkas/cli:build: ESM dist\kaspa-wallet-runner-JVGE3BSO.js         12.43 KB
+@hardkas/cli:build: ESM dist\local-wizard-runner-PNSPDKLJ.js         6.85 KB
+@hardkas/cli:build: ESM dist\kaspa-doctor-runner-L2EUYFMD.js         4.82 KB
+@hardkas/cli:build: ESM dist\dev-tx-generate-runner-UCJ5EUDL.js      3.15 KB
+@hardkas/cli:build: ESM dist\session-runner-YOLBAINZ.js              4.47 KB
+@hardkas/cli:build: ESM dist\capabilities-2IKPJP4W.js                1.39 KB
+@hardkas/cli:build: ESM dist\snapshot-replay-runner-CZCGBQEC.js      6.61 KB
+@hardkas/cli:build: ESM dist\dev-env-runner-5VI2EC6G.js              165.00 B
+@hardkas/cli:build: ESM dist\snapshot-create-runner-R2MQTDWX.js      2.05 KB
+@hardkas/cli:build: ESM dist\dev-create-runner-M6XQIX5S.js           19.07 KB
+@hardkas/cli:build: ESM dist\dev-init-runner-NDKQ3PWF.js             137.00 B
+@hardkas/cli:build: ESM dist\dev-accounts-runners-FX4EYXSS.js        6.19 KB
+@hardkas/cli:build: ESM dist\dev-tx-runners-VQMD6ZET.js              231.00 B
+@hardkas/cli:build: ESM dist\dev-doctor-runner-ASSPF7VB.js           19.70 KB
+@hardkas/cli:build: ESM dist\accounts-consolidate-runner-LSHIFY3T.js 7.58 KB
+@hardkas/cli:build: ESM dist\projection-access-Y26Z6OWL.js           1.31 KB
+@hardkas/cli:build: ESM dist\accounts-keystore-runners-32BAL7C6.js   7.84 KB
+@hardkas/cli:build: ESM dist\doctor-signer-runner-EC56SFZX.js        1.59 KB
+@hardkas/cli:build: ESM dist\doctor-node-runner-FOGXLYV5.js          143.00 B
+@hardkas/cli:build: ESM dist\snapshot-verify-runner-2TSY76QH.js      4.43 KB
+@hardkas/cli:build: ESM dist\chunk-KFL56A75.js                       665.00 B
+@hardkas/cli:build: ESM dist\artifact-inspect-runner-WWUWQKLA.js     4.33 KB
+@hardkas/cli:build: ESM dist\localnet-account-runners-FI7FKDQX.js    1.24 KB
+@hardkas/cli:build: ESM dist\env-CQNDPT4O.js                         385.00 B
+@hardkas/cli:build: ESM dist\replay-diff-runner-5MY6L7Z5.js          3.59 KB
+@hardkas/cli:build: ESM dist\artifact-migrate-runner-NHSETB2H.js     2.55 KB
+@hardkas/cli:build: ESM dist\artifact-create-runner-36COFGNZ.js      1.68 KB
+@hardkas/cli:build: ESM dist\dag-runners-N4LB5U7S.js                 2.65 KB
+@hardkas/cli:build: ESM dist\replay-verify-runner-GGTC56A2.js        177.00 B
+@hardkas/cli:build: ESM dist\next-steps-RLSVR3HR.js                  359.00 B
+@hardkas/cli:build: ESM dist\artifact-lineage-runner-3GSQ5NIP.js     5.79 KB
+@hardkas/cli:build: ESM dist\tx-status-runner-YHELYKPB.js            325.00 B
+@hardkas/cli:build: ESM dist\workspace-root-OMFUH57Z.js              573.00 B
+@hardkas/cli:build: ESM dist\rpc-doctor-runner-BGLBH6WB.js           7.37 KB
+@hardkas/cli:build: ESM dist\deployment-runners-32WF2SBQ.js          419.00 B
+@hardkas/cli:build: ESM dist\chunk-FS7ZDG53.js                       4.80 KB
+@hardkas/cli:build: ESM dist\tx-batch-runner-HSBDCNFW.js             4.60 KB
+@hardkas/cli:build: ESM dist\tx-wait-runner-IZY27SFH.js              6.78 KB
+@hardkas/cli:build: ESM dist\tx-verify-runner-2MJUWM6U.js            169.00 B
+@hardkas/cli:build: ESM dist\tx-compare-runner-4PCWLE7I.js           2.68 KB
+@hardkas/cli:build: ESM dist\chunk-S26K3ZMK.js                       2.07 KB
+@hardkas/cli:build: ESM dist\index.js                                2.25 KB
+@hardkas/cli:build: ESM dist\chunk-EKJZU7DH.js                       4.38 KB
+@hardkas/cli:build: ESM dist\chunk-R64WNZ5E.js                       4.29 KB
+@hardkas/cli:build: ESM dist\chunk-56RTKS6M.js                       4.07 KB
+@hardkas/cli:build: ESM dist\chunk-SPOLNJ2L.js                       1.29 KB
+@hardkas/cli:build: ESM dist\chunk-Y2WZ2V52.js                       424.50 KB
+@hardkas/cli:build: ESM dist\chunk-GSQCDE7Q.js                       1.92 KB
+@hardkas/cli:build: ESM dist\public.js                               19.83 KB
+@hardkas/cli:build: ESM dist\chunk-XNC72UUI.js                       2.32 KB
+@hardkas/cli:build: ESM dist\chunk-725JRV74.js                       1.66 KB
+@hardkas/cli:build: ESM dist\chunk-L7CK2PUG.js                       2.88 KB
+@hardkas/cli:build: ESM dist\chunk-UWU3AB6W.js                       3.96 KB
+@hardkas/cli:build: ESM dist\chunk-4N4CBO6J.js                       3.07 KB
+@hardkas/cli:build: ESM dist\chunk-AHDOJC5T.js                       6.87 KB
+@hardkas/cli:build: ESM dist\chunk-2XTZMMA7.js                       262.00 B
+@hardkas/cli:build: ESM dist\output-HKXOQLZS.js                      213.00 B
+@hardkas/cli:build: ESM dist\chunk-QX56J22Q.js                       1.58 KB
+@hardkas/cli:build: ESM dist\cli-errors-E5FIRYOW.js                  401.00 B
+@hardkas/cli:build: ESM dist\chunk-NTUBYGCP.js                       6.64 KB
+@hardkas/cli:build: ESM dist\chunk-WLMRUDBW.js                       3.92 KB
+@hardkas/cli:build: ESM dist\ui-GD3HQOGD.js                          251.00 B
+@hardkas/cli:build: ESM dist\dev-server-runner-PXEQMIYG.js           183.00 B
+@hardkas/cli:build: ESM dist\chunk-PFVFDUUC.js                       6.19 KB
+@hardkas/cli:build: ESM dist\toolchain-install-46OFAS4Z.js           131.00 B
+@hardkas/cli:build: ESM dist\chunk-LFZFQRKG.js                       2.06 KB
+@hardkas/cli:build: ESM dist\chunk-ILKFKEAM.js                       11.83 KB
+@hardkas/cli:build: ESM dist\secrets-7LUUFYLG.js                     159.00 B
+@hardkas/cli:build: ESM dist\chunk-A6L6TSVD.js                       4.31 KB
+@hardkas/cli:build: ESM dist\chunk-DVT4OV4Q.js                       37.44 KB
+@hardkas/cli:build: ESM dist\chunk-IDSCKG3M.js                       3.76 KB
+@hardkas/cli:build: ESM dist\chunk-Y2IFRMLN.js                       1.94 KB
+@hardkas/cli:build: ESM ⚡️ Build success in 287ms
+@hardkas/cli:build: DTS Build start
+@hardkas/cli:build: DTS ⚡️ Build success in 9921ms
+@hardkas/cli:build: DTS dist\index.d.ts  20.00 B
+@hardkas/cli:build: DTS dist\public.d.ts 3.00 KB
+
+ Tasks:    25 successful, 25 total
+Cached:    24 cached, 25 total
+  Time:    3.436s 
+

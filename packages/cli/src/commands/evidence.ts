@@ -46,13 +46,28 @@ export function registerEvidenceCommands(program: Command) {
         const result = await EvidenceManager.verify(packagePath);
         if (result.ok) {
           if (options.json) {
-            getOutput().writeJson({ ok: true, command: "evidence verify", mode: "cli", result: { status: result.status } });
+            getOutput().writeJson({ ok: true, command: "evidence verify", mode: "cli", result: { status: result.status, scope: result.scope } });
           } else {
-            getOutput().writeLine(`EVIDENCE_VERIFIED: The package is valid and structurally sound.`);
+            // TASK-EVIDENCE-UNBOUND-1 (D-TEU-3): the verdict always says what it covers and what it does not. What the
+            // package verifies and what an RPC observer reported are separate lines, never one "payment proven".
+            const s = result.scope;
+            const out = getOutput();
+            out.writeLine(`EVIDENCE_VERIFIED: ${s?.artifacts ?? 0} artifacts, claim ${s?.claim ?? "unspecified"}, run ${s?.verdict ?? "unknown"}, lineage ${s?.lineage ?? "unknown"}.`);
+            for (const p of s?.payments ?? []) {
+              const answer = p.submitAccepted === true ? "accepted the request" : p.submitAccepted === false ? "refused it" : "answer not recorded";
+              out.writeLine(`Payment ${p.txId}: plan, signed and submission linked inside the package; the node ${answer} when it was submitted.`);
+            }
+            const reported = (s?.payments ?? []).flatMap((p) =>
+              p.rpcObservationsReported.map((o) => `${p.txId}: ${o.finding ?? "no finding"}${o.confirmationsBlue !== null ? `, ${o.confirmationsBlue} blue confirmations` : ""} (${o.observer ?? "observer"})`)
+            );
+            if (reported.length > 0) {
+              out.writeLine(`RPC observations carried, as one observer reported them (not checked against the network by this command): ${reported.join("; ")}.`);
+            }
+            if (s?.statement) out.writeLine(s.statement);
           }
         } else {
           if (options.json) {
-            getOutput().writeJson({ ok: false, code: result.status, message: result.details, mode: "cli" });
+            getOutput().writeJson({ ok: false, code: result.status, message: result.details, mode: "cli", ...(result.scope ? { scope: result.scope } : {}) });
             process.exit(1);
           } else {
             getOutput().error(`${result.status}: ${result.details}`);

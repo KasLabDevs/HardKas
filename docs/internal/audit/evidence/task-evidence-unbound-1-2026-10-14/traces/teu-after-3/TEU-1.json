@@ -1,0 +1,64 @@
+{
+  "exit": 0,
+  "taskOutput": {
+    "planHash": "66a9e4d2c3250404580cf275929e5b089a06e916365f4bd1d53b6a0cbc34682f",
+    "signedHash": "e33ffc997f4ee946a04cc1da381b8f19001aece25adc4a607860b92c9e58bf48",
+    "txId": "3bd6fa09bb6b04634c40e835d11d59d7f3b14213c0c7faf6547d17349a88b939",
+    "observationHash": "3f9a1ed21e4ec719e2b5f1b805b16bbfb651e4016596d2f1b78f1dd9a682e53d"
+  },
+  "storeChain": [
+    "66a9e4d2c3250404580cf275929e5b089a06e916365f4bd1d53b6a0cbc34682f",
+    "e33ffc997f4ee946a04cc1da381b8f19001aece25adc4a607860b92c9e58bf48",
+    "54dae268969c882d862a563674da4ef9dd9eb548f5420dbb26a21eb68ac9a7b5",
+    "3f9a1ed21e4ec719e2b5f1b805b16bbfb651e4016596d2f1b78f1dd9a682e53d"
+  ],
+  "package": {
+    "artifacts": 4,
+    "named": [
+      "66a9e4d2c3250404580cf275929e5b089a06e916365f4bd1d53b6a0cbc34682f",
+      "e33ffc997f4ee946a04cc1da381b8f19001aece25adc4a607860b92c9e58bf48",
+      "54dae268969c882d862a563674da4ef9dd9eb548f5420dbb26a21eb68ac9a7b5",
+      "3f9a1ed21e4ec719e2b5f1b805b16bbfb651e4016596d2f1b78f1dd9a682e53d"
+    ],
+    "claim": {
+      "kind": "payment",
+      "payments": [
+        {
+          "txId": "3bd6fa09bb6b04634c40e835d11d59d7f3b14213c0c7faf6547d17349a88b939",
+          "submissionArtifactId": "54dae268969c882d862a563674da4ef9dd9eb548f5420dbb26a21eb68ac9a7b5"
+        }
+      ]
+    }
+  },
+  "verdict": {
+    "ok": true,
+    "status": "EVIDENCE_VERIFIED",
+    "scope": {
+      "artifacts": 4,
+      "claim": "payment",
+      "verdict": "passed",
+      "lineage": "closed",
+      "unresolved": [],
+      "payments": [
+        {
+          "txId": "3bd6fa09bb6b04634c40e835d11d59d7f3b14213c0c7faf6547d17349a88b939",
+          "complete": true,
+          "plan": "66a9e4d2c3250404580cf275929e5b089a06e916365f4bd1d53b6a0cbc34682f",
+          "signed": "e33ffc997f4ee946a04cc1da381b8f19001aece25adc4a607860b92c9e58bf48",
+          "submission": "54dae268969c882d862a563674da4ef9dd9eb548f5420dbb26a21eb68ac9a7b5",
+          "submitAccepted": true,
+          "observations": [
+            {
+              "artifactId": "3f9a1ed21e4ec719e2b5f1b805b16bbfb651e4016596d2f1b78f1dd9a682e53d",
+              "finding": "not_found",
+              "confirmationsBlue": null,
+              "observer": "rpc"
+            }
+          ],
+          "problems": []
+        }
+      ],
+      "statement": "Integrity and internal consistency of an unsigned package: each artifact hashes to its identity and they are exactly the ones its sealed scenario result names, and each claimed payment's lineage (plan, signed, submission) closes inside it. Not a proof of inclusion on chain, nor of who produced the package; an observation records what one RPC observer reported."
+    }
+  }
+}

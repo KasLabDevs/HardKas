@@ -12,7 +12,18 @@ import { HARDKAS_VERSION } from "./constants.js";
 // This producer seals a v5 artifact the way every other producer does: declare
 // the hash version, then hash the finished body once.
 
-export type ScenarioResultMode = "simulator" | "localnet" | "rpc";
+export type ScenarioResultMode = "simulator" | "localnet" | "rpc" | "l2-rpc";
+
+/**
+ * TASK-EVIDENCE-UNBOUND-1 (D-TEU-1/D-TEU-2): what a package of this run may be presented as, sealed with the verdict.
+ * `none` — the run wrote nothing (an explicitly empty package); `artifacts` — it wrote artifacts and claims no payment;
+ * `payment` — it broadcast these payments, each named by its submission (the verifier then requires each payment's
+ * lineage — plan ← signed ← submission — to close inside the package). A claim is never a proof of chain inclusion.
+ */
+export type ScenarioEvidenceClaim =
+  | { kind: "none" }
+  | { kind: "artifacts" }
+  | { kind: "payment"; payments: Array<{ txId: string; submissionArtifactId: string }> };
 
 export interface ScenarioResultInput {
   scenarioName: string;
@@ -20,6 +31,8 @@ export interface ScenarioResultInput {
   networkId: string;
   mode: ScenarioResultMode;
   artifactsGenerated?: string[];
+  /** Defaults to `none` for a run that names no artifact and `artifacts` otherwise (never `payment` by default). */
+  evidenceClaim?: ScenarioEvidenceClaim;
   error?: { code: string; message: string; component?: string; recoverable?: boolean };
   /** Free, authenticated context (e.g. `{ kind: "task", taskName, args, result }`). */
   metadata?: Record<string, unknown>;
@@ -34,6 +47,8 @@ export function scenarioModeForNetwork(networkId: string | undefined): ScenarioR
 }
 
 export function createScenarioResultArtifact(input: ScenarioResultInput): ScenarioResult {
+  const named = [...(input.artifactsGenerated ?? [])];
+  const evidenceClaim: ScenarioEvidenceClaim = input.evidenceClaim ?? (named.length === 0 ? { kind: "none" } : { kind: "artifacts" });
   const body: Record<string, unknown> = {
     schema: HardkasSchemas.ScenarioResultV1,
     hardkasVersion: HARDKAS_VERSION,
@@ -44,7 +59,8 @@ export function createScenarioResultArtifact(input: ScenarioResultInput): Scenar
     mode: input.mode,
     scenarioName: input.scenarioName,
     status: input.status,
-    artifactsGenerated: [...(input.artifactsGenerated ?? [])],
+    artifactsGenerated: named,
+    evidenceClaim,
     ...(input.error ? { error: input.error } : {}),
     claims: { mainnet: false, testnet: false, production: false },
     ...(input.metadata ? { metadata: input.metadata } : {})

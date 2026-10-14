@@ -1,0 +1,21 @@
+{
+  "verdict": {
+    "ok": true,
+    "status": "EVIDENCE_VERIFIED",
+    "scope": {
+      "artifacts": 2,
+      "claim": "artifacts",
+      "verdict": "passed",
+      "lineage": "open",
+      "unresolved": [
+        {
+          "from": "ad0e3e869140b60edc96f83346d23b0034d025b4f27fc13041dc0d2ee662101d",
+          "field": "lineage.parentArtifactId",
+          "missing": "66a9e4d2c3250404580cf275929e5b089a06e916365f4bd1d53b6a0cbc34682f"
+        }
+      ],
+      "payments": [],
+      "statement": "Integrity and internal consistency of an unsigned package: each artifact hashes to its identity and they are exactly the ones its sealed scenario result names. Not a proof of inclusion on chain, nor of who produced the package; an observation records what one RPC observer reported."
+    }
+  }
+}

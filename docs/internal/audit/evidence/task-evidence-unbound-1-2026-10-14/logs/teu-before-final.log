@@ -1,0 +1,356 @@
+
+ RUN  v2.1.9 C:/Users/jrodr/hkl1/si/src
+
+ × packages/cli/test/task-evidence-unbound-1.test.ts > TASK-EVIDENCE-UNBOUND-1 · the task's evidence package and the payment it made > TEU-1 `task pay --evidence`: the package carries plan, signed, submission and observation, names them, and verifies as a closed, observed payment 1618ms
+   → {"exit":0,"taskOutput":{"planHash":"87ad873dff122960a0ef72ed092b834ebc236628919d2a2bbbc9b00496b3fba6","signedHash":"49ab834535d6990a74b95b96b9fe23b5d3a961db867366b63bde792b42e8bd86","txId":"123cde7c83c06cc79ddd0c958eda558b87093d3a8a1a683893ee5d0c85f3b343","observationHash":"c19ad81efdb878fb9a1c5b8d7272221d18cdc34be2221924fab0cb83de5cc92d"},"storeChain":["87ad873dff122960a0ef72ed092b834ebc236628919d2a2bbbc9b00496b3fba6","49ab834535d6990a74b95b96b9fe23b5d3a961db867366b63bde792b42e8bd86","320b14620900b496be58ee9515c50261af512b2cd31cdec3fbc1c58a7887d7e5","c19ad81efdb878fb9a1c5b8d7272221d18cdc34be2221924fab0cb83de5cc92d"],"package":{"artifacts":0,"named":[],"claim":null},"verdict":{"ok":true,"status":"EVIDENCE_VERIFIED"}}: expected [] to include '87ad873dff122960a0ef72ed092b834ebc236…'
+ × packages/cli/test/task-evidence-unbound-1.test.ts > TASK-EVIDENCE-UNBOUND-1 · the task's evidence package and the payment it made > TEU-2 the scenario result and the package record the execution mode the task ran in (rpc), not a label derived from the network 1703ms
+   → {"exit":0,"scenarioMode":"localnet","packageMode":"localnet","signedMode":"rpc"}: expected 'localnet' to be 'rpc' // Object.is equality
+ × packages/cli/test/task-evidence-unbound-1.test.ts > TASK-EVIDENCE-UNBOUND-1 · the task's evidence package and the payment it made > TEU-3 a package that cannot be written fails the command (non-zero exit, typed code), never `ok: true`; the scenario result stays 1578ms
+   → exit 0
+{
+  "ok": true,
+  "command": "task",
+  "mode": "cli",
+  "result": {
+    "task": "pay",
+    "artifact": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-teu-Q97D4b\\.hardkas\\artifacts\\misc\\scenarioResult-e6a21fc27412db721e171d66b08ecd26717b790ddbfa20247cdeb2206e72bb4d.json",
+    "output": {
+      "planHash": "87ad873dff122960a0ef72ed092b834ebc236628919d2a2bbbc9b00496b3fba6",
+      "signedHash": "db310021193b8f7f1cc7ca77919be8839e540a4453426bb36ab69de337edec8f",
+      "txId": "123cde7c83c06cc79ddd0c958eda558b87093d3a8a1a683893ee5d0c85f3b343",
+      "observationHash": "3d0ac3fee1c0e8300c2127251661aea9a10865cfb85a494372983419cecd543d"
+    }
+  }
+}
+
+
+  ═══ Running Task: pay ═══
+  ✔ Task 'pay' completed successfully.
+  ℹ Packaging task evidence...
+
+  ✗ Error:
+    Failed to pack evidence: EISDIR: illegal operation on a directory, open 'C:\Users\jrodr\AppData\Local\Temp\hk-teu-Q97D4b\pay.hke.json'
+: expected +0 not to be +0 // Object.is equality
+ × packages/cli/test/task-evidence-unbound-1.test.ts > TASK-EVIDENCE-UNBOUND-1 · a payment claim needs its closed lineage (D-TEU-1); other packages keep verifying > TEU-8a a payment package with one payment artifact omitted (consistently re-sealed): not verified as that payment 1591ms
+   → {"carried":0,"verdict":{"ok":true,"status":"EVIDENCE_VERIFIED"}}: expected true to be false // Object.is equality
+ × packages/cli/test/task-evidence-unbound-1.test.ts > TASK-EVIDENCE-UNBOUND-1 · a payment claim needs its closed lineage (D-TEU-1); other packages keep verifying > TEU-8b a payment package whose lineage was manipulated (signed re-parented and every artifact re-sealed): not verified as that payment 1599ms
+   → Cannot read properties of undefined (reading 'lineage')
+ × packages/cli/test/task-evidence-unbound-1.test.ts > TASK-EVIDENCE-UNBOUND-1 · a payment claim needs its closed lineage (D-TEU-1); other packages keep verifying > TEU-8c a package that names nothing and does not declare itself empty (the E1′ shape) is not EVIDENCE_VERIFIED
+   → expected 'EVIDENCE_VERIFIED' not to be 'EVIDENCE_VERIFIED' // Object.is equality
+ × packages/cli/test/task-evidence-unbound-1.test.ts > TASK-EVIDENCE-UNBOUND-1 · a payment claim needs its closed lineage (D-TEU-1); other packages keep verifying > TEU-8d a package that makes no payment claim keeps verifying with an open lineage, and says so 1636ms
+   → expected undefined to match object { claim: 'artifacts', …(2) }
+ × packages/cli/test/task-evidence-unbound-1.test.ts > TASK-EVIDENCE-UNBOUND-1 · a payment claim needs its closed lineage (D-TEU-1); other packages keep verifying > TEU-4 unchanged guarantees: an edited artifact and a dropped one are refused; a fully re-sealed forgery of a closed chain verifies (unsigned: authorship is not proven) 1849ms
+   → Cannot set properties of undefined (setting 'networkId')
+ × packages/cli/test/task-evidence-unbound-1.test.ts > TASK-EVIDENCE-UNBOUND-1 · only this run, and the kinds of task > TEU-7 another SDK instance of the same process writing in the same workspace during the task: its artifact is not named 1595ms
+   → {"exit":0,"code":null,"output":{"planHash":"87ad873dff122960a0ef72ed092b834ebc236628919d2a2bbbc9b00496b3fba6","signedHash":"7b666011854b174a8178ff414525b2d1bf08fcb8956cc9e5d490921b0d536ae9","foreignPlanHash":"d3f1645e7e0b625fece96fc8beb645979acb4d6709ae6789d351c831366c8c52"},"named":[]}: expected [] to include '87ad873dff122960a0ef72ed092b834ebc236…'
+ × packages/cli/test/task-evidence-unbound-1.test.ts > TASK-EVIDENCE-UNBOUND-1 · only this run, and the kinds of task > TEU-9 a task that writes nothing (noop, or a plan never signed) declares an empty package; one that signs without sending claims artifacts, not a payment 3839ms
+   → {"noop":{"exit":0,"claim":null,"verdict":{"ok":true,"status":"EVIDENCE_VERIFIED"}},"planonly":{"exit":0,"claim":null,"verdict":{"ok":true,"status":"EVIDENCE_VERIFIED"}},"signonly":{"exit":0,"claim":null,"verdict":{"ok":true,"status":"EVIDENCE_VERIFIED"}}}: expected null to deeply equal { kind: 'none' }
+ × packages/cli/test/task-evidence-unbound-1.test.ts > TASK-EVIDENCE-UNBOUND-1 · only this run, and the kinds of task > TEU-10 a failed task keeps sealed evidence of the failure (status failed, what it wrote, no secret) and the command still fails 1502ms
+   → exit 1
+{
+  "ok": false,
+  "code": "TASK_FAILED",
+  "message": "Task 'boom' failed: task gave up at ws://127.0.0.1:1/?token=REDACTED",
+  "mode": "cli"
+}
+
+
+  ═══ Running Task: boom ═══
+: expected +0 to be 1 // Object.is equality
+ × packages/cli/test/task-evidence-unbound-1.test.ts > TASK-EVIDENCE-UNBOUND-1 · only this run, and the kinds of task > TEU-6 the task without --network runs on the workspace's default and records its effective mode 1603ms
+   → expected 'localnet' to be 'rpc' // Object.is equality
+ × packages/cli/test/task-evidence-unbound-1.test.ts > TASK-EVIDENCE-UNBOUND-1 · what the verifier says (D-TEU-3) and where the version comes from > TEU-11 `evidence verify` states its scope: artifacts, claim, lineage, and that it is not a proof of chain inclusion 3331ms
+   → exit 0
+{
+  "ok": true,
+  "command": "evidence verify",
+  "mode": "cli",
+  "result": {
+    "status": "EVIDENCE_VERIFIED"
+  }
+}
+
+: expected undefined to match object { Object (artifacts, claim, ...) }
+ × packages/cli/test/task-evidence-unbound-1.test.ts > TASK-EVIDENCE-UNBOUND-1 · what the verifier says (D-TEU-3) and where the version comes from > TEU-12 the package's hardkasVersion is the product version from its one source 1210ms
+   → {"packaged":"0.12.0-rc.27","product":"0.12.0-rc.27","literalInSource":true}: expected true to be false // Object.is equality
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 14 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  packages/cli/test/task-evidence-unbound-1.test.ts > TASK-EVIDENCE-UNBOUND-1 · the task's evidence package and the payment it made > TEU-1 `task pay --evidence`: the package carries plan, signed, submission and observation, names them, and verifies as a closed, observed payment
+AssertionError: {"exit":0,"taskOutput":{"planHash":"87ad873dff122960a0ef72ed092b834ebc236628919d2a2bbbc9b00496b3fba6","signedHash":"49ab834535d6990a74b95b96b9fe23b5d3a961db867366b63bde792b42e8bd86","txId":"123cde7c83c06cc79ddd0c958eda558b87093d3a8a1a683893ee5d0c85f3b343","observationHash":"c19ad81efdb878fb9a1c5b8d7272221d18cdc34be2221924fab0cb83de5cc92d"},"storeChain":["87ad873dff122960a0ef72ed092b834ebc236628919d2a2bbbc9b00496b3fba6","49ab834535d6990a74b95b96b9fe23b5d3a961db867366b63bde792b42e8bd86","320b14620900b496be58ee9515c50261af512b2cd31cdec3fbc1c58a7887d7e5","c19ad81efdb878fb9a1c5b8d7272221d18cdc34be2221924fab0cb83de5cc92d"],"package":{"artifacts":0,"named":[],"claim":null},"verdict":{"ok":true,"status":"EVIDENCE_VERIFIED"}}: expected [] to include '87ad873dff122960a0ef72ed092b834ebc236…'
+ ❯ packages/cli/test/task-evidence-unbound-1.test.ts:329:72
+    327|       expect(r.status, r.brief).toBe(0);
+    328|       expect(chainIds.every((id) => typeof id === "string"), JSON.stri…
+    329|       for (const id of chainIds) expect(carried, JSON.stringify(seen))…
+       |                                                                        ^
+    330|       for (const id of chainIds) expect(pkg?.scenarioResult?.artifacts…
+    331|       expect(verdict?.status, JSON.stringify(seen)).toBe("EVIDENCE_VER…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/14]⎯
+
+ FAIL  packages/cli/test/task-evidence-unbound-1.test.ts > TASK-EVIDENCE-UNBOUND-1 · the task's evidence package and the payment it made > TEU-2 the scenario result and the package record the execution mode the task ran in (rpc), not a label derived from the network
+AssertionError: {"exit":0,"scenarioMode":"localnet","packageMode":"localnet","signedMode":"rpc"}: expected 'localnet' to be 'rpc' // Object.is equality
+
+Expected: "rpc"
+Received: "localnet"
+
+ ❯ packages/cli/test/task-evidence-unbound-1.test.ts:353:55
+    351|       trace("TEU-2", seen);
+    352|       expect(seen.signedMode, JSON.stringify(seen)).toBe("rpc");
+    353|       expect(seen.scenarioMode, JSON.stringify(seen)).toBe("rpc");
+       |                                                       ^
+    354|       expect(seen.packageMode, JSON.stringify(seen)).toBe("rpc");
+    355|     } finally {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/14]⎯
+
+ FAIL  packages/cli/test/task-evidence-unbound-1.test.ts > TASK-EVIDENCE-UNBOUND-1 · the task's evidence package and the payment it made > TEU-3 a package that cannot be written fails the command (non-zero exit, typed code), never `ok: true`; the scenario result stays
+AssertionError: exit 0
+{
+  "ok": true,
+  "command": "task",
+  "mode": "cli",
+  "result": {
+    "task": "pay",
+    "artifact": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-teu-Q97D4b\\.hardkas\\artifacts\\misc\\scenarioResult-e6a21fc27412db721e171d66b08ecd26717b790ddbfa20247cdeb2206e72bb4d.json",
+    "output": {
+      "planHash": "87ad873dff122960a0ef72ed092b834ebc236628919d2a2bbbc9b00496b3fba6",
+      "signedHash": "db310021193b8f7f1cc7ca77919be8839e540a4453426bb36ab69de337edec8f",
+      "txId": "123cde7c83c06cc79ddd0c958eda558b87093d3a8a1a683893ee5d0c85f3b343",
+      "observationHash": "3d0ac3fee1c0e8300c2127251661aea9a10865cfb85a494372983419cecd543d"
+    }
+  }
+}
+
+
+  ═══ Running Task: pay ═══
+  ✔ Task 'pay' completed successfully.
+  ℹ Packaging task evidence...
+
+  ✗ Error:
+    Failed to pack evidence: EISDIR: illegal operation on a directory, open 'C:\Users\jrodr\AppData\Local\Temp\hk-teu-Q97D4b\pay.hke.json'
+: expected +0 not to be +0 // Object.is equality
+ ❯ packages/cli/test/task-evidence-unbound-1.test.ts:368:38
+    366|       const seen = { exit: r.status, ok: r.doc?.ok ?? null, code: r.do…
+    367|       trace("TEU-3", seen);
+    368|       expect(seen.exit, r.brief).not.toBe(0);
+       |                                      ^
+    369|       expect(seen.ok, r.brief).not.toBe(true);
+    370|       expect(seen.code, r.brief).toBe("EVIDENCE_PACK_FAILED");
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/14]⎯
+
+ FAIL  packages/cli/test/task-evidence-unbound-1.test.ts > TASK-EVIDENCE-UNBOUND-1 · a payment claim needs its closed lineage (D-TEU-1); other packages keep verifying > TEU-8a a payment package with one payment artifact omitted (consistently re-sealed): not verified as that payment
+AssertionError: {"carried":0,"verdict":{"ok":true,"status":"EVIDENCE_VERIFIED"}}: expected true to be false // Object.is equality
+
+- Expected
++ Received
+
+- false
++ true
+
+ ❯ packages/cli/test/task-evidence-unbound-1.test.ts:387:48
+    385|       const seen = { carried: withoutPlan.artifacts.length, verdict };
+    386|       trace("TEU-8a", seen);
+    387|       expect(verdict.ok, JSON.stringify(seen)).toBe(false);
+       |                                                ^
+    388|       expect(verdict.status, JSON.stringify(seen)).toBe("EVIDENCE_PAYM…
+    389|     } finally {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/14]⎯
+
+ FAIL  packages/cli/test/task-evidence-unbound-1.test.ts > TASK-EVIDENCE-UNBOUND-1 · a payment claim needs its closed lineage (D-TEU-1); other packages keep verifying > TEU-8b a payment package whose lineage was manipulated (signed re-parented and every artifact re-sealed): not verified as that payment
+TypeError: Cannot read properties of undefined (reading 'lineage')
+ ❯ packages/cli/test/task-evidence-unbound-1.test.ts:401:65
+    399|       const signed = artifacts.find((a: any) => a.contentHash === chai…
+    400|       const others = artifacts.filter((a: any) => a !== signed);
+    401|       const reparented = seal({ ...signed, lineage: { ...signed.lineag…
+       |                                                                 ^
+    402|       // the submission follows its forged parent, re-sealed; the obse…
+    403|       const sub = others.find((a: any) => /txSubmission/.test(String(a…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/14]⎯
+
+ FAIL  packages/cli/test/task-evidence-unbound-1.test.ts > TASK-EVIDENCE-UNBOUND-1 · a payment claim needs its closed lineage (D-TEU-1); other packages keep verifying > TEU-8c a package that names nothing and does not declare itself empty (the E1′ shape) is not EVIDENCE_VERIFIED
+AssertionError: expected 'EVIDENCE_VERIFIED' not to be 'EVIDENCE_VERIFIED' // Object.is equality
+ ❯ packages/cli/test/task-evidence-unbound-1.test.ts:460:34
+    458|       const verdict = await verify(writeJson(ws, "legacy-empty.hke.jso…
+    459|       trace("TEU-8c", { verdict });
+    460|       expect(verdict.status).not.toBe("EVIDENCE_VERIFIED");
+       |                                  ^
+    461|       expect(verdict.status).toBe("EVIDENCE_EMPTY_UNDECLARED");
+    462|     } finally {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/14]⎯
+
+ FAIL  packages/cli/test/task-evidence-unbound-1.test.ts > TASK-EVIDENCE-UNBOUND-1 · a payment claim needs its closed lineage (D-TEU-1); other packages keep verifying > TEU-8d a package that makes no payment claim keeps verifying with an open lineage, and says so
+AssertionError: expected undefined to match object { claim: 'artifacts', …(2) }
+
+- Expected: 
+Object {
+  "artifacts": 2,
+  "claim": "artifacts",
+  "lineage": "open",
+}
+
++ Received: 
+undefined
+
+ ❯ packages/cli/test/task-evidence-unbound-1.test.ts:483:29
+    481|       trace("TEU-8d", { verdict });
+    482|       expect(verdict.status).toBe("EVIDENCE_VERIFIED");
+    483|       expect(verdict.scope).toMatchObject({ claim: "artifacts", artifa…
+       |                             ^
+    484|       expect(verdict.scope.unresolved).toEqual([expect.objectContainin…
+    485|     } finally {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/14]⎯
+
+ FAIL  packages/cli/test/task-evidence-unbound-1.test.ts > TASK-EVIDENCE-UNBOUND-1 · a payment claim needs its closed lineage (D-TEU-1); other packages keep verifying > TEU-4 unchanged guarantees: an edited artifact and a dropped one are refused; a fully re-sealed forgery of a closed chain verifies (unsigned: authorship is not proven)
+TypeError: Cannot set properties of undefined (setting 'networkId')
+ ❯ packages/cli/test/task-evidence-unbound-1.test.ts:495:27
+    493|       const { ws, pkg } = await taskWithEvidence(node);
+    494|       const edited = structuredClone(pkg);
+    495|       edited.artifacts[0].networkId = "testnet-10";
+       |                           ^
+    496|       const editedStatus = (await verify(writeJson(ws, "edited.hke.jso…
+    497|       const dropped = structuredClone(pkg);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/14]⎯
+
+ FAIL  packages/cli/test/task-evidence-unbound-1.test.ts > TASK-EVIDENCE-UNBOUND-1 · only this run, and the kinds of task > TEU-7 another SDK instance of the same process writing in the same workspace during the task: its artifact is not named
+AssertionError: {"exit":0,"code":null,"output":{"planHash":"87ad873dff122960a0ef72ed092b834ebc236628919d2a2bbbc9b00496b3fba6","signedHash":"7b666011854b174a8178ff414525b2d1bf08fcb8956cc9e5d490921b0d536ae9","foreignPlanHash":"d3f1645e7e0b625fece96fc8beb645979acb4d6709ae6789d351c831366c8c52"},"named":[]}: expected [] to include '87ad873dff122960a0ef72ed092b834ebc236…'
+ ❯ packages/cli/test/task-evidence-unbound-1.test.ts:525:43
+    523|       trace("TEU-7", seen);
+    524|       expect(r.status, r.brief).toBe(0);
+    525|       expect(named, JSON.stringify(seen)).toContain(output.planHash);
+       |                                           ^
+    526|       expect(named, JSON.stringify(seen)).not.toContain(output.foreign…
+    527|     } finally {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/14]⎯
+
+ FAIL  packages/cli/test/task-evidence-unbound-1.test.ts > TASK-EVIDENCE-UNBOUND-1 · only this run, and the kinds of task > TEU-9 a task that writes nothing (noop, or a plan never signed) declares an empty package; one that signs without sending claims artifacts, not a payment
+AssertionError: {"noop":{"exit":0,"claim":null,"verdict":{"ok":true,"status":"EVIDENCE_VERIFIED"}},"planonly":{"exit":0,"claim":null,"verdict":{"ok":true,"status":"EVIDENCE_VERIFIED"}},"signonly":{"exit":0,"claim":null,"verdict":{"ok":true,"status":"EVIDENCE_VERIFIED"}}}: expected null to deeply equal { kind: 'none' }
+
+- Expected: 
+Object {
+  "kind": "none",
+}
+
++ Received: 
+null
+
+ ❯ packages/cli/test/task-evidence-unbound-1.test.ts:547:53
+    545|       };
+    546|       trace("TEU-9", seen);
+    547|       expect(seen.noop.claim, JSON.stringify(seen)).toEqual({ kind: "n…
+       |                                                     ^
+    548|       expect(noneVerdict?.status, JSON.stringify(seen)).toBe("EVIDENCE…
+    549|       expect(noneVerdict?.scope, JSON.stringify(seen)).toMatchObject({…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/14]⎯
+
+ FAIL  packages/cli/test/task-evidence-unbound-1.test.ts > TASK-EVIDENCE-UNBOUND-1 · only this run, and the kinds of task > TEU-10 a failed task keeps sealed evidence of the failure (status failed, what it wrote, no secret) and the command still fails
+AssertionError: exit 1
+{
+  "ok": false,
+  "code": "TASK_FAILED",
+  "message": "Task 'boom' failed: task gave up at ws://127.0.0.1:1/?token=REDACTED",
+  "mode": "cli"
+}
+
+
+  ═══ Running Task: boom ═══
+: expected +0 to be 1 // Object.is equality
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ packages/cli/test/task-evidence-unbound-1.test.ts:580:41
+    578|       expect(seen.exit, r.brief).not.toBe(0);
+    579|       expect(seen.code, r.brief).toBe("TASK_FAILED");
+    580|       expect(scenarios.length, r.brief).toBe(1);
+       |                                         ^
+    581|       expect(seen.scenario).toMatchObject({ status: "failed", named: 2…
+    582|       expect(verdict?.status, JSON.stringify(seen)).toBe("EVIDENCE_VER…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/14]⎯
+
+ FAIL  packages/cli/test/task-evidence-unbound-1.test.ts > TASK-EVIDENCE-UNBOUND-1 · only this run, and the kinds of task > TEU-6 the task without --network runs on the workspace's default and records its effective mode
+AssertionError: expected 'localnet' to be 'rpc' // Object.is equality
+
+Expected: "rpc"
+Received: "localnet"
+
+ ❯ packages/cli/test/task-evidence-unbound-1.test.ts:600:33
+    598|       expect(seen.exit, r.brief).toBe(0);
+    599|       expect(seen.scenarioNetwork).toBe("simnet");
+    600|       expect(seen.scenarioMode).toBe("rpc");
+       |                                 ^
+    601|     } finally {
+    602|       await node.close();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/14]⎯
+
+ FAIL  packages/cli/test/task-evidence-unbound-1.test.ts > TASK-EVIDENCE-UNBOUND-1 · what the verifier says (D-TEU-3) and where the version comes from > TEU-11 `evidence verify` states its scope: artifacts, claim, lineage, and that it is not a proof of chain inclusion
+AssertionError: exit 0
+{
+  "ok": true,
+  "command": "evidence verify",
+  "mode": "cli",
+  "result": {
+    "status": "EVIDENCE_VERIFIED"
+  }
+}
+
+: expected undefined to match object { Object (artifacts, claim, ...) }
+
+- Expected: 
+Object {
+  "artifacts": 4,
+  "claim": "payment",
+  "lineage": "closed",
+}
+
++ Received: 
+undefined
+
+ ❯ packages/cli/test/task-evidence-unbound-1.test.ts:617:51
+    615|       trace("TEU-11", seen);
+    616|       expect(json.doc?.result?.status, json.brief).toBe("EVIDENCE_VERI…
+    617|       expect(json.doc?.result?.scope, json.brief).toMatchObject({ arti…
+       |                                                   ^
+    618|       expect(String(json.doc?.result?.scope?.statement ?? ""), json.br…
+    619|       expect(seen.human, human.brief).toMatch(/4 artifacts/);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/14]⎯
+
+ FAIL  packages/cli/test/task-evidence-unbound-1.test.ts > TASK-EVIDENCE-UNBOUND-1 · what the verifier says (D-TEU-3) and where the version comes from > TEU-12 the package's hardkasVersion is the product version from its one source
+AssertionError: {"packaged":"0.12.0-rc.27","product":"0.12.0-rc.27","literalInSource":true}: expected true to be false // Object.is equality
+
+- Expected
++ Received
+
+- false
++ true
+
+ ❯ packages/cli/test/task-evidence-unbound-1.test.ts:634:58
+    632|       trace("TEU-12", seen);
+    633|       expect(seen.packaged).toBe(seen.product);
+    634|       expect(seen.literalInSource, JSON.stringify(seen)).toBe(false);
+       |                                                          ^
+    635|     } finally {
+    636|       await node.close();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/14]⎯
+
+ Test Files  1 failed (1)
+      Tests  14 failed (14)
+   Start at  02:29:35
+   Duration  30.79s (transform 1.53s, setup 0ms, collect 109ms, tests 30.34s, environment 0ms, prepare 118ms)
+
+JSON report written to C:/Users/jrodr/AppData/Local/Temp/claude/C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo/ecaf7e92-a2ba-49b0-aafc-c62b4cb5eda0/scratchpad/l1-reality-1/teu/logs/teu-before-final.json

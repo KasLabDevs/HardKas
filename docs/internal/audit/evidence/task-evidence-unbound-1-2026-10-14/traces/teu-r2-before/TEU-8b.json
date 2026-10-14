@@ -1,0 +1,42 @@
+{
+  "verdict": {
+    "ok": false,
+    "status": "EVIDENCE_PAYMENT_INCOMPLETE",
+    "details": "The package claims 1 payment(s) it does not establish: a60faafb97e48c96d8ffdfe26c5fc08234bd2938db939c1e47de7e736bc82779: the plan 0000000000000000000000000000000000000000000000000000000000000bad the signed transaction derives from is not carried; 06462c13d43febd64b674962f82cf4a894183649fd3dd43cf065ff344f3c69d6 lineage.parentArtifactId → 0000000000000000000000000000000000000000000000000000000000000bad is not carried.",
+    "scope": {
+      "artifacts": 4,
+      "claim": "payment",
+      "verdict": "passed",
+      "lineage": "open",
+      "unresolved": [
+        {
+          "from": "06462c13d43febd64b674962f82cf4a894183649fd3dd43cf065ff344f3c69d6",
+          "field": "lineage.parentArtifactId",
+          "missing": "0000000000000000000000000000000000000000000000000000000000000bad"
+        }
+      ],
+      "payments": [
+        {
+          "txId": "a60faafb97e48c96d8ffdfe26c5fc08234bd2938db939c1e47de7e736bc82779",
+          "complete": false,
+          "plan": null,
+          "signed": "06462c13d43febd64b674962f82cf4a894183649fd3dd43cf065ff344f3c69d6",
+          "submission": "c9417b109c619b38049531d561835de32606545c03df1c5fceb9db32af8428ce",
+          "submitAccepted": true,
+          "observations": [
+            {
+              "artifactId": "5590a3882ea6437dc8c7ea185dcb45d97c7225f3ac7e4b9fdf28528284f82e94",
+              "finding": "not_found",
+              "confirmationsBlue": null,
+              "observer": "rpc"
+            }
+          ],
+          "problems": [
+            "the plan 0000000000000000000000000000000000000000000000000000000000000bad the signed transaction derives from is not carried"
+          ]
+        }
+      ],
+      "statement": "Integrity and internal consistency of an unsigned package: each artifact hashes to its identity and they are exactly the ones its sealed scenario result names, and each claimed payment's lineage (plan, signed, submission) closes inside it. Not a proof of inclusion on chain, nor of who produced the package; an observation records what one RPC observer reported."
+    }
+  }
+}

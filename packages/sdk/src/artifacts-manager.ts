@@ -62,8 +62,42 @@ export class HardkasArtifactsManager {
    * that exist in the workspace store. Warm ≡ cold ≡ after restart (S1, S2).
    */
   private cache = new Map<string, any>();
+  /** TASK-EVIDENCE-UNBOUND-1: the one open recording of THIS instance (see record()). */
+  private recording: Set<string> | null = null;
 
   constructor(private sdk: Hardkas) {}
+
+  /**
+   * TASK-EVIDENCE-UNBOUND-1: records the identities of the artifacts THIS instance puts in (or finds already in, a
+   * write-once hit) the workspace store until `stop()`, in write order. Scoped to the instance, never to the process
+   * or the workspace: another instance writing at the same time (another task, another run) is not recorded. Writes
+   * outside the store (`outputDir` exports) and dry runs are not recorded.
+   * One recording at a time per instance: an instance cannot tell which of two overlapping runs made a write, so a
+   * second recording while one is open is refused (ARTIFACT_RECORDING_BUSY) instead of crossing their evidence. Runs
+   * that must overlap use one instance each.
+   */
+  record(): { stop(): string[] } {
+    if (this.recording !== null) {
+      throw new HardkasError(
+        "ARTIFACT_RECORDING_BUSY",
+        "A recording is already open on this SDK instance: overlapping runs on one instance cannot be told apart, so their evidence would cross. Stop it first, or give each concurrent run its own instance (Hardkas.open)."
+      );
+    }
+    const ids = new Set<string>();
+    this.recording = ids;
+    return {
+      stop: () => {
+        if (this.recording === ids) this.recording = null;
+        return [...ids];
+      }
+    };
+  }
+
+  /** An identity this instance just put in the store by another path than write() (e.g. a simulated execution commit). */
+  noteStored(artifactId: unknown): void {
+    if (typeof artifactId !== "string" || !ARTIFACT_ID_PATTERN.test(artifactId)) return;
+    this.recording?.add(artifactId);
+  }
 
   /**
    * Memoises an artifact that exists in the store, under its recomputed identity.
@@ -182,6 +216,7 @@ export class HardkasArtifactsManager {
       if (typeof record.contentHash === "string" && record.contentHash.length > 0) {
         this.cache.set(record.contentHash, published.artifact);
       }
+      this.noteStored(record.contentHash);
     }
 
     // EVENT-LEDGER-2 (D4): announced through the one artifact boundary (the envelope every writer emits), so localnet

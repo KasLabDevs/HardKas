@@ -1,0 +1,18 @@
+{
+  "noop": {
+    "exit": 0,
+    "claim": null,
+    "verdict": {
+      "ok": true,
+      "status": "EVIDENCE_VERIFIED"
+    }
+  },
+  "planonly": {
+    "exit": 0,
+    "claim": null,
+    "verdict": {
+      "ok": true,
+      "status": "EVIDENCE_VERIFIED"
+    }
+  }
+}

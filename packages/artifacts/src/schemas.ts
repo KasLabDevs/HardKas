@@ -1187,6 +1187,17 @@ export const ScenarioResultSchema = BaseArtifactSchema.extend({
   scenarioName: z.string(),
   status: z.enum(["passed", "failed"]),
   artifactsGenerated: z.array(z.string()),
+  // TASK-EVIDENCE-UNBOUND-1: what a package of this run may be presented as (absent on scenario results sealed before it)
+  evidenceClaim: z
+    .union([
+      z.object({ kind: z.literal("none") }),
+      z.object({ kind: z.literal("artifacts") }),
+      z.object({
+        kind: z.literal("payment"),
+        payments: z.array(z.object({ txId: z.string(), submissionArtifactId: z.string() })).min(1)
+      })
+    ])
+    .optional(),
   error: z.object({
     code: z.string(),
     message: z.string(),

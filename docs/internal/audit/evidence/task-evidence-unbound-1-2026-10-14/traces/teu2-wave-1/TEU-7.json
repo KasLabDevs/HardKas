@@ -1,0 +1,14 @@
+{
+  "exit": 0,
+  "code": null,
+  "output": {
+    "planHash": "52f1db60f6db7a708c997dea75ad98ab3b53bb83e4b44f555a8db78aa3bc9d2b",
+    "signedHash": "999dccac603a066b5f65b0bb35dca96ea7ec830d099c94b4b7b811c5e23c55ba",
+    "foreignPlanHash": "8441c99243066a70a487886bf9dc7aa6e253be8c2f785a501cb98292a7e019c3"
+  },
+  "named": [
+    "52f1db60f6db7a708c997dea75ad98ab3b53bb83e4b44f555a8db78aa3bc9d2b",
+    "999dccac603a066b5f65b0bb35dca96ea7ec830d099c94b4b7b811c5e23c55ba",
+    "eb4bfde16a6af2f2311561b904e2c548d742445ec51e9399fd9626d883864302"
+  ]
+}
