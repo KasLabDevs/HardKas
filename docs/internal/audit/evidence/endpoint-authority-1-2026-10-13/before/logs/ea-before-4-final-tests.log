@@ -1,0 +1,213 @@
+
+ RUN  v2.1.9 C:/Users/jrodr/hkl1/src
+
+ × packages/cli/test/endpoint-authority-1.test.ts > ENDPOINT-AUTHORITY-1 · SDK send > EA-1 sdk.tx.send(signed, urlB) on an instance opened on A: refused SEND_ENDPOINT_MISMATCH before anything is sent or recorded 635ms
+   → expected a refusal, the call succeeded
+ × packages/cli/test/endpoint-authority-1.test.ts > ENDPOINT-AUTHORITY-1 · SDK send > EA-1c control: an explicit URL that IS the client's endpoint (another spelling) is accepted; the receipt and the event name A 351ms
+   → {"sameEndpoint":"http://127.0.0.1:55059/","submitReceivedByA":true,"receiptRpcUrl":"http://127.0.0.1:55059/","eventRpcUrls":["http://127.0.0.1:55059/"]}: expected 'http://127.0.0.1:55059/' to be 'ws://127.0.0.1:55059' // Object.is equality
+ × packages/cli/test/endpoint-authority-1.test.ts > ENDPOINT-AUTHORITY-1 · SDK send > EA-2 sdk.tx.send(signed) without a URL (default client on A): the receipt and the event name A 346ms
+   → {"A":"ws://127.0.0.1:55062","submitReceivedByA":true,"receiptRpcUrl":null,"eventRpcUrls":[""]}: expected null to be 'ws://127.0.0.1:55062' // Object.is equality
+ × packages/cli/test/endpoint-authority-1.test.ts > ENDPOINT-AUTHORITY-1 · SDK send > EA-2u an injected client that does not say its endpoint: an explicit URL is refused SEND_ENDPOINT_UNVERIFIABLE (nothing sent); without one the receipt names no endpoint 353ms
+   → expected a refusal, the call succeeded
+ × packages/cli/test/endpoint-authority-1.test.ts > ENDPOINT-AUTHORITY-1 · SDK send > EA-3 a simulator instance given an explicit URL: refused SEND_ENDPOINT_ON_SIMULATOR; B receives nothing, no receipt 546ms
+   → expected a refusal, the call succeeded
+ × packages/cli/test/endpoint-authority-1.test.ts > ENDPOINT-AUTHORITY-1 · SDK send > EA-3n a signed artifact of another network: refused SEND_NETWORK_MISMATCH before anything is sent or recorded 368ms
+   → {"refusal":{"code":"PUBLIC_NETWORK_BLOCKED","message":"The network 'testnet-10' is treated as a public or external network and is blocked by default. You must explicitly set 'allowPublic: true' in your policy or network configuration to use it."},"sMethods":[],"submissions":[]}: expected 'PUBLIC_NETWORK_BLOCKED' to be 'SEND_NETWORK_MISMATCH' // Object.is equality
+ × packages/cli/test/endpoint-authority-1.test.ts > ENDPOINT-AUTHORITY-1 · observation > EA-4 sdk.tx.observe(txId, { rpcUrl: B }) on an instance on A: refused OBSERVE_ENDPOINT_MISMATCH, nobody queried, nothing recorded 394ms
+   → expected a refusal, the call succeeded
+ × packages/cli/test/endpoint-authority-1.test.ts > ENDPOINT-AUTHORITY-1 · observation > EA-4c control: observe without a URL names the client's endpoint (A) and A's observer 510ms
+   → {"observationRpcUrl":null,"observerId":"obs_b64532a27660938b0d7ab97bd943b7497eb4249d8f411651e45af2581a48ea6c","observerOfA":"obs_b64532a27660938b0d7ab97bd943b7497eb4249d8f411651e45af2581a48ea6c"}: expected null to be 'ws://127.0.0.1:55080' // Object.is equality
+ × packages/cli/test/endpoint-authority-1.test.ts > ENDPOINT-AUTHORITY-1 · observation > EA-5 the client swapped into sdk.rpc (as the CLI's tx send / consolidate do): the observation names B and B's observer 432ms
+   → {"bMethods":["getBlockDagInfo","getServerInfo","getSinkBlueScore","getMempoolEntry","getVirtualChainFromBlock"],"observationRpcUrl":null,"observerId":"obs_af77448840b326d1492866b9dd775a49280bd4be82b77c964463b8ff299945f4","observerOfA":"obs_af77448840b326d1492866b9dd775a49280bd4be82b77c964463b8ff299945f4","observerOfB":"obs_d1669d6bbd2892d7720cd0546c1613c1c28bba536aeccd415c763264e0c39b35"}: expected 'obs_af77448840b326d1492866b9dd775a492…' to be 'obs_d1669d6bbd2892d7720cd0546c1613c1c…' // Object.is equality
+ ✓ packages/cli/test/endpoint-authority-1.test.ts > ENDPOINT-AUTHORITY-1 · CLI tx send (controls) > EA-6 control: tx send --url B in a workspace declaring A: B receives the submission and the receipt names B; A receives nothing 1668ms
+ ✓ packages/cli/test/endpoint-authority-1.test.ts > ENDPOINT-AUTHORITY-1 · CLI tx send (controls) > EA-7 control: tx send without --url: the configured node A receives it and the receipt names A 1543ms
+ × packages/cli/test/endpoint-authority-1.test.ts > ENDPOINT-AUTHORITY-1 · TQ-1 remote node authority > EA-8 probeRemoteTestnet declaring B while its client talks to A: refused ENDPOINT_MISMATCH before any call
+   → {"reason":null,"message":"succeeded","aMethods":["getServerInfo","getBlockDagInfo"],"bMethods":[]}: expected null to be 'ENDPOINT_MISMATCH' // Object.is equality
+ × packages/cli/test/endpoint-authority-1.test.ts > ENDPOINT-AUTHORITY-1 · TQ-1 remote node authority > EA-8u probeRemoteTestnet whose client does not say its endpoint: refused ENDPOINT_UNVERIFIABLE before any call
+   → {"reason":null,"aMethods":["getServerInfo","getBlockDagInfo"]}: expected null to be 'ENDPOINT_UNVERIFIABLE' // Object.is equality
+ ✓ packages/cli/test/endpoint-authority-1.test.ts > ENDPOINT-AUTHORITY-1 · TQ-1 remote node authority > EA-8c control: probeRemoteTestnet declaring the endpoint its client talks to: the authority names A
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 11 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  packages/cli/test/endpoint-authority-1.test.ts > ENDPOINT-AUTHORITY-1 · SDK send > EA-1 sdk.tx.send(signed, urlB) on an instance opened on A: refused SEND_ENDPOINT_MISMATCH before anything is sent or recorded
+Error: expected a refusal, the call succeeded
+ ❯ refusal packages/cli/test/endpoint-authority-1.test.ts:190:9
+    188|     return { code: e?.code, message: String(e?.message ?? e).slice(0, …
+    189|   }
+    190|   throw new Error("expected a refusal, the call succeeded");
+       |         ^
+    191| }
+    192| 
+ ❯ packages/cli/test/endpoint-authority-1.test.ts:238:13
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/11]⎯
+
+ FAIL  packages/cli/test/endpoint-authority-1.test.ts > ENDPOINT-AUTHORITY-1 · SDK send > EA-1c control: an explicit URL that IS the client's endpoint (another spelling) is accepted; the receipt and the event name A
+AssertionError: {"sameEndpoint":"http://127.0.0.1:55059/","submitReceivedByA":true,"receiptRpcUrl":"http://127.0.0.1:55059/","eventRpcUrls":["http://127.0.0.1:55059/"]}: expected 'http://127.0.0.1:55059/' to be 'ws://127.0.0.1:55059' // Object.is equality
+
+Expected: "ws://127.0.0.1:55059"
+Received: "http://127.0.0.1:55059/"
+
+ ❯ packages/cli/test/endpoint-authority-1.test.ts:275:56
+    273|       trace("EA-1c", seen);
+    274|       expect(seen.submitReceivedByA).toBe(true);
+    275|       expect(seen.receiptRpcUrl, JSON.stringify(seen)).toBe(A.url);
+       |                                                        ^
+    276|       expect(seen.eventRpcUrls, JSON.stringify(seen)).toEqual([A.url]);
+    277|     } finally {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/11]⎯
+
+ FAIL  packages/cli/test/endpoint-authority-1.test.ts > ENDPOINT-AUTHORITY-1 · SDK send > EA-2 sdk.tx.send(signed) without a URL (default client on A): the receipt and the event name A
+AssertionError: {"A":"ws://127.0.0.1:55062","submitReceivedByA":true,"receiptRpcUrl":null,"eventRpcUrls":[""]}: expected null to be 'ws://127.0.0.1:55062' // Object.is equality
+
+- Expected: 
+"ws://127.0.0.1:55062"
+
++ Received: 
+null
+
+ ❯ packages/cli/test/endpoint-authority-1.test.ts:300:56
+    298|       trace("EA-2", seen);
+    299|       expect(seen.submitReceivedByA, JSON.stringify(seen)).toBe(true);
+    300|       expect(seen.receiptRpcUrl, JSON.stringify(seen)).toBe(A.url);
+       |                                                        ^
+    301|       expect(seen.eventRpcUrls, JSON.stringify(seen)).toEqual([A.url]);
+    302|     } finally {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/11]⎯
+
+ FAIL  packages/cli/test/endpoint-authority-1.test.ts > ENDPOINT-AUTHORITY-1 · SDK send > EA-2u an injected client that does not say its endpoint: an explicit URL is refused SEND_ENDPOINT_UNVERIFIABLE (nothing sent); without one the receipt names no endpoint
+Error: expected a refusal, the call succeeded
+ ❯ refusal packages/cli/test/endpoint-authority-1.test.ts:190:9
+    188|     return { code: e?.code, message: String(e?.message ?? e).slice(0, …
+    189|   }
+    190|   throw new Error("expected a refusal, the call succeeded");
+       |         ^
+    191| }
+    192| 
+ ❯ packages/cli/test/endpoint-authority-1.test.ts:320:13
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/11]⎯
+
+ FAIL  packages/cli/test/endpoint-authority-1.test.ts > ENDPOINT-AUTHORITY-1 · SDK send > EA-3 a simulator instance given an explicit URL: refused SEND_ENDPOINT_ON_SIMULATOR; B receives nothing, no receipt
+Error: expected a refusal, the call succeeded
+ ❯ refusal packages/cli/test/endpoint-authority-1.test.ts:190:9
+    188|     return { code: e?.code, message: String(e?.message ?? e).slice(0, …
+    189|   }
+    190|   throw new Error("expected a refusal, the call succeeded");
+       |         ^
+    191| }
+    192| 
+ ❯ packages/cli/test/endpoint-authority-1.test.ts:350:13
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/11]⎯
+
+ FAIL  packages/cli/test/endpoint-authority-1.test.ts > ENDPOINT-AUTHORITY-1 · SDK send > EA-3n a signed artifact of another network: refused SEND_NETWORK_MISMATCH before anything is sent or recorded
+AssertionError: {"refusal":{"code":"PUBLIC_NETWORK_BLOCKED","message":"The network 'testnet-10' is treated as a public or external network and is blocked by default. You must explicitly set 'allowPublic: true' in your policy or network configuration to use it."},"sMethods":[],"submissions":[]}: expected 'PUBLIC_NETWORK_BLOCKED' to be 'SEND_NETWORK_MISMATCH' // Object.is equality
+
+Expected: "SEND_NETWORK_MISMATCH"
+Received: "PUBLIC_NETWORK_BLOCKED"
+
+ ❯ packages/cli/test/endpoint-authority-1.test.ts:382:44
+    380|       const seen = { refusal: r, sMethods: S.methods, submissions: sto…
+    381|       trace("EA-3n", seen);
+    382|       expect(r.code, JSON.stringify(seen)).toBe("SEND_NETWORK_MISMATCH…
+       |                                            ^
+    383|       expect(got(S, "submitTransaction")).toBe(false);
+    384|       expect(seen.submissions).toEqual([]);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/11]⎯
+
+ FAIL  packages/cli/test/endpoint-authority-1.test.ts > ENDPOINT-AUTHORITY-1 · observation > EA-4 sdk.tx.observe(txId, { rpcUrl: B }) on an instance on A: refused OBSERVE_ENDPOINT_MISMATCH, nobody queried, nothing recorded
+Error: expected a refusal, the call succeeded
+ ❯ refusal packages/cli/test/endpoint-authority-1.test.ts:190:9
+    188|     return { code: e?.code, message: String(e?.message ?? e).slice(0, …
+    189|   }
+    190|   throw new Error("expected a refusal, the call succeeded");
+       |         ^
+    191| }
+    192| 
+ ❯ packages/cli/test/endpoint-authority-1.test.ts:403:13
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/11]⎯
+
+ FAIL  packages/cli/test/endpoint-authority-1.test.ts > ENDPOINT-AUTHORITY-1 · observation > EA-4c control: observe without a URL names the client's endpoint (A) and A's observer
+AssertionError: {"observationRpcUrl":null,"observerId":"obs_b64532a27660938b0d7ab97bd943b7497eb4249d8f411651e45af2581a48ea6c","observerOfA":"obs_b64532a27660938b0d7ab97bd943b7497eb4249d8f411651e45af2581a48ea6c"}: expected null to be 'ws://127.0.0.1:55080' // Object.is equality
+
+- Expected: 
+"ws://127.0.0.1:55080"
+
++ Received: 
+null
+
+ ❯ packages/cli/test/endpoint-authority-1.test.ts:434:60
+    432|       const seen = { observationRpcUrl: r?.observation?.rpcUrl ?? null…
+    433|       trace("EA-4c", seen);
+    434|       expect(seen.observationRpcUrl, JSON.stringify(seen)).toBe(A.url);
+       |                                                            ^
+    435|       expect(seen.observerId, JSON.stringify(seen)).toBe(observerOfA);
+    436|     } finally {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/11]⎯
+
+ FAIL  packages/cli/test/endpoint-authority-1.test.ts > ENDPOINT-AUTHORITY-1 · observation > EA-5 the client swapped into sdk.rpc (as the CLI's tx send / consolidate do): the observation names B and B's observer
+AssertionError: {"bMethods":["getBlockDagInfo","getServerInfo","getSinkBlueScore","getMempoolEntry","getVirtualChainFromBlock"],"observationRpcUrl":null,"observerId":"obs_af77448840b326d1492866b9dd775a49280bd4be82b77c964463b8ff299945f4","observerOfA":"obs_af77448840b326d1492866b9dd775a49280bd4be82b77c964463b8ff299945f4","observerOfB":"obs_d1669d6bbd2892d7720cd0546c1613c1c28bba536aeccd415c763264e0c39b35"}: expected 'obs_af77448840b326d1492866b9dd775a492…' to be 'obs_d1669d6bbd2892d7720cd0546c1613c1c…' // Object.is equality
+
+Expected: "obs_d1669d6bbd2892d7720cd0546c1613c1c28bba536aeccd415c763264e0c39b35"
+Received: "obs_af77448840b326d1492866b9dd775a49280bd4be82b77c964463b8ff299945f4"
+
+ ❯ packages/cli/test/endpoint-authority-1.test.ts:462:53
+    460|       trace("EA-5", seen);
+    461|       expect(B.methods.length, JSON.stringify(seen)).toBeGreaterThan(0…
+    462|       expect(seen.observerId, JSON.stringify(seen)).toBe(observerOfB);
+       |                                                     ^
+    463|       expect(seen.observationRpcUrl, JSON.stringify(seen)).toBe(B.url);
+    464|     } finally {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/11]⎯
+
+ FAIL  packages/cli/test/endpoint-authority-1.test.ts > ENDPOINT-AUTHORITY-1 · TQ-1 remote node authority > EA-8 probeRemoteTestnet declaring B while its client talks to A: refused ENDPOINT_MISMATCH before any call
+AssertionError: {"reason":null,"message":"succeeded","aMethods":["getServerInfo","getBlockDagInfo"],"bMethods":[]}: expected null to be 'ENDPOINT_MISMATCH' // Object.is equality
+
+- Expected: 
+"ENDPOINT_MISMATCH"
+
++ Received: 
+null
+
+ ❯ packages/cli/test/endpoint-authority-1.test.ts:540:49
+    538|       const seen = { reason: e?.reason ?? null, message: String(e?.mes…
+    539|       trace("EA-8", seen);
+    540|       expect(seen.reason, JSON.stringify(seen)).toBe("ENDPOINT_MISMATC…
+       |                                                 ^
+    541|       expect(seen.aMethods).toEqual([]);
+    542|       expect(seen.bMethods).toEqual([]);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/11]⎯
+
+ FAIL  packages/cli/test/endpoint-authority-1.test.ts > ENDPOINT-AUTHORITY-1 · TQ-1 remote node authority > EA-8u probeRemoteTestnet whose client does not say its endpoint: refused ENDPOINT_UNVERIFIABLE before any call
+AssertionError: {"reason":null,"aMethods":["getServerInfo","getBlockDagInfo"]}: expected null to be 'ENDPOINT_UNVERIFIABLE' // Object.is equality
+
+- Expected: 
+"ENDPOINT_UNVERIFIABLE"
+
++ Received: 
+null
+
+ ❯ packages/cli/test/endpoint-authority-1.test.ts:563:49
+    561|       const seen = { reason: e?.reason ?? null, aMethods: A.methods };
+    562|       trace("EA-8u", seen);
+    563|       expect(seen.reason, JSON.stringify(seen)).toBe("ENDPOINT_UNVERIF…
+       |                                                 ^
+    564|       expect(seen.aMethods).toEqual([]);
+    565|     } finally {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/11]⎯
+
+ Test Files  1 failed (1)
+      Tests  11 failed | 3 passed (14)
+   Start at  20:22:27
+   Duration  13.83s (transform 1.78s, setup 0ms, collect 103ms, tests 13.33s, environment 0ms, prepare 122ms)
+
+JSON report written to C:/Users/jrodr/AppData/Local/Temp/claude/C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo/ecaf7e92-a2ba-49b0-aafc-c62b4cb5eda0/scratchpad/l1-reality-1/ea/logs/ea-before-4-final-tests.json

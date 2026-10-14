@@ -3,12 +3,41 @@ import {
   deterministicCompare,
   getCoinbaseMaturity,
   HardkasError,
+  assertMainnetTransactionsDisabled,
   stripBom,
   redactUrlCredentials,
   redactUrlCredentialsInText
 } from "@hardkas/core";
 import { pollCondition } from "./waiters.js";
 import { Hardkas } from "./index.js";
+import { isNodeNetworkIdentityError, rpcEndpointOf, sameRpcEndpoint } from "@hardkas/kaspa-rpc";
+
+/**
+ * ENDPOINT-AUTHORITY-1 (EA-I1/EA-I2): the endpoint of the client that carries an operation is the only endpoint a
+ * record may name. An explicit endpoint must BE that client's (same effective destination); when the client does not
+ * say which endpoint it talks to, an explicit one cannot be shown to match and is refused. Decided before any request.
+ */
+function endpointAuthority(rpc: unknown, explicit: string | undefined, operation: "SEND" | "OBSERVE"): string | undefined {
+  const own = rpcEndpointOf(rpc);
+  if (explicit === undefined) return own;
+  const verb = operation === "SEND" ? "send to" : "observe through";
+  if (own === undefined) {
+    throw new HardkasError(
+      `${operation}_ENDPOINT_UNVERIFIABLE`,
+      `Cannot ${verb} ${redactUrlCredentials(explicit)}: this instance's RPC client does not say which endpoint it talks to, ` +
+        `so the request could not be shown to go there. Nothing was sent or recorded.`
+    );
+  }
+  if (!sameRpcEndpoint(explicit, own)) {
+    throw new HardkasError(
+      `${operation}_ENDPOINT_MISMATCH`,
+      `Cannot ${verb} ${redactUrlCredentials(explicit)}: this instance's RPC client talks to ${redactUrlCredentials(own)}, ` +
+        `and HardKAS never records one endpoint for a request another one received. Open the instance on that endpoint. ` +
+        `Nothing was sent or recorded.`
+    );
+  }
+  return own;
+}
 import {
   Utxo as BuilderUtxo,
   verifySignedTxSemantics
@@ -36,15 +65,30 @@ import {
   deriveSubmissionFee,
   deriveTxStatus,
   deriveObserverId,
+  submitOutcomeOf,
   TX_STATUS_POLICY_HARDKAS_DEFAULT_V1,
   type DerivedTxStatus,
   type TxStatusPolicy,
   type TxObservation
 } from "@hardkas/artifacts";
 import { observeTxOnce, rpcObserverFor } from "./tx-observer.js";
-import { coreEvents } from "@hardkas/core";
+import {
+  coreEvents,
+  createEventEnvelope,
+  emitArtifactWritten,
+  rethrowWithLedgerEffect,
+  STANDALONE_WORKFLOW_ID,
+  asArtifactId,
+  asCorrelationId,
+  asEventSequence,
+  asNetworkId,
+  asRpcEndpointId,
+  asTxId,
+  asWorkflowId
+} from "@hardkas/core";
 import {
   HardkasAccount,
+  assertAccountCompatible,
   signTxPlanArtifact,
   validateAddressNetwork
 } from "@hardkas/accounts";
@@ -166,6 +210,8 @@ export class HardkasTx {
       );
     }
     const { ProjectArtifactStore } = await import("@hardkas/artifacts");
+    // ENDPOINT-AUTHORITY-1 (EA-I1/EA-I2): the observation is the observing client's; an explicit endpoint must be it
+    const endpoint = endpointAuthority(this.sdk.rpc, options.rpcUrl, "OBSERVE");
     const store = new ProjectArtifactStore(this.sdk.workspace.root);
     const submission = await this.findSubmissionForTxId(txId);
     const previous = store.listObservationsByTxId(txId).observations as any[];
@@ -209,7 +255,7 @@ export class HardkasTx {
         networkId,
         mode,
         ...((submission as any)?.execution ? { execution: (submission as any).execution } : {}),
-        ...(options.rpcUrl ? { rpcUrl: options.rpcUrl } : {}),
+        ...(endpoint ? { rpcUrl: endpoint } : {}),
         ...((submission as any)?.workflowId ? { workflowId: (submission as any).workflowId } : {}),
         ...((submission as any)?.assumptionLevel ? { assumptionLevel: (submission as any).assumptionLevel } : {})
       },
@@ -237,9 +283,12 @@ export class HardkasTx {
    * observer ⇒ one history; a different node configuration is a different observer.
    */
   observerId(): string {
-    const target = this.sdk.config.config.defaultNetwork || "simnet";
-    const locator = (this.sdk.config.config.networks as any)?.[target]?.rpcUrl;
-    return deriveObserverId({ kind: "rpc", target, ...(typeof locator === "string" ? { locator } : {}) });
+    const target = this.sdk.network as string;
+    // ENDPOINT-AUTHORITY-1 (EA-I1): the observer is the client that observes (its endpoint), not the configuration's
+    // endpoint — they differ once a client is swapped in (as the CLI's tx send / consolidate do). The SDK opens its
+    // own client on the configured rpcUrl, so for an unswapped instance the identity is unchanged.
+    const locator = rpcEndpointOf(this.sdk.rpc);
+    return deriveObserverId({ kind: "rpc", target, ...(locator !== undefined ? { locator } : {}) });
   }
 
   /** The verified submission (or simulator receipt) recorded for `txId`, if exactly one exists. */
@@ -353,21 +402,34 @@ export class HardkasTx {
     /** AUD-28: explicit change destination; default = the sender's address. Validated, then forwarded to the planner. */
     changeAddress?: string;
   }): Promise<TxPlanArtifact> {
+    // WORKSPACE-AUTHORITY-2 (WA2-I2): the identities and the world of a plan come from the ONE resolved execution target
+    // of this instance, and their compatibility is decided before any plan exists — the CLI's rule, shared from
+    // @hardkas/accounts (`assertAccountCompatible`), never a world-mixing artifact caught later by the signer.
+    const world = this.sdk.execution;
     const fromAccount =
       typeof options.from === "string"
-        ? await this.sdk.accounts.resolve(options.from)
+        ? await this.sdk.accounts.resolve(options.from, world)
         : options.from;
     const toAccount =
       typeof options.to === "string"
-        ? await this.sdk.accounts.resolve(options.to)
+        ? await this.sdk.accounts.resolve(options.to, world)
         : options.to;
+    assertAccountCompatible(fromAccount, world);
+    assertAccountCompatible(toAccount, world);
 
     if (!fromAccount.address)
       throw new Error(`From account ${fromAccount.name} has no address.`);
     if (!toAccount.address)
       throw new Error(`To account ${toAccount.name} has no address.`);
 
-    const activeNetwork = options.networkProfile || this.sdk.config.config.defaultNetwork || "simnet";
+    const activeNetwork = options.networkProfile || (this.sdk.network as string);
+    // the world of this plan: the resolved execution target's mode when planning on this instance's network (the
+    // authority; a `{ mode: "simulator", network: "simnet" }` target is the simulator whatever the label says), else
+    // what the explicit network's declaration implies
+    const simulatedWorld =
+      activeNetwork === (this.sdk.network as string)
+        ? this.sdk.execution.mode === "simulator"
+        : activeNetwork === "simulated" || this.sdk.config.config.networks?.[activeNetwork]?.kind === "simulated";
 
     if (typeof options.amount === "string" && options.amount.toLowerCase() === "all") {
       const res = await this.sdk.query.getSpendableUtxos({ address: fromAccount.address, excludePending: true });
@@ -413,10 +475,7 @@ export class HardkasTx {
     // Create UtxoProvider
     const utxoProvider: UtxoProvider = {
       getUtxos: async (address: string) => {
-        if (
-          activeNetwork === "simulated" ||
-          this.sdk.config.config.networks?.[activeNetwork]?.kind === "simulated"
-        ) {
+        if (simulatedWorld) {
           const { loadOrCreateLocalnetState, getSpendableUtxos } =
             await import("@hardkas/localnet");
           const localState = await loadOrCreateLocalnetState({
@@ -468,10 +527,7 @@ export class HardkasTx {
         }
       },
       getVirtualDaaScore: async () => {
-        if (
-          activeNetwork === "simulated" ||
-          this.sdk.config.config.networks?.[activeNetwork]?.kind === "simulated"
-        ) {
+        if (simulatedWorld) {
           return 1000000n; // Arbitrary high score for simulator
         } else {
           try {
@@ -511,9 +567,7 @@ export class HardkasTx {
     // path to the synthetic path: an upstream failure surfaces to the caller
     // rather than being silently downgraded to synthetic. This preserves the
     // real-network authority claim while keeping the `mode: simulated` DX.
-    const isSimulatedForPlan =
-      activeNetwork === "simulated" ||
-      this.sdk.config.config.networks?.[activeNetwork]?.kind === "simulated";
+    const isSimulatedForPlan = simulatedWorld;
     const planService = new TxPlanService(utxoProvider, { coinbaseMaturity });
     let result;
     if (isSimulatedForPlan) {
@@ -539,8 +593,9 @@ export class HardkasTx {
     const builderPlan = result.plan;
 
     const isSimulated =
-      activeNetwork === "simulated" ||
-      this.sdk.config.config.networks?.[activeNetwork]?.kind === "simulated";
+      activeNetwork === (this.sdk.network as string)
+        ? this.sdk.execution.mode === "simulator"
+        : activeNetwork === "simulated" || this.sdk.config.config.networks?.[activeNetwork]?.kind === "simulated";
     let resolvedAssumptionLevel = options.assumption;
     if (!resolvedAssumptionLevel) {
       if (isSimulated) {
@@ -554,7 +609,9 @@ export class HardkasTx {
 
     const basePlan = createTxPlanArtifact({
       networkId: activeNetwork as NetworkId,
-      mode: isSimulated ? "simulator" : (networkConfig?.kind === "kaspa-node" ? "localnet" : "rpc"),
+      // the plan records the mode of the resolved execution target (WORKSPACE-AUTHORITY-2), never one re-inferred from
+      // the network's kind
+      mode: isSimulated ? "simulator" : activeNetwork === (this.sdk.network as string) ? this.sdk.execution.mode : (networkConfig?.kind === "kaspa-node" ? "localnet" : "rpc"),
       from: {
         input: fromAccount.name || fromAccount.address,
         address: fromAccount.address,
@@ -661,11 +718,35 @@ export class HardkasTx {
       );
     }
 
-    const activeNetwork =
-      options.network || this.sdk.config.config.defaultNetwork || "simnet";
-    const isSimulated =
-      activeNetwork === "simulated" ||
-      this.sdk.config.config.networks?.[activeNetwork]?.kind === "simulated";
+    // WORKSPACE-AUTHORITY-2 (closeout): this instance's resolved execution target is the authority of a consolidation
+    // too. A per-call `network` is validated by the shared resolver and must be THIS instance's world (an instance is
+    // never re-pointed by one call); the account, the destination and the UTXOs are checked against that world before
+    // any plan exists — the rules `tx.plan` applies (shared from @hardkas/accounts), never a cross-world artifact.
+    const world = this.sdk.execution;
+    if (options.network !== undefined) {
+      const { resolveWorkspaceExecution } = await import("@hardkas/config");
+      const requested = resolveWorkspaceExecution({ config: this.sdk.config.config, network: options.network }).networkId;
+      if (requested !== (this.sdk.network as string)) {
+        throw new HardkasError(
+          "EXECUTION_NETWORK_MISMATCH",
+          `This instance runs on '${this.sdk.network}' (${world.mode}); a consolidation on '${options.network}' needs an instance opened on it (Hardkas.open({ network: "${options.network}" }) or a target). Nothing was planned.`
+        );
+      }
+    }
+    assertAccountCompatible(resolvedAccount, world);
+    const destinationAccount = await this.sdk.accounts.resolve(options.destination, world);
+    assertAccountCompatible(destinationAccount, world);
+    const selected = Array.isArray(options.selectedUtxos) ? options.selectedUtxos : [];
+    const foreign = selected.filter((u: any) => u?.address !== resolvedAccount.address);
+    if (foreign.length > 0) {
+      throw new HardkasError(
+        "UTXO_ACCOUNT_MISMATCH",
+        `${foreign.length} of ${selected.length} selected UTXOs do not belong to '${resolvedAccount.name}' (${resolvedAccount.address}): a consolidation spends the account's own UTXOs only. Nothing was planned.`
+      );
+    }
+
+    const activeNetwork = this.sdk.network as string;
+    const isSimulated = world.mode === "simulator";
 
     const dummyProvider: UtxoProvider = {
       getUtxos: async () => []
@@ -694,7 +775,7 @@ export class HardkasTx {
 
     const basePlan = createTxPlanArtifact({
       networkId: activeNetwork as any,
-      mode: isSimulated ? "simulator" : (networkConfig?.kind === "kaspa-node" ? "localnet" : "rpc"),
+      mode: world.mode,
       from: {
         input: resolvedAccount?.name || (resolvedAccount?.address as string),
         address: resolvedAccount?.address as string,
@@ -769,6 +850,15 @@ export class HardkasTx {
       (e as any).code = "TX_ARTIFACT_SCHEMA_INVALID";
       throw e;
     }
+
+    // SDK-MAINNET-BROADCAST-GUARD-1: no signature on mainnet — decided from every network identity involved (the
+    // artifact's own and its execution's, and this instance's), before any signer is asked, external ones included,
+    // and before anything is written. allowPublic does not lift it.
+    assertMainnetTransactionsDisabled(
+      "sign",
+      [(plan as any).networkId, (plan as any).execution?.network, this.sdk.network],
+      "tx.sign"
+    );
 
     if (
       (plan as any).schema === HardkasSchemas.TxPlanV1 ||
@@ -903,29 +993,10 @@ export class HardkasTx {
       await this.persistAuthorizedPlan(plan);
       // EVIDENCE-TRUST-1 (D2): what is returned is exactly what the store holds (the earlier copy of an identity signed before).
       const written = await this.sdk.artifacts.write(produced);
-      const absolutePath = written.absolutePath;
       const signedArtifact: typeof produced = written.artifact ?? produced;
-      const { coreEvents } = await import("@hardkas/core");
-      const signedRecord = signedArtifact as unknown as Record<string, string>;
-      // IC-5′.11: events carry the canonical identity (content hash), never a label.
-      const artifactId = signedRecord.contentHash || signedArtifact.signedId;
-
-      coreEvents.normalizeAndEmit({
-        kind: "artifact.created",
-        schema: signedArtifact.schema,
-        artifactId: artifactId,
-        network: signedArtifact.networkId,
-        mode: signedArtifact.mode,
-        path: absolutePath
-      } as unknown as Parameters<typeof coreEvents.normalizeAndEmit>[0]);
-
-      coreEvents.normalizeAndEmit({
-        kind: "tx.signed",
-        txId: signedArtifact.txId || artifactId,
-        network: signedArtifact.networkId,
-        mode: signedArtifact.mode,
-        amountSompi: signedArtifact.amountSompi
-      } as unknown as Parameters<typeof coreEvents.normalizeAndEmit>[0]);
+      // EVENT-LEDGER-2 (EVENT-EMISSION-1): the store write above is announced by the artifact manager
+      // (`artifact.written`, under the signed artifact's own workflowId). The raw `artifact.created` / `tx.signed`
+      // objects once handed to normalizeAndEmit here duplicated it without a correlation and were discarded: gone.
 
       return signedArtifact;
     }
@@ -1180,30 +1251,10 @@ export class HardkasTx {
     await this.persistAuthorizedPlan(plan);
     // EVIDENCE-TRUST-1 (D2): what is returned is exactly what the store holds (the earlier copy of an identity signed before).
     const written = await this.sdk.artifacts.write(signedArtifact);
-    const absolutePath = written.absolutePath;
     if (written.artifact) signedArtifact = written.artifact;
-
-    const { coreEvents } = await import("@hardkas/core");
-    const signedRecord = signedArtifact as unknown as Record<string, string>;
-    // IC-5′.11: events carry the canonical identity (content hash), never a label.
-    const artifactId = signedRecord.contentHash || signedArtifact.signedId;
-
-    coreEvents.normalizeAndEmit({
-      kind: "artifact.created",
-      schema: signedArtifact.schema,
-      artifactId: artifactId,
-      network: signedArtifact.networkId,
-      mode: signedArtifact.mode,
-      path: absolutePath
-    } as unknown as Parameters<typeof coreEvents.normalizeAndEmit>[0]);
-
-    coreEvents.normalizeAndEmit({
-      kind: "tx.signed",
-      txId: signedArtifact.txId || artifactId,
-      network: signedArtifact.networkId,
-      mode: signedArtifact.mode,
-      amountSompi: signedArtifact.amountSompi
-    } as unknown as Parameters<typeof coreEvents.normalizeAndEmit>[0]);
+    // EVENT-LEDGER-2 (EVENT-EMISSION-1): the store write above is announced by the artifact manager
+    // (`artifact.written`, under the signed artifact's own workflowId). The raw `artifact.created` / `tx.signed`
+    // objects once handed to normalizeAndEmit here duplicated it without a correlation and were discarded: gone.
 
     // Fire non-blocking after hook
     // Do not await, or await but let plugin manager catch failure
@@ -1422,7 +1473,10 @@ export class HardkasTx {
 
       // If persist is true and it's a new in-memory plan (no ID), we write it
       if (persist && !planArtifact.planId) {
-        const savedPlanResult = await this.sdk.artifacts.write(planArtifact);
+        // A1: a ledger failure here comes before the simulator runs anything
+        await this.sdk.artifacts.write(planArtifact).catch((e: unknown) =>
+          rethrowWithLedgerEffect(e, { operation: "simulated-execution", outcome: "not-performed" })
+        );
         sourcePlanId = planArtifact.planId || "unknown";
       }
       // D-Q2.a / N4: the synthetic txId IS the executed plan's identity.
@@ -1482,11 +1536,9 @@ export class HardkasTx {
       throw new Error(`Strict validation failed: ${simResult.errors?.join(", ")}`);
     }
 
-    coreEvents.normalizeAndEmit({
-      kind: "workflow.submitted",
-      txId: simResult.receipt.txId,
-      endpoint: "simulated://local"
-    } as unknown as Parameters<typeof coreEvents.normalizeAndEmit>[0]);
+    // EVENT-LEDGER-2 (EVENT-EMISSION-1): the raw `workflow.submitted` to "simulated://local" and `tx.submitted`
+    // objects once handed to normalizeAndEmit here (no correlation, an invented endpoint) were discarded: gone. The
+    // simulator's evidence is the receipt the durable commit publishes, announced below (D4).
 
     const completedAt = Date.now();
 
@@ -1500,7 +1552,10 @@ export class HardkasTx {
       // record names them); post-state + record are then committed in one ledger write, the evidence is published and
       // the record cleared. The store is held for the whole sequence: a store held elsewhere delays the execution
       // instead of leaving the state moved without its evidence.
-      await this.persistExecutionMaterial(executed, planArtifact);
+      // A1: a ledger failure while the material is stored comes before the state moves: nothing was executed
+      await this.persistExecutionMaterial(executed, planArtifact).catch((e: unknown) =>
+        rethrowWithLedgerEffect(e, { operation: "simulated-execution", outcome: "not-performed", txId: receipt.txId })
+      );
       const clock = {
         traceStartedAtMs: startTime,
         submittedAt: nowIso,
@@ -1527,26 +1582,31 @@ export class HardkasTx {
       receiptPath = evidence.receiptPath;
     }
 
-    // P1.1 Emit dashboard/query-store events for local/simulated transactions
-    if (persist) {
-      coreEvents.normalizeAndEmit({
-        kind: "artifact.created",
-        schema: receipt.schema,
-        artifactId: receipt.txId,
-        network: receipt.networkId,
-        mode: receipt.mode,
-        path: receiptPath!
-      } as unknown as Parameters<typeof coreEvents.normalizeAndEmit>[0]);
+    // EVENT-LEDGER-2 (D4): the receipt the durable commit published is announced through the one artifact boundary,
+    // under its content hash and its own workflowId (the plan's). The trace and the state snapshot of the same
+    // commit are not announced yet (ARTIFACT-ANNOUNCE-2).
+    if (persist && receiptPath) {
+      try {
+        emitArtifactWritten({
+          artifactId: typeof receipt.contentHash === "string" ? receipt.contentHash : "unknown",
+          absolutePath: receiptPath,
+          sourceSubsystem: "sdk:tx-simulate",
+          workflowId: typeof receipt.workflowId === "string" ? receipt.workflowId : undefined,
+          networkId: receipt.networkId
+        });
+        // TASK-EVIDENCE-UNBOUND-1: what this instance put in the store, for a recording open on it
+        this.sdk.artifacts.noteStored(receipt.contentHash);
+      } catch (e: unknown) {
+        // A1: the commit above already moved the simulated state: the failure names that execution and its receipt
+        rethrowWithLedgerEffect(e, {
+          operation: "simulated-execution",
+          outcome: "executed",
+          txId: receipt.txId,
+          artifactId: typeof receipt.contentHash === "string" ? receipt.contentHash : undefined,
+          artifactPath: receiptPath
+        });
+      }
     }
-
-    coreEvents.normalizeAndEmit({
-      kind: "tx.submitted",
-      txId: receipt.txId,
-      network: receipt.networkId,
-      mode: receipt.mode,
-      amountSompi: receipt.amountSompi,
-      feeSompi: receipt.feeSompi
-    } as unknown as Parameters<typeof coreEvents.normalizeAndEmit>[0]);
     const result: {
       receipt: TxReceiptArtifact;
       receiptPath?: string;
@@ -1579,17 +1639,26 @@ export class HardkasTx {
     submitted?: boolean;
     txId?: string;
   }> {
-    const activeNetwork = this.sdk.config.config.defaultNetwork || "simnet";
-    const isExplicitRpc =
-      typeof urlOrOptions === "string" &&
-      (urlOrOptions.startsWith("ws://") ||
-        urlOrOptions.startsWith("http://") ||
-        urlOrOptions.startsWith("wss://") ||
-        urlOrOptions.startsWith("https://"));
-    const isSimulated =
-      !isExplicitRpc &&
-      (activeNetwork === "simulated" ||
-        this.sdk.config.config.networks?.[activeNetwork]?.kind === "simulated");
+    const activeNetwork = this.sdk.network as string;
+    // SDK-MAINNET-BROADCAST-GUARD-1: no broadcast on mainnet — decided from every network identity involved (the signed
+    // artifact's own and its execution's, and this instance's) before any RPC request, receipt or submission event.
+    // A transaction signed anywhere (outside HardKAS included) is refused the same way; allowPublic does not lift it.
+    assertMainnetTransactionsDisabled(
+      "broadcast",
+      [(signedArtifact as any)?.networkId, (signedArtifact as any)?.execution?.network, activeNetwork],
+      "tx.send"
+    );
+    // the world this instance runs on decides (WORKSPACE-AUTHORITY-2)
+    const isSimulated = this.sdk.execution.mode === "simulator";
+    const explicitUrl = typeof urlOrOptions === "string" ? urlOrOptions : undefined;
+    // ENDPOINT-AUTHORITY-1 (EA-I4): an explicit endpoint never turns a simulated run into an RPC one
+    if (explicitUrl !== undefined && isSimulated) {
+      throw new HardkasError(
+        "SEND_ENDPOINT_ON_SIMULATOR",
+        `Cannot send to ${redactUrlCredentials(explicitUrl)}: this instance runs the simulator (network ${activeNetwork}), ` +
+          `which has no RPC endpoint. Open an instance on that endpoint's network to broadcast. Nothing was sent or recorded.`
+      );
+    }
 
     if (isSimulated) {
       // Wave 1.4 · IC-6′.5: in the simulator only a coherent synthetic authorization
@@ -1627,7 +1696,16 @@ export class HardkasTx {
     }
 
     const signedTxId = signedArtifact.txId || signedArtifact.signedId || signedArtifact.contentHash || "unknown";
-    await this.sdk.plugins.onBeforeTxSend({ signedTxId, from: signedArtifact.from?.accountName || signedArtifact.from?.address || "unknown" });
+    try {
+      await this.sdk.plugins.onBeforeTxSend({ signedTxId, from: signedArtifact.from?.accountName || signedArtifact.from?.address || "unknown" });
+    } catch (e: unknown) {
+      // A1: a ledger failure here (a plugin's blocking decision being recorded) comes before anything is sent or executed
+      rethrowWithLedgerEffect(e, {
+        operation: isSimulated ? "simulated-execution" : "broadcast",
+        outcome: "not-performed",
+        txId: typeof signedArtifact.txId === "string" ? signedArtifact.txId : undefined
+      });
+    }
 
     if (isSimulated) {
       const persistOpt = typeof urlOrOptions === "object" ? urlOrOptions.persist : true;
@@ -1693,6 +1771,19 @@ export class HardkasTx {
     }
     const signedArtifactId = signedIdentity.artifactId;
 
+    // ENDPOINT-AUTHORITY-1 (EA-I3): a transaction is sent only on the network it was signed for. This compares the
+    // artifact with the instance; whether the node behind the client serves that network is a separate check.
+    const signedNetwork = (signedArtifact as { networkId?: unknown }).networkId;
+    if (typeof signedNetwork === "string" && signedNetwork !== activeNetwork) {
+      throw new HardkasError(
+        "SEND_NETWORK_MISMATCH",
+        `Refusing to broadcast: the signed artifact is for network ${signedNetwork}, this instance runs on ${activeNetwork}. ` +
+          `Nothing was sent or recorded.`
+      );
+    }
+    // EA-I1/EA-I2: the endpoint a submission records is the endpoint of the client that submits it
+    const endpoint = endpointAuthority(this.sdk.rpc, url, "SEND");
+
     const broadcastable = getBroadcastableSignedTransaction(signedArtifact);
 
     // Wave 2(a): the observer's cursor — where the virtual was when HardKAS submitted.
@@ -1746,11 +1837,11 @@ export class HardkasTx {
       unknown
     >;
     const localTxId = (broadcastRecord.id as string) || "unknown";
-    coreEvents.normalizeAndEmit({
-      kind: "workflow.submitted",
-      txId: localTxId,
-      endpoint: url ? redactUrlCredentials(url) : "real"
-    } as unknown as Parameters<typeof coreEvents.normalizeAndEmit>[0]);
+    // EVENT-LEDGER-2 closeout (CL-2): the submission's EVENT is decided by its RESULT, recorded after the submit call
+    // answered (below): `workflow.submitted` only for a submission the node accepted, `workflow.failed` for one that
+    // failed or was refused. An intent to submit is not a submission (a catalog kind for the intent is a proposal).
+    const submissionWorkflowId =
+      typeof signedArtifact.workflowId === "string" && signedArtifact.workflowId ? signedArtifact.workflowId : STANDALONE_WORKFLOW_ID;
 
     // The submit call's result is recorded as returned, accepted or not. EVIDENCE-TRUST-1 (ET-C4): the result is
     // authenticated, so a credential the RPC layer put into its error text (it names the URL) is redacted BEFORE hashing.
@@ -1762,8 +1853,14 @@ export class HardkasTx {
         ...(typeof answer?.transactionId === "string" ? { transactionId: answer.transactionId } : {})
       };
     } catch (e: unknown) {
+      // NODE-NETWORK-IDENTITY-1: the node said it serves another network (or none) before anything was sent to it:
+      // nothing was submitted, so there is no submission to record; the caller gets the typed refusal itself.
+      if (isNodeNetworkIdentityError(e)) throw e;
       submitResult = { accepted: false, error: redactUrlCredentialsInText(e instanceof Error ? e.message : String(e)) };
     }
+    // EVENT-LEDGER-2 final closeout: from here on the broadcast has happened, or its outcome is unknown — what the
+    // recorded result establishes (accepted request, the node's rejection, or no answer), never a consensus state
+    const submitOutcome = submitOutcomeOf(submitResult);
 
     // DEF-1b: `mode` describes the EXECUTION SEMANTICS of the lifecycle, fixed
     // at plan/sign time. It is NOT a property of the transport (URL scheme).
@@ -1773,7 +1870,7 @@ export class HardkasTx {
     const inheritedMode: any =
       (signedArtifact as any).mode ||
       (signedArtifact as any).execution?.mode ||
-      (isExplicitRpc ? "rpc" : "localnet");
+      (url !== undefined ? "rpc" : "localnet");
     const nowIso = new Date().toISOString();
     // Authenticated: the signed reference, the txId, the submit result (IC-2′.2).
     // Unauthenticated: submittedAt and the locator `rpcUrl` (IC-1′.1b), recorded
@@ -1797,7 +1894,8 @@ export class HardkasTx {
       ...(submitPoint ? { submitPoint } : {}),
       fee: feeEvidence,
       submittedAt: nowIso,
-      ...(url ? { rpcUrl: redactUrlCredentials(url) } : {}),
+      // EA-I1: the submitting client's endpoint (absent when the client does not say; never a caller's label)
+      ...(endpoint ? { rpcUrl: redactUrlCredentials(endpoint) } : {}),
       ...(signedArtifact.workflowId ? { workflowId: signedArtifact.workflowId } : {}),
       ...(signedArtifact.assumptionLevel
         ? { assumptionLevel: signedArtifact.assumptionLevel }
@@ -1815,14 +1913,74 @@ export class HardkasTx {
     submissionBase.contentHash = calculateContentHash(submissionBase, CURRENT_HASH_VERSION);
     submissionBase.lineage.artifactId = submissionBase.contentHash;
     const produced: TxSubmissionArtifact = Object.freeze(submissionBase);
+    // the transaction that was sent: the node's txId, else the signed artifact's (a failed call records "unknown")
+    const sentTxId = [produced.txId, signedArtifact.txId].find((t) => typeof t === "string" && /^[0-9a-f]{64}$/.test(t)) as
+      | string
+      | undefined;
 
-    // EVIDENCE-TRUST-1 (D2): what is returned is exactly what the store holds (the earlier copy of this identity, if any).
-    const written = await this.sdk.artifacts.write(produced);
-    const receiptPath = written.absolutePath;
-    const submission: TxSubmissionArtifact = written.artifact ? Object.freeze(written.artifact) : produced;
+    let receiptPath: string | undefined;
+    let submission: TxSubmissionArtifact = produced;
+    try {
+      // EVIDENCE-TRUST-1 (D2): what is returned is exactly what the store holds (the earlier copy of this identity, if any).
+      const written = await this.sdk.artifacts.write(produced);
+      receiptPath = written.absolutePath;
+      if (written.artifact) submission = Object.freeze(written.artifact);
 
-    // Reuse the signedTxId from the start of the method
-    await this.sdk.plugins.onTxSent({ signedTxId, receiptArtifact: submission });
+      // EVENT-LEDGER-2 closeout (CL-2; final closeout, decision 2): the submission's RESULT, once the call returned or
+      // failed, under the signed artifact's own workflowId (never a derived one), naming the submission artifact that
+      // records it: `workflow.submitted` for a submission request the node accepted, `workflow.failed` for the node's
+      // rejection and, for a call that failed without an answer, `rpc.error` — the outcome is unknown, so neither a
+      // submission nor a rejection is declared. Existing kinds only; no consensus state.
+      const resultEvent = {
+        domain: "workflow" as const,
+        workflowId: asWorkflowId(submissionWorkflowId),
+        correlationId: asCorrelationId(submissionWorkflowId),
+        networkId: asNetworkId(this.sdk.network),
+        sequenceNumber: asEventSequence(1),
+        globalOffset: 0,
+        sourceSubsystem: "sdk:tx-send",
+        txId: asTxId(submission.txId),
+        artifactId: asArtifactId(submission.contentHash as string)
+      };
+      const rpcUrl = endpoint ? redactUrlCredentials(endpoint) : "";
+      coreEvents.emit(
+        submitOutcome === "accepted"
+          ? createEventEnvelope({ ...resultEvent, kind: "workflow.submitted", payload: { txId: asTxId(submission.txId), rpcUrl } })
+          : submitOutcome === "rejected"
+            ? createEventEnvelope({
+                ...resultEvent,
+                kind: "workflow.failed",
+                payload: {
+                  workflowId: asWorkflowId(submissionWorkflowId),
+                  error: `the node rejected the submission: ${submitResult.error ?? "it answered accepted: false"}`
+                }
+              })
+            : createEventEnvelope({
+                ...resultEvent,
+                domain: "rpc",
+                kind: "rpc.error",
+                payload: {
+                  endpoint: asRpcEndpointId(rpcUrl || "unknown"),
+                  error:
+                    `submitTransaction failed without an answer from the node (${submitResult.error ?? "no answer"}): the outcome ` +
+                    `of the submission is unknown, and the node may have received transaction ${sentTxId ?? submission.txId}`,
+                  retriable: false
+                }
+              })
+      );
+
+      // Reuse the signedTxId from the start of the method
+      await this.sdk.plugins.onTxSent({ signedTxId, receiptArtifact: submission });
+    } catch (e: unknown) {
+      // A1: a ledger failure after the broadcast names what was sent, never reads as "not sent"
+      rethrowWithLedgerEffect(e, {
+        operation: "broadcast",
+        outcome: submitOutcome,
+        txId: sentTxId,
+        artifactId: produced.contentHash as string,
+        artifactPath: receiptPath
+      });
+    }
 
     return {
       receipt: submission,

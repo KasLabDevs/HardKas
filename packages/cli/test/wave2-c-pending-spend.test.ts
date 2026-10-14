@@ -173,9 +173,11 @@ describe("Wave 2(c) · AUD-19 · pending-spend exclusion with mempool evidence",
 
     const sdkWs = fs.mkdtempSync(path.join(os.tmpdir(), "hk-w2c-sdk-"));
     try {
-      const sdk = await Hardkas.create({ cwd: sdkWs, autoBootstrap: true, network: "simulated" });
+      // WORKSPACE-AUTHORITY-2: opened on the real-node simnet it is meant to plan on (it used to be opened on the
+      // simulator and re-pointed by writing `config.defaultNetwork` afterwards — no longer an authority)
+      fs.mkdirSync(path.join(sdkWs, ".hardkas"));
+      const sdk = await Hardkas.create({ cwd: sdkWs, autoBootstrap: true, network: "simnet" });
       const cfg: any = sdk.config.config;
-      cfg.defaultNetwork = "simnet";
       cfg.networks = { ...(cfg.networks ?? {}), simnet: { kind: "kaspa-node", network: "simnet", rpcUrl: "ws://127.0.0.1:1" } };
       vi.spyOn(sdk.rpc, "getUtxosByAddress").mockImplementation(async () => node.utxos.map((u) => ({ ...u })) as any);
       vi.spyOn(sdk.rpc, "getBlockDagInfo").mockResolvedValue({ networkId: "simnet", virtualDaaScore: node.virtualDaaScore, tipHashes: [], virtualParentHashes: [], sink: "s" } as any);

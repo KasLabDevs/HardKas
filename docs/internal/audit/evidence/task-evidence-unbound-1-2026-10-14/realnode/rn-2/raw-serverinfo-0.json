@@ -1,0 +1,1 @@
+{"id":1,"method":"getServerInfo","params":{"hasUtxoIndex":true,"isSynced":false,"networkId":"simnet","rpcApiRevision":0,"rpcApiVersion":1,"serverVersion":"2.1.0","virtualDaaScore":18021}}

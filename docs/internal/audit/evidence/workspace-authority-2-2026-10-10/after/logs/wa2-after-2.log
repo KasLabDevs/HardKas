@@ -1,0 +1,26 @@
+gate-hermetic: HARDKAS_HOME=C:\Users\jrodr\AppData\Local\Temp\hardkas-hermetic-home-SekVW5 (copy of C:\Users\jrodr\AppData\Local\Temp\hk-v210-gate-home)
+gate-hermetic: DOCKER_HOST=tcp://127.0.0.1:1; preload=C:\Users\jrodr\AppData\Local\Temp\hk-ra\wt\scripts\hermetic\no-network-preload.cjs
+gate-hermetic: vitest run --coverage.enabled=false --reporter=default --reporter=json --outputFile=C:\Users\jrodr\AppData\Local\Temp\claude\C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo\21f9a2e4-33ac-4300-9366-aff402f85900\scratchpad\cut48-workspace-authority-2\logs\wa2-after-2.json packages/sdk/test/workspace-authority-2.test.ts packages/cli/test/workspace-authority-2.test.ts
+
+ RUN  v2.1.9 C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt
+
+ ✓ packages/sdk/test/workspace-authority-2.test.ts (22 tests) 769ms
+ ✓ packages/cli/test/workspace-authority-2.test.ts (5 tests) 8292ms
+   ✓ WORKSPACE-AUTHORITY-2 · controls · the CLI follows the workspace's execution target > execution.default = localnet: `tx plan` does not plan in the simulator (it asks the node, unreachable here) 1113ms
+   ✓ WORKSPACE-AUTHORITY-2 · controls · the CLI follows the workspace's execution target > the scaffold default (simulator): `tx plan --json` plans in the simulator over synthetic identities 1148ms
+   ✓ WORKSPACE-AUTHORITY-2 · AFTER · the CLI shares the resolver > `--target simulator` in a localnet-default workspace plans in the simulator (the named target wins) 1156ms
+   ✓ WORKSPACE-AUTHORITY-2 · AFTER · the CLI shares the resolver > `--target nope` is EXECUTION_TARGET_NOT_FOUND; `--network nonsense` is UNKNOWN_NETWORK; `--target localnet --network simulated` is EXECUTION_NETWORK_MISMATCH 2733ms
+   ✓ WORKSPACE-AUTHORITY-2 · AFTER · the CLI shares the resolver > `--network simulated` names the simulator's target of the same workspace: a simulator plan; `--network localnet` (a target name) is refused as a network 2141ms
+
+ Test Files  2 passed (2)
+      Tests  27 passed (27)
+   Start at  15:22:10
+   Duration  12.73s (transform 1.57s, setup 0ms, collect 3.04s, tests 9.06s, environment 0ms, prepare 226ms)
+
+JSON report written to C:/Users/jrodr/AppData/Local/Temp/claude/C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo/21f9a2e4-33ac-4300-9366-aff402f85900/scratchpad/cut48-workspace-authority-2/logs/wa2-after-2.json
+
+gate-hermetic: vitest exit 0 after 13s
+gate-hermetic: non-loopback attempts (each one fails the gate): 0
+gate-hermetic: loopback connection targets (review for dependencies on local services):
+  127.0.0.1:18210 x13
+gate-hermetic: PASS

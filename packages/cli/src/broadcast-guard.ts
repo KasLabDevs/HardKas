@@ -1,24 +1,16 @@
+import { assertMainnetTransactionsDisabled, isMainnetNetworkId } from "@hardkas/core";
+
 /**
  * Security guard for network broadcasting.
- * Blocks mainnet by default and prevents network mismatches.
+ * Blocks mainnet (SDK-MAINNET-BROADCAST-GUARD-1: the product policy shared with the SDK, typed
+ * MAINNET_BROADCAST_DISABLED) and prevents network mismatches.
  */
 export function assertBroadcastNetworkAllowed(input: {
   artifactNetworkId: string;
   selectedNetwork: string;
 }): void {
-  const isMainnetArtifact = isMainnetLike(input.artifactNetworkId);
-  const isMainnetSelected = isMainnetLike(input.selectedNetwork);
-
-  // Mainnet block
-  if (isMainnetArtifact || isMainnetSelected) {
-    throw new Error(
-      "Mainnet broadcast is disabled in HardKAS 0.12.0-rc.27.\n\n" +
-        "Reason:\n" +
-        "  Production transaction submission is intentionally unavailable in this development release.\n\n" +
-        "Use:\n" +
-        "  simnet or testnet for real transaction testing."
-    );
-  }
+  // Mainnet block: the artifact's network and the selected one, whichever names mainnet
+  assertMainnetTransactionsDisabled("broadcast", [input.artifactNetworkId, input.selectedNetwork], "tx send");
 
   // Network mismatch check
   if (!isSameNetwork(input.artifactNetworkId, input.selectedNetwork)) {
@@ -29,15 +21,10 @@ export function assertBroadcastNetworkAllowed(input: {
   }
 }
 
-function isMainnetLike(network: string): boolean {
-  const n = network.toLowerCase();
-  return n === "mainnet" || n === "kaspa" || n === "kaspa-mainnet";
-}
-
 function isSameNetwork(n1: string, n2: string): boolean {
   // Simple exact match or mainnet-like equivalence
   if (n1 === n2) return true;
-  if (isMainnetLike(n1) && isMainnetLike(n2)) return true;
+  if (isMainnetNetworkId(n1) && isMainnetNetworkId(n2)) return true;
 
   // Potential future mapping could go here
   return false;

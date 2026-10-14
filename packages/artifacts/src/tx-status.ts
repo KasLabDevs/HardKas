@@ -117,10 +117,32 @@ export interface DerivedTxStatus {
   isFinal: boolean;
 }
 
+/**
+ * EVENT-LEDGER-2 closeout · what the recorded result of ONE submit call establishes, and nothing more (never a
+ * consensus state):
+ *  - `accepted`: the responding node accepted the submission request — not acceptance or confirmation in the DAG;
+ *  - `rejected`: the node answered and refused it: an answer with `accepted: false`, or the node's own rejection, which
+ *    arrives as "Rejected transaction <txId>: <reason>" (rusty-kaspa's RejectedTransaction RPC error);
+ *  - `unknown`: the call failed without such an answer (a timeout, a lost connection, …): whether the node received the
+ *    transaction is not known, so it is never reported as a rejection.
+ */
+export type SubmitOutcome = "accepted" | "rejected" | "unknown";
+
+const NODE_REJECTION = /^Rejected transaction\b/;
+
+export function submitOutcomeOf(submitResult: { accepted?: unknown; error?: unknown } | null | undefined): SubmitOutcome {
+  if (!submitResult) return "unknown";
+  if (submitResult.accepted === true) return "accepted";
+  if (submitResult.accepted !== false) return "unknown";
+  const error = submitResult.error;
+  if (typeof error !== "string" || error.length === 0) return "rejected";
+  return NODE_REJECTION.test(error) ? "rejected" : "unknown";
+}
+
 type Ignored = { artifactId?: string; reason: string };
 
 type Submission =
-  | { kind: "submission"; artifactId: string; accepted: boolean; txId: string }
+  | { kind: "submission"; artifactId: string; outcome: SubmitOutcome; error: string | undefined; txId: string }
   | { kind: "synthetic-receipt"; artifactId: string; txId: string }
   | { kind: "none" };
 
@@ -151,7 +173,13 @@ function classifySubmission(submission: unknown, txId: string, ignored: Ignored[
       ignored.push({ artifactId: identity.artifactId, reason: `submission: txId ${parsed.data.txId} is not ${txId}` });
       return { kind: "none" };
     }
-    return { kind: "submission", artifactId: identity.artifactId, accepted: parsed.data.submitResult.accepted === true, txId };
+    return {
+      kind: "submission",
+      artifactId: identity.artifactId,
+      outcome: submitOutcomeOf(parsed.data.submitResult),
+      error: parsed.data.submitResult.error,
+      txId
+    };
   }
   if (s.schema === HardkasSchemas.TxReceipt || s.schema === HardkasSchemas.TxReceiptV1) {
     if (s.txId !== txId) {
@@ -516,12 +544,20 @@ export function deriveTxStatus(input: {
   if (histories.length > 0) reasons.push(...histories.flatMap((h) => h.reasons));
   void byId;
   if (submission.kind === "submission") {
-    if (submission.accepted) {
+    if (submission.outcome === "accepted") {
       reasons.push("submitTransaction returned success at that instant on the responding node; nothing has been observed since");
       return result("SUBMITTED", [], histories, reasons);
     }
-    reasons.push("the responding node rejected this submission");
-    return result("REJECTED_BY_NODE", [], histories, reasons);
+    if (submission.outcome === "rejected") {
+      reasons.push("the responding node rejected this submission");
+      return result("REJECTED_BY_NODE", [], histories, reasons);
+    }
+    // EVENT-LEDGER-2 closeout: a call that failed without an answer is not a rejection; nothing decides yet
+    reasons.push(
+      `the submit call failed without an answer from the responding node${submission.error ? ` (${submission.error})` : ""}: ` +
+        "whether the node received this transaction is unknown, so no state is decided — observe it"
+    );
+    return result("INSUFFICIENT_EVIDENCE", [], histories, reasons);
   }
   reasons.push("no FULL-scope submission or observation decides this txId");
   return result("INSUFFICIENT_EVIDENCE", [], histories, reasons);

@@ -1,0 +1,408 @@
+
+ RUN  v2.1.9 C:/Users/jrodr/hkl1/nni/src
+
+ ✓ packages/cli/test/node-network-identity.test.ts > NODE-NETWORK-IDENTITY-1 Â· CLI (built dist) against a loopback fake node > control: a node that says testnet-10 is used (balance and plan succeed) 2177ms
+ × packages/cli/test/node-network-identity.test.ts > NODE-NETWORK-IDENTITY-1 Â· CLI (built dist) against a loopback fake node > a simnet node presented as testnet-10: accounts balance refuses NODE_NETWORK_MISMATCH, no balance read 1159ms
+   → exit 0
+{
+  "ok": true,
+  "command": "accounts balance",
+  "mode": "cli",
+  "result": {
+    "name": "alice",
+    "address": "kaspatest:qzgnc763wqu6g0l3d8auhquu0rjynfwjfxeefz5q9w27tc0j48zqsa87xljwy",
+    "balanceSompi": "10000000000",
+    "utxoCount": 1,
+    "network": "testnet-10"
+  }
+}
+
+: expected +0 to be 1 // Object.is equality
+ × packages/cli/test/node-network-identity.test.ts > NODE-NETWORK-IDENTITY-1 Â· CLI (built dist) against a loopback fake node > a mainnet node presented as testnet-10: tx plan refuses NODE_NETWORK_MISMATCH, no UTXO read, no plan written 1180ms
+   → exit 0
+{
+  "schema": "hardkas.txPlan",
+  "hardkasVersion": "0.12.0-rc.27",
+  "schemaVersion": "hardkas.artifact.v1",
+  "version": "1.0.0-alpha",
+  "hashVersion": 5,
+  "createdAt": "2026-10-13T14:47:02.304Z",
+  "networkId": "testnet-10",
+  "mode": "rpc",
+  "execution": {
+    "mode": "rpc",
+    "domain": "kaspa-l1",
+    "network": "testnet-10"
+  },
+  "from": {
+    "address": "kaspatest:qzgnc763wqu6g0l3d8auhquu0rjynfwjfxeefz5q9w27tc0j48zqsa87xljwy",
+    "input": "alice"
+  },
+  "to": {
+    "address": "kaspatest:qrd3eu2plkd7597qqaqjujdg5clzdgrg7p3fquj3xfwtg7sllhjmzddxkrpha",
+    "input": "bob"
+  },
+  "amountSompi": "100000000",
+  "estimatedFeeSompi": "1000100",
+  "estimatedMass": "10001",
+  "inputs": [
+    {
+      "outpoint": {
+        "transactionId": "0000000000000000000000000000000000000000000000000000000000000f00",
+        "index": 0
+      },
+      "amountSompi": "10000000000",
+      "address": "kaspatest:qzgnc763wqu6g0l3d8auhquu0rjynfwjfxeefz5q9w27tc0j48zqsa87xljwy",
+      "scriptPublicKey": "000020913c7b517039a43ff169fbcb839c78e449a5d249b3948a802b95e5e1f2a9c408ac",
+      "blockDaaScore": "49900000",
+      "isCoinbase": false
+    }
+  ],
+  "outputs": [
+    {
+      "address": "kaspatest:qrd
+: expected +0 to be 1 // Object.is equality
+ × packages/cli/test/node-network-identity.test.ts > NODE-NETWORK-IDENTITY-1 Â· CLI (built dist) against a loopback fake node > a node that does not say its network: NODE_NETWORK_UNKNOWN, nothing read 1137ms
+   → exit 1
+{
+  "ok": false,
+  "code": "UNKNOWN",
+  "message": "Unknown connection error: RPC Server (remote error) -> RPC serde deserialization error: Invalid network type: unknown",
+  "mode": "cli"
+}
+
+: expected 'UNKNOWN' to be 'NODE_NETWORK_UNKNOWN' // Object.is equality
+ ✓ packages/cli/test/node-network-identity.test.ts > NODE-NETWORK-IDENTITY-1 Â· CLI (built dist) against a loopback fake node > no node at all: a connection failure, never an identity verdict 1131ms
+ × packages/cli/test/node-network-identity.test.ts > NODE-NETWORK-IDENTITY-1 Â· SDK (built dist) against a loopback fake node > a simnet node presented as testnet-10: sdk.tx.plan is refused NODE_NETWORK_MISMATCH before any UTXO read 3072ms
+   → succeeded: expected undefined to be 'NODE_NETWORK_MISMATCH' // Object.is equality
+ × packages/cli/test/node-network-identity.test.ts > NODE-NETWORK-IDENTITY-1 Â· SDK (built dist) against a loopback fake node > a signed testnet-10 transaction is never sent to a node that says mainnet (no submitTransaction) 371ms
+   → send must be refused: expected '{"value":{"receipt":{"schema":"hardka…' to match /NODE_NETWORK_MISMATCH/
+ × packages/kaspa-rpc/test/node-network-identity.test.ts > NODE-NETWORK-IDENTITY-1 · the session verifies the node's network before using it > a node of the expected network is used normally, identity asked once per connection
+   → expected [ 'getUtxosByAddresses', …(1) ] to deeply equal [ 'getServerInfo', …(2) ]
+ × packages/kaspa-rpc/test/node-network-identity.test.ts > NODE-NETWORK-IDENTITY-1 · the session verifies the node's network before using it > a simnet node presented as testnet-10 is refused before any request reaches it
+   → expected a failure, the call succeeded
+ × packages/kaspa-rpc/test/node-network-identity.test.ts > NODE-NETWORK-IDENTITY-1 · the session verifies the node's network before using it > a mainnet node presented as testnet-10 is refused, a submitTransaction never reaches it
+   → expected 'RPC_STORAGE_MASS_MISSING' to be 'NODE_NETWORK_MISMATCH' // Object.is equality
+ × packages/kaspa-rpc/test/node-network-identity.test.ts > NODE-NETWORK-IDENTITY-1 · the session verifies the node's network before using it > a node that does not say which network it is: NODE_NETWORK_UNKNOWN, nothing used
+   → expected a failure, the call succeeded
+ × packages/kaspa-rpc/test/node-network-identity.test.ts > NODE-NETWORK-IDENTITY-1 · the session verifies the node's network before using it > a node that refuses getServerInfo: NODE_NETWORK_UNKNOWN (identity not established), not a mismatch
+   → expected a failure, the call succeeded
+ ✓ packages/kaspa-rpc/test/node-network-identity.test.ts > NODE-NETWORK-IDENTITY-1 · the session verifies the node's network before using it > a connection that cannot be opened stays a connection failure, never an identity verdict
+ × packages/kaspa-rpc/test/node-network-identity.test.ts > NODE-NETWORK-IDENTITY-1 · the session verifies the node's network before using it > a reconnection verifies again: a validated session never carries its verdict to the next connection
+   → expected a failure, the call succeeded
+ × packages/kaspa-rpc/test/node-network-identity.test.ts > NODE-NETWORK-IDENTITY-1 · the session verifies the node's network before using it > a verdict belongs to one endpoint: another URL opens and verifies its own connection
+   → expected a failure, the call succeeded
+ ✓ packages/kaspa-rpc/test/node-network-identity.test.ts > NODE-NETWORK-IDENTITY-1 · the session verifies the node's network before using it > without an expected network nothing changes: no identity call
+ × packages/kaspa-rpc/test/node-network-identity.test.ts > NODE-NETWORK-IDENTITY-1 · the session verifies the node's network before using it > the three HardKAS clients pass the expectation down; a mismatch is not retried
+   → expected a failure, the call succeeded
+ × packages/kaspa-rpc/test/node-network-identity.test.ts > NODE-NETWORK-IDENTITY-1 · the session verifies the node's network before using it > the node's own spelling is compared by network id (case, `kaspa-` prefix), never by substring
+   → expected a failure, the call succeeded
+ × packages/kaspa-rpc/test/node-network-identity.test.ts > NODE-NETWORK-IDENTITY-1 · the session verifies the node's network before using it > the refusal never carries URL credentials
+   → expected a failure, the call succeeded
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 15 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  packages/cli/test/node-network-identity.test.ts > NODE-NETWORK-IDENTITY-1 Â· CLI (built dist) against a loopback fake node > a simnet node presented as testnet-10: accounts balance refuses NODE_NETWORK_MISMATCH, no balance read
+AssertionError: exit 0
+{
+  "ok": true,
+  "command": "accounts balance",
+  "mode": "cli",
+  "result": {
+    "name": "alice",
+    "address": "kaspatest:qzgnc763wqu6g0l3d8auhquu0rjynfwjfxeefz5q9w27tc0j48zqsa87xljwy",
+    "balanceSompi": "10000000000",
+    "utxoCount": 1,
+    "network": "testnet-10"
+  }
+}
+
+: expected +0 to be 1 // Object.is equality
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ packages/cli/test/node-network-identity.test.ts:184:33
+    182|     try {
+    183|       const r = await run(["accounts", "balance", "alice", "--network"…
+    184|       expect(r.status, r.brief).toBe(1);
+       |                                 ^
+    185|       expect(r.doc?.ok, r.brief).toBe(false);
+    186|       expect(r.doc?.code, r.brief).toBe("NODE_NETWORK_MISMATCH");
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/15]⎯
+
+ FAIL  packages/cli/test/node-network-identity.test.ts > NODE-NETWORK-IDENTITY-1 Â· CLI (built dist) against a loopback fake node > a mainnet node presented as testnet-10: tx plan refuses NODE_NETWORK_MISMATCH, no UTXO read, no plan written
+AssertionError: exit 0
+{
+  "schema": "hardkas.txPlan",
+  "hardkasVersion": "0.12.0-rc.27",
+  "schemaVersion": "hardkas.artifact.v1",
+  "version": "1.0.0-alpha",
+  "hashVersion": 5,
+  "createdAt": "2026-10-13T14:47:02.304Z",
+  "networkId": "testnet-10",
+  "mode": "rpc",
+  "execution": {
+    "mode": "rpc",
+    "domain": "kaspa-l1",
+    "network": "testnet-10"
+  },
+  "from": {
+    "address": "kaspatest:qzgnc763wqu6g0l3d8auhquu0rjynfwjfxeefz5q9w27tc0j48zqsa87xljwy",
+    "input": "alice"
+  },
+  "to": {
+    "address": "kaspatest:qrd3eu2plkd7597qqaqjujdg5clzdgrg7p3fquj3xfwtg7sllhjmzddxkrpha",
+    "input": "bob"
+  },
+  "amountSompi": "100000000",
+  "estimatedFeeSompi": "1000100",
+  "estimatedMass": "10001",
+  "inputs": [
+    {
+      "outpoint": {
+        "transactionId": "0000000000000000000000000000000000000000000000000000000000000f00",
+        "index": 0
+      },
+      "amountSompi": "10000000000",
+      "address": "kaspatest:qzgnc763wqu6g0l3d8auhquu0rjynfwjfxeefz5q9w27tc0j48zqsa87xljwy",
+      "scriptPublicKey": "000020913c7b517039a43ff169fbcb839c78e449a5d249b3948a802b95e5e1f2a9c408ac",
+      "blockDaaScore": "49900000",
+      "isCoinbase": false
+    }
+  ],
+  "outputs": [
+    {
+      "address": "kaspatest:qrd
+: expected +0 to be 1 // Object.is equality
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ packages/cli/test/node-network-identity.test.ts:198:33
+    196|       const ws = workspace(fake.url);
+    197|       const r = await run(["tx", "plan", "--network", "testnet-10", "-…
+    198|       expect(r.status, r.brief).toBe(1);
+       |                                 ^
+    199|       expect(r.doc?.code, r.brief).toBe("NODE_NETWORK_MISMATCH");
+    200|       expect(fake.methods.filter((m) => DATA_METHODS.includes(m)), JSO…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/15]⎯
+
+ FAIL  packages/cli/test/node-network-identity.test.ts > NODE-NETWORK-IDENTITY-1 Â· CLI (built dist) against a loopback fake node > a node that does not say its network: NODE_NETWORK_UNKNOWN, nothing read
+AssertionError: exit 1
+{
+  "ok": false,
+  "code": "UNKNOWN",
+  "message": "Unknown connection error: RPC Server (remote error) -> RPC serde deserialization error: Invalid network type: unknown",
+  "mode": "cli"
+}
+
+: expected 'UNKNOWN' to be 'NODE_NETWORK_UNKNOWN' // Object.is equality
+
+Expected: "NODE_NETWORK_UNKNOWN"
+Received: "UNKNOWN"
+
+ ❯ packages/cli/test/node-network-identity.test.ts:213:36
+    211|       const r = await run(["tx", "plan", "--network", "testnet-10", "-…
+    212|       expect(r.status, r.brief).toBe(1);
+    213|       expect(r.doc?.code, r.brief).toBe("NODE_NETWORK_UNKNOWN");
+       |                                    ^
+    214|       expect(fake.methods.filter((m) => DATA_METHODS.includes(m)), JSO…
+    215|     } finally {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/15]⎯
+
+ FAIL  packages/cli/test/node-network-identity.test.ts > NODE-NETWORK-IDENTITY-1 Â· SDK (built dist) against a loopback fake node > a simnet node presented as testnet-10: sdk.tx.plan is refused NODE_NETWORK_MISMATCH before any UTXO read
+AssertionError: succeeded: expected undefined to be 'NODE_NETWORK_MISMATCH' // Object.is equality
+
+- Expected: 
+"NODE_NETWORK_MISMATCH"
+
++ Received: 
+undefined
+
+ ❯ packages/cli/test/node-network-identity.test.ts:250:70
+    248|     try {
+    249|       const r = await attempt(workspace(fake.url), (sdk) => sdk.tx.pla…
+    250|       expect(r.error?.code, String(r.error?.message ?? "succeeded")).t…
+       |                                                                      ^
+    251|       expect(fake.methods.filter((m) => DATA_METHODS.includes(m)), JSO…
+    252|     } finally {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/15]⎯
+
+ FAIL  packages/cli/test/node-network-identity.test.ts > NODE-NETWORK-IDENTITY-1 Â· SDK (built dist) against a loopback fake node > a signed testnet-10 transaction is never sent to a node that says mainnet (no submitTransaction)
+AssertionError: send must be refused: expected '{"value":{"receipt":{"schema":"hardka…' to match /NODE_NETWORK_MISMATCH/
+
+- Expected: 
+/NODE_NETWORK_MISMATCH/
+
++ Received: 
+"{\"value\":{\"receipt\":{\"schema\":\"hardkas.txSubmission.v1\",\"hardkasVersion\":\"0.12.0-rc.27\",\"version\":\"1.0.0-alpha\",\"hashVersion\":5,\"networkId\":\"testnet-10\",\"mode\":\"rpc\",\"createdAt\":\"2026-10-13T14:47:08.049Z\",\"execution\":{\"mode\":\"rpc\",\"domain\":\"kaspa-l1\",\"network\":\"testnet-10\"},\"signedArtifactId\":\"72fa1c6d684d650bcb644d99d4183024df90edf00c45f575898556ce87078506\",\"txId\":\"unknown\",\"submitResult\":{\"accepted\":false,\"error\":\"Cannot connect to Kaspa RPC at ws://127.0.0.1:64982. Is kaspad running with --rpclisten-json? (wRPC -> WebSocket -> Unable to connect to ws://127.0.0.1:64982)\"},\"fee\":{\"status\":\"derived\",\"method\":\"inputs-minus-outputs\",\"inputsSompi\":\"10000000000\",\"outputsSompi\":\"9998999900\",\"feeSompi\":\"1000100\",\"inputCount\":1,\"outputCount\":2,\"planArtifactId\":\"e7737b14cdf01ca2792645348b8d4dd62f519b380a27c9ab1a91960d5bd5d0a0\"},\"submittedAt\":\"2026-10-13T14:47:08.049Z\",\"workflowId\":\"wf_07a74cb1530c51b7\",\"assumptionLevel\":\"testnet-10\",\"lineage\":{\"artifactId\":\"ae9ae2312b3bb0838d27aef94909bda9f5a5adea6bc4e0d4f29537dd0defbc29\",\"lineageId\":\"e7737b14cdf01ca2792645348b8d4dd62f519b380a27c9ab1a91960d5bd5d0a0\",\"parentArtifactId\":\"72fa1c6d684d650bcb644d99d4183024df90edf00c45f575898556ce87078506\",\"rootArtifactId\":\"e7737b14cdf01ca2792645348b8d4dd62f519b380a27c9ab1a91960d5bd5d0a0\",\"sequence\":3},\"contentHash\":\"ae9ae2312b3bb0838d27aef94909bda9f5a5adea6bc4e0d4f29537dd0defbc29\"},\"submission\":{\"schema\":\"hardkas.txSubmission.v1\",\"hardkasVersion\":\"0.12.0-rc.27\",\"version\":\"1.0.0-alpha\",\"hashVersion\":5,\"networkId\":\"testnet-10\",\"mode\":\"rpc\",\"createdAt\":\"2026-10-13T14:47:08.049Z\",\"execution\":{\"mode\":\"rpc\",\"domain\":\"kaspa-l1\",\"network\":\"testnet-10\"},\"signedArtifactId\":\"72fa1c6d684d650bcb644d99d4183024df90edf00c45f575898556ce87078506\",\"txId\":\"unknown\",\"submitResult\":{\"accepted\":false,\"error\":\"Cannot connect to Kaspa RPC at ws://127.0.0.1:64982. Is kaspad running with --rpclisten-json? (wRPC -> WebSocket -> Unable to connect to ws://127.0.0.1:64982)\"},\"fee\":{\"status\":\"derived\",\"method\":\"inputs-minus-outputs\",\"inputsSompi\":\"10000000000\",\"outputsSompi\":\"9998999900\",\"feeSompi\":\"1000100\",\"inputCount\":1,\"outputCount\":2,\"planArtifactId\":\"e7737b14cdf01ca2792645348b8d4dd62f519b380a27c9ab1a91960d5bd5d0a0\"},\"submittedAt\":\"2026-10-13T14:47:08.049Z\",\"workflowId\":\"wf_07a74cb1530c51b7\",\"assumptionLevel\":\"testnet-10\",\"lineage\":{\"artifactId\":\"ae9ae2312b3bb0838d27aef94909bda9f5a5adea6bc4e0d4f29537dd0defbc29\",\"lineageId\":\"e7737b14cdf01ca2792645348b8d4dd62f519b380a27c9ab1a91960d5bd5d0a0\",\"parentArtifactId\":\"72fa1c6d684d650bcb644d99d4183024df90edf00c45f575898556ce87078506\",\"rootArtifactId\":\"e7737b14cdf01ca2792645348b8d4dd62f519b380a27c9ab1a91960d5bd5d0a0\",\"sequence\":3},\"contentHash\":\"ae9ae2312b3bb0838d27aef94909bda9f5a5adea6bc4e0d4f29537dd0defbc29\"},\"receiptPath\":\"C:\\\\Users\\\\jrodr\\\\AppData\\\\Local\\\\Temp\\\\hk-nni-ksobaM\\\\.hardkas\\\\artifacts\\\\receipts\\\\txSubmission-ae9ae2312b3bb0838d27aef94909bda9f5a5adea6bc4e0d4f29537dd0defbc29.json\",\"artifactId\":\"ae9ae2312b3bb0838d27aef94909bda9f5a5adea6bc4e0d4f29537dd0defbc29\",\"mode\":\"real\",\"submitted\":false,\"txId\":\"unknown\"}}"
+
+ ❯ packages/cli/test/node-network-identity.test.ts:278:122
+    276|       const r = await attempt(ws, (sdk) => sdk.tx.send(signed));
+    277|       const refusal = r.error ?? r.value;
+    278|       expect(JSON.stringify({ code: r.error?.code, message: r.error?.m…
+       |                                                                                                                          ^
+    279|       expect(refusal).toBeDefined();
+    280|       expect(bad.methods, JSON.stringify(bad.methods)).not.toContain("…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/15]⎯
+
+ FAIL  packages/kaspa-rpc/test/node-network-identity.test.ts > NODE-NETWORK-IDENTITY-1 · the session verifies the node's network before using it > a node of the expected network is used normally, identity asked once per connection
+AssertionError: expected [ 'getUtxosByAddresses', …(1) ] to deeply equal [ 'getServerInfo', …(2) ]
+
+- Expected
++ Received
+
+  Array [
+-   "getServerInfo",
+    "getUtxosByAddresses",
+    "getBlockDagInfo",
+  ]
+
+ ❯ packages/kaspa-rpc/test/node-network-identity.test.ts:52:23
+     50|     await s.request("getUtxosByAddresses", { addresses: ["kaspatest:q"…
+     51|     await s.request("getBlockDagInfo");
+     52|     expect(methods()).toEqual(["getServerInfo", "getUtxosByAddresses",…
+       |                       ^
+     53|     await s.close();
+     54|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/15]⎯
+
+ FAIL  packages/kaspa-rpc/test/node-network-identity.test.ts > NODE-NETWORK-IDENTITY-1 · the session verifies the node's network before using it > a simnet node presented as testnet-10 is refused before any request reaches it
+Error: expected a failure, the call succeeded
+ ❯ failure packages/kaspa-rpc/test/node-network-identity.test.ts:43:9
+     41|     return e;
+     42|   }
+     43|   throw new Error("expected a failure, the call succeeded");
+       |         ^
+     44| }
+     45| 
+ ❯ packages/kaspa-rpc/test/node-network-identity.test.ts:59:15
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/15]⎯
+
+ FAIL  packages/kaspa-rpc/test/node-network-identity.test.ts > NODE-NETWORK-IDENTITY-1 · the session verifies the node's network before using it > a mainnet node presented as testnet-10 is refused, a submitTransaction never reaches it
+AssertionError: expected 'RPC_STORAGE_MASS_MISSING' to be 'NODE_NETWORK_MISMATCH' // Object.is equality
+
+Expected: "NODE_NETWORK_MISMATCH"
+Received: "RPC_STORAGE_MASS_MISSING"
+
+ ❯ packages/kaspa-rpc/test/node-network-identity.test.ts:73:20
+     71|     const s = session(fake, "testnet-10");
+     72|     const e = await failure(s.request("submitTransaction", { transacti…
+     73|     expect(e.code).toBe("NODE_NETWORK_MISMATCH");
+       |                    ^
+     74|     expect(e.data).toMatchObject({ expected: "testnet-10", observed: "…
+     75|     expect(methods()).not.toContain("submitTransaction");
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/15]⎯
+
+ FAIL  packages/kaspa-rpc/test/node-network-identity.test.ts > NODE-NETWORK-IDENTITY-1 · the session verifies the node's network before using it > a node that does not say which network it is: NODE_NETWORK_UNKNOWN, nothing used
+Error: expected a failure, the call succeeded
+ ❯ failure packages/kaspa-rpc/test/node-network-identity.test.ts:43:9
+     41|     return e;
+     42|   }
+     43|   throw new Error("expected a failure, the call succeeded");
+       |         ^
+     44| }
+     45| 
+ ❯ packages/kaspa-rpc/test/node-network-identity.test.ts:81:15
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/15]⎯
+
+ FAIL  packages/kaspa-rpc/test/node-network-identity.test.ts > NODE-NETWORK-IDENTITY-1 · the session verifies the node's network before using it > a node that refuses getServerInfo: NODE_NETWORK_UNKNOWN (identity not established), not a mismatch
+Error: expected a failure, the call succeeded
+ ❯ failure packages/kaspa-rpc/test/node-network-identity.test.ts:43:9
+     41|     return e;
+     42|   }
+     43|   throw new Error("expected a failure, the call succeeded");
+       |         ^
+     44| }
+     45| 
+ ❯ packages/kaspa-rpc/test/node-network-identity.test.ts:91:15
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/15]⎯
+
+ FAIL  packages/kaspa-rpc/test/node-network-identity.test.ts > NODE-NETWORK-IDENTITY-1 · the session verifies the node's network before using it > a reconnection verifies again: a validated session never carries its verdict to the next connection
+Error: expected a failure, the call succeeded
+ ❯ failure packages/kaspa-rpc/test/node-network-identity.test.ts:43:9
+     41|     return e;
+     42|   }
+     43|   throw new Error("expected a failure, the call succeeded");
+       |         ^
+     44| }
+     45| 
+ ❯ packages/kaspa-rpc/test/node-network-identity.test.ts:111:15
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/15]⎯
+
+ FAIL  packages/kaspa-rpc/test/node-network-identity.test.ts > NODE-NETWORK-IDENTITY-1 · the session verifies the node's network before using it > a verdict belongs to one endpoint: another URL opens and verifies its own connection
+Error: expected a failure, the call succeeded
+ ❯ failure packages/kaspa-rpc/test/node-network-identity.test.ts:43:9
+     41|     return e;
+     42|   }
+     43|   throw new Error("expected a failure, the call succeeded");
+       |         ^
+     44| }
+     45| 
+ ❯ packages/kaspa-rpc/test/node-network-identity.test.ts:123:15
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/15]⎯
+
+ FAIL  packages/kaspa-rpc/test/node-network-identity.test.ts > NODE-NETWORK-IDENTITY-1 · the session verifies the node's network before using it > the three HardKAS clients pass the expectation down; a mismatch is not retried
+Error: expected a failure, the call succeeded
+ ❯ failure packages/kaspa-rpc/test/node-network-identity.test.ts:43:9
+     41|     return e;
+     42|   }
+     43|   throw new Error("expected a failure, the call succeeded");
+       |         ^
+     44| }
+     45| 
+ ❯ packages/kaspa-rpc/test/node-network-identity.test.ts:142:17
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/15]⎯
+
+ FAIL  packages/kaspa-rpc/test/node-network-identity.test.ts > NODE-NETWORK-IDENTITY-1 · the session verifies the node's network before using it > the node's own spelling is compared by network id (case, `kaspa-` prefix), never by substring
+Error: expected a failure, the call succeeded
+ ❯ failure packages/kaspa-rpc/test/node-network-identity.test.ts:43:9
+     41|     return e;
+     42|   }
+     43|   throw new Error("expected a failure, the call succeeded");
+       |         ^
+     44| }
+     45| 
+ ❯ packages/kaspa-rpc/test/node-network-identity.test.ts:159:15
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/15]⎯
+
+ FAIL  packages/kaspa-rpc/test/node-network-identity.test.ts > NODE-NETWORK-IDENTITY-1 · the session verifies the node's network before using it > the refusal never carries URL credentials
+Error: expected a failure, the call succeeded
+ ❯ failure packages/kaspa-rpc/test/node-network-identity.test.ts:43:9
+     41|     return e;
+     42|   }
+     43|   throw new Error("expected a failure, the call succeeded");
+       |         ^
+     44| }
+     45| 
+ ❯ packages/kaspa-rpc/test/node-network-identity.test.ts:165:15
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[15/15]⎯
+
+ Test Files  2 failed (2)
+      Tests  15 failed | 4 passed (19)
+   Start at  16:46:54
+   Duration  13.99s (transform 1.53s, setup 0ms, collect 250ms, tests 13.07s, environment 0ms, prepare 224ms)
+
+JSON report written to C:/Users/jrodr/AppData/Local/Temp/claude/C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo/ecaf7e92-a2ba-49b0-aafc-c62b4cb5eda0/scratchpad/l1-reality-1/nni/logs/nni-before-4.json

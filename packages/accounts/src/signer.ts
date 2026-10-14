@@ -8,7 +8,7 @@ import {
   HARDKAS_VERSION,
   createLineageTransition
 } from "@hardkas/artifacts";
-import { systemRuntimeContext } from "@hardkas/core";
+import { systemRuntimeContext, assertMainnetTransactionsDisabled } from "@hardkas/core";
 import {
   HardkasAccount,
   HardkasTxPlanSigner,
@@ -90,11 +90,10 @@ export async function signTxPlanArtifact(input: {
     ) as SignedTxArtifact;
   }
 
-  // Block mainnet by default for safety
-  if (planArtifact.networkId === "mainnet" && !input.allowMainnet) {
-    throw new Error(
-      "Mainnet signing is disabled by default. Use --allow-mainnet-signing only if you understand the risks."
-    );
+  // SDK-MAINNET-BROADCAST-GUARD-1: the product's mainnet policy, typed (MAINNET_SIGNING_DISABLED), from the plan's network
+  // and the target's. `allowMainnet: true` remains for direct library use only; no HardKAS path passes it.
+  if (!input.allowMainnet) {
+    assertMainnetTransactionsDisabled("sign", [planArtifact.networkId, input.target?.network], "accounts signer");
   }
 
   if (account && account.kind === "synthetic") {

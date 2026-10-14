@@ -1,0 +1,108 @@
+﻿gate-hermetic: HARDKAS_HOME=C:\Users\jrodr\AppData\Local\Temp\hardkas-hermetic-home-PqDoV2 (copy of C:\Users\jrodr\AppData\Local\Temp\hk-v210-gate-home)
+gate-hermetic: DOCKER_HOST=tcp://127.0.0.1:1; preload=C:\Users\jrodr\AppData\Local\Temp\hk-ra\wt\scripts\hermetic\no-network-preload.cjs
+gate-hermetic: vitest run --coverage.enabled=false --reporter=default --reporter=json --outputFile=C:\Users\jrodr\AppData\Local\Temp\claude\C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo\21f9a2e4-33ac-4300-9366-aff402f85900\scratchpad\cut46-event-ledger-2\logs\fc-json-1.json packages/cli/test/event-ledger-2-json-contract.test.ts
+
+ RUN  v2.1.9 C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt
+
+ ❯ packages/cli/test/event-ledger-2-json-contract.test.ts (2 tests | 1 failed) 26842ms
+   ✓ EVENT-LEDGER-2 final check · `tx send --json` with a ledger failure writes exactly one JSON document > before anything is sent: one JSON, exit 1, EVENT_LEDGER_APPEND_FAILED, outcome failed, no txId (nothing was planned), nothing executed 13403ms
+   × EVENT-LEDGER-2 final check · `tx send --json` with a ledger failure writes exactly one JSON document > after a known effect (the simulator committed; its receipt's announcement fails): one JSON, exit 1, outcome submitted, the txId and the receipt 13438ms
+     → exit 1 in 11023 ms
+stdout:
+{
+  "ok": false,
+  "command": "tx send",
+  "mode": "cli",
+  "outcome": "failed",
+  "code": "EVENT_LEDGER_APPEND_FAILED",
+  "message": "Nothing was executed: the ledger failed before the simulator ran transaction synthetic-53ba8fe1243e03a65088351a466ef06177e01126b38f968e3f7fe6e3c1295eb7. The event artifact.written (d40e38fa-2aee-49fa-bef6-a68e1512f7cc) could not be recorded in C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-el2-json-yBFz9P\\events.jsonl: Could not take the append lock of events.jsonl (C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-el2-json-yBFz9P\\.hardkas\\locks\\append-events.jsonl.lock) within 10000 ms: held by process 13884, which is running on this host. A lock whose holder may be alive is never taken over. If that holder is gone, 'hardkas lock doctor' reports it and 'hardkas lock clear append-events.jsonl --if-dead' removes it. The artifact 53ba8fe1243e03a65088351a466ef06177e01126b38f968e3f7fe6e3c1295eb7 WAS written at C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-el2-json-yBFz9P\\.hardkas\\artifacts\\plans\\txPlan-53ba8fe1243e03a65088351a466ef06177e01126b38f968e3f7fe6e3c1295eb7.json; only its ledger entry is missing. Nothing was spooled. Free the ledger ('hardkas lock doctor'), then run the command again.",
+  "network": "simulated",
+  "effect": {
+    "operation": "simulated-execution",
+    "outcome": "not-performed",
+    "txId": "synthetic-53ba8fe1243e03a65088351a466ef06177e01126b38f968e3f7fe6e3c1295eb7"
+  }
+}
+
+stderr:
+: expected { exit: 1, ok: false, …(3) } to deeply equal { exit: 1, ok: false, …(3) }
+
+node.exe : ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+En C:\Users\jrodr\AppData\Local\Temp\claude\C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo\21f9a2e4-33ac-4300-
+9366-aff402f85900\scratchpad\cut46-event-ledger-2\run-files-wt.ps1: 22 Carácter: 1
++ & node @args_ *> $log
++ ~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+
+ FAIL  packages/cli/test/event-ledger-2-json-contract.test.ts > EVENT-LEDGER-2 final check · `tx send --json` with a 
+ledger failure writes exactly one JSON document > after a known effect (the simulator committed; its receipt's 
+announcement fails): one JSON, exit 1, outcome submitted, the txId and the receipt
+AssertionError: exit 1 in 11023 ms
+stdout:
+{
+  "ok": false,
+  "command": "tx send",
+  "mode": "cli",
+  "outcome": "failed",
+  "code": "EVENT_LEDGER_APPEND_FAILED",
+  "message": "Nothing was executed: the ledger failed before the simulator ran transaction 
+synthetic-53ba8fe1243e03a65088351a466ef06177e01126b38f968e3f7fe6e3c1295eb7. The event artifact.written 
+(d40e38fa-2aee-49fa-bef6-a68e1512f7cc) could not be recorded in 
+C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-el2-json-yBFz9P\\events.jsonl: Could not take the append lock of 
+events.jsonl (C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-el2-json-yBFz9P\\.hardkas\\locks\\append-events.jsonl.lock) 
+within 10000 ms: held by process 13884, which is running on this host. A lock whose holder may be alive is never taken 
+over. If that holder is gone, 'hardkas lock doctor' reports it and 'hardkas lock clear append-events.jsonl --if-dead' 
+removes it. The artifact 53ba8fe1243e03a65088351a466ef06177e01126b38f968e3f7fe6e3c1295eb7 WAS written at C:\\Users\\jro
+dr\\AppData\\Local\\Temp\\hk-el2-json-yBFz9P\\.hardkas\\artifacts\\plans\\txPlan-53ba8fe1243e03a65088351a466ef06177e011
+26b38f968e3f7fe6e3c1295eb7.json; only its ledger entry is missing. Nothing was spooled. Free the ledger ('hardkas lock 
+doctor'), then run the command again.",
+  "network": "simulated",
+  "effect": {
+    "operation": "simulated-execution",
+    "outcome": "not-performed",
+    "txId": "synthetic-53ba8fe1243e03a65088351a466ef06177e01126b38f968e3f7fe6e3c1295eb7"
+  }
+}
+
+stderr:
+: expected { exit: 1, ok: false, …(3) } to deeply equal { exit: 1, ok: false, …(3) }
+
+- Expected
++ Received
+
+  Object {
+    "code": "EVENT_LEDGER_APPEND_FAILED",
+    "effect": Object {
+      "operation": "simulated-execution",
+-     "outcome": "executed",
++     "outcome": "not-performed",
+      "txId": "synthetic-53ba8fe1243e03a65088351a466ef06177e01126b38f968e3f7fe6e3c1295eb7",
+    },
+    "exit": 1,
+    "ok": false,
+-   "outcome": "submitted",
++   "outcome": "failed",
+  }
+
+ ❯ packages/cli/test/event-ledger-2-json-contract.test.ts:139:7
+    137|       },
+    138|       `exit ${r.status} in ${r.ms} ms\nstdout:\n${r.stdout}\nstderr:\n…
+    139|     ).toEqual({
+       |       ^
+    140|       exit: 1,
+    141|       ok: false,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 1 passed (2)
+   Start at  10:12:00
+   Duration  41.36s (transform 2.30s, setup 0ms, collect 13.35s, tests 26.84s, environment 0ms, prepare 783ms)
+
+JSON report written to C:/Users/jrodr/AppData/Local/Temp/claude/C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo/21f9a2e4-33ac-4300-9366-aff402f85900/scratchpad/cut46-event-ledger-2/logs/fc-json-1.json
+
+gate-hermetic: vitest exit 1 after 46s
+gate-hermetic: non-loopback attempts (each one fails the gate): 0
+gate-hermetic: loopback connection targets (review for dependencies on local services):

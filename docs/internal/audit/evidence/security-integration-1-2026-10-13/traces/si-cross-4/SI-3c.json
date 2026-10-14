@@ -1,0 +1,10 @@
+{
+  "status": "failed",
+  "code": "MAINNET_SIGNING_DISABLED",
+  "signerCalls": 0,
+  "submitTransaction": {
+    "M": 0
+  },
+  "submissionRecords": [],
+  "submissionEvents": []
+}

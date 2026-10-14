@@ -10,16 +10,18 @@ export class HardkasAccounts {
   constructor(private sdk: Hardkas) {}
 
   /**
-   * Resolves an account by name or address.
+   * Resolves an account by name or address — for the execution target given, else for the world this SDK instance
+   * runs on (WORKSPACE-AUTHORITY-2: the identities follow the same resolved target as the plans, never the config's
+   * default while the instance runs elsewhere).
    */
   async resolve(
     nameOrAddress: string,
-    executionTarget?: import("@hardkas/core").HardkasExecutionTarget
+    executionTarget: import("@hardkas/core").HardkasExecutionTarget = this.sdk.execution
   ): Promise<HardkasAccount> {
     return resolveHardkasAccount({
       nameOrAddress,
       config: { ...this.sdk.config.config, cwd: this.sdk.workspace.root } as any,
-      ...(executionTarget ? { executionTarget } : {})
+      executionTarget
     });
   }
 
@@ -61,7 +63,8 @@ export class HardkasAccounts {
    */
   async list(): Promise<Record<string, unknown>[]> {
     const { listHardkasAccounts, describeAccount } = await import("@hardkas/accounts");
-    const accounts = listHardkasAccounts({ ...this.sdk.config.config, cwd: this.sdk.workspace.root } as any);
+    // the identities of the world this instance runs on (WORKSPACE-AUTHORITY-2)
+    const accounts = listHardkasAccounts({ ...this.sdk.config.config, cwd: this.sdk.workspace.root } as any, this.sdk.execution);
     return accounts.map((a) => describeAccount(a));
   }
 

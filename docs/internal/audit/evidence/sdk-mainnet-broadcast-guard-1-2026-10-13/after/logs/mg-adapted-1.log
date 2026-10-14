@@ -1,0 +1,82 @@
+
+ RUN  v2.1.9 C:/Users/jrodr/hkl1/mg/src
+
+ ✓ packages/sdk/test/sdk-mainnet-broadcast-guard-1.test.ts > SDK-MAINNET-BROADCAST-GUARD-1 · mainnet signing and broadcast are refused (allowPublic does not open them) > MG-1 internal signer on a mainnet instance (policy.allowPublic): refused with a typed mainnet code, nothing written
+ ✓ packages/sdk/test/sdk-mainnet-broadcast-guard-1.test.ts > SDK-MAINNET-BROADCAST-GUARD-1 · mainnet signing and broadcast are refused (allowPublic does not open them) > MG-2 external signer on a mainnet instance: refused before the external signer is asked, nothing written
+ ✓ packages/sdk/test/sdk-mainnet-broadcast-guard-1.test.ts > SDK-MAINNET-BROADCAST-GUARD-1 · mainnet signing and broadcast are refused (allowPublic does not open them) > MG-3 tx.send of a mainnet-signed artifact (signed outside HardKAS): refused before submitTransaction, no submission recorded
+ ✓ packages/sdk/test/sdk-mainnet-broadcast-guard-1.test.ts > SDK-MAINNET-BROADCAST-GUARD-1 · mainnet signing and broadcast are refused (allowPublic does not open them) > MG-4 the same through the workspace config (experimental + network.allowPublic, no per-call policy): refused before submitTransaction
+ ✓ packages/sdk/test/sdk-mainnet-broadcast-guard-1.test.ts > SDK-MAINNET-BROADCAST-GUARD-1 · mainnet signing and broadcast are refused (allowPublic does not open them) > MG-5 a workflow [tx.plan, tx.send] on a mainnet instance with an external signer: no signature, no submitTransaction
+stdout | packages/sdk/test/sdk-mainnet-broadcast-guard-1.test.ts > SDK-MAINNET-BROADCAST-GUARD-1 · mainnet signing and broadcast are refused (allowPublic does not open them) > MG-6 sdk.wallet (WalletToolkit) create + send on a mainnet instance with an external signer (the toolkit's default network): no submitTransaction
+MG-6 seen: {"label":"the toolkit's default network","created":{"ok":true},"r":{"ok":false,"code":"MAINNET_BROADCAST_DISABLED","message":"Mainnet broadcast is disabled in HardKAS (WalletToolkit.payMany): allowPublic, an external signer or a direct call do not enable it. Use simnet or testnet for real transactions. Nothing was sent or recorded."},"signerCalls":0,"submitAttempts":0,"nodeMethods":["getBlockDagInfo"]}
+
+stdout | packages/sdk/test/sdk-mainnet-broadcast-guard-1.test.ts > SDK-MAINNET-BROADCAST-GUARD-1 · mainnet signing and broadcast are refused (allowPublic does not open them) > MG-6 sdk.wallet (WalletToolkit) create + send on a mainnet instance with an external signer (network: mainnet): no submitTransaction
+MG-6 seen: {"label":"network: mainnet","r":{"ok":false,"message":"WALLET_QUERY_MAINNET_BLOCKED: mainnet query is blocked by default in simulated v1."},"signerCalls":0,"submitAttempts":0,"nodeMethods":[]}
+
+ ✓ packages/sdk/test/sdk-mainnet-broadcast-guard-1.test.ts > SDK-MAINNET-BROADCAST-GUARD-1 · mainnet signing and broadcast are refused (allowPublic does not open them) > MG-6 sdk.wallet (WalletToolkit) create + send on a mainnet instance with an external signer (the toolkit's default network): no submitTransaction
+ ✓ packages/sdk/test/sdk-mainnet-broadcast-guard-1.test.ts > SDK-MAINNET-BROADCAST-GUARD-1 · mainnet signing and broadcast are refused (allowPublic does not open them) > MG-6 sdk.wallet (WalletToolkit) create + send on a mainnet instance with an external signer (network: mainnet): no submitTransaction
+ ✓ packages/sdk/test/sdk-mainnet-broadcast-guard-1.test.ts > SDK-MAINNET-BROADCAST-GUARD-1 · every identity, every signing path, no effects > MG-7 a direct send refused on mainnet leaves no submission event, no receipt and no submit (ledger attached)
+ ✓ packages/sdk/test/sdk-mainnet-broadcast-guard-1.test.ts > SDK-MAINNET-BROADCAST-GUARD-1 · every identity, every signing path, no effects > MG-8 crossed identities: a mainnet artifact on a testnet-10 instance is refused (sign and send), whatever the instance declares
+ ✓ packages/sdk/test/sdk-mainnet-broadcast-guard-1.test.ts > SDK-MAINNET-BROADCAST-GUARD-1 · every identity, every signing path, no effects > MG-9 the multisig append path (a partially signed mainnet artifact) is refused before any bookkeeping
+ ✓ packages/sdk/test/sdk-mainnet-broadcast-guard-1.test.ts > SDK-MAINNET-BROADCAST-GUARD-1 · every identity, every signing path, no effects > MG-10 a testnet workflow with allowPublic records allowMainnet: false, and its workflowId is the one the frozen identity input gives
+ ✓ packages/sdk/test/sdk-mainnet-broadcast-guard-1.test.ts > SDK-MAINNET-BROADCAST-GUARD-1 · what stays allowed (controls) > MG-C1 without allowPublic a mainnet instance does not open (PUBLIC_NETWORK_BLOCKED)
+ ✓ packages/sdk/test/sdk-mainnet-broadcast-guard-1.test.ts > SDK-MAINNET-BROADCAST-GUARD-1 · what stays allowed (controls) > MG-C2 reading and planning on mainnet stay allowed (allowPublic)
+ ✓ packages/sdk/test/sdk-mainnet-broadcast-guard-1.test.ts > SDK-MAINNET-BROADCAST-GUARD-1 · what stays allowed (controls) > MG-C3 testnet-10 with allowPublic: the internal signer signs and tx.send reaches submitTransaction (the fake refuses it) 312ms
+ ✓ packages/sdk/test/sdk-mainnet-broadcast-guard-1.test.ts > SDK-MAINNET-BROADCAST-GUARD-1 · what stays allowed (controls) > MG-C4 testnet-10 with allowPublic and an external signer: it signs and tx.send reaches submitTransaction
+ ✓ packages/accounts/test/signer.test.ts > signTxPlanArtifact > should sign a simulator plan with a synthetic account
+ ✓ packages/accounts/test/signer.test.ts > signTxPlanArtifact > should throw error when signing real plan with synthetic account
+ ✓ packages/accounts/test/signer.test.ts > signTxPlanArtifact > should generate simulated signature for simulated plan even with real account
+ ✓ packages/accounts/test/signer.test.ts > signTxPlanArtifact > should throw error for real Kaspa signing if backend is unavailable
+ ✓ packages/accounts/test/signer.test.ts > signTxPlanArtifact > should block mainnet signing by default
+ ✓ packages/accounts/test/signer.test.ts > signTxPlanArtifact > should allow mainnet signing if allowMainnet is true
+  ℹ HardKAS: Encrypted keystore is for local developer workflows, not institutional custody.
+  ℹ Do not import mainnet keys unless you fully understand the risks.
+
+  ⚠️  WARNING:
+     LEGACY MODE: Storing private keys in plaintext is unsafe and discouraged.
+stderr | packages/cli/test/account-hardening.test.ts > Account Hardening & Security Guards > should allow unsafe plaintext import with explicit flag
+
+  ⚠️  [SECURITY WARNING] Plaintext private keys detected in legacy account store for: bob
+     Location: C:\Users\jrodr\AppData\Local\Temp\account-hardening-test-vwkTr8\.hardkas\accounts.real.json
+     Recommendation: Re-import these accounts using encrypted keystores.
+
+
+ ✓ packages/cli/test/account-hardening.test.ts > Account Hardening & Security Guards > should import an account as encrypted by default and set 0600 permissions 436ms
+ ✓ packages/cli/test/account-hardening.test.ts > Account Hardening & Security Guards > should allow unsafe plaintext import with explicit flag
+ ✓ packages/cli/test/account-hardening.test.ts > Account Hardening & Security Guards > should refuse mainnet signing without explicit flag
+ × packages/cli/test/account-hardening.test.ts > Account Hardening & Security Guards > should refuse signing if artifact network and account network disagree
+   → expected [Function] to throw error including 'Network mismatch' but got 'Mainnet signing is disabled in HardKA…'
+ ✓ packages/cli/test/help-truth.test.ts > --help says what the CLI does > marks the options that have no effect
+ ✓ packages/cli/test/help-truth.test.ts > --help says what the CLI does > does not advertise defaults that the code does not apply
+ ✓ packages/cli/test/help-truth.test.ts > --help says what the CLI does > points the kaspa commands at the canonical localnet wRPC endpoint
+ ✓ packages/cli/test/help-truth.test.ts > --help says what the CLI does > states the real scope of commands that were overstated
+ ✓ packages/cli/test/broadcast-guard.test.ts > assertBroadcastNetworkAllowed > should allow same non-mainnet network
+ ✓ packages/cli/test/broadcast-guard.test.ts > assertBroadcastNetworkAllowed > should block mainnet (always rejected: MAINNET_BROADCAST_DISABLED)
+ ✓ packages/cli/test/broadcast-guard.test.ts > assertBroadcastNetworkAllowed > should block mainnet even if only artifact is mainnet
+ ✓ packages/cli/test/broadcast-guard.test.ts > assertBroadcastNetworkAllowed > should block mainnet-like aliases
+ ✓ packages/cli/test/broadcast-guard.test.ts > assertBroadcastNetworkAllowed > the refusal is typed MAINNET_BROADCAST_DISABLED (the policy shared with the SDK)
+ ✓ packages/cli/test/broadcast-guard.test.ts > assertBroadcastNetworkAllowed > should fail on network mismatch
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  packages/cli/test/account-hardening.test.ts > Account Hardening & Security Guards > should refuse signing if artifact network and account network disagree
+AssertionError: expected [Function] to throw error including 'Network mismatch' but got 'Mainnet signing is disabled in HardKA…'
+
+Expected: "Network mismatch"
+Received: "Mainnet signing is disabled in HardKAS (tx sign): allowPublic, an external signer or a direct call do not enable it. Use simnet or testnet for real transactions. Nothing was signed or recorded."
+
+ ❯ packages/cli/test/account-hardening.test.ts:122:5
+    120|     };
+    121| 
+    122|     await expect(
+       |     ^
+    123|       runTxSign({
+    124|         planArtifact,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+ Test Files  1 failed | 4 passed (5)
+      Tests  1 failed | 34 passed (35)
+   Start at  22:16:15
+   Duration  13.10s (transform 2.50s, setup 0ms, collect 7.27s, tests 4.25s, environment 1ms, prepare 565ms)
+
+JSON report written to C:/Users/jrodr/AppData/Local/Temp/claude/C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo/ecaf7e92-a2ba-49b0-aafc-c62b4cb5eda0/scratchpad/l1-reality-1/mg/logs/mg-adapted-1.json

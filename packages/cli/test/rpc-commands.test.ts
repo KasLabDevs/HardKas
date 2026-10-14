@@ -134,6 +134,22 @@ describe("hardkas rpc dag", () => {
     expect(node.closed).toBe(1);
   });
 
+  it("--json writes the DAG with ok: true envelope", async () => {
+    const r = await hardkas(["dag", "--url", "ws://10.0.0.5:18110", "--json"], "json");
+    expect(r.error).toBeUndefined();
+    expect(JSON.parse(r.stdout)).toEqual({
+      ok: true,
+      url: "ws://10.0.0.5:18110",
+      dag: {
+        networkId: "simnet",
+        virtualDaaScore: "5206",
+        tipHashes: ["aa".repeat(32), "ab".repeat(32)],
+        virtualParentHashes: [],
+        sink: "bb".repeat(32)
+      }
+    });
+  });
+
   it("an unreachable node fails the command with the connection error", async () => {
     node.fail = true;
     const r = await hardkas(["dag"]);
@@ -179,7 +195,7 @@ describe("hardkas rpc mempool", () => {
     expect(r.error).toBeUndefined();
     expect(r.stdout).toContain("Status:   not in the mempool");
     const j = await hardkas(["mempool", "ee".repeat(32), "--json"], "json");
-    expect(JSON.parse(j.stdout)).toEqual({ url: "ws://127.0.0.1:18210", txId: "ee".repeat(32), entry: null });
+    expect(JSON.parse(j.stdout)).toEqual({ ok: true, url: "ws://127.0.0.1:18210", txId: "ee".repeat(32), entry: null });
   });
 
   it("without a txId, lists what the mempool holds", async () => {
@@ -188,6 +204,7 @@ describe("hardkas rpc mempool", () => {
     expect(r.stdout).toContain(`${TX_IN_MEMPOOL}  fee 2036 sompi`);
     const j = await hardkas(["mempool", "--json"], "json");
     expect(JSON.parse(j.stdout)).toEqual({
+      ok: true,
       url: "ws://127.0.0.1:18210",
       entries: [{ txId: TX_IN_MEMPOOL, feeSompi: "2036", isOrphan: false }]
     });

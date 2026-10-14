@@ -11,13 +11,13 @@ describe("assertBroadcastNetworkAllowed", () => {
     ).not.toThrow();
   });
 
-  it("should block mainnet (always rejected in 0.12.0-rc.27)", () => {
+  it("should block mainnet (always rejected: MAINNET_BROADCAST_DISABLED)", () => {
     expect(() =>
       assertBroadcastNetworkAllowed({
         artifactNetworkId: "mainnet",
         selectedNetwork: "mainnet"
       })
-    ).toThrow(/Mainnet broadcast is disabled in HardKAS 0.12.0-rc.27/);
+    ).toThrow(/Mainnet broadcast is disabled in HardKAS/);
   });
 
   it("should block mainnet even if only artifact is mainnet", () => {
@@ -26,7 +26,7 @@ describe("assertBroadcastNetworkAllowed", () => {
         artifactNetworkId: "kaspa",
         selectedNetwork: "devnet"
       })
-    ).toThrow(/Mainnet broadcast is disabled in HardKAS 0.12.0-rc.27/);
+    ).toThrow(/Mainnet broadcast is disabled in HardKAS/);
   });
 
   it("should block mainnet-like aliases", () => {
@@ -35,7 +35,17 @@ describe("assertBroadcastNetworkAllowed", () => {
         artifactNetworkId: "kaspa-mainnet",
         selectedNetwork: "kaspa-mainnet"
       })
-    ).toThrow(/Mainnet broadcast is disabled in HardKAS 0.12.0-rc.27/);
+    ).toThrow(/Mainnet broadcast is disabled in HardKAS/);
+  });
+
+  it("the refusal is typed MAINNET_BROADCAST_DISABLED (the policy shared with the SDK)", () => {
+    let err: any;
+    try {
+      assertBroadcastNetworkAllowed({ artifactNetworkId: "mainnet", selectedNetwork: "mainnet" });
+    } catch (e) {
+      err = e;
+    }
+    expect(err?.code).toBe("MAINNET_BROADCAST_DISABLED");
   });
 
   it("should fail on network mismatch", () => {

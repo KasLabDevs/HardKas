@@ -1,0 +1,14 @@
+{
+  "asWritten": {
+    "artifacts": 0,
+    "status": "EVIDENCE_VERIFIED"
+  },
+  "missingParent": {
+    "carried": 2,
+    "signedParentCarried": false,
+    "status": "EVIDENCE_VERIFIED"
+  },
+  "editedStatus": "EVIDENCE_ARTIFACT_HASH_MISMATCH",
+  "droppedStatus": "EVIDENCE_MEMBERSHIP_MISMATCH",
+  "forgedStatus": "EVIDENCE_VERIFIED"
+}

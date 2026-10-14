@@ -1,0 +1,31 @@
+{
+  "exit": 1,
+  "code": "TASK_FAILED",
+  "scenario": {
+    "status": "failed",
+    "error": {
+      "code": "TASK_FAILED",
+      "message": "Task 'boom' failed: task gave up at ws://127.0.0.1:1/?token=REDACTED",
+      "component": "task",
+      "recoverable": false
+    },
+    "named": 0,
+    "claim": {
+      "kind": "none"
+    }
+  },
+  "verdict": {
+    "ok": true,
+    "status": "EVIDENCE_VERIFIED",
+    "scope": {
+      "artifacts": 0,
+      "claim": "none",
+      "verdict": "failed",
+      "lineage": "closed",
+      "unresolved": [],
+      "payments": [],
+      "statement": "Integrity and internal consistency of an unsigned package: each artifact hashes to its identity and they are exactly the ones its sealed scenario result names. Not a proof of inclusion on chain, nor of who produced the package; an observation records what one RPC observer reported."
+    }
+  },
+  "secretAnywhere": false
+}

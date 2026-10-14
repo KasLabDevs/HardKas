@@ -1,0 +1,2497 @@
+diff --git a/packages/artifacts/src/tx-status.ts b/packages/artifacts/src/tx-status.ts
+index ef9dad8c9..4931ffefa 100644
+--- a/packages/artifacts/src/tx-status.ts
++++ b/packages/artifacts/src/tx-status.ts
+@@ -117,10 +117,32 @@ export interface DerivedTxStatus {
+   isFinal: boolean;
+ }
+ 
++/**
++ * EVENT-LEDGER-2 closeout · what the recorded result of ONE submit call establishes, and nothing more (never a
++ * consensus state):
++ *  - `accepted`: the responding node accepted the submission request — not acceptance or confirmation in the DAG;
++ *  - `rejected`: the node answered and refused it: an answer with `accepted: false`, or the node's own rejection, which
++ *    arrives as "Rejected transaction <txId>: <reason>" (rusty-kaspa's RejectedTransaction RPC error);
++ *  - `unknown`: the call failed without such an answer (a timeout, a lost connection, …): whether the node received the
++ *    transaction is not known, so it is never reported as a rejection.
++ */
++export type SubmitOutcome = "accepted" | "rejected" | "unknown";
++
++const NODE_REJECTION = /^Rejected transaction\b/;
++
++export function submitOutcomeOf(submitResult: { accepted?: unknown; error?: unknown } | null | undefined): SubmitOutcome {
++  if (!submitResult) return "unknown";
++  if (submitResult.accepted === true) return "accepted";
++  if (submitResult.accepted !== false) return "unknown";
++  const error = submitResult.error;
++  if (typeof error !== "string" || error.length === 0) return "rejected";
++  return NODE_REJECTION.test(error) ? "rejected" : "unknown";
++}
++
+ type Ignored = { artifactId?: string; reason: string };
+ 
+ type Submission =
+-  | { kind: "submission"; artifactId: string; accepted: boolean; txId: string }
++  | { kind: "submission"; artifactId: string; outcome: SubmitOutcome; error: string | undefined; txId: string }
+   | { kind: "synthetic-receipt"; artifactId: string; txId: string }
+   | { kind: "none" };
+ 
+@@ -151,7 +173,13 @@ function classifySubmission(submission: unknown, txId: string, ignored: Ignored[
+       ignored.push({ artifactId: identity.artifactId, reason: `submission: txId ${parsed.data.txId} is not ${txId}` });
+       return { kind: "none" };
+     }
+-    return { kind: "submission", artifactId: identity.artifactId, accepted: parsed.data.submitResult.accepted === true, txId };
++    return {
++      kind: "submission",
++      artifactId: identity.artifactId,
++      outcome: submitOutcomeOf(parsed.data.submitResult),
++      error: parsed.data.submitResult.error,
++      txId
++    };
+   }
+   if (s.schema === HardkasSchemas.TxReceipt || s.schema === HardkasSchemas.TxReceiptV1) {
+     if (s.txId !== txId) {
+@@ -516,12 +544,20 @@ export function deriveTxStatus(input: {
+   if (histories.length > 0) reasons.push(...histories.flatMap((h) => h.reasons));
+   void byId;
+   if (submission.kind === "submission") {
+-    if (submission.accepted) {
++    if (submission.outcome === "accepted") {
+       reasons.push("submitTransaction returned success at that instant on the responding node; nothing has been observed since");
+       return result("SUBMITTED", [], histories, reasons);
+     }
+-    reasons.push("the responding node rejected this submission");
+-    return result("REJECTED_BY_NODE", [], histories, reasons);
++    if (submission.outcome === "rejected") {
++      reasons.push("the responding node rejected this submission");
++      return result("REJECTED_BY_NODE", [], histories, reasons);
++    }
++    // EVENT-LEDGER-2 closeout: a call that failed without an answer is not a rejection; nothing decides yet
++    reasons.push(
++      `the submit call failed without an answer from the responding node${submission.error ? ` (${submission.error})` : ""}: ` +
++        "whether the node received this transaction is unknown, so no state is decided — observe it"
++    );
++    return result("INSUFFICIENT_EVIDENCE", [], histories, reasons);
+   }
+   reasons.push("no FULL-scope submission or observation decides this txId");
+   return result("INSUFFICIENT_EVIDENCE", [], histories, reasons);
+diff --git a/packages/artifacts/test/event-ledger-2-submit-outcome.test.ts b/packages/artifacts/test/event-ledger-2-submit-outcome.test.ts
+new file mode 100644
+index 000000000..3f701e391
+--- /dev/null
++++ b/packages/artifacts/test/event-ledger-2-submit-outcome.test.ts
+@@ -0,0 +1,62 @@
++import { describe, it, expect } from "vitest";
++import { calculateContentHash, CURRENT_HASH_VERSION } from "../src/canonical.js";
++import { HARDKAS_VERSION } from "../src/constants.js";
++import { deriveTxStatus } from "../src/tx-status.js";
++
++// EVENT-LEDGER-2 · reviewer final closeout, decision 2: a submit call that failed WITHOUT an answer from the node (a
++// timeout, a lost connection, a connection that never opened) is not the node's rejection — whether the node received
++// the transaction is unknown. The derived state says so with an existing state (INSUFFICIENT_EVIDENCE: nothing decides
++// yet; observe it), never REJECTED_BY_NODE; no consensus state is invented. The node's own rejection (its wire format,
++// "Rejected transaction <txId>: <reason>", as the real-node fixtures record it) and an answer with accepted:false stay
++// REJECTED_BY_NODE; an accepted submission stays SUBMITTED (the request was accepted at that instant, not DAG acceptance).
++
++const TX = "a".repeat(64);
++const SIGNED = "b".repeat(64);
++
++function submission(submitResult: Record<string, unknown>): any {
++  const s: any = {
++    schema: "hardkas.txSubmission.v1",
++    hardkasVersion: HARDKAS_VERSION,
++    version: "1.0.0-alpha",
++    hashVersion: CURRENT_HASH_VERSION,
++    networkId: "simnet",
++    mode: "localnet",
++    createdAt: "2026-10-09T00:00:00.000Z",
++    signedArtifactId: SIGNED,
++    txId: TX,
++    submitResult,
++    workflowId: "wf_0000000000000000",
++    lineage: { artifactId: "", parentArtifactId: SIGNED, lineageId: SIGNED, rootArtifactId: SIGNED, sequence: 3 }
++  };
++  s.contentHash = calculateContentHash(s, CURRENT_HASH_VERSION);
++  s.lineage.artifactId = s.contentHash;
++  return s;
++}
++
++const derive = (submitResult: Record<string, unknown>) => deriveTxStatus({ txId: TX, submission: submission(submitResult), observations: [] });
++
++describe("EVENT-LEDGER-2 final closeout · a submit result decides only what it establishes", () => {
++  it("a submit call that failed without an answer decides nothing: INSUFFICIENT_EVIDENCE, never REJECTED_BY_NODE", () => {
++    for (const error of [
++      "RPC request submitTransaction timed out after 5000ms",
++      "Connection to Kaspa RPC at ws://127.0.0.1:16110 was lost: socket closed",
++      "Cannot connect to Kaspa RPC at ws://127.0.0.1:16110. Connection timed out."
++    ]) {
++      const d = derive({ accepted: false, error });
++      expect({ error, status: d.status }).toEqual({ error, status: "INSUFFICIENT_EVIDENCE" });
++      expect(d.reasons.join(" ")).toMatch(/unknown/);
++      expect(d.evidence.submissionArtifactId, "the attempt is still the evidence it names").toMatch(/^[0-9a-f]{64}$/);
++    }
++  });
++
++  it("the node's own rejection in its wire format, and an answer with accepted:false, stay REJECTED_BY_NODE (control)", () => {
++    expect(derive({ accepted: false, error: `Rejected transaction ${TX}: transaction ${TX} is an orphan where orphan is disallowed` }).status).toBe("REJECTED_BY_NODE");
++    expect(derive({ accepted: false }).status).toBe("REJECTED_BY_NODE");
++  });
++
++  it("an accepted submission stays SUBMITTED: accepted at that instant on the responding node, nothing observed (control)", () => {
++    const d = derive({ accepted: true, transactionId: TX });
++    expect(d.status).toBe("SUBMITTED");
++    expect(d.isFinal).toBe(false);
++  });
++});
+diff --git a/packages/cli/src/commands/tx.ts b/packages/cli/src/commands/tx.ts
+index 3e1d131ae..a663e9805 100644
+--- a/packages/cli/src/commands/tx.ts
++++ b/packages/cli/src/commands/tx.ts
+@@ -91,12 +91,37 @@ async function refuseUnrecordableTrackLabel(args: {
+   });
+ }
+ 
++/**
++ * EVENT-LEDGER-2 final closeout (A1) · a ledger failure that stops `tx send` keeps its typed code; in JSON mode the one
++ * envelope also carries the AUX-11 outcome of what the send had done (`metadata.effect`), so automation never reads
++ * "not sent" after a broadcast or an execution. The error is rethrown either way.
++ */
++async function rethrowSendLedgerFailure(e: unknown, json: boolean | undefined, network: string): Promise<never> {
++  const { isEventLedgerAppendFailure } = await import("@hardkas/core");
++  if (json && isEventLedgerAppendFailure(e)) {
++    const { outcomeOfEffect } = await import("../runners/next-steps.js");
++    const effect = e.metadata?.effect;
++    UI.writeJson({
++      ok: false,
++      command: "tx send",
++      mode: "cli",
++      outcome: outcomeOfEffect(effect),
++      code: e.code,
++      message: e.message,
++      network,
++      ...(effect ? { effect } : {})
++    });
++  }
++  throw e;
++}
++
+ /**
+  * Demo-cut step 2 · T-A14b — what a network send may say about the transaction:
+  * the state DERIVED from the evidence just recorded (the submission, plus any
+  * observation already in the workspace), through `sdk.tx.status`. Right after a send
+  * that is SUBMITTED (submitTransaction succeeded at that instant on the responding
+- * node) or REJECTED_BY_NODE — never a claim of consensus validation.
++ * node), REJECTED_BY_NODE, or — for a submit call that failed without an answer —
++ * INSUFFICIENT_EVIDENCE; never a claim of consensus validation.
+  */
+ async function networkSendState(txId: string | undefined, network: string): Promise<string> {
+   if (!txId || !/^[0-9a-f]{64}$/.test(txId)) return "not derivable: the node returned no txId";
+@@ -560,12 +585,13 @@ export function registerTxCommands(program: Command) {
+               config: loaded.config,
+               ...(options.url ? { url: options.url } : {}),
+               workspaceRoot
+-            });
++            }).catch((e: unknown) => rethrowSendLedgerFailure(e, options.json, String(signedArtifact.networkId)));
+ 
+             // Wave 1.2 · CLI-NEXTSTEPS-1 / IC-5′.11: artifactId is the receipt's
+             // canonical identity; the txId is labelled as a txId.
+             // Wave 1.3 · R-iii: the verdict comes from the authenticated outcome.
+-            const { nextStepsAfterSend, receiptArtifactId, sendExplanation, sendOutcome } = await import("../runners/next-steps.js");
++            const { nextStepsAfterSend, receiptArtifactId, sendExplanation, sendOutcome, sendOutcomeLabel, notAcceptedFailure } =
++              await import("../runners/next-steps.js");
+             const outcome = sendOutcome(result.receipt);
+ 
+             // JSON-PAPERCUTS #19: the deployment record (`--track`) is written BEFORE anything is
+@@ -619,8 +645,9 @@ export function registerTxCommands(program: Command) {
+             if (options.json) {
+               UI.writeJson({
+                 ok: result.accepted,
+-                // AUX-11: one of three unambiguous outcomes (submitted | rejected | not_executed).
+-                outcome: result.accepted ? "submitted" : "rejected",
++                // AUX-11: one of three unambiguous outcomes (submitted | rejected | not_executed); EVENT-LEDGER-2 final
++                // closeout: `unknown` for a submit call that failed without an answer (never reported as rejected).
++                outcome: sendOutcomeLabel(result.receipt, result.accepted),
+                 data: {
+                   plan: undefined,
+                   signed: signedArtifact,
+@@ -661,7 +688,7 @@ export function registerTxCommands(program: Command) {
+                   ? "Transaction simulated successfully"
+                   : result.accepted
+                     ? "Transaction submitted to the node"
+-                    : "Transaction NOT accepted by the node",
++                    : notAcceptedFailure(result.receipt, result.txId).title,
+                 {
+                   "Execution ID": result.executionId,
+                   "Artifact ID": receiptArtifactId(result.receipt) ?? "unknown",
+@@ -689,11 +716,8 @@ export function registerTxCommands(program: Command) {
+ 
+             if (!result.accepted) {
+               const { HardkasCliError } = await import("../cli-errors.js");
+-              throw new HardkasCliError(
+-                "TX_SUBMISSION_REJECTED",
+-                `The node did not accept the transaction (${(result.receipt as any)?.submitResult?.error ?? "no reason returned"}); the submission was recorded as ${receiptArtifactId(result.receipt) ?? "unknown"}.`,
+-                { exitCode: 1 }
+-              );
++              const failure = notAcceptedFailure(result.receipt, result.txId);
++              throw new HardkasCliError(failure.code, failure.message, { exitCode: 1 });
+             }
+           } else if (options.from && options.to && options.amount) {
+             // AUX-11: the confirmation policy of `tx send` — required unless the network is
+@@ -710,6 +734,7 @@ export function registerTxCommands(program: Command) {
+               });
+             }
+ 
++            // a ledger failure that stops the flow itself (before its first step) is reported with its outcome too
+             const result = await runTxFlow({
+               amount: options.amount!,
+               from: options.from!,
+@@ -722,9 +747,10 @@ export function registerTxCommands(program: Command) {
+               ...(options.feeRate ? { feeRate: options.feeRate } : {}),
+               ...(options.url ? { url: options.url } : {}),
+               workspaceRoot
+-            });
++            }).catch((e: unknown) => rethrowSendLedgerFailure(e, options.json, String(options.network ?? loaded.config.defaultNetwork ?? "simulated")));
+ 
+-            const { nextStepsAfterSend, receiptArtifactId, sendExplanation } = await import("../runners/next-steps.js");
++            const { nextStepsAfterSend, receiptArtifactId, sendExplanation, sendOutcomeLabel, notAcceptedFailure, outcomeOfEffect, effectSummary } =
++              await import("../runners/next-steps.js");
+             // R-iii: when the flow broadcast, the verdict is the runner's authenticated outcome.
+             // AUX-11: only a send step that ran ("ok") can be submitted or rejected. A step the
+             // flow blocked or skipped is NOT executed; a step (or an earlier step) that errored
+@@ -740,6 +766,40 @@ export function registerTxCommands(program: Command) {
+               const erroredStep = (["plan", "sign", "send"] as const).find(
+                 (k) => result.steps[k].status === "error"
+               );
++              // EVENT-LEDGER-2 final closeout (A1): a ledger failure keeps its typed code, and what the send step had
++              // already done decides the outcome — a broadcast or an execution that took place never reads as "did not
++              // broadcast", and the partial results stay in the output
++              const errored = erroredStep ? result.steps[erroredStep] : undefined;
++              const effect = errored?.effect;
++              const ledgerFailure = errored?.code === "EVENT_LEDGER_APPEND_FAILED";
++              if (ledgerFailure || (effect !== undefined && effect.outcome !== "not-performed")) {
++                const code = ledgerFailure ? "EVENT_LEDGER_APPEND_FAILED" : "TX_SEND_FAILED";
++                const message = ledgerFailure
++                  ? (errored?.error ?? "the event ledger could not record the flow")
++                  : `FAILED after the send step ran (${effectSummary(effect!)}): ${erroredStep} step failed: ${errored?.error ?? "no error message"}`;
++                if (options.json) {
++                  UI.writeJson({
++                    ok: false,
++                    command: "tx send",
++                    mode: "cli",
++                    outcome: outcomeOfEffect(effect),
++                    code,
++                    message,
++                    network: result.networkId,
++                    steps: stepStatuses,
++                    ...(effect ? { effect } : {}),
++                    data: {
++                      plan: result.steps.plan.artifact,
++                      signed: result.steps.sign.artifact,
++                      receipt: flowSend.artifact?.receipt
++                    }
++                  });
++                }
++                throw new HardkasCliError(code, message, {
++                  exitCode: HardkasExitCode.RUNTIME_FAILURE,
++                  context: { network: result.networkId, ...stepStatuses }
++                });
++              }
+               const notExecuted = erroredStep === undefined;
+               const reason = erroredStep
+                 ? `${erroredStep} step failed: ${result.steps[erroredStep].error ?? "no error message"}`
+@@ -768,8 +828,9 @@ export function registerTxCommands(program: Command) {
+               const sendResult = result.steps.send;
+               UI.writeJson({
+                 ok: flowAccepted,
+-                // AUX-11: one of three unambiguous outcomes (submitted | rejected | not_executed).
+-                outcome: flowAccepted ? "submitted" : "rejected",
++                // AUX-11: one of three unambiguous outcomes (submitted | rejected | not_executed); EVENT-LEDGER-2 final
++                // closeout: `unknown` for a submit call that failed without an answer (never reported as rejected).
++                outcome: sendOutcomeLabel(sendResult?.artifact?.receipt, flowAccepted),
+                 data: {
+                   plan: result.steps.plan.artifact,
+                   signed: result.steps.sign.artifact,
+@@ -815,7 +876,7 @@ export function registerTxCommands(program: Command) {
+                   ? "Transaction simulated successfully"
+                   : flowAccepted
+                     ? "Transaction submitted to the node"
+-                    : "Transaction NOT accepted by the node",
++                    : notAcceptedFailure(sendResult?.artifact?.receipt, sendResult?.artifact?.txId).title,
+                 {
+                   // Wave 1.5 · AUD-14 (simulator part): no replay ran here, so no
+                   // replay id or replay verdict is printed.
+@@ -842,11 +903,8 @@ export function registerTxCommands(program: Command) {
+             }
+             if (!flowAccepted) {
+               const { HardkasCliError } = await import("../cli-errors.js");
+-              throw new HardkasCliError(
+-                "TX_SUBMISSION_REJECTED",
+-                `The node did not accept the transaction; the submission was recorded as ${receiptArtifactId(flowSend?.artifact?.receipt) ?? "unknown"}.`,
+-                { exitCode: 1 }
+-              );
++              const failure = notAcceptedFailure(flowSend?.artifact?.receipt, flowSend?.artifact?.txId);
++              throw new HardkasCliError(failure.code, failure.message, { exitCode: 1 });
+             }
+           } else {
+             // CLI-RUNTIME-CONTRACT-1: a usage error with its code and exit code (was an untyped "Command failed").
+diff --git a/packages/cli/src/runners/dev-tx-generate-runner.ts b/packages/cli/src/runners/dev-tx-generate-runner.ts
+index 5599c74b3..1a8286484 100644
+--- a/packages/cli/src/runners/dev-tx-generate-runner.ts
++++ b/packages/cli/src/runners/dev-tx-generate-runner.ts
+@@ -1,4 +1,5 @@
+ import { runTxFlow } from "./tx-flow.js";
++import { sendOutcomeLabel } from "./next-steps.js";
+ import { loadHardkasConfig } from "@hardkas/config";
+ import { UI } from "../ui.js";
+ import { systemRuntimeContext } from "@hardkas/core";
+@@ -68,7 +69,12 @@ export async function runDevTxGenerate(options: any) {
+         planError: flowResult.steps.plan.error,
+         signError: flowResult.steps.sign.error,
+         sendError: flowResult.steps.send.error,
+-        ...(flowResult.steps.send.artifact?.accepted === false ? { sendRejected: true } : {})
++        // EVENT-LEDGER-2 final closeout: a submit call that failed without an answer is not a rejection
++        ...(flowResult.steps.send.artifact?.accepted === false
++          ? sendOutcomeLabel(flowResult.steps.send.artifact.receipt, false) === "unknown"
++            ? { sendOutcomeUnknown: true }
++            : { sendRejected: true }
++          : {})
+       });
+     } catch (e) {
+       failCount++;
+diff --git a/packages/cli/src/runners/next-steps.ts b/packages/cli/src/runners/next-steps.ts
+index d1d140f46..543862b71 100644
+--- a/packages/cli/src/runners/next-steps.ts
++++ b/packages/cli/src/runners/next-steps.ts
+@@ -9,7 +9,8 @@
+ // from a submission's authenticated submit result, or from a FULL-scope receipt's
+ // status. A legacy (hashVersion ≤ 4) or unverifiable status decides nothing.
+ 
+-import { checkArtifactIdentity, CURRENT_HASH_VERSION, HardkasSchemas } from "@hardkas/artifacts";
++import { checkArtifactIdentity, CURRENT_HASH_VERSION, HardkasSchemas, submitOutcomeOf } from "@hardkas/artifacts";
++import type { LedgerFailureEffect } from "@hardkas/core";
+ 
+ const ARTIFACT_ID_PATTERN = /^[0-9a-f]{64}$/;
+ 
+@@ -78,3 +79,64 @@ export function sendOutcome(artifact: any): SendArtifactOutcome {
+   }
+   return { kind: "unknown", accepted: false, decided: false, authScope: "NONE" };
+ }
++
++/**
++ * EVENT-LEDGER-2 final closeout (decision 2) · the `outcome` a `tx send` reports for a send that ran: AUX-11's
++ * `submitted` / `rejected`, and `unknown` for a submission whose submit call failed without an answer from the node —
++ * which may have received it, so it is never reported as rejected.
++ */
++export function sendOutcomeLabel(artifact: any, accepted: boolean): "submitted" | "rejected" | "unknown" {
++  if (accepted) return "submitted";
++  if (artifact?.schema === HardkasSchemas.TxSubmissionV1 && submitOutcomeOf(artifact?.submitResult) === "unknown") return "unknown";
++  return "rejected";
++}
++
++/** The CLI failure for a send that ran and was not accepted: the node's rejection, or an unknown outcome. */
++export function notAcceptedFailure(artifact: any, txId: string | undefined): { code: string; title: string; message: string } {
++  const id = receiptArtifactId(artifact) ?? "unknown";
++  const reason = typeof artifact?.submitResult?.error === "string" ? artifact.submitResult.error : undefined;
++  if (sendOutcomeLabel(artifact, false) === "unknown") {
++    const tx = txId && ARTIFACT_ID_PATTERN.test(txId) ? txId : undefined;
++    return {
++      code: "TX_SUBMISSION_OUTCOME_UNKNOWN",
++      title: "Submission outcome UNKNOWN: the node may have received the transaction",
++      message:
++        `The outcome of the submission is unknown: the submit call failed without an answer from the node (${reason ?? "no answer"}), ` +
++        `which may have received the transaction. The attempt was recorded as ${id}; check the transaction` +
++        `${tx ? ` ('hardkas tx status ${tx}')` : ""} before sending it again.`
++    };
++  }
++  return {
++    code: "TX_SUBMISSION_REJECTED",
++    title: "Transaction NOT accepted by the node",
++    message: `The node did not accept the transaction (${reason ?? "no reason returned"}); the submission was recorded as ${id}.`
++  };
++}
++
++/**
++ * EVENT-LEDGER-2 final closeout (A1) · the AUX-11 `outcome` of a `tx send` whose ledger failed, from what its send step
++ * had done: submitted (the node accepted the submission request, or the simulator executed it), rejected, unknown, or
++ * failed (nothing was sent or executed).
++ */
++export function outcomeOfEffect(effect: LedgerFailureEffect | undefined): "submitted" | "rejected" | "unknown" | "failed" {
++  if (!effect || effect.outcome === "not-performed") return "failed";
++  if (effect.outcome === "accepted" || effect.outcome === "executed") return "submitted";
++  return effect.outcome;
++}
++
++/** A short phrase for what a send step had done, for a failure that came after it. */
++export function effectSummary(effect: LedgerFailureEffect): string {
++  const tx = effect.txId ? `transaction ${effect.txId}` : "the transaction";
++  switch (effect.outcome) {
++    case "accepted":
++      return `the node accepted the submission of ${tx}: RPC acceptance of the request, not acceptance in the DAG`;
++    case "rejected":
++      return `the node rejected ${tx}`;
++    case "unknown":
++      return `the outcome of sending ${tx} is unknown: the node may have received it`;
++    case "executed":
++      return `the simulator executed ${tx}`;
++    case "not-performed":
++      return "nothing was sent or executed";
++  }
++}
+diff --git a/packages/cli/src/runners/tx-batch-runner.ts b/packages/cli/src/runners/tx-batch-runner.ts
+index 1a024ba53..f815b3255 100644
+--- a/packages/cli/src/runners/tx-batch-runner.ts
++++ b/packages/cli/src/runners/tx-batch-runner.ts
+@@ -2,6 +2,7 @@ import { getOutput } from "../output.js";
+ import fs from "node:fs/promises";
+ import path from "node:path";
+ import { runTxFlow } from "./tx-flow.js";
++import { sendOutcomeLabel } from "./next-steps.js";
+ import { loadHardkasConfig } from "@hardkas/config";
+ import { UI } from "../ui.js";
+ import { HardkasCliError, HardkasExitCode } from "../cli-errors.js";
+@@ -96,7 +97,12 @@ export async function runTxBatch(options: any) {
+         planError: flowResult.steps.plan.error,
+         signError: flowResult.steps.sign.error,
+         sendError: flowResult.steps.send.error,
+-        ...(flowResult.steps.send.artifact?.accepted === false ? { sendRejected: true } : {})
++        // EVENT-LEDGER-2 final closeout: a submit call that failed without an answer is not a rejection
++        ...(flowResult.steps.send.artifact?.accepted === false
++          ? sendOutcomeLabel(flowResult.steps.send.artifact.receipt, false) === "unknown"
++            ? { sendOutcomeUnknown: true }
++            : { sendRejected: true }
++          : {})
+       });
+       if (flowResult.ok) {
+         successCount++;
+diff --git a/packages/cli/src/runners/tx-flow.ts b/packages/cli/src/runners/tx-flow.ts
+index 258bc601e..420a739ab 100644
+--- a/packages/cli/src/runners/tx-flow.ts
++++ b/packages/cli/src/runners/tx-flow.ts
+@@ -6,18 +6,22 @@ import {
+   SignedTxArtifact,
+   writeArtifact,
+   deriveWorkflowId,
++  submitOutcomeOf,
+   HARDKAS_VERSION
+ } from "@hardkas/artifacts";
+ import { HardkasConfig } from "@hardkas/config";
+ import {
+   coreEvents,
+   createEventEnvelope,
++  isEventLedgerAppendFailure,
++  rethrowWithLedgerEffect,
+   asEventSequence,
+   asArtifactId,
+   asWorkflowId,
+   asCorrelationId,
+   asNetworkId,
+-  asTxId
++  asTxId,
++  type LedgerFailureEffect
+ } from "@hardkas/core";
+ import crypto from "node:crypto";
+ import path from "path";
+@@ -52,6 +56,23 @@ export interface TxFlowStepResult<T> {
+   artifactPath?: string;
+   error?: string;
+   reason?: string;
++  /** EVENT-LEDGER-2 final closeout (A1): the typed code of the step's error, when it has one. */
++  code?: string;
++  /** What the flow had already sent or executed when the step failed (a ledger failure, or any failure after the send). */
++  effect?: LedgerFailureEffect;
++}
++
++/** EVENT-LEDGER-2 final closeout (A1) · what a send step that ran did: a broadcast (with its recorded outcome) or a simulated execution. */
++function sendEffectOf(sent: TxSendRunnerResult): LedgerFailureEffect {
++  const receipt: any = sent.receipt;
++  const broadcast = receipt?.schema === HardkasSchemas.TxSubmissionV1;
++  return {
++    operation: broadcast ? "broadcast" : "simulated-execution",
++    outcome: broadcast ? submitOutcomeOf(receipt?.submitResult) : "executed",
++    txId: sent.txId,
++    artifactId: typeof receipt?.contentHash === "string" ? receipt.contentHash : undefined,
++    artifactPath: sent.receiptPath
++  };
+ }
+ 
+ export interface TxFlowResult {
+@@ -182,19 +203,29 @@ async function txFlow(input: TxFlowInput, opened: { sdk?: { close(): Promise<voi
+ 
+   const netId = asNetworkId(resolvedNetwork);
+ 
+-  coreEvents.emit(
+-    createEventEnvelope({
+-      kind: "workflow.started",
+-      domain: "workflow",
+-      workflowId,
+-      correlationId: asCorrelationId(workflowId),
+-      networkId: netId,
+-      payload: { workflowId, network: netId },
+-      sequenceNumber: asEventSequence(1),
+-      globalOffset: globalOffset++,
+-      sourceSubsystem: "cli:tx-flow"
+-    })
+-  );
++  // EVENT-LEDGER-2 final closeout (A1): until the send step runs, a ledger failure of a flow that was to send says that
++  // nothing was sent (or executed, in the simulator); once it ran, the failure names what it did (sendEffectOf).
++  let sendOperation: LedgerFailureEffect["operation"] = resolvedNetwork === "simulated" ? "simulated-execution" : "broadcast";
++  const notPerformed = (): LedgerFailureEffect => ({ operation: sendOperation, outcome: "not-performed" });
++
++  try {
++    coreEvents.emit(
++      createEventEnvelope({
++        kind: "workflow.started",
++        domain: "workflow",
++        workflowId,
++        correlationId: asCorrelationId(workflowId),
++        networkId: netId,
++        payload: { workflowId, network: netId },
++        sequenceNumber: asEventSequence(1),
++        globalOffset: globalOffset++,
++        sourceSubsystem: "cli:tx-flow"
++      })
++    );
++  } catch (e: unknown) {
++    if (shouldSend) rethrowWithLedgerEffect(e, notPerformed());
++    throw e;
++  }
+ 
+   const flowResult: TxFlowResult = {
+     ok: true,
+@@ -208,6 +239,10 @@ async function txFlow(input: TxFlowInput, opened: { sdk?: { close(): Promise<voi
+     result: "planned-only"
+   };
+ 
++  // the step a failure belongs to (a step's own announcements included), and what the send step returned once it ran
++  let current: "plan" | "sign" | "send" = "plan";
++  let sendResult: TxSendRunnerResult | undefined;
++
+   try {
+     // 1. Plan
+     const planInput: any = {
+@@ -222,6 +257,7 @@ async function txFlow(input: TxFlowInput, opened: { sdk?: { close(): Promise<voi
+     if (workspaceRoot) planInput.workspaceRoot = workspaceRoot;
+ 
+     const planArtifact = await runTxPlan(planInput);
++    sendOperation = planArtifact.mode === "simulator" ? "simulated-execution" : "broadcast";
+ 
+     flowResult.mode = planArtifact.mode;
+     flowResult.networkId = planArtifact.networkId;
+@@ -312,6 +348,7 @@ async function txFlow(input: TxFlowInput, opened: { sdk?: { close(): Promise<voi
+         return flowResult;
+       }
+ 
++      current = "sign";
+       const signedArtifact = await runTxSign({
+         planArtifact,
+         config,
+@@ -379,12 +416,15 @@ async function txFlow(input: TxFlowInput, opened: { sdk?: { close(): Promise<voi
+           flowResult.result = "signed";
+           flowResult.ok = false;
+         } else {
+-          const sendResult = await runTxSend({
++          current = "send";
++          sendResult = await runTxSend({
+             signedArtifact,
+             config,
+             ...(url ? { url } : {}),
+             ...(workspaceRoot ? { workspaceRoot } : {})
+           });
++          // the send step ran: whatever fails after this point fails after a broadcast or an execution
++          flowResult.result = "broadcast";
+ 
+           if (actualOutDir && sendResult.receipt) {
+             const receiptPath = await saveArtifact(
+@@ -412,24 +452,30 @@ async function txFlow(input: TxFlowInput, opened: { sdk?: { close(): Promise<voi
+               : outcome.kind === "receipt" && outcome.status === "confirmed"
+                 ? "finalized"
+                 : "accepted";
+-
+-            coreEvents.emit(
+-              createEventEnvelope({
+-                kind: "workflow.receipt",
+-                domain: "workflow",
+-                workflowId,
+-                correlationId: asCorrelationId(workflowId),
+-                networkId: receiptNetId,
+-                payload: {
+-                  txId: asTxId(sendResult.receipt.txId),
+-                  status: eventStatus
+-                },
+-                sequenceNumber: asEventSequence(6),
+-                globalOffset: globalOffset++,
+-                sourceSubsystem: "cli:tx-flow",
+-                artifactId: receiptId
+-              })
+-            );
++            // EVENT-LEDGER-2 final closeout (decision 2): a submission whose outcome is unknown (the submit call failed
++            // without an answer) has no receipt status to announce — "failed" would read as a rejection; its submission
++            // artifact is still announced below
++            const outcomeUnknown = sendEffectOf(sendResult).outcome === "unknown";
++
++            if (!outcomeUnknown) {
++              coreEvents.emit(
++                createEventEnvelope({
++                  kind: "workflow.receipt",
++                  domain: "workflow",
++                  workflowId,
++                  correlationId: asCorrelationId(workflowId),
++                  networkId: receiptNetId,
++                  payload: {
++                    txId: asTxId(sendResult.receipt.txId),
++                    status: eventStatus
++                  },
++                  sequenceNumber: asEventSequence(6),
++                  globalOffset: globalOffset++,
++                  sourceSubsystem: "cli:tx-flow",
++                  artifactId: receiptId
++                })
++              );
++            }
+ 
+             coreEvents.emit(
+               createEventEnvelope({
+@@ -466,15 +512,31 @@ async function txFlow(input: TxFlowInput, opened: { sdk?: { close(): Promise<voi
+     }
+   } catch (error) {
+     flowResult.ok = false;
+-    const msg = error instanceof Error ? error.message : String(error);
+-    // Find where it failed (the error is reported in that step's result)
+-    if (flowResult.steps.plan.status !== "ok") {
+-      flowResult.steps.plan = { status: "error", error: msg };
+-    } else if (shouldSign && flowResult.steps.sign.status !== "ok") {
+-      flowResult.steps.sign = { status: "error", error: msg };
+-    } else if (shouldSend && flowResult.steps.send.status !== "ok") {
+-      flowResult.steps.send = { status: "error", error: msg };
++    // EVENT-LEDGER-2 final closeout (A1): the error is reported on the step it belongs to (its announcements included),
++    // with its typed code, what the flow had already sent or executed, and what that step had produced — never as a
++    // generic step error that reads as "nothing was sent"
++    const done = sendResult ? sendEffectOf(sendResult) : undefined;
++    // nothing was sent while the send step had not started; inside it, only the effect the SDK named is reported
++    const beforeTheSend = shouldSend && current !== "send";
++    let failure: unknown = error;
++    if (isEventLedgerAppendFailure(error) && (done || beforeTheSend)) {
++      try {
++        rethrowWithLedgerEffect(error, done ?? notPerformed());
++      } catch (named) {
++        failure = named;
++      }
+     }
++    const msg = failure instanceof Error ? failure.message : String(failure);
++    const code = typeof (failure as any)?.code === "string" ? ((failure as any).code as string) : undefined;
++    const effect: LedgerFailureEffect | undefined = (failure as any)?.metadata?.effect ?? done;
++    const entry = { status: "error" as const, error: msg, ...(code ? { code } : {}), ...(effect ? { effect } : {}) };
++    const kept = <T>(step: TxFlowStepResult<T>) => ({
++      ...(step.artifact ? { artifact: step.artifact } : {}),
++      ...(step.artifactPath ? { artifactPath: step.artifactPath } : {})
++    });
++    if (current === "plan") flowResult.steps.plan = { ...kept(flowResult.steps.plan), ...entry };
++    else if (current === "sign") flowResult.steps.sign = { ...kept(flowResult.steps.sign), ...entry };
++    else flowResult.steps.send = { ...(sendResult ? { artifact: sendResult } : {}), ...entry };
+   }
+ 
+   return flowResult;
+diff --git a/packages/cli/src/runners/why-narrative.ts b/packages/cli/src/runners/why-narrative.ts
+index 0fdbd0b3f..d5be17606 100644
+--- a/packages/cli/src/runners/why-narrative.ts
++++ b/packages/cli/src/runners/why-narrative.ts
+@@ -1,4 +1,4 @@
+-import { HardkasSchemas } from "@hardkas/artifacts";
++import { HardkasSchemas, submitOutcomeOf } from "@hardkas/artifacts";
+ 
+ // Wave 1.2 · AUD-45: `why` narrates what the artifact records, computed from its real
+ // fields. Nothing is invented: an unobserved block is reported as not observed.
+@@ -13,11 +13,17 @@ export function describeWhyNode(artifact: any): string | undefined {
+   if (schema === HardkasSchemas.TxSubmissionV1) {
+     const result = artifact?.submitResult ?? {};
+     const txId = typeof artifact?.txId === "string" ? artifact.txId : "unknown";
+-    if (result.accepted === true) {
+-      return `Submitted to the node; the node accepted txId ${txId}. No observation recorded (the status is derived from observations, not stored).`;
++    const error = typeof result.error === "string" && result.error.length > 0 ? result.error : undefined;
++    // EVENT-LEDGER-2 final closeout: what the submit result establishes — the node's acceptance of the submission
++    // request (not acceptance in the DAG), its rejection, or an unknown outcome (a call that failed without an answer)
++    switch (submitOutcomeOf(result)) {
++      case "accepted":
++        return `Submitted to the node; the node accepted the submission request for txId ${txId} (not acceptance or confirmation in the DAG). No observation recorded (the status is derived from observations, not stored).`;
++      case "unknown":
++        return `Submission attempted (txId ${txId}); its outcome is unknown: the submit call failed without an answer from the node${error ? ` (${error})` : ""}, which may have received it. No observation recorded.`;
++      case "rejected":
++        return `Submitted to the node; the node rejected the transaction (txId ${txId})${error ? `: ${error}` : ""}. No observation recorded.`;
+     }
+-    const reason = typeof result.error === "string" && result.error.length > 0 ? `: ${result.error}` : "";
+-    return `Submitted to the node; the node rejected the transaction (txId ${txId})${reason}. No observation recorded.`;
+   }
+   if (schema.startsWith(HardkasSchemas.TxReceipt)) {
+     const block = artifact?.dagContext?.acceptingBlockHash ?? artifact?.blockHash;
+diff --git a/packages/cli/test/demo-cut-t-a14b-tx-status.test.ts b/packages/cli/test/demo-cut-t-a14b-tx-status.test.ts
+index 2d6ccf28c..488f3b065 100644
+--- a/packages/cli/test/demo-cut-t-a14b-tx-status.test.ts
++++ b/packages/cli/test/demo-cut-t-a14b-tx-status.test.ts
+@@ -222,7 +222,8 @@ describe("Demo-cut · T-A14b · tx status / tx wait present the derived Q4 state
+     await realSend();
+     await resealSubmission((s) => {
+       asSimnet(s);
+-      s.submitResult = { accepted: false, error: "transaction is already in the mempool" };
++      // the node's rejection as it arrives (rusty-kaspa's RejectedTransaction error; fixtures/toccata-v2 record real ones)
++      s.submitResult = { accepted: false, error: `Rejected transaction ${TX}: transaction ${TX} is already in the mempool` };
+     });
+     expect((await runTxStatus({ txId: TX, sdk, observe: false })).derived.status).toBe("REJECTED_BY_NODE");
+     const err: any = await runTxWait({ txId: TX, sdk, until: "accepted", timeoutMs: 10_000, intervalMs: 1, sleep: async () => undefined }).catch((e) => e);
+diff --git a/packages/cli/test/event-ledger-2-flow.test.ts b/packages/cli/test/event-ledger-2-flow.test.ts
+new file mode 100644
+index 000000000..5152353b7
+--- /dev/null
++++ b/packages/cli/test/event-ledger-2-flow.test.ts
+@@ -0,0 +1,172 @@
++import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
++import fs from "node:fs";
++import os from "node:os";
++import path from "node:path";
++
++// EVENT-LEDGER-2 · reviewer final closeout, on the CLI side of `tx send` (the plan → sign → send flow behind
++// `tx send --from`, `tx batch`, `dev tx send` and `dev tx generate`):
++//  A1 · the flow keeps the typed EVENT_LEDGER_APPEND_FAILED, the identifiers and the partial result: a ledger failure
++//       after the send step ran is reported on that step with its code, the effect (what was broadcast or executed)
++//       and the send result — never as a generic step error that reads as "nothing was sent"; one before it says
++//       nothing was sent;
++//  D2 · a submission whose outcome is unknown (the submit call failed without an answer) is not recorded as a failed
++//       receipt, and `why` never narrates it as the node's rejection; an accepted one is narrated as the acceptance of
++//       the submission request, not as acceptance in the DAG.
++// The plan, sign and send runners are doubles (as in tx-flow-outcome.test.ts); the flow is real. The ledger is made to
++// fail at one event by a persistence sink that throws the ledger's own EventLedgerAppendError, as the attached ledger does.
++
++vi.mock("../src/runners/tx-plan-runner.js", () => ({ runTxPlan: vi.fn() }));
++vi.mock("../src/runners/tx-sign-runner.js", () => ({ runTxSign: vi.fn() }));
++vi.mock("../src/runners/tx-send-runner.js", () => ({ runTxSend: vi.fn() }));
++vi.mock("@hardkas/sdk", () => ({
++  Hardkas: {
++    open: async () => {
++      throw new Error("no SDK in this test");
++    }
++  }
++}));
++
++import { coreEvents, EventLedgerAppendError } from "@hardkas/core";
++import { calculateContentHash, CURRENT_HASH_VERSION, HARDKAS_VERSION } from "@hardkas/artifacts";
++import { runTxFlow } from "../src/runners/tx-flow.js";
++import { runTxPlan } from "../src/runners/tx-plan-runner.js";
++import { runTxSign } from "../src/runners/tx-sign-runner.js";
++import { runTxSend } from "../src/runners/tx-send-runner.js";
++import { describeWhyNode } from "../src/runners/why-narrative.js";
++
++const TX = "c".repeat(64);
++const plan = { mode: "rpc", networkId: "simnet", planId: "plan-0123456789abcdef", amountSompi: "100000000", contentHash: "a".repeat(64) };
++const signed = { signedId: "signed-0123456789abcdef", networkId: "simnet", contentHash: "b".repeat(64), txId: TX };
++const submission = (submitResult: Record<string, unknown>) => ({
++  schema: "hardkas.txSubmission.v1",
++  networkId: "simnet",
++  txId: TX,
++  contentHash: "d".repeat(64),
++  submitResult
++});
++
++describe("EVENT-LEDGER-2 final closeout · the tx send flow keeps the typed failure, the effect and the partial result", () => {
++  let ws: string;
++  let detach: (() => void) | undefined;
++  let passed: any[];
++  const flow = () =>
++    runTxFlow({ from: "alice", to: "bob", amount: "1", network: "simnet", config: {} as any, send: true, yes: true, workspaceRoot: ws });
++  const ledgerFailingOn = (fails: (e: any) => boolean) => {
++    detach = coreEvents.persistWith((event: any) => {
++      if (fails(event)) throw new EventLedgerAppendError(path.join(ws, "events.jsonl"), event, new Error("no space left on the ledger's disk (test double)."));
++      passed.push(event);
++    });
++  };
++
++  beforeEach(() => {
++    ws = fs.mkdtempSync(path.join(os.tmpdir(), "hk-el2-flow-"));
++    passed = [];
++    vi.mocked(runTxPlan).mockResolvedValue(plan as any);
++    vi.mocked(runTxSign).mockResolvedValue(signed as any);
++  });
++
++  afterEach(() => {
++    detach?.();
++    detach = undefined;
++    vi.restoreAllMocks();
++    fs.rmSync(ws, { recursive: true, force: true });
++  });
++
++  it("the ledger fails on workflow.started: the failure is typed and says nothing was sent", async () => {
++    vi.mocked(runTxSend).mockResolvedValue({ accepted: true, txId: TX } as any);
++    ledgerFailingOn((e) => e.kind === "workflow.started");
++    const err: any = await flow().then(() => undefined, (e) => e);
++    expect(err?.code).toBe("EVENT_LEDGER_APPEND_FAILED");
++    expect(err.metadata?.effect).toMatchObject({ operation: "broadcast", outcome: "not-performed" });
++    expect(err.message).toMatch(/^Nothing was sent/);
++    expect(vi.mocked(runTxSend)).not.toHaveBeenCalled();
++  });
++
++  it("the ledger fails on the plan's announcement: the plan step keeps the typed code and says nothing was sent", async () => {
++    vi.mocked(runTxSend).mockResolvedValue({ accepted: true, txId: TX } as any);
++    ledgerFailingOn((e) => e.kind === "artifact.written" && e.sourceSubsystem === "cli:tx-flow");
++    const result: any = await flow();
++    expect(result.ok).toBe(false);
++    expect(result.steps.plan).toMatchObject({ status: "error", code: "EVENT_LEDGER_APPEND_FAILED", effect: { operation: "broadcast", outcome: "not-performed" } });
++    expect(result.steps.plan.error).toMatch(/^Nothing was sent/);
++    expect(result.steps.send.status).not.toBe("ok");
++    expect(vi.mocked(runTxSend)).not.toHaveBeenCalled();
++  });
++
++  it("an accepted broadcast, then the ledger fails on workflow.receipt: the send step keeps the code, the effect and the send result", async () => {
++    const sendResult = { accepted: true, txId: TX, rpcUrl: "http://127.0.0.1:16110", networkName: "simnet", receipt: submission({ accepted: true, transactionId: TX }) };
++    vi.mocked(runTxSend).mockResolvedValue(sendResult as any);
++    ledgerFailingOn((e) => e.kind === "workflow.receipt");
++    const result: any = await flow();
++    expect(result.ok).toBe(false);
++    expect(result.result, "it was broadcast").toBe("broadcast");
++    expect(result.steps.send).toMatchObject({
++      status: "error",
++      code: "EVENT_LEDGER_APPEND_FAILED",
++      effect: { operation: "broadcast", outcome: "accepted", txId: TX, artifactId: "d".repeat(64) },
++      artifact: { accepted: true, txId: TX }
++    });
++    expect(result.steps.send.error).toMatch(/it WAS sent/);
++    expect(fs.existsSync(result.steps.send.effect.artifactPath), "the receipt copy the flow wrote").toBe(true);
++  });
++
++  it("a ledger failure raised inside the send step without a named effect keeps its code and is never labelled 'nothing was sent'", async () => {
++    // what the flow cannot know (the failure came from inside the send runner, which named no effect) it never claims
++    vi.mocked(runTxSend).mockImplementation(async () => {
++      const lost: any = { kind: "workflow.submitted", eventId: "e-inside-send", workflowId: "wf", txId: TX, payload: {} };
++      throw new EventLedgerAppendError(path.join(ws, "events.jsonl"), lost, new Error("no space left on the ledger's disk (test double)."));
++    });
++    ledgerFailingOn(() => false);
++    const result: any = await flow();
++    expect(result.ok).toBe(false);
++    expect(result.steps.send).toMatchObject({ status: "error", code: "EVENT_LEDGER_APPEND_FAILED" });
++    expect(result.steps.send.effect?.outcome, "not claimed as not performed").not.toBe("not-performed");
++    expect(result.steps.send.error).not.toMatch(/^Nothing was sent/);
++    expect(result.steps.send.error).toMatch(/may already have been executed or submitted/);
++  });
++
++  it("a submission whose outcome is unknown is not announced as a failed receipt (no status is known)", async () => {
++    const receipt = submission({ accepted: false, error: "RPC request submitTransaction timed out after 5000ms" });
++    vi.mocked(runTxSend).mockResolvedValue({ accepted: false, txId: TX, rpcUrl: "http://127.0.0.1:16110", networkName: "simnet", receipt } as any);
++    ledgerFailingOn(() => false);
++    const result: any = await flow();
++    expect(result.ok, "not accepted ⇒ the flow fails").toBe(false);
++    expect(result.steps.send.status).toBe("ok");
++    expect(passed.filter((e) => e.kind === "workflow.receipt")).toEqual([]);
++  });
++});
++
++describe("EVENT-LEDGER-2 final closeout · `why` narrates what a submission establishes", () => {
++  const seal = (body: Record<string, unknown>) => {
++    const a: any = { ...body, hashVersion: CURRENT_HASH_VERSION };
++    a.contentHash = calculateContentHash(a, CURRENT_HASH_VERSION);
++    a.lineage.artifactId = a.contentHash;
++    return a;
++  };
++  const sub = (submitResult: Record<string, unknown>) =>
++    seal({
++      schema: "hardkas.txSubmission.v1",
++      hardkasVersion: HARDKAS_VERSION,
++      version: "1.0.0-alpha",
++      networkId: "simnet",
++      mode: "localnet",
++      createdAt: "2026-10-09T00:00:00.000Z",
++      signedArtifactId: "a".repeat(64),
++      txId: TX,
++      submitResult,
++      lineage: { artifactId: "", parentArtifactId: "a".repeat(64), lineageId: "9".repeat(64), rootArtifactId: "9".repeat(64), sequence: 3 }
++    });
++
++  it("a submit call that failed without an answer: an unknown outcome, never the node's rejection", () => {
++    const text = describeWhyNode(sub({ accepted: false, error: "RPC request submitTransaction timed out after 5000ms" }))!;
++    expect(text).toMatch(/unknown/i);
++    expect(text).toContain("timed out");
++    expect(text).not.toMatch(/rejected|not accepted/i);
++  });
++
++  it("an accepted submission: the node accepted the submission request, which is not acceptance in the DAG", () => {
++    const text = describeWhyNode(sub({ accepted: true, transactionId: TX }))!;
++    expect(text).toMatch(/submission request/);
++    expect(text).toMatch(/not acceptance .*in the DAG/);
++  });
++});
+diff --git a/packages/cli/test/event-ledger-2-json-contract.test.ts b/packages/cli/test/event-ledger-2-json-contract.test.ts
+new file mode 100644
+index 000000000..1f11b7237
+--- /dev/null
++++ b/packages/cli/test/event-ledger-2-json-contract.test.ts
+@@ -0,0 +1,161 @@
++import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
++import fs from "node:fs";
++import os from "node:os";
++import path from "node:path";
++import { spawn, spawnSync, type ChildProcess } from "node:child_process";
++import { Hardkas } from "@hardkas/sdk";
++import { cliDist, childEnv } from "./first-contact-helpers.js";
++
++vi.setConfig({ testTimeout: 300_000, hookTimeout: 120_000 });
++
++// EVENT-LEDGER-2 · reviewer's final check (A1 at process level). `tx send --json` whose ledger fails writes EXACTLY ONE
++// parseable JSON document on stdout, exits 1, carries EVENT_LEDGER_APPEND_FAILED, the outcome of what the send had done
++// and the txId when there is one — never a second envelope from the global error renderer, never "not sent" after an
++// effect. Every case runs the built CLI in a simulated workspace while a live process holds the append lock of
++// events.jsonl for the whole command, so the first event the command tries to record is the one that fails:
++//  1. before anything is sent: the shortcut `tx send --from …` records `workflow.started` first, before any step;
++//  2. before the effect, after an artifact write: with a plan and a signed artifact made by `tx plan --out` /
++//     `tx sign --out`, the simulator publishes the plan into its canonical store entry before the commit (the CLI's copy
++//     is not that entry), and THAT announcement is the first event — the failure says nothing was executed and names
++//     the plan copy that was written;
++//  3. after a known effect: with the plan and the signed artifact made by the SDK (canonical entries), `tx send
++//     <signed.json>` records nothing until the simulator's durable commit has published the receipt, whose
++//     announcement is the command's first event — the simulated state has already moved.
++// Every workspace is a temporary directory created here; the holder is killed afterwards.
++
++interface Run {
++  status: number | null;
++  stdout: string;
++  stderr: string;
++  ms: number;
++}
++const cli = (args: string[], cwd: string): Run => {
++  const t0 = Date.now();
++  const r = spawnSync(process.execPath, [cliDist, ...args], { cwd, env: childEnv(), encoding: "utf8", input: "", timeout: 280_000 });
++  return { status: r.status, stdout: r.stdout ?? "", stderr: r.stderr ?? "", ms: Date.now() - t0 };
++};
++/** The ONE JSON document stdout holds: anything else on stdout (a second document, a stray line) fails the parse. */
++const theOneJson = (stdout: string): any => {
++  const documents = stdout.trim().split(/\r?\n(?=[{[])/).filter((c) => c.trim().length > 0);
++  expect(documents.length, `stdout holds ${documents.length} JSON-looking chunks:\n${stdout}`).toBe(1);
++  return JSON.parse(stdout.trim());
++};
++const ledgerLines = (ws: string): string[] => {
++  const file = path.join(ws, "events.jsonl");
++  return fs.existsSync(file) ? fs.readFileSync(file, "utf8").split(/\r?\n/).filter(Boolean) : [];
++};
++const receiptsIn = (ws: string): string[] => {
++  const dir = path.join(ws, ".hardkas", "artifacts", "receipts");
++  return fs.existsSync(dir) ? fs.readdirSync(dir).map((f) => path.join(dir, f)).sort() : [];
++};
++const lockPathOf = (ws: string) => path.join(ws, ".hardkas", "locks", "append-events.jsonl.lock");
++const describeRun = (r: Run) => `exit ${r.status} in ${r.ms} ms\nstdout:\n${r.stdout}\nstderr:\n${r.stderr.slice(0, 600)}`;
++
++describe("EVENT-LEDGER-2 final check · `tx send --json` with a ledger failure writes exactly one JSON document", () => {
++  let ws: string;
++  let sdk: Hardkas;
++  let holder: ChildProcess | undefined;
++
++  /** A live process takes the append lock exactly as the coordinator does (wx + its record) and keeps it; returns its record. */
++  const holdLedger = async (): Promise<string> => {
++    const lock = lockPathOf(ws);
++    fs.mkdirSync(path.dirname(lock), { recursive: true });
++    const mineFile = path.join(ws, "holder-lock.txt");
++    holder = spawn(
++      process.execPath,
++      [
++        "-e",
++        `const fs=require("fs"),os=require("os");const fd=fs.openSync(${JSON.stringify(lock)},"wx");` +
++          `const mine=JSON.stringify({schema:"hardkas.lock.v1",name:"append-events.jsonl",pid:process.pid,command:"holder",cwd:process.cwd(),hostname:os.hostname(),createdAt:new Date().toISOString(),expiresAt:null});` +
++          `fs.writeSync(fd,mine);fs.closeSync(fd);fs.writeFileSync(${JSON.stringify(mineFile)},mine);setTimeout(()=>{},600000);`
++      ],
++      { stdio: "ignore", cwd: ws }
++    );
++    const deadline = Date.now() + 10_000;
++    while (!fs.existsSync(mineFile) && Date.now() < deadline) await new Promise((r) => setTimeout(r, 20));
++    return fs.readFileSync(mineFile, "utf8");
++  };
++
++  /** The common shape of the one document, and the invariants of a command whose ledger refused its first event. */
++  const expectLedgerFailure = (r: Run, doc: any, mine: string, before: { ledger: number; receipts: string[] }, expected: { outcome: string; effect: Record<string, unknown>; receiptsPublished: number }) => {
++    expect(
++      { exit: r.status, ok: doc.ok, command: doc.command, code: doc.code, outcome: doc.outcome, effect: doc.effect },
++      describeRun(r)
++    ).toEqual({ exit: 1, ok: false, command: "tx send", code: "EVENT_LEDGER_APPEND_FAILED", outcome: expected.outcome, effect: expected.effect });
++    expect(doc.message).toContain("events.jsonl");
++    expect({
++      recorded: ledgerLines(ws).length - before.ledger,
++      receiptsPublished: receiptsIn(ws).filter((f) => !before.receipts.includes(f)).length,
++      holderLockIntact: fs.readFileSync(lockPathOf(ws), "utf8") === mine
++    }).toEqual({ recorded: 0, receiptsPublished: expected.receiptsPublished, holderLockIntact: true });
++  };
++
++  beforeEach(async () => {
++    ws = fs.mkdtempSync(path.join(os.tmpdir(), "hk-el2-json-"));
++    sdk = await Hardkas.create({ cwd: ws, autoBootstrap: true, network: "simulated" });
++  });
++
++  afterEach(async () => {
++    await sdk.close();
++    if (holder && holder.exitCode === null) {
++      holder.kill();
++      await new Promise((r) => setTimeout(r, 300));
++    }
++    holder = undefined;
++    fs.rmSync(ws, { recursive: true, force: true });
++  });
++
++  it("1 · before anything is sent: outcome failed, not performed, no txId (nothing was planned), nothing executed", async () => {
++    const mine = await holdLedger();
++    const before = { ledger: ledgerLines(ws).length, receipts: receiptsIn(ws) };
++    const r = cli(["tx", "send", "--from", "alice", "--to", "bob", "--amount", "1", "--network", "simulated", "--json"], ws);
++    const doc = theOneJson(r.stdout);
++    expectLedgerFailure(r, doc, mine, before, { outcome: "failed", effect: { operation: "simulated-execution", outcome: "not-performed" }, receiptsPublished: 0 });
++    expect(doc.message).toMatch(/^Nothing was executed: the ledger failed before the simulator ran the transaction\./);
++  });
++
++  it("2 · before the effect, after an artifact write (CLI-made plan and signed): outcome failed, not performed, the txId, the plan copy it wrote named", async () => {
++    expect(cli(["tx", "plan", "alice", "dave", "--amount", "3", "--network", "simulated", "--out", "t.plan.json", "--json"], ws).status).toBe(0);
++    expect(cli(["tx", "sign", "t.plan.json", "--out", "t.signed.json", "--json"], ws).status).toBe(0);
++    const signed = JSON.parse(fs.readFileSync(path.join(ws, "t.signed.json"), "utf8"));
++    const mine = await holdLedger();
++    const before = { ledger: ledgerLines(ws).length, receipts: receiptsIn(ws) };
++    const r = cli(["tx", "send", "t.signed.json", "--json"], ws);
++    const doc = theOneJson(r.stdout);
++    expectLedgerFailure(r, doc, mine, before, {
++      outcome: "failed",
++      effect: { operation: "simulated-execution", outcome: "not-performed", txId: signed.txId },
++      receiptsPublished: 0
++    });
++    expect(doc.message).toMatch(/^Nothing was executed: the ledger failed before the simulator ran transaction synthetic-[0-9a-f]{64}\./);
++    // what WAS written is named: the plan's canonical store entry (the simulator publishes it before the commit)
++    const planCopy = /WAS written at (\S+txPlan-[0-9a-f]{64}\.json)/.exec(doc.message);
++    expect(planCopy, doc.message).not.toBeNull();
++    expect(fs.existsSync(planCopy![1]!)).toBe(true);
++  });
++
++  it("3 · after a known effect (SDK-made plan and signed; the simulator committed): outcome submitted, executed, the txId and the receipt", async () => {
++    // the SDK writes both artifacts at their canonical store entries, so the send announces nothing before the commit
++    const plan = await sdk.tx.plan({ from: "alice", to: "dave", amount: "3" } as any);
++    const signed: any = await sdk.tx.sign(plan as any, "alice");
++    fs.writeFileSync(path.join(ws, "t.signed.json"), JSON.stringify(signed, (_k, v) => (typeof v === "bigint" ? v.toString() : v), 2));
++    const mine = await holdLedger();
++    const before = { ledger: ledgerLines(ws).length, receipts: receiptsIn(ws) };
++
++    const r = cli(["tx", "send", "t.signed.json", "--json"], ws);
++    const doc = theOneJson(r.stdout);
++    // the effect took place: the one receipt the commit published is in the store, and the document names it
++    const published = receiptsIn(ws).filter((f) => !before.receipts.includes(f));
++    expect(published.length, describeRun(r)).toBe(1);
++    const receipt = JSON.parse(fs.readFileSync(published[0]!, "utf8"));
++    expectLedgerFailure(r, doc, mine, before, {
++      outcome: "submitted",
++      effect: { operation: "simulated-execution", outcome: "executed", txId: signed.txId, artifactId: receipt.contentHash, artifactPath: published[0] },
++      receiptsPublished: 1
++    });
++    expect(receipt.txId).toBe(signed.txId);
++    expect(doc.message).toMatch(/^The simulator EXECUTED transaction synthetic-[0-9a-f]{64}: the simulated state changed\./);
++    expect(doc.message).toContain("Do not execute it again");
++    expect(doc.message).not.toMatch(/Nothing was (sent|executed)|run the command again/);
++  });
++});
+diff --git a/packages/cli/test/event-ledger-2-report.test.ts b/packages/cli/test/event-ledger-2-report.test.ts
+new file mode 100644
+index 000000000..21db5048b
+--- /dev/null
++++ b/packages/cli/test/event-ledger-2-report.test.ts
+@@ -0,0 +1,68 @@
++import { describe, it, expect } from "vitest";
++import { calculateContentHash, CURRENT_HASH_VERSION, HARDKAS_VERSION } from "@hardkas/artifacts";
++import { effectSummary, notAcceptedFailure, outcomeOfEffect, sendOutcomeLabel } from "../src/runners/next-steps.js";
++
++// EVENT-LEDGER-2 · reviewer final closeout — how `tx send` reports what its send step did (the helpers are new in this
++// closeout, so they have no BEFORE of their own; the behaviour they replace is pinned by event-ledger-2-flow.test.ts and
++// the SDK tests):
++//  - decision 2: AUX-11's `submitted` / `rejected`, plus `unknown` with TX_SUBMISSION_OUTCOME_UNKNOWN for a submit call
++//    that failed without an answer — never reported as the node's rejection;
++//  - A1: a ledger failure's outcome follows what the send step had done (an accepted request or an execution is
++//    `submitted`, never `failed`/"not sent").
++
++const TX = "c".repeat(64);
++const submission = (submitResult: Record<string, unknown>) => {
++  const a: any = {
++    schema: "hardkas.txSubmission.v1",
++    hardkasVersion: HARDKAS_VERSION,
++    version: "1.0.0-alpha",
++    hashVersion: CURRENT_HASH_VERSION,
++    networkId: "simnet",
++    mode: "localnet",
++    createdAt: "2026-10-09T00:00:00.000Z",
++    signedArtifactId: "a".repeat(64),
++    txId: TX,
++    submitResult,
++    lineage: { artifactId: "", parentArtifactId: "a".repeat(64), lineageId: "9".repeat(64), rootArtifactId: "9".repeat(64), sequence: 3 }
++  };
++  a.contentHash = calculateContentHash(a, CURRENT_HASH_VERSION);
++  a.lineage.artifactId = a.contentHash;
++  return a;
++};
++const NODE_REJECTION = `Rejected transaction ${TX}: transaction ${TX} is an orphan where orphan is disallowed`;
++const NO_ANSWER = "RPC request submitTransaction timed out after 5000ms";
++
++describe("EVENT-LEDGER-2 final closeout · tx send reports what its send step did", () => {
++  it("outcome: submitted / rejected / unknown — a submit call without an answer is never `rejected`", () => {
++    expect(sendOutcomeLabel(submission({ accepted: true, transactionId: TX }), true)).toBe("submitted");
++    expect(sendOutcomeLabel(submission({ accepted: false, error: NODE_REJECTION }), false)).toBe("rejected");
++    expect(sendOutcomeLabel(submission({ accepted: false }), false)).toBe("rejected");
++    expect(sendOutcomeLabel(submission({ accepted: false, error: NO_ANSWER }), false)).toBe("unknown");
++    // a simulator receipt has no submit result: unchanged (AUX-11)
++    expect(sendOutcomeLabel({ schema: "hardkas.txReceipt", status: "failed" }, false)).toBe("rejected");
++  });
++
++  it("the failure: TX_SUBMISSION_REJECTED for the node's rejection, TX_SUBMISSION_OUTCOME_UNKNOWN for a call without an answer", () => {
++    const rejected = notAcceptedFailure(submission({ accepted: false, error: NODE_REJECTION }), TX);
++    expect(rejected).toMatchObject({ code: "TX_SUBMISSION_REJECTED", title: "Transaction NOT accepted by the node" });
++    expect(rejected.message).toContain("orphan");
++    const unknown = notAcceptedFailure(submission({ accepted: false, error: NO_ANSWER }), TX);
++    expect(unknown.code).toBe("TX_SUBMISSION_OUTCOME_UNKNOWN");
++    expect(unknown.title).toMatch(/UNKNOWN: the node may have received the transaction/);
++    expect(unknown.message).toContain(NO_ANSWER);
++    expect(unknown.message).toContain(`hardkas tx status ${TX}`);
++    expect(`${unknown.title} ${unknown.message}`).not.toMatch(/rejected|did not accept|NOT accepted/i);
++  });
++
++  it("a ledger failure's outcome follows the effect: accepted or executed → submitted; rejected; unknown; not performed → failed", () => {
++    expect(outcomeOfEffect({ operation: "broadcast", outcome: "accepted" })).toBe("submitted");
++    expect(outcomeOfEffect({ operation: "simulated-execution", outcome: "executed" })).toBe("submitted");
++    expect(outcomeOfEffect({ operation: "broadcast", outcome: "rejected" })).toBe("rejected");
++    expect(outcomeOfEffect({ operation: "broadcast", outcome: "unknown" })).toBe("unknown");
++    expect(outcomeOfEffect({ operation: "broadcast", outcome: "not-performed" })).toBe("failed");
++    expect(outcomeOfEffect(undefined)).toBe("failed");
++    expect(effectSummary({ operation: "broadcast", outcome: "accepted", txId: TX })).toBe(
++      `the node accepted the submission of transaction ${TX}: RPC acceptance of the request, not acceptance in the DAG`
++    );
++  });
++});
+diff --git a/packages/cli/test/wave1-3-cli-helpers.test.ts b/packages/cli/test/wave1-3-cli-helpers.test.ts
+index 0bd4eb355..b68cd89c3 100644
+--- a/packages/cli/test/wave1-3-cli-helpers.test.ts
++++ b/packages/cli/test/wave1-3-cli-helpers.test.ts
+@@ -89,7 +89,10 @@ describe("Wave 1.3 · send outcome decisions", () => {
+     expect(text).toMatch(/submitted/i);
+     expect(text).toContain("b".repeat(64));
+     expect(text).toMatch(/no observation|not observed/i);
+-    const rejected = describeWhyNode(submission({ submitResult: { accepted: false, error: "orphan" } }))!;
++    // the node's rejection as it arrives (rusty-kaspa's RejectedTransaction error; fixtures/toccata-v2 record real ones)
++    const rejected = describeWhyNode(
++      submission({ submitResult: { accepted: false, error: `Rejected transaction ${"b".repeat(64)}: transaction ${"b".repeat(64)} is an orphan where orphan is disallowed` } })
++    )!;
+     expect(rejected).toMatch(/rejected|not accepted/i);
+     expect(rejected).toContain("orphan");
+   });
+diff --git a/packages/core/README.md b/packages/core/README.md
+index 0dbea06e5..e263bffb1 100644
+--- a/packages/core/README.md
++++ b/packages/core/README.md
+@@ -56,11 +56,16 @@ command.
+    - **unverifiable** (the record names another host): treated as live.
+    - **abandoned** (its pid is not running on this host; or the file is empty / unreadable and older than the creation
+      grace; or a record without `hostname` — written by an earlier HardKAS — whose pid is dead here and that is at
+-     least 60 s old): recovered without waiting. One `.recover` mutex (`wx`, carrying its recoverer's record)
+-     serializes the recoverers. An existing mutex is judged by the same rules: while its recoverer may be alive it is
+-     never taken over, however long the recovery lasts; only a mutex whose recoverer is verifiably gone is removed.
+-     Under the mutex the lock is read again and removed only if it is byte for byte the content that was judged. The
+-     recovery is logged as a `STALE_LOCK_RECOVERY` anomaly in the workspace telemetry once the append is done.
++     least 60 s old): recovered without waiting. One recovery lock (`.hardkas/locks/append-<file>.recover.lock`, taken
++     with `wx` and carrying its recoverer's record) serializes the recoverers; under it the lock is read again and
++     removed only if it is byte for byte the content that was judged. The recovery is logged as a `STALE_LOCK_RECOVERY`
++     anomaly in the workspace telemetry once the append is done.
++   - An existing **recovery lock** is judged by the same rules and is never removed automatically. While its recoverer
++     may be alive the append waits for it (then `APPEND_LOCK_TIMEOUT`). When its recoverer is gone — a recovery that
++     stopped halfway — removing it (read, compare, unlink) could race with another recoverer, so the append fails at
++     once with `APPEND_LOCK_RECOVERY_BLOCKED`: `hardkas lock doctor` lists that lock, and
++     `hardkas lock clear append-<file>.recover --if-dead` (or `--force` for an empty one) clears it, after which the next
++     command recovers the append lock.
+ 3. Repair the tail of the target file if it is corrupted (below).
+ 4. Append the JSON line (bigint payload values are written as decimal strings) and `fs.fsyncSync()` the descriptor.
+ 5. Release: close and unlink the lock.
+@@ -74,6 +79,13 @@ _effect_ of the step that produced the event may already have taken place; it na
+ id, a `txId`, an artifact id and path) without claiming a success. Nothing is spooled. Listeners registered with
+ `coreEvents.on` stay fire-and-forget: the ledger is a persistence sink (`coreEvents.persistWith`), not a listener.
+ 
++At an execution or broadcast boundary (`sdk.tx.send`, `sdk.tx.simulate`, the workflow runner, the CLI's `tx send`
++flow) the failure is rethrown with what the step had already done (`rethrowWithLedgerEffect`, `metadata.effect`), and
++the message leads with it: the node accepted the submission request (RPC acceptance — not acceptance or confirmation
++in the DAG), the node rejected it, the outcome is unknown (the submit call failed without an answer, so the node may
++have received it), the simulator executed it, or nothing was sent or executed. A broadcast or an execution that took
++place is never described as an operation that did not happen.
++
+ ### Variant: Tail Corruption Repair
+ 
+ If the chaos engine (or a crash) leaves a partial JSON object at the tail of `events.jsonl` (e.g., `{"eventId": 142, "domain": "tx"` missing the closing brace):
+diff --git a/packages/core/src/append-coordinator.ts b/packages/core/src/append-coordinator.ts
+index 37f64762a..f72152364 100644
+--- a/packages/core/src/append-coordinator.ts
++++ b/packages/core/src/append-coordinator.ts
+@@ -155,12 +155,12 @@ export function judgeAppendLock(lockPath: string, now: number = Date.now()): App
+   );
+ }
+ 
+-/** Removes `file` only if it still holds exactly `bytes` (what was judged or written); anything else is left alone. */
++/** Removes `file` only if it still holds exactly `bytes` (what this call wrote); anything else is left alone. */
+ function removeIfUnchanged(file: string, bytes: Buffer): void {
+   try {
+     if (fs.readFileSync(file).equals(bytes)) fs.unlinkSync(file);
+   } catch {
+-    // gone already, or unreadable right now: left for the next judgement
++    // gone already, or unreadable right now: left alone
+   }
+ }
+ 
+@@ -169,58 +169,70 @@ function sleepMs(ms: number): void {
+   Atomics.wait(sharedBuf, 0, 0, ms);
+ }
+ 
++/** What one attempt to recover an abandoned append lock came to (recoverAbandonedLock). */
++type RecoveryAttempt =
++  | { kind: "recovered" }
++  | { kind: "retry" }
++  | { kind: "waiting"; reason: string }
++  | { kind: "blocked"; recovery: Extract<AppendLockVerdict, { state: "abandoned" }> };
++
+ export class AppendCoordinator {
+   private static _lastRecovery: any = null;
+ 
+   /**
+    * EVENT-LEDGER-2 (D1, closeout CL-4) · removes an abandoned append lock, safely:
+-   *  1. one `.recover` mutex (`wx`, carrying its recoverer's record) serializes the recoverers. An existing mutex is
+-   *     judged like a lock (judgeAppendLock): while its recoverer may be alive — this host's live pid, this very
+-   *     process, another host — it is never taken over, however long that recovery lasts. Only a mutex whose recoverer
+-   *     is verifiably gone (a dead pid on this host, or an empty / unreadable file past the creation grace) is removed,
+-   *     and only if it is still byte for byte the mutex that was judged; the recovery is retried on the next spin;
+-   *  2. under the mutex the lock is read again and removed ONLY if it is byte for byte the content that was judged
+-   *     abandoned (a lock that changed meanwhile is a new holder's and is never touched). While a recoverer holds the
+-   *     mutex nobody else removes the abandoned lock, so no new holder can appear between its check and its unlink.
+-   * Returns true when this call removed the lock; a string naming the recovery still in progress when another
+-   * recoverer holds the mutex (it is waited for); false otherwise (retry on the next spin).
++   *  1. one recovery lock (`<lock name>.recover.lock` next to the append lock, taken with `wx` and carrying its
++   *     recoverer's record) serializes the recoverers. An existing recovery lock is judged like a lock
++   *     (judgeAppendLock) and is NEVER removed automatically: while its recoverer may be alive — this host's live pid,
++   *     this very process, another host — the recovery waits for it ("waiting"), however long it lasts; when its
++   *     recoverer is gone (a recovery that stopped halfway), removing it — read, compare, unlink — could race with
++   *     another recoverer, so the recovery fails closed ("blocked") and an administrator clears it with the lock tools;
++   *  2. under the recovery lock the append lock is read again and removed ONLY if it is byte for byte the content that
++   *     was judged abandoned (a lock that changed meanwhile is a new holder's and is never touched). Nobody else removes
++   *     the abandoned lock while a recoverer holds the recovery lock, so no new holder can appear between its check and
++   *     its unlink.
++   * The recovery lock this call took is released by this call, and only if it still holds what this call wrote.
+    */
+-  private static recoverAbandonedLock(lockPath: string, lockName: string, verdict: Extract<AppendLockVerdict, { state: "abandoned" }>): boolean | string {
+-    const mutexPath = `${lockPath}.recover`;
+-    let mutexFd: number;
++  private static recoverAbandonedLock(
++    lockPath: string,
++    recoveryPath: string,
++    recoveryName: string,
++    verdict: Extract<AppendLockVerdict, { state: "abandoned" }>
++  ): RecoveryAttempt {
++    let recoveryFd: number;
+     try {
+-      mutexFd = fs.openSync(mutexPath, "wx");
++      recoveryFd = fs.openSync(recoveryPath, "wx");
+     } catch (e: unknown) {
+       if ((e as NodeJS.ErrnoException).code !== "EEXIST") throw e;
+-      const mutexVerdict = judgeAppendLock(mutexPath);
+-      if (mutexVerdict.state === "abandoned") {
+-        removeIfUnchanged(mutexPath, mutexVerdict.bytes);
+-        return false;
+-      }
++      const recovery = judgeAppendLock(recoveryPath);
++      if (recovery.state === "gone") return { kind: "retry" };
++      if (recovery.state === "abandoned") return { kind: "blocked", recovery };
+       // a recovery that may still be running is waited for, never taken over
+-      return mutexVerdict.state === "gone" ? false : `a recovery of it is in progress (${mutexVerdict.reason})`;
++      return { kind: "waiting", reason: `a recovery of it is in progress (${recovery.reason})` };
+     }
+-    const mine = JSON.stringify(appendLockRecord(`${lockName}.recover`));
++    const mine = Buffer.from(JSON.stringify(appendLockRecord(recoveryName)), "utf8");
++    let written = 0;
+     try {
+-      fs.writeSync(mutexFd, mine);
++      written = fs.writeSync(recoveryFd, mine);
+       let current: Buffer;
+       try {
+         current = fs.readFileSync(lockPath);
+       } catch {
+-        return false; // already recovered by someone else
++        return { kind: "retry" }; // already recovered by someone else
+       }
+-      if (!current.equals(verdict.bytes)) return false; // a different lock now: a new holder's, never touched
++      if (!current.equals(verdict.bytes)) return { kind: "retry" }; // a different lock now: a new holder's, never touched
+       try {
+         fs.unlinkSync(lockPath);
+       } catch (e: unknown) {
+-        if ((e as NodeJS.ErrnoException).code === "ENOENT") return false;
++        if ((e as NodeJS.ErrnoException).code === "ENOENT") return { kind: "retry" };
+         throw e;
+       }
+-      return true;
++      return { kind: "recovered" };
+     } finally {
+-      fs.closeSync(mutexFd);
+-      // release only the mutex this call wrote (a leftover is judged and cleared by the next recoverer)
+-      removeIfUnchanged(mutexPath, Buffer.from(mine, "utf8"));
++      fs.closeSync(recoveryFd);
++      // release the recovery lock this call took: nobody else removes it automatically, so it still holds what this
++      // call wrote (nothing, if that write failed) unless an administrator cleared it meanwhile
++      removeIfUnchanged(recoveryPath, mine.subarray(0, written));
+     }
+   }
+ 
+@@ -232,7 +244,9 @@ export class AppendCoordinator {
+    * The lock (`.hardkas/locks/append-<file>.lock`) is taken with `wx` and carries this process's record
+    * (AppendLockRecord). An existing lock is judged first (judgeAppendLock): a live or unverifiable holder is waited
+    * for up to APPEND_LOCK_WAIT_MS and never taken over (then APPEND_LOCK_TIMEOUT, naming it); an abandoned one is
+-   * recovered (recoverAbandonedLock) and the append proceeds without waiting. A recovery is recorded as a
++   * recovered (recoverAbandonedLock) and the append proceeds without waiting — unless an earlier recovery of it stopped
++   * halfway and left its recovery lock, which is never removed automatically: the append then fails at once with
++   * APPEND_LOCK_RECOVERY_BLOCKED, naming the lock-tool command that clears it. A recovery is recorded as a
+    * STALE_LOCK_RECOVERY anomaly in the workspace telemetry, after the lock is released.
+    */
+   public static appendAtomic(filePath: string, line: string, rootDir: string): void {
+@@ -244,6 +258,10 @@ export class AppendCoordinator {
+     const logBase = path.basename(filePath);
+     const lockName = `append-${logBase}`;
+     const lockPath = path.join(lockDir, `${lockName}.lock`);
++    // closeout CL-4: the recovery lock is one more workspace lock, so `lock list` / `lock doctor` show it and
++    // `lock clear <name> --if-dead` removes it once its recoverer is gone
++    const recoveryName = `${lockName}.recover`;
++    const recoveryPath = path.join(lockDir, `${recoveryName}.lock`);
+     let fd: number | null = null;
+     let repaired = false;
+     let linesDiscarded = 0;
+@@ -263,12 +281,38 @@ export class AppendCoordinator {
+           const verdict = judgeAppendLock(lockPath);
+           let recoveryInProgress: string | undefined;
+           if (verdict.state === "abandoned") {
+-            const outcome = AppendCoordinator.recoverAbandonedLock(lockPath, lockName, verdict);
+-            if (outcome === true) {
++            const attempt = AppendCoordinator.recoverAbandonedLock(lockPath, recoveryPath, recoveryName, verdict);
++            if (attempt.kind === "recovered") {
+               recovered = { reason: verdict.reason, holder: verdict.holder };
+               continue; // the next wx takes the lock, or waits for whoever took it first
+             }
+-            if (typeof outcome === "string") recoveryInProgress = outcome;
++            if (attempt.kind === "blocked") {
++              // closeout CL-4 (fail closed): the abandoned recovery lock is the administrator's to clear
++              const named = attempt.recovery.holder?.pid !== undefined;
++              const clear = named
++                ? `'hardkas lock clear ${recoveryName} --if-dead' (it removes the recovery lock only if its process is gone)`
++                : `'hardkas lock clear ${recoveryName} --force' (an empty or unreadable recovery lock names no process to check)`;
++              throw new HardkasError(
++                "APPEND_LOCK_RECOVERY_BLOCKED",
++                `The append lock of ${logBase} (${lockPath}) was left by a holder that is gone (${verdict.reason}), but it is not ` +
++                  `recovered automatically: an earlier recovery of it stopped halfway and left its recovery lock ${recoveryPath} ` +
++                  `(${attempt.recovery.reason}). HardKAS never removes a recovery lock by itself, because removing it could race ` +
++                  `with another recoverer. Check that no HardKAS command is running in this workspace, then run ${clear}; the ` +
++                  `next command recovers the append lock.`,
++                {
++                  metadata: {
++                    lockPath,
++                    lockName,
++                    recoveryLockPath: recoveryPath,
++                    recoveryLockName: recoveryName,
++                    holder: verdict.holder,
++                    recoveryHolder: attempt.recovery.holder,
++                    state: "recovery-blocked"
++                  }
++                }
++              );
++            }
++            if (attempt.kind === "waiting") recoveryInProgress = attempt.reason;
+           }
+           const waitedMs = Date.now() - start;
+           if (waitedMs > APPEND_LOCK_WAIT_MS) {
+diff --git a/packages/core/src/events.ts b/packages/core/src/events.ts
+index 758ca4d5e..5d21a482d 100644
+--- a/packages/core/src/events.ts
++++ b/packages/core/src/events.ts
+@@ -341,24 +341,83 @@ function lostEventIdentity(envelope: EventEnvelope): LostEventIdentity {
+   };
+ }
+ 
++/**
++ * EVENT-LEDGER-2 closeout (A1) · what the step whose event the ledger could not take had already done outside the
++ * workspace, as the execution or broadcast boundary that raised the failure knows it. The failure is then reported
++ * next to that effect, never as an operation that did not happen:
++ *  - `accepted`: the node accepted the submission request — RPC acceptance, not acceptance or confirmation in the DAG;
++ *  - `rejected`: the node answered with a rejection;
++ *  - `unknown`: the submit call failed without an answer from the node, which may have received the transaction;
++ *  - `executed`: the simulator executed it (the simulated state changed);
++ *  - `not-performed`: the ledger failed before anything was sent or executed.
++ */
++export interface LedgerFailureEffect {
++  operation: "broadcast" | "simulated-execution";
++  outcome: "accepted" | "rejected" | "unknown" | "executed" | "not-performed";
++  txId?: string | undefined;
++  /** The submission (broadcast) or receipt (simulated execution) that records the effect, once it was written. */
++  artifactId?: string | undefined;
++  artifactPath?: string | undefined;
++}
++
++function describeEffect(effect: LedgerFailureEffect): string {
++  const tx = effect.txId ? `transaction ${effect.txId}` : "the transaction";
++  const recorded = effect.artifactId
++    ? ` It is recorded as artifact ${effect.artifactId}${effect.artifactPath ? ` at ${effect.artifactPath}` : ""}.`
++    : "";
++  switch (effect.outcome) {
++    case "accepted":
++      return (
++        `The node ACCEPTED the submission of ${tx} (acceptance of the request by the RPC, not acceptance or confirmation ` +
++        `in the DAG): it WAS sent.${recorded} Do not send it again${effect.txId ? `; follow it with 'hardkas tx status ${effect.txId}'` : ""}.`
++      );
++    case "rejected":
++      return `The node REJECTED ${tx} with an explicit answer.${recorded}`;
++    case "unknown":
++      return (
++        `The outcome of sending ${tx} is UNKNOWN: the submit call failed without an answer from the node, which may have ` +
++        `received it.${recorded} Do not send it again before checking it${effect.txId ? ` ('hardkas tx status ${effect.txId}')` : ""}.`
++      );
++    case "executed":
++      return `The simulator EXECUTED ${tx}: the simulated state changed.${recorded} Do not execute it again.`;
++    case "not-performed":
++      return effect.operation === "broadcast"
++        ? `Nothing was sent: the ledger failed before ${tx} was broadcast.`
++        : `Nothing was executed: the ledger failed before the simulator ran ${tx}.`;
++  }
++}
++
+ /**
+  * EVENT-LEDGER-2 (D2) · what the failure says: the EVIDENCE was not persisted, while the EFFECT of the step that
+  * produced the event may already have taken place. The two are kept apart so that a non-zero exit is never read as
+  * "the transaction was not sent" and repeated blindly; what is known (txId, artifact, path) is named, never a success.
++ * Closeout (A1): when the boundary knows the effect, the failure leads with it.
+  */
+-function describeLostEvent(ledgerPath: string, event: LostEventIdentity, cause: unknown): string {
++function describeLostEvent(ledgerPath: string, event: LostEventIdentity, cause: unknown, known?: LedgerFailureEffect): string {
+   const why = cause instanceof Error ? cause.message : String(cause);
+-  const effect =
++  const lost = `The event ${event.kind} (${event.eventId}) could not be recorded in ${ledgerPath}: ${why}`;
++  const written =
+     event.kind === "artifact.written" && event.path
+       ? `The artifact ${event.artifactId ?? "(unknown identity)"} WAS written at ${event.path}; only its ledger entry is missing.`
+-      : event.txId
+-        ? `Transaction ${event.txId} may already have been executed or submitted: do not send it again before checking it ` +
+-          `('hardkas tx status ${event.txId}'). Only its ledger entry is missing.`
+-        : event.artifactId
+-          ? `The artifact ${event.artifactId} may already exist in the workspace; only its ledger entry is missing.`
+-          : `The step that produced this event may already have taken effect; only its ledger entry is missing.`;
++      : undefined;
++  if (known) {
++    const tail =
++      known.outcome === "not-performed"
++        ? `Nothing was spooled. Free the ledger ('hardkas lock doctor'), then run the command again.`
++        : `Nothing was spooled: that ledger entry stays missing${known.artifactId || written ? ", and the artifact named here is the evidence of what happened" : ""}. ` +
++          `Free the ledger ('hardkas lock doctor') before running anything else in this workspace.`;
++    return `${describeEffect(known)} ${lost} ${written ?? "Only its ledger entry is missing."} ${tail}`;
++  }
++  const effect =
++    written ??
++    (event.txId
++      ? `Transaction ${event.txId} may already have been executed or submitted: do not send it again before checking it ` +
++        `('hardkas tx status ${event.txId}'). Only its ledger entry is missing.`
++      : event.artifactId
++        ? `The artifact ${event.artifactId} may already exist in the workspace; only its ledger entry is missing.`
++        : `The step that produced this event may already have taken effect; only its ledger entry is missing.`);
+   return (
+-    `The event ${event.kind} (${event.eventId}) could not be recorded in ${ledgerPath}: ${why} ${effect} ` +
++    `${lost} ${effect} ` +
+     `Nothing was spooled: this event is lost unless the step is repeated. Free the ledger first ('hardkas lock doctor') ` +
+     `and check the workspace evidence before repeating anything.`
+   );
+@@ -368,20 +427,24 @@ function describeLostEvent(ledgerPath: string, event: LostEventIdentity, cause:
+ export class EventLedgerAppendError extends HardkasError {
+   readonly ledgerPath: string;
+   readonly event: LostEventIdentity;
++  /** Closeout (A1): what the step had already done, when the boundary that raised the failure knew it. */
++  readonly effect: LedgerFailureEffect | undefined;
+ 
+-  constructor(ledgerPath: string, envelope: EventEnvelope, cause: unknown) {
+-    const event = lostEventIdentity(envelope);
+-    super("EVENT_LEDGER_APPEND_FAILED", describeLostEvent(ledgerPath, event, cause), {
++  constructor(ledgerPath: string, envelope: EventEnvelope | LostEventIdentity, cause: unknown, effect?: LedgerFailureEffect) {
++    const event = "payload" in envelope ? lostEventIdentity(envelope) : envelope;
++    super("EVENT_LEDGER_APPEND_FAILED", describeLostEvent(ledgerPath, event, cause, effect), {
+       cause,
+       metadata: {
+         ledgerPath,
+         event,
+-        cause: { ...(typeof (cause as any)?.code === "string" ? { code: (cause as any).code } : {}), message: cause instanceof Error ? cause.message : String(cause) }
++        cause: { ...(typeof (cause as any)?.code === "string" ? { code: (cause as any).code } : {}), message: cause instanceof Error ? cause.message : String(cause) },
++        ...(effect ? { effect } : {})
+       }
+     });
+     this.name = "EventLedgerAppendError";
+     this.ledgerPath = ledgerPath;
+     this.event = event;
++    this.effect = effect;
+   }
+ }
+ 
+@@ -389,6 +452,18 @@ export function isEventLedgerAppendFailure(e: unknown): e is EventLedgerAppendEr
+   return typeof e === "object" && e !== null && (e as any).code === "EVENT_LEDGER_APPEND_FAILED";
+ }
+ 
++/**
++ * EVENT-LEDGER-2 closeout (A1) · at an execution or broadcast boundary: a ledger failure is rethrown naming what the
++ * step had already done — same code, same lost event, same cause. An effect already named closer to the boundary is
++ * kept; any other error is rethrown as it is.
++ */
++export function rethrowWithLedgerEffect(e: unknown, effect: LedgerFailureEffect): never {
++  if (isEventLedgerAppendFailure(e) && e.effect === undefined && typeof e.ledgerPath === "string" && e.event) {
++    throw new EventLedgerAppendError(e.ledgerPath, e.event, e.cause, effect);
++  }
++  throw e;
++}
++
+ /** One ledger line: the envelope as JSON, bigint payload values (amountSompi …) as decimal strings. */
+ export function serializeEventForLedger(event: EventEnvelope): string {
+   return JSON.stringify(event, (_key, value) => (typeof value === "bigint" ? value.toString() : value)) + "\n";
+diff --git a/packages/core/test/event-ledger-2-closeout.test.ts b/packages/core/test/event-ledger-2-closeout.test.ts
+index c35163e67..e1e1b2eda 100644
+--- a/packages/core/test/event-ledger-2-closeout.test.ts
++++ b/packages/core/test/event-ledger-2-closeout.test.ts
+@@ -5,6 +5,7 @@ import path from "node:path";
+ import { spawn, spawnSync, type ChildProcess } from "node:child_process";
+ import { Worker } from "node:worker_threads";
+ import { attachLedgerAppender, coreEvents, createEventEnvelope, eventLedgerPath, isEventLedgerAppendFailure } from "../src/events.js";
++import { clearLock, listLocks } from "../src/lock.js";
+ import { asArtifactId, asCorrelationId, asEventSequence, asNetworkId, asWorkflowId } from "../src/domain-types.js";
+ 
+ vi.setConfig({ testTimeout: 90_000 });
+@@ -13,9 +14,16 @@ vi.setConfig({ testTimeout: 90_000 });
+ // and neither is a recovery that is still valid.
+ //  CL-3 (same pid): a lock whose record names THIS process's pid is held by a live process — this one, through another
+ //       of its flows (a worker thread here) — so it is waited for, never judged abandoned because the pid is ours;
+-//  CL-4 (recovery race): a `.recover` mutex is never taken over while its recoverer is alive, however long it has been
++//  CL-4 (recovery race): a recovery lock is never taken over while its recoverer is alive, however long it has been
+ //       suspended; a recoverer suspended between its check and its unlink therefore never removes the lock of a holder
+-//       that came after it.
++//       that came after it;
++//  CL-4c (final closeout, fail closed): a recovery lock whose recoverer is gone is not removed automatically either —
++//       read, compare and unlink is not atomic, so removing it could race with another recoverer. The append fails at
++//       once with APPEND_LOCK_RECOVERY_BLOCKED, the lock tools show that recovery lock and clear it once its process is
++//       gone, and the next append recovers the abandoned append lock by itself.
++// The recovery lock lives at <lock name>.recover.lock (a workspace lock the lock tools read); the closeout's first round
++// kept it at <lock>.recover. The recoverers below hold, and the leftovers are planted at, both paths, so the same tests
++// judge both versions.
+ // Every participant other than the ledger under test is a separate process or thread acting on the files exactly as
+ // the protocol does; every workspace is a temporary directory created here.
+ 
+@@ -35,35 +43,44 @@ const envelope = (n: number) =>
+ 
+ const tempRoot = () => fs.mkdtempSync(path.join(os.tmpdir(), "hk-el2-cl-"));
+ const lockPathOf = (root: string) => path.join(root, ".hardkas", "locks", "append-events.jsonl.lock");
++/** Where a recovery lock lives: this version's path first, the first round's second. */
++const recoveryPathsOf = (root: string) => [path.join(root, ".hardkas", "locks", "append-events.jsonl.recover.lock"), `${lockPathOf(root)}.recover`];
+ const ledgerHas = (root: string, eventId: string) => {
+   const file = eventLedgerPath(root);
+   return fs.existsSync(file) && fs.readFileSync(file, "utf8").split(/\r?\n/).filter(Boolean).some((l) => JSON.parse(l).eventId === eventId);
+ };
+ const deadPid = (): number => spawnSync(process.execPath, ["-e", ""]).pid;
+-const record = (pid: number) =>
+-  JSON.stringify({ schema: "hardkas.lock.v1", name: "append-events.jsonl", pid, command: "test", cwd: os.tmpdir(), hostname: os.hostname(), createdAt: new Date().toISOString(), expiresAt: null });
++const record = (pid: number, name = "append-events.jsonl") =>
++  JSON.stringify({ schema: "hardkas.lock.v1", name, pid, command: "test", cwd: os.tmpdir(), hostname: os.hostname(), createdAt: new Date().toISOString(), expiresAt: null });
+ const waitFor = async (file: string, ms = 15_000) => {
+   const deadline = Date.now() + ms;
+   while (!fs.existsSync(file) && Date.now() < deadline) await new Promise((r) => setTimeout(r, 20));
+   if (!fs.existsSync(file)) throw new Error(`timed out waiting for ${file}`);
+ };
+ const exited = (child: ChildProcess) => new Promise<void>((resolve) => (child.exitCode !== null ? resolve() : child.once("exit", () => resolve())));
++const unchanged = (file: string, bytes: Buffer) => fs.existsSync(file) && fs.readFileSync(file).equals(bytes);
+ 
+-/** emit with the ledger attached; returns how it ended (never swallows a non-ledger error). */
+-const emitWithLedger = (root: string, n: number): { eventId: string; failure?: string } => {
++/** emit with the ledger attached; returns the ledger's failure, if any (a non-ledger error is never swallowed). */
++const emitWithLedger = (root: string, n: number): { eventId: string; error?: any } => {
+   const e = envelope(n);
+   const detach = attachLedgerAppender(root);
+   try {
+     coreEvents.emit(e);
+     return { eventId: e.eventId };
+   } catch (err) {
+-    if (isEventLedgerAppendFailure(err)) return { eventId: e.eventId, failure: (err as Error).message };
++    if (isEventLedgerAppendFailure(err)) return { eventId: e.eventId, error: err };
+     throw err;
+   } finally {
+     detach();
+   }
+ };
+ 
++/** The script of a recoverer that takes every recovery lock in `paths` exactly as the protocol does (wx + record). */
++const takeRecoveryLocks = (paths: string[], who: string) =>
++  `const fs=require("fs"),os=require("os");const ms=${JSON.stringify(paths)};` +
++  `const rec=JSON.stringify({schema:"hardkas.lock.v1",name:"append-events.jsonl.recover",pid:process.pid,command:${JSON.stringify(who)},cwd:os.tmpdir(),hostname:os.hostname(),createdAt:new Date().toISOString(),expiresAt:null});` +
++  `const old=new Date(Date.now()-3600000);for(const m of ms){const fd=fs.openSync(m,"wx");fs.writeSync(fd,rec);fs.closeSync(fd);fs.utimesSync(m,old,old);}`;
++
+ describe("EVENT-LEDGER-2 closeout · CL-3 a lock naming this process's own pid is held by a live process", () => {
+   it("a worker thread of this process holding the append lock is waited for, never taken over; the event lands after it releases", async () => {
+     const root = tempRoot();
+@@ -86,7 +103,7 @@ describe("EVENT-LEDGER-2 closeout · CL-3 a lock naming this process's own pid i
+       await held;
+       const r = emitWithLedger(root, 1);
+       const holder = await released;
+-      expect({ persisted: ledgerHas(root, r.eventId), failure: r.failure ?? null, holder }).toEqual({
++      expect({ persisted: ledgerHas(root, r.eventId), failure: r.error?.message ?? null, holder }).toEqual({
+         persisted: true,
+         failure: null,
+         holder: { ownLockIntact: true }
+@@ -99,30 +116,25 @@ describe("EVENT-LEDGER-2 closeout · CL-3 a lock naming this process's own pid i
+ });
+ 
+ describe("EVENT-LEDGER-2 closeout · CL-4 a recovery that is still valid is never taken over", () => {
+-  it("a recoverer that is alive keeps its .recover mutex however old it is: the append waits and fails typed, the mutex intact", async () => {
++  it("a recoverer that is alive keeps its recovery lock however old it is: the append waits and fails typed, the lock intact", async () => {
+     const root = tempRoot();
+     const lock = lockPathOf(root);
+-    const mutex = `${lock}.recover`;
++    const recoveries = recoveryPathsOf(root);
+     const ready = path.join(root, "a-ready");
+     fs.mkdirSync(path.dirname(lock), { recursive: true });
+     fs.writeFileSync(lock, record(deadPid())); // an abandoned lock both recoverers will judge
+-    // Recoverer A: takes the mutex with its record, is "suspended" (its mutex made an hour old), stays alive 30 s.
++    // Recoverer A: takes the recovery lock with its record, is "suspended" (its lock made an hour old), stays alive 30 s.
+     const a = spawn(
+       process.execPath,
+-      [
+-        "-e",
+-        `const fs=require("fs"),os=require("os");const m=${JSON.stringify(mutex)};const fd=fs.openSync(m,"wx");` +
+-          `fs.writeSync(fd,JSON.stringify({schema:"hardkas.lock.v1",name:"append-events.jsonl.recover",pid:process.pid,command:"recoverer-A",cwd:os.tmpdir(),hostname:os.hostname(),createdAt:new Date().toISOString(),expiresAt:null}));fs.closeSync(fd);` +
+-          `const old=new Date(Date.now()-3600000);fs.utimesSync(m,old,old);fs.writeFileSync(${JSON.stringify(ready)},"1");setTimeout(()=>{},30000);`
+-      ],
++      ["-e", takeRecoveryLocks(recoveries, "recoverer-A") + `fs.writeFileSync(${JSON.stringify(ready)},"1");setTimeout(()=>{},30000);`],
+       { stdio: "ignore" }
+     );
+     try {
+       await waitFor(ready);
+-      const mutexBytes = fs.readFileSync(mutex);
++      const before = recoveries.map((m) => fs.readFileSync(m));
+       const r = emitWithLedger(root, 2);
+-      const mutexIntact = fs.existsSync(mutex) && fs.readFileSync(mutex).equals(mutexBytes);
+-      expect({ mutexIntact, typedFailure: typeof r.failure === "string" }).toEqual({ mutexIntact: true, typedFailure: true });
++      const intact = recoveries.every((m, i) => unchanged(m, before[i]!));
++      expect({ recoveryLockIntact: intact, typedFailure: r.error !== undefined }).toEqual({ recoveryLockIntact: true, typedFailure: true });
+     } finally {
+       a.kill();
+       await exited(a);
+@@ -133,21 +145,20 @@ describe("EVENT-LEDGER-2 closeout · CL-4 a recovery that is still valid is neve
+   it("a recoverer suspended between its check and its unlink never removes the lock of a holder that came after it", async () => {
+     const root = tempRoot();
+     const lock = lockPathOf(root);
+-    const mutex = `${lock}.recover`;
++    const recoveries = recoveryPathsOf(root);
+     const aChecked = path.join(root, "a-checked");
+     const cResult = path.join(root, "c-result.json");
+     fs.mkdirSync(path.dirname(lock), { recursive: true });
+     fs.writeFileSync(lock, record(deadPid()));
+-    // Recoverer A: mutex (record, an hour old), reads the abandoned lock (its check), is suspended 3 s, then unlinks
+-    // the lock path as its protocol step says, and releases the mutex.
++    // Recoverer A: recovery lock (record, an hour old), reads the abandoned lock (its check), is suspended 3 s, then
++    // unlinks the lock path as its protocol step says, and releases its recovery lock.
+     const a = spawn(
+       process.execPath,
+       [
+         "-e",
+-        `const fs=require("fs"),os=require("os");const m=${JSON.stringify(mutex)},l=${JSON.stringify(lock)};const fd=fs.openSync(m,"wx");` +
+-          `fs.writeSync(fd,JSON.stringify({schema:"hardkas.lock.v1",name:"append-events.jsonl.recover",pid:process.pid,command:"recoverer-A",cwd:os.tmpdir(),hostname:os.hostname(),createdAt:new Date().toISOString(),expiresAt:null}));fs.closeSync(fd);` +
+-          `const old=new Date(Date.now()-3600000);fs.utimesSync(m,old,old);fs.readFileSync(l);fs.writeFileSync(${JSON.stringify(aChecked)},"1");` +
+-          `setTimeout(()=>{try{fs.unlinkSync(l)}catch{}try{fs.unlinkSync(m)}catch{}},3000);setTimeout(()=>{},6000);`
++        takeRecoveryLocks(recoveries, "recoverer-A") +
++          `const l=${JSON.stringify(lock)};fs.readFileSync(l);fs.writeFileSync(${JSON.stringify(aChecked)},"1");` +
++          `setTimeout(()=>{try{fs.unlinkSync(l)}catch{}for(const m of ms){try{fs.unlinkSync(m)}catch{}}},3000);setTimeout(()=>{},6000);`
+       ],
+       { stdio: "ignore" }
+     );
+@@ -170,7 +181,7 @@ describe("EVENT-LEDGER-2 closeout · CL-4 a recovery that is still valid is neve
+       await waitFor(cResult, 30_000);
+       const holder = JSON.parse(fs.readFileSync(cResult, "utf8"));
+       // C's lock must never be removed by anyone but C; the ledger's event is persisted, or its loss is typed.
+-      expect({ holder, eventAccounted: ledgerHas(root, r.eventId) || typeof r.failure === "string" }).toEqual({
++      expect({ holder, eventAccounted: ledgerHas(root, r.eventId) || r.error !== undefined }).toEqual({
+         holder: { took: true, ownLockIntact: true },
+         eventAccounted: true
+       });
+@@ -180,4 +191,43 @@ describe("EVENT-LEDGER-2 closeout · CL-4 a recovery that is still valid is neve
+       fs.rmSync(root, { recursive: true, force: true });
+     }
+   });
++
++  it("CL-4c · a recovery lock whose recoverer died fails the append closed — no automatic removal, no wait — until the lock tool clears it", () => {
++    const root = tempRoot();
++    const lock = lockPathOf(root);
++    const [recovery, earlier] = recoveryPathsOf(root) as [string, string];
++    fs.mkdirSync(path.dirname(lock), { recursive: true });
++    fs.writeFileSync(lock, record(deadPid())); // an abandoned append lock
++    // what a recoverer that died while recovering it leaves: its recovery lock, naming a pid that is gone
++    const leftover = record(deadPid(), "append-events.jsonl.recover");
++    fs.writeFileSync(recovery, leftover);
++    fs.writeFileSync(earlier, leftover);
++    const before = { lock: fs.readFileSync(lock), recovery: fs.readFileSync(recovery), earlier: fs.readFileSync(earlier) };
++    try {
++      const t0 = Date.now();
++      const r = emitWithLedger(root, 4);
++      const ms = Date.now() - t0;
++      expect({
++        cause: r.error?.metadata?.cause?.code,
++        persisted: ledgerHas(root, r.eventId),
++        intact: { lock: unchanged(lock, before.lock), recovery: unchanged(recovery, before.recovery), earlier: unchanged(earlier, before.earlier) }
++      }).toEqual({ cause: "APPEND_LOCK_RECOVERY_BLOCKED", persisted: false, intact: { lock: true, recovery: true, earlier: true } });
++      expect(ms, "fails at once: waiting cannot bring a dead recoverer back").toBeLessThan(5_000);
++      expect(r.error.message).toContain("hardkas lock clear append-events.jsonl.recover --if-dead");
++      expect(r.error.message).toContain(recovery);
++
++      // The administrator's step, with the lock tools: they list the recovery lock, and clear it once its process is gone.
++      expect(listLocks(root).map((l) => [l.name, l.isAlive])).toContainEqual(["append-events.jsonl.recover", false]);
++      expect(clearLock(root, "append-events.jsonl.recover", { ifDead: true })).toEqual({ cleared: true });
++      // Without a recovery lock in the way, the abandoned append lock is recovered automatically, as before.
++      const again = emitWithLedger(root, 5);
++      expect({ persisted: ledgerHas(root, again.eventId), failure: again.error?.message ?? null, appendLockLeft: fs.existsSync(lock) }).toEqual({
++        persisted: true,
++        failure: null,
++        appendLockLeft: false
++      });
++    } finally {
++      fs.rmSync(root, { recursive: true, force: true });
++    }
++  });
+ });
+diff --git a/packages/core/test/event-ledger-2-effect.test.ts b/packages/core/test/event-ledger-2-effect.test.ts
+new file mode 100644
+index 000000000..7b3118dd3
+--- /dev/null
++++ b/packages/core/test/event-ledger-2-effect.test.ts
+@@ -0,0 +1,79 @@
++import { describe, it, expect } from "vitest";
++import { createEventEnvelope, EventLedgerAppendError, rethrowWithLedgerEffect, type LedgerFailureEffect } from "../src/events.js";
++import { HardkasError } from "../src/errors.js";
++import { asArtifactId, asCorrelationId, asEventSequence, asNetworkId, asTxId, asWorkflowId } from "../src/domain-types.js";
++
++// EVENT-LEDGER-2 · reviewer final closeout, decision A1 — the mechanism, unit level (new in this closeout, so it has no
++// BEFORE of its own; the behaviour it replaces is pinned by the SDK and CLI event-ledger-2 tests): at an execution or
++// broadcast boundary a ledger failure is rethrown with the same code, the same lost event and the same cause, naming
++// what the step had already done; an effect named closer to the boundary is kept; any other error passes untouched.
++
++const TX = "e".repeat(64);
++const envelope = createEventEnvelope({
++  kind: "workflow.submitted",
++  domain: "workflow",
++  workflowId: asWorkflowId("wf_el2_effect"),
++  correlationId: asCorrelationId("wf_el2_effect"),
++  networkId: asNetworkId("simnet"),
++  payload: { txId: asTxId(TX), rpcUrl: "" },
++  sequenceNumber: asEventSequence(1),
++  globalOffset: 0,
++  sourceSubsystem: "event-ledger-2-effect-test",
++  txId: asTxId(TX),
++  artifactId: asArtifactId("f".repeat(64))
++});
++const ledgerFailure = () => new EventLedgerAppendError("/ws/events.jsonl", envelope, new Error("no space left on device."));
++const named = (effect: LedgerFailureEffect): EventLedgerAppendError => {
++  try {
++    rethrowWithLedgerEffect(ledgerFailure(), effect);
++  } catch (e) {
++    return e as EventLedgerAppendError;
++  }
++  throw new Error("rethrowWithLedgerEffect returned");
++};
++
++describe("EVENT-LEDGER-2 final closeout · rethrowWithLedgerEffect", () => {
++  it("keeps the code, the lost event and the cause, and adds the effect (error field and metadata)", () => {
++    const original = ledgerFailure();
++    const effect: LedgerFailureEffect = { operation: "broadcast", outcome: "accepted", txId: TX, artifactId: "f".repeat(64), artifactPath: "/ws/s.json" };
++    let thrown: any;
++    try {
++      rethrowWithLedgerEffect(original, effect);
++    } catch (e) {
++      thrown = e;
++    }
++    expect(thrown).toBeInstanceOf(EventLedgerAppendError);
++    expect({ code: thrown.code, event: thrown.event, cause: thrown.cause, effect: thrown.effect, meta: thrown.metadata.effect }).toEqual({
++      code: "EVENT_LEDGER_APPEND_FAILED",
++      event: original.event,
++      cause: original.cause,
++      effect,
++      meta: effect
++    });
++    expect(thrown.message).toContain("could not be recorded in /ws/events.jsonl: no space left on device.");
++  });
++
++  it("an effect already named closer to the boundary is kept; a non-ledger error passes untouched", () => {
++    const inner = named({ operation: "broadcast", outcome: "unknown", txId: TX });
++    expect(() => rethrowWithLedgerEffect(inner, { operation: "broadcast", outcome: "not-performed" })).toThrow(inner);
++    const other = new HardkasError("SOMETHING_ELSE", "not a ledger failure");
++    expect(() => rethrowWithLedgerEffect(other, { operation: "broadcast", outcome: "accepted" })).toThrow(other);
++  });
++
++  it("the message leads with the effect; a performed one never invites repeating the step", () => {
++    const cases: Array<[LedgerFailureEffect, RegExp]> = [
++      [{ operation: "broadcast", outcome: "accepted", txId: TX }, /^The node ACCEPTED the submission of transaction e{64} \(acceptance of the request by the RPC, not acceptance or confirmation in the DAG\): it WAS sent\./],
++      [{ operation: "broadcast", outcome: "rejected", txId: TX }, /^The node REJECTED transaction e{64} with an explicit answer\./],
++      [{ operation: "broadcast", outcome: "unknown", txId: TX }, /^The outcome of sending transaction e{64} is UNKNOWN: the submit call failed without an answer from the node, which may have received it\./],
++      [{ operation: "simulated-execution", outcome: "executed", txId: TX }, /^The simulator EXECUTED transaction e{64}: the simulated state changed\./],
++      [{ operation: "broadcast", outcome: "not-performed", txId: TX }, /^Nothing was sent: the ledger failed before transaction e{64} was broadcast\./],
++      [{ operation: "simulated-execution", outcome: "not-performed" }, /^Nothing was executed: the ledger failed before the simulator ran the transaction\./]
++    ];
++    for (const [effect, lead] of cases) {
++      const message = named(effect).message;
++      expect(message, effect.outcome).toMatch(lead);
++      if (effect.outcome === "not-performed") expect(message).toMatch(/then run the command again\.$/);
++      else expect(message, "a performed effect: the step is never to be repeated").not.toMatch(/lost unless the step is repeated|run the command again/);
++    }
++  });
++});
+diff --git a/packages/core/test/event-ledger-2.test.ts b/packages/core/test/event-ledger-2.test.ts
+index 26734ae60..2473f38df 100644
+--- a/packages/core/test/event-ledger-2.test.ts
++++ b/packages/core/test/event-ledger-2.test.ts
+@@ -19,7 +19,7 @@ import {
+   appendLockRecord,
+   judgeAppendLock
+ } from "../src/append-coordinator.js";
+-import { listLocks, lockCommandOf } from "../src/lock.js";
++import { clearLock, listLocks, lockCommandOf } from "../src/lock.js";
+ import { asArtifactId, asCorrelationId, asEventSequence, asNetworkId, asWorkflowId } from "../src/domain-types.js";
+ 
+ vi.setConfig({ testTimeout: 60_000 });
+@@ -307,21 +307,36 @@ describe("EVENT-LEDGER-2 · AFTER · the append lock is judged before it is touc
+     }
+   });
+ 
+-  it("a .recover mutex left by a recoverer that died does not block the next recovery, and none is left behind", () => {
++  it("closeout CL-4 (reviewer, fail closed): an empty recovery lock left by a recoverer that died is never removed automatically; the append fails typed until the lock tool clears it", () => {
+     const root = tempRoot();
+     try {
+       const lock = leaveLock(root, recordFor(deadPid()), 0);
+-      const mutex = `${lock}.recover`;
+-      fs.writeFileSync(mutex, "");
+-      const old = new Date(Date.now() - 60_000);
+-      fs.utimesSync(mutex, old, old);
++      const lockBytes = fs.readFileSync(lock);
++      // the recovery lock where this version keeps it, and where the closeout's first round kept it (`<lock>.recover`),
++      // so the same test judges both: an empty one past the creation grace is a recoverer that died before its record
++      const recovery = leaveLock(root, "", 60_000, "append-events.jsonl.recover.lock");
++      const earlier = leaveLock(root, "", 60_000, "append-events.jsonl.lock.recover");
+       const e = envelope(11);
+-      withLedger(root, () => coreEvents.emit(e));
+-      expect({ persisted: ledgerHas(root, e.eventId), lockLeft: fs.existsSync(lock), mutexLeft: fs.existsSync(mutex) }).toEqual({
+-        persisted: true,
+-        lockLeft: false,
+-        mutexLeft: false
+-      });
++      let failure: any;
++      try {
++        withLedger(root, () => coreEvents.emit(e));
++      } catch (err) {
++        failure = err;
++      }
++      expect({
++        code: failure?.code,
++        cause: failure?.metadata?.cause?.code,
++        persisted: ledgerHas(root, e.eventId),
++        lockIntact: fs.existsSync(lock) && fs.readFileSync(lock).equals(lockBytes),
++        recoveryLeft: fs.existsSync(recovery),
++        earlierLeft: fs.existsSync(earlier)
++      }).toEqual({ code: "EVENT_LEDGER_APPEND_FAILED", cause: "APPEND_LOCK_RECOVERY_BLOCKED", persisted: false, lockIntact: true, recoveryLeft: true, earlierLeft: true });
++      expect(failure.message, "an empty recovery lock names no process to check").toContain("hardkas lock clear append-events.jsonl.recover --force");
++      // the administrator's step; the next append then recovers the abandoned append lock by itself
++      expect(clearLock(root, "append-events.jsonl.recover", { force: true })).toEqual({ cleared: true });
++      const e2 = envelope(13);
++      withLedger(root, () => coreEvents.emit(e2));
++      expect({ persisted: ledgerHas(root, e2.eventId), lockLeft: fs.existsSync(lock) }).toEqual({ persisted: true, lockLeft: false });
+     } finally {
+       fs.rmSync(root, { recursive: true, force: true });
+     }
+diff --git a/packages/sdk/src/tx.ts b/packages/sdk/src/tx.ts
+index 5eafa0b41..51f0cef44 100644
+--- a/packages/sdk/src/tx.ts
++++ b/packages/sdk/src/tx.ts
+@@ -36,6 +36,7 @@ import {
+   deriveSubmissionFee,
+   deriveTxStatus,
+   deriveObserverId,
++  submitOutcomeOf,
+   TX_STATUS_POLICY_HARDKAS_DEFAULT_V1,
+   type DerivedTxStatus,
+   type TxStatusPolicy,
+@@ -46,11 +47,13 @@ import {
+   coreEvents,
+   createEventEnvelope,
+   emitArtifactWritten,
++  rethrowWithLedgerEffect,
+   STANDALONE_WORKFLOW_ID,
+   asArtifactId,
+   asCorrelationId,
+   asEventSequence,
+   asNetworkId,
++  asRpcEndpointId,
+   asTxId,
+   asWorkflowId
+ } from "@hardkas/core";
+@@ -1394,7 +1397,10 @@ export class HardkasTx {
+ 
+       // If persist is true and it's a new in-memory plan (no ID), we write it
+       if (persist && !planArtifact.planId) {
+-        const savedPlanResult = await this.sdk.artifacts.write(planArtifact);
++        // A1: a ledger failure here comes before the simulator runs anything
++        await this.sdk.artifacts.write(planArtifact).catch((e: unknown) =>
++          rethrowWithLedgerEffect(e, { operation: "simulated-execution", outcome: "not-performed" })
++        );
+         sourcePlanId = planArtifact.planId || "unknown";
+       }
+       // D-Q2.a / N4: the synthetic txId IS the executed plan's identity.
+@@ -1470,7 +1476,10 @@ export class HardkasTx {
+       // record names them); post-state + record are then committed in one ledger write, the evidence is published and
+       // the record cleared. The store is held for the whole sequence: a store held elsewhere delays the execution
+       // instead of leaving the state moved without its evidence.
+-      await this.persistExecutionMaterial(executed, planArtifact);
++      // A1: a ledger failure while the material is stored comes before the state moves: nothing was executed
++      await this.persistExecutionMaterial(executed, planArtifact).catch((e: unknown) =>
++        rethrowWithLedgerEffect(e, { operation: "simulated-execution", outcome: "not-performed", txId: receipt.txId })
++      );
+       const clock = {
+         traceStartedAtMs: startTime,
+         submittedAt: nowIso,
+@@ -1501,13 +1510,24 @@ export class HardkasTx {
+     // under its content hash and its own workflowId (the plan's). The trace and the state snapshot of the same
+     // commit are not announced yet (ARTIFACT-ANNOUNCE-2).
+     if (persist && receiptPath) {
+-      emitArtifactWritten({
+-        artifactId: typeof receipt.contentHash === "string" ? receipt.contentHash : "unknown",
+-        absolutePath: receiptPath,
+-        sourceSubsystem: "sdk:tx-simulate",
+-        workflowId: typeof receipt.workflowId === "string" ? receipt.workflowId : undefined,
+-        networkId: receipt.networkId
+-      });
++      try {
++        emitArtifactWritten({
++          artifactId: typeof receipt.contentHash === "string" ? receipt.contentHash : "unknown",
++          absolutePath: receiptPath,
++          sourceSubsystem: "sdk:tx-simulate",
++          workflowId: typeof receipt.workflowId === "string" ? receipt.workflowId : undefined,
++          networkId: receipt.networkId
++        });
++      } catch (e: unknown) {
++        // A1: the commit above already moved the simulated state: the failure names that execution and its receipt
++        rethrowWithLedgerEffect(e, {
++          operation: "simulated-execution",
++          outcome: "executed",
++          txId: receipt.txId,
++          artifactId: typeof receipt.contentHash === "string" ? receipt.contentHash : undefined,
++          artifactPath: receiptPath
++        });
++      }
+     }
+     const result: {
+       receipt: TxReceiptArtifact;
+@@ -1589,7 +1609,16 @@ export class HardkasTx {
+     }
+ 
+     const signedTxId = signedArtifact.txId || signedArtifact.signedId || signedArtifact.contentHash || "unknown";
+-    await this.sdk.plugins.onBeforeTxSend({ signedTxId, from: signedArtifact.from?.accountName || signedArtifact.from?.address || "unknown" });
++    try {
++      await this.sdk.plugins.onBeforeTxSend({ signedTxId, from: signedArtifact.from?.accountName || signedArtifact.from?.address || "unknown" });
++    } catch (e: unknown) {
++      // A1: a ledger failure here (a plugin's blocking decision being recorded) comes before anything is sent or executed
++      rethrowWithLedgerEffect(e, {
++        operation: isSimulated ? "simulated-execution" : "broadcast",
++        outcome: "not-performed",
++        txId: typeof signedArtifact.txId === "string" ? signedArtifact.txId : undefined
++      });
++    }
+ 
+     if (isSimulated) {
+       const persistOpt = typeof urlOrOptions === "object" ? urlOrOptions.persist : true;
+@@ -1729,6 +1758,9 @@ export class HardkasTx {
+     } catch (e: unknown) {
+       submitResult = { accepted: false, error: redactUrlCredentialsInText(e instanceof Error ? e.message : String(e)) };
+     }
++    // EVENT-LEDGER-2 final closeout: from here on the broadcast has happened, or its outcome is unknown — what the
++    // recorded result establishes (accepted request, the node's rejection, or no answer), never a consensus state
++    const submitOutcome = submitOutcomeOf(submitResult);
+ 
+     // DEF-1b: `mode` describes the EXECUTION SEMANTICS of the lifecycle, fixed
+     // at plan/sign time. It is NOT a property of the transport (URL scheme).
+@@ -1780,45 +1812,74 @@ export class HardkasTx {
+     submissionBase.contentHash = calculateContentHash(submissionBase, CURRENT_HASH_VERSION);
+     submissionBase.lineage.artifactId = submissionBase.contentHash;
+     const produced: TxSubmissionArtifact = Object.freeze(submissionBase);
++    // the transaction that was sent: the node's txId, else the signed artifact's (a failed call records "unknown")
++    const sentTxId = [produced.txId, signedArtifact.txId].find((t) => typeof t === "string" && /^[0-9a-f]{64}$/.test(t)) as
++      | string
++      | undefined;
+ 
+-    // EVIDENCE-TRUST-1 (D2): what is returned is exactly what the store holds (the earlier copy of this identity, if any).
+-    const written = await this.sdk.artifacts.write(produced);
+-    const receiptPath = written.absolutePath;
+-    const submission: TxSubmissionArtifact = written.artifact ? Object.freeze(written.artifact) : produced;
+-
+-    // EVENT-LEDGER-2 closeout (CL-2): the submission's RESULT, once the node answered: `workflow.submitted` for an
+-    // accepted submission, `workflow.failed` for one that failed or was refused — under the signed artifact's own
+-    // workflowId (never a derived one), naming the submission artifact that records the answer.
+-    const resultEvent = {
+-      domain: "workflow" as const,
+-      workflowId: asWorkflowId(submissionWorkflowId),
+-      correlationId: asCorrelationId(submissionWorkflowId),
+-      networkId: asNetworkId(this.sdk.network),
+-      sequenceNumber: asEventSequence(1),
+-      globalOffset: 0,
+-      sourceSubsystem: "sdk:tx-send",
+-      txId: asTxId(submission.txId),
+-      artifactId: asArtifactId(submission.contentHash as string)
+-    };
+-    coreEvents.emit(
+-      submitResult.accepted
+-        ? createEventEnvelope({
+-            ...resultEvent,
+-            kind: "workflow.submitted",
+-            payload: { txId: asTxId(submission.txId), rpcUrl: endpoint ? redactUrlCredentials(endpoint) : "" }
+-          })
+-        : createEventEnvelope({
+-            ...resultEvent,
+-            kind: "workflow.failed",
+-            payload: {
+-              workflowId: asWorkflowId(submissionWorkflowId),
+-              error: `submission not accepted: ${submitResult.error ?? "the node answered accepted: false"}`
+-            }
+-          })
+-    );
++    let receiptPath: string | undefined;
++    let submission: TxSubmissionArtifact = produced;
++    try {
++      // EVIDENCE-TRUST-1 (D2): what is returned is exactly what the store holds (the earlier copy of this identity, if any).
++      const written = await this.sdk.artifacts.write(produced);
++      receiptPath = written.absolutePath;
++      if (written.artifact) submission = Object.freeze(written.artifact);
++
++      // EVENT-LEDGER-2 closeout (CL-2; final closeout, decision 2): the submission's RESULT, once the call returned or
++      // failed, under the signed artifact's own workflowId (never a derived one), naming the submission artifact that
++      // records it: `workflow.submitted` for a submission request the node accepted, `workflow.failed` for the node's
++      // rejection and, for a call that failed without an answer, `rpc.error` — the outcome is unknown, so neither a
++      // submission nor a rejection is declared. Existing kinds only; no consensus state.
++      const resultEvent = {
++        domain: "workflow" as const,
++        workflowId: asWorkflowId(submissionWorkflowId),
++        correlationId: asCorrelationId(submissionWorkflowId),
++        networkId: asNetworkId(this.sdk.network),
++        sequenceNumber: asEventSequence(1),
++        globalOffset: 0,
++        sourceSubsystem: "sdk:tx-send",
++        txId: asTxId(submission.txId),
++        artifactId: asArtifactId(submission.contentHash as string)
++      };
++      const rpcUrl = endpoint ? redactUrlCredentials(endpoint) : "";
++      coreEvents.emit(
++        submitOutcome === "accepted"
++          ? createEventEnvelope({ ...resultEvent, kind: "workflow.submitted", payload: { txId: asTxId(submission.txId), rpcUrl } })
++          : submitOutcome === "rejected"
++            ? createEventEnvelope({
++                ...resultEvent,
++                kind: "workflow.failed",
++                payload: {
++                  workflowId: asWorkflowId(submissionWorkflowId),
++                  error: `the node rejected the submission: ${submitResult.error ?? "it answered accepted: false"}`
++                }
++              })
++            : createEventEnvelope({
++                ...resultEvent,
++                domain: "rpc",
++                kind: "rpc.error",
++                payload: {
++                  endpoint: asRpcEndpointId(rpcUrl || "unknown"),
++                  error:
++                    `submitTransaction failed without an answer from the node (${submitResult.error ?? "no answer"}): the outcome ` +
++                    `of the submission is unknown, and the node may have received transaction ${sentTxId ?? submission.txId}`,
++                  retriable: false
++                }
++              })
++      );
+ 
+-    // Reuse the signedTxId from the start of the method
+-    await this.sdk.plugins.onTxSent({ signedTxId, receiptArtifact: submission });
++      // Reuse the signedTxId from the start of the method
++      await this.sdk.plugins.onTxSent({ signedTxId, receiptArtifact: submission });
++    } catch (e: unknown) {
++      // A1: a ledger failure after the broadcast names what was sent, never reads as "not sent"
++      rethrowWithLedgerEffect(e, {
++        operation: "broadcast",
++        outcome: submitOutcome,
++        txId: sentTxId,
++        artifactId: produced.contentHash as string,
++        artifactPath: receiptPath
++      });
++    }
+ 
+     return {
+       receipt: submission,
+diff --git a/packages/sdk/src/workflow.ts b/packages/sdk/src/workflow.ts
+index e7d649ff8..5fd667ebf 100644
+--- a/packages/sdk/src/workflow.ts
++++ b/packages/sdk/src/workflow.ts
+@@ -1,8 +1,24 @@
+ import { Hardkas } from "./index.js";
+-import { WorkflowArtifact, HARDKAS_VERSION } from "@hardkas/artifacts";
+-import { HardkasError, deterministicCompare } from "@hardkas/core";
++import { WorkflowArtifact, HARDKAS_VERSION, submitOutcomeOf } from "@hardkas/artifacts";
++import { HardkasError, deterministicCompare, rethrowWithLedgerEffect, type LedgerFailureEffect } from "@hardkas/core";
+ import { HardkasSchemas } from "@hardkas/artifacts";
+ 
++/**
++ * EVENT-LEDGER-2 final closeout (A1) · what a `tx.send` / `tx.simulate` result had already done, for a ledger failure
++ * raised by a step's writes after it: a simulated execution, or a broadcast with the outcome its submit result records.
++ */
++function effectOf(res: any): LedgerFailureEffect {
++  const artifact = res?.submission ?? res?.receipt;
++  const simulated = res?.simulated === true || artifact?.mode === "simulator";
++  return {
++    operation: simulated ? "simulated-execution" : "broadcast",
++    outcome: simulated ? "executed" : submitOutcomeOf(artifact?.submitResult),
++    txId: typeof artifact?.txId === "string" ? artifact.txId : undefined,
++    artifactId: typeof artifact?.contentHash === "string" ? artifact.contentHash : undefined,
++    artifactPath: typeof res?.receiptPath === "string" ? res.receiptPath : undefined
++  };
++}
++
+ export interface WorkflowRunOptions {
+   steps: Array<{
+     type: string;
+@@ -114,6 +130,16 @@ export class HardkasWorkflow {
+       if (res && res.submitted === false && res.simulated !== true) {
+         const submissionId = res.submission?.contentHash ?? res.artifactId ?? "unknown";
+         const reason = res.submission?.submitResult?.error ?? "no reason returned";
++        // EVENT-LEDGER-2 final closeout (decision 2): a submit call that failed without an answer is not a rejection
++        if (submitOutcomeOf(res.submission?.submitResult) === "unknown") {
++          const txId = typeof res.txId === "string" && /^[0-9a-f]{64}$/.test(res.txId) ? res.txId : undefined;
++          throw new HardkasError(
++            "TX_SUBMISSION_OUTCOME_UNKNOWN",
++            `The outcome of the submission is unknown: the submit call failed without an answer from the node (${reason}), ` +
++              `which may have received the transaction. The attempt was recorded as ${submissionId}; check the transaction` +
++              `${txId ? ` ('hardkas tx status ${txId}')` : ""} before sending it again.`
++          );
++        }
+         throw new HardkasError(
+           "TX_SUBMISSION_REJECTED",
+           `The node did not accept the transaction (${reason}); the submission was recorded as ${submissionId}.`
+@@ -192,7 +218,11 @@ export class HardkasWorkflow {
+                     ? await this.sdk.tx.simulate(signed, parentHint(signed))
+                     : await this.sdk.tx.send(signed, parentHint(signed));
+                 assertBroadcastAccepted(sent);
+-                const storedReceipt = (await this.sdk.artifacts.write(sent.receipt, { dryRun: options.dryRun ?? false })).artifact;
++                const storedReceipt = (
++                  await this.sdk.artifacts
++                    .write(sent.receipt, { dryRun: options.dryRun ?? false })
++                    .catch((e: unknown) => rethrowWithLedgerEffect(e, effectOf(sent)))
++                ).artifact;
+                 const res = storedReceipt ? { ...sent, receipt: storedReceipt } : sent;
+                 const receiptRecord = res.receipt as unknown as Record<string, string>;
+                 const id =
+@@ -204,7 +234,11 @@ export class HardkasWorkflow {
+               },
+               simulate: async (signed: any) => {
+                 const simulated: any = await this.sdk.tx.simulate(signed, parentHint(signed));
+-                const storedReceipt = (await this.sdk.artifacts.write(simulated.receipt, { dryRun: options.dryRun ?? false })).artifact;
++                const storedReceipt = (
++                  await this.sdk.artifacts
++                    .write(simulated.receipt, { dryRun: options.dryRun ?? false })
++                    .catch((e: unknown) => rethrowWithLedgerEffect(e, effectOf(simulated)))
++                ).artifact;
+                 const res = storedReceipt ? { ...simulated, receipt: storedReceipt } : simulated;
+                 const receiptRecord = res.receipt as unknown as Record<string, string>;
+                 const id =
+@@ -263,9 +297,14 @@ export class HardkasWorkflow {
+           if (signedId) producedArtifacts.push(signedId);
+ 
+           if (step.type === "tx.simulate") {
+-            const { receipt: producedReceipt } = await this.sdk.tx.simulate(lastSigned, parentHint(lastSigned));
++            const simulated = await this.sdk.tx.simulate(lastSigned, parentHint(lastSigned));
++            const producedReceipt = simulated.receipt;
+             const receipt =
+-              (await this.sdk.artifacts.write(producedReceipt, { dryRun: options.dryRun ?? false })).artifact ?? producedReceipt;
++              (
++                await this.sdk.artifacts
++                  .write(producedReceipt, { dryRun: options.dryRun ?? false })
++                  .catch((e: unknown) => rethrowWithLedgerEffect(e, effectOf(simulated)))
++              ).artifact ?? producedReceipt;
+             const receiptRecord = receipt as unknown as Record<string, string>;
+             producedArtifactId =
+               receiptRecord.contentHash || receiptRecord.artifactId || receiptRecord.txId;
+@@ -278,7 +317,11 @@ export class HardkasWorkflow {
+                 : await this.sdk.tx.send(lastSigned, parentHint(lastSigned));
+             assertBroadcastAccepted(sendResult);
+             const receipt =
+-              (await this.sdk.artifacts.write(sendResult.receipt, { dryRun: options.dryRun ?? false })).artifact ?? sendResult.receipt;
++              (
++                await this.sdk.artifacts
++                  .write(sendResult.receipt, { dryRun: options.dryRun ?? false })
++                  .catch((e: unknown) => rethrowWithLedgerEffect(e, effectOf(sendResult)))
++              ).artifact ?? sendResult.receipt;
+             const receiptRecord = receipt as unknown as Record<string, string>;
+             producedArtifactId =
+               receiptRecord.contentHash || receiptRecord.artifactId || receiptRecord.txId;
+diff --git a/packages/sdk/test/event-ledger-2-effect.test.ts b/packages/sdk/test/event-ledger-2-effect.test.ts
+new file mode 100644
+index 000000000..06beca7ad
+--- /dev/null
++++ b/packages/sdk/test/event-ledger-2-effect.test.ts
+@@ -0,0 +1,190 @@
++import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
++import fs from "node:fs";
++import os from "node:os";
++import path from "node:path";
++import { Hardkas } from "../src/index.js";
++import { coreEvents, EventLedgerAppendError } from "@hardkas/core";
++import { calculateContentHash, CURRENT_HASH_VERSION, storeEntryFor } from "@hardkas/artifacts";
++
++vi.setConfig({ testTimeout: 120_000 });
++
++// EVENT-LEDGER-2 · reviewer final closeout, decision A1. The attached ledger still throws EVENT_LEDGER_APPEND_FAILED,
++// and at an execution or broadcast boundary the failure names what the step had already done (metadata.effect, and a
++// message that leads with it):
++//  - effect confirmed: the node accepted the submission request (RPC acceptance, not acceptance or confirmation in the
++//    DAG), or the simulator executed the transaction — txId and artifact kept;
++//  - outcome unknown: the submit call failed without an answer — never presented as a rejection;
++//  - rejected: the node answered with a rejection;
++//  - not performed: the ledger failed before anything was sent or executed.
++// A broadcast or an execution that took place is never described as an operation that did not happen.
++//
++// How the ledger is made to fail at one precise event: a persistence sink that behaves exactly as the attached ledger
++// does when it cannot append (it throws the ledger's own EventLedgerAppendError for the events it selects) and lets every
++// other event through. The real-broadcast branch is reached as in wave1-3-b2: a simulated workspace plans and signs, the
++// signed artifact is re-issued as a non-synthetic v5 artifact, the instance reports a non-simulated network, and
++// `rpc.submitTransaction` is the only stub. The simulator cases run the real simulator.
++
++const LOOPBACK = "http://127.0.0.1:16110";
++const NODE_TX = "b".repeat(64);
++
++function asBroadcastable(signed: any): any {
++  const s: any = structuredClone(signed);
++  delete s.authorization;
++  s.signedTransaction = { format: "hex", payload: "deadbeef" };
++  s.txId = "f".repeat(64);
++  delete s.contentHash;
++  s.lineage = { ...s.lineage, artifactId: "" };
++  s.contentHash = calculateContentHash(s, CURRENT_HASH_VERSION);
++  s.lineage.artifactId = s.contentHash;
++  s.signedId = `signed-${s.contentHash.slice(0, 16)}`;
++  return s;
++}
++
++/** Every artifact file under the workspace store whose JSON satisfies `pred`. */
++function storedWhere(ws: string, pred: (a: any) => boolean): string[] {
++  const out: string[] = [];
++  const walk = (dir: string) => {
++    if (!fs.existsSync(dir)) return;
++    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
++      const p = path.join(dir, entry.name);
++      if (entry.isDirectory()) walk(p);
++      else if (p.endsWith(".json")) {
++        try {
++          if (pred(JSON.parse(fs.readFileSync(p, "utf8")))) out.push(p);
++        } catch {
++          // not an artifact
++        }
++      }
++    }
++  };
++  walk(path.join(ws, ".hardkas", "artifacts"));
++  return out;
++}
++
++describe("EVENT-LEDGER-2 final closeout · A1 a ledger failure names the effect its step already had", () => {
++  let ws: string;
++  let detach: (() => void) | undefined;
++  let passed: any[];
++
++  /** The ledger fails for the events `fails` selects (as the attached ledger fails), and takes every other one. */
++  const ledgerFailingOn = (fails: (e: any) => boolean) => {
++    detach = coreEvents.persistWith((event: any) => {
++      if (fails(event)) throw new EventLedgerAppendError(path.join(ws, "events.jsonl"), event, new Error("no space left on the ledger's disk (test double)."));
++      passed.push(event);
++    });
++  };
++
++  beforeEach(() => {
++    ws = fs.mkdtempSync(path.join(os.tmpdir(), "hk-el2-effect-"));
++    passed = [];
++  });
++
++  afterEach(() => {
++    detach?.();
++    detach = undefined;
++    vi.restoreAllMocks();
++    fs.rmSync(ws, { recursive: true, force: true });
++  });
++
++  async function realBroadcast(submit: () => Promise<any>) {
++    const sdk = await Hardkas.create({ cwd: ws, autoBootstrap: true, network: "simulated" });
++    const plan = await sdk.tx.plan({ from: "alice", to: "bob", amount: "1" } as any);
++    const signed = asBroadcastable(await sdk.tx.sign(plan as any, "alice"));
++    Object.defineProperty(sdk, "network", { get: () => "simnet", configurable: true });
++    vi.spyOn(sdk.rpc, "submitTransaction").mockImplementation(submit as any);
++    return { sdk, signed };
++  }
++
++  it("accepted broadcast, then the submission's artifact.written is lost: the failure says the transaction WAS sent (RPC acceptance, not DAG)", async () => {
++    const { sdk, signed } = await realBroadcast(() => Promise.resolve({ transactionId: NODE_TX }));
++    ledgerFailingOn((e) => e.kind === "artifact.written");
++    const err: any = await sdk.tx.send(signed, LOOPBACK).then(() => undefined, (e) => e);
++    expect(err?.code).toBe("EVENT_LEDGER_APPEND_FAILED");
++    expect(err.metadata?.effect).toMatchObject({ operation: "broadcast", outcome: "accepted", txId: NODE_TX });
++    expect(err.metadata.effect.artifactId).toBe(err.metadata.event.artifactId); // the submission that was written
++    expect(fs.existsSync(err.metadata.event.path), "the submission WAS written").toBe(true);
++    expect(err.message).toMatch(/ACCEPTED the submission of transaction b{64}/);
++    expect(err.message).toMatch(/not acceptance or confirmation in the DAG\): it WAS sent/);
++    expect(err.message).not.toMatch(/Nothing was sent|may already have been executed or submitted/);
++  });
++
++  it("accepted broadcast, then its result event is lost: the failure names the accepted submission and where it is recorded", async () => {
++    const { sdk, signed } = await realBroadcast(() => Promise.resolve({ transactionId: NODE_TX }));
++    ledgerFailingOn((e) => e.sourceSubsystem === "sdk:tx-send");
++    const err: any = await sdk.tx.send(signed, LOOPBACK).then(() => undefined, (e) => e);
++    expect(err?.code).toBe("EVENT_LEDGER_APPEND_FAILED");
++    const effect = err.metadata?.effect;
++    expect(effect).toMatchObject({ operation: "broadcast", outcome: "accepted", txId: NODE_TX });
++    expect(fs.existsSync(effect.artifactPath), "the submission artifact it names exists").toBe(true);
++    expect(JSON.parse(fs.readFileSync(effect.artifactPath, "utf8")).contentHash).toBe(effect.artifactId);
++    expect(err.message).toMatch(/it WAS sent/);
++  });
++
++  it("a submit call that failed without an answer, then its result event is lost: the outcome is UNKNOWN, never a rejection", async () => {
++    const { sdk, signed } = await realBroadcast(() => Promise.reject(new Error("RPC request submitTransaction timed out after 5000ms")));
++    ledgerFailingOn((e) => e.sourceSubsystem === "sdk:tx-send");
++    const err: any = await sdk.tx.send(signed, LOOPBACK).then(() => undefined, (e) => e);
++    expect(err?.code).toBe("EVENT_LEDGER_APPEND_FAILED");
++    // a failed call records no txId from the node; the effect names the transaction that was sent (the signed artifact's)
++    expect(err.metadata?.effect).toMatchObject({ operation: "broadcast", outcome: "unknown", txId: "f".repeat(64) });
++    expect(err.message).toMatch(/is UNKNOWN: the submit call failed without an answer from the node, which may have received it/);
++    expect(err.message).not.toMatch(/REJECTED|rejected/);
++    expect(passed.filter((e) => e.kind === "workflow.failed"), "no failure event either: nothing says it was rejected").toEqual([]);
++  });
++
++  it("a submission the node rejected, then its result event is lost: the failure says REJECTED, with the submission", async () => {
++    const { sdk, signed } = await realBroadcast(() =>
++      Promise.reject(new Error(`Rejected transaction ${"f".repeat(64)}: transaction ${"f".repeat(64)} is an orphan where orphan is disallowed`))
++    );
++    ledgerFailingOn((e) => e.sourceSubsystem === "sdk:tx-send");
++    const err: any = await sdk.tx.send(signed, LOOPBACK).then(() => undefined, (e) => e);
++    expect(err?.code).toBe("EVENT_LEDGER_APPEND_FAILED");
++    expect(err.metadata?.effect).toMatchObject({ operation: "broadcast", outcome: "rejected" });
++    expect(err.message).toMatch(/The node REJECTED transaction/);
++  });
++
++  it("the simulator executed, then the receipt's announcement is lost: the failure says EXECUTED and names the receipt", async () => {
++    const sdk = await Hardkas.create({ cwd: ws, autoBootstrap: true, network: "simulated" });
++    const signed: any = await sdk.tx.sign((await sdk.tx.plan({ from: "alice", to: "bob", amount: "1" } as any)) as any, "alice");
++    ledgerFailingOn((e) => e.sourceSubsystem === "sdk:tx-simulate");
++    const err: any = await sdk.tx.simulate(signed).then(() => undefined, (e) => e);
++    expect(err?.code).toBe("EVENT_LEDGER_APPEND_FAILED");
++    const effect = err.metadata?.effect;
++    expect(effect).toMatchObject({ operation: "simulated-execution", outcome: "executed" });
++    expect(fs.existsSync(effect.artifactPath), "the receipt the commit published").toBe(true);
++    expect(err.message).toMatch(/The simulator EXECUTED transaction .*Do not execute it again/);
++    // it did execute: once the ledger takes events again, the same artifact resolves to that receipt (idempotent)
++    detach?.();
++    detach = undefined;
++    const again = await sdk.tx.simulate(signed);
++    expect((again.receipt as any).contentHash).toBe(effect.artifactId);
++  });
++
++  it("the ledger fails before the simulator runs (the executed artifact's store write): nothing was executed, and the failure says so", async () => {
++    const sdk = await Hardkas.create({ cwd: ws, autoBootstrap: true, network: "simulated" });
++    const signed: any = await sdk.tx.sign((await sdk.tx.plan({ from: "alice", to: "bob", amount: "1" } as any)) as any, "alice");
++    // the executed artifact missing from the store: the execution writes it again before it moves the state
++    fs.unlinkSync(path.join(ws, ".hardkas", "artifacts", storeEntryFor(signed).rel));
++    ledgerFailingOn((e) => e.kind === "artifact.written" && e.artifactId === signed.contentHash);
++    const err: any = await sdk.tx.simulate(signed).then(() => undefined, (e) => e);
++    expect(err?.code).toBe("EVENT_LEDGER_APPEND_FAILED");
++    expect(err.metadata?.effect).toMatchObject({ operation: "simulated-execution", outcome: "not-performed" });
++    expect(err.message).toMatch(/^Nothing was executed/);
++    const receipts = storedWhere(ws, (a) => String(a?.schema).startsWith("hardkas.txReceipt") && a?.lineage?.parentArtifactId === signed.contentHash);
++    expect(receipts, "no receipt: the simulated state did not move").toEqual([]);
++  });
++
++  it("a workflow's tx.simulate step: the receipt's store announcement after the execution is lost, and the step's error says EXECUTED", async () => {
++    const sdk = await Hardkas.create({ cwd: ws, autoBootstrap: true, network: "simulated" });
++    let receiptId: string | undefined;
++    ledgerFailingOn((e) => {
++      if (e.kind === "artifact.written" && e.sourceSubsystem === "sdk:tx-simulate") receiptId = e.artifactId;
++      return e.kind === "artifact.written" && e.sourceSubsystem === "sdk:artifacts-manager" && receiptId !== undefined && e.artifactId === receiptId;
++    });
++    const run: any = await sdk.workflow.run({ steps: [{ type: "tx.plan", from: "alice", to: "bob", amount: 1 } as any, { type: "tx.simulate" } as any] });
++    expect(receiptId, "precondition: the simulator executed and announced its receipt").toMatch(/^[0-9a-f]{64}$/);
++    expect(run.status).toBe("failed");
++    expect(run.errorEnvelope?.code).toBe("EVENT_LEDGER_APPEND_FAILED");
++    expect(run.errorEnvelope?.message).toMatch(/The simulator EXECUTED transaction/);
++  });
++});
+diff --git a/packages/sdk/test/event-ledger-2-submission.test.ts b/packages/sdk/test/event-ledger-2-submission.test.ts
+index 5973372de..854add097 100644
+--- a/packages/sdk/test/event-ledger-2-submission.test.ts
++++ b/packages/sdk/test/event-ledger-2-submission.test.ts
+@@ -4,14 +4,20 @@ import os from "node:os";
+ import path from "node:path";
+ import { Hardkas } from "../src/index.js";
+ import { attachLedgerAppender, eventLedgerPath } from "@hardkas/core";
+-import { calculateContentHash, CURRENT_HASH_VERSION } from "@hardkas/artifacts";
++import { calculateContentHash, CURRENT_HASH_VERSION, deriveTxStatus } from "@hardkas/artifacts";
+ 
+ vi.setConfig({ testTimeout: 120_000 });
+ 
+ // EVENT-LEDGER-2 · reviewer closeout, point 2 (submission semantics). `workflow.submitted` says a submission took place:
+ // it is recorded only once the submit call answered and the node accepted the transaction, naming the submission
+-// artifact that records the answer. A broadcast that failed (the call threw) or was refused (accepted:false) is never
+-// recorded as submitted; its outcome is recorded as such (`workflow.failed`, naming the same submission artifact).
++// artifact that records the answer. A broadcast the node refused (its own rejection, thrown by the submit call, or an
++// answer with accepted:false) is never recorded as submitted; its outcome is recorded as such (`workflow.failed`,
++// naming the same submission artifact).
++// Final closeout (decision 2): a submit call that failed WITHOUT an answer from the node (a timeout, a lost connection)
++// is not a rejection either — whether the node received the transaction is unknown. It is recorded as what it is, an
++// RPC error (`rpc.error`, an existing kind), never as `workflow.failed`; the workflow step fails with
++// TX_SUBMISSION_OUTCOME_UNKNOWN, not TX_SUBMISSION_REJECTED; and the derived status is INSUFFICIENT_EVIDENCE (an existing
++// state), not REJECTED_BY_NODE. No consensus state is invented.
+ //
+ // How the real-broadcast branch is reached hermetically (as wave1-3-b2-workflow-rejected-send does): a simulated
+ // workspace plans and signs; the signed artifact is re-issued as a non-synthetic, re-sealed v5 artifact; the instance
+@@ -67,7 +73,7 @@ describe("EVENT-LEDGER-2 closeout · CL-2 workflow.submitted is recorded only af
+     return { result, signed };
+   }
+ 
+-  it("a broadcast whose submit call throws is never recorded as submitted; its failure is, naming the submission", async () => {
++  it("a broadcast whose submit call throws the node's own rejection is never recorded as submitted; its failure is, naming the submission", async () => {
+     const { result } = await sendWith(() => Promise.reject(new Error("Rejected transaction: orphan")));
+     const events = ledger(ws);
+     const submission = result.submission;
+@@ -102,4 +108,40 @@ describe("EVENT-LEDGER-2 closeout · CL-2 workflow.submitted is recorded only af
+     });
+     expect(events.filter((e) => e.kind === "workflow.failed")).toEqual([]);
+   });
++
++  for (const [what, transport] of [
++    ["a timeout", "RPC request submitTransaction timed out after 5000ms"],
++    ["a lost connection", "Connection to Kaspa RPC at ws://127.0.0.1:16110 was lost: socket closed"]
++  ] as const) {
++    it(`a submit call that failed without an answer (${what}) is recorded as an RPC error with an unknown outcome — never as a rejection`, async () => {
++      const { result } = await sendWith(() => Promise.reject(new Error(transport)));
++      const events = ledger(ws);
++      const submission = result.submission;
++      expect(submission.submitResult, "the call's result is recorded as it returned").toMatchObject({ accepted: false, error: transport });
++      expect(events.filter((e) => e.kind === "workflow.submitted" || e.kind === "workflow.failed"), "neither submitted nor rejected").toEqual([]);
++      const rpcErrors = events.filter((e) => e.kind === "rpc.error");
++      expect(rpcErrors.map((e) => ({ artifactId: e.artifactId, txId: e.txId, retriable: e.payload?.retriable }))).toEqual([
++        { artifactId: submission.contentHash, txId: submission.txId, retriable: false }
++      ]);
++      expect(String(rpcErrors[0].payload.error)).toMatch(/outcome of the submission is unknown/);
++      const status = deriveTxStatus({ txId: submission.txId, submission, observations: [] });
++      expect(status.status, "an unknown outcome decides nothing: not REJECTED_BY_NODE").toBe("INSUFFICIENT_EVIDENCE");
++      expect(status.reasons.join(" ")).toMatch(/unknown/);
++    });
++  }
++
++  it("a workflow's tx.send step whose submit call failed without an answer fails with TX_SUBMISSION_OUTCOME_UNKNOWN, not TX_SUBMISSION_REJECTED", async () => {
++    const sdk = await Hardkas.create({ cwd: ws, autoBootstrap: true, network: "simulated" });
++    Object.defineProperty(sdk, "network", { get: () => "simnet", configurable: true });
++    const realSend = sdk.tx.send.bind(sdk.tx);
++    vi.spyOn(sdk.tx, "send").mockImplementation((signed: any) => realSend(asBroadcastable(signed), LOOPBACK));
++    vi.spyOn(sdk.rpc, "submitTransaction").mockImplementation((() => Promise.reject(new Error("RPC request submitTransaction timed out after 5000ms"))) as any);
++    const run: any = await sdk.workflow.run({ steps: [{ type: "tx.plan", from: "alice", to: "bob", amount: 10 } as any, { type: "tx.send" } as any] });
++    const sent: any = await vi.mocked(sdk.tx.send).mock.results[0]!.value;
++    expect(run.status).toBe("failed");
++    expect(run.errorEnvelope?.code).toBe("TX_SUBMISSION_OUTCOME_UNKNOWN");
++    expect(run.errorEnvelope?.message).toContain(sent.submission.contentHash);
++    expect(run.errorEnvelope?.message).toMatch(/unknown/);
++    expect(run.errorEnvelope?.message).not.toMatch(/did not accept|rejected/i);
++  });
+ });

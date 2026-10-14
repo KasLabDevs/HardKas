@@ -1,0 +1,10 @@
+docker : failed to connect to the docker API at npipe:////./pipe/dockerDesktopLinuxEngine; check if the path is 
+correct and if the daemon is running: open //./pipe/dockerDesktopLinuxEngine: The system cannot find the file 
+specified.
+En C:\Users\jrodr\AppData\Local\Temp\claude\C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo\21f9a2e4-33ac-4300-
+9366-aff402f85900\scratchpad\cut48-workspace-authority-2\run-full-wt.ps1: 20 Carácter: 1
++ docker ps -a --format "{{.ID}} {{.Names}} {{.Labels}}" *> (Join-Path  ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (failed to conne...file specified.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 

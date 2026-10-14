@@ -12,7 +12,12 @@ import { assertSafeFileId, schemaFilePrefix } from "./file-id.js";
 export const bigIntReplacer = (_key: string, value: unknown) =>
   typeof value === "bigint" ? value.toString() : value;
 
-export async function writeArtifact(filePath: string, artifact: unknown): Promise<void> {
+/**
+ * Writes an artifact as JSON (atomically; through the store's gate when the target is inside an artifact store).
+ * Returns the absolute path written (a directory target gets a file named after the artifact), so the caller can
+ * announce the write (`emitArtifactWritten`, EVENT-LEDGER-2 D4). This function itself announces nothing.
+ */
+export async function writeArtifact(filePath: string, artifact: unknown): Promise<string> {
   let isDir = false;
   try {
     const stat = await fs.stat(filePath);
@@ -40,9 +45,10 @@ export async function writeArtifact(filePath: string, artifact: unknown): Promis
   const inStore = ArtifactStoreMutation.forPath(finalPath);
   if (inStore && inStore.relPath) {
     await inStore.store.writeFile(inStore.relPath, data);
-    return;
+    return path.resolve(finalPath);
   }
   await writeFileAtomic(finalPath, data);
+  return path.resolve(finalPath);
 }
 
 export function getDefaultReceiptPath(txId: string, cwd: string = process.cwd()): string {

@@ -1,0 +1,26 @@
+
+ RUN  v2.1.9 C:/Users/jrodr/hkl1/ea/src
+
+ ✓ packages/cli/test/demo-cut-t-a14b-tx-status.test.ts > Demo-cut · T-A14b · tx status / tx wait present the derived Q4 state > walks SUBMITTED → MEMPOOL_ACCEPTED → ACCEPTED(n) → CONFIRMED(n) → FINALIZED, each equal to sdk.tx.status, nothing asserted beyond it 463ms
+ ✓ packages/cli/test/demo-cut-t-a14b-tx-status.test.ts > Demo-cut · T-A14b · tx status / tx wait present the derived Q4 state > REORGED, REJECTED_BY_NODE and INSUFFICIENT_EVIDENCE come straight from the model
+ ✓ packages/cli/test/demo-cut-t-a14b-tx-status.test.ts > Demo-cut · T-A14b · tx status / tx wait present the derived Q4 state > a submission the node rejected is REJECTED_BY_NODE, and `tx wait` fails on it instead of waiting
+ ✓ packages/cli/test/demo-cut-t-a14b-tx-status.test.ts > Demo-cut · T-A14b · tx status / tx wait present the derived Q4 state > CONFLICTING_OBSERVATIONS shows every observer's view
+ ✓ packages/cli/test/demo-cut-t-a14b-tx-status.test.ts > Demo-cut · T-A14b · tx status / tx wait present the derived Q4 state > `tx wait --until confirmed` follows the evidence to CONFIRMED, one persisted observation per look
+ ✓ packages/cli/test/demo-cut-t-a14b-tx-status.test.ts > Demo-cut · T-A14b · tx status / tx wait present the derived Q4 state > `tx wait --until accepted` stops at ACCEPTED; a timeout names the last derived state and never claims confirmation
+ ✓ packages/cli/test/demo-cut-t-a14b-tx-status.test.ts > Demo-cut · T-A14b · tx status / tx wait present the derived Q4 state > `tx wait --until confirmed` returns only once the node's UTXO view reflects the transaction (a trailing view is waited out)
+ ✓ packages/cli/test/demo-cut-t-a14b-tx-status.test.ts > Demo-cut · T-A14b · tx status / tx wait present the derived Q4 state > a UTXO view that never reflects the transaction fails explicitly and bounded, naming what is missing; the state stays CONFIRMED
+ ✓ packages/cli/test/demo-cut-t-a14b-tx-status.test.ts > Demo-cut · T-A14b · tx status / tx wait present the derived Q4 state > without a verifiable plan for the txId in this workspace the view is not checked, and the wait says so
+ ✓ packages/cli/test/demo-cut-t-a14b-tx-status.test.ts > Demo-cut · T-A14b · tx status / tx wait present the derived Q4 state > a simulator txId is SYNTHETIC_EXECUTED: status and wait say there is no network, and take no observation
+ ✓ packages/cli/test/demo-cut-t-a14b-no-false-claims.test.ts > Demo-cut · T-A14b · no unbacked consensus, settlement or finality claims > the touched CLI sources contain none of the forbidden narratives
+ ✓ packages/cli/test/demo-cut-t-a14b-no-false-claims.test.ts > Demo-cut · T-A14b · what the built CLI prints for tx status, tx wait and explain > tx status <network txId> --no-observe: SUBMITTED from the recorded submission, with the policy and no claims 1868ms
+ ✓ packages/cli/test/demo-cut-t-a14b-no-false-claims.test.ts > Demo-cut · T-A14b · what the built CLI prints for tx status, tx wait and explain > tx status <synthetic txId>: SYNTHETIC_EXECUTED; tx wait on it says there is no network and exits 0 1933ms
+ ✓ packages/cli/test/demo-cut-t-a14b-no-false-claims.test.ts > Demo-cut · T-A14b · what the built CLI prints for tx status, tx wait and explain > tx wait rejects an unknown target with a usage error 878ms
+ ✓ packages/cli/test/demo-cut-t-a14b-no-false-claims.test.ts > Demo-cut · T-A14b · what the built CLI prints for tx status, tx wait and explain > tx status <path> keeps the signature-coverage view 876ms
+ ✓ packages/cli/test/demo-cut-t-a14b-no-false-claims.test.ts > Demo-cut · T-A14b · what the built CLI prints for tx status, tx wait and explain > explain on the network submission derives its state and makes no consensus claim 934ms
+
+ Test Files  2 passed (2)
+      Tests  16 passed (16)
+   Start at  20:45:38
+   Duration  13.59s (transform 1.69s, setup 0ms, collect 4.38s, tests 8.55s, environment 0ms, prepare 235ms)
+
+JSON report written to C:/Users/jrodr/AppData/Local/Temp/claude/C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo/ecaf7e92-a2ba-49b0-aafc-c62b4cb5eda0/scratchpad/l1-reality-1/ea/logs/ea-adapted-cli-1.json

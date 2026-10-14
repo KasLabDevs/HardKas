@@ -551,7 +551,8 @@ export async function runLocalnetFork(opts: {
     UI.warning("No addresses specified. Forked state will be empty.");
   }
 
-  const client = new JsonWrpcKaspaClient({ rpcUrl });
+  // NODE-NETWORK-IDENTITY-1: UTXOs are forked from a node only if it says it serves the named network
+  const client = new JsonWrpcKaspaClient({ rpcUrl, expectedNetworkId: opts.network });
   try {
     await withLock(
       {

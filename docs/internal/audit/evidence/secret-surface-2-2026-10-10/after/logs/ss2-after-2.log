@@ -1,0 +1,111 @@
+﻿gate-hermetic: HARDKAS_HOME=C:\Users\jrodr\AppData\Local\Temp\hardkas-hermetic-home-RYTUTA (copy of C:\Users\jrodr\AppData\Local\Temp\hk-v210-gate-home)
+gate-hermetic: DOCKER_HOST=tcp://127.0.0.1:1; preload=C:\Users\jrodr\AppData\Local\Temp\hk-ra\wt\scripts\hermetic\no-network-preload.cjs
+gate-hermetic: vitest run --coverage.enabled=false --reporter=default --reporter=json --outputFile=C:\Users\jrodr\AppData\Local\Temp\claude\C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo\21f9a2e4-33ac-4300-9366-aff402f85900\scratchpad\cut47-secret-surface-2\logs\ss2-after-2.json packages/core/test/secret-surface-2.test.ts packages/cli/test/secret-surface-2.test.ts
+
+ RUN  v2.1.9 C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt
+
+ ❯ packages/cli/test/secret-surface-2.test.ts (33 tests | 1 failed) 37471ms
+   ✓ SECRET-SURFACE-2 · BEFORE > SS2-A · security audit finds the plaintext keys HardKAS writes > control · a clean workspace passes 1077ms
+   ✓ SECRET-SURFACE-2 · BEFORE > SS2-A · security audit finds the plaintext keys HardKAS writes > the key `localnet account create` stores in plaintext fails the audit, naming the file 2119ms
+   ✓ SECRET-SURFACE-2 · BEFORE > SS2-A · security audit finds the plaintext keys HardKAS writes > a mnemonic in plaintext under .hardkas fails the audit 1040ms
+   ✓ SECRET-SURFACE-2 · BEFORE > SS2-A · security audit finds the plaintext keys HardKAS writes > control · a dev-account config that holds only a privateKeyRef is not a leak 1048ms
+   × SECRET-SURFACE-2 · BEFORE > SS2-B · a mainnet private key is not printed by default > kaspa wallet create <name> --network mainnet prints the address and the config snippet, never the key 1257ms
+     → no 64-hex value (the private key) in stdout or stderr: expected '\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nHar…' not to match /[0-9a-f]{64}/i
+   ✓ SECRET-SURFACE-2 · BEFORE > SS2-C · env check does not print the dev server token > human output names the variable as set without its value 1047ms
+   ✓ SECRET-SURFACE-2 · BEFORE > SS2-C · env check does not print the dev server token > --json reports the variable without its value 1128ms
+   ✓ SECRET-SURFACE-2 · BEFORE > SS2-D · URL credentials are redacted even when the output is coloured > control · colours off: kaspa doctor never prints the URL's password 1150ms
+   ✓ SECRET-SURFACE-2 · BEFORE > SS2-D · URL credentials are redacted even when the output is coloured > colours on (every Windows terminal by default): the password must be redacted all the same 1175ms
+   ✓ SECRET-SURFACE-2 · BEFORE > SS2-D · URL credentials are redacted even when the output is coloured > AFTER · colours on, --json: the one document carries no password either 1205ms
+   ✓ SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > finds: JSON, a space after the colon (the store's format) 1119ms
+   ✓ SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > finds: JSON, no spaces 1032ms
+   ✓ SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > finds: a TS object with single quotes 1039ms
+   ✓ SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > finds: privateKeyHex under YAML-style spacing 1060ms
+   ✓ SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > finds: the .env line kaspa wallet create recommends, in a log 1023ms
+   ✓ SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > finds: a 12-word mnemonic under a field 1027ms
+   ✓ SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > finds: a 24-word seed phrase under seedPhrase 1025ms
+   ✓ SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > finds: a mnemonic in a variable line 1038ms
+   ✓ SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > finds: an extended private key anywhere 1029ms
+   ✓ SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > finds: an extra path given with --include 1052ms
+   ✓ SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > passes: content hashes and txIds (64 hex under identity names) 1061ms
+   ✓ SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > passes: an encrypted keystore (ciphertext, salt, nonce) 1010ms
+   ✓ SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > passes: an account that names its key's environment variable 1034ms
+   ✓ SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > passes: a dev-account config that references its key file (the documented exemption) 1037ms
+   ✓ SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > passes: the dev server token file (a bare value: no private key) 1046ms
+   ✓ SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > passes: twelve ordinary words of prose, not under a phrase-bearing name 1040ms
+   ✓ SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > passes: a 64-hex under a secret name split across a newline is still a key; but a 63-hex is not 1040ms
+   ✓ SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > the exemption is delimited: a dev-account config that carries a key besides its reference is a finding 1060ms
+   ✓ SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > a simnet account is not exempt for being simnet: the plaintext store of localnet account create is a finding, with the way out 2062ms
+   ✓ SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > the .key files of dev accounts are not searched (their permissions are checked instead) 1056ms
+   ✓ SECRET-SURFACE-2 · AFTER > D3 · env check reports a secret-bearing variable as configured, never its value > --json: value [REDACTED], configured: true, secret: true; a non-secret variable keeps its value 1067ms
+   ✓ SECRET-SURFACE-2 · AFTER > D3 · env check reports a secret-bearing variable as configured, never its value > human: the line says configured and shows the marker; the same when the token comes from .env 1204ms
+   ✓ SECRET-SURFACE-2 · AFTER > D3 · env check reports a secret-bearing variable as configured, never its value > the token file the server writes is not touched by env check 1060ms
+ ✓ packages/core/test/secret-surface-2.test.ts (20 tests) 8ms
+
+node.exe : ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+En C:\Users\jrodr\AppData\Local\Temp\claude\C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo\21f9a2e4-33ac-4300-
+9366-aff402f85900\scratchpad\cut47-secret-surface-2\run-files-wt.ps1: 22 Carácter: 1
++ & node @args_ *> $log
++ ~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+
+ FAIL  packages/cli/test/secret-surface-2.test.ts > SECRET-SURFACE-2 · BEFORE > SS2-B · a mainnet private key is not 
+printed by default > kaspa wallet create <name> --network mainnet prints the address and the config snippet, never the 
+key
+AssertionError: no 64-hex value (the private key) in stdout or stderr: expected 
+'\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nHar…' not to match /[0-9a-f]{64}/i
+
+- Expected: 
+/[0-9a-f]{64}/i
+
++ Received: 
+"
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+HardKAS • Kaspa Wallet Creation
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ✓ New Kaspa L1 wallet generated:
+    Name:    vault
+    Address: kaspa:qqq8l4ffj07es45susxj6dnvhy0d2hjgh23tkn8cvcwq8qxmzk89u2jekamnt
+    Network: mainnet
+
+  Action Required: Add this to your hardkas.config.ts:
+  ----------------------------------------
+  accounts: {
+    vault: {
+      kind: \"kaspa-private-key\",
+      address: \"kaspa:qqq8l4ffj07es45susxj6dnvhy0d2hjgh23tkn8cvcwq8qxmzk89u2jekamnt\",
+      privateKeyEnv: \"VAULT_PRIVATE_KEY\"
+    }
+  }
+  ----------------------------------------
+
+  Set your private key in .env:
+  VAULT_PRIVATE_KEY=<64hex-redacted>
+
+HardKAS never auto-writes secrets for your protection.
+
+"
+
+ ❯ packages/cli/test/secret-surface-2.test.ts:110:81
+    108|       expect(text, "the address is still shown").toMatch(/Address:\s+k…
+    109|       expect(text, "the config snippet is still shown").toContain("pri…
+    110|       expect(text, "no 64-hex value (the private key) in stdout or std…
+       |                                                                                 ^
+    111|     });
+    112|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 52 passed (53)
+   Start at  11:52:48
+   Duration  38.24s (transform 78ms, setup 0ms, collect 103ms, tests 37.48s, environment 0ms, prepare 233ms)
+
+JSON report written to C:/Users/jrodr/AppData/Local/Temp/claude/C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo/21f9a2e4-33ac-4300-9366-aff402f85900/scratchpad/cut47-secret-surface-2/logs/ss2-after-2.json
+
+gate-hermetic: vitest exit 1 after 39s
+gate-hermetic: non-loopback attempts (each one fails the gate): 0
+gate-hermetic: loopback connection targets (review for dependencies on local services):
+  127.0.0.1:1 x3

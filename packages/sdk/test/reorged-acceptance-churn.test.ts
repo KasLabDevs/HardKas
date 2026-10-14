@@ -6,6 +6,7 @@ import { Hardkas } from "../src/index.js";
 import { observeTxOnce, type TxObserverRpcRecorder } from "../src/tx-observer.js";
 import { calculateContentHash, CURRENT_HASH_VERSION, deriveObserverId, deriveTxStatus, evidenceDigest } from "@hardkas/artifacts";
 import { finalityDepthFor, systemRuntimeContext } from "@hardkas/core";
+import { sendAsRpc } from "./helpers/rpc-instance.js";
 
 // False REORGED, reproduced live on the canonical localnet (2026-10-02, record run 2, tx 7): with a
 // fast miner the chain block that accepts a transaction is often replaced by a sibling that accepts it
@@ -159,7 +160,7 @@ describe("False REORGED · accepting-block churn (live 2026-10-02 record run 2, 
     s.signedId = `signed-${s.contentHash.slice(0, 16)}`;
     await sdk.artifacts.write(s);
     vi.spyOn(sdk.rpc, "submitTransaction").mockResolvedValue({ transactionId: TX } as any);
-    const sent: any = await sdk.tx.send(s, "http://127.0.0.1:16110");
+    const sent: any = await sendAsRpc(sdk, s, "http://127.0.0.1:16110");
     expect(sent.submitted).toBe(true);
     return sent.txId;
   }

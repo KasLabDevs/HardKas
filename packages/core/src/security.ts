@@ -1,31 +1,60 @@
 /**
+ * SECRET-SURFACE-2 (D4) · the escape sequences a terminal interprets, removed from a text BEFORE it is searched for
+ * secrets: CSI (`ESC [ … final`, colours included), OSC (`ESC ] … BEL | ST`), the other two-character escapes, the C1
+ * CSI (U+009B), and the textual forms `\u001b[…` / `\x1b[…` a JSON or log line carries once a coloured string was
+ * serialised. The CLI colours what it prints, and a redaction anchored on word boundaries never saw a value that began
+ * right after an escape sequence's final byte ("…[37mhttp://user:pw@…"). Removing the escapes first makes the
+ * presentation irrelevant to the redaction, hostile interleaving included ("s3c\x1b[0mret" is "s3cret").
+ */
+const ANSI_SEQUENCE = /\x1b\[[0-?]*[ -/]*[@-~]|\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)|\x1b[@-Z\\-_]|\x9b[0-?]*[ -/]*[@-~]|\\(?:u001b|x1b)\[[0-?]*[ -/]*[@-~]/gi;
+
+/** `text` without its escape sequences (see ANSI_SEQUENCE); a text without any is returned as it is. */
+export function stripAnsi(text: string): string {
+  return typeof text === "string" && text.length > 0 ? text.replace(ANSI_SEQUENCE, "") : text;
+}
+
+/**
+ * The one way every free-text redaction runs (D4): the text is stripped of its escape sequences, then redacted. A text
+ * that holds nothing to redact is returned exactly as it came (its colours kept); a text that held a secret is returned
+ * redacted AND without its escapes, so that no later sink can rebuild the value from coloured pieces.
+ */
+function redactPlainText(text: string, redact: (plain: string) => string): string {
+  const plain = stripAnsi(text);
+  const redacted = redact(plain);
+  return redacted === plain ? text : redacted;
+}
+
+/**
  * Redacts sensitive information from strings and objects recursively.
  * Masks Kaspa private keys (64 hex chars), mnemonics and the credentials of URLs.
  *
  * EVIDENCE-TRUST-1 (D8): a safety net for FREE TEXT only (error messages, warnings, stack traces). A 64-hex value has
  * the shape of a private key but also of every content hash and txId, so structured and identity output (titles, fields,
  * JSON) never goes through this function; it never decides identity, equality, verification or replay either.
+ * SECRET-SURFACE-2 (D4): the text is searched without its escape sequences (redactPlainText).
  */
 export function maskSecrets(data: any): any {
   if (data === null || data === undefined) return data;
 
   if (typeof data === "string") {
-    // Credentials carried by URLs (userinfo, secret-named query parameters)
-    let redacted = redactUrlCredentialsInText(data);
+    return redactPlainText(data, (plain) => {
+      // Credentials carried by URLs (userinfo, secret-named query parameters)
+      let redacted = redactUrlCredentialsInText(plain);
 
-    // Mask private keys (64 hex chars)
-    redacted = redacted.replace(/\b[0-9a-fA-F]{64}\b/g, (match) => {
-      return `${match.slice(0, 6)}...${match.slice(-4)} [REDACTED]`;
+      // Mask private keys (64 hex chars)
+      redacted = redacted.replace(/\b[0-9a-fA-F]{64}\b/g, (match) => {
+        return `${match.slice(0, 6)}...${match.slice(-4)} [REDACTED]`;
+      });
+
+      // Mask mnemonics (rough approximation for BIP39 - long series of words)
+      // This is a safety net, not a perfect detector.
+      redacted = redacted.replace(
+        /\b([a-z]{3,10}\s+){11,23}[a-z]{3,10}\b/g,
+        "[MNEMONIC REDACTED]"
+      );
+
+      return redacted;
     });
-
-    // Mask mnemonics (rough approximation for BIP39 - long series of words)
-    // This is a safety net, not a perfect detector.
-    redacted = redacted.replace(
-      /\b([a-z]{3,10}\s+){11,23}[a-z]{3,10}\b/g,
-      "[MNEMONIC REDACTED]"
-    );
-
-    return redacted;
   }
 
   if (Array.isArray(data)) {
@@ -175,25 +204,28 @@ export function redactUrlCredentials(url: string): string {
  */
 export function redactUrlCredentialsInText(text: string): string {
   if (typeof text !== "string" || text === "") return text;
-  const withUrls = text.replace(/\b[a-z][a-z0-9+.-]*:\/\/[^\s"'<>`]+/gi, (match) => {
-    const trail = /[.,;:!?)\]}]+$/.exec(match)?.[0] ?? "";
-    const core = trail ? match.slice(0, -trail.length) : match;
-    return redactUrlCredentials(core) + trail;
-  });
-  return withUrls.replace(
-    /([?&])([^=&#\s"'<>`?]+)=([^&#\s"'<>`]*)/g,
-    (whole, sep: string, rawName: string, rawValue: string) => {
-      let name = rawName;
-      try {
-        name = decodeURIComponent(rawName.replace(/\+/g, " "));
-      } catch {
-        // compared as written
+  // SECRET-SURFACE-2 (D4): searched without its escape sequences; returned as it came when nothing is redacted
+  return redactPlainText(text, (plain) => {
+    const withUrls = plain.replace(/\b[a-z][a-z0-9+.-]*:\/\/[^\s"'<>`]+/gi, (match) => {
+      const trail = /[.,;:!?)\]}]+$/.exec(match)?.[0] ?? "";
+      const core = trail ? match.slice(0, -trail.length) : match;
+      return redactUrlCredentials(core) + trail;
+    });
+    return withUrls.replace(
+      /([?&])([^=&#\s"'<>`?]+)=([^&#\s"'<>`]*)/g,
+      (whole, sep: string, rawName: string, rawValue: string) => {
+        let name = rawName;
+        try {
+          name = decodeURIComponent(rawName.replace(/\+/g, " "));
+        } catch {
+          // compared as written
+        }
+        if (!isSecretUrlParamName(name)) return whole;
+        const trail = /[.,;:!?)\]}]+$/.exec(rawValue)?.[0] ?? ""; // a sentence's punctuation stays outside the value
+        return `${sep}${rawName}=${URL_SECRET_MARKER}${trail}`;
       }
-      if (!isSecretUrlParamName(name)) return whole;
-      const trail = /[.,;:!?)\]}]+$/.exec(rawValue)?.[0] ?? ""; // a sentence's punctuation stays outside the value
-      return `${sep}${rawName}=${URL_SECRET_MARKER}${trail}`;
-    }
-  );
+    );
+  });
 }
 
 /**

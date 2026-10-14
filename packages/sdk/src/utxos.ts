@@ -70,7 +70,7 @@ export class HardkasUtxos {
         // Coinbase maturity from upstream network params (M10-D2). The +10n
         // safety margin is a HardKAS-level tolerance for DAG merge propagation,
         // not a semantic override of the protocol threshold.
-        const network = this.sdk.config.config.defaultNetwork || "simnet";
+        const network = this.sdk.network as string;
         const { filterMatureUtxos } = await import("@hardkas/tx-builder");
         const filtered = filterMatureUtxos<any>({
           networkId: network,

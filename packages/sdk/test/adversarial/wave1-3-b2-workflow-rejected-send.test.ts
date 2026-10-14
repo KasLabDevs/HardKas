@@ -4,6 +4,7 @@ import path from "node:path";
 import os from "node:os";
 import { Hardkas } from "../../src/index.js";
 import { calculateContentHash, CURRENT_HASH_VERSION } from "@hardkas/artifacts";
+import { asRpcInstance } from "../helpers/rpc-instance.js";
 
 // WAVE_1_3_SECURITY_REVIEW · B2 (rejected broadcast recorded as workflow success)
 //
@@ -25,8 +26,10 @@ const LOOPBACK = "http://127.0.0.1:16110";
  * so the real-broadcast branch is exercised with the same artifact re-issued as a non-synthetic
  * signed (hex payload), re-sealed under v5. Nothing else about the lifecycle changes.
  */
-function asBroadcastable(signed: any): any {
+// ENDPOINT-AUTHORITY-1 (EA-I3): the re-issued artifact is for the network the instance sends on
+function asBroadcastable(signed: any, network?: string): any {
   const s: any = structuredClone(signed);
+  if (network) s.networkId = network;
   delete s.authorization;
   s.signedTransaction = { format: "hex", payload: "deadbeef" };
   s.txId = "f".repeat(64);
@@ -42,7 +45,10 @@ async function realBroadcastSdk(ws: string, submit: () => Promise<any>): Promise
   const sdk = await Hardkas.create({ cwd: ws, autoBootstrap: true, network: "simulated" });
   Object.defineProperty(sdk, "network", { get: () => "simnet", configurable: true });
   const realSend = sdk.tx.send.bind(sdk.tx);
-  vi.spyOn(sdk.tx, "send").mockImplementation((signed: any) => realSend(asBroadcastable(signed), LOOPBACK));
+  vi.spyOn(sdk.tx, "send").mockImplementation((signed: any) => {
+    asRpcInstance(sdk, LOOPBACK, "simnet");
+    return realSend(asBroadcastable(signed, "simnet"), LOOPBACK);
+  });
   vi.spyOn(sdk.rpc, "submitTransaction").mockImplementation(submit as any);
   return sdk;
 }

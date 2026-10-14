@@ -46,6 +46,11 @@ export interface GetBlockDagInfoResponse {
 }
 
 export interface RemoteNodeRpc {
+  /**
+   * ENDPOINT-AUTHORITY-1: the endpoint these calls really go to (the client's own URL). The authority a probe records
+   * names it; a probe whose calls go elsewhere than the declared endpoint, or cannot say where, fails closed.
+   */
+  readonly endpoint?: string;
   getServerInfo(): Promise<GetServerInfoResponse>;
   getBlockDagInfo(): Promise<GetBlockDagInfoResponse>;
   /** Optional capability. Presence detected by attempting the call. */
@@ -80,6 +85,8 @@ export interface RemoteTestnetAuthority {
 }
 
 export type ProbeFailureReason =
+  | "ENDPOINT_MISMATCH"
+  | "ENDPOINT_UNVERIFIABLE"
   | "NETWORK_MISMATCH"
   | "UNSYNCED"
   | "MISSING_CAPABILITY"
@@ -144,8 +151,49 @@ function coerceBigint(v: bigint | string | number): bigint {
  *   be present. Non-required capabilities are still probed and recorded, but
  *   their absence does not fail the probe.
  */
+/**
+ * The effective destination of an endpoint URL, for comparison only: http(s) is used as ws(s), a bare host:port gets
+ * ws://, then the URL standard's normalisation (scheme/host case, default port, empty path). Another host name, port,
+ * path or query is another endpoint. (The same rule as @hardkas/kaspa-rpc canonicalRpcEndpoint; this package has no
+ * dependencies.)
+ */
+function canonicalEndpoint(url: string): string {
+  const t = url.trim();
+  const ws = t.startsWith("http://") ? "ws://" + t.slice(7) : t.startsWith("https://") ? "wss://" + t.slice(8) : /^wss?:\/\//.test(t) ? t : `ws://${t}`;
+  try {
+    const u = new URL(ws);
+    const auth = u.username || u.password ? `${u.username}${u.password ? `:${u.password}` : ""}@` : "";
+    return `${u.protocol}//${auth}${u.hostname.toLowerCase()}${u.port ? `:${u.port}` : ""}${u.pathname === "/" ? "" : u.pathname}${u.search}`;
+  } catch {
+    return ws;
+  }
+}
+
+/** A URL without userinfo or query, for messages. */
+function shownEndpoint(url: string): string {
+  return url.replace(/^([a-z][a-z0-9+.-]*:\/\/)[^@/]*@/i, "$1").replace(/\?.*$/, "");
+}
+
 export async function probeRemoteTestnet(input: ProbeRemoteTestnetInput): Promise<RemoteTestnetAuthority> {
   const now = input.now ?? (() => new Date());
+
+  // 0. ENDPOINT-AUTHORITY-1: the authority recorded below names input.endpoint, so the calls must go there — FAIL
+  // CLOSED, before any call, when the client cannot say where its calls go or says another endpoint.
+  const actual = input.rpc.endpoint;
+  if (typeof actual !== "string" || actual.trim() === "") {
+    throw new RemoteTestnetProbeFailedError(
+      "ENDPOINT_UNVERIFIABLE",
+      `The probe client does not say which endpoint it talks to; the declared endpoint ${shownEndpoint(input.endpoint.address)} cannot be shown to be the one probed.`,
+      { declared: shownEndpoint(input.endpoint.address) }
+    );
+  }
+  if (canonicalEndpoint(actual) !== canonicalEndpoint(input.endpoint.address)) {
+    throw new RemoteTestnetProbeFailedError(
+      "ENDPOINT_MISMATCH",
+      `The declared endpoint ${shownEndpoint(input.endpoint.address)} is not the endpoint the probe client talks to (${shownEndpoint(actual)}).`,
+      { declared: shownEndpoint(input.endpoint.address), actual: shownEndpoint(actual) }
+    );
+  }
 
   // 1. getServerInfo — required.
   let serverInfo: GetServerInfoResponse;

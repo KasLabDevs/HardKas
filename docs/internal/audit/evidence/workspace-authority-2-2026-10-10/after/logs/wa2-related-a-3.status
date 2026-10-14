@@ -1,0 +1,97 @@
+ M docs/guides/sdk.md
+ M packages/cli/src/runners/accounts-balance-runner.ts
+ M packages/cli/src/runners/accounts-consolidate-runner.ts
+ M packages/cli/src/runners/tx-flow.ts
+ M packages/cli/src/runners/tx-plan-runner.ts
+ M packages/cli/src/runners/tx-send-runner.ts
+ M packages/cli/src/runners/tx-sign-runner.ts
+ M packages/cli/test/wave2-b-planner-convergence.test.ts
+ M packages/cli/test/wave2-c-pending-spend.test.ts
+ M packages/config/src/load.ts
+ M packages/config/src/provider.ts
+ M packages/config/src/resolve.ts
+ M packages/pskt-native/hardkas-pskt-native.win32-x64-msvc.node
+ M packages/sdk/src/accounts.ts
+ M packages/sdk/src/capabilities.ts
+ M packages/sdk/src/index.ts
+ M packages/sdk/src/observe/backends.ts
+ M packages/sdk/src/observe/index.ts
+ M packages/sdk/src/tx.ts
+ M packages/sdk/src/utxos.ts
+ M packages/sdk/src/workflow.ts
+ M packages/sdk/test/adversarial/wave2-d-send-fee.test.ts
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/INVESTIGATION.md
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/after/logs/build-wa2-after-1.log
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/after/logs/wa2-after-1.exit
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/after/logs/wa2-after-1.head
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/after/logs/wa2-after-1.json
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/after/logs/wa2-after-1.log
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/after/logs/wa2-after-1.status
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/after/logs/wa2-after-2.exit
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/after/logs/wa2-after-2.head
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/after/logs/wa2-after-2.json
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/after/logs/wa2-after-2.log
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/after/logs/wa2-after-2.status
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/after/logs/wa2-consolidation-probe-1.log
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/after/logs/wa2-consolidation-probe-2.log
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/after/logs/wa2-overrides-probe-1.log
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/after/logs/wa2-related-a-1.exit
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/after/logs/wa2-related-a-1.head
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/after/logs/wa2-related-a-1.json
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/after/logs/wa2-related-a-1.log
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/after/logs/wa2-related-a-1.status
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/after/logs/wa2-related-a-2.exit
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/after/logs/wa2-related-a-2.head
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/after/logs/wa2-related-a-2.json
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/after/logs/wa2-related-a-2.log
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/after/logs/wa2-related-a-2.status
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/after/logs/wa2-related-b-1.exit
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/after/logs/wa2-related-b-1.head
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/after/logs/wa2-related-b-1.json
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/after/logs/wa2-related-b-1.log
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/after/logs/wa2-related-b-1.status
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/after/logs/wa2-related-b-2.exit
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/after/logs/wa2-related-b-2.head
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/after/logs/wa2-related-b-2.json
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/after/logs/wa2-related-b-2.log
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/after/logs/wa2-related-b-2.status
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/after/logs/wa2-related-c-1.exit
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/after/logs/wa2-related-c-1.head
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/after/logs/wa2-related-c-1.json
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/after/logs/wa2-related-c-1.log
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/after/logs/wa2-related-c-1.status
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/after/probes/wa2-consolidation-probe.mjs
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/after/probes/wa2-overrides-probe.mjs
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/after/scripts/manifest2.ps1
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/after/scripts/run-after-chain.ps1
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/after/scripts/run-files-wt.ps1
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/after/tests/cli-wave2-b-planner-convergence.test.ts
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/after/tests/cli-wave2-c-pending-spend.test.ts
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/after/tests/cli-workspace-authority-2.test.ts
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/after/tests/sdk-wave2-d-send-fee.test.ts
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/after/tests/sdk-workspace-authority-2.test.ts
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/before/logs/run-files-wt.ps1
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/before/logs/wa2-before-1.exit
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/before/logs/wa2-before-1.head
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/before/logs/wa2-before-1.json
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/before/logs/wa2-before-1.log
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/before/logs/wa2-before-1.status
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/before/logs/wa2-before-2.exit
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/before/logs/wa2-before-2.head
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/before/logs/wa2-before-2.json
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/before/logs/wa2-before-2.log
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/before/logs/wa2-before-2.status
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/before/logs/wa2-before-3.exit
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/before/logs/wa2-before-3.head
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/before/logs/wa2-before-3.json
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/before/logs/wa2-before-3.log
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/before/logs/wa2-before-3.status
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/before/logs/wa2-probe-1.log
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/before/logs/wa2-probe-2.log
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/before/logs/wa2-probe-a5-1.log
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/before/probes/wa2-probe-a5.mjs
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/before/probes/wa2-probe.mjs
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/before/tests/cli-workspace-authority-2.test.ts
+?? docs/internal/audit/evidence/workspace-authority-2-2026-10-10/before/tests/sdk-workspace-authority-2.test.ts
+?? packages/cli/test/workspace-authority-2.test.ts
+?? packages/sdk/test/workspace-authority-2.test.ts

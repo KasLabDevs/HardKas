@@ -1,0 +1,35 @@
+{
+  "platform": "linux",
+  "node": "v24.15.0",
+  "umask": "022",
+  "cliVersion": "0.12.0-rc.27",
+  "cases": [
+    {
+      "fixture": "fixture as written today (no mode set; the umask decides)",
+      "keyMode": "0644",
+      "exit": 1,
+      "auditFailed": true,
+      "permissionFinding": "Key permission != 0600 for alice.key (got 0644)",
+      "valueEchoed": false,
+      "output": "✗ [SECURITY_AUDIT_FAILED] Security audit failed:\n- Key permission != 0600 for alice.key (got 0644)\n\n  💡 Suggestion:\n    Store keys encrypted: 'hardkas accounts real generate --password-env <VAR>' (or re-import a plaintext account with 'hardkas accounts real import'), and remove the plaintext copies."
+    },
+    {
+      "fixture": "corrected fixture (0600)",
+      "keyMode": "0600",
+      "exit": 0,
+      "auditFailed": false,
+      "permissionFinding": null,
+      "valueEchoed": false,
+      "output": "Mainnet Firewall: {\"mainnet\":\"BLOCKED_BY_POLICY\"}\nSecurity audit passed. No secret leaks or policy violations detected."
+    },
+    {
+      "fixture": "new negative fixture (0644)",
+      "keyMode": "0644",
+      "exit": 1,
+      "auditFailed": true,
+      "permissionFinding": "Key permission != 0600 for alice.key (got 0644)",
+      "valueEchoed": false,
+      "output": "✗ [SECURITY_AUDIT_FAILED] Security audit failed:\n- Key permission != 0600 for alice.key (got 0644)\n\n  💡 Suggestion:\n    Store keys encrypted: 'hardkas accounts real generate --password-env <VAR>' (or re-import a plaintext account with 'hardkas accounts real import'), and remove the plaintext copies."
+    }
+  ]
+}

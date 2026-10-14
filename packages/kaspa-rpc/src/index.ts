@@ -88,6 +88,11 @@ export interface JsonWrpcKaspaClientOptions {
   timeoutMs?: number;
   /** Builds the official client for a URL; defaults to the pinned kaspa-wasm `RpcClient` (tests pass a stand-in). */
   rpcFactory?: OfficialRpcFactory;
+  /**
+   * NODE-NETWORK-IDENTITY-1: the network this client uses the node as (a Kaspa network id: simnet, devnet,
+   * testnet-10, mainnet…). Each connection is refused unless the node itself says it serves that network.
+   */
+  expectedNetworkId?: string | undefined;
 }
 
 export interface BlockDagInfo {
@@ -166,7 +171,12 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
 
   constructor(options: JsonWrpcKaspaClientOptions) {
     this.rpcUrl = options.rpcUrl;
-    this.session = new OfficialRpcSession(options.rpcUrl, options.timeoutMs ?? 30000, options.rpcFactory);
+    this.session = new OfficialRpcSession(options.rpcUrl, options.timeoutMs ?? 30000, options.rpcFactory, options.expectedNetworkId);
+  }
+
+  /** ENDPOINT-AUTHORITY-1: the endpoint this client was opened on (what a record names as its RPC endpoint). */
+  get url(): string {
+    return this.rpcUrl;
   }
 
   async call<TResponse = unknown>(method: string, params: any = {}): Promise<TResponse> {
@@ -635,6 +645,7 @@ export { KaspaWrpcClient } from "./wrpc-client.js";
 export * from "./health.js";
 
 export * from "./errors.js";
+export { canonicalRpcEndpoint, sameRpcEndpoint, rpcEndpointOf } from "./endpoint.js";
 // The transport: the official kaspa-wasm RpcClient, and the factory seam tests use to stand in for it.
 export { officialRpcFactory, toWrpcUrl, type OfficialRpcClientLike, type OfficialRpcFactory } from "./upstream/session.js";
 export * from "./provider.js";

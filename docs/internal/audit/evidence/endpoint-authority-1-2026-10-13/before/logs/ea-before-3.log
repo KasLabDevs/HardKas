@@ -1,0 +1,131 @@
+
+ RUN  v2.1.9 C:/Users/jrodr/hkl1/ea/src
+
+ × packages/cli/test/endpoint-authority-1.test.ts > ENDPOINT-AUTHORITY-1 Â· SDK send > EA-1 sdk.tx.send(signed, urlB) on an instance opened on A: the receipt names the endpoint that received the submission 621ms
+   → {"ledgerKinds":["artifact.written","workflow.submitted"],"A":"ws://127.0.0.1:63986","B":"ws://127.0.0.1:63987","submitReceivedBy":{"A":true,"B":false},"receiptRpcUrl":"ws://127.0.0.1:63987","eventRpcUrls":["ws://127.0.0.1:63987"],"aMethods":["getFeeEstimate","getInfo","getServerInfo","getBlockDagInfo","getBlockDagInfo","getUtxosByAddresses","getMempoolEntriesByAddresses","getBlockDagInfo","getBlockDagInfo","getSinkBlueScore","submitTransaction"],"bMethods":[]}: expected 'ws://127.0.0.1:63987' to be 'ws://127.0.0.1:63986' // Object.is equality
+ × packages/cli/test/endpoint-authority-1.test.ts > ENDPOINT-AUTHORITY-1 Â· SDK send > EA-2 sdk.tx.send(signed) without a URL (default client on A): the receipt and the event name A 327ms
+   → {"A":"ws://127.0.0.1:63990","submitReceivedByA":true,"receiptRpcUrl":null,"eventRpcUrls":[""]}: expected null to be 'ws://127.0.0.1:63990' // Object.is equality
+ × packages/cli/test/endpoint-authority-1.test.ts > ENDPOINT-AUTHORITY-1 Â· SDK send > EA-3 a simulator instance given an explicit URL: nothing is recorded against an endpoint that received nothing 320ms
+   → {"B":"ws://127.0.0.1:63994","bMethods":[],"outcome":{"value":{"rpcUrl":"ws://127.0.0.1:63994","schema":"hardkas.txSubmission.v1","accepted":false}}}: expected true to be false // Object.is equality
+ × packages/cli/test/endpoint-authority-1.test.ts > ENDPOINT-AUTHORITY-1 Â· observation > EA-4 sdk.tx.observe(txId, { rpcUrl: B }) on an instance on A: the observation names the endpoint it queried 340ms
+   → {"A":"ws://127.0.0.1:63996","B":"ws://127.0.0.1:63997","aMethods":["getFeeEstimate","getInfo","getServerInfo","getBlockDagInfo","getBlockDagInfo","getUtxosByAddresses","getMempoolEntriesByAddresses","getBlockDagInfo","getBlockDagInfo","getServerInfo","getSinkBlueScore","getMempoolEntry","getVirtualChainFromBlock"],"bMethods":[],"observationRpcUrl":"ws://127.0.0.1:63997"}: expected false to be true // Object.is equality
+ × packages/cli/test/endpoint-authority-1.test.ts > ENDPOINT-AUTHORITY-1 Â· observation > EA-5 the client swapped into sdk.rpc (as the CLI's tx send / consolidate do): the observer identity names the endpoint queried 348ms
+   → {"aMethods":["getFeeEstimate","getInfo","getServerInfo","getBlockDagInfo","getBlockDagInfo","getUtxosByAddresses","getMempoolEntriesByAddresses","getBlockDagInfo"],"bMethods":["getBlockDagInfo","getServerInfo","getSinkBlueScore","getMempoolEntry","getVirtualChainFromBlock"],"observerId":"obs_8f61e9580abd035bbf07e427bff97d80a9a1fcf3fcd445994d15e78c1c620ac0","observerOfA":"obs_8f61e9580abd035bbf07e427bff97d80a9a1fcf3fcd445994d15e78c1c620ac0","observerOfB":"obs_0219615f071c2445cffc69a643e35a3b8c3ba9722ddcaa93daf6c73921170c98"}: expected 'obs_8f61e9580abd035bbf07e427bff97d80a…' to be 'obs_0219615f071c2445cffc69a643e35a3b8…' // Object.is equality
+ ✓ packages/cli/test/endpoint-authority-1.test.ts > ENDPOINT-AUTHORITY-1 Â· CLI tx send (controls) > EA-6 control: tx send --url B in a workspace declaring A: B receives the submission and the receipt names B; A receives nothing 1330ms
+ ✓ packages/cli/test/endpoint-authority-1.test.ts > ENDPOINT-AUTHORITY-1 Â· CLI tx send (controls) > EA-7 control: tx send without --url: the configured node A receives it and the receipt names A 1330ms
+ × packages/cli/test/endpoint-authority-1.test.ts > ENDPOINT-AUTHORITY-1 Â· TQ-1 remote node authority > EA-8 probeRemoteTestnet: the recorded authority endpoint is the endpoint the probe queried
+   → {"A":"ws://127.0.0.1:64011","B":"ws://127.0.0.1:64012","aMethods":["getServerInfo","getBlockDagInfo"],"bMethods":[],"authorityEndpoint":{"class":"wrpc","address":"ws://127.0.0.1:64012"}}: expected 'ws://127.0.0.1:64012' to be 'ws://127.0.0.1:64011' // Object.is equality
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  packages/cli/test/endpoint-authority-1.test.ts > ENDPOINT-AUTHORITY-1 Â· SDK send > EA-1 sdk.tx.send(signed, urlB) on an instance opened on A: the receipt names the endpoint that received the submission
+AssertionError: {"ledgerKinds":["artifact.written","workflow.submitted"],"A":"ws://127.0.0.1:63986","B":"ws://127.0.0.1:63987","submitReceivedBy":{"A":true,"B":false},"receiptRpcUrl":"ws://127.0.0.1:63987","eventRpcUrls":["ws://127.0.0.1:63987"],"aMethods":["getFeeEstimate","getInfo","getServerInfo","getBlockDagInfo","getBlockDagInfo","getUtxosByAddresses","getMempoolEntriesByAddresses","getBlockDagInfo","getBlockDagInfo","getSinkBlueScore","submitTransaction"],"bMethods":[]}: expected 'ws://127.0.0.1:63987' to be 'ws://127.0.0.1:63986' // Object.is equality
+
+Expected: "ws://127.0.0.1:63986"
+Received: "ws://127.0.0.1:63987"
+
+ ❯ packages/cli/test/endpoint-authority-1.test.ts:227:56
+    225|       expect(receiverUrl, JSON.stringify(seen)).not.toBeNull();
+    226|       // the contract: what is recorded is the endpoint that received …
+    227|       expect(seen.receiptRpcUrl, JSON.stringify(seen)).toBe(receiverUr…
+       |                                                        ^
+    228|       for (const u of seen.eventRpcUrls) expect(u, JSON.stringify(seen…
+    229|     } finally {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/6]⎯
+
+ FAIL  packages/cli/test/endpoint-authority-1.test.ts > ENDPOINT-AUTHORITY-1 Â· SDK send > EA-2 sdk.tx.send(signed) without a URL (default client on A): the receipt and the event name A
+AssertionError: {"A":"ws://127.0.0.1:63990","submitReceivedByA":true,"receiptRpcUrl":null,"eventRpcUrls":[""]}: expected null to be 'ws://127.0.0.1:63990' // Object.is equality
+
+- Expected: 
+"ws://127.0.0.1:63990"
+
++ Received: 
+null
+
+ ❯ packages/cli/test/endpoint-authority-1.test.ts:253:56
+    251|       trace("EA-2", seen);
+    252|       expect(seen.submitReceivedByA, JSON.stringify(seen)).toBe(true);
+    253|       expect(seen.receiptRpcUrl, JSON.stringify(seen)).toBe(A.url);
+       |                                                        ^
+    254|       expect(seen.eventRpcUrls, JSON.stringify(seen)).toEqual([A.url]);
+    255|     } finally {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/6]⎯
+
+ FAIL  packages/cli/test/endpoint-authority-1.test.ts > ENDPOINT-AUTHORITY-1 Â· SDK send > EA-3 a simulator instance given an explicit URL: nothing is recorded against an endpoint that received nothing
+AssertionError: {"B":"ws://127.0.0.1:63994","bMethods":[],"outcome":{"value":{"rpcUrl":"ws://127.0.0.1:63994","schema":"hardkas.txSubmission.v1","accepted":false}}}: expected true to be false // Object.is equality
+
+- Expected
++ Received
+
+- false
++ true
+
+ ❯ packages/cli/test/endpoint-authority-1.test.ts:285:119
+    283|       trace("EA-3", seen);
+    284|       // either refused, or the record names an endpoint that actually…
+    285|       if (outcome.value) expect(outcome.value.rpcUrl === B.url && !got…
+       |                                                                                                                       ^
+    286|     } finally {
+    287|       await A.close();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/6]⎯
+
+ FAIL  packages/cli/test/endpoint-authority-1.test.ts > ENDPOINT-AUTHORITY-1 Â· observation > EA-4 sdk.tx.observe(txId, { rpcUrl: B }) on an instance on A: the observation names the endpoint it queried
+AssertionError: {"A":"ws://127.0.0.1:63996","B":"ws://127.0.0.1:63997","aMethods":["getFeeEstimate","getInfo","getServerInfo","getBlockDagInfo","getBlockDagInfo","getUtxosByAddresses","getMempoolEntriesByAddresses","getBlockDagInfo","getBlockDagInfo","getServerInfo","getSinkBlueScore","getMempoolEntry","getVirtualChainFromBlock"],"bMethods":[],"observationRpcUrl":"ws://127.0.0.1:63997"}: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ packages/cli/test/endpoint-authority-1.test.ts:310:107
+    308|       trace("EA-4", seen);
+    309|       const queried = B.methods.length > 0 ? B.url : A.methods.length …
+    310|       expect(seen.observationRpcUrl === null || seen.observationRpcUrl…
+       |                                                                                                           ^
+    311|     } finally {
+    312|       await A.close();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/6]⎯
+
+ FAIL  packages/cli/test/endpoint-authority-1.test.ts > ENDPOINT-AUTHORITY-1 Â· observation > EA-5 the client swapped into sdk.rpc (as the CLI's tx send / consolidate do): the observer identity names the endpoint queried
+AssertionError: {"aMethods":["getFeeEstimate","getInfo","getServerInfo","getBlockDagInfo","getBlockDagInfo","getUtxosByAddresses","getMempoolEntriesByAddresses","getBlockDagInfo"],"bMethods":["getBlockDagInfo","getServerInfo","getSinkBlueScore","getMempoolEntry","getVirtualChainFromBlock"],"observerId":"obs_8f61e9580abd035bbf07e427bff97d80a9a1fcf3fcd445994d15e78c1c620ac0","observerOfA":"obs_8f61e9580abd035bbf07e427bff97d80a9a1fcf3fcd445994d15e78c1c620ac0","observerOfB":"obs_0219615f071c2445cffc69a643e35a3b8c3ba9722ddcaa93daf6c73921170c98"}: expected 'obs_8f61e9580abd035bbf07e427bff97d80a…' to be 'obs_0219615f071c2445cffc69a643e35a3b8…' // Object.is equality
+
+Expected: "obs_0219615f071c2445cffc69a643e35a3b8c3ba9722ddcaa93daf6c73921170c98"
+Received: "obs_8f61e9580abd035bbf07e427bff97d80a9a1fcf3fcd445994d15e78c1c620ac0"
+
+ ❯ packages/cli/test/endpoint-authority-1.test.ts:340:53
+    338|       expect(B.methods.length, JSON.stringify(seen)).toBeGreaterThan(0…
+    339|       // the observer identity names the endpoint queried (B), not the…
+    340|       expect(seen.observerId, JSON.stringify(seen)).toBe(observerOfB);
+       |                                                     ^
+    341|     } finally {
+    342|       await A.close();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/6]⎯
+
+ FAIL  packages/cli/test/endpoint-authority-1.test.ts > ENDPOINT-AUTHORITY-1 Â· TQ-1 remote node authority > EA-8 probeRemoteTestnet: the recorded authority endpoint is the endpoint the probe queried
+AssertionError: {"A":"ws://127.0.0.1:64011","B":"ws://127.0.0.1:64012","aMethods":["getServerInfo","getBlockDagInfo"],"bMethods":[],"authorityEndpoint":{"class":"wrpc","address":"ws://127.0.0.1:64012"}}: expected 'ws://127.0.0.1:64012' to be 'ws://127.0.0.1:64011' // Object.is equality
+
+Expected: "ws://127.0.0.1:64011"
+Received: "ws://127.0.0.1:64012"
+
+ ❯ packages/cli/test/endpoint-authority-1.test.ts:417:69
+    415|       const queried = A.methods.length > 0 ? A.url : B.methods.length …
+    416|       expect(queried, JSON.stringify(seen)).not.toBeNull();
+    417|       expect(seen.authorityEndpoint?.address, JSON.stringify(seen)).to…
+       |                                                                     ^
+    418|     } finally {
+    419|       await A.close();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/6]⎯
+
+ Test Files  1 failed (1)
+      Tests  6 failed | 2 passed (8)
+   Start at  18:28:12
+   Duration  10.51s (transform 1.46s, setup 0ms, collect 89ms, tests 10.05s, environment 0ms, prepare 117ms)
+
+JSON report written to C:/Users/jrodr/AppData/Local/Temp/claude/C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo/ecaf7e92-a2ba-49b0-aafc-c62b4cb5eda0/scratchpad/l1-reality-1/ea/logs/ea-before-3.json

@@ -18,7 +18,6 @@ import {
   RpcNotFoundError
 } from "./errors.js";
 import { calculateConfidence } from "./resilience.js";
-import { coreEvents } from "@hardkas/core";
 import { OfficialRpcSession, type OfficialRpcFactory } from "./upstream/session.js";
 import { toOfficialTransaction } from "./upstream/wire.js";
 
@@ -46,6 +45,8 @@ export interface RpcClientOptions {
   circuitBreaker?: Partial<CircuitBreakerOptions>;
   /** Builds the official client for a URL; defaults to the pinned kaspa-wasm `RpcClient` (tests pass a stand-in). */
   rpcFactory?: OfficialRpcFactory;
+  /** NODE-NETWORK-IDENTITY-1: see JsonWrpcKaspaClientOptions.expectedNetworkId. */
+  expectedNetworkId?: string | undefined;
 }
 
 /**
@@ -85,7 +86,7 @@ export class KaspaJsonRpcClient implements KaspaRpcClient {
       failureThreshold: options.circuitBreaker?.failureThreshold ?? 5,
       resetTimeoutMs: options.circuitBreaker?.resetTimeoutMs ?? 15000,
     };
-    this.session = new OfficialRpcSession(this.url, this.timeoutMs, options.rpcFactory);
+    this.session = new OfficialRpcSession(this.url, this.timeoutMs, options.rpcFactory, options.expectedNetworkId);
   }
 
   async call<TResponse = unknown>(method: string, params?: any): Promise<TResponse> {
@@ -125,15 +126,9 @@ export class KaspaJsonRpcClient implements KaspaRpcClient {
         circuitOpen: this.circuitState === CircuitState.OPEN
       });
 
-      coreEvents.normalizeAndEmit({
-        kind: "rpc.health",
-        endpoint: this.url,
-        state: resilience.state,
-        score: resilience.score,
-        latencyMs: latency,
-        issues: resilience.issues
-      });
-
+      // EVENT-LEDGER-2 (EVENT-EMISSION-1): the raw `rpc.health` / `rpc.error` objects this client handed to
+      // normalizeAndEmit carried no workflow or correlation and were discarded by it; they are gone, not converted
+      // (a transport diagnostic is not workspace evidence). The result below is what the caller gets.
       return {
         reachable: true,
         rpcUrl: this.url,
@@ -156,15 +151,6 @@ export class KaspaJsonRpcClient implements KaspaRpcClient {
         stale: false,
         reachable: false,
         circuitOpen: this.circuitState === CircuitState.OPEN
-      });
-
-      coreEvents.normalizeAndEmit({
-        kind: "rpc.health",
-        endpoint: this.url,
-        state: resilience.state,
-        score: resilience.score,
-        latencyMs: -1,
-        issues: resilience.issues
       });
 
       return {
@@ -432,12 +418,6 @@ export class KaspaJsonRpcClient implements KaspaRpcClient {
         lastErr = e;
 
         const isRetriable = e instanceof RpcError ? e.isRetriable : true;
-        coreEvents.normalizeAndEmit({
-          kind: "rpc.error",
-          endpoint: this.url,
-          error: e instanceof Error ? ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) : String(e),
-          retriable: isRetriable
-        });
 
         // Increment total retries count for health reporting
         if (attempt < this.retry.maxRetries && isRetriable) {

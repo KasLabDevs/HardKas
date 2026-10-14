@@ -102,6 +102,10 @@ export function classifyError(err: unknown): RetryErrorClass {
       case "UNSYNCED": return "unsynced";
       case "MISSING_CAPABILITY": return "missing-capability";
       case "RPC_ERROR": return "transport";
+      // ENDPOINT-AUTHORITY-1: a wrong or unverifiable endpoint is a configuration fact, never retried
+      case "ENDPOINT_MISMATCH":
+      case "ENDPOINT_UNVERIFIABLE":
+        return "unknown";
     }
   }
 
@@ -120,7 +124,13 @@ export function classifyError(err: unknown): RetryErrorClass {
  * this marker.
  */
 export abstract class RemoteTestnetProbeFailedErrorMarker extends Error {
-  abstract readonly reason: "NETWORK_MISMATCH" | "UNSYNCED" | "MISSING_CAPABILITY" | "RPC_ERROR";
+  abstract readonly reason:
+    | "ENDPOINT_MISMATCH"
+    | "ENDPOINT_UNVERIFIABLE"
+    | "NETWORK_MISMATCH"
+    | "UNSYNCED"
+    | "MISSING_CAPABILITY"
+    | "RPC_ERROR";
 }
 
 export interface WithRetryOnTransportOptions {

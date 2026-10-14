@@ -1,0 +1,16 @@
+
+> hardkas-monorepo@0.12.0-rc.27 docs:check-cli C:\Users\jrodr\hkl1\mg\src
+> pnpm --filter @hardkas/cli docs:check-cli
+
+
+> @hardkas/cli@0.12.0-rc.27 docs:check-cli C:\Users\jrodr\hkl1\mg\src\packages\cli
+> tsx src/scripts/generate-cli-docs.ts --check
+
+Checking CLI documentation integrity...
+
+[!] CLI documentation is OUT OF DATE.
+    Run 'pnpm docs:generate-cli' to update them.
+C:\Users\jrodr\hkl1\mg\src\packages\cli:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @hardkas/cli@0.12.0-rc.27 docs:check-cli: `tsx src/scripts/generate-cli-docs.ts --check`
+Exit status 1
+ ELIFECYCLE  Command failed with exit code 1.

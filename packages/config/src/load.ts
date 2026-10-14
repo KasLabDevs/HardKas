@@ -3,6 +3,7 @@ import fs from "node:fs";
 import { fileURLToPath } from "node:url";
 import { createJiti } from "jiti";
 import { DEFAULT_HARDKAS_CONFIG } from "./defaults.js";
+import { aliasSimulatedNetwork, knownNetworks, resolveNewIntentTarget } from "./resolve.js";
 import { validateHardkasConfig } from "./schema.js";
 import type { LoadedHardkasConfig, HardkasConfig } from "./types.js";
 import { findHardkasConfigFile } from "./workspace-root.js";
@@ -106,6 +107,19 @@ async function loadConfigFile(
     // execution default must not shadow it.
     if (userConfig.execution === undefined && userConfig.defaultNetwork !== undefined) {
       delete mergedConfig.execution;
+    }
+
+    // WORKSPACE-AUTHORITY-2: the legacy mirror never contradicts a declared `execution`. A config that declares
+    // `execution` and never wrote `defaultNetwork` would otherwise carry the BUILT-IN default's mirror ("simulated")
+    // whatever its own default target says, and every reader of the legacy key would follow the wrong world. The
+    // mirror is derived from the declared default target — in memory only, the file is never rewritten. A config that
+    // wrote `defaultNetwork` itself keeps it (its documented, warned, legacy behaviour).
+    if (userConfig.execution !== undefined && userConfig.defaultNetwork === undefined) {
+      try {
+        mergedConfig.defaultNetwork = aliasSimulatedNetwork(resolveNewIntentTarget({ config: mergedConfig }).network, knownNetworks(mergedConfig));
+      } catch {
+        // an execution contract that does not resolve is reported, typed, by the commands that resolve it
+      }
     }
 
     validateHardkasConfig(mergedConfig);

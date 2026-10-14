@@ -6,6 +6,7 @@ import { UtxoControlStore } from './stores/utxo-control-store.js';
 import { logger, metrics, tracer } from '@hardkas/observability';
 import { UtxoWatchEngine, type WalletWatchHandle, type WalletWatchListener } from './watch.js';
 import { calculateDynamicFeeRate, FeePriority } from './fee-estimator.js';
+import { assertMainnetTransactionsDisabled } from '@hardkas/core';
 
 metrics.register({
     name: "wallet_tx_generated_total",
@@ -256,7 +257,26 @@ export class WalletToolkit {
         return `sim_tx_${Date.now()}`;
     }
 
+    /**
+     * SDK-MAINNET-BROADCAST-GUARD-1 (D-MG-2): the toolkit never signs or sends on mainnet. Decided before anything is
+     * planned, signed or sent, from the wallet's declared network AND the node's own (a read, which is allowed) — not
+     * left to an incompatible address failing later in the planner.
+     */
+    private async assertNotMainnet(operation: string): Promise<void> {
+        let nodeNetwork: string | undefined;
+        if (this.options.rpc?.getBlockDagInfo) {
+            try {
+                nodeNetwork = (await this.options.rpc.getBlockDagInfo())?.networkId;
+            } catch {
+                nodeNetwork = undefined;
+            }
+        }
+        assertMainnetTransactionsDisabled("broadcast", [this.options.network, nodeNetwork], `WalletToolkit.${operation}`);
+    }
+
     private async signAndBroadcast(plan: any): Promise<{ txId: string; plan: any }> {
+        // defence in depth: every caller already asserted, and the signer is never reached on mainnet
+        await this.assertNotMainnet("signAndBroadcast");
         if (!this.options.signer) {
             const err = new Error("MISSING_SIGNER: WalletToolkit requires an explicit signer to sign transactions.");
             (err as any).code = "MISSING_SIGNER";
@@ -308,6 +328,7 @@ export class WalletToolkit {
 
     /** AUD-28: `changeAddress` is forwarded to the upstream planner; default = the wallet's receive address. */
     public async payMany(opts: { outputs: { address: string; amount: bigint }[]; priority?: FeePriority; feeRate?: bigint; changeAddress?: string }) {
+        await this.assertNotMainnet("payMany");
         const addr = await this.receive();
         const availableUtxos = await this.utxos.list();
 
@@ -408,6 +429,7 @@ export class WalletToolkit {
     }
 
     public async sweep(opts: { to: string; priority?: FeePriority; feeRate?: bigint }) {
+        await this.assertNotMainnet("sweep");
         const addr = await this.receive();
         let availableUtxos = await this.utxos.list();
         if (availableUtxos.length === 0) throw new Error("No UTXOs to sweep");
@@ -459,6 +481,7 @@ export class WalletToolkit {
     }
 
     public async consolidate(opts: { to?: string; priority?: FeePriority; feeRate?: bigint; maxUtxos?: number }) {
+        await this.assertNotMainnet("consolidate");
         const addr = await this.receive();
         const availableUtxos = await this.utxos.list();
         const maxUtxos = opts.maxUtxos || 100;
@@ -505,6 +528,7 @@ export class WalletToolkit {
 
     public async split(opts: { outputsCount: number; amountPerOutput: bigint; priority?: FeePriority; feeRate?: bigint }) {
         if (opts.outputsCount <= 0) throw new Error("outputsCount must be greater than 0");
+        await this.assertNotMainnet("split");
         const addr = await this.receive();
         const outputs = Array(opts.outputsCount).fill({ address: addr, amount: opts.amountPerOutput });
         return this.payMany({

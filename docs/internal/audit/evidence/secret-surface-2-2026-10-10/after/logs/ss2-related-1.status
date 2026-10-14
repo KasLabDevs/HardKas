@@ -1,0 +1,14 @@
+﻿ M packages/cli/src/commands/env.ts
+ M packages/cli/src/commands/security.ts
+ M packages/core/src/security.ts
+?? docs/internal/audit/evidence/secret-surface-2-2026-10-10/before/INVESTIGATION.md
+?? docs/internal/audit/evidence/secret-surface-2-2026-10-10/before/logs/run-files-wt.ps1
+?? docs/internal/audit/evidence/secret-surface-2-2026-10-10/before/logs/ss2-before-1.exit
+?? docs/internal/audit/evidence/secret-surface-2-2026-10-10/before/logs/ss2-before-1.head
+?? docs/internal/audit/evidence/secret-surface-2-2026-10-10/before/logs/ss2-before-1.json
+?? docs/internal/audit/evidence/secret-surface-2-2026-10-10/before/logs/ss2-before-1.log
+?? docs/internal/audit/evidence/secret-surface-2-2026-10-10/before/logs/ss2-before-1.status
+?? docs/internal/audit/evidence/secret-surface-2-2026-10-10/before/tests/cli-secret-surface-2.test.ts
+?? docs/internal/audit/evidence/secret-surface-2-2026-10-10/before/tests/core-secret-surface-2.test.ts
+?? packages/cli/test/secret-surface-2.test.ts
+?? packages/core/test/secret-surface-2.test.ts

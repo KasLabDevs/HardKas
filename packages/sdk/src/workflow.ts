@@ -1,7 +1,23 @@
 import { Hardkas } from "./index.js";
-import { WorkflowArtifact, HARDKAS_VERSION } from "@hardkas/artifacts";
-import { HardkasError, deterministicCompare } from "@hardkas/core";
+import { WorkflowArtifact, HARDKAS_VERSION, submitOutcomeOf } from "@hardkas/artifacts";
+import { HardkasError, MAINNET_TRANSACTIONS_ENABLED, deterministicCompare, rethrowWithLedgerEffect, type LedgerFailureEffect } from "@hardkas/core";
 import { HardkasSchemas } from "@hardkas/artifacts";
+
+/**
+ * EVENT-LEDGER-2 final closeout (A1) · what a `tx.send` / `tx.simulate` result had already done, for a ledger failure
+ * raised by a step's writes after it: a simulated execution, or a broadcast with the outcome its submit result records.
+ */
+function effectOf(res: any): LedgerFailureEffect {
+  const artifact = res?.submission ?? res?.receipt;
+  const simulated = res?.simulated === true || artifact?.mode === "simulator";
+  return {
+    operation: simulated ? "simulated-execution" : "broadcast",
+    outcome: simulated ? "executed" : submitOutcomeOf(artifact?.submitResult),
+    txId: typeof artifact?.txId === "string" ? artifact.txId : undefined,
+    artifactId: typeof artifact?.contentHash === "string" ? artifact.contentHash : undefined,
+    artifactPath: typeof res?.receiptPath === "string" ? res.receiptPath : undefined
+  };
+}
 
 export interface WorkflowRunOptions {
   steps: Array<{
@@ -75,6 +91,9 @@ export class HardkasWorkflow {
       parentArtifacts: [], // In v1, workflows do not accept explicit parent inputs yet
       policySnapshot: {
         allowNetwork: this.sdk.policy.allowNetwork,
+        // SDK-MAINNET-BROADCAST-GUARD-1: a FROZEN identity input. This key has always carried `allowPublic`; it is part of
+        // the intent the workflowId digests, so it stays exactly as it was (changing it would change every workflowId of
+        // a run with allowPublic: true). It is never recorded as a permission — the artifact's `policy` below is.
         allowMainnet: this.sdk.policy.allowPublic,
         allowExternalWallet: this.sdk.policy.allowExternalWallet,
         requireDryRun: this.sdk.policy.requireDryRun
@@ -114,6 +133,16 @@ export class HardkasWorkflow {
       if (res && res.submitted === false && res.simulated !== true) {
         const submissionId = res.submission?.contentHash ?? res.artifactId ?? "unknown";
         const reason = res.submission?.submitResult?.error ?? "no reason returned";
+        // EVENT-LEDGER-2 final closeout (decision 2): a submit call that failed without an answer is not a rejection
+        if (submitOutcomeOf(res.submission?.submitResult) === "unknown") {
+          const txId = typeof res.txId === "string" && /^[0-9a-f]{64}$/.test(res.txId) ? res.txId : undefined;
+          throw new HardkasError(
+            "TX_SUBMISSION_OUTCOME_UNKNOWN",
+            `The outcome of the submission is unknown: the submit call failed without an answer from the node (${reason}), ` +
+              `which may have received the transaction. The attempt was recorded as ${submissionId}; check the transaction` +
+              `${txId ? ` ('hardkas tx status ${txId}')` : ""} before sending it again.`
+          );
+        }
         throw new HardkasError(
           "TX_SUBMISSION_REJECTED",
           `The node did not accept the transaction (${reason}); the submission was recorded as ${submissionId}.`
@@ -192,7 +221,11 @@ export class HardkasWorkflow {
                     ? await this.sdk.tx.simulate(signed, parentHint(signed))
                     : await this.sdk.tx.send(signed, parentHint(signed));
                 assertBroadcastAccepted(sent);
-                const storedReceipt = (await this.sdk.artifacts.write(sent.receipt, { dryRun: options.dryRun ?? false })).artifact;
+                const storedReceipt = (
+                  await this.sdk.artifacts
+                    .write(sent.receipt, { dryRun: options.dryRun ?? false })
+                    .catch((e: unknown) => rethrowWithLedgerEffect(e, effectOf(sent)))
+                ).artifact;
                 const res = storedReceipt ? { ...sent, receipt: storedReceipt } : sent;
                 const receiptRecord = res.receipt as unknown as Record<string, string>;
                 const id =
@@ -204,7 +237,11 @@ export class HardkasWorkflow {
               },
               simulate: async (signed: any) => {
                 const simulated: any = await this.sdk.tx.simulate(signed, parentHint(signed));
-                const storedReceipt = (await this.sdk.artifacts.write(simulated.receipt, { dryRun: options.dryRun ?? false })).artifact;
+                const storedReceipt = (
+                  await this.sdk.artifacts
+                    .write(simulated.receipt, { dryRun: options.dryRun ?? false })
+                    .catch((e: unknown) => rethrowWithLedgerEffect(e, effectOf(simulated)))
+                ).artifact;
                 const res = storedReceipt ? { ...simulated, receipt: storedReceipt } : simulated;
                 const receiptRecord = res.receipt as unknown as Record<string, string>;
                 const id =
@@ -263,9 +300,14 @@ export class HardkasWorkflow {
           if (signedId) producedArtifacts.push(signedId);
 
           if (step.type === "tx.simulate") {
-            const { receipt: producedReceipt } = await this.sdk.tx.simulate(lastSigned, parentHint(lastSigned));
+            const simulated = await this.sdk.tx.simulate(lastSigned, parentHint(lastSigned));
+            const producedReceipt = simulated.receipt;
             const receipt =
-              (await this.sdk.artifacts.write(producedReceipt, { dryRun: options.dryRun ?? false })).artifact ?? producedReceipt;
+              (
+                await this.sdk.artifacts
+                  .write(producedReceipt, { dryRun: options.dryRun ?? false })
+                  .catch((e: unknown) => rethrowWithLedgerEffect(e, effectOf(simulated)))
+              ).artifact ?? producedReceipt;
             const receiptRecord = receipt as unknown as Record<string, string>;
             producedArtifactId =
               receiptRecord.contentHash || receiptRecord.artifactId || receiptRecord.txId;
@@ -278,7 +320,11 @@ export class HardkasWorkflow {
                 : await this.sdk.tx.send(lastSigned, parentHint(lastSigned));
             assertBroadcastAccepted(sendResult);
             const receipt =
-              (await this.sdk.artifacts.write(sendResult.receipt, { dryRun: options.dryRun ?? false })).artifact ?? sendResult.receipt;
+              (
+                await this.sdk.artifacts
+                  .write(sendResult.receipt, { dryRun: options.dryRun ?? false })
+                  .catch((e: unknown) => rethrowWithLedgerEffect(e, effectOf(sendResult)))
+              ).artifact ?? sendResult.receipt;
             const receiptRecord = receipt as unknown as Record<string, string>;
             producedArtifactId =
               receiptRecord.contentHash || receiptRecord.artifactId || receiptRecord.txId;
@@ -317,11 +363,8 @@ export class HardkasWorkflow {
       }
     }
 
-    const isSimulated =
-      this.sdk.network === "simulated" ||
-      this.sdk.config.config.networks?.[this.sdk.network]?.kind === "simulated";
-    const networkConfig = this.sdk.config.config.networks?.[this.sdk.network];
-    const executionMode = isSimulated ? "simulator" : (networkConfig?.kind === "kaspa-node" ? "localnet" : "rpc");
+    // the workflow records the mode of this instance's resolved execution target (WORKSPACE-AUTHORITY-2)
+    const executionMode = this.sdk.execution.mode;
 
     const artifact: any = {
       schema: HardkasSchemas.WorkflowV1,
@@ -347,7 +390,9 @@ export class HardkasWorkflow {
       },
       policy: {
         allowNetwork: this.sdk.policy.allowNetwork,
-        allowMainnet: this.sdk.policy.allowPublic,
+        // SDK-MAINNET-BROADCAST-GUARD-1: the permission HardKAS actually grants (mainnet transactions are disabled), never
+        // `allowPublic` — a testnet run with allowPublic: true does not record a mainnet permission.
+        allowMainnet: MAINNET_TRANSACTIONS_ENABLED,
         allowExternalWallet: this.sdk.policy.allowExternalWallet,
         requireDryRun: this.sdk.policy.requireDryRun
       }

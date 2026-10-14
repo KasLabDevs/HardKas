@@ -1,0 +1,22 @@
+{
+  "secondRecording": {
+    "code": "ARTIFACT_RECORDING_BUSY",
+    "message": "A recording is already open on this SDK instance: overlapping runs on one instance cannot be told apart, so their evidence would cross. Stop it first, or give each concurrent run its own instance (Har"
+  },
+  "overlap": {
+    "aNamesB": false,
+    "bNamesA": false,
+    "aCount": 4,
+    "bCount": 0
+  },
+  "sequential": {
+    "c": {
+      "own": true,
+      "crossed": false
+    },
+    "d": {
+      "own": true,
+      "crossed": false
+    }
+  }
+}

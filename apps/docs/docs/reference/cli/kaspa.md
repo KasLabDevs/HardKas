@@ -8,7 +8,7 @@ title: hardkas kaspa
 
 ### Synopsis (Generated)
 
-**Purpose:** Generate a key pair and print it (address, config snippet and private key); nothing is saved. For stored dev accounts use 'accounts real generate' stable
+**Purpose:** Generate a key pair and print its address and config snippet; the private key is printed once, only with --show-private-key; nothing is saved. For a stored, encrypted account use 'accounts real generate' stable
 
 #### Arguments
 
@@ -17,6 +17,8 @@ title: hardkas kaspa
 #### Options
 
 - `--network &lt;id&gt;` (Default: `simnet`): Kaspa network ID
+- `--show-private-key` (Default: `false`): Print the new private key once; you keep the only copy (HardKAS stores nothing and cannot recover it). Without it the command refuses before generating anything
+- `--json` (Default: `false`): Output as JSON (the private key is included only with --show-private-key)
 
 ---
 

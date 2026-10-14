@@ -8,8 +8,12 @@ import { HardkasCliError, HardkasExitCode } from "../cli-errors.js";
 // It now checks the variables HardKAS honours, flags HARDKAS_* names it does not know (a typo is
 // a silent misconfiguration), and only reports the deployment profile when a .env declares it.
 
-/** The environment variables HardKAS reads, with what they do. */
-export const HARDKAS_ENV_VARIABLES: ReadonlyArray<{ name: string; meaning: string }> = [
+/**
+ * The environment variables HardKAS reads, with what they do. SECRET-SURFACE-2 (D3): a variable marked `secret` holds a
+ * credential; `env check` reports it as configured and never prints its value (the explicit reveal of the dev server
+ * token stays `hardkas dev-server token`).
+ */
+export const HARDKAS_ENV_VARIABLES: ReadonlyArray<{ name: string; meaning: string; secret?: true }> = [
   { name: "HARDKAS_HOME", meaning: "home of the managed toolchains (kaspa-wasm, silverc)" },
   { name: "HARDKAS_KASPAD_IMAGE", meaning: "Docker image of the local node (default: the pinned rusty-kaspad)" },
   { name: "HARDKAS_ALLOW_SIMULATED_NODE", meaning: "1: report a simulated node when Docker is unavailable (never a real node)" },
@@ -22,7 +26,7 @@ export const HARDKAS_ENV_VARIABLES: ReadonlyArray<{ name: string; meaning: strin
   { name: "HARDKAS_PROJECTION_BACKEND", meaning: "query store backend (sqlite or filesystem)" },
   { name: "HARDKAS_QUERY_STORE_PATH", meaning: "path of the query store database" },
   { name: "HARDKAS_ROOT", meaning: "workspace root used by the dev server" },
-  { name: "HARDKAS_DEV_TOKEN", meaning: "dev server access token" },
+  { name: "HARDKAS_DEV_TOKEN", meaning: "dev server access token", secret: true },
   { name: "HARDKAS_WATCH_POLLING", meaning: "dev server: poll the filesystem instead of watching it" },
   { name: "HARDKAS_NETWORK", meaning: "dev server: network of the simnet routes" },
   { name: "HARDKAS_KEYSTORE_LOCK_STALE_MS", meaning: "age after which a keystore lock is stale" },
@@ -53,9 +57,21 @@ export function parseDotEnv(content: string): Record<string, string> {
   return parsed;
 }
 
+/** What a secret-bearing variable's value is reported as (SECRET-SURFACE-2 D3): the marker, never the value. */
+export const ENV_SECRET_VALUE_MARKER = "[REDACTED]";
+
 export interface EnvCheckReport {
   dotEnv: string | null;
-  known: Array<{ name: string; value: string; source: "process" | ".env"; meaning: string }>;
+  known: Array<{
+    name: string;
+    /** The value as set — or `[REDACTED]` for a secret-bearing variable, whose value is never reported. */
+    value: string;
+    source: "process" | ".env";
+    meaning: string;
+    /** Only on a secret-bearing variable: it is configured (non-empty); its value is not part of this report. */
+    configured?: true;
+    secret?: true;
+  }>;
   unknown: string[];
   deployProfile: { present: string[]; missing: string[] } | null;
 }
@@ -68,9 +84,10 @@ export function checkEnvironment(processEnv: NodeJS.ProcessEnv, dotEnv: Record<s
   const knownNames = new Set(HARDKAS_ENV_VARIABLES.map((v) => v.name));
   const known = HARDKAS_ENV_VARIABLES.filter((v) => merged[v.name] !== undefined && merged[v.name]!.value !== "").map((v) => ({
     name: v.name,
-    value: merged[v.name]!.value,
+    value: v.secret ? ENV_SECRET_VALUE_MARKER : merged[v.name]!.value,
     source: merged[v.name]!.source,
-    meaning: v.meaning
+    meaning: v.meaning,
+    ...(v.secret ? { configured: true as const, secret: true as const } : {})
   }));
   const unknown = Object.keys(merged)
     .filter((k) => k.startsWith("HARDKAS_") && !knownNames.has(k) && !k.startsWith("HARDKAS_TEST_") && !k.startsWith("HARDKAS_HARNESS_") && !k.startsWith("HARDKAS_ESCROW_") && !k.startsWith("HARDKAS_DEV_SERVER_"))
@@ -112,7 +129,10 @@ export function registerEnvCommands(program: Command) {
         out.writeLine(`Environment check (${report.dotEnv ? `.env at ${report.dotEnv} + process` : "process only, no .env"})`);
         out.writeLine("");
         if (report.known.length === 0) out.writeLine("  No HARDKAS_* variable is set: the defaults apply.");
-        for (const v of report.known) out.writeLine(`  ✅ ${v.name}=${v.value}  (${v.source}; ${v.meaning})`);
+        for (const v of report.known) {
+          // a secret-bearing variable is reported as configured; its value is never printed (D3)
+          out.writeLine(v.secret ? `  ✅ ${v.name}=${v.value}  (configured; ${v.source}; ${v.meaning})` : `  ✅ ${v.name}=${v.value}  (${v.source}; ${v.meaning})`);
+        }
         for (const name of report.unknown) out.writeLine(`  ❌ ${name}: not a variable HardKAS reads (a typo?)`);
         if (report.deployProfile) {
           out.writeLine("");

@@ -1,0 +1,35 @@
+{
+  "editedStatus": "EVIDENCE_ARTIFACT_HASH_MISMATCH",
+  "droppedStatus": "EVIDENCE_MEMBERSHIP_MISMATCH",
+  "forgedVerdict": {
+    "ok": true,
+    "status": "EVIDENCE_VERIFIED",
+    "scope": {
+      "artifacts": 4,
+      "claim": "payment",
+      "verdict": "passed",
+      "lineage": "closed",
+      "unresolved": [],
+      "payments": [
+        {
+          "txId": "3bd6fa09bb6b04634c40e835d11d59d7f3b14213c0c7faf6547d17349a88b939",
+          "complete": true,
+          "plan": "66a9e4d2c3250404580cf275929e5b089a06e916365f4bd1d53b6a0cbc34682f",
+          "signed": "fe5561129100daabe16e6c4a164381e610e5b45d1b8441d8dc3287362ed73801",
+          "submission": "b04f1296f333239597d0ceec42c2ce4e4b3e7e6cba705b56586abe86d061fb62",
+          "submitAccepted": true,
+          "observations": [
+            {
+              "artifactId": "10ecfcb67a52583f87eeb1a6e4670f72e43e69863e6c629b9077ef57ce0e7ea1",
+              "finding": "not_found",
+              "confirmationsBlue": null,
+              "observer": "rpc"
+            }
+          ],
+          "problems": []
+        }
+      ],
+      "statement": "Integrity and internal consistency of an unsigned package: each artifact hashes to its identity and they are exactly the ones its sealed scenario result names, and each claimed payment's lineage (plan, signed, submission) closes inside it. Not a proof of inclusion on chain, nor of who produced the package; an observation records what one RPC observer reported."
+    }
+  }
+}

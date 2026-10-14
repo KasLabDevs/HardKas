@@ -213,7 +213,8 @@ export async function verifyDeploymentStatus(opts: {
   } else {
     let client: JsonWrpcKaspaClient | undefined;
     try {
-      client = new JsonWrpcKaspaClient({ rpcUrl: rpcUrl });
+      // NODE-NETWORK-IDENTITY-1: a deployment's status is read only from a node of the deployment's network
+      client = new JsonWrpcKaspaClient({ rpcUrl: rpcUrl, expectedNetworkId: String(record.networkId) });
       const tx = (await client.getTransaction(record.txId)) as Record<
         string,
         unknown

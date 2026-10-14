@@ -1,0 +1,8 @@
+{
+  "a2Methods": [
+    "getBlockDagInfo",
+    "getSinkBlueScore",
+    "submitTransaction"
+  ],
+  "receiptRpcUrl": "ws://127.0.0.1:58208"
+}

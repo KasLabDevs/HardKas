@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { Hardkas } from "../src/index.js";
 import { calculateContentHash, CURRENT_HASH_VERSION } from "@hardkas/artifacts";
+import { sendAsRpc } from "./helpers/rpc-instance.js";
 
 // EVIDENCE-TRUST-1 (investigation, 2026-10-05) · BEFORE, SDK level.
 // - Secret boundary of persistence: a real send records the RPC locator raw in the txSubmission (`rpcUrl`), so a
@@ -65,7 +66,7 @@ describe("EVIDENCE-TRUST-1 · SDK", () => {
     const signed: any = asBroadcastable(await sdk.tx.sign(plan, "alice"));
     await sdk.artifacts.write(signed);
     vi.spyOn(sdk.rpc, "submitTransaction").mockResolvedValue({ transactionId: "b".repeat(64) } as any);
-    const sent: any = await sdk.tx.send(signed, rpcUrl);
+    const sent: any = await sendAsRpc(sdk, signed, rpcUrl);
     expect(sent.submitted, "precondition: the real-send branch ran").toBe(true);
     expect(fs.existsSync(sent.receiptPath), "precondition: a submission was persisted").toBe(true);
     return sent;
@@ -104,7 +105,7 @@ describe("EVIDENCE-TRUST-1 · SDK", () => {
       vi.spyOn(sdk.rpc, "submitTransaction").mockRejectedValue(
         new Error("Connection to Kaspa RPC at ws://127.0.0.1:16110/?token=ET1SECRETTOKEN was lost: socket closed")
       );
-      const sent: any = await sdk.tx.send(signed, "http://127.0.0.1:16110/?token=ET1SECRETTOKEN");
+      const sent: any = await sendAsRpc(sdk, signed, "http://127.0.0.1:16110/?token=ET1SECRETTOKEN");
       expect(sent.submitted, "precondition: a rejected submit").toBe(false);
       const stored = JSON.parse(fs.readFileSync(sent.receiptPath, "utf8"));
       expect(stored.submitResult.error, "precondition: the node's answer is recorded").toContain("was lost");

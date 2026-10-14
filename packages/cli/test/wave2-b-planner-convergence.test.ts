@@ -63,9 +63,11 @@ vi.mock("@hardkas/kaspa-rpc", async () => {
  * reads scripted to the same UTXO set the CLI's scripted client serves.
  */
 async function realNodeSdk(cwd: string): Promise<Hardkas> {
-  const sdk = await Hardkas.create({ cwd, autoBootstrap: true, network: "simulated" });
+  // WORKSPACE-AUTHORITY-2: opened on the real-node simnet it is meant to plan on (it used to be opened on the simulator
+  // and re-pointed by writing `config.defaultNetwork` afterwards — the legacy slot that is no longer an authority).
+  fs.mkdirSync(path.join(cwd, ".hardkas"), { recursive: true });
+  const sdk = await Hardkas.create({ cwd, autoBootstrap: true, network: "simnet" });
   const cfg: any = sdk.config.config;
-  cfg.defaultNetwork = "simnet";
   cfg.networks = { ...(cfg.networks ?? {}), simnet: { kind: "kaspa-node", network: "simnet", rpcUrl: "ws://127.0.0.1:1" } };
   vi.spyOn(sdk.query, "getSpendableUtxos").mockResolvedValue({
     data: node.utxos.map((u) => ({ ...u, amountSompi: u.amountSompi.toString(), blockDaaScore: u.blockDaaScore.toString() }))

@@ -27,4 +27,4 @@ This applies to what is written into evidence and state (`txSubmission.rpcUrl` a
 > [!NOTE]
 > A credential embedded in an opaque path segment (for example `https://provider.example/v3/<key>`) cannot be identified generically without knowing the provider, and is kept as it is.
 
-Evidence written before this rule is never rewritten. Inspection, listing and configuration commands (`kaspa wallet list --json`, `config show --json`) do not reveal secrets; only commands whose explicit purpose is to reveal or export a key do (for example `kaspa wallet create`, `dev accounts reveal`).
+Evidence written before this rule is never rewritten. Inspection, listing and configuration commands (`kaspa wallet list --json`, `config show --json`) do not reveal secrets; only commands whose explicit purpose is to reveal or export a key do, and only on an explicit flag (for example `kaspa wallet create --show-private-key`, `dev accounts reveal`). `kaspa wallet create` stores nothing, so without `--show-private-key` it refuses before generating a key, and points to `accounts real generate --password-env` for a stored, encrypted account.

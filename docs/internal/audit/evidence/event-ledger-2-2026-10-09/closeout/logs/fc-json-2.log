@@ -1,0 +1,22 @@
+﻿gate-hermetic: HARDKAS_HOME=C:\Users\jrodr\AppData\Local\Temp\hardkas-hermetic-home-sMCLTX (copy of C:\Users\jrodr\AppData\Local\Temp\hk-v210-gate-home)
+gate-hermetic: DOCKER_HOST=tcp://127.0.0.1:1; preload=C:\Users\jrodr\AppData\Local\Temp\hk-ra\wt\scripts\hermetic\no-network-preload.cjs
+gate-hermetic: vitest run --coverage.enabled=false --reporter=default --reporter=json --outputFile=C:\Users\jrodr\AppData\Local\Temp\claude\C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo\21f9a2e4-33ac-4300-9366-aff402f85900\scratchpad\cut46-event-ledger-2\logs\fc-json-2.json packages/cli/test/event-ledger-2-json-contract.test.ts
+
+ RUN  v2.1.9 C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt
+
+ ✓ packages/cli/test/event-ledger-2-json-contract.test.ts (3 tests) 36405ms
+   ✓ EVENT-LEDGER-2 final check · `tx send --json` with a ledger failure writes exactly one JSON document > 1 · before anything is sent: outcome failed, not performed, no txId (nothing was planned), nothing executed 11340ms
+   ✓ EVENT-LEDGER-2 final check · `tx send --json` with a ledger failure writes exactly one JSON document > 2 · before the effect, after an artifact write (CLI-made plan and signed): outcome failed, not performed, the txId, the plan copy it wrote named 13488ms
+   ✓ EVENT-LEDGER-2 final check · `tx send --json` with a ledger failure writes exactly one JSON document > 3 · after a known effect (SDK-made plan and signed; the simulator committed): outcome submitted, executed, the txId and the receipt 11576ms
+
+ Test Files  1 passed (1)
+      Tests  3 passed (3)
+   Start at  10:15:24
+   Duration  39.90s (transform 1.69s, setup 0ms, collect 3.15s, tests 36.41s, environment 0ms, prepare 117ms)
+
+JSON report written to C:/Users/jrodr/AppData/Local/Temp/claude/C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo/21f9a2e4-33ac-4300-9366-aff402f85900/scratchpad/cut46-event-ledger-2/logs/fc-json-2.json
+
+gate-hermetic: vitest exit 0 after 41s
+gate-hermetic: non-loopback attempts (each one fails the gate): 0
+gate-hermetic: loopback connection targets (review for dependencies on local services):
+gate-hermetic: PASS

@@ -1,0 +1,6 @@
+{
+  "reason": "ENDPOINT_UNVERIFIABLE",
+  "message": "The probe client does not say which endpoint it talks to; the declared endpoint ws://127.0.0.1:63919 cannot be shown to be the one probed.",
+  "aMethods": [],
+  "bMethods": []
+}

@@ -1,0 +1,21 @@
+gate-hermetic: HARDKAS_HOME=C:\Users\jrodr\AppData\Local\Temp\hardkas-hermetic-home-Jg8x0E (copy of C:\Users\jrodr\AppData\Local\Temp\hk-v210-gate-home)
+gate-hermetic: DOCKER_HOST=tcp://127.0.0.1:1; preload=C:\Users\jrodr\AppData\Local\Temp\hk-ra\wt\scripts\hermetic\no-network-preload.cjs
+gate-hermetic: vitest run --coverage.enabled=false --reporter=default --reporter=json --outputFile=C:\Users\jrodr\AppData\Local\Temp\claude\C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo\21f9a2e4-33ac-4300-9366-aff402f85900\scratchpad\cut49-cli-contract-2\logs\cc2a-parity-1.json packages/sdk/test/sdk-parity-0-9-1.test.ts
+
+ RUN  v2.1.9 C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt
+
+ ✓ packages/sdk/test/sdk-parity-0-9-1.test.ts (2 tests) 465ms
+   ✓ 0.12.0-rc.27 SDK parity surface > exposes capabilities with the same bounded claims as the CLI JSON 327ms
+
+ Test Files  1 passed (1)
+      Tests  2 passed (2)
+   Start at  16:29:59
+   Duration  3.90s (transform 1.59s, setup 0ms, collect 3.09s, tests 465ms, environment 0ms, prepare 118ms)
+
+JSON report written to C:/Users/jrodr/AppData/Local/Temp/claude/C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo/21f9a2e4-33ac-4300-9366-aff402f85900/scratchpad/cut49-cli-contract-2/logs/cc2a-parity-1.json
+
+gate-hermetic: vitest exit 0 after 5s
+gate-hermetic: non-loopback attempts (each one fails the gate): 0
+gate-hermetic: loopback connection targets (review for dependencies on local services):
+  127.0.0.1:18210 x6
+gate-hermetic: PASS

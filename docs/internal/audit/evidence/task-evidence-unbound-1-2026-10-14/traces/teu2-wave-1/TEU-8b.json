@@ -1,0 +1,42 @@
+{
+  "verdict": {
+    "ok": false,
+    "status": "EVIDENCE_PAYMENT_INCOMPLETE",
+    "details": "The package claims 1 payment(s) it does not establish: 726c2396320e7d9fcc410fcf84db74c68452adcc2db3051fa1b211a185512995: the plan 0000000000000000000000000000000000000000000000000000000000000bad the signed transaction derives from is not carried; eb1c3d054c7a83524db709373f6038307ed921804c59a5d701e1aa0b03c0078f lineage.parentArtifactId → 0000000000000000000000000000000000000000000000000000000000000bad is not carried.",
+    "scope": {
+      "artifacts": 4,
+      "claim": "payment",
+      "verdict": "passed",
+      "lineage": "open",
+      "unresolved": [
+        {
+          "from": "eb1c3d054c7a83524db709373f6038307ed921804c59a5d701e1aa0b03c0078f",
+          "field": "lineage.parentArtifactId",
+          "missing": "0000000000000000000000000000000000000000000000000000000000000bad"
+        }
+      ],
+      "payments": [
+        {
+          "txId": "726c2396320e7d9fcc410fcf84db74c68452adcc2db3051fa1b211a185512995",
+          "lineageClosed": false,
+          "plan": null,
+          "signed": "eb1c3d054c7a83524db709373f6038307ed921804c59a5d701e1aa0b03c0078f",
+          "submission": "458250bcdf34b7b6cd5b09f854d81f54ea74f395d2172edd03a89340d3bfb7af",
+          "submitAccepted": true,
+          "rpcObservationsReported": [
+            {
+              "artifactId": "7f4fe8cfd0de15a6c2840b2533146801cd8c93397ce98b1c07965c23606911bd",
+              "finding": "not_found",
+              "confirmationsBlue": null,
+              "observer": "rpc"
+            }
+          ],
+          "problems": [
+            "the plan 0000000000000000000000000000000000000000000000000000000000000bad the signed transaction derives from is not carried"
+          ]
+        }
+      ],
+      "statement": "Integrity and internal consistency of an unsigned package: each artifact hashes to its identity and they are exactly the ones its sealed scenario result names, and each claimed payment's lineage (plan, signed, submission) closes inside it. Not a proof of inclusion on chain, nor of who produced the package; an observation records what one RPC observer reported."
+    }
+  }
+}

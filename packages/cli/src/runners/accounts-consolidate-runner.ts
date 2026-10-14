@@ -1,6 +1,7 @@
 import { getOutput } from "../output.js";
 import { Hardkas } from "@hardkas/sdk";
 import { resolveExecutionTarget } from "@hardkas/config";
+import { assertMainnetTransactionsDisabled } from "@hardkas/core";
 
 export interface AccountsConsolidateOptions {
   account: string;
@@ -18,7 +19,10 @@ export interface AccountsConsolidateOptions {
 }
 
 export async function runAccountsConsolidate(options: AccountsConsolidateOptions) {
-  const sdk = await Hardkas.open({ cwd: process.cwd() });
+  // WORKSPACE-AUTHORITY-2 (closeout): the SDK instance is opened on the network the command works on — an instance is
+  // never re-pointed by a per-call option, so `--network` decides at open (as `tx send` does), else the workspace's
+  // execution contract.
+  const sdk = await Hardkas.open({ cwd: process.cwd(), ...(options.network ? { network: options.network } : {}) });
   // RESOURCE-LIFECYCLE-1 (RL-I1/RL-I3): this command opened the SDK and may hand it a client of its own; both are
   // released whatever the command ends with. sdk.close() releases only the SDK's own client, never the handed one.
   const created: Array<{ close(): void | Promise<void> }> = [];
@@ -33,24 +37,29 @@ export async function runAccountsConsolidate(options: AccountsConsolidateOptions
 async function consolidate(options: AccountsConsolidateOptions, sdk: Hardkas, created: Array<{ close(): void | Promise<void> }>) {
   const resolvedName = options.network || sdk.config.config.defaultNetwork || "simnet";
 
-  if (resolvedName === "mainnet" && options.execute && !options.allowMainnet) {
-    const err = new Error(
-      "MAINNET_CONSOLIDATION_BLOCKED: Consolidation on mainnet requires the --allow-mainnet flag."
-    );
-    (err as any).code = "MAINNET_CONSOLIDATION_BLOCKED";
-    throw err;
+  // SDK-MAINNET-BROADCAST-GUARD-1: executing a consolidation signs and broadcasts — refused on mainnet by the product
+  // policy (MAINNET_BROADCAST_DISABLED), with or without --allow-mainnet, before any batch is planned. A dry run only
+  // plans, which stays allowed.
+  if (options.execute) {
+    assertMainnetTransactionsDisabled("broadcast", [resolvedName, sdk.network], "accounts consolidate");
   }
 
   const { resolveProvider } = await import("@hardkas/config");
+  const declaredRpcUrl = (sdk.config.config.networks as Record<string, { rpcUrl?: unknown }> | undefined)?.[resolvedName]?.rpcUrl;
   const provider = resolveProvider({
     network: resolvedName,
     provider: options.provider,
-    url: options.url
+    url: options.url,
+    // the instance's resolved mode (every SDK instance carries one; a test double standing in for the SDK may not)
+    executionMode: sdk.execution?.mode,
+    // WORKSPACE-AUTHORITY-2 (closeout): the endpoint the network declares, the same the SDK uses
+    networkRpcUrl: typeof declaredRpcUrl === "string" ? declaredRpcUrl : undefined
   });
 
   if (provider.mode !== "simulator") {
     const { JsonWrpcKaspaClient } = await import("@hardkas/kaspa-rpc");
-    const client = new JsonWrpcKaspaClient({ rpcUrl: provider.endpoint! });
+    // NODE-NETWORK-IDENTITY-1: UTXOs are consolidated only on a node that says it serves this network
+    const client = new JsonWrpcKaspaClient({ rpcUrl: provider.endpoint!, expectedNetworkId: provider.network });
     created.push(client);
     (sdk as any).rpc = client;
   }

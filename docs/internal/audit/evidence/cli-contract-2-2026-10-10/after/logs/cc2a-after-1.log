@@ -1,0 +1,1060 @@
+gate-hermetic: HARDKAS_HOME=C:\Users\jrodr\AppData\Local\Temp\hardkas-hermetic-home-x2Ub3p (copy of C:\Users\jrodr\AppData\Local\Temp\hk-v210-gate-home)
+gate-hermetic: DOCKER_HOST=tcp://127.0.0.1:1; preload=C:\Users\jrodr\AppData\Local\Temp\hk-ra\wt\scripts\hermetic\no-network-preload.cjs
+gate-hermetic: vitest run --coverage.enabled=false --reporter=default --reporter=json --outputFile=C:\Users\jrodr\AppData\Local\Temp\claude\C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo\21f9a2e4-33ac-4300-9366-aff402f85900\scratchpad\cut49-cli-contract-2\logs\cc2a-after-1.json packages/cli/test/cli-contract-2a.test.ts packages/cli/test/cli-contract-2.test.ts
+
+ RUN  v2.1.9 C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt
+
+ ❯ packages/cli/test/cli-contract-2.test.ts (28 tests | 15 failed) 44848ms
+   ✓ CLI-CONTRACT-2 · A · the `hardkas test` verdict (TEST-VACUOUS-PASS) > A1 · no test file: zero tests run is not a pass, and the envelope agrees with the exit code 1567ms
+   ✓ CLI-CONTRACT-2 · A · the `hardkas test` verdict (TEST-VACUOUS-PASS) > A2a · one passing test under --json: exactly one JSON document on stdout (the envelope), exit 0, ok:true 2020ms
+   ✓ CLI-CONTRACT-2 · A · the `hardkas test` verdict (TEST-VACUOUS-PASS) > A2b · one passing test: the report says how many tests ran (a pass that proves something ran) 2120ms
+   × CLI-CONTRACT-2 · A · the `hardkas test` verdict (TEST-VACUOUS-PASS) > A3 · a file whose only test is skipped: nothing failed, so the verdict is never TESTS_FAILED 2078ms
+     → exit 1
+stdout: JSON report written to C:/Users/jrodr/AppData/Local/Temp/hk-cc2-test-gkupbU/.hardkas/runs/run_1791656946174_flzkp/vitest-report.json
+{
+  "ok": false,
+  "code": "NO_TESTS_EXECUTED",
+  "message": "1 test(s) collected, none executed (1 skipped, 0 todo). Nothing ran, so this is not a pass.",
+  "command": "test",
+  "mode": "cli",
+  "result": {
+    "testRunId": "run_1791656946174_flzkp",
+    "network": "simnet",
+    "tests": {
+      "collected": 1,
+      "executed": 0,
+      "passed": 0,
+      "failed": 0,
+      "skipped": 1,
+      "todo": 0
+    },
+    "files": {
+      "total": 1,
+      "failed": 0
+    },
+    "verdict": "NO_TESTS_EXECUTED",
+    "scenariosExecuted": 0,
+    "passed": false,
+    "scenarios": [],
+    "createdAt": "2026-10-10T18:29:07.122Z",
+    "vitestReport": ".hardkas/runs/run_1791656946174_flzkp/vitest-report.json"
+  }
+}
+
+stderr: : expected { code: 'NO_TESTS_EXECUTED', …(1) } to deeply equal { code: null, claimsFailure: false }
+   ✓ CLI-CONTRACT-2 · A · the `hardkas test` verdict (TEST-VACUOUS-PASS) > A4 · `--scenario` that matches no test: zero tests selected is neither a pass nor TESTS_FAILED, and the envelope agrees with the exit 2057ms
+   ✓ CLI-CONTRACT-2 · A · the `hardkas test` verdict (TEST-VACUOUS-PASS) > A5 · control · a failing test: ok:false, TESTS_FAILED, exit 1 2236ms
+   × CLI-CONTRACT-2 · A · the `hardkas test` verdict (TEST-VACUOUS-PASS) > A6 · the report names the world the tests ran in (this workspace executes in the simulator), not an option default 2019ms
+     → exit 0
+stdout: JSON report written to C:/Users/jrodr/AppData/Local/Temp/hk-cc2-test-praLpF/.hardkas/runs/run_1791656952513_wwc0s/vitest-report.json
+{
+  "ok": true,
+  "command": "test",
+  "mode": "cli",
+  "result": {
+    "testRunId": "run_1791656952513_wwc0s",
+    "network": "simnet",
+    "tests": {
+      "collected": 1,
+      "executed": 1,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "files": {
+      "total": 1,
+      "failed": 0
+    },
+    "verdict": "PASS",
+    "scenariosExecuted": 0,
+    "passed": true,
+    "scenarios": [],
+    "createdAt": "2026-10-10T18:29:13.442Z",
+    "vitestReport": ".hardkas/runs/run_1791656952513_wwc0s/vitest-report.json"
+  }
+}
+
+stderr: : expected 'simnet' to be 'simulated' // Object.is equality
+   ✓ CLI-CONTRACT-2 · B · one unreachable node, one typed code > B0 · control · a typed refusal before any connection: `--network nonsense` is UNKNOWN_NETWORK in one envelope 1074ms
+   × CLI-CONTRACT-2 · B · one unreachable node, one typed code > B1 · `tx plan --json` against a node that refuses: a typed connection code, never UNKNOWN 1256ms
+     → exit 1
+stdout: {
+  "ok": false,
+  "code": "UNKNOWN",
+  "message": "Unknown connection error: Cannot connect to Kaspa RPC at ws://127.0.0.1:18210. Is kaspad running with --rpclisten-json? (wRPC -> WebSocket -> Unable to connect to ws://127.0.0.1:18210)",
+  "mode": "cli"
+}
+
+stderr: : expected 'UNKNOWN' not to match /^UNKNOWN(_ERROR)?$/
+   × CLI-CONTRACT-2 · B · one unreachable node, one typed code > B2 · `accounts balance alice --json` against the same node: typed, never UNKNOWN_ERROR 1189ms
+     → exit 1
+stdout: {
+  "ok": false,
+  "code": "UNKNOWN_ERROR",
+  "message": "Cannot connect to Kaspa RPC at ws://127.0.0.1:18210. Is kaspad running with --rpclisten-json? (wRPC -> WebSocket -> Unable to connect to ws://127.0.0.1:18210)",
+  "mode": "cli"
+}
+
+stderr: : expected 'UNKNOWN_ERROR' not to match /^UNKNOWN(_ERROR)?$/
+   ✓ CLI-CONTRACT-2 · B · one unreachable node, one typed code > B3 · control · `rpc health --json` against the same node: typed 1174ms
+   × CLI-CONTRACT-2 · B · one unreachable node, one typed code > B4 · the three commands name one failure (the node refuses) with one code 3241ms
+     → tx plan / accounts balance / rpc health → UNKNOWN / UNKNOWN_ERROR / RPC_NOT_READY: expected 3 to be 1 // Object.is equality
+   ✓ CLI-CONTRACT-2 · C · an error shown is a failure of the run; a claim is backed by an effect > C1 · `dev tx send` without arguments: the usage error it prints is exit ≠ 0 1065ms
+   ✓ CLI-CONTRACT-2 · C · an error shown is a failure of the run; a claim is backed by an effect > C2 · `dev tx send` follows the workspace's execution target (the simulator here), never a hard-coded simnet node 1265ms
+   × CLI-CONTRACT-2 · C · an error shown is a failure of the run; a claim is backed by an effect > C3 · `create <unknown template> <dest> --json`: exit ≠ 0 and the CLI's one envelope shape ({ ok:false, code }) 1074ms
+     → exit 0
+stdout: {
+  "ok": false,
+  "error": {
+    "code": "TEMPLATE_CREATE_FAILED",
+    "message": "Template 'no-such-template' not found."
+  }
+}
+
+stderr: : expected { failed: false, topLevelCode: false } to deeply equal { failed: true, topLevelCode: true }
+   × CLI-CONTRACT-2 · C · an error shown is a failure of the run; a claim is backed by an effect > C4 · `status` reports a hardkas.config.ts that cannot load, instead of describing the workspace as if nothing were wrong 1046ms
+     → exit 0
+stdout: 
+  ═══ HardKAS Workspace Status ═══
+  ╔══════════════════════════════════════╗
+  ║              Workspace               ║
+  ║C:\Users\jrodr\AppData\Local\Temp\hk-cc2-claims-BjXN0u║
+  ╚══════════════════════════════════════╝
+
+  Dev Server       🔴 Offline
+
+  Artifacts        0 (no artifacts directory)
+
+  Projection       none (queries read the workspace)
+
+  ℹ No Dev Accounts found.
+
+  💡 Next Steps:
+     > hardkas dev --headless
+
+
+stderr: : expected false to be true // Object.is equality
+   × CLI-CONTRACT-2 · C · an error shown is a failure of the run; a claim is backed by an effect > C4b · `status` in a directory that holds a hardkas.config.ts but no .hardkas/ does not call it 'no workspace' (WA-1: the config is the root) 1244ms
+     → exit 0
+stdout: 
+  ═══ HardKAS Workspace Status ═══
+  ℹ No HardKAS workspace detected in current directory.
+
+  💡 Next Steps:
+     > hardkas init
+
+
+stderr: : expected '\n  ═══ HardKAS Workspace Status ═══\…' not to match /No HardKAS workspace detected/
+   × CLI-CONTRACT-2 · C · an error shown is a failure of the run; a claim is backed by an effect > C5 · `ci verify` in a pristine simulator workspace when only Docker is down: no 'corrupted workspace' verdict 2190ms
+     → exit 1
+stdout: 
+  ═══ CI Workspace Verification ═══
+  1. Running environment doctor checks...
+  2. Scanning artifact lattice integrity...
+  3. Verifying projection index...
+
+
+
+stderr: 
+  ✗ Error:
+    Environment doctor checks failed.
+
+  ⚠️  WARNING:
+     No artifacts directory found. Skipping lattice scan.
+
+  ⚠️  WARNING:
+     No projection database found (the query commands read the workspace). Skipping projection checks.
+
+  ✗ [CI_VERIFY_FAILED] CI Verification Failed. Workspace is corrupted or incorrectly configured.
+: expected '\n  ═══ CI Workspace Verification ═══…' not to match /corrupted|incorrectly configured/i
+   × CLI-CONTRACT-2 · C · an error shown is a failure of the run; a claim is backed by an effect > C6 · `doctor --json`: failed checks and the exit code agree (a verdict that reports failures does not exit 0) 2072ms
+     → exit 0
+stdout: {
+  "version": "0.12.0-rc.27",
+  "timestamp": "2026-10-10T18:29:30.315Z",
+  "checks": [
+    {
+      "name": "Node.js version",
+      "category": "runtime",
+      "status": "pass",
+      "message": "v24.15.0 (>= 18 required)"
+    },
+    {
+      "name": "pnpm",
+      "category": "runtime",
+      "status": "pass",
+      "message": "v11.1.3"
+    },
+    {
+      "name": ".hardkas/ directory",
+      "category": "persistence",
+      "status": "pass",
+      "message": "Exists and is active"
+    },
+    {
+      "name": ".gitignore protection",
+      "category": "persistence",
+      "status": "skip",
+      "message": ".gitignore not found"
+    },
+    {
+      "name": "store.db accessibility",
+      "category": "persistence",
+      "status": "warn",
+      "message": "store.db not found",
+      "suggestion": "Run 'hardkas query store rebuild' to populate the index."
+    },
+    {
+      "name": "Workspace locks",
+      "category": "persistence",
+      "status": "pass",
+      "message": "No active or stale locks found"
+    },
+    {
+      "name": "Events Ledger Stream",
+      "category": "persistence",
+      "status": "skip",
+      "message": "Stream not found"
+    },
+    {
+      "name": "Telemetry Stream",
+      "category": "persistence",
+      "status": "skip",
+      "message": "Stream not found"
+    },
+    {
+      "name": "Keystore permissions",
+      "category": "security",
+      "status": "pass",
+      "message": "No keystore found (nothing to secure)"
+    },
+    {
+      "name": "Docker da
+stderr: : expected { failedChecks: 1, exit: +0 } to satisfy [Function]
+   × CLI-CONTRACT-2 · C · an error shown is a failure of the run; a claim is backed by an effect > C7 · re-sending an already applied signed transaction: the answer never reads as a fresh submission without saying it was already applied 4337ms
+     → exit 0
+stdout: {
+  "ok": true,
+  "outcome": "submitted",
+  "data": {
+    "signed": {
+      "schema": "hardkas.signedTx",
+      "schemaVersion": "hardkas.artifact.v1",
+      "hardkasVersion": "0.12.0-rc.27",
+      "version": "1.0.0-alpha",
+      "hashVersion": 5,
+      "createdAt": "2026-10-10T18:29:33.534Z",
+      "status": "signed",
+      "sourcePlanId": "plan-a990b2df0ada1f08",
+      "networkId": "simulated",
+      "mode": "simulator",
+      "from": {
+        "address": "kaspa:sim_alice"
+      },
+      "to": {
+        "address": "kaspa:sim_bob"
+      },
+      "amountSompi": "100000000",
+      "txId": "synthetic-a990b2df0ada1f0845c3f8bfd905f08906d407dc1dfc891602bbafad4d56cd43",
+      "authorization": {
+        "kind": "synthetic",
+        "planArtifactId": "a990b2df0ada1f0845c3f8bfd905f08906d407dc1dfc891602bbafad4d56cd43",
+        "signers": [
+          "kaspa:sim_alice"
+        ]
+      },
+      "signedTransaction": {
+        "format": "synthetic-authorization",
+        "payload": "a990b2df0ada1f0845c3f8bfd905f08906d407dc1dfc891602bbafad4d56cd43"
+      },
+      "lineage": {
+        "artifactId": "4f7ccf94113dea3803c1e96736320def05d70f145230ae1eec35d5251a82bbc4",
+        "lineageId": "a990b2df0ada1f0845c3f8bfd905f08906d407dc1dfc891602bbafad4d56cd43",
+        "parentArtifactId": "a990b2df0ada1f0845c3f8bfd905f08906d407dc1dfc891602bbafad4d56cd43",
+        "rootArtifactId": "a990b2df0ada1f0845c3f8bfd905f08906d407dc1dfc891602bbafad4d56cd43",
+        "sequence": 2
+      },
+      "execution": {
+  
+stderr: : expected { receiptsAfterFirst: 1, …(2) } to match object { markedAsAlreadyApplied: true }
+(2 matching properties omitted from actual)
+   × CLI-CONTRACT-2 · D · `--json` answers with exactly one envelope, usage errors included > D1 · an unknown option under --json: one { ok:false } envelope on stdout and the usage exit code (2) 1045ms
+     → exit 1
+stdout: 
+stderr: error: unknown option '--no-such-option'
+
+Usage: hardkas tx plan [options] [from] [to]
+
+Build a transaction plan artifact stable
+
+Options:
+  --target <name>              Named execution target from hardkas.config.ts
+  --from <accountOrAddress>    Sender account name or address (default: alice)
+  --to <address>               Recipient address or account name (default: bob)
+  --amount <kas>               Amount in KAS, up to 8 decimals (default: 1)
+  --network <name>             simulated, simnet, devnet, testnet-10,
+                               testnet-12 or mainnet (default: the config's
+                               default target)
+  --fee-rate <sompiPerMass>    Whole sompi per gram of mass (default: 1 in the
+                               simulator, 100 on real networks; not a live
+                               estimate)
+  --change <accountOrAddress>  Change destination (account na: expected { docs: +0, exit: 1 } to deeply equal { docs: 1, exit: 2 }
+   × CLI-CONTRACT-2 · D · `--json` answers with exactly one envelope, usage errors included > D2 · a missing required argument under --json (`artifact verify --json`): the same 1044ms
+     → exit 1
+stdout: 
+stderr: error: missing required argument 'path'
+
+Usage: hardkas artifact verify [options] <path>
+
+Verify an artifact's integrity and schema stable
+
+Options:
+  --json              Output results as JSON (default: false)
+  --recursive         Recursively verify all artifacts in a directory (default:
+                      false)
+  --strict            Perform deep semantic and operational safety verification
+                      (default: false)
+  --workspace <path>  Override workspace root directory
+  -h, --help          display help for command
+: expected { docs: +0, exit: 1 } to deeply equal { docs: 1, exit: 2 }
+   × CLI-CONTRACT-2 · D · `--json` answers with exactly one envelope, usage errors included > D3 · `run <missing file> --json`: one document, not two 1057ms
+     → exit 1
+stdout: {"timestamp":"2026-10-10T18:29:38.826Z","level":"info","event":"Running script: no-such-script.ts","context":{"script":"no-such-script.ts","network":"simnet"}}
+{
+  "ok": false,
+  "code": "SCRIPT_NOT_FOUND",
+  "message": "Run failed: Script not found: C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-cc2-json-eANnYJ\\no-such-script.ts",
+  "mode": "cli"
+}
+
+stderr: : expected 2 to be 1 // Object.is equality
+   × CLI-CONTRACT-2 · D · `--json` answers with exactly one envelope, usage errors included > D4 · `kaspa doctor --json`: one document, not two 1162ms
+     → exit 1
+stdout: {
+  "schema": "hardkas.kaspaDoctor.v1",
+  "status": "failed",
+  "checks": [
+    {
+      "name": "RPC Reachability",
+      "status": "error",
+      "message": "Failed to connect: Cannot connect to Kaspa RPC at ws://127.0.0.1:18210. Is kaspad running with --rpclisten-json? (wRPC -> WebSocket -> Unable to connect to ws://127.0.0.1:18210)"
+    }
+  ]
+}
+{
+  "ok": false,
+  "code": "DOCTOR_FAILED",
+  "message": "Doctor checks failed",
+  "mode": "cli"
+}
+
+stderr: : expected 2 to be 1 // Object.is equality
+   ✓ CLI-CONTRACT-2 · D · `--json` answers with exactly one envelope, usage errors included > D5 · control · `node reset --json` without --yes is a typed usage refusal with one envelope (JSON-ENVELOPE-RESIDUAL-2, fixed) 1062ms
+   ✓ CLI-CONTRACT-2 · E · an explicit empty input is refused, never replaced by a default > E · `tx plan --amount ""` is refused: exit ≠ 0 and no plan 1050ms
+   ✓ CLI-CONTRACT-2 · E · an explicit empty input is refused, never replaced by a default > E · `tx plan --to ""` is refused: exit ≠ 0 and no plan 1057ms
+   ✓ CLI-CONTRACT-2 · E · an explicit empty input is refused, never replaced by a default > E · `tx plan --from ""` is refused: exit ≠ 0 and no plan 1044ms
+ ✓ packages/cli/test/cli-contract-2a.test.ts (17 tests) 27897ms
+   ✓ CLI-CONTRACT-2A · A · `hardkas test` says what ran > A1 · no test file: ok:false, NO_TESTS_FOUND inside the one envelope, exit 1, nothing collected 1585ms
+   ✓ CLI-CONTRACT-2A · A · `hardkas test` says what ran > A2 · one passing test: ok:true, exit 0, one document, the counts, and the runner's own report on disk agrees 2011ms
+   ✓ CLI-CONTRACT-2A · A · `hardkas test` says what ran > A3 · only a skipped test: ok:false, NO_TESTS_EXECUTED (not TESTS_FAILED), exit 1, 1 skipped, 0 failed 2057ms
+   ✓ CLI-CONTRACT-2A · A · `hardkas test` says what ran > A4 · `--scenario` that matches nothing: NO_TESTS_EXECUTED naming the pattern, exit 1 2044ms
+   ✓ CLI-CONTRACT-2A · A · `hardkas test` says what ran > A5 · one passing and one skipped test: a pass (executed 1, skipped 1) 1988ms
+   ✓ CLI-CONTRACT-2A · A · `hardkas test` says what ran > A6 · a failing test: ok:false, TESTS_FAILED inside the envelope, exit 1, 1 failed of 1 executed 2043ms
+   ✓ CLI-CONTRACT-2A · A · `hardkas test` says what ran > A7 · a test file that cannot run: ok:false, TESTS_FAILED, files.failed 1 1970ms
+   ✓ CLI-CONTRACT-2A · A · `hardkas test` says what ran > A8 · human mode: no JSON on stdout, the counts line, and the same exit codes (a pass is 0, no tests is 1) 3378ms
+   ✓ CLI-CONTRACT-2A · B · `dev tx send` never announces a send it did not make > B1 · without arguments: a typed usage failure, exit 2, no 'Transaction submitted' 1060ms
+   ✓ CLI-CONTRACT-2A · B · `dev tx send` never announces a send it did not make > B2 · with arguments: the flow's send step does not run (no consent), so TX_SEND_NOT_EXECUTED, exit 1, no claim, no receipt 1240ms
+   ✓ CLI-CONTRACT-2A · C · `tx plan` refuses explicit empties and keeps omitted defaults > C1 · `--amount ""`: TX_PLAN_USAGE, exit 2, one envelope, nothing planned or written 1040ms
+   ✓ CLI-CONTRACT-2A · C · `tx plan` refuses explicit empties and keeps omitted defaults > C1 · `--to ""`: TX_PLAN_USAGE, exit 2, one envelope, nothing planned or written 1054ms
+   ✓ CLI-CONTRACT-2A · C · `tx plan` refuses explicit empties and keeps omitted defaults > C1 · `--from ""`: TX_PLAN_USAGE, exit 2, one envelope, nothing planned or written 1060ms
+   ✓ CLI-CONTRACT-2A · C · `tx plan` refuses explicit empties and keeps omitted defaults > C2 · a blank value (`--amount "  "`) is empty too; two empties are named together 1971ms
+   ✓ CLI-CONTRACT-2A · C · `tx plan` refuses explicit empties and keeps omitted defaults > C3 · an empty positional (`tx plan "" bob`) is refused the same way 1038ms
+   ✓ CLI-CONTRACT-2A · C · `tx plan` refuses explicit empties and keeps omitted defaults > C4 · control · omitted options keep their documented defaults: alice → bob, 1 KAS 1172ms
+   ✓ CLI-CONTRACT-2A · C · `tx plan` refuses explicit empties and keeps omitted defaults > C5 · control · given values are used: `--amount 2` plans 2 KAS to bob 1184ms
+
+node.exe : ⎯⎯⎯⎯⎯⎯ Failed Tests 15 ⎯⎯⎯⎯⎯⎯⎯
+En C:\Users\jrodr\AppData\Local\Temp\claude\C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo\21f9a2e4-33ac-4300-
+9366-aff402f85900\scratchpad\cut49-cli-contract-2\run-files-wt.ps1: 22 Carácter: 1
++ & node @args_ *> $log
++ ~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (⎯⎯⎯⎯⎯⎯ Failed Tests 15 ⎯⎯⎯⎯⎯⎯⎯:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+
+ FAIL  packages/cli/test/cli-contract-2.test.ts > CLI-CONTRACT-2 · A · the `hardkas test` verdict (TEST-VACUOUS-PASS) 
+> A3 · a file whose only test is skipped: nothing failed, so the verdict is never TESTS_FAILED
+AssertionError: exit 1
+stdout: JSON report written to 
+C:/Users/jrodr/AppData/Local/Temp/hk-cc2-test-gkupbU/.hardkas/runs/run_1791656946174_flzkp/vitest-report.json
+{
+  "ok": false,
+  "code": "NO_TESTS_EXECUTED",
+  "message": "1 test(s) collected, none executed (1 skipped, 0 todo). Nothing ran, so this is not a pass.",
+  "command": "test",
+  "mode": "cli",
+  "result": {
+    "testRunId": "run_1791656946174_flzkp",
+    "network": "simnet",
+    "tests": {
+      "collected": 1,
+      "executed": 0,
+      "passed": 0,
+      "failed": 0,
+      "skipped": 1,
+      "todo": 0
+    },
+    "files": {
+      "total": 1,
+      "failed": 0
+    },
+    "verdict": "NO_TESTS_EXECUTED",
+    "scenariosExecuted": 0,
+    "passed": false,
+    "scenarios": [],
+    "createdAt": "2026-10-10T18:29:07.122Z",
+    "vitestReport": ".hardkas/runs/run_1791656946174_flzkp/vitest-report.json"
+  }
+}
+
+stderr: : expected { code: 'NO_TESTS_EXECUTED', …(1) } to deeply equal { code: null, claimsFailure: false }
+
+- Expected
++ Received
+
+  Object {
+-   "claimsFailure": false,
+-   "code": null,
++   "claimsFailure": true,
++   "code": "NO_TESTS_EXECUTED",
+  }
+
+ ❯ packages/cli/test/cli-contract-2.test.ts:134:75
+    132|     const r = run(["test", "--json"], ws);
+    133|     const e = envelope(r);
+    134|     expect({ code: codeOf(r), claimsFailure: e?.ok === false }, brief(…
+       |                                                                           ^
+    135|   });
+    136| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/15]⎯
+
+ FAIL  packages/cli/test/cli-contract-2.test.ts > CLI-CONTRACT-2 · A · the `hardkas test` verdict (TEST-VACUOUS-PASS) 
+> A6 · the report names the world the tests ran in (this workspace executes in the simulator), not an option default
+AssertionError: exit 0
+stdout: JSON report written to 
+C:/Users/jrodr/AppData/Local/Temp/hk-cc2-test-praLpF/.hardkas/runs/run_1791656952513_wwc0s/vitest-report.json
+{
+  "ok": true,
+  "command": "test",
+  "mode": "cli",
+  "result": {
+    "testRunId": "run_1791656952513_wwc0s",
+    "network": "simnet",
+    "tests": {
+      "collected": 1,
+      "executed": 1,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "files": {
+      "total": 1,
+      "failed": 0
+    },
+    "verdict": "PASS",
+    "scenariosExecuted": 0,
+    "passed": true,
+    "scenarios": [],
+    "createdAt": "2026-10-10T18:29:13.442Z",
+    "vitestReport": ".hardkas/runs/run_1791656952513_wwc0s/vitest-report.json"
+  }
+}
+
+stderr: : expected 'simnet' to be 'simulated' // Object.is equality
+
+Expected: "simulated"
+Received: "simnet"
+
+ ❯ packages/cli/test/cli-contract-2.test.ts:163:42
+    161|     const r = run(["test", "--json"], ws);
+    162|     const e = envelope(r);
+    163|     expect(e?.result?.network, brief(r)).toBe("simulated");
+       |                                          ^
+    164|   });
+    165| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/15]⎯
+
+ FAIL  packages/cli/test/cli-contract-2.test.ts > CLI-CONTRACT-2 · B · one unreachable node, one typed code > B1 · `tx 
+plan --json` against a node that refuses: a typed connection code, never UNKNOWN
+AssertionError: exit 1
+stdout: {
+  "ok": false,
+  "code": "UNKNOWN",
+  "message": "Unknown connection error: Cannot connect to Kaspa RPC at ws://127.0.0.1:18210. Is kaspad running with 
+--rpclisten-json? (wRPC -> WebSocket -> Unable to connect to ws://127.0.0.1:18210)",
+  "mode": "cli"
+}
+
+stderr: : expected 'UNKNOWN' not to match /^UNKNOWN(_ERROR)?$/
+
+- Expected: 
+/^UNKNOWN(_ERROR)?$/
+
++ Received: 
+"UNKNOWN"
+
+ ❯ packages/cli/test/cli-contract-2.test.ts:185:37
+    183|     expect(r.status, brief(r)).not.toBe(0);
+    184|     expect(codeOf(r), brief(r)).not.toBeNull();
+    185|     expect(codeOf(r), brief(r)).not.toMatch(UNTYPED);
+       |                                     ^
+    186|   });
+    187| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/15]⎯
+
+ FAIL  packages/cli/test/cli-contract-2.test.ts > CLI-CONTRACT-2 · B · one unreachable node, one typed code > B2 · 
+`accounts balance alice --json` against the same node: typed, never UNKNOWN_ERROR
+AssertionError: exit 1
+stdout: {
+  "ok": false,
+  "code": "UNKNOWN_ERROR",
+  "message": "Cannot connect to Kaspa RPC at ws://127.0.0.1:18210. Is kaspad running with --rpclisten-json? (wRPC -> 
+WebSocket -> Unable to connect to ws://127.0.0.1:18210)",
+  "mode": "cli"
+}
+
+stderr: : expected 'UNKNOWN_ERROR' not to match /^UNKNOWN(_ERROR)?$/
+
+- Expected: 
+/^UNKNOWN(_ERROR)?$/
+
++ Received: 
+"UNKNOWN_ERROR"
+
+ ❯ packages/cli/test/cli-contract-2.test.ts:192:37
+    190|     expect(r.status, brief(r)).not.toBe(0);
+    191|     expect(codeOf(r), brief(r)).not.toBeNull();
+    192|     expect(codeOf(r), brief(r)).not.toMatch(UNTYPED);
+       |                                     ^
+    193|   });
+    194| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/15]⎯
+
+ FAIL  packages/cli/test/cli-contract-2.test.ts > CLI-CONTRACT-2 · B · one unreachable node, one typed code > B4 · the 
+three commands name one failure (the node refuses) with one code
+AssertionError: tx plan / accounts balance / rpc health → UNKNOWN / UNKNOWN_ERROR / RPC_NOT_READY: expected 3 to be 1 
+// Object.is equality
+
+- Expected
++ Received
+
+- 1
++ 3
+
+ ❯ packages/cli/test/cli-contract-2.test.ts:208:99
+    206|       run(["rpc", "health", "--json"], ws)
+    207|     ].map((r) => codeOf(r) ?? "(none)");
+    208|     expect(new Set(codes).size, `tx plan / accounts balance / rpc heal…
+       |                                                                                                   ^
+    209|   });
+    210| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/15]⎯
+
+ FAIL  packages/cli/test/cli-contract-2.test.ts > CLI-CONTRACT-2 · C · an error shown is a failure of the run; a claim 
+is backed by an effect > C3 · `create <unknown template> <dest> --json`: exit ≠ 0 and the CLI's one envelope shape ({ 
+ok:false, code })
+AssertionError: exit 0
+stdout: {
+  "ok": false,
+  "error": {
+    "code": "TEMPLATE_CREATE_FAILED",
+    "message": "Template 'no-such-template' not found."
+  }
+}
+
+stderr: : expected { failed: false, topLevelCode: false } to deeply equal { failed: true, topLevelCode: true }
+
+- Expected
++ Received
+
+  Object {
+-   "failed": true,
+-   "topLevelCode": true,
++   "failed": false,
++   "topLevelCode": false,
+  }
+
+ ❯ packages/cli/test/cli-contract-2.test.ts:238:93
+    236|     const r = run(["create", "no-such-template", "dest-dir", "--json"]…
+    237|     const e = envelope(r);
+    238|     expect({ failed: r.status !== 0, topLevelCode: typeof e?.code === …
+       |                                                                                             ^
+    239|   });
+    240| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/15]⎯
+
+ FAIL  packages/cli/test/cli-contract-2.test.ts > CLI-CONTRACT-2 · C · an error shown is a failure of the run; a claim 
+is backed by an effect > C4 · `status` reports a hardkas.config.ts that cannot load, instead of describing the 
+workspace as if nothing were wrong
+AssertionError: exit 0
+stdout: 
+  ═══ HardKAS Workspace Status ═══
+  ╔══════════════════════════════════════╗
+  ║              Workspace               ║
+  ║C:\Users\jrodr\AppData\Local\Temp\hk-cc2-claims-BjXN0u║
+  ╚══════════════════════════════════════╝
+
+  Dev Server       🔴 Offline
+
+  Artifacts        0 (no artifacts directory)
+
+  Projection       none (queries read the workspace)
+
+  ℹ No Dev Accounts found.
+
+  💡 Next Steps:
+     > hardkas dev --headless
+
+
+stderr: : expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ packages/cli/test/cli-contract-2.test.ts:244:63
+    242|     fs.writeFileSync(path.join(ws, "hardkas.config.ts"), 'throw new Er…
+    243|     const r = run(["status"], ws);
+    244|     expect(r.status !== 0 || /config/i.test(r.all), brief(r)).toBe(tru…
+       |                                                               ^
+    245|   });
+    246| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/15]⎯
+
+ FAIL  packages/cli/test/cli-contract-2.test.ts > CLI-CONTRACT-2 · C · an error shown is a failure of the run; a claim 
+is backed by an effect > C4b · `status` in a directory that holds a hardkas.config.ts but no .hardkas/ does not call 
+it 'no workspace' (WA-1: the config is the root)
+AssertionError: exit 0
+stdout: 
+  ═══ HardKAS Workspace Status ═══
+  ℹ No HardKAS workspace detected in current directory.
+
+  💡 Next Steps:
+     > hardkas init
+
+
+stderr: : expected '\n  ═══ HardKAS Workspace Status ═══\…' not to match /No HardKAS workspace detected/
+
+- Expected: 
+/No HardKAS workspace detected/
+
++ Received: 
+"
+  ═══ HardKAS Workspace Status ═══
+  ℹ No HardKAS workspace detected in current directory.
+
+  💡 Next Steps:
+     > hardkas init
+
+
+"
+
+ ❯ packages/cli/test/cli-contract-2.test.ts:250:33
+    248|     fs.rmSync(path.join(ws, ".hardkas"), { recursive: true, force: tru…
+    249|     const r = run(["status"], ws);
+    250|     expect(r.all, brief(r)).not.toMatch(/No HardKAS workspace detected…
+       |                                 ^
+    251|   });
+    252| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/15]⎯
+
+ FAIL  packages/cli/test/cli-contract-2.test.ts > CLI-CONTRACT-2 · C · an error shown is a failure of the run; a claim 
+is backed by an effect > C5 · `ci verify` in a pristine simulator workspace when only Docker is down: no 'corrupted 
+workspace' verdict
+AssertionError: exit 1
+stdout: 
+  ═══ CI Workspace Verification ═══
+  1. Running environment doctor checks...
+  2. Scanning artifact lattice integrity...
+  3. Verifying projection index...
+
+
+
+stderr: 
+  ✗ Error:
+    Environment doctor checks failed.
+
+  ⚠️  WARNING:
+     No artifacts directory found. Skipping lattice scan.
+
+  ⚠️  WARNING:
+     No projection database found (the query commands read the workspace). Skipping projection checks.
+
+  ✗ [CI_VERIFY_FAILED] CI Verification Failed. Workspace is corrupted or incorrectly configured.
+: expected '\n  ═══ CI Workspace Verification ═══…' not to match /corrupted|incorrectly configured/i
+
+- Expected: 
+/corrupted|incorrectly configured/i
+
++ Received: 
+"
+  ═══ CI Workspace Verification ═══
+  1. Running environment doctor checks...
+  2. Scanning artifact lattice integrity...
+  3. Verifying projection index...
+
+
+
+
+  ✗ Error:
+    Environment doctor checks failed.
+
+  ⚠️  WARNING:
+     No artifacts directory found. Skipping lattice scan.
+
+  ⚠️  WARNING:
+     No projection database found (the query commands read the workspace). Skipping projection checks.
+
+  ✗ [CI_VERIFY_FAILED] CI Verification Failed. Workspace is corrupted or incorrectly configured.
+"
+
+ ❯ packages/cli/test/cli-contract-2.test.ts:255:53
+    253|   it("C5 · `ci verify` in a pristine simulator workspace when only Doc…
+    254|     const r = run(["ci", "verify"], ws, DOCKER_DOWN);
+    255|     if (r.status !== 0) expect(r.all, brief(r)).not.toMatch(/corrupted…
+       |                                                     ^
+    256|   });
+    257| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/15]⎯
+
+ FAIL  packages/cli/test/cli-contract-2.test.ts > CLI-CONTRACT-2 · C · an error shown is a failure of the run; a claim 
+is backed by an effect > C6 · `doctor --json`: failed checks and the exit code agree (a verdict that reports failures 
+does not exit 0)
+AssertionError: exit 0
+stdout: {
+  "version": "0.12.0-rc.27",
+  "timestamp": "2026-10-10T18:29:30.315Z",
+  "checks": [
+    {
+      "name": "Node.js version",
+      "category": "runtime",
+      "status": "pass",
+      "message": "v24.15.0 (>= 18 required)"
+    },
+    {
+      "name": "pnpm",
+      "category": "runtime",
+      "status": "pass",
+      "message": "v11.1.3"
+    },
+    {
+      "name": ".hardkas/ directory",
+      "category": "persistence",
+      "status": "pass",
+      "message": "Exists and is active"
+    },
+    {
+      "name": ".gitignore protection",
+      "category": "persistence",
+      "status": "skip",
+      "message": ".gitignore not found"
+    },
+    {
+      "name": "store.db accessibility",
+      "category": "persistence",
+      "status": "warn",
+      "message": "store.db not found",
+      "suggestion": "Run 'hardkas query store rebuild' to populate the index."
+    },
+    {
+      "name": "Workspace locks",
+      "category": "persistence",
+      "status": "pass",
+      "message": "No active or stale locks found"
+    },
+    {
+      "name": "Events Ledger Stream",
+      "category": "persistence",
+      "status": "skip",
+      "message": "Stream not found"
+    },
+    {
+      "name": "Telemetry Stream",
+      "category": "persistence",
+      "status": "skip",
+      "message": "Stream not found"
+    },
+    {
+      "name": "Keystore permissions",
+      "category": "security",
+      "status": "pass",
+      "message": "No keystore found (nothing to secure)"
+    },
+    {
+      "name": "Docker da
+stderr: : expected { failedChecks: 1, exit: +0 } to satisfy [Function]
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ packages/cli/test/cli-contract-2.test.ts:263:64
+    261|     const failed = Number(report?.summary?.failed ?? report?.result?.s…
+    262|     expect(report, brief(r)).toBeDefined();
+    263|     expect({ failedChecks: failed, exit: r.status }, brief(r)).toSatis…
+       |                                                                ^
+    264|   });
+    265| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/15]⎯
+
+ FAIL  packages/cli/test/cli-contract-2.test.ts > CLI-CONTRACT-2 · C · an error shown is a failure of the run; a claim 
+is backed by an effect > C7 · re-sending an already applied signed transaction: the answer never reads as a fresh 
+submission without saying it was already applied
+AssertionError: exit 0
+stdout: {
+  "ok": true,
+  "outcome": "submitted",
+  "data": {
+    "signed": {
+      "schema": "hardkas.signedTx",
+      "schemaVersion": "hardkas.artifact.v1",
+      "hardkasVersion": "0.12.0-rc.27",
+      "version": "1.0.0-alpha",
+      "hashVersion": 5,
+      "createdAt": "2026-10-10T18:29:33.534Z",
+      "status": "signed",
+      "sourcePlanId": "plan-a990b2df0ada1f08",
+      "networkId": "simulated",
+      "mode": "simulator",
+      "from": {
+        "address": "kaspa:sim_alice"
+      },
+      "to": {
+        "address": "kaspa:sim_bob"
+      },
+      "amountSompi": "100000000",
+      "txId": "synthetic-a990b2df0ada1f0845c3f8bfd905f08906d407dc1dfc891602bbafad4d56cd43",
+      "authorization": {
+        "kind": "synthetic",
+        "planArtifactId": "a990b2df0ada1f0845c3f8bfd905f08906d407dc1dfc891602bbafad4d56cd43",
+        "signers": [
+          "kaspa:sim_alice"
+        ]
+      },
+      "signedTransaction": {
+        "format": "synthetic-authorization",
+        "payload": "a990b2df0ada1f0845c3f8bfd905f08906d407dc1dfc891602bbafad4d56cd43"
+      },
+      "lineage": {
+        "artifactId": "4f7ccf94113dea3803c1e96736320def05d70f145230ae1eec35d5251a82bbc4",
+        "lineageId": "a990b2df0ada1f0845c3f8bfd905f08906d407dc1dfc891602bbafad4d56cd43",
+        "parentArtifactId": "a990b2df0ada1f0845c3f8bfd905f08906d407dc1dfc891602bbafad4d56cd43",
+        "rootArtifactId": "a990b2df0ada1f0845c3f8bfd905f08906d407dc1dfc891602bbafad4d56cd43",
+        "sequence": 2
+      },
+      "execution": {
+  
+stderr: : expected { receiptsAfterFirst: 1, …(2) } to match object { markedAsAlreadyApplied: true }
+(2 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  Object {
+-   "markedAsAlreadyApplied": true,
++   "markedAsAlreadyApplied": false,
+  }
+
+ ❯ packages/cli/test/cli-contract-2.test.ts:279:7
+    277|       { receiptsAfterFirst, receiptsAfterSecond: listReceipts(ws), mar…
+    278|       brief(second)
+    279|     ).toMatchObject({ markedAsAlreadyApplied: true });
+       |       ^
+    280|   });
+    281| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/15]⎯
+
+ FAIL  packages/cli/test/cli-contract-2.test.ts > CLI-CONTRACT-2 · D · `--json` answers with exactly one envelope, 
+usage errors included > D1 · an unknown option under --json: one { ok:false } envelope on stdout and the usage exit 
+code (2)
+AssertionError: exit 1
+stdout: 
+stderr: error: unknown option '--no-such-option'
+
+Usage: hardkas tx plan [options] [from] [to]
+
+Build a transaction plan artifact stable
+
+Options:
+  --target <name>              Named execution target from hardkas.config.ts
+  --from <accountOrAddress>    Sender account name or address (default: alice)
+  --to <address>               Recipient address or account name (default: bob)
+  --amount <kas>               Amount in KAS, up to 8 decimals (default: 1)
+  --network <name>             simulated, simnet, devnet, testnet-10,
+                               testnet-12 or mainnet (default: the config's
+ Test Files  1 failed | 1 passed (2)
+      Tests  15 failed | 30 passed (45)
+   Start at  20:28:58
+   Duration  73.52s (transform 84ms, setup 0ms, collect 112ms, tests 72.75s, environment 0ms, prepare 232ms)
+
+                               default target)
+  --fee-rate <sompiPerMass>    Whole sompi per gram of mass (default: 1 in the
+                               simulator, 100 on real networks; not a live
+                               estimate)
+  --change <accountOrAddress>  Change destination (account na: expected { docs: +0, exit: 1 } to deeply equal { docs: 
+1, exit: 2 }
+
+- Expected
++ Received
+
+  Object {
+-   "docs": 1,
+-   "exit": 2,
++   "docs": 0,
++   "exit": 1,
+  }
+
+ ❯ packages/cli/test/cli-contract-2.test.ts:293:63
+    291|   it("D1 · an unknown option under --json: one { ok:false } envelope o…
+    292|     const r = run(["tx", "plan", "--no-such-option", "--json"], ws);
+    293|     expect({ docs: r.docs.length, exit: r.status }, brief(r)).toEqual(…
+       |                                                               ^
+    294|   });
+    295| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/15]⎯
+
+ FAIL  packages/cli/test/cli-contract-2.test.ts > CLI-CONTRACT-2 · D · `--json` answers with exactly one envelope, 
+usage errors included > D2 · a missing required argument under --json (`artifact verify --json`): the same
+AssertionError: exit 1
+stdout: 
+stderr: error: missing required argument 'path'
+
+Usage: hardkas artifact verify [options] <path>
+
+Verify an artifact's integrity and schema stable
+
+Options:
+  --json              Output results as JSON (default: false)
+  --recursive         Recursively verify all artifacts in a directory (default:
+                      false)
+  --strict            Perform deep semantic and operational safety verification
+                      (default: false)
+  --workspace <path>  Override workspace root directory
+  -h, --help          display help for command
+: expected { docs: +0, exit: 1 } to deeply equal { docs: 1, exit: 2 }
+
+- Expected
++ Received
+
+  Object {
+-   "docs": 1,
+-   "exit": 2,
++   "docs": 0,
++   "exit": 1,
+  }
+
+ ❯ packages/cli/test/cli-contract-2.test.ts:298:63
+    296|   it("D2 · a missing required argument under --json (`artifact verify …
+    297|     const r = run(["artifact", "verify", "--json"], ws);
+    298|     expect({ docs: r.docs.length, exit: r.status }, brief(r)).toEqual(…
+       |                                                               ^
+    299|   });
+    300| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/15]⎯
+
+ FAIL  packages/cli/test/cli-contract-2.test.ts > CLI-CONTRACT-2 · D · `--json` answers with exactly one envelope, 
+usage errors included > D3 · `run <missing file> --json`: one document, not two
+AssertionError: exit 1
+stdout: {"timestamp":"2026-10-10T18:29:38.826Z","level":"info","event":"Running script: 
+no-such-script.ts","context":{"script":"no-such-script.ts","network":"simnet"}}
+{
+  "ok": false,
+  "code": "SCRIPT_NOT_FOUND",
+  "message": "Run failed: Script not found: 
+C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-cc2-json-eANnYJ\\no-such-script.ts",
+  "mode": "cli"
+}
+
+stderr: : expected 2 to be 1 // Object.is equality
+
+- Expected
++ Received
+
+- 1
++ 2
+
+ ❯ packages/cli/test/cli-contract-2.test.ts:303:37
+    301|   it("D3 · `run <missing file> --json`: one document, not two", () => {
+    302|     const r = run(["run", "no-such-script.ts", "--json"], ws);
+    303|     expect(r.docs.length, brief(r)).toBe(1);
+       |                                     ^
+    304|   });
+    305| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/15]⎯
+JSON report written to C:/Users/jrodr/AppData/Local/Temp/claude/C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo/21f9a2e4-33ac-4300-9366-aff402f85900/scratchpad/cut49-cli-contract-2/logs/cc2a-after-1.json
+
+ FAIL  packages/cli/test/cli-contract-2.test.ts > CLI-CONTRACT-2 · D · `--json` answers with exactly one envelope, 
+usage errors included > D4 · `kaspa doctor --json`: one document, not two
+AssertionError: exit 1
+stdout: {
+  "schema": "hardkas.kaspaDoctor.v1",
+  "status": "failed",
+  "checks": [
+    {
+      "name": "RPC Reachability",
+      "status": "error",
+      "message": "Failed to connect: Cannot connect to Kaspa RPC at ws://127.0.0.1:18210. Is kaspad running with 
+--rpclisten-json? (wRPC -> WebSocket -> Unable to connect to ws://127.0.0.1:18210)"
+    }
+  ]
+}
+{
+  "ok": false,
+  "code": "DOCTOR_FAILED",
+  "message": "Doctor checks failed",
+  "mode": "cli"
+}
+
+stderr: : expected 2 to be 1 // Object.is equality
+
+- Expected
++ Received
+
+- 1
++ 2
+
+ ❯ packages/cli/test/cli-contract-2.test.ts:308:37
+    306|   it("D4 · `kaspa doctor --json`: one document, not two", () => {
+    307|     const r = run(["kaspa", "doctor", "--json"], ws);
+    308|     expect(r.docs.length, brief(r)).toBe(1);
+       |                                     ^
+    309|   });
+    310| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[15/15]⎯
+
+
+gate-hermetic: vitest exit 1 after 74s
+gate-hermetic: non-loopback attempts (each one fails the gate): 0
+gate-hermetic: loopback connection targets (review for dependencies on local services):
+  127.0.0.1:18210 x7
+  localhost:7420 x1

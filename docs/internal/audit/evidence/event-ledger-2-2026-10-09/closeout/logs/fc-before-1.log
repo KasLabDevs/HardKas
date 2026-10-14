@@ -1,0 +1,594 @@
+﻿gate-hermetic: HARDKAS_HOME=C:\Users\jrodr\AppData\Local\Temp\hardkas-hermetic-home-qHMvhP (copy of C:\Users\jrodr\AppData\Local\Temp\hk-v210-gate-home)
+gate-hermetic: DOCKER_HOST=tcp://127.0.0.1:1; preload=C:\Users\jrodr\AppData\Local\Temp\hk-ra\wt\scripts\hermetic\no-network-preload.cjs
+gate-hermetic: vitest run --coverage.enabled=false --reporter=default --reporter=json --outputFile=C:\Users\jrodr\AppData\Local\Temp\claude\C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo\21f9a2e4-33ac-4300-9366-aff402f85900\scratchpad\cut46-event-ledger-2\logs\fc-before-1.json packages/core/test/event-ledger-2-closeout.test.ts packages/core/test/event-ledger-2.test.ts packages/sdk/test/event-ledger-2-effect.test.ts packages/sdk/test/event-ledger-2-submission.test.ts packages/artifacts/test/event-ledger-2-submit-outcome.test.ts packages/cli/test/event-ledger-2-flow.test.ts packages/cli/test/demo-cut-t-a14b-tx-status.test.ts packages/cli/test/wave1-3-cli-helpers.test.ts
+
+ RUN  v2.1.9 C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt
+
+ ❯ packages/core/test/event-ledger-2.test.ts (19 tests | 1 failed) 17702ms
+   ✓ EVENT-LEDGER-2 · controls (must hold before and after) > a lock held by a LIVE process is waited for, never taken over: the event lands after the holder releases it 1606ms
+   ✓ EVENT-LEDGER-2 · AFTER · the append lock is judged before it is touched (D1) > judgeAppendLock: dead on this host → abandoned; alive → live; another host → unverifiable; legacy/young → live 314ms
+   × EVENT-LEDGER-2 · AFTER · the append lock is judged before it is touched (D1) > closeout CL-4 (reviewer, fail closed): an empty recovery lock left by a recoverer that died is never removed automatically; the append fails typed until the lock tool clears it 124ms
+     → expected { code: undefined, …(5) } to deeply equal { …(6) }
+   ✓ EVENT-LEDGER-2 · AFTER · no silent loss (D2, EL2-I0) > a live holder past the wait: typed failure naming the holder, in about the wait, and the holder's lock is never taken over 15099ms
+ ✓ packages/cli/test/demo-cut-t-a14b-tx-status.test.ts (10 tests) 1766ms
+   ✓ Demo-cut · T-A14b · tx status / tx wait present the derived Q4 state > walks SUBMITTED → MEMPOOL_ACCEPTED → ACCEPTED(n) → CONFIRMED(n) → FINALIZED, each equal to sdk.tx.status, nothing asserted beyond it 556ms
+ ❯ packages/core/test/event-ledger-2-closeout.test.ts (4 tests | 1 failed) 19235ms
+   ✓ EVENT-LEDGER-2 closeout · CL-3 a lock naming this process's own pid is held by a live process > a worker thread of this process holding the append lock is waited for, never taken over; the event lands after it releases 1587ms
+   ✓ EVENT-LEDGER-2 closeout · CL-4 a recovery that is still valid is never taken over > a recoverer that is alive keeps its recovery lock however old it is: the append waits and fails typed, the lock intact 10207ms
+   ✓ EVENT-LEDGER-2 closeout · CL-4 a recovery that is still valid is never taken over > a recoverer suspended between its check and its unlink never removes the lock of a holder that came after it 7228ms
+   × EVENT-LEDGER-2 closeout · CL-4 a recovery that is still valid is never taken over > CL-4c · a recovery lock whose recoverer died fails the append closed — no automatic removal, no wait — until the lock tool clears it 211ms
+     → expected { cause: undefined, …(2) } to deeply equal { …(3) }
+ ❯ packages/sdk/test/event-ledger-2-effect.test.ts (7 tests | 7 failed) 686ms
+   × EVENT-LEDGER-2 final closeout · A1 a ledger failure names the effect its step already had > accepted broadcast, then the submission's artifact.written is lost: the failure says the transaction WAS sent (RPC acceptance, not DAG) 207ms
+     → expected undefined to match object { operation: 'broadcast', …(2) }
+   × EVENT-LEDGER-2 final closeout · A1 a ledger failure names the effect its step already had > accepted broadcast, then its result event is lost: the failure names the accepted submission and where it is recorded 64ms
+     → expected undefined to match object { operation: 'broadcast', …(2) }
+   × EVENT-LEDGER-2 final closeout · A1 a ledger failure names the effect its step already had > a submit call that failed without an answer, then its result event is lost: the outcome is UNKNOWN, never a rejection 61ms
+     → expected undefined to match object { operation: 'broadcast', …(2) }
+   × EVENT-LEDGER-2 final closeout · A1 a ledger failure names the effect its step already had > a submission the node rejected, then its result event is lost: the failure says REJECTED, with the submission 74ms
+     → expected undefined to match object { operation: 'broadcast', …(1) }
+   × EVENT-LEDGER-2 final closeout · A1 a ledger failure names the effect its step already had > the simulator executed, then the receipt's announcement is lost: the failure says EXECUTED and names the receipt 96ms
+     → expected undefined to match object { …(2) }
+   × EVENT-LEDGER-2 final closeout · A1 a ledger failure names the effect its step already had > the ledger fails before the simulator runs (the executed artifact's store write): nothing was executed, and the failure says so 81ms
+     → expected undefined to match object { …(2) }
+   × EVENT-LEDGER-2 final closeout · A1 a ledger failure names the effect its step already had > a workflow's tx.simulate step: the receipt's store announcement after the execution is lost, and the step's error says EXECUTED 101ms
+     → expected 'The event artifact.written (95851a14-…' to match /The simulator EXECUTED transaction/
+stdout | packages/cli/test/wave1-3-cli-helpers.test.ts > Wave 1.3 · artifact create writes no identity copy (IC-7.3) > the created artifact has a deterministic contentHash as its only identity
+{
+  "type": "test-type",
+  "schemaValid": true,
+  "payload": {
+    "key": "value",
+    "b": 2,
+    "a": 1
+  },
+  "createdAt": 1791562584391,
+  "hashVersion": 5,
+  "contentHash": "c34b27e42fb5c703d9cd97dd77e24e771369725f5584c3f6da5183c7640a655d"
+}
+
+stdout | packages/cli/test/wave1-3-cli-helpers.test.ts > Wave 1.3 · artifact create writes no identity copy (IC-7.3) > the created artifact has a deterministic contentHash as its only identity
+{
+  "type": "test-type",
+  "schemaValid": true,
+  "payload": {
+    "key": "value",
+    "b": 2,
+    "a": 1
+  },
+  "createdAt": 1791562584393,
+  "hashVersion": 5,
+  "contentHash": "c34b27e42fb5c703d9cd97dd77e24e771369725f5584c3f6da5183c7640a655d"
+}
+
+ ✓ packages/cli/test/wave1-3-cli-helpers.test.ts (9 tests) 23ms
+ ❯ packages/sdk/test/event-ledger-2-submission.test.ts (6 tests | 3 failed) 555ms
+   × EVENT-LEDGER-2 closeout · CL-2 workflow.submitted is recorded only after an accepted submission > a submit call that failed without an answer (a timeout) is recorded as an RPC error with an unknown outcome — never as a rejection 76ms
+     → neither submitted nor rejected: expected [ { schema: 'hardkas.event', …(15) } ] to deeply equal []
+   × EVENT-LEDGER-2 closeout · CL-2 workflow.submitted is recorded only after an accepted submission > a submit call that failed without an answer (a lost connection) is recorded as an RPC error with an unknown outcome — never as a rejection 74ms
+     → neither submitted nor rejected: expected [ { schema: 'hardkas.event', …(15) } ] to deeply equal []
+   × EVENT-LEDGER-2 closeout · CL-2 workflow.submitted is recorded only after an accepted submission > a workflow's tx.send step whose submit call failed without an answer fails with TX_SUBMISSION_OUTCOME_UNKNOWN, not TX_SUBMISSION_REJECTED 75ms
+     → expected 'TX_SUBMISSION_REJECTED' to be 'TX_SUBMISSION_OUTCOME_UNKNOWN' // Object.is equality
+ ❯ packages/cli/test/event-ledger-2-flow.test.ts (6 tests | 6 failed) 100ms
+   × EVENT-LEDGER-2 final closeout · the tx send flow keeps the typed failure, the effect and the partial result > the ledger fails on workflow.started: the failure is typed and says nothing was sent 19ms
+     → expected undefined to match object { operation: 'broadcast', …(1) }
+   × EVENT-LEDGER-2 final closeout · the tx send flow keeps the typed failure, the effect and the partial result > the ledger fails on the plan's announcement: the plan step keeps the typed code and says nothing was sent 19ms
+     → expected { status: 'ok', …(2) } to match object { status: 'error', …(2) }
+(7 matching properties omitted from actual)
+   × EVENT-LEDGER-2 final closeout · the tx send flow keeps the typed failure, the effect and the partial result > an accepted broadcast, then the ledger fails on workflow.receipt: the send step keeps the code, the effect and the send result 31ms
+     → it was broadcast: expected 'signed' to be 'broadcast' // Object.is equality
+   × EVENT-LEDGER-2 final closeout · the tx send flow keeps the typed failure, the effect and the partial result > a submission whose outcome is unknown is not announced as a failed receipt (no status is known) 27ms
+     → expected [ { schema: 'hardkas.event', …(16) } ] to deeply equal []
+   × EVENT-LEDGER-2 final closeout · `why` narrates what a submission establishes > a submit call that failed without an answer: an unknown outcome, never the node's rejection 2ms
+     → expected 'Submitted to the node; the node rejec…' to match /unknown/i
+   × EVENT-LEDGER-2 final closeout · `why` narrates what a submission establishes > an accepted submission: the node accepted the submission request, which is not acceptance in the DAG 1ms
+     → expected 'Submitted to the node; the node accep…' to match /submission request/
+ ❯ packages/artifacts/test/event-ledger-2-submit-outcome.test.ts (3 tests | 1 failed) 16ms
+   × EVENT-LEDGER-2 final closeout · a submit result decides only what it establishes > a submit call that failed without an answer decides nothing: INSUFFICIENT_EVIDENCE, never REJECTED_BY_NODE 13ms
+     → expected { …(2) } to deeply equal { …(2) }
+
+node.exe : ⎯⎯⎯⎯⎯⎯ Failed Tests 19 ⎯⎯⎯⎯⎯⎯⎯
+En C:\Users\jrodr\AppData\Local\Temp\claude\C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo\21f9a2e4-33ac-4300-
+9366-aff402f85900\scratchpad\cut46-event-ledger-2\run-files-wt.ps1: 22 Carácter: 1
++ & node @args_ *> $log
++ ~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (⎯⎯⎯⎯⎯⎯ Failed Tests 19 ⎯⎯⎯⎯⎯⎯⎯:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+
+ FAIL  packages/artifacts/test/event-ledger-2-submit-outcome.test.ts > EVENT-LEDGER-2 final closeout · a submit result 
+decides only what it establishes > a submit call that failed without an answer decides nothing: INSUFFICIENT_EVIDENCE, 
+never REJECTED_BY_NODE
+AssertionError: expected { …(2) } to deeply equal { …(2) }
+
+- Expected
++ Received
+
+  Object {
+    "error": "RPC request submitTransaction timed out after 5000ms",
+-   "status": "INSUFFICIENT_EVIDENCE",
++   "status": "REJECTED_BY_NODE",
+  }
+
+ ❯ packages/artifacts/test/event-ledger-2-submit-outcome.test.ts:45:43
+     43|     ]) {
+     44|       const d = derive({ accepted: false, error });
+     45|       expect({ error, status: d.status }).toEqual({ error, status: "IN…
+       |                                           ^
+     46|       expect(d.reasons.join(" ")).toMatch(/unknown/);
+     47|       expect(d.evidence.submissionArtifactId, "the attempt is still th…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/19]⎯
+
+ FAIL  packages/cli/test/event-ledger-2-flow.test.ts > EVENT-LEDGER-2 final closeout · the tx send flow keeps the 
+typed failure, the effect and the partial result > the ledger fails on workflow.started: the failure is typed and says 
+nothing was sent
+AssertionError: expected undefined to match object { operation: 'broadcast', …(1) }
+
+- Expected: 
+Object {
+  "operation": "broadcast",
+  "outcome": "not-performed",
+}
+
++ Received: 
+undefined
+
+ ❯ packages/cli/test/event-ledger-2-flow.test.ts:80:34
+     78|     const err: any = await flow().then(() => undefined, (e) => e);
+     79|     expect(err?.code).toBe("EVENT_LEDGER_APPEND_FAILED");
+     80|     expect(err.metadata?.effect).toMatchObject({ operation: "broadcast…
+       |                                  ^
+     81|     expect(err.message).toMatch(/^Nothing was sent/);
+     82|     expect(vi.mocked(runTxSend)).not.toHaveBeenCalled();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/19]⎯
+
+ FAIL  packages/cli/test/event-ledger-2-flow.test.ts > EVENT-LEDGER-2 final closeout · the tx send flow keeps the 
+typed failure, the effect and the partial result > the ledger fails on the plan's announcement: the plan step keeps 
+the typed code and says nothing was sent
+AssertionError: expected { status: 'ok', …(2) } to match object { status: 'error', …(2) }
+(7 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  Object {
+-   "code": "EVENT_LEDGER_APPEND_FAILED",
+-   "effect": Object {
+-     "operation": "broadcast",
+-     "outcome": "not-performed",
+-   },
+-   "status": "error",
++   "status": "ok",
+  }
+
+ ❯ packages/cli/test/event-ledger-2-flow.test.ts:90:31
+     88|     const result: any = await flow();
+     89|     expect(result.ok).toBe(false);
+     90|     expect(result.steps.plan).toMatchObject({ status: "error", code: "…
+       |                               ^
+     91|     expect(result.steps.plan.error).toMatch(/^Nothing was sent/);
+     92|     expect(result.steps.send.status).not.toBe("ok");
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/19]⎯
+
+ FAIL  packages/cli/test/event-ledger-2-flow.test.ts > EVENT-LEDGER-2 final closeout · the tx send flow keeps the 
+typed failure, the effect and the partial result > an accepted broadcast, then the ledger fails on workflow.receipt: 
+the send step keeps the code, the effect and the send result
+AssertionError: it was broadcast: expected 'signed' to be 'broadcast' // Object.is equality
+
+Expected: "broadcast"
+Received: "signed"
+
+ ❯ packages/cli/test/event-ledger-2-flow.test.ts:102:47
+    100|     const result: any = await flow();
+    101|     expect(result.ok).toBe(false);
+    102|     expect(result.result, "it was broadcast").toBe("broadcast");
+       |                                               ^
+    103|     expect(result.steps.send).toMatchObject({
+    104|       status: "error",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/19]⎯
+
+ FAIL  packages/cli/test/event-ledger-2-flow.test.ts > EVENT-LEDGER-2 final closeout · the tx send flow keeps the 
+typed failure, the effect and the partial result > a submission whose outcome is unknown is not announced as a failed 
+receipt (no status is known)
+AssertionError: expected [ { schema: 'hardkas.event', …(16) } ] to deeply equal []
+
+- Expected
++ Received
+
+- Array []
++ Array [
++   Object {
++     "artifactId": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
++     "causationId": undefined,
++     "correlationId": "wf_d2dcdb5858131157",
++     "domain": "workflow",
++     "emittedAt": "2026-10-09T16:16:27.197Z",
++     "eventId": "775c65ee-6fa7-4575-ae01-b870a574a4ff",
++     "globalOffset": 5,
++     "kind": "workflow.receipt",
++     "networkId": "simnet",
++     "payload": Object {
++       "status": "failed",
++       "txId": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
++     },
++     "schema": "hardkas.event",
++     "sequenceNumber": 6,
++     "sourceSubsystem": "cli:tx-flow",
++     "timestamp": "2026-10-09T16:16:27.197Z",
++     "txId": undefined,
++     "version": "1.0.0",
++     "workflowId": "wf_d2dcdb5858131157",
++   },
++ ]
+
+ ❯ packages/cli/test/event-ledger-2-flow.test.ts:120:65
+    118|     expect(result.ok, "not accepted ⇒ the flow fails").toBe(false);
+    119|     expect(result.steps.send.status).toBe("ok");
+    120|     expect(passed.filter((e) => e.kind === "workflow.receipt")).toEqua…
+       |                                                                 ^
+    121|   });
+    122| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/19]⎯
+
+ FAIL  packages/cli/test/event-ledger-2-flow.test.ts > EVENT-LEDGER-2 final closeout · `why` narrates what a 
+submission establishes > a submit call that failed without an answer: an unknown outcome, never the node's rejection
+AssertionError: expected 'Submitted to the node; the node rejec…' to match /unknown/i
+
+- Expected: 
+/unknown/i
+
++ Received: 
+"Submitted to the node; the node rejected the transaction (txId 
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc): RPC request submitTransaction timed out after 
+5000ms. No observation recorded."
+
+ ❯ packages/cli/test/event-ledger-2-flow.test.ts:147:18
+    145|   it("a submit call that failed without an answer: an unknown outcome,…
+    146|     const text = describeWhyNode(sub({ accepted: false, error: "RPC re…
+    147|     expect(text).toMatch(/unknown/i);
+       |                  ^
+    148|     expect(text).toContain("timed out");
+    149|     expect(text).not.toMatch(/rejected|not accepted/i);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/19]⎯
+
+ FAIL  packages/cli/test/event-ledger-2-flow.test.ts > EVENT-LEDGER-2 final closeout · `why` narrates what a 
+submission establishes > an accepted submission: the node accepted the submission request, which is not acceptance in 
+the DAG
+AssertionError: expected 'Submitted to the node; the node accep…' to match /submission request/
+
+- Expected: 
+/submission request/
+
++ Received: 
+"Submitted to the node; the node accepted txId cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc. No 
+observation recorded (the status is derived from observations, not stored)."
+
+ ❯ packages/cli/test/event-ledger-2-flow.test.ts:154:18
+    152|   it("an accepted submission: the node accepted the submission request…
+    153|     const text = describeWhyNode(sub({ accepted: true, transactionId: …
+    154|     expect(text).toMatch(/submission request/);
+       |                  ^
+    155|     expect(text).toMatch(/not acceptance .*in the DAG/);
+    156|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/19]⎯
+
+ FAIL  packages/core/test/event-ledger-2-closeout.test.ts > EVENT-LEDGER-2 closeout · CL-4 a recovery that is still 
+valid is never taken over > CL-4c · a recovery lock whose recoverer died fails the append closed — no automatic 
+removal, no wait — until the lock tool clears it
+AssertionError: expected { cause: undefined, …(2) } to deeply equal { …(3) }
+
+- Expected
++ Received
+
+  Object {
+-   "cause": "APPEND_LOCK_RECOVERY_BLOCKED",
++   "cause": undefined,
+    "intact": Object {
+-     "earlier": true,
+-     "lock": true,
++     "earlier": false,
++     "lock": false,
+      "recovery": true,
+    },
+-   "persisted": false,
++   "persisted": true,
+  }
+
+ ❯ packages/core/test/event-ledger-2-closeout.test.ts:214:10
+    212|         persisted: ledgerHas(root, r.eventId),
+    213|         intact: { lock: unchanged(lock, before.lock), recovery: unchan…
+    214|       }).toEqual({ cause: "APPEND_LOCK_RECOVERY_BLOCKED", persisted: f…
+       |          ^
+    215|       expect(ms, "fails at once: waiting cannot bring a dead recoverer…
+    216|       expect(r.error.message).toContain("hardkas lock clear append-eve…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/19]⎯
+
+ FAIL  packages/core/test/event-ledger-2.test.ts > EVENT-LEDGER-2 · AFTER · the append lock is judged before it is 
+touched (D1) > closeout CL-4 (reviewer, fail closed): an empty recovery lock left by a recoverer that died is never 
+removed automatically; the append fails typed until the lock tool clears it
+AssertionError: expected { code: undefined, …(5) } to deeply equal { …(6) }
+
+- Expected
++ Received
+
+  Object {
+-   "cause": "APPEND_LOCK_RECOVERY_BLOCKED",
+-   "code": "EVENT_LEDGER_APPEND_FAILED",
+-   "earlierLeft": true,
+-   "lockIntact": true,
+-   "persisted": false,
++   "cause": undefined,
++   "code": undefined,
++   "earlierLeft": false,
++   "lockIntact": false,
++   "persisted": true,
+    "recoveryLeft": true,
+  }
+
+ ❯ packages/core/test/event-ledger-2.test.ts:333:10
+    331|         recoveryLeft: fs.existsSync(recovery),
+    332|         earlierLeft: fs.existsSync(earlier)
+    333|       }).toEqual({ code: "EVENT_LEDGER_APPEND_FAILED", cause: "APPEND_…
+       |          ^
+    334|       expect(failure.message, "an empty recovery lock names no process…
+    335|       // the administrator's step; the next append then recovers the a…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/19]⎯
+
+ FAIL  packages/sdk/test/event-ledger-2-effect.test.ts > EVENT-LEDGER-2 final closeout · A1 a ledger failure names the 
+effect its step already had > accepted broadcast, then the submission's artifact.written is lost: the failure says the 
+transaction WAS sent (RPC acceptance, not DAG)
+AssertionError: expected undefined to match object { operation: 'broadcast', …(2) }
+
+- Expected: 
+Object {
+  "operation": "broadcast",
+  "outcome": "accepted",
+  "txId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+}
+
++ Received: 
+undefined
+
+ ❯ packages/sdk/test/event-ledger-2-effect.test.ts:103:34
+    101|     const err: any = await sdk.tx.send(signed, LOOPBACK).then(() => un…
+    102|     expect(err?.code).toBe("EVENT_LEDGER_APPEND_FAILED");
+    103|     expect(err.metadata?.effect).toMatchObject({ operation: "broadcast…
+       |                                  ^
+    104|     expect(err.metadata.effect.artifactId).toBe(err.metadata.event.art…
+    105|     expect(fs.existsSync(err.metadata.event.path), "the submission WAS…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/19]⎯
+
+ FAIL  packages/sdk/test/event-ledger-2-effect.test.ts > EVENT-LEDGER-2 final closeout · A1 a ledger failure names the 
+effect its step already had > accepted broadcast, then its result event is lost: the failure names the accepted 
+submission and where it is recorded
+AssertionError: expected undefined to match object { operation: 'broadcast', …(2) }
+
+- Expected: 
+Object {
+  "operation": "broadcast",
+  "outcome": "accepted",
+  "txId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+}
+
++ Received: 
+undefined
+
+ ❯ packages/sdk/test/event-ledger-2-effect.test.ts:117:20
+    115|     expect(err?.code).toBe("EVENT_LEDGER_APPEND_FAILED");
+    116|     const effect = err.metadata?.effect;
+    117|     expect(effect).toMatchObject({ operation: "broadcast", outcome: "a…
+       |                    ^
+    118|     expect(fs.existsSync(effect.artifactPath), "the submission artifac…
+    119|     expect(JSON.parse(fs.readFileSync(effect.artifactPath, "utf8")).co…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/19]⎯
+
+ FAIL  packages/sdk/test/event-ledger-2-effect.test.ts > EVENT-LEDGER-2 final closeout · A1 a ledger failure names the 
+effect its step already had > a submit call that failed without an answer, then its result event is lost: the outcome 
+is UNKNOWN, never a rejection
+AssertionError: expected undefined to match object { operation: 'broadcast', …(2) }
+
+- Expected: 
+Object {
+  "operation": "broadcast",
+  "outcome": "unknown",
+  "txId": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+}
+
++ Received: 
+undefined
+
+ ❯ packages/sdk/test/event-ledger-2-effect.test.ts:129:34
+    127|     expect(err?.code).toBe("EVENT_LEDGER_APPEND_FAILED");
+    128|     // a failed call records no txId from the node; the effect names t…
+    129|     expect(err.metadata?.effect).toMatchObject({ operation: "broadcast…
+       |                                  ^
+    130|     expect(err.message).toMatch(/is UNKNOWN: the submit call failed wi…
+    131|     expect(err.message).not.toMatch(/REJECTED|rejected/);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/19]⎯
+
+ FAIL  packages/sdk/test/event-ledger-2-effect.test.ts > EVENT-LEDGER-2 final closeout · A1 a ledger failure names the 
+effect its step already had > a submission the node rejected, then its result event is lost: the failure says 
+REJECTED, with the submission
+AssertionError: expected undefined to match object { operation: 'broadcast', …(1) }
+
+- Expected: 
+Object {
+  "operation": "broadcast",
+  "outcome": "rejected",
+}
+
++ Received: 
+undefined
+
+ ❯ packages/sdk/test/event-ledger-2-effect.test.ts:142:34
+    140|     const err: any = await sdk.tx.send(signed, LOOPBACK).then(() => un…
+    141|     expect(err?.code).toBe("EVENT_LEDGER_APPEND_FAILED");
+    142|     expect(err.metadata?.effect).toMatchObject({ operation: "broadcast…
+       |                                  ^
+    143|     expect(err.message).toMatch(/The node REJECTED transaction/);
+    144|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/19]⎯
+
+ FAIL  packages/sdk/test/event-ledger-2-effect.test.ts > EVENT-LEDGER-2 final closeout · A1 a ledger failure names the 
+effect its step already had > the simulator executed, then the receipt's announcement is lost: the failure says 
+EXECUTED and names the receipt
+AssertionError: expected undefined to match object { …(2) }
+
+- Expected: 
+Object {
+  "operation": "simulated-execution",
+ Test Files  6 failed | 2 passed (8)
+      Tests  19 failed | 45 passed (64)
+   Start at  18:15:37
+   Duration  49.87s (transform 2.10s, setup 0ms, collect 7.23s, tests 40.08s, environment 2ms, prepare 922ms)
+
+  "outcome": "executed",
+}
+
++ Received: 
+undefined
+
+ ❯ packages/sdk/test/event-ledger-2-effect.test.ts:153:20
+    151|     expect(err?.code).toBe("EVENT_LEDGER_APPEND_FAILED");
+    152|     const effect = err.metadata?.effect;
+    153|     expect(effect).toMatchObject({ operation: "simulated-execution", o…
+       |                    ^
+    154|     expect(fs.existsSync(effect.artifactPath), "the receipt the commit…
+    155|     expect(err.message).toMatch(/The simulator EXECUTED transaction .*…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/19]⎯
+
+ FAIL  packages/sdk/test/event-ledger-2-effect.test.ts > EVENT-LEDGER-2 final closeout · A1 a ledger failure names the 
+effect its step already had > the ledger fails before the simulator runs (the executed artifact's store write): 
+nothing was executed, and the failure says so
+AssertionError: expected undefined to match object { …(2) }
+
+- Expected: 
+Object {
+  "operation": "simulated-execution",
+  "outcome": "not-performed",
+}
+
++ Received: 
+undefined
+
+ ❯ packages/sdk/test/event-ledger-2-effect.test.ts:171:34
+    169|     const err: any = await sdk.tx.simulate(signed).then(() => undefine…
+    170|     expect(err?.code).toBe("EVENT_LEDGER_APPEND_FAILED");
+    171|     expect(err.metadata?.effect).toMatchObject({ operation: "simulated…
+       |                                  ^
+    172|     expect(err.message).toMatch(/^Nothing was executed/);
+    173|     const receipts = storedWhere(ws, (a) => String(a?.schema).startsWi…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[15/19]⎯
+
+ FAIL  packages/sdk/test/event-ledger-2-effect.test.ts > EVENT-LEDGER-2 final closeout · A1 a ledger failure names the 
+effect its step already had > a workflow's tx.simulate step: the receipt's store announcement after the execution is 
+lost, and the step's error says EXECUTED
+AssertionError: expected 'The event artifact.written (95851a14-…' to match /The simulator EXECUTED transaction/
+
+- Expected: 
+/The simulator EXECUTED transaction/
+
++ Received: 
+"The event artifact.written (95851a14-3771-4863-9fc6-d261c2c9a42a) could not be recorded in 
+C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-el2-effect-rFyZrw\\events.jsonl: no space left on the ledger's disk (test 
+double). The artifact 57a99ebdad6ef87ab862c81b186e1d15b5728fe0c0c5a39f8afc53e0780e15ff WAS written at C:\\Users\\jrodr\
+\AppData\\Local\\Temp\\hk-el2-effect-rFyZrw\\.hardkas\\artifacts\\receipts\\txReceipt-57a99ebdad6ef87ab862c81b186e1d15b
+5728fe0c0c5a39f8afc53e0780e15ff.json; only its ledger entry is missing. Nothing was spooled: this event is lost unless 
+the step is repeated. Free the ledger first ('hardkas lock doctor') and check the workspace evidence before repeating 
+anything."
+
+ ❯ packages/sdk/test/event-ledger-2-effect.test.ts:188:40
+    186|     expect(run.status).toBe("failed");
+    187|     expect(run.errorEnvelope?.code).toBe("EVENT_LEDGER_APPEND_FAILED");
+    188|     expect(run.errorEnvelope?.message).toMatch(/The simulator EXECUTED…
+       |                                        ^
+    189|   });
+    190| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[16/19]⎯
+
+ FAIL  packages/sdk/test/event-ledger-2-submission.test.ts > EVENT-LEDGER-2 closeout · CL-2 workflow.submitted is 
+recorded only after an accepted submission > a submit call that failed without an answer (a timeout) is recorded as an 
+RPC error with an unknown outcome — never as a rejection
+ FAIL  packages/sdk/test/event-ledger-2-submission.test.ts > EVENT-LEDGER-2 closeout · CL-2 workflow.submitted is 
+recorded only after an accepted submission > a submit call that failed without an answer (a lost connection) is 
+recorded as an RPC error with an unknown outcome — never as a rejection
+AssertionError: neither submitted nor rejected: expected [ { schema: 'hardkas.event', …(15) } ] to deeply equal []
+
+- Expected
++ Received
+
+- Array []
++ Array [
++   Object {
++     "artifactId": "16894b22159cb71f14d7aa07166b2dd057e446d841207400c5534599e9778385",
++     "correlationId": "wf_c5e0d0449f49e72e",
++     "domain": "workflow",
++     "emittedAt": "2026-10-09T16:16:26.344Z",
++     "eventId": "af4aacf0-83df-46be-86d9-448af2780e14",
++     "globalOffset": 0,
++     "kind": "workflow.failed",
++     "networkId": "simnet",
++     "payload": Object {
+JSON report written to C:/Users/jrodr/AppData/Local/Temp/claude/C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo/21f9a2e4-33ac-4300-9366-aff402f85900/scratchpad/cut46-event-ledger-2/logs/fc-before-1.json
++       "error": "submission not accepted: RPC request submitTransaction timed out after 5000ms",
++       "workflowId": "wf_c5e0d0449f49e72e",
++     },
++     "schema": "hardkas.event",
++     "sequenceNumber": 1,
++     "sourceSubsystem": "sdk:tx-send",
++     "timestamp": "2026-10-09T16:16:26.344Z",
++     "txId": "unknown",
++     "version": "1.0.0",
++     "workflowId": "wf_c5e0d0449f49e72e",
++   },
++ ]
+
+ ❯ packages/sdk/test/event-ledger-2-submission.test.ts:121:135
+    119|       const submission = result.submission;
+    120|       expect(submission.submitResult, "the call's result is recorded a…
+    121|       expect(events.filter((e) => e.kind === "workflow.submitted" || e…
+       |                                                                                                               
+                        ^
+    122|       const rpcErrors = events.filter((e) => e.kind === "rpc.error");
+    123|       expect(rpcErrors.map((e) => ({ artifactId: e.artifactId, txId: e…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[17/19]⎯
+
+ FAIL  packages/sdk/test/event-ledger-2-submission.test.ts > EVENT-LEDGER-2 closeout · CL-2 workflow.submitted is 
+recorded only after an accepted submission > a workflow's tx.send step whose submit call failed without an answer 
+fails with TX_SUBMISSION_OUTCOME_UNKNOWN, not TX_SUBMISSION_REJECTED
+AssertionError: expected 'TX_SUBMISSION_REJECTED' to be 'TX_SUBMISSION_OUTCOME_UNKNOWN' // Object.is equality
+
+Expected: "TX_SUBMISSION_OUTCOME_UNKNOWN"
+Received: "TX_SUBMISSION_REJECTED"
+
+ ❯ packages/sdk/test/event-ledger-2-submission.test.ts:142:37
+    140|     const sent: any = await vi.mocked(sdk.tx.send).mock.results[0]!.va…
+    141|     expect(run.status).toBe("failed");
+    142|     expect(run.errorEnvelope?.code).toBe("TX_SUBMISSION_OUTCOME_UNKNOW…
+       |                                     ^
+    143|     expect(run.errorEnvelope?.message).toContain(sent.submission.conte…
+    144|     expect(run.errorEnvelope?.message).toMatch(/unknown/);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[18/19]⎯
+
+
+gate-hermetic: vitest exit 1 after 51s
+gate-hermetic: non-loopback attempts (each one fails the gate): 0
+gate-hermetic: loopback connection targets (review for dependencies on local services):

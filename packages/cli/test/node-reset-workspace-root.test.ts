@@ -65,4 +65,20 @@ describe("node reset · acts on the workspace, never on the current directory", 
     await expect(program().parseAsync(["node", "reset", "--yes"], { from: "user" })).rejects.toMatchObject({ code: "WORKSPACE_NOT_FOUND" });
     expect(vi.mocked(runNodeReset)).not.toHaveBeenCalled();
   });
+
+  it("with --json and no --yes, it fails as INTERACTIVE_PROMPT_IN_JSON_MODE (exit 2) with zero effects", async () => {
+    fs.writeFileSync(path.join(root, "hardkas.config.ts"), "export default {};");
+    vi.spyOn(process, "cwd").mockReturnValue(root);
+    process.exitCode = 0;
+    let stdout = "";
+    const { setGlobalOutput, createCommandOutput } = await import("../src/output.js");
+    setGlobalOutput(createCommandOutput({ mode: "json", stdout: { write: (m: string) => void (stdout += m) } }));
+    await program().parseAsync(["node", "reset", "--json"], { from: "user" });
+    expect(process.exitCode).toBe(2);
+    expect(JSON.parse(stdout)).toMatchObject({
+      ok: false,
+      code: "INTERACTIVE_PROMPT_IN_JSON_MODE"
+    });
+    expect(vi.mocked(runNodeReset)).not.toHaveBeenCalled();
+  });
 });

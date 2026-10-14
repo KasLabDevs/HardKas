@@ -1,0 +1,128 @@
+{
+  "wt": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-ra\\wt",
+  "head": "71ff614f96b1a3bbbe7fc80607fefb08ee60e3e7",
+  "at": "2026-10-07T18:58:28.010Z",
+  "network": {
+    "refused": [],
+    "loopback": {}
+  },
+  "results": [
+    {
+      "id": "EL2-P1-STALE-EVENTS-LOCK",
+      "area": "durability",
+      "claim": "a leftover events append lock (dead holder): time, events lost, output, what is left",
+      "ms": 109068,
+      "verdict": "DEFECT",
+      "sev": "medium",
+      "why": "reference send: exit 0 3346 ms, 10 ledger lines after it; with the stale lock: exit 0 in 102381 ms, ledger 10 → 10, ok:true, stderr \"\"; lock still there: true; the next command (tx plan): exit 0 in 1926 ms, ledger → 10",
+      "evidence": {
+        "stale": {
+          "cmd": "hardkas tx send --from alice --to bob --amount 1 --network simulated --json",
+          "exit": 0,
+          "signal": null,
+          "ms": 102381,
+          "stdout": "{\n  \"ok\": true,\n  \"outcome\": \"submitted\",\n  \"data\": {\n    \"plan\": {\n      \"schema\": \"hardkas.txPlan\",\n      \"hardkasVersion\": \"0.12.0-rc.27\",\n      \"schemaVersion\": \"hardkas.artifact.v1\",\n      \"version\": \"1.0.0-alpha\",\n      \"hashVersion\": 5,\n      \"createdAt\": \"2026-10-07T18:56:15.564Z\",\n      \"networkId\": \"simulated\",\n      \"mode\": \"simulator\",\n      \"execution\": {\n        \"mode\": \"simulator\",\n…[+13155]",
+          "stderr": ""
+        },
+        "next": {
+          "cmd": "hardkas tx plan --from alice --to bob --amount 1 --network simulated --out p.json --json",
+          "exit": 0,
+          "signal": null,
+          "ms": 1926,
+          "stdout": "{\n  \"schema\": \"hardkas.txPlan\",\n  \"hardkasVersion\": \"0.12.0-rc.27\",\n  \"schemaVersion\": \"hardkas.artifact.v1\",\n  \"version\": \"1.0.0-alpha\",\n  \"hashVersion\": 5,\n  \"createdAt\": \"2026-10-07T18:57:47.808Z\",\n  \"networkId\": \"simulated\",\n  \"mode\": \"simulator\",\n  \"execution\": {\n    \"mode\": \"simulator\",\n    \"d…[+1435]",
+          "stderr": ""
+        }
+      }
+    },
+    {
+      "id": "EL2-P2-LOCK-TOOLS",
+      "area": "operability",
+      "claim": "what lock list / lock doctor say about a stale events append lock",
+      "ms": 8018,
+      "verdict": "NOTE",
+      "why": "lock list --json exit 0: {\"ok\":true,\"command\":\"lock list\",\"mode\":\"cli\",\"result\":[{\"name\":\"append-events.jsonl\",\"metadata\":{\"pid\":28748,\"time\":\"2026-10-07T17:57:47.985Z\"},\"path\":\"C:\\\\Users\\\\jrodr\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo\\\\21f9a2e4-33ac-4300-9366-aff402f85900\\\\scra · lock doctor --json exit 1: \"\"",
+      "evidence": {
+        "list": {
+          "cmd": "hardkas lock list --json",
+          "exit": 0,
+          "signal": null,
+          "ms": 1784,
+          "stdout": "{\n  \"ok\": true,\n  \"command\": \"lock list\",\n  \"mode\": \"cli\",\n  \"result\": [\n    {\n      \"name\": \"append-events.jsonl\",\n      \"metadata\": {\n        \"pid\": 28748,\n        \"time\": \"2026-10-07T17:57:47.985Z\"\n      },\n      \"path\": \"C:\\\\Users\\\\jrodr\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo\\\\21f9a2e4-33ac-4300-9366-aff402f85900\\\\scratchpad\\\\cut46-event-ledger-2\\\\runs\\\\probes-1\\\\ws-p2\\\\.hardkas\\\\locks\\\\append-events.jsonl.lock\",\n      \"isAlive\": true\n    }\n  ]\n}\n",
+          "stderr": ""
+        },
+        "doctor": {
+          "cmd": "hardkas lock doctor --json",
+          "exit": 1,
+          "signal": null,
+          "ms": 2306,
+          "stdout": "",
+          "stderr": "error: unknown option '--json'\n\nUsage: hardkas lock doctor [options]\n\nReport stale locks (process no longer running on this host) in .hardkas/locks\nstable\n\nOptions:\n  -h, --help  display help for command\n"
+        },
+        "listHuman": {
+          "cmd": "hardkas lock list",
+          "exit": 0,
+          "signal": null,
+          "ms": 3794,
+          "stdout": "\n  ═══ Active Workspace Locks ═══\n  append-events.jsonl PID: 28748  State: live\n    Command: undefined\n    Created: undefined\n\n",
+          "stderr": ""
+        }
+      }
+    },
+    {
+      "id": "EL2-P3-STALE-TELEMETRY-LOCK",
+      "area": "durability",
+      "claim": "the same coordinator on telemetry.jsonl: a stale telemetry lock, then commands that write telemetry",
+      "ms": 16080,
+      "verdict": "NOTE",
+      "why": "reference plan 3901 ms; telemetry files none; with stale telemetry + artifacts locks: plan exit 0 in 11862 ms; telemetry -; telemetry lock still there: true",
+      "evidence": {
+        "run": {
+          "cmd": "hardkas tx plan --from alice --to bob --amount 1 --network simulated --out b.json --json",
+          "exit": 0,
+          "signal": null,
+          "ms": 11862,
+          "stdout": "{\n  \"schema\": \"hardkas.txPlan\",\n  \"hardkasVersion\": \"0.12.0-rc.27\",\n  \"schemaVersion\": \"hardkas.artifact.v1\",\n  \"version\": \"1.0.0-alpha\",\n  \"hashVersion\": 5,\n  \"createdAt\": \"2026-10-07T18:58:01.875Z\",\n  \"networkId\": \"simulated\",\n  \"mode\": \"simulator\",\n  \"execution\": {\n    \"mode\": \"simulator\",\n    \"d…[+1426]",
+          "stderr": ""
+        }
+      }
+    },
+    {
+      "id": "EL2-P4-EVENT-KINDS",
+      "area": "evidence",
+      "claim": "EVENT-EMISSION-1: event kinds after plan → sign → send, and after a shortcut send",
+      "ms": 8168,
+      "verdict": "NOTE",
+      "why": "after plan → sign → send: {\"artifact.written\":2}; after a shortcut send as well: {\"artifact.written\":9,\"workflow.started\":1,\"workflow.signed\":1,\"workflow.receipt\":1}",
+      "evidence": {
+        "afterFlow": {
+          "artifact.written": 2
+        },
+        "afterShortcut": {
+          "artifact.written": 9,
+          "workflow.started": 1,
+          "workflow.signed": 1,
+          "workflow.receipt": 1
+        }
+      }
+    },
+    {
+      "id": "EL2-P5-SIMULATE-REORG",
+      "area": "evidence",
+      "claim": "dag simulate-reorg: what changes in the workspace and what is recorded",
+      "ms": 7812,
+      "verdict": "DEFECT",
+      "sev": "low",
+      "why": "exit 0; changed .hardkas/localnet.json; added -; ledger 2 → 2",
+      "evidence": {
+        "run": {
+          "cmd": "hardkas dag simulate-reorg --depth 1",
+          "exit": 0,
+          "signal": null,
+          "ms": 1455,
+          "stdout": "  ℹ Initializing DAG light-model for this localnet...\n  ℹ Simulating reorg at depth 1...\n  ✔ Reorg simulation complete.\n  ℹ New Sink: reorg_side_genesis_0\n  ℹ Selected Path: genesis -> reorg_side_genesis_0\n",
+          "stderr": ""
+        }
+      }
+    }
+  ]
+}

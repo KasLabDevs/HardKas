@@ -3,6 +3,7 @@ import { Hardkas } from "@hardkas/sdk";
 import { UI } from "../ui.js";
 import { TxPlanArtifact, SignedTxArtifact } from "@hardkas/artifacts";
 import { HardkasConfig } from "@hardkas/config";
+import { assertMainnetTransactionsDisabled } from "@hardkas/core";
 
 export interface TxSignRunnerInput {
   planArtifact: TxPlanArtifact;
@@ -64,14 +65,9 @@ export async function runTxSign(input: TxSignRunnerInput): Promise<SignedTxArtif
   }
 
   if (targetName) {
-    const { resolveNewIntentTarget } = await import("@hardkas/config");
-    let explicitTarget: import("@hardkas/core").HardkasExecutionTarget | undefined = undefined;
-    if (config.execution && "targets" in config.execution) {
-      explicitTarget = (config.execution.targets as any)[targetName];
-    }
-    if (!explicitTarget) {
-      throw new Error(`Execution target '${targetName}' not found in hardkas.config.ts`);
-    }
+    // WORKSPACE-AUTHORITY-2: the named target is looked up by the shared resolver (typed EXECUTION_TARGET_NOT_FOUND)
+    const { resolveWorkspaceExecution } = await import("@hardkas/config");
+    const explicitTarget = resolveWorkspaceExecution({ config, target: targetName }).execution;
 
     if (
       executionTarget.domain !== explicitTarget.domain ||
@@ -91,17 +87,11 @@ export async function runTxSign(input: TxSignRunnerInput): Promise<SignedTxArtif
   const artifactNetwork = planArtifact.networkId;
   const accountAddressNetwork = getNetworkFromAddress(account.address || "");
 
-  if (artifactNetwork === "mainnet") {
-    UI.warning("CRITICAL: You are signing a transaction for MAINNET.");
-    UI.info("HardKAS is developer infrastructure, not production custody software.");
-    UI.info("Do not use high-value mainnet keys in this environment.");
-
-    if (!allowMainnetSigning) {
-      throw new Error(
-        "Mainnet signing is blocked. Use --allow-mainnet-signing if you understand the risks."
-      );
-    }
-  }
+  // SDK-MAINNET-BROADCAST-GUARD-1: mainnet signing is refused (MAINNET_SIGNING_DISABLED, the product policy shared
+  // with the SDK) whatever --allow-mainnet-signing says: the flag stays refused in this release.
+  // (the account/artifact network mismatch below keeps its own refusal; the SDK checks the instance's network too)
+  void allowMainnetSigning;
+  assertMainnetTransactionsDisabled("sign", [artifactNetwork], "tx sign");
 
   // Check for network mismatch
   if (artifactNetwork !== accountAddressNetwork && accountAddressNetwork !== "unknown") {

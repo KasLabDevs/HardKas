@@ -1,0 +1,7 @@
+NNI-REFUSAL-STORM-CRASH-1 - crash frequency of scripts/probe-race.mjs (ROUNDS=10 unless noted; exit 0xC0000409 = -1073740791, no stderr)
+integrated build (hkl1\si), 5 ms:  runs with ROUNDS=10 and stdout to file: 2/10 crashed (marks: round 0, after 'M up')
+                                   earlier unmarked runs: 2 crashes in 9 runs (one reported as exit 9)
+                                   ROUNDS=3, stdout to NUL: 0/15
+NNI wave build (hkl1\nni), 5 ms:   2/15 crashed (marks: round 1, after 'M up'); earlier 0/8
+pre-NNI build (hkl1\src, 3c61d15f6), 5 ms: 0/15 crashed; 10/10 rounds VIOLATED (no identity check: the mainnet node is used)
+integrated build, 50 ms:           0/15 crashed, 0 violations

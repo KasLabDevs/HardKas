@@ -107,38 +107,71 @@ export function registerTaskCommands(program: Command, loadedConfig?: LoadedHard
         const { randomUUID } = await import("node:crypto");
         const runId = `task_${Date.now()}_${randomUUID().substring(0, 5)}`;
         
+        // TASK-EVIDENCE-UNBOUND-1: what THIS run writes, recorded on the instance lent to the task (never the process's
+        // or the workspace's other writers), becomes the run's sealed membership.
+        const recording = hk.artifacts.record();
         let resultData;
+        let failure: any;
         try {
           if (definition.actionFn) {
              resultData = await definition.actionFn(typedArgs, hk);
           }
         } catch (e: any) {
-          throw new HardkasCliError("TASK_FAILED", `Task '${name}' failed: ${e.message}`, { exitCode: 1 });
+          failure = e;
         }
+        const written = recording.stop();
 
         // First contact · E03: the task run is recorded as a sealed v5
         // `hardkas.scenarioResult.v1` (the shape EvidenceManager packs). The previous
         // ad-hoc body had no hashVersion, so the writer refused it (N3) and every
         // task failed after its action had already run.
-        const { createScenarioResultArtifact, scenarioModeForNetwork } = await import("@hardkas/artifacts");
+        // TASK-EVIDENCE-UNBOUND-1 (D-TEU-1..4): it names what the run wrote, records the mode the instance ran in (not a
+        // label derived from the network name), seals what its package may be presented as — nothing, artifacts, or the
+        // payments it broadcast — and a failed run is recorded as failed (its error and arguments without secrets).
+        const { createScenarioResultArtifact, scenarioModeForNetwork, ProjectArtifactStore } = await import("@hardkas/artifacts");
+        const { maskSecrets, redactSecretFields } = await import("@hardkas/core");
         const taskNetwork = String(hk.network ?? "simulated");
+        const executedMode = hk.execution?.mode;
+        const mode =
+          executedMode === "simulator" || executedMode === "localnet" || executedMode === "rpc" || executedMode === "l2-rpc"
+            ? executedMode
+            : scenarioModeForNetwork(taskNetwork);
+        const writtenSet = new Set(written);
+        const payments = (await new ProjectArtifactStore(hk.cwd).enumerateCanonicalArtifacts())
+          .filter((entry) => typeof entry.contentHash === "string" && writtenSet.has(entry.contentHash))
+          .map((entry) => entry.artifact as any)
+          .filter((a) => a?.schema === "hardkas.txSubmission.v1" && typeof a.txId === "string")
+          .map((a) => ({ txId: a.txId as string, submissionArtifactId: a.contentHash as string }));
+        const failureMessage = failure !== undefined ? maskSecrets(`Task '${name}' failed: ${failure?.message ?? String(failure)}`) : undefined;
         const taskResult = createScenarioResultArtifact({
           scenarioName: name,
-          status: "passed",
+          status: failure === undefined ? "passed" : "failed",
           networkId: taskNetwork,
-          mode: scenarioModeForNetwork(taskNetwork),
+          mode,
+          artifactsGenerated: written,
+          evidenceClaim: payments.length > 0 ? { kind: "payment", payments } : written.length > 0 ? { kind: "artifacts" } : { kind: "none" },
+          ...(failure !== undefined
+            ? {
+                error: {
+                  code: typeof failure?.code === "string" && /^[A-Z][A-Z0-9_]*$/.test(failure.code) ? failure.code : "TASK_FAILED",
+                  message: failureMessage!,
+                  component: "task",
+                  recoverable: false
+                }
+              }
+            : {}),
           metadata: {
             kind: "task",
             taskName: name,
             runId,
-            args: typedArgs,
-            ...(resultData !== undefined ? { result: resultData } : {})
+            args: redactSecretFields(typedArgs),
+            ...(resultData !== undefined ? { result: redactSecretFields(resultData) } : {})
           }
         });
         const writeResult = await hk.artifacts.write(taskResult as any);
         const taskResultPath = writeResult.absolutePath;
 
-        UI.success(`Task '${name}' completed successfully.`);
+        if (failure === undefined) UI.success(`Task '${name}' completed successfully.`);
 
         if (options.evidence) {
           UI.info(`Packaging task evidence...`);
@@ -150,8 +183,19 @@ export function registerTaskCommands(program: Command, loadedConfig?: LoadedHard
             });
             UI.success(`Evidence packed: ${outPath}`);
           } catch (e: any) {
-             UI.error(`Failed to pack evidence: ${e.message}`);
+            const reason = maskSecrets(String(e?.message ?? e));
+            // a task that already failed reports its own failure; the package that could not follow it is noted
+            if (failure !== undefined) UI.error(`Failed to pack evidence: ${reason}`);
+            else
+              throw new HardkasCliError("EVIDENCE_PACK_FAILED", `Task '${name}' completed but its evidence package was not written: ${reason}`, {
+                exitCode: 1,
+                context: { scenarioResult: String(taskResultPath), cause: String(e?.code ?? "unknown") }
+              });
           }
+        }
+
+        if (failure !== undefined) {
+          throw new HardkasCliError("TASK_FAILED", failureMessage!, { exitCode: 1, context: { scenarioResult: String(taskResultPath) } });
         }
 
         const { getOutput } = await import("../output.js");

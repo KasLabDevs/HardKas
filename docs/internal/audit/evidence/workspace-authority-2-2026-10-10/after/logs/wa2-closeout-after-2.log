@@ -1,0 +1,34 @@
+gate-hermetic: HARDKAS_HOME=C:\Users\jrodr\AppData\Local\Temp\hardkas-hermetic-home-Y396uw (copy of C:\Users\jrodr\AppData\Local\Temp\hk-v210-gate-home)
+gate-hermetic: DOCKER_HOST=tcp://127.0.0.1:1; preload=C:\Users\jrodr\AppData\Local\Temp\hk-ra\wt\scripts\hermetic\no-network-preload.cjs
+gate-hermetic: vitest run --coverage.enabled=false --reporter=default --reporter=json --outputFile=C:\Users\jrodr\AppData\Local\Temp\claude\C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo\21f9a2e4-33ac-4300-9366-aff402f85900\scratchpad\cut48-workspace-authority-2\logs\wa2-closeout-after-2.json packages/sdk/test/workspace-authority-2.test.ts packages/cli/test/workspace-authority-2.test.ts
+
+ RUN  v2.1.9 C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt
+
+stdout | packages/sdk/test/workspace-authority-2.test.ts > WORKSPACE-AUTHORITY-2 · AFTER · one workspace, one execution authority > closeout · a per-call override never moves an instance to another world; the endpoint is the resolved one > X6 · observation: a `target` of another world is refused, typed; the instance's own target (or none) observes through its own provider, labelled as its own world; an unknown target is typed
+[DEBUG] Using SimulatorObserverBackend for network simulated
+
+stdout | packages/sdk/test/workspace-authority-2.test.ts > WORKSPACE-AUTHORITY-2 · AFTER · one workspace, one execution authority > closeout · a per-call override never moves an instance to another world; the endpoint is the resolved one > X6 · observation: a `target` of another world is refused, typed; the instance's own target (or none) observes through its own provider, labelled as its own world; an unknown target is typed
+[DEBUG] Using SimulatorObserverBackend for network simulated
+
+ ✓ packages/sdk/test/workspace-authority-2.test.ts (29 tests) 988ms
+ ✓ packages/cli/test/workspace-authority-2.test.ts (6 tests) 9622ms
+   ✓ WORKSPACE-AUTHORITY-2 · controls · the CLI follows the workspace's execution target > execution.default = localnet: `tx plan` does not plan in the simulator (it asks the node, unreachable here) 1186ms
+   ✓ WORKSPACE-AUTHORITY-2 · controls · the CLI follows the workspace's execution target > the scaffold default (simulator): `tx plan --json` plans in the simulator over synthetic identities 1193ms
+   ✓ WORKSPACE-AUTHORITY-2 · AFTER · the CLI shares the resolver > `--target simulator` in a localnet-default workspace plans in the simulator (the named target wins) 1164ms
+   ✓ WORKSPACE-AUTHORITY-2 · AFTER · the CLI shares the resolver > `--target nope` is EXECUTION_TARGET_NOT_FOUND; `--network nonsense` is UNKNOWN_NETWORK; `--target localnet --network simulated` is EXECUTION_NETWORK_MISMATCH 2843ms
+   ✓ WORKSPACE-AUTHORITY-2 · AFTER · the CLI shares the resolver > closeout · the CLI contacts the endpoint the resolved network declares: a custom networks.simnet.rpcUrl under a localnet default is what `tx plan` names, never the canonical substitute 1141ms
+   ✓ WORKSPACE-AUTHORITY-2 · AFTER · the CLI shares the resolver > `--network simulated` names the simulator's target of the same workspace: a simulator plan; `--network localnet` (a target name) is refused as a network 2093ms
+
+ Test Files  2 passed (2)
+      Tests  35 passed (35)
+   Start at  18:29:18
+   Duration  14.58s (transform 1.67s, setup 0ms, collect 3.31s, tests 10.61s, environment 0ms, prepare 237ms)
+
+JSON report written to C:/Users/jrodr/AppData/Local/Temp/claude/C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo/21f9a2e4-33ac-4300-9366-aff402f85900/scratchpad/cut48-workspace-authority-2/logs/wa2-closeout-after-2.json
+
+gate-hermetic: vitest exit 0 after 15s
+gate-hermetic: non-loopback attempts (each one fails the gate): 0
+gate-hermetic: loopback connection targets (review for dependencies on local services):
+  127.0.0.1:1 x1
+  127.0.0.1:18210 x13
+gate-hermetic: PASS

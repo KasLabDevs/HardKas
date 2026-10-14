@@ -1,0 +1,10 @@
+{
+  "exit": 0,
+  "code": null,
+  "output": {
+    "planHash": "87ad873dff122960a0ef72ed092b834ebc236628919d2a2bbbc9b00496b3fba6",
+    "signedHash": "7b666011854b174a8178ff414525b2d1bf08fcb8956cc9e5d490921b0d536ae9",
+    "foreignPlanHash": "d3f1645e7e0b625fece96fc8beb645979acb4d6709ae6789d351c831366c8c52"
+  },
+  "named": []
+}

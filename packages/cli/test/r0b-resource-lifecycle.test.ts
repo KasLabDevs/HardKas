@@ -63,7 +63,9 @@ describe("RESOURCE-LIFECYCLE-1 · a finite command closes what it opened and end
   const TX = "e".repeat(64);
 
   beforeAll(async () => {
-    node = await startFakeWrpcNode();
+    // NODE-NETWORK-IDENTITY-1: every network below is simnet, and the runners now verify that the node is one; the
+    // fake says so, so each path keeps the code it had (an unidentified node would be refused NODE_NETWORK_UNKNOWN)
+    node = await startFakeWrpcNode({ networkId: "simnet" });
     parent = fs.mkdtempSync(path.join(os.tmpdir(), "hk-r0b-"));
     ws = path.join(parent, "ws");
     fs.mkdirSync(ws);
@@ -94,7 +96,9 @@ describe("RESOURCE-LIFECYCLE-1 · a finite command closes what it opened and end
     ["tx plan error path (runner-created client)", () => ["tx", "plan", "--from", "alice", "--to", bob, "--amount", "1", "--network", "simnet", "--url", node.url, "--json"], 1, "UNKNOWN"],
     ["tx send --from/--to/--amount error path (through tx plan)", () => ["tx", "send", "--from", "alice", "--to", bob, "--amount", "1", "--network", "simnet", "--url", node.url, "--yes", "--json"], 1, "TX_SEND_FAILED"],
     ["control: accounts balance --url (already closed in a finally)", () => ["accounts", "balance", alice, "--network", "simnet", "--url", node.url, "--json"], 1, "UNKNOWN_ERROR"],
-    ["control: rpc info --url (already closed in a finally)", () => ["rpc", "info", "--url", node.url, "--json"], 1, "RPC_INFO_UNAVAILABLE"],
+    // NODE-NETWORK-IDENTITY-1: the fake now answers getServerInfo (it identifies itself as simnet), so `rpc info`, which
+    // reads exactly that, succeeds; what this control pins is unchanged: the command ends by itself
+    ["control: rpc info --url (already closed in a finally)", () => ["rpc", "info", "--url", node.url, "--json"], 0, null],
     ["control: deploy status --verify (closed before)", () => ["deploy", "status", "lbl", "--network", "nodenet", "--verify"], 0, null]
   ];
 

@@ -1,4 +1,5 @@
 import { runTxFlow } from "./tx-flow.js";
+import { sendOutcomeLabel } from "./next-steps.js";
 import { loadHardkasConfig } from "@hardkas/config";
 import { UI } from "../ui.js";
 import { systemRuntimeContext } from "@hardkas/core";
@@ -68,7 +69,12 @@ export async function runDevTxGenerate(options: any) {
         planError: flowResult.steps.plan.error,
         signError: flowResult.steps.sign.error,
         sendError: flowResult.steps.send.error,
-        ...(flowResult.steps.send.artifact?.accepted === false ? { sendRejected: true } : {})
+        // EVENT-LEDGER-2 final closeout: a submit call that failed without an answer is not a rejection
+        ...(flowResult.steps.send.artifact?.accepted === false
+          ? sendOutcomeLabel(flowResult.steps.send.artifact.receipt, false) === "unknown"
+            ? { sendOutcomeUnknown: true }
+            : { sendRejected: true }
+          : {})
       });
     } catch (e) {
       failCount++;

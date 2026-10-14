@@ -22,7 +22,9 @@ describe("RESOURCE-LIFECYCLE-1 · Hardkas.close()", () => {
   let ws: string;
 
   beforeAll(async () => {
-    node = await startFakeWrpcNode();
+    // NODE-NETWORK-IDENTITY-1: the SDK verifies its simnet node, so the fake says it is one (a node it could not
+    // identify would be refused and released at once, and the leak control below would have nothing to leak)
+    node = await startFakeWrpcNode({ networkId: "simnet" });
     parent = fs.mkdtempSync(path.join(os.tmpdir(), "hk-r0b-sdk-"));
     ws = path.join(parent, "ws");
     fs.mkdirSync(path.join(ws, ".hardkas"), { recursive: true });

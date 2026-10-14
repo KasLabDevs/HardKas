@@ -1,5 +1,12 @@
-import { loadManagedKaspaWasmSync } from "@hardkas/core";
-import { normalizeRpcError, RpcConnectionError, RpcError, RpcNotFoundError, RpcTimeoutError } from "../errors.js";
+import { loadManagedKaspaWasmSync, redactUrlCredentials, redactUrlCredentialsInText } from "@hardkas/core";
+import {
+  NodeNetworkIdentityError,
+  normalizeRpcError,
+  RpcConnectionError,
+  RpcError,
+  RpcNotFoundError,
+  RpcTimeoutError
+} from "../errors.js";
 import { toOfficialTransaction, toWire, u64FieldsToBigint } from "./wire.js";
 import { useWsWebSocketForSdk } from "./node-websocket-compat.js";
 
@@ -88,9 +95,21 @@ async function release(client: OfficialRpcClientLike): Promise<void> {
   }
 }
 
+/**
+ * A message naming the endpoint, without its credentials: userinfo and secret-named query parameters (the
+ * EVIDENCE-TRUST-1 boundary). The official client's own text repeats the URL as given, so the whole text is redacted
+ * (SECURITY-INTEGRATION-1).
+ */
+const redacted = (text: string): string => redactUrlCredentialsInText(text);
+
+/** A network id as the node and HardKAS spell it, compared exactly: case-insensitive, `kaspa-` prefix ignored. */
+function canonicalNetworkId(id: string): string {
+  return id.trim().toLowerCase().replace(/^kaspa-/, "");
+}
+
 /** A connection closed while it was being opened: not retryable, its owner closed it on purpose. */
 export function rpcClientClosedError(url: string): RpcError {
-  return new RpcError(`The Kaspa RPC connection to ${url} was closed while it was being opened.`, "RPC_CLIENT_CLOSED", undefined, false);
+  return new RpcError(`The Kaspa RPC connection to ${redactUrlCredentials(url)} was closed while it was being opened.`, "RPC_CLIENT_CLOSED", undefined, false);
 }
 
 export class OfficialRpcSession {
@@ -101,11 +120,25 @@ export class OfficialRpcSession {
   // epoch never becomes the session's client: open() releases it as soon as it is established.
   private epoch = 0;
   private closing: Promise<void> | null = null;
+  // NODE-NETWORK-IDENTITY-1 (SECURITY-INTEGRATION-1): the client whose CURRENT connection said it serves the expected
+  // network. The official client reconnects by itself when the node behind its URL comes back; a "disconnect" clears
+  // this, so the connection it resumes on is verified again before anything is asked of it.
+  private verifiedClient: OfficialRpcClientLike | null = null;
+  private verifying: Promise<OfficialRpcClientLike> | null = null;
+  private readonly disconnects = new WeakMap<OfficialRpcClientLike, number>();
 
+  /**
+   * @param expectedNetworkId NODE-NETWORK-IDENTITY-1: the network the caller uses this node as. When given, every
+   * connection this session opens (the first one and each one after the node went away) asks the node which network
+   * it serves before it is handed out, and is released and refused when the node answers another network
+   * (NODE_NETWORK_MISMATCH) or none (NODE_NETWORK_UNKNOWN). A verdict is never carried from one connection to the
+   * next, and a session serves one URL only.
+   */
   constructor(
     url: string,
     private readonly timeoutMs: number = 30000,
-    private readonly factory: OfficialRpcFactory = officialRpcFactory
+    private readonly factory: OfficialRpcFactory = officialRpcFactory,
+    private readonly expectedNetworkId?: string | undefined
   ) {
     this.url = toWrpcUrl(url);
   }
@@ -117,7 +150,18 @@ export class OfficialRpcSession {
 
   /** The connected official client; connects on first use and again after the node went away. */
   async connected(): Promise<OfficialRpcClientLike> {
-    if (this.client && this.client.isConnected !== false) return this.client;
+    if (this.client && this.client.isConnected !== false) {
+      if (this.expectedNetworkId === undefined || this.verifiedClient === this.client) return this.client;
+      // the official client resumed on a new connection by itself (the node went away and something answers again
+      // behind the URL): that connection is verified like any other before it is used
+      if (!this.verifying) {
+        const verifying: Promise<OfficialRpcClientLike> = this.reverify(this.client).finally(() => {
+          if (this.verifying === verifying) this.verifying = null;
+        });
+        this.verifying = verifying;
+      }
+      return this.verifying;
+    }
     if (!this.connecting) {
       const connecting: Promise<OfficialRpcClientLike> = this.open().finally(() => {
         if (this.connecting === connecting) this.connecting = null;
@@ -137,20 +181,125 @@ export class OfficialRpcSession {
       await withTimeout(
         client.connect({ blockAsyncConnect: true, strategy: "fallback", timeoutDuration: this.timeoutMs }),
         this.timeoutMs + 1000,
-        () => new RpcConnectionError(`Cannot connect to Kaspa RPC at ${this.url}. Connection timed out.`)
+        () => new RpcConnectionError(redacted(`Cannot connect to Kaspa RPC at ${this.url}. Connection timed out.`))
       );
     } catch (e) {
       await release(client);
       if (e instanceof RpcConnectionError) throw e;
-      throw new RpcConnectionError(`Cannot connect to Kaspa RPC at ${this.url}. Is kaspad running with --rpclisten-json? (${messageOf(e)})`);
+      throw new RpcConnectionError(redacted(`Cannot connect to Kaspa RPC at ${this.url}. Is kaspad running with --rpclisten-json? (${messageOf(e)})`));
+    }
+    if (this.expectedNetworkId !== undefined) {
+      try {
+        // registered before the question: a drop while it is asked is not lost
+        this.disconnects.set(client, 0);
+        client.addEventListener("disconnect", () => {
+          this.disconnects.set(client, (this.disconnects.get(client) ?? 0) + 1);
+          if (this.verifiedClient === client) this.verifiedClient = null;
+        });
+        await this.verifyNetwork(client, this.expectedNetworkId);
+      } catch (e) {
+        await release(client);
+        throw e;
+      }
     }
     if (epoch !== this.epoch) {
       // close() ran while this connection was being opened: it is released here and never handed out.
       await release(client);
       throw rpcClientClosedError(this.url);
     }
+    if (this.expectedNetworkId !== undefined && (this.disconnects.get(client) ?? 0) !== 0) {
+      // the connection dropped while its network was being asked: whatever it resumed on did not answer the question
+      await release(client);
+      throw this.lostWhileVerifying();
+    }
     this.client = client;
+    if (this.expectedNetworkId !== undefined) this.verifiedClient = client;
     return client;
+  }
+
+  private lostWhileVerifying(): RpcConnectionError {
+    return new RpcConnectionError(
+      redacted(`Connection to Kaspa RPC at ${this.url} was lost while its network was being verified; nothing was asked of it.`)
+    );
+  }
+
+  /**
+   * The current client resumed on a new connection: verified again, released and refused like a first connection. Every
+   * caller that arrived meanwhile waits for this one verification; none is handed the client before it, and a connection
+   * that drops again while it is asked is a connection failure (never handed out unverified).
+   */
+  private async reverify(client: OfficialRpcClientLike): Promise<OfficialRpcClientLike> {
+    const epoch = this.epoch;
+    const dropsBefore = this.disconnects.get(client) ?? 0;
+    const discard = async () => {
+      if (this.client === client) this.client = null;
+      if (this.verifiedClient === client) this.verifiedClient = null;
+      await release(client);
+    };
+    try {
+      await this.verifyNetwork(client, this.expectedNetworkId!);
+    } catch (e) {
+      await discard();
+      throw e;
+    }
+    if (epoch !== this.epoch) throw rpcClientClosedError(this.url);
+    if ((this.disconnects.get(client) ?? 0) !== dropsBefore || this.client !== client) {
+      await discard();
+      throw this.lostWhileVerifying();
+    }
+    this.verifiedClient = client;
+    return client;
+  }
+
+  /**
+   * NODE-NETWORK-IDENTITY-1: the node's own answer to getServerInfo decides. A connection lost or timed out while
+   * asking stays a connection failure; a node that answers without a network, or refuses the question, is UNKNOWN;
+   * a node that names another network is a MISMATCH.
+   */
+  private async verifyNetwork(client: OfficialRpcClientLike, expected: string): Promise<void> {
+    const endpoint = redactUrlCredentials(this.url);
+    let info: any;
+    try {
+      const fn = client["getServerInfo"];
+      if (typeof fn !== "function") throw new Error("the client offers no getServerInfo");
+      info = toWire(
+        await withTimeout(
+          Promise.resolve(fn.call(client, {})),
+          this.timeoutMs,
+          () => new RpcTimeoutError(`RPC request getServerInfo timed out after ${this.timeoutMs}ms while verifying the network of ${endpoint}`)
+        )
+      );
+    } catch (e) {
+      if (e instanceof RpcError) throw e;
+      const raw = messageOf(e);
+      if (NOT_CONNECTED.test(raw)) {
+        throw new RpcConnectionError(redacted(`Connection to Kaspa RPC at ${endpoint} was lost while its network was being verified: ${raw}`));
+      }
+      throw new NodeNetworkIdentityError(
+        "NODE_NETWORK_UNKNOWN",
+        redacted(
+          `The node at ${endpoint} did not say which network it serves (getServerInfo failed: ${nodeMessage(raw)}); ` +
+            `HardKAS expected ${expected} and uses nothing from it.`
+        ),
+        { expected, endpoint }
+      );
+    }
+    const observed = info?.networkId;
+    if (typeof observed !== "string" || observed.trim() === "" || observed === "undefined") {
+      throw new NodeNetworkIdentityError(
+        "NODE_NETWORK_UNKNOWN",
+        `The node at ${endpoint} did not say which network it serves (getServerInfo has no networkId); ` +
+          `HardKAS expected ${expected} and uses nothing from it.`,
+        { expected, endpoint }
+      );
+    }
+    if (canonicalNetworkId(observed) !== canonicalNetworkId(expected)) {
+      throw new NodeNetworkIdentityError(
+        "NODE_NETWORK_MISMATCH",
+        `The node at ${endpoint} serves ${observed}, not ${expected}: HardKAS refuses to read from it or send to it as ${expected}.`,
+        { expected, observed, endpoint }
+      );
+    }
   }
 
   /** One RPC call by HardKAS method name; the result is plain JSON data in the node's wire shape. */
@@ -177,7 +326,7 @@ export class OfficialRpcSession {
         // Drop the dead client (the next call opens a new one) and release what it still holds.
         if (this.client === client) this.client = null;
         await release(client);
-        throw new RpcConnectionError(`Connection to Kaspa RPC at ${this.url} was lost: ${raw}`);
+        throw new RpcConnectionError(redacted(`Connection to Kaspa RPC at ${this.url} was lost: ${raw}`));
       }
       const err = new Error(nodeMessage(raw));
       throw normalizeRpcError(err, { method: name, params });
@@ -197,6 +346,8 @@ export class OfficialRpcSession {
     const previous = this.closing;
     this.client = null;
     this.connecting = null;
+    this.verifiedClient = null;
+    this.verifying = null;
     const closing = (async () => {
       if (client) await release(client);
       if (connecting) await connecting.catch(() => {});

@@ -1,0 +1,178 @@
+﻿gate-hermetic: HARDKAS_HOME=C:\Users\jrodr\AppData\Local\Temp\hardkas-hermetic-home-kFLcDq (copy of C:\Users\jrodr\AppData\Local\Temp\hk-v210-gate-home)
+gate-hermetic: DOCKER_HOST=tcp://127.0.0.1:1; preload=C:\Users\jrodr\AppData\Local\Temp\hk-ra\wt\scripts\hermetic\no-network-preload.cjs
+gate-hermetic: vitest run --coverage.enabled=false --reporter=default --reporter=json --outputFile=C:\Users\jrodr\AppData\Local\Temp\claude\C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo\21f9a2e4-33ac-4300-9366-aff402f85900\scratchpad\cut46-event-ledger-2\logs\fc-before-2.json packages/cli/test/event-ledger-2-flow.test.ts
+
+ RUN  v2.1.9 C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt
+
+ ❯ packages/cli/test/event-ledger-2-flow.test.ts (7 tests | 5 failed) 135ms
+   × EVENT-LEDGER-2 final closeout · the tx send flow keeps the typed failure, the effect and the partial result > the ledger fails on workflow.started: the failure is typed and says nothing was sent 20ms
+     → expected undefined to match object { operation: 'broadcast', …(1) }
+   × EVENT-LEDGER-2 final closeout · the tx send flow keeps the typed failure, the effect and the partial result > the ledger fails on the plan's announcement: the plan step keeps the typed code and says nothing was sent 18ms
+     → expected { status: 'ok', …(2) } to match object { status: 'error', …(2) }
+(7 matching properties omitted from actual)
+   × EVENT-LEDGER-2 final closeout · the tx send flow keeps the typed failure, the effect and the partial result > an accepted broadcast, then the ledger fails on workflow.receipt: the send step keeps the code, the effect and the send result 47ms
+     → it was broadcast: expected 'signed' to be 'broadcast' // Object.is equality
+   × EVENT-LEDGER-2 final closeout · the tx send flow keeps the typed failure, the effect and the partial result > a ledger failure raised inside the send step without a named effect keeps its code and is never labelled 'nothing was sent' 19ms
+     → expected { status: 'error', …(1) } to match object { status: 'error', …(1) }
+(1 matching property omitted from actual)
+   × EVENT-LEDGER-2 final closeout · the tx send flow keeps the typed failure, the effect and the partial result > a submission whose outcome is unknown is not announced as a failed receipt (no status is known) 29ms
+     → expected [ { schema: 'hardkas.event', …(16) } ] to deeply equal []
+
+node.exe : ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+En C:\Users\jrodr\AppData\Local\Temp\claude\C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo\21f9a2e4-33ac-4300-
+9366-aff402f85900\scratchpad\cut46-event-ledger-2\run-files-wt.ps1: 22 Carácter: 1
++ & node @args_ *> $log
++ ~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+
+ FAIL  packages/cli/test/event-ledger-2-flow.test.ts > EVENT-LEDGER-2 final closeout · the tx send flow keeps the 
+typed failure, the effect and the partial result > the ledger fails on workflow.started: the failure is typed and says 
+nothing was sent
+AssertionError: expected undefined to match object { operation: 'broadcast', …(1) }
+
+- Expected: 
+Object {
+  "operation": "broadcast",
+  "outcome": "not-performed",
+}
+
++ Received: 
+undefined
+
+ ❯ packages/cli/test/event-ledger-2-flow.test.ts:80:34
+     78|     const err: any = await flow().then(() => undefined, (e) => e);
+     79|     expect(err?.code).toBe("EVENT_LEDGER_APPEND_FAILED");
+     80|     expect(err.metadata?.effect).toMatchObject({ operation: "broadcast…
+       |                                  ^
+     81|     expect(err.message).toMatch(/^Nothing was sent/);
+     82|     expect(vi.mocked(runTxSend)).not.toHaveBeenCalled();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯
+
+ FAIL  packages/cli/test/event-ledger-2-flow.test.ts > EVENT-LEDGER-2 final closeout · the tx send flow keeps the 
+typed failure, the effect and the partial result > the ledger fails on the plan's announcement: the plan step keeps 
+the typed code and says nothing was sent
+AssertionError: expected { status: 'ok', …(2) } to match object { status: 'error', …(2) }
+(7 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  Object {
+-   "code": "EVENT_LEDGER_APPEND_FAILED",
+-   "effect": Object {
+-     "operation": "broadcast",
+-     "outcome": "not-performed",
+-   },
+-   "status": "error",
++   "status": "ok",
+  }
+
+ ❯ packages/cli/test/event-ledger-2-flow.test.ts:90:31
+     88|     const result: any = await flow();
+     89|     expect(result.ok).toBe(false);
+     90|     expect(result.steps.plan).toMatchObject({ status: "error", code: "…
+       |                               ^
+     91|     expect(result.steps.plan.error).toMatch(/^Nothing was sent/);
+     92|     expect(result.steps.send.status).not.toBe("ok");
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/5]⎯
+
+ FAIL  packages/cli/test/event-ledger-2-flow.test.ts > EVENT-LEDGER-2 final closeout · the tx send flow keeps the 
+typed failure, the effect and the partial result > an accepted broadcast, then the ledger fails on workflow.receipt: 
+the send step keeps the code, the effect and the send result
+AssertionError: it was broadcast: expected 'signed' to be 'broadcast' // Object.is equality
+
+Expected: "broadcast"
+Received: "signed"
+
+ ❯ packages/cli/test/event-ledger-2-flow.test.ts:102:47
+    100|     const result: any = await flow();
+    101|     expect(result.ok).toBe(false);
+    102|     expect(result.result, "it was broadcast").toBe("broadcast");
+       |                                               ^
+    103|     expect(result.steps.send).toMatchObject({
+    104|       status: "error",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/5]⎯
+
+ FAIL  packages/cli/test/event-ledger-2-flow.test.ts > EVENT-LEDGER-2 final closeout · the tx send flow keeps the 
+typed failure, the effect and the partial result > a ledger failure raised inside the send step without a named effect 
+keeps its code and is never labelled 'nothing was sent'
+AssertionError: expected { status: 'error', …(1) } to match object { status: 'error', …(1) }
+(1 matching property omitted from actual)
+
+- Expected
++ Received
+
+  Object {
+-   "code": "EVENT_LEDGER_APPEND_FAILED",
+    "status": "error",
+  }
+
+ ❯ packages/cli/test/event-ledger-2-flow.test.ts:122:31
+    120|     const result: any = await flow();
+    121|     expect(result.ok).toBe(false);
+    122|     expect(result.steps.send).toMatchObject({ status: "error", code: "…
+       |                               ^
+    123|     expect(result.steps.send.effect?.outcome, "not claimed as not perf…
+    124|     expect(result.steps.send.error).not.toMatch(/^Nothing was sent/);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/5]⎯
+
+ FAIL  packages/cli/test/event-ledger-2-flow.test.ts > EVENT-LEDGER-2 final closeout · the tx send flow keeps the 
+typed failure, the effect and the partial result > a submission whose outcome is unknown is not announced as a failed 
+receipt (no status is known)
+AssertionError: expected [ { schema: 'hardkas.event', …(16) } ] to deeply equal []
+
+- Expected
++ Received
+
+- Array []
++ Array [
++   Object {
++     "artifactId": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
++     "causationId": undefined,
++     "correlationId": "wf_d2dcdb5858131157",
++     "domain": "workflow",
++     "emittedAt": "2026-10-09T17:09:25.647Z",
++     "eventId": "b027b115-1a59-4d87-a165-b485c45d9577",
++     "globalOffset": 5,
++     "kind": "workflow.receipt",
++     "networkId": "simnet",
++     "payload": Object {
++       "status": "failed",
++       "txId": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
++     },
++     "schema": "hardkas.event",
++     "sequenceNumber": 6,
++     "sourceSubsystem": "cli:tx-flow",
++     "timestamp": "2026-10-09T17:09:25.647Z",
++     "txId": undefined,
++     "version": "1.0.0",
++     "workflowId": "wf_d2dcdb5858131157",
++   },
++ ]
+
+ ❯ packages/cli/test/event-ledger-2-flow.test.ts:135:65
+    133|     expect(result.ok, "not accepted ⇒ the flow fails").toBe(false);
+    134|     expect(result.steps.send.status).toBe("ok");
+    135|     expect(passed.filter((e) => e.kind === "workflow.receipt")).toEqua…
+       |                                                                 ^
+    136|   });
+    137| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/5]⎯
+ Test Files  1 failed (1)
+      Tests  5 failed | 2 passed (7)
+   Start at  19:09:24
+   Duration  1.49s (transform 644ms, setup 0ms, collect 1.01s, tests 135ms, environment 0ms, prepare 116ms)
+
+JSON report written to C:/Users/jrodr/AppData/Local/Temp/claude/C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo/21f9a2e4-33ac-4300-9366-aff402f85900/scratchpad/cut46-event-ledger-2/logs/fc-before-2.json
+
+gate-hermetic: vitest exit 1 after 2s
+gate-hermetic: non-loopback attempts (each one fails the gate): 0
+gate-hermetic: loopback connection targets (review for dependencies on local services):
+

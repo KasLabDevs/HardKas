@@ -10,7 +10,7 @@ import {
   type UtxoProvider
 } from "@hardkas/tx-builder";
 import { createTxPlanArtifact, TxPlanArtifact } from "@hardkas/artifacts";
-import { coreEvents, getCoinbaseMaturity, sha256hex, SelectedUtxoInvalidatedError } from "@hardkas/core";
+import { getCoinbaseMaturity, sha256hex, SelectedUtxoInvalidatedError } from "@hardkas/core";
 import type { RuntimeContext } from "@hardkas/core";
 import { resolveExecutionTarget, HardkasConfig } from "@hardkas/config";
 
@@ -75,48 +75,21 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
   const amountSompi = parseKasToSompi(amount);
   const feeRateSompiPerMass = feeRate ? BigInt(feeRate) : undefined;
 
-  const { resolveNewIntentTarget, resolveProvider } = await import("@hardkas/config");
+  const { resolveWorkspaceExecution, resolveProvider } = await import("@hardkas/config");
   const { assertAccountCompatible, resolveHardkasAccount } = await import("@hardkas/accounts");
 
-  if (!targetName && !networkId && !resolvedConfig.execution && !(resolvedConfig as any).defaultNetwork && !(resolvedConfig as any).defaultTarget) {
-    throw new Error("EXECUTION_NETWORK_MISMATCH: No target or network specified, and no default target found in config.");
-  }
-
-  let explicitTarget: import("@hardkas/core").HardkasExecutionTarget | undefined = undefined;
-  if (targetName) {
-    if (resolvedConfig.execution && "targets" in resolvedConfig.execution) {
-      explicitTarget = (resolvedConfig.execution.targets as any)[targetName];
-    }
-    if (!explicitTarget) {
-      throw new Error(`Execution target '${targetName}' not found in hardkas.config.ts`);
-    }
-  } else if (networkId) {
-    // If config has execution targets, find the target matching this networkId
-    const execConfig = resolvedConfig.execution as any;
-    if (execConfig?.targets) {
-      const matchingTarget = Object.values(execConfig.targets).find(
-        (t: any) => t.network === networkId
-      ) as import("@hardkas/core").HardkasExecutionTarget | undefined;
-      if (matchingTarget) {
-        explicitTarget = matchingTarget;
-      }
-    }
-    // Legacy fallback: infer mode from networkId name
-    if (!explicitTarget) {
-      let mode: "simulator" | "localnet" | "rpc" = "rpc";
-      let domain: "kaspa-l1" | "evm-l2" = "kaspa-l1";
-      if (networkId === "simulated") mode = "simulator";
-      else if (networkId === "simnet" || networkId === "devnet") mode = "localnet";
-      explicitTarget = { mode, domain, network: networkId };
-    }
-  }
-
-  const execution = resolveNewIntentTarget({
+  // WORKSPACE-AUTHORITY-2 (WA2-I1): the one resolution the SDK uses too — a named target (`--target`), else a network
+  // id (`--network`, never a target name: a declared target for that network, else the mode the network implies), else
+  // the workspace's `execution` contract. Unknown names, missing targets and a target/network disagreement are typed
+  // refusals (EXECUTION_TARGET_NOT_FOUND, UNKNOWN_NETWORK, EXECUTION_NETWORK_MISMATCH); there is no fallback.
+  const resolvedExecution = resolveWorkspaceExecution({
     config: resolvedConfig,
-    ...(explicitTarget ? { explicitTarget } : {})
+    ...(targetName ? { target: targetName } : {}),
+    ...(networkId ? { network: networkId } : {})
   });
+  const execution = resolvedExecution.execution;
 
-  const resolvedTargetName = targetName || execution.network;
+  const resolvedTargetName = resolvedExecution.targetName ?? execution.network;
 
   // Resolve and assert account compatibility BEFORE doing address validation
   const fromAccount = resolveHardkasAccount({ nameOrAddress: from, config: resolvedConfig, executionTarget: execution });
@@ -139,15 +112,7 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
     changeAddressResolved = changeAccount.address as string;
   }
 
-  let effectiveNetworkId = networkId;
-  if (networkId === "simnet" && resolvedConfig.networks?.simnet?.kind === "simulated") {
-    effectiveNetworkId = "simulated";
-  }
-
-  if (effectiveNetworkId && execution.network !== effectiveNetworkId) {
-    throw new Error(`EXECUTION_NETWORK_MISMATCH: Target '${resolvedTargetName}' specifies network '${execution.network}', but command was called with legacy --network '${networkId}'.`);
-  }
-
+  // (a `--network` that disagrees with the target was refused by the resolver above)
   const resolvedNetworkId = execution.network;
   const networkDef = config.networks?.[resolvedNetworkId];
 
@@ -158,7 +123,9 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
     provider: input.provider,
     url,
     configNetworkKind,
-    executionMode: execution.mode
+    executionMode: execution.mode,
+    // WORKSPACE-AUTHORITY-2 (closeout): the endpoint the resolved network declares, the same the SDK uses
+    networkRpcUrl: resolvedExecution.rpcUrl
   });
 
   const resolvedNetwork = providerConfig.network;
@@ -259,7 +226,8 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
       }
       if (!rpcUrl) throw new Error("Could not resolve RPC URL");
 
-      const client = new JsonWrpcKaspaClient({ rpcUrl });
+      // NODE-NETWORK-IDENTITY-1: the node's UTXOs are planned on only if the node says it serves the planned network
+      const client = new JsonWrpcKaspaClient({ rpcUrl, expectedNetworkId: resolvedNetwork });
       release = () => client.close();
       const MAX_PLAN_RETRIES = 3;
       let planSuccess = false;
@@ -412,6 +380,9 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
     } catch (e: unknown) {
       if (e instanceof SelectedUtxoInvalidatedError) throw e;
       if (e instanceof UpstreamPlannerError) throw e;
+      // NODE-NETWORK-IDENTITY-1: the wrong (or an unidentified) node is its own typed refusal, not a connection error
+      const { isNodeNetworkIdentityError } = await import("@hardkas/kaspa-rpc");
+      if (isNodeNetworkIdentityError(e)) throw e;
       if (e instanceof PendingSpendEvidenceUnavailableError || e instanceof PendingSpendAllExcludedError) throw e;
       if (e instanceof Error && (e.message.includes("No UTXOs found") || e.message.includes("Insufficient funds"))) throw e;
 
@@ -480,13 +451,9 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
     }
   }) as unknown as TxPlanArtifact;
 
-  coreEvents.normalizeAndEmit({
-    kind: "workflow.plan.created",
-    planId: artifact.planId,
-    planHash: artifact.contentHash || "unknown",
-    network: artifact.networkId,
-    mode: artifact.mode
-  });
-
+  // EVENT-LEDGER-2 (EVENT-EMISSION-1): the raw `workflow.plan.created` object this runner handed to normalizeAndEmit
+  // was discarded by it (no envelope, no correlation). It is gone: the formal `workflow.plan.created` belongs to the
+  // owner of a workflow (tx-flow emits it under its workflowId), and a plan `tx plan` writes is announced as
+  // `artifact.written` by the command, under the plan's own workflowId (D4).
   return artifact;
 }

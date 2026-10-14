@@ -1,0 +1,9 @@
+{
+  "reason": null,
+  "message": "succeeded",
+  "aMethods": [
+    "getServerInfo",
+    "getBlockDagInfo"
+  ],
+  "bMethods": []
+}

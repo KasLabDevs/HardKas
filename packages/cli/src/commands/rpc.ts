@@ -91,7 +91,7 @@ export function registerRpcCommands(program: Command) {
       const { getOutput } = await import("../output.js");
       const res = await runRpcDag({ url: options.url });
       if (options.json) {
-        getOutput().writeJson({ url: res.url, dag: res.dag });
+        getOutput().writeJson({ ok: true, url: res.url, dag: res.dag });
       } else {
         getOutput().writeLine(res.formatted);
       }
@@ -107,6 +107,7 @@ export function registerRpcCommands(program: Command) {
       const res = await runRpcUtxos({ address, url: options.url });
       if (options.json) {
         getOutput().writeJson({
+          ok: true,
           url: res.url,
           address: res.address,
           totalSompi: res.totalSompi,
@@ -135,7 +136,7 @@ export function registerRpcCommands(program: Command) {
       const res = await runRpcMempool({ txId, url: options.url });
       if (options.json) {
         getOutput().writeJson(
-          res.txId !== undefined ? { url: res.url, txId: res.txId, entry: res.entry } : { url: res.url, entries: res.entries }
+          res.txId !== undefined ? { ok: true, url: res.url, txId: res.txId, entry: res.entry } : { ok: true, url: res.url, entries: res.entries }
         );
       } else {
         getOutput().writeLine(res.formatted);

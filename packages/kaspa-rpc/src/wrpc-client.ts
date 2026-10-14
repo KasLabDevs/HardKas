@@ -40,15 +40,26 @@ export interface WrpcResponse {
 export interface KaspaWrpcClientOptions {
   /** Builds the official client for a URL; defaults to the pinned kaspa-wasm `RpcClient` (tests pass a stand-in). */
   rpcFactory?: OfficialRpcFactory;
+  /**
+   * NODE-NETWORK-IDENTITY-1: see JsonWrpcKaspaClientOptions.expectedNetworkId (checked by connect() and before every
+   * request on a resumed connection; notifications are not covered, see onNotification).
+   */
+  expectedNetworkId?: string | undefined;
 }
 
 export class KaspaWrpcClient {
-  private url: string;
+  /** ENDPOINT-AUTHORITY-1: the endpoint this client talks to (what a record names as its RPC endpoint). */
+  public readonly url: string;
   private session: OfficialRpcSession | null = null;
   /** The session whose connect() has not completed yet: disconnect() closes it too (RL-I4). */
   private opening: OfficialRpcSession | null = null;
 
-  /** Receives every node notification as `{ method: <event>, params: <payload> }`. */
+  /**
+   * Receives every node notification as `{ method: <event>, params: <payload> }`, as the official client delivers it.
+   * NOT covered by NODE-NETWORK-IDENTITY-1: requests are verified on every connection, notifications are not — after
+   * the official client resumed on a new connection by itself, events are forwarded before any request re-verified the
+   * node (SECURITY-INTEGRATION-1). No HardKAS path subscribes or decides anything from notifications.
+   */
   public onNotification?: (msg: WrpcResponse) => void;
   public debug = false;
 
@@ -64,7 +75,7 @@ export class KaspaWrpcClient {
     // The previous connection is detached and the new session registered before anything is awaited, so a
     // disconnect() from this point on closes the new session too (RL-I4).
     const released = this.disconnect();
-    const session = new OfficialRpcSession(this.url, timeoutMs, this.options.rpcFactory);
+    const session = new OfficialRpcSession(this.url, timeoutMs, this.options.rpcFactory, this.options.expectedNetworkId);
     this.opening = session;
     await released;
     if (this.opening !== session) throw rpcClientClosedError(this.url);

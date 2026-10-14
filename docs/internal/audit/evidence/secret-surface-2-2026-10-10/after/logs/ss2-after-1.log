@@ -1,0 +1,402 @@
+﻿gate-hermetic: HARDKAS_HOME=C:\Users\jrodr\AppData\Local\Temp\hardkas-hermetic-home-eNh7EF (copy of C:\Users\jrodr\AppData\Local\Temp\hk-v210-gate-home)
+gate-hermetic: DOCKER_HOST=tcp://127.0.0.1:1; preload=C:\Users\jrodr\AppData\Local\Temp\hk-ra\wt\scripts\hermetic\no-network-preload.cjs
+gate-hermetic: vitest run --coverage.enabled=false --reporter=default --reporter=json --outputFile=C:\Users\jrodr\AppData\Local\Temp\claude\C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo\21f9a2e4-33ac-4300-9366-aff402f85900\scratchpad\cut47-secret-surface-2\logs\ss2-after-1.json packages/core/test/secret-surface-2.test.ts packages/cli/test/secret-surface-2.test.ts
+
+ RUN  v2.1.9 C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt
+
+ ❯ packages/cli/test/secret-surface-2.test.ts (33 tests | 3 failed) 35667ms
+   ✓ SECRET-SURFACE-2 · BEFORE > SS2-A · security audit finds the plaintext keys HardKAS writes > control · a clean workspace passes 1029ms
+   ✓ SECRET-SURFACE-2 · BEFORE > SS2-A · security audit finds the plaintext keys HardKAS writes > the key `localnet account create` stores in plaintext fails the audit, naming the file 2042ms
+   ✓ SECRET-SURFACE-2 · BEFORE > SS2-A · security audit finds the plaintext keys HardKAS writes > a mnemonic in plaintext under .hardkas fails the audit 1024ms
+   ✓ SECRET-SURFACE-2 · BEFORE > SS2-A · security audit finds the plaintext keys HardKAS writes > control · a dev-account config that holds only a privateKeyRef is not a leak 1001ms
+   × SECRET-SURFACE-2 · BEFORE > SS2-B · a mainnet private key is not printed by default > kaspa wallet create <name> --network mainnet prints the address and the config snippet, never the key 1093ms
+     → no 64-hex value (the private key) in stdout or stderr: expected '\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nHar…' not to match /[0-9a-f]{64}/i
+   ✓ SECRET-SURFACE-2 · BEFORE > SS2-C · env check does not print the dev server token > human output names the variable as set without its value 1001ms
+   ✓ SECRET-SURFACE-2 · BEFORE > SS2-C · env check does not print the dev server token > --json reports the variable without its value 985ms
+   ✓ SECRET-SURFACE-2 · BEFORE > SS2-D · URL credentials are redacted even when the output is coloured > control · colours off: kaspa doctor never prints the URL's password 1132ms
+   ✓ SECRET-SURFACE-2 · BEFORE > SS2-D · URL credentials are redacted even when the output is coloured > colours on (every Windows terminal by default): the password must be redacted all the same 1106ms
+   ✓ SECRET-SURFACE-2 · BEFORE > SS2-D · URL credentials are redacted even when the output is coloured > AFTER · colours on, --json: the one document carries no password either 1147ms
+   ✓ SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > finds: JSON, a space after the colon (the store's format) 1004ms
+   ✓ SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > finds: JSON, no spaces 992ms
+   ✓ SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > finds: a TS object with single quotes 1000ms
+   ✓ SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > finds: privateKeyHex under YAML-style spacing 993ms
+   ✓ SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > finds: the .env line kaspa wallet create recommends, in a log 1022ms
+   ✓ SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > finds: a 12-word mnemonic under a field 1030ms
+   ✓ SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > finds: a 24-word seed phrase under seedPhrase 999ms
+   ✓ SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > finds: a mnemonic in a variable line 1009ms
+   ✓ SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > finds: an extended private key anywhere 986ms
+   × SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > finds: an extra path given with --include 1010ms
+     → Mainnet Firewall: {"mainnet":"BLOCKED_BY_POLICY"}
+Security audit passed. No secret leaks or policy violations detected.
+
+: expected { exit: +0, failed: false } to deeply equal { exit: 1, failed: true }
+   ✓ SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > passes: content hashes and txIds (64 hex under identity names) 1003ms
+   ✓ SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > passes: an encrypted keystore (ciphertext, salt, nonce) 1003ms
+   ✓ SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > passes: an account that names its key's environment variable 1006ms
+   ✓ SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > passes: a dev-account config that references its key file (the documented exemption) 991ms
+   ✓ SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > passes: the dev server token file (a bare value: no private key) 1009ms
+   ✓ SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > passes: twelve ordinary words of prose, not under a phrase-bearing name 1032ms
+   ✓ SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > passes: a 64-hex under a secret name split across a newline is still a key; but a 63-hex is not 1070ms
+   ✓ SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > the exemption is delimited: a dev-account config that carries a key besides its reference is a finding 1029ms
+   ✓ SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > a simnet account is not exempt for being simnet: the plaintext store of localnet account create is a finding, with the way out 1942ms
+   ✓ SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > the .key files of dev accounts are not searched (their permissions are checked instead) 985ms
+   ✓ SECRET-SURFACE-2 · AFTER > D3 · env check reports a secret-bearing variable as configured, never its value > --json: value [REDACTED], configured: true, secret: true; a non-secret variable keeps its value 994ms
+   ✓ SECRET-SURFACE-2 · AFTER > D3 · env check reports a secret-bearing variable as configured, never its value > human: the line says configured and shows the marker; the same when the token comes from .env 1020ms
+   × SECRET-SURFACE-2 · AFTER > D3 · env check reports a secret-bearing variable as configured, never its value > the explicit reveal is untouched: dev-server token still prints the token file's content 976ms
+     → 
+error: unknown command 'dev-server'
+
+Usage: hardkas [options] [command]
+
+HardKAS: Kaspa-native developer operating environment
+
+Options:
+  -V, --version                       output the version number
+  --workspace <path>                  Workspace root: the nearest
+                                      hardkas.config.* at or above this
+                                      directory, else the directory itself
+                                      (default: from the current directory).
+                                      Commands that act on the current
+                                      directory refuse it
+  -h, --help                          display help for command
+
+Commands:
+  init [options] [name]               Initialize a new HardKAS project stable
+  up [options]                        Boot or validate the HardKAS developer
+                                      runtime environment stable
+  create [options] <template> <dest>  Scaffold a new HardKAS project from a
+                                      template stable
+  tx                                  L1 Transaction commands
+  artifact|artifacts                  Manage HardKAS artifacts
+  replay                              Manage HardKAS transaction replays
+  rpc                                 Kaspa RPC diagnostics and queries
+  dag                                 Simulate blockDAG operations (Localnet
+                                      only)
+  accounts                            Manage HardKAS accounts
+  node                                Kaspa node management (Docker)
+  config                              Manage HardKAS configuration
+  query                               Query and introspect HardKAS artifacts,
+                                      lineage, and workflows
+  test [options] [files...]           Run the project's tests with Vitest and
+                                      the HardKAS test helpers stable
+  doctor [options] [module]           Perform a full system diagnostic and
+                                      health report stable
+  verify [options] [path]             Verify artifact integrity and lineage
+                                      continuity across the workspace stable
+  verify-semantics [options]          Verify semantic truth agreement across
+                                      all HardKAS subsystems alpha
+  rebuild [options]                   Wipe and rebuild the SQLite query store
+                                      from the committed artifacts stable
+  run [options] <script>              Run a TypeScript or JavaScript file with
+                                      tsx and a global 'hardkas': a simulator
+                                      test harness on simulated networks, an
+                                      RPC client otherwise (not the SDK) stable
+  lock                                Manage HardKAS workspace locks
+  console [options]                   Open an interactive REPL with an
+                                      in-memory simulator harness (h) and
+                                      hash/format helpers; no network is
+                                      contacted stable
+  localnet                            Manage localnet state and snapshots
+  simulator                           HardKAS Simulator management
+  deploy                              Track and manage deployments
+  dev [options]                       Local development tools: dev environment,
+                                      dApp templates, simnet dev accounts (`dev
+                                      doctor` is an Igra L2 lab check)
+  local                               Local development and environment
+                                      lifecycle tools
+  kaspa                               Kaspa L1 native developer tools
+  pskt                                Portable Signing Sessions (PSKT):
+                                      unavailable in this build. No adapter
+                                      implements PSKT operations, so export,
+                                      import, sign, merge, finalize and extract
+                                      refuse
+  explain [options] [artifact]        Provide a narrative causal explanation of
+                                      an artifact resolved by exact artifactId,
+                                      artifact file path, or a namespaced
+                                      identifier (--plan, --signed, --tx,
+                                      --workflow) stable
+  torture                             HardKAS Semantic Torture Testing Suite
+  telemetry                           Inspect, verify, and monitor the
+                                      canonical runtime pressure telemetry
+                                      stream
+  repair [options]                    Report an outdated workspace, lock files
+                                      in .hardkas/, torn JSONL tails and a
+                                      corrupt query store; --force repairs them
+                                      beta
+  rotate [options]                    Archive the telemetry stream
+                                      (.hardkas/telemetry/telemetry.jsonl) once
+                                      it reaches 10 MiB beta
+  inspect [options]                   Inspect stream sizes and archive segments
+                                      beta
+  chaos [options]                     Run the internal Chaos Engine to
+                                      stress-test the runtime experimental
+  status [options]                    Display the current state of the local
+                                      HardKAS runtime workspace
+  why [options] [artifact]            Explain the causal lineage of an artifact
+                                      resolved by exact artifactId, artifact
+                                      file path, or a namespaced identifier
+                                      (--plan, --signed, --tx, --workflow)
+  ci                                  Continuous Integration and DevSecOps
+                                      commands
+  sandbox [options]                   Start a temporary, ephemeral HardKAS
+                                      local experimentation environment
+  silver                              SilverScript v1: managed silverc v1.0.0,
+                                      Kaspa SDK scripts, verified canonical
+                                      node
+  corpus                              Verify release fixture corpora
+  zk                                  Experimental local-only ZK proof artifact
+                                      tools (Outputs JSON by default)
+  vprogs                              vProgs inspect-only builder surface
+                                      (Outputs JSON by default)
+  programmability                     Builder-ready local programmability
+                                      surface (Outputs JSON by default)
+  security                            Security DX and safety verification tools
+  env                                 Manage and validate environment
+                                      configurations
+  toolchain                           Install and verify the upstream
+                                      toolchains HardKAS pins (official Kaspa
+                                      release assets)
+  task                                Execute an evidence-aware custom task
+  workflow                            Programmable deterministic workflows and
+                                      agent orchestration alpha
+  evidence                            Manage HardKAS Evidence Packages
+                                      (.hke.json) alpha
+  help [command]                      display help for command
+: expected 1 to be +0 // Object.is equality
+ ✓ packages/core/test/secret-surface-2.test.ts (20 tests) 8ms
+
+node.exe : ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+En C:\Users\jrodr\AppData\Local\Temp\claude\C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo\21f9a2e4-33ac-4300-
+9366-aff402f85900\scratchpad\cut47-secret-surface-2\run-files-wt.ps1: 22 Carácter: 1
++ & node @args_ *> $log
++ ~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+
+ FAIL  packages/cli/test/secret-surface-2.test.ts > SECRET-SURFACE-2 · BEFORE > SS2-B · a mainnet private key is not 
+printed by default > kaspa wallet create <name> --network mainnet prints the address and the config snippet, never the 
+key
+AssertionError: no 64-hex value (the private key) in stdout or stderr: expected 
+'\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nHar…' not to match /[0-9a-f]{64}/i
+
+- Expected: 
+/[0-9a-f]{64}/i
+
++ Received: 
+"
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+HardKAS • Kaspa Wallet Creation
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ✓ New Kaspa L1 wallet generated:
+    Name:    vault
+    Address: kaspa:qrq3ecv2j9hjxeaxw4ly6k0nrq693wvdvqljmj3mxqmrelt9rk945saxvtewj
+    Network: mainnet
+
+  Action Required: Add this to your hardkas.config.ts:
+  ----------------------------------------
+  accounts: {
+    vault: {
+      kind: \"kaspa-private-key\",
+      address: \"kaspa:qrq3ecv2j9hjxeaxw4ly6k0nrq693wvdvqljmj3mxqmrelt9rk945saxvtewj\",
+      privateKeyEnv: \"VAULT_PRIVATE_KEY\"
+    }
+  }
+  ----------------------------------------
+
+  Set your private key in .env:
+  VAULT_PRIVATE_KEY=<64hex-redacted>
+
+HardKAS never auto-writes secrets for your protection.
+
+"
+
+ ❯ packages/cli/test/secret-surface-2.test.ts:110:81
+    108|       expect(text, "the address is still shown").toMatch(/Address:\s+k…
+    109|       expect(text, "the config snippet is still shown").toContain("pri…
+    110|       expect(text, "no 64-hex value (the private key) in stdout or std…
+       |                                                                                 ^
+    111|     });
+    112|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  packages/cli/test/secret-surface-2.test.ts > SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are 
+found (by name and shape), the value is never echoed > finds: an extra path given with --include
+AssertionError: Mainnet Firewall: {"mainnet":"BLOCKED_BY_POLICY"}
+Security audit passed. No secret leaks or policy violations detected.
+
+: expected { exit: +0, failed: false } to deeply equal { exit: 1, failed: true }
+
+- Expected
++ Received
+
+  Object {
+-   "exit": 1,
+-   "failed": true,
++   "exit": 0,
++   "failed": false,
+  }
+
+ ❯ packages/cli/test/secret-surface-2.test.ts:200:88
+    198|         const extra = rel.startsWith("../") ? ["--include", path.resol…
+    199|         const r = audit(extra);
+    200|         expect({ exit: r.status, failed: /SECURITY_AUDIT_FAILED/.test(…
+       |                                                                                        ^
+    201|         expect(r.all).toMatch(expectation);
+    202|         expect(r.all, "never the value").not.toContain(HEX);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  packages/cli/test/secret-surface-2.test.ts > SECRET-SURFACE-2 · AFTER > D3 · env check reports a secret-bearing 
+variable as configured, never its value > the explicit reveal is untouched: dev-server token still prints the token 
+file's content
+AssertionError: 
+error: unknown command 'dev-server'
+
+Usage: hardkas [options] [command]
+
+HardKAS: Kaspa-native developer operating environment
+
+Options:
+  -V, --version                       output the version number
+  --workspace <path>                  Workspace root: the nearest
+                                      hardkas.config.* at or above this
+                                      directory, else the directory itself
+                                      (default: from the current directory).
+                                      Commands that act on the current
+                                      directory refuse it
+  -h, --help                          display help for command
+
+Commands:
+  init [options] [name]               Initialize a new HardKAS project stable
+  up [options]                        Boot or validate the HardKAS developer
+                                      runtime environment stable
+  create [options] <template> <dest>  Scaffold a new HardKAS project from a
+                                      template stable
+  tx                                  L1 Transaction commands
+  artifact|artifacts                  Manage HardKAS artifacts
+  replay                              Manage HardKAS transaction replays
+  rpc                                 Kaspa RPC diagnostics and queries
+  dag                                 Simulate blockDAG operations (Localnet
+                                      only)
+  accounts                            Manage HardKAS accounts
+  node                                Kaspa node management (Docker)
+  config                              Manage HardKAS configuration
+  query                               Query and introspect HardKAS artifacts,
+                                      lineage, and workflows
+  test [options] [files...]           Run the project's tests with Vitest and
+                                      the HardKAS test helpers stable
+  doctor [options] [module]           Perform a full system diagnostic and
+                                      health report stable
+  verify [options] [path]             Verify artifact integrity and lineage
+                                      continuity across the workspace stable
+  verify-semantics [options]          Verify semantic truth agreement across
+                                      all HardKAS subsystems alpha
+  rebuild [options]                   Wipe and rebuild the SQLite query store
+                                      from the committed artifacts stable
+  run [options] <script>              Run a TypeScript or JavaScript file with
+                                      tsx and a global 'hardkas': a simulator
+                                      test harness on simulated networks, an
+                                      RPC client otherwise (not the SDK) stable
+  lock                                Manage HardKAS workspace locks
+  console [options]                   Open an interactive REPL with an
+                                      in-memory simulator harness (h) and
+                                      hash/format helpers; no network is
+                                      contacted stable
+  localnet                            Manage localnet state and snapshots
+  simulator                           HardKAS Simulator management
+  deploy                              Track and manage deployments
+  dev [options]                       Local development tools: dev environment,
+                                      dApp templates, simnet dev accounts (`dev
+                                      doctor` is an Igra L2 lab check)
+  local                               Local development and environment
+                                      lifecycle tools
+  kaspa                               Kaspa L1 native developer tools
+  pskt                                Portable Signing Sessions (PSKT):
+                                      unavailable in this build. No adapter
+                                      implements PSKT operations, so export,
+                                      import, sign, merge, finalize and extract
+                                      refuse
+  explain [options] [artifact]        Provide a narrative causal explanation of
+                                      an artifact resolved by exact artifactId,
+                                      artifact file path, or a namespaced
+                                      identifier (--plan, --signed, --tx,
+                                      --workflow) stable
+  torture                             HardKAS Semantic Torture Testing Suite
+  telemetry                           Inspect, verify, and monitor the
+                                      canonical runtime pressure telemetry
+                                      stream
+  repair [options]                    Report an outdated workspace, lock files
+                                      in .hardkas/, torn JSONL tails and a
+                                      corrupt query store; --force repairs them
+                                      beta
+ Test Files  1 failed | 1 passed (2)
+      Tests  3 failed | 50 passed (53)
+   Start at  11:49:47
+   Duration  36.40s (transform 75ms, setup 0ms, collect 98ms, tests 35.67s, environment 0ms, prepare 222ms)
+
+  rotate [options]                    Archive the telemetry stream
+                                      (.hardkas/telemetry/telemetry.jsonl) once
+                                      it reaches 10 MiB beta
+  inspect [options]                   Inspect stream sizes and archive segments
+                                      beta
+  chaos [options]                     Run the internal Chaos Engine to
+                                      stress-test the runtime experimental
+  status [options]                    Display the current state of the local
+                                      HardKAS runtime workspace
+  why [options] [artifact]            Explain the causal lineage of an artifact
+                                      resolved by exact artifactId, artifact
+                                      file path, or a namespaced identifier
+                                      (--plan, --signed, --tx, --workflow)
+  ci                                  Continuous Integration and DevSecOps
+                                      commands
+  sandbox [options]                   Start a temporary, ephemeral HardKAS
+                                      local experimentation environment
+  silver                              SilverScript v1: managed silverc v1.0.0,
+                                      Kaspa SDK scripts, verified canonical
+                                      node
+  corpus                              Verify release fixture corpora
+  zk                                  Experimental local-only ZK proof artifact
+                                      tools (Outputs JSON by default)
+  vprogs                              vProgs inspect-only builder surface
+                                      (Outputs JSON by default)
+  programmability                     Builder-ready local programmability
+                                      surface (Outputs JSON by default)
+  security                            Security DX and safety verification tools
+  env                                 Manage and validate environment
+                                      configurations
+  toolchain                           Install and verify the upstream
+                                      toolchains HardKAS pins (official Kaspa
+                                      release assets)
+  task                                Execute an evidence-aware custom task
+  workflow                            Programmable deterministic workflows and
+                                      agent orchestration alpha
+  evidence                            Manage HardKAS Evidence Packages
+                                      (.hke.json) alpha
+  help [command]                      display help for command
+: expected 1 to be +0 // Object.is equality
+
+- Expected
++ Received
+
+- 0
++ 1
+
+ ❯ packages/cli/test/secret-surface-2.test.ts:273:31
+    271|       fs.writeFileSync(path.join(ws, ".hardkas", "dev-server-token"), …
+    272|       const r = run(["dev-server", "token"], ws);
+    273|       expect(r.status, r.all).toBe(0);
+       |                               ^
+    274|       expect(r.stdout.trim()).toBe(token);
+    275|     });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+
+JSON report written to C:/Users/jrodr/AppData/Local/Temp/claude/C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo/21f9a2e4-33ac-4300-9366-aff402f85900/scratchpad/cut47-secret-surface-2/logs/ss2-after-1.json
+
+gate-hermetic: vitest exit 1 after 37s
+gate-hermetic: non-loopback attempts (each one fails the gate): 0
+gate-hermetic: loopback connection targets (review for dependencies on local services):
+  127.0.0.1:1 x3

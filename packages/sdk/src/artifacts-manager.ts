@@ -62,8 +62,42 @@ export class HardkasArtifactsManager {
    * that exist in the workspace store. Warm ≡ cold ≡ after restart (S1, S2).
    */
   private cache = new Map<string, any>();
+  /** TASK-EVIDENCE-UNBOUND-1: the one open recording of THIS instance (see record()). */
+  private recording: Set<string> | null = null;
 
   constructor(private sdk: Hardkas) {}
+
+  /**
+   * TASK-EVIDENCE-UNBOUND-1: records the identities of the artifacts THIS instance puts in (or finds already in, a
+   * write-once hit) the workspace store until `stop()`, in write order. Scoped to the instance, never to the process
+   * or the workspace: another instance writing at the same time (another task, another run) is not recorded. Writes
+   * outside the store (`outputDir` exports) and dry runs are not recorded.
+   * One recording at a time per instance: an instance cannot tell which of two overlapping runs made a write, so a
+   * second recording while one is open is refused (ARTIFACT_RECORDING_BUSY) instead of crossing their evidence. Runs
+   * that must overlap use one instance each.
+   */
+  record(): { stop(): string[] } {
+    if (this.recording !== null) {
+      throw new HardkasError(
+        "ARTIFACT_RECORDING_BUSY",
+        "A recording is already open on this SDK instance: overlapping runs on one instance cannot be told apart, so their evidence would cross. Stop it first, or give each concurrent run its own instance (Hardkas.open)."
+      );
+    }
+    const ids = new Set<string>();
+    this.recording = ids;
+    return {
+      stop: () => {
+        if (this.recording === ids) this.recording = null;
+        return [...ids];
+      }
+    };
+  }
+
+  /** An identity this instance just put in the store by another path than write() (e.g. a simulated execution commit). */
+  noteStored(artifactId: unknown): void {
+    if (typeof artifactId !== "string" || !ARTIFACT_ID_PATTERN.test(artifactId)) return;
+    this.recording?.add(artifactId);
+  }
 
   /**
    * Memoises an artifact that exists in the store, under its recomputed identity.
@@ -182,41 +216,22 @@ export class HardkasArtifactsManager {
       if (typeof record.contentHash === "string" && record.contentHash.length > 0) {
         this.cache.set(record.contentHash, published.artifact);
       }
+      this.noteStored(record.contentHash);
     }
 
-    // Emit the event so localnet and query-store can index it.
-    const {
-      coreEvents,
-      createEventEnvelope,
-      asWorkflowId,
-      asCorrelationId,
-      asNetworkId,
-      asArtifactId,
-      asEventSequence
-    } = await import("@hardkas/core");
-    // If no workflowId is provided, this artifact is standalone.
-    // "wf_unknown_standalone" is a sentinel value for tracking provenance of loose artifacts.
-    // It is NOT a replayable causal workflow identity.
-    const wId = options.workflowId || "wf_unknown_standalone";
-    const cId = options.correlationId || wId;
-    const netId = options.networkId || record.networkId || "unknown";
-    // IC-5′.11: events carry the canonical identity (the content hash), never a label.
-    const artifactId = hash;
-
-    coreEvents.emit(
-      createEventEnvelope({
-        kind: "artifact.written",
-        domain: "integrity",
-        workflowId: asWorkflowId(wId),
-        correlationId: asCorrelationId(cId),
-        networkId: asNetworkId(netId),
-        payload: { artifactId: asArtifactId(artifactId), path: absolutePath },
-        sequenceNumber: asEventSequence(1),
-        globalOffset: 0,
-        sourceSubsystem: "sdk:artifacts-manager",
-        artifactId: asArtifactId(artifactId)
-      })
-    );
+    // EVENT-LEDGER-2 (D4): announced through the one artifact boundary (the envelope every writer emits), so localnet
+    // and the query store can index it, and the ledger records it or the write fails loudly (EL2-I0). The correlation
+    // is the caller's, else the artifact's own workflowId, else the standalone marker: never derived or invented here.
+    // IC-5′.11: the identity announced is the content hash, never a label.
+    const { emitArtifactWritten } = await import("@hardkas/core");
+    emitArtifactWritten({
+      artifactId: hash,
+      absolutePath,
+      sourceSubsystem: "sdk:artifacts-manager",
+      workflowId: options.workflowId || (typeof record.workflowId === "string" ? record.workflowId : undefined),
+      correlationId: options.correlationId,
+      networkId: options.networkId || record.networkId
+    });
 
     if (!options.bypassHooks) {
       // Intentionally not awaiting so it runs asynchronously/observational, or we await it but it's guaranteed to handle errors via plugin manager.

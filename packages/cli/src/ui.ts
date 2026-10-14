@@ -351,7 +351,7 @@ export function handleError(e: unknown, context?: string) {
         "The Kaspa node might still be starting. Try 'hardkas rpc health --wait'.";
     } else if (msg.includes("submitTransaction is not exposed")) {
       suggestion =
-        "Ensure your node/RPC provider supports transaction submission and you are NOT on mainnet without --allow-mainnet-signing.";
+        "Ensure your node/RPC provider supports transaction submission. HardKAS does not sign or broadcast on mainnet.";
     }
   }
 

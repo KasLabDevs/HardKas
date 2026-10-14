@@ -1,0 +1,73 @@
+﻿gate-hermetic: HARDKAS_HOME=C:\Users\jrodr\AppData\Local\Temp\hardkas-hermetic-home-fmobUl (copy of C:\Users\jrodr\AppData\Local\Temp\hk-v210-gate-home)
+gate-hermetic: DOCKER_HOST=tcp://127.0.0.1:1; preload=C:\Users\jrodr\AppData\Local\Temp\hk-ra\wt\scripts\hermetic\no-network-preload.cjs
+gate-hermetic: vitest run --coverage.enabled=false --reporter=default --reporter=json --outputFile=C:\Users\jrodr\AppData\Local\Temp\claude\C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo\21f9a2e4-33ac-4300-9366-aff402f85900\scratchpad\cut46-event-ledger-2\logs\fc-after-1.json packages/core/test/event-ledger-2-closeout.test.ts packages/core/test/event-ledger-2.test.ts packages/core/test/event-ledger-2-effect.test.ts packages/core/test/event-emission-guard.test.ts packages/sdk/test/event-ledger-2-effect.test.ts packages/sdk/test/event-ledger-2-submission.test.ts packages/artifacts/test/event-ledger-2-submit-outcome.test.ts packages/cli/test/event-ledger-2-flow.test.ts packages/cli/test/event-ledger-2-report.test.ts packages/cli/test/event-ledger-2.test.ts packages/cli/test/demo-cut-t-a14b-tx-status.test.ts packages/cli/test/wave1-3-cli-helpers.test.ts
+
+ RUN  v2.1.9 C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt
+
+ ✓ packages/core/test/event-ledger-2.test.ts (19 tests) 17942ms
+   ✓ EVENT-LEDGER-2 · controls (must hold before and after) > a lock held by a LIVE process is waited for, never taken over: the event lands after the holder releases it 1667ms
+   ✓ EVENT-LEDGER-2 · AFTER · the append lock is judged before it is touched (D1) > judgeAppendLock: dead on this host → abandoned; alive → live; another host → unverifiable; legacy/young → live 340ms
+   ✓ EVENT-LEDGER-2 · AFTER · no silent loss (D2, EL2-I0) > a live holder past the wait: typed failure naming the holder, in about the wait, and the holder's lock is never taken over 15132ms
+ ✓ packages/cli/test/demo-cut-t-a14b-tx-status.test.ts (10 tests) 1894ms
+   ✓ Demo-cut · T-A14b · tx status / tx wait present the derived Q4 state > walks SUBMITTED → MEMPOOL_ACCEPTED → ACCEPTED(n) → CONFIRMED(n) → FINALIZED, each equal to sdk.tx.status, nothing asserted beyond it 581ms
+ ✓ packages/core/test/event-ledger-2-closeout.test.ts (4 tests) 19229ms
+   ✓ EVENT-LEDGER-2 closeout · CL-3 a lock naming this process's own pid is held by a live process > a worker thread of this process holding the append lock is waited for, never taken over; the event lands after it releases 1567ms
+   ✓ EVENT-LEDGER-2 closeout · CL-4 a recovery that is still valid is never taken over > a recoverer that is alive keeps its recovery lock however old it is: the append waits and fails typed, the lock intact 10253ms
+   ✓ EVENT-LEDGER-2 closeout · CL-4 a recovery that is still valid is never taken over > a recoverer suspended between its check and its unlink never removes the lock of a holder that came after it 7241ms
+ ✓ packages/cli/test/event-ledger-2.test.ts (8 tests) 25144ms
+   ✓ EVENT-LEDGER-2 · the CLI's event ledger > control · a shortcut tx send records its events in events.jsonl and leaves no lock 1108ms
+   ✓ EVENT-LEDGER-2 · the CLI's event ledger > EL2-I1 · with an append lock left by a dead process, tx send still records its events, without the 10 s wait, and no stale lock survives 1191ms
+   ✓ EVENT-LEDGER-2 · the CLI's event ledger > EL2-I2 · while a live process holds the append lock for the whole command, tx send fails with EVENT_LEDGER_APPEND_FAILED, and the holder keeps its lock 11346ms
+   ✓ EVENT-LEDGER-2 · the CLI's event ledger > EL2-I4 · the plan artifact tx plan writes is announced in the ledger, under the plan's own workflowId 1305ms
+   ✓ EVENT-LEDGER-2 · the CLI's event ledger > EL2-I4 · the copy tx sign --out writes is announced like the store's copy 2235ms
+   ✓ EVENT-LEDGER-2 · the CLI's event ledger > D7 · lock list / lock doctor call a dead holder's append lock stale, and the next command recovers it 4311ms
+   ✓ EVENT-LEDGER-2 · the CLI's event ledger > D7 · an append lock without a hostname (an earlier HardKAS) is reported as unverifiable, never as live 2253ms
+   ✓ EVENT-LEDGER-2 · the CLI's event ledger > D6 · a dead telemetry lock costs no wait and no anomaly: the telemetry appends recover it like the ledger does 1394ms
+ ✓ packages/sdk/test/event-ledger-2-effect.test.ts (7 tests) 760ms
+stdout | packages/cli/test/wave1-3-cli-helpers.test.ts > Wave 1.3 · artifact create writes no identity copy (IC-7.3) > the created artifact has a deterministic contentHash as its only identity
+{
+  "type": "test-type",
+  "schemaValid": true,
+  "payload": {
+    "key": "value",
+    "b": 2,
+    "a": 1
+  },
+  "createdAt": 1791563303874,
+  "hashVersion": 5,
+  "contentHash": "c34b27e42fb5c703d9cd97dd77e24e771369725f5584c3f6da5183c7640a655d"
+}
+
+stdout | packages/cli/test/wave1-3-cli-helpers.test.ts > Wave 1.3 · artifact create writes no identity copy (IC-7.3) > the created artifact has a deterministic contentHash as its only identity
+{
+  "type": "test-type",
+  "schemaValid": true,
+  "payload": {
+    "key": "value",
+    "b": 2,
+    "a": 1
+  },
+  "createdAt": 1791563303878,
+  "hashVersion": 5,
+  "contentHash": "c34b27e42fb5c703d9cd97dd77e24e771369725f5584c3f6da5183c7640a655d"
+}
+
+ ✓ packages/cli/test/wave1-3-cli-helpers.test.ts (9 tests) 23ms
+ ✓ packages/sdk/test/event-ledger-2-submission.test.ts (6 tests) 570ms
+ ✓ packages/cli/test/event-ledger-2-flow.test.ts (6 tests) 84ms
+ ✓ packages/core/test/event-ledger-2-effect.test.ts (3 tests) 5ms
+ ✓ packages/cli/test/event-ledger-2-report.test.ts (3 tests) 5ms
+ ✓ packages/core/test/event-emission-guard.test.ts (3 tests) 162ms
+ ✓ packages/artifacts/test/event-ledger-2-submit-outcome.test.ts (3 tests) 8ms
+
+ Test Files  12 passed (12)
+      Tests  81 passed (81)
+   Start at  18:27:10
+   Duration  78.19s (transform 2.11s, setup 0ms, collect 8.59s, tests 65.83s, environment 2ms, prepare 1.35s)
+
+JSON report written to C:/Users/jrodr/AppData/Local/Temp/claude/C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo/21f9a2e4-33ac-4300-9366-aff402f85900/scratchpad/cut46-event-ledger-2/logs/fc-after-1.json
+
+gate-hermetic: vitest exit 0 after 79s
+gate-hermetic: non-loopback attempts (each one fails the gate): 0
+gate-hermetic: loopback connection targets (review for dependencies on local services):
+gate-hermetic: PASS

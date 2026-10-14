@@ -87,7 +87,7 @@ hardkas accounts consolidate [options] <account>
 | `--dry-run` | Only estimate batches (default if --execute is not provided) |  |
 | `--execute` | Execute the consolidation (requires --yes to broadcast) |  |
 | `--yes` | Confirm broadcast for execution |  |
-| `--allow-mainnet` | Allow consolidation on mainnet |  |
+| `--allow-mainnet` | No effect: executing on mainnet stays refused in this release (MAINNET_BROADCAST_DISABLED) |  |
 | `--json` | Output as JSON | false |
 
 ### Arguments
@@ -1811,7 +1811,7 @@ hardkas kaspa wallet balance [options] <name>
 
 ## hardkas kaspa wallet create
 
-Generate a key pair and print it (address, config snippet and private key); nothing is saved. For stored dev accounts use 'accounts real generate' stable
+Generate a key pair and print its address and config snippet; the private key is printed once, only with --show-private-key; nothing is saved. For a stored, encrypted account use 'accounts real generate' stable
 
 ### Usage
 
@@ -1824,6 +1824,8 @@ hardkas kaspa wallet create [options] <name>
 | Flag | Description | Default |
 | :--- | :--- | :--- |
 | `--network <id>` | Kaspa network ID | simnet |
+| `--show-private-key` | Print the new private key once; you keep the only copy (HardKAS stores nothing and cannot recover it). Without it the command refuses before generating anything | false |
+| `--json` | Output as JSON (the private key is included only with --show-private-key) | false |
 
 ### Arguments
 
@@ -5130,7 +5132,7 @@ hardkas tx sign [options] <planPath>
 | `--account <name>` | Account name to sign with |  |
 | `--out <path>` | Save signed artifact JSON |  |
 | `--fixture` | Sign with the built-in fixture test key (any network except mainnet) | false |
-| `--allow-mainnet-signing` | Mainnet signing stays refused in this release; the flag only lets synthetic --threshold entries through | false |
+| `--allow-mainnet-signing` | Mainnet signing stays refused in this release (MAINNET_SIGNING_DISABLED); the flag has no effect | false |
 | `--threshold <number>` | Synthetic multisig threshold for tests (no Kaspa multisig script is produced) |  |
 | `--required-signers <list>` | Comma-separated signers, no spaces (with --threshold above 1) |  |
 | `--append` | Append signature to a partially signed transaction | false |

@@ -1,0 +1,156 @@
+gate-hermetic: HARDKAS_HOME=C:\Users\jrodr\AppData\Local\Temp\hardkas-hermetic-home-vdqgIc (copy of C:\Users\jrodr\AppData\Local\Temp\hk-v210-gate-home)
+gate-hermetic: DOCKER_HOST=tcp://127.0.0.1:1; preload=C:\Users\jrodr\AppData\Local\Temp\hk-ra\wt\scripts\hermetic\no-network-preload.cjs
+gate-hermetic: vitest run --coverage.enabled=false --reporter=default --reporter=json --outputFile=C:\Users\jrodr\AppData\Local\Temp\claude\C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo\21f9a2e4-33ac-4300-9366-aff402f85900\scratchpad\cut48-workspace-authority-2\logs\wa2-before-2.json packages/sdk/test/workspace-authority-2.test.ts packages/cli/test/workspace-authority-2.test.ts
+
+ RUN  v2.1.9 C:/Users/jrodr/AppData/Local/Temp/hk-ra/wt
+
+ ❯ packages/sdk/test/workspace-authority-2.test.ts (12 tests | 5 failed) 654ms
+   × WORKSPACE-AUTHORITY-2 · BEFORE · the workspace declares its execution target, the SDK runs another > WA2-A1 · execution.default = localnet: the CLI's resolver says localnet/simnet; the SDK must open on the same target, not on the simulator 203ms
+     → expected { network: 'simulated', …(1) } to deeply equal { network: 'simnet', …(1) }
+   × WORKSPACE-AUTHORITY-2 · BEFORE · the workspace declares its execution target, the SDK runs another > WA2-A2 · the single-target form (rpc on devnet) is ignored the same way 32ms
+     → expected { network: 'simulated', …(1) } to deeply equal { network: 'devnet', …(1) }
+   × WORKSPACE-AUTHORITY-2 · BEFORE · the workspace declares its execution target, the SDK runs another > WA2-A3 · a plan made by the SDK in the localnet-default workspace belongs to that world (or the node is reported unreachable): never a silent simulator plan 205ms
+     → {"kind":"ok","mode":"simulator","networkId":"simulated","execution":{"mode":"simulator","domain":"kaspa-l1","network":"simulated"},"from":"kaspasim:qqlpk9rs7yag6eqj3lttzqd8vgvssz8l8fxlpdag4h7zx2rjjr8lkkerwkezn","plannerAuthority":"SYNTHETIC_SIMULATOR"}: expected { kind: 'ok', mode: 'simulator', …(4) } to not match object { kind: 'ok', mode: 'simulator' }
+   × WORKSPACE-AUTHORITY-2 · BEFORE · the workspace declares its execution target, the SDK runs another > WA2-A4 · one call, one authority: the account identity and the execution world of an SDK plan come from the same target 41ms
+     → {"alice":{"kind":"kaspa","network":"simnet","address":"kaspasim:qqlpk9rs7yag6eqj3lttzqd8vgvssz8l8fxlpdag4h7zx2rjjr8lkkerwkezn"},"plan":{"kind":"ok","mode":"simulator","networkId":"simulated","from":"kaspasim:qqlpk9rs7yag6eqj3lttzqd8vgvssz8l8fxlpdag4h7zx2rjjr8lkkerwkezn"}}: expected false to be true // Object.is equality
+   × WORKSPACE-AUTHORITY-2 · BEFORE · the workspace declares its execution target, the SDK runs another > WA2-A6 · the loaded config carries one authority: the legacy mirror never contradicts the declared execution target 9ms
+     → defaultNetwork=simulated while execution resolves to simnet: expected false to be true // Object.is equality
+ ✓ packages/cli/test/workspace-authority-2.test.ts (2 tests) 2428ms
+   ✓ WORKSPACE-AUTHORITY-2 · controls · the CLI follows the workspace's execution target > execution.default = localnet: `tx plan` does not plan in the simulator (it asks the node, unreachable here) 1180ms
+   ✓ WORKSPACE-AUTHORITY-2 · controls · the CLI follows the workspace's execution target > the scaffold default (simulator): `tx plan --json` plans in the simulator over synthetic identities 1247ms
+
+node.exe : ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+En C:\Users\jrodr\AppData\Local\Temp\claude\C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo\21f9a2e4-33ac-4300-
+9366-aff402f85900\scratchpad\cut48-workspace-authority-2\run-files-wt.ps1: 22 Carácter: 1
++ & node @args_ *> $log
++ ~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+
+ FAIL  packages/sdk/test/workspace-authority-2.test.ts > WORKSPACE-AUTHORITY-2 · BEFORE · the workspace declares its 
+execution target, the SDK runs another > WA2-A1 · execution.default = localnet: the CLI's resolver says 
+localnet/simnet; the SDK must open on the same target, not on the simulator
+AssertionError: expected { network: 'simulated', …(1) } to deeply equal { network: 'simnet', …(1) }
+
+- Expected
++ Received
+
+  Object {
+-   "network": "simnet",
+-   "provider": StringNotContaining "Simulated",
++   "network": "simulated",
++   "provider": "LocalnetSimulatedProvider",
+  }
+
+ ❯ packages/sdk/test/workspace-authority-2.test.ts:66:69
+     64|       const sdk = await Hardkas.open({ cwd: dir });
+     65|       try {
+     66|         expect({ network: sdk.network, provider: providerOf(sdk) }).to…
+       |                                                                     ^
+     67|       } finally {
+     68|         await sdk.close();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯
+
+ FAIL  packages/sdk/test/workspace-authority-2.test.ts > WORKSPACE-AUTHORITY-2 · BEFORE · the workspace declares its 
+execution target, the SDK runs another > WA2-A2 · the single-target form (rpc on devnet) is ignored the same way
+AssertionError: expected { network: 'simulated', …(1) } to deeply equal { network: 'devnet', …(1) }
+
+- Expected
++ Received
+
+  Object {
+-   "network": "devnet",
+-   "provider": StringNotContaining "Simulated",
++   "network": "simulated",
++   "provider": "LocalnetSimulatedProvider",
+  }
+
+ ❯ packages/sdk/test/workspace-authority-2.test.ts:82:69
+     80|       const sdk = await Hardkas.open({ cwd: dir });
+     81|       try {
+     82|         expect({ network: sdk.network, provider: providerOf(sdk) }).to…
+       |                                                                     ^
+     83|       } finally {
+     84|         await sdk.close();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/5]⎯
+
+ FAIL  packages/sdk/test/workspace-authority-2.test.ts > WORKSPACE-AUTHORITY-2 · BEFORE · the workspace declares its 
+execution target, the SDK runs another > WA2-A3 · a plan made by the SDK in the localnet-default workspace belongs to 
+that world (or the node is reported unreachable): never a silent simulator plan
+AssertionError: {"kind":"ok","mode":"simulator","networkId":"simulated","execution":{"mode":"simulator","domain":"kaspa
+-l1","network":"simulated"},"from":"kaspasim:qqlpk9rs7yag6eqj3lttzqd8vgvssz8l8fxlpdag4h7zx2rjjr8lkkerwkezn","plannerAut
+hority":"SYNTHETIC_SIMULATOR"}: expected { kind: 'ok', mode: 'simulator', …(4) } to not match object { kind: 'ok', 
+mode: 'simulator' }
+
+Compared values have no visual difference.
+
+ ❯ packages/sdk/test/workspace-authority-2.test.ts:104:54
+    102|         }));
+    103|         // the hermetic run has no node: an honest SDK either refuses …
+    104|         expect(outcome, JSON.stringify(outcome)).not.toMatchObject({ k…
+       |                                                      ^
+    105|         if (outcome.kind === "ok") expect(outcome.execution).toMatchOb…
+    106|       } finally {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/5]⎯
+
+ FAIL  packages/sdk/test/workspace-authority-2.test.ts > WORKSPACE-AUTHORITY-2 · BEFORE · the workspace declares its 
+execution target, the SDK runs another > WA2-A4 · one call, one authority: the account identity and the execution 
+world of an SDK plan come from the same target
+AssertionError: {"alice":{"kind":"kaspa","network":"simnet","address":"kaspasim:qqlpk9rs7yag6eqj3lttzqd8vgvssz8l8fxlpda
+g4h7zx2rjjr8lkkerwkezn"},"plan":{"kind":"ok","mode":"simulator","networkId":"simulated","from":"kaspasim:qqlpk9rs7yag6e
+qj3lttzqd8vgvssz8l8fxlpdag4h7zx2rjjr8lkkerwkezn"}}: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ packages/sdk/test/workspace-authority-2.test.ts:126:95
+    124|           const synthetic = typeof plan.from === "string" && plan.from…
+    125|           // a simulator plan must spend a synthetic identity; a local…
+    126|           expect(plan.mode === "simulator" ? synthetic : !synthetic, J…
+       |                                                                                               ^
+    127|           expect(alice.kind === "synthetic" ? "simulator" : "localnet"…
+    128|         }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/5]⎯
+
+ FAIL  packages/sdk/test/workspace-authority-2.test.ts > WORKSPACE-AUTHORITY-2 · BEFORE · the workspace declares its 
+execution target, the SDK runs another > WA2-A6 · the loaded config carries one authority: the legacy mirror never 
+contradicts the declared execution target
+AssertionError: defaultNetwork=simulated while execution resolves to simnet: expected false to be true // Object.is 
+equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ packages/sdk/test/workspace-authority-2.test.ts:183:147
+    181|       const { loaded, target } = await authorityOf(dir);
+    182|       const mirror = loaded.config.defaultNetwork;
+    183|       expect(mirror === undefined || mirror === target.network, `defau…
+       |                                                                                                               
+                                    ^
+    184|     } finally {
+    185|       remove(dir);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/5]⎯
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  5 failed | 9 passed (14)
+   Start at  14:25:47
+   Duration  6.94s (transform 1.64s, setup 0ms, collect 3.19s, tests 3.08s, environment 0ms, prepare 234ms)
+
+JSON report written to C:/Users/jrodr/AppData/Local/Temp/claude/C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo/21f9a2e4-33ac-4300-9366-aff402f85900/scratchpad/cut48-workspace-authority-2/logs/wa2-before-2.json
+
+gate-hermetic: vitest exit 1 after 8s
+gate-hermetic: non-loopback attempts (each one fails the gate): 0
+gate-hermetic: loopback connection targets (review for dependencies on local services):
+  127.0.0.1:18210 x1

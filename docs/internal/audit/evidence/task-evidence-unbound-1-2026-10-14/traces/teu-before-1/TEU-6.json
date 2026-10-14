@@ -1,0 +1,8 @@
+{
+  "exit": 0,
+  "code": null,
+  "message": "",
+  "nodeContacted": true,
+  "scenarioNetwork": "simnet",
+  "scenarioMode": "localnet"
+}

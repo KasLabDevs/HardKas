@@ -8,6 +8,12 @@ export interface ResolveProviderOptions {
   url?: string | undefined;
   configNetworkKind?: "simulated" | "kaspa-node" | "kaspa-rpc" | string | undefined;
   executionMode?: string | undefined;
+  /**
+   * WORKSPACE-AUTHORITY-2 (closeout): the endpoint the resolved network declares (`resolveWorkspaceExecution(...).rpcUrl`).
+   * An explicit `url` still wins; without one, a declared endpoint is the destination — the canonical localnet is the
+   * default of the localnet mode only when the network declares none, never a substitute for what it declares.
+   */
+  networkRpcUrl?: string | undefined;
 }
 
 export interface ResolvedProvider {
@@ -38,11 +44,14 @@ export function resolveProvider(options: ResolveProviderOptions): ResolvedProvid
     };
   }
 
+  const declared = options.networkRpcUrl ? { endpoint: options.networkRpcUrl } : {};
+
   // 2. Explicit provider string
   if (provider === "rpc") {
     return {
       mode: "rpc",
-      network
+      network,
+      ...declared
     };
   }
   if (provider === "simulated") {
@@ -58,8 +67,9 @@ export function resolveProvider(options: ResolveProviderOptions): ResolvedProvid
       return { mode: "simulator", network };
     }
     if (options.executionMode === "localnet") {
-      // CANONICAL-RPC-URL: the canonical localnet endpoint from @hardkas/core, never a copy.
-      return { mode: "rpc", network, endpoint: nodeRpcUrl() };
+      // The endpoint the network declares; CANONICAL-RPC-URL: the canonical localnet endpoint from @hardkas/core (never
+      // a copy) only when it declares none (WORKSPACE-AUTHORITY-2 closeout: never a silent substitute).
+      return { mode: "rpc", network, endpoint: options.networkRpcUrl ?? nodeRpcUrl() };
     }
   }
 
@@ -79,9 +89,10 @@ export function resolveProvider(options: ResolveProviderOptions): ResolvedProvid
     };
   }
 
-  // Default to RPC for unknown or real networks
+  // Default to RPC for unknown or real networks (with the endpoint the network declares, when it declares one)
   return {
     mode: "rpc",
-    network
+    network,
+    ...declared
   };
 }

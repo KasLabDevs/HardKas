@@ -1,0 +1,8 @@
+﻿EL2-P1-STALE-EVENTS-LOCK       NOTE         reference send: exit 0 1271 ms, 12 ledger lines after it; with the stale lock: exit 0 in 1186 ms, ledger 12 → 24, ok:true, stderr ""; lock still there: false; the next command (tx plan): exit 0 in 1016 ms, ledger → 26
+EL2-P2-LOCK-TOOLS              NOTE         lock list --json exit 0: {"ok":true,"command":"lock list","mode":"cli","result":[{"name":"append-events.jsonl","metadata":{"pid":18356,"time":"2026-10-09T09:02:02.735Z"},"path":"C:\\Users\\jrodr\\AppData\\Local\\Temp\\claude\\C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo\\178242cc-c0b4-4452-b344-f35b49dc3d1f\\scra · lock doctor --json exit 1: ""
+EL2-P3-STALE-TELEMETRY-LOCK    NOTE         reference plan 1026 ms; telemetry files none; with stale telemetry + artifacts locks: plan exit 0 in 1057 ms; telemetry -; telemetry lock still there: false
+EL2-P4-EVENT-KINDS             NOTE         after plan → sign → send: {"artifact.written":6}; after a shortcut send as well: {"artifact.written":14,"workflow.started":1,"workflow.plan.created":1,"workflow.signed":1,"workflow.receipt":1}
+
+verdicts: DEFECT 0 · OK 0 · NOTE 4 · INCONCLUSIVE 0
+network: refused 0 ; non-loopback 0; loopback {}
+results → C:\Users\jrodr\AppData\Local\Temp\claude\C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo\178242cc-c0b4-4452-b344-f35b49dc3d1f\scratchpad\el2\runs\after-1-p\results.json

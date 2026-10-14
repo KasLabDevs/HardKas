@@ -1,0 +1,14 @@
+{
+  "tag": "rn-2-verify-human",
+  "cwd": "C:\\Users\\jrodr\\hkl1\\teu\\realnode-ws",
+  "argv": [
+    "evidence",
+    "verify",
+    "C:\\Users\\jrodr\\hkl1\\teu\\realnode-ws\\paycheck.hke.json"
+  ],
+  "exit": 0,
+  "timedOut": false,
+  "ms": 1266,
+  "stdout": "EVIDENCE_VERIFIED: 5 artifacts, claim payment, run passed, lineage closed.\nPayment a9c742ee694d5e3ca09d0bf04d7eada1613f0deac7800a0be25e59322b258bc8: plan, signed and submission linked inside the package; the node accepted the request when it was submitted.\nRPC observations carried, as one observer reported them (not checked against the network by this command): a9c742ee694d5e3ca09d0bf04d7eada1613f0deac7800a0be25e59322b258bc8: mempool_entry (rpc); a9c742ee694d5e3ca09d0bf04d7eada1613f0deac7800a0be25e59322b258bc8: chain_accepted, 130 blue confirmations (rpc).\nIntegrity and internal consistency of an unsigned package: each artifact hashes to its identity and they are exactly the ones its sealed scenario result names, and each claimed payment's lineage (plan, signed, submission) closes inside it. Not a proof of inclusion on chain, nor of who produced the package; an observation records what one RPC observer reported.\n",
+  "stderr": ""
+}

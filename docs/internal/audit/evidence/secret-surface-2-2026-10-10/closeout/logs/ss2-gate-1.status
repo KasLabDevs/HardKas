@@ -1,0 +1,71 @@
+ M apps/docs/docs-data/cli-command-inventory.json
+ M apps/docs/docs/reference/cli/kaspa.md
+ M docs/concepts/security-model.md
+ M docs/reference/cli.generated.json
+ M docs/reference/cli.md
+ M packages/cli/src/commands/env.ts
+ M packages/cli/src/commands/kaspa.ts
+ M packages/cli/src/commands/security.ts
+ M packages/cli/src/runners/kaspa-wallet-runner.ts
+ M packages/core/src/index.ts
+ M packages/core/src/security.ts
+?? docs/internal/audit/evidence/secret-surface-2-2026-10-10/D1-WALLET-CREATE-RECOVERABILITY.md
+?? docs/internal/audit/evidence/secret-surface-2-2026-10-10/LEDGER.md
+?? docs/internal/audit/evidence/secret-surface-2-2026-10-10/after/logs/build-ss2-after-1.log
+?? docs/internal/audit/evidence/secret-surface-2-2026-10-10/after/logs/ss2-after-1.exit
+?? docs/internal/audit/evidence/secret-surface-2-2026-10-10/after/logs/ss2-after-1.head
+?? docs/internal/audit/evidence/secret-surface-2-2026-10-10/after/logs/ss2-after-1.json
+?? docs/internal/audit/evidence/secret-surface-2-2026-10-10/after/logs/ss2-after-1.log
+?? docs/internal/audit/evidence/secret-surface-2-2026-10-10/after/logs/ss2-after-1.status
+?? docs/internal/audit/evidence/secret-surface-2-2026-10-10/after/logs/ss2-after-2.exit
+?? docs/internal/audit/evidence/secret-surface-2-2026-10-10/after/logs/ss2-after-2.head
+?? docs/internal/audit/evidence/secret-surface-2-2026-10-10/after/logs/ss2-after-2.json
+?? docs/internal/audit/evidence/secret-surface-2-2026-10-10/after/logs/ss2-after-2.log
+?? docs/internal/audit/evidence/secret-surface-2-2026-10-10/after/logs/ss2-after-2.status
+?? docs/internal/audit/evidence/secret-surface-2-2026-10-10/after/logs/ss2-related-1.exit
+?? docs/internal/audit/evidence/secret-surface-2-2026-10-10/after/logs/ss2-related-1.head
+?? docs/internal/audit/evidence/secret-surface-2-2026-10-10/after/logs/ss2-related-1.json
+?? docs/internal/audit/evidence/secret-surface-2-2026-10-10/after/logs/ss2-related-1.log
+?? docs/internal/audit/evidence/secret-surface-2-2026-10-10/after/logs/ss2-related-1.status
+?? docs/internal/audit/evidence/secret-surface-2-2026-10-10/after/tests/cli-secret-surface-2.test.ts
+?? docs/internal/audit/evidence/secret-surface-2-2026-10-10/after/tests/core-secret-surface-2.test.ts
+?? docs/internal/audit/evidence/secret-surface-2-2026-10-10/before/INVESTIGATION.md
+?? docs/internal/audit/evidence/secret-surface-2-2026-10-10/before/logs/run-files-wt.ps1
+?? docs/internal/audit/evidence/secret-surface-2-2026-10-10/before/logs/ss2-before-1.exit
+?? docs/internal/audit/evidence/secret-surface-2-2026-10-10/before/logs/ss2-before-1.head
+?? docs/internal/audit/evidence/secret-surface-2-2026-10-10/before/logs/ss2-before-1.json
+?? docs/internal/audit/evidence/secret-surface-2-2026-10-10/before/logs/ss2-before-1.log
+?? docs/internal/audit/evidence/secret-surface-2-2026-10-10/before/logs/ss2-before-1.status
+?? docs/internal/audit/evidence/secret-surface-2-2026-10-10/before/tests/cli-secret-surface-2.test.ts
+?? docs/internal/audit/evidence/secret-surface-2-2026-10-10/before/tests/core-secret-surface-2.test.ts
+?? docs/internal/audit/evidence/secret-surface-2-2026-10-10/closeout/logs/build-ss2-after-2.log
+?? docs/internal/audit/evidence/secret-surface-2-2026-10-10/closeout/logs/ss2-after-3.exit
+?? docs/internal/audit/evidence/secret-surface-2-2026-10-10/closeout/logs/ss2-after-3.head
+?? docs/internal/audit/evidence/secret-surface-2-2026-10-10/closeout/logs/ss2-after-3.json
+?? docs/internal/audit/evidence/secret-surface-2-2026-10-10/closeout/logs/ss2-after-3.log
+?? docs/internal/audit/evidence/secret-surface-2-2026-10-10/closeout/logs/ss2-after-3.status
+?? docs/internal/audit/evidence/secret-surface-2-2026-10-10/closeout/logs/ss2-after-4.exit
+?? docs/internal/audit/evidence/secret-surface-2-2026-10-10/closeout/logs/ss2-after-4.head
+?? docs/internal/audit/evidence/secret-surface-2-2026-10-10/closeout/logs/ss2-after-4.json
+?? docs/internal/audit/evidence/secret-surface-2-2026-10-10/closeout/logs/ss2-after-4.log
+?? docs/internal/audit/evidence/secret-surface-2-2026-10-10/closeout/logs/ss2-after-4.status
+?? docs/internal/audit/evidence/secret-surface-2-2026-10-10/closeout/logs/ss2-d1-before-1.exit
+?? docs/internal/audit/evidence/secret-surface-2-2026-10-10/closeout/logs/ss2-d1-before-1.head
+?? docs/internal/audit/evidence/secret-surface-2-2026-10-10/closeout/logs/ss2-d1-before-1.json
+?? docs/internal/audit/evidence/secret-surface-2-2026-10-10/closeout/logs/ss2-d1-before-1.log
+?? docs/internal/audit/evidence/secret-surface-2-2026-10-10/closeout/logs/ss2-d1-before-1.status
+?? docs/internal/audit/evidence/secret-surface-2-2026-10-10/closeout/logs/ss2-related-2.exit
+?? docs/internal/audit/evidence/secret-surface-2-2026-10-10/closeout/logs/ss2-related-2.head
+?? docs/internal/audit/evidence/secret-surface-2-2026-10-10/closeout/logs/ss2-related-2.json
+?? docs/internal/audit/evidence/secret-surface-2-2026-10-10/closeout/logs/ss2-related-2.log
+?? docs/internal/audit/evidence/secret-surface-2-2026-10-10/closeout/logs/ss2-related-2.status
+?? docs/internal/audit/evidence/secret-surface-2-2026-10-10/closeout/scripts/manifest2.ps1
+?? docs/internal/audit/evidence/secret-surface-2-2026-10-10/closeout/scripts/run-after-chain.ps1
+?? docs/internal/audit/evidence/secret-surface-2-2026-10-10/closeout/scripts/run-files-wt.ps1
+?? docs/internal/audit/evidence/secret-surface-2-2026-10-10/closeout/scripts/run-full-wt.ps1
+?? docs/internal/audit/evidence/secret-surface-2-2026-10-10/closeout/tests/cli-secret-surface-2-wallet-create.test.ts
+?? docs/internal/audit/evidence/secret-surface-2-2026-10-10/closeout/tests/cli-secret-surface-2.test.ts
+?? docs/internal/audit/evidence/secret-surface-2-2026-10-10/closeout/tests/core-secret-surface-2.test.ts
+?? packages/cli/test/secret-surface-2-wallet-create.test.ts
+?? packages/cli/test/secret-surface-2.test.ts
+?? packages/core/test/secret-surface-2.test.ts

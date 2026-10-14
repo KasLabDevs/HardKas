@@ -362,7 +362,7 @@ export class HardkasCapabilitiesApi {
     let rpcUrl = options?.igraRpcUrl;
     if (!rpcUrl && this.sdk) {
        // Assuming config access pattern
-       const networkId = this.sdk.config?.config?.defaultNetwork || "simnet";
+       const networkId = (this.sdk.network as string) || "simnet";
        rpcUrl = this.sdk.config?.config?.networks?.[networkId]?.igraRpcUrl;
     }
     if (!rpcUrl && process.env.IGRA_RPC_URL) {

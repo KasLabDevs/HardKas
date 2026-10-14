@@ -1,0 +1,13 @@
+{
+  "A": "ws://127.0.0.1:64011",
+  "B": "ws://127.0.0.1:64012",
+  "aMethods": [
+    "getServerInfo",
+    "getBlockDagInfo"
+  ],
+  "bMethods": [],
+  "authorityEndpoint": {
+    "class": "wrpc",
+    "address": "ws://127.0.0.1:64012"
+  }
+}

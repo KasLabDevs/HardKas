@@ -1,0 +1,55 @@
+
+ RUN  v2.1.9 C:/Users/jrodr/hkl1/si/src
+
+ ✓ packages/kaspa-rpc/test/security-integration-1.test.ts > SECURITY-INTEGRATION-1 · a connection the official client resumed by itself is verified again > resumed on a node that declares mainnet: NODE_NETWORK_MISMATCH before the request reaches it; the client is released
+ ✓ packages/kaspa-rpc/test/security-integration-1.test.ts > SECURITY-INTEGRATION-1 · a connection the official client resumed by itself is verified again > resumed on a node of the same network: verified once, then used normally
+ ✓ packages/kaspa-rpc/test/security-integration-1.test.ts > SECURITY-INTEGRATION-1 · a connection the official client resumed by itself is verified again > concurrent requests after a resume share one verification
+ ✓ packages/kaspa-rpc/test/security-integration-1.test.ts > SECURITY-INTEGRATION-1 · a connection the official client resumed by itself is verified again > without an expected network a resume changes nothing (no identity call)
+ ✓ packages/kaspa-rpc/test/security-integration-1.test.ts > SECURITY-INTEGRATION-1 · the session's messages never carry endpoint credentials > an identity refusal names the endpoint without userinfo and with secret query parameters redacted
+ ✓ packages/kaspa-rpc/test/security-integration-1.test.ts > SECURITY-INTEGRATION-1 · the session's messages never carry endpoint credentials > a connection failure (the official client repeats the URL in its own text) carries no credential
+ ✓ packages/kaspa-rpc/test/security-integration-1.test.ts > SECURITY-INTEGRATION-1 · the session's messages never carry endpoint credentials > a connection lost under a request carries no credential
+ ✓ packages/kaspa-rpc/test/security-integration-1.test.ts > SECURITY-INTEGRATION-1 · D1 concurrency and connection errors around a resume > five concurrent requests (submitTransaction among them) right after a resume onto a mainnet node: all refused, the node asked once, nothing else reaches it
+ ✓ packages/kaspa-rpc/test/security-integration-1.test.ts > SECURITY-INTEGRATION-1 · D1 concurrency and connection errors around a resume > requests arriving while the re-verification is pending wait for it: none reaches the node before the answer
+ × packages/kaspa-rpc/test/security-integration-1.test.ts > SECURITY-INTEGRATION-1 · D1 concurrency and connection errors around a resume > a drop while the re-verification is pending: the answer is not trusted, every waiting request fails as a connection error, nothing reaches the node; the next request verifies a new connection
+   → expected 'fulfilled' to be 'rejected' // Object.is equality
+ × packages/kaspa-rpc/test/security-integration-1.test.ts > SECURITY-INTEGRATION-1 · D1 concurrency and connection errors around a resume > a drop while the FIRST verification is pending: a connection failure, the connection never handed out
+   → expected null to be an instance of RpcConnectionError
+ ✓ packages/kaspa-rpc/test/security-integration-1.test.ts > SECURITY-INTEGRATION-1 · D1 concurrency and connection errors around a resume > a connection lost while re-verifying stays a connection failure with the same type and retriability as any other
+ ✓ packages/kaspa-rpc/test/security-integration-1.test.ts > SECURITY-INTEGRATION-1 · D1 concurrency and connection errors around a resume > redaction keeps the typed errors: identity refusal (code, not retriable, expected/observed, endpoint without credentials) and connection failure (class, retriable)
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  packages/kaspa-rpc/test/security-integration-1.test.ts > SECURITY-INTEGRATION-1 · D1 concurrency and connection errors around a resume > a drop while the re-verification is pending: the answer is not trusted, every waiting request fails as a connection error, nothing reaches the node; the next request verifies a new connection
+AssertionError: expected 'fulfilled' to be 'rejected' // Object.is equality
+
+Expected: "rejected"
+Received: "fulfilled"
+
+ ❯ packages/kaspa-rpc/test/security-integration-1.test.ts:194:24
+    192|     const results = await pending;
+    193|     for (const r of results) {
+    194|       expect(r.status).toBe("rejected");
+       |                        ^
+    195|       const e = (r as PromiseRejectedResult).reason;
+    196|       expect(e).toBeInstanceOf(RpcConnectionError);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  packages/kaspa-rpc/test/security-integration-1.test.ts > SECURITY-INTEGRATION-1 · D1 concurrency and connection errors around a resume > a drop while the FIRST verification is pending: a connection failure, the connection never handed out
+AssertionError: expected null to be an instance of RpcConnectionError
+ ❯ packages/kaspa-rpc/test/security-integration-1.test.ts:216:15
+    214|     h.release();
+    215|     const e = await first;
+    216|     expect(e).toBeInstanceOf(RpcConnectionError);
+       |               ^
+    217|     expect(methods()).toEqual(["getServerInfo"]);
+    218|     expect(s.current()).toBeNull();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 11 passed (13)
+   Start at  23:43:11
+   Duration  1.08s (transform 409ms, setup 0ms, collect 666ms, tests 72ms, environment 0ms, prepare 117ms)
+
+JSON report written to C:/Users/jrodr/AppData/Local/Temp/claude/C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo/ecaf7e92-a2ba-49b0-aafc-c62b4cb5eda0/scratchpad/l1-reality-1/si/logs/si-d1-before-1.json

@@ -6,6 +6,7 @@ import { Hardkas } from "../../src/index.js";
 import { observeTxOnce, type TxObserverRpc, type TxObserverRpcRecorder } from "../../src/tx-observer.js";
 import { calculateContentHash, CURRENT_HASH_VERSION, evidenceDigest, deriveObserverId } from "@hardkas/artifacts";
 import { systemRuntimeContext, finalityDepthFor } from "@hardkas/core";
+import { sendAsRpc } from "../helpers/rpc-instance.js";
 
 // Wave 2(a) · Q4 · the RPC observer and the SDK surface
 //   observeTxOnce records what ONE node answers (mempool → virtual chain → header → finality
@@ -204,7 +205,7 @@ describe("Wave 2(a) · SDK: submission cursor, persisted observations, derived s
     s.signedId = `signed-${s.contentHash.slice(0, 16)}`;
     await sdk.artifacts.write(s);
     vi.spyOn(sdk.rpc, "submitTransaction").mockResolvedValue({ transactionId: TX } as any);
-    const sent: any = await sdk.tx.send(s, "http://127.0.0.1:16110");
+    const sent: any = await sendAsRpc(sdk, s, "http://127.0.0.1:16110");
     expect(sent.submitted).toBe(true);
     return { txId: sent.txId, submissionId: sent.submission.contentHash };
   }

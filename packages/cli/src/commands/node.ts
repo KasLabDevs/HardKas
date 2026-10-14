@@ -152,6 +152,16 @@ export function registerNodeCommands(program: Command) {
             timeoutMs: parseInt(options.lockTimeout)
           },
           async () => {
+            // JSON-ENVELOPE-RESIDUAL-2: --json never opens an interactive prompt. Without explicit
+            // consent this is a usage error with zero side effects; interactive cancel is unchanged.
+            if (options.json && !options.yes) {
+              const { HardkasCliError, HardkasExitCode } = await import("../cli-errors.js");
+              throw new HardkasCliError(
+                "INTERACTIVE_PROMPT_IN_JSON_MODE",
+                "'node reset --json' cannot ask for confirmation. Pass --yes to confirm. Nothing was reset.",
+                { exitCode: HardkasExitCode.USAGE_ERROR }
+              );
+            }
             if (!options.yes) {
               const confirmed = await UI.confirm(
                 "This will delete all local chain data. Are you sure?"
@@ -261,7 +271,13 @@ export function registerNodeCommands(program: Command) {
         const result = await runNodeLogs({
           tail: parseInt(options.tail, 10)
         });
-        if (result) console.log(result);
+        if (options.json) {
+          // JSON-ENVELOPE-RESIDUAL-2: exactly one JSON document on stdout.
+          const { getOutput } = await import("../output.js");
+          getOutput().writeJson({ ok: true, logs: result ?? "" });
+        } else if (result) {
+          console.log(result);
+        }
       } catch (e) {
         handleError(e);
       }

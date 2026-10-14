@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
 import { Hardkas } from "../../src/index.js";
+import { withClientUrl } from "../helpers/rpc-instance.js";
 import {
   calculateContentHash,
   CURRENT_HASH_VERSION,
@@ -98,15 +99,20 @@ describe("Wave 2(d) · the submission records a derived fee or insufficient evid
 
   beforeEach(async () => {
     ws = fs.mkdtempSync(path.join(os.tmpdir(), "hk-w2d-sdk-"));
-    sdk = await Hardkas.create({ cwd: ws, autoBootstrap: true, network: "simulated" });
+    fs.mkdirSync(path.join(ws, ".hardkas"));
+    // WORKSPACE-AUTHORITY-2: the SDK is opened on the real-node simnet it is meant to plan on. It used to be opened on
+    // the simulator and re-pointed by writing `config.defaultNetwork` afterwards — the legacy slot that is no longer an
+    // authority (the world is resolved once, at open).
+    sdk = await Hardkas.create({ cwd: ws, autoBootstrap: true, network: "simnet" });
     const cfg: any = sdk.config.config;
-    cfg.defaultNetwork = "simnet";
     cfg.networks = { ...(cfg.networks ?? {}), simnet: { kind: "kaspa-node", network: "simnet", rpcUrl: "ws://127.0.0.1:1" } };
     vi.spyOn(sdk.rpc, "getUtxosByAddress").mockImplementation(async () => UTXOS.map((u) => ({ ...u })) as any);
     vi.spyOn(sdk.rpc, "getMempoolEntriesByAddresses").mockResolvedValue({ entries: [] } as any);
     vi.spyOn(sdk.rpc, "getBlockDagInfo").mockResolvedValue({ networkId: "simnet", virtualDaaScore: 1_000_000n, tipHashes: ["s"], virtualParentHashes: ["s"], sink: "s" } as any);
     vi.spyOn(sdk.rpc, "getSinkBlueScore").mockResolvedValue({ blueScore: "5000" } as any);
     submit = vi.spyOn(sdk.rpc, "submitTransaction").mockResolvedValue({ transactionId: "f".repeat(64) } as any);
+    // ENDPOINT-AUTHORITY-1 (EA-I2): the scripted client says it is the endpoint the sends below name
+    withClientUrl(sdk, LOOPBACK);
     plan = await sdk.tx.plan({
       from: { name: FROM, kind: "external-wallet", network: "simnet", address: FROM } as any,
       to: { name: TO, kind: "external-wallet", network: "simnet", address: TO } as any,

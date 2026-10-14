@@ -98,24 +98,26 @@ describe("Account Hardening & Security Guards", () => {
         config,
         allowMainnetSigning: false
       })
-    ).rejects.toThrow("Mainnet signing is blocked");
+    ).rejects.toMatchObject({ code: "MAINNET_SIGNING_DISABLED" });
   });
 
   it("should refuse signing if artifact network and account network disagree", async () => {
+    // SDK-MAINNET-BROADCAST-GUARD-1: a mainnet PLAN is refused by the mainnet policy first (whatever the flag says), so
+    // the mismatch is shown with the reachable case: a testnet-10 plan and an account whose address is mainnet's.
     const planArtifact: any = {
       planId: "test-plan",
-      networkId: "mainnet",
+      networkId: "testnet-10",
       mode: "rpc",
-      execution: { mode: "rpc", domain: "kaspa-l1", network: "mainnet" },
+      execution: { mode: "rpc", domain: "kaspa-l1", network: "testnet-10" },
       from: {
-        address: "kaspatest:qrh60m5zv98m5l855l855l855l855l855l855l855l855l85sxtunx"
-      }, // Testnet address
-      to: { address: "kaspa:qrh60m5zv98m5l855l855l855l855l855l855l855l855l85sxtunx" },
+        address: "kaspa:qrh60m5zv98m5l855l855l855l855l855l855l855l855l85sxtunx"
+      }, // Mainnet address
+      to: { address: "kaspatest:qrh60m5zv98m5l855l855l855l855l855l855l855l855l85sxtunx" },
       amountSompi: 100000000n
     };
 
     const config: any = {
-      defaultNetwork: "mainnet",
+      defaultNetwork: "testnet-10",
       accounts: {}
     };
 
@@ -126,6 +128,23 @@ describe("Account Hardening & Security Guards", () => {
         config,
         allowMainnetSigning: true
       })
-    ).rejects.toThrow("Network mismatch");
+      // refused as a network mismatch — here by the account/target compatibility check (WORKSPACE-AUTHORITY-2), which
+      // runs before the runner's own artifact/address comparison
+    ).rejects.toThrow(/network mismatch/i);
+  });
+
+  it("a mainnet plan is refused MAINNET_SIGNING_DISABLED even with --allow-mainnet-signing (the flag stays refused)", async () => {
+    const planArtifact: any = {
+      planId: "test-plan",
+      networkId: "mainnet",
+      mode: "rpc",
+      execution: { mode: "rpc", domain: "kaspa-l1", network: "mainnet" },
+      from: { address: "kaspa:qrh60m5zv98m5l855l855l855l855l855l855l855l855l85sxtunx" },
+      to: { address: "kaspa:qrh60m5zv98m5l855l855l855l855l855l855l855l855l85sxtunx" },
+      amountSompi: 100000000n
+    };
+    await expect(
+      runTxSign({ planArtifact, accountName: planArtifact.from.address, config: { defaultNetwork: "mainnet", accounts: {} } as any, allowMainnetSigning: true })
+    ).rejects.toMatchObject({ code: "MAINNET_SIGNING_DISABLED" });
   });
 });
