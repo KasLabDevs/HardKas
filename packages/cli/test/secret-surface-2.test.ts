@@ -190,10 +190,12 @@ describe("SECRET-SURFACE-2 · AFTER", () => {
   });
 
   const audit = (args: string[] = []) => run(["security", "audit", ...args], ws);
-  const plant = (rel: string, content: string) => {
+  const plant = (rel: string, content: string, mode?: number) => {
     const p = path.join(ws, rel);
     fs.mkdirSync(path.dirname(p), { recursive: true });
     fs.writeFileSync(p, content);
+    // an explicit mode, set after writing so the process umask cannot change it
+    if (mode !== undefined) fs.chmodSync(p, mode);
   };
 
   describe("D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed", () => {
@@ -258,9 +260,19 @@ describe("SECRET-SURFACE-2 · AFTER", () => {
     });
 
     it("the .key files of dev accounts are not searched (their permissions are checked instead)", () => {
-      plant(".hardkas/dev-accounts/keys/alice.key", HEX);
+      // owner-only, as a dev key must be: outside Windows the audit checks the mode (0644, the umask default, fails)
+      plant(".hardkas/dev-accounts/keys/alice.key", HEX, 0o600);
       const r = audit();
       expect(r.status, r.all).toBe(0);
+    });
+
+    // SECRET-SURFACE-2-LINUX-TEST-1: the permission check itself (Windows modes do not carry it; there it is skipped)
+    it.skipIf(process.platform === "win32")("a dev-account .key readable by others is reported by its mode, never by its value", () => {
+      plant(".hardkas/dev-accounts/keys/alice.key", HEX, 0o644);
+      const r = audit();
+      expect({ exit: r.status, failed: /SECURITY_AUDIT_FAILED/.test(r.all) }, r.all).toEqual({ exit: 1, failed: true });
+      expect(r.all).toMatch(/Key permission != 0600 for alice\.key \(got 0644\)/);
+      expect(r.all, "never the value").not.toContain(HEX);
     });
   });
 
