@@ -5,6 +5,7 @@ import path from "node:path";
 import { Hardkas } from "../src/index.js";
 import { attachLedgerAppender, eventLedgerPath } from "@hardkas/core";
 import { calculateContentHash, CURRENT_HASH_VERSION, deriveTxStatus } from "@hardkas/artifacts";
+import { asRpcInstance } from "./helpers/rpc-instance.js";
 
 vi.setConfig({ testTimeout: 120_000 });
 
@@ -25,8 +26,10 @@ vi.setConfig({ testTimeout: 120_000 });
 
 const LOOPBACK = "http://127.0.0.1:16110";
 
-function asBroadcastable(signed: any): any {
+// ENDPOINT-AUTHORITY-1 (EA-I3): the re-issued artifact is for the network the instance sends on
+function asBroadcastable(signed: any, network?: string): any {
   const s: any = structuredClone(signed);
+  if (network) s.networkId = network;
   delete s.authorization;
   s.signedTransaction = { format: "hex", payload: "deadbeef" };
   s.txId = "f".repeat(64);
@@ -61,9 +64,11 @@ describe("EVENT-LEDGER-2 closeout · CL-2 workflow.submitted is recorded only af
   /** Plans and signs in the simulator, then sends the re-issued artifact through the REAL send() with `submit`. */
   async function sendWith(submit: () => Promise<any>, seen: { atSubmit?: string[] } = {}) {
     const sdk = await Hardkas.create({ cwd: ws, autoBootstrap: true, network: "simulated" });
+    // ENDPOINT-AUTHORITY-1 (EA-I3): planned and signed for the network the send runs on
+    Object.defineProperty(sdk, "network", { get: () => "simnet", configurable: true });
     const plan = await sdk.tx.plan({ from: "alice", to: "bob", amount: "1" } as any);
     const signed = asBroadcastable(await sdk.tx.sign(plan as any, "alice"));
-    Object.defineProperty(sdk, "network", { get: () => "simnet", configurable: true });
+    asRpcInstance(sdk, LOOPBACK, "simnet");
     vi.spyOn(sdk.rpc, "submitTransaction").mockImplementation((async () => {
       seen.atSubmit = ledger(ws).map((e) => e.kind);
       return submit();
@@ -134,7 +139,10 @@ describe("EVENT-LEDGER-2 closeout · CL-2 workflow.submitted is recorded only af
     const sdk = await Hardkas.create({ cwd: ws, autoBootstrap: true, network: "simulated" });
     Object.defineProperty(sdk, "network", { get: () => "simnet", configurable: true });
     const realSend = sdk.tx.send.bind(sdk.tx);
-    vi.spyOn(sdk.tx, "send").mockImplementation((signed: any) => realSend(asBroadcastable(signed), LOOPBACK));
+    vi.spyOn(sdk.tx, "send").mockImplementation((signed: any) => {
+      asRpcInstance(sdk, LOOPBACK, "simnet");
+      return realSend(asBroadcastable(signed, "simnet"), LOOPBACK);
+    });
     vi.spyOn(sdk.rpc, "submitTransaction").mockImplementation((() => Promise.reject(new Error("RPC request submitTransaction timed out after 5000ms"))) as any);
     const run: any = await sdk.workflow.run({ steps: [{ type: "tx.plan", from: "alice", to: "bob", amount: 10 } as any, { type: "tx.send" } as any] });
     const sent: any = await vi.mocked(sdk.tx.send).mock.results[0]!.value;

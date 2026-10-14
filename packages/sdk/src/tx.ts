@@ -3,12 +3,41 @@ import {
   deterministicCompare,
   getCoinbaseMaturity,
   HardkasError,
+  assertMainnetTransactionsDisabled,
   stripBom,
   redactUrlCredentials,
   redactUrlCredentialsInText
 } from "@hardkas/core";
 import { pollCondition } from "./waiters.js";
 import { Hardkas } from "./index.js";
+import { isNodeNetworkIdentityError, rpcEndpointOf, sameRpcEndpoint } from "@hardkas/kaspa-rpc";
+
+/**
+ * ENDPOINT-AUTHORITY-1 (EA-I1/EA-I2): the endpoint of the client that carries an operation is the only endpoint a
+ * record may name. An explicit endpoint must BE that client's (same effective destination); when the client does not
+ * say which endpoint it talks to, an explicit one cannot be shown to match and is refused. Decided before any request.
+ */
+function endpointAuthority(rpc: unknown, explicit: string | undefined, operation: "SEND" | "OBSERVE"): string | undefined {
+  const own = rpcEndpointOf(rpc);
+  if (explicit === undefined) return own;
+  const verb = operation === "SEND" ? "send to" : "observe through";
+  if (own === undefined) {
+    throw new HardkasError(
+      `${operation}_ENDPOINT_UNVERIFIABLE`,
+      `Cannot ${verb} ${redactUrlCredentials(explicit)}: this instance's RPC client does not say which endpoint it talks to, ` +
+        `so the request could not be shown to go there. Nothing was sent or recorded.`
+    );
+  }
+  if (!sameRpcEndpoint(explicit, own)) {
+    throw new HardkasError(
+      `${operation}_ENDPOINT_MISMATCH`,
+      `Cannot ${verb} ${redactUrlCredentials(explicit)}: this instance's RPC client talks to ${redactUrlCredentials(own)}, ` +
+        `and HardKAS never records one endpoint for a request another one received. Open the instance on that endpoint. ` +
+        `Nothing was sent or recorded.`
+    );
+  }
+  return own;
+}
 import {
   Utxo as BuilderUtxo,
   verifySignedTxSemantics
@@ -181,6 +210,8 @@ export class HardkasTx {
       );
     }
     const { ProjectArtifactStore } = await import("@hardkas/artifacts");
+    // ENDPOINT-AUTHORITY-1 (EA-I1/EA-I2): the observation is the observing client's; an explicit endpoint must be it
+    const endpoint = endpointAuthority(this.sdk.rpc, options.rpcUrl, "OBSERVE");
     const store = new ProjectArtifactStore(this.sdk.workspace.root);
     const submission = await this.findSubmissionForTxId(txId);
     const previous = store.listObservationsByTxId(txId).observations as any[];
@@ -224,7 +255,7 @@ export class HardkasTx {
         networkId,
         mode,
         ...((submission as any)?.execution ? { execution: (submission as any).execution } : {}),
-        ...(options.rpcUrl ? { rpcUrl: options.rpcUrl } : {}),
+        ...(endpoint ? { rpcUrl: endpoint } : {}),
         ...((submission as any)?.workflowId ? { workflowId: (submission as any).workflowId } : {}),
         ...((submission as any)?.assumptionLevel ? { assumptionLevel: (submission as any).assumptionLevel } : {})
       },
@@ -253,8 +284,11 @@ export class HardkasTx {
    */
   observerId(): string {
     const target = this.sdk.network as string;
-    const locator = (this.sdk.config.config.networks as any)?.[target]?.rpcUrl;
-    return deriveObserverId({ kind: "rpc", target, ...(typeof locator === "string" ? { locator } : {}) });
+    // ENDPOINT-AUTHORITY-1 (EA-I1): the observer is the client that observes (its endpoint), not the configuration's
+    // endpoint — they differ once a client is swapped in (as the CLI's tx send / consolidate do). The SDK opens its
+    // own client on the configured rpcUrl, so for an unswapped instance the identity is unchanged.
+    const locator = rpcEndpointOf(this.sdk.rpc);
+    return deriveObserverId({ kind: "rpc", target, ...(locator !== undefined ? { locator } : {}) });
   }
 
   /** The verified submission (or simulator receipt) recorded for `txId`, if exactly one exists. */
@@ -816,6 +850,15 @@ export class HardkasTx {
       (e as any).code = "TX_ARTIFACT_SCHEMA_INVALID";
       throw e;
     }
+
+    // SDK-MAINNET-BROADCAST-GUARD-1: no signature on mainnet — decided from every network identity involved (the
+    // artifact's own and its execution's, and this instance's), before any signer is asked, external ones included,
+    // and before anything is written. allowPublic does not lift it.
+    assertMainnetTransactionsDisabled(
+      "sign",
+      [(plan as any).networkId, (plan as any).execution?.network, this.sdk.network],
+      "tx.sign"
+    );
 
     if (
       (plan as any).schema === HardkasSchemas.TxPlanV1 ||
@@ -1595,14 +1638,25 @@ export class HardkasTx {
     txId?: string;
   }> {
     const activeNetwork = this.sdk.network as string;
-    const isExplicitRpc =
-      typeof urlOrOptions === "string" &&
-      (urlOrOptions.startsWith("ws://") ||
-        urlOrOptions.startsWith("http://") ||
-        urlOrOptions.startsWith("wss://") ||
-        urlOrOptions.startsWith("https://"));
-    // the world this instance runs on decides (WORKSPACE-AUTHORITY-2), unless an explicit RPC endpoint was given
-    const isSimulated = !isExplicitRpc && this.sdk.execution.mode === "simulator";
+    // SDK-MAINNET-BROADCAST-GUARD-1: no broadcast on mainnet — decided from every network identity involved (the signed
+    // artifact's own and its execution's, and this instance's) before any RPC request, receipt or submission event.
+    // A transaction signed anywhere (outside HardKAS included) is refused the same way; allowPublic does not lift it.
+    assertMainnetTransactionsDisabled(
+      "broadcast",
+      [(signedArtifact as any)?.networkId, (signedArtifact as any)?.execution?.network, activeNetwork],
+      "tx.send"
+    );
+    // the world this instance runs on decides (WORKSPACE-AUTHORITY-2)
+    const isSimulated = this.sdk.execution.mode === "simulator";
+    const explicitUrl = typeof urlOrOptions === "string" ? urlOrOptions : undefined;
+    // ENDPOINT-AUTHORITY-1 (EA-I4): an explicit endpoint never turns a simulated run into an RPC one
+    if (explicitUrl !== undefined && isSimulated) {
+      throw new HardkasError(
+        "SEND_ENDPOINT_ON_SIMULATOR",
+        `Cannot send to ${redactUrlCredentials(explicitUrl)}: this instance runs the simulator (network ${activeNetwork}), ` +
+          `which has no RPC endpoint. Open an instance on that endpoint's network to broadcast. Nothing was sent or recorded.`
+      );
+    }
 
     if (isSimulated) {
       // Wave 1.4 · IC-6′.5: in the simulator only a coherent synthetic authorization
@@ -1715,6 +1769,19 @@ export class HardkasTx {
     }
     const signedArtifactId = signedIdentity.artifactId;
 
+    // ENDPOINT-AUTHORITY-1 (EA-I3): a transaction is sent only on the network it was signed for. This compares the
+    // artifact with the instance; whether the node behind the client serves that network is a separate check.
+    const signedNetwork = (signedArtifact as { networkId?: unknown }).networkId;
+    if (typeof signedNetwork === "string" && signedNetwork !== activeNetwork) {
+      throw new HardkasError(
+        "SEND_NETWORK_MISMATCH",
+        `Refusing to broadcast: the signed artifact is for network ${signedNetwork}, this instance runs on ${activeNetwork}. ` +
+          `Nothing was sent or recorded.`
+      );
+    }
+    // EA-I1/EA-I2: the endpoint a submission records is the endpoint of the client that submits it
+    const endpoint = endpointAuthority(this.sdk.rpc, url, "SEND");
+
     const broadcastable = getBroadcastableSignedTransaction(signedArtifact);
 
     // Wave 2(a): the observer's cursor — where the virtual was when HardKAS submitted.
@@ -1773,9 +1840,6 @@ export class HardkasTx {
     // failed or was refused. An intent to submit is not a submission (a catalog kind for the intent is a proposal).
     const submissionWorkflowId =
       typeof signedArtifact.workflowId === "string" && signedArtifact.workflowId ? signedArtifact.workflowId : STANDALONE_WORKFLOW_ID;
-    // the endpoint: the explicit one, else the one the SDK's client was opened with (a stand-in may name none)
-    const clientUrl = (this.sdk.rpc as { url?: unknown }).url;
-    const endpoint = url ?? (typeof clientUrl === "string" ? clientUrl : "");
 
     // The submit call's result is recorded as returned, accepted or not. EVIDENCE-TRUST-1 (ET-C4): the result is
     // authenticated, so a credential the RPC layer put into its error text (it names the URL) is redacted BEFORE hashing.
@@ -1787,6 +1851,9 @@ export class HardkasTx {
         ...(typeof answer?.transactionId === "string" ? { transactionId: answer.transactionId } : {})
       };
     } catch (e: unknown) {
+      // NODE-NETWORK-IDENTITY-1: the node said it serves another network (or none) before anything was sent to it:
+      // nothing was submitted, so there is no submission to record; the caller gets the typed refusal itself.
+      if (isNodeNetworkIdentityError(e)) throw e;
       submitResult = { accepted: false, error: redactUrlCredentialsInText(e instanceof Error ? e.message : String(e)) };
     }
     // EVENT-LEDGER-2 final closeout: from here on the broadcast has happened, or its outcome is unknown — what the
@@ -1801,7 +1868,7 @@ export class HardkasTx {
     const inheritedMode: any =
       (signedArtifact as any).mode ||
       (signedArtifact as any).execution?.mode ||
-      (isExplicitRpc ? "rpc" : "localnet");
+      (url !== undefined ? "rpc" : "localnet");
     const nowIso = new Date().toISOString();
     // Authenticated: the signed reference, the txId, the submit result (IC-2′.2).
     // Unauthenticated: submittedAt and the locator `rpcUrl` (IC-1′.1b), recorded
@@ -1825,7 +1892,8 @@ export class HardkasTx {
       ...(submitPoint ? { submitPoint } : {}),
       fee: feeEvidence,
       submittedAt: nowIso,
-      ...(url ? { rpcUrl: redactUrlCredentials(url) } : {}),
+      // EA-I1: the submitting client's endpoint (absent when the client does not say; never a caller's label)
+      ...(endpoint ? { rpcUrl: redactUrlCredentials(endpoint) } : {}),
       ...(signedArtifact.workflowId ? { workflowId: signedArtifact.workflowId } : {}),
       ...(signedArtifact.assumptionLevel
         ? { assumptionLevel: signedArtifact.assumptionLevel }

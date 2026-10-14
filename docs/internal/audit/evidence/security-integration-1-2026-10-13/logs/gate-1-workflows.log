@@ -1,0 +1,677 @@
+
+> hardkas-monorepo@0.12.0-rc.27 test:workflows C:\Users\jrodr\hkl1\si\src
+> vitest run packages/cli/test/workflow-corpus.test.ts
+
+
+ RUN  v2.1.9 C:/Users/jrodr/hkl1/si/src
+      Coverage enabled with v8
+
+ ↓ packages/cli/test/workflow-corpus.test.ts (5 tests | 5 skipped)
+
+ Test Files  1 skipped (1)
+      Tests  5 skipped (5)
+   Start at  00:50:00
+   Duration  7.53s (transform 1.71s, setup 0ms, collect 3.23s, tests 0ms, environment 0ms, prepare 132ms)
+
+ % Coverage report from v8
+-------------------|---------|----------|---------|---------|-------------------
+File               | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+-------------------|---------|----------|---------|---------|-------------------
+All files          |    6.71 |    14.18 |    2.71 |    6.71 |                   
+ accounts/src      |    5.85 |    28.57 |    1.85 |    5.85 |                   
+  ...ss-manager.ts |   10.44 |      100 |       0 |   10.44 | ...06-110,113-117 
+  authorizers.ts   |   16.45 |      100 |       0 |   16.45 | ...4,89-91,94-121 
+  dev-accounts.ts  |    3.38 |      100 |       0 |    3.38 | 17-110,113-162    
+  env.ts           |   14.28 |      100 |       0 |   14.28 | 2-7               
+  evm-export.ts    |       0 |      100 |       0 |       0 | 18-90             
+  index.ts         |     100 |      100 |     100 |     100 |                   
+  ...sdk-keygen.ts |    9.67 |        0 |       0 |    9.67 | 15,18-42,46-83    
+  ...eal-signer.ts |    7.69 |        0 |       0 |    7.69 | 13-14,17-102      
+  kaspa-wallet.ts  |   11.11 |      100 |       0 |   11.11 | 12-20             
+  ...asm-signer.ts |    3.26 |        0 |       0 |    3.26 | ...63-334,344-350 
+  keystore-lock.ts |    1.47 |      100 |       0 |    1.47 | 4-83              
+  keystore.ts      |    7.28 |      100 |   14.28 |    7.28 | ...81-193,199-217 
+  real-accounts.ts |    7.72 |      100 |       0 |    7.72 | ...34-335,341-362 
+  real-keygen.ts   |   42.85 |      100 |       0 |   42.85 | 20-23             
+  real-signer.ts   |   42.85 |      100 |       0 |   42.85 | 23-26             
+  resolve.ts       |     1.6 |      100 |       0 |     1.6 | ...94-362,365-383 
+  ...er-backend.ts |    4.28 |      100 |       0 |    4.28 | 32-83,91-118      
+  signer.ts        |    4.13 |        0 |       0 |    4.13 | 33-37,45-190      
+  ...r-covenant.ts |    1.99 |      100 |       0 |    1.99 | ...30-209,250-332 
+  ...er-funding.ts |    2.53 |      100 |       0 |    2.53 | 13-17,38-113      
+  silver-spend.ts  |    3.15 |      100 |       0 |    3.15 | ...56-362,369-389 
+  simulated.ts     |      40 |      100 |       0 |      40 | 7-12              
+  types.ts         |       0 |        0 |       0 |       0 |                   
+  ...et-manager.ts |   14.86 |      100 |   14.28 |   14.86 | ...21-124,127-130 
+  ...tate-store.ts |   22.64 |        0 |       0 |   22.64 | ...0,86-91,97-102 
+  ...ransaction.ts |    6.17 |      100 |       0 |    6.17 | ...31-140,149-157 
+ ...s/src/internal |    0.85 |      100 |       0 |    0.85 |                   
+  ...ialization.ts |    0.85 |      100 |       0 |    0.85 | 2-18,25-143       
+ artifacts/src     |    26.7 |     7.69 |    0.41 |    26.7 |                   
+  ...act-handle.ts |   10.63 |        0 |       0 |   10.63 | 31,34-42,70-101   
+  ...fact-index.ts |   21.42 |        0 |       0 |   21.42 | ...59,62-63,66-89 
+  canonical.ts     |    45.2 |        0 |       0 |    45.2 | ...42-347,356-378 
+  constants.ts     |     100 |      100 |     100 |     100 |                   
+  conversions.ts   |     7.4 |      100 |       0 |     7.4 | ...45,51-55,61-73 
+  ...ment-store.ts |    0.86 |      100 |       0 |    0.86 | 19-157            
+  deployment.ts    |    5.76 |      100 |       0 |    5.76 | 23-52,55-75       
+  diff.ts          |    2.53 |      100 |       0 |    2.53 | 36-125            
+  domain-digest.ts |   33.33 |      100 |       0 |   33.33 | ...46,54-57,61-63 
+  ...ence-batch.ts |   18.42 |        0 |       0 |   18.42 | 30-31,34-53,56-68 
+  explain.ts       |       1 |      100 |       0 |       1 | 61-170            
+  feeVerify.ts     |     2.6 |      100 |       0 |     2.6 | ...8,45-60,66-171 
+  file-id.ts       |      20 |      100 |       0 |      20 | 11-14,18-24,28-32 
+  format.ts        |     5.4 |      100 |       0 |     5.4 | 7-40,46-60,66-93  
+  ...categories.ts |   97.29 |      100 |       0 |   97.29 | 167-168,172-173   
+  ...-artifacts.ts |   10.56 |      100 |       0 |   10.56 | ...24-225,228-229 
+  igra-io.ts       |    4.91 |      100 |       0 |    4.91 | 12-13,16-83       
+  index.ts         |     100 |      100 |     100 |     100 |                   
+  io.ts            |    3.94 |      100 |       0 |    3.94 | 13-52,56-101      
+  lineage-chain.ts |    5.55 |      100 |       0 |    5.55 | ...4,48-75,99-149 
+  lineage-error.ts |   28.57 |        0 |       0 |   28.57 | 20,23-31          
+  lineage.ts       |    1.59 |      100 |       0 |    1.59 | 18-226,233-257    
+  migration.ts     |    8.15 |    33.33 |       5 |    8.15 | ...22-728,737-789 
+  ...t-receipts.ts |    4.34 |      100 |       0 |    4.34 | 29-76             
+  ...okup-error.ts |   28.57 |        0 |       0 |   28.57 | 35,38-46          
+  resolve.ts       |    6.82 |        0 |       0 |    6.82 | ...90-507,513-571 
+  ...rio-result.ts |      12 |      100 |       0 |      12 | 31-34,37-54       
+  schemas.ts       |     100 |      100 |       0 |     100 |                   
+  signed-tx.ts     |    3.93 |      100 |       0 |    3.93 | ...41-421,432-450 
+  signer.ts        |       0 |        0 |       0 |       0 |                   
+  silver-refs.ts   |    9.09 |      100 |       0 |    9.09 | 32-65             
+  ...e-mutation.ts |   13.63 |        0 |       0 |   13.63 | ...91-103,110-127 
+  store.ts         |    7.82 |        0 |       0 |    7.82 | ...64-486,489-492 
+  ...ission-fee.ts |    5.36 |      100 |       0 |    5.36 | ...45-267,271-285 
+  ...bservation.ts |    9.57 |      100 |       0 |    9.57 | ...12-113,120-148 
+  tx-plan.ts       |     3.5 |      100 |       0 |     3.5 | ...1,60-68,79-179 
+  tx-status.ts     |    4.38 |      100 |       0 |    4.38 | ...90-564,568-571 
+  types.ts         |     100 |      100 |     100 |     100 |                   
+  validate.ts      |    6.61 |      100 |       0 |    6.61 | ...10-117,120-159 
+  verify.ts        |    1.36 |      100 |       0 |    1.36 | ...41-428,434-892 
+  workflow-id.ts   |   20.58 |        0 |       0 |   20.58 | 39-41,44-64,68-70 
+ ...src/invariants |      18 |        0 |       0 |      18 |                   
+  definitions.ts   |   20.13 |        0 |       0 |   20.13 | ...81,189,191-192 
+  types.ts         |       0 |        0 |       0 |       0 |                   
+  watcher.ts       |   13.43 |        0 |       0 |   13.43 | ...,95-96,100-118 
+ bridge-local/src  |       0 |       20 |      20 |       0 |                   
+  index.ts         |       0 |        0 |       0 |       0 | 1-4               
+  payload.ts       |       0 |      100 |     100 |       0 | 14-38             
+  planner.ts       |       0 |        0 |       0 |       0 | 1-49              
+  prefix-miner.ts  |       0 |        0 |       0 |       0 | 1-50              
+  ...n-resolver.ts |       0 |        0 |       0 |       0 | 1-116             
+ cli/src           |       0 |    18.18 |   18.18 |       0 |                   
+  ...cast-guard.ts |       0 |        0 |       0 |       0 | 1-31              
+  cli-errors.ts    |       0 |      100 |     100 |       0 | 12-177            
+  define-config.ts |       0 |      100 |     100 |       0 | 7-9               
+  index.ts         |       0 |        0 |       0 |       0 | 1-62              
+  output.ts        |       0 |        0 |       0 |       0 | 1-105             
+  program.ts       |       0 |        0 |       0 |       0 | 1-150             
+  public.ts        |       0 |        0 |       0 |       0 | 1                 
+  ...in-archive.ts |       0 |        0 |       0 |       0 | 1-56              
+  ...in-install.ts |       0 |        0 |       0 |       0 | 1-113             
+  ui.ts            |       0 |        0 |       0 |       0 | 1-432             
+  ...space-root.ts |       0 |        0 |       0 |       0 | 1-108             
+ cli/src/commands  |       0 |     3.77 |    3.77 |       0 |                   
+  accounts.ts      |       0 |        0 |       0 |       0 | 1-407             
+  artifact.ts      |       0 |        0 |       0 |       0 | 1-127             
+  bridge.ts        |       0 |        0 |       0 |       0 | 1-57              
+  capabilities.ts  |       0 |        0 |       0 |       0 | 1-159             
+  chaos.ts         |       0 |        0 |       0 |       0 | 1-131             
+  ci.ts            |       0 |        0 |       0 |       0 | 1-108             
+  config.ts        |       0 |      100 |     100 |       0 | 3-181             
+  console.ts       |       0 |        0 |       0 |       0 | 1-22              
+  corpus.ts        |       0 |        0 |       0 |       0 | 1-21              
+  create.ts        |       0 |        0 |       0 |       0 | 1-111             
+  dag.ts           |       0 |      100 |     100 |       0 | 3-32              
+  dashboard.ts     |       0 |        0 |       0 |       0 | 1-32              
+  deploy.ts        |       0 |        0 |       0 |       0 | 1-167             
+  dev-server.ts    |       0 |        0 |       0 |       0 | 1-58              
+  dev.ts           |       0 |        0 |       0 |       0 | 1-159             
+  doctor.ts        |       0 |        0 |       0 |       0 | 1-726             
+  env.ts           |       0 |        0 |       0 |       0 | 1-153             
+  evidence.ts      |       0 |        0 |       0 |       0 | 1-89              
+  explain.ts       |       0 |        0 |       0 |       0 | 1-149             
+  init.ts          |       0 |        0 |       0 |       0 | 1-334             
+  inspect.ts       |       0 |        0 |       0 |       0 | 1-86              
+  kaspa.ts         |       0 |        0 |       0 |       0 | 1-78              
+  l2.ts            |       0 |        0 |       0 |       0 | 1-221             
+  local.ts         |       0 |        0 |       0 |       0 | 1-25              
+  localnet.ts      |       0 |        0 |       0 |       0 | 1-165             
+  lock.ts          |       0 |        0 |       0 |       0 | 1-190             
+  metamask.ts      |       0 |        0 |       0 |       0 | 1-52              
+  node.ts          |       0 |        0 |       0 |       0 | 1-285             
+  ...ammability.ts |       0 |        0 |       0 |       0 | 1-136             
+  query.ts         |       0 |        0 |       0 |       0 | 1-1390            
+  rebuild.ts       |       0 |        0 |       0 |       0 | 1-99              
+  repair.ts        |       0 |        0 |       0 |       0 | 1-175             
+  replay.ts        |       0 |        0 |       0 |       0 | 1-47              
+  rotate.ts        |       0 |        0 |       0 |       0 | 1-54              
+  rpc.ts           |       0 |        0 |       0 |       0 | 1-145             
+  run.ts           |       0 |        0 |       0 |       0 | 1-48              
+  sandbox.ts       |       0 |        0 |       0 |       0 | 1-15              
+  security.ts      |       0 |        0 |       0 |       0 | 1-192             
+  session.ts       |       0 |        0 |       0 |       0 | 1-54              
+  silver.ts        |       0 |        0 |       0 |       0 | 1-806             
+  simulator.ts     |       0 |        0 |       0 |       0 | 1-84              
+  status.ts        |       0 |        0 |       0 |       0 | 1-137             
+  task.ts          |       0 |        0 |       0 |       0 | 1-191             
+  telemetry.ts     |       0 |        0 |       0 |       0 | 1-51              
+  test.ts          |       0 |        0 |       0 |       0 | 1-56              
+  toolchain.ts     |       0 |        0 |       0 |       0 | 1-110             
+  torture.ts       |       0 |        0 |       0 |       0 | 1-77              
+  tx.ts            |       0 |        0 |       0 |       0 | 1-1064            
+  verify.ts        |       0 |        0 |       0 |       0 | 1-78              
+  vprogs.ts        |       0 |        0 |       0 |       0 | 1-56              
+  why.ts           |       0 |        0 |       0 |       0 | 1-201             
+  workflow.ts      |       0 |        0 |       0 |       0 | 1-64              
+  zk.ts            |       0 |        0 |       0 |       0 | 1-74              
+ .../commands/pskt |       0 |        0 |       0 |       0 |                   
+  capabilities.ts  |       0 |        0 |       0 |       0 | 1-14              
+  export.ts        |       0 |        0 |       0 |       0 | 1-17              
+  extract.ts       |       0 |        0 |       0 |       0 | 1-15              
+  finalize.ts      |       0 |        0 |       0 |       0 | 1-15              
+  import.ts        |       0 |        0 |       0 |       0 | 1-17              
+  index.ts         |       0 |        0 |       0 |       0 | 1-39              
+  inspect.ts       |       0 |        0 |       0 |       0 | 1-15              
+  merge.ts         |       0 |        0 |       0 |       0 | 1-15              
+  sign.ts          |       0 |        0 |       0 |       0 | 1-19              
+  verify.ts        |       0 |        0 |       0 |       0 | 1-13              
+ ...commands/query |       0 |        0 |       0 |       0 |                   
+  ...ne-factory.ts |       0 |        0 |       0 |       0 | 1-54              
+  ...ion-access.ts |       0 |        0 |       0 |       0 | 1-36              
+ cli/src/docs      |       0 |        0 |       0 |       0 |                   
+  generator.ts     |       0 |        0 |       0 |       0 | 1-174             
+ cli/src/lib       |       0 |        0 |       0 |       0 |                   
+  ...d-versions.ts |       0 |        0 |       0 |       0 | 1-130             
+ cli/src/recipes   |       0 |        0 |       0 |       0 |                   
+  ...on-rebuild.ts |       0 |        0 |       0 |       0 | 1-75              
+  ...ay-failure.ts |       0 |        0 |       0 |       0 | 1-60              
+  transfer.ts      |       0 |        0 |       0 |       0 | 1-43              
+ cli/src/runners   |       0 |     2.97 |    2.97 |       0 |                   
+  ...nce-runner.ts |       0 |        0 |       0 |       0 | 1-128             
+  ...ate-runner.ts |       0 |        0 |       0 |       0 | 1-261             
+  ...und-runner.ts |       0 |        0 |       0 |       0 | 1-82              
+  ...re-runners.ts |       0 |        0 |       0 |       0 | 1-294             
+  ...nce-runner.ts |       0 |        0 |       0 |       0 | 1-49              
+  ...ate-runner.ts |       0 |        0 |       0 |       0 | 1-162             
+  ...ort-runner.ts |       0 |        0 |       0 |       0 | 1-31              
+  ...nit-runner.ts |       0 |        0 |       0 |       0 | 1-46              
+  ...ist-runner.ts |       0 |        0 |       0 |       0 | 1-40              
+  ...ove-runner.ts |       0 |        0 |       0 |       0 | 1-23              
+  ...how-runner.ts |       0 |        0 |       0 |       0 | 1-38              
+  ...xos-runner.ts |       0 |        0 |       0 |       0 | 1-58              
+  ...ate-runner.ts |       0 |        0 |       0 |       0 | 1-70              
+  ...ain-runner.ts |       0 |        0 |       0 |       0 | 1-163             
+  ...ect-runner.ts |       0 |        0 |       0 |       0 | 1-140             
+  ...age-runner.ts |       0 |        0 |       0 |       0 | 1-200             
+  ...ate-runner.ts |       0 |        0 |       0 |       0 | 1-77              
+  ...ify-runner.ts |       0 |        0 |       0 |       0 | 1-348             
+  ...cal-runner.ts |       0 |        0 |       0 |       0 | 1-292             
+  chaos-actors.ts  |       0 |        0 |       0 |       0 | 1-145             
+  chaos-runner.ts  |       0 |        0 |       0 |       0 | 1-244             
+  ...ole-runner.ts |       0 |        0 |       0 |       0 | 1-84              
+  ...ify-runner.ts |       0 |        0 |       0 |       0 | 1-45              
+  dag-runners.ts   |       0 |        0 |       0 |       0 | 1-95              
+  ...tor-runner.ts |       0 |        0 |       0 |       0 | 1-321             
+  ...ard-runner.ts |       0 |        0 |       0 |       0 | 1-705             
+  ...nt-runners.ts |       0 |        0 |       0 |       0 | 1-281             
+  ...ts-runners.ts |       0 |        0 |       0 |       0 | 1-172             
+  ...ate-runner.ts |       0 |        0 |       0 |       0 | 1-47              
+  ...tor-runner.ts |       0 |        0 |       0 |       0 | 1-640             
+  ...env-runner.ts |       0 |        0 |       0 |       0 | 1-74              
+  ...ate-runner.ts |       0 |        0 |       0 |       0 | 1-72              
+  ...nit-runner.ts |       0 |        0 |       0 |       0 | 1-82              
+  ...ast-runner.ts |       0 |        0 |       0 |       0 | 1-114             
+  ...ver-runner.ts |       0 |        0 |       0 |       0 | 1-233             
+  ...ate-runner.ts |       0 |        0 |       0 |       0 | 1-113             
+  ...tx-runners.ts |       0 |        0 |       0 |       0 | 1-98              
+  ...ode-runner.ts |       0 |        0 |       0 |       0 | 1-150             
+  ...ner-runner.ts |       0 |        0 |       0 |       0 | 1-45              
+  ...tor-runner.ts |       0 |        0 |       0 |       0 | 1-174             
+  ...let-runner.ts |       0 |        0 |       0 |       0 | 1-358             
+  ...tore-names.ts |       0 |        0 |       0 |       0 | 1-60              
+  ...nt-runners.ts |       0 |        0 |       0 |       0 | 1-128             
+  ...ge-runners.ts |       0 |        0 |       0 |       0 | 1-99              
+  ...ll-runners.ts |       0 |        0 |       0 |       0 | 1-131             
+  ...ct-runners.ts |       0 |        0 |       0 |       0 | 1-203             
+  ...rks-runner.ts |       0 |        0 |       0 |       0 | 1-39              
+  ...how-runner.ts |       0 |        0 |       0 |       0 | 1-56              
+  ...ate-runner.ts |       0 |        0 |       0 |       0 | 1-75              
+  ...lth-runner.ts |       0 |        0 |       0 |       0 | 1-107             
+  ...ry-runners.ts |       0 |        0 |       0 |       0 | 1-88              
+  l2-tx-runners.ts |       0 |        0 |       0 |       0 | 1-721             
+  ...ard-runner.ts |       0 |        0 |       0 |       0 | 1-192             
+  ...nt-runners.ts |       0 |        0 |       0 |       0 | 1-34              
+  ...et-runners.ts |       0 |        0 |       0 |       0 | 1-769             
+  lookup-args.ts   |       0 |      100 |     100 |       0 | 20-50             
+  ...ask-runner.ts |       0 |        0 |       0 |       0 | 1-180             
+  next-steps.ts    |       0 |        0 |       0 |       0 | 1-142             
+  ...ogs-runner.ts |       0 |        0 |       0 |       0 | 1-13              
+  ...set-runner.ts |       0 |        0 |       0 |       0 | 1-28              
+  ...art-runner.ts |       0 |        0 |       0 |       0 | 1-26              
+  ...art-runner.ts |       0 |        0 |       0 |       0 | 1-43              
+  ...tus-runner.ts |       0 |        0 |       0 |       0 | 1-46              
+  ...top-runner.ts |       0 |        0 |       0 |       0 | 1-12              
+  ...iff-runner.ts |       0 |        0 |       0 |       0 | 1-112             
+  ...ify-runner.ts |       0 |        0 |       0 |       0 | 1-183             
+  ...dag-runner.ts |       0 |        0 |       0 |       0 | 1-42              
+  ...tor-runner.ts |       0 |        0 |       0 |       0 | 1-255             
+  ...lth-runner.ts |       0 |        0 |       0 |       0 | 1-84              
+  ...nfo-runner.ts |       0 |        0 |       0 |       0 | 1-40              
+  ...ool-runner.ts |       0 |        0 |       0 |       0 | 1-77              
+  ...xos-runner.ts |       0 |        0 |       0 |       0 | 1-49              
+  ...box-runner.ts |       0 |        0 |       0 |       0 | 1-168             
+  script-runner.ts |       0 |        0 |       0 |       0 | 1-108             
+  secrets.ts       |       0 |        0 |       0 |       0 | 1-93              
+  ...ify-runner.ts |       0 |        0 |       0 |       0 | 1-21              
+  ...ion-runner.ts |       0 |        0 |       0 |       0 | 1-136             
+  ...er-records.ts |       0 |        0 |       0 |       0 | 1-55              
+  ...or-runners.ts |       0 |        0 |       0 |       0 | 1-45              
+  ...ate-runner.ts |       0 |        0 |       0 |       0 | 1-60              
+  snapshot-dir.ts  |       0 |        0 |       0 |       0 | 1-21              
+  ...lay-runner.ts |       0 |        0 |       0 |       0 | 1-188             
+  ...ify-runner.ts |       0 |        0 |       0 |       0 | 1-147             
+  ...ry-runners.ts |       0 |        0 |       0 |       0 | 1-341             
+  test-runner.ts   |       0 |        0 |       0 |       0 | 1-266             
+  ...ure-runner.ts |       0 |        0 |       0 |       0 | 1-555             
+  ...tch-runner.ts |       0 |        0 |       0 |       0 | 1-144             
+  ...are-runner.ts |       0 |        0 |       0 |       0 | 1-96              
+  tx-flow.ts       |       0 |        0 |       0 |       0 | 1-585             
+  ...lan-runner.ts |       0 |        0 |       0 |       0 | 1-459             
+  ...ile-runner.ts |       0 |        0 |       0 |       0 | 1-160             
+  ...ipt-runner.ts |       0 |        0 |       0 |       0 | 1-49              
+  ...end-runner.ts |       0 |        0 |       0 |       0 | 1-170             
+  ...ign-runner.ts |       0 |        0 |       0 |       0 | 1-144             
+  ...tus-runner.ts |       0 |      100 |     100 |       0 | 14-165            
+  ...ify-runner.ts |       0 |        0 |       0 |       0 | 1-144             
+  ...ait-runner.ts |       0 |        0 |       0 |       0 | 1-239             
+  up-runner.ts     |       0 |        0 |       0 |       0 | 1-106             
+  why-narrative.ts |       0 |        0 |       0 |       0 | 1-41              
+  with-sdk.ts      |       0 |      100 |     100 |       0 | 8-16              
+  ...low-runner.ts |       0 |        0 |       0 |       0 | 1-272             
+ ...c/runners/pskt |       0 |        0 |       0 |       0 |                   
+  capabilities.ts  |       0 |        0 |       0 |       0 | 1-39              
+  fs.ts            |       0 |        0 |       0 |       0 | 1-72              
+  inspect.ts       |       0 |        0 |       0 |       0 | 1-60              
+  mutating.ts      |       0 |        0 |       0 |       0 | 1-140             
+  verify.ts        |       0 |        0 |       0 |       0 | 1-37              
+ cli/src/scripts   |       0 |        0 |       0 |       0 |                   
+  ...e-cli-docs.ts |       0 |        0 |       0 |       0 | 1-72              
+ cli/src/templates |       0 |        0 |       0 |       0 |                   
+  dapp-react.ts    |       0 |        0 |       0 |       0 | 1-628             
+ client/src        |       0 |      100 |     100 |       0 |                   
+  index.ts         |       0 |      100 |     100 |       0 | 20-114            
+ config/src        |   15.38 |      100 |       0 |   15.38 |                   
+  defaults.ts      |     100 |      100 |     100 |     100 |                   
+  define.ts        |   33.33 |      100 |       0 |   33.33 | 4-5               
+  index.ts         |     100 |      100 |     100 |     100 |                   
+  load.ts          |    1.05 |      100 |       0 |    1.05 | 18-137            
+  provider.ts      |    3.63 |      100 |       0 |    3.63 | 30-98             
+  resolve.ts       |    4.06 |      100 |       0 |    4.06 | ...12-222,225-312 
+  schema.ts        |    8.33 |      100 |       0 |    8.33 | 10-22             
+  types.ts         |       0 |        0 |       0 |       0 |                   
+  ...space-root.ts |   28.57 |      100 |       0 |   28.57 | 20-32,46-56,60-61 
+ core/src          |   17.39 |       24 |    2.51 |   17.39 |                   
+  ...oordinator.ts |    3.15 |      100 |      10 |    3.15 | ...53-402,417-549 
+  branded.ts       |     100 |      100 |     100 |     100 |                   
+  ...ion-policy.ts |    4.76 |      100 |       0 |    4.76 | 33-80             
+  corruption.ts    |    6.25 |      100 |       0 |    6.25 | 64-83             
+  deterministic.ts |   33.33 |      100 |       0 |   33.33 | 6-7               
+  domain-types.ts  |   55.17 |      100 |       0 |   55.17 | ...02-107,114-119 
+  errors.ts        |   28.57 |        0 |       0 |   28.57 | 3-4,7-12,26,29-39 
+  events.ts        |   11.48 |    33.33 |       4 |   11.48 | ...01-639,642-647 
+  fs.ts            |    4.26 |      100 |       0 |    4.26 | ...59-164,170-251 
+  index.ts         |   78.57 |      100 |       0 |   78.57 | 23-30,111-122     
+  kaspa-params.ts  |   88.37 |      100 |   33.33 |   88.37 | 66-68,72-73       
+  kaspa-wasm.ts    |   14.28 |      100 |       0 |   14.28 | 16-43             
+  lock.ts          |    6.01 |      100 |       0 |    6.01 | ...71-394,400-453 
+  ...net-policy.ts |   17.39 |      100 |       0 |   17.39 | 16-19,29-44       
+  migrations.ts    |    10.3 |      100 |       0 |    10.3 | ...11-118,121-130 
+  money.ts         |    4.87 |      100 |       0 |    4.87 | ...90-112,122-133 
+  ...ork-params.ts |    8.92 |      100 |       0 |    8.92 | ...61,70-82,89-99 
+  node-identity.ts |   19.14 |      100 |       0 |   19.14 | ...02-228,232-241 
+  node-images.ts   |     100 |      100 |     100 |     100 |                   
+  plugins.ts       |       0 |        0 |       0 |       0 |                   
+  provenance.ts    |       0 |        0 |       0 |       0 |                   
+  pskt-adapter.ts  |       0 |        0 |       0 |       0 |                   
+  pskt-errors.ts   |   69.38 |        0 |       0 |   69.38 | 7-10,13-29        
+  pskt.ts          |       0 |        0 |       0 |       0 |                   
+  registry.ts      |      80 |      100 |       0 |      80 | ...82-186,189-217 
+  replay.ts        |   17.47 |      100 |       0 |   17.47 | 58-127,134-160    
+  retention.ts     |   12.96 |      100 |      25 |   12.96 | 19-38,44-71,77-84 
+  ...me-context.ts |     100 |      100 |       0 |     100 |                   
+  security.ts      |   24.85 |      100 |       0 |   24.85 | ...40-258,264-267 
+  ...script-abi.ts |    7.03 |      100 |       0 |    7.03 | ...63-166,174-182 
+  ...ipt-corpus.ts |    5.74 |      100 |       0 |    5.74 | 103-327           
+  ...t-covenant.ts |     2.4 |      100 |       0 |     2.4 | ...7,51-77,81-210 
+  ...ipt-runner.ts |    7.14 |      100 |       0 |    7.14 | ...80-425,435-457 
+  silverscript.ts  |    6.81 |      100 |       0 |    6.81 | ...70-387,429-534 
+  snapshot.ts      |    0.71 |      100 |       0 |    0.71 | 37-207            
+  tasks.ts         |   48.14 |      100 |       0 |   48.14 | 36-44,47-49,53-54 
+  telemetry.ts     |   19.28 |    66.66 |   13.33 |   19.28 | ...96-197,199-200 
+  toolchains.ts    |   32.01 |      100 |       0 |   32.01 | ...43-187,191-319 
+  utxo-errors.ts   |   18.75 |        0 |       0 |   18.75 | ...70,75-77,83-93 
+  utxo-utils.ts    |      50 |      100 |       0 |      50 | 4-5               
+  version.ts       |     100 |      100 |     100 |     100 |                   
+ .../src/semantics |   18.35 |      100 |       0 |   18.35 |                   
+  api.ts           |   14.03 |      100 |       0 |   14.03 | ...84,88-89,92-96 
+  ...ity-errors.ts |   50.68 |      100 |       0 |   50.68 | ...77,82-84,89-91 
+  compatibility.ts |    2.38 |      100 |       0 |    2.38 | 23-70             
+  drift.ts         |    3.22 |      100 |       0 |    3.22 | 17-63,69-88       
+  ...tion-guard.ts |    6.03 |      100 |       0 |    6.03 | ...93-207,210-218 
+  index.ts         |     100 |      100 |     100 |     100 |                   
+  migration.ts     |    7.89 |      100 |       0 |    7.89 | 14-28,35-48,54-62 
+  status.ts        |   55.55 |      100 |       0 |   55.55 | 22-31             
+  types.ts         |       0 |        0 |       0 |       0 |                   
+ dev-server/src    |       0 |        0 |       0 |       0 |                   
+  db.ts            |       0 |        0 |       0 |       0 | 1-28              
+  index.ts         |       0 |        0 |       0 |       0 | 1-4               
+  replay-status.ts |       0 |        0 |       0 |       0 | 1-65              
+  server.ts        |       0 |        0 |       0 |       0 | 1-324             
+  stream.ts        |       0 |        0 |       0 |       0 | 1-76              
+  watcher.ts       |       0 |        0 |       0 |       0 | 1-197             
+ ...ver/src/routes |       0 |        0 |       0 |       0 |                   
+  accounts.ts      |       0 |        0 |       0 |       0 | 1-91              
+  artifacts.ts     |       0 |        0 |       0 |       0 | 1-210             
+  bridge.ts        |       0 |        0 |       0 |       0 | 1-20              
+  dapp-tx.ts       |       0 |        0 |       0 |       0 | 1-208             
+  dev-accounts.ts  |       0 |        0 |       0 |       0 | 1-18              
+  dev-status.ts    |       0 |        0 |       0 |       0 | 1-73              
+  escrow.ts        |       0 |        0 |       0 |       0 | 1-459             
+  events.ts        |       0 |        0 |       0 |       0 | 1-42              
+  health.ts        |       0 |        0 |       0 |       0 | 1-89              
+  kasware.ts       |       0 |        0 |       0 |       0 | 1-14              
+  metamask.ts      |       0 |        0 |       0 |       0 | 1-14              
+  observability.ts |       0 |        0 |       0 |       0 | 1-727             
+  overview.ts      |       0 |        0 |       0 |       0 | 1-186             
+  sandbox.ts       |       0 |        0 |       0 |       0 | 1-44              
+  session.ts       |       0 |        0 |       0 |       0 | 1-118             
+  simnet.ts        |       0 |        0 |       0 |       0 | 1-70              
+  stream.ts        |       0 |        0 |       0 |       0 | 1-81              
+  transactions.ts  |       0 |        0 |       0 |       0 | 1-397             
+ ...er/src/sandbox |       0 |        0 |       0 |       0 |                   
+  manager.ts       |       0 |        0 |       0 |       0 | 1-71              
+ escrow/src        |       0 |       40 |      40 |       0 |                   
+  create-escrow.ts |       0 |        0 |       0 |       0 | 1-119             
+  escrow-source.ts |       0 |      100 |     100 |       0 | 9-56              
+  index.ts         |       0 |        0 |       0 |       0 | 1                 
+  resolution.ts    |       0 |        0 |       0 |       0 | 1-39              
+  types.ts         |       0 |        0 |       0 |       0 |                   
+ jobs/src          |   26.48 |        0 |       0 |   26.48 |                   
+  batch-cursor.ts  |   31.57 |      100 |       0 |   31.57 | ...10,13-17,20-21 
+  index.ts         |     100 |      100 |     100 |     100 |                   
+  ...checkpoint.ts |      50 |        0 |       0 |      50 | 5-6,9-10,13-14,18 
+  job-runner.ts    |      20 |        0 |       0 |      20 | ...81-163,166-167 
+  ...store-json.ts |    27.5 |        0 |       0 |    27.5 | ...40,43-46,49-54 
+  job-store.ts     |       0 |        0 |       0 |       0 |                   
+  ...s-reporter.ts |   24.13 |      100 |       0 |   24.13 | ...25,28-29,32-39 
+  retry-policy.ts  |   21.05 |      100 |       0 |   21.05 | 10-24             
+ kaspa-rpc/src     |   15.94 |       25 |       0 |   15.94 |                   
+  endpoint.ts      |   13.33 |      100 |       0 |   13.33 | 14-24,28-29,36-48 
+  errors.ts        |   28.92 |      100 |       0 |   28.92 | ...13-115,119-162 
+  health.ts        |    0.84 |      100 |       0 |    0.84 | 36-166            
+  index.ts         |    15.9 |        0 |       0 |    15.9 | ...33-634,637-638 
+  ...rpc-client.ts |   10.99 |       50 |       0 |   10.99 | ...88-501,504-506 
+  provider.ts      |   25.37 |      100 |       0 |   25.37 | ...59-160,163-189 
+  resilience.ts    |    2.59 |      100 |       0 |    2.59 | 33-89,95-130      
+  wrpc-client.ts   |   35.35 |      100 |       0 |   35.35 | ...41-147,151-155 
+ ...c/src/adapters |       0 |        0 |       0 |       0 |                   
+  index.ts         |       0 |        0 |       0 |       0 |                   
+ ...c/src/internal |    2.77 |      100 |       0 |    2.77 |                   
+  storage-mass.ts  |    2.77 |      100 |       0 |    2.77 | 14-49             
+ ...c/src/upstream |   11.88 |      100 |       0 |   11.88 |                   
+  ...ket-compat.ts |      40 |      100 |       0 |      40 | 34-39             
+  session.ts       |   13.56 |      100 |       0 |   13.56 | ...07-334,343-362 
+  wire.ts          |    6.61 |      100 |       0 |    6.61 | ...04-125,134-180 
+ l2/src            |      17 |        0 |       0 |      17 |                   
+  abi.ts           |     7.4 |      100 |       0 |     7.4 | 11-43             
+  bridge.ts        |   44.06 |      100 |       0 |   44.06 | ...47,52-77,80-87 
+  evm-receipts.ts  |    4.76 |      100 |       0 |    4.76 | 14-36             
+  ...rpc-client.ts |   13.86 |        0 |       0 |   13.86 | ...63-168,171-174 
+  ...rpc-health.ts |    2.17 |      100 |       0 |    2.17 | 14-68             
+  formatters.ts    |   13.33 |      100 |       0 |   13.33 | 2-11,14-16        
+  igra-signer.ts   |   42.85 |      100 |       0 |   42.85 | 23-26             
+  index.ts         |     100 |      100 |     100 |     100 |                   
+  metamask.ts      |    7.69 |      100 |       0 |    7.69 | 19-39,45-53       
+  profiles.ts      |     100 |      100 |     100 |     100 |                   
+  registry.ts      |    4.91 |      100 |       0 |    4.91 | ...25-152,155-160 
+  ...gra-signer.ts |    6.25 |        0 |       0 |    6.25 | ...6,31-32,35-141 
+ localnet/src      |    7.37 |        0 |       0 |    7.37 |                   
+  accounts.ts      |   32.65 |      100 |       0 |   32.65 | 47-71,73-95       
+  balance.ts       |   16.12 |      100 |       0 |   16.12 | ...44,47-52,55-57 
+  dag.ts           |    2.98 |      100 |       0 |    2.98 | ...38-439,445-470 
+  devnet.ts        |    5.88 |      100 |       0 |    5.88 | 11-34             
+  faucet.ts        |    9.09 |      100 |       0 |    9.09 | 10-33             
+  fork.ts          |    1.92 |      100 |       0 |    1.92 | 13-68             
+  index.ts         |     100 |      100 |     100 |     100 |                   
+  ...-execution.ts |    3.29 |      100 |       0 |    3.29 | ...12-205,209-295 
+  provider.ts      |      28 |      100 |       0 |      28 | ...28,131-136,157 
+  receipts.ts      |    4.54 |      100 |       0 |    4.54 | 25-55             
+  replay.ts        |    1.17 |      100 |       0 |    1.17 | 50-258            
+  ...ated-chain.ts |   20.37 |        0 |       0 |   20.37 | ...66,74-79,82-84 
+  snapshot.ts      |    5.62 |      100 |       0 |    5.62 | ...42-205,211-238 
+  state.ts         |    5.33 |      100 |       0 |    5.33 | ...4,66-87,98-121 
+  store.ts         |    4.67 |      100 |       0 |    4.67 | ...9,52-56,59-251 
+  traces.ts        |    5.15 |      100 |       0 |    5.15 | ...90-131,135-187 
+  transactions.ts  |    1.43 |      100 |       0 |    1.43 | ...83-264,277-404 
+  types.ts         |       0 |        0 |       0 |       0 |                   
+ ...chestrator/src |       0 |    33.33 |   33.33 |       0 |                   
+  args.ts          |       0 |      100 |     100 |       0 | 3-35              
+  index.ts         |       0 |        0 |       0 |       0 | 1                 
+  paths.ts         |       0 |        0 |       0 |       0 | 1-67              
+  process.ts       |       0 |        0 |       0 |       0 | 1-120             
+  status.ts        |       0 |        0 |       0 |       0 | 1-124             
+  types.ts         |       0 |        0 |       0 |       0 |                   
+ node-runner/src   |    7.93 |        0 |       0 |    7.93 |                   
+  ...pad-runner.ts |     7.1 |        0 |       0 |     7.1 | ...79-492,495-532 
+  identity.ts      |    12.5 |      100 |       0 |    12.5 | 10-18,26-32       
+  index.ts         |     100 |      100 |     100 |     100 |                   
+  types.ts         |       0 |        0 |       0 |       0 |                   
+ observability/src |      32 |    77.77 |   25.92 |      32 |                   
+  health.ts        |    6.66 |      100 |       0 |    6.66 | 15-28             
+  index.ts         |     100 |      100 |     100 |     100 |                   
+  logger.ts        |   44.92 |       60 |   27.27 |   44.92 | ...7,86-92,95-101 
+  metrics.ts       |   39.13 |      100 |   33.33 |   39.13 | ...67,70-71,74-75 
+  prometheus.ts    |    4.16 |      100 |       0 |    4.16 | 3-12,15-30        
+  tracing.ts       |   19.51 |      100 |   33.33 |   19.51 | 16-18,22-54       
+ ...al-indexer/src |       0 |        0 |       0 |       0 |                   
+  index.ts         |       0 |        0 |       0 |       0 | 1-72              
+ ...pc-backend/src |       0 |        0 |       0 |       0 |                   
+  errors.ts        |       0 |        0 |       0 |       0 | 1-20              
+  index.ts         |       0 |        0 |       0 |       0 | 1-127             
+  resilience.ts    |       0 |        0 |       0 |       0 | 1-147             
+ query-store/src   |   10.25 |        0 |       0 |   10.25 |                   
+  backend.ts       |    8.13 |        0 |       0 |    8.13 | ...62-401,406-451 
+  db.ts            |    8.12 |        0 |       0 |    8.12 | ...21-134,140-214 
+  domain-store.ts  |   18.33 |        0 |       0 |   18.33 | ...60,63-64,67-72 
+  index.ts         |     100 |      100 |     100 |     100 |                   
+  indexer.ts       |     3.6 |        0 |       0 |     3.6 | ...06-838,845-869 
+  ...r-appender.ts |   26.66 |      100 |       0 |   26.66 | 17-22,28-32       
+  migrations.ts    |    30.5 |      100 |       0 |    30.5 | ...95-337,346-393 
+  ...ion-status.ts |   10.25 |      100 |       0 |   10.25 | ...73-103,107-119 
+  ...tion-store.ts |      25 |        0 |       0 |      25 | ...45,48-51,54-57 
+  schema.ts        |     100 |      100 |     100 |     100 |                   
+ query/src         |    7.88 |       20 |    2.04 |    7.88 |                   
+  backend-fs.ts    |   13.57 |        0 |       0 |   13.57 | ...78-179,182-185 
+  backend.ts       |       0 |        0 |       0 |       0 |                   
+  engine.ts        |    6.27 |        0 |       0 |    6.27 | ...85-299,306-318 
+  errors.ts        |   26.66 |        0 |       0 |   26.66 | 5-16              
+  explain.ts       |     6.5 |      100 |       0 |     6.5 | ...12-226,229-246 
+  filter.ts        |    3.84 |      100 |       0 |    3.84 | ...6,32-34,40-114 
+  format.ts        |    5.71 |      100 |       0 |    5.71 | 15-52             
+  index.ts         |     100 |      100 |     100 |     100 |                   
+  ...nt-tracker.ts |       0 |      100 |       0 |       0 | 27-82             
+  serialize.ts     |    12.5 |      100 |       0 |    12.5 | 15-17,26-46       
+  types.ts         |       0 |        0 |       0 |       0 |                   
+  wallet-query.ts  |    8.33 |        0 |       0 |    8.33 | ...16-137,140-161 
+ ...y/src/adapters |    6.93 |        0 |       0 |    6.93 |                   
+  ...ct-adapter.ts |    5.02 |        0 |       0 |    5.02 | ...40,451,455-561 
+  dag-adapter.ts   |    4.26 |        0 |       0 |    4.26 | ...75-383,390-518 
+  ...ts-adapter.ts |    9.34 |        0 |       0 |    9.34 | ...64-132,135-155 
+  ...ge-adapter.ts |     6.4 |        0 |       0 |     6.4 | ...43-464,467-473 
+  ...ay-adapter.ts |    7.07 |        0 |       0 |    7.07 | ...90-432,455-530 
+  tx-adapter.ts    |   15.04 |        0 |       0 |   15.04 | ...83-264,267-279 
+ react/src         |       0 |        0 |       0 |       0 |                   
+  index.ts         |       0 |        0 |       0 |       0 | 1-4               
+ react/src/hooks   |       0 |        0 |       0 |       0 |                   
+  useMutation.ts   |       0 |        0 |       0 |       0 | 1-39              
+  useQuery.ts      |       0 |        0 |       0 |       0 | 1-43              
+  useWallet.ts     |       0 |        0 |       0 |       0 | 1-7               
+ sdk/src           |    6.25 |    14.28 |    0.42 |    6.25 |                   
+  accounts.ts      |   14.94 |      100 |       0 |   14.94 | ...29-130,136-137 
+  ...ts-manager.ts |     3.8 |        0 |       0 |     3.8 | ...37-470,480-551 
+  capabilities.ts  |    4.41 |      100 |       0 |    4.41 | ...82-402,411-467 
+  client.ts        |    0.73 |      100 |       0 |    0.73 | 22-192            
+  corpus.ts        |      50 |      100 |       0 |      50 | 18-19,22-24       
+  covenants.ts     |   15.94 |      100 |       0 |   15.94 | ...23-228,242-254 
+  environment.ts   |    3.33 |      100 |       0 |    3.33 | 128-200           
+  evidence.ts      |    4.21 |      100 |       0 |    4.21 | ...23-211,217-235 
+  experimental.ts  |      56 |      100 |       0 |      56 | 34-44             
+  fees.ts          |   18.51 |      100 |       0 |   18.51 | 32-61             
+  igra.ts          |   22.72 |      100 |       0 |   22.72 | 21-39             
+  index.ts         |   24.64 |      100 |       0 |   24.64 | ...32-433,440-466 
+  l2.ts            |   35.71 |        0 |       0 |   35.71 | ...42,48-49,54-59 
+  lineage.ts       |   17.39 |      100 |       0 |   17.39 | 14-39             
+  localnet.ts      |     7.5 |      100 |       0 |     7.5 | ...94-222,225-252 
+  node.ts          |    7.28 |        0 |       0 |    7.28 | ...53-262,273-307 
+  ...ing-spends.ts |       0 |        0 |       0 |       0 | 1-231             
+  ...in-manager.ts |   29.54 |        0 |       0 |   29.54 | ...07-208,211-212 
+  policy.ts        |   11.11 |      100 |       0 |   11.11 | 4-27              
+  ...ammability.ts |    3.35 |      100 |       0 |    3.35 | ...93-407,410-544 
+  pskt.ts          |    4.08 |      100 |       0 |    4.08 | ...71-198,201-412 
+  query.ts         |   12.06 |      100 |       0 |   12.06 | ...67-185,192-244 
+  replay.ts        |    3.95 |      100 |       0 |    3.95 | 48,58-275         
+  silver.ts        |   23.68 |      100 |       0 |   23.68 | ...65,69-70,73-80 
+  tasks.ts         |   26.66 |      100 |      25 |   26.66 | 29-48,51-52,55-56 
+  tx-observer.ts   |    1.38 |      100 |       0 |    1.38 | 38-41,45-294      
+  tx.ts            |    1.42 |      100 |       0 |    1.42 | ...2002,2014-2024 
+  utxos.ts         |    8.57 |      100 |       0 |    8.57 | 17-49,60-104      
+  vprogs.ts        |    8.03 |      100 |       0 |    8.03 | ...5,61-72,75-167 
+  waiters.ts       |    9.09 |      100 |       0 |    9.09 | 3-5,19-52         
+  workflow.ts      |     2.1 |      100 |       0 |     2.1 | ...0,46-77,83-415 
+  workspace.ts     |   24.07 |        0 |       0 |   24.07 | ...71,77-78,84-87 
+  zk.ts            |    2.42 |      100 |       0 |    2.42 | ...38-139,143-682 
+ sdk/src/observe   |    4.95 |      100 |    8.33 |    4.95 |                   
+  backends.ts      |    4.54 |      100 |       0 |    4.54 | ...60-204,208-239 
+  index.ts         |    5.45 |      100 |       0 |    5.45 | ...78-185,188-220 
+  types.ts         |       0 |        0 |       0 |       0 |                   
+ sdk/src/pskt      |   37.03 |    66.66 |      50 |   37.03 |                   
+  registry.ts      |   37.03 |    66.66 |      50 |   37.03 | ...55,59-63,68-75 
+ .../pskt/adapters |   10.53 |    66.66 |   21.05 |   10.53 |                   
+  native.ts        |       0 |        0 |       0 |       0 | 1-345             
+  unavailable.ts   |      32 |    66.66 |   22.22 |      32 | ...78,81-86,89-94 
+  wasm.ts          |   23.71 |      100 |   22.22 |   23.71 | ...04-114,117-127 
+ sessions/src      |       0 |    33.33 |   33.33 |       0 |                   
+  index.ts         |       0 |        0 |       0 |       0 | 1-2               
+  store.ts         |       0 |        0 |       0 |       0 | 1-130             
+  types.ts         |       0 |        0 |       0 |       0 |                   
+ ...r-adapters/src |       0 |        0 |       0 |       0 |                   
+  bridge.ts        |       0 |        0 |       0 |       0 | 1-57              
+  index.ts         |       0 |        0 |       0 |       0 | 1                 
+ simulator/src     |    7.83 |        0 |       0 |    7.83 |                   
+  ...dag-engine.ts |    5.36 |        0 |       0 |    5.36 | ...12-206,217-258 
+  ...tdag-store.ts |   30.95 |        0 |       0 |   30.95 | ...60,63-64,72-80 
+  ...tdag-types.ts |   33.33 |      100 |       0 |   33.33 | ...03-104,107-112 
+  index.ts         |     100 |      100 |     100 |     100 |                   
+  mass-profile.ts  |    5.55 |      100 |       0 |    5.55 | ...38-149,155-172 
+  mass-snapshot.ts |    6.77 |      100 |       0 |    6.77 | ...6,52-68,74-114 
+  metrics.ts       |    2.27 |      100 |       0 |    2.27 | 33-152            
+  ordering.ts      |   11.53 |      100 |       0 |   11.53 | 35-41,50-51,64-81 
+  reachability.ts  |    6.32 |      100 |       0 |    6.32 | ...78-116,125-142 
+  report.ts        |    5.55 |      100 |       0 |    5.55 | 8-26              
+  scenarios.ts     |    3.68 |      100 |       0 |    3.68 | ...83-223,226-236 
+  tx-simulator.ts  |   14.81 |      100 |       0 |   14.81 | 51-75,85-86       
+ ...e-postgres/src |       0 |        0 |       0 |       0 |                   
+  index.ts         |       0 |        0 |       0 |       0 | 1-3               
+  ...es-storage.ts |       0 |        0 |       0 |       0 | 1-85              
+ ...res/src/stores |       0 |      100 |     100 |       0 |                   
+  ...e-postgres.ts |       0 |      100 |     100 |       0 | 4-94              
+  ...e-postgres.ts |       0 |      100 |     100 |       0 | 4-89              
+ ...age-sqlite/src |       0 |        0 |       0 |       0 |                   
+  index.ts         |       0 |        0 |       0 |       0 | 1-3               
+  ...te-storage.ts |       0 |        0 |       0 |       0 | 1-98              
+ ...ite/src/stores |       0 |      100 |     100 |       0 |                   
+  ...ore-sqlite.ts |       0 |      100 |     100 |       0 | 4-69              
+  ...ore-sqlite.ts |       0 |      100 |     100 |       0 | 4-84              
+ sync-daemon/src   |       0 |        0 |       0 |       0 |                   
+  daemon.ts        |       0 |        0 |       0 |       0 | 1-213             
+  index.ts         |       0 |        0 |       0 |       0 | 1                 
+ testing/src       |       0 |    13.33 |   13.33 |       0 |                   
+  ...l-fixtures.ts |       0 |        0 |       0 |       0 | 1-176             
+  ...ure-signer.ts |       0 |        0 |       0 |       0 | 1-238             
+  fixtures.ts      |       0 |        0 |       0 |       0 | 1-39              
+  fuzzing.ts       |       0 |      100 |     100 |       0 | 8-31              
+  harness.ts       |       0 |        0 |       0 |       0 | 1-151             
+  index.ts         |       0 |        0 |       0 |       0 | 1-63              
+  mass-setup.ts    |       0 |        0 |       0 |       0 | 1-5               
+  matchers.ts      |       0 |        0 |       0 |       0 | 1-189             
+  ...ducibility.ts |       0 |        0 |       0 |       0 | 1-173             
+  scenarios.ts     |       0 |        0 |       0 |       0 | 1-170             
+  setup.ts         |       0 |        0 |       0 |       0 | 1-10              
+  ...ing-driver.ts |       0 |      100 |     100 |       0 | 23-85             
+  ...de-harness.ts |       0 |        0 |       0 |       0 | 1-401             
+  ...lan-signer.ts |       0 |        0 |       0 |       0 | 1-26              
+  utxo-fuzzer.ts   |       0 |        0 |       0 |       0 | 1-143             
+ ...ng/src/torture |       0 |       25 |      25 |       0 |                   
+  buckets.ts       |       0 |        0 |       0 |       0 | 1-5068            
+  ...on-buckets.ts |       0 |        0 |       0 |       0 | 1-85              
+  local-buckets.ts |       0 |        0 |       0 |       0 | 1-135             
+  ...ure-engine.ts |       0 |      100 |     100 |       0 | 3-130             
+ ...lification/src |       0 |    33.33 |   33.33 |       0 |                   
+  daa-observer.ts  |       0 |      100 |     100 |       0 | 59-239            
+  funding-input.ts |       0 |      100 |     100 |       0 | 81-275            
+  index.ts         |       0 |        0 |       0 |       0 | 1                 
+  ...t-redactor.ts |       0 |        0 |       0 |       0 | 1-406             
+  receipt.ts       |       0 |        0 |       0 |       0 | 1-415             
+  remote-node.ts   |       0 |        0 |       0 |       0 | 1-328             
+  retry.ts         |       0 |      100 |     100 |       0 | 25-174            
+  runner.ts        |       0 |        0 |       0 |       0 | 1-400             
+  ...sion-guard.ts |       0 |        0 |       0 |       0 | 1-259             
+ .../src/scenarios |       0 |        0 |       0 |       0 |                   
+  standard-l1.ts   |       0 |        0 |       0 |       0 | 1-387             
+ toolkit/src       |   12.88 |        0 |       0 |   12.88 |                   
+  fee-estimator.ts |       0 |      100 |       0 |       0 | 11-72             
+  index.ts         |     100 |      100 |     100 |     100 |                   
+  indexer.ts       |   18.86 |      100 |       0 |   18.86 | ...28-136,139-141 
+  jobs.ts          |   34.14 |        0 |       0 |   34.14 | ...49-52,55-56,62 
+  payment.ts       |   16.88 |        0 |       0 |   16.88 | ...74,77-90,94-99 
+  query-api.ts     |   11.38 |      100 |       0 |   11.38 | ...76-189,192-194 
+  utxos.ts         |    6.09 |        0 |       0 |    6.09 | ...31-432,435-450 
+  wallet.ts        |   10.48 |      100 |       0 |   10.48 | ...84-527,530-539 
+  watch.ts         |   19.04 |      100 |       0 |   19.04 | ...16-224,227-237 
+ toolkit/src/dag   |      16 |        0 |       0 |      16 |                   
+  consensus.ts     |    8.84 |        0 |       0 |    8.84 | ...91-132,135-149 
+  index.ts         |   35.29 |        0 |       0 |   35.29 | ...64,67-68,71-72 
+  store.ts         |   27.58 |        0 |       0 |   27.58 | ...30,33-34,37-39 
+  topology.ts      |    9.75 |      100 |       0 |    9.75 | ...2,25-49,52-107 
+  types.ts         |       0 |        0 |       0 |       0 |                   
+ ...t/src/snapshot |   17.24 |       50 |    7.69 |   17.24 |                   
+  index.ts         |   17.33 |        0 |       0 |   17.33 | ...,95-97,100-101 
+  serialization.ts |   16.66 |      100 |       0 |   16.66 | 7-11,17-21        
+  types.ts         |       0 |        0 |       0 |       0 |                   
+ ...pshot/backends |   15.07 |        0 |       0 |   15.07 |                   
+  ...hotBackend.ts |   13.15 |        0 |       0 |   13.15 | ...87,90-94,97-99 
+  ...hotBackend.ts |      18 |        0 |       0 |      18 | ...52,55-56,59-64 
+ ...kit/src/stores |   27.17 |        0 |       0 |   27.17 |                   
+  invoice-store.ts |   33.33 |        0 |       0 |   33.33 | ...45,48-49,52-61 
+  ...trol-store.ts |   23.72 |        0 |       0 |   23.72 | ...68,71-73,76-77 
+ tx-builder/src    |    4.83 |        0 |       0 |    4.83 |                   
+  ...rator-plan.ts |       4 |      100 |       0 |       4 | ...8,63-74,78-257 
+  index.ts         |    2.42 |      100 |       0 |    2.42 | ...80-287,293-303 
+  kaspa-uri.ts     |    6.12 |      100 |       0 |    6.12 | 44-60,63-104      
+  ...et-adapter.ts |    2.12 |      100 |       0 |    2.12 | ...46-359,363-364 
+  mass.ts          |    7.07 |      100 |       0 |    7.07 | ...42-344,348-349 
+  ...ing-spends.ts |   13.97 |        0 |       0 |   13.97 | ...68-125,129-136 
+  service.ts       |    7.93 |        0 |       0 |    7.93 | ...60-222,231-274 
+  utxo-mapper.ts   |      10 |      100 |       0 |      10 | 18-27,33-40       
+  verify.ts        |    1.87 |      100 |       0 |    1.87 | ...89-346,354-379 
+ ...et-adapter/src |       0 |    66.66 |   66.66 |       0 |                   
+  contracts.ts     |       0 |        0 |       0 |       0 |                   
+  index.ts         |       0 |        0 |       0 |       0 | 1-5               
+  manager.ts       |       0 |      100 |     100 |       0 | 21-55             
+ .../src/providers |       0 |      100 |     100 |       0 |                   
+  in-memory.ts     |       0 |      100 |     100 |       0 | 12-63             
+  watch-only.ts    |       0 |      100 |     100 |       0 | 4-37              
+ .../providers/dev |       0 |      100 |     100 |       0 |                   
+  dev-accounts.ts  |       0 |      100 |     100 |       0 | 14-60             
+-------------------|---------|----------|---------|---------|-------------------

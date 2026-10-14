@@ -123,7 +123,7 @@ describe("signTxPlanArtifact", () => {
         planArtifact: mainnetPlan,
         account: mainnetAccount
       })
-    ).rejects.toThrow(/Mainnet signing is disabled by default/);
+    ).rejects.toMatchObject({ code: "MAINNET_SIGNING_DISABLED" });
   });
 
   it("should allow mainnet signing if allowMainnet is true", async () => {
@@ -144,7 +144,7 @@ describe("signTxPlanArtifact", () => {
         allowMainnet: true
       })
     // @ts-ignore
-    ).rejects.not.toThrow(/Mainnet signing is disabled by default/);
+    ).rejects.not.toThrow(/Mainnet signing is disabled/);
   });
 });
 

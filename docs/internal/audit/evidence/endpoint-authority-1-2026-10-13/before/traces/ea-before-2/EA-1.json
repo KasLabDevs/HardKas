@@ -1,0 +1,30 @@
+{
+  "ledgerKinds": [
+    "artifact.written",
+    "workflow.submitted"
+  ],
+  "A": "ws://127.0.0.1:63957",
+  "B": "ws://127.0.0.1:63958",
+  "submitReceivedBy": {
+    "A": true,
+    "B": false
+  },
+  "receiptRpcUrl": "ws://127.0.0.1:63958",
+  "eventRpcUrls": [
+    "ws://127.0.0.1:63958"
+  ],
+  "aMethods": [
+    "getFeeEstimate",
+    "getInfo",
+    "getServerInfo",
+    "getBlockDagInfo",
+    "getBlockDagInfo",
+    "getUtxosByAddresses",
+    "getMempoolEntriesByAddresses",
+    "getBlockDagInfo",
+    "getBlockDagInfo",
+    "getSinkBlueScore",
+    "submitTransaction"
+  ],
+  "bMethods": []
+}

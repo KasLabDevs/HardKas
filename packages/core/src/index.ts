@@ -95,6 +95,7 @@ export type HardkasConfig = z.infer<typeof hardkasConfigSchema>;
 
 import { HardkasError } from "./errors.js";
 export * from "./errors.js";
+export * from "./mainnet-policy.js";
 export * from "./node-images.js";
 export * from "./node-identity.js";
 export * from "./toolchains.js";

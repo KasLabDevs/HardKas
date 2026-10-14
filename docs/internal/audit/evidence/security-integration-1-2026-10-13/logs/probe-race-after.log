@@ -1,0 +1,21 @@
+round 0: M received {"getServerInfo":171}
+round 1: M received {"getServerInfo":187}
+round 2: M received {"getServerInfo":201}
+round 3: M received {"getServerInfo":196}
+round 4: M received {"getServerInfo":186}
+round 5: M received {"getServerInfo":184}
+round 6: M received {"getServerInfo":173}
+round 7: M received {"getServerInfo":175}
+round 8: M received {"getServerInfo":189}
+round 9: M received {"getServerInfo":193}
+round 10: M received {"getServerInfo":169}
+round 11: M received {"getServerInfo":187}
+round 12: M received {"getServerInfo":174}
+round 13: M received {"getServerInfo":172}
+round 14: M received {"getServerInfo":182}
+round 15: M received {"getServerInfo":184}
+round 16: M received {"getServerInfo":174}
+round 17: M received {"getServerInfo":169}
+round 18: M received {"getServerInfo":211}
+round 19: M received {"getServerInfo":213}
+{"rounds":20,"violations":0,"requests":7636,"outcomes":{"ok":152,"RpcError":40,"NODE_NETWORK_MISMATCH":7444}}

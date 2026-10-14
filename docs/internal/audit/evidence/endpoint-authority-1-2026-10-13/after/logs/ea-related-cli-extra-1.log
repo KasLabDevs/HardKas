@@ -1,0 +1,13 @@
+
+ RUN  v2.1.9 C:/Users/jrodr/hkl1/ea/src
+
+ ✓ packages/cli/test/wave1-5-narratives-cli.test.ts > Wave 1.5 · AUD-14 · CLI narratives report only computed results (simulator) > T-A14a · `explain` of a simulated receipt: computed identity check, replay stated as not run, nothing 'successful' 1009ms
+ ✓ packages/cli/test/wave1-5-narratives-cli.test.ts > Wave 1.5 · AUD-14 · CLI narratives report only computed results (simulator) > T-A14a · `tx send` in the simulator prints the computed outcome and no replay id or replay verdict 1159ms
+ ✓ packages/cli/test/wave1-5-narratives-cli.test.ts > Wave 1.5 · AUD-14 · CLI narratives report only computed results (simulator) > T-A14a · manipulated chain: a tampered receipt is refused by `explain` (verified lookup) and nothing is called successful 1788ms
+
+ Test Files  1 passed (1)
+      Tests  3 passed (3)
+   Start at  20:46:09
+   Duration  7.65s (transform 1.61s, setup 0ms, collect 3.11s, tests 4.19s, environment 0ms, prepare 124ms)
+
+JSON report written to C:/Users/jrodr/AppData/Local/Temp/claude/C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo/ecaf7e92-a2ba-49b0-aafc-c62b4cb5eda0/scratchpad/l1-reality-1/ea/logs/ea-related-cli-extra-1.json

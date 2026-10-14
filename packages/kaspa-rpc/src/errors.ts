@@ -72,6 +72,35 @@ export class RpcConnectionError extends RpcError {
   }
 }
 
+/**
+ * NODE-NETWORK-IDENTITY-1: the node behind an endpoint is not the network the caller expects (MISMATCH), or did not
+ * say which network it serves (UNKNOWN). Raised before any of the caller's requests reach that node; never retried
+ * (another attempt asks the same node). `endpoint` carries no URL credentials.
+ */
+export type NodeNetworkIdentityCode = "NODE_NETWORK_MISMATCH" | "NODE_NETWORK_UNKNOWN";
+
+export interface NodeNetworkIdentity {
+  readonly expected: string;
+  readonly observed?: string | undefined;
+  readonly endpoint: string;
+}
+
+export class NodeNetworkIdentityError extends RpcError {
+  constructor(
+    code: NodeNetworkIdentityCode,
+    message: string,
+    public readonly identity: NodeNetworkIdentity
+  ) {
+    super(message, code, identity, false);
+    this.name = "NodeNetworkIdentityError";
+  }
+}
+
+export function isNodeNetworkIdentityError(error: unknown): error is NodeNetworkIdentityError {
+  const code = (error as { code?: unknown } | null)?.code;
+  return error instanceof NodeNetworkIdentityError || code === "NODE_NETWORK_MISMATCH" || code === "NODE_NETWORK_UNKNOWN";
+}
+
 export class RpcProtocolError extends RpcError {
   constructor(message: string = "Invalid RPC protocol response", code?: number | string) {
     super(message, code, undefined, false);

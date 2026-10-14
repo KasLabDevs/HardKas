@@ -1,0 +1,991 @@
+
+ RUN  v2.1.9 C:/Users/jrodr/hkl1/si/src
+
+ ✓ packages/artifacts/test/adversarial/wave2-a-derive-tx-status.test.ts > Wave 2(a) · upstream parameters are provenanced, not chosen > finality depth is the verified rusty-kaspa value for every network HardKAS runs against, and unknown for the rest
+ ✓ packages/artifacts/test/adversarial/wave2-a-derive-tx-status.test.ts > Wave 2(a) · upstream parameters are provenanced, not chosen > the default policy is an explicit HardKAS product choice, never presented as a Kaspa parameter
+ ✓ packages/artifacts/test/adversarial/wave2-a-derive-tx-status.test.ts > Wave 2(a) · deriveTxStatus (T-RS) > T-RS-1 · a submission alone: SUBMITTED means the submit call succeeded at that instant, never CONFIRMED; rejected → REJECTED_BY_NODE; nothing → INSUFFICIENT_EVIDENCE
+ ✓ packages/artifacts/test/adversarial/wave2-a-derive-tx-status.test.ts > Wave 2(a) · deriveTxStatus (T-RS) > T-RS-2 · a mempool entry decides MEMPOOL_ACCEPTED, an orphan entry MEMPOOL_ORPHAN; absence is not evidence
+ ✓ packages/artifacts/test/adversarial/wave2-a-derive-tx-status.test.ts > Wave 2(a) · deriveTxStatus (T-RS) > T-RS-3 · ACCEPTED below the policy depth, CONFIRMED at it; the unit is blue score (a large DAA delta never confirms)
+ ✓ packages/artifacts/test/adversarial/wave2-a-derive-tx-status.test.ts > Wave 2(a) · deriveTxStatus (T-RS) > T-RS-4 · acceptance then removal of the accepting block is REORGED; a later acceptance by another block is ACCEPTED again
+ ✓ packages/artifacts/test/adversarial/wave2-a-derive-tx-status.test.ts > Wave 2(a) · deriveTxStatus (T-RS) > T-RS-5 · FINALIZED only at the network's verified finality depth with the block on the chain; shallower or mis-declared finality is refused as incoherent
+ ✓ packages/artifacts/test/adversarial/wave2-a-derive-tx-status.test.ts > Wave 2(a) · deriveTxStatus (T-RS) > T-RS-6 · finality followed by removal of the same block is CONFLICTING_OBSERVATIONS (the protocol excludes it)
+ ✓ packages/artifacts/test/adversarial/wave2-a-derive-tx-status.test.ts > Wave 2(a) · deriveTxStatus (T-RS) > T-RS-7 · a pruned observer yields UNOBSERVABLE_PRUNED, never finality by age; an earlier durable finality observation stands
+ ✓ packages/artifacts/test/adversarial/wave2-a-derive-tx-status.test.ts > Wave 2(a) · deriveTxStatus (T-RS) > T-RS-8 · LEGACY-scope or tampered observations never decide; they are reported as ignored
+ ✓ packages/artifacts/test/adversarial/wave2-a-derive-tx-status.test.ts > Wave 2(a) · deriveTxStatus (T-RS) > T-RS-9 · the simulator never yields CONFIRMED/FINALIZED: SYNTHETIC_EXECUTED; synthetic plus network evidence is a conflict
+ ✓ packages/artifacts/test/adversarial/wave2-a-derive-tx-status.test.ts > Wave 2(a) · deriveTxStatus (T-RS) > two accepting blocks both observed on the chain are CONFLICTING_OBSERVATIONS; the derivation is order-independent
+ ✓ packages/artifacts/test/adversarial/wave2-a-derive-tx-status.test.ts > Wave 2(a) · deriveTxStatus (T-RS) > an observation is a FULL v5 artifact without lineage or workflow fields, stored under observations/ and listed by txId (rejects a tampered copy)
+ ✓ packages/artifacts/test/adversarial/wave2-a-derive-tx-status.test.ts > Wave 2(a) · deriveTxStatus (T-RS) > observer locality · the observerId is opaque, stable and authenticated; a temporal history exists only within one observer
+ ✓ packages/artifacts/test/adversarial/wave2-a-derive-tx-status.test.ts > Wave 2(a) · deriveTxStatus (T-RS) > coherence: confirmationsBlue must equal sinkBlueScore − acceptingBlueScore; a synthetic finding needs a synthetic observer
+ ✓ packages/artifacts/test/adversarial/wave1-3-b1-parent-migrated-forge.test.ts > B1 · a MigrationReceipt never turns a missing parent into a valid one > the exact forgery: v5 signed + ghost parent + forged FULL receipt → strict PARENT_MISSING (error)
+ ✓ packages/artifacts/test/adversarial/wave1-3-b1-parent-migrated-forge.test.ts > B1 · a MigrationReceipt never turns a missing parent into a valid one > the forged receipt itself hangs from the ghost: strict PARENT_MISSING, never MIGRATION_SOURCE_ABSENT
+ ✓ packages/artifacts/test/adversarial/wave1-3-b1-parent-migrated-forge.test.ts > B1 · a MigrationReceipt never turns a missing parent into a valid one > positive: a genuine migration with the legacy source present verifies strict through the normal parent path
+ ✓ packages/artifacts/test/adversarial/wave1-3-b1-parent-migrated-forge.test.ts > B1 · a MigrationReceipt never turns a missing parent into a valid one > the same genuine migration WITHOUT the source in the store fails strict with PARENT_MISSING (the source must stay)
+ ✓ packages/artifacts/test/adversarial/wave1-3-b1-parent-migrated-forge.test.ts > B1 · a MigrationReceipt never turns a missing parent into a valid one > SUPERSEDED_BY_MIGRATION requires every condition; each forged or broken variant yields nothing
+ ✓ packages/artifacts/test/adversarial/wave1-3-b1-parent-migrated-forge.test.ts > B1-bis · a descendant is not a re-issue: supersession requires schema continuity and a coherent receipt > case 1 (attack) · legacy plan L → legitimate v5 signed child S + forged FULL receipt old=L,new=S → undefined; L stays MIGRATION_REQUIRED
+ ✓ packages/artifacts/test/adversarial/wave1-3-b1-parent-migrated-forge.test.ts > B1-bis · a descendant is not a re-issue: supersession requires schema continuity and a coherent receipt > case 2 (genuine) · plan → re-issued plan keeps returning the pair and the re-issue is a strict member of the store
+ ✓ packages/artifacts/test/adversarial/wave1-3-b1-parent-migrated-forge.test.ts > B1-bis · a descendant is not a re-issue: supersession requires schema continuity and a coherent receipt > case 2b (genuine, schema-version step) · a 0.1.0 `.v1` plan re-issued as `hardkas.txPlan` is the same base schema and is superseded
+ ✓ packages/artifacts/test/adversarial/wave1-3-b1-parent-migrated-forge.test.ts > B1-bis · a descendant is not a re-issue: supersession requires schema continuity and a coherent receipt > case 3 (metadata forgery) · correct hashes but falsified fromSchema or toSchema → undefined
+ ✓ packages/artifacts/test/wave6-lineage-cycle-safety.test.ts > Wave 6 · LINEAGE-1 · cycle-safe canonical lineage resolver (IC-5′ re-base) > 1. receipt → signed → plan → ROOT terminates with exactly 3 nodes
+ ✓ packages/artifacts/test/wave6-lineage-cycle-safety.test.ts > Wave 6 · LINEAGE-1 · cycle-safe canonical lineage resolver (IC-5′ re-base) > 2. root plan with explicit empty canonical parent terminates with exactly 1 node
+ ✓ packages/artifacts/test/wave6-lineage-cycle-safety.test.ts > Wave 6 · LINEAGE-1 · cycle-safe canonical lineage resolver (IC-5′ re-base) > 3. canonical non-empty parent resolves correctly
+ ✓ packages/artifacts/test/wave6-lineage-cycle-safety.test.ts > Wave 6 · LINEAGE-1 · cycle-safe canonical lineage resolver (IC-5′ re-base) > 4. canonical empty parent does NOT fall through to `planId`
+ ✓ packages/artifacts/test/wave6-lineage-cycle-safety.test.ts > Wave 6 · LINEAGE-1 · cycle-safe canonical lineage resolver (IC-5′ re-base) > 5. canonical parent wins over a conflicting legacy `sourcePlanId` label
+ ✓ packages/artifacts/test/wave6-lineage-cycle-safety.test.ts > Wave 6 · LINEAGE-1 · cycle-safe canonical lineage resolver (IC-5′ re-base) > 6. a legacy child whose only upward pointer is the `sourcePlanId` label returns a partial lineage (label never resolves)
+ ✓ packages/artifacts/test/wave6-lineage-cycle-safety.test.ts > Wave 6 · LINEAGE-1 · cycle-safe canonical lineage resolver (IC-5′ re-base) > 7. a legacy receipt whose only upward pointer is `sourceSignedId` returns a partial lineage (label never resolves)
+ ✓ packages/artifacts/test/wave6-lineage-cycle-safety.test.ts > Wave 6 · LINEAGE-1 · cycle-safe canonical lineage resolver (IC-5′ re-base) > 8. top-level legacy `parentArtifactId` remains supported when it is a 64-hex artifactId
+ ✓ packages/artifacts/test/wave6-lineage-cycle-safety.test.ts > Wave 6 · LINEAGE-1 · cycle-safe canonical lineage resolver (IC-5′ re-base) > 9. `planId` alone is NEVER interpreted as a parent
+ ✓ packages/artifacts/test/wave6-lineage-cycle-safety.test.ts > Wave 6 · LINEAGE-1 · cycle-safe canonical lineage resolver (IC-5′ re-base) > 10. A → A throws LINEAGE_CYCLE_DETECTED
+ ✓ packages/artifacts/test/wave6-lineage-cycle-safety.test.ts > Wave 6 · LINEAGE-1 · cycle-safe canonical lineage resolver (IC-5′ re-base) > 11. A → B → A throws LINEAGE_CYCLE_DETECTED
+ ✓ packages/artifacts/test/wave6-lineage-cycle-safety.test.ts > Wave 6 · LINEAGE-1 · cycle-safe canonical lineage resolver (IC-5′ re-base) > 12. chain within configured depth succeeds
+ ✓ packages/artifacts/test/wave6-lineage-cycle-safety.test.ts > Wave 6 · LINEAGE-1 · cycle-safe canonical lineage resolver (IC-5′ re-base) > 13. chain exceeding configured depth throws LINEAGE_DEPTH_EXCEEDED
+ ✓ packages/artifacts/test/wave6-lineage-cycle-safety.test.ts > Wave 6 · LINEAGE-1 · cycle-safe canonical lineage resolver (IC-5′ re-base) > 13. chain exceeding configured depth throws LINEAGE_DEPTH_EXCEEDED 8710ms
+ ✓ packages/artifacts/test/wave6-lineage-cycle-safety.test.ts > Wave 6 · LINEAGE-1 · cycle-safe canonical lineage resolver (IC-5′ re-base) > 14. missing-parent behavior returns the partial lineage silently
+ ✓ packages/artifacts/test/wave6-lineage-cycle-safety.test.ts > Wave 6 · LINEAGE-1 · cycle-safe canonical lineage resolver (IC-5′ re-base) > 15. schema casing has no effect on traversal
+ ✓ packages/artifacts/test/wave6-lineage-cycle-safety.test.ts > Wave 6 · LINEAGE-1 · cycle-safe canonical lineage resolver (IC-5′ re-base) > 16. exact Wave 4 receipt/signed/plan shape now terminates in bounded time
+ ✓ packages/artifacts/test/wave6-lineage-cycle-safety.test.ts > Wave 6 · LINEAGE-1 · cycle-safe canonical lineage resolver (IC-5′ re-base) > throws LineageError instances (typed)
+ ✓ packages/localnet/test/simulator-state-evidence.test.ts > SIMULATOR-STATE-EVIDENCE-1 · a simulated state is evidenced before it is durable > a fund whose state snapshot cannot be written fails and leaves the ledger as it was
+ ✓ packages/localnet/test/simulator-state-evidence.test.ts > SIMULATOR-STATE-EVIDENCE-1 · a simulated state is evidenced before it is durable > the first ledger of a workspace is not created when its state snapshot cannot be written
+ ✓ packages/localnet/test/simulator-state-evidence.test.ts > SIMULATOR-STATE-EVIDENCE-1 · a simulated state is evidenced before it is durable > a fork into the workspace is not persisted when its state snapshot cannot be written
+ ✓ packages/localnet/test/simulator-state-evidence.test.ts > SIMULATOR-STATE-EVIDENCE-1 · a simulated state is evidenced before it is durable > the snapshot lands before the ledger
+ ✓ packages/localnet/test/simulator-state-evidence.test.ts > SIMULATOR-STATE-EVIDENCE-1 · a simulated state is evidenced before it is durable > a ledger write that fails after the snapshot landed leaves the snapshot (an orphan) and the ledger as it was
+ ✓ packages/localnet/test/simulator-state-evidence.test.ts > SIMULATOR-STATE-EVIDENCE-1 · a simulated state is evidenced before it is durable > a retry reaching the same state adopts the orphan without rewriting it
+ ✓ packages/localnet/test/simulator-state-evidence.test.ts > SIMULATOR-STATE-EVIDENCE-1 · a simulated state is evidenced before it is durable > a reset never rewrites the initial state's snapshot
+ ✓ packages/localnet/test/simulator-state-evidence.test.ts > SIMULATOR-STATE-EVIDENCE-1 · a simulated state is evidenced before it is durable > a DAG reorg writes the ledger and no snapshot: the hashed state did not change, its snapshot is kept
+ ✓ packages/localnet/test/simulator-state-evidence.test.ts > SIMULATOR-STATE-EVIDENCE-1 · a simulated state is evidenced before it is durable > a reset after a HardKAS version change keeps the initial state's snapshot the older version wrote
+ ✓ packages/localnet/test/simulator-state-evidence.test.ts > SIMULATOR-STATE-EVIDENCE-1 · a simulated state is evidenced before it is durable > a deterministic state that recurs after a HardKAS version change adopts the snapshot the older version wrote
+ ✓ packages/localnet/test/simulator-state-evidence.test.ts > SIMULATOR-STATE-EVIDENCE-1 · a simulated state is evidenced before it is durable > a snapshot path holding this state's snapshot serialized otherwise (same content, other bytes) refuses the change and touches nothing
+ ✓ packages/localnet/test/simulator-state-evidence.test.ts > SIMULATOR-STATE-EVIDENCE-1 · a simulated state is evidenced before it is durable > a snapshot path holding this state's snapshot with another field outside its identity (indexedAt) refuses the change and touches nothing
+ ✓ packages/localnet/test/simulator-state-evidence.test.ts > SIMULATOR-STATE-EVIDENCE-1 · a simulated state is evidenced before it is durable > a snapshot path holding this state's snapshot with a createdAt that is not a timestamp refuses the change and touches nothing
+ ✓ packages/localnet/test/simulator-state-evidence.test.ts > SIMULATOR-STATE-EVIDENCE-1 · a simulated state is evidenced before it is durable > a snapshot path holding this state's snapshot with a hardkasVersion that is not a version string refuses the change and touches nothing
+ ✓ packages/localnet/test/simulator-state-evidence.test.ts > SIMULATOR-STATE-EVIDENCE-1 · a simulated state is evidenced before it is durable > a snapshot path holding this state's snapshot with its authenticated content altered (declared identity kept) refuses the change and touches nothing
+ ✓ packages/localnet/test/simulator-state-evidence.test.ts > SIMULATOR-STATE-EVIDENCE-1 · a simulated state is evidenced before it is durable > a snapshot path holding another state's valid snapshot refuses the change and touches nothing
+ ✓ packages/localnet/test/simulator-state-evidence.test.ts > SIMULATOR-STATE-EVIDENCE-1 · a simulated state is evidenced before it is durable > a snapshot path holding other content refuses the change and touches nothing
+ ✓ packages/localnet/test/simulator-state-evidence.test.ts > SIMULATOR-STATE-EVIDENCE-1 · a simulated state is evidenced before it is durable > waits for another holder of the store before writing anything, then lands snapshot and ledger 1612ms
+ ✓ packages/localnet/test/simulator-state-evidence.test.ts > SIMULATOR-STATE-EVIDENCE-1 · a simulated state is evidenced before it is durable > a state kept under the workspace's .hardkas (a scenario run's) is evidenced first, in that workspace's store
+ ✓ packages/localnet/test/simulator-state-evidence.test.ts > SIMULATOR-STATE-EVIDENCE-1 · a simulated state is evidenced before it is durable > an explicit external state path gets no snapshot and creates nothing outside its own folder
+ ✓ packages/artifacts/test/adversarial/wave1-2-resolver.test.ts > Wave 1.2 · IC-5′ verified, namespaced artifact resolution > T-IDMATRIX · an untyped input is only a contained path or a 64-hex artifactId; labels need a namespace
+ ✓ packages/artifacts/test/adversarial/wave1-2-resolver.test.ts > Wave 1.2 · IC-5′ verified, namespaced artifact resolution > typed lookups return the verified artifact of their own namespace, with its authentication scope
+ ✓ packages/artifacts/test/adversarial/wave1-2-resolver.test.ts > Wave 1.2 · IC-5′ verified, namespaced artifact resolution > tx namespace never returns a signed artifact, even when the signed carries the same txId
+ ✓ packages/artifacts/test/adversarial/wave1-2-resolver.test.ts > Wave 1.2 · IC-5′ verified, namespaced artifact resolution > T-P7 · a top-level artifactId is not an identity claim: an impostor never shadows the artifact it names
+ ✓ packages/artifacts/test/adversarial/wave1-2-resolver.test.ts > Wave 1.2 · IC-5′ verified, namespaced artifact resolution > CANDIDATE_INVALID · a tampered copy that claims the queried identity fails the lookup instead of being skipped
+ ✓ packages/artifacts/test/adversarial/wave1-2-resolver.test.ts > Wave 1.2 · IC-5′ verified, namespaced artifact resolution > a label that does not derive from its artifact's hash is an invalid candidate (IC-5′.4), never a silent skip
+ ✓ packages/artifacts/test/adversarial/wave1-2-resolver.test.ts > Wave 1.2 · IC-5′ verified, namespaced artifact resolution > identical copies collapse; distinct valid receipts for one txId are RECEIPT_AMBIGUOUS_CONFLICT
+ ✓ packages/artifacts/test/adversarial/wave1-2-resolver.test.ts > Wave 1.2 · IC-5′ verified, namespaced artifact resolution > legacy (hashVersion 4) artifacts resolve under their own rules and report authScope LEGACY
+ ✓ packages/artifacts/test/adversarial/wave1-2-resolver.test.ts > Wave 1.2 · IC-5′ verified, namespaced artifact resolution > resolveArtifactHandle (CLI façade) refuses untyped labels with NAMESPACE_REQUIRED and accepts a namespace option
+ ✓ packages/artifacts/test/adversarial/wave1-2-resolver.test.ts > Wave 1.2 · IC-5′ verified, namespaced artifact resolution > store.readArtifact · 64-hex is verified identity, labels are refused, paths are workspace-relative not cwd-relative
+ ✓ packages/artifacts/test/adversarial/wave1-2-resolver.test.ts > Wave 1.2 · IC-5′ verified, namespaced artifact resolution > finalized plan re-sealed after a field change still resolves by its new identity and label
+ ✓ packages/artifacts/test/wave11-resolver-exact-id.test.ts > Wave 11 · RESOLVER-1 · content-verified store lookups (IC-5′ re-base) > 1. resolves a plan by full 64-hex canonical artifactId when the filename carries only the 16-hex short form
+ ✓ packages/artifacts/test/wave11-resolver-exact-id.test.ts > Wave 11 · RESOLVER-1 · content-verified store lookups (IC-5′ re-base) > 3. a planId is the `plan` namespace: the generic reader refuses it, the typed lookup verifies it
+ ✓ packages/artifacts/test/wave11-resolver-exact-id.test.ts > Wave 11 · RESOLVER-1 · content-verified store lookups (IC-5′ re-base) > 10. lineage parent lookup by full canonical artifactId resolves
+ ✓ packages/artifacts/test/wave11-resolver-exact-id.test.ts > Wave 11 · RESOLVER-1 · content-verified store lookups (IC-5′ re-base) > 2. does NOT return artifact Y when Y's filename shares the queried A's first-16-hex — canonical identity is authoritative
+ ✓ packages/artifacts/test/wave11-resolver-exact-id.test.ts > Wave 11 · RESOLVER-1 · content-verified store lookups (IC-5′ re-base) > does NOT return the wrong artifact when a short token is a prefix of another artifact's planId
+ ✓ packages/artifacts/test/wave11-resolver-exact-id.test.ts > Wave 11 · RESOLVER-1 · content-verified store lookups (IC-5′ re-base) > selects the verified label match past a filename-only impostor
+ ✓ packages/artifacts/test/wave11-resolver-exact-id.test.ts > Wave 11 · RESOLVER-1 · content-verified store lookups (IC-5′ re-base) > identical copies of one plan in the canonical subdirectory and at the root collapse to one identity
+ ✓ packages/artifacts/test/wave11-resolver-exact-id.test.ts > Wave 11 · RESOLVER-1 · content-verified store lookups (IC-5′ re-base) > 4. arbitrary partial IDs never resolve: they are neither a path nor a 64-hex artifactId
+ ✓ packages/artifacts/test/wave11-resolver-exact-id.test.ts > Wave 11 · RESOLVER-1 · content-verified store lookups (IC-5′ re-base) > 5. `txId` is NOT generic artifact identity — readArtifact(txId) rejects even when a receipt on disk carries .txId === input
+ ✓ packages/artifacts/test/wave11-resolver-exact-id.test.ts > Wave 11 · RESOLVER-1 · content-verified store lookups (IC-5′ re-base) > 6/7. an artifact without lineage (snapshot) is identity-resolvable by its recomputed contentHash AND path-resolvable
+ ✓ packages/artifacts/test/wave11-resolver-exact-id.test.ts > Wave 11 · RESOLVER-1 · content-verified store lookups (IC-5′ re-base) > 8. `findReceiptByTxId(realTxId)` succeeds — the receipt-specific lookup owns the txId namespace
+ ✓ packages/artifacts/test/wave11-resolver-exact-id.test.ts > Wave 11 · RESOLVER-1 · content-verified store lookups (IC-5′ re-base) > 8b. `findReceiptByTxId(unknownTxId)` throws typed RECEIPT_NOT_FOUND
+ ✓ packages/artifacts/test/wave11-resolver-exact-id.test.ts > Wave 11 · RESOLVER-1 · content-verified store lookups (IC-5′ re-base) > 9. the tx namespace replaces the speculative `readArtifact(txId)` + enumerate-fallback pattern
+ ✓ packages/artifacts/test/wave11-resolver-exact-id.test.ts > Wave 11 · RESOLVER-1 · content-verified store lookups (IC-5′ re-base) > does not treat corrupt JSON as a match, even when its filename contains the label
+ ✓ packages/artifacts/test/wave11-resolver-exact-id.test.ts > Wave 11 · RESOLVER-1 · content-verified store lookups (IC-5′ re-base) > does not treat a directory whose name contains the label as an artifact
+ ✓ packages/artifacts/test/wave11-resolver-exact-id.test.ts > Wave 11 · RESOLVER-1 · content-verified store lookups (IC-5′ re-base) > returns not-found for a genuinely missing artifact even when a neighbour's filename contains the queried label
+ ✓ packages/artifacts/test/artifact-handle.test.ts > resolveArtifactHandle · Wave 5 · DEF-17 contract (IC-5′ re-base) > resolves an absolute in-workspace artifact path
+ ✓ packages/artifacts/test/artifact-handle.test.ts > resolveArtifactHandle · Wave 5 · DEF-17 contract (IC-5′ re-base) > resolves a workspace-relative artifact path anchored to workspaceRoot (not cwd)
+ ✓ packages/artifacts/test/artifact-handle.test.ts > resolveArtifactHandle · Wave 5 · DEF-17 contract (IC-5′ re-base) > rejects a path outside the workspace with a typed error
+ ✓ packages/artifacts/test/artifact-handle.test.ts > resolveArtifactHandle · Wave 5 · DEF-17 contract (IC-5′ re-base) > rejects a directory input with ARTIFACT_INPUT_IS_DIRECTORY
+ ✓ packages/artifacts/test/artifact-handle.test.ts > resolveArtifactHandle · Wave 5 · DEF-17 contract (IC-5′ re-base) > rejects a missing path with ARTIFACT_NOT_FOUND
+ ✓ packages/artifacts/test/artifact-handle.test.ts > resolveArtifactHandle · Wave 5 · DEF-17 contract (IC-5′ re-base) > a path to a file that does not verify is CANDIDATE_INVALID (IC-5′.4)
+ ✓ packages/artifacts/test/artifact-handle.test.ts > resolveArtifactHandle · Wave 5 · DEF-17 contract (IC-5′ re-base) > resolves a plan by exact artifactId even at the legacy root layout
+ ✓ packages/artifacts/test/artifact-handle.test.ts > resolveArtifactHandle · Wave 5 · DEF-17 contract (IC-5′ re-base) > resolves a signed by exact artifactId (canonical signed/ subdir)
+ ✓ packages/artifacts/test/artifact-handle.test.ts > resolveArtifactHandle · Wave 5 · DEF-17 contract (IC-5′ re-base) > resolves a receipt by exact artifactId (canonical receipts/ subdir)
+ ✓ packages/artifacts/test/artifact-handle.test.ts > resolveArtifactHandle · Wave 5 · DEF-17 contract (IC-5′ re-base) > resolves a snapshot (no lineage) by its recomputed contentHash — identity by category (IC-5′.1, AUD-45)
+ ✓ packages/artifacts/test/artifact-handle.test.ts > resolveArtifactHandle · Wave 5 · DEF-17 contract (IC-5′ re-base) > a partial artifactId needs a namespace (NAMESPACE_REQUIRED, D-Q3.a)
+ ✓ packages/artifacts/test/artifact-handle.test.ts > resolveArtifactHandle · Wave 5 · DEF-17 contract (IC-5′ re-base) > an arbitrary filename-substring token needs a namespace (NAMESPACE_REQUIRED)
+ ✓ packages/artifacts/test/artifact-handle.test.ts > resolveArtifactHandle · Wave 5 · DEF-17 contract (IC-5′ re-base) > labels resolve only through their namespace, and are verified against the artifact's hash
+ ✓ packages/artifacts/test/artifact-handle.test.ts > resolveArtifactHandle · Wave 5 · DEF-17 contract (IC-5′ re-base) > rejects a Kaspa txId (not an artifactId) with ARTIFACT_NOT_FOUND when it looks like a 64-hex
+ ✓ packages/artifacts/test/artifact-handle.test.ts > resolveArtifactHandle · Wave 5 · DEF-17 contract (IC-5′ re-base) > rejects malformed tokens
+ ✓ packages/artifacts/test/artifact-handle.test.ts > resolveArtifactHandle · Wave 5 · DEF-17 contract (IC-5′ re-base) > identical copies of one artifact collapse; a different body claiming the same id fails closed
+ ✓ packages/artifacts/test/artifact-handle.test.ts > resolveArtifactHandle · Wave 5 · DEF-17 contract (IC-5′ re-base) > throws ArtifactHandleError instances (typed)
+ ✓ packages/artifacts/test/adversarial/wave2-d-submission-fee.test.ts > Wave 2(d) · signed ↔ plan equivalence before any fee is derived > Kaspa addresses decode to the standard scripts the plan denotes (P2PK schnorr)
+ ✓ packages/artifacts/test/adversarial/wave2-d-submission-fee.test.ts > Wave 2(d) · signed ↔ plan equivalence before any fee is derived > 1 · plan and signed economically identical ⇒ fee derived
+ ✓ packages/artifacts/test/adversarial/wave2-d-submission-fee.test.ts > Wave 2(d) · signed ↔ plan equivalence before any fee is derived > 2 · the signed change is 7 sompi smaller ⇒ SIGNED_PLAN_MISMATCH, never 'fee + 7'
+ ✓ packages/artifacts/test/adversarial/wave2-d-submission-fee.test.ts > Wave 2(d) · signed ↔ plan equivalence before any fee is derived > 3 · the signed payment amount differs with the same inputs ⇒ SIGNED_PLAN_MISMATCH
+ ✓ packages/artifacts/test/adversarial/wave2-d-submission-fee.test.ts > Wave 2(d) · signed ↔ plan equivalence before any fee is derived > 4 · extra, omitted, reordered outputs or a different destination ⇒ SIGNED_PLAN_MISMATCH (exact order)
+ ✓ packages/artifacts/test/adversarial/wave2-d-submission-fee.test.ts > Wave 2(d) · signed ↔ plan equivalence before any fee is derived > insufficient evidence — never 0 — when the payload is opaque or missing, or the plan is missing/unsealed
+ ✓ packages/artifacts/test/adversarial/wave2-d-submission-fee.test.ts > Wave 2(d) · signed ↔ plan equivalence before any fee is derived > parseSignedTransactionPayload reads flattened and wrapped RPC shapes and refuses non-transactions
+ ✓ packages/artifacts/test/adversarial/wave2-d-submission-fee.test.ts > Wave 2(d) · signed ↔ plan equivalence before any fee is derived > the verifier flags a recorded fee that is not what it claims (SUBMISSION_FEE_INCOHERENT); an insufficient-evidence record needs a reason
+ ✓ packages/artifacts/test/adversarial/wave2-d-submission-fee.test.ts > Wave 2(d) · signed ↔ plan equivalence before any fee is derived > a simulated receipt's fee is derived from the plan it executes; an unbalanced plan cannot produce a receipt
+ ✓ packages/artifacts/test/wave10-receipt-lookup.test.ts > Wave 10 · RECEIPT-1 · findReceiptByTxId exact lookup (IC-5′ re-base) > 1. resolves a real-node canonical receipt by real Kaspa txId
+ ✓ packages/artifacts/test/wave10-receipt-lookup.test.ts > Wave 10 · RECEIPT-1 · findReceiptByTxId exact lookup (IC-5′ re-base) > 2. resolves a simulator receipt written with .schemaVersion (v1) by txId
+ ✓ packages/artifacts/test/wave10-receipt-lookup.test.ts > Wave 10 · RECEIPT-1 · findReceiptByTxId exact lookup (IC-5′ re-base) > 3. does NOT accidentally return a receipt when queried by its artifactId
+ ✓ packages/artifacts/test/wave10-receipt-lookup.test.ts > Wave 10 · RECEIPT-1 · findReceiptByTxId exact lookup (IC-5′ re-base) > 4. missing txId throws RECEIPT_NOT_FOUND (typed)
+ ✓ packages/artifacts/test/wave10-receipt-lookup.test.ts > Wave 10 · RECEIPT-1 · findReceiptByTxId exact lookup (IC-5′ re-base) > 5. duplicate copies of the same verified receipt collapse cleanly
+ ✓ packages/artifacts/test/wave10-receipt-lookup.test.ts > Wave 10 · RECEIPT-1 · findReceiptByTxId exact lookup (IC-5′ re-base) > 6. conflicting verified receipts with the same txId and DIFFERENT identity throw RECEIPT_AMBIGUOUS_CONFLICT
+ ✓ packages/artifacts/test/wave10-receipt-lookup.test.ts > Wave 10 · RECEIPT-1 · findReceiptByTxId exact lookup (IC-5′ re-base) > 7. non-receipt artifact with matching .txId is excluded by schema filter
+ ✓ packages/artifacts/test/wave10-receipt-lookup.test.ts > Wave 10 · RECEIPT-1 · findReceiptByTxId exact lookup (IC-5′ re-base) > 8. simulator-failure txId marker (simtx_failed_*) is resolvable — no hex-shape enforcement
+ ✓ packages/artifacts/test/wave10-receipt-lookup.test.ts > Wave 10 · RECEIPT-1 · findReceiptByTxId exact lookup (IC-5′ re-base) > 9. L2 Igra receipt with matching .txId is NOT resolved (L1-only scope)
+ ✓ packages/artifacts/test/wave10-receipt-lookup.test.ts > Wave 10 · RECEIPT-1 · findReceiptByTxId exact lookup (IC-5′ re-base) > 10. a candidate that does not verify (no contentHash) fails the lookup closed with CANDIDATE_INVALID
+ ✓ packages/artifacts/test/wave10-receipt-lookup.test.ts > Wave 10 · RECEIPT-1 · findReceiptByTxId exact lookup (IC-5′ re-base) > 11. exact Wave 4 real-node receipt shape (hashVersion 4) resolves in bounded time with LEGACY scope
+ ✓ packages/artifacts/test/wave10-receipt-lookup.test.ts > Wave 10 · RECEIPT-1 · findReceiptByTxId exact lookup (IC-5′ re-base) > 12. throws ReceiptLookupError instances (typed, not plain Error)
+ ✓ packages/artifacts/test/adversarial/wave1-3-migration.test.ts > Wave 1.3 · D-Q1.f migrate --to 5 without whitewash > the migration entry point exists and is explicit about the target hash version
+ ✓ packages/artifacts/test/adversarial/wave1-3-migration.test.ts > Wave 1.3 · D-Q1.f migrate --to 5 without whitewash > a v4 plan migrates to a NEW v5 artifact that verifies strict FULL; the source object is untouched
+ ✓ packages/artifacts/test/adversarial/wave1-3-migration.test.ts > Wave 1.3 · D-Q1.f migrate --to 5 without whitewash > unauthenticated material fields of the source do not enter the v5 body: they are recorded as legacy claims
+ ✓ packages/artifacts/test/adversarial/wave1-3-migration.test.ts > Wave 1.3 · D-Q1.f migrate --to 5 without whitewash > the migrated artifact is a child of the verified source (lineage rebuilt from the recomputed source identity)
+ ✓ packages/artifacts/test/adversarial/wave1-3-migration.test.ts > Wave 1.3 · D-Q1.f migrate --to 5 without whitewash > N13: the MigrationReceipt carries a valid hexadecimal lineage, verifies strict FULL and references recomputed hashes
+ ✓ packages/artifacts/test/adversarial/wave1-3-migration.test.ts > Wave 1.3 · D-Q1.f migrate --to 5 without whitewash > a source whose claimed contentHash does not match its content is refused (nothing is re-issued from tampered material)
+ ✓ packages/artifacts/test/adversarial/wave1-3-migration.test.ts > Wave 1.3 · D-Q1.f migrate --to 5 without whitewash > a source without a valid hashVersion is refused (IC-4′.2: it cannot be verified, so it cannot be migrated)
+ ✓ packages/artifacts/test/adversarial/wave1-3-migration.test.ts > Wave 1.3 · D-Q1.f migrate --to 5 without whitewash > an artifact already at version 5 is not migrated (MIGRATION_NOT_NEEDED); only --to 5 is supported
+ ✓ packages/artifacts/test/adversarial/wave1-3-migration.test.ts > Wave 1.3 · D-Q1.f migrate --to 5 without whitewash > a legacy receipt whose REQUIRED field `status` was never authenticated cannot be re-issued as v5 (refused, not whitewashed)
+ ✓ packages/artifacts/test/adversarial/wave1-3-migration.test.ts > Wave 1.3 · D-Q1.f migrate --to 5 without whitewash > the legacy schema-version migration (0.1.0 → 1.0.0-alpha) seals through the same rule: no unauthenticated field enters the body
+ ✓ packages/artifacts/test/adversarial/wave1-3-migration.test.ts > Wave 1.3 · D-Q1.f migrate --to 5 without whitewash > the migration receipt generator recomputes the hashes it certifies instead of trusting claims
+ ✓ packages/query/test/phase6-query.test.ts > EventsQueryAdapter > should list all events
+ ✓ packages/query/test/phase6-query.test.ts > EventsQueryAdapter > should filter events by --tx
+ ✓ packages/query/test/phase6-query.test.ts > EventsQueryAdapter > should filter events by domain
+ ✓ packages/query/test/phase6-query.test.ts > EventsQueryAdapter > should return deterministic ordering by timestamp+eventId
+ ✓ packages/query/test/phase6-query.test.ts > EventsQueryAdapter > should include explain metadata when requested
+ ✓ packages/query/test/phase6-query.test.ts > TxQueryAdapter > should aggregate artifacts and events for a txId
+ ✓ packages/query/test/phase6-query.test.ts > TxQueryAdapter > should report warnings for missing artifacts
+ ✓ packages/query/test/phase6-query.test.ts > TxQueryAdapter > should include explain with completeness info
+ ✓ packages/query/test/phase6-query.test.ts > Type-aware filters > should use strict equality (no String coercion)
+ ✓ packages/query/test/phase6-query.test.ts > Type-aware filters > should return false for invalid numeric comparisons (not NaN => 0)
+ ✓ packages/query/test/phase6-query.test.ts > Type-aware filters > should handle bigint comparisons
+ ✓ packages/query/test/phase6-query.test.ts > Type-aware filters > should handle exists filter
+ ✓ packages/query/test/phase6-query.test.ts > JSON output stability > should produce stable machine-readable JSON
+ ✓ packages/query/test/phase6-query.test.ts > JSON output stability > should produce identical queryHash for same data
+stderr | packages/node-runner/test/docker-kaspad-runner.test.ts > DockerKaspadRunner > fails without Docker unless a simulated node is explicitly allowed
+[DockerKaspadRunner] Docker unavailable (daemon not running). SIMULATED node runner explicitly allowed (allowSimulatedFallback / HARDKAS_ALLOW_SIMULATED_NODE=1): this is not a real node.
+
+ ✓ packages/node-runner/test/docker-kaspad-runner.test.ts > DockerKaspadRunner > should build the correct docker run command with localhost binding
+ ✓ packages/node-runner/test/docker-kaspad-runner.test.ts > DockerKaspadRunner > should return status even if container doesn't exist
+ ✓ packages/node-runner/test/docker-kaspad-runner.test.ts > DockerKaspadRunner > refuses, and starts nothing, when a port is held by something that is not its container
+ ✓ packages/node-runner/test/docker-kaspad-runner.test.ts > DockerKaspadRunner > does not trust a running container on its canonical name alone
+ ✓ packages/node-runner/test/docker-kaspad-runner.test.ts > DockerKaspadRunner > adopts a running canonical container that proves its identity
+ ✓ packages/node-runner/test/docker-kaspad-runner.test.ts > DockerKaspadRunner > fails without Docker unless a simulated node is explicitly allowed
+ ✓ packages/node-runner/test/docker-kaspad-runner.test.ts > DockerKaspadRunner > uses the canonical node and miner names
+ ✓ packages/node-runner/test/docker-kaspad-runner.test.ts > DockerKaspadRunner > should use the default pinned image if none provided
+ ✓ packages/node-runner/test/docker-kaspad-runner.test.ts > DockerKaspadRunner > pins the reference image by version and digest
+ ✓ packages/node-runner/test/docker-kaspad-runner.test.ts > DockerKaspadRunner > should stop the container if it exists
+ ✓ packages/node-runner/test/docker-kaspad-runner.test.ts > DockerKaspadRunner > CLI-RUNTIME-CONTRACT-1 · truthful stop/status/logs/reset > stop(): Docker unavailable is DOCKER_UNAVAILABLE and nothing is stopped or removed
+ ✓ packages/node-runner/test/docker-kaspad-runner.test.ts > DockerKaspadRunner > CLI-RUNTIME-CONTRACT-1 · truthful stop/status/logs/reset > stop(): no container is `stopped: false` and no docker stop/rm is attempted
+ ✓ packages/node-runner/test/docker-kaspad-runner.test.ts > DockerKaspadRunner > CLI-RUNTIME-CONTRACT-1 · truthful stop/status/logs/reset > stop(): a `docker stop` that fails for a real reason is an error, never a success
+ ✓ packages/node-runner/test/docker-kaspad-runner.test.ts > DockerKaspadRunner > CLI-RUNTIME-CONTRACT-1 · truthful stop/status/logs/reset > status(): Docker unavailable is an error, not a 'not-found' container
+ ✓ packages/node-runner/test/docker-kaspad-runner.test.ts > DockerKaspadRunner > CLI-RUNTIME-CONTRACT-1 · truthful stop/status/logs/reset > logs(): typed codes for a missing container and for Docker unavailable
+ ✓ packages/node-runner/test/docker-kaspad-runner.test.ts > DockerKaspadRunner > CLI-RUNTIME-CONTRACT-1 · truthful stop/status/logs/reset > reset(): with Docker unavailable the chain data is not removed
+ ✓ packages/node-runner/test/docker-kaspad-runner.test.ts > DockerKaspadRunner > CLI-RUNTIME-CONTRACT-1 · truthful stop/status/logs/reset > start(): the Docker check keeps the [DOCKER_UNAVAILABLE] message and carries the code
+ ✓ packages/artifacts/test/wave1-h-persistence-failure.test.ts > H · persistence failure atomicity across the lifecycle chain > Plan persisted → SignedTx persistence FAILS → plan is byte-unchanged, no signed on disk
+ ✓ packages/artifacts/test/wave1-h-persistence-failure.test.ts > H · persistence failure atomicity across the lifecycle chain > Plan + SignedTx persisted → Receipt persistence FAILS → parents byte-unchanged, no receipt on disk
+ ✓ packages/artifacts/test/wave1-h-persistence-failure.test.ts > H · persistence failure atomicity across the lifecycle chain > failed write must NOT silently succeed via a fallback: subsequent successful write reflects only the second call
+ ✓ packages/artifacts/test/adversarial/wave1-2-references.test.ts > Wave 1.2 · persisted references resolve only by verified identity > baseline: a plan bound to a DENY policy fails strict semantics with POLICY_VIOLATION
+ ✓ packages/artifacts/test/adversarial/wave1-2-references.test.ts > Wave 1.2 · persisted references resolve only by verified identity > T-P7 (AUD-10) · an ALLOW impostor claiming the DENY policy's identity via top-level artifactId is never the reference target
+ ✓ packages/artifacts/test/adversarial/wave1-2-references.test.ts > Wave 1.2 · persisted references resolve only by verified identity > T-AUX02 · references are never resolved relative to process.cwd()
+ ✓ packages/artifacts/test/adversarial/wave1-2-references.test.ts > Wave 1.2 · persisted references resolve only by verified identity > IC-5′.6 · a persisted reference that is a label (not a 64-hex artifactId) is REFERENCE_INVALID, not resolved
+ ✓ packages/artifacts/test/adversarial/wave1-2-references.test.ts > Wave 1.2 · persisted references resolve only by verified identity > IC-5′.6 · a referenced policy whose stored copy was tampered is REFERENCE_HASH_MISMATCH (verified before use)
+ ✓ packages/artifacts/test/adversarial/wave1-2-references.test.ts > Wave 1.2 · persisted references resolve only by verified identity > lineage parents resolve only through lineage.parentArtifactId; sourcePlanId (a label) never resolves a parent
+ ✓ packages/artifacts/test/adversarial/wave1-2-references.test.ts > Wave 1.2 · N1 · Silver nested references are checked against the target's identity and digest > accepts the record the reference was made for
+ ✓ packages/artifacts/test/adversarial/wave1-2-references.test.ts > Wave 1.2 · N1 · Silver nested references are checked against the target's identity and digest > T-N1a · a swapped compile record is refused even when the (v4-unauthenticated) contentHash was updated to match it
+ ✓ packages/artifacts/test/adversarial/wave1-2-references.test.ts > Wave 1.2 · N1 · Silver nested references are checked against the target's identity and digest > a reference whose contentHash does not match the target's recomputed identity is REFERENCE_HASH_MISMATCH
+ ✓ packages/artifacts/test/adversarial/wave1-2-references.test.ts > Wave 1.2 · N1 · Silver nested references are checked against the target's identity and digest > a target whose body no longer hashes to its declared identity is CANDIDATE_INVALID
+ ✓ packages/artifacts/test/adversarial/wave1-2-references.test.ts > Wave 1.2 · N1 · Silver nested references are checked against the target's identity and digest > a target whose artifactJson no longer matches its own provenance digest is refused
+ ✓ packages/artifacts/test/adversarial/wave1-1-canonical-v5.test.ts > Wave 1.1 · v5 canonicalisation authenticates material fields (AUD-11) > T-P1: status is part of the hash at the top level under the current version (legacy v4 still ignores it)
+ ✓ packages/artifacts/test/adversarial/wave1-1-canonical-v5.test.ts > Wave 1.1 · v5 canonicalisation authenticates material fields (AUD-11) > T-P2: no exclusion by key name at depth (nested status/cache/logs are authenticated)
+ ✓ packages/artifacts/test/adversarial/wave1-1-canonical-v5.test.ts > Wave 1.1 · v5 canonicalisation authenticates material fields (AUD-11) > T-N1b: a nested reference contentHash is authenticated (Silver-style {path, contentHash} references)
+ ✓ packages/artifacts/test/adversarial/wave1-1-canonical-v5.test.ts > Wave 1.1 · v5 canonicalisation authenticates material fields (AUD-11) > hashVersion itself is authenticated (IC-1′.3)
+ ✓ packages/artifacts/test/adversarial/wave1-1-canonical-v5.test.ts > Wave 1.1 · v5 canonicalisation authenticates material fields (AUD-11) > only exact-path self references are excluded: top-level contentHash and lineage.artifactId, never a nested contentHash
+ ✓ packages/artifacts/test/adversarial/wave1-1-canonical-v5.test.ts > Wave 1.1 · v5 canonicalisation authenticates material fields (AUD-11) > the derived labels planId/signedId are excluded from the hash (the verifier recomputes them, IC-4′.5)
+ ✓ packages/artifacts/test/adversarial/wave1-1-canonical-v5.test.ts > Wave 1.1 · v5 canonicalisation authenticates material fields (AUD-11) > the unauthenticated list is exactly the ratified closed list and applies only at the top level
+ ✓ packages/artifacts/test/adversarial/wave1-1-canonical-v5.test.ts > Wave 1.1 · v5 canonicalisation authenticates material fields (AUD-11) > fields that v4 dropped by name are authenticated in v5: status, sourceSignedId, dagContext, events, artifactId, parentArtifactId
+ ✓ packages/artifacts/test/adversarial/wave1-1-canonical-v5.test.ts > Wave 1.1 · v5 canonicalisation authenticates material fields (AUD-11) > IC-1′.6: no exported Zod schema declares a top-level field from the unauthenticated list beyond the acknowledged set
+ ✓ packages/artifacts/test/adversarial/wave1-1-canonical-v5.test.ts > Wave 1.1 · v5 canonicalisation authenticates material fields (AUD-11) > T-P3 / T-R3: flipping status on a schema-valid signed artifact breaks verification in every mode
+ ✓ packages/artifacts/test/adversarial/wave1-1-canonical-v5.test.ts > Wave 1.1 · v5 canonicalisation authenticates material fields (AUD-11) > T-R1 / T-R2: receipt status flip and sourceSignedId re-pointing break verification
+ ✓ packages/artifacts/test/adversarial/wave1-1-canonical-v5.test.ts > Wave 1.1 · v5 canonicalisation authenticates material fields (AUD-11) > canonical strings of versions 1 to 4 are unchanged (legacy artifacts stay verifiable)
+ ✓ packages/artifacts/test/adversarial/wave1-3-domain-digest.test.ts > Wave 1.3 · IC-1′.7 dedicated domain-digest function > exports domainDigest with its own algorithm version, distinct from the artifact hash version
+ ✓ packages/artifacts/test/adversarial/wave1-3-domain-digest.test.ts > Wave 1.3 · IC-1′.7 dedicated domain-digest function > has NO exclusions: every key at every depth is part of the digest (names v4/v5 exclude included)
+ ✓ packages/artifacts/test/adversarial/wave1-3-domain-digest.test.ts > Wave 1.3 · IC-1′.7 dedicated domain-digest function > differs from calculateContentHash whenever an excluded name is present, and is not the v4 canonical form
+ ✓ packages/artifacts/test/adversarial/wave1-3-domain-digest.test.ts > Wave 1.3 · IC-1′.7 dedicated domain-digest function > selects the algorithm by the containing artifact's hashVersion: legacy for ≤4, current for 5
+ ✓ packages/artifacts/test/adversarial/wave1-3-domain-digest.test.ts > Wave 1.3 · IC-1′.7 dedicated domain-digest function > no source uses calculateContentHash or canonicalStringify with a numeric literal version (N7)
+ ✓ packages/artifacts/test/adversarial/wave1-3-domain-digest.test.ts > Wave 1.3 · IC-1′.7 dedicated domain-digest function > no source defines its own canonicaliser or a local CURRENT_HASH_VERSION
+ ✓ packages/artifacts/test/adversarial/wave1-3-domain-digest.test.ts > Wave 1.3 · IC-7.4 single workflowId derivation > exports deriveWorkflowId over a typed intent: wf_ + 16 hex, a function of the intent only
+ ✓ packages/artifacts/test/adversarial/wave1-3-domain-digest.test.ts > Wave 1.3 · IC-7.4 single workflowId derivation > the derivation uses the domain digest (no exclusions), never the artifact hash
+ ✓ packages/artifacts/test/adversarial/wave1-3-domain-digest.test.ts > Wave 1.3 · IC-7.4 single workflowId derivation > a root plan's default workflowId is the single derivation over its transfer intent
+ ✓ packages/artifacts/test/adversarial/wave1-3-domain-digest.test.ts > Wave 1.3 · IC-7.4 single workflowId derivation > no source builds a `wf_` identifier outside deriveWorkflowId
+ ✓ packages/artifacts/test/adversarial/wave1-3-domain-digest.test.ts > Wave 1.3 · IC-7.4 single workflowId derivation > legacy check: canonicalStringify with an explicit version is still available to the verifier
+ ✓ packages/artifacts/test/artifact-mutation-guard.test.ts > ARTIFACT-MUTATION-1 · no filesystem mutation of the artifact store outside its gate > packages/*/src: every store-bound mutation is in packages/artifacts/src/store-mutation.ts 1318ms
+ ✓ packages/artifacts/test/artifact-mutation-guard.test.ts > ARTIFACT-MUTATION-1 · no filesystem mutation of the artifact store outside its gate > self-test: flags store-bound destinations, never legitimate writes elsewhere
+ ✓ packages/localnet/test/replay-trust-2.test.ts > REPLAY-TRUST-2 · BEFORE · verifyReplay > controls > the genuine receipt is reproduced
+ ✓ packages/localnet/test/replay-trust-2.test.ts > REPLAY-TRUST-2 · BEFORE · verifyReplay > controls > a re-sealed receipt with another amount diverges
+ ✓ packages/localnet/test/replay-trust-2.test.ts > REPLAY-TRUST-2 · BEFORE · verifyReplay > controls > a re-sealed receipt whose txId alone was changed diverges (its created outpoints no longer match)
+ ✓ packages/localnet/test/replay-trust-2.test.ts > REPLAY-TRUST-2 · BEFORE · verifyReplay > controls > the bus delivers a well-formed envelope to a listener
+ ✓ packages/localnet/test/replay-trust-2.test.ts > REPLAY-TRUST-2 · BEFORE · verifyReplay > REPLAY-DIVERGENCE-EVENT-1 · the replay's outcome reaches the event bus > a diverged replay emits a replay.divergence envelope for the field that diverged
+ ✓ packages/localnet/test/replay-trust-2.test.ts > REPLAY-TRUST-2 · BEFORE · verifyReplay > REPLAY-DIVERGENCE-EVENT-1 · the replay's outcome reaches the event bus > a reproduced replay emits replay.verified
+ ✓ packages/localnet/test/replay-trust-2.test.ts > REPLAY-TRUST-2 · BEFORE · verifyReplay > REPLAY-DIFF-SCOPE-1 · nothing a receipt asserts escapes the comparison > a re-sealed receipt that says the transaction failed is not reproduced by a successful execution
+ ✓ packages/localnet/test/replay-trust-2.test.ts > REPLAY-TRUST-2 · BEFORE · verifyReplay > REPLAY-DIFF-SCOPE-1 · nothing a receipt asserts escapes the comparison > a re-sealed receipt with another DAG context is not reproduced
+ ✓ packages/localnet/test/replay-trust-2.test.ts > REPLAY-TRUST-2 · BEFORE · verifyReplay > REPLAY-DIFF-SCOPE-1 · nothing a receipt asserts escapes the comparison > a receipt naming another txId, with outpoints and post-state consistent with it, is not reproduced
+ ✓ packages/localnet/test/replay-trust-2.test.ts > REPLAY-TRUST-2 · BEFORE · verifyReplay > §4b · the report is evidence about the receipt it verified > the report names the receipt it verified as its lineage parent
+ ✓ packages/localnet/test/replay-trust-2.test.ts > REPLAY-TRUST-2 · BEFORE · verifyReplay > §4b · the report is evidence about the receipt it verified > control: the report passes integrity (its identity verifies)
+ ✓ packages/localnet/test/replay-trust-2.test.ts > REPLAY-TRUST-2 · BEFORE · verifyReplay > §4b · the report is evidence about the receipt it verified > the report passes the strict semantics `hardkas verify` applies (its chain resolvable, as in a store)
+ ✓ packages/localnet/test/wave1-3-domain-digests.test.ts > Wave 1.3 · localnet domain digests (IC-1′.7) > current digests use domainDigest (no exclusions), not calculateContentHash
+ ✓ packages/localnet/test/wave1-3-domain-digests.test.ts > Wave 1.3 · localnet domain digests (IC-1′.7) > the legacy algorithm is reachable only by explicit hashVersion ≤ 4 and equals the frozen canonical-v4 digest
+ ✓ packages/localnet/test/wave1-3-domain-digests.test.ts > Wave 1.3 · localnet domain digests (IC-1′.7) > a v5 snapshot carries current digests and verifies; its identity is FULL
+ ✓ packages/localnet/test/wave1-3-domain-digests.test.ts > Wave 1.3 · localnet domain digests (IC-1′.7) > a legacy v4 snapshot (digests computed with canonical v4) still verifies: the algorithm follows the declared version
+ ✓ packages/localnet/test/wave1-3-domain-digests.test.ts > Wave 1.3 · localnet domain digests (IC-1′.7) > a v5 snapshot that carries legacy digests does NOT verify (no silent fallback between algorithms)
+ ✓ packages/localnet/test/wave1-3-domain-digests.test.ts > Wave 1.3 · T-N7 replay uses the digest of the receipt's declared version > a current (v5) receipt records current digests and replays cleanly
+ ✓ packages/localnet/test/wave1-3-domain-digests.test.ts > Wave 1.3 · T-N7 replay uses the digest of the receipt's declared version > a legacy v4 receipt (digests from canonical v4) replays with the legacy digest: no false preStateHash divergence
+ ✓ packages/localnet/test/wave1-3-domain-digests.test.ts > Wave 1.3 · T-N7 replay uses the digest of the receipt's declared version > control: a v5 receipt carrying legacy digests diverges (the declared version decides, nothing is retried)
+ ✓ packages/dev-server/test/escrow-fail-closed.test.ts > escrow routes fail closed > create never returns a fabricated redeem script
+ ✓ packages/dev-server/test/escrow-fail-closed.test.ts > escrow routes fail closed > create refuses keys the v1 contract cannot take and persists nothing
+ ✓ packages/dev-server/test/escrow-fail-closed.test.ts > escrow routes fail closed > fund refuses to spend from an account other than the buyer and persists nothing 466ms
+ ✓ packages/dev-server/test/escrow-fail-closed.test.ts > escrow routes fail closed > sign refuses to sign without the signer's key and stores no signature
+ ✓ packages/dev-server/test/escrow-fail-closed.test.ts > escrow routes fail closed > release never reports success when unlock or submission fails
+ ✓ packages/dev-server/test/escrow-fail-closed.test.ts > escrow routes fail closed > sign finds the signer by its x-only key, and still refuses a draft that does not rebuild to its id 511ms
+ ✓ packages/dev-server/test/escrow-fail-closed.test.ts > escrow routes fail closed > sign refuses to sign over a funding UTXO that was never recorded
+ ✓ packages/dev-server/test/escrow-fail-closed.test.ts > escrow routes fail closed > rejects a signer that the branch policy does not require
+ ✓ packages/dev-server/test/escrow-fail-closed.test.ts > escrow routes fail closed > rejects prepare with an unknown branch
+ ✓ packages/dev-server/test/escrow-fail-closed.test.ts > escrow routes fail closed > rejects release before all signatures are present
+ ✓ packages/artifacts/test/deployment-path-containment.test.ts > DEPLOYMENT-PATH-CONTAINMENT-1 · a deployment record lives at .hardkas/deployments/<network>/<label>.json > save refuses a parent-relative label and writes nothing
+ ✓ packages/artifacts/test/deployment-path-containment.test.ts > DEPLOYMENT-PATH-CONTAINMENT-1 · a deployment record lives at .hardkas/deployments/<network>/<label>.json > save refuses a label that reaches into the artifact store and writes nothing
+ ✓ packages/artifacts/test/deployment-path-containment.test.ts > DEPLOYMENT-PATH-CONTAINMENT-1 · a deployment record lives at .hardkas/deployments/<network>/<label>.json > save refuses a label that leaves the workspace and writes nothing
+ ✓ packages/artifacts/test/deployment-path-containment.test.ts > DEPLOYMENT-PATH-CONTAINMENT-1 · a deployment record lives at .hardkas/deployments/<network>/<label>.json > save refuses an absolute label and writes nothing
+ ✓ packages/artifacts/test/deployment-path-containment.test.ts > DEPLOYMENT-PATH-CONTAINMENT-1 · a deployment record lives at .hardkas/deployments/<network>/<label>.json > save refuses a nested label and writes nothing
+ ✓ packages/artifacts/test/deployment-path-containment.test.ts > DEPLOYMENT-PATH-CONTAINMENT-1 · a deployment record lives at .hardkas/deployments/<network>/<label>.json > save refuses a backslash-separated label and writes nothing
+ ✓ packages/artifacts/test/deployment-path-containment.test.ts > DEPLOYMENT-PATH-CONTAINMENT-1 · a deployment record lives at .hardkas/deployments/<network>/<label>.json > save refuses '.' and writes nothing
+ ✓ packages/artifacts/test/deployment-path-containment.test.ts > DEPLOYMENT-PATH-CONTAINMENT-1 · a deployment record lives at .hardkas/deployments/<network>/<label>.json > save refuses '..' and writes nothing
+ ✓ packages/artifacts/test/deployment-path-containment.test.ts > DEPLOYMENT-PATH-CONTAINMENT-1 · a deployment record lives at .hardkas/deployments/<network>/<label>.json > save refuses a label with a colon (drive or stream) and writes nothing
+ ✓ packages/artifacts/test/deployment-path-containment.test.ts > DEPLOYMENT-PATH-CONTAINMENT-1 · a deployment record lives at .hardkas/deployments/<network>/<label>.json > save refuses a label with NUL and writes nothing
+ ✓ packages/artifacts/test/deployment-path-containment.test.ts > DEPLOYMENT-PATH-CONTAINMENT-1 · a deployment record lives at .hardkas/deployments/<network>/<label>.json > save refuses a parent-relative network and writes nothing
+ ✓ packages/artifacts/test/deployment-path-containment.test.ts > DEPLOYMENT-PATH-CONTAINMENT-1 · a deployment record lives at .hardkas/deployments/<network>/<label>.json > save refuses a network that is the artifact store and writes nothing
+ ✓ packages/artifacts/test/deployment-path-containment.test.ts > DEPLOYMENT-PATH-CONTAINMENT-1 · a deployment record lives at .hardkas/deployments/<network>/<label>.json > save refuses a network that leaves the workspace and writes nothing
+ ✓ packages/artifacts/test/deployment-path-containment.test.ts > DEPLOYMENT-PATH-CONTAINMENT-1 · a deployment record lives at .hardkas/deployments/<network>/<label>.json > save refuses an absolute network and writes nothing
+ ✓ packages/artifacts/test/deployment-path-containment.test.ts > DEPLOYMENT-PATH-CONTAINMENT-1 · a deployment record lives at .hardkas/deployments/<network>/<label>.json > save refuses a nested network and writes nothing
+ ✓ packages/artifacts/test/deployment-path-containment.test.ts > DEPLOYMENT-PATH-CONTAINMENT-1 · a deployment record lives at .hardkas/deployments/<network>/<label>.json > save refuses a backslash-separated network and writes nothing
+ ✓ packages/artifacts/test/deployment-path-containment.test.ts > DEPLOYMENT-PATH-CONTAINMENT-1 · a deployment record lives at .hardkas/deployments/<network>/<label>.json > save refuses '.' and writes nothing
+ ✓ packages/artifacts/test/deployment-path-containment.test.ts > DEPLOYMENT-PATH-CONTAINMENT-1 · a deployment record lives at .hardkas/deployments/<network>/<label>.json > save refuses '..' and writes nothing
+ ✓ packages/artifacts/test/deployment-path-containment.test.ts > DEPLOYMENT-PATH-CONTAINMENT-1 · a deployment record lives at .hardkas/deployments/<network>/<label>.json > save refuses a network with a colon (drive or stream) and writes nothing
+ ✓ packages/artifacts/test/deployment-path-containment.test.ts > DEPLOYMENT-PATH-CONTAINMENT-1 · a deployment record lives at .hardkas/deployments/<network>/<label>.json > load refuses a label or a network that would read another file
+ ✓ packages/artifacts/test/deployment-path-containment.test.ts > DEPLOYMENT-PATH-CONTAINMENT-1 · a deployment record lives at .hardkas/deployments/<network>/<label>.json > list refuses a network that is not one network directory
+ ✓ packages/artifacts/test/deployment-path-containment.test.ts > DEPLOYMENT-PATH-CONTAINMENT-1 · a deployment record lives at .hardkas/deployments/<network>/<label>.json > delete refuses and removes nothing
+ ✓ packages/artifacts/test/deployment-path-containment.test.ts > DEPLOYMENT-PATH-CONTAINMENT-1 · a deployment record lives at .hardkas/deployments/<network>/<label>.json > update refuses to move a record to an invalid label
+ ✓ packages/artifacts/test/deployment-path-containment.test.ts > DEPLOYMENT-PATH-CONTAINMENT-1 · a deployment record lives at .hardkas/deployments/<network>/<label>.json > a stored record whose own label is a path is not re-saved there (`deploy status --verify` saves the loaded record)
+ ✓ packages/artifacts/test/deployment-path-containment.test.ts > DEPLOYMENT-PATH-CONTAINMENT-1 · a deployment record lives at .hardkas/deployments/<network>/<label>.json > physical containment: a network directory linked out of .hardkas/deployments > is refused for a write, and the artifact store it points to is untouched
+ ✓ packages/artifacts/test/deployment-path-containment.test.ts > DEPLOYMENT-PATH-CONTAINMENT-1 · a deployment record lives at .hardkas/deployments/<network>/<label>.json > physical containment: a network directory linked out of .hardkas/deployments > is refused for a read, a listing and a delete
+ ✓ packages/artifacts/test/deployment-path-containment.test.ts > DEPLOYMENT-PATH-CONTAINMENT-1 · a deployment record lives at .hardkas/deployments/<network>/<label>.json > control: simnet / counter-2026.10.04 saves, loads, lists and deletes as before
+ ✓ packages/artifacts/test/deployment-path-containment.test.ts > DEPLOYMENT-PATH-CONTAINMENT-1 · a deployment record lives at .hardkas/deployments/<network>/<label>.json > control: testnet-10 / my_deploy saves, loads, lists and deletes as before
+ ✓ packages/artifacts/test/deployment-path-containment.test.ts > DEPLOYMENT-PATH-CONTAINMENT-1 · a deployment record lives at .hardkas/deployments/<network>/<label>.json > control: mainnet / v1.2 saves, loads, lists and deletes as before
+ ✓ packages/artifacts/test/evidence-trust-1-contract.test.ts > EVIDENCE-TRUST-1 · write-once publication (D1/D2) > the first publication writes; publishing the same identity again writes nothing and returns the stored copy
+ ✓ packages/artifacts/test/evidence-trust-1-contract.test.ts > EVIDENCE-TRUST-1 · write-once publication (D1/D2) > publishing identical bytes again is a no-op
+ ✓ packages/artifacts/test/evidence-trust-1-contract.test.ts > EVIDENCE-TRUST-1 · write-once publication (D1/D2) > a tampered copy at the identity's path → ARTIFACT_IDENTITY_CONFLICT, not a byte touched
+ ✓ packages/artifacts/test/evidence-trust-1-contract.test.ts > EVIDENCE-TRUST-1 · write-once publication (D1/D2) > content that is not JSON at the identity's path → ARTIFACT_IDENTITY_CONFLICT, not a byte touched
+ ✓ packages/artifacts/test/evidence-trust-1-contract.test.ts > EVIDENCE-TRUST-1 · write-once publication (D1/D2) > another artifact at the identity's path → ARTIFACT_IDENTITY_CONFLICT, not a byte touched
+ ✓ packages/artifacts/test/evidence-trust-1-contract.test.ts > EVIDENCE-TRUST-1 · lineage claims from what was looked up (D3) > resolved / missing / invalid / unresolved / root
+ ✓ packages/artifacts/test/evidence-trust-1-contract.test.ts > EVIDENCE-TRUST-1 · lineage claims from what was looked up (D3) > the chain is complete only when walked to the declared root
+ ✓ packages/artifacts/test/evidence-trust-1-contract.test.ts > EVIDENCE-TRUST-1 · lineage claims from what was looked up (D3) > strict semantics with the workspace resolve the parent; without one the parent is PARENT_UNRESOLVED, never PARENT_MISSING
+ ✓ packages/artifacts/test/evidence-trust-1-contract.test.ts > EVIDENCE-TRUST-1 · lineage claims from what was looked up (D3) > explainArtifact looks in the workspace it is given
+ ✓ packages/artifacts/test/evidence-trust-1-contract.test.ts > EVIDENCE-TRUST-1 · what the content hash covers (D4) > ["lineage","parentArtifactId"] under hash version 5 → true
+ ✓ packages/artifacts/test/evidence-trust-1-contract.test.ts > EVIDENCE-TRUST-1 · what the content hash covers (D4) > ["lineage","artifactId"] under hash version 5 → false
+ ✓ packages/artifacts/test/evidence-trust-1-contract.test.ts > EVIDENCE-TRUST-1 · what the content hash covers (D4) > ["contentHash"] under hash version 5 → false
+ ✓ packages/artifacts/test/evidence-trust-1-contract.test.ts > EVIDENCE-TRUST-1 · what the content hash covers (D4) > ["createdAt"] under hash version 5 → false
+ ✓ packages/artifacts/test/evidence-trust-1-contract.test.ts > EVIDENCE-TRUST-1 · what the content hash covers (D4) > ["rpcUrl"] under hash version 5 → false
+ ✓ packages/artifacts/test/evidence-trust-1-contract.test.ts > EVIDENCE-TRUST-1 · what the content hash covers (D4) > ["inputs",null,"amountSompi"] under hash version 5 → true
+ ✓ packages/artifacts/test/evidence-trust-1-contract.test.ts > EVIDENCE-TRUST-1 · what the content hash covers (D4) > ["execution","createdAt"] under hash version 5 → true
+ ✓ packages/artifacts/test/evidence-trust-1-contract.test.ts > EVIDENCE-TRUST-1 · what the content hash covers (D4) > ["lineage","parentArtifactId"] under hash version 3 → false
+ ✓ packages/artifacts/test/evidence-trust-1-contract.test.ts > EVIDENCE-TRUST-1 · what the content hash covers (D4) > ["amountSompi"] under hash version 3 → true
+ ✓ packages/artifacts/test/evidence-trust-1-contract.test.ts > EVIDENCE-TRUST-1 · a plan records its locator without credentials (ET-C4) > createTxPlanArtifact strips the userinfo and secret query values; the identity does not depend on it
+ ✓ packages/artifacts/test/adversarial/wave1-1-producers-immutability.test.ts > Wave 1.1 · producers are self-consistent and immutable after hashing > plan, signed and receipt from @hardkas/artifacts verify as produced, in strict mode
+ ✓ packages/artifacts/test/adversarial/wave1-1-producers-immutability.test.ts > Wave 1.1 · producers are self-consistent and immutable after hashing > every authenticated top-level field of plan, signed and receipt is covered by the hash (mutation matrix)
+ ✓ packages/artifacts/test/adversarial/wave1-1-producers-immutability.test.ts > Wave 1.1 · producers are self-consistent and immutable after hashing > IC-1′.5 / D-Q1.d: a root plan stores no self-referential lineage fields and derives nothing from its own hash
+ ✓ packages/artifacts/test/adversarial/wave1-1-producers-immutability.test.ts > Wave 1.1 · producers are self-consistent and immutable after hashing > the default workflowId is a function of the intent, not of the artifact hash
+ ✓ packages/artifacts/test/adversarial/wave1-1-producers-immutability.test.ts > Wave 1.1 · producers are self-consistent and immutable after hashing > children reference the root's real artifactId (rootArtifactId = lineageId = root.contentHash) and chain strictly
+ ✓ packages/artifacts/test/adversarial/wave1-1-producers-immutability.test.ts > Wave 1.1 · producers are self-consistent and immutable after hashing > migration-receipt and deployment producers write hashVersion before hashing and stay self-consistent
+ ✓ packages/artifacts/test/corruption.test.ts > Corruption Corpus Hardening > should reject fee-mismatch.json in strict mode
+ ✓ packages/artifacts/test/corruption.test.ts > Corruption Corpus Hardening > should reject broken-content-hash.json
+ ✓ packages/artifacts/test/corruption.test.ts > Corruption Corpus Hardening > should reject mutated semantic field
+ ✓ packages/artifacts/test/corruption.test.ts > Corruption Corpus Hardening > should reject network/address mismatch
+ ✓ packages/artifacts/test/corruption.test.ts > Corruption Corpus Hardening > should detect lineage corruption (ID mismatch) when parent provided
+ ✓ packages/artifacts/test/corruption.test.ts > Corruption Corpus Hardening > should detect parent artifactId mismatch
+ ✓ packages/artifacts/test/corruption.test.ts > Corruption Corpus Hardening > should detect missing parentArtifactId reference when parent provided
+ ✓ packages/artifacts/test/corruption.test.ts > Corruption Corpus Hardening > should detect network contamination between parent and child
+ ✓ packages/artifacts/test/corruption.test.ts > Corruption Corpus Hardening > should detect mode contamination between parent and child
+ ✓ packages/artifacts/test/corruption.test.ts > Corruption Corpus Hardening > should detect self-parenting
+ ✓ packages/artifacts/test/corruption.test.ts > Corruption Corpus Hardening > Structural Corruption > should reject truncated JSON
+ ✓ packages/artifacts/test/corruption.test.ts > Corruption Corpus Hardening > Structural Corruption > should reject invalid JSON
+ ✓ packages/artifacts/test/corruption.test.ts > Corruption Corpus Hardening > Structural Corruption > should reject missing schema
+ ✓ packages/artifacts/test/adversarial/wave1-1-hash-version-gate.test.ts > Wave 1.1 · hashVersion gate (IC-4′.2) > readDeclaredHashVersion accepts only integers 1..CURRENT
+ ✓ packages/artifacts/test/adversarial/wave1-1-hash-version-gate.test.ts > Wave 1.1 · hashVersion gate (IC-4′.2) > T-P5 / T-R5: an invalid or missing hashVersion is HASH_VERSION_INVALID in strict and non-strict, and no legacy rule is applied
+ ✓ packages/artifacts/test/adversarial/wave1-1-hash-version-gate.test.ts > Wave 1.1 · hashVersion gate (IC-4′.2) > T-R6 (control): a numeric legacy version is verified under its own rules; strict demands migration
+ ✓ packages/artifacts/test/adversarial/wave1-1-hash-version-gate.test.ts > Wave 1.1 · hashVersion gate (IC-4′.2) > a current-version artifact reports authScope FULL with no unauthenticated material fields
+ ✓ packages/artifacts/test/adversarial/wave1-1-hash-version-gate.test.ts > Wave 1.1 · hashVersion gate (IC-4′.2) > T-N11: a v5-born artifact re-declared as v4 with fields added under the legacy exclusions is detected
+ ✓ packages/artifacts/test/adversarial/wave1-1-hash-version-gate.test.ts > Wave 1.1 · hashVersion gate (IC-4′.2) > IC-4′.5: a derived label that does not match the recomputed hash is LABEL_MISMATCH in every mode
+ ✓ packages/artifacts/test/adversarial/wave1-1-hash-version-gate.test.ts > Wave 1.1 · hashVersion gate (IC-4′.2) > legacy artifacts keep their historical scope: a v4 status flip is reported as unauthenticated, never as verified
+ ✓ packages/artifacts/test/adversarial/wave1-3-verify-fail-closed.test.ts > Wave 1.3 · IC-4′.1 no schema skips verification (AUD-08 / T-P6) > a ReplayReportV1 without hashVersion/contentHash is NOT ok in any mode
+ ✓ packages/artifacts/test/adversarial/wave1-3-verify-fail-closed.test.ts > Wave 1.3 · IC-4′.1 no schema skips verification (AUD-08 / T-P6) > a ReplayReportV1 whose contentHash does not match is a hash mismatch, not a pass
+ ✓ packages/artifacts/test/adversarial/wave1-3-verify-fail-closed.test.ts > Wave 1.3 · IC-4′.1 no schema skips verification (AUD-08 / T-P6) > a sealed ReplayReportV1 verifies like any other artifact (FULL scope)
+ ✓ packages/artifacts/test/adversarial/wave1-3-verify-fail-closed.test.ts > Wave 1.3 · IC-4′.1 no schema skips verification (AUD-08 / T-P6) > control: an unknown schema is an error in every mode
+ ✓ packages/artifacts/test/adversarial/wave1-3-verify-fail-closed.test.ts > Wave 1.3 · IC-7.3 / IC-4′.5 no top-level artifactId on version-5 artifacts > a v5 plan with a top-level artifactId is FORBIDDEN_IDENTITY_FIELD, even when the hash covers it
+ ✓ packages/artifacts/test/adversarial/wave1-3-verify-fail-closed.test.ts > Wave 1.3 · IC-7.3 / IC-4′.5 no top-level artifactId on version-5 artifacts > the resolver's identity check refuses the same artifact (CANDIDATE_INVALID material)
+ ✓ packages/artifacts/test/adversarial/wave1-3-verify-fail-closed.test.ts > Wave 1.3 · IC-7.3 / IC-4′.5 no top-level artifactId on version-5 artifacts > a v5 artifact with a top-level artifactId that is a label (not the hash) is refused for the same reason
+ ✓ packages/artifacts/test/adversarial/wave1-3-verify-fail-closed.test.ts > Wave 1.3 · IC-7.3 / IC-4′.5 no top-level artifactId on version-5 artifacts > a legacy v4 artifact keeps its historical artifactId copy: LEGACY scope, never FORBIDDEN_IDENTITY_FIELD
+ ✓ packages/artifacts/test/adversarial/wave1-3-verify-fail-closed.test.ts > Wave 1.3 · IC-7.3 / IC-4′.5 no top-level artifactId on version-5 artifacts > a v5 artifact without the field is unaffected (control)
+ ✓ packages/query/test/dag-adapter.test.ts > DagQueryAdapter > conflicts — should list double-spend conflicts
+ ✓ packages/query/test/dag-adapter.test.ts > DagQueryAdapter > conflicts — with explain shows deterministic-light-model
+ ✓ packages/query/test/dag-adapter.test.ts > DagQueryAdapter > displaced — should list displaced transactions
+ ✓ packages/query/test/dag-adapter.test.ts > DagQueryAdapter > history — should return lifecycle for accepted tx
+ ✓ packages/query/test/dag-adapter.test.ts > DagQueryAdapter > history — should return lifecycle for accepted tx
+ ✓ packages/query/test/dag-adapter.test.ts > DagQueryAdapter > sink-path — should return genesis-to-sink path
+ ✓ packages/query/test/dag-adapter.test.ts > DagQueryAdapter > anomalies — should detect displaced-never-reaccepted
+ ✓ packages/query/test/dag-adapter.test.ts > DagQueryAdapter > anomalies — should detect unreachable blocks
+ ✓ packages/query/test/dag-adapter.test.ts > DagQueryAdapter > determinism — same query produces same hash
+ ✓ packages/query/test/dag-adapter.test.ts > DagQueryAdapter > engine lists all 4 domains
+ ✓ packages/localnet/test/replay-redaction.test.ts > EVIDENCE-DIFF-REDACTION-1 · replay decides on the recorded values > control: the genuine receipt is reproduced
+ ✓ packages/localnet/test/replay-redaction.test.ts > EVIDENCE-DIFF-REDACTION-1 · replay decides on the recorded values > control: a postStateHash changed in its first character diverges
+ ✓ packages/localnet/test/replay-redaction.test.ts > EVIDENCE-DIFF-REDACTION-1 · replay decides on the recorded values > a postStateHash changed only in its middle diverges
+ ✓ packages/localnet/test/replay-redaction.test.ts > EVIDENCE-DIFF-REDACTION-1 · replay decides on the recorded values > (proposed contract) a divergence on a public hash records the real expected and actual values
+ ✓ packages/localnet/test/replay-redaction.test.ts > EVIDENCE-DIFF-REDACTION-1 · replay decides on the recorded values > spentUtxoIds changed only in the middle of their ids diverge
+ ✓ packages/localnet/test/replay-redaction.test.ts > EVIDENCE-DIFF-REDACTION-1 · replay decides on the recorded values > createdUtxoIds changed only in the middle of their ids diverge
+ ✓ packages/localnet/test/replay-redaction.test.ts > EVIDENCE-DIFF-REDACTION-1 · replay decides on the recorded values > a new report says its receipt was compared raw (reports without it are legacy)
+ ✓ packages/localnet/test/replay-redaction.test.ts > EVIDENCE-DIFF-REDACTION-1 · replay decides on the recorded values > a divergence in a nested secret field is recorded as 'differs' only: report, errors and events hold no value
+ ✓ packages/localnet/test/replay-redaction.test.ts > EVIDENCE-DIFF-REDACTION-1 · replay decides on the recorded values > a divergence on a value that holds a secret records no part of it
+ ✓ packages/localnet/test/replay-redaction.test.ts > EVIDENCE-DIFF-REDACTION-1 · replay decides on the recorded values > (observation) a txId changed in its first character: does replay notice?
+ ✓ packages/artifacts/test/lineage.test.ts > Artifact Lineage Hardening > should pass valid lineage chain
+ ✓ packages/artifacts/test/lineage.test.ts > Artifact Lineage Hardening > should fail if parent provided but child is missing parentArtifactId
+ ✓ packages/artifacts/test/lineage.test.ts > Artifact Lineage Hardening > should fail on lineageId mismatch
+ ✓ packages/artifacts/test/lineage.test.ts > Artifact Lineage Hardening > should fail on rootId mismatch
+ ✓ packages/artifacts/test/lineage.test.ts > Artifact Lineage Hardening > should fail on parent hash mismatch
+ ✓ packages/artifacts/test/lineage.test.ts > Artifact Lineage Hardening > should WARN but not fail on non-monotonic sequence
+ ✓ packages/artifacts/test/lineage.test.ts > Artifact Lineage Hardening > should fail on network mismatch
+ ✓ packages/artifacts/test/lineage.test.ts > Artifact Lineage Hardening > should fail on mode mismatch
+ ✓ packages/artifacts/test/lineage.test.ts > Artifact Lineage Hardening > should fail on self-parent
+ ✓ packages/artifacts/test/lineage.test.ts > Artifact Lineage Hardening > should fail on invalid transition (e.g. receipt -> plan)
+ ✓ packages/artifacts/test/lineage.test.ts > Artifact Lineage Hardening > verifyFullChain: should maintain continuous lineage from TxPlan to TxReceipt
+ ✓ packages/artifacts/test/adversarial/wave1-4-synthetic-authorization.test.ts > Wave 1.4 · synthetic authorization producer (IC-6′) > binds to the plan by artifactId, names the signer in the authenticated body, and uses the single synthetic txId scheme
+ ✓ packages/artifacts/test/adversarial/wave1-4-synthetic-authorization.test.ts > Wave 1.4 · synthetic authorization producer (IC-6′) > the binding fields are authenticated: changing the plan reference, the signer or the format changes the identity
+ ✓ packages/artifacts/test/adversarial/wave1-4-synthetic-authorization.test.ts > Wave 1.4 · synthetic authorization producer (IC-6′) > refuses to authorize for a signer that is not the plan's `from` (SIGNER_MISMATCH) and refuses an unsealed plan
+ ✓ packages/artifacts/test/adversarial/wave1-4-synthetic-authorization.test.ts > Wave 1.4 · synthetic authorization producer (IC-6′) > an account object with the plan's address is accepted and its name is recorded only as metadata of the authorization
+ ✓ packages/artifacts/test/adversarial/wave1-4-synthetic-authorization.test.ts > Wave 1.4 · synthetic authorization producer (IC-6′) > N4 · no source builds a `simtx_` or `simulated-<label>-tx` identifier or a `simulated` signed format
+ ✓ packages/testing/test/wave0-def14-fixture-identity.test.ts > DEF-14 · fixture registry — bounded, auditable, closed set > registry lists exactly the six well-known dev fixtures
+ ✓ packages/testing/test/wave0-def14-fixture-identity.test.ts > DEF-14 · fixture registry — bounded, auditable, closed set > every registry entry is a 64-hex-char string
+ ✓ packages/testing/test/wave0-def14-fixture-identity.test.ts > DEF-14 · fixture registry — bounded, auditable, closed set > no registered fixture collapses to the historic RFC 6979 test vector
+ ✓ packages/testing/test/wave0-def14-fixture-identity.test.ts > DEF-14 · fixture registry — bounded, auditable, closed set > all six registered fixtures have DISTINCT private keys
+ ✓ packages/testing/test/wave0-def14-fixture-identity.test.ts > DEF-14 · fixture registry — bounded, auditable, closed set > registry values are recomputable — audit trail via SHA-256 over the documented domain
+ ✓ packages/testing/test/wave0-def14-fixture-identity.test.ts > DEF-14 · fixture registry — bounded, auditable, closed set > registry object is frozen (cannot be mutated at runtime)
+ ✓ packages/testing/test/wave0-def14-fixture-identity.test.ts > DEF-14 · getHardkasFixtureKey — closed-set lookup > returns the registry value for each known name
+ ✓ packages/testing/test/wave0-def14-fixture-identity.test.ts > DEF-14 · getHardkasFixtureKey — closed-set lookup > fails closed on typo — 'alixe' is not accepted
+ ✓ packages/testing/test/wave0-def14-fixture-identity.test.ts > DEF-14 · getHardkasFixtureKey — closed-set lookup > fails closed on arbitrary user string — no side-channel derivation
+ ✓ packages/testing/test/wave0-def14-fixture-identity.test.ts > DEF-14 · HardkasFixtureSigner — bounded fixture identities > distinct known fixtures produce distinct simnet addresses
+ ✓ packages/testing/test/wave0-def14-fixture-identity.test.ts > DEF-14 · HardkasFixtureSigner — bounded fixture identities > same fixture name is deterministic across signer instances
+ ✓ packages/testing/test/wave0-def14-fixture-identity.test.ts > DEF-14 · HardkasFixtureSigner — bounded fixture identities > default identity is stable across the two ways to construct it
+ ✓ packages/testing/test/wave0-def14-fixture-identity.test.ts > DEF-14 · HardkasFixtureSigner — bounded fixture identities > default is not aliased to any explicitly named fixture
+ ✓ packages/testing/test/wave0-def14-fixture-identity.test.ts > DEF-14 · HardkasFixtureSigner — bounded fixture identities > mainnet is refused at construction (regardless of fixture)
+ ✓ packages/testing/test/wave0-def14-fixture-identity.test.ts > DEF-14 · HardkasFixtureSigner — bounded fixture identities > arbitrary fixture name is refused at construction (registry-gated)
+ ✓ packages/testing/test/wave0-def14-fixture-identity.test.ts > DEF-14 · HardkasFixtureSigner — bounded fixture identities > networkId and fixtureName are exposed and match the constructor arguments
+ ✓ packages/testing/test/wave0-def14-fixture-identity.test.ts > DEF-14 · HardkasFixtureSigner — bounded fixture identities > fixture addresses are deterministic across fresh Node processes 550ms
+ ✓ packages/artifacts/test/canonical-enumeration.test.ts > QF-008: ProjectArtifactStore Canonical Enumeration & Path Containment Hardening > 1. Enumerates artifacts across canonical subdirectories (plans, signed, receipts, lineage, misc)
+ ✓ packages/artifacts/test/canonical-enumeration.test.ts > QF-008: ProjectArtifactStore Canonical Enumeration & Path Containment Hardening > 2. Adversarial: Rejects sibling directory prefix escape (artifacts-evil) while allowing legitimate files starting with dot-dot
+ ✓ packages/artifacts/test/canonical-enumeration.test.ts > QF-008: ProjectArtifactStore Canonical Enumeration & Path Containment Hardening > 3. Adversarial: Rejects symlinks pointing outside workspace store
+ ✓ packages/artifacts/test/canonical-enumeration.test.ts > QF-008: ProjectArtifactStore Canonical Enumeration & Path Containment Hardening > 4. Deduplicates physical real paths cleanly while preserving distinct physical files with same hash
+ ✓ packages/artifacts/test/store-mutation.test.ts > ArtifactStoreMutation · paths > writes inside the store, creating parents, and returns the absolute path
+ ✓ packages/artifacts/test/store-mutation.test.ts > ArtifactStoreMutation · paths > refuses ../outside.json: ARTIFACT_PATH_OUTSIDE_STORE, nothing written
+ ✓ packages/artifacts/test/store-mutation.test.ts > ArtifactStoreMutation · paths > refuses plans/../../outside.json: ARTIFACT_PATH_OUTSIDE_STORE, nothing written
+ ✓ packages/artifacts/test/store-mutation.test.ts > ArtifactStoreMutation · paths > refuses C:\Users\jrodr\AppData\Local\Temp\elsewhere.json: ARTIFACT_PATH_OUTSIDE_STORE, nothing written
+ ✓ packages/artifacts/test/store-mutation.test.ts > ArtifactStoreMutation · paths > refuses : ARTIFACT_PATH_OUTSIDE_STORE, nothing written
+ ✓ packages/artifacts/test/store-mutation.test.ts > ArtifactStoreMutation · paths > refuses a directory linked out of the store
+ ✓ packages/artifacts/test/store-mutation.test.ts > ArtifactStoreMutation · paths > forPath finds the store a path is in (or is); undefined outside any store
+ ✓ packages/artifacts/test/store-mutation.test.ts > ArtifactStoreMutation · write modes > replaces an existing file by default (today's store semantics, atomically)
+ ✓ packages/artifacts/test/store-mutation.test.ts > ArtifactStoreMutation · write modes > exclusive: creates an absent file, and never overwrites an existing one (EEXIST)
+ ✓ packages/artifacts/test/store-mutation.test.ts > ArtifactStoreMutation · write modes > ensureDir creates the store, or a directory inside it
+ ✓ packages/artifacts/test/store-mutation.test.ts > ArtifactStoreMutation · the artifacts lock > waits while another holder has `artifacts`, writes once it is released 812ms
+ ✓ packages/artifacts/test/store-mutation.test.ts > ArtifactStoreMutation · the artifacts lock > joins a holding of `artifacts` its caller already has (reentrant), and releases nothing of it
+ ✓ packages/artifacts/test/store-mutation.test.ts > caller-chosen paths > writeFileRespectingStore: inside a store through the gate, elsewhere the caller's own write
+ ✓ packages/artifacts/test/store-mutation.test.ts > caller-chosen paths > ensureDirRespectingStore: the store through the gate, other directories with a plain mkdir
+ ✓ packages/dev-server/test/replay-trust-2.test.ts > REPLAY-TRUST-2 · BEFORE · the dashboard's replay verdicts (D4) > control: a raw, reproduced report → PASS
+ ✓ packages/dev-server/test/replay-trust-2.test.ts > REPLAY-TRUST-2 · BEFORE · the dashboard's replay verdicts (D4) > control: a raw, diverged report → FAIL
+ ✓ packages/dev-server/test/replay-trust-2.test.ts > REPLAY-TRUST-2 · BEFORE · the dashboard's replay verdicts (D4) > D4 · a legacy report (masked comparison) is not presented as a raw PASS
+ ✓ packages/dev-server/test/replay-trust-2.test.ts > REPLAY-TRUST-2 · BEFORE · the dashboard's replay verdicts (D4) > a report that does not verify (its verdict edited, not re-sealed) does not make the transaction PASS
+ ✓ packages/dev-server/test/wave1-5-narratives.test.ts > Wave 1.5 · AUD-14 · the dev-server reports only what it computed (T-A14c) > explain · the integrity verdict is computed (FULL, passed) and nothing about signatures or replays is claimed
+ ✓ packages/dev-server/test/wave1-5-narratives.test.ts > Wave 1.5 · AUD-14 · the dev-server reports only what it computed (T-A14c) > replay · a simulator receipt is actually replayed and the verdict is the replay's
+ ✓ packages/dev-server/test/wave1-5-narratives.test.ts > Wave 1.5 · AUD-14 · the dev-server reports only what it computed (T-A14c) > replay · a plan has no execution to reproduce: unsupported, never passed
+ ✓ packages/dev-server/test/wave1-5-narratives.test.ts > Wave 1.5 · AUD-14 · the dev-server reports only what it computed (T-A14c) > manipulated chain · a tampered receipt fails the computed integrity check and its replay never passes
+ ✓ packages/dev-server/test/wave1-5-narratives.test.ts > Wave 1.5 · AUD-14 · the dev-server reports only what it computed (T-A14c) > session · replay and diff-replay never fabricate a verdict
+ ✓ packages/query/test/replay-adapter.test.ts > ReplayQueryAdapter > list — should enumerate receipts
+ ✓ packages/query/test/replay-adapter.test.ts > ReplayQueryAdapter > summary — should return detailed summary for a txId
+ ✓ packages/query/test/replay-adapter.test.ts > ReplayQueryAdapter > divergences — should detect failed tx with state change
+ ✓ packages/query/test/replay-adapter.test.ts > ReplayQueryAdapter > divergences — should produce explain chains
+ ✓ packages/query/test/replay-adapter.test.ts > ReplayQueryAdapter > invariants — should check all invariants for a confirmed tx
+ ✓ packages/query/test/replay-adapter.test.ts > ReplayQueryAdapter > invariants — should detect state transition issue on failed tx
+ ✓ packages/query/test/replay-adapter.test.ts > ReplayQueryAdapter > determinism — same query produces same queryHash
+ ✓ packages/artifacts/test/v2-artifacts.test.ts > Artifacts - Determinism and Verification > should produce the same hash for same object with different key order
+ ✓ packages/artifacts/test/v2-artifacts.test.ts > Artifacts - Determinism and Verification > should produce the same hash/string when undefined fields are present vs absent
+ ✓ packages/artifacts/test/v2-artifacts.test.ts > Artifacts - Determinism and Verification > should exclude contentHash from canonical stringify
+ ✓ packages/artifacts/test/v2-artifacts.test.ts > Artifacts - Determinism and Verification > should change hash when data changes (1-sompi mutation)
+ ✓ packages/artifacts/test/v2-artifacts.test.ts > Artifacts - Determinism and Verification > should sort UTXOs by outpoint deterministically
+ ✓ packages/artifacts/test/v2-artifacts.test.ts > Artifacts - Determinism and Verification > should verify a valid canonical artifact
+ ✓ packages/artifacts/test/v2-artifacts.test.ts > Artifacts - Determinism and Verification > should fail verification if hash is manipulated
+ ✓ packages/artifacts/test/v2-artifacts.test.ts > Artifacts - Determinism and Verification > should migrate v1 to canonical correctly
+ ✓ packages/artifacts/test/evidence-trust-1.test.ts > EVIDENCE-TRUST-1 · a stored artifact is never rewritten > control: the first write stores the artifact's bytes under its identity
+ ✓ packages/artifacts/test/evidence-trust-1.test.ts > EVIDENCE-TRUST-1 · a stored artifact is never rewritten > control: another identity is another file, and the first stays as it was
+ ✓ packages/artifacts/test/evidence-trust-1.test.ts > EVIDENCE-TRUST-1 · a stored artifact is never rewritten > writing the same identity again (only createdAt differs) leaves the stored bytes as they were
+ ✓ packages/artifacts/test/evidence-trust-1.test.ts > EVIDENCE-TRUST-1 · a stored artifact is never rewritten > a stored copy that no longer verifies is never overwritten (the tamper evidence stays)
+ ✓ packages/artifacts/test/evidence-trust-1.test.ts > EVIDENCE-TRUST-1 · a stored artifact is never rewritten > a non-artifact file at the identity's path is never overwritten
+ ✓ packages/artifacts/test/evidence-trust-1.test.ts > EVIDENCE-TRUST-1 · a parent that was not looked up is never reported as missing from the workspace > control: strict semantics without a workspace raise an issue about the parent
+ ✓ packages/artifacts/test/evidence-trust-1.test.ts > EVIDENCE-TRUST-1 · a parent that was not looked up is never reported as missing from the workspace > strict semantics without a workspace do not claim the parent is missing from the workspace
+ ✓ packages/artifacts/test/evidence-trust-1.test.ts > EVIDENCE-TRUST-1 · a parent that was not looked up is never reported as missing from the workspace > explainArtifact does not claim the parent is missing from the workspace without looking there
+ ✓ packages/localnet/test/localnet-state-unreadable.test.ts > localnet state · an unreadable state is never taken as absent > a corrupt localnet.json: load and loadOrCreate fail closed, and its bytes are left as they are
+ ✓ packages/localnet/test/localnet-state-unreadable.test.ts > localnet state · an unreadable state is never taken as absent > a corrupt localnet.json is not replaced by a legacy localnet-state.json either
+ ✓ packages/localnet/test/localnet-state-unreadable.test.ts > localnet state · an unreadable state is never taken as absent > a localnet.json that cannot be read (a directory) fails closed and is left as it is
+ ✓ packages/localnet/test/localnet-state-unreadable.test.ts > localnet state · an unreadable state is never taken as absent > a localnet.json with a UTF-8 BOM is read as the state it holds, not replaced
+ ✓ packages/localnet/test/localnet-state-unreadable.test.ts > localnet state · an unreadable state is never taken as absent > a localnet.json with a BOM can still be changed: the recovery-first read accepts it too
+ ✓ packages/localnet/test/localnet-state-unreadable.test.ts > localnet state · an unreadable state is never taken as absent > the legacy migration writes localnet.json through the state writer: the state's snapshot comes first
+ ✓ packages/localnet/test/localnet-state-unreadable.test.ts > localnet state · an unreadable state is never taken as absent > a corrupt legacy file is refused and nothing is written
+ ✓ packages/localnet/test/localnet-state-unreadable.test.ts > localnet state · an unreadable state is never taken as absent > with neither file the state is absent and loadOrCreate creates it (control)
+ ✓ packages/artifacts/test/wave1-evidence-integrity.test.ts > DEF-7 · plannerAuthority projection into TxPlan artifact > KASPA_WASM_GENERATOR from planner ctx is projected verbatim into the artifact
+ ✓ packages/artifacts/test/wave1-evidence-integrity.test.ts > DEF-7 · plannerAuthority projection into TxPlan artifact > SYNTHETIC_SIMULATOR from planner ctx is projected verbatim (labels do not upgrade)
+ ✓ packages/artifacts/test/wave1-evidence-integrity.test.ts > DEF-7 · plannerAuthority projection into TxPlan artifact > absence stays absence — an artifact from ctx without plannerAuthority does NOT synthesize one
+ ✓ packages/artifacts/test/wave1-evidence-integrity.test.ts > DEF-7 · plannerAuthority projection into TxPlan artifact > plannerAuthority roundtrips through JSON disk + read + schema parse
+ ✓ packages/artifacts/test/wave1-evidence-integrity.test.ts > DEF-7 · plannerAuthority projection into TxPlan artifact > TxPlanSchema rejects unknown plannerAuthority values (closed enum)
+ ✓ packages/artifacts/test/wave1-evidence-integrity.test.ts > DEF-1 · historical rc.22-era plans without plannerAuthority remain valid (additive) > a plan artifact WITHOUT plannerAuthority still passes TxPlanSchema validation
+ ✓ packages/query/test/wa1-backend-agreement.test.ts > WORKSPACE-AUTHORITY-1 · the query backends agree > the store holds one artifact in two files
+ ✓ packages/query/test/wa1-backend-agreement.test.ts > WORKSPACE-AUTHORITY-1 · the query backends agree > query artifacts list: one item, the canonical copy, on both backends
+ ✓ packages/query/test/wa1-backend-agreement.test.ts > WORKSPACE-AUTHORITY-1 · the query backends agree > query tx: the same artifact, by the same copy, on both backends
+ ✓ packages/query/test/wa1-backend-agreement.test.ts > WORKSPACE-AUTHORITY-1 · the query backends agree > the projection moves to the canonical copy when the store-root copy was indexed first
+ ✓ packages/localnet/test/property.test.ts > Localnet Property Tests (fast-check) > should conserve total supply: sum(utxos) + fees == initial_sum 455ms
+ ✓ packages/localnet/test/property.test.ts > Localnet Property Tests (fast-check) > should be deterministic: same sequence produces same finalStateHash
+ ✓ packages/localnet/test/property.test.ts > Localnet Property Tests (fast-check) > should not mutate state on transaction failure
+ ✓ packages/localnet/test/property.test.ts > Localnet Property Tests (fast-check) > should prevent double spending (invariant check)
+ ✓ packages/artifacts/test/tx-plan-artifact.test.ts > TxPlanArtifact > should create a valid artifact from a plan
+ ✓ packages/artifacts/test/tx-plan-artifact.test.ts > TxPlanArtifact > same tx intent twice -> same workflowId if inputs identical
+ ✓ packages/artifacts/test/tx-plan-artifact.test.ts > TxPlanArtifact > different amount -> different workflowId
+ ✓ packages/artifacts/test/tx-plan-artifact.test.ts > TxPlanArtifact > explicit --workflow-id and --assumption-level respected and hashed
+ ✓ packages/artifacts/test/evidence-diff-redaction.test.ts > EVIDENCE-DIFF-REDACTION-1 · diffArtifacts decides on the evidence itself > control: identical artifacts are identical
+ ✓ packages/artifacts/test/evidence-diff-redaction.test.ts > EVIDENCE-DIFF-REDACTION-1 · diffArtifacts decides on the evidence itself > control: a 64-hex value that differs in its first character is a difference
+ ✓ packages/artifacts/test/evidence-diff-redaction.test.ts > EVIDENCE-DIFF-REDACTION-1 · diffArtifacts decides on the evidence itself > a top-level hash that differs only in its middle is a difference
+ ✓ packages/artifacts/test/evidence-diff-redaction.test.ts > EVIDENCE-DIFF-REDACTION-1 · diffArtifacts decides on the evidence itself > a prefixed id that differs only in its middle is a difference
+ ✓ packages/artifacts/test/evidence-diff-redaction.test.ts > EVIDENCE-DIFF-REDACTION-1 · diffArtifacts decides on the evidence itself > a hash inside an array of objects that differs only in its middle is a difference
+ ✓ packages/artifacts/test/evidence-diff-redaction.test.ts > EVIDENCE-DIFF-REDACTION-1 · diffArtifacts decides on the evidence itself > a field named password whose values differ is a difference
+ ✓ packages/artifacts/test/evidence-diff-redaction.test.ts > EVIDENCE-DIFF-REDACTION-1 · diffArtifacts decides on the evidence itself > a field named keystorePassword whose values differ is a difference
+ ✓ packages/artifacts/test/evidence-diff-redaction.test.ts > EVIDENCE-DIFF-REDACTION-1 · diffArtifacts decides on the evidence itself > a field named clientSecret whose values differ is a difference
+ ✓ packages/artifacts/test/evidence-diff-redaction.test.ts > EVIDENCE-DIFF-REDACTION-1 · diffArtifacts decides on the evidence itself > a field named privateKeyHex whose values differ is a difference
+ ✓ packages/artifacts/test/evidence-diff-redaction.test.ts > EVIDENCE-DIFF-REDACTION-1 · diffArtifacts decides on the evidence itself > a field named mnemonicPhrase whose values differ is a difference
+ ✓ packages/artifacts/test/evidence-diff-redaction.test.ts > EVIDENCE-DIFF-REDACTION-1 · diffArtifacts decides on the evidence itself > a field named secretRedaction whose values differ is a difference
+ ✓ packages/artifacts/test/evidence-diff-redaction.test.ts > EVIDENCE-DIFF-REDACTION-1 · diffArtifacts decides on the evidence itself > a field named passwordProtected whose values differ is a difference
+ ✓ packages/artifacts/test/evidence-diff-redaction.test.ts > EVIDENCE-DIFF-REDACTION-1 · diffArtifacts decides on the evidence itself > a secret-named field nested in an object is compared
+ ✓ packages/artifacts/test/evidence-diff-redaction.test.ts > EVIDENCE-DIFF-REDACTION-1 · diffArtifacts decides on the evidence itself > a non-secret text of twelve lowercase words that differs is a difference
+ ✓ packages/artifacts/test/evidence-diff-redaction.test.ts > EVIDENCE-DIFF-REDACTION-1 · diffArtifacts decides on the evidence itself > (proposed contract) a difference on a public hash carries the real values, not a masked form
+ ✓ packages/artifacts/test/evidence-diff-redaction.test.ts > EVIDENCE-DIFF-REDACTION-1 · diffArtifacts decides on the evidence itself > control: what a diff exposes never holds a secret value
+ ✓ packages/artifacts/test/evidence-diff-redaction.test.ts > EVIDENCE-DIFF-REDACTION-1 · diffArtifacts entries are safe to record > a secret field that differs is an entry with its path and no values
+ ✓ packages/artifacts/test/evidence-diff-redaction.test.ts > EVIDENCE-DIFF-REDACTION-1 · diffArtifacts entries are safe to record > a secret field present on one side only is an entry with no value
+ ✓ packages/artifacts/test/evidence-diff-redaction.test.ts > EVIDENCE-DIFF-REDACTION-1 · diffArtifacts entries are safe to record > a value that holds a secret anywhere inside is recorded without its value
+ ✓ packages/artifacts/test/evidence-diff-redaction.test.ts > EVIDENCE-DIFF-REDACTION-1 · diffArtifacts entries are safe to record > an element under a secret field is a secret entry
+ ✓ packages/artifacts/test/evidence-diff-redaction.test.ts > EVIDENCE-DIFF-REDACTION-1 · diffArtifacts entries are safe to record > a name that only contains a secret word is not secret: its values are carried (names, not shapes)
+ ✓ packages/artifacts/test/evidence-diff-redaction.test.ts > EVIDENCE-DIFF-REDACTION-1 · diffArtifacts entries are safe to record > SEMANTIC_EXCLUSIONS are still skipped
+ ✓ packages/query/test/explain.test.ts > explainIntegrity > should explain a valid artifact
+ ✓ packages/query/test/explain.test.ts > explainIntegrity > should explain an invalid artifact
+ ✓ packages/query/test/explain.test.ts > explainTransition > should explain a valid txPlan → signedTx transition
+ ✓ packages/query/test/explain.test.ts > explainTransition > should explain an invalid snapshot → txReceipt transition
+ ✓ packages/query/test/explain.test.ts > explainTransition > should detect context mismatch
+ ✓ packages/query/test/explain.test.ts > explainOrphan > should explain why an artifact is orphaned
+ ✓ packages/query/test/explain.test.ts > formatting > formatExplainBlock should produce diagnostics
+ ✓ packages/query/test/explain.test.ts > formatting > formatWhyBlock should produce causal output
+ ✓ packages/testing/test/main-entry-without-vitest.test.ts > @hardkas/testing: vitest stays an optional peer > the main entry's runtime graph never imports vitest 804ms
+ ✓ packages/testing/test/main-entry-without-vitest.test.ts > @hardkas/testing: vitest stays an optional peer > the walk does see vitest where it is loaded: ./setup and ./scenarios 772ms
+ ✓ packages/testing/test/main-entry-without-vitest.test.ts > @hardkas/testing: vitest stays an optional peer > the manifest declares vitest as an optional peer next to the two entries that need it
+ ✓ packages/artifacts/test/store-path-safety.test.ts > ProjectArtifactStore: path safety > refuses an artifactId that names a path and writes nothing
+ ✓ packages/artifacts/test/store-path-safety.test.ts > ProjectArtifactStore: path safety > names the offending field
+ ✓ packages/artifacts/test/store-path-safety.test.ts > ProjectArtifactStore: path safety > refuses non-string identifiers
+ ✓ packages/artifacts/test/store-path-safety.test.ts > ProjectArtifactStore: path safety > does not let the schema choose a directory
+ ✓ packages/artifacts/test/store-path-safety.test.ts > ProjectArtifactStore: path safety > still writes ordinary identifiers into the canonical subdirectory
+ ✓ packages/artifacts/test/store-path-safety.test.ts > ProjectArtifactStore: path safety > reports traversal on read even when the target does not exist
+ ✓ packages/artifacts/test/store-path-safety.test.ts > ProjectArtifactStore: path safety > refuses to read an existing file outside the workspace
+ ✓ packages/artifacts/test/store-path-safety.test.ts > ProjectArtifactStore: path safety > refuses a sibling directory that shares the workspace prefix
+ ✓ packages/artifacts/test/store-path-safety.test.ts > ProjectArtifactStore: path safety > writeArtifact() into a directory refuses identifiers that name a path
+ ✓ packages/artifacts/test/store-path-safety.test.ts > ProjectArtifactStore: path safety > reads a file inside the workspace by path
+ ✓ packages/artifacts/test/adversarial/wave1-1-recompute-declared-version.test.ts > Wave 1.1 · recompute with the declared hash version (N7) > recomputeDeclaredContentHash uses the artifact's declared version, so legacy artifacts do not turn into false mismatches
+ ✓ packages/artifacts/test/adversarial/wave1-1-recompute-declared-version.test.ts > Wave 1.1 · recompute with the declared hash version (N7) > the hash invariant checker recomputes with the declared version
+ ✓ packages/artifacts/test/adversarial/wave1-1-recompute-declared-version.test.ts > Wave 1.1 · recompute with the declared hash version (N7) > no source outside the producer allow-list recomputes a hash with an implicit version
+ ✓ packages/artifacts/test/adversarial/first-contact-e07-producers.test.ts > First contact · E07 · scenario results are sealed v5 artifacts > a scenario result verifies strictly with FULL scope
+ ✓ packages/artifacts/test/adversarial/first-contact-e07-producers.test.ts > First contact · E07 · scenario results are sealed v5 artifacts > a task run (scenario result with task metadata) verifies strictly, and its metadata is authenticated
+ ✓ packages/artifacts/test/adversarial/first-contact-e07-producers.test.ts > First contact · E07 · scenario results are sealed v5 artifacts > a failed scenario keeps its error, and the mode is always a real execution mode
+ ✓ packages/artifacts/test/adversarial/first-contact-e07-producers.test.ts > First contact · E07 · scenario results are sealed v5 artifacts > the pre-fix shape (no hashVersion, mode "agent") is still rejected — the verifier was right
+ ✓ packages/artifacts/test/adversarial/first-contact-e07-producers.test.ts > First contact · E07 · `hardkas silver compile` records verify under HardKAS's own verifier > the record the published rc.23 CLI wrote verifies strictly (FULL)
+ ✓ packages/artifacts/test/adversarial/first-contact-e07-producers.test.ts > First contact · E07 · `hardkas silver compile` records verify under HardKAS's own verifier > making artifactId optional does not let a v5 record carry one (FORBIDDEN_IDENTITY_FIELD)
+ ✓ packages/artifacts/test/adversarial/first-contact-e07-producers.test.ts > First contact · E07 · `hardkas silver compile` records verify under HardKAS's own verifier > a tampered record is still detected
+ ✓ packages/artifacts/test/invariants.test.ts > Invariant System (Phase 5) > HashInvariant should detect mismatch
+ ✓ packages/artifacts/test/invariants.test.ts > Invariant System (Phase 5) > SchemaInvariant should detect unsupported schema
+ ✓ packages/artifacts/test/invariants.test.ts > Invariant System (Phase 5) > BasicCorrelationInvariant should detect missing IDs
+ ✓ packages/artifacts/test/invariants.test.ts > Invariant System (Phase 5) > InvariantWatcher should emit integrity.violation and stop correctly
+ ✓ packages/artifacts/test/invariants.test.ts > Invariant System (Phase 5) > InvariantWatcher should not loop on integrity events
+ ✓ packages/artifacts/test/store-root-resolution.test.ts > ProjectArtifactStore: resolving artifacts written at the artifacts root > resolves a plan written at the root with the `tx plan --out` naming
+ ✓ packages/artifacts/test/store-root-resolution.test.ts > ProjectArtifactStore: resolving artifacts written at the artifacts root > identical copies in a canonical subdirectory and at the root collapse to one identity
+ ✓ packages/artifacts/test/store-root-resolution.test.ts > ProjectArtifactStore: resolving artifacts written at the artifacts root > never returns a directory whose name contains the id
+ ✓ packages/artifacts/test/store-root-resolution.test.ts > ProjectArtifactStore: resolving artifacts written at the artifacts root > keeps reporting a genuinely missing artifact as missing
+ ✓ packages/localnet/test/ghostdag-dag.test.ts > GHOSTDAG DAG ordering > sink is determined by highest blueWork, not first-seen
+ ✓ packages/localnet/test/ghostdag-dag.test.ts > GHOSTDAG DAG ordering > blocks in red set are marked isBlue=false
+ ✓ packages/localnet/test/ghostdag-dag.test.ts > GHOSTDAG DAG ordering > getSelectedChain returns path from sink to genesis
+ ✓ packages/localnet/test/ghostdag-dag.test.ts > GHOSTDAG DAG ordering > getDagColoring returns coloring for all blocks
+ ✓ packages/localnet/test/ghostdag-dag.test.ts > GHOSTDAG DAG ordering > conflict resolution uses GHOSTDAG ordering
+ ✓ packages/artifacts/test/tx-status-reacceptance.test.ts > False REORGED · a re-acceptance in the same answer replaces the accepting block > chain_accepted(B) naming A as removed: the observer's accepting block is B (ACCEPTED, then CONFIRMED), never two blocks
+ ✓ packages/artifacts/test/tx-status-reacceptance.test.ts > False REORGED · a re-acceptance in the same answer replaces the accepting block > unchanged guard: two accepting blocks with no removal linking them are still CONFLICTING_OBSERVATIONS
+ ✓ packages/artifacts/test/tx-status-reacceptance.test.ts > False REORGED · a re-acceptance in the same answer replaces the accepting block > a block this observer saw final cannot be replaced: that history is CONFLICTING_OBSERVATIONS (as a removal of it is)
+ ✓ packages/artifacts/test/tx-status-reacceptance.test.ts > False REORGED · a re-acceptance in the same answer replaces the accepting block > coherence: an observation cannot name its own accepting block as the removed one
+ ✓ packages/query/test/payment-tracker.test.ts > PaymentTracker > returns not_found when no UTXOs exist
+ ✓ packages/query/test/payment-tracker.test.ts > PaymentTracker > returns partially_paid when amount is insufficient
+ ✓ packages/query/test/payment-tracker.test.ts > PaymentTracker > returns mempool when amount is sufficient but confirmations are lacking
+ ✓ packages/query/test/payment-tracker.test.ts > PaymentTracker > returns confirmed when amount and confirmations are sufficient
+ ✓ packages/query/test/payment-tracker.test.ts > PaymentTracker > aggregates multiple UTXOs correctly
+ ✓ packages/query/test/payment-tracker.test.ts > PaymentTracker > rejects negative or zero expected amounts
+ ✓ packages/localnet/test/simulation-correctness.test.ts > Simulation Correctness > should perform atomic state transition on success
+ ✓ packages/localnet/test/simulation-correctness.test.ts > Simulation Correctness > should rollback (no mutation) on insufficient funds
+ ✓ packages/localnet/test/simulation-correctness.test.ts > Simulation Correctness > should reject double spend in subsequent transactions
+ ✓ packages/localnet/test/simulation-correctness.test.ts > Simulation Correctness > should result in identical state hash for identical transaction sequence
+ ✓ packages/localnet/test/simulation-correctness.test.ts > Simulation Correctness > should reject duplicate inputs in the same transaction (via builder)
+ ✓ packages/localnet/test/simulation-correctness.test.ts > Simulation Correctness > should refuse dust outputs the node would not relay
+ ✓ packages/artifacts/test/fee-correctness.test.ts > Fee Correctness (Fase 1 Hardening) > should recompute correct mass for a standard plan
+ ✓ packages/artifacts/test/fee-correctness.test.ts > Fee Correctness (Fase 1 Hardening) > should pass verification for a valid fee artifact
+ ✓ packages/artifacts/test/fee-correctness.test.ts > Fee Correctness (Fase 1 Hardening) > should fail when mass is mutated
+ ✓ packages/artifacts/test/fee-correctness.test.ts > Fee Correctness (Fase 1 Hardening) > should fail on negative fee
+ ✓ packages/artifacts/test/fee-correctness.test.ts > Fee Correctness (Fase 1 Hardening) > should fail on input/output imbalance
+ ✓ packages/artifacts/test/fee-correctness.test.ts > Fee Correctness (Fase 1 Hardening) > should fail on dust outputs
+ ✓ packages/artifacts/test/adversarial/wave1-3-identity-categories.test.ts > Wave 1.3 · IC-7.1 identity categories registry > exports the registry and the closed category set
+ ✓ packages/artifacts/test/adversarial/wave1-3-identity-categories.test.ts > Wave 1.3 · IC-7.1 identity categories registry > every identifier-shaped field declared by an exported Zod schema is registered
+ ✓ packages/artifacts/test/adversarial/wave1-3-identity-categories.test.ts > Wave 1.3 · IC-7.1 identity categories registry > IC-7.2: only CONTENT names are identities or references; labels, network ids and correlation ids are not
+ ✓ packages/artifacts/test/adversarial/wave1-3-identity-categories.test.ts > Wave 1.3 · IC-7.1 identity categories registry > the registry is closed: unknown names have no category
+ ✓ packages/testing/test/replay.test.ts > Deterministic Replay Verification > Success Path: replaying a valid transaction on clean state is reproducible bit-for-bit
+ ✓ packages/testing/test/replay.test.ts > Deterministic Replay Verification > Pre-state Mismatch: verification fails if the starting state has been modified
+ ✓ packages/testing/test/replay.test.ts > Deterministic Replay Verification > Plan Hash Mismatch: verification fails if the transaction plan was altered
+ ✓ packages/testing/test/replay.test.ts > Deterministic Replay Verification > Receipt Divergence: verification fails if execution results differ from original receipt
+ ✓ packages/testing/test/demo-ready-aud01-packaging.test.ts > Demo-ready · AUD-01: what gets published references only what gets published > finds the workspace, including @hardkas/pskt-native
+ ✓ packages/testing/test/demo-ready-aud01-packaging.test.ts > Demo-ready · AUD-01: what gets published references only what gets published > no publishable manifest depends on an @hardkas package outside the workspace
+ ✓ packages/testing/test/demo-ready-aud01-packaging.test.ts > Demo-ready · AUD-01: what gets published references only what gets published > no publish-time lifecycle script runs napi (its pre-publish step rewrites the manifest)
+ ✓ packages/testing/test/demo-ready-aud01-packaging.test.ts > Demo-ready · AUD-01: what gets published references only what gets published > @hardkas/pskt-native ships its own binary and loads it from its own directory
+ ✓ packages/query/test/wave1-3-legacy-status.test.ts > Wave 1.3 · replay queries never decide on a legacy status > divergences: the FULL-scope receipt is judged on its status; the legacy one yields insufficient evidence
+ ✓ packages/query/test/wave1-3-legacy-status.test.ts > Wave 1.3 · replay queries never decide on a legacy status > invariants: a legacy receipt's transition and conservation are NOT evaluated from its status
+ ✓ packages/query/test/filter.test.ts > resolveFieldPath > should resolve top-level fields
+ ✓ packages/query/test/filter.test.ts > resolveFieldPath > should resolve nested fields
+ ✓ packages/query/test/filter.test.ts > resolveFieldPath > should return undefined for missing paths
+ ✓ packages/query/test/filter.test.ts > resolveFieldPath > should handle null/undefined gracefully
+ ✓ packages/query/test/filter.test.ts > resolveFieldPath > should resolve deeply nested paths
+ ✓ packages/query/test/filter.test.ts > evaluateFilter > eq — matches string equality
+ ✓ packages/query/test/filter.test.ts > evaluateFilter > neq — matches inequality
+ ✓ packages/query/test/filter.test.ts > evaluateFilter > gt/lt — numeric comparison
+ ✓ packages/query/test/filter.test.ts > evaluateFilter > in — membership check
+ ✓ packages/query/test/filter.test.ts > evaluateFilter > contains — substring match
+ ✓ packages/query/test/filter.test.ts > evaluateFilter > exists — field presence
+ ✓ packages/query/test/filter.test.ts > evaluateFilter > handles nested field paths
+ ✓ packages/query/test/filter.test.ts > evaluateFilters (AND semantics) > should return true when all filters pass
+ ✓ packages/query/test/filter.test.ts > evaluateFilters (AND semantics) > should return false when any filter fails
+ ✓ packages/query/test/filter.test.ts > evaluateFilters (AND semantics) > should return true for empty filter list
+ ✓ packages/testing/test/golden-corpus.test.ts > Golden Corpus Validation > validates local-workflow-basic.json against WorkflowSchema
+ ✓ packages/testing/test/golden-corpus.test.ts > Golden Corpus Validation > validates local-workflow-with-warning.json against WorkflowSchema
+ ✓ packages/testing/test/golden-corpus.test.ts > Golden Corpus Validation > validates receipt-submitted.json against TxReceiptSchema
+ ✓ packages/testing/test/golden-corpus.test.ts > Golden Corpus Validation > validates receipt-unknown.json against TxReceiptSchema
+ ✓ packages/testing/test/golden-corpus.test.ts > Golden Corpus Validation > validates explain-transfer.json against TxPlanSchema
+ ✓ packages/testing/test/golden-corpus.test.ts > Golden Corpus Validation > validates artifact-tx-plan.json against TxPlanSchema
+ ✓ packages/testing/test/golden-corpus.test.ts > Golden Corpus Validation > validates artifact-signed-tx.json against SignedTxSchema
+ ✓ packages/testing/test/golden-corpus.test.ts > Golden Corpus Validation > ensures DevDoctor outputs have correct schemaVersion
+ ✓ packages/testing/test/golden-corpus.test.ts > Golden Corpus Validation > ensures TortureReport outputs have correct schemaVersion
+ ✓ packages/testing/test/golden-corpus.test.ts > Golden Corpus Validation > ensures ArtifactInspect outputs have correct schemaVersion and format
+ ✓ packages/testing/test/golden-corpus.test.ts > Golden Corpus Validation > ensures ReplayReport outputs have correct schemaVersion and format
+ ✓ packages/testing/test/golden-corpus.test.ts > Golden Corpus Validation > validates large JSONL fixtures exist and have no schema wrappers
+ ✓ packages/artifacts/test/integrity-hardening.test.ts > Artifact Integrity Hardening (P1.1) > should verify a valid artifact object
+ ✓ packages/artifacts/test/integrity-hardening.test.ts > Artifact Integrity Hardening (P1.1) > should detect content manipulation
+ ✓ packages/artifacts/test/integrity-hardening.test.ts > Artifact Integrity Hardening (P1.1) > should fail if contentHash is missing
+ ✓ packages/artifacts/test/integrity-hardening.test.ts > Artifact Integrity Hardening (P1.1) > should reject incompatible major versions
+ ✓ packages/artifacts/test/integrity-hardening.test.ts > Artifact Integrity Hardening (P1.1) > should be independent of CRLF/LF line endings in file
+ ✓ packages/artifacts/test/integrity-hardening.test.ts > Artifact Integrity Hardening (P1.1) > should ignore filesystem path metadata
+stdout | packages/dev-server/test/security.test.ts > Dev Server Security Hardening > Authentication and Host Checks > Test 1 — GET without token rejected (401)
+<-- GET /api/health
+--> GET /api/health 401 3ms
+
+stdout | packages/dev-server/test/security.test.ts > Dev Server Security Hardening > Authentication and Host Checks > Test 2 — GET with wrong token rejected (401)
+<-- GET /api/health
+--> GET /api/health 401 0ms
+
+stdout | packages/dev-server/test/security.test.ts > Dev Server Security Hardening > Authentication and Host Checks > Test 3 — GET with correct token accepted (200)
+<-- GET /api/health
+
+ ✓ packages/dev-server/test/security.test.ts > Dev Server Security Hardening > Authentication and Host Checks > Test 1 — GET without token rejected (401)
+ ✓ packages/dev-server/test/security.test.ts > Dev Server Security Hardening > Authentication and Host Checks > Test 2 — GET with wrong token rejected (401)
+stdout | packages/dev-server/test/security.test.ts > Dev Server Security Hardening > Authentication and Host Checks > Test 3 — GET with correct token accepted (200)
+--> GET /api/health 200 52ms
+
+stdout | packages/dev-server/test/security.test.ts > Dev Server Security Hardening > Authentication and Host Checks > Test 4 — POST with token but missing CSRF header rejected (403)
+<-- POST /api/transactions
+--> POST /api/transactions 403 0ms
+
+stdout | packages/dev-server/test/security.test.ts > Dev Server Security Hardening > Authentication and Host Checks > Test 5 — POST with token + CSRF header accepted or reaches route validation (not 401/403)
+<-- POST /api/transactions
+
+stdout | packages/dev-server/test/security.test.ts > Dev Server Security Hardening > Authentication and Host Checks > Test 5 — POST with token + CSRF header accepted or reaches route validation (not 401/403)
+--> POST /api/transactions 404 7ms
+
+stdout | packages/dev-server/test/security.test.ts > Dev Server Security Hardening > Authentication and Host Checks > Test 6 — hostile Origin rejected (blocked / no CORS approval)
+<-- GET /api/health
+--> GET /api/health 403 0ms
+
+stdout | packages/dev-server/test/security.test.ts > Dev Server Security Hardening > Authentication and Host Checks > Test 7 — DNS rebinding Host rejected (403)
+<-- GET /api/health
+--> GET /api/health 403 0ms
+
+stdout | packages/dev-server/test/security.test.ts > Dev Server Security Hardening > Unsafe External Security Configuration > Test 8 — unsafe-external still requires token (401)
+<-- GET /api/health
+--> GET /api/health 401 0ms
+
+ ✓ packages/dev-server/test/security.test.ts > Dev Server Security Hardening > Authentication and Host Checks > Test 3 — GET with correct token accepted (200)
+ ✓ packages/dev-server/test/security.test.ts > Dev Server Security Hardening > Authentication and Host Checks > Test 4 — POST with token but missing CSRF header rejected (403)
+ ✓ packages/dev-server/test/security.test.ts > Dev Server Security Hardening > Authentication and Host Checks > Test 5 — POST with token + CSRF header accepted or reaches route validation (not 401/403)
+ ✓ packages/dev-server/test/security.test.ts > Dev Server Security Hardening > Authentication and Host Checks > Test 6 — hostile Origin rejected (blocked / no CORS approval)
+ ✓ packages/dev-server/test/security.test.ts > Dev Server Security Hardening > Authentication and Host Checks > Test 7 — DNS rebinding Host rejected (403)
+ ✓ packages/dev-server/test/security.test.ts > Dev Server Security Hardening > Unsafe External Security Configuration > Test 8 — unsafe-external still requires token (401)
+ ✓ packages/artifacts/test/property.test.ts > Artifact Property Tests (fast-check) > should be deterministic: same object always produces same canonical string
+ ✓ packages/artifacts/test/property.test.ts > Artifact Property Tests (fast-check) > should be order-independent: key order in source doesn't affect output
+ ✓ packages/artifacts/test/property.test.ts > Artifact Property Tests (fast-check) > should preserve null and exclude undefined (semantics check)
+ ✓ packages/artifacts/test/property.test.ts > Artifact Property Tests (fast-check) > should handle nested objects canonically
+ ✓ packages/artifacts/test/property.test.ts > Artifact Property Tests (fast-check) > should detect any semantic field change in hash
+ ✓ packages/artifacts/test/property.test.ts > Artifact Property Tests (fast-check) > should exclude only the top-level self reference (contentHash) and authenticate artifactId
+ ✓ packages/artifacts/test/property.test.ts > Artifact Property Tests (fast-check) > should handle BigInt serialization stably
+ ✓ packages/localnet/test/wave1-2-localnet-identity.test.ts > Wave 1.2 · localnet identity lookups > loadSimulatedReceipt: exactly one verified receipt for the txId, ambiguity and invalid copies fail closed
+ ✓ packages/localnet/test/wave1-2-localnet-identity.test.ts > Wave 1.2 · localnet identity lookups > T-A45 · a snapshot without lineage resolves by its recomputed contentHash, through the resolver and the CLI façade
+stdout | packages/dev-server/test/server.test.ts > Dev Server > API Endpoints > returns health status
+<-- GET /api/health
+
+ ✓ packages/dev-server/test/server.test.ts > Dev Server > SSE Emitter > subscribes and receives events
+ ✓ packages/dev-server/test/server.test.ts > Dev Server > SSE Emitter > stops receiving events after unsubscribe
+stdout | packages/dev-server/test/server.test.ts > Dev Server > API Endpoints > returns health status
+--> GET /api/health 200 38ms
+
+stdout | packages/dev-server/test/server.test.ts > Dev Server > API Endpoints > returns active session (null if none)
+<-- GET /api/session
+--> GET /api/session 200 1ms
+
+stdout | packages/dev-server/test/server.test.ts > Dev Server > API Endpoints > does not expose secrets in health response
+<-- GET /api/health
+
+stdout | packages/dev-server/test/server.test.ts > Dev Server > API Endpoints > does not expose secrets in health response
+--> GET /api/health 200 4ms
+
+ ✓ packages/dev-server/test/server.test.ts > Dev Server > API Endpoints > returns health status
+ ✓ packages/dev-server/test/server.test.ts > Dev Server > API Endpoints > returns active session (null if none)
+ ✓ packages/dev-server/test/server.test.ts > Dev Server > API Endpoints > does not expose secrets in health response
+ ✓ packages/dev-server/test/server.test.ts > Dev Server > CORS Origin Helper > handles undefined origin safely
+ ✓ packages/dev-server/test/server.test.ts > Dev Server > CORS Origin Helper > allows localhost origins on configured port
+ ✓ packages/dev-server/test/server.test.ts > Dev Server > CORS Origin Helper > allows Vite dashboard development localhost origin
+ ✓ packages/dev-server/test/server.test.ts > Dev Server > CORS Origin Helper > allows Vite dashboard development 127.0.0.1 origin
+ ✓ packages/dev-server/test/server.test.ts > Dev Server > CORS Origin Helper > allows Vite dashboard development IPv6 loopback origin
+ ✓ packages/dev-server/test/server.test.ts > Dev Server > CORS Origin Helper > rejects unauthorized remote origins by default
+ ✓ packages/dev-server/test/server.test.ts > Dev Server > CORS Origin Helper > allows unauthorized remote origins when unsafeExternal is enabled
+ ✓ packages/testing/test/backward-compat.test.ts > Phase 6B: Backward Compatibility (Vitest Layer 1) > should enforce SAFE_REJECT_UNSUPPORTED for old schemas via MigrationRequiredError
+ ✓ packages/testing/test/backward-compat.test.ts > Phase 6B: Backward Compatibility (Vitest Layer 1) > should preserve broken lineage tracking across migrationReceipt
+ ✓ packages/query/test/wallet-query.test.ts > WalletQuery > empty wallet balance = 0
+ ✓ packages/query/test/wallet-query.test.ts > WalletQuery > multiple addresses aggregated
+ ✓ packages/query/test/wallet-query.test.ts > WalletQuery > UTXOs grouped by address
+ ✓ packages/query/test/wallet-query.test.ts > WalletQuery > history paginated
+ ✓ packages/query/test/wallet-query.test.ts > WalletQuery > query-store unavailable -> structured degraded result
+ ✓ packages/query/test/wallet-query.test.ts > WalletQuery > no forbidden claims
+ ✓ packages/query/test/wallet-query.test.ts > WalletQuery > mainnet blocked by default
+ ✓ packages/artifacts/test/igra-artifacts.test.ts > Igra Artifacts > IgraTxPlanArtifact > should validate a correct plan artifact
+ ✓ packages/artifacts/test/igra-artifacts.test.ts > Igra Artifacts > IgraTxPlanArtifact > should reject invalid EVM address
+ ✓ packages/artifacts/test/igra-artifacts.test.ts > Igra Artifacts > IgraTxPlanArtifact > should reject invalid bigint string
+ ✓ packages/artifacts/test/igra-artifacts.test.ts > Igra Artifacts > IgraSignedTxArtifact > should validate a correct signed artifact
+ ✓ packages/artifacts/test/igra-artifacts.test.ts > Igra Artifacts > IgraSignedTxArtifact > should reject invalid rawTransaction
+ ✓ packages/artifacts/test/igra-artifacts.test.ts > Igra Artifacts > IgraTxReceiptArtifact > should validate a correct receipt artifact
+ ✓ packages/artifacts/test/igra-artifacts.test.ts > Igra Artifacts > IgraTxReceiptArtifact > should reject invalid txHash
+ ✓ packages/localnet/test/transactions.test.ts > Simulated Transactions > should spend sender UTXOs and create recipient/change UTXOs
+ ✓ packages/localnet/test/transactions.test.ts > Simulated Transactions > should return ok:false for insufficient funds
+ ✓ packages/localnet/test/transactions.test.ts > Simulated Transactions > should return ok:false for non-positive amount
+ ✓ packages/localnet/test/transactions.test.ts > Simulated Transactions > should handle address as recipient
+ ✓ packages/query/test/engine.test.ts > QueryEngine Backend Selection > should throw QueryBackendInitializationError when sqlite fails in sqlite mode
+ ✓ packages/query/test/engine.test.ts > QueryEngine Backend Selection > should preserve cause in QueryBackendInitializationError
+ ✓ packages/query/test/engine.test.ts > QueryEngine Backend Selection > should fallback to filesystem and record evidence when sqlite fails in auto mode
+ ✓ packages/query/test/engine.test.ts > QueryEngine Backend Selection > should not attempt to load sqlite in filesystem mode
+ ✓ packages/query/test/engine.test.ts > QueryEngine Backend Selection > should isolate parallel engine creations
+ ✓ packages/testing/test/gate-subpath-exports.test.ts > T-A04: workspace subpath exports resolve in the gate > imports the subpath exports consumers use
+ ✓ packages/testing/test/gate-subpath-exports.test.ts > T-A04: workspace subpath exports resolve in the gate > maps declared subpaths to the source behind the declared dist target
+ ✓ packages/testing/test/gate-subpath-exports.test.ts > T-A04: workspace subpath exports resolve in the gate > resolves packages without an exports map through main
+ ✓ packages/testing/test/gate-subpath-exports.test.ts > T-A04: workspace subpath exports resolve in the gate > refuses subpaths a package does not declare instead of inventing a file
+ ✓ packages/testing/test/gate-subpath-exports.test.ts > T-A04: workspace subpath exports resolve in the gate > honours export conditions and subpath patterns
+ ✓ packages/testing/test/gate-subpath-exports.test.ts > T-A04: workspace subpath exports resolve in the gate > every resolved file exists on disk
+ ✓ packages/artifacts/test/payment-receipts.test.ts > PaymentReceipt Artifact > receipt contains invoiceId/txId/amount/confirmations
+ ✓ packages/artifacts/test/payment-receipts.test.ts > PaymentReceipt Artifact > receipt rejects unpaid status
+ ✓ packages/artifacts/test/payment-receipts.test.ts > PaymentReceipt Artifact > receipt rejects amountFound < expected
+ ✓ packages/artifacts/test/payment-receipts.test.ts > PaymentReceipt Artifact > receipt rejects confirmations < required
+ ✓ packages/artifacts/test/payment-receipts.test.ts > PaymentReceipt Artifact > receipt contains no secrets
+ ✓ packages/artifacts/test/payment-receipts.test.ts > PaymentReceipt Artifact > receipt claims are explicit false
+ ✓ packages/localnet/test/wave1-1-snapshot-identity.test.ts > Wave 1.1 · localnet snapshot identity > createLocalnetSnapshot produces a self-consistent current-version artifact
+ ✓ packages/localnet/test/wave1-1-snapshot-identity.test.ts > Wave 1.1 · localnet snapshot identity > verifySnapshot recomputes with the declared version, so a v4 snapshot (legacy digests) stays verifiable
+ ✓ packages/localnet/test/wave1-1-snapshot-identity.test.ts > Wave 1.1 · localnet snapshot identity > domain digests are domain digests (IC-1′.7): the dedicated function, never the artifact canonical form
+ ✓ packages/localnet/test/snapshot-hashing.test.ts > Snapshot Hashing > should generate deterministic state hashes
+ ✓ packages/localnet/test/snapshot-hashing.test.ts > Snapshot Hashing > should remain deterministic regardless of UTXO order in state
+ ✓ packages/localnet/test/snapshot-hashing.test.ts > Snapshot Hashing > should change accountsHash on balance mutation
+ ✓ packages/localnet/test/snapshot-hashing.test.ts > Snapshot Hashing > should verify a valid snapshot
+ ✓ packages/localnet/test/snapshot-hashing.test.ts > Snapshot Hashing > should detect tampering (contentHash mismatch)
+ ✓ packages/localnet/test/snapshot-hashing.test.ts > Snapshot Hashing > should detect deep tampering (stateHash mismatch)
+ ✓ packages/localnet/test/snapshot-hashing.test.ts > Snapshot Hashing > should fail restoration of corrupted snapshot without mutating state
+ ✓ packages/localnet/test/snapshot-determinism.test.ts > Localnet Snapshot Determinism > should generate the same contentHash regardless of array order or timestamp
+ ✓ packages/localnet/test/simulator-state-lock.test.ts > SIMULATOR-EXECUTION-UNIT-1 · writers of the simulated state > saving the workspace's simulated state waits for another holder of it 1599ms
+ ✓ packages/localnet/test/simulator-state-lock.test.ts > SIMULATOR-EXECUTION-UNIT-1 · writers of the simulated state > creating the state on first use waits, and keeps a state another writer created meanwhile 1621ms
+ ✓ packages/localnet/test/dag.test.ts > DAG Simulation Light-Model > should create a DAG with genesis
+ ✓ packages/localnet/test/dag.test.ts > DAG Simulation Light-Model > should resolve conflicts deterministically (Priority: Ancestry > Order > ID)
+ ✓ packages/localnet/test/dag.test.ts > DAG Simulation Light-Model > should resolve conflicts by tie-break if neither in ancestry path
+ ✓ packages/localnet/test/dag.test.ts > DAG Simulation Light-Model > should handle reorg by changing sink ancestry
+ ✓ packages/query/test/format.test.ts > paginateAndFormatResult > should handle offset = 0
+ ✓ packages/query/test/format.test.ts > paginateAndFormatResult > should handle intermediate offset
+ ✓ packages/query/test/format.test.ts > paginateAndFormatResult > should handle missing limit
+ ✓ packages/query/test/format.test.ts > paginateAndFormatResult > should handle offset greater than total
+ ✓ packages/query/test/format.test.ts > paginateAndFormatResult > should ensure deterministic hashes do not depend on runtime metadata
+ ✓ packages/query/test/format.test.ts > paginateAndFormatResult > should have same queryHash but different resultHash for different pages of the same query
+ ✓ packages/localnet/test/persistent-state.test.ts > Persistent Localnet State > should create initial state with genesis UTXOs
+ ✓ packages/localnet/test/persistent-state.test.ts > Persistent Localnet State > should load or create state file
+ ✓ packages/localnet/test/persistent-state.test.ts > Persistent Localnet State > should fund an address and increment DAA score
+ ✓ packages/localnet/test/persistent-state.test.ts > Persistent Localnet State > should create and restore snapshots
+ ✓ packages/localnet/test/persistent-state.test.ts > Persistent Localnet State > should resolve account addresses
+ ✓ packages/localnet/test/persistent-state.test.ts > Persistent Localnet State > should reset state
+ ✓ packages/localnet/test/dag-simulation.test.ts > DAG Simulation > should resolve conflicts deterministically by ancestry
+ ✓ packages/localnet/test/dag-simulation.test.ts > DAG Simulation > should handle complex displacement when sink moves to a side-branch
+ ✓ packages/artifacts/test/real-tx-artifact.test.ts > Real Transaction Artifacts > Conversions > should convert Utxo <-> UtxoArtifact without loss
+ ✓ packages/artifacts/test/real-tx-artifact.test.ts > Real Transaction Artifacts > Conversions > should convert TxOutput <-> TxOutputArtifact without loss
+ ✓ packages/artifacts/test/real-tx-artifact.test.ts > Real Transaction Artifacts > Conversions > should throw on invalid BigInt string
+ ✓ packages/artifacts/test/real-tx-artifact.test.ts > Real Transaction Artifacts > Validation > should accept a valid artifact
+ ✓ packages/artifacts/test/real-tx-artifact.test.ts > Real Transaction Artifacts > Validation > should reject wrong schema
+ ✓ packages/artifacts/test/real-tx-artifact.test.ts > Real Transaction Artifacts > Validation > should reject invalid bigint strings
+ ✓ packages/artifacts/test/real-tx-artifact.test.ts > Real Transaction Artifacts > Validation > should reject missing required fields
+ ✓ packages/artifacts/test/event-ledger-2-submit-outcome.test.ts > EVENT-LEDGER-2 final closeout · a submit result decides only what it establishes > a submit call that failed without an answer decides nothing: INSUFFICIENT_EVIDENCE, never REJECTED_BY_NODE
+ ✓ packages/artifacts/test/event-ledger-2-submit-outcome.test.ts > EVENT-LEDGER-2 final closeout · a submit result decides only what it establishes > the node's own rejection in its wire format, and an answer with accepted:false, stay REJECTED_BY_NODE (control)
+ ✓ packages/artifacts/test/event-ledger-2-submit-outcome.test.ts > EVENT-LEDGER-2 final closeout · a submit result decides only what it establishes > an accepted submission stays SUBMITTED: accepted at that instant on the responding node, nothing observed (control)
+ ✓ packages/artifacts/test/hardening.test.ts > Artifact Hardening (Phase 4) > should have stable content hash (golden test)
+ ✓ packages/artifacts/test/hardening.test.ts > Artifact Hardening (Phase 4) > should use injected clock for semantic validation
+ ✓ packages/artifacts/test/hardening.test.ts > Artifact Hardening (Phase 4) > should distinguish between normal and strict mode for hardening fields
+ ✓ packages/artifacts/test/hardening.test.ts > Artifact Hardening (Phase 4) > should fail if networkId and address prefix mismatch
+ ✓ packages/localnet/test/receipts.test.ts > receipts store > should save and load a receipt
+ ✓ packages/localnet/test/receipts.test.ts > receipts store > should list receipts sorted by date
+ ✓ packages/localnet/test/receipts.test.ts > receipts store > should throw error for invalid txId (path traversal)
+ ✓ packages/localnet/test/receipts.test.ts > receipts store > should throw error if receipt not found
+ ✓ packages/artifacts/test/adversarial.test.ts > PR 7: Adversarial Integrity Validation > should detect hash mismatch in tampered artifacts
+ ✓ packages/artifacts/test/adversarial.test.ts > PR 7: Adversarial Integrity Validation > should detect cross-network contamination
+ ✓ packages/artifacts/test/adversarial.test.ts > PR 7: Adversarial Integrity Validation > should detect self-parenting (simple cycle)
+ ✓ packages/dev-server/test/dapp-api.test.ts > Dev-Server dApp Endpoints Envelope > returns stable JSON envelope on successful plan
+ ✓ packages/dev-server/test/dapp-api.test.ts > Dev-Server dApp Endpoints Envelope > returns stable JSON envelope on validation error
+ ✓ packages/dev-server/test/dapp-api.test.ts > Dev-Server dApp Endpoints Envelope > rejects auto-signing if allowDevAutoSign is missing
+ ✓ packages/dev-server/test/dapp-api.test.ts > Dev-Server dApp Endpoints Envelope > allows auto-signing if allowDevAutoSign is present in simulated network
+ ✓ packages/artifacts/test/golden.test.ts > Artifact Golden Fixtures (Cross-Runtime) > should have stable version-aware hashing
+ ✓ packages/artifacts/test/golden.test.ts > Artifact Golden Fixtures (Cross-Runtime) > should distinguish BigInt from Number in canonical strings
+ ✓ packages/artifacts/test/golden.test.ts > Artifact Golden Fixtures (Cross-Runtime) > should maintain stable key sorting regardless of input order
+ ✓ packages/artifacts/test/golden.test.ts > Artifact Golden Fixtures (Cross-Runtime) > should ignore metadata but include semantic version
+ ✓ packages/artifacts/test/golden.test.ts > Artifact Golden Fixtures (Cross-Runtime) > should skip undefined but retain null
+ ✓ packages/artifacts/test/hash-integrity.test.ts > Artifact Hash Integrity > should fail validation if contentHash is missing
+ ✓ packages/artifacts/test/hash-integrity.test.ts > Artifact Hash Integrity > should fail validation if contentHash mismatches payload
+ ✓ packages/artifacts/test/hash-integrity.test.ts > Artifact Hash Integrity > should pass validation if JSON keys are reordered
+ ✓ packages/artifacts/test/hash-integrity.test.ts > Artifact Hash Integrity > should not recursively hash contentHash
+ ✓ packages/artifacts/test/signed-tx-artifact.test.ts > SignedTxArtifact > should generate a stable hash for the same artifact
+ ✓ packages/artifacts/test/signed-tx-artifact.test.ts > SignedTxArtifact > should generate different hashes for different artifacts
+ ✓ packages/artifacts/test/signed-tx-artifact.test.ts > SignedTxArtifact > should create a synthetic authorization of the plan (never a signature)
+ ✓ packages/artifacts/test/signed-tx-artifact.test.ts > SignedTxArtifact > should validate a correct signed artifact
+ ✓ packages/artifacts/test/signed-tx-artifact.test.ts > SignedTxArtifact > should fail validation for invalid signed artifact
+ ✓ packages/testing/test/harness.test.ts > TestHarness > creates harness with default 3 accounts
+ ✓ packages/testing/test/harness.test.ts > TestHarness > send returns accepted receipt
+ ✓ packages/testing/test/harness.test.ts > TestHarness > send updates balances correctly
+ ✓ packages/testing/test/harness.test.ts > TestHarness > receipt has valid txId
+ ✓ packages/testing/test/harness.test.ts > TestHarness > reset returns to initial state
+ ✓ packages/testing/test/harness.test.ts > TestHarness > fixture applies setup transactions
+ ✓ packages/testing/test/harness.test.ts > TestHarness > insufficient funds fails gracefully
+ ✓ packages/testing/test/harness.test.ts > Custom Matchers > toBeAccepted works on valid receipt
+ ✓ packages/testing/test/harness.test.ts > Custom Matchers > toBeFailed works on failed receipt
+ ✓ packages/testing/test/harness.test.ts > Custom Matchers > toHaveValidContentHash works on 64-char hex
+ ✓ packages/testing/test/harness.test.ts > Custom Matchers > toHaveValidContentHash fails on short hash
+ ✓ packages/localnet/test/wave1-trace-lineage-schema.test.ts > DEF-1a · StoredSimulatedTxTrace schema optionally carries lineage/workflow/assumption > legacy trace WITHOUT the new fields still round-trips (rc.22-era artifacts stay readable)
+ ✓ packages/localnet/test/wave1-trace-lineage-schema.test.ts > DEF-1a · StoredSimulatedTxTrace schema optionally carries lineage/workflow/assumption > Wave-1 trace WITH the new fields persists them faithfully
+stdout | packages/dev-server/test/observability.test.ts > Dev Server Observability API Endpoints > GET /api/status returns valid schema
+<-- GET /api/status
+
+stdout | packages/dev-server/test/observability.test.ts > Dev Server Observability API Endpoints > GET /api/status returns valid schema
+--> GET /api/status 200 31ms
+
+stdout | packages/dev-server/test/observability.test.ts > Dev Server Observability API Endpoints > GET /api/lineage returns valid schema
+<-- GET /api/lineage
+
+stdout | packages/dev-server/test/observability.test.ts > Dev Server Observability API Endpoints > GET /api/lineage returns valid schema
+--> GET /api/lineage 200 4ms
+
+stdout | packages/dev-server/test/observability.test.ts > Dev Server Observability API Endpoints > GET /api/quarantine returns valid schema
+<-- GET /api/quarantine
+
+stdout | packages/dev-server/test/observability.test.ts > Dev Server Observability API Endpoints > GET /api/quarantine returns valid schema
+--> GET /api/quarantine 200 4ms
+
+stdout | packages/dev-server/test/observability.test.ts > Dev Server Observability API Endpoints > GET /api/telemetry returns valid schema
+<-- GET /api/telemetry
+
+stdout | packages/dev-server/test/observability.test.ts > Dev Server Observability API Endpoints > GET /api/telemetry returns valid schema
+--> GET /api/telemetry 200 3ms
+
+stdout | packages/dev-server/test/observability.test.ts > Dev Server Observability API Endpoints > GET /api/replay returns valid schema
+<-- GET /api/replay
+
+stdout | packages/dev-server/test/observability.test.ts > Dev Server Observability API Endpoints > GET /api/replay returns valid schema
+--> GET /api/replay 200 4ms
+
+stdout | packages/dev-server/test/observability.test.ts > Dev Server Observability API Endpoints > GET /api/bundles returns valid schema
+<-- GET /api/bundles
+
+stdout | packages/dev-server/test/observability.test.ts > Dev Server Observability API Endpoints > GET /api/bundles returns valid schema
+--> GET /api/bundles 200 3ms
+
+stdout | packages/dev-server/test/observability.test.ts > Dev Server Observability API Endpoints > GET /api/dashboard-health returns valid schema
+<-- GET /api/dashboard-health
+
+stdout | packages/dev-server/test/observability.test.ts > Dev Server Observability API Endpoints > GET /api/dashboard-health returns valid schema
+--> GET /api/dashboard-health 200 4ms
+
+ ✓ packages/dev-server/test/observability.test.ts > Dev Server Observability API Endpoints > GET /api/status returns valid schema
+ ✓ packages/dev-server/test/observability.test.ts > Dev Server Observability API Endpoints > GET /api/lineage returns valid schema
+ ✓ packages/dev-server/test/observability.test.ts > Dev Server Observability API Endpoints > GET /api/quarantine returns valid schema
+ ✓ packages/dev-server/test/observability.test.ts > Dev Server Observability API Endpoints > GET /api/telemetry returns valid schema
+ ✓ packages/dev-server/test/observability.test.ts > Dev Server Observability API Endpoints > GET /api/replay returns valid schema
+ ✓ packages/dev-server/test/observability.test.ts > Dev Server Observability API Endpoints > GET /api/bundles returns valid schema
+ ✓ packages/dev-server/test/observability.test.ts > Dev Server Observability API Endpoints > GET /api/dashboard-health returns valid schema
+ ✓ packages/testing/test/historical-artifacts.test.ts > Historical Artifacts (V1/V2) > should parse a V1 TxPlan artifact without failing
+ ✓ packages/testing/test/historical-artifacts.test.ts > Historical Artifacts (V1/V2) > should parse a V1 SignedTx artifact without failing
+ ✓ packages/testing/test/historical-artifacts.test.ts > Historical Artifacts (V1/V2) > should parse a V1 TxReceipt artifact without failing
+ ✓ packages/testing/test/historical-artifacts.test.ts > Historical Artifacts (V1/V2) > should pass the execution guard natively (no throw for empty execution)
+ ✓ packages/testing/test/historical-artifacts.test.ts > Historical Artifacts (V1/V2) > should fail during replay if LEGACY_EXECUTION_CONTEXT is omitted
+ ✓ packages/localnet/test/replay-invariants.test.ts > Replay Invariants > should verify exact match for a successful transaction
+ ✓ packages/localnet/test/replay-invariants.test.ts > Replay Invariants > should fail if plan is mutated (contentHash mismatch)
+ ✓ packages/localnet/test/replay-invariants.test.ts > Replay Invariants > should fail if preStateHash mismatch
+stdout | packages/dev-server/test/watcher.test.ts > Watcher Fallback & Polling Contract > should start chokidar with native fs events by default
+📡 [Watcher] Monitoring C:\Users\jrodr\hkl1\si\src\.hardkas for changes...
+
+stdout | packages/dev-server/test/watcher.test.ts > Watcher Fallback & Polling Contract > should respect HARDKAS_WATCH_POLLING=1 and enable polling
+📡 [Watcher] Monitoring C:\Users\jrodr\hkl1\si\src\.hardkas for changes...
+
+stdout | packages/dev-server/test/watcher.test.ts > Watcher Fallback & Polling Contract > should fall back gracefully to polling when watch setup throws ENOSPC / ENOTSUP
+📡 [Watcher] Monitoring C:\Users\jrodr\hkl1\si\src\.hardkas for changes...
+
+stderr | packages/dev-server/test/watcher.test.ts > Watcher Fallback & Polling Contract > should fall back gracefully to polling when watch setup throws ENOSPC / ENOTSUP
+[Watcher] Native watch failed (ENOSPC). Falling back to polling...
+
+ ✓ packages/dev-server/test/watcher.test.ts > Watcher Fallback & Polling Contract > should start chokidar with native fs events by default
+ ✓ packages/dev-server/test/watcher.test.ts > Watcher Fallback & Polling Contract > should respect HARDKAS_WATCH_POLLING=1 and enable polling
+ ✓ packages/dev-server/test/watcher.test.ts > Watcher Fallback & Polling Contract > should fall back gracefully to polling when watch setup throws ENOSPC / ENOTSUP
+stdout | packages/dev-server/test/escrow-session-recovery.test.ts > Session Recovery Matrix > should return 404 for unknown session id
+<-- GET /api/escrows/unknown-id-123
+--> GET /api/escrows/unknown-id-123 404 8ms
+
+ ✓ packages/dev-server/test/escrow-session-recovery.test.ts > Session Recovery Matrix > should return 404 for unknown session id
+ ✓ packages/localnet/test/reconstruct.test.ts > State Reconstruction (Time Travel) > mathematically reconstructs UTXO state to a previous DAA score
+ ✓ packages/testing/test/reproducibility.test.ts > Reproducibility Proof v0 > proof version matches
+ ✓ packages/testing/test/reproducibility.test.ts > Reproducibility Proof v0 > all artifact hashes are 64-char hex
+ ✓ packages/testing/test/reproducibility.test.ts > Reproducibility Proof v0 > L1 plan hash is reproducible
+ ✓ packages/testing/test/reproducibility.test.ts > Reproducibility Proof v0 > L1 signed hash is reproducible
+ ✓ packages/testing/test/reproducibility.test.ts > Reproducibility Proof v0 > L2 Igra plan hash is reproducible
+ ✓ packages/testing/test/reproducibility.test.ts > Reproducibility Proof v0 > DAG linear scenario hash is reproducible
+ ✓ packages/testing/test/reproducibility.test.ts > Reproducibility Proof v0 > DAG wide scenario hash is reproducible
+ ✓ packages/testing/test/reproducibility.test.ts > Reproducibility Proof v0 > Mass profile hash is reproducible
+ ✓ packages/testing/test/reproducibility.test.ts > Reproducibility Proof v0 > L1 plan hash is reproducible
+ ✓ packages/testing/test/reproducibility.test.ts > Reproducibility Proof v0 > Simulated tx receipt hash is reproducible
+ ✓ packages/testing/test/reproducibility.test.ts > Reproducibility Proof v0 > Canonical nested hash is reproducible
+ ✓ packages/testing/test/reproducibility.test.ts > Reproducibility Proof v0 > all artifact hashes match golden
+ ✓ packages/testing/test/reproducibility.test.ts > Reproducibility Proof v0 > prints semantic diff if any hash diverges
+ ✓ packages/dev-server/test/health.test.ts > Dev Server Health Route > does not accidentally select mainnet for health check
+ ✓ packages/dev-server/test/health.test.ts > Dev Server Health Route > returns simulated-mode when defaultNetwork is simulated
+ ✓ packages/artifacts/test/deployment.test.ts > Deployment artifacts > createDeploymentRecord produces valid contentHash
+ ✓ packages/artifacts/test/deployment.test.ts > Deployment artifacts > same deployment input produces same hash
+ ✓ packages/artifacts/test/deployment.test.ts > Deployment artifacts > different status produces a different hash (status is authenticated in hashVersion 5)
+ ✓ packages/artifacts/test/deployment.test.ts > Deployment artifacts > deployedAt is excluded from hash (deterministic)
+ ✓ packages/artifacts/test/deployment.test.ts > Deployment artifacts > updateDeploymentStatus returns new record with new hash
+ ✓ packages/testing/test/semantics.torture.test.ts > HardKAS Semantic Integrity Torture Tests > Artifact Status Lattice > allows legal transitions
+ ✓ packages/testing/test/semantics.torture.test.ts > HardKAS Semantic Integrity Torture Tests > Artifact Status Lattice > fails loudly on illegal transitions
+ ✓ packages/testing/test/semantics.torture.test.ts > HardKAS Semantic Integrity Torture Tests > Semantic Drift Detection > passes when all subsystems agree
+ ✓ packages/testing/test/semantics.torture.test.ts > HardKAS Semantic Integrity Torture Tests > Semantic Drift Detection > fails loudly when Dashboard hallucinates truth
+ ✓ packages/testing/test/semantics.torture.test.ts > HardKAS Semantic Integrity Torture Tests > Semantic Drift Detection > fails loudly on hash mismatch
+ ✓ packages/testing/test/semantics.torture.test.ts > HardKAS Semantic Integrity Torture Tests > Implicit Latest Resolution Ban > forbids implicit latest resolution
+ ✓ packages/testing/test/semantics.torture.test.ts > HardKAS Semantic Integrity Torture Tests > Implicit Latest Resolution Ban > allows explicit pinning
+ ✓ packages/localnet/test/replay.test.ts > replay summary > should construct a replay summary from receipt and trace
+ ✓ packages/testing/test/simnet-docker-args.test.ts > T-A06b: simnet harness docker run arguments > publishes the RPC port on the loopback interface only
+ ✓ packages/testing/test/simnet-docker-args.test.ts > T-A06b: simnet harness docker run arguments > labels the container with the harness role and the run id
+ ✓ packages/testing/test/simnet-docker-args.test.ts > T-A06b: simnet harness docker run arguments > keeps the container named, auto-removed, and kaspad listening on all container interfaces
+ ✓ packages/testing/test/simnet-docker-args.test.ts > T-A06b: simnet harness docker run arguments > appends index flags only when requested
+ ✓ packages/testing/test/simnet-docker-args.test.ts > T-A06b: simnet harness docker run arguments > takes the run id from the environment and otherwise derives one per process
+ ✓ packages/localnet/test/traces.test.ts > traces store > should save and load a trace
+ ✓ packages/localnet/test/traces.test.ts > traces store > should list traces sorted by date
+ ✓ packages/localnet/test/traces.test.ts > traces store > should throw error for invalid txId (path traversal)
+ ✓ packages/artifacts/test/igra-io.test.ts > Igra L2 IO Helpers > should reject invalid txHash
+ ✓ packages/artifacts/test/igra-io.test.ts > Igra L2 IO Helpers > should save receipt
+ ✓ packages/artifacts/test/igra-io.test.ts > Igra L2 IO Helpers > should load receipt
+ ✓ packages/artifacts/test/igra-io.test.ts > Igra L2 IO Helpers > should list receipts and sort by createdAt descending
+ ✓ packages/artifacts/test/igra-io.test.ts > Igra L2 IO Helpers > should return empty list if directory missing
+ ✓ packages/localnet/test/wave1-4-synthetic-txid.test.ts > Wave 1.4 · localnet synthetic txIds (N4) > a simulated payment's receipt carries synthetic-<planArtifactId>
+ ✓ packages/localnet/test/wave1-4-synthetic-txid.test.ts > Wave 1.4 · localnet synthetic txIds (N4) > applySimulatedPlan without an explicit txId derives the same synthetic id from the plan identity
+ ✓ packages/localnet/test/wave1-4-synthetic-txid.test.ts > Wave 1.4 · localnet synthetic txIds (N4) > a failed simulated execution still uses the single scheme (synthetic- + 64 hex), never simtx_
+ ✓ packages/localnet/test/replay-determinism.test.ts > Deterministic Replay Injection > should produce the exact same receipt and trace for identical inputs across two different replays
+ ✓ packages/node-runner/test/pr6-docker-network.test.ts > PR 6: Docker Runner Hardening > should generate correct flags for simnet 414ms
+ ✓ packages/node-runner/test/pr6-docker-network.test.ts > PR 6: Docker Runner Hardening > should generate correct flags for testnet-10 394ms
+ ✓ packages/node-runner/test/pr6-docker-network.test.ts > PR 6: Docker Runner Hardening > should fail for mainnet
+ ✓ packages/artifacts/test/canonical-path.test.ts > canonicalStringify Path Hashing and Backslash Preservation > preserves backslashes in non-path strings like regexes
+ ✓ packages/artifacts/test/canonical-path.test.ts > canonicalStringify Path Hashing and Backslash Preservation > normalizes backslashes in allowlisted path keys to forward slashes
+ ✓ packages/artifacts/test/canonical-path.test.ts > canonicalStringify Path Hashing and Backslash Preservation > does not normalize fields ending with path if they are not in the strict allowlist
+ ✓ packages/artifacts/test/canonical-path.test.ts > canonicalStringify Path Hashing and Backslash Preservation > hashing is stable and cross-platform for path fields
+ ✓ packages/dev-server/test/evidence-trust-1.test.ts > EVIDENCE-TRUST-1 · the dev server never prints its session token > control: a request is written to the access log
+ ✓ packages/dev-server/test/evidence-trust-1.test.ts > EVIDENCE-TRUST-1 · the dev server never prints its session token > a request authenticated with ?token= does not print the token
+ ✓ packages/dev-server/test/evidence-trust-1.test.ts > EVIDENCE-TRUST-1 · the dev server never prints its session token > a rejected ?token= value is not printed either
+ ✓ packages/testing/test/surface-truth-1.test.ts > SURFACE-TRUTH-1 · BEFORE · @hardkas/testing matchers on real artifacts > control: the receipt passes integrity and `toHaveValidContentHash`
+ ✓ packages/testing/test/surface-truth-1.test.ts > SURFACE-TRUTH-1 · BEFORE · @hardkas/testing matchers on real artifacts > `toPassLineageCheck` passes on a real receipt whose lineage HardKAS wrote
+ ✓ packages/testing/test/fuzz-migration.test.ts > Phase 6A: Migration Fuzzing > should force migration receipts and avoid silent migrations
+ ✓ packages/localnet/test/accounts.test.ts > localnet accounts > resolveAccountAddress > should resolve alice alias
+ ✓ packages/localnet/test/accounts.test.ts > localnet accounts > resolveAccountAddress > should resolve bob alias case-insensitive
+ ✓ packages/localnet/test/accounts.test.ts > localnet accounts > resolveAccountAddress > should return direct kaspa:sim_ addresses as-is
+ ✓ packages/localnet/test/accounts.test.ts > localnet accounts > resolveAccountAddress > should throw for unknown aliases
+ ✓ packages/localnet/test/accounts.test.ts > localnet accounts > createDeterministicAccounts > should create default accounts with 1000 KAS
+ ✓ packages/localnet/test/accounts.test.ts > localnet accounts > createDeterministicAccounts > should respect custom count and balance
+ ✓ packages/artifacts/test/pr7-determinism.test.ts > PR 7: Cross-Platform Hash Determinism (v3) > should normalize newlines (
+ -> 
+) in v3
+ ✓ packages/artifacts/test/pr7-determinism.test.ts > PR 7: Cross-Platform Hash Determinism (v3) > should NOT normalize newlines in v2 (backward compatibility)
+ ✓ packages/artifacts/test/pr7-determinism.test.ts > PR 7: Cross-Platform Hash Determinism (v3) > should reject undefined at root but safely omit it from object properties or replace it with null in arrays
+ ✓ packages/artifacts/test/pr7-determinism.test.ts > PR 7: Cross-Platform Hash Determinism (v3) > should normalize UTF-8 NFC in v3
+ ✓ packages/artifacts/test/pr7-determinism.test.ts > PR 7: Cross-Platform Hash Determinism (v3) > should produce different hashes for BigInt vs String (v2/v3 logic)
+ ✓ packages/artifacts/test/surface-truth-1.test.ts > SURFACE-TRUTH-1 · BEFORE · Igra receipts and the URL secret boundary > control: a public RPC URL is kept as written
+ ✓ packages/artifacts/test/surface-truth-1.test.ts > SURFACE-TRUTH-1 · BEFORE · Igra receipts and the URL secret boundary > the persisted receipt carries no URL credentials (userinfo, secret query parameters)
+ ✓ packages/query/test/determinism.test.ts > deterministic serialization > should produce identical hashes for identical items
+ ✓ packages/query/test/determinism.test.ts > deterministic serialization > should produce identical hashes regardless of key order
+ ✓ packages/query/test/determinism.test.ts > deterministic serialization > should produce different hashes for different items
+ ✓ packages/query/test/determinism.test.ts > deterministic serialization > should handle empty arrays
+ ✓ packages/query/test/determinism.test.ts > deterministic serialization > should handle undefined values deterministically
+ ✓ packages/query/test/determinism.test.ts > deterministic serialization > should produce a 64-char hex hash
+ ✓ packages/query/test/determinism.test.ts > deterministic sorting > should sort artifacts deterministically regardless of locale
+ ✓ packages/testing/test/fuzz-policy.test.ts > Phase 6A: Policy Fuzzing > should reject all 10,000 mutated policies 1751ms
+ ✓ packages/testing/test/gate-levels.test.ts > T-A06c: test levels are separated by configuration > excludes simnet, localnet and e2e suites from the canonical gate
+ ✓ packages/testing/test/gate-levels.test.ts > T-A06c: test levels are separated by configuration > gives simnet suites their own level with run-scoped container cleanup
+ ✓ packages/testing/test/gate-levels.test.ts > T-A06c: test levels are separated by configuration > gives silverc suites their own level, rooted in the workspace packages
+ ✓ packages/testing/test/gate-levels.test.ts > T-A06c: test levels are separated by configuration > keeps the other levels disjoint from the canonical gate
+ ✓ packages/artifacts/test/determinism.test.ts > Artifact Determinism > should exclude non-semantic fields from canonical stringification
+ ✓ packages/artifacts/test/determinism.test.ts > Artifact Determinism > should generate deterministic planId from semantic content
+ ✓ packages/testing/test/fuzz-network.test.ts > Phase 6A: Network Fuzzing > should reject all mutated network profiles
+ ✓ packages/artifacts/test/cross-platform.test.ts > Cross-Platform Canonicalization > should normalize newlines in version 3
+ ✓ packages/artifacts/test/cross-platform.test.ts > Cross-Platform Canonicalization > should normalize Unicode NFC in version 3
+ ✓ packages/artifacts/test/cross-platform.test.ts > Cross-Platform Canonicalization > should handle BigInt consistently in version 2+
+ ✓ packages/artifacts/test/cross-platform.test.ts > Cross-Platform Canonicalization > should sort keys deterministically
+ ✓ packages/artifacts/test/cross-platform.test.ts > Cross-Platform Canonicalization > should preserve versioning behavior
+ ✓ packages/artifacts/test/reproducibility.test.ts > Reproducibility Corpus > should generate the exact expected hash across all platforms
+ ✓ packages/artifacts/test/reproducibility.test.ts > Reproducibility Corpus > should generate deterministic workflowId
+ ✓ packages/query/test/wiring.test.ts > QueryEngine Wiring > should fallback to FilesystemQueryBackend if store.db does not exist
+ ✓ packages/query/test/wiring.test.ts > QueryEngine Wiring > should attempt to use SqliteQueryBackend if .hardkas/store.db exists
+ ✓ packages/testing/test/repo-hygiene.test.ts > Repository Hygiene > ensures no scratch or runtime files are tracked in git
+ ✓ packages/artifacts/test/broadcast.test.ts > getBroadcastableSignedTransaction > should validate a correct real signed artifact
+ ✓ packages/artifacts/test/broadcast.test.ts > getBroadcastableSignedTransaction > should allow simulated artifacts
+ ✓ packages/artifacts/test/broadcast.test.ts > getBroadcastableSignedTransaction > should fail if payload is missing
+ ✓ packages/localnet/test/containment-2.test.ts > CONTAINMENT-2 · trace file names > refuses a txId with ':' (an alternate stream) or a device name
+ ✓ packages/localnet/test/containment-2.test.ts > CONTAINMENT-2 · trace file names > controls: a network txId and a simulator txId
+ ✓ packages/artifacts/test/zod-issue-message.test.ts > artifact verification · schema issues carry their message > a plan missing required fields reports each issue's text, never [object Object]
+ ✓ packages/artifacts/test/pr6-canonicalization.test.ts > PR 6: Artifact Hardening > BigInt/String Canonicalization > should distinguish BigInt(123) and String('123') in v2
+ ✓ packages/artifacts/test/pr6-canonicalization.test.ts > PR 6: Artifact Hardening > BigInt/String Canonicalization > should remain backward compatible with v1 if requested
+ ✓ packages/artifacts/test/pr6-canonicalization.test.ts > PR 6: Artifact Hardening > BigInt/String Canonicalization > should produce different hashes for BigInt vs String in v2
+ ✓ packages/testing/test/hygiene.test.ts > Repository Hygiene: No forbidden scratch/runtime files tracked in git
+ ✓ packages/testing/test/mass-tracking.test.ts > Mass tracking > collects records when enabled
+ ✓ packages/testing/test/mass-tracking.test.ts > Mass tracking > does not collect when disabled
+ ✓ packages/testing/test/utxo-invariants.test.ts > Infrastructure Invariants: UTXO Stability > should maintain sum(inputs) == sum(outputs) + fee over 100 random transactions
+ ✓ packages/localnet/test/surface-cut-subscriptions.test.ts > Surface Cut 3c-2: LocalnetSimulatedProvider is request/response only > has no subscribeTo*, on or off
+ ✓ packages/testing/test/gauntlet.test.ts > legacy vitest stub > stub
+
+ Test Files  135 passed | 4 skipped (139)
+      Tests  865 passed | 12 skipped (877)
+   Start at  23:28:48
+   Duration  116.04s (transform 2.79s, setup 0ms, collect 43.57s, tests 32.08s, environment 27ms, prepare 14.81s)
+
+JSON report written to C:/Users/jrodr/AppData/Local/Temp/claude/C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo/ecaf7e92-a2ba-49b0-aafc-c62b4cb5eda0/scratchpad/l1-reality-1/si/logs/si-related-pkgs-1.json

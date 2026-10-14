@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
 import { Hardkas } from "../../src/index.js";
+import { withClientUrl } from "../helpers/rpc-instance.js";
 import {
   calculateContentHash,
   CURRENT_HASH_VERSION,
@@ -110,6 +111,8 @@ describe("Wave 2(d) · the submission records a derived fee or insufficient evid
     vi.spyOn(sdk.rpc, "getBlockDagInfo").mockResolvedValue({ networkId: "simnet", virtualDaaScore: 1_000_000n, tipHashes: ["s"], virtualParentHashes: ["s"], sink: "s" } as any);
     vi.spyOn(sdk.rpc, "getSinkBlueScore").mockResolvedValue({ blueScore: "5000" } as any);
     submit = vi.spyOn(sdk.rpc, "submitTransaction").mockResolvedValue({ transactionId: "f".repeat(64) } as any);
+    // ENDPOINT-AUTHORITY-1 (EA-I2): the scripted client says it is the endpoint the sends below name
+    withClientUrl(sdk, LOOPBACK);
     plan = await sdk.tx.plan({
       from: { name: FROM, kind: "external-wallet", network: "simnet", address: FROM } as any,
       to: { name: TO, kind: "external-wallet", network: "simnet", address: TO } as any,

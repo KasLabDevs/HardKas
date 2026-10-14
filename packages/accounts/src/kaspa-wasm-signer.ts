@@ -6,7 +6,7 @@ import {
   SignTxPlanResult,
   HardkasSignerKind
 } from "./types.js";
-import { NetworkId, getNetworkPrefix } from "@hardkas/core";
+import { NetworkId, getNetworkPrefix, assertMainnetTransactionsDisabled } from "@hardkas/core";
 import { loadKaspaWasm, WasmProviderConfig } from "./signer-backend.js";
 import { KeystoreManager } from "./keystore.js";
 import { DEV_ACCOUNTS_PASSWORD } from "./dev-accounts.js";
@@ -342,12 +342,9 @@ export function assertSigningNetworkAllowed(input: {
   mode: string;
   allowMainnet?: boolean | undefined;
 }): void {
-  const isMainnet = input.network === "mainnet";
-
-  if (isMainnet && !input.allowMainnet) {
-    throw new Error(
-      "Mainnet signing is disabled by default. " +
-        "Use --allow-mainnet-signing only if you understand the risks."
-    );
+  // SDK-MAINNET-BROADCAST-GUARD-1: the product's mainnet policy, typed (MAINNET_SIGNING_DISABLED); no advice to use a
+  // flag that stays refused. `allowMainnet: true` remains for direct library use only.
+  if (!input.allowMainnet) {
+    assertMainnetTransactionsDisabled("sign", [input.network], "kaspa-wasm signer");
   }
 }

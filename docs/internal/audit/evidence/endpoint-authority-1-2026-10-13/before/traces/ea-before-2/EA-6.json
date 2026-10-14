@@ -1,0 +1,11 @@
+{
+  "exit": 0,
+  "A": "ws://127.0.0.1:63975",
+  "B": "ws://127.0.0.1:63976",
+  "submitReceivedBy": {
+    "A": false,
+    "B": true
+  },
+  "aAfterSign": [],
+  "receiptRpcUrl": "ws://127.0.0.1:63976"
+}

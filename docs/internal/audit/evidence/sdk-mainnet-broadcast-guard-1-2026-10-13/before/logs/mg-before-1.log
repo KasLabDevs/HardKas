@@ -1,0 +1,163 @@
+
+ RUN  v2.1.9 C:/Users/jrodr/hkl1/mg/src
+
+ × packages/sdk/test/sdk-mainnet-broadcast-guard-1.test.ts > SDK-MAINNET-BROADCAST-GUARD-1 · mainnet signing and broadcast are refused (allowPublic does not open them) > MG-1 internal signer on a mainnet instance (policy.allowPublic): refused with a typed mainnet code, nothing written
+   → {"ok":false,"code":"EXECUTION_NETWORK_MISMATCH","message":"Execution network mismatch. Expected: mainnet, Actual: undefined"}: expected 'EXECUTION_NETWORK_MISMATCH' to match /^MAINNET_(SIGNING|BROADCAST|TRANSACTI…/
+ × packages/sdk/test/sdk-mainnet-broadcast-guard-1.test.ts > SDK-MAINNET-BROADCAST-GUARD-1 · mainnet signing and broadcast are refused (allowPublic does not open them) > MG-2 external signer on a mainnet instance: refused before the external signer is asked, nothing written
+   → {"ok":true,"value":{"schema":"hardkas.signedTx","hardkasVersion":"0.12.0-rc.27","version":"1.0.0-alpha","hashVersion":5,"status":"signed","createdAt":"2026-10-13T19:31:54.497Z","txId":"1d421e0b9d14ed0bfee8504fd5aad0d2a0eb55e0e12c774e95f6ad5d3f543aa0","sourcePlanId":"plan-e7fb9ab5345eab44","networkId":"mainnet","mode":"rpc","from":{"address":"kaspa:qzeud689mzmq7y3c2832lkhrd847jjmqlp6n09j2tnsdtgz66kz46h7tagfdr"},"to":{"address":"kaspa:qz02kdawndj60uqlq0dgf6l0qan5ynjafr40uxkm2gdk29ysy7ncua9gvjsfr"},"amountSompi":"100000000","signedTransaction":{"format":"hex","payload":"{\"version\":0,\"inputs\":[{\"previousOutpoint\":{\"transactionId\":\"0000000000000000000000000000000000000000000000000000000000000f00\",\"index\":0},\"signatureScript\":\"41545698adcdc22858f2748639e4aba9836507c749a79b3a115e8ca14f144c743e7c76ab77040f468c145c2be48c6ce00bc6dbef67da6d187c65e2e7773834ab7701\",\"sequence\":0,\"sigOpCount\":1,\"computeBudget\":0}],\"outputs\":[{\"amount\":\"100000000\",\"scriptPublicKey\":{\"version\":0,\"scriptPublicKey\":\"209eab37ae9b65a7f01f03da84ebef0767424e5d48eafe1adb521b65149027a78eac\"}},{\"amount\":\"9898999900\",\"scriptPublicKey\":{\"version\":0,\"scriptPublicKey\":\"20b3c6e8e5d8b60f123851e2afdae369ebe94b60f87537964a5ce0d5a05ad5855dac\"}}],\"lockTime\":0,\"subnetworkId\":\"0000000000000000000000000000000000000000\",\"gas\":0,\"storageMass\":0,\"payload\":\"\"}"},"lineage":{"artifactId":"af96f170e2e62e9bb7c272cef86ee5e124fbf28cf18a0a98a83ab011077fd98a","lineageId":"e7fb9ab5345eab44a3825cbe9228530649291c56e2c83b65bef96ad3cab86e1a","parentArtifactId":"e7fb9ab5345eab44a3825cbe9228530649291c56e2c83b65bef96ad3cab86e1a","rootArtifactId":"e7fb9ab5345eab44a3825cbe9228530649291c56e2c83b65bef96ad3cab86e1a","sequence":2},"execution":{"mode":"rpc","domain":"kaspa-l1","network":"mainnet"},"workflowId":"wf_6840d4a122ddd03f","assumptionLevel":"mainnet","signedId":"signed-af96f170e2e62e9b","contentHash":"af96f170e2e62e9bb7c272cef86ee5e124fbf28cf18a0a98a83ab011077fd98a"}}: expected { ok: true, signerCalls: 1 } to deeply equal { ok: false, signerCalls: +0 }
+ × packages/sdk/test/sdk-mainnet-broadcast-guard-1.test.ts > SDK-MAINNET-BROADCAST-GUARD-1 · mainnet signing and broadcast are refused (allowPublic does not open them) > MG-3 tx.send of a mainnet-signed artifact (signed outside HardKAS): refused before submitTransaction, no submission recorded
+   → {"r":{"ok":false,"message":"parent_plan_unresolved: Missing context plan for simulation."},"submitAttempts":0,"submissions":[]}: expected 'undefined' to match /^MAINNET_(SIGNING|BROADCAST|TRANSACTI…/
+ × packages/sdk/test/sdk-mainnet-broadcast-guard-1.test.ts > SDK-MAINNET-BROADCAST-GUARD-1 · mainnet signing and broadcast are refused (allowPublic does not open them) > MG-4 the same through the workspace config (experimental + network.allowPublic, no per-call policy): refused before submitTransaction
+   → {"r":{"ok":false,"message":"parent_plan_unresolved: Missing context plan for simulation."},"submitAttempts":0}: expected 'undefined' to match /^MAINNET_(SIGNING|BROADCAST|TRANSACTI…/
+ × packages/sdk/test/sdk-mainnet-broadcast-guard-1.test.ts > SDK-MAINNET-BROADCAST-GUARD-1 · mainnet signing and broadcast are refused (allowPublic does not open them) > MG-5 a workflow [tx.plan, tx.send] on a mainnet instance with an external signer: no signature, no submitTransaction
+   → {"status":"failed","code":"TX_SUBMISSION_REJECTED","signerCalls":1,"submitAttempts":1}: expected 1 to be +0 // Object.is equality
+ ✓ packages/sdk/test/sdk-mainnet-broadcast-guard-1.test.ts > SDK-MAINNET-BROADCAST-GUARD-1 · mainnet signing and broadcast are refused (allowPublic does not open them) > MG-6 sdk.wallet (WalletToolkit) send on a mainnet instance with an external signer: no submitTransaction
+ ✓ packages/sdk/test/sdk-mainnet-broadcast-guard-1.test.ts > SDK-MAINNET-BROADCAST-GUARD-1 · what stays allowed (controls) > MG-C1 without allowPublic a mainnet instance does not open (PUBLIC_NETWORK_BLOCKED)
+ × packages/sdk/test/sdk-mainnet-broadcast-guard-1.test.ts > SDK-MAINNET-BROADCAST-GUARD-1 · what stays allowed (controls) > MG-C2 reading and planning on mainnet stay allowed (allowPublic)
+   → fake does not implement getBalancesByAddresses
+ × packages/sdk/test/sdk-mainnet-broadcast-guard-1.test.ts > SDK-MAINNET-BROADCAST-GUARD-1 · what stays allowed (controls) > MG-C3 testnet-10 with allowPublic: the internal signer signs and tx.send reaches submitTransaction (the fake refuses it)
+   → Execution network mismatch. Expected: testnet-10, Actual: undefined
+ ✓ packages/sdk/test/sdk-mainnet-broadcast-guard-1.test.ts > SDK-MAINNET-BROADCAST-GUARD-1 · what stays allowed (controls) > MG-C4 testnet-10 with allowPublic and an external signer: it signs and tx.send reaches submitTransaction
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 7 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  packages/sdk/test/sdk-mainnet-broadcast-guard-1.test.ts > SDK-MAINNET-BROADCAST-GUARD-1 · mainnet signing and broadcast are refused (allowPublic does not open them) > MG-1 internal signer on a mainnet instance (policy.allowPublic): refused with a typed mainnet code, nothing written
+AssertionError: {"ok":false,"code":"EXECUTION_NETWORK_MISMATCH","message":"Execution network mismatch. Expected: mainnet, Actual: undefined"}: expected 'EXECUTION_NETWORK_MISMATCH' to match /^MAINNET_(SIGNING|BROADCAST|TRANSACTI…/
+
+- Expected: 
+/^MAINNET_(SIGNING|BROADCAST|TRANSACTIONS)_DISABLED$/
+
++ Received: 
+"EXECUTION_NETWORK_MISMATCH"
+
+ ❯ packages/sdk/test/sdk-mainnet-broadcast-guard-1.test.ts:197:51
+    195|         const r = await outcome(sdk.tx.sign(plan, { account: "main" })…
+    196|         expect(r.ok, JSON.stringify(r)).toBe(false);
+    197|         expect(String(r.code), JSON.stringify(r)).toMatch(MAINNET_REFU…
+       |                                                   ^
+    198|         expect(stored(ws, /signedTx/)).toEqual([]);
+    199|       } finally {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/7]⎯
+
+ FAIL  packages/sdk/test/sdk-mainnet-broadcast-guard-1.test.ts > SDK-MAINNET-BROADCAST-GUARD-1 · mainnet signing and broadcast are refused (allowPublic does not open them) > MG-2 external signer on a mainnet instance: refused before the external signer is asked, nothing written
+AssertionError: {"ok":true,"value":{"schema":"hardkas.signedTx","hardkasVersion":"0.12.0-rc.27","version":"1.0.0-alpha","hashVersion":5,"status":"signed","createdAt":"2026-10-13T19:31:54.497Z","txId":"1d421e0b9d14ed0bfee8504fd5aad0d2a0eb55e0e12c774e95f6ad5d3f543aa0","sourcePlanId":"plan-e7fb9ab5345eab44","networkId":"mainnet","mode":"rpc","from":{"address":"kaspa:qzeud689mzmq7y3c2832lkhrd847jjmqlp6n09j2tnsdtgz66kz46h7tagfdr"},"to":{"address":"kaspa:qz02kdawndj60uqlq0dgf6l0qan5ynjafr40uxkm2gdk29ysy7ncua9gvjsfr"},"amountSompi":"100000000","signedTransaction":{"format":"hex","payload":"{\"version\":0,\"inputs\":[{\"previousOutpoint\":{\"transactionId\":\"0000000000000000000000000000000000000000000000000000000000000f00\",\"index\":0},\"signatureScript\":\"41545698adcdc22858f2748639e4aba9836507c749a79b3a115e8ca14f144c743e7c76ab77040f468c145c2be48c6ce00bc6dbef67da6d187c65e2e7773834ab7701\",\"sequence\":0,\"sigOpCount\":1,\"computeBudget\":0}],\"outputs\":[{\"amount\":\"100000000\",\"scriptPublicKey\":{\"version\":0,\"scriptPublicKey\":\"209eab37ae9b65a7f01f03da84ebef0767424e5d48eafe1adb521b65149027a78eac\"}},{\"amount\":\"9898999900\",\"scriptPublicKey\":{\"version\":0,\"scriptPublicKey\":\"20b3c6e8e5d8b60f123851e2afdae369ebe94b60f87537964a5ce0d5a05ad5855dac\"}}],\"lockTime\":0,\"subnetworkId\":\"0000000000000000000000000000000000000000\",\"gas\":0,\"storageMass\":0,\"payload\":\"\"}"},"lineage":{"artifactId":"af96f170e2e62e9bb7c272cef86ee5e124fbf28cf18a0a98a83ab011077fd98a","lineageId":"e7fb9ab5345eab44a3825cbe9228530649291c56e2c83b65bef96ad3cab86e1a","parentArtifactId":"e7fb9ab5345eab44a3825cbe9228530649291c56e2c83b65bef96ad3cab86e1a","rootArtifactId":"e7fb9ab5345eab44a3825cbe9228530649291c56e2c83b65bef96ad3cab86e1a","sequence":2},"execution":{"mode":"rpc","domain":"kaspa-l1","network":"mainnet"},"workflowId":"wf_6840d4a122ddd03f","assumptionLevel":"mainnet","signedId":"signed-af96f170e2e62e9b","contentHash":"af96f170e2e62e9bb7c272cef86ee5e124fbf28cf18a0a98a83ab011077fd98a"}}: expected { ok: true, signerCalls: 1 } to deeply equal { ok: false, signerCalls: +0 }
+
+- Expected
++ Received
+
+  Object {
+-   "ok": false,
+-   "signerCalls": 0,
++   "ok": true,
++   "signerCalls": 1,
+  }
+
+ ❯ packages/sdk/test/sdk-mainnet-broadcast-guard-1.test.ts:216:75
+    214|         const plan: any = await sdk.tx.plan({ from: "main", to: "mainT…
+    215|         const r = await outcome(sdk.tx.sign(plan));
+    216|         expect({ ok: r.ok, signerCalls: ext.calls.n }, JSON.stringify(…
+       |                                                                           ^
+    217|         expect(String(r.code), JSON.stringify(r)).toMatch(MAINNET_REFU…
+    218|         expect(stored(ws, /signedTx/)).toEqual([]);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/7]⎯
+
+ FAIL  packages/sdk/test/sdk-mainnet-broadcast-guard-1.test.ts > SDK-MAINNET-BROADCAST-GUARD-1 · mainnet signing and broadcast are refused (allowPublic does not open them) > MG-3 tx.send of a mainnet-signed artifact (signed outside HardKAS): refused before submitTransaction, no submission recorded
+AssertionError: {"r":{"ok":false,"message":"parent_plan_unresolved: Missing context plan for simulation."},"submitAttempts":0,"submissions":[]}: expected 'undefined' to match /^MAINNET_(SIGNING|BROADCAST|TRANSACTI…/
+
+- Expected: 
+/^MAINNET_(SIGNING|BROADCAST|TRANSACTIONS)_DISABLED$/
+
++ Received: 
+"undefined"
+
+ ❯ packages/sdk/test/sdk-mainnet-broadcast-guard-1.test.ts:239:54
+    237|         expect(seen.submitAttempts, JSON.stringify(seen)).toBe(0);
+    238|         expect(r.ok, JSON.stringify(seen)).toBe(false);
+    239|         expect(String(r.code), JSON.stringify(seen)).toMatch(MAINNET_R…
+       |                                                      ^
+    240|         expect(seen.submissions, JSON.stringify(seen)).toEqual([]);
+    241|       } finally {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/7]⎯
+
+ FAIL  packages/sdk/test/sdk-mainnet-broadcast-guard-1.test.ts > SDK-MAINNET-BROADCAST-GUARD-1 · mainnet signing and broadcast are refused (allowPublic does not open them) > MG-4 the same through the workspace config (experimental + network.allowPublic, no per-call policy): refused before submitTransaction
+AssertionError: {"r":{"ok":false,"message":"parent_plan_unresolved: Missing context plan for simulation."},"submitAttempts":0}: expected 'undefined' to match /^MAINNET_(SIGNING|BROADCAST|TRANSACTI…/
+
+- Expected: 
+/^MAINNET_(SIGNING|BROADCAST|TRANSACTIONS)_DISABLED$/
+
++ Received: 
+"undefined"
+
+ ❯ packages/sdk/test/sdk-mainnet-broadcast-guard-1.test.ts:260:54
+    258|         const seen = { r, submitAttempts: node.methods.filter((m) => m…
+    259|         expect(seen.submitAttempts, JSON.stringify(seen)).toBe(0);
+    260|         expect(String(r.code), JSON.stringify(seen)).toMatch(MAINNET_R…
+       |                                                      ^
+    261|       } finally {
+    262|         await sdk.close();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/7]⎯
+
+ FAIL  packages/sdk/test/sdk-mainnet-broadcast-guard-1.test.ts > SDK-MAINNET-BROADCAST-GUARD-1 · mainnet signing and broadcast are refused (allowPublic does not open them) > MG-5 a workflow [tx.plan, tx.send] on a mainnet instance with an external signer: no signature, no submitTransaction
+AssertionError: {"status":"failed","code":"TX_SUBMISSION_REJECTED","signerCalls":1,"submitAttempts":1}: expected 1 to be +0 // Object.is equality
+
+- Expected
++ Received
+
+- 0
++ 1
+
+ ❯ packages/sdk/test/sdk-mainnet-broadcast-guard-1.test.ts:278:59
+    276|         const run: any = await sdk.workflow.run({ steps: [{ type: "tx.…
+    277|         const seen = { status: run.status, code: run.errorEnvelope?.co…
+    278|         expect(seen.submitAttempts, JSON.stringify(seen)).toBe(0);
+       |                                                           ^
+    279|         expect(seen.signerCalls, JSON.stringify(seen)).toBe(0);
+    280|         expect(seen.status, JSON.stringify(seen)).toBe("failed");
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/7]⎯
+
+ FAIL  packages/sdk/test/sdk-mainnet-broadcast-guard-1.test.ts > SDK-MAINNET-BROADCAST-GUARD-1 · what stays allowed (controls) > MG-C2 reading and planning on mainnet stay allowed (allowPublic)
+RpcError: fake does not implement getBalancesByAddresses
+ ❯ Module.normalizeRpcError packages/kaspa-rpc/src/errors.ts:132:10
+    130|   }
+    131| 
+    132|   return new RpcError(((error instanceof Error) ? error.message : Stri…
+       |          ^
+    133| }
+    134| 
+ ❯ OfficialRpcSession.request packages/kaspa-rpc/src/upstream/session.ts:183:13
+ ❯ JsonWrpcKaspaClient.getBalanceByAddress packages/kaspa-rpc/src/index.ts:227:22
+ ❯ packages/sdk/test/sdk-mainnet-broadcast-guard-1.test.ts:329:30
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Serialized Error: { code: undefined, data: undefined, isRetriable: true }
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/7]⎯
+
+ FAIL  packages/sdk/test/sdk-mainnet-broadcast-guard-1.test.ts > SDK-MAINNET-BROADCAST-GUARD-1 · what stays allowed (controls) > MG-C3 testnet-10 with allowPublic: the internal signer signs and tx.send reaches submitTransaction (the fake refuses it)
+ExecutionNetworkMismatchError: Execution network mismatch. Expected: testnet-10, Actual: undefined
+ ❯ assertAccountCompatibleWithTarget packages/core/src/semantics/execution-guard.ts:132:13
+    130|     }
+    131|     if (account.network !== target.network) {
+    132|       throw new ExecutionNetworkMismatchError({ expected: target.netwo…
+       |             ^
+    133|     }
+    134|   }
+ ❯ assertExecutionCompatibility packages/core/src/semantics/execution-guard.ts:214:16
+ ❯ Module.signTxPlanArtifact packages/accounts/src/signer.ts:68:3
+ ❯ HardkasTx.sign packages/sdk/src/tx.ts:1193:26
+ ❯ packages/sdk/test/sdk-mainnet-broadcast-guard-1.test.ts:351:29
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Serialized Error: { code: 'EXECUTION_NETWORK_MISMATCH', metadata: { expected: 'testnet-10', actual: 'undefined' } }
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/7]⎯
+
+ Test Files  1 failed (1)
+      Tests  7 failed | 3 passed (10)
+   Start at  21:31:50
+   Duration  4.26s (transform 1.69s, setup 0ms, collect 3.23s, tests 645ms, environment 0ms, prepare 118ms)
+
+JSON report written to C:/Users/jrodr/AppData/Local/Temp/claude/C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo/ecaf7e92-a2ba-49b0-aafc-c62b4cb5eda0/scratchpad/l1-reality-1/mg/logs/mg-before-1.json

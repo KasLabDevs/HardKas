@@ -1,0 +1,22 @@
+{
+  "aMethods": [
+    "getFeeEstimate",
+    "getInfo",
+    "getServerInfo",
+    "getBlockDagInfo",
+    "getBlockDagInfo",
+    "getUtxosByAddresses",
+    "getMempoolEntriesByAddresses",
+    "getBlockDagInfo"
+  ],
+  "bMethods": [
+    "getBlockDagInfo",
+    "getServerInfo",
+    "getSinkBlueScore",
+    "getMempoolEntry",
+    "getVirtualChainFromBlock"
+  ],
+  "observerId": "obs_8f61e9580abd035bbf07e427bff97d80a9a1fcf3fcd445994d15e78c1c620ac0",
+  "observerOfA": "obs_8f61e9580abd035bbf07e427bff97d80a9a1fcf3fcd445994d15e78c1c620ac0",
+  "observerOfB": "obs_0219615f071c2445cffc69a643e35a3b8c3ba9722ddcaa93daf6c73921170c98"
+}

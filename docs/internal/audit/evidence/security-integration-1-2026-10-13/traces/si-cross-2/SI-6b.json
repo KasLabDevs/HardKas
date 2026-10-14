@@ -1,0 +1,34 @@
+{
+  "codes": {
+    "nniRead": "NODE_NETWORK_MISMATCH",
+    "nniSend": "NODE_NETWORK_MISMATCH",
+    "eaSend": "SEND_ENDPOINT_MISMATCH",
+    "unreachableRead": null
+  },
+  "leaks": {
+    "nniRead": [
+      "si-token-SECRET-91c2"
+    ],
+    "nniSend": [
+      "si-token-SECRET-91c2"
+    ],
+    "eaSend": [],
+    "unreachableRead": [
+      "si-pass-SECRET-7f3a",
+      "si-token-SECRET-91c2"
+    ]
+  },
+  "messages": {
+    "nniRead": "The node at ws://***@127.0.0.1:64588/?token=<TOKEN_SECRET> serves mainnet, not testnet-10: HardKAS refuses to read from it or send to it as testnet-10.",
+    "nniSend": "The node at ws://***@127.0.0.1:64588/?token=<TOKEN_SECRET> serves mainnet, not testnet-10: HardKAS refuses to read from it or send to it as testnet-10.",
+    "eaSend": "Cannot send to ws://127.0.0.1:64588/?token=REDACTED: this instance's RPC client talks to ws://127.0.0.1:64587, and HardKAS never records one endpoint for a request another one received. Open the instance on that endpoint. Nothing was sent or recorded.",
+    "unreachableRead": "Cannot connect to Kaspa RPC at ws://hkuser:<USER_SECRET>@127.0.0.1:64589/?token=<TOKEN_SECRET>. Is kaspad running with --rpclisten-json? (wRPC -> WebSocket -> Unable to connect to ws://hkuser:<USER_SECRET>@127.0.0.1:64589/?token=<TOKEN_SECRET>)"
+  },
+  "filesLeaking": [],
+  "submitTransaction": {
+    "A": 0,
+    "M": 0
+  },
+  "submissionRecords": [],
+  "submissionEvents": []
+}

@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { Hardkas } from "../src/index.js";
 import { calculateContentHash, CURRENT_HASH_VERSION } from "@hardkas/artifacts";
+import { sendAsRpc } from "./helpers/rpc-instance.js";
 
 // EVIDENCE-TRUST-1 · D2 on the SDK: what a producer returns is exactly what the store holds. Signing a plan again keeps
 // the stored signed artifact and returns it; `artifacts.write` reports the stored copy and whether it wrote.
@@ -66,7 +67,7 @@ describe("EVIDENCE-TRUST-1 · SDK contract (D2)", () => {
     const signed: any = asBroadcastable(await sdk.tx.sign(plan, "alice"));
     await sdk.artifacts.write(signed);
     vi.spyOn(sdk.rpc, "submitTransaction").mockResolvedValue({ transactionId: "b".repeat(64) } as any);
-    const sent: any = await sdk.tx.send(signed, "https://op:ET1PASS@node.example:17110/?token=ET1TOKEN&network=testnet-10");
+    const sent: any = await sendAsRpc(sdk, signed, "https://op:ET1PASS@node.example:17110/?token=ET1TOKEN&network=testnet-10");
     const stored = JSON.parse(fs.readFileSync(sent.receiptPath, "utf8"));
     const asStored = (v: unknown) => JSON.parse(JSON.stringify(v, (_k, x) => (typeof x === "bigint" ? x.toString() : x)));
     expect(asStored(sent.submission)).toEqual(stored);

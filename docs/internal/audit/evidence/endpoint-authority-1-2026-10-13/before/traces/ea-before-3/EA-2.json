@@ -1,0 +1,8 @@
+{
+  "A": "ws://127.0.0.1:63990",
+  "submitReceivedByA": true,
+  "receiptRpcUrl": null,
+  "eventRpcUrls": [
+    ""
+  ]
+}

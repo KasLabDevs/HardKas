@@ -261,7 +261,7 @@
       },
       {
         "flags": "--allow-mainnet-signing",
-        "description": "Mainnet signing stays refused in this release; the flag only lets synthetic --threshold entries through",
+        "description": "Mainnet signing stays refused in this release (MAINNET_SIGNING_DISABLED); the flag has no effect",
         "defaultValue": false
       },
       {
@@ -1263,7 +1263,7 @@
       },
       {
         "flags": "--allow-mainnet",
-        "description": "Allow consolidation on mainnet"
+        "description": "No effect: executing on mainnet stays refused in this release (MAINNET_BROADCAST_DISABLED)"
       },
       {
         "flags": "--json",

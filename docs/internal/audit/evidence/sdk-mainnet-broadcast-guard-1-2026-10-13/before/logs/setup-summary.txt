@@ -1,0 +1,6 @@
+﻿2026-10-13T19:21:38Z commit=e141384775498e38ad38b8c2ff80595cd854fab0 expectedTree=cc3d4dbc7957038bbafef444db70a8a5a64cbdbd
+2026-10-13T19:22:47Z baselineTree=cc3d4dbc7957038bbafef444db70a8a5a64cbdbd match=True
+2026-10-13T19:24:15Z pnpm install exit=0 secs=88
+2026-10-13T19:31:37Z build (cli/sdk/tq + deps) exit=0 secs=443
+2026-10-13T19:31:38Z cli --version: 0.12.0-rc.27
+2026-10-13T19:31:38Z SETUP DONE

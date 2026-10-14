@@ -1,6 +1,6 @@
 import { Hardkas } from "./index.js";
 import { WorkflowArtifact, HARDKAS_VERSION, submitOutcomeOf } from "@hardkas/artifacts";
-import { HardkasError, deterministicCompare, rethrowWithLedgerEffect, type LedgerFailureEffect } from "@hardkas/core";
+import { HardkasError, MAINNET_TRANSACTIONS_ENABLED, deterministicCompare, rethrowWithLedgerEffect, type LedgerFailureEffect } from "@hardkas/core";
 import { HardkasSchemas } from "@hardkas/artifacts";
 
 /**
@@ -91,6 +91,9 @@ export class HardkasWorkflow {
       parentArtifacts: [], // In v1, workflows do not accept explicit parent inputs yet
       policySnapshot: {
         allowNetwork: this.sdk.policy.allowNetwork,
+        // SDK-MAINNET-BROADCAST-GUARD-1: a FROZEN identity input. This key has always carried `allowPublic`; it is part of
+        // the intent the workflowId digests, so it stays exactly as it was (changing it would change every workflowId of
+        // a run with allowPublic: true). It is never recorded as a permission — the artifact's `policy` below is.
         allowMainnet: this.sdk.policy.allowPublic,
         allowExternalWallet: this.sdk.policy.allowExternalWallet,
         requireDryRun: this.sdk.policy.requireDryRun
@@ -387,7 +390,9 @@ export class HardkasWorkflow {
       },
       policy: {
         allowNetwork: this.sdk.policy.allowNetwork,
-        allowMainnet: this.sdk.policy.allowPublic,
+        // SDK-MAINNET-BROADCAST-GUARD-1: the permission HardKAS actually grants (mainnet transactions are disabled), never
+        // `allowPublic` — a testnet run with allowPublic: true does not record a mainnet permission.
+        allowMainnet: MAINNET_TRANSACTIONS_ENABLED,
         allowExternalWallet: this.sdk.policy.allowExternalWallet,
         requireDryRun: this.sdk.policy.requireDryRun
       }

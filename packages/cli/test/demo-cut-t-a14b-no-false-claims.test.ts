@@ -5,6 +5,7 @@ import os from "node:os";
 import { Hardkas } from "@hardkas/sdk";
 import { calculateContentHash, CURRENT_HASH_VERSION } from "@hardkas/artifacts";
 import { runCli } from "./first-contact-helpers.js";
+import { sendAsRpc } from "../../sdk/test/helpers/rpc-instance.js";
 
 // Demo-cut step 2 · T-A14b — negative search of the forbidden narratives on the
 // surfaces this block touches, in the code (comments stripped: they name the
@@ -74,7 +75,7 @@ describe("Demo-cut · T-A14b · what the built CLI prints for tx status, tx wait
     vi.spyOn(sdk.rpc, "getBlockDagInfo").mockResolvedValue({ networkId: "simnet", virtualDaaScore: 10n, tipHashes: ["a".repeat(64)], virtualParentHashes: ["a".repeat(64)], sink: "a".repeat(64) } as any);
     vi.spyOn(sdk.rpc, "getSinkBlueScore").mockResolvedValue({ blueScore: "10" } as any);
     vi.spyOn(sdk.rpc, "submitTransaction").mockResolvedValue({ transactionId: TX } as any);
-    const sent: any = await sdk.tx.send(s, "http://127.0.0.1:16110");
+    const sent: any = await sendAsRpc(sdk, s, "http://127.0.0.1:16110");
     vi.restoreAllMocks();
     // Recorded by a simulated-network SDK: re-seal it as what a simnet send records
     // (network, mode, execution) and replace it in the store.

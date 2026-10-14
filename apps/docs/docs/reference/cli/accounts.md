@@ -186,7 +186,7 @@ title: hardkas accounts
 - `--dry-run`: Only estimate batches (default if --execute is not provided)
 - `--execute`: Execute the consolidation (requires --yes to broadcast)
 - `--yes`: Confirm broadcast for execution
-- `--allow-mainnet`: Allow consolidation on mainnet
+- `--allow-mainnet`: No effect: executing on mainnet stays refused in this release (MAINNET_BROADCAST_DISABLED)
 - `--json` (Default: `false`): Output as JSON
 
 ---

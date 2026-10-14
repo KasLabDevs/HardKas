@@ -260,7 +260,11 @@ export class Hardkas {
       this.ownedRpc = rpcOwnership === "owned" ? rpc : undefined;
     } else {
       this.rpc = new JsonWrpcKaspaClient({
-        rpcUrl: this.resolveRpcUrl()
+        rpcUrl: this.resolveRpcUrl(),
+        // NODE-NETWORK-IDENTITY-1: a real Kaspa world uses its node only once the node says it serves that network
+        ...(this.execution.mode !== "simulator" && this.execution.domain === "kaspa-l1"
+          ? { expectedNetworkId: this.activeNetwork }
+          : {})
       });
       this.ownedRpc = this.rpc;
     }

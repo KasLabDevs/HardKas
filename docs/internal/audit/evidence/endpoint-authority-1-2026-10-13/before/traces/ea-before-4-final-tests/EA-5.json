@@ -1,0 +1,13 @@
+{
+  "bMethods": [
+    "getBlockDagInfo",
+    "getServerInfo",
+    "getSinkBlueScore",
+    "getMempoolEntry",
+    "getVirtualChainFromBlock"
+  ],
+  "observationRpcUrl": null,
+  "observerId": "obs_af77448840b326d1492866b9dd775a49280bd4be82b77c964463b8ff299945f4",
+  "observerOfA": "obs_af77448840b326d1492866b9dd775a49280bd4be82b77c964463b8ff299945f4",
+  "observerOfB": "obs_d1669d6bbd2892d7720cd0546c1613c1c28bba536aeccd415c763264e0c39b35"
+}

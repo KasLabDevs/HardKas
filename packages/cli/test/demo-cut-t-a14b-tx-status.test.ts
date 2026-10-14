@@ -7,6 +7,7 @@ import { calculateContentHash, CURRENT_HASH_VERSION, TX_STATUS_POLICY_HARDKAS_DE
 import { finalityDepthFor } from "@hardkas/core";
 import { runTxStatus, renderTxStatusRows, stateHeadline, txStatusJson } from "../src/runners/tx-status-runner.js";
 import { runTxWait } from "../src/runners/tx-wait-runner.js";
+import { sendAsRpc } from "../../sdk/test/helpers/rpc-instance.js";
 
 // Demo-cut step 2 · Wave 2(f) / T-A14b — the CLI surface of the Q4 model.
 //   `tx status <txId>` and `tx wait <txId>` present what `sdk.tx.observe` /
@@ -124,7 +125,7 @@ describe("Demo-cut · T-A14b · tx status / tx wait present the derived Q4 state
     s.signedId = `signed-${s.contentHash.slice(0, 16)}`;
     await sdk.artifacts.write(s);
     vi.spyOn(sdk.rpc, "submitTransaction").mockResolvedValue({ transactionId: TX } as any);
-    const sent: any = await sdk.tx.send(s, "http://127.0.0.1:16110");
+    const sent: any = await sendAsRpc(sdk, s, "http://127.0.0.1:16110");
     expect(sent.submitted).toBe(true);
   }
 

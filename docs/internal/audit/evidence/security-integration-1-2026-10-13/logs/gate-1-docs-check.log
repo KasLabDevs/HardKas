@@ -1,0 +1,8 @@
+
+> hardkas-monorepo@0.12.0-rc.27 docs:check C:\Users\jrodr\hkl1\si\src
+> node scripts/docs-check.mjs
+
+❌ [CONTRIBUTING.md] Broken link: SECURITY.md
+
+docs:check FAILED!
+ ELIFECYCLE  Command failed with exit code 1.

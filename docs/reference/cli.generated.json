@@ -367,7 +367,7 @@
             },
             {
               "flags": "--allow-mainnet",
-              "description": "Allow consolidation on mainnet",
+              "description": "No effect: executing on mainnet stays refused in this release (MAINNET_BROADCAST_DISABLED)",
               "default": null,
               "required": false,
               "mandatory": false
@@ -6200,7 +6200,7 @@
             },
             {
               "flags": "--allow-mainnet-signing",
-              "description": "Mainnet signing stays refused in this release; the flag only lets synthetic --threshold entries through",
+              "description": "Mainnet signing stays refused in this release (MAINNET_SIGNING_DISABLED); the flag has no effect",
               "default": false,
               "required": false,
               "mandatory": false

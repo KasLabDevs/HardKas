@@ -1,0 +1,7 @@
+{
+  "reason": null,
+  "aMethods": [
+    "getServerInfo",
+    "getBlockDagInfo"
+  ]
+}

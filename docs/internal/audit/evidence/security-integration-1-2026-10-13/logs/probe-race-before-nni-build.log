@@ -1,0 +1,11 @@
+round 0: M received {"getServerInfo":166}
+round 1: M received {"getServerInfo":177}
+round 2: M received {"getServerInfo":194}
+round 3: M received {"getServerInfo":192}
+round 4: M received {"getServerInfo":193}
+round 5: M received {"getServerInfo":194}
+round 6: M received {"getServerInfo":198}
+round 7: M received {"getServerInfo":196}
+round 8: M received {"getServerInfo":191}
+round 9: M received {"getServerInfo":198}
+{"rounds":10,"violations":0,"requests":3902,"outcomes":{"ok":80,"RpcError: RPC Server (remote error) -> WebSocket disconnected":20,"NODE_NETWORK_MISMATCH":3802}}

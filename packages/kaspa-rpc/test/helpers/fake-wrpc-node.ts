@@ -13,7 +13,11 @@ export interface FakeWrpcNode {
   close(): Promise<void>;
 }
 
-export async function startFakeWrpcNode(): Promise<FakeWrpcNode> {
+/**
+ * @param options.networkId NODE-NETWORK-IDENTITY-1: when given, getServerInfo is answered with that network (every
+ * other request is still refused), so a client that verifies the node's network keeps its connection.
+ */
+export async function startFakeWrpcNode(options: { networkId?: string } = {}): Promise<FakeWrpcNode> {
   const server = new WebSocketServer({ host: "127.0.0.1", port: 0 });
   await new Promise<void>((resolve) => server.on("listening", () => resolve()));
   let opened = 0;
@@ -25,7 +29,13 @@ export async function startFakeWrpcNode(): Promise<FakeWrpcNode> {
       // never match the answer).
       const id = /"id"\s*:\s*(\d+)/.exec(text)?.[1];
       const method = /"method"\s*:\s*"([^"]+)"/.exec(text)?.[1] ?? "?";
-      if (id) socket.send(`{"id":${id},"error":{"code":1,"message":"fake node refuses ${method}"}}`);
+      if (!id) return;
+      if (method === "getServerInfo" && options.networkId !== undefined) {
+        const info = { rpcApiVersion: 1, rpcApiRevision: 0, serverVersion: "2.1.0", networkId: options.networkId, hasUtxoIndex: true, isSynced: true, virtualDaaScore: 1 };
+        socket.send(`{"id":${id},"method":"getServerInfo","params":${JSON.stringify(info)}}`);
+        return;
+      }
+      socket.send(`{"id":${id},"error":{"code":1,"message":"fake node refuses ${method}"}}`);
     });
   });
   const { port } = server.address() as AddressInfo;

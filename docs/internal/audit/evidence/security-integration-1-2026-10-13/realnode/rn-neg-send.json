@@ -1,0 +1,18 @@
+{
+  "tag": "rn-neg-send",
+  "cwd": "C:\\Users\\jrodr\\hkl1\\si\\realnode-neg",
+  "argv": [
+    "tx",
+    "send",
+    "C:\\Users\\jrodr\\hkl1\\e1\\ws\\.hardkas\\artifacts\\signed\\signedTx-946c3ac42880edce84a8b11cf7a96bb6e77fd5a9ece49f77e1da74e391fc8956.json",
+    "--url",
+    "ws://127.0.0.1:28210",
+    "--yes",
+    "--json"
+  ],
+  "exit": 1,
+  "timedOut": false,
+  "ms": 1398,
+  "stdout": "{\n  \"ok\": false,\n  \"code\": \"UNKNOWN_ERROR\",\n  \"message\": \"parent_plan_unresolved: Missing context plan for simulation.\",\n  \"mode\": \"cli\"\n}\n",
+  "stderr": ""
+}

@@ -10,6 +10,7 @@ import { finalizeArtifact, deepFreeze, writeArtifact } from "@hardkas/artifacts"
 import path from "node:path";
 import fs from "node:fs";
 import os from "node:os";
+import { sendAsRpc } from "./helpers/rpc-instance.js";
 
 // Mock Kaspa WASM dependency
 vi.mock("kaspa", () => {
@@ -166,7 +167,8 @@ describe("Core Hardening Sprint Regressions", () => {
     // Real-broadcast branch (explicit RPC URL): the pre-broadcast semantic check is what
     // fails closed here. In the simulator branch the Wave 1.4 binding check (IC-6′.5,
     // LEGACY_UNBOUND_SIGNED) refuses such an artifact even earlier.
-    await expect(sdk.tx.send(invalidSigned as any, "http://127.0.0.1:16110")).rejects.toThrow(
+    // (an RPC instance of its own: the simulator branch is asserted on `sdk` below)
+    await expect(sendAsRpc(await Hardkas.open({ cwd: tmpDir }), invalidSigned as any, "http://127.0.0.1:16110")).rejects.toThrow(
       /Pre-broadcast semantic verification failed/
     );
     await expect(sdk.tx.send(invalidSigned as any)).rejects.toMatchObject({ code: "LEGACY_UNBOUND_SIGNED" });

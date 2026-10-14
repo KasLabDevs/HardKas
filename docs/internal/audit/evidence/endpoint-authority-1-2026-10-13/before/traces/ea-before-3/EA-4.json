@@ -1,0 +1,21 @@
+{
+  "A": "ws://127.0.0.1:63996",
+  "B": "ws://127.0.0.1:63997",
+  "aMethods": [
+    "getFeeEstimate",
+    "getInfo",
+    "getServerInfo",
+    "getBlockDagInfo",
+    "getBlockDagInfo",
+    "getUtxosByAddresses",
+    "getMempoolEntriesByAddresses",
+    "getBlockDagInfo",
+    "getBlockDagInfo",
+    "getServerInfo",
+    "getSinkBlueScore",
+    "getMempoolEntry",
+    "getVirtualChainFromBlock"
+  ],
+  "bMethods": [],
+  "observationRpcUrl": "ws://127.0.0.1:63997"
+}

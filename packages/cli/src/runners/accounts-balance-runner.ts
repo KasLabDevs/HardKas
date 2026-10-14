@@ -107,7 +107,8 @@ export async function runAccountsBalance(
       }).rpcUrl;
     }
 
-    const client = new JsonWrpcKaspaClient({ rpcUrl });
+    // NODE-NETWORK-IDENTITY-1: a balance is read only from a node that says it serves the queried network
+    const client = new JsonWrpcKaspaClient({ rpcUrl, expectedNetworkId: network });
 
     try {
       const balance = await client.getBalanceByAddress(address);

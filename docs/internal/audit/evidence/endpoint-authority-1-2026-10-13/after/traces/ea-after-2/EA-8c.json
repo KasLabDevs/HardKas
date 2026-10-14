@@ -1,0 +1,10 @@
+{
+  "authorityEndpoint": {
+    "class": "wrpc",
+    "address": "ws://127.0.0.1:63978"
+  },
+  "aMethods": [
+    "getServerInfo",
+    "getBlockDagInfo"
+  ]
+}

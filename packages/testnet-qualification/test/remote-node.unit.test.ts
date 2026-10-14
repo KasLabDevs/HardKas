@@ -32,6 +32,8 @@ function fakeRpc(overrides: Partial<{
     ...overrides.dagInfo
   };
   const rpc: any = {
+    // ENDPOINT-AUTHORITY-1: the fake says where its calls go — the endpoint the probes below declare (ENDPOINT)
+    endpoint: "ws://127.0.0.1:17110",
     getServerInfo: overrides.serverInfoImpl ?? vi.fn(async () => defaultServerInfo),
     getBlockDagInfo: overrides.dagInfoImpl ?? vi.fn(async () => defaultDagInfo)
   };

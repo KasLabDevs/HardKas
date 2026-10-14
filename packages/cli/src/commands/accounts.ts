@@ -372,7 +372,7 @@ export function registerAccountsCommands(program: Command) {
     .option("--dry-run", "Only estimate batches (default if --execute is not provided)")
     .option("--execute", "Execute the consolidation (requires --yes to broadcast)")
     .option("--yes", "Confirm broadcast for execution")
-    .option("--allow-mainnet", "Allow consolidation on mainnet")
+    .option("--allow-mainnet", "No effect: executing on mainnet stays refused in this release (MAINNET_BROADCAST_DISABLED)")
     .option("--json", "Output as JSON", false)
     .action(async (account: string, options: any) => {
       try {

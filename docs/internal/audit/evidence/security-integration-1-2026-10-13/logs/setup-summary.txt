@@ -1,0 +1,17 @@
+2026-10-13T20:56:39Z pnpm install exit=0 secs=66
+2026-10-13T21:04:10Z build-1 (cli/sdk/toolkit/tq + deps) exit=0 secs=451
+2026-10-13T21:04:10Z restored packages/pskt-native/hardkas-pskt-native.win32-x64-msvc.node
+2026-10-13T21:04:11Z cli --version: 0.12.0-rc.27
+2026-10-13T21:04:11Z build-1 DONE
+2026-10-13T21:10:44Z build-2 (cli/sdk/toolkit/tq + deps) exit=0 secs=106
+2026-10-13T21:10:44Z restored packages/pskt-native/hardkas-pskt-native.win32-x64-msvc.node
+2026-10-13T21:10:45Z cli --version: 0.12.0-rc.27
+2026-10-13T21:10:45Z build-2 DONE
+2026-10-13T21:15:09Z build-3 (cli/sdk/toolkit/tq + deps) exit=0 secs=105
+2026-10-13T21:15:10Z restored packages/pskt-native/hardkas-pskt-native.win32-x64-msvc.node
+2026-10-13T21:15:11Z cli --version: 0.12.0-rc.27
+2026-10-13T21:15:11Z build-3 DONE
+2026-10-13T21:45:40Z build-4 (cli/sdk/toolkit/tq + deps) exit=0 secs=105
+2026-10-13T21:45:40Z restored packages/pskt-native/hardkas-pskt-native.win32-x64-msvc.node
+2026-10-13T21:45:41Z cli --version: 0.12.0-rc.27
+2026-10-13T21:45:41Z build-4 DONE

@@ -1,0 +1,14 @@
+{
+  "refusal": {
+    "code": "SEND_ENDPOINT_MISMATCH",
+    "message": "Cannot send to ws://127.0.0.1:52380: this instance's RPC client talks to ws://127.0.0.1:52379, and HardKAS never records one endpoint for a request another one received. Open the instance on that endpoint. Nothing was sent or recorded."
+  },
+  "aAfterOpen": [],
+  "bMethods": [],
+  "submitTransaction": {
+    "A": 0,
+    "B": 0
+  },
+  "submissionRecords": [],
+  "submissionEvents": []
+}

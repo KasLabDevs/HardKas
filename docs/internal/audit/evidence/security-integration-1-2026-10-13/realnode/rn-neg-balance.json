@@ -1,0 +1,17 @@
+{
+  "tag": "rn-neg-balance",
+  "cwd": "C:\\Users\\jrodr\\hkl1\\si\\realnode-neg",
+  "argv": [
+    "accounts",
+    "balance",
+    "alice",
+    "--network",
+    "testnet-10",
+    "--json"
+  ],
+  "exit": 1,
+  "timedOut": false,
+  "ms": 1486,
+  "stdout": "{\n  \"ok\": false,\n  \"code\": \"NODE_NETWORK_MISMATCH\",\n  \"message\": \"The node at ws://127.0.0.1:28210 serves simnet, not testnet-10: HardKAS refuses to read from it or send to it as testnet-10.\",\n  \"mode\": \"cli\"\n}\n",
+  "stderr": ""
+}

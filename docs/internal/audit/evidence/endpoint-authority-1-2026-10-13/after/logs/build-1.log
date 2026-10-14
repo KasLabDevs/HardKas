@@ -1,0 +1,60 @@
+• turbo 2.10.8
+
+   • Packages in scope: @hardkas/accounts, @hardkas/artifacts, @hardkas/bridge-local, @hardkas/cli, @hardkas/config, @hardkas/core, @hardkas/dev-server, @hardkas/escrow, @hardkas/jobs, @hardkas/kaspa-rpc, @hardkas/l2, @hardkas/localnet, @hardkas/node-orchestrator, @hardkas/node-runner, @hardkas/observability, @hardkas/pskt-native, @hardkas/query, @hardkas/query-store, @hardkas/sdk, @hardkas/sessions, @hardkas/simulator, @hardkas/testing, @hardkas/testnet-qualification, @hardkas/toolkit, @hardkas/tx-builder
+   • Running build in 25 packages
+   • Remote caching disabled
+
+@hardkas/observability:build: cache miss, executing 6896658c6b9db754
+@hardkas/observability:build: 
+@hardkas/observability:build: > @hardkas/observability@0.12.0-rc.27 build C:\Users\jrodr\hkl1\ea\src\packages\observability
+@hardkas/observability:build: > tsup src/index.ts --format esm --dts --clean
+@hardkas/observability:build: 
+@hardkas/observability:build: CLI Building entry: src/index.ts
+@hardkas/observability:build: CLI Using tsconfig: tsconfig.json
+@hardkas/observability:build: CLI tsup v8.5.1
+@hardkas/observability:build: CLI Using tsup config: C:\Users\jrodr\hkl1\ea\src\packages\observability\tsup.config.ts
+@hardkas/observability:build: CLI Target: es2022
+@hardkas/observability:build: CLI Cleaning output folder
+@hardkas/observability:build: ESM Build start
+@hardkas/observability:build: ESM dist\index.js 5.94 KB
+@hardkas/observability:build: ESM ⚡️ Build success in 14ms
+@hardkas/observability:build: DTS Build start
+@hardkas/observability:build: DTS ⚡️ Build success in 1126ms
+@hardkas/observability:build: DTS dist\index.d.ts 2.84 KB
+@hardkas/testnet-qualification:build: cache miss, executing ff75a5a04f85b60e
+@hardkas/testnet-qualification:build: 
+@hardkas/testnet-qualification:build: > @hardkas/testnet-qualification@0.12.0-rc.27 build C:\Users\jrodr\hkl1\ea\src\packages\testnet-qualification
+@hardkas/testnet-qualification:build: > tsup src/index.ts --format esm --dts --clean
+@hardkas/testnet-qualification:build: 
+@hardkas/testnet-qualification:build: CLI Building entry: src/index.ts
+@hardkas/testnet-qualification:build: CLI Using tsconfig: tsconfig.json
+@hardkas/testnet-qualification:build: CLI tsup v8.5.1
+@hardkas/testnet-qualification:build: CLI Target: es2022
+@hardkas/testnet-qualification:build: CLI Cleaning output folder
+@hardkas/testnet-qualification:build: ESM Build start
+@hardkas/testnet-qualification:build: ESM dist\index.js 50.09 KB
+@hardkas/testnet-qualification:build: ESM ⚡️ Build success in 49ms
+@hardkas/testnet-qualification:build: DTS Build start
+@hardkas/testnet-qualification:build: src/remote-node.ts(96,12): error TS2416: Property 'reason' in type 'RemoteTestnetProbeFailedError' is not assignable to the same property in base type 'RemoteTestnetProbeFailedErrorMarker'.
+@hardkas/testnet-qualification:build:   Type 'ProbeFailureReason' is not assignable to type '"NETWORK_MISMATCH" | "UNSYNCED" | "MISSING_CAPABILITY" | "RPC_ERROR"'.
+@hardkas/testnet-qualification:build:     Type '"ENDPOINT_MISMATCH"' is not assignable to type '"NETWORK_MISMATCH" | "UNSYNCED" | "MISSING_CAPABILITY" | "RPC_ERROR"'.
+@hardkas/testnet-qualification:build: 
+@hardkas/testnet-qualification:build: Error: error occurred in dts build
+@hardkas/testnet-qualification:build:     at Worker.<anonymous> (C:\Users\jrodr\hkl1\ea\src\node_modules\.pnpm\tsup@8.5.1_jiti@2.7.0_postcss@8.5.25_tsx@4.23.7_typescript@5.9.3_yaml@2.9.0\node_modules\tsup\dist\index.js:1545:26)
+@hardkas/testnet-qualification:build:     at Worker.emit (node:events:509:28)
+@hardkas/testnet-qualification:build:     at MessagePort.<anonymous> (node:internal/worker:332:53)
+@hardkas/testnet-qualification:build:     at [nodejs.internal.kHybridDispatch] (node:internal/event_target:843:20)
+@hardkas/testnet-qualification:build:     at MessagePort.<anonymous> (node:internal/per_context/messageport:23:28)
+@hardkas/testnet-qualification:build: DTS Build error
+@hardkas/testnet-qualification:build:  ELIFECYCLE  Command failed with exit code 1.
+@hardkas/core:build: cache miss, executing b8387dc9df817b7c
+@hardkas/pskt-native:build: cache miss, executing c33f1e1cff63df26
+@hardkas/jobs:build: cache miss, executing b112385ad2428a4c
+@hardkas/testnet-qualification#build:  ERROR  command (C:\Users\jrodr\hkl1\ea\src\packages\testnet-qualification) C:\Users\jrodr\AppData\Local\pnpm\store\v11\links\@\pnpm\9.15.4\e6a2d0dd119b7b1581d6bc6a677e4b12487c65f8fd1e7f9b26d6a481dbb2e654\bin\pnpm.CMD run build exited (1)
+
+ Tasks:    1 successful, 5 total
+Cached:    0 cached, 5 total
+  Time:    6.33s 
+Failed:    @hardkas/testnet-qualification#build
+
+ ERROR  run failed: command  exited (1)

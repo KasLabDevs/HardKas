@@ -1,0 +1,12 @@
+{
+  "refusal": {
+    "code": "SEND_ENDPOINT_MISMATCH"
+  },
+  "bMethods": [],
+  "submitTransaction": {
+    "A": 0,
+    "B": 0
+  },
+  "submissionRecords": [],
+  "submissionEvents": []
+}

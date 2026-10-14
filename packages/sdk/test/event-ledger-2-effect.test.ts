@@ -5,6 +5,7 @@ import path from "node:path";
 import { Hardkas } from "../src/index.js";
 import { coreEvents, EventLedgerAppendError } from "@hardkas/core";
 import { calculateContentHash, CURRENT_HASH_VERSION, storeEntryFor } from "@hardkas/artifacts";
+import { asRpcInstance } from "./helpers/rpc-instance.js";
 
 vi.setConfig({ testTimeout: 120_000 });
 
@@ -27,8 +28,10 @@ vi.setConfig({ testTimeout: 120_000 });
 const LOOPBACK = "http://127.0.0.1:16110";
 const NODE_TX = "b".repeat(64);
 
-function asBroadcastable(signed: any): any {
+// ENDPOINT-AUTHORITY-1 (EA-I3): the re-issued artifact is for the network the instance sends on
+function asBroadcastable(signed: any, network?: string): any {
   const s: any = structuredClone(signed);
+  if (network) s.networkId = network;
   delete s.authorization;
   s.signedTransaction = { format: "hex", payload: "deadbeef" };
   s.txId = "f".repeat(64);
@@ -88,9 +91,11 @@ describe("EVENT-LEDGER-2 final closeout · A1 a ledger failure names the effect 
 
   async function realBroadcast(submit: () => Promise<any>) {
     const sdk = await Hardkas.create({ cwd: ws, autoBootstrap: true, network: "simulated" });
+    // ENDPOINT-AUTHORITY-1 (EA-I3): planned and signed for the network the send runs on
+    Object.defineProperty(sdk, "network", { get: () => "simnet", configurable: true });
     const plan = await sdk.tx.plan({ from: "alice", to: "bob", amount: "1" } as any);
     const signed = asBroadcastable(await sdk.tx.sign(plan as any, "alice"));
-    Object.defineProperty(sdk, "network", { get: () => "simnet", configurable: true });
+    asRpcInstance(sdk, LOOPBACK, "simnet");
     vi.spyOn(sdk.rpc, "submitTransaction").mockImplementation(submit as any);
     return { sdk, signed };
   }

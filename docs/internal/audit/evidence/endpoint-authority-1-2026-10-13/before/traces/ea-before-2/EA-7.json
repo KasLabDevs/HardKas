@@ -1,0 +1,6 @@
+{
+  "exit": 0,
+  "A": "ws://127.0.0.1:63979",
+  "submitReceivedByA": true,
+  "receiptRpcUrl": "ws://127.0.0.1:63979"
+}

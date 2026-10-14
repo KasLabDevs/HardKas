@@ -260,6 +260,9 @@ try {
   authority = await probeRemoteTestnet({
     endpoint: { class: endpointClass, address: endpointAddress },
     rpc: {
+      // ENDPOINT-AUTHORITY-1: the endpoint the SDK's client really talks to; the probe fails closed if it is not the
+      // declared HARDKAS_TQ_ENDPOINT (the rest of this script is TQ1-SCRIPT-BROKEN-1's)
+      ...(typeof rpc.url === "string" ? { endpoint: rpc.url } : {}),
       async getServerInfo() { return await rpc.getServerInfo(); },
       async getBlockDagInfo() { return await rpc.getBlockDagInfo(); },
       ...(typeof rpc.getNetworkParams === "function" ? { getNetworkParams: (n) => rpc.getNetworkParams(n) } : {}),

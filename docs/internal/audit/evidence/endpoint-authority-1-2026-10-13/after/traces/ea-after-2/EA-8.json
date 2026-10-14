@@ -1,0 +1,6 @@
+{
+  "reason": "ENDPOINT_MISMATCH",
+  "message": "The declared endpoint ws://127.0.0.1:63976 is not the endpoint the probe client talks to (ws://127.0.0.1:63975).",
+  "aMethods": [],
+  "bMethods": []
+}

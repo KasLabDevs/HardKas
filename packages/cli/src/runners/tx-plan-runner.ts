@@ -226,7 +226,8 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
       }
       if (!rpcUrl) throw new Error("Could not resolve RPC URL");
 
-      const client = new JsonWrpcKaspaClient({ rpcUrl });
+      // NODE-NETWORK-IDENTITY-1: the node's UTXOs are planned on only if the node says it serves the planned network
+      const client = new JsonWrpcKaspaClient({ rpcUrl, expectedNetworkId: resolvedNetwork });
       release = () => client.close();
       const MAX_PLAN_RETRIES = 3;
       let planSuccess = false;
@@ -379,6 +380,9 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
     } catch (e: unknown) {
       if (e instanceof SelectedUtxoInvalidatedError) throw e;
       if (e instanceof UpstreamPlannerError) throw e;
+      // NODE-NETWORK-IDENTITY-1: the wrong (or an unidentified) node is its own typed refusal, not a connection error
+      const { isNodeNetworkIdentityError } = await import("@hardkas/kaspa-rpc");
+      if (isNodeNetworkIdentityError(e)) throw e;
       if (e instanceof PendingSpendEvidenceUnavailableError || e instanceof PendingSpendAllExcludedError) throw e;
       if (e instanceof Error && (e.message.includes("No UTXOs found") || e.message.includes("Insufficient funds"))) throw e;
 

@@ -1,0 +1,87 @@
+
+ RUN  v2.1.9 C:/Users/jrodr/hkl1/si/src
+
+ ✓ packages/kaspa-rpc/test/security-integration-1.test.ts > SECURITY-INTEGRATION-1 · a connection the official client resumed by itself is verified again > resumed on a node that declares mainnet: NODE_NETWORK_MISMATCH before the request reaches it; the client is released
+ ✓ packages/kaspa-rpc/test/security-integration-1.test.ts > SECURITY-INTEGRATION-1 · a connection the official client resumed by itself is verified again > resumed on a node of the same network: verified once, then used normally
+ ✓ packages/kaspa-rpc/test/security-integration-1.test.ts > SECURITY-INTEGRATION-1 · a connection the official client resumed by itself is verified again > concurrent requests after a resume share one verification
+ ✓ packages/kaspa-rpc/test/security-integration-1.test.ts > SECURITY-INTEGRATION-1 · a connection the official client resumed by itself is verified again > without an expected network a resume changes nothing (no identity call)
+ × packages/kaspa-rpc/test/security-integration-1.test.ts > SECURITY-INTEGRATION-1 · the session's messages never carry endpoint credentials > an identity refusal names the endpoint without userinfo and with secret query parameters redacted
+   → expected [ 'si-tok-SECRET' ] to deeply equal []
+ × packages/kaspa-rpc/test/security-integration-1.test.ts > SECURITY-INTEGRATION-1 · the session's messages never carry endpoint credentials > a connection failure (the official client repeats the URL in its own text) carries no credential
+   → expected [ 'si-pw-SECRET', 'si-tok-SECRET' ] to deeply equal []
+ × packages/kaspa-rpc/test/security-integration-1.test.ts > SECURITY-INTEGRATION-1 · the session's messages never carry endpoint credentials > a connection lost under a request carries no credential
+   → expected [ 'si-pw-SECRET', 'si-tok-SECRET' ] to deeply equal []
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  packages/kaspa-rpc/test/security-integration-1.test.ts > SECURITY-INTEGRATION-1 · the session's messages never carry endpoint credentials > an identity refusal names the endpoint without userinfo and with secret query parameters redacted
+AssertionError: expected [ 'si-tok-SECRET' ] to deeply equal []
+
+- Expected
++ Received
+
+- Array []
++ Array [
++   "si-tok-SECRET",
++ ]
+
+ ❯ packages/kaspa-rpc/test/security-integration-1.test.ts:95:23
+     93|     const e = await failure(session(fake, "testnet-10", SECRET_URL).re…
+     94|     expect(e.code).toBe("NODE_NETWORK_MISMATCH");
+     95|     expect(leaked(e)).toEqual([]);
+       |                       ^
+     96|     expect(String(e.message)).toContain("node.example:443/?token=REDAC…
+     97|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  packages/kaspa-rpc/test/security-integration-1.test.ts > SECURITY-INTEGRATION-1 · the session's messages never carry endpoint credentials > a connection failure (the official client repeats the URL in its own text) carries no credential
+AssertionError: expected [ 'si-pw-SECRET', 'si-tok-SECRET' ] to deeply equal []
+
+- Expected
++ Received
+
+- Array []
++ Array [
++   "si-pw-SECRET",
++   "si-tok-SECRET",
++ ]
+
+ ❯ packages/kaspa-rpc/test/security-integration-1.test.ts:103:23
+    101|     const e = await failure(session(fake, "testnet-10", SECRET_URL).re…
+    102|     expect(String(e.message)).toMatch(/Cannot connect to Kaspa RPC/);
+    103|     expect(leaked(e)).toEqual([]);
+       |                       ^
+    104|   });
+    105| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  packages/kaspa-rpc/test/security-integration-1.test.ts > SECURITY-INTEGRATION-1 · the session's messages never carry endpoint credentials > a connection lost under a request carries no credential
+AssertionError: expected [ 'si-pw-SECRET', 'si-tok-SECRET' ] to deeply equal []
+
+- Expected
++ Received
+
+- Array []
++ Array [
++   "si-pw-SECRET",
++   "si-tok-SECRET",
++ ]
+
+ ❯ packages/kaspa-rpc/test/security-integration-1.test.ts:115:23
+    113|     const e = await failure(session(fake, "testnet-10", SECRET_URL).re…
+    114|     expect(String(e.message)).toMatch(/was lost/);
+    115|     expect(leaked(e)).toEqual([]);
+       |                       ^
+    116|   });
+    117| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 4 passed (7)
+   Start at  23:12:57
+   Duration  901ms (transform 339ms, setup 0ms, collect 539ms, tests 17ms, environment 0ms, prepare 115ms)
+
+JSON report written to C:/Users/jrodr/AppData/Local/Temp/claude/C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo/ecaf7e92-a2ba-49b0-aafc-c62b4cb5eda0/scratchpad/l1-reality-1/si/logs/si-redact-before-1.json

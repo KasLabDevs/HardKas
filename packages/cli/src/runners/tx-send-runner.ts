@@ -129,9 +129,11 @@ export async function runTxSend(input: TxSendRunnerInput): Promise<TxSendRunnerR
     // Override the SDK RPC client for real mode since default simnet creates a simulated provider
     const { JsonWrpcKaspaClient, KaspaWrpcClient } = await import("@hardkas/kaspa-rpc");
     const isWebSocket = rpcUrl.startsWith("ws://") || rpcUrl.startsWith("wss://");
+    // NODE-NETWORK-IDENTITY-1: a signed transaction is sent only to a node that says it serves the transaction's network
+    const expectedNetworkId = String(signedArtifact.networkId ?? resolvedName);
     const rpcClient = isWebSocket
-      ? new KaspaWrpcClient(rpcUrl)
-      : new JsonWrpcKaspaClient({ rpcUrl: rpcUrl });
+      ? new KaspaWrpcClient(rpcUrl, { expectedNetworkId })
+      : new JsonWrpcKaspaClient({ rpcUrl: rpcUrl, expectedNetworkId });
     if (isWebSocket) {
       await (rpcClient as InstanceType<typeof KaspaWrpcClient>).connect();
     }

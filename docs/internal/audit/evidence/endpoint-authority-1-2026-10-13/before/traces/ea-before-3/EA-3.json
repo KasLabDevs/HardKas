@@ -1,0 +1,11 @@
+{
+  "B": "ws://127.0.0.1:63994",
+  "bMethods": [],
+  "outcome": {
+    "value": {
+      "rpcUrl": "ws://127.0.0.1:63994",
+      "schema": "hardkas.txSubmission.v1",
+      "accepted": false
+    }
+  }
+}

@@ -5,6 +5,7 @@ import os from "node:os";
 import { Hardkas } from "../../src/index.js";
 import * as artifacts from "@hardkas/artifacts";
 import { calculateContentHash, CURRENT_HASH_VERSION, verifyArtifactIntegritySync, resolveArtifact } from "@hardkas/artifacts";
+import { sendAsRpc } from "../helpers/rpc-instance.js";
 
 // Wave 1.3 · producers under IC-1′…IC-7
 //   N6 / IC-7.3–5  the workflow producer writes a version-5 artifact with no
@@ -104,7 +105,7 @@ describe("Wave 1.3 · SDK producers", () => {
     const nodeTxId = "b".repeat(64);
     const submit = vi.spyOn(sdk.rpc, "submitTransaction").mockResolvedValue({ transactionId: nodeTxId } as any);
 
-    const sent: any = await sdk.tx.send(signed, "http://127.0.0.1:16110/?token=secret");
+    const sent: any = await sendAsRpc(sdk, signed, "http://127.0.0.1:16110/?token=secret");
     expect(submit).toHaveBeenCalledTimes(1);
     expect(sent.mode).toBe("real");
     expect(sent.submitted).toBe(true);
@@ -153,7 +154,7 @@ describe("Wave 1.3 · SDK producers", () => {
     await sdk.artifacts.write(signed);
     vi.spyOn(sdk.rpc, "submitTransaction").mockRejectedValue(new Error("Rejected transaction: orphan"));
 
-    const sent: any = await sdk.tx.send(signed, "http://127.0.0.1:16110");
+    const sent: any = await sendAsRpc(sdk, signed, "http://127.0.0.1:16110");
     expect(sent.submitted).toBe(false);
     expect(sent.submission.submitResult.accepted).toBe(false);
     expect(sent.submission.submitResult.error).toContain("orphan");
@@ -169,7 +170,7 @@ describe("Wave 1.3 · SDK producers", () => {
     await sdk.artifacts.write(signed);
     const nodeTxId = "c".repeat(64);
     vi.spyOn(sdk.rpc, "submitTransaction").mockResolvedValue({ transactionId: nodeTxId } as any);
-    const first: any = await sdk.tx.send(signed, "http://127.0.0.1:16110");
+    const first: any = await sendAsRpc(sdk, signed, "http://127.0.0.1:16110");
     // A second submission of a different signed artifact that the node answered with the same txId.
     const other: any = structuredClone(first.submission);
     other.signedArtifactId = "d".repeat(64);

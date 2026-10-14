@@ -45,6 +45,8 @@ export interface RpcClientOptions {
   circuitBreaker?: Partial<CircuitBreakerOptions>;
   /** Builds the official client for a URL; defaults to the pinned kaspa-wasm `RpcClient` (tests pass a stand-in). */
   rpcFactory?: OfficialRpcFactory;
+  /** NODE-NETWORK-IDENTITY-1: see JsonWrpcKaspaClientOptions.expectedNetworkId. */
+  expectedNetworkId?: string | undefined;
 }
 
 /**
@@ -84,7 +86,7 @@ export class KaspaJsonRpcClient implements KaspaRpcClient {
       failureThreshold: options.circuitBreaker?.failureThreshold ?? 5,
       resetTimeoutMs: options.circuitBreaker?.resetTimeoutMs ?? 15000,
     };
-    this.session = new OfficialRpcSession(this.url, this.timeoutMs, options.rpcFactory);
+    this.session = new OfficialRpcSession(this.url, this.timeoutMs, options.rpcFactory, options.expectedNetworkId);
   }
 
   async call<TResponse = unknown>(method: string, params?: any): Promise<TResponse> {
