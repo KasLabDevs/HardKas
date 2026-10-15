@@ -1,8 +1,0 @@
-{
-  "refusal": {
-    "code": "SEND_ENDPOINT_ON_SIMULATOR",
-    "message": "Cannot send to ws://127.0.0.1:63953: this instance runs the simulator (network simulated), which has no RPC endpoint. Open an instance on that endpoint's network to broadcast. Nothing was sent or recorded."
-  },
-  "bMethods": [],
-  "submissions": []
-}

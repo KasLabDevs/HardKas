@@ -45,7 +45,14 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 
 export const RAW_RECEIPT_SCHEMA = "hardkas.testnet-qualification.receipt";
-export const RAW_RECEIPT_SCHEMA_VERSION = 1 as const;
+/**
+ * v2 (TQ1-SCRIPT-BROKEN-1, D7, 2026-10-15): `evidence.submissionAttempts`, the explicit record of the one
+ * `submitTransaction` call (`ReceiptSubmissionAttempt`). In v1 a call the guard re-threw left no record at all, so the
+ * absence of a submission in a v1 receipt does NOT mean "not attempted" — v1 receipts are not read by this build
+ * (no v1 receipt was ever produced by `scripts/testnet-qualification.mjs`, which failed before its runner since it was
+ * written; the package is private).
+ */
+export const RAW_RECEIPT_SCHEMA_VERSION = 2 as const;
 
 export type QualificationOutcome = "PASS" | "FAIL" | "UNRESOLVED";
 
@@ -120,6 +127,26 @@ export interface ReceiptSubmissionOutcome {
   readonly resolvedAt: string;
 }
 
+/**
+ * TQ1-SCRIPT-BROKEN-1 (D7): what happened to the ONE `submitTransaction` call, recorded separately from the guard's
+ * state so that an unknown outcome is never written as a rejection (or as nothing):
+ * - `not_attempted` / attempts 0: never invoked (the run stopped at `stage` first, or the client refused pre-send);
+ * - `accepted` / `rejected` / `outcome_unknown`, attempts 1: invoked. `accepted` and `rejected` only when the node's
+ *   ANSWER said so (explicit acceptance; explicit, classifiable rejection). Any ambiguous answer is `outcome_unknown`
+ *   and stays so even when the independent status query that follows finds the tx — that observation is recorded in
+ *   `submissions[].state/resolvedVia` and the acceptance/inclusion slots, never folded back into this record. Never a
+ *   resubmission.
+ * `reason` is a machine code (the stopping error's code or the guard's `resolvedVia`), never a message.
+ */
+export interface ReceiptSubmissionAttempt {
+  readonly outcome: "not_attempted" | "accepted" | "rejected" | "outcome_unknown";
+  readonly attempts: 0 | 1;
+  readonly stage: "plan-and-sign" | "submit";
+  readonly txid?: string;
+  readonly reason?: string;
+  readonly recordedAt: string;
+}
+
 export interface ReceiptAcceptanceEvidence {
   readonly txid: string;
   readonly acceptedAt: string;
@@ -145,6 +172,8 @@ export interface QualificationEvidence {
   readonly remoteAuthority?: ReceiptRemoteAuthority;
   readonly funding?: readonly ReceiptSourceUtxoEvidence[];
   readonly submissions?: readonly ReceiptSubmissionOutcome[];
+  /** v2: present whenever a scenario ran — one record per scenario's submission (see ReceiptSubmissionAttempt). */
+  readonly submissionAttempts?: readonly ReceiptSubmissionAttempt[];
   readonly acceptances?: readonly ReceiptAcceptanceEvidence[];
   readonly inclusions?: readonly ReceiptInclusionEvidence[];
   readonly confirmations?: readonly ReceiptConfirmationEvidence[];
@@ -276,6 +305,20 @@ function assertValidReceiptShape(r: unknown): asserts r is TestnetQualificationR
   }
   if (!["PASS", "FAIL", "UNRESOLVED"].includes(String(anyR.outcome))) {
     throw new ReceiptPersistenceError("SCHEMA_INVALID", `Receipt outcome must be one of PASS|FAIL|UNRESOLVED, got '${String(anyR.outcome)}'`);
+  }
+  // v2 (D7): an attempt record is consistent — attempts 0 exactly when not_attempted
+  const attempts = (anyR.evidence as { submissionAttempts?: unknown } | undefined)?.submissionAttempts;
+  if (attempts !== undefined) {
+    if (!Array.isArray(attempts)) throw new ReceiptPersistenceError("SCHEMA_INVALID", "evidence.submissionAttempts must be an array");
+    for (const a of attempts as Array<Record<string, unknown>>) {
+      const outcome = String(a?.outcome);
+      if (!["not_attempted", "accepted", "rejected", "outcome_unknown"].includes(outcome)) {
+        throw new ReceiptPersistenceError("SCHEMA_INVALID", `submission attempt outcome must be not_attempted|accepted|rejected|outcome_unknown, got '${outcome}'`);
+      }
+      if (a.attempts !== (outcome === "not_attempted" ? 0 : 1)) {
+        throw new ReceiptPersistenceError("SCHEMA_INVALID", `submission attempt '${outcome}' must record attempts ${outcome === "not_attempted" ? 0 : 1}, got ${String(a.attempts)}`);
+      }
+    }
   }
 }
 

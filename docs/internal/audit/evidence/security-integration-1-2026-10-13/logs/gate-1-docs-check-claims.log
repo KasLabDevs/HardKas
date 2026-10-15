@@ -1,5 +1,0 @@
-
-> hardkas-monorepo@0.12.0-rc.27 docs:check-claims C:\Users\jrodr\hkl1\si\src
-> node scripts/generate-claims-docs.mjs --check
-
-[claims] Claim docs match the code (0.12.0-rc.27).

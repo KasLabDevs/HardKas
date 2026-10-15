@@ -1,9 +1,0 @@
-{
-  "json": {
-    "ok": false,
-    "code": "UNKNOWN_ERROR",
-    "message": "Evidence verify failed: Evidence package not found: C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-teu-Kp6glZ\\pay.hke.json",
-    "mode": "cli"
-  },
-  "human": "\n  ✗ Error:\n    Evidence verify failed: Evidence package not found: C:\\Users\\jrodr\\AppData\\Local\\Temp\\hk-teu-Kp6glZ\\pay.hke.json\n"
-}

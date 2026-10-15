@@ -1,7 +1,0 @@
-2026-10-14T10:52:21Z commit=8f381739d05648d145f3d30ce476915739752569 expectedTree=1cb80d8ea0c123ccd79d1d24dc9f71c2c7f4bd78
-2026-10-14T10:53:39Z baselineTree=1cb80d8ea0c123ccd79d1d24dc9f71c2c7f4bd78 match=True
-2026-10-14T10:55:37Z pnpm install exit=0 secs=118
-2026-10-14T11:04:27Z build (cli + deps) exit=0 secs=529
-2026-10-14T11:04:27Z restored packages/pskt-native/hardkas-pskt-native.win32-x64-msvc.node
-2026-10-14T11:04:28Z cli --version: 0.12.0-rc.27
-2026-10-14T11:04:28Z SETUP DONE

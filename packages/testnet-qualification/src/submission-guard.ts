@@ -27,6 +27,14 @@
  *                     the caller may fix and retry.
  * - UNRESOLVED        Ambiguous submit AND no positive observation within
  *                     the probe budget. The caller MUST NOT retry.
+ *
+ * TQ1-SCRIPT-BROKEN-1 (D7, review 2026-10-15): once `submitTransaction` has been invoked, the guard always RETURNS an
+ * outcome — it never throws the call's error away. An error it cannot classify (any class other than transport /
+ * consensus / already-known) is ambiguous: it is resolved by the same independent observation (mempool, then the
+ * watched UTXO sets) and ends OBSERVED_* or UNRESOLVED, never retried. A probe that itself fails ends UNRESOLVED.
+ * The one thing the guard throws is `SubmissionNotAttemptedError`: the HardKAS client refused BEFORE sending anything
+ * (a typed pre-send refusal, `PRE_SEND_REFUSAL_CODES`), so no attempt exists. `attemptOutcomeOf` maps a state to the
+ * attempt record of the receipt: accepted / rejected / outcome_unknown (`not_attempted` is the scenario's).
  */
 
 import { classifyError } from "./retry.js";
@@ -47,7 +55,63 @@ export type SubmissionResolvedVia =
   | "already-known-mempool-hit"
   | "already-known-utxo-hit"
   | "transport-ambiguity-no-positive-observation"
-  | "already-known-but-not-observed";
+  | "already-known-but-not-observed"
+  | "unclassified-error-mempool-hit"
+  | "unclassified-error-utxo-hit"
+  | "unclassified-error-no-positive-observation"
+  | "probe-failed-no-positive-observation";
+
+/**
+ * TQ1-SCRIPT-BROKEN-1 (D7): what the receipt records about the one `submitTransaction` call — what the node's ANSWER
+ * to that call established, nothing more:
+ * - not_attempted   the call was never invoked (attempts 0);
+ * - accepted        the node answered with acceptance (SUBMITTED);
+ * - rejected        the node answered with an explicit, classifiable rejection (SAFE_TO_RETRY);
+ * - outcome_unknown it was invoked and the answer was ambiguous — lost, unclassifiable, "already known" — whatever
+ *                   the independent observation found afterwards (OBSERVED_MEMPOOL / OBSERVED_ACCEPTED / UNRESOLVED).
+ * Review 2026-10-15 (D7 control): the later observation never rewrites, after the fact, that the answer was
+ * ambiguous; it is recorded separately (the guard's state and `resolvedVia`, the acceptance/inclusion slots).
+ */
+export type SubmissionAttemptOutcome = "not_attempted" | "accepted" | "rejected" | "outcome_unknown";
+
+export function attemptOutcomeOf(state: SubmissionState): Exclude<SubmissionAttemptOutcome, "not_attempted"> {
+  switch (state) {
+    case "SUBMITTED":
+      return "accepted";
+    case "SAFE_TO_RETRY":
+      return "rejected";
+    case "OBSERVED_MEMPOOL":
+    case "OBSERVED_ACCEPTED":
+    case "UNRESOLVED":
+      return "outcome_unknown";
+  }
+}
+
+/**
+ * Typed refusals the HardKAS RPC client raises BEFORE a request leaves the process: no endpoint chosen
+ * (NETWORK_ENDPOINT_REQUIRED), a node that does not serve the expected network (NODE_NETWORK_*, verified before the
+ * request), a storage-mass commitment it will not send (RPC_STORAGE_MASS_*).
+ */
+export const PRE_SEND_REFUSAL_CODES: ReadonlySet<string> = new Set([
+  "NETWORK_ENDPOINT_REQUIRED",
+  "NODE_NETWORK_MISMATCH",
+  "NODE_NETWORK_UNKNOWN",
+  "RPC_STORAGE_MASS_INVALID",
+  "RPC_STORAGE_MASS_CONFLICT",
+  "RPC_STORAGE_MASS_MISSING"
+]);
+
+/** The client refused before sending: `submitTransaction` was never invoked on the node. Carries the client's code. */
+export class SubmissionNotAttemptedError extends Error {
+  readonly code: string;
+  readonly cause: unknown;
+  constructor(code: string, cause: unknown) {
+    super(`submitTransaction was not sent: the client refused first (${code}): ${messageOf(cause)}`);
+    this.name = "SubmissionNotAttemptedError";
+    this.code = code;
+    this.cause = cause;
+  }
+}
 
 export interface SubmissionOutcome {
   readonly state: SubmissionState;
@@ -171,6 +235,15 @@ export async function submitWithAmbiguityGuard(
     submitError = err;
   }
 
+  // D7: a typed refusal of the client itself, before anything was sent — no attempt exists.
+  const preSendCode =
+    submitError && typeof submitError === "object" && typeof (submitError as { code?: unknown }).code === "string"
+      ? ((submitError as { code: string }).code)
+      : undefined;
+  if (preSendCode !== undefined && PRE_SEND_REFUSAL_CODES.has(preSendCode)) {
+    throw new SubmissionNotAttemptedError(preSendCode, submitError);
+  }
+
   const cls = classifyError(submitError);
 
   // Ambiguity paths — probe before deciding.
@@ -182,7 +255,20 @@ export async function submitWithAmbiguityGuard(
     await sleep(probeWaitBeforeMs);
     const deadline = now().getTime() + probeMaxWaitMs;
     while (true) {
-      const probe = await probeForTx(input.rpc, input.txid, input.watchAddresses);
+      let probe: Awaited<ReturnType<typeof probeForTx>>;
+      try {
+        probe = await probeForTx(input.rpc, input.txid, input.watchAddresses);
+      } catch {
+        // D7: the call was made; an observation that cannot be taken proves nothing either way
+        return {
+          state: "UNRESOLVED",
+          txid: input.txid,
+          attempts: 1,
+          resolvedVia: "probe-failed-no-positive-observation",
+          lastError: submitError,
+          resolvedAt: now().toISOString()
+        };
+      }
       if (probe.hit === "mempool") {
         return {
           state: "OBSERVED_MEMPOOL",
@@ -253,7 +339,12 @@ export async function submitWithAmbiguityGuard(
   }
 
   // Case D: Every other classification (network-mismatch / unsynced /
-  // missing-capability / unknown) is not a submission-guard concern. Re-throw
-  // so the runner records it against the appropriate authority instead.
-  throw submitError;
+  // missing-capability / unknown) after the call was made. TQ1-SCRIPT-BROKEN-1 (D7): the node received the call and
+  // answered something the guard cannot classify — the outcome is unknown, not "nothing happened". Resolve it by
+  // observation like any other ambiguity; never retry.
+  return probeAmbiguous(
+    (hit) => hit === "mempool" ? "unclassified-error-mempool-hit" : "unclassified-error-utxo-hit",
+    "unclassified-error-no-positive-observation",
+    "UNRESOLVED"
+  );
 }

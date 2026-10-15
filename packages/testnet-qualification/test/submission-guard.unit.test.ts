@@ -1,6 +1,9 @@
 import { describe, it, expect, vi } from "vitest";
 import {
   submitWithAmbiguityGuard,
+  attemptOutcomeOf,
+  PRE_SEND_REFUSAL_CODES,
+  SubmissionNotAttemptedError,
   type SubmissionGuardRpc
 } from "../src/submission-guard.js";
 import type { DaaObserverUtxoRow } from "../src/daa-observer.js";
@@ -205,41 +208,99 @@ describe("submitWithAmbiguityGuard — pre-mempool rejection", () => {
   });
 });
 
-describe("submitWithAmbiguityGuard — re-throw on other classes", () => {
-  it("network-mismatch is not the guard's concern; re-thrown to runner", async () => {
-    const rpc = scriptedRpc({
-      submitImpl: async () => { throw new Error("network mismatch on endpoint"); },
-      mempoolAt: [null],
-      utxosAt: [[]]
-    });
-    await expect(
-      submitWithAmbiguityGuard({ rpc, ...baseInput }, { now: FIXED_NOW, sleep: noSleep })
-    ).rejects.toThrow(/network mismatch/);
-    expect(rpc.calls.submit).toBe(1);
+// TQ1-SCRIPT-BROKEN-1 (D7, review 2026-10-15). Until then the guard RE-THREW these classes after the call was made,
+// and the receipt recorded no submission at all ("0 submits" for a call the node received). Now: an answer the guard
+// cannot classify is an ambiguity like any other — resolved by observation, never retried, never a missing record —
+// and the only throw is a client refusal BEFORE anything was sent (SubmissionNotAttemptedError).
+describe("submitWithAmbiguityGuard — unclassified answers after the call (D7)", () => {
+  const probeOpts = (clockStep = 3) => ({
+    now: advancingClock("2026-09-15T14:00:00.000Z", clockStep),
+    sleep: noSleep,
+    probeWaitBeforeMs: 0,
+    probeMaxWaitMs: 5,
+    probePollIntervalMs: 1
   });
 
-  it("unsynced is not the guard's concern; re-thrown to runner", async () => {
-    const rpc = scriptedRpc({
-      submitImpl: async () => { throw new Error("Node is still syncing"); },
-      mempoolAt: [null],
-      utxosAt: [[]]
+  for (const message of ["network mismatch on endpoint", "Node is still syncing", "something opaque"]) {
+    it(`'${message}' → UNRESOLVED (outcome_unknown) after observation, exactly one call, never SAFE_TO_RETRY`, async () => {
+      const rpc = scriptedRpc({
+        submitImpl: async () => { throw new Error(message); },
+        mempoolAt: [null, null, null],
+        utxosAt: [[], [], []]
+      });
+      const outcome = await submitWithAmbiguityGuard({ rpc, ...baseInput }, probeOpts());
+      expect(outcome.state).toBe("UNRESOLVED");
+      expect(outcome.resolvedVia).toBe("unclassified-error-no-positive-observation");
+      expect(outcome.attempts).toBe(1);
+      expect(attemptOutcomeOf(outcome.state)).toBe("outcome_unknown");
+      expect(rpc.calls.submit).toBe(1);
+      expect(rpc.calls.mempool).toBeGreaterThanOrEqual(1); // the independent status query
     });
-    await expect(
-      submitWithAmbiguityGuard({ rpc, ...baseInput }, { now: FIXED_NOW, sleep: noSleep })
-    ).rejects.toThrow(/still syncing/);
-    expect(rpc.calls.submit).toBe(1);
-  });
+  }
 
-  it("unknown class is re-thrown (never blind-classified as SAFE_TO_RETRY)", async () => {
+  it("an unclassified answer followed by a mempool hit → OBSERVED_MEMPOOL, but the attempt stays outcome_unknown (the answer was ambiguous)", async () => {
     const rpc = scriptedRpc({
       submitImpl: async () => { throw new Error("something opaque"); },
+      mempoolAt: [{ txid: TXID }],
+      utxosAt: [[]]
+    });
+    const outcome = await submitWithAmbiguityGuard({ rpc, ...baseInput }, { now: FIXED_NOW, sleep: noSleep, probeWaitBeforeMs: 0, probeMaxWaitMs: 1000, probePollIntervalMs: 1 });
+    expect(outcome.state).toBe("OBSERVED_MEMPOOL");
+    expect(outcome.resolvedVia).toBe("unclassified-error-mempool-hit");
+    // review 2026-10-15 (D7 control): the observation does not rewrite the ambiguous answer
+    expect(attemptOutcomeOf(outcome.state)).toBe("outcome_unknown");
+    expect(rpc.calls.submit).toBe(1);
+  });
+
+  it("the observation itself fails after an ambiguous call → UNRESOLVED (probe-failed), never a throw", async () => {
+    const rpc = scriptedRpc({
+      submitImpl: async () => { throw Object.assign(new Error("socket hang up"), { code: "ECONNRESET" }); },
       mempoolAt: [null],
       utxosAt: [[]]
     });
-    await expect(
-      submitWithAmbiguityGuard({ rpc, ...baseInput }, { now: FIXED_NOW, sleep: noSleep })
-    ).rejects.toThrow(/opaque/);
+    rpc.getMempoolEntry = async () => { throw new Error("connection lost while probing"); };
+    const outcome = await submitWithAmbiguityGuard({ rpc, ...baseInput }, { now: FIXED_NOW, sleep: noSleep, probeWaitBeforeMs: 0, probeMaxWaitMs: 1000, probePollIntervalMs: 1 });
+    expect(outcome.state).toBe("UNRESOLVED");
+    expect(outcome.resolvedVia).toBe("probe-failed-no-positive-observation");
     expect(rpc.calls.submit).toBe(1);
+  });
+});
+
+describe("submitWithAmbiguityGuard — a client refusal before sending is not an attempt (D7)", () => {
+  for (const code of ["NETWORK_ENDPOINT_REQUIRED", "NODE_NETWORK_MISMATCH", "NODE_NETWORK_UNKNOWN", "RPC_STORAGE_MASS_MISSING"]) {
+    it(`${code} → SubmissionNotAttemptedError carrying the code; nothing probed`, async () => {
+      expect(PRE_SEND_REFUSAL_CODES.has(code)).toBe(true);
+      const rpc = scriptedRpc({
+        submitImpl: async () => { throw Object.assign(new Error(`refused before sending (${code})`), { code }); },
+        mempoolAt: [null],
+        utxosAt: [[]]
+      });
+      const err = await submitWithAmbiguityGuard({ rpc, ...baseInput }, { now: FIXED_NOW, sleep: noSleep }).catch((e) => e);
+      expect(err).toBeInstanceOf(SubmissionNotAttemptedError);
+      expect(err.code).toBe(code);
+      expect(rpc.calls.mempool).toBe(0);
+      expect(rpc.calls.utxos).toBe(0);
+    });
+  }
+
+  it("a node error that merely mentions such a code in its text is NOT a pre-send refusal (the code must be the client's)", async () => {
+    const rpc = scriptedRpc({
+      submitImpl: async () => { throw new Error("node says NODE_NETWORK_MISMATCH"); },
+      mempoolAt: [null, null, null],
+      utxosAt: [[], [], []]
+    });
+    const outcome = await submitWithAmbiguityGuard({ rpc, ...baseInput }, { now: advancingClock("2026-09-15T14:00:00.000Z", 3), sleep: noSleep, probeWaitBeforeMs: 0, probeMaxWaitMs: 5, probePollIntervalMs: 1 });
+    expect(attemptOutcomeOf(outcome.state)).toBe("outcome_unknown");
+  });
+
+  it("attemptOutcomeOf maps every guard state", () => {
+    // only the node's own answer decides accepted / rejected; a state reached by observation after an ambiguous
+    // answer is outcome_unknown (review 2026-10-15, D7 control)
+    expect(attemptOutcomeOf("SUBMITTED")).toBe("accepted");
+    expect(attemptOutcomeOf("OBSERVED_MEMPOOL")).toBe("outcome_unknown");
+    expect(attemptOutcomeOf("OBSERVED_ACCEPTED")).toBe("outcome_unknown");
+    expect(attemptOutcomeOf("SAFE_TO_RETRY")).toBe("rejected");
+    expect(attemptOutcomeOf("UNRESOLVED")).toBe("outcome_unknown");
   });
 });
 

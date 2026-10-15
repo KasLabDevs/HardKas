@@ -1,9 +1,0 @@
-{
-  "B": "ws://127.0.0.1:56692",
-  "bMethods": [],
-  "outcome": {
-    "error": {
-      "message": "parent_plan_unresolved: Missing context plan for simulation."
-    }
-  }
-}

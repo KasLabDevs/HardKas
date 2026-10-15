@@ -237,3 +237,53 @@ describe("Observation semantics — never strengthened by the receipt layer", ()
     expect(/"consensus-valid"/i.test(serialized)).toBe(false);
   });
 });
+
+// TQ1-SCRIPT-BROKEN-1 (D7): schema v2 — the attempt record, and v1 no longer read
+describe("Schema v2 — submission attempt record (D7)", () => {
+  const writeReceipt = async (body: unknown) => {
+    const dir = await tmpDir();
+    const filePath = path.join(dir, "TESTNET_QUALIFICATION_x_20260915T000000000Z.json");
+    await fs.writeFile(filePath, JSON.stringify(body));
+    return filePath;
+  };
+  const body = (evidence: unknown, schemaVersion: number = RAW_RECEIPT_SCHEMA_VERSION) => ({
+    schema: RAW_RECEIPT_SCHEMA,
+    schemaVersion,
+    qualificationId: "x",
+    network: "testnet-10",
+    startedAt: "2026-09-15T14:00:00.000Z",
+    completedAt: "2026-09-15T14:00:05.000Z",
+    outcome: "UNRESOLVED",
+    toolchain: { hardkas: { version: "0" } },
+    evidence
+  });
+
+  it("the current raw schema version is 2", () => {
+    expect(RAW_RECEIPT_SCHEMA_VERSION).toBe(2);
+  });
+
+  it("a v1 receipt is not read as v2 (its missing attempt record must never mean 'not attempted')", async () => {
+    await expect(readRawReceipt(await writeReceipt(body({}, 1)))).rejects.toMatchObject({ reason: "SCHEMA_INVALID" });
+  });
+
+  it("round-trips every attempt outcome with its attempts count", async () => {
+    const dir = await tmpDir();
+    const attempts = [
+      { outcome: "not_attempted", attempts: 0, stage: "plan-and-sign", reason: "KEYSTORE_PASSWORD_REQUIRED", recordedAt: "2026-09-15T14:00:01.000Z" },
+      { outcome: "outcome_unknown", attempts: 1, stage: "submit", txid: "cc".repeat(32), reason: "unclassified-error-no-positive-observation", recordedAt: "2026-09-15T14:00:02.000Z" }
+    ] as const;
+    const persisted = await persistRawReceipt({ receipt: fixtureReceipt({ evidence: { submissionAttempts: attempts } }), rawDir: dir });
+    const read = await readRawReceipt(persisted.filePath);
+    expect(read.receipt.evidence.submissionAttempts).toEqual(attempts);
+  });
+
+  for (const [label, attempt] of [
+    ["not_attempted with attempts 1", { outcome: "not_attempted", attempts: 1, stage: "submit", recordedAt: "t" }],
+    ["outcome_unknown with attempts 0", { outcome: "outcome_unknown", attempts: 0, stage: "submit", recordedAt: "t" }],
+    ["an invented outcome (accepted:false style)", { outcome: "not_accepted", attempts: 1, stage: "submit", recordedAt: "t" }]
+  ] as const) {
+    it(`rejects an inconsistent attempt record: ${label}`, async () => {
+      await expect(readRawReceipt(await writeReceipt(body({ submissionAttempts: [attempt] })))).rejects.toMatchObject({ reason: "SCHEMA_INVALID" });
+    });
+  }
+});

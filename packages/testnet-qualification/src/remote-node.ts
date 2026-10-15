@@ -157,7 +157,7 @@ function coerceBigint(v: bigint | string | number): bigint {
  * path or query is another endpoint. (The same rule as @hardkas/kaspa-rpc canonicalRpcEndpoint; this package has no
  * dependencies.)
  */
-function canonicalEndpoint(url: string): string {
+export function canonicalEndpoint(url: string): string {
   const t = url.trim();
   const ws = t.startsWith("http://") ? "ws://" + t.slice(7) : t.startsWith("https://") ? "wss://" + t.slice(8) : /^wss?:\/\//.test(t) ? t : `ws://${t}`;
   try {
@@ -170,7 +170,7 @@ function canonicalEndpoint(url: string): string {
 }
 
 /** A URL without userinfo or query, for messages. */
-function shownEndpoint(url: string): string {
+export function shownEndpoint(url: string): string {
   return url.replace(/^([a-z][a-z0-9+.-]*:\/\/)[^@/]*@/i, "$1").replace(/\?.*$/, "");
 }
 

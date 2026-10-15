@@ -41,6 +41,7 @@ import {
   type ReceiptRemoteAuthority,
   type ReceiptSourceUtxoEvidence,
   type ReceiptSubmissionOutcome,
+  type ReceiptSubmissionAttempt,
   type ReceiptAcceptanceEvidence,
   type ReceiptInclusionEvidence,
   type ReceiptConfirmationEvidence,
@@ -48,7 +49,8 @@ import {
 } from "./receipt.js";
 
 export const SHARED_RECEIPT_SCHEMA = "hardkas.testnet-qualification.shared-receipt";
-export const SHARED_RECEIPT_SCHEMA_VERSION = 1 as const;
+/** v2 (TQ1-SCRIPT-BROKEN-1, D7): projects `evidence.submissionAttempts`; derived from raw v2 only. */
+export const SHARED_RECEIPT_SCHEMA_VERSION = 2 as const;
 
 // Governance invariant: RAW_RECEIPT_SCHEMA !== SHARED_RECEIPT_SCHEMA.
 // Enforced by unit test `receipt-redactor.unit.test.ts > "uses a schema
@@ -120,6 +122,8 @@ export interface SharedEvidence {
   readonly remoteAuthority?: SharedRemoteAuthority;
   readonly funding?: readonly SharedSourceUtxoEvidence[];
   readonly submissions?: readonly SharedSubmissionOutcome[];
+  /** Public facts only (outcome, attempts, stage, txid, a machine reason code, time) — no message, no error. */
+  readonly submissionAttempts?: readonly ReceiptSubmissionAttempt[];
   readonly acceptances?: readonly ReceiptAcceptanceEvidence[];
   readonly inclusions?: readonly ReceiptInclusionEvidence[];
   readonly confirmations?: readonly ReceiptConfirmationEvidence[];
@@ -190,6 +194,13 @@ function projectSubmission(s: ReceiptSubmissionOutcome): SharedSubmissionOutcome
   return out;
 }
 
+function projectSubmissionAttempt(a: ReceiptSubmissionAttempt): ReceiptSubmissionAttempt {
+  const out: any = { outcome: a.outcome, attempts: a.attempts, stage: a.stage, recordedAt: a.recordedAt };
+  if (a.txid !== undefined) out.txid = a.txid;
+  if (a.reason !== undefined) out.reason = a.reason;
+  return out;
+}
+
 function projectAcceptance(a: ReceiptAcceptanceEvidence): ReceiptAcceptanceEvidence {
   return { txid: a.txid, acceptedAt: a.acceptedAt, detectedVia: a.detectedVia, witnessAddress: a.witnessAddress };
 }
@@ -216,6 +227,7 @@ function projectEvidence(ev: TestnetQualificationReceipt["evidence"]): SharedEvi
     ...(ev.remoteAuthority ? { remoteAuthority: projectRemoteAuthority(ev.remoteAuthority) } : {}),
     ...(ev.funding ? { funding: ev.funding.map(projectFunding) } : {}),
     ...(ev.submissions ? { submissions: ev.submissions.map(projectSubmission) } : {}),
+    ...(ev.submissionAttempts ? { submissionAttempts: ev.submissionAttempts.map(projectSubmissionAttempt) } : {}),
     ...(ev.acceptances ? { acceptances: ev.acceptances.map(projectAcceptance) } : {}),
     ...(ev.inclusions ? { inclusions: ev.inclusions.map(projectInclusion) } : {}),
     ...(ev.confirmations ? { confirmations: ev.confirmations.map(projectConfirmation) } : {})
