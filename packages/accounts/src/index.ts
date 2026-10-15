@@ -15,6 +15,7 @@ export * from "./kaspa-wasm-signer.js";
 export * from "./real-signer.js";
 export * from "./kaspa-sdk-real-signer.js";
 export * from "./real-accounts.js";
+export * from "./real-account-network-migration.js";
 export * from "./real-keygen.js";
 export * from "./kaspa-sdk-keygen.js";
 export * from "./keystore.js";

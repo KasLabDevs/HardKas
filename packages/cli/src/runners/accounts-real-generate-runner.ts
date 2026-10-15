@@ -7,6 +7,7 @@ import {
   RealDevAccount,
   KeystoreManager
 } from "@hardkas/accounts";
+import type { NetworkId } from "@hardkas/core";
 import path from "node:path";
 import fs from "node:fs";
 import { acquirePassword } from "./secrets.js";
@@ -93,7 +94,10 @@ export async function runAccountsRealGenerate(
     }
   }
 
-  let store = await loadOrCreateRealAccountStore({ cwd });
+  // ACCOUNT-STORE-NETWORK-1: a store created here is labelled with the requested network, and every entry records the
+  // network its key was made for (the store used to be "simnet" and entries carried none, whatever was asked)
+  const network = (options.networkId || "simnet") as NetworkId;
+  let store = await loadOrCreateRealAccountStore({ cwd, networkId: network });
 
   for (let i = 0; i < count; i++) {
     const name = names[i]!;
@@ -129,6 +133,7 @@ export async function runAccountsRealGenerate(
     store = importRealDevAccount(store, {
       name,
       address: generated.address,
+      network,
       ...(generated.publicKey ? { publicKey: generated.publicKey } : {}),
       ...(options.unsafePlaintext && generated.privateKey
         ? { privateKey: generated.privateKey }

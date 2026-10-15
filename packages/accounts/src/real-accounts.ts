@@ -58,7 +58,12 @@ export function attachInspectRedactor<T extends object>(obj: T): T {
 
 export interface RealAccountStore extends HardkasArtifactBase {
   readonly schema: "hardkas.realAccountStore.v1";
-  readonly networkId: NetworkId; // usually "simnet" or "testnet-10"
+  /**
+   * Legacy store-level label. ACCOUNT-STORE-NETWORK-1: until 2026-10-15 every store was created "simnet" whatever
+   * network its accounts were made for, so this field carries no information about an account; the network of an
+   * account is its entry's `network` (and its keystore's), never this.
+   */
+  readonly networkId: NetworkId;
   readonly mode: "real";
   readonly connectionMode?: "node" | "rpc";
   readonly warning: string;
@@ -68,6 +73,11 @@ export interface RealAccountStore extends HardkasArtifactBase {
 export interface RealDevAccount {
   readonly name: string;
   readonly address: string;
+  /**
+   * ACCOUNT-STORE-NETWORK-1: the network this account's key was made for (generate --network / import). Absent on
+   * entries written before 2026-10-15; `planRealAccountNetworkMigration` proposes it from the keystore + address.
+   */
+  readonly network?: NetworkId;
   readonly publicKey?: string;
   /** @deprecated Use keystoreRef for encrypted storage. Plaintext keys in this field are considered legacy/unsafe. */
   readonly privateKey?: string;
@@ -83,13 +93,13 @@ export function getDefaultRealAccountsPath(cwd?: string): string {
   return path.join(root, ".hardkas", "accounts.real.json");
 }
 
-export function createEmptyRealAccountStore(): RealAccountStore {
+export function createEmptyRealAccountStore(networkId: NetworkId = "simnet" as NetworkId): RealAccountStore {
   return {
     schema: ARTIFACT_SCHEMAS.REAL_ACCOUNT_STORE,
     hardkasVersion: HARDKAS_VERSION,
     version: ARTIFACT_VERSION,
     createdAt: new Date().toISOString(),
-    networkId: "simnet" as NetworkId,
+    networkId,
     mode: "real",
     connectionMode: "node",
     warning:
@@ -170,11 +180,13 @@ export async function loadRealAccountStore(options?: {
 export async function loadOrCreateRealAccountStore(options?: {
   readonly cwd?: string;
   readonly path?: string;
+  /** ACCOUNT-STORE-NETWORK-1: the label of a store created here (the network of its first accounts). */
+  readonly networkId?: NetworkId;
 }): Promise<RealAccountStore> {
   const store = await loadRealAccountStore(options);
   if (store) return store;
 
-  const newStore = createEmptyRealAccountStore();
+  const newStore = createEmptyRealAccountStore(options?.networkId);
   await saveRealAccountStore(newStore, options);
   return newStore;
 }
@@ -274,11 +286,27 @@ export function validateAddressNetwork(
   }
 }
 
+/**
+ * ACCOUNT-STORE-NETWORK-1: whether an address can belong to a network, by its prefix (the same rule as
+ * validateAddressNetwork: kaspa: = mainnet, kaspatest: = testnet-*, kaspasim: = simnet/devnet/simulated).
+ * An unknown network name is not judged (true).
+ */
+export function addressMatchesNetwork(address: string, networkId: string): boolean {
+  try {
+    validateAddressNetwork(address, networkId);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export function importRealDevAccount(
   store: RealAccountStore,
   account: {
     readonly name: string;
     readonly address: string;
+    /** ACCOUNT-STORE-NETWORK-1: the network the key was made for; must fit the address. */
+    readonly network?: NetworkId;
     readonly publicKey?: string;
     readonly privateKey?: string;
     readonly privateKeyEnv?: string;
@@ -287,6 +315,7 @@ export function importRealDevAccount(
 ): RealAccountStore {
   validateAccountName(account.name);
   validateAddressPrefix(account.address);
+  if (account.network !== undefined) validateAddressNetwork(account.address, account.network);
 
   if (store.accounts.some((a) => a.name.toLowerCase() === account.name.toLowerCase())) {
     throw new Error(`Account with name '${account.name}' already exists.`);

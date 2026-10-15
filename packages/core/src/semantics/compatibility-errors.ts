@@ -21,6 +21,21 @@ export class AccountNetworkMismatchError extends HardkasError {
   }
 }
 
+/**
+ * ACCOUNT-STORE-NETWORK-1: the sources that say which network an account's key belongs to — its store entry, its
+ * keystore's metadata, its address — disagree. Never resolved by picking one.
+ */
+export class AccountNetworkConflictError extends HardkasError {
+  constructor(metadata: { account: string; sources: Record<string, string>; detail?: string }, options?: { cause?: unknown }) {
+    super(
+      "ACCOUNT_NETWORK_CONFLICT",
+      `Account '${metadata.account}' has contradicting networks: ${Object.entries(metadata.sources).map(([k, v]) => `${k}=${v}`).join(", ")}${metadata.detail ? ` (${metadata.detail})` : ""}. Nothing was signed or written; fix the account store (see the real-account network migration).`,
+      { ...options, metadata }
+    );
+    this.name = "AccountNetworkConflictError";
+  }
+}
+
 export class CrossWorldAccountCollisionError extends HardkasError {
   constructor(metadata: { accountId: string, worlds: string[] }, options?: { cause?: unknown }) {
     super("CROSS_WORLD_ACCOUNT_COLLISION", `Account collision across execution worlds for ${metadata.accountId}. Found in: ${metadata.worlds.join(', ')}`, { ...options, metadata });
