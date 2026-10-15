@@ -3,13 +3,25 @@ import path from "node:path";
 import type { HardkasConfig } from "@hardkas/config";
 import { createDeterministicAccounts } from "@hardkas/localnet";
 import type { HardkasAccount, HardkasSyntheticAccount } from "./types.js";
-import { CrossWorldAccountCollisionError, AccountNetworkMismatchError, stripBom } from "@hardkas/core";
+import { CrossWorldAccountCollisionError, AccountNetworkMismatchError, AccountNetworkConflictError, stripBom } from "@hardkas/core";
 import {
   loadRealAccountStoreSync,
   getRealDevAccount,
   listRealDevAccounts,
-  attachInspectRedactor
+  attachInspectRedactor,
+  addressMatchesNetwork
 } from "./real-accounts.js";
+
+/**
+ * ACCOUNT-STORE-NETWORK-1: the network an address prefix alone settles, if any. kaspasim: is simnet (the network
+ * legacy real-store accounts were always taken for), kaspa: is mainnet; kaspatest: names no single network
+ * (testnet-10, testnet-11, …) and stays unbound.
+ */
+function networkFromAddressPrefix(address: string): string | undefined {
+  if (address.startsWith("kaspasim:")) return "simnet";
+  if (address.startsWith("kaspa:") && !address.startsWith("kaspa:sim_")) return "mainnet";
+  return undefined;
+}
 
 export interface ResolveAccountOptions {
   nameOrAddress: string;
@@ -86,6 +98,23 @@ export function assertAccountCompatible(account: HardkasAccount, target: import(
       expected: target.network,
       actual: account.network,
       detail: `Account '${account.name}' is bound to network '${account.network}' but execution target is '${target.network}'.`
+    });
+  }
+
+  // ACCOUNT-STORE-NETWORK-1: an account not bound to one network (a legacy kaspatest: entry) is still bound to its
+  // address's network family — a kaspatest: key never passes for a simnet or mainnet target, nor the reverse.
+  if (
+    account.kind === "kaspa" &&
+    target.mode !== "simulator" &&
+    target.network &&
+    typeof account.address === "string" &&
+    !account.address.startsWith("kaspa:sim_") &&
+    !addressMatchesNetwork(account.address, target.network)
+  ) {
+    throw new AccountNetworkMismatchError({
+      expected: target.network,
+      actual: `address ${account.address}`,
+      detail: `Account '${account.name}' has an address of another network than the execution target '${target.network}'.`
     });
   }
 }
@@ -214,17 +243,32 @@ export function listHardkasAccounts(config?: HardkasConfig, executionTarget?: im
     }
   }
 
-  // Add from real account store
+  // Add from real account store.
+  // ACCOUNT-STORE-NETWORK-1: an entry's network is its own `network` (written by generate/import since 2026-10-15),
+  // never a constant: it used to be "simnet" for every entry, and an account's keystore (below) silently replaced it.
+  // A legacy entry (no `network`) gets what its address prefix settles; its keystore, if any, decides below — and a
+  // store entry that contradicts its keystore or its address is a conflict, not a choice.
   const realStore = loadRealAccountStoreSync({ cwd: workspaceRoot });
+  const storeEntryNetwork = new Map<string, string | undefined>();
   if (realStore) {
     for (const realAcc of listRealDevAccounts(realStore)) {
+      if (realAcc.network !== undefined && !addressMatchesNetwork(realAcc.address, realAcc.network)) {
+        throw new AccountNetworkConflictError({
+          account: realAcc.name,
+          sources: { storeEntry: realAcc.network, address: realAcc.address },
+          detail: "the store entry's network does not fit its address"
+        });
+      }
+      const network = realAcc.network ?? networkFromAddressPrefix(realAcc.address);
+      storeEntryNetwork.set(realAcc.name, realAcc.network);
       accounts.set(realAcc.name, {
         name: realAcc.name,
-        kind: "kaspa", network: "simnet", // Wait, listRealDevAccounts returns accounts, does it have network? The legacy real store assumed simnet. We'll leave it as simnet for now, or maybe the store should provide it.
+        kind: "kaspa",
+        ...(network ? { network } : {}),
         address: realAcc.address,
         ...(realAcc.privateKeyEnv ? { privateKeyEnv: realAcc.privateKeyEnv } : {}),
         ...(realAcc.privateKey ? { privateKey: realAcc.privateKey } : {})
-      });
+      } as HardkasAccount);
     }
   }
 
@@ -244,15 +288,31 @@ export function listHardkasAccounts(config?: HardkasConfig, executionTarget?: im
             if (!keystore.metadata?.network) {
               throw new AccountNetworkMismatchError({ expected: "known network", actual: "undefined", detail: `at ${path.join(keystoreDir, file)}` });
             }
+            const keystoreNetwork = String(keystore.metadata.network);
+            const keystoreAddress = keystore.payload?.address || keystore.metadata?.address; // Payloads are encrypted, but address might be in metadata
+            // ACCOUNT-STORE-NETWORK-1: the keystore, its address and the store entry of the same name must agree
+            if (typeof keystoreAddress === "string" && !addressMatchesNetwork(keystoreAddress, keystoreNetwork)) {
+              throw new AccountNetworkConflictError({ account: name, sources: { keystore: keystoreNetwork, address: keystoreAddress }, detail: "the keystore's network does not fit its address" });
+            }
+            if (storeEntryNetwork.has(name)) {
+              const entryNetwork = storeEntryNetwork.get(name);
+              const entryAddress = accounts.get(name)?.address;
+              if (entryNetwork !== undefined && entryNetwork !== keystoreNetwork) {
+                throw new AccountNetworkConflictError({ account: name, sources: { storeEntry: entryNetwork, keystore: keystoreNetwork } });
+              }
+              if (typeof entryAddress === "string" && typeof keystoreAddress === "string" && entryAddress !== keystoreAddress) {
+                throw new AccountNetworkConflictError({ account: name, sources: { storeEntryAddress: entryAddress, keystoreAddress }, detail: "the store entry and the keystore name different addresses" });
+              }
+            }
             accounts.set(name, {
               name,
-              kind: "kaspa", network: keystore.metadata.network,
-              address: keystore.payload?.address || keystore.metadata?.address, // Payloads are encrypted, but address might be in metadata
+              kind: "kaspa", network: keystoreNetwork,
+              address: keystoreAddress,
               keystorePath: path.join(keystoreDir, file)
             });
           }
         } catch (e) {
-          if (e instanceof AccountNetworkMismatchError) throw e;
+          if (e instanceof AccountNetworkMismatchError || e instanceof AccountNetworkConflictError) throw e;
           // Ignore corrupted keystores in listing
         }
       }
