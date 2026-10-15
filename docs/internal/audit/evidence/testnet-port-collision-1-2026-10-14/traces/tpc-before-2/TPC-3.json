@@ -1,0 +1,31 @@
+{
+  "paths": [
+    {
+      "path": "D-cli-accounts-balance",
+      "exit": 1,
+      "code": "UNKNOWN_ERROR",
+      "dialled": [
+        "REFUSED_CONNECT tn10.kaspa.stream:443"
+      ],
+      "message": "Cannot connect to Kaspa RPC at wss://tn10.kaspa.stream:443. Is kaspad running with --rpclisten-json? (wRPC -> WebSocket -> Unable to connect to wss://tn10.kaspa.stream:443)"
+    },
+    {
+      "path": "D-cli-tx-plan",
+      "exit": 1,
+      "code": "UNKNOWN",
+      "dialled": [
+        "REFUSED_CONNECT tn10.kaspa.stream:443"
+      ],
+      "message": "Unknown connection error: Cannot connect to Kaspa RPC at wss://tn10.kaspa.stream:443. Is kaspad running with --rpclisten-json? (wRPC -> WebSocket -> Unable to connect to wss://tn10.kaspa.stream:443)"
+    },
+    {
+      "path": "D-sdk-rpc",
+      "exit": 0,
+      "code": null,
+      "dialled": [
+        "REFUSED_CONNECT tn10.kaspa.stream:443"
+      ],
+      "message": "Cannot connect to Kaspa RPC at wss://tn10.kaspa.stream:443. Is kaspad running with --rpclisten-json? (wRPC -> WebSocket -> Unable to connect to wss://tn10.kaspa.stream:443)"
+    }
+  ]
+}

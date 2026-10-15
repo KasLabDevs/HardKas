@@ -1,0 +1,64 @@
+{
+  "paths": [
+    {
+      "path": "MK-cli-accounts-balance",
+      "exit": 1,
+      "code": "UNKNOWN_ERROR",
+      "dialled": [
+        "LOOPBACK_CONNECT 127.0.0.1:18110"
+      ],
+      "message": "Cannot connect to Kaspa RPC at ws://127.0.0.1:18110. Is kaspad running with --rpclisten-json? (wRPC -> WebSocket -> Unable to connect to ws://127.0.0.1:18110)",
+      "output": "exit 1\n{\n  \"ok\": false,\n  \"code\": \"UNKNOWN_ERROR\",\n  \"message\": \"Cannot connect to Kaspa RPC at ws://127.0.0.1:18110. Is kaspad running with --rpclisten-json? (wRPC -> WebSocket -> Unable to connect to ws://127.0.0.1:18110)\",\n  \"mode\": \"cli\"\n}\n\n"
+    },
+    {
+      "path": "MK-cli-tx-plan",
+      "exit": 1,
+      "code": "UNKNOWN",
+      "dialled": [
+        "LOOPBACK_CONNECT 127.0.0.1:18110"
+      ],
+      "message": "Unknown connection error: Cannot connect to Kaspa RPC at ws://127.0.0.1:18110. Is kaspad running with --rpclisten-json? (wRPC -> WebSocket -> Unable to connect to ws://127.0.0.1:18110)",
+      "output": "exit 1\n{\n  \"ok\": false,\n  \"code\": \"UNKNOWN\",\n  \"message\": \"Unknown connection error: Cannot connect to Kaspa RPC at ws://127.0.0.1:18110. Is kaspad running with --rpclisten-json? (wRPC -> WebSocket -> Unable to connect to ws://127.0.0.1:18110)\",\n  \"mode\": \"cli\"\n}\n\n"
+    },
+    {
+      "path": "MK-sdk-rpc",
+      "exit": 0,
+      "code": "NODE_NETWORK_MISMATCH",
+      "dialled": [
+        "LOOPBACK_CONNECT 127.0.0.1:18210"
+      ],
+      "message": "The node at ws://127.0.0.1:18210 serves simnet, not mainnet: HardKAS refuses to read from it or send to it as mainnet.",
+      "output": "exit 0\n{\"ok\":false,\"code\":\"NODE_NETWORK_MISMATCH\",\"message\":\"The node at ws://127.0.0.1:18210 serves simnet, not mainnet: HardKAS refuses to read from it or send to it as mainnet.\"}\n\n"
+    },
+    {
+      "path": "MD-cli-accounts-balance",
+      "exit": 1,
+      "code": "UNKNOWN_ERROR",
+      "dialled": [
+        "REFUSED_CONNECT kaspa.stream:443"
+      ],
+      "message": "Cannot connect to Kaspa RPC at wss://kaspa.stream:443. Is kaspad running with --rpclisten-json? (wRPC -> WebSocket -> Unable to connect to wss://kaspa.stream:443)",
+      "output": "exit 1\n{\n  \"ok\": false,\n  \"code\": \"UNKNOWN_ERROR\",\n  \"message\": \"Cannot connect to Kaspa RPC at wss://kaspa.stream:443. Is kaspad running with --rpclisten-json? (wRPC -> WebSocket -> Unable to connect to wss://kaspa.stream:443)\",\n  \"mode\": \"cli\"\n}\n\n"
+    },
+    {
+      "path": "MD-cli-tx-plan",
+      "exit": 1,
+      "code": "UNKNOWN",
+      "dialled": [
+        "REFUSED_CONNECT kaspa.stream:443"
+      ],
+      "message": "Unknown connection error: Cannot connect to Kaspa RPC at wss://kaspa.stream:443. Is kaspad running with --rpclisten-json? (wRPC -> WebSocket -> Unable to connect to wss://kaspa.stream:443)",
+      "output": "exit 1\n{\n  \"ok\": false,\n  \"code\": \"UNKNOWN\",\n  \"message\": \"Unknown connection error: Cannot connect to Kaspa RPC at wss://kaspa.stream:443. Is kaspad running with --rpclisten-json? (wRPC -> WebSocket -> Unable to connect to wss://kaspa.stream:443)\",\n  \"mode\": \"cli\"\n}\n\n"
+    },
+    {
+      "path": "MD-sdk-rpc",
+      "exit": 0,
+      "code": null,
+      "dialled": [
+        "REFUSED_CONNECT kaspa.stream:443"
+      ],
+      "message": "Cannot connect to Kaspa RPC at wss://kaspa.stream:443. Is kaspad running with --rpclisten-json? (wRPC -> WebSocket -> Unable to connect to wss://kaspa.stream:443)",
+      "output": "exit 0\n{\"ok\":false,\"code\":null,\"message\":\"Cannot connect to Kaspa RPC at wss://kaspa.stream:443. Is kaspad running with --rpclisten-json? (wRPC -> WebSocket -> Unable to connect to wss://kaspa.stream:443)\"}\n\n"
+    }
+  ]
+}

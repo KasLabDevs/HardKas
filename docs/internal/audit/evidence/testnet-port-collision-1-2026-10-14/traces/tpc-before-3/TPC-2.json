@@ -1,0 +1,95 @@
+{
+  "paths": [
+    {
+      "path": "R-cli-accounts-balance",
+      "exit": 0,
+      "code": null,
+      "dialled": [
+        "LOOPBACK_CONNECT 127.0.0.1:63963"
+      ],
+      "message": "",
+      "output": "exit 0\n{\n  \"ok\": true,\n  \"command\": \"accounts balance\",\n  \"mode\": \"cli\",\n  \"result\": {\n    \"name\": \"alice\",\n    \"address\": \"kaspatest:qp97kr0xdnz7m3k7a76t8dj95v6eltfqkuretpdlrflsdsqfprkpqxs039l5s\",\n    \"balanceSompi\": \"10000000000\",\n    \"utxoCount\": 1,\n    \"network\": \"testnet-10\"\n  }\n}\n\n"
+    },
+    {
+      "path": "R-cli-tx-plan",
+      "exit": 0,
+      "code": null,
+      "dialled": [
+        "LOOPBACK_CONNECT 127.0.0.1:63963"
+      ],
+      "message": "",
+      "output": "exit 0\n{\n  \"schema\": \"hardkas.txPlan\",\n  \"hardkasVersion\": \"0.12.0-rc.27\",\n  \"schemaVersion\": \"hardkas.artifact.v1\",\n  \"version\": \"1.0.0-alpha\",\n  \"hashVersion\": 5,\n  \"createdAt\": \"2026-10-14T16:23:28.620Z\",\n  \"networkId\": \"testnet-10\",\n  \"mode\": \"rpc\",\n  \"execution\": {\n    \"mode\": \"rpc\",\n    \"domain\": \"kaspa-l1\",\n    \"network\": \"testnet-10\"\n  },\n  \"from\": {\n    \"address\": \"kaspatest:qp97kr0xdnz7m3k7a76t8dj95v6eltfqkuretpdlrflsdsqfprkpqxs039l5s\",\n    \"input\": \"alice\"\n  },\n  \"to\": {\n    \"address\": \"kaspatest:qqdg8jz8me04893p4k6rz3aslgzhgywlulrhkat52qqklcz9gefgj83rnlw7l\",\n    \"input\": \"bob\"\n  },\n  \"amountSompi\": \"100000000\",\n  \"estimatedFeeSompi\": \"1000100\",\n  \"estimatedMass\": \"10001\",\n  \"inpu"
+    },
+    {
+      "path": "R-cli-tx-send",
+      "exit": 1,
+      "code": null,
+      "dialled": [
+        "LOOPBACK_CONNECT 127.0.0.1:63963"
+      ],
+      "message": "",
+      "output": "exit 1\n{\n  \"ok\": false,\n  \"outcome\": \"unknown\",\n  \"data\": {\n    \"signed\": {\n      \"schema\": \"hardkas.signedTx\",\n      \"hardkasVersion\": \"0.12.0-rc.27\",\n      \"version\": \"1.0.0-alpha\",\n      \"hashVersion\": 5,\n      \"status\": \"signed\",\n      \"createdAt\": \"2026-10-14T16:22:44.250Z\",\n      \"txId\": \"09688f45cb65c045b8ade8740d3661a6a7326b5491bae2477b2f68f2942c483b\",\n      \"sourcePlanId\": \"plan-292283a79e09d520\",\n      \"networkId\": \"testnet-10\",\n      \"mode\": \"rpc\",\n      \"from\": {\n        \"address\": \"kaspatest:qp97kr0xdnz7m3k7a76t8dj95v6eltfqkuretpdlrflsdsqfprkpqxs039l5s\"\n      },\n      \"to\": {\n        \"address\": \"kaspatest:qqdg8jz8me04893p4k6rz3aslgzhgywlulrhkat52qqklcz9gefgj83rnlw7l\"\n      },\n  "
+    },
+    {
+      "path": "R-cli-tx-status",
+      "exit": 0,
+      "code": null,
+      "dialled": [
+        "LOOPBACK_CONNECT 127.0.0.1:63963"
+      ],
+      "message": "",
+      "output": "exit 0\n{\n  \"ok\": true,\n  \"command\": \"tx status\",\n  \"mode\": \"cli\",\n  \"txId\": \"09688f45cb65c045b8ade8740d3661a6a7326b5491bae2477b2f68f2942c483b\",\n  \"network\": \"testnet-10\",\n  \"state\": \"INSUFFICIENT_EVIDENCE\",\n  \"isFinal\": false,\n  \"look\": {\n    \"taken\": true,\n    \"artifactId\": \"0342e3b18d375dbcb0d4b2288bca1d6f5a26ae8b48c557f53e5b10d120e53fd9\",\n    \"path\": \"C:\\\\Users\\\\jrodr\\\\AppData\\\\Local\\\\Temp\\\\hk-tpc-zkGBkN\\\\.hardkas\\\\artifacts\\\\observations\\\\txObservation-0342e3b18d375dbcb0d4b2288bca1d6f5a26ae8b48c557f53e5b10d120e53fd9.json\"\n  },\n  \"derived\": {\n    \"txId\": \"09688f45cb65c045b8ade8740d3661a6a7326b5491bae2477b2f68f2942c483b\",\n    \"status\": \"INSUFFICIENT_EVIDENCE\",\n    \"policy\": {\n      \"policy"
+    },
+    {
+      "path": "R-cli-tx-wait",
+      "exit": 1,
+      "code": "TX_WAIT_TIMEOUT",
+      "dialled": [
+        "LOOPBACK_CONNECT 127.0.0.1:63963"
+      ],
+      "message": "Timed out after 3s waiting for 09688f45cb65c045b8ade8740d3661a6a7326b5491bae2477b2f68f2942c483b to be ACCEPTED; last derived state: INSUFFICIENT_EVIDENCE.",
+      "output": "exit 1\n{\n  \"ok\": false,\n  \"code\": \"TX_WAIT_TIMEOUT\",\n  \"message\": \"Timed out after 3s waiting for 09688f45cb65c045b8ade8740d3661a6a7326b5491bae2477b2f68f2942c483b to be ACCEPTED; last derived state: INSUFFICIENT_EVIDENCE.\",\n  \"mode\": \"cli\"\n}\n\n"
+    },
+    {
+      "path": "R-cli-accounts-consolidate",
+      "exit": 0,
+      "code": null,
+      "dialled": [
+        "LOOPBACK_CONNECT 127.0.0.1:63963"
+      ],
+      "message": "",
+      "output": "exit 0\n{\n  \"ok\": true,\n  \"command\": \"accounts consolidate\",\n  \"mode\": \"cli\",\n  \"result\": {\n    \"status\": \"CONSOLIDATION_NOT_REQUIRED\",\n    \"message\": \"Account already has 1 UTXOs, which is <= target of 20. No consolidation needed.\"\n  }\n}\n\n"
+    },
+    {
+      "path": "R-sdk-rpc",
+      "exit": 0,
+      "code": null,
+      "dialled": [
+        "LOOPBACK_CONNECT 127.0.0.1:63963"
+      ],
+      "message": "",
+      "output": "exit 0\n{\"dag\":null,\"ok\":true}\n\n"
+    },
+    {
+      "path": "R-sdk-tx-plan",
+      "exit": 0,
+      "code": null,
+      "dialled": [
+        "LOOPBACK_CONNECT 127.0.0.1:63963"
+      ],
+      "message": "",
+      "output": "exit 0\n{\"ok\":true}\n\n"
+    },
+    {
+      "path": "R-sdk-tx-observe",
+      "exit": 0,
+      "code": null,
+      "dialled": [
+        "LOOPBACK_CONNECT 127.0.0.1:63963"
+      ],
+      "message": "",
+      "output": "exit 0\n{\"ok\":true}\n\n"
+    }
+  ],
+  "notOnlyT": []
+}

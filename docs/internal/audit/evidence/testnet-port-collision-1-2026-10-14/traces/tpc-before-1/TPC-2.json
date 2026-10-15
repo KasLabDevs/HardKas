@@ -1,0 +1,86 @@
+{
+  "paths": [
+    {
+      "path": "R-cli-accounts-balance",
+      "exit": 0,
+      "code": null,
+      "dialled": [
+        "LOOPBACK_CONNECT 127.0.0.1:59037"
+      ],
+      "message": ""
+    },
+    {
+      "path": "R-cli-tx-plan",
+      "exit": 0,
+      "code": null,
+      "dialled": [
+        "LOOPBACK_CONNECT 127.0.0.1:59037"
+      ],
+      "message": ""
+    },
+    {
+      "path": "R-cli-tx-send",
+      "exit": 1,
+      "code": null,
+      "dialled": [
+        "LOOPBACK_CONNECT 127.0.0.1:59037"
+      ],
+      "message": ""
+    },
+    {
+      "path": "R-cli-tx-status",
+      "exit": 0,
+      "code": null,
+      "dialled": [
+        "LOOPBACK_CONNECT 127.0.0.1:59037"
+      ],
+      "message": ""
+    },
+    {
+      "path": "R-cli-tx-wait",
+      "exit": 1,
+      "code": "TX_WAIT_TIMEOUT",
+      "dialled": [
+        "LOOPBACK_CONNECT 127.0.0.1:59037"
+      ],
+      "message": "Timed out after 3s waiting for fe7ebb1271e839957b20d841c092e76511946a28983bc22c6c79b11bff708b71 to be ACCEPTED; last derived state: INSUFFICIENT_EVIDENCE."
+    },
+    {
+      "path": "R-cli-accounts-consolidate",
+      "exit": 0,
+      "code": null,
+      "dialled": [
+        "LOOPBACK_CONNECT 127.0.0.1:59037"
+      ],
+      "message": ""
+    },
+    {
+      "path": "R-sdk-rpc",
+      "exit": 0,
+      "code": null,
+      "dialled": [
+        "LOOPBACK_CONNECT 127.0.0.1:59037"
+      ],
+      "message": ""
+    },
+    {
+      "path": "R-sdk-tx-plan",
+      "exit": 0,
+      "code": null,
+      "dialled": [
+        "LOOPBACK_CONNECT 127.0.0.1:59037"
+      ],
+      "message": ""
+    },
+    {
+      "path": "R-sdk-tx-observe",
+      "exit": 0,
+      "code": null,
+      "dialled": [
+        "LOOPBACK_CONNECT 127.0.0.1:59037"
+      ],
+      "message": ""
+    }
+  ],
+  "notOnlyT": []
+}

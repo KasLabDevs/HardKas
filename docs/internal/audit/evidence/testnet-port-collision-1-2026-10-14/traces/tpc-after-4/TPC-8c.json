@@ -1,0 +1,77 @@
+{
+  "paths": [
+    {
+      "path": "C8-my-tn10-cli-accounts-balance",
+      "exit": 1,
+      "code": "NETWORK_ENDPOINT_REQUIRED",
+      "dialled": [],
+      "message": "Network 'my-tn10' has no node endpoint you chose. Declare it in hardkas.config.ts (networks['my-tn10'].rpcUrl: your own node, e.g. ws://127.0.0.1:<port>, or a public node you select) or pass --url. HardKAS never connects a public network to",
+      "output": "exit 1\n{\n  \"ok\": false,\n  \"code\": \"NETWORK_ENDPOINT_REQUIRED\",\n  \"message\": \"Network 'my-tn10' has no node endpoint you chose. Declare it in hardkas.config.ts (networks['my-tn10'].rpcUrl: your own node, e.g. ws://127.0.0.1:<port>, or a public node you select) or pass --url. HardKAS never connects a public network to an endpoint it infers (not the local simnet node, not a built-in public host). Nothing was contacted.\",\n  \"mode\": \"cli\"\n}\n\n"
+    },
+    {
+      "path": "C8-my-tn10-cli-tx-plan",
+      "exit": 1,
+      "code": "COINBASE_MATURITY_UNRESOLVED",
+      "dialled": [],
+      "message": "COINBASE_MATURITY_UNRESOLVED: Cannot resolve the coinbase maturity for network 'my-tn10' (kaspa-wasm has no parameters for 'my-tn10': Invalid network type: my). Provide an explicit override.",
+      "output": "exit 1\n{\n  \"ok\": false,\n  \"code\": \"COINBASE_MATURITY_UNRESOLVED\",\n  \"message\": \"COINBASE_MATURITY_UNRESOLVED: Cannot resolve the coinbase maturity for network 'my-tn10' (kaspa-wasm has no parameters for 'my-tn10': Invalid network type: my). Provide an explicit override.\",\n  \"mode\": \"cli\"\n}\n\n"
+    },
+    {
+      "path": "C8-my-tn10-sdk-rpc",
+      "exit": 0,
+      "code": "NETWORK_ENDPOINT_REQUIRED",
+      "dialled": [],
+      "message": "Network 'my-tn10' has no node endpoint you chose. Declare it in hardkas.config.ts (networks['my-tn10'].rpcUrl: your own node, e.g. ws://127.0.0.1:<port>, or a public node you select) or pass --url. HardKAS never connects a public network to",
+      "output": "exit 0\n{\"ok\":false,\"code\":\"NETWORK_ENDPOINT_REQUIRED\",\"message\":\"Network 'my-tn10' has no node endpoint you chose. Declare it in hardkas.config.ts (networks['my-tn10'].rpcUrl: your own node, e.g. ws://127.0.0.1:<port>, or a public node you select) or pass --url. HardKAS never connects a public network to\"}\n\n"
+    },
+    {
+      "path": "C8-my-tn10-rpc-cli-accounts-balance",
+      "exit": 1,
+      "code": "NETWORK_ENDPOINT_REQUIRED",
+      "dialled": [],
+      "message": "Network 'my-tn10-rpc' has no node endpoint you chose. Declare it in hardkas.config.ts (networks['my-tn10-rpc'].rpcUrl: your own node, e.g. ws://127.0.0.1:<port>, or a public node you select) or pass --url. HardKAS never connects a public ne",
+      "output": "exit 1\n{\n  \"ok\": false,\n  \"code\": \"NETWORK_ENDPOINT_REQUIRED\",\n  \"message\": \"Network 'my-tn10-rpc' has no node endpoint you chose. Declare it in hardkas.config.ts (networks['my-tn10-rpc'].rpcUrl: your own node, e.g. ws://127.0.0.1:<port>, or a public node you select) or pass --url. HardKAS never connects a public network to an endpoint it infers (not the local simnet node, not a built-in public host). Nothing was contacted.\",\n  \"mode\": \"cli\"\n}\n\n"
+    },
+    {
+      "path": "C8-my-tn10-rpc-cli-tx-plan",
+      "exit": 1,
+      "code": "COINBASE_MATURITY_UNRESOLVED",
+      "dialled": [],
+      "message": "COINBASE_MATURITY_UNRESOLVED: Cannot resolve the coinbase maturity for network 'my-tn10-rpc' (kaspa-wasm has no parameters for 'my-tn10-rpc': Invalid network type: my). Provide an explicit override.",
+      "output": "exit 1\n{\n  \"ok\": false,\n  \"code\": \"COINBASE_MATURITY_UNRESOLVED\",\n  \"message\": \"COINBASE_MATURITY_UNRESOLVED: Cannot resolve the coinbase maturity for network 'my-tn10-rpc' (kaspa-wasm has no parameters for 'my-tn10-rpc': Invalid network type: my). Provide an explicit override.\",\n  \"mode\": \"cli\"\n}\n\n"
+    },
+    {
+      "path": "C8-my-tn10-rpc-sdk-rpc",
+      "exit": 0,
+      "code": "NETWORK_ENDPOINT_REQUIRED",
+      "dialled": [],
+      "message": "Network 'my-tn10-rpc' has no node endpoint you chose. Declare it in hardkas.config.ts (networks['my-tn10-rpc'].rpcUrl: your own node, e.g. ws://127.0.0.1:<port>, or a public node you select) or pass --url. HardKAS never connects a public ne",
+      "output": "exit 0\n{\"ok\":false,\"code\":\"NETWORK_ENDPOINT_REQUIRED\",\"message\":\"Network 'my-tn10-rpc' has no node endpoint you chose. Declare it in hardkas.config.ts (networks['my-tn10-rpc'].rpcUrl: your own node, e.g. ws://127.0.0.1:<port>, or a public node you select) or pass --url. HardKAS never connects a public ne\"}\n\n"
+    },
+    {
+      "path": "C8-prod-cli-accounts-balance",
+      "exit": 1,
+      "code": "NETWORK_ENDPOINT_REQUIRED",
+      "dialled": [],
+      "message": "Network 'prod' has no node endpoint you chose. Declare it in hardkas.config.ts (networks['prod'].rpcUrl: your own node, e.g. ws://127.0.0.1:<port>, or a public node you select) or pass --url. HardKAS never connects a public network to an en",
+      "output": "exit 1\n{\n  \"ok\": false,\n  \"code\": \"NETWORK_ENDPOINT_REQUIRED\",\n  \"message\": \"Network 'prod' has no node endpoint you chose. Declare it in hardkas.config.ts (networks['prod'].rpcUrl: your own node, e.g. ws://127.0.0.1:<port>, or a public node you select) or pass --url. HardKAS never connects a public network to an endpoint it infers (not the local simnet node, not a built-in public host). Nothing was contacted.\",\n  \"mode\": \"cli\"\n}\n\n"
+    },
+    {
+      "path": "C8-prod-cli-tx-plan",
+      "exit": 1,
+      "code": "ACCOUNT_NETWORK_MISMATCH",
+      "dialled": [],
+      "message": "Account network mismatch. Expected: prod, Actual: mainnet",
+      "output": "exit 1\n{\n  \"ok\": false,\n  \"code\": \"ACCOUNT_NETWORK_MISMATCH\",\n  \"message\": \"Account network mismatch. Expected: prod, Actual: mainnet\",\n  \"mode\": \"cli\"\n}\n\n"
+    },
+    {
+      "path": "C8-prod-sdk-rpc",
+      "exit": 0,
+      "code": "NETWORK_ENDPOINT_REQUIRED",
+      "dialled": [],
+      "message": "Network 'prod' has no node endpoint you chose. Declare it in hardkas.config.ts (networks['prod'].rpcUrl: your own node, e.g. ws://127.0.0.1:<port>, or a public node you select) or pass --url. HardKAS never connects a public network to an en",
+      "output": "exit 0\n{\"ok\":false,\"code\":\"NETWORK_ENDPOINT_REQUIRED\",\"message\":\"Network 'prod' has no node endpoint you chose. Declare it in hardkas.config.ts (networks['prod'].rpcUrl: your own node, e.g. ws://127.0.0.1:<port>, or a public node you select) or pass --url. HardKAS never connects a public network to an en\"}\n\n"
+    }
+  ],
+  "canonicalPortDialledBy": []
+}

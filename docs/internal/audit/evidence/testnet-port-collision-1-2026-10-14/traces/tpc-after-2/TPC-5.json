@@ -1,0 +1,52 @@
+{
+  "paths": [
+    {
+      "path": "MK-cli-accounts-balance",
+      "exit": 1,
+      "code": "NETWORK_ENDPOINT_REQUIRED",
+      "dialled": [],
+      "message": "Network 'mainnet' has no node endpoint you chose. Declare it in hardkas.config.ts (networks['mainnet'].rpcUrl: your own node, e.g. ws://127.0.0.1:<port>, or a public node you select) or pass --url. HardKAS never connects a public network to",
+      "output": "exit 1\n{\n  \"ok\": false,\n  \"code\": \"NETWORK_ENDPOINT_REQUIRED\",\n  \"message\": \"Network 'mainnet' has no node endpoint you chose. Declare it in hardkas.config.ts (networks['mainnet'].rpcUrl: your own node, e.g. ws://127.0.0.1:<port>, or a public node you select) or pass --url. HardKAS never connects a public network to an endpoint it infers (not the local simnet node, not a built-in public host). Nothing was contacted.\",\n  \"mode\": \"cli\"\n}\n\n"
+    },
+    {
+      "path": "MK-cli-tx-plan",
+      "exit": 1,
+      "code": "NETWORK_ENDPOINT_REQUIRED",
+      "dialled": [],
+      "message": "Network 'mainnet' has no node endpoint you chose. Declare it in hardkas.config.ts (networks['mainnet'].rpcUrl: your own node, e.g. ws://127.0.0.1:<port>, or a public node you select) or pass --url. HardKAS never connects a public network to",
+      "output": "exit 1\n{\n  \"ok\": false,\n  \"code\": \"NETWORK_ENDPOINT_REQUIRED\",\n  \"message\": \"Network 'mainnet' has no node endpoint you chose. Declare it in hardkas.config.ts (networks['mainnet'].rpcUrl: your own node, e.g. ws://127.0.0.1:<port>, or a public node you select) or pass --url. HardKAS never connects a public network to an endpoint it infers (not the local simnet node, not a built-in public host). Nothing was contacted.\",\n  \"mode\": \"cli\"\n}\n\n"
+    },
+    {
+      "path": "MK-sdk-rpc",
+      "exit": 0,
+      "code": "NETWORK_ENDPOINT_REQUIRED",
+      "dialled": [],
+      "message": "Network 'mainnet' has no node endpoint you chose. Declare it in hardkas.config.ts (networks['mainnet'].rpcUrl: your own node, e.g. ws://127.0.0.1:<port>, or a public node you select) or pass --url. HardKAS never connects a public network to",
+      "output": "exit 0\n{\"ok\":false,\"code\":\"NETWORK_ENDPOINT_REQUIRED\",\"message\":\"Network 'mainnet' has no node endpoint you chose. Declare it in hardkas.config.ts (networks['mainnet'].rpcUrl: your own node, e.g. ws://127.0.0.1:<port>, or a public node you select) or pass --url. HardKAS never connects a public network to\"}\n\n"
+    },
+    {
+      "path": "MD-cli-accounts-balance",
+      "exit": 1,
+      "code": "NETWORK_ENDPOINT_REQUIRED",
+      "dialled": [],
+      "message": "Network 'mainnet' has no node endpoint you chose. Declare it in hardkas.config.ts (networks['mainnet'].rpcUrl: your own node, e.g. ws://127.0.0.1:<port>, or a public node you select) or pass --url. HardKAS never connects a public network to",
+      "output": "exit 1\n{\n  \"ok\": false,\n  \"code\": \"NETWORK_ENDPOINT_REQUIRED\",\n  \"message\": \"Network 'mainnet' has no node endpoint you chose. Declare it in hardkas.config.ts (networks['mainnet'].rpcUrl: your own node, e.g. ws://127.0.0.1:<port>, or a public node you select) or pass --url. HardKAS never connects a public network to an endpoint it infers (not the local simnet node, not a built-in public host). Nothing was contacted.\",\n  \"mode\": \"cli\"\n}\n\n"
+    },
+    {
+      "path": "MD-cli-tx-plan",
+      "exit": 1,
+      "code": "NETWORK_ENDPOINT_REQUIRED",
+      "dialled": [],
+      "message": "Network 'mainnet' has no node endpoint you chose. Declare it in hardkas.config.ts (networks['mainnet'].rpcUrl: your own node, e.g. ws://127.0.0.1:<port>, or a public node you select) or pass --url. HardKAS never connects a public network to",
+      "output": "exit 1\n{\n  \"ok\": false,\n  \"code\": \"NETWORK_ENDPOINT_REQUIRED\",\n  \"message\": \"Network 'mainnet' has no node endpoint you chose. Declare it in hardkas.config.ts (networks['mainnet'].rpcUrl: your own node, e.g. ws://127.0.0.1:<port>, or a public node you select) or pass --url. HardKAS never connects a public network to an endpoint it infers (not the local simnet node, not a built-in public host). Nothing was contacted.\",\n  \"mode\": \"cli\"\n}\n\n"
+    },
+    {
+      "path": "MD-sdk-rpc",
+      "exit": 0,
+      "code": "NETWORK_ENDPOINT_REQUIRED",
+      "dialled": [],
+      "message": "Network 'mainnet' has no node endpoint you chose. Declare it in hardkas.config.ts (networks['mainnet'].rpcUrl: your own node, e.g. ws://127.0.0.1:<port>, or a public node you select) or pass --url. HardKAS never connects a public network to",
+      "output": "exit 0\n{\"ok\":false,\"code\":\"NETWORK_ENDPOINT_REQUIRED\",\"message\":\"Network 'mainnet' has no node endpoint you chose. Declare it in hardkas.config.ts (networks['mainnet'].rpcUrl: your own node, e.g. ws://127.0.0.1:<port>, or a public node you select) or pass --url. HardKAS never connects a public network to\"}\n\n"
+    }
+  ]
+}

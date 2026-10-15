@@ -11,6 +11,14 @@ import {
 import { pollCondition } from "./waiters.js";
 import { Hardkas } from "./index.js";
 import { isNodeNetworkIdentityError, rpcEndpointOf, sameRpcEndpoint } from "@hardkas/kaspa-rpc";
+import { networkEndpointRequiredError } from "@hardkas/config";
+
+/** TESTNET-PORT-COLLISION-1: the instance's client stands for "no endpoint chosen" (see unresolved-endpoint-rpc.ts). */
+function refuseUnresolvedEndpoint(sdk: Hardkas): void {
+  if ((sdk.rpc as { endpointUnresolved?: unknown } | undefined)?.endpointUnresolved === true) {
+    throw networkEndpointRequiredError(String(sdk.network));
+  }
+}
 
 /**
  * ENDPOINT-AUTHORITY-1 (EA-I1/EA-I2): the endpoint of the client that carries an operation is the only endpoint a
@@ -210,6 +218,8 @@ export class HardkasTx {
       );
     }
     const { ProjectArtifactStore } = await import("@hardkas/artifacts");
+    // TESTNET-PORT-COLLISION-1: an instance whose public network has no endpoint the user chose observes nothing
+    refuseUnresolvedEndpoint(this.sdk);
     // ENDPOINT-AUTHORITY-1 (EA-I1/EA-I2): the observation is the observing client's; an explicit endpoint must be it
     const endpoint = endpointAuthority(this.sdk.rpc, options.rpcUrl, "OBSERVE");
     const store = new ProjectArtifactStore(this.sdk.workspace.root);
@@ -1781,6 +1791,9 @@ export class HardkasTx {
           `Nothing was sent or recorded.`
       );
     }
+    // TESTNET-PORT-COLLISION-1: no endpoint chosen for this public network — refused before any request or record (a
+    // submission that never left this machine is not a failed submission)
+    refuseUnresolvedEndpoint(this.sdk);
     // EA-I1/EA-I2: the endpoint a submission records is the endpoint of the client that submits it
     const endpoint = endpointAuthority(this.sdk.rpc, url, "SEND");
 

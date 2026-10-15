@@ -74,7 +74,8 @@ export function registerConfigCommands(program: Command) {
       console.log("  " + "─".repeat(header.length - 2));
 
       for (const [name, net] of Object.entries(networks)) {
-        const rpc = (net as any).rpcUrl || "simulated";
+        // TESTNET-PORT-COLLISION-1: a built-in public network carries no endpoint until the user declares one
+        const rpc = (net as any).rpcUrl || ((net as any).kind === "simulated" ? "simulated" : "(not declared)");
         const kind = (net as any).kind || "unknown";
         console.log(`  ${name.padEnd(14)} ${rpc.padEnd(32)} ${kind}`);
       }

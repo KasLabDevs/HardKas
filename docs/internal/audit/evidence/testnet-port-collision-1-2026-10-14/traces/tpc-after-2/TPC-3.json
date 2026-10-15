@@ -1,0 +1,76 @@
+{
+  "paths": [
+    {
+      "path": "D-cli-accounts-balance",
+      "exit": 1,
+      "code": "NETWORK_ENDPOINT_REQUIRED",
+      "dialled": [],
+      "message": "Network 'testnet-10' has no node endpoint you chose. Declare it in hardkas.config.ts (networks['testnet-10'].rpcUrl: your own node, e.g. ws://127.0.0.1:<port>, or a public node you select) or pass --url. HardKAS never connects a public netw",
+      "output": "exit 1\n{\n  \"ok\": false,\n  \"code\": \"NETWORK_ENDPOINT_REQUIRED\",\n  \"message\": \"Network 'testnet-10' has no node endpoint you chose. Declare it in hardkas.config.ts (networks['testnet-10'].rpcUrl: your own node, e.g. ws://127.0.0.1:<port>, or a public node you select) or pass --url. HardKAS never connects a public network to an endpoint it infers (not the local simnet node, not a built-in public host). Nothing was contacted.\",\n  \"mode\": \"cli\"\n}\n\n"
+    },
+    {
+      "path": "D-cli-tx-plan",
+      "exit": 1,
+      "code": "NETWORK_ENDPOINT_REQUIRED",
+      "dialled": [],
+      "message": "Network 'testnet-10' has no node endpoint you chose. Declare it in hardkas.config.ts (networks['testnet-10'].rpcUrl: your own node, e.g. ws://127.0.0.1:<port>, or a public node you select) or pass --url. HardKAS never connects a public netw",
+      "output": "exit 1\n{\n  \"ok\": false,\n  \"code\": \"NETWORK_ENDPOINT_REQUIRED\",\n  \"message\": \"Network 'testnet-10' has no node endpoint you chose. Declare it in hardkas.config.ts (networks['testnet-10'].rpcUrl: your own node, e.g. ws://127.0.0.1:<port>, or a public node you select) or pass --url. HardKAS never connects a public network to an endpoint it infers (not the local simnet node, not a built-in public host). Nothing was contacted.\",\n  \"mode\": \"cli\"\n}\n\n"
+    },
+    {
+      "path": "D-cli-tx-send",
+      "exit": 1,
+      "code": "NETWORK_ENDPOINT_REQUIRED",
+      "dialled": [],
+      "message": "Network 'testnet-10' has no node endpoint you chose. Declare it in hardkas.config.ts (networks['testnet-10'].rpcUrl: your own node, e.g. ws://127.0.0.1:<port>, or a public node you select) or pass --url. HardKAS never connects a public netw",
+      "output": "exit 1\n{\n  \"ok\": false,\n  \"code\": \"NETWORK_ENDPOINT_REQUIRED\",\n  \"message\": \"Network 'testnet-10' has no node endpoint you chose. Declare it in hardkas.config.ts (networks['testnet-10'].rpcUrl: your own node, e.g. ws://127.0.0.1:<port>, or a public node you select) or pass --url. HardKAS never connects a public network to an endpoint it infers (not the local simnet node, not a built-in public host). Nothing was contacted.\",\n  \"mode\": \"cli\"\n}\n\n"
+    },
+    {
+      "path": "D-cli-tx-status",
+      "exit": 0,
+      "code": null,
+      "dialled": [],
+      "message": "",
+      "output": "exit 0\n{\n  \"ok\": true,\n  \"command\": \"tx status\",\n  \"mode\": \"cli\",\n  \"txId\": \"87d74e090c0728970e30f24cfd851f9c7f124a5854603b988414100d4d3d130d\",\n  \"network\": \"testnet-10\",\n  \"state\": \"INSUFFICIENT_EVIDENCE\",\n  \"isFinal\": false,\n  \"look\": {\n    \"taken\": false,\n    \"reason\": \"the configured observer could not be read: [NETWORK_ENDPOINT_REQUIRED] Network 'testnet-10' has no node endpoint you chose. Declare it in hardkas.config.ts (networks['testnet-10'].rpcUrl: your own node, e.g. ws://127.0.0.1:<port>, or a public node you select) or pass --url. HardKAS never connects a public network to an endpoint it infers (not the local simnet node, not a built-in public host). Nothing was contacted.\"\n  },\n"
+    },
+    {
+      "path": "D-cli-tx-wait",
+      "exit": 1,
+      "code": "NETWORK_ENDPOINT_REQUIRED",
+      "dialled": [],
+      "message": "Network 'testnet-10' has no node endpoint you chose. Declare it in hardkas.config.ts (networks['testnet-10'].rpcUrl: your own node, e.g. ws://127.0.0.1:<port>, or a public node you select) or pass --url. HardKAS never connects a public netw",
+      "output": "exit 1\n{\n  \"ok\": false,\n  \"code\": \"NETWORK_ENDPOINT_REQUIRED\",\n  \"message\": \"Network 'testnet-10' has no node endpoint you chose. Declare it in hardkas.config.ts (networks['testnet-10'].rpcUrl: your own node, e.g. ws://127.0.0.1:<port>, or a public node you select) or pass --url. HardKAS never connects a public network to an endpoint it infers (not the local simnet node, not a built-in public host). Nothing was contacted.\",\n  \"mode\": \"cli\"\n}\n\n"
+    },
+    {
+      "path": "D-cli-accounts-consolidate",
+      "exit": 1,
+      "code": "NETWORK_ENDPOINT_REQUIRED",
+      "dialled": [],
+      "message": "Network 'testnet-10' has no node endpoint you chose. Declare it in hardkas.config.ts (networks['testnet-10'].rpcUrl: your own node, e.g. ws://127.0.0.1:<port>, or a public node you select) or pass --url. HardKAS never connects a public netw",
+      "output": "exit 1\n{\n  \"ok\": false,\n  \"code\": \"NETWORK_ENDPOINT_REQUIRED\",\n  \"message\": \"Network 'testnet-10' has no node endpoint you chose. Declare it in hardkas.config.ts (networks['testnet-10'].rpcUrl: your own node, e.g. ws://127.0.0.1:<port>, or a public node you select) or pass --url. HardKAS never connects a public network to an endpoint it infers (not the local simnet node, not a built-in public host). Nothing was contacted.\",\n  \"mode\": \"cli\"\n}\n\n"
+    },
+    {
+      "path": "D-sdk-rpc",
+      "exit": 0,
+      "code": "NETWORK_ENDPOINT_REQUIRED",
+      "dialled": [],
+      "message": "Network 'testnet-10' has no node endpoint you chose. Declare it in hardkas.config.ts (networks['testnet-10'].rpcUrl: your own node, e.g. ws://127.0.0.1:<port>, or a public node you select) or pass --url. HardKAS never connects a public netw",
+      "output": "exit 0\n{\"ok\":false,\"code\":\"NETWORK_ENDPOINT_REQUIRED\",\"message\":\"Network 'testnet-10' has no node endpoint you chose. Declare it in hardkas.config.ts (networks['testnet-10'].rpcUrl: your own node, e.g. ws://127.0.0.1:<port>, or a public node you select) or pass --url. HardKAS never connects a public netw\"}\n\n"
+    },
+    {
+      "path": "D-sdk-tx-plan",
+      "exit": 0,
+      "code": "NETWORK_ENDPOINT_REQUIRED",
+      "dialled": [],
+      "message": "Network 'testnet-10' has no node endpoint you chose. Declare it in hardkas.config.ts (networks['testnet-10'].rpcUrl: your own node, e.g. ws://127.0.0.1:<port>, or a public node you select) or pass --url. HardKAS never connects a public netw",
+      "output": "exit 0\n{\"ok\":false,\"code\":\"NETWORK_ENDPOINT_REQUIRED\",\"message\":\"Network 'testnet-10' has no node endpoint you chose. Declare it in hardkas.config.ts (networks['testnet-10'].rpcUrl: your own node, e.g. ws://127.0.0.1:<port>, or a public node you select) or pass --url. HardKAS never connects a public netw\"}\n\n"
+    },
+    {
+      "path": "D-sdk-tx-observe",
+      "exit": 0,
+      "code": "NETWORK_ENDPOINT_REQUIRED",
+      "dialled": [],
+      "message": "Network 'testnet-10' has no node endpoint you chose. Declare it in hardkas.config.ts (networks['testnet-10'].rpcUrl: your own node, e.g. ws://127.0.0.1:<port>, or a public node you select) or pass --url. HardKAS never connects a public netw",
+      "output": "exit 0\n{\"ok\":false,\"code\":\"NETWORK_ENDPOINT_REQUIRED\",\"message\":\"Network 'testnet-10' has no node endpoint you chose. Declare it in hardkas.config.ts (networks['testnet-10'].rpcUrl: your own node, e.g. ws://127.0.0.1:<port>, or a public node you select) or pass --url. HardKAS never connects a public netw\"}\n\n"
+    }
+  ]
+}

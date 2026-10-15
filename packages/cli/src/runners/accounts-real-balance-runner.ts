@@ -1,7 +1,7 @@
 import { loadRealAccountStore, getRealDevAccount } from "@hardkas/accounts";
 import { JsonWrpcKaspaClient } from "@hardkas/kaspa-rpc";
 import { formatSompiToKas, type NetworkId } from "@hardkas/core";
-import { resolveRuntimeConfig, type KaspaRealNetwork } from "@hardkas/node-orchestrator";
+import { loadHardkasConfig, resolveNodeEndpoint } from "@hardkas/config";
 
 export interface AccountsRealBalanceOptions {
   name: string;
@@ -24,14 +24,13 @@ export async function runAccountsRealBalance(
     throw new Error(`Account '${options.name}' not found in real store.`);
   }
 
-  let rpcUrl = options.url;
-  if (!rpcUrl) {
-    rpcUrl = resolveRuntimeConfig({
-      network: (options.network ?? "simnet") as KaspaRealNetwork
-    }).rpcUrl;
-  }
+  // TESTNET-PORT-COLLISION-1: the shared endpoint authority (given, declared, a local network's default, or
+  // NETWORK_ENDPOINT_REQUIRED before any connection); NODE-NETWORK-IDENTITY-1: the node must say it serves that network
+  const network = options.network ?? "simnet";
+  const { config } = await loadHardkasConfig({ cwd });
+  const rpcUrl = resolveNodeEndpoint({ config, networkId: network, explicitUrl: options.url }).url;
 
-  const client = new JsonWrpcKaspaClient({ rpcUrl });
+  const client = new JsonWrpcKaspaClient({ rpcUrl, expectedNetworkId: network });
   let balance;
   try {
     balance = await client.getBalanceByAddress(account.address);

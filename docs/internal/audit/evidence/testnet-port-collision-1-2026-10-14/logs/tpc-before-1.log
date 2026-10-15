@@ -1,0 +1,256 @@
+
+ RUN  v2.1.9 C:/Users/jrodr/hkl1/tpc/src
+
+ × packages/cli/test/testnet-port-collision-1.test.ts > TESTNET-PORT-COLLISION-1 · BEFORE > TPC-1 testnet-10 declared as `kaspa-node` WITHOUT rpcUrl: no testnet path may dial 127.0.0.1:18210 (the canonical simnet localnet's port) 13876ms
+   → {
+ "paths": [
+  {
+   "path": "K-cli-accounts-balance",
+   "exit": 1,
+   "code": "NODE_NETWORK_MISMATCH",
+   "dialled": [
+    "LOOPBACK_CONNECT 127.0.0.1:18210"
+   ],
+   "message": "The node at ws://127.0.0.1:18210 serves simnet, not testnet-10: HardKAS refuses to read from it or send to it as testnet-10."
+  },
+  {
+   "path": "K-cli-tx-plan",
+   "exit": 1,
+   "code": "NODE_NETWORK_MISMATCH",
+   "dialled": [
+    "LOOPBACK_CONNECT 127.0.0.1:18210"
+   ],
+   "message": "The node at ws://127.0.0.1:18210 serves simnet, not testnet-10: HardKAS refuses to read from it or send to it as testnet-10."
+  },
+  {
+   "path": "K-cli-tx-send",
+   "exit": 1,
+   "code": "UNKNOWN_ERROR",
+   "dialled": [],
+   "message": "No RPC URL found for network 'testnet-10'."
+  },
+  {
+   "path": "K-cli-tx-status",
+   "exit": 0,
+   "code": null,
+   "dialled": [
+    "LOOPBACK_CONNECT 127.0.0.1:18210"
+   ],
+   "message": ""
+  },
+  {
+   "path": "K-cli-tx-wait",
+   "exit": 1,
+   "code": "TX_WAIT_TIMEOUT",
+   "dialled": [
+    "LOOPBACK_CONNECT 127.0.0.1:18210"
+   ],
+   "message": "Timed out after 3s waiting for fe7ebb1271e839957b20d841c092e76511946a28983bc22c6c79b11bff708b71 to be ACCEPTED; last derived state: nothing derived (no observation succeeded); last observer error: [NODE_NETWORK_MISMATCH] The node at ws://12"
+  },
+  {
+   "path": "K-cli-accounts-consolidate",
+   "exit": 1,
+   "code": "UNKNOWN_ERROR",
+   "dialled": [],
+   "message": "Cannot read properties of undefined (reading 'startsWith')"
+  },
+  {
+   "path": "K-sdk-rpc",
+   "exit": 0,
+   "code": "NODE_NETWORK_MISMATCH",
+   "dialled": [
+    "LOOPBACK_CONNECT 127.0.0.1:18210"
+   ],
+   "message": "The node at ws://127.0.0.1:18210 serves simnet, not testnet-10: HardKAS refuses to read from it or send to it as testnet-10."
+  },
+  {
+   "path": "K-sdk-tx-plan",
+   "exit": 0,
+   "code": "NODE_NETWORK_MISMATCH",
+   "dialled": [
+    "LOOPBACK_CONNECT 127.0.0.1:18210"
+   ],
+   "message": "The node at ws://127.0.0.1:18210 serves simnet, not testnet-10: HardKAS refuses to read from it or send to it as testnet-10."
+  },
+  {
+   "path": "K-sdk-tx-observe",
+   "exit": 0,
+   "code": "NODE_NETWORK_MISMATCH",
+   "dialled": [
+    "LOOPBACK_CONNECT 127.0.0.1:18210"
+   ],
+   "message": "The node at ws://127.0.0.1:18210 serves simnet, not testnet-10: HardKAS refuses to read from it or send to it as testnet-10."
+  }
+ ],
+ "canonicalPortDialledBy": [
+  "K-cli-accounts-balance",
+  "K-cli-tx-plan",
+  "K-cli-tx-status",
+  "K-cli-tx-wait",
+  "K-sdk-rpc",
+  "K-sdk-tx-plan",
+  "K-sdk-tx-observe"
+ ],
+ "fakeS": {
+  "connections": 11,
+  "methods": [
+   "getServerInfo",
+   "getServerInfo",
+   "getServerInfo",
+   "getServerInfo",
+   "getServerInfo",
+   "getServerInfo",
+   "getServerInfo",
+   "getServerInfo",
+   "getServerInfo",
+   "getServerInfo",
+   "getServerInfo"
+  ]
+ },
+ "submitTransactionAtS": 0
+}: expected [ 'K-cli-accounts-balance', …(6) ] to deeply equal []
+ ✓ packages/cli/test/testnet-port-collision-1.test.ts > TESTNET-PORT-COLLISION-1 · BEFORE > TPC-2 control: testnet-10 as `kaspa-rpc` with an explicit rpcUrl (the own node T): every path dials T and only T 14396ms
+ ✓ packages/cli/test/testnet-port-collision-1.test.ts > TESTNET-PORT-COLLISION-1 · BEFORE > TPC-3 characterization: testnet-10 with NO networks entry takes the built-in default — a third-party public host (refused here by the hermetic preload) 3386ms
+ ✓ packages/cli/test/testnet-port-collision-1.test.ts > TESTNET-PORT-COLLISION-1 · BEFORE > TPC-4 control: simnet declared as `kaspa-node` without rpcUrl keeps its legitimate default — the canonical localnet (S on :18210) 2288ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  packages/cli/test/testnet-port-collision-1.test.ts > TESTNET-PORT-COLLISION-1 · BEFORE > TPC-1 testnet-10 declared as `kaspa-node` WITHOUT rpcUrl: no testnet path may dial 127.0.0.1:18210 (the canonical simnet localnet's port)
+AssertionError: {
+ "paths": [
+  {
+   "path": "K-cli-accounts-balance",
+   "exit": 1,
+   "code": "NODE_NETWORK_MISMATCH",
+   "dialled": [
+    "LOOPBACK_CONNECT 127.0.0.1:18210"
+   ],
+   "message": "The node at ws://127.0.0.1:18210 serves simnet, not testnet-10: HardKAS refuses to read from it or send to it as testnet-10."
+  },
+  {
+   "path": "K-cli-tx-plan",
+   "exit": 1,
+   "code": "NODE_NETWORK_MISMATCH",
+   "dialled": [
+    "LOOPBACK_CONNECT 127.0.0.1:18210"
+   ],
+   "message": "The node at ws://127.0.0.1:18210 serves simnet, not testnet-10: HardKAS refuses to read from it or send to it as testnet-10."
+  },
+  {
+   "path": "K-cli-tx-send",
+   "exit": 1,
+   "code": "UNKNOWN_ERROR",
+   "dialled": [],
+   "message": "No RPC URL found for network 'testnet-10'."
+  },
+  {
+   "path": "K-cli-tx-status",
+   "exit": 0,
+   "code": null,
+   "dialled": [
+    "LOOPBACK_CONNECT 127.0.0.1:18210"
+   ],
+   "message": ""
+  },
+  {
+   "path": "K-cli-tx-wait",
+   "exit": 1,
+   "code": "TX_WAIT_TIMEOUT",
+   "dialled": [
+    "LOOPBACK_CONNECT 127.0.0.1:18210"
+   ],
+   "message": "Timed out after 3s waiting for fe7ebb1271e839957b20d841c092e76511946a28983bc22c6c79b11bff708b71 to be ACCEPTED; last derived state: nothing derived (no observation succeeded); last observer error: [NODE_NETWORK_MISMATCH] The node at ws://12"
+  },
+  {
+   "path": "K-cli-accounts-consolidate",
+   "exit": 1,
+   "code": "UNKNOWN_ERROR",
+   "dialled": [],
+   "message": "Cannot read properties of undefined (reading 'startsWith')"
+  },
+  {
+   "path": "K-sdk-rpc",
+   "exit": 0,
+   "code": "NODE_NETWORK_MISMATCH",
+   "dialled": [
+    "LOOPBACK_CONNECT 127.0.0.1:18210"
+   ],
+   "message": "The node at ws://127.0.0.1:18210 serves simnet, not testnet-10: HardKAS refuses to read from it or send to it as testnet-10."
+  },
+  {
+   "path": "K-sdk-tx-plan",
+   "exit": 0,
+   "code": "NODE_NETWORK_MISMATCH",
+   "dialled": [
+    "LOOPBACK_CONNECT 127.0.0.1:18210"
+   ],
+   "message": "The node at ws://127.0.0.1:18210 serves simnet, not testnet-10: HardKAS refuses to read from it or send to it as testnet-10."
+  },
+  {
+   "path": "K-sdk-tx-observe",
+   "exit": 0,
+   "code": "NODE_NETWORK_MISMATCH",
+   "dialled": [
+    "LOOPBACK_CONNECT 127.0.0.1:18210"
+   ],
+   "message": "The node at ws://127.0.0.1:18210 serves simnet, not testnet-10: HardKAS refuses to read from it or send to it as testnet-10."
+  }
+ ],
+ "canonicalPortDialledBy": [
+  "K-cli-accounts-balance",
+  "K-cli-tx-plan",
+  "K-cli-tx-status",
+  "K-cli-tx-wait",
+  "K-sdk-rpc",
+  "K-sdk-tx-plan",
+  "K-sdk-tx-observe"
+ ],
+ "fakeS": {
+  "connections": 11,
+  "methods": [
+   "getServerInfo",
+   "getServerInfo",
+   "getServerInfo",
+   "getServerInfo",
+   "getServerInfo",
+   "getServerInfo",
+   "getServerInfo",
+   "getServerInfo",
+   "getServerInfo",
+   "getServerInfo",
+   "getServerInfo"
+  ]
+ },
+ "submitTransactionAtS": 0
+}: expected [ 'K-cli-accounts-balance', …(6) ] to deeply equal []
+
+- Expected
++ Received
+
+- Array []
++ Array [
++   "K-cli-accounts-balance",
++   "K-cli-tx-plan",
++   "K-cli-tx-status",
++   "K-cli-tx-wait",
++   "K-sdk-rpc",
++   "K-sdk-tx-plan",
++   "K-sdk-tx-observe",
++ ]
+
+ ❯ packages/cli/test/testnet-port-collision-1.test.ts:264:72
+    262|     trace("TPC-1", seen);
+    263|     // NNI refusing S afterwards does not make the resolution right: t…
+    264|     expect(seen.canonicalPortDialledBy, JSON.stringify(seen, null, 1))…
+       |                                                                        ^
+    265|     expect(seen.fakeS.connections, JSON.stringify(seen, null, 1)).toBe…
+    266|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 3 passed (4)
+   Start at  18:13:28
+   Duration  41.79s (transform 328ms, setup 0ms, collect 340ms, tests 40.37s, environment 0ms, prepare 667ms)
+
+JSON report written to C:/Users/jrodr/AppData/Local/Temp/claude/C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo/ecaf7e92-a2ba-49b0-aafc-c62b4cb5eda0/scratchpad/l1-reality-1/tpc/logs/tpc-before-1.json

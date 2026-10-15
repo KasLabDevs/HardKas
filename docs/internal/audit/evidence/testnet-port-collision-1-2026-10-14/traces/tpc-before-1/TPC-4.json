@@ -1,0 +1,22 @@
+{
+  "paths": [
+    {
+      "path": "SN-cli-accounts-balance",
+      "exit": 0,
+      "code": null,
+      "dialled": [
+        "LOOPBACK_CONNECT 127.0.0.1:18210"
+      ],
+      "message": ""
+    },
+    {
+      "path": "SN-sdk-rpc",
+      "exit": 0,
+      "code": null,
+      "dialled": [
+        "LOOPBACK_CONNECT 127.0.0.1:18210"
+      ],
+      "message": ""
+    }
+  ]
+}

@@ -1,0 +1,107 @@
+{
+  "paths": [
+    {
+      "path": "K-cli-accounts-balance",
+      "exit": 1,
+      "code": "NODE_NETWORK_MISMATCH",
+      "dialled": [
+        "LOOPBACK_CONNECT 127.0.0.1:18210"
+      ],
+      "message": "The node at ws://127.0.0.1:18210 serves simnet, not testnet-10: HardKAS refuses to read from it or send to it as testnet-10."
+    },
+    {
+      "path": "K-cli-tx-plan",
+      "exit": 1,
+      "code": "NODE_NETWORK_MISMATCH",
+      "dialled": [
+        "LOOPBACK_CONNECT 127.0.0.1:18210"
+      ],
+      "message": "The node at ws://127.0.0.1:18210 serves simnet, not testnet-10: HardKAS refuses to read from it or send to it as testnet-10."
+    },
+    {
+      "path": "K-cli-tx-send",
+      "exit": 1,
+      "code": "UNKNOWN_ERROR",
+      "dialled": [],
+      "message": "No RPC URL found for network 'testnet-10'."
+    },
+    {
+      "path": "K-cli-tx-status",
+      "exit": 0,
+      "code": null,
+      "dialled": [
+        "LOOPBACK_CONNECT 127.0.0.1:18210"
+      ],
+      "message": ""
+    },
+    {
+      "path": "K-cli-tx-wait",
+      "exit": 1,
+      "code": "TX_WAIT_TIMEOUT",
+      "dialled": [
+        "LOOPBACK_CONNECT 127.0.0.1:18210"
+      ],
+      "message": "Timed out after 3s waiting for fe7ebb1271e839957b20d841c092e76511946a28983bc22c6c79b11bff708b71 to be ACCEPTED; last derived state: nothing derived (no observation succeeded); last observer error: [NODE_NETWORK_MISMATCH] The node at ws://12"
+    },
+    {
+      "path": "K-cli-accounts-consolidate",
+      "exit": 1,
+      "code": "UNKNOWN_ERROR",
+      "dialled": [],
+      "message": "Cannot read properties of undefined (reading 'startsWith')"
+    },
+    {
+      "path": "K-sdk-rpc",
+      "exit": 0,
+      "code": "NODE_NETWORK_MISMATCH",
+      "dialled": [
+        "LOOPBACK_CONNECT 127.0.0.1:18210"
+      ],
+      "message": "The node at ws://127.0.0.1:18210 serves simnet, not testnet-10: HardKAS refuses to read from it or send to it as testnet-10."
+    },
+    {
+      "path": "K-sdk-tx-plan",
+      "exit": 0,
+      "code": "NODE_NETWORK_MISMATCH",
+      "dialled": [
+        "LOOPBACK_CONNECT 127.0.0.1:18210"
+      ],
+      "message": "The node at ws://127.0.0.1:18210 serves simnet, not testnet-10: HardKAS refuses to read from it or send to it as testnet-10."
+    },
+    {
+      "path": "K-sdk-tx-observe",
+      "exit": 0,
+      "code": "NODE_NETWORK_MISMATCH",
+      "dialled": [
+        "LOOPBACK_CONNECT 127.0.0.1:18210"
+      ],
+      "message": "The node at ws://127.0.0.1:18210 serves simnet, not testnet-10: HardKAS refuses to read from it or send to it as testnet-10."
+    }
+  ],
+  "canonicalPortDialledBy": [
+    "K-cli-accounts-balance",
+    "K-cli-tx-plan",
+    "K-cli-tx-status",
+    "K-cli-tx-wait",
+    "K-sdk-rpc",
+    "K-sdk-tx-plan",
+    "K-sdk-tx-observe"
+  ],
+  "fakeS": {
+    "connections": 11,
+    "methods": [
+      "getServerInfo",
+      "getServerInfo",
+      "getServerInfo",
+      "getServerInfo",
+      "getServerInfo",
+      "getServerInfo",
+      "getServerInfo",
+      "getServerInfo",
+      "getServerInfo",
+      "getServerInfo",
+      "getServerInfo"
+    ]
+  },
+  "submitTransactionAtS": 0
+}

@@ -1,0 +1,64 @@
+{
+  "paths": [
+    {
+      "path": "XR-cli-accounts-balance",
+      "exit": 1,
+      "code": "UNKNOWN_ERROR",
+      "dialled": [
+        "REFUSED_CONNECT tn10.kaspa.stream:443"
+      ],
+      "message": "Cannot connect to Kaspa RPC at wss://tn10.kaspa.stream:443. Is kaspad running with --rpclisten-json? (wRPC -> WebSocket -> Unable to connect to wss://tn10.kaspa.stream:443)",
+      "output": "exit 1\n{\n  \"ok\": false,\n  \"code\": \"UNKNOWN_ERROR\",\n  \"message\": \"Cannot connect to Kaspa RPC at wss://tn10.kaspa.stream:443. Is kaspad running with --rpclisten-json? (wRPC -> WebSocket -> Unable to connect to wss://tn10.kaspa.stream:443)\",\n  \"mode\": \"cli\"\n}\n\n"
+    },
+    {
+      "path": "XR-cli-tx-plan",
+      "exit": 1,
+      "code": "UNKNOWN",
+      "dialled": [
+        "REFUSED_CONNECT tn10.kaspa.stream:443"
+      ],
+      "message": "Unknown connection error: Cannot connect to Kaspa RPC at wss://tn10.kaspa.stream:443. Is kaspad running with --rpclisten-json? (wRPC -> WebSocket -> Unable to connect to wss://tn10.kaspa.stream:443)",
+      "output": "exit 1\n{\n  \"ok\": false,\n  \"code\": \"UNKNOWN\",\n  \"message\": \"Unknown connection error: Cannot connect to Kaspa RPC at wss://tn10.kaspa.stream:443. Is kaspad running with --rpclisten-json? (wRPC -> WebSocket -> Unable to connect to wss://tn10.kaspa.stream:443)\",\n  \"mode\": \"cli\"\n}\n\n"
+    },
+    {
+      "path": "XR-sdk-rpc",
+      "exit": 0,
+      "code": null,
+      "dialled": [
+        "REFUSED_CONNECT tn10.kaspa.stream:443"
+      ],
+      "message": "Cannot connect to Kaspa RPC at wss://tn10.kaspa.stream:443. Is kaspad running with --rpclisten-json? (wRPC -> WebSocket -> Unable to connect to wss://tn10.kaspa.stream:443)",
+      "output": "exit 0\n{\"ok\":false,\"code\":null,\"message\":\"Cannot connect to Kaspa RPC at wss://tn10.kaspa.stream:443. Is kaspad running with --rpclisten-json? (wRPC -> WebSocket -> Unable to connect to wss://tn10.kaspa.stream:443)\"}\n\n"
+    },
+    {
+      "path": "XN-cli-accounts-balance",
+      "exit": 1,
+      "code": "UNKNOWN_ERROR",
+      "dialled": [
+        "REFUSED_CONNECT tn10.kaspa.stream:443"
+      ],
+      "message": "Cannot connect to Kaspa RPC at wss://tn10.kaspa.stream:443. Is kaspad running with --rpclisten-json? (wRPC -> WebSocket -> Unable to connect to wss://tn10.kaspa.stream:443)",
+      "output": "exit 1\n{\n  \"ok\": false,\n  \"code\": \"UNKNOWN_ERROR\",\n  \"message\": \"Cannot connect to Kaspa RPC at wss://tn10.kaspa.stream:443. Is kaspad running with --rpclisten-json? (wRPC -> WebSocket -> Unable to connect to wss://tn10.kaspa.stream:443)\",\n  \"mode\": \"cli\"\n}\n\n"
+    },
+    {
+      "path": "XN-cli-tx-plan",
+      "exit": 1,
+      "code": "UNKNOWN",
+      "dialled": [
+        "REFUSED_CONNECT tn10.kaspa.stream:443"
+      ],
+      "message": "Unknown connection error: Cannot connect to Kaspa RPC at wss://tn10.kaspa.stream:443. Is kaspad running with --rpclisten-json? (wRPC -> WebSocket -> Unable to connect to wss://tn10.kaspa.stream:443)",
+      "output": "exit 1\n{\n  \"ok\": false,\n  \"code\": \"UNKNOWN\",\n  \"message\": \"Unknown connection error: Cannot connect to Kaspa RPC at wss://tn10.kaspa.stream:443. Is kaspad running with --rpclisten-json? (wRPC -> WebSocket -> Unable to connect to wss://tn10.kaspa.stream:443)\",\n  \"mode\": \"cli\"\n}\n\n"
+    },
+    {
+      "path": "XN-sdk-rpc",
+      "exit": 0,
+      "code": null,
+      "dialled": [
+        "REFUSED_CONNECT tn10.kaspa.stream:443"
+      ],
+      "message": "Cannot connect to Kaspa RPC at wss://tn10.kaspa.stream:443. Is kaspad running with --rpclisten-json? (wRPC -> WebSocket -> Unable to connect to wss://tn10.kaspa.stream:443)",
+      "output": "exit 0\n{\"ok\":false,\"code\":null,\"message\":\"Cannot connect to Kaspa RPC at wss://tn10.kaspa.stream:443. Is kaspad running with --rpclisten-json? (wRPC -> WebSocket -> Unable to connect to wss://tn10.kaspa.stream:443)\"}\n\n"
+    }
+  ]
+}

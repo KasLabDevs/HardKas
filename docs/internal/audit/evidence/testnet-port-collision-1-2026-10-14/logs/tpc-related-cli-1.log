@@ -1,0 +1,439 @@
+
+ RUN  v2.1.9 C:/Users/jrodr/hkl1/tpc/src
+
+ ✓ packages/cli/test/security-integration-1.test.ts > SECURITY-INTEGRATION-1 · a testnet artifact never reaches a node that declares mainnet (NNI + EA + MG) > SI-1 sdk.tx.send of a testnet-10 artifact, the instance's endpoint now answered by a node declaring mainnet: NODE_NETWORK_MISMATCH, nothing sent or recorded 643ms
+ ✓ packages/cli/test/security-integration-1.test.ts > SECURITY-INTEGRATION-1 · a testnet artifact never reaches a node that declares mainnet (NNI + EA + MG) > SI-1c CLI tx send --url <node declaring mainnet> in a testnet-10 workspace on A: refused NODE_NETWORK_MISMATCH; A and M receive no submission 1467ms
+ ✓ packages/cli/test/security-integration-1.test.ts > SECURITY-INTEGRATION-1 · a testnet artifact never reaches a node that declares mainnet (NNI + EA + MG) > SI-1d CLI tx send without --url, the workspace's testnet-10 endpoint answered by a node declaring mainnet: refused NODE_NETWORK_MISMATCH 1579ms
+ ✓ packages/cli/test/security-integration-1.test.ts > SECURITY-INTEGRATION-1 · an explicit URL B never replaces the effective connection A > SI-2 sdk.tx.send(signed, B) on an instance on A, B declaring mainnet: SEND_ENDPOINT_MISMATCH before B is even asked who it is 320ms
+ ✓ packages/cli/test/security-integration-1.test.ts > SECURITY-INTEGRATION-1 · an explicit URL B never replaces the effective connection A > SI-2b the same with B declaring testnet-10 (a healthy node, just not the instance's): still SEND_ENDPOINT_MISMATCH, B receives nothing 311ms
+ ✓ packages/cli/test/security-integration-1.test.ts > SECURITY-INTEGRATION-1 · an external signer is never asked for mainnet > SI-3a a testnet-10 plan on a mainnet instance with an external signer: MAINNET_SIGNING_DISABLED, 0 signer calls, nothing written
+ ✓ packages/cli/test/security-integration-1.test.ts > SECURITY-INTEGRATION-1 · an external signer is never asked for mainnet > SI-3b a plan whose networkId says mainnet, on a testnet-10 instance with an external signer: MAINNET_SIGNING_DISABLED, 0 signer calls
+ ✓ packages/cli/test/security-integration-1.test.ts > SECURITY-INTEGRATION-1 · an external signer is never asked for mainnet > SI-3b a plan whose execution.network says mainnet, on a testnet-10 instance with an external signer: MAINNET_SIGNING_DISABLED, 0 signer calls
+ ✓ packages/cli/test/security-integration-1.test.ts > SECURITY-INTEGRATION-1 · an external signer is never asked for mainnet > SI-3c a workflow [tx.plan, tx.send] on a mainnet instance with an external signer: 0 signer calls, 0 submitTransaction
+ ✓ packages/cli/test/security-integration-1.test.ts > SECURITY-INTEGRATION-1 · a reconnection is verified again > SI-4 the node behind the instance's endpoint restarts as a node declaring mainnet: the next send is refused NODE_NETWORK_MISMATCH, no submitTransaction 5331ms
+ ✓ packages/cli/test/security-integration-1.test.ts > SECURITY-INTEGRATION-1 · a reconnection is verified again > SI-4b control: the node restarts as the SAME network: the next send goes through on the new connection, verified again 5341ms
+ ✓ packages/cli/test/security-integration-1.test.ts > SECURITY-INTEGRATION-1 · artifact network vs instance network at signing > SI-5 a testnet-10 plan signed on a simnet instance (external signer): what signing does today, and the send refused on both sides
+ ✓ packages/cli/test/security-integration-1.test.ts > SECURITY-INTEGRATION-1 · endpoint credentials never reach receipts, events, errors or the workspace > SI-6a a send through an endpoint with userinfo and ?token=: the receipt, the events and every workspace file are free of both secrets 337ms
+ ✓ packages/cli/test/security-integration-1.test.ts > SECURITY-INTEGRATION-1 · endpoint credentials never reach receipts, events, errors or the workspace > SI-6b refusals on endpoints with credentials (NNI mismatch, EA endpoint mismatch, connection failure): no secret in the error, nothing written 409ms
+ ✓ packages/cli/test/security-integration-1.test.ts > SECURITY-INTEGRATION-1 · endpoint credentials never reach receipts, events, errors or the workspace > SI-6c CLI tx send --url <endpoint with credentials declaring mainnet>, then a CLI send through a configured endpoint with credentials: no secret in any output or file 2784ms
+ ✓ packages/cli/test/security-integration-1.test.ts > SECURITY-INTEGRATION-1 · D3 every refusal object (metadata included) is free of endpoint credentials > SI-7 NNI, EA (send, observe, simulator), MG, TQ and connection-failure errors: no secret anywhere in the object 512ms
+ ✓ packages/cli/test/security-integration-1.test.ts > SECURITY-INTEGRATION-1 · D3 every refusal object (metadata included) is free of endpoint credentials > SI-7b a send whose credentialed endpoint is unreachable: refused or recorded as failed, never with a credential (receipt, events, files, error) 357ms
+ ✓ packages/cli/test/task-evidence-unbound-1.test.ts > TASK-EVIDENCE-UNBOUND-1 · the task's evidence package and the payment it made > TEU-1 `task pay --evidence`: the package carries plan, signed, submission and observation, names them, and verifies as a closed, observed payment 1763ms
+ ✓ packages/cli/test/task-evidence-unbound-1.test.ts > TASK-EVIDENCE-UNBOUND-1 · the task's evidence package and the payment it made > TEU-2 the scenario result and the package record the execution mode the task ran in (rpc), not a label derived from the network 1762ms
+ ✓ packages/cli/test/task-evidence-unbound-1.test.ts > TASK-EVIDENCE-UNBOUND-1 · the task's evidence package and the payment it made > TEU-3 a package that cannot be written fails the command (non-zero exit, typed code), never `ok: true`; the scenario result stays 1726ms
+ ✓ packages/cli/test/task-evidence-unbound-1.test.ts > TASK-EVIDENCE-UNBOUND-1 · a payment claim needs its closed lineage (D-TEU-1); other packages keep verifying > TEU-8a a payment package with one payment artifact omitted (consistently re-sealed): not verified as that payment 1732ms
+ ✓ packages/cli/test/task-evidence-unbound-1.test.ts > TASK-EVIDENCE-UNBOUND-1 · a payment claim needs its closed lineage (D-TEU-1); other packages keep verifying > TEU-8b a payment package whose lineage was manipulated (signed re-parented and every artifact re-sealed): not verified as that payment 1752ms
+ ✓ packages/cli/test/task-evidence-unbound-1.test.ts > TASK-EVIDENCE-UNBOUND-1 · a payment claim needs its closed lineage (D-TEU-1); other packages keep verifying > TEU-8c a package that names nothing and does not declare itself empty (the E1′ shape) is not EVIDENCE_VERIFIED
+ ✓ packages/cli/test/task-evidence-unbound-1.test.ts > TASK-EVIDENCE-UNBOUND-1 · a payment claim needs its closed lineage (D-TEU-1); other packages keep verifying > TEU-8d a package that makes no payment claim keeps verifying with an open lineage, and says so 1778ms
+ ✓ packages/cli/test/task-evidence-unbound-1.test.ts > TASK-EVIDENCE-UNBOUND-1 · a payment claim needs its closed lineage (D-TEU-1); other packages keep verifying > TEU-4 unchanged guarantees: an edited artifact and a dropped one are refused; a fully re-sealed forgery of a closed chain verifies (unsigned: authorship is not proven) 1740ms
+ ✓ packages/cli/test/task-evidence-unbound-1.test.ts > TASK-EVIDENCE-UNBOUND-1 · only this run, and the kinds of task > TEU-7 another SDK instance of the same process writing in the same workspace during the task: its artifact is not named 1694ms
+ ✓ packages/cli/test/task-evidence-unbound-1.test.ts > TASK-EVIDENCE-UNBOUND-1 · only this run, and the kinds of task > TEU-9 a task that writes nothing (noop, or a plan never signed) declares an empty package; one that signs without sending claims artifacts, not a payment 4283ms
+ ✓ packages/cli/test/task-evidence-unbound-1.test.ts > TASK-EVIDENCE-UNBOUND-1 · only this run, and the kinds of task > TEU-10 a failed task keeps sealed evidence of the failure (status failed, what it wrote, no secret) and the command still fails 1692ms
+ ✓ packages/cli/test/task-evidence-unbound-1.test.ts > TASK-EVIDENCE-UNBOUND-1 · only this run, and the kinds of task > TEU-13 two runs recording on the SAME SDK instance at once: refused explicitly (typed), never crossed evidence; one after the other they stay separate 1453ms
+ ✓ packages/cli/test/task-evidence-unbound-1.test.ts > TASK-EVIDENCE-UNBOUND-1 · only this run, and the kinds of task > TEU-6 the task without --network runs on the workspace's default and records its effective mode 1724ms
+ ✓ packages/cli/test/task-evidence-unbound-1.test.ts > TASK-EVIDENCE-UNBOUND-1 · what the verifier says (D-TEU-3) and where the version comes from > TEU-11 `evidence verify` states its scope: artifacts, claim, lineage, and that it is not a proof of chain inclusion 3760ms
+ ✓ packages/cli/test/task-evidence-unbound-1.test.ts > TASK-EVIDENCE-UNBOUND-1 · what the verifier says (D-TEU-3) and where the version comes from > TEU-12 the package's hardkasVersion is the product version from its one source 1175ms
+ ✓ packages/cli/test/secret-surface-2.test.ts > SECRET-SURFACE-2 · BEFORE > SS2-A · security audit finds the plaintext keys HardKAS writes > control · a clean workspace passes 1139ms
+ ✓ packages/cli/test/secret-surface-2.test.ts > SECRET-SURFACE-2 · BEFORE > SS2-A · security audit finds the plaintext keys HardKAS writes > the key `localnet account create` stores in plaintext fails the audit, naming the file 2186ms
+ ✓ packages/cli/test/secret-surface-2.test.ts > SECRET-SURFACE-2 · BEFORE > SS2-A · security audit finds the plaintext keys HardKAS writes > a mnemonic in plaintext under .hardkas fails the audit 1129ms
+ ✓ packages/cli/test/secret-surface-2.test.ts > SECRET-SURFACE-2 · BEFORE > SS2-A · security audit finds the plaintext keys HardKAS writes > control · a dev-account config that holds only a privateKeyRef is not a leak 1109ms
+ ✓ packages/cli/test/secret-surface-2.test.ts > SECRET-SURFACE-2 · BEFORE > SS2-B · a mainnet private key is not printed by default > kaspa wallet create <name> --network mainnet refuses (WALLET_KEY_OUTPUT_REQUIRED, exit 2): no key, no address, the two ways out named 1121ms
+ ✓ packages/cli/test/secret-surface-2.test.ts > SECRET-SURFACE-2 · BEFORE > SS2-C · env check does not print the dev server token > human output names the variable as set without its value 1125ms
+ ✓ packages/cli/test/secret-surface-2.test.ts > SECRET-SURFACE-2 · BEFORE > SS2-C · env check does not print the dev server token > --json reports the variable without its value 1103ms
+ ✓ packages/cli/test/secret-surface-2.test.ts > SECRET-SURFACE-2 · BEFORE > SS2-D · URL credentials are redacted even when the output is coloured > control · colours off: kaspa doctor never prints the URL's password 1247ms
+ ✓ packages/cli/test/secret-surface-2.test.ts > SECRET-SURFACE-2 · BEFORE > SS2-D · URL credentials are redacted even when the output is coloured > colours on (every Windows terminal by default): the password must be redacted all the same 1248ms
+ ✓ packages/cli/test/secret-surface-2.test.ts > SECRET-SURFACE-2 · BEFORE > SS2-D · URL credentials are redacted even when the output is coloured > AFTER · colours on, --json: the one document carries no password either 1232ms
+ ✓ packages/cli/test/secret-surface-2.test.ts > SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > finds: JSON, a space after the colon (the store's format) 1135ms
+ ✓ packages/cli/test/secret-surface-2.test.ts > SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > finds: JSON, no spaces 1109ms
+ ✓ packages/cli/test/secret-surface-2.test.ts > SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > finds: a TS object with single quotes 1121ms
+ ✓ packages/cli/test/secret-surface-2.test.ts > SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > finds: privateKeyHex under YAML-style spacing 1119ms
+ ✓ packages/cli/test/secret-surface-2.test.ts > SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > finds: the .env line kaspa wallet create recommends, in a log 1109ms
+ ✓ packages/cli/test/secret-surface-2.test.ts > SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > finds: a 12-word mnemonic under a field 1129ms
+ ✓ packages/cli/test/secret-surface-2.test.ts > SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > finds: a 24-word seed phrase under seedPhrase 1124ms
+ ✓ packages/cli/test/secret-surface-2.test.ts > SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > finds: a mnemonic in a variable line 1105ms
+ ✓ packages/cli/test/secret-surface-2.test.ts > SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > finds: an extended private key anywhere 1127ms
+ ✓ packages/cli/test/secret-surface-2.test.ts > SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > finds: an extra path given with --include 1109ms
+ ✓ packages/cli/test/secret-surface-2.test.ts > SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > passes: content hashes and txIds (64 hex under identity names) 1124ms
+ ✓ packages/cli/test/secret-surface-2.test.ts > SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > passes: an encrypted keystore (ciphertext, salt, nonce) 1133ms
+ ✓ packages/cli/test/secret-surface-2.test.ts > SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > passes: an account that names its key's environment variable 1151ms
+ ✓ packages/cli/test/secret-surface-2.test.ts > SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > passes: a dev-account config that references its key file (the documented exemption) 1120ms
+ ✓ packages/cli/test/secret-surface-2.test.ts > SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > passes: the dev server token file (a bare value: no private key) 1116ms
+ ✓ packages/cli/test/secret-surface-2.test.ts > SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > passes: twelve ordinary words of prose, not under a phrase-bearing name 1107ms
+ ✓ packages/cli/test/secret-surface-2.test.ts > SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > passes: a 64-hex under a secret name split across a newline is still a key; but a 63-hex is not 1138ms
+ ✓ packages/cli/test/secret-surface-2.test.ts > SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > the exemption is delimited: a dev-account config that carries a key besides its reference is a finding 1112ms
+ ✓ packages/cli/test/secret-surface-2.test.ts > SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > a simnet account is not exempt for being simnet: the plaintext store of localnet account create is a finding, with the way out 2236ms
+ ✓ packages/cli/test/secret-surface-2.test.ts > SECRET-SURFACE-2 · AFTER > D2 · the formats HardKAS writes are found (by name and shape), the value is never echoed > the .key files of dev accounts are not searched (their permissions are checked instead) 1124ms
+ ✓ packages/cli/test/secret-surface-2.test.ts > SECRET-SURFACE-2 · AFTER > D3 · env check reports a secret-bearing variable as configured, never its value > --json: value [REDACTED], configured: true, secret: true; a non-secret variable keeps its value 1124ms
+ ✓ packages/cli/test/secret-surface-2.test.ts > SECRET-SURFACE-2 · AFTER > D3 · env check reports a secret-bearing variable as configured, never its value > human: the line says configured and shows the marker; the same when the token comes from .env 1124ms
+ ✓ packages/cli/test/secret-surface-2.test.ts > SECRET-SURFACE-2 · AFTER > D3 · env check reports a secret-bearing variable as configured, never its value > the token file the server writes is not touched by env check 1106ms
+ ✓ packages/cli/test/secret-surface-2.test.ts > SECRET-SURFACE-2 · AFTER > D1 · kaspa wallet create: the key goes where the user says, decided before anything is generated > refuses by default on simnet (the default): exit 2, WALLET_KEY_OUTPUT_REQUIRED, no key, no address, nothing written 1131ms
+ ✓ packages/cli/test/secret-surface-2.test.ts > SECRET-SURFACE-2 · AFTER > D1 · kaspa wallet create: the key goes where the user says, decided before anything is generated > refuses by default on testnet-10: exit 2, WALLET_KEY_OUTPUT_REQUIRED, no key, no address, nothing written 1122ms
+ ✓ packages/cli/test/secret-surface-2.test.ts > SECRET-SURFACE-2 · AFTER > D1 · kaspa wallet create: the key goes where the user says, decided before anything is generated > refuses by default on mainnet: exit 2, WALLET_KEY_OUTPUT_REQUIRED, no key, no address, nothing written 1120ms
+ ✓ packages/cli/test/secret-surface-2.test.ts > SECRET-SURFACE-2 · AFTER > D1 · kaspa wallet create: the key goes where the user says, decided before anything is generated > --json without the flag: exactly one JSON document (ok: false, the code), exit 2, no secret, nothing written 1129ms
+ ✓ packages/cli/test/secret-surface-2.test.ts > SECRET-SURFACE-2 · AFTER > D1 · kaspa wallet create: the key goes where the user says, decided before anything is generated > --show-private-key on simnet (the default): the address, the snippet and the key printed once, after the warning; nothing written 1188ms
+ ✓ packages/cli/test/secret-surface-2.test.ts > SECRET-SURFACE-2 · AFTER > D1 · kaspa wallet create: the key goes where the user says, decided before anything is generated > --show-private-key on testnet-10: the address, the snippet and the key printed once, after the warning; nothing written 1204ms
+ ✓ packages/cli/test/secret-surface-2.test.ts > SECRET-SURFACE-2 · AFTER > D1 · kaspa wallet create: the key goes where the user says, decided before anything is generated > --show-private-key on mainnet: the address, the snippet and the key printed once, after the warning; nothing written 1196ms
+ ✓ packages/cli/test/secret-surface-2.test.ts > SECRET-SURFACE-2 · AFTER > D1 · kaspa wallet create: the key goes where the user says, decided before anything is generated > --show-private-key --json: one document carrying the key (once), the warning on stderr, nothing written 1191ms
+ ✓ packages/cli/test/secret-surface-2.test.ts > SECRET-SURFACE-2 · AFTER > D1 · kaspa wallet create: the key goes where the user says, decided before anything is generated > the help says so: the key only with --show-private-key; nothing is saved 1111ms
+ ✓ packages/cli/test/secret-surface-2.test.ts > SECRET-SURFACE-2 · AFTER > D1 · kaspa wallet create: the key goes where the user says, decided before anything is generated > the way out the refusal names is real and recoverable: accounts real generate --password-env (mainnet) writes an encrypted keystore v2 the CLI opens again with the password, holding the key of that address; the key is never printed; the workspace passes the audit 5659ms
+ ✓ packages/cli/test/secret-surface-2.test.ts > SECRET-SURFACE-2 · AFTER > D2 + D4 · secrets obfuscated by whitespace and escape sequences are found, and never echoed > finds: a captured coloured console line: spaces around the colon, the value split by escapes 2144ms
+ ✓ packages/cli/test/secret-surface-2.test.ts > SECRET-SURFACE-2 · AFTER > D2 + D4 · secrets obfuscated by whitespace and escape sequences are found, and never echoed > finds: the .env line with spaces around = and a coloured value 2125ms
+ ✓ packages/cli/test/secret-surface-2.test.ts > SECRET-SURFACE-2 · AFTER > D2 + D4 · secrets obfuscated by whitespace and escape sequences are found, and never echoed > finds: a serialised log: the textual \u001b form around a mnemonic 2099ms
+ ✓ packages/cli/test/secret-surface-2.test.ts > SECRET-SURFACE-2 · AFTER > D2 + D4 · secrets obfuscated by whitespace and escape sequences are found, and never echoed > finds: an escape after every character of the key, tabs around the separator 2085ms
+ ✓ packages/cli/test/secret-surface-2.test.ts > SECRET-SURFACE-2 · AFTER > D2 + D4 · secrets obfuscated by whitespace and escape sequences are found, and never echoed > passes: a coloured log without a secret (a txId under its name, an address, amounts) 1133ms
+ ✓ packages/cli/test/endpoint-authority-1.test.ts > ENDPOINT-AUTHORITY-1 · SDK send > EA-1 sdk.tx.send(signed, urlB) on an instance opened on A: refused SEND_ENDPOINT_MISMATCH before anything is sent or recorded 598ms
+ ✓ packages/cli/test/endpoint-authority-1.test.ts > ENDPOINT-AUTHORITY-1 · SDK send > EA-1c control: an explicit URL that IS the client's endpoint (another spelling) is accepted; the receipt and the event name A 352ms
+ ✓ packages/cli/test/endpoint-authority-1.test.ts > ENDPOINT-AUTHORITY-1 · SDK send > EA-2 sdk.tx.send(signed) without a URL (default client on A): the receipt and the event name A 345ms
+ ✓ packages/cli/test/endpoint-authority-1.test.ts > ENDPOINT-AUTHORITY-1 · SDK send > EA-2u an injected client that does not say its endpoint: an explicit URL is refused SEND_ENDPOINT_UNVERIFIABLE (nothing sent); without one the receipt names no endpoint 348ms
+ ✓ packages/cli/test/endpoint-authority-1.test.ts > ENDPOINT-AUTHORITY-1 · SDK send > EA-3 a simulator instance given an explicit URL: refused SEND_ENDPOINT_ON_SIMULATOR; B receives nothing, no receipt 310ms
+ ✓ packages/cli/test/endpoint-authority-1.test.ts > ENDPOINT-AUTHORITY-1 · SDK send > EA-3n a signed artifact of another network: refused SEND_NETWORK_MISMATCH before anything is sent or recorded 319ms
+ ✓ packages/cli/test/endpoint-authority-1.test.ts > ENDPOINT-AUTHORITY-1 · observation > EA-4 sdk.tx.observe(txId, { rpcUrl: B }) on an instance on A: refused OBSERVE_ENDPOINT_MISMATCH, nobody queried, nothing recorded 309ms
+ ✓ packages/cli/test/endpoint-authority-1.test.ts > ENDPOINT-AUTHORITY-1 · observation > EA-4c control: observe without a URL names the client's endpoint (A) and A's observer 339ms
+ ✓ packages/cli/test/endpoint-authority-1.test.ts > ENDPOINT-AUTHORITY-1 · observation > EA-5 the client swapped into sdk.rpc (as the CLI's tx send / consolidate do): the observation names B and B's observer 331ms
+ ✓ packages/cli/test/endpoint-authority-1.test.ts > ENDPOINT-AUTHORITY-1 · CLI tx send (controls) > EA-6 control: tx send --url B in a workspace declaring A: B receives the submission and the receipt names B; A receives nothing 1491ms
+ ✓ packages/cli/test/endpoint-authority-1.test.ts > ENDPOINT-AUTHORITY-1 · CLI tx send (controls) > EA-7 control: tx send without --url: the configured node A receives it and the receipt names A 1470ms
+ ✓ packages/cli/test/endpoint-authority-1.test.ts > ENDPOINT-AUTHORITY-1 · TQ-1 remote node authority > EA-8 probeRemoteTestnet declaring B while its client talks to A: refused ENDPOINT_MISMATCH before any call
+ ✓ packages/cli/test/endpoint-authority-1.test.ts > ENDPOINT-AUTHORITY-1 · TQ-1 remote node authority > EA-8u probeRemoteTestnet whose client does not say its endpoint: refused ENDPOINT_UNVERIFIABLE before any call
+ ✓ packages/cli/test/endpoint-authority-1.test.ts > ENDPOINT-AUTHORITY-1 · TQ-1 remote node authority > EA-8c control: probeRemoteTestnet declaring the endpoint its client talks to: the authority names A
+ ✓ packages/cli/test/testnet-port-collision-1.test.ts > TESTNET-PORT-COLLISION-1 · a public network never gets an implicit endpoint > TPC-1 testnet-10 declared as `kaspa-node` WITHOUT rpcUrl: NETWORK_ENDPOINT_REQUIRED on every path, zero connections (never 127.0.0.1:18210) 8857ms
+ ✓ packages/cli/test/testnet-port-collision-1.test.ts > TESTNET-PORT-COLLISION-1 · a public network never gets an implicit endpoint > TPC-3 testnet-10 with NO networks entry: the built-in public endpoint is not used — NETWORK_ENDPOINT_REQUIRED, zero connections 8831ms
+ ✓ packages/cli/test/testnet-port-collision-1.test.ts > TESTNET-PORT-COLLISION-1 · a public network never gets an implicit endpoint > TPC-5 mainnet without an endpoint (as `kaspa-node`, and with no entry): NETWORK_ENDPOINT_REQUIRED, zero connections 6100ms
+ ✓ packages/cli/test/testnet-port-collision-1.test.ts > TESTNET-PORT-COLLISION-1 · a public network never gets an implicit endpoint > TPC-7 an explicit endpoint is never silently replaced: `--url` T on the K workspace dials T only; a declared endpoint that is down fails on THAT endpoint, never on a fallback 7060ms
+ ✓ packages/cli/test/testnet-port-collision-1.test.ts > TESTNET-PORT-COLLISION-1 · what keeps working > TPC-2 control: testnet-10 as `kaspa-rpc` with an explicit rpcUrl (the own node T): every path dials T and only T 14333ms
+ ✓ packages/cli/test/testnet-port-collision-1.test.ts > TESTNET-PORT-COLLISION-1 · what keeps working > TPC-4 control: simnet declared as `kaspa-node` without rpcUrl keeps its legitimate default — the canonical localnet (S on :18210) 2250ms
+ ✓ packages/cli/test/demo-cut-t-a14b-tx-status.test.ts > Demo-cut · T-A14b · tx status / tx wait present the derived Q4 state > walks SUBMITTED → MEMPOOL_ACCEPTED → ACCEPTED(n) → CONFIRMED(n) → FINALIZED, each equal to sdk.tx.status, nothing asserted beyond it 487ms
+ ✓ packages/cli/test/demo-cut-t-a14b-tx-status.test.ts > Demo-cut · T-A14b · tx status / tx wait present the derived Q4 state > REORGED, REJECTED_BY_NODE and INSUFFICIENT_EVIDENCE come straight from the model
+ ✓ packages/cli/test/demo-cut-t-a14b-tx-status.test.ts > Demo-cut · T-A14b · tx status / tx wait present the derived Q4 state > a submission the node rejected is REJECTED_BY_NODE, and `tx wait` fails on it instead of waiting
+ ✓ packages/cli/test/demo-cut-t-a14b-tx-status.test.ts > Demo-cut · T-A14b · tx status / tx wait present the derived Q4 state > CONFLICTING_OBSERVATIONS shows every observer's view
+ ✓ packages/cli/test/demo-cut-t-a14b-tx-status.test.ts > Demo-cut · T-A14b · tx status / tx wait present the derived Q4 state > `tx wait --until confirmed` follows the evidence to CONFIRMED, one persisted observation per look
+ ✓ packages/cli/test/demo-cut-t-a14b-tx-status.test.ts > Demo-cut · T-A14b · tx status / tx wait present the derived Q4 state > `tx wait --until accepted` stops at ACCEPTED; a timeout names the last derived state and never claims confirmation
+ ✓ packages/cli/test/demo-cut-t-a14b-tx-status.test.ts > Demo-cut · T-A14b · tx status / tx wait present the derived Q4 state > `tx wait --until confirmed` returns only once the node's UTXO view reflects the transaction (a trailing view is waited out)
+ ✓ packages/cli/test/demo-cut-t-a14b-tx-status.test.ts > Demo-cut · T-A14b · tx status / tx wait present the derived Q4 state > a UTXO view that never reflects the transaction fails explicitly and bounded, naming what is missing; the state stays CONFIRMED
+ ✓ packages/cli/test/demo-cut-t-a14b-tx-status.test.ts > Demo-cut · T-A14b · tx status / tx wait present the derived Q4 state > without a verifiable plan for the txId in this workspace the view is not checked, and the wait says so
+ ✓ packages/cli/test/demo-cut-t-a14b-tx-status.test.ts > Demo-cut · T-A14b · tx status / tx wait present the derived Q4 state > a simulator txId is SYNTHETIC_EXECUTED: status and wait say there is no network, and take no observation
+ ✓ packages/cli/test/cli-contract-2.test.ts > CLI-CONTRACT-2 · A · the `hardkas test` verdict (TEST-VACUOUS-PASS) > A1 · no test file: zero tests run is not a pass, and the envelope agrees with the exit code 1634ms
+ ✓ packages/cli/test/cli-contract-2.test.ts > CLI-CONTRACT-2 · A · the `hardkas test` verdict (TEST-VACUOUS-PASS) > A2a · one passing test under --json: exactly one JSON document on stdout (the envelope), exit 0, ok:true 2122ms
+ ✓ packages/cli/test/cli-contract-2.test.ts > CLI-CONTRACT-2 · A · the `hardkas test` verdict (TEST-VACUOUS-PASS) > A2b · one passing test: the report says how many tests ran (a pass that proves something ran) 2084ms
+ ✓ packages/cli/test/cli-contract-2.test.ts > CLI-CONTRACT-2 · A · the `hardkas test` verdict (TEST-VACUOUS-PASS) > A3 · a file whose only test is skipped: nothing failed, so the verdict is never TESTS_FAILED (and nothing ran, so it is not a pass) 2080ms
+ ✓ packages/cli/test/cli-contract-2.test.ts > CLI-CONTRACT-2 · A · the `hardkas test` verdict (TEST-VACUOUS-PASS) > A4 · `--scenario` that matches no test: zero tests selected is neither a pass nor TESTS_FAILED, and the envelope agrees with the exit 2107ms
+ ✓ packages/cli/test/cli-contract-2.test.ts > CLI-CONTRACT-2 · A · the `hardkas test` verdict (TEST-VACUOUS-PASS) > A5 · control · a failing test: ok:false, TESTS_FAILED, exit 1 2130ms
+ ✓ packages/cli/test/cli-contract-2.test.ts > CLI-CONTRACT-2 · B · one unreachable node, one typed code > B0 · control · a typed refusal before any connection: `--network nonsense` is UNKNOWN_NETWORK in one envelope 1132ms
+ ✓ packages/cli/test/cli-contract-2.test.ts > CLI-CONTRACT-2 · B · one unreachable node, one typed code > B3 · control · `rpc health --json` against the same node: typed 1238ms
+ ✓ packages/cli/test/cli-contract-2.test.ts > CLI-CONTRACT-2 · C · an error shown is a failure of the run; a claim is backed by an effect > C1 · `dev tx send` without arguments: the usage error it prints is exit ≠ 0 1125ms
+ ✓ packages/cli/test/cli-contract-2.test.ts > CLI-CONTRACT-2 · C · an error shown is a failure of the run; a claim is backed by an effect > C2 · `dev tx send` follows the workspace's execution target (the simulator here), never a hard-coded simnet node 1317ms
+ ✓ packages/cli/test/cli-contract-2.test.ts > CLI-CONTRACT-2 · D · `--json` answers with exactly one envelope, usage errors included > D5 · control · `node reset --json` without --yes is a typed usage refusal with one envelope (JSON-ENVELOPE-RESIDUAL-2, fixed) 1136ms
+ ✓ packages/cli/test/cli-contract-2.test.ts > CLI-CONTRACT-2 · E · an explicit empty input is refused, never replaced by a default > E · `tx plan --amount ""` is refused: exit ≠ 0 and no plan 1104ms
+ ✓ packages/cli/test/cli-contract-2.test.ts > CLI-CONTRACT-2 · E · an explicit empty input is refused, never replaced by a default > E · `tx plan --to ""` is refused: exit ≠ 0 and no plan 1142ms
+ ✓ packages/cli/test/cli-contract-2.test.ts > CLI-CONTRACT-2 · E · an explicit empty input is refused, never replaced by a default > E · `tx plan --from ""` is refused: exit ≠ 0 and no plan 1137ms
+ ✓ packages/cli/test/workspace-authority-1.test.ts > WORKSPACE-AUTHORITY-1 · BEFORE > A · one event ledger: what the CLI records is what the readers read > control: the workspace recorded events
+ ✓ packages/cli/test/workspace-authority-1.test.ts > WORKSPACE-AUTHORITY-1 · BEFORE > A · one event ledger: what the CLI records is what the readers read > `query events` returns the events the workspace recorded 969ms
+ ✓ packages/cli/test/workspace-authority-1.test.ts > WORKSPACE-AUTHORITY-1 · BEFORE > A · one event ledger: what the CLI records is what the readers read > `query store rebuild --backend sqlite` indexes the events the workspace recorded 1052ms
+ ✓ packages/cli/test/workspace-authority-1.test.ts > WORKSPACE-AUTHORITY-1 · BEFORE > A · one event ledger: what the CLI records is what the readers read > the projection holds every event of the ledger (two distinct events are two rows) 2072ms
+ ✓ packages/cli/test/workspace-authority-1.test.ts > WORKSPACE-AUTHORITY-1 · BEFORE > A · one event ledger: what the CLI records is what the readers read > `localnet snapshot create` captures the events the workspace recorded 1010ms
+ ✓ packages/cli/test/workspace-authority-1.test.ts > WORKSPACE-AUTHORITY-1 · BEFORE > B · the query store is derived from the workspace, never its authority > control: with no store.db the query commands answer from the workspace 4394ms
+ ✓ packages/cli/test/workspace-authority-1.test.ts > WORKSPACE-AUTHORITY-1 · BEFORE > B · the query store is derived from the workspace, never its authority > `status` (an observation) creates nothing in the workspace 4403ms
+ ✓ packages/cli/test/workspace-authority-1.test.ts > WORKSPACE-AUTHORITY-1 · BEFORE > B · the query store is derived from the workspace, never its authority > the query commands still answer after `status` ran 7407ms
+ ✓ packages/cli/test/workspace-authority-1.test.ts > WORKSPACE-AUTHORITY-1 · BEFORE > B · the query store is derived from the workspace, never its authority > `query store rebuild` does not report success while it indexed nothing and the workspace holds artifacts 4427ms
+ ✓ packages/cli/test/workspace-authority-1.test.ts > WORKSPACE-AUTHORITY-1 · BEFORE > B · the query store is derived from the workspace, never its authority > a projection that misses the workspace's newer artifacts is not answered as the truth, nor reported healthy 10876ms
+ ✓ packages/cli/test/workspace-authority-1.test.ts > WORKSPACE-AUTHORITY-1 · BEFORE > C · counters see the artifacts the workspace holds > control: `hardkas verify` scans every artifact the resolver holds 1079ms
+ ✓ packages/cli/test/workspace-authority-1.test.ts > WORKSPACE-AUTHORITY-1 · BEFORE > C · counters see the artifacts the workspace holds > `status` counts the artifacts the resolver holds 1038ms
+ ✓ packages/cli/test/workspace-authority-1.test.ts > WORKSPACE-AUTHORITY-1 · BEFORE > C · counters see the artifacts the workspace holds > `ci verify` scans the artifacts the resolver holds 2397ms
+ ✓ packages/cli/test/workspace-authority-1.test.ts > WORKSPACE-AUTHORITY-1 · BEFORE > D · `query tx` reports the transaction's evidence from the store > control: the receipt and the signed artifact are found
+ ✓ packages/cli/test/workspace-authority-1.test.ts > WORKSPACE-AUTHORITY-1 · BEFORE > D · `query tx` reports the transaction's evidence from the store > the plan of the transaction is found
+ ✓ packages/cli/test/workspace-authority-1.test.ts > WORKSPACE-AUTHORITY-1 · BEFORE > D · `query tx` reports the transaction's evidence from the store > no artifact of the transaction has the role 'unknown'
+ ✓ packages/cli/test/workspace-authority-1.test.ts > WORKSPACE-AUTHORITY-1 · BEFORE > D · `query tx` reports the transaction's evidence from the store > only the workspace's artifact store is evidence (a user's --out copy is not a second artifact)
+ ✓ packages/cli/test/workspace-authority-1.test.ts > WORKSPACE-AUTHORITY-1 · BEFORE > E · one snapshot model > `localnet snapshot verify` finds the snapshot `localnet snapshot create` just made 5410ms
+ ✓ packages/cli/test/workspace-authority-1.test.ts > WORKSPACE-AUTHORITY-1 · BEFORE > F · a read-only command never creates a workspace > `verify --json` run from a subdirectory of a workspace creates no .hardkas there 970ms
+ ✓ packages/cli/test/workspace-authority-1.test.ts > WORKSPACE-AUTHORITY-1 · BEFORE > F · a read-only command never creates a workspace > `artifact explain` run from a subdirectory of a workspace creates no .hardkas there 975ms
+ ✓ packages/cli/test/workspace-authority-1.test.ts > WORKSPACE-AUTHORITY-1 · BEFORE > F · a read-only command never creates a workspace > `artifact lineage --json` run from a subdirectory of a workspace creates no .hardkas there 977ms
+ ✓ packages/cli/test/workspace-authority-1.test.ts > WORKSPACE-AUTHORITY-1 · BEFORE > F · a read-only command never creates a workspace > control: `status` from a subdirectory creates nothing 965ms
+ ✓ packages/cli/test/workspace-authority-1.test.ts > WORKSPACE-AUTHORITY-1 · BEFORE > F · a configured project has one simulator state, wherever a command runs from > control: the balance read at the project root reflects the payment 996ms
+ ✓ packages/cli/test/workspace-authority-1.test.ts > WORKSPACE-AUTHORITY-1 · BEFORE > F · a configured project has one simulator state, wherever a command runs from > `accounts balance` from a subdirectory reports the project's balance 4016ms
+ ✓ packages/cli/test/workspace-authority-1.test.ts > WORKSPACE-AUTHORITY-1 · BEFORE > F · a configured project has one simulator state, wherever a command runs from > a payment run from a subdirectory spends from the project's state 3421ms
+ ✓ packages/cli/test/accounts-secrets-wave.test.ts > Accounts wave · encrypted real accounts sign with the user's password, given explicitly > --password-env: signs; the password appears in no output and no file 4130ms
+ ✓ packages/cli/test/accounts-secrets-wave.test.ts > Accounts wave · encrypted real accounts sign with the user's password, given explicitly > --password-stdin: signs, and the password is not echoed 3946ms
+ ✓ packages/cli/test/accounts-secrets-wave.test.ts > Accounts wave · encrypted real accounts sign with the user's password, given explicitly > a wrong password fails with KEYSTORE_PASSWORD_INVALID: nothing signed, the attempt not echoed 3866ms
+ ✓ packages/cli/test/accounts-secrets-wave.test.ts > Accounts wave · encrypted real accounts sign with the user's password, given explicitly > no password and no terminal: KEYSTORE_PASSWORD_REQUIRED at once, no prompt, nothing signed, no lock 3527ms
+ ✓ packages/cli/test/accounts-secrets-wave.test.ts > Accounts wave · encrypted real accounts sign with the user's password, given explicitly > a real account encrypted with the development password is not unlocked silently; given explicitly it signs 4904ms
+ ✓ packages/cli/test/accounts-secrets-wave.test.ts > Accounts wave · encrypted real accounts sign with the user's password, given explicitly > control · development accounts (.hardkas/dev-accounts) still sign with no password at all 3866ms
+ ✓ packages/cli/test/accounts-secrets-wave.test.ts > Accounts wave · `accounts real generate` without a terminal fails closed > no password source: exit != 0 with KEYSTORE_PASSWORD_REQUIRED; no keystore, no store, no lock 1164ms
+ ✓ packages/cli/test/accounts-secrets-wave.test.ts > Accounts wave · `accounts real generate` without a terminal fails closed > --json: a JSON error, never a prompt 1139ms
+ ✓ packages/cli/test/accounts-secrets-wave.test.ts > Accounts wave · `accounts real generate` without a terminal fails closed > stdin left open (automation): fails at once instead of hanging 1173ms
+ ✓ packages/cli/test/accounts-secrets-wave.test.ts > Accounts wave · `accounts real generate` without a terminal fails closed > --password-env naming an unset variable: KEYSTORE_PASSWORD_REQUIRED, never a fallback prompt 1163ms
+ ✓ packages/cli/test/accounts-secrets-wave.test.ts > Accounts wave · `accounts real generate` without a terminal fails closed > control · --password-env and --password-stdin still create encrypted accounts and release the lock 2812ms
+ ✓ packages/cli/test/accounts-secrets-wave.test.ts > Accounts wave · AUD-20 · plaintext is never written for mainnet > generate --network mainnet --unsafe-plaintext: PLAINTEXT_MAINNET_FORBIDDEN before anything is written 1108ms
+ ✓ packages/cli/test/accounts-secrets-wave.test.ts > Accounts wave · AUD-20 · plaintext is never written for mainnet > import of a mainnet key with --unsafe-plaintext: refused the same way, the key written nowhere 1129ms
+ ✓ packages/cli/test/accounts-secrets-wave.test.ts > Accounts wave · AUD-20 · plaintext is never written for mainnet > control · plaintext on simnet, asked for explicitly, still works 1210ms
+ ✓ packages/cli/test/cli-contract-2a.test.ts > CLI-CONTRACT-2A · A · `hardkas test` says what ran > A1 · no test file: ok:false, NO_TESTS_FOUND inside the one envelope, exit 1, nothing collected 1633ms
+ ✓ packages/cli/test/cli-contract-2a.test.ts > CLI-CONTRACT-2A · A · `hardkas test` says what ran > A2 · one passing test: ok:true, exit 0, one document, the counts, and the runner's own report on disk agrees 2166ms
+ ✓ packages/cli/test/cli-contract-2a.test.ts > CLI-CONTRACT-2A · A · `hardkas test` says what ran > A3 · only a skipped test: ok:false, NO_TESTS_EXECUTED (not TESTS_FAILED), exit 1, 1 skipped, 0 failed 2105ms
+ ✓ packages/cli/test/cli-contract-2a.test.ts > CLI-CONTRACT-2A · A · `hardkas test` says what ran > A4 · `--scenario` that matches nothing: NO_TESTS_EXECUTED naming the pattern, exit 1 2102ms
+ ✓ packages/cli/test/cli-contract-2a.test.ts > CLI-CONTRACT-2A · A · `hardkas test` says what ran > A5 · one passing and one skipped test: a pass (executed 1, skipped 1) 2107ms
+ ✓ packages/cli/test/cli-contract-2a.test.ts > CLI-CONTRACT-2A · A · `hardkas test` says what ran > A6 · a failing test: ok:false, TESTS_FAILED inside the envelope, exit 1, 1 failed of 1 executed 2125ms
+ ✓ packages/cli/test/cli-contract-2a.test.ts > CLI-CONTRACT-2A · A · `hardkas test` says what ran > A7 · a test file that cannot run: ok:false, TESTS_FAILED, files.failed 1 2132ms
+ ✓ packages/cli/test/cli-contract-2a.test.ts > CLI-CONTRACT-2A · A · `hardkas test` says what ran > A8 · human mode: no JSON on stdout, the counts line, and the same exit codes (a pass is 0, no tests is 1) 3537ms
+ ✓ packages/cli/test/cli-contract-2a.test.ts > CLI-CONTRACT-2A · B · `dev tx send` never announces a send it did not make > B1 · without arguments: a typed usage failure, exit 2, no 'Transaction submitted' 1147ms
+ ✓ packages/cli/test/cli-contract-2a.test.ts > CLI-CONTRACT-2A · B · `dev tx send` never announces a send it did not make > B2 · with arguments: the flow's send step does not run (no consent), so TX_SEND_NOT_EXECUTED, exit 1, no claim, no receipt 1324ms
+ ✓ packages/cli/test/cli-contract-2a.test.ts > CLI-CONTRACT-2A · C · `tx plan` refuses explicit empties and keeps omitted defaults > C1 · `--amount ""`: TX_PLAN_USAGE, exit 2, one envelope, nothing planned or written 1102ms
+ ✓ packages/cli/test/cli-contract-2a.test.ts > CLI-CONTRACT-2A · C · `tx plan` refuses explicit empties and keeps omitted defaults > C1 · `--to ""`: TX_PLAN_USAGE, exit 2, one envelope, nothing planned or written 1122ms
+ ✓ packages/cli/test/cli-contract-2a.test.ts > CLI-CONTRACT-2A · C · `tx plan` refuses explicit empties and keeps omitted defaults > C1 · `--from ""`: TX_PLAN_USAGE, exit 2, one envelope, nothing planned or written 1124ms
+ ✓ packages/cli/test/cli-contract-2a.test.ts > CLI-CONTRACT-2A · C · `tx plan` refuses explicit empties and keeps omitted defaults > C2 · a blank value (`--amount "  "`) is empty too; two empties are named together 2130ms
+ ✓ packages/cli/test/cli-contract-2a.test.ts > CLI-CONTRACT-2A · C · `tx plan` refuses explicit empties and keeps omitted defaults > C3 · an empty positional (`tx plan "" bob`) is refused the same way 1120ms
+ ✓ packages/cli/test/cli-contract-2a.test.ts > CLI-CONTRACT-2A · C · `tx plan` refuses explicit empties and keeps omitted defaults > C4 · control · omitted options keep their documented defaults: alice → bob, 1 KAS 1278ms
+ ✓ packages/cli/test/cli-contract-2a.test.ts > CLI-CONTRACT-2A · C · `tx plan` refuses explicit empties and keeps omitted defaults > C5 · control · given values are used: `--amount 2` plans 2 KAS to bob 1250ms
+ ✓ packages/cli/test/node-network-identity.test.ts > NODE-NETWORK-IDENTITY-1 · CLI (built dist) against a loopback fake node > control: a node that says testnet-10 is used (balance and plan succeed) 2467ms
+ ✓ packages/cli/test/node-network-identity.test.ts > NODE-NETWORK-IDENTITY-1 · CLI (built dist) against a loopback fake node > a simnet node presented as testnet-10: accounts balance refuses NODE_NETWORK_MISMATCH, no balance read 1246ms
+ ✓ packages/cli/test/node-network-identity.test.ts > NODE-NETWORK-IDENTITY-1 · CLI (built dist) against a loopback fake node > a mainnet node presented as testnet-10: tx plan refuses NODE_NETWORK_MISMATCH, no UTXO read, no plan written 1274ms
+ ✓ packages/cli/test/node-network-identity.test.ts > NODE-NETWORK-IDENTITY-1 · CLI (built dist) against a loopback fake node > a node that does not say its network: NODE_NETWORK_UNKNOWN, nothing read 1254ms
+ ✓ packages/cli/test/node-network-identity.test.ts > NODE-NETWORK-IDENTITY-1 · CLI (built dist) against a loopback fake node > no node at all: a connection failure, never an identity verdict 1248ms
+ ✓ packages/cli/test/node-network-identity.test.ts > NODE-NETWORK-IDENTITY-1 · SDK (built dist) against a loopback fake node > a simnet node presented as testnet-10: sdk.tx.plan is refused NODE_NETWORK_MISMATCH before any UTXO read 1451ms
+ ✓ packages/cli/test/node-network-identity.test.ts > NODE-NETWORK-IDENTITY-1 · SDK (built dist) against a loopback fake node > a signed testnet-10 transaction is never sent to a node that says mainnet (no submitTransaction) 372ms
+ ✓ packages/cli/test/event-ledger-2.test.ts > EVENT-LEDGER-2 · the CLI's event ledger > control · a shortcut tx send records its events in events.jsonl and leaves no lock 1260ms
+ ✓ packages/cli/test/event-ledger-2.test.ts > EVENT-LEDGER-2 · the CLI's event ledger > EL2-I1 · with an append lock left by a dead process, tx send still records its events, without the 10 s wait, and no stale lock survives 1367ms
+ ✓ packages/cli/test/event-ledger-2.test.ts > EVENT-LEDGER-2 · the CLI's event ledger > EL2-I2 · while a live process holds the append lock for the whole command, tx send fails with EVENT_LEDGER_APPEND_FAILED, and the holder keeps its lock
+ ✓ packages/cli/test/event-ledger-2.test.ts > EVENT-LEDGER-2 · the CLI's event ledger > EL2-I2 · while a live process holds the append lock for the whole command, tx send fails with EVENT_LEDGER_APPEND_FAILED, and the holder keeps its lock 11434ms
+ ✓ packages/cli/test/event-ledger-2.test.ts > EVENT-LEDGER-2 · the CLI's event ledger > EL2-I4 · the plan artifact tx plan writes is announced in the ledger, under the plan's own workflowId 1127ms
+ ✓ packages/cli/test/event-ledger-2.test.ts > EVENT-LEDGER-2 · the CLI's event ledger > EL2-I4 · the copy tx sign --out writes is announced like the store's copy 2226ms
+ ✓ packages/cli/test/event-ledger-2.test.ts > EVENT-LEDGER-2 · the CLI's event ledger > D7 · lock list / lock doctor call a dead holder's append lock stale, and the next command recovers it 4101ms
+ ✓ packages/cli/test/event-ledger-2.test.ts > EVENT-LEDGER-2 · the CLI's event ledger > D7 · an append lock without a hostname (an earlier HardKAS) is reported as unverifiable, never as live 2032ms
+ ✓ packages/cli/test/event-ledger-2.test.ts > EVENT-LEDGER-2 · the CLI's event ledger > D6 · a dead telemetry lock costs no wait and no anomaly: the telemetry appends recover it like the ledger does 1282ms
+ ✓ packages/cli/test/evidence-trust-1.test.ts > EVIDENCE-TRUST-1 · CLI > a stored artifact is never rewritten > a second `tx sign` of the same plan leaves the stored signed artifact's bytes as they were 4375ms
+ ✓ packages/cli/test/evidence-trust-1.test.ts > EVIDENCE-TRUST-1 · CLI > a stored artifact is never rewritten > a stored signed artifact that was tampered with is not overwritten by the next `tx sign` 3308ms
+ ✓ packages/cli/test/evidence-trust-1.test.ts > EVIDENCE-TRUST-1 · CLI > lineage claims match the workspace > `artifact explain` of a receipt whose parent is in the store reports no PARENT_MISSING 1099ms
+ ✓ packages/cli/test/evidence-trust-1.test.ts > EVIDENCE-TRUST-1 · CLI > lineage claims match the workspace > control: `artifact explain` reports PARENT_MISSING when the parent is really absent 1059ms
+ ✓ packages/cli/test/evidence-trust-1.test.ts > EVIDENCE-TRUST-1 · CLI > lineage claims match the workspace > `query artifacts inspect` of that receipt does not say its parent is missing from the workspace 1110ms
+ ✓ packages/cli/test/evidence-trust-1.test.ts > EVIDENCE-TRUST-1 · CLI > `query artifacts diff` decides on the identity > control: an artifact and its exact copy are identical 1025ms
+ ✓ packages/cli/test/evidence-trust-1.test.ts > EVIDENCE-TRUST-1 · CLI > `query artifacts diff` decides on the identity > control: a different amount is a difference 972ms
+ ✓ packages/cli/test/evidence-trust-1.test.ts > EVIDENCE-TRUST-1 · CLI > `query artifacts diff` decides on the identity > two artifacts whose lineage differs (so do their content hashes) are not identical 1026ms
+ ✓ packages/cli/test/evidence-trust-1.test.ts > EVIDENCE-TRUST-1 · CLI > `query artifacts diff` decides on the identity > the human output does not call two different identities identical 1001ms
+ ✓ packages/cli/test/evidence-trust-1.test.ts > EVIDENCE-TRUST-1 · CLI > `query artifacts diff` decides on the identity > a token inside a differing rpcUrl is never printed 1942ms
+ ✓ packages/cli/test/evidence-trust-1.test.ts > EVIDENCE-TRUST-1 · CLI > a credential inside an RPC URL is never printed > rpc info --json, ?token= 1096ms
+ ✓ packages/cli/test/evidence-trust-1.test.ts > EVIDENCE-TRUST-1 · CLI > a credential inside an RPC URL is never printed > rpc info, user:password@ 1080ms
+ ✓ packages/cli/test/evidence-trust-1.test.ts > EVIDENCE-TRUST-1 · CLI > a credential inside an RPC URL is never printed > rpc doctor, ?token= 969ms
+ ✓ packages/cli/test/evidence-trust-1.test.ts > EVIDENCE-TRUST-1 · CLI > a credential inside an RPC URL is never printed > tx plan --json, ?token= 1100ms
+ ✓ packages/cli/test/evidence-trust-1.test.ts > EVIDENCE-TRUST-1 · CLI > a private key is never printed by a listing > `kaspa wallet list --json` does not print a plaintext account's private key 2063ms
+ ✓ packages/cli/test/evidence-trust-1.test.ts > EVIDENCE-TRUST-1 · CLI > presentation keeps public identities > `artifact explain` names the file it explains (its content hash is not shown as [REDACTED]) 1090ms
+ ✓ packages/cli/test/r0b-resource-lifecycle.test.ts > RESOURCE-LIFECYCLE-1 · a finite command closes what it opened and ends by itself > kaspa doctor (runner-created client): ends by itself with exit 1 DOCTOR_FAILED 1121ms
+ ✓ packages/cli/test/r0b-resource-lifecycle.test.ts > RESOURCE-LIFECYCLE-1 · a finite command closes what it opened and ends by itself > tx status <txId> (the SDK's own client, opened by the runner): ends by itself with exit 0 1163ms
+ ✓ packages/cli/test/r0b-resource-lifecycle.test.ts > RESOURCE-LIFECYCLE-1 · a finite command closes what it opened and ends by itself > tx wait <txId> (the SDK's own client, opened by the runner): ends by itself with exit 1 TX_WAIT_TIMEOUT 5327ms
+ ✓ packages/cli/test/r0b-resource-lifecycle.test.ts > RESOURCE-LIFECYCLE-1 · a finite command closes what it opened and ends by itself > accounts consolidate (the runner's own client swapped into sdk.rpc): ends by itself with exit 1 UNKNOWN_ERROR 1133ms
+ ✓ packages/cli/test/r0b-resource-lifecycle.test.ts > RESOURCE-LIFECYCLE-1 · a finite command closes what it opened and ends by itself > kaspa wallet balance (runner-created client): ends by itself with exit 1 WALLET_OPERATION_FAILED 1127ms
+ ✓ packages/cli/test/r0b-resource-lifecycle.test.ts > RESOURCE-LIFECYCLE-1 · a finite command closes what it opened and ends by itself > kaspa wallet send --dry-run (runner-created client): ends by itself with exit 1 WALLET_OPERATION_FAILED 1119ms
+ ✓ packages/cli/test/r0b-resource-lifecycle.test.ts > RESOURCE-LIFECYCLE-1 · a finite command closes what it opened and ends by itself > tx plan error path (runner-created client): ends by itself with exit 1 UNKNOWN 1140ms
+ ✓ packages/cli/test/r0b-resource-lifecycle.test.ts > RESOURCE-LIFECYCLE-1 · a finite command closes what it opened and ends by itself > tx send --from/--to/--amount error path (through tx plan): ends by itself with exit 1 TX_SEND_FAILED 1140ms
+ ✓ packages/cli/test/r0b-resource-lifecycle.test.ts > RESOURCE-LIFECYCLE-1 · a finite command closes what it opened and ends by itself > control: accounts balance --url (already closed in a finally): ends by itself with exit 1 UNKNOWN_ERROR 1117ms
+ ✓ packages/cli/test/r0b-resource-lifecycle.test.ts > RESOURCE-LIFECYCLE-1 · a finite command closes what it opened and ends by itself > control: rpc info --url (already closed in a finally): ends by itself with exit 0 1112ms
+ ✓ packages/cli/test/r0b-resource-lifecycle.test.ts > RESOURCE-LIFECYCLE-1 · a finite command closes what it opened and ends by itself > control: deploy status --verify (closed before): ends by itself with exit 0 1108ms
+ ✓ packages/cli/test/r0b-resource-lifecycle.test.ts > RESOURCE-LIFECYCLE-1 · a finite command closes what it opened and ends by itself > workflow run --timeout: a run that finishes first leaves no timer behind; the command ends by itself 1039ms
+ ✓ packages/cli/test/r0b-resource-lifecycle.test.ts > RESOURCE-LIFECYCLE-1 · a finite command closes what it opened and ends by itself > RL-I1/RL-I3 static guard: every client or SDK the CLI creates is released in a finally of the function that creates it, or is listed with how it is released
+ ✓ packages/cli/test/r0b-resource-lifecycle.test.ts > RESOURCE-LIFECYCLE-1 · a finite command closes what it opened and ends by itself > RL-I2: an SDK injected into tx status / tx wait is the caller's: the runner closes neither it nor its client, on success or on error
+stderr | packages/cli/test/wave2-b-planner-convergence.test.ts > Wave 2(b) · canonical planner in the CLI (AUD-17) and explicit change (AUD-28) > T-A17a · a real network plans through the upstream Generator (KASPA_WASM_GENERATOR) with the CLI read guards intact
+DEPRECATED: 'defaultNetwork: "simulated"' is deprecated. Please migrate to the explicit 'execution' contract in HardkasConfig.
+DEPRECATED: 'defaultNetwork: "simulated"' is deprecated. Please migrate to the explicit 'execution' contract in HardkasConfig.
+
+stderr | packages/cli/test/wave2-b-planner-convergence.test.ts > Wave 2(b) · canonical planner in the CLI (AUD-17) and explicit change (AUD-28) > T-A17b · the same intention through the CLI and the SDK yields the same inputs, fee and mass
+DEPRECATED: 'defaultNetwork: "simulated"' is deprecated. Please migrate to the explicit 'execution' contract in HardkasConfig.
+
+stderr | packages/cli/test/wave2-b-planner-convergence.test.ts > Wave 2(b) · canonical planner in the CLI (AUD-17) and explicit change (AUD-28) > T-A28 · an explicit change destination reaches the plan through the CLI (real and simulator), the SDK and the toolkit
+DEPRECATED: 'defaultNetwork: "simulated"' is deprecated. Please migrate to the explicit 'execution' contract in HardkasConfig.
+
+ ✓ packages/cli/test/wave2-b-planner-convergence.test.ts > Wave 2(b) · canonical planner in the CLI (AUD-17) and explicit change (AUD-28) > T-A17c · the simulator plans through the canonical synthetic planner and says so
+ ✓ packages/cli/test/wave2-b-planner-convergence.test.ts > Wave 2(b) · canonical planner in the CLI (AUD-17) and explicit change (AUD-28) > T-A17a · a real network plans through the upstream Generator (KASPA_WASM_GENERATOR) with the CLI read guards intact
+ ✓ packages/cli/test/wave2-b-planner-convergence.test.ts > Wave 2(b) · canonical planner in the CLI (AUD-17) and explicit change (AUD-28) > T-A17b · the same intention through the CLI and the SDK yields the same inputs, fee and mass
+ ✓ packages/cli/test/wave2-b-planner-convergence.test.ts > Wave 2(b) · canonical planner in the CLI (AUD-17) and explicit change (AUD-28) > T-A28 · an explicit change destination reaches the plan through the CLI (real and simulator), the SDK and the toolkit
+ ✓ packages/cli/test/evidence-trust-1-contract.test.ts > EVIDENCE-TRUST-1 · CLI contract > D2 · a second `tx sign` prints the stored signed artifact (the first createdAt), byte-identical to the store 4461ms
+ ✓ packages/cli/test/evidence-trust-1-contract.test.ts > EVIDENCE-TRUST-1 · CLI contract > D1 · signing over a stored copy that was changed fails with ARTIFACT_IDENTITY_CONFLICT and leaves it as it is 3310ms
+ ✓ packages/cli/test/evidence-trust-1-contract.test.ts > EVIDENCE-TRUST-1 · CLI contract > lineage and diff over one simulated payment > D3 · `artifact lineage` resolves receipt → signed → plan and only then says Operational Provenance Complete 1990ms
+ ✓ packages/cli/test/evidence-trust-1-contract.test.ts > EVIDENCE-TRUST-1 · CLI contract > lineage and diff over one simulated payment > D3 · with the parent gone, `artifact lineage` is LINEAGE_INCOMPLETE (exit 1) and never claims completeness 2011ms
+ ✓ packages/cli/test/evidence-trust-1-contract.test.ts > EVIDENCE-TRUST-1 · CLI contract > lineage and diff over one simulated payment > D3 · `artifact explain` says the parent was resolved in the workspace store 1083ms
+ ✓ packages/cli/test/evidence-trust-1-contract.test.ts > EVIDENCE-TRUST-1 · CLI contract > lineage and diff over one simulated payment > D4 · a lineage-only difference: not identical, not the same identity, the entry is authenticated 986ms
+ ✓ packages/cli/test/evidence-trust-1-contract.test.ts > EVIDENCE-TRUST-1 · CLI contract > lineage and diff over one simulated payment > D4 · a createdAt-only difference: not identical but the same identity; the entry is not authenticated 1947ms
+ ✓ packages/cli/test/evidence-trust-1-contract.test.ts > EVIDENCE-TRUST-1 · CLI contract > D9 · `config show --json` and `config networks` reveal no secret written into the configuration 2142ms
+stderr | packages/cli/test/demo-ready-e02-live-dag-planning.test.ts > Demo-ready · E02 · planning on a live DAG is UTXO-scoped > A · the DAG advances several times while one plan is built; inputs intact, mempool clean ⇒ the plan is valid
+DEPRECATED: 'defaultNetwork: "simulated"' is deprecated. Please migrate to the explicit 'execution' contract in HardkasConfig.
+
+stderr | packages/cli/test/demo-ready-e02-live-dag-planning.test.ts > Demo-ready · E02 · planning on a live DAG is UTXO-scoped > control · no block arrives while planning ⇒ one attempt, identical fingerprints, same evidence shape
+DEPRECATED: 'defaultNetwork: "simulated"' is deprecated. Please migrate to the explicit 'execution' contract in HardkasConfig.
+
+stderr | packages/cli/test/demo-ready-e02-live-dag-planning.test.ts > Demo-ready · E02 · planning on a live DAG is UTXO-scoped > B · an input spent between selection and re-validation makes the attempt retry; the retry plans on what is still unspent
+DEPRECATED: 'defaultNetwork: "simulated"' is deprecated. Please migrate to the explicit 'execution' contract in HardkasConfig.
+
+stderr | packages/cli/test/demo-ready-e02-live-dag-planning.test.ts > Demo-ready · E02 · planning on a live DAG is UTXO-scoped > C · once the observed mempool shows the input being spent, the retry excludes it through the pending-spend evidence
+DEPRECATED: 'defaultNetwork: "simulated"' is deprecated. Please migrate to the explicit 'execution' contract in HardkasConfig.
+
+ ✓ packages/cli/test/demo-ready-e02-live-dag-planning.test.ts > Demo-ready · E02 · planning on a live DAG is UTXO-scoped > A · the DAG advances several times while one plan is built; inputs intact, mempool clean ⇒ the plan is valid
+ ✓ packages/cli/test/demo-ready-e02-live-dag-planning.test.ts > Demo-ready · E02 · planning on a live DAG is UTXO-scoped > control · no block arrives while planning ⇒ one attempt, identical fingerprints, same evidence shape
+ ✓ packages/cli/test/demo-ready-e02-live-dag-planning.test.ts > Demo-ready · E02 · planning on a live DAG is UTXO-scoped > B · a selected input missing when the node is re-read is never planned: bounded retries, then SELECTED_UTXO_INVALIDATED
+ ✓ packages/cli/test/demo-ready-e02-live-dag-planning.test.ts > Demo-ready · E02 · planning on a live DAG is UTXO-scoped > B · an input spent between selection and re-validation makes the attempt retry; the retry plans on what is still unspent
+ ✓ packages/cli/test/demo-ready-e02-live-dag-planning.test.ts > Demo-ready · E02 · planning on a live DAG is UTXO-scoped > C · a selected input the observed mempool shows being spent after planning is never planned: retries, then SELECTED_UTXO_INVALIDATED
+ ✓ packages/cli/test/demo-ready-e02-live-dag-planning.test.ts > Demo-ready · E02 · planning on a live DAG is UTXO-scoped > C · once the observed mempool shows the input being spent, the retry excludes it through the pending-spend evidence
+ ✓ packages/cli/test/event-ledger-2-json-contract.test.ts > EVENT-LEDGER-2 final check · `tx send --json` with a ledger failure writes exactly one JSON document > 1 · before anything is sent: outcome failed, not performed, no txId (nothing was planned), nothing executed
+ ✓ packages/cli/test/event-ledger-2-json-contract.test.ts > EVENT-LEDGER-2 final check · `tx send --json` with a ledger failure writes exactly one JSON document > 1 · before anything is sent: outcome failed, not performed, no txId (nothing was planned), nothing executed 11441ms
+ ✓ packages/cli/test/event-ledger-2-json-contract.test.ts > EVENT-LEDGER-2 final check · `tx send --json` with a ledger failure writes exactly one JSON document > 2 · before the effect, after an artifact write (CLI-made plan and signed): outcome failed, not performed, the txId, the plan copy it wrote named
+ ✓ packages/cli/test/event-ledger-2-json-contract.test.ts > EVENT-LEDGER-2 final check · `tx send --json` with a ledger failure writes exactly one JSON document > 2 · before the effect, after an artifact write (CLI-made plan and signed): outcome failed, not performed, the txId, the plan copy it wrote named 13774ms
+ ✓ packages/cli/test/event-ledger-2-json-contract.test.ts > EVENT-LEDGER-2 final check · `tx send --json` with a ledger failure writes exactly one JSON document > 3 · after a known effect (SDK-made plan and signed; the simulator committed): outcome submitted, executed, the txId and the receipt
+ ✓ packages/cli/test/event-ledger-2-json-contract.test.ts > EVENT-LEDGER-2 final check · `tx send --json` with a ledger failure writes exactly one JSON document > 3 · after a known effect (SDK-made plan and signed; the simulator committed): outcome submitted, executed, the txId and the receipt 11763ms
+ ✓ packages/cli/test/event-ledger-2-flow.test.ts > EVENT-LEDGER-2 final closeout · the tx send flow keeps the typed failure, the effect and the partial result > the ledger fails on workflow.started: the failure is typed and says nothing was sent
+ ✓ packages/cli/test/event-ledger-2-flow.test.ts > EVENT-LEDGER-2 final closeout · the tx send flow keeps the typed failure, the effect and the partial result > the ledger fails on the plan's announcement: the plan step keeps the typed code and says nothing was sent
+ ✓ packages/cli/test/event-ledger-2-flow.test.ts > EVENT-LEDGER-2 final closeout · the tx send flow keeps the typed failure, the effect and the partial result > an accepted broadcast, then the ledger fails on workflow.receipt: the send step keeps the code, the effect and the send result
+ ✓ packages/cli/test/event-ledger-2-flow.test.ts > EVENT-LEDGER-2 final closeout · the tx send flow keeps the typed failure, the effect and the partial result > a ledger failure raised inside the send step without a named effect keeps its code and is never labelled 'nothing was sent'
+ ✓ packages/cli/test/event-ledger-2-flow.test.ts > EVENT-LEDGER-2 final closeout · the tx send flow keeps the typed failure, the effect and the partial result > a submission whose outcome is unknown is not announced as a failed receipt (no status is known)
+ ✓ packages/cli/test/event-ledger-2-flow.test.ts > EVENT-LEDGER-2 final closeout · `why` narrates what a submission establishes > a submit call that failed without an answer: an unknown outcome, never the node's rejection
+ ✓ packages/cli/test/event-ledger-2-flow.test.ts > EVENT-LEDGER-2 final closeout · `why` narrates what a submission establishes > an accepted submission: the node accepted the submission request, which is not acceptance in the DAG
+ ✓ packages/cli/test/rpc-commands.test.ts > hardkas rpc info > prints the node's network, version, sync, UTXO index and virtual DAA from the canonical localnet
+ ✓ packages/cli/test/rpc-commands.test.ts > hardkas rpc info > --json writes the server info
+ ✓ packages/cli/test/rpc-commands.test.ts > hardkas rpc info > an unreachable node prints the reason and fails the command
+ ✓ packages/cli/test/rpc-commands.test.ts > hardkas rpc dag > prints network, virtual DAA, sink and tips from the node given by --url
+ ✓ packages/cli/test/rpc-commands.test.ts > hardkas rpc dag > --json writes the DAG with ok: true envelope
+ ✓ packages/cli/test/rpc-commands.test.ts > hardkas rpc dag > an unreachable node fails the command with the connection error
+ ✓ packages/cli/test/rpc-commands.test.ts > hardkas rpc utxos > lists the address's UTXOs and their total
+ ✓ packages/cli/test/rpc-commands.test.ts > hardkas rpc utxos > --json writes the UTXOs without the raw node entry
+ ✓ packages/cli/test/rpc-commands.test.ts > hardkas rpc mempool > finds a transaction the node holds, with its fee
+ ✓ packages/cli/test/rpc-commands.test.ts > hardkas rpc mempool > reports a transaction the node does not hold
+ ✓ packages/cli/test/rpc-commands.test.ts > hardkas rpc mempool > without a txId, lists what the mempool holds
+ ✓ packages/cli/test/wave2-e-send-outcome.test.ts > Wave 2(e) · AUX-11 · tx send outcomes are unambiguous > T-AUX11 · shortcut mode without --yes on a non-simulated network: NOT executed, exit 3, nothing written, nothing that reads as success 977ms
+ ✓ packages/cli/test/wave2-e-send-outcome.test.ts > Wave 2(e) · AUX-11 · tx send outcomes are unambiguous > T-AUX11 · the same refusal is machine-readable in --json: ok:false, outcome:not_executed, the code, exit 3 961ms
+ ✓ packages/cli/test/wave2-e-send-outcome.test.ts > Wave 2(e) · AUX-11 · tx send outcomes are unambiguous > T-AUX11 · signed-artifact mode without --yes on a non-simulated network is refused the same way, before any RPC 991ms
+ ✓ packages/cli/test/wave2-e-send-outcome.test.ts > Wave 2(e) · AUX-11 · tx send outcomes are unambiguous > control · a simulated shortcut send really runs and is `submitted`: ok:true, outcome:submitted, a receipt, exit 0 1231ms
+ ✓ packages/cli/test/wave2-e-send-outcome.test.ts > Wave 2(e) · AUX-11 · tx send outcomes are unambiguous > control · the same send in human mode names the receipt it wrote (no 'unknown' artifact behind a success line) 1287ms
+ ✓ packages/cli/test/wave2-e-send-outcome.test.ts > Wave 2(e) · AUX-11 · tx send outcomes are unambiguous > T-AUX11 · a shortcut send whose flow fails before broadcasting is `failed`: ok:false, outcome:failed, exit 1, never submitted 1078ms
+ ✓ packages/cli/test/demo-cut-t-a14b-no-false-claims.test.ts > Demo-cut · T-A14b · no unbacked consensus, settlement or finality claims > the touched CLI sources contain none of the forbidden narratives
+ ✓ packages/cli/test/demo-cut-t-a14b-no-false-claims.test.ts > Demo-cut · T-A14b · what the built CLI prints for tx status, tx wait and explain > tx status <network txId> --no-observe: SUBMITTED from the recorded submission, with the policy and no claims 2049ms
+ ✓ packages/cli/test/demo-cut-t-a14b-no-false-claims.test.ts > Demo-cut · T-A14b · what the built CLI prints for tx status, tx wait and explain > tx status <synthetic txId>: SYNTHETIC_EXECUTED; tx wait on it says there is no network and exits 0 2190ms
+ ✓ packages/cli/test/demo-cut-t-a14b-no-false-claims.test.ts > Demo-cut · T-A14b · what the built CLI prints for tx status, tx wait and explain > tx wait rejects an unknown target with a usage error 968ms
+ ✓ packages/cli/test/demo-cut-t-a14b-no-false-claims.test.ts > Demo-cut · T-A14b · what the built CLI prints for tx status, tx wait and explain > tx status <path> keeps the signature-coverage view 1003ms
+ ✓ packages/cli/test/demo-cut-t-a14b-no-false-claims.test.ts > Demo-cut · T-A14b · what the built CLI prints for tx status, tx wait and explain > explain on the network submission derives its state and makes no consensus claim 1066ms
+  ✔ Tracked deployment: test-reentrancy-deployment (simnet)
+  ✔ Tracked deployment: test-reentrancy-deployment (simnet)
+  ✔ Tracked deployment: test-reentrancy-deployment (simnet)
+ ✓ packages/cli/test/deployment-locking.test.ts > Deployment Locking > trackDeploymentInternal can be used safely inside an outer lock
+ ✓ packages/cli/test/deployment-locking.test.ts > Deployment Locking > trackDeployment acquires its own lock and succeeds
+ ✓ packages/cli/test/deployment-locking.test.ts > Deployment Locking > trackDeployment fails with lock error while another operation holds the deployments lock
+  ✔ Tracked deployment: test-reentrancy-deployment (simnet)
+ ✓ packages/cli/test/deployment-locking.test.ts > Deployment Locking > a holder of the artifact store does not block trackDeployment: deployments are not in the store (phase 2B)
+  ✔ Tracked deployment: test-reentrancy-deployment-fail (simnet)
+  ✔ Tracked deployment: test-reentrancy-deployment-other (simnet)
+ ✓ packages/cli/test/deployment-locking.test.ts > Deployment Locking > trackDeployment called inside its caller's deployments holding joins it (ARTIFACT-LOCK-REENTRANCY-1)
+ ✓ packages/cli/test/deployment-locking.test.ts > Deployment Locking > lock released correctly after tracking failure
+  ✔ Tracked deployment: test-reentrancy-deployment-persist (simnet)
+ ✓ packages/cli/test/deployment-locking.test.ts > Deployment Locking > lock ownership verification (correct lock name used)
+ ✓ packages/cli/test/deployment-locking.test.ts > Deployment Locking > deployment persists after successful tracking
+ ✓ packages/cli/test/workspace-authority-2.test.ts > WORKSPACE-AUTHORITY-2 · controls · the CLI follows the workspace's execution target > execution.default = localnet: `tx plan` does not plan in the simulator (it asks the node, unreachable here) 1305ms
+ ✓ packages/cli/test/workspace-authority-2.test.ts > WORKSPACE-AUTHORITY-2 · controls · the CLI follows the workspace's execution target > the scaffold default (simulator): `tx plan --json` plans in the simulator over synthetic identities 1246ms
+ ✓ packages/cli/test/workspace-authority-2.test.ts > WORKSPACE-AUTHORITY-2 · AFTER · the CLI shares the resolver > `--target simulator` in a localnet-default workspace plans in the simulator (the named target wins) 1281ms
+ ✓ packages/cli/test/workspace-authority-2.test.ts > WORKSPACE-AUTHORITY-2 · AFTER · the CLI shares the resolver > `--target nope` is EXECUTION_TARGET_NOT_FOUND; `--network nonsense` is UNKNOWN_NETWORK; `--target localnet --network simulated` is EXECUTION_NETWORK_MISMATCH 3106ms
+ ✓ packages/cli/test/workspace-authority-2.test.ts > WORKSPACE-AUTHORITY-2 · AFTER · the CLI shares the resolver > closeout · the CLI contacts the endpoint the resolved network declares: a custom networks.simnet.rpcUrl under a localnet default is what `tx plan` names, never the canonical substitute 1237ms
+ ✓ packages/cli/test/workspace-authority-2.test.ts > WORKSPACE-AUTHORITY-2 · AFTER · the CLI shares the resolver > `--network simulated` names the simulator's target of the same workspace: a simulator plan; `--network localnet` (a target name) is refused as a network 2227ms
+  ℹ HardKAS: Encrypted keystore is for local developer workflows, not institutional custody.
+  ℹ Do not import mainnet keys unless you fully understand the risks.
+
+  ⚠️  WARNING:
+     LEGACY MODE: Storing private keys in plaintext is unsafe and discouraged.
+stderr | packages/cli/test/account-hardening.test.ts > Account Hardening & Security Guards > should allow unsafe plaintext import with explicit flag
+
+  ⚠️  [SECURITY WARNING] Plaintext private keys detected in legacy account store for: bob
+     Location: C:\Users\jrodr\AppData\Local\Temp\account-hardening-test-kXqI7L\.hardkas\accounts.real.json
+     Recommendation: Re-import these accounts using encrypted keystores.
+
+
+ ✓ packages/cli/test/account-hardening.test.ts > Account Hardening & Security Guards > should import an account as encrypted by default and set 0600 permissions 458ms
+ ✓ packages/cli/test/account-hardening.test.ts > Account Hardening & Security Guards > should allow unsafe plaintext import with explicit flag
+ ✓ packages/cli/test/account-hardening.test.ts > Account Hardening & Security Guards > should refuse mainnet signing without explicit flag
+ ✓ packages/cli/test/account-hardening.test.ts > Account Hardening & Security Guards > should refuse signing if artifact network and account network disagree
+ ✓ packages/cli/test/account-hardening.test.ts > Account Hardening & Security Guards > a mainnet plan is refused MAINNET_SIGNING_DISABLED even with --allow-mainnet-signing (the flag stays refused)
+ ✓ packages/cli/test/deploy-path-containment.test.ts > DEPLOYMENT-PATH-CONTAINMENT-1 · CLI entry points > deploy track refuses a label that leaves the workspace, and writes nothing there 967ms
+ ✓ packages/cli/test/deploy-path-containment.test.ts > DEPLOYMENT-PATH-CONTAINMENT-1 · CLI entry points > deploy track refuses a network that reaches into the artifact store, and writes nothing there 988ms
+ ✓ packages/cli/test/deploy-path-containment.test.ts > DEPLOYMENT-PATH-CONTAINMENT-1 · CLI entry points > deploy inspect refuses a path into the artifact store and shows nothing from it 985ms
+ ✓ packages/cli/test/deploy-path-containment.test.ts > DEPLOYMENT-PATH-CONTAINMENT-1 · CLI entry points > deploy status refuses a path into the artifact store and shows nothing from it 968ms
+ ✓ packages/cli/test/deploy-path-containment.test.ts > DEPLOYMENT-PATH-CONTAINMENT-1 · CLI entry points > deploy list refuses a path into the artifact store and shows nothing from it 999ms
+ ✓ packages/cli/test/deploy-path-containment.test.ts > DEPLOYMENT-PATH-CONTAINMENT-1 · CLI entry points > tx send --track refuses a label that reaches into the artifact store, and writes no record there 3238ms
+ ✓ packages/cli/test/deploy-path-containment.test.ts > DEPLOYMENT-PATH-CONTAINMENT-1 · CLI entry points > control: a plain label and network are tracked and inspected as before 2034ms
+ ✓ packages/cli/test/tx-command-lock-scope.test.ts > tx plan / sign / send · no command-level hold of the artifact store > tx plan is not refused by a holder of the store: it waits for the store at its write, then completes 1348ms
+ ✓ packages/cli/test/tx-command-lock-scope.test.ts > tx plan / sign / send · no command-level hold of the artifact store > tx sign is not refused by a holder of the store: it waits for the store at its write, then completes 1381ms
+ ✓ packages/cli/test/tx-command-lock-scope.test.ts > tx plan / sign / send · no command-level hold of the artifact store > tx send is not refused by a holder of the store: it waits for the store at its write, then completes 1524ms
+ ✓ packages/cli/test/wave1-2-next-steps.test.ts > Wave 1.2 · CLI identifiers > T-NS1 · every suggestion printed after tx send resolves in the same workspace
+ ✓ packages/cli/test/wave1-2-next-steps.test.ts > Wave 1.2 · CLI identifiers > send explanation labels the canonical identity as artifactId and the txId as txId
+ ✓ packages/cli/test/wave1-2-next-steps.test.ts > Wave 1.2 · CLI identifiers > T-N9 · the CLI reference data documents exactly the identifiers explain/why accept
+ ✓ packages/cli/test/wave1-2-next-steps.test.ts > Wave 1.2 · CLI identifiers > T-A45 · why narrates real fields: plan outputs, receipt block observation, signed signers
+ ✓ packages/cli/test/tx-simulated.test.ts > Simnet Transaction Backend Mismatch Regression > should fail with NETWORK_ACCOUNT_MISMATCH when provider rpc is forced on simnet 4748ms
+ ✓ packages/cli/test/help-truth.test.ts > --help says what the CLI does > marks the options that have no effect
+ ✓ packages/cli/test/help-truth.test.ts > --help says what the CLI does > does not advertise defaults that the code does not apply
+ ✓ packages/cli/test/help-truth.test.ts > --help says what the CLI does > points the kaspa commands at the canonical localnet wRPC endpoint
+ ✓ packages/cli/test/help-truth.test.ts > --help says what the CLI does > states the real scope of commands that were overstated
+ ✓ packages/cli/test/demo-ready-e20-account-names.test.ts > Demo-ready · E20 · real account names > --name ana creates exactly `ana` when one account is requested 1079ms
+ ✓ packages/cli/test/demo-ready-e20-account-names.test.ts > Demo-ready · E20 · real account names > --count 2 --name ben still numbers them: ben1, ben2 1077ms
+ ✓ packages/cli/test/demo-ready-e20-account-names.test.ts > Demo-ready · E20 · real account names > a taken name is refused and the existing plaintext account is left untouched 2037ms
+ ✓ packages/cli/test/demo-ready-e20-account-names.test.ts > Demo-ready · E20 · real account names > a taken name in encrypted mode is refused before the existing keystore is touched 2324ms
+ ✓ packages/cli/test/tx-verify-tx-version.test.ts > tx verify · a real plan is verified, not rejected by its artifact format version > a localnet plan passes semantic verification 1358ms
+ ✓ packages/cli/test/tx-flow-outcome.test.ts > tx flow · outcome of a broadcast > a submission the node rejected makes the flow fail; the send step ran and keeps its artifact
+ ✓ packages/cli/test/tx-flow-outcome.test.ts > tx flow · outcome of a broadcast > an accepted submission keeps the flow ok (control)
+ ✓ packages/cli/test/tx-flow-outcome.test.ts > tx flow · outcome of a broadcast > a failing step is reported in the result only, with no debug dump on stderr
+
+  ✗ [DEPLOYMENT_EXISTS] Deployment 'dup' already exists on network 'simnet'.
+
+  💡 Suggestion:
+    Choose another label, or inspect the existing record with 'hardkas deploy inspect'.
+ ✓ packages/cli/test/deploy.test.ts > Deployment tracking > tracks a deployment with label and network 2445ms
+ ✓ packages/cli/test/deploy.test.ts > Deployment tracking > lists tracked deployments 6348ms
+ ✓ packages/cli/test/deploy.test.ts > Deployment tracking > inspects a specific deployment 4278ms
+ ✓ packages/cli/test/deploy.test.ts > Deployment tracking > deployment has valid content hash 4208ms
+ ✓ packages/cli/test/deploy.test.ts > Deployment tracking > refuses duplicate label on same network 4339ms
+ ✓ packages/cli/test/deploy.test.ts > Deployment tracking > same label allowed on different networks 4203ms
+ ✓ packages/cli/test/first-contact-newcomer.test.ts > First contact · the documented first steps work as published > docs/start/quickstart.md · SDK Workflow runs verbatim and prints the simulation receipt 1089ms
+ ✓ packages/cli/test/first-contact-newcomer.test.ts > First contact · the documented first steps work as published > README.md · 30 Second SDK Example runs verbatim and prints the receipt txId 1123ms
+ ✓ packages/cli/test/first-contact-newcomer.test.ts > First contact · the documented first steps work as published > `hardkas init .` then its generated test passes under vitest in the new project, balance check included 6332ms
+ ✓ packages/cli/test/accounts-real-query.test.ts > Real Account Queries (Balance & UTXOs) > runAccountsRealBalance > should resolve alias and fetch balance
+ ✓ packages/cli/test/accounts-real-query.test.ts > Real Account Queries (Balance & UTXOs) > runAccountsRealBalance > should throw if alias not found
+ ✓ packages/cli/test/accounts-real-query.test.ts > Real Account Queries (Balance & UTXOs) > runAccountsRealUtxos > should list detailed UTXOs
+ ✓ packages/cli/test/first-contact-e03-tasks.test.ts > First contact · E03 · custom tasks run as the guide shows > `hardkas task hello --name bob --json` returns the task output and a record that verifies 2184ms
+ ✓ packages/cli/test/first-contact-e03-tasks.test.ts > First contact · E03 · custom tasks run as the guide shows > `--evidence` packs the run and `hardkas evidence verify` accepts the package 2190ms
+ ✓ packages/cli/test/demo-ready-e21-plan-path.test.ts > Demo-ready · E21 · tx plan says where the plan is > without --out it prints the persisted path, which exists, holds the plan and is signable 5529ms
+ ✓ packages/cli/test/demo-ready-e21-plan-path.test.ts > Demo-ready · E21 · tx plan says where the plan is > with --out it still reports the --out file 3347ms
+ ✓ packages/cli/test/demo-ready-e26-simulated-balance-identity.test.ts > Demo-ready · E26 · simulated balance shows the identity it queried > by name: the account and the simulator address, never `Unknown` 2174ms
+ ✓ packages/cli/test/demo-ready-e26-simulated-balance-identity.test.ts > Demo-ready · E26 · simulated balance shows the identity it queried > --json carries the same identity; the synthetic kaspa:sim_ form resolves to the same account 4022ms
+ ✓ packages/cli/test/first-contact-small-fixes.test.ts > First contact · CLI texts tell the truth about accounts > generate prints a clean summary and list labels a plaintext key as plaintext, never as encrypted 2043ms
+ ✓ packages/cli/test/first-contact-small-fixes.test.ts > First contact · the quickstart SDK example is honest about failure and module type > the example sets a non-zero exit code when it fails
+ ✓ packages/cli/test/first-contact-small-fixes.test.ts > First contact · the quickstart SDK example is honest about failure and module type > the guide says the SDK needs an ES module project
+stderr | packages/cli/test/e2e-real-accounts.test.ts > E2E Real Accounts Management > should initialize, import, list, show and remove an account
+
+  ⚠️  [SECURITY WARNING] Plaintext private keys detected in legacy account store for: test-acc
+     Location: C:\Users\jrodr\hkl1\tpc\src\.hardkas\accounts.real.json
+     Recommendation: Re-import these accounts using encrypted keystores.
+
+
+  ⚠️  [SECURITY WARNING] Plaintext private keys detected in legacy account store for: test-acc
+     Location: C:\Users\jrodr\hkl1\tpc\src\.hardkas\accounts.real.json
+     Recommendation: Re-import these accounts using encrypted keystores.
+
+
+  ⚠️  [SECURITY WARNING] Plaintext private keys detected in legacy account store for: test-acc
+     Location: C:\Users\jrodr\hkl1\tpc\src\.hardkas\accounts.real.json
+     Recommendation: Re-import these accounts using encrypted keystores.
+
+
+  ⚠️  [SECURITY WARNING] Plaintext private keys detected in legacy account store for: test-acc
+     Location: C:\Users\jrodr\hkl1\tpc\src\.hardkas\accounts.real.json
+     Recommendation: Re-import these accounts using encrypted keystores.
+
+
+ ✓ packages/cli/test/e2e-real-accounts.test.ts > E2E Real Accounts Management > should initialize, import, list, show and remove an account
+ ✓ packages/cli/test/demo-cut-e04-cli-balances.test.ts > Demo-cut · E04 · CLI balances after a simulated send > alice → bob 25 KAS: bob 1025, alice 1000 − 25 − fee, by name and by synthetic identity 4286ms
+ ✓ packages/cli/test/broadcast-guard.test.ts > assertBroadcastNetworkAllowed > should allow same non-mainnet network
+ ✓ packages/cli/test/broadcast-guard.test.ts > assertBroadcastNetworkAllowed > should block mainnet (always rejected: MAINNET_BROADCAST_DISABLED)
+ ✓ packages/cli/test/broadcast-guard.test.ts > assertBroadcastNetworkAllowed > should block mainnet even if only artifact is mainnet
+ ✓ packages/cli/test/broadcast-guard.test.ts > assertBroadcastNetworkAllowed > should block mainnet-like aliases
+ ✓ packages/cli/test/broadcast-guard.test.ts > assertBroadcastNetworkAllowed > the refusal is typed MAINNET_BROADCAST_DISABLED (the policy shared with the SDK)
+ ✓ packages/cli/test/broadcast-guard.test.ts > assertBroadcastNetworkAllowed > should fail on network mismatch
+ ✓ packages/cli/test/accounts-balance-local.test.ts > Accounts Balance Local > should query local balance successfully without hitting RPC
+ ✓ packages/cli/test/localnet-fork.test.ts > localnet fork engine > creates state from mocked UTXO response
+ ✓ packages/cli/test/localnet-fork.test.ts > localnet fork engine > fork metadata is preserved in state
+ ✓ packages/cli/test/kaspa-rpc-url.test.ts > kaspa commands · the default node endpoint is the canonical one > ["kaspa","doctor"]
+ ✓ packages/cli/test/kaspa-rpc-url.test.ts > kaspa commands · the default node endpoint is the canonical one > ["kaspa","wallet","balance"]
+ ✓ packages/cli/test/kaspa-rpc-url.test.ts > kaspa commands · the default node endpoint is the canonical one > ["kaspa","wallet","send"]
+
+ Test Files  46 passed | 1 skipped (47)
+      Tests  357 passed | 21 skipped (378)
+   Start at  18:35:58
+   Duration  655.10s (transform 3.44s, setup 0ms, collect 29.36s, tests 610.95s, environment 9ms, prepare 5.56s)
+
+JSON report written to C:/Users/jrodr/AppData/Local/Temp/claude/C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo/ecaf7e92-a2ba-49b0-aafc-c62b4cb5eda0/scratchpad/l1-reality-1/tpc/logs/tpc-related-cli-1.json
