@@ -427,19 +427,35 @@ export function registerTxCommands(program: Command) {
     )
     .option("--no-observe", "Derive from the evidence already in the workspace; take no new observation")
     .option("-n, --network <network>", "Network whose configured node observes (default: the network of the recorded submission)")
+    .option(
+      "--since <chainBlockHash>",
+      "Scan the node's virtual chain from this chain block (64 hex; it must precede the tx's acceptance) — for a tx sent outside this workspace"
+    )
     .option("--json", "Output as JSON", false)
-    .action(async (artifactPath: string, options: { json: boolean; observe: boolean; network?: string }) => {
+    .action(async (artifactPath: string, options: { json: boolean; observe: boolean; network?: string; since?: string }) => {
       try {
         if (options.json) UI.setJsonMode(true);
         // Demo-cut step 2 · T-A14b: a txId shows the Q4 derived state (the same
         // `sdk.tx.status` the SDK exposes); a path keeps the signature-coverage view.
         const fsMod = await import("node:fs");
-        const { isTxIdentifier, runTxStatus, renderTxStatusRows, txStatusJson, stateHeadline } = await import("../runners/tx-status-runner.js");
+        const { isTxIdentifier, runTxStatus, renderTxStatusRows, txStatusJson, stateHeadline, NETWORK_TXID } = await import("../runners/tx-status-runner.js");
+        // TN10-CONFIRMATION-FIX-1: --since is the observer's cursor for ONE new look at a network txId; anything else is
+        // a usage error, refused before any connection
+        if (options.since !== undefined) {
+          const { HardkasCliError, HardkasExitCode } = await import("../cli-errors.js");
+          const refuse = (why: string) => {
+            throw new HardkasCliError("TX_STATUS_USAGE", `${why} Nothing was observed.`, { exitCode: HardkasExitCode.USAGE_ERROR });
+          };
+          if (!/^[0-9a-f]{64}$/.test(options.since)) refuse(`--since must be a 64-hex chain block hash, got '${options.since.slice(0, 80)}'.`);
+          if (options.observe === false) refuse("--since sets where the new observation scans from; it cannot be combined with --no-observe.");
+          if (!NETWORK_TXID.test(artifactPath) || fsMod.existsSync(artifactPath)) refuse("--since applies to a network txId (64 hex), not to a simulator txId or an artifact path.");
+        }
         if (isTxIdentifier(artifactPath) && !fsMod.existsSync(artifactPath)) {
           const r = await runTxStatus({
             txId: artifactPath,
             observe: options.observe !== false,
             ...(options.network ? { network: options.network } : {}),
+            ...(options.since !== undefined ? { since: options.since } : {}),
             workspaceRoot: invocationWorkspaceRoot()
           });
           if (options.json) {

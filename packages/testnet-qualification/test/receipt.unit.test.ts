@@ -33,7 +33,8 @@ function fixtureReceipt(overrides: Partial<TestnetQualificationReceipt> = {}): T
     network: "testnet-10",
     startedAt: "2026-09-15T14:00:00.000Z",
     completedAt: "2026-09-15T14:00:05.123Z",
-    outcome: "PASS",
+    // v3: a PASS needs a satisfied blue-score confirmation (see "Schema v3" below); the generic fixture is UNRESOLVED
+    outcome: "UNRESOLVED",
     toolchain: {
       hardkas: { version: "0.12.0-rc.27" },
       kaspaWasm: { version: "2.0.1", digest: "7eaffac9cd920ef2fdf540c6e10f2a2b7761170ebc62ec57dfa0f71c64567a71" }
@@ -166,7 +167,7 @@ describe("readRawReceipt — schema validation", () => {
     const read = await readRawReceipt(persisted.filePath);
     expect(sha256Hex(read.bytes)).toBe(persisted.digest.value);
     expect(read.receipt.qualificationId).toBe("tq-2026-09-15-abc");
-    expect(read.receipt.outcome).toBe("PASS");
+    expect(read.receipt.outcome).toBe("UNRESOLVED");
   });
 
   it("Malformed raw JSON fails closed with SCHEMA_INVALID", async () => {
@@ -238,7 +239,7 @@ describe("Observation semantics — never strengthened by the receipt layer", ()
   });
 });
 
-// TQ1-SCRIPT-BROKEN-1 (D7): schema v2 — the attempt record, and v1 no longer read
+// TQ1-SCRIPT-BROKEN-1 (D7): schema v2 — the attempt record (kept in v3), and v1 no longer read
 describe("Schema v2 — submission attempt record (D7)", () => {
   const writeReceipt = async (body: unknown) => {
     const dir = await tmpDir();
@@ -258,8 +259,8 @@ describe("Schema v2 — submission attempt record (D7)", () => {
     evidence
   });
 
-  it("the current raw schema version is 2", () => {
-    expect(RAW_RECEIPT_SCHEMA_VERSION).toBe(2);
+  it("the current raw schema version is 3 (v2's attempt record is kept)", () => {
+    expect(RAW_RECEIPT_SCHEMA_VERSION).toBe(3);
   });
 
   it("a v1 receipt is not read as v2 (its missing attempt record must never mean 'not attempted')", async () => {
@@ -286,4 +287,105 @@ describe("Schema v2 — submission attempt record (D7)", () => {
       await expect(readRawReceipt(await writeReceipt(body({ submissionAttempts: [attempt] })))).rejects.toMatchObject({ reason: "SCHEMA_INVALID" });
     });
   }
+});
+
+// TN10-CONFIRMATION-FIX-1: schema v3 — confirmation is blue-score depth of an accepting chain block bound to the UTXO row.
+// This build writes v3 only, reads v2 as recorded, and a v3 receipt cannot carry the v2 DAA slots.
+describe("Schema v3 — accepting chain block and blue-score confirmation", () => {
+  const TX = "cc".repeat(32);
+  const BLOCK = "ab".repeat(32);
+  const look = {
+    observationArtifactId: "ee".repeat(32),
+    observedAt: "2026-09-15T14:00:04.000Z",
+    observerId: `obs_${"ff".repeat(32)}`,
+    point: { sinkHash: "99".repeat(32), sinkBlueScore: "1150", virtualDaaScore: "251" },
+    finding: { type: "accepted" as const, acceptingBlockHash: BLOCK, acceptingBlueScore: "1000", acceptingDaaScore: "100", confirmationsBlue: "150" },
+    derivedStatus: "CONFIRMED"
+  };
+  const chainAcceptance = (result: "matches" | "mismatch" = "matches") => ({
+    txid: TX,
+    method: "virtual-chain-from-submit-start-point" as const,
+    startPoint: { sinkHash: "dd".repeat(32), sinkBlueScore: "990", virtualDaaScore: "90", capturedAt: "2026-09-15T14:00:01.000Z" },
+    acceptingBlockHash: BLOCK,
+    acceptingBlueScore: "1000",
+    acceptingDaaScore: "100",
+    utxoBinding: { witnessAddress: "kaspatest:qrdest", utxoBlockDaaScore: "100", acceptingDaaScore: "100", result },
+    observation: look
+  });
+  const blueConfirmation = (over: Record<string, unknown> = {}) => ({
+    txid: TX,
+    acceptingBlockHash: BLOCK,
+    acceptingBlueScore: "1000",
+    sinkBlueScoreAtObservation: "1150",
+    confirmationsBlue: "150",
+    unit: "blue-score" as const,
+    observedStatus: "CONFIRMED",
+    policy: { minConfirmations: "100", unit: "blue-score" as const, requestedVia: "--min-confirmations", satisfied: true },
+    observationArtifactId: look.observationArtifactId,
+    observedAt: look.observedAt,
+    limitations: ["observed through ONE RPC node"],
+    ...over
+  });
+  const pass = (evidence: Record<string, unknown>) => fixtureReceipt({ outcome: "PASS", evidence: evidence as any });
+
+  it("writes v3 only; reads v2 and v3", async () => {
+    const { RAW_RECEIPT_READABLE_VERSIONS } = await import("../src/receipt.js");
+    expect(RAW_RECEIPT_SCHEMA_VERSION).toBe(3);
+    expect([...RAW_RECEIPT_READABLE_VERSIONS]).toEqual([2, 3]);
+    await expect(persistRawReceipt({ receipt: fixtureReceipt({ schemaVersion: 2 as any }), rawDir: await tmpDir() })).rejects.toMatchObject({ reason: "SCHEMA_INVALID" });
+  });
+
+  it("a v2 receipt (block hash from a UTXO row, DAA 'confirmations') is read exactly as recorded, never rewritten", async () => {
+    const dir = await tmpDir();
+    const filePath = path.join(dir, "TESTNET_QUALIFICATION_testnet-10_20261015T180604720Z.json");
+    const v2 = {
+      ...fixtureReceipt({ schemaVersion: 2 as any }),
+      evidence: {
+        inclusions: [{ txid: TX, inclusionBlockHash: BLOCK, inclusionDaaScore: "100", observedAt: "2026-09-15T14:00:03.000Z" }],
+        confirmations: [{ txid: TX, inclusionBlockHash: BLOCK, inclusionDaaScore: "100", observedAt: "2026-09-15T14:00:03.000Z", virtualDaaScoreAtObservation: "200", deltaDaa: "100", configuredDaaDelta: "10", criterion: "virtualDaaScore - inclusionDaaScore >= configuredDaaDelta" }]
+      }
+    };
+    const bytes = canonicalizeReceipt(v2 as any);
+    await fs.writeFile(filePath, bytes);
+    const read = await readRawReceipt(filePath);
+    expect(read.receipt.schemaVersion).toBe(2);
+    expect(read.digest.value).toBe(sha256Hex(bytes));
+    expect(read.receipt.evidence.confirmations?.[0]?.deltaDaa).toBe("100");
+    expect((read.receipt.evidence as any).blueConfirmations).toBeUndefined();
+    expect(sha256Hex(new Uint8Array(await fs.readFile(filePath)))).toBe(sha256Hex(bytes));
+  });
+
+  it("a v3 receipt never carries the v2 DAA slots", async () => {
+    for (const legacy of [
+      { inclusions: [{ txid: TX, inclusionBlockHash: BLOCK, inclusionDaaScore: "100", observedAt: "x" }] },
+      { confirmations: [{ txid: TX, inclusionBlockHash: BLOCK, inclusionDaaScore: "100", observedAt: "x", virtualDaaScoreAtObservation: "200", deltaDaa: "100", configuredDaaDelta: "10", criterion: "c" }] }
+    ]) {
+      await expect(persistRawReceipt({ receipt: fixtureReceipt({ evidence: legacy as any }), rawDir: await tmpDir() })).rejects.toMatchObject({ reason: "SCHEMA_INVALID" });
+    }
+  });
+
+  it("PASS requires a satisfied blue-score confirmation of a chain block bound to the UTXO row", async () => {
+    const refused = [
+      pass({}),
+      pass({ acceptances: [{ txid: TX, acceptedAt: "x", detectedVia: "mempool-gone+utxo-present", witnessAddress: "kaspatest:qrdest" }] }),
+      pass({ chainAcceptances: [chainAcceptance()] }),
+      pass({ chainAcceptances: [chainAcceptance("mismatch")], blueConfirmations: [blueConfirmation()] }),
+      pass({ blueConfirmations: [blueConfirmation()] }),
+      pass({ chainAcceptances: [chainAcceptance()], blueConfirmations: [blueConfirmation({ unit: "daa" })] }),
+      pass({ chainAcceptances: [chainAcceptance()], blueConfirmations: [blueConfirmation({ confirmationsBlue: "60" })] }),
+      pass({ chainAcceptances: [chainAcceptance()], blueConfirmations: [blueConfirmation({ confirmationsBlue: "60", policy: { minConfirmations: "100", unit: "blue-score", requestedVia: "x", satisfied: false } })] })
+    ];
+    for (const receipt of refused) {
+      await expect(persistRawReceipt({ receipt, rawDir: await tmpDir() }), JSON.stringify(receipt.evidence).slice(0, 200)).rejects.toMatchObject({ reason: "SCHEMA_INVALID" });
+    }
+  });
+
+  it("a PASS with a bound, satisfied blue-score confirmation round-trips", async () => {
+    const receipt = pass({ chainAcceptances: [chainAcceptance()], blueConfirmations: [blueConfirmation()] });
+    const persisted = await persistRawReceipt({ receipt, rawDir: await tmpDir() });
+    const read = await readRawReceipt(persisted.filePath);
+    expect(read.receipt.schemaVersion).toBe(3);
+    expect(read.receipt.evidence.blueConfirmations?.[0]).toMatchObject({ confirmationsBlue: "150", unit: "blue-score", policy: { satisfied: true } });
+    expect(read.receipt.evidence.chainAcceptances?.[0]?.utxoBinding.result).toBe("matches");
+  });
 });

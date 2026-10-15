@@ -64,6 +64,8 @@ export async function runTxStatus(input: {
   txId: string;
   observe?: boolean;
   network?: string;
+  /** TN10-CONFIRMATION-FIX-1: the new look's virtual-chain cursor (a chain block preceding the acceptance). */
+  since?: string;
   workspaceRoot?: string;
   sdk?: Sdk;
 }): Promise<TxStatusRunnerResult> {
@@ -80,7 +82,7 @@ export async function runTxStatus(input: {
   }
 }
 
-async function lookAndDerive(input: { txId: string; observe?: boolean }, sdk: Sdk, network: string): Promise<TxStatusRunnerResult> {
+async function lookAndDerive(input: { txId: string; observe?: boolean; since?: string }, sdk: Sdk, network: string): Promise<TxStatusRunnerResult> {
   let look: TxStatusLook;
   if (SYNTHETIC_TXID.test(input.txId)) {
     look = { taken: false, reason: "a simulator txId: there is no network to observe; the state derives from the simulator receipt" };
@@ -88,7 +90,7 @@ async function lookAndDerive(input: { txId: string; observe?: boolean }, sdk: Sd
     look = { taken: false, reason: "not requested (--no-observe): derived from the evidence already in this workspace" };
   } else {
     try {
-      const r = await sdk.tx.observe(input.txId);
+      const r = await sdk.tx.observe(input.txId, input.since !== undefined ? { since: input.since } : {});
       look = { taken: true, artifactId: r.observation.contentHash, ...(r.observationPath ? { path: r.observationPath } : {}) };
     } catch (e: any) {
       look = { taken: false, reason: `the configured observer could not be read: ${e?.code ? `[${e.code}] ` : ""}${e?.message ?? String(e)}` };

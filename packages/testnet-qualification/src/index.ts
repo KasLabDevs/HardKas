@@ -36,22 +36,28 @@ export type {
   ProbeRemoteTestnetInput
 } from "./remote-node.js";
 
-export {
-  waitForAcceptance,
-  observeInclusion,
-  assertConfirmedByDaaDelta
-} from "./daa-observer.js";
+export { waitForAcceptance } from "./daa-observer.js";
 export type {
   AcceptanceEvidence,
-  InclusionEvidence,
-  ConfirmationEvidence,
   DaaObserverRpc,
   DaaObserverUtxoRow,
   WaitForAcceptanceInput,
-  WaitForAcceptanceOptions,
-  ObserveInclusionInput,
-  AssertConfirmedByDaaDeltaOptions
+  WaitForAcceptanceOptions
 } from "./daa-observer.js";
+
+export { observeChainAcceptance, CHAIN_OBSERVATION_LIMITATIONS } from "./chain-acceptance.js";
+export type {
+  ChainStartPoint,
+  ChainLookFinding,
+  ChainLook,
+  ChainAcceptanceObserver,
+  UtxoBinding,
+  ChainAcceptanceEvidence,
+  BlueConfirmationEvidence,
+  ChainAcceptanceResult,
+  ObserveChainAcceptanceInput,
+  ObserveChainAcceptanceOptions
+} from "./chain-acceptance.js";
 
 export {
   assertSpendableOrFailClosed,
@@ -89,6 +95,7 @@ export type {
 export {
   RAW_RECEIPT_SCHEMA,
   RAW_RECEIPT_SCHEMA_VERSION,
+  RAW_RECEIPT_READABLE_VERSIONS,
   ReceiptPersistenceError,
   canonicalizeReceipt,
   toReceiptJsonSafe,
@@ -114,7 +121,11 @@ export type {
   ReceiptSubmissionAttempt,
   ReceiptAcceptanceEvidence,
   ReceiptInclusionEvidence,
-  ReceiptConfirmationEvidence
+  ReceiptConfirmationEvidence,
+  ReceiptChainStartPoint,
+  ReceiptChainLook,
+  ReceiptChainAcceptanceEvidence,
+  ReceiptBlueConfirmationEvidence
 } from "./receipt.js";
 
 export {

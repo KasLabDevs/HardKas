@@ -234,7 +234,7 @@ describe("TQ1-SCRIPT-BROKEN-1 · the script reaches one guarded submission and r
     expect(seen.submitsAtT, r.brief).toBe(1);
     expect(r.dialled.every((d) => d === `LOOPBACK_CONNECT 127.0.0.1:${T.port}`), JSON.stringify(r.dialled)).toBe(true);
     expect(rec, r.brief).toBeTruthy();
-    expect(rec!.json.schemaVersion).toBe(2);
+    expect(rec!.json.schemaVersion).toBe(3); // TN10-CONFIRMATION-FIX-1: receipts are v3
     expect(rec!.json.outcome).toBe("UNRESOLVED");
     expect(rec!.json.evidence.submissionAttempts).toEqual([
       expect.objectContaining({ attempts: 1, outcome: "outcome_unknown", stage: "submit" })

@@ -20,7 +20,7 @@
  *   resolves via observation, never via a second submission.
  *
  * - Observation states from Blocks 1/2 stay distinct — submission,
- *   mempool, acceptance, inclusion, confirmation are never collapsed.
+ *   mempool, UTXO-level acceptance, the accepting chain block and its blue-score confirmation are never collapsed.
  *
  * - `UNRESOLVED` is a valid scenario outcome and is preferable to an
  *   invented PASS or FAIL.
@@ -45,13 +45,17 @@ import {
 } from "../submission-guard.js";
 import {
   waitForAcceptance,
-  observeInclusion,
-  assertConfirmedByDaaDelta,
   type DaaObserverRpc,
-  type AcceptanceEvidence,
-  type InclusionEvidence,
-  type ConfirmationEvidence
+  type AcceptanceEvidence
 } from "../daa-observer.js";
+import {
+  observeChainAcceptance,
+  type ChainAcceptanceObserver,
+  type ChainStartPoint,
+  type ChainAcceptanceEvidence,
+  type BlueConfirmationEvidence,
+  type ChainLook
+} from "../chain-acceptance.js";
 import type { RemoteTestnetAuthority } from "../remote-node.js";
 import type { SourceUtxoEvidence } from "../funding-input.js";
 
@@ -90,9 +94,10 @@ export interface ProductTransactionPath {
 
 export type ScenarioBlockerStage =
   | "plan-and-sign"
+  | "start-point"
   | "submit"
   | "acceptance"
-  | "inclusion"
+  | "acceptance-block"
   | "confirmation";
 
 export interface ScenarioBlocker {
@@ -115,10 +120,18 @@ export interface StandardL1ScenarioInput {
   readonly productPath: ProductTransactionPath;
   readonly submissionRpc: SubmissionGuardRpc;
   readonly observerRpc: DaaObserverRpc;
+  /**
+   * TN10-CONFIRMATION-FIX-1: the product's chain observer (`sdk.tx.observe`), bound by the caller. It captures the
+   * start point before the submission and names the accepting chain block and its blue-score depth afterwards.
+   */
+  readonly chainObserver: ChainAcceptanceObserver;
   readonly fromAddress: string;
   readonly toAddress: string;
   readonly amountSompi: bigint;
-  readonly configuredDaaDelta: bigint;
+  /** Blue-score confirmations the accepting block must reach (never a DAA delta). */
+  readonly minConfirmations: bigint;
+  /** How the threshold was requested (`--min-confirmations`, or the legacy alias), recorded on the receipt. */
+  readonly minConfirmationsRequestedVia: string;
   readonly submissionOptions?: SubmissionGuardOptions;
   readonly acceptanceOptions?: {
     readonly pollIntervalMs?: number;
@@ -136,9 +149,16 @@ export interface StandardL1ScenarioResult {
   readonly outcome: QualificationOutcome;
   readonly plan?: PlanAndSignResult;
   readonly submission?: SubmissionOutcome;
+  /** The chain position captured before `submitTransaction` (absent when the run stopped earlier). */
+  readonly startPoint?: ChainStartPoint;
+  /** UTXO-level acceptance signal (mempool gone + output present). Never a confirmation by itself. */
   readonly acceptance?: AcceptanceEvidence;
-  readonly inclusion?: InclusionEvidence;
-  readonly confirmation?: ConfirmationEvidence;
+  /** The accepting chain block, named by the virtual chain and bound to the UTXO row. */
+  readonly chainAcceptance?: ChainAcceptanceEvidence;
+  /** Blue-score confirmation under the policy — present only when the policy was satisfied. */
+  readonly confirmation?: BlueConfirmationEvidence;
+  /** The last chain look when no acceptance block could be established (diagnostics; never a claim). */
+  readonly lastChainLook?: ChainLook;
   readonly blocker?: ScenarioBlocker;
   /**
    * TQ1-SCRIPT-BROKEN-1 (D7): the record of the ONE `submitTransaction` call — always present: `not_attempted`
@@ -172,7 +192,7 @@ export async function runStandardL1Scenario(
   const watchAddresses: string[] = [input.toAddress];
   if (input.fromAddress && !watchAddresses.includes(input.fromAddress)) {
     // Change goes back to fromAddress under the current HardKAS planner
-    // contract; watch it too so a change-return UTXO counts as inclusion
+    // contract; watch it too so a change-return UTXO counts as the acceptance signal
     // evidence when the recipient UTXO is late to appear.
     watchAddresses.push(input.fromAddress);
   }
@@ -211,6 +231,27 @@ export async function runStandardL1Scenario(
     };
   }
 
+  // 1b. TN10-CONFIRMATION-FIX-1: a known chain position BEFORE the submission — the virtual chain is scanned from it
+  // afterwards to name the accepting block. Without one the acceptance block could never be established, so nothing
+  // is submitted.
+  let startPoint: ChainStartPoint;
+  try {
+    startPoint = await input.chainObserver.captureStartPoint();
+  } catch (err) {
+    return {
+      outcome: "FAIL",
+      plan,
+      watchAddresses,
+      submissionAttempt: notAttempted("submit", toCode(err, "START_POINT_UNAVAILABLE"), plan.txid),
+      blocker: {
+        stage: "start-point",
+        code: "START_POINT_UNAVAILABLE",
+        message: `The chain position to observe acceptance from could not be read, so submitTransaction was not sent: ${toMessage(err)}`,
+        expectedUpstream: "rusty-kaspad getBlockDagInfo.sink + getSinkBlueScore (via HardKAS RPC)"
+      }
+    };
+  }
+
   // 2. Submit through the Block 2 guard. Exactly ONE submitTransaction call.
   let submission: SubmissionOutcome;
   try {
@@ -233,6 +274,7 @@ export async function runStandardL1Scenario(
       return {
         outcome: "FAIL",
         plan,
+        startPoint,
         watchAddresses,
         submissionAttempt: notAttempted("submit", err.code, plan.txid),
         blocker: {
@@ -248,6 +290,7 @@ export async function runStandardL1Scenario(
     return {
       outcome: "UNRESOLVED",
       plan,
+      startPoint,
       watchAddresses,
       submissionAttempt: {
         outcome: "outcome_unknown",
@@ -287,6 +330,7 @@ export async function runStandardL1Scenario(
       return {
         outcome: "UNRESOLVED",
         plan,
+        startPoint,
         submission,
         submissionAttempt,
         watchAddresses,
@@ -313,6 +357,7 @@ export async function runStandardL1Scenario(
       return {
         outcome: "FAIL",
         plan,
+        startPoint,
         submission,
         submissionAttempt,
         watchAddresses,
@@ -333,6 +378,7 @@ export async function runStandardL1Scenario(
       return {
         outcome: "FAIL",
         plan,
+        startPoint,
         submission,
         submissionAttempt,
         watchAddresses,
@@ -373,6 +419,7 @@ export async function runStandardL1Scenario(
       return {
         outcome: "UNRESOLVED",
         plan,
+        startPoint,
         submission,
         submissionAttempt,
         watchAddresses,
@@ -386,61 +433,43 @@ export async function runStandardL1Scenario(
     }
   }
 
-  // 5. Observe inclusion (block hash + block DAA score).
-  let inclusion: InclusionEvidence;
-  try {
-    inclusion = await observeInclusion(
-      input.observerRpc,
-      { txid: submission.txid, witnessAddress: acceptance.witnessAddress },
-      { ...(input.now ? { now: input.now } : {}) }
-    );
-  } catch (err) {
-    // Missing inclusion metadata is a genuine upstream gap — we neither
-    // invent it nor infer confirmation without it.
-    return {
-      outcome: "UNRESOLVED",
-      plan,
-      submission,
-      submissionAttempt,
-      acceptance,
-      watchAddresses,
-      blocker: {
-        stage: "inclusion",
-        code: toCode(err, "INCLUSION_METADATA_MISSING"),
-        message: `Inclusion evidence unavailable via the RPC UTXO row: ${toMessage(err)}`,
-        expectedUpstream: "rusty-kaspad getUtxosByAddress row (blockHash + blockDaaScore)"
-      }
-    };
-  }
 
-  // 6. Assert confirmation by DAA delta.
-  let confirmation: ConfirmationEvidence;
-  try {
-    confirmation = await assertConfirmedByDaaDelta(
-      input.observerRpc,
-      inclusion,
-      {
-        configuredDaaDelta: input.configuredDaaDelta,
-        ...(input.confirmationOptions?.pollIntervalMs !== undefined ? { pollIntervalMs: input.confirmationOptions.pollIntervalMs } : {}),
-        ...(input.confirmationOptions?.maxWaitMs !== undefined ? { maxWaitMs: input.confirmationOptions.maxWaitMs } : {}),
-        ...(input.now ? { now: input.now } : {}),
-        ...(input.sleep ? { sleep: input.sleep } : {})
-      }
-    );
-  } catch (err) {
+  // 5. TN10-CONFIRMATION-FIX-1: the accepting chain block and its blue-score depth, from the product observer, scanned
+  // from the pre-submit start point and bound to the UTXO row. A UTXO row carries no block hash and UTXO presence is
+  // not acceptance-block evidence: without the virtual chain naming the block, nothing is confirmed.
+  const chain = await observeChainAcceptance(
+    {
+      txid: submission.txid,
+      witnessAddress: acceptance.witnessAddress,
+      startPoint,
+      minConfirmations: input.minConfirmations,
+      minConfirmationsRequestedVia: input.minConfirmationsRequestedVia,
+      chainObserver: input.chainObserver,
+      observerRpc: input.observerRpc
+    },
+    {
+      ...(input.confirmationOptions?.pollIntervalMs !== undefined ? { pollIntervalMs: input.confirmationOptions.pollIntervalMs } : {}),
+      ...(input.confirmationOptions?.maxWaitMs !== undefined ? { maxWaitMs: input.confirmationOptions.maxWaitMs } : {}),
+      ...(input.now ? { now: input.now } : {}),
+      ...(input.sleep ? { sleep: input.sleep } : {})
+    }
+  );
+  if (chain.kind === "unresolved") {
     return {
       outcome: "UNRESOLVED",
       plan,
+      startPoint,
       submission,
       submissionAttempt,
       acceptance,
-      inclusion,
+      ...(chain.acceptance ? { chainAcceptance: chain.acceptance } : {}),
+      ...(chain.lastLook && !chain.acceptance ? { lastChainLook: chain.lastLook } : {}),
       watchAddresses,
       blocker: {
-        stage: "confirmation",
-        code: toCode(err, "CONFIRMATION_TIMEOUT"),
-        message: `DAA delta threshold not met within budget: ${toMessage(err)}`,
-        expectedUpstream: "rusty-kaspad getBlockDagInfo.virtualDaaScore progression"
+        stage: chain.code === "CONFIRMATION_TIMEOUT" ? "confirmation" : "acceptance-block",
+        code: chain.code,
+        message: chain.message,
+        expectedUpstream: "rusty-kaspad getVirtualChainFromBlock (accepted tx ids) + getBlock blueScore, via sdk.tx.observe"
       }
     };
   }
@@ -448,11 +477,12 @@ export async function runStandardL1Scenario(
   return {
     outcome: "PASS",
     plan,
+    startPoint,
     submission,
     submissionAttempt,
     acceptance,
-    inclusion,
-    confirmation,
+    chainAcceptance: chain.acceptance,
+    confirmation: chain.confirmation,
     watchAddresses
   };
 }

@@ -43,14 +43,20 @@ import {
   type ReceiptSubmissionOutcome,
   type ReceiptSubmissionAttempt,
   type ReceiptAcceptanceEvidence,
-  type ReceiptInclusionEvidence,
-  type ReceiptConfirmationEvidence,
+  type ReceiptChainStartPoint,
+  type ReceiptChainLook,
+  type ReceiptChainAcceptanceEvidence,
+  type ReceiptBlueConfirmationEvidence,
   type TestnetQualificationReceipt
 } from "./receipt.js";
 
 export const SHARED_RECEIPT_SCHEMA = "hardkas.testnet-qualification.shared-receipt";
-/** v2 (TQ1-SCRIPT-BROKEN-1, D7): projects `evidence.submissionAttempts`; derived from raw v2 only. */
-export const SHARED_RECEIPT_SCHEMA_VERSION = 2 as const;
+/**
+ * v2 (TQ1-SCRIPT-BROKEN-1, D7): projects `evidence.submissionAttempts`.
+ * v3 (TN10-CONFIRMATION-FIX-1): projects the start point, the accepting chain block and the blue-score confirmation
+ * (local observation paths dropped); derived from a raw v3 only — a v2 raw stays as recorded and is never re-derived.
+ */
+export const SHARED_RECEIPT_SCHEMA_VERSION = 3 as const;
 
 // Governance invariant: RAW_RECEIPT_SCHEMA !== SHARED_RECEIPT_SCHEMA.
 // Enforced by unit test `receipt-redactor.unit.test.ts > "uses a schema
@@ -125,8 +131,11 @@ export interface SharedEvidence {
   /** Public facts only (outcome, attempts, stage, txid, a machine reason code, time) — no message, no error. */
   readonly submissionAttempts?: readonly ReceiptSubmissionAttempt[];
   readonly acceptances?: readonly ReceiptAcceptanceEvidence[];
-  readonly inclusions?: readonly ReceiptInclusionEvidence[];
-  readonly confirmations?: readonly ReceiptConfirmationEvidence[];
+  readonly startPoints?: readonly ReceiptChainStartPoint[];
+  /** Public chain facts; the observation's local path is dropped. */
+  readonly chainAcceptances?: readonly ReceiptChainAcceptanceEvidence[];
+  readonly blueConfirmations?: readonly ReceiptBlueConfirmationEvidence[];
+  readonly chainLooks?: readonly ReceiptChainLook[];
   // `notes` from the raw receipt is INTENTIONALLY not projected.
 }
 
@@ -205,20 +214,56 @@ function projectAcceptance(a: ReceiptAcceptanceEvidence): ReceiptAcceptanceEvide
   return { txid: a.txid, acceptedAt: a.acceptedAt, detectedVia: a.detectedVia, witnessAddress: a.witnessAddress };
 }
 
-function projectInclusion(i: ReceiptInclusionEvidence): ReceiptInclusionEvidence {
-  return { txid: i.txid, inclusionBlockHash: i.inclusionBlockHash, inclusionDaaScore: i.inclusionDaaScore, observedAt: i.observedAt };
+function projectStartPoint(s: ReceiptChainStartPoint): ReceiptChainStartPoint {
+  return { sinkHash: s.sinkHash, sinkBlueScore: s.sinkBlueScore, virtualDaaScore: s.virtualDaaScore, capturedAt: s.capturedAt };
 }
 
-function projectConfirmation(c: ReceiptConfirmationEvidence): ReceiptConfirmationEvidence {
+function projectChainLook(l: ReceiptChainLook): ReceiptChainLook {
+  const f: any = { type: l.finding.type };
+  for (const k of ["acceptingBlockHash", "acceptingBlueScore", "acceptingDaaScore", "confirmationsBlue", "confirmationsDaa", "finalityReached", "scannedChainBlocks", "reason"] as const) {
+    if (l.finding[k] !== undefined) f[k] = l.finding[k];
+  }
+  // `observationPath` is a local filesystem path: never projected
+  return {
+    observationArtifactId: l.observationArtifactId,
+    observedAt: l.observedAt,
+    observerId: l.observerId,
+    point: { sinkHash: l.point.sinkHash, sinkBlueScore: l.point.sinkBlueScore, virtualDaaScore: l.point.virtualDaaScore },
+    finding: f,
+    derivedStatus: l.derivedStatus
+  };
+}
+
+function projectChainAcceptance(a: ReceiptChainAcceptanceEvidence): ReceiptChainAcceptanceEvidence {
+  const binding: any = { witnessAddress: a.utxoBinding.witnessAddress, result: a.utxoBinding.result };
+  if (a.utxoBinding.utxoBlockDaaScore !== undefined) binding.utxoBlockDaaScore = a.utxoBinding.utxoBlockDaaScore;
+  if (a.utxoBinding.acceptingDaaScore !== undefined) binding.acceptingDaaScore = a.utxoBinding.acceptingDaaScore;
+  return {
+    txid: a.txid,
+    method: a.method,
+    startPoint: projectStartPoint(a.startPoint),
+    acceptingBlockHash: a.acceptingBlockHash,
+    acceptingBlueScore: a.acceptingBlueScore,
+    ...(a.acceptingDaaScore !== undefined ? { acceptingDaaScore: a.acceptingDaaScore } : {}),
+    utxoBinding: binding,
+    observation: projectChainLook(a.observation)
+  };
+}
+
+function projectBlueConfirmation(c: ReceiptBlueConfirmationEvidence): ReceiptBlueConfirmationEvidence {
   return {
     txid: c.txid,
-    inclusionBlockHash: c.inclusionBlockHash,
-    inclusionDaaScore: c.inclusionDaaScore,
+    acceptingBlockHash: c.acceptingBlockHash,
+    acceptingBlueScore: c.acceptingBlueScore,
+    sinkBlueScoreAtObservation: c.sinkBlueScoreAtObservation,
+    confirmationsBlue: c.confirmationsBlue,
+    unit: c.unit,
+    ...(c.confirmationsDaa !== undefined ? { confirmationsDaa: c.confirmationsDaa } : {}),
+    observedStatus: c.observedStatus,
+    policy: { minConfirmations: c.policy.minConfirmations, unit: c.policy.unit, requestedVia: c.policy.requestedVia, satisfied: c.policy.satisfied },
+    observationArtifactId: c.observationArtifactId,
     observedAt: c.observedAt,
-    virtualDaaScoreAtObservation: c.virtualDaaScoreAtObservation,
-    deltaDaa: c.deltaDaa,
-    configuredDaaDelta: c.configuredDaaDelta,
-    criterion: c.criterion
+    limitations: [...c.limitations]
   };
 }
 
@@ -229,8 +274,10 @@ function projectEvidence(ev: TestnetQualificationReceipt["evidence"]): SharedEvi
     ...(ev.submissions ? { submissions: ev.submissions.map(projectSubmission) } : {}),
     ...(ev.submissionAttempts ? { submissionAttempts: ev.submissionAttempts.map(projectSubmissionAttempt) } : {}),
     ...(ev.acceptances ? { acceptances: ev.acceptances.map(projectAcceptance) } : {}),
-    ...(ev.inclusions ? { inclusions: ev.inclusions.map(projectInclusion) } : {}),
-    ...(ev.confirmations ? { confirmations: ev.confirmations.map(projectConfirmation) } : {})
+    ...(ev.startPoints ? { startPoints: ev.startPoints.map(projectStartPoint) } : {}),
+    ...(ev.chainAcceptances ? { chainAcceptances: ev.chainAcceptances.map(projectChainAcceptance) } : {}),
+    ...(ev.blueConfirmations ? { blueConfirmations: ev.blueConfirmations.map(projectBlueConfirmation) } : {}),
+    ...(ev.chainLooks ? { chainLooks: ev.chainLooks.map(projectChainLook) } : {})
     // `notes` intentionally not projected.
   };
   return out;
@@ -270,6 +317,13 @@ export interface DerivedShared {
  */
 export async function deriveSharedReceipt(input: DeriveSharedInput): Promise<DerivedShared> {
   const raw = await readRawReceipt(input.rawFilePath);
+  if (raw.receipt.schemaVersion !== RAW_RECEIPT_SCHEMA_VERSION) {
+    // a v2 raw is kept as recorded: re-deriving it would project its DAA `confirmations` under the v3 meaning
+    throw new ReceiptPersistenceError(
+      "SCHEMA_INVALID",
+      `a shared v${SHARED_RECEIPT_SCHEMA_VERSION} receipt derives from a raw v${RAW_RECEIPT_SCHEMA_VERSION} only; ${input.rawFilePath} is v${raw.receipt.schemaVersion} and stays as recorded`
+    );
+  }
   const shared: SharedQualificationReceipt = {
     schema: SHARED_RECEIPT_SCHEMA,
     schemaVersion: SHARED_RECEIPT_SCHEMA_VERSION,

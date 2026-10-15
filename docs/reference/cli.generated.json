@@ -6299,6 +6299,13 @@
               "mandatory": false
             },
             {
+              "flags": "--since <chainBlockHash>",
+              "description": "Scan the node's virtual chain from this chain block (64 hex; it must precede the tx's acceptance) — for a tx sent outside this workspace",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
               "flags": "--json",
               "description": "Output as JSON",
               "default": false,
