@@ -5,7 +5,8 @@ import path from "node:path";
 import { spawn } from "node:child_process";
 import type { AddressInfo } from "node:net";
 import { WebSocketServer } from "ws";
-import { cliDist, childEnv, repoRoot } from "./first-contact-helpers.js";
+import { cliDist, repoRoot } from "./first-contact-helpers.js";
+import { hermeticChildEnv, assertHermeticPreloadActive } from "./hermetic-child.js";
 
 vi.setConfig({ testTimeout: 300_000, hookTimeout: 300_000 });
 
@@ -123,7 +124,8 @@ made.push(logs);
 /** One process with its OWN hermetic log; every address it tried. HARDKAS_TQ_* come only from `env`. */
 async function run(name: string, argv: string[], cwd: string, env: Record<string, string> = {}) {
   const log = path.join(logs, `${name}.net.log`);
-  const base = childEnv({ HARDKAS_HERMETIC_LOG: log, [PW_VAR]: PW });
+  // HERMETIC-CHILD-PRELOAD-1: the child loads the hermetic preload itself, whatever runs this file (CI included)
+  const base = hermeticChildEnv(log, { [PW_VAR]: PW });
   for (const k of Object.keys(base)) if (k.startsWith("HARDKAS_TQ_")) delete base[k];
   const r = await new Promise<{ status: number | null; stdout: string; stderr: string }>((resolve) => {
     const child = spawn(process.execPath, argv, { cwd, env: { ...base, ...env } });
@@ -194,6 +196,8 @@ let R: Fake;
 const count = (f: Fake, m: string, from: number) => f.methods.slice(from).filter((x) => x === m).length;
 
 beforeAll(async () => {
+  // nothing below may run unless every child's connection attempts are recorded (and non-loopback ones refused)
+  assertHermeticPreloadActive();
   const coreMod: any = await import("@hardkas/core");
   kaspa = coreMod.loadManagedKaspaWasmSync();
   S = await startFake("S(:18210 simnet)", "simnet", { port: 18210 });
