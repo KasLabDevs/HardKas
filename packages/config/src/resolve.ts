@@ -1,4 +1,5 @@
 import { DEFAULT_HARDKAS_CONFIG } from "./defaults";
+import { declaredNodeEndpoint } from "./endpoint";
 import type { HardkasConfig, HardkasNetworkTarget, HardkasExecutionTarget } from "./types";
 
 export interface ResolveExecutionTargetOptions {
@@ -296,10 +297,8 @@ export function resolveWorkspaceExecution(options: ResolveWorkspaceExecutionOpti
     );
   }
 
-  const rpcUrl =
-    networkTarget && "rpcUrl" in networkTarget && typeof (networkTarget as { rpcUrl?: unknown }).rpcUrl === "string"
-      ? ((networkTarget as { rpcUrl: string }).rpcUrl)
-      : undefined;
+  // TESTNET-PORT-COLLISION-1 (D-TPC-2): the endpoint the USER declared — a built-in public entry declares none
+  const rpcUrl = declaredNodeEndpoint({ ...config, networks } as HardkasConfig, networkId);
 
   return {
     execution,

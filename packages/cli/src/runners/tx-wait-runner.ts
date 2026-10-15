@@ -224,6 +224,9 @@ async function waitOn(input: TxWaitRunnerInput, sdk: any, network: string): Prom
       }
     } catch (e: any) {
       if (e?.name === "HardkasCliError") throw e;
+      // TESTNET-PORT-COLLISION-1: no endpoint chosen for this public network — waiting cannot change that, so the wait
+      // ends now with the typed refusal (nothing was contacted) instead of timing out on it
+      if (e?.code === "NETWORK_ENDPOINT_REQUIRED") throw e;
       lastError = `${e?.code ? `[${e.code}] ` : ""}${e?.message ?? String(e)}`;
     }
     if (now() - start >= input.timeoutMs) break;

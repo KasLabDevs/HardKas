@@ -1,8 +1,0 @@
-TEST-INIT-SCAFFOLD             DEFECT       [medium] init 0; test exit 1 VITEST_MISSING; doc {"ok":false,"code":"VITEST_MISSING","message":"Test execution failed: Fallback: No real tests were executed because the engine is missing.","mode":"cli"}
-TEST-NO-TESTS                  OK           exit 1 ; doc {"ok":true,"command":"test","mode":"cli","result":{"testRunId":"run_1791655232363_4smnm","network":"simnet","scenariosExecuted":0,"passed":true,"scenarios":[],"createdAt":"2026-10-10T18:00:32.802Z"}}
-TEST-FAILING                   OK           exit 1 ; doc {"ok":false,"command":"test","mode":"cli","result":{"testRunId":"run_1791655233876_u5emg","network":"simnet","scenariosExecuted":0,"passed":false,"scenarios":[],"createdAt":"2026-10-10T18:00:34.787Z"}}
-TEST-EVIDENCE                  NOTE         test --evidence exit 1; no evidence package found (scenarios executed: ?)
-
-verdicts: DEFECT 1 · OK 2 · NOTE 1 · INCONCLUSIVE 0
-network: refused 0 ; non-loopback 0; loopback {}
-results → C:\Users\jrodr\AppData\Local\Temp\claude\C--Users-jrodr-Documents-kaslabdevs-GitHub-HardKas-repo\21f9a2e4-33ac-4300-9366-aff402f85900\scratchpad\cut49-cli-contract-2\runs\test-2\results.json

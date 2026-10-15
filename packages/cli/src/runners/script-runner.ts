@@ -3,7 +3,7 @@
 import { resolve, dirname } from "node:path";
 import { existsSync, unlinkSync } from "node:fs";
 import { execSync } from "node:child_process";
-import { loadHardkasConfig } from "@hardkas/config";
+import { loadHardkasConfig, resolveNodeEndpoint } from "@hardkas/config";
 import { tmpdir } from "node:os";
 
 export async function runScript(
@@ -44,7 +44,9 @@ Object.assign(globalThis, { hardkas });
 `;
     } else {
       const netConfigObj = netConfig as unknown as Record<string, unknown>;
-      const rpcUrl = typeof netConfigObj.rpcUrl === "string" ? netConfigObj.rpcUrl : "";
+      // TESTNET-PORT-COLLISION-1: the shared endpoint authority (a public network with no endpoint the user chose refuses
+      // NETWORK_ENDPOINT_REQUIRED before the script runs)
+      const rpcUrl = resolveNodeEndpoint({ config, networkId: opts.network }).url;
       const networkId =
         typeof netConfigObj.network === "string" ? netConfigObj.network : opts.network;
       injectionCode = `

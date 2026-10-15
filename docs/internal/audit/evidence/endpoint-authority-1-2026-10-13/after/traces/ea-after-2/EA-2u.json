@@ -1,8 +1,0 @@
-{
-  "refusal": {
-    "code": "SEND_ENDPOINT_UNVERIFIABLE",
-    "message": "Cannot send to ws://127.0.0.1:63949: this instance's RPC client does not say which endpoint it talks to, so the request could not be shown to go there. Nothing was sent or recorded."
-  },
-  "submitReceivedByA": true,
-  "receiptRpcUrl": null
-}

@@ -3,12 +3,14 @@ import {
   LoadedHardkasConfig as LoadedConfig,
   defineHardkasConfig,
   resolveWorkspaceExecution,
+  resolveNodeEndpoint,
   type ResolvedWorkspaceExecution
 } from "@hardkas/config";
+import { isNetworkEndpointRequired, unresolvedEndpointRpc } from "./unresolved-endpoint-rpc.js";
 import { resolveHardkasAccount, HardkasAccount } from "@hardkas/accounts";
 import { ExternalHardkasSigner } from "@hardkas/artifacts";
 import { JsonWrpcKaspaClient, KaspaRpcClient } from "@hardkas/kaspa-rpc";
-import { NetworkId, HardkasError, getCoinbaseMaturity, nodeRpcUrl, type HardkasExecutionTarget } from "@hardkas/core";
+import { NetworkId, HardkasError, getCoinbaseMaturity, type HardkasExecutionTarget } from "@hardkas/core";
 import { assertPublicNetworkAllowed } from "./policy.js";
 import { HardkasAccounts } from "./accounts.js";
 import { HardkasTx } from "./tx.js";
@@ -259,13 +261,24 @@ export class Hardkas {
       this.rpc = rpc;
       this.ownedRpc = rpcOwnership === "owned" ? rpc : undefined;
     } else {
-      this.rpc = new JsonWrpcKaspaClient({
-        rpcUrl: this.resolveRpcUrl(),
-        // NODE-NETWORK-IDENTITY-1: a real Kaspa world uses its node only once the node says it serves that network
-        ...(this.execution.mode !== "simulator" && this.execution.domain === "kaspa-l1"
-          ? { expectedNetworkId: this.activeNetwork }
-          : {})
-      });
+      // TESTNET-PORT-COLLISION-1: the endpoint by the shared authority; a public network with none chosen gets a client
+      // that refuses every request (NETWORK_ENDPOINT_REQUIRED) and never connects — never an inferred node.
+      let rpcUrl: string | undefined;
+      try {
+        rpcUrl = this.resolveRpcUrl();
+      } catch (e) {
+        if (!isNetworkEndpointRequired(e)) throw e;
+      }
+      this.rpc =
+        rpcUrl === undefined
+          ? unresolvedEndpointRpc(this.activeNetwork)
+          : new JsonWrpcKaspaClient({
+              rpcUrl,
+              // NODE-NETWORK-IDENTITY-1: a real Kaspa world uses its node only once the node says it serves that network
+              ...(this.execution.mode !== "simulator" && this.execution.domain === "kaspa-l1"
+                ? { expectedNetworkId: this.activeNetwork }
+                : {})
+            });
       this.ownedRpc = this.rpc;
     }
 
@@ -292,14 +305,9 @@ export class Hardkas {
   }
 
   private resolveRpcUrl(): string {
-    const networkId = this.activeNetwork;
-    const target = this.config.config.networks?.[networkId];
-
-    if (target && "rpcUrl" in target && typeof target.rpcUrl === "string") {
-      return target.rpcUrl;
-    }
-    // CANONICAL-RPC-URL: the canonical localnet endpoint from @hardkas/core, never a copy.
-    return nodeRpcUrl();
+    // TESTNET-PORT-COLLISION-1: the one endpoint authority the CLI uses too — the user's declared endpoint, else a local
+    // network's default (CANONICAL-RPC-URL: the canonical localnet for simnet), else NETWORK_ENDPOINT_REQUIRED.
+    return resolveNodeEndpoint({ config: this.config.config, networkId: this.activeNetwork }).url;
   }
 
   /**

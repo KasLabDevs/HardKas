@@ -288,3 +288,17 @@ describe("Persistence outcome ≠ qualification outcome", () => {
     // no side-effect on the shared side (no shared dir was even passed).
   });
 });
+
+// TQ1-SCRIPT-BROKEN-1 (D7): the shared receipt (v2) carries the attempt record — public facts only
+describe("Shared v2 — submission attempt record (D7)", () => {
+  it("projects outcome/attempts/stage/txid/reason/recordedAt and nothing else", async () => {
+    const rawDir = await tmpDir();
+    const attempt = { outcome: "outcome_unknown", attempts: 1, stage: "submit", txid: "dd".repeat(32), reason: "unclassified-error-no-positive-observation", recordedAt: "2026-09-15T14:00:04.900Z" } as const;
+    const base = fixtureReceipt();
+    const persisted = await persistRawReceipt({ receipt: { ...base, evidence: { ...base.evidence, submissionAttempts: [attempt] } }, rawDir });
+    const derived = await deriveSharedReceipt({ rawFilePath: persisted.filePath });
+    expect(SHARED_RECEIPT_SCHEMA_VERSION).toBe(2);
+    expect(derived.shared.evidence.submissionAttempts).toEqual([attempt]);
+    expect(Object.keys(derived.shared.evidence.submissionAttempts![0]!).sort()).toEqual(["attempts", "outcome", "reason", "recordedAt", "stage", "txid"]);
+  });
+});

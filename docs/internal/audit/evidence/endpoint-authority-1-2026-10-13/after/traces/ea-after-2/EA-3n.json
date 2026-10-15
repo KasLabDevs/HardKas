@@ -1,8 +1,0 @@
-{
-  "refusal": {
-    "code": "SEND_NETWORK_MISMATCH",
-    "message": "Refusing to broadcast: the signed artifact is for network testnet-10, this instance runs on simnet. Nothing was sent or recorded."
-  },
-  "sMethods": [],
-  "submissions": []
-}

@@ -1,9 +1,0 @@
-{
-  "refusal": {
-    "code": "OBSERVE_ENDPOINT_MISMATCH",
-    "message": "Cannot observe through ws://127.0.0.1:63959: this instance's RPC client talks to ws://127.0.0.1:63958, and HardKAS never records one endpoint for a request another one received. Open the instance on that endpoint. Nothing was sent or recorded."
-  },
-  "aAfterOpen": [],
-  "bMethods": [],
-  "observations": []
-}

@@ -26,6 +26,18 @@
  *   HARDKAS_TQ_RECEIPTS_DIR         base receipts directory
  *                                   (default: ./.hardkas/testnet-qualification)
  *
+ * Optional:
+ *   HARDKAS_TQ_KEYSTORE_PASSWORD_ENV  the NAME of the env var that holds the funding account's keystore password
+ *                                     (like the CLI's --password-env); the value is never printed or recorded.
+ *                                     Without it an encrypted account cannot sign (KEYSTORE_PASSWORD_REQUIRED).
+ *
+ * TQ1-SCRIPT-BROKEN-1 (2026-10-15): ONE endpoint authority. The SDK talks to the workspace's endpoint for the
+ * network (`networks[<network>].rpcUrl`, resolved by @hardkas/config resolveNodeEndpoint); HARDKAS_TQ_ENDPOINT must
+ * name that same endpoint, and both are checked BEFORE the SDK opens (exit 4 otherwise, nothing contacted). The
+ * probe's ENDPOINT-AUTHORITY-1 check stays as the second line. `allowPublic` is granted to the SDK for a
+ * `testnet-<n>` qualification only (mainnet and anything else are refused above). Configuration errors are typed
+ * refusals (`CONFIGURATION_REFUSED <CODE>`, exit 4), never a stack trace.
+ *
  * Exit codes:
  *   0 → PASS + raw persisted
  *   2 → UNRESOLVED, or missing inputs, or dry-run informational
@@ -59,8 +71,15 @@ const expectedNetwork = args.get("expected-network") ?? "testnet-10";
 if (expectedNetwork === "mainnet" || /^kaspa$/i.test(expectedNetwork)) {
   fail(`Refusing to run testnet qualification against '${expectedNetwork}'. TQ-1 targets testnet only.`, 4);
 }
-if (!expectedNetwork.startsWith("testnet-")) {
+if (!/^testnet-\d+$/.test(expectedNetwork)) {
   fail(`Refusing to run against non-testnet network '${expectedNetwork}'. TQ-1 targets testnet only.`, 4);
+}
+
+/** A typed configuration refusal: `CONFIGURATION_REFUSED <CODE>: <message>`, exit 4, never a stack trace. */
+function refuseConfiguration(err) {
+  const message = String(err?.message ?? err);
+  const code = (typeof err?.code === "string" && err.code) || /\b([A-Z][A-Z0-9]+(?:_[A-Z0-9]+)+)\b/.exec(message)?.[1] || "CONFIG_ERROR";
+  fail(`CONFIGURATION_REFUSED ${code}: ${message}`, 4);
 }
 
 const confirmationDaaDelta = BigInt(args.get("confirmation-daa-delta") ?? "10");
@@ -84,6 +103,19 @@ const fundingIndexRaw = process.env.HARDKAS_TQ_FUNDING_INDEX;
 const fundingMinSompi = process.env.HARDKAS_TQ_FUNDING_MIN_SOMPI;
 const destAddress = process.env.HARDKAS_TQ_DEST_ADDRESS;
 const amountSompiRaw = process.env.HARDKAS_TQ_AMOUNT_SOMPI;
+// D5: the NAME of the variable holding the keystore password; its value is read once and never printed or recorded
+const keystorePasswordEnv = process.env.HARDKAS_TQ_KEYSTORE_PASSWORD_ENV || undefined;
+
+// D8: the HardKAS version recorded on the receipt — the repository's own CLI package, not npm_package_version
+// (unset when this script runs as `node scripts/testnet-qualification.mjs`)
+const hardkasVersion = await (async () => {
+  try {
+    const { readFile } = await import("node:fs/promises");
+    return JSON.parse(await readFile(new URL("../packages/cli/package.json", import.meta.url), "utf8")).version ?? "unknown";
+  } catch {
+    return "unknown";
+  }
+})();
 
 function requiredForLive() {
   const missing = [];
@@ -117,7 +149,9 @@ process.stdout.write(
     `network expected  : ${expectedNetwork}`,
     `endpoint          : ${describeEndpoint(endpointAddress)}`,
     `workspace         : ${workspace ?? "<unset>"}`,
+    `hardkas version   : ${hardkasVersion}`,
     `funding account   : ${fundingAccount ?? "<unset>"}`,
+    `keystore password : ${keystorePasswordEnv ? `from $${keystorePasswordEnv}` : "<none>"}`,
     `funding address   : ${fundingAddress ?? "<unset>"}`,
     `declared outpoint : ${fundingTxid ?? "<unset>"}:${fundingIndexRaw ?? "<unset>"}`,
     `amount sompi      : ${amountSompiRaw ?? "<unset>"}`,
@@ -139,6 +173,11 @@ if (!live) {
 const missing = requiredForLive();
 if (missing.length > 0) {
   fail(`Missing required inputs for --live:\n  - ${missing.join("\n  - ")}`, 4);
+}
+// D5: a password variable that was named must hold a password — refused before anything is contacted
+const keystorePassword = keystorePasswordEnv ? process.env[keystorePasswordEnv] : undefined;
+if (keystorePasswordEnv && !keystorePassword) {
+  fail(`CONFIGURATION_REFUSED KEYSTORE_PASSWORD_ENV_UNSET: HARDKAS_TQ_KEYSTORE_PASSWORD_ENV names '${keystorePasswordEnv}', which is unset or empty. Nothing was contacted.`, 4);
 }
 
 // --- LIVE PATH ---------------------------------------------------------------
@@ -162,16 +201,48 @@ const sdkMod = await importDistOrSrc(
   "../packages/sdk/src/index.ts"
 );
 
-const { runQualification, probeRemoteTestnet, assertSpendableOrFailClosed, createInMemoryReservationLedger } = tq;
+const configMod = await importDistOrSrc(
+  "../packages/config/dist/index.js",
+  "../packages/config/src/index.ts"
+);
+
+const { runQualification, probeRemoteTestnet, assertSpendableOrFailClosed, createInMemoryReservationLedger, canonicalEndpoint, shownEndpoint } = tq;
 const Hardkas = sdkMod.Hardkas ?? sdkMod.default?.Hardkas;
 if (!Hardkas) fail("Could not resolve `Hardkas` from @hardkas/sdk. Build the sdk package first.", 4);
 
-// Open the SDK workspace bound to a wRPC endpoint that targets our node.
-const sdk = await Hardkas.open({
-  cwd: workspace,
-  mode: "developer",
-  network: expectedNetwork
-});
+// D2 (TQ1-SCRIPT-BROKEN-1): ONE endpoint authority. The SDK below talks to the workspace's endpoint for the network —
+// the shared resolver (TESTNET-PORT-COLLISION-1: declared rpcUrl, never a built-in public host, never the canonical
+// localnet). HARDKAS_TQ_ENDPOINT must be that endpoint; checked before the SDK opens, so a mismatch contacts nothing.
+let workspaceEndpoint;
+try {
+  const loaded = await configMod.loadHardkasConfig({ cwd: workspace });
+  workspaceEndpoint = configMod.resolveNodeEndpoint({ config: loaded.config, networkId: expectedNetwork }).url;
+} catch (err) {
+  refuseConfiguration(err);
+}
+if (canonicalEndpoint(workspaceEndpoint) !== canonicalEndpoint(endpointAddress)) {
+  fail(
+    `CONFIGURATION_REFUSED ENDPOINT_DECLARATION_MISMATCH: HARDKAS_TQ_ENDPOINT ${shownEndpoint(endpointAddress)} is not the ` +
+      `workspace's endpoint for '${expectedNetwork}' (${shownEndpoint(workspaceEndpoint)}), which the SDK would use. ` +
+      `Declare networks['${expectedNetwork}'].rpcUrl as HARDKAS_TQ_ENDPOINT, or set HARDKAS_TQ_ENDPOINT to it. Nothing was contacted.`,
+    4
+  );
+}
+
+// Open the SDK workspace on that endpoint. D6: `allowPublic` is the qualification's own consent (--live, a
+// `testnet-<n>` network — anything else was refused above); the workspace does not need network.allowPublic.
+let sdk;
+try {
+  if (!/^testnet-\d+$/.test(expectedNetwork)) throw Object.assign(new Error(`allowPublic is granted to testnet qualifications only, not '${expectedNetwork}'`), { code: "TQ_NETWORK_REFUSED" });
+  sdk = await Hardkas.open({
+    cwd: workspace,
+    mode: "developer",
+    network: expectedNetwork,
+    policy: { allowPublic: true }
+  });
+} catch (err) {
+  refuseConfiguration(err);
+}
 
 // Build a compact RPC facade over the SDK's rpc so TQ's submission-guard
 // and observer see the exact interface they expect. We call SDK methods
@@ -223,13 +294,18 @@ const observerRpc = {
 // Product path: SDK does plan + sign; TQ takes the resulting signed payload.
 const productPath = {
   async planAndSign(input) {
+    // D4: the network is this SDK instance's (Hardkas.open above); `networkProfile` is an artifact reference, not a
+    // network id, so it is not passed
     const plan = await sdk.tx.plan({
       from: input.fromAddress,
       to: input.toAddress,
-      amount: input.amountSompi,
-      networkProfile: input.networkId
+      amount: input.amountSompi
     });
-    const signed = await sdk.tx.sign(plan, fundingAccount);
+    // D5: the keystore password from the named variable (never printed); without one an encrypted account refuses
+    const signed = await sdk.tx.sign(plan, {
+      account: fundingAccount,
+      ...(keystorePassword ? { keystorePassword } : {})
+    });
     const signedPayload = signed.signedTransaction?.payload
       ? JSON.parse(signed.signedTransaction.payload)
       : signed.signedTransaction ?? signed;
@@ -298,7 +374,7 @@ process.stdout.write(`[TQ-CLI] Funding OK: ${fundingEvidence.amountSompi} sompi 
 const startedAt = new Date();
 const outcome = await runQualification({
   qualificationId: `tq-${startedAt.toISOString().replace(/[:.]/g, "")}`,
-  toolchain: { hardkas: { version: process.env.npm_package_version ?? "unknown" } },
+  toolchain: { hardkas: { version: hardkasVersion } },
   authority,
   fundingEvidence,
   rawDir,
@@ -311,7 +387,8 @@ const outcome = await runQualification({
     fromAddress: fundingAddress,
     toAddress: destAddress,
     amountSompi: BigInt(amountSompiRaw),
-    configuredDaaDelta,
+    // D1: the parsed --confirmation-daa-delta (the name `configuredDaaDelta` alone was never defined)
+    configuredDaaDelta: confirmationDaaDelta,
     submissionOptions: { probeWaitBeforeMs: 1000, probeMaxWaitMs: 10_000, probePollIntervalMs: 1000 },
     acceptanceOptions: { pollIntervalMs: 2000, maxWaitMs: 120_000 },
     confirmationOptions: { pollIntervalMs: 2000, maxWaitMs: 120_000 }
@@ -327,7 +404,9 @@ process.stdout.write(
     "──────────────── Qualification Result ────────────────",
     `qualification    : ${q.outcome}`,
     q.blocker ? `blocker          : ${q.blocker.code} @ ${q.blocker.stage}` : "blocker          : (none)",
-    `submit calls     : ${outcome.scenarios.standardL1?.submission?.attempts ?? 0}`,
+    // D7: from the attempt record — a call the guard could not classify still counts
+    `submit calls     : ${outcome.scenarios.standardL1?.submissionAttempt?.attempts ?? 0}`,
+    `submission outcome : ${outcome.scenarios.standardL1?.submissionAttempt?.outcome ?? "not_attempted"}`,
     `submission state : ${outcome.scenarios.standardL1?.submission?.state ?? "(none)"}`,
     `txid             : ${outcome.scenarios.standardL1?.plan?.txid ?? "(none)"}`,
     outcome.scenarios.standardL1?.inclusion ? `inclusion        : block ${outcome.scenarios.standardL1.inclusion.inclusionBlockHash} @ DAA ${outcome.scenarios.standardL1.inclusion.inclusionDaaScore}` : "inclusion        : (none)",

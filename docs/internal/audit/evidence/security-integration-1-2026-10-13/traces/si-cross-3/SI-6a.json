@@ -1,7 +1,0 @@
-{
-  "submitReceived": true,
-  "receiptRpcUrl": "ws://127.0.0.1:65430/?token=REDACTED",
-  "receiptLeaks": [],
-  "eventLeaks": [],
-  "filesLeaking": []
-}

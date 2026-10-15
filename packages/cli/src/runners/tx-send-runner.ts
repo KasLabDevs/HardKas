@@ -1,5 +1,5 @@
 import { SignedTxArtifact, TxReceiptArtifact, TxSubmissionArtifact } from "@hardkas/artifacts";
-import { resolveExecutionTarget, HardkasConfig } from "@hardkas/config";
+import { resolveExecutionTarget, HardkasConfig, declaredNodeEndpoint, resolveNodeEndpoint } from "@hardkas/config";
 import { assertBroadcastNetworkAllowed } from "../broadcast-guard.js";
 import { Hardkas } from "@hardkas/sdk";
 import { sendOutcome } from "./next-steps.js";
@@ -84,7 +84,8 @@ export async function runTxSend(input: TxSendRunnerInput): Promise<TxSendRunnerR
     url,
     executionMode: execution.mode,
     // WORKSPACE-AUTHORITY-2 (closeout): the endpoint the resolved network declares, the same the SDK uses
-    networkRpcUrl: typeof (target as { rpcUrl?: unknown })?.rpcUrl === "string" ? (target as { rpcUrl: string }).rpcUrl : undefined
+    // (TESTNET-PORT-COLLISION-1, D-TPC-2: declared by the USER; a built-in public entry declares none)
+    networkRpcUrl: declaredNodeEndpoint(config, resolvedName)
   });
 
   // ENFORCE EXECUTION COMPATIBILITY FOR BROADCASTING/SIMULATION
@@ -120,11 +121,9 @@ export async function runTxSend(input: TxSendRunnerInput): Promise<TxSendRunnerR
       selectedNetwork: networkName
     });
 
-    const targetRecord = target as unknown as Record<string, unknown>;
-    const targetRpcUrl =
-      typeof targetRecord["rpcUrl"] === "string" ? targetRecord["rpcUrl"] : undefined;
-    const rpcUrl = url || targetRpcUrl || provider.endpoint;
-    if (!rpcUrl) throw new Error(`No RPC URL found for network '${networkName}'.`);
+    // TESTNET-PORT-COLLISION-1: the shared endpoint authority — `--url`, else the declared endpoint (the provider's, which
+    // is a local network's default too), else NETWORK_ENDPOINT_REQUIRED, typed, before any connection
+    const rpcUrl = resolveNodeEndpoint({ config, networkId: resolvedName, explicitUrl: url || provider.endpoint }).url;
 
     // Override the SDK RPC client for real mode since default simnet creates a simulated provider
     const { JsonWrpcKaspaClient, KaspaWrpcClient } = await import("@hardkas/kaspa-rpc");

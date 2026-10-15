@@ -1,8 +1,0 @@
-{
-  "sameEndpoint": "http://127.0.0.1:63943/",
-  "submitReceivedByA": true,
-  "receiptRpcUrl": "ws://127.0.0.1:63943",
-  "eventRpcUrls": [
-    "ws://127.0.0.1:63943"
-  ]
-}

@@ -42,20 +42,24 @@ export const DEFAULT_HARDKAS_CONFIG: HardkasConfig = {
       // possibly before kaspa-wasm is installed, so a test pins it to the SDK instead.
       rpcUrl: "ws://127.0.0.1:18610"
     },
+    // TESTNET-PORT-COLLISION-1 (D-TPC-2): the public networks are known by name, but carry NO endpoint: HardKAS never
+    // picks a node of a public network for the user (neither a third-party public host nor a local default port). The
+    // user declares `rpcUrl` (their own node, or a public node they select) or passes --url; otherwise every client
+    // path refuses NETWORK_ENDPOINT_REQUIRED (@hardkas/config resolveNodeEndpoint). Empty, never a URL, by construction.
     "testnet-10": {
       kind: "kaspa-rpc",
       network: "testnet-10",
-      rpcUrl: "wss://tn10.kaspa.stream:443"
+      rpcUrl: ""
     },
     "testnet-11": {
       kind: "kaspa-rpc",
       network: "testnet-11",
-      rpcUrl: "wss://tn11.kaspa.stream:443"
+      rpcUrl: ""
     },
     mainnet: {
       kind: "kaspa-rpc",
       network: "mainnet",
-      rpcUrl: "wss://kaspa.stream:443"
+      rpcUrl: ""
     }
   },
   accounts: {}

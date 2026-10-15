@@ -252,3 +252,6 @@ apps/docs/build/
 # RC and Release artifacts at root
 /.rc*-tarball-manifest.json
 /rc*-manifest.json
+
+# Internal audit notes and evidence: kept locally, never pushed
+/docs/internal/

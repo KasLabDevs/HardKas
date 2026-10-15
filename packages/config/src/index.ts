@@ -11,4 +11,5 @@ export {
 export { defineHardkasConfig } from "./define.js";
 export * from "./resolve.js";
 export * from "./provider.js";
+export * from "./endpoint.js";
 export * from "./schema.js";

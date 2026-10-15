@@ -524,3 +524,165 @@ describe("runStandardL1Scenario direct use", () => {
     expect(result.blocker).toBeUndefined();
   });
 });
+
+// TQ1-SCRIPT-BROKEN-1 (D7, review 2026-10-15): the receipt's explicit record of the ONE submitTransaction call.
+describe("D7 — submission attempt record", () => {
+  async function runWith(submitImpl: () => Promise<{ transactionId?: string }>, planImpl: () => Promise<PlanAndSignResult> = async () => successfulPlan()) {
+    const rawDir = await tmpDir();
+    const submissionRpc = scriptedSubmit({ submitImpl, mempool: [null, null, null], utxos: [[], [], []] });
+    const outcome = await runQualification({
+      qualificationId: "tq-d7",
+      toolchain: TOOLCHAIN,
+      authority: AUTHORITY,
+      fundingEvidence: FUNDING,
+      rawDir,
+      startedAt: STARTED_AT,
+      now: advancingClock("2026-09-15T15:00:00.000Z", 5),
+      sleep: noSleep,
+      standardL1: {
+        productPath: productPath(planImpl),
+        submissionRpc,
+        observerRpc: scriptedObserver({ mempool: [null], utxos: [[]], dagVirtual: [0n] }),
+        fromAddress: FUND_ADDR,
+        toAddress: DEST_ADDR,
+        amountSompi: 1_000_000_000n,
+        configuredDaaDelta: 10n,
+        submissionOptions: { probeWaitBeforeMs: 0, probeMaxWaitMs: 10, probePollIntervalMs: 1 }
+      }
+    });
+    return { outcome, submissionRpc };
+  }
+
+  it("stopped at plan-and-sign → not_attempted, attempts 0, stage plan-and-sign; no submission record, nothing called", async () => {
+    const { outcome, submissionRpc } = await runWith(async () => ({}), async () => {
+      throw Object.assign(new Error("keystore locked"), { code: "KEYSTORE_PASSWORD_REQUIRED" });
+    });
+    expect(submissionRpc.calls.submit).toBe(0);
+    expect(outcome.receipt.evidence.submissions).toBeUndefined();
+    expect(outcome.receipt.evidence.submissionAttempts).toEqual([
+      expect.objectContaining({ outcome: "not_attempted", attempts: 0, stage: "plan-and-sign", reason: "KEYSTORE_PASSWORD_REQUIRED" })
+    ]);
+  });
+
+  it("a client refusal before sending → not_attempted, attempts 0, stage submit, FAIL with the client's code", async () => {
+    const { outcome } = await runWith(async () => {
+      throw Object.assign(new Error("no endpoint chosen"), { code: "NETWORK_ENDPOINT_REQUIRED" });
+    });
+    expect(outcome.qualification.outcome).toBe("FAIL");
+    expect(outcome.qualification.blocker?.code).toBe("NETWORK_ENDPOINT_REQUIRED");
+    expect(outcome.receipt.evidence.submissionAttempts).toEqual([
+      expect.objectContaining({ outcome: "not_attempted", attempts: 0, stage: "submit", txid: TXID })
+    ]);
+  });
+
+  it("accepted → attempts 1 / accepted", async () => {
+    const { outcome, submissionRpc } = await runWith(async () => ({ transactionId: TXID }));
+    expect(submissionRpc.calls.submit).toBe(1);
+    expect(outcome.receipt.evidence.submissionAttempts).toEqual([
+      expect.objectContaining({ outcome: "accepted", attempts: 1, stage: "submit", reason: "first-attempt" })
+    ]);
+  });
+
+  it("explicit rejection → attempts 1 / rejected, FAIL, never retried", async () => {
+    const { outcome, submissionRpc } = await runWith(async () => { throw new Error("Transaction rejected: invalid signature"); });
+    expect(submissionRpc.calls.submit).toBe(1);
+    expect(outcome.qualification.outcome).toBe("FAIL");
+    expect(outcome.receipt.evidence.submissionAttempts).toEqual([expect.objectContaining({ outcome: "rejected", attempts: 1 })]);
+  });
+
+  it("an answer the guard cannot classify → attempts 1 / outcome_unknown, UNRESOLVED SUBMIT_OUTCOME_UNKNOWN, never retried, never 'accepted: false'", async () => {
+    const { outcome, submissionRpc } = await runWith(async () => { throw new Error("fake node: submissions refused"); });
+    expect(submissionRpc.calls.submit).toBe(1);
+    expect(outcome.qualification.outcome).toBe("UNRESOLVED");
+    expect(outcome.qualification.blocker?.code).toBe("SUBMIT_OUTCOME_UNKNOWN");
+    expect(outcome.receipt.evidence.submissionAttempts).toEqual([
+      expect.objectContaining({ outcome: "outcome_unknown", attempts: 1, reason: "unclassified-error-no-positive-observation" })
+    ]);
+    expect(outcome.receipt.evidence.submissions![0]!.state).toBe("UNRESOLVED");
+    expect(JSON.stringify(outcome.receipt)).not.toMatch(/"accepted":\s*false/);
+  });
+});
+// Review 2026-10-15, D7 control: a generic RPC error must not become `rejected` merely because submitTransaction threw
+// (the node may have received the tx and the answer been lost), and the independent status query that follows must
+// NOT rewrite, after the fact, that the original answer was ambiguous. The attempt record keeps what the ANSWER
+// established; what the later query observed stays in `submissions[].state` / `resolvedVia` and the observation slots.
+describe("D7 control — an ambiguous submit answer stays ambiguous in the attempt record", () => {
+  async function run(submitImpl: () => Promise<{ transactionId?: string }>, guardSees: { mempool: ({ txid: string } | null)[]; utxos: DaaObserverUtxoRow[][] }, observerSeesTx: boolean) {
+    const rawDir = await tmpDir();
+    const sharedDir = await tmpDir();
+    const submissionRpc = scriptedSubmit({ submitImpl, mempool: guardSees.mempool, utxos: guardSees.utxos });
+    const observerRpc = scriptedObserver({
+      mempool: [null],
+      utxos: observerSeesTx ? [[utxoAt(TXID, 100n)]] : [[]],
+      dagVirtual: [200n]
+    });
+    const outcome = await runQualification({
+      qualificationId: "tq-d7-control",
+      toolchain: TOOLCHAIN,
+      authority: AUTHORITY,
+      fundingEvidence: FUNDING,
+      rawDir,
+      sharedDir,
+      startedAt: STARTED_AT,
+      now: advancingClock("2026-09-15T15:00:00.000Z", 3),
+      sleep: noSleep,
+      standardL1: {
+        productPath: productPath(async () => successfulPlan()),
+        submissionRpc,
+        observerRpc,
+        fromAddress: FUND_ADDR,
+        toAddress: DEST_ADDR,
+        amountSompi: 1_000_000_000n,
+        configuredDaaDelta: 10n,
+        submissionOptions: { probeWaitBeforeMs: 0, probeMaxWaitMs: 5, probePollIntervalMs: 1 },
+        acceptanceOptions: { pollIntervalMs: 1, maxWaitMs: 20 },
+        confirmationOptions: { pollIntervalMs: 1, maxWaitMs: 20 }
+      }
+    });
+    const onDisk = JSON.parse(await fs.readFile(outcome.evidencePersistence.rawFilePath!, "utf8"));
+    const shared = JSON.parse(await fs.readFile(outcome.evidencePersistence.sharedFilePath!, "utf8"));
+    return { outcome, submissionRpc, onDisk, shared };
+  }
+  const UNKNOWN_ONE = expect.objectContaining({ outcome: "outcome_unknown", attempts: 1, stage: "submit", txid: TXID });
+
+  const generic: Array<[string, () => Promise<never>]> = [
+    ["a generic RPC error text", async () => { throw new Error("RPC error: internal error"); }],
+    ["a JSON-RPC error object with a numeric code", async () => { throw { code: -32603, message: "Internal error" }; }],
+    ["a lost response (connection reset after sending)", async () => { throw Object.assign(new Error("socket hang up"), { code: "ECONNRESET" }); }]
+  ];
+  for (const [label, submitImpl] of generic) {
+    it(`${label}, nothing observed → attempts 1 / outcome_unknown (never rejected), one call, UNRESOLVED`, async () => {
+      const { outcome, submissionRpc, onDisk, shared } = await run(submitImpl, { mempool: [null, null, null], utxos: [[], [], []] }, false);
+      expect(submissionRpc.calls.submit).toBe(1); // zero retries
+      expect(outcome.qualification.outcome).toBe("UNRESOLVED");
+      for (const ev of [outcome.receipt.evidence, onDisk.evidence, shared.evidence]) {
+        expect(ev.submissionAttempts).toEqual([UNKNOWN_ONE]);
+        expect(JSON.stringify(ev.submissionAttempts)).not.toMatch(/rejected|not_attempted|"accepted"/);
+      }
+    });
+  }
+
+  for (const [label, guardSees, state, via] of [
+    ["the independent query then finds it in the mempool", { mempool: [{ txid: TXID }], utxos: [[]] }, "OBSERVED_MEMPOOL", "unclassified-error-mempool-hit"],
+    ["the independent query then finds its output UTXO", { mempool: [null], utxos: [[utxoAt(TXID)]] }, "OBSERVED_ACCEPTED", "unclassified-error-utxo-hit"]
+  ] as const) {
+    it(`a generic RPC error, ${label}, and the run even reaches PASS → the attempt record STILL says outcome_unknown / attempts 1; the observation is recorded separately`, async () => {
+      const { outcome, submissionRpc, onDisk, shared } = await run(async () => { throw new Error("RPC error: internal error"); }, guardSees as any, true);
+      expect(submissionRpc.calls.submit).toBe(1); // zero retries
+      expect(outcome.qualification.outcome).toBe("PASS");
+      for (const ev of [outcome.receipt.evidence, onDisk.evidence, shared.evidence]) {
+        // the answer was ambiguous — the later observation does not rewrite that
+        expect(ev.submissionAttempts).toEqual([expect.objectContaining({ outcome: "outcome_unknown", attempts: 1, reason: via })]);
+        // what the independent query saw lives in the guard's record and the observation slots
+        expect(ev.submissions[0].state).toBe(state);
+        expect(ev.submissions[0].resolvedVia).toBe(via);
+        expect(ev.confirmations).toHaveLength(1);
+      }
+    });
+  }
+
+  it("only an answer the node actually gave as acceptance is `accepted` (SUBMITTED, first attempt)", async () => {
+    const { outcome } = await run(async () => ({ transactionId: TXID }), { mempool: [null], utxos: [[]] }, true);
+    expect(outcome.receipt.evidence.submissionAttempts).toEqual([expect.objectContaining({ outcome: "accepted", attempts: 1, reason: "first-attempt" })]);
+  });
+});

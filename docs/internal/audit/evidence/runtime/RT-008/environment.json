@@ -1,5 +1,0 @@
-{
-  "os": "windows",
-  "node": "v20.x",
-  "test_name": "SQLite projection deletion and rebuild"
-}

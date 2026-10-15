@@ -1,8 +1,7 @@
-import { loadHardkasConfig } from "@hardkas/config";
+import { loadHardkasConfig, declaredNodeEndpoint, resolveNodeEndpoint } from "@hardkas/config";
 import { loadRealAccountStore, getRealDevAccount } from "@hardkas/accounts";
 import { JsonWrpcKaspaClient } from "@hardkas/kaspa-rpc";
 import { formatSompiToKas, type NetworkId } from "@hardkas/core";
-import { resolveRuntimeConfig } from "@hardkas/node-orchestrator";
 import { invocationWorkspaceRoot, requireExistingWorkspace } from "../workspace-root.js";
 import { HardkasCliError, HardkasExitCode } from "../cli-errors.js";
 
@@ -58,13 +57,14 @@ export async function runAccountsBalance(
     // no target declared anywhere: the simulator, as everywhere else in HardKAS
   }
   const balanceNetwork = options.network ?? configuredNetwork;
-  const declaredRpcUrl = (loadedConfig.config.networks as Record<string, { rpcUrl?: unknown }> | undefined)?.[balanceNetwork]?.rpcUrl;
+  // TESTNET-PORT-COLLISION-1 (D-TPC-2): the endpoint the USER declared (a built-in public entry declares none)
+  const declaredRpcUrl = declaredNodeEndpoint(loadedConfig.config, balanceNetwork);
   const provider = resolveProvider({
     network: balanceNetwork,
     provider: options.provider,
     url: options.url,
     // WORKSPACE-AUTHORITY-2 (closeout): the endpoint the network declares, the same the SDK uses
-    networkRpcUrl: typeof declaredRpcUrl === "string" ? declaredRpcUrl : undefined
+    networkRpcUrl: declaredRpcUrl
   });
 
   const network = provider.network;
@@ -100,12 +100,9 @@ export async function runAccountsBalance(
       network: "simulated"
     };
   } else {
-    let rpcUrl = provider.endpoint;
-    if (!rpcUrl) {
-      rpcUrl = resolveRuntimeConfig({
-        network: network as "mainnet" | "testnet-10" | "simnet"
-      }).rpcUrl;
-    }
+    // TESTNET-PORT-COLLISION-1: the shared endpoint authority — given, declared, a local network's default, or
+    // NETWORK_ENDPOINT_REQUIRED before any connection
+    const rpcUrl = resolveNodeEndpoint({ config: loadedConfig.config, networkId: network, explicitUrl: provider.endpoint }).url;
 
     // NODE-NETWORK-IDENTITY-1: a balance is read only from a node that says it serves the queried network
     const client = new JsonWrpcKaspaClient({ rpcUrl, expectedNetworkId: network });

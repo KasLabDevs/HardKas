@@ -32,10 +32,13 @@
  */
 
 import type {
-  QualificationOutcome
+  QualificationOutcome,
+  ReceiptSubmissionAttempt
 } from "../receipt.js";
 import {
   submitWithAmbiguityGuard,
+  attemptOutcomeOf,
+  SubmissionNotAttemptedError,
   type SubmissionGuardRpc,
   type SubmissionOutcome,
   type SubmissionGuardOptions
@@ -138,6 +141,11 @@ export interface StandardL1ScenarioResult {
   readonly confirmation?: ConfirmationEvidence;
   readonly blocker?: ScenarioBlocker;
   /**
+   * TQ1-SCRIPT-BROKEN-1 (D7): the record of the ONE `submitTransaction` call — always present: `not_attempted`
+   * (attempts 0) when the run stopped before invoking it, else what the guard resolved (attempts 1).
+   */
+  readonly submissionAttempt: ReceiptSubmissionAttempt;
+  /**
    * The addresses whose UTXO sets the scenario watched during observation.
    * Preserved in the receipt so a reader can reproduce the observation.
    */
@@ -169,6 +177,17 @@ export async function runStandardL1Scenario(
     watchAddresses.push(input.fromAddress);
   }
 
+  const now = input.now ?? (() => new Date());
+  // TQ1-SCRIPT-BROKEN-1 (D7): the record of a submitTransaction call that never happened
+  const notAttempted = (stage: "plan-and-sign" | "submit", reason: string, txid?: string): ReceiptSubmissionAttempt => ({
+    outcome: "not_attempted",
+    attempts: 0,
+    stage,
+    ...(txid !== undefined ? { txid } : {}),
+    reason,
+    recordedAt: now().toISOString()
+  });
+
   // 1. Plan + sign via existing product path. TQ does not substitute.
   let plan: PlanAndSignResult;
   try {
@@ -182,6 +201,7 @@ export async function runStandardL1Scenario(
     return {
       outcome: "FAIL",
       watchAddresses,
+      submissionAttempt: notAttempted("plan-and-sign", toCode(err, "PLAN_AND_SIGN_FAILED")),
       blocker: {
         stage: "plan-and-sign",
         code: toCode(err, "PLAN_AND_SIGN_FAILED"),
@@ -208,18 +228,53 @@ export async function runStandardL1Scenario(
       }
     );
   } catch (err) {
+    if (err instanceof SubmissionNotAttemptedError) {
+      // D7: the client refused before sending — nothing reached the node; attempts 0
+      return {
+        outcome: "FAIL",
+        plan,
+        watchAddresses,
+        submissionAttempt: notAttempted("submit", err.code, plan.txid),
+        blocker: {
+          stage: "submit",
+          code: err.code,
+          message: `submitTransaction was not sent: ${toMessage(err.cause)}`,
+          expectedUpstream: "HardKAS RPC client (pre-send checks)"
+        }
+      };
+    }
+    // The guard returns an outcome for every call it made (D7); a throw here is not a pre-send refusal, so the call
+    // may have reached the node: never recorded as "not attempted", never as rejected.
     return {
-      outcome: "FAIL",
+      outcome: "UNRESOLVED",
       plan,
       watchAddresses,
+      submissionAttempt: {
+        outcome: "outcome_unknown",
+        attempts: 1,
+        stage: "submit",
+        txid: plan.txid,
+        reason: toCode(err, "SUBMIT_GUARD_ERROR"),
+        recordedAt: now().toISOString()
+      },
       blocker: {
         stage: "submit",
-        code: toCode(err, "SUBMIT_UNEXPECTED_ERROR"),
-        message: `Submission guard re-threw an out-of-scope error: ${toMessage(err)}`,
+        code: "SUBMIT_OUTCOME_UNKNOWN",
+        message: `The submission guard failed after it may have called submitTransaction: ${toMessage(err)}. Outcome unknown; MUST NOT retry — query the transaction's status independently.`,
         expectedUpstream: "rusty-kaspad submitTransaction (via HardKAS RPC)"
       }
     };
   }
+
+  // D7: the guard made exactly one call; the record says what is known about it
+  const submissionAttempt: ReceiptSubmissionAttempt = {
+    outcome: attemptOutcomeOf(submission.state),
+    attempts: 1,
+    stage: "submit",
+    txid: submission.txid,
+    reason: submission.resolvedVia,
+    recordedAt: submission.resolvedAt
+  };
 
   // 3. Route on submission state. Observation semantics from Blocks 1/2 are
   // preserved verbatim — no state collapse into "confirmed" / "final".
@@ -227,17 +282,27 @@ export async function runStandardL1Scenario(
     case "UNRESOLVED": {
       // Never resubmit. Never invent a stronger observation. UNRESOLVED is
       // a valid, evidenced outcome for this run.
+      const unclassified =
+        submission.resolvedVia.startsWith("unclassified-error") || submission.resolvedVia.startsWith("probe-failed");
       return {
         outcome: "UNRESOLVED",
         plan,
         submission,
+        submissionAttempt,
         watchAddresses,
-        blocker: {
-          stage: "submit",
-          code: "SUBMIT_TRANSPORT_AMBIGUITY_UNRESOLVED",
-          message: `Submission ambiguous and no positive observation within the probe budget. Caller MUST NOT retry.`,
-          expectedUpstream: "rusty-kaspad submitTransaction (via HardKAS RPC)"
-        }
+        blocker: unclassified
+          ? {
+              stage: "submit",
+              code: "SUBMIT_OUTCOME_UNKNOWN",
+              message: `submitTransaction was called; the answer could not be classified and no positive observation followed (${submission.resolvedVia}). Outcome unknown — neither accepted nor rejected. Caller MUST NOT retry; query the transaction's status independently.`,
+              expectedUpstream: "rusty-kaspad submitTransaction (via HardKAS RPC)"
+            }
+          : {
+              stage: "submit",
+              code: "SUBMIT_TRANSPORT_AMBIGUITY_UNRESOLVED",
+              message: `Submission ambiguous and no positive observation within the probe budget. Caller MUST NOT retry.`,
+              expectedUpstream: "rusty-kaspad submitTransaction (via HardKAS RPC)"
+            }
       };
     }
     case "SAFE_TO_RETRY": {
@@ -249,6 +314,7 @@ export async function runStandardL1Scenario(
         outcome: "FAIL",
         plan,
         submission,
+        submissionAttempt,
         watchAddresses,
         blocker: {
           stage: "submit",
@@ -268,6 +334,7 @@ export async function runStandardL1Scenario(
         outcome: "FAIL",
         plan,
         submission,
+        submissionAttempt,
         watchAddresses,
         blocker: {
           stage: "submit",
@@ -307,6 +374,7 @@ export async function runStandardL1Scenario(
         outcome: "UNRESOLVED",
         plan,
         submission,
+        submissionAttempt,
         watchAddresses,
         blocker: {
           stage: "acceptance",
@@ -333,6 +401,7 @@ export async function runStandardL1Scenario(
       outcome: "UNRESOLVED",
       plan,
       submission,
+      submissionAttempt,
       acceptance,
       watchAddresses,
       blocker: {
@@ -363,6 +432,7 @@ export async function runStandardL1Scenario(
       outcome: "UNRESOLVED",
       plan,
       submission,
+      submissionAttempt,
       acceptance,
       inclusion,
       watchAddresses,
@@ -379,6 +449,7 @@ export async function runStandardL1Scenario(
     outcome: "PASS",
     plan,
     submission,
+    submissionAttempt,
     acceptance,
     inclusion,
     confirmation,

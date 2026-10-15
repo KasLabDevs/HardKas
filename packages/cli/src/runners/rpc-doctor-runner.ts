@@ -1,6 +1,6 @@
 import { UI } from "../ui.js";
 import { KaspaWrpcClient } from "@hardkas/kaspa-rpc";
-import { loadHardkasConfig } from "@hardkas/config";
+import { loadHardkasConfig, resolveNodeEndpoint } from "@hardkas/config";
 import net from "node:net";
 
 export interface RpcDoctorOptions {
@@ -174,18 +174,9 @@ export async function runRpcDoctor(options: RpcDoctorOptions) {
 
   if (endpoints.length === 0) {
     const defaultNetwork = loaded.config.defaultNetwork || "simnet";
-    const network = loadedNetworks[defaultNetwork];
-    const networkObj =
-      typeof network === "object" && network !== null
-        ? (network as Record<string, unknown>)
-        : undefined;
-
-    if (networkObj && typeof networkObj.rpcUrl === "string") {
-      endpoints = [networkObj.rpcUrl];
-    } else {
-      const { nodeRpcUrl } = await import("@hardkas/core");
-      endpoints = [nodeRpcUrl()];
-    }
+    // TESTNET-PORT-COLLISION-1: the shared endpoint authority — the declared endpoint, else a local network's default
+    // (the canonical localnet for simnet), else NETWORK_ENDPOINT_REQUIRED (a public network is never probed on a guess)
+    endpoints = [resolveNodeEndpoint({ config: loaded.config, networkId: defaultNetwork }).url];
   }
 
   UI.header("HardKAS RPC Doctor");

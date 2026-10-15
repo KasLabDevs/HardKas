@@ -199,10 +199,11 @@ export async function verifyDeploymentStatus(opts: {
 
   UI.info(`Checking ${record.label} on ${record.networkId}...`);
   const { config } = await loadHardkasConfig();
-  const netTarget = resolveExecutionTarget({ config, network: record.networkId });
-  const netTargetObj = netTarget.target as unknown as Record<string, unknown>;
-  const rpcUrl =
-    typeof netTargetObj.rpcUrl === "string" ? netTargetObj.rpcUrl : undefined;
+  // the network must be one the config knows (the resolver refuses it otherwise)
+  resolveExecutionTarget({ config, network: record.networkId });
+  // TESTNET-PORT-COLLISION-1 (D-TPC-2): only an endpoint the USER declared — a built-in public entry declares none
+  const { declaredNodeEndpoint } = await import("@hardkas/config");
+  const rpcUrl = declaredNodeEndpoint(config, String(record.networkId));
   console.log(`  RPC: ${rpcUrl || "simulated"}`);
   console.log(`  TxId: ${record.txId}`);
 

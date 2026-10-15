@@ -20,7 +20,9 @@ export type { RetryErrorClass, WithRetryOnTransportOptions } from "./retry.js";
 export {
   probeRemoteTestnet,
   assertRemoteTestnetOrFailClosed,
-  RemoteTestnetProbeFailedError
+  RemoteTestnetProbeFailedError,
+  canonicalEndpoint,
+  shownEndpoint
 } from "./remote-node.js";
 export type {
   EndpointClass,
@@ -68,10 +70,16 @@ export type {
   AssertSpendableInput
 } from "./funding-input.js";
 
-export { submitWithAmbiguityGuard } from "./submission-guard.js";
+export {
+  submitWithAmbiguityGuard,
+  attemptOutcomeOf,
+  PRE_SEND_REFUSAL_CODES,
+  SubmissionNotAttemptedError
+} from "./submission-guard.js";
 export type {
   SubmissionState,
   SubmissionResolvedVia,
+  SubmissionAttemptOutcome,
   SubmissionOutcome,
   SubmissionGuardRpc,
   SubmissionGuardInput,
@@ -103,6 +111,7 @@ export type {
   ReceiptRemoteAuthority,
   ReceiptSourceUtxoEvidence,
   ReceiptSubmissionOutcome,
+  ReceiptSubmissionAttempt,
   ReceiptAcceptanceEvidence,
   ReceiptInclusionEvidence,
   ReceiptConfirmationEvidence

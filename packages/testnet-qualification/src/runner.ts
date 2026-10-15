@@ -212,6 +212,10 @@ function buildRawReceipt(input: {
     ...(input.standardL1?.submission
       ? { submissions: [toReceiptSubmission(input.standardL1.submission)] }
       : {}),
+    // TQ1-SCRIPT-BROKEN-1 (D7): the attempt record, always present once the scenario ran
+    ...(input.standardL1?.submissionAttempt
+      ? { submissionAttempts: [input.standardL1.submissionAttempt] }
+      : {}),
     ...(input.standardL1?.acceptance
       ? { acceptances: [toReceiptAcceptance(input.standardL1.acceptance)] }
       : {}),

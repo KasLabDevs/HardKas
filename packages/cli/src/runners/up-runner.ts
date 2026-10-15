@@ -1,5 +1,5 @@
 import { UI } from "../ui.js";
-import { loadHardkasConfig } from "@hardkas/config";
+import { loadHardkasConfig, resolveNodeEndpoint } from "@hardkas/config";
 import { JsonWrpcKaspaClient } from "@hardkas/kaspa-rpc";
 import { listHardkasAccounts } from "@hardkas/accounts";
 import fs from "node:fs/promises";
@@ -30,16 +30,9 @@ export async function runUp() {
     UI.info("\x1b[1mRuntime:\x1b[0m");
 
     // 3. Check RPC
-    const target = loaded.config.networks?.[networkId];
-    const { nodeRpcUrl } = await import("@hardkas/core");
-    let rpcUrl = nodeRpcUrl();
-    if (target) {
-      if (target.kind === "kaspa-rpc" || target.kind === "igra") {
-        rpcUrl = target.rpcUrl;
-      } else if (target.kind === "kaspa-node" && target.rpcUrl) {
-        rpcUrl = target.rpcUrl;
-      }
-    }
+    // TESTNET-PORT-COLLISION-1: the shared endpoint authority — the declared endpoint, else a local network's default
+    // (the canonical localnet), else NETWORK_ENDPOINT_REQUIRED (a public network is never checked on a guess)
+    const rpcUrl = resolveNodeEndpoint({ config: loaded.config, networkId }).url;
 
     const client = new JsonWrpcKaspaClient({ rpcUrl });
     try {

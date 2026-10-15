@@ -44,8 +44,7 @@ async function consolidate(options: AccountsConsolidateOptions, sdk: Hardkas, cr
     assertMainnetTransactionsDisabled("broadcast", [resolvedName, sdk.network], "accounts consolidate");
   }
 
-  const { resolveProvider } = await import("@hardkas/config");
-  const declaredRpcUrl = (sdk.config.config.networks as Record<string, { rpcUrl?: unknown }> | undefined)?.[resolvedName]?.rpcUrl;
+  const { resolveProvider, declaredNodeEndpoint, resolveNodeEndpoint } = await import("@hardkas/config");
   const provider = resolveProvider({
     network: resolvedName,
     provider: options.provider,
@@ -53,13 +52,17 @@ async function consolidate(options: AccountsConsolidateOptions, sdk: Hardkas, cr
     // the instance's resolved mode (every SDK instance carries one; a test double standing in for the SDK may not)
     executionMode: sdk.execution?.mode,
     // WORKSPACE-AUTHORITY-2 (closeout): the endpoint the network declares, the same the SDK uses
-    networkRpcUrl: typeof declaredRpcUrl === "string" ? declaredRpcUrl : undefined
+    // (TESTNET-PORT-COLLISION-1, D-TPC-2: declared by the USER; a built-in public entry declares none)
+    networkRpcUrl: declaredNodeEndpoint(sdk.config.config, resolvedName)
   });
 
   if (provider.mode !== "simulator") {
     const { JsonWrpcKaspaClient } = await import("@hardkas/kaspa-rpc");
+    // TESTNET-PORT-COLLISION-1 (D-TPC-4): the shared endpoint authority — NETWORK_ENDPOINT_REQUIRED, typed, instead of a
+    // crash on a missing endpoint, and never an inferred node
+    const rpcUrl = resolveNodeEndpoint({ config: sdk.config.config, networkId: resolvedName, explicitUrl: provider.endpoint }).url;
     // NODE-NETWORK-IDENTITY-1: UTXOs are consolidated only on a node that says it serves this network
-    const client = new JsonWrpcKaspaClient({ rpcUrl: provider.endpoint!, expectedNetworkId: provider.network });
+    const client = new JsonWrpcKaspaClient({ rpcUrl, expectedNetworkId: provider.network });
     created.push(client);
     (sdk as any).rpc = client;
   }

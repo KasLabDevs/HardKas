@@ -213,18 +213,14 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
     rpcUrl = "simulated://local";
   } else {
     mode = execution.mode === "localnet" ? "kaspa-node" : "kaspa-rpc";
+    // TESTNET-PORT-COLLISION-1: the shared endpoint authority, before anything connects — the endpoint given or declared,
+    // else a local network's default, else NETWORK_ENDPOINT_REQUIRED (never the listen port of a node HardKAS would start)
+    const { resolveNodeEndpoint } = await import("@hardkas/config");
+    rpcUrl = resolveNodeEndpoint({ config, networkId: resolvedNetwork, explicitUrl: rpcUrl }).url;
     // RESOURCE-LIFECYCLE-1 (RL-I1/RL-I3): releases the client this planner creates, on success and on every refusal.
     let release: (() => Promise<void>) | undefined;
     try {
       const { JsonWrpcKaspaClient } = await import("@hardkas/kaspa-rpc");
-      const { resolveRuntimeConfig } = await import("@hardkas/node-orchestrator");
-
-      if (!rpcUrl) {
-        rpcUrl = resolveRuntimeConfig({
-          network: resolvedNetwork as "mainnet" | "testnet-10" | "simnet"
-        }).rpcUrl;
-      }
-      if (!rpcUrl) throw new Error("Could not resolve RPC URL");
 
       // NODE-NETWORK-IDENTITY-1: the node's UTXOs are planned on only if the node says it serves the planned network
       const client = new JsonWrpcKaspaClient({ rpcUrl, expectedNetworkId: resolvedNetwork });
