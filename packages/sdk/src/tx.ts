@@ -206,6 +206,10 @@ export class HardkasTx {
    * (by default) persisted as `hardkas.txObservation.v1`. The observer's cursor is,
    * in order: `since`, the latest stored observation's sink, the submission's
    * `submitPoint.sinkHash`, the node's pruning point. Nothing here decides a state.
+   *
+   * TN10-CONFIRMATION-FIX-1: an explicit `since` (a 64-hex chain block hash the caller knows precedes the acceptance)
+   * lets a transaction sent outside this workspace — no submission recorded here — be observed without inventing a
+   * receipt. When the node cannot serve the chain from it, `OBSERVE_SINCE_UNAVAILABLE` is thrown and nothing is sealed.
    */
   async observe(
     txId: string,
@@ -215,6 +219,12 @@ export class HardkasTx {
       throw new HardkasError(
         "OBSERVATION_SYNTHETIC_TXID",
         `${txId} is a synthetic (simulator) txId: there is no network to observe; its state derives from the simulator receipt`
+      );
+    }
+    if (options.since !== undefined && !/^[0-9a-f]{64}$/.test(options.since)) {
+      throw new HardkasError(
+        "OBSERVE_SINCE_INVALID",
+        `since must be a 64-hex chain block hash, got '${String(options.since).slice(0, 80)}'. Nothing was observed.`
       );
     }
     const { ProjectArtifactStore } = await import("@hardkas/artifacts");
@@ -260,6 +270,7 @@ export class HardkasTx {
         observerId: this.observerId(),
         ...(submission?.contentHash ? { submissionArtifactId: submission.contentHash as string } : {}),
         ...(since ? { since } : {}),
+        ...(options.since !== undefined ? { sinceExplicit: true } : {}),
         ...(currentAccepting ? { previousAcceptingBlockHash: currentAccepting } : {}),
         ...(options.maxBatches !== undefined ? { maxBatches: options.maxBatches } : {}),
         networkId,

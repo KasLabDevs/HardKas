@@ -1,5 +1,5 @@
 import type { KaspaRpcClient } from "@hardkas/kaspa-rpc";
-import { finalityDepthFor } from "@hardkas/core";
+import { finalityDepthFor, HardkasError } from "@hardkas/core";
 import {
   createTxObservationArtifact,
   evidenceDigest,
@@ -133,6 +133,12 @@ export interface ObserveTxOptions {
   submissionArtifactId?: string;
   /** Chain block hash to scan the virtual chain from (the observer's cursor). */
   since?: string;
+  /**
+   * TN10-CONFIRMATION-FIX-1: `since` was given by the caller (not derived from earlier evidence). When the node cannot
+   * serve the virtual chain from it, the look throws `OBSERVE_SINCE_UNAVAILABLE` and seals nothing: an unknown or
+   * pruned cursor says nothing about the transaction, so it is never recorded as a `pruned_unobservable` finding.
+   */
+  sinceExplicit?: boolean;
   /** Block hash previously observed as accepting, to detect its removal from the chain. */
   previousAcceptingBlockHash?: string;
   /** Upper bound on `getVirtualChainFromBlock` batches per observation (each ≈ mergeset limit × 10 chain blocks). */
@@ -271,7 +277,17 @@ export async function observeTxOnce(
       try {
         chain = await rpc.getVirtualChainFromBlock(cursor!);
       } catch (e) {
-        if (isNotFound(e) || /prun|not in selected|unknown block|not found/i.test(String((e as any)?.message ?? e))) {
+        const message = String((e as any)?.message ?? e);
+        // kaspad 2.1.0 answers an unknown/pruned start with "cannot find header …", "some data is missing …" or
+        // "… does not have source on its chain"
+        if (options.sinceExplicit && batch === 0 && (isNotFound(e) || /prun|not in selected|unknown block|not found|cannot find|data is missing|source on its chain/i.test(message))) {
+          throw new HardkasError(
+            "OBSERVE_SINCE_UNAVAILABLE",
+            `The node cannot serve the virtual chain from ${cursor} (unknown or pruned): ${message}. Nothing was recorded; ` +
+              `give a chain block the node still holds that precedes the transaction's acceptance.`
+          );
+        }
+        if (isNotFound(e) || /prun|not in selected|unknown block|not found/i.test(message)) {
           return seal({ type: "pruned_unobservable", reason: `the observer cannot serve the virtual chain from ${cursor}: ${String((e as any)?.message ?? e)}` });
         }
         throw e;

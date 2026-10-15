@@ -38,6 +38,18 @@
  * `testnet-<n>` qualification only (mainnet and anything else are refused above). Configuration errors are typed
  * refusals (`CONFIGURATION_REFUSED <CODE>`, exit 4), never a stack trace.
  *
+ * TN10-CONFIRMATION-FIX-1 (2026-10-15): confirmation is BLUE-SCORE depth of the chain block that accepted the tx.
+ * Before the submission the script records the sink (a known chain position); afterwards the product observer
+ * (`sdk.tx.observe`, the same one `hardkas tx status` uses) scans the virtual chain from it, names the accepting block
+ * and its blue-score depth, and that block is bound to the UTXO row (same DAA score). UTXO presence alone is never a
+ * confirmation. Receipts are v3.
+ *   --min-confirmations <n>        blue-score confirmations required (default 100, the HardKAS tx status policy)
+ *   --confirmation-daa-delta <n>   LEGACY alias, kept temporarily. INCOMPATIBLE CHANGE: it used to compare a DAA delta
+ *                                  (default 10); it now means blue-score confirmations, says so on stderr and the
+ *                                  receipt records how the threshold was requested. A consumer that relied on the DAA
+ *                                  meaning must migrate to --min-confirmations explicitly (there is no DAA mode).
+ *                                  Given together with a different --min-confirmations it is refused (exit 4).
+ *
  * Exit codes:
  *   0 → PASS + raw persisted
  *   2 → UNRESOLVED, or missing inputs, or dry-run informational
@@ -82,7 +94,35 @@ function refuseConfiguration(err) {
   fail(`CONFIGURATION_REFUSED ${code}: ${message}`, 4);
 }
 
-const confirmationDaaDelta = BigInt(args.get("confirmation-daa-delta") ?? "10");
+// TN10-CONFIRMATION-FIX-1: the threshold is blue-score confirmations; the old DAA flag is a loud legacy alias
+function confirmationsArg(name) {
+  const raw = args.get(name);
+  if (raw === undefined) return undefined;
+  if (!/^\d+$/.test(raw)) fail(`CONFIGURATION_REFUSED MIN_CONFIRMATIONS_INVALID: --${name} must be a non-negative integer, got '${raw}'. Nothing was contacted.`, 4);
+  return BigInt(raw);
+}
+const minConfirmationsFlag = confirmationsArg("min-confirmations");
+const legacyDaaFlag = confirmationsArg("confirmation-daa-delta");
+if (minConfirmationsFlag !== undefined && legacyDaaFlag !== undefined && minConfirmationsFlag !== legacyDaaFlag) {
+  fail(
+    `CONFIGURATION_REFUSED MIN_CONFIRMATIONS_CONFLICT: --min-confirmations ${minConfirmationsFlag} and the legacy --confirmation-daa-delta ${legacyDaaFlag} disagree. ` +
+      `Give --min-confirmations only (blue-score confirmations). Nothing was contacted.`,
+    4
+  );
+}
+if (legacyDaaFlag !== undefined && minConfirmationsFlag === undefined) {
+  process.stderr.write(
+    `[TQ-CLI] LEGACY_FLAG --confirmation-daa-delta ${legacyDaaFlag}: this now requires ${legacyDaaFlag} BLUE-SCORE confirmations of the accepting chain block, ` +
+      `not a DAA delta (incompatible with the old meaning). Use --min-confirmations; the receipt records how the threshold was requested.\n`
+  );
+}
+const minConfirmations = minConfirmationsFlag ?? legacyDaaFlag ?? 100n;
+const minConfirmationsRequestedVia =
+  minConfirmationsFlag !== undefined
+    ? "--min-confirmations"
+    : legacyDaaFlag !== undefined
+      ? "--confirmation-daa-delta (legacy alias, blue-score semantics)"
+      : "default (HardKAS tx status policy v1: 100)";
 const live = args.get("live") === "true";
 const forSharing = args.get("for-sharing") === "true";
 
@@ -156,7 +196,7 @@ process.stdout.write(
     `declared outpoint : ${fundingTxid ?? "<unset>"}:${fundingIndexRaw ?? "<unset>"}`,
     `amount sompi      : ${amountSompiRaw ?? "<unset>"}`,
     `destination       : ${destAddress ?? "<unset>"}`,
-    `confirmation DAA δ: ${confirmationDaaDelta.toString()}`,
+    `min confirmations : ${minConfirmations.toString()} blue-score (${minConfirmationsRequestedVia})`,
     `raw receipts dir  : ${rawDir}`,
     `shared enabled    : ${forSharing ? "yes" : "no"}`,
     "──────────────────────────────────────────────────────────────────────"
@@ -275,19 +315,82 @@ const submissionRpc = {
 };
 
 const observerRpc = {
-  async getBlockDagInfo() {
-    const r = await rpc.getBlockDagInfo();
-    return { virtualDaaScore: r.virtualDaaScore };
-  },
   async getMempoolEntry(txid) { return submissionRpc.getMempoolEntry(txid); },
   async getUtxosByAddress(address) {
     const raw = await rpc.getUtxosByAddress(address);
+    // TN10-CONFIRMATION-FIX-1: a kaspad row carries the accepting chain block's DAA score and no block hash
     return (raw ?? []).map((u) => ({
       outpoint: { transactionId: u.outpoint?.transactionId ?? u.transactionId, index: u.outpoint?.index ?? u.outputIndex ?? 0 },
       amountSompi: u.amountSompi ?? 0n,
-      blockDaaScore: u.blockDaaScore,
-      blockHash: u.blockHash ?? u.acceptingBlockHash
+      blockDaaScore: u.blockDaaScore
     }));
+  }
+};
+
+// TN10-CONFIRMATION-FIX-1: the chain observer is the product's (`sdk.tx.observe`, as `hardkas tx status`); TQ only
+// captures the start point before the submission and reads back what each sealed observation found.
+const qualificationPolicy = (n) => ({
+  policyId: "hardkas.testnet-qualification.min-confirmations",
+  policyVersion: 1,
+  origin: "user",
+  minConfirmations: Number(n),
+  confirmationUnit: "blue-score"
+});
+const big = (v) => (v === undefined || v === null ? undefined : BigInt(v));
+const chainObserver = {
+  async captureStartPoint() {
+    const dag = await rpc.getBlockDagInfo();
+    const sinkHash = dag?.sink ?? dag?.sinkHash;
+    if (typeof sinkHash !== "string" || !/^[0-9a-f]{64}$/.test(sinkHash)) {
+      throw Object.assign(new Error(`getBlockDagInfo returned no usable sink (${String(sinkHash)})`), { code: "START_POINT_UNAVAILABLE" });
+    }
+    const sb = await rpc.getSinkBlueScore();
+    return {
+      sinkHash,
+      sinkBlueScore: BigInt(sb?.blueScore ?? sb),
+      virtualDaaScore: BigInt(dag.virtualDaaScore),
+      capturedAt: new Date().toISOString()
+    };
+  },
+  async look({ txid, since, minConfirmations }) {
+    const r = await sdk.tx.observe(txid, { since, policy: qualificationPolicy(minConfirmations) });
+    const o = r.observation;
+    const f = o.finding ?? {};
+    const finding =
+      f.type === "chain_accepted"
+        ? {
+            type: "accepted",
+            acceptingBlockHash: f.acceptingBlockHash,
+            acceptingBlueScore: BigInt(f.acceptingBlueScore),
+            ...(f.acceptingDaaScore !== undefined ? { acceptingDaaScore: BigInt(f.acceptingDaaScore) } : {}),
+            confirmationsBlue: BigInt(f.confirmationsBlue),
+            ...(f.confirmationsDaa !== undefined ? { confirmationsDaa: BigInt(f.confirmationsDaa) } : {}),
+            finalityReached: false
+          }
+        : f.type === "finality_reached"
+          ? {
+              type: "accepted",
+              acceptingBlockHash: f.acceptingBlockHash,
+              acceptingBlueScore: BigInt(f.acceptingBlueScore),
+              confirmationsBlue: BigInt(f.confirmationsBlue),
+              finalityReached: true
+            }
+          : f.type === "mempool_entry"
+            ? { type: "mempool" }
+            : f.type === "not_found"
+              ? { type: "not_found", ...(typeof f.scannedChainBlocks === "number" ? { scannedChainBlocks: f.scannedChainBlocks } : {}) }
+              : f.type === "chain_removed"
+                ? { type: "removed", acceptingBlockHash: f.acceptingBlockHash }
+                : { type: "unobservable", reason: f.type === "pruned_unobservable" ? String(f.reason) : `unexpected finding '${String(f.type)}'` };
+    return {
+      observationArtifactId: o.contentHash,
+      ...(r.observationPath ? { observationPath: r.observationPath } : {}),
+      observedAt: o.observedAt,
+      observerId: o.observer.observerId,
+      point: { sinkHash: o.point.sinkHash, sinkBlueScore: big(o.point.sinkBlueScore), virtualDaaScore: big(o.point.virtualDaaScore) },
+      finding,
+      derivedStatus: r.derived.status
+    };
   }
 };
 
@@ -384,11 +487,12 @@ const outcome = await runQualification({
     productPath,
     submissionRpc,
     observerRpc,
+    chainObserver,
     fromAddress: fundingAddress,
     toAddress: destAddress,
     amountSompi: BigInt(amountSompiRaw),
-    // D1: the parsed --confirmation-daa-delta (the name `configuredDaaDelta` alone was never defined)
-    configuredDaaDelta: confirmationDaaDelta,
+    minConfirmations,
+    minConfirmationsRequestedVia,
     submissionOptions: { probeWaitBeforeMs: 1000, probeMaxWaitMs: 10_000, probePollIntervalMs: 1000 },
     acceptanceOptions: { pollIntervalMs: 2000, maxWaitMs: 120_000 },
     confirmationOptions: { pollIntervalMs: 2000, maxWaitMs: 120_000 }
@@ -409,8 +513,13 @@ process.stdout.write(
     `submission outcome : ${outcome.scenarios.standardL1?.submissionAttempt?.outcome ?? "not_attempted"}`,
     `submission state : ${outcome.scenarios.standardL1?.submission?.state ?? "(none)"}`,
     `txid             : ${outcome.scenarios.standardL1?.plan?.txid ?? "(none)"}`,
-    outcome.scenarios.standardL1?.inclusion ? `inclusion        : block ${outcome.scenarios.standardL1.inclusion.inclusionBlockHash} @ DAA ${outcome.scenarios.standardL1.inclusion.inclusionDaaScore}` : "inclusion        : (none)",
-    outcome.scenarios.standardL1?.confirmation ? `confirmation     : delta ${outcome.scenarios.standardL1.confirmation.deltaDaa} >= ${outcome.scenarios.standardL1.confirmation.configuredDaaDelta}` : "confirmation     : (none)",
+    outcome.scenarios.standardL1?.startPoint ? `start point      : sink ${outcome.scenarios.standardL1.startPoint.sinkHash} (captured before submit)` : "start point      : (none)",
+    outcome.scenarios.standardL1?.chainAcceptance
+      ? `accepting block  : ${outcome.scenarios.standardL1.chainAcceptance.acceptingBlockHash} (blue score ${outcome.scenarios.standardL1.chainAcceptance.acceptingBlueScore}; UTXO binding ${outcome.scenarios.standardL1.chainAcceptance.utxoBinding.result})`
+      : "accepting block  : (none)",
+    outcome.scenarios.standardL1?.confirmation
+      ? `confirmation     : ${outcome.scenarios.standardL1.confirmation.confirmationsBlue} blue-score confirmations >= ${outcome.scenarios.standardL1.confirmation.policy.minConfirmations} (${outcome.scenarios.standardL1.confirmation.observedStatus})`
+      : "confirmation     : (none)",
     `raw evidence     : ${p.raw}${p.rawFilePath ? ` → ${p.rawFilePath}` : ""}`,
     `raw digest       : ${p.rawDigest ?? "(none)"}`,
     `shared evidence  : ${p.shared}${p.sharedFilePath ? ` → ${p.sharedFilePath}` : ""}`,

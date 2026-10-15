@@ -92,7 +92,43 @@ function fixtureReceipt(overrides: Partial<TestnetQualificationReceipt> = {}): T
           resolvedAt: "2026-09-15T14:00:04.900Z"
         }
       ],
-      notes: {
+      // v3: a PASS stands on a satisfied blue-score confirmation of a chain block bound to the UTXO row
+      chainAcceptances: [
+        {
+          txid: "dd".repeat(32),
+          method: "virtual-chain-from-submit-start-point",
+          startPoint: { sinkHash: "11".repeat(32), sinkBlueScore: "990", virtualDaaScore: "90", capturedAt: "2026-09-15T14:00:02.000Z" },
+          acceptingBlockHash: "ab".repeat(32),
+          acceptingBlueScore: "1000",
+          acceptingDaaScore: "100",
+          utxoBinding: { witnessAddress: "kaspatest:qrdest", utxoBlockDaaScore: "100", acceptingDaaScore: "100", result: "matches" },
+          observation: {
+            observationArtifactId: "ee".repeat(32),
+            // local path: MUST NOT propagate
+            observationPath: "C:/Users/someone/ws/.hardkas/artifacts/observations/txObservation-ee.json",
+            observedAt: "2026-09-15T14:00:05.000Z",
+            observerId: `obs_${"ff".repeat(32)}`,
+            point: { sinkHash: "99".repeat(32), sinkBlueScore: "1150", virtualDaaScore: "251" },
+            finding: { type: "accepted", acceptingBlockHash: "ab".repeat(32), acceptingBlueScore: "1000", acceptingDaaScore: "100", confirmationsBlue: "150" },
+            derivedStatus: "CONFIRMED"
+          }
+        }
+      ],
+      blueConfirmations: [
+        {
+          txid: "dd".repeat(32),
+          acceptingBlockHash: "ab".repeat(32),
+          acceptingBlueScore: "1000",
+          sinkBlueScoreAtObservation: "1150",
+          confirmationsBlue: "150",
+          unit: "blue-score",
+          observedStatus: "CONFIRMED",
+          policy: { minConfirmations: "100", unit: "blue-score", requestedVia: "--min-confirmations", satisfied: true },
+          observationArtifactId: "ee".repeat(32),
+          observedAt: "2026-09-15T14:00:05.000Z",
+          limitations: ["observed through ONE RPC node"]
+        }
+      ],      notes: {
         // Anything the runner wanted local-only. MUST NOT propagate.
         HARDKAS_INTERNAL_HINT: "sensitive-detail-not-for-sharing"
       }
@@ -297,8 +333,31 @@ describe("Shared v2 — submission attempt record (D7)", () => {
     const base = fixtureReceipt();
     const persisted = await persistRawReceipt({ receipt: { ...base, evidence: { ...base.evidence, submissionAttempts: [attempt] } }, rawDir });
     const derived = await deriveSharedReceipt({ rawFilePath: persisted.filePath });
-    expect(SHARED_RECEIPT_SCHEMA_VERSION).toBe(2);
+    expect(SHARED_RECEIPT_SCHEMA_VERSION).toBe(3);
     expect(derived.shared.evidence.submissionAttempts).toEqual([attempt]);
     expect(Object.keys(derived.shared.evidence.submissionAttempts![0]!).sort()).toEqual(["attempts", "outcome", "reason", "recordedAt", "stage", "txid"]);
+  });
+});
+
+// TN10-CONFIRMATION-FIX-1: shared v3 — the chain evidence is public, local paths are not; a v2 raw is never re-derived
+describe("Shared v3 — accepting chain block and blue-score confirmation", () => {
+  it("projects the accepting block and the blue-score confirmation, and drops the observation's local path", async () => {
+    const persisted = await persistRawReceipt({ receipt: fixtureReceipt(), rawDir: await tmpDir() });
+    const derived = await deriveSharedReceipt({ rawFilePath: persisted.filePath });
+    expect(derived.shared.derivedFrom.rawSchemaVersion).toBe(3);
+    expect(derived.shared.evidence.blueConfirmations?.[0]).toMatchObject({ confirmationsBlue: "150", unit: "blue-score", policy: { satisfied: true } });
+    expect(derived.shared.evidence.chainAcceptances?.[0]?.acceptingBlockHash).toBe("ab".repeat(32));
+    const text = JSON.stringify(derived.shared);
+    expect(text).not.toContain("observationPath");
+    expect(text).not.toContain("C:/Users/someone");
+  });
+
+  it("refuses to derive a shared v3 from a raw v2 (kept as recorded)", async () => {
+    const dir = await tmpDir();
+    const filePath = path.join(dir, "TESTNET_QUALIFICATION_testnet-10_20261015T180604720Z.json");
+    const rest: Record<string, unknown> = { ...fixtureReceipt() };
+    delete rest.evidence;
+    await fs.writeFile(filePath, JSON.stringify({ ...rest, schemaVersion: 2, outcome: "UNRESOLVED", evidence: {} }) + "\n");
+    await expect(deriveSharedReceipt({ rawFilePath: filePath })).rejects.toMatchObject({ reason: "SCHEMA_INVALID" });
   });
 });

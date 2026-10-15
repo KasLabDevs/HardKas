@@ -29,8 +29,10 @@ import type {
   ReceiptSourceUtxoEvidence,
   ReceiptSubmissionOutcome,
   ReceiptAcceptanceEvidence,
-  ReceiptInclusionEvidence,
-  ReceiptConfirmationEvidence,
+  ReceiptChainStartPoint,
+  ReceiptChainLook,
+  ReceiptChainAcceptanceEvidence,
+  ReceiptBlueConfirmationEvidence,
   TestnetQualificationReceipt,
   PersistedRawReceipt
 } from "./receipt.js";
@@ -48,11 +50,14 @@ import {
 import type { RemoteTestnetAuthority } from "./remote-node.js";
 import type { SourceUtxoEvidence } from "./funding-input.js";
 import type { SubmissionOutcome } from "./submission-guard.js";
+import type { AcceptanceEvidence } from "./daa-observer.js";
 import type {
-  AcceptanceEvidence,
-  InclusionEvidence,
-  ConfirmationEvidence
-} from "./daa-observer.js";
+  ChainAcceptanceObserver,
+  ChainStartPoint,
+  ChainLook,
+  ChainAcceptanceEvidence,
+  BlueConfirmationEvidence
+} from "./chain-acceptance.js";
 import {
   runStandardL1Scenario,
   type ProductTransactionPath,
@@ -67,10 +72,14 @@ export interface StandardL1RunnerBinding {
   readonly productPath: ProductTransactionPath;
   readonly submissionRpc: SubmissionGuardRpc;
   readonly observerRpc: DaaObserverRpc;
+  /** TN10-CONFIRMATION-FIX-1: the product chain observer (`sdk.tx.observe`), see StandardL1ScenarioInput. */
+  readonly chainObserver: ChainAcceptanceObserver;
   readonly fromAddress: string;
   readonly toAddress: string;
   readonly amountSompi: bigint;
-  readonly configuredDaaDelta: bigint;
+  /** Blue-score confirmations required of the accepting chain block. */
+  readonly minConfirmations: bigint;
+  readonly minConfirmationsRequestedVia: string;
   readonly submissionOptions?: StandardL1ScenarioInput["submissionOptions"];
   readonly acceptanceOptions?: StandardL1ScenarioInput["acceptanceOptions"];
   readonly confirmationOptions?: StandardL1ScenarioInput["confirmationOptions"];
@@ -172,25 +181,77 @@ function toReceiptAcceptance(a: AcceptanceEvidence): ReceiptAcceptanceEvidence {
   return { txid: a.txid, acceptedAt: a.acceptedAt, detectedVia: a.detectedVia, witnessAddress: a.witnessAddress };
 }
 
-function toReceiptInclusion(i: InclusionEvidence): ReceiptInclusionEvidence {
+function toReceiptStartPoint(s: ChainStartPoint): ReceiptChainStartPoint {
+  return { sinkHash: s.sinkHash, sinkBlueScore: b(s.sinkBlueScore), virtualDaaScore: b(s.virtualDaaScore), capturedAt: s.capturedAt };
+}
+
+function toReceiptChainLook(l: ChainLook): ReceiptChainLook {
+  const f = l.finding;
   return {
-    txid: i.txid,
-    inclusionBlockHash: i.inclusionBlockHash,
-    inclusionDaaScore: b(i.inclusionDaaScore),
-    observedAt: i.observedAt
+    observationArtifactId: l.observationArtifactId,
+    ...(l.observationPath !== undefined ? { observationPath: l.observationPath } : {}),
+    observedAt: l.observedAt,
+    observerId: l.observerId,
+    point: { sinkHash: l.point.sinkHash, sinkBlueScore: b(l.point.sinkBlueScore), virtualDaaScore: b(l.point.virtualDaaScore) },
+    finding:
+      f.type === "accepted"
+        ? {
+            type: "accepted",
+            acceptingBlockHash: f.acceptingBlockHash,
+            acceptingBlueScore: b(f.acceptingBlueScore),
+            ...(f.acceptingDaaScore !== undefined ? { acceptingDaaScore: b(f.acceptingDaaScore) } : {}),
+            confirmationsBlue: b(f.confirmationsBlue),
+            ...(f.confirmationsDaa !== undefined ? { confirmationsDaa: b(f.confirmationsDaa) } : {}),
+            finalityReached: f.finalityReached
+          }
+        : f.type === "not_found"
+          ? { type: "not_found", ...(f.scannedChainBlocks !== undefined ? { scannedChainBlocks: f.scannedChainBlocks } : {}) }
+          : f.type === "removed"
+            ? { type: "removed", acceptingBlockHash: f.acceptingBlockHash }
+            : f.type === "unobservable"
+              ? { type: "unobservable", reason: f.reason }
+              : { type: "mempool" },
+    derivedStatus: l.derivedStatus
   };
 }
 
-function toReceiptConfirmation(c: ConfirmationEvidence): ReceiptConfirmationEvidence {
+function toReceiptChainAcceptance(a: ChainAcceptanceEvidence): ReceiptChainAcceptanceEvidence {
+  return {
+    txid: a.txid,
+    method: a.method,
+    startPoint: toReceiptStartPoint(a.startPoint),
+    acceptingBlockHash: a.acceptingBlockHash,
+    acceptingBlueScore: b(a.acceptingBlueScore),
+    ...(a.acceptingDaaScore !== undefined ? { acceptingDaaScore: b(a.acceptingDaaScore) } : {}),
+    utxoBinding: {
+      witnessAddress: a.utxoBinding.witnessAddress,
+      ...(a.utxoBinding.utxoBlockDaaScore !== undefined ? { utxoBlockDaaScore: b(a.utxoBinding.utxoBlockDaaScore) } : {}),
+      ...(a.utxoBinding.acceptingDaaScore !== undefined ? { acceptingDaaScore: b(a.utxoBinding.acceptingDaaScore) } : {}),
+      result: a.utxoBinding.result
+    },
+    observation: toReceiptChainLook(a.look)
+  };
+}
+
+function toReceiptBlueConfirmation(c: BlueConfirmationEvidence): ReceiptBlueConfirmationEvidence {
   return {
     txid: c.txid,
-    inclusionBlockHash: c.inclusionBlockHash,
-    inclusionDaaScore: b(c.inclusionDaaScore),
+    acceptingBlockHash: c.acceptingBlockHash,
+    acceptingBlueScore: b(c.acceptingBlueScore),
+    sinkBlueScoreAtObservation: b(c.sinkBlueScoreAtObservation),
+    confirmationsBlue: b(c.confirmationsBlue),
+    unit: "blue-score",
+    ...(c.confirmationsDaa !== undefined ? { confirmationsDaa: b(c.confirmationsDaa) } : {}),
+    observedStatus: c.observedStatus,
+    policy: {
+      minConfirmations: b(c.policy.minConfirmations),
+      unit: c.policy.unit,
+      requestedVia: c.policy.requestedVia,
+      satisfied: c.policy.satisfied
+    },
+    observationArtifactId: c.observationArtifactId,
     observedAt: c.observedAt,
-    virtualDaaScoreAtObservation: b(c.virtualDaaScoreAtObservation),
-    deltaDaa: b(c.deltaDaa),
-    configuredDaaDelta: b(c.configuredDaaDelta),
-    criterion: c.criterion
+    limitations: [...c.limitations]
   };
 }
 
@@ -219,11 +280,18 @@ function buildRawReceipt(input: {
     ...(input.standardL1?.acceptance
       ? { acceptances: [toReceiptAcceptance(input.standardL1.acceptance)] }
       : {}),
-    ...(input.standardL1?.inclusion
-      ? { inclusions: [toReceiptInclusion(input.standardL1.inclusion)] }
+    // v3 (TN10-CONFIRMATION-FIX-1): start point → accepting chain block → blue-score confirmation, each its own slot
+    ...(input.standardL1?.startPoint
+      ? { startPoints: [toReceiptStartPoint(input.standardL1.startPoint)] }
+      : {}),
+    ...(input.standardL1?.chainAcceptance
+      ? { chainAcceptances: [toReceiptChainAcceptance(input.standardL1.chainAcceptance)] }
       : {}),
     ...(input.standardL1?.confirmation
-      ? { confirmations: [toReceiptConfirmation(input.standardL1.confirmation)] }
+      ? { blueConfirmations: [toReceiptBlueConfirmation(input.standardL1.confirmation)] }
+      : {}),
+    ...(input.standardL1?.lastChainLook
+      ? { chainLooks: [toReceiptChainLook(input.standardL1.lastChainLook)] }
       : {}),
     // notes: intentionally omitted from the standard L1 emission. Local
     // scenario-only metadata (blocker) belongs to the artifacts section,
@@ -311,10 +379,12 @@ export async function runQualification(input: RunnerInput): Promise<RunnerOutcom
       productPath: input.standardL1.productPath,
       submissionRpc: input.standardL1.submissionRpc,
       observerRpc: input.standardL1.observerRpc,
+      chainObserver: input.standardL1.chainObserver,
       fromAddress: input.standardL1.fromAddress,
       toAddress: input.standardL1.toAddress,
       amountSompi: input.standardL1.amountSompi,
-      configuredDaaDelta: input.standardL1.configuredDaaDelta,
+      minConfirmations: input.standardL1.minConfirmations,
+      minConfirmationsRequestedVia: input.standardL1.minConfirmationsRequestedVia,
       ...(input.standardL1.submissionOptions ? { submissionOptions: input.standardL1.submissionOptions } : {}),
       ...(input.standardL1.acceptanceOptions ? { acceptanceOptions: input.standardL1.acceptanceOptions } : {}),
       ...(input.standardL1.confirmationOptions ? { confirmationOptions: input.standardL1.confirmationOptions } : {}),

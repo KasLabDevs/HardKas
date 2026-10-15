@@ -51,8 +51,17 @@ export const RAW_RECEIPT_SCHEMA = "hardkas.testnet-qualification.receipt";
  * absence of a submission in a v1 receipt does NOT mean "not attempted" — v1 receipts are not read by this build
  * (no v1 receipt was ever produced by `scripts/testnet-qualification.mjs`, which failed before its runner since it was
  * written; the package is private).
+ *
+ * v3 (TN10-CONFIRMATION-FIX-1, 2026-10-15): confirmation is blue-score depth of the ACCEPTING CHAIN BLOCK named by the
+ * virtual chain, scanned from a start point captured before the submission and bound to the UTXO row
+ * (`evidence.startPoints`, `chainAcceptances`, `blueConfirmations`, `chainLooks`). The v2 slots `inclusions` and
+ * `confirmations` held a block hash read from a UTXO row (kaspad never serves one) and a DAA delta; a v3 receipt never
+ * carries them. This build WRITES v3 only and READS v2 as recorded — a v2 receipt is never rewritten, and its DAA
+ * `confirmations` are never read as blue-score confirmations.
  */
-export const RAW_RECEIPT_SCHEMA_VERSION = 2 as const;
+export const RAW_RECEIPT_SCHEMA_VERSION = 3 as const;
+/** Versions `readRawReceipt` accepts: v2 as recorded (legacy, read-only), v3. */
+export const RAW_RECEIPT_READABLE_VERSIONS: readonly number[] = Object.freeze([2, 3]);
 
 export type QualificationOutcome = "PASS" | "FAIL" | "UNRESOLVED";
 
@@ -154,6 +163,7 @@ export interface ReceiptAcceptanceEvidence {
   readonly witnessAddress: string;
 }
 
+/** v2 only (legacy, read as recorded): a block hash taken from a UTXO row. Never written by v3. */
 export interface ReceiptInclusionEvidence {
   readonly txid: string;
   readonly inclusionBlockHash: string;
@@ -161,6 +171,7 @@ export interface ReceiptInclusionEvidence {
   readonly observedAt: string;
 }
 
+/** v2 only (legacy, read as recorded): a DAA delta — NOT blue-score confirmations. Never written by v3. */
 export interface ReceiptConfirmationEvidence extends ReceiptInclusionEvidence {
   readonly virtualDaaScoreAtObservation: string;
   readonly deltaDaa: string;
@@ -168,15 +179,98 @@ export interface ReceiptConfirmationEvidence extends ReceiptInclusionEvidence {
   readonly criterion: string;
 }
 
+/** v3: the chain position captured before `submitTransaction` — the scan of the virtual chain starts there. */
+export interface ReceiptChainStartPoint {
+  readonly sinkHash: string;
+  readonly sinkBlueScore: string;
+  readonly virtualDaaScore: string;
+  readonly capturedAt: string;
+}
+
+/** v3: ONE look of the product observer (`sdk.tx.observe`), as it was sealed — the evidence a chain claim stands on. */
+export interface ReceiptChainLook {
+  /** The persisted `hardkas.txObservation.v1` contentHash. */
+  readonly observationArtifactId: string;
+  /** Local path of that observation (raw only; the shared receipt drops it). */
+  readonly observationPath?: string;
+  readonly observedAt: string;
+  readonly observerId: string;
+  readonly point: { readonly sinkHash: string; readonly sinkBlueScore: string; readonly virtualDaaScore: string };
+  readonly finding: {
+    readonly type: "accepted" | "mempool" | "not_found" | "removed" | "unobservable";
+    readonly acceptingBlockHash?: string;
+    readonly acceptingBlueScore?: string;
+    readonly acceptingDaaScore?: string;
+    readonly confirmationsBlue?: string;
+    readonly confirmationsDaa?: string;
+    readonly finalityReached?: boolean;
+    readonly scannedChainBlocks?: number;
+    readonly reason?: string;
+  };
+  /** The state the observer's evidence derived to at that look, under the run's policy. */
+  readonly derivedStatus: string;
+}
+
+/** v3: the chain block that ACCEPTED the tx — named by the virtual chain, bound to the UTXO row by DAA score. */
+export interface ReceiptChainAcceptanceEvidence {
+  readonly txid: string;
+  readonly method: "virtual-chain-from-submit-start-point";
+  readonly startPoint: ReceiptChainStartPoint;
+  readonly acceptingBlockHash: string;
+  readonly acceptingBlueScore: string;
+  readonly acceptingDaaScore?: string;
+  readonly utxoBinding: {
+    readonly witnessAddress: string;
+    readonly utxoBlockDaaScore?: string;
+    readonly acceptingDaaScore?: string;
+    readonly result: "matches" | "mismatch" | "row-missing" | "not-checkable";
+  };
+  readonly observation: ReceiptChainLook;
+}
+
+/** v3: blue-score confirmations of the accepting block and the policy result. DAA is informational only. */
+export interface ReceiptBlueConfirmationEvidence {
+  readonly txid: string;
+  readonly acceptingBlockHash: string;
+  readonly acceptingBlueScore: string;
+  readonly sinkBlueScoreAtObservation: string;
+  readonly confirmationsBlue: string;
+  readonly unit: "blue-score";
+  readonly confirmationsDaa?: string;
+  readonly observedStatus: string;
+  readonly policy: {
+    readonly minConfirmations: string;
+    readonly unit: "blue-score";
+    readonly requestedVia: string;
+    readonly satisfied: boolean;
+  };
+  readonly observationArtifactId: string;
+  readonly observedAt: string;
+  /** What an RPC observation can and cannot establish (single node; revertible until finality; …). */
+  readonly limitations: readonly string[];
+}
+
 export interface QualificationEvidence {
   readonly remoteAuthority?: ReceiptRemoteAuthority;
   readonly funding?: readonly ReceiptSourceUtxoEvidence[];
+  /** The node's answer to the submission, as the guard classified it. */
   readonly submissions?: readonly ReceiptSubmissionOutcome[];
   /** v2: present whenever a scenario ran — one record per scenario's submission (see ReceiptSubmissionAttempt). */
   readonly submissionAttempts?: readonly ReceiptSubmissionAttempt[];
+  /** UTXO-level acceptance signal (mempool gone + output present). Never a confirmation by itself. */
   readonly acceptances?: readonly ReceiptAcceptanceEvidence[];
+  /** v2 only — see ReceiptInclusionEvidence. */
   readonly inclusions?: readonly ReceiptInclusionEvidence[];
+  /** v2 only — see ReceiptConfirmationEvidence. */
   readonly confirmations?: readonly ReceiptConfirmationEvidence[];
+  /** v3: the start point captured before the submission. */
+  readonly startPoints?: readonly ReceiptChainStartPoint[];
+  /** v3: the accepting chain block (present once the virtual chain named one). */
+  readonly chainAcceptances?: readonly ReceiptChainAcceptanceEvidence[];
+  /** v3: blue-score confirmation under the policy (present only when the policy was satisfied). */
+  readonly blueConfirmations?: readonly ReceiptBlueConfirmationEvidence[];
+  /** v3: the last chain look when no accepting block could be established (diagnostics, never a claim). */
+  readonly chainLooks?: readonly ReceiptChainLook[];
   /**
    * Free-form observations that do not fit the typed slots above. Callers
    * MUST NOT place secrets here — the redactor's allowlist projection does
@@ -188,7 +282,8 @@ export interface QualificationEvidence {
 
 export interface TestnetQualificationReceipt {
   readonly schema: typeof RAW_RECEIPT_SCHEMA;
-  readonly schemaVersion: typeof RAW_RECEIPT_SCHEMA_VERSION;
+  /** 3 for every receipt this build writes; 2 only for a legacy receipt read as recorded. */
+  readonly schemaVersion: typeof RAW_RECEIPT_SCHEMA_VERSION | 2;
   readonly qualificationId: string;
   readonly network: string;
   readonly startedAt: string;
@@ -287,7 +382,7 @@ export function receiptFilename(network: string, completedAt: Date): string {
   return `TESTNET_QUALIFICATION_${sanitizeNetworkForFs(network)}_${formatUtcTimestampForFilename(completedAt)}.json`;
 }
 
-function assertValidReceiptShape(r: unknown): asserts r is TestnetQualificationReceipt {
+function assertValidReceiptShape(r: unknown, mode: "write" | "read" = "write"): asserts r is TestnetQualificationReceipt {
   if (!r || typeof r !== "object" || Array.isArray(r)) {
     throw new ReceiptPersistenceError("SCHEMA_INVALID", "Receipt payload must be a JSON object");
   }
@@ -295,8 +390,13 @@ function assertValidReceiptShape(r: unknown): asserts r is TestnetQualificationR
   if (anyR.schema !== RAW_RECEIPT_SCHEMA) {
     throw new ReceiptPersistenceError("SCHEMA_INVALID", `Receipt schema must be '${RAW_RECEIPT_SCHEMA}', got '${String(anyR.schema)}'`);
   }
-  if (anyR.schemaVersion !== RAW_RECEIPT_SCHEMA_VERSION) {
-    throw new ReceiptPersistenceError("SCHEMA_INVALID", `Unsupported raw schema version ${String(anyR.schemaVersion)} (this build supports ${RAW_RECEIPT_SCHEMA_VERSION})`);
+  if (mode === "write" ? anyR.schemaVersion !== RAW_RECEIPT_SCHEMA_VERSION : !RAW_RECEIPT_READABLE_VERSIONS.includes(anyR.schemaVersion as number)) {
+    throw new ReceiptPersistenceError(
+      "SCHEMA_INVALID",
+      mode === "write"
+        ? `This build writes raw schema version ${RAW_RECEIPT_SCHEMA_VERSION} only, got ${String(anyR.schemaVersion)}`
+        : `Unsupported raw schema version ${String(anyR.schemaVersion)} (this build reads ${RAW_RECEIPT_READABLE_VERSIONS.join(", ")})`
+    );
   }
   for (const required of ["qualificationId", "network", "startedAt", "completedAt", "outcome", "toolchain", "evidence"]) {
     if (!(required in anyR)) {
@@ -319,6 +419,49 @@ function assertValidReceiptShape(r: unknown): asserts r is TestnetQualificationR
         throw new ReceiptPersistenceError("SCHEMA_INVALID", `submission attempt '${outcome}' must record attempts ${outcome === "not_attempted" ? 0 : 1}, got ${String(a.attempts)}`);
       }
     }
+  }
+  if (anyR.schemaVersion === 3) assertV3ConfirmationSemantics(anyR);
+}
+
+/**
+ * v3 (TN10-CONFIRMATION-FIX-1): confirmation means blue-score depth of an accepting chain block, never a DAA delta and
+ * never UTXO presence. A v3 receipt cannot carry the v2 DAA slots, every blue confirmation is internally consistent,
+ * and PASS requires a satisfied blue confirmation of a block the virtual chain named and the UTXO row binds.
+ */
+function assertV3ConfirmationSemantics(r: Record<string, unknown>): void {
+  const ev = (r.evidence ?? {}) as Record<string, unknown>;
+  for (const legacy of ["inclusions", "confirmations"]) {
+    if (ev[legacy] !== undefined) {
+      throw new ReceiptPersistenceError("SCHEMA_INVALID", `a v3 receipt never carries evidence.${legacy} (v2 DAA semantics)`);
+    }
+  }
+  const confirmations = (ev.blueConfirmations ?? []) as Array<Record<string, any>>;
+  const acceptances = (ev.chainAcceptances ?? []) as Array<Record<string, any>>;
+  if (!Array.isArray(confirmations) || !Array.isArray(acceptances)) {
+    throw new ReceiptPersistenceError("SCHEMA_INVALID", "evidence.blueConfirmations and evidence.chainAcceptances must be arrays");
+  }
+  for (const c of confirmations) {
+    let blue: bigint;
+    let min: bigint;
+    try {
+      blue = BigInt(c?.confirmationsBlue);
+      min = BigInt(c?.policy?.minConfirmations);
+    } catch {
+      throw new ReceiptPersistenceError("SCHEMA_INVALID", "a blue confirmation needs integer confirmationsBlue and policy.minConfirmations");
+    }
+    if (c.unit !== "blue-score" || c.policy?.unit !== "blue-score") {
+      throw new ReceiptPersistenceError("SCHEMA_INVALID", "a v3 confirmation is counted in blue score");
+    }
+    if (c.policy?.satisfied !== (blue >= min)) {
+      throw new ReceiptPersistenceError("SCHEMA_INVALID", `policy.satisfied=${String(c.policy?.satisfied)} contradicts ${blue} blue-score confirmations against ${min}`);
+    }
+    const named = acceptances.find((a) => a?.acceptingBlockHash === c.acceptingBlockHash && a?.txid === c.txid);
+    if (!named || named.utxoBinding?.result !== "matches") {
+      throw new ReceiptPersistenceError("SCHEMA_INVALID", `blue confirmation of ${String(c.acceptingBlockHash)} has no chain acceptance bound to its UTXO row`);
+    }
+  }
+  if (r.outcome === "PASS" && !confirmations.some((c) => c?.policy?.satisfied === true)) {
+    throw new ReceiptPersistenceError("SCHEMA_INVALID", "a v3 PASS requires a satisfied blue-score confirmation of the accepting chain block");
   }
 }
 
@@ -447,7 +590,7 @@ export async function readRawReceipt(filePath: string): Promise<ReadRawReceiptRe
       `Raw receipt at ${filePath} is not valid JSON: ${err instanceof Error ? err.message : String(err)}`
     );
   }
-  assertValidReceiptShape(parsed);
+  assertValidReceiptShape(parsed, "read");
   return { filePath, bytes, receipt: parsed, digest };
 }
 

@@ -5167,6 +5167,7 @@ hardkas tx status [options] <txIdOrPath>
 | :--- | :--- | :--- |
 | `--no-observe` | Derive from the evidence already in the workspace; take no new observation |  |
 | `-n, --network <network>` | Network whose configured node observes (default: the network of the recorded submission) |  |
+| `--since <chainBlockHash>` | Scan the node's virtual chain from this chain block (64 hex; it must precede the tx's acceptance) — for a tx sent outside this workspace |  |
 | `--json` | Output as JSON | false |
 
 ### Arguments
