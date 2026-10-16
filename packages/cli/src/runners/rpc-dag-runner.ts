@@ -4,6 +4,8 @@ import { nodeRpcUrl } from "@hardkas/core";
 export interface RpcDagOptions {
   /** Node wRPC endpoint; defaults to the canonical localnet. */
   url?: string | undefined;
+  /** HARDKAS-NETWORK-PORTABILITY-1: the network the node must serve (refused otherwise, NODE_NETWORK_MISMATCH). */
+  expectedNetworkId?: string | undefined;
 }
 
 export async function runRpcDag(options: RpcDagOptions = {}): Promise<{
@@ -12,7 +14,7 @@ export async function runRpcDag(options: RpcDagOptions = {}): Promise<{
   formatted: string;
 }> {
   const url = options.url || nodeRpcUrl();
-  const client = new JsonWrpcKaspaClient({ rpcUrl: url, timeoutMs: 10000 });
+  const client = new JsonWrpcKaspaClient({ rpcUrl: url, timeoutMs: 10000, expectedNetworkId: options.expectedNetworkId });
   try {
     const dag = await client.getBlockDagInfo();
     const tips = dag.tipHashes ?? [];

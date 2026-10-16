@@ -19,7 +19,7 @@ export function registerDoctorCommand(program: Command) {
   program
     .command("doctor [module]")
     .description(
-      `Perform a full system diagnostic and health report ${UI.maturity("stable")}`
+      `Perform a full system diagnostic and health report (on a public network it contacts the workspace's declared endpoint) ${UI.maturity("stable")}`
     )
     .option("--json", "Output results as stable JSON schema", false)
     .option("--capabilities", "With 'doctor node': report the node's capabilities (RPC, network, DAA advance) as JSON", false)
@@ -70,7 +70,8 @@ interface DoctorCheck {
 
 export async function runDoctorChecks(
   root: string,
-  opts: { json?: boolean; consistency?: boolean; strict?: boolean; quiet?: boolean }
+  // HARDKAS-NETWORK-PORTABILITY-1-A: `network: false` (ci verify) never contacts the workspace's public endpoint
+  opts: { json?: boolean; consistency?: boolean; strict?: boolean; quiet?: boolean; network?: boolean }
 ): Promise<boolean> {
   if (opts.json) UI.setJsonMode(true);
 
@@ -473,6 +474,54 @@ export async function runDoctorChecks(
     } catch {
       // skip
     }
+  }
+
+  // --- 4.2. Workspace network endpoint (HARDKAS-NETWORK-PORTABILITY-1, C6) ---
+  // A workspace whose network is public (testnet-<n>, mainnet) runs against the endpoint it declares, not the local
+  // node above: doctor checks that endpoint answers AND serves that network (NODE-NETWORK-IDENTITY-1). Local networks
+  // (simnet, devnet, simulated) are covered by the local node checks; nothing is contacted for them here.
+  try {
+    const { resolveNodeEndpoint, isPublicKaspaNetwork } = await import("@hardkas/config");
+    const { config } = await loadHardkasConfig({ cwd: root });
+    const exec: any = (config as any).execution;
+    const target = exec?.default ? exec.targets?.[exec.default] : undefined;
+    const name: string | undefined = typeof target?.network === "string" ? target.network : (config as any).defaultNetwork;
+    const entry = name ? ((config.networks as any)?.[name] as { network?: unknown } | undefined) : undefined;
+    const network = typeof entry?.network === "string" ? entry.network : name;
+    if (name && network && isPublicKaspaNetwork(network) && opts.network === false) {
+      addCheck({ name: `Network endpoint (${network})`, category: "network", status: "skip", message: "not contacted: this check runs offline (hardkas doctor checks the endpoint)" });
+    } else if (name && network && isPublicKaspaNetwork(network)) {
+      const checkName = `Network endpoint (${network})`;
+      let url: string | undefined;
+      try {
+        url = resolveNodeEndpoint({ config, networkId: name }).url;
+      } catch (e: any) {
+        addCheck({ name: checkName, category: "network", status: "fail", message: `${e?.code ?? "NETWORK_ENDPOINT_REQUIRED"}: no endpoint declared`, suggestion: `Declare networks['${name}'].rpcUrl in hardkas.config.ts.` });
+      }
+      if (url) {
+        const client = new JsonWrpcKaspaClient({ rpcUrl: url, timeoutMs: 8000, expectedNetworkId: network });
+        try {
+          const info = await client.getServerInfo();
+          addCheck({
+            name: checkName,
+            category: "network",
+            status: info.isSynced === false ? "warn" : "pass",
+            message: `${url} serves ${info.networkId} (kaspad ${info.serverVersion ?? "?"}, ${info.isSynced === false ? "NOT synced" : "synced"}, UTXO index ${info.hasUtxoIndex ? "yes" : "no"})`
+          });
+        } catch (e: any) {
+          const { isNodeNetworkIdentityError } = await import("@hardkas/kaspa-rpc");
+          addCheck(
+            isNodeNetworkIdentityError(e)
+              ? { name: checkName, category: "network", status: "fail", message: `${e.code}: ${e.message}`, suggestion: `Point networks['${name}'].rpcUrl at a node that serves ${network}.` }
+              : { name: checkName, category: "network", status: "warn", message: `${url} did not answer: ${e?.message ?? String(e)}` }
+          );
+        } finally {
+          await client.close();
+        }
+      }
+    }
+  } catch {
+    // no readable workspace config: nothing to check here
   }
 
   // --- 4.5. Environment Checks ---

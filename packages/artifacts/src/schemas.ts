@@ -917,6 +917,9 @@ const SilverOnChainSchema = SilverRecordBaseSchema.extend({
 });
 
 export const SilverCompileV1Schema = SilverRecordBaseSchema.extend({
+  // HARDKAS-NETWORK-PORTABILITY-1 (C7): a compile record names the network its P2SH addresses are for (compilation does
+  // not depend on it); deploy, spend and covenant records stay canonical-simnet-only. Mainnet is never a compile network.
+  networkId: z.union([z.literal("simnet"), z.literal("devnet"), z.string().regex(/^testnet-\d+$/)]),
   schema: z.literal(HardkasSchemas.SilverCompileV1),
   source: z.object({ path: z.string(), sha256: Hex64, text: z.string() }),
   provenance: z

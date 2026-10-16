@@ -7,6 +7,7 @@ import { runRpcUtxos } from "../runners/rpc-utxos-runner.js";
 import { runRpcMempool } from "../runners/rpc-mempool-runner.js";
 
 import { nodeRpcUrl } from "@hardkas/core";
+import { resolveRpcTarget, RPC_NETWORK_OPTION } from "../runners/rpc-target.js";
 
 // CANONICAL-RPC-URL: the help names the endpoint @hardkas/core declares canonical, never a copy.
 const URL_OPTION = `Node wRPC endpoint (default: the canonical localnet, ${nodeRpcUrl()})`;
@@ -18,10 +19,11 @@ export function registerRpcCommands(program: Command) {
     .command("info")
     .description("Show the node's network, version, sync state and UTXO index")
     .option("--url <url>", URL_OPTION)
+    .option("--network <name>", RPC_NETWORK_OPTION)
     .option("--json", "Output as JSON", false)
-    .action(async (options: { url?: string; json: boolean }) => {
+    .action(async (options: { url?: string; network?: string; json: boolean }) => {
       const { getOutput } = await import("../output.js");
-      const res = await runRpcInfo({ url: options.url });
+      const res = await runRpcInfo(await resolveRpcTarget(options));
       if (options.json) {
         getOutput().writeJson(
           res.info
@@ -40,14 +42,17 @@ export function registerRpcCommands(program: Command) {
 
   rpcCmd
     .command("health")
-    .description(`Check that the canonical localnet node (${nodeRpcUrl()}) answers and is ready`)
+    .description(`Check that a Kaspa node answers and is ready (default: the canonical localnet, ${nodeRpcUrl()}; --url or --network for another)`)
+    .option("--url <url>", URL_OPTION)
+    .option("--network <name>", RPC_NETWORK_OPTION)
     .option("--wait", "Wait until healthy")
     .option("--timeout <ms>", "With --wait: how long to wait in ms (default: 60000)")
     .option("--json", "Output as JSON", false)
-    .action(async (options: { wait?: boolean; timeout?: string; json: boolean }) => {
+    .action(async (options: { url?: string; network?: string; wait?: boolean; timeout?: string; json: boolean }) => {
       try {
         const { getOutput } = await import("../output.js");
         const res = await runRpcHealth({
+          ...(await resolveRpcTarget(options)),
           wait: options.wait ?? false,
           timeout: options.timeout ? parseInt(options.timeout, 10) / 1000 : 60
         });
@@ -86,10 +91,11 @@ export function registerRpcCommands(program: Command) {
     .command("dag")
     .description("Show the node's DAG: network, virtual DAA score, sink and tips")
     .option("--url <url>", URL_OPTION)
+    .option("--network <name>", RPC_NETWORK_OPTION)
     .option("--json", "Output as JSON", false)
-    .action(async (options: { url?: string; json: boolean }) => {
+    .action(async (options: { url?: string; network?: string; json: boolean }) => {
       const { getOutput } = await import("../output.js");
-      const res = await runRpcDag({ url: options.url });
+      const res = await runRpcDag(await resolveRpcTarget(options));
       if (options.json) {
         getOutput().writeJson({ ok: true, url: res.url, dag: res.dag });
       } else {
@@ -101,10 +107,11 @@ export function registerRpcCommands(program: Command) {
     .command("utxos <address>")
     .description("Show the UTXOs the node holds for an address")
     .option("--url <url>", URL_OPTION)
+    .option("--network <name>", RPC_NETWORK_OPTION)
     .option("--json", "Output as JSON", false)
-    .action(async (address: string, options: { url?: string; json: boolean }) => {
+    .action(async (address: string, options: { url?: string; network?: string; json: boolean }) => {
       const { getOutput } = await import("../output.js");
-      const res = await runRpcUtxos({ address, url: options.url });
+      const res = await runRpcUtxos({ address, ...(await resolveRpcTarget(options)) });
       if (options.json) {
         getOutput().writeJson({
           ok: true,
@@ -130,10 +137,11 @@ export function registerRpcCommands(program: Command) {
     .command("mempool [txId]")
     .description("Look up a transaction in the node's mempool, or list what the mempool holds")
     .option("--url <url>", URL_OPTION)
+    .option("--network <name>", RPC_NETWORK_OPTION)
     .option("--json", "Output as JSON", false)
-    .action(async (txId: string | undefined, options: { url?: string; json: boolean }) => {
+    .action(async (txId: string | undefined, options: { url?: string; network?: string; json: boolean }) => {
       const { getOutput } = await import("../output.js");
-      const res = await runRpcMempool({ txId, url: options.url });
+      const res = await runRpcMempool({ txId, ...(await resolveRpcTarget(options)) });
       if (options.json) {
         getOutput().writeJson(
           res.txId !== undefined ? { ok: true, url: res.url, txId: res.txId, entry: res.entry } : { ok: true, url: res.url, entries: res.entries }

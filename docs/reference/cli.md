@@ -612,7 +612,7 @@ No arguments.
 
 ## hardkas ci verify
 
-Non-interactively verify workspace integrity, artifacts, and projections
+Non-interactively verify workspace integrity, artifacts, and projections (offline: no public endpoint is contacted)
 
 ### Usage
 
@@ -1433,7 +1433,7 @@ No arguments.
 
 ## hardkas doctor
 
-Perform a full system diagnostic and health report stable
+Perform a full system diagnostic and health report (on a public network it contacts the workspace's declared endpoint) stable
 
 ### Usage
 
@@ -3939,6 +3939,7 @@ hardkas rpc dag [options]
 | Flag | Description | Default |
 | :--- | :--- | :--- |
 | `--url <url>` | Node wRPC endpoint (default: the canonical localnet, ws://127.0.0.1:18210) |  |
+| `--network <name>` | Network from the workspace config: its declared endpoint, and the node must prove it serves that network (default: none — the --url or the canonical localnet, unchecked) |  |
 | `--json` | Output as JSON | false |
 
 ### Arguments
@@ -3971,7 +3972,7 @@ No arguments.
 
 ## hardkas rpc health
 
-Check that the canonical localnet node (ws://127.0.0.1:18210) answers and is ready
+Check that a Kaspa node answers and is ready (default: the canonical localnet, ws://127.0.0.1:18210; --url or --network for another)
 
 ### Usage
 
@@ -3983,6 +3984,8 @@ hardkas rpc health [options]
 
 | Flag | Description | Default |
 | :--- | :--- | :--- |
+| `--url <url>` | Node wRPC endpoint (default: the canonical localnet, ws://127.0.0.1:18210) |  |
+| `--network <name>` | Network from the workspace config: its declared endpoint, and the node must prove it serves that network (default: none — the --url or the canonical localnet, unchecked) |  |
 | `--wait` | Wait until healthy |  |
 | `--timeout <ms>` | With --wait: how long to wait in ms (default: 60000) |  |
 | `--json` | Output as JSON | false |
@@ -4008,6 +4011,7 @@ hardkas rpc info [options]
 | Flag | Description | Default |
 | :--- | :--- | :--- |
 | `--url <url>` | Node wRPC endpoint (default: the canonical localnet, ws://127.0.0.1:18210) |  |
+| `--network <name>` | Network from the workspace config: its declared endpoint, and the node must prove it serves that network (default: none — the --url or the canonical localnet, unchecked) |  |
 | `--json` | Output as JSON | false |
 
 ### Arguments
@@ -4031,6 +4035,7 @@ hardkas rpc mempool [options] [txId]
 | Flag | Description | Default |
 | :--- | :--- | :--- |
 | `--url <url>` | Node wRPC endpoint (default: the canonical localnet, ws://127.0.0.1:18210) |  |
+| `--network <name>` | Network from the workspace config: its declared endpoint, and the node must prove it serves that network (default: none — the --url or the canonical localnet, unchecked) |  |
 | `--json` | Output as JSON | false |
 
 ### Arguments
@@ -4056,6 +4061,7 @@ hardkas rpc utxos [options] <address>
 | Flag | Description | Default |
 | :--- | :--- | :--- |
 | `--url <url>` | Node wRPC endpoint (default: the canonical localnet, ws://127.0.0.1:18210) |  |
+| `--network <name>` | Network from the workspace config: its declared endpoint, and the node must prove it serves that network (default: none — the --url or the canonical localnet, unchecked) |  |
 | `--json` | Output as JSON | false |
 
 ### Arguments
@@ -4080,7 +4086,7 @@ hardkas run [options] <script>
 
 | Flag | Description | Default |
 | :--- | :--- | :--- |
-| `--network <name>` | Network from the config (unknown names fall back to simulated) | simnet |
+| `--network <name>` | Network from the workspace config (default: the workspace's network; an unknown name is refused) |  |
 | `--accounts <n>` | Number of harness accounts (simulated networks only) | 3 |
 | `--balance <sompi>` | Initial balance per harness account, whole sompi (simulated networks only) | 100000000000 |
 | `--no-harness` | Skip automatic harness creation |  |
@@ -4212,6 +4218,7 @@ hardkas silver compile [options] <source>
 | Flag | Description | Default |
 | :--- | :--- | :--- |
 | `--args <file>` | Constructor arguments: JSON list of {kind, value} |  |
+| `--network <network>` | Network the record and its P2SH addresses are for (default: the workspace's network, else simnet; mainnet refused) |  |
 | `--out <file>` | Record path (default .hardkas/artifacts/silver/) |  |
 | `--json` | Output as JSON | false |
 
@@ -4743,7 +4750,7 @@ hardkas test [options] [files...]
 
 | Flag | Description | Default |
 | :--- | :--- | :--- |
-| `--network <network>` | Only recorded in the results: tests use the config's default network | simnet |
+| `--network <network>` | The network the scenarios run on: the workspace's network (default); a different one is refused |  |
 | `--watch` | Passed to Vitest, but the CLI exits after the first run (watch does not persist) | false |
 | `--mass-report` | No effect in this release | false |
 | `--mass-snapshot <label>` | No effect in this release |  |
