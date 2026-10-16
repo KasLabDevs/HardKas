@@ -1621,7 +1621,7 @@ hardkas explain [options] [artifact]
 | `--artifact <id-or-path>` | 64-hex artifactId or workspace path (same as the positional) |  |
 | `--plan <planId>` | Resolve a plan by its derived label (verified against its hash) |  |
 | `--signed <signedId>` | Resolve a signed transaction by its derived label (verified) |  |
-| `--tx <txId>` | Resolve the submission receipt for a txId (never the signed) |  |
+| `--tx <txId>` | Resolve the submission receipt for a txId (never the signed); with no submission here, the tx as observed by this workspace (origin: observed) |  |
 | `--workflow <workflowId>` | Resolve a workflow run by its correlation id |  |
 | `--workspace <path>` | Override workspace root directory |  |
 
@@ -5227,6 +5227,7 @@ hardkas tx wait [options] <txId>
 | `--timeout <seconds>` | Timeout in seconds | 60 |
 | `--interval <seconds>` | Seconds between observations | 2 |
 | `-n, --network <network>` | Network whose configured node observes (default: the network of the recorded submission) |  |
+| `--since <chainBlockHash>` | Scan the node's virtual chain from this chain block (64 hex; it must precede the tx's acceptance) on the first look — for a tx sent outside this workspace |  |
 | `--json` | Output as JSON | false |
 
 ### Arguments
@@ -5417,7 +5418,7 @@ hardkas why [options] [artifact]
 | `--artifact <id-or-path>` | 64-hex artifactId or workspace path (same as the positional) |  |
 | `--plan <planId>` | Resolve a plan by its derived label (verified against its hash) |  |
 | `--signed <signedId>` | Resolve a signed transaction by its derived label (verified) |  |
-| `--tx <txId>` | Resolve the submission receipt for a txId (never the signed) |  |
+| `--tx <txId>` | Resolve the submission receipt for a txId (never the signed); with no submission here, the tx as observed by this workspace (origin: observed) |  |
 | `--workflow <workflowId>` | Resolve a workflow run by its correlation id |  |
 | `--json` | Output lineage graph in JSON format |  |
 | `--workspace <path>` | Override workspace root directory |  |

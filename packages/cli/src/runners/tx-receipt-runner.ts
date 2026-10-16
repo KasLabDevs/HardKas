@@ -16,8 +16,21 @@ export async function runTxReceipt(
 ): Promise<TxReceiptRunnerResult> {
   const { txId, cwd } = input;
 
-  const store = new ProjectArtifactStore(cwd || process.cwd());
-  const receipt = await store.findReceiptByTxId(txId) as any;
+  const root = cwd || process.cwd();
+  const store = new ProjectArtifactStore(root);
+  let receipt: any;
+  try {
+    receipt = await store.findReceiptByTxId(txId);
+  } catch (e: any) {
+    // STAGE-B-2 · C4: still no receipt (a receipt records a submission, and none is invented), but when the workspace
+    // holds observations of the tx the refusal says so and where to look. Same code; any other error is unchanged.
+    if (e?.code !== "RECEIPT_NOT_FOUND") throw e;
+    const { receiptNotFoundMessage } = await import("./observed-tx.js");
+    const message = receiptNotFoundMessage(txId, root, String(e.message));
+    if (message === e.message) throw e;
+    const { HardkasCliError, HardkasExitCode } = await import("../cli-errors.js");
+    throw new HardkasCliError("RECEIPT_NOT_FOUND", message, { exitCode: HardkasExitCode.RUNTIME_FAILURE, cause: e });
+  }
 
   const lines = [
     "Transaction receipt",

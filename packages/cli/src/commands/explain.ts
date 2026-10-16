@@ -41,7 +41,7 @@ export function registerExplainCommand(program: Command) {
     .option("--artifact <id-or-path>", "64-hex artifactId or workspace path (same as the positional)")
     .option("--plan <planId>", "Resolve a plan by its derived label (verified against its hash)")
     .option("--signed <signedId>", "Resolve a signed transaction by its derived label (verified)")
-    .option("--tx <txId>", "Resolve the submission receipt for a txId (never the signed)")
+    .option("--tx <txId>", "Resolve the submission receipt for a txId (never the signed); with no submission here, the tx as observed by this workspace (origin: observed)")
     .option("--workflow <workflowId>", "Resolve a workflow run by its correlation id")
     .option("--workspace <path>", "Override workspace root directory")
     .action(
@@ -76,6 +76,26 @@ export function registerExplainCommand(program: Command) {
             lookup.namespace ? { namespace: lookup.namespace } : {}
           );
         } catch (e: any) {
+          // STAGE-B-2 · C4: a txId with no submission here but with verified observations is explained from them,
+          // labelled origin "observed" (nothing sent by this workspace is implied). Only RECEIPT_NOT_FOUND falls back.
+          if (lookup.namespace === "tx" && e?.code === "RECEIPT_NOT_FOUND") {
+            const { findObservedTx, observedRows } = await import("../runners/observed-tx.js");
+            const { observed } = findObservedTx(lookup.input, workspaceRoot);
+            if (observed) {
+              console.log(`\n  ${pc.magenta("═════")} ${pc.bold("Deterministic Explanation")} ${pc.magenta("═════")}\n`);
+              console.log(
+                pc.white(
+                  `  This transaction was observed on the network by this workspace; it was not sent from here, so there is no plan, signature or submission to explain.\n`
+                )
+              );
+              UI.causality("Observation Trace", {
+                ...observedRows(observed),
+                "Source Authority": "filesystem artifacts: hardkas.txObservation.v1, each verified (FULL scope) before it counts",
+                Replay: "not supported for network artifacts"
+              });
+              return;
+            }
+          }
           const code = e?.code || "ARTIFACT_UNKNOWN";
           UI.semanticError(
             code === "NAMESPACE_REQUIRED" ? "Namespace Required" : code === "CANDIDATE_INVALID" ? "Artifact Does Not Verify" : "Artifact Not Found",
@@ -121,6 +141,8 @@ export function registerExplainCommand(program: Command) {
           // IC-5′.11: the canonical identity, labelled as such; a txId is shown as a txId.
           "Artifact ID": handle.artifactId,
           ...(typeof artifact.txId === "string" ? { "Tx ID": artifact.txId } : {}),
+          // STAGE-B-2 · C4: a submission is labelled as such (≠ origin "observed")
+          ...(schema === "hardkas.txSubmission.v1" ? { Origin: "submitted — a HardKAS submission recorded in this workspace" } : {}),
           "Authentication Scope": handle.authScope,
           "Resolved By": handle.resolvedBy,
           "Source Authority": "filesystem artifact",
