@@ -18,7 +18,7 @@ export function registerWhyCommand(program: Command) {
     .option("--artifact <id-or-path>", "64-hex artifactId or workspace path (same as the positional)")
     .option("--plan <planId>", "Resolve a plan by its derived label (verified against its hash)")
     .option("--signed <signedId>", "Resolve a signed transaction by its derived label (verified)")
-    .option("--tx <txId>", "Resolve the submission receipt for a txId (never the signed)")
+    .option("--tx <txId>", "Resolve the submission receipt for a txId (never the signed); with no submission here, the tx as observed by this workspace (origin: observed)")
     .option("--workflow <workflowId>", "Resolve a workflow run by its correlation id")
     .option("--json", "Output lineage graph in JSON format")
     .option("--workspace <path>", "Override workspace root directory")
@@ -58,6 +58,20 @@ export function registerWhyCommand(program: Command) {
               lookup.namespace ? { namespace: lookup.namespace } : {}
             );
           } catch (e: any) {
+            // STAGE-B-2 · C4: a txId with no submission here but with verified observations is explained from them,
+            // labelled origin "observed" (nothing sent by this workspace is implied). Only RECEIPT_NOT_FOUND falls back.
+            if (lookup.namespace === "tx" && e?.code === "RECEIPT_NOT_FOUND") {
+              const { findObservedTx, observedJson, observedRows } = await import("../runners/observed-tx.js");
+              const { observed } = findObservedTx(lookup.input, workspaceRoot);
+              if (observed) {
+                if (options.json) {
+                  UI.writeJson({ target: observed.txId, ...observedJson(observed) });
+                  return;
+                }
+                UI.causality(`Observed Transaction: ${observed.txId.substring(0, 8)}...`, observedRows(observed), [`hardkas tx status ${observed.txId}`], "info");
+                return;
+              }
+            }
             if (e?.code === "NAMESPACE_REQUIRED" && !options.json) {
               UI.semanticError(
                 "Namespace Required",
@@ -141,6 +155,8 @@ export function registerWhyCommand(program: Command) {
           if (options.json) {
             UI.writeJson({
               target: targetId,
+              // STAGE-B-2 · C4: a --tx lookup that resolved a submission says so (≠ origin "observed")
+              ...(lookup.namespace === "tx" ? { origin: "submitted" } : {}),
               authScope: handle.authScope,
               resolvedBy: handle.resolvedBy,
               resolvedPath: handle.path,

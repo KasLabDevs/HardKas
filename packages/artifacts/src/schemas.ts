@@ -401,7 +401,20 @@ export const TxObservationPointSchema = z.object({
  * consensus verdict by itself — `deriveTxStatus` turns a set of them into a state.
  */
 export const TxObservationFindingSchema = z.discriminatedUnion("type", [
-  z.object({ type: z.literal("mempool_entry"), isOrphan: z.boolean(), feeSompi: decimalString.optional() }),
+  z.object({
+    type: z.literal("mempool_entry"),
+    isOrphan: z.boolean(),
+    feeSompi: decimalString.optional(),
+    /**
+     * MEMPOOL-CHAIN-PRECEDENCE-FIX-1: the chain window the same look read (absent in historical observations and when
+     * the node served no batch). `scannedTo` is the last chain block read — the next cursor; `scanComplete` is false when
+     * the scan stopped before the node's selected-chain tip.
+     */
+    scannedFrom: z.string().optional(),
+    scannedTo: z.string().optional(),
+    scannedChainBlocks: z.number().int().nonnegative().optional(),
+    scanComplete: z.boolean().optional()
+  }),
   z.object({ type: z.literal("mempool_absent") }),
   z.object({
     type: z.literal("chain_accepted"),
@@ -917,6 +930,9 @@ const SilverOnChainSchema = SilverRecordBaseSchema.extend({
 });
 
 export const SilverCompileV1Schema = SilverRecordBaseSchema.extend({
+  // HARDKAS-NETWORK-PORTABILITY-1 (C7): a compile record names the network its P2SH addresses are for (compilation does
+  // not depend on it); deploy, spend and covenant records stay canonical-simnet-only. Mainnet is never a compile network.
+  networkId: z.union([z.literal("simnet"), z.literal("devnet"), z.string().regex(/^testnet-\d+$/)]),
   schema: z.literal(HardkasSchemas.SilverCompileV1),
   source: z.object({ path: z.string(), sha256: Hex64, text: z.string() }),
   provenance: z

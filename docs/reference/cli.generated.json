@@ -1106,7 +1106,7 @@
           "path": "hardkas ci verify",
           "name": "verify",
           "aliases": [],
-          "description": "Non-interactively verify workspace integrity, artifacts, and projections",
+          "description": "Non-interactively verify workspace integrity, artifacts, and projections (offline: no public endpoint is contacted)",
           "usage": "hardkas ci verify [options]",
           "arguments": [],
           "options": [],
@@ -1898,7 +1898,7 @@
       "path": "hardkas doctor",
       "name": "doctor",
       "aliases": [],
-      "description": "Perform a full system diagnostic and health report stable",
+      "description": "Perform a full system diagnostic and health report (on a public network it contacts the workspace's declared endpoint) stable",
       "usage": "hardkas doctor [options] [module]",
       "arguments": [
         {
@@ -2097,7 +2097,7 @@
         },
         {
           "flags": "--tx <txId>",
-          "description": "Resolve the submission receipt for a txId (never the signed)",
+          "description": "Resolve the submission receipt for a txId (never the signed); with no submission here, the tx as observed by this workspace (origin: observed)",
           "default": null,
           "required": true,
           "mandatory": false
@@ -4631,6 +4631,13 @@
               "mandatory": false
             },
             {
+              "flags": "--network <name>",
+              "description": "Network from the workspace config: its declared endpoint, and the node must prove it serves that network (default: none — the --url or the canonical localnet, unchecked)",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
               "flags": "--json",
               "description": "Output as JSON",
               "default": false,
@@ -4662,10 +4669,24 @@
           "path": "hardkas rpc health",
           "name": "health",
           "aliases": [],
-          "description": "Check that the canonical localnet node (ws://127.0.0.1:18210) answers and is ready",
+          "description": "Check that a Kaspa node answers and is ready (default: the canonical localnet, ws://127.0.0.1:18210; --url or --network for another)",
           "usage": "hardkas rpc health [options]",
           "arguments": [],
           "options": [
+            {
+              "flags": "--url <url>",
+              "description": "Node wRPC endpoint (default: the canonical localnet, ws://127.0.0.1:18210)",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--network <name>",
+              "description": "Network from the workspace config: its declared endpoint, and the node must prove it serves that network (default: none — the --url or the canonical localnet, unchecked)",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
             {
               "flags": "--wait",
               "description": "Wait until healthy",
@@ -4706,6 +4727,13 @@
               "mandatory": false
             },
             {
+              "flags": "--network <name>",
+              "description": "Network from the workspace config: its declared endpoint, and the node must prove it serves that network (default: none — the --url or the canonical localnet, unchecked)",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
               "flags": "--json",
               "description": "Output as JSON",
               "default": false,
@@ -4731,6 +4759,13 @@
             {
               "flags": "--url <url>",
               "description": "Node wRPC endpoint (default: the canonical localnet, ws://127.0.0.1:18210)",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--network <name>",
+              "description": "Network from the workspace config: its declared endpoint, and the node must prove it serves that network (default: none — the --url or the canonical localnet, unchecked)",
               "default": null,
               "required": true,
               "mandatory": false
@@ -4766,6 +4801,13 @@
               "mandatory": false
             },
             {
+              "flags": "--network <name>",
+              "description": "Network from the workspace config: its declared endpoint, and the node must prove it serves that network (default: none — the --url or the canonical localnet, unchecked)",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
               "flags": "--json",
               "description": "Output as JSON",
               "default": false,
@@ -4792,8 +4834,8 @@
       "options": [
         {
           "flags": "--network <name>",
-          "description": "Network from the config (unknown names fall back to simulated)",
-          "default": "simnet",
+          "description": "Network from the workspace config (default: the workspace's network; an unknown name is refused)",
+          "default": null,
           "required": true,
           "mandatory": false
         },
@@ -4928,6 +4970,13 @@
             {
               "flags": "--args <file>",
               "description": "Constructor arguments: JSON list of {kind, value}",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--network <network>",
+              "description": "Network the record and its P2SH addresses are for (default: the workspace's network, else simnet; mainnet refused)",
               "default": null,
               "required": true,
               "mandatory": false
@@ -5586,8 +5635,8 @@
       "options": [
         {
           "flags": "--network <network>",
-          "description": "Only recorded in the results: tests use the config's default network",
-          "default": "simnet",
+          "description": "The network the scenarios run on: the workspace's network (default); a different one is refused",
+          "default": null,
           "required": true,
           "mandatory": false
         },
@@ -6380,6 +6429,13 @@
               "mandatory": false
             },
             {
+              "flags": "--since <chainBlockHash>",
+              "description": "Scan the node's virtual chain from this chain block (64 hex; it must precede the tx's acceptance) on the first look — for a tx sent outside this workspace",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
               "flags": "--json",
               "description": "Output as JSON",
               "default": false,
@@ -6563,7 +6619,7 @@
         },
         {
           "flags": "--tx <txId>",
-          "description": "Resolve the submission receipt for a txId (never the signed)",
+          "description": "Resolve the submission receipt for a txId (never the signed); with no submission here, the tx as observed by this workspace (origin: observed)",
           "default": null,
           "required": true,
           "mandatory": false

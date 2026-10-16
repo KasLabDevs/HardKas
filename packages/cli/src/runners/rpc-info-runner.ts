@@ -1,9 +1,11 @@
-import { JsonWrpcKaspaClient, ServerInfo } from "@hardkas/kaspa-rpc";
+import { JsonWrpcKaspaClient, ServerInfo, isNodeNetworkIdentityError } from "@hardkas/kaspa-rpc";
 import { nodeRpcUrl } from "@hardkas/core";
 
 export interface RpcInfoOptions {
   /** Node wRPC endpoint; defaults to the canonical localnet. */
   url?: string | undefined;
+  /** HARDKAS-NETWORK-PORTABILITY-1: the network the node must serve (refused otherwise, NODE_NETWORK_MISMATCH). */
+  expectedNetworkId?: string | undefined;
 }
 
 export interface RpcInfoResult {
@@ -15,7 +17,7 @@ export interface RpcInfoResult {
 
 export async function runRpcInfo(options: RpcInfoOptions = {}): Promise<RpcInfoResult> {
   const url = options.url || nodeRpcUrl();
-  const client = new JsonWrpcKaspaClient({ rpcUrl: url, timeoutMs: 10000 });
+  const client = new JsonWrpcKaspaClient({ rpcUrl: url, timeoutMs: 10000, expectedNetworkId: options.expectedNetworkId });
   try {
     const info = await client.getServerInfo();
     const yesNo = (v: boolean | undefined) => (v === undefined ? "unknown" : v ? "yes" : "no");
@@ -31,6 +33,8 @@ export async function runRpcInfo(options: RpcInfoOptions = {}): Promise<RpcInfoR
     ];
     return { url, info, formatted: lines.join("\n") };
   } catch (e: unknown) {
+    // a node that serves another network is a typed refusal, never an unreachable info
+    if (isNodeNetworkIdentityError(e)) throw e;
     const error = e instanceof Error ? e.message : String(e);
     const lines = ["Kaspa RPC info", "", `URL:      ${url}`, `Status:   unreachable`, `Error:    ${error}`];
     return { url, error, formatted: lines.join("\n") };

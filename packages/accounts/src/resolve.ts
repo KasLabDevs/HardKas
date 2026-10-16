@@ -119,6 +119,18 @@ export function assertAccountCompatible(account: HardkasAccount, target: import(
   }
 }
 
+/**
+ * HARDKAS-NETWORK-PORTABILITY-1 (C1): the network the listing is for — the execution target's, else the workspace's
+ * execution default, else the legacy `defaultNetwork` mirror. Undefined when nothing says.
+ */
+function listingNetwork(config?: HardkasConfig, executionTarget?: import("@hardkas/core").HardkasExecutionTarget): string | undefined {
+  if (executionTarget?.network) return String(executionTarget.network);
+  const exec: any = config?.execution;
+  const target = exec?.default ? exec.targets?.[exec.default] : undefined;
+  if (typeof target?.network === "string") return target.network;
+  return typeof config?.defaultNetwork === "string" ? config.defaultNetwork : undefined;
+}
+
 export function listHardkasAccounts(config?: HardkasConfig, executionTarget?: import("@hardkas/core").HardkasExecutionTarget): HardkasAccount[] {
   const accounts: Map<string, HardkasAccount> = new Map();
 
@@ -145,8 +157,12 @@ export function listHardkasAccounts(config?: HardkasConfig, executionTarget?: im
     }
   }
 
-  // Add deterministic accounts first (defaults)
-  const detAccounts = createDeterministicAccounts();
+  // Add deterministic accounts first (defaults). HARDKAS-NETWORK-PORTABILITY-1 (C1): they are simnet keys (kaspasim:
+  // addresses) or simulator identities — offered on the simulator and on simnet only, never as accounts of a public or
+  // other network, where they do not exist.
+  const network = listingNetwork(config, executionTarget);
+  const presetsApply = targetMode === "simulator" || network === undefined || network === "simnet" || network === "simulated";
+  const detAccounts = presetsApply ? createDeterministicAccounts() : [];
   for (const det of detAccounts) {
     if (targetMode === "simulator") {
       accounts.set(det.name, {
@@ -429,6 +445,11 @@ export function describeAccount(account: HardkasAccount): Record<string, unknown
 
   if (account.address) {
     desc.address = account.address;
+  }
+
+  // HARDKAS-NETWORK-PORTABILITY-1 (C1): which network an account belongs to, when it is bound to one
+  if ("network" in account && typeof (account as any).network === "string") {
+    desc.network = (account as any).network;
   }
 
   if (account.kind === "kaspa" || account.kind === "evm-private-key") {

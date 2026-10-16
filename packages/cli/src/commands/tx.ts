@@ -977,14 +977,28 @@ export function registerTxCommands(program: Command) {
     .option("--timeout <seconds>", "Timeout in seconds", "60")
     .option("--interval <seconds>", "Seconds between observations", "2")
     .option("-n, --network <network>", "Network whose configured node observes (default: the network of the recorded submission)")
+    .option(
+      "--since <chainBlockHash>",
+      "Scan the node's virtual chain from this chain block (64 hex; it must precede the tx's acceptance) on the first look — for a tx sent outside this workspace"
+    )
     .option("--json", "Output as JSON", false)
-    .action(async (txId: string, options: { until: string; timeout: string; interval: string; network?: string; json: boolean }) => {
+    .action(async (txId: string, options: { until: string; timeout: string; interval: string; network?: string; since?: string; json: boolean }) => {
       if (options.json) UI.setJsonMode(true);
       const { HardkasCliError, HardkasExitCode } = await import("../cli-errors.js");
       if (options.until !== "accepted" && options.until !== "confirmed") {
         throw new HardkasCliError("TX_WAIT_TARGET_INVALID", `--until must be "accepted" or "confirmed" (got "${options.until}")`, {
           exitCode: HardkasExitCode.USAGE_ERROR
         });
+      }
+      // STAGE-B-2 · C3: the same --since contract as `tx status` (the cursor of the first look at a network txId); a
+      // misuse is refused before any connection and nothing is observed
+      if (options.since !== undefined) {
+        const { NETWORK_TXID } = await import("../runners/tx-status-runner.js");
+        const refuse = (why: string) => {
+          throw new HardkasCliError("TX_WAIT_USAGE", `${why} Nothing was observed.`, { exitCode: HardkasExitCode.USAGE_ERROR });
+        };
+        if (!/^[0-9a-f]{64}$/.test(options.since)) refuse(`--since must be a 64-hex chain block hash, got '${options.since.slice(0, 80)}'.`);
+        if (!NETWORK_TXID.test(txId)) refuse("--since applies to a network txId (64 hex), not to a simulator txId.");
       }
       // Demo-cut step 2 · T-A14b: the wait follows the Q4 derived state; it never
       // assumes confirmation and never prints "Settlement Proof".
@@ -996,6 +1010,7 @@ export function registerTxCommands(program: Command) {
         timeoutMs: Math.max(0, Number(options.timeout)) * 1000,
         intervalMs: Math.max(0.2, Number(options.interval)) * 1000,
         ...(options.network ? { network: options.network } : {}),
+        ...(options.since !== undefined ? { since: options.since } : {}),
         workspaceRoot: invocationWorkspaceRoot(),
         onUpdate: (line) => {
           if (!options.json) UI.logHuman(`  • ${line}`);

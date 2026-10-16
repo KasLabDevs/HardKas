@@ -13,7 +13,7 @@ export function registerCiCommand(program: Command) {
   ciCmd
     .command("verify")
     .description(
-      "Non-interactively verify workspace integrity, artifacts, and projections"
+      "Non-interactively verify workspace integrity, artifacts, and projections (offline: no public endpoint is contacted)"
     )
     .action(async () => {
       try {
@@ -29,7 +29,8 @@ export function registerCiCommand(program: Command) {
         // 1. Doctor checks
         UI.step(1, "Running environment doctor checks...");
         try {
-          const doctorOk = await runDoctorChecks(root, { quiet: true });
+          // HARDKAS-NETWORK-PORTABILITY-1-A: ci verify checks the workspace offline — it never contacts a public endpoint
+          const doctorOk = await runDoctorChecks(root, { quiet: true, network: false });
           if (!doctorOk) {
             UI.error("Environment doctor checks failed.");
             hasErrors = true;

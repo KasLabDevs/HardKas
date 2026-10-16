@@ -44,6 +44,63 @@ function assertNetwork(network: string | undefined) {
   return n;
 }
 
+/**
+ * HARDKAS-NETWORK-PORTABILITY-1 (C7): the network a compile record is for. Compilation itself does not depend on the
+ * network (same silverc, same arguments, same artifact and script); the record's address and declared network do. It
+ * is the explicit `--network`, else the workspace's network (its execution default, through the network entry's own
+ * `network`), else the canonical simnet. Mainnet stays refused; a network without a Kaspa address prefix is refused.
+ * This says nothing about deploying there: deploy and spend stay canonical-simnet-only.
+ */
+async function compileNetwork(explicit: string | undefined): Promise<string> {
+  let n = explicit;
+  if (n === undefined) {
+    try {
+      const { loadHardkasConfig } = await import("@hardkas/config");
+      const { config } = await loadHardkasConfig({ workspaceRoot: process.cwd() });
+      const exec: any = (config as any).execution;
+      const target = exec?.default ? exec.targets?.[exec.default] : undefined;
+      const name: string | undefined = typeof target?.network === "string" ? target.network : (config as any).defaultNetwork;
+      const entry = name ? ((config.networks as any)?.[name] as { network?: unknown } | undefined) : undefined;
+      n = typeof entry?.network === "string" ? entry.network : name;
+    } catch {
+      n = undefined;
+    }
+    if (n === undefined || n === "simulated") n = NETWORK;
+  }
+  if (n === "mainnet") fail("SILVERSCRIPT_MAINNET_NOT_ENABLED", "SilverScript is not enabled on mainnet", HardkasExitCode.USAGE_ERROR);
+  if (n !== NETWORK && n !== "devnet" && !/^testnet-\d+$/.test(n)) {
+    fail("SILVER_NETWORK_NOT_SUPPORTED", `'${n}' has no Kaspa address prefix a compile record can use (simnet, devnet, testnet-<n>)`, HardkasExitCode.USAGE_ERROR);
+  }
+  return n;
+}
+
+/** HARDKAS-NETWORK-PORTABILITY-1 (C7): deploy, spend and covenants run on the canonical simnet localnet only. */
+function assertCompiledForCanonical(compileRecord: any, file: string) {
+  if (compileRecord?.networkId !== NETWORK) {
+    fail(
+      "SILVER_NETWORK_NOT_SUPPORTED",
+      `${file} was compiled for ${String(compileRecord?.networkId)}; deploy and spend run on the canonical ${NETWORK} localnet only (recompile with --network ${NETWORK})`,
+      HardkasExitCode.USAGE_ERROR
+    );
+  }
+}
+
+/**
+ * HARDKAS-NETWORK-PORTABILITY-1-A (integration): a deploy or covenant record, and the compile record it references,
+ * must be the canonical simnet's — checked before any key is loaded or any node contacted (a record of another network
+ * cannot come from `deploy`/`genesis`, which refuse it, but can be written by hand with a recomputed identity).
+ */
+function assertOnChainRecordForCanonical(record: any, compileRecord: any, file: string) {
+  if (record?.networkId !== NETWORK) {
+    fail(
+      "SILVER_NETWORK_NOT_SUPPORTED",
+      `${file} is a record of ${String(record?.networkId)}; spend and covenant transitions run on the canonical ${NETWORK} localnet only`,
+      HardkasExitCode.USAGE_ERROR
+    );
+  }
+  assertCompiledForCanonical(compileRecord, `the compile record of ${file}`);
+}
+
 function readFileOrFail(file: string, what: string): Buffer {
   try {
     return fs.readFileSync(path.resolve(file));
@@ -297,11 +354,13 @@ export function registerSilverCommand(program: Command) {
     .command("compile <source>")
     .description("Compile SilverScript with the managed silverc v1.0.0 and record its provenance")
     .option("--args <file>", "Constructor arguments: JSON list of {kind, value}")
+    .option("--network <network>", "Network the record and its P2SH addresses are for (default: the workspace's network, else simnet; mainnet refused)")
     .option("--out <file>", "Record path (default .hardkas/artifacts/silver/)")
     .option("--json", "Output as JSON", false)
-    .action(async (source: string, opts: { args?: string; out?: string; json: boolean }) => {
+    .action(async (source: string, opts: { args?: string; network?: string; out?: string; json: boolean }) => {
       const core = await import("@hardkas/core");
       const { HARDKAS_VERSION } = await import("@hardkas/artifacts");
+      const network = await compileNetwork(opts.network);
       const sourceBytes = readFileOrFail(source, "source");
       const args = opts.args ? await argsFromFile(opts.args) : { values: [], canonical: "[]" };
       const compiled = await core.compileSilverScript({ source: sourceBytes, constructorArgs: args.values });
@@ -312,7 +371,7 @@ export function registerSilverCommand(program: Command) {
           entries: Object.fromEntries(Object.entries(c.entries).map(([e, v]) => [e, v.dispatch_tag])),
           ...(c.cov_decl_to_abi ? { covenantPolicies: c.cov_decl_to_abi } : {}),
           lockingScript: core.silverP2shLock(bytecode),
-          address: core.silverP2shAddress(bytecode, NETWORK)
+          address: core.silverP2shAddress(bytecode, network)
         };
       });
       const S = await schemas();
@@ -321,7 +380,7 @@ export function registerSilverCommand(program: Command) {
           schema: S.SilverCompileV1,
           hardkasVersion: HARDKAS_VERSION,
           createdAt: new Date().toISOString(),
-          networkId: NETWORK,
+          networkId: network,
           capability: "silver.compile.v1",
           source: { path: path.relative(process.cwd(), path.resolve(source)).replace(/\\/g, "/"), sha256: sha256(sourceBytes), text: sourceBytes.toString("utf8") },
           provenance: compiled.provenance,
@@ -367,9 +426,32 @@ export function registerSilverCommand(program: Command) {
       const core = await import("@hardkas/core");
       const S = await schemas();
       const record = await readRecord(file, S.SilverCompileV1);
-      await loadCompiled(record);
+      const artifact = await loadCompiled(record);
       const args = opts.args ? await argsFromFile(opts.args) : { values: [], canonical: "[]" };
       const problems: string[] = [];
+      // HARDKAS-NETWORK-PORTABILITY-1 (C7): every contract's locking script and address are those of its bytecode on the
+      // network the record declares (a record's identity covers them, but not their coherence with that network)
+      for (const summary of (record.contracts ?? []) as Array<{ name: string; address?: string; lockingScript?: unknown }>) {
+        const c = (artifact.contracts as Record<string, any>)[summary.name];
+        if (!c) {
+          problems.push(`contract ${summary.name} is not in the compiled artifact`);
+          continue;
+        }
+        const bytecode = core.silContractBytecodeHex(c);
+        let expected: string | undefined;
+        try {
+          expected = core.silverP2shAddress(bytecode, String(record.networkId));
+        } catch {
+          expected = undefined;
+        }
+        if (expected === undefined) problems.push(`contract ${summary.name}: the record's network '${String(record.networkId)}' has no address prefix`);
+        else if (summary.address !== expected) {
+          problems.push(`contract ${summary.name}: address ${summary.address} does not belong to the record's network ${String(record.networkId)} (not the address of its bytecode there: ${expected})`);
+        }
+        if (JSON.stringify(summary.lockingScript) !== JSON.stringify(core.silverP2shLock(bytecode))) {
+          problems.push(`contract ${summary.name}: locking script is not the P2SH script of its bytecode`);
+        }
+      }
       if (sha256(record.source.text) !== record.provenance.sourceSha256) problems.push("source does not match its provenance");
       if (sha256(args.canonical) !== record.provenance.constructorArgsSha256) problems.push("these constructor arguments are not the ones compiled");
       const again = await core.compileSilverScript({ source: record.source.text, constructorArgs: args.values });
@@ -495,6 +577,7 @@ export function registerSilverCommand(program: Command) {
       const { HARDKAS_VERSION } = await import("@hardkas/artifacts");
       const S = await schemas();
       const compileRecord = await readRecord(file, S.SilverCompileV1);
+      assertCompiledForCanonical(compileRecord, file);
       const artifact = await loadCompiled(compileRecord);
       const { name, contract } = core.getSilContract(artifact, opts.contract);
       const bytecode = core.silContractBytecodeHex(contract);
@@ -554,6 +637,7 @@ export function registerSilverCommand(program: Command) {
       const S = await schemas();
       const deploy = await readRecord(file, S.SilverDeployV1);
       const compileRecord = await readReferencedRecord(deploy.compileRecord, S.SilverCompileV1, "the compile record");
+      assertOnChainRecordForCanonical(deploy, compileRecord, file);
       const artifact = await loadCompiled(compileRecord);
       const args = await entryArgs(opts.args);
       const { identity, rpc } = await canonicalNode();
@@ -625,6 +709,7 @@ export function registerSilverCommand(program: Command) {
       const { HARDKAS_VERSION } = await import("@hardkas/artifacts");
       const S = await schemas();
       const compileRecord = await readRecord(file, S.SilverCompileV1);
+      assertCompiledForCanonical(compileRecord, file);
       const artifact = await loadCompiled(compileRecord);
       const { name, contract } = core.getSilContract(artifact, opts.contract);
       const address = core.silverP2shAddress(core.silContractBytecodeHex(contract), NETWORK);
@@ -707,6 +792,7 @@ export function registerSilverCommand(program: Command) {
       const S = await schemas();
       const prev = await readRecord(file, S.SilverCovenantV1);
       const compileRecord = await readReferencedRecord(prev.compileRecord, S.SilverCompileV1, "the compile record");
+      assertOnChainRecordForCanonical(prev, compileRecord, file);
       const ctor = await argsFromFile(opts.constructorArgs);
       if (sha256(ctor.canonical) !== compileRecord.provenance.constructorArgsSha256) {
         fail("SILVER_CONSTRUCTOR_ARGS_MISMATCH", "these constructor arguments are not the ones the current state was compiled with", HardkasExitCode.USAGE_ERROR);

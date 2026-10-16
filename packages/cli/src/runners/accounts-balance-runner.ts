@@ -57,6 +57,27 @@ export async function runAccountsBalance(
     // no target declared anywhere: the simulator, as everywhere else in HardKAS
   }
   const balanceNetwork = options.network ?? configuredNetwork;
+
+  // HARDKAS-NETWORK-PORTABILITY-1 (C1): a name found neither in the config nor in the real store is resolved like every
+  // other account (keystores, dev accounts, the simnet presets — on simnet only), for the network the balance is read
+  // on. A name that is no account there is a typed refusal: it used to be sent to the node as an address
+  // ("The address prefix is missing", UNKNOWN_ERROR).
+  // (the simulator backend resolves names against its own state below)
+  if (balanceNetwork !== "simulated" && address === options.identifier && !/^kaspa(test|sim|dev)?:/.test(options.identifier)) {
+    const { resolveHardkasAccount } = await import("@hardkas/accounts");
+    try {
+      const account: any = resolveHardkasAccount({
+        nameOrAddress: options.identifier,
+        config: { ...loadedConfig.config, cwd: workspaceRoot } as any,
+        executionTarget: { mode: "rpc", domain: "kaspa-l1", network: balanceNetwork } as any
+      });
+      if (!account?.address) throw new Error(`Account '${options.identifier}' has no address`);
+      address = account.address;
+      name = account.name ?? options.identifier;
+    } catch (e: any) {
+      throw new HardkasCliError("ACCOUNT_NOT_FOUND", String(e?.message ?? e), { exitCode: HardkasExitCode.USAGE_ERROR });
+    }
+  }
   // TESTNET-PORT-COLLISION-1 (D-TPC-2): the endpoint the USER declared (a built-in public entry declares none)
   const declaredRpcUrl = declaredNodeEndpoint(loadedConfig.config, balanceNetwork);
   const provider = resolveProvider({

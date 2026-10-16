@@ -63,7 +63,9 @@ export async function checkKaspaRpcHealth(
         ready: true,
         checkedAt,
         latencyMs,
-        networkId: dagInfo?.networkId || "simnet",
+        // HARDKAS-NETWORK-PORTABILITY-1: the network the node says it serves (getServerInfo), never an assumed "simnet"
+        // (the DAG info carries no `networkId`, so every healthy node used to be reported as simnet — testnet-10 included)
+        networkId: info?.networkId || dagInfo?.networkId || dagInfo?.network || "unknown",
         virtualDaaScore: dagInfo?.virtualDaaScore?.toString() || "0",
         serverVersion: info?.serverVersion || "unknown",
         isSynced: info?.isSynced ?? true,

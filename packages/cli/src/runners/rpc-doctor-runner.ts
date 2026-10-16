@@ -59,7 +59,9 @@ async function checkKaspaEndpoint(rpcUrl: string): Promise<LayeredHealthResult> 
   try {
     const url = new URL(rpcUrl.replace("ws://", "http://").replace("wss://", "https://"));
     host = url.hostname || "127.0.0.1";
-    port = parseInt(url.port) || 18210;
+    // HARDKAS-NETWORK-PORTABILITY-1 (C5): a URL without a port means its scheme's port (wss/https 443, ws/http 80), not
+    // the canonical localnet's 18210 — the TCP probe of a public wss endpoint used to dial <host>:18210
+    port = parseInt(url.port) || (url.protocol === "https:" ? 443 : 80);
   } catch (e) {}
 
   // Layer 1: TCP

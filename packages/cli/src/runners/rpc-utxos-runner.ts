@@ -5,6 +5,8 @@ export interface RpcUtxosOptions {
   address: string;
   /** Node wRPC endpoint; defaults to the canonical localnet. */
   url?: string | undefined;
+  /** HARDKAS-NETWORK-PORTABILITY-1: the network the node must serve (refused otherwise, NODE_NETWORK_MISMATCH). */
+  expectedNetworkId?: string | undefined;
 }
 
 export async function runRpcUtxos(options: RpcUtxosOptions): Promise<{
@@ -15,7 +17,7 @@ export async function runRpcUtxos(options: RpcUtxosOptions): Promise<{
   formatted: string;
 }> {
   const url = options.url || nodeRpcUrl();
-  const client = new JsonWrpcKaspaClient({ rpcUrl: url, timeoutMs: 10000 });
+  const client = new JsonWrpcKaspaClient({ rpcUrl: url, timeoutMs: 10000, expectedNetworkId: options.expectedNetworkId });
   try {
     const utxos = await client.getUtxosByAddress(options.address);
     const totalSompi = utxos.reduce((acc, u) => acc + u.amountSompi, 0n);

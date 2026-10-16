@@ -10,7 +10,17 @@ import {
   type UtxoProvider
 } from "@hardkas/tx-builder";
 import { createTxPlanArtifact, TxPlanArtifact } from "@hardkas/artifacts";
-import { getCoinbaseMaturity, sha256hex, SelectedUtxoInvalidatedError } from "@hardkas/core";
+import { getCoinbaseMaturity, sha256hex, SelectedUtxoInvalidatedError, HardkasError } from "@hardkas/core";
+
+/**
+ * HARDKAS-NETWORK-PORTABILITY-1 (C2): nothing spendable is the same typed refusal on every backend (it was an untyped
+ * Error, rendered as UNKNOWN_ERROR, on RPC networks). The message keeps its words and says whether outputs exist that
+ * are not mature yet.
+ */
+function noSpendableUtxos(fromAddress: string, network: string, found = 0, hint = ""): HardkasError {
+  const immature = found > 0 ? ` (${found} UTXO(s) found, none mature: coinbase outputs are spendable only after the network's coinbase maturity)` : "";
+  return new HardkasError("NO_SPENDABLE_UTXOS", `No UTXOs found for ${fromAddress} on network '${network}'${immature}.${hint}`);
+}
 import type { RuntimeContext } from "@hardkas/core";
 import { resolveExecutionTarget, HardkasConfig } from "@hardkas/config";
 
@@ -182,9 +192,7 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
     });
 
     if (availableUtxos.length === 0) {
-      throw new Error(
-        `No UTXOs found for ${fromAddress} on network '${resolvedNetwork}'.\n  Hint: Run 'hardkas simulator fund ${from} --amount 1000' to create simulated UTXOs.`
-      );
+      throw noSpendableUtxos(fromAddress, resolvedNetwork, 0, `\n  Hint: Run 'hardkas simulator fund ${from} --amount 1000' to create simulated UTXOs.`);
     }
 
     let actualFeeRate = feeRateSompiPerMass;
@@ -261,7 +269,7 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
         }));
 
         if (matureUtxos.length === 0) {
-          throw new Error(`No UTXOs found for ${fromAddress} on network '${resolvedNetwork}'.`);
+          throw noSpendableUtxos(fromAddress, resolvedNetwork, rpcUtxos.length);
         }
 
         // --- Pending-spend exclusion (Wave 2(c) · AUD-19) ---

@@ -6,6 +6,8 @@ export interface RpcMempoolOptions {
   txId?: string | undefined;
   /** Node wRPC endpoint; defaults to the canonical localnet. */
   url?: string | undefined;
+  /** HARDKAS-NETWORK-PORTABILITY-1: the network the node must serve (refused otherwise, NODE_NETWORK_MISMATCH). */
+  expectedNetworkId?: string | undefined;
 }
 
 export interface RpcMempoolTx {
@@ -34,7 +36,7 @@ export async function runRpcMempool(options: RpcMempoolOptions = {}): Promise<{
   formatted: string;
 }> {
   const url = options.url || nodeRpcUrl();
-  const client = new JsonWrpcKaspaClient({ rpcUrl: url, timeoutMs: 10000 });
+  const client = new JsonWrpcKaspaClient({ rpcUrl: url, timeoutMs: 10000, expectedNetworkId: options.expectedNetworkId });
   try {
     if (options.txId) {
       let raw: any = null;

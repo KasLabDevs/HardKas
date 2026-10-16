@@ -28,7 +28,8 @@ const big = (s: unknown): bigint | undefined => {
  *  - `chain_accepted`: a `removedAcceptingBlockHash` is not the accepting block itself;
  *  - `finality_reached`: `finalityDepth` is the network's verified depth and `confirmationsBlue ≥ finalityDepth`;
  *  - `synthetic_executed` ⇔ `observer.kind = "synthetic"`;
- *  - `mempool_entry`/chain findings need an `rpc` observer.
+ *  - `mempool_entry`/chain findings need an `rpc` observer;
+ *  - `mempool_entry`: its chain window is all four fields or none (a partial window is not a verified one).
  */
 export function checkTxObservationCoherence(observation: unknown): TxObservationCoherence {
   const parsed = TxObservationSchema.safeParse(observation);
@@ -47,6 +48,12 @@ export function checkTxObservationCoherence(observation: unknown): TxObservation
   const synthetic = o.observer.kind === "synthetic";
   if ((f.type === "synthetic_executed") !== synthetic) {
     return { ok: false, message: "a synthetic finding requires a synthetic observer and vice versa", path: "finding.type" };
+  }
+  if (f.type === "mempool_entry") {
+    const window = [f.scannedFrom, f.scannedTo, f.scannedChainBlocks, f.scanComplete];
+    if (window.some((v) => v !== undefined) && window.some((v) => v === undefined)) {
+      return { ok: false, message: "a mempool_entry chain window needs scannedFrom, scannedTo, scannedChainBlocks and scanComplete together", path: "finding.scannedTo" };
+    }
   }
   if (f.type === "chain_accepted" || f.type === "finality_reached") {
     const acceptingBlue = big(f.acceptingBlueScore)!;

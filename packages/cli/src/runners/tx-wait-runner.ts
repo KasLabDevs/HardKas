@@ -40,6 +40,11 @@ export interface TxWaitRunnerInput {
   timeoutMs: number;
   intervalMs: number;
   network?: string;
+  /**
+   * STAGE-B-2 · C3: the virtual-chain cursor of the first look that succeeds (`tx status --since`'s contract); later looks
+   * continue from the window a stored look verified.
+   */
+  since?: string;
   workspaceRoot?: string;
   /** Test injection: an opened SDK whose RPC is scripted. */
   sdk?: any;
@@ -175,9 +180,13 @@ async function waitOn(input: TxWaitRunnerInput, sdk: any, network: string): Prom
   let lastHeadline = "";
   let lastError: string | undefined;
   let lastObservationArtifactId: string | undefined;
+  // STAGE-B-2 · C3: an explicit cursor applies until one look has been recorded (a transport error before that must not
+  // drop it, or the next look would scan from the pruning point); from then on the stored window is the cursor.
+  let since = input.since;
   for (;;) {
     try {
-      const r = await sdk.tx.observe(input.txId);
+      const r = await sdk.tx.observe(input.txId, since !== undefined ? { since } : {});
+      since = undefined;
       looks++;
       last = r.derived as DerivedTxStatus;
       lastObservationArtifactId = r.observation?.contentHash;
@@ -227,6 +236,9 @@ async function waitOn(input: TxWaitRunnerInput, sdk: any, network: string): Prom
       // TESTNET-PORT-COLLISION-1: no endpoint chosen for this public network — waiting cannot change that, so the wait
       // ends now with the typed refusal (nothing was contacted) instead of timing out on it
       if (e?.code === "NETWORK_ENDPOINT_REQUIRED") throw e;
+      // STAGE-B-2 · C3: the node cannot serve the chain from the explicit --since (unknown or pruned); waiting cannot
+      // change that, and the observer recorded nothing — end now with its typed refusal
+      if (e?.code === "OBSERVE_SINCE_UNAVAILABLE") throw e;
       lastError = `${e?.code ? `[${e.code}] ` : ""}${e?.message ?? String(e)}`;
     }
     if (now() - start >= input.timeoutMs) break;
@@ -234,9 +246,17 @@ async function waitOn(input: TxWaitRunnerInput, sdk: any, network: string): Prom
   }
 
   const lastState = last ? stateHeadline(last) : "nothing derived (no observation succeeded)";
+  // STAGE-B-2 · C3: only when it is the cause — nothing here says where the tx is (no submission recorded, no --since)
+  // and the looks have not found it — say how the scan proceeds and how to start it where the tx is.
+  const noCursor =
+    input.since === undefined && last !== undefined && !last.evidence.submissionArtifactId && last.status === "INSUFFICIENT_EVIDENCE";
   throw new HardkasCliError(
     "TX_WAIT_TIMEOUT",
-    `Timed out after ${Math.round(input.timeoutMs / 1000)}s waiting for ${input.txId} to be ${input.until.toUpperCase()}; last derived state: ${lastState}${lastError ? `; last observer error: ${lastError}` : ""}.`,
+    `Timed out after ${Math.round(input.timeoutMs / 1000)}s waiting for ${input.txId} to be ${input.until.toUpperCase()}; last derived state: ${lastState}${lastError ? `; last observer error: ${lastError}` : ""}.` +
+      (noCursor
+        ? ` No submission of this txId is recorded in this workspace and no --since was given, so the looks scan the node's virtual chain from its pruning point onward, each one resuming where the previous one stopped. ` +
+          `Pass --since <chainBlockHash> (a chain block before the tx's acceptance) to start there, or run the wait again to continue.`
+        : ""),
     { exitCode: HardkasExitCode.RUNTIME_FAILURE }
   );
 }
