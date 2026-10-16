@@ -198,14 +198,35 @@ function isSignTxOptions(value: unknown): value is SignTxOptions {
   );
 }
 
+/**
+ * MEMPOOL-CHAIN-PRECEDENCE-FIX-1: the observer's cursor never moves past chain that a look did not read. Walking the
+ * history back from the latest look (in deriveTxStatus order), the cursor is the first position one of them verified:
+ *  - a scan window's last chain block (`not_found`, or a `mempool_entry` that also read the chain): `scannedTo`;
+ *  - a scan that read no block past its start (`not_found` without `scannedTo`): that start;
+ *  - after the accepting block left the chain, that block (the node answers from the common ancestor, so a later
+ *    re-acceptance anywhere on the new chain stays reachable; the removal look's sink could already be past it).
+ * A look's sink is not such a position: a historical `mempool_entry` (no window), a pruned or accepting look never read
+ * the chain up to it. `undefined` when no look verified one.
+ */
+function verifiedCursor(history: readonly any[]): string | undefined {
+  for (let i = history.length - 1; i >= 0; i--) {
+    const f = history[i]?.finding;
+    if (!f) continue;
+    if ((f.type === "not_found" || f.type === "mempool_entry") && typeof f.scannedTo === "string") return f.scannedTo;
+    if (f.type === "not_found" && typeof f.scannedFrom === "string") return f.scannedFrom;
+    if (f.type === "chain_removed" && typeof f.acceptingBlockHash === "string") return f.acceptingBlockHash;
+  }
+  return undefined;
+}
+
 export class HardkasTx {
   constructor(private sdk: Hardkas) {}
 
   /**
    * Wave 2(a) · Q4 / IC-2′: ONE look at the configured node about `txId`, sealed and
    * (by default) persisted as `hardkas.txObservation.v1`. The observer's cursor is,
-   * in order: `since`, the latest stored observation's sink, the submission's
-   * `submitPoint.sinkHash`, the node's pruning point. Nothing here decides a state.
+   * in order: `since`, the latest position a stored look verified (`verifiedCursor`), the
+   * submission's `submitPoint.sinkHash`, the node's pruning point. Nothing here decides a state.
    *
    * TN10-CONFIRMATION-FIX-1: an explicit `since` (a 64-hex chain block hash the caller knows precedes the acceptance)
    * lets a transaction sent outside this workspace — no submission recorded here — be observed without inventing a
@@ -244,22 +265,13 @@ export class HardkasTx {
       if (a.observedAt !== b.observedAt) return a.observedAt < b.observedAt ? -1 : 1;
       return a.contentHash < b.contentHash ? -1 : a.contentHash > b.contentHash ? 1 : 0;
     });
-    const latest = previous[previous.length - 1];
     // The block currently established as accepting (none after a REORGED derivation).
     const soFar = deriveTxStatus({ txId, ...(submission ? { submission } : {}), observations: previous });
     const currentAccepting =
       soFar.status === "ACCEPTED" || soFar.status === "CONFIRMED" || soFar.status === "FINALIZED" ? soFar.acceptingBlockHash : undefined;
-    // Cursor: an explicit `since`, else where the last scan stopped, else — after the accepting
-    // block left the chain — that block (the node answers from the common ancestor, so a later
-    // re-acceptance anywhere on the new chain stays reachable; the removal look's sink could
-    // already be past it), else the last observation point, else the submit point; the observer
-    // falls back to the pruning point.
-    const since =
-      options.since ??
-      (latest?.finding?.type === "not_found" && typeof latest.finding.scannedTo === "string" ? (latest.finding.scannedTo as string) : undefined) ??
-      (latest?.finding?.type === "chain_removed" && typeof latest.finding.acceptingBlockHash === "string" ? (latest.finding.acceptingBlockHash as string) : undefined) ??
-      (latest?.point?.sinkHash as string | undefined) ??
-      ((submission as any)?.submitPoint?.sinkHash as string | undefined);
+    // Cursor: an explicit `since`, else the latest position a look actually verified (see
+    // `verifiedCursor`), else the submit point; the observer falls back to the pruning point.
+    const since = options.since ?? verifiedCursor(previous) ?? ((submission as any)?.submitPoint?.sinkHash as string | undefined);
     const networkId = ((submission as any)?.networkId ?? this.sdk.network) as TxObservation["networkId"];
     const mode = ((submission as any)?.mode ?? "rpc") as TxObservation["mode"];
 

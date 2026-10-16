@@ -112,10 +112,12 @@ describe("Wave 2(a) · observeTxOnce records what the node answers", () => {
     const node = new FakeNode();
     node.mempool.set(TX, { isOrphan: false, fee: "1500" });
     const inMempool = await observeTxOnce(node.recorder(), { ...base, since: H(1) }, systemRuntimeContext);
-    expect(inMempool.finding).toEqual({ type: "mempool_entry", isOrphan: false, feeSompi: "1500" });
+    // MEMPOOL-CHAIN-PRECEDENCE-FIX-1: a mempool entry no longer ends the look; the chain is read too and the window it
+    // read is recorded (here from H(1), the tip: nothing past it, scan complete).
+    expect(inMempool.finding).toEqual({ type: "mempool_entry", isOrphan: false, feeSompi: "1500", scannedFrom: H(1), scannedTo: H(1), scannedChainBlocks: 0, scanComplete: true });
     expect(inMempool.observer.observerId).toBe(OBS);
     expect(inMempool.observer.description).toBe("observation obtained through the configured RPC observer");
-    expect(inMempool.evidence.map((e) => e.method)).toEqual(["getBlockDagInfo", "getSinkBlueScore", "getMempoolEntry"]);
+    expect(inMempool.evidence.map((e) => e.method)).toEqual(["getBlockDagInfo", "getSinkBlueScore", "getMempoolEntry", "getVirtualChainFromBlock"]);
     expect(inMempool.contentHash).toBe(calculateContentHash(inMempool, CURRENT_HASH_VERSION));
 
     node.mempool.delete(TX);

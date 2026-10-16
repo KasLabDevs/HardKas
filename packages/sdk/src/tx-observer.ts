@@ -40,6 +40,33 @@ const isNotFound = (e: unknown): boolean => {
   return code.includes("NOT_FOUND") || msg.includes("not found") || msg.includes("no_data") || msg.includes("entry not found");
 };
 
+/**
+ * MCP-7G-FIX: rusty-kaspa (2.1.0 `rpc/service`, getVirtualChainFromBlock) zips the added chain blocks with their
+ * acceptance data in order and truncates `added` to it, so an answer with accepted ids carries exactly one entry per
+ * added block, naming that block, in the same order. An answer that does not is rejected whole: it establishes no
+ * acceptance, no removal and no cursor progress, and the look seals nothing (the next one re-reads from the last
+ * verified cursor).
+ */
+function assertCoherentChainAnswer(chain: Awaited<ReturnType<TxObserverRpc["getVirtualChainFromBlock"]>>, startHash: string): void {
+  const added = chain?.addedChainBlockHashes;
+  const accepted = chain?.acceptedTransactionIds;
+  let reason: string | undefined;
+  if (!Array.isArray(added) || !Array.isArray(accepted) || !Array.isArray(chain?.removedChainBlockHashes)) {
+    reason = "its chain block lists are missing";
+  } else if (accepted.length !== added.length) {
+    reason = `${added.length} added chain blocks but acceptance data for ${accepted.length}`;
+  } else {
+    const i = accepted.findIndex((a, j) => a?.acceptingBlockHash !== added[j] || !Array.isArray(a?.acceptedTransactionIds));
+    if (i >= 0) reason = `acceptance entry ${i} names ${String(accepted[i]?.acceptingBlockHash)}, not the added chain block ${added[i]}`;
+  }
+  if (reason) {
+    throw new HardkasError(
+      "OBSERVE_CHAIN_ANSWER_INCOHERENT",
+      `The node's virtual-chain answer from ${startHash} is not coherent (${reason}). It was rejected whole: nothing was recorded and the cursor did not move; observe again.`
+    );
+  }
+}
+
 /** Adapts a `KaspaRpcClient` to the observer reads and records raw responses as evidence. */
 export function rpcObserverFor(client: KaspaRpcClient): TxObserverRpcRecorder {
   const evidence: TxObservation["evidence"] = [];
@@ -231,7 +258,7 @@ export async function observeTxOnce(
   //    them (or one in the answers that continue it, within the batch bound) accepts
   //    the transaction, the acceptance moved to that block and the finding says so;
   //    only when none does is the removal the finding. If the node cannot answer the
-  //    first question, fall through.
+  //    first question, fall through; an incoherent answer ends the look with nothing sealed.
   if (options.previousAcceptingBlockHash) {
     const prev = options.previousAcceptingBlockHash;
     let fromPrevious: Awaited<ReturnType<TxObserverRpc["getVirtualChainFromBlock"]>> | undefined;
@@ -241,6 +268,7 @@ export async function observeTxOnce(
       fromPrevious = undefined;
     }
     if (fromPrevious) {
+      assertCoherentChainAnswer(fromPrevious, prev);
       if (fromPrevious.removedChainBlockHashes.includes(prev)) {
         let chain = fromPrevious;
         let cursor = prev;
@@ -254,6 +282,7 @@ export async function observeTxOnce(
           if (!last || last === cursor || batch >= maxBatches) break;
           cursor = last;
           chain = await rpc.getVirtualChainFromBlock(cursor);
+          assertCoherentChainAnswer(chain, cursor);
         }
         return seal({ type: "chain_removed", acceptingBlockHash: prev });
       }
@@ -261,16 +290,17 @@ export async function observeTxOnce(
     }
   }
 
-  // 2. Mempool (local, transient).
+  // 2. Mempool (local, transient). MEMPOOL-CHAIN-PRECEDENCE-FIX-1: recorded, but it never ends the look by itself —
+  //    a node can keep an entry its own virtual chain already accepted (rusty-kaspa #1146), so the chain is read too.
   const mempool = await rpc.getMempoolEntry(options.txId);
-  if (mempool) {
-    return seal({ type: "mempool_entry", isOrphan: mempool.isOrphan, ...(mempool.feeSompi ? { feeSompi: mempool.feeSompi } : {}) });
-  }
 
-  // 3. Virtual chain from the cursor, in bounded batches.
+  // 3. Virtual chain from the cursor, in bounded batches. An acceptance found here, in the node's current view, is the
+  //    finding even when the mempool still lists the transaction.
   const start = options.since ?? dag.pruningPointHash;
   let scanned = 0;
   let cursor = start;
+  let answered = 0;
+  let complete = false;
   if (start) {
     for (let batch = 0; batch < maxBatches; batch++) {
       let chain;
@@ -288,17 +318,36 @@ export async function observeTxOnce(
           );
         }
         if (isNotFound(e) || /prun|not in selected|unknown block|not found/i.test(message)) {
+          // With a mempool entry the look still says what it saw; its window ends at the last block actually read.
+          if (mempool) break;
           return seal({ type: "pruned_unobservable", reason: `the observer cannot serve the virtual chain from ${cursor}: ${String((e as any)?.message ?? e)}` });
         }
         throw e;
       }
+      assertCoherentChainAnswer(chain, cursor!);
+      answered++;
       scanned += chain.addedChainBlockHashes.length;
       const hit = chain.acceptedTransactionIds.find((a) => a.acceptedTransactionIds.includes(options.txId));
       if (hit) return seal(await acceptedBy(hit.acceptingBlockHash));
       const last = chain.addedChainBlockHashes[chain.addedChainBlockHashes.length - 1];
-      if (!last || last === cursor) break;
+      if (!last || last === cursor) {
+        complete = true;
+        break;
+      }
       cursor = last;
     }
+  }
+
+  if (mempool) {
+    return seal({
+      type: "mempool_entry",
+      isOrphan: mempool.isOrphan,
+      ...(mempool.feeSompi ? { feeSompi: mempool.feeSompi } : {}),
+      // The chain window this look actually read (only when the node answered at least once): `scannedTo` is the last
+      // chain block read, a safe next cursor; `scanComplete` is false when the scan stopped at the batch bound or the
+      // node stopped answering before its selected-chain tip.
+      ...(start && answered > 0 ? { scannedFrom: start, scannedTo: cursor!, scannedChainBlocks: scanned, scanComplete: complete } : {})
+    });
   }
 
   return seal({
