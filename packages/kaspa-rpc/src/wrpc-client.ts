@@ -5,6 +5,7 @@
 import { logger, metrics } from "@hardkas/observability";
 import { OfficialRpcSession, rpcClientClosedError, toWrpcUrl, type OfficialRpcFactory } from "./upstream/session.js";
 import { toWire } from "./upstream/wire.js";
+import { RpcRequestNotSentError } from "./errors.js";
 
 metrics.register({
   name: "rpc_requests_total",
@@ -135,6 +136,10 @@ export class KaspaWrpcClient {
   }
 
   async submitTransaction(txPayload: any, allowOrphan = false): Promise<unknown> {
+    // TX-SEND-BLOCKED-OUTCOME-1: without a connection nothing can have been sent
+    if (!this.session) {
+      throw new RpcRequestNotSentError(`submitTransaction was not sent (before the transport): this client is not connected to ${this.url}`);
+    }
     // The storage mass commitment is checked before anything is sent (see upstream/wire.ts).
     const result = (await this.request("submitTransaction", { transaction: txPayload, allowOrphan })) as any;
     // Normalize return to match SDK expectations (accepted + transactionId)

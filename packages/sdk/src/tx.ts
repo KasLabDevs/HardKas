@@ -10,7 +10,7 @@ import {
 } from "@hardkas/core";
 import { pollCondition } from "./waiters.js";
 import { Hardkas } from "./index.js";
-import { isNodeNetworkIdentityError, rpcEndpointOf, sameRpcEndpoint } from "@hardkas/kaspa-rpc";
+import { isNodeNetworkIdentityError, isRpcRequestNotSentError, rpcEndpointOf, sameRpcEndpoint } from "@hardkas/kaspa-rpc";
 import { networkEndpointRequiredError } from "@hardkas/config";
 
 /** TESTNET-PORT-COLLISION-1: the instance's client stands for "no endpoint chosen" (see unresolved-endpoint-rpc.ts). */
@@ -1928,6 +1928,17 @@ export class HardkasTx {
       // NODE-NETWORK-IDENTITY-1: the node said it serves another network (or none) before anything was sent to it:
       // nothing was submitted, so there is no submission to record; the caller gets the typed refusal itself.
       if (isNodeNetworkIdentityError(e)) throw e;
+      // TX-SEND-BLOCKED-OUTCOME-1: the request was refused before it reached the transport — it certainly never left this
+      // process. That is not a submission with an unknown outcome: nothing is recorded as submitted, and the caller
+      // gets the typed refusal. (A request that may have left — a timeout, a lost connection — stays recorded below.)
+      if (isRpcRequestNotSentError(e)) {
+        throw new HardkasError(
+          "SUBMIT_NOT_SENT",
+          `Transaction ${signedArtifact.txId ?? localTxId} was not sent: the request never left this process (${redactUrlCredentialsInText(
+            e instanceof Error ? e.message : String(e)
+          )}). No submission was recorded; nothing reached the node.`
+        );
+      }
       submitResult = { accepted: false, error: redactUrlCredentialsInText(e instanceof Error ? e.message : String(e)) };
     }
     // EVENT-LEDGER-2 final closeout: from here on the broadcast has happened, or its outcome is unknown — what the

@@ -101,6 +101,36 @@ export function isNodeNetworkIdentityError(error: unknown): error is NodeNetwork
   return error instanceof NodeNetworkIdentityError || code === "NODE_NETWORK_MISMATCH" || code === "NODE_NETWORK_UNKNOWN";
 }
 
+/**
+ * TX-SEND-BLOCKED-OUTCOME-1: a request that certainly never left this process — refused before it reached the
+ * transport: its conversion or pre-send checks failed, no connection could be opened, the method does not exist, or an
+ * interceptor in front of the transport refused it. Interceptors signal that with the code `RPC_REQUEST_NOT_SENT`.
+ * Raised for submitTransaction only, where "not sent" and "sent, answer lost" mean different things. Never retried.
+ */
+export class RpcRequestNotSentError extends RpcError {
+  constructor(message: string, cause?: unknown) {
+    super(message, "RPC_REQUEST_NOT_SENT", cause === undefined ? undefined : { cause: cause instanceof Error ? cause.message : String(cause) }, false);
+    this.name = "RpcRequestNotSentError";
+  }
+}
+
+/**
+ * Whether a submitTransaction failure certainly never left this process: an RpcRequestNotSentError, an error carrying
+ * the interceptor code RPC_REQUEST_NOT_SENT, or a typed error the session MARKED as raised before the transport (it
+ * keeps its own type and code — e.g. RpcValidationError RPC_STORAGE_MASS_CONFLICT, RpcConnectionError).
+ */
+export function isRpcRequestNotSentError(error: unknown): boolean {
+  const e = error as { code?: unknown; requestNotSent?: unknown } | null;
+  return error instanceof RpcRequestNotSentError || e?.code === "RPC_REQUEST_NOT_SENT" || e?.requestNotSent === true;
+}
+
+/** Marks a failure raised before the request reached the transport (see isRpcRequestNotSentError); returns it. */
+export function markRequestNotSent<T>(error: T): T | RpcRequestNotSentError {
+  if (error === null || typeof error !== "object") return new RpcRequestNotSentError(`submitTransaction was not sent: ${String(error)}`, error);
+  Object.defineProperty(error, "requestNotSent", { value: true, enumerable: false, configurable: true });
+  return error;
+}
+
 export class RpcProtocolError extends RpcError {
   constructor(message: string = "Invalid RPC protocol response", code?: number | string) {
     super(message, code, undefined, false);

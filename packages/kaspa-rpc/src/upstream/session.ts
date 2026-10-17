@@ -1,7 +1,10 @@
 import { loadManagedKaspaWasmSync, redactUrlCredentials, redactUrlCredentialsInText } from "@hardkas/core";
 import {
+  isNodeNetworkIdentityError,
+  markRequestNotSent,
   NodeNetworkIdentityError,
   normalizeRpcError,
+  RpcRequestNotSentError,
   RpcConnectionError,
   RpcError,
   RpcNotFoundError,
@@ -305,12 +308,27 @@ export class OfficialRpcSession {
   /** One RPC call by HardKAS method name; the result is plain JSON data in the node's wire shape. */
   async request<T = unknown>(method: string, params?: unknown, timeoutMs: number = this.timeoutMs): Promise<T> {
     const name = officialMethodName(method);
+    // TX-SEND-BLOCKED-OUTCOME-1: for a submission, everything up to handing the request to the transport is local — a
+    // failure there means the transaction certainly never left this process, which is not the same as a lost answer.
+    const isSubmit = name === "submitTransaction";
+    const notSent = (stage: string, e: unknown) =>
+      new RpcRequestNotSentError(redacted(`submitTransaction was not sent (${stage}): ${messageOf(e)}`), e);
     const translate = REQUEST_TRANSLATORS[name];
-    const request = translate ? translate(params) : (params ?? {});
-    const client = await this.connected();
+    let request: unknown;
+    let client: OfficialRpcClientLike;
+    try {
+      request = translate ? translate(params) : (params ?? {});
+      client = await this.connected();
+    } catch (e) {
+      // the request could not be prepared or no connection could be opened: it keeps its own type and code (and the
+      // node's identity refusal stays NODE-NETWORK-IDENTITY-1's), MARKED as raised before the transport
+      if (!isSubmit || isNodeNetworkIdentityError(e)) throw e;
+      throw markRequestNotSent(e);
+    }
     const fn = client[name];
     if (typeof fn !== "function") {
-      throw new RpcNotFoundError(`Kaspa RPC method not found: ${method}`, -32601);
+      const missing = new RpcNotFoundError(`Kaspa RPC method not found: ${method}`, -32601);
+      throw isSubmit ? markRequestNotSent(missing) : missing;
     }
     try {
       const result = await withTimeout(
@@ -320,6 +338,10 @@ export class OfficialRpcSession {
       );
       return toWire(result) as T;
     } catch (e) {
+      // an interceptor in front of the transport refused the submission (code RPC_REQUEST_NOT_SENT): nothing left
+      if (isSubmit && (e as { code?: unknown } | null)?.code === "RPC_REQUEST_NOT_SENT" && !(e instanceof RpcRequestNotSentError)) {
+        throw notSent("refused before the transport", e);
+      }
       if (e instanceof RpcError) throw e;
       const raw = messageOf(e);
       if (NOT_CONNECTED.test(raw)) {
