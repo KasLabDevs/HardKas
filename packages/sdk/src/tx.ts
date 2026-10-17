@@ -208,6 +208,52 @@ function isSignTxOptions(value: unknown): value is SignTxOptions {
  * A look's sink is not such a position: a historical `mempool_entry` (no window), a pruned or accepting look never read
  * the chain up to it. `undefined` when no look verified one.
  */
+/**
+ * TX-SEND-SUBMITPOINT-1: where the virtual was just before a submission, from ONE view of the chain — the sink the node
+ * names (getBlockDagInfo, with that same answer's virtual DAA score) and THAT block's own blue score, read from its
+ * header. The former pair (getBlockDagInfo + getSinkBlueScore) could join a sink with a later sink's blue score, and a
+ * client without getSinkBlueScore (the CLI's KaspaWrpcClient) lost the whole point without a word. It reads through the
+ * generic `call` every HardKAS RPC client exposes. Any failure is returned as a reason, never as an invented point.
+ */
+async function captureSubmitPoint(
+  client: any
+): Promise<
+  | { submitPoint: { virtualDaaScore: string; sinkHash: string; sinkBlueScore: string } }
+  | { submitPointUnavailable: { reason: string } }
+> {
+  const unavailable = (reason: string) => ({ submitPointUnavailable: { reason } });
+  const messageOf = (e: unknown) => redactUrlCredentialsInText(e instanceof Error ? e.message : String(e));
+  if (typeof client?.call !== "function") return unavailable("the RPC client cannot read the chain position (it has no generic call)");
+  let dag: any;
+  try {
+    const raw: any = await client.call("getBlockDagInfo", {});
+    dag = raw?.getBlockDagInfoResponse ?? raw;
+  } catch (e) {
+    return unavailable(`reading the sink (getBlockDagInfo) failed: ${messageOf(e)}`);
+  }
+  const sinkHash = typeof dag?.sink === "string" ? dag.sink : typeof dag?.sinkHash === "string" ? dag.sinkHash : "";
+  if (!/^[0-9a-f]{64}$/.test(sinkHash)) return unavailable("the node's getBlockDagInfo named no sink hash");
+  if (dag?.virtualDaaScore === undefined || dag?.virtualDaaScore === null) return unavailable("the node's getBlockDagInfo gave no virtual DAA score");
+  let header: any;
+  try {
+    const raw: any = await client.call("getBlock", { hash: sinkHash, includeTransactions: false });
+    header = raw?.block?.header ?? raw?.getBlockResponse?.block?.header ?? raw?.header;
+  } catch (e) {
+    return unavailable(`reading the sink's header (getBlock ${sinkHash}) failed: ${messageOf(e)}`);
+  }
+  if (typeof header?.hash === "string" && header.hash !== sinkHash) {
+    return unavailable(`the node's getBlock answered another block's header (${header.hash}) for the sink ${sinkHash}`);
+  }
+  if (header?.blueScore === undefined || header?.blueScore === null) return unavailable(`the node's getBlock gave no header blue score for the sink ${sinkHash}`);
+  try {
+    return {
+      submitPoint: { virtualDaaScore: BigInt(dag.virtualDaaScore).toString(), sinkHash, sinkBlueScore: BigInt(header.blueScore).toString() }
+    };
+  } catch (e) {
+    return unavailable(`the node's chain position is not numeric: ${messageOf(e)}`);
+  }
+}
+
 function verifiedCursor(history: readonly any[]): string | undefined {
   for (let i = history.length - 1; i >= 0; i--) {
     const f = history[i]?.finding;
@@ -1823,20 +1869,10 @@ export class HardkasTx {
     const broadcastable = getBroadcastableSignedTransaction(signedArtifact);
 
     // Wave 2(a): the observer's cursor — where the virtual was when HardKAS submitted.
-    // A fact about the submit (authenticated), never a post-send state. Best effort:
-    // a node that cannot answer leaves it absent, and the observer falls back to the
-    // pruning point.
-    let submitPoint: { virtualDaaScore: string; sinkHash: string; sinkBlueScore: string } | undefined;
-    try {
-      const dag = await this.sdk.rpc.getBlockDagInfo();
-      const sinkRaw: any = await this.sdk.rpc.getSinkBlueScore();
-      const sinkBlueScore = BigInt(sinkRaw?.blueScore ?? sinkRaw);
-      if (typeof dag.sink === "string" && dag.sink.length > 0) {
-        submitPoint = { virtualDaaScore: BigInt(dag.virtualDaaScore ?? 0).toString(), sinkHash: dag.sink, sinkBlueScore: sinkBlueScore.toString() };
-      }
-    } catch {
-      submitPoint = undefined;
-    }
+    // A fact about the submit (authenticated), never a post-send state. TX-SEND-SUBMITPOINT-1: read here, BEFORE the
+    // submit, from one view of the chain (captureSubmitPoint); when it cannot be read the submission records why, and
+    // the observer falls back to the pruning point. Nothing else about the send depends on it.
+    const pointCapture = await captureSubmitPoint(this.sdk.rpc);
 
     // Wave 2(d) · AUD-18: the fee is derived from what the signed transaction consumes
     // (the plan's authenticated inputs, matched by outpoint) minus what it produces
@@ -1925,9 +1961,15 @@ export class HardkasTx {
       createdAt: nowIso,
       ...(signedArtifact.execution ? { execution: signedArtifact.execution } : {}),
       signedArtifactId,
-      txId: submitResult.transactionId || localTxId,
+      // TX-SEND-SUBMITPOINT-1: when the node returned no id (no answer, connection lost, rejection), the submission
+      // still names the transaction it sent — the signed artifact's own txId (authenticated by its content hash) — so
+      // its submitPoint stays reachable by `tx wait <txId>`. It identifies what was sent; submitResult says what
+      // happened, unchanged.
+      txId:
+        submitResult.transactionId ||
+        (typeof signedArtifact.txId === "string" && /^[0-9a-f]{64}$/.test(signedArtifact.txId) ? signedArtifact.txId : localTxId),
       submitResult,
-      ...(submitPoint ? { submitPoint } : {}),
+      ...("submitPoint" in pointCapture ? { submitPoint: pointCapture.submitPoint } : { submitPointUnavailable: pointCapture.submitPointUnavailable }),
       fee: feeEvidence,
       submittedAt: nowIso,
       // EA-I1: the submitting client's endpoint (absent when the client does not say; never a caller's label)

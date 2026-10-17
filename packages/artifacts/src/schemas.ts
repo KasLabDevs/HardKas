@@ -363,6 +363,11 @@ export const TxSubmissionSchema = BaseArtifactSchema.extend({
     })
     .optional(),
   /**
+   * TX-SEND-SUBMITPOINT-1: why there is no `submitPoint` — the chain position could not be read before the submit. Never
+   * written together with `submitPoint`; never a substitute point.
+   */
+  submitPointUnavailable: z.object({ reason: z.string().min(1) }).optional(),
+  /**
    * Wave 2(d) · AUD-18: the fee DERIVED from the signed transaction (Σ consumed −
    * Σ produced) or an explicit statement that the evidence did not allow it.
    * Never an estimate copied from metadata, never "0" by default.

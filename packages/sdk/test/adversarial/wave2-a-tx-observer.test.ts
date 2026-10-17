@@ -215,7 +215,11 @@ describe("Wave 2(a) · SDK: submission cursor, persisted observations, derived s
   it("the submission carries the observer's cursor (submitPoint); status derives SUBMITTED until something is observed", async () => {
     const { txId, submissionId } = await realSend();
     const submission: any = await sdk.artifacts.read({ artifact: submissionId });
-    expect(submission.submitPoint).toEqual({ virtualDaaScore: node.virtualDaaScore.toString(), sinkHash: node.sink, sinkBlueScore: node.sinkBlueScore.toString() });
+    // TX-SEND-SUBMITPOINT-1: the submit point is one view — the sink and THAT block's own header blue score (this scripted
+    // node keeps its sink blue-score counter apart from the sink block's header, so the two differ here; on a node they agree)
+    const sinkBlock = node.chain[node.chain.length - 1]!;
+    expect(submission.submitPoint).toEqual({ virtualDaaScore: node.virtualDaaScore.toString(), sinkHash: node.sink, sinkBlueScore: sinkBlock.blueScore.toString() });
+    expect(submission.submitPointUnavailable).toBeUndefined();
     const derived = await sdk.tx.status(txId);
     expect(derived.status).toBe("SUBMITTED");
     expect(derived.evidence.submissionArtifactId).toBe(submissionId);

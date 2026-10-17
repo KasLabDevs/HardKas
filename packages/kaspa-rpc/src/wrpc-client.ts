@@ -110,6 +110,14 @@ export class KaspaWrpcClient {
     }
   }
 
+  /**
+   * TX-SEND-SUBMITPOINT-1: the generic call every HardKAS RPC client exposes (`KaspaRpcClient.call`), so code holding this
+   * client (the SDK, when `tx send` hands it this one) reads the chain through it as through any other. Same request.
+   */
+  async call<TResponse = unknown>(method: string, params: Record<string, unknown> = {}): Promise<TResponse> {
+    return (await this.request(method, params)) as TResponse;
+  }
+
   async getServerInfo(): Promise<unknown> {
     return this.request("getServerInfo");
   }
