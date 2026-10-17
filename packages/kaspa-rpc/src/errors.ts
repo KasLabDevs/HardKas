@@ -76,8 +76,10 @@ export class RpcConnectionError extends RpcError {
  * NODE-NETWORK-IDENTITY-1: the node behind an endpoint is not the network the caller expects (MISMATCH), or did not
  * say which network it serves (UNKNOWN). Raised before any of the caller's requests reach that node; never retried
  * (another attempt asks the same node). `endpoint` carries no URL credentials.
+ * MAINNET-PERIMETER-1: MAINNET_BROADCAST_DISABLED is the same kind of refusal, raised right before a broadcast when the
+ * node (or the network it is used as) is of the mainnet type — the product policy (@hardkas/core mainnet-policy).
  */
-export type NodeNetworkIdentityCode = "NODE_NETWORK_MISMATCH" | "NODE_NETWORK_UNKNOWN";
+export type NodeNetworkIdentityCode = "NODE_NETWORK_MISMATCH" | "NODE_NETWORK_UNKNOWN" | "MAINNET_BROADCAST_DISABLED";
 
 export interface NodeNetworkIdentity {
   readonly expected: string;
@@ -98,7 +100,12 @@ export class NodeNetworkIdentityError extends RpcError {
 
 export function isNodeNetworkIdentityError(error: unknown): error is NodeNetworkIdentityError {
   const code = (error as { code?: unknown } | null)?.code;
-  return error instanceof NodeNetworkIdentityError || code === "NODE_NETWORK_MISMATCH" || code === "NODE_NETWORK_UNKNOWN";
+  return (
+    error instanceof NodeNetworkIdentityError ||
+    code === "NODE_NETWORK_MISMATCH" ||
+    code === "NODE_NETWORK_UNKNOWN" ||
+    (error instanceof RpcError && code === "MAINNET_BROADCAST_DISABLED")
+  );
 }
 
 /**

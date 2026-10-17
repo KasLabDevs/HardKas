@@ -7,6 +7,8 @@ describe("RPC Resilience Refined (P1.2)", () => {
   describe("Deterministic Errors", () => {
     it("should NOT retry on deterministic validation errors", async () => {
       const rpc = fakeOfficialRpc({
+        getServerInfo: () => ({ networkId: "simnet" }),
+        getBlockDagInfo: () => ({ network: "simnet" }),
         submitTransaction: () => {
           throw new Error("insufficient funds for transaction");
         }
@@ -19,7 +21,7 @@ describe("RPC Resilience Refined (P1.2)", () => {
 
       // A transaction must carry its storage mass commitment to reach the node at all.
       await expect(client.submitTransaction({ storageMass: 0 })).rejects.toThrow(RpcValidationError);
-      expect(rpc.calls.length).toBe(1); // No retry!
+      expect(rpc.calls.filter((c) => c.method === "submitTransaction").length).toBe(1); // No retry!
     });
 
     it("should NOT retry when isRetriable is explicitly false", async () => {

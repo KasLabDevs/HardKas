@@ -2356,7 +2356,7 @@
               "path": "hardkas kaspa wallet send",
               "name": "send",
               "aliases": [],
-              "description": "Plan, confirm (y/N), sign and submit a payment over --rpc-url; the network and target come from hardkas.config stable",
+              "description": "Plan a payment over --rpc-url with --dry-run (the node must serve the workspace's network); sending is disabled here: use 'tx plan', 'tx sign' and 'tx send' internal",
               "usage": "hardkas kaspa wallet send [options] <from> <to>",
               "arguments": [
                 {
@@ -2378,7 +2378,7 @@
                 },
                 {
                   "flags": "--dry-run",
-                  "description": "Plan but do not sign or broadcast",
+                  "description": "Plan only (required: without it the command refuses, KASPA_WALLET_SEND_DISABLED)",
                   "default": false,
                   "required": false,
                   "mandatory": false

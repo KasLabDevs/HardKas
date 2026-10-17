@@ -4,13 +4,21 @@ import {
   getCoinbaseMaturity,
   HardkasError,
   assertMainnetTransactionsDisabled,
+  declaredNetworkIdOf,
   stripBom,
   redactUrlCredentials,
   redactUrlCredentialsInText
 } from "@hardkas/core";
 import { pollCondition } from "./waiters.js";
 import { Hardkas } from "./index.js";
-import { isNodeNetworkIdentityError, isRpcRequestNotSentError, rpcEndpointOf, sameRpcEndpoint } from "@hardkas/kaspa-rpc";
+import {
+  assertBroadcastNodeIdentity,
+  isNodeNetworkIdentityError,
+  isRpcRequestNotSentError,
+  markRequestNotSent,
+  rpcEndpointOf,
+  sameRpcEndpoint
+} from "@hardkas/kaspa-rpc";
 import { networkEndpointRequiredError } from "@hardkas/config";
 
 /** TESTNET-PORT-COLLISION-1: the instance's client stands for "no endpoint chosen" (see unresolved-endpoint-rpc.ts). */
@@ -935,7 +943,8 @@ export class HardkasTx {
     // and before anything is written. allowPublic does not lift it.
     assertMainnetTransactionsDisabled(
       "sign",
-      [(plan as any).networkId, (plan as any).execution?.network, this.sdk.network],
+      // MAINNET-PERIMETER-1 (B2): also the network this instance's config entry DECLARES, whatever its name
+      [(plan as any).networkId, (plan as any).execution?.network, this.sdk.network, declaredNetworkIdOf(this.sdk.config.config, this.sdk.network)],
       "tx.sign"
     );
 
@@ -1724,7 +1733,8 @@ export class HardkasTx {
     // A transaction signed anywhere (outside HardKAS included) is refused the same way; allowPublic does not lift it.
     assertMainnetTransactionsDisabled(
       "broadcast",
-      [(signedArtifact as any)?.networkId, (signedArtifact as any)?.execution?.network, activeNetwork],
+      // MAINNET-PERIMETER-1 (B2): also the network this instance's config entry DECLARES, whatever its name
+      [(signedArtifact as any)?.networkId, (signedArtifact as any)?.execution?.network, activeNetwork, declaredNetworkIdOf(this.sdk.config.config, activeNetwork)],
       "tx.send"
     );
     // the world this instance runs on decides (WORKSPACE-AUTHORITY-2)
@@ -1919,6 +1929,20 @@ export class HardkasTx {
     // authenticated, so a credential the RPC layer put into its error text (it names the URL) is redacted BEFORE hashing.
     let submitResult: { accepted: boolean; transactionId?: string; error?: string };
     try {
+      // MAINNET-PERIMETER-1 (B2): the node's identity, asked through whatever client this instance holds (its own, or
+      // one a caller injected) right before the broadcast — two answers, one non-mainnet network, the one this
+      // instance's config declares. An identity refusal is typed (NODE_NETWORK_* / MAINNET_BROADCAST_DISABLED) and the
+      // catch below lets it through as such: nothing is sent or recorded. Any other failure of these reads (the
+      // connection lost, a timeout) happened before the broadcast started, so it is MARKED as raised before the
+      // transport (TX-SEND-BLOCKED-OUTCOME-1): SUBMIT_NOT_SENT below, never a submission with an unknown outcome.
+      if (!isSimulated) {
+        try {
+          await assertBroadcastNodeIdentity(this.sdk.rpc as any, declaredNetworkIdOf(this.sdk.config.config, activeNetwork), endpoint ? redactUrlCredentials(endpoint) : "the configured node");
+        } catch (e) {
+          if (isNodeNetworkIdentityError(e)) throw e;
+          throw markRequestNotSent(e);
+        }
+      }
       const answer: any = await this.sdk.rpc.submitTransaction(broadcastable.rawTransaction as any);
       submitResult = {
         accepted: answer?.accepted !== false,

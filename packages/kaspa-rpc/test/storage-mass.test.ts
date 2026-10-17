@@ -36,6 +36,8 @@ describe("normalizeRpcStorageMass", () => {
 
 describe("submitTransaction mass fields on the wire", () => {
   const url = "http://localhost:16110";
+  // MAINNET-PERIMETER-1: a broadcast first asks the node who it is; these fakes answer like a simnet node
+  const identified = { getServerInfo: () => ({ networkId: "simnet" }), getBlockDagInfo: () => ({ network: "simnet" }) };
   const tx = () => ({
     version: 1,
     inputs: [{ previousOutpoint: { transactionId: "ab".repeat(32), index: 0 }, signatureScript: "00", sequence: 0, sigOpCount: 0, computeBudget: 10 }],
@@ -48,9 +50,9 @@ describe("submitTransaction mass fields on the wire", () => {
   });
 
   it("sends storageMass and no legacy mass", async () => {
-    const rpc = fakeOfficialRpc({ submitTransaction: () => ({ transactionId: "t" }) });
+    const rpc = fakeOfficialRpc({ ...identified, submitTransaction: () => ({ transactionId: "t" }) });
     await new KaspaJsonRpcClient({ url, rpcFactory: rpc.factory }).submitTransaction(tx());
-    const sent = (rpc.calls[0]!.request as any).transaction;
+    const sent = (rpc.calls.find((c) => c.method === "submitTransaction")!.request as any).transaction;
     expect(sent.storageMass).toBe(1234n);
     expect("mass" in sent).toBe(false);
     // v1: the input's compute budget travels; its sig op count stays as given.
@@ -58,11 +60,11 @@ describe("submitTransaction mass fields on the wire", () => {
   });
 
   it("carries a legacy mass over as storageMass", async () => {
-    const rpc = fakeOfficialRpc({ submitTransaction: () => ({ transactionId: "t" }) });
+    const rpc = fakeOfficialRpc({ ...identified, submitTransaction: () => ({ transactionId: "t" }) });
     const legacy: Record<string, unknown> = { ...tx(), mass: 77 };
     delete legacy.storageMass;
     await new JsonWrpcKaspaClient({ rpcUrl: url, rpcFactory: rpc.factory }).submitTransaction(legacy as any);
-    const sent = (rpc.calls[0]!.request as any).transaction;
+    const sent = (rpc.calls.find((c) => c.method === "submitTransaction")!.request as any).transaction;
     expect(sent.storageMass).toBe(77n);
     expect("mass" in sent).toBe(false);
   });

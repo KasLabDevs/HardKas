@@ -12,6 +12,10 @@ import {
 } from "../errors.js";
 import { toOfficialTransaction, toWire, u64FieldsToBigint } from "./wire.js";
 import { useWsWebSocketForSdk } from "./node-websocket-compat.js";
+import { canonicalNetworkId, decideBroadcastIdentity, namedNetwork } from "../broadcast-identity.js";
+
+/** MAINNET-PERIMETER-1: the official methods that put a transaction on the network. */
+const BROADCAST_METHODS: ReadonlySet<string> = new Set(["submitTransaction", "submitTransactionReplacement"]);
 
 /*
  * The official kaspa-wasm RpcClient is HardKAS's only Kaspa RPC transport. This
@@ -105,10 +109,8 @@ async function release(client: OfficialRpcClientLike): Promise<void> {
  */
 const redacted = (text: string): string => redactUrlCredentialsInText(text);
 
-/** A network id as the node and HardKAS spell it, compared exactly: case-insensitive, `kaspa-` prefix ignored. */
-function canonicalNetworkId(id: string): string {
-  return id.trim().toLowerCase().replace(/^kaspa-/, "");
-}
+// A network id as the node and HardKAS spell it, compared exactly: the one rule in ../broadcast-identity.ts
+// (case-insensitive, `kaspa-` prefix ignored, HardKAS's `simulated` alias = simnet).
 
 /** A connection closed while it was being opened: not retryable, its owner closed it on purpose. */
 export function rpcClientClosedError(url: string): RpcError {
@@ -305,6 +307,42 @@ export class OfficialRpcSession {
     }
   }
 
+  /**
+   * MAINNET-PERIMETER-1 (B1/B2): the node's two identity answers, read now on `client`, decided by
+   * `decideBroadcastIdentity` against the expected network (when this session has one). A read that fails says nothing
+   * (NODE_NETWORK_UNKNOWN); a connection lost meanwhile stays a connection failure. Nothing is sent before this passes.
+   */
+  private async verifyBroadcastIdentity(client: OfficialRpcClientLike): Promise<void> {
+    const endpoint = redactUrlCredentials(this.url);
+    const ask = async (method: "getServerInfo" | "getBlockDagInfo"): Promise<any> => {
+      const fn = client[method];
+      if (typeof fn !== "function") return undefined;
+      try {
+        return toWire(
+          await withTimeout(
+            Promise.resolve(fn.call(client, {})),
+            this.timeoutMs,
+            () => new RpcTimeoutError(`RPC request ${method} timed out after ${this.timeoutMs}ms while identifying ${endpoint} before a broadcast`)
+          )
+        );
+      } catch (e) {
+        const raw = messageOf(e);
+        if (NOT_CONNECTED.test(raw)) {
+          throw new RpcConnectionError(redacted(`Connection to Kaspa RPC at ${endpoint} was lost while it was identified before a broadcast; nothing was sent: ${raw}`));
+        }
+        return undefined;
+      }
+    };
+    const server = await ask("getServerInfo");
+    const dag = await ask("getBlockDagInfo");
+    decideBroadcastIdentity({
+      server: namedNetwork(server?.networkId),
+      dag: namedNetwork(dag?.network ?? dag?.networkName ?? dag?.networkId),
+      expected: this.expectedNetworkId,
+      endpoint
+    });
+  }
+
   /** One RPC call by HardKAS method name; the result is plain JSON data in the node's wire shape. */
   async request<T = unknown>(method: string, params?: unknown, timeoutMs: number = this.timeoutMs): Promise<T> {
     const name = officialMethodName(method);
@@ -329,6 +367,18 @@ export class OfficialRpcSession {
     if (typeof fn !== "function") {
       const missing = new RpcNotFoundError(`Kaspa RPC method not found: ${method}`, -32601);
       throw isSubmit ? markRequestNotSent(missing) : missing;
+    }
+    // MAINNET-PERIMETER-1: every client of this transport (the SDK's, an injected one, an exported one used directly)
+    // asks the node who it is on THIS connection right before a broadcast; see broadcast-identity.ts. An identity
+    // refusal keeps its type (NODE-NETWORK-IDENTITY-1); a connection lost during those reads is MARKED as raised before
+    // the transport (TX-SEND-BLOCKED-OUTCOME-1): the broadcast itself never started.
+    if (BROADCAST_METHODS.has(name)) {
+      try {
+        await this.verifyBroadcastIdentity(client);
+      } catch (e) {
+        if (isNodeNetworkIdentityError(e)) throw e;
+        throw markRequestNotSent(e);
+      }
     }
     try {
       const result = await withTimeout(
