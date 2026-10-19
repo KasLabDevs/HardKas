@@ -169,7 +169,11 @@ export interface SubmissionGuardOptions {
 const ALREADY_KNOWN_PATTERNS = [
   /already (?:known|in mempool|accepted)/i,
   /duplicate/i,
-  /transaction is already/i
+  /transaction is already/i,
+  // P0-TX-SAFETY-1A: rusty-kaspa v2.1.0's own texts (RejectDuplicate, RejectDuplicateOrphan), wrapped as
+  // "Rejected transaction <id>: transaction <id> is already in the mempool". Missed before, they fell to the consensus
+  // class ("rejected", "orphan") and the guard answered SAFE_TO_RETRY for a transaction the node holds.
+  /\bis already in the (?:mempool|orphan pool)\b/i
 ];
 
 function messageOf(err: unknown): string {

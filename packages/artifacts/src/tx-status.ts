@@ -124,11 +124,21 @@ export interface DerivedTxStatus {
  *  - `rejected`: the node answered and refused it: an answer with `accepted: false`, or the node's own rejection, which
  *    arrives as "Rejected transaction <txId>: <reason>" (rusty-kaspa's RejectedTransaction RPC error);
  *  - `unknown`: the call failed without such an answer (a timeout, a lost connection, …): whether the node received the
- *    transaction is not known, so it is never reported as a rejection.
+ *    transaction is not known, so it is never reported as a rejection. P0-TX-SAFETY-1A: so is an answer in which the node
+ *    says it ALREADY HOLDS this transaction (rusty-kaspa wraps those mempool rules in the same "Rejected transaction"
+ *    error): it neither rejects nor accepts the payment — its state is decided by observation, and it never invites
+ *    planning and signing the payment again.
  */
 export type SubmitOutcome = "accepted" | "rejected" | "unknown";
 
 const NODE_REJECTION = /^Rejected transaction\b/;
+// rusty-kaspa v2.1.0 mining/errors/src/mempool.rs: RejectDuplicate, RejectAlreadyAccepted, RejectDuplicateOrphan
+const NODE_ALREADY_HOLDS = /\b(?:is already in the mempool|was already accepted by the consensus|is already in the orphan pool)\b/;
+
+/** P0-TX-SAFETY-1A: the node's answer says it already holds (or already accepted) the submitted transaction. */
+export function nodeAlreadyHoldsTx(error: unknown): boolean {
+  return typeof error === "string" && NODE_REJECTION.test(error) && NODE_ALREADY_HOLDS.test(error);
+}
 
 export function submitOutcomeOf(submitResult: { accepted?: unknown; error?: unknown } | null | undefined): SubmitOutcome {
   if (!submitResult) return "unknown";
@@ -136,6 +146,7 @@ export function submitOutcomeOf(submitResult: { accepted?: unknown; error?: unkn
   if (submitResult.accepted !== false) return "unknown";
   const error = submitResult.error;
   if (typeof error !== "string" || error.length === 0) return "rejected";
+  if (nodeAlreadyHoldsTx(error)) return "unknown";
   return NODE_REJECTION.test(error) ? "rejected" : "unknown";
 }
 
@@ -551,6 +562,14 @@ export function deriveTxStatus(input: {
     if (submission.outcome === "rejected") {
       reasons.push("the responding node rejected this submission");
       return result("REJECTED_BY_NODE", [], histories, reasons);
+    }
+    // P0-TX-SAFETY-1A: the node said it already holds this transaction — not a rejection, not an acceptance
+    if (nodeAlreadyHoldsTx(submission.error)) {
+      reasons.push(
+        `the responding node answered that it already holds this transaction (${submission.error}): not a rejection and not ` +
+          "an acceptance, so no state is decided — observe it; never plan and sign the payment again"
+      );
+      return result("INSUFFICIENT_EVIDENCE", [], histories, reasons);
     }
     // EVENT-LEDGER-2 closeout: a call that failed without an answer is not a rejection; nothing decides yet
     reasons.push(

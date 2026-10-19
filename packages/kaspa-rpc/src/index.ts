@@ -645,7 +645,7 @@ export { KaspaWrpcClient } from "./wrpc-client.js";
 export * from "./health.js";
 
 export * from "./errors.js";
-export { assertBroadcastNodeIdentity, decideBroadcastIdentity, type BroadcastIdentitySource } from "./broadcast-identity.js";
+export { assertBroadcastNodeIdentity, decideBroadcastIdentity, canonicalNetworkId, type BroadcastIdentitySource } from "./broadcast-identity.js";
 export { canonicalRpcEndpoint, sameRpcEndpoint, rpcEndpointOf } from "./endpoint.js";
 // The transport: the official kaspa-wasm RpcClient, and the factory seam tests use to stand in for it.
 export { officialRpcFactory, toWrpcUrl, type OfficialRpcClientLike, type OfficialRpcFactory } from "./upstream/session.js";

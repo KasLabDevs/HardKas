@@ -6,7 +6,14 @@ import { UtxoControlStore } from './stores/utxo-control-store.js';
 import { logger, metrics, tracer } from '@hardkas/observability';
 import { UtxoWatchEngine, type WalletWatchHandle, type WalletWatchListener } from './watch.js';
 import { calculateDynamicFeeRate, FeePriority } from './fee-estimator.js';
-import { assertMainnetTransactionsDisabled } from '@hardkas/core';
+import { assertMainnetTransactionsDisabled, HardkasError, networkTypeOf, isMainnetNetworkId } from '@hardkas/core';
+import {
+    assertBroadcastNodeIdentity,
+    canonicalNetworkId,
+    isNodeNetworkIdentityError,
+    isRpcRequestNotSentError
+} from '@hardkas/kaspa-rpc';
+import { submitOutcomeOf } from '@hardkas/artifacts';
 
 metrics.register({
     name: "wallet_tx_generated_total",
@@ -27,6 +34,12 @@ metrics.register({
 export interface WalletToolkitOptions {
     storePath?: string;
     network?: "simnet" | "testnet" | "mainnet";
+    /**
+     * P0-TX-SAFETY-1B: the exact network every spend (send, payMany, sweep, consolidate, split) is made on, e.g. `simnet`,
+     * `testnet-10`. Required to sign or broadcast — the toolkit never adopts the network a node announces. `network`
+     * alone names a network only when it is exact (`simnet`); `testnet` alone is ambiguous and spends are refused.
+     */
+    networkId?: string;
     provider?: WalletQueryProvider;
     rpc?: any; // To support subscriptions
     signer?: any; // HardkasTxPlanSigner instance
@@ -129,8 +142,32 @@ export class WalletToolkit {
             accountIndex: 0,
             chain: 'receive',
             addressIndex: 0,
-            network: this.options.network || 'simnet'
+            network: this.addressNetwork() as any
         }).address;
+    }
+
+    /**
+     * P0-TX-SAFETY-1B v2: the network type addresses (receive, change) are derived for. With a declared `networkId` it
+     * is that id's type (`testnet-10` → testnet → `kaspatest:`), never the `simnet` default; a `network` that
+     * names another type than `networkId` is refused here too.
+     */
+    private addressNetwork(): string {
+        const fromId = this.options.networkId;
+        const fromNetwork = this.options.network as string | undefined;
+        if (typeof fromId === "string") {
+            const idType = networkTypeOf(canonicalNetworkId(fromId));
+            if (idType !== undefined) {
+                const nType = fromNetwork === undefined ? undefined : networkTypeOf(canonicalNetworkId(fromNetwork === "local-docker-simnet" ? "simnet" : fromNetwork));
+                if (fromNetwork !== undefined && nType !== idType) {
+                    throw new HardkasError(
+                        "WALLET_NETWORK_CONTRADICTORY",
+                        `WalletToolkit.receive: network ${fromNetwork} and networkId ${fromId} name different network types.`
+                    );
+                }
+                return idType;
+            }
+        }
+        return fromNetwork || "simnet";
     }
 
     public async balance(): Promise<bigint> {
@@ -258,39 +295,89 @@ export class WalletToolkit {
     }
 
     /**
-     * SDK-MAINNET-BROADCAST-GUARD-1 (D-MG-2): the toolkit never signs or sends on mainnet. Decided before anything is
-     * planned, signed or sent, from the wallet's declared network AND the node's own (a read, which is allowed) — not
-     * left to an incompatible address failing later in the planner.
+     * P0-TX-SAFETY-1B: the network a spend is made on is DECLARED (`networkId`, or an exact `network`), never adopted
+     * from the node. Missing, ambiguous (`testnet`), unparseable or contradictory declarations refuse the spend.
      */
-    private async assertNotMainnet(operation: string): Promise<void> {
-        let nodeNetwork: string | undefined;
-        if (this.options.rpc?.getBlockDagInfo) {
-            try {
-                nodeNetwork = (await this.options.rpc.getBlockDagInfo())?.networkId;
-            } catch {
-                nodeNetwork = undefined;
+    private declaredSpendNetwork(operation: string): string {
+        const ctx = `WalletToolkit.${operation}`;
+        const declaredType = (v: unknown) => {
+            if (typeof v !== "string") return undefined;
+            return networkTypeOf(canonicalNetworkId(v === "local-docker-simnet" ? "simnet" : v));
+        };
+        const fromId = this.options.networkId;
+        const fromNetwork = this.options.network as string | undefined;
+        // mainnet in ANY declaration refuses first (SDK-MAINNET-BROADCAST-GUARD-1)
+        assertMainnetTransactionsDisabled("broadcast", [fromNetwork, fromId], ctx);
+        let expected: string | undefined;
+        if (fromId !== undefined) {
+            if (typeof fromId !== "string" || declaredType(fromId) === undefined) {
+                throw new HardkasError("WALLET_NETWORK_INVALID", `${ctx}: networkId ${JSON.stringify(fromId)} is not a Kaspa network id (simnet, testnet-10, devnet, …). Nothing was signed or sent.`);
+            }
+            expected = canonicalNetworkId(fromId);
+            // a testnet id without its suffix does not say which testnet (rusty-kaspa requires the suffix for testnet)
+            if (declaredType(fromId) === "testnet" && !/-\d+$/.test(expected)) {
+                throw new HardkasError(
+                    "WALLET_NETWORK_AMBIGUOUS",
+                    `WalletToolkit.${operation}: networkId ${fromId} does not say which testnet; declare it with its suffix (e.g. testnet-10). Nothing was signed or sent.`
+                );
+            }
+            if (fromNetwork !== undefined && declaredType(fromNetwork) !== declaredType(fromId)) {
+                throw new HardkasError(
+                    "WALLET_NETWORK_CONTRADICTORY",
+                    `${ctx}: network ${fromNetwork} and networkId ${fromId} name different network types. Nothing was signed or sent.`
+                );
+            }
+        } else if (fromNetwork !== undefined) {
+            const c = canonicalNetworkId(fromNetwork === "local-docker-simnet" ? "simnet" : fromNetwork);
+            // exact only: simnet, or an id with its suffix (testnet-10); "testnet" alone does not say which testnet
+            if (declaredType(fromNetwork) !== undefined && (declaredType(fromNetwork) !== "testnet" || /-\d+$/.test(c))) expected = c;
+            else {
+                throw new HardkasError(
+                    "WALLET_NETWORK_AMBIGUOUS",
+                    `${ctx}: network ${fromNetwork} does not name one network; declare networkId (e.g. testnet-10) to sign or send. Nothing was signed or sent.`
+                );
             }
         }
-        assertMainnetTransactionsDisabled("broadcast", [this.options.network, nodeNetwork], `WalletToolkit.${operation}`);
+        if (expected === undefined) {
+            throw new HardkasError(
+                "WALLET_NETWORK_UNDECLARED",
+                `${ctx}: no network is declared for this wallet (networkId); the toolkit does not sign or send on whatever network a node announces. Nothing was signed or sent.`
+            );
+        }
+        if (isMainnetNetworkId(expected)) assertMainnetTransactionsDisabled("broadcast", [expected], ctx);
+        return expected;
+    }
+
+    /**
+     * P0-TX-SAFETY-1B · the node's identity, read NOW (MAINNET-PERIMETER-1's centralized check, @hardkas/kaspa-rpc):
+     * getServerInfo.networkId and getBlockDagInfo.network(Id) must both answer, agree, not be mainnet and equal the
+     * declared network. A read that fails, a missing method or an unnamed network refuses (fail closed). Returns the
+     * verified network. Called before planning and again right before signing and right before submitting.
+     */
+    private async verifySpendNetwork(operation: string): Promise<string> {
+        const expected = this.declaredSpendNetwork(operation);
+        if (!this.options.rpc) {
+            throw new HardkasError("WALLET_RPC_REQUIRED", `WalletToolkit.${operation}: an RPC client is required to sign or send. Nothing was signed or sent.`);
+        }
+        return assertBroadcastNodeIdentity(this.options.rpc, expected, "the wallet's node");
     }
 
     private async signAndBroadcast(plan: any): Promise<{ txId: string; plan: any }> {
-        // defence in depth: every caller already asserted, and the signer is never reached on mainnet
-        await this.assertNotMainnet("signAndBroadcast");
         if (!this.options.signer) {
             const err = new Error("MISSING_SIGNER: WalletToolkit requires an explicit signer to sign transactions.");
             (err as any).code = "MISSING_SIGNER";
             throw err;
         }
-        if (!this.options.rpc) {
-            throw new Error("RPC client is required for broadcast.");
-        }
+        // P0-TX-SAFETY-1B: the identity is read again right before signing — nothing is signed for a node that does not
+        // say, now, that it serves the declared network
+        const network = await this.verifySpendNetwork("signAndBroadcast");
 
         const addr = await this.receive();
         const fakeArtifact = {
             schema: "hardkas.txPlan",
             planId: "wallet-toolkit-inline",
-            networkId: this.options.network || "simnet",
+            // the verified network, never a default (the signer's own mainnet check decides on this value)
+            networkId: network,
             mode: "real",
             from: { address: addr },
             to: { address: plan.outputs[0]?.address || addr },
@@ -305,14 +392,68 @@ export class WalletToolkit {
             ? this.options.signer.signTxPlan({ planArtifact: fakeArtifact })
             : this.options.signer.signTransaction(fakeArtifact));
         const rawTx = JSON.parse(result.signedTransaction.payload);
-        const submitRes = await this.options.rpc.submitTransaction(rawTx);
+        // ... and right before submitting (the node may change what it says between the two)
+        await this.verifySpendNetwork("signAndBroadcast");
+        let submitRes: any;
+        try {
+            // ONE submit; never retried here
+            submitRes = await this.options.rpc.submitTransaction(rawTx);
+        } catch (e) {
+            // refused by the transport before anything left: typed, and nothing was sent
+            if (isNodeNetworkIdentityError(e) || isRpcRequestNotSentError(e)) throw e;
+            metrics.inc("wallet_tx_failed_total");
+            const message = e instanceof Error ? e.message : String(e);
+            if (submitOutcomeOf({ accepted: false, error: message }) === "rejected") {
+                throw new HardkasError("WALLET_SUBMIT_REJECTED", `The node rejected transaction ${result.txId}: ${message}`, { cause: e, metadata: { txId: result.txId } });
+            }
+            // a timeout or a lost connection AFTER the request may have left: never reported as "not sent"
+            throw new HardkasError(
+                "WALLET_SUBMIT_OUTCOME_UNKNOWN",
+                `The submit of transaction ${result.txId} got no answer (${message}): the node may have received it. It was not `+
+                    `sent again; observe it before paying again.`,
+                { cause: e, metadata: { txId: result.txId } }
+            );
+        }
+
+        // P0-TX-SAFETY-1B v2: an ANSWER is success only when it says so: a structured rejection (`accepted: false`, an
+        // `error`) is never reported as sent, and an answer that names no transaction or another one proves nothing
+        const answerError = submitRes?.error === undefined || submitRes?.error === null ? undefined : (typeof submitRes.error === "string" ? submitRes.error : (submitRes.error?.message ?? JSON.stringify(submitRes.error)));
+        if (submitRes?.accepted === false || answerError !== undefined) {
+            metrics.inc("wallet_tx_failed_total");
+            const message = answerError ?? "the node answered accepted: false";
+            if (submitOutcomeOf({ accepted: false, error: answerError }) === "rejected") {
+                throw new HardkasError("WALLET_SUBMIT_REJECTED", `The node rejected transaction ${result.txId}: ${message}`, { metadata: { txId: result.txId, answer: submitRes } });
+            }
+            throw new HardkasError(
+                "WALLET_SUBMIT_OUTCOME_UNKNOWN",
+                `The node's answer for transaction ${result.txId} does not establish its outcome (${message}): it may have it. It was not sent again.`,
+                { metadata: { txId: result.txId, answer: submitRes } }
+            );
+        }
+        const answeredTxId = typeof submitRes?.transactionId === "string" && submitRes.transactionId !== "" ? submitRes.transactionId : undefined;
+        if (answeredTxId !== undefined && typeof result.txId === "string" && answeredTxId !== result.txId) {
+            metrics.inc("wallet_tx_failed_total");
+            throw new HardkasError(
+                "WALLET_SUBMIT_OUTCOME_UNKNOWN",
+                `The node answered transaction ${answeredTxId} for the submit of ${result.txId}: what it accepted is not what was signed. It was not sent again; observe both.`,
+                { metadata: { txId: result.txId, answeredTxId } }
+            );
+        }
+        if (answeredTxId === undefined && submitRes?.accepted !== true) {
+            metrics.inc("wallet_tx_failed_total");
+            throw new HardkasError(
+                "WALLET_SUBMIT_OUTCOME_UNKNOWN",
+                `The node's answer for transaction ${result.txId} names no transaction and does not say it was accepted: its outcome is unknown. It was not sent again.`,
+                { metadata: { txId: result.txId, answer: submitRes } }
+            );
+        }
 
         metrics.inc("wallet_tx_submitted_total");
-        logger.info("Wallet tx submitted successfully", { txId: submitRes.transactionId || result.txId });
+        logger.info("Wallet tx submitted successfully", { txId: answeredTxId ?? result.txId });
 
         // Return full artifact/evidence format
         return {
-            txId: submitRes.transactionId || result.txId,
+            txId: answeredTxId ?? result.txId,
             plan
         };
     }
@@ -328,7 +469,7 @@ export class WalletToolkit {
 
     /** AUD-28: `changeAddress` is forwarded to the upstream planner; default = the wallet's receive address. */
     public async payMany(opts: { outputs: { address: string; amount: bigint }[]; priority?: FeePriority; feeRate?: bigint; changeAddress?: string }) {
-        await this.assertNotMainnet("payMany");
+        const verifiedNetwork = await this.verifySpendNetwork("payMany");
         const addr = await this.receive();
         const availableUtxos = await this.utxos.list();
 
@@ -338,14 +479,13 @@ export class WalletToolkit {
             finalFeeRate = dynamic.feeRate;
         }
 
-        // Fetch current DAA score for coinbase maturity filtering
+        // Fetch current DAA score for coinbase maturity filtering (the network is the verified one, never this read's)
         let virtualDaaScore: bigint | undefined;
-        let networkId: string | undefined;
+        const networkId: string = verifiedNetwork;
         if (this.options.rpc?.getBlockDagInfo) {
             try {
                 const dagInfo = await this.options.rpc.getBlockDagInfo();
                 virtualDaaScore = dagInfo.virtualDaaScore;
-                networkId = dagInfo.networkId;
             } catch {
                 // If DAG info unavailable, proceed without maturity filtering
             }
@@ -359,7 +499,7 @@ export class WalletToolkit {
             outputs: builderOutputs,
             feeRate: finalFeeRate || 1n,
             ...(virtualDaaScore !== undefined ? { virtualDaaScore } : {}),
-            ...(networkId !== undefined ? { networkId } : {}),
+            networkId,
             ...(opts.changeAddress !== undefined ? { changeAddress: opts.changeAddress } : {})
         });
 
@@ -429,7 +569,7 @@ export class WalletToolkit {
     }
 
     public async sweep(opts: { to: string; priority?: FeePriority; feeRate?: bigint }) {
-        await this.assertNotMainnet("sweep");
+        const verifiedNetwork = await this.verifySpendNetwork("sweep");
         const addr = await this.receive();
         let availableUtxos = await this.utxos.list();
         if (availableUtxos.length === 0) throw new Error("No UTXOs to sweep");
@@ -440,12 +580,11 @@ export class WalletToolkit {
             finalFeeRate = dynamic.feeRate;
         }
 
-        // Filter immature coinbase UTXOs
-        let networkId: string | undefined;
+        // Filter immature coinbase UTXOs (the network is the verified one, never this read's)
+        const networkId: string = verifiedNetwork;
         if (this.options.rpc?.getBlockDagInfo) {
             try {
                 const dagInfo = await this.options.rpc.getBlockDagInfo();
-                networkId = dagInfo.networkId;
                 const virtualDaaScore = dagInfo.virtualDaaScore;
                 if (virtualDaaScore !== undefined) {
                     if (this.options.coinbaseMaturity === undefined) {
@@ -481,7 +620,7 @@ export class WalletToolkit {
     }
 
     public async consolidate(opts: { to?: string; priority?: FeePriority; feeRate?: bigint; maxUtxos?: number }) {
-        await this.assertNotMainnet("consolidate");
+        const verifiedNetwork = await this.verifySpendNetwork("consolidate");
         const addr = await this.receive();
         const availableUtxos = await this.utxos.list();
         const maxUtxos = opts.maxUtxos || 100;
@@ -505,14 +644,8 @@ export class WalletToolkit {
             finalFeeRate = dynamic.feeRate;
         }
 
-        let networkId: string | undefined;
-        if (this.options.rpc?.getBlockDagInfo) {
-            try {
-                networkId = (await this.options.rpc.getBlockDagInfo()).networkId;
-            } catch {
-                // Without DAG info the plan is priced as simnet.
-            }
-        }
+        // the network is the verified one, never adopted from a read
+        const networkId: string = verifiedNetwork;
 
         const plan = await this.planSweep({
             fromAddress: addr,
@@ -528,7 +661,7 @@ export class WalletToolkit {
 
     public async split(opts: { outputsCount: number; amountPerOutput: bigint; priority?: FeePriority; feeRate?: bigint }) {
         if (opts.outputsCount <= 0) throw new Error("outputsCount must be greater than 0");
-        await this.assertNotMainnet("split");
+        await this.verifySpendNetwork("split");
         const addr = await this.receive();
         const outputs = Array(opts.outputsCount).fill({ address: addr, amount: opts.amountPerOutput });
         return this.payMany({

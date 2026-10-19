@@ -9,6 +9,8 @@ export interface ClientEnvelope<T> {
   error?: {
     code: string;
     message: string;
+    /** P0-1A: on TX_SEND_OUTCOME_UNKNOWN, the key that makes a repeated request for the same payment safe. */
+    idempotencyKey?: string;
   };
   warnings: string[];
   meta: {
@@ -18,17 +20,63 @@ export interface ClientEnvelope<T> {
   };
 }
 
+/**
+ * P0-TX-SAFETY-1A: a request that can broadcast a transaction (`POST /api/tx/send`) is sent ONCE. Its failure here —
+ * no answer, a lost connection, an answer that cannot be read — does not say whether the dev server planned, signed or
+ * broadcast anything, so it is never retried: the caller gets `TX_SEND_OUTCOME_UNKNOWN` with the request's
+ * idempotency key. Repeating the request with that key returns the dev server's recorded result instead of a new
+ * transaction; the outcome itself is resolved by observing the transaction, never by sending again.
+ */
+type FetchMode = { kind: "retry" } | { kind: "broadcast"; idempotencyKey: string };
+
+function newIdempotencyKey(): string {
+  const c = (globalThis as { crypto?: { randomUUID?: () => string } }).crypto;
+  if (c && typeof c.randomUUID === "function") return c.randomUUID();
+  return `hk-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}${Math.random().toString(36).slice(2)}`;
+}
+
 export function createHardkasClient(options: HardkasClientOptions = {}) {
   const baseUrl = options.baseUrl || "http://127.0.0.1:7420";
   const defaultHeaders = {
     "Content-Type": "application/json",
     "X-Hardkas-Request": "true"
   };
+  const failureMeta = () => ({
+    workspace: "unknown",
+    network: options.network || "simulated",
+    mode: "unknown"
+  });
 
   async function fetchApi<T>(
     path: string,
-    init?: RequestInit
+    init?: RequestInit,
+    mode: FetchMode = { kind: "retry" }
   ): Promise<ClientEnvelope<T>> {
+    if (mode.kind === "broadcast") {
+      try {
+        const response = await fetch(`${baseUrl}${path}`, {
+          ...init,
+          headers: { ...defaultHeaders, ...init?.headers }
+        });
+        const data = await response.json();
+        return data as ClientEnvelope<T>;
+      } catch (e: unknown) {
+        return {
+          ok: false,
+          error: {
+            code: "TX_SEND_OUTCOME_UNKNOWN",
+            message:
+              `The send request got no readable answer (${e instanceof Error ? e.message : String(e)}): whether the dev server ` +
+              `broadcast a transaction is unknown, so it was not sent again. Check the transaction (GET /api/tx/receipt/<txId>, ` +
+              `\`hardkas tx wait <txId>\`) before paying again; repeating the request with idempotencyKey ` +
+              `${mode.idempotencyKey} returns the recorded result instead of a new transaction.`,
+            idempotencyKey: mode.idempotencyKey
+          },
+          warnings: [],
+          meta: failureMeta()
+        };
+      }
+    }
     const maxRetries = 3;
     let attempt = 0;
     while (true) {
@@ -46,11 +94,7 @@ export function createHardkasClient(options: HardkasClientOptions = {}) {
             ok: false,
             error: { code: "LOCALNET_RPC_RETRY_EXHAUSTED", message: ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) },
             warnings: [],
-            meta: {
-              workspace: "unknown",
-              network: options.network || "simulated",
-              mode: "unknown"
-            }
+            meta: failureMeta()
           };
         }
         // Backoff with jitter
@@ -58,6 +102,17 @@ export function createHardkasClient(options: HardkasClientOptions = {}) {
         await new Promise(r => setTimeout(r, attempt * jitter));
       }
     }
+  }
+
+  // P0-TX-SAFETY-1A: every send carries an idempotency key (the caller's, else a fresh one) and is sent once
+  function sendOnce<T>(params: Record<string, unknown> & { idempotencyKey?: string }) {
+    const idempotencyKey =
+      typeof params.idempotencyKey === "string" && params.idempotencyKey.length > 0 ? params.idempotencyKey : newIdempotencyKey();
+    return fetchApi<T>(
+      "/api/tx/send",
+      { method: "POST", body: JSON.stringify({ ...params, idempotencyKey }) },
+      { kind: "broadcast", idempotencyKey }
+    );
   }
 
   return {
@@ -81,8 +136,9 @@ export function createHardkasClient(options: HardkasClientOptions = {}) {
         amountSompi?: string;
         feeRate?: string;
         allowDevAutoSign?: boolean;
-      }) =>
-        fetchApi<any>("/api/tx/send", { method: "POST", body: JSON.stringify(params) }),
+        idempotencyKey?: string;
+        allowNewPaymentAfterUnknown?: boolean;
+      }) => sendOnce<any>(params),
       receipt: (id: string) => fetchApi<any>(`/api/tx/receipt/${id}`)
     },
     artifacts: {
@@ -153,12 +209,9 @@ export function createHardkasClient(options: HardkasClientOptions = {}) {
         amountSompi: string;
         feeRate?: string;
         allowDevAutoSign?: boolean;
-      }) => {
-        return fetchApi<any>("/api/tx/send", {
-          method: "POST",
-          body: JSON.stringify(params)
-        });
-      }
+        idempotencyKey?: string;
+        allowNewPaymentAfterUnknown?: boolean;
+      }) => sendOnce<any>(params)
     },
     localnet: {
       status: () => fetchApi<any>("/api/localnet/status")

@@ -224,12 +224,26 @@ describe("Demo-cut · T-A14b · tx status / tx wait present the derived Q4 state
     await resealSubmission((s) => {
       asSimnet(s);
       // the node's rejection as it arrives (rusty-kaspa's RejectedTransaction error; fixtures/toccata-v2 record real ones)
-      s.submitResult = { accepted: false, error: `Rejected transaction ${TX}: transaction ${TX} is already in the mempool` };
+      // P0-TX-SAFETY-1A: a real rejection — "is already in the mempool" means the node HOLDS the tx (unknown, not rejected)
+      s.submitResult = { accepted: false, error: `Rejected transaction ${TX}: transaction ${TX} is not standard: transaction version 9 is not in the valid range of 0-1` };
     });
     expect((await runTxStatus({ txId: TX, sdk, observe: false })).derived.status).toBe("REJECTED_BY_NODE");
     const err: any = await runTxWait({ txId: TX, sdk, until: "accepted", timeoutMs: 10_000, intervalMs: 1, sleep: async () => undefined }).catch((e) => e);
     expect(err.code).toBe("TX_WAIT_FAILED");
     expect(err.exitCode).toBe(1);
+  });
+
+  it("P0-TX-SAFETY-1A: the node saying it already holds the tx is NOT a rejection: no state decided, `tx wait` keeps observing", async () => {
+    await realSend();
+    await resealSubmission((s) => {
+      asSimnet(s);
+      s.submitResult = { accepted: false, error: `Rejected transaction ${TX}: transaction ${TX} is already in the mempool` };
+    });
+    const derived = (await runTxStatus({ txId: TX, sdk, observe: false })).derived;
+    expect(derived.status).toBe("INSUFFICIENT_EVIDENCE");
+    expect(derived.reasons.join(" ")).toMatch(/already holds this transaction/);
+    const err: any = await runTxWait({ txId: TX, sdk, until: "accepted", timeoutMs: 200, intervalMs: 1, sleep: async () => undefined }).catch((e) => e);
+    expect(err.code).toBe("TX_WAIT_TIMEOUT");
   });
 
   it("CONFLICTING_OBSERVATIONS shows every observer's view", () => {
