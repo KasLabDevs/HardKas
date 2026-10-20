@@ -5,6 +5,7 @@ import { sqliteStorage } from '@hardkas/storage-sqlite';
 import { metrics, getHealthSnapshot, toPrometheusText, logger } from '@hardkas/observability';
 import http from 'http';
 import fs from 'fs';
+import { requireLabNetwork, LAB_NETWORK_ENV } from './network-guard.js';
 
 // Default to 30 minutes for smoke test
 const RUN_DURATION_MS = 30 * 60 * 1000;
@@ -60,12 +61,14 @@ async function main() {
     const storage = sqliteStorage({ path: '.hardkas/testnet.db' });
     await storage.migrate();
 
-    // Initialize Wallet
-    const wallet = await WalletToolkit.open("smoke-test-bot", { network: "testnet" });
+    // Initialize Wallet. WALLET-HD-0: the toolkit's identity is SYNTHETIC (its private key is computable from the wallet
+    // name), so it exists on a local simnet only, declared explicitly by the operator. This lab never asks anyone to
+    // fund that address on a public network; for testnet-10 use a real encrypted account (see network-guard.ts).
+    const labNetwork = requireLabNetwork(process.env[LAB_NETWORK_ENV]);
+    const wallet = WalletToolkit.open("smoke-test-bot", { networkId: labNetwork });
     await wallet.create();
-    const address = await wallet.address();
-    logger.info(`Wallet Address: ${address}`);
-    logger.info(`Please fund this address via a testnet faucet to enable active transaction testing.`);
+    const address = await wallet.receive();
+    logger.warn(`Wallet address (simnet, SYNTHETIC identity: its private key is derivable from the wallet name; never send real funds to it): ${address}`);
 
     const indexer = IndexerToolkit.open();
     const jobs = JobsToolkit.open({ storage });
@@ -98,7 +101,7 @@ async function main() {
             const balance = await wallet.balance();
             if (balance > 10000n) {
                 logger.info("Funds detected! Simulating active send...", { balance: balance.toString() });
-                const dest = await wallet.address(); // Send to self
+                const dest = await wallet.receive(); // Send to self
                 await wallet.sendSimulated({ to: dest, amount: 10000n });
                 metrics.inc("wallet_tx_submitted_total");
             } else {

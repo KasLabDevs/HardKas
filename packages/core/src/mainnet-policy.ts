@@ -35,6 +35,23 @@ export function isMainnetNetworkId(networkId: unknown): boolean {
 }
 
 /**
+ * WALLET-HD-0 · HardKAS's own spellings of its local simulated world, besides the rusty-kaspa simnet type itself
+ * (`simnet`, `simnet-<n>`, `kaspa-simnet`): the simulator's `simulated` and the Docker localnet's `local-docker-simnet`.
+ */
+export const SIMNET_NETWORK_ALIASES: ReadonlySet<string> = new Set(["simulated", "local-docker-simnet"]);
+
+/**
+ * WALLET-HD-0 · whether a network NAME means the local simnet — the only network a synthetic (predictable-key) HardKAS
+ * identity may exist on. Decided by the name alone, never by an address prefix: `kaspasim` (a prefix), a misspelling,
+ * an empty string or any unknown name is NOT simnet (fail closed).
+ */
+export function isSimnetNetworkId(networkId: unknown): boolean {
+  if (typeof networkId !== "string") return false;
+  const n = networkId.trim().toLowerCase();
+  return n !== "" && (networkTypeOf(n) === "simnet" || SIMNET_NETWORK_ALIASES.has(n));
+}
+
+/**
  * MAINNET-PERIMETER-1 (B2): the network a config entry DECLARES (`networks[name].network`), else the name itself. A
  * config may name an entry anything ("prod"); the guard decides from what the entry says it is, not from its name.
  */

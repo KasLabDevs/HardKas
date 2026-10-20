@@ -135,7 +135,8 @@ export {
   redactUrlCredentialsInText,
   redactSecretFields,
   stripAnsi,
-  URL_SECRET_MARKER
+  URL_SECRET_MARKER,
+  EXTENDED_PRIVATE_KEY_PATTERN
 } from "./security.js";
 export * from "./fs.js";
 export * from "./corruption.js";

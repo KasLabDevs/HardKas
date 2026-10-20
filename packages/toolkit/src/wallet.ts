@@ -6,7 +6,7 @@ import { UtxoControlStore } from './stores/utxo-control-store.js';
 import { logger, metrics, tracer } from '@hardkas/observability';
 import { UtxoWatchEngine, type WalletWatchHandle, type WalletWatchListener } from './watch.js';
 import { calculateDynamicFeeRate, FeePriority } from './fee-estimator.js';
-import { assertMainnetTransactionsDisabled, HardkasError, networkTypeOf, isMainnetNetworkId } from '@hardkas/core';
+import { assertMainnetTransactionsDisabled, HardkasError, networkTypeOf, isMainnetNetworkId, isSimnetNetworkId } from '@hardkas/core';
 import {
     assertBroadcastNodeIdentity,
     canonicalNetworkId,
@@ -48,6 +48,16 @@ export interface WalletToolkitOptions {
     rpcUrl?: string;
 }
 
+/**
+ * WALLET-HD-0 · identity notice. The only identity this toolkit has today is the SYNTHETIC legacy one
+ * (`WalletManager` + `AddressManager`): its private keys are computable by anyone from the wallet's NAME. It exists on
+ * the local simnet only — `create()` and `receive()` refuse every other declared network before an address exists
+ * (`WALLET_SYNTHETIC_NETWORK_BLOCKED`), and so does everything built on them (balance, utxos, history, watch,
+ * estimateFee, send, payMany, sweep, consolidate, split). It is not BIP39/BIP32, it recovers no Kaspa wallet, and a
+ * spend needs an injected `signer`, which is a DIFFERENT identity: a spend from this wallet's own address cannot be
+ * signed by it. A development facade, never custody. For funds on a public network use a real account
+ * (`hardkas accounts real generate`) and the tx plan / sign / send path.
+ */
 export class WalletToolkit {
     private walletManager: WalletManagerImpl;
     private addressManager: typeof AddressManager;
@@ -130,11 +140,22 @@ export class WalletToolkit {
         return new WalletToolkit(name, store, options);
     }
 
+    /**
+     * Creates the wallet's SYNTHETIC identity (WALLET-HD-0: simnet only; refused on any other declared network before
+     * it exists). The identity is derived from the wallet's name: it is a development fixture, not custody.
+     */
     public async create(): Promise<void> {
-        this.walletManager.create({ walletId: this.name });
+        const network = this.assertSyntheticIdentityNetwork("create");
+        this.walletManager.create({ walletId: this.name, network: network as any });
     }
 
+    /**
+     * The wallet's receive address (account 0, index 0; also its change address and the `from` of its plans). WALLET-HD-0:
+     * refused before derivation on any network but the local simnet — the key behind this address is computable from the
+     * wallet's name.
+     */
     public async receive(): Promise<string> {
+        const network = this.assertSyntheticIdentityNetwork("receive");
         // High level facade: gets receive address
         const seedRef = this.walletManager.getSeedRef(this.name);
         return this.addressManager.derive({
@@ -142,32 +163,67 @@ export class WalletToolkit {
             accountIndex: 0,
             chain: 'receive',
             addressIndex: 0,
-            network: this.addressNetwork() as any
+            network: network as any
         }).address;
     }
 
     /**
-     * P0-TX-SAFETY-1B v2: the network type addresses (receive, change) are derived for. With a declared `networkId` it
-     * is that id's type (`testnet-10` → testnet → `kaspatest:`), never the `simnet` default; a `network` that
-     * names another type than `networkId` is refused here too.
+     * WALLET-HD-0 · the toolkit's identity is synthetic (its keys are computable from its name), so it may exist on the
+     * local simnet only. Called before an identity is created and before any address is derived: a declaration naming
+     * any other network (testnet-10 and every testnet, devnet, mainnet) is refused with a typed error, and nothing
+     * downstream (balance, UTXOs, plans, signatures, submits) can happen without the address. No option, flag or
+     * environment variable lifts it. Returns the network name the derivation uses (`simnet`).
+     */
+    private assertSyntheticIdentityNetwork(operation: string): string {
+        const network = this.addressNetwork();
+        if (isSimnetNetworkId(network)) return network;
+        throw new HardkasError(
+            "WALLET_SYNTHETIC_NETWORK_BLOCKED",
+            `WalletToolkit.${operation}: this wallet's identity is synthetic (its private keys are computable from its name) ` +
+                `and exists on simnet only; it cannot receive or spend on ${network}. No address was derived; nothing was ` +
+                `signed or sent. For a public network use a real account: hardkas accounts real generate --network <id> ` +
+                `--password-env <VAR>, then tx plan, tx sign and tx send.`,
+            { metadata: { network, identity: "legacy-synthetic", derivationModel: "deterministic-simulated-v1" } }
+        );
+    }
+
+    /**
+     * P0-TX-SAFETY-1B v2 / WALLET-HD-0: the network TYPE addresses (receive, change) are derived for, from the
+     * declaration alone. With a declared `networkId` it is that id's type (`testnet-10` → testnet), never the `simnet`
+     * default; a `network` that names another type than `networkId` is refused (contradictory); a name that is neither a
+     * Kaspa network id nor a simnet alias is refused (invalid), never defaulted to simnet.
      */
     private addressNetwork(): string {
         const fromId = this.options.networkId;
         const fromNetwork = this.options.network as string | undefined;
-        if (typeof fromId === "string") {
-            const idType = networkTypeOf(canonicalNetworkId(fromId));
-            if (idType !== undefined) {
-                const nType = fromNetwork === undefined ? undefined : networkTypeOf(canonicalNetworkId(fromNetwork === "local-docker-simnet" ? "simnet" : fromNetwork));
-                if (fromNetwork !== undefined && nType !== idType) {
-                    throw new HardkasError(
-                        "WALLET_NETWORK_CONTRADICTORY",
-                        `WalletToolkit.receive: network ${fromNetwork} and networkId ${fromId} name different network types.`
-                    );
-                }
-                return idType;
+        const typeOf = (v: string): string | undefined => (isSimnetNetworkId(v) ? "simnet" : networkTypeOf(canonicalNetworkId(v)));
+        if (fromId !== undefined) {
+            const idType = typeof fromId === "string" ? typeOf(fromId) : undefined;
+            if (idType === undefined) {
+                throw new HardkasError(
+                    "WALLET_NETWORK_INVALID",
+                    `WalletToolkit: networkId ${JSON.stringify(fromId)} is not a Kaspa network id (simnet, testnet-10, devnet, …). No address was derived.`
+                );
             }
+            if (fromNetwork !== undefined && typeOf(fromNetwork) !== idType) {
+                throw new HardkasError(
+                    "WALLET_NETWORK_CONTRADICTORY",
+                    `WalletToolkit.receive: network ${fromNetwork} and networkId ${fromId} name different network types.`
+                );
+            }
+            return idType;
         }
-        return fromNetwork || "simnet";
+        if (fromNetwork !== undefined) {
+            const nType = typeOf(fromNetwork);
+            if (nType === undefined) {
+                throw new HardkasError(
+                    "WALLET_NETWORK_INVALID",
+                    `WalletToolkit: network ${JSON.stringify(fromNetwork)} is not a Kaspa network name. No address was derived.`
+                );
+            }
+            return nType;
+        }
+        return "simnet";
     }
 
     public async balance(): Promise<bigint> {
@@ -469,8 +525,12 @@ export class WalletToolkit {
 
     /** AUD-28: `changeAddress` is forwarded to the upstream planner; default = the wallet's receive address. */
     public async payMany(opts: { outputs: { address: string; amount: bigint }[]; priority?: FeePriority; feeRate?: bigint; changeAddress?: string }) {
-        const verifiedNetwork = await this.verifySpendNetwork("payMany");
+        // WALLET-HD-0.1 · fail closed in this order, each step before any I/O of the next: (1) the DECLARED network
+        // (mainnet policy, ambiguity, invalid names — pure), (2) the wallet's IDENTITY (synthetic → simnet only; derives
+        // the address, no I/O), (3) the NODE's identity (the two reads). A refused spend never asks the node anything.
+        this.declaredSpendNetwork("payMany");
         const addr = await this.receive();
+        const verifiedNetwork = await this.verifySpendNetwork("payMany");
         const availableUtxos = await this.utxos.list();
 
         let finalFeeRate = opts.feeRate;
@@ -569,8 +629,10 @@ export class WalletToolkit {
     }
 
     public async sweep(opts: { to: string; priority?: FeePriority; feeRate?: bigint }) {
-        const verifiedNetwork = await this.verifySpendNetwork("sweep");
+        // WALLET-HD-0.1 · declared network → wallet identity → node identity (see payMany)
+        this.declaredSpendNetwork("sweep");
         const addr = await this.receive();
+        const verifiedNetwork = await this.verifySpendNetwork("sweep");
         let availableUtxos = await this.utxos.list();
         if (availableUtxos.length === 0) throw new Error("No UTXOs to sweep");
 
@@ -620,8 +682,10 @@ export class WalletToolkit {
     }
 
     public async consolidate(opts: { to?: string; priority?: FeePriority; feeRate?: bigint; maxUtxos?: number }) {
-        const verifiedNetwork = await this.verifySpendNetwork("consolidate");
+        // WALLET-HD-0.1 · declared network → wallet identity → node identity (see payMany)
+        this.declaredSpendNetwork("consolidate");
         const addr = await this.receive();
+        const verifiedNetwork = await this.verifySpendNetwork("consolidate");
         const availableUtxos = await this.utxos.list();
         const maxUtxos = opts.maxUtxos || 100;
 
@@ -661,8 +725,10 @@ export class WalletToolkit {
 
     public async split(opts: { outputsCount: number; amountPerOutput: bigint; priority?: FeePriority; feeRate?: bigint }) {
         if (opts.outputsCount <= 0) throw new Error("outputsCount must be greater than 0");
-        await this.verifySpendNetwork("split");
+        // WALLET-HD-0.1 · declared network → wallet identity → node identity (see payMany); payMany repeats the chain
+        this.declaredSpendNetwork("split");
         const addr = await this.receive();
+        await this.verifySpendNetwork("split");
         const outputs = Array(opts.outputsCount).fill({ address: addr, amount: opts.amountPerOutput });
         return this.payMany({
             outputs,

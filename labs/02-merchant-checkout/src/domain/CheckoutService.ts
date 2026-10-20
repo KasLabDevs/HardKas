@@ -49,6 +49,8 @@ export class CheckoutService {
      */
     public registerMerchant(merchantId: string): void {
         // FRICTION #01 RESOLUTION: WalletManager + AddressManager from Lab 01 work here without changes.
+        // WALLET-HD-0: a SYNTHETIC, simnet-only identity — its keys are computable from `merchantId`, so the per-invoice
+        // addresses are development fixtures and must never receive real funds (refused outside simnet).
         WalletManager.create({ walletId: merchantId, network: "simnet" });
         this.merchants.set(merchantId, { nextInvoiceAddressIndex: 0 });
     }

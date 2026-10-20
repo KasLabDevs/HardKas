@@ -45,10 +45,13 @@ function stubSpendPath(ctx: ReturnType<typeof wallet>) {
 const send = (w: WalletToolkit) => w.send({ to: "kaspatest:qdest", amount: 1_000n, feeRate: 1n });
 
 describe("P0-TX-SAFETY-1B v2 · addresses follow the declared network", () => {
-  it("networkId testnet-10 → receive() is a kaspatest: address (BEFORE: kaspasim:)", async () => {
+  // WALLET-HD-0 (2026-10-20): 1B v2 asked this case for a kaspatest: address; the toolkit's identity is synthetic
+  // (its key is computable from the wallet's name), so that address would give its funds away. The identity is now
+  // refused on testnet-10 before it exists — addresses still never fall back to the simnet default.
+  it("networkId testnet-10 → the synthetic identity is refused at create() and receive(); no address (1B v2: kaspatest:; BEFORE 1B: kaspasim:)", async () => {
     const { w } = wallet({ networkId: "testnet-10" }, { net: "testnet-10" });
-    await w.create();
-    expect(await w.receive()).toMatch(/^kaspatest:/);
+    await expect(w.create()).rejects.toMatchObject({ code: "WALLET_SYNTHETIC_NETWORK_BLOCKED" });
+    await expect(w.receive()).rejects.toMatchObject({ code: "WALLET_SYNTHETIC_NETWORK_BLOCKED" });
   });
 
   it("networkId simnet → kaspasim:; nothing declared keeps the simnet default for read-only use", async () => {
@@ -60,15 +63,18 @@ describe("P0-TX-SAFETY-1B v2 · addresses follow the declared network", () => {
     expect(await b.w.receive()).toMatch(/^kaspasim:/);
   });
 
-  it("network simnet + networkId testnet-10 → receive() refuses (contradictory), no address is handed out", async () => {
+  it("network simnet + networkId testnet-10 → create() and receive() refuse (contradictory), no address is handed out", async () => {
     const { w } = wallet({ network: "simnet", networkId: "testnet-10" }, { net: "testnet-10" });
-    await w.create();
+    // WALLET-HD-0: the contradiction is refused already when the identity would be created, not only at receive()
+    await expect(w.create()).rejects.toMatchObject({ code: "WALLET_NETWORK_CONTRADICTORY" });
     await expect(w.receive()).rejects.toMatchObject({ code: "WALLET_NETWORK_CONTRADICTORY" });
   });
 
   it("the change address of a testnet-10 spend is a testnet address (it is the wallet's receive address)", async () => {
     const ctx = wallet({ networkId: "testnet-10" }, { net: "testnet-10" });
-    await ctx.w.create();
+    // WALLET-HD-0: the synthetic identity no longer exists on testnet-10, so (as stubSpendPath does) the wallet's address
+    // is a stand-in here; under test is that the planner receives the DECLARED network and that address as the change.
+    vi.spyOn(ctx.w, "receive").mockResolvedValue("kaspatest:qsource");
     vi.spyOn(ctx.w.utxos, "list").mockResolvedValue([{ transactionId: "aa".repeat(32), outputIndex: 0, amountSompi: 10_000_000n, scriptPublicKey: "00", blockDaaScore: 1n, isCoinbase: false }] as any);
     const seen: any[] = [];
     vi.spyOn(ctx.w as any, "planUpstream").mockImplementation(async (p: any) => {

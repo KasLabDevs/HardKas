@@ -1,5 +1,5 @@
 import { Command } from "commander";
-import { stripAnsi } from "@hardkas/core";
+import { stripAnsi, EXTENDED_PRIVATE_KEY_PATTERN } from "@hardkas/core";
 import { getOutput } from "../output.js";
 import fs from "fs";
 import path from "path";
@@ -37,8 +37,9 @@ const PATTERNS: ReadonlyArray<{ kind: SecretKind; regex: RegExp; where: (m: RegE
   { kind: "mnemonic", regex: new RegExp(`["']?(${PHRASE_FIELD})["']?\\s*[:=]\\s*["']?${PHRASE}(?![a-z])`, "i"), where: (m) => `field "${m[1]}"` },
   // MY_MNEMONIC="<words>"  |  WALLET_SEED=<words>
   { kind: "mnemonic", regex: new RegExp(`\\b([A-Z][A-Z0-9_]*(?:MNEMONIC|SEED(?:_PHRASE)?))\\s*=\\s*["']?${PHRASE}(?![a-z])`), where: (m) => `variable ${m[1]}` },
-  // a BIP32 extended private key, wherever it is
-  { kind: "extended private key", regex: /\bxprv[1-9A-HJ-NP-Za-km-z]{50,}/, where: () => "an xprv value" }
+  // an extended private key, wherever it is: Kaspa's kprv / ktrv, BIP32's xprv and the other *prv prefixes (WALLET-HD-0;
+  // the shared shape lives in @hardkas/core so the free-text mask and this audit agree). The public kpub/ktub/xpub never match.
+  { kind: "extended private key", regex: new RegExp(EXTENDED_PRIVATE_KEY_PATTERN.source), where: (m) => `a ${m[0].slice(0, 4)} value` }
 ];
 
 /**
