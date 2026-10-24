@@ -1,5 +1,6 @@
 import type { NetworkId } from "@hardkas/core";
-import { RpcError, RpcNotFoundError } from "./errors.js";
+import { RpcError, RpcNotFoundError, acceptedTxIdOf, classifySubmitFailure } from "./errors.js";
+import { submitTxIdOf } from "./expected-txid.js";
 import { OfficialRpcSession, type OfficialRpcFactory } from "./upstream/session.js";
 
 export interface KaspaNodeInfo {
@@ -124,6 +125,13 @@ export interface KaspaSubmitTransactionResult {
 
 export interface SubmitTransactionOptions {
   allowOrphan?: boolean;
+  /**
+   * EXPECTED-TXID-1: the TXID of the signed transaction being sent (the signed artifact's, 64 hex). The client refuses
+   * to send (typed not-sent) when it is malformed or is not the official kaspa-wasm id of the transaction, and names it
+   * in every outcome: accepted only when the node's answer names it; an answer naming none or another one, or a failure
+   * after the request may have left, is RpcSubmitOutcomeUnknownError carrying it. Never a consensus confirmation.
+   */
+  expectedTxId?: string;
 }
 
 /** Data verbosity of `getVirtualChainFromBlockV2`; HardKAS clients accept NONE and LEGACY_RECOVERY. */
@@ -264,11 +272,21 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
 
   async submitTransaction(transaction: KaspaRpcTransaction, options?: SubmitTransactionOptions): Promise<KaspaSubmitTransactionResult> {
     // The storage mass commitment is checked before anything is sent (see upstream/wire.ts).
-    const response = await this.session.request("submitTransaction", {
-      transaction,
-      allowOrphan: options?.allowOrphan ?? false
-    });
-    return mapKaspaSubmitTransactionResult(response);
+    // EXPECTED-TXID-1: options.expectedTxId, checked against the transaction before anything is sent
+    const expected = submitTxIdOf(transaction, options);
+    let response: unknown;
+    try {
+      response = await this.session.request("submitTransaction", {
+        transaction,
+        allowOrphan: options?.allowOrphan ?? false
+      });
+    } catch (e) {
+      throw classifySubmitFailure(e, expected);
+    }
+    // RPC-SUBMIT-SAFETY-1: an answer that names no transaction (or another one) is not an accepted submission
+    const mapped = mapKaspaSubmitTransactionResult(response);
+    if (mapped.accepted !== false) acceptedTxIdOf(response, expected);
+    return mapped;
   }
 
   async getMempoolEntry(txId: string): Promise<MempoolEntry | null> {
@@ -642,6 +660,7 @@ export class MockKaspaRpcClient implements KaspaRpcClient {
 
 export * from "./json-rpc-client.js";
 export { KaspaWrpcClient } from "./wrpc-client.js";
+export { officialTxIdOf, submitTxIdOf } from "./expected-txid.js";
 export * from "./health.js";
 
 export * from "./errors.js";

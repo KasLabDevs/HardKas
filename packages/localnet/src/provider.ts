@@ -73,17 +73,23 @@ export class LocalnetSimulatedProvider implements KaspaRpcClient {
     if (!state) return [];
 
     const utxos = getSpendableUtxos(state, address);
-    return utxos.map((u) => ({
-      address: u.address,
-      amountSompi: BigInt(u.amountSompi),
-      outpoint: {
-        transactionId: u.id.split(":")[1] || "unknown",
-        index: Number(u.id.split(":")[2]) || 0
-      },
-      blockDaaScore: u.createdAtDaaScore ? BigInt(u.createdAtDaaScore) : 0n,
-      isCoinbase: u.id.startsWith("coinbase:"),
-      scriptPublicKey: "200000000000000000000000000000000000000000000000000000000000000000ac"
-    }));
+    return utxos.map((u) => {
+      // SIM-OUTPOINT-1: the simulator writes its UTXO ids as `<txId>:<index>` (older ones `faucet:<addr>:<daa>:<n>`); the
+      // outpoint is the id split at its LAST ":", so `${transactionId}:${index}` is the id again and two UTXOs never share
+      // an outpoint (parts [1] and [2] gave every output of a payment the transaction "0" or "1" and index 0)
+      const cut = u.id.lastIndexOf(":");
+      return {
+        address: u.address,
+        amountSompi: BigInt(u.amountSompi),
+        outpoint: {
+          transactionId: cut > 0 ? u.id.slice(0, cut) : u.id,
+          index: cut > 0 ? Number(u.id.slice(cut + 1)) || 0 : 0
+        },
+        blockDaaScore: u.createdAtDaaScore ? BigInt(u.createdAtDaaScore) : 0n,
+        isCoinbase: u.id.startsWith("coinbase:"),
+        scriptPublicKey: "200000000000000000000000000000000000000000000000000000000000000000ac"
+      };
+    });
   }
 
   async getUtxosByAddresses(addresses: string[]): Promise<any> {

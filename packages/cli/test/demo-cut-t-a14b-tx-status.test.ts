@@ -8,6 +8,7 @@ import { finalityDepthFor } from "@hardkas/core";
 import { runTxStatus, renderTxStatusRows, stateHeadline, txStatusJson } from "../src/runners/tx-status-runner.js";
 import { runTxWait } from "../src/runners/tx-wait-runner.js";
 import { sendAsRpc } from "../../sdk/test/helpers/rpc-instance.js";
+import { reissueAsBroadcastable, nodeNamesReceived } from "../../sdk/test/helpers/official-signed-payload.js";
 
 // Demo-cut step 2 · Wave 2(f) / T-A14b — the CLI surface of the Q4 model.
 //   `tx status <txId>` and `tx wait <txId>` present what `sdk.tx.observe` /
@@ -15,7 +16,8 @@ import { sendAsRpc } from "../../sdk/test/helpers/rpc-instance.js";
 //   `txObservation.v1` artifacts) — no second state machine, no "Consensus Validated",
 //   no "Settlement Proof", and FINALIZED only as "final according to the observed rule".
 
-const TX = "1".repeat(64);
+// EXPECTED-TXID-1: the recorded network submission is of a real transaction, so TX is its official id (set by realSend)
+let TX = "1".repeat(64);
 const H = (n: number) => n.toString(16).padStart(64, "0");
 const FORBIDDEN = /Consensus Validated|Settlement Proof|performed by remote node|implies Kaspa consensus|irreversib/i;
 
@@ -114,17 +116,11 @@ describe("Demo-cut · T-A14b · tx status / tx wait present the derived Q4 state
   async function realSend(): Promise<void> {
     const plan = await sdk.tx.plan({ from: "alice", to: "bob", amount: "10" });
     const signed: any = await sdk.tx.sign(plan, "alice");
-    const s: any = structuredClone(signed);
-    delete s.authorization;
-    s.signedTransaction = { format: "hex", payload: "deadbeef" };
-    s.txId = TX;
-    delete s.contentHash;
-    s.lineage = { ...s.lineage, artifactId: "" };
-    s.contentHash = calculateContentHash(s, CURRENT_HASH_VERSION);
-    s.lineage.artifactId = s.contentHash;
-    s.signedId = `signed-${s.contentHash.slice(0, 16)}`;
+    // EXPECTED-TXID-1: the payload is the transaction the plan authorizes, under its official kaspa-wasm id
+    const s: any = reissueAsBroadcastable(signed, plan);
+    TX = s.txId;
     await sdk.artifacts.write(s);
-    vi.spyOn(sdk.rpc, "submitTransaction").mockResolvedValue({ transactionId: TX } as any);
+    vi.spyOn(sdk.rpc, "submitTransaction").mockImplementation(nodeNamesReceived as any);
     const sent: any = await sendAsRpc(sdk, s, "http://127.0.0.1:16110");
     expect(sent.submitted).toBe(true);
   }

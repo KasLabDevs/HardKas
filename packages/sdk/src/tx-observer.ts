@@ -94,7 +94,10 @@ export function rpcObserverFor(client: KaspaRpcClient): TxObserverRpcRecorder {
       };
     },
     async getSinkBlueScore() {
-      const raw: any = record("getSinkBlueScore", {}, await client.getSinkBlueScore());
+      // TX-SEND-IDEMPOTENT-1: the same request through the generic call when the client has no typed method (the CLI's
+      // KaspaWrpcClient, which `tx send` hands the SDK — a re-send observes through it)
+      const answer = typeof (client as { getSinkBlueScore?: unknown }).getSinkBlueScore === "function" ? await client.getSinkBlueScore() : await client.call<any>("getSinkBlueScore", {});
+      const raw: any = record("getSinkBlueScore", {}, answer);
       return BigInt(raw?.blueScore ?? raw?.getSinkBlueScoreResponse?.blueScore ?? raw);
     },
     async getMempoolEntry(txId) {

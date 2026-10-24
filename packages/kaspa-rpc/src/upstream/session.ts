@@ -1,4 +1,4 @@
-import { loadManagedKaspaWasmSync, redactUrlCredentials, redactUrlCredentialsInText } from "@hardkas/core";
+import { loadManagedKaspaWasmSync, redactUrlCredentials, redactUrlCredentialsInText, assertValidNodeEndpoint } from "@hardkas/core";
 import {
   isNodeNetworkIdentityError,
   markRequestNotSent,
@@ -16,6 +16,11 @@ import { canonicalNetworkId, decideBroadcastIdentity, namedNetwork } from "../br
 
 /** MAINNET-PERIMETER-1: the official methods that put a transaction on the network. */
 const BROADCAST_METHODS: ReadonlySet<string> = new Set(["submitTransaction", "submitTransactionReplacement"]);
+
+/** RPC-SUBMIT-SAFETY-1: whether a HardKAS method name (any spelling: `submitTransactionRequest`…) is a broadcast. */
+export function isBroadcastMethod(method: string): boolean {
+  return BROADCAST_METHODS.has(officialMethodName(method));
+}
 
 /*
  * The official kaspa-wasm RpcClient is HardKAS's only Kaspa RPC transport. This
@@ -44,8 +49,13 @@ export const officialRpcFactory: OfficialRpcFactory = (url) => {
   return new k.RpcClient({ url, encoding: k.Encoding.SerdeJson });
 };
 
-/** wRPC endpoints are WebSocket URLs: http(s):// maps to ws(s)://, a bare host:port gets ws://. */
+/**
+ * wRPC endpoints are WebSocket URLs: http(s):// maps to ws(s)://, a bare host:port gets ws://. ENDPOINT-VALIDATION-1:
+ * a malformed endpoint is refused here (NETWORK_ENDPOINT_INVALID), so no client is ever created for it and nothing
+ * connects — it used to become `ws://<text>`.
+ */
 export function toWrpcUrl(url: string): string {
+  assertValidNodeEndpoint(url, "Kaspa RPC endpoint");
   if (url.startsWith("http://")) return "ws://" + url.slice("http://".length);
   if (url.startsWith("https://")) return "wss://" + url.slice("https://".length);
   if (url.startsWith("ws://") || url.startsWith("wss://")) return url;

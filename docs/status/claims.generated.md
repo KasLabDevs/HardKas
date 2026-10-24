@@ -81,7 +81,7 @@ These describe what the build contains and probe nothing. `silverScript`,
 here; the SDK's `capabilities.get()` derives them from the checks
 `hardkas silver doctor` reports and from the kaspa-wasm the signer loads.
 `covenants` covers the real builders only (1:1 auth-bound transitions,
-`hardkas silver covenant genesis|transition`) and also needs the canonical node
+`hardkas silver covenant genesis` and `hardkas silver covenant transition`) and also needs the canonical node
 to prove its identity. `sdkCovenantPlanning` is false: the SDK's
 `covenants.planDeploy/planSpend` refuse.
 

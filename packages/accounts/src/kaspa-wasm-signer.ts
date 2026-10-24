@@ -48,6 +48,47 @@ export async function unlockAccountKeystore(
   return unlock.payload.privateKey;
 }
 
+/**
+ * SILVER-KEYS-1: the private key of a local account, in the one order every HardKAS signer follows: the variable its
+ * `privateKeyEnv` names; else its plaintext key (a legacy store entry; refused on mainnet); else its keystore
+ * (unlockAccountKeystore: a development account opens with the published development password, any other only with
+ * `keystorePassword`, its owner's). Returns 64-hex key material and never logs it.
+ */
+export async function resolveAccountPrivateKey(
+  account: { name: string; privateKeyEnv?: string | undefined; privateKey?: string | undefined; keystorePath?: string | undefined; keystoreKind?: "dev-account" | undefined },
+  options: { networkId: string; keystorePassword?: string | undefined }
+): Promise<string> {
+  let pkValue = account.privateKeyEnv ? process.env[account.privateKeyEnv] : undefined;
+
+  if (!pkValue && account.privateKey) {
+    if (options.networkId === "mainnet") {
+      throw new Error(
+        `Mainnet guard: Unsafe plaintext privateKey fallback is forbidden on mainnet for account '${account.name}'. Use privateKeyEnv instead.`
+      );
+    }
+    pkValue = account.privateKey;
+  }
+
+  if (!pkValue && account.keystorePath) {
+    pkValue = await unlockAccountKeystore(
+      { name: account.name, keystorePath: account.keystorePath, keystoreKind: account.keystoreKind },
+      options.keystorePassword
+    );
+  }
+
+  if (!pkValue) {
+    const err = new Error(`DEV_ACCOUNT_KEY_UNAVAILABLE: Missing required private key for account '${account.name}'.`);
+    (err as any).code = "DEV_ACCOUNT_KEY_UNAVAILABLE";
+    throw err;
+  }
+
+  if (typeof pkValue !== "string" || pkValue.trim() === "" || !/^[0-9a-fA-F]{64}$/.test(pkValue)) {
+    const err = new Error("INVALID_PRIVATE_KEY_MATERIAL: Private key must be a valid 64-character hex string.");
+    (err as any).code = "INVALID_PRIVATE_KEY_MATERIAL";
+    throw err;
+  }
+  return pkValue;
+}
 
 /**
  * Real Kaspa signer using the official WASM SDK (the pinned managed toolchain).
@@ -86,35 +127,8 @@ export class KaspaWasmPrivateKeySigner implements HardkasTxPlanSigner {
     
     if (this.options.account) {
         const account = this.options.account;
-        let pkValue = account.privateKeyEnv ? process.env[account.privateKeyEnv] : undefined;
-
-        if (!pkValue && (account as any).privateKey) {
-          if (plan.networkId === "mainnet") {
-            throw new Error(
-              `Mainnet guard: Unsafe plaintext privateKey fallback is forbidden on mainnet for account '${account.name}'. Use privateKeyEnv instead.`
-            );
-          }
-          pkValue = (account as any).privateKey;
-        }
-
-        if (!pkValue && account.keystorePath) {
-          pkValue = await unlockAccountKeystore(
-            { name: account.name, keystorePath: account.keystorePath, keystoreKind: account.keystoreKind },
-            this.options.keystorePassword
-          );
-        }
-
-        if (!pkValue) {
-          const err = new Error(`DEV_ACCOUNT_KEY_UNAVAILABLE: Missing required private key for account '${account.name}'.`);
-          (err as any).code = "DEV_ACCOUNT_KEY_UNAVAILABLE";
-          throw err;
-        }
-
-        if (typeof pkValue !== "string" || pkValue.trim() === "" || !/^[0-9a-fA-F]{64}$/.test(pkValue)) {
-          const err = new Error("INVALID_PRIVATE_KEY_MATERIAL: Private key must be a valid 64-character hex string.");
-          (err as any).code = "INVALID_PRIVATE_KEY_MATERIAL";
-          throw err;
-        }
+        // SILVER-KEYS-1: the shared key-resolution order (`hardkas silver` resolves keys through it too)
+        const pkValue = await resolveAccountPrivateKey(account as any, { networkId: plan.networkId, keystorePassword: this.options.keystorePassword });
 
         const expectedAddress = (new sdk.PrivateKey(pkValue) as any).toKeypair().toAddress(getNetworkPrefix(plan.networkId || "simnet")).toString();
         const { PrivateKeyAuthorizer } = await import("./authorizers.js");
@@ -214,7 +228,8 @@ export class KaspaWasmPrivateKeySigner implements HardkasTxPlanSigner {
           return { amountSompi: amount, output: new sdk.PaymentOutput(new sdk.Address(o.address), amount) };
         });
 
-        const unsignedTx = createBalancedTransaction(sdk, { utxos, outputs, feeSompi: priorityFee });
+        // TX-SEQUENCE-1: an ordinary payment gets sequence 0 on every input; a covenant (V1) transaction is built as before
+        const unsignedTx = createBalancedTransaction(sdk, { utxos, outputs, feeSompi: priorityFee, ...(isV1 ? { inputSequences: "as-built" as const } : {}) });
 
         if (isV1) {
           // Group outputs with empty covenantId by authorizingInput to populate genesis covenants
@@ -250,6 +265,10 @@ export class KaspaWasmPrivateKeySigner implements HardkasTxPlanSigner {
             inputs[i].sigOpCount = 0;
           }
         }
+        // V1-TXID-1: the version, storage mass, compute budgets and sig-op counts set above are covered by the
+        // transaction's id, which kaspa-wasm recomputes only on finalize(): without it the txId declared below would be
+        // the id of the transaction as built (version 0), not of the one signed and serialized
+        if (isV1 || plan.computeBudget !== undefined) unsignedTx.finalize();
         return unsignedTx;
       };
 

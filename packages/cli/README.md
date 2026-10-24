@@ -66,7 +66,7 @@ npx hardkas localnet stop --toccata
 
 `localnet fund` mines until the account has spendable coins. With `--keep-miner` the miner keeps running, so new blocks keep arriving and the transaction gets accepted and confirmed; without it the miner stops and the node stays still until you mine again. `localnet stop` stops the node, and the miner, which shares its network, stops with it.
 
-`tx status` and `tx wait` report what the node has been observed to do with the transaction — `SUBMITTED`, `MEMPOOL_ACCEPTED`, `ACCEPTED`, then `CONFIRMED` once it has at least 100 blue-score confirmations. That threshold is a HardKAS default, not a Kaspa parameter. Once the state is reached, `tx wait` also waits, within the same `--timeout`, until the node's UTXO view lists the new outputs and no longer lists the spent inputs, so the balance you read next is current; if the view does not catch up in time it fails with `TX_WAIT_UTXO_VIEW_STALE`.
+`tx status` and `tx wait` report what the node has been observed to do with the transaction — `SUBMITTED`, `MEMPOOL_ACCEPTED`, `ACCEPTED`, then `CONFIRMED` once it has at least 100 blue-score confirmations. That threshold is a HardKAS default, not a Kaspa parameter. Once the state is reached, `tx wait` also waits, within the same `--timeout`, until the node's UTXO view lists the new outputs and no longer lists the spent inputs, so the balance you read next is current (an output that a later transaction has already spent, such as change used by the next payment of a batch, is not waited for); if the view does not catch up in time it fails with `TX_WAIT_UTXO_VIEW_STALE`.
 
 ## Evidence
 

@@ -215,7 +215,9 @@ export const TxPlanSchema = BaseArtifactSchema.extend({
   // field and remain readable — the fields are optional to preserve backward
   // compatibility with rc.22-era artifacts.
   plannerAuthority: z.enum(["KASPA_WASM_GENERATOR", "SYNTHETIC_SIMULATOR"]).optional(),
-  plannerAuthorityDetail: z.string().optional()
+  plannerAuthorityDetail: z.string().optional(),
+  // TX-FEE-GUARD-1: the total fee limit (sompi) the plan was made under; enforced again at sign and send
+  maxFeeSompi: z.string().regex(/^\d+$/).optional()
 });
 
 export const DagContextSchema = z.object({

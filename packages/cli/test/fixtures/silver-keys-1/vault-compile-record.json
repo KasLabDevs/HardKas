@@ -1,0 +1,60 @@
+{
+  "schema": "hardkas.silverCompile.v1",
+  "hardkasVersion": "0.12.0-rc.27",
+  "createdAt": "2026-10-22T10:16:39.984Z",
+  "networkId": "simnet",
+  "capability": "silver.compile.v1",
+  "source": {
+    "path": "contracts/VaultRelease.sil",
+    "sha256": "19816dbdb11ed84caa46666e8d97b41b9558785929c6d69bc3b03f1e2be71d19",
+    "text": "pragma silverscript ^0.1.0;\n\ncontract VaultRelease(pubkey owner) {\n    entry release(sig ownerSig) {\n        require(checkSig(ownerSig, owner));\n    }\n}\n"
+  },
+  "provenance": {
+    "schema": "hardkas.silver.compileProvenance.v1",
+    "compiler": {
+      "id": "silverc",
+      "repository": "kaspanet/silverscript",
+      "releaseTag": "v1.0.0",
+      "commit": "3ed973335b59269293564805cc2c58a14595ec03",
+      "assetName": "silverc-windows-x86_64.zip",
+      "assetSha256": "3e0d660c15a9e7ac90f3960da24d348b076b1891481bfe758db18accc8a102e1",
+      "binarySha256": "ce1e0ef5f1f415f371d3d2426e788597a388635da8cbe93e72e95a4f754b29af",
+      "languageVersion": "0.1.0"
+    },
+    "sourceSha256": "19816dbdb11ed84caa46666e8d97b41b9558785929c6d69bc3b03f1e2be71d19",
+    "constructorArgsSha256": "4b09bb8691d2ab3f14a5c1452df9640f234c759b57689e46f3bfe9376a2dfe15",
+    "artifactSha256": "104d4a6b4c33524a122aa30d80abd2510ddb67a9d79446e757b183a85ee974a5",
+    "abiSchemaVersion": 1,
+    "contracts": [
+      {
+        "name": "VaultRelease",
+        "bytecodeSha256": "ffc0467bd93aa086c2b3be0391963faf9bd1cc768caa1fad90b5f3d09b8ef5a0",
+        "templateHash": "7098fcd263b30db21857ce2ee42a9a98d9bd5119e4f37364daf04db2f064d8ab",
+        "entries": [
+          {
+            "name": "release",
+            "dispatchTag": "388ad0b4"
+          }
+        ]
+      }
+    ]
+  },
+  "artifactJson": "{\n  \"schema_version\": 1,\n  \"compiler_version\": \"0.1.0\",\n  \"structs\": {},\n  \"contracts\": {\n    \"VaultRelease\": {\n      \"source_path\": \"sil/VaultRelease.sil\",\n      \"runtime_state\": {\n        \"source\": \"State\",\n        \"fields\": []\n      },\n      \"entries\": {\n        \"release\": {\n          \"dispatch_tag\": \"388ad0b4\",\n          \"params\": [\n            {\n              \"name\": \"ownerSig\",\n              \"type\": {\n                \"kind\": \"sig\"\n              }\n            }\n          ]\n        }\n      },\n      \"compiled\": {\n        \"bytecode\": [118, 4, 56, 138, 208, 180, 135, 99, 117, 118, 130, 1, 65, 157, 117, 118, 32, 113, 85, 14, 108, 131, 169, 56, 31, 53, 197, 104, 209, 168, 14, 17, 250, 62, 14, 252, 151, 223, 208, 224, 241, 116, 146, 162, 237, 182, 76, 55, 169, 172, 105, 117, 81, 103, 106, 104],\n        \"template_hash\": [112, 152, 252, 210, 99, 179, 13, 178, 24, 87, 206, 46, 228, 42, 154, 152, 217, 189, 81, 25, 228, 243, 115, 100, 218, 240, 77, 178, 240, 100, 216, 171],\n        \"state_span\": {\n          \"offset\": 0,\n          \"len\": 0\n        }\n      }\n    }\n  }\n}",
+  "contracts": [
+    {
+      "name": "VaultRelease",
+      "entries": {
+        "release": "388ad0b4"
+      },
+      "lockingScript": {
+        "version": 0,
+        "script": "aa20f697dc836d943bcba5c535d99107d6c0ed9e8dbf82b7f174ddc56bd99b41cb4287"
+      },
+      "address": "kaspasim:prmf0hyrdk2rhja9c56anyg86mqwm85dh7pt0ut5mhzkhkvmg895ynyryqku2"
+    }
+  ],
+  "version": "1.0.0-alpha",
+  "mode": "localnet",
+  "hashVersion": 5,
+  "contentHash": "bb0ef2620ce0ee6e8b6ad1cce55c5604d5ed34713178396c0d7d15e14b9687d0"
+}

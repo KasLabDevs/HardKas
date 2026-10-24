@@ -138,6 +138,66 @@ export function markRequestNotSent<T>(error: T): T | RpcRequestNotSentError {
   return error;
 }
 
+/**
+ * RPC-SUBMIT-SAFETY-1: a broadcast (submitTransaction / submitTransactionReplacement) that may have reached the node and
+ * whose answer cannot be relied on — a timeout, a connection lost after the request left, an answer that names no
+ * transaction or another one. The node MAY have the transaction: this is never a rejection and never "not sent". It is
+ * never retried and never sent to another node; `txId` (when known) is what to observe before paying again.
+ */
+export class RpcSubmitOutcomeUnknownError extends RpcError {
+  readonly txId: string | undefined;
+  readonly cause: unknown;
+  constructor(opts: { txId?: string | undefined; cause?: unknown; reason?: string }) {
+    const why = opts.reason ?? (opts.cause instanceof Error ? opts.cause.message : opts.cause === undefined ? "no usable answer" : String(opts.cause));
+    super(
+      `submitTransaction outcome unknown (${why}): the node may have received transaction ${opts.txId ?? "(id unknown)"}. ` +
+        "HardKAS did not re-submit it and tried no other node; observe that transaction before paying again.",
+      "RPC_SUBMIT_OUTCOME_UNKNOWN",
+      { ...(opts.txId ? { txId: opts.txId } : {}), cause: why },
+      false
+    );
+    this.name = "RpcSubmitOutcomeUnknownError";
+    this.txId = opts.txId;
+    this.cause = opts.cause;
+  }
+}
+
+/** The transaction id a caller handed in, when it carries one (64 hex); otherwise undefined. */
+export function knownTxIdOf(transaction: unknown): string | undefined {
+  const t = transaction as { id?: unknown; transactionId?: unknown; txId?: unknown } | null | undefined;
+  const id = t?.id ?? t?.transactionId ?? t?.txId;
+  return typeof id === "string" && /^[0-9a-f]{64}$/i.test(id) ? id.toLowerCase() : undefined;
+}
+
+/**
+ * RPC-SUBMIT-SAFETY-1: the node's answer to a broadcast proves acceptance only when it names a transaction — and, when
+ * the submitted transaction's id is known, that same one. Otherwise the outcome is unknown (never a success).
+ */
+export function acceptedTxIdOf(answer: unknown, expectedTxId: string | undefined): string {
+  const a = answer as Record<string, unknown> | string | null | undefined;
+  const named = typeof a === "string" ? a : a?.transactionId ?? a?.transactionID ?? a?.transaction_id ?? a?.txId;
+  if (typeof named !== "string" || named.trim() === "") {
+    throw new RpcSubmitOutcomeUnknownError({ txId: expectedTxId, reason: "the node's answer names no transaction" });
+  }
+  if (expectedTxId !== undefined && named.toLowerCase() !== expectedTxId) {
+    throw new RpcSubmitOutcomeUnknownError({ txId: expectedTxId, reason: `the node answered transaction ${named}, not the one submitted` });
+  }
+  return named;
+}
+
+/**
+ * RPC-SUBMIT-SAFETY-1: what a FAILED broadcast attempt establishes. Refused before the transport (typed not-sent), the
+ * node's identity refused, or the node's own answer (a rejection, "already in the mempool"…): kept as it is. Anything
+ * else — a timeout, a connection lost, an unclassified failure — happened after the request may have left: unknown.
+ */
+export function classifySubmitFailure(e: unknown, txId: string | undefined): unknown {
+  if (isRpcRequestNotSentError(e) || isNodeNetworkIdentityError(e) || e instanceof RpcSubmitOutcomeUnknownError) return e;
+  if (e instanceof RpcTimeoutError || e instanceof RpcConnectionError || e instanceof RpcUnavailableError || !(e instanceof RpcError)) {
+    return new RpcSubmitOutcomeUnknownError({ txId, cause: e });
+  }
+  return e; // the node answered (normalizeRpcError): its own text decides (accepted / rejected / already held)
+}
+
 export class RpcProtocolError extends RpcError {
   constructor(message: string = "Invalid RPC protocol response", code?: number | string) {
     super(message, code, undefined, false);

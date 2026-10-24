@@ -5,21 +5,15 @@ import path from "node:path";
 import { Hardkas } from "../src/index.js";
 import { calculateContentHash, CURRENT_HASH_VERSION } from "@hardkas/artifacts";
 import { sendAsRpc } from "./helpers/rpc-instance.js";
+import { reissueAsBroadcastable, planOfSigned, nodeNamesReceived } from "./helpers/official-signed-payload.js";
+
 
 // EVIDENCE-TRUST-1 · D2 on the SDK: what a producer returns is exactly what the store holds. Signing a plan again keeps
 // the stored signed artifact and returns it; `artifacts.write` reports the stored copy and whether it wrote.
 
-function asBroadcastable(signed: any): any {
-  const s: any = structuredClone(signed);
-  delete s.authorization;
-  s.signedTransaction = { format: "hex", payload: "deadbeef" };
-  s.txId = "f".repeat(64);
-  delete s.contentHash;
-  s.lineage = { ...s.lineage, artifactId: "" };
-  s.contentHash = calculateContentHash(s, CURRENT_HASH_VERSION);
-  s.lineage.artifactId = s.contentHash;
-  s.signedId = `signed-${s.contentHash.slice(0, 16)}`;
-  return s;
+// EXPECTED-TXID-1: the payload is the transaction the plan authorizes, under its official kaspa-wasm id.
+function asBroadcastable(signed: any, plan: any): any {
+  return reissueAsBroadcastable(signed, plan);
 }
 
 describe("EVIDENCE-TRUST-1 · SDK contract (D2)", () => {
@@ -64,9 +58,9 @@ describe("EVIDENCE-TRUST-1 · SDK contract (D2)", () => {
   it("a real send returns the submission exactly as stored, its locator without credentials", async () => {
     const plan = await sdk.tx.plan({ from: "alice", to: "bob", amount: "10" });
     await sdk.artifacts.write(plan);
-    const signed: any = asBroadcastable(await sdk.tx.sign(plan, "alice"));
+    const signed: any = asBroadcastable(await sdk.tx.sign(plan, "alice"), plan);
     await sdk.artifacts.write(signed);
-    vi.spyOn(sdk.rpc, "submitTransaction").mockResolvedValue({ transactionId: "b".repeat(64) } as any);
+    vi.spyOn(sdk.rpc, "submitTransaction").mockResolvedValue({ transactionId: signed.txId } as any);
     const sent: any = await sendAsRpc(sdk, signed, "https://op:ET1PASS@node.example:17110/?token=ET1TOKEN&network=testnet-10");
     const stored = JSON.parse(fs.readFileSync(sent.receiptPath, "utf8"));
     const asStored = (v: unknown) => JSON.parse(JSON.stringify(v, (_k, x) => (typeof x === "bigint" ? x.toString() : x)));

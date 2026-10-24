@@ -16,7 +16,10 @@ export interface TxSendRunnerInput {
 }
 
 export interface TxSendRunnerResult {
-  /** Decided from an authenticated field only (a submission's result or a FULL-scope receipt's status). */
+  /**
+   * Decided from an authenticated field only (a submission's result or a FULL-scope receipt's status) — or, for a
+   * transaction this workspace had already submitted, from the FULL-scope observation that found the node holds it.
+   */
   accepted: boolean;
   txId: string;
   rpcUrl: string;
@@ -25,6 +28,12 @@ export interface TxSendRunnerResult {
   receipt: TxReceiptArtifact | TxSubmissionArtifact;
   receiptPath?: string | undefined;
   executionId?: string;
+  /**
+   * TX-SEND-IDEMPOTENT-1: the transaction had already been submitted from this workspace and the node holds it — nothing
+   * was broadcast; `receipt` is the recorded submission and `state` the derived state one observation found.
+   */
+  alreadySubmitted?: boolean;
+  state?: string;
 }
 
 /**
@@ -139,18 +148,21 @@ export async function runTxSend(input: TxSendRunnerInput): Promise<TxSendRunnerR
     (sdk as any).rpc = rpcClient;
 
     try {
-      const { receipt, receiptPath } = await sdk.tx.send(signedArtifact, rpcUrl);
+      const { receipt, receiptPath, alreadySubmitted, derived } = await sdk.tx.send(signedArtifact, rpcUrl);
 
       // R-iii part 1 / IC-2′.8: the outcome comes from the submission's
       // authenticated submit result, never from a status field.
+      // TX-SEND-IDEMPOTENT-1: a re-send the SDK answered with the recorded submission (the node holds the transaction)
+      // was not broadcast; it succeeds on that observation.
       return {
-        accepted: sendOutcome(receipt).accepted,
+        accepted: alreadySubmitted === true || sendOutcome(receipt).accepted,
         txId: receipt.txId,
         rpcUrl,
         networkName: resolvedName,
         receipt,
         receiptPath,
-        executionId: `exec_${Date.now().toString(36)}`
+        executionId: `exec_${Date.now().toString(36)}`,
+        ...(alreadySubmitted ? { alreadySubmitted: true, ...(derived ? { state: derived.status } : {}) } : {})
       };
     } finally {
       if (rpcClient) {

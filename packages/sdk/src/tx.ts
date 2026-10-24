@@ -16,10 +16,45 @@ import {
   isNodeNetworkIdentityError,
   isRpcRequestNotSentError,
   markRequestNotSent,
+  officialTxIdOf,
   rpcEndpointOf,
+  RpcSubmitOutcomeUnknownError,
   sameRpcEndpoint
 } from "@hardkas/kaspa-rpc";
 import { networkEndpointRequiredError } from "@hardkas/config";
+
+/**
+ * EXPECTED-TXID-1: the TXID a real send is made under — the signed artifact's, provided it is the id the official
+ * kaspa-wasm computes for the payload being sent. Refused before any request or record otherwise: no TXID declared, a
+ * payload whose id cannot be computed (no HardKAS client could send it), or a TXID that is not the payload's.
+ */
+function signedTxIdToSend(signedArtifact: { txId?: unknown }, rawTransaction: unknown): string {
+  const declared = signedArtifact.txId;
+  if (typeof declared !== "string" || !/^[0-9a-f]{64}$/.test(declared)) {
+    throw new HardkasError(
+      "SIGNED_TXID_UNVERIFIABLE",
+      "Refusing to broadcast: the signed artifact declares no transaction id (64 lowercase hex) to send it under. Nothing was sent or recorded."
+    );
+  }
+  let official: string;
+  try {
+    official = officialTxIdOf(rawTransaction);
+  } catch (e) {
+    throw new HardkasError(
+      "SIGNED_TXID_UNVERIFIABLE",
+      `Refusing to broadcast: the official id of the signed payload cannot be computed to check txId ${declared} ` +
+        `(${e instanceof Error ? e.message : String(e)}). Nothing was sent or recorded.`
+    );
+  }
+  if (official !== declared) {
+    throw new HardkasError(
+      "SIGNED_TXID_MISMATCH",
+      `Refusing to broadcast: the signed artifact declares txId ${declared}, but its payload is transaction ${official} ` +
+        "(official kaspa-wasm id). Nothing was sent or recorded."
+    );
+  }
+  return official;
+}
 
 /** TESTNET-PORT-COLLISION-1: the instance's client stands for "no endpoint chosen" (see unresolved-endpoint-rpc.ts). */
 function refuseUnresolvedEndpoint(sdk: Hardkas): void {
@@ -100,7 +135,8 @@ import {
   asNetworkId,
   asRpcEndpointId,
   asTxId,
-  asWorkflowId
+  asWorkflowId,
+  withLock
 } from "@hardkas/core";
 import {
   HardkasAccount,
@@ -108,7 +144,15 @@ import {
   signTxPlanArtifact,
   validateAddressNetwork
 } from "@hardkas/accounts";
-import { parseKasToSompi, type NetworkId } from "@hardkas/core";
+import {
+  parseKasToSompi,
+  parseFeeRate,
+  parseMaxFeeSompi,
+  effectiveFeeLimit,
+  assertFeeWithinLimit,
+  planPaysFeeSompi,
+  type NetworkId
+} from "@hardkas/core";
 import { TxPlanService, type UtxoProvider } from "@hardkas/tx-builder";
 import { HardkasSchemas } from "@hardkas/artifacts";
 
@@ -272,6 +316,14 @@ function verifiedCursor(history: readonly any[]): string | undefined {
   }
   return undefined;
 }
+
+/**
+ * TX-SEND-IDEMPOTENT-1: how long a send waits for another send of the same transaction to finish (its broadcast and its
+ * record) before giving up, nothing sent.
+ */
+const TX_SEND_LOCK_WAIT_MS = 180_000;
+/** TX-SEND-IDEMPOTENT-1: derived states in which the observed node holds the transaction (mempool or chain). */
+const NODE_HOLDS_TX = new Set<DerivedTxStatus["status"]>(["MEMPOOL_ACCEPTED", "MEMPOOL_ORPHAN", "ACCEPTED", "CONFIRMED", "FINALIZED"]);
 
 export class HardkasTx {
   constructor(private sdk: Hardkas) {}
@@ -482,6 +534,13 @@ export class HardkasTx {
     to: string | HardkasAccount;
     amount: string | number | bigint;
     feeRate?: bigint;
+    /**
+     * TX-FEE-GUARD-1: the most this transaction may pay in total, in sompi. Refused with FEE_EXCEEDS_MAX when the
+     * planned fee is above it (or above the workspace's `networks[<net>].maxFeeSompi`, the lower one applies); recorded
+     * in the plan and enforced again at sign and send. Optional: without it (and without a network limit) no limit is
+     * imposed.
+     */
+    maxFeeSompi?: bigint | number | string;
     workflowId?: string;
     policy?: string;
     networkProfile?: string;
@@ -489,6 +548,10 @@ export class HardkasTx {
     /** AUD-28: explicit change destination; default = the sender's address. Validated, then forwarded to the planner. */
     changeAddress?: string;
   }): Promise<TxPlanArtifact> {
+    // TX-FEE-GUARD-1: a fee rate, when given, is a positive integer (INVALID_FEE_RATE); a plan limit is a positive
+    // integer of sompi (INVALID_MAX_FEE). Decided before anything is read or planned.
+    if (options.feeRate !== undefined) parseFeeRate(options.feeRate, "tx.plan feeRate");
+    const planMaxFeeSompi = options.maxFeeSompi === undefined ? undefined : parseMaxFeeSompi(options.maxFeeSompi, "tx.plan maxFeeSompi");
     // WORKSPACE-AUTHORITY-2 (WA2-I2): the identities and the world of a plan come from the ONE resolved execution target
     // of this instance, and their compatibility is decided before any plan exists — the CLI's rule, shared from
     // @hardkas/accounts (`assertAccountCompatible`), never a world-mixing artifact caught later by the signer.
@@ -525,7 +588,8 @@ export class HardkasTx {
          selectedUtxos: res.data,
          destination: toAccount.address,
          network: activeNetwork,
-         ...(options.feeRate !== undefined ? { feeRate: options.feeRate } : {})
+         ...(options.feeRate !== undefined ? { feeRate: options.feeRate } : {}),
+         ...(planMaxFeeSompi !== undefined ? { maxFeeSompi: planMaxFeeSompi } : {})
       });
     }
 
@@ -678,6 +742,13 @@ export class HardkasTx {
     }
 
     const builderPlan = result.plan;
+    // TX-FEE-GUARD-1: the planned fee within the lower of the plan's limit and the workspace's network limit
+    assertFeeWithinLimit(
+      BigInt(builderPlan.estimatedFeeSompi),
+      effectiveFeeLimit({ planMaxFeeSompi, config: this.sdk.config.config, network: activeNetwork }),
+      "plan",
+      activeNetwork
+    );
 
     const isSimulated =
       activeNetwork === (this.sdk.network as string)
@@ -710,6 +781,7 @@ export class HardkasTx {
       },
       amountSompi,
       plan: builderPlan,
+      ...(planMaxFeeSompi !== undefined ? { maxFeeSompi: planMaxFeeSompi } : {}),
       ctx: {
         ...systemRuntimeContext,
         ...(options.workflowId ? { workflowId: options.workflowId } : {}),
@@ -791,7 +863,12 @@ export class HardkasTx {
     network?: string;
     feeRate?: bigint;
     totalUtxosSeen?: number;
+    /** TX-FEE-GUARD-1: see `plan({ maxFeeSompi })`. */
+    maxFeeSompi?: bigint | number | string;
   }): Promise<TxPlanArtifact> {
+    // TX-FEE-GUARD-1: as in plan()
+    if (options.feeRate !== undefined) parseFeeRate(options.feeRate, "tx.createConsolidationPlan feeRate");
+    const planMaxFeeSompi = options.maxFeeSompi === undefined ? undefined : parseMaxFeeSompi(options.maxFeeSompi, "tx.createConsolidationPlan maxFeeSompi");
     let resolvedAccount: HardkasAccount;
     if (typeof options.account === "string") {
       resolvedAccount = await this.sdk.accounts.resolve(options.account);
@@ -857,6 +934,13 @@ export class HardkasTx {
       throw new Error("Consolidation failed: transaction builder produced no outputs.");
     }
     const outputAmount = firstOutput.amountSompi;
+    // TX-FEE-GUARD-1
+    assertFeeWithinLimit(
+      BigInt(builderPlan.estimatedFeeSompi),
+      effectiveFeeLimit({ planMaxFeeSompi, config: this.sdk.config.config, network: activeNetwork }),
+      "plan",
+      activeNetwork
+    );
 
     let resolvedAssumptionLevel = isSimulated ? "local-simulated" : "local-rpc";
 
@@ -874,6 +958,7 @@ export class HardkasTx {
       },
       amountSompi: outputAmount,
       plan: builderPlan,
+      ...(planMaxFeeSompi !== undefined ? { maxFeeSompi: planMaxFeeSompi } : {}),
       ctx: {
         ...systemRuntimeContext,
         assumptionLevel: resolvedAssumptionLevel,
@@ -947,6 +1032,25 @@ export class HardkasTx {
       [(plan as any).networkId, (plan as any).execution?.network, this.sdk.network, declaredNetworkIdOf(this.sdk.config.config, this.sdk.network)],
       "tx.sign"
     );
+
+    // TX-FEE-GUARD-1: before any signer is asked, a plan's fee is within the limit in force (the plan's own and the
+    // workspace's for its network, the lower one), measured on what the plan really pays (inputs - outputs - change),
+    // never only on the fee it declares: a plan built by another route cannot understate it.
+    if ((plan as any).schema === HardkasSchemas.TxPlan || (plan as any).schema === HardkasSchemas.TxPlanV1) {
+      const planNetwork = String((plan as any).networkId ?? this.sdk.network);
+      const limit = effectiveFeeLimit({ planMaxFeeSompi: (plan as any).maxFeeSompi, config: this.sdk.config.config, network: planNetwork });
+      if (limit) {
+        const paid = planPaysFeeSompi(plan as any);
+        const declared = /^\d+$/.test(String((plan as any).estimatedFeeSompi)) ? BigInt((plan as any).estimatedFeeSompi) : undefined;
+        if (paid === undefined && declared === undefined) {
+          throw new HardkasError(
+            "FEE_LIMIT_UNVERIFIABLE",
+            `Refusing to sign: a fee limit of ${limit.maxFeeSompi} sompi is in force and this plan's fee cannot be computed from its amounts. Nothing was signed.`
+          );
+        }
+        assertFeeWithinLimit(paid !== undefined && declared !== undefined ? (paid > declared ? paid : declared) : (paid ?? declared)!, limit, "sign", planNetwork);
+      }
+    }
 
     if (
       (plan as any).schema === HardkasSchemas.TxPlanV1 ||
@@ -1726,6 +1830,12 @@ export class HardkasTx {
     simulated?: boolean;
     submitted?: boolean;
     txId?: string;
+    /**
+     * TX-SEND-IDEMPOTENT-1: this workspace had already recorded a submission of the transaction and the node holds it:
+     * nothing was broadcast, `submission` is the recorded one and `derived` the state one observation found.
+     */
+    alreadySubmitted?: boolean;
+    derived?: DerivedTxStatus;
   }> {
     const activeNetwork = this.sdk.network as string;
     // SDK-MAINNET-BROADCAST-GUARD-1: no broadcast on mainnet — decided from every network identity involved (the signed
@@ -1911,8 +2021,57 @@ export class HardkasTx {
         );
       }
       feeEvidence = derived;
+      // TX-FEE-GUARD-1: before the broadcast, the fee the SIGNED transaction pays (derived from its outputs and the
+      // plan's authenticated inputs) is within the limit in force — the plan's own and the workspace's for the network.
+      // With a limit in force and no derived fee, nothing is sent (the limit cannot be checked).
+      const limit = effectiveFeeLimit({ planMaxFeeSompi: plan?.maxFeeSompi, config: this.sdk.config.config, network: activeNetwork });
+      if (limit) {
+        if (derived.status !== "derived") {
+          throw new HardkasError(
+            "FEE_LIMIT_UNVERIFIABLE",
+            `Refusing to broadcast: a fee limit of ${limit.maxFeeSompi} sompi is in force and the fee of the signed transaction cannot be derived (${derived.reason}). Nothing was sent or recorded.`
+          );
+        }
+        assertFeeWithinLimit(BigInt(derived.feeSompi), limit, "send", activeNetwork);
+      }
     }
 
+    // EXPECTED-TXID-1: the transaction is sent under the signed artifact's TXID, checked here — before the broadcast
+    // and before any record, after the plan check — against the id the official kaspa-wasm computes for the payload
+    // being sent (ids exclude signature scripts). The client is handed it (`expectedTxId`) so it can name it whatever
+    // the node answers.
+    const expectedTxId = signedTxIdToSend(signedArtifact, broadcastable.rawTransaction);
+
+    // TX-SEND-IDEMPOTENT-1 (IC-5′.5: one submission per txId): a transaction this workspace already recorded a submission
+    // for is never broadcast again. Under the transaction's workspace lock (two sends of it, from two processes or one,
+    // never both broadcast) the recorded submission is looked up first; only without one does the broadcast go ahead.
+    return withLock(
+      { rootDir: this.sdk.workspace.root, name: `tx-send-${expectedTxId}`, command: "tx send", wait: true, timeoutMs: TX_SEND_LOCK_WAIT_MS },
+      async () =>
+        (await this.alreadySubmittedReply(expectedTxId)) ??
+        this.broadcastOnce({ signedArtifact, url, activeNetwork, isSimulated, signedTxId, signedArtifactId, endpoint, broadcastable, pointCapture, feeEvidence, expectedTxId })
+    );
+  }
+
+  /**
+   * TX-SEND-IDEMPOTENT-1: the one broadcast of a transaction and its record, run by send() under the transaction's lock
+   * once every check has passed and no submission of it is recorded.
+   */
+  private async broadcastOnce(args: {
+    signedArtifact: SignedTxArtifact;
+    url: string | undefined;
+    activeNetwork: string;
+    isSimulated: boolean;
+    signedTxId: string;
+    signedArtifactId: string;
+    endpoint: string | undefined;
+    broadcastable: ReturnType<typeof getBroadcastableSignedTransaction>;
+    pointCapture: Awaited<ReturnType<typeof captureSubmitPoint>>;
+    feeEvidence: Extract<ReturnType<typeof deriveSubmissionFee>, { status: "derived" | "insufficient-evidence" }>;
+    expectedTxId: string;
+  }) {
+    const { signedArtifact, url, activeNetwork, isSimulated, signedTxId, signedArtifactId, endpoint, broadcastable, pointCapture, feeEvidence, expectedTxId } =
+      args;
     // Attempt broadcast
     const broadcastRecord = broadcastable.rawTransaction as unknown as Record<
       string,
@@ -1943,11 +2102,23 @@ export class HardkasTx {
           throw markRequestNotSent(e);
         }
       }
-      const answer: any = await this.sdk.rpc.submitTransaction(broadcastable.rawTransaction as any);
-      submitResult = {
-        accepted: answer?.accepted !== false,
-        ...(typeof answer?.transactionId === "string" ? { transactionId: answer.transactionId } : {})
-      };
+      const answer: any = await this.sdk.rpc.submitTransaction(broadcastable.rawTransaction as any, { expectedTxId } as any);
+      // EXPECTED-TXID-1: whatever client answered, an accepted request is one whose answer names the expected TXID. An
+      // answer naming none or another transaction is an unknown outcome (the node may hold it), never accepted. Not a
+      // consensus confirmation either way.
+      const named = typeof answer?.transactionId === "string" ? answer.transactionId.toLowerCase() : undefined;
+      submitResult =
+        answer?.accepted === false
+          ? { accepted: false, ...(named === expectedTxId ? { transactionId: expectedTxId } : {}) }
+          : named === expectedTxId
+            ? { accepted: true, transactionId: expectedTxId }
+            : {
+                accepted: false,
+                error: new RpcSubmitOutcomeUnknownError({
+                  txId: expectedTxId,
+                  reason: named ? `the node answered transaction ${named}, not the one submitted` : "the node's answer names no transaction"
+                }).message
+              };
     } catch (e: unknown) {
       // NODE-NETWORK-IDENTITY-1: the node said it serves another network (or none) before anything was sent to it:
       // nothing was submitted, so there is no submission to record; the caller gets the typed refusal itself.
@@ -2104,6 +2275,48 @@ export class HardkasTx {
       submitted: submitResult.accepted,
       txId: submission.txId
     };
+  }
+
+  /**
+   * TX-SEND-IDEMPOTENT-1 (IC-5′.5: one submission per txId), called by send() under the transaction's lock before any
+   * broadcast. Without a recorded submission of `txId`: undefined, and the broadcast goes ahead. With one, the transaction
+   * is not broadcast again — a second broadcast adds no fact the recorded one lacks, and a second record for the txId
+   * would make every lookup of it ambiguous (RECEIPT_AMBIGUOUS_CONFLICT). ONE observation (a fact, the look `tx wait`
+   * takes) decides the answer: the node holds the transaction (mempool or chain) → the recorded submission with the
+   * derived state, nothing sent; it does not, or it cannot be observed → TX_ALREADY_SUBMITTED, nothing sent.
+   */
+  private async alreadySubmittedReply(txId: string) {
+    const recorded: any = await this.findSubmissionForTxId(txId);
+    if (!recorded) return undefined;
+    const recordedOutcome = recorded.schema === HardkasSchemas.TxSubmissionV1 ? submitOutcomeOf(recorded.submitResult) : "unknown";
+    let derived: DerivedTxStatus | undefined;
+    let unobservable: string | undefined;
+    try {
+      derived = (await this.observe(txId)).derived;
+    } catch (e: unknown) {
+      unobservable = redactUrlCredentialsInText(e instanceof Error ? e.message : String(e));
+    }
+    if (derived && NODE_HOLDS_TX.has(derived.status)) {
+      return {
+        receipt: recorded as TxSubmissionArtifact,
+        submission: recorded as TxSubmissionArtifact,
+        artifactId: recorded.contentHash as string,
+        mode: "real",
+        submitted: false,
+        alreadySubmitted: true,
+        derived,
+        txId
+      };
+    }
+    throw new HardkasError(
+      "TX_ALREADY_SUBMITTED",
+      `Transaction ${txId} was not sent again: this workspace already recorded a submission of it (${String(recorded.contentHash)}, outcome ${recordedOutcome}), ` +
+        (derived
+          ? `and the node does not hold it now (derived state ${derived.status}: ${derived.reasons.join(" · ")}). `
+          : `and whether the node holds it could not be observed (${unobservable}). `) +
+        `Broadcasting it again would record a second submission for the same txId, which the evidence model does not allow ` +
+        `(one submission per txId). Nothing was sent. Observe it with 'hardkas tx status ${txId}'.`
+    );
   }
 
   /**

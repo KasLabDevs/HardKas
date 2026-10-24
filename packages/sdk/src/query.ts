@@ -199,22 +199,9 @@ export class HardkasQuery {
           throw new Error("Workspace not initialized. Run hardkas init.");
         }
 
-        const unsafeTokens = ["DROP", "UPDATE", "DELETE", "INSERT", "ALTER", "CREATE", "REPLACE"];
-        const upperSql = sql.toUpperCase();
-        const hasUnsafe = unsafeTokens.some(t => upperSql.includes(t));
-
-        if (hasUnsafe) {
-          if (!options?.unsafeWrite || !options?.yes) {
-            throw new Error(
-              `Raw mutation queries are blocked by default. Pass { unsafeWrite: true, yes: true } to override.`
-            );
-          }
-        }
-
-        let HardkasStore: any;
+        let qs: any;
         try {
-          const qs = await import("@hardkas/query-store");
-          HardkasStore = qs.HardkasStore;
+          qs = await import("@hardkas/query-store");
         } catch (e) {
           throw new Error("Query store backend unavailable. Install @hardkas/query-store.");
         }
@@ -224,20 +211,18 @@ export class HardkasQuery {
           throw new Error("store.db not found. Run sdk.query.sync() first.");
         }
 
-        const store = new HardkasStore({ dbPath });
-        store.connect({ autoMigrate: false });
-        const db = store.getDatabase();
-
+        // SA-1 (SECURITY-AUDIT-1, 2026-10-21): one authority with `hardkas query store sql` — read-only enforced by SQLite
+        // unless { unsafeWrite: true, yes: true } authorizes a write. The keyword list this method used to check let PRAGMA
+        // assignments, VACUUM, ANALYZE and ATTACH through on a read-write connection. The projection is opened as it is,
+        // with no migration and no journal-mode change.
+        const store = qs.HardkasStore.openExisting(dbPath);
+        if (!store) {
+          throw new Error("store.db not found. Run sdk.query.sync() first.");
+        }
         try {
-          // If it's a mutation, we should probably run it differently, but db.prepare(sql).all() works for read.
-          // For mutations, better to use .run()
-          if (hasUnsafe) {
-            return db.prepare(sql).run();
-          } else {
-            return db.prepare(sql).all();
-          }
+          return await new qs.SqliteQueryBackend(store).executeRawSql(sql, options);
         } finally {
-          db.close();
+          store.disconnect();
         }
       }
     };

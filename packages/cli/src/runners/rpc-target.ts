@@ -21,6 +21,18 @@ export async function resolveRpcTarget(options: { url?: string | undefined; netw
   const { config } = await loadHardkasConfig();
   const entry = (config.networks as Record<string, { network?: unknown }> | undefined)?.[options.network];
   const expectedNetworkId = typeof entry?.network === "string" ? entry.network : options.network;
+  // SIM-NO-NODE-1: the simulated network executes in this process and has no node. Without an endpoint the caller chose,
+  // the endpoint authority would give it a node network's local default — the canonical localnet, possibly another
+  // session's node on this machine: refused, typed, before any connection
+  if (expectedNetworkId === "simulated" && !options.url) {
+    const { HardkasCliError, HardkasExitCode } = await import("../cli-errors.js");
+    throw new HardkasCliError(
+      "SIMULATOR_HAS_NO_NODE",
+      `Network '${options.network}' is the HardKAS simulator: it executes in this process and has no Kaspa node to talk to. ` +
+        `Use --network with a node network (simnet, testnet-10, …) or pass --url. Nothing was contacted.`,
+      { exitCode: HardkasExitCode.USAGE_ERROR }
+    );
+  }
   const { url } = resolveNodeEndpoint({ config, networkId: options.network, explicitUrl: options.url });
   return { url, expectedNetworkId };
 }

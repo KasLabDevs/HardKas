@@ -23,6 +23,11 @@ export interface CreateTxPlanArtifactOptions {
   plan: TxPlanType;
   rpcUrl?: string;
   ctx: RuntimeContext;
+  /**
+   * TX-FEE-GUARD-1: the total fee limit (sompi) this plan was made under, recorded inside its identity so signing and
+   * sending enforce it on the plan as authenticated. Absent = the plan carries no limit of its own.
+   */
+  maxFeeSompi?: bigint;
 }
 
 /**
@@ -165,7 +170,9 @@ export function createTxPlanArtifact(options: CreateTxPlanArtifactOptions): TxPl
     ...(options.plan.computeBudget !== undefined ? { computeBudget: options.plan.computeBudget.toString() } : {}),
     ...(options.plan.storageMass !== undefined ? { storageMass: options.plan.storageMass.toString() } : {}),
     ...(options.plan.lane !== undefined ? { lane: options.plan.lane } : {}),
-    ...(options.plan.version !== undefined ? { txVersion: options.plan.version } : {})
+    ...(options.plan.version !== undefined ? { txVersion: options.plan.version } : {}),
+    // TX-FEE-GUARD-1: authenticated with the plan (part of its content hash)
+    ...(options.maxFeeSompi !== undefined ? { maxFeeSompi: options.maxFeeSompi.toString() } : {})
   };
 
   if (options.plan.change) {

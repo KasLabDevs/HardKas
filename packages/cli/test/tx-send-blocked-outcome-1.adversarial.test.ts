@@ -499,7 +499,7 @@ describe("TX-SEND-BLOCKED-OUTCOME-1 · adversarial 1 · the node's answer carrie
 });
 
 describe("TX-SEND-BLOCKED-OUTCOME-1 · adversarial 2 · a local interceptor refuses the request before the transport", () => {
-  it("BO-7 refused → SUBMIT_NOT_SENT with zero frames at the node and zero records; then a real send works (one frame, one submission); then a further send is refused again across processes and the records stay as they were", async () => {
+  it("BO-7 refused → SUBMIT_NOT_SENT with zero frames at the node and zero records; then a real send works (one frame, one submission); then a further send is never broadcast across processes and the records stay as they were", async () => {
     const F = await fakeFor("bo7", { history: 3_000 });
     const ws = workspace("bo7", F.url);
     const txId = await planAndSign("BO-7", ws);
@@ -525,10 +525,14 @@ describe("TX-SEND-BLOCKED-OUTCOME-1 · adversarial 2 · a local interceptor refu
     expect(subs1).toHaveLength(1);
     expect(subs1[0].submitResult).toMatchObject({ accepted: true, transactionId: txId });
     expect(subs1[0].txId).toBe(txId);
-    // 3. a further send (a new process, the shared state at its limit) is refused again; nothing changes
+    // 3. a further send (a new process, the shared state at its limit): nothing is broadcast; nothing changes.
+    // TX-SEND-IDEMPOTENT-1: HardKAS answers it with the recorded submission before the transport (this interceptor used
+    // to refuse it with SUBMIT_NOT_SENT; it is never reached now): exit 0, said to be already submitted
     const again = await send("BO-7-again", ws, withPreload(INTERCEPTOR, { BO_STATE: state, BO_MAX: "1" }));
     trace("BO-7-again", { send: again.brief });
-    expect(codeOf(again), again.brief).toBe("SUBMIT_NOT_SENT");
+    expect(again.exit, again.brief).toBe(0);
+    expect(again.json?.alreadySubmitted, again.brief).toBe(true);
+    expect(Number(fs.readFileSync(state, "utf8")), "the interceptor saw one submit call").toBe(1);
     expect(F.submits, "still one frame").toBe(1);
     expect(submissionsOf(ws).map((s) => s.contentHash)).toEqual(subs1.map((s) => s.contentHash));
     const w = await run("BO-7-wait", [cliDist, "tx", "wait", txId, "--until", "confirmed", "--timeout", "60", "--json"], ws);

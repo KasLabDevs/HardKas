@@ -36,6 +36,32 @@ export function assertValueConservation(input: {
   }
 }
 
+/**
+ * TX-SEQUENCE-1 · the inputs' `sequence` of a payment. kaspa-wasm's `createTransaction` numbers them 0, 1, 2… (the
+ * input index: rusty-kaspa wallet/core/src/wasm/tx/utils.rs, `.enumerate()` … `sequence as u64`). In Kaspa a sequence
+ * without the disable bit (1 << 63) is a RELATIVE LOCK in DAA (consensus check_sequence_lock: refused when the UTXO's
+ * block DAA score + (sequence & 0xffffffff) - 1 >= the virtual DAA score), so input k could not spend a UTXO the node
+ * accepted less than k DAA ago ("one of the transaction sequence locks conditions was not met"). An ordinary payment
+ * sets no time condition: every input gets sequence 0 (`"zero"`, the default). `"as-built"` keeps the SDK's numbering,
+ * for the covenant (V1) transactions this change leaves as they were.
+ */
+export type InputSequencePolicy = "zero" | "as-built";
+
+/** TX-SEQUENCE-1: every input of `tx` at sequence 0, and the transaction finalized again (its id covers the sequences). */
+export function zeroInputSequences(tx: any): void {
+  const inputs: any[] = Array.isArray(tx?.inputs) ? tx.inputs : [];
+  if (inputs.every((txInput) => BigInt(txInput.sequence ?? 0) === 0n)) return;
+  for (const txInput of inputs) txInput.sequence = 0n;
+  if (typeof tx.finalize !== "function") {
+    throw Object.assign(new Error("TX_SEQUENCE_NOT_FINALIZED: the inputs were set to sequence 0 but the transaction cannot recompute its id"), { code: "TX_SEQUENCE_NOT_FINALIZED" });
+  }
+  // without this the id would still be the one of the SDK's numbering, and a signed artifact would declare it
+  tx.finalize();
+  if (tx.inputs.some((txInput: any) => BigInt(txInput.sequence) !== 0n)) {
+    throw Object.assign(new Error("TX_SEQUENCE_NOT_APPLIED: the SDK did not keep sequence 0 on every input"), { code: "TX_SEQUENCE_NOT_APPLIED" });
+  }
+}
+
 /** Builds an unsigned transaction whose outputs (change included) and fee balance the inputs exactly. */
 export function createBalancedTransaction(
   sdk: any,
@@ -43,6 +69,8 @@ export function createBalancedTransaction(
     readonly utxos: readonly WasmUtxoEntrySource[];
     readonly outputs: readonly BalancedOutput[];
     readonly feeSompi: bigint;
+    /** TX-SEQUENCE-1: `"zero"` (default) for an ordinary payment; `"as-built"` only for covenant (V1) transactions. */
+    readonly inputSequences?: InputSequencePolicy;
   }
 ): any {
   assertValueConservation({
@@ -50,11 +78,13 @@ export function createBalancedTransaction(
     outputAmounts: input.outputs.map((o) => o.amountSompi),
     feeSompi: input.feeSompi
   });
-  return sdk.createTransaction(
+  const tx = sdk.createTransaction(
     [...input.utxos],
     input.outputs.map((o) => o.output),
     input.feeSompi
   );
+  if ((input.inputSequences ?? "zero") === "zero") zeroInputSequences(tx);
+  return tx;
 }
 
 export interface WasmUtxoInput {

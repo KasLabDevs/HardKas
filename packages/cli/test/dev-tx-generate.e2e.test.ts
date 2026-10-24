@@ -53,7 +53,8 @@ export default defineHardkasConfig({
     }
     expect(result.generated).toBe(50);
     expect(result.successCount).toBe(50);
-    expect(result.mode).toBe("simulated");
+    // E2E-MODE-1: the simulator's execution mode is "simulator"; "simulated" is the legacy value (LegacyExecutionMode).
+    expect(result.mode).toBe("simulator");
     expect(result.purpose).toBe("load-test");
     expect(result.securityModel).toBe("mock-fixture");
     expect(result.results.length).toBe(50);

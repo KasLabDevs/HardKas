@@ -498,7 +498,7 @@ describe("TX-SEND-BLOCKED-OUTCOME-1 · a submission refused before the transport
     expect(codeOf(rc), rc.brief).toBe("RECEIPT_NOT_FOUND");
   });
 
-  it("BO-2 the second send of an accepted transaction is refused before the transport (cross-process): still ONE submission, one frame; receipt / status / why / explain / verify read the accepted one", async () => {
+  it("BO-2 the second send of an accepted transaction is never broadcast (cross-process): still ONE submission, one frame; receipt / status / why / explain / verify read the accepted one", async () => {
     const F = await fakeFor("bo2", { history: 3_000 });
     const ws = workspace("bo2", F.url);
     const txId = await planAndSign("BO-2", ws);
@@ -509,8 +509,13 @@ describe("TX-SEND-BLOCKED-OUTCOME-1 · a submission refused before the transport
     const subs = submissionsOf(ws);
     trace("BO-2", { first: first.brief, again: again.brief, submissions: subs.map((s) => ({ id: s.contentHash, result: s.submitResult })) });
     expect(F.submits).toBe(1);
-    expect(again.exit, again.brief).not.toBe(0);
-    expect(codeOf(again), again.brief).toBe("SUBMIT_NOT_SENT");
+    // TX-SEND-IDEMPOTENT-1: HardKAS no longer attempts the second broadcast (this interceptor used to refuse it with
+    // SUBMIT_NOT_SENT; it is never reached now): the recorded submission answers, the node holds the transaction, and the
+    // send succeeds without a frame (AUX-11: submitted = exit 0), saying it was already submitted
+    expect(again.exit, again.brief).toBe(0);
+    expect(again.json?.alreadySubmitted, again.brief).toBe(true);
+    expect(again.json?.data?.receipt?.contentHash, again.brief).toBe(subs[0]?.contentHash);
+    expect(Number(fs.readFileSync(path.join(ws, "bo.state"), "utf8")), "the interceptor saw one submit call").toBe(1);
     expect(subs).toHaveLength(1);
     expect(subs[0].submitResult.accepted).toBe(true);
     const w = await run("BO-2-wait", [cliDist, "tx", "wait", txId, "--until", "confirmed", "--timeout", "60", "--json"], ws);

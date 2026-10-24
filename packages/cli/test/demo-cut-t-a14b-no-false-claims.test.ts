@@ -6,6 +6,7 @@ import { Hardkas } from "@hardkas/sdk";
 import { calculateContentHash, CURRENT_HASH_VERSION } from "@hardkas/artifacts";
 import { runCli } from "./first-contact-helpers.js";
 import { sendAsRpc } from "../../sdk/test/helpers/rpc-instance.js";
+import { reissueAsBroadcastable, nodeNamesReceived } from "../../sdk/test/helpers/official-signed-payload.js";
 
 // Demo-cut step 2 · T-A14b — negative search of the forbidden narratives on the
 // surfaces this block touches, in the code (comments stripped: they name the
@@ -50,31 +51,28 @@ describe("Demo-cut · T-A14b · what the built CLI prints for tx status, tx wait
   let ws: string;
   let syntheticTxId: string;
   let submissionId: string;
-  const TX = "2".repeat(64);
+  // EXPECTED-TXID-1: the recorded network submission is of a real transaction, so TX is its official id (set below)
+  let TX = "2".repeat(64);
 
   beforeAll(async () => {
     ws = fs.mkdtempSync(path.join(os.tmpdir(), "hk-dc-ta14b-cli-"));
     const sdk: any = await Hardkas.create({ cwd: ws, autoBootstrap: true, network: "simulated" });
+    // EXPECTED-TXID-1: the network submission's plan is made first, so it spends a genesis outpoint (a real transaction
+    // id) rather than an output of the simulated transaction below
+    const p2 = await sdk.tx.plan({ from: "alice", to: "carol", amount: "2" });
+    const signed: any = await sdk.tx.sign(p2, "alice");
     const plan = await sdk.tx.plan({ from: "alice", to: "bob", amount: "1" });
     const { receipt } = await sdk.tx.simulate(await sdk.tx.sign(plan, "alice"));
     syntheticTxId = receipt.txId;
 
     // A recorded network submission (scripted node; nothing leaves the process).
-    const p2 = await sdk.tx.plan({ from: "alice", to: "carol", amount: "2" });
-    const signed: any = await sdk.tx.sign(p2, "alice");
-    const s: any = structuredClone(signed);
-    delete s.authorization;
-    s.signedTransaction = { format: "hex", payload: "deadbeef" };
-    s.txId = TX;
-    delete s.contentHash;
-    s.lineage = { ...s.lineage, artifactId: "" };
-    s.contentHash = calculateContentHash(s, CURRENT_HASH_VERSION);
-    s.lineage.artifactId = s.contentHash;
-    s.signedId = `signed-${s.contentHash.slice(0, 16)}`;
+    // EXPECTED-TXID-1: the payload is the transaction the plan authorizes, under its official kaspa-wasm id
+    const s: any = reissueAsBroadcastable(signed, p2);
+    TX = s.txId;
     await sdk.artifacts.write(s);
     vi.spyOn(sdk.rpc, "getBlockDagInfo").mockResolvedValue({ networkId: "simnet", virtualDaaScore: 10n, tipHashes: ["a".repeat(64)], virtualParentHashes: ["a".repeat(64)], sink: "a".repeat(64) } as any);
     vi.spyOn(sdk.rpc, "getSinkBlueScore").mockResolvedValue({ blueScore: "10" } as any);
-    vi.spyOn(sdk.rpc, "submitTransaction").mockResolvedValue({ transactionId: TX } as any);
+    vi.spyOn(sdk.rpc, "submitTransaction").mockImplementation(nodeNamesReceived as any);
     const sent: any = await sendAsRpc(sdk, s, "http://127.0.0.1:16110");
     vi.restoreAllMocks();
     // Recorded by a simulated-network SDK: re-seal it as what a simnet send records
