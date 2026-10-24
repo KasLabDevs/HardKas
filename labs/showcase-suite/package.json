@@ -1,6 +1,6 @@
 {
   "name": "showcase-suite",
-  "version": "0.12.0-rc.27",
+  "version": "0.12.0-rc.28",
   "private": true,
   "scripts": {
     "test": "vitest run",
