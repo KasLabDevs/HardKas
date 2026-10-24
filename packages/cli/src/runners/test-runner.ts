@@ -154,18 +154,26 @@ export interface NetworkEvidence {
   otherContacts: { endpoint: string; files: string[] }[];
 }
 
+/** A host as an endpoint key: lower case, an IPv6 address without its brackets. */
+const endpointHost = (host: string) => String(host).replace(/^\[|\]$/g, "").toLowerCase();
+
 /**
  * TEST-NETWORK-EVIDENCE-1 · the run's network, derived from the observed contacts: a run requested on the simulated network
- * whose test files contacted a Kaspa node endpoint (a known node port, or the port of a configured network's rpcUrl) is
- * "mixed"; any other run keeps the requested network. The contacts are reported either way.
+ * whose test files contacted a Kaspa node endpoint (a known node port, the port a configured network's rpcUrl names, or
+ * that rpcUrl's own endpoint) is "mixed"; any other run keeps the requested network. The contacts are reported either way.
+ * TEST-NETWORK-EVIDENCE-2: `configuredNodeEndpoints` are host:port, with the scheme's port for an rpcUrl that names none
+ * (wss://vector-10.kaspa.green/… is vector-10.kaspa.green:443), matched with their host: another host on 443 is not a node.
  */
 export function networkEvidenceOf(
   requested: string,
   contacts: NetContact[],
   workspaceRoot: string,
-  configuredNodePorts: number[] = []
+  configuredNodePorts: number[] = [],
+  configuredNodeEndpoints: string[] = []
 ): { network: string; evidence: NetworkEvidence } {
   const nodePorts = new Set([...KASPA_NODE_PORTS, ...configuredNodePorts]);
+  const nodeEndpoints = new Set(configuredNodeEndpoints.map((e) => e.toLowerCase()));
+  const isNode = (c: NetContact) => nodePorts.has(c.port) || nodeEndpoints.has(`${endpointHost(c.host)}:${c.port}`);
   const group = (list: NetContact[]) => {
     const byEndpoint = new Map<string, Set<string>>();
     for (const c of list) {
@@ -178,8 +186,8 @@ export function networkEvidenceOf(
       .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
       .map(([endpoint, files]) => ({ endpoint, files: [...files].sort() }));
   };
-  const nodeContacts = group(contacts.filter((c) => nodePorts.has(c.port)));
-  const otherContacts = group(contacts.filter((c) => !nodePorts.has(c.port)));
+  const nodeContacts = group(contacts.filter(isNode));
+  const otherContacts = group(contacts.filter((c) => !isNode(c)));
   const simulated = requested === "simulated" || requested === "simulator";
   return { network: simulated && nodeContacts.length > 0 ? "mixed" : requested, evidence: { requested, nodeContacts, otherContacts } };
 }
@@ -191,24 +199,34 @@ function withNetObserver(viteOverrides: any, observerPath: string): any {
   return { ...(viteOverrides ?? {}), test: { ...test, setupFiles: [...setupFiles, observerPath] } };
 }
 
-/** The ports of the rpcUrl of every network the workspace configures (best effort: none when the config cannot be read). */
-async function configuredRpcPorts(workspaceRoot: string): Promise<number[]> {
+const SCHEME_PORTS: Record<string, number> = { "ws:": 80, "http:": 80, "wss:": 443, "https:": 443 };
+
+/**
+ * The rpcUrl of every network the workspace configures (best effort: none when the config cannot be read): `ports`, the
+ * ports the URLs name (a contact on one counts on any host, TEST-NETWORK-EVIDENCE-1), and `endpoints`, each URL's own
+ * host:port, with its scheme's port when it names none (TEST-NETWORK-EVIDENCE-2: `new URL(…).port` is "" then).
+ */
+async function configuredRpcTargets(workspaceRoot: string): Promise<{ ports: number[]; endpoints: string[] }> {
+  const ports: number[] = [];
+  const endpoints: string[] = [];
   try {
     const { loadHardkasConfig } = await import("@hardkas/config");
     const loaded: any = await loadHardkasConfig({ workspaceRoot });
-    const ports: number[] = [];
     for (const n of Object.values(loaded?.config?.networks ?? {}) as any[]) {
       try {
-        const port = Number(new URL(String(n?.rpcUrl)).port);
-        if (port > 0) ports.push(port);
+        const url = new URL(String(n?.rpcUrl));
+        const named = Number(url.port);
+        if (named > 0) ports.push(named);
+        const port = named > 0 ? named : SCHEME_PORTS[url.protocol];
+        if (url.hostname && port) endpoints.push(`${endpointHost(url.hostname)}:${port}`);
       } catch {
         // no rpcUrl, or not a URL
       }
     }
-    return ports;
   } catch {
-    return [];
+    // no readable config: the known node ports only
   }
+  return { ports, endpoints };
 }
 
 /**
@@ -341,7 +359,8 @@ export async function runTest(options: TestRunnerOptions): Promise<void> {
       (text) => text.split("\n").filter(Boolean).map((line) => JSON.parse(line)),
       () => []
     );
-    const { network: observedNetwork, evidence: networkEvidence } = networkEvidenceOf(network, contacts, workspaceRoot, await configuredRpcPorts(workspaceRoot));
+    const rpcTargets = await configuredRpcTargets(workspaceRoot);
+    const { network: observedNetwork, evidence: networkEvidence } = networkEvidenceOf(network, contacts, workspaceRoot, rpcTargets.ports, rpcTargets.endpoints);
     const testReport = {
       testRunId,
       // TEST-NETWORK-EVIDENCE-1: derived from what the test files contacted, not only from the request

@@ -453,6 +453,18 @@ function readOnlyViolation(e: unknown): unknown {
   return err;
 }
 
+/** PRAGMAs that take an argument and only read: `PRAGMA table_info(artifacts)` and the like. */
+const READ_PRAGMAS_WITH_ARGUMENT = new Set([
+  "TABLE_INFO", "TABLE_XINFO", "TABLE_LIST", "INDEX_INFO", "INDEX_XINFO", "INDEX_LIST",
+  "FOREIGN_KEY_LIST", "FOREIGN_KEY_CHECK", "INTEGRITY_CHECK", "QUICK_CHECK"
+]);
+
+/** `PRAGMA [schema.]name = value` sets a value; so does `PRAGMA [schema.]name(value)`, unless that pragma only reads. */
+function isPragmaWrite(upperSql: string): boolean {
+  const m = upperSql.match(/^PRAGMA\s+(?:[A-Z_][A-Z0-9_]*\s*\.\s*)?([A-Z_][A-Z0-9_]*)\s*([=(])/);
+  return m !== null && (m[2] === "=" || !READ_PRAGMAS_WITH_ARGUMENT.has(m[1] ?? ""));
+}
+
 export function classifySqlSafety(sql: string): { kind: "read" | "write" | "unknown"; reason?: string; } {
   // 1. Remove multi-line comments /* ... */
   let cleanSql = sql.replace(new RegExp("/\\*[\\s\\S]*?\\*/", "g"), "");
@@ -481,6 +493,12 @@ export function classifySqlSafety(sql: string): { kind: "read" | "write" | "unkn
 
   // Common safe read starts
   if (firstToken === "SELECT" || firstToken === "EXPLAIN" || firstToken === "PRAGMA") {
+      // QUERY-STORE-PRAGMA-WRITE-1: a PRAGMA that sets a value is a write, refused here before SQLite runs it. SQLite
+      // refuses it on the read-only connection too, but with a platform's own error ("disk I/O error" on Windows,
+      // "database is locked" on Linux), which readOnlyViolation does not always recognise.
+      if (firstToken === "PRAGMA" && isPragmaWrite(cleanSql)) {
+          return { kind: "write", reason: "PRAGMA assignment" };
+      }
       // PRAGMA can be mutating (e.g. PRAGMA user_version = 1), but let's do a deeper check
       if (cleanSql.includes("INSERT ") || cleanSql.includes("UPDATE ") || cleanSql.includes("DELETE ") ||
           cleanSql.includes("DROP ") || cleanSql.includes("ALTER ") || cleanSql.includes("CREATE ") ||
