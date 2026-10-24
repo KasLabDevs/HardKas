@@ -48,7 +48,9 @@ volumes:
       await fs.writeFile(path.join(cwd, "docker-compose.yml"), dockerCompose, "utf8");
       out.writeLine("  ✅ Created docker-compose.yml");
 
-      const dockerfile = `FROM node:18-alpine
+      // NODE-DEPLOY-IMAGE-1: Node 18 is end-of-life and has no fix for the October 2026 Node.js security release.
+      // The patched 24 LTS image, pinned by its digest: a tag can be moved, the digest is the image that was validated.
+      const dockerfile = `FROM node:24.22.1-alpine@sha256:06d7adf3e0ef61a13f1d28682726366f97a15aa1888c934d3ecec86c33918b53
 WORKDIR /app
 
 # Copy package files and install dependencies
