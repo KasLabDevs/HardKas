@@ -4,6 +4,7 @@ import path from "node:path";
 import os from "node:os";
 import { Hardkas } from "../../src/index.js";
 import { withClientUrl } from "../helpers/rpc-instance.js";
+import { officialSignedPayload } from "../helpers/official-signed-payload.js";
 import {
   calculateContentHash,
   CURRENT_HASH_VERSION,
@@ -40,6 +41,8 @@ const UTXOS = [
 /** A signed artifact re-issued from `plan` whose payload is the RPC transaction the plan authorizes (or a mutation of it). */
 function signedFromPlan(plan: any, payload: string | ((tx: any) => void)): any {
   let body: string;
+  // EXPECTED-TXID-1: the artifact declares its payload's official kaspa-wasm id (a send is refused unless they agree)
+  let txId = "f".repeat(64);
   if (typeof payload === "string") {
     body = payload;
   } else {
@@ -50,10 +53,15 @@ function signedFromPlan(plan: any, payload: string | ((tx: any) => void)): any {
         ...plan.outputs.map((o: any) => ({ amount: o.amountSompi, scriptPublicKey: { version: 0, scriptPublicKey: script(o.address) } })),
         ...(plan.change ? [{ amount: plan.change.amountSompi, scriptPublicKey: { version: 0, scriptPublicKey: script(plan.change.address) } }] : [])
       ],
-      lockTime: 0
+      lockTime: 0,
+      subnetworkId: "0000000000000000000000000000000000000000",
+      gas: 0,
+      payload: "",
+      storageMass: 0
     };
     payload(tx);
     body = JSON.stringify(tx);
+    txId = officialSignedPayload(tx).txId;
   }
   const s: any = {
     schema: HardkasSchemas.SignedTx,
@@ -70,7 +78,7 @@ function signedFromPlan(plan: any, payload: string | ((tx: any) => void)): any {
     from: { address: plan.from.address },
     to: { address: plan.to.address },
     amountSompi: plan.amountSompi,
-    txId: "f".repeat(64),
+    txId,
     signedTransaction: { format: "hex", payload: body },
     lineage: createLineageTransition(plan, HardkasSchemas.SignedTx),
     ...(plan.workflowId ? { workflowId: plan.workflowId } : {}),
@@ -109,6 +117,8 @@ describe("Wave 2(d) · the submission records a derived fee or insufficient evid
     vi.spyOn(sdk.rpc, "getUtxosByAddress").mockImplementation(async () => UTXOS.map((u) => ({ ...u })) as any);
     vi.spyOn(sdk.rpc, "getMempoolEntriesByAddresses").mockResolvedValue({ entries: [] } as any);
     vi.spyOn(sdk.rpc, "getBlockDagInfo").mockResolvedValue({ networkId: "simnet", virtualDaaScore: 1_000_000n, tipHashes: ["s"], virtualParentHashes: ["s"], sink: "s" } as any);
+    // MAINNET-PERIMETER-1: a send asks the node who it is (both answers) right before the broadcast
+    vi.spyOn(sdk.rpc, "getServerInfo").mockResolvedValue({ networkId: "simnet", serverVersion: "2.1.0", isSynced: true } as any);
     vi.spyOn(sdk.rpc, "getSinkBlueScore").mockResolvedValue({ blueScore: "5000" } as any);
     submit = vi.spyOn(sdk.rpc, "submitTransaction").mockResolvedValue({ transactionId: "f".repeat(64) } as any);
     // ENDPOINT-AUTHORITY-1 (EA-I2): the scripted client says it is the endpoint the sends below name
@@ -146,6 +156,7 @@ describe("Wave 2(d) · the submission records a derived fee or insufficient evid
   it("1 · plan and signed economically identical ⇒ fee derived (Σ plan inputs − Σ signed outputs), authenticated in the submission", async () => {
     const s = signedFromPlan(plan, () => {});
     await sdk.artifacts.write(s);
+    submit.mockResolvedValue({ transactionId: s.txId } as any); // EXPECTED-TXID-1: the node names the transaction sent
     const sent: any = await sdk.tx.send(s, LOOPBACK);
     expect(sent.submitted).toBe(true);
     const fee = sent.submission.fee;
@@ -202,13 +213,14 @@ describe("Wave 2(d) · the submission records a derived fee or insufficient evid
     expect(submissions()).toEqual([]);
   });
 
-  it("an opaque payload yields `insufficient-evidence` with the reason; no submission ever writes a default fee of 0", async () => {
+  // EXPECTED-TXID-1: an opaque payload is no longer sendable — its official id cannot be computed, so the TXID it is
+  // sent under cannot be checked (and no HardKAS client could convert it to send it). The fee's insufficient-evidence
+  // derivation itself stays covered by the artifacts suite (wave2-d-submission-fee).
+  it("an opaque payload is refused before the broadcast (SIGNED_TXID_UNVERIFIABLE); nothing is written", async () => {
     const opaque = signedFromPlan(plan, "deadbeef");
     await sdk.artifacts.write(opaque);
-    const sent: any = await sdk.tx.send(opaque, LOOPBACK);
-    expect(sent.submitted).toBe(true);
-    expect(sent.submission.fee).toEqual({ status: "insufficient-evidence", reason: expect.stringMatching(/not a JSON transaction/) });
-    expect(JSON.stringify(sent.submission)).not.toMatch(/"feeSompi":"0"/);
-    expect(JSON.stringify(sent.submission)).not.toMatch(/estimatedFeeSompi/);
+    expect(await codeOf(sdk.tx.send(opaque, LOOPBACK))).toBe("SIGNED_TXID_UNVERIFIABLE");
+    expect(submit).not.toHaveBeenCalled();
+    expect(submissions()).toEqual([]);
   });
 });

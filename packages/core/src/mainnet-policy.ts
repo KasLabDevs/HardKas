@@ -11,11 +11,54 @@ import { HardkasError } from "./errors.js";
 /** Whether HardKAS signs or broadcasts on mainnet. A constant: enabling it is an explicit product decision. */
 export const MAINNET_TRANSACTIONS_ENABLED = false as const;
 
-/** A network id that names Kaspa mainnet (`mainnet`, `kaspa`, `kaspa-mainnet`, any case). */
+/** The Kaspa network types (rusty-kaspa `NetworkType`). */
+export type KaspaNetworkType = "mainnet" | "testnet" | "devnet" | "simnet";
+
+/**
+ * MAINNET-PERIMETER-1 (B2): the network TYPE an id names, the way rusty-kaspa parses a NetworkId — `<type>[-<suffix>]`
+ * (consensus/core/src/network.rs), so `mainnet-1` is mainnet — plus HardKAS's `kaspa` / `kaspa-` spellings, any case,
+ * trimmed. `undefined` for any other name (a config alias such as "prod", "simulated"): such a name never decides by
+ * itself; the network a config entry declares does (see `declaredNetworkIdOf`).
+ */
+export function networkTypeOf(networkId: unknown): KaspaNetworkType | undefined {
+  if (typeof networkId !== "string") return undefined;
+  let n = networkId.trim().toLowerCase();
+  if (n === "kaspa") return "mainnet";
+  if (n.startsWith("kaspa-")) n = n.slice("kaspa-".length);
+  const m = /^(mainnet|testnet|devnet|simnet)(?:-\d+)?$/.exec(n);
+  return m ? (m[1] as KaspaNetworkType) : undefined;
+}
+
+/** A network id of the mainnet type (`mainnet`, `mainnet-<n>`, `kaspa`, `kaspa-mainnet[-<n>]`, any case). */
 export function isMainnetNetworkId(networkId: unknown): boolean {
+  return networkTypeOf(networkId) === "mainnet";
+}
+
+/**
+ * WALLET-HD-0 · HardKAS's own spellings of its local simulated world, besides the rusty-kaspa simnet type itself
+ * (`simnet`, `simnet-<n>`, `kaspa-simnet`): the simulator's `simulated` and the Docker localnet's `local-docker-simnet`.
+ */
+export const SIMNET_NETWORK_ALIASES: ReadonlySet<string> = new Set(["simulated", "local-docker-simnet"]);
+
+/**
+ * WALLET-HD-0 · whether a network NAME means the local simnet — the only network a synthetic (predictable-key) HardKAS
+ * identity may exist on. Decided by the name alone, never by an address prefix: `kaspasim` (a prefix), a misspelling,
+ * an empty string or any unknown name is NOT simnet (fail closed).
+ */
+export function isSimnetNetworkId(networkId: unknown): boolean {
   if (typeof networkId !== "string") return false;
   const n = networkId.trim().toLowerCase();
-  return n === "mainnet" || n === "kaspa" || n === "kaspa-mainnet";
+  return n !== "" && (networkTypeOf(n) === "simnet" || SIMNET_NETWORK_ALIASES.has(n));
+}
+
+/**
+ * MAINNET-PERIMETER-1 (B2): the network a config entry DECLARES (`networks[name].network`), else the name itself. A
+ * config may name an entry anything ("prod"); the guard decides from what the entry says it is, not from its name.
+ */
+export function declaredNetworkIdOf(config: unknown, name: unknown): string | undefined {
+  if (typeof name !== "string") return undefined;
+  const declared = (config as { networks?: Record<string, { network?: unknown } | undefined> } | undefined)?.networks?.[name]?.network;
+  return typeof declared === "string" && declared.trim() !== "" ? declared : name;
 }
 
 export type MainnetTransactionOperation = "sign" | "broadcast";

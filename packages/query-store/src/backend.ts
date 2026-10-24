@@ -1,6 +1,10 @@
+import { createRequire } from "node:module";
 import { HardkasStore } from "./db.js";
 import { ExecutionMode, NetworkId } from "@hardkas/core";
 import { HardkasSchemas } from "@hardkas/artifacts";
+
+// SA-1: the read-only connection of runReadOnlySql (node:sqlite, loaded as db.ts loads it)
+const requireNodeSqlite = createRequire(import.meta.url);
 
 // ---------------------------------------------------------------------------
 // Database Row definitions for typed SQLite mapping.
@@ -373,11 +377,17 @@ export class SqliteQueryBackend implements QueryBackend {
       }
     }
 
+    // SA-1 (SECURITY-AUDIT-1, 2026-10-21): only BOTH flags authorize a write. Every other statement runs where SQLite
+    // itself refuses to write. The lexical classification above is an early, friendlier refusal, never the guarantee:
+    // PRAGMA assignments, `WITH … DELETE<tab>FROM …` and `WITH … REPLACE INTO …` passed it as reads and changed the store.
+    if (!(options?.unsafeWrite === true && options?.yes === true)) {
+      return Promise.resolve(runReadOnlySql(this.store, sql));
+    }
+
     const db = this.store.getDatabase();
 
-    // SQLite has a readonly setting when opening the connection, but better-sqlite3
-    // opens a single connection for the whole app. We enforce lexical guards.
-    // To support multiple statements or writes, if unsafe is permitted, we use db.exec or db.prepare appropriately.
+    // The explicit, authorized write path (`--unsafe-write --yes`; SDK `{ unsafeWrite: true, yes: true }`): the store's
+    // own read-write connection; db.exec runs a multi-statement script.
 
     try {
       if (classification.kind === "write" || classification.kind === "unknown") {
@@ -399,6 +409,48 @@ export class SqliteQueryBackend implements QueryBackend {
         throw e;
     }
   }
+}
+
+/**
+ * SA-1 · one statement executed where SQLite refuses every write. File-backed store: a separate read-only connection to
+ * the same file (PRAGMA assignments, DML inside a CTE, VACUUM, ANALYZE and ATTACH of a new file all fail there). The
+ * store's own connection stays open meanwhile, so SQLite still removes `-wal`/`-shm` when that one closes. In-memory store
+ * (tests): the same connection under `PRAGMA query_only`, restored afterwards; ATTACH never reaches it (lexical pre-check).
+ */
+function runReadOnlySql(store: HardkasStore, sql: string): any[] {
+  const db = store.getDatabase(); // "Store not connected" as before when it is not
+  if (store.path === ":memory:") {
+    db.exec("PRAGMA query_only = ON;");
+    try {
+      return db.prepare(sql).all() as any[];
+    } catch (e: unknown) {
+      throw readOnlyViolation(e);
+    } finally {
+      db.exec("PRAGMA query_only = OFF;");
+    }
+  }
+  const { DatabaseSync } = requireNodeSqlite("node:sqlite");
+  const readOnly = new DatabaseSync(store.path, { readOnly: true });
+  try {
+    readOnly.exec("PRAGMA busy_timeout = 15000;");
+    return readOnly.prepare(sql).all() as any[];
+  } catch (e: unknown) {
+    throw readOnlyViolation(e);
+  } finally {
+    readOnly.close();
+  }
+}
+
+/** SQLite's refusal to write, as the store's typed violation (the original SQLite message is kept). Other errors pass. */
+function readOnlyViolation(e: unknown): unknown {
+  const message = e instanceof Error ? e.message : String(e);
+  if (!/readonly database|read-only|query_only|attempt to write|disk I\/O error/i.test(message)) return e;
+  const err = new Error(
+    `QUERY_STORE_READ_ONLY_VIOLATION: SQLite refused to write: the query store is read-only unless a write is authorized ` +
+      `(CLI: --unsafe-write and --yes; SDK: { unsafeWrite: true, yes: true }). Nothing was changed. (${message})`
+  );
+  (err as any).code = "QUERY_STORE_READ_ONLY_VIOLATION";
+  return err;
 }
 
 export function classifySqlSafety(sql: string): { kind: "read" | "write" | "unknown"; reason?: string; } {

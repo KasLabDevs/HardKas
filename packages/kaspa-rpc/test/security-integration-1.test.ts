@@ -17,7 +17,8 @@ function nodeClaiming(initial: string) {
   const state = { networkId: initial };
   const fake = fakeOfficialRpc({
     getServerInfo: () => ({ rpcApiVersion: 1, serverVersion: "2.1.0", networkId: state.networkId, hasUtxoIndex: true, isSynced: true, virtualDaaScore: 7n }),
-    getBlockDagInfo: () => ({ virtualDaaScore: 7n, tipHashes: [] }),
+    // MAINNET-PERIMETER-1: a node names its network in getBlockDagInfo too (rusty-kaspa `network`); a broadcast reads both
+    getBlockDagInfo: () => ({ network: state.networkId, virtualDaaScore: 7n, tipHashes: [] }),
     submitTransaction: () => ({ transactionId: "ab".repeat(32) })
   });
   return { fake, state, methods: () => fake.calls.map((c) => c.method) };
@@ -128,7 +129,7 @@ function heldNode(initial: string) {
   const info = () => ({ rpcApiVersion: 1, serverVersion: "2.1.0", networkId: state.networkId, hasUtxoIndex: true, isSynced: true, virtualDaaScore: 7n });
   const fake = fakeOfficialRpc({
     getServerInfo: () => (state.hold ? state.hold.promise.then(info) : info()),
-    getBlockDagInfo: () => ({ virtualDaaScore: 7n, tipHashes: [] }),
+    getBlockDagInfo: () => ({ network: state.networkId, virtualDaaScore: 7n, tipHashes: [] }),
     submitTransaction: () => ({ transactionId: "ab".repeat(32) })
   });
   const hold = () => {
@@ -174,8 +175,9 @@ describe("SECURITY-INTEGRATION-1 · D1 concurrency and connection errors around 
     expect(methods()).toEqual(["getServerInfo", "getBlockDagInfo", "getServerInfo"]);
     h.release();
     await Promise.all(pending);
-    expect(methods().slice(3).sort()).toEqual(["getBlockDagInfo", "getBlockDagInfo", "submitTransaction"]);
-    expect(methods().filter((m) => m === "getServerInfo")).toHaveLength(2);
+    // MAINNET-PERIMETER-1: the broadcast itself reads the node's two identity answers right before submitTransaction
+    expect(methods().slice(3).sort()).toEqual(["getBlockDagInfo", "getBlockDagInfo", "getBlockDagInfo", "getServerInfo", "submitTransaction"]);
+    expect(methods().filter((m) => m === "getServerInfo")).toHaveLength(3);
     await s.close();
   });
 

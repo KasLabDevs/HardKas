@@ -2,12 +2,20 @@ import { describe, it, expect, vi } from "vitest";
 import { dappTxRoutes } from "../src/routes/dapp-tx.js";
 import { Hono } from "hono";
 
+// P0-TX-SAFETY-1A: the send guard keeps its record in the workspace, so the mock's workspace is a real temporary one
+const WS = await vi.hoisted(async () => {
+  const fs = await import("node:fs");
+  const os = await import("node:os");
+  const path = await import("node:path");
+  return fs.mkdtempSync(path.join(os.tmpdir(), "hk-dapp-api-"));
+});
+
 // Basic mocking of Hardkas class to test envelope serialization
 vi.mock("@hardkas/sdk", () => {
   return {
     Hardkas: {
       create: vi.fn().mockResolvedValue({
-        cwd: "/mock/workspace",
+        cwd: WS,
         network: "simulated",
         tx: {
           plan: vi.fn().mockResolvedValue({ id: "plan-123" }),
@@ -39,7 +47,7 @@ describe("Dev-Server dApp Endpoints Envelope", () => {
     expect(json.ok).toBe(true);
     expect(json.data).toEqual({ id: "plan-123" });
     expect(json.meta).toEqual({
-      workspace: "/mock/workspace",
+      workspace: WS,
       network: "simulated",
       mode: "developer"
     });

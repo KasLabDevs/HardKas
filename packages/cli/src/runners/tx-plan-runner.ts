@@ -1,4 +1,4 @@
-import { parseKasToSompi, systemRuntimeContext, NetworkId } from "@hardkas/core";
+import { parseKasToSompi, systemRuntimeContext, NetworkId, parseFeeRate, parseMaxFeeSompi, effectiveFeeLimit, assertFeeWithinLimit } from "@hardkas/core";
 import {
   TxPlanService,
   observePendingSpends,
@@ -53,6 +53,8 @@ export interface TxPlanRunnerInput {
   amount: string;
   networkId?: string;
   feeRate?: string;
+  /** TX-FEE-GUARD-1: total fee limit in sompi (--max-fee); recorded in the plan and enforced again at sign and send. */
+  maxFee?: string;
   provider: string;
   config: HardkasConfig;
   url?: string;
@@ -61,7 +63,33 @@ export interface TxPlanRunnerInput {
   assumptionLevel?: string;
   /** AUD-28: explicit change destination (account name or address); default = the sender. */
   changeAddress?: string;
+  /**
+   * TX-BATCH-1: the outpoints that earlier payments of the same run (`tx batch`) spent in transactions the node
+   * accepted or may have accepted, each mapped to the address that owned it. They are never selected again: the node
+   * drops an accepted transaction from its mempool before its UTXO index drops the inputs, and a plan on them is refused
+   * ("orphan"). A payment that cannot be funded while the index still lists any of them waits for the index to catch up
+   * (up to `spentReleaseTimeoutMs`, default 120 s) and reads again. RPC networks only: the simulator's state is updated
+   * by the send itself.
+   */
+  spentOutpoints?: ReadonlyMap<string, string>;
+  spentReleaseTimeoutMs?: number;
 }
+
+/** TX-BATCH-1: how long a payment waits for the node's UTXO index to release what earlier payments spent, and how often it looks. */
+const SPENT_RELEASE_TIMEOUT_MS = 120_000;
+const SPENT_RELEASE_POLL_MS = 500;
+
+/** TX-BATCH-1: a payment the node could fund only with outpoints that earlier payments of the run already spent. */
+function spentNotReleased(fromAddress: string, listed: number, waitedMs: number, reason: string): HardkasError {
+  return new HardkasError(
+    "SPENT_OUTPOINTS_NOT_RELEASED",
+    `${listed} outpoint(s) spent by earlier payments of this run are still listed by the node after ${Math.round(waitedMs / 1000)} s ` +
+      `(their transactions are not accepted yet, or were dropped), and the payment from ${fromAddress} cannot be funded without them: ${reason}. No plan was made.`
+  );
+}
+
+const isInsufficientFunds = (e: unknown): boolean =>
+  (e as any)?.code === "INSUFFICIENT_FUNDS_UPSTREAM" || /insufficient funds/i.test(e instanceof Error ? e.message : String(e));
 
 /**
  * Reusable logic for transaction planning.
@@ -83,7 +111,10 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
 
   const resolvedConfig = workspaceRoot ? { ...config, cwd: workspaceRoot } : config;
   const amountSompi = parseKasToSompi(amount);
-  const feeRateSompiPerMass = feeRate ? BigInt(feeRate) : undefined;
+  // TX-FEE-GUARD-1: a fee rate is a positive integer (INVALID_FEE_RATE), a fee limit a positive integer of sompi
+  // (INVALID_MAX_FEE); both are decided before anything connects
+  const feeRateSompiPerMass = feeRate !== undefined ? parseFeeRate(feeRate, "--fee-rate") : undefined;
+  const planMaxFeeSompi = input.maxFee !== undefined ? parseMaxFeeSompi(input.maxFee, "--max-fee") : undefined;
 
   const { resolveWorkspaceExecution, resolveProvider } = await import("@hardkas/config");
   const { assertAccountCompatible, resolveHardkasAccount } = await import("@hardkas/accounts");
@@ -251,7 +282,50 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
       // Demo-ready · E02: what the last invalidated attempt saw, for the error once retries run out.
       let lastInvalidation: { missing: string[]; pending: string[]; virtualDaaScore: bigint } | undefined;
 
-      for (let attempt = 0; attempt < MAX_PLAN_RETRIES; attempt++) {
+      // TX-BATCH-1: the outpoints earlier payments of this run spent are never selected. When this payment cannot be
+      // funded without them, it waits for the node's UTXO index to release them: true once one it saw (or, when it saw
+      // none, one the index still listed) is gone — read again; false when the index lists none of them — the failure
+      // is this payment's own; SPENT_OUTPOINTS_NOT_RELEASED when the wait runs out.
+      const spentEarlier = input.spentOutpoints && input.spentOutpoints.size > 0 ? input.spentOutpoints : undefined;
+      const releaseTimeoutMs = input.spentReleaseTimeoutMs ?? SPENT_RELEASE_TIMEOUT_MS;
+      let releaseDeadline: number | undefined;
+      const listedSpent = async (): Promise<Set<string>> => {
+        const byAddress = new Map<string, Set<string>>();
+        for (const [key, address] of spentEarlier ?? []) {
+          let keys = byAddress.get(address);
+          if (!keys) byAddress.set(address, (keys = new Set()));
+          keys.add(key);
+        }
+        const listed = new Set<string>();
+        for (const [address, keys] of byAddress) {
+          for (const u of await client.getUtxosByAddress(address)) {
+            const key = utxoOutpointKey(u);
+            if (key && keys.has(key)) listed.add(key);
+          }
+        }
+        return listed;
+      };
+      const spentReleased = async (seen: ReadonlySet<string>, failure: unknown): Promise<boolean> => {
+        if (!spentEarlier) return false;
+        const deadline = (releaseDeadline ??= Date.now() + releaseTimeoutMs);
+        const waitingFor = new Set(seen);
+        for (let listed = await listedSpent(); ; listed = await listedSpent()) {
+          const released = [...waitingFor].some((key) => !listed.has(key));
+          if (!released && waitingFor.size === 0) {
+            if (listed.size === 0) return false;
+            for (const key of listed) waitingFor.add(key);
+          }
+          if (Date.now() >= deadline) {
+            throw spentNotReleased(fromAddress, listed.size, releaseTimeoutMs, failure instanceof Error ? failure.message : String(failure));
+          }
+          if (released) return true;
+          await new Promise((resolve) => setTimeout(resolve, SPENT_RELEASE_POLL_MS));
+        }
+      };
+      const none: ReadonlySet<string> = new Set();
+
+      // TX-BATCH-1: `attempt` counts the reads whose selection was invalidated, not the reads after a release
+      for (let attempt = 0; attempt < MAX_PLAN_RETRIES; ) {
         const vBefore = await getVirtualFingerprint(client);
         const rpcUtxos = await client.getUtxosByAddress(fromAddress);
 
@@ -269,7 +343,9 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
         }));
 
         if (matureUtxos.length === 0) {
-          throw noSpendableUtxos(fromAddress, resolvedNetwork, rpcUtxos.length);
+          const failure = noSpendableUtxos(fromAddress, resolvedNetwork, rpcUtxos.length);
+          if (await spentReleased(none, failure)) continue;
+          throw failure;
         }
 
         // --- Pending-spend exclusion (Wave 2(c) · AUD-19) ---
@@ -279,10 +355,18 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
         // observer-local protection, never a statement about the network.
         const observedPending = await observePendingSpends(client, fromAddress, vBefore.virtualDaaScore);
         const pendingOutpoints = observedPending.outpoints;
-        const spendableUtxos = matureUtxos.filter((u) => !pendingOutpoints.has(utxoOutpointKey(u) ?? ""));
-        if (spendableUtxos.length === 0) {
-          throw new PendingSpendAllExcludedError(observedPending.evidence, matureUtxos.length);
+        const unpendingUtxos = matureUtxos.filter((u) => !pendingOutpoints.has(utxoOutpointKey(u) ?? ""));
+        if (unpendingUtxos.length === 0) {
+          const failure = new PendingSpendAllExcludedError(observedPending.evidence, matureUtxos.length);
+          if (await spentReleased(none, failure)) continue;
+          throw failure;
         }
+        // TX-BATCH-1: what an earlier payment of this run spent is never selected, whatever the index still lists
+        const spentListed: ReadonlySet<string> = new Set(
+          spentEarlier ? unpendingUtxos.map((u) => utxoOutpointKey(u) ?? "").filter((key) => spentEarlier.has(key)) : []
+        );
+        const spendableUtxos = spentListed.size > 0 ? unpendingUtxos.filter((u) => !spentListed.has(utxoOutpointKey(u) ?? "")) : unpendingUtxos;
+        const excludedOutpoints = spentListed.size > 0 ? new Set([...pendingOutpoints, ...spentListed]) : pendingOutpoints;
 
         let actualFeeRate = feeRateSompiPerMass;
         if (actualFeeRate === undefined) {
@@ -318,10 +402,13 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
             amountSompi,
             feeRate: actualFeeRate,
             networkId: resolvedNetwork,
-            ...(pendingOutpoints.size > 0 ? { excludeOutpoints: pendingOutpoints } : {}),
+            ...(excludedOutpoints.size > 0 ? { excludeOutpoints: excludedOutpoints } : {}),
             ...(changeAddressResolved ? { changeAddress: changeAddressResolved } : {})
           });
         } catch (plannerError: unknown) {
+          // TX-BATCH-1: short of funds while the index still lists what earlier payments of this run spent: read
+          // again once it releases them
+          if (isInsufficientFunds(plannerError) && (await spentReleased(spentListed, plannerError))) continue;
           // A planner refusal (invalid address, insufficient funds, Generator error) is
           // not a transport failure: it surfaces as itself, never as an RPC connection error.
           throw new UpstreamPlannerError(plannerError);
@@ -350,6 +437,7 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
 
         if (missing.length > 0 || pending.length > 0) {
           lastInvalidation = { missing, pending, virtualDaaScore: vAfter.virtualDaaScore };
+          attempt++;
           continue; // retry READ phase
         }
 
@@ -388,6 +476,7 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
       const { isNodeNetworkIdentityError } = await import("@hardkas/kaspa-rpc");
       if (isNodeNetworkIdentityError(e)) throw e;
       if (e instanceof PendingSpendEvidenceUnavailableError || e instanceof PendingSpendAllExcludedError) throw e;
+      if (e instanceof HardkasError && e.code === "SPENT_OUTPOINTS_NOT_RELEASED") throw e;
       if (e instanceof Error && (e.message.includes("No UTXOs found") || e.message.includes("Insufficient funds"))) throw e;
 
       const protocol = rpcUrl?.startsWith("ws") ? "WebSocket" : "JSON-RPC";
@@ -433,6 +522,13 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
   if (!planResult) {
     throw new Error("PLANNER_NO_RESULT: no plan was produced");
   }
+  // TX-FEE-GUARD-1: the planned fee within the lower of --max-fee and the workspace's networks[<net>].maxFeeSompi
+  assertFeeWithinLimit(
+    BigInt(planResult.plan.estimatedFeeSompi),
+    effectiveFeeLimit({ planMaxFeeSompi, config: resolvedConfig, network: resolvedNetwork }),
+    "plan",
+    resolvedNetwork
+  );
 
   const artifact = createTxPlanArtifact({
     networkId: resolvedNetwork as NetworkId,
@@ -442,6 +538,7 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
     to: { input: to, address: toAddress },
     amountSompi,
     plan: planResult.plan,
+    ...(planMaxFeeSompi !== undefined ? { maxFeeSompi: planMaxFeeSompi } : {}),
     ctx: {
       ...systemRuntimeContext,
       ...(workflowId ? { workflowId } : {}),

@@ -5,6 +5,8 @@ import os from "node:os";
 import { Hardkas } from "../../src/index.js";
 import { calculateContentHash, CURRENT_HASH_VERSION } from "@hardkas/artifacts";
 import { asRpcInstance } from "../helpers/rpc-instance.js";
+import { reissueAsBroadcastable, planOfSigned, nodeNamesReceived } from "../helpers/official-signed-payload.js";
+
 
 // WAVE_1_3_SECURITY_REVIEW · B2 (rejected broadcast recorded as workflow success)
 //
@@ -27,34 +29,25 @@ const LOOPBACK = "http://127.0.0.1:16110";
  * signed (hex payload), re-sealed under v5. Nothing else about the lifecycle changes.
  */
 // ENDPOINT-AUTHORITY-1 (EA-I3): the re-issued artifact is for the network the instance sends on
-function asBroadcastable(signed: any, network?: string): any {
-  const s: any = structuredClone(signed);
-  if (network) s.networkId = network;
-  delete s.authorization;
-  s.signedTransaction = { format: "hex", payload: "deadbeef" };
-  s.txId = "f".repeat(64);
-  delete s.contentHash;
-  s.lineage = { ...s.lineage, artifactId: "" };
-  s.contentHash = calculateContentHash(s, CURRENT_HASH_VERSION);
-  s.lineage.artifactId = s.contentHash;
-  s.signedId = `signed-${s.contentHash.slice(0, 16)}`;
-  return s;
+// EXPECTED-TXID-1: the payload is the transaction the plan authorizes, under its official kaspa-wasm id.
+function asBroadcastable(signed: any, plan: any, network?: string): any {
+  return reissueAsBroadcastable(signed, plan, network);
 }
 
-async function realBroadcastSdk(ws: string, submit: () => Promise<any>): Promise<Hardkas> {
+async function realBroadcastSdk(ws: string, submit: (...args: any[]) => Promise<any>): Promise<Hardkas> {
   const sdk = await Hardkas.create({ cwd: ws, autoBootstrap: true, network: "simulated" });
   Object.defineProperty(sdk, "network", { get: () => "simnet", configurable: true });
   const realSend = sdk.tx.send.bind(sdk.tx);
   vi.spyOn(sdk.tx, "send").mockImplementation((signed: any) => {
     asRpcInstance(sdk, LOOPBACK, "simnet");
-    return realSend(asBroadcastable(signed, "simnet"), LOOPBACK);
+    return realSend(asBroadcastable(signed, planOfSigned(ws, signed), "simnet"), LOOPBACK);
   });
   vi.spyOn(sdk.rpc, "submitTransaction").mockImplementation(submit as any);
   return sdk;
 }
 
 const rejected = () => Promise.reject(new Error("Rejected transaction: orphan"));
-const accepted = () => Promise.resolve({ transactionId: "b".repeat(64) });
+const accepted = nodeNamesReceived; // EXPECTED-TXID-1: the node names the transaction it was sent
 
 describe("B2 · a rejected broadcast is never a successful workflow step", () => {
   let ws: string;

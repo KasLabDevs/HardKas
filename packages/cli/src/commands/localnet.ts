@@ -77,13 +77,14 @@ export function registerLocalnetCommands(program: Command): void {
       });
     });
 
+  // CLI-LOCALNET-ACCOUNT-HELP-1: real simnet accounts (Execution Worlds); the synthetic ones are `simulator account`.
   const accountCmd = localnet
     .command("account")
-    .description("Manage simulated localnet accounts");
+    .description("Manage real simnet accounts for the local node");
 
   accountCmd
     .command("create <name>")
-    .description(`Create a simulated localnet account ${UI.maturity("alpha")}`)
+    .description(`Create a real simnet account: a random key, stored in plaintext in .hardkas/accounts.real.json ${UI.maturity("alpha")}`)
     .option("--json", "Output as JSON", false)
     .action(async (name: string, options: any) => {
       const { runLocalnetAccountCreate } =

@@ -61,8 +61,10 @@ function hasSensitiveKeys(obj: any): boolean {
   if (Array.isArray(obj)) return obj.some(hasSensitiveKeys);
   
   const prohibitedKeys = [
-    "privatekey", "private_key", "secretkey", 
-    "seed", "seedphrase", "mnemonic", "xprv"
+    "privatekey", "private_key", "privkey", "secretkey",
+    "seed", "seedphrase", "mnemonic",
+    // extended private keys, BIP32 and Kaspa spellings (WALLET-HD-0)
+    "xprv", "kprv", "ktrv", "extendedprivatekey", "extended_private_key"
   ];
   
   for (const [key, value] of Object.entries(obj)) {

@@ -3,9 +3,6 @@ import { UI, handleError } from "../ui.js";
 import { getOutput } from "../output.js";
 import { HardkasCliError, HardkasExitCode } from "../cli-errors.js";
 import { loadHardkasConfig } from "@hardkas/config";
-import type { NetworkId, KaspaAddress } from "@hardkas/core";
-import type { TxPlanArtifact } from "@hardkas/artifacts";
-import { HardkasSchemas } from "@hardkas/artifacts";
 
 type WalletNetwork = "mainnet" | "testnet-10" | "simnet";
 
@@ -202,6 +199,18 @@ export async function runKaspaWalletSend(
   to: string,
   options: { amount: string; dryRun: boolean; rpcUrl: string }
 ) {
+  // MAINNET-PERIMETER-1 (B1): this command's send path never checked which network the node serves and never ran the
+  // broadcast guard; it only failed because its signer input was incomplete. It is disabled explicitly, before any
+  // connection, and its signing/broadcast code is gone, so fixing a signer can never open an unguarded broadcast.
+  // `--dry-run` (plan only) stays.
+  if (!options.dryRun) {
+    throw new HardkasCliError(
+      "KASPA_WALLET_SEND_DISABLED",
+      "`hardkas kaspa wallet send` no longer signs or broadcasts. Use `hardkas tx plan`, `hardkas tx sign` and `hardkas tx send`, " +
+        "which verify the node's network and apply the mainnet policy. `--dry-run` still shows the plan. Nothing was connected, signed or sent.",
+      { exitCode: HardkasExitCode.USAGE_ERROR }
+    );
+  }
   // RESOURCE-LIFECYCLE-1 (RL-I1): releases the client this command creates, in the finally below.
   let release: (() => Promise<void>) | undefined;
   try {
@@ -210,9 +219,7 @@ export async function runKaspaWalletSend(
       await import("@hardkas/accounts");
     const { JsonWrpcKaspaClient } = await import("@hardkas/kaspa-rpc");
     const { planPaymentWithGenerator } = await import("@hardkas/tx-builder");
-    const { signTxPlanArtifact } = await import("@hardkas/accounts");
-    const { HARDKAS_VERSION, finalizeTxPlanIdentity } = await import("@hardkas/artifacts");
-    const { parseKasToSompi, formatSompiToKas } = await import("@hardkas/core");
+    const { parseKasToSompi, formatSompiToKas, declaredNetworkIdOf } = await import("@hardkas/core");
     const configObj = config.config as Record<string, unknown>;
     const networkId =
       typeof configObj.networkId === "string"
@@ -231,7 +238,9 @@ export async function runKaspaWalletSend(
     const targetAddress = await resolveHardkasAccountAddress(to, config.config);
     const amountSompi = parseKasToSompi(options.amount);
 
-    const client = new JsonWrpcKaspaClient({ rpcUrl: options.rpcUrl });
+    // NODE-NETWORK-IDENTITY-1 / MAINNET-PERIMETER-1: the plan reads the node only once it says it serves this workspace's
+    // network (the network the config entry declares) — a node of another network would serve the same key's UTXOs.
+    const client = new JsonWrpcKaspaClient({ rpcUrl: options.rpcUrl, expectedNetworkId: declaredNetworkIdOf(config.config, target.network) ?? target.network });
     release = () => client.close();
     const utxos = await client.getUtxosByAddress(sender.address!);
 
@@ -261,93 +270,15 @@ export async function runKaspaWalletSend(
     console.log(`Inputs:  ${plan.inputs.length} UTXOs`);
     console.log(pc.dim("----------------------------------------\n"));
 
-    if (options.dryRun) {
-      console.log(pc.blue("Dry-run mode: Transaction NOT signed or broadcast.\n"));
-      return;
-    }
-
-    const confirm = await UI.confirm(
-      `Proceed with signing and broadcasting this transaction?`
-    );
-    if (!confirm) {
-      console.log(pc.red("Cancelled.\n"));
-      return;
-    }
-
-    // 2. Sign
-    // 2. Sign
-    // Map internal plan to Artifact format for the signer
-
-    // The plan handed to the signer is sealed like every plan (IC-1′.1c): its
-    // planId derives from its real identity, never from an ad-hoc digest.
-    const planDraft: any = {
-      schema: HardkasSchemas.TxPlan,
-      hardkasVersion: HARDKAS_VERSION,
-      version: "1.0.0-alpha",
-      createdAt: new Date().toISOString(),
-      networkId: networkId as NetworkId,
-      mode: execution.mode,
-      execution: execution as any,
-      from: { address: sender.address as KaspaAddress },
-      to: { address: targetAddress as KaspaAddress },
-      amountSompi: amountSompi.toString(),
-      inputs: plan.inputs.map((i) => ({
-        outpoint: {
-          transactionId: i.outpoint.transactionId,
-          index: i.outpoint.index
-        },
-        amountSompi: i.amountSompi.toString()
-      })),
-      outputs: plan.outputs.map((o) => ({
-        address: o.address as KaspaAddress,
-        amountSompi: o.amountSompi.toString()
-      })),
-      estimatedFeeSompi: plan.estimatedFeeSompi.toString(),
-      estimatedMass: plan.estimatedMass.toString(),
-      ...(plan.change
-        ? {
-            change: {
-              address: plan.change.address as KaspaAddress,
-              amountSompi: plan.change.amountSompi.toString()
-            }
-          }
-        : {})
-    };
-    const planArtifact: TxPlanArtifact = finalizeTxPlanIdentity(planDraft) as TxPlanArtifact;
-
-    const signedArtifact = await signTxPlanArtifact({
-      target: execution as any,
-      planArtifact,
-      account: sender,
-      config: config.config
-    });
-
-    console.log(`  ${pc.green("✓")} Transaction signed.`);
-
-    // 3. Broadcast
-    if (!signedArtifact.signedTransaction) {
-      throw new Error(
-        "Failed to sign transaction: signedTransaction payload is missing."
-      );
-    }
-    const submitResult = await client.submitTransaction(
-      JSON.parse(signedArtifact.signedTransaction.payload)
-    );
-
-    if (submitResult.accepted) {
-      console.log(`  ${pc.green("✓")} Transaction accepted by node.`);
-      console.log(`  TXID: ${pc.bold(pc.white(submitResult.transactionId))}\n`);
-    } else {
-      const { HardkasCliError } = await import("../cli-errors.js");
-      throw new HardkasCliError(
-        "TX_REJECTED",
-        `Transaction rejected by node.\nDetails: ${JSON.stringify(submitResult.raw)}`,
-        { exitCode: 1 }
-      );
-    }
+    // MAINNET-PERIMETER-1 (B1): only the plan is shown (signing and broadcasting were removed; refused above).
+    console.log(pc.blue("Dry-run mode: Transaction NOT signed or broadcast.\n"));
   } catch (e: unknown) {
     if (((e as any).name) === "HardkasCliError") throw e;
-    const { HardkasCliError } = await import("../cli-errors.js");
+    // NODE-NETWORK-IDENTITY-1: a node of another (or no) network is refused with its own typed code
+    const { isNodeNetworkIdentityError } = await import("@hardkas/kaspa-rpc");
+    if (isNodeNetworkIdentityError(e)) {
+      throw new HardkasCliError(String((e as { code?: unknown }).code), (e as Error).message, { exitCode: HardkasExitCode.RUNTIME_FAILURE, cause: e });
+    }
     throw new HardkasCliError("WALLET_OPERATION_FAILED", ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) || "Unknown error", {
       exitCode: 1,
       cause: e

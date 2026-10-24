@@ -70,7 +70,10 @@ export interface HardkasEnvironment {
     estimateTransactions: typeof estimateTransactionsUpstream;
   };
 
-  /** Address Manager API */
+  /**
+   * Address Manager API — WALLET-HD-0: the SYNTHETIC derivation (keys computable from seedRef + path + network), not
+   * BIP32; simnet only, every other network is refused (SYNTHETIC_DERIVATION_NETWORK_BLOCKED).
+   */
   addressManager: {
     derive: any;
     deriveReceive: any;
@@ -78,7 +81,10 @@ export interface HardkasEnvironment {
     path: any;
   };
 
-  /** Wallet Manager API */
+  /**
+   * Wallet Manager API — WALLET-HD-0: synthetic wallets whose keys derive from the PUBLIC walletId; simnet only.
+   * `importMnemonic` hashes the given text: it is NOT BIP39 recovery of any Kaspa wallet.
+   */
   walletManager: {
     create: any;
     importMnemonic: any;

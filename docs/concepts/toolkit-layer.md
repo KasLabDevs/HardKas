@@ -3,7 +3,7 @@
 The `@hardkas/toolkit` package is the culmination of building real applications. It hides complex infrastructure (`WalletManager`, `DomainStoreJson`, `ArtifactIndexStore`) behind simple facades.
 
 ## Available Toolkits
-- **`WalletToolkit`**: Send and receive Kaspa.
+- **`WalletToolkit`**: Simnet development wallet facade over a synthetic identity (keys derivable from the wallet name; public networks are refused). Receive address, balance and UTXO planning for local testing — not custody, not for real funds.
 - **`PaymentToolkit`**: Invoices and Receipts.
 - **`IndexerToolkit`**: Chain indexing and artifact search.
 - **`JobsToolkit`**: Background task runner.

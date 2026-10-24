@@ -6,6 +6,8 @@ import { Hardkas } from "../../src/index.js";
 import * as artifacts from "@hardkas/artifacts";
 import { calculateContentHash, CURRENT_HASH_VERSION, verifyArtifactIntegritySync, resolveArtifact } from "@hardkas/artifacts";
 import { sendAsRpc } from "../helpers/rpc-instance.js";
+import { reissueAsBroadcastable } from "../helpers/official-signed-payload.js";
+
 
 // Wave 1.3 · producers under IC-1′…IC-7
 //   N6 / IC-7.3–5  the workflow producer writes a version-5 artifact with no
@@ -35,17 +37,9 @@ const codes = (r: { issues: Array<{ code: string }> }) => r.issues.map((i) => i.
  * so the real-send branch is exercised with the same artifact re-issued as a non-synthetic
  * signed (hex payload), re-sealed under v5.
  */
-function asBroadcastable(signed: any): any {
-  const s: any = structuredClone(signed);
-  delete s.authorization;
-  s.signedTransaction = { format: "hex", payload: "deadbeef" };
-  s.txId = "f".repeat(64);
-  delete s.contentHash;
-  s.lineage = { ...s.lineage, artifactId: "" };
-  s.contentHash = calculateContentHash(s, CURRENT_HASH_VERSION);
-  s.lineage.artifactId = s.contentHash;
-  s.signedId = `signed-${s.contentHash.slice(0, 16)}`;
-  return s;
+// EXPECTED-TXID-1: the payload is the transaction the plan authorizes, under its official kaspa-wasm id.
+function asBroadcastable(signed: any, plan: any): any {
+  return reissueAsBroadcastable(signed, plan);
 }
 
 describe("Wave 1.3 · SDK producers", () => {
@@ -100,9 +94,9 @@ describe("Wave 1.3 · SDK producers", () => {
   it("R-iii · a real send writes an immutable txSubmission.v1 with the signed reference, the node's txId and the submit result; no post-send state", async () => {
     const plan = await sdk.tx.plan({ from: "alice", to: "bob", amount: "10" });
     await sdk.artifacts.write(plan);
-    const signed: any = asBroadcastable(await sdk.tx.sign(plan, "alice"));
+    const signed: any = asBroadcastable(await sdk.tx.sign(plan, "alice"), plan);
     await sdk.artifacts.write(signed);
-    const nodeTxId = "b".repeat(64);
+    const nodeTxId = signed.txId; // EXPECTED-TXID-1: the node names the transaction it was sent
     const submit = vi.spyOn(sdk.rpc, "submitTransaction").mockResolvedValue({ transactionId: nodeTxId } as any);
 
     const sent: any = await sendAsRpc(sdk, signed, "http://127.0.0.1:16110/?token=secret");
@@ -150,7 +144,7 @@ describe("Wave 1.3 · SDK producers", () => {
   it("R-iii · a rejected submit is recorded as a submission too (what HardKAS did), with the node's answer authenticated", async () => {
     const plan = await sdk.tx.plan({ from: "alice", to: "bob", amount: "10" });
     await sdk.artifacts.write(plan);
-    const signed: any = asBroadcastable(await sdk.tx.sign(plan, "alice"));
+    const signed: any = asBroadcastable(await sdk.tx.sign(plan, "alice"), plan);
     await sdk.artifacts.write(signed);
     vi.spyOn(sdk.rpc, "submitTransaction").mockRejectedValue(new Error("Rejected transaction: orphan"));
 
@@ -166,9 +160,9 @@ describe("Wave 1.3 · SDK producers", () => {
   it("R-iii · two distinct submissions for one txId are an ambiguity, never a silent pick", async () => {
     const plan = await sdk.tx.plan({ from: "alice", to: "bob", amount: "10" });
     await sdk.artifacts.write(plan);
-    const signed: any = asBroadcastable(await sdk.tx.sign(plan, "alice"));
+    const signed: any = asBroadcastable(await sdk.tx.sign(plan, "alice"), plan);
     await sdk.artifacts.write(signed);
-    const nodeTxId = "c".repeat(64);
+    const nodeTxId = signed.txId; // EXPECTED-TXID-1: the node names the transaction it was sent
     vi.spyOn(sdk.rpc, "submitTransaction").mockResolvedValue({ transactionId: nodeTxId } as any);
     const first: any = await sendAsRpc(sdk, signed, "http://127.0.0.1:16110");
     // A second submission of a different signed artifact that the node answered with the same txId.

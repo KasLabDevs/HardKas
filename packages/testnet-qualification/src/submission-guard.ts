@@ -90,12 +90,14 @@ export function attemptOutcomeOf(state: SubmissionState): Exclude<SubmissionAtte
 /**
  * Typed refusals the HardKAS RPC client raises BEFORE a request leaves the process: no endpoint chosen
  * (NETWORK_ENDPOINT_REQUIRED), a node that does not serve the expected network (NODE_NETWORK_*, verified before the
- * request), a storage-mass commitment it will not send (RPC_STORAGE_MASS_*).
+ * request), a storage-mass commitment it will not send (RPC_STORAGE_MASS_*), a node of the mainnet type identified
+ * right before the broadcast (MAINNET_BROADCAST_DISABLED, MAINNET-PERIMETER-1).
  */
 export const PRE_SEND_REFUSAL_CODES: ReadonlySet<string> = new Set([
   "NETWORK_ENDPOINT_REQUIRED",
   "NODE_NETWORK_MISMATCH",
   "NODE_NETWORK_UNKNOWN",
+  "MAINNET_BROADCAST_DISABLED",
   "RPC_STORAGE_MASS_INVALID",
   "RPC_STORAGE_MASS_CONFLICT",
   "RPC_STORAGE_MASS_MISSING"
@@ -167,7 +169,11 @@ export interface SubmissionGuardOptions {
 const ALREADY_KNOWN_PATTERNS = [
   /already (?:known|in mempool|accepted)/i,
   /duplicate/i,
-  /transaction is already/i
+  /transaction is already/i,
+  // P0-TX-SAFETY-1A: rusty-kaspa v2.1.0's own texts (RejectDuplicate, RejectDuplicateOrphan), wrapped as
+  // "Rejected transaction <id>: transaction <id> is already in the mempool". Missed before, they fell to the consensus
+  // class ("rejected", "orphan") and the guard answered SAFE_TO_RETRY for a transaction the node holds.
+  /\bis already in the (?:mempool|orphan pool)\b/i
 ];
 
 function messageOf(err: unknown): string {

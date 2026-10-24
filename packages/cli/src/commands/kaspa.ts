@@ -57,9 +57,10 @@ export function registerKaspaCommands(program: Command) {
 
   walletCmd
     .command("send <from> <to>")
-    .description(`Plan, confirm (y/N), sign and submit a payment over --rpc-url; the network and target come from hardkas.config ${UI.maturity("stable")}`)
+    // MAINNET-PERIMETER-1 (B1): signing and broadcasting are disabled here (KASPA_WALLET_SEND_DISABLED); only --dry-run plans
+    .description(`Plan a payment over --rpc-url with --dry-run (the node must serve the workspace's network); sending is disabled here: use 'tx plan', 'tx sign' and 'tx send' ${UI.maturity("internal")}`)
     .option("--amount <kas>", "Amount in KAS to send")
-    .option("--dry-run", "Plan but do not sign or broadcast", false)
+    .option("--dry-run", "Plan only (required: without it the command refuses, KASPA_WALLET_SEND_DISABLED)", false)
     .option("--rpc-url <url>", RPC_URL_OPTION, DEFAULT_RPC_URL)
     .action(async (from: string, to: string, options: any) => {
       const { runKaspaWalletSend } = await import("../runners/kaspa-wallet-runner.js");

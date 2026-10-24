@@ -7,6 +7,8 @@ import { observeTxOnce, type TxObserverRpcRecorder } from "../src/tx-observer.js
 import { calculateContentHash, CURRENT_HASH_VERSION, deriveObserverId, deriveTxStatus, evidenceDigest } from "@hardkas/artifacts";
 import { finalityDepthFor, systemRuntimeContext } from "@hardkas/core";
 import { sendAsRpc } from "./helpers/rpc-instance.js";
+import { reissueAsBroadcastable, nodeNamesReceived } from "./helpers/official-signed-payload.js";
+
 
 // False REORGED, reproduced live on the canonical localnet (2026-10-02, record run 2, tx 7): with a
 // fast miner the chain block that accepts a transaction is often replaced by a sibling that accepts it
@@ -145,21 +147,14 @@ describe("False REORGED · accepting-block churn (live 2026-10-02 record run 2, 
 
   /** A real-broadcast submission recorded in the workspace (the cursor starts at its submit point). */
   async function realSend(): Promise<string> {
-    const TX = "1".repeat(64);
     const plan = await sdk.tx.plan({ from: "alice", to: "bob", amount: "10" });
     await sdk.artifacts.write(plan);
     const signed: any = await sdk.tx.sign(plan, "alice");
-    const s: any = structuredClone(signed);
-    delete s.authorization;
-    s.signedTransaction = { format: "hex", payload: "deadbeef" };
-    s.txId = TX;
-    delete s.contentHash;
-    s.lineage = { ...s.lineage, artifactId: "" };
-    s.contentHash = calculateContentHash(s, CURRENT_HASH_VERSION);
-    s.lineage.artifactId = s.contentHash;
-    s.signedId = `signed-${s.contentHash.slice(0, 16)}`;
+    // EXPECTED-TXID-1: the payload is the transaction the plan authorizes, under its official kaspa-wasm id, and the
+    // node names the transaction it was sent
+    const s: any = reissueAsBroadcastable(signed, plan);
     await sdk.artifacts.write(s);
-    vi.spyOn(sdk.rpc, "submitTransaction").mockResolvedValue({ transactionId: TX } as any);
+    vi.spyOn(sdk.rpc, "submitTransaction").mockImplementation(nodeNamesReceived as any);
     const sent: any = await sendAsRpc(sdk, s, "http://127.0.0.1:16110");
     expect(sent.submitted).toBe(true);
     return sent.txId;

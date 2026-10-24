@@ -5,6 +5,9 @@
 import { logger, metrics } from "@hardkas/observability";
 import { OfficialRpcSession, rpcClientClosedError, toWrpcUrl, type OfficialRpcFactory } from "./upstream/session.js";
 import { toWire } from "./upstream/wire.js";
+import { RpcRequestNotSentError, acceptedTxIdOf, classifySubmitFailure } from "./errors.js";
+import { submitTxIdOf } from "./expected-txid.js";
+import type { SubmitTransactionOptions } from "./index.js";
 
 metrics.register({
   name: "rpc_requests_total",
@@ -110,6 +113,14 @@ export class KaspaWrpcClient {
     }
   }
 
+  /**
+   * TX-SEND-SUBMITPOINT-1: the generic call every HardKAS RPC client exposes (`KaspaRpcClient.call`), so code holding this
+   * client (the SDK, when `tx send` hands it this one) reads the chain through it as through any other. Same request.
+   */
+  async call<TResponse = unknown>(method: string, params: Record<string, unknown> = {}): Promise<TResponse> {
+    return (await this.request(method, params)) as TResponse;
+  }
+
   async getServerInfo(): Promise<unknown> {
     return this.request("getServerInfo");
   }
@@ -126,14 +137,34 @@ export class KaspaWrpcClient {
     return this.request("getUtxosByAddresses", { addresses });
   }
 
-  async submitTransaction(txPayload: any, allowOrphan = false): Promise<unknown> {
+  /**
+   * EXPECTED-TXID-1: the second argument is SubmitTransactionOptions (as every HardKAS client takes it; `sdk.tx.send`
+   * passes `{ expectedTxId }`) or, as before, the boolean allowOrphan. An options object is never read as allowOrphan.
+   */
+  async submitTransaction(txPayload: any, allowOrphanOrOptions: boolean | SubmitTransactionOptions = false): Promise<unknown> {
+    const options: SubmitTransactionOptions =
+      typeof allowOrphanOrOptions === "object" && allowOrphanOrOptions !== null ? allowOrphanOrOptions : { allowOrphan: allowOrphanOrOptions === true };
+    const allowOrphan = options.allowOrphan === true;
+    // TX-SEND-BLOCKED-OUTCOME-1: without a connection nothing can have been sent
+    if (!this.session) {
+      throw new RpcRequestNotSentError(`submitTransaction was not sent (before the transport): this client is not connected to ${this.url}`);
+    }
     // The storage mass commitment is checked before anything is sent (see upstream/wire.ts).
-    const result = (await this.request("submitTransaction", { transaction: txPayload, allowOrphan })) as any;
+    // EXPECTED-TXID-1: options.expectedTxId, checked against the transaction before anything is sent
+    const expected = submitTxIdOf(txPayload, options);
+    let result: any;
+    try {
+      result = (await this.request("submitTransaction", { transaction: txPayload, allowOrphan })) as any;
+    } catch (e) {
+      throw classifySubmitFailure(e, expected);
+    }
+    // RPC-SUBMIT-SAFETY-1: accepted only when the answer names the transaction (never an empty id)
+    const transactionId = result?.accepted === false ? result?.transactionId || result?.transactionID || "" : acceptedTxIdOf(result, expected);
     // Normalize return to match SDK expectations (accepted + transactionId)
     return {
       accepted: true,
-      transactionId: result?.transactionId || result?.transactionID || "",
-      ...result
+      ...result,
+      transactionId
     };
   }
 

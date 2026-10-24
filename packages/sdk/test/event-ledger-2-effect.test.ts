@@ -6,6 +6,8 @@ import { Hardkas } from "../src/index.js";
 import { coreEvents, EventLedgerAppendError } from "@hardkas/core";
 import { calculateContentHash, CURRENT_HASH_VERSION, storeEntryFor } from "@hardkas/artifacts";
 import { asRpcInstance } from "./helpers/rpc-instance.js";
+import { reissueAsBroadcastable, planOfSigned, nodeNamesReceived } from "./helpers/official-signed-payload.js";
+
 
 vi.setConfig({ testTimeout: 120_000 });
 
@@ -26,21 +28,11 @@ vi.setConfig({ testTimeout: 120_000 });
 // `rpc.submitTransaction` is the only stub. The simulator cases run the real simulator.
 
 const LOOPBACK = "http://127.0.0.1:16110";
-const NODE_TX = "b".repeat(64);
 
 // ENDPOINT-AUTHORITY-1 (EA-I3): the re-issued artifact is for the network the instance sends on
-function asBroadcastable(signed: any, network?: string): any {
-  const s: any = structuredClone(signed);
-  if (network) s.networkId = network;
-  delete s.authorization;
-  s.signedTransaction = { format: "hex", payload: "deadbeef" };
-  s.txId = "f".repeat(64);
-  delete s.contentHash;
-  s.lineage = { ...s.lineage, artifactId: "" };
-  s.contentHash = calculateContentHash(s, CURRENT_HASH_VERSION);
-  s.lineage.artifactId = s.contentHash;
-  s.signedId = `signed-${s.contentHash.slice(0, 16)}`;
-  return s;
+// EXPECTED-TXID-1: the payload is the transaction the plan authorizes, under its official kaspa-wasm id.
+function asBroadcastable(signed: any, plan: any, network?: string): any {
+  return reissueAsBroadcastable(signed, plan, network);
 }
 
 /** Every artifact file under the workspace store whose JSON satisfies `pred`. */
@@ -89,37 +81,37 @@ describe("EVENT-LEDGER-2 final closeout · A1 a ledger failure names the effect 
     fs.rmSync(ws, { recursive: true, force: true });
   });
 
-  async function realBroadcast(submit: () => Promise<any>) {
+  async function realBroadcast(submit: (...args: any[]) => Promise<any>) {
     const sdk = await Hardkas.create({ cwd: ws, autoBootstrap: true, network: "simulated" });
     // ENDPOINT-AUTHORITY-1 (EA-I3): planned and signed for the network the send runs on
     Object.defineProperty(sdk, "network", { get: () => "simnet", configurable: true });
     const plan = await sdk.tx.plan({ from: "alice", to: "bob", amount: "1" } as any);
-    const signed = asBroadcastable(await sdk.tx.sign(plan as any, "alice"));
+    const signed = asBroadcastable(await sdk.tx.sign(plan as any, "alice"), plan);
     asRpcInstance(sdk, LOOPBACK, "simnet");
     vi.spyOn(sdk.rpc, "submitTransaction").mockImplementation(submit as any);
     return { sdk, signed };
   }
 
   it("accepted broadcast, then the submission's artifact.written is lost: the failure says the transaction WAS sent (RPC acceptance, not DAG)", async () => {
-    const { sdk, signed } = await realBroadcast(() => Promise.resolve({ transactionId: NODE_TX }));
+    const { sdk, signed } = await realBroadcast(nodeNamesReceived) /* EXPECTED-TXID-1: the node names the transaction it was sent */;
     ledgerFailingOn((e) => e.kind === "artifact.written");
     const err: any = await sdk.tx.send(signed, LOOPBACK).then(() => undefined, (e) => e);
     expect(err?.code).toBe("EVENT_LEDGER_APPEND_FAILED");
-    expect(err.metadata?.effect).toMatchObject({ operation: "broadcast", outcome: "accepted", txId: NODE_TX });
+    expect(err.metadata?.effect).toMatchObject({ operation: "broadcast", outcome: "accepted", txId: signed.txId });
     expect(err.metadata.effect.artifactId).toBe(err.metadata.event.artifactId); // the submission that was written
     expect(fs.existsSync(err.metadata.event.path), "the submission WAS written").toBe(true);
-    expect(err.message).toMatch(/ACCEPTED the submission of transaction b{64}/);
+    expect(err.message).toMatch(new RegExp(`ACCEPTED the submission of transaction ${signed.txId}`));
     expect(err.message).toMatch(/not acceptance or confirmation in the DAG\): it WAS sent/);
     expect(err.message).not.toMatch(/Nothing was sent|may already have been executed or submitted/);
   });
 
   it("accepted broadcast, then its result event is lost: the failure names the accepted submission and where it is recorded", async () => {
-    const { sdk, signed } = await realBroadcast(() => Promise.resolve({ transactionId: NODE_TX }));
+    const { sdk, signed } = await realBroadcast(nodeNamesReceived) /* EXPECTED-TXID-1: the node names the transaction it was sent */;
     ledgerFailingOn((e) => e.sourceSubsystem === "sdk:tx-send");
     const err: any = await sdk.tx.send(signed, LOOPBACK).then(() => undefined, (e) => e);
     expect(err?.code).toBe("EVENT_LEDGER_APPEND_FAILED");
     const effect = err.metadata?.effect;
-    expect(effect).toMatchObject({ operation: "broadcast", outcome: "accepted", txId: NODE_TX });
+    expect(effect).toMatchObject({ operation: "broadcast", outcome: "accepted", txId: signed.txId });
     expect(fs.existsSync(effect.artifactPath), "the submission artifact it names exists").toBe(true);
     expect(JSON.parse(fs.readFileSync(effect.artifactPath, "utf8")).contentHash).toBe(effect.artifactId);
     expect(err.message).toMatch(/it WAS sent/);
@@ -131,16 +123,17 @@ describe("EVENT-LEDGER-2 final closeout · A1 a ledger failure names the effect 
     const err: any = await sdk.tx.send(signed, LOOPBACK).then(() => undefined, (e) => e);
     expect(err?.code).toBe("EVENT_LEDGER_APPEND_FAILED");
     // a failed call records no txId from the node; the effect names the transaction that was sent (the signed artifact's)
-    expect(err.metadata?.effect).toMatchObject({ operation: "broadcast", outcome: "unknown", txId: "f".repeat(64) });
+    expect(err.metadata?.effect).toMatchObject({ operation: "broadcast", outcome: "unknown", txId: signed.txId });
     expect(err.message).toMatch(/is UNKNOWN: the submit call failed without an answer from the node, which may have received it/);
     expect(err.message).not.toMatch(/REJECTED|rejected/);
     expect(passed.filter((e) => e.kind === "workflow.failed"), "no failure event either: nothing says it was rejected").toEqual([]);
   });
 
   it("a submission the node rejected, then its result event is lost: the failure says REJECTED, with the submission", async () => {
-    const { sdk, signed } = await realBroadcast(() =>
-      Promise.reject(new Error(`Rejected transaction ${"f".repeat(64)}: transaction ${"f".repeat(64)} is an orphan where orphan is disallowed`))
-    );
+    const { sdk, signed } = await realBroadcast(async (tx: unknown) => {
+      const id = (await nodeNamesReceived(tx)).transactionId;
+      throw new Error(`Rejected transaction ${id}: transaction ${id} is an orphan where orphan is disallowed`);
+    });
     ledgerFailingOn((e) => e.sourceSubsystem === "sdk:tx-send");
     const err: any = await sdk.tx.send(signed, LOOPBACK).then(() => undefined, (e) => e);
     expect(err?.code).toBe("EVENT_LEDGER_APPEND_FAILED");

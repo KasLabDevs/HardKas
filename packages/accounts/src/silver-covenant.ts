@@ -186,6 +186,9 @@ export function buildCovenantGenesis(request: CovenantGenesisRequest): CovenantT
   const unsigned = make(fee);
   const signatures = inputs.map((f, i) => String(k.createInputSignature(unsigned, i, f.key, k.SighashType.All)));
   const signed = make(fee, signatures);
+  // SILVER-GENESIS-TXID-1: the covenant binding and the storage mass were set after construction, and kaspa-wasm
+  // recomputes a transaction's id only on finalize(): without it the declared txId is not the id of what is sent.
+  signed.finalize();
   const binding = signed.outputs[0].covenant;
   if (!binding) throw covenantError("COVENANT_GENESIS_UNBOUND", "the SDK did not bind the covenant output");
 

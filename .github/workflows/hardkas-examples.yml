@@ -16,7 +16,8 @@ jobs:
       - name: Install Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          # NODE-CI-PIN-1: the exact patched release this code was validated on (not a floating major).
+          node-version: 24.22.1
 
       - name: Install pnpm
         uses: pnpm/action-setup@v3

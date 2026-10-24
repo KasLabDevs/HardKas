@@ -1,4 +1,4 @@
-import { HardkasError, nodeRpcUrl } from "@hardkas/core";
+import { HardkasError, nodeRpcUrl, assertValidNodeEndpoint } from "@hardkas/core";
 import { DEFAULT_HARDKAS_CONFIG } from "./defaults";
 import type { HardkasConfig } from "./types";
 
@@ -63,9 +63,14 @@ export function networkEndpointRequiredError(networkId: string): HardkasError {
 
 /** The node endpoint for a network, by the rules above; throws NETWORK_ENDPOINT_REQUIRED instead of guessing. */
 export function resolveNodeEndpoint(options: { config: HardkasConfig; networkId: string; explicitUrl?: string | undefined }): ResolvedNodeEndpoint {
-  if (typeof options.explicitUrl === "string" && options.explicitUrl !== "") return { url: options.explicitUrl, source: "explicit" };
+  // ENDPOINT-VALIDATION-1: an endpoint given or declared must be well formed, or nothing connects (NETWORK_ENDPOINT_INVALID)
+  if (typeof options.explicitUrl === "string" && options.explicitUrl !== "") {
+    return { url: assertValidNodeEndpoint(options.explicitUrl, "--url"), source: "explicit" };
+  }
   const declared = declaredNodeEndpoint(options.config, options.networkId);
-  if (declared !== undefined) return { url: declared, source: "declared" };
+  if (declared !== undefined) {
+    return { url: assertValidNodeEndpoint(declared, `networks['${options.networkId}'].rpcUrl`), source: "declared" };
+  }
   const network = entryNetwork(options.config, options.networkId);
   const local = isPublicKaspaNetwork(network) ? undefined : localDefault(network);
   if (local !== undefined) return { url: local, source: "local-default" };

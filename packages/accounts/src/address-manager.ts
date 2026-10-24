@@ -1,7 +1,12 @@
 import { createHash } from "node:crypto";
-import { getNetworkPrefix } from "@hardkas/core";
+import { HardkasError, isSimnetNetworkId } from "@hardkas/core";
 import { loadKaspaWasmSync } from "./signer-backend.js";
 
+/**
+ * The network names the SYNTHETIC derivation accepts as input. WALLET-HD-0: only the simnet ones (`simnet` and its
+ * aliases) are allowed at runtime; the others stay in the type so that existing callers compile, and `derive()`
+ * refuses them.
+ */
 export type NetworkType = "simnet" | "testnet" | "mainnet" | "local-docker-simnet";
 export type ChainType = "receive" | "change" | 0 | 1;
 
@@ -37,6 +42,31 @@ export interface HelperDeriveRequest {
     readonly network?: NetworkType;
 }
 
+/**
+ * WALLET-HD-0 · the code every refusal of a non-simnet network carries. Mainnet keeps the codes that existed before
+ * (`ADDRESS_MANAGER_MAINNET_BLOCKED`, `WALLET_MANAGER_MAINNET_BLOCKED`).
+ */
+export const SYNTHETIC_DERIVATION_NETWORK_BLOCKED = "SYNTHETIC_DERIVATION_NETWORK_BLOCKED";
+
+/**
+ * WALLET-HD-0 · the synthetic derivation (`deterministic-simulated-v1`) has NO secret in its chain: the private key is
+ * sha256(seedRef:path:network) and `seedRef` itself comes from the public walletId (or from an unvalidated text). Anyone
+ * who knows those public values computes the key. Such an identity may exist on the local simnet only; this refuses
+ * every other network name — testnet-10 and every testnet, devnet, unknown names, and address prefixes used as if they
+ * were networks — before anything is derived. No option, flag or environment variable lifts it.
+ */
+export function assertSyntheticDerivationNetwork(network: string, context: string): void {
+    if (isSimnetNetworkId(network)) return;
+    throw new HardkasError(
+        SYNTHETIC_DERIVATION_NETWORK_BLOCKED,
+        `${context}: the synthetic derivation (deterministic-simulated-v1) exists on simnet only. Its private keys are ` +
+            `computable from public data (walletId or seedRef, path and network), so an address on ${JSON.stringify(network)} ` +
+            `would hand its funds to anyone. Nothing was derived. For a public network use a real account: ` +
+            `hardkas accounts real generate --network <id> --password-env <VAR>.`,
+        { metadata: { network, derivationModel: "deterministic-simulated-v1" } }
+    );
+}
+
 function resolveChain(chain: ChainType): 0 | 1 {
     if (chain === "receive" || chain === 0) return 0;
     if (chain === "change" || chain === 1) return 1;
@@ -49,6 +79,13 @@ function validateIndex(index: number, name: string): void {
     }
 }
 
+/**
+ * SYNTHETIC address derivation, simnet only (WALLET-HD-0). The path `m/44'/111111'/…` is a LABEL: this is not BIP32,
+ * the key is a hash of `seedRef`, the path text and the network name (`derivationModel: "deterministic-simulated-v1"`,
+ * `claims.realBip39: false`). Simnet addresses are unchanged by WALLET-HD-0 (byte for byte); every other network is
+ * refused with `SYNTHETIC_DERIVATION_NETWORK_BLOCKED` (mainnet keeps `ADDRESS_MANAGER_MAINNET_BLOCKED`).
+ * @deprecated for anything but simnet development fixtures; a BIP39/BIP32 gen1 derivation is a separate, future batch.
+ */
 export const AddressManager = {
     path(opts: PathRequest): string {
         validateIndex(opts.accountIndex, "accountIndex");
@@ -62,6 +99,8 @@ export const AddressManager = {
         if (network === "mainnet") {
             throw new Error("ADDRESS_MANAGER_MAINNET_BLOCKED: mainnet derivation is blocked by default in simulated v1.");
         }
+        // WALLET-HD-0: fail closed on every network that is not the local simnet (by name, never by prefix)
+        assertSyntheticDerivationNetwork(network, "AddressManager.derive");
 
         const derivationPath = this.path({
             accountIndex: opts.accountIndex,
@@ -69,10 +108,12 @@ export const AddressManager = {
             addressIndex: opts.addressIndex
         });
 
-        // Deterministic mock generation utilizing REAL Kaspa wasm logic
+        // Deterministic mock generation utilizing REAL Kaspa wasm logic. The payload keeps the network NAME as given
+        // (so every simnet address of the past stays identical); the address is encoded for simnet, the only network
+        // that reaches this point.
         const payload = `${opts.seedRef}:${derivationPath}:${network}`;
         const hash = createHash("sha256").update(payload).digest("hex");
-        
+
         // Synchronous API, so this uses the synchronous loader (same pin, same
         // integrity check). It never invents an address: without the SDK there
         // is no valid address to return.
@@ -80,7 +121,7 @@ export const AddressManager = {
         try {
             const kaspa = loadKaspaWasmSync();
             const priv = new kaspa.PrivateKey(hash);
-            address = priv.toKeypair().toAddress(getNetworkPrefix(network)).toString();
+            address = priv.toKeypair().toAddress("simnet").toString();
         } catch (e) {
             if (typeof (e as any)?.code === "string" && (e as any).code.startsWith("WASM_TOOLCHAIN_")) throw e;
             const err = new Error(

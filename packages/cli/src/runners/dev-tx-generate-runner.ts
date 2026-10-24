@@ -98,8 +98,9 @@ export async function runDevTxGenerate(options: any) {
       results
     });
   } else {
+    // DEV-TX-GENERATE-TEXT-1: the summary names the same mode as the JSON ("simulated" is the legacy value)
     console.log(
-      `\nGeneration complete (mode: simulated, purpose: load-test, securityModel: mock-fixture).`
+      `\nGeneration complete (mode: simulator, purpose: load-test, securityModel: mock-fixture).`
     );
     console.log(`Success: ${successCount}`);
     console.log(`Failed:  ${failCount}`);

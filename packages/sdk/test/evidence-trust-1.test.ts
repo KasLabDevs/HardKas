@@ -5,6 +5,8 @@ import path from "node:path";
 import { Hardkas } from "../src/index.js";
 import { calculateContentHash, CURRENT_HASH_VERSION } from "@hardkas/artifacts";
 import { sendAsRpc } from "./helpers/rpc-instance.js";
+import { reissueAsBroadcastable, planOfSigned, nodeNamesReceived } from "./helpers/official-signed-payload.js";
+
 
 // EVIDENCE-TRUST-1 (investigation, 2026-10-05) · BEFORE, SDK level.
 // - Secret boundary of persistence: a real send records the RPC locator raw in the txSubmission (`rpcUrl`), so a
@@ -13,17 +15,9 @@ import { sendAsRpc } from "./helpers/rpc-instance.js";
 
 /** The same re-issue as wave1-3-producers: a synthetic authorization is never broadcast, so the real-send branch is
  * exercised with the artifact re-issued as a non-synthetic signed (hex payload), re-sealed under v5. */
-function asBroadcastable(signed: any): any {
-  const s: any = structuredClone(signed);
-  delete s.authorization;
-  s.signedTransaction = { format: "hex", payload: "deadbeef" };
-  s.txId = "f".repeat(64);
-  delete s.contentHash;
-  s.lineage = { ...s.lineage, artifactId: "" };
-  s.contentHash = calculateContentHash(s, CURRENT_HASH_VERSION);
-  s.lineage.artifactId = s.contentHash;
-  s.signedId = `signed-${s.contentHash.slice(0, 16)}`;
-  return s;
+// EXPECTED-TXID-1: the payload is the transaction the plan authorizes, under its official kaspa-wasm id.
+function asBroadcastable(signed: any, plan: any): any {
+  return reissueAsBroadcastable(signed, plan);
 }
 
 const filesUnder = (dir: string): string[] => {
@@ -63,9 +57,9 @@ describe("EVIDENCE-TRUST-1 · SDK", () => {
   const realSend = async (rpcUrl: string) => {
     const plan = await sdk.tx.plan({ from: "alice", to: "bob", amount: "10" });
     await sdk.artifacts.write(plan);
-    const signed: any = asBroadcastable(await sdk.tx.sign(plan, "alice"));
+    const signed: any = asBroadcastable(await sdk.tx.sign(plan, "alice"), plan);
     await sdk.artifacts.write(signed);
-    vi.spyOn(sdk.rpc, "submitTransaction").mockResolvedValue({ transactionId: "b".repeat(64) } as any);
+    vi.spyOn(sdk.rpc, "submitTransaction").mockResolvedValue({ transactionId: signed.txId } as any);
     const sent: any = await sendAsRpc(sdk, signed, rpcUrl);
     expect(sent.submitted, "precondition: the real-send branch ran").toBe(true);
     expect(fs.existsSync(sent.receiptPath), "precondition: a submission was persisted").toBe(true);
@@ -100,7 +94,7 @@ describe("EVIDENCE-TRUST-1 · SDK", () => {
       // where this.url = toWrpcUrl(url) keeps the userinfo and the query string.
       const plan = await sdk.tx.plan({ from: "alice", to: "bob", amount: "10" });
       await sdk.artifacts.write(plan);
-      const signed: any = asBroadcastable(await sdk.tx.sign(plan, "alice"));
+      const signed: any = asBroadcastable(await sdk.tx.sign(plan, "alice"), plan);
       await sdk.artifacts.write(signed);
       vi.spyOn(sdk.rpc, "submitTransaction").mockRejectedValue(
         new Error("Connection to Kaspa RPC at ws://127.0.0.1:16110/?token=ET1SECRETTOKEN was lost: socket closed")

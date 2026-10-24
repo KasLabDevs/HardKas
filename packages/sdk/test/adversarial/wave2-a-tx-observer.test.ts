@@ -7,6 +7,8 @@ import { observeTxOnce, type TxObserverRpc, type TxObserverRpcRecorder } from ".
 import { calculateContentHash, CURRENT_HASH_VERSION, evidenceDigest, deriveObserverId } from "@hardkas/artifacts";
 import { systemRuntimeContext, finalityDepthFor } from "@hardkas/core";
 import { sendAsRpc } from "../helpers/rpc-instance.js";
+import { reissueAsBroadcastable, nodeNamesReceived } from "../helpers/official-signed-payload.js";
+
 
 // Wave 2(a) · Q4 · the RPC observer and the SDK surface
 //   observeTxOnce records what ONE node answers (mempool → virtual chain → header → finality
@@ -196,17 +198,11 @@ describe("Wave 2(a) · SDK: submission cursor, persisted observations, derived s
     await sdk.artifacts.write(plan);
     const signed: any = await sdk.tx.sign(plan, "alice");
     // The real-broadcast branch: a non-synthetic re-issue (a synthetic authorization is never broadcast).
-    const s: any = structuredClone(signed);
-    delete s.authorization;
-    s.signedTransaction = { format: "hex", payload: "deadbeef" };
-    s.txId = TX;
-    delete s.contentHash;
-    s.lineage = { ...s.lineage, artifactId: "" };
-    s.contentHash = calculateContentHash(s, CURRENT_HASH_VERSION);
-    s.lineage.artifactId = s.contentHash;
-    s.signedId = `signed-${s.contentHash.slice(0, 16)}`;
+    // EXPECTED-TXID-1: its payload is the transaction the plan authorizes, under its official kaspa-wasm id, and the
+    // node names the transaction it was sent.
+    const s: any = reissueAsBroadcastable(signed, plan);
     await sdk.artifacts.write(s);
-    vi.spyOn(sdk.rpc, "submitTransaction").mockResolvedValue({ transactionId: TX } as any);
+    vi.spyOn(sdk.rpc, "submitTransaction").mockImplementation(nodeNamesReceived as any);
     const sent: any = await sendAsRpc(sdk, s, "http://127.0.0.1:16110");
     expect(sent.submitted).toBe(true);
     return { txId: sent.txId, submissionId: sent.submission.contentHash };
@@ -215,7 +211,11 @@ describe("Wave 2(a) · SDK: submission cursor, persisted observations, derived s
   it("the submission carries the observer's cursor (submitPoint); status derives SUBMITTED until something is observed", async () => {
     const { txId, submissionId } = await realSend();
     const submission: any = await sdk.artifacts.read({ artifact: submissionId });
-    expect(submission.submitPoint).toEqual({ virtualDaaScore: node.virtualDaaScore.toString(), sinkHash: node.sink, sinkBlueScore: node.sinkBlueScore.toString() });
+    // TX-SEND-SUBMITPOINT-1: the submit point is one view — the sink and THAT block's own header blue score (this scripted
+    // node keeps its sink blue-score counter apart from the sink block's header, so the two differ here; on a node they agree)
+    const sinkBlock = node.chain[node.chain.length - 1]!;
+    expect(submission.submitPoint).toEqual({ virtualDaaScore: node.virtualDaaScore.toString(), sinkHash: node.sink, sinkBlueScore: sinkBlock.blueScore.toString() });
+    expect(submission.submitPointUnavailable).toBeUndefined();
     const derived = await sdk.tx.status(txId);
     expect(derived.status).toBe("SUBMITTED");
     expect(derived.evidence.submissionArtifactId).toBe(submissionId);

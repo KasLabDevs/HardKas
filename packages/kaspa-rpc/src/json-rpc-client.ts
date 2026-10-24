@@ -15,11 +15,17 @@ import {
   RpcError,
   RpcCircuitOpenError,
   RpcValidationError,
-  RpcNotFoundError
+  RpcNotFoundError,
+  acceptedTxIdOf,
+  classifySubmitFailure,
+  knownTxIdOf,
+  markRequestNotSent,
+  isRpcRequestNotSentError
 } from "./errors.js";
 import { calculateConfidence } from "./resilience.js";
-import { OfficialRpcSession, type OfficialRpcFactory } from "./upstream/session.js";
+import { OfficialRpcSession, isBroadcastMethod, type OfficialRpcFactory } from "./upstream/session.js";
 import { toOfficialTransaction } from "./upstream/wire.js";
+import { submitTxIdOf } from "./expected-txid.js";
 
 export enum CircuitState {
   CLOSED = "CLOSED",
@@ -373,11 +379,11 @@ export class KaspaJsonRpcClient implements KaspaRpcClient {
     // Converted (and its storage mass commitment checked) before the retry loop:
     // a malformed transaction is refused once, never retried against the node.
     const txObj = toOfficialTransaction(transaction);
-    const result = (await this.callRpc("submitTransactionRequest", {
-      transaction: txObj,
-      allowOrphan: options?.allowOrphan ?? false
-    })) as { transactionId: string };
-    return { transactionId: result.transactionId };
+    // EXPECTED-TXID-1: options.expectedTxId, checked against the transaction before anything is sent
+    const expected = submitTxIdOf(transaction, options);
+    const result = await this.broadcastOnce("submitTransactionRequest", { transaction: txObj, allowOrphan: options?.allowOrphan ?? false }, expected);
+    // RPC-SUBMIT-SAFETY-1: success only when the answer names the transaction (the submitted one, when known)
+    return { transactionId: acceptedTxIdOf(result, expected) };
   }
 
   async getServerInfo(): Promise<ServerInfo> {
@@ -395,7 +401,35 @@ export class KaspaJsonRpcClient implements KaspaRpcClient {
   }
 
   private async callRpc<T>(method: string, params: unknown = {}): Promise<T> {
+    // RPC-SUBMIT-SAFETY-1: a broadcast reached through the generic call() is sent once too
+    if (isBroadcastMethod(method)) return this.broadcastOnce<T>(method, params, knownTxIdOf((params as { transaction?: unknown } | undefined)?.transaction));
     return this.withResilience(() => this.internalCall<T>(method, params));
+  }
+
+  /**
+   * RPC-SUBMIT-SAFETY-1: a request that can put a transaction on the network is made ONCE — never retried. An open
+   * circuit refuses it before anything is sent (typed not-sent). A failure keeps its meaning (classifySubmitFailure):
+   * not sent, the node's own answer, or — after the request may have left — an unknown outcome naming the txId.
+   */
+  private async broadcastOnce<T>(method: string, params: unknown, txId: string | undefined): Promise<T> {
+    this.checkCircuit();
+    if (this.circuitState === CircuitState.OPEN) throw markRequestNotSent(new RpcCircuitOpenError());
+    const start = Date.now();
+    this.totalRequests++;
+    try {
+      const result = await this.internalCall<T>(method, params);
+      this.onSuccess(Date.now() - start);
+      return result;
+    } catch (e: unknown) {
+      this.onFailure(e);
+      const classified = classifySubmitFailure(e, txId);
+      // the node's own deterministic refusal keeps the type withResilience gives it (RpcValidationError), text unchanged
+      if (classified === e && !isRpcRequestNotSentError(e) && this.isDeterministicError(e)) {
+        const err = e as any;
+        throw new RpcValidationError(err instanceof Error ? err.message : String(err), err?.code, err?.data);
+      }
+      throw classified;
+    }
   }
 
   private async withResilience<T>(fn: () => Promise<T>): Promise<T> {

@@ -28,7 +28,10 @@ export class WalletService {
         const hk = { walletManager: (await import('@hardkas/accounts')).WalletManager };
         
         const id = randomUUID();
-        // Generates the wallet in SDK (simulated) and returns safe artifacts
+        // Generates the wallet in SDK (simulated) and returns safe artifacts.
+        // WALLET-HD-0: WalletManager is a SYNTHETIC, simnet-only identity — its keys are computable from `walletId`
+        // (a public value), so these addresses are development fixtures and must never receive real funds; outside
+        // simnet WalletManager refuses (SYNTHETIC_DERIVATION_NETWORK_BLOCKED).
         const artifact = hk.walletManager.create({ walletId: id, network: "simnet" });
         
         const createdAt = Date.now();
