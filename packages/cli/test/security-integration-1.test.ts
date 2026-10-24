@@ -30,6 +30,8 @@ vi.setConfig({ testTimeout: 240_000, hookTimeout: 240_000 });
 type Fake = { url: string; port: number; label: string; methods: string[]; close(): Promise<void> };
 
 let kaspa: any;
+/** EXPECTED-TXID-1: the official id of a transaction as the fake node receives it (set in beforeAll). */
+let txIdOfReceived: (transaction: unknown) => string;
 const hashOf = (n: number) => n.toString(16).padStart(64, "0");
 function spkHex(address: string): string {
   const spk = kaspa.payToAddressScript(address);
@@ -92,7 +94,8 @@ async function startFake(label: string, network: string, port = 0): Promise<Fake
           return ok({ removedChainBlockHashes: [], addedChainBlockHashes: [], acceptedTransactionIds: [], chainBlockAcceptedTransactions: [] });
         case "submitTransaction":
           if (network === "mainnet") return err(`Rejected transaction ${hashOf(0xabc)}: fake mainnet node never accepts`);
-          return ok({ transactionId: hashOf(0xa11) });
+          // EXPECTED-TXID-1: like a node, it names the transaction it received (its official kaspa-wasm id)
+          return ok({ transactionId: txIdOfReceived(params?.transaction) });
         default:
           return err(`fake ${label} does not implement ${method}`);
       }
@@ -304,6 +307,7 @@ beforeAll(async () => {
   accountsMod = await import("@hardkas/accounts");
   sdkMod = await dist("sdk");
   kaspa = coreMod.loadManagedKaspaWasmSync();
+  txIdOfReceived = (await dist("kaspa-rpc")).officialTxIdOf;
   T = throwawayKey("HK_SI_EXT_PK");
   T2 = throwawayKey("HK_SI_EXT2_PK");
   template = fs.mkdtempSync(path.join(os.tmpdir(), "hk-si-template-"));

@@ -25,8 +25,17 @@ function redactPlainText(text: string, redact: (plain: string) => string): strin
 }
 
 /**
+ * WALLET-HD-0 · the shape of a BIP32-style extended PRIVATE key as Kaspa (`kprv` mainnet, `ktrv` testnet) and the
+ * Bitcoin family (`xprv`, `yprv`, `zprv`, `tprv`, …) serialise it: a short lowercase prefix ending in `prv` (or Kaspa's
+ * `ktrv`) followed by about 107 base58 characters (111 in all). The public forms (`kpub`, `ktub`, `xpub`) do not match.
+ * Shape only — a safety net for free text and a detector for the audit; it never decides identity. Two prefixes do not
+ * exhaust the formats (kaspa-wasm serialises with any prefix the caller gives), hence the `[a-z]{1,3}prv` family.
+ */
+export const EXTENDED_PRIVATE_KEY_PATTERN = /\b(?:[a-z]{1,3}prv|ktrv)[1-9A-HJ-NP-Za-km-z]{95,120}\b/g;
+
+/**
  * Redacts sensitive information from strings and objects recursively.
- * Masks Kaspa private keys (64 hex chars), mnemonics and the credentials of URLs.
+ * Masks Kaspa private keys (64 hex chars), extended private keys (kprv/ktrv/xprv…), mnemonics and the credentials of URLs.
  *
  * EVIDENCE-TRUST-1 (D8): a safety net for FREE TEXT only (error messages, warnings, stack traces). A 64-hex value has
  * the shape of a private key but also of every content hash and txId, so structured and identity output (titles, fields,
@@ -44,6 +53,11 @@ export function maskSecrets(data: any): any {
       // Mask private keys (64 hex chars)
       redacted = redacted.replace(/\b[0-9a-fA-F]{64}\b/g, (match) => {
         return `${match.slice(0, 6)}...${match.slice(-4)} [REDACTED]`;
+      });
+
+      // Mask extended private keys (kprv, ktrv, xprv, …): only the prefix survives (WALLET-HD-0)
+      redacted = redacted.replace(new RegExp(EXTENDED_PRIVATE_KEY_PATTERN.source, "g"), (match) => {
+        return `${match.slice(0, 4)}... [REDACTED]`;
       });
 
       // Mask mnemonics (rough approximation for BIP39 - long series of words)
@@ -65,12 +79,17 @@ export function maskSecrets(data: any): any {
     const redactedObj: any = {};
     for (const key in data) {
       if (Object.prototype.hasOwnProperty.call(data, key)) {
-        // Redact common sensitive keys immediately
+        // Redact common sensitive keys immediately (extended private keys included — WALLET-HD-0)
+        const lower = key.toLowerCase();
         if (
-          key.toLowerCase().includes("secret") ||
-          key.toLowerCase().includes("privatekey") ||
-          key.toLowerCase().includes("mnemonic") ||
-          key.toLowerCase().includes("password")
+          lower.includes("secret") ||
+          lower.includes("privatekey") ||
+          lower.includes("privkey") ||
+          lower.includes("mnemonic") ||
+          lower.includes("password") ||
+          lower.includes("xprv") ||
+          lower.includes("kprv") ||
+          lower.includes("ktrv")
         ) {
           redactedObj[key] = "[REDACTED]";
         } else {
@@ -93,6 +112,16 @@ const SECRET_FIELD_NAMES: ReadonlySet<string> = new Set([
   "privatekey",
   "privatekeyhex",
   "privatekeywif",
+  "privkey",
+  // extended private keys, Kaspa and BIP32 spellings (WALLET-HD-0)
+  "xprv",
+  "kprv",
+  "ktrv",
+  "extendedprivatekey",
+  "masterxprv",
+  "accountxprv",
+  "seedhex",
+  "bip39seed",
   "mnemonic",
   "seed",
   "seedphrase",

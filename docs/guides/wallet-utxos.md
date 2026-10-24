@@ -8,8 +8,10 @@ The `@hardkas/toolkit` includes built-in UTXO analysis and planning through the 
 
 Instead of blindly parsing arrays of UTXOs, you can instantly measure the health of a wallet:
 
+> `WalletToolkit` is a **simnet-only development wallet** with a synthetic identity (its keys are derivable from the wallet name). It refuses public networks; never send real funds to its addresses.
+
 ```typescript
-const wallet = WalletToolkit.open("merchant-vault");
+const wallet = WalletToolkit.open("merchant-vault", { networkId: "simnet" });
 
 // Quick stats
 const stats = await wallet.utxos.statistics();

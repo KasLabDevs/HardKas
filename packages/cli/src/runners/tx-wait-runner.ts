@@ -15,6 +15,9 @@
 // spent are no longer listed for the sender. The node's UTXO index can trail acceptance by
 // seconds, so balances read right after CONFIRMED could otherwise be stale. This is a view
 // condition, not a transaction state: the derived state stays what the observations say.
+// TX-WAIT-CHAINED-SPEND-1: an output spent since by a later transaction (a batch's next payment
+// spending this one's change) is never listed again, so the view also reflects the transaction
+// once an output of it is listed and none of its inputs is (see waitForUtxoView).
 
 import { isConfirmed, type DerivedTxStatus } from "@hardkas/artifacts";
 import { SYNTHETIC_TXID, openSdkForTx, stateHeadline } from "./tx-status-runner.js";
@@ -31,6 +34,11 @@ export interface TxWaitUtxoView {
   missingOutputsFor: string[];
   /** Outpoints (`txId:index`) the tx spends that the sender's view still listed at the last look. */
   inputsStillListed: string[];
+  /**
+   * TX-WAIT-CHAINED-SPEND-1: addresses whose output of the tx the converged view no longer lists — the view lists another
+   * output of it and none of its inputs, so it has applied the tx and that output was spent since.
+   */
+  outputsNoLongerListed?: string[];
   looks: number;
 }
 
@@ -121,8 +129,21 @@ async function waitForUtxoView(args: {
       const listed = new Set((sender ? views.get(sender) ?? [] : []).map((u: any) => outpointKey(u.outpoint)));
       still = spent.filter((k) => listed.has(k));
       lastError = undefined;
-      if (missing.length === 0 && still.length === 0) {
-        return { checked: true, converged: true, addresses, missingOutputsFor: [], inputsStillListed: [], looks };
+      // TX-WAIT-CHAINED-SPEND-1: kaspad's UTXO index applies a transaction's spent inputs and its new outputs in one
+      // diff, so a view that lists an output of the tx and none of its inputs has applied it, and an output it does not
+      // list was spent since (a later payment spending this one's change, a recipient spending what it received). A view
+      // that lists no output of the tx proves nothing (lagging, empty or rebuilding): the wait goes on, as it does while
+      // an input is still listed.
+      if (still.length === 0 && (missing.length === 0 || missing.length < addresses.length)) {
+        return {
+          checked: true,
+          converged: true,
+          addresses,
+          missingOutputsFor: [],
+          inputsStillListed: [],
+          ...(missing.length > 0 ? { outputsNoLongerListed: missing } : {}),
+          looks
+        };
       }
     } catch (e: any) {
       lastError = `${e?.code ? `[${e.code}] ` : ""}${e?.message ?? String(e)}`;
@@ -139,6 +160,16 @@ async function waitForUtxoView(args: {
     inputsStillListed: still,
     looks
   };
+}
+
+/** The `UTXO View` row of `tx wait`'s human output (a view, not a state). */
+export function utxoViewRow(view: TxWaitUtxoView): string {
+  if (!view.checked) return `not checked: ${view.reason}`;
+  const spentSince = view.outputsNoLongerListed ?? [];
+  return spentSince.length === 0
+    ? `reflects this transaction: an output of it is listed for ${view.addresses.length} address(es) and the inputs it spent are no longer listed (${view.looks} look(s))`
+    : `reflects this transaction: an output of it is listed for ${view.addresses.length - spentSince.length} of ${view.addresses.length} address(es) ` +
+        `(the output for ${spentSince.join(", ")} was spent since) and the inputs it spent are no longer listed (${view.looks} look(s))`;
 }
 
 export function targetReached(derived: DerivedTxStatus, until: TxWaitTarget): boolean {

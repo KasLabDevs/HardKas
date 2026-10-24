@@ -96,6 +96,8 @@ export type HardkasConfig = z.infer<typeof hardkasConfigSchema>;
 import { HardkasError } from "./errors.js";
 export * from "./errors.js";
 export * from "./mainnet-policy.js";
+export * from "./fee-guard.js";
+export * from "./endpoint-validation.js";
 export * from "./node-images.js";
 export * from "./node-identity.js";
 export * from "./toolchains.js";
@@ -135,7 +137,8 @@ export {
   redactUrlCredentialsInText,
   redactSecretFields,
   stripAnsi,
-  URL_SECRET_MARKER
+  URL_SECRET_MARKER,
+  EXTENDED_PRIVATE_KEY_PATTERN
 } from "./security.js";
 export * from "./fs.js";
 export * from "./corruption.js";

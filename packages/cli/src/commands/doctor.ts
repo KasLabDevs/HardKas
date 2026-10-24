@@ -68,6 +68,28 @@ interface DoctorCheck {
   suggestion?: string | undefined;
 }
 
+/**
+ * The workspace's network as doctor reads it: its execution default target's network, else `defaultNetwork`
+ * (HARDKAS-NETWORK-PORTABILITY-1), and whether it declares a `localnet` target (a user `execution` replaces the
+ * built-in one whole, so its targets are the workspace's own); undefined when the config cannot be read or names none.
+ */
+async function workspaceNetworkOf(
+  root: string
+): Promise<{ config: any; name: string; network: string; declaresLocalnet: boolean } | undefined> {
+  try {
+    const { config } = await loadHardkasConfig({ cwd: root });
+    const exec: any = (config as any).execution;
+    const target = exec?.default ? exec.targets?.[exec.default] : undefined;
+    const name: string | undefined = typeof target?.network === "string" ? target.network : (config as any).defaultNetwork;
+    const entry = name ? ((config.networks as any)?.[name] as { network?: unknown } | undefined) : undefined;
+    const network = typeof entry?.network === "string" ? entry.network : name;
+    const declaresLocalnet = Object.values(exec?.targets ?? {}).some((t: any) => t?.mode === "localnet");
+    return name && network ? { config, name, network, declaresLocalnet } : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 export async function runDoctorChecks(
   root: string,
   // HARDKAS-NETWORK-PORTABILITY-1-A: `network: false` (ci verify) never contacts the workspace's public endpoint
@@ -424,6 +446,14 @@ export async function runDoctorChecks(
   }
 
   // --- 4. Docker Checks ---
+  // DOCTOR-DOCKER-SCOPE-1: a workspace whose network is public (testnet-<n>, mainnet) and that declares no localnet
+  // target runs against the endpoint it declares (4.2), never a local node: there an unreachable daemon is reported, not
+  // failed. A localnet target needs the daemon: unchanged. `doctor node` and the localnet/node commands check the local
+  // node themselves, whatever the workspace's network.
+  const { isPublicKaspaNetwork } = await import("@hardkas/config");
+  const workspaceNet = await workspaceNetworkOf(root);
+  const publicNetwork =
+    workspaceNet && isPublicKaspaNetwork(workspaceNet.network) && !workspaceNet.declaresLocalnet ? workspaceNet.network : undefined;
   let dockerDaemonOk = false;
   try {
     await execa("docker", ["info"]);
@@ -435,13 +465,22 @@ export async function runDoctorChecks(
       message: "Reachable"
     });
   } catch {
-    addCheck({
-      name: "Docker daemon",
-      category: "docker",
-      status: "fail",
-      message: "Not reachable",
-      suggestion: "Ensure Docker is running."
-    });
+    addCheck(
+      publicNetwork
+        ? {
+            name: "Docker daemon",
+            category: "docker",
+            status: "skip",
+            message: `Not reachable; not needed by this workspace: it runs on ${publicNetwork} through the endpoint it declares and has no localnet target (the localnet and node commands, and 'hardkas doctor node', need it)`
+          }
+        : {
+            name: "Docker daemon",
+            category: "docker",
+            status: "fail",
+            message: "Not reachable",
+            suggestion: "Ensure Docker is running."
+          }
+    );
   }
 
   if (dockerDaemonOk) {
@@ -481,13 +520,10 @@ export async function runDoctorChecks(
   // node above: doctor checks that endpoint answers AND serves that network (NODE-NETWORK-IDENTITY-1). Local networks
   // (simnet, devnet, simulated) are covered by the local node checks; nothing is contacted for them here.
   try {
-    const { resolveNodeEndpoint, isPublicKaspaNetwork } = await import("@hardkas/config");
-    const { config } = await loadHardkasConfig({ cwd: root });
-    const exec: any = (config as any).execution;
-    const target = exec?.default ? exec.targets?.[exec.default] : undefined;
-    const name: string | undefined = typeof target?.network === "string" ? target.network : (config as any).defaultNetwork;
-    const entry = name ? ((config.networks as any)?.[name] as { network?: unknown } | undefined) : undefined;
-    const network = typeof entry?.network === "string" ? entry.network : name;
+    const { resolveNodeEndpoint } = await import("@hardkas/config");
+    const config = workspaceNet?.config;
+    const name = workspaceNet?.name;
+    const network = workspaceNet?.network;
     if (name && network && isPublicKaspaNetwork(network) && opts.network === false) {
       addCheck({ name: `Network endpoint (${network})`, category: "network", status: "skip", message: "not contacted: this check runs offline (hardkas doctor checks the endpoint)" });
     } else if (name && network && isPublicKaspaNetwork(network)) {

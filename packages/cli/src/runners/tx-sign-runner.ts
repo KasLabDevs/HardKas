@@ -19,8 +19,17 @@ export interface TxSignRunnerInput {
   /** Where an encrypted account's keystore password comes from (never from argv). */
   passwordEnv?: string;
   passwordStdin?: boolean;
+  /** TX-BATCH-1: the password itself, already acquired by the caller (in memory only); nothing else is asked. */
+  keystorePassword?: string;
   /** Machine-readable output: never prompts. */
   json?: boolean;
+}
+
+/** Whether signing as `account` needs its owner's keystore password: an encrypted real account (development accounts need none). */
+export function accountNeedsKeystorePassword(account: any): boolean {
+  return Boolean(
+    account?.kind === "kaspa" && account.keystorePath && account.keystoreKind !== "dev-account" && !account.privateKey && !account.privateKeyEnv
+  );
 }
 
 /**
@@ -103,18 +112,21 @@ export async function runTxSign(input: TxSignRunnerInput): Promise<SignedTxArtif
   }
 
   // An encrypted real account opens only with its owner's password, read before anything is
-  // signed or written: from the named variable, from stdin, or prompted on a terminal. It stays in
-  // memory for this call. Development accounts (`.hardkas/dev-accounts/`) need none.
+  // signed or written: from the named variable, from stdin, or prompted on a terminal (or given by
+  // the caller, which read it the same way). It stays in memory for this call. Development accounts
+  // (`.hardkas/dev-accounts/`) need none.
   let keystorePassword: string | undefined;
   const acc: any = account;
-  if (!signer && acc.kind === "kaspa" && acc.keystorePath && acc.keystoreKind !== "dev-account" && !acc.privateKey && !acc.privateKeyEnv) {
+  if (!signer && accountNeedsKeystorePassword(acc)) {
     const { acquirePassword } = await import("./secrets.js");
-    keystorePassword = await acquirePassword({
-      env: input.passwordEnv,
-      stdin: input.passwordStdin,
-      interactive: !input.json,
-      message: `Enter the keystore password of account '${acc.name}':`
-    });
+    keystorePassword =
+      input.keystorePassword ??
+      (await acquirePassword({
+        env: input.passwordEnv,
+        stdin: input.passwordStdin,
+        interactive: !input.json,
+        message: `Enter the keystore password of account '${acc.name}':`
+      }));
   }
 
   // Open the SDK to perform transaction signing & event emission & SQLite indexing

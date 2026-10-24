@@ -1,10 +1,12 @@
 import { WalletToolkit } from '@hardkas/toolkit';
 
 async function main() {
-  const wallet = WalletToolkit.open('alice');
+  // A simnet development wallet: synthetic identity (keys derivable from the name), refused on public networks.
+  const wallet = WalletToolkit.open('alice', { networkId: 'simnet' });
+  await wallet.create();
 
   // 1. Basic properties
-  const address = await wallet.address();
+  const address = await wallet.receive();
   const balance = await wallet.balance();
   console.log(`Address: ${address}, Balance: ${balance} Sompi`);
 

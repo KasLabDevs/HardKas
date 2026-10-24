@@ -1859,7 +1859,7 @@ No arguments.
 
 ## hardkas kaspa wallet send
 
-Plan, confirm (y/N), sign and submit a payment over --rpc-url; the network and target come from hardkas.config stable
+Plan a payment over --rpc-url with --dry-run (the node must serve the workspace's network); sending is disabled here: use 'tx plan', 'tx sign' and 'tx send' internal
 
 ### Usage
 
@@ -1872,7 +1872,7 @@ hardkas kaspa wallet send [options] <from> <to>
 | Flag | Description | Default |
 | :--- | :--- | :--- |
 | `--amount <kas>` | Amount in KAS to send |  |
-| `--dry-run` | Plan but do not sign or broadcast | false |
+| `--dry-run` | Plan only (required: without it the command refuses, KASPA_WALLET_SEND_DISABLED) | false |
 | `--rpc-url <url>` | Node wRPC endpoint (default: the canonical localnet, ws://127.0.0.1:18210) | ws://127.0.0.1:18210 |
 
 ### Arguments
@@ -1965,7 +1965,7 @@ No arguments.
 
 ## hardkas localnet account
 
-Manage simulated localnet accounts
+Manage real simnet accounts for the local node
 
 ### Usage
 
@@ -1989,7 +1989,7 @@ No arguments.
 
 ## hardkas localnet account create
 
-Create a simulated localnet account alpha
+Create a real simnet account: a random key, stored in plaintext in .hardkas/accounts.real.json alpha
 
 ### Usage
 
@@ -4276,6 +4276,8 @@ hardkas silver covenant genesis [options] <record>
 | `--contract <name>` | Contract, when the artifact has several |  |
 | `--wait` | Wait for confirmation and the node's covenant id | false |
 | `--timeout <seconds>` | Confirmation timeout | 120 |
+| `--password-env <env>` | Read the keystore password of the encrypted account(s) this command signs with from this environment variable (development accounts need none) |  |
+| `--password-stdin` | Read the keystore password of the encrypted account(s) this command signs with from stdin | false |
 | `--json` | Output as JSON | false |
 
 ### Arguments
@@ -4340,6 +4342,8 @@ hardkas silver deploy [options] <record>
 | `--network <network>` | Network | simnet |
 | `--wait` | Wait for confirmation | false |
 | `--timeout <seconds>` | Confirmation timeout | 120 |
+| `--password-env <env>` | Read the keystore password of the encrypted account(s) this command signs with from this environment variable (development accounts need none) |  |
+| `--password-stdin` | Read the keystore password of the encrypted account(s) this command signs with from stdin | false |
 | `--json` | Output as JSON | false |
 
 ### Arguments
@@ -4417,6 +4421,8 @@ hardkas silver spend [options] <deploy-record>
 | `--sig-op-count <n>` | Declared signature operations (default: the signature arguments, at least 1) |  |
 | `--wait` | Wait for confirmation | false |
 | `--timeout <seconds>` | Confirmation timeout | 120 |
+| `--password-env <env>` | Read the keystore password of the encrypted account(s) this command signs with from this environment variable (development accounts need none) |  |
+| `--password-stdin` | Read the keystore password of the encrypted account(s) this command signs with from stdin | false |
 | `--json` | Output as JSON | false |
 
 ### Arguments
@@ -4446,6 +4452,8 @@ hardkas silver test [options] <record>
 | `--contract <name>` | Contract, when the artifact has several |  |
 | `--runner <path>` | SilverScript runner (cli-debugger) binary (default: $HARDKAS_SILVER_RUNNER) |  |
 | `--out <file>` | Record path (default .hardkas/artifacts/silver-vm/) |  |
+| `--password-env <env>` | Read the keystore password of the encrypted account(s) this command signs with from this environment variable (development accounts need none) |  |
+| `--password-stdin` | Read the keystore password of the encrypted account(s) this command signs with from stdin | false |
 | `--json` | Output as JSON | false |
 
 ### Arguments
@@ -4967,6 +4975,8 @@ hardkas tx batch [options]
 | `--file <path>` | Path to JSON file containing batch payments |  |
 | `--network <name>` | Network name |  |
 | `--workspace <path>` | Override workspace root directory |  |
+| `--password-env <env>` | Read the keystore password of the batch's encrypted payers from this environment variable (read once, before the first payment) |  |
+| `--password-stdin` | Read the keystore password of the batch's encrypted payers from stdin (read once, before the first payment) | false |
 | `--json` | Output as JSON | false |
 
 ### Arguments
@@ -5017,10 +5027,11 @@ hardkas tx plan [options] [from] [to]
 | `--to <address>` | Recipient address or account name (default: bob) |  |
 | `--amount <kas>` | Amount in KAS, up to 8 decimals (default: 1) |  |
 | `--network <name>` | simulated, simnet, devnet, testnet-10, testnet-12 or mainnet (default: the config's default target) |  |
-| `--fee-rate <sompiPerMass>` | Whole sompi per gram of mass (default: 1 in the simulator, 100 on real networks; not a live estimate) |  |
+| `--fee-rate <sompiPerMass>` | Whole sompi per gram of mass, at least 1 (default: 1 in the simulator, 100 on real networks; not a live estimate) |  |
+| `--max-fee <sompi>` | Total fee limit in sompi: the plan is refused (FEE_EXCEEDS_MAX) above it, and the limit is recorded in the plan and enforced again at sign and send. The workspace's networks[<net>].maxFeeSompi also applies; the lower one wins. No limit by default |  |
 | `--change <accountOrAddress>` | Change destination (account name or address); default: the sender |  |
 | `--provider <type>` | Provider mode (auto, rpc, simulated) | auto |
-| `--url <url>` | Node wRPC URL (default: ws://127.0.0.1:18210 for simnet and devnet; the config's rpcUrl is not used) |  |
+| `--url <url>` | Node wRPC URL (default: the network's rpcUrl in hardkas.config.ts; without one, ws://127.0.0.1:18210 for simnet and devnet) |  |
 | `--out <path>` | Save plan as artifact JSON |  |
 | `--save <path>` | Alias for --out (Save plan as artifact JSON) |  |
 | `--workflow-id <id>` | Optional deterministic workflow ID override |  |
@@ -5106,6 +5117,8 @@ hardkas tx send [options] [signedPath]
 | `--amount <kas>` | Amount in KAS (shortcut mode) |  |
 | `--network <name>` | Network name |  |
 | `--fee-rate <sompiPerMass>` | Fee rate in sompi per mass (shortcut mode) |  |
+| `--password-env <env>` | Shortcut mode: read the sender's keystore password (an encrypted account) from this environment variable |  |
+| `--password-stdin` | Shortcut mode: read the sender's keystore password (an encrypted account) from stdin | false |
 | `--provider <type>` | Provider mode (auto, rpc, simulated; signed-artifact mode only) | auto |
 | `--url <url>` | RPC URL (optional override) |  |
 | `--yes` | Confirm broadcast. Required unless the network is simulated or simnet (in shortcut mode, unless --network simulated or simnet is given): without it the send is refused (NOT EXECUTED, exit 3) and nothing is written | false |

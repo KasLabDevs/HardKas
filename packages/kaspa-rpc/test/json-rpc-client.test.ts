@@ -57,7 +57,12 @@ describe("KaspaJsonRpcClient", () => {
   });
 
   it("should call submitTransaction correctly", async () => {
-    const rpc = fakeOfficialRpc({ submitTransaction: () => ({ transactionId: "new-txid-123" }) });
+    // MAINNET-PERIMETER-1: a broadcast first asks the node who it is, on this connection; the submit is the last call
+    const rpc = fakeOfficialRpc({
+      getServerInfo: () => ({ networkId: "simnet", serverVersion: "1.0.0", isSynced: true }),
+      getBlockDagInfo: () => ({ network: "simnet", virtualDaaScore: 1n, sink: "abc" }),
+      submitTransaction: () => ({ transactionId: "new-txid-123" })
+    });
     const client = new KaspaJsonRpcClient({ url, rpcFactory: rpc.factory });
 
     const result = await client.submitTransaction({
@@ -71,8 +76,8 @@ describe("KaspaJsonRpcClient", () => {
       storageMass: 0
     });
 
-    expect(rpc.calls[0]!.method).toBe("submitTransaction");
-    const sent = (rpc.calls[0]!.request as any).transaction;
+    expect(rpc.calls.map((c) => c.method)).toEqual(["getServerInfo", "getBlockDagInfo", "submitTransaction"]);
+    const sent = (rpc.calls.find((c) => c.method === "submitTransaction")!.request as any).transaction;
     expect(sent.outputs[0]).toEqual({ value: 1000n, scriptPublicKey: "000020aa" });
     expect(sent.inputs[0].sequence).toBe(0n);
     expect(result.transactionId).toBe("new-txid-123");

@@ -173,21 +173,61 @@ async function schemas() {
   return HardkasSchemas;
 }
 
-/** The private key of a local account that holds one (dev or plaintext real accounts). */
-async function accountKey(nameOrAddress: string): Promise<{ privateKey: string; address: string }> {
+/** Where an encrypted account's keystore password comes from: never argv; read at most once per command. */
+interface KeySource {
+  passwordEnv?: string | undefined;
+  passwordStdin?: boolean | undefined;
+  interactive: boolean;
+  password?: string | undefined;
+}
+
+const keySource = (opts: any): KeySource => ({ passwordEnv: opts.passwordEnv, passwordStdin: Boolean(opts.passwordStdin), interactive: !opts.json });
+
+/**
+ * The private key of a local account (SILVER-KEYS-1): resolved the way every HardKAS signer resolves it
+ * (resolveAccountPrivateKey) — its key variable, a plaintext legacy entry, its development keystore (no password) or its
+ * encrypted keystore (the owner's password from --password-env, --password-stdin or a terminal prompt). The account must
+ * belong to the canonical localnet's network.
+ */
+async function accountKey(nameOrAddress: string, keys: KeySource): Promise<{ privateKey: string; address: string }> {
   const { loadHardkasConfig } = await import("@hardkas/config");
-  const { resolveHardkasAccount } = await import("@hardkas/accounts");
+  const { resolveHardkasAccount, assertAccountCompatible, resolveAccountPrivateKey } = await import("@hardkas/accounts");
+  const { accountNeedsKeystorePassword } = await import("../runners/tx-sign-runner.js");
   const loaded = await loadHardkasConfig({ workspaceRoot: process.cwd() });
+  const target = { mode: "localnet", domain: "kaspa-l1", network: NETWORK } as any;
   const account: any = resolveHardkasAccount({
     nameOrAddress,
     config: { ...loaded.config, cwd: process.cwd() } as any,
-    executionTarget: { mode: "localnet", domain: "kaspa-l1", network: NETWORK } as any
+    executionTarget: target
   });
-  if (!account?.privateKey || !account?.address) {
-    fail("SILVER_ACCOUNT_KEY_UNAVAILABLE", `account '${nameOrAddress}' has no locally available key (encrypted keystores are not supported here)`, HardkasExitCode.USAGE_ERROR);
+  try {
+    assertAccountCompatible(account, target);
+  } catch (e: any) {
+    fail(String(e?.code ?? "ACCOUNT_NETWORK_MISMATCH"), String(e?.message ?? e), HardkasExitCode.USAGE_ERROR);
   }
-  return { privateKey: String(account.privateKey), address: String(account.address) };
+  if (!account?.address || (!account.privateKeyEnv && !account.privateKey && !account.keystorePath)) {
+    fail("SILVER_ACCOUNT_KEY_UNAVAILABLE", `account '${nameOrAddress}' has no locally available key (no key variable, plaintext entry or keystore)`, HardkasExitCode.USAGE_ERROR);
+  }
+  if (accountNeedsKeystorePassword(account) && keys.password === undefined) {
+    const { acquirePassword } = await import("../runners/secrets.js");
+    keys.password = await acquirePassword({
+      env: keys.passwordEnv,
+      stdin: keys.passwordStdin,
+      interactive: keys.interactive,
+      message: `Enter the keystore password of account '${account.name}':`
+    });
+  }
+  try {
+    const privateKey = await resolveAccountPrivateKey(account, { networkId: NETWORK, keystorePassword: keys.password });
+    return { privateKey, address: String(account.address) };
+  } catch (e: any) {
+    const code = typeof e?.code === "string" ? e.code : "SILVER_ACCOUNT_KEY_UNAVAILABLE";
+    return fail(code, String(e?.message ?? e).replace(`${code}: `, ""), HardkasExitCode.USAGE_ERROR);
+  }
 }
+
+const PASSWORD_ENV_HELP = "Read the keystore password of the encrypted account(s) this command signs with from this environment variable (development accounts need none)";
+const PASSWORD_STDIN_HELP = "Read the keystore password of the encrypted account(s) this command signs with from stdin";
 
 /** The canonical node, after it proves its identity, and a client for it. */
 async function canonicalNode() {
@@ -249,16 +289,38 @@ async function spendableCoins(rpc: any, address: string) {
   return mature.sort((a: any, b: any) => (a.amountSompi > b.amountSompi ? -1 : 1));
 }
 
-async function submit(rpc: any, rpcTransaction: any, label: string): Promise<string> {
+/**
+ * ESCROW-BROADCAST-SAFETY-1: one send, and an honest outcome. Only the node's own refusal is SILVER_REJECTED_BY_NODE; a
+ * request that certainly never left is SILVER_SUBMIT_NOT_SENT; anything else after it may have left (a timeout, a lost
+ * answer, "already in the mempool", an answer naming no or another transaction) is SILVER_SUBMIT_OUTCOME_UNKNOWN with
+ * the txId to observe — never "rejected", which would invite building and sending another transaction.
+ */
+export async function submitSilverTransaction(rpc: any, rpcTransaction: any, label: string, expectedTxId?: string): Promise<string> {
+  const { acceptedTxIdOf, isNodeNetworkIdentityError, isRpcRequestNotSentError, knownTxIdOf } = await import("@hardkas/kaspa-rpc");
+  const { submitOutcomeOf } = await import("@hardkas/artifacts");
+  const txId = typeof expectedTxId === "string" && /^[0-9a-f]{64}$/i.test(expectedTxId) ? expectedTxId.toLowerCase() : knownTxIdOf(rpcTransaction);
+  let res: any;
   try {
-    const res = await rpc.submitTransaction(rpcTransaction);
-    if (!res?.transactionId) fail("SILVER_SUBMIT_FAILED", `${label}: the node returned no transaction id`);
-    return String(res.transactionId);
+    res = await rpc.submitTransaction(rpcTransaction);
   } catch (e: any) {
     if (e instanceof HardkasCliError) throw e;
-    return fail("SILVER_REJECTED_BY_NODE", `${label}: ${String(e?.message ?? e)}`);
+    const message = String(e?.message ?? e);
+    if (isRpcRequestNotSentError(e) || isNodeNetworkIdentityError(e)) return fail("SILVER_SUBMIT_NOT_SENT", `${label}: nothing was sent (${message})`);
+    if (submitOutcomeOf({ accepted: false, error: message }) === "rejected") return fail("SILVER_REJECTED_BY_NODE", `${label}: ${message}`);
+    return fail(
+      "SILVER_SUBMIT_OUTCOME_UNKNOWN",
+      `${label}: the outcome is unknown (${message}); the node may have transaction ${txId ?? "(id unknown)"}. It was not ` +
+        "re-submitted: observe it before building another transaction."
+    );
+  }
+  try {
+    return acceptedTxIdOf(res, txId);
+  } catch (e: any) {
+    return fail("SILVER_SUBMIT_OUTCOME_UNKNOWN", `${label}: ${String(e?.message ?? e)}`);
   }
 }
+
+const submit = submitSilverTransaction;
 
 function parseKas(amount: string): bigint {
   if (!/^\d+(\.\d{1,8})?$/.test(amount ?? "")) fail("SILVER_AMOUNT_INVALID", `'${amount}' is not a KAS amount`, HardkasExitCode.USAGE_ERROR);
@@ -267,7 +329,7 @@ function parseKas(amount: string): bigint {
 }
 
 /** Entry arguments: `{kind, value}` values, and `{"kind":"signature","account":"<name>"}` slots. */
-async function entryArgs(file: string | undefined) {
+async function entryArgs(file: string | undefined, keys: KeySource) {
   if (!file) return [];
   const text = readFileOrFail(file, "arguments file").toString("utf8");
   const raw = JSON.parse(stripBom(text));
@@ -277,7 +339,7 @@ async function entryArgs(file: string | undefined) {
   for (let i = 0; i < raw.length; i++) {
     const a = raw[i];
     if (a?.kind === "signature") {
-      const { privateKey } = await accountKey(String(a.account));
+      const { privateKey } = await accountKey(String(a.account), keys);
       out.push({ kind: "signature", privateKey });
     } else {
       out.push(parseSilArtifactValuesJson(JSON.stringify([a]))[0]);
@@ -475,8 +537,11 @@ export function registerSilverCommand(program: Command) {
     .option("--contract <name>", "Contract, when the artifact has several")
     .option("--runner <path>", "SilverScript runner (cli-debugger) binary (default: $HARDKAS_SILVER_RUNNER)")
     .option("--out <file>", "Record path (default .hardkas/artifacts/silver-vm/)")
+    .option("--password-env <env>", PASSWORD_ENV_HELP)
+    .option("--password-stdin", PASSWORD_STDIN_HELP, false)
     .option("--json", "Output as JSON", false)
     .action(async (file: string, opts: any) => {
+      const keys = keySource(opts);
       const core = await import("@hardkas/core");
       const { HARDKAS_VERSION } = await import("@hardkas/artifacts");
       const S = await schemas();
@@ -505,7 +570,7 @@ export function registerSilverCommand(program: Command) {
           contractName: opts.contract,
           constructorArgs: ctor.values,
           tests,
-          signer: async (account) => (await accountKey(account)).privateKey
+          signer: async (account) => (await accountKey(account, keys)).privateKey
         });
       } catch (e: any) {
         // A test file, value or runner the user has to fix: a usage error, not a runtime one.
@@ -569,6 +634,8 @@ export function registerSilverCommand(program: Command) {
     .option("--network <network>", "Network", NETWORK)
     .option("--wait", "Wait for confirmation", false)
     .option("--timeout <seconds>", "Confirmation timeout", "120")
+    .option("--password-env <env>", PASSWORD_ENV_HELP)
+    .option("--password-stdin", PASSWORD_STDIN_HELP, false)
     .option("--json", "Output as JSON", false)
     .action(async (file: string, opts: any) => {
       assertNetwork(opts.network);
@@ -584,11 +651,11 @@ export function registerSilverCommand(program: Command) {
       const lock = core.silverP2shLock(bytecode);
       const address = core.silverP2shAddress(bytecode, NETWORK);
       const value = parseKas(opts.amount);
-      const funder = await accountKey(opts.from);
+      const funder = await accountKey(opts.from, keySource(opts));
       const { identity, rpc } = await canonicalNode();
       try {
         const funding = buildScriptFunding({ utxos: await spendableCoins(rpc, funder.address), privateKey: funder.privateKey, lockingScript: lock, valueSompi: value, networkId: NETWORK });
-        const txId = await submit(rpc, funding.rpcTransaction, "deploy");
+        const txId = await submit(rpc, funding.rpcTransaction, "deploy", (funding as any).txId);
         const outpoint = { transactionId: txId, index: 0 };
         const confirmed = opts.wait ? await waitForUtxo(rpc, address, outpoint, Number(opts.timeout)) : undefined;
         const { path: recordPath, record } = await writeRecord(
@@ -629,6 +696,8 @@ export function registerSilverCommand(program: Command) {
     .option("--sig-op-count <n>", "Declared signature operations (default: the signature arguments, at least 1)")
     .option("--wait", "Wait for confirmation", false)
     .option("--timeout <seconds>", "Confirmation timeout", "120")
+    .option("--password-env <env>", PASSWORD_ENV_HELP)
+    .option("--password-stdin", PASSWORD_STDIN_HELP, false)
     .option("--json", "Output as JSON", false)
     .action(async (file: string, opts: any) => {
       const core = await import("@hardkas/core");
@@ -639,7 +708,7 @@ export function registerSilverCommand(program: Command) {
       const compileRecord = await readReferencedRecord(deploy.compileRecord, S.SilverCompileV1, "the compile record");
       assertOnChainRecordForCanonical(deploy, compileRecord, file);
       const artifact = await loadCompiled(compileRecord);
-      const args = await entryArgs(opts.args);
+      const args = await entryArgs(opts.args, keySource(opts));
       const { identity, rpc } = await canonicalNode();
       try {
         const utxo = await findUtxo(rpc, deploy.address, deploy.outpoint);
@@ -655,7 +724,7 @@ export function registerSilverCommand(program: Command) {
           ...(opts.sequence !== undefined ? { sequence: BigInt(opts.sequence) } : {}),
           sigOpCount: opts.sigOpCount !== undefined ? Number(opts.sigOpCount) : Math.max(1, args.filter((a: any) => a.kind === "signature").length)
         });
-        const txId = await submit(rpc, built.rpcTransaction, "spend");
+        const txId = await submit(rpc, built.rpcTransaction, "spend", (built as any).txId);
         const confirmed = opts.wait ? await waitForUtxo(rpc, opts.to, { transactionId: txId, index: 0 }, Number(opts.timeout)) : undefined;
         const { contract } = core.getSilContract(artifact, deploy.contract);
         const { path: recordPath, record } = await writeRecord(
@@ -702,6 +771,8 @@ export function registerSilverCommand(program: Command) {
     .option("--contract <name>", "Contract, when the artifact has several")
     .option("--wait", "Wait for confirmation and the node's covenant id", false)
     .option("--timeout <seconds>", "Confirmation timeout", "120")
+    .option("--password-env <env>", PASSWORD_ENV_HELP)
+    .option("--password-stdin", PASSWORD_STDIN_HELP, false)
     .option("--json", "Output as JSON", false)
     .action(async (file: string, opts: any) => {
       const core = await import("@hardkas/core");
@@ -714,7 +785,7 @@ export function registerSilverCommand(program: Command) {
       const { name, contract } = core.getSilContract(artifact, opts.contract);
       const address = core.silverP2shAddress(core.silContractBytecodeHex(contract), NETWORK);
       const value = parseKas(opts.amount);
-      const funder = await accountKey(opts.from);
+      const funder = await accountKey(opts.from, keySource(opts));
       const budget = Number(opts.computeBudget);
       const { identity, rpc } = await canonicalNode();
       try {
@@ -734,7 +805,7 @@ export function registerSilverCommand(program: Command) {
           networkId: NETWORK,
           ...(opts.fee !== undefined ? { feeSompi: BigInt(opts.fee) } : {})
         });
-        const txId = await submit(rpc, genesis.rpcTransaction, "covenant genesis");
+        const txId = await submit(rpc, genesis.rpcTransaction, "covenant genesis", (genesis as any).txId);
         const outpoint = { transactionId: txId, index: 0 };
         const confirmed = opts.wait ? await waitForUtxo(rpc, address, outpoint, Number(opts.timeout)) : undefined;
         if (confirmed && confirmed.covenantId !== genesis.covenantId) {
@@ -808,7 +879,7 @@ export function registerSilverCommand(program: Command) {
       if (!decl || !core.isSingletonAuthTransition(decl)) {
         fail("SILVER_COVENANT_NOT_IMPLEMENTED", `policy '${opts.policy}' is not a 1:1 auth-bound transition (${JSON.stringify(decl ?? null)})`, HardkasExitCode.USAGE_ERROR);
       }
-      const args = await entryArgs(opts.args);
+      const args = await entryArgs(opts.args, keySource(opts));
       if (args.some((a: any) => a.kind === "signature")) fail("SILVER_COVENANT_NOT_IMPLEMENTED", "signed covenant transitions are not supported yet", HardkasExitCode.USAGE_ERROR);
       const budget = Number(opts.computeBudget);
       const { identity, rpc } = await canonicalNode();
@@ -827,7 +898,7 @@ export function registerSilverCommand(program: Command) {
           computeBudget: budget,
           ...(opts.fee !== undefined ? { feeSompi: BigInt(opts.fee) } : {})
         });
-        const txId = await submit(rpc, built.rpcTransaction, "covenant transition");
+        const txId = await submit(rpc, built.rpcTransaction, "covenant transition", (built as any).txId);
         const successorBytecode = core.silContractBytecodeHex(core.getSilContract(next.successor.artifact, prev.contract).contract);
         const successorAddress = core.silverP2shAddress(successorBytecode, NETWORK);
         const outpoint = { transactionId: txId, index: 0 };

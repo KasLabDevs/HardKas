@@ -9,8 +9,8 @@ import {
 import { isNetworkEndpointRequired, unresolvedEndpointRpc } from "./unresolved-endpoint-rpc.js";
 import { resolveHardkasAccount, HardkasAccount } from "@hardkas/accounts";
 import { ExternalHardkasSigner } from "@hardkas/artifacts";
-import { JsonWrpcKaspaClient, KaspaRpcClient } from "@hardkas/kaspa-rpc";
-import { NetworkId, HardkasError, getCoinbaseMaturity, type HardkasExecutionTarget } from "@hardkas/core";
+import { JsonWrpcKaspaClient, KaspaRpcClient, canonicalNetworkId } from "@hardkas/kaspa-rpc";
+import { NetworkId, HardkasError, getCoinbaseMaturity, declaredNetworkIdOf, type HardkasExecutionTarget } from "@hardkas/core";
 import { assertPublicNetworkAllowed } from "./policy.js";
 import { HardkasAccounts } from "./accounts.js";
 import { HardkasTx } from "./tx.js";
@@ -198,13 +198,38 @@ export class Hardkas {
       const activeNetwork = this.network;
       const networkConfig = this.config.config.networks?.[activeNetwork];
       const coinbaseMaturity = getCoinbaseMaturity(activeNetwork, networkConfig?.kind === "kaspa-node" || networkConfig?.kind === "kaspa-rpc" || networkConfig?.kind === "simulated" ? networkConfig.consensusParams : undefined);
+      // P0-TX-SAFETY-1B (v2): the network this instance declares (its config entry's, else its name) is a CONSTRAINT on the
+      // wallet, not a default: a caller cannot open it on another network, nor hand it another node or signer. Every
+      // spend is then checked against this network and the node's identity; the node's own network is never adopted.
+      const instanceNetworkId = declaredNetworkIdOf(this.config.config, activeNetwork);
+      const callerOpts: Record<string, unknown> = { ...(opts ?? {}) };
+      for (const forbidden of ["rpc", "signer"]) {
+        if (callerOpts[forbidden] !== undefined) {
+          throw new HardkasError(
+            "WALLET_OPTION_NOT_ALLOWED",
+            `sdk.wallet.open: \`${forbidden}\` cannot be given — the wallet uses this instance's ${forbidden}. Open a Hardkas instance on the node and signer you mean.`
+          );
+        }
+      }
+      if (callerOpts.networkId !== undefined) {
+        const asked = typeof callerOpts.networkId === "string" ? canonicalNetworkId(callerOpts.networkId) : undefined;
+        if (instanceNetworkId === undefined || asked !== canonicalNetworkId(instanceNetworkId)) {
+          throw new HardkasError(
+            "WALLET_NETWORK_OVERRIDE_REFUSED",
+            `sdk.wallet.open: networkId ${JSON.stringify(callerOpts.networkId)} is not this instance's network (${instanceNetworkId ?? "none"}). ` +
+              "A wallet opened through the SDK spends only on the network the instance is authorized for."
+          );
+        }
+      }
       return WalletToolkit.open(name, {
-        rpc: this.rpc,
-        signer: this.signer,
-        coinbaseMaturity,
+        ...(callerOpts as Omit<WalletToolkitOptions, "rpc" | "signer">),
         // watch() needs the node endpoint; only a node client has one (the simulator does not).
         ...(this.rpc instanceof JsonWrpcKaspaClient ? { rpcUrl: this.resolveRpcUrl() } : {}),
-        ...opts
+        coinbaseMaturity,
+        // set LAST: nothing the caller passed replaces them
+        rpc: this.rpc,
+        signer: this.signer,
+        ...(instanceNetworkId !== undefined ? { networkId: instanceNetworkId } : {})
       });
     }
   };

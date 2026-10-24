@@ -11,7 +11,8 @@ import {
   KaspaRpcTransaction,
   SubmitTransactionOptions
 } from "./index.js";
-import { RpcUnavailableError, RpcError } from "./errors.js";
+import { RpcUnavailableError, RpcError, isRpcRequestNotSentError } from "./errors.js";
+import { isBroadcastMethod } from "./upstream/session.js";
 
 export interface LoadBalancerOptions {
   strategy: "round-robin" | "failover";
@@ -35,6 +36,7 @@ export class LoadBalancedRpcProvider implements KaspaRpcClient {
   }
 
   async call<TResponse = unknown>(method: string, params?: unknown): Promise<TResponse> {
+    if (isBroadcastMethod(method)) return this.broadcastWithoutFailover((c) => c.call<TResponse>(method, params));
     return this.withFailover((c) => c.call<TResponse>(method, params));
   }
 
@@ -81,7 +83,7 @@ export class LoadBalancedRpcProvider implements KaspaRpcClient {
   }
 
   async submitTransaction(transaction: KaspaRpcTransaction, options?: SubmitTransactionOptions): Promise<KaspaSubmitTransactionResult> {
-    return this.withFailover((c) => c.submitTransaction(transaction, options));
+    return this.broadcastWithoutFailover((c) => c.submitTransaction(transaction, options));
   }
 
   async getMempoolEntry(txId: string): Promise<MempoolEntry | null> {
@@ -157,6 +159,27 @@ export class LoadBalancedRpcProvider implements KaspaRpcClient {
 
   async close(): Promise<void> {
     await Promise.all(this.clients.map((c) => c.close()));
+  }
+
+  /**
+   * RPC-SUBMIT-SAFETY-1: a broadcast goes to the next node ONLY when the previous one certainly never received it (a
+   * typed not-sent refusal: no connection, open circuit, refused before the transport). Any other failure — a rejection,
+   * an unknown outcome — is final: another node is never asked to take a transaction the first one may hold.
+   */
+  private async broadcastWithoutFailover<T>(fn: (client: KaspaRpcClient) => Promise<T>): Promise<T> {
+    let lastError: unknown;
+    for (let i = 0; i < this.clients.length; i++) {
+      const index = (this.currentIndex + i) % this.clients.length;
+      try {
+        const result = await fn(this.clients[index]!);
+        this.currentIndex = this.options.strategy === "round-robin" ? (index + 1) % this.clients.length : index;
+        return result;
+      } catch (error: unknown) {
+        if (!isRpcRequestNotSentError(error)) throw error;
+        lastError = error;
+      }
+    }
+    throw lastError ?? new RpcUnavailableError("All RPC endpoints failed");
   }
 
   private async withFailover<T>(fn: (client: KaspaRpcClient) => Promise<T>): Promise<T> {

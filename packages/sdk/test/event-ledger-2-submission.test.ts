@@ -6,6 +6,8 @@ import { Hardkas } from "../src/index.js";
 import { attachLedgerAppender, eventLedgerPath } from "@hardkas/core";
 import { calculateContentHash, CURRENT_HASH_VERSION, deriveTxStatus } from "@hardkas/artifacts";
 import { asRpcInstance } from "./helpers/rpc-instance.js";
+import { reissueAsBroadcastable, planOfSigned, nodeNamesReceived } from "./helpers/official-signed-payload.js";
+
 
 vi.setConfig({ testTimeout: 120_000 });
 
@@ -27,18 +29,9 @@ vi.setConfig({ testTimeout: 120_000 });
 const LOOPBACK = "http://127.0.0.1:16110";
 
 // ENDPOINT-AUTHORITY-1 (EA-I3): the re-issued artifact is for the network the instance sends on
-function asBroadcastable(signed: any, network?: string): any {
-  const s: any = structuredClone(signed);
-  if (network) s.networkId = network;
-  delete s.authorization;
-  s.signedTransaction = { format: "hex", payload: "deadbeef" };
-  s.txId = "f".repeat(64);
-  delete s.contentHash;
-  s.lineage = { ...s.lineage, artifactId: "" };
-  s.contentHash = calculateContentHash(s, CURRENT_HASH_VERSION);
-  s.lineage.artifactId = s.contentHash;
-  s.signedId = `signed-${s.contentHash.slice(0, 16)}`;
-  return s;
+// EXPECTED-TXID-1: the payload is the transaction the plan authorizes, under its official kaspa-wasm id.
+function asBroadcastable(signed: any, plan: any, network?: string): any {
+  return reissueAsBroadcastable(signed, plan, network);
 }
 
 const ledger = (ws: string): any[] => {
@@ -62,16 +55,16 @@ describe("EVENT-LEDGER-2 closeout · CL-2 workflow.submitted is recorded only af
   });
 
   /** Plans and signs in the simulator, then sends the re-issued artifact through the REAL send() with `submit`. */
-  async function sendWith(submit: () => Promise<any>, seen: { atSubmit?: string[] } = {}) {
+  async function sendWith(submit: (...args: any[]) => Promise<any>, seen: { atSubmit?: string[] } = {}) {
     const sdk = await Hardkas.create({ cwd: ws, autoBootstrap: true, network: "simulated" });
     // ENDPOINT-AUTHORITY-1 (EA-I3): planned and signed for the network the send runs on
     Object.defineProperty(sdk, "network", { get: () => "simnet", configurable: true });
     const plan = await sdk.tx.plan({ from: "alice", to: "bob", amount: "1" } as any);
-    const signed = asBroadcastable(await sdk.tx.sign(plan as any, "alice"));
+    const signed = asBroadcastable(await sdk.tx.sign(plan as any, "alice"), plan);
     asRpcInstance(sdk, LOOPBACK, "simnet");
-    vi.spyOn(sdk.rpc, "submitTransaction").mockImplementation((async () => {
+    vi.spyOn(sdk.rpc, "submitTransaction").mockImplementation((async (...args: any[]) => {
       seen.atSubmit = ledger(ws).map((e) => e.kind);
-      return submit();
+      return submit(...args);
     }) as any);
     detach = attachLedgerAppender(ws);
     const result: any = await sdk.tx.send(signed, LOOPBACK);
@@ -101,7 +94,7 @@ describe("EVENT-LEDGER-2 closeout · CL-2 workflow.submitted is recorded only af
 
   it("an accepted broadcast: workflow.submitted appears only after the submit call answered, naming the submission artifact", async () => {
     const seen: { atSubmit?: string[] } = {};
-    const { result, signed } = await sendWith(() => Promise.resolve({ transactionId: "b".repeat(64) }), seen);
+    const { result, signed } = await sendWith(nodeNamesReceived, seen) /* EXPECTED-TXID-1: the node names the transaction it was sent */;
     const events = ledger(ws);
     const submitted = events.filter((e) => e.kind === "workflow.submitted");
     expect({
@@ -141,7 +134,7 @@ describe("EVENT-LEDGER-2 closeout · CL-2 workflow.submitted is recorded only af
     const realSend = sdk.tx.send.bind(sdk.tx);
     vi.spyOn(sdk.tx, "send").mockImplementation((signed: any) => {
       asRpcInstance(sdk, LOOPBACK, "simnet");
-      return realSend(asBroadcastable(signed, "simnet"), LOOPBACK);
+      return realSend(asBroadcastable(signed, planOfSigned(ws, signed), "simnet"), LOOPBACK);
     });
     vi.spyOn(sdk.rpc, "submitTransaction").mockImplementation((() => Promise.reject(new Error("RPC request submitTransaction timed out after 5000ms"))) as any);
     const run: any = await sdk.workflow.run({ steps: [{ type: "tx.plan", from: "alice", to: "bob", amount: 10 } as any, { type: "tx.send" } as any] });

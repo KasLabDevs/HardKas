@@ -18,7 +18,7 @@ pnpm install
 **2. Explore the Toolkits**
 HardKAS groups functionality into **Toolkits**. You don't need to understand complex UTXO mathematics or DAG ordering to start.
 
-- `WalletToolkit`: Manages keys, coin selection, and transaction building.
+- `WalletToolkit`: A simnet development wallet facade (synthetic keys derived from the wallet name — not for real funds; refused on public networks) with UTXO listing and Generator-based planning.
 - `IndexerToolkit`: Reads balances and histories.
 - `DAGToolkit`: Analyzes blocks and reachability.
 

@@ -1,7 +1,10 @@
-import { loadManagedKaspaWasmSync, redactUrlCredentials, redactUrlCredentialsInText } from "@hardkas/core";
+import { loadManagedKaspaWasmSync, redactUrlCredentials, redactUrlCredentialsInText, assertValidNodeEndpoint } from "@hardkas/core";
 import {
+  isNodeNetworkIdentityError,
+  markRequestNotSent,
   NodeNetworkIdentityError,
   normalizeRpcError,
+  RpcRequestNotSentError,
   RpcConnectionError,
   RpcError,
   RpcNotFoundError,
@@ -9,6 +12,15 @@ import {
 } from "../errors.js";
 import { toOfficialTransaction, toWire, u64FieldsToBigint } from "./wire.js";
 import { useWsWebSocketForSdk } from "./node-websocket-compat.js";
+import { canonicalNetworkId, decideBroadcastIdentity, namedNetwork } from "../broadcast-identity.js";
+
+/** MAINNET-PERIMETER-1: the official methods that put a transaction on the network. */
+const BROADCAST_METHODS: ReadonlySet<string> = new Set(["submitTransaction", "submitTransactionReplacement"]);
+
+/** RPC-SUBMIT-SAFETY-1: whether a HardKAS method name (any spelling: `submitTransactionRequest`…) is a broadcast. */
+export function isBroadcastMethod(method: string): boolean {
+  return BROADCAST_METHODS.has(officialMethodName(method));
+}
 
 /*
  * The official kaspa-wasm RpcClient is HardKAS's only Kaspa RPC transport. This
@@ -37,8 +49,13 @@ export const officialRpcFactory: OfficialRpcFactory = (url) => {
   return new k.RpcClient({ url, encoding: k.Encoding.SerdeJson });
 };
 
-/** wRPC endpoints are WebSocket URLs: http(s):// maps to ws(s)://, a bare host:port gets ws://. */
+/**
+ * wRPC endpoints are WebSocket URLs: http(s):// maps to ws(s)://, a bare host:port gets ws://. ENDPOINT-VALIDATION-1:
+ * a malformed endpoint is refused here (NETWORK_ENDPOINT_INVALID), so no client is ever created for it and nothing
+ * connects — it used to become `ws://<text>`.
+ */
 export function toWrpcUrl(url: string): string {
+  assertValidNodeEndpoint(url, "Kaspa RPC endpoint");
   if (url.startsWith("http://")) return "ws://" + url.slice("http://".length);
   if (url.startsWith("https://")) return "wss://" + url.slice("https://".length);
   if (url.startsWith("ws://") || url.startsWith("wss://")) return url;
@@ -102,10 +119,8 @@ async function release(client: OfficialRpcClientLike): Promise<void> {
  */
 const redacted = (text: string): string => redactUrlCredentialsInText(text);
 
-/** A network id as the node and HardKAS spell it, compared exactly: case-insensitive, `kaspa-` prefix ignored. */
-function canonicalNetworkId(id: string): string {
-  return id.trim().toLowerCase().replace(/^kaspa-/, "");
-}
+// A network id as the node and HardKAS spell it, compared exactly: the one rule in ../broadcast-identity.ts
+// (case-insensitive, `kaspa-` prefix ignored, HardKAS's `simulated` alias = simnet).
 
 /** A connection closed while it was being opened: not retryable, its owner closed it on purpose. */
 export function rpcClientClosedError(url: string): RpcError {
@@ -302,15 +317,78 @@ export class OfficialRpcSession {
     }
   }
 
+  /**
+   * MAINNET-PERIMETER-1 (B1/B2): the node's two identity answers, read now on `client`, decided by
+   * `decideBroadcastIdentity` against the expected network (when this session has one). A read that fails says nothing
+   * (NODE_NETWORK_UNKNOWN); a connection lost meanwhile stays a connection failure. Nothing is sent before this passes.
+   */
+  private async verifyBroadcastIdentity(client: OfficialRpcClientLike): Promise<void> {
+    const endpoint = redactUrlCredentials(this.url);
+    const ask = async (method: "getServerInfo" | "getBlockDagInfo"): Promise<any> => {
+      const fn = client[method];
+      if (typeof fn !== "function") return undefined;
+      try {
+        return toWire(
+          await withTimeout(
+            Promise.resolve(fn.call(client, {})),
+            this.timeoutMs,
+            () => new RpcTimeoutError(`RPC request ${method} timed out after ${this.timeoutMs}ms while identifying ${endpoint} before a broadcast`)
+          )
+        );
+      } catch (e) {
+        const raw = messageOf(e);
+        if (NOT_CONNECTED.test(raw)) {
+          throw new RpcConnectionError(redacted(`Connection to Kaspa RPC at ${endpoint} was lost while it was identified before a broadcast; nothing was sent: ${raw}`));
+        }
+        return undefined;
+      }
+    };
+    const server = await ask("getServerInfo");
+    const dag = await ask("getBlockDagInfo");
+    decideBroadcastIdentity({
+      server: namedNetwork(server?.networkId),
+      dag: namedNetwork(dag?.network ?? dag?.networkName ?? dag?.networkId),
+      expected: this.expectedNetworkId,
+      endpoint
+    });
+  }
+
   /** One RPC call by HardKAS method name; the result is plain JSON data in the node's wire shape. */
   async request<T = unknown>(method: string, params?: unknown, timeoutMs: number = this.timeoutMs): Promise<T> {
     const name = officialMethodName(method);
+    // TX-SEND-BLOCKED-OUTCOME-1: for a submission, everything up to handing the request to the transport is local — a
+    // failure there means the transaction certainly never left this process, which is not the same as a lost answer.
+    const isSubmit = name === "submitTransaction";
+    const notSent = (stage: string, e: unknown) =>
+      new RpcRequestNotSentError(redacted(`submitTransaction was not sent (${stage}): ${messageOf(e)}`), e);
     const translate = REQUEST_TRANSLATORS[name];
-    const request = translate ? translate(params) : (params ?? {});
-    const client = await this.connected();
+    let request: unknown;
+    let client: OfficialRpcClientLike;
+    try {
+      request = translate ? translate(params) : (params ?? {});
+      client = await this.connected();
+    } catch (e) {
+      // the request could not be prepared or no connection could be opened: it keeps its own type and code (and the
+      // node's identity refusal stays NODE-NETWORK-IDENTITY-1's), MARKED as raised before the transport
+      if (!isSubmit || isNodeNetworkIdentityError(e)) throw e;
+      throw markRequestNotSent(e);
+    }
     const fn = client[name];
     if (typeof fn !== "function") {
-      throw new RpcNotFoundError(`Kaspa RPC method not found: ${method}`, -32601);
+      const missing = new RpcNotFoundError(`Kaspa RPC method not found: ${method}`, -32601);
+      throw isSubmit ? markRequestNotSent(missing) : missing;
+    }
+    // MAINNET-PERIMETER-1: every client of this transport (the SDK's, an injected one, an exported one used directly)
+    // asks the node who it is on THIS connection right before a broadcast; see broadcast-identity.ts. An identity
+    // refusal keeps its type (NODE-NETWORK-IDENTITY-1); a connection lost during those reads is MARKED as raised before
+    // the transport (TX-SEND-BLOCKED-OUTCOME-1): the broadcast itself never started.
+    if (BROADCAST_METHODS.has(name)) {
+      try {
+        await this.verifyBroadcastIdentity(client);
+      } catch (e) {
+        if (isNodeNetworkIdentityError(e)) throw e;
+        throw markRequestNotSent(e);
+      }
     }
     try {
       const result = await withTimeout(
@@ -320,6 +398,10 @@ export class OfficialRpcSession {
       );
       return toWire(result) as T;
     } catch (e) {
+      // an interceptor in front of the transport refused the submission (code RPC_REQUEST_NOT_SENT): nothing left
+      if (isSubmit && (e as { code?: unknown } | null)?.code === "RPC_REQUEST_NOT_SENT" && !(e instanceof RpcRequestNotSentError)) {
+        throw notSent("refused before the transport", e);
+      }
       if (e instanceof RpcError) throw e;
       const raw = messageOf(e);
       if (NOT_CONNECTED.test(raw)) {

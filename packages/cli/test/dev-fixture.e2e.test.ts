@@ -38,7 +38,8 @@ describe("hardkas dev fixture generate", () => {
     expect(payload._is_fixture).toBe(true);
     expect(payload.type).toBe("payroll");
     expect(payload.securityModel).toBe("mock-fixture");
-    expect(payload.mode).toBe("simulated");
+    // E2E-MODE-1: the simulator's execution mode is "simulator"; "simulated" is the legacy value (LegacyExecutionMode).
+    expect(payload.mode).toBe("simulator");
     expect(payload.items.length).toBe(5);
   }, 180000);
 

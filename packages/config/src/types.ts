@@ -32,6 +32,8 @@ export interface HardkasKaspaNodeTarget {
   consensusParams?: {
     coinbaseMaturity?: bigint | number;
   };
+  /** TX-FEE-GUARD-1: workspace limit on the TOTAL fee (sompi) of a transaction on this network, checked at plan, sign and send. */
+  maxFeeSompi?: bigint | number | string;
 }
 
 export interface HardkasKaspaRpcTarget {
@@ -42,6 +44,8 @@ export interface HardkasKaspaRpcTarget {
   consensusParams?: {
     coinbaseMaturity?: bigint | number;
   };
+  /** TX-FEE-GUARD-1: workspace limit on the TOTAL fee (sompi) of a transaction on this network, checked at plan, sign and send. */
+  maxFeeSompi?: bigint | number | string;
 }
 
 export interface HardkasIgraTarget {

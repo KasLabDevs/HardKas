@@ -155,6 +155,8 @@ export function registerTxCommands(program: Command) {
     .requiredOption("--file <path>", "Path to JSON file containing batch payments")
     .option("--network <name>", "Network name")
     .option("--workspace <path>", "Override workspace root directory")
+    .option("--password-env <env>", "Read the keystore password of the batch's encrypted payers from this environment variable (read once, before the first payment)")
+    .option("--password-stdin", "Read the keystore password of the batch's encrypted payers from stdin (read once, before the first payment)", false)
     .option("--json", "Output as JSON", false)
     .action(async (options: any) => {
       try {
@@ -175,10 +177,11 @@ export function registerTxCommands(program: Command) {
     .option("--to <address>", "Recipient address or account name (default: bob)")
     .option("--amount <kas>", "Amount in KAS, up to 8 decimals (default: 1)")
     .option("--network <name>", "simulated, simnet, devnet, testnet-10, testnet-12 or mainnet (default: the config's default target)")
-    .option("--fee-rate <sompiPerMass>", "Whole sompi per gram of mass (default: 1 in the simulator, 100 on real networks; not a live estimate)")
+    .option("--fee-rate <sompiPerMass>", "Whole sompi per gram of mass, at least 1 (default: 1 in the simulator, 100 on real networks; not a live estimate)")
+    .option("--max-fee <sompi>", "Total fee limit in sompi: the plan is refused (FEE_EXCEEDS_MAX) above it, and the limit is recorded in the plan and enforced again at sign and send. The workspace's networks[<net>].maxFeeSompi also applies; the lower one wins. No limit by default")
     .option("--change <accountOrAddress>", "Change destination (account name or address); default: the sender")
     .option("--provider <type>", "Provider mode (auto, rpc, simulated)", "auto")
-    .option("--url <url>", `Node wRPC URL (default: ${nodeRpcUrl()} for simnet and devnet; the config's rpcUrl is not used)`)
+    .option("--url <url>", `Node wRPC URL (default: the network's rpcUrl in hardkas.config.ts; without one, ${nodeRpcUrl()} for simnet and devnet)`)
     .option("--out <path>", "Save plan as artifact JSON")
     .option("--save <path>", "Alias for --out (Save plan as artifact JSON)")
     .option("--workflow-id <id>", "Optional deterministic workflow ID override")
@@ -239,7 +242,9 @@ export function registerTxCommands(program: Command) {
             amount: options.amount ?? "1",
             ...(options.network ? { networkId: options.network } : {}),
             provider: options.provider || "auto",
-            ...(options.feeRate ? { feeRate: options.feeRate } : {}),
+            // TX-FEE-GUARD-1: a given value is always validated (an empty one too), never dropped
+            ...(options.feeRate !== undefined ? { feeRate: options.feeRate } : {}),
+            ...(options.maxFee !== undefined ? { maxFee: options.maxFee } : {}),
             ...(options.change ? { changeAddress: options.change } : {}),
             config: loaded.config,
             ...(options.workflowId ? { workflowId: options.workflowId } : {}),
@@ -536,6 +541,8 @@ export function registerTxCommands(program: Command) {
     .option("--amount <kas>", "Amount in KAS (shortcut mode)")
     .option("--network <name>", "Network name")
     .option("--fee-rate <sompiPerMass>", "Fee rate in sompi per mass (shortcut mode)")
+    .option("--password-env <env>", "Shortcut mode: read the sender's keystore password (an encrypted account) from this environment variable")
+    .option("--password-stdin", "Shortcut mode: read the sender's keystore password (an encrypted account) from stdin", false)
     .option("--provider <type>", "Provider mode (auto, rpc, simulated; signed-artifact mode only)", "auto")
     .option("--url <url>", "RPC URL (optional override)")
     .option(
@@ -557,6 +564,8 @@ export function registerTxCommands(program: Command) {
           amount?: string;
           network?: string;
           feeRate?: string;
+          passwordEnv?: string;
+          passwordStdin: boolean;
           provider: string;
           url?: string;
           yes: boolean;
@@ -680,6 +689,8 @@ export function registerTxCommands(program: Command) {
                 // AUX-11: one of three unambiguous outcomes (submitted | rejected | not_executed); EVENT-LEDGER-2 final
                 // closeout: `unknown` for a submit call that failed without an answer (never reported as rejected).
                 outcome: sendOutcomeLabel(result.receipt, result.accepted),
+                // TX-SEND-IDEMPOTENT-1: already submitted from this workspace and held by the node — not broadcast again
+                ...(result.alreadySubmitted ? { alreadySubmitted: true, ...(result.state ? { state: result.state } : {}) } : {}),
                 data: {
                   plan: undefined,
                   signed: signedArtifact,
@@ -718,9 +729,11 @@ export function registerTxCommands(program: Command) {
               UI.causality(
                 isSimulated
                   ? "Transaction simulated successfully"
-                  : result.accepted
-                    ? "Transaction submitted to the node"
-                    : notAcceptedFailure(result.receipt, result.txId).title,
+                  : result.alreadySubmitted
+                    ? "Transaction already submitted from this workspace: not sent again"
+                    : result.accepted
+                      ? "Transaction submitted to the node"
+                      : notAcceptedFailure(result.receipt, result.txId).title,
                 {
                   "Execution ID": result.executionId,
                   "Artifact ID": receiptArtifactId(result.receipt) ?? "unknown",
@@ -729,7 +742,9 @@ export function registerTxCommands(program: Command) {
                   "Execution Scope": isSimulated
                     ? "local simulated execution"
                     : "network submission",
-                  "Artifact Written": result.receiptPath || ".hardkas/artifacts/...",
+                  "Artifact Written": result.alreadySubmitted
+                    ? "none: the recorded submission (Artifact ID) stands"
+                    : result.receiptPath || ".hardkas/artifacts/...",
                   Projection: "SQLite query-store (indexed while the dashboard runs)",
                   ...networkRows
                 },
@@ -778,6 +793,10 @@ export function registerTxCommands(program: Command) {
               ...(options.network ? { network: options.network } : {}),
               ...(options.feeRate ? { feeRate: options.feeRate } : {}),
               ...(options.url ? { url: options.url } : {}),
+              // TX-SEND-PASSWORD-1: an encrypted sender's keystore password, read by the sign step (never prompted with --json)
+              ...(options.passwordEnv ? { passwordEnv: options.passwordEnv } : {}),
+              ...(options.passwordStdin ? { passwordStdin: true } : {}),
+              json: options.json,
               workspaceRoot
             }).catch((e: unknown) => rethrowSendLedgerFailure(e, options.json, String(options.network ?? loaded.config.defaultNetwork ?? "simulated")));
 
@@ -1002,7 +1021,7 @@ export function registerTxCommands(program: Command) {
       }
       // Demo-cut step 2 · T-A14b: the wait follows the Q4 derived state; it never
       // assumes confirmation and never prints "Settlement Proof".
-      const { runTxWait } = await import("../runners/tx-wait-runner.js");
+      const { runTxWait, utxoViewRow } = await import("../runners/tx-wait-runner.js");
       const { renderTxStatusRows, stateHeadline } = await import("../runners/tx-status-runner.js");
       const r = await runTxWait({
         txId,
@@ -1043,9 +1062,7 @@ export function registerTxCommands(program: Command) {
       });
       // Demo-ready: the node's UTXO view after the target was reached (a view, not a state).
       if (r.utxoView) {
-        rows["UTXO View"] = r.utxoView.checked
-          ? `reflects this transaction: an output of it is listed for ${r.utxoView.addresses.length} address(es) and the inputs it spent are no longer listed (${r.utxoView.looks} look(s))`
-          : `not checked: ${r.utxoView.reason}`;
+        rows["UTXO View"] = utxoViewRow(r.utxoView);
       }
       UI.causality(
         r.outcome === "synthetic"

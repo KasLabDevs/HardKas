@@ -48,6 +48,16 @@ export interface TxFlowInput {
 
   allowMainnetSigning?: boolean;
   workspaceRoot?: string;
+
+  /** TX-BATCH-1: what earlier payments of the run spent (see TxPlanRunnerInput.spentOutpoints). */
+  spentOutpoints?: ReadonlyMap<string, string>;
+  /** TX-BATCH-1: an encrypted payer's keystore password, already acquired by the caller; in memory only. */
+  keystorePassword?: string;
+  /** TX-SEND-PASSWORD-1: where the sign step reads an encrypted payer's keystore password (never from argv). */
+  passwordEnv?: string;
+  passwordStdin?: boolean;
+  /** Machine-readable output: the sign step never prompts. */
+  json?: boolean;
 }
 
 export interface TxFlowStepResult<T> {
@@ -247,7 +257,8 @@ async function txFlow(input: TxFlowInput, opened: { sdk?: { close(): Promise<voi
       networkId: flowResult.networkId,
       feeRate,
       config,
-      ...(url ? { url } : {})
+      ...(url ? { url } : {}),
+      ...(input.spentOutpoints && input.spentOutpoints.size > 0 ? { spentOutpoints: input.spentOutpoints } : {})
     };
     if (workspaceRoot) planInput.workspaceRoot = workspaceRoot;
 
@@ -348,7 +359,11 @@ async function txFlow(input: TxFlowInput, opened: { sdk?: { close(): Promise<voi
         planArtifact,
         config,
         ...(allowMainnetSigning !== undefined ? { allowMainnetSigning } : {}),
-        ...(workspaceRoot ? { workspaceRoot } : {})
+        ...(workspaceRoot ? { workspaceRoot } : {}),
+        ...(input.keystorePassword !== undefined ? { keystorePassword: input.keystorePassword } : {}),
+        ...(input.passwordEnv ? { passwordEnv: input.passwordEnv } : {}),
+        ...(input.passwordStdin ? { passwordStdin: true } : {}),
+        ...(input.json ? { json: true } : {})
       });
 
       flowResult.steps.sign = { status: "ok", artifact: signedArtifact };

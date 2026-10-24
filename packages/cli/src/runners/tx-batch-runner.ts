@@ -1,15 +1,100 @@
 import { getOutput } from "../output.js";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { runTxFlow } from "./tx-flow.js";
+import { runTxFlow, type TxFlowResult } from "./tx-flow.js";
+import { accountNeedsKeystorePassword } from "./tx-sign-runner.js";
 import { sendOutcomeLabel } from "./next-steps.js";
-import { loadHardkasConfig } from "@hardkas/config";
+import { loadHardkasConfig, type HardkasConfig } from "@hardkas/config";
 import { UI } from "../ui.js";
 import { HardkasCliError, HardkasExitCode } from "../cli-errors.js";
 import { stripBom } from "@hardkas/core";
+import { utxoOutpointKey } from "@hardkas/tx-builder";
+
+/**
+ * TX-BATCH-1: the keystore password of the batch's encrypted payers, read ONCE, before the first payment — from
+ * --password-env, --password-stdin, or a prompt on a terminal (never with --json) — and checked against every encrypted
+ * payer's keystore. A missing or wrong password stops the batch before anything is planned, signed or sent, so a batch
+ * is never left half paid for want of it. Undefined when no payer needs one.
+ */
+async function batchKeystorePassword(args: {
+  payments: any[];
+  config: HardkasConfig;
+  workspaceRoot: string;
+  network: string;
+  passwordEnv?: string | undefined;
+  passwordStdin?: boolean | undefined;
+  json?: boolean | undefined;
+}): Promise<string | undefined> {
+  const { resolveWorkspaceExecution } = await import("@hardkas/config");
+  const { resolveHardkasAccount, unlockAccountKeystore } = await import("@hardkas/accounts");
+  const resolvedConfig: any = { ...args.config, cwd: args.workspaceRoot };
+  let execution: any;
+  try {
+    execution = resolveWorkspaceExecution({ config: resolvedConfig, network: args.network }).execution;
+  } catch {
+    return undefined; // every payment reports the refusal itself, as before
+  }
+  const encrypted = new Map<string, any>();
+  for (const payment of args.payments) {
+    if (!payment?.from) continue;
+    try {
+      const account: any = resolveHardkasAccount({ nameOrAddress: String(payment.from), config: resolvedConfig, executionTarget: execution });
+      if (accountNeedsKeystorePassword(account)) encrypted.set(account.name, account);
+    } catch {
+      // a payer that does not resolve fails in its own payment, as before
+    }
+  }
+  if (encrypted.size === 0) return undefined;
+  const names = [...encrypted.keys()].join(", ");
+  const nothingDone = `The batch pays from encrypted account(s) ${names}: nothing was planned, signed or sent.`;
+  const { acquirePassword } = await import("./secrets.js");
+  let password: string;
+  try {
+    password = await acquirePassword({
+      env: args.passwordEnv,
+      stdin: args.passwordStdin,
+      interactive: !args.json,
+      message: `Enter the keystore password of the batch's encrypted account(s) (${names}):`
+    });
+  } catch (e) {
+    if (e instanceof HardkasCliError) throw new HardkasCliError(e.code, `${e.message} ${nothingDone}`, { exitCode: e.exitCode });
+    throw e;
+  }
+  for (const account of encrypted.values()) {
+    try {
+      await unlockAccountKeystore({ name: account.name, keystorePath: account.keystorePath, keystoreKind: account.keystoreKind }, password);
+    } catch (e) {
+      // KEYSTORE_PASSWORD_INVALID (a wrong password) is the caller's to fix; a keystore that cannot be read is not
+      const code = typeof (e as any)?.code === "string" ? (e as any).code : "KEYSTORE_UNLOCK_FAILED";
+      throw new HardkasCliError(code, `${e instanceof Error ? e.message : String(e)} ${nothingDone}`, {
+        exitCode: code === "KEYSTORE_PASSWORD_INVALID" ? HardkasExitCode.USAGE_ERROR : HardkasExitCode.RUNTIME_FAILURE
+      });
+    }
+  }
+  return password;
+}
+
+/**
+ * TX-BATCH-1: the inputs of a payment whose transaction the node accepted, or may have (outcome unknown), mapped to
+ * the address that owned them; a rejected or unsent one spent nothing. The simulator's state is updated by the send.
+ */
+function recordSpent(flow: TxFlowResult, spent: Map<string, string>): void {
+  const plan: any = flow.steps.plan.artifact;
+  if (!plan || plan.mode === "simulator") return;
+  const send = flow.steps.send;
+  const mayHaveSpent =
+    send.status === "ok" && send.artifact
+      ? send.artifact.accepted || sendOutcomeLabel(send.artifact.receipt, false) === "unknown"
+      : send.effect?.operation === "broadcast" && (send.effect.outcome === "accepted" || send.effect.outcome === "unknown");
+  if (!mayHaveSpent) return;
+  for (const input of plan.inputs ?? []) {
+    const key = utxoOutpointKey(input);
+    if (key) spent.set(key, String(input.address ?? plan.from?.address));
+  }
+}
 
 export async function runTxBatch(options: any) {
-  const { file, network = "simulated", json, workspace } = options;
+  const { file, network = "simulated", json, workspace, passwordEnv, passwordStdin } = options;
 
   if (!file) {
     throw new Error("Must provide --file with payments.json");
@@ -41,9 +126,21 @@ export async function runTxBatch(options: any) {
     );
   }
 
+  const keystorePassword = await batchKeystorePassword({
+    payments,
+    config: loaded.config,
+    workspaceRoot: workspace || process.cwd(),
+    network,
+    passwordEnv,
+    passwordStdin,
+    json
+  });
+
   const results = [];
   let successCount = 0;
   let failCount = 0;
+  // TX-BATCH-1: what earlier payments of this batch spent (outpoint → owner address): never selected again
+  const spentByBatch = new Map<string, string>();
 
   if (!json) {
     getOutput().writeLine(
@@ -87,13 +184,18 @@ export async function runTxBatch(options: any) {
         send: true,
         yes: true,
         config: loaded.config,
-        workspaceRoot: workspace || process.cwd()
+        workspaceRoot: workspace || process.cwd(),
+        ...(spentByBatch.size > 0 ? { spentOutpoints: new Map(spentByBatch) } : {}),
+        ...(keystorePassword !== undefined ? { keystorePassword } : {})
       });
+      recordSpent(flowResult, spentByBatch);
 
+      const txId = flowResult.steps.send.artifact?.txId;
       results.push({
         index: i,
         ok: flowResult.ok,
         result: flowResult.result,
+        ...(txId ? { txId } : {}),
         planError: flowResult.steps.plan.error,
         signError: flowResult.steps.sign.error,
         sendError: flowResult.steps.send.error,

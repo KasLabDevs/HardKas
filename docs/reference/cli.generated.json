@@ -2356,7 +2356,7 @@
               "path": "hardkas kaspa wallet send",
               "name": "send",
               "aliases": [],
-              "description": "Plan, confirm (y/N), sign and submit a payment over --rpc-url; the network and target come from hardkas.config stable",
+              "description": "Plan a payment over --rpc-url with --dry-run (the node must serve the workspace's network); sending is disabled here: use 'tx plan', 'tx sign' and 'tx send' internal",
               "usage": "hardkas kaspa wallet send [options] <from> <to>",
               "arguments": [
                 {
@@ -2378,7 +2378,7 @@
                 },
                 {
                   "flags": "--dry-run",
-                  "description": "Plan but do not sign or broadcast",
+                  "description": "Plan only (required: without it the command refuses, KASPA_WALLET_SEND_DISABLED)",
                   "default": false,
                   "required": false,
                   "mandatory": false
@@ -2460,7 +2460,7 @@
           "path": "hardkas localnet account",
           "name": "account",
           "aliases": [],
-          "description": "Manage simulated localnet accounts",
+          "description": "Manage real simnet accounts for the local node",
           "usage": "hardkas localnet account [options] [command]",
           "arguments": [],
           "options": [],
@@ -2469,7 +2469,7 @@
               "path": "hardkas localnet account create",
               "name": "create",
               "aliases": [],
-              "description": "Create a simulated localnet account alpha",
+              "description": "Create a real simnet account: a random key, stored in plaintext in .hardkas/accounts.real.json alpha",
               "usage": "hardkas localnet account create [options] <name>",
               "arguments": [
                 {
@@ -5070,6 +5070,20 @@
                   "mandatory": false
                 },
                 {
+                  "flags": "--password-env <env>",
+                  "description": "Read the keystore password of the encrypted account(s) this command signs with from this environment variable (development accounts need none)",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--password-stdin",
+                  "description": "Read the keystore password of the encrypted account(s) this command signs with from stdin",
+                  "default": false,
+                  "required": false,
+                  "mandatory": false
+                },
+                {
                   "flags": "--json",
                   "description": "Output as JSON",
                   "default": false,
@@ -5230,6 +5244,20 @@
               "mandatory": false
             },
             {
+              "flags": "--password-env <env>",
+              "description": "Read the keystore password of the encrypted account(s) this command signs with from this environment variable (development accounts need none)",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--password-stdin",
+              "description": "Read the keystore password of the encrypted account(s) this command signs with from stdin",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            },
+            {
               "flags": "--json",
               "description": "Output as JSON",
               "default": false,
@@ -5343,6 +5371,20 @@
               "mandatory": false
             },
             {
+              "flags": "--password-env <env>",
+              "description": "Read the keystore password of the encrypted account(s) this command signs with from this environment variable (development accounts need none)",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--password-stdin",
+              "description": "Read the keystore password of the encrypted account(s) this command signs with from stdin",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            },
+            {
               "flags": "--json",
               "description": "Output as JSON",
               "default": false,
@@ -5398,6 +5440,20 @@
               "description": "Record path (default .hardkas/artifacts/silver-vm/)",
               "default": null,
               "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--password-env <env>",
+              "description": "Read the keystore password of the encrypted account(s) this command signs with from this environment variable (development accounts need none)",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--password-stdin",
+              "description": "Read the keystore password of the encrypted account(s) this command signs with from stdin",
+              "default": false,
+              "required": false,
               "mandatory": false
             },
             {
@@ -5900,6 +5956,20 @@
               "mandatory": false
             },
             {
+              "flags": "--password-env <env>",
+              "description": "Read the keystore password of the batch's encrypted payers from this environment variable (read once, before the first payment)",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--password-stdin",
+              "description": "Read the keystore password of the batch's encrypted payers from stdin (read once, before the first payment)",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            },
+            {
               "flags": "--json",
               "description": "Output as JSON",
               "default": false,
@@ -5982,7 +6052,14 @@
             },
             {
               "flags": "--fee-rate <sompiPerMass>",
-              "description": "Whole sompi per gram of mass (default: 1 in the simulator, 100 on real networks; not a live estimate)",
+              "description": "Whole sompi per gram of mass, at least 1 (default: 1 in the simulator, 100 on real networks; not a live estimate)",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--max-fee <sompi>",
+              "description": "Total fee limit in sompi: the plan is refused (FEE_EXCEEDS_MAX) above it, and the limit is recorded in the plan and enforced again at sign and send. The workspace's networks[<net>].maxFeeSompi also applies; the lower one wins. No limit by default",
               "default": null,
               "required": true,
               "mandatory": false
@@ -6003,7 +6080,7 @@
             },
             {
               "flags": "--url <url>",
-              "description": "Node wRPC URL (default: ws://127.0.0.1:18210 for simnet and devnet; the config's rpcUrl is not used)",
+              "description": "Node wRPC URL (default: the network's rpcUrl in hardkas.config.ts; without one, ws://127.0.0.1:18210 for simnet and devnet)",
               "default": null,
               "required": true,
               "mandatory": false
@@ -6159,6 +6236,20 @@
               "description": "Fee rate in sompi per mass (shortcut mode)",
               "default": null,
               "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--password-env <env>",
+              "description": "Shortcut mode: read the sender's keystore password (an encrypted account) from this environment variable",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--password-stdin",
+              "description": "Shortcut mode: read the sender's keystore password (an encrypted account) from stdin",
+              "default": false,
+              "required": false,
               "mandatory": false
             },
             {

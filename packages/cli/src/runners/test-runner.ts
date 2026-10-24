@@ -1,6 +1,8 @@
 import { UI } from "../ui.js";
 import path from "node:path";
 import fs from "node:fs/promises";
+import { createRequire } from "node:module";
+import { pathToFileURL } from "node:url";
 import { Hardkas } from "@hardkas/sdk";
 
 export interface TestRunnerOptions {
@@ -89,6 +91,162 @@ export function testRunVerdict(
 }
 
 /**
+ * TEST-NETWORK-EVIDENCE-1 · the observer a run injects into its test files (a vitest setup file written into the run
+ * directory): every TCP connection a test file starts — host, port, file — is appended to the run's net-contacts.jsonl.
+ * It records and never changes a connection. Facts only: what a contact means is derived by networkEvidenceOf.
+ */
+export const NET_OBSERVER_SOURCE = `// HardKAS TEST-NETWORK-EVIDENCE-1: written by hardkas test into its run directory, loaded by vitest as a setup file.
+// Records every TCP connection a test file starts (host, port, file); the connection itself is left untouched.
+import fs from "node:fs";
+import net from "node:net";
+import path from "node:path";
+import { expect } from "vitest";
+const runDir = process.env.HARDKAS_TEST_RUN_DIR;
+const out = runDir ? path.join(runDir, "net-contacts.jsonl") : undefined;
+const proto = net.Socket.prototype;
+if (out && !proto.connect.__hardkasNetObserver) {
+  const original = proto.connect;
+  const observer = function (...args) {
+    try {
+      const first = Array.isArray(args[0]) ? args[0][0] : args[0];
+      let port;
+      let host;
+      if (first && typeof first === "object") {
+        if (first.path === undefined) {
+          port = first.port;
+          host = first.host;
+        }
+      } else if (first !== undefined && first !== null && !Number.isNaN(Number(first))) {
+        port = first;
+        host = typeof args[1] === "string" ? args[1] : undefined;
+      }
+      if (port !== undefined && port !== null) {
+        let file = null;
+        try {
+          file = expect.getState().testPath ?? null;
+        } catch {}
+        // hardkas-append-allow: the run's own scratch record, one line per contact; @hardkas/core may not resolve from a test worker
+        fs.appendFileSync(out, JSON.stringify({ host: host || "localhost", port: Number(port), file, pid: process.pid }) + "\\n");
+      }
+    } catch {}
+    return original.apply(this, args);
+  };
+  observer.__hardkasNetObserver = true;
+  proto.connect = observer;
+}
+`;
+
+/** Ports of a Kaspa node's RPC endpoints: the canonical localnet's and rusty-kaspa's defaults (gRPC, wRPC Borsh, wRPC JSON). */
+const KASPA_NODE_PORTS = [16110, 17110, 18110, 16210, 17210, 18210, 16510, 17510, 18510, 16610, 17610, 18610];
+
+export interface NetContact {
+  host: string;
+  port: number;
+  file: string | null;
+}
+
+export interface NetworkEvidence {
+  /** The network the run was asked for. */
+  requested: string;
+  /** Kaspa node endpoints the test files contacted (attempts included), with the files that did. */
+  nodeContacts: { endpoint: string; files: string[] }[];
+  /** Every other TCP endpoint they contacted (their own local servers, …): listed, never a node. */
+  otherContacts: { endpoint: string; files: string[] }[];
+}
+
+/** A host as an endpoint key: lower case, an IPv6 address without its brackets. */
+const endpointHost = (host: string) => String(host).replace(/^\[|\]$/g, "").toLowerCase();
+
+/**
+ * TEST-NETWORK-EVIDENCE-1 · the run's network, derived from the observed contacts: a run requested on the simulated network
+ * whose test files contacted a Kaspa node endpoint (a known node port, the port a configured network's rpcUrl names, or
+ * that rpcUrl's own endpoint) is "mixed"; any other run keeps the requested network. The contacts are reported either way.
+ * TEST-NETWORK-EVIDENCE-2: `configuredNodeEndpoints` are host:port, with the scheme's port for an rpcUrl that names none
+ * (wss://vector-10.kaspa.green/… is vector-10.kaspa.green:443), matched with their host: another host on 443 is not a node.
+ */
+export function networkEvidenceOf(
+  requested: string,
+  contacts: NetContact[],
+  workspaceRoot: string,
+  configuredNodePorts: number[] = [],
+  configuredNodeEndpoints: string[] = []
+): { network: string; evidence: NetworkEvidence } {
+  const nodePorts = new Set([...KASPA_NODE_PORTS, ...configuredNodePorts]);
+  const nodeEndpoints = new Set(configuredNodeEndpoints.map((e) => e.toLowerCase()));
+  const isNode = (c: NetContact) => nodePorts.has(c.port) || nodeEndpoints.has(`${endpointHost(c.host)}:${c.port}`);
+  const group = (list: NetContact[]) => {
+    const byEndpoint = new Map<string, Set<string>>();
+    for (const c of list) {
+      const endpoint = `${c.host}:${c.port}`;
+      const file = c.file ? path.relative(workspaceRoot, c.file).replace(/\\/g, "/") : "(outside a test)";
+      if (!byEndpoint.has(endpoint)) byEndpoint.set(endpoint, new Set());
+      byEndpoint.get(endpoint)!.add(file);
+    }
+    return [...byEndpoint.entries()]
+      .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+      .map(([endpoint, files]) => ({ endpoint, files: [...files].sort() }));
+  };
+  const nodeContacts = group(contacts.filter(isNode));
+  const otherContacts = group(contacts.filter((c) => !isNode(c)));
+  const simulated = requested === "simulated" || requested === "simulator";
+  return { network: simulated && nodeContacts.length > 0 ? "mixed" : requested, evidence: { requested, nodeContacts, otherContacts } };
+}
+
+/** Vite overrides with the observer added to their setup files (the project's own setup files are kept: overrides merge). */
+function withNetObserver(viteOverrides: any, observerPath: string): any {
+  const test = viteOverrides?.test ?? {};
+  const setupFiles = Array.isArray(test.setupFiles) ? test.setupFiles : test.setupFiles ? [test.setupFiles] : [];
+  return { ...(viteOverrides ?? {}), test: { ...test, setupFiles: [...setupFiles, observerPath] } };
+}
+
+const SCHEME_PORTS: Record<string, number> = { "ws:": 80, "http:": 80, "wss:": 443, "https:": 443 };
+
+/**
+ * The rpcUrl of every network the workspace configures (best effort: none when the config cannot be read): `ports`, the
+ * ports the URLs name (a contact on one counts on any host, TEST-NETWORK-EVIDENCE-1), and `endpoints`, each URL's own
+ * host:port, with its scheme's port when it names none (TEST-NETWORK-EVIDENCE-2: `new URL(…).port` is "" then).
+ */
+async function configuredRpcTargets(workspaceRoot: string): Promise<{ ports: number[]; endpoints: string[] }> {
+  const ports: number[] = [];
+  const endpoints: string[] = [];
+  try {
+    const { loadHardkasConfig } = await import("@hardkas/config");
+    const loaded: any = await loadHardkasConfig({ workspaceRoot });
+    for (const n of Object.values(loaded?.config?.networks ?? {}) as any[]) {
+      try {
+        const url = new URL(String(n?.rpcUrl));
+        const named = Number(url.port);
+        if (named > 0) ports.push(named);
+        const port = named > 0 ? named : SCHEME_PORTS[url.protocol];
+        if (url.hostname && port) endpoints.push(`${endpointHost(url.hostname)}:${port}`);
+      } catch {
+        // no rpcUrl, or not a URL
+      }
+    }
+  } catch {
+    // no readable config: the known node ports only
+  }
+  return { ports, endpoints };
+}
+
+/**
+ * TEST-RUNNER-VITEST-INSTANCE-1 · the engine a run starts is the vitest the workspace itself resolves. Its test files,
+ * and the packages they load from its node_modules (@hardkas/testing's scenario(), whose vitest is a peer), register
+ * their tests on THAT vitest: an engine started from another copy — the CLI's own, found wherever the CLI is installed —
+ * holds no suite for them ("Vitest failed to find the current suite") and runs nothing. A workspace without a vitest of
+ * its own runs on the CLI's, as before.
+ */
+export async function loadTestEngine(workspaceRoot: string): Promise<typeof import("vitest/node")> {
+  let entry: string | undefined;
+  try {
+    entry = createRequire(path.join(workspaceRoot, "package.json")).resolve("vitest/node");
+  } catch {
+    entry = undefined; // no vitest of its own
+  }
+  return entry ? import(pathToFileURL(entry).href) : import("vitest/node");
+}
+
+/**
  * HardKAS Scenario Runner (v1)
  *
  * Replaces the previous mock with a real discovery and execution engine.
@@ -127,12 +285,21 @@ export async function runTest(options: TestRunnerOptions): Promise<void> {
   const scenarioResultsDir = path.join(testRunDir, "scenario-results");
   await fs.mkdir(scenarioResultsDir, { recursive: true });
   const testResultsPath = path.join(testRunDir, "test-results.json");
+  // TEST-NETWORK-EVIDENCE-1: what the test files contact is observed in their own processes; the fact stays in the run
+  const netContactsPath = path.join(testRunDir, "net-contacts.jsonl");
+  const netObserverPath = path.join(testRunDir, "net-observer.mjs");
+  await fs.writeFile(netObserverPath, NET_OBSERVER_SOURCE);
 
   // 4. Vitest Integration (Lazy Load)
   try {
     // Note: In a real implementation, we would use the Vitest Node API (startVitest)
     // For this audit/hardening phase, we implement the discovery and setup logic.
-    const { startVitest } = await import("vitest/node");
+    // TEST-NETWORK-EVIDENCE-1: every start of the engine carries the observer as one more setup file, merged into the
+    // project's own configuration (vite overrides add setup files; test options would replace the project's)
+    // TEST-RUNNER-VITEST-INSTANCE-1: the workspace's own vitest when it has one
+    const { startVitest: startVitestEngine } = await loadTestEngine(workspaceRoot);
+    const startVitest: typeof startVitestEngine = (mode, filters, testOptions, viteOverrides, engineOptions) =>
+      startVitestEngine(mode, filters, testOptions, withNetObserver(viteOverrides, netObserverPath), engineOptions);
 
     // CLI-CONTRACT-2A: the runner's own JSON report goes to a file in the run directory, never to stdout (`--json`
     // prints exactly one document, the envelope); the human reporter stays in human mode.
@@ -158,7 +325,9 @@ export async function runTest(options: TestRunnerOptions): Promise<void> {
       ...(options.scenario ? { testNamePattern: options.scenario } : {})
     };
 
-    const vitest = await startVitest("test", [], vitestOptions);
+    // TEST-JSON-STDOUT-1: under --json the engine's own messages ("JSON report written to …") go to stderr, so stdout carries
+    // exactly the envelope
+    const vitest = await startVitest("test", [], vitestOptions, undefined, json ? { stdout: process.stderr } : undefined);
 
     if (!vitest) {
       throw new Error("Failed to initialize test engine.");
@@ -186,9 +355,17 @@ export async function runTest(options: TestRunnerOptions): Promise<void> {
     }
 
     const vitestReportExists = await fs.stat(vitestJsonPath).then(() => true, () => false);
+    const contacts: NetContact[] = await fs.readFile(netContactsPath, "utf8").then(
+      (text) => text.split("\n").filter(Boolean).map((line) => JSON.parse(line)),
+      () => []
+    );
+    const rpcTargets = await configuredRpcTargets(workspaceRoot);
+    const { network: observedNetwork, evidence: networkEvidence } = networkEvidenceOf(network, contacts, workspaceRoot, rpcTargets.ports, rpcTargets.endpoints);
     const testReport = {
       testRunId,
-      network,
+      // TEST-NETWORK-EVIDENCE-1: derived from what the test files contacted, not only from the request
+      network: observedNetwork,
+      networkEvidence,
       // CLI-CONTRACT-2A: what ran, from the runner's own results; `passed` keeps its name and now means the verdict.
       tests: { collected: counts.collected, executed: counts.executed, passed: counts.passed, failed: counts.failed, skipped: counts.skipped, todo: counts.todo },
       files: { total: counts.filesTotal, failed: counts.filesFailed },
@@ -207,6 +384,12 @@ export async function runTest(options: TestRunnerOptions): Promise<void> {
         `Tests: ${counts.collected} collected, ${counts.passed} passed, ${counts.failed} failed, ${counts.skipped} skipped` +
           `${counts.todo ? `, ${counts.todo} todo` : ""}${counts.filesFailed ? `; ${counts.filesFailed} file(s) could not run` : ""}`
       );
+      if (networkEvidence.nodeContacts.length > 0) {
+        const where = networkEvidence.nodeContacts.map((c) => `${c.endpoint} (${c.files.join(", ")})`).join("; ");
+        const line = `Network: ${observedNetwork} (requested ${network}): test files contacted a Kaspa node: ${where}`;
+        if (observedNetwork !== network) UI.warning(line);
+        else UI.info(line);
+      }
       UI.info(`Report saved to .hardkas/runs/${testRunId}/test-results.json`);
       if (passed) UI.success("All executed tests passed.");
     }

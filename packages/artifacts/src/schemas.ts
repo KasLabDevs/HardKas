@@ -215,7 +215,9 @@ export const TxPlanSchema = BaseArtifactSchema.extend({
   // field and remain readable — the fields are optional to preserve backward
   // compatibility with rc.22-era artifacts.
   plannerAuthority: z.enum(["KASPA_WASM_GENERATOR", "SYNTHETIC_SIMULATOR"]).optional(),
-  plannerAuthorityDetail: z.string().optional()
+  plannerAuthorityDetail: z.string().optional(),
+  // TX-FEE-GUARD-1: the total fee limit (sompi) the plan was made under; enforced again at sign and send
+  maxFeeSompi: z.string().regex(/^\d+$/).optional()
 });
 
 export const DagContextSchema = z.object({
@@ -362,6 +364,11 @@ export const TxSubmissionSchema = BaseArtifactSchema.extend({
       sinkBlueScore: z.string().regex(/^\d+$/)
     })
     .optional(),
+  /**
+   * TX-SEND-SUBMITPOINT-1: why there is no `submitPoint` — the chain position could not be read before the submit. Never
+   * written together with `submitPoint`; never a substitute point.
+   */
+  submitPointUnavailable: z.object({ reason: z.string().min(1) }).optional(),
   /**
    * Wave 2(d) · AUD-18: the fee DERIVED from the signed transaction (Σ consumed −
    * Σ produced) or an explicit statement that the evidence did not allow it.

@@ -1,6 +1,7 @@
 ﻿import fs from "node:fs";
 import path from "node:path";
 import http from "node:http";
+import crypto from "node:crypto";
 import { UI } from "../ui.js";
 import { eventLedgerPath } from "@hardkas/core";
 
@@ -614,10 +615,26 @@ function handleDashboardHealth(_url: URL, res: http.ServerResponse) {
 // ---------------------------------------------------------------------------
 // Server
 // ---------------------------------------------------------------------------
-export async function runDashboard() {
+/** DASHBOARD-CLOSE-1: what a started dashboard gives its caller — where it listens, and how to stop it. */
+export interface RunningDashboard {
+  url: string;
+  /** Stops the server (open connections included); once closed it no longer keeps its process alive. */
+  close(): Promise<void>;
+}
+
+export async function runDashboard(): Promise<RunningDashboard> {
   UI.info("Starting HardKAS Semantic Observability Dashboard...");
 
   const port = 3333;
+  // SA-2 (SECURITY-AUDIT-1, 2026-10-21): the dashboard serves the workspace's artifacts, lineage and telemetry. It used to
+  // listen on every interface with `Access-Control-Allow-Origin: *` and no authentication, so any web page open in the
+  // browser (and any machine the firewall let through) could read them. Now: loopback only; the Host and the Origin of
+  // every request must be this server's (DNS rebinding, other origins); no CORS grant at all (the page and its API share
+  // an origin); and /api/* requires the per-run token the served page carries, as the dev-server's page does.
+  const host = "127.0.0.1";
+  const sessionToken = crypto.randomBytes(32).toString("hex");
+  const allowedHosts = new Set([`127.0.0.1:${port}`, `localhost:${port}`]);
+  const allowedOrigins = new Set([`http://127.0.0.1:${port}`, `http://localhost:${port}`]);
 
   // Use dynamic import for express and url to avoid overhead in other commands
   const express = (await import("express")).default;
@@ -626,12 +643,29 @@ export async function runDashboard() {
   const __dirname = path.dirname(__filename);
 
   const app = express();
+  app.disable("x-powered-by");
 
   app.use((req, res, next) => {
-    res.setHeader("Access-Control-Allow-Origin", "*");
-    res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
-    if (req.method === "OPTIONS") {
-      res.sendStatus(204);
+    const requestHost = String(req.headers.host ?? "").toLowerCase();
+    if (!allowedHosts.has(requestHost)) {
+      res.status(403).json({ error: "Forbidden: this dashboard answers only on its own loopback address." });
+      return;
+    }
+    const origin = req.headers.origin;
+    if (origin !== undefined && !allowedOrigins.has(String(origin).toLowerCase())) {
+      res.status(403).json({ error: "Forbidden: requests from another origin are not served." });
+      return;
+    }
+    next();
+  });
+
+  app.use("/api", (req, res, next) => {
+    const authorization = String(req.headers.authorization ?? "");
+    const given = authorization.startsWith("Bearer ") ? authorization.slice(7) : "";
+    const a = Buffer.from(given);
+    const b = Buffer.from(sessionToken);
+    if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
+      res.status(401).json({ error: "Unauthorized: invalid or missing session token." });
       return;
     }
     next();
@@ -665,7 +699,8 @@ export async function runDashboard() {
   const distPath = isProd
     ? path.join(__dirname, "..", "dashboard-dist")
     : path.join(__dirname, "..", "..", "dashboard-dist");
-  app.use(express.static(distPath));
+  // the static bundle without its index: index.html is served below, carrying the session token
+  app.use(express.static(distPath, { index: false }));
 
   app.use((req, res) => {
     if (req.path.startsWith("/api/")) {
@@ -673,7 +708,10 @@ export async function runDashboard() {
     } else {
       const indexPath = path.join(distPath, "index.html");
       if (fs.existsSync(indexPath)) {
-        res.sendFile(indexPath);
+        const html = fs.readFileSync(indexPath, "utf-8");
+        const tokenScript = `<script>window.__HARDKAS_DEV_TOKEN__ = "${sessionToken}";</script>`;
+        res.setHeader("Cache-Control", "no-store");
+        res.type("html").send(html.includes("</head>") ? html.replace("</head>", `${tokenScript}\n</head>`) : `${tokenScript}\n${html}`);
       } else {
         res
           .status(404)
@@ -682,10 +720,18 @@ export async function runDashboard() {
     }
   });
 
-  return new Promise((resolve, reject) => {
-    const server = app.listen(port, () => {
-      UI.success(`Dashboard API and UI running at http://localhost:${port}`);
-      resolve(null);
+  return new Promise<RunningDashboard>((resolve, reject) => {
+    const server = app.listen(port, host, () => {
+      UI.success(`Dashboard API and UI running at http://${host}:${port} (this machine only; the API answers the session token of the page)`);
+      // DASHBOARD-CLOSE-1: the caller can stop what it started (the server used to keep its process alive until killed)
+      resolve({
+        url: `http://${host}:${port}`,
+        close: () =>
+          new Promise<void>((done, fail) => {
+            server.closeAllConnections?.();
+            server.close((err) => (err ? fail(err) : done()));
+          })
+      });
     });
     server.on("error", (err: any) => {
       if (((err as any).code) === "EADDRINUSE") {

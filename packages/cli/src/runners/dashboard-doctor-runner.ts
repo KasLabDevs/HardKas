@@ -5,33 +5,52 @@ import pc from "picocolors";
 import { UI } from "../ui.js";
 import { HardkasSchemas } from "@hardkas/artifacts";
 
-// Helper to fetch JSON from localhost API
-function fetchJson(url: string): Promise<any> {
+// SA-2 (SECURITY-AUDIT-1, 2026-10-21): the dashboard listens on 127.0.0.1 only and its API requires the session token of
+// the page it serves; the doctor reads that token from the page, as the dashboard's own UI does.
+const DASHBOARD_URL = "http://127.0.0.1:3333";
+
+function httpGet(url: string, headers: Record<string, string> = {}): Promise<{ status: number; body: string }> {
   return new Promise((resolve, reject) => {
     http
-      .get(url, { timeout: 2000 }, (res) => {
-        if (res.statusCode !== 200) {
-          reject(new Error(`HTTP status ${res.statusCode}`));
-          return;
-        }
+      .get(url, { timeout: 2000, headers }, (res) => {
         let rawData = "";
         res.on("data", (chunk) => {
           rawData += chunk;
         });
-        res.on("end", () => {
-          try {
-            resolve(JSON.parse(rawData));
-          } catch (e) {
-            reject(e);
-          }
-        });
+        res.on("end", () => resolve({ status: res.statusCode ?? 0, body: rawData }));
       })
-      .on("error", (e) => {
-        reject(e);
+      .on("error", (e) => reject(e))
+      .on("timeout", () => reject(new Error("Request timed out")));
+  });
+}
+
+let dashboardToken: string | undefined;
+async function sessionToken(): Promise<string> {
+  if (dashboardToken) return dashboardToken;
+  const page = await httpGet(`${DASHBOARD_URL}/`);
+  const token = /__HARDKAS_DEV_TOKEN__\s*=\s*"([0-9a-f]{64})"/.exec(page.body)?.[1];
+  if (!token) throw new Error(`the dashboard page carries no session token (HTTP status ${page.status})`);
+  dashboardToken = token;
+  return token;
+}
+
+// Helper to fetch JSON from the dashboard API, with the session token
+function fetchJson(url: string): Promise<any> {
+  return new Promise((resolve, reject) => {
+    sessionToken()
+      .then((token) => httpGet(url, { Authorization: `Bearer ${token}` }))
+      .then((res) => {
+        if (res.status !== 200) {
+          reject(new Error(`HTTP status ${res.status}`));
+          return;
+        }
+        try {
+          resolve(JSON.parse(res.body));
+        } catch (e) {
+          reject(e);
+        }
       })
-      .on("timeout", () => {
-        reject(new Error("Request timed out"));
-      });
+      .catch(reject);
   });
 }
 
@@ -67,18 +86,18 @@ export async function runDashboardDoctor() {
 
   // Check 1: API Server ping
   try {
-    const health = await fetchJson("http://localhost:3333/api/dashboard-health");
+    const health = await fetchJson("http://127.0.0.1:3333/api/dashboard-health");
     apiRunning = true;
     checks.push({
       name: "Dashboard API Server",
       status: "success",
-      message: `Running at http://localhost:3333 (Active workspace: ${health.workspaceRoot})`
+      message: `Running at http://127.0.0.1:3333 (Active workspace: ${health.workspaceRoot})`
     });
   } catch (e: unknown) {
     checks.push({
       name: "Dashboard API Server",
       status: "error",
-      message: `Offline/unreachable at http://localhost:3333 (Reason: ${((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e))})`
+      message: `Offline/unreachable at http://127.0.0.1:3333 (Reason: ${((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e))})`
     });
     hasErrors = true;
   }
@@ -87,20 +106,20 @@ export async function runDashboardDoctor() {
   if (apiRunning) {
     UI.info("Step 2: Validating active API endpoints...");
     const endpoints = [
-      { name: "Truth Status (/api/status)", path: "http://localhost:3333/api/status" },
-      { name: "Telemetry (/api/telemetry)", path: "http://localhost:3333/api/telemetry" },
-      { name: "Replay (/api/replay)", path: "http://localhost:3333/api/replay" },
+      { name: "Truth Status (/api/status)", path: "http://127.0.0.1:3333/api/status" },
+      { name: "Telemetry (/api/telemetry)", path: "http://127.0.0.1:3333/api/telemetry" },
+      { name: "Replay (/api/replay)", path: "http://127.0.0.1:3333/api/replay" },
       {
         name: "Causal Lineage (/api/lineage)",
-        path: "http://localhost:3333/api/lineage"
+        path: "http://127.0.0.1:3333/api/lineage"
       },
       {
         name: "Quarantine (/api/quarantine)",
-        path: "http://localhost:3333/api/quarantine"
+        path: "http://127.0.0.1:3333/api/quarantine"
       },
       {
         name: "Semantic Bundles (/api/bundles)",
-        path: "http://localhost:3333/api/bundles"
+        path: "http://127.0.0.1:3333/api/bundles"
       }
     ];
 
