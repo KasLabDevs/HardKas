@@ -1,4 +1,14 @@
 
+## [0.12.0-rc.29] - 2026-10-25 - Coordinated Release Identity Refresh
+
+### Fixed
+- Promoted the coordinated release-set identity from `0.12.0-rc.28` to `0.12.0-rc.29`.
+- `0.12.0-rc.28` on npm was packed from stale build outputs and does not carry the code of its release commit; `0.12.0-rc.29` is the same source, published from a clean build.
+- Kept the scaffold invariant intact: `CLI release X -> scaffolded @hardkas/* dependencies = exact X`.
+
+### Preserved Evidence
+- `0.12.0-rc.28` records (the earlier CHANGELOG sections) remain historical and are not rewritten as `0.12.0-rc.29`.
+
 ## [0.12.0-rc.28] - 2026-10-24 - Coordinated Release Identity Refresh
 
 ### Fixed
