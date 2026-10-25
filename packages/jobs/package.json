@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/jobs",
-  "version": "0.12.0-rc.28",
+  "version": "0.12.0-rc.29",
   "private": false,
   "type": "module",
   "main": "dist/index.js",

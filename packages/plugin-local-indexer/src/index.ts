@@ -47,8 +47,8 @@ export class LocalIndexerApi {
 export function localIndexerPlugin(options?: LocalIndexerOptions): HardkasPlugin {
   return {
     name: "@hardkas/plugin-local-indexer",
-    version: "0.12.0-rc.28",
-    hardkasVersion: "0.12.0-rc.28",
+    version: "0.12.0-rc.29",
+    hardkasVersion: "0.12.0-rc.29",
     capabilities: {
       requiresNetwork: false,
       requiresMutation: false
