@@ -1,8 +1,18 @@
 import fs from "node:fs";
 import path from "node:path";
 import { createHash } from "node:crypto";
-import { loadManagedKaspaWasmSync, systemRuntimeContext } from "@hardkas/core";
-import { createV1TxPlanArtifact } from "@hardkas/artifacts";
+import {
+  HardkasSchemas,
+  getSilContract,
+  loadManagedKaspaWasmSync,
+  parseSilAbiArtifact,
+  serializeSilArtifactValues,
+  silContractBytecodeHex,
+  silverP2shAddress,
+  silverP2shLock,
+  systemRuntimeContext
+} from "@hardkas/core";
+import { ARTIFACT_VERSION, CURRENT_HASH_VERSION, HARDKAS_VERSION, calculateContentHash, createV1TxPlanArtifact } from "@hardkas/artifacts";
 import { v1StorageMass, type V1PlanBody } from "@hardkas/tx-builder";
 import { buildV1Transaction, v1ContractFactsFromArtifact, v1SuccessorFactsFromArtifact, type V1ContractFacts, type V1NodeUtxo, type V1SuccessorFacts } from "@hardkas/accounts";
 
@@ -74,6 +84,40 @@ export function twoOfTwoFacts() {
     two = v1ContractFactsFromArtifact({ compileRecordHash: TWO_RECORD.contentHash, artifactSha256: TWO_RECORD.artifactSha256, artifact: JSON.parse(bytes.toString("utf8")), contractName: "TwoOfTwo", constructorArgs: ctor, ast: json(path.join(AST, "phase2", "twooftwo.ast.json")) });
   }
   return { facts: { contract: async () => two!, successor: async (): Promise<never> => { throw new Error("no successor"); } }, record: TWO_RECORD, ctor: two!.constructorArgs.map((a: any) => ({ kind: "bytes", value: Array.from(a.value as ArrayLike<number>) })) };
+}
+
+/**
+ * A sealed silver compile record (hardkas.silver.compile.v1) of TwoOfTwo for alice's and bob's keys, as `silver compile`
+ * writes it (its artifact the fixture's silverc 1.0.0 artifact; the source a placeholder: nothing here recompiles it).
+ */
+export function twoOfTwoCompileRecord(): any {
+  twoOfTwoFacts();
+  const artifactJson = fs.readFileSync(path.join(AST, "phase2", "twooftwo.artifact.json"), "utf8");
+  const ctor = ["alice", "bob"].map((a) => ({ kind: "bytes" as const, value: Uint8Array.from(Buffer.from(twoPublicKeyOf(a)!, "hex")) }));
+  const source = "// TwoOfTwo: the fixture artifact's source is not part of this record's test";
+  const sha = (s: string) => createHash("sha256").update(s).digest("hex");
+  const bytecodeHex = silContractBytecodeHex(getSilContract(parseSilAbiArtifact(JSON.parse(artifactJson)), "TwoOfTwo").contract);
+  const draft: Record<string, unknown> = {
+    schema: HardkasSchemas.SilverCompileV1,
+    hardkasVersion: HARDKAS_VERSION,
+    createdAt: "2026-10-26T00:00:00.000Z",
+    networkId: "simnet",
+    capability: "silver.compile.v1",
+    source: { path: "twooftwo.sil", sha256: sha(source), text: source },
+    provenance: {
+      schema: "hardkas.silver.compileProvenance.v1",
+      compiler: { id: "silverc", releaseTag: "v1.0.0", commit: "0".repeat(40), assetSha256: "0".repeat(64), binarySha256: "0".repeat(64) },
+      sourceSha256: sha(source),
+      constructorArgsSha256: sha(serializeSilArtifactValues(ctor)),
+      artifactSha256: sha(artifactJson)
+    },
+    artifactJson,
+    contracts: [{ name: "TwoOfTwo", lockingScript: silverP2shLock(bytecodeHex), address: silverP2shAddress(bytecodeHex, "simnet") }],
+    version: ARTIFACT_VERSION,
+    mode: "localnet",
+    hashVersion: CURRENT_HASH_VERSION
+  };
+  return { ...draft, contentHash: calculateContentHash(draft, CURRENT_HASH_VERSION) };
 }
 
 /** The corpus transition 7 → 12 of the Counter (txid 611cd372… at fee 300,100); another fee gives another transaction. */

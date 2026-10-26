@@ -342,6 +342,87 @@ export async function gatherV1ContractFacts(input: {
   });
 }
 
+/**
+ * V1-ENGINE-2 · the constructor arguments of a compile record, proven. The record keeps only their digest, and the engine
+ * needs the values to reproduce the contract with silverc and to tell which key each signature slot is checked against.
+ * They are: the ones given (their digest must be the record's: SILVER_CONSTRUCTOR_ARGS_MISMATCH); none, for a contract
+ * without parameters; or assembled from what the operation already names — a `pubkey`/`byte[32]` parameter a signature
+ * slot of the called function checks, from that slot's signer key; a parameter that initializes a State field directly,
+ * from the state the record's artifact holds — and kept only when their digest is the record's. When a signer's key was
+ * used and the digest does not match, that key is not the one the contract holds (SIGNER_SLOT_KEY_MISMATCH, before any
+ * private key is read); a parameter nothing fills: SILVER_CONSTRUCTOR_ARGS_REQUIRED. Nothing is assumed.
+ */
+export function resolveV1ConstructorArgs(input: {
+  readonly record: Pick<SilverCompileRecordLike, "provenance" | "artifactJson">;
+  readonly contractName: string;
+  readonly ast: AstNode;
+  readonly explicit?: readonly SilArtifactValue[] | undefined;
+  /** The function the operation calls and, for each of its `sig` parameters, the x-only key of the account signing it. */
+  readonly slots?: { readonly functionName: string; readonly signers: Readonly<Record<string, string>> } | undefined;
+}): { readonly constructorArgs: readonly SilArtifactValue[]; readonly source: "given" | "no parameters" | "derived"; readonly derived: readonly string[] } {
+  const digest = input.record.provenance.constructorArgsSha256;
+  const digestOf = (args: readonly SilArtifactValue[]) => sha256Hex(serializeSilArtifactValues(args));
+  if (input.explicit !== undefined) {
+    if (digestOf(input.explicit) !== digest) throw factsError("SILVER_CONSTRUCTOR_ARGS_MISMATCH", "these constructor arguments are not the ones the record was compiled with");
+    return { constructorArgs: input.explicit, source: "given", derived: [] };
+  }
+  const params = ((input.ast.params ?? []) as AstNode[]).map((p) => ({ name: String(p.name), type: p.type_ref as AstNode }));
+  if (params.length === 0 && digestOf([]) === digest) return { constructorArgs: [], source: "no parameters", derived: [] };
+  const values: Array<SilArtifactValue | undefined> = params.map(() => undefined);
+  const derived: string[] = [];
+  const isKey = (t: AstNode) => t?.base === "pubkey" || (t?.base === "byte" && Array.isArray(t.array_dims) && t.array_dims.length === 1 && Number(t.array_dims[0]?.value) === 32);
+
+  // a parameter that initializes a State field directly: the value the record's artifact holds for that field
+  const artifact = parseSilAbiArtifact(JSON.parse(input.record.artifactJson));
+  const { name, contract } = getSilContract(artifact, input.contractName);
+  if (contract.runtime_state.fields.length > 0) {
+    const state = verifySilverTemplate(artifact, name).state;
+    for (const f of (input.ast.fields ?? []) as AstNode[]) {
+      const from = identifierOf(f.expr);
+      const pi = from !== undefined ? params.findIndex((p) => p.name === from) : -1;
+      if (pi >= 0 && state[String(f.name)] !== undefined) {
+        values[pi] = state[String(f.name)];
+        derived.push(`${params[pi]!.name} = the initial State '${f.name}'`);
+      }
+    }
+  }
+  // a key parameter a signature slot checks: the slot's signer key (found by giving each key parameter a marker value)
+  let usedSigner = false;
+  if (input.slots) {
+    const marker = (i: number) => sha256Hex(`hardkas-constructor-parameter-marker:${i}`);
+    const markerArgs: SilArtifactValue[] = params.map((p, i) => (isKey(p.type) ? { kind: "bytes", value: Uint8Array.from(Buffer.from(marker(i), "hex")) } : { kind: "int", value: 0n }));
+    const keys = silverSignatureSlotKeys(input.ast, input.slots.functionName, markerArgs);
+    for (const [sig, ks] of Object.entries(keys)) {
+      const signerKey = input.slots.signers[sig]?.toLowerCase();
+      if (!ks || ks.length !== 1 || signerKey === undefined) continue;
+      const pi = params.findIndex((_, i) => marker(i) === ks[0]);
+      if (pi < 0) continue;
+      const value: SilArtifactValue = { kind: "bytes", value: Uint8Array.from(Buffer.from(signerKey, "hex")) };
+      if (values[pi] !== undefined && hexOfBytes(values[pi]) !== signerKey) {
+        throw factsError("SIGNER_SLOT_KEY_MISMATCH", `'${sig}' is checked against '${params[pi]!.name}', which holds another key than its signer's`);
+      }
+      values[pi] = value;
+      usedSigner = true;
+      derived.push(`${params[pi]!.name} = the key of '${sig}''s signer`);
+    }
+  }
+  const missing = params.filter((_, i) => values[i] === undefined).map((p) => p.name);
+  if (missing.length > 0) {
+    throw factsError(
+      "SILVER_CONSTRUCTOR_ARGS_REQUIRED",
+      `the compile record keeps only a digest of the constructor arguments, and ${missing.map((m) => `'${m}'`).join(", ")} is neither checked by a signature of this operation nor the initial value of a State field: give the constructor arguments the contract was compiled with`
+    );
+  }
+  const args = values as SilArtifactValue[];
+  if (digestOf(args) !== digest) {
+    if (usedSigner) {
+      throw factsError("SIGNER_SLOT_KEY_MISMATCH", "the contract was compiled for other keys than the signers of this operation (the constructor arguments they give do not match the record's digest); nothing was signed");
+    }
+    throw factsError("SILVER_CONSTRUCTOR_ARGS_REQUIRED", "the constructor arguments the record's state gives do not match its digest: give the ones the contract was compiled with");
+  }
+  return { constructorArgs: args, source: "derived", derived };
+}
+
 /** The successor of a transition, with silverc (same template, only the state changes; refused otherwise). */
 export async function gatherV1SuccessorFacts(input: {
   readonly record: SilverCompileRecordLike;

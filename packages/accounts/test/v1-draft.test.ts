@@ -153,11 +153,119 @@ describe("F1.9 · v1 drafts signed in turns", () => {
     expect(sync(() => signV1Draft({ draft, plan: p, account: "carol", privateKey: KEYS.carol! }))).toBe("SILVER_SPEND_SIGNER_NOT_IN_DRAFT");
   });
 
-  it("DR-5 two different signatures for one slot cannot be combined", async () => {
+  it("DR-5 a slot whose second copy carries a signature that is not valid cannot be combined (V1-ENGINE-2: refused as SILVER_SPEND_SIGNATURE_INVALID, the more precise code)", async () => {
     const p = plan();
     const draft = await prepareV1Draft({ plan: p, node, facts, publicKeyOf });
     const a = signV1Draft({ draft, plan: p, account: "alice", privateKey: KEYS.alice! });
     const other = reseal({ ...a, slots: a.slots.map((s) => (s.signer === "alice" ? { ...s, signature: "cd".repeat(64) + "01" } : s)) });
-    expect(sync(() => combineV1Drafts([a, other], p))).toBe("SILVER_SPEND_DRAFT_INVALID");
+    expect(sync(() => combineV1Drafts([a, other], p))).toBe("SILVER_SPEND_SIGNATURE_INVALID");
+  });
+});
+
+// -----------------------------------------------------------------------------
+// V1-ENGINE-2 · drafts take nothing on trust. A draft's contentHash is not a signature: anyone can change a draft and
+// reseal it. Every signature is verified (BIP340 over the input's Kaspa signature hash, SIGHASH_ALL only) when drafts are
+// combined and at finalization, where the slots themselves must be the ones F1.4 derives from the plan and the node.
+// -----------------------------------------------------------------------------
+
+describe("V1-ENGINE-2 · drafts verify every signature before they are combined and finalized", () => {
+  const flipLast = (hex: string) => hex.slice(0, 126) + ((parseInt(hex.slice(126, 128), 16) ^ 1).toString(16).padStart(2, "0")) + hex.slice(128);
+
+  it("DR-6 a signature with one bit changed (the draft resealed): refused when combined and when finalized, naming the slot", async () => {
+    const p = plan(true);
+    const draft = await prepareV1Draft({ plan: p, node, facts, publicKeyOf });
+    const full = combineV1Drafts(["alice", "bob", "fixture"].map((a) => signV1Draft({ draft, plan: p, account: a, privateKey: KEYS[a]! })), p);
+    const forged = reseal({ ...full, slots: full.slots.map((s) => (s.signer === "bob" ? { ...s, signature: flipLast(s.signature!) } : s)) });
+    expect(sync(() => combineV1Drafts([forged], p))).toBe("SILVER_SPEND_SIGNATURE_INVALID");
+    const r = await settle(finalizeV1Draft({ draft: forged, plan: p, node, facts }));
+    expect(r.error?.code).toBe("SILVER_SPEND_SIGNATURE_INVALID");
+    expect(r.error?.message).toMatch(/'sb' \(bob\)/);
+  });
+
+  it("DR-7 a valid signature made for another transaction, moved into this draft: refused (it does not sign this transaction's hash)", async () => {
+    const pA = plan(false);
+    const pB = plan(true);
+    const dA = await prepareV1Draft({ plan: pA, node, facts, publicKeyOf });
+    const dB = await prepareV1Draft({ plan: pB, node, facts, publicKeyOf });
+    const aliceOnB = signV1Draft({ draft: dB, plan: pB, account: "alice", privateKey: KEYS.alice! }).slots.find((s) => s.signer === "alice")!.signature!;
+    const moved = reseal({ ...dA, slots: dA.slots.map((s) => (s.signer === "alice" ? { ...s, signature: aliceOnB } : s)) });
+    expect(sync(() => combineV1Drafts([moved], pA))).toBe("SILVER_SPEND_SIGNATURE_INVALID");
+  });
+
+  it("DR-8 a slot's key swapped to another party's (carol), signed by carol and resealed: combinable on its face, refused at finalization (the slots are not F1.4's)", async () => {
+    const p = plan();
+    const draft = await prepareV1Draft({ plan: p, node, facts, publicKeyOf });
+    const swapped = reseal({ ...draft, slots: draft.slots.map((s) => (s.signer === "alice" ? { ...s, publicKey: xonly(KEYS.carol!) } : s)) });
+    const byCarol = signV1Draft({ draft: swapped, plan: p, account: "alice", privateKey: KEYS.carol! });
+    const byBob = signV1Draft({ draft: swapped, plan: p, account: "bob", privateKey: KEYS.bob! });
+    const combined = combineV1Drafts([byCarol, byBob], p);
+    const r = await settle(finalizeV1Draft({ draft: combined, plan: p, node, facts }));
+    expect(r.error?.code).toBe("SILVER_SPEND_DRAFT_INVALID");
+    expect(r.error?.message).toMatch(/slots are not the ones/);
+  });
+
+  it("DR-9 a valid signature with another sighash type (ALL|ANYONE_CAN_PAY): refused (HardKAS drafts sign and accept SIGHASH_ALL only)", async () => {
+    const p = plan();
+    const draft = await prepareV1Draft({ plan: p, node, facts, publicKeyOf });
+    const { buildV1WasmTransaction } = await import("../src/v1-engine.js");
+    const tx = buildV1WasmTransaction(k, p);
+    const acp = String(k.createInputSignature(tx, 0, new k.PrivateKey(KEYS.alice!), k.SighashType.AllAnyOneCanPay)).slice(2);
+    expect(acp.slice(128)).toBe("81");
+    const odd = reseal({ ...draft, slots: draft.slots.map((s) => (s.signer === "alice" ? { ...s, signature: acp } : s)) });
+    expect(sync(() => combineV1Drafts([odd], p))).toBe("SILVER_SPEND_SIGNATURE_INVALID");
+  });
+
+  it("DR-10 the same party signing twice (two different valid signatures): combined in any order to the same draft, finalized to the engine's transaction", async () => {
+    const p = plan();
+    const draft = await prepareV1Draft({ plan: p, node, facts, publicKeyOf });
+    const a1 = signV1Draft({ draft, plan: p, account: "alice", privateKey: KEYS.alice! });
+    const a2 = signV1Draft({ draft, plan: p, account: "alice", privateKey: KEYS.alice! });
+    expect(a1.slots[0]!.signature).not.toBe(a2.slots[0]!.signature);
+    const b = signV1Draft({ draft, plan: p, account: "bob", privateKey: KEYS.bob! });
+    const one = combineV1Drafts([a1, a2, b], p);
+    const two_ = combineV1Drafts([b, a2, a1], p);
+    expect(one.contentHash).toBe(two_.contentHash);
+    const done = await finalizeV1Draft({ draft: one, plan: p, node, facts });
+    expect(done.txId).toBe(draft.txId);
+  });
+
+  it("DR-11 HardKAS's signature hash is kaspa-wasm's: 40 random v1/v0 transactions (1–3 inputs, bindings, payloads), every input signed by kaspa-wasm verifies; a changed amount, output or payload does not", async () => {
+    const { kaspaSighashInputsFromWasm, verifyKaspaInputSignature } = await import("@hardkas/core");
+    const rnd = (n: number) => crypto.randomBytes(n).toString("hex");
+    let checked = 0;
+    for (let t = 0; t < 40; t++) {
+      const version = t % 4 === 3 ? 0 : 1;
+      const keys = [rnd(32), rnd(32), rnd(32)].slice(0, 1 + (t % 3));
+      const pubs = keys.map((key) => String(new k.PrivateKey(key).toPublicKey().toXOnlyPublicKey().toString()));
+      const spk = (pub: string) => new k.ScriptPublicKey(0, `20${pub}ac`);
+      const inputs = keys.map((_, i) => ({
+        previousOutpoint: { transactionId: rnd(32), index: i },
+        signatureScript: "",
+        sequence: 0n,
+        sigOpCount: version === 0 ? 1 : 0,
+        ...(version === 1 ? { computeBudget: 10 } : {}),
+        utxo: { outpoint: { transactionId: rnd(32), index: i }, amount: BigInt(1_000_000 + t * 7 + i), scriptPublicKey: spk(pubs[i]!), blockDaaScore: 1n, isCoinbase: false }
+      }));
+      inputs.forEach((x) => (x.utxo.outpoint = x.previousOutpoint));
+      const outputs = [0, 1].map((o) => ({
+        value: BigInt(10_000 + t * 3 + o),
+        scriptPublicKey: spk(pubs[o % pubs.length]!),
+        ...(version === 1 && (t + o) % 2 === 0 ? { covenant: { authorizingInput: o % keys.length, covenantId: rnd(32) } } : {})
+      }));
+      const payload = t % 5 === 0 ? rnd(1 + (t % 7)) : "";
+      const tx = new k.Transaction({ version, inputs, outputs, lockTime: 0n, subnetworkId: "0".repeat(40), gas: 0n, payload });
+      const ctx = kaspaSighashInputsFromWasm(tx.serializeToObject());
+      for (let i = 0; i < keys.length; i++) {
+        const sig = String(k.createInputSignature(tx, i, new k.PrivateKey(keys[i]!), k.SighashType.All)).slice(2);
+        expect(verifyKaspaInputSignature({ tx: ctx.tx, inputIndex: i, utxo: ctx.utxos[i]!, publicKey: pubs[i]!, signature: sig })).toBe(true);
+        const changedAmount = { ...ctx.utxos[i]!, amount: ctx.utxos[i]!.amount + 1n };
+        expect(verifyKaspaInputSignature({ tx: ctx.tx, inputIndex: i, utxo: changedAmount, publicKey: pubs[i]!, signature: sig })).toBe(false);
+        const changedOutput = { ...ctx.tx, outputs: ctx.tx.outputs.map((o, n) => (n === 1 ? { ...o, value: o.value + 1n } : o)) };
+        expect(verifyKaspaInputSignature({ tx: changedOutput, inputIndex: i, utxo: ctx.utxos[i]!, publicKey: pubs[i]!, signature: sig })).toBe(false);
+        expect(verifyKaspaInputSignature({ tx: { ...ctx.tx, payload: ctx.tx.payload + "00" }, inputIndex: i, utxo: ctx.utxos[i]!, publicKey: pubs[i]!, signature: sig })).toBe(false);
+        checked++;
+      }
+    }
+    expect(checked).toBe(79); // 14 transactions of one input, 13 of two, 13 of three
   });
 });

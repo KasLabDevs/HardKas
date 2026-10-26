@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { psktProbe, psktInspect, psktDecodeEncodeRoundtrip, psktCombine, psktFinalize, psktExtract, psktSign } from '../index.js';
+import { hasNativeBinding, psktProbe, psktInspect, psktDecodeEncodeRoundtrip, psktCombine, psktFinalize, psktExtract, psktSign } from '../index.js';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 
-describe('pskt-native bridge', () => {
+describe.skipIf(!hasNativeBinding)('pskt-native bridge', () => {
   it('should probe correctly', () => {
     const capsStr = psktProbe();
     const caps = JSON.parse(capsStr);

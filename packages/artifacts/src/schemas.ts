@@ -250,7 +250,9 @@ export const TxPlanSchema = BaseArtifactSchema.extend({
       kind: z.enum(["p2pk", "p2sh", "covenant"]).optional(),
       computeBudget: z.number().int().min(0).max(0xffff).optional(),
       contract: V1ContractRefSchema.optional(),
-      signer: z.string().min(1).optional()
+      signer: z.string().min(1).optional(),
+      // V1-ENGINE-2 · a relative time lock's input sequence (u64, decimal); absent = 0
+      sequence: z.string().regex(/^\d{1,20}$/).optional()
     })
   ),
   outputs: z.array(
@@ -488,8 +490,10 @@ export const TxSubmissionSchema = BaseArtifactSchema.extend({
     )
     .optional(),
   /**
-   * F1.6 · the read-only check a v1 send made just before the broadcast: the node's virtual DAA score at the check, how
-   * many inputs it read, and its guarantee (this node only; absence from its mempool proves no absence on the network).
+   * F1.6 · the read-only check a v1 send made just before the broadcast (PAYMENT-PREFLIGHT-1: or a payment sent with its
+   * opt-in preflight, which also verifies each input's signature): the node's virtual DAA score at the check, how many
+   * inputs it read, and its guarantee, which says what was checked (this node only; absence from its mempool proves no
+   * absence on the network).
    */
   preflight: z
     .object({

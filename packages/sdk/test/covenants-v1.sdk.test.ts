@@ -5,7 +5,21 @@ import os from "node:os";
 import { Hardkas } from "../src/index.js";
 import { withClientUrl } from "./helpers/rpc-instance.js";
 import { FakeNode } from "./helpers/fake-v1-node.js";
-import { COUNTER_ADDR, COUNTER_RECORD, COVENANT_ID, FIXTURE, FIXTURE_KEY, FIXTURE_XONLY, TWO_KEYS, fundingUtxo, twoOfTwoFacts, twoPublicKeyOf, v1CorpusFacts } from "./helpers/v1-corpus.js";
+import {
+  COUNTER_ADDR,
+  COUNTER_RECORD,
+  COVENANT_ID,
+  FIXTURE,
+  FIXTURE_KEY,
+  FIXTURE_XONLY,
+  SUCCESSOR_ADDR,
+  TWO_KEYS,
+  fundingUtxo,
+  twoOfTwoCompileRecord,
+  twoOfTwoFacts,
+  twoPublicKeyOf,
+  v1CorpusFacts
+} from "./helpers/v1-corpus.js";
 
 vi.setConfig({ testTimeout: 60_000 });
 
@@ -167,5 +181,126 @@ describe("phase 3 · sdk.covenants plans, signs and sends v1 covenant transactio
     await expect(
       sdk.covenants.planTransition({ covenantId, inputs: [input({ contract: { ...COUNTER, entry: "__covenant_entrypoint_auth_bump_other", policy: "bump", args: [] } })], continuations: cont(999_000_000n) }, { facts })
     ).rejects.toMatchObject({ code: "V1_COMPUTE_BUDGET_REQUIRED" });
+  });
+
+  /** A covenant of the corpus Counter (state 7), started and accepted. */
+  async function counterCovenant(sdk: any, facts: any) {
+    const g = await sdk.covenants.sign(await sdk.covenants.planGenesis({ contract: COUNTER, outputs: [{ amountSompi: 1_000_000_000n }], funder: FIXTURE }, { facts }), { facts, keys });
+    await sdk.covenants.send(g.signed, { facts });
+    node.mine(g.txId);
+    return { txId: g.txId, covenantId: JSON.parse(g.signed.signedTransaction.payload).outputs[0].covenant.covenantId as string };
+  }
+  const bump = (txId: string, over: any = {}) => ({ outpoint: { transactionId: txId, index: 0 }, contract: { ...COUNTER, entry: "__covenant_entrypoint_auth_bump", policy: "bump", args: [{ kind: "int", value: "5" }] }, ...over });
+  const twelve = { value: { kind: "int", value: "12" } } as const;
+
+  it("CV-6 a continuation that takes the rest: the covenant pays the node's floor (71,900, the corpus fee) or a larger fee given; refused with a funder or twice", async () => {
+    const sdk = await openSdk();
+    const facts = v1CorpusFacts();
+    const { txId, covenantId } = await counterCovenant(sdk, facts);
+    const floor = await sdk.covenants.planTransition({ covenantId, inputs: [bump(txId)], continuations: [{ amountSompi: "rest", state: twelve }] }, { facts });
+    expect(floor.estimatedFeeSompi).toBe("71900");
+    // the continuation is the template holding 12: the corpus successor, the covenant's id
+    expect(floor.outputs).toEqual([{ address: SUCCESSOR_ADDR, amountSompi: String(1_000_000_000n - 71_900n), covenant: { authorizingInput: 0, covenantId } }]);
+    const more = await sdk.covenants.planTransition({ covenantId, inputs: [bump(txId)], continuations: [{ amountSompi: "rest", state: twelve }], feeSompi: 100_000n }, { facts });
+    expect([more.estimatedFeeSompi, more.outputs[0].amountSompi]).toEqual(["100000", String(1_000_000_000n - 100_000n)]);
+    // a fee below the floor is the floor (the plan never pays less)
+    const less = await sdk.covenants.planTransition({ covenantId, inputs: [bump(txId)], continuations: [{ amountSompi: "rest", state: twelve }], feeSompi: 1n }, { facts });
+    expect(less.estimatedFeeSompi).toBe("71900");
+    const t = await sdk.covenants.sign(floor, { facts, keys });
+    expect((await sdk.covenants.send(t.signed, { facts })).submitted).toBe(true);
+    for (const options of [
+      { covenantId, inputs: [bump(txId)], continuations: [{ amountSompi: "rest", state: twelve }], funder: FIXTURE },
+      { covenantId, inputs: [bump(txId)], continuations: [{ amountSompi: "rest", state: twelve }, { amountSompi: "rest", state: twelve }] }
+    ]) {
+      await expect(sdk.covenants.planTransition(options as any, { facts })).rejects.toMatchObject({ code: "V1_PLAN_INVALID" });
+    }
+  });
+
+  it("CV-7 a contract spend swept to one address: the fee is the floor measured on the sweep itself (or more), the rest is swept; a sequence is planned; refusals", async () => {
+    const sdk = await openSdk();
+    const { facts, record, ctor } = twoOfTwoFacts();
+    const contract = { compileRecord: record, contract: "TwoOfTwo", constructorArgs: ctor } as any;
+    const d = await sdk.covenants.sign(await sdk.covenants.planContractDeploy({ contract, amountSompi: 500_000_000n, funder: FIXTURE }, { facts }), { facts, keys });
+    await sdk.covenants.send(d.signed, { facts });
+    node.mine(d.txId);
+    const spendOf = (over: any = {}) => ({
+      outpoint: { transactionId: d.txId, index: 0 },
+      contract: { ...contract, entry: "spend", args: [{ kind: "signer", signer: "alice" }, { kind: "signer", signer: "bob" }] },
+      payments: [],
+      sweepTo: FIXTURE,
+      computeBudget: 50,
+      ...over
+    });
+    const both = { publicKeyOf: twoPublicKeyOf, privateKeyOf: async (a: string) => TWO_KEYS[a]! };
+    const swept = await sdk.covenants.planContractSpend(spendOf(), { facts });
+    const fee = BigInt(swept.estimatedFeeSompi);
+    expect(fee).toBeGreaterThan(0n);
+    expect(swept.outputs).toEqual([{ address: FIXTURE, amountSompi: String(500_000_000n - fee), role: "payment" }]);
+    // the floor is the one of this very transaction: the check (F1.4) accepts it
+    expect((await sdk.covenants.check(swept, { facts, keys: both })).feeSompi).toBe(fee);
+    // a payment and the sweep: two outputs raise the floor above the one-output fee + 1,000 given, so the floor is paid;
+    // a fee above the floor is paid as given
+    const paid = await sdk.covenants.planContractSpend(spendOf({ payments: [{ address: FIXTURE, amountSompi: 100_000_000n }], feeSompi: fee + 1_000n }), { facts });
+    const paidFee = BigInt(paid.estimatedFeeSompi);
+    expect(paidFee).toBeGreaterThan(fee + 1_000n);
+    expect((await sdk.covenants.check(paid, { facts, keys: both })).feeSompi).toBe(paidFee);
+    expect(paid.outputs.map((o: any) => o.amountSompi)).toEqual(["100000000", String(400_000_000n - paidFee)]);
+    const generous = await sdk.covenants.planContractSpend(spendOf({ payments: [{ address: FIXTURE, amountSompi: 100_000_000n }], feeSompi: 1_000_000n }), { facts });
+    expect([generous.estimatedFeeSompi, generous.outputs[1].amountSompi]).toEqual(["1000000", String(400_000_000n - 1_000_000n)]);
+    const sequenced = await sdk.covenants.planContractSpend(spendOf({ sequence: 5n }), { facts });
+    expect(sequenced.inputs[0].sequence).toBe("5");
+    // the sequence is part of the signed transaction (and of the txid)
+    expect((await sdk.covenants.check(sequenced, { facts, keys: both })).txId).not.toBe((await sdk.covenants.check(swept, { facts, keys: both })).txId);
+    const s = await sdk.covenants.sign(swept, { facts, keys: both });
+    expect((await sdk.covenants.send(s.signed, { facts })).submitted).toBe(true);
+    node.mine(s.txId);
+    // the contract output is spent (the deploy's change, its output 1, stays); the sweep holds the rest
+    expect(node.utxos.some((u) => u.outpoint.transactionId === d.txId && u.outpoint.index === 0)).toBe(false);
+    expect(node.utxos.find((u) => u.outpoint.transactionId === s.txId)?.amountSompi).toBe(500_000_000n - fee);
+  });
+
+  it("CV-7b spend refusals before any node answer matters: feeSompi without sweepTo, nothing to pay, a sequence above u64", async () => {
+    const sdk = await openSdk();
+    const { facts, record, ctor } = twoOfTwoFacts();
+    const contract = { compileRecord: record, contract: "TwoOfTwo", constructorArgs: ctor } as any;
+    const d = await sdk.covenants.sign(await sdk.covenants.planContractDeploy({ contract, amountSompi: 500_000_000n, funder: FIXTURE }, { facts }), { facts, keys });
+    await sdk.covenants.send(d.signed, { facts });
+    node.mine(d.txId);
+    const base = { outpoint: { transactionId: d.txId, index: 0 }, contract: { ...contract, entry: "spend", args: [{ kind: "signer", signer: "alice" }, { kind: "signer", signer: "bob" }] }, computeBudget: 50 };
+    for (const over of [{ payments: [{ address: FIXTURE, amountSompi: 1n }], feeSompi: 10_000n }, { payments: [] }, { payments: [], sweepTo: FIXTURE, sequence: 1n << 64n }]) {
+      await expect(sdk.covenants.planContractSpend({ ...base, ...over } as any, { facts })).rejects.toMatchObject({ code: "V1_PLAN_INVALID" });
+    }
+  });
+
+  it("CV-8 a deploy without constructor arguments funds the P2SH of the compile record's own artifact: a record the caller read, or the workspace's; a tampered one is not found", async () => {
+    const sdk = await openSdk();
+    const record = twoOfTwoCompileRecord();
+    const { facts: twoFacts } = twoOfTwoFacts();
+    const expected = (await twoFacts.contract()).lock;
+    const k: any = (await import("@hardkas/core")).loadManagedKaspaWasmSync();
+    const address = String(k.addressFromScriptPublicKey(new k.ScriptPublicKey(expected.version, expected.script), "simnet"));
+    const ref = { compileRecord: { contentHash: record.contentHash, artifactSha256: record.provenance.artifactSha256 }, contract: "TwoOfTwo" };
+    const given = await sdk.covenants.planContractDeploy({ contract: ref, amountSompi: 300_000_000n, funder: FIXTURE }, { compileRecords: [record] });
+    expect(given.outputs[0]).toEqual({ address, amountSompi: "300000000", role: "payment" });
+    expect(given.inputs.every((i: any) => i.kind === "p2pk" && i.contract === undefined)).toBe(true);
+    // not given and not in the workspace: SILVER_RECORD_NOT_FOUND
+    await expect(sdk.covenants.planContractDeploy({ contract: ref, amountSompi: 300_000_000n, funder: FIXTURE })).rejects.toMatchObject({ code: "SILVER_RECORD_NOT_FOUND" });
+    // in the workspace, where `silver compile` writes it
+    const dir = path.join(ws, ".hardkas", "artifacts", "silver");
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(path.join(dir, `silverCompile-${record.contentHash.slice(0, 16)}.json`), JSON.stringify(record, null, 2));
+    const found = await sdk.covenants.planContractDeploy({ contract: ref, amountSompi: 300_000_000n, funder: FIXTURE });
+    expect(found.outputs[0].address).toBe(address);
+    // a record whose artifact was changed (its identity and digest no longer verify) is never used: given, it is passed
+    // over for the workspace's own; once the workspace holds only that one, there is none
+    const tampered = { ...record, artifactJson: `${record.artifactJson} ` };
+    const passedOver = await sdk.covenants.planContractDeploy({ contract: ref, amountSompi: 300_000_000n, funder: FIXTURE }, { compileRecords: [tampered] });
+    expect(passedOver.outputs[0].address).toBe(address);
+    fs.writeFileSync(path.join(dir, `silverCompile-${record.contentHash.slice(0, 16)}.json`), JSON.stringify(tampered, null, 2));
+    await expect(sdk.covenants.planContractDeploy({ contract: ref, amountSompi: 300_000_000n, funder: FIXTURE }, { compileRecords: [tampered] })).rejects.toMatchObject({ code: "SILVER_RECORD_NOT_FOUND" });
+    // another state than the record's needs the facts silverc reproduces
+    await expect(
+      sdk.covenants.planContractDeploy({ contract: ref, amountSompi: 300_000_000n, funder: FIXTURE, state: { value: { kind: "int", value: "1" } } }, { compileRecords: [record] })
+    ).rejects.toMatchObject({ code: "V1_PLAN_INVALID" });
   });
 });

@@ -23,6 +23,36 @@ export function officialTxIdOf(transaction: unknown): string {
 }
 
 /**
+ * PAYMENT-PREFLIGHT-1: the transaction exactly as a HardKAS client sends it (the conversion `officialTxIdOf` and the clients
+ * apply), built by the official kaspa-wasm with the UTXO entry each input spends supplied by the caller (`utxos[n]` for
+ * input n: its amount and its script public key as "<2-byte version><script>" hex), as kaspa-wasm serializes it
+ * (`serializeToObject()`), and its official id, which the entries do not change: what a check of its signatures reads.
+ * Throws when it cannot be built; a kaspa-wasm Transaction is not accepted (its inputs' entries could not be replaced).
+ */
+export function officialTransactionWithUtxos(
+  transaction: unknown,
+  utxos: ReadonlyArray<{ readonly amount: bigint; readonly scriptPublicKey: string }>
+): { id: string; serialized: any } {
+  const official: any = toOfficialTransaction(transaction);
+  if (typeof official?.serializeToObject === "function") throw new Error("expected the transaction's JSON, not a kaspa-wasm Transaction");
+  const inputs: any[] = official.inputs;
+  if (utxos.length !== inputs.length) throw new Error(`${utxos.length} UTXO entries for ${inputs.length} inputs`);
+  const k: any = loadManagedKaspaWasmSync();
+  const tx = new k.Transaction({
+    ...official,
+    inputs: inputs.map((i, n) => {
+      const spk = String(utxos[n]!.scriptPublicKey);
+      if (!/^(?:[0-9a-f]{2}){2,}$/i.test(spk)) throw new Error(`the UTXO entry of input ${n} has no serialized script public key`);
+      const scriptPublicKey = new k.ScriptPublicKey(parseInt(spk.slice(0, 4), 16), spk.slice(4));
+      return { ...i, utxo: { outpoint: i.previousOutpoint, amount: utxos[n]!.amount, scriptPublicKey, blockDaaScore: 0n, isCoinbase: false } };
+    })
+  });
+  const id = String(tx.id);
+  if (!HEX64.test(id)) throw new Error("kaspa-wasm returned no transaction id");
+  return { id: id.toLowerCase(), serialized: tx.serializeToObject() };
+}
+
+/**
  * The TXID a submission is made under. Without `expectedTxId`: the id the transaction carries, if any (unchanged
  * behaviour). With it: it must be a 64-hex id, equal to any id the transaction carries and to the official id of the
  * transaction — otherwise the submission is refused before anything is sent (typed not-sent; RpcValidationError

@@ -46,6 +46,7 @@
     "@hardkas/config": "workspace:*",
     "@hardkas/core": "workspace:*",
     "@hardkas/dev-server": "workspace:*",
+    "@hardkas/escrow": "workspace:*",
     "@hardkas/kaspa-rpc": "workspace:*",
     "@hardkas/l2": "workspace:*",
     "@hardkas/localnet": "workspace:*",

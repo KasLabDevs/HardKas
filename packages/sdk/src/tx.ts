@@ -109,6 +109,14 @@ export interface SendTxOptions {
   replacePendingTransition?: string | readonly string[];
   /** F1.6 · where a v1 send gets its contract facts (default: this workspace's compile records and the pinned silverc). */
   v1Facts?: V1EngineFacts;
+  /**
+   * PAYMENT-PREFLIGHT-1 · opt-in, for a payment (not a v1 engine transaction, which always runs its own check): right
+   * before the broadcast, read-only, the node is asked for every input (unspent, as the plan states it, no covenant id,
+   * not pending in its mempool) and each input's Schnorr signature (SIGHASH_ALL) is verified for the transaction sent
+   * against the node's UTXO entry. Anything it cannot verify refuses the send; nothing is sent or recorded then. The
+   * submission records the check (`preflight`). One node's view, not a consensus validation. Default false: unchanged.
+   */
+  preflight?: boolean;
 }
 
 /** The version a signed payload declares (0 when it says none or cannot be read). */
@@ -188,6 +196,7 @@ import {
   type TxObservation
 } from "@hardkas/artifacts";
 import { observeTxOnce, rpcObserverFor } from "./tx-observer.js";
+import { preflightPaymentSend } from "./payment-preflight.js";
 import {
   coreEvents,
   createEventEnvelope,
@@ -2001,11 +2010,18 @@ export class HardkasTx {
      */
     alreadySubmitted?: boolean;
     derived?: DerivedTxStatus;
-    /** F1.6 · a v1 send the node rejected: the class of its rejection (final: never retried, rebuilt or re-sent). */
+    /**
+     * F1.6 · a v1 send (PAYMENT-PREFLIGHT-1: or a payment sent with `preflight`) the node rejected: the class of its
+     * rejection (final: never retried, rebuilt or re-sent).
+     */
     rejection?: NodeRejection;
   }> {
     const activeNetwork = this.sdk.network as string;
     const sendOptions: SendTxOptions = typeof urlOrOptions === "object" && urlOrOptions !== null ? urlOrOptions : {};
+    // PAYMENT-PREFLIGHT-1: asked for or not, never guessed from another value
+    if (sendOptions.preflight !== undefined && typeof sendOptions.preflight !== "boolean") {
+      throw new HardkasError("SEND_OPTION_INVALID", `Refusing to broadcast: 'preflight' is true or false, not ${JSON.stringify(sendOptions.preflight)}. Nothing was sent or recorded.`);
+    }
     // SDK-MAINNET-BROADCAST-GUARD-1: no broadcast on mainnet — decided from every network identity involved (the signed
     // artifact's own and its execution's, and this instance's) before any RPC request, receipt or submission event.
     // A transaction signed anywhere (outside HardKAS included) is refused the same way; allowPublic does not lift it.
@@ -2024,6 +2040,14 @@ export class HardkasTx {
         "SEND_ENDPOINT_ON_SIMULATOR",
         `Cannot send to ${redactUrlCredentials(explicitUrl)}: this instance runs the simulator (network ${activeNetwork}), ` +
           `which has no RPC endpoint. Open an instance on that endpoint's network to broadcast. Nothing was sent or recorded.`
+      );
+    }
+    // PAYMENT-PREFLIGHT-1: the simulator has no node to check the inputs and signatures against
+    if (sendOptions.preflight === true && isSimulated) {
+      throw new HardkasError(
+        "SEND_PREFLIGHT_ON_SIMULATOR",
+        `Cannot run the send preflight: this instance runs the simulator (network ${activeNetwork}), which has no node to check the ` +
+          `inputs and signatures against. Nothing was sent or recorded.`
       );
     }
 
@@ -2181,6 +2205,8 @@ export class HardkasTx {
     let feeEvidence: Extract<ReturnType<typeof deriveSubmissionFee>, { status: "derived" | "insufficient-evidence" }>;
     // F1.6 · a v1 transaction (its payload's version, the artifact's or its plan's) is sent only with its verified plan
     let v1Plan: any;
+    // PAYMENT-PREFLIGHT-1 · the verified plan a payment's preflight looks its inputs up with
+    let paymentPlan: any;
     {
       let plan: any;
       const parentId = (signedArtifact as any).lineage?.parentArtifactId;
@@ -2240,6 +2266,26 @@ export class HardkasTx {
         }
         assertFeeWithinLimit(BigInt(derived.feeSompi), limit, "send", activeNetwork);
       }
+      paymentPlan = plan;
+    }
+    // PAYMENT-PREFLIGHT-1 · asked for: a v1 engine transaction is checked by its own preflight (F1.6), and a payment's
+    // inputs are looked up at the addresses its verified plan names (the strict verification above already refuses a
+    // plan named but absent, or none named; this refusal stays behind it, fail closed)
+    if (sendOptions.preflight === true) {
+      if (v1Plan) {
+        throw new HardkasError(
+          "SEND_PREFLIGHT_NOT_APPLICABLE",
+          `Refusing to broadcast: the payment preflight checks payments; this is a v1 engine transaction (plan ${String(v1Plan.contentHash)}), ` +
+            `which is always sent through its own check (F1.6). Send it without 'preflight'. Nothing was sent or recorded.`
+        );
+      }
+      if (!paymentPlan) {
+        throw new HardkasError(
+          "SEND_PREFLIGHT_PLAN_UNRESOLVED",
+          `Refusing to broadcast: the send preflight looks each input up at the address the transaction's plan names, and its plan ` +
+            `(${String((signedArtifact as any).lineage?.parentArtifactId ?? "no lineage parent")}) is not in this workspace with a verified identity. Nothing was sent or recorded.`
+        );
+      }
     }
 
     // EXPECTED-TXID-1: the transaction is sent under the signed artifact's TXID, checked here — before the broadcast
@@ -2271,8 +2317,30 @@ export class HardkasTx {
       { rootDir: this.sdk.workspace.root, name: `tx-send-${expectedTxId}`, command: "tx send", wait: true, timeoutMs: TX_SEND_LOCK_WAIT_MS },
       async () =>
         (await this.alreadySubmittedReply(expectedTxId)) ??
-        (v1 ? this.sendV1Locked(broadcast, { ...v1, options: sendOptions }) : this.broadcastOnce(broadcast))
+        (v1
+          ? this.sendV1Locked(broadcast, { ...v1, options: sendOptions })
+          : sendOptions.preflight === true
+            ? this.sendPaymentPreflighted(broadcast, paymentPlan)
+            : this.broadcastOnce(broadcast))
     );
+  }
+
+  /**
+   * PAYMENT-PREFLIGHT-1 · a payment send its caller asked to check, under its txid lock once nothing is recorded for that
+   * txid: the read-only check of its inputs and signatures against the node (payment-preflight.ts), then the one
+   * broadcast, whose record carries the check's DAA score and guarantee (`preflight`). A refusal sends and records nothing.
+   */
+  private async sendPaymentPreflighted(broadcast: Parameters<HardkasTx["broadcastOnce"]>[0], plan: any) {
+    let preflight: Awaited<ReturnType<typeof preflightPaymentSend>>;
+    try {
+      preflight = await preflightPaymentSend({ plan, rawTransaction: broadcast.broadcastable.rawTransaction, txId: broadcast.expectedTxId, node: this.v1PreflightNode() });
+    } catch (e: any) {
+      throw new HardkasError(typeof e?.code === "string" ? e.code : "PAYMENT_PREFLIGHT_FAILED", `Refusing to broadcast: ${withoutCode(e)}. Nothing was sent or recorded.`, {
+        cause: e,
+        ...(e?.detail ? { metadata: e.detail } : {})
+      });
+    }
+    return this.broadcastOnce({ ...broadcast, v1Record: { preflight: { ...preflight.evidence } } });
   }
 
   /**
@@ -2394,7 +2462,7 @@ export class HardkasTx {
     return pending.map((p) => p.artifactId).sort();
   }
 
-  /** F1.6 · the node a v1 send checks against: this instance's client, read-only. */
+  /** F1.6 · the node a v1 send (and, PAYMENT-PREFLIGHT-1, a checked payment send) checks against: this instance's client, read-only. */
   private v1PreflightNode(): V1PreflightNode {
     const rpc: any = this.sdk.rpc;
     return {
@@ -2437,7 +2505,10 @@ export class HardkasTx {
     pointCapture: Awaited<ReturnType<typeof captureSubmitPoint>>;
     feeEvidence: Extract<ReturnType<typeof deriveSubmissionFee>, { status: "derived" | "insufficient-evidence" }>;
     expectedTxId: string;
-    /** F1.6 · what a v1 send adds to its record (TxSubmissionSchema: covenantSpends, preflight, replaces). */
+    /**
+     * F1.6 · what a v1 send adds to its record (TxSubmissionSchema: covenantSpends, preflight, replaces); PAYMENT-PREFLIGHT-1:
+     * a payment sent with its preflight adds the check (`preflight`) only.
+     */
     v1Record?: { covenantSpends?: unknown; preflight: unknown; replaces?: string[] };
   }) {
     const { signedArtifact, url, activeNetwork, isSimulated, signedTxId, signedArtifactId, endpoint, broadcastable, pointCapture, feeEvidence, expectedTxId, v1Record } =
@@ -2637,7 +2708,8 @@ export class HardkasTx {
       });
     }
 
-    // F1.6 · the class of a v1 rejection, read from the recorded result (payments are unchanged in this phase)
+    // F1.6 · the class of a v1 rejection, read from the recorded result; PAYMENT-PREFLIGHT-1: of a checked payment's too (a
+    // payment sent without the check returns what it always did)
     const rejection = v1Record ? nodeRejectionOf(submitResult) : undefined;
     return {
       receipt: submission,

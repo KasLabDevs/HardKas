@@ -134,6 +134,23 @@ async function networkSendState(txId: string | undefined, network: string): Prom
   }
 }
 
+/**
+ * PAYMENT-PREFLIGHT-1 · what a submission says its send checked before the broadcast (a row of the human output): a
+ * payment's opt-in preflight verified the signatures too; a v1 send's check (F1.6) leaves them to the node.
+ */
+async function preflightRow(receipt: unknown): Promise<Record<string, string>> {
+  const p: any = (receipt as any)?.preflight;
+  if (!p || typeof p.inputs !== "number") return {};
+  const { PAYMENT_PREFLIGHT_GUARANTEE } = await import("@hardkas/sdk");
+  const at = p.observedAtDaaScore ? ` (DAA ${p.observedAtDaaScore})` : "";
+  return {
+    Preflight:
+      p.guarantee === PAYMENT_PREFLIGHT_GUARANTEE
+        ? `${p.inputs} input(s) checked at the node${at} and their signatures verified against its UTXOs; one node's view, not a consensus validation`
+        : `${p.inputs} input(s) checked at the node${at}; the signatures are verified by the node only`
+  };
+}
+
 export function registerTxCommands(program: Command) {
   const tx = program.command("tx").description("L1 Transaction commands");
 
@@ -554,6 +571,11 @@ export function registerTxCommands(program: Command) {
     .option("--lock-timeout <ms>", "No effect, kept for compatibility (see --wait-lock)", "30000")
     .option("--json", "Output as JSON", false)
     .option("--track <label>", "Signed-artifact mode: after an accepted broadcast, record a deployment with this label")
+    .option(
+      "--preflight",
+      "Payments: right before the broadcast, check every input at the node (unspent, as planned, no covenant id, not pending in its mempool) and verify each input's signature against the node's UTXO; anything it cannot verify refuses the send. One node's view, not a consensus validation",
+      false
+    )
     .action(
       async (
         signedPath: string | undefined,
@@ -573,6 +595,7 @@ export function registerTxCommands(program: Command) {
           lockTimeout: string;
           json: boolean;
           track?: string;
+          preflight: boolean;
         }
       ) => {
         try {
@@ -625,6 +648,7 @@ export function registerTxCommands(program: Command) {
               provider: options.provider,
               config: loaded.config,
               ...(options.url ? { url: options.url } : {}),
+              ...(options.preflight ? { preflight: true } : {}),
               workspaceRoot
             }).catch((e: unknown) => rethrowSendLedgerFailure(e, options.json, String(signedArtifact.networkId)));
 
@@ -724,7 +748,8 @@ export function registerTxCommands(program: Command) {
                   }
                 : {
                     State: await networkSendState(txIdShown, String(result.networkName)),
-                    "Replay Status": "not supported for network submissions"
+                    "Replay Status": "not supported for network submissions",
+                    ...(await preflightRow(result.receipt))
                   };
               UI.causality(
                 isSimulated
@@ -796,6 +821,7 @@ export function registerTxCommands(program: Command) {
               // TX-SEND-PASSWORD-1: an encrypted sender's keystore password, read by the sign step (never prompted with --json)
               ...(options.passwordEnv ? { passwordEnv: options.passwordEnv } : {}),
               ...(options.passwordStdin ? { passwordStdin: true } : {}),
+              ...(options.preflight ? { preflight: true } : {}),
               json: options.json,
               workspaceRoot
             }).catch((e: unknown) => rethrowSendLedgerFailure(e, options.json, String(options.network ?? loaded.config.defaultNetwork ?? "simulated")));
@@ -919,7 +945,8 @@ export function registerTxCommands(program: Command) {
                   }
                 : {
                     State: await networkSendState(txIdShown, String(result.networkId)),
-                    "Replay Status": "not supported for network submissions"
+                    "Replay Status": "not supported for network submissions",
+                    ...(await preflightRow(sendResult?.artifact?.receipt))
                   };
 
               UI.causality(

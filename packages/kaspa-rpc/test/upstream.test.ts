@@ -226,13 +226,19 @@ describe("upstream session: connection, errors and timeouts", () => {
 });
 
 describe("Node/Windows compatibility: the SDK's WebSocket (node-websocket-compat.ts)", () => {
+  // KASPA-WASM-WS-ERROR-1: the SDK gets `ws`'s WebSocket guarded (a subclass that always listens for 'error'), not Node's
+  const isWsWebSocket = (g: unknown) => {
+    const WsWebSocket = createRequire(import.meta.url)("ws").WebSocket;
+    return typeof g === "function" && Object.getPrototypeOf(g) === WsWebSocket && (g as any).prototype instanceof WsWebSocket;
+  };
+
   it("officialRpcFactory gives the SDK the `ws` WebSocket when the global is still Node's", async () => {
     const original = (globalThis as any).WebSocket;
     vi.resetModules();
     try {
       const fresh = await import("../src/upstream/session.js");
       fresh.officialRpcFactory("ws://127.0.0.1:1");
-      expect((globalThis as any).WebSocket).toBe(createRequire(import.meta.url)("ws").WebSocket);
+      expect(isWsWebSocket((globalThis as any).WebSocket)).toBe(true);
     } finally {
       (globalThis as any).WebSocket = original;
     }
@@ -262,7 +268,7 @@ describe("Node/Windows compatibility: the SDK's WebSocket (node-websocket-compat
       class Later {}
       (globalThis as any).WebSocket = Later;
       compat.useWsWebSocketForSdk();
-      expect(ws).toBe(createRequire(import.meta.url)("ws").WebSocket);
+      expect(isWsWebSocket(ws)).toBe(true);
       expect((globalThis as any).WebSocket).toBe(Later);
     } finally {
       (globalThis as any).WebSocket = original;

@@ -53,9 +53,20 @@ describe("SURFACE-TRUTH-1A · contract · SDK covenants refuse with typed codes"
     expect(storeFiles()).toEqual(before);
   });
 
-  it("inspect and getState refuse with their typed codes", async () => {
-    expect(await codeOf(() => sdk.covenants.inspect("ab".repeat(32)))).toBe("HardkasError:COVENANT_INSPECT_UNSUPPORTED");
-    expect(await codeOf(() => sdk.covenants.getState("ab".repeat(32)))).toBe("HardkasError:COVENANT_STATE_UNSUPPORTED");
+  // V1-ENGINE-2: inspect and getState answer from what the workspace recorded and the node lists (they refused before,
+  // with COVENANT_INSPECT_UNSUPPORTED / COVENANT_STATE_UNSUPPORTED, while no query could be answered truthfully). A
+  // covenant this workspace never recorded is never reported active or verified, and nothing is written.
+  it("inspect and getState of a covenant this workspace never recorded: not active, not verified, no tip, nothing written; a malformed id is refused", async () => {
+    const before = storeFiles();
+    const inspection = await sdk.covenants.inspect("ab".repeat(32));
+    expect(inspection).toMatchObject({ covenantId: "ab".repeat(32), active: false, utxoCount: 0, totalValueLocked: 0n, transitions: 0, verified: false, tip: [] });
+    expect(inspection.checks.anchor).toBe("no-genesis");
+    expect(inspection.findings.join(" ")).toMatch(/no genesis of this covenant is recorded/);
+    const state = await sdk.covenants.getState("ab".repeat(32));
+    expect(state).toMatchObject({ covenantId: "ab".repeat(32), active: false, utxoCount: 0, totalValueLocked: 0n, utxos: [], verified: false });
+    expect(storeFiles()).toEqual(before);
+    expect(await codeOf(() => sdk.covenants.inspect("not-a-covenant-id"))).toBe("HardkasError:COVENANT_ID_INVALID");
+    expect(await codeOf(() => sdk.covenants.getState("ab"))).toBe("HardkasError:COVENANT_ID_INVALID");
   });
 });
 

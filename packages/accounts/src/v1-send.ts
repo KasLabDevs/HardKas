@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { createHash } from "node:crypto";
 import { HardkasSchemas, loadManagedKaspaWasmSync, stripBom } from "@hardkas/core";
 import { checkArtifactIdentity } from "@hardkas/artifacts";
 import { PENDING_SPEND_GUARANTEE } from "@hardkas/tx-builder";
@@ -102,7 +103,7 @@ export function checkSignedV1AgainstPlan(rawTransaction: unknown, plan: Record<s
       return mismatch(`input ${idx} commits a compute budget of ${String(s.computeBudget ?? s.compute_budget ?? 0)}, the plan ${i.computeBudget}`);
     }
     if (num(s.sigOpCount ?? s.sig_op_count) !== 0n) return mismatch(`input ${idx} declares ${String(s.sigOpCount ?? s.sig_op_count)} sig ops; a v1 input declares 0`);
-    if (num(s.sequence) !== 0n) return mismatch(`input ${idx} has sequence ${String(s.sequence)}; the plan's transactions use 0`);
+    if (num(s.sequence) !== BigInt(i.sequence ?? 0)) return mismatch(`input ${idx} has sequence ${String(s.sequence)}; the plan's is ${String(i.sequence ?? 0)}`);
     const script = String(s.signatureScript ?? s.signature_script ?? "").toLowerCase();
     if (!/^(?:[0-9a-f]{2})+$/.test(script)) return mismatch(`input ${idx} carries no hex signature script`);
     signatureScripts.push(script);
@@ -221,41 +222,71 @@ export async function preflightV1Send(input: {
   };
 }
 
+/** Whether `record` is the compile record `ref` names: its schema, its recomputed identity, its artifact digests. */
+function isV1CompileRecordFor(record: any, ref: { readonly contentHash: string; readonly artifactSha256: string }): boolean {
+  if (record?.schema !== HardkasSchemas.SilverCompileV1) return false;
+  const identity = checkArtifactIdentity(record);
+  if (!identity.ok || identity.artifactId !== ref.contentHash) return false;
+  if (record?.provenance?.artifactSha256 !== ref.artifactSha256) return false;
+  return typeof record.artifactJson === "string" && createHash("sha256").update(record.artifactJson).digest("hex") === ref.artifactSha256;
+}
+
+/**
+ * The compile record a reference names: one of `given` (records a caller already read, wherever they are), else from this
+ * workspace (`.hardkas/artifacts/silver/`, or the reference's path, inside the workspace). Used only when it is that
+ * record (its recomputed contentHash, its artifact digest, and the digest of its artifact JSON). SILVER_RECORD_NOT_FOUND
+ * otherwise.
+ */
+export function readV1CompileRecord(
+  workspaceRoot: string,
+  ref: { readonly contentHash: string; readonly artifactSha256: string; readonly path?: string | undefined },
+  given: ReadonlyArray<Record<string, any>> = []
+): SilverCompileRecordLike & Record<string, any> {
+  const known = given.find((r) => isV1CompileRecordFor(r, ref));
+  if (known) return known as SilverCompileRecordLike & Record<string, any>;
+  const root = path.resolve(workspaceRoot);
+  const candidates = [
+    ...(typeof ref.path === "string" ? [path.resolve(root, ref.path)] : []),
+    path.join(root, ".hardkas", "artifacts", "silver", `silverCompile-${String(ref.contentHash).slice(0, 16)}.json`)
+  ].filter((p) => {
+    const rel = path.relative(root, p);
+    return rel !== "" && !rel.startsWith("..") && !path.isAbsolute(rel);
+  });
+  for (const file of candidates) {
+    let record: any;
+    try {
+      record = JSON.parse(stripBom(fs.readFileSync(file, "utf8")));
+    } catch {
+      continue;
+    }
+    if (isV1CompileRecordFor(record, ref)) return record;
+  }
+  throw fail("SILVER_RECORD_NOT_FOUND", `no compile record ${ref.contentHash} (artifact ${ref.artifactSha256}) in this workspace verifies as the one the plan names`, {
+    compileRecord: ref.contentHash
+  });
+}
+
 /**
  * The facts of the contracts a plan names, from this workspace's compile records (`.hardkas/artifacts/silver/`, or the
  * path a reference gives, inside the workspace) reproduced by the pinned silverc. A record is used only when it is the
- * one the reference names (its recomputed contentHash and artifact digest).
+ * one the reference names (readV1CompileRecord). `records`: compile records the caller already read, wherever they are;
+ * each is used only for the reference that names it, with the same checks (its identity recomputed, its artifact digest,
+ * the digest of its artifact JSON), before the workspace is searched.
  */
-export function createWorkspaceV1Facts(options: { readonly workspaceRoot: string; readonly home?: string | undefined }): V1EngineFacts {
+export function createWorkspaceV1Facts(options: {
+  readonly workspaceRoot: string;
+  readonly home?: string | undefined;
+  readonly records?: ReadonlyArray<Record<string, any>> | undefined;
+}): V1EngineFacts {
   const root = path.resolve(options.workspaceRoot);
   const records = new Map<string, SilverCompileRecordLike>();
   const contracts = new Map<string, Promise<V1ContractFacts>>();
   const recordOf = (ref: { contentHash: string; artifactSha256: string; path?: string }): SilverCompileRecordLike => {
     const cached = records.get(ref.contentHash);
     if (cached) return cached;
-    const candidates = [
-      ...(typeof ref.path === "string" ? [path.resolve(root, ref.path)] : []),
-      path.join(root, ".hardkas", "artifacts", "silver", `silverCompile-${String(ref.contentHash).slice(0, 16)}.json`)
-    ].filter((p) => {
-      const rel = path.relative(root, p);
-      return rel !== "" && !rel.startsWith("..") && !path.isAbsolute(rel);
-    });
-    for (const file of candidates) {
-      let record: any;
-      try {
-        record = JSON.parse(stripBom(fs.readFileSync(file, "utf8")));
-      } catch {
-        continue;
-      }
-      const identity = checkArtifactIdentity(record);
-      if (record?.schema !== HardkasSchemas.SilverCompileV1 || !identity.ok || identity.artifactId !== ref.contentHash) continue;
-      if (record?.provenance?.artifactSha256 !== ref.artifactSha256) continue;
-      records.set(ref.contentHash, record);
-      return record;
-    }
-    throw fail("SILVER_RECORD_NOT_FOUND", `no compile record ${ref.contentHash} (artifact ${ref.artifactSha256}) in this workspace verifies as the one the plan names`, {
-      compileRecord: ref.contentHash
-    });
+    const record = readV1CompileRecord(root, ref, options.records);
+    records.set(ref.contentHash, record);
+    return record;
   };
   return {
     contract: (ref) => {

@@ -2,7 +2,8 @@ import { createRequire } from 'module';
 import os from 'node:os';
 const require = createRequire(import.meta.url);
 
-let binding;
+let binding = null;
+let loadError = null;
 try {
   const platform = os.platform();
   const arch = os.arch();
@@ -15,14 +16,22 @@ try {
   try {
     binding = require('./hardkas-pskt-native.node'); // Fallback
   } catch (e2) {
-    throw new Error(`Could not find native binding for ${os.platform()}-${os.arch()}. Errors: ${e.message} | ${e2.message}`);
+    loadError = new Error(`Could not find native binding for ${os.platform()}-${os.arch()}. Errors: ${e.message} | ${e2.message}`);
   }
 }
 
-export const psktProbe = binding.psktProbe;
-export const psktInspect = binding.psktInspect;
-export const psktDecodeEncodeRoundtrip = binding.psktDecodeEncodeRoundtrip;
-export const psktCombine = binding.psktCombine;
-export const psktFinalize = binding.psktFinalize;
-export const psktExtract = binding.psktExtract;
-export const psktSign = binding.psktSign;
+function getBinding() {
+  if (!binding) {
+    throw loadError || new Error(`Native binding not available for ${os.platform()}-${os.arch()}`);
+  }
+  return binding;
+}
+
+export const hasNativeBinding = !!binding;
+export const psktProbe = (...args) => getBinding().psktProbe(...args);
+export const psktInspect = (...args) => getBinding().psktInspect(...args);
+export const psktDecodeEncodeRoundtrip = (...args) => getBinding().psktDecodeEncodeRoundtrip(...args);
+export const psktCombine = (...args) => getBinding().psktCombine(...args);
+export const psktFinalize = (...args) => getBinding().psktFinalize(...args);
+export const psktExtract = (...args) => getBinding().psktExtract(...args);
+export const psktSign = (...args) => getBinding().psktSign(...args);

@@ -1,5 +1,6 @@
+import fs from "node:fs";
 import path from "node:path";
-import { HardkasError } from "@hardkas/core";
+import { HardkasError, stripBom } from "@hardkas/core";
 import type { Hardkas } from "@hardkas/sdk";
 
 /**
@@ -14,19 +15,21 @@ export const SILVER_ENGINE_OPS = ["genesis", "transition", "deploy", "spend"] as
 export type SilverEngineOp = (typeof SILVER_ENGINE_OPS)[number];
 
 const SPEC_KEYS: Record<SilverEngineOp, readonly string[]> = {
-  genesis: ["contract", "outputs", "funder", "feeSompi", "maxFeeSompi"],
+  genesis: ["contract", "outputs", "funder", "feeSompi", "maxFeeSompi", "fundingComputeBudget"],
   transition: ["covenantId", "inputs", "continuations", "payments", "funder", "feeSompi", "maxFeeSompi"],
   deploy: ["contract", "amountSompi", "state", "funder", "feeSompi", "maxFeeSompi"],
-  spend: ["outpoint", "contract", "payments", "computeBudget", "maxFeeSompi"]
+  spend: ["outpoint", "contract", "payments", "sweepTo", "feeSompi", "computeBudget", "sequence", "maxFeeSompi"]
 };
 
 const invalid = (message: string) => new HardkasError("SILVER_ENGINE_SPEC_INVALID", message);
 
-function sompi(value: unknown, where: string): bigint {
+function integer(value: unknown, where: string, what: string): bigint {
   if (typeof value === "string" && /^\d+$/.test(value)) return BigInt(value);
   if (typeof value === "number" && Number.isSafeInteger(value) && value >= 0) return BigInt(value);
-  throw invalid(`${where}: a sompi amount is a decimal string (or a safe integer)`);
+  throw invalid(`${where}: ${what} is a decimal string (or a safe integer)`);
 }
+
+const sompi = (value: unknown, where: string) => integer(value, where, "a sompi amount");
 
 function list(value: unknown, where: string): any[] {
   if (!Array.isArray(value)) throw invalid(`${where}: a JSON list`);
@@ -48,17 +51,21 @@ export function engineOptionsOf(op: SilverEngineOp, spec: unknown): any {
     ...(s.feeSompi !== undefined ? { feeSompi: sompi(s.feeSompi, "feeSompi") } : {}),
     ...(s.maxFeeSompi !== undefined ? { maxFeeSompi: sompi(s.maxFeeSompi, "maxFeeSompi") } : {})
   };
-  const amounts = (items: unknown, where: string) =>
-    list(items, where).map((o, i) => ({ ...object(o, `${where}[${i}]`), amountSompi: sompi(o?.amountSompi, `${where}[${i}].amountSompi`) }));
+  // `rest`: a continuation that keeps what the other outputs and the fee leave (the covenant pays its own fee)
+  const amounts = (items: unknown, where: string, rest = false) =>
+    list(items, where).map((o, i) => ({
+      ...object(o, `${where}[${i}]`),
+      amountSompi: rest && o?.amountSompi === "rest" ? ("rest" as const) : sompi(o?.amountSompi, `${where}[${i}].amountSompi`)
+    }));
   switch (op) {
     case "genesis":
       return { ...s, outputs: amounts(s.outputs, "outputs"), ...fees };
     case "transition":
-      return { ...s, continuations: amounts(s.continuations, "continuations"), ...(s.payments !== undefined ? { payments: amounts(s.payments, "payments") } : {}), ...fees };
+      return { ...s, continuations: amounts(s.continuations, "continuations", true), ...(s.payments !== undefined ? { payments: amounts(s.payments, "payments") } : {}), ...fees };
     case "deploy":
       return { ...s, amountSompi: sompi(s.amountSompi, "amountSompi"), ...fees };
     case "spend":
-      return { ...s, payments: amounts(s.payments, "payments"), ...fees };
+      return { ...s, payments: amounts(s.payments, "payments"), ...(s.sequence !== undefined ? { sequence: integer(s.sequence, "sequence", "an input sequence") } : {}), ...fees };
   }
 }
 
@@ -122,6 +129,54 @@ export async function runSilverEngineSign(
   const encrypted = await encryptedEngineSigners(sdk, plan);
   const keystorePassword = encrypted.length > 0 && options.password ? await options.password(encrypted) : undefined;
   const r = await sdk.covenants.sign(plan, keystorePassword !== undefined ? { keystorePassword } : {});
+  return { ...r, path: await storePathOf(sdk, r.signed) };
+}
+
+// F1.9 · `hardkas silver engine draft`: the SDK's draft methods (sdk.covenants.prepareDraft, signDraft, combineDrafts,
+// finalizeDraft). The CLI reads and writes the draft files the parties exchange and asks for a keystore password; every
+// check is the SDK's.
+
+/** A draft file as a party wrote it (its seal and its plan are checked by the SDK, not here). */
+export function readSilverEngineDraft(file: string): any {
+  try {
+    return JSON.parse(stripBom(fs.readFileSync(path.resolve(file), "utf8")));
+  } catch (e: any) {
+    throw new HardkasError("SILVER_SPEND_DRAFT_INVALID", `${file} is not a readable draft (${e?.code ?? e?.message})`);
+  }
+}
+
+/** Writes a draft: `out`, else `.hardkas/drafts/v1Draft-<contentHash16>.json` of the workspace (outside the artifact store). */
+export async function writeSilverEngineDraft(workspaceRoot: string, draft: any, out?: string): Promise<string> {
+  const target = out ? path.resolve(out) : path.join(workspaceRoot, ".hardkas", "drafts", `v1Draft-${String(draft.contentHash).slice(0, 16)}.json`);
+  const text = `${JSON.stringify(draft, null, 2)}\n`;
+  const { writeFileRespectingStore } = await import("@hardkas/artifacts");
+  await writeFileRespectingStore(target, text, () => {
+    fs.mkdirSync(path.dirname(target), { recursive: true });
+    fs.writeFileSync(target, text);
+  });
+  return target;
+}
+
+/**
+ * Signs one account's slots of a draft: the draft checked first (sealed, for this plan, with slots of that account), then
+ * the keystore password when that account is encrypted (`password` asks for it), then the SDK signs.
+ */
+export async function runSilverEngineDraftSign(
+  sdk: Hardkas,
+  draft: any,
+  plan: unknown,
+  account: string,
+  options: { readonly password?: ((accounts: readonly string[]) => Promise<string | undefined>) | undefined } = {}
+): Promise<any> {
+  sdk.covenants.checkDraft(draft, plan, account);
+  const encrypted = await encryptedEngineSigners(sdk, { inputs: [{ signer: account }] });
+  const keystorePassword = encrypted.length > 0 && options.password ? await options.password(encrypted) : undefined;
+  return sdk.covenants.signDraft(draft, plan, account, keystorePassword !== undefined ? { keystorePassword } : {});
+}
+
+/** Finalizes a fully signed draft into the signed artifact the SDK stores (`hardkas tx send` sends it). */
+export async function runSilverEngineDraftFinalize(sdk: Hardkas, draft: any, plan: unknown): Promise<{ signed: any; txId: string; path: string }> {
+  const r = await sdk.covenants.finalizeDraft(draft, plan);
   return { ...r, path: await storePathOf(sdk, r.signed) };
 }
 
