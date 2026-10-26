@@ -102,6 +102,8 @@ export * from "./node-images.js";
 export * from "./node-identity.js";
 export * from "./toolchains.js";
 export * from "./kaspa-wasm.js";
+export * from "./kaspa-sighash.js";
+export * from "./kaspa-covenant-id.js";
 export * from "./network-params.js";
 export * from "./silverscript.js";
 export * from "./silverscript-abi.js";

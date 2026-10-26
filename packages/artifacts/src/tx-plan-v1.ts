@@ -71,7 +71,8 @@ export function createV1TxPlanArtifact(options: CreateV1TxPlanArtifactOptions): 
       kind: i.kind,
       computeBudget: i.computeBudget,
       ...(i.contract !== undefined ? { contract: copyArg(i.contract) } : {}),
-      ...(i.signer !== undefined ? { signer: i.signer } : {})
+      ...(i.signer !== undefined ? { signer: i.signer } : {}),
+      ...(i.sequence !== undefined ? { sequence: i.sequence } : {})
     })),
     outputs: b.outputs.map((o) => ({
       address: o.address,

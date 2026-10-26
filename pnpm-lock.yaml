@@ -1302,6 +1302,9 @@ importers:
 
   packages/core:
     dependencies:
+      '@noble/curves':
+        specifier: ^1.9.1
+        version: 1.9.1
       '@noble/hashes':
         specifier: ^2.2.0
         version: 2.2.0

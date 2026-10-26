@@ -79,7 +79,10 @@ export interface V1SignatureSlot {
   readonly argIndex: number;
   readonly param: string;
   readonly signer: string;
+  /** The signer's key ("" when validating without keys: a send, a draft's finalization). */
   readonly publicKey: string;
+  /** The keys the contract checks this slot against, from its facts (empty when HardKAS cannot tell). */
+  readonly allowedKeys: readonly string[];
 }
 
 export interface V1ValidatedInput {
@@ -159,6 +162,14 @@ function placeholderUnlock(facts: V1ContractFacts, entry: string, args: readonly
   }
 }
 
+/**
+ * V1-ENGINE-2 · the unlock a contract input will carry, signatures as fixed-size placeholders (a signer slot is always 65
+ * bytes), so its length and redeem script are the signed one's: what a compute-budget estimate reads before any key.
+ */
+export function v1PlannedUnlockHex(facts: V1ContractFacts, entry: string, args: readonly V1ArgValue[]): string {
+  return placeholderUnlock(facts, entry, args, "SILVER_ABI_ARGUMENT_INVALID", `entry '${entry}'`);
+}
+
 const SIGNED_P2PK_SCRIPT = /^41[0-9a-f]{128}01$/;
 
 /**
@@ -207,9 +218,10 @@ function signatureSlots(
     if (a.kind === "signer" && !isSig) throw fail("V1_PLAN_INVALID", `${where}.args[${i}]: a signer slot fills only a sig parameter ('${p.name}' is ${p.type.kind})`);
     if (isSig && a.kind !== "signer") throw fail("V1_PLAN_INVALID", `${where}.args[${i}]: the sig parameter '${p.name}' is a signer slot; a plan never carries a resolved signature`);
     if (!isSig) return;
+    const allowedKeys = (keys[p.name] ?? []).map((x) => x.toLowerCase());
     // A send checks the slots' place, not their keys: nothing is signed there (see V1ValidationInput.publicKeyOf)
     if (!publicKeyOf) {
-      slots.push({ argIndex: i, param: p.name, signer: (a as { signer: string }).signer, publicKey: "" });
+      slots.push({ argIndex: i, param: p.name, signer: (a as { signer: string }).signer, publicKey: "", allowedKeys });
       return;
     }
     const allowed = keys[p.name];
@@ -223,7 +235,7 @@ function signatureSlots(
     if (!allowed.includes(pk.toLowerCase())) {
       throw fail("SIGNER_SLOT_KEY_MISMATCH", `${where}: account '${(a as { signer: string }).signer}' is not the key '${fnName}' checks '${p.name}' against`, { param: p.name });
     }
-    slots.push({ argIndex: i, param: p.name, signer: (a as { signer: string }).signer, publicKey: pk.toLowerCase() });
+    slots.push({ argIndex: i, param: p.name, signer: (a as { signer: string }).signer, publicKey: pk.toLowerCase(), allowedKeys });
   });
   return slots;
 }

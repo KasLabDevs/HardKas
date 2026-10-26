@@ -348,6 +348,24 @@ main section:first-child { border-top: 0; padding: 88px 0 56px; }
 .hero-runbook .codebar { display: none; }
 .hero-runbook pre { padding: 22px 18px; font-size: 0.9rem; }
 
+.hero-copy { position: relative; }
+.hero-ide {
+  margin: 0 0 30px;
+  max-width: 420px;
+  padding: 18px 20px 20px;
+  background: var(--bg-elev);
+  border: 1px solid var(--accent-line);
+  border-radius: 12px;
+}
+.hero-ide-label { font: 500 0.7rem/1 var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); margin: 0 0 12px; }
+.hero-ide-title { font-size: 1.15rem; font-weight: 600; letter-spacing: -0.01em; margin: 0 0 6px; }
+.hero-ide-text { font-size: 0.9rem; line-height: 1.5; color: var(--text-2); margin: 0 0 16px; }
+.hero-ide .button { height: 40px; }
+.hero-ide-more { margin-left: 14px; font-size: 0.88rem; white-space: nowrap; }
+.hero-ide-meta { margin: 12px 0 0; font: 500 0.72rem/1.4 var(--mono); color: var(--muted); }
+@media (min-width: 1280px) {
+  .hero-ide { position: absolute; top: 0; right: 0; width: 340px; margin: 0; }
+}
 /* ---------- code ---------- */
 .codeblock {
   background: var(--code-bg);
@@ -694,6 +712,7 @@ summary:hover { color: var(--accent); }
 <a href="#toccata">SilverScript &amp; covenants</a>
 <a href="#architecture">Architecture</a>
 <a href="#quickstart">Quickstart</a>
+<a href="#ide">HardKAS IDE</a>
 <a href="#examples">Examples &amp; Labs</a>
 <a href="#security">Security Boundaries</a>
 <div class="side-title">ADVANCED / REFERENCE</div>
@@ -715,7 +734,14 @@ summary:hover { color: var(--accent); }
 <div class="hero-shell">
 <div class="hero-copy">
 <div class="hero-kicker">HardKAS / local</div>
-<h1>Execution-safe development for Kaspa.</h1>
+<div class="hero-ide">
+<p class="hero-ide-label">Desktop app</p>
+<p class="hero-ide-title">HardKAS IDE</p>
+<p class="hero-ide-text">Editor, compiler, Deploy &amp; Run, local node and tests in one window.</p>
+<a class="button primary" href="https://github.com/KasLabDevs/HardKasIDE/releases/latest/download/HardKas-IDE-setup.exe" rel="noopener">Download for Windows</a>
+<a class="hero-ide-more" href="#ide">Learn more</a>
+<p class="hero-ide-meta">0.1.0 / Windows 10 / 11, x64</p>
+</div><h1>Execution-safe development for Kaspa.</h1>
 <p class="hero-desc">
                 HardKAS is a local-first developer environment for Kaspa L1, including
                 the <strong>SilverScript and covenant</strong> workflows of the Toccata upgrade.
@@ -1011,6 +1037,35 @@ Account kind = synthetic · target mode = rpc<br/>
   Result
     PASS</pre>
 </div>
+</section>
+<section id="ide">
+<h2>HardKAS IDE</h2>
+<p><strong>A desktop workbench for HardKAS projects.</strong></p>
+<p>The IDE puts the HardKAS workflow in one window: an editor with SilverScript support, the compiler, Deploy &amp; Run, the local node, artifacts and tests. It runs the same <code>hardkas</code> CLI underneath, so everything it does is a command you can also run in a terminal, and it saves the same artifacts.</p>
+<div class="actions">
+<a class="button primary" href="https://github.com/KasLabDevs/HardKasIDE/releases/latest/download/HardKas-IDE-setup.exe" rel="noopener">Download for Windows</a>
+<a class="button" href="https://github.com/KasLabDevs/HardKasIDE" rel="noreferrer" target="_blank">Source on GitHub</a>
+</div>
+<div class="meta">
+<span class="badge accent">0.1.0</span>
+<span class="badge">Windows 10 / 11, x64</span>
+<span class="badge">Installer not code-signed</span>
+</div>
+<table>
+<thead><tr><th>Part</th><th>What it gives you</th></tr></thead>
+<tbody>
+<tr><td>Editor</td><td>SilverScript syntax highlighting and completions, compile with Ctrl+Enter, errors shown in the editor, and the real project folder on disk.</td></tr>
+<tr><td>Deploy &amp; Run</td><td>Plan, sign and send from a form against the simulator, the local node or testnet-10. Deploy a SilverScript contract and call each of its entries. A history per contract with amounts, fees and balances.</td></tr>
+<tr><td>Local node</td><td>Start, stop, restart or reset the Docker rusty-kaspad node, with visible progress. Dev accounts with their balances and the simnet keys to import into KasWare. A node explorer: DAA score, mined blocks, mempool and UTXOs.</td></tr>
+<tr><td>Cluster</td><td>Start extra simnet nodes next to the HardKAS node, scale them up and down, and watch each node's height and sync.</td></tr>
+<tr><td>Artifacts and index</td><td>Browse every artifact and its lineage, compare two of them, verify integrity, and query the HardKAS query store with read-only SQL.</td></tr>
+<tr><td>Tests</td><td>Run the project's vitest tests, see each result, and debug them with breakpoints, stepping, variables and watches.</td></tr>
+<tr><td>Terminal and console</td><td>Real terminals in the project folder, next to a console of every command the IDE runs.</td></tr>
+<tr><td>Assistant</td><td>A chat grounded in the official Kaspa docs. You bring your own API key; nothing is sent until you add one.</td></tr>
+<tr><td>MCP server</td><td>Lets an AI agent compile, deploy and query the project through the IDE. It never sees private keys.</td></tr>
+</tbody>
+</table>
+<div class="note"><strong>What it needs.</strong> Node.js 22.5 or newer with npm (the IDE runs the <code>hardkas</code> CLI), and Docker Desktop for the local node and the cluster. The simulator needs neither Docker nor a node. Mainnet is blocked by HardKAS policy, so the IDE works with the simulator, the local simnet node and testnet-10. The installer is not code-signed yet, so Windows SmartScreen may ask you to confirm.</div>
 </section>
 <section id="examples">
 <h2>Examples &amp; Builder Labs</h2>
@@ -2707,6 +2762,7 @@ hardkas chaos replay --run-seed 42">
 <a href="#toccata">SilverScript &amp; covenants</a>
 <a href="#architecture">Architecture</a>
 <a href="#quickstart">Quickstart</a>
+<a href="#ide">HardKAS IDE</a>
 <a href="#examples">Examples &amp; Labs</a>
 <a href="#security">Security Boundaries</a>
 <div class="side-title">ADVANCED / REFERENCE</div>

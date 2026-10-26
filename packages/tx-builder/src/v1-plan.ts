@@ -75,6 +75,11 @@ export interface V1PlanInput {
   readonly contract?: V1ContractRef | undefined;
   /** The account whose key signs a p2pk input. */
   readonly signer?: string | undefined;
+  /**
+   * V1-ENGINE-2 · the input's sequence (u64, decimal), for a contract with a relative time lock (`this.age…`); 0 when
+   * absent. The node decides whether the lock is met (SEQUENCE_LOCK_REJECTED); the signature hash commits to it.
+   */
+  readonly sequence?: string | undefined;
 }
 
 export interface V1PlanOutput {
@@ -311,6 +316,9 @@ export function assertV1PlanShape(plan: Record<string, any>): { feeSompi: bigint
       throw invalid(`${where}.computeBudget ${JSON.stringify(input.computeBudget)} is not a u16`, { where });
     }
     if (input.covenantId !== undefined && (typeof input.covenantId !== "string" || !HEX64.test(input.covenantId))) throw invalid(`${where}.covenantId is not 64 hex`);
+    if (input.sequence !== undefined && (typeof input.sequence !== "string" || !/^\d{1,20}$/.test(input.sequence) || BigInt(input.sequence) > 0xffffffffffffffffn)) {
+      throw invalid(`${where}.sequence is not a u64 (decimal string)`, { where });
+    }
     switch (input.kind) {
       case "p2pk":
         if (input.covenantId !== undefined) {

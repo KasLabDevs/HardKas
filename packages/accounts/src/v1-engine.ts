@@ -93,7 +93,7 @@ export function buildV1WasmTransaction(k: any, plan: Record<string, any>, signat
     inputs: inputs.map((i, idx) => ({
       previousOutpoint: { transactionId: i.outpoint.transactionId, index: i.outpoint.index },
       signatureScript: signatureScripts?.[idx] ?? "",
-      sequence: 0n,
+      sequence: BigInt(i.sequence ?? 0),
       sigOpCount: 0,
       computeBudget: i.computeBudget,
       utxo: {

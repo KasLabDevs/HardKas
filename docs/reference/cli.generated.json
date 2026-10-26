@@ -1,7 +1,7 @@
 {
   "schema": "hardkas.cliReference.v1",
   "generatedAt": "deterministic",
-  "totalCommands": 227,
+  "totalCommands": 233,
   "flatSurface": [
     "hardkas accounts",
     "hardkas accounts balance",
@@ -172,10 +172,16 @@
     "hardkas silver compile",
     "hardkas silver covenant",
     "hardkas silver covenant genesis",
+    "hardkas silver covenant inspect",
     "hardkas silver covenant transition",
     "hardkas silver deploy",
     "hardkas silver doctor",
     "hardkas silver engine",
+    "hardkas silver engine draft",
+    "hardkas silver engine draft combine",
+    "hardkas silver engine draft finalize",
+    "hardkas silver engine draft prepare",
+    "hardkas silver engine draft sign",
     "hardkas silver engine plan",
     "hardkas silver engine sign",
     "hardkas silver inspect",
@@ -5039,14 +5045,21 @@
                 },
                 {
                   "flags": "--compute-budget <n>",
-                  "description": "Compute budget of the funding input (explicit: no estimator exists)",
+                  "description": "Compute budget of the funding inputs (default: the certified P2PK budget)",
                   "default": null,
                   "required": true,
-                  "mandatory": true
+                  "mandatory": false
                 },
                 {
                   "flags": "--fee <sompi>",
-                  "description": "Explicit fee (required when --compute-budget > 0: the SDK does not price v1 budgets)",
+                  "description": "Fee in sompi: at least the node's floor for this transaction (the floor when omitted)",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--constructor-args <file>",
+                  "description": "Constructor arguments the contract was compiled with (default: proven from its initial State)",
                   "default": null,
                   "required": true,
                   "mandatory": false
@@ -5083,6 +5096,50 @@
                   "flags": "--password-stdin",
                   "description": "Read the keystore password of the encrypted account(s) this command signs with from stdin",
                   "default": false,
+                  "required": false,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--json",
+                  "description": "Output as JSON",
+                  "default": false,
+                  "required": false,
+                  "mandatory": false
+                }
+              ],
+              "subcommands": []
+            },
+            {
+              "path": "hardkas silver covenant inspect",
+              "name": "inspect",
+              "aliases": [],
+              "description": "A covenant's lineage and state (its id, or one of its covenant records): genesis anchored by its recomputed id, transitions linked by outpoints, the tip checked at the node",
+              "usage": "hardkas silver covenant inspect [options] <covenant>",
+              "arguments": [
+                {
+                  "name": "covenant",
+                  "description": ""
+                }
+              ],
+              "options": [
+                {
+                  "flags": "--network <network>",
+                  "description": "Network (default: the workspace's)",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--no-node",
+                  "description": "Do not ask the node for the tip (records only)",
+                  "default": null,
+                  "required": false,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--no-states",
+                  "description": "Do not check the declared states against the addresses",
+                  "default": null,
                   "required": false,
                   "mandatory": false
                 },
@@ -5139,21 +5196,21 @@
                 },
                 {
                   "flags": "--compute-budget <n>",
-                  "description": "Compute budget of the covenant input (explicit: no estimator exists)",
+                  "description": "Compute budget of the covenant input, or 'estimate' (rusty-kaspa's upper bound); default: the certified budget of this entry, else that estimate",
                   "default": null,
                   "required": true,
-                  "mandatory": true
+                  "mandatory": false
                 },
                 {
                   "flags": "--args <file>",
-                  "description": "Entry arguments: JSON list of {kind, value}",
+                  "description": "Entry arguments: JSON list of {kind, value} and {\"kind\":\"signature\",\"account\":\"<name>\"}",
                   "default": null,
                   "required": true,
                   "mandatory": false
                 },
                 {
                   "flags": "--fee <sompi>",
-                  "description": "Explicit fee (required when --compute-budget > 0)",
+                  "description": "Fee in sompi, paid from the covenant's value: at least the node's floor for this transaction (the floor when omitted)",
                   "default": null,
                   "required": true,
                   "mandatory": false
@@ -5177,6 +5234,20 @@
                   "description": "Confirmation timeout",
                   "default": "120",
                   "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--password-env <env>",
+                  "description": "Read the keystore password of the encrypted account(s) this command signs with from this environment variable (development accounts need none)",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--password-stdin",
+                  "description": "Read the keystore password of the encrypted account(s) this command signs with from stdin",
+                  "default": false,
+                  "required": false,
                   "mandatory": false
                 },
                 {
@@ -5229,6 +5300,13 @@
               "flags": "--network <network>",
               "description": "Network",
               "default": "simnet",
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--tx-version <n>",
+              "description": "Transaction version: 0 (the default, as certified) or 1 (the SDK's v1 engine: checks before any key, compute budgets)",
+              "default": "0",
               "required": true,
               "mandatory": false
             },
@@ -5297,6 +5375,193 @@
           "arguments": [],
           "options": [],
           "subcommands": [
+            {
+              "path": "hardkas silver engine draft",
+              "name": "draft",
+              "aliases": [],
+              "description": "A v1 plan signed in turns by several parties (not a PSKT): prepare, sign, combine, finalize; send with `hardkas tx send`",
+              "usage": "hardkas silver engine draft [options] [command]",
+              "arguments": [],
+              "options": [],
+              "subcommands": [
+                {
+                  "path": "hardkas silver engine draft combine",
+                  "name": "combine",
+                  "aliases": [],
+                  "description": "Combine drafts signed by different parties: the same transaction and slots, every signature verified (one bad signature refuses all)",
+                  "usage": "hardkas silver engine draft combine [options] <drafts...>",
+                  "arguments": [
+                    {
+                      "name": "drafts",
+                      "description": ""
+                    }
+                  ],
+                  "options": [
+                    {
+                      "flags": "--plan <plan>",
+                      "description": "The plan the drafts were prepared for (its path or artifact id)",
+                      "default": null,
+                      "required": true,
+                      "mandatory": true
+                    },
+                    {
+                      "flags": "--out <file>",
+                      "description": "Combined draft path (default .hardkas/drafts/)",
+                      "default": null,
+                      "required": true,
+                      "mandatory": false
+                    },
+                    {
+                      "flags": "--json",
+                      "description": "Output as JSON",
+                      "default": false,
+                      "required": false,
+                      "mandatory": false
+                    }
+                  ],
+                  "subcommands": []
+                },
+                {
+                  "path": "hardkas silver engine draft finalize",
+                  "name": "finalize",
+                  "aliases": [],
+                  "description": "Finalize a fully signed draft into the signed transaction (checked against the node and the compiler again, every signature verified)",
+                  "usage": "hardkas silver engine draft finalize [options] <draft>",
+                  "arguments": [
+                    {
+                      "name": "draft",
+                      "description": ""
+                    }
+                  ],
+                  "options": [
+                    {
+                      "flags": "--plan <plan>",
+                      "description": "The plan the draft was prepared for (its path or artifact id)",
+                      "default": null,
+                      "required": true,
+                      "mandatory": true
+                    },
+                    {
+                      "flags": "--network <network>",
+                      "description": "Network (default: the plan's)",
+                      "default": null,
+                      "required": true,
+                      "mandatory": false
+                    },
+                    {
+                      "flags": "--json",
+                      "description": "Output as JSON",
+                      "default": false,
+                      "required": false,
+                      "mandatory": false
+                    }
+                  ],
+                  "subcommands": []
+                },
+                {
+                  "path": "hardkas silver engine draft prepare",
+                  "name": "prepare",
+                  "aliases": [],
+                  "description": "Prepare a draft of a v1 plan (its path or artifact id): checked against the node and the compiler now, its signature slots unsigned",
+                  "usage": "hardkas silver engine draft prepare [options] <plan>",
+                  "arguments": [
+                    {
+                      "name": "plan",
+                      "description": ""
+                    }
+                  ],
+                  "options": [
+                    {
+                      "flags": "--network <network>",
+                      "description": "Network (default: the plan's)",
+                      "default": null,
+                      "required": true,
+                      "mandatory": false
+                    },
+                    {
+                      "flags": "--out <file>",
+                      "description": "Draft path (default .hardkas/drafts/)",
+                      "default": null,
+                      "required": true,
+                      "mandatory": false
+                    },
+                    {
+                      "flags": "--json",
+                      "description": "Output as JSON",
+                      "default": false,
+                      "required": false,
+                      "mandatory": false
+                    }
+                  ],
+                  "subcommands": []
+                },
+                {
+                  "path": "hardkas silver engine draft sign",
+                  "name": "sign",
+                  "aliases": [],
+                  "description": "Sign one account's slots of a draft with its local key (the draft checked first; each signature verified before it is kept)",
+                  "usage": "hardkas silver engine draft sign [options] <draft>",
+                  "arguments": [
+                    {
+                      "name": "draft",
+                      "description": ""
+                    }
+                  ],
+                  "options": [
+                    {
+                      "flags": "--plan <plan>",
+                      "description": "The plan the draft was prepared for (its path or artifact id)",
+                      "default": null,
+                      "required": true,
+                      "mandatory": true
+                    },
+                    {
+                      "flags": "--account <name>",
+                      "description": "The account whose slots this signs",
+                      "default": null,
+                      "required": true,
+                      "mandatory": true
+                    },
+                    {
+                      "flags": "--network <network>",
+                      "description": "Network (default: the plan's)",
+                      "default": null,
+                      "required": true,
+                      "mandatory": false
+                    },
+                    {
+                      "flags": "--out <file>",
+                      "description": "Signed draft path (default .hardkas/drafts/)",
+                      "default": null,
+                      "required": true,
+                      "mandatory": false
+                    },
+                    {
+                      "flags": "--password-env <env>",
+                      "description": "Read the keystore password of the encrypted account(s) this command signs with from this environment variable (development accounts need none)",
+                      "default": null,
+                      "required": true,
+                      "mandatory": false
+                    },
+                    {
+                      "flags": "--password-stdin",
+                      "description": "Read the keystore password of the encrypted account(s) this command signs with from stdin",
+                      "default": false,
+                      "required": false,
+                      "mandatory": false
+                    },
+                    {
+                      "flags": "--json",
+                      "description": "Output as JSON",
+                      "default": false,
+                      "required": false,
+                      "mandatory": false
+                    }
+                  ],
+                  "subcommands": []
+                }
+              ]
+            },
             {
               "path": "hardkas silver engine plan",
               "name": "plan",
@@ -5443,7 +5708,28 @@
             },
             {
               "flags": "--sig-op-count <n>",
-              "description": "Declared signature operations (default: the signature arguments, at least 1)",
+              "description": "Declared signature operations (default: the signature arguments, at least 1); transaction v0 only",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--tx-version <n>",
+              "description": "Transaction version: 0 (the default, as certified) or 1 (the SDK's v1 engine: checks before any key, compute budgets)",
+              "default": "0",
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--constructor-args <file>",
+              "description": "With --tx-version 1: the constructor arguments the contract was compiled with (default: proven from this spend's signers, when they are the keys it checks)",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--compute-budget <n>",
+              "description": "With --tx-version 1: the contract input's compute budget, or 'estimate' (rusty-kaspa's upper bound); default: the certified budget of this entry, else that estimate",
               "default": null,
               "required": true,
               "mandatory": false
