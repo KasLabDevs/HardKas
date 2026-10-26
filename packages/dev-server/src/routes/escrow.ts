@@ -164,7 +164,13 @@ escrowRoutes.post("/:id/fund", async (c) => {
     try {
       const utxosRes = await rpc.getUtxosByAddresses([buyerAccount.address]);
       if (!utxosRes.entries || utxosRes.entries.length === 0) throw new Error("Buyer account has no UTXOs.");
-      const rawUtxos = utxosRes.entries.map(toContractUtxo);
+      // COVENANT-UTXO-PAYMENT-FILTER-1: funding an escrow never spends a covenant's UTXO (that would end the covenant)
+      const { isCovenantUtxo } = await import("@hardkas/tx-builder");
+      const ordinaryEntries = utxosRes.entries.filter((e: any) => !isCovenantUtxo(e));
+      if (ordinaryEntries.length === 0) {
+        throw new Error(`Buyer account has no UTXOs a funding may spend (${utxosRes.entries.length} covenant UTXO(s) left out).`);
+      }
+      const rawUtxos = ordinaryEntries.map(toContractUtxo);
       // Filter immature coinbase UTXOs via upstream network params (M10-D2).
       // Without this, a buyer whose only UTXOs are unmatured coinbases would
       // get a node rejection at submitTransaction.

@@ -1,5 +1,5 @@
 import { loadManagedKaspaWasmSync } from '@hardkas/core';
-import { createUtxoContext, type UtxoContextHandle } from '@hardkas/tx-builder';
+import { covenantIdOf, createUtxoContext, type UtxoContextHandle } from '@hardkas/tx-builder';
 import { logger } from '@hardkas/observability';
 
 /*
@@ -21,6 +21,8 @@ export interface WalletWatchUtxo extends WalletOutpoint {
     state: "mature" | "pending";
     isCoinbase: boolean;
     blockDaaScore: bigint;
+    /** COVENANT-UTXO-PAYMENT-FILTER-1C: set when the UTXO belongs to a covenant (KIP-20); a payment never spends it. */
+    covenantId?: string;
 }
 
 /**
@@ -162,13 +164,16 @@ export class UtxoWatchEngine {
             for (const u of list) {
                 const o = u?.outpoint ?? u?.entry?.outpoint;
                 if (!o) continue;
+                // kaspa-wasm puts a covenant's id on the reference's entry (UtxoEntry.covenantId)
+                const covenantId = covenantIdOf(u);
                 const utxo: WalletWatchUtxo = {
                     transactionId: String(o.transactionId),
                     index: Number(o.index),
                     amountSompi: BigInt(u.amount ?? 0),
                     state,
                     isCoinbase: Boolean(u.isCoinbase),
-                    blockDaaScore: BigInt(u.blockDaaScore ?? 0)
+                    blockDaaScore: BigInt(u.blockDaaScore ?? 0),
+                    ...(covenantId !== undefined ? { covenantId } : {})
                 };
                 out.set(keyOf(utxo), utxo);
             }

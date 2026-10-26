@@ -18,6 +18,8 @@ import { stripBom } from "@hardkas/core";
  *
  * Capabilities, each evidenced independently: silver.compile.v1,
  * silver.p2sh.deploy-spend.v1, toccata.covenant.auth-1to1-transition.v1.
+ * `hardkas silver engine` (F1.10) drives the SDK's v1 engine (sdk.covenants)
+ * instead: same planner, validation, signing, artifacts and errors as the SDK.
  * Contract tests (`hardkas silver test`, experimental) run on the official
  * SilverScript runner: contract execution on scenario transactions, recorded
  * apart and never counted as node evidence. HardKAS has no Silver simulator of
@@ -278,8 +280,10 @@ async function spendableCoins(rpc: any, address: string) {
   // getNetworkParams via KaspaWalletAdapter) — no HardKAS-owned per-network
   // constants. See M10-D2 audit.
   const virt = BigInt((await rpc.getBlockDagInfo()).virtualDaaScore);
-  const raw = (await rpc.getUtxosByAddress(address)).map(contractUtxo);
-  const { filterMatureUtxos } = await import("@hardkas/tx-builder");
+  const { filterMatureUtxos, isCovenantUtxo } = await import("@hardkas/tx-builder");
+  // COVENANT-UTXO-PAYMENT-FILTER-1: funding a deploy or a genesis never spends a covenant's UTXO (that would end the
+  // covenant); a covenant is spent only by its own `covenant transition`, which reads its UTXO by outpoint
+  const raw = (await rpc.getUtxosByAddress(address)).map(contractUtxo).filter((u: any) => !isCovenantUtxo(u));
   const { mature } = filterMatureUtxos<ReturnType<typeof contractUtxo>>({
     networkId: NETWORK,
     virtualDaaScore: virt,
@@ -959,5 +963,98 @@ export function registerSilverCommand(program: Command) {
       } finally {
         await rpc.close?.();
       }
+    });
+
+  // ---------------------------------------------------------------- engine (F1.10)
+  // The v1 engine of the SDK (sdk.covenants): the same planner, validation (F1.4) and signing as a library caller gets,
+  // the same artifacts and typed errors. The send is `hardkas tx send` (F1.6), the one send of every transaction.
+  const engine = silver
+    .command("engine")
+    .description("The SDK's v1 engine (sdk.covenants): plan and sign covenant and contract transactions; send them with `hardkas tx send`");
+
+  engine
+    .command("plan <operation> <spec>")
+    .description("Plan a v1 transaction (genesis, transition, deploy or spend) from a JSON spec of the SDK's options, sompi as decimal strings")
+    .option("--network <network>", "Network (default: the workspace's)")
+    .option("--json", "Output as JSON", false)
+    .action(async (operation: string, specFile: string, opts: any) => {
+      const { SILVER_ENGINE_OPS, runSilverEnginePlan } = await import("../runners/silver-engine-runner.js");
+      if (!(SILVER_ENGINE_OPS as readonly string[]).includes(operation)) {
+        fail("SILVER_ENGINE_SPEC_INVALID", `'${operation}' is not an engine operation (${SILVER_ENGINE_OPS.join(", ")})`, HardkasExitCode.USAGE_ERROR);
+      }
+      let spec: unknown;
+      try {
+        spec = JSON.parse(stripBom(readFileOrFail(specFile, "spec file").toString("utf8")));
+      } catch (e: any) {
+        if (e instanceof HardkasCliError) throw e;
+        fail("SILVER_ENGINE_SPEC_INVALID", `${specFile} is not JSON`, HardkasExitCode.USAGE_ERROR);
+      }
+      const { withSdk } = await import("../runners/with-sdk.js");
+      const { invocationWorkspaceRoot } = await import("../workspace-root.js");
+      const r = await withSdk({ cwd: invocationWorkspaceRoot(), ...(opts.network ? { network: opts.network } : {}) }, (sdk) =>
+        runSilverEnginePlan(sdk, operation as any, spec)
+      );
+      const summary = {
+        schema: "hardkas.silverEnginePlan.v1",
+        operation,
+        planId: r.plan.planId,
+        contentHash: r.plan.contentHash,
+        networkId: r.plan.networkId,
+        estimatedFeeSompi: r.plan.estimatedFeeSompi,
+        inputs: r.plan.inputs.length,
+        outputs: r.plan.outputs.length,
+        path: r.path
+      };
+      if (opts.json) return out().writeJson(summary);
+      out().writeLine(`${pc.green("Planned")} ${operation} ${r.plan.planId} ${pc.dim(`(${summary.inputs} inputs, ${summary.outputs} outputs, fee ${summary.estimatedFeeSompi} sompi)`)}`);
+      out().writeLine(pc.dim(`plan: ${relativePath(r.path)}`));
+      out().writeLine(pc.dim(`next: hardkas silver engine sign ${relativePath(r.path)}`));
+    });
+
+  engine
+    .command("sign <plan>")
+    .description("Sign a v1 plan (its path or artifact id) with the SDK's engine: checked against the node and the compiler first, no key read for a plan it refuses")
+    .option("--network <network>", "Network (default: the plan's)")
+    .option("--password-env <env>", PASSWORD_ENV_HELP)
+    .option("--password-stdin", PASSWORD_STDIN_HELP, false)
+    .option("--json", "Output as JSON", false)
+    .action(async (planRef: string, opts: any) => {
+      const { runSilverEngineSign } = await import("../runners/silver-engine-runner.js");
+      const { withSdk } = await import("../runners/with-sdk.js");
+      const { invocationWorkspaceRoot } = await import("../workspace-root.js");
+      const cwd = invocationWorkspaceRoot();
+      // the plan as the workspace store holds it (a contained path or its artifact id; its identity verified)
+      const plan = await withSdk({ cwd }, (sdk) => sdk.artifacts.read(planRef));
+      const network = opts.network ?? plan?.execution?.network ?? plan?.networkId;
+      const r = await withSdk({ cwd, ...(network ? { network } : {}) }, (sdk) =>
+        runSilverEngineSign(sdk, plan, {
+          // asked only after F1.4 accepted the plan, and only when an encrypted account signs
+          password: async (accounts) => {
+            const { acquirePassword } = await import("../runners/secrets.js");
+            return acquirePassword({
+              env: opts.passwordEnv,
+              stdin: Boolean(opts.passwordStdin),
+              interactive: !opts.json,
+              message: `Enter the keystore password of ${accounts.map((a) => `'${a}'`).join(", ")}:`
+            });
+          }
+        })
+      );
+      const summary = {
+        schema: "hardkas.silverEngineSign.v1",
+        txId: r.txId,
+        signedId: r.signed.signedId,
+        contentHash: r.signed.contentHash,
+        networkId: r.signed.networkId,
+        feeSompi: r.feeSompi.toString(),
+        mass: JSON.parse(JSON.stringify(r.mass ?? null, (_k, v) => (typeof v === "bigint" ? v.toString() : v))),
+        warnings: r.warnings,
+        path: r.path
+      };
+      if (opts.json) return out().writeJson(summary);
+      out().writeLine(`${pc.green("Signed")} ${r.txId} ${pc.dim(`(fee ${summary.feeSompi} sompi)`)}`);
+      for (const w of r.warnings) out().writeLine(pc.yellow(`  warning: ${w}`));
+      out().writeLine(pc.dim(`signed: ${relativePath(r.path)}`));
+      out().writeLine(pc.dim(`next: hardkas tx send ${relativePath(r.path)}`));
     });
 }

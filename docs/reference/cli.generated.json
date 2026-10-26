@@ -1,7 +1,7 @@
 {
   "schema": "hardkas.cliReference.v1",
   "generatedAt": "deterministic",
-  "totalCommands": 224,
+  "totalCommands": 227,
   "flatSurface": [
     "hardkas accounts",
     "hardkas accounts balance",
@@ -175,6 +175,9 @@
     "hardkas silver covenant transition",
     "hardkas silver deploy",
     "hardkas silver doctor",
+    "hardkas silver engine",
+    "hardkas silver engine plan",
+    "hardkas silver engine sign",
     "hardkas silver inspect",
     "hardkas silver spend",
     "hardkas silver test",
@@ -5284,6 +5287,95 @@
             }
           ],
           "subcommands": []
+        },
+        {
+          "path": "hardkas silver engine",
+          "name": "engine",
+          "aliases": [],
+          "description": "The SDK's v1 engine (sdk.covenants): plan and sign covenant and contract transactions; send them with `hardkas tx send`",
+          "usage": "hardkas silver engine [options] [command]",
+          "arguments": [],
+          "options": [],
+          "subcommands": [
+            {
+              "path": "hardkas silver engine plan",
+              "name": "plan",
+              "aliases": [],
+              "description": "Plan a v1 transaction (genesis, transition, deploy or spend) from a JSON spec of the SDK's options, sompi as decimal strings",
+              "usage": "hardkas silver engine plan [options] <operation> <spec>",
+              "arguments": [
+                {
+                  "name": "operation",
+                  "description": ""
+                },
+                {
+                  "name": "spec",
+                  "description": ""
+                }
+              ],
+              "options": [
+                {
+                  "flags": "--network <network>",
+                  "description": "Network (default: the workspace's)",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--json",
+                  "description": "Output as JSON",
+                  "default": false,
+                  "required": false,
+                  "mandatory": false
+                }
+              ],
+              "subcommands": []
+            },
+            {
+              "path": "hardkas silver engine sign",
+              "name": "sign",
+              "aliases": [],
+              "description": "Sign a v1 plan (its path or artifact id) with the SDK's engine: checked against the node and the compiler first, no key read for a plan it refuses",
+              "usage": "hardkas silver engine sign [options] <plan>",
+              "arguments": [
+                {
+                  "name": "plan",
+                  "description": ""
+                }
+              ],
+              "options": [
+                {
+                  "flags": "--network <network>",
+                  "description": "Network (default: the plan's)",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--password-env <env>",
+                  "description": "Read the keystore password of the encrypted account(s) this command signs with from this environment variable (development accounts need none)",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--password-stdin",
+                  "description": "Read the keystore password of the encrypted account(s) this command signs with from stdin",
+                  "default": false,
+                  "required": false,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--json",
+                  "description": "Output as JSON",
+                  "default": false,
+                  "required": false,
+                  "mandatory": false
+                }
+              ],
+              "subcommands": []
+            }
+          ]
         },
         {
           "path": "hardkas silver inspect",

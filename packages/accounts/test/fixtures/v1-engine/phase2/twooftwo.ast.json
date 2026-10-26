@@ -1,0 +1,123 @@
+{
+  "pragma": {
+    "name": "silverscript",
+    "value": "^0.1.0",
+    "span": "pragma silverscript ^0.1.0;",
+    "name_span": "silverscript",
+    "value_span": "^0.1.0"
+  },
+  "name": "TwoOfTwo",
+  "params": [
+    {
+      "type_ref": {
+        "base": "pubkey"
+      },
+      "name": "a",
+      "span": "pubkey a",
+      "type_span": "pubkey ",
+      "name_span": "a"
+    },
+    {
+      "type_ref": {
+        "base": "pubkey"
+      },
+      "name": "b",
+      "span": "pubkey b",
+      "type_span": "pubkey ",
+      "name_span": "b"
+    }
+  ],
+  "constants": [],
+  "functions": [
+    {
+      "name": "spend",
+      "params": [
+        {
+          "type_ref": {
+            "base": "sig"
+          },
+          "name": "sa",
+          "span": "sig sa",
+          "type_span": "sig ",
+          "name_span": "sa"
+        },
+        {
+          "type_ref": {
+            "base": "sig"
+          },
+          "name": "sb",
+          "span": "sig sb",
+          "type_span": "sig ",
+          "name_span": "sb"
+        }
+      ],
+      "entrypoint": true,
+      "return_types": [],
+      "returns_tuple": false,
+      "body": [
+        {
+          "kind": "require",
+          "data": {
+            "expr": {
+              "kind": "call",
+              "data": {
+                "name": "checkSig",
+                "args": [
+                  {
+                    "kind": "identifier",
+                    "data": "sa",
+                    "span": "sa"
+                  },
+                  {
+                    "kind": "identifier",
+                    "data": "a",
+                    "span": "a"
+                  }
+                ],
+                "name_span": "checkSig"
+              },
+              "span": "checkSig(sa, a)"
+            },
+            "message": null,
+            "span": "require(checkSig(sa, a));",
+            "message_span": null
+          }
+        },
+        {
+          "kind": "require",
+          "data": {
+            "expr": {
+              "kind": "call",
+              "data": {
+                "name": "checkSig",
+                "args": [
+                  {
+                    "kind": "identifier",
+                    "data": "sb",
+                    "span": "sb"
+                  },
+                  {
+                    "kind": "identifier",
+                    "data": "b",
+                    "span": "b"
+                  }
+                ],
+                "name_span": "checkSig"
+              },
+              "span": "checkSig(sb, b)"
+            },
+            "message": null,
+            "span": "require(checkSig(sb, b));",
+            "message_span": null
+          }
+        }
+      ],
+      "return_type_spans": [],
+      "span": "entry spend(sig sa, sig sb) {\n        require(checkSig(sa, a));\n        require(checkSig(sb, b));\n    }",
+      "name_span": "spend",
+      "body_span": "require(checkSig(sa, a));\n        require(checkSig(sb, b));"
+    }
+  ],
+  "span": "contract TwoOfTwo(pubkey a, pubkey b) {\n    entry spend(sig sa, sig sb) {\n        require(checkSig(sa, a));\n        require(checkSig(sb, b));\n    }\n}",
+  "name_span": "TwoOfTwo"
+}

@@ -4196,6 +4196,7 @@ No arguments.
 - [hardkas silver covenant](#hardkas-silver-covenant)
 - [hardkas silver deploy](#hardkas-silver-deploy)
 - [hardkas silver doctor](#hardkas-silver-doctor)
+- [hardkas silver engine](#hardkas-silver-engine)
 - [hardkas silver inspect](#hardkas-silver-inspect)
 - [hardkas silver spend](#hardkas-silver-spend)
 - [hardkas silver test](#hardkas-silver-test)
@@ -4373,6 +4374,84 @@ hardkas silver doctor [options]
 ### Arguments
 
 No arguments.
+
+---
+
+## hardkas silver engine
+
+The SDK's v1 engine (sdk.covenants): plan and sign covenant and contract transactions; send them with `hardkas tx send`
+
+### Usage
+
+```bash
+hardkas silver engine [options] [command]
+```
+
+### Options
+
+No options.
+
+### Arguments
+
+No arguments.
+
+### Subcommands
+
+- [hardkas silver engine plan](#hardkas-silver-engine-plan)
+- [hardkas silver engine sign](#hardkas-silver-engine-sign)
+
+---
+
+## hardkas silver engine plan
+
+Plan a v1 transaction (genesis, transition, deploy or spend) from a JSON spec of the SDK's options, sompi as decimal strings
+
+### Usage
+
+```bash
+hardkas silver engine plan [options] <operation> <spec>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--network <network>` | Network (default: the workspace's) |  |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `operation` |  |
+| `spec` |  |
+
+---
+
+## hardkas silver engine sign
+
+Sign a v1 plan (its path or artifact id) with the SDK's engine: checked against the node and the compiler first, no key read for a plan it refuses
+
+### Usage
+
+```bash
+hardkas silver engine sign [options] <plan>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--network <network>` | Network (default: the plan's) |  |
+| `--password-env <env>` | Read the keystore password of the encrypted account(s) this command signs with from this environment variable (development accounts need none) |  |
+| `--password-stdin` | Read the keystore password of the encrypted account(s) this command signs with from stdin | false |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `plan` |  |
 
 ---
 

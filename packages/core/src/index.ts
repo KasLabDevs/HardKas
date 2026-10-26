@@ -105,6 +105,7 @@ export * from "./kaspa-wasm.js";
 export * from "./network-params.js";
 export * from "./silverscript.js";
 export * from "./silverscript-abi.js";
+export * from "./silverscript-state.js";
 export * from "./silverscript-covenant.js";
 export * from "./silverscript-corpus.js";
 export * from "./silverscript-runner.js";

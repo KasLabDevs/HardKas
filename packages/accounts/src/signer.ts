@@ -8,7 +8,8 @@ import {
   HARDKAS_VERSION,
   createLineageTransition
 } from "@hardkas/artifacts";
-import { systemRuntimeContext, assertMainnetTransactionsDisabled } from "@hardkas/core";
+import { systemRuntimeContext, assertMainnetTransactionsDisabled, HardkasError } from "@hardkas/core";
+import { covenantIdOf } from "@hardkas/tx-builder";
 import {
   HardkasAccount,
   HardkasTxPlanSigner,
@@ -61,6 +62,38 @@ export async function signTxPlanArtifact(input: {
     // Valid for signing
   } else if (planRecord.status !== "built" && planRecord.status !== "unsigned") {
     throw new Error(`Cannot sign artifact with status: ${planRecord.status}`);
+  }
+
+  // COVENANT-UTXO-PAYMENT-FILTER-1 / -1B (F1.0-bis): a payment plan never spends a covenant's UTXO, whatever its outputs
+  // declare. A payment transaction is v0 and cannot carry a covenant binding (the signer drops one), and a v1 binding
+  // alone does not prove a valid transition. HardKAS planners never select such a UTXO; a plan that names one is not
+  // signed, before any key is read. `tx.sign` (SDK, CLI) also asks the node what each input is.
+  const covenantInputs = [
+    ...(Array.isArray(planRecord.inputs) ? planRecord.inputs : []),
+    ...(Array.isArray(planRecord.selectedUtxos) ? planRecord.selectedUtxos : [])
+  ].filter((i: any) => covenantIdOf(i) !== undefined);
+  if (covenantInputs.length > 0) {
+    throw new HardkasError(
+      "COVENANT_UTXO_NOT_PAYMENT_INPUT",
+      `This plan spends ${covenantInputs.length} covenant UTXO(s) (${covenantInputs.map((i: any) => `${i.outpoint?.transactionId}:${i.outpoint?.index}`).join(", ")}). ` +
+        "A payment never spends a covenant's UTXO, whatever its outputs declare: a payment transaction cannot carry a covenant " +
+        "binding, and a binding alone does not prove a valid transition. A covenant is spent only through its own commands " +
+        "(hardkas silver covenant). Nothing was signed."
+    );
+  }
+
+  // V1-ENGINE: a plan of the v1 engine (genesis groups, contract inputs, per-input budgets…) is signed only by the engine,
+  // which validates it first (F1.4). The payment signer would drop its bindings, budgets and unlocks; nothing is signed.
+  const engineField =
+    planRecord.plannerAuthority === "HARDKAS_V1_PLANNER" ||
+    ["genesisCovenantGroups", "nextState", "covenantOutpoints"].some((f) => planRecord[f] !== undefined) ||
+    (Array.isArray(planRecord.inputs) && planRecord.inputs.some((i: any) => i?.kind !== undefined || i?.contract !== undefined)) ||
+    (Array.isArray(planRecord.outputs) && planRecord.outputs.some((o: any) => o?.covenant !== undefined));
+  if (engineField) {
+    throw new HardkasError(
+      "V1_PLAN_REQUIRES_ENGINE",
+      "This is a plan of the v1 engine (covenants, contracts, compute budgets): it is signed by the engine (sdk.covenants.sign), which validates it against the node and the compiler first. The payment signer would drop what makes it v1. Nothing was signed."
+    );
   }
 
   // ENFORCE EXECUTION COMPATIBILITY BEFORE ANY SIGNER UNLOCK

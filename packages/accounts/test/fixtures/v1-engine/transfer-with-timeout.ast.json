@@ -1,0 +1,160 @@
+{
+  "pragma": {
+    "name": "silverscript",
+    "value": "^0.1.0",
+    "span": "pragma silverscript ^0.1.0;",
+    "name_span": "silverscript",
+    "value_span": "^0.1.0"
+  },
+  "name": "TransferWithTimeout",
+  "params": [
+    {
+      "type_ref": {
+        "base": "pubkey"
+      },
+      "name": "sender",
+      "span": "pubkey sender",
+      "type_span": "pubkey ",
+      "name_span": "sender"
+    },
+    {
+      "type_ref": {
+        "base": "pubkey"
+      },
+      "name": "recipient",
+      "span": "pubkey recipient",
+      "type_span": "pubkey ",
+      "name_span": "recipient"
+    },
+    {
+      "type_ref": {
+        "base": "int"
+      },
+      "name": "period",
+      "span": "int period",
+      "type_span": "int ",
+      "name_span": "period"
+    }
+  ],
+  "constants": [],
+  "functions": [
+    {
+      "name": "transfer",
+      "params": [
+        {
+          "type_ref": {
+            "base": "sig"
+          },
+          "name": "recipientSig",
+          "span": "sig recipientSig",
+          "type_span": "sig ",
+          "name_span": "recipientSig"
+        }
+      ],
+      "entrypoint": true,
+      "return_types": [],
+      "returns_tuple": false,
+      "body": [
+        {
+          "kind": "require",
+          "data": {
+            "expr": {
+              "kind": "call",
+              "data": {
+                "name": "checkSig",
+                "args": [
+                  {
+                    "kind": "identifier",
+                    "data": "recipientSig",
+                    "span": "recipientSig"
+                  },
+                  {
+                    "kind": "identifier",
+                    "data": "recipient",
+                    "span": "recipient"
+                  }
+                ],
+                "name_span": "checkSig"
+              },
+              "span": "checkSig(recipientSig, recipient)"
+            },
+            "message": null,
+            "span": "require(checkSig(recipientSig, recipient));",
+            "message_span": null
+          }
+        }
+      ],
+      "return_type_spans": [],
+      "span": "entry transfer(sig recipientSig) {\n        require(checkSig(recipientSig, recipient));\n    }",
+      "name_span": "transfer",
+      "body_span": "require(checkSig(recipientSig, recipient));"
+    },
+    {
+      "name": "reclaim",
+      "params": [
+        {
+          "type_ref": {
+            "base": "sig"
+          },
+          "name": "senderSig",
+          "span": "sig senderSig",
+          "type_span": "sig ",
+          "name_span": "senderSig"
+        }
+      ],
+      "entrypoint": true,
+      "return_types": [],
+      "returns_tuple": false,
+      "body": [
+        {
+          "kind": "require",
+          "data": {
+            "expr": {
+              "kind": "call",
+              "data": {
+                "name": "checkSig",
+                "args": [
+                  {
+                    "kind": "identifier",
+                    "data": "senderSig",
+                    "span": "senderSig"
+                  },
+                  {
+                    "kind": "identifier",
+                    "data": "sender",
+                    "span": "sender"
+                  }
+                ],
+                "name_span": "checkSig"
+              },
+              "span": "checkSig(senderSig, sender)"
+            },
+            "message": null,
+            "span": "require(checkSig(senderSig, sender));",
+            "message_span": null
+          }
+        },
+        {
+          "kind": "require_age_daa",
+          "data": {
+            "expr": {
+              "kind": "identifier",
+              "data": "period",
+              "span": "period"
+            },
+            "message": null,
+            "span": "require(this.ageDaa >= period);",
+            "target_span": "this.ageDaa",
+            "message_span": null
+          }
+        }
+      ],
+      "return_type_spans": [],
+      "span": "entry reclaim(sig senderSig) {\n        require(checkSig(senderSig, sender));\n        require(this.ageDaa >= period);\n    }",
+      "name_span": "reclaim",
+      "body_span": "require(checkSig(senderSig, sender));\n        require(this.ageDaa >= period);"
+    }
+  ],
+  "span": "contract TransferWithTimeout(pubkey sender, pubkey recipient, int period) {\n    entry transfer(sig recipientSig) {\n        require(checkSig(recipientSig, recipient));\n    }\n\n    entry reclaim(sig senderSig) {\n        require(checkSig(senderSig, sender));\n        require(this.ageDaa >= period);\n    }\n}",
+  "name_span": "TransferWithTimeout"
+}

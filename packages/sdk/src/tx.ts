@@ -89,6 +89,71 @@ function endpointAuthority(rpc: unknown, explicit: string | undefined, operation
   }
   return own;
 }
+
+/** Options of `tx.send` given as an object (the string form is the endpoint alone). */
+export interface SendTxOptions {
+  /** The endpoint to send to: it must be this instance's client's (ENDPOINT-AUTHORITY-1). */
+  url?: string;
+  /** Simulator: write the receipt (default true). */
+  persist?: boolean;
+  /**
+   * Simulator: the signed artifact's plan, when the store does not hold it (used only if its recomputed identity is the
+   * signed artifact's lineage parent). A real send reads the plan from the workspace store only.
+   */
+  plan?: TxPlanArtifact;
+  /**
+   * F1.6 · explicit replacement of a pending transition of the same covenant: the artifactId(s) of its recorded
+   * submission(s). Allowed only for a transaction that spends one of the replaced transition's covenant outpoints; the
+   * new record names what it replaced. Never automatic.
+   */
+  replacePendingTransition?: string | readonly string[];
+  /** F1.6 · where a v1 send gets its contract facts (default: this workspace's compile records and the pinned silverc). */
+  v1Facts?: V1EngineFacts;
+}
+
+/** The version a signed payload declares (0 when it says none or cannot be read). */
+function payloadVersionOf(rawTransaction: unknown): number {
+  let tx: any = rawTransaction;
+  for (let depth = 0; typeof tx === "string" && depth < 3; depth++) {
+    try {
+      tx = JSON.parse(tx);
+    } catch {
+      return 0;
+    }
+  }
+  return Number(tx?.version ?? tx?.tx?.inner?.version ?? 0) || 0;
+}
+
+/** A plan field only the v1 engine writes (inputs' kind, bindings, genesis groups, next state, covenant outpoints). */
+function hasV1EngineFields(plan: any): boolean {
+  return (
+    (Array.isArray(plan?.inputs) && plan.inputs.some((i: any) => i?.kind !== undefined || i?.contract !== undefined || i?.computeBudget !== undefined)) ||
+    (Array.isArray(plan?.outputs) && plan.outputs.some((o: any) => o?.covenant !== undefined || o?.role !== undefined)) ||
+    plan?.genesisCovenantGroups !== undefined ||
+    plan?.nextState !== undefined ||
+    plan?.covenantOutpoints !== undefined
+  );
+}
+
+/** Whether a signed payload binds any output to a covenant. */
+function payloadHasCovenantBindings(rawTransaction: unknown): boolean {
+  let tx: any = rawTransaction;
+  for (let depth = 0; typeof tx === "string" && depth < 3; depth++) {
+    try {
+      tx = JSON.parse(tx);
+    } catch {
+      return false;
+    }
+  }
+  const outputs: any[] = Array.isArray(tx?.outputs) ? tx.outputs : Array.isArray(tx?.tx?.inner?.outputs) ? tx.tx.inner.outputs : [];
+  return outputs.some((o) => o?.covenant !== undefined && o?.covenant !== null);
+}
+
+/** An engine error's message without its leading "CODE: " (the code travels as the HardkasError code). */
+function withoutCode(e: unknown): string {
+  const message = e instanceof Error ? e.message : String(e);
+  return message.replace(/^[A-Z][A-Z0-9_]+:\s*/, "");
+}
 import {
   Utxo as BuilderUtxo,
   verifySignedTxSemantics
@@ -136,14 +201,24 @@ import {
   asRpcEndpointId,
   asTxId,
   asWorkflowId,
-  withLock
+  withLock,
+  withLocks
 } from "@hardkas/core";
 import {
   HardkasAccount,
   assertAccountCompatible,
   signTxPlanArtifact,
-  validateAddressNetwork
+  validateAddressNetwork,
+  checkSignedV1AgainstPlan,
+  createWorkspaceV1Facts,
+  preflightV1Send,
+  v1CovenantSpendsOf,
+  v1NodeUtxoOf,
+  type V1EngineFacts,
+  type V1PreflightNode
 } from "@hardkas/accounts";
+import { assertV1PlanShape, observePendingSpends } from "@hardkas/tx-builder";
+import { enumerateWorkspaceArtifactsSync, nodeRejectionOf, type NodeRejection } from "@hardkas/artifacts";
 import {
   parseKasToSompi,
   parseFeeRate,
@@ -153,7 +228,7 @@ import {
   planPaysFeeSompi,
   type NetworkId
 } from "@hardkas/core";
-import { TxPlanService, type UtxoProvider } from "@hardkas/tx-builder";
+import { TxPlanService, covenantIdOf, type UtxoProvider } from "@hardkas/tx-builder";
 import { HardkasSchemas } from "@hardkas/artifacts";
 
 /** An artifact's identity: its declared 64-hex contentHash, or the hash of its body when it declares none. */
@@ -673,6 +748,11 @@ export class HardkasTx {
             if (u.blockDaaScore !== undefined) {
               utxo.blockDaaScore = BigInt(u.blockDaaScore);
             }
+            // COVENANT-UTXO-PAYMENT-FILTER-1: the covenant id goes with the UTXO, so the planner leaves a covenant's out
+            const covenantId = covenantIdOf(u);
+            if (covenantId !== undefined) {
+              utxo.covenantId = covenantId;
+            }
             return utxo;
           });
         }
@@ -1051,6 +1131,11 @@ export class HardkasTx {
         assertFeeWithinLimit(paid !== undefined && declared !== undefined ? (paid > declared ? paid : declared) : (paid ?? declared)!, limit, "sign", planNetwork);
       }
     }
+
+    // COVENANT-UTXO-PAYMENT-FILTER-1B (F1.0-bis): before any signer is asked (an external one too), any account is
+    // resolved or key opened, and anything is written, a plan that spends a covenant's UTXO is refused: on what the plan
+    // declares, then on what the node lists for each input.
+    await this.refuseCovenantInputs(plan);
 
     if (
       (plan as any).schema === HardkasSchemas.TxPlanV1 ||
@@ -1489,6 +1574,86 @@ export class HardkasTx {
   }
 
   /**
+   * COVENANT-UTXO-PAYMENT-FILTER-1B (F1.0-bis): a payment plan never spends a covenant's UTXO, whatever its outputs
+   * declare. What the plan says is checked first; it is not trusted on its own, since a plan written by hand, by another
+   * tool or by an older HardKAS can leave a covenant's UTXO unmarked. So for a plan on a node network the node is asked
+   * what each input is. An input the node does not list unspent, or a node that cannot be asked, leaves the input
+   * unverified: nothing is signed (fail closed). The simulator has no covenants, and its plans are not signed with keys.
+   */
+  private async refuseCovenantInputs(plan: any): Promise<void> {
+    if (plan?.schema !== HardkasSchemas.TxPlan && plan?.schema !== HardkasSchemas.TxPlanV1) return;
+    const inputs: any[] = [...(Array.isArray(plan.inputs) ? plan.inputs : []), ...(Array.isArray(plan.selectedUtxos) ? plan.selectedUtxos : [])];
+    const outpointOf = (i: any) => `${String(i?.outpoint?.transactionId)}:${String(i?.outpoint?.index)}`;
+    const declared = inputs.filter((i) => covenantIdOf(i) !== undefined);
+    if (declared.length > 0) {
+      throw new HardkasError(
+        "COVENANT_UTXO_NOT_PAYMENT_INPUT",
+        `Refusing to sign: this plan spends ${declared.length} covenant UTXO(s) (${declared.map(outpointOf).join(", ")}). A payment never ` +
+          `spends a covenant's UTXO, whatever its outputs declare. A covenant is spent only through its own commands ` +
+          `(hardkas silver covenant). Nothing was signed.`
+      );
+    }
+    if (plan.mode === "simulator") return;
+    // Only the plan's own node can say what its inputs are: an instance of another network (or the simulator) is never
+    // asked in its place.
+    if (String(plan.networkId) !== String(this.sdk.network) || this.sdk.execution.mode === "simulator") {
+      throw new HardkasError(
+        "COVENANT_UTXO_UNVERIFIED",
+        `Refusing to sign: this plan is for ${String(plan.networkId)}, but this instance runs ` +
+          `${this.sdk.execution.mode === "simulator" ? "the simulator" : String(this.sdk.network)}, so HardKAS cannot ask the plan's node ` +
+          `what its inputs are and cannot check that none is a covenant's UTXO. Open the SDK on ${String(plan.networkId)}. Nothing was signed.`
+      );
+    }
+
+    const byAddress = new Map<string, any[]>();
+    const unverified: string[] = [];
+    for (const i of inputs) {
+      const address = typeof i?.address === "string" && i.address ? i.address : plan.from?.address;
+      if (typeof address !== "string" || !address || typeof i?.outpoint?.transactionId !== "string") {
+        unverified.push(`${outpointOf(i)} (no address or outpoint to look up)`);
+        continue;
+      }
+      byAddress.set(address, [...(byAddress.get(address) ?? []), i]);
+    }
+    const covenant: string[] = [];
+    for (const [address, group] of byAddress) {
+      let listed: any[];
+      try {
+        listed = await this.sdk.rpc.getUtxosByAddress(address);
+      } catch (e: unknown) {
+        throw new HardkasError(
+          "COVENANT_UTXO_UNVERIFIED",
+          `Refusing to sign: the node could not be asked what this plan's inputs at ${address} are ` +
+            `(${redactUrlCredentialsInText(e instanceof Error ? e.message : String(e))}), so HardKAS cannot check that none is a ` +
+            `covenant's UTXO. Nothing was signed.`
+        );
+      }
+      const byOutpoint = new Map((listed ?? []).map((u: any) => [`${String(u?.outpoint?.transactionId).toLowerCase()}:${Number(u?.outpoint?.index)}`, u]));
+      for (const i of group) {
+        const found = byOutpoint.get(`${String(i.outpoint.transactionId).toLowerCase()}:${Number(i.outpoint.index)}`);
+        const id = found === undefined ? undefined : covenantIdOf(found);
+        if (found === undefined) unverified.push(outpointOf(i));
+        else if (id !== undefined) covenant.push(`${outpointOf(i)} (covenant id ${id})`);
+      }
+    }
+    if (covenant.length > 0) {
+      throw new HardkasError(
+        "COVENANT_UTXO_NOT_PAYMENT_INPUT",
+        `Refusing to sign: the node lists ${covenant.length} of this plan's inputs as a covenant's UTXO, which the plan does not ` +
+          `say: ${covenant.join(", ")}. A payment never spends a covenant's UTXO. A covenant is spent only through its own ` +
+          `commands (hardkas silver covenant). Nothing was signed.`
+      );
+    }
+    if (unverified.length > 0) {
+      throw new HardkasError(
+        "COVENANT_UTXO_UNVERIFIED",
+        `Refusing to sign: the node does not list ${unverified.length} of this plan's inputs as unspent (${unverified.join(", ")}), ` +
+          `so HardKAS cannot check that none is a covenant's UTXO. Plan again from the node's current UTXOs. Nothing was signed.`
+      );
+    }
+  }
+
+  /**
    * SIMULATOR-DURABLE-EXECUTION-1: what a recovery reads back (the executed artifact and its plan) is in the store, under
    * its verified identity, before the ledger moves. Each is looked up at its canonical store path; a copy there that
    * does not verify as that identity is never overwritten, and nothing is executed.
@@ -1815,7 +1980,7 @@ export class HardkasTx {
    */
   async send(
     signedArtifact: SignedTxArtifact,
-    urlOrOptions?: string | { persist?: boolean; plan?: TxPlanArtifact }
+    urlOrOptions?: string | SendTxOptions
   ): Promise<{
     /**
      * The artifact this send produced: a simulated `hardkas.txReceipt` in the
@@ -1836,8 +2001,11 @@ export class HardkasTx {
      */
     alreadySubmitted?: boolean;
     derived?: DerivedTxStatus;
+    /** F1.6 · a v1 send the node rejected: the class of its rejection (final: never retried, rebuilt or re-sent). */
+    rejection?: NodeRejection;
   }> {
     const activeNetwork = this.sdk.network as string;
+    const sendOptions: SendTxOptions = typeof urlOrOptions === "object" && urlOrOptions !== null ? urlOrOptions : {};
     // SDK-MAINNET-BROADCAST-GUARD-1: no broadcast on mainnet — decided from every network identity involved (the signed
     // artifact's own and its execution's, and this instance's) before any RPC request, receipt or submission event.
     // A transaction signed anywhere (outside HardKAS included) is refused the same way; allowPublic does not lift it.
@@ -1849,7 +2017,7 @@ export class HardkasTx {
     );
     // the world this instance runs on decides (WORKSPACE-AUTHORITY-2)
     const isSimulated = this.sdk.execution.mode === "simulator";
-    const explicitUrl = typeof urlOrOptions === "string" ? urlOrOptions : undefined;
+    const explicitUrl = typeof urlOrOptions === "string" ? urlOrOptions : sendOptions.url;
     // ENDPOINT-AUTHORITY-1 (EA-I4): an explicit endpoint never turns a simulated run into an RPC one
     if (explicitUrl !== undefined && isSimulated) {
       throw new HardkasError(
@@ -1880,6 +2048,14 @@ export class HardkasTx {
         });
       } catch (e: unknown) {
         if (((e instanceof Error) ? ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) : String(e)).includes("PARENT_MISSING")) {
+          // F1.6 · a v1 transaction without its plan is never sent, and says so with its own code
+          if (payloadVersionOf(signedArtifact.signedTransaction?.payload) === 1 || (signedArtifact as any).txVersion === 1) {
+            throw new HardkasError(
+              "V1_SEND_PLAN_UNRESOLVED",
+              `Refusing to broadcast: a v1 transaction is sent only with the plan that authorized it, and its plan ` +
+                `(${String((signedArtifact as any).lineage?.parentArtifactId ?? "no lineage parent")}) is not in this workspace with a verified identity. Nothing was sent or recorded.`
+            );
+          }
           throw new Error("parent_plan_unresolved: Missing context plan for simulation.");
         }
         throw e;
@@ -1955,7 +2131,7 @@ export class HardkasTx {
       return result;
     }
 
-    const url = typeof urlOrOptions === "string" ? urlOrOptions : undefined;
+    const url = explicitUrl;
 
     // R-iii part 1 (IC-2′.2): a submission records what HardKAS did against ONE
     // identified signed artifact. Without a verifiable identity there is nothing
@@ -2003,6 +2179,8 @@ export class HardkasTx {
     // that parses and diverges is refused here — nothing is broadcast and no
     // submission is written (2(d) security review: SIGNED_PLAN_MISMATCH).
     let feeEvidence: Extract<ReturnType<typeof deriveSubmissionFee>, { status: "derived" | "insufficient-evidence" }>;
+    // F1.6 · a v1 transaction (its payload's version, the artifact's or its plan's) is sent only with its verified plan
+    let v1Plan: any;
     {
       let plan: any;
       const parentId = (signedArtifact as any).lineage?.parentArtifactId;
@@ -2011,6 +2189,34 @@ export class HardkasTx {
           plan = await this.sdk.artifacts.read({ artifact: parentId }, { expectedSchema: ARTIFACT_SCHEMAS.TX_PLAN });
         } catch {
           plan = undefined;
+        }
+      }
+      const payloadVersion = payloadVersionOf(broadcastable.rawTransaction);
+      const isV1 = payloadVersion === 1 || (signedArtifact as any).txVersion === 1 || plan?.txVersion === 1;
+      if (isV1) {
+        if (!plan) {
+          throw new HardkasError(
+            "V1_SEND_PLAN_UNRESOLVED",
+            `Refusing to broadcast: a v1 transaction is sent only with the plan that authorized it, resolved with a verified identity, and ` +
+              `its plan (${typeof parentId === "string" && parentId ? parentId : "no lineage parent"}) could not be. Nothing was sent or recorded.`
+          );
+        }
+        if (payloadVersion !== (plan.txVersion === 1 ? 1 : 0)) {
+          throw new HardkasError(
+            "SIGNED_PLAN_MISMATCH",
+            `Refusing to broadcast: the signed transaction is version ${payloadVersion} and its plan ${String(plan.contentHash)} authorizes version ${plan.txVersion === 1 ? 1 : 0}. Nothing was sent or recorded.`
+          );
+        }
+        // The v1 engine's checks apply to its plans, to any plan carrying a v1 engine field, and to any payload that binds
+        // an output to a covenant (a payment plan never authorizes a binding). A v1 payment of the Generator planner keeps
+        // the payment checks below.
+        if (plan.plannerAuthority === "HARDKAS_V1_PLANNER" || hasV1EngineFields(plan) || payloadHasCovenantBindings(broadcastable.rawTransaction)) {
+          try {
+            assertV1PlanShape(plan);
+          } catch (e: any) {
+            throw new HardkasError(typeof e?.code === "string" ? e.code : "V1_PLAN_INVALID", `Refusing to broadcast: ${withoutCode(e)}. Nothing was sent or recorded.`);
+          }
+          v1Plan = plan;
         }
       }
       const derived = deriveSubmissionFee({ signedTransaction: signedArtifact.signedTransaction, plan });
@@ -2042,15 +2248,177 @@ export class HardkasTx {
     // the node answers.
     const expectedTxId = signedTxIdToSend(signedArtifact, broadcastable.rawTransaction);
 
+    // F1.6 · the v1 fields the payment check does not see (version, budgets, bindings, storage mass, payload…), and the
+    // plan's whole transaction against the signed one's id
+    let v1: { plan: any; signatureScripts: string[] } | undefined;
+    if (v1Plan) {
+      const check = checkSignedV1AgainstPlan(broadcastable.rawTransaction, v1Plan, expectedTxId);
+      if (!check.ok) {
+        throw new HardkasError(
+          check.code,
+          `Refusing to broadcast: the signed transaction is not the v1 transaction plan ${String(v1Plan.contentHash)} authorized (${check.reason}). Nothing was sent or recorded.`
+        );
+      }
+      v1 = { plan: v1Plan, signatureScripts: check.signatureScripts };
+    }
+
     // TX-SEND-IDEMPOTENT-1 (IC-5′.5: one submission per txId): a transaction this workspace already recorded a submission
     // for is never broadcast again. Under the transaction's workspace lock (two sends of it, from two processes or one,
     // never both broadcast) the recorded submission is looked up first; only without one does the broadcast go ahead.
+    // F1.6: so a v1 re-send of something already recorded gets its record or TX_ALREADY_SUBMITTED, never "input spent".
+    const broadcast = { signedArtifact, url, activeNetwork, isSimulated, signedTxId, signedArtifactId, endpoint, broadcastable, pointCapture, feeEvidence, expectedTxId };
     return withLock(
       { rootDir: this.sdk.workspace.root, name: `tx-send-${expectedTxId}`, command: "tx send", wait: true, timeoutMs: TX_SEND_LOCK_WAIT_MS },
       async () =>
         (await this.alreadySubmittedReply(expectedTxId)) ??
-        this.broadcastOnce({ signedArtifact, url, activeNetwork, isSimulated, signedTxId, signedArtifactId, endpoint, broadcastable, pointCapture, feeEvidence, expectedTxId })
+        (v1 ? this.sendV1Locked(broadcast, { ...v1, options: sendOptions }) : this.broadcastOnce(broadcast))
     );
+  }
+
+  /**
+   * F1.6 · a v1 send under its txid lock, once nothing is recorded for that txid. Under one more lock per covenant it
+   * spends (from the check to the record; they order processes of this workspace only — across workspaces or machines
+   * the consensus decides): no pending transition of those covenants (COVENANT_TRANSITION_PENDING, unless explicitly
+   * replaced), the read-only check of the inputs and F1.4 again, then the one broadcast and its record, which names the
+   * covenant outpoints it spends, the check's DAA score and guarantee, and any transition it replaced.
+   */
+  private async sendV1Locked(
+    broadcast: Parameters<HardkasTx["broadcastOnce"]>[0],
+    v1: { plan: any; signatureScripts: string[]; options: SendTxOptions }
+  ) {
+    const spends = v1CovenantSpendsOf(v1.plan);
+    const replace = [...new Set(typeof v1.options.replacePendingTransition === "string" ? [v1.options.replacePendingTransition] : v1.options.replacePendingTransition ?? [])];
+    const run = async () => {
+      const replaces = await this.pendingCovenantTransitions(spends, broadcast.expectedTxId, replace);
+      let preflight: Awaited<ReturnType<typeof preflightV1Send>>;
+      try {
+        preflight = await preflightV1Send({
+          plan: v1.plan,
+          signatureScripts: v1.signatureScripts,
+          node: this.v1PreflightNode(),
+          facts: v1.options.v1Facts ?? createWorkspaceV1Facts({ workspaceRoot: this.sdk.workspace.root })
+        });
+      } catch (e: any) {
+        throw new HardkasError(typeof e?.code === "string" ? e.code : "V1_PREFLIGHT_FAILED", `Refusing to broadcast: ${withoutCode(e)}. Nothing was sent or recorded.`, {
+          cause: e,
+          ...(e?.detail ? { metadata: e.detail } : {})
+        });
+      }
+      return this.broadcastOnce({
+        ...broadcast,
+        v1Record: { ...(spends.length > 0 ? { covenantSpends: spends } : {}), preflight: { ...preflight.evidence }, ...(replaces.length > 0 ? { replaces } : {}) }
+      });
+    };
+    const covenants = [...new Set(spends.map((s) => s.covenantId))].sort();
+    if (covenants.length === 0) return run();
+    return withLocks(
+      this.sdk.workspace.root,
+      covenants.map((id) => `covenant-${id}`),
+      run,
+      { command: "tx send", wait: true, timeoutMs: TX_SEND_LOCK_WAIT_MS }
+    );
+  }
+
+  /**
+   * F1.6 · the transitions of these covenants this workspace sent that are still pending: a recorded v1 submission that
+   * spent one of them, neither rejected by the node, nor accepted (observed), nor in conflict (its covenant outpoint
+   * spent while the node holds no trace of it). Each pending one refuses the send (COVENANT_TRANSITION_PENDING) unless
+   * the caller names it for replacement, which is allowed only for a transition spending one of its covenant outpoints
+   * (so the consensus accepts at most one of the two). Returns the artifactIds replaced. Building a plan is never blocked.
+   */
+  private async pendingCovenantTransitions(
+    spends: ReadonlyArray<{ outpoint: string; covenantId: string; address: string }>,
+    txId: string,
+    replace: readonly string[]
+  ): Promise<string[]> {
+    const { checkArtifactIdentity } = await import("@hardkas/artifacts");
+    const ids = new Set(spends.map((s) => s.covenantId));
+    const outpoints = new Set(spends.map((s) => s.outpoint));
+    const pending: Array<{ artifactId: string; txId: string; spends: Array<{ outpoint: string; covenantId: string; address: string }>; state: string }> = [];
+    if (ids.size > 0) {
+      for (const entry of enumerateWorkspaceArtifactsSync(this.sdk.workspace.root)) {
+        const a: any = entry.artifact;
+        if (a?.schema !== HardkasSchemas.TxSubmissionV1 || !Array.isArray(a.covenantSpends) || a.txId === txId) continue;
+        if (!a.covenantSpends.some((s: any) => ids.has(String(s?.covenantId)))) continue;
+        // only verified evidence decides (a record that does not verify is not a submission)
+        const identity = checkArtifactIdentity(a);
+        if (!identity.ok || pending.some((p) => p.artifactId === identity.artifactId)) continue;
+        if (submitOutcomeOf(a.submitResult) === "rejected") continue;
+        let state = "unobservable";
+        try {
+          const { derived } = await this.observe(a.txId);
+          state = derived.status;
+        } catch {
+          state = "unobservable";
+        }
+        if (state === "ACCEPTED" || state === "CONFIRMED" || state === "FINALIZED" || state === "REJECTED_BY_NODE") continue;
+        if (state !== "MEMPOOL_ACCEPTED" && state !== "MEMPOOL_ORPHAN") {
+          // the node holds no trace of it: in conflict (never acceptable) once another transaction spent its outpoint
+          try {
+            const listed = await this.v1PreflightNode().utxosByAddresses([...new Set<string>(a.covenantSpends.map((s: any) => String(s.address)))]);
+            if (a.covenantSpends.some((s: any) => !listed.has(String(s.outpoint)))) continue;
+          } catch {
+            // cannot tell: it stays pending
+          }
+        }
+        pending.push({ artifactId: identity.artifactId, txId: a.txId, spends: a.covenantSpends, state });
+      }
+    }
+    for (const r of replace) {
+      const target = pending.find((p) => p.artifactId === r);
+      if (!target) {
+        throw new HardkasError(
+          "COVENANT_REPLACEMENT_INVALID",
+          `Refusing to broadcast: ${r} is not a pending transition of the covenant(s) this transaction spends. Nothing was sent or recorded.`
+        );
+      }
+      if (!target.spends.some((s) => outpoints.has(s.outpoint))) {
+        throw new HardkasError(
+          "COVENANT_REPLACEMENT_INVALID",
+          `Refusing to broadcast: a replacement spends the covenant outpoint the transition it replaces spent (${target.spends.map((s) => s.outpoint).join(", ")}), ` +
+            `so the consensus accepts at most one of them; this transaction does not. Nothing was sent or recorded.`
+        );
+      }
+    }
+    const blocking = pending.filter((p) => !replace.includes(p.artifactId));
+    if (blocking.length > 0) {
+      throw new HardkasError(
+        "COVENANT_TRANSITION_PENDING",
+        `Refusing to broadcast: this workspace sent another transition of the same covenant whose outcome is not final ` +
+          blocking.map((p) => `(transaction ${p.txId}, submission ${p.artifactId}, state ${p.state})`).join(", ") +
+          `. Wait until it is accepted, or until another transaction spends its covenant outpoint; or replace it explicitly ` +
+          `(replacePendingTransition: the submission's artifactId). Nothing was sent or recorded.`,
+        { metadata: { pending: blocking.map((p) => ({ txId: p.txId, artifactId: p.artifactId, state: p.state })) } }
+      );
+    }
+    return pending.map((p) => p.artifactId).sort();
+  }
+
+  /** F1.6 · the node a v1 send checks against: this instance's client, read-only. */
+  private v1PreflightNode(): V1PreflightNode {
+    const rpc: any = this.sdk.rpc;
+    return {
+      networkId: declaredNetworkIdOf(this.sdk.config.config, this.sdk.network) ?? String(this.sdk.network),
+      utxosByAddresses: async (addresses) => {
+        const listed = new Map<string, any>();
+        for (const address of addresses) {
+          for (const u of ((await rpc.getUtxosByAddress(address)) ?? []) as any[]) {
+            const n = v1NodeUtxoOf(u);
+            if (n) listed.set(n.key, n.utxo);
+          }
+        }
+        return listed;
+      },
+      pendingSpentOutpoints: async (addresses) => {
+        const spent = new Set<string>();
+        for (const address of addresses) for (const o of (await observePendingSpends(rpc, address)).outpoints) spent.add(o);
+        return spent;
+      },
+      virtualDaaScore: async () => {
+        const info = await rpc.getBlockDagInfo();
+        return info?.virtualDaaScore !== undefined && info?.virtualDaaScore !== null ? BigInt(info.virtualDaaScore) : undefined;
+      }
+    };
   }
 
   /**
@@ -2069,8 +2437,10 @@ export class HardkasTx {
     pointCapture: Awaited<ReturnType<typeof captureSubmitPoint>>;
     feeEvidence: Extract<ReturnType<typeof deriveSubmissionFee>, { status: "derived" | "insufficient-evidence" }>;
     expectedTxId: string;
+    /** F1.6 · what a v1 send adds to its record (TxSubmissionSchema: covenantSpends, preflight, replaces). */
+    v1Record?: { covenantSpends?: unknown; preflight: unknown; replaces?: string[] };
   }) {
-    const { signedArtifact, url, activeNetwork, isSimulated, signedTxId, signedArtifactId, endpoint, broadcastable, pointCapture, feeEvidence, expectedTxId } =
+    const { signedArtifact, url, activeNetwork, isSimulated, signedTxId, signedArtifactId, endpoint, broadcastable, pointCapture, feeEvidence, expectedTxId, v1Record } =
       args;
     // Attempt broadcast
     const broadcastRecord = broadcastable.rawTransaction as unknown as Record<
@@ -2191,6 +2561,7 @@ export class HardkasTx {
       ...(signedArtifact.assumptionRef
         ? { assumptionRef: signedArtifact.assumptionRef }
         : {}),
+      ...(v1Record ?? {}),
       lineage: createLineageTransition(signedArtifact, HardkasSchemas.TxSubmissionV1)
     };
     // One pass: lineage.artifactId is a self reference excluded by exact path.
@@ -2266,6 +2637,8 @@ export class HardkasTx {
       });
     }
 
+    // F1.6 · the class of a v1 rejection, read from the recorded result (payments are unchanged in this phase)
+    const rejection = v1Record ? nodeRejectionOf(submitResult) : undefined;
     return {
       receipt: submission,
       submission,
@@ -2273,7 +2646,8 @@ export class HardkasTx {
       artifactId: submission.contentHash as string,
       mode: "real",
       submitted: submitResult.accepted,
-      txId: submission.txId
+      txId: submission.txId,
+      ...(rejection ? { rejection } : {})
     };
   }
 

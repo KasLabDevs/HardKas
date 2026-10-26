@@ -1,0 +1,234 @@
+{
+  "pragma": {
+    "name": "silverscript",
+    "value": "^0.1.0",
+    "span": "pragma silverscript ^0.1.0;",
+    "name_span": "silverscript",
+    "value_span": "^0.1.0"
+  },
+  "name": "Matrix",
+  "params": [
+    {
+      "type_ref": {
+        "base": "int"
+      },
+      "name": "max_ins",
+      "span": "int max_ins",
+      "type_span": "int ",
+      "name_span": "max_ins"
+    },
+    {
+      "type_ref": {
+        "base": "int"
+      },
+      "name": "max_outs",
+      "span": "int max_outs",
+      "type_span": "int ",
+      "name_span": "max_outs"
+    },
+    {
+      "type_ref": {
+        "base": "int"
+      },
+      "name": "init_amount",
+      "span": "int init_amount",
+      "type_span": "int ",
+      "name_span": "init_amount"
+    },
+    {
+      "type_ref": {
+        "base": "byte",
+        "array_dims": [
+          {
+            "kind": "fixed",
+            "value": 32
+          }
+        ]
+      },
+      "name": "init_owner",
+      "span": "byte[32] init_owner",
+      "type_span": "byte[32]",
+      "name_span": "init_owner"
+    }
+  ],
+  "fields": [
+    {
+      "type_ref": {
+        "base": "int"
+      },
+      "name": "amount",
+      "expr": {
+        "kind": "identifier",
+        "data": "init_amount",
+        "span": "init_amount"
+      },
+      "span": "int amount = init_amount;",
+      "type_span": "int ",
+      "name_span": "amount"
+    },
+    {
+      "type_ref": {
+        "base": "byte",
+        "array_dims": [
+          {
+            "kind": "fixed",
+            "value": 32
+          }
+        ]
+      },
+      "name": "owner",
+      "expr": {
+        "kind": "identifier",
+        "data": "init_owner",
+        "span": "init_owner"
+      },
+      "span": "byte[32] owner = init_owner;",
+      "type_span": "byte[32]",
+      "name_span": "owner"
+    }
+  ],
+  "constants": [],
+  "functions": [
+    {
+      "name": "step",
+      "attributes": [
+        {
+          "path": [
+            "covenant"
+          ],
+          "args": [
+            {
+              "name": "binding",
+              "expr": {
+                "kind": "identifier",
+                "data": "cov",
+                "span": "cov"
+              },
+              "span": "binding = cov",
+              "name_span": "binding"
+            },
+            {
+              "name": "from",
+              "expr": {
+                "kind": "identifier",
+                "data": "max_ins",
+                "span": "max_ins"
+              },
+              "span": "from = max_ins",
+              "name_span": "from"
+            },
+            {
+              "name": "to",
+              "expr": {
+                "kind": "identifier",
+                "data": "max_outs",
+                "span": "max_outs"
+              },
+              "span": "to = max_outs",
+              "name_span": "to"
+            },
+            {
+              "name": "mode",
+              "expr": {
+                "kind": "identifier",
+                "data": "transition",
+                "span": "transition"
+              },
+              "span": "mode = transition",
+              "name_span": "mode"
+            }
+          ],
+          "span": "#[covenant(binding = cov, from = max_ins, to = max_outs, mode = transition)]",
+          "path_spans": [
+            "covenant"
+          ]
+        }
+      ],
+      "params": [
+        {
+          "type_ref": {
+            "base": "State",
+            "array_dims": [
+              {
+                "kind": "dynamic"
+              }
+            ]
+          },
+          "name": "prev_states",
+          "span": "State[] prev_states",
+          "type_span": "State[]",
+          "name_span": "prev_states"
+        },
+        {
+          "type_ref": {
+            "base": "int"
+          },
+          "name": "fee",
+          "span": "int fee",
+          "type_span": "int ",
+          "name_span": "fee"
+        }
+      ],
+      "entrypoint": false,
+      "return_types": [
+        {
+          "base": "State",
+          "array_dims": [
+            {
+              "kind": "dynamic"
+            }
+          ]
+        }
+      ],
+      "returns_tuple": true,
+      "body": [
+        {
+          "kind": "require",
+          "data": {
+            "expr": {
+              "kind": "binary",
+              "data": {
+                "op": "ge",
+                "left": {
+                  "kind": "identifier",
+                  "data": "fee",
+                  "span": "fee"
+                },
+                "right": {
+                  "kind": "int",
+                  "data": 0,
+                  "span": "0"
+                }
+              },
+              "span": "fee >= 0"
+            },
+            "message": null,
+            "span": "require(fee >= 0);",
+            "message_span": null
+          }
+        },
+        {
+          "kind": "return",
+          "data": {
+            "exprs": [
+              {
+                "kind": "identifier",
+                "data": "prev_states",
+                "span": "prev_states"
+              }
+            ],
+            "span": "return(prev_states);"
+          }
+        }
+      ],
+      "return_type_spans": [
+        "State[]"
+      ],
+      "span": "#[covenant(binding = cov, from = max_ins, to = max_outs, mode = transition)]\n    function step(State[] prev_states, int fee) : (State[]) {\n        require(fee >= 0);\n        return(prev_states);\n    }",
+      "name_span": "step",
+      "body_span": "require(fee >= 0);\n        return(prev_states);"
+    }
+  ],
+  "span": "contract Matrix(int max_ins, int max_outs, int init_amount, byte[32] init_owner) {\n    int amount = init_amount;\n    byte[32] owner = init_owner;\n\n    #[covenant(binding = cov, from = max_ins, to = max_outs, mode = transition)]\n    function step(State[] prev_states, int fee) : (State[]) {\n        require(fee >= 0);\n        return(prev_states);\n    }\n}",
+  "name_span": "Matrix"
+}
