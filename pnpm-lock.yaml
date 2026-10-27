@@ -1192,6 +1192,9 @@ importers:
       '@hardkas/dev-server':
         specifier: workspace:*
         version: link:../dev-server
+      '@hardkas/escrow':
+        specifier: workspace:*
+        version: link:../escrow
       '@hardkas/kaspa-rpc':
         specifier: workspace:*
         version: link:../kaspa-rpc

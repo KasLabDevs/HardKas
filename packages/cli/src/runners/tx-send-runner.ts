@@ -13,6 +13,8 @@ export interface TxSendRunnerInput {
   provider?: string;
   workspaceRoot?: string;
   sync?: boolean;
+  /** PAYMENT-PREFLIGHT-1 · check the inputs and signatures against the node before the broadcast (SDK `preflight`). */
+  preflight?: boolean;
 }
 
 export interface TxSendRunnerResult {
@@ -111,6 +113,14 @@ export async function runTxSend(input: TxSendRunnerInput): Promise<TxSendRunnerR
   try {
     // 1. Simulated Mode
     if (provider.mode === "simulator" && signedArtifact.mode !== "real") {
+      // PAYMENT-PREFLIGHT-1: the simulator has no node to check against
+      if (input.preflight) {
+        const { HardkasError } = await import("@hardkas/core");
+        throw new HardkasError(
+          "SEND_PREFLIGHT_ON_SIMULATOR",
+          `Cannot run the send preflight: ${resolvedName} runs on the simulator, which has no node to check the inputs and signatures against. Nothing was sent or recorded.`
+        );
+      }
       const { receipt, receiptPath } = await sdk.tx.simulate(signedArtifact);
 
       return {
@@ -148,7 +158,7 @@ export async function runTxSend(input: TxSendRunnerInput): Promise<TxSendRunnerR
     (sdk as any).rpc = rpcClient;
 
     try {
-      const { receipt, receiptPath, alreadySubmitted, derived } = await sdk.tx.send(signedArtifact, rpcUrl);
+      const { receipt, receiptPath, alreadySubmitted, derived } = await sdk.tx.send(signedArtifact, input.preflight ? { url: rpcUrl, preflight: true } : rpcUrl);
 
       // R-iii part 1 / IC-2′.8: the outcome comes from the submission's
       // authenticated submit result, never from a status field.

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi, type MockInstance } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
@@ -30,6 +30,12 @@ import {
 // an RPC-transaction payload, exactly what a real signer serialises.
 
 const LOOPBACK = "http://127.0.0.1:16110";
+// STALE-CLOCK-1: strict verification refuses an artifact older than 30 days (STALE_ARTIFACT). The signed artifacts below
+// are dated 2026-09-26, so the suite runs on a controlled clock that same day (only Date is controlled; timers are real).
+// It used to run on the wall clock and turned red when the date passed (26-oct-2026); the rule itself is unchanged and
+// checked in its own case below.
+const SIGNED_AT = "2026-09-26T00:00:00.000Z";
+const NOW = Date.parse("2026-09-26T12:00:00.000Z");
 const FROM = "kaspasim:qpumuen7l8wthtz45p3ftn58pvrs9xlumvkuu2xet8egzkcklqtes65ue9mw6";
 const TO = "kaspasim:qrrqglu5g8kh6mfsg4qxa9wq0nv9cauwfwxw70984wkqnw2uwz0w27rvnw0sc";
 const script = (address: string) => expectedScriptPublicKeyHex(address)!;
@@ -69,7 +75,7 @@ function signedFromPlan(plan: any, payload: string | ((tx: any) => void)): any {
     hardkasVersion: HARDKAS_VERSION,
     version: ARTIFACT_VERSION,
     hashVersion: CURRENT_HASH_VERSION,
-    createdAt: "2026-09-26T00:00:00.000Z",
+    createdAt: SIGNED_AT,
     status: "signed",
     sourcePlanId: plan.planId,
     networkId: plan.networkId,
@@ -102,10 +108,11 @@ const codeOf = async (p: Promise<unknown>): Promise<string> => {
 describe("Wave 2(d) · the submission records a derived fee or insufficient evidence; a divergent signed is refused", () => {
   let ws: string;
   let sdk: Hardkas;
-  let submit: ReturnType<typeof vi.spyOn>;
+  let submit: MockInstance;
   let plan: any;
 
   beforeEach(async () => {
+    vi.useFakeTimers({ toFake: ["Date"], now: NOW });
     ws = fs.mkdtempSync(path.join(os.tmpdir(), "hk-w2d-sdk-"));
     fs.mkdirSync(path.join(ws, ".hardkas"));
     // WORKSPACE-AUTHORITY-2: the SDK is opened on the real-node simnet it is meant to plan on. It used to be opened on
@@ -135,6 +142,7 @@ describe("Wave 2(d) · the submission records a derived fee or insufficient evid
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     vi.restoreAllMocks();
     fs.rmSync(ws, { recursive: true, force: true });
   });
@@ -209,6 +217,21 @@ describe("Wave 2(d) · the submission records a derived fee or insufficient evid
       await sdk.artifacts.write(s);
       expect(await codeOf(sdk.tx.send(s, LOOPBACK)), label).toBe("SIGNED_PLAN_MISMATCH");
     }
+    expect(submit).not.toHaveBeenCalled();
+    expect(submissions()).toEqual([]);
+  });
+
+  it("STALE-CLOCK-1 · the staleness rule still holds: the same signed artifact, 31 days after it was signed, is refused (STALE_ARTIFACT); nothing broadcast or written", async () => {
+    const s = signedFromPlan(plan, () => {});
+    await sdk.artifacts.write(s);
+    vi.setSystemTime(Date.parse(SIGNED_AT) + 31 * 24 * 60 * 60 * 1000);
+    let message = "";
+    try {
+      await sdk.tx.send(s, LOOPBACK);
+    } catch (e: any) {
+      message = String(e?.message ?? e);
+    }
+    expect(message).toMatch(/STALE_ARTIFACT/);
     expect(submit).not.toHaveBeenCalled();
     expect(submissions()).toEqual([]);
   });

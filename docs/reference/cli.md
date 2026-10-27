@@ -3915,12 +3915,41 @@ No arguments.
 
 ### Subcommands
 
+- [hardkas rpc compare](#hardkas-rpc-compare)
 - [hardkas rpc dag](#hardkas-rpc-dag)
 - [hardkas rpc doctor](#hardkas-rpc-doctor)
 - [hardkas rpc health](#hardkas-rpc-health)
 - [hardkas rpc info](#hardkas-rpc-info)
 - [hardkas rpc mempool](#hardkas-rpc-mempool)
 - [hardkas rpc utxos](#hardkas-rpc-utxos)
+
+---
+
+## hardkas rpc compare
+
+Read several nodes side by side, read-only: identity, lag, the UTXOs of addresses, one look at a transaction. Differences the nodes' lag accounts for are lag, others disagreements (exit 1). Nothing is sent; agreement among nodes is not consensus validation
+
+### Usage
+
+```bash
+hardkas rpc compare [options]
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--endpoints <urls...>` | Node wRPC endpoints to read, separated by spaces (two or more) |  |
+| `--network <id>` | The network every node must say it serves (e.g. simnet, testnet-10); a node serving another is not read |  |
+| `--address <addresses...>` | Compare the UTXOs of these addresses |  |
+| `--tx <txId>` | Look at this transaction on every node |  |
+| `--since <hash>` | With --tx: a chain block every node holds to look from (default: each node's pruning point) |  |
+| `--lag-threshold <daa>` | DAA score behind the most advanced synced node beyond which a node is lagging (default: 100) |  |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+No arguments.
 
 ---
 
@@ -5376,6 +5405,7 @@ hardkas tx send [options] [signedPath]
 | `--lock-timeout <ms>` | No effect, kept for compatibility (see --wait-lock) | 30000 |
 | `--json` | Output as JSON | false |
 | `--track <label>` | Signed-artifact mode: after an accepted broadcast, record a deployment with this label |  |
+| `--preflight` | Payments: right before the broadcast, check every input at the node (unspent, as planned, no covenant id, not pending in its mempool) and verify each input's signature against the node's UTXO; anything it cannot verify refuses the send. One node's view, not a consensus validation | false |
 
 ### Arguments
 

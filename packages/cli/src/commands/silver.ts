@@ -442,7 +442,7 @@ export async function submitSilverTransaction(rpc: any, rpcTransaction: any, lab
   const txId = typeof expectedTxId === "string" && /^[0-9a-f]{64}$/i.test(expectedTxId) ? expectedTxId.toLowerCase() : knownTxIdOf(rpcTransaction);
   let res: any;
   try {
-    res = await rpc.submitTransaction(rpcTransaction);
+    res = await rpc.submitTransaction(rpcTransaction, { allowOrphan: false, ...(txId ? { expectedTxId: txId } : {}) });
   } catch (e: any) {
     if (e instanceof HardkasCliError) throw e;
     const message = String(e?.message ?? e);

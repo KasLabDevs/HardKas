@@ -1,7 +1,7 @@
 {
   "schema": "hardkas.cliReference.v1",
   "generatedAt": "deterministic",
-  "totalCommands": 233,
+  "totalCommands": 234,
   "flatSurface": [
     "hardkas accounts",
     "hardkas accounts balance",
@@ -158,6 +158,7 @@
     "hardkas replay verify",
     "hardkas rotate",
     "hardkas rpc",
+    "hardkas rpc compare",
     "hardkas rpc dag",
     "hardkas rpc doctor",
     "hardkas rpc health",
@@ -4625,6 +4626,66 @@
       "options": [],
       "subcommands": [
         {
+          "path": "hardkas rpc compare",
+          "name": "compare",
+          "aliases": [],
+          "description": "Read several nodes side by side, read-only: identity, lag, the UTXOs of addresses, one look at a transaction. Differences the nodes' lag accounts for are lag, others disagreements (exit 1). Nothing is sent; agreement among nodes is not consensus validation",
+          "usage": "hardkas rpc compare [options]",
+          "arguments": [],
+          "options": [
+            {
+              "flags": "--endpoints <urls...>",
+              "description": "Node wRPC endpoints to read, separated by spaces (two or more)",
+              "default": null,
+              "required": true,
+              "mandatory": true
+            },
+            {
+              "flags": "--network <id>",
+              "description": "The network every node must say it serves (e.g. simnet, testnet-10); a node serving another is not read",
+              "default": null,
+              "required": true,
+              "mandatory": true
+            },
+            {
+              "flags": "--address <addresses...>",
+              "description": "Compare the UTXOs of these addresses",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--tx <txId>",
+              "description": "Look at this transaction on every node",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--since <hash>",
+              "description": "With --tx: a chain block every node holds to look from (default: each node's pruning point)",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--lag-threshold <daa>",
+              "description": "DAA score behind the most advanced synced node beyond which a node is lagging (default: 100)",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        },
+        {
           "path": "hardkas rpc dag",
           "name": "dag",
           "aliases": [],
@@ -6677,6 +6738,13 @@
               "description": "Signed-artifact mode: after an accepted broadcast, record a deployment with this label",
               "default": null,
               "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--preflight",
+              "description": "Payments: right before the broadcast, check every input at the node (unspent, as planned, no covenant id, not pending in its mempool) and verify each input's signature against the node's UTXO; anything it cannot verify refuses the send. One node's view, not a consensus validation",
+              "default": false,
+              "required": false,
               "mandatory": false
             }
           ],

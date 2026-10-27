@@ -51,6 +51,7 @@ for (const name of ["KASPA_SIMNET_WRPC_URL", "KASPAD_BIN", "HARDKAS_DEV_SERVER_U
 }
 env.HARDKAS_HOME = home;
 env.HARDKAS_HERMETIC_LOG = networkLog;
+env.HARDKAS_HERMETIC_TRACE = process.env.HARDKAS_HERMETIC_TRACE ?? "1";
 env.DOCKER_HOST = "tcp://127.0.0.1:1"; // nothing listens there: every docker CLI call fails fast
 if (denyPorts) env.HARDKAS_HERMETIC_DENY_PORTS = denyPorts;
 // Forward slashes: Node treats backslashes inside a quoted NODE_OPTIONS value as escapes.

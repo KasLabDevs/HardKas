@@ -42,6 +42,28 @@ export type { FundDevWalletsOptions } from "./node.js";
 // Curated explicit exports only. No `export *`
 export { HardkasAccounts } from "./accounts.js";
 export { HardkasTx } from "./tx.js";
+export { PAYMENT_PREFLIGHT_GUARANTEE, preflightPaymentSend } from "./payment-preflight.js";
+// ESCROW-SAFETY-2 / MULTINODE-READ-1: one look at a node about a txId (mempool, accepting chain block), for callers that
+// hold their own client (the dev-server escrow; one look per node of a read-only set)
+export { observeTxOnce, rpcObserverFor } from "./tx-observer.js";
+export type { ObserveTxOptions, TxObserverRpc, TxObserverRpcRecorder } from "./tx-observer.js";
+export {
+  MULTINODE_GUARANTEE,
+  MULTINODE_SCOPE,
+  compareUtxosAcrossNodes,
+  observeTxAcrossNodes,
+  readNodeSet
+} from "./multinode-read.js";
+export type {
+  MultinodeDisagreement,
+  MultinodeLag,
+  NodeReading,
+  NodeSetReading,
+  NodeStanding,
+  ReadNode,
+  TxAcrossNodes,
+  UtxoComparison
+} from "./multinode-read.js";
 export { HardkasFees } from "./fees.js";
 export { HardkasL2 } from "./l2.js";
 export { HardkasCovenants } from "./covenants.js";
