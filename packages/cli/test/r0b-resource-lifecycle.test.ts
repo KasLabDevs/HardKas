@@ -135,7 +135,8 @@ describe("RESOURCE-LIFECYCLE-1 · a finite command closes what it opened and end
       "runners/localnet-runners.ts#detectToccataNode": "closes the client on its only two paths (the try and the catch)",
       "runners/doctor-node-runner.ts#runCapabilitiesReport": "closes the client on every path (the loop's catch and after the loop)",
       "runners/rpc-doctor-runner.ts#checkKaspaEndpoint": "disconnects on each of its three paths (connect refused, answered, request refused)",
-      "runners/workflow-runner.ts#runWorkflowRun": "closes the SDK when the run settles, not in a finally: a --timeout must not close it under the abandoned run (WORKFLOW-TIMEOUT-CANCELLATION-1)"
+      "runners/workflow-runner.ts#runWorkflowRun": "closes the SDK when the run settles, not in a finally: a --timeout must not close it under the abandoned run (WORKFLOW-TIMEOUT-CANCELLATION-1)",
+      "runners/silver-onchain-runner.ts#openCanonicalSilverSdk": "returns the SDK (closing it when it refuses the workspace); withEngine in commands/silver.ts, its only caller, closes it in its finally"
     };
     const srcRoot = path.resolve(__dirname, "../src");
     const files: string[] = [];

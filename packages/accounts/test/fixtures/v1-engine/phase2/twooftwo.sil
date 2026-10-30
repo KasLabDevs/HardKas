@@ -1,0 +1,8 @@
+pragma silverscript ^0.1.0;
+
+contract TwoOfTwo(pubkey a, pubkey b) {
+    entry spend(sig sa, sig sb) {
+        require(checkSig(sa, a));
+        require(checkSig(sb, b));
+    }
+}

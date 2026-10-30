@@ -1,6 +1,7 @@
 import { parseKasToSompi, systemRuntimeContext, NetworkId, parseFeeRate, parseMaxFeeSompi, effectiveFeeLimit, assertFeeWithinLimit } from "@hardkas/core";
 import {
   TxPlanService,
+  covenantIdOf,
   observePendingSpends,
   utxoOutpointKey,
   PendingSpendAllExcludedError,
@@ -333,14 +334,19 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
           if (!u.isCoinbase) return true;
           if (u.blockDaaScore === undefined) return false;
           return vBefore.virtualDaaScore - BigInt(u.blockDaaScore) > (planCoinbaseMaturity + 10n);
-        }).map((u) => ({
-          outpoint: u.outpoint,
-          address: u.address,
-          amountSompi: u.amountSompi,
-          scriptPublicKey: u.scriptPublicKey || "unresolved",
-          ...(u.blockDaaScore !== undefined ? { blockDaaScore: BigInt(u.blockDaaScore) } : {}),
-          ...(u.isCoinbase !== undefined ? { isCoinbase: u.isCoinbase } : {})
-        }));
+        }).map((u) => {
+          // COVENANT-UTXO-PAYMENT-FILTER-1: the covenant id goes with the UTXO, so the planner leaves a covenant's out
+          const covenantId = covenantIdOf(u);
+          return {
+            outpoint: u.outpoint,
+            address: u.address,
+            amountSompi: u.amountSompi,
+            scriptPublicKey: u.scriptPublicKey || "unresolved",
+            ...(u.blockDaaScore !== undefined ? { blockDaaScore: BigInt(u.blockDaaScore) } : {}),
+            ...(u.isCoinbase !== undefined ? { isCoinbase: u.isCoinbase } : {}),
+            ...(covenantId !== undefined ? { covenantId } : {})
+          };
+        });
 
         if (matureUtxos.length === 0) {
           const failure = noSpendableUtxos(fromAddress, resolvedNetwork, rpcUtxos.length);

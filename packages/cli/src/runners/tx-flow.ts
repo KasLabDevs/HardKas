@@ -58,6 +58,8 @@ export interface TxFlowInput {
   passwordStdin?: boolean;
   /** Machine-readable output: the sign step never prompts. */
   json?: boolean;
+  /** PAYMENT-PREFLIGHT-1 · the send step checks the inputs and signatures against the node before the broadcast. */
+  preflight?: boolean;
 }
 
 export interface TxFlowStepResult<T> {
@@ -132,7 +134,16 @@ async function txFlow(input: TxFlowInput, opened: { sdk?: { close(): Promise<voi
   // WORKSPACE-AUTHORITY-2: the effective network comes from the one resolver the steps and the SDK use (`--network` as
   // a network id, else the workspace's `execution` contract); an unknown name is a typed refusal before anything runs.
   const { resolveWorkspaceExecution } = await import("@hardkas/config");
-  const resolvedNetwork: string = resolveWorkspaceExecution({ config, ...(network ? { network } : {}) }).networkId;
+  const resolvedWorkspace = resolveWorkspaceExecution({ config, ...(network ? { network } : {}) });
+  const resolvedNetwork: string = resolvedWorkspace.networkId;
+  // PAYMENT-PREFLIGHT-1: the simulator has no node to check against; refused before anything is planned or signed
+  if (input.preflight && send && resolvedWorkspace.execution?.mode === "simulator") {
+    const { HardkasError } = await import("@hardkas/core");
+    throw new HardkasError(
+      "SEND_PREFLIGHT_ON_SIMULATOR",
+      `Cannot run the send preflight: ${resolvedNetwork} runs on the simulator, which has no node to check the inputs and signatures against. Nothing was planned, signed, sent or recorded.`
+    );
+  }
 
   const { Hardkas } = await import("@hardkas/sdk");
   let sdk: any = null;
@@ -431,7 +442,8 @@ async function txFlow(input: TxFlowInput, opened: { sdk?: { close(): Promise<voi
             signedArtifact,
             config,
             ...(url ? { url } : {}),
-            ...(workspaceRoot ? { workspaceRoot } : {})
+            ...(workspaceRoot ? { workspaceRoot } : {}),
+            ...(input.preflight ? { preflight: true } : {})
           });
           // the send step ran: whatever fails after this point fails after a broadcast or an execution
           flowResult.result = "broadcast";

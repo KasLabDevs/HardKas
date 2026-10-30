@@ -9,6 +9,8 @@ export interface FlatUtxo {
     amountSompi: bigint;
     scriptPublicKey: string;
     address?: string;
+    /** COVENANT-UTXO-PAYMENT-FILTER-1: kept so the planner can leave a covenant's UTXO out. */
+    covenantId?: string;
 }
 
 /**
@@ -22,7 +24,8 @@ export function toTxBuilderUtxo(utxo: FlatUtxo, addressOverride?: string): Utxo 
         },
         address: addressOverride || utxo.address || "",
         amountSompi: utxo.amountSompi,
-        scriptPublicKey: utxo.scriptPublicKey
+        scriptPublicKey: utxo.scriptPublicKey,
+        ...(utxo.covenantId ? { covenantId: utxo.covenantId } : {})
     };
 }
 
@@ -35,6 +38,7 @@ export function toWalletQueryUtxo(utxo: Utxo): FlatUtxo {
         outputIndex: utxo.outpoint.index,
         amountSompi: utxo.amountSompi,
         scriptPublicKey: utxo.scriptPublicKey,
-        address: utxo.address
+        address: utxo.address,
+        ...(utxo.covenantId ? { covenantId: utxo.covenantId } : {})
     };
 }

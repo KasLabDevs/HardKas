@@ -17,8 +17,8 @@
   },
   "scripts": {
     "artifacts": "napi artifacts",
-    "build": "napi build --platform --release",
-    "build:debug": "napi build --platform",
+    "build": "which cargo >/dev/null 2>&1 && napi build --platform --release || echo \"[pskt-native] cargo not found, using pre-built binary if available\"",
+    "build:debug": "which cargo >/dev/null 2>&1 && napi build --platform || echo \"[pskt-native] cargo not found\"",
     "test": "vitest run",
     "typecheck": "echo \"No typecheck needed for napi auto-gen\""
   },

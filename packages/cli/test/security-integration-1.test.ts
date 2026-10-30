@@ -594,7 +594,7 @@ describe("SECURITY-INTEGRATION-1 · a reconnection is verified again", () => {
 });
 
 describe("SECURITY-INTEGRATION-1 · artifact network vs instance network at signing", () => {
-  it("SI-5 a testnet-10 plan signed on a simnet instance (external signer): what signing does today, and the send refused on both sides", async () => {
+  it("SI-5 a testnet-10 plan signed on a simnet instance (external signer): signing refused there, and the send refused on both sides", async () => {
     const A = await startFake("A", "testnet-10");
     const S = await startFake("S", "simnet");
     try {
@@ -603,6 +603,7 @@ describe("SECURITY-INTEGRATION-1 · artifact network vs instance network at sign
       const ext = externalSigner();
       const sim = await openOn(ws, "simnet", { signer: ext.signer });
       let signOutcome: any;
+      let signerCallsOnSimnet = 0;
       let signed: any;
       let sendOnSimnet: any;
       try {
@@ -612,7 +613,18 @@ describe("SECURITY-INTEGRATION-1 · artifact network vs instance network at sign
         } catch (e: any) {
           signOutcome = { ok: false, code: e?.code };
         }
-        if (signed) sendOnSimnet = await refusal(sim.tx.send(signed));
+        signerCallsOnSimnet = ext.calls.n;
+        // COVENANT-UTXO-PAYMENT-FILTER-1B: the signature comes from an instance of the plan's own network (its node lists
+        // the plan's inputs); the send-side refusals below are then checked with that artifact, as before
+        if (!signed) {
+          const tn = await openOn(ws, "testnet-10", { signer: ext.signer });
+          try {
+            signed = await tn.tx.sign(plan);
+          } finally {
+            await tn.close?.();
+          }
+        }
+        sendOnSimnet = await refusal(sim.tx.send(signed));
       } finally {
         await sim.close?.();
       }
@@ -631,6 +643,7 @@ describe("SECURITY-INTEGRATION-1 · artifact network vs instance network at sign
       const onT = effects(tws, A, S);
       const seen = {
         signOutcome,
+        signerCallsOnSimnet,
         signerCalls: ext.calls.n,
         sendOnSimnet: sendOnSimnet && { code: sendOnSimnet.code },
         sendViaSimnetNode: sendViaSimnetNode && { code: sendViaSimnetNode.code },
@@ -640,9 +653,12 @@ describe("SECURITY-INTEGRATION-1 · artifact network vs instance network at sign
         submissionEvents: [...onSim.submissionEvents, ...onT.submissionEvents]
       };
       trace("SI-5", seen);
-      // pinned as it is (no instance check at signing; a decision for review, not part of this integration):
-      // the signature is produced for the artifact's own network, then no path sends it on another one
-      expect(signOutcome, JSON.stringify(seen)).toEqual({ ok: true, networkId: "testnet-10" });
+      // COVENANT-UTXO-PAYMENT-FILTER-1B decided the instance check at signing that was left for review here: a plan's inputs
+      // are checked on the plan's own node, so an instance of another network refuses before any signer is asked (fail
+      // closed). The artifact signed on its own network is then sent on no other one
+      expect(signOutcome, JSON.stringify(seen)).toEqual({ ok: false, code: "COVENANT_UTXO_UNVERIFIED" });
+      expect(seen.signerCallsOnSimnet, JSON.stringify(seen)).toBe(0);
+      expect(signed?.networkId, JSON.stringify(seen)).toBe("testnet-10");
       expect(seen.sendOnSimnet?.code, JSON.stringify(seen)).toBe("SEND_NETWORK_MISMATCH");
       expect(seen.sendViaSimnetNode?.code, JSON.stringify(seen)).toBe("NODE_NETWORK_MISMATCH");
       expectNoEffects(seen, JSON.stringify(seen));

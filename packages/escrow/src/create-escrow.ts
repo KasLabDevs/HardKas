@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import {
   compileSilverScript,
   getSilContract,
@@ -6,10 +7,17 @@ import {
   silverP2shLock,
   type SilArtifactValue
 } from "@hardkas/core";
-import { ESCROW_CONTRACT_NAME, ESCROW_SOURCE } from "./escrow-source.js";
-import type { EscrowArtifact, EscrowCompileProvenance, EscrowConfig, EscrowState } from "./types.js";
+import {
+  ESCROW_CONTRACT_NAME,
+  ESCROW_FULL_SOURCE,
+  ESCROW_SPLIT_CONTRACT_NAME,
+  ESCROW_SPLIT_SOURCE,
+  ESCROW_V1_CONTRACT_NAME,
+  ESCROW_V1_SOURCE
+} from "./escrow-source.js";
+import type { EscrowArtifact, EscrowCompileProvenance, EscrowConfig, EscrowState, EscrowVersion, EscrowMode } from "./types.js";
 
-export { ESCROW_CONTRACT_NAME } from "./escrow-source.js";
+export { ESCROW_CONTRACT_NAME, ESCROW_SPLIT_CONTRACT_NAME, ESCROW_V1_CONTRACT_NAME } from "./escrow-source.js";
 
 export type EscrowErrorCode =
   | "ESCROW_CONFIG_INVALID"
@@ -52,6 +60,16 @@ function amountArg(name: string, value: unknown): SilArtifactValue {
   return { kind: "int", value: n };
 }
 
+function nonceArg(nonceHex?: string): { arg: SilArtifactValue; hex: string } {
+  let h = nonceHex ? nonceHex.replace(/^0x/, "") : "";
+  if (!h) {
+    h = crypto.randomBytes(32).toString("hex");
+  } else if (!/^[0-9a-fA-F]{64}$/.test(h)) {
+    throw new EscrowError("ESCROW_CONFIG_INVALID", "escrowNonce must be a 32-byte hex string (64 characters)");
+  }
+  return { arg: { kind: "bytes", value: Buffer.from(h, "hex") }, hex: h.toLowerCase() };
+}
+
 export interface CreateEscrowOptions {
   /** Network the P2SH address is derived for (default simnet). */
   readonly networkId?: string | undefined;
@@ -62,10 +80,6 @@ export interface CreateEscrowOptions {
 /**
  * Compiles the escrow contract for these parties with the managed silverc
  * v1.0.0 and derives its P2SH lock from the SDK.
- *
- * Fails closed: an invalid configuration, a missing or unverified compiler, a
- * compiler error or an unexpected artifact is an error, never a substitute
- * script. The provenance records the constructor arguments by digest only.
  */
 export async function createEscrow(
   config: EscrowConfig,
@@ -74,22 +88,71 @@ export async function createEscrow(
   state: EscrowState;
   artifact: EscrowArtifact;
   provenance: EscrowCompileProvenance;
-  /** What was compiled, for reproduction: the arguments passed to silverc and its exact output. */
   compiled: { constructorArgs: readonly SilArtifactValue[]; artifactBytes: Uint8Array };
+  effectiveConfig: EscrowConfig;
 }> {
-  const constructorArgs: SilArtifactValue[] = [
-    pubkeyArg("buyer", config?.buyer?.publicKeyHex),
-    pubkeyArg("seller", config?.seller?.publicKeyHex),
-    pubkeyArg("arbiter", config?.arbiter?.publicKeyHex),
-    destinationArg("buyerDestinationSpk", config?.buyerDestinationSpk),
-    destinationArg("sellerDestinationSpk", config?.sellerDestinationSpk),
-    amountArg("refundAmount", config?.refundAmount),
-    amountArg("releaseAmount", config?.releaseAmount)
-  ];
+  // Validate all amounts present in config up front
+  if (config.refundAmount !== undefined) amountArg("refundAmount", config.refundAmount);
+  if (config.releaseAmount !== undefined) amountArg("releaseAmount", config.releaseAmount);
+  if (config.principal !== undefined) amountArg("principal", config.principal);
+  if (config.buyerAmount !== undefined) amountArg("buyerAmount", config.buyerAmount);
+  if (config.sellerAmount !== undefined) amountArg("sellerAmount", config.sellerAmount);
+
+  const version: EscrowVersion = config.version ?? "v2";
+  const mode: EscrowMode = config.mode ?? (config.buyerAmount !== undefined && config.sellerAmount !== undefined ? "split" : "full");
+
+  let source: string;
+  let contractName: string;
+  let constructorArgs: SilArtifactValue[];
+  let effectiveNonce: string | undefined;
+
+  if (version === "v1") {
+    source = ESCROW_V1_SOURCE;
+    contractName = ESCROW_V1_CONTRACT_NAME;
+    constructorArgs = [
+      pubkeyArg("buyer", config?.buyer?.publicKeyHex),
+      pubkeyArg("seller", config?.seller?.publicKeyHex),
+      pubkeyArg("arbiter", config?.arbiter?.publicKeyHex),
+      destinationArg("buyerDestinationSpk", config?.buyerDestinationSpk),
+      destinationArg("sellerDestinationSpk", config?.sellerDestinationSpk),
+      amountArg("refundAmount", config?.refundAmount),
+      amountArg("releaseAmount", config?.releaseAmount)
+    ];
+  } else if (mode === "split") {
+    source = ESCROW_SPLIT_SOURCE;
+    contractName = ESCROW_SPLIT_CONTRACT_NAME;
+    const { arg, hex } = nonceArg(config.escrowNonce);
+    effectiveNonce = hex;
+    constructorArgs = [
+      pubkeyArg("buyer", config?.buyer?.publicKeyHex),
+      pubkeyArg("seller", config?.seller?.publicKeyHex),
+      pubkeyArg("arbiter", config?.arbiter?.publicKeyHex),
+      destinationArg("buyerDestinationSpk", config?.buyerDestinationSpk),
+      destinationArg("sellerDestinationSpk", config?.sellerDestinationSpk),
+      amountArg("buyerAmount", config?.buyerAmount ?? config?.refundAmount),
+      amountArg("sellerAmount", config?.sellerAmount ?? config?.releaseAmount),
+      arg
+    ];
+  } else {
+    source = ESCROW_FULL_SOURCE;
+    contractName = ESCROW_CONTRACT_NAME;
+    const { arg, hex } = nonceArg(config.escrowNonce);
+    effectiveNonce = hex;
+    const principal = config.principal !== undefined ? config.principal : (config.refundAmount !== undefined ? config.refundAmount : config.releaseAmount);
+    constructorArgs = [
+      pubkeyArg("buyer", config?.buyer?.publicKeyHex),
+      pubkeyArg("seller", config?.seller?.publicKeyHex),
+      pubkeyArg("arbiter", config?.arbiter?.publicKeyHex),
+      destinationArg("buyerDestinationSpk", config?.buyerDestinationSpk),
+      destinationArg("sellerDestinationSpk", config?.sellerDestinationSpk),
+      amountArg("principal", principal),
+      arg
+    ];
+  }
 
   let compiled: Awaited<ReturnType<typeof compileSilverScript>>;
   try {
-    compiled = await compileSilverScript({ source: ESCROW_SOURCE, constructorArgs, home: options.home });
+    compiled = await compileSilverScript({ source, constructorArgs, home: options.home });
   } catch (e: any) {
     const code = String(e?.code ?? "");
     if (code.startsWith("SILVERC_TOOLCHAIN") || code === "SILVERC_PLATFORM_UNSUPPORTED") {
@@ -102,7 +165,7 @@ export async function createEscrow(
 
   let contract;
   try {
-    contract = getSilContract(compiled.artifact, ESCROW_CONTRACT_NAME).contract;
+    contract = getSilContract(compiled.artifact, contractName).contract;
   } catch (e: any) {
     throw new EscrowError("ESCROW_ARTIFACT_INVALID", e.message, e);
   }
@@ -110,10 +173,24 @@ export async function createEscrow(
   const lock = silverP2shLock(redeemScriptHex);
   const address = silverP2shAddress(redeemScriptHex, options.networkId ?? "simnet");
 
+  const effectiveConfig: EscrowConfig = {
+    ...config,
+    version,
+    mode,
+    ...(effectiveNonce ? { escrowNonce: effectiveNonce } : {})
+  };
+
   return {
     artifact: compiled.artifact,
-    provenance: { ...compiled.provenance, contractName: ESCROW_CONTRACT_NAME, lockingScriptHex: lock.script },
+    provenance: {
+      ...compiled.provenance,
+      contractName,
+      lockingScriptHex: lock.script,
+      contractVersion: version,
+      ...(effectiveNonce ? { escrowNonce: effectiveNonce } : {})
+    },
     state: { lockingScriptHex: lock.script, redeemScriptHex, address },
-    compiled: { constructorArgs, artifactBytes: compiled.artifactBytes }
+    compiled: { constructorArgs, artifactBytes: compiled.artifactBytes },
+    effectiveConfig
   };
 }

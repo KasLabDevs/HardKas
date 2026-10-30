@@ -3915,12 +3915,41 @@ No arguments.
 
 ### Subcommands
 
+- [hardkas rpc compare](#hardkas-rpc-compare)
 - [hardkas rpc dag](#hardkas-rpc-dag)
 - [hardkas rpc doctor](#hardkas-rpc-doctor)
 - [hardkas rpc health](#hardkas-rpc-health)
 - [hardkas rpc info](#hardkas-rpc-info)
 - [hardkas rpc mempool](#hardkas-rpc-mempool)
 - [hardkas rpc utxos](#hardkas-rpc-utxos)
+
+---
+
+## hardkas rpc compare
+
+Read several nodes side by side, read-only: identity, lag, the UTXOs of addresses, one look at a transaction. Differences the nodes' lag accounts for are lag, others disagreements (exit 1). Nothing is sent; agreement among nodes is not consensus validation
+
+### Usage
+
+```bash
+hardkas rpc compare [options]
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--endpoints <urls...>` | Node wRPC endpoints to read, separated by spaces (two or more) |  |
+| `--network <id>` | The network every node must say it serves (e.g. simnet, testnet-10); a node serving another is not read |  |
+| `--address <addresses...>` | Compare the UTXOs of these addresses |  |
+| `--tx <txId>` | Look at this transaction on every node |  |
+| `--since <hash>` | With --tx: a chain block every node holds to look from (default: each node's pruning point) |  |
+| `--lag-threshold <daa>` | DAA score behind the most advanced synced node beyond which a node is lagging (default: 100) |  |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+No arguments.
 
 ---
 
@@ -4196,6 +4225,7 @@ No arguments.
 - [hardkas silver covenant](#hardkas-silver-covenant)
 - [hardkas silver deploy](#hardkas-silver-deploy)
 - [hardkas silver doctor](#hardkas-silver-doctor)
+- [hardkas silver engine](#hardkas-silver-engine)
 - [hardkas silver inspect](#hardkas-silver-inspect)
 - [hardkas silver spend](#hardkas-silver-spend)
 - [hardkas silver test](#hardkas-silver-test)
@@ -4251,6 +4281,7 @@ No arguments.
 ### Subcommands
 
 - [hardkas silver covenant genesis](#hardkas-silver-covenant-genesis)
+- [hardkas silver covenant inspect](#hardkas-silver-covenant-inspect)
 - [hardkas silver covenant transition](#hardkas-silver-covenant-transition)
 
 ---
@@ -4271,8 +4302,9 @@ hardkas silver covenant genesis [options] <record>
 | :--- | :--- | :--- |
 | `--from <account>` | Funding account (local key) |  |
 | `--amount <kas>` | Value locked in the covenant |  |
-| `--compute-budget <n>` | Compute budget of the funding input (explicit: no estimator exists) |  |
-| `--fee <sompi>` | Explicit fee (required when --compute-budget > 0: the SDK does not price v1 budgets) |  |
+| `--compute-budget <n>` | Compute budget of the funding inputs (default: the certified P2PK budget) |  |
+| `--fee <sompi>` | Fee in sompi: at least the node's floor for this transaction (the floor when omitted) |  |
+| `--constructor-args <file>` | Constructor arguments the contract was compiled with (default: proven from its initial State) |  |
 | `--contract <name>` | Contract, when the artifact has several |  |
 | `--wait` | Wait for confirmation and the node's covenant id | false |
 | `--timeout <seconds>` | Confirmation timeout | 120 |
@@ -4285,6 +4317,33 @@ hardkas silver covenant genesis [options] <record>
 | Argument | Description |
 | :--- | :--- |
 | `record` |  |
+
+---
+
+## hardkas silver covenant inspect
+
+A covenant's lineage and state (its id, or one of its covenant records): genesis anchored by its recomputed id, transitions linked by outpoints, the tip checked at the node
+
+### Usage
+
+```bash
+hardkas silver covenant inspect [options] <covenant>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--network <network>` | Network (default: the workspace's) |  |
+| `--no-node` | Do not ask the node for the tip (records only) |  |
+| `--no-states` | Do not check the declared states against the addresses |  |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `covenant` |  |
 
 ---
 
@@ -4306,12 +4365,14 @@ hardkas silver covenant transition [options] <covenant-record>
 | `--constructor-args <file>` | Constructor arguments of the current state (checked against the record) |  |
 | `--state-map <json>` | State field -> constructor parameter index, e.g. {"value":0} |  |
 | `--next-state <file>` | Successor state: JSON object of {kind, value} per field |  |
-| `--compute-budget <n>` | Compute budget of the covenant input (explicit: no estimator exists) |  |
-| `--args <file>` | Entry arguments: JSON list of {kind, value} |  |
-| `--fee <sompi>` | Explicit fee (required when --compute-budget > 0) |  |
+| `--compute-budget <n>` | Compute budget of the covenant input, or 'estimate' (rusty-kaspa's upper bound); default: the certified budget of this entry, else that estimate |  |
+| `--args <file>` | Entry arguments: JSON list of {kind, value} and {"kind":"signature","account":"<name>"} |  |
+| `--fee <sompi>` | Fee in sompi, paid from the covenant's value: at least the node's floor for this transaction (the floor when omitted) |  |
 | `--emit-args <file>` | Write the successor's constructor arguments here (for the next transition) |  |
 | `--wait` | Wait for confirmation and check the lineage | false |
 | `--timeout <seconds>` | Confirmation timeout | 120 |
+| `--password-env <env>` | Read the keystore password of the encrypted account(s) this command signs with from this environment variable (development accounts need none) |  |
+| `--password-stdin` | Read the keystore password of the encrypted account(s) this command signs with from stdin | false |
 | `--json` | Output as JSON | false |
 
 ### Arguments
@@ -4340,6 +4401,7 @@ hardkas silver deploy [options] <record>
 | `--amount <kas>` | Value locked in the contract |  |
 | `--contract <name>` | Contract, when the artifact has several |  |
 | `--network <network>` | Network | simnet |
+| `--tx-version <n>` | Transaction version: 0 (the default, as certified) or 1 (the SDK's v1 engine: checks before any key, compute budgets) | 0 |
 | `--wait` | Wait for confirmation | false |
 | `--timeout <seconds>` | Confirmation timeout | 120 |
 | `--password-env <env>` | Read the keystore password of the encrypted account(s) this command signs with from this environment variable (development accounts need none) |  |
@@ -4373,6 +4435,220 @@ hardkas silver doctor [options]
 ### Arguments
 
 No arguments.
+
+---
+
+## hardkas silver engine
+
+The SDK's v1 engine (sdk.covenants): plan and sign covenant and contract transactions; send them with `hardkas tx send`
+
+### Usage
+
+```bash
+hardkas silver engine [options] [command]
+```
+
+### Options
+
+No options.
+
+### Arguments
+
+No arguments.
+
+### Subcommands
+
+- [hardkas silver engine draft](#hardkas-silver-engine-draft)
+- [hardkas silver engine plan](#hardkas-silver-engine-plan)
+- [hardkas silver engine sign](#hardkas-silver-engine-sign)
+
+---
+
+## hardkas silver engine draft
+
+A v1 plan signed in turns by several parties (not a PSKT): prepare, sign, combine, finalize; send with `hardkas tx send`
+
+### Usage
+
+```bash
+hardkas silver engine draft [options] [command]
+```
+
+### Options
+
+No options.
+
+### Arguments
+
+No arguments.
+
+### Subcommands
+
+- [hardkas silver engine draft combine](#hardkas-silver-engine-draft-combine)
+- [hardkas silver engine draft finalize](#hardkas-silver-engine-draft-finalize)
+- [hardkas silver engine draft prepare](#hardkas-silver-engine-draft-prepare)
+- [hardkas silver engine draft sign](#hardkas-silver-engine-draft-sign)
+
+---
+
+## hardkas silver engine draft combine
+
+Combine drafts signed by different parties: the same transaction and slots, every signature verified (one bad signature refuses all)
+
+### Usage
+
+```bash
+hardkas silver engine draft combine [options] <drafts...>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--plan <plan>` | The plan the drafts were prepared for (its path or artifact id) |  |
+| `--out <file>` | Combined draft path (default .hardkas/drafts/) |  |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `drafts` |  |
+
+---
+
+## hardkas silver engine draft finalize
+
+Finalize a fully signed draft into the signed transaction (checked against the node and the compiler again, every signature verified)
+
+### Usage
+
+```bash
+hardkas silver engine draft finalize [options] <draft>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--plan <plan>` | The plan the draft was prepared for (its path or artifact id) |  |
+| `--network <network>` | Network (default: the plan's) |  |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `draft` |  |
+
+---
+
+## hardkas silver engine draft prepare
+
+Prepare a draft of a v1 plan (its path or artifact id): checked against the node and the compiler now, its signature slots unsigned
+
+### Usage
+
+```bash
+hardkas silver engine draft prepare [options] <plan>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--network <network>` | Network (default: the plan's) |  |
+| `--out <file>` | Draft path (default .hardkas/drafts/) |  |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `plan` |  |
+
+---
+
+## hardkas silver engine draft sign
+
+Sign one account's slots of a draft with its local key (the draft checked first; each signature verified before it is kept)
+
+### Usage
+
+```bash
+hardkas silver engine draft sign [options] <draft>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--plan <plan>` | The plan the draft was prepared for (its path or artifact id) |  |
+| `--account <name>` | The account whose slots this signs |  |
+| `--network <network>` | Network (default: the plan's) |  |
+| `--out <file>` | Signed draft path (default .hardkas/drafts/) |  |
+| `--password-env <env>` | Read the keystore password of the encrypted account(s) this command signs with from this environment variable (development accounts need none) |  |
+| `--password-stdin` | Read the keystore password of the encrypted account(s) this command signs with from stdin | false |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `draft` |  |
+
+---
+
+## hardkas silver engine plan
+
+Plan a v1 transaction (genesis, transition, deploy or spend) from a JSON spec of the SDK's options, sompi as decimal strings
+
+### Usage
+
+```bash
+hardkas silver engine plan [options] <operation> <spec>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--network <network>` | Network (default: the workspace's) |  |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `operation` |  |
+| `spec` |  |
+
+---
+
+## hardkas silver engine sign
+
+Sign a v1 plan (its path or artifact id) with the SDK's engine: checked against the node and the compiler first, no key read for a plan it refuses
+
+### Usage
+
+```bash
+hardkas silver engine sign [options] <plan>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--network <network>` | Network (default: the plan's) |  |
+| `--password-env <env>` | Read the keystore password of the encrypted account(s) this command signs with from this environment variable (development accounts need none) |  |
+| `--password-stdin` | Read the keystore password of the encrypted account(s) this command signs with from stdin | false |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `plan` |  |
 
 ---
 
@@ -4418,7 +4694,10 @@ hardkas silver spend [options] <deploy-record>
 | `--to <address>` | Recipient of the whole value (minus the fee) |  |
 | `--args <file>` | Entry arguments: JSON list of {kind, value} and {"kind":"signature","account":"<name>"} |  |
 | `--sequence <n>` | Input sequence (relative locks) |  |
-| `--sig-op-count <n>` | Declared signature operations (default: the signature arguments, at least 1) |  |
+| `--sig-op-count <n>` | Declared signature operations (default: the signature arguments, at least 1); transaction v0 only |  |
+| `--tx-version <n>` | Transaction version: 0 (the default, as certified) or 1 (the SDK's v1 engine: checks before any key, compute budgets) | 0 |
+| `--constructor-args <file>` | With --tx-version 1: the constructor arguments the contract was compiled with (default: proven from this spend's signers, when they are the keys it checks) |  |
+| `--compute-budget <n>` | With --tx-version 1: the contract input's compute budget, or 'estimate' (rusty-kaspa's upper bound); default: the certified budget of this entry, else that estimate |  |
 | `--wait` | Wait for confirmation | false |
 | `--timeout <seconds>` | Confirmation timeout | 120 |
 | `--password-env <env>` | Read the keystore password of the encrypted account(s) this command signs with from this environment variable (development accounts need none) |  |
@@ -5126,6 +5405,7 @@ hardkas tx send [options] [signedPath]
 | `--lock-timeout <ms>` | No effect, kept for compatibility (see --wait-lock) | 30000 |
 | `--json` | Output as JSON | false |
 | `--track <label>` | Signed-artifact mode: after an accepted broadcast, record a deployment with this label |  |
+| `--preflight` | Payments: right before the broadcast, check every input at the node (unspent, as planned, no covenant id, not pending in its mempool) and verify each input's signature against the node's UTXO; anything it cannot verify refuses the send. One node's view, not a consensus validation | false |
 
 ### Arguments
 

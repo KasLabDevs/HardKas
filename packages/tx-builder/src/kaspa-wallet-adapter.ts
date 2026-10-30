@@ -17,6 +17,7 @@
  * Authority order: wallet-core (rusty-kaspa) > pinned kaspa-wasm (managed) > here.
  */
 import { KASPA_WASM_REFERENCE, getCoinbaseMaturity, loadManagedKaspaWasmSync } from "@hardkas/core";
+import { covenantIdOf } from "./covenant-utxos.js";
 
 /** The managed WASM SDK, opaque to HardKAS callers. */
 type KaspaWasm = ReturnType<typeof loadManagedKaspaWasmSync>;
@@ -59,11 +60,38 @@ function toWasmSettings(input: GeneratorSettingsInput): Record<string, unknown> 
 }
 
 /**
+ * COVENANT-UTXO-PAYMENT-FILTER-1B (F1.0-bis): the pinned Generator spends a covenant's UTXO like any other input, which
+ * ends the covenant, so these functions never hand it one. Entries that are not a list (a live `UtxoContext`) cannot be
+ * checked and are refused too: nothing is built or estimated from them.
+ */
+function refuseCovenantEntries(entries: unknown): void {
+  if (!Array.isArray(entries)) {
+    const err = new Error(
+      "COVENANT_UTXO_UNVERIFIED: the entries are not a list (a UtxoContext?), so HardKAS cannot check that none is a covenant's " +
+        "UTXO. Pass them as a list of UTXO entries. Nothing was built."
+    );
+    (err as any).code = "COVENANT_UTXO_UNVERIFIED";
+    throw err;
+  }
+  const covenant = entries.filter((e) => covenantIdOf(e) !== undefined);
+  if (covenant.length > 0) {
+    const err = new Error(
+      `COVENANT_UTXO_NOT_PAYMENT_INPUT: ${covenant.length} entr${covenant.length === 1 ? "y belongs" : "ies belong"} to a covenant ` +
+        `(${covenant.map((e: any) => `${String(e?.outpoint?.transactionId)}:${String(e?.outpoint?.index)}`).join(", ")}): the Generator ` +
+        "builds ordinary payments only, and a covenant is spent only through its own commands. Nothing was built."
+    );
+    (err as any).code = "COVENANT_UTXO_NOT_PAYMENT_INPUT";
+    throw err;
+  }
+}
+
+/**
  * Iterates the WASM `Generator` and yields each `PendingTransaction`.
  * Consumer is responsible for signing (`pt.sign([keys])` or `pt.signInput(...)`)
  * and submission (`pt.submit(rpc)`).
  */
 export async function* buildTransactions(input: GeneratorSettingsInput): AsyncGenerator<any> {
+  refuseCovenantEntries(input.entries);
   const k: KaspaWasm = loadManagedKaspaWasmSync();
   const gen = new k.Generator(toWasmSettings(input));
   while (true) {
@@ -78,6 +106,7 @@ export async function* buildTransactions(input: GeneratorSettingsInput): AsyncGe
  * upstream `GeneratorSummary` (fees, mass, utxos, transactions count, ids).
  */
 export async function estimateTransactionsUpstream(input: GeneratorSettingsInput): Promise<any> {
+  refuseCovenantEntries(input.entries);
   const k: KaspaWasm = loadManagedKaspaWasmSync();
   const gen = new k.Generator(toWasmSettings(input));
   return await gen.estimate();

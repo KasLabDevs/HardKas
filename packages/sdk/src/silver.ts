@@ -16,9 +16,13 @@ import { HardkasCorpus, type CorpusVerifyResult } from "./corpus.js";
  * SilverScript v1 from the SDK.
  *
  * Compilation is the managed, pinned silverc (kaspanet/silverscript v1.0.0);
- * the P2SH lock and address come from the Kaspa SDK. Funding and spending are
- * @hardkas/accounts (buildScriptFunding, buildSilverSweep, prepareSilverSpend)
- * or `hardkas silver deploy|spend`. There is no simulated path here.
+ * the P2SH lock and address come from the Kaspa SDK. Covenants, and contract
+ * deploys and spends in transaction v1, are the v1 engine: `sdk.covenants`
+ * (planGenesis, planTransition, planContractDeploy, planContractSpend, sign,
+ * send), which `hardkas silver covenant`, `hardkas silver engine` and
+ * `hardkas silver deploy|spend --tx-version 1` run too. Transaction v0 deploys
+ * and spends are @hardkas/accounts (buildScriptFunding, buildSilverSweep) and
+ * `hardkas silver deploy|spend` by default. There is no simulated path here.
  */
 export interface SilverCompileOptions {
   /** Source text, or `file` relative to the SDK cwd. */

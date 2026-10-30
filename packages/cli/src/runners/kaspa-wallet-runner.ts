@@ -218,7 +218,7 @@ export async function runKaspaWalletSend(
     const { resolveHardkasAccount, resolveHardkasAccountAddress } =
       await import("@hardkas/accounts");
     const { JsonWrpcKaspaClient } = await import("@hardkas/kaspa-rpc");
-    const { planPaymentWithGenerator } = await import("@hardkas/tx-builder");
+    const { planPaymentWithGenerator, isCovenantUtxo } = await import("@hardkas/tx-builder");
     const { parseKasToSompi, formatSompiToKas, declaredNetworkIdOf } = await import("@hardkas/core");
     const configObj = config.config as Record<string, unknown>;
     const networkId =
@@ -246,9 +246,10 @@ export async function runKaspaWalletSend(
 
     // 1. Build Plan: the kaspa-wasm Generator selects the inputs, prices the
     //    transaction (network minimum rate) and makes the change.
+    // COVENANT-UTXO-PAYMENT-FILTER-1: a covenant's UTXOs are left out (a payment never spends one)
     const plan = await planPaymentWithGenerator({
       networkId,
-      utxos: utxos.map((u) => ({
+      utxos: utxos.filter((u) => !isCovenantUtxo(u)).map((u) => ({
         outpoint: u.outpoint,
         address: u.address,
         amountSompi: u.amountSompi,

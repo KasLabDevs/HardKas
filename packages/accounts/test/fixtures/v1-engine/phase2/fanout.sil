@@ -1,0 +1,10 @@
+pragma silverscript ^0.1.0;
+
+contract Decls(int max_outs, int init_value) {
+    int value = init_value;
+
+    #[covenant(from = 1, to = max_outs, mode = transition)]
+    function fanout(State prev_state, State[] next_states) : State[] {
+        return next_states;
+    }
+}

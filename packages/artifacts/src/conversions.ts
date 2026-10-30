@@ -16,7 +16,9 @@ export function utxoToArtifact(utxo: Utxo): UtxoArtifact {
     ...(utxo.blockDaaScore !== undefined
       ? { blockDaaScore: utxo.blockDaaScore.toString() }
       : {}),
-    ...(utxo.isCoinbase !== undefined ? { isCoinbase: utxo.isCoinbase } : {})
+    ...(utxo.isCoinbase !== undefined ? { isCoinbase: utxo.isCoinbase } : {}),
+    // COVENANT-UTXO-PAYMENT-FILTER-1C: a persisted covenant UTXO still says it belongs to a covenant
+    ...(utxo.covenantId !== undefined ? { covenantId: utxo.covenantId } : {})
   };
 }
 
@@ -40,7 +42,8 @@ export function utxoFromArtifact(artifact: UtxoArtifact): Utxo {
           )
         }
       : {}),
-    ...(artifact.isCoinbase !== undefined ? { isCoinbase: artifact.isCoinbase } : {})
+    ...(artifact.isCoinbase !== undefined ? { isCoinbase: artifact.isCoinbase } : {}),
+    ...(artifact.covenantId !== undefined ? { covenantId: artifact.covenantId } : {})
   };
 }
 

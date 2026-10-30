@@ -129,8 +129,10 @@ export async function runTxSign(input: TxSignRunnerInput): Promise<SignedTxArtif
       }));
   }
 
-  // Open the SDK to perform transaction signing & event emission & SQLite indexing
-  const sdk = await Hardkas.open({ cwd: workspaceRoot || process.cwd(), signer });
+  // Open the SDK to perform transaction signing & event emission & SQLite indexing. COVENANT-UTXO-PAYMENT-FILTER-1B: on
+  // the plan's network (as `tx send` opens on the signed artifact's), so the node `tx.sign` asks about the inputs is the
+  // plan's own.
+  const sdk = await Hardkas.open({ cwd: workspaceRoot || process.cwd(), signer, network: executionTarget.network });
 
   try {
     const signedArtifact = await sdk.tx.sign(planArtifact as any, accountName, {

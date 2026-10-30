@@ -1,0 +1,14 @@
+pragma silverscript ^0.1.0;
+
+contract Matrix(int init_amount, byte[32] init_owner) {
+    int amount = init_amount;
+    byte[32] owner = init_owner;
+
+    #[covenant.singleton(mode = transition, termination = allowed)]
+    function step(
+        State prev_state,
+        State[] next_states
+    ) : (State[]) {
+        return(next_states);
+    }
+}

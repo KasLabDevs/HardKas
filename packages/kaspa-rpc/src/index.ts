@@ -660,7 +660,7 @@ export class MockKaspaRpcClient implements KaspaRpcClient {
 
 export * from "./json-rpc-client.js";
 export { KaspaWrpcClient } from "./wrpc-client.js";
-export { officialTxIdOf, submitTxIdOf } from "./expected-txid.js";
+export { officialTxIdOf, officialTransactionWithUtxos, submitTxIdOf } from "./expected-txid.js";
 export * from "./health.js";
 
 export * from "./errors.js";

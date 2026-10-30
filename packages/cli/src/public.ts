@@ -10,3 +10,5 @@ export { runDashboard } from "./runners/dashboard-runner.js";
 
 
 export { buildHardkasProgram } from "./program.js";
+
+export { submitSilverTransaction } from "./commands/silver.js";

@@ -1,3 +1,5 @@
+import { HardkasError } from "@hardkas/core";
+import { covenantIdOf } from "@hardkas/tx-builder";
 import { RealTxSigner, RealTxSigningInput, RealTxSigningResult } from "./real-signer.js";
 import { loadKaspaWasm } from "./signer-backend.js";
 import { createBalancedTransaction, planOutputsWithChange, toWasmScriptPublicKey } from "./wasm-transaction.js";
@@ -15,6 +17,17 @@ export class KaspaSdkRealTxSigner implements RealTxSigner {
 
   async sign(input: RealTxSigningInput): Promise<RealTxSigningResult> {
     const { plan, account } = input;
+
+    // COVENANT-UTXO-PAYMENT-FILTER-1C: as in signTxPlanArtifact, a covenant's UTXO is never a payment input. Refused
+    // before the SDK loads or the account's key is read; a covenant is spent only through its own commands.
+    const covenantInputs = (plan.inputs ?? []).filter((u: any) => covenantIdOf(u) !== undefined);
+    if (covenantInputs.length > 0) {
+      throw new HardkasError(
+        "COVENANT_UTXO_NOT_PAYMENT_INPUT",
+        `This plan spends ${covenantInputs.length} covenant UTXO(s) (${covenantInputs.map((u: any) => `${u.outpoint?.transactionId}:${u.outpoint?.index}`).join(", ")}). ` +
+          "A payment never spends a covenant's UTXO: a covenant is spent only through its own commands (hardkas silver covenant). Nothing was signed."
+      );
+    }
 
     let sdk;
     try {
