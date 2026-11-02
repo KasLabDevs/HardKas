@@ -86,6 +86,11 @@ export interface HardkasConfig {
   l2?: {
     networks?: Record<string, any>; // Will be refined in @hardkas/l2
   };
+  /**
+   * First-party extensions installed in the project are enabled by default; `false` keeps one from loading
+   * (e.g. `extensions: { l2: false }`).
+   */
+  extensions?: Record<string, boolean>;
   experimental?: boolean;
   wasm?: {
     provider: "managed" | "local" | "release-asset";

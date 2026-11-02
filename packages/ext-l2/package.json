@@ -1,0 +1,70 @@
+{
+  "name": "@hardkas/ext-l2",
+  "version": "0.12.0-rc.29",
+  "description": "HardKAS CLI extension: the Igra L2 (EVM) lab (profiles, JSON-RPC, EVM transactions and contracts)",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/extension.d.ts",
+      "import": "./dist/extension.js",
+      "default": "./dist/extension.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "main": "./dist/extension.js",
+  "types": "./dist/extension.d.ts",
+  "hardkas": {
+    "extension": {
+      "id": "l2",
+      "apiVersion": 1,
+      "entry": "./dist/extension.js"
+    }
+  },
+  "files": [
+    "dist",
+    "templates",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsup src/extension.ts --format esm --dts --clean --external @hardkas/cli",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "peerDependencies": {
+    "@hardkas/cli": "workspace:*"
+  },
+  "dependencies": {
+    "@hardkas/accounts": "workspace:*",
+    "@hardkas/artifacts": "workspace:*",
+    "@hardkas/config": "workspace:*",
+    "@hardkas/core": "workspace:*",
+    "@hardkas/l2": "workspace:*",
+    "@hardkas/node-orchestrator": "workspace:*",
+    "@hardkas/query-store": "workspace:*",
+    "@hardkas/sdk": "workspace:*",
+    "picocolors": "^1.1.1",
+    "viem": "^2.21.32"
+  },
+  "devDependencies": {
+    "@hardkas/cli": "workspace:*",
+    "commander": "^12.1.0",
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  },
+  "license": "MIT",
+  "author": "Javier Rodriguez",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KasLabDevs/HardKas.git",
+    "directory": "packages/ext-l2"
+  },
+  "bugs": {
+    "url": "https://github.com/KasLabDevs/HardKas/issues"
+  },
+  "homepage": "https://github.com/KasLabDevs/HardKas/tree/main/packages/ext-l2#readme",
+  "publishConfig": {
+    "access": "public"
+  }
+}

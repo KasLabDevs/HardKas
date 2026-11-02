@@ -66,7 +66,9 @@ export const COMMANDS_HONORING_WORKSPACE: readonly string[] = [
   // F1.10: the v1 engine commands open the SDK on the invocation root, as tx sign / tx send do
   "silver engine",
   // V1-ENGINE-2: a covenant's lineage is read from the invocation root's records
-  "silver covenant inspect"
+  "silver covenant inspect",
+  // L2-EXT stage 2: extensions are installed in, and read from, the invocation root's project
+  "extension"
 ];
 
 /** A command's path under the program ("localnet snapshot verify"). */

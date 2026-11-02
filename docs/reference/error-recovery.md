@@ -84,7 +84,7 @@ Initialize or repair the local workspace:
 
 ```bash
 hardkas init
-hardkas dev doctor
+hardkas doctor workspace
 ```
 
 ## `MALFORMED_ARTIFACT`

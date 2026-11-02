@@ -1,4 +1,6 @@
 import { IgraTxSigner, IgraTxSigningInput, IgraTxSigningResult } from "./igra-signer.js";
+import { EvmSignerChainMismatchError, L2SafetyError } from "./errors.js";
+import { assertFeeWithinLimits, assertL2WriteAllowed, resolveFeeLimits } from "./network-guard.js";
 
 export interface ViemIgraTxSignerOptions {
   /**
@@ -88,6 +90,30 @@ export class ViemIgraTxSigner implements IgraTxSigner {
       );
     }
 
+    // 5b. Network binding: chain, mainnet authorization and fee ceilings are mandatory.
+    const guard = input.guard;
+    if (!guard) {
+      throw new L2SafetyError(
+        "L2_CHAIN_ID_REQUIRED",
+        "Igra plan signing requires a network guard (expectedChainId from the selected profile)."
+      );
+    }
+    if (plan.chainId !== guard.expectedChainId) {
+      throw new EvmSignerChainMismatchError(guard.expectedChainId, plan.chainId);
+    }
+    assertL2WriteAllowed({
+      chainId: plan.chainId,
+      profile: guard.profile,
+      allowMainnet: guard.allowMainnet,
+      operation: "l2 tx sign"
+    });
+    const gasLimit = BigInt(plan.request.gasLimit);
+    const gasPrice = BigInt(plan.request.gasPriceWei);
+    assertFeeWithinLimits(
+      { gasLimit, feePerGasWei: gasPrice },
+      resolveFeeLimits(guard.feeLimits, guard.profile?.feePolicy)
+    );
+
     // 6. Private Key Normalization & Validation
     let normalizedPk = account.privateKey;
     if (!normalizedPk.startsWith("0x")) {
@@ -113,30 +139,40 @@ export class ViemIgraTxSigner implements IgraTxSigner {
     }
 
     // 8. Perform Signing
+    let signed: `0x${string}`;
     try {
       const viemAccount = accounts.privateKeyToAccount(normalizedPk);
 
-      const signed = await viemAccount.signTransaction({
+      signed = await viemAccount.signTransaction({
         chainId: plan.chainId,
         to: plan.request.to as `0x${string}`,
         data: plan.request.data as `0x${string}`,
         value: BigInt(plan.request.valueWei),
-        gas: BigInt(plan.request.gasLimit),
-        gasPrice: BigInt(plan.request.gasPriceWei),
+        gas: gasLimit,
+        gasPrice,
         nonce: Number(plan.request.nonce)
       });
-
-      return {
-        rawTransaction: signed,
-        // Viem's signTransaction usually returns the raw serialized tx.
-        // We can use keccak256 to get the hash if viem provides it.
-        txHash: viem.keccak256 ? viem.keccak256(signed) : undefined
-      };
     } catch (e) {
       // Re-throw without leaking private key
       throw new Error(
-        `Igra signing failed: ${e instanceof Error ? ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) : String(e)}`
+        `Igra signing failed: ${e instanceof Error ? e.message : String(e)}`
       );
     }
+
+    // 9. The serialized transaction must carry the bound chain ID.
+    if (typeof viem.parseTransaction === "function") {
+      const decoded = viem.parseTransaction(signed);
+      if (decoded.chainId !== guard.expectedChainId) {
+        throw new L2SafetyError(
+          "L2_SIGNED_TX_MISMATCH",
+          `Serialized transaction chain ID ${String(decoded.chainId)} differs from bound chain ${guard.expectedChainId}.`
+        );
+      }
+    }
+
+    return {
+      rawTransaction: signed,
+      txHash: viem.keccak256 ? viem.keccak256(signed) : undefined
+    };
   }
 }

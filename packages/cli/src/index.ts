@@ -31,7 +31,13 @@ async function main() {
     // commands will catch it when they try to use it if it's required.
   }
 
-  const program = buildHardkasProgram({ loadedConfig });
+  // L2-EXT stage 2: first-party extensions installed in the project (design §3.3). The registry imports an extension
+  // only after its checks pass; without one, no extension code (and nothing of @hardkas/l2 or viem) is loaded.
+  const { loadExtensions } = await import("./extensions/registry.js");
+  const { HARDKAS_VERSION } = await import("@hardkas/artifacts");
+  const extensions = await loadExtensions({ workspaceRoot, loadedConfig, cliVersion: HARDKAS_VERSION });
+
+  const program = buildHardkasProgram({ loadedConfig, extensions });
 
   // R0-I1: a command's result is its exit status, never an abrupt termination. The entry sets the status and returns;
   // the runtime then closes naturally, after draining its pending work (an abrupt process.exit() raced V8's background

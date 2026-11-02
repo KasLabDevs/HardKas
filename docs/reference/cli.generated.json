@@ -1,7 +1,7 @@
 {
   "schema": "hardkas.cliReference.v1",
   "generatedAt": "deterministic",
-  "totalCommands": 234,
+  "totalCommands": 242,
   "flatSurface": [
     "hardkas accounts",
     "hardkas accounts balance",
@@ -51,7 +51,6 @@
     "hardkas dev accounts list",
     "hardkas dev accounts reveal",
     "hardkas dev create",
-    "hardkas dev doctor",
     "hardkas dev fixture",
     "hardkas dev fixture generate",
     "hardkas dev init",
@@ -62,11 +61,22 @@
     "hardkas doctor",
     "hardkas env",
     "hardkas env check",
+    "hardkas escrow",
+    "hardkas escrow rescue-v1",
+    "hardkas escrow rescue-v1 broadcast",
+    "hardkas escrow rescue-v1 inspect",
+    "hardkas escrow rescue-v1 prepare",
+    "hardkas escrow rescue-v1 sign",
     "hardkas evidence",
     "hardkas evidence explain",
     "hardkas evidence pack",
     "hardkas evidence verify",
     "hardkas explain",
+    "hardkas extension",
+    "hardkas extension doctor",
+    "hardkas extension install",
+    "hardkas extension list",
+    "hardkas extension remove",
     "hardkas init",
     "hardkas inspect",
     "hardkas kaspa",
@@ -77,8 +87,6 @@
     "hardkas kaspa wallet create",
     "hardkas kaspa wallet list",
     "hardkas kaspa wallet send",
-    "hardkas local",
-    "hardkas local wizard",
     "hardkas localnet",
     "hardkas localnet account",
     "hardkas localnet account create",
@@ -1669,59 +1677,6 @@
           "subcommands": []
         },
         {
-          "path": "hardkas dev doctor",
-          "name": "doctor",
-          "aliases": [],
-          "description": "Igra L2 lab, not the L1 core: check local dev readiness for an L2 profile (Igra by default): workspace, artifacts, query store, SDK import, dev server and the L2 JSON-RPC; the Kaspa node is not checked experimental",
-          "usage": "hardkas dev doctor [options]",
-          "arguments": [],
-          "options": [
-            {
-              "flags": "--profile <name>",
-              "description": "L2 network profile name",
-              "default": "igra",
-              "required": true,
-              "mandatory": false
-            },
-            {
-              "flags": "--rpc-url <url>",
-              "description": "Explicit Igra RPC URL to check",
-              "default": null,
-              "required": true,
-              "mandatory": false
-            },
-            {
-              "flags": "--account <name>",
-              "description": "EVM account that must exist in hardkas.config (its balance is not checked)",
-              "default": null,
-              "required": true,
-              "mandatory": false
-            },
-            {
-              "flags": "--timeout <ms>",
-              "description": "RPC timeout in milliseconds",
-              "default": "3000",
-              "required": true,
-              "mandatory": false
-            },
-            {
-              "flags": "--json",
-              "description": "Output as JSON",
-              "default": null,
-              "required": false,
-              "mandatory": false
-            },
-            {
-              "flags": "--release",
-              "description": "Run strict release gate checks",
-              "default": null,
-              "required": false,
-              "mandatory": false
-            }
-          ],
-          "subcommands": []
-        },
-        {
           "path": "hardkas dev fixture",
           "name": "fixture",
           "aliases": [],
@@ -1944,6 +1899,13 @@
           "default": false,
           "required": false,
           "mandatory": false
+        },
+        {
+          "flags": "--release",
+          "description": "With 'doctor workspace': also run the release checks (git, schemas, claims, raw appends, browser imports)",
+          "default": false,
+          "required": false,
+          "mandatory": false
         }
       ],
       "subcommands": []
@@ -1974,6 +1936,199 @@
             }
           ],
           "subcommands": []
+        }
+      ]
+    },
+    {
+      "path": "hardkas escrow",
+      "name": "escrow",
+      "aliases": [],
+      "description": "Escrow operations: lifecycle, security guards, and legacy v1 fund recovery",
+      "usage": "hardkas escrow [options] [command]",
+      "arguments": [],
+      "options": [],
+      "subcommands": [
+        {
+          "path": "hardkas escrow rescue-v1",
+          "name": "rescue-v1",
+          "aliases": [],
+          "description": "Legacy v1 Escrow fund recovery tools without exposing private keys in CLI arguments",
+          "usage": "hardkas escrow rescue-v1 [options] [command]",
+          "arguments": [],
+          "options": [],
+          "subcommands": [
+            {
+              "path": "hardkas escrow rescue-v1 broadcast",
+              "name": "broadcast",
+              "aliases": [],
+              "description": "Finalize and broadcast the signed rescue transaction to the network",
+              "usage": "hardkas escrow rescue-v1 broadcast [options] <draft-file>",
+              "arguments": [
+                {
+                  "name": "draft-file",
+                  "description": ""
+                }
+              ],
+              "options": [
+                {
+                  "flags": "--network <network>",
+                  "description": "Network (default simnet)",
+                  "default": "simnet",
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--json",
+                  "description": "Output as JSON",
+                  "default": false,
+                  "required": false,
+                  "mandatory": false
+                }
+              ],
+              "subcommands": []
+            },
+            {
+              "path": "hardkas escrow rescue-v1 inspect",
+              "name": "inspect",
+              "aliases": [],
+              "description": "Inspect a rescue draft and verify balance and signature status",
+              "usage": "hardkas escrow rescue-v1 inspect [options] <draft-file>",
+              "arguments": [
+                {
+                  "name": "draft-file",
+                  "description": ""
+                }
+              ],
+              "options": [
+                {
+                  "flags": "--json",
+                  "description": "Output as JSON",
+                  "default": false,
+                  "required": false,
+                  "mandatory": false
+                }
+              ],
+              "subcommands": []
+            },
+            {
+              "path": "hardkas escrow rescue-v1 prepare",
+              "name": "prepare",
+              "aliases": [],
+              "description": "Prepare a v1 escrow rescue draft spending an orphaned UTXO to a target address",
+              "usage": "hardkas escrow rescue-v1 prepare [options]",
+              "arguments": [],
+              "options": [
+                {
+                  "flags": "--address <address>",
+                  "description": "Legacy escrow P2SH address",
+                  "default": null,
+                  "required": true,
+                  "mandatory": true
+                },
+                {
+                  "flags": "--outpoint <outpoint>",
+                  "description": "Funding outpoint to spend (txId:index)",
+                  "default": null,
+                  "required": true,
+                  "mandatory": true
+                },
+                {
+                  "flags": "--to <address>",
+                  "description": "Destination address to recover funds to",
+                  "default": null,
+                  "required": true,
+                  "mandatory": true
+                },
+                {
+                  "flags": "--network <network>",
+                  "description": "Network id (default simnet)",
+                  "default": "simnet",
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--out <file>",
+                  "description": "Output draft file path (default rescue-v1-plan.draft.json)",
+                  "default": "rescue-v1-plan.draft.json",
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--fee <sompi>",
+                  "description": "Miner fee in sompi (default 400000 sompi = 0.004 KAS)",
+                  "default": "400000",
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--buyer-pk <hex>",
+                  "description": "Buyer x-only public key (32 bytes hex)",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--seller-pk <hex>",
+                  "description": "Seller x-only public key (32 bytes hex)",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--arbiter-pk <hex>",
+                  "description": "Arbiter x-only public key (32 bytes hex)",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--json",
+                  "description": "Output as JSON",
+                  "default": false,
+                  "required": false,
+                  "mandatory": false
+                }
+              ],
+              "subcommands": []
+            },
+            {
+              "path": "hardkas escrow rescue-v1 sign",
+              "name": "sign",
+              "aliases": [],
+              "description": "Sign a rescue draft with a local dev or keystore account",
+              "usage": "hardkas escrow rescue-v1 sign [options] <draft-file>",
+              "arguments": [
+                {
+                  "name": "draft-file",
+                  "description": ""
+                }
+              ],
+              "options": [
+                {
+                  "flags": "--account <name>",
+                  "description": "Account name or role (e.g. buyer, seller, or dev account name)",
+                  "default": null,
+                  "required": true,
+                  "mandatory": true
+                },
+                {
+                  "flags": "--role <role>",
+                  "description": "Contract role (buyer or seller)",
+                  "default": "buyer",
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--json",
+                  "description": "Output as JSON",
+                  "default": false,
+                  "required": false,
+                  "mandatory": false
+                }
+              ],
+              "subcommands": []
+            }
+          ]
         }
       ]
     },
@@ -2128,6 +2283,141 @@
         }
       ],
       "subcommands": []
+    },
+    {
+      "path": "hardkas extension",
+      "name": "extension",
+      "aliases": [],
+      "description": "First-party extensions installed in the project (the Igra L2 lab is the 'l2' extension) experimental",
+      "usage": "hardkas extension [options] [command]",
+      "arguments": [],
+      "options": [],
+      "subcommands": [
+        {
+          "path": "hardkas extension doctor",
+          "name": "doctor",
+          "aliases": [],
+          "description": "Run the checks of the extensions loaded in this project",
+          "usage": "hardkas extension doctor [options]",
+          "arguments": [],
+          "options": [
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        },
+        {
+          "path": "hardkas extension install",
+          "name": "install",
+          "aliases": [],
+          "description": "Install an extension in this project at the CLI's exact version, with install scripts disabled; it downloads no toolchain and starts nothing",
+          "usage": "hardkas extension install [options] <id>",
+          "arguments": [
+            {
+              "name": "id",
+              "description": ""
+            }
+          ],
+          "options": [
+            {
+              "flags": "--from <tgz>",
+              "description": "Install from a local npm tarball (offline); requires --sha256",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--sha256 <hex>",
+              "description": "SHA-256 the --from tarball must have",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--yes",
+              "description": "Run the package manager without asking",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            },
+            {
+              "flags": "--dry-run",
+              "description": "Only print the checks' result and the command that would run",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            },
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        },
+        {
+          "path": "hardkas extension list",
+          "name": "list",
+          "aliases": [],
+          "description": "List the known extensions and their state in this project (installed, version, enabled, compatible)",
+          "usage": "hardkas extension list [options]",
+          "arguments": [],
+          "options": [
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        },
+        {
+          "path": "hardkas extension remove",
+          "name": "remove",
+          "aliases": [],
+          "description": "Remove an extension from this project",
+          "usage": "hardkas extension remove [options] <id>",
+          "arguments": [
+            {
+              "name": "id",
+              "description": ""
+            }
+          ],
+          "options": [
+            {
+              "flags": "--yes",
+              "description": "Run the package manager without asking",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            },
+            {
+              "flags": "--dry-run",
+              "description": "Only print the command that would run",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            },
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        }
+      ]
     },
     {
       "path": "hardkas init",
@@ -2404,56 +2694,6 @@
               "subcommands": []
             }
           ]
-        }
-      ]
-    },
-    {
-      "path": "hardkas local",
-      "name": "local",
-      "aliases": [],
-      "description": "Local development and environment lifecycle tools",
-      "usage": "hardkas local [options] [command]",
-      "arguments": [],
-      "options": [],
-      "subcommands": [
-        {
-          "path": "hardkas local wizard",
-          "name": "wizard",
-          "aliases": [],
-          "description": "Guided Igra L2 (EVM) check, an L2 lab: JSON-RPC, EVM account and its balance; not a Kaspa L1 setup experimental",
-          "usage": "hardkas local wizard [options]",
-          "arguments": [],
-          "options": [
-            {
-              "flags": "--profile <name>",
-              "description": "L2 network profile name",
-              "default": "igra",
-              "required": true,
-              "mandatory": false
-            },
-            {
-              "flags": "--account <name>",
-              "description": "EVM account name in hardkas.config (if it is missing, a key is printed for you to add)",
-              "default": "dev_alice",
-              "required": true,
-              "mandatory": false
-            },
-            {
-              "flags": "--non-interactive",
-              "description": "Skip interactive prompts (will fail if input required)",
-              "default": false,
-              "required": false,
-              "mandatory": false
-            },
-            {
-              "flags": "--json",
-              "description": "Output as JSON",
-              "default": false,
-              "required": false,
-              "mandatory": false
-            }
-          ],
-          "subcommands": []
         }
       ]
     },
@@ -6198,7 +6438,7 @@
       "path": "hardkas toolchain",
       "name": "toolchain",
       "aliases": [],
-      "description": "Install and verify the upstream toolchains HardKAS pins (official Kaspa release assets)",
+      "description": "Install and verify the upstream toolchains HardKAS pins (official Kaspa release assets; an installed extension adds its own, e.g. the l2 extension's foundry)",
       "usage": "hardkas toolchain [options] [command]",
       "arguments": [],
       "options": [],

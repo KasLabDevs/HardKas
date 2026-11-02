@@ -4,6 +4,8 @@ node_modules/
 # Build outputs and tool caches
 dist/
 dist-release/
+# stale tsc emit of the CLI (the published CLI is dist/, built by tsup)
+packages/cli/out/
 .turbo/
 .tmp/
 .cache/

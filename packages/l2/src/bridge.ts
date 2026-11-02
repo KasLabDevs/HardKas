@@ -30,16 +30,24 @@ const IGRA_BRIDGE_ASSUMPTIONS: L2BridgeAssumptions = {
     "Bridge security is phase-dependent: pre-ZK -> MPC -> ZK.",
     "pre-ZK implies stronger trust assumptions.",
     "MPC implies threshold committee trust assumptions.",
-    "ZK phase enables validity-proof based trustless exit.",
-    "HardKAS does not perform bridge operations in 0.12.0-rc.29."
+    "A ZK proof system alone does not guarantee trustless exit: that needs a deployed, working proof-based withdrawal path.",
+    "HardKAS performs no bridge operations; these are static assumptions, not observations."
   ],
   updatedAt: "2026-05-07T00:00:00Z" // Reference date for Phase 33
 };
 
 const BRIDGE_ASSUMPTIONS_REGISTRY: L2BridgeAssumptions[] = [IGRA_BRIDGE_ASSUMPTIONS];
 
+/** Bridge assumptions are per network family: every Igra profile shares the Igra entry. */
+const FAMILY_ALIASES: Readonly<Record<string, string>> = {
+  "igra-mainnet": "igra",
+  "igra-galleon": "igra",
+  "igra-caravel": "igra"
+};
+
 export function getL2BridgeAssumptions(network: string): L2BridgeAssumptions | null {
-  return BRIDGE_ASSUMPTIONS_REGISTRY.find((a) => a.l2Network === network) || null;
+  const family = FAMILY_ALIASES[network] ?? network;
+  return BRIDGE_ASSUMPTIONS_REGISTRY.find((a) => a.l2Network === family) || null;
 }
 
 export function listL2BridgeAssumptions(): readonly L2BridgeAssumptions[] {

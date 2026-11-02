@@ -1198,9 +1198,6 @@ importers:
       '@hardkas/kaspa-rpc':
         specifier: workspace:*
         version: link:../kaspa-rpc
-      '@hardkas/l2':
-        specifier: workspace:*
-        version: link:../l2
       '@hardkas/localnet':
         specifier: workspace:*
         version: link:../localnet
@@ -1252,9 +1249,6 @@ importers:
       picocolors:
         specifier: ^1.1.1
         version: 1.1.1
-      viem:
-        specifier: ^2.21.32
-        version: 2.55.11(typescript@5.9.3)(zod@3.25.76)
       zod:
         specifier: ^3.23.8
         version: 3.25.76
@@ -1411,6 +1405,55 @@ importers:
         specifier: ^2.1.8
         version: 2.1.9(@types/node@26.1.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(lightningcss@1.32.0)(terser@5.51.2)
 
+  packages/ext-l2:
+    dependencies:
+      '@hardkas/accounts':
+        specifier: workspace:*
+        version: link:../accounts
+      '@hardkas/artifacts':
+        specifier: workspace:*
+        version: link:../artifacts
+      '@hardkas/config':
+        specifier: workspace:*
+        version: link:../config
+      '@hardkas/core':
+        specifier: workspace:*
+        version: link:../core
+      '@hardkas/l2':
+        specifier: workspace:*
+        version: link:../l2
+      '@hardkas/node-orchestrator':
+        specifier: workspace:*
+        version: link:../node-orchestrator
+      '@hardkas/query-store':
+        specifier: workspace:*
+        version: link:../query-store
+      '@hardkas/sdk':
+        specifier: workspace:*
+        version: link:../sdk
+      picocolors:
+        specifier: ^1.1.1
+        version: 1.1.1
+      viem:
+        specifier: ^2.21.32
+        version: 2.55.11(typescript@5.9.3)(zod@4.4.3)
+    devDependencies:
+      '@hardkas/cli':
+        specifier: workspace:*
+        version: link:../cli
+      commander:
+        specifier: ^12.1.0
+        version: 12.1.0
+      tsup:
+        specifier: ^8.3.5
+        version: 8.5.1(jiti@2.7.0)(postcss@8.5.25)(tsx@4.23.7)(typescript@5.9.3)(yaml@2.9.0)
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
+      vitest:
+        specifier: ^2.1.8
+        version: 2.1.9(@types/node@26.1.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(lightningcss@1.32.0)(terser@5.51.2)
+
   packages/jobs:
     dependencies:
       '@hardkas/observability':
@@ -1454,6 +1497,9 @@ importers:
       '@hardkas/artifacts':
         specifier: workspace:*
         version: link:../artifacts
+      '@hardkas/core':
+        specifier: workspace:*
+        version: link:../core
       viem:
         specifier: ^2.48.8
         version: 2.55.11(typescript@5.9.3)(zod@4.4.3)
@@ -1706,9 +1752,6 @@ importers:
       '@hardkas/kaspa-rpc':
         specifier: workspace:*
         version: link:../kaspa-rpc
-      '@hardkas/l2':
-        specifier: workspace:*
-        version: link:../l2
       '@hardkas/localnet':
         specifier: workspace:*
         version: link:../localnet
@@ -15840,11 +15883,6 @@ snapshots:
       d3-selection: 3.0.0
       d3-zoom: 3.0.0
 
-  abitype@1.2.3(typescript@5.9.3)(zod@3.25.76):
-    optionalDependencies:
-      typescript: 5.9.3
-      zod: 3.25.76
-
   abitype@1.2.3(typescript@5.9.3)(zod@4.4.3):
     optionalDependencies:
       typescript: 5.9.3
@@ -19510,21 +19548,6 @@ snapshots:
       object-keys: 1.1.1
       safe-push-apply: 1.0.0
 
-  ox@0.14.33(typescript@5.9.3)(zod@3.25.76):
-    dependencies:
-      '@adraffy/ens-normalize': 1.11.1
-      '@noble/ciphers': 1.3.0
-      '@noble/curves': 1.9.1
-      '@noble/hashes': 1.8.0
-      '@scure/bip32': 1.7.0
-      '@scure/bip39': 1.6.0
-      abitype: 1.2.3(typescript@5.9.3)(zod@3.25.76)
-      eventemitter3: 5.0.1
-    optionalDependencies:
-      typescript: 5.9.3
-    transitivePeerDependencies:
-      - zod
-
   ox@0.14.33(typescript@5.9.3)(zod@4.4.3):
     dependencies:
       '@adraffy/ens-normalize': 1.11.1
@@ -21735,23 +21758,6 @@ snapshots:
     dependencies:
       '@types/unist': 3.0.3
       vfile-message: 4.0.3
-
-  viem@2.55.11(typescript@5.9.3)(zod@3.25.76):
-    dependencies:
-      '@noble/curves': 1.9.1
-      '@noble/hashes': 1.8.0
-      '@scure/bip32': 1.7.0
-      '@scure/bip39': 1.6.0
-      abitype: 1.2.3(typescript@5.9.3)(zod@3.25.76)
-      isows: 1.0.7(ws@8.21.0)
-      ox: 0.14.33(typescript@5.9.3)(zod@3.25.76)
-      ws: 8.21.0
-    optionalDependencies:
-      typescript: 5.9.3
-    transitivePeerDependencies:
-      - bufferutil
-      - utf-8-validate
-      - zod
 
   viem@2.55.11(typescript@5.9.3)(zod@4.4.3):
     dependencies:

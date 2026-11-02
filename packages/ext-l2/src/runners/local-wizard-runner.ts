@@ -1,0 +1,193 @@
+import pc from "picocolors";
+import { UI, handleError } from "@hardkas/cli/extension-kit";
+import { loadHardkasConfig } from "@hardkas/config";
+import { HardkasSchemas } from "@hardkas/artifacts";
+
+export interface LocalWizardResult {
+  schema: typeof HardkasSchemas.LocalWizardV1;
+  step: string;
+  status: "success" | "pending" | "failed";
+  suggestion?: string;
+  accountCreated?: boolean;
+}
+
+export async function runLocalWizard(options: {
+  profile: string;
+  account: string;
+  nonInteractive: boolean;
+  json: boolean;
+  rpcUrl?: string;
+}) {
+  try {
+    const config = await loadHardkasConfig();
+    const configRecord = config.config as Record<string, unknown>;
+    const networkId =
+      (typeof configRecord["networkId"] === "string"
+        ? configRecord["networkId"]
+        : config.config.defaultNetwork) || "simnet";
+    const { getL2NetworkProfile, EvmJsonRpcClient } = await import("@hardkas/l2");
+    const { listHardkasAccounts } = await import("@hardkas/accounts");
+
+    if (!options.json) {
+      console.log(pc.bold("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"));
+      console.log(pc.bold(`HardKAS • Local Dev Wizard`));
+      console.log(pc.bold("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"));
+    }
+
+    const result: LocalWizardResult = {
+      schema: HardkasSchemas.LocalWizardV1,
+      step: "preflight",
+      status: "pending"
+    };
+
+    // 1. Preflight Diagnostic
+    if (!options.json) console.log(`${pc.cyan(pc.bold("1. Checking Environment"))}`);
+    let profile;
+    try {
+      profile = await getL2NetworkProfile({
+        name: options.profile,
+        userProfiles: config.config.l2?.networks,
+        // No implicit endpoint or chain rewrite: the selected profile (default `local`) decides.
+        cliOverrides: {
+          ...(options.rpcUrl ? { rpcUrl: options.rpcUrl } : {})
+        }
+      });
+      const client = new EvmJsonRpcClient({ url: profile.rpcUrl!, profile, timeoutMs: 2000 });
+      await client.assertExpectedChainId();
+      if (!options.json)
+        console.log(
+          `  ${pc.green("✓")} L2 RPC is reachable and serves chain ${profile.chainId} (${profile.name} [${profile.environment}], ${profile.rpcUrl})`
+        );
+    } catch (e) {
+      const isLocal = profile?.environment === "local";
+      if (!options.json) {
+        console.log(`  ${pc.red("✗")} L2 RPC check failed: ${e instanceof Error ? e.message : String(e)}`);
+        if (isLocal) console.log(`    ${pc.dim("Please start your local node first.")}`);
+      }
+      result.status = "failed";
+      result.suggestion = isLocal
+        ? "Start the local EVM node (Anvil) on 127.0.0.1:8545"
+        : "Check the profile's RPC URL and chain ID";
+      if (options.json) console.log(JSON.stringify(result, null, 2));
+      return;
+    }
+
+    // 2. Account Check/Creation
+    result.step = "accounts";
+    if (!options.json) console.log(`\n${pc.cyan(pc.bold("2. Checking Accounts"))}`);
+    const accounts = listHardkasAccounts(config.config);
+    let targetAccount = accounts.find(
+      (a) => a.name === options.account && a.kind === "evm-private-key"
+    );
+
+    if (!targetAccount) {
+      if (options.nonInteractive) {
+        result.status = "failed";
+        result.suggestion = `Account "${options.account}" missing. Run in interactive mode to generate.`;
+        if (options.json) console.log(JSON.stringify(result, null, 2));
+        else console.log(`  ${pc.red("✗")} Account missing (non-interactive mode).`);
+        return;
+      }
+
+      if (!options.json)
+        console.log(
+          `  ${pc.yellow("⚠")} No EVM account named "${options.account}" found.`
+        );
+      const confirm = await UI.confirm(
+        `Would you like to generate a new local EVM account for "${options.account}"?`
+      );
+
+      if (confirm) {
+        const { generatePrivateKey, privateKeyToAccount } = await import("viem/accounts");
+        const privKey = generatePrivateKey();
+        const account = privateKeyToAccount(privKey);
+
+        if (!options.json) {
+          console.log(
+            `\n  ${pc.bgYellow(pc.black(pc.bold(" SECURITY ACTION: PRIVATE KEY GENERATED ")))}`
+          );
+          console.log(
+            `  ${pc.yellow("This key is for LOCAL DEVELOPMENT ONLY. Never use it for real assets.")}\n`
+          );
+
+          console.log(`  ${pc.green("✓")} New account generated:`);
+          console.log(`    Name:    ${pc.white(options.account)}`);
+          console.log(`    Address: ${pc.white(account.address)}`);
+
+          console.log(
+            `\n  ${pc.yellow("Action Required:")} Add this to your ${pc.white("hardkas.config.ts")}:`
+          );
+          console.log(pc.gray("  ----------------------------------------"));
+          console.log(pc.white(`  accounts: {`));
+          console.log(pc.white(`    ${options.account}: {`));
+          console.log(pc.white(`      kind: "evm-private-key",`));
+          console.log(pc.white(`      address: "${account.address}",`));
+          console.log(pc.white(`      privateKey: "${privKey}"`));
+          console.log(pc.white(`    }`));
+          console.log(pc.white(`  }`));
+          console.log(pc.gray("  ----------------------------------------"));
+          console.log(
+            `\n  ${pc.dim("HardKAS does not automatically write secrets to your config for safety.")}`
+          );
+          console.log(
+            `  ${pc.dim("Please update your config and run the wizard again to finish setup.")}`
+          );
+        }
+
+        result.status = "pending";
+        result.accountCreated = true;
+        result.suggestion = "Update hardkas.config.ts with generated key";
+        if (options.json) console.log(JSON.stringify(result, null, 2));
+        return;
+      } else {
+        if (!options.json) console.log(`  ${pc.red("✗")} Setup cancelled.`);
+        result.status = "failed";
+        if (options.json) console.log(JSON.stringify(result, null, 2));
+        return;
+      }
+    } else {
+      if (!options.json)
+        console.log(
+          `  ${pc.green("✓")} Account "${targetAccount.name}" found (${targetAccount.address})`
+        );
+    }
+
+    // 3. Balance & Funding
+    result.step = "balance";
+    if (!options.json) console.log(`\n${pc.cyan(pc.bold("3. Checking Balance"))}`);
+    const client = new EvmJsonRpcClient({ url: profile.rpcUrl! });
+    const balance = await client.getBalanceWei(targetAccount.address!);
+    const kasBalance = Number(balance) / 1e18;
+
+    if (kasBalance === 0) {
+      if (!options.json) {
+        console.log(`  ${pc.yellow("⚠")} Account has 0 iKAS.`);
+        console.log(
+          `  ${pc.dim("Please fund your account manually or via local faucet.")}`
+        );
+      }
+      result.status = "failed";
+      result.suggestion = "Fund local account";
+    } else {
+      if (!options.json) console.log(`  ${pc.green("✓")} Balance: ${kasBalance} iKAS`);
+    }
+
+    // 4. Final Success
+    result.status = kasBalance > 0 ? "success" : "failed";
+
+    if (options.json) {
+      console.log(JSON.stringify(result, null, 2));
+      return;
+    }
+
+    if (result.status === "success") {
+      // SURFACE-TRUTH-1B: the L1 CLI registers no `metamask` group, so the wizard no longer sends you to
+      // `hardkas metamask snippet|account`; it prints what a wallet needs.
+      console.log(`\n${pc.cyan(pc.bold("4. Wallet"))}`);
+      console.log(`  ${pc.dim("Add the network to your EVM wallet by hand:")} chain ID ${profile?.chainId}, RPC ${profile?.rpcUrl}`);
+      console.log(`\n${pc.bold(pc.green("READY!"))} The Igra L2 checks passed.\n`);
+    }
+  } catch (e) {
+    handleError(e);
+  }
+}

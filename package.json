@@ -45,6 +45,8 @@
     "docs:generate-claims": "node scripts/generate-claims-docs.mjs",
     "docs:check-claims": "node scripts/generate-claims-docs.mjs --check",
     "docs:check-site": "node scripts/check-site-map.mjs",
+    "site:build": "node scripts/build-unified-site.mjs",
+    "site:test": "node scripts/test-unified-site.mjs",
     "hardkas": "pnpm --filter @hardkas/cli run dev",
     "cli": "pnpm --filter @hardkas/cli run dev",
     "check": "pnpm typecheck && pnpm build && pnpm version:check && pnpm docs:check-cli && pnpm docs:check-claims && pnpm check:docs && pnpm test",

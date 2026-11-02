@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { runDevCreate } from "../src/runners/dev-create-runner.js";
 import { runDevInit } from "../src/runners/dev-init-runner.js";
-import { runDevDoctor } from "../src/runners/dev-doctor-runner.js";
+import { collectWorkspaceDoctorChecks, renderWorkspaceDoctorReport } from "../src/runners/workspace-doctor-runner.js";
 import fs from "node:fs";
 import path from "node:path";
 
@@ -37,14 +37,23 @@ describe("CLI dev namespace", () => {
     );
   });
 
-  it("dev doctor outputs stable JSON envelope when --json is passed", async () => {
+  // `dev doctor` moved to the l2 extension (L2-EXT stage 2): its test is packages/ext-l2/test/dev-doctor.test.ts.
+  // NEW-11: its L1 checks stayed in the core as `doctor workspace`; the same envelope test, on the same mocks.
+  it("doctor workspace outputs stable JSON envelope when --json is passed", async () => {
     const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
-    await runDevDoctor({ profile: "igra", json: true });
+    const result = await collectWorkspaceDoctorChecks({});
+    await renderWorkspaceDoctorReport(result, {
+      json: true,
+      title: "Workspace Doctor",
+      failureCode: "WORKSPACE_DOCTOR_FAILED",
+      failureMessage: "Workspace doctor checks failed."
+    });
 
     const output = logSpy.mock.calls[0][0];
     const parsed = JSON.parse(output);
     expect(parsed.schema).toBe("hardkas.devDoctor.v1");
     expect(parsed.status).toBeDefined();
     expect(parsed.checks).toBeInstanceOf(Array);
+    expect(parsed.checks.some((c: any) => /L2|Igra|EVM/.test(c.name))).toBe(false);
   });
 });

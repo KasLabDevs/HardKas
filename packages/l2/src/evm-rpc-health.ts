@@ -27,7 +27,7 @@ export async function checkEvmRpcHealth(
     const latencyMs = Date.now() - start;
 
     return {
-      url: options.url,
+      url: client.url,
       ready: true,
       checkedAt: new Date().toISOString(),
       latencyMs,
@@ -37,7 +37,7 @@ export async function checkEvmRpcHealth(
     };
   } catch (e) {
     return {
-      url: options.url,
+      url: client.url,
       ready: false,
       checkedAt: new Date().toISOString(),
       error: e instanceof Error ? ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) : String(e)

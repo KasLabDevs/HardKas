@@ -2189,6 +2189,11 @@
         "flags": "--strict",
         "description": "Fail strictly (exit 1) if invariants or consistency checks fail",
         "defaultValue": false
+      },
+      {
+        "flags": "--release",
+        "description": "With 'doctor workspace': also run the release checks (git, schemas, claims, raw appends, browser imports)",
+        "defaultValue": false
       }
     ],
     "aliases": [],
@@ -2866,42 +2871,6 @@
     "status": "REGISTERED"
   },
   {
-    "commandPath": "hardkas dev doctor",
-    "description": "Igra L2 lab, not the L1 core: check local dev readiness for an L2 profile (Igra by default): workspace, artifacts, query store, SDK import, dev server and the L2 JSON-RPC; the Kaspa node is not checked experimental",
-    "arguments": [],
-    "options": [
-      {
-        "flags": "--profile <name>",
-        "description": "L2 network profile name",
-        "defaultValue": "igra"
-      },
-      {
-        "flags": "--rpc-url <url>",
-        "description": "Explicit Igra RPC URL to check"
-      },
-      {
-        "flags": "--account <name>",
-        "description": "EVM account that must exist in hardkas.config (its balance is not checked)"
-      },
-      {
-        "flags": "--timeout <ms>",
-        "description": "RPC timeout in milliseconds",
-        "defaultValue": "3000"
-      },
-      {
-        "flags": "--json",
-        "description": "Output as JSON"
-      },
-      {
-        "flags": "--release",
-        "description": "Run strict release gate checks"
-      }
-    ],
-    "aliases": [],
-    "category": "Dev",
-    "status": "REGISTERED"
-  },
-  {
     "commandPath": "hardkas dev accounts list",
     "description": "List dev accounts",
     "arguments": [],
@@ -3050,36 +3019,6 @@
     ],
     "aliases": [],
     "category": "Dev",
-    "status": "REGISTERED"
-  },
-  {
-    "commandPath": "hardkas local wizard",
-    "description": "Guided Igra L2 (EVM) check, an L2 lab: JSON-RPC, EVM account and its balance; not a Kaspa L1 setup experimental",
-    "arguments": [],
-    "options": [
-      {
-        "flags": "--profile <name>",
-        "description": "L2 network profile name",
-        "defaultValue": "igra"
-      },
-      {
-        "flags": "--account <name>",
-        "description": "EVM account name in hardkas.config (if it is missing, a key is printed for you to add)",
-        "defaultValue": "dev_alice"
-      },
-      {
-        "flags": "--non-interactive",
-        "description": "Skip interactive prompts (will fail if input required)",
-        "defaultValue": false
-      },
-      {
-        "flags": "--json",
-        "description": "Output as JSON",
-        "defaultValue": false
-      }
-    ],
-    "aliases": [],
-    "category": "Local",
     "status": "REGISTERED"
   },
   {
@@ -4562,6 +4501,106 @@
     "options": [],
     "aliases": [],
     "category": "Task",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas extension list",
+    "description": "List the known extensions and their state in this project (installed, version, enabled, compatible)",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Extension",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas extension install",
+    "description": "Install an extension in this project at the CLI's exact version, with install scripts disabled; it downloads no toolchain and starts nothing",
+    "arguments": [
+      {
+        "name": "id",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--from <tgz>",
+        "description": "Install from a local npm tarball (offline); requires --sha256"
+      },
+      {
+        "flags": "--sha256 <hex>",
+        "description": "SHA-256 the --from tarball must have"
+      },
+      {
+        "flags": "--yes",
+        "description": "Run the package manager without asking",
+        "defaultValue": false
+      },
+      {
+        "flags": "--dry-run",
+        "description": "Only print the checks' result and the command that would run",
+        "defaultValue": false
+      },
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Extension",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas extension remove",
+    "description": "Remove an extension from this project",
+    "arguments": [
+      {
+        "name": "id",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--yes",
+        "description": "Run the package manager without asking",
+        "defaultValue": false
+      },
+      {
+        "flags": "--dry-run",
+        "description": "Only print the command that would run",
+        "defaultValue": false
+      },
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Extension",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas extension doctor",
+    "description": "Run the checks of the extensions loaded in this project",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Extension",
     "status": "REGISTERED"
   },
   {

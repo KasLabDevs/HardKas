@@ -10,3 +10,15 @@ export * from "./viem-igra-signer.js";
 export * from "./evm-receipts.js";
 export * from "./bridge.js";
 export * from "./abi.js";
+export * from "./tx-pipeline.js";
+export * from "./nonce-manager.js";
+export * from "./contract.js";
+export * from "./resilience.js";
+export * from "./errors.js";
+export * from "./network-guard.js";
+export {
+  parseChainIdHex,
+  parseUserChainId,
+  parseHexQuantity,
+  assertValidChainId
+} from "./hex.js";

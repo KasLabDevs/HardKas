@@ -1,4 +1,3 @@
-import { listL2Profiles, getL2Profile, L2NetworkProfile } from "@hardkas/l2";
 import { HardkasError } from "@hardkas/core";
 import type { Hardkas } from "./index.js";
 import { HardkasIgra } from "./igra.js";
@@ -14,17 +13,19 @@ export class HardkasL2 {
     this.igra = new HardkasIgra(sdk);
   }
   /**
-   * Lists all available L2 network profiles.
+   * L2 profiles live in `@hardkas/l2`, outside the core SDK (L2-EXT, D2): refuses with L2_EXTENSION_REQUIRED.
+   * Use `listL2Profiles()` from `@hardkas/l2` directly.
    */
-  listProfiles(): readonly L2NetworkProfile[] {
-    return listL2Profiles();
+  listProfiles(): never {
+    throw extensionRequired("listL2Profiles()");
   }
 
   /**
-   * Gets a specific L2 network profile by name.
+   * L2 profiles live in `@hardkas/l2`, outside the core SDK (L2-EXT, D2): refuses with L2_EXTENSION_REQUIRED.
+   * Use `getL2Profile(name)` from `@hardkas/l2` directly.
    */
-  getProfile(name: string): L2NetworkProfile | null {
-    return getL2Profile(name) || null;
+  getProfile(_name: string): never {
+    throw extensionRequired("getL2Profile(name)");
   }
 
   /**
@@ -47,6 +48,16 @@ export class HardkasL2 {
   async bridge(): Promise<never> {
     throw notInCore("L2 bridge support");
   }
+}
+
+// L2-EXT stage 2 (D2): the core SDK no longer depends on @hardkas/l2 (nor, through it, on viem), so loading the SDK
+// loads no L2 code. The profile list moved with the L2 package; the refusal names the replacement.
+function extensionRequired(replacement: string): HardkasError {
+  return new HardkasError(
+    "L2_EXTENSION_REQUIRED",
+    `L2 network profiles are not part of the HardKAS core SDK: install @hardkas/l2 and call ${replacement} from it ` +
+      "(for the CLI: hardkas extension install l2)."
+  );
 }
 
 // SURFACE-TRUTH-1B (ST-D): a typed refusal that sends nobody anywhere. The former messages said "Use CLI for experimental

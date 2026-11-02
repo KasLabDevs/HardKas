@@ -1,3 +1,5 @@
+// REMED-CLOSE: a workspace of its own (HARDKAS_ROOT), never the repository root's .hardkas — imported first
+import "./helpers/isolated-root.js";
 import { describe, it, expect, vi } from "vitest";
 import { devServerEmitter } from "../src/stream.js";
 import { createDevServer, resolveCorsOrigin } from "../src/server.js";

@@ -4,10 +4,38 @@ import path from "node:path";
 import fs from "node:fs";
 import url from "node:url";
 import { coerceHardkasDependencyVersions } from "../lib/scaffold-versions.js";
+import { EMPTY_EXTENSION_REGISTRY, type ExtensionRegistry, extensionStateOf } from "../extensions/registry.js";
+import { KNOWN_EXTENSIONS } from "../extensions/api.js";
+import { extensionUnavailableError } from "../extensions/refusal.js";
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 
-export function registerCreateCommand(program: Command) {
+/**
+ * L2-EXT stage 2 (design §3.7): a template id is the core's, else a loaded extension's; one a known extension provides
+ * while it is not loaded is a typed refusal that copies nothing. An id in both places is a programming error.
+ */
+function resolveTemplate(template: string, extensions: ExtensionRegistry): { dir: string; nextSteps?: readonly string[] } {
+  const possiblePaths = [
+    path.join(__dirname, "../templates", template), // from dist
+    path.join(__dirname, "../../templates", template) // from src/commands
+  ];
+  const core = possiblePaths.find((p) => fs.existsSync(p));
+  const fromExtensions = extensions.loaded.flatMap((ext) => (ext.extension.templates?.() ?? []).filter((t) => t.id === template));
+  if (core && fromExtensions.length > 0) {
+    throw new Error(`Template '${template}' is defined by both the core and an extension.`);
+  }
+  if (core) return { dir: core };
+  if (fromExtensions[0]) return { dir: fromExtensions[0].dir, ...(fromExtensions[0].nextSteps ? { nextSteps: fromExtensions[0].nextSteps } : {}) };
+  const owner = KNOWN_EXTENSIONS.find((k) => k.templates.includes(template));
+  const ownerState = owner ? extensionStateOf(extensions, owner.id) : undefined;
+  if (owner && ownerState?.status === "loaded") {
+    throw new Error(`Template '${template}' is not provided by the installed ${owner.packageName}@${ownerState.version}.`);
+  }
+  if (owner) throw extensionUnavailableError(owner, ownerState, `The '${template}' template`);
+  throw new Error(`Template '${template}' not found.`);
+}
+
+export function registerCreateCommand(program: Command, extensions: ExtensionRegistry = EMPTY_EXTENSION_REGISTRY) {
   program
     .command("create")
     .description(`Scaffold a new HardKAS project from a template ${UI.maturity("stable")}`)
@@ -19,25 +47,9 @@ export function registerCreateCommand(program: Command) {
       try {
         const destDir = path.resolve(process.cwd(), dest);
         
-        // Find template directory
-        // In dist, we are at packages/cli/dist/index.js (or similar)
-        // The templates are copied to packages/cli/templates during build (or we run from source)
-        const possiblePaths = [
-          path.join(__dirname, "../templates", template), // from dist
-          path.join(__dirname, "../../templates", template), // from src/commands
-        ];
-
-        let templateDir = "";
-        for (const p of possiblePaths) {
-          if (fs.existsSync(p)) {
-            templateDir = p;
-            break;
-          }
-        }
-
-        if (!templateDir) {
-          throw new Error(`Template '${template}' not found.`);
-        }
+        // In dist, we are at packages/cli/dist/index.js (or similar); the templates ship in packages/cli/templates.
+        const resolved = resolveTemplate(template, extensions);
+        const templateDir = resolved.dir;
 
         if (fs.existsSync(destDir)) {
           throw new Error(`Destination directory '${dest}' already exists.`);
@@ -65,6 +77,11 @@ export function registerCreateCommand(program: Command) {
         if (fs.existsSync(npmIgnore)) {
           fs.renameSync(npmIgnore, gitIgnore);
         }
+        // L2-EXT stage 5: package managers drop dot-ignore files from a tarball, so a template ships `_gitignore`
+        const underscoreIgnore = path.join(destDir, "_gitignore");
+        if (fs.existsSync(underscoreIgnore) && !fs.existsSync(gitIgnore)) {
+          fs.renameSync(underscoreIgnore, gitIgnore);
+        }
 
         if (options.install) {
           if (!options.json) UI.info("Running npm install...");
@@ -75,7 +92,7 @@ export function registerCreateCommand(program: Command) {
         const nextSteps = [
           `cd ${dest}`,
           ...(options.install ? [] : ["npm install"]),
-          "npx hardkas test"
+          ...(resolved.nextSteps ?? ["npx hardkas test"])
         ];
 
         if (options.json) {
@@ -93,6 +110,9 @@ export function registerCreateCommand(program: Command) {
           UI.footer(`Next steps:\n  ` + nextSteps.join("\n  "));
         }
       } catch (e: any) {
+        // An extension's template while the extension is not loaded: the CLI's one typed refusal (exit ≠ 0), never
+        // the legacy create envelope (its exit-0 gap is CLI-CONTRACT-2B, out of this change).
+        if (typeof e?.code === "string" && e.code.startsWith("EXTENSION_")) throw e;
         if (options.json) {
           const { getOutput } = await import("../output.js");
           getOutput().writeJson({

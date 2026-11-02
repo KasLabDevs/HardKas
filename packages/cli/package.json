@@ -15,6 +15,11 @@
       "import": "./dist/public.js",
       "default": "./dist/public.js"
     },
+    "./extension-kit": {
+      "types": "./dist/extension-kit.d.ts",
+      "import": "./dist/extension-kit.js",
+      "default": "./dist/extension-kit.js"
+    },
     "./bin": "./dist/index.js"
   },
   "files": [
@@ -28,7 +33,7 @@
     "hardkas": "./dist/index.js"
   },
   "scripts": {
-    "build": "tsup src/index.ts src/public.ts --format esm --dts --clean --external vitest --external kaspa-wasm",
+    "build": "tsup src/index.ts src/public.ts src/extension-kit.ts --format esm --dts --clean --external vitest --external kaspa-wasm",
     "dev": "tsx src/index.ts",
     "hardkas": "tsx src/index.ts",
     "typecheck": "tsc --noEmit",
@@ -48,7 +53,6 @@
     "@hardkas/dev-server": "workspace:*",
     "@hardkas/escrow": "workspace:*",
     "@hardkas/kaspa-rpc": "workspace:*",
-    "@hardkas/l2": "workspace:*",
     "@hardkas/localnet": "workspace:*",
     "@hardkas/node-orchestrator": "workspace:*",
     "@hardkas/node-runner": "workspace:*",
@@ -66,7 +70,6 @@
     "express": "^5.2.1",
     "fflate": "^0.8.3",
     "picocolors": "^1.1.1",
-    "viem": "^2.21.32",
     "zod": "^3.23.8"
   },
   "devDependencies": {

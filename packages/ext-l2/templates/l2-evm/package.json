@@ -1,0 +1,14 @@
+{
+  "name": "l2-evm",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "compile": "hardkas l2 compile",
+    "compile:check": "hardkas l2 compile --check"
+  },
+  "devDependencies": {
+    "@hardkas/cli": "0.0.0-scaffold-placeholder-do-not-install-directly",
+    "@hardkas/ext-l2": "0.0.0-scaffold-placeholder-do-not-install-directly"
+  }
+}

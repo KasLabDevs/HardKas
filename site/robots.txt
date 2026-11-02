@@ -1,0 +1,27 @@
+# HardKAS robots.txt
+# https://hardkas.dev
+
+User-agent: *
+Allow: /
+
+# Standard Search Crawlers
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+# Generative AI Assistants & Search Bots
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: GPTBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Applebot
+Allow: /
+
+Sitemap: https://hardkas.dev/sitemap.xml

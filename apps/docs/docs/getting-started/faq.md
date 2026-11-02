@@ -8,7 +8,7 @@ No. Kaspa L1 does not execute EVM smart contracts. EVM execution belongs to Igra
 
 Is the bridge trustless today?
 
-No. Pre-ZK bridge workflows are assumption-aware. Trustless exit only applies once the ZK phase exists and is explicitly implemented.
+No. HardKAS performs no bridge operations; it only reports static bridge assumptions. A trustless exit needs a live, proof-based withdrawal path, which pre-ZK and MPC phases do not provide.
 
 Is the DAG simulator consensus-equivalent?
 

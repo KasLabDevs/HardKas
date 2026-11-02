@@ -1,17 +1,18 @@
 import { describe, it, expect, vi } from "vitest";
 import { ViemIgraTxSigner } from "../src/viem-igra-signer.js";
+import { getL2Profile } from "../src/registry.js";
 import { IgraTxPlanArtifact } from "@hardkas/artifacts";
 
 describe("ViemIgraTxSigner", () => {
   const mockPlan: IgraTxPlanArtifact = {
     schema: "hardkas.igraTxPlan.v1",
     hardkasVersion: "0.12.0-rc.29",
-    networkId: "igra",
+    networkId: "local",
     mode: "l2-rpc",
     createdAt: new Date().toISOString(),
     planId: "plan-123",
-    l2Network: "igra",
-    chainId: 1,
+    l2Network: "local",
+    chainId: 31337,
     request: {
       from: "0x1234567890123456789012345678901234567890",
       to: "0x0987654321098765432109876543210987654321",
@@ -26,18 +27,25 @@ describe("ViemIgraTxSigner", () => {
     status: "built"
   };
 
+  const localGuard = { expectedChainId: 31337, profile: getL2Profile("local")! };
+
   const mockAccount = {
     name: "test-acc",
     address: "0x1234567890123456789012345678901234567890",
     privateKey: "a".repeat(64) // 64 chars hex
   };
 
-  const setupMockViem = () => {
+  const setupMockViem = (decodedChainId?: number) => {
     const signTransaction = vi.fn().mockResolvedValue("0xsignedtx");
     const privateKeyToAccount = vi.fn().mockReturnValue({ signTransaction });
     const keccak256 = vi.fn().mockReturnValue("0xtxhash");
 
-    const viemLoader = async () => ({ keccak256 });
+    const viemLoader = async () => ({
+      keccak256,
+      ...(decodedChainId !== undefined
+        ? { parseTransaction: () => ({ chainId: decodedChainId }) }
+        : {})
+    });
     const accountsLoader = async () => ({ privateKeyToAccount });
 
     return {
@@ -49,16 +57,15 @@ describe("ViemIgraTxSigner", () => {
     };
   };
 
-  it("signs correctly with valid input and 0x prefix private key", async () => {
-    const mocks = setupMockViem();
-    const signer = new ViemIgraTxSigner({
-      viemLoader: mocks.viemLoader,
-      accountsLoader: mocks.accountsLoader
-    });
+  const signerWith = (mocks: ReturnType<typeof setupMockViem>) =>
+    new ViemIgraTxSigner({ viemLoader: mocks.viemLoader, accountsLoader: mocks.accountsLoader });
 
-    const result = await signer.sign({
+  it("signs correctly with valid input and 0x prefix private key", async () => {
+    const mocks = setupMockViem(31337);
+    const result = await signerWith(mocks).sign({
       plan: mockPlan,
-      account: { ...mockAccount, privateKey: "0x" + "a".repeat(64) }
+      account: { ...mockAccount, privateKey: "0x" + "a".repeat(64) },
+      guard: localGuard
     });
 
     expect(result.rawTransaction).toBe("0xsignedtx");
@@ -68,84 +75,127 @@ describe("ViemIgraTxSigner", () => {
 
   it("signs correctly with non-0x prefix private key", async () => {
     const mocks = setupMockViem();
-    const signer = new ViemIgraTxSigner({
-      viemLoader: mocks.viemLoader,
-      accountsLoader: mocks.accountsLoader
-    });
-
-    const result = await signer.sign({
+    const result = await signerWith(mocks).sign({
       plan: mockPlan,
-      account: mockAccount
+      account: mockAccount,
+      guard: localGuard
     });
 
     expect(result.rawTransaction).toBe("0xsignedtx");
     expect(mocks.privateKeyToAccount).toHaveBeenCalledWith("0x" + "a".repeat(64));
   });
 
-  it("rejects Kaspa L1 address", async () => {
-    const mocks = setupMockViem();
-    const signer = new ViemIgraTxSigner({
-      viemLoader: mocks.viemLoader,
-      accountsLoader: mocks.accountsLoader
-    });
-
+  it("refuses to sign without a network guard", async () => {
     await expect(
-      signer.sign({
+      signerWith(setupMockViem()).sign({ plan: mockPlan, account: mockAccount })
+    ).rejects.toThrow(expect.objectContaining({ code: "L2_CHAIN_ID_REQUIRED" }));
+  });
+
+  it("refuses a plan built for another chain than the guard's", async () => {
+    await expect(
+      signerWith(setupMockViem()).sign({
+        plan: { ...mockPlan, chainId: 38836 },
+        account: mockAccount,
+        guard: localGuard
+      })
+    ).rejects.toThrow(expect.objectContaining({ code: "L2_CHAIN_ID_MISMATCH" }));
+  });
+
+  it("refuses mainnet (chain 38833 and chain 1) without allowMainnet, allows it with it", async () => {
+    const mainnet = getL2Profile("igra-mainnet")!;
+    const feeLimits = { maxGasLimit: 100000n, maxFeePerGasWei: 10n ** 12n, maxTotalFeeWei: 10n ** 17n };
+    for (const chainId of [38833, 1]) {
+      const guard = {
+        expectedChainId: chainId,
+        ...(chainId === 38833 ? { profile: mainnet } : {}),
+        feeLimits
+      };
+      await expect(
+        signerWith(setupMockViem()).sign({ plan: { ...mockPlan, chainId }, account: mockAccount, guard })
+      ).rejects.toThrow(expect.objectContaining({ code: "L2_MAINNET_WRITE_BLOCKED" }));
+    }
+    const ok = await signerWith(setupMockViem()).sign({
+      plan: { ...mockPlan, chainId: 38833 },
+      account: mockAccount,
+      guard: { expectedChainId: 38833, profile: mainnet, allowMainnet: true, feeLimits }
+    });
+    expect(ok.rawTransaction).toBe("0xsignedtx");
+  });
+
+  it("refuses when fee ceilings are missing or exceeded", async () => {
+    const galleon = getL2Profile("igra-galleon")!;
+    const plan = { ...mockPlan, chainId: 38836 };
+    await expect(
+      signerWith(setupMockViem()).sign({
+        plan,
+        account: mockAccount,
+        guard: { expectedChainId: 38836, profile: galleon }
+      })
+    ).rejects.toThrow(expect.objectContaining({ code: "L2_FEE_POLICY_REQUIRED" }));
+    await expect(
+      signerWith(setupMockViem()).sign({
+        plan,
+        account: mockAccount,
+        guard: {
+          expectedChainId: 38836,
+          profile: galleon,
+          feeLimits: { maxGasLimit: 21000n, maxFeePerGasWei: 999n, maxTotalFeeWei: 10n ** 18n }
+        }
+      })
+    ).rejects.toThrow(expect.objectContaining({ code: "L2_FEE_LIMIT_EXCEEDED" }));
+  });
+
+  it("refuses a serialized transaction whose chain ID differs from the guard", async () => {
+    await expect(
+      signerWith(setupMockViem(1)).sign({ plan: mockPlan, account: mockAccount, guard: localGuard })
+    ).rejects.toThrow(expect.objectContaining({ code: "L2_SIGNED_TX_MISMATCH" }));
+  });
+
+  it("rejects Kaspa L1 address", async () => {
+    await expect(
+      signerWith(setupMockViem()).sign({
         plan: mockPlan,
-        account: { ...mockAccount, address: "kaspa:qpau7..." }
+        account: { ...mockAccount, address: "kaspa:qpau7..." },
+        guard: localGuard
       })
     ).rejects.toThrow("Igra L2 signing requires an EVM 0x account address.");
   });
 
   it("rejects invalid hex private key format", async () => {
-    const mocks = setupMockViem();
-    const signer = new ViemIgraTxSigner({
-      viemLoader: mocks.viemLoader,
-      accountsLoader: mocks.accountsLoader
-    });
-
     await expect(
-      signer.sign({
+      signerWith(setupMockViem()).sign({
         plan: mockPlan,
-        account: { ...mockAccount, privateKey: "short" }
+        account: { ...mockAccount, privateKey: "short" },
+        guard: localGuard
       })
     ).rejects.toThrow("Invalid EVM private key format for account 'test-acc'.");
   });
 
   it("does not leak private key in error messages", async () => {
-    const mocks = setupMockViem();
-    const signer = new ViemIgraTxSigner({
-      viemLoader: mocks.viemLoader,
-      accountsLoader: mocks.accountsLoader
-    });
-
     const pk = "b".repeat(64);
     try {
-      await signer.sign({
+      await signerWith(setupMockViem()).sign({
         plan: mockPlan,
-        account: { ...mockAccount, privateKey: "invalid hex!" }
+        account: { ...mockAccount, privateKey: "invalid hex!" },
+        guard: localGuard
       });
     } catch (e: unknown) {
-      expect(((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e))).not.toContain(pk);
-      expect(((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e))).toContain("Invalid EVM private key format");
+      const msg = e instanceof Error ? e.message : String(e);
+      expect(msg).not.toContain(pk);
+      expect(msg).toContain("Invalid EVM private key format");
     }
   });
 
   it("rejects incomplete plan missing gasLimit", async () => {
-    const mocks = setupMockViem();
-    const signer = new ViemIgraTxSigner({
-      viemLoader: mocks.viemLoader,
-      accountsLoader: mocks.accountsLoader
-    });
-
     const incompletePlan = {
       ...mockPlan,
       request: { ...mockPlan.request, gasLimit: undefined }
     };
     await expect(
-      signer.sign({
+      signerWith(setupMockViem()).sign({
         plan: incompletePlan as any,
-        account: mockAccount
+        account: mockAccount,
+        guard: localGuard
       })
     ).rejects.toThrow(
       "Igra transaction plan is incomplete. Rebuild the plan with gas limit."
@@ -160,7 +210,7 @@ describe("ViemIgraTxSigner", () => {
     });
 
     const signer = new ViemIgraTxSigner({ viemLoader, accountsLoader });
-    const result = await signer.sign({ plan: mockPlan, account: mockAccount });
+    const result = await signer.sign({ plan: mockPlan, account: mockAccount, guard: localGuard });
 
     expect(result.rawTransaction).toBe("0xsignedtx");
     expect(result.txHash).toBeUndefined();

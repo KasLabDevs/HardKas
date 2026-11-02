@@ -20,6 +20,7 @@ title: hardkas doctor
 - `--capabilities` (Default: `false`): With 'doctor node': report the node's capabilities (RPC, network, DAA advance) as JSON
 - `--consistency` (Default: `false`): Run advanced deterministic consistency checks
 - `--strict` (Default: `false`): Fail strictly (exit 1) if invariants or consistency checks fail
+- `--release` (Default: `false`): With 'doctor workspace': also run the release checks (git, schemas, claims, raw appends, browser imports)
 
 ---
 

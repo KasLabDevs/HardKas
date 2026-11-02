@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "@hardkas/artifacts": "workspace:*",
+    "@hardkas/core": "workspace:*",
     "viem": "^2.48.8"
   },
   "devDependencies": {

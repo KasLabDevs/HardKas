@@ -1114,7 +1114,6 @@ No arguments.
 
 - [hardkas dev accounts](#hardkas-dev-accounts)
 - [hardkas dev create](#hardkas-dev-create)
-- [hardkas dev doctor](#hardkas-dev-doctor)
 - [hardkas dev fixture](#hardkas-dev-fixture)
 - [hardkas dev init](#hardkas-dev-init)
 - [hardkas dev last](#hardkas-dev-last)
@@ -1233,33 +1232,6 @@ No options.
 | Argument | Description |
 | :--- | :--- |
 | `name` |  |
-
----
-
-## hardkas dev doctor
-
-Igra L2 lab, not the L1 core: check local dev readiness for an L2 profile (Igra by default): workspace, artifacts, query store, SDK import, dev server and the L2 JSON-RPC; the Kaspa node is not checked experimental
-
-### Usage
-
-```bash
-hardkas dev doctor [options]
-```
-
-### Options
-
-| Flag | Description | Default |
-| :--- | :--- | :--- |
-| `--profile <name>` | L2 network profile name | igra |
-| `--rpc-url <url>` | Explicit Igra RPC URL to check |  |
-| `--account <name>` | EVM account that must exist in hardkas.config (its balance is not checked) |  |
-| `--timeout <ms>` | RPC timeout in milliseconds | 3000 |
-| `--json` | Output as JSON |  |
-| `--release` | Run strict release gate checks |  |
-
-### Arguments
-
-No arguments.
 
 ---
 
@@ -1449,6 +1421,7 @@ hardkas doctor [options] [module]
 | `--capabilities` | With 'doctor node': report the node's capabilities (RPC, network, DAA advance) as JSON | false |
 | `--consistency` | Run advanced deterministic consistency checks | false |
 | `--strict` | Fail strictly (exit 1) if invariants or consistency checks fail | false |
+| `--release` | With 'doctor workspace': also run the release checks (git, schemas, claims, raw appends, browser imports) | false |
 
 ### Arguments
 
@@ -1501,6 +1474,163 @@ hardkas env check [options]
 ### Arguments
 
 No arguments.
+
+---
+
+## hardkas escrow
+
+Escrow operations: lifecycle, security guards, and legacy v1 fund recovery
+
+### Usage
+
+```bash
+hardkas escrow [options] [command]
+```
+
+### Options
+
+No options.
+
+### Arguments
+
+No arguments.
+
+### Subcommands
+
+- [hardkas escrow rescue-v1](#hardkas-escrow-rescue-v1)
+
+---
+
+## hardkas escrow rescue-v1
+
+Legacy v1 Escrow fund recovery tools without exposing private keys in CLI arguments
+
+### Usage
+
+```bash
+hardkas escrow rescue-v1 [options] [command]
+```
+
+### Options
+
+No options.
+
+### Arguments
+
+No arguments.
+
+### Subcommands
+
+- [hardkas escrow rescue-v1 broadcast](#hardkas-escrow-rescue-v1-broadcast)
+- [hardkas escrow rescue-v1 inspect](#hardkas-escrow-rescue-v1-inspect)
+- [hardkas escrow rescue-v1 prepare](#hardkas-escrow-rescue-v1-prepare)
+- [hardkas escrow rescue-v1 sign](#hardkas-escrow-rescue-v1-sign)
+
+---
+
+## hardkas escrow rescue-v1 broadcast
+
+Finalize and broadcast the signed rescue transaction to the network
+
+### Usage
+
+```bash
+hardkas escrow rescue-v1 broadcast [options] <draft-file>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--network <network>` | Network (default simnet) | simnet |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `draft-file` |  |
+
+---
+
+## hardkas escrow rescue-v1 inspect
+
+Inspect a rescue draft and verify balance and signature status
+
+### Usage
+
+```bash
+hardkas escrow rescue-v1 inspect [options] <draft-file>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `draft-file` |  |
+
+---
+
+## hardkas escrow rescue-v1 prepare
+
+Prepare a v1 escrow rescue draft spending an orphaned UTXO to a target address
+
+### Usage
+
+```bash
+hardkas escrow rescue-v1 prepare [options]
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--address <address>` | Legacy escrow P2SH address |  |
+| `--outpoint <outpoint>` | Funding outpoint to spend (txId:index) |  |
+| `--to <address>` | Destination address to recover funds to |  |
+| `--network <network>` | Network id (default simnet) | simnet |
+| `--out <file>` | Output draft file path (default rescue-v1-plan.draft.json) | rescue-v1-plan.draft.json |
+| `--fee <sompi>` | Miner fee in sompi (default 400000 sompi = 0.004 KAS) | 400000 |
+| `--buyer-pk <hex>` | Buyer x-only public key (32 bytes hex) |  |
+| `--seller-pk <hex>` | Seller x-only public key (32 bytes hex) |  |
+| `--arbiter-pk <hex>` | Arbiter x-only public key (32 bytes hex) |  |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+No arguments.
+
+---
+
+## hardkas escrow rescue-v1 sign
+
+Sign a rescue draft with a local dev or keystore account
+
+### Usage
+
+```bash
+hardkas escrow rescue-v1 sign [options] <draft-file>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--account <name>` | Account name or role (e.g. buyer, seller, or dev account name) |  |
+| `--role <role>` | Contract role (buyer or seller) | buyer |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `draft-file` |  |
 
 ---
 
@@ -1630,6 +1760,131 @@ hardkas explain [options] [artifact]
 | Argument | Description |
 | :--- | :--- |
 | `artifact` |  |
+
+---
+
+## hardkas extension
+
+First-party extensions installed in the project (the Igra L2 lab is the 'l2' extension) experimental
+
+### Usage
+
+```bash
+hardkas extension [options] [command]
+```
+
+### Options
+
+No options.
+
+### Arguments
+
+No arguments.
+
+### Subcommands
+
+- [hardkas extension doctor](#hardkas-extension-doctor)
+- [hardkas extension install](#hardkas-extension-install)
+- [hardkas extension list](#hardkas-extension-list)
+- [hardkas extension remove](#hardkas-extension-remove)
+
+---
+
+## hardkas extension doctor
+
+Run the checks of the extensions loaded in this project
+
+### Usage
+
+```bash
+hardkas extension doctor [options]
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+No arguments.
+
+---
+
+## hardkas extension install
+
+Install an extension in this project at the CLI's exact version, with install scripts disabled; it downloads no toolchain and starts nothing
+
+### Usage
+
+```bash
+hardkas extension install [options] <id>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--from <tgz>` | Install from a local npm tarball (offline); requires --sha256 |  |
+| `--sha256 <hex>` | SHA-256 the --from tarball must have |  |
+| `--yes` | Run the package manager without asking | false |
+| `--dry-run` | Only print the checks' result and the command that would run | false |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `id` |  |
+
+---
+
+## hardkas extension list
+
+List the known extensions and their state in this project (installed, version, enabled, compatible)
+
+### Usage
+
+```bash
+hardkas extension list [options]
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+No arguments.
+
+---
+
+## hardkas extension remove
+
+Remove an extension from this project
+
+### Usage
+
+```bash
+hardkas extension remove [options] <id>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--yes` | Run the package manager without asking | false |
+| `--dry-run` | Only print the command that would run | false |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `id` |  |
 
 ---
 
@@ -1881,55 +2136,6 @@ hardkas kaspa wallet send [options] <from> <to>
 | :--- | :--- |
 | `from` |  |
 | `to` |  |
-
----
-
-## hardkas local
-
-Local development and environment lifecycle tools
-
-### Usage
-
-```bash
-hardkas local [options] [command]
-```
-
-### Options
-
-No options.
-
-### Arguments
-
-No arguments.
-
-### Subcommands
-
-- [hardkas local wizard](#hardkas-local-wizard)
-
----
-
-## hardkas local wizard
-
-Guided Igra L2 (EVM) check, an L2 lab: JSON-RPC, EVM account and its balance; not a Kaspa L1 setup experimental
-
-### Usage
-
-```bash
-hardkas local wizard [options]
-```
-
-### Options
-
-| Flag | Description | Default |
-| :--- | :--- | :--- |
-| `--profile <name>` | L2 network profile name | igra |
-| `--account <name>` | EVM account name in hardkas.config (if it is missing, a key is printed for you to add) | dev_alice |
-| `--non-interactive` | Skip interactive prompts (will fail if input required) | false |
-| `--json` | Output as JSON | false |
-
-### Arguments
-
-No arguments.
 
 ---
 
@@ -5057,7 +5263,7 @@ hardkas test [options] [files...]
 
 ## hardkas toolchain
 
-Install and verify the upstream toolchains HardKAS pins (official Kaspa release assets)
+Install and verify the upstream toolchains HardKAS pins (official Kaspa release assets; an installed extension adds its own, e.g. the l2 extension's foundry)
 
 ### Usage
 

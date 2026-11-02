@@ -136,7 +136,11 @@ const WORKSPACE_ROOT = path.resolve(__dirname, "../../..");
 const docsFiles = [
   path.join(WORKSPACE_ROOT, "README.md"),
   ...getAllFiles(path.join(WORKSPACE_ROOT, "docs"), ".md")
-].filter((f) => !f.includes("history"));
+].filter((f) => {
+  const rel = path.relative(WORKSPACE_ROOT, f);
+  const excluded = [path.join("docs", "internal"), path.join("docs", "history")];
+  return !excluded.some((d) => rel === d || rel.startsWith(d + path.sep));
+});
 
 let totalMatches = 0;
 let driftCount = 0;

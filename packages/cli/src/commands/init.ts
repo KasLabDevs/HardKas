@@ -135,7 +135,10 @@ export function registerInitCommands(program: Command) {
 export default defineConfig({
   test: {
     fileParallelism: false,
-    pool: "forks"
+    pool: "forks",
+    // a scenario runs a whole payment flow (fund, plan, sign, send): ~3 s on an idle machine, 7-8 s with every CPU
+    // busy, so vitest's 5 s default fails the scaffolded test on a loaded machine
+    testTimeout: 30_000
   }
 });
 `;

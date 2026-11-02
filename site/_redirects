@@ -1,0 +1,6 @@
+/getting-started/*  /docs/getting-started/:splat  301
+/concepts/*         /docs/concepts/:splat         301
+/guides/*           /docs/guides/:splat           301
+/how-to/*           /docs/how-to/:splat           301
+/tutorials/*        /docs/tutorials/:splat        301
+/reference/*        /docs/reference/:splat        301

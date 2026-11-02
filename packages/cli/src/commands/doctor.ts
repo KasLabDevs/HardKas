@@ -14,8 +14,10 @@ import { HardkasSchemas, eventLedgerPath, legacyEventLedgerPath } from "@hardkas
 import readline from "node:readline";
 import fsSync from "node:fs";
 import { invocationWorkspaceRoot } from "../workspace-root.js";
+import { EMPTY_EXTENSION_REGISTRY, type ExtensionRegistry } from "../extensions/registry.js";
+import { knownExtension } from "../extensions/api.js";
 
-export function registerDoctorCommand(program: Command) {
+export function registerDoctorCommand(program: Command, extensions: ExtensionRegistry = EMPTY_EXTENSION_REGISTRY) {
   program
     .command("doctor [module]")
     .description(
@@ -29,14 +31,23 @@ export function registerDoctorCommand(program: Command) {
       "Fail strictly (exit 1) if invariants or consistency checks fail",
       false
     )
+    .option("--release", "With 'doctor workspace': also run the release checks (git, schemas, claims, raw appends, browser imports)", false)
     .action(async (moduleStr, opts) => {
       try {
-        if (moduleStr === "signer") {
+        if (moduleStr === "workspace") {
+          // NEW-11: the L1 workspace checks `dev doctor` ran (it moved to the l2 extension with its L2 section)
+          const { runWorkspaceDoctor } = await import("../runners/workspace-doctor-runner.js");
+          await runWorkspaceDoctor({ json: opts.json, release: opts.release, workspaceRoot: invocationWorkspaceRoot() });
+        } else if (moduleStr === "signer") {
           const { runDoctorSigner } = await import("../runners/doctor-signer-runner.js");
           await runDoctorSigner(opts);
         } else if (moduleStr === "node") {
           const { runDoctorNode } = await import("../runners/doctor-node-runner.js");
           await runDoctorNode(opts);
+        } else if (moduleStr !== undefined && knownExtension(moduleStr)) {
+          // L2-EXT stage 2 (design §3.8): `doctor <extension>` runs that extension's checks, or refuses with its reason
+          const { runExtensionDoctor } = await import("./extension.js");
+          await runExtensionDoctor(extensions, moduleStr, opts);
         } else {
           // WORKSPACE-AUTHORITY-1 (WA-I0): the invocation's one workspace root
           await runDoctorChecks(invocationWorkspaceRoot(), opts);
