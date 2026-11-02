@@ -10,7 +10,7 @@ import { createLocalnetSnapshot, verifySnapshot, calculateUtxoSetHash, calculate
 
 const state: any = {
   schema: "hardkas.localnetState.v1",
-  hardkasVersion: "0.12.0-rc.29",
+  hardkasVersion: "0.13.0-rc.1",
   version: "1.0.0-alpha",
   networkId: "simnet",
   mode: "simulator",

@@ -22,7 +22,7 @@ describe("Artifact Integrity Hardening (P1.1)", () => {
 
   const createValidArtifact = () => ({
     schema: "hardkas.txPlan",
-    hardkasVersion: "0.12.0-rc.29",
+    hardkasVersion: "0.13.0-rc.1",
     version: ARTIFACT_VERSION,
     hashVersion: CURRENT_HASH_VERSION,
     createdAt: new Date().toISOString(),
