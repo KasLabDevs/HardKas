@@ -72,6 +72,14 @@ async function planFrom(from: string) {
 
 const runFrom = (dir: string) => vi.spyOn(process, "cwd").mockReturnValue(dir);
 
+// COVENANT-UTXO-PAYMENT-FILTER-1B: `tx.sign` asks the plan's own node what each input is and signs nothing without an
+// answer, so a simnet plan is signed by an instance opened on simnet. These tests sign a plan over a made-up UTXO, so the
+// node is stubbed to list it as an ordinary one.
+const nodeListsPlanInputs = (sdk: any, p: any) =>
+  vi.spyOn(sdk.rpc, "getUtxosByAddress").mockImplementation(async (address: any) =>
+    p.inputs.filter((i: any) => (i.address ?? p.from.address) === address).map((i: any) => ({ outpoint: i.outpoint, address, amountSompi: BigInt(i.amountSompi) }))
+  );
+
 beforeAll(async () => {
   k = await loadKaspaWasm();
   ws = fs.mkdtempSync(path.join(os.tmpdir(), "hk-ws-keystore-"));
@@ -103,7 +111,8 @@ describe("SDK-WORKSPACE-KEYSTORE-1 · the configured workspace, not the process 
 
   it("…and signs with the password given in memory", async () => {
     runFrom(appDir);
-    const sdk = await Hardkas.open({ cwd: ws });
+    const sdk = await Hardkas.open({ cwd: ws, network: "simnet" });
+    nodeListsPlanInputs(sdk, plan);
     const signed: any = await sdk.tx.sign(structuredClone(plan), { account: NAME, keystorePassword: PW });
     expect(signed.status).toBe("signed");
     expect(signed.txId).toMatch(/^[0-9a-f]{64}$/);
@@ -139,9 +148,10 @@ describe("SDK-WORKSPACE-KEYSTORE-1 · the configured workspace, not the process 
 
   it("control · with the process cwd = the workspace (how the CLI runs), the account resolves and signs", async () => {
     runFrom(ws);
-    const sdk = await Hardkas.open({ cwd: ws });
+    const sdk = await Hardkas.open({ cwd: ws, network: "simnet" });
     const acc: any = await sdk.accounts.resolve(NAME);
     expect(acc.keystorePath ? path.resolve(acc.keystorePath) : null).toBe(path.resolve(account.keystorePath));
+    nodeListsPlanInputs(sdk, plan);
     const signed: any = await sdk.tx.sign(structuredClone(plan), { account: NAME, keystorePassword: PW });
     expect(signed.status).toBe("signed");
   });

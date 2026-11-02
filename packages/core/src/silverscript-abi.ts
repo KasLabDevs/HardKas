@@ -3,8 +3,10 @@ import {
   getSilContract,
   type SilAbiArtifact,
   type SilArtifactValue,
+  type SilNamedType,
   type SilTypeArtifact
 } from "./silverscript.js";
+import { silArrayPayload, silStructsOf, type SilStructs } from "./silverscript-state.js";
 
 /**
  * Locking and unlocking SilverScript contracts, with the pinned Kaspa SDK as
@@ -13,9 +15,11 @@ import {
  * The lock is the SDK's pay-to-script-hash of the contract bytecode. The unlock
  * follows silverscript-abi `encode_contract_entry_sig_script`: each argument
  * pushed in order, then the entry's dispatch tag, then the redeem script
- * (`payToScriptHashSignatureScript`). Only argument types that map to a single
- * SDK push are supported; arrays and structs are NOT_IMPLEMENTED rather than
- * re-encoded here, since their encoding belongs to silverscript-abi.
+ * (`payToScriptHashSignatureScript`). Scalars are one SDK push each. Arrays and
+ * structs follow silverscript-abi v1.0.0 `push_sig_arg` (F1 phase 2 · KCC-1): a
+ * struct pushes its fields in order; an array of scalars is one push of its
+ * items' fixed-width bytes; an array of structs is pushed column by column, one
+ * array per struct field (`push_struct_array_fields`).
  */
 
 function abiError(code: string, message: string): Error {
@@ -65,8 +69,33 @@ function fixedBytes(where: string, value: SilArtifactValue, len: number): string
   return toHex(bytes);
 }
 
-/** One argument, pushed exactly as silverscript-abi `push_sig_arg` does for scalar types. */
-function pushArgument(sb: any, where: string, type: SilTypeArtifact, value: SilArtifactValue): void {
+function structFields(structs: SilStructs, where: string, name: string): readonly SilNamedType[] {
+  const fields = structs.byName(name);
+  if (!fields) throw abiError("SILVER_ABI_ARGUMENT_INVALID", `${where}: unknown struct '${name}'`);
+  return fields;
+}
+
+function objectFields(where: string, value: SilArtifactValue, fields: readonly SilNamedType[]): Readonly<Record<string, SilArtifactValue>> {
+  if (value?.kind !== "object") mismatch(where, "struct", value);
+  const extra = Object.keys(value.value).filter((k) => !fields.some((f) => f.name === k));
+  if (extra.length > 0) throw abiError("SILVER_ABI_ARGUMENT_INVALID", `${where}: unknown field(s) ${extra.join(", ")}`);
+  for (const f of fields) if (!(f.name in value.value)) throw abiError("SILVER_ABI_ARGUMENT_INVALID", `${where}: missing field '${f.name}'`);
+  return value.value;
+}
+
+/** silverscript-abi `push_struct_array_fields`: one array per struct field, in field order. */
+function pushStructArray(sb: any, structs: SilStructs, where: string, item: { kind: "struct"; name: string }, len: number | undefined, value: SilArtifactValue): void {
+  const fields = structFields(structs, where, item.name);
+  if (value?.kind !== "array") mismatch(where, "array of structs", value);
+  if (len !== undefined && value.value.length !== len) throw abiError("SILVER_ABI_ARGUMENT_INVALID", `${where}: expected ${len} items, got ${value.value.length}`);
+  const objects = value.value.map((v, i) => objectFields(`${where}[${i}]`, v, fields));
+  for (const f of fields) {
+    pushArgument(sb, structs, `${where}.${f.name}`, { kind: "dynamic_array", item: f.type }, { kind: "array", value: objects.map((o) => o[f.name]!) });
+  }
+}
+
+/** One argument, pushed exactly as silverscript-abi `push_sig_arg` does. */
+function pushArgument(sb: any, structs: SilStructs, where: string, type: SilTypeArtifact, value: SilArtifactValue): void {
   switch (type.kind) {
     case "int":
     case "temporal": {
@@ -111,13 +140,25 @@ function pushArgument(sb: any, where: string, type: SilTypeArtifact, value: SilA
     case "fixed_bytes":
       sb.addData(fixedBytes(where, value, type.len));
       return;
+    case "struct": {
+      const fields = structFields(structs, where, type.name);
+      const object = objectFields(where, value, fields);
+      for (const f of fields) pushArgument(sb, structs, `${where}.${f.name}`, f.type, object[f.name]!);
+      return;
+    }
     case "fixed_array":
-    case "dynamic_array":
-    case "struct":
-      throw abiError(
-        "SILVER_ABI_NOT_IMPLEMENTED",
-        `${where}: ${type.kind} arguments are encoded by silverscript-abi, which HardKAS does not reimplement`
-      );
+    case "dynamic_array": {
+      const len = type.kind === "fixed_array" ? type.len : undefined;
+      if (type.item.kind === "struct") return pushStructArray(sb, structs, where, type.item, len, value);
+      let payload: Uint8Array;
+      try {
+        payload = silArrayPayload(where, type.item, len, value);
+      } catch (e: any) {
+        throw abiError(e?.code === "SILVER_ABI_NOT_IMPLEMENTED" ? "SILVER_ABI_NOT_IMPLEMENTED" : "SILVER_ABI_ARGUMENT_INVALID", String(e?.message ?? e).replace(/^[A-Z_]+:\s*/, ""));
+      }
+      sb.addData(toHex(payload));
+      return;
+    }
     default:
       throw abiError("SILVER_ABI_NOT_IMPLEMENTED", `${where}: unknown type kind '${(type as any).kind}'`);
   }
@@ -153,7 +194,8 @@ export function encodeSilverEntryArgs(call: SilverEntryCall): string {
   }
   const k = loadManagedKaspaWasmSync();
   const sb = new k.ScriptBuilder();
-  entry.params.forEach((param, i) => pushArgument(sb, `${contractName}::${call.entry}(${param.name})`, param.type, call.args[i]!));
+  const structs = silStructsOf(call.artifact, contract);
+  entry.params.forEach((param, i) => pushArgument(sb, structs, `${contractName}::${call.entry}(${param.name})`, param.type, call.args[i]!));
   sb.addData(entry.dispatch_tag);
   return String(sb.drain());
 }

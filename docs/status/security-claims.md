@@ -16,6 +16,8 @@ This means HardKAS mathematically protects against various vectors, but explicit
 | **Prototype pollution**   | ✅ YES     | Core logic parses raw objects safely, discarding prototype chains when validating artifacts.                                                        |
 | **Path traversal escape** | ✅ YES     | Strict sandboxing restricts all artifact reads, writes, and verification paths to the project directory boundary.                                   |
 
+What each public send route checks before a broadcast (the SDK, the CLI, the dev-server escrow, the toolkit wallet) is listed in [Send routes: what each one checks before a broadcast](send-routes-security.md).
+
 ## What is NOT Protected?
 
 | Scenario                     | Protected? | Explanation                                                                                                                                                                       |

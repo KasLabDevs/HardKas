@@ -1,4 +1,6 @@
 import fs from "node:fs";
+import net from "node:net";
+import crypto from "node:crypto";
 import { execSync } from "node:child_process";
 import path from "node:path";
 import {
@@ -6,8 +8,10 @@ import {
   getVirtualDaaScore,
   getVirtualDaaScoreBestEffort,
   coinbaseMaturity,
-  waitForDaaScore
-} from "./helpers.mjs";
+  waitForDaaScore,
+  readBalanceSompi,
+  cleanWorkspaceState
+} from "./real-node-helpers.mjs";
 import { CPUMINER_REFERENCE_IMAGE, CANONICAL_LOCALNET, nodeRpcUrl } from "@hardkas/core";
 import { requireNodeIdentity } from "@hardkas/node-runner";
 
@@ -23,6 +27,73 @@ const RPC_URL = nodeRpcUrl();
 
 // Written on failure so the gauntlet report keeps the real reason, not just "command failed".
 const FAILURE_FILE = path.join(".hardkas", "real-node-failure.json");
+
+// HARDKAS_GAUNTLET_NODE=disposable: this phase runs on a node it starts itself from KASPAD_BIN (the pinned kaspad) on the
+// canonical port of its OWN network namespace (a disposable container), and mines through block templates. It never uses a
+// Docker engine, the canonical localnet container or its miner, and a busy port is a failure: it never attaches to, or
+// mines into, a node it did not start. The node's identity is the binary's digest, not the canonical image check.
+const DISPOSABLE = process.env.HARDKAS_GAUNTLET_NODE === "disposable";
+let disposable;
+
+function portInUse(port) {
+  return new Promise((resolve) => {
+    const socket = net.createConnection({ host: "127.0.0.1", port });
+    socket.setTimeout(500);
+    socket.once("connect", () => (socket.destroy(), resolve(true)));
+    socket.once("timeout", () => (socket.destroy(), resolve(false)));
+    socket.once("error", () => resolve(false));
+  });
+}
+
+async function startDisposableNode() {
+  const bin = process.env.KASPAD_BIN;
+  if (!bin) throw new Error("GAUNTLET_DISPOSABLE_NO_BINARY: HARDKAS_GAUNTLET_NODE=disposable needs KASPAD_BIN (the pinned kaspad)");
+  const port = Number(new URL(RPC_URL).port);
+  if (await portInUse(port)) {
+    throw new Error(`GAUNTLET_DISPOSABLE_PORT_BUSY: 127.0.0.1:${port} is in use; the disposable phase starts its own node and never uses another`);
+  }
+  const { startIsolatedSimnet } = await import("@hardkas/testing");
+  const session = await startIsolatedSimnet({ rpcPort: port, minerFixture: "alice" });
+  const info = await session.rpc.getServerInfo();
+  const digest = crypto.createHash("sha256").update(fs.readFileSync(bin)).digest("hex");
+  console.log(`  DISPOSABLE node (not the canonical localnet): kaspad ${info.serverVersion} (${info.networkId}) from ${path.basename(bin)} sha256 ${digest}`);
+  return session;
+}
+
+async function stopDisposableNode() {
+  if (!disposable) return;
+  const { stopIsolatedSimnet } = await import("@hardkas/testing");
+  await stopIsolatedSimnet(disposable);
+  disposable = undefined;
+}
+
+/** Disposable mode: blocks to the miner address, through templates, until the account holds the amount (then maturity). */
+async function ensureFundingDisposable(minerAddress, targetAccountName, expectedSompi, label, { requireCoinbaseMaturity = false } = {}) {
+  console.log(`  Mining confirmation blocks for ${label} (disposable node, block templates)...`);
+  const { mineBlocks } = await import("@hardkas/testing");
+  const timeoutMs = parseInt(process.env.HARDKAS_TOCCATA_FUNDING_TIMEOUT_MS || "60000", 10);
+  const deadline = Date.now() + timeoutMs;
+  let last;
+  for (;;) {
+    await mineBlocks(disposable, 10, minerAddress);
+    try {
+      last = readBalanceSompi(run, targetAccountName);
+    } catch {
+      last = undefined;
+    }
+    if (last !== undefined && last >= expectedSompi) break;
+    if (Date.now() > deadline) {
+      throw new Error(`TOCCATA_FUNDING_CONFIRMATION_TIMEOUT: ${targetAccountName} holds ${last ?? "no readable balance"} of ${expectedSompi} sompi (disposable node)`);
+    }
+  }
+  if (requireCoinbaseMaturity) {
+    const blocks = Number(coinbaseMaturity()) + 20;
+    console.log(`  Maturing the coinbase: ${blocks} more blocks...`);
+    await mineBlocks(disposable, blocks, minerAddress);
+  }
+  await new Promise((resolve) => setTimeout(resolve, SETTLE_MS));
+  return { accountName: targetAccountName, balanceSompi: last };
+}
 
 function run(cmd) {
   try {
@@ -40,6 +111,7 @@ function run(cmd) {
 }
 
 async function ensureFundingConfirmed(minerAddress, targetAccountName, expectedSompi, label, { requireCoinbaseMaturity = false } = {}) {
+  if (DISPOSABLE) return ensureFundingDisposable(minerAddress, targetAccountName, expectedSompi, label, { requireCoinbaseMaturity });
   console.log(`  Mining confirmation blocks for ${label}...`);
   // The canonical node, and only after it proves its identity (never "the first
   // container whose name looks like kaspad").
@@ -133,19 +205,21 @@ async function ensureFundingConfirmed(minerAddress, targetAccountName, expectedS
 }
 
 async function runRealNodeCert() {
-  console.log("=== Real Node 0.12.0-rc.29 / Toccata Certification ===");
+  console.log("=== Real Node 0.13.0-rc.1 / Toccata Certification ===");
 
-  // Fail before touching anything if the node is not the canonical one.
-  const identity = await requireNodeIdentity();
-  console.log(
-    `  Node identity verified: ${identity.observed.container?.name} ` +
-      `(rusty-kaspad ${identity.observed.server?.serverVersion}, ${identity.expected.imageDigest.slice(0, 19)}...)`
-  );
-
-  // Clean state
-  if (fs.existsSync(".hardkas")) {
-    fs.rmSync(".hardkas", { recursive: true, force: true });
+  if (DISPOSABLE) {
+    disposable = await startDisposableNode();
+  } else {
+    // Fail before touching anything if the node is not the canonical one.
+    const identity = await requireNodeIdentity();
+    console.log(
+      `  Node identity verified: ${identity.observed.container?.name} ` +
+        `(rusty-kaspad ${identity.observed.server?.serverVersion}, ${identity.expected.imageDigest.slice(0, 19)}...)`
+    );
   }
+
+  // Clean state (the canonical node's own data, .hardkas/kaspad, stays: see cleanWorkspaceState)
+  cleanWorkspaceState();
   fs.writeFileSync("package.json", '{"name":"real-node-cert"}');
   // `network` is the policy block, not the target selector. Writing
   // `{ network: "simnet" }` leaves the default target at `simulated`, and every
@@ -266,7 +340,10 @@ async function runRealNodeCert() {
   console.log("\n=== REAL NODE FULL PASS ===");
 }
 
-runRealNodeCert().catch(err => {
-  console.error("Test Failed:", err);
-  process.exit(1);
-});
+runRealNodeCert()
+  .then(() => stopDisposableNode())
+  .catch(async (err) => {
+    console.error("Test Failed:", err);
+    await stopDisposableNode().catch(() => undefined);
+    process.exit(1);
+  });

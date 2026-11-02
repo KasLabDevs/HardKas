@@ -122,6 +122,17 @@ describe("Demo-cut · T-A14b · what the built CLI prints for tx status, tx wait
     expect(w.out).toMatch(/TX_WAIT_TARGET_INVALID/);
   });
 
+  it("TX-WAIT-TXID-VALIDATION: tx wait on what is not a txId is a usage error at once (exit 2), not a wait until the timeout", () => {
+    for (const bad of ["not-a-txid", "2".repeat(63), "A".repeat(64), `synthetic-${"2".repeat(10)}`]) {
+      const t0 = Date.now();
+      const w = runCli(["tx", "wait", bad, "--timeout", "30", "--json"], ws);
+      expect(w.status, `${bad}: ${w.out}`).toBe(2);
+      expect(w.out, bad).toMatch(/TX_WAIT_USAGE/);
+      expect(w.out, bad).toMatch(/Nothing was observed/);
+      expect(Date.now() - t0, `${bad}: answered without waiting`).toBeLessThan(25_000);
+    }
+  });
+
   it("tx status <path> keeps the signature-coverage view", () => {
     const signedDir = path.join(ws, ".hardkas", "artifacts", "signed");
     const file = path.join(signedDir, fs.readdirSync(signedDir)[0]!);

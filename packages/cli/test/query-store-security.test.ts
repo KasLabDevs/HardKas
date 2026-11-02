@@ -12,9 +12,12 @@ let dbPath: string;
 
 function runCli(args: string[]): { stdout: string; stderr: string; status: number | null } {
   try {
-    const stdout = execFileSync("node", [cliPath, ...args], { 
-        encoding: "utf8", 
+    const stdout = execFileSync("node", [cliPath, ...args], {
+        encoding: "utf8",
         stdio: "pipe",
+        // REMED-CLOSE · test isolation: the command's workspace (its locks) is the test's own directory, never the
+        // repository root's .hardkas
+        cwd: testDir,
         env: { ...process.env, HARDKAS_PROJECTION_BACKEND: "sqlite", HARDKAS_QUERY_STORE_PATH: dbPath }
     });
     return { stdout, stderr: "", status: 0 };

@@ -1,9 +1,15 @@
 import { describe, it, expect } from "vitest";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import {
   HARDKAS_TEST_RUN_ID_ENV,
   SIMNET_HARNESS_ROLE,
   SIMNET_HARNESS_ROLE_LABEL,
   SIMNET_HARNESS_RUN_LABEL,
+  SimnetNodeHarness,
+  buildSimnetBinaryArgs,
+  buildSimnetDockerRemoveArgs,
   buildSimnetDockerRunArgs,
   resolveHarnessRunId
 } from "../src/simnet-node-harness.js";
@@ -48,9 +54,47 @@ describe("T-A06b: simnet harness docker run arguments", () => {
     expect(buildSimnetDockerRunArgs(spec)).not.toContain("--utxoindex");
   });
 
+  it("R-03 · a node from a kaspad binary (KASPAD_BIN) gets the container's simnet flags, unsynced mining included, on loopback", () => {
+    const args = buildSimnetBinaryArgs({ rpcPort: 41234, p2pPort: 41235, appDir: "/tmp/hk-simnet-x", utxoIndex: true });
+    expect(args).toEqual([
+      "--simnet",
+      "--rpclisten-json=127.0.0.1:41234",
+      "--listen=127.0.0.1:41235",
+      "--nogrpc",
+      "--disable-upnp",
+      "--appdir=/tmp/hk-simnet-x",
+      "--enable-unsynced-mining",
+      "--reset-db",
+      "--utxoindex"
+    ]);
+    // the container's kaspad flags, plus what sharing one network namespace needs: its own P2P port, no gRPC, no UPnP
+    const docker = buildSimnetDockerRunArgs({ ...spec, utxoIndex: true });
+    const kaspadFlags = (a: string[]) =>
+      a.filter((x) => x.startsWith("--") && !/^--(rpclisten-json|appdir|listen)=/.test(x) && !["--rm", "--name", "--label", "--nogrpc", "--disable-upnp"].includes(x));
+    expect(kaspadFlags(args)).toEqual(kaspadFlags(docker));
+    expect(buildSimnetBinaryArgs({ rpcPort: 1, p2pPort: 2, appDir: "d" })).not.toContain("--utxoindex");
+  });
+
   it("takes the run id from the environment and otherwise derives one per process", () => {
     expect(resolveHarnessRunId({ [HARDKAS_TEST_RUN_ID_ENV]: "from-env" })).toBe("from-env");
     expect(resolveHarnessRunId({})).toBe(`pid-${process.pid}`);
     expect(resolveHarnessRunId({ [HARDKAS_TEST_RUN_ID_ENV]: "  " })).toBe(`pid-${process.pid}`);
+  });
+
+  it("R-03 · a node run from a binary: an early exit is reported with its exit code, and kill() removes its app directory", async () => {
+    // node itself stands in for a kaspad binary: it refuses kaspad's flags and exits at once
+    const node = await SimnetNodeHarness.start({ binaryPath: process.execPath, utxoIndex: true, startupTimeoutMs: 20_000 });
+    expect(node.dataDir.startsWith(os.tmpdir())).toBe(true);
+    fs.mkdirSync(node.dataDir, { recursive: true });
+    fs.writeFileSync(path.join(node.dataDir, "db"), "x");
+    await expect(node.waitUntilReady({ timeoutMs: 20_000 })).rejects.toThrow(/ENVIRONMENT_NOT_QUALIFIED: .*process exited \((code \d+|signal \w+)\)/);
+    await node.kill();
+    expect(fs.existsSync(node.dataDir)).toBe(false);
+  }, 60_000);
+
+  // The image declares VOLUME /app/data: `--rm` alone drops the anonymous volume only when the container exits by
+  // itself, and the harness removes its containers first, so the removal itself must take the volumes (-v).
+  it("removes a container together with its anonymous volumes", () => {
+    expect(buildSimnetDockerRemoveArgs("hardkas-simnet-41234")).toEqual(["rm", "-f", "-v", "hardkas-simnet-41234"]);
   });
 });

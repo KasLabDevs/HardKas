@@ -37,23 +37,6 @@ title: hardkas dev
 
 ---
 
-## `hardkas dev doctor`
-
-### Synopsis (Generated)
-
-**Purpose:** Igra L2 lab, not the L1 core: check local dev readiness for an L2 profile (Igra by default): workspace, artifacts, query store, SDK import, dev server and the L2 JSON-RPC; the Kaspa node is not checked experimental
-
-#### Options
-
-- `--profile &lt;name&gt;` (Default: `igra`): L2 network profile name
-- `--rpc-url &lt;url&gt;`: Explicit Igra RPC URL to check
-- `--account &lt;name&gt;`: EVM account that must exist in hardkas.config (its balance is not checked)
-- `--timeout &lt;ms&gt;` (Default: `3000`): RPC timeout in milliseconds
-- `--json`: Output as JSON
-- `--release`: Run strict release gate checks
-
----
-
 ## `hardkas dev accounts list`
 
 ### Synopsis (Generated)

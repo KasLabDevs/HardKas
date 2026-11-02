@@ -5,9 +5,9 @@
 import { logger, metrics } from "@hardkas/observability";
 import { OfficialRpcSession, rpcClientClosedError, toWrpcUrl, type OfficialRpcFactory } from "./upstream/session.js";
 import { toWire } from "./upstream/wire.js";
-import { RpcRequestNotSentError, acceptedTxIdOf, classifySubmitFailure } from "./errors.js";
+import { RpcNotFoundError, RpcRequestNotSentError, acceptedTxIdOf, classifySubmitFailure } from "./errors.js";
 import { submitTxIdOf } from "./expected-txid.js";
-import type { SubmitTransactionOptions } from "./index.js";
+import { mapKaspaRpcUtxos, type KaspaRpcUtxo, type SubmitTransactionOptions } from "./index.js";
 
 metrics.register({
   name: "rpc_requests_total",
@@ -135,6 +135,27 @@ export class KaspaWrpcClient {
   }
   async getUtxosByAddresses(addresses: string[]): Promise<unknown> {
     return this.request("getUtxosByAddresses", { addresses });
+  }
+
+  /**
+   * V1-ENGINE (F1.6): the UTXOs of one address as every HardKAS client gives them (`mapKaspaRpcUtxos`, the covenant id the
+   * node lists kept), so the SDK's v1 send reads its inputs through this client as through any other (`tx send` hands it
+   * this one for a ws:// endpoint). An address the node does not know lists nothing.
+   */
+  async getUtxosByAddress(address: string): Promise<KaspaRpcUtxo[]> {
+    let response: any;
+    try {
+      response = await this.request("getUtxosByAddresses", { addresses: [address] });
+    } catch (e) {
+      if (e instanceof RpcNotFoundError) return [];
+      throw e;
+    }
+    return response?.entries ? mapKaspaRpcUtxos(response, address) : [];
+  }
+
+  /** V1-ENGINE (F1.6): the mempool's entries for these addresses (the pending spends a v1 send checks), as the node answers. */
+  async getMempoolEntriesByAddresses(options: { addresses: string[]; includeOrphanPool?: boolean; filterTransactionPool?: boolean }): Promise<unknown> {
+    return this.request("getMempoolEntriesByAddresses", options);
   }
 
   /**

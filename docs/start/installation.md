@@ -16,7 +16,7 @@ If you would rather see a transaction first and read afterwards, go to the
 
 | Requirement | Version | Notes |
 | :---------- | :------ | :---- |
-| Node.js | `>=22.5.0` | Required by `@hardkas/pskt-native` and by the HardKAS repository itself. |
+| Node.js | 24.22.1 | The only supported runtime: HardKAS is built and tested on it, and it is its security baseline. |
 | A package manager | npm, pnpm, or yarn | The repository itself uses pnpm. |
 
 Check your Node version before installing:
@@ -26,10 +26,10 @@ node --version
 ```
 
 > [!IMPORTANT]
-> Most HardKAS packages do not yet declare an `engines` field, so npm will not
-> warn you on an older runtime. `hardkas doctor` currently checks for Node 18 or
-> later, which is below the version the native package needs. Treat 22.5.0 as
-> the real floor regardless of what either tool tells you.
+> `@hardkas/core`, `@hardkas/cli`, `@hardkas/testing` and `@hardkas/pskt-native`
+> declare `engines: 24.22.1`; the other packages do not declare an `engines`
+> field yet, and npm only warns about it. `hardkas doctor` currently checks for
+> Node 18 or later. Use Node.js 24.22.1 regardless of what either tool tells you.
 
 Docker is **not** required for the default development loop, which runs against
 the in-memory simulator. You only need it for the localnet baseline described in

@@ -107,7 +107,7 @@ const NOT_IN_THIS_BUILD: Array<[CapabilityKey, string, string]> = [
   ["productionWallet", "Production wallet", ""],
   ["trustlessExit", "Trustless exit", ""],
   ["differentialDagValidation", "Differential DAG validation", ""],
-  ["l2Profiles", "L2 profiles", "Igra is a Lab, not the L1 core (the SDK still lists its profiles; L2 operations refuse)"],
+  ["l2Profiles", "L2 profiles", "Igra is a Lab, not the L1 core (@hardkas/sdk lists its profiles and refuses L2 operations; the separate experimental @hardkas/l2 package can sign and broadcast, chain-bound, mainnet-guarded and fee-capped)"],
   ["l2BridgeAssumptions", "Bridge model", "a Lab, not the L1 core"]
 ];
 

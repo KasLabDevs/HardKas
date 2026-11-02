@@ -56,14 +56,12 @@ describe("SilverScript entry encoding vs upstream silverscript-abi (differential
     });
   }
 
-  it("is NOT_IMPLEMENTED where upstream uses its own array/struct encoding", () => {
+  it("encodes the array vectors as upstream does too (F1 phase 2: silverscript-abi push_sig_arg for arrays and structs)", () => {
     const listVectors = vectors.filter((v) => !isScalarEntry(v.entry));
     expect(listVectors.length).toBeGreaterThan(0);
     for (const v of listVectors) {
-      expect(v.expectedHex).toBeDefined(); // upstream encodes it...
-      expect(() => encodeSilverEntryArgs({ artifact, entry: v.entry, args: v.args.map(fromFixture) })).toThrow(
-        expect.objectContaining({ code: "SILVER_ABI_NOT_IMPLEMENTED" }) // ...HardKAS does not reimplement it
-      );
+      expect(v.expectedHex).toBeDefined();
+      expect(encodeSilverEntryArgs({ artifact, entry: v.entry, args: v.args.map(fromFixture) })).toBe(v.expectedHex);
     }
   });
 

@@ -29,11 +29,27 @@ import { createRequire } from "node:module";
 const hostWebSocket = (globalThis as { WebSocket?: unknown }).WebSocket;
 let applied = false;
 
+/**
+ * KASPA-WASM-WS-ERROR-1 (found by MULTINODE-READ-1 on a real simnet node that stopped answering): `ws` emits 'error' as
+ * an EventEmitter event, and kaspa-wasm closes a socket still connecting (a node that does not complete the handshake
+ * within the connect timeout) without a listener for it, so ws's "WebSocket was closed before the connection was
+ * established" was unhandled and ended the process. Every socket gets a no-op 'error' listener: kaspa-wasm's own
+ * handler still receives the error when it has one, and the attempt fails as the session types it (timeout, connection).
+ */
+function guardedWebSocket(WsWebSocket: new (...args: any[]) => { on(event: string, listener: (...args: any[]) => void): unknown }) {
+  return class GuardedWebSocket extends WsWebSocket {
+    constructor(...args: any[]) {
+      super(...args);
+      this.on("error", () => {});
+    }
+  };
+}
+
 /** Gives the SDK `ws`'s WebSocket, once per process, unless the global was replaced after load. */
 export function useWsWebSocketForSdk(): void {
   if (applied) return;
   applied = true;
   const g = globalThis as { WebSocket?: unknown };
   if (g.WebSocket !== hostWebSocket) return;
-  g.WebSocket = createRequire(import.meta.url)("ws").WebSocket;
+  g.WebSocket = guardedWebSocket(createRequire(import.meta.url)("ws").WebSocket);
 }

@@ -86,10 +86,13 @@ describe("official SilverScript runner through the adapter", () => {
     expect(
       await run(COUNTER, [{ kind: "int", value: 7 }], [
         { name: "bump", function: "bump", args: ["5"], expect: "pass", tx: bump(12) },
-        { name: "wrong-successor", function: "bump", args: ["5"], expect: "fail", tx: bump(13) },
-        // The runner rejects the scenario before the script runs, so this is not an "expected failure".
-        { name: "other-covenant-id", function: "bump", args: ["5"], expect: "fail", tx: bump(12, `0x${"22".repeat(32)}`) }
+        { name: "wrong-successor", function: "bump", args: ["5"], expect: "fail", tx: bump(13) }
       ])
-    ).toEqual({ bump: "PASS", "wrong-successor": "PASS (expected failure)", "other-covenant-id": "FAIL" });
+    ).toEqual({ bump: "PASS", "wrong-successor": "PASS (expected failure)" });
+    // The runner rejects the scenario before the script runs, with its own error: not an "expected failure", and since
+    // F3 (H-B4, R-05) not a failed contract test either: a run without the runner's verdict is a runner error.
+    await expect(
+      run(COUNTER, [{ kind: "int", value: 7 }], [{ name: "other-covenant-id", function: "bump", args: ["5"], expect: "fail", tx: bump(12, `0x${"22".repeat(32)}`) }])
+    ).rejects.toThrow(/SILVER_RUNNER_INTERNAL_ERROR: other-covenant-id: .*WrongGenesisCovenantId/);
   });
 });

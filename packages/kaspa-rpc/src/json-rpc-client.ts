@@ -289,6 +289,7 @@ export class KaspaJsonRpcClient implements KaspaRpcClient {
           scriptPublicKey: string;
           blockDaaScore: string | number;
           isCoinbase: boolean;
+          covenantId?: string;
         };
       }>;
       };
@@ -304,6 +305,9 @@ export class KaspaJsonRpcClient implements KaspaRpcClient {
         const scriptHex = spk.script || spk.scriptPublicKey || "";
         spk = versionHex + scriptHex;
       }
+      // COVENANT-UTXO-PAYMENT-FILTER-1C: the covenant id the node lists (KIP-20) is kept, as JsonWrpcKaspaClient keeps
+      // it: it is what lets every payment path leave the covenant's UTXO out
+      const covenantId = e.utxoEntry.covenantId ?? e.utxoEntry.covenant_id;
       return {
         address: e.address,
         outpoint: {
@@ -313,7 +317,8 @@ export class KaspaJsonRpcClient implements KaspaRpcClient {
         amountSompi: BigInt(e.utxoEntry.amount),
         scriptPublicKey: spk,
         blockDaaScore: BigInt(e.utxoEntry.blockDaaScore),
-        isCoinbase: e.utxoEntry.isCoinbase
+        isCoinbase: e.utxoEntry.isCoinbase,
+        ...(covenantId != null && String(covenantId) !== "" ? { covenantId: String(covenantId) } : {})
       };
     });
   }

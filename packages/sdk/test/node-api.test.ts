@@ -1,4 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import { Hardkas } from "../src/index.js";
 import { HardkasNodeApi } from "../src/node.js";
 import { DockerKaspadRunner } from "@hardkas/node-runner";
@@ -19,18 +22,26 @@ vi.mock("@hardkas/node-runner", () => {
 
 describe("HardkasNodeApi", () => {
   let sdk: Hardkas;
-  
+  // REMED-CLOSE · test isolation: opening the SDK sets up its workspace (.hardkas); each test opens a temporary one of
+  // its own, never the repository root
+  let workspaceRoot = "";
+
   beforeEach(async () => {
     vi.clearAllMocks();
+    workspaceRoot = fs.mkdtempSync(path.join(os.tmpdir(), "hk-sdk-node-api-"));
     sdk = await Hardkas.open({
-      cwd: process.cwd(),
+      cwd: workspaceRoot,
       network: "simulated"
     });
   });
 
+  afterEach(() => {
+    fs.rmSync(workspaceRoot, { recursive: true, force: true });
+  });
+
   it("should fail to start on mainnet with NODE_MANAGEMENT_MAINNET_FORBIDDEN", async () => {
     const mainnetSdk = await Hardkas.open({
-      cwd: process.cwd(),
+      cwd: workspaceRoot,
       network: "mainnet",
       policy: { allowPublic: true }
     });

@@ -1,0 +1,206 @@
+{
+  "pragma": {
+    "name": "silverscript",
+    "value": "^0.1.0",
+    "span": "pragma silverscript ^0.1.0;",
+    "name_span": "silverscript",
+    "value_span": "^0.1.0"
+  },
+  "name": "Counter",
+  "params": [
+    {
+      "type_ref": {
+        "base": "int"
+      },
+      "name": "init_value",
+      "span": "int init_value",
+      "type_span": "int ",
+      "name_span": "init_value"
+    }
+  ],
+  "fields": [
+    {
+      "type_ref": {
+        "base": "int"
+      },
+      "name": "value",
+      "expr": {
+        "kind": "identifier",
+        "data": "init_value",
+        "span": "init_value"
+      },
+      "span": "int value = init_value;",
+      "type_span": "int ",
+      "name_span": "value"
+    }
+  ],
+  "constants": [],
+  "functions": [
+    {
+      "name": "bump",
+      "attributes": [
+        {
+          "path": [
+            "covenant"
+          ],
+          "args": [
+            {
+              "name": "binding",
+              "expr": {
+                "kind": "identifier",
+                "data": "auth",
+                "span": "auth"
+              },
+              "span": "binding = auth",
+              "name_span": "binding"
+            },
+            {
+              "name": "from",
+              "expr": {
+                "kind": "int",
+                "data": 1,
+                "span": "1"
+              },
+              "span": "from = 1",
+              "name_span": "from"
+            },
+            {
+              "name": "to",
+              "expr": {
+                "kind": "int",
+                "data": 1,
+                "span": "1"
+              },
+              "span": "to = 1",
+              "name_span": "to"
+            },
+            {
+              "name": "mode",
+              "expr": {
+                "kind": "identifier",
+                "data": "transition",
+                "span": "transition"
+              },
+              "span": "mode = transition",
+              "name_span": "mode"
+            }
+          ],
+          "span": "#[covenant(binding = auth, from = 1, to = 1, mode = transition)]",
+          "path_spans": [
+            "covenant"
+          ]
+        }
+      ],
+      "params": [
+        {
+          "type_ref": {
+            "base": "State"
+          },
+          "name": "prev_state",
+          "span": "State prev_state",
+          "type_span": "State ",
+          "name_span": "prev_state"
+        },
+        {
+          "type_ref": {
+            "base": "int"
+          },
+          "name": "delta",
+          "span": "int delta",
+          "type_span": "int ",
+          "name_span": "delta"
+        }
+      ],
+      "entrypoint": false,
+      "return_types": [
+        {
+          "base": "State"
+        }
+      ],
+      "returns_tuple": true,
+      "body": [
+        {
+          "kind": "require",
+          "data": {
+            "expr": {
+              "kind": "binary",
+              "data": {
+                "op": "gt",
+                "left": {
+                  "kind": "identifier",
+                  "data": "delta",
+                  "span": "delta"
+                },
+                "right": {
+                  "kind": "int",
+                  "data": 0,
+                  "span": "0"
+                }
+              },
+              "span": "delta > 0"
+            },
+            "message": null,
+            "span": "require(delta > 0);",
+            "message_span": null
+          }
+        },
+        {
+          "kind": "return",
+          "data": {
+            "exprs": [
+              {
+                "kind": "struct_literal",
+                "data": {
+                  "name": "State",
+                  "fields": [
+                    {
+                      "name": "value",
+                      "expr": {
+                        "kind": "binary",
+                        "data": {
+                          "op": "add",
+                          "left": {
+                            "kind": "field_access",
+                            "data": {
+                              "source": {
+                                "kind": "identifier",
+                                "data": "prev_state",
+                                "span": "prev_state"
+                              },
+                              "field": "value",
+                              "field_span": "value"
+                            },
+                            "span": "prev_state.value"
+                          },
+                          "right": {
+                            "kind": "identifier",
+                            "data": "delta",
+                            "span": "delta"
+                          }
+                        },
+                        "span": "prev_state.value + delta "
+                      },
+                      "span": "value: prev_state.value + delta ",
+                      "name_span": "value"
+                    }
+                  ],
+                  "name_span": "State"
+                },
+                "span": "State { value: prev_state.value + delta }"
+              }
+            ],
+            "span": "return(State { value: prev_state.value + delta });"
+          }
+        }
+      ],
+      "return_type_spans": [
+        "State"
+      ],
+      "span": "#[covenant(binding = auth, from = 1, to = 1, mode = transition)]\n    function bump(State prev_state, int delta) : (State) {\n        require(delta > 0);\n        return(State { value: prev_state.value + delta });\n    }",
+      "name_span": "bump",
+      "body_span": "require(delta > 0);\n        return(State { value: prev_state.value + delta });"
+    }
+  ],
+  "span": "contract Counter(int init_value) {\n    int value = init_value;\n\n    #[covenant(binding = auth, from = 1, to = 1, mode = transition)]\n    function bump(State prev_state, int delta) : (State) {\n        require(delta > 0);\n        return(State { value: prev_state.value + delta });\n    }\n}",
+  "name_span": "Counter"
+}

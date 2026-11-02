@@ -1,12 +1,10 @@
 import { describe, it, expect, vi } from "vitest";
 import { EvmJsonRpcClient } from "../src/evm-rpc-client.js";
+import { rpcFetcher } from "./helpers/mock-fetch.js";
 
 describe("EvmJsonRpcClient", () => {
   it("should send correct JSON-RPC request and parse chainId", async () => {
-    const mockFetcher = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({ jsonrpc: "2.0", id: 1, result: "0x3039" }) // 12345 in hex
-    });
+    const mockFetcher = rpcFetcher(() => ({ result: "0x3039" })); // 12345 in hex
 
     const client = new EvmJsonRpcClient({
       url: "http://localhost:8545",
@@ -25,33 +23,17 @@ describe("EvmJsonRpcClient", () => {
   });
 
   it("should parse blockNumber as bigint", async () => {
-    const mockFetcher = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({ jsonrpc: "2.0", id: 1, result: "0x64" }) // 100 in hex
-    });
-
     const client = new EvmJsonRpcClient({
       url: "http://localhost:8545",
-      fetcher: mockFetcher as any
+      fetcher: rpcFetcher(() => ({ result: "0x64" })) as any // 100 in hex
     });
-    const blockNumber = await client.getBlockNumber();
-
-    expect(blockNumber).toBe(100n);
+    expect(await client.getBlockNumber()).toBe(100n);
   });
 
   it("should handle JSON-RPC errors", async () => {
-    const mockFetcher = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({
-        jsonrpc: "2.0",
-        id: 1,
-        error: { code: -32601, message: "Method not found" }
-      })
-    });
-
     const client = new EvmJsonRpcClient({
       url: "http://localhost:8545",
-      fetcher: mockFetcher as any
+      fetcher: rpcFetcher(() => ({ error: { code: -32601, message: "Method not found" } })) as any
     });
     await expect(client.getChainId()).rejects.toThrow(/JSON-RPC error: Method not found/);
   });
@@ -60,7 +42,8 @@ describe("EvmJsonRpcClient", () => {
     const mockFetcher = vi.fn().mockResolvedValue({
       ok: false,
       status: 500,
-      statusText: "Internal Server Error"
+      statusText: "Internal Server Error",
+      text: async () => ""
     });
 
     const client = new EvmJsonRpcClient({
@@ -71,37 +54,23 @@ describe("EvmJsonRpcClient", () => {
   });
 
   it("should get balance for an address", async () => {
-    const mockFetcher = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({ jsonrpc: "2.0", id: 1, result: "0xde0b6b3a7640000" }) // 1 ether in hex
-    });
-
     const client = new EvmJsonRpcClient({
       url: "http://localhost:8545",
-      fetcher: mockFetcher as any
+      fetcher: rpcFetcher(() => ({ result: "0xde0b6b3a7640000" })) as any // 1 ether
     });
-    const balance = await client.getBalanceWei(
-      "0x0000000000000000000000000000000000000000"
+    expect(await client.getBalanceWei("0x0000000000000000000000000000000000000000")).toBe(
+      1000000000000000000n
     );
-
-    expect(balance).toBe(1000000000000000000n);
   });
 
   it("should get nonce for an address", async () => {
-    const mockFetcher = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({ jsonrpc: "2.0", id: 1, result: "0x7" })
-    });
-
     const client = new EvmJsonRpcClient({
       url: "http://localhost:8545",
-      fetcher: mockFetcher as any
+      fetcher: rpcFetcher(() => ({ result: "0x7" })) as any
     });
-    const nonce = await client.getTransactionCount(
-      "0x0000000000000000000000000000000000000000"
-    );
-
-    expect(nonce).toBe(7n);
+    expect(
+      await client.getTransactionCount("0x0000000000000000000000000000000000000000")
+    ).toBe(7n);
   });
 
   it("should reject invalid addresses", async () => {
@@ -111,11 +80,7 @@ describe("EvmJsonRpcClient", () => {
   });
 
   it("should perform eth_call", async () => {
-    const mockFetcher = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({ jsonrpc: "2.0", id: 1, result: "0x1234" })
-    });
-
+    const mockFetcher = rpcFetcher(() => ({ result: "0x1234" }));
     const client = new EvmJsonRpcClient({
       url: "http://localhost:8545",
       fetcher: mockFetcher as any
@@ -135,23 +100,16 @@ describe("EvmJsonRpcClient", () => {
   });
 
   it("should perform eth_estimateGas", async () => {
-    const mockFetcher = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({ jsonrpc: "2.0", id: 1, result: "0x5208" }) // 21000 in hex
-    });
-
     const client = new EvmJsonRpcClient({
       url: "http://localhost:8545",
-      fetcher: mockFetcher as any
+      fetcher: rpcFetcher(() => ({ result: "0x5208" })) as any // 21000
     });
-    const gas = await client.estimateGas({
-      to: "0x0000000000000000000000000000000000000000"
-    });
-
-    expect(gas).toBe(21000n);
+    expect(
+      await client.estimateGas({ to: "0x0000000000000000000000000000000000000000" })
+    ).toBe(21000n);
   });
 
-  it.skip("[known gap: request is sent before it is validated -> Labs/L2] should reject invalid call requests", async () => {
+  it("validates and rejects invalid call requests before sending to node", async () => {
     const client = new EvmJsonRpcClient({ url: "http://localhost:8545" });
 
     // Missing to

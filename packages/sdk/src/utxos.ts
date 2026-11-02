@@ -71,11 +71,12 @@ export class HardkasUtxos {
         // safety margin is a HardKAS-level tolerance for DAG merge propagation,
         // not a semantic override of the protocol threshold.
         const network = this.sdk.network as string;
-        const { filterMatureUtxos } = await import("@hardkas/tx-builder");
+        const { filterMatureUtxos, isCovenantUtxo } = await import("@hardkas/tx-builder");
         const filtered = filterMatureUtxos<any>({
           networkId: network,
           virtualDaaScore,
-          utxos: utxosResult as any[],
+          // COVENANT-UTXO-PAYMENT-FILTER-1: a covenant's UTXO is no funding a payment can spend
+          utxos: (utxosResult as any[]).filter((u: any) => !isCovenantUtxo(u)),
           readEntry: (u: any) => ({
             blockDaaScore: u.blockDaaScore === undefined ? 0n : BigInt(u.blockDaaScore),
             // Treat coinbase with missing blockDaaScore as immature (defensive).

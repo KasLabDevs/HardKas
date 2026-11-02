@@ -16,4 +16,4 @@ HardKAS includes L1 RPC diagnostics so tools and agents can inspect runtime read
 
 `hardkas rpc utxos <address>`Query UTXOs for an address.
 
-The Igra L2 checks are a Lab, not part of the L1 CLI (it registers no `l2` command group); `hardkas dev doctor` and `hardkas local wizard` check an Igra JSON-RPC endpoint.
+The Igra L2 checks are a Lab, not part of the L1 CLI: they come with the `l2` extension (`hardkas extension install l2`), whose `hardkas l2 doctor` and `hardkas l2 wizard` check an Igra JSON-RPC endpoint (`local wizard` is the alias of `l2 wizard` for one version; `dev doctor`, also kept for one version, is `hardkas doctor workspace` plus `hardkas l2 doctor`).

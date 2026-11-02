@@ -23,7 +23,7 @@ function readJson(filePath: string): any {
   return JSON.parse(fs.readFileSync(filePath, "utf8"));
 }
 
-describe("0.12.0-rc.29 SDK parity surface (silverc installed)", () => {
+describe("0.13.0-rc.1 SDK parity surface (silverc installed)", () => {
   let workspaceRoot: string;
 
   beforeEach(() => {
@@ -35,9 +35,11 @@ describe("0.12.0-rc.29 SDK parity surface (silverc installed)", () => {
   });
 
   it("exposes corpus.verify with machine-checkable release claims", async () => {
-    const root = repoRoot();
+    // REMED-CLOSE · test isolation: autoBootstrap writes the workspace's .hardkas, so the corpus is verified in the
+    // temporary workspace, from a copy of it at the same relative path, never in the repository root
+    fs.cpSync(path.join(repoRoot(), "fixtures", "toccata-v2", "silver"), path.join(workspaceRoot, "fixtures", "toccata-v2", "silver"), { recursive: true });
     const sdk = await Hardkas.create({
-      cwd: root,
+      cwd: workspaceRoot,
       network: "simulated",
       autoBootstrap: true
     });

@@ -87,8 +87,9 @@ describe("SURFACE-TRUTH-1B · contract · SDK capabilities and v1 signing", () =
     // the deterministic simnet dev identities (real keys), unlocked explicitly: no silent unlock
     const alice = await getOrCreateDevAccount(dir, 0, "alice");
     const bob = await getOrCreateDevAccount(dir, 1, "bob");
-    // A v1 payment planned by the real planner (the pinned Generator: mass, fee, change) over one UTXO of alice's; no
-    // node is involved: signing is local.
+    // A v1 payment planned by the real planner (the pinned Generator: mass, fee, change) over one UTXO of alice's; the
+    // signing is local. COVENANT-UTXO-PAYMENT-FILTER-1B: `tx.sign` asks the node what each input of a node-network plan
+    // is and signs nothing without an answer, so the node is stubbed to list that UTXO as an ordinary one.
     const utxo = {
       outpoint: { transactionId: "a".repeat(64), index: 0 },
       address: alice.address,
@@ -114,6 +115,7 @@ describe("SURFACE-TRUTH-1B · contract · SDK capabilities and v1 signing", () =
       plan: planned.plan
     } as any);
     expect((plan as any).txVersion).toBe(1);
+    vi.spyOn(sdk.rpc as any, "getUtxosByAddress").mockResolvedValue([{ outpoint: utxo.outpoint, address: alice.address, amountSompi: utxo.amountSompi }]);
 
     let signed: any;
     let error: any;

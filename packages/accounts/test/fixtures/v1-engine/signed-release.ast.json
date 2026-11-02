@@ -1,0 +1,77 @@
+{
+  "pragma": {
+    "name": "silverscript",
+    "value": "^0.1.0",
+    "span": "pragma silverscript ^0.1.0;",
+    "name_span": "silverscript",
+    "value_span": "^0.1.0"
+  },
+  "name": "SignedRelease",
+  "params": [
+    {
+      "type_ref": {
+        "base": "pubkey"
+      },
+      "name": "owner",
+      "span": "pubkey owner",
+      "type_span": "pubkey ",
+      "name_span": "owner"
+    }
+  ],
+  "constants": [],
+  "functions": [
+    {
+      "name": "release",
+      "params": [
+        {
+          "type_ref": {
+            "base": "sig"
+          },
+          "name": "ownerSig",
+          "span": "sig ownerSig",
+          "type_span": "sig ",
+          "name_span": "ownerSig"
+        }
+      ],
+      "entrypoint": true,
+      "return_types": [],
+      "returns_tuple": false,
+      "body": [
+        {
+          "kind": "require",
+          "data": {
+            "expr": {
+              "kind": "call",
+              "data": {
+                "name": "checkSig",
+                "args": [
+                  {
+                    "kind": "identifier",
+                    "data": "ownerSig",
+                    "span": "ownerSig"
+                  },
+                  {
+                    "kind": "identifier",
+                    "data": "owner",
+                    "span": "owner"
+                  }
+                ],
+                "name_span": "checkSig"
+              },
+              "span": "checkSig(ownerSig, owner)"
+            },
+            "message": null,
+            "span": "require(checkSig(ownerSig, owner));",
+            "message_span": null
+          }
+        }
+      ],
+      "return_type_spans": [],
+      "span": "entry release(sig ownerSig) {\n        require(checkSig(ownerSig, owner));\n    }",
+      "name_span": "release",
+      "body_span": "require(checkSig(ownerSig, owner));"
+    }
+  ],
+  "span": "contract SignedRelease(pubkey owner) {\n    entry release(sig ownerSig) {\n        require(checkSig(ownerSig, owner));\n    }\n}",
+  "name_span": "SignedRelease"
+}

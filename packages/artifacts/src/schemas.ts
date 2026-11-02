@@ -160,6 +160,64 @@ const executionTargetSchema = z.object({
   network: z.string()
 });
 
+// F1.1 · v1 plan fields (all optional: a v0 plan carries none of them, so its content hash does not change).
+// silverscript-abi {kind, value} arguments with ints as decimal strings, or a signer slot filled only at signing time.
+export const V1ArgValueSchema: z.ZodType<unknown> = z.lazy(() =>
+  z.union([
+    z.object({ kind: z.literal("int"), value: z.string().regex(/^-?(0|[1-9]\d*)$/) }).strict(),
+    z.object({ kind: z.literal("bool"), value: z.boolean() }).strict(),
+    z.object({ kind: z.literal("byte"), value: z.number().int().min(0).max(255) }).strict(),
+    z.object({ kind: z.literal("bytes"), value: z.array(z.number().int().min(0).max(255)) }).strict(),
+    z.object({ kind: z.literal("text"), value: z.string() }).strict(),
+    z.object({ kind: z.literal("array"), value: z.array(V1ArgValueSchema) }).strict(),
+    z.object({ kind: z.literal("object"), value: z.record(V1ArgValueSchema) }).strict(),
+    z.object({ kind: z.literal("signer"), signer: z.string().min(1) }).strict()
+  ])
+);
+const Hex64Schema = z.string().regex(/^[0-9a-f]{64}$/);
+const V1CompileRecordRefSchema = z.object({ contentHash: Hex64Schema, artifactSha256: Hex64Schema, path: z.string().optional() }).strict();
+export const V1CompiledContractSchema = z
+  .object({ compileRecord: V1CompileRecordRefSchema, contract: z.string().min(1), constructorArgs: z.array(V1ArgValueSchema) })
+  .strict();
+export const V1ContractRefSchema = z
+  .object({
+    compileRecord: V1CompileRecordRefSchema,
+    contract: z.string().min(1),
+    constructorArgs: z.array(V1ArgValueSchema),
+    // F1 phase 2: the State of the spent UTXO, when it is not the compile record's own
+    state: z.record(V1ArgValueSchema).optional(),
+    entry: z.string().min(1),
+    policy: z.string().min(1).optional(),
+    args: z.array(V1ArgValueSchema)
+  })
+  .strict();
+export const V1NextStateSchema = z.union([
+  z
+    .object({
+      covenantId: Hex64Schema,
+      input: z.number().int().min(0),
+      outputs: z.array(z.number().int().min(0)),
+      successor: z
+        .object({
+          artifactSha256: Hex64Schema,
+          constructorArgs: z.array(V1ArgValueSchema),
+          stateToConstructorArg: z.record(z.number().int().min(0)),
+          state: z.record(V1ArgValueSchema)
+        })
+        .strict()
+    })
+    .strict(),
+  // F1 phase 2: one State per continuation, encoded into the contract's template
+  z
+    .object({
+      covenantId: Hex64Schema,
+      input: z.number().int().min(0),
+      outputs: z.array(z.number().int().min(0)),
+      states: z.array(z.record(V1ArgValueSchema))
+    })
+    .strict()
+]);
+
 export const TxPlanSchema = BaseArtifactSchema.extend({
   schema: z.literal(HardkasSchemas.TxPlan),
   execution: executionTargetSchema,
@@ -187,13 +245,23 @@ export const TxPlanSchema = BaseArtifactSchema.extend({
       blockDaaScore: z.string().optional(),
       isCoinbase: z.boolean().optional(),
       covenantId: z.string().optional(),
-      lane: z.string().optional()
+      lane: z.string().optional(),
+      // F1.1 · v1 inputs
+      kind: z.enum(["p2pk", "p2sh", "covenant"]).optional(),
+      computeBudget: z.number().int().min(0).max(0xffff).optional(),
+      contract: V1ContractRefSchema.optional(),
+      signer: z.string().min(1).optional(),
+      // V1-ENGINE-2 · a relative time lock's input sequence (u64, decimal); absent = 0
+      sequence: z.string().regex(/^\d{1,20}$/).optional()
     })
   ),
   outputs: z.array(
     z.object({
       address: z.string(),
-      amountSompi: z.string()
+      amountSompi: z.string(),
+      // a continuation binding (v1); legacy payment plans wrote a genesis marker without covenantId
+      covenant: z.object({ authorizingInput: z.number().int().min(0), covenantId: z.string().optional() }).optional(),
+      role: z.enum(["change", "payment"]).optional()
     })
   ),
   change: z
@@ -202,6 +270,22 @@ export const TxPlanSchema = BaseArtifactSchema.extend({
       amountSompi: z.string()
     })
     .optional(),
+  // F1.1 · v1 plan fields
+  genesisCovenantGroups: z
+    .array(
+      z.object({
+        authorizingInput: z.number().int().min(0),
+        outputs: z.array(z.number().int().min(0)),
+        contract: V1CompiledContractSchema.optional(),
+        covenantId: Hex64Schema.optional(),
+        // F1 phase 2: the State each output starts with (encoded into the contract's template), in output order
+        states: z.array(z.record(V1ArgValueSchema)).optional()
+      })
+    )
+    .optional(),
+  payload: z.string().regex(/^(?:[0-9a-f]{2})*$/).optional(),
+  covenantOutpoints: z.array(z.string().regex(/^[0-9a-f]{64}:\d+$/)).optional(),
+  nextState: z.array(V1NextStateSchema).optional(),
   rpcUrl: z.string().optional(),
   networkProfileRef: z.string().optional(),
   policyRef: z.string().optional(),
@@ -214,7 +298,8 @@ export const TxPlanSchema = BaseArtifactSchema.extend({
   // NEVER synthesize a value. Historical plan artifacts legitimately omit this
   // field and remain readable — the fields are optional to preserve backward
   // compatibility with rc.22-era artifacts.
-  plannerAuthority: z.enum(["KASPA_WASM_GENERATOR", "SYNTHETIC_SIMULATOR"]).optional(),
+  // HARDKAS_V1_PLANNER: v1 plans (F1.1): kaspa-wasm 2.1.0's Generator builds only v0, so HardKAS plans v1 itself
+  plannerAuthority: z.enum(["KASPA_WASM_GENERATOR", "SYNTHETIC_SIMULATOR", "HARDKAS_V1_PLANNER"]).optional(),
   plannerAuthorityDetail: z.string().optional(),
   // TX-FEE-GUARD-1: the total fee limit (sompi) the plan was made under; enforced again at sign and send
   maxFeeSompi: z.string().regex(/^\d+$/).optional()
@@ -388,7 +473,39 @@ export const TxSubmissionSchema = BaseArtifactSchema.extend({
       }),
       z.object({ status: z.literal("insufficient-evidence"), reason: z.string().min(1) })
     ])
-    .optional()
+    .optional(),
+  /**
+   * F1.6 · the covenant outpoints a v1 send spends, each with the covenant id its verified plan gives it and the address
+   * the node lists it at: how a pending transition of a covenant is found. Written by v1 sends only.
+   */
+  covenantSpends: z
+    .array(
+      z
+        .object({
+          outpoint: z.string().regex(/^[0-9a-f]{64}:\d+$/),
+          covenantId: z.string().regex(/^[0-9a-f]{64}$/),
+          address: z.string().min(1)
+        })
+        .strict()
+    )
+    .optional(),
+  /**
+   * F1.6 · the read-only check a v1 send made just before the broadcast (PAYMENT-PREFLIGHT-1: or a payment sent with its
+   * opt-in preflight, which also verifies each input's signature): the node's virtual DAA score at the check, how many
+   * inputs it read, and its guarantee, which says what was checked (this node only; absence from its mempool proves no
+   * absence on the network).
+   */
+  preflight: z
+    .object({
+      observedAtDaaScore: z.string().regex(/^\d+$/).optional(),
+      inputs: z.number().int().positive(),
+      scope: z.literal("observer-local"),
+      guarantee: z.string().min(1)
+    })
+    .strict()
+    .optional(),
+  /** F1.6 · the pending transitions of the same covenant this send replaced, by explicit request (their artifactIds). */
+  replaces: z.array(z.string().regex(/^[0-9a-f]{64}$/)).optional()
 });
 
 const decimalString = z.string().regex(/^\d+$/);
@@ -992,15 +1109,19 @@ export const SilverCovenantV1Schema = SilverOnChainSchema.extend({
   computeBudget: z.number().int().nonnegative()
 }).passthrough();
 
-// `hardkas silver test`: the official SilverScript runner's verdicts on synthetic
+// `hardkas silver test`: the SilverScript runner's verdicts on synthetic
 // scenario transactions. Contract execution only, never transaction validity or
 // node evidence: its mode is "vm", never "localnet", and it claims no capability.
 // The runner's output can print argument values, so results carry its digest.
+// F3 (H-B4): "official-vm-scenario" only from a VERIFIED runner; a run of an
+// UNVERIFIED local build (today every runner) is "unverified-vm-scenario", with
+// runner.trust "UNVERIFIED". Records written before runner.trust existed carry no
+// trust and were all UNVERIFIED runs.
 export const SilverVmTestV1Schema = BaseArtifactSchema.omit({ mode: true }).extend({
   schema: z.literal(HardkasSchemas.SilverVmTestV1),
   mode: z.literal("vm"),
   networkId: z.literal("simnet"),
-  evidence: z.literal("official-vm-scenario"),
+  evidence: z.enum(["official-vm-scenario", "unverified-vm-scenario"]),
   scope: z.string(),
   compileRecord: SilverRecordRefSchema,
   contract: z.string(),
@@ -1008,6 +1129,10 @@ export const SilverVmTestV1Schema = BaseArtifactSchema.omit({ mode: true }).exte
     binarySha256: Hex64,
     size: z.number().int().positive(),
     provenance: z.literal("unmanaged-local-build"),
+    trust: z.enum(["VERIFIED", "UNVERIFIED"]).optional(),
+    // R-08: where the runner was found and, for an UNVERIFIED one, which opt-in let it run (records since R-08)
+    source: z.enum(["explicit-path", "env", "home-toolchains"]).optional(),
+    trustOptIn: z.enum(["flag", "environment"]).optional(),
     expectedSource: z.object({ repository: z.string(), releaseTag: z.string(), commit: z.string(), package: z.literal("cli-debugger") })
   }),
   testFile: z.object({ path: z.string(), sha256: Hex64 }),

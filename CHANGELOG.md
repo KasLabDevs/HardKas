@@ -1,3 +1,12 @@
+## [0.13.0-rc.1] - 2026-11-02 - Coordinated Release Identity Refresh
+
+### Changed
+- Updated the coordinated package versions, runtime identity, scaffolds and current release documentation to `0.13.0-rc.1`.
+- Kept scaffolded `@hardkas/*` dependencies pinned to the CLI's exact release version.
+- Scoped abbreviated RC comparisons to their release line so historical `0.12.0` references remain valid after the minor-version bump.
+
+### Preserved Evidence
+- Previous release reports, qualification records and captured corpus artifacts retain their original version identities.
 
 ## [0.12.0-rc.29] - 2026-10-25 - Coordinated Release Identity Refresh
 

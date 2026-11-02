@@ -3,6 +3,9 @@ import path from "node:path";
 import { execa } from "execa";
 import { randomUUID } from "node:crypto";
 
+// NEW-11 (L2-EXT stage 2b): every vector checks the workspace with `hardkas doctor workspace`, the L1 checks that
+// `dev doctor` ran before it moved to the l2 extension (same report, checks and codes); the assertions are unchanged.
+
 import { fileURLToPath } from "node:url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -112,7 +115,7 @@ async function nuclearCorruption(workspace: string, cliPath: string) {
   } catch {}
 
   await child;
-  const doc = await execa("node", [cliPath, "dev", "doctor", "--json"], {
+  const doc = await execa("node", [cliPath, "doctor", "workspace", "--json"], {
     cwd: workspace,
     reject: false
   });
@@ -138,7 +141,7 @@ async function kill9PowerLoss(workspace: string, cliPath: string) {
   child.kill("SIGKILL");
   await child.catch(() => {});
 
-  const doc = await execa("node", [cliPath, "dev", "doctor", "--json"], {
+  const doc = await execa("node", [cliPath, "doctor", "workspace", "--json"], {
     cwd: workspace,
     reject: false
   });
@@ -150,7 +153,7 @@ async function kill9PowerLoss(workspace: string, cliPath: string) {
       // We trust doctor's internal validation here, but we ensure it exits.
     }
   } catch {
-    throw new Error("dev doctor returned unparseable JSON after SIGKILL: " + doc.stdout);
+    throw new Error("doctor workspace returned unparseable JSON after SIGKILL: " + doc.stdout);
   }
 }
 
@@ -160,7 +163,7 @@ async function idiotDeveloper(workspace: string, cliPath: string) {
     cwd: workspace,
     reject: false
   });
-  const doctor = await execa("node", [cliPath, "dev", "doctor", "--json"], {
+  const doctor = await execa("node", [cliPath, "doctor", "workspace", "--json"], {
     cwd: workspace,
     reject: false
   });
@@ -196,7 +199,7 @@ async function idiotDeveloper(workspace: string, cliPath: string) {
     })
   );
 
-  const check = await execa("node", [cliPath, "dev", "doctor", "--json"], {
+  const check = await execa("node", [cliPath, "doctor", "workspace", "--json"], {
     cwd: workspace,
     reject: false
   });
@@ -224,7 +227,7 @@ async function memoryPressure(workspace: string, cliPath: string) {
   if (res.exitCode !== 0) {
     if (res.stderr.includes("JavaScript heap out of memory")) {
       // OOM is allowed as long as the ledger is recoverable
-      const doc = await execa("node", [cliPath, "dev", "doctor", "--json"], {
+      const doc = await execa("node", [cliPath, "doctor", "workspace", "--json"], {
         cwd: workspace,
         reject: false
       });
@@ -265,7 +268,7 @@ async function parallelHell(workspace: string, cliPath: string) {
     })();
   };
 
-  for (let i = 0; i < 5; i++) runners.push(startRunner(["dev", "doctor"]));
+  for (let i = 0; i < 5; i++) runners.push(startRunner(["doctor", "workspace"]));
   for (let i = 0; i < 5; i++)
     runners.push(startRunner(["artifact", "inspect", "invalid_id_ignore"]));
   for (let i = 0; i < 3; i++) runners.push(startRunner(["rebuild", "--from-artifacts"]));
@@ -279,7 +282,7 @@ async function parallelHell(workspace: string, cliPath: string) {
   if (hasFailed) throw new Error(errString);
 
   // Post-mortem
-  const doc = await execa("node", [cliPath, "dev", "doctor", "--json"], {
+  const doc = await execa("node", [cliPath, "doctor", "workspace", "--json"], {
     cwd: workspace,
     reject: false
   });
@@ -301,7 +304,7 @@ async function unicodeNightmare(workspace: string, cliPath: string) {
   };
   await fs.writeFile(path.join(artifactsDir, "unicode.json"), JSON.stringify(payload));
 
-  const doc = await execa("node", [cliPath, "dev", "doctor", "--json"], {
+  const doc = await execa("node", [cliPath, "doctor", "workspace", "--json"], {
     cwd: workspace,
     reject: false
   });
@@ -316,7 +319,7 @@ async function filesystemFromHell(workspace: string, cliPath: string) {
   try {
     await fs.mkdir(deepDir, { recursive: true });
     await execa("node", [cliPath, "init"], { cwd: deepDir, reject: false });
-    await execa("node", [cliPath, "dev", "doctor"], { cwd: deepDir, reject: false });
+    await execa("node", [cliPath, "doctor", "workspace"], { cwd: deepDir, reject: false });
   } catch (e: unknown) {
     if (((e as any).code) === "ENAMETOOLONG" || ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)).includes("ENOENT")) {
       throw new Error(
@@ -359,7 +362,7 @@ async function fakeRpcLiar(workspace: string, cliPath: string) {
 
 async function theTruthTest(workspace: string, cliPath: string) {
   // Audit the current workspace artifacts for any overclaims
-  const doctor = await execa("node", [cliPath, "dev", "doctor", "--json"], {
+  const doctor = await execa("node", [cliPath, "doctor", "workspace", "--json"], {
     cwd: workspace,
     reject: false
   });
@@ -410,14 +413,14 @@ async function duplicateArtifactRegression(workspace: string, cliPath: string) {
   // Rule 4: MALFORMED_ARTIFACT
   await fs.writeFile(path.join(artifactsDir, "broken.json"), "NOT VALID JSON {{{");
 
-  const doc = await execa("node", [cliPath, "dev", "doctor", "--json"], {
+  const doc = await execa("node", [cliPath, "doctor", "workspace", "--json"], {
     cwd: workspace,
     reject: false
   });
 
   if (doc.exitCode === 0) {
-    console.error("DEV DOCTOR STDOUT:", doc.stdout);
-    console.error("DEV DOCTOR STDERR:", doc.stderr);
+    console.error("DOCTOR WORKSPACE STDOUT:", doc.stdout);
+    console.error("DOCTOR WORKSPACE STDERR:", doc.stderr);
     throw new Error("Doctor reported OK despite 4 categories of artifact corruption!");
   }
 
@@ -462,8 +465,8 @@ async function parallelHellMiniRegression(workspace: string, cliPath: string) {
     })();
   };
 
-  processes.push(spawn(["dev", "doctor", "--json"]));
-  processes.push(spawn(["dev", "doctor", "--json"]));
+  processes.push(spawn(["doctor", "workspace", "--json"]));
+  processes.push(spawn(["doctor", "workspace", "--json"]));
   processes.push(spawn(["artifact", "inspect", "nonexistent", "--json"]));
   processes.push(spawn(["artifact", "inspect", "nonexistent", "--json"]));
   processes.push(spawn(["rebuild", "--from-artifacts"]));

@@ -50,12 +50,23 @@ describe("CLI Semantic Constraints", () => {
     expect(res.stderr.toLowerCase()).toContain("unknown option");
   });
 
+  // NEW-11: this was `dev doctor --json`; its L1 checks are `doctor workspace` in the core (the alias, with the l2
+  // extension, keeps the case in packages/ext-l2/test/extension-installed.test.ts).
   it("JSON stdout is strictly valid and without ANSI escapes", () => {
-    const res = run(["dev", "doctor", "--json"]);
+    const res = run(["doctor", "workspace", "--json"]);
     expect(res.status).toBe(0);
     expect(res.stdout).not.toContain("\x1b[");
     const parsed = JSON.parse(res.stdout);
     expect(parsed.schemaVersion).toBe("hardkas.devDoctor.v1");
+  });
+
+  // L2-EXT stage 2: without the extension `dev doctor` is its typed refusal, just as strictly valid JSON.
+  it("`dev doctor --json` without the l2 extension: one strictly valid JSON refusal", () => {
+    const res = run(["dev", "doctor", "--json"]);
+    expect(res.status).toBe(1);
+    expect(res.stdout).not.toContain("\x1b[");
+    const parsed = JSON.parse(res.stdout);
+    expect({ ok: parsed.ok, code: parsed.code }).toEqual({ ok: false, code: "EXTENSION_NOT_INSTALLED" });
   });
 
   it("respects workspace flag independently of CWD", () => {

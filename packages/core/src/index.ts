@@ -102,12 +102,20 @@ export * from "./node-images.js";
 export * from "./node-identity.js";
 export * from "./toolchains.js";
 export * from "./kaspa-wasm.js";
+export * from "./kaspa-sighash.js";
+export * from "./kaspa-covenant-id.js";
 export * from "./network-params.js";
 export * from "./silverscript.js";
 export * from "./silverscript-abi.js";
+export * from "./silverscript-state.js";
 export * from "./silverscript-covenant.js";
 export * from "./silverscript-corpus.js";
 export * from "./silverscript-runner.js";
+export * from "./silverscript-vm-debugger.js";
+export * from "./silverscript-static-analyzer.js";
+export * from "./kcc1.js";
+export * from "./kcc2.js";
+export * from "./kcc20.js";
 
 export function parseHardkasConfig(input: unknown): HardkasConfig {
   const result = hardkasConfigSchema.safeParse(input);

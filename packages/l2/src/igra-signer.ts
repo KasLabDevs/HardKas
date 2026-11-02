@@ -1,4 +1,14 @@
 import { IgraTxPlanArtifact } from "@hardkas/artifacts";
+import type { L2NetworkProfile } from "./profiles.js";
+import type { L2FeeLimitsInput } from "./network-guard.js";
+
+/** Network binding a plan signer must enforce (chain, mainnet authorization, fee ceilings). */
+export interface IgraTxSigningGuard {
+  readonly expectedChainId: number;
+  readonly profile?: L2NetworkProfile | undefined;
+  readonly allowMainnet?: boolean | undefined;
+  readonly feeLimits?: L2FeeLimitsInput | undefined;
+}
 
 export interface IgraTxSigningInput {
   readonly plan: IgraTxPlanArtifact;
@@ -7,6 +17,7 @@ export interface IgraTxSigningInput {
     readonly address: string;
     readonly privateKey?: string;
   };
+  readonly guard?: IgraTxSigningGuard | undefined;
 }
 
 export interface IgraTxSigningResult {

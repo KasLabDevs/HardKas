@@ -1114,7 +1114,6 @@ No arguments.
 
 - [hardkas dev accounts](#hardkas-dev-accounts)
 - [hardkas dev create](#hardkas-dev-create)
-- [hardkas dev doctor](#hardkas-dev-doctor)
 - [hardkas dev fixture](#hardkas-dev-fixture)
 - [hardkas dev init](#hardkas-dev-init)
 - [hardkas dev last](#hardkas-dev-last)
@@ -1233,33 +1232,6 @@ No options.
 | Argument | Description |
 | :--- | :--- |
 | `name` |  |
-
----
-
-## hardkas dev doctor
-
-Igra L2 lab, not the L1 core: check local dev readiness for an L2 profile (Igra by default): workspace, artifacts, query store, SDK import, dev server and the L2 JSON-RPC; the Kaspa node is not checked experimental
-
-### Usage
-
-```bash
-hardkas dev doctor [options]
-```
-
-### Options
-
-| Flag | Description | Default |
-| :--- | :--- | :--- |
-| `--profile <name>` | L2 network profile name | igra |
-| `--rpc-url <url>` | Explicit Igra RPC URL to check |  |
-| `--account <name>` | EVM account that must exist in hardkas.config (its balance is not checked) |  |
-| `--timeout <ms>` | RPC timeout in milliseconds | 3000 |
-| `--json` | Output as JSON |  |
-| `--release` | Run strict release gate checks |  |
-
-### Arguments
-
-No arguments.
 
 ---
 
@@ -1449,6 +1421,7 @@ hardkas doctor [options] [module]
 | `--capabilities` | With 'doctor node': report the node's capabilities (RPC, network, DAA advance) as JSON | false |
 | `--consistency` | Run advanced deterministic consistency checks | false |
 | `--strict` | Fail strictly (exit 1) if invariants or consistency checks fail | false |
+| `--release` | With 'doctor workspace': also run the release checks (git, schemas, claims, raw appends, browser imports) | false |
 
 ### Arguments
 
@@ -1501,6 +1474,163 @@ hardkas env check [options]
 ### Arguments
 
 No arguments.
+
+---
+
+## hardkas escrow
+
+Escrow operations: lifecycle, security guards, and legacy v1 fund recovery
+
+### Usage
+
+```bash
+hardkas escrow [options] [command]
+```
+
+### Options
+
+No options.
+
+### Arguments
+
+No arguments.
+
+### Subcommands
+
+- [hardkas escrow rescue-v1](#hardkas-escrow-rescue-v1)
+
+---
+
+## hardkas escrow rescue-v1
+
+Legacy v1 Escrow fund recovery tools without exposing private keys in CLI arguments
+
+### Usage
+
+```bash
+hardkas escrow rescue-v1 [options] [command]
+```
+
+### Options
+
+No options.
+
+### Arguments
+
+No arguments.
+
+### Subcommands
+
+- [hardkas escrow rescue-v1 broadcast](#hardkas-escrow-rescue-v1-broadcast)
+- [hardkas escrow rescue-v1 inspect](#hardkas-escrow-rescue-v1-inspect)
+- [hardkas escrow rescue-v1 prepare](#hardkas-escrow-rescue-v1-prepare)
+- [hardkas escrow rescue-v1 sign](#hardkas-escrow-rescue-v1-sign)
+
+---
+
+## hardkas escrow rescue-v1 broadcast
+
+Finalize and broadcast the signed rescue transaction to the network
+
+### Usage
+
+```bash
+hardkas escrow rescue-v1 broadcast [options] <draft-file>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--network <network>` | Network (default simnet) | simnet |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `draft-file` |  |
+
+---
+
+## hardkas escrow rescue-v1 inspect
+
+Inspect a rescue draft and verify balance and signature status
+
+### Usage
+
+```bash
+hardkas escrow rescue-v1 inspect [options] <draft-file>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `draft-file` |  |
+
+---
+
+## hardkas escrow rescue-v1 prepare
+
+Prepare a v1 escrow rescue draft spending an orphaned UTXO to a target address
+
+### Usage
+
+```bash
+hardkas escrow rescue-v1 prepare [options]
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--address <address>` | Legacy escrow P2SH address |  |
+| `--outpoint <outpoint>` | Funding outpoint to spend (txId:index) |  |
+| `--to <address>` | Destination address to recover funds to |  |
+| `--network <network>` | Network id (default simnet) | simnet |
+| `--out <file>` | Output draft file path (default rescue-v1-plan.draft.json) | rescue-v1-plan.draft.json |
+| `--fee <sompi>` | Miner fee in sompi (default 400000 sompi = 0.004 KAS) | 400000 |
+| `--buyer-pk <hex>` | Buyer x-only public key (32 bytes hex) |  |
+| `--seller-pk <hex>` | Seller x-only public key (32 bytes hex) |  |
+| `--arbiter-pk <hex>` | Arbiter x-only public key (32 bytes hex) |  |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+No arguments.
+
+---
+
+## hardkas escrow rescue-v1 sign
+
+Sign a rescue draft with a local dev or keystore account
+
+### Usage
+
+```bash
+hardkas escrow rescue-v1 sign [options] <draft-file>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--account <name>` | Account name or role (e.g. buyer, seller, or dev account name) |  |
+| `--role <role>` | Contract role (buyer or seller) | buyer |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `draft-file` |  |
 
 ---
 
@@ -1630,6 +1760,131 @@ hardkas explain [options] [artifact]
 | Argument | Description |
 | :--- | :--- |
 | `artifact` |  |
+
+---
+
+## hardkas extension
+
+First-party extensions installed in the project (the Igra L2 lab is the 'l2' extension) experimental
+
+### Usage
+
+```bash
+hardkas extension [options] [command]
+```
+
+### Options
+
+No options.
+
+### Arguments
+
+No arguments.
+
+### Subcommands
+
+- [hardkas extension doctor](#hardkas-extension-doctor)
+- [hardkas extension install](#hardkas-extension-install)
+- [hardkas extension list](#hardkas-extension-list)
+- [hardkas extension remove](#hardkas-extension-remove)
+
+---
+
+## hardkas extension doctor
+
+Run the checks of the extensions loaded in this project
+
+### Usage
+
+```bash
+hardkas extension doctor [options]
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+No arguments.
+
+---
+
+## hardkas extension install
+
+Install an extension in this project at the CLI's exact version, with install scripts disabled; it downloads no toolchain and starts nothing
+
+### Usage
+
+```bash
+hardkas extension install [options] <id>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--from <tgz>` | Install from a local npm tarball (offline); requires --sha256 |  |
+| `--sha256 <hex>` | SHA-256 the --from tarball must have |  |
+| `--yes` | Run the package manager without asking | false |
+| `--dry-run` | Only print the checks' result and the command that would run | false |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `id` |  |
+
+---
+
+## hardkas extension list
+
+List the known extensions and their state in this project (installed, version, enabled, compatible)
+
+### Usage
+
+```bash
+hardkas extension list [options]
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+No arguments.
+
+---
+
+## hardkas extension remove
+
+Remove an extension from this project
+
+### Usage
+
+```bash
+hardkas extension remove [options] <id>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--yes` | Run the package manager without asking | false |
+| `--dry-run` | Only print the command that would run | false |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `id` |  |
 
 ---
 
@@ -1884,14 +2139,14 @@ hardkas kaspa wallet send [options] <from> <to>
 
 ---
 
-## hardkas local
+## hardkas kcc
 
-Local development and environment lifecycle tools
+KCC-1 covenant ABI and KCC-2 authority schemes (kaspanet/kccs, Final), off chain experimental
 
 ### Usage
 
 ```bash
-hardkas local [options] [command]
+hardkas kcc [options] [command]
 ```
 
 ### Options
@@ -1904,32 +2159,179 @@ No arguments.
 
 ### Subcommands
 
-- [hardkas local wizard](#hardkas-local-wizard)
+- [hardkas kcc dispatch](#hardkas-kcc-dispatch)
+- [hardkas kcc template-hash](#hardkas-kcc-template-hash)
 
 ---
 
-## hardkas local wizard
+## hardkas kcc dispatch
 
-Guided Igra L2 (EVM) check, an L2 lab: JSON-RPC, EVM account and its balance; not a Kaspa L1 setup experimental
+The KCC-1 dispatch tag of a function signature written with dispatch type names, e.g. 'transfer({int,byte[32],byte,byte,byte[32],byte[32]}[],byte[])': Hash(UTF8(signature))[0:4]
 
 ### Usage
 
 ```bash
-hardkas local wizard [options]
+hardkas kcc dispatch [options] <signature>
 ```
 
 ### Options
 
 | Flag | Description | Default |
 | :--- | :--- | :--- |
-| `--profile <name>` | L2 network profile name | igra |
-| `--account <name>` | EVM account name in hardkas.config (if it is missing, a key is printed for you to add) | dev_alice |
-| `--non-interactive` | Skip interactive prompts (will fail if input required) | false |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `signature` |  |
+
+---
+
+## hardkas kcc template-hash
+
+The KCC-1 template hash Hash(LE64(len(prefix)) || prefix || LE64(len(suffix)) || suffix) of a template
+
+### Usage
+
+```bash
+hardkas kcc template-hash [options]
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--prefix <hex>` | Template prefix (hex; empty is '') |  |
+| `--suffix <hex>` | Template suffix (hex; empty is '') |  |
 | `--json` | Output as JSON | false |
 
 ### Arguments
 
 No arguments.
+
+---
+
+## hardkas kcc20
+
+KCC-20 fungible tokens on L1 covenants (kaspanet/kccs, Final), off chain: state codec, transfer checks, program artifacts experimental. Not KRC-20
+
+### Usage
+
+```bash
+hardkas kcc20 [options] [command]
+```
+
+### Options
+
+No options.
+
+### Arguments
+
+No arguments.
+
+### Subcommands
+
+- [hardkas kcc20 artifact](#hardkas-kcc20-artifact)
+- [hardkas kcc20 check](#hardkas-kcc20-check)
+- [hardkas kcc20 decode-state](#hardkas-kcc20-decode-state)
+- [hardkas kcc20 encode-state](#hardkas-kcc20-encode-state)
+
+---
+
+## hardkas kcc20 artifact
+
+Read a KCC-20 program artifact (kcc20.json: program, entrypoints, owner_schemes, max_token_inputs, max_token_outputs) and print its configuration and KCC-1 dispatch tags. Exit codes: 0 valid; 2 invalid
+
+### Usage
+
+```bash
+hardkas kcc20 artifact [options] <file>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `file` |  |
+
+---
+
+## hardkas kcc20 check
+
+Check a KCC-20 transfer off chain against the leader's rules: inputs (leader first, with state, kasValueSompi, witness), nextStates, outputs (state, kasValueSompi), optional transactionInputs and config (a kcc20.json). Signatures are listed, never verified; continuation programs, covenant bindings and each input's entrypoint are not checked, and the input states and their order are taken as given (the token's program checks them on chain). Exit codes: 0 STRUCTURALLY_VALID; 1 REJECTED (KCC20_TRANSFER_REJECTED); 2 usage
+
+### Usage
+
+```bash
+hardkas kcc20 check [options] <transfer>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `transfer` |  |
+
+---
+
+## hardkas kcc20 decode-state
+
+Decode a 112-byte KCC20State encoding strictly (KCC-1 §3.7.1) and report any KCC-20 rule the state breaks. Exit codes: 0 decoded; 2 not a canonical KCC20State encoding
+
+### Usage
+
+```bash
+hardkas kcc20 decode-state [options] <hex>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `hex` |  |
+
+---
+
+## hardkas kcc20 encode-state
+
+Encode a KCC20State (JSON file or inline: amount, owner, ownerScheme, borrowScheme, borrowGuard, extensionCommitment) as its 112-byte KCC-1 state encoding. Exit codes: 0 encoded; 2 an invalid state
+
+### Usage
+
+```bash
+hardkas kcc20 encode-state [options] <state>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `state` |  |
 
 ---
 
@@ -3915,12 +4317,41 @@ No arguments.
 
 ### Subcommands
 
+- [hardkas rpc compare](#hardkas-rpc-compare)
 - [hardkas rpc dag](#hardkas-rpc-dag)
 - [hardkas rpc doctor](#hardkas-rpc-doctor)
 - [hardkas rpc health](#hardkas-rpc-health)
 - [hardkas rpc info](#hardkas-rpc-info)
 - [hardkas rpc mempool](#hardkas-rpc-mempool)
 - [hardkas rpc utxos](#hardkas-rpc-utxos)
+
+---
+
+## hardkas rpc compare
+
+Read several nodes side by side, read-only: identity, lag, the UTXOs of addresses, one look at a transaction. Differences the nodes' lag accounts for are lag, others disagreements (exit 1). Nothing is sent; agreement among nodes is not consensus validation
+
+### Usage
+
+```bash
+hardkas rpc compare [options]
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--endpoints <urls...>` | Node wRPC endpoints to read, separated by spaces (two or more) |  |
+| `--network <id>` | The network every node must say it serves (e.g. simnet, testnet-10); a node serving another is not read |  |
+| `--address <addresses...>` | Compare the UTXOs of these addresses |  |
+| `--tx <txId>` | Look at this transaction on every node |  |
+| `--since <hash>` | With --tx: a chain block every node holds to look from (default: each node's pruning point) |  |
+| `--lag-threshold <daa>` | DAA score behind the most advanced synced node beyond which a node is lagging (default: 100) |  |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+No arguments.
 
 ---
 
@@ -4192,14 +4623,45 @@ No arguments.
 
 ### Subcommands
 
+- [hardkas silver audit](#hardkas-silver-audit)
 - [hardkas silver compile](#hardkas-silver-compile)
 - [hardkas silver covenant](#hardkas-silver-covenant)
+- [hardkas silver debug](#hardkas-silver-debug)
 - [hardkas silver deploy](#hardkas-silver-deploy)
 - [hardkas silver doctor](#hardkas-silver-doctor)
+- [hardkas silver engine](#hardkas-silver-engine)
+- [hardkas silver fuzz](#hardkas-silver-fuzz)
 - [hardkas silver inspect](#hardkas-silver-inspect)
+- [hardkas silver preflight](#hardkas-silver-preflight)
 - [hardkas silver spend](#hardkas-silver-spend)
 - [hardkas silver test](#hardkas-silver-test)
 - [hardkas silver verify](#hardkas-silver-verify)
+
+---
+
+## hardkas silver audit
+
+Run static security analysis over a SilverScript (.sil) contract or compile record (heuristic AST and source-text rules COV-AUTH-001..COV-BUDGET-001: findings to review, not a proof of security). Exit codes: 0 report written; 1 HIGH findings with --fail-on-high (SILVER_AUDIT_HIGH_FINDINGS); 2 usage (file not found, not a compile record); 4 tampered compile record
+
+### Usage
+
+```bash
+hardkas silver audit [options] <source-or-record>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--args <file>` | Optional constructor arguments JSON file |  |
+| `--fail-on-high` | Exit with non-zero code if any HIGH severity finding is detected | false |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `source-or-record` |  |
 
 ---
 
@@ -4251,6 +4713,7 @@ No arguments.
 ### Subcommands
 
 - [hardkas silver covenant genesis](#hardkas-silver-covenant-genesis)
+- [hardkas silver covenant inspect](#hardkas-silver-covenant-inspect)
 - [hardkas silver covenant transition](#hardkas-silver-covenant-transition)
 
 ---
@@ -4271,8 +4734,9 @@ hardkas silver covenant genesis [options] <record>
 | :--- | :--- | :--- |
 | `--from <account>` | Funding account (local key) |  |
 | `--amount <kas>` | Value locked in the covenant |  |
-| `--compute-budget <n>` | Compute budget of the funding input (explicit: no estimator exists) |  |
-| `--fee <sompi>` | Explicit fee (required when --compute-budget > 0: the SDK does not price v1 budgets) |  |
+| `--compute-budget <n>` | Compute budget of the funding inputs (default: the certified P2PK budget) |  |
+| `--fee <sompi>` | Fee in sompi: at least the node's floor for this transaction (the floor when omitted) |  |
+| `--constructor-args <file>` | Constructor arguments the contract was compiled with (default: proven from its initial State) |  |
 | `--contract <name>` | Contract, when the artifact has several |  |
 | `--wait` | Wait for confirmation and the node's covenant id | false |
 | `--timeout <seconds>` | Confirmation timeout | 120 |
@@ -4285,6 +4749,33 @@ hardkas silver covenant genesis [options] <record>
 | Argument | Description |
 | :--- | :--- |
 | `record` |  |
+
+---
+
+## hardkas silver covenant inspect
+
+A covenant's lineage and state (its id, or one of its covenant records): genesis anchored by its recomputed id, transitions linked by outpoints, the tip checked at the node
+
+### Usage
+
+```bash
+hardkas silver covenant inspect [options] <covenant>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--network <network>` | Network (default: the workspace's) |  |
+| `--no-node` | Do not ask the node for the tip (records only) |  |
+| `--no-states` | Do not check the declared states against the addresses |  |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `covenant` |  |
 
 ---
 
@@ -4306,12 +4797,14 @@ hardkas silver covenant transition [options] <covenant-record>
 | `--constructor-args <file>` | Constructor arguments of the current state (checked against the record) |  |
 | `--state-map <json>` | State field -> constructor parameter index, e.g. {"value":0} |  |
 | `--next-state <file>` | Successor state: JSON object of {kind, value} per field |  |
-| `--compute-budget <n>` | Compute budget of the covenant input (explicit: no estimator exists) |  |
-| `--args <file>` | Entry arguments: JSON list of {kind, value} |  |
-| `--fee <sompi>` | Explicit fee (required when --compute-budget > 0) |  |
+| `--compute-budget <n>` | Compute budget of the covenant input, or 'estimate' (rusty-kaspa's upper bound); default: the certified budget of this entry, else that estimate |  |
+| `--args <file>` | Entry arguments: JSON list of {kind, value} and {"kind":"signature","account":"<name>"} |  |
+| `--fee <sompi>` | Fee in sompi, paid from the covenant's value: at least the node's floor for this transaction (the floor when omitted) |  |
 | `--emit-args <file>` | Write the successor's constructor arguments here (for the next transition) |  |
 | `--wait` | Wait for confirmation and check the lineage | false |
 | `--timeout <seconds>` | Confirmation timeout | 120 |
+| `--password-env <env>` | Read the keystore password of the encrypted account(s) this command signs with from this environment variable (development accounts need none) |  |
+| `--password-stdin` | Read the keystore password of the encrypted account(s) this command signs with from stdin | false |
 | `--json` | Output as JSON | false |
 
 ### Arguments
@@ -4319,6 +4812,40 @@ hardkas silver covenant transition [options] <covenant-record>
 | Argument | Description |
 | :--- | :--- |
 | `covenant-record` |  |
+
+---
+
+## hardkas silver debug
+
+Execute a covenant transition on the SilverScript runner (cli-debugger: a local build, no official binary exists) after the structural v1 validation, and emit source-mapped step traces, variable state and three verdicts (structural, SCRIPT_VM, global). Exit codes: 0 APPROVED (or any rejection with --allow-failure); 1 rejected (SILVER_DEBUG_STRUCTURAL_REJECTED, SILVER_DEBUG_CONTRACT_REJECTED) or a runner that gave no verdict (SILVER_RUNNER_NOT_FOUND, _START_FAILED, _TIMEOUT, _PROTOCOL_ERROR or _INTERNAL_ERROR); 2 usage; 3 runner refused by the trust policy (SILVER_RUNNER_UNVERIFIED); 4 tampered compile record
+
+### Usage
+
+```bash
+hardkas silver debug [options] <source-or-record>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--entry <name>` | Covenant policy or entrypoint name (e.g. bump) |  |
+| `--constructor-args <file>` | Constructor arguments JSON file |  |
+| `--args <json-or-file>` | Entry arguments JSON array or file path |  |
+| `--state <json-or-file>` | Current covenant state JSON object or file path |  |
+| `--next-state <json-or-file>` | Successor covenant state JSON object or file path |  |
+| `--demo-fixture` | Allow generated laboratory fixture parameters and synthetic UTXO when explicit transaction arguments are omitted | false |
+| `--fee <sompi>` | Fee in sompi (default: 300000) |  |
+| `--compute-budget <n>` | Compute budget or 'estimate' (default: estimate) |  |
+| `--allow-failure` | Return exit code 0 when the transition is rejected (structural validation or SCRIPT_VM), for interactive inspection; the verdicts are unchanged | false |
+| `--allow-unverified-runner` | Run a SilverScript runner (cli-debugger) that is not verified against a trusted reference. Upstream publishes no runner binary, so today every runner is an UNVERIFIED local build: without this flag none is executed. Its verdicts are labelled UNVERIFIED, never official | false |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `source-or-record` |  |
 
 ---
 
@@ -4340,6 +4867,7 @@ hardkas silver deploy [options] <record>
 | `--amount <kas>` | Value locked in the contract |  |
 | `--contract <name>` | Contract, when the artifact has several |  |
 | `--network <network>` | Network | simnet |
+| `--tx-version <n>` | Transaction version: 0 (the default, as certified) or 1 (the SDK's v1 engine: checks before any key, compute budgets) | 0 |
 | `--wait` | Wait for confirmation | false |
 | `--timeout <seconds>` | Confirmation timeout | 120 |
 | `--password-env <env>` | Read the keystore password of the encrypted account(s) this command signs with from this environment variable (development accounts need none) |  |
@@ -4376,6 +4904,250 @@ No arguments.
 
 ---
 
+## hardkas silver engine
+
+The SDK's v1 engine (sdk.covenants): plan and sign covenant and contract transactions; send them with `hardkas tx send`
+
+### Usage
+
+```bash
+hardkas silver engine [options] [command]
+```
+
+### Options
+
+No options.
+
+### Arguments
+
+No arguments.
+
+### Subcommands
+
+- [hardkas silver engine draft](#hardkas-silver-engine-draft)
+- [hardkas silver engine plan](#hardkas-silver-engine-plan)
+- [hardkas silver engine sign](#hardkas-silver-engine-sign)
+
+---
+
+## hardkas silver engine draft
+
+A v1 plan signed in turns by several parties (not a PSKT): prepare, sign, combine, finalize; send with `hardkas tx send`
+
+### Usage
+
+```bash
+hardkas silver engine draft [options] [command]
+```
+
+### Options
+
+No options.
+
+### Arguments
+
+No arguments.
+
+### Subcommands
+
+- [hardkas silver engine draft combine](#hardkas-silver-engine-draft-combine)
+- [hardkas silver engine draft finalize](#hardkas-silver-engine-draft-finalize)
+- [hardkas silver engine draft prepare](#hardkas-silver-engine-draft-prepare)
+- [hardkas silver engine draft sign](#hardkas-silver-engine-draft-sign)
+
+---
+
+## hardkas silver engine draft combine
+
+Combine drafts signed by different parties: the same transaction and slots, every signature verified (one bad signature refuses all)
+
+### Usage
+
+```bash
+hardkas silver engine draft combine [options] <drafts...>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--plan <plan>` | The plan the drafts were prepared for (its path or artifact id) |  |
+| `--out <file>` | Combined draft path (default .hardkas/drafts/) |  |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `drafts` |  |
+
+---
+
+## hardkas silver engine draft finalize
+
+Finalize a fully signed draft into the signed transaction (checked against the node and the compiler again, every signature verified)
+
+### Usage
+
+```bash
+hardkas silver engine draft finalize [options] <draft>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--plan <plan>` | The plan the draft was prepared for (its path or artifact id) |  |
+| `--network <network>` | Network (default: the plan's) |  |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `draft` |  |
+
+---
+
+## hardkas silver engine draft prepare
+
+Prepare a draft of a v1 plan (its path or artifact id): checked against the node and the compiler now, its signature slots unsigned
+
+### Usage
+
+```bash
+hardkas silver engine draft prepare [options] <plan>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--network <network>` | Network (default: the plan's) |  |
+| `--out <file>` | Draft path (default .hardkas/drafts/) |  |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `plan` |  |
+
+---
+
+## hardkas silver engine draft sign
+
+Sign one account's slots of a draft with its local key (the draft checked first; each signature verified before it is kept)
+
+### Usage
+
+```bash
+hardkas silver engine draft sign [options] <draft>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--plan <plan>` | The plan the draft was prepared for (its path or artifact id) |  |
+| `--account <name>` | The account whose slots this signs |  |
+| `--network <network>` | Network (default: the plan's) |  |
+| `--out <file>` | Signed draft path (default .hardkas/drafts/) |  |
+| `--password-env <env>` | Read the keystore password of the encrypted account(s) this command signs with from this environment variable (development accounts need none) |  |
+| `--password-stdin` | Read the keystore password of the encrypted account(s) this command signs with from stdin | false |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `draft` |  |
+
+---
+
+## hardkas silver engine plan
+
+Plan a v1 transaction (genesis, transition, deploy or spend) from a JSON spec of the SDK's options, sompi as decimal strings
+
+### Usage
+
+```bash
+hardkas silver engine plan [options] <operation> <spec>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--network <network>` | Network (default: the workspace's) |  |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `operation` |  |
+| `spec` |  |
+
+---
+
+## hardkas silver engine sign
+
+Sign a v1 plan (its path or artifact id) with the SDK's engine: checked against the node and the compiler first, no key read for a plan it refuses
+
+### Usage
+
+```bash
+hardkas silver engine sign [options] <plan>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--network <network>` | Network (default: the plan's) |  |
+| `--password-env <env>` | Read the keystore password of the encrypted account(s) this command signs with from this environment variable (development accounts need none) |  |
+| `--password-stdin` | Read the keystore password of the encrypted account(s) this command signs with from stdin | false |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `plan` |  |
+
+---
+
+## hardkas silver fuzz
+
+Run bidirectional property-based fuzzing over a counter covenant transition: SCRIPT_VM checks the counter rule (accepted iff delta > 0 and next = previous + delta) on the SilverScript runner; SYNTHETIC checks the structural compute-budget bounds. Exit codes: 0 FUZZ PASS; 1 counterexample (SILVER_FUZZ_FAILED), too few samples of one direction (SILVER_FUZZ_INSUFFICIENT_COVERAGE), a sample without a VM verdict (SILVER_FUZZ_NO_VM_EVIDENCE), a testbed error (SILVER_FUZZ_EVALUATION_ERROR), a runner that gave no verdict (SILVER_RUNNER_NOT_FOUND, _START_FAILED, _TIMEOUT, _PROTOCOL_ERROR or _INTERNAL_ERROR) or one that changed during the run (SILVER_RUNNER_CHANGED); 2 usage (SILVER_OPTION_INVALID, SILVER_FUZZ_SHAPE_UNSUPPORTED); 3 runner refused by the trust policy (SILVER_RUNNER_UNVERIFIED); 4 tampered compile record
+
+### Usage
+
+```bash
+hardkas silver fuzz [options] <source-or-record>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--entry <name>` | Covenant entrypoint name: it must take (State, int delta, sig) over a state of one int field | bump |
+| `--constructor-args <file>` | Constructor arguments JSON file |  |
+| `--runs <n>` | Generated samples (1-10000), run after the boundary samples that every run includes | 10 |
+| `--seed <n>` | Deterministic RNG seed (32-bit integer) | 20261029 |
+| `--backend <backend>` | SCRIPT_VM: the counter rule on the SilverScript runner; SYNTHETIC: the structural compute-budget bounds (no contract logic is judged without the VM) | SCRIPT_VM |
+| `--allow-unverified-runner` | Run a SilverScript runner (cli-debugger) that is not verified against a trusted reference. Upstream publishes no runner binary, so today every runner is an UNVERIFIED local build: without this flag none is executed. Its verdicts are labelled UNVERIFIED, never official | false |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `source-or-record` |  |
+
+---
+
 ## hardkas silver inspect
 
 Show a SilverScript v1 compile record
@@ -4400,6 +5172,40 @@ hardkas silver inspect [options] <record>
 
 ---
 
+## hardkas silver preflight
+
+Run v1 covenant transition preflight on a generated local testbed UTXO (STRUCTURAL_PREFLIGHT, plus SCRIPT_VM_PREFLIGHT on the SilverScript runner) reporting mass, compute budget and both verdicts; never a node's acceptance. Exit codes: 0 PREFLIGHT PASS; 1 PREFLIGHT FAIL (structural or SCRIPT_VM rejection: SILVER_PREFLIGHT_FAILED) or a runner that gave no verdict (SILVER_RUNNER_NOT_FOUND, _START_FAILED, _TIMEOUT, _PROTOCOL_ERROR or _INTERNAL_ERROR); 2 usage; 3 runner refused by the trust policy (SILVER_RUNNER_UNVERIFIED); 4 tampered compile record
+
+### Usage
+
+```bash
+hardkas silver preflight [options] <source-or-record>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--entry <name>` | Covenant policy or entrypoint name (e.g. bump) |  |
+| `--constructor-args <file>` | Constructor arguments JSON file |  |
+| `--args <json-or-file>` | Entry arguments JSON array or file path |  |
+| `--state <json-or-file>` | Current covenant state JSON object or file path |  |
+| `--next-state <json-or-file>` | Successor covenant state JSON object or file path |  |
+| `--demo-fixture` | Allow generated laboratory fixture parameters and synthetic UTXO when explicit transaction arguments are omitted | false |
+| `--fee <sompi>` | Fee in sompi (default: 300000) |  |
+| `--compute-budget <n>` | Compute budget or 'estimate' (default: estimate) |  |
+| `--level <level>` | Preflight level: STRUCTURAL_PREFLIGHT or SCRIPT_VM_PREFLIGHT | SCRIPT_VM_PREFLIGHT |
+| `--allow-unverified-runner` | Run a SilverScript runner (cli-debugger) that is not verified against a trusted reference. Upstream publishes no runner binary, so today every runner is an UNVERIFIED local build: without this flag none is executed. Its verdicts are labelled UNVERIFIED, never official | false |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `source-or-record` |  |
+
+---
+
 ## hardkas silver spend
 
 Spend a deployed contract output through one of its entries
@@ -4418,7 +5224,10 @@ hardkas silver spend [options] <deploy-record>
 | `--to <address>` | Recipient of the whole value (minus the fee) |  |
 | `--args <file>` | Entry arguments: JSON list of {kind, value} and {"kind":"signature","account":"<name>"} |  |
 | `--sequence <n>` | Input sequence (relative locks) |  |
-| `--sig-op-count <n>` | Declared signature operations (default: the signature arguments, at least 1) |  |
+| `--sig-op-count <n>` | Declared signature operations (default: the signature arguments, at least 1); transaction v0 only |  |
+| `--tx-version <n>` | Transaction version: 0 (the default, as certified) or 1 (the SDK's v1 engine: checks before any key, compute budgets) | 0 |
+| `--constructor-args <file>` | With --tx-version 1: the constructor arguments the contract was compiled with (default: proven from this spend's signers, when they are the keys it checks) |  |
+| `--compute-budget <n>` | With --tx-version 1: the contract input's compute budget, or 'estimate' (rusty-kaspa's upper bound); default: the certified budget of this entry, else that estimate |  |
 | `--wait` | Wait for confirmation | false |
 | `--timeout <seconds>` | Confirmation timeout | 120 |
 | `--password-env <env>` | Read the keystore password of the encrypted account(s) this command signs with from this environment variable (development accounts need none) |  |
@@ -4435,7 +5244,7 @@ hardkas silver spend [options] <deploy-record>
 
 ## hardkas silver test
 
-Run a compiled contract's tests on the official SilverScript runner experimental (script engine on scenario transactions; not transaction validity)
+Run a compiled contract's tests on the SilverScript runner (cli-debugger) experimental (script engine on scenario transactions; not transaction validity). Exit codes: 0 every test passed; 1 a test failed (SILVER_TEST_FAILED) or the runner gave no verdict (SILVER_RUNNER_FAILED, _START_FAILED, _CHANGED, _TIMEOUT, _OUTPUT_UNRECOGNIZED, _PROTOCOL_ERROR or _INTERNAL_ERROR); 2 usage; 3 runner refused by the trust policy (SILVER_RUNNER_UNVERIFIED); 4 tampered compile record
 
 ### Usage
 
@@ -4450,7 +5259,8 @@ hardkas silver test [options] <record>
 | `--tests <file>` | Runner test file (.test.json); a sig argument may be {"signature":"<account>"} |  |
 | `--args <file>` | The constructor arguments the record was compiled with |  |
 | `--contract <name>` | Contract, when the artifact has several |  |
-| `--runner <path>` | SilverScript runner (cli-debugger) binary (default: $HARDKAS_SILVER_RUNNER) |  |
+| `--runner <path>` | SilverScript runner (cli-debugger) binary (default: $HARDKAS_SILVER_RUNNER, else <HARDKAS_HOME>/toolchains/cli-debugger/1.0.0) |  |
+| `--allow-unverified-runner` | Run a SilverScript runner (cli-debugger) that is not verified against a trusted reference. Upstream publishes no runner binary, so today every runner is an UNVERIFIED local build: without this flag none is executed. Its verdicts are labelled UNVERIFIED, never official | false |
 | `--out <file>` | Record path (default .hardkas/artifacts/silver-vm/) |  |
 | `--password-env <env>` | Read the keystore password of the encrypted account(s) this command signs with from this environment variable (development accounts need none) |  |
 | `--password-stdin` | Read the keystore password of the encrypted account(s) this command signs with from stdin | false |
@@ -4778,7 +5588,7 @@ hardkas test [options] [files...]
 
 ## hardkas toolchain
 
-Install and verify the upstream toolchains HardKAS pins (official Kaspa release assets)
+Install and verify the upstream toolchains HardKAS pins (official Kaspa release assets; an installed extension adds its own, e.g. the l2 extension's foundry)
 
 ### Usage
 
@@ -5126,6 +5936,7 @@ hardkas tx send [options] [signedPath]
 | `--lock-timeout <ms>` | No effect, kept for compatibility (see --wait-lock) | 30000 |
 | `--json` | Output as JSON | false |
 | `--track <label>` | Signed-artifact mode: after an accepted broadcast, record a deployment with this label |  |
+| `--preflight` | Payments: right before the broadcast, check every input at the node (unspent, as planned, no covenant id, not pending in its mempool) and verify each input's signature against the node's UTXO; anything it cannot verify refuses the send. One node's view, not a consensus validation | false |
 
 ### Arguments
 

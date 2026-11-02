@@ -435,8 +435,8 @@ export function createHardkasCapabilities(): HardkasCapabilities {
       scriptRunner: true,
       testingFramework: true,
       // L2 (Igra profiles, the bridge model) is a Lab, not the L1 core: the L1 CLI registers no L2 group and the SDK's L2
-      // operations refuse (L2_NOT_IN_CORE). The SDK still carries the Igra profile list (`l2.listProfiles()`) until the
-      // Surface Cut; that is data, not an L2 capability.
+      // operations refuse (L2_NOT_IN_CORE). Since L2-EXT stage 2 the SDK does not carry the Igra profile list either
+      // (`l2.listProfiles()` refuses with L2_EXTENSION_REQUIRED; the list is in @hardkas/l2).
       l2Profiles: false,
       l2BridgeAssumptions: false,
       consensusValidation: false,

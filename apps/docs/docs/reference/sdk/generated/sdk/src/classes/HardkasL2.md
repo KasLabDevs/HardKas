@@ -78,39 +78,41 @@ L2 contract surface (Experimental)
 
 ### getProfile()
 
-> **getProfile**(`name`): `L2NetworkProfile`
+> **getProfile**(`_name`): `never`
 
 Defined in: [packages/sdk/src/l2.ts:25](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/l2.ts#L25)
 
 **`Alpha`**
 
-Gets a specific L2 network profile by name.
+L2 profiles live in `@hardkas/l2`, outside the core SDK (L2-EXT, D2): refuses with L2_EXTENSION_REQUIRED.
+Use `getL2Profile(name)` from `@hardkas/l2` directly.
 
 #### Parameters
 
-##### name
+##### \_name
 
 `string`
 
 #### Returns
 
-`L2NetworkProfile`
+`never`
 
 ***
 
 ### listProfiles()
 
-> **listProfiles**(): readonly `L2NetworkProfile`[]
+> **listProfiles**(): `never`
 
 Defined in: [packages/sdk/src/l2.ts:18](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/l2.ts#L18)
 
 **`Alpha`**
 
-Lists all available L2 network profiles.
+L2 profiles live in `@hardkas/l2`, outside the core SDK (L2-EXT, D2): refuses with L2_EXTENSION_REQUIRED.
+Use `listL2Profiles()` from `@hardkas/l2` directly.
 
 #### Returns
 
-readonly `L2NetworkProfile`[]
+`never`
 
 ***
 

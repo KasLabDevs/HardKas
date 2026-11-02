@@ -1,6 +1,7 @@
 import type { Utxo, TxPlan } from "./index.js";
 import { filterMatureUtxos, adapterAuthority } from "./kaspa-wallet-adapter.js";
-import { planPaymentWithGenerator, planWithGenerator } from "./generator-plan.js";
+import { GeneratorPlanError, planPaymentWithGenerator, planWithGenerator } from "./generator-plan.js";
+import { covenantIdOf, partitionCovenantUtxos } from "./covenant-utxos.js";
 
 export interface UtxoProvider {
   getUtxos(address: string): Promise<Utxo[]>;
@@ -130,7 +131,9 @@ export class TxPlanService {
    * - immature coinbase UTXOs are dropped (maturity from the SDK's network
    *   parameters, plus the 10-DAA margin above);
    * - `excludeOutpoints` are dropped before the Generator, never after (it owns
-   *   selection).
+   *   selection);
+   * - a covenant's UTXOs (covenant id set) are dropped: a payment never spends
+   *   one (COVENANT-UTXO-PAYMENT-FILTER-1, see `covenant-utxos.ts`).
    *
    * A spend that does not fit in one standard transaction is refused
    * (MULTI_TRANSACTION_PLAN_REQUIRED), and so is a change output too small to be
@@ -187,9 +190,14 @@ export class TxPlanService {
       );
     }
 
+    // COVENANT-UTXO-PAYMENT-FILTER-1: a covenant's UTXO is never a payment input
+    const { spendable, covenant } = partitionCovenantUtxos(candidates);
+    candidates = spendable;
+    const covenantNote = `${covenant.length} covenant UTXO(s) excluded: a payment never spends a covenant's UTXO`;
+
     if (candidates.length === 0) {
       throw new Error(
-        `Insufficient funds: no spendable UTXOs at ${request.fromAddress} (after maturity + excludeOutpoints filters).`
+        `Insufficient funds: no spendable UTXOs at ${request.fromAddress} (after maturity + excludeOutpoints filters${covenant.length > 0 ? `; ${covenantNote}` : ""}).`
       );
     }
 
@@ -207,15 +215,19 @@ export class TxPlanService {
       version: request.version
     });
 
+    const warnings = [
+      ...(request.excludeOutpoints && request.excludeOutpoints.size > 0
+        ? [`${request.excludeOutpoints.size} outpoint(s) excluded from candidate set before Generator`]
+        : []),
+      ...(covenant.length > 0 ? [covenantNote] : [])
+    ];
     return {
       plan,
       utxoSelection: {
         totalUtxosSeen: rpcUtxos.length,
         selectedUtxos: plan.inputs.length,
         selectionStrategy: "upstream-generator",
-        ...(request.excludeOutpoints && request.excludeOutpoints.size > 0
-          ? { warnings: [`${request.excludeOutpoints.size} outpoint(s) excluded from candidate set before Generator`] }
-          : {})
+        ...(warnings.length > 0 ? { warnings } : {})
       },
       ...provenance(synthetic)
     };
@@ -225,9 +237,18 @@ export class TxPlanService {
    * Plans a consolidation: every UTXO in `selectedUtxos` goes to one output at
    * `toAddress`, priced by the `Generator`. UTXOs that do not fit in one standard
    * transaction are refused (MULTI_TRANSACTION_PLAN_REQUIRED): consolidate them in
-   * smaller batches.
+   * smaller batches. A covenant's UTXO among them is refused
+   * (COVENANT_UTXO_NOT_PAYMENT_INPUT): consolidating it would end the covenant.
    */
   async planConsolidation(request: ConsolidationRequest): Promise<TxPlanResult> {
+    const covenant = request.selectedUtxos.filter((u) => covenantIdOf(u) !== undefined);
+    if (covenant.length > 0) {
+      throw new GeneratorPlanError(
+        "COVENANT_UTXO_NOT_PAYMENT_INPUT",
+        `${covenant.length} of the ${request.selectedUtxos.length} selected UTXOs belong to a covenant ` +
+          `(${covenant.map((u) => `${u.outpoint.transactionId}:${u.outpoint.index}`).join(", ")}): a consolidation never spends one. Nothing was planned.`
+      );
+    }
     const synthetic = request.simulated === true;
     const utxos = request.selectedUtxos.map((u) => ({ ...u, amountSompi: BigInt(u.amountSompi) }));
     const totalAmount = utxos.reduce((s, u) => s + u.amountSompi, 0n);

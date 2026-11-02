@@ -17,9 +17,12 @@ const config = {
   releaseAmount: 200000000n
 };
 
+// The escrow rework (develop 4cc548a14) made v2 the default: EscrowFull, with a 32-byte nonce drawn at random unless one
+// is given, so that two escrows of the same parties never share an address. The v1 cases ask for v1 explicitly; v2 is
+// deterministic for the same parties AND the same nonce.
 describe("createEscrow (SilverScript v1, managed silverc installed)", () => {
   it("compiles the v1 escrow and derives its P2SH lock from the SDK", async () => {
-    const { artifact, state, provenance } = await createEscrow(config);
+    const { artifact, state, provenance } = await createEscrow({ ...config, version: "v1" });
     const { contract } = getSilContract(artifact, "Escrow");
     expect(Object.keys(contract.entries).sort()).toEqual(["mutualRelease", "refundBuyer", "releaseToSeller"]);
     expect(state.redeemScriptHex).toBe(silContractBytecodeHex(contract));
@@ -36,10 +39,25 @@ describe("createEscrow (SilverScript v1, managed silverc installed)", () => {
     expect(serialized).not.toContain(config.buyerDestinationSpk);
   });
 
-  it("is deterministic for the same parties", async () => {
-    const a = await createEscrow(config);
-    const b = await createEscrow(config);
+  it("is deterministic for the same parties (v1)", async () => {
+    const a = await createEscrow({ ...config, version: "v1" });
+    const b = await createEscrow({ ...config, version: "v1" });
     expect(a.provenance.artifactSha256).toBe(b.provenance.artifactSha256);
     expect(a.state.lockingScriptHex).toBe(b.state.lockingScriptHex);
+  });
+
+  it("v2, the default: deterministic for the same parties and nonce, a different address for each escrow without one", async () => {
+    const escrowNonce = "11".repeat(32);
+    const a = await createEscrow({ ...config, escrowNonce });
+    const b = await createEscrow({ ...config, escrowNonce });
+    expect(a.provenance.contractName).toBe("EscrowFull");
+    expect(a.provenance.contractVersion).toBe("v2");
+    expect(a.provenance.artifactSha256).toBe(b.provenance.artifactSha256);
+    expect(a.state.lockingScriptHex).toBe(b.state.lockingScriptHex);
+    const c = await createEscrow(config);
+    const d = await createEscrow(config);
+    expect(c.effectiveConfig.escrowNonce).toMatch(/^[0-9a-f]{64}$/);
+    expect(c.effectiveConfig.escrowNonce).not.toBe(d.effectiveConfig.escrowNonce);
+    expect(c.state.lockingScriptHex).not.toBe(d.state.lockingScriptHex);
   });
 });

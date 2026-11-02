@@ -15,7 +15,8 @@ describe("Command Modules Side Effects", () => {
     await import("../src/commands/rpc.js");
     await import("../src/commands/dag.js");
     await import("../src/commands/accounts.js");
-    await import("../src/commands/l2.js");
+    // the l2 command module moved to @hardkas/ext-l2 (L2-EXT stage 2): checked in packages/ext-l2/test/command-modules.test.ts
+    await import("../src/commands/extension.js");
     await import("../src/commands/node.js");
     await import("../src/commands/config.js");
 

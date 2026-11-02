@@ -22,7 +22,7 @@ HardKAS operates strictly within the **Golden Core Qualification Model**, emphas
 ## What HardKAS is NOT
 
 - **Not a Kaspa Node:** HardKAS orchestrates and queries Kaspa nodes (like `rusty-kaspa`), but it does not implement consensus.
-- **Not a Trustless Bridge:** It provides simulation tools for L1/L2 interactions, not production bridging.
+- **Not a Bridge:** HardKAS performs no bridge operations (no deposits, withdrawals or custody), trustless or otherwise.
 - **Not Production Custody Software:** HardKAS is developer infrastructure. While it enforces strict safety orchestrations during development (e.g., path traversal sandboxing, maturity filtering, pending-spend protection), it is not a replacement for a secure production custody solution or HSM.
 
 ## Relationship with Kaspa Protocol

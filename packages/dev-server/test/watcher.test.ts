@@ -1,3 +1,5 @@
+// REMED-CLOSE: a workspace of its own (HARDKAS_ROOT), never the repository root's .hardkas — imported first
+import "./helpers/isolated-root.js";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import chokidar from "chokidar";
 import { startHardkasWatcher, stopHardkasWatcher } from "../src/watcher.js";

@@ -1,0 +1,18 @@
+# HardKAS l2-evm · compiled with `npx hardkas l2 compile`, which runs the pinned, verified forge with the pinned, verified
+# solc 0.8.38 (hardkas toolchain install foundry / solc), offline. Nothing is downloaded at build time.
+[profile.default]
+src = "src"
+test = "test"
+out = "out"
+libs = []
+# never fetch a compiler: without the verified solc the build fails instead of downloading one
+offline = true
+auto_detect_solc = false
+solc_version = "0.8.38"
+# PROVISIONAL: "cancun" is a conservative target; it is NOT a statement that Igra runs this EVM version. Check the
+# target network's rules before any deployment.
+evm_version = "cancun"
+optimizer = true
+optimizer_runs = 200
+# larger contracts can fail with "Stack too deep": compile them through the IR pipeline
+# via_ir = true

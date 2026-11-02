@@ -37,6 +37,7 @@ export function minerContainerNameFor(nodeContainerName: string): string {
 export const NODE_ERROR_DOCKER_UNAVAILABLE = "DOCKER_UNAVAILABLE";
 export const NODE_ERROR_CONTAINER_NOT_FOUND = "NODE_CONTAINER_NOT_FOUND";
 export const NODE_ERROR_LOGS_FAILED = "NODE_LOGS_FAILED";
+export const NODE_ERROR_DATA_NOT_REMOVED = "NODE_DATA_NOT_REMOVED";
 
 export function nodeRunnerError(code: string, message: string, cause?: unknown): Error & { code: string } {
   return Object.assign(new Error(`[${code}] ${message}`), { code, cause });
@@ -485,10 +486,64 @@ export class DockerKaspadRunner {
         : path.resolve(this.options.cwd, this.options.dataDir);
 
       if (existsSync(absoluteDataDir)) {
-        await fs.rm(absoluteDataDir, { recursive: true, force: true });
+        await this.removeDataDir(absoluteDataDir);
       }
     }
     return this.status();
+  }
+
+  /**
+   * NODE-RESET-LINUX-1 · kaspad writes its chain data through the bind mount as the container's user. On a rootful Linux
+   * engine that is root, so the host user cannot delete it (EACCES/EPERM); Docker Desktop (Windows, macOS) maps the
+   * owner and a rootless engine writes as the host user, so only there does this happen. The folder's entries are then
+   * removed by a short-lived container of the node's own pinned image (root there, the same mount, no network, never
+   * pulled), and the emptied folder from here.
+   */
+  private async removeDataDir(absoluteDataDir: string): Promise<void> {
+    try {
+      await fs.rm(absoluteDataDir, { recursive: true, force: true });
+      return;
+    } catch (e) {
+      const code = (e as NodeJS.ErrnoException)?.code;
+      if (code !== "EACCES" && code !== "EPERM") throw e;
+    }
+    const notRemoved = (e: unknown) =>
+      nodeRunnerError(
+        NODE_ERROR_DATA_NOT_REMOVED,
+        `The node's data at ${absoluteDataDir} belongs to the container's user and could not be removed through the image ${this.options.image}: ${(e as any)?.shortMessage ?? (e as any)?.message ?? String(e)}. Remove that folder as root.`,
+        e
+      );
+    let entries: string[];
+    try {
+      entries = await fs.readdir(absoluteDataDir);
+    } catch (e) {
+      throw notRemoved(e);
+    }
+    if (entries.length > 0) {
+      try {
+        await execa("docker", [
+          "run", "--rm", "--pull", "never", "--network", "none", "--user", "0:0",
+          "-v", `${absoluteDataDir}:/app/data`,
+          "--entrypoint", "rm",
+          this.options.image,
+          "-rf", ...entries.map((entry) => `/app/data/${entry}`)
+        ]);
+      } catch (e) {
+        if (isDockerUnavailableError(e)) {
+          throw nodeRunnerError(
+            NODE_ERROR_DOCKER_UNAVAILABLE,
+            `Docker is not available to remove the node's data at ${absoluteDataDir}, which belongs to the container's user. Details: ${(e as any)?.shortMessage ?? (e as any)?.message ?? String(e)}`,
+            e
+          );
+        }
+        throw notRemoved(e);
+      }
+    }
+    try {
+      await fs.rm(absoluteDataDir, { recursive: true, force: true });
+    } catch (e) {
+      throw notRemoved(e);
+    }
   }
 
   async logs(options?: { tail?: number; follow?: boolean }): Promise<string | void> {

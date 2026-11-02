@@ -319,10 +319,12 @@ describe("SURFACE-TRUTH-1 · BEFORE · what the CLI claims about itself and its 
       expect({ exit: r.status, status: json(r.stdout)?.status }).not.toEqual({ exit: 0, status: "success" });
     });
 
-    it("`dev doctor` does not report artifacts the CLI wrote, and `hardkas verify` accepts, as malformed", () => {
+    // NEW-11: this was `dev doctor`, whose L1 checks are `doctor workspace` in the core (`dev doctor` itself is the l2
+    // extension's alias: packages/ext-l2/test/extension-installed.test.ts keeps this case for it).
+    it("`doctor workspace` does not report artifacts the CLI wrote, and `hardkas verify` accepts, as malformed", () => {
       const v = cli(["verify", "--json"], ws);
       expect(v.status, v.all.slice(0, 600)).toBe(0);
-      const d = cli(["dev", "doctor", "--json", "--rpc-url", "http://127.0.0.1:1"], ws);
+      const d = cli(["doctor", "workspace", "--json"], ws);
       const report = jsonDocs(d.stdout).find((doc: any) => doc?.schema === "hardkas.devDoctor.v1");
       expect(report, d.all.slice(0, 400)).toBeTruthy();
       // any error check that names a file (whatever its code), since `hardkas verify` accepts every file of this store

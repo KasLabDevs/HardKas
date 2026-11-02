@@ -1,4 +1,5 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll } from "vitest";
+import os from "node:os";
 import { acquireLock, withLock } from "@hardkas/core";
 import {
   trackDeployment,
@@ -9,7 +10,19 @@ import path from "node:path";
 import fs from "node:fs";
 
 describe("Deployment Locking", () => {
-  const rootDir = process.cwd();
+  // REMED-CLOSE · test isolation: trackDeployment records under the process's working directory; this file runs in a
+  // temporary one of its own (its real path, as process.cwd() reports it), never the repository root.
+  let rootDir = "";
+  let cwdBefore = "";
+  beforeAll(() => {
+    cwdBefore = process.cwd();
+    rootDir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "hk-deploy-lock-")));
+    process.chdir(rootDir);
+  });
+  afterAll(() => {
+    process.chdir(cwdBefore);
+    fs.rmSync(rootDir, { recursive: true, force: true });
+  });
   const testLabel = "test-reentrancy-deployment";
   const testNetwork = "simnet";
 

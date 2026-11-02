@@ -11,6 +11,7 @@ import {
   SIMNET_HARNESS_ROLE_LABEL,
   SIMNET_HARNESS_RUN_LABEL,
   SimnetNodeHarness,
+  buildSimnetDockerRemoveArgs,
   resolveHarnessRunId,
   sweepHarnessContainers
 } from "../src/simnet-node-harness.js";
@@ -36,7 +37,8 @@ function containersLabelled(runId: string): string[] {
 describe("simnet harness container hygiene (T-A06a / T-A06b)", () => {
   const scratch: string[] = [];
   afterAll(() => {
-    for (const name of scratch) spawnSync("docker", ["rm", "-f", name], { stdio: "ignore" });
+    // the scratch containers come from the kaspad image too: removed with their anonymous volumes
+    for (const name of scratch) spawnSync("docker", buildSimnetDockerRemoveArgs(name), { stdio: "ignore" });
   });
 
   it("T-A06b: a started node publishes its RPC port on 127.0.0.1 only and carries the run label", async () => {

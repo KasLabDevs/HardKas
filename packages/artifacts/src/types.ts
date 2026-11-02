@@ -83,6 +83,8 @@ export interface UtxoArtifact {
   readonly scriptPublicKey: string;
   readonly blockDaaScore?: string | undefined;
   readonly isCoinbase?: boolean | undefined;
+  /** COVENANT-UTXO-PAYMENT-FILTER-1C: set when the UTXO belongs to a covenant (KIP-20); a payment never spends it. */
+  readonly covenantId?: string | undefined;
 }
 
 export interface TxOutputArtifact {

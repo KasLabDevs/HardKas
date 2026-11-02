@@ -40,21 +40,8 @@ export function registerDevCommands(program: Command) {
       await runDevInit();
     });
 
-  devCmd
-    .command("doctor")
-    // SURFACE-TRUTH-1B (ST-D): an Igra L2 lab check, not a stable L1 command.
-    .description(`Igra L2 lab, not the L1 core: check local dev readiness for an L2 profile (Igra by default): workspace, artifacts, query store, SDK import, dev server and the L2 JSON-RPC; the Kaspa node is not checked ${UI.maturity("experimental")}`)
-    .option("--profile <name>", "L2 network profile name", "igra")
-    .option("--rpc-url <url>", "Explicit Igra RPC URL to check")
-    .option("--account <name>", "EVM account that must exist in hardkas.config (its balance is not checked)")
-    .option("--timeout <ms>", "RPC timeout in milliseconds", "3000")
-    .option("--json", "Output as JSON")
-    .option("--release", "Run strict release gate checks")
-    .action(async (options: any) => {
-      const { runDevDoctor } = await import("../runners/dev-doctor-runner.js");
-      await runDevDoctor(options);
-    });
-
+  // `dev doctor` (an Igra L2 lab check) is the `l2` extension's since L2-EXT stage 2 (D6): with @hardkas/ext-l2 it
+  // registers itself here as the alias of `l2 doctor`; without it the core answers EXTENSION_NOT_INSTALLED.
 
   const accountsCmd = devCmd
     .command("accounts")

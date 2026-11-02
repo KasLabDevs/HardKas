@@ -1,28 +1,31 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, beforeAll, afterAll } from "vitest";
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { cliDist, repoRoot } from "./first-contact-helpers.js";
 
 // silverc level (AUD-41): verifying the programmability corpus recompiles its
 // SilverScript cases with the pinned silverc installed in HARDKAS_HOME. The
 // other programmability CLI cases stay in programmability.test.ts.
 
-function repoRoot(): string {
-  let current = path.dirname(fileURLToPath(import.meta.url));
-  while (current !== path.dirname(current)) {
-    if (fs.existsSync(path.join(current, "pnpm-workspace.yaml"))) return current;
-    current = path.dirname(current);
-  }
-  throw new Error("repo root not found");
-}
+// REMED-CLOSE · test isolation: `programmability` sets up the workspace of the directory it runs in (.hardkas); the
+// built CLI runs in a temporary workspace of its own holding a copy of the corpus at the same relative path, never in
+// the repository root
+let workspaceRoot = "";
+beforeAll(() => {
+  workspaceRoot = fs.mkdtempSync(path.join(os.tmpdir(), "hk-cli-programmability-corpus-"));
+  fs.cpSync(path.join(repoRoot, "fixtures", "toccata-v2"), path.join(workspaceRoot, "fixtures", "toccata-v2"), { recursive: true });
+});
+afterAll(() => {
+  fs.rmSync(workspaceRoot, { recursive: true, force: true });
+});
 
 function runHardkas(args: string[]) {
-  return spawnSync("pnpm", ["exec", "tsx", "packages/cli/src/index.ts", ...args], {
-    cwd: repoRoot(),
+  return spawnSync(process.execPath, [cliDist, ...args], {
+    cwd: workspaceRoot,
     env: process.env,
-    encoding: "utf8",
-    shell: process.platform === "win32"
+    encoding: "utf8"
   });
 }
 

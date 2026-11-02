@@ -14,7 +14,7 @@ registerTortureBucket({
   name: "local-first-lifecycle",
   profiles: ["local"],
   expectedInvariant:
-    "Workspace init, basic transfer, and dev doctor checks succeed without mutation side effects",
+    "Workspace init, basic transfer, and workspace doctor checks succeed without mutation side effects",
   run: async (ctx: TortureBucketContext) => {
     const runDir = path.join(ctx.workspaceDir, ".tmp", `local-${ctx.caseId}`);
     fs.rmSync(runDir, { recursive: true, force: true });
@@ -76,9 +76,10 @@ registerTortureBucket({
     // hardkas-append-allow
     fs.appendFileSync(eventsPath, JSON.stringify(mockArtifact) + "\n");
 
-    // 3. Dev doctor (use --json to inspect results; only fail on critical workspace checks)
+    // 3. Workspace doctor (use --json to inspect results; only fail on critical workspace checks). NEW-11: this was
+    // `dev doctor`, which moved to the l2 extension; `doctor workspace` is its L1 part, with the same report and checks.
     try {
-      const doctorOutput = execSync(`node "${cliPath}" dev doctor --json`, {
+      const doctorOutput = execSync(`node "${cliPath}" doctor workspace --json`, {
         cwd: runDir,
         stdio: "pipe",
         encoding: "utf-8"
@@ -89,15 +90,15 @@ registerTortureBucket({
       );
       if (workspaceCheck?.status === "error") {
         throw new TortureInvariantError(
-          `dev doctor: workspace invalid — ${workspaceCheck.message}`,
+          `doctor workspace: workspace invalid — ${workspaceCheck.message}`,
           "DOCTOR_WORKSPACE_INVALID",
           "critical"
         );
       }
-      // SDK/L2/dev-server warnings are expected in a bare test workspace
+      // SDK/dev-server warnings are expected in a bare test workspace
     } catch (e: unknown) {
       if (e instanceof TortureInvariantError) throw e;
-      // dev doctor exits non-zero for "failed" status — parse stdout to check
+      // doctor workspace exits non-zero for "failed" status — parse stdout to check
       const stdout = ((e as any).stdout) || "";
       try {
         const doctorResult = JSON.parse(stdout);
@@ -106,7 +107,7 @@ registerTortureBucket({
         );
         if (workspaceCheck?.status === "error") {
           throw new TortureInvariantError(
-            `dev doctor: workspace invalid — ${workspaceCheck.message}`,
+            `doctor workspace: workspace invalid — ${workspaceCheck.message}`,
             "DOCTOR_WORKSPACE_INVALID",
             "critical"
           );
@@ -115,7 +116,7 @@ registerTortureBucket({
       } catch (parseErr: any) {
         if (parseErr instanceof TortureInvariantError) throw parseErr;
         throw new TortureInvariantError(
-          `dev doctor failed and produced unparseable output: ${((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e))}`,
+          `doctor workspace failed and produced unparseable output: ${((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e))}`,
           "DOCTOR_FAILED",
           "warning"
         );
@@ -127,7 +128,7 @@ registerTortureBucket({
 
     return {
       flow: "local-first-lifecycle",
-      mutation: "simulated local workflows and dev doctor",
+      mutation: "simulated local workflows and workspace doctor",
       environmentMode: "local",
       artifactsAfter: ["events.jsonl"]
     };

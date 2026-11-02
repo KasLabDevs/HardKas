@@ -26,8 +26,11 @@ export interface ManagedToolchainReference {
   readonly url: string;
   /** SHA-256 of the release asset, as published on the GitHub release. */
   readonly assetSha256: string;
-  /** Container format of the release asset. */
-  readonly archive: "zip" | "tar.gz";
+  /**
+   * Container format of the release asset. `binary` (L2-EXT stage 5: solc): the asset is the one pinned file itself,
+   * so `files` has exactly one entry, whose digest is the asset digest.
+   */
+  readonly archive: "zip" | "tar.gz" | "binary";
   /** Directory inside the asset whose files are installed. */
   readonly assetSubdir: string;
   /** Module or program used from the install directory. */
@@ -174,6 +177,23 @@ function sha256Hex(data: Uint8Array): string {
   return createHash("sha256").update(data).digest("hex");
 }
 
+/** SHA-256 of a file read in fixed-size chunks: constant memory, also for 100 MB binaries (L2-EXT stage 3). */
+function sha256FileSync(file: string): string {
+  const hash = createHash("sha256");
+  const buf = Buffer.allocUnsafe(1024 * 1024);
+  const fd = fsSync.openSync(file, "r");
+  try {
+    for (;;) {
+      const n = fsSync.readSync(fd, buf, 0, buf.length, null);
+      if (n === 0) break;
+      hash.update(buf.subarray(0, n));
+    }
+  } finally {
+    fsSync.closeSync(fd);
+  }
+  return hash.digest("hex");
+}
+
 /**
  * Checks an installed toolchain against its pin: every pinned file present
  * with the pinned size and digest, nothing else besides the install record,
@@ -200,13 +220,18 @@ export function verifyManagedToolchainSync(
 
   const problems: string[] = [];
   for (const [name, pin] of Object.entries(ref.files)) {
+    const file = path.join(dir, name);
+    let size: number;
     try {
-      const data = fsSync.readFileSync(path.join(dir, name));
-      if (data.length !== pin.size) problems.push(`${name}: size ${data.length}, expected ${pin.size}`);
-      else if (sha256Hex(data) !== pin.sha256) problems.push(`${name}: sha256 does not match the pin`);
+      const st = fsSync.statSync(file);
+      if (!st.isFile()) throw new Error("not a file");
+      size = st.size;
     } catch {
       problems.push(`${name}: missing`);
+      continue;
     }
+    if (size !== pin.size) problems.push(`${name}: size ${size}, expected ${pin.size}`);
+    else if (sha256FileSync(file) !== pin.sha256) problems.push(`${name}: sha256 does not match the pin`);
   }
   for (const name of entries) {
     if (name !== TOOLCHAIN_INSTALL_RECORD && !(name in ref.files)) problems.push(`${name}: not part of the pinned package`);
@@ -265,11 +290,60 @@ export async function installManagedToolchain(
     }
   }
 
+  const staging = await createToolchainStaging(ref, input.home);
+  try {
+    for (const [name, data] of Object.entries(input.files)) await fs.writeFile(path.join(staging, name), data);
+  } catch (e) {
+    await fs.rm(staging, { recursive: true, force: true }).catch(() => {});
+    throw e;
+  }
+  return finalizeManagedToolchainInstall(ref, { ...input, stagingDir: staging });
+}
+
+/**
+ * A fresh, empty staging directory next to where `ref` is installed (same volume, so the final swap is a rename).
+ * Large toolchains (L2-EXT stage 3: Foundry) are extracted straight into it, file by file, instead of in memory.
+ */
+export async function createToolchainStaging(ref: ManagedToolchainReference, home?: string | undefined): Promise<string> {
+  const parent = path.dirname(getToolchainInstallDir(ref, home));
+  await fs.mkdir(parent, { recursive: true });
+  const staging = path.join(parent, `.staging-${ref.version}-${process.pid}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`);
+  await fs.mkdir(staging);
+  return staging;
+}
+
+/**
+ * Turns a staging directory holding the pinned files into the installed toolchain, or throws and removes it.
+ *
+ * Fails closed: the asset digest must be the pin's, and the staged directory must hold exactly the pinned files with
+ * their pinned sizes and digests (checked after the provenance record is written, by the same verifier the loaders
+ * use) before it is swapped in with renames.
+ */
+export async function finalizeManagedToolchainInstall(
+  ref: ManagedToolchainReference,
+  input: {
+    readonly assetSha256: string;
+    readonly stagingDir: string;
+    readonly source: ToolchainInstallRecord["source"];
+    readonly installer: string;
+    readonly home?: string | undefined;
+  }
+): Promise<{ dir: string; record: ToolchainInstallRecord }> {
+  const staging = input.stagingDir;
   const dir = getToolchainInstallDir(ref, input.home);
   const parent = path.dirname(dir);
-  await fs.mkdir(parent, { recursive: true });
+  if (path.dirname(path.resolve(staging)) !== path.resolve(parent)) {
+    await fs.rm(staging, { recursive: true, force: true }).catch(() => {});
+    throw toolchainError("TOOLCHAIN_CONTENT_MISMATCH", `staging directory ${staging} is not next to ${dir}`);
+  }
+  if (input.assetSha256 !== ref.assetSha256) {
+    await fs.rm(staging, { recursive: true, force: true }).catch(() => {});
+    throw toolchainError(
+      "TOOLCHAIN_ASSET_DIGEST_MISMATCH",
+      `${ref.assetName} has sha256 ${input.assetSha256}, expected ${ref.assetSha256}`
+    );
+  }
   const nonce = `${process.pid}-${Date.now().toString(36)}`;
-  const staging = path.join(parent, `.staging-${ref.version}-${nonce}`);
   const previous = path.join(parent, `.previous-${ref.version}-${nonce}`);
 
   const record: ToolchainInstallRecord = {
@@ -286,10 +360,8 @@ export async function installManagedToolchain(
   };
 
   try {
-    await fs.mkdir(staging);
-    for (const [name, data] of Object.entries(input.files)) {
-      await fs.writeFile(path.join(staging, name), data);
-      if (ref.executables?.includes(name)) await fs.chmod(path.join(staging, name), 0o755);
+    for (const name of Object.keys(ref.files)) {
+      if (ref.executables?.includes(name)) await fs.chmod(path.join(staging, name), 0o755).catch(() => {});
     }
     await fs.writeFile(path.join(staging, TOOLCHAIN_INSTALL_RECORD), JSON.stringify(record, null, 2) + "\n");
     const staged = await verifyManagedToolchain(ref, staging);

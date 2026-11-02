@@ -445,9 +445,10 @@ describe("TX-BATCH-1 · tx batch on a node whose UTXO index lags behind its memp
     expect(r.status, r.brief).toBe(0);
     expect(r.json).toMatchObject({ ok: true, batchSize: 3, successCount: 3, failCount: 0 });
     expectDisjointInputs(fake);
-    // every input is one of the miner's original outputs, and each plan read the index exactly twice (read + re-check)
+    // every input is one of the miner's original outputs; each plan read the index exactly twice (read + re-check), and
+    // each signature once more: `tx sign` asks the node what each input is (COVENANT-UTXO-PAYMENT-FILTER-1B)
     for (const tx of fake.accepted) for (const k of tx.inputs) expect(fake.accepted.map((t) => t.id)).not.toContain(k.split(":")[0]);
-    expect(fake.utxoReads.get(address.miner!)).toBe(6);
+    expect(fake.utxoReads.get(address.miner!)).toBe(9);
     fake.flush();
     for (const who of ["alice", "bob", "charlie"]) expect(fake.balance(address[who]!), who).toBe(5n * KAS);
   });

@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { loadManagedKaspaWasmSync } from "@hardkas/core";
 import { buildTransactions } from "./kaspa-wallet-adapter.js";
+import { covenantIdOf } from "./covenant-utxos.js";
 import type { Utxo, TxPlan } from "./index.js";
 
 /*
@@ -92,6 +93,16 @@ function ownScriptHex(spk: unknown): string | undefined {
  * listed them in: HardKAS adds no selection policy of its own.
  */
 export async function planWithGenerator(request: GeneratorPlanRequest): Promise<GeneratorPlanOutcome> {
+  // COVENANT-UTXO-PAYMENT-FILTER-1: the Generator never sees a covenant's UTXO (it would spend it as an ordinary input
+  // and end the covenant). HardKAS planners leave them out first; one handed here anyway is refused.
+  const covenant = request.utxos.filter((u) => covenantIdOf(u) !== undefined);
+  if (covenant.length > 0) {
+    throw new GeneratorPlanError(
+      "COVENANT_UTXO_NOT_PAYMENT_INPUT",
+      `${covenant.length} candidate UTXO(s) belong to a covenant (${covenant.map((u) => `${u.outpoint.transactionId}:${u.outpoint.index}`).join(", ")}): ` +
+        "the Generator plans ordinary payments only. Nothing was planned."
+    );
+  }
   const k = loadManagedKaspaWasmSync();
   const synthetic = request.syntheticIdentities === true;
   // The simulator models simnet; a real network id goes to the Generator as given.

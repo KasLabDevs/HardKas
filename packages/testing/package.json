@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/testing",
-  "version": "0.12.0-rc.29",
+  "version": "0.13.0-rc.1",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -37,7 +37,7 @@
     }
   },
   "scripts": {
-    "build": "tsup src/index.ts src/scenarios.ts src/harness.ts src/setup.ts src/reproducibility.ts src/adversarial-fixtures.ts src/mass-setup.ts --format esm --dts --clean --external vitest --external kaspa",
+    "build": "tsup src/index.ts src/scenarios.ts src/harness.ts src/setup.ts src/reproducibility.ts src/adversarial-fixtures.ts src/mass-setup.ts --format esm --dts --clean --external vitest --external kaspa --external fast-check",
     "test": "vitest run && pnpm test:gauntlet",
     "test:gauntlet": "node --import tsx --test test/gauntlet.node.ts",
     "typecheck": "tsc --noEmit",
@@ -53,7 +53,8 @@
     "@hardkas/query-store": "workspace:*",
     "@hardkas/sdk": "workspace:*",
     "@hardkas/simulator": "workspace:*",
-    "@hardkas/tx-builder": "workspace:*"
+    "@hardkas/tx-builder": "workspace:*",
+    "fast-check": "^4.8.0"
   },
   "devDependencies": {
     "execa": "^9.5.2",
@@ -68,6 +69,9 @@
     "vitest": {
       "optional": true
     }
+  },
+  "engines": {
+    "node": "24.22.1"
   },
   "license": "MIT",
   "author": "Javier Rodriguez",

@@ -18,6 +18,8 @@ export const HARDKAS_ENV_VARIABLES: ReadonlyArray<{ name: string; meaning: strin
   { name: "HARDKAS_KASPAD_IMAGE", meaning: "Docker image of the local node (default: the pinned rusty-kaspad)" },
   { name: "HARDKAS_ALLOW_SIMULATED_NODE", meaning: "1: report a simulated node when Docker is unavailable (never a real node)" },
   { name: "HARDKAS_ALLOW_UNVERIFIED_NODE", meaning: "testing harness: accept a node whose identity does not verify" },
+  { name: "HARDKAS_SILVER_RUNNER", meaning: "SilverScript runner (cli-debugger) binary of silver test, debug, preflight and fuzz" },
+  { name: "HARDKAS_SILVER_RUNNER_TRUST", meaning: "allow-unverified: run a SilverScript runner that is not verified (its verdicts labelled UNVERIFIED)" },
   { name: "HARDKAS_TOCCATA_MINER_THROTTLE_MS", meaning: "pause between blocks of the localnet miner" },
   { name: "HARDKAS_ALLOW_UNSAFE_CHAOS", meaning: "1: allow a chaos campaign in the current directory" },
   // SURFACE-TRUTH-1B (ST-J): what it does, not what it was meant to do. It "exposed the experimental command groups",
@@ -57,6 +59,19 @@ export function parseDotEnv(content: string): Record<string, string> {
   return parsed;
 }
 
+/**
+ * R-08 · a variable set to a value that relaxes a safety policy for every command: `env check` and `doctor` warn about
+ * it rather than mark it fine. The per-command alternative is named in the warning.
+ */
+export const ENV_POLICY_WARNINGS: Readonly<Record<string, (value: string) => string | undefined>> = {
+  HARDKAS_SILVER_RUNNER_TRUST: (value) =>
+    value === "allow-unverified"
+      ? "relaxes the SilverScript runner trust policy for every command: any runner found (the <HARDKAS_HOME>/toolchains one included) starts UNVERIFIED; prefer --allow-unverified-runner on the command that needs it"
+      : undefined,
+  HARDKAS_ALLOW_UNVERIFIED_NODE: (value) =>
+    value === "1" ? "the simnet test harness attaches to a node whose identity it cannot prove" : undefined
+};
+
 /** What a secret-bearing variable's value is reported as (SECRET-SURFACE-2 D3): the marker, never the value. */
 export const ENV_SECRET_VALUE_MARKER = "[REDACTED]";
 
@@ -71,8 +86,12 @@ export interface EnvCheckReport {
     /** Only on a secret-bearing variable: it is configured (non-empty); its value is not part of this report. */
     configured?: true;
     secret?: true;
+    /** R-08: set when this value relaxes a safety policy for every command. */
+    warning?: string;
   }>;
   unknown: string[];
+  /** R-08: the variables whose value relaxes a safety policy (also on their `known` entry). */
+  warnings: Array<{ name: string; message: string }>;
   deployProfile: { present: string[]; missing: string[] } | null;
 }
 
@@ -82,13 +101,18 @@ export function checkEnvironment(processEnv: NodeJS.ProcessEnv, dotEnv: Record<s
   for (const [k, v] of Object.entries(dotEnv ?? {})) merged[k] = { value: v, source: ".env" };
 
   const knownNames = new Set(HARDKAS_ENV_VARIABLES.map((v) => v.name));
-  const known = HARDKAS_ENV_VARIABLES.filter((v) => merged[v.name] !== undefined && merged[v.name]!.value !== "").map((v) => ({
-    name: v.name,
-    value: v.secret ? ENV_SECRET_VALUE_MARKER : merged[v.name]!.value,
-    source: merged[v.name]!.source,
-    meaning: v.meaning,
-    ...(v.secret ? { configured: true as const, secret: true as const } : {})
-  }));
+  const known = HARDKAS_ENV_VARIABLES.filter((v) => merged[v.name] !== undefined && merged[v.name]!.value !== "").map((v) => {
+    const warning = ENV_POLICY_WARNINGS[v.name]?.(merged[v.name]!.value);
+    return {
+      name: v.name,
+      value: v.secret ? ENV_SECRET_VALUE_MARKER : merged[v.name]!.value,
+      source: merged[v.name]!.source,
+      meaning: v.meaning,
+      ...(v.secret ? { configured: true as const, secret: true as const } : {}),
+      ...(warning ? { warning } : {})
+    };
+  });
+  const warnings = known.filter((k) => k.warning !== undefined).map((k) => ({ name: k.name, message: k.warning! }));
   const unknown = Object.keys(merged)
     .filter((k) => k.startsWith("HARDKAS_") && !knownNames.has(k) && !k.startsWith("HARDKAS_TEST_") && !k.startsWith("HARDKAS_HARNESS_") && !k.startsWith("HARDKAS_ESCROW_") && !k.startsWith("HARDKAS_DEV_SERVER_"))
     .sort();
@@ -102,7 +126,7 @@ export function checkEnvironment(processEnv: NodeJS.ProcessEnv, dotEnv: Record<s
       }
     : null;
 
-  return { dotEnv: null, known, unknown, deployProfile };
+  return { dotEnv: null, known, unknown, warnings, deployProfile };
 }
 
 export function registerEnvCommands(program: Command) {
@@ -131,7 +155,8 @@ export function registerEnvCommands(program: Command) {
         if (report.known.length === 0) out.writeLine("  No HARDKAS_* variable is set: the defaults apply.");
         for (const v of report.known) {
           // a secret-bearing variable is reported as configured; its value is never printed (D3)
-          out.writeLine(v.secret ? `  ✅ ${v.name}=${v.value}  (configured; ${v.source}; ${v.meaning})` : `  ✅ ${v.name}=${v.value}  (${v.source}; ${v.meaning})`);
+          if (v.warning) out.writeLine(`  ⚠️ ${v.name}=${v.value}  (${v.source}; ${v.warning})`);
+          else out.writeLine(v.secret ? `  ✅ ${v.name}=${v.value}  (configured; ${v.source}; ${v.meaning})` : `  ✅ ${v.name}=${v.value}  (${v.source}; ${v.meaning})`);
         }
         for (const name of report.unknown) out.writeLine(`  ❌ ${name}: not a variable HardKAS reads (a typo?)`);
         if (report.deployProfile) {

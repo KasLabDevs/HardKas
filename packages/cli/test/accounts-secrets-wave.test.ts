@@ -4,6 +4,8 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { spawn, spawnSync } from "node:child_process";
+import type { AddressInfo } from "node:net";
+import { WebSocketServer } from "ws";
 import { cliDist, childEnv } from "./first-contact-helpers.js";
 import { createTxPlanArtifact } from "@hardkas/artifacts";
 import { systemRuntimeContext } from "@hardkas/core";
@@ -38,6 +40,62 @@ const run = (args: string[], cwd: string, env: Record<string, string> = {}, inpu
   });
   return { status: r.status, stdout: r.stdout ?? "", stderr: r.stderr ?? "", all: `${r.stdout ?? ""}\n${r.stderr ?? ""}` };
 };
+
+/** `run`, asynchronous: the loopback fake node below lives in this process, which a synchronous spawn would freeze. */
+const runAsync = (args: string[], cwd: string, env: Record<string, string> = {}, input?: string) =>
+  new Promise<{ status: number | null; stdout: string; stderr: string; all: string }>((resolve) => {
+    const child = spawn(process.execPath, [cliDist, ...args], { cwd, env: childEnv(env), stdio: ["pipe", "pipe", "pipe"] });
+    let stdout = "";
+    let stderr = "";
+    const timer = setTimeout(() => child.kill(), 120_000);
+    child.stdout.on("data", (d) => (stdout += d));
+    child.stderr.on("data", (d) => (stderr += d));
+    child.on("close", (status) => {
+      clearTimeout(timer);
+      resolve({ status, stdout, stderr, all: `${stdout}\n${stderr}` });
+    });
+    child.stdin.end(input ?? "");
+  });
+
+/**
+ * COVENANT-UTXO-PAYMENT-FILTER-1B: `tx sign` asks the node what each input of a node-network plan is and signs nothing
+ * without an answer. The plans here are priced over a UTXO held in memory (outpoint ab…:0), so a loopback fake simnet
+ * node lists that UTXO, as an ordinary one, at every address it is asked about.
+ */
+async function startSimnetFake(k: any): Promise<{ url: string; close(): Promise<void> }> {
+  const server = new WebSocketServer({ host: "127.0.0.1", port: 0 });
+  await new Promise<void>((r) => server.on("listening", () => r()));
+  const packed = (address: string) => {
+    const spk = k.payToAddressScript(address);
+    return Number(spk.version).toString(16).padStart(4, "0") + String(spk.script);
+  };
+  server.on("connection", (socket) => {
+    socket.on("message", (data) => {
+      const text = String(data);
+      const id = /"id"\s*:\s*(\d+)/.exec(text)?.[1];
+      const method = /"method"\s*:\s*"([^"]+)"/.exec(text)?.[1] ?? "?";
+      let params: any;
+      try { params = JSON.parse(text.replace(/"id"\s*:\s*\d+/, '"id":0')).params; } catch { params = undefined; }
+      if (!id) return;
+      const ok = (result: unknown) => socket.send(`{"id":${id},"method":"${method}","params":${JSON.stringify(result)}}`);
+      const err = (message: string) => socket.send(`{"id":${id},"error":{"code":0,"message":${JSON.stringify(message)},"data":null}}`);
+      switch (method) {
+        case "getServerInfo":
+          return ok({ rpcApiVersion: 1, rpcApiRevision: 0, serverVersion: "2.1.0", networkId: "simnet", hasUtxoIndex: true, isSynced: true, virtualDaaScore: 100_000 });
+        case "getInfo":
+          return ok({ p2pId: "acc-wave", mempoolSize: 0, serverVersion: "2.1.0", isUtxoIndexed: true, isSynced: true, hasNotifyCommand: true, hasMessageId: true });
+        case "getUtxosByAddresses":
+          return ok({ entries: (params?.addresses ?? []).map((address: string) => ({ address, outpoint: { transactionId: "ab".repeat(32), index: 0 }, utxoEntry: { amount: 2_000_000_000, scriptPublicKey: packed(address), blockDaaScore: 1, isCoinbase: false } })) });
+        case "getMempoolEntriesByAddresses":
+          return ok({ entries: (params?.addresses ?? []).map((address: string) => ({ address, sending: [], receiving: [] })) });
+        default:
+          return err(`fake does not implement ${method}`);
+      }
+    });
+  });
+  const url = `ws://127.0.0.1:${(server.address() as AddressInfo).port}`;
+  return { url, close: () => new Promise<void>((r) => { for (const c of server.clients) c.terminate(); server.close(() => r()); }) };
+}
 
 /** stdin stays an open, silent pipe (an automation tool that never writes to it). */
 const runOpenStdin = (args: string[], cwd: string, env: Record<string, string> = {}, timeoutMs = 20_000) =>
@@ -94,7 +152,7 @@ const signedArtifacts = (ws: string) =>
 /**
  * A real simnet plan for `from`, built the way `tx plan` builds one: the pinned kaspa-wasm Generator
  * (`TxPlanService.planTransactionUpstream`) prices it over one UTXO of `from`, here held in memory
- * instead of read from a node. Signing needs no node.
+ * instead of read from a node. Signing asks the node what that input is: the fake simnet node lists it.
  */
 async function realPlan(ws: string, from: { name: string; address: string }, toAddress: string): Promise<string> {
   const k: any = await loadKaspaWasm();
@@ -127,15 +185,18 @@ async function realPlan(ws: string, from: { name: string; address: string }, toA
 describe("Accounts wave · encrypted real accounts sign with the user's password, given explicitly", () => {
   let ws: string;
   let dest: string;
+  let node: { url: string; close(): Promise<void> };
 
-  beforeEach(() => {
+  beforeEach(async () => {
     ws = fs.mkdtempSync(path.join(os.tmpdir(), "hk-acc-wave-"));
-    fs.writeFileSync(path.join(ws, "hardkas.config.ts"), "export default {};");
+    node = await startSimnetFake(await loadKaspaWasm());
+    fs.writeFileSync(path.join(ws, "hardkas.config.ts"), `export default { networks: { simnet: { kind: "kaspa-node", network: "simnet", rpcUrl: "${node.url}" } } };`);
     expect(run(["accounts", "real", "generate", "--name", "dest", "--unsafe-plaintext", "--yes", "--json"], ws).status).toBe(0);
     dest = accountIn(ws, "dest").address;
   });
 
-  afterEach(() => {
+  afterEach(async () => {
+    await node.close();
     fs.rmSync(ws, { recursive: true, force: true });
   });
 
@@ -148,7 +209,7 @@ describe("Accounts wave · encrypted real accounts sign with the user's password
 
   it("--password-env: signs; the password appears in no output and no file", async () => {
     const { plan } = await encrypted("encuser", USER_PW);
-    const r = run(["tx", "sign", plan, "--account", "encuser", "--password-env", "HK_WAVE_PW", "--json"], ws, { HK_WAVE_PW: USER_PW });
+    const r = await runAsync(["tx", "sign", plan, "--account", "encuser", "--password-env", "HK_WAVE_PW", "--json"], ws, { HK_WAVE_PW: USER_PW });
     expect(r.status, r.all).toBe(0);
     const signed = jsonOf(r.stdout);
     expect(signed.schema).toBe("hardkas.signedTx");
@@ -161,7 +222,7 @@ describe("Accounts wave · encrypted real accounts sign with the user's password
 
   it("--password-stdin: signs, and the password is not echoed", async () => {
     const { plan } = await encrypted("encuser", USER_PW);
-    const r = run(["tx", "sign", plan, "--account", "encuser", "--password-stdin", "--json"], ws, {}, USER_PW + "\n");
+    const r = await runAsync(["tx", "sign", plan, "--account", "encuser", "--password-stdin", "--json"], ws, {}, USER_PW + "\n");
     expect(r.status, r.all).toBe(0);
     expect(jsonOf(r.stdout).status).toBe("signed");
     expect(r.all).not.toContain(USER_PW);
@@ -171,7 +232,7 @@ describe("Accounts wave · encrypted real accounts sign with the user's password
   it("a wrong password fails with KEYSTORE_PASSWORD_INVALID: nothing signed, the attempt not echoed", async () => {
     const { plan } = await encrypted("encuser", USER_PW);
     const wrong = "not-the-password-71b";
-    const r = run(["tx", "sign", plan, "--account", "encuser", "--password-env", "HK_WAVE_PW", "--json"], ws, { HK_WAVE_PW: wrong });
+    const r = await runAsync(["tx", "sign", plan, "--account", "encuser", "--password-env", "HK_WAVE_PW", "--json"], ws, { HK_WAVE_PW: wrong });
     expect(r.status, r.all).not.toBe(0);
     const err = jsonOf(r.stdout);
     expect(err.ok).toBe(false);
@@ -184,7 +245,7 @@ describe("Accounts wave · encrypted real accounts sign with the user's password
 
   it("no password and no terminal: KEYSTORE_PASSWORD_REQUIRED at once, no prompt, nothing signed, no lock", async () => {
     const { plan } = await encrypted("encuser", USER_PW);
-    const r = run(["tx", "sign", plan, "--account", "encuser", "--json"], ws);
+    const r = await runAsync(["tx", "sign", plan, "--account", "encuser", "--json"], ws);
     expect(r.status, r.all).not.toBe(0);
     expect(r.all).not.toMatch(ANSI);
     expect(r.all).not.toMatch(/Enter (the )?password/i);
@@ -198,12 +259,12 @@ describe("Accounts wave · encrypted real accounts sign with the user's password
 
   it("a real account encrypted with the development password is not unlocked silently; given explicitly it signs", async () => {
     const { plan } = await encrypted("encdev", DEV_PW);
-    const silent = run(["tx", "sign", plan, "--account", "encdev", "--json"], ws);
+    const silent = await runAsync(["tx", "sign", plan, "--account", "encdev", "--json"], ws);
     expect(silent.status, silent.all).not.toBe(0);
     expect(jsonOf(silent.stdout).code).toBe("KEYSTORE_PASSWORD_REQUIRED");
     expect(signedArtifacts(ws)).toEqual([]);
 
-    const explicit = run(["tx", "sign", plan, "--account", "encdev", "--password-env", "HK_WAVE_PW", "--json"], ws, { HK_WAVE_PW: DEV_PW });
+    const explicit = await runAsync(["tx", "sign", plan, "--account", "encdev", "--password-env", "HK_WAVE_PW", "--json"], ws, { HK_WAVE_PW: DEV_PW });
     expect(explicit.status, explicit.all).toBe(0);
     expect(jsonOf(explicit.stdout).status).toBe("signed");
   });
@@ -214,7 +275,7 @@ describe("Accounts wave · encrypted real accounts sign with the user's password
     const address = ks.metadata?.address ?? ks.payload?.address;
     expect(address).toMatch(/^kaspasim:/);
     const plan = await realPlan(ws, { name: "alice", address }, dest);
-    const r = run(["tx", "sign", plan, "--account", "alice", "--json"], ws);
+    const r = await runAsync(["tx", "sign", plan, "--account", "alice", "--json"], ws);
     expect(r.status, r.all).toBe(0);
     expect(jsonOf(r.stdout).status).toBe("signed");
   });

@@ -28,7 +28,7 @@ Verify the installation:
 ```bash
 hardkas --version
 ```
-*(Should output `0.12.0-rc.29` or higher)*
+*(Should output `0.13.0-rc.1` or higher)*
 
 ## Create a New Project
 

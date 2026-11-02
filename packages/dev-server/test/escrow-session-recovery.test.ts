@@ -1,3 +1,5 @@
+// REMED-CLOSE: a workspace of its own (HARDKAS_ROOT), never the repository root's .hardkas — imported first
+import "./helpers/isolated-root.js";
 import { describe, it, expect, beforeAll } from "vitest";
 import { createDevServer } from "../src/server.js";
 import { resolveEscrowIntegrationConfig } from "./escrow-integration-config.js";

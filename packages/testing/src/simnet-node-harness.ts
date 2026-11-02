@@ -8,7 +8,10 @@ import {
   type NodeIdentityRecord
 } from "@hardkas/core";
 import { verifyNodeIdentity } from "@hardkas/node-runner";
+import fs from "fs";
 import net from "net";
+import os from "os";
+import path from "path";
 import { SimnetMiningDriver, SimnetMiningDriverImpl } from "./simnet-mining-driver.js";
 
 export interface SimnetNodeHandle {
@@ -106,6 +109,49 @@ export function buildSimnetDockerRunArgs(spec: SimnetDockerRunSpec): string[] {
   return args;
 }
 
+/**
+ * The `docker rm` invocation that removes a harness container, its anonymous volumes included (`-v`). The kaspad image
+ * declares `VOLUME /app/data`, so every container gets an anonymous volume. `--rm` removes it only when the container
+ * exits by itself; the harness removes containers with `docker rm -f` first, and without `-v` that left one anonymous
+ * volume behind per node started.
+ */
+export function buildSimnetDockerRemoveArgs(containerName: string): string[] {
+  return ["rm", "-f", "-v", containerName];
+}
+
+export interface SimnetBinarySpec {
+  readonly rpcPort: number;
+  /** The node's own P2P port (loopback): several binary nodes share one network namespace, unlike containers. */
+  readonly p2pPort: number;
+  readonly appDir: string;
+  readonly utxoIndex?: boolean | undefined;
+  readonly txIndex?: boolean | undefined;
+}
+
+/**
+ * The arguments for a harness node run from a kaspad binary (KASPAD_BIN), no Docker: the same simnet flags as the
+ * container (buildSimnetDockerRunArgs) — unsynced mining included, which the block-template miner needs on a node with
+ * no peers — with the JSON wRPC on the loopback interface only and the data in its own app directory. A container has a
+ * network namespace of its own; binary nodes share the caller's, so each also gets its own P2P port on loopback, and no
+ * gRPC server (whose default port two nodes would contend for) and no UPnP: with the default ports a second node, or one
+ * a failed test left running, made the next node exit at its start (AddrInUse). Pure, so a test pins it.
+ */
+export function buildSimnetBinaryArgs(spec: SimnetBinarySpec): string[] {
+  const args = [
+    "--simnet",
+    `--rpclisten-json=127.0.0.1:${spec.rpcPort}`,
+    `--listen=127.0.0.1:${spec.p2pPort}`,
+    "--nogrpc",
+    "--disable-upnp",
+    `--appdir=${spec.appDir}`,
+    "--enable-unsynced-mining",
+    "--reset-db"
+  ];
+  if (spec.utxoIndex) args.push("--utxoindex");
+  if (spec.txIndex) args.push("--txindex");
+  return args;
+}
+
 export interface HarnessSweepResult {
   /** false when the docker CLI could not be run at all (nothing was swept). */
   readonly dockerAvailable: boolean;
@@ -139,7 +185,7 @@ export function sweepHarnessContainers(runId: string): HarnessSweepResult {
   const failed: Array<{ name: string; error: string }> = [];
   for (const name of candidates) {
     try {
-      execFileSync("docker", ["rm", "-f", name], { stdio: "ignore" });
+      execFileSync("docker", buildSimnetDockerRemoveArgs(name), { stdio: "ignore" });
       removed.push(name);
       startedContainers.delete(name);
     } catch (error: any) {
@@ -158,7 +204,7 @@ let exitHookInstalled = false;
 
 function removeContainerSync(name: string): void {
   try {
-    execFileSync("docker", ["rm", "-f", name], { stdio: "ignore" });
+    execFileSync("docker", buildSimnetDockerRemoveArgs(name), { stdio: "ignore" });
   } catch {
     // Already gone or Docker unavailable.
   }
@@ -167,11 +213,55 @@ function removeContainerSync(name: string): void {
 
 async function removeContainer(name: string): Promise<void> {
   await new Promise((resolve) => {
-    const rm = spawn("docker", ["rm", "-f", name], { stdio: "ignore" });
+    const rm = spawn("docker", buildSimnetDockerRemoveArgs(name), { stdio: "ignore" });
     rm.on("exit", () => resolve(true));
     rm.on("error", () => resolve(true));
   });
   startedContainers.delete(name);
+}
+
+/**
+ * A node run from a binary (KASPAD_BIN) keeps its database in its own app directory: once the process is gone (at most
+ * 10 s after the signal) that directory is removed, as `docker run --rm` removes a container's. They used to stay: on a
+ * small or memory-backed temp (a tmpfs) the later nodes of a run then failed to start.
+ */
+async function removeBinaryNodeData(child: ChildProcess | undefined, dataDir: string): Promise<void> {
+  if (child) startedBinaries.delete(child);
+  if (child && child.exitCode === null && child.signalCode === null) {
+    await new Promise<void>((resolve) => {
+      const timer = setTimeout(resolve, 10_000);
+      child.once("exit", () => {
+        clearTimeout(timer);
+        resolve();
+      });
+    });
+  }
+  try {
+    fs.rmSync(dataDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
+  } catch {
+    // best effort: a directory left behind is only disk space
+  }
+}
+
+/** Binary nodes still running when the process exits (a test that failed before its cleanup) are killed then. */
+const startedBinaries = new Map<ChildProcess, string>();
+let binaryExitHookInstalled = false;
+
+function trackBinaryNode(child: ChildProcess, dataDir: string): void {
+  startedBinaries.set(child, dataDir);
+  if (!binaryExitHookInstalled) {
+    binaryExitHookInstalled = true;
+    process.once("exit", () => {
+      for (const [proc, dir] of startedBinaries) {
+        try {
+          proc.kill("SIGKILL");
+        } catch {}
+        try {
+          fs.rmSync(dir, { recursive: true, force: true });
+        } catch {}
+      }
+    });
+  }
 }
 
 function trackContainer(name: string): void {
@@ -193,7 +283,7 @@ export class SimnetNodeHarness {
     }
     const rpcPort = options.rpcPort ?? await this.getFreePort();
     const rpcUrl = `ws://127.0.0.1:${rpcPort}`;
-    const dataDir = `/tmp/hardkas-simnet-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const dataDir = path.join(os.tmpdir(), `hardkas-simnet-${Date.now()}-${Math.random().toString(36).slice(2)}`);
     
     // For simplicity we use KASPAD_BIN or docker
     const binaryPath = options.binaryPath || process.env.KASPAD_BIN;
@@ -202,15 +292,10 @@ export class SimnetNodeHarness {
     let containerName: string | undefined;
 
     if (binaryPath) {
-      const args = [
-        "--simnet",
-        "--rpclisten-json=127.0.0.1:" + rpcPort,
-        "--appdir=" + dataDir,
-        "--reset-db"
-      ];
-      if (options.utxoIndex) args.push("--utxoindex");
-      if (options.txIndex) args.push("--txindex");
+      const p2pPort = await this.getFreePort();
+      const args = buildSimnetBinaryArgs({ rpcPort, p2pPort, appDir: dataDir, utxoIndex: options.utxoIndex, txIndex: options.txIndex });
       child = spawn(binaryPath, args, { stdio: "ignore" });
+      trackBinaryNode(child, dataDir);
     } else {
       // Fallback to docker
       let dockerAvailable = false;
@@ -230,7 +315,7 @@ export class SimnetNodeHarness {
       // and unkillable by anything but the `docker run` client process.
       containerName = `hardkas-simnet-${rpcPort}`;
       await new Promise((resolve) => {
-        const rm = spawn("docker", ["rm", "-f", containerName!], { stdio: "ignore" });
+        const rm = spawn("docker", buildSimnetDockerRemoveArgs(containerName!), { stdio: "ignore" });
         rm.on("exit", () => resolve(true));
         rm.on("error", () => resolve(true));
       });
@@ -250,12 +335,14 @@ export class SimnetNodeHarness {
 
     let spawnError: Error | undefined = undefined;
     let processExited = false;
+    let exitedWith = "";
     child.on("error", (err: any) => {
       console.warn("[SimnetNodeHarness] Child process error:", err.message);
       spawnError = err;
     });
-    child.on("exit", () => {
+    child.on("exit", (code, signal) => {
       processExited = true;
+      exitedWith = signal ? `signal ${signal}` : `code ${code}`;
     });
 
     const client = new JsonWrpcKaspaClient({ rpcUrl });
@@ -271,7 +358,9 @@ export class SimnetNodeHarness {
         const start = Date.now();
         while (Date.now() - start < timeoutMs) {
           if (spawnError || processExited) {
-            throw new Error(`ENVIRONMENT_NOT_QUALIFIED: Spawn error (${spawnError?.message}) or process exited. Node failed to start.`);
+            throw new Error(
+              `ENVIRONMENT_NOT_QUALIFIED: Spawn error (${spawnError?.message}) or process exited${exitedWith ? ` (${exitedWith})` : ""}. Node failed to start.`
+            );
           }
           try {
             const client = new JsonWrpcKaspaClient({ rpcUrl });
@@ -311,10 +400,12 @@ export class SimnetNodeHarness {
       stop: async () => {
         child?.kill("SIGTERM");
         if (containerName) await removeContainer(containerName);
+        else await removeBinaryNodeData(child, dataDir);
       },
       kill: async () => {
         child?.kill("SIGKILL");
         if (containerName) await removeContainer(containerName);
+        else await removeBinaryNodeData(child, dataDir);
       }
     };
 

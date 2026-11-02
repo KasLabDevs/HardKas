@@ -1,6 +1,7 @@
-import { measureRelayFee, measureUpstreamMass, type UpstreamMassInput } from "@hardkas/tx-builder";
+import { measureRelayFee, measureUpstreamMass, v1StorageMass, type UpstreamMassInput } from "@hardkas/tx-builder";
 import { TxPlan, SignedTx, TxReceipt } from "./schemas.js";
 import { HardkasSchemas } from "@hardkas/core";
+import { expectedScriptPublicKeyHex } from "./submission-fee.js";
 
 export interface FeeAuditResult {
   ok: boolean;
@@ -60,9 +61,64 @@ export function recomputeMass(artifact: TxPlan | SignedTx | TxReceipt): bigint {
 }
 
 /**
+ * F1.2 · a v1 plan's economics, from its own fields only. The SDK's mass (measureUpstreamMass) knows neither compute
+ * budgets nor bindings nor contract unlocks, so it does not price a v1 plan. What the plan alone fixes is checked here:
+ * its storage mass (rusty-kaspa 2.1.0 calc_storage_mass over its amounts, scripts and covenant ids), its fee (inputs −
+ * outputs), the economic invariant and dust. Its compute mass and the node's floor depend on the unlock sizes of its
+ * contract inputs, which only the contract facts give: F1.4 checks them before anything is signed.
+ */
+function verifyV1PlanEconomics(plan: any): FeeAuditResult {
+  const issues: string[] = [];
+  const big = (v: unknown) => {
+    try {
+      return BigInt((v as any) ?? 0);
+    } catch {
+      return 0n;
+    }
+  };
+  const inputs: any[] = plan.inputs ?? [];
+  const outputs: any[] = plan.outputs ?? [];
+  const inputTotal: bigint = inputs.reduce<bigint>((s, i) => s + big(i.amountSompi), 0n);
+  const outputTotal: bigint = outputs.reduce<bigint>((s, o) => s + big(o.amountSompi), 0n);
+  const fee: bigint = big(plan.estimatedFeeSompi);
+  const mass: bigint = big(plan.estimatedMass);
+  if (inputTotal - outputTotal !== fee) issues.push(`Fee mismatch: artifact reports ${fee}, its inputs minus outputs pay ${inputTotal - outputTotal}`);
+  if (inputTotal > 0n && inputTotal < outputTotal) issues.push(`Economic violation: Total inputs (${inputTotal}) less than outputs (${outputTotal})`);
+  const inGroup = new Set<number>(((plan.genesisCovenantGroups ?? []) as any[]).flatMap((g) => (Array.isArray(g?.outputs) ? g.outputs : [])));
+  const outScripts = outputs.map((o) => expectedScriptPublicKeyHex(String(o.address)));
+  if (outScripts.some((s) => s === undefined)) {
+    issues.push("Storage mass cannot be verified: an output address is not a standard Kaspa address");
+  } else {
+    const storage = v1StorageMass(
+      inputs.map((i) => ({ amountSompi: big(i.amountSompi), scriptBytes: String(i.scriptPublicKey ?? "").length / 2 - 2, covenantId: i.covenantId !== undefined })),
+      outputs.map((o, oi) => ({ amountSompi: big(o.amountSompi), scriptBytes: outScripts[oi]!.length / 2, covenantId: Boolean(o.covenant) || inGroup.has(oi) }))
+    );
+    if (storage === undefined) issues.push("Storage mass mismatch: the node cannot compute the storage mass of these amounts");
+    else if (storage !== big(plan.storageMass)) issues.push(`Storage mass mismatch: artifact reports ${big(plan.storageMass)}, recomputed ${storage}`);
+  }
+  outputs.forEach((o, i) => {
+    if (big(o.amountSompi) < 600n) issues.push(`Dust output detected at index ${i}: ${o.amountSompi} sompi`);
+  });
+  return {
+    ok: issues.length === 0,
+    actualMass: mass,
+    expectedMass: mass,
+    actualFeeSompi: fee,
+    expectedFeeSompi: inputTotal - outputTotal,
+    feeRateSompiPerMass: mass > 0n ? fee / mass : 1n,
+    deltaSompi: fee - (inputTotal - outputTotal),
+    issues
+  };
+}
+
+/**
  * Performs a deep economic audit of a transaction artifact.
  */
 export function verifyFeeSemantics(artifact: any): FeeAuditResult {
+  // the v1 engine's plans only: a v1 payment of the Generator planner keeps the SDK's mass and fee checks below
+  if (artifact?.schema === HardkasSchemas.TxPlan && artifact?.txVersion === 1 && artifact?.plannerAuthority === "HARDKAS_V1_PLANNER") {
+    return verifyV1PlanEconomics(artifact);
+  }
   const issues: string[] = [];
 
   let artifactMass = 0n;

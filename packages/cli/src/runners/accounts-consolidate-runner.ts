@@ -78,7 +78,14 @@ async function consolidate(options: AccountsConsolidateOptions, sdk: Hardkas, cr
   try {
     if (provider.mode !== "simulator") {
       const rpcUtxos = await sdk.rpc.getUtxosByAddress(resolvedAccount.address!);
-      allUtxos = rpcUtxos.map((u: any) => ({
+      // COVENANT-UTXO-PAYMENT-FILTER-1: a covenant's UTXOs are never consolidated (that would end the covenant): they are
+      // neither counted nor batched
+      const { partitionCovenantUtxos } = await import("@hardkas/tx-builder");
+      const { spendable, covenant } = partitionCovenantUtxos(rpcUtxos as any[]);
+      if (covenant.length > 0) {
+        getOutput().warn(`${covenant.length} covenant UTXO(s) left out: a consolidation never spends a covenant's UTXO.`);
+      }
+      allUtxos = spendable.map((u: any) => ({
         outpoint: {
           transactionId: u.outpoint.transactionId,
           index: u.outpoint.index

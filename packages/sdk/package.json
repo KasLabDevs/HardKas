@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/sdk",
-  "version": "0.12.0-rc.29",
+  "version": "0.13.0-rc.1",
   "type": "module",
   "files": [
     "dist",
@@ -36,7 +36,6 @@
     "@hardkas/config": "workspace:*",
     "@hardkas/core": "workspace:*",
     "@hardkas/kaspa-rpc": "workspace:*",
-    "@hardkas/l2": "workspace:*",
     "@hardkas/localnet": "workspace:*",
     "@hardkas/query": "workspace:*",
     "@hardkas/query-store": "workspace:*",

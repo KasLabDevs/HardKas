@@ -88,6 +88,65 @@ export function registerRpcCommands(program: Command) {
     });
 
   rpcCmd
+    .command("compare")
+    .description(
+      "Read several nodes side by side, read-only: identity, lag, the UTXOs of addresses, one look at a transaction. Differences the nodes' lag accounts for are lag, others disagreements (exit 1). Nothing is sent; agreement among nodes is not consensus validation"
+    )
+    .requiredOption("--endpoints <urls...>", "Node wRPC endpoints to read, separated by spaces (two or more)")
+    .requiredOption("--network <id>", "The network every node must say it serves (e.g. simnet, testnet-10); a node serving another is not read")
+    .option("--address <addresses...>", "Compare the UTXOs of these addresses")
+    .option("--tx <txId>", "Look at this transaction on every node")
+    .option("--since <hash>", "With --tx: a chain block every node holds to look from (default: each node's pruning point)")
+    .option("--lag-threshold <daa>", "DAA score behind the most advanced synced node beyond which a node is lagging (default: 100)")
+    .option("--json", "Output as JSON", false)
+    .action(
+      async (options: { endpoints: string[]; network: string; address?: string[]; tx?: string; since?: string; lagThreshold?: string; json: boolean }) => {
+        const { getOutput } = await import("../output.js");
+        const { HardkasCliError, HardkasExitCode } = await import("../cli-errors.js");
+        if (options.lagThreshold !== undefined && !/^\d+$/.test(options.lagThreshold)) {
+          throw new HardkasCliError("MULTINODE_LAG_THRESHOLD_INVALID", `--lag-threshold '${options.lagThreshold}' is not a DAA score difference. Nothing was contacted.`, {
+            exitCode: HardkasExitCode.USAGE_ERROR
+          });
+        }
+        const { runRpcCompare, formatRpcCompare } = await import("../runners/rpc-compare-runner.js");
+        const r = await runRpcCompare({
+          endpoints: options.endpoints,
+          network: options.network,
+          ...(options.address ? { addresses: options.address } : {}),
+          ...(options.tx ? { txId: options.tx } : {}),
+          ...(options.since ? { since: options.since } : {}),
+          ...(options.lagThreshold !== undefined ? { lagThresholdDaa: BigInt(options.lagThreshold) } : {})
+        });
+        const code = r.errors.length > 0 ? r.errors[0]!.code : r.disagreements > 0 ? "MULTINODE_DISAGREEMENT" : undefined;
+        if (options.json) {
+          getOutput().writeJson({
+            ok: code === undefined,
+            ...(code ? { code } : {}),
+            scope: r.set.scope,
+            guarantee: r.set.guarantee,
+            network: r.set.expectedNetwork,
+            lagThresholdDaa: r.set.lagThresholdDaa,
+            nodes: r.set.nodes,
+            ...(r.set.reference ? { reference: r.set.reference } : {}),
+            ...(r.utxos ? { utxos: r.utxos } : {}),
+            ...(r.tx ? { tx: r.tx } : {}),
+            ...(r.errors.length > 0 ? { errors: r.errors } : {})
+          });
+        } else {
+          getOutput().writeLine(formatRpcCompare(r));
+        }
+        if (code) {
+          // the report above is the outcome; the exit code says it found something to look at (or could not compare)
+          throw new HardkasCliError(
+            code,
+            code === "MULTINODE_DISAGREEMENT" ? `${r.disagreements} disagreement(s) among the nodes (see the report). Nothing was sent.` : `${r.errors.map((e) => `${e.section}: ${e.message}`).join("; ")}`,
+            { exitCode: 1 }
+          );
+        }
+      }
+    );
+
+  rpcCmd
     .command("dag")
     .description("Show the node's DAG: network, virtual DAA score, sink and tips")
     .option("--url <url>", URL_OPTION)

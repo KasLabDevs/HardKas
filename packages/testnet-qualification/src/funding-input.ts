@@ -17,7 +17,10 @@
  *      (b) the amount meets `expectedMinimumSompi`,
  *      (c) the scriptPublicKey matches when the caller supplied one,
  *      (d) if coinbase and a maturity context is supplied, it is mature,
- *      (e) not already reserved by THIS run.
+ *      (e) not already reserved by THIS run,
+ *      (f) the node does not list it as a covenant's UTXO (KIP-20 covenant
+ *          id): funding a payment from it would end the covenant
+ *          (COVENANT-UTXO-PAYMENT-FILTER-1C).
  *    It does NOT prove absence of pending conflicts network-wide.
  *
  * 4. No keystore adoption. The `FundingAuthority` describes the expected
@@ -66,6 +69,8 @@ export interface FundingInputRpc {
     readonly address?: string;
     readonly scriptPublicKey?: string;
     readonly isCoinbase?: boolean;
+    /** Set by the node for a covenant's UTXO (KIP-20). */
+    readonly covenantId?: string;
   })[]>;
 }
 
@@ -113,7 +118,8 @@ export type FundingInputFailureReason =
   | "AMOUNT_INSUFFICIENT"
   | "SCRIPT_MISMATCH"
   | "COINBASE_IMMATURE"
-  | "ALREADY_LOCAL_RESERVED";
+  | "ALREADY_LOCAL_RESERVED"
+  | "COVENANT_UTXO";
 
 export class FundingInputRejectedError extends Error {
   readonly reason: FundingInputFailureReason;
@@ -145,6 +151,23 @@ function outpointsEqual(a: DeclaredFundingOutpoint, b: DeclaredFundingOutpoint):
 
 function normaliseHex(s: string): string {
   return s.startsWith("0x") ? s.slice(2).toLowerCase() : s.toLowerCase();
+}
+
+/**
+ * The covenant id the node lists for a row, in the shapes a HardKAS client returns (`covenantId`, snake case too, flat
+ * or in the node's `utxoEntry`). Local on purpose: this package has no dependencies.
+ */
+function covenantIdOfRow(row: unknown): string | undefined {
+  if (row === null || typeof row !== "object") return undefined;
+  const r = row as Record<string, any>;
+  for (const holder of [r, r.utxoEntry]) {
+    if (holder === null || typeof holder !== "object") continue;
+    for (const name of ["covenantId", "covenant_id"]) {
+      const v = holder[name];
+      if (v !== undefined && v !== null && String(v).trim() !== "") return String(v);
+    }
+  }
+  return undefined;
 }
 
 export interface AssertSpendableInput {
@@ -182,6 +205,16 @@ export async function assertSpendableOrFailClosed(input: AssertSpendableInput): 
       "OUTPOINT_NOT_FOUND",
       `Declared outpoint ${input.spec.declaredOutpoint.transactionId}:${input.spec.declaredOutpoint.index} not found at ${input.spec.authority.address}`,
       { outpoint: input.spec.declaredOutpoint, address: input.spec.authority.address }
+    );
+  }
+
+  // 3(f). Not a covenant's UTXO: a payment funded from it would end the covenant.
+  const covenantId = covenantIdOfRow(row);
+  if (covenantId !== undefined) {
+    throw new FundingInputRejectedError(
+      "COVENANT_UTXO",
+      `Declared outpoint ${input.spec.declaredOutpoint.transactionId}:${input.spec.declaredOutpoint.index} belongs to covenant ${covenantId}; a qualification payment never spends a covenant's UTXO.`,
+      { outpoint: input.spec.declaredOutpoint, covenantId }
     );
   }
 

@@ -1,6 +1,6 @@
 import { WalletManagerImpl, WalletStateStoreJson, AddressManager } from '@hardkas/accounts';
 import { WalletQuery, WalletQueryProvider } from '@hardkas/query';
-import { toTxBuilderUtxo, TxPlanService, type UtxoProvider, type Utxo } from '@hardkas/tx-builder';
+import { covenantIdOf, toTxBuilderUtxo, TxPlanService, type UtxoProvider, type Utxo } from '@hardkas/tx-builder';
 import { WalletUtxoApi } from './utxos.js';
 import { UtxoControlStore } from './stores/utxo-control-store.js';
 import { logger, metrics, tracer } from '@hardkas/observability';
@@ -90,15 +90,21 @@ export class WalletToolkit {
                     const res: Record<string, any[]> = {};
                     for (const addr of addresses) {
                         const utxos = await options.rpc.getUtxosByAddress(addr);
-                        res[addr] = utxos.map((u: any) => ({
-                            transactionId: u.outpoint.transactionId,
-                            outputIndex: u.outpoint.index,
-                            amountSompi: u.amountSompi,
-                            scriptPublicKey: u.scriptPublicKey,
-                            address: u.address,
-                            blockDaaScore: u.blockDaaScore,
-                            isCoinbase: u.isCoinbase
-                        }));
+                        res[addr] = utxos.map((u: any) => {
+                            // COVENANT-UTXO-PAYMENT-FILTER-1C: the node's covenant id stays on the UTXO, so the
+                            // planners leave a covenant's UTXO out of a payment and a sweep refuses it
+                            const covenantId = covenantIdOf(u);
+                            return {
+                                transactionId: u.outpoint.transactionId,
+                                outputIndex: u.outpoint.index,
+                                amountSompi: u.amountSompi,
+                                scriptPublicKey: u.scriptPublicKey,
+                                address: u.address,
+                                blockDaaScore: u.blockDaaScore,
+                                isCoinbase: u.isCoinbase,
+                                ...(covenantId !== undefined ? { covenantId } : {})
+                            };
+                        });
                     }
                     return res;
                 },

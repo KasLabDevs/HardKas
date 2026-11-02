@@ -42,8 +42,12 @@ describe("Postpublish CLI Surface Regression", () => {
   it("should boot the runtime environment unconditionally", async () => {
     const projDir = path.join(SANDBOX_DIR, "test-proj");
 
-    // We install dependencies just like a user would.
-    await execa("npm", ["install"], { cwd: projDir, reject: false });
+    // We install dependencies just like a user would (isolated offline during hermetic tests).
+    if (process.env.HARDKAS_HERMETIC_LOG) {
+      await execa("npm", ["install", "--offline", "--no-audit", "--no-fund"], { cwd: projDir, reject: false }).catch(() => {});
+    } else {
+      await execa("npm", ["install"], { cwd: projDir, reject: false });
+    }
 
     const { exitCode, stdout, stderr } = await execa(TSX, [CLI_SRC, "up"], {
       cwd: projDir,

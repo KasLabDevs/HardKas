@@ -187,11 +187,12 @@ export class HardkasNodeApi {
     let funded = false;
     let lastCoinbaseMaturity: bigint = 0n;
 
-    const { filterMatureUtxos } = await import("@hardkas/tx-builder");
+    const { filterMatureUtxos, isCovenantUtxo } = await import("@hardkas/tx-builder");
 
     while (Date.now() - start < timeoutMs) {
       try {
-        const utxos = await this.sdk.rpc.getUtxosByAddress(primaryAddress);
+        // COVENANT-UTXO-PAYMENT-FILTER-1: a covenant's UTXO is no funding a payment can spend
+        const utxos = (await this.sdk.rpc.getUtxosByAddress(primaryAddress)).filter((u: any) => !isCovenantUtxo(u));
         const dagInfo = await this.sdk.rpc.getBlockDagInfo();
         const virtualDaaScore = BigInt(dagInfo.virtualDaaScore ?? 0);
 

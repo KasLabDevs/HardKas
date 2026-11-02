@@ -1,0 +1,155 @@
+{
+  "pragma": {
+    "name": "silverscript",
+    "value": "^0.1.0",
+    "span": "pragma silverscript ^0.1.0;",
+    "name_span": "silverscript",
+    "value_span": "^0.1.0"
+  },
+  "name": "Decls",
+  "params": [
+    {
+      "type_ref": {
+        "base": "int"
+      },
+      "name": "max_outs",
+      "span": "int max_outs",
+      "type_span": "int ",
+      "name_span": "max_outs"
+    },
+    {
+      "type_ref": {
+        "base": "int"
+      },
+      "name": "init_value",
+      "span": "int init_value",
+      "type_span": "int ",
+      "name_span": "init_value"
+    }
+  ],
+  "fields": [
+    {
+      "type_ref": {
+        "base": "int"
+      },
+      "name": "value",
+      "expr": {
+        "kind": "identifier",
+        "data": "init_value",
+        "span": "init_value"
+      },
+      "span": "int value = init_value;",
+      "type_span": "int ",
+      "name_span": "value"
+    }
+  ],
+  "constants": [],
+  "functions": [
+    {
+      "name": "fanout",
+      "attributes": [
+        {
+          "path": [
+            "covenant"
+          ],
+          "args": [
+            {
+              "name": "from",
+              "expr": {
+                "kind": "int",
+                "data": 1,
+                "span": "1"
+              },
+              "span": "from = 1",
+              "name_span": "from"
+            },
+            {
+              "name": "to",
+              "expr": {
+                "kind": "identifier",
+                "data": "max_outs",
+                "span": "max_outs"
+              },
+              "span": "to = max_outs",
+              "name_span": "to"
+            },
+            {
+              "name": "mode",
+              "expr": {
+                "kind": "identifier",
+                "data": "transition",
+                "span": "transition"
+              },
+              "span": "mode = transition",
+              "name_span": "mode"
+            }
+          ],
+          "span": "#[covenant(from = 1, to = max_outs, mode = transition)]",
+          "path_spans": [
+            "covenant"
+          ]
+        }
+      ],
+      "params": [
+        {
+          "type_ref": {
+            "base": "State"
+          },
+          "name": "prev_state",
+          "span": "State prev_state",
+          "type_span": "State ",
+          "name_span": "prev_state"
+        },
+        {
+          "type_ref": {
+            "base": "State",
+            "array_dims": [
+              {
+                "kind": "dynamic"
+              }
+            ]
+          },
+          "name": "next_states",
+          "span": "State[] next_states",
+          "type_span": "State[]",
+          "name_span": "next_states"
+        }
+      ],
+      "entrypoint": false,
+      "return_types": [
+        {
+          "base": "State",
+          "array_dims": [
+            {
+              "kind": "dynamic"
+            }
+          ]
+        }
+      ],
+      "returns_tuple": false,
+      "body": [
+        {
+          "kind": "return",
+          "data": {
+            "exprs": [
+              {
+                "kind": "identifier",
+                "data": "next_states",
+                "span": "next_states"
+              }
+            ],
+            "span": "return next_states;"
+          }
+        }
+      ],
+      "return_type_spans": [
+        "State[]"
+      ],
+      "span": "#[covenant(from = 1, to = max_outs, mode = transition)]\n    function fanout(State prev_state, State[] next_states) : State[] {\n        return next_states;\n    }",
+      "name_span": "fanout",
+      "body_span": "return next_states;"
+    }
+  ],
+  "span": "contract Decls(int max_outs, int init_value) {\n    int value = init_value;\n\n    #[covenant(from = 1, to = max_outs, mode = transition)]\n    function fanout(State prev_state, State[] next_states) : State[] {\n        return next_states;\n    }\n}",
+  "name_span": "Decls"
+}

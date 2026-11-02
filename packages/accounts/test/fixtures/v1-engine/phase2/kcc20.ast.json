@@ -1,0 +1,1107 @@
+{
+  "pragma": {
+    "name": "silverscript",
+    "value": "^0.1.0",
+    "span": "pragma silverscript ^0.1.0;",
+    "name_span": "silverscript",
+    "value_span": "^0.1.0"
+  },
+  "name": "KCC20",
+  "params": [
+    {
+      "type_ref": {
+        "base": "byte",
+        "array_dims": [
+          {
+            "kind": "fixed",
+            "value": 32
+          }
+        ]
+      },
+      "name": "genesisPk",
+      "span": "byte[32] genesisPk",
+      "type_span": "byte[32]",
+      "name_span": "genesisPk"
+    },
+    {
+      "type_ref": {
+        "base": "int"
+      },
+      "name": "genesisAmount",
+      "span": "int genesisAmount",
+      "type_span": "int ",
+      "name_span": "genesisAmount"
+    },
+    {
+      "type_ref": {
+        "base": "byte"
+      },
+      "name": "genesisIdentifierType",
+      "span": "byte genesisIdentifierType",
+      "type_span": "byte ",
+      "name_span": "genesisIdentifierType"
+    },
+    {
+      "type_ref": {
+        "base": "bool"
+      },
+      "name": "genesisIsMinter",
+      "span": "bool genesisIsMinter",
+      "type_span": "bool ",
+      "name_span": "genesisIsMinter"
+    },
+    {
+      "type_ref": {
+        "base": "int"
+      },
+      "name": "maxCovIns",
+      "span": "int maxCovIns",
+      "type_span": "int ",
+      "name_span": "maxCovIns"
+    },
+    {
+      "type_ref": {
+        "base": "int"
+      },
+      "name": "maxCovOuts",
+      "span": "int maxCovOuts",
+      "type_span": "int ",
+      "name_span": "maxCovOuts"
+    }
+  ],
+  "fields": [
+    {
+      "type_ref": {
+        "base": "byte",
+        "array_dims": [
+          {
+            "kind": "fixed",
+            "value": 32
+          }
+        ]
+      },
+      "name": "ownerIdentifier",
+      "expr": {
+        "kind": "identifier",
+        "data": "genesisPk",
+        "span": "genesisPk"
+      },
+      "span": "byte[32] ownerIdentifier = genesisPk;",
+      "type_span": "byte[32]",
+      "name_span": "ownerIdentifier"
+    },
+    {
+      "type_ref": {
+        "base": "byte"
+      },
+      "name": "identifierType",
+      "expr": {
+        "kind": "identifier",
+        "data": "genesisIdentifierType",
+        "span": "genesisIdentifierType"
+      },
+      "span": "byte identifierType = genesisIdentifierType;",
+      "type_span": "byte ",
+      "name_span": "identifierType"
+    },
+    {
+      "type_ref": {
+        "base": "int"
+      },
+      "name": "amount",
+      "expr": {
+        "kind": "identifier",
+        "data": "genesisAmount",
+        "span": "genesisAmount"
+      },
+      "span": "int amount = genesisAmount;",
+      "type_span": "int ",
+      "name_span": "amount"
+    },
+    {
+      "type_ref": {
+        "base": "bool"
+      },
+      "name": "isMinter",
+      "expr": {
+        "kind": "identifier",
+        "data": "genesisIsMinter",
+        "span": "genesisIsMinter"
+      },
+      "span": "bool isMinter = genesisIsMinter;",
+      "type_span": "bool ",
+      "name_span": "isMinter"
+    }
+  ],
+  "constants": [
+    {
+      "type_ref": {
+        "base": "byte"
+      },
+      "name": "IDENTIFIER_PUBKEY",
+      "expr": {
+        "kind": "int",
+        "data": 0,
+        "span": "0x00"
+      },
+      "span": "byte constant IDENTIFIER_PUBKEY = 0x00;",
+      "type_span": "byte ",
+      "name_span": "IDENTIFIER_PUBKEY"
+    },
+    {
+      "type_ref": {
+        "base": "byte"
+      },
+      "name": "IDENTIFIER_SCRIPT_HASH",
+      "expr": {
+        "kind": "int",
+        "data": 1,
+        "span": "0x01"
+      },
+      "span": "byte constant IDENTIFIER_SCRIPT_HASH = 0x01;",
+      "type_span": "byte ",
+      "name_span": "IDENTIFIER_SCRIPT_HASH"
+    },
+    {
+      "type_ref": {
+        "base": "byte"
+      },
+      "name": "IDENTIFIER_COVENANT_ID",
+      "expr": {
+        "kind": "int",
+        "data": 2,
+        "span": "0x02"
+      },
+      "span": "byte constant IDENTIFIER_COVENANT_ID = 0x02;",
+      "type_span": "byte ",
+      "name_span": "IDENTIFIER_COVENANT_ID"
+    }
+  ],
+  "functions": [
+    {
+      "name": "checkInputSig",
+      "params": [
+        {
+          "type_ref": {
+            "base": "sig"
+          },
+          "name": "s",
+          "span": "sig s",
+          "type_span": "sig ",
+          "name_span": "s"
+        },
+        {
+          "type_ref": {
+            "base": "byte"
+          },
+          "name": "witness",
+          "span": "byte witness",
+          "type_span": "byte ",
+          "name_span": "witness"
+        }
+      ],
+      "entrypoint": false,
+      "return_types": [],
+      "returns_tuple": false,
+      "body": [
+        {
+          "kind": "if",
+          "data": {
+            "condition": {
+              "kind": "binary",
+              "data": {
+                "op": "eq",
+                "left": {
+                  "kind": "identifier",
+                  "data": "identifierType",
+                  "span": "identifierType"
+                },
+                "right": {
+                  "kind": "identifier",
+                  "data": "IDENTIFIER_PUBKEY",
+                  "span": "IDENTIFIER_PUBKEY"
+                }
+              },
+              "span": "identifierType == IDENTIFIER_PUBKEY"
+            },
+            "then_branch": [
+              {
+                "kind": "require",
+                "data": {
+                  "expr": {
+                    "kind": "call",
+                    "data": {
+                      "name": "checkSig",
+                      "args": [
+                        {
+                          "kind": "identifier",
+                          "data": "s",
+                          "span": "s"
+                        },
+                        {
+                          "kind": "call",
+                          "data": {
+                            "name": "pubkey",
+                            "args": [
+                              {
+                                "kind": "identifier",
+                                "data": "ownerIdentifier",
+                                "span": "ownerIdentifier"
+                              }
+                            ],
+                            "name_span": "pubkey"
+                          },
+                          "span": "pubkey(ownerIdentifier)"
+                        }
+                      ],
+                      "name_span": "checkSig"
+                    },
+                    "span": "checkSig(s, pubkey(ownerIdentifier))"
+                  },
+                  "message": null,
+                  "span": "require(checkSig(s, pubkey(ownerIdentifier)));",
+                  "message_span": null
+                }
+              }
+            ],
+            "else_branch": [
+              {
+                "kind": "if",
+                "data": {
+                  "condition": {
+                    "kind": "binary",
+                    "data": {
+                      "op": "eq",
+                      "left": {
+                        "kind": "identifier",
+                        "data": "identifierType",
+                        "span": "identifierType"
+                      },
+                      "right": {
+                        "kind": "identifier",
+                        "data": "IDENTIFIER_SCRIPT_HASH",
+                        "span": "IDENTIFIER_SCRIPT_HASH"
+                      }
+                    },
+                    "span": "identifierType == IDENTIFIER_SCRIPT_HASH"
+                  },
+                  "then_branch": [
+                    {
+                      "kind": "variable_definition",
+                      "data": {
+                        "type_ref": {
+                          "base": "byte",
+                          "array_dims": [
+                            {
+                              "kind": "dynamic"
+                            }
+                          ]
+                        },
+                        "modifiers": [],
+                        "name": "spk",
+                        "expr": {
+                          "kind": "call",
+                          "data": {
+                            "name": "byte[]",
+                            "args": [
+                              {
+                                "kind": "new",
+                                "data": {
+                                  "name": "ScriptPubKeyP2SH",
+                                  "args": [
+                                    {
+                                      "kind": "identifier",
+                                      "data": "ownerIdentifier",
+                                      "span": "ownerIdentifier"
+                                    }
+                                  ],
+                                  "name_span": "ScriptPubKeyP2SH"
+                                },
+                                "span": "new ScriptPubKeyP2SH(ownerIdentifier)"
+                              }
+                            ],
+                            "name_span": "byte[]"
+                          },
+                          "span": "byte[](new ScriptPubKeyP2SH(ownerIdentifier))"
+                        },
+                        "span": "byte[] spk = byte[](new ScriptPubKeyP2SH(ownerIdentifier));",
+                        "type_span": "byte[]",
+                        "modifier_spans": [],
+                        "name_span": "spk"
+                      }
+                    },
+                    {
+                      "kind": "require",
+                      "data": {
+                        "expr": {
+                          "kind": "binary",
+                          "data": {
+                            "op": "eq",
+                            "left": {
+                              "kind": "indexed_introspection",
+                              "data": {
+                                "kind": "input_script_pub_key",
+                                "index": {
+                                  "kind": "call",
+                                  "data": {
+                                    "name": "unsigned",
+                                    "args": [
+                                      {
+                                        "kind": "identifier",
+                                        "data": "witness",
+                                        "span": "witness"
+                                      }
+                                    ],
+                                    "name_span": "unsigned"
+                                  },
+                                  "span": "unsigned(witness)"
+                                },
+                                "field_span": ".scriptPubKey"
+                              },
+                              "span": "tx.inputs[unsigned(witness)].scriptPubKey"
+                            },
+                            "right": {
+                              "kind": "identifier",
+                              "data": "spk",
+                              "span": "spk"
+                            }
+                          },
+                          "span": "tx.inputs[unsigned(witness)].scriptPubKey == spk"
+                        },
+                        "message": null,
+                        "span": "require(tx.inputs[unsigned(witness)].scriptPubKey == spk);",
+                        "message_span": null
+                      }
+                    }
+                  ],
+                  "else_branch": [
+                    {
+                      "kind": "if",
+                      "data": {
+                        "condition": {
+                          "kind": "binary",
+                          "data": {
+                            "op": "eq",
+                            "left": {
+                              "kind": "identifier",
+                              "data": "identifierType",
+                              "span": "identifierType"
+                            },
+                            "right": {
+                              "kind": "identifier",
+                              "data": "IDENTIFIER_COVENANT_ID",
+                              "span": "IDENTIFIER_COVENANT_ID"
+                            }
+                          },
+                          "span": "identifierType == IDENTIFIER_COVENANT_ID"
+                        },
+                        "then_branch": [
+                          {
+                            "kind": "require",
+                            "data": {
+                              "expr": {
+                                "kind": "binary",
+                                "data": {
+                                  "op": "gt",
+                                  "left": {
+                                    "kind": "call",
+                                    "data": {
+                                      "name": "OpCovInputCount",
+                                      "args": [
+                                        {
+                                          "kind": "identifier",
+                                          "data": "ownerIdentifier",
+                                          "span": "ownerIdentifier"
+                                        }
+                                      ],
+                                      "name_span": "OpCovInputCount"
+                                    },
+                                    "span": "OpCovInputCount(ownerIdentifier)"
+                                  },
+                                  "right": {
+                                    "kind": "int",
+                                    "data": 0,
+                                    "span": "0"
+                                  }
+                                },
+                                "span": "OpCovInputCount(ownerIdentifier) > 0"
+                              },
+                              "message": null,
+                              "span": "require(OpCovInputCount(ownerIdentifier) > 0);",
+                              "message_span": null
+                            }
+                          }
+                        ],
+                        "else_branch": [
+                          {
+                            "kind": "require",
+                            "data": {
+                              "expr": {
+                                "kind": "bool",
+                                "data": false,
+                                "span": "false"
+                              },
+                              "message": null,
+                              "span": "require(false);",
+                              "message_span": null
+                            }
+                          }
+                        ],
+                        "span": "if(identifierType == IDENTIFIER_COVENANT_ID){\n            require(OpCovInputCount(ownerIdentifier) > 0);\n        } else {\n            require(false);\n        }",
+                        "then_span": "require(OpCovInputCount(ownerIdentifier) > 0);",
+                        "else_span": "require(false);"
+                      }
+                    }
+                  ],
+                  "span": "if(identifierType == IDENTIFIER_SCRIPT_HASH){\n            byte[] spk = byte[](new ScriptPubKeyP2SH(ownerIdentifier));\n            require(tx.inputs[unsigned(witness)].scriptPubKey == spk);\n        } else if(identifierType == IDENTIFIER_COVENANT_ID){\n            require(OpCovInputCount(ownerIdentifier) > 0);\n        } else {\n            require(false);\n        }",
+                  "then_span": "byte[] spk = byte[](new ScriptPubKeyP2SH(ownerIdentifier));\n            require(tx.inputs[unsigned(witness)].scriptPubKey == spk);",
+                  "else_span": "if(identifierType == IDENTIFIER_COVENANT_ID){\n            require(OpCovInputCount(ownerIdentifier) > 0);\n        } else {\n            require(false);\n        }"
+                }
+              }
+            ],
+            "span": "if(identifierType == IDENTIFIER_PUBKEY){\n            require(checkSig(s, pubkey(ownerIdentifier)));\n        } else if(identifierType == IDENTIFIER_SCRIPT_HASH){\n            byte[] spk = byte[](new ScriptPubKeyP2SH(ownerIdentifier));\n            require(tx.inputs[unsigned(witness)].scriptPubKey == spk);\n        } else if(identifierType == IDENTIFIER_COVENANT_ID){\n            require(OpCovInputCount(ownerIdentifier) > 0);\n        } else {\n            require(false);\n        }",
+            "then_span": "require(checkSig(s, pubkey(ownerIdentifier)));",
+            "else_span": "if(identifierType == IDENTIFIER_SCRIPT_HASH){\n            byte[] spk = byte[](new ScriptPubKeyP2SH(ownerIdentifier));\n            require(tx.inputs[unsigned(witness)].scriptPubKey == spk);\n        } else if(identifierType == IDENTIFIER_COVENANT_ID){\n            require(OpCovInputCount(ownerIdentifier) > 0);\n        } else {\n            require(false);\n        }"
+          }
+        }
+      ],
+      "return_type_spans": [],
+      "span": "function checkInputSig(sig s, byte witness) {\n        if(identifierType == IDENTIFIER_PUBKEY){\n            require(checkSig(s, pubkey(ownerIdentifier)));\n        } else if(identifierType == IDENTIFIER_SCRIPT_HASH){\n            byte[] spk = byte[](new ScriptPubKeyP2SH(ownerIdentifier));\n            require(tx.inputs[unsigned(witness)].scriptPubKey == spk);\n        } else if(identifierType == IDENTIFIER_COVENANT_ID){\n            require(OpCovInputCount(ownerIdentifier) > 0);\n        } else {\n            require(false);\n        }\n    }",
+      "name_span": "checkInputSig",
+      "body_span": "if(identifierType == IDENTIFIER_PUBKEY){\n            require(checkSig(s, pubkey(ownerIdentifier)));\n        } else if(identifierType == IDENTIFIER_SCRIPT_HASH){\n            byte[] spk = byte[](new ScriptPubKeyP2SH(ownerIdentifier));\n            require(tx.inputs[unsigned(witness)].scriptPubKey == spk);\n        } else if(identifierType == IDENTIFIER_COVENANT_ID){\n            require(OpCovInputCount(ownerIdentifier) > 0);\n        } else {\n            require(false);\n        }"
+    },
+    {
+      "name": "checkAmounts",
+      "params": [
+        {
+          "type_ref": {
+            "base": "State",
+            "array_dims": [
+              {
+                "kind": "dynamic"
+              }
+            ]
+          },
+          "name": "prevStates",
+          "span": "State[] prevStates",
+          "type_span": "State[]",
+          "name_span": "prevStates"
+        },
+        {
+          "type_ref": {
+            "base": "State",
+            "array_dims": [
+              {
+                "kind": "dynamic"
+              }
+            ]
+          },
+          "name": "newStates",
+          "span": "State[] newStates",
+          "type_span": "State[]",
+          "name_span": "newStates"
+        }
+      ],
+      "entrypoint": false,
+      "return_types": [],
+      "returns_tuple": false,
+      "body": [
+        {
+          "kind": "if",
+          "data": {
+            "condition": {
+              "kind": "unary",
+              "data": {
+                "op": "not",
+                "expr": {
+                  "kind": "identifier",
+                  "data": "isMinter",
+                  "span": "isMinter"
+                }
+              },
+              "span": "!isMinter"
+            },
+            "then_branch": [
+              {
+                "kind": "variable_definition",
+                "data": {
+                  "type_ref": {
+                    "base": "int"
+                  },
+                  "modifiers": [],
+                  "name": "totalIn",
+                  "expr": {
+                    "kind": "int",
+                    "data": 0,
+                    "span": "0"
+                  },
+                  "span": "int totalIn = 0;",
+                  "type_span": "int ",
+                  "modifier_spans": [],
+                  "name_span": "totalIn"
+                }
+              },
+              {
+                "kind": "for",
+                "data": {
+                  "ident": "i",
+                  "start": {
+                    "kind": "int",
+                    "data": 0,
+                    "span": "0"
+                  },
+                  "end": {
+                    "kind": "unary_suffix",
+                    "data": {
+                      "source": {
+                        "kind": "identifier",
+                        "data": "prevStates",
+                        "span": "prevStates"
+                      },
+                      "kind": "length",
+                      "span": ".length"
+                    },
+                    "span": "prevStates.length"
+                  },
+                  "max_iterations": {
+                    "kind": "identifier",
+                    "data": "maxCovIns",
+                    "span": "maxCovIns"
+                  },
+                  "body": [
+                    {
+                      "kind": "assign",
+                      "data": {
+                        "name": "totalIn",
+                        "expr": {
+                          "kind": "binary",
+                          "data": {
+                            "op": "add",
+                            "left": {
+                              "kind": "identifier",
+                              "data": "totalIn",
+                              "span": "totalIn"
+                            },
+                            "right": {
+                              "kind": "field_access",
+                              "data": {
+                                "source": {
+                                  "kind": "array_index",
+                                  "data": {
+                                    "source": {
+                                      "kind": "identifier",
+                                      "data": "prevStates",
+                                      "span": "prevStates"
+                                    },
+                                    "index": {
+                                      "kind": "identifier",
+                                      "data": "i",
+                                      "span": "i"
+                                    }
+                                  },
+                                  "span": "prevStates[i]"
+                                },
+                                "field": "amount",
+                                "field_span": "amount"
+                              },
+                              "span": "prevStates[i].amount"
+                            }
+                          },
+                          "span": "totalIn + prevStates[i].amount"
+                        },
+                        "span": "totalIn = totalIn + prevStates[i].amount;",
+                        "name_span": "totalIn"
+                      }
+                    }
+                  ],
+                  "span": "for(i, 0, prevStates.length, maxCovIns) {\n                totalIn = totalIn + prevStates[i].amount;\n            }",
+                  "ident_span": "i",
+                  "body_span": "totalIn = totalIn + prevStates[i].amount;"
+                }
+              },
+              {
+                "kind": "variable_definition",
+                "data": {
+                  "type_ref": {
+                    "base": "int"
+                  },
+                  "modifiers": [],
+                  "name": "totalOut",
+                  "expr": {
+                    "kind": "int",
+                    "data": 0,
+                    "span": "0"
+                  },
+                  "span": "int totalOut = 0;",
+                  "type_span": "int ",
+                  "modifier_spans": [],
+                  "name_span": "totalOut"
+                }
+              },
+              {
+                "kind": "for",
+                "data": {
+                  "ident": "i",
+                  "start": {
+                    "kind": "int",
+                    "data": 0,
+                    "span": "0"
+                  },
+                  "end": {
+                    "kind": "unary_suffix",
+                    "data": {
+                      "source": {
+                        "kind": "identifier",
+                        "data": "newStates",
+                        "span": "newStates"
+                      },
+                      "kind": "length",
+                      "span": ".length"
+                    },
+                    "span": "newStates.length"
+                  },
+                  "max_iterations": {
+                    "kind": "identifier",
+                    "data": "maxCovOuts",
+                    "span": "maxCovOuts"
+                  },
+                  "body": [
+                    {
+                      "kind": "assign",
+                      "data": {
+                        "name": "totalOut",
+                        "expr": {
+                          "kind": "binary",
+                          "data": {
+                            "op": "add",
+                            "left": {
+                              "kind": "identifier",
+                              "data": "totalOut",
+                              "span": "totalOut"
+                            },
+                            "right": {
+                              "kind": "field_access",
+                              "data": {
+                                "source": {
+                                  "kind": "array_index",
+                                  "data": {
+                                    "source": {
+                                      "kind": "identifier",
+                                      "data": "newStates",
+                                      "span": "newStates"
+                                    },
+                                    "index": {
+                                      "kind": "identifier",
+                                      "data": "i",
+                                      "span": "i"
+                                    }
+                                  },
+                                  "span": "newStates[i]"
+                                },
+                                "field": "amount",
+                                "field_span": "amount"
+                              },
+                              "span": "newStates[i].amount"
+                            }
+                          },
+                          "span": "totalOut + newStates[i].amount"
+                        },
+                        "span": "totalOut = totalOut + newStates[i].amount;",
+                        "name_span": "totalOut"
+                      }
+                    }
+                  ],
+                  "span": "for(i, 0, newStates.length, maxCovOuts) {\n                totalOut = totalOut + newStates[i].amount;\n            }",
+                  "ident_span": "i",
+                  "body_span": "totalOut = totalOut + newStates[i].amount;"
+                }
+              },
+              {
+                "kind": "require",
+                "data": {
+                  "expr": {
+                    "kind": "binary",
+                    "data": {
+                      "op": "eq",
+                      "left": {
+                        "kind": "identifier",
+                        "data": "totalIn",
+                        "span": "totalIn"
+                      },
+                      "right": {
+                        "kind": "identifier",
+                        "data": "totalOut",
+                        "span": "totalOut"
+                      }
+                    },
+                    "span": "totalIn == totalOut"
+                  },
+                  "message": null,
+                  "span": "require(totalIn == totalOut);",
+                  "message_span": null
+                }
+              }
+            ],
+            "else_branch": null,
+            "span": "if(!isMinter){\n            int totalIn = 0;\n            for(i, 0, prevStates.length, maxCovIns) {\n                totalIn = totalIn + prevStates[i].amount;\n            }\n\n            int totalOut = 0;\n            for(i, 0, newStates.length, maxCovOuts) {\n                totalOut = totalOut + newStates[i].amount;\n            }\n\n            require(totalIn == totalOut);\n        }\n    ",
+            "then_span": "int totalIn = 0;\n            for(i, 0, prevStates.length, maxCovIns) {\n                totalIn = totalIn + prevStates[i].amount;\n            }\n\n            int totalOut = 0;\n            for(i, 0, newStates.length, maxCovOuts) {\n                totalOut = totalOut + newStates[i].amount;\n            }\n\n            require(totalIn == totalOut);",
+            "else_span": null
+          }
+        }
+      ],
+      "return_type_spans": [],
+      "span": "function checkAmounts(State[] prevStates, State[] newStates) {\n        if(!isMinter){\n            int totalIn = 0;\n            for(i, 0, prevStates.length, maxCovIns) {\n                totalIn = totalIn + prevStates[i].amount;\n            }\n\n            int totalOut = 0;\n            for(i, 0, newStates.length, maxCovOuts) {\n                totalOut = totalOut + newStates[i].amount;\n            }\n\n            require(totalIn == totalOut);\n        }\n    }",
+      "name_span": "checkAmounts",
+      "body_span": "if(!isMinter){\n            int totalIn = 0;\n            for(i, 0, prevStates.length, maxCovIns) {\n                totalIn = totalIn + prevStates[i].amount;\n            }\n\n            int totalOut = 0;\n            for(i, 0, newStates.length, maxCovOuts) {\n                totalOut = totalOut + newStates[i].amount;\n            }\n\n            require(totalIn == totalOut);\n        }\n    "
+    },
+    {
+      "name": "checkMintingTransfer",
+      "params": [
+        {
+          "type_ref": {
+            "base": "State",
+            "array_dims": [
+              {
+                "kind": "dynamic"
+              }
+            ]
+          },
+          "name": "newStates",
+          "span": "State[] newStates",
+          "type_span": "State[]",
+          "name_span": "newStates"
+        }
+      ],
+      "entrypoint": false,
+      "return_types": [],
+      "returns_tuple": false,
+      "body": [
+        {
+          "kind": "if",
+          "data": {
+            "condition": {
+              "kind": "unary",
+              "data": {
+                "op": "not",
+                "expr": {
+                  "kind": "identifier",
+                  "data": "isMinter",
+                  "span": "isMinter"
+                }
+              },
+              "span": "!isMinter"
+            },
+            "then_branch": [
+              {
+                "kind": "for",
+                "data": {
+                  "ident": "i",
+                  "start": {
+                    "kind": "int",
+                    "data": 0,
+                    "span": "0"
+                  },
+                  "end": {
+                    "kind": "unary_suffix",
+                    "data": {
+                      "source": {
+                        "kind": "identifier",
+                        "data": "newStates",
+                        "span": "newStates"
+                      },
+                      "kind": "length",
+                      "span": ".length"
+                    },
+                    "span": "newStates.length"
+                  },
+                  "max_iterations": {
+                    "kind": "identifier",
+                    "data": "maxCovOuts",
+                    "span": "maxCovOuts"
+                  },
+                  "body": [
+                    {
+                      "kind": "require",
+                      "data": {
+                        "expr": {
+                          "kind": "unary",
+                          "data": {
+                            "op": "not",
+                            "expr": {
+                              "kind": "field_access",
+                              "data": {
+                                "source": {
+                                  "kind": "array_index",
+                                  "data": {
+                                    "source": {
+                                      "kind": "identifier",
+                                      "data": "newStates",
+                                      "span": "newStates"
+                                    },
+                                    "index": {
+                                      "kind": "identifier",
+                                      "data": "i",
+                                      "span": "i"
+                                    }
+                                  },
+                                  "span": "newStates[i]"
+                                },
+                                "field": "isMinter",
+                                "field_span": "isMinter"
+                              },
+                              "span": "newStates[i].isMinter"
+                            }
+                          },
+                          "span": "!newStates[i].isMinter"
+                        },
+                        "message": null,
+                        "span": "require(!newStates[i].isMinter);",
+                        "message_span": null
+                      }
+                    }
+                  ],
+                  "span": "for(i, 0, newStates.length, maxCovOuts) {\n                require(!newStates[i].isMinter);\n            }",
+                  "ident_span": "i",
+                  "body_span": "require(!newStates[i].isMinter);"
+                }
+              }
+            ],
+            "else_branch": null,
+            "span": "if(!isMinter){\n            for(i, 0, newStates.length, maxCovOuts) {\n                require(!newStates[i].isMinter);\n            }\n        }\n    ",
+            "then_span": "for(i, 0, newStates.length, maxCovOuts) {\n                require(!newStates[i].isMinter);\n            }",
+            "else_span": null
+          }
+        }
+      ],
+      "return_type_spans": [],
+      "span": "function checkMintingTransfer(State[] newStates){\n        if(!isMinter){\n            for(i, 0, newStates.length, maxCovOuts) {\n                require(!newStates[i].isMinter);\n            }\n        }\n    }",
+      "name_span": "checkMintingTransfer",
+      "body_span": "if(!isMinter){\n            for(i, 0, newStates.length, maxCovOuts) {\n                require(!newStates[i].isMinter);\n            }\n        }\n    "
+    },
+    {
+      "name": "transfer",
+      "attributes": [
+        {
+          "path": [
+            "covenant"
+          ],
+          "args": [
+            {
+              "name": "binding",
+              "expr": {
+                "kind": "identifier",
+                "data": "cov",
+                "span": "cov"
+              },
+              "span": "binding = cov",
+              "name_span": "binding"
+            },
+            {
+              "name": "from",
+              "expr": {
+                "kind": "identifier",
+                "data": "maxCovIns",
+                "span": "maxCovIns"
+              },
+              "span": "from = maxCovIns",
+              "name_span": "from"
+            },
+            {
+              "name": "to",
+              "expr": {
+                "kind": "identifier",
+                "data": "maxCovOuts",
+                "span": "maxCovOuts"
+              },
+              "span": "to = maxCovOuts",
+              "name_span": "to"
+            }
+          ],
+          "span": "#[covenant(binding = cov, from = maxCovIns, to = maxCovOuts)]",
+          "path_spans": [
+            "covenant"
+          ]
+        }
+      ],
+      "params": [
+        {
+          "type_ref": {
+            "base": "State",
+            "array_dims": [
+              {
+                "kind": "dynamic"
+              }
+            ]
+          },
+          "name": "prevStates",
+          "span": "State[] prevStates",
+          "type_span": "State[]",
+          "name_span": "prevStates"
+        },
+        {
+          "type_ref": {
+            "base": "State",
+            "array_dims": [
+              {
+                "kind": "dynamic"
+              }
+            ]
+          },
+          "name": "newStates",
+          "span": "State[] newStates",
+          "type_span": "State[]",
+          "name_span": "newStates"
+        },
+        {
+          "type_ref": {
+            "base": "sig"
+          },
+          "name": "s",
+          "span": "sig s",
+          "type_span": "sig ",
+          "name_span": "s"
+        },
+        {
+          "type_ref": {
+            "base": "byte"
+          },
+          "name": "witness",
+          "span": "byte witness",
+          "type_span": "byte ",
+          "name_span": "witness"
+        }
+      ],
+      "entrypoint": false,
+      "return_types": [],
+      "returns_tuple": false,
+      "body": [
+        {
+          "kind": "function_call",
+          "data": {
+            "name": "checkInputSig",
+            "args": [
+              {
+                "kind": "identifier",
+                "data": "s",
+                "span": "s"
+              },
+              {
+                "kind": "identifier",
+                "data": "witness",
+                "span": "witness"
+              }
+            ],
+            "span": "checkInputSig(s, witness);",
+            "name_span": "checkInputSig"
+          }
+        },
+        {
+          "kind": "function_call",
+          "data": {
+            "name": "checkAmounts",
+            "args": [
+              {
+                "kind": "identifier",
+                "data": "prevStates",
+                "span": "prevStates"
+              },
+              {
+                "kind": "identifier",
+                "data": "newStates",
+                "span": "newStates"
+              }
+            ],
+            "span": "checkAmounts(prevStates, newStates);",
+            "name_span": "checkAmounts"
+          }
+        },
+        {
+          "kind": "function_call",
+          "data": {
+            "name": "checkMintingTransfer",
+            "args": [
+              {
+                "kind": "identifier",
+                "data": "newStates",
+                "span": "newStates"
+              }
+            ],
+            "span": "checkMintingTransfer(newStates);",
+            "name_span": "checkMintingTransfer"
+          }
+        }
+      ],
+      "return_type_spans": [],
+      "span": "#[covenant(binding = cov, from = maxCovIns, to = maxCovOuts)]\n    function transfer(State[] prevStates, State[] newStates, sig s, byte witness) {\n        checkInputSig(s, witness);\n        checkAmounts(prevStates, newStates);\n        checkMintingTransfer(newStates);\n    }",
+      "name_span": "transfer",
+      "body_span": "checkInputSig(s, witness);\n        checkAmounts(prevStates, newStates);\n        checkMintingTransfer(newStates);"
+    },
+    {
+      "name": "authorizeDelegate",
+      "attributes": [
+        {
+          "path": [
+            "covenant",
+            "delegate"
+          ],
+          "span": "#[covenant.delegate]",
+          "path_spans": [
+            "covenant",
+            "delegate"
+          ]
+        }
+      ],
+      "params": [
+        {
+          "type_ref": {
+            "base": "sig"
+          },
+          "name": "s",
+          "span": "sig s",
+          "type_span": "sig ",
+          "name_span": "s"
+        },
+        {
+          "type_ref": {
+            "base": "byte"
+          },
+          "name": "witness",
+          "span": "byte witness",
+          "type_span": "byte ",
+          "name_span": "witness"
+        }
+      ],
+      "entrypoint": false,
+      "return_types": [],
+      "returns_tuple": false,
+      "body": [
+        {
+          "kind": "function_call",
+          "data": {
+            "name": "checkInputSig",
+            "args": [
+              {
+                "kind": "identifier",
+                "data": "s",
+                "span": "s"
+              },
+              {
+                "kind": "identifier",
+                "data": "witness",
+                "span": "witness"
+              }
+            ],
+            "span": "checkInputSig(s, witness);",
+            "name_span": "checkInputSig"
+          }
+        }
+      ],
+      "return_type_spans": [],
+      "span": "#[covenant.delegate]\n    function authorizeDelegate(sig s, byte witness) {\n        checkInputSig(s, witness);\n    }",
+      "name_span": "authorizeDelegate",
+      "body_span": "checkInputSig(s, witness);"
+    }
+  ],
+  "span": "contract KCC20(byte[32] genesisPk, int genesisAmount, byte genesisIdentifierType, bool genesisIsMinter, int maxCovIns, int maxCovOuts) {\n    byte constant IDENTIFIER_PUBKEY = 0x00;\n    byte constant IDENTIFIER_SCRIPT_HASH = 0x01;\n    byte constant IDENTIFIER_COVENANT_ID = 0x02;\n    \n    byte[32] ownerIdentifier = genesisPk;\n    byte identifierType = genesisIdentifierType;\n    int amount = genesisAmount;\n    bool isMinter = genesisIsMinter;\n\n    function checkInputSig(sig s, byte witness) {\n        if(identifierType == IDENTIFIER_PUBKEY){\n            require(checkSig(s, pubkey(ownerIdentifier)));\n        } else if(identifierType == IDENTIFIER_SCRIPT_HASH){\n            byte[] spk = byte[](new ScriptPubKeyP2SH(ownerIdentifier));\n            require(tx.inputs[unsigned(witness)].scriptPubKey == spk);\n        } else if(identifierType == IDENTIFIER_COVENANT_ID){\n            require(OpCovInputCount(ownerIdentifier) > 0);\n        } else {\n            require(false);\n        }\n    }\n\n    function checkAmounts(State[] prevStates, State[] newStates) {\n        if(!isMinter){\n            int totalIn = 0;\n            for(i, 0, prevStates.length, maxCovIns) {\n                totalIn = totalIn + prevStates[i].amount;\n            }\n\n            int totalOut = 0;\n            for(i, 0, newStates.length, maxCovOuts) {\n                totalOut = totalOut + newStates[i].amount;\n            }\n\n            require(totalIn == totalOut);\n        }\n    }\n\n    function checkMintingTransfer(State[] newStates){\n        if(!isMinter){\n            for(i, 0, newStates.length, maxCovOuts) {\n                require(!newStates[i].isMinter);\n            }\n        }\n    }\n\n    #[covenant(binding = cov, from = maxCovIns, to = maxCovOuts)]\n    function transfer(State[] prevStates, State[] newStates, sig s, byte witness) {\n        checkInputSig(s, witness);\n        checkAmounts(prevStates, newStates);\n        checkMintingTransfer(newStates);\n    }\n\n    #[covenant.delegate]\n    function authorizeDelegate(sig s, byte witness) {\n        checkInputSig(s, witness);\n    }\n}",
+  "name_span": "KCC20"
+}

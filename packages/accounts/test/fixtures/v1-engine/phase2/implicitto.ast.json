@@ -1,0 +1,224 @@
+{
+  "pragma": {
+    "name": "silverscript",
+    "value": "^0.1.0",
+    "span": "pragma silverscript ^0.1.0;",
+    "name_span": "silverscript",
+    "value_span": "^0.1.0"
+  },
+  "name": "Matrix",
+  "params": [
+    {
+      "type_ref": {
+        "base": "int"
+      },
+      "name": "init_amount",
+      "span": "int init_amount",
+      "type_span": "int ",
+      "name_span": "init_amount"
+    },
+    {
+      "type_ref": {
+        "base": "byte",
+        "array_dims": [
+          {
+            "kind": "fixed",
+            "value": 32
+          }
+        ]
+      },
+      "name": "init_owner",
+      "span": "byte[32] init_owner",
+      "type_span": "byte[32]",
+      "name_span": "init_owner"
+    }
+  ],
+  "fields": [
+    {
+      "type_ref": {
+        "base": "int"
+      },
+      "name": "amount",
+      "expr": {
+        "kind": "identifier",
+        "data": "init_amount",
+        "span": "init_amount"
+      },
+      "span": "int amount = init_amount;",
+      "type_span": "int ",
+      "name_span": "amount"
+    },
+    {
+      "type_ref": {
+        "base": "byte",
+        "array_dims": [
+          {
+            "kind": "fixed",
+            "value": 32
+          }
+        ]
+      },
+      "name": "owner",
+      "expr": {
+        "kind": "identifier",
+        "data": "init_owner",
+        "span": "init_owner"
+      },
+      "span": "byte[32] owner = init_owner;",
+      "type_span": "byte[32]",
+      "name_span": "owner"
+    }
+  ],
+  "constants": [],
+  "functions": [
+    {
+      "name": "step",
+      "attributes": [
+        {
+          "path": [
+            "covenant"
+          ],
+          "args": [
+            {
+              "name": "binding",
+              "expr": {
+                "kind": "identifier",
+                "data": "auth",
+                "span": "auth"
+              },
+              "span": "binding = auth",
+              "name_span": "binding"
+            },
+            {
+              "name": "from",
+              "expr": {
+                "kind": "int",
+                "data": 1,
+                "span": "1"
+              },
+              "span": "from = 1",
+              "name_span": "from"
+            },
+            {
+              "name": "mode",
+              "expr": {
+                "kind": "identifier",
+                "data": "transition",
+                "span": "transition"
+              },
+              "span": "mode = transition",
+              "name_span": "mode"
+            }
+          ],
+          "span": "#[covenant(binding = auth, from = 1, mode = transition)]",
+          "path_spans": [
+            "covenant"
+          ]
+        }
+      ],
+      "params": [
+        {
+          "type_ref": {
+            "base": "State"
+          },
+          "name": "prev_state",
+          "span": "State prev_state",
+          "type_span": "State ",
+          "name_span": "prev_state"
+        },
+        {
+          "type_ref": {
+            "base": "int"
+          },
+          "name": "fee",
+          "span": "int fee",
+          "type_span": "int ",
+          "name_span": "fee"
+        }
+      ],
+      "entrypoint": false,
+      "return_types": [
+        {
+          "base": "State"
+        }
+      ],
+      "returns_tuple": true,
+      "body": [
+        {
+          "kind": "return",
+          "data": {
+            "exprs": [
+              {
+                "kind": "struct_literal",
+                "data": {
+                  "name": "State",
+                  "fields": [
+                    {
+                      "name": "amount",
+                      "expr": {
+                        "kind": "binary",
+                        "data": {
+                          "op": "sub",
+                          "left": {
+                            "kind": "field_access",
+                            "data": {
+                              "source": {
+                                "kind": "identifier",
+                                "data": "prev_state",
+                                "span": "prev_state"
+                              },
+                              "field": "amount",
+                              "field_span": "amount"
+                            },
+                            "span": "prev_state.amount"
+                          },
+                          "right": {
+                            "kind": "identifier",
+                            "data": "fee",
+                            "span": "fee"
+                          }
+                        },
+                        "span": "prev_state.amount - fee"
+                      },
+                      "span": "amount: prev_state.amount - fee",
+                      "name_span": "amount"
+                    },
+                    {
+                      "name": "owner",
+                      "expr": {
+                        "kind": "field_access",
+                        "data": {
+                          "source": {
+                            "kind": "identifier",
+                            "data": "prev_state",
+                            "span": "prev_state"
+                          },
+                          "field": "owner",
+                          "field_span": "owner"
+                        },
+                        "span": "prev_state.owner"
+                      },
+                      "span": "owner: prev_state.owner\n        ",
+                      "name_span": "owner"
+                    }
+                  ],
+                  "name_span": "State"
+                },
+                "span": "State {\n            amount: prev_state.amount - fee,\n            owner: prev_state.owner\n        }"
+              }
+            ],
+            "span": "return(State {\n            amount: prev_state.amount - fee,\n            owner: prev_state.owner\n        });"
+          }
+        }
+      ],
+      "return_type_spans": [
+        "State"
+      ],
+      "span": "#[covenant(binding = auth, from = 1, mode = transition)]\n    function step(State prev_state, int fee) : (State) {\n        return(State {\n            amount: prev_state.amount - fee,\n            owner: prev_state.owner\n        });\n    }",
+      "name_span": "step",
+      "body_span": "return(State {\n            amount: prev_state.amount - fee,\n            owner: prev_state.owner\n        });"
+    }
+  ],
+  "span": "contract Matrix(int init_amount, byte[32] init_owner) {\n    int amount = init_amount;\n    byte[32] owner = init_owner;\n\n    #[covenant(binding = auth, from = 1, mode = transition)]\n    function step(State prev_state, int fee) : (State) {\n        return(State {\n            amount: prev_state.amount - fee,\n            owner: prev_state.owner\n        });\n    }\n}",
+  "name_span": "Matrix"
+}

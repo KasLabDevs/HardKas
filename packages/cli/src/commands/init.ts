@@ -135,7 +135,10 @@ export function registerInitCommands(program: Command) {
 export default defineConfig({
   test: {
     fileParallelism: false,
-    pool: "forks"
+    pool: "forks",
+    // a scenario runs a whole payment flow (fund, plan, sign, send): ~3 s on an idle machine, 7-8 s with every CPU
+    // busy, so vitest's 5 s default fails the scaffolded test on a loaded machine
+    testTimeout: 30_000
   }
 });
 `;
@@ -157,7 +160,7 @@ export default defineConfig({
             const template = `import { defineHardkasConfig } from "@hardkas/sdk";
 
 export default defineHardkasConfig({
-  // HardKAS v0.12.0-rc.29 Configuration
+  // HardKAS v0.13.0-rc.1 Configuration
   execution: {
     default: "simulator",
     targets: {
@@ -208,6 +211,8 @@ export default defineHardkasConfig({
             const testFile = path.join(testDir, "payment.test.ts");
             const testTemplate = `import { scenario, expect } from "@hardkas/testing/scenarios";
 
+// A whole plan -> sign -> send flow with the dev accounts' keystores: on a busy machine it can take longer than
+// vitest's 5 s default, so it has its own time budget (the last argument).
 scenario("payment flow", async ({ hk }) => {
   const alice = await hk.accounts.resolve("alice");
   const bob = await hk.accounts.resolve("bob");
@@ -231,7 +236,7 @@ scenario("payment flow", async ({ hk }) => {
 
   const afterBob = await hk.accounts.balance(bob.address);
   expect(afterBob.sompi - beforeBob.sompi).toBe(10n * 100000000n);
-});
+}, 30_000);
 `;
             if (!fs.existsSync(testFile)) {
               writeFileAtomicSync(testFile, testTemplate, { encoding: "utf-8" });
@@ -305,7 +310,7 @@ scenario("payment flow", async ({ hk }) => {
                 `HardKAS project '${name || "current"}' initialized successfully.`
               );
               if (name) UI.info(`Project folder: ${targetDir}`);
-              UI.info(`Created: hardkas.config.ts (0.12.0-rc.29)`);
+              UI.info(`Created: hardkas.config.ts (0.13.0-rc.1)`);
               UI.footer(`Next steps:\n  ` + (name ? `cd ${name}\n  ` : "") + (options.install ? "" : "npm install\n  ") + "npm test");
             }
           }

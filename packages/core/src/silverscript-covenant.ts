@@ -37,6 +37,10 @@ export interface SilverCovenantDeclaration {
   readonly from: number | string;
   readonly to: number | string;
   readonly mode: string;
+  /** As written; absent means the spec's default (auth → multiple, cov → single). */
+  readonly groups?: string;
+  /** As written; absent means disallowed (only a singleton transition may allow it). */
+  readonly termination?: string;
 }
 
 function literal(expr: AstNode | undefined): number | string | undefined {
@@ -62,6 +66,12 @@ export function silverCovenantDeclarations(ast: AstNode): SilverCovenantDeclarat
         to = 1;
       }
       if (form === "covenant.fanout") from = 1;
+      // A transition that returns one State and names no `to` has exactly one continuation: silverc 1.0.0 lowers it to
+      // `require(auth_out_count == 1)` (upstream fixture lowers_auth_transition_two_field_state). Any other omission
+      // stays unknown, and the declaration is left out (its entries are then refused).
+      const returns = (fn.return_types ?? []) as AstNode[];
+      const oneState = returns.length === 1 && returns[0]?.base === "State" && ((returns[0]?.array_dims ?? []) as unknown[]).length === 0;
+      if (to === undefined && from !== undefined && oneState && String(args.mode ?? "transition") === "transition") to = 1;
       if (from === undefined || to === undefined) continue;
       out.push({
         policy: String(fn.name),
@@ -69,11 +79,34 @@ export function silverCovenantDeclarations(ast: AstNode): SilverCovenantDeclarat
         binding: String(args.binding ?? (from === 1 ? "auth" : "cov")),
         from,
         to,
-        mode: String(args.mode ?? ((fn.return_types ?? []).length > 0 ? "transition" : "verification"))
+        mode: String(args.mode ?? ((fn.return_types ?? []).length > 0 ? "transition" : "verification")),
+        ...(args.groups !== undefined ? { groups: String(args.groups) } : {}),
+        ...(args.termination !== undefined ? { termination: String(args.termination) } : {})
       });
     }
   }
   return out;
+}
+
+/** The function a contract marks `#[covenant.delegate]` (the body its delegate entry runs), if any. */
+export function silverCovenantDelegateFunction(ast: AstNode): string | undefined {
+  for (const fn of (ast.functions ?? []) as AstNode[]) {
+    if (((fn.attributes ?? []) as AstNode[]).some((a) => (a.path ?? [])[0] === "covenant" && (a.path ?? [])[1] === "delegate")) return String(fn.name);
+  }
+  return undefined;
+}
+
+/**
+ * A declaration's bound (`from` / `to`) as a number: a literal, or the value of the constructor parameter it names
+ * (`to = max_outs`). Undefined when it cannot be told.
+ */
+export function silverDeclarationBound(ast: AstNode, bound: number | string, constructorArgs: readonly SilArtifactValue[]): number | undefined {
+  if (typeof bound === "number") return Number.isSafeInteger(bound) ? bound : undefined;
+  const index = ((ast.params ?? []) as AstNode[]).findIndex((p) => p.name === bound);
+  const v = index >= 0 ? constructorArgs[index] : undefined;
+  if (v?.kind !== "int") return undefined;
+  const n = BigInt(v.value);
+  return n >= 0n && n <= BigInt(Number.MAX_SAFE_INTEGER) ? Number(n) : undefined;
 }
 
 /** True for the declaration shape M8 supports: one input, one successor, auth binding, transition. */

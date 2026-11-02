@@ -12,7 +12,8 @@ describe("checkEvmRpcHealth", () => {
 
       return {
         ok: true,
-        json: async () => ({ jsonrpc: "2.0", id: body.id, result })
+        status: 200,
+        text: async () => JSON.stringify({ jsonrpc: "2.0", id: body.id, result })
       };
     });
 
@@ -31,7 +32,8 @@ describe("checkEvmRpcHealth", () => {
     const mockFetcher = vi.fn().mockResolvedValue({
       ok: false,
       status: 404,
-      statusText: "Not Found"
+      statusText: "Not Found",
+      text: async () => ""
     });
 
     const result = await checkEvmRpcHealth({

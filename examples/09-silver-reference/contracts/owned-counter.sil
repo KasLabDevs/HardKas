@@ -1,0 +1,17 @@
+pragma silverscript ^0.1.0;
+
+// HardKAS reference contract (V1-ENGINE-2): a counter only its owner can advance.
+// A 1:1 auth-bound covenant transition whose policy checks the owner's signature
+// over the transaction (a signature slot of the covenant entry) and that the
+// counter grows. The owner key is a constructor parameter (part of the template);
+// the value is the covenant's State.
+contract OwnedCounter(pubkey owner, int init_value) {
+    int value = init_value;
+
+    #[covenant(binding = auth, from = 1, to = 1, mode = transition)]
+    function bump(State prev_state, int delta, sig s) : (State) {
+        require(checkSig(s, owner));
+        require(delta > 0);
+        return(State { value: prev_state.value + delta });
+    }
+}

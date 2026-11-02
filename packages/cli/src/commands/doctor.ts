@@ -14,8 +14,10 @@ import { HardkasSchemas, eventLedgerPath, legacyEventLedgerPath } from "@hardkas
 import readline from "node:readline";
 import fsSync from "node:fs";
 import { invocationWorkspaceRoot } from "../workspace-root.js";
+import { EMPTY_EXTENSION_REGISTRY, type ExtensionRegistry } from "../extensions/registry.js";
+import { knownExtension } from "../extensions/api.js";
 
-export function registerDoctorCommand(program: Command) {
+export function registerDoctorCommand(program: Command, extensions: ExtensionRegistry = EMPTY_EXTENSION_REGISTRY) {
   program
     .command("doctor [module]")
     .description(
@@ -29,14 +31,23 @@ export function registerDoctorCommand(program: Command) {
       "Fail strictly (exit 1) if invariants or consistency checks fail",
       false
     )
+    .option("--release", "With 'doctor workspace': also run the release checks (git, schemas, claims, raw appends, browser imports)", false)
     .action(async (moduleStr, opts) => {
       try {
-        if (moduleStr === "signer") {
+        if (moduleStr === "workspace") {
+          // NEW-11: the L1 workspace checks `dev doctor` ran (it moved to the l2 extension with its L2 section)
+          const { runWorkspaceDoctor } = await import("../runners/workspace-doctor-runner.js");
+          await runWorkspaceDoctor({ json: opts.json, release: opts.release, workspaceRoot: invocationWorkspaceRoot() });
+        } else if (moduleStr === "signer") {
           const { runDoctorSigner } = await import("../runners/doctor-signer-runner.js");
           await runDoctorSigner(opts);
         } else if (moduleStr === "node") {
           const { runDoctorNode } = await import("../runners/doctor-node-runner.js");
           await runDoctorNode(opts);
+        } else if (moduleStr !== undefined && knownExtension(moduleStr)) {
+          // L2-EXT stage 2 (design §3.8): `doctor <extension>` runs that extension's checks, or refuses with its reason
+          const { runExtensionDoctor } = await import("./extension.js");
+          await runExtensionDoctor(extensions, moduleStr, opts);
         } else {
           // WORKSPACE-AUTHORITY-1 (WA-I0): the invocation's one workspace root
           await runDoctorChecks(invocationWorkspaceRoot(), opts);
@@ -130,24 +141,16 @@ export async function runDoctorChecks(
   };
 
   // --- 1. Runtime Checks ---
-  const nodeVer = process.version;
-  const nodeMajor = parseInt(nodeVer.slice(1).split(".")[0]!);
-  if (nodeMajor >= 18) {
-    addCheck({
-      name: "Node.js version",
-      category: "runtime",
-      status: "pass",
-      message: `${nodeVer} (>= 18 required)`
-    });
-  } else {
-    addCheck({
-      name: "Node.js version",
-      category: "runtime",
-      status: "fail",
-      message: `${nodeVer} (>= 18 required)`,
-      suggestion: "Upgrade Node.js to v18 or higher."
-    });
-  }
+  // I-07: judged against the supported runtime the packages' engines pin, not an older floor of the doctor's own
+  const { nodeVersionVerdict, SUPPORTED_NODE_VERSION } = await import("../node-policy.js");
+  const nodeVerdict = nodeVersionVerdict(process.version);
+  addCheck({
+    name: "Node.js version",
+    category: "runtime",
+    status: nodeVerdict.status,
+    message: nodeVerdict.message,
+    ...(nodeVerdict.status === "pass" ? {} : { suggestion: `Use Node.js ${SUPPORTED_NODE_VERSION}, the only supported runtime.` })
+  });
 
   try {
     const { stdout } = await execa("pnpm", ["-v"]);
@@ -580,7 +583,16 @@ export async function runDoctorChecks(
     const profile = report.deployProfile
       ? `; deployment profile (informational): ${report.deployProfile.missing.length ? `${report.deployProfile.missing.join(", ")} not set` : "complete"}`
       : "";
-    if (report.unknown.length === 0) {
+    if (report.unknown.length === 0 && report.warnings.length > 0) {
+      // R-08: known variables whose value relaxes a safety policy for every command are a warning, not a pass
+      addCheck({
+        name: "HARDKAS_* environment",
+        category: "env",
+        status: "warn",
+        message: `Every HARDKAS_* variable set is one HardKAS reads; relaxes a policy: ${report.warnings.map((w) => `${w.name} (${w.message})`).join("; ")}${profile}`,
+        suggestion: "Unset the variable and use the per-command option where one exists (silver: --allow-unverified-runner)."
+      });
+    } else if (report.unknown.length === 0) {
       addCheck({
         name: "HARDKAS_* environment",
         category: "env",

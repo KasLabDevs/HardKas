@@ -34,7 +34,7 @@ Do not collapse these categories. They have fundamentally different execution an
 * **Status:** `ACTIVE DEVELOPMENT / PROTOTYPE`.
 
 ### 3. Layer 2 Networks (Igra / Kasplex L2)
-* **What it is:** Separate blockchain networks (often DAGs themselves) that use Kaspa as a Data Availability (DA) and settlement layer.
+* **What it is:** Separate blockchain networks (often DAGs themselves) that use Kaspa for ordering and data availability (DA); their settlement guarantees depend on each L2's bridge and proof design, which HardKAS does not verify.
 * **Execution:** Independent L2 nodes.
 * **Status:** External architecture (not documented in HardKAS Toccata boundaries).
 

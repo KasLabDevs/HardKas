@@ -17,7 +17,105 @@ export type { FixtureDefinition } from "./fixtures.js";
 export { createFixture } from "./fixtures.js";
 
 // ── Matchers ─────────────────────────────────────────────────────────────────
-export type { HardKasMatchers } from "./matchers.js";
+export type { HardKasMatchers, CovenantPassMatcherOptions } from "./matchers.js";
+
+// ── Covenant Dev Framework (Testing, VM Preflight, Fuzzing, Isolated Simnet) ──
+export type {
+  CovenantEvidenceLevel,
+  CovenantPreflightLevel,
+  CovenantTestAccount,
+  CompiledCovenantContract,
+  CovenantLiveUtxo,
+  CovenantUtxoFixture,
+  CovenantTransitionAttemptParams,
+  CovenantTransitionResult,
+  CovenantTestbedOptions
+} from "./covenant-testbed.js";
+export { createCovenantTestbed, normalizeStateRecord } from "./covenant-testbed.js";
+
+export type {
+  ConsensusSubmissionStage,
+  ConsensusSubmissionOutcome,
+  ConsensusSimnetRpc,
+  ConsensusObservationOptions,
+  ConsensusExpectedOutput,
+  ConsensusSpentInput,
+  ConsensusSubmissionEvidence
+} from "./consensus-submission.js";
+export { submitAndObserveConsensus } from "./consensus-submission.js";
+
+export type {
+  CovenantTopologyKind,
+  CovenantTopologySample,
+  CovenantFuzzRunOptions,
+  CovenantFuzzFailureReport,
+  CovenantFuzzReport,
+  CovenantFuzzExpectation,
+  CovenantFuzzOracleVerdict,
+  CovenantFuzzOutcome,
+  CovenantFuzzCoverage,
+  CovenantFuzzInfrastructureFailure,
+  BidirectionalCovenantFuzzOptions,
+  BidirectionalCovenantFuzzReport,
+  CovenantFuzzTestbed,
+  CounterTransitionCase,
+  CounterTransitionSample,
+  CounterAuthorizationCase,
+  CounterAuthorizationSample,
+  ComputeBudgetCase,
+  ComputeBudgetSample
+} from "./covenant-fuzz.js";
+export {
+  MAX_SOMPI,
+  MIN_NON_DUST_SOMPI,
+  SILVER_INT_MAX,
+  SILVER_INT_MIN,
+  COUNTER_UNAUTHORIZED_SIGNERS,
+  sompiAmountArbitrary,
+  covenantIdHexArbitrary,
+  corruptedCovenantIdArbitrary,
+  covenantUtxoArbitrary,
+  int64StateArbitrary,
+  successorStateTransitionArbitrary,
+  invalidSignatureHexArbitrary,
+  unauthorizedFixtureSignerArbitrary,
+  computeBudgetArbitrary,
+  invalidComputeBudgetArbitrary,
+  covenantTopologyArbitrary,
+  runCovenantPropertyFuzz,
+  runBidirectionalCovenantFuzz,
+  counterTransitionArbitrary,
+  counterTransitionBoundarySamples,
+  counterTransitionOracle,
+  fuzzCounterTransitions,
+  counterAuthorizationArbitrary,
+  counterAuthorizationBoundarySamples,
+  fuzzCounterAuthorization,
+  fuzzComputeBudgetBounds
+} from "./covenant-fuzz.js";
+
+export type {
+  IsolatedSimnetSession,
+  StartIsolatedSimnetOptions,
+  SimnetOnChainUtxo,
+  CoinbaseMaturityAuditResult,
+  SimnetCovenantTransitionInput,
+  SimnetCovenantTransitionOutcome
+} from "./isolated-simnet.js";
+export {
+  SIMNET_CONSENSUS_COINBASE_MATURITY_DAA,
+  startIsolatedSimnet,
+  stopIsolatedSimnet,
+  mineBlocks,
+  waitForDaaScore,
+  waitForUtxo,
+  waitForTransaction,
+  fundTestAccount,
+  inspectCoinbaseMaturity,
+  createFundedCovenant,
+  executeSimnetCovenantTransition,
+  testbedSimnetRpc
+} from "./isolated-simnet.js";
 
 // ── Signers ──────────────────────────────────────────────────────────────────
 export {

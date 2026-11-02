@@ -1,0 +1,76 @@
+name: Docker suites (disposable runner)
+
+# REMED-CLOSE: the suites that need a Docker engine of their own run here, on GitHub's disposable runner VM, never on a
+# developer's engine:
+#   - the harness's container hygiene (T-A06a/b);
+#   - the node-management e2e, which resets the canonical localnet of the engine it reaches;
+#   - the gauntlet in its canonical mode (the canonical localnet and its miner).
+# Nothing is skipped: each one fails if its dependency is missing.
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  docker-suites:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          # NODE-CI-PIN-1: the exact patched release this code was validated on (not a floating major).
+          node-version: 24.22.1
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9.15.4
+
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Build packages
+        run: pnpm build
+
+      - name: Install pinned Kaspa WASM and silverc toolchains
+        run: |
+          node packages/cli/dist/index.js toolchain install kaspa-wasm
+          node packages/cli/dist/index.js toolchain install silverc
+
+      - name: Pull the pinned node and miner images (by digest)
+        run: |
+          node -e "import('./packages/core/dist/index.js').then((m) => console.log([m.KASPAD_REFERENCE_IMAGE, m.CPUMINER_REFERENCE_IMAGE].join('\n')))" > images.txt
+          cat images.txt
+          xargs -n1 docker pull < images.txt
+
+      - name: Harness container hygiene (T-A06a / T-A06b)
+        run: pnpm vitest run --config vitest.simnet.config.ts packages/testing/test/harness-cleanup.simnet.test.ts
+
+      - name: Node management e2e (resets the canonical localnet of THIS disposable engine)
+        env:
+          HARDKAS_TEST_E2E_NODE_MANAGEMENT: run
+        run: pnpm vitest run --config vitest.e2e.config.ts --no-file-parallelism packages/cli/test/node-programmatic.e2e.test.ts
+
+      - name: Gauntlet, canonical mode
+        run: |
+          cd packages/cli/test-gauntlet/real-node
+          node ../../dist/index.js localnet start --toccata --json
+          node ../../dist/index.js rpc health --wait --timeout 90000 --json
+          cd "$GITHUB_WORKSPACE"
+          pnpm gauntlet:toccata
+
+      - name: Stop the canonical localnet
+        if: always()
+        run: |
+          cd packages/cli/test-gauntlet/real-node
+          node ../../dist/index.js localnet stop --toccata --json || echo "localnet stop failed (nothing else runs after this step)"

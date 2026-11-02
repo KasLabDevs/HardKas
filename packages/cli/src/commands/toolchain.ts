@@ -3,20 +3,47 @@ import pc from "picocolors";
 import { getOutput } from "../output.js";
 import { HardkasCliError, HardkasExitCode } from "../cli-errors.js";
 import { ensureManagedToolchain } from "../toolchain-install.js";
+import { EMPTY_EXTENSION_REGISTRY, type ExtensionRegistry, extensionStateOf } from "../extensions/registry.js";
+import { KNOWN_EXTENSIONS } from "../extensions/api.js";
+import { extensionUnavailableError } from "../extensions/refusal.js";
 
-async function getManagedToolchains() {
+async function getManagedToolchains(extensions: ExtensionRegistry) {
   const { KASPA_WASM_REFERENCE, SILVERC_REFERENCES } = await import("@hardkas/core");
   const refs: Record<string, typeof KASPA_WASM_REFERENCE> = { [KASPA_WASM_REFERENCE.id]: KASPA_WASM_REFERENCE };
   // silverc is per platform; where it is not pinned it is simply not offered.
   const silverc = SILVERC_REFERENCES[`${process.platform}-${process.arch}`];
   if (silverc) refs[silverc.id] = silverc;
+  // L2-EXT stage 3 (design §3.5): the pins of the loaded extensions, for this platform, installed by this same manager
+  for (const ext of extensions.loaded) {
+    for (const ref of ext.extension.toolchains?.() ?? []) {
+      if (refs[ref.id]) throw new Error(`toolchain id '${ref.id}' is pinned twice (core and the '${ext.known.id}' extension)`);
+      refs[ref.id] = ref;
+    }
+  }
   return refs;
 }
 
-export function registerToolchainCommands(program: Command) {
+/** The typed reason an id that is not offered here is missing: an extension's toolchain, or unknown. */
+function unavailableToolchain(id: string, refs: Record<string, unknown>, extensions: ExtensionRegistry): HardkasCliError {
+  const owner = KNOWN_EXTENSIONS.find((k) => k.toolchains.includes(id));
+  if (owner) {
+    const state = extensionStateOf(extensions, owner.id);
+    if (state?.status !== "loaded") return extensionUnavailableError(owner, state, `The '${id}' toolchain`);
+    return new HardkasCliError(
+      "TOOLCHAIN_PLATFORM_UNSUPPORTED",
+      `The '${owner.id}' extension pins no '${id}' release asset for ${process.platform}-${process.arch}: it is not offered on this platform rather than installed unverified.`,
+      { exitCode: HardkasExitCode.USAGE_ERROR }
+    );
+  }
+  return new HardkasCliError("TOOLCHAIN_UNKNOWN", `Unknown toolchain '${id}'. Managed toolchains: ${Object.keys(refs).join(", ")}`, {
+    exitCode: HardkasExitCode.USAGE_ERROR
+  });
+}
+
+export function registerToolchainCommands(program: Command, extensions: ExtensionRegistry = EMPTY_EXTENSION_REGISTRY) {
   const toolchainCmd = program
     .command("toolchain")
-    .description("Install and verify the upstream toolchains HardKAS pins (official Kaspa release assets)");
+    .description("Install and verify the upstream toolchains HardKAS pins (official Kaspa release assets; an installed extension adds its own, e.g. the l2 extension's foundry)");
 
   toolchainCmd
     .command("install <id>")
@@ -26,15 +53,9 @@ export function registerToolchainCommands(program: Command) {
     .option("--json", "Output as JSON", false)
     .action(async (id: string, opts: { fromFile?: string; force: boolean; json: boolean }) => {
       const out = getOutput();
-      const refs = await getManagedToolchains();
+      const refs = await getManagedToolchains(extensions);
       const ref = refs[id];
-      if (!ref) {
-        throw new HardkasCliError(
-          "TOOLCHAIN_UNKNOWN",
-          `Unknown toolchain '${id}'. Managed toolchains: ${Object.keys(refs).join(", ")}`,
-          { exitCode: HardkasExitCode.USAGE_ERROR }
-        );
-      }
+      if (!ref) throw unavailableToolchain(id, refs, extensions);
 
       const result = await ensureManagedToolchain(ref, {
         fromFile: opts.fromFile,
@@ -66,7 +87,7 @@ export function registerToolchainCommands(program: Command) {
     .action(async (opts: { json: boolean }) => {
       const out = getOutput();
       const { verifyManagedToolchain } = await import("@hardkas/core");
-      const refs = await getManagedToolchains();
+      const refs = await getManagedToolchains(extensions);
 
       const results = [];
       for (const ref of Object.values(refs)) {

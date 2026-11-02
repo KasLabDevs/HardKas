@@ -4,12 +4,12 @@ import type * as Preset from '@docusaurus/preset-classic';
 
 const config: Config = {
   title: 'HardKAS',
-  tagline: 'Execution-safe development for Kaspa',
+  tagline: 'Kaspa L1 Development Framework & IDE',
   favicon: 'img/favicon.ico',
   url: 'https://hardkas.dev',
-  baseUrl: '/', // Kept as / for local dev without assumptions
+  baseUrl: '/docs/',
   onBrokenLinks: 'throw',
-  onBrokenMarkdownLinks: 'warn',
+  onBrokenMarkdownLinks: 'throw',
   i18n: { defaultLocale: 'en', locales: ['en'] },
   presets: [
     [
@@ -27,10 +27,33 @@ const config: Config = {
     ],
   ],
   themeConfig: {
+    colorMode: {
+      defaultMode: 'dark',
+      disableSwitch: false,
+      respectPrefersColorScheme: false,
+    },
     navbar: {
-      title: 'HardKAS',
+      title: '',
+      logo: {
+        alt: 'HardKas — Kaspa Developer Toolkit',
+        src: 'img/logo.png',
+        srcDark: 'img/logo.png',
+        height: 26,
+        href: 'https://hardkas.dev/',
+        target: '_self',
+      },
       items: [
-        { type: 'docSidebar', sidebarId: 'tutorialSidebar', position: 'left', label: 'Documentation' },
+        { to: '/', position: 'left', label: 'Docs' },
+        { href: 'https://hardkas.dev/#cli', position: 'left', label: 'CLI', target: '_self' },
+        { href: 'https://hardkas.dev/#packages', position: 'left', label: 'SDK', target: '_self' },
+        { href: 'https://hardkas.dev/#examples', position: 'left', label: 'Examples', target: '_self' },
+        { href: 'https://hardkas.dev/#security', position: 'left', label: 'Security', target: '_self' },
+        {
+          href: 'https://github.com/KasLabDevs/HardKas',
+          position: 'right',
+          className: 'header-github-link',
+          'aria-label': 'GitHub repository',
+        },
       ],
     },
     prism: { theme: prismThemes.github, darkTheme: prismThemes.dracula },
