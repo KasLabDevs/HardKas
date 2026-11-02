@@ -1,0 +1,40 @@
+pragma silverscript ^0.1.0;
+
+// Test fixture (R-03 regression): OwnedCounter (examples/09-silver-reference) with extra always-true checks that only
+// make the script larger, so the transition's mass needs a fee above the covenant testbed's default (300000 sompi). The
+// script accepts a valid bump; HardKAS's structural v1 validation refuses the default fee (FEE_BELOW_V1_FLOOR). A
+// transition the structural validation refuses must never be approved, whatever the SilverScript runner says.
+contract BulkyCounter(pubkey owner, int init_value) {
+    int value = init_value;
+
+    #[covenant(binding = auth, from = 1, to = 1, mode = transition)]
+    function bump(State prev_state, int delta, sig s) : (State) {
+        require(checkSig(s, owner));
+        require(delta > 0);
+        require(owner != pubkey(0x1111111111111111111111111111111111111111111111111111111111111111));
+        require(owner != pubkey(0x2222222222222222222222222222222222222222222222222222222222222222));
+        require(owner != pubkey(0x3333333333333333333333333333333333333333333333333333333333333333));
+        require(owner != pubkey(0x4444444444444444444444444444444444444444444444444444444444444444));
+        require(owner != pubkey(0x5555555555555555555555555555555555555555555555555555555555555555));
+        require(owner != pubkey(0x6666666666666666666666666666666666666666666666666666666666666666));
+        require(owner != pubkey(0x7777777777777777777777777777777777777777777777777777777777777777));
+        require(owner != pubkey(0x8888888888888888888888888888888888888888888888888888888888888888));
+        require(owner != pubkey(0x9999999999999999999999999999999999999999999999999999999999999999));
+        require(owner != pubkey(0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa));
+        require(owner != pubkey(0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb));
+        require(owner != pubkey(0xcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc));
+        require(owner != pubkey(0xdddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd));
+        require(owner != pubkey(0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee));
+        require(owner != pubkey(0x0101010101010101010101010101010101010101010101010101010101010101));
+        require(owner != pubkey(0x0202020202020202020202020202020202020202020202020202020202020202));
+        require(owner != pubkey(0x0303030303030303030303030303030303030303030303030303030303030303));
+        require(owner != pubkey(0x0404040404040404040404040404040404040404040404040404040404040404));
+        require(owner != pubkey(0x0505050505050505050505050505050505050505050505050505050505050505));
+        require(owner != pubkey(0x0606060606060606060606060606060606060606060606060606060606060606));
+        require(owner != pubkey(0x0707070707070707070707070707070707070707070707070707070707070707));
+        require(owner != pubkey(0x0808080808080808080808080808080808080808080808080808080808080808));
+        require(owner != pubkey(0x0909090909090909090909090909090909090909090909090909090909090909));
+        require(owner != pubkey(0x0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a));
+        return(State { value: prev_state.value + delta });
+    }
+}

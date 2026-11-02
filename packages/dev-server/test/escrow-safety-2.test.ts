@@ -6,6 +6,15 @@ import path from "node:path";
 import { escrowRoutes, escrowNode, memoryStore, type EscrowRecord } from "../src/routes/escrow.js";
 import { H, SINK, factoryOf, fakeEscrowNode, type FakeEscrowNode, type FakeUtxo } from "./helpers/fake-escrow-node.js";
 
+// N-11 · the escrow journal fixes its path when ../src/routes/escrow.js is imported: point it at a temporary file before
+// that import (vi.hoisted runs first), so this test never writes <repo>/.hardkas/escrow-store.json.
+await vi.hoisted(async () => {
+  const osMod = await import("node:os");
+  const pathMod = await import("node:path");
+  const fsMod = await import("node:fs");
+  process.env.HARDKAS_ESCROW_STORE_PATH = pathMod.join(fsMod.mkdtempSync(pathMod.join(osMod.tmpdir(), "hk-es2-store-")), "escrow-store.json");
+});
+
 // -----------------------------------------------------------------------------
 // ESCROW-SAFETY-2 · the dev-server escrow routes with the protections HardKAS's own sends have, against a stand-in of
 // the official kaspa-wasm client (no network): one funding per escrow; an unknown submit outcome recorded with its txId

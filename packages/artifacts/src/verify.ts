@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { HardkasSchemas } from "@hardkas/core";
+import { HardkasSchemas, SILVER_RUNNER_TRUSTED_REFERENCES } from "@hardkas/core";
 import {
   calculateContentHash,
   CURRENT_HASH_VERSION,
@@ -380,6 +380,23 @@ export function verifyArtifactIntegritySync(
         "ARTIFACT_SCHEMA_INVALID",
         `Unsupported or unknown artifact schema: ${v.schema}`
       );
+    }
+
+    // F3 (H-B4): an official VM record comes from a VERIFIED runner. Records written before runner.trust existed carry none
+    // and were all runs of UNVERIFIED local builds: they are not official either.
+    // I-02: records are not signed, so the record's own trust claim is not evidence: an official record's runner digest must
+    // also be one of the trusted references (today none), which this check reads from the code, not from the record.
+    if (v.schema === HardkasSchemas.SilverVmTestV1 && v.evidence === "official-vm-scenario") {
+      const runner = v.runner as { trust?: unknown; binarySha256?: unknown } | undefined;
+      if (runner?.trust !== "VERIFIED") {
+        addError("ARTIFACT_SCHEMA_INVALID", "an official-vm-scenario record needs runner.trust VERIFIED: this runner was not verified", "runner.trust");
+      } else if (!SILVER_RUNNER_TRUSTED_REFERENCES.some((t) => t.sha256 === String(runner.binarySha256 ?? "").toLowerCase())) {
+        addError(
+          "ARTIFACT_SCHEMA_INVALID",
+          "an official-vm-scenario record names a runner digest that is not a trusted reference: a record's own trust claim is not evidence (records are not signed)",
+          "runner.binarySha256"
+        );
+      }
     }
 
     // Wave 1.4 · IC-6′: a signed artifact that carries a synthetic authorization

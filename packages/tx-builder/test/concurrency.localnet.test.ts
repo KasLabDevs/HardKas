@@ -2,14 +2,22 @@ import { describe, test, expect, beforeAll, afterAll } from "vitest";
 // @ts-ignore
 import { Hardkas } from "@hardkas/sdk";
 
-// This test suite runs against a real localnet and asserts the optimistic concurrency model
+// This test suite runs against a real localnet and asserts the optimistic concurrency model.
+// The level's global setup funds alice (packages/dev-server/test/global-setup.ts): a plan that finds no funds is a
+// failed precondition and fails the test; it is never skipped (a skipped W1–W3 would pass the level by omission).
 describe("Optimistic Concurrency & Integrity Semantics", () => {
   let hk: any;
   let alice: any;
   let bob: any;
 
   beforeAll(async () => {
+    // REMED-CLOSE: the level's own workspace (its global setup creates it), never the repository root's .hardkas
+    const workspace = process.env.HARDKAS_TEST_LOCALNET_WORKSPACE;
+    if (!workspace) {
+      throw new Error("LOCALNET_WORKSPACE_MISSING: run this file through vitest.localnet.config.ts, whose global setup creates the level's own workspace");
+    }
     hk = await Hardkas.create({
+      cwd: workspace,
       network: "simnet",
       autoBootstrap: true,
       policy: { allowPublic: true },
@@ -31,14 +39,8 @@ describe("Optimistic Concurrency & Integrity Semantics", () => {
     }
   });
 
-  test("W1: Sequential sends succeed without reusing pending input", async (ctx) => {
-    let intentA;
-    try {
-      intentA = await hk.tx.plan({ from: alice, amount: "1 KAS", to: bob });
-    } catch (e: any) {
-      if (e.message?.includes("Insufficient funds")) return ctx.skip();
-      throw e;
-    }
+  test("W1: Sequential sends succeed without reusing pending input", async () => {
+    const intentA = await hk.tx.plan({ from: alice, amount: "1 KAS", to: bob });
     const signedA = await hk.tx.sign(intentA, alice);
     const resultA = await hk.tx.send(signedA);
     expect(resultA.txId).toBeDefined();
@@ -56,14 +58,8 @@ describe("Optimistic Concurrency & Integrity Semantics", () => {
     expect(outpointsA.join(",")).not.toBe(outpointsB.join(","));
   });
 
-  test("W2: Concurrent read-only plans may overlap and do not mutate state", async (ctx) => {
-    let fundIntent;
-    try {
-      fundIntent = await hk.tx.plan({ from: alice, amount: "5 KAS", to: bob });
-    } catch (e: any) {
-      if (e.message?.includes("Insufficient funds")) return ctx.skip();
-      throw e;
-    }
+  test("W2: Concurrent read-only plans may overlap and do not mutate state", async () => {
+    const fundIntent = await hk.tx.plan({ from: alice, amount: "5 KAS", to: bob });
     const fundSigned = await hk.tx.sign(fundIntent, alice);
     await hk.tx.send(fundSigned);
     
@@ -83,14 +79,8 @@ describe("Optimistic Concurrency & Integrity Semantics", () => {
     expect(outpointsA.join(",")).toBe(outpointsB.join(","));
   });
 
-  test("W3: Two genuinely conflicting signed submissions maintain receipt integrity", async (ctx) => {
-    let fundIntent;
-    try {
-      fundIntent = await hk.tx.plan({ from: alice, amount: "5 KAS", to: bob });
-    } catch (e: any) {
-      if (e.message?.includes("Insufficient funds")) return ctx.skip();
-      throw e;
-    }
+  test("W3: Two genuinely conflicting signed submissions maintain receipt integrity", async () => {
+    const fundIntent = await hk.tx.plan({ from: alice, amount: "5 KAS", to: bob });
     const fundSigned = await hk.tx.sign(fundIntent, alice);
     await hk.tx.send(fundSigned);
     
@@ -106,45 +96,33 @@ describe("Optimistic Concurrency & Integrity Semantics", () => {
       hk.tx.sign(intentB, bob)
     ]);
 
-    // 3. Submit concurrently
+    // Both spend the same first input (one state, one canonical order): they genuinely conflict
+    expect(intentA.inputs[0].outpoint).toEqual(intentB.inputs[0].outpoint);
+
+    // 3. Submit concurrently. sdk.tx.send records every outcome and RETURNS it — it does not throw on a node rejection:
+    //    `submitted` is the node's answer and the recorded submission keeps it. (This test predates that contract, and the
+    //    level never ran it: it counted every fulfilled send as accepted and looked for txReceipt-<txId>.json files.)
     const results = await Promise.allSettled([
       hk.tx.send(signedA),
       hk.tx.send(signedB)
     ]);
-
-    let accepted = 0;
-    let rejected = 0;
-    let winnerTxId = null;
-    let loserTxId = null;
-
-    for (const [index, r] of results.entries()) {
-      if (r.status === "fulfilled") {
-        accepted++;
-        winnerTxId = (r.value as any).txId;
-      } else {
-        rejected++;
-        loserTxId = index === 0 ? signedA.txId : signedB.txId;
-      }
-    }
+    const outcomes = results.map((r) =>
+      r.status === "rejected" ? "refused-before-sending" : (r.value as any).submitted === true ? "accepted" : "rejected-by-node"
+    );
 
     // Exactly one should win, one should fail
-    expect(accepted).toBe(1);
-    expect(rejected).toBe(1);
+    expect(outcomes.filter((o) => o === "accepted"), JSON.stringify(outcomes)).toHaveLength(1);
+    expect(outcomes.filter((o) => o !== "accepted"), JSON.stringify(outcomes)).toHaveLength(1);
 
-    // 4. Verify artifact integrity (No false receipt for the loser)
+    // 4. Receipt integrity: the winner's recorded submission says accepted and exists on disk; the loser never has a
+    //    record claiming acceptance (the node's rejection is recorded as such, or nothing was sent)
     const fs = await import("fs");
-    const path = await import("path");
-    
-    // In SDK tests, workspace directory is usually where the artifacts live
-    const artifactsDir = hk.workspace.artifactsDir;
-    
-    const winnerReceiptPath = path.join(artifactsDir, "receipts", `txReceipt-${winnerTxId}.json`);
-    const loserReceiptPath = path.join(artifactsDir, "receipts", `txReceipt-${loserTxId}.json`);
-
-    const winnerHasReceipt = fs.existsSync(winnerReceiptPath);
-    const loserHasReceipt = fs.existsSync(loserReceiptPath);
-
-    expect(winnerHasReceipt).toBe(true);
-    expect(loserHasReceipt).toBe(false);
+    for (const r of results) {
+      if (r.status !== "fulfilled") continue;
+      const v: any = r.value;
+      expect(v.submission.submitResult.accepted, JSON.stringify(v.submission.submitResult)).toBe(v.submitted === true);
+      if (v.submitted === true) expect(fs.existsSync(v.receiptPath)).toBe(true);
+      else expect(String(v.submission.submitResult.error ?? "")).not.toBe("");
+    }
   });
 });

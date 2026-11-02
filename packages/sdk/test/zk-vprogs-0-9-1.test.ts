@@ -22,6 +22,20 @@ function copyZkCorpus(): string {
   return target;
 }
 
+/**
+ * REMED-CLOSE · test isolation: an SDK opened with autoBootstrap writes its workspace state (.hardkas: the simulator
+ * ledger, a snapshot artifact, locks). The tests that read the repository's fixtures get a temporary workspace of their
+ * own holding copies of exactly those files, at the same relative paths, never the repository root.
+ */
+function fixtureWorkspace(): string {
+  const ws = fs.mkdtempSync(path.join(os.tmpdir(), "hardkas-sdk-zk-ws-"));
+  for (const rel of ["fixtures/toccata-v2/zk", "fixtures/toccata-v2/vprogs"]) {
+    fs.cpSync(path.join(repoRoot(), rel), path.join(ws, rel), { recursive: true });
+  }
+  fs.copyFileSync(path.join(repoRoot(), "package.json"), path.join(ws, "package.json"));
+  return ws;
+}
+
 function mutateJson(filePath: string, mutate: (value: any) => void) {
   const value = JSON.parse(fs.readFileSync(filePath, "utf8"));
   mutate(value);
@@ -32,7 +46,7 @@ describe("0.13.0-rc.1 ZK corpus and vProgs inspect SDK parity", () => {
   let workspaceRoot: string;
 
   beforeEach(() => {
-    workspaceRoot = fs.mkdtempSync(path.join(os.tmpdir(), "hardkas-sdk-zk-"));
+    workspaceRoot = fixtureWorkspace();
     delete process.env.HARDKAS_EXPERIMENTAL_VPROGS;
   });
 
@@ -58,7 +72,7 @@ describe("0.13.0-rc.1 ZK corpus and vProgs inspect SDK parity", () => {
 
   it("verifies the experimental Groth16/RISC0 corpus with partial local verification", async () => {
     const sdk = await Hardkas.create({
-      cwd: repoRoot(),
+      cwd: workspaceRoot,
       network: "simulated",
       autoBootstrap: true
     });
@@ -126,7 +140,7 @@ describe("0.13.0-rc.1 ZK corpus and vProgs inspect SDK parity", () => {
 
   it("inspects RISC0 and returns explicit unsupported local verification", async () => {
     const sdk = await Hardkas.create({
-      cwd: repoRoot(),
+      cwd: workspaceRoot,
       network: "simulated",
       autoBootstrap: true
     });
@@ -145,7 +159,7 @@ describe("0.13.0-rc.1 ZK corpus and vProgs inspect SDK parity", () => {
 
   it("exposes vProgs inspect-only surface with bounded claims", async () => {
     const sdk = await Hardkas.create({
-      cwd: repoRoot(),
+      cwd: workspaceRoot,
       network: "simulated",
       autoBootstrap: true
     });
@@ -166,7 +180,7 @@ describe("0.13.0-rc.1 ZK corpus and vProgs inspect SDK parity", () => {
 
   it("fails to inspect an invalid vProgs schema like package.json", async () => {
     const sdk = await Hardkas.create({
-      cwd: repoRoot(),
+      cwd: workspaceRoot,
       network: "simulated",
       autoBootstrap: true
     });

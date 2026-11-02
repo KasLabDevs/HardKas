@@ -104,7 +104,9 @@ describe("F1.6 · classifyNodeRejection (product)", () => {
   });
 
   it("NR-4 only a recorded rejection has a class: accepted, 'already in the mempool / accepted', a lost answer have none", () => {
-    expect(nodeRejectionOf({ accepted: true, transactionId: TX })).toBeUndefined();
+    // A recorded submit result carries more than the two fields nodeRejectionOf reads (a fresh literal would trip TS2353).
+    const acceptedRecord = { accepted: true, transactionId: TX };
+    expect(nodeRejectionOf(acceptedRecord)).toBeUndefined();
     expect(nodeRejectionOf({ accepted: false, error: `Rejected transaction ${TX}: transaction ${TX} is already in the mempool` })).toBeUndefined();
     expect(nodeRejectionOf({ accepted: false, error: `Rejected transaction ${TX}: transaction ${TX} was already accepted by the consensus` })).toBeUndefined();
     expect(nodeRejectionOf({ accepted: false, error: "RPC request timed out after 30000ms (socket hang up)" })).toBeUndefined();

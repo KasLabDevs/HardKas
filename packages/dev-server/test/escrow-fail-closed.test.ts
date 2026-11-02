@@ -5,6 +5,15 @@ import os from "node:os";
 import path from "node:path";
 import { escrowRoutes, memoryStore, type EscrowRecord } from "../src/routes/escrow.js";
 
+// N-11 · the escrow journal fixes its path when ../src/routes/escrow.js is imported: point it at a temporary file before
+// that import (vi.hoisted runs first), so this test never writes <repo>/.hardkas/escrow-store.json.
+await vi.hoisted(async () => {
+  const osMod = await import("node:os");
+  const pathMod = await import("node:path");
+  const fsMod = await import("node:fs");
+  process.env.HARDKAS_ESCROW_STORE_PATH = pathMod.join(fsMod.mkdtempSync(pathMod.join(osMod.tmpdir(), "hk-efc-store-")), "escrow-store.json");
+});
+
 // Route-level checks that a failed authority (compiler, signer, unlock tool, node)
 // never turns into success, a fabricated value, or a persisted success state.
 

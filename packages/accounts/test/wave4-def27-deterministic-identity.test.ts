@@ -119,6 +119,12 @@ describe("Wave 4 · DEF-27 · deterministic identity invariant", () => {
     }
   });
 
+  // The two keystore cases run the keystore KDF on purpose: ensureDevAccounts encrypts five keystores, and the next
+  // case also decrypts them. That is seconds of CPU (1.3-5.2 s measured), so vitest's 5 s default made them fail
+  // whenever the machine was busy (5088 ms in a full gate on 30-oct; reproduced on one shared core). They get a budget
+  // that fits their work instead.
+  const KEYSTORE_CASE_TIMEOUT_MS = 60_000;
+
   it("ensureDevAccounts provisions all five identities under the workspace", async () => {
     const workspace = mkTmpWorkspace();
     await ensureDevAccounts(workspace);
@@ -132,7 +138,7 @@ describe("Wave 4 · DEF-27 · deterministic identity invariant", () => {
     expect(files).toEqual(
       NAMES.map((n) => `${n}.json`).slice().sort()
     );
-  });
+  }, KEYSTORE_CASE_TIMEOUT_MS);
 
   it("advertised === derived === keystore for every identity (private key never exposed)", async () => {
     const workspace = mkTmpWorkspace();
@@ -170,5 +176,5 @@ describe("Wave 4 · DEF-27 · deterministic identity invariant", () => {
       expect(typeof unlocked.payload!.privateKey).toBe("string");
       expect(unlocked.payload!.privateKey!.length).toBeGreaterThan(0);
     }
-  });
+  }, KEYSTORE_CASE_TIMEOUT_MS);
 });

@@ -79,6 +79,9 @@
     "typescript": "^5.7.2",
     "vitest": "^2.1.8"
   },
+  "engines": {
+    "node": "24.22.1"
+  },
   "license": "MIT",
   "author": "Javier Rodriguez",
   "repository": {

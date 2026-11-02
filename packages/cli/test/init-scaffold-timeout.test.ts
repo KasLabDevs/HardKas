@@ -5,7 +5,8 @@ import { makeConsumerDir, removeConsumerDir, runCli, type ConsumerDir } from "./
 
 // The test `hardkas init` scaffolds runs a whole payment flow: measured on 1-nov-2026 at ~3.1 s on an idle machine and
 // 7.6-7.9 s with every CPU busy (l2fix-evidence\28-stage5-7\first-contact-timing.txt), so vitest's 5 s default failed
-// it on a loaded machine (seen in a full gate). The generated config gives it room; the scenario itself is unchanged.
+// it on a loaded machine (seen in a full gate). The generated config gives it room, and the scaffolded scenario also
+// passes its own 30 s budget (`scenario`'s last argument): either one alone covers it. This test checks the config.
 
 let consumer: ConsumerDir | undefined;
 afterEach(() => {

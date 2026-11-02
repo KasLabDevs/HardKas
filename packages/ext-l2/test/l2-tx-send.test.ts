@@ -1,4 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, beforeAll, afterAll } from "vitest";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import { keccak256 } from "viem";
 import {
   runL2TxSend,
@@ -47,6 +50,20 @@ vi.mock("@hardkas/artifacts", async (importOriginal) => {
 const LOCAL_URL = "http://127.0.0.1:8545";
 
 describe("Igra L2 Transaction Runners", () => {
+  // REMED-CLOSE · test isolation: `l2 tx send` creates .hardkas/l2-receipts under the process's working directory; this
+  // file runs in a temporary one of its own, never the repository root.
+  let cwdBefore = "";
+  let isolatedCwd = "";
+  beforeAll(() => {
+    cwdBefore = process.cwd();
+    isolatedCwd = fs.mkdtempSync(path.join(os.tmpdir(), "hk-l2-tx-send-"));
+    process.chdir(isolatedCwd);
+  });
+  afterAll(() => {
+    process.chdir(cwdBefore);
+    fs.rmSync(isolatedCwd, { recursive: true, force: true });
+  });
+
   const mockHash = "0x" + "a".repeat(64);
   let raw: `0x${string}`;
   let validSigned: any;

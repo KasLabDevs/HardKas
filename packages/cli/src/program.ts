@@ -40,6 +40,7 @@ import { registerWhyCommand } from "./commands/why.js";
 import { registerCiCommand } from "./commands/ci.js";
 import { registerSandboxCommand } from "./commands/sandbox.js";
 import { registerSilverCommand } from "./commands/silver.js";
+import { registerKccCommands } from "./commands/kcc.js";
 import { registerEscrowCommands } from "./commands/escrow.js";
 import { registerCorpusCommands } from "./commands/corpus.js";
 import { registerZkCommands } from "./commands/zk.js";
@@ -138,6 +139,7 @@ export function buildHardkasProgram(options?: {
   registerCiCommand(program);
   registerSandboxCommand(program);
   registerSilverCommand(program);
+  registerKccCommands(program);
   registerEscrowCommands(program);
   registerCorpusCommands(program);
   registerZkCommands(program);

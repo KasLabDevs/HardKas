@@ -141,24 +141,16 @@ export async function runDoctorChecks(
   };
 
   // --- 1. Runtime Checks ---
-  const nodeVer = process.version;
-  const nodeMajor = parseInt(nodeVer.slice(1).split(".")[0]!);
-  if (nodeMajor >= 18) {
-    addCheck({
-      name: "Node.js version",
-      category: "runtime",
-      status: "pass",
-      message: `${nodeVer} (>= 18 required)`
-    });
-  } else {
-    addCheck({
-      name: "Node.js version",
-      category: "runtime",
-      status: "fail",
-      message: `${nodeVer} (>= 18 required)`,
-      suggestion: "Upgrade Node.js to v18 or higher."
-    });
-  }
+  // I-07: judged against the supported runtime the packages' engines pin, not an older floor of the doctor's own
+  const { nodeVersionVerdict, SUPPORTED_NODE_VERSION } = await import("../node-policy.js");
+  const nodeVerdict = nodeVersionVerdict(process.version);
+  addCheck({
+    name: "Node.js version",
+    category: "runtime",
+    status: nodeVerdict.status,
+    message: nodeVerdict.message,
+    ...(nodeVerdict.status === "pass" ? {} : { suggestion: `Use Node.js ${SUPPORTED_NODE_VERSION}, the only supported runtime.` })
+  });
 
   try {
     const { stdout } = await execa("pnpm", ["-v"]);
@@ -591,7 +583,16 @@ export async function runDoctorChecks(
     const profile = report.deployProfile
       ? `; deployment profile (informational): ${report.deployProfile.missing.length ? `${report.deployProfile.missing.join(", ")} not set` : "complete"}`
       : "";
-    if (report.unknown.length === 0) {
+    if (report.unknown.length === 0 && report.warnings.length > 0) {
+      // R-08: known variables whose value relaxes a safety policy for every command are a warning, not a pass
+      addCheck({
+        name: "HARDKAS_* environment",
+        category: "env",
+        status: "warn",
+        message: `Every HARDKAS_* variable set is one HardKAS reads; relaxes a policy: ${report.warnings.map((w) => `${w.name} (${w.message})`).join("; ")}${profile}`,
+        suggestion: "Unset the variable and use the per-command option where one exists (silver: --allow-unverified-runner)."
+      });
+    } else if (report.unknown.length === 0) {
       addCheck({
         name: "HARDKAS_* environment",
         category: "env",

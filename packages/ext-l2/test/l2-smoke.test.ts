@@ -1,4 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, beforeAll, afterAll } from "vitest";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import { runL2Networks } from "../src/runners/l2-networks-runner.js";
 import { runL2ProfileShow } from "../src/runners/l2-profile-show-runner.js";
 import { runL2ProfileValidate } from "../src/runners/l2-profile-validate-runner.js";
@@ -134,6 +137,19 @@ vi.mock("@hardkas/artifacts", async (importOriginal) => {
 
 describe("Igra L2 Smoke Tests (Mocked)", () => {
   let consoleSpy: any;
+  // REMED-CLOSE · test isolation: `l2 tx send` creates .hardkas/l2-receipts under the process's working directory; this
+  // file runs in a temporary one of its own, never the repository root.
+  let cwdBefore = "";
+  let isolatedCwd = "";
+  beforeAll(() => {
+    cwdBefore = process.cwd();
+    isolatedCwd = fs.mkdtempSync(path.join(os.tmpdir(), "hk-l2-smoke-"));
+    process.chdir(isolatedCwd);
+  });
+  afterAll(() => {
+    process.chdir(cwdBefore);
+    fs.rmSync(isolatedCwd, { recursive: true, force: true });
+  });
 
   beforeEach(() => {
     vi.clearAllMocks();

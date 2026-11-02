@@ -2139,6 +2139,202 @@ hardkas kaspa wallet send [options] <from> <to>
 
 ---
 
+## hardkas kcc
+
+KCC-1 covenant ABI and KCC-2 authority schemes (kaspanet/kccs, Final), off chain experimental
+
+### Usage
+
+```bash
+hardkas kcc [options] [command]
+```
+
+### Options
+
+No options.
+
+### Arguments
+
+No arguments.
+
+### Subcommands
+
+- [hardkas kcc dispatch](#hardkas-kcc-dispatch)
+- [hardkas kcc template-hash](#hardkas-kcc-template-hash)
+
+---
+
+## hardkas kcc dispatch
+
+The KCC-1 dispatch tag of a function signature written with dispatch type names, e.g. 'transfer({int,byte[32],byte,byte,byte[32],byte[32]}[],byte[])': Hash(UTF8(signature))[0:4]
+
+### Usage
+
+```bash
+hardkas kcc dispatch [options] <signature>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `signature` |  |
+
+---
+
+## hardkas kcc template-hash
+
+The KCC-1 template hash Hash(LE64(len(prefix)) || prefix || LE64(len(suffix)) || suffix) of a template
+
+### Usage
+
+```bash
+hardkas kcc template-hash [options]
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--prefix <hex>` | Template prefix (hex; empty is '') |  |
+| `--suffix <hex>` | Template suffix (hex; empty is '') |  |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+No arguments.
+
+---
+
+## hardkas kcc20
+
+KCC-20 fungible tokens on L1 covenants (kaspanet/kccs, Final), off chain: state codec, transfer checks, program artifacts experimental. Not KRC-20
+
+### Usage
+
+```bash
+hardkas kcc20 [options] [command]
+```
+
+### Options
+
+No options.
+
+### Arguments
+
+No arguments.
+
+### Subcommands
+
+- [hardkas kcc20 artifact](#hardkas-kcc20-artifact)
+- [hardkas kcc20 check](#hardkas-kcc20-check)
+- [hardkas kcc20 decode-state](#hardkas-kcc20-decode-state)
+- [hardkas kcc20 encode-state](#hardkas-kcc20-encode-state)
+
+---
+
+## hardkas kcc20 artifact
+
+Read a KCC-20 program artifact (kcc20.json: program, entrypoints, owner_schemes, max_token_inputs, max_token_outputs) and print its configuration and KCC-1 dispatch tags. Exit codes: 0 valid; 2 invalid
+
+### Usage
+
+```bash
+hardkas kcc20 artifact [options] <file>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `file` |  |
+
+---
+
+## hardkas kcc20 check
+
+Check a KCC-20 transfer off chain against the leader's rules: inputs (leader first, with state, kasValueSompi, witness), nextStates, outputs (state, kasValueSompi), optional transactionInputs and config (a kcc20.json). Signatures are listed, never verified; continuation programs, covenant bindings and each input's entrypoint are not checked, and the input states and their order are taken as given (the token's program checks them on chain). Exit codes: 0 STRUCTURALLY_VALID; 1 REJECTED (KCC20_TRANSFER_REJECTED); 2 usage
+
+### Usage
+
+```bash
+hardkas kcc20 check [options] <transfer>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `transfer` |  |
+
+---
+
+## hardkas kcc20 decode-state
+
+Decode a 112-byte KCC20State encoding strictly (KCC-1 §3.7.1) and report any KCC-20 rule the state breaks. Exit codes: 0 decoded; 2 not a canonical KCC20State encoding
+
+### Usage
+
+```bash
+hardkas kcc20 decode-state [options] <hex>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `hex` |  |
+
+---
+
+## hardkas kcc20 encode-state
+
+Encode a KCC20State (JSON file or inline: amount, owner, ownerScheme, borrowScheme, borrowGuard, extensionCommitment) as its 112-byte KCC-1 state encoding. Exit codes: 0 encoded; 2 an invalid state
+
+### Usage
+
+```bash
+hardkas kcc20 encode-state [options] <state>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `state` |  |
+
+---
+
 ## hardkas localnet
 
 Manage localnet state and snapshots
@@ -4427,15 +4623,45 @@ No arguments.
 
 ### Subcommands
 
+- [hardkas silver audit](#hardkas-silver-audit)
 - [hardkas silver compile](#hardkas-silver-compile)
 - [hardkas silver covenant](#hardkas-silver-covenant)
+- [hardkas silver debug](#hardkas-silver-debug)
 - [hardkas silver deploy](#hardkas-silver-deploy)
 - [hardkas silver doctor](#hardkas-silver-doctor)
 - [hardkas silver engine](#hardkas-silver-engine)
+- [hardkas silver fuzz](#hardkas-silver-fuzz)
 - [hardkas silver inspect](#hardkas-silver-inspect)
+- [hardkas silver preflight](#hardkas-silver-preflight)
 - [hardkas silver spend](#hardkas-silver-spend)
 - [hardkas silver test](#hardkas-silver-test)
 - [hardkas silver verify](#hardkas-silver-verify)
+
+---
+
+## hardkas silver audit
+
+Run static security analysis over a SilverScript (.sil) contract or compile record (heuristic AST and source-text rules COV-AUTH-001..COV-BUDGET-001: findings to review, not a proof of security). Exit codes: 0 report written; 1 HIGH findings with --fail-on-high (SILVER_AUDIT_HIGH_FINDINGS); 2 usage (file not found, not a compile record); 4 tampered compile record
+
+### Usage
+
+```bash
+hardkas silver audit [options] <source-or-record>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--args <file>` | Optional constructor arguments JSON file |  |
+| `--fail-on-high` | Exit with non-zero code if any HIGH severity finding is detected | false |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `source-or-record` |  |
 
 ---
 
@@ -4586,6 +4812,40 @@ hardkas silver covenant transition [options] <covenant-record>
 | Argument | Description |
 | :--- | :--- |
 | `covenant-record` |  |
+
+---
+
+## hardkas silver debug
+
+Execute a covenant transition on the SilverScript runner (cli-debugger: a local build, no official binary exists) after the structural v1 validation, and emit source-mapped step traces, variable state and three verdicts (structural, SCRIPT_VM, global). Exit codes: 0 APPROVED (or any rejection with --allow-failure); 1 rejected (SILVER_DEBUG_STRUCTURAL_REJECTED, SILVER_DEBUG_CONTRACT_REJECTED) or a runner that gave no verdict (SILVER_RUNNER_NOT_FOUND, _START_FAILED, _TIMEOUT, _PROTOCOL_ERROR or _INTERNAL_ERROR); 2 usage; 3 runner refused by the trust policy (SILVER_RUNNER_UNVERIFIED); 4 tampered compile record
+
+### Usage
+
+```bash
+hardkas silver debug [options] <source-or-record>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--entry <name>` | Covenant policy or entrypoint name (e.g. bump) |  |
+| `--constructor-args <file>` | Constructor arguments JSON file |  |
+| `--args <json-or-file>` | Entry arguments JSON array or file path |  |
+| `--state <json-or-file>` | Current covenant state JSON object or file path |  |
+| `--next-state <json-or-file>` | Successor covenant state JSON object or file path |  |
+| `--demo-fixture` | Allow generated laboratory fixture parameters and synthetic UTXO when explicit transaction arguments are omitted | false |
+| `--fee <sompi>` | Fee in sompi (default: 300000) |  |
+| `--compute-budget <n>` | Compute budget or 'estimate' (default: estimate) |  |
+| `--allow-failure` | Return exit code 0 when the transition is rejected (structural validation or SCRIPT_VM), for interactive inspection; the verdicts are unchanged | false |
+| `--allow-unverified-runner` | Run a SilverScript runner (cli-debugger) that is not verified against a trusted reference. Upstream publishes no runner binary, so today every runner is an UNVERIFIED local build: without this flag none is executed. Its verdicts are labelled UNVERIFIED, never official | false |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `source-or-record` |  |
 
 ---
 
@@ -4858,6 +5118,36 @@ hardkas silver engine sign [options] <plan>
 
 ---
 
+## hardkas silver fuzz
+
+Run bidirectional property-based fuzzing over a counter covenant transition: SCRIPT_VM checks the counter rule (accepted iff delta > 0 and next = previous + delta) on the SilverScript runner; SYNTHETIC checks the structural compute-budget bounds. Exit codes: 0 FUZZ PASS; 1 counterexample (SILVER_FUZZ_FAILED), too few samples of one direction (SILVER_FUZZ_INSUFFICIENT_COVERAGE), a sample without a VM verdict (SILVER_FUZZ_NO_VM_EVIDENCE), a testbed error (SILVER_FUZZ_EVALUATION_ERROR), a runner that gave no verdict (SILVER_RUNNER_NOT_FOUND, _START_FAILED, _TIMEOUT, _PROTOCOL_ERROR or _INTERNAL_ERROR) or one that changed during the run (SILVER_RUNNER_CHANGED); 2 usage (SILVER_OPTION_INVALID, SILVER_FUZZ_SHAPE_UNSUPPORTED); 3 runner refused by the trust policy (SILVER_RUNNER_UNVERIFIED); 4 tampered compile record
+
+### Usage
+
+```bash
+hardkas silver fuzz [options] <source-or-record>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--entry <name>` | Covenant entrypoint name: it must take (State, int delta, sig) over a state of one int field | bump |
+| `--constructor-args <file>` | Constructor arguments JSON file |  |
+| `--runs <n>` | Generated samples (1-10000), run after the boundary samples that every run includes | 10 |
+| `--seed <n>` | Deterministic RNG seed (32-bit integer) | 20261029 |
+| `--backend <backend>` | SCRIPT_VM: the counter rule on the SilverScript runner; SYNTHETIC: the structural compute-budget bounds (no contract logic is judged without the VM) | SCRIPT_VM |
+| `--allow-unverified-runner` | Run a SilverScript runner (cli-debugger) that is not verified against a trusted reference. Upstream publishes no runner binary, so today every runner is an UNVERIFIED local build: without this flag none is executed. Its verdicts are labelled UNVERIFIED, never official | false |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `source-or-record` |  |
+
+---
+
 ## hardkas silver inspect
 
 Show a SilverScript v1 compile record
@@ -4879,6 +5169,40 @@ hardkas silver inspect [options] <record>
 | Argument | Description |
 | :--- | :--- |
 | `record` |  |
+
+---
+
+## hardkas silver preflight
+
+Run v1 covenant transition preflight on a generated local testbed UTXO (STRUCTURAL_PREFLIGHT, plus SCRIPT_VM_PREFLIGHT on the SilverScript runner) reporting mass, compute budget and both verdicts; never a node's acceptance. Exit codes: 0 PREFLIGHT PASS; 1 PREFLIGHT FAIL (structural or SCRIPT_VM rejection: SILVER_PREFLIGHT_FAILED) or a runner that gave no verdict (SILVER_RUNNER_NOT_FOUND, _START_FAILED, _TIMEOUT, _PROTOCOL_ERROR or _INTERNAL_ERROR); 2 usage; 3 runner refused by the trust policy (SILVER_RUNNER_UNVERIFIED); 4 tampered compile record
+
+### Usage
+
+```bash
+hardkas silver preflight [options] <source-or-record>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--entry <name>` | Covenant policy or entrypoint name (e.g. bump) |  |
+| `--constructor-args <file>` | Constructor arguments JSON file |  |
+| `--args <json-or-file>` | Entry arguments JSON array or file path |  |
+| `--state <json-or-file>` | Current covenant state JSON object or file path |  |
+| `--next-state <json-or-file>` | Successor covenant state JSON object or file path |  |
+| `--demo-fixture` | Allow generated laboratory fixture parameters and synthetic UTXO when explicit transaction arguments are omitted | false |
+| `--fee <sompi>` | Fee in sompi (default: 300000) |  |
+| `--compute-budget <n>` | Compute budget or 'estimate' (default: estimate) |  |
+| `--level <level>` | Preflight level: STRUCTURAL_PREFLIGHT or SCRIPT_VM_PREFLIGHT | SCRIPT_VM_PREFLIGHT |
+| `--allow-unverified-runner` | Run a SilverScript runner (cli-debugger) that is not verified against a trusted reference. Upstream publishes no runner binary, so today every runner is an UNVERIFIED local build: without this flag none is executed. Its verdicts are labelled UNVERIFIED, never official | false |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `source-or-record` |  |
 
 ---
 
@@ -4920,7 +5244,7 @@ hardkas silver spend [options] <deploy-record>
 
 ## hardkas silver test
 
-Run a compiled contract's tests on the official SilverScript runner experimental (script engine on scenario transactions; not transaction validity)
+Run a compiled contract's tests on the SilverScript runner (cli-debugger) experimental (script engine on scenario transactions; not transaction validity). Exit codes: 0 every test passed; 1 a test failed (SILVER_TEST_FAILED) or the runner gave no verdict (SILVER_RUNNER_FAILED, _START_FAILED, _CHANGED, _TIMEOUT, _OUTPUT_UNRECOGNIZED, _PROTOCOL_ERROR or _INTERNAL_ERROR); 2 usage; 3 runner refused by the trust policy (SILVER_RUNNER_UNVERIFIED); 4 tampered compile record
 
 ### Usage
 
@@ -4935,7 +5259,8 @@ hardkas silver test [options] <record>
 | `--tests <file>` | Runner test file (.test.json); a sig argument may be {"signature":"<account>"} |  |
 | `--args <file>` | The constructor arguments the record was compiled with |  |
 | `--contract <name>` | Contract, when the artifact has several |  |
-| `--runner <path>` | SilverScript runner (cli-debugger) binary (default: $HARDKAS_SILVER_RUNNER) |  |
+| `--runner <path>` | SilverScript runner (cli-debugger) binary (default: $HARDKAS_SILVER_RUNNER, else <HARDKAS_HOME>/toolchains/cli-debugger/1.0.0) |  |
+| `--allow-unverified-runner` | Run a SilverScript runner (cli-debugger) that is not verified against a trusted reference. Upstream publishes no runner binary, so today every runner is an UNVERIFIED local build: without this flag none is executed. Its verdicts are labelled UNVERIFIED, never official | false |
 | `--out <file>` | Record path (default .hardkas/artifacts/silver-vm/) |  |
 | `--password-env <env>` | Read the keystore password of the encrypted account(s) this command signs with from this environment variable (development accounts need none) |  |
 | `--password-stdin` | Read the keystore password of the encrypted account(s) this command signs with from stdin | false |

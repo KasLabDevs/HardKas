@@ -3,7 +3,7 @@
 If you want to dive straight into code, this is your path. HardKAS allows you to build Kaspa applications completely locally before you ever touch a testnet.
 
 ## Prerequisites
-- Node.js >= 22.5.0
+- Node.js 24.22.1
 - pnpm >= 9.0
 
 ## The 3 Steps

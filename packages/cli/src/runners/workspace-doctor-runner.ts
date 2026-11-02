@@ -49,24 +49,21 @@ export async function collectWorkspaceDoctorChecks(options: {
   let finalStatus: WorkspaceDoctorStatus = "ready";
 
   // 1. Node Version Check
+  // I-07: the supported runtime the packages' engines pin (exactly), not an older floor of this command's own
+  const { nodeVersionVerdict, SUPPORTED_NODE_VERSION } = await import("../node-policy.js");
   const nodeVer = process.version;
-  const nodeMajor = parseInt(nodeVer.replace("v", "").split(".")[0]!, 10);
-  const nodeMinor = parseInt(nodeVer.replace("v", "").split(".")[1]!, 10);
-  if (options.release) {
-    if (nodeMajor < 22 || (nodeMajor === 22 && nodeMinor < 5)) {
-      checks.push({
-        name: "Node.js Version",
-        status: "error",
-        message: `Requires >= 22.5.0, found ${nodeVer}`,
-        code: "NODE_VERSION_MISMATCH",
-        suggestion: "Upgrade Node.js to >= 22.5.0"
-      });
-      finalStatus = "failed";
-    } else {
-      checks.push({ name: "Node.js Version", status: "success", message: nodeVer });
-    }
+  const verdict = nodeVersionVerdict(nodeVer);
+  if (options.release && verdict.status !== "pass") {
+    checks.push({
+      name: "Node.js Version",
+      status: "error",
+      message: `Requires Node.js ${SUPPORTED_NODE_VERSION}, found ${nodeVer}`,
+      code: "NODE_VERSION_MISMATCH",
+      suggestion: `Use Node.js ${SUPPORTED_NODE_VERSION}, the only supported runtime`
+    });
+    finalStatus = "failed";
   } else {
-    checks.push({ name: "Node.js Version", status: "success", message: nodeVer });
+    checks.push({ name: "Node.js Version", status: "success", message: verdict.status === "pass" ? nodeVer : `${nodeVer} (${verdict.message})` });
   }
 
   let config: any = null;

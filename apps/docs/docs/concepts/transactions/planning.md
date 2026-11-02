@@ -39,7 +39,7 @@ When inspecting a `TxPlanArtifact`, the `provenance.plannerAuthority` field decl
 
 ## Coin Selection
 
-The Generator takes the UTXOs in the order their source lists them (the node, or the Simulator state); HardKAS adds no selection policy of its own. The same UTXOs in the same order give the same plan on every surface.
+The Generator selects the inputs, taking the UTXOs in the order their source lists them; HardKAS adds no selection policy of its own. The Simulator lists its UTXOs in its own ledger order. HardKAS reads a real network's spendable UTXOs in one canonical order (by outpoint). A node lists an address's UTXOs in hash-map order, which changes from one call to the next on the same state, so the same state used to give different plans. Now the same UTXOs always give the same plan on every surface, and two plans for different amounts over one state share their first input.
 
 ## The `TxPlanArtifact`
 

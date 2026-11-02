@@ -1109,15 +1109,19 @@ export const SilverCovenantV1Schema = SilverOnChainSchema.extend({
   computeBudget: z.number().int().nonnegative()
 }).passthrough();
 
-// `hardkas silver test`: the official SilverScript runner's verdicts on synthetic
+// `hardkas silver test`: the SilverScript runner's verdicts on synthetic
 // scenario transactions. Contract execution only, never transaction validity or
 // node evidence: its mode is "vm", never "localnet", and it claims no capability.
 // The runner's output can print argument values, so results carry its digest.
+// F3 (H-B4): "official-vm-scenario" only from a VERIFIED runner; a run of an
+// UNVERIFIED local build (today every runner) is "unverified-vm-scenario", with
+// runner.trust "UNVERIFIED". Records written before runner.trust existed carry no
+// trust and were all UNVERIFIED runs.
 export const SilverVmTestV1Schema = BaseArtifactSchema.omit({ mode: true }).extend({
   schema: z.literal(HardkasSchemas.SilverVmTestV1),
   mode: z.literal("vm"),
   networkId: z.literal("simnet"),
-  evidence: z.literal("official-vm-scenario"),
+  evidence: z.enum(["official-vm-scenario", "unverified-vm-scenario"]),
   scope: z.string(),
   compileRecord: SilverRecordRefSchema,
   contract: z.string(),
@@ -1125,6 +1129,10 @@ export const SilverVmTestV1Schema = BaseArtifactSchema.omit({ mode: true }).exte
     binarySha256: Hex64,
     size: z.number().int().positive(),
     provenance: z.literal("unmanaged-local-build"),
+    trust: z.enum(["VERIFIED", "UNVERIFIED"]).optional(),
+    // R-08: where the runner was found and, for an UNVERIFIED one, which opt-in let it run (records since R-08)
+    source: z.enum(["explicit-path", "env", "home-toolchains"]).optional(),
+    trustOptIn: z.enum(["flag", "environment"]).optional(),
     expectedSource: z.object({ repository: z.string(), releaseTag: z.string(), commit: z.string(), package: z.literal("cli-debugger") })
   }),
   testFile: z.object({ path: z.string(), sha256: Hex64 }),

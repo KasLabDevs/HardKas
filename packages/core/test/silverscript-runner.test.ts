@@ -80,8 +80,13 @@ describe("silverRunnerValue", () => {
     expect(silverRunnerValue({ kind: "bytes", value: [0xab, 0x01] })).toBe("0xab01");
     expect(silverRunnerValue({ kind: "bytes", value: [] })).toBe("0x");
     expect(silverRunnerValue({ kind: "text", value: "hello" })).toBe("hello");
-    expect(silverRunnerValue({ kind: "array", value: [{ kind: "int", value: 1 }, { kind: "int", value: 2 }] })).toEqual(["1", "2"]);
-    expect(silverRunnerValue({ kind: "object", value: { b: { kind: "bool", value: true }, a: { kind: "int", value: 3 } } })).toEqual({ a: "3", b: "true" });
+    // N-12 · inside an array or a struct the runner reads JSON (debugger-session args.rs parse_artifact_json_value): an int
+    // is an exact JSON integer and a byte a JSON number; a string there is refused ("expected int, got \"1\"")
+    expect(JSON.stringify(silverRunnerValue({ kind: "array", value: [{ kind: "int", value: 1 }, { kind: "int", value: 2 }] }))).toBe("[1,2]");
+    expect(JSON.stringify(silverRunnerValue({ kind: "object", value: { b: { kind: "bool", value: true }, a: { kind: "int", value: 3 } } }))).toBe('{"a":3,"b":"true"}');
+    expect(JSON.stringify(silverRunnerValue({ kind: "array", value: [{ kind: "int", value: 2n ** 63n - 1n }, { kind: "int", value: -(2n ** 62n) }] }))).toBe("[9223372036854775807,-4611686018427387904]");
+    expect(JSON.stringify(silverRunnerValue({ kind: "object", value: { s: { kind: "byte", value: 1 }, k: { kind: "bytes", value: [0xab] } } }))).toBe('{"k":"0xab","s":1}');
+    expect(() => silverRunnerValue({ kind: "array", value: [{ kind: "int", value: 2n ** 63n }] })).toThrow(/SILVER_TEST_VALUE_UNREPRESENTABLE/);
   });
 
   it("refuses text the runner would read as something else", () => {
@@ -177,7 +182,12 @@ if (!a.includes("--run")) process.exit(9);
 console.log("given " + createHash("sha256").update(fs.readFileSync(file)).digest("hex") + " " + fs.readFileSync(source, "utf8").length);
 if (name === "passes") console.log("PASS");
 else if (name === "fails-as-expected") console.log("PASS (expected failure)");
-else if (name === "fails") { console.error("error: script ran, but verification failed"); process.exit(1); }
+// the real runner (debugger/cli/src/main.rs) reports a failed test and then returns Err("FAIL"): Error: "FAIL", exit 1
+else if (name === "fails") { console.error("error: script ran, but verification failed"); console.error('Error: "FAIL"'); process.exit(1); }
+else if (name === "passes-unexpectedly") { console.error("FAIL: expected failure but bytecode passed"); console.error('Error: "FAIL"'); process.exit(1); }
+else if (name === "usage-error") { console.error("usage: cli-debugger [OPTIONS] <FILE>"); process.exit(1); }
+else if (name === "own-error") { console.error('Error: Os { code: 2, kind: NotFound, message: "The system cannot find the file specified." }'); process.exit(1); }
+else if (name === "panics") { console.error("thread 'main' panicked at debugger/cli/src/main.rs:1:1:"); process.exit(101); }
 else if (name === "silent") process.exit(0);
 else if (name === "hangs") setTimeout(() => {}, 60000);
 `
@@ -204,5 +214,18 @@ else if (name === "hangs") setTimeout(() => {}, 60000);
     expect(await code(prepared(["hangs"]).then((p) => runSilverVmTests({ runner, source: "x", prepared: p, timeoutMs: 1500 })))).toBe("SILVER_RUNNER_TIMEOUT");
     const missing = { ...runner, path: path.join(temp, "no-such-runner.exe"), prefixArgs: [] };
     expect(await code(prepared(["passes"]).then((p) => runSilverVmTests({ runner: missing, source: "x", prepared: p })))).toBe("SILVER_RUNNER_FAILED");
+  });
+
+  // F3 (H-B4) · `silver test` reads the runner's verdicts with the same rule as the framework (R-05): a failed test is the
+  // runner's failure report or expectation report ending in Error: "FAIL"; any other exit is not a verdict on the contract.
+  it("counts a test as failed only on the runner's own report; an expectation mismatch is a failure too", async () => {
+    const results = await runSilverVmTests({ runner, source: "x", prepared: await prepared(["passes-unexpectedly"]) });
+    expect(results.map((r) => [r.name, r.outcome, r.exitCode])).toEqual([["passes-unexpectedly", "FAIL", 1]]);
+  });
+
+  it("treats an exit that is not the runner's verdict as an error, never as a failed test", async () => {
+    expect(await code(prepared(["usage-error"]).then((p) => runSilverVmTests({ runner, source: "x", prepared: p })))).toBe("SILVER_RUNNER_PROTOCOL_ERROR");
+    expect(await code(prepared(["own-error"]).then((p) => runSilverVmTests({ runner, source: "x", prepared: p })))).toBe("SILVER_RUNNER_INTERNAL_ERROR");
+    expect(await code(prepared(["panics"]).then((p) => runSilverVmTests({ runner, source: "x", prepared: p })))).toBe("SILVER_RUNNER_INTERNAL_ERROR");
   });
 });

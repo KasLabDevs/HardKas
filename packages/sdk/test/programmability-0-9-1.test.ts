@@ -1,22 +1,25 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, beforeEach, afterEach } from "vitest";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { Hardkas, HardkasProgrammability } from "../src/index.js";
 
-function repoRoot(): string {
-  let current = path.dirname(fileURLToPath(import.meta.url));
-  while (current !== path.dirname(current)) {
-    if (fs.existsSync(path.join(current, "pnpm-workspace.yaml"))) return current;
-    current = path.dirname(current);
-  }
-  throw new Error("repo root not found");
-}
-
 describe("0.13.0-rc.1 programmability SDK surface", () => {
+  // REMED-CLOSE · test isolation: an SDK opened with autoBootstrap writes its workspace state (.hardkas); these surfaces
+  // read nothing from the workspace, so each test gets an empty temporary one, never the repository root
+  let workspaceRoot = "";
+
+  beforeEach(() => {
+    workspaceRoot = fs.mkdtempSync(path.join(os.tmpdir(), "hk-sdk-programmability-"));
+  });
+
+  afterEach(() => {
+    fs.rmSync(workspaceRoot, { recursive: true, force: true });
+  });
+
   it("reports builder-ready programmability capabilities", async () => {
     const sdk = await Hardkas.create({
-      cwd: repoRoot(),
+      cwd: workspaceRoot,
       network: "simulated",
       autoBootstrap: true
     });
@@ -42,7 +45,7 @@ describe("0.13.0-rc.1 programmability SDK surface", () => {
 
   it("plans builder apps without runtime claims", async () => {
     const sdk = await Hardkas.create({
-      cwd: repoRoot(),
+      cwd: workspaceRoot,
       network: "simulated",
       autoBootstrap: true
     });

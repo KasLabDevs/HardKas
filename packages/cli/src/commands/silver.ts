@@ -7,6 +7,7 @@ import { getOutput } from "../output.js";
 import { HardkasCliError, HardkasExitCode } from "../cli-errors.js";
 import { UI } from "../ui.js";
 import { stripBom } from "@hardkas/core";
+import { ALLOW_UNVERIFIED_RUNNER_HELP, exactValuesText, readExactJson, readExactValuesJson, registerSilverDevFrameworkCommands } from "./silver-dev-framework.js";
 
 /**
  * `hardkas silver` — SilverScript v1 through upstream authorities only.
@@ -35,6 +36,11 @@ const NETWORK = "simnet";
 const VM_SCOPE =
   "Official SilverScript runner (Kaspa script engine) on synthetic scenario transactions, with the runner's own compilation " +
   "and argument encoding: contract execution only. Not transaction validity, not node or consensus evidence.";
+// F3 (H-B4): a runner that is not VERIFIED (today every runner: upstream publishes no binary) never makes an official record
+const VM_SCOPE_UNVERIFIED =
+  "UNVERIFIED local build of the SilverScript runner (Kaspa script engine; upstream publishes no runner binary) on synthetic " +
+  "scenario transactions, with the runner's own compilation and argument encoding: contract execution only, not an official " +
+  "verification. Not transaction validity, not node or consensus evidence.";
 
 const sha256 = (data: Uint8Array | string) => createHash("sha256").update(data).digest("hex");
 const out = () => getOutput();
@@ -309,7 +315,8 @@ async function engineEntryArgs(file: string | undefined, keys: KeySource, params
   const signers: Record<string, string> = {};
   if (!file) return { args: [] as any[], accounts, signers };
   const text = readFileOrFail(file, "arguments file").toString("utf8");
-  const raw = JSON.parse(stripBom(text));
+  // ISSUE-ONCHAIN-JSON-PRECISION-1: every number by its literal, never through JSON.parse's double
+  const raw = readExactValuesJson(text, "--args") as any[];
   if (!Array.isArray(raw)) fail("SILVER_ARGS_INVALID", "arguments must be a JSON list", HardkasExitCode.USAGE_ERROR);
   const { parseSilArtifactValuesJson } = await import("@hardkas/core");
   const { silToV1Arg } = await import("@hardkas/accounts");
@@ -485,7 +492,8 @@ function parseKas(amount: string): bigint {
 async function entryArgs(file: string | undefined, keys: KeySource) {
   if (!file) return [];
   const text = readFileOrFail(file, "arguments file").toString("utf8");
-  const raw = JSON.parse(stripBom(text));
+  // ISSUE-ONCHAIN-JSON-PRECISION-1: every number by its literal, never through JSON.parse's double
+  const raw = readExactValuesJson(text, "--args") as any[];
   if (!Array.isArray(raw)) fail("SILVER_ARGS_INVALID", "arguments must be a JSON list", HardkasExitCode.USAGE_ERROR);
   const { parseSilArtifactValuesJson } = await import("@hardkas/core");
   const out: any[] = [];
@@ -501,10 +509,11 @@ async function entryArgs(file: string | undefined, keys: KeySource) {
   return out;
 }
 
-async function argsFromFile(file: string) {
+/** P-1 / N-7: `--args` and `--constructor-args` of develop's commands, by the same rule as the dev-framework commands. */
+async function argsFromFile(file: string, option = "--args") {
   const { parseSilArtifactValuesJson, serializeSilArtifactValues } = await import("@hardkas/core");
   const text = readFileOrFail(file, "constructor-args file").toString("utf8");
-  const values = parseSilArtifactValuesJson(text);
+  const values = parseSilArtifactValuesJson(exactValuesText(stripBom(text), option));
   return { values, canonical: serializeSilArtifactValues(values) };
 }
 
@@ -522,6 +531,7 @@ export function registerSilverCommand(program: Command) {
     .command("silver")
     .description("SilverScript v1: managed silverc v1.0.0, Kaspa SDK scripts, verified canonical node");
 
+  registerSilverDevFrameworkCommands(silver);
   // ---------------------------------------------------------------- doctor
   silver
     .command("doctor")
@@ -535,14 +545,23 @@ export function registerSilverCommand(program: Command) {
       const readiness = await probeSilverReadiness();
       const silverc = readiness.toolchains.silverc;
       const node = { ok: readiness.node.ok, detail: readiness.node.detail };
-      // Optional and experimental: no release binary exists, so it never gates the capabilities above.
-      let runner: { ok: boolean; detail: string };
-      try {
-        const r = core.resolveSilverRunner();
-        runner = { ok: true, detail: `${r.path} sha256 ${r.binarySha256} (unmanaged local build)` };
-      } catch (e: any) {
-        runner = { ok: false, detail: String(e?.code ?? e?.message) };
+      // Optional and experimental: no release binary exists, so it never gates the capabilities above. The runner is found
+      // the way `silver test` finds it; `silver test` is usable only if its trust policy lets it run (F3, R-04).
+      let runner: { ok: boolean; detail: string; trust?: string };
+      const found = core.resolveAvailableSilverRunner(undefined, { trust: "allow-unverified" });
+      const policy = core.silverRunnerTrustPolicy();
+      if (found.available && found.identity) {
+        const i = found.identity;
+        const usable = i.trust === "VERIFIED" || policy === "allow-unverified";
+        runner = {
+          ok: true,
+          trust: i.trust,
+          detail: `${i.path} sha256 ${i.sha256} (${i.trust}, from ${i.source})${usable ? "" : `: runs only with --allow-unverified-runner or ${core.SILVER_RUNNER_TRUST_ENV}=allow-unverified`}`
+        };
+      } else {
+        runner = { ok: false, detail: String(found.message ?? found.reasonCode ?? "SilverScript runner unavailable") };
       }
+      const runnerUsable = runner.ok && (runner.trust === "VERIFIED" || policy === "allow-unverified");
       const report = {
         schema: "hardkas.silverDoctor.v1",
         silverscript: { releaseTag: core.SILVERSCRIPT_RELEASE.releaseTag, languageVersion: core.SILVERSCRIPT_RELEASE.languageVersion },
@@ -551,7 +570,7 @@ export function registerSilverCommand(program: Command) {
         ready: readiness.ready,
         experimental: {
           "silver-runner": runner,
-          "silver test": silverc.ok && readiness.toolchains["kaspa-wasm"].ok && runner.ok
+          "silver test": silverc.ok && readiness.toolchains["kaspa-wasm"].ok && runnerUsable
         }
       };
       if (opts.json) return out().writeJson(report);
@@ -684,11 +703,15 @@ export function registerSilverCommand(program: Command) {
   // ---------------------------------------------------------------- test
   silver
     .command("test <record>")
-    .description(`Run a compiled contract's tests on the official SilverScript runner ${UI.maturity("experimental")} (script engine on scenario transactions; not transaction validity)`)
+    .description(
+      `Run a compiled contract's tests on the SilverScript runner (cli-debugger) ${UI.maturity("experimental")} (script engine on scenario transactions; not transaction validity). ` +
+        "Exit codes: 0 every test passed; 1 a test failed (SILVER_TEST_FAILED) or the runner gave no verdict (SILVER_RUNNER_FAILED, _START_FAILED, _CHANGED, _TIMEOUT, _OUTPUT_UNRECOGNIZED, _PROTOCOL_ERROR or _INTERNAL_ERROR); 2 usage; 3 runner refused by the trust policy (SILVER_RUNNER_UNVERIFIED); 4 tampered compile record"
+    )
     .requiredOption("--tests <file>", 'Runner test file (.test.json); a sig argument may be {"signature":"<account>"}')
     .option("--args <file>", "The constructor arguments the record was compiled with")
     .option("--contract <name>", "Contract, when the artifact has several")
-    .option("--runner <path>", "SilverScript runner (cli-debugger) binary (default: $HARDKAS_SILVER_RUNNER)")
+    .option("--runner <path>", "SilverScript runner (cli-debugger) binary (default: $HARDKAS_SILVER_RUNNER, else <HARDKAS_HOME>/toolchains/cli-debugger/1.0.0)")
+    .option("--allow-unverified-runner", ALLOW_UNVERIFIED_RUNNER_HELP, false)
     .option("--out <file>", "Record path (default .hardkas/artifacts/silver-vm/)")
     .option("--password-env <env>", PASSWORD_ENV_HELP)
     .option("--password-stdin", PASSWORD_STDIN_HELP, false)
@@ -710,14 +733,29 @@ export function registerSilverCommand(program: Command) {
       const testsBytes = readFileOrFail(opts.tests, "test file");
       let tests: unknown;
       try {
-        tests = JSON.parse(stripBom(testsBytes.toString("utf8")));
-      } catch {
+        // N-2: each number by its literal (B-2's rule): 1e3, 1.0000000000000001 or 0.0 are refused, never sent rewritten
+        tests = readExactJson(testsBytes.toString("utf8"), "--tests");
+      } catch (e) {
+        if (e instanceof HardkasCliError) throw e;
         fail("SILVER_TEST_FILE_INVALID", `${opts.tests} is not JSON`, HardkasExitCode.USAGE_ERROR);
       }
-      let runner!: Awaited<ReturnType<typeof core.resolveSilverRunner>>;
+      // F3 (H-B4) · the same runner trust policy as the dev-framework commands (R-04): a runner that is not VERIFIED runs
+      // only under the explicit opt-in, and its record says UNVERIFIED, never official
+      if (opts.runner !== undefined && String(opts.runner).trim() === "") {
+        fail("SILVER_RUNNER_NOT_FOUND", "--runner is empty: name the runner binary, or leave the option out", HardkasExitCode.USAGE_ERROR);
+      }
+      const resolved = core.resolveAvailableSilverRunner(opts.runner, opts.allowUnverifiedRunner ? { trust: "allow-unverified" } : {});
+      if (!resolved.available || !resolved.runner || !resolved.identity) {
+        const message = resolved.message ?? "SilverScript runner (cli-debugger) unavailable";
+        if (resolved.reasonCode === "RUNNER_UNVERIFIED") fail("SILVER_RUNNER_UNVERIFIED", message, HardkasExitCode.POLICY_DENIED);
+        // not configured or not found: a runner the user has to name
+        const code = message.match(/^(SILVER_RUNNER_[A-Z_]+): /)?.[1] ?? "SILVER_RUNNER_NOT_FOUND";
+        fail(code, message.replace(`${code}: `, ""), HardkasExitCode.USAGE_ERROR);
+      }
+      const runner = resolved.runner!;
+      const runnerTrust = resolved.identity!.trust;
       let prepared!: Awaited<ReturnType<typeof core.prepareSilverVmTests>>;
       try {
-        runner = core.resolveSilverRunner(opts.runner);
         prepared = await core.prepareSilverVmTests({
           artifact,
           contractName: opts.contract,
@@ -732,19 +770,36 @@ export function registerSilverCommand(program: Command) {
         }
         throw e;
       }
-      const results = await core.runSilverVmTests({ runner, source: compileRecord.source.text, prepared });
+      let results!: Awaited<ReturnType<typeof core.runSilverVmTests>>;
+      try {
+        results = await core.runSilverVmTests({ runner, source: compileRecord.source.text, prepared });
+      } catch (e: any) {
+        // R-05: a runner that gave no verdict (or whose bytes changed) is a runtime failure, never a failed contract test
+        if (typeof e?.code === "string" && e.code.startsWith("SILVER_RUNNER_")) fail(e.code, String(e.message).replace(`${e.code}: `, ""));
+        throw e;
+      }
       const failed = results.filter((r) => r.outcome === "FAIL").length;
+      const verified = runnerTrust === "VERIFIED";
       const { path: recordPath, record } = await writeRecord(
         {
           schema: S.SilverVmTestV1,
           hardkasVersion: HARDKAS_VERSION,
           createdAt: new Date().toISOString(),
           networkId: NETWORK,
-          evidence: "official-vm-scenario",
-          scope: VM_SCOPE,
+          evidence: verified ? "official-vm-scenario" : "unverified-vm-scenario",
+          scope: verified ? VM_SCOPE : VM_SCOPE_UNVERIFIED,
           compileRecord: { path: relativePath(file), contentHash: compileRecord.contentHash, artifactSha256: compileRecord.provenance.artifactSha256 },
           contract: prepared.contract,
-          runner: { binarySha256: runner.binarySha256, size: runner.size, provenance: runner.provenance, expectedSource: { ...core.SILVER_RUNNER_SOURCE } },
+          runner: {
+            binarySha256: runner.binarySha256,
+            size: runner.size,
+            provenance: runner.provenance,
+            trust: runnerTrust,
+            // R-08: where it was found, and which opt-in let an UNVERIFIED runner start (the per-command flag or the global variable)
+            source: resolved.identity!.source,
+            ...(verified ? {} : { trustOptIn: opts.allowUnverifiedRunner ? ("flag" as const) : ("environment" as const) }),
+            expectedSource: { ...core.SILVER_RUNNER_SOURCE }
+          },
           testFile: { path: relativePath(opts.tests), sha256: sha256(testsBytes) },
           runnerInputSha256: sha256(prepared.runnerTestFile),
           // The runner's output can print argument values: only its digest is recorded.
@@ -766,7 +821,7 @@ export function registerSilverCommand(program: Command) {
         "vm"
       );
       const lines = [
-        `${pc.bold("SilverScript runner")} ${pc.dim(`(experimental; unmanaged local build ${runner.binarySha256.slice(0, 16)}…)`)}`,
+        `${pc.bold("SilverScript runner")} ${pc.dim(`(experimental; ${verified ? "VERIFIED" : "UNVERIFIED unmanaged local build"} ${runner.binarySha256.slice(0, 16)}…)`)}`,
         ...results.flatMap((r) => [
           `  ${r.outcome === "PASS" ? pc.green("PASS") : pc.red("FAIL")}  ${r.name}${r.runnerStatus === "PASS (expected failure)" ? pc.dim("  (expected failure)") : ""}`,
           ...(r.outcome === "FAIL" ? r.stderr.trim().split(/\r?\n/).filter(Boolean).map((l) => pc.dim(`        ${l}`)) : [])
@@ -1112,12 +1167,16 @@ export function registerSilverCommand(program: Command) {
       const prev = await readRecord(file, S.SilverCovenantV1);
       const compileRecord = await readReferencedRecord(prev.compileRecord, S.SilverCompileV1, "the compile record");
       assertOnChainRecordForCanonical(prev, compileRecord, file);
-      const ctor = await argsFromFile(opts.constructorArgs);
+      const ctor = await argsFromFile(opts.constructorArgs, "--constructor-args");
       if (sha256(ctor.canonical) !== compileRecord.provenance.constructorArgsSha256) {
         fail("SILVER_CONSTRUCTOR_ARGS_MISMATCH", "these constructor arguments are not the ones the current state was compiled with", HardkasExitCode.USAGE_ERROR);
       }
       const stateMap = JSON.parse(opts.stateMap);
-      const nextRaw = JSON.parse(stripBom(readFileOrFail(opts.nextState, "next-state file").toString("utf8")));
+      // ISSUE-ONCHAIN-JSON-PRECISION-1: the next state's ints by their literals, never through JSON.parse's double
+      const nextRaw = readExactValuesJson(readFileOrFail(opts.nextState, "next-state file").toString("utf8"), "--next-state") as Record<string, unknown>;
+      if (nextRaw === null || typeof nextRaw !== "object" || Array.isArray(nextRaw)) {
+        fail("SILVER_ARGS_INVALID", "--next-state must be a JSON object of {kind, value} fields", HardkasExitCode.USAGE_ERROR);
+      }
       const nextState = Object.fromEntries(Object.entries(nextRaw).map(([k, v]) => [k, core.parseSilArtifactValuesJson(JSON.stringify([v]))[0]!]));
       const next = await core.compileSilverSuccessor({ source: compileRecord.source.text, constructorArgs: ctor.values, contractName: prev.contract, stateToConstructorArg: stateMap, nextState });
       if (Buffer.from(next.current.artifactBytes).toString("utf8") !== compileRecord.artifactJson) {
@@ -1291,9 +1350,10 @@ export function registerSilverCommand(program: Command) {
       }
       let spec: unknown;
       try {
-        spec = JSON.parse(stripBom(readFileOrFail(specFile, "spec file").toString("utf8")));
+        // ISSUE-ONCHAIN-JSON-PRECISION-1: the spec's arguments and states by their literals (sompi stay decimal strings)
+        spec = readExactValuesJson(readFileOrFail(specFile, "spec file").toString("utf8"), "spec");
       } catch (e: any) {
-        if (e instanceof HardkasCliError) throw e;
+        if (e instanceof HardkasCliError && e.code !== "SILVER_ARGS_INVALID") throw e;
         fail("SILVER_ENGINE_SPEC_INVALID", `${specFile} is not JSON`, HardkasExitCode.USAGE_ERROR);
       }
       const { withSdk } = await import("../runners/with-sdk.js");

@@ -1,4 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, beforeAll, afterAll } from "vitest";
+import fsSync from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import { DockerKaspadRunner } from "../src/docker-kaspad-runner.js";
 import { execa } from "execa";
 import fs from "node:fs/promises";
@@ -33,6 +36,20 @@ vi.mock("@hardkas/kaspa-rpc", () => ({
   checkKaspaRpcHealth: vi.fn().mockResolvedValue({ ready: true }),
   waitForKaspaRpcReady: vi.fn().mockResolvedValue({ ready: true })
 }));
+
+// REMED-CLOSE · test isolation: a runner without `cwd` creates its data directory (.hardkas/kaspad) under the process's
+// working directory; this file runs in a temporary one of its own, never the repository root.
+let cwdBefore = "";
+let isolatedCwd = "";
+beforeAll(() => {
+  cwdBefore = process.cwd();
+  isolatedCwd = fsSync.mkdtempSync(path.join(os.tmpdir(), "hk-pr6-docker-network-"));
+  process.chdir(isolatedCwd);
+});
+afterAll(() => {
+  process.chdir(cwdBefore);
+  fsSync.rmSync(isolatedCwd, { recursive: true, force: true });
+});
 
 describe("PR 6: Docker Runner Hardening", () => {
   beforeEach(() => {

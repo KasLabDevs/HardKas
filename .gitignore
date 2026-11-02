@@ -75,6 +75,9 @@ Thumbs.db
 # SilverScript real-node runners: the golden corpus names them as its generator.
 !/packages/cli/test-gauntlet/real-node/silver-e2e.mjs
 !/packages/cli/test-gauntlet/real-node/run-silver-*.mjs
+# The gauntlet's real-node phase (scripts/toccata-gauntlet.mjs) and the waits it imports.
+!/packages/cli/test-gauntlet/real-node/run-real-node.mjs
+!/packages/cli/test-gauntlet/real-node/real-node-helpers.mjs
 /runs/
 
 # Local generated source/build leftovers

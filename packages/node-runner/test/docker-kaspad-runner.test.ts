@@ -1,4 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, beforeAll, afterAll } from "vitest";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import { DockerKaspadRunner, minerContainerNameFor } from "../src/docker-kaspad-runner";
 import { verifyNodeIdentity } from "../src/identity";
 import { KASPAD_REFERENCE_IMAGE, CANONICAL_LOCALNET, CANONICAL_NODE_EXPECTATION } from "@hardkas/core";
@@ -18,6 +21,20 @@ vi.mock("@hardkas/kaspa-rpc", () => ({
   checkKaspaRpcHealth: vi.fn()
 }));
 vi.mock("node:net");
+
+// REMED-CLOSE · test isolation: a runner without `cwd` creates its data directory (.hardkas/kaspad) under the process's
+// working directory; this file runs in a temporary one of its own, never the repository root.
+let cwdBefore = "";
+let isolatedCwd = "";
+beforeAll(() => {
+  cwdBefore = process.cwd();
+  isolatedCwd = fs.mkdtempSync(path.join(os.tmpdir(), "hk-kaspad-runner-test-"));
+  process.chdir(isolatedCwd);
+});
+afterAll(() => {
+  process.chdir(cwdBefore);
+  fs.rmSync(isolatedCwd, { recursive: true, force: true });
+});
 
 describe("DockerKaspadRunner", () => {
   beforeEach(() => {

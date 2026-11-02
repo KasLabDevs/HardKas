@@ -1,0 +1,18 @@
+pragma silverscript ^0.1.0;
+
+// HardKAS Covenant Dev Framework reference contract:
+// A 1:1 auth-bound covenant counter that also enforces output value preservation
+// (`tx.outputs[out_idx].value >= tx.inputs[this.activeInputIndex].value - max_fee`)
+// so an attacker or authorized caller cannot drain the covenant UTXO's sompi balance.
+contract GuardedVaultCounter(pubkey owner, int init_value, int max_fee) {
+    int value = init_value;
+
+    #[covenant(binding = auth, from = 1, to = 1, mode = transition)]
+    function bump(State prev_state, int delta, sig s) : (State) {
+        require(checkSig(s, owner));
+        require(delta > 0);
+        int out_idx = OpAuthOutputIdx(this.activeInputIndex, 0);
+        require(tx.outputs[out_idx].value >= tx.inputs[this.activeInputIndex].value - max_fee);
+        return(State { value: prev_state.value + delta });
+    }
+}

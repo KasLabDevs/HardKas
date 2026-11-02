@@ -10,7 +10,7 @@
   },
   "homepage": "https://github.com/KasLabDevs/HardKas#readme",
   "engines": {
-    "node": ">=22.5.0"
+    "node": "24.22.1"
   },
   "bugs": {
     "url": "https://github.com/KasLabDevs/HardKas/issues"

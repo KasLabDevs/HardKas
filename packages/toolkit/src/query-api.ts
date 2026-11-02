@@ -11,6 +11,18 @@ export interface QueryResponse<T> {
   pendingSpendEvidence?: PendingSpendEvidence;
 }
 
+/** Outpoint order: transaction id (hex, case-insensitive), then output index as a number. */
+export function compareOutpoints(a: unknown, b: unknown): number {
+  const ka = utxoOutpointKey(a) ?? "";
+  const kb = utxoOutpointKey(b) ?? "";
+  const ia = ka.lastIndexOf(":");
+  const ib = kb.lastIndexOf(":");
+  const ta = ka.slice(0, ia).toLowerCase();
+  const tb = kb.slice(0, ib).toLowerCase();
+  if (ta !== tb) return ta < tb ? -1 : 1;
+  return Number(ka.slice(ia + 1)) - Number(kb.slice(ib + 1));
+}
+
 export class QueryToolkit {
   constructor(
     private readonly rpc: KaspaRpcClient,
@@ -85,8 +97,11 @@ export class QueryToolkit {
       for (const op of observed.outpoints) excluded.add(op);
     }
 
-    // 3. Filter UTXOs
-    const filtered = excluded.size > 0 ? baseUtxos.filter((u) => !excluded.has(utxoOutpointKey(u) ?? "")) : baseUtxos;
+    // 3. Filter UTXOs, then put them in one canonical order (LOCALNET-W2): a node lists an address's UTXOs in hash-map
+    // order, which changes between two calls on the same state, and the planner hands the snapshot to the Generator in the
+    // order given (no selection policy of its own), so the same state planned twice gave two different plans. Ordered by
+    // outpoint, the same state always gives the same snapshot, hence the same plan.
+    const filtered = (excluded.size > 0 ? baseUtxos.filter((u) => !excluded.has(utxoOutpointKey(u) ?? "")) : [...baseUtxos]).sort(compareOutpoints);
     return {
       data: filtered,
       source: utxoRes.source,

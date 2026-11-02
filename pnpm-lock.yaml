@@ -1927,6 +1927,9 @@ importers:
       '@hardkas/tx-builder':
         specifier: workspace:*
         version: link:../tx-builder
+      fast-check:
+        specifier: ^4.8.0
+        version: 4.9.0
     devDependencies:
       execa:
         specifier: ^9.5.2

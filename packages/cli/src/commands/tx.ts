@@ -1036,6 +1036,16 @@ export function registerTxCommands(program: Command) {
           exitCode: HardkasExitCode.USAGE_ERROR
         });
       }
+      // TX-WAIT-TXID-VALIDATION: what is not a txId is a usage error at once, before any connection; it used to wait the
+      // whole timeout and end in TX_WAIT_TIMEOUT
+      const { isTxIdentifier } = await import("../runners/tx-status-runner.js");
+      if (!isTxIdentifier(txId)) {
+        throw new HardkasCliError(
+          "TX_WAIT_USAGE",
+          `'${txId.slice(0, 80)}' is not a txId: a network txId is 64 lowercase hex, a simulator txId is synthetic-<64 hex>. Nothing was observed.`,
+          { exitCode: HardkasExitCode.USAGE_ERROR }
+        );
+      }
       // STAGE-B-2 · C3: the same --since contract as `tx status` (the cursor of the first look at a network txId); a
       // misuse is refused before any connection and nothing is observed
       if (options.since !== undefined) {

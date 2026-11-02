@@ -1,0 +1,7 @@
+{
+  "program": { "artifact": "artifact.json" },
+  "entrypoints": { "transfer": "transfer", "delegator": "transfer_delegator" },
+  "owner_schemes": [0, 1, 2, 3, 4],
+  "max_token_inputs": 3,
+  "max_token_outputs": 3
+}

@@ -2,20 +2,10 @@ import { describe, expect, it, beforeEach, afterEach } from "vitest";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { Hardkas } from "../src/index.js";
 
 // Cases that recompile or compile with the pinned silverc live in
 // sdk-parity-0-9-1.silverc.test.ts (silverc level); nothing here needs a compiler.
-
-function repoRoot(): string {
-  let current = path.dirname(fileURLToPath(import.meta.url));
-  while (current !== path.dirname(current)) {
-    if (fs.existsSync(path.join(current, "pnpm-workspace.yaml"))) return current;
-    current = path.dirname(current);
-  }
-  throw new Error("repo root not found");
-}
 
 describe("0.13.0-rc.1 SDK parity surface", () => {
   let workspaceRoot: string;
@@ -29,8 +19,10 @@ describe("0.13.0-rc.1 SDK parity surface", () => {
   });
 
   it("exposes capabilities with the same bounded claims as the CLI JSON", async () => {
+    // REMED-CLOSE · test isolation: autoBootstrap writes the workspace's .hardkas; capabilities read nothing from it, so
+    // this test uses the temporary workspace too, never the repository root
     const sdk = await Hardkas.create({
-      cwd: repoRoot(),
+      cwd: workspaceRoot,
       network: "simulated",
       autoBootstrap: true
     });

@@ -211,6 +211,8 @@ export default defineHardkasConfig({
             const testFile = path.join(testDir, "payment.test.ts");
             const testTemplate = `import { scenario, expect } from "@hardkas/testing/scenarios";
 
+// A whole plan -> sign -> send flow with the dev accounts' keystores: on a busy machine it can take longer than
+// vitest's 5 s default, so it has its own time budget (the last argument).
 scenario("payment flow", async ({ hk }) => {
   const alice = await hk.accounts.resolve("alice");
   const bob = await hk.accounts.resolve("bob");
@@ -234,7 +236,7 @@ scenario("payment flow", async ({ hk }) => {
 
   const afterBob = await hk.accounts.balance(bob.address);
   expect(afterBob.sompi - beforeBob.sompi).toBe(10n * 100000000n);
-});
+}, 30_000);
 `;
             if (!fs.existsSync(testFile)) {
               writeFileAtomicSync(testFile, testTemplate, { encoding: "utf-8" });

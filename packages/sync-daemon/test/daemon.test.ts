@@ -1,5 +1,16 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import { SyncDaemon } from '../src/daemon.js';
+
+let checkpointDir = '';
+beforeAll(() => {
+    checkpointDir = fs.mkdtempSync(path.join(os.tmpdir(), 'hk-sync-daemon-'));
+});
+afterAll(() => {
+    fs.rmSync(checkpointDir, { recursive: true, force: true });
+});
 
 describe('SyncDaemon', () => {
     it('should notify indexer and resume pending jobs on new blocks', async () => {
@@ -31,7 +42,8 @@ describe('SyncDaemon', () => {
             jobs: mockJobs,
             indexer: mockIndexer,
             pollIntervalMs: 100,
-            checkpointPath: '.hardkas/test-sync-' + Date.now() + '.json'
+            // REMED-CLOSE · test isolation: the checkpoint lives in a temporary directory, never the repository root's .hardkas
+            checkpointPath: path.join(checkpointDir, 'test-sync-' + Date.now() + '.json')
         });
 
         await daemon.start();

@@ -33,6 +33,8 @@ export default defineConfig({
 
     teardownTimeout: 120000,
     hookTimeout: 120000,
+    // REMED-CLOSE: a run that leaves anything in the repository root's .hardkas fails, naming it
+    globalSetup: ["./scripts/vitest-root-hygiene.global-setup.ts"],
     include: ["packages/*/test/**/*.test.ts"],
     exclude: [
       "**/node_modules/**",

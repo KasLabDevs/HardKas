@@ -61,6 +61,10 @@ export function v1ArgToSil(v: V1ArgValue, where = "arg"): SilArtifactValue {
 export function silToV1Arg(v: SilArtifactValue): V1ArgValue {
   switch (v.kind) {
     case "int":
+      // ISSUE-ONCHAIN-JSON-PRECISION-1: a JS number past 2^53 is already rounded; it is refused, never written as digits
+      if (typeof v.value === "number" && !Number.isSafeInteger(v.value)) {
+        throw factsError("V1_PLAN_INVALID", `int ${v.value} is not an exact integer (pass it as a bigint)`);
+      }
       return { kind: "int", value: BigInt(v.value).toString() };
     case "bytes":
       return { kind: "bytes", value: Array.from(v.value as ArrayLike<number>) };

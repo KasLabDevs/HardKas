@@ -1,5 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, beforeEach, afterEach } from "vitest";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { Hardkas, HardkasProgrammability } from "../src/index.js";
@@ -17,10 +18,30 @@ function repoRoot(): string {
   throw new Error("repo root not found");
 }
 
+/**
+ * REMED-CLOSE · test isolation: an SDK opened with autoBootstrap writes its workspace state (.hardkas). The corpus is
+ * verified in a temporary workspace of its own holding a copy of it at the same relative path, never the repository root.
+ */
+function corpusWorkspace(): string {
+  const ws = fs.mkdtempSync(path.join(os.tmpdir(), "hardkas-sdk-corpus-ws-"));
+  fs.cpSync(path.join(repoRoot(), "fixtures", "toccata-v2"), path.join(ws, "fixtures", "toccata-v2"), { recursive: true });
+  return ws;
+}
+
 describe("0.13.0-rc.1 programmability SDK surface (silverc installed)", () => {
+  let workspaceRoot = "";
+
+  beforeEach(() => {
+    workspaceRoot = corpusWorkspace();
+  });
+
+  afterEach(() => {
+    fs.rmSync(workspaceRoot, { recursive: true, force: true });
+  });
+
   it("verifies the root programmability corpus", async () => {
     const sdk = await Hardkas.create({
-      cwd: repoRoot(),
+      cwd: workspaceRoot,
       network: "simulated",
       autoBootstrap: true
     });

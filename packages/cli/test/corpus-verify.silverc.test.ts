@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 
 // silverc level (AUD-41): the built CLI recompiles the golden corpus with the
@@ -14,17 +15,26 @@ describe("corpus verify", () => {
       throw new Error(`built CLI not found at ${distCli}: run \`pnpm --filter @hardkas/cli build\` before the silverc level`);
     }
 
+    // REMED-CLOSE · test isolation: the CLI sets up the workspace of the directory it runs in (.hardkas); it runs in a
+    // temporary workspace of its own holding a copy of the corpus at the same relative path, never in the repository root
     const root = path.resolve(__dirname, "../../..");
-    const output = execFileSync(
-      process.execPath,
-      [distCli, "corpus", "verify", "fixtures/toccata-v2/silver", "--json"],
-      {
-        cwd: root,
-        encoding: "utf8",
-        stdio: "pipe",
-        timeout: 60_000
-      }
-    );
+    const workspaceRoot = fs.mkdtempSync(path.join(os.tmpdir(), "hk-cli-corpus-verify-"));
+    fs.cpSync(path.join(root, "fixtures", "toccata-v2", "silver"), path.join(workspaceRoot, "fixtures", "toccata-v2", "silver"), { recursive: true });
+    let output: string;
+    try {
+      output = execFileSync(
+        process.execPath,
+        [distCli, "corpus", "verify", "fixtures/toccata-v2/silver", "--json"],
+        {
+          cwd: workspaceRoot,
+          encoding: "utf8",
+          stdio: "pipe",
+          timeout: 60_000
+        }
+      );
+    } finally {
+      fs.rmSync(workspaceRoot, { recursive: true, force: true });
+    }
     const result = JSON.parse(output);
     expect(result.issues).toEqual([]);
     expect(result.ok).toBe(true);

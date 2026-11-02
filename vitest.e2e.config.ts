@@ -10,6 +10,8 @@ export default defineConfig({
   test: {
     include: ["packages/*/test/**/*.e2e.test.ts"],
     exclude: ["**/node_modules/**", "**/dist/**"],
+    // REMED-CLOSE: a run that leaves anything in the repository root's .hardkas fails, naming it
+    globalSetup: ["./scripts/vitest-root-hygiene.global-setup.ts"],
     coverage: {
       provider: "v8",
       enabled: false,

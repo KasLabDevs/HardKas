@@ -310,23 +310,55 @@ function serializeValue(v: SilArtifactValue, where: string): string {
   }
 }
 
+/** A JSON number kept as its own literal while `{kind, value}` JSON is read, so nothing passes through a double. */
+const NUMBER_LITERAL = Symbol("JSON number literal");
+const INT_LITERAL = /^-?(?:0|[1-9][0-9]*)$/;
+
+function numberLiteral(v: unknown): string | undefined {
+  return v !== null && typeof v === "object" && NUMBER_LITERAL in v ? (v as { [NUMBER_LITERAL]: string })[NUMBER_LITERAL] : undefined;
+}
+
 /**
- * Parses `{kind, value}` JSON (e.g. a constructor-args file) into values,
- * keeping ints exact: they are read as literals, never through a JS number.
+ * An int's value read from its literal: a JSON number's own digits (any key order, any size) or a string of decimal digits.
+ * A fraction or an exponent (5.0, 1e3, 1.0000000000000001) is refused even when it denotes an integer, and so is a string
+ * that BigInt() would read some other way ("0x10", "", " 10 ").
+ */
+function intFromJson(v: unknown, where: string): bigint {
+  const literal = numberLiteral(v) ?? (typeof v === "string" ? v : undefined);
+  if (literal === undefined || !INT_LITERAL.test(literal)) {
+    throw valueError(
+      `${where}: ${literal !== undefined ? JSON.stringify(literal) : typeof v} is not an int: write its decimal digits (an optional '-'; no '+', spaces, fraction, exponent or 0x), as a JSON number or a string`
+    );
+  }
+  return BigInt(literal);
+}
+
+/** A byte (or a byte of `bytes`) back to a JS number: a small integer literal, or what the value checks will refuse. */
+function smallNumberFromJson(v: unknown): unknown {
+  const literal = numberLiteral(v);
+  return literal === undefined ? v : Number(literal);
+}
+
+/**
+ * Parses `{kind, value}` JSON (e.g. a constructor-args file) into values, keeping ints exact: every JSON number is read from
+ * its own literal (JSON.parse's source text, Node.js >= 21), never through a JS number, whatever the key order.
+ * ISSUE-ONCHAIN-JSON-PRECISION-1 / N-1 / N-7: it used to read an int exactly only when "kind" came right before "value",
+ * and to apply BigInt() to anything else, so {"value":9007199254740993,"kind":"int"} became …992 and "0x10" became 16.
  */
 export function parseSilArtifactValuesJson(text: string): SilArtifactValue[] {
-  const exact = text.replace(/("kind"\s*:\s*"int"\s*,\s*"value"\s*:\s*)(-?\d+)/g, '$1"$2"');
   const revive = (v: any, where: string): SilArtifactValue => {
     switch (v?.kind) {
       case "int":
-        return { kind: "int", value: BigInt(v.value) };
+        return { kind: "int", value: intFromJson(v.value, `${where}.value`) };
+      case "byte":
+        return { kind: "byte", value: smallNumberFromJson(v.value) as number };
+      case "bytes":
+        return { kind: "bytes", value: Array.isArray(v.value) ? v.value.map(smallNumberFromJson) : v.value };
       case "array":
         return { kind: "array", value: (v.value ?? []).map((x: any, i: number) => revive(x, `${where}[${i}]`)) };
       case "object":
         return { kind: "object", value: Object.fromEntries(Object.entries(v.value ?? {}).map(([k, x]) => [k, revive(x, `${where}.${k}`)])) };
       case "bool":
-      case "byte":
-      case "bytes":
       case "text":
         return v;
       default:
@@ -335,8 +367,16 @@ export function parseSilArtifactValuesJson(text: string): SilArtifactValue[] {
   };
   let parsed: unknown;
   try {
-    parsed = JSON.parse(exact);
+    parsed = JSON.parse(text, (_key: string, value: unknown, context?: { source?: string }) => {
+      if (typeof value !== "number") return value;
+      const source = context?.source;
+      if (typeof source === "string") return { [NUMBER_LITERAL]: source };
+      // no source text (Node.js < 21): only a safe integer is known exactly
+      if (Number.isSafeInteger(value)) return { [NUMBER_LITERAL]: String(value) };
+      throw valueError(`the JSON number ${value} cannot be read exactly on this Node.js (no JSON source text access); use Node.js 24.22.1`);
+    });
   } catch (e: any) {
+    if (e?.code === "SILVER_VALUE_INVALID") throw e;
     throw valueError(`not JSON: ${e?.message ?? e}`);
   }
   if (!Array.isArray(parsed)) throw valueError("expected a JSON list of {kind, value} values");
