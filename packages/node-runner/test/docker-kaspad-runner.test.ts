@@ -1,5 +1,6 @@
-import { describe, it, expect, vi, beforeEach, beforeAll, afterAll } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach, beforeAll, afterAll, type MockInstance } from "vitest";
 import fs from "node:fs";
+import fsp from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { DockerKaspadRunner, minerContainerNameFor } from "../src/docker-kaspad-runner";
@@ -252,6 +253,68 @@ describe("DockerKaspadRunner", () => {
       vi.mocked(execa).mockImplementation(((file: string, args: string[]) =>
         args?.[0] === "version" ? Promise.reject(new Error("daemon not running")) : Promise.reject(new Error("No such object"))) as any);
       await expect(new DockerKaspadRunner().start()).rejects.toMatchObject({ code: "DOCKER_UNAVAILABLE" });
+    });
+  });
+
+  // NODE-RESET-LINUX-1: on a rootful Linux engine the chain data belongs to the container's user (root) and the host user
+  // cannot delete it (the CI Docker suite's `node reset` failed with EACCES); reset then removes it through a short-lived
+  // container of the node's own pinned image.
+  describe("NODE-RESET-LINUX-1 · chain data the host user cannot delete", () => {
+    const eacces = () => Object.assign(new Error("EACCES: permission denied, rmdir '.rusty-kaspa'"), { code: "EACCES" });
+    // the node's container is gone (stop/status answer "No such object"); a `docker run` is the removal container
+    const engine = (onRun: (args: string[]) => Promise<unknown>) =>
+      vi.mocked(execa).mockImplementation(((file: string, args: string[]) =>
+        args?.[0] === "run"
+          ? onRun(args)
+          : Promise.reject(Object.assign(new Error("Error response from daemon: No such container: n"), { exitCode: 1, stderr: "Error: No such object: n" }))) as any);
+    let cwd = "";
+    let dataDir = "";
+    let rmSpy: MockInstance | undefined;
+    beforeEach(() => {
+      cwd = fs.mkdtempSync(path.join(os.tmpdir(), "hk-node-reset-linux-"));
+      dataDir = path.join(cwd, ".hardkas", "kaspad");
+      fs.mkdirSync(path.join(dataDir, ".rusty-kaspa", "kaspa-simnet"), { recursive: true });
+      fs.writeFileSync(path.join(dataDir, ".rusty-kaspa", "kaspa-simnet", "marker"), "chain data\n");
+    });
+    afterEach(() => {
+      rmSpy?.mockRestore();
+      rmSpy = undefined;
+      fs.rmSync(cwd, { recursive: true, force: true });
+    });
+
+    it("removes the entries through the node's own image (root, no network, never pulled), then the folder", async () => {
+      rmSpy = vi.spyOn(fsp, "rm").mockRejectedValueOnce(eacces());
+      const runs: string[][] = [];
+      engine(async (args) => {
+        runs.push(args);
+        fs.rmSync(path.join(dataDir, ".rusty-kaspa"), { recursive: true, force: true }); // what the container does
+        return {};
+      });
+      await new DockerKaspadRunner({ cwd, containerName: "n", image: "pinned-image" }).reset({ removeData: true });
+      expect(runs).toEqual([
+        ["run", "--rm", "--pull", "never", "--network", "none", "--user", "0:0", "-v", `${dataDir}:/app/data`, "--entrypoint", "rm", "pinned-image", "-rf", "/app/data/.rusty-kaspa"]
+      ]);
+      expect(rmSpy).toHaveBeenCalledTimes(2);
+      expect(fs.existsSync(dataDir)).toBe(false);
+    });
+
+    it("any other error of the host removal is reported as it is, and no container is started", async () => {
+      rmSpy = vi.spyOn(fsp, "rm").mockRejectedValueOnce(Object.assign(new Error("EBUSY: resource busy or locked"), { code: "EBUSY" }));
+      const runs: string[][] = [];
+      engine(async (args) => {
+        runs.push(args);
+        return {};
+      });
+      await expect(new DockerKaspadRunner({ cwd, containerName: "n", image: "pinned-image" }).reset({ removeData: true })).rejects.toMatchObject({ code: "EBUSY" });
+      expect(runs).toEqual([]);
+      expect(fs.existsSync(path.join(dataDir, ".rusty-kaspa", "kaspa-simnet", "marker"))).toBe(true);
+    });
+
+    it("a removal container that fails is NODE_DATA_NOT_REMOVED, never a success, and the data stays", async () => {
+      rmSpy = vi.spyOn(fsp, "rm").mockRejectedValueOnce(eacces());
+      engine(() => Promise.reject(Object.assign(new Error('exec: "rm": executable file not found in $PATH'), { exitCode: 127 })));
+      await expect(new DockerKaspadRunner({ cwd, containerName: "n", image: "pinned-image" }).reset({ removeData: true })).rejects.toMatchObject({ code: "NODE_DATA_NOT_REMOVED" });
+      expect(fs.existsSync(path.join(dataDir, ".rusty-kaspa", "kaspa-simnet", "marker"))).toBe(true);
     });
   });
 });
