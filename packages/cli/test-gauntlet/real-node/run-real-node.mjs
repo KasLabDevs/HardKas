@@ -9,7 +9,8 @@ import {
   getVirtualDaaScoreBestEffort,
   coinbaseMaturity,
   waitForDaaScore,
-  readBalanceSompi
+  readBalanceSompi,
+  cleanWorkspaceState
 } from "./real-node-helpers.mjs";
 import { CPUMINER_REFERENCE_IMAGE, CANONICAL_LOCALNET, nodeRpcUrl } from "@hardkas/core";
 import { requireNodeIdentity } from "@hardkas/node-runner";
@@ -217,10 +218,8 @@ async function runRealNodeCert() {
     );
   }
 
-  // Clean state
-  if (fs.existsSync(".hardkas")) {
-    fs.rmSync(".hardkas", { recursive: true, force: true });
-  }
+  // Clean state (the canonical node's own data, .hardkas/kaspad, stays: see cleanWorkspaceState)
+  cleanWorkspaceState();
   fs.writeFileSync("package.json", '{"name":"real-node-cert"}');
   // `network` is the policy block, not the target selector. Writing
   // `{ network: "simnet" }` leaves the default target at `simulated`, and every

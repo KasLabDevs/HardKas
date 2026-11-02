@@ -1,10 +1,26 @@
 // Waits for the gauntlet's real-node phase (run-real-node.mjs), tracked. GAUNTLET-HELPERS-UNTRACKED: the phase imported
 // these from an ignored local file, so a clean clone could not run it. Every wait is bounded and only READS the canonical
 // node (JSON wRPC) or the CLI's view of an account: nothing here mines, signs or sends.
+import fs from "node:fs";
+import path from "node:path";
 import { JsonWrpcKaspaClient } from "@hardkas/kaspa-rpc";
 import { getCoinbaseMaturity } from "@hardkas/core";
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/**
+ * Empties the workspace state before the certification (accounts, artifacts, store…) but never the canonical node's own
+ * data: a localnet started from this directory keeps its chain in `.hardkas/kaspad` (the node runner's data folder),
+ * written by the node's container (as root on a Linux engine, so the host user cannot delete it: EACCES in CI) and in
+ * use by the running node.
+ */
+export function cleanWorkspaceState(dir = ".hardkas") {
+  if (!fs.existsSync(dir)) return;
+  for (const entry of fs.readdirSync(dir)) {
+    if (entry === "kaspad") continue;
+    fs.rmSync(path.join(dir, entry), { recursive: true, force: true });
+  }
+}
 
 async function withClient(rpcUrl, fn) {
   const client = new JsonWrpcKaspaClient({ rpcUrl });

@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
@@ -44,4 +45,25 @@ describe("GAUNTLET-HELPERS-UNTRACKED · the real-node phase's waits are a tracke
     expect(await h.getVirtualDaaScoreBestEffort("ws://127.0.0.1:1")).toBeUndefined();
     await expect(h.waitForDaaScore({ rpcUrl: "ws://127.0.0.1:1", target: 10n, timeoutMs: 200, intervalMs: 50 })).rejects.toThrow(/^TOCCATA_DAA_TIMEOUT: /);
   }, 30_000);
+
+  // The CI Docker suite's canonical gauntlet failed with EACCES: the phase removed the whole .hardkas, which held the chain
+  // the canonical node's container had written as root (the localnet was started from the same directory).
+  it("the clean state empties the workspace state but keeps the canonical node's data folder (.hardkas/kaspad)", async () => {
+    const h = await load();
+    const ws = fs.mkdtempSync(path.join(os.tmpdir(), "hk-gauntlet-clean-"));
+    try {
+      const dir = path.join(ws, ".hardkas");
+      fs.mkdirSync(path.join(dir, "kaspad", ".rusty-kaspa"), { recursive: true });
+      fs.writeFileSync(path.join(dir, "kaspad", ".rusty-kaspa", "chain"), "chain data\n");
+      fs.mkdirSync(path.join(dir, "artifacts", "misc"), { recursive: true });
+      fs.writeFileSync(path.join(dir, "artifacts", "misc", "a.json"), "{}");
+      fs.writeFileSync(path.join(dir, "accounts.real.json"), "{}");
+      h.cleanWorkspaceState(dir);
+      expect(fs.readdirSync(dir)).toEqual(["kaspad"]);
+      expect(fs.readFileSync(path.join(dir, "kaspad", ".rusty-kaspa", "chain"), "utf8")).toBe("chain data\n");
+      expect(() => h.cleanWorkspaceState(path.join(ws, "absent"))).not.toThrow();
+    } finally {
+      fs.rmSync(ws, { recursive: true, force: true });
+    }
+  });
 });
