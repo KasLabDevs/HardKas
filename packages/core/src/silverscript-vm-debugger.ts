@@ -509,7 +509,7 @@ function serializeStateForRunner(state: Readonly<Record<string, SilArtifactValue
     } else if (val.kind === "bool") {
       out[key] = Boolean(val.value);
     } else {
-      out[key] = silverRunnerValue(val, `state.${key}`);
+      out[key] = silverRunnerValue(val, `state.${key}`, true);
     }
   }
   return out;

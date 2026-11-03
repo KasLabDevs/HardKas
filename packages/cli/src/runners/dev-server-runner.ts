@@ -154,7 +154,7 @@ export async function runDevServer(options: {
           console.log(`[${index}] ${pc.blue(acc.name)}`);
           console.log(`Address: ${acc.address}`);
           // We do not fake balance: no balance is looked up here, the dashboard shows it
-          console.log(`Balance: see the dashboard\n`);
+          console.log(`Balance: query via dev-server API (/api/dev-accounts)\n`);
         });
 
         UI.printNextSteps([

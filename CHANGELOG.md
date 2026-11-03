@@ -1,6 +1,8 @@
 ## [0.13.0-rc.1] - 2026-11-02 - Coordinated Release Identity Refresh
 
 ### Changed
+- **Retired Dashboard (`apps/dashboard`)**: The standalone web dashboard application and its secondary Express server (port 3333) have been retired to simplify the developer surface and reduce package size. Local development is provided headlessly via `@hardkas/dev-server` (providing REST APIs, SSE event streams, filesystem watcher, and SQLite query-store).
+- **Public API Surface**: The public export `runDashboard` from `@hardkas/cli/public` and production dependency `express` in `@hardkas/cli` have been removed.
 - Updated the coordinated package versions, runtime identity, scaffolds and current release documentation to `0.13.0-rc.1`.
 - Kept scaffolded `@hardkas/*` dependencies pinned to the CLI's exact release version.
 - Scoped abbreviated RC comparisons to their release line so historical `0.12.0` references remain valid after the minor-version bump.

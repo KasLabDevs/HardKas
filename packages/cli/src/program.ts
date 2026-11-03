@@ -27,7 +27,7 @@ import { registerKaspaCommands } from "./commands/kaspa.js";
 import { registerBridgeCommands } from "./commands/bridge.js";
 import { registerSessionCommands } from "./commands/session.js";
 import { registerPsktCommands } from "./commands/pskt/index.js";
-import { registerDashboardCommand } from "./commands/dashboard.js";
+
 import { registerExplainCommand } from "./commands/explain.js";
 import { registerTortureCommands } from "./commands/torture.js";
 import { registerTelemetryCommands } from "./commands/telemetry.js";
@@ -124,6 +124,7 @@ export function buildHardkasProgram(options?: {
   registerSimulatorCommands(program);
   registerDeployCommands(program);
   registerDevCommands(program);
+  registerDevServerCommands(program);
   registerKaspaCommands(program);
   registerSessionCommands(program);
   registerPsktCommands(program);

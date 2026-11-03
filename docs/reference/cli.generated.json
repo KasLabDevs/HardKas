@@ -1,7 +1,7 @@
 {
   "schema": "hardkas.cliReference.v1",
   "generatedAt": "deterministic",
-  "totalCommands": 254,
+  "totalCommands": 257,
   "flatSurface": [
     "hardkas accounts",
     "hardkas accounts balance",
@@ -58,6 +58,9 @@
     "hardkas dev tx",
     "hardkas dev tx generate",
     "hardkas dev tx send",
+    "hardkas dev-server",
+    "hardkas dev-server start",
+    "hardkas dev-server token",
     "hardkas doctor",
     "hardkas env",
     "hardkas env check",
@@ -1868,6 +1871,102 @@
               "subcommands": []
             }
           ]
+        }
+      ]
+    },
+    {
+      "path": "hardkas dev-server",
+      "name": "dev-server",
+      "aliases": [],
+      "description": "Manage the local HardKAS dev server stable",
+      "usage": "hardkas dev-server [options] [command]",
+      "arguments": [],
+      "options": [],
+      "subcommands": [
+        {
+          "path": "hardkas dev-server start",
+          "name": "start",
+          "aliases": [],
+          "description": "Start the dev server",
+          "usage": "hardkas dev-server start [options]",
+          "arguments": [],
+          "options": [
+            {
+              "flags": "--port <number>",
+              "description": "Port to bind to",
+              "default": "7420",
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--host <string>",
+              "description": "Host to bind to",
+              "default": "127.0.0.1",
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--dashboard",
+              "description": "Deprecated: the standalone dashboard UI has been retired; dev-server runs as a headless API service",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            },
+            {
+              "flags": "--unsafe-external",
+              "description": "Allow external access (binds to 0.0.0.0 if host not specified)",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            },
+            {
+              "flags": "--unsafe-no-auth",
+              "description": "Disable token authentication (requires --yes)",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            },
+            {
+              "flags": "--yes",
+              "description": "Acknowledge unsafe flags",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            },
+            {
+              "flags": "--with-node",
+              "description": "Spawn the localnet node and auto-fund simnet accounts",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            },
+            {
+              "flags": "--json",
+              "description": "Output status as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        },
+        {
+          "path": "hardkas dev-server token",
+          "name": "token",
+          "aliases": [],
+          "description": "Print the current dev server token",
+          "usage": "hardkas dev-server token [options]",
+          "arguments": [],
+          "options": [
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
         }
       ]
     },
@@ -5385,14 +5484,14 @@
         },
         {
           "flags": "-p, --port <port>",
-          "description": "Port for dashboard",
+          "description": "Port for dev-server API",
           "default": "3000",
           "required": true,
           "mandatory": false
         },
         {
           "flags": "-h, --host <host>",
-          "description": "Host for dashboard",
+          "description": "Host for dev-server API",
           "default": "localhost",
           "required": true,
           "mandatory": false

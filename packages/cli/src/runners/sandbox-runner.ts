@@ -1,4 +1,4 @@
-﻿import fs from "node:fs";
+import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
 import pc from "picocolors";
@@ -64,7 +64,7 @@ export async function runSandbox(options: {
     console.log(pc.bold("Mode:"));
     console.log(`  ephemeral\n`);
 
-    console.log(pc.bold("Dashboard:"));
+    console.log(pc.bold("Dev Server API:"));
     console.log(`  http://${host}:${port}\n`);
 
     console.log(pc.bold("Artifacts:"));

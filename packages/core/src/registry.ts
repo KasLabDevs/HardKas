@@ -163,6 +163,31 @@ export const HardkasSchemas = {
   MetamaskLocalV1: "hardkas.metamaskLocal.v1",
 
   // Miscellaneous used in docs / examples
+  // --- Node, Spends, PSKT & Escrow ---
+  NodeIdentityV1: "hardkas.nodeIdentity.v1",
+  PendingSpendsV1: "hardkas.pendingSpends.v1",
+  PsktV1: "hardkas.pskt.v1",
+  EscrowRescueV1: "hardkas.escrow.rescue.v1",
+  ToolchainInstallV1: "hardkas.toolchain.install.v1",
+  ExtensionDoctorV1: "hardkas.extensionDoctor.v1",
+  TxStatusPolicyDefault: "hardkas.txStatusPolicy.default",
+  TxStatusPolicyCaller: "hardkas.txStatusPolicy.caller",
+  CliErrorRendered: "hardkas.cli.error.rendered",
+
+  // --- SilverScript Advanced & Engine ---
+  SilverCompileProvenanceV1: "hardkas.silver.compileProvenance.v1",
+  SilverE2eEvidenceV1: "hardkas.silver.e2eEvidence.v1",
+  SilverStaticAuditV1: "hardkas.silver.staticAudit.v1",
+  SilverPreflightV1: "hardkas.silver.preflight.v1",
+  SilverDebugReportV1: "hardkas.silver.debugReport.v1",
+  SilverDoctorV1: "hardkas.silverDoctor.v1",
+  SilverVerifyV1: "hardkas.silverVerify.v1",
+  SilverCovenantInspectV1: "hardkas.silverCovenantInspect.v1",
+  SilverEnginePlanV1: "hardkas.silverEnginePlan.v1",
+  SilverEngineSignV1: "hardkas.silverEngineSign.v1",
+  SilverEngineDraftV1: "hardkas.silverEngineDraft.v1",
+  SilverEngineDraftFinalizeV1: "hardkas.silverEngineDraftFinalize.v1",
+
   ExampleDocumentAnchorV1: "hardkas.example.documentAnchor.v1"
 } as const;
 

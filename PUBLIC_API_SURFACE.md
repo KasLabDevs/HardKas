@@ -1,4 +1,4 @@
-﻿# HardKAS Public API Surface
+# HardKAS Public API Surface
 
 Generado desde los `dist/**/*.d.ts` publicados de la version `0.13.0-rc.1`.
 Este fichero es el **inventario** de lo que se exporta, no una promesa de estabilidad:
@@ -433,7 +433,7 @@ La columna *Ejercitado* cuenta si el identificador aparece en el corpus de prueb
 
 - [ ] `buildHardkasProgram`
 - [ ] `defineConfig`
-- [ ] `runDashboard`
+- [ ] ~`runDashboard`~ *(Retirado en 0.13.0-rc.1: dashboard web retirado; API provista por @hardkas/dev-server)*
 - [ ] `runDevEnv`
 - [x] `runDevInit`
 - [ ] `runDevTxSend`

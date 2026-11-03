@@ -1,5 +1,6 @@
-import { exec, spawn } from "node:child_process";
+import { spawn } from "node:child_process";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import http from "node:http";
 
@@ -8,11 +9,17 @@ console.log("=== PHASE 11: DEV SERVER SECURITY AUDIT ===");
 const workspaceRoot = process.cwd();
 const PORT = 7421;
 
-// We will launch the dev server in the background
-const serverProc = spawn("pnpm", ["hardkas", "dev", "server", "--port", PORT.toString(), "--show-token"], {
-  cwd: workspaceRoot,
+// Run audit in an isolated temporary workspace
+const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "hardkas-devserver-audit-"));
+fs.writeFileSync(path.join(tmpDir, "hardkas.config.ts"), "export default {};\n");
+
+const cliPath = path.resolve(workspaceRoot, "packages", "cli", "dist", "index.js");
+
+// Launch the dev server with the correct CLI command: dev-server start
+const serverProc = spawn(process.execPath, [cliPath, "dev-server", "start", "--port", PORT.toString()], {
+  cwd: tmpDir,
   stdio: ["ignore", "pipe", "pipe"],
-  shell: true,
+  shell: false,
   env: { ...process.env, HARDKAS_DEV_TOKEN: "static-audit-token-123" }
 });
 
@@ -83,6 +90,7 @@ async function runAudit() {
     console.error("Server failed to boot or respond on port " + PORT);
     console.error("Output: ", serverOutput);
     serverProc.kill();
+    try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch {}
     process.exit(1);
   }
   
@@ -151,6 +159,7 @@ async function runAudit() {
   // Teardown
   console.log("Stopping Dev Server...");
   serverProc.kill("SIGTERM");
+  try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch {}
 
   if (!passed) {
     console.error("=== DEV SERVER SECURITY AUDIT FAILED ===");

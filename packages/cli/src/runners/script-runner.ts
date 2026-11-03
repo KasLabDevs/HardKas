@@ -1,10 +1,11 @@
 // SAFETY_LEVEL: SIMULATION_ONLY
 
 import { resolve, dirname } from "node:path";
-import { existsSync, unlinkSync } from "node:fs";
-import { execSync } from "node:child_process";
+import { existsSync, unlinkSync, mkdirSync, readFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { createRequire } from "node:module";
+import { pathToFileURL } from "node:url";
 import { loadHardkasConfig, resolveNodeEndpoint } from "@hardkas/config";
-import { tmpdir } from "node:os";
 
 export interface RunScriptOptions {
   /** A network of the workspace config; undefined: the workspace's network (HARDKAS-NETWORK-PORTABILITY-1). */
@@ -13,6 +14,25 @@ export interface RunScriptOptions {
   balance: string;
   harness: boolean;
   workspaceRoot?: string;
+}
+
+/**
+ * Validates user-controlled accounts and balance parameters before code generation.
+ */
+export function validateRunScriptOptions(opts: RunScriptOptions): { accounts: number; balance: bigint } {
+  const accountsNum = Number(opts.accounts);
+  if (!Number.isInteger(accountsNum) || accountsNum <= 0) {
+    const err = new Error(`INVALID_ACCOUNTS: accounts must be a positive integer, got '${opts.accounts}'`);
+    (err as any).code = "INVALID_ACCOUNTS";
+    throw err;
+  }
+  const balanceStr = String(opts.balance).trim();
+  if (!/^\d+$/.test(balanceStr)) {
+    const err = new Error(`INVALID_BALANCE: balance must be a non-negative integer string, got '${opts.balance}'`);
+    (err as any).code = "INVALID_BALANCE";
+    throw err;
+  }
+  return { accounts: accountsNum, balance: BigInt(balanceStr) };
 }
 
 /**
@@ -37,19 +57,48 @@ export function resolveRunNetwork(config: any, requested: string | undefined): s
 }
 
 /**
+ * Resolves the tsx entrypoint from @hardkas/cli dependencies without relying on a global installation.
+ */
+export function resolveTsxCli(): string {
+  try {
+    const req = createRequire(import.meta.url);
+    const tsxPkg = req.resolve("tsx/package.json");
+    const tsxDir = dirname(tsxPkg);
+    const distCli = resolve(tsxDir, "dist", "cli.mjs");
+    if (existsSync(distCli)) {
+      return distCli;
+    }
+    const pkg = JSON.parse(readFileSync(tsxPkg, "utf8"));
+    const binRel = typeof pkg.bin === "string" ? pkg.bin : pkg.bin?.tsx || "./dist/cli.mjs";
+    const resolvedBin = resolve(tsxDir, binRel);
+    if (existsSync(resolvedBin)) {
+      return resolvedBin;
+    }
+  } catch (err: any) {
+    const error = new Error(`TSX_NOT_FOUND: could not resolve 'tsx' from @hardkas/cli dependencies: ${err?.message || err}`);
+    (error as any).code = "TSX_NOT_FOUND";
+    throw error;
+  }
+  const error = new Error("TSX_NOT_FOUND: 'tsx' CLI binary file does not exist in installed package");
+  (error as any).code = "TSX_NOT_FOUND";
+  throw error;
+}
+
+/**
  * The global `hardkas` the wrapper injects: the simulator harness on a simulated network, else an RPC client to the
  * network's endpoint that must prove it serves that network before anything is read (NODE-NETWORK-IDENTITY-1).
  */
 export function buildRunInjection(config: any, opts: RunScriptOptions & { network: string }): string {
   if (!opts.harness) return "";
-  const netConfig = config.networks?.[opts.network] as Record<string, unknown>;
+  const netConfig = config?.networks?.[opts.network] as Record<string, unknown> | undefined;
   if (netConfig?.kind === "simulated") {
+    const validated = validateRunScriptOptions(opts);
     return `
 import { createTestHarness } from "@hardkas/testing/harness";
 const hardkas = createTestHarness({
-  accounts: ${parseInt(opts.accounts)},
-  initialBalance: ${opts.balance}n,
-  networkId: "${opts.network}",
+  accounts: ${validated.accounts},
+  initialBalance: ${validated.balance}n,
+  networkId: ${JSON.stringify(opts.network)},
 });
 Object.assign(globalThis, { hardkas });
 `;
@@ -81,6 +130,14 @@ export async function runScript(script: string, opts: RunScriptOptions): Promise
     });
   }
 
+  // Validate parameters upfront
+  try {
+    validateRunScriptOptions(opts);
+  } catch (e: any) {
+    const { HardkasCliError } = await import("../cli-errors.js");
+    throw new HardkasCliError(e.code ?? "INVALID_ARGUMENT", e.message, { exitCode: 2 });
+  }
+
   const { config } = await loadHardkasConfig();
   let network: string;
   try {
@@ -91,13 +148,22 @@ export async function runScript(script: string, opts: RunScriptOptions): Promise
   }
   opts = { ...opts, network };
 
+  let tsxCli: string;
+  try {
+    tsxCli = resolveTsxCli();
+  } catch (e: any) {
+    const { HardkasCliError } = await import("../cli-errors.js");
+    throw new HardkasCliError("MISSING_DEPENDENCY", e.message, { exitCode: 1 });
+  }
+
   // Build a wrapper that creates the harness or RPC client and injects it as global
   const injectionCode = buildRunInjection(config, { ...opts, network });
+  const scriptFileUrl = pathToFileURL(scriptPath).href;
   const wrapperCode = `
 ${injectionCode}
 (async () => {
   try {
-    await import("file://${scriptPath.replace(/\\/g, "/")}");
+    await import(${JSON.stringify(scriptFileUrl)});
   } catch (err) {
     console.error(err);
     throw err;
@@ -106,25 +172,23 @@ ${injectionCode}
 `;
 
   // Write to a temp file inside .hardkas to allow workspace resolution
-  const dotHardkas = resolve(opts.workspaceRoot || process.cwd(), ".hardkas");
+  const workspaceRoot = opts.workspaceRoot || process.cwd();
+  const dotHardkas = resolve(workspaceRoot, ".hardkas");
   if (!existsSync(dotHardkas)) {
-    const { mkdirSync } = await import("node:fs");
     mkdirSync(dotHardkas, { recursive: true });
   }
 
-  const tempWrapper = resolve(dotHardkas, `run-${Date.now()}.mts`);
+  const tempWrapper = resolve(dotHardkas, `run-${Date.now()}-${Math.random().toString(36).slice(2)}.mts`);
 
   const { writeFileAtomicSync } = await import("@hardkas/core");
   writeFileAtomicSync(tempWrapper, wrapperCode);
 
   try {
-    // Execute via tsx
-    const tsxBin = resolve("node_modules/.bin/tsx");
-    const actualTsx = existsSync(tsxBin) ? tsxBin : "npx tsx";
-
-    execSync(`${actualTsx} ${tempWrapper}`, {
+    // Execute safely without a shell using process.execPath and the resolved tsx cli
+    const result = spawnSync(process.execPath, [tsxCli, tempWrapper], {
       stdio: "inherit",
-      cwd: opts.workspaceRoot || process.cwd(),
+      cwd: workspaceRoot,
+      shell: false,
       env: {
         ...process.env,
         HARDKAS_NETWORK: opts.network,
@@ -132,6 +196,21 @@ ${injectionCode}
         HARDKAS_BALANCE: opts.balance
       }
     });
+
+    if (result.error) {
+      const { HardkasCliError } = await import("../cli-errors.js");
+      throw new HardkasCliError("SCRIPT_EXECUTION_FAILED", `Failed to execute script: ${result.error.message}`, {
+        exitCode: 1,
+        cause: result.error
+      });
+    }
+
+    if (result.status !== 0) {
+      const { HardkasCliError } = await import("../cli-errors.js");
+      throw new HardkasCliError("SCRIPT_EXECUTION_FAILED", `Script exited with non-zero code ${result.status ?? "unknown"}`, {
+        exitCode: result.status ?? 1
+      });
+    }
   } finally {
     if (existsSync(tempWrapper)) {
       unlinkSync(tempWrapper);

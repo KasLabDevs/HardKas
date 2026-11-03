@@ -35,7 +35,7 @@ In scope: the code in this repository, including:
 - how keys are generated, stored, unlocked and used (keystores, the development accounts, signing);
 - the guards that refuse mainnet transactions, and the checks of a node's network and identity;
 - the integrity of artifacts and evidence (content hashes, verification, tampering detection);
-- what the CLI, the dashboard and the logs reveal (secret redaction, the dashboard's access token);
+- what the CLI, the dev-server and the logs reveal (secret redaction, the dev-server's access token);
 - reading and writing outside the `.hardkas/` workspace.
 
 Out of scope:

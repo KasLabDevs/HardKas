@@ -770,7 +770,7 @@ export function registerTxCommands(program: Command) {
                   "Artifact Written": result.alreadySubmitted
                     ? "none: the recorded submission (Artifact ID) stands"
                     : result.receiptPath || ".hardkas/artifacts/...",
-                  Projection: "SQLite query-store (indexed while the dashboard runs)",
+                  Projection: "SQLite query-store (indexed while the dev-server runs)",
                   ...networkRows
                 },
                 [
@@ -967,7 +967,7 @@ export function registerTxCommands(program: Command) {
                     : "network submission",
                   "Artifact Written":
                     sendResult?.artifact?.receiptPath || ".hardkas/artifacts/...",
-                  Projection: "SQLite query-store (indexed while the dashboard runs)",
+                  Projection: "SQLite query-store (indexed while the dev-server runs)",
                   ...networkRows
                 },
                 [

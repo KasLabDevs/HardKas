@@ -22,10 +22,10 @@ import { streamRoutes } from "./routes/stream.js";
 import { devAccountsRoutes } from "./routes/dev-accounts.js";
 import { escrowRoutes } from "./routes/escrow.js";
 import { simnetRoutes } from "./routes/simnet.js";
-import { serveStatic } from "@hono/node-server/serve-static";
+
 import path from "node:path";
 import fs from "node:fs";
-import { fileURLToPath } from "node:url";
+
 import open from "open";
 import { loadSessionStoreWithDiagnostics } from "@hardkas/sessions";
 import { HARDKAS_VERSION } from "@hardkas/artifacts";
@@ -208,57 +208,24 @@ export function createDevServer(config: DevServerConfig) {
   app.route("/api", devStatusRoutes);
   app.route("/api", observabilityRoutes);
 
-  // Try to find dashboard dist in multiple locations
-  function findDashboardDist(): string | null {
-    const __dirname = path.dirname(fileURLToPath(import.meta.url));
-    const candidates = [
-      path.resolve(__dirname, "../../../apps/dashboard/dist"), // monorepo dev
-      path.resolve(__dirname, "../dashboard"), // bundled in package
-      path.resolve(process.cwd(), "node_modules/@hardkas/dev-server/dashboard") // npm install
-    ];
-    for (const c of candidates) {
-      try {
-        if (fs.existsSync(c)) return c;
-      } catch {}
-    }
-    return null;
-  }
+  // Dev Server root: returns informational status and API endpoint catalog
+  app.get("/", (c) =>
+    c.json({
+      name: "HardKas Dev Server",
+      version: HARDKAS_VERSION,
+      status: "running",
+      endpoints: {
+        artifacts: "/api/artifacts",
+        transactions: "/api/transactions",
+        devAccounts: "/api/dev-accounts",
+        overview: "/api/overview",
+        query: "/api/query",
+        stream: "/api/stream",
+        health: "/api/dashboard-health"
+      }
+    })
+  );
 
-  const dashboardDist = findDashboardDist();
-  if (dashboardDist) {
-    app.use(
-      "/assets/*",
-      serveStatic({
-        root: dashboardDist,
-        rewriteRequestPath: (p) => p
-      })
-    );
-    app.get("/*", async (c) => {
-      const htmlPath = path.join(dashboardDist, "index.html");
-      let html = await fs.promises.readFile(htmlPath, "utf-8");
-
-      // Inject global script payload for secure dashboard API client bootstrapping
-      const scriptTag = `
-<script>
-  window.__HARDKAS_DEV_TOKEN__ = "${devServerToken}";
-</script>
-`;
-      html = html.replace("<head>", `<head>${scriptTag}`);
-
-      return c.html(html);
-    });
-  } else {
-    app.get("/", (c) =>
-      c.json({
-        name: "HardKas Dev Server",
-        version: HARDKAS_VERSION,
-        status: "running",
-        dashboard: "not-found",
-        message:
-          "Dashboard not built. API available at /api/*. Run 'pnpm build' in apps/dashboard to enable the UI."
-      })
-    );
-  }
 
   return {
     app,

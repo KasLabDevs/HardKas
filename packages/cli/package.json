@@ -24,7 +24,7 @@
   },
   "files": [
     "dist",
-    "dashboard-dist",
+
     "templates",
     "README.md",
     "LICENSE"
@@ -67,15 +67,15 @@
     "commander": "^12.1.0",
     "enquirer": "^2.4.1",
     "execa": "^9.5.2",
-    "express": "^5.2.1",
+
     "fflate": "^0.8.3",
     "picocolors": "^1.1.1",
-    "zod": "^3.23.8"
+    "zod": "^3.23.8",
+    "tsx": "^4.19.2"
   },
   "devDependencies": {
-    "@types/express": "^5.0.6",
+
     "tsup": "^8.3.5",
-    "tsx": "^4.19.2",
     "typescript": "^5.7.2",
     "vitest": "^2.1.8"
   },

@@ -113,6 +113,7 @@ export {
   fundTestAccount,
   inspectCoinbaseMaturity,
   createFundedCovenant,
+  createFundedP2sh,
   executeSimnetCovenantTransition,
   testbedSimnetRpc
 } from "./isolated-simnet.js";

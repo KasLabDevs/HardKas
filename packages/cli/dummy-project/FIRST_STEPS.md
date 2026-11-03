@@ -11,17 +11,17 @@ pnpm transfer
 This will run a simulated transfer and generate an **Artifact**.
 _Notice the output narrating the causal execution._
 
-### 2. Open the dashboard
+### 2. Inspect workspace status
 
 ```bash
-hardkas dashboard
+hardkas status
 ```
 
-This boots the runtime UI. You will see the event timeline and the state projections.
+This queries the local dev environment and verifies the state projections.
 
 ### 3. Inspect the artifact
 
-Navigate to the "Provenance" tab in the dashboard to see how your transaction artifact relates to the genesis state.
+Run `hardkas artifact list` or `hardkas dev last --replay` to inspect how your transaction artifact relates to the genesis state.
 
 ### 4. Run `hardkas explain`
 
@@ -31,7 +31,7 @@ In your terminal, copy the Artifact ID from step 1 and run:
 hardkas explain <artifact_id>
 ```
 
-This provides a deep, narrative explanation of the artifact's causality without needing the UI.
+This provides a deep, narrative explanation of the artifact's causality without needing a separate UI.
 
 ### 5. Break an artifact intentionally
 

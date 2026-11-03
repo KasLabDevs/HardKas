@@ -1403,6 +1403,82 @@ No arguments.
 
 ---
 
+## hardkas dev-server
+
+Manage the local HardKAS dev server stable
+
+### Usage
+
+```bash
+hardkas dev-server [options] [command]
+```
+
+### Options
+
+No options.
+
+### Arguments
+
+No arguments.
+
+### Subcommands
+
+- [hardkas dev-server start](#hardkas-dev-server-start)
+- [hardkas dev-server token](#hardkas-dev-server-token)
+
+---
+
+## hardkas dev-server start
+
+Start the dev server
+
+### Usage
+
+```bash
+hardkas dev-server start [options]
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--port <number>` | Port to bind to | 7420 |
+| `--host <string>` | Host to bind to | 127.0.0.1 |
+| `--dashboard` | Deprecated: the standalone dashboard UI has been retired; dev-server runs as a headless API service | false |
+| `--unsafe-external` | Allow external access (binds to 0.0.0.0 if host not specified) | false |
+| `--unsafe-no-auth` | Disable token authentication (requires --yes) | false |
+| `--yes` | Acknowledge unsafe flags | false |
+| `--with-node` | Spawn the localnet node and auto-fund simnet accounts | false |
+| `--json` | Output status as JSON | false |
+
+### Arguments
+
+No arguments.
+
+---
+
+## hardkas dev-server token
+
+Print the current dev server token
+
+### Usage
+
+```bash
+hardkas dev-server token [options]
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+No arguments.
+
+---
+
 ## hardkas doctor
 
 Perform a full system diagnostic and health report (on a public network it contacts the workspace's declared endpoint) stable
@@ -4547,8 +4623,8 @@ hardkas sandbox [options]
 | :--- | :--- | :--- |
 | `--with-node` | Not supported: the sandbox starts no node (refuses with SANDBOX_WITH_NODE_UNSUPPORTED) |  |
 | `--recipe <name>` | Run an initial recipe/template inside the sandbox |  |
-| `-p, --port <port>` | Port for dashboard | 3000 |
-| `-h, --host <host>` | Host for dashboard | localhost |
+| `-p, --port <port>` | Port for dev-server API | 3000 |
+| `-h, --host <host>` | Host for dev-server API | localhost |
 
 ### Arguments
 

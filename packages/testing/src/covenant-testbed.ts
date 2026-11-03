@@ -104,6 +104,22 @@ export interface CovenantTransitionAttemptParams {
     | SilArtifactValue
     | { readonly kind: "signer"; readonly signer: string; readonly overridePrivateKeyHex?: string | undefined }
   >;
+  /**
+   * Optional arguments for delegate inputs (`inputs[1..N-1]`) in a multi-input
+   * `binding = cov` transition where input 0 executes the leader policy and
+   * inputs `1..N-1` execute the `#[covenant.delegate]` entrypoint.
+   */
+  readonly delegateArgs?: ReadonlyArray<
+    | SilArtifactValue
+    | { readonly kind: "signer"; readonly signer: string; readonly overridePrivateKeyHex?: string | undefined }
+  > | undefined;
+  /** Optional per-delegate-input argument list (`delegateArgsPerInput[i]` for `inputs[i + 1]`). */
+  readonly delegateArgsPerInput?: ReadonlyArray<
+    ReadonlyArray<
+      | SilArtifactValue
+      | { readonly kind: "signer"; readonly signer: string; readonly overridePrivateKeyHex?: string | undefined }
+    >
+  > | undefined;
   /** Next state(s) for successor outputs. Empty array = covenant termination. */
   readonly nextStates: ReadonlyArray<{
     readonly state?: Readonly<Record<string, SilArtifactValue | number | bigint | boolean | string>> | undefined;
@@ -537,6 +553,40 @@ export function createCovenantTestbed(options: CovenantTestbedOptions = {}) {
     };
   }
 
+  async function deployP2sh(params: {
+    readonly contract: CompiledCovenantContract;
+    readonly amountSompi?: bigint | undefined;
+    readonly blockDaaScore?: bigint | undefined;
+  }): Promise<{
+    readonly txId: string;
+    readonly address: string;
+    readonly scriptPublicKey: string;
+    readonly utxo: CovenantLiveUtxo;
+  }> {
+    const amountSompi = params.amountSompi ?? 1_000_000_000n;
+    const blockDaaScore = params.blockDaaScore ?? 1_001n;
+    const lock = silverP2shLock(params.contract.facts.bytecodeHex);
+    const p2shAddress = silverP2shAddress(params.contract.facts.bytecodeHex, networkId);
+    const p2shSpk = lock.version.toString(16).padStart(4, "0") + lock.script;
+    const txId = (txCounter++).toString(16).padStart(64, "0");
+    const p2shUtxo: CovenantLiveUtxo = {
+      outpoint: { transactionId: txId, index: 0 },
+      address: p2shAddress,
+      amountSompi,
+      scriptPublicKey: p2shSpk,
+      contract: params.contract,
+      blockDaaScore,
+      isCoinbase: false
+    };
+    utxos.set(outpointKey(p2shUtxo.outpoint), p2shUtxo);
+    return {
+      txId,
+      address: p2shAddress,
+      scriptPublicKey: p2shSpk,
+      utxo: p2shUtxo
+    };
+  }
+
   function resolveEntryAndPolicy(
     contract: CompiledCovenantContract,
     entrypointOrPolicy: string,
@@ -642,10 +692,14 @@ export function createCovenantTestbed(options: CovenantTestbedOptions = {}) {
       return silToV1Arg(a as SilArtifactValue);
     });
 
+    const needsStatePrefix =
+      (hasStateStructPrefix || hasStateArrayPrefix) &&
+      params.args.length < (abiEntryDef?.params.length ?? 0);
+
     const fullV1EntryArgs: any[] = [];
-    if (hasStateStructPrefix && resolvedContinuations.length === 1 && resolvedContinuations[0]!.state) {
+    if (needsStatePrefix && hasStateStructPrefix && resolvedContinuations.length === 1 && resolvedContinuations[0]!.state) {
       fullV1EntryArgs.push(silToV1Arg({ kind: "object", value: resolvedContinuations[0]!.state }));
-    } else if (hasStateArrayPrefix) {
+    } else if (needsStatePrefix && hasStateArrayPrefix) {
       fullV1EntryArgs.push({
         kind: "array",
         value: resolvedContinuations
@@ -657,9 +711,9 @@ export function createCovenantTestbed(options: CovenantTestbedOptions = {}) {
 
     // Build placeholder signatureScriptHex to measure exact upper-bound script units via @hardkas/tx-builder
     const placeholderSilArgs: SilArtifactValue[] = [];
-    if (hasStateStructPrefix && resolvedContinuations.length === 1 && resolvedContinuations[0]!.state) {
+    if (needsStatePrefix && hasStateStructPrefix && resolvedContinuations.length === 1 && resolvedContinuations[0]!.state) {
       placeholderSilArgs.push({ kind: "object", value: resolvedContinuations[0]!.state });
-    } else if (hasStateArrayPrefix) {
+    } else if (needsStatePrefix && hasStateArrayPrefix) {
       placeholderSilArgs.push({
         kind: "array",
         value: resolvedContinuations
@@ -738,36 +792,79 @@ export function createCovenantTestbed(options: CovenantTestbedOptions = {}) {
         throw err;
       }
 
-      const planInputs = spentUtxos.map((u) => ({
-        outpoint: u.outpoint,
-        address: u.address,
-        amountSompi: u.amountSompi.toString(),
-        scriptPublicKey: u.scriptPublicKey,
-        blockDaaScore: u.blockDaaScore.toString(),
-        isCoinbase: u.isCoinbase,
-        ...(u.covenantId ? { covenantId: u.covenantId } : {}),
-        kind: (isCovenant ? "covenant" : "p2sh") as "covenant" | "p2sh",
-        computeBudget: effectiveComputeBudget,
-        contract: {
-          compileRecord: {
-            contentHash: params.contract.compileRecordHash,
-            artifactSha256: params.contract.artifactSha256
-          },
-          contract: params.contract.contractName,
-          constructorArgs: params.contract.constructorArgs.map((a) => silToV1Arg(a)),
-          ...(u.state
-            ? {
-                state: Object.fromEntries(
-                  Object.entries(u.state).map(([kField, vVal]) => [kField, silToV1Arg(vVal)])
-                )
+      const planInputs = spentUtxos.map((u, idx) => {
+        const isDelegate = idx > 0 && isCovenant && silContract.delegate_entry_abi !== undefined;
+        const inputEntry = isDelegate ? silContract.delegate_entry_abi! : abiEntry;
+        const rawDelArgs = isDelegate
+          ? (params.delegateArgsPerInput?.[idx - 1] ?? params.delegateArgs ?? [])
+          : [];
+        rawDelArgs.forEach((a, i) => assertSafeSilverIntegers(a, `delegateArgs[${idx - 1}][${i}]`));
+        const inputArgs = isDelegate
+          ? rawDelArgs.map((a) => {
+              if (typeof a === "object" && a !== null && a.kind === "signer") {
+                return { kind: "signer" as const, signer: a.signer };
               }
-            : {}),
-          entry: abiEntry,
-          ...(isCovenant ? { policy: policyName } : {}),
-          args: fullV1EntryArgs
-        },
-        ...(params.sequence !== undefined ? { sequence: String(params.sequence) } : {})
-      }));
+              return silToV1Arg(a as SilArtifactValue);
+            })
+          : fullV1EntryArgs;
+        let inputBudget = effectiveComputeBudget;
+        if (isDelegate && (params.computeBudget === undefined || params.computeBudget === "estimate")) {
+          const delPlaceholderArgs: SilArtifactValue[] = rawDelArgs.map((a) =>
+            typeof a === "object" && a !== null && a.kind === "signer"
+              ? { kind: "bytes", value: new Uint8Array(65) }
+              : (a as SilArtifactValue)
+          );
+          let delUnlockHex = "";
+          try {
+            delUnlockHex = silverUnlockScript(
+              inputFactsList[idx]!.bytecodeHex,
+              encodeSilverEntryArgs({
+                artifact: params.contract.artifact,
+                contractName: params.contract.contractName,
+                entry: inputEntry,
+                args: delPlaceholderArgs
+              })
+            );
+          } catch {
+            delUnlockHex = silverUnlockScript(inputFactsList[idx]!.bytecodeHex, "");
+          }
+          const delEst = estimateV1ComputeBudget({
+            signatureScriptHex: delUnlockHex,
+            scriptPublicKeyHex: u.scriptPublicKey
+          });
+          inputBudget = Math.max(delEst.budget, 15);
+        }
+        return {
+          outpoint: u.outpoint,
+          address: u.address,
+          amountSompi: u.amountSompi.toString(),
+          scriptPublicKey: u.scriptPublicKey,
+          blockDaaScore: u.blockDaaScore.toString(),
+          isCoinbase: u.isCoinbase,
+          ...(u.covenantId ? { covenantId: u.covenantId } : {}),
+          kind: (isCovenant ? "covenant" : "p2sh") as "covenant" | "p2sh",
+          computeBudget: inputBudget,
+          contract: {
+            compileRecord: {
+              contentHash: params.contract.compileRecordHash,
+              artifactSha256: params.contract.artifactSha256
+            },
+            contract: params.contract.contractName,
+            constructorArgs: params.contract.constructorArgs.map((a) => silToV1Arg(a)),
+            ...(u.state
+              ? {
+                  state: Object.fromEntries(
+                    Object.entries(u.state).map(([kField, vVal]) => [kField, silToV1Arg(vVal)])
+                  )
+                }
+              : {}),
+            entry: inputEntry,
+            ...(isCovenant ? { policy: policyName } : {}),
+            args: inputArgs
+          },
+          ...(params.sequence !== undefined ? { sequence: String(params.sequence) } : {})
+        };
+      });
 
       const planOutputs = [
         ...resolvedContinuations.map((c) => ({
@@ -876,7 +973,12 @@ export function createCovenantTestbed(options: CovenantTestbedOptions = {}) {
     }
 
     // If only SYNTHETIC was requested, or if SYNTHETIC failed and SCRIPT_VM is not forced with override keys
-    const hasOverrideSignerKey = params.args.some(
+    const allSignerArgs = [
+      ...params.args,
+      ...(params.delegateArgs ?? []),
+      ...((params.delegateArgsPerInput ?? []).flat())
+    ];
+    const hasOverrideSignerKey = allSignerArgs.some(
       (a) => typeof a === "object" && a !== null && a.kind === "signer" && a.overridePrivateKeyHex !== undefined
     );
 
@@ -929,7 +1031,7 @@ export function createCovenantTestbed(options: CovenantTestbedOptions = {}) {
     // it (R-01), and its own evidence comes from the node.
     let vmResult: SilverVmExecutionResult | undefined;
     if (backends.includes("SCRIPT_VM")) {
-      const vmArgs = params.args.map((a) => {
+      const mapVmArg = (a: (typeof params.args)[number]) => {
         if (typeof a === "object" && a !== null && a.kind === "signer") {
           if (a.overridePrivateKeyHex) {
             return { privateKeyHex: a.overridePrivateKeyHex };
@@ -937,7 +1039,19 @@ export function createCovenantTestbed(options: CovenantTestbedOptions = {}) {
           return { signature: a.signer };
         }
         return a as SilArtifactValue;
-      });
+      };
+      const vmArgs: any[] = [];
+      if (needsStatePrefix && hasStateStructPrefix && resolvedContinuations.length === 1 && resolvedContinuations[0]!.state) {
+        vmArgs.push({ kind: "object", value: resolvedContinuations[0]!.state });
+      } else if (needsStatePrefix && hasStateArrayPrefix) {
+        vmArgs.push({
+          kind: "array",
+          value: resolvedContinuations
+            .filter((c) => c.state !== undefined)
+            .map((c) => ({ kind: "object", value: c.state! }) as SilArtifactValue)
+        });
+      }
+      vmArgs.push(...params.args.map(mapVmArg));
 
       const runnerOpt = resolveAvailableSilverRunner(options.runner ?? options.runnerPath, { trust: options.runnerTrust });
       if (!runnerOpt.available || !runnerOpt.runner) {
@@ -1017,6 +1131,61 @@ export function createCovenantTestbed(options: CovenantTestbedOptions = {}) {
         ...(options.runnerTrust ? { runnerTrust: options.runnerTrust } : {}),
         captureTrace: params.captureTrace
       });
+
+      if (vmResult.passed && spentUtxos.length > 1 && isCovenant && silContract.delegate_entry_abi) {
+        for (let delIdx = 1; delIdx < spentUtxos.length; delIdx++) {
+          const rawDelArgs = params.delegateArgsPerInput?.[delIdx - 1] ?? params.delegateArgs ?? [];
+          const delVmArgs = rawDelArgs.map(mapVmArg);
+          const delVmResult = await executeSilverVmScenario({
+            source: params.contract.source,
+            ...(params.contract.sourceFile ? { sourceFile: params.contract.sourceFile } : {}),
+            artifact: params.contract.artifact,
+            contractName: params.contract.contractName,
+            constructorArgs: params.contract.constructorArgs,
+            entrypoint: silContract.delegate_entry_abi,
+            args: delVmArgs,
+            tx: {
+              version: 1,
+              lockTime: params.lockTime ?? 0,
+              activeInputIndex: delIdx,
+              inputs: spentUtxos.map((u) => ({
+                prevTxId: u.outpoint.transactionId,
+                prevIndex: u.outpoint.index,
+                sequence: params.sequence ?? 0,
+                sigOpCount: 100,
+                utxoValue: u.amountSompi,
+                ...(u.covenantId ? { covenantId: u.covenantId } : {}),
+                ...(u.state ? { state: u.state } : {})
+              })),
+              outputs: [
+                ...resolvedContinuations.map((c) => ({
+                  value: c.amountSompi,
+                  ...(covenantId ? { covenantId } : {}),
+                  authorizingInput: c.authorizingInput,
+                  ...(c.state ? { state: c.state } : {})
+                })),
+                ...(params.extraOutputs ?? []).map((eo) => {
+                  const spk = k.payToAddressScript(new k.Address(eo.address));
+                  const spkObj = typeof spk.serializeToObject === "function" ? spk.serializeToObject() : spk;
+                  return {
+                    value: eo.amountSompi,
+                    scriptHex: String(spkObj.script)
+                  };
+                })
+              ]
+            },
+            signer: (acctName) => getAccount(acctName).privateKeyHex,
+            ...(runnerOpt.runner ? { runner: runnerOpt.runner } : {}),
+            ...(runnerOpt.identity ? { runnerIdentity: runnerOpt.identity } : {}),
+            ...(options.runnerTrust ? { runnerTrust: options.runnerTrust } : {}),
+            captureTrace: params.captureTrace
+          });
+          if (!delVmResult.passed || delVmResult.status === "BLOCKED") {
+            vmResult = delVmResult;
+            break;
+          }
+        }
+      }
 
       if (vmResult.status === "BLOCKED") {
         const res: CovenantTransitionResult = {
@@ -1276,6 +1445,7 @@ export function createCovenantTestbed(options: CovenantTestbedOptions = {}) {
     fundAccount,
     compileContract,
     deployGenesis,
+    deployP2sh,
     executeTransition,
     auditContract,
     /**

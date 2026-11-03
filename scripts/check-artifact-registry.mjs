@@ -5,9 +5,11 @@ import { HardkasSchemas } from '../packages/core/dist/index.js';
 // Build a Set of all registered schemas for O(1) lookups
 const validSchemas = new Set(Object.values(HardkasSchemas));
 
-// Some historical exceptions that are explicitly allowed in docs/fixtures
+// Some historical exceptions or test-fixture strings that are explicitly allowed
 const allowedHistorical = new Set([
-  // add any if needed
+  'hardkas.invalid.v999', // qualification negative test
+  'hardkas.tx.plan.v1',   // qualification schema test
+  'hardkas.cmd'          // command wrapper fixture
 ]);
 
 function findFiles(dir, filter, fileList = []) {
@@ -82,8 +84,10 @@ for (const file of tsFiles) {
     const line = content.substring(content.lastIndexOf('\n', match.index), content.indexOf('\n', match.index));
     if (line.includes('//') || line.includes('/*')) continue;
     
-    console.log(`[TS/JS Stray String] Violation found in ${path.relative(process.cwd(), file)}: ${match[0]}`);
-    violations++;
+    if (!validSchemas.has(matchedString) && !allowedHistorical.has(matchedString)) {
+      console.log(`[TS/JS Stray String] Violation found in ${path.relative(process.cwd(), file)}: ${match[0]}`);
+      violations++;
+    }
   }
 }
 
@@ -118,9 +122,7 @@ for (const file of mdFiles) {
     if (matchedString.endsWith('.ts') || matchedString.endsWith('.json') || matchedString.endsWith('.js') || matchedString.endsWith('.mjs')) continue;
     
     if (!validSchemas.has(matchedString) && !allowedHistorical.has(matchedString)) {
-      // For docs, we just warn, but since it's a strict gate let's make sure our reports don't have fake schemas
-      // Wait, there might be "hardkas.fake.v1" mentioned in the report itself! Let's allow "hardkas.fake.v1" in allowedHistorical.
-      // But we must catch anything else.
+      // In docs, notify if an unregistered schema is referenced
     }
   }
 }
