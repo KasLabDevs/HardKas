@@ -25,7 +25,15 @@ import {
   type SilverRunnerTrustPolicy,
   type CovenantStaticAnalysisReport
 } from "@hardkas/core";
-import { createV1TxPlanArtifact, expectedScriptPublicKeyHex } from "@hardkas/artifacts";
+import {
+  createV1TxPlanArtifact,
+  expectedScriptPublicKeyHex,
+  checkArtifactIdentity,
+  createCovenantTransitionFactArtifact,
+  deriveCovenantStatus,
+  type CovenantTransitionFact,
+  type CovenantStatusResult
+} from "@hardkas/artifacts";
 import {
   v1ContractFactsFromArtifact,
   v1ContractFactsAtState,
@@ -177,6 +185,8 @@ export interface CovenantTransitionResult {
    * CONSENSUS_SIMNET_INCONCLUSIVE. `expectedTxId` is empty when the transaction was never built.
    */
   readonly consensus?: ConsensusSubmissionEvidence | undefined;
+  readonly transitionFact?: CovenantTransitionFact | undefined;
+  readonly covenantStatus?: CovenantStatusResult | undefined;
 }
 
 export interface CovenantTestbedOptions {
@@ -1259,6 +1269,73 @@ export function createCovenantTestbed(options: CovenantTestbedOptions = {}) {
 
     // Step 3: CONSENSUS_SIMNET. R-01: a pass needs the node's answer naming the expected txid AND the transaction's effect
     // observed in the node's UTXO index (submitAndObserveConsensus); a submission alone is never one.
+    // Unified Lifecycle: assemble immutable CovenantTransitionFact (IC-2'.3 / Wave 2a)
+    let transitionFact: CovenantTransitionFact | undefined;
+    if (planCandidate && builtTx && primaryUtxo) {
+      try {
+        const planId = checkArtifactIdentity(planCandidate);
+        const draftId = builtTx.signed ? checkArtifactIdentity(builtTx.signed) : undefined;
+        const outpoint = { transactionId: String(primaryUtxo.outpoint.transactionId), index: Number(primaryUtxo.outpoint.index) };
+        const succOutpoint = resolvedContinuations[0]
+          ? { transactionId: builtTx.txId, index: 0 }
+          : undefined;
+        transitionFact = createCovenantTransitionFactArtifact({
+          networkId,
+          covenantId: covenantId ?? primaryUtxo.covenantId ?? "00".repeat(32),
+          contractName: params.contract.contractName,
+          artifactSha256: params.contract.artifactSha256,
+          entrypoint: policyName,
+          ...(params.policy ? { policy: params.policy } : {}),
+          ...(primaryUtxo.state ? { previousState: primaryUtxo.state } : {}),
+          ...(params.nextStates[0]?.state ? { nextState: params.nextStates[0].state as any } : {}),
+          spentOutpoint: outpoint,
+          ...(succOutpoint ? { successorOutpoint: succOutpoint } : {}),
+          ...(resolvedContinuations[0]?.amountSompi ? { successorAmountSompi: String(resolvedContinuations[0].amountSompi) } : {}),
+          planArtifactId: planId.ok ? planId.artifactId : "00".repeat(32),
+          ...(draftId?.ok ? { draftArtifactId: draftId.artifactId } : {}),
+          txId: builtTx.txId,
+          validation: {
+            structuralPassed,
+            ...(vmResult ? { scriptVmPassed: vmResult.passed, vmStatus: vmResult.status, diagnostic: vmResult.diagnostic?.message } : {})
+          }
+        });
+      } catch {
+        // fact remains undefined if parameter validation fails
+      }
+    }
+
+    const computeCovenantStatus = (txOutcome?: string): CovenantStatusResult | undefined => {
+      if (!transitionFact) return undefined;
+      const statusKind = txOutcome === "CONFIRMED"
+        ? "CONFIRMED"
+        : txOutcome === "REJECTED"
+          ? "REJECTED_BY_NODE"
+          : consensus?.outcome === "CONFIRMED"
+            ? "CONFIRMED"
+            : vmResult?.passed
+              ? "SYNTHETIC_EXECUTED"
+              : undefined;
+
+      const dummyDerived = statusKind
+        ? {
+            txId: builtTx?.txId ?? "",
+            status: statusKind as any,
+            policy: { policyId: "hardkas.policy.v1", policyVersion: 1, origin: "hardkas-product-default" as const, minConfirmations: 10, confirmationUnit: "blue-score" as const },
+            perObserver: [],
+            observers: [],
+            evidence: { observationArtifactIds: [], ignored: [] },
+            reasons: [consensus?.detail ?? "Covenant transition preflight execution"],
+            isFinal: statusKind === "CONFIRMED" || statusKind === "REJECTED_BY_NODE"
+          }
+        : undefined;
+
+      return deriveCovenantStatus({
+        transitionFact,
+        txStatus: dummyDerived,
+        isTerminated: resolvedContinuations.length === 0
+      });
+    };
+
     let consensus: ConsensusSubmissionEvidence | undefined;
     if (backends.includes("CONSENSUS_SIMNET")) {
       if (!options.simnetRpc || !builtTx) {
@@ -1333,6 +1410,8 @@ export function createCovenantTestbed(options: CovenantTestbedOptions = {}) {
           plan: planCandidate,
           signedArtifact: builtTx.signed,
           simnetConfirmed: false,
+          ...(transitionFact ? { transitionFact } : {}),
+          ...(computeCovenantStatus(consensus.outcome) ? { covenantStatus: computeCovenantStatus(consensus.outcome) } : {}),
           consensus
         };
         recordedResults.push(res);
@@ -1384,7 +1463,9 @@ export function createCovenantTestbed(options: CovenantTestbedOptions = {}) {
       ...(massBreakdown ? { massBreakdown } : {}),
       plan: planCandidate,
       ...(builtTx ? { signedArtifact: builtTx.signed } : {}),
-      ...(reachedSimnet ? { simnetConfirmed: true, consensus } : {})
+      ...(reachedSimnet ? { simnetConfirmed: true, consensus } : {}),
+      ...(transitionFact ? { transitionFact } : {}),
+      ...(computeCovenantStatus(reachedSimnet ? "CONFIRMED" : undefined) ? { covenantStatus: computeCovenantStatus(reachedSimnet ? "CONFIRMED" : undefined) } : {})
     };
     recordedResults.push(res);
     return res;

@@ -10,6 +10,7 @@ exports[`Wave 1.1 · v5 canonicalisation authenticates material fields (AUD-11) 
   "BaseArtifactSchema.hardkasVersion",
   "CovenantSchema.createdAt",
   "CovenantSchema.hardkasVersion",
+  "CovenantTransitionFactSchema.hardkasVersion",
   "EvidencePackageSchema.createdAt",
   "EvidencePackageSchema.hardkasVersion",
   "IgraStatusSchema.createdAt",
@@ -96,5 +97,6 @@ exports[`Wave 1.1 · v5 canonicalisation authenticates material fields (AUD-11) 
   "TxTraceSchema.hardkasVersion",
   "WorkflowSchema.createdAt",
   "WorkflowSchema.hardkasVersion",
+  "ZkVerificationFactSchema.hardkasVersion",
 ]
 `;

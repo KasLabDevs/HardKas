@@ -41,6 +41,7 @@ export const IDENTITY_CATEGORIES: Readonly<Record<string, IdentityCategory>> = O
   spendPlanHash: "CONTENT",
   deploySimulationHash: "CONTENT",
   planArtifactId: "CONTENT",
+  draftArtifactId: "CONTENT",
   receiptArtifactId: "CONTENT",
   submissionArtifactId: "CONTENT", // a TxObservation's subject submission (Wave 2(a), IC-2′.3)
   childArtifactId: "CONTENT",

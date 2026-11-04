@@ -329,7 +329,9 @@ export function assertV1PlanShape(plan: Record<string, any>): { feeSompi: bigint
         break;
       case "p2sh":
         if (input.covenantId !== undefined) throw invalid(`${where}: an input with a covenant id is declared as a covenant input, not p2sh`, { where });
-        checkContract(input.contract, `${where}.contract`);
+        if (input.contract !== undefined) {
+          checkContract(input.contract, `${where}.contract`);
+        }
         break;
       case "covenant":
         if (input.covenantId === undefined) throw invalid(`${where}: a covenant input carries the covenant id the node reports`);

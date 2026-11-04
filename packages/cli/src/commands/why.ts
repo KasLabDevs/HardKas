@@ -126,6 +126,10 @@ export function registerWhyCommand(program: Command) {
                 role = "Transaction Receipt";
               if (artifact.schema.startsWith(HardkasSchemas.ReplayV1))
                 role = "Replay Verification";
+              if (artifact.schema === HardkasSchemas.CovenantTransitionFactV1)
+                role = "Covenant Transition";
+              if (artifact.schema === HardkasSchemas.ZkVerificationFactV1)
+                role = "ZK Verification";
             }
 
             // IC-5′.11: the canonical identity, never a label.
@@ -151,6 +155,46 @@ export function registerWhyCommand(program: Command) {
           }
 
           const targetId = chain[0]?.id;
+
+          // Discover associated collateral facts (Covenant / ZK) without modifying the linear parent-child lineage
+          const targetTxId =
+            typeof handle.artifact?.txId === "string"
+              ? handle.artifact.txId
+              : (lookup.namespace === "tx" ? lookup.input : undefined);
+
+          let factsResolution: any;
+          if (targetTxId) {
+            const planNode = chain.find((n) => n.schema?.startsWith(HardkasSchemas.TxPlan));
+            const signedNode = chain.find((n) => n.schema?.startsWith(HardkasSchemas.SignedTx));
+            const planArtifact = lineage.find((a: any) => a.schema?.startsWith(HardkasSchemas.TxPlan));
+            const { resolveAssociatedFacts } = await import("../runners/why-facts.js");
+            factsResolution = resolveAssociatedFacts({
+              txId: targetTxId,
+              workspaceRoot,
+              planArtifactId: planNode?.id,
+              draftArtifactId: signedNode?.id,
+              planOutputs: planArtifact?.outputs
+            });
+
+            if (chain[0]) {
+              const allFacts = [
+                ...factsResolution.covenantFacts,
+                ...factsResolution.zkFacts
+              ];
+              if (allFacts.length > 0) {
+                chain[0].associatedFacts = allFacts.map((f: any) => ({
+                  schema: f.schema,
+                  id: f.id,
+                  relation: f.relation,
+                  ...(f.reason ? { reason: f.reason } : {}),
+                  ...(f.details ? { details: f.details } : {})
+                }));
+              }
+              if (factsResolution.offlineStatus) {
+                chain[0].offlineStatus = factsResolution.offlineStatus;
+              }
+            }
+          }
 
           if (options.json) {
             UI.writeJson({
@@ -191,6 +235,50 @@ export function registerWhyCommand(program: Command) {
             UI.raw(
               `  ${indent}  \x1b[90mTime: ${node.createdAt || "unknown"}\x1b[0m`
             );
+          }
+
+          if (factsResolution) {
+            const allFacts = [
+              ...factsResolution.covenantFacts,
+              ...factsResolution.zkFacts
+            ];
+            if (allFacts.length > 0 || factsResolution.contradictoryFacts.length > 0) {
+              UI.emptyLine();
+              UI.raw("  \x1b[1mAssociated Evidence:\x1b[0m");
+              for (const f of factsResolution.covenantFacts) {
+                const color = f.relation === "exact" ? "\x1b[32m" : f.relation === "compatible" ? "\x1b[36m" : "\x1b[31m";
+                UI.raw(`    ◆ Covenant Transition (${color}${f.relation.toUpperCase()}\x1b[0m)`);
+                UI.raw(`      \x1b[90mFact ID:   ${f.id}\x1b[0m`);
+                if (f.reason) UI.raw(`      \x1b[90mBinding:   ${f.reason}\x1b[0m`);
+                if (f.details) UI.raw(`      \x1b[90mDetails:   ${f.details}\x1b[0m`);
+              }
+              for (const f of factsResolution.zkFacts) {
+                const color = f.relation === "exact" ? "\x1b[32m" : f.relation === "compatible" ? "\x1b[36m" : "\x1b[31m";
+                UI.raw(`    ◆ ZK Verification (${color}${f.relation.toUpperCase()}\x1b[0m)`);
+                UI.raw(`      \x1b[90mFact ID:   ${f.id}\x1b[0m`);
+                if (f.reason) UI.raw(`      \x1b[90mBinding:   ${f.reason}\x1b[0m`);
+                if (f.details) UI.raw(`      \x1b[90mDetails:   ${f.details}\x1b[0m`);
+              }
+            }
+
+            if (factsResolution.offlineStatus) {
+              UI.emptyLine();
+              UI.raw("  \x1b[1mDerived Status (Offline):\x1b[0m");
+              const s = factsResolution.offlineStatus;
+              if (s.tx) {
+                UI.raw(`    Transaction: ${s.tx.status}${s.tx.confirmations?.blue ? ` (${s.tx.confirmations.blue} blue-score confirmations)` : ""}`);
+                if (s.tx.reasons && s.tx.reasons.length > 0 && s.tx.status !== "FINALIZED") {
+                  UI.raw(`      \x1b[90mReason:      ${s.tx.reasons[0]}\x1b[0m`);
+                }
+              }
+              if (s.covenant) {
+                UI.raw(`    Covenant:    ${s.covenant.kind}${s.covenant.activeOutpoint ? ` (Active: ${s.covenant.activeOutpoint})` : ""}`);
+              }
+              if (s.zk) {
+                UI.raw(`    ZK:          ${s.zk.kind}`);
+              }
+              UI.raw(`    \x1b[90mNotice:      ${s.offlineNotice}\x1b[0m`);
+            }
           }
 
           UI.emptyLine();

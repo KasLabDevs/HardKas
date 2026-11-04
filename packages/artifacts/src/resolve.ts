@@ -299,7 +299,7 @@ export function countWorkspaceArtifactsSync(workspaceRoot: string): { artifacts:
 // Candidate verification (IC-5′.4)
 // -----------------------------------------------------------------------------
 
-type CandidateCheck =
+export type CandidateCheck =
   | { ok: true; artifactId: string; authScope: AuthScope }
   | { ok: false; issues: VerificationIssue[] };
 

@@ -37,5 +37,27 @@ export function describeWhyNode(artifact: any): string | undefined {
   if (schema.startsWith(HardkasSchemas.ReplayV1)) {
     return `Verified: ${artifact.status}`;
   }
+  if (schema === HardkasSchemas.CovenantTransitionFactV1) {
+    const contract = typeof artifact?.contractName === "string" ? artifact.contractName : "contract";
+    const method = typeof artifact?.entrypoint === "string" ? artifact.entrypoint : "transition";
+    const spent = artifact?.spentOutpoint
+      ? `${String(artifact.spentOutpoint.transactionId).slice(0, 8)}:${artifact.spentOutpoint.index}`
+      : "unknown";
+    const successor = artifact?.successorOutpoint
+      ? `${String(artifact.successorOutpoint.transactionId).slice(0, 8)}:${artifact.successorOutpoint.index}`
+      : "none (terminated)";
+    const preflight = artifact?.validation?.scriptVmPassed
+      ? "ScriptVM PASSED"
+      : (artifact?.validation?.diagnostic ?? (artifact?.validation?.structuralPassed ? "Structural OK" : "Preflight failed"));
+    return `Covenant ${typeof artifact?.covenantId === "string" ? artifact.covenantId.slice(0, 8) + "..." : ""} (${contract}.${method}), spent ${spent} -> ${successor} (${preflight}). Contract state transition declared; node execution requires consensus observation.`;
+  }
+  if (schema === HardkasSchemas.ZkVerificationFactV1) {
+    const guest = typeof artifact?.guestSystem === "string" ? artifact.guestSystem : "Guest";
+    const sys = typeof artifact?.provingSystem === "string" ? artifact.provingSystem : "Groth16";
+    const curve = typeof artifact?.curve === "string" ? artifact.curve : "BN254";
+    const math = artifact?.verifiedOffChain ? "Math verified locally" : "Math verification FAILED";
+    const journal = typeof artifact?.journalHash === "string" ? `${String(artifact.journalHash).slice(0, 8)}...` : "unknown";
+    return `ZK proof (${guest} ${sys} ${curve}), journal ${journal}, ${math}. Cryptographic Groth16 proof verified off-chain; consensus acceptance requires OpZkPrecompile execution in DAG.`;
+  }
   return undefined;
 }

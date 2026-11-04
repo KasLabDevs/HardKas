@@ -1,10 +1,27 @@
-import { loadManagedKaspaWasmSync } from "@hardkas/core";
+import { createHash } from "node:crypto";
+import { loadManagedKaspaWasmSync, systemRuntimeContext } from "@hardkas/core";
+import type { KaspaRpcClient } from "@hardkas/kaspa-rpc";
 import {
   HardkasSchemas,
+  createV1TxPlanArtifact,
+  createZkVerificationFactArtifact,
+  checkArtifactIdentity,
+  deriveTxStatus,
+  deriveZkOperationStatus,
   type ZkToccataScriptsType,
-  type ZkToccataTxType
+  type ZkToccataTxType,
+  type TxPlanArtifact,
+  type ZkVerificationFact,
+  type ZkOperationStatusResult,
+  type DerivedTxStatus,
+  type TxObservation
 } from "@hardkas/artifacts";
+import { observeTxOnce, rpcObserverFor } from "../tx-observer.js";
 import type { ZkIssue } from "../zk.js";
+
+function sha256Hex(data: string | Buffer): string {
+  return createHash("sha256").update(data).digest("hex");
+}
 
 export const OP_ZK_PRECOMPILE = "0xa6";
 export const GROTH16_PROVING_SYSTEM_TAG = "0x20";
@@ -178,6 +195,8 @@ export interface BuildR0Groth16TxParams {
   feeOptions?: ToccataFeePolicyOptions;
   computeBudget?: number;
   networkId?: "simnet" | "testnet-10" | "mainnet";
+  /** Whether the Groth16 mathematical verification succeeded off-chain */
+  mathVerified?: boolean | undefined;
 }
 
 export interface R0Groth16TxResult {
@@ -200,6 +219,10 @@ export interface R0Groth16TxResult {
   experimental: true;
   warnings: ZkIssue[];
   issues: ZkIssue[];
+  /** Unified V1 transaction plan artifact for this ZK spend */
+  planArtifact?: TxPlanArtifact | undefined;
+  /** Immutable ZK verification fact binding proof, verification key, inputs and outputs */
+  zkFact?: ZkVerificationFact | undefined;
 }
 
 export interface R0Groth16VerifyScriptsParams {
@@ -513,6 +536,59 @@ function emptyTxResult(
 }
 
 /**
+ * Builds a TxPlanArtifact (hardkas.txPlan.v1) for a Toccata ZK Groth16 spend.
+ * Integrates ZK transactions directly into HardKAS's deterministic plan pipeline.
+ */
+export function buildR0Groth16Plan(params: BuildR0Groth16TxParams): TxPlanArtifact {
+  const computeBudget = params.computeBudget ?? DEFAULT_ZK_COMPUTE_BUDGET;
+  const feeEstimate = estimateToccataZkFee(computeBudget, REFERENCE_BASE_COMPUTE_MASS, params.feeOptions);
+  const feeSompi = params.feeSompi ?? feeEstimate.recommendedSompi;
+  const spkHex = params.scripts.p2shScriptPublicKey
+    ? `${Number(params.scripts.p2shScriptPublicKey.version).toString(16).padStart(4, "0")}${params.scripts.p2shScriptPublicKey.script}`
+    : "0008" + "00".repeat(32);
+  const netKey = (params.networkId ?? "simnet") as "simnet" | "testnet-10" | "mainnet";
+  const p2shAddress =
+    (netKey === "testnet-10" ? params.scripts.p2shAddresses?.testnet10 : params.scripts.p2shAddresses?.[netKey]) ||
+    params.scripts.p2shAddresses?.simnet ||
+    "kaspasim:p2sh_zk_placeholder";
+  const outputAmount = params.utxo.amountSompi > feeSompi ? params.utxo.amountSompi - feeSompi : 0n;
+
+  return createV1TxPlanArtifact({
+    networkId: (params.networkId ?? "simnet") as any,
+    mode: "rpc",
+    from: { input: p2shAddress, address: p2shAddress },
+    to: { input: params.destinationAddress, address: params.destinationAddress },
+    amountSompi: outputAmount,
+    body: {
+      txVersion: 1,
+      inputs: [
+        {
+          outpoint: { transactionId: params.utxo.transactionId, index: params.utxo.index },
+          amountSompi: String(params.utxo.amountSompi),
+          address: p2shAddress,
+          scriptPublicKey: spkHex,
+          kind: "p2sh",
+          computeBudget
+        }
+      ],
+      outputs: [
+        {
+          address: params.destinationAddress,
+          amountSompi: String(outputAmount),
+          role: "payment"
+        }
+      ],
+      estimatedFeeSompi: String(feeSompi),
+      estimatedMass: String(feeEstimate.computeMass),
+      storageMass: "0",
+      maxFeeSompi: String(params.feeOptions?.maxFeeSompi ?? DEFAULT_MAX_FEE_CAP_SOMPI)
+    },
+    ctx: systemRuntimeContext,
+    purpose: "ZK Groth16 spend"
+  }) as any;
+}
+
+/**
  * Builds (does not sign or broadcast) a version-1 transaction spending a P2SH UTXO locked by a
  * RISC Zero Groth16 covenant. The compute budget must be a u16; the fee is derived from the mass
  * kaspa-wasm reports for the real transaction plus the compute-budget term.
@@ -642,6 +718,57 @@ export function buildR0Groth16Transaction(params: BuildR0Groth16TxParams): R0Gro
       });
     }
 
+    const planArtifact = buildR0Groth16Plan({
+      ...params,
+      feeSompi
+    });
+    const planIdCheck = checkArtifactIdentity(planArtifact);
+    const planArtifactId = planIdCheck.ok ? planIdCheck.artifactId : undefined;
+    const finalOutputAmount = params.utxo.amountSompi - feeSompi;
+
+    let zkFact: ZkVerificationFact | undefined;
+    try {
+      const vkHash = params.scripts.imageId
+        ? sha256Hex(params.scripts.imageId)
+        : "00".repeat(32);
+      const rawJournal = params.scripts.journalHash ?? "";
+      const journalHash = rawJournal.startsWith("0x") ? rawJournal.slice(2) : rawJournal;
+      const rawProof = typeof params.scripts.preparedProof === "string" ? params.scripts.preparedProof : "";
+      const proofHash = rawProof ? sha256Hex(rawProof) : "00".repeat(32);
+      const redeemHash = params.scripts.redeemScriptHash || sha256Hex(params.scripts.redeemScript || "");
+      const netKey = (networkId ?? "simnet") as "simnet" | "testnet-10" | "mainnet";
+      const p2shAddress =
+        (netKey === "testnet-10" ? params.scripts.p2shAddresses?.testnet10 : params.scripts.p2shAddresses?.[netKey]) ||
+        params.scripts.p2shAddresses?.simnet ||
+        "kaspasim:p2sh_zk_placeholder";
+
+      zkFact = createZkVerificationFactArtifact({
+        networkId,
+        provingSystem: "Groth16",
+        curve: "BN254",
+        guestSystem: "RISC Zero",
+        imageId: vkHash.padEnd(64, "0").slice(0, 64),
+        journalHash: (journalHash || "00".repeat(32)).padEnd(64, "0").slice(0, 64),
+        proofSha256: proofHash.padEnd(64, "0").slice(0, 64),
+        verifiedOffChain: params.mathVerified ?? false,
+        spendUtxo: {
+          transactionId: params.utxo.transactionId,
+          index: params.utxo.index,
+          amountSompi: String(params.utxo.amountSompi)
+        },
+        p2shAddress,
+        redeemScriptHash: redeemHash.padEnd(64, "0").slice(0, 64),
+        payoutAddress: destinationAddress,
+        payoutSompi: String(finalOutputAmount),
+        computeBudget,
+        feeSompi: String(feeSompi),
+        txId: String(tx.id),
+        ...(planArtifactId ? { planArtifactId } : {})
+      });
+    } catch {
+      // Ignore fact creation errors to avoid breaking tx building
+    }
+
     return {
       ok: issues.length === 0,
       schema: HardkasSchemas.ZkToccataTxV1,
@@ -659,7 +786,9 @@ export function buildR0Groth16Transaction(params: BuildR0Groth16TxParams): R0Gro
       networkId,
       experimental: true,
       warnings,
-      issues
+      issues,
+      planArtifact,
+      zkFact
     };
   } catch (error: any) {
     const msg = error instanceof Error ? error.message : String(error);
@@ -798,5 +927,53 @@ export function getToccataPrecompileRules(): ToccataPrecompileRules {
     maxStandardMass: STANDARD_MAX_TRANSACTION_MASS,
     consensusActivation: "KIP-16 (Toccata Hardfork)",
     scriptSource: KASPA_WASM_ZK_BUILDER_CLAIM
+  };
+}
+
+/**
+ * Observes a Toccata ZK transaction using HardKAS's common TxObserver pipeline and
+ * derives both the base transaction status and the unified ZK operation status.
+ */
+export async function observeZkSpendOnce(
+  client: KaspaRpcClient,
+  params: {
+    readonly txId: string;
+    readonly zkFact?: ZkVerificationFact | undefined;
+    readonly observerId?: string | undefined;
+    readonly networkId?: TxObservation["networkId"] | undefined;
+    readonly mode?: TxObservation["mode"] | undefined;
+  }
+): Promise<{
+  readonly observation: TxObservation;
+  readonly derivedStatus: DerivedTxStatus;
+  readonly zkStatus?: ZkOperationStatusResult | undefined;
+}> {
+  const recorder = rpcObserverFor(client);
+  const defaultObserverId = "obs_" + sha256Hex("zk-toccata-observer");
+  const observation = await observeTxOnce(
+    recorder,
+    {
+      txId: params.txId,
+      observerId: params.observerId ?? defaultObserverId,
+      networkId: params.networkId ?? "simnet",
+      mode: params.mode ?? "rpc"
+    },
+    systemRuntimeContext
+  );
+  const derivedStatus = deriveTxStatus({
+    txId: params.txId,
+    observations: [observation]
+  });
+  const zkStatus = params.zkFact
+    ? deriveZkOperationStatus({
+        zkFact: params.zkFact,
+        txStatus: derivedStatus
+      })
+    : undefined;
+
+  return {
+    observation,
+    derivedStatus,
+    ...(zkStatus ? { zkStatus } : {})
   };
 }

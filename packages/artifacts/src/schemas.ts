@@ -1681,3 +1681,80 @@ export type ZkProofMathVerificationType = z.infer<typeof ZkProofMathVerification
 export type ZkToccataScriptsType = z.infer<typeof ZkToccataScriptsSchema>;
 export type ZkToccataTxType = z.infer<typeof ZkToccataTxSchema>;
 export type ZkExecutionEvidenceType = z.infer<typeof ZkExecutionEvidenceSchema>;
+
+/**
+ * hardkas.covenantTransitionFact.v1
+ * Immutable fact capturing the full context of a covenant transition:
+ * identity, contract ABI, entrypoint, state before/after, consumed/successor outpoints,
+ * plan, and validation results.
+ */
+export const CovenantTransitionFactSchema = z.object({
+  schema: z.literal(HardkasSchemas.CovenantTransitionFactV1),
+  hardkasVersion: z.string(),
+  hashVersion: z.union([z.number(), z.string()]),
+  networkId: kaspaNetworkIdSchema,
+  covenantId: z.string().regex(/^[0-9a-f]{64}$/i),
+  contractName: z.string(),
+  artifactSha256: z.string(),
+  entrypoint: z.string(),
+  policy: z.string().optional(),
+  previousState: z.record(z.unknown()).optional(),
+  nextState: z.record(z.unknown()).optional(),
+  spentOutpoint: z.object({
+    transactionId: z.string(),
+    index: z.number().int().nonnegative()
+  }),
+  successorOutpoint: z.object({
+    transactionId: z.string(),
+    index: z.number().int().nonnegative()
+  }).optional(),
+  successorAmountSompi: z.string().optional(),
+  planArtifactId: z.string(),
+  draftArtifactId: z.string().optional(),
+  txId: z.string().regex(/^[0-9a-f]{64}$/i),
+  validation: z.object({
+    structuralPassed: z.boolean(),
+    scriptVmPassed: z.boolean().optional(),
+    vmStatus: z.string().optional(),
+    diagnostic: z.string().optional()
+  }),
+  timestamp: z.string(),
+  contentHash: z.string().optional()
+});
+export type CovenantTransitionFact = z.infer<typeof CovenantTransitionFactSchema>;
+
+/**
+ * hardkas.zkVerificationFact.v1
+ * Immutable fact capturing the cryptographic verification and transaction lineage
+ * of a Zero-Knowledge proof execution on Kaspa Toccata.
+ */
+export const ZkVerificationFactSchema = z.object({
+  schema: z.literal(HardkasSchemas.ZkVerificationFactV1),
+  hardkasVersion: z.string(),
+  hashVersion: z.union([z.number(), z.string()]),
+  networkId: kaspaNetworkIdSchema,
+  provingSystem: z.literal("Groth16"),
+  curve: z.literal("BN254"),
+  guestSystem: z.enum(["RISC Zero", "custom"]),
+  imageId: z.string().regex(/^[0-9a-f]{64}$/i),
+  journalHash: z.string().regex(/^[0-9a-f]{64}$/i),
+  proofSha256: z.string(),
+  verifiedOffChain: z.boolean(),
+  spendUtxo: z.object({
+    transactionId: z.string(),
+    index: z.number().int().nonnegative(),
+    amountSompi: z.string()
+  }),
+  p2shAddress: z.string(),
+  redeemScriptHash: z.string(),
+  planArtifactId: z.string().optional(),
+  draftArtifactId: z.string().optional(),
+  txId: z.string().regex(/^[0-9a-f]{64}$/i),
+  payoutAddress: z.string(),
+  payoutSompi: z.string(),
+  computeBudget: z.number().int().nonnegative(),
+  feeSompi: z.string(),
+  timestamp: z.string(),
+  contentHash: z.string().optional()
+});
+export type ZkVerificationFact = z.infer<typeof ZkVerificationFactSchema>;

@@ -55,6 +55,8 @@ export const HardkasSchemas = {
   DeploymentV1: "hardkas.deployment.v1",
   DeploymentIndexV1: "hardkas.deploymentIndex.v1",
   CovenantV1: "hardkas.covenant.v1",
+  CovenantTransitionFactV1: "hardkas.covenantTransitionFact.v1",
+  ZkVerificationFactV1: "hardkas.zkVerificationFact.v1",
   ToccataCapabilitiesV1: "hardkas.toccataCapabilities.v1",
 
   // --- L2 & Igra ---
@@ -227,7 +229,7 @@ export function describeArtifactType(type: HardkasSchema): SchemaMetadata {
 }
 
 function inferDomain(type: string): SchemaMetadata["domain"] {
-  if (type.includes("silver")) return "silver";
+  if (type.includes("silver") || type.includes("covenant")) return "silver";
   if (type.includes("zk") || type.includes("groth16") || type.includes("risc0")) return "zk";
   if (type.includes("vprog")) return "vprogs";
   if (type.includes("programmability")) return "programmability";

@@ -19,6 +19,7 @@ import {
   type Groth16VerificationKeyStrength
 } from "./zk/groth16-verifier.js";
 import {
+  buildR0Groth16Plan,
   buildR0Groth16Scripts,
   prepareR0Groth16Proof,
   buildR0Groth16Transaction,
@@ -42,6 +43,7 @@ import {
   GROTH16_PRECOMPILE_COST_SCRIPT_UNITS,
   KASPA_WASM_ZK_BUILDER_CLAIM,
   parseKaspaScript,
+  observeZkSpendOnce,
   type KaspaScriptOp,
   type R0Groth16ScriptParams,
   type R0Groth16ScriptsResult,
@@ -53,14 +55,25 @@ import {
   type ToccataFeePolicyOptions,
   type ToccataZkFeeEstimate
 } from "./zk/toccata.js";
+import {
+  deriveZkOperationStatus,
+  createZkVerificationFactArtifact,
+  type ZkVerificationFact,
+  type ZkOperationStatusResult
+} from "@hardkas/artifacts";
 
 export {
+  buildR0Groth16Plan,
   buildR0Groth16Scripts,
   prepareR0Groth16Proof,
   buildR0Groth16Transaction,
   verifyR0Groth16Scripts,
   getToccataPrecompileRules,
   estimateToccataZkFee,
+  deriveZkOperationStatus,
+  createZkVerificationFactArtifact,
+  type ZkVerificationFact,
+  type ZkOperationStatusResult,
   OP_ZK_PRECOMPILE,
   GROTH16_PROVING_SYSTEM_TAG,
   DEFAULT_ZK_COMPUTE_BUDGET,
@@ -78,6 +91,7 @@ export {
   GROTH16_PRECOMPILE_COST_SCRIPT_UNITS,
   KASPA_WASM_ZK_BUILDER_CLAIM,
   parseKaspaScript,
+  observeZkSpendOnce,
   type KaspaScriptOp,
   type R0Groth16ScriptParams,
   type R0Groth16ScriptsResult,
@@ -271,11 +285,14 @@ export class HardkasZk {
     verify: (targetPath: string) => Promise<ZkCorpusVerifyResult>;
   };
   public readonly toccata: {
+    buildPlan: typeof buildR0Groth16Plan;
     buildScripts: typeof buildR0Groth16Scripts;
     prepareProof: typeof prepareR0Groth16Proof;
     buildTransaction: typeof buildR0Groth16Transaction;
     verifyScripts: typeof verifyR0Groth16Scripts;
     rules: typeof getToccataPrecompileRules;
+    deriveStatus: typeof deriveZkOperationStatus;
+    observeSpendOnce: (txId: string, zkFact?: ZkVerificationFact) => Promise<{ observation: any; derivedStatus: any; zkStatus?: any }>;
   };
 
   constructor(private sdk: Hardkas) {
@@ -289,11 +306,15 @@ export class HardkasZk {
       verify: (targetPath: string) => verifyZkCorpus(targetPath, this.sdk.cwd)
     };
     this.toccata = {
+      buildPlan: buildR0Groth16Plan,
       buildScripts: buildR0Groth16Scripts,
       prepareProof: prepareR0Groth16Proof,
       buildTransaction: buildR0Groth16Transaction,
       verifyScripts: verifyR0Groth16Scripts,
-      rules: getToccataPrecompileRules
+      rules: getToccataPrecompileRules,
+      deriveStatus: deriveZkOperationStatus,
+      observeSpendOnce: (txId: string, zkFact?: ZkVerificationFact) =>
+        observeZkSpendOnce(this.sdk.rpc, { txId, zkFact })
     };
   }
 
