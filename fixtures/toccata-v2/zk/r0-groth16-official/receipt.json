@@ -1,0 +1,9 @@
+{
+  "schema": "hardkas.zk.risc0.receipt.v1",
+  "encoding": "borsh-hex",
+  "receiptFile": "receipt.hex",
+  "lengthBytes": 325,
+  "imageId": "75641a540ee2ad9ee5902bcdcdb8b55c0bef4a28287309b858f97b1356c6c2e0",
+  "journalHash": "5df6e0e2761359d30a8275058e299fcc0381534545f55cf43e41983f5d4c9456",
+  "provenance": "kaspanet/kaspa-python-sdk examples/zk (groth16_onchain.py, data/groth.rcpt.hex); scripts built with the ZkScriptBuilder of kaspa-wasm (rusty-kaspa 2.1.0)"
+}

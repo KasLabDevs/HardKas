@@ -83,7 +83,7 @@ export function classifyNodeRejection(message: string): NodeRejection {
 }
 
 /** The class of a recorded submit result, only when that result is the node's rejection (submitOutcomeOf: rejected). */
-export function nodeRejectionOf(submitResult: { accepted?: unknown; error?: unknown } | null | undefined): NodeRejection | undefined {
+export function nodeRejectionOf(submitResult: { accepted?: unknown; error?: unknown; transactionId?: unknown; [key: string]: unknown } | null | undefined): NodeRejection | undefined {
   if (submitOutcomeOf(submitResult) !== "rejected") return undefined;
   const error = submitResult?.error;
   return typeof error === "string" && error.length > 0 ? classifyNodeRejection(error) : { code: "NODE_REJECTED_UNCLASSIFIED", retriable: false };

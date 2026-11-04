@@ -1,0 +1,14 @@
+{
+  "schema": "hardkas.zk.groth16.verifyReport.v1",
+  "status": "ZK_FIXTURE_COHERENCE_PASS",
+  "coherenceDigest": "e2181d1e033af814391a5b8eebbf2259b13b43a60ca52f72d36b1f917b4ead83",
+  "claims": {
+    "cryptographicVerification": "TOY_KNOWN_TRAPDOOR",
+    "trustedSetup": "INSECURE_UNCONTRIBUTED_TAU",
+    "fixtureCoherence": "CLAIMED",
+    "zkOnchainVerification": "NOT_CLAIMED",
+    "vmConsensusEquivalence": "NOT_CLAIMED",
+    "mainnet": "BLOCKED_BY_POLICY"
+  },
+  "note": "ZK_FIXTURE_COHERENCE_PASS is a coherence verdict. The pairing check passes too, but against a key with a known trapdoor, so the proof demonstrates nothing (see README)."
+}

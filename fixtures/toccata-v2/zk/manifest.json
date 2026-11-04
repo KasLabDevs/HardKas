@@ -1,10 +1,13 @@
 {
   "schema": "hardkas.zkCorpus.v1",
-  "version": "0.1.0-experimental",
+  "version": "0.2.0-experimental",
   "network": "simnet",
   "profile": "toccata-v2",
   "experimental": true,
-  "proofSystems": ["groth16", "risc0"],
+  "proofSystems": [
+    "groth16",
+    "risc0"
+  ],
   "expectedKnownLimitations": [
     "ZK_ONCHAIN_VERIFICATION_NOT_CLAIMED",
     "PARTIAL_VM_SIMULATION"
@@ -12,6 +15,7 @@
   "claims": {
     "zkArtifactCoherence": "READY_MATCH",
     "zkLocalVerification": "READY_GROTH16_FIXTURE_COHERENCE",
+    "zkMathematicalVerification": "GROTH16_SNARKJS_BN254_FIXTURE_BOUND_TOY_KEY_ONLY",
     "zkOnchainVerification": "NOT_CLAIMED",
     "runtimeOutcome": "PARTIAL",
     "vmConsensusEquivalence": "NOT_CLAIMED",
@@ -24,8 +28,20 @@
       "expectedStatus": "ZK_FIXTURE_COHERENCE_PASS"
     },
     {
+      "id": "groth16-multiplier-toy",
+      "path": "groth16-multiplier/manifest.json",
+      "expectedStatus": "ZK_FIXTURE_COHERENCE_PASS",
+      "expectedMathStatus": "ZK_GROTH16_MATH_VERIFIED",
+      "allowWeakVerificationKey": true
+    },
+    {
       "id": "risc0-smoke",
       "path": "risc0/manifest.json",
+      "expectedStatus": "RISC0_LOCAL_VERIFICATION_NOT_IMPLEMENTED"
+    },
+    {
+      "id": "risc0-groth16-official-vector",
+      "path": "r0-groth16-official/manifest.json",
       "expectedStatus": "RISC0_LOCAL_VERIFICATION_NOT_IMPLEMENTED"
     }
   ]

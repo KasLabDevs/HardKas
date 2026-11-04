@@ -45,7 +45,18 @@ import {
   SilverDeployV1Schema,
   SilverSpendV1Schema,
   SilverCovenantV1Schema,
-  SilverVmTestV1Schema
+  SilverVmTestV1Schema,
+  ZkGroth16ProofSchema,
+  ZkGroth16VerificationKeySchema,
+  ZkGroth16PublicInputsSchema,
+  ZkGroth16FixtureSchema,
+  ZkRisc0ReceiptSchema,
+  ZkRisc0FixtureSchema,
+  ZkCorpusSchema,
+  ZkProofMathVerificationSchema,
+  ZkToccataScriptsSchema,
+  ZkToccataTxSchema,
+  ZkExecutionEvidenceSchema
 } from "./schemas.js";
 
 export interface Clock {
@@ -350,6 +361,39 @@ export function verifyArtifactIntegritySync(
         break;
       case HardkasSchemas.SilverVmTestV1:
         schema = SilverVmTestV1Schema;
+        break;
+      case HardkasSchemas.ZkGroth16ProofV1:
+        schema = ZkGroth16ProofSchema;
+        break;
+      case HardkasSchemas.ZkGroth16VerificationKeyV1:
+        schema = ZkGroth16VerificationKeySchema;
+        break;
+      case HardkasSchemas.ZkGroth16PublicInputsV1:
+        schema = ZkGroth16PublicInputsSchema;
+        break;
+      case HardkasSchemas.ZkGroth16FixtureV1:
+        schema = ZkGroth16FixtureSchema;
+        break;
+      case HardkasSchemas.ZkRisc0ReceiptV1:
+        schema = ZkRisc0ReceiptSchema;
+        break;
+      case HardkasSchemas.ZkRisc0FixtureV1:
+        schema = ZkRisc0FixtureSchema;
+        break;
+      case HardkasSchemas.ZkCorpusV1:
+        schema = ZkCorpusSchema;
+        break;
+      case HardkasSchemas.ZkProofMathVerificationV1:
+        schema = ZkProofMathVerificationSchema;
+        break;
+      case HardkasSchemas.ZkToccataScriptsV1:
+        schema = ZkToccataScriptsSchema;
+        break;
+      case HardkasSchemas.ZkToccataTxV1:
+        schema = ZkToccataTxSchema;
+        break;
+      case HardkasSchemas.ZkExecutionEvidenceV1:
+        schema = ZkExecutionEvidenceSchema;
         break;
     }
 

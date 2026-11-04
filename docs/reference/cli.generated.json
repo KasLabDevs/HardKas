@@ -1,7 +1,7 @@
 {
   "schema": "hardkas.cliReference.v1",
   "generatedAt": "deterministic",
-  "totalCommands": 257,
+  "totalCommands": 261,
   "flatSurface": [
     "hardkas accounts",
     "hardkas accounts balance",
@@ -259,7 +259,11 @@
     "hardkas zk corpus verify",
     "hardkas zk proof",
     "hardkas zk proof inspect",
-    "hardkas zk proof verify"
+    "hardkas zk proof verify",
+    "hardkas zk proof verify-math",
+    "hardkas zk toccata",
+    "hardkas zk toccata build-scripts",
+    "hardkas zk toccata rules"
   ],
   "commands": [
     {
@@ -8108,7 +8112,7 @@
       "path": "hardkas zk",
       "name": "zk",
       "aliases": [],
-      "description": "Experimental local-only ZK proof artifact tools (Outputs JSON by default)",
+      "description": "Experimental local-only ZK proof artifact tools (fixture coherence, Groth16 pairing check, Toccata script building; no on-chain claims)",
       "usage": "hardkas zk [options] [command]",
       "arguments": [],
       "options": [],
@@ -8144,7 +8148,7 @@
               "path": "hardkas zk corpus verify",
               "name": "verify",
               "aliases": [],
-              "description": "Verify a local ZK corpus",
+              "description": "Verify a local ZK corpus (coherence of every listed fixture; pairing check where a fixture claims it)",
               "usage": "hardkas zk corpus verify [options] <path>",
               "arguments": [
                 {
@@ -8203,7 +8207,7 @@
               "aliases": [
                 "verify-local"
               ],
-              "description": "Verify a local proof fixture locally (No on-chain claims) alpha",
+              "description": "Verify local fixture coherence for a proof artifact (No cryptographic proof or on-chain claims) alpha",
               "usage": "hardkas zk proof verify [options] <path>",
               "arguments": [
                 {
@@ -8211,6 +8215,125 @@
                   "description": ""
                 }
               ],
+              "options": [
+                {
+                  "flags": "--json",
+                  "description": "Output as JSON",
+                  "default": false,
+                  "required": false,
+                  "mandatory": false
+                }
+              ],
+              "subcommands": []
+            },
+            {
+              "path": "hardkas zk proof verify-math",
+              "name": "verify-math",
+              "aliases": [],
+              "description": "Groth16 pairing check (snarkjs, BN254) of a fixture, bound to its content hashes by default; reports the key, inputs and proof digests it used (No on-chain claims) alpha",
+              "usage": "hardkas zk proof verify-math [options] <path>",
+              "arguments": [
+                {
+                  "name": "path",
+                  "description": ""
+                }
+              ],
+              "options": [
+                {
+                  "flags": "--json",
+                  "description": "Output as JSON",
+                  "default": false,
+                  "required": false,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--timeout <ms>",
+                  "description": "Verification timeout in milliseconds (integer, 1..600000)",
+                  "default": "10000",
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--expect-vk-hash <sha256>",
+                  "description": "Reject unless the verification key's domain digest equals this value",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--math-only",
+                  "description": "Skip the fixture-coherence binding; the result is labelled MATH_ONLY",
+                  "default": false,
+                  "required": false,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--allow-weak-vk",
+                  "description": "Accept a verification key with a known trapdoor (toy fixtures only; proofs against such keys prove nothing)",
+                  "default": false,
+                  "required": false,
+                  "mandatory": false
+                }
+              ],
+              "subcommands": []
+            }
+          ]
+        },
+        {
+          "path": "hardkas zk toccata",
+          "name": "toccata",
+          "aliases": [],
+          "description": "Kaspa Toccata L1 Zero-Knowledge covenant script tools (kaspa-wasm ZkScriptBuilder; builds only, never broadcasts)",
+          "usage": "hardkas zk toccata [options] [command]",
+          "arguments": [],
+          "options": [],
+          "subcommands": [
+            {
+              "path": "hardkas zk toccata build-scripts",
+              "name": "build-scripts",
+              "aliases": [],
+              "description": "Build P2SH redeem and signature scripts for a RISC Zero Groth16 proof set (imageId/journalHash are not cross-checked against the receipt)",
+              "usage": "hardkas zk toccata build-scripts [options]",
+              "arguments": [],
+              "options": [
+                {
+                  "flags": "--image-id <hex>",
+                  "description": "32-byte hex Image ID",
+                  "default": null,
+                  "required": true,
+                  "mandatory": true
+                },
+                {
+                  "flags": "--journal-hash <hex>",
+                  "description": "32-byte hex Journal Hash",
+                  "default": null,
+                  "required": true,
+                  "mandatory": true
+                },
+                {
+                  "flags": "--receipt <pathOrHex>",
+                  "description": "Path to receipt file (.hex) or raw receipt hex string",
+                  "default": null,
+                  "required": true,
+                  "mandatory": true
+                },
+                {
+                  "flags": "--json",
+                  "description": "Output as JSON",
+                  "default": false,
+                  "required": false,
+                  "mandatory": false
+                }
+              ],
+              "subcommands": []
+            },
+            {
+              "path": "hardkas zk toccata rules",
+              "name": "rules",
+              "aliases": [],
+              "description": "Show the Kaspa Toccata L1 Groth16 precompile facts HardKAS relies on (opcode, tag, costs, compute budget)",
+              "usage": "hardkas zk toccata rules [options]",
+              "arguments": [],
               "options": [
                 {
                   "flags": "--json",

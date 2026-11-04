@@ -1,0 +1,23 @@
+{
+  "schema": "hardkas.zkRisc0Fixture.v1",
+  "proofSystem": "risc0",
+  "verifierAdapter": "kaspa-wasm-zk-script-builder-2.1.0",
+  "receipt": "receipt.json",
+  "journal": "journal.json",
+  "imageId": "image-id.json",
+  "verifyReport": "verify-report.json",
+  "contentHashes": {
+    "receipt": "64a0d0234c69783dae9901c50ff2e066cb6344baef01dea608717eff56610bf0",
+    "journal": "52e307bc0a060ead4935aa632a2e05cda71f17ff8fbd2121b8a9c24433c37d91",
+    "imageId": "e25e720e865c23e325b1aa2d4c211bf92f73278389c2aa4c5af719aa6059264f",
+    "verifyReport": "dc729eb42b8b88d29908bc0d5cf3e52bf9e1529c1afa71cd665402dd5353490f"
+  },
+  "expectedStatus": "RISC0_LOCAL_VERIFICATION_NOT_IMPLEMENTED",
+  "claims": {
+    "localReceiptVerification": "NOT_IMPLEMENTED",
+    "receiptClaimCrossCheck": "NOT_IMPLEMENTED",
+    "zkOnchainVerification": "NOT_CLAIMED",
+    "vmConsensusEquivalence": "NOT_CLAIMED",
+    "mainnet": "BLOCKED_BY_POLICY"
+  }
+}

@@ -1,0 +1,93 @@
+{
+  "schema": "hardkas.zk.executionEvidence.v1",
+  "networkId": "simnet",
+  "node": {
+    "rpcUrl": "ws://127.0.0.1:56081",
+    "serverVersion": "2.1.0",
+    "source": "simnet-harness",
+    "harnessRunId": "vitest-44232-deb548bc"
+  },
+  "precompile": {
+    "opcode": "0xa6",
+    "opcodeName": "OpZkPrecompile",
+    "tag": "0x20",
+    "curve": "BN254",
+    "provingSystem": "Groth16"
+  },
+  "guestSystem": "RISC Zero",
+  "imageId": "75641a540ee2ad9ee5902bcdcdb8b55c0bef4a28287309b858f97b1356c6c2e0",
+  "journalHash": "5df6e0e2761359d30a8275058e299fcc0381534545f55cf43e41983f5d4c9456",
+  "p2shAddress": "kaspasim:prr6mc7myqn2umzt758qhv2gnvahrqapq0d5zwul4y5t55gexw55gk5pqjvz7",
+  "redeemScriptHash": "c7ade3db2026ae6c4bf50e0bb1489b3b7183a103db413b9fa928ba511933a944",
+  "funding": {
+    "txId": "af7459addf20bf2edcf7b995cd5c1d7b59c2cdb00b4a63922e3005704d5f0c41",
+    "outputIndex": 0,
+    "amountSompi": "200000000",
+    "accepted": true,
+    "utxoObserved": true
+  },
+  "spend": {
+    "computeBudget": 1600,
+    "feeSompi": "20000000",
+    "payoutAddress": "kaspasim:qprx6l72u437tjcf5rgcwza4sq6ysprp0pu6zj2feu3zshcm4cljwd5me0nwt",
+    "payoutSompi": "180000000",
+    "accepted": true,
+    "payoutUtxoObserved": true,
+    "txId": "2a333a79273997aabfb3dcadbf3b070fa2ad262335ba84ad2a1cf18d8561453d",
+    "blockDaaScore": "1011"
+  },
+  "negativeCases": [
+    {
+      "testCase": "orphan_outpoint",
+      "rejected": true,
+      "rawError": "Rejected transaction fa374cf5b59cdb8ceb0aa14ed433ed21f0027c98a2e5ecf4d17d555f5191af71: transaction fa374cf5b59cdb8ceb0aa14ed433ed21f0027c98a2e5ecf4d17d555f5191af71 is an orphan where orphan is disallowed",
+      "expectedPattern": "orphan",
+      "matchedExpectedPattern": true
+    },
+    {
+      "testCase": "insufficient_compute_budget",
+      "rejected": true,
+      "rawError": "Rejected transaction 2a333a79273997aabfb3dcadbf3b070fa2ad262335ba84ad2a1cf18d8561453d: failed to verify the signature script: script units exceeded the amount committed in the input: used=14002811, limit=109999",
+      "expectedPattern": "script units exceeded",
+      "matchedExpectedPattern": true
+    },
+    {
+      "testCase": "tampered_groth16_proof",
+      "rejected": true,
+      "rawError": "Rejected transaction 2a333a79273997aabfb3dcadbf3b070fa2ad262335ba84ad2a1cf18d8561453d: failed to verify the signature script: ZK Integrity: Groth16 verification failed",
+      "expectedPattern": "ZK Integrity|Groth16 verification failed",
+      "matchedExpectedPattern": true
+    },
+    {
+      "testCase": "altered_journal_hash",
+      "rejected": true,
+      "rawError": "Rejected transaction 2a333a79273997aabfb3dcadbf3b070fa2ad262335ba84ad2a1cf18d8561453d: failed to verify the signature script: ZK Integrity: Groth16 verification failed",
+      "expectedPattern": "ZK Integrity|Groth16 verification failed",
+      "matchedExpectedPattern": true
+    },
+    {
+      "testCase": "truncated_proof_push_script",
+      "rejected": true,
+      "rawError": "Rejected transaction 2a333a79273997aabfb3dcadbf3b070fa2ad262335ba84ad2a1cf18d8561453d: failed to verify the signature script: opcode requires 128 bytes, but script only has 40 remaining",
+      "expectedPattern": "opcode requires|remaining|script",
+      "matchedExpectedPattern": true
+    },
+    {
+      "testCase": "tx_version_0_precompile_forbidden",
+      "rejected": true,
+      "rawError": "Rejected transaction b11c71fdfe910baa92634227acf59dd076ced4d3610d500bc472a187b7d50201: failed to verify the signature script: script units exceeded the amount committed in the input: used=14002811, limit=9999",
+      "expectedPattern": "script units exceeded",
+      "matchedExpectedPattern": true
+    },
+    {
+      "testCase": "insufficient_fee_for_compute_mass",
+      "rejected": true,
+      "rawError": "Rejected transaction 5d28137dcce36c9a72d43b675b7c7cd9137147ad8f467a0933d56f7b25d149b2: transaction 5d28137dcce36c9a72d43b675b7c7cd9137147ad8f467a0933d56f7b25d149b2 is not standard: transaction has 500000 fees which is under the required amount of 16152700 for compute mass 161527",
+      "expectedPattern": "not standard|fees which is under the required amount",
+      "matchedExpectedPattern": true
+    }
+  ],
+  "outcome": "ALL_AS_EXPECTED",
+  "timestamp": "2026-11-03T22:41:42.611Z",
+  "notes": []
+}

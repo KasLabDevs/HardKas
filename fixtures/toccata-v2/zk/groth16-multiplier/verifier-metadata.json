@@ -1,0 +1,12 @@
+{
+  "schema": "hardkas.zk.groth16.verifierMetadata.v1",
+  "proofSystem": "groth16",
+  "curve": "bn128",
+  "verifierAdapter": "snarkjs-bn254",
+  "statementHash": "3de7f351ad688bf1a36c9662a06f147a0ed32ad39c685b66133c5bb9edd2bc19",
+  "verificationKeyHash": "2fc386ab6884c2280aae8ca7313d334ba3625bf6e5c94cf9ecb74b493f686afa",
+  "publicInputsHash": "6060f20f0f7c0f02921a9a08e2d64898732f9d82898dbaf96f078a146692723c",
+  "proofHash": "816e22b57547733a033c57ef2aecf8d37cd89e7ceb57a28dfff305fb6bc8cc26",
+  "coherenceDigest": "e2181d1e033af814391a5b8eebbf2259b13b43a60ca52f72d36b1f917b4ead83",
+  "note": "Coherence metadata for the TOY multiplier fixture (known-trapdoor verification key). Coherence says the files match the manifest; it says nothing about the setup's security."
+}

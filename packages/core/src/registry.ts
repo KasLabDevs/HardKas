@@ -107,6 +107,7 @@ export const HardkasSchemas = {
   ZkCorpusV1: "hardkas.zkCorpus.v1",
   ZkProofInspectV1: "hardkas.zkProofInspect.v1",
   ZkProofVerificationV1: "hardkas.zkProofVerification.v1",
+  ZkProofMathVerificationV1: "hardkas.zkProofMathVerification.v1",
   ZkCorpusVerificationV1: "hardkas.zkCorpusVerification.v1",
   ZkGroth16FixtureV1: "hardkas.zkGroth16Fixture.v1",
   ZkRisc0FixtureV1: "hardkas.zkRisc0Fixture.v1",
@@ -120,6 +121,9 @@ export const HardkasSchemas = {
   ZkRisc0JournalV1: "hardkas.zk.risc0.journal.v1",
   ZkRisc0ReceiptV1: "hardkas.zk.risc0.receipt.v1",
   ZkRisc0VerifyReportV1: "hardkas.zk.risc0.verifyReport.v1",
+  ZkToccataScriptsV1: "hardkas.zk.toccata.scripts.v1",
+  ZkToccataTxV1: "hardkas.zk.toccata.tx.v1",
+  ZkExecutionEvidenceV1: "hardkas.zk.executionEvidence.v1",
 
   VProgsCapabilitiesV1: "hardkas.vprogsCapabilities.v1",
   VProgsInspectV1: "hardkas.vprogsInspect.v1",
