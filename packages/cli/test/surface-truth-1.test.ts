@@ -431,7 +431,7 @@ describe("SURFACE-TRUTH-1 · BEFORE · what the CLI claims about itself and its 
         killAfterMs: 60_000,
         onLine: (line, child) => {
           if (!sawDashboard) {
-            sawDashboard = /Dashboard:/.test(line);
+            sawDashboard = /(?:Dev Server API|Dashboard):/.test(line);
             return;
           }
           const printed = /https?:\/\/\S+/.exec(line)?.[0];
