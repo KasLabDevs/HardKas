@@ -75,6 +75,7 @@ const TX_SUCCESSOR_MISMATCH = "77".repeat(32);
 const TX_UNBOUND_DRAFT = "88".repeat(32);
 const TX_SHALLOW = "99".repeat(32);
 const TX_CONFLICTING = "fa".repeat(32);
+const TX_AMBIGUOUS = "dd".repeat(32);
 
 let l1PlanId: string;
 let l1SignedId: string;
@@ -610,6 +611,77 @@ beforeAll(async () => {
   await fsp.writeFile(path.join(artifactsDir, "evidences", `cov-conf-${confCovFact.contentHash!.slice(0, 16)}.json`), JSON.stringify(confCovFact));
   await fsp.writeFile(path.join(artifactsDir, "observations", `obs-conf1-${confObs1.contentHash.slice(0, 16)}.json`), JSON.stringify(confObs1));
   await fsp.writeFile(path.join(artifactsDir, "observations", `obs-conf2-${confObs2.contentHash.slice(0, 16)}.json`), JSON.stringify(confObs2));
+
+  // ---------------------------------------------------------------------------
+  // 11. Ambiguous Conflict Setup (two valid facts for same txId)
+  // ---------------------------------------------------------------------------
+  const ambPlan = seal(
+    {
+      schema: HardkasSchemas.TxPlanV1,
+      networkId: "simnet",
+      mode: "simulator",
+      lineage: { artifactId: "", sequence: 1 },
+      outputs: [{ address: "kaspatest:qpqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq", amountSompi: "100000000" }]
+    },
+    "planId"
+  );
+  const ambSigned = seal(
+    {
+      schema: HardkasSchemas.SignedTxV1,
+      txId: TX_AMBIGUOUS,
+      networkId: "simnet",
+      mode: "simulator",
+      lineage: { artifactId: "", parentArtifactId: ambPlan.contentHash, lineageId: ambPlan.contentHash, rootArtifactId: ambPlan.contentHash, sequence: 2 }
+    },
+    "signedId"
+  );
+  const ambSub = seal({
+    schema: HardkasSchemas.TxSubmissionV1,
+    txId: TX_AMBIGUOUS,
+    networkId: "simnet",
+    mode: "simulator",
+    lineage: { artifactId: "", parentArtifactId: ambSigned.contentHash, lineageId: ambPlan.contentHash, rootArtifactId: ambPlan.contentHash, sequence: 3 },
+    submitResult: { accepted: true }
+  });
+  // Fact A: withdraw 500
+  const ambFact1 = createCovenantTransitionFactArtifact({
+    networkId: "simnet",
+    covenantId: "cc".repeat(32),
+    contractName: "vault.silver",
+    artifactSha256: "ee".repeat(32),
+    entrypoint: "withdraw",
+    previousState: { balance: 1000 },
+    nextState: { balance: 500 },
+    spentOutpoint: { transactionId: "aa".repeat(32), index: 0 },
+    successorOutpoint: { transactionId: TX_AMBIGUOUS, index: 0 },
+    planArtifactId: ambPlan.contentHash,
+    draftArtifactId: ambSigned.contentHash,
+    txId: TX_AMBIGUOUS,
+    validation: { structuralPassed: true, scriptVmPassed: true }
+  });
+  // Fact B: deposit 500
+  const ambFact2 = createCovenantTransitionFactArtifact({
+    networkId: "simnet",
+    covenantId: "cc".repeat(32),
+    contractName: "vault.silver",
+    artifactSha256: "ee".repeat(32),
+    entrypoint: "deposit",
+    previousState: { balance: 1000 },
+    nextState: { balance: 1500 },
+    spentOutpoint: { transactionId: "aa".repeat(32), index: 0 },
+    successorOutpoint: { transactionId: TX_AMBIGUOUS, index: 0 },
+    planArtifactId: ambPlan.contentHash,
+    draftArtifactId: ambSigned.contentHash,
+    txId: TX_AMBIGUOUS,
+    validation: { structuralPassed: true, scriptVmPassed: true }
+  });
+  const ambObs = makeObservation(TX_AMBIGUOUS, 1150, 1000);
+  await fsp.writeFile(path.join(artifactsDir, `plan-amb-${ambPlan.contentHash.slice(0, 16)}.json`), JSON.stringify(ambPlan));
+  await fsp.writeFile(path.join(artifactsDir, "signed", `signed-amb-${ambSigned.contentHash.slice(0, 16)}.json`), JSON.stringify(ambSigned));
+  await fsp.writeFile(path.join(artifactsDir, "receipts", `sub-amb-${ambSub.contentHash.slice(0, 16)}.json`), JSON.stringify(ambSub));
+  await fsp.writeFile(path.join(artifactsDir, "evidences", `cov-amb-1-${ambFact1.contentHash!.slice(0, 16)}.json`), JSON.stringify(ambFact1));
+  await fsp.writeFile(path.join(artifactsDir, "evidences", `cov-amb-2-${ambFact2.contentHash!.slice(0, 16)}.json`), JSON.stringify(ambFact2));
+  await fsp.writeFile(path.join(artifactsDir, "observations", `obs-amb-${ambObs.contentHash.slice(0, 16)}.json`), JSON.stringify(ambObs));
 });
 
 afterAll(async () => {
@@ -907,5 +979,49 @@ describe("Unified Retrospective Forensics via `hardkas why`", () => {
     expect(human.stdout).toContain("Derived Status (Offline):");
     expect(human.stdout).toContain("CONFLICTING_OBSERVATIONS");
     expect(human.stdout).toContain("CONFLICTED");
+  });
+
+  // ---------------------------------------------------------------------------
+  // Condition 12: Adversarial ambiguous conflict (two distinct facts for same txId)
+  // ---------------------------------------------------------------------------
+  it("Condition 12: Multiple distinct valid facts for the same txId are flagged as ambiguous_conflict without arbitrary selection", () => {
+    const r = runHardkas(`why --tx ${TX_AMBIGUOUS} --json`);
+    expect(r.code, r.stderr).toBe(0);
+    const out = JSON.parse(r.stdout);
+
+    const targetNode = out.chain[0];
+    expect(targetNode.associatedFacts).toBeDefined();
+    expect(targetNode.associatedFacts.length).toBe(2);
+
+    for (const f of targetNode.associatedFacts) {
+      expect(f.relation).toBe("ambiguous_conflict");
+      expect(f.reason).toContain("Multiple distinct covenant facts (2) found for txId");
+    }
+
+    // Must NOT derive a positive covenant state from ambiguous facts!
+    expect(targetNode.offlineStatus).toBeDefined();
+    expect(targetNode.offlineStatus.covenant).toBeUndefined();
+    expect(targetNode.offlineStatus.tx.status).toBe("CONFIRMED");
+
+    // Human output inspection
+    const human = runHardkas(`why --tx ${TX_AMBIGUOUS}`);
+    expect(human.code).toBe(0);
+    expect(human.stdout).toContain("AMBIGUOUS_CONFLICT");
+    expect(human.stdout).toContain("Multiple distinct covenant facts (2)");
+    expect(human.stdout).not.toContain("Covenant:    TRANSITION_CONFIRMED");
+  });
+
+  // ---------------------------------------------------------------------------
+  // Condition 13: Retrospective explain and tx status --no-observe commands
+  // ---------------------------------------------------------------------------
+  it("Condition 13: Retrospective commands explain and tx status --no-observe derive state from workspace observations", () => {
+    const explainRes = runHardkas(`explain --tx ${TX_COVENANT}`);
+    expect(explainRes.code).toBe(0);
+    expect(explainRes.stdout).toContain("Deterministic Explanation");
+    expect(explainRes.stdout).toContain("submitted — a HardKAS submission recorded in this workspace");
+
+    const statusRes = runHardkas(`tx status ${TX_COVENANT} --no-observe`);
+    expect(statusRes.code).toBe(0);
+    expect(statusRes.stdout).toContain("CONFIRMED");
   });
 });
