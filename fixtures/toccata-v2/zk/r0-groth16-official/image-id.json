@@ -1,0 +1,5 @@
+{
+  "schema": "hardkas.zk.risc0.imageId.v1",
+  "imageId": "75641a540ee2ad9ee5902bcdcdb8b55c0bef4a28287309b858f97b1356c6c2e0",
+  "provenance": "kaspanet/kaspa-python-sdk examples/zk (groth16_onchain.py, data/groth.rcpt.hex); scripts built with the ZkScriptBuilder of kaspa-wasm (rusty-kaspa 2.1.0)"
+}

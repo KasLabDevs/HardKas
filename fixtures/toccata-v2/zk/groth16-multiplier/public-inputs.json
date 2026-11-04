@@ -1,0 +1,8 @@
+{
+  "schema": "hardkas.zk.groth16.publicInputs.v1",
+  "statement": "circom-multiplier: 3 * 11 = 33",
+  "publicSignals": [
+    "33"
+  ],
+  "statementHash": "3de7f351ad688bf1a36c9662a06f147a0ed32ad39c685b66133c5bb9edd2bc19"
+}

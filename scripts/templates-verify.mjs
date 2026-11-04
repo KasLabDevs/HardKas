@@ -53,9 +53,12 @@ for (const template of templates) {
     console.log(`4. Running npx hardkas test --evidence`);
     execSync(`npx hardkas test --evidence`, { cwd: tmpDir, stdio: "inherit" });
 
-    // Find the generated evidence file
+    // Find the newest generated evidence file
     const rootFiles = fs.readdirSync(tmpDir);
-    const hkeFile = rootFiles.find(f => f.endsWith(".hke.json"));
+    const hkeFiles = rootFiles
+      .filter(f => f.endsWith(".hke.json"))
+      .sort((a, b) => fs.statSync(path.join(tmpDir, b)).mtimeMs - fs.statSync(path.join(tmpDir, a)).mtimeMs);
+    const hkeFile = hkeFiles[0];
     
     if (!hkeFile) {
       throw new Error("No .hke.json evidence package was generated!");
@@ -76,6 +79,10 @@ for (const template of templates) {
     console.error(`\n[FAIL] Template verification failed for ${template}`);
     console.error(err);
     allPassed = false;
+  } finally {
+    try {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    } catch {}
   }
 }
 

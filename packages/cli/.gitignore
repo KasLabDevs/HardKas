@@ -2,7 +2,7 @@
 # HardKAS local storage
 .hardkas/
 
-dashboard-dist/
+
 events.jsonl
 
 # Configs generated inside scratch projects must stay out...

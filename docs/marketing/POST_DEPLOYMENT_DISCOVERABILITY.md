@@ -175,7 +175,7 @@ graph TD
   - `H2: Choosing the Right Stack for Your Kaspa Application`
 - **Contenido Técnico a Demostrar:**
   - Explicación de cómo encajan `rusty-kaspa`, `kaspa-wasm`, `silverscript` y `hardkas`.
-  - Comandos de diagnóstico de nodo: `hardkas rpc health`, `hardkas rpc info`, `hardkas dev doctor`.
+  - Comandos de diagnóstico de nodo: `hardkas rpc health`, `hardkas rpc info`, `hardkas doctor`.
 - **Enlaces Internos:**
   - Hacia: `https://hardkas.dev/docs/reference/cli`
   - Hacia: `https://hardkas.dev/docs/guides/debugging`

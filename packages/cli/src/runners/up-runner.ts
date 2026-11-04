@@ -78,7 +78,7 @@ export async function runUp() {
     console.log(`    ${pc.white("filesystem artifacts")}\n`);
     console.log(`  ${pc.dim("Projection Layer:")}`);
     console.log(`    ${pc.white("SQLite query-store")}\n`);
-    console.log(`  ${pc.dim("Open the dashboard to inspect:")}`);
+    console.log(`  ${pc.dim("Query or inspect via Dev Server API:")}`);
     console.log(`    - ${pc.white("event timeline")}`);
     console.log(`    - ${pc.white("provenance graph")}`);
     console.log(`    - ${pc.white("replay state")}`);

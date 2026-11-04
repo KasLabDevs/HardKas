@@ -147,7 +147,7 @@ export function registerExplainCommand(program: Command) {
           "Resolved By": handle.resolvedBy,
           "Source Authority": "filesystem artifact",
           "File Path": handle.path,
-          "Projection Layer": "SQLite query-store (indexed while the dashboard runs)",
+          "Projection Layer": "SQLite query-store (indexed while the dev-server runs)",
           Integrity:
             handle.authScope === "FULL"
               ? "verified: the body recomputes to this artifactId (FULL scope)"

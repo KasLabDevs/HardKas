@@ -611,6 +611,115 @@ export async function createFundedCovenant(
  * isolated `rusty-kaspad` v2.1.0 simnet node, returning real consensus evidence
  * (`CONSENSUS_SIMNET`).
  */
+/**
+ * Funds and confirms a stateless P2SH contract UTXO on the isolated simnet node
+ * (without a `covenantId`), returning a `CovenantUtxoFixture` ready for `bed.adoptLiveUtxo(...)`.
+ */
+export async function createFundedP2sh(
+  session: IsolatedSimnetSession,
+  options: {
+    contract: CompiledCovenantContract;
+    funderFixture?: HardkasFixtureName;
+    valueSompi?: bigint;
+    feeSompi?: bigint;
+  }
+): Promise<CovenantUtxoFixture> {
+  const k = loadManagedKaspaWasmSync();
+  const funderName = options.funderFixture ?? session.minerFixture;
+  const funderKey = resolveFixtureAccount(funderName);
+  const valueSompi = options.valueSompi ?? 1_000_000_000n;
+  const feeSompi = options.feeSompi ?? 500_000n;
+
+  const fundingUtxo = await fundTestAccount(
+    session,
+    funderName,
+    valueSompi + feeSompi + 10_000_000n
+  );
+
+  const bytecodeHex = options.contract.facts.bytecodeHex;
+  const p2shAddress = silverP2shAddress(bytecodeHex, "simnet");
+  const changeSompi = fundingUtxo.amountSompi - valueSompi - feeSompi;
+  const key = new k.PrivateKey(funderKey.privateKeyHex);
+
+  const makeTx = (sigScript = "") => {
+    const tx = new k.Transaction({
+      version: 0,
+      inputs: [
+        {
+          previousOutpoint: fundingUtxo.outpoint,
+          signatureScript: sigScript,
+          sequence: 0n,
+          sigOpCount: 1,
+          utxo: {
+            outpoint: fundingUtxo.outpoint,
+            amount: fundingUtxo.amountSompi,
+            scriptPublicKey: new k.ScriptPublicKey(
+              fundingUtxo.scriptPublicKey.version,
+              fundingUtxo.scriptPublicKey.script
+            ),
+            blockDaaScore: fundingUtxo.blockDaaScore,
+            isCoinbase: fundingUtxo.isCoinbase
+          }
+        }
+      ],
+      outputs: [
+        {
+          value: valueSompi,
+          scriptPublicKey: k.payToAddressScript(new k.Address(p2shAddress))
+        },
+        ...(changeSompi > 0n
+          ? [
+              {
+                value: changeSompi,
+                scriptPublicKey: k.payToAddressScript(new k.Address(funderKey.address))
+              }
+            ]
+          : [])
+      ],
+      lockTime: 0n,
+      subnetworkId: "0000000000000000000000000000000000000000",
+      gas: 0n,
+      payload: ""
+    });
+    tx.storageMass = calculateUpstreamStorageMass(
+      [fundingUtxo.amountSompi],
+      changeSompi > 0n ? [valueSompi, changeSompi] : [valueSompi],
+      "simnet"
+    );
+    tx.finalize();
+    return tx;
+  };
+
+  const unsignedTx = makeTx();
+  const sig = String(k.createInputSignature(unsignedTx, 0, key, k.SighashType.All));
+  const signedTx = makeTx(sig);
+  const txId = String(signedTx.id).toLowerCase();
+  const rpcTx = parseWasmTxToRpc(signedTx.serializeToObject());
+
+  const submitRes = await session.rpc.submitTransaction(rpcTx, {
+    allowOrphan: false,
+    expectedTxId: txId
+  });
+  if (!submitRes.accepted) {
+    throw new Error(
+      `SIMNET_P2SH_FUNDING_REJECTED: ${(submitRes as any).error ?? "node rejected P2SH funding tx"}`
+    );
+  }
+
+  await mineBlocks(session, 1, session.minerAddress);
+  const confirmed = await waitForUtxo(session, p2shAddress, { transactionId: txId, index: 0 }, 15_000);
+
+  return {
+    outpoint: confirmed.outpoint,
+    amountSompi: confirmed.amountSompi,
+    address: p2shAddress,
+    scriptPublicKey: `${confirmed.scriptPublicKey.version.toString(16).padStart(4, "0")}${confirmed.scriptPublicKey.script}`,
+    contract: options.contract,
+    blockDaaScore: confirmed.blockDaaScore,
+    isCoinbase: confirmed.isCoinbase
+  };
+}
+
 export async function executeSimnetCovenantTransition(
   session: IsolatedSimnetSession,
   input: SimnetCovenantTransitionInput

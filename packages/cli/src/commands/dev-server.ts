@@ -11,7 +11,7 @@ export function registerDevServerCommands(program: Command) {
     .description("Start the dev server")
     .option("--port <number>", "Port to bind to", "7420")
     .option("--host <string>", "Host to bind to", "127.0.0.1")
-    .option("--dashboard", "Serve the local dashboard UI", false)
+    .option("--dashboard", "Deprecated: the standalone dashboard UI has been retired; dev-server runs as a headless API service", false)
     .option("--unsafe-external", "Allow external access (binds to 0.0.0.0 if host not specified)", false)
     .option("--unsafe-no-auth", "Disable token authentication (requires --yes)", false)
     .option("--yes", "Acknowledge unsafe flags", false)
@@ -32,7 +32,7 @@ export function registerDevServerCommands(program: Command) {
           host: options.host,
           unsafeExternal: options.unsafeExternal,
           unsafeNoAuth: options.unsafeNoAuth,
-          open: options.dashboard,
+          open: false,
           json: options.json,
           withNode: options.withNode
         } as any);

@@ -1403,6 +1403,82 @@ No arguments.
 
 ---
 
+## hardkas dev-server
+
+Manage the local HardKAS dev server stable
+
+### Usage
+
+```bash
+hardkas dev-server [options] [command]
+```
+
+### Options
+
+No options.
+
+### Arguments
+
+No arguments.
+
+### Subcommands
+
+- [hardkas dev-server start](#hardkas-dev-server-start)
+- [hardkas dev-server token](#hardkas-dev-server-token)
+
+---
+
+## hardkas dev-server start
+
+Start the dev server
+
+### Usage
+
+```bash
+hardkas dev-server start [options]
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--port <number>` | Port to bind to | 7420 |
+| `--host <string>` | Host to bind to | 127.0.0.1 |
+| `--dashboard` | Deprecated: the standalone dashboard UI has been retired; dev-server runs as a headless API service | false |
+| `--unsafe-external` | Allow external access (binds to 0.0.0.0 if host not specified) | false |
+| `--unsafe-no-auth` | Disable token authentication (requires --yes) | false |
+| `--yes` | Acknowledge unsafe flags | false |
+| `--with-node` | Spawn the localnet node and auto-fund simnet accounts | false |
+| `--json` | Output status as JSON | false |
+
+### Arguments
+
+No arguments.
+
+---
+
+## hardkas dev-server token
+
+Print the current dev server token
+
+### Usage
+
+```bash
+hardkas dev-server token [options]
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+No arguments.
+
+---
+
 ## hardkas doctor
 
 Perform a full system diagnostic and health report (on a public network it contacts the workspace's declared endpoint) stable
@@ -4547,8 +4623,8 @@ hardkas sandbox [options]
 | :--- | :--- | :--- |
 | `--with-node` | Not supported: the sandbox starts no node (refuses with SANDBOX_WITH_NODE_UNSUPPORTED) |  |
 | `--recipe <name>` | Run an initial recipe/template inside the sandbox |  |
-| `-p, --port <port>` | Port for dashboard | 3000 |
-| `-h, --host <host>` | Host for dashboard | localhost |
+| `-p, --port <port>` | Port for dev-server API | 3000 |
+| `-h, --host <host>` | Host for dev-server API | localhost |
 
 ### Arguments
 
@@ -6358,7 +6434,7 @@ hardkas workflow run [options] <file>
 
 ## hardkas zk
 
-Experimental local-only ZK proof artifact tools (Outputs JSON by default)
+Experimental local-only ZK proof artifact tools (fixture coherence, Groth16 pairing check, Toccata script building; no on-chain claims)
 
 ### Usage
 
@@ -6379,6 +6455,7 @@ No arguments.
 - [hardkas zk capabilities](#hardkas-zk-capabilities)
 - [hardkas zk corpus](#hardkas-zk-corpus)
 - [hardkas zk proof](#hardkas-zk-proof)
+- [hardkas zk toccata](#hardkas-zk-toccata)
 
 ---
 
@@ -6430,7 +6507,7 @@ No arguments.
 
 ## hardkas zk corpus verify
 
-Verify a local ZK corpus
+Verify a local ZK corpus (coherence of every listed fixture; pairing check where a fixture claims it)
 
 ### Usage
 
@@ -6474,6 +6551,7 @@ No arguments.
 
 - [hardkas zk proof inspect](#hardkas-zk-proof-inspect)
 - [hardkas zk proof verify](#hardkas-zk-proof-verify)
+- [hardkas zk proof verify-math](#hardkas-zk-proof-verify-math)
 
 ---
 
@@ -6505,7 +6583,7 @@ hardkas zk proof inspect [options] <path>
 
 **Aliases:** verify-local
 
-Verify a local proof fixture locally (No on-chain claims) alpha
+Verify local fixture coherence for a proof artifact (No cryptographic proof or on-chain claims) alpha
 
 ### Usage
 
@@ -6524,4 +6602,104 @@ hardkas zk proof verify [options] <path>
 | Argument | Description |
 | :--- | :--- |
 | `path` |  |
+
+---
+
+## hardkas zk proof verify-math
+
+Groth16 pairing check (snarkjs, BN254) of a fixture, bound to its content hashes by default; reports the key, inputs and proof digests it used (No on-chain claims) alpha
+
+### Usage
+
+```bash
+hardkas zk proof verify-math [options] <path>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--json` | Output as JSON | false |
+| `--timeout <ms>` | Verification timeout in milliseconds (integer, 1..600000) | 10000 |
+| `--expect-vk-hash <sha256>` | Reject unless the verification key's domain digest equals this value |  |
+| `--math-only` | Skip the fixture-coherence binding; the result is labelled MATH_ONLY | false |
+| `--allow-weak-vk` | Accept a verification key with a known trapdoor (toy fixtures only; proofs against such keys prove nothing) | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `path` |  |
+
+---
+
+## hardkas zk toccata
+
+Kaspa Toccata L1 Zero-Knowledge covenant script tools (kaspa-wasm ZkScriptBuilder; builds only, never broadcasts)
+
+### Usage
+
+```bash
+hardkas zk toccata [options] [command]
+```
+
+### Options
+
+No options.
+
+### Arguments
+
+No arguments.
+
+### Subcommands
+
+- [hardkas zk toccata build-scripts](#hardkas-zk-toccata-build-scripts)
+- [hardkas zk toccata rules](#hardkas-zk-toccata-rules)
+
+---
+
+## hardkas zk toccata build-scripts
+
+Build P2SH redeem and signature scripts for a RISC Zero Groth16 proof set (imageId/journalHash are not cross-checked against the receipt)
+
+### Usage
+
+```bash
+hardkas zk toccata build-scripts [options]
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--image-id <hex>` | 32-byte hex Image ID |  |
+| `--journal-hash <hex>` | 32-byte hex Journal Hash |  |
+| `--receipt <pathOrHex>` | Path to receipt file (.hex) or raw receipt hex string |  |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+No arguments.
+
+---
+
+## hardkas zk toccata rules
+
+Show the Kaspa Toccata L1 Groth16 precompile facts HardKAS relies on (opcode, tag, costs, compute budget)
+
+### Usage
+
+```bash
+hardkas zk toccata rules [options]
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+No arguments.
 

@@ -53,6 +53,9 @@ export const IDENTITY_CATEGORIES: Readonly<Record<string, IdentityCategory>> = O
   signedId: "LABEL",
   sourcePlanId: "LABEL",
   sourceSignedId: "LABEL",
+  proofId: "LABEL", // ZK fixture labels (Phase 3 remediation, IC-7.1): names, never references
+  verificationKeyId: "LABEL",
+  receiptId: "LABEL",
   // --- NETWORK: consensus-side identifiers, 1:N with artifacts ---
   txId: "NETWORK",
   deployTxId: "NETWORK",
@@ -106,6 +109,7 @@ export const IDENTITY_CATEGORIES: Readonly<Record<string, IdentityCategory>> = O
   ownerId: "CORRELATION",
   profileId: "CORRELATION",
   imageId: "CORRELATION",
+  harnessRunId: "CORRELATION", // simnet harness run id carried by ZK execution evidence
   // --- DOMAIN_DIGEST: digests of state or material; never an identity ---
   stateHash: "DOMAIN_DIGEST",
   preStateHash: "DOMAIN_DIGEST",
@@ -133,6 +137,9 @@ export const IDENTITY_CATEGORIES: Readonly<Record<string, IdentityCategory>> = O
   verificationKeyHash: "DOMAIN_DIGEST",
   proofHash: "DOMAIN_DIGEST",
   statementHash: "DOMAIN_DIGEST",
+  contentHashes: "DOMAIN_DIGEST", // ZK fixture manifests: per-file legacy corpus digests
+  journalHash: "DOMAIN_DIGEST", // RISC Zero journal digest (a public input of the precompile), never an identity
+  imageIdHash: "DOMAIN_DIGEST", // digest of the image-id artifact file
   manifestHash: "DOMAIN_DIGEST",
   corpusHash: "DOMAIN_DIGEST",
   sourceHash: "DOMAIN_DIGEST",

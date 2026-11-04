@@ -35,7 +35,7 @@ Inspired by the developer ergonomics of Ethereum tooling like **Hardhat** and **
 | **Local Node Testing** | Local `geth` or `anvil` container | Managed Docker `rusty-kaspad` on `simnet` with CPU miner |
 | **State Inspection** | Transaction traces & state diffs | Verifiable JSON Artifacts (`TxPlan`, `SignedTx`, `TxReceipt`) |
 | **Verification & Debug** | Hardhat console / console.log | Deterministic Workflow Replay at specific DAA scores |
-| **Visual Studio** | Remix IDE / Hardhat Dashboard | HardKAS Visual Studio (`apps/dashboard` / React Flow) |
+| **Dev Server & APIs** | Hardhat Node / Remix | HardKAS Dev Server (`@hardkas/dev-server` REST & SSE) |
 
 ---
 
@@ -327,7 +327,7 @@ checks whether the observed state transition remains deterministic.
 ### Query Store
 
 A rebuildable SQLite projection over `.hardkas/artifacts` and local events. It
-exists for fast reads by CLI and dashboard; the filesystem artifacts remain the
+exists for fast reads by CLI, query services and dev-server; the filesystem artifacts remain the
 source of truth.
 
 ## Guarantees

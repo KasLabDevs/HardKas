@@ -27,7 +27,7 @@ import { registerKaspaCommands } from "./commands/kaspa.js";
 import { registerBridgeCommands } from "./commands/bridge.js";
 import { registerSessionCommands } from "./commands/session.js";
 import { registerPsktCommands } from "./commands/pskt/index.js";
-import { registerDashboardCommand } from "./commands/dashboard.js";
+
 import { registerExplainCommand } from "./commands/explain.js";
 import { registerTortureCommands } from "./commands/torture.js";
 import { registerTelemetryCommands } from "./commands/telemetry.js";
@@ -46,7 +46,6 @@ import { registerCorpusCommands } from "./commands/corpus.js";
 import { registerZkCommands } from "./commands/zk.js";
 import { registerVprogsCommands } from "./commands/vprogs.js";
 import { registerProgrammabilityCommands } from "./commands/programmability.js";
-import { registerDevServerCommands } from "./commands/dev-server.js";
 import { registerSecurityCommand } from "./commands/security.js";
 import { registerEvidenceCommands } from "./commands/evidence.js";
 import { registerEnvCommands } from "./commands/env.js";

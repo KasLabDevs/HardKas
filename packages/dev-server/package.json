@@ -12,8 +12,8 @@
     }
   },
   "scripts": {
-    "build": "tsup src/index.ts --format esm --dts --clean && pnpm build:dashboard",
-    "build:dashboard": "node scripts/copy-dashboard.js",
+    "build": "tsup src/index.ts --format esm --dts --clean",
+
     "test": "vitest run --passWithNoTests",
     "verify:escrow": "npx tsx scripts/verify-escrow.ts",
     "typecheck": "tsc --noEmit"
@@ -46,7 +46,7 @@
   "author": "Javier Rodriguez",
   "files": [
     "dist",
-    "dashboard",
+
     "README.md",
     "LICENSE"
   ],

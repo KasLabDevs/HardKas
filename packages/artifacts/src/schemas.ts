@@ -1417,3 +1417,267 @@ export const AddressObservationSchema = BaseArtifactSchema.extend({
   }),
   observedAt: z.string().datetime()
 });
+
+
+// --- Zero-Knowledge (ZK) Artifact & Fixture Schemas ---
+
+/** A canonical non-negative decimal (no sign, no leading zeros, no hex): the only accepted field-element encoding. */
+export const ZkCanonicalDecimalSchema = z.string().regex(/^(0|[1-9][0-9]*)$/, "canonical decimal expected");
+/** Projective G1 point exactly as snarkjs serialises it: [x, y, z]. */
+export const ZkG1PointSchema = z.tuple([ZkCanonicalDecimalSchema, ZkCanonicalDecimalSchema, ZkCanonicalDecimalSchema]);
+/** Projective G2 point: three rows of two Fp elements. */
+export const ZkG2PointSchema = z.tuple([
+  z.tuple([ZkCanonicalDecimalSchema, ZkCanonicalDecimalSchema]),
+  z.tuple([ZkCanonicalDecimalSchema, ZkCanonicalDecimalSchema]),
+  z.tuple([ZkCanonicalDecimalSchema, ZkCanonicalDecimalSchema])
+]);
+export const ZkSha256HexSchema = z.string().regex(/^[0-9a-f]{64}$/);
+
+// Strict objects: unknown keys are rejected, so a "verified" proof is a canonical object whose
+// digest is unique (Phase 3 remediation, L-01).
+export const ZkGroth16ProofSchema = z
+  .object({
+    schema: z.literal(HardkasSchemas.ZkGroth16ProofV1),
+    protocol: z.literal("groth16"),
+    curve: z.string().min(1),
+    proofId: z.string().min(1),
+    publicInputsHash: ZkSha256HexSchema.optional(),
+    verificationKeyHash: ZkSha256HexSchema.optional(),
+    pi_a: ZkG1PointSchema,
+    pi_b: ZkG2PointSchema,
+    pi_c: ZkG1PointSchema,
+    note: z.string().optional()
+  })
+  .strict();
+
+export const ZkGroth16VerificationKeySchema = z
+  .object({
+    schema: z.literal(HardkasSchemas.ZkGroth16VerificationKeyV1),
+    protocol: z.literal("groth16"),
+    curve: z.string().min(1),
+    verificationKeyId: z.string().min(1),
+    statementHash: ZkSha256HexSchema.optional(),
+    nPublic: z.number().int().nonnegative().optional(),
+    vk_alpha_1: ZkG1PointSchema.optional(),
+    vk_beta_2: ZkG2PointSchema.optional(),
+    vk_gamma_2: ZkG2PointSchema.optional(),
+    vk_delta_2: ZkG2PointSchema.optional(),
+    vk_alphabeta_12: z.array(z.any()).optional(),
+    IC: z.array(ZkG1PointSchema).optional(),
+    note: z.string().optional()
+  })
+  .strict();
+
+export const ZkGroth16PublicInputsSchema = z
+  .object({
+    schema: z.literal(HardkasSchemas.ZkGroth16PublicInputsV1),
+    statement: z.string().optional(),
+    publicSignals: z.array(ZkCanonicalDecimalSchema),
+    statementHash: ZkSha256HexSchema.optional()
+  })
+  .strict();
+
+export const ZkGroth16FixtureSchema = z.object({
+  schema: z.literal(HardkasSchemas.ZkGroth16FixtureV1),
+  proofSystem: z.literal("groth16"),
+  curve: z.string(),
+  verifierAdapter: z.string(),
+  proof: z.string(),
+  publicInputs: z.string(),
+  verificationKey: z.string(),
+  verifierMetadata: z.string().optional(),
+  verifyReport: z.string().optional(),
+  contentHashes: z.record(z.string()),
+  expectedStatus: z.string(),
+  claims: z.record(z.string())
+});
+
+export const ZkRisc0ReceiptSchema = z.object({
+  schema: z.literal(HardkasSchemas.ZkRisc0ReceiptV1),
+  encoding: z.string(),
+  receiptId: z.string().min(1),
+  journalHash: z.string().optional(),
+  imageIdHash: z.string().optional(),
+  note: z.string().optional()
+});
+
+export const ZkRisc0FixtureSchema = z.object({
+  schema: z.literal(HardkasSchemas.ZkRisc0FixtureV1),
+  proofSystem: z.literal("risc0"),
+  verifierAdapter: z.string(),
+  receipt: z.string(),
+  journal: z.string(),
+  imageId: z.string(),
+  verifyReport: z.string().optional(),
+  contentHashes: z.record(z.string()),
+  expectedStatus: z.string(),
+  claims: z.record(z.string())
+});
+
+export const ZkCorpusFixtureEntrySchema = z.object({
+  id: z.string().min(1),
+  path: z.string().min(1),
+  expectedStatus: z.string().min(1),
+  /** Required when the fixture claims a cryptographicVerification: the status `verify-math` must produce. */
+  expectedMathStatus: z.string().min(1).optional(),
+  /** Only for TOY fixtures whose verification key has a known trapdoor. */
+  allowWeakVerificationKey: z.boolean().optional()
+});
+
+export const ZkCorpusSchema = z.object({
+  schema: z.literal(HardkasSchemas.ZkCorpusV1),
+  version: z.string(),
+  network: z.string(),
+  profile: z.string(),
+  experimental: z.literal(true),
+  proofSystems: z.array(z.string()),
+  expectedKnownLimitations: z.array(z.string()),
+  claims: z.record(z.string()),
+  fixtures: z.array(ZkCorpusFixtureEntrySchema)
+});
+
+export const ZkProofMathVerificationSchema = z.object({
+  schema: z.literal(HardkasSchemas.ZkProofMathVerificationV1),
+  path: z.string(),
+  proofSystem: z.literal("groth16"),
+  engine: z.literal("snarkjs-bn254"),
+  curve: z.string(),
+  status: z.enum([
+    "ZK_GROTH16_MATH_VERIFIED",
+    "ZK_GROTH16_MATH_REJECTED",
+    "ZK_GROTH16_VERIFIER_ERROR"
+  ]),
+  verified: z.boolean(),
+  durationMs: z.number().nonnegative(),
+  experimental: z.literal(true),
+  summary: z.object({
+    proofSystem: z.string(),
+    curve: z.string(),
+    publicSignals: z.array(z.string()),
+    mathCheck: z.enum(["PASS", "FAIL", "ERROR"]),
+    verificationKeyHash: z.string(),
+    publicInputsHash: z.string(),
+    proofHash: z.string(),
+    verificationKeyStrength: z.enum(["NO_KNOWN_WEAKNESS", "WEAK_TRAPDOOR_SUSPECTED"]),
+    binding: z.enum(["FIXTURE_COHERENCE", "MATH_ONLY"])
+  }),
+  claims: z.record(z.string()),
+  issues: z.array(
+    z.object({
+      code: z.string(),
+      message: z.string(),
+      file: z.string().optional()
+    })
+  )
+});
+
+export const ZkToccataScriptsSchema = z.object({
+  schema: z.literal(HardkasSchemas.ZkToccataScriptsV1),
+  imageId: z.string().regex(/^[0-9a-fA-F]{64}$/),
+  journalHash: z.string().regex(/^[0-9a-fA-F]{64}$/),
+  redeemScript: z.string().min(1),
+  sigScript: z.string().min(1),
+  fullSignatureScript: z.string().min(1),
+  preparedProof: z.string().regex(/^[0-9a-fA-F]{256}$/),
+  redeemScriptHash: z.string().regex(/^[0-9a-fA-F]{64}$/),
+  p2shScriptPublicKey: z.object({
+    version: z.number().int(),
+    script: z.string()
+  }),
+  p2shAddresses: z.object({
+    simnet: z.string(),
+    testnet10: z.string(),
+    mainnet: z.string()
+  }),
+  precompileOpcode: z.literal("0xa6"),
+  provingSystemTag: z.literal("0x20"),
+  experimental: z.literal(true),
+  warnings: z
+    .array(z.object({ code: z.string(), message: z.string(), file: z.string().optional() }))
+    .optional()
+});
+
+export const ZkToccataTxSchema = z.object({
+  schema: z.literal(HardkasSchemas.ZkToccataTxV1),
+  txVersion: z.literal(1),
+  computeBudget: z.number().int().positive(),
+  storageMass: z.string(),
+  transactionId: z.string().regex(/^[0-9a-fA-F]{64}$/),
+  mass: z.string(),
+  standardMaxMass: z.string(),
+  withinStandardMaxMass: z.boolean(),
+  destinationAddress: z.string(),
+  feeSompi: z.string(),
+  experimental: z.literal(true)
+});
+
+/**
+ * Evidence of ONE run against ONE real node raised by the simnet harness. It records what the node
+ * answered, including failures: nothing in this schema can only express success, and it carries no
+ * score or maturity claim (Phase 3 remediation, L-07).
+ */
+export const ZkExecutionEvidenceSchema = z.object({
+  schema: z.literal(HardkasSchemas.ZkExecutionEvidenceV1),
+  networkId: z.enum(["simnet", "testnet-10"]),
+  node: z.object({
+    rpcUrl: z.string(),
+    serverVersion: z.string(),
+    /** How the node was obtained: only harness-managed nodes are acceptable evidence sources. */
+    source: z.enum(["simnet-harness", "external"]),
+    harnessRunId: z.string().optional()
+  }),
+  precompile: z.object({
+    opcode: z.literal("0xa6"),
+    opcodeName: z.literal("OpZkPrecompile"),
+    tag: z.literal("0x20"),
+    curve: z.literal("BN254"),
+    provingSystem: z.literal("Groth16")
+  }),
+  guestSystem: z.literal("RISC Zero"),
+  imageId: z.string().regex(/^[0-9a-f]{64}$/),
+  journalHash: z.string().regex(/^[0-9a-f]{64}$/),
+  p2shAddress: z.string(),
+  redeemScriptHash: z.string(),
+  funding: z.object({
+    txId: z.string(),
+    outputIndex: z.number().int().nonnegative(),
+    amountSompi: z.string(),
+    accepted: z.boolean(),
+    utxoObserved: z.boolean()
+  }),
+  spend: z.object({
+    txId: z.string().optional(),
+    computeBudget: z.number().int().nonnegative(),
+    feeSompi: z.string(),
+    payoutAddress: z.string(),
+    payoutSompi: z.string(),
+    accepted: z.boolean(),
+    payoutUtxoObserved: z.boolean(),
+    blockDaaScore: z.string().optional(),
+    rawError: z.string().optional()
+  }),
+  negativeCases: z.array(
+    z.object({
+      testCase: z.string(),
+      rejected: z.boolean(),
+      rawError: z.string().optional(),
+      expectedPattern: z.string(),
+      matchedExpectedPattern: z.boolean()
+    })
+  ),
+  outcome: z.enum(["ALL_AS_EXPECTED", "DEVIATIONS"]),
+  timestamp: z.string(),
+  notes: z.array(z.string()).optional()
+});
+
+export type ZkGroth16ProofType = z.infer<typeof ZkGroth16ProofSchema>;
+export type ZkGroth16VerificationKeyType = z.infer<typeof ZkGroth16VerificationKeySchema>;
+export type ZkGroth16PublicInputsType = z.infer<typeof ZkGroth16PublicInputsSchema>;
+export type ZkGroth16FixtureType = z.infer<typeof ZkGroth16FixtureSchema>;
+export type ZkRisc0ReceiptType = z.infer<typeof ZkRisc0ReceiptSchema>;
+export type ZkRisc0FixtureType = z.infer<typeof ZkRisc0FixtureSchema>;
+export type ZkCorpusType = z.infer<typeof ZkCorpusSchema>;
+export type ZkProofMathVerificationType = z.infer<typeof ZkProofMathVerificationSchema>;
+export type ZkToccataScriptsType = z.infer<typeof ZkToccataScriptsSchema>;
+export type ZkToccataTxType = z.infer<typeof ZkToccataTxSchema>;
+export type ZkExecutionEvidenceType = z.infer<typeof ZkExecutionEvidenceSchema>;

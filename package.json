@@ -107,5 +107,11 @@
     "ws": "^8.18.0"
   },
   "version": "0.13.0-rc.1",
-  "dependencies": {}
+  "dependencies": {},
+  "pnpm": {
+    "overrides": {
+      "brace-expansion@2": "2.1.7",
+      "underscore": "1.13.8"
+    }
+  }
 }
