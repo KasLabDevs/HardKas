@@ -21,17 +21,17 @@ export interface AssociatedFactRecord {
   id: string;
   path: string;
   relation: FactRelation;
-  reason?: string;
-  details?: string;
+  reason?: string | undefined;
+  details?: string | undefined;
   artifact: any;
 }
 
 export interface OfflineDerivedStatusSummary {
-  tx?: DerivedTxStatus;
-  covenant?: CovenantStatusResult;
-  zk?: ZkOperationStatusResult;
+  tx?: DerivedTxStatus | undefined;
+  covenant?: CovenantStatusResult | undefined;
+  zk?: ZkOperationStatusResult | undefined;
   observationsCount: number;
-  latestDaaScore?: string;
+  latestDaaScore?: string | undefined;
   offlineNotice: string;
 }
 
@@ -39,15 +39,15 @@ export interface AssociatedFactsResolution {
   covenantFacts: AssociatedFactRecord[];
   zkFacts: AssociatedFactRecord[];
   contradictoryFacts: AssociatedFactRecord[];
-  offlineStatus?: OfflineDerivedStatusSummary;
+  offlineStatus?: OfflineDerivedStatusSummary | undefined;
 }
 
 export function resolveAssociatedFacts(options: {
   txId: string;
   workspaceRoot: string;
-  planArtifactId?: string;
-  draftArtifactId?: string;
-  planOutputs?: Array<{ address?: string; amountSompi?: string }>;
+  planArtifactId?: string | undefined;
+  draftArtifactId?: string | undefined;
+  planOutputs?: Array<{ address?: string | undefined; amountSompi?: string | undefined }> | undefined;
 }): AssociatedFactsResolution {
   const { txId, workspaceRoot, planArtifactId, draftArtifactId, planOutputs } = options;
 
