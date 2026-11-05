@@ -1,10 +1,27 @@
-import { loadManagedKaspaWasmSync } from "@hardkas/core";
+import { createHash, randomBytes } from "node:crypto";
+import { loadManagedKaspaWasmSync, systemRuntimeContext } from "@hardkas/core";
+import type { KaspaRpcClient } from "@hardkas/kaspa-rpc";
 import {
   HardkasSchemas,
+  createV1TxPlanArtifact,
+  createZkVerificationFactArtifact,
+  checkArtifactIdentity,
+  deriveTxStatus,
+  deriveZkOperationStatus,
   type ZkToccataScriptsType,
-  type ZkToccataTxType
+  type ZkToccataTxType,
+  type TxPlanArtifact,
+  type ZkVerificationFact,
+  type ZkOperationStatusResult,
+  type DerivedTxStatus,
+  type TxObservation
 } from "@hardkas/artifacts";
+import { observeTxOnce, rpcObserverFor } from "../tx-observer.js";
 import type { ZkIssue } from "../zk.js";
+
+function sha256Hex(data: string | Buffer): string {
+  return createHash("sha256").update(data).digest("hex");
+}
 
 export const OP_ZK_PRECOMPILE = "0xa6";
 export const GROTH16_PROVING_SYSTEM_TAG = "0x20";
@@ -134,10 +151,95 @@ export const DEFAULT_ZK_FEE_SOMPI = estimateToccataZkFee(DEFAULT_ZK_COMPUTE_BUDG
 export const STANDARD_MAX_TRANSACTION_MASS = 100000n;
 export const ZERO_TXID = "0000000000000000000000000000000000000000000000000000000000000000";
 
+
+export const ZK_OUTPUT_BINDING_DOMAIN = "HARDKAS_ZK_OUTPUT_BINDING_V1" as const;
+export const ZK_OUTPUT_BINDING_MAGIC = "484b5a31"; // "HKZ1"
+
+export type ZkBindingMode = "proof-only" | "proof-and-output-bound";
+
+export interface ZkOutputTarget {
+  address: string;
+  amountSompi: bigint;
+}
+
+export interface ZkReplayBinding {
+  transactionId: string;
+  index: number;
+}
+
+export interface ZkOutputBindingPolicy {
+  mode: ZkBindingMode;
+  payout: ZkOutputTarget;
+  change?: ZkOutputTarget;
+  utxoBinding?: ZkReplayBinding;
+}
+
+export interface ZkJournalBindingParams {
+  payoutAddress: string;
+  amountSompi: bigint;
+  utxoOutpoint?: { transactionId: string; index: number };
+  nonceHex?: string;
+}
+
+export interface ZkJournalBindingResult {
+  domain: typeof ZK_OUTPUT_BINDING_DOMAIN;
+  journalHex: string;
+  journalHash: string;
+  recipientSpkHex: string;
+  amountSompi: bigint;
+  nonceHex: string;
+}
+
+/**
+ * Creates a canonical, domain-separated journal for zkVM applications committing to transaction outputs.
+ * Domain: HARDKAS_ZK_OUTPUT_BINDING_V1
+ * Layout: [0..4] "HKZ1" | [4..36] SPK SHA-256 | [36..44] Amount u64 LE | [44..76] Outpoint Digest | [76..108] Nonce
+ */
+export function createZkOutputBindingJournal(params: ZkJournalBindingParams): ZkJournalBindingResult {
+  const kaspa = loadManagedKaspaWasmSync();
+  if (!kaspa.Address.validate(params.payoutAddress)) {
+    throw new Error(`Invalid payoutAddress: '${params.payoutAddress}'`);
+  }
+  const addr = new kaspa.Address(params.payoutAddress);
+  const spk = kaspa.payToAddressScript(addr);
+  const spkBytes = Buffer.from(spk.script, "hex");
+  const spkDigest = createHash("sha256").update(spkBytes).digest();
+
+  const amountBuf = Buffer.alloc(8);
+  amountBuf.writeBigUInt64LE(params.amountSompi, 0);
+
+  let utxoDigest: Buffer;
+  if (params.utxoOutpoint) {
+    const txIdBytes = Buffer.from(params.utxoOutpoint.transactionId, "hex");
+    const idxBuf = Buffer.alloc(4);
+    idxBuf.writeUInt32LE(params.utxoOutpoint.index, 0);
+    utxoDigest = createHash("sha256").update(Buffer.concat([txIdBytes, idxBuf])).digest();
+  } else {
+    utxoDigest = Buffer.alloc(32, 0);
+  }
+
+  const nonce = params.nonceHex ? Buffer.from(params.nonceHex, "hex") : randomBytes(32);
+  const magic = Buffer.from(ZK_OUTPUT_BINDING_MAGIC, "hex");
+
+  const journalBuf = Buffer.concat([magic, spkDigest, amountBuf, utxoDigest, nonce]);
+  const journalHex = journalBuf.toString("hex");
+  const journalHash = createHash("sha256").update(journalBuf).digest("hex");
+
+  return {
+    domain: ZK_OUTPUT_BINDING_DOMAIN,
+    journalHex,
+    journalHash,
+    recipientSpkHex: spk.script,
+    amountSompi: params.amountSompi,
+    nonceHex: nonce.toString("hex")
+  };
+}
+
 export interface R0Groth16ScriptParams {
   imageId: string;
   journalHash: string;
   receiptHex: string;
+  bindingPolicy?: ZkOutputBindingPolicy;
 }
 
 export interface R0Groth16ScriptsResult {
@@ -161,6 +263,11 @@ export interface R0Groth16ScriptsResult {
   };
   precompileOpcode: typeof OP_ZK_PRECOMPILE;
   provingSystemTag: typeof GROTH16_PROVING_SYSTEM_TAG;
+  bindingMode: ZkBindingMode;
+  bindingPolicy?: ZkOutputBindingPolicy;
+  consensusEnforced: boolean;
+  boundPayoutAddress?: string;
+  boundPayoutAmount?: bigint;
   experimental: true;
   warnings: ZkIssue[];
   issues: ZkIssue[];
@@ -178,6 +285,9 @@ export interface BuildR0Groth16TxParams {
   feeOptions?: ToccataFeePolicyOptions;
   computeBudget?: number;
   networkId?: "simnet" | "testnet-10" | "mainnet";
+  /** Whether the Groth16 mathematical verification succeeded off-chain */
+  mathVerified?: boolean | undefined;
+  bindingPolicy?: ZkOutputBindingPolicy;
 }
 
 export interface R0Groth16TxResult {
@@ -197,16 +307,25 @@ export interface R0Groth16TxResult {
   feeSompi: bigint;
   destinationAddress: string;
   networkId: "simnet" | "testnet-10" | "mainnet";
+  bindingMode: ZkBindingMode;
+  consensusEnforced: boolean;
   experimental: true;
   warnings: ZkIssue[];
   issues: ZkIssue[];
+  /** Unified V1 transaction plan artifact for this ZK spend */
+  planArtifact?: TxPlanArtifact | undefined;
+  /** Immutable ZK verification fact binding proof, verification key, inputs and outputs */
+  zkFact?: ZkVerificationFact | undefined;
 }
 
 export interface R0Groth16VerifyScriptsParams {
   redeemScript: string;
   sigScript: string;
-  imageId?: string;
-  journalHash?: string;
+  imageId?: string | undefined;
+  journalHash?: string | undefined;
+  expectedBindingMode?: ZkBindingMode | undefined;
+  expectedPayoutAddress?: string | undefined;
+  expectedPayoutAmount?: bigint | undefined;
 }
 
 export interface KaspaScriptOp {
@@ -235,6 +354,15 @@ export interface R0Groth16VerifyScriptsResult {
   largestRedeemPushBytes: number;
   imageIdFound?: boolean;
   journalHashFound?: boolean;
+  bindingMode?: ZkBindingMode;
+  consensusEnforced?: boolean;
+  hasOutputIntrospection?: boolean;
+  enforcesOutputCount?: boolean;
+  enforcesPayoutSpk?: boolean;
+  enforcesPayoutAmount?: boolean;
+  enforcesUtxoBinding?: boolean;
+  boundPayoutSpk?: string;
+  boundPayoutAmount?: bigint;
   issues: ZkIssue[];
 }
 
@@ -356,8 +484,10 @@ function emptyScriptsResult(
   journalHash: string,
   preparedProof: string,
   warnings: ZkIssue[],
-  issues: ZkIssue[]
+  issues: ZkIssue[],
+  bindingPolicy?: ZkOutputBindingPolicy
 ): R0Groth16ScriptsResult {
+  const mode = bindingPolicy?.mode ?? "proof-only";
   return {
     ok: false,
     schema: HardkasSchemas.ZkToccataScriptsV1,
@@ -372,6 +502,10 @@ function emptyScriptsResult(
     p2shAddresses: { simnet: "", testnet10: "", mainnet: "" },
     precompileOpcode: OP_ZK_PRECOMPILE,
     provingSystemTag: GROTH16_PROVING_SYSTEM_TAG,
+    bindingMode: mode,
+    ...(bindingPolicy ? { bindingPolicy } : {}),
+    consensusEnforced: mode === "proof-and-output-bound",
+    ...(bindingPolicy?.payout ? { boundPayoutAddress: bindingPolicy.payout.address, boundPayoutAmount: bindingPolicy.payout.amountSompi } : {}),
     experimental: true,
     warnings,
     issues
@@ -398,6 +532,15 @@ export function buildR0Groth16Scripts(params: R0Groth16ScriptParams): R0Groth16S
   const imageId = typeof params.imageId === "string" ? params.imageId.trim().toLowerCase() : "";
   const journalHash = typeof params.journalHash === "string" ? params.journalHash.trim().toLowerCase() : "";
   const receiptHex = typeof params.receiptHex === "string" ? params.receiptHex.trim() : "";
+  const bindingMode: ZkBindingMode = params.bindingPolicy?.mode ?? "proof-only";
+
+  if (params.bindingPolicy?.mode === "proof-only") {
+    warnings.push({
+      code: "ZK_UNBOUND_OUTPUTS_POLICY",
+      message:
+        "proof-only mode does not enforce destination address or amount in the L1 consensus script. Anyone possessing the proof can construct a valid transaction redirecting the funds. Use proof-and-output-bound mode for secure payments."
+    });
+  }
 
   if (!/^[0-9a-f]{64}$/.test(imageId)) {
     issues.push({
@@ -422,23 +565,139 @@ export function buildR0Groth16Scripts(params: R0Groth16ScriptParams): R0Groth16S
     });
   }
 
-  if (issues.length > 0) return emptyScriptsResult(imageId, journalHash, preparedProof, warnings, issues);
-
   const kaspa = loadManagedKaspaWasmSync();
+
+  if (bindingMode === "proof-and-output-bound") {
+    const policy = params.bindingPolicy!;
+    if (!policy.payout?.address) {
+      issues.push({
+        code: "ZK_BINDING_POLICY_INVALID",
+        message: "bindingPolicy.payout.address is required in proof-and-output-bound mode"
+      });
+    } else if (!kaspa.Address.validate(policy.payout.address)) {
+      issues.push({
+        code: "ZK_INVALID_DESTINATION_ADDRESS",
+        message: `Invalid payout address in binding policy: '${policy.payout.address}'`
+      });
+    }
+    if (typeof policy.payout?.amountSompi !== "bigint" || policy.payout.amountSompi <= 0n) {
+      issues.push({
+        code: "ZK_BINDING_POLICY_INVALID",
+        message: "bindingPolicy.payout.amountSompi must be a positive bigint"
+      });
+    }
+    if (policy.change) {
+      if (!policy.change.address || !kaspa.Address.validate(policy.change.address)) {
+        issues.push({
+          code: "ZK_BINDING_POLICY_INVALID",
+          message: `Invalid change address in binding policy: '${policy.change?.address}'`
+        });
+      }
+      if (typeof policy.change.amountSompi !== "bigint" || policy.change.amountSompi <= 0n) {
+        issues.push({
+          code: "ZK_BINDING_POLICY_INVALID",
+          message: "bindingPolicy.change.amountSompi must be a positive bigint"
+        });
+      }
+    }
+    if (policy.utxoBinding) {
+      if (!/^[0-9a-fA-F]{64}$/.test(policy.utxoBinding.transactionId)) {
+        issues.push({
+          code: "ZK_BINDING_POLICY_INVALID",
+          message: "bindingPolicy.utxoBinding.transactionId must be a 32-byte hex transaction id"
+        });
+      }
+      if (!Number.isInteger(policy.utxoBinding.index) || policy.utxoBinding.index < 0) {
+        issues.push({
+          code: "ZK_BINDING_POLICY_INVALID",
+          message: "bindingPolicy.utxoBinding.index must be a non-negative integer"
+        });
+      }
+    }
+  }
+
+  if (issues.length > 0) return emptyScriptsResult(imageId, journalHash, preparedProof, warnings, issues, params.bindingPolicy);
+
   try {
-    const builder = kaspa.ZkScriptBuilder.newR0();
-    builder.commitToGroth16(imageId);
-    const finalized = builder.finalizeWithGroth16Proof(receiptHex.toLowerCase(), journalHash);
+    let redeemScript = "";
+    let sigScript = "";
 
-    const redeemScript = String(finalized.redeemScript).toLowerCase();
-    const sigScript = String(finalized.sigScript).toLowerCase();
+    if (bindingMode === "proof-and-output-bound") {
+      const policy = params.bindingPolicy!;
+      const payoutAddr = new kaspa.Address(policy.payout.address);
+      const payoutSpk = kaspa.payToAddressScript(payoutAddr);
+
+      const zkBuilder = kaspa.ZkScriptBuilder.newR0();
+      zkBuilder.appendR0Groth16Verifier(imageId);
+      const zkPart = zkBuilder.drain();
+
+      const sb = new kaspa.ScriptBuilder();
+      sb.addOps(Buffer.from(zkPart, "hex"));
+      sb.addOp(kaspa.Opcodes.OpVerify);
+
+      const expectedOutputCount = policy.change ? 2n : 1n;
+      sb.addOp(kaspa.Opcodes.OpTxOutputCount);
+      sb.addI64(expectedOutputCount);
+      sb.addOp(kaspa.Opcodes.OpEqualVerify);
+
+      // Enforce output 0 recipient
+      sb.addI64(0n);
+      sb.addOp(kaspa.Opcodes.OpTxOutputSpk);
+      sb.addData(Buffer.from(payoutSpk.script, "hex"));
+      sb.addOp(kaspa.Opcodes.OpEqualVerify);
+
+      // Enforce output 0 amount
+      sb.addI64(0n);
+      sb.addOp(kaspa.Opcodes.OpTxOutputAmount);
+      sb.addI64(policy.payout.amountSompi);
+      sb.addOp(kaspa.Opcodes.OpNumEqualVerify);
+
+      // Enforce change output if configured
+      if (policy.change) {
+        const changeAddr = new kaspa.Address(policy.change.address);
+        const changeSpk = kaspa.payToAddressScript(changeAddr);
+        sb.addI64(1n);
+        sb.addOp(kaspa.Opcodes.OpTxOutputSpk);
+        sb.addData(Buffer.from(changeSpk.script, "hex"));
+        sb.addOp(kaspa.Opcodes.OpEqualVerify);
+
+        sb.addI64(1n);
+        sb.addOp(kaspa.Opcodes.OpTxOutputAmount);
+        sb.addI64(policy.change.amountSompi);
+        sb.addOp(kaspa.Opcodes.OpNumEqualVerify);
+      }
+
+      // Enforce UTXO outpoint binding if configured
+      if (policy.utxoBinding) {
+        sb.addOp(kaspa.Opcodes.OpTxInputIndex);
+        sb.addOp(kaspa.Opcodes.OpDup);
+        sb.addOp(kaspa.Opcodes.OpOutpointTxId);
+        sb.addData(Buffer.from(policy.utxoBinding.transactionId, "hex"));
+        sb.addOp(kaspa.Opcodes.OpEqualVerify);
+
+        sb.addOp(kaspa.Opcodes.OpOutpointIndex);
+        sb.addI64(BigInt(policy.utxoBinding.index));
+        sb.addOp(kaspa.Opcodes.OpEqualVerify);
+      }
+
+      sb.addOp(kaspa.Opcodes.OpTrue);
+      redeemScript = String(sb.drain()).toLowerCase();
+
+      const sigBuilder = new kaspa.ScriptBuilder();
+      sigBuilder.addData(Buffer.from(journalHash, "hex"));
+      sigBuilder.addData(Buffer.from(preparedProof, "hex"));
+      sigBuilder.addData(Buffer.from(redeemScript, "hex"));
+      sigScript = String(sigBuilder.drain()).toLowerCase();
+    } else {
+      const builder = kaspa.ZkScriptBuilder.newR0();
+      builder.commitToGroth16(imageId);
+      const finalized = builder.finalizeWithGroth16Proof(receiptHex.toLowerCase(), journalHash);
+      redeemScript = String(finalized.redeemScript).toLowerCase();
+      sigScript = String(finalized.sigScript).toLowerCase();
+    }
+
     const spk = kaspa.payToScriptHashScript(redeemScript);
-
-    // finalizeWithGroth16Proof already returns the complete P2SH scriptSig
-    // ([push journalHash] [push proof] [push redeemScript]); appending the redeem script again
-    // through payToScriptHashSignatureScript would double-push it.
     const fullSignatureScript = sigScript;
-
     const redeemScriptHash =
       spk.script.startsWith("aa20") && spk.script.endsWith("87") ? spk.script.slice(4, -2) : "";
 
@@ -446,7 +705,17 @@ export function buildR0Groth16Scripts(params: R0Groth16ScriptParams): R0Groth16S
     const testnet10Addr = kaspa.addressFromScriptPublicKey(spk, "testnet-10")?.toString() ?? "";
     const mainnetAddr = kaspa.addressFromScriptPublicKey(spk, "mainnet")?.toString() ?? "";
 
-    const structural = verifyR0Groth16Scripts({ redeemScript, sigScript, imageId, journalHash });
+    const structural = verifyR0Groth16Scripts({
+      redeemScript,
+      sigScript,
+      imageId,
+      journalHash,
+      expectedBindingMode: bindingMode,
+      ...(params.bindingPolicy?.payout ? {
+        expectedPayoutAddress: params.bindingPolicy.payout.address,
+        expectedPayoutAmount: params.bindingPolicy.payout.amountSompi
+      } : {})
+    });
     if (!structural.ok) {
       issues.push({
         code: "ZK_REDEEM_SCRIPT_INVALID_STRUCTURE",
@@ -468,6 +737,13 @@ export function buildR0Groth16Scripts(params: R0Groth16ScriptParams): R0Groth16S
       p2shAddresses: { simnet: simnetAddr, testnet10: testnet10Addr, mainnet: mainnetAddr },
       precompileOpcode: OP_ZK_PRECOMPILE,
       provingSystemTag: GROTH16_PROVING_SYSTEM_TAG,
+      bindingMode,
+      ...(params.bindingPolicy ? { bindingPolicy: params.bindingPolicy } : {}),
+      consensusEnforced: bindingMode === "proof-and-output-bound",
+      ...(params.bindingPolicy?.payout ? {
+        boundPayoutAddress: params.bindingPolicy.payout.address,
+        boundPayoutAmount: params.bindingPolicy.payout.amountSompi
+      } : {}),
       experimental: true,
       warnings,
       issues
@@ -478,7 +754,7 @@ export function buildR0Groth16Scripts(params: R0Groth16ScriptParams): R0Groth16S
       code: "ZK_SCRIPT_BUILD_FAILED",
       message: `Failed to build R0 Groth16 scripts: ${msg}`
     });
-    return emptyScriptsResult(imageId, journalHash, preparedProof, warnings, issues);
+    return emptyScriptsResult(imageId, journalHash, preparedProof, warnings, issues, params.bindingPolicy);
   }
 }
 
@@ -489,7 +765,8 @@ function emptyTxResult(
   destinationAddress: string,
   networkId: "simnet" | "testnet-10" | "mainnet",
   warnings: ZkIssue[],
-  issues: ZkIssue[]
+  issues: ZkIssue[],
+  bindingMode: ZkBindingMode = "proof-only"
 ): R0Groth16TxResult {
   return {
     ok: false,
@@ -506,10 +783,68 @@ function emptyTxResult(
     feeSompi,
     destinationAddress,
     networkId,
+    bindingMode,
+    consensusEnforced: bindingMode === "proof-and-output-bound",
     experimental: true,
     warnings,
     issues
   };
+}
+
+/**
+ * Builds a TxPlanArtifact (hardkas.txPlan.v1) for a Toccata ZK Groth16 spend.
+ * Integrates ZK transactions directly into HardKAS's deterministic plan pipeline.
+ */
+export function buildR0Groth16Plan(params: BuildR0Groth16TxParams): TxPlanArtifact {
+  const computeBudget = params.computeBudget ?? DEFAULT_ZK_COMPUTE_BUDGET;
+  const feeEstimate = estimateToccataZkFee(computeBudget, REFERENCE_BASE_COMPUTE_MASS, params.feeOptions);
+  const feeSompi = params.feeSompi ?? feeEstimate.recommendedSompi;
+  const spkHex = params.scripts.p2shScriptPublicKey
+    ? `${Number(params.scripts.p2shScriptPublicKey.version).toString(16).padStart(4, "0")}${params.scripts.p2shScriptPublicKey.script}`
+    : "0008" + "00".repeat(32);
+  const netKey = (params.networkId ?? "simnet") as "simnet" | "testnet-10" | "mainnet";
+  const p2shAddress =
+    (netKey === "testnet-10" ? params.scripts.p2shAddresses?.testnet10 : params.scripts.p2shAddresses?.[netKey]) ||
+    params.scripts.p2shAddresses?.simnet ||
+    "kaspasim:p2sh_zk_placeholder";
+  const outputAmount = params.utxo.amountSompi > feeSompi ? params.utxo.amountSompi - feeSompi : 0n;
+
+  return createV1TxPlanArtifact({
+    networkId: (params.networkId ?? "simnet") as any,
+    mode: "rpc",
+    from: { input: p2shAddress, address: p2shAddress },
+    to: { input: params.destinationAddress, address: params.destinationAddress },
+    amountSompi: outputAmount,
+    body: {
+      txVersion: 1,
+      inputs: [
+        {
+          outpoint: { transactionId: params.utxo.transactionId, index: params.utxo.index },
+          amountSompi: String(params.utxo.amountSompi),
+          address: p2shAddress,
+          scriptPublicKey: spkHex,
+          kind: "p2sh",
+          computeBudget
+        }
+      ],
+      outputs: [
+        {
+          address: params.destinationAddress,
+          amountSompi: String(outputAmount),
+          role: "payment"
+        }
+      ],
+      estimatedFeeSompi: String(feeSompi),
+      estimatedMass: String(feeEstimate.computeMass),
+      storageMass: "0",
+      maxFeeSompi: String(
+        params.feeOptions?.maxFeeSompi ??
+        (feeSompi > DEFAULT_MAX_FEE_CAP_SOMPI ? feeSompi : DEFAULT_MAX_FEE_CAP_SOMPI)
+      )
+    },
+    ctx: systemRuntimeContext,
+    purpose: "ZK Groth16 spend"
+  }) as any;
 }
 
 /**
@@ -523,6 +858,16 @@ export function buildR0Groth16Transaction(params: BuildR0Groth16TxParams): R0Gro
   const networkId = params.networkId ?? "simnet";
   const computeBudget = params.computeBudget ?? DEFAULT_ZK_COMPUTE_BUDGET;
   const destinationAddress = String(params.destinationAddress ?? "").trim();
+  const bindingMode = params.scripts?.bindingMode ?? "proof-only";
+  const bindingPolicy = params.scripts?.bindingPolicy;
+
+  if (params.scripts?.bindingPolicy?.mode === "proof-only") {
+    warnings.push({
+      code: "ZK_TRANSACTION_OUTPUTS_UNBOUND",
+      message:
+        "Transaction was built from a proof-only script: the consensus script does NOT bind destination address or amount. Funds can be redirected by anyone possessing the proof."
+    });
+  }
 
   if (!isValidComputeBudget(computeBudget)) {
     issues.push({
@@ -530,7 +875,10 @@ export function buildR0Groth16Transaction(params: BuildR0Groth16TxParams): R0Gro
       message: `computeBudget must be an integer in [0, ${COMPUTE_BUDGET_MAX}] (u16), got ${String(computeBudget)}`
     });
     const estimate = estimateToccataZkFee(DEFAULT_ZK_COMPUTE_BUDGET, REFERENCE_BASE_COMPUTE_MASS, params.feeOptions);
-    return emptyTxResult(estimate, Number(computeBudget), params.feeSompi ?? 0n, destinationAddress, networkId, warnings, issues);
+    const empty = emptyTxResult(estimate, Number(computeBudget), params.feeSompi ?? 0n, destinationAddress, networkId, warnings, issues);
+    empty.bindingMode = bindingMode;
+    empty.consensusEnforced = bindingMode === "proof-and-output-bound";
+    return empty;
   }
   if (networkId === "mainnet") {
     warnings.push({
@@ -558,15 +906,38 @@ export function buildR0Groth16Transaction(params: BuildR0Groth16TxParams): R0Gro
   if (!params.scripts?.ok || !params.scripts.sigScript) {
     issues.push({ code: "ZK_SCRIPTS_INVALID", message: "params.scripts must be a successful buildR0Groth16Scripts result" });
   }
+
+  // Cross-check consensus binding policy if script is bound
+  if (bindingMode === "proof-and-output-bound" && bindingPolicy) {
+    if (destinationAddress.toLowerCase() !== bindingPolicy.payout.address.toLowerCase()) {
+      issues.push({
+        code: "ZK_BINDING_DESTINATION_MISMATCH",
+        message: `Specified destinationAddress '${destinationAddress}' does not match the covenant's consensus-bound payout address '${bindingPolicy.payout.address}'`
+      });
+    }
+    if (bindingPolicy.utxoBinding) {
+      const expectedTxId = bindingPolicy.utxoBinding.transactionId.toLowerCase();
+      const actualTxId = String(params.utxo?.transactionId ?? "").toLowerCase();
+      if (expectedTxId !== actualTxId || bindingPolicy.utxoBinding.index !== params.utxo?.index) {
+        issues.push({
+          code: "ZK_BINDING_UTXO_MISMATCH",
+          message: `Spent UTXO ${params.utxo?.transactionId}:${params.utxo?.index} does not match the covenant's bound outpoint ${bindingPolicy.utxoBinding.transactionId}:${bindingPolicy.utxoBinding.index}`
+        });
+      }
+    }
+  }
+
   if (issues.length > 0) {
     const estimate = estimateToccataZkFee(computeBudget, REFERENCE_BASE_COMPUTE_MASS, params.feeOptions);
-    return emptyTxResult(estimate, computeBudget, params.feeSompi ?? estimate.recommendedSompi, destinationAddress, networkId, warnings, issues);
+    const empty = emptyTxResult(estimate, computeBudget, params.feeSompi ?? estimate.recommendedSompi, destinationAddress, networkId, warnings, issues);
+    empty.bindingMode = bindingMode;
+    empty.consensusEnforced = bindingMode === "proof-and-output-bound";
+    return empty;
   }
 
   const makeTx = (fee: bigint) => {
     const destAddr = new kaspa.Address(destinationAddress);
     const destSpk = kaspa.payToAddressScript(destAddr);
-    const outputAmount = params.utxo.amountSompi - fee;
     const utxoOutpoint = { transactionId: params.utxo.transactionId, index: params.utxo.index };
     const spk = params.scripts.p2shScriptPublicKey;
     const utxoEntry = {
@@ -576,6 +947,29 @@ export function buildR0Groth16Transaction(params: BuildR0Groth16TxParams): R0Gro
       blockDaaScore: 0n,
       isCoinbase: false
     };
+
+    const outputs: any[] = [];
+    if (bindingMode === "proof-and-output-bound" && bindingPolicy?.change) {
+      outputs.push({
+        value: bindingPolicy.payout.amountSompi,
+        scriptPublicKey: new kaspa.ScriptPublicKey(destSpk.version, destSpk.script)
+      });
+      const changeAddr = new kaspa.Address(bindingPolicy.change.address);
+      const changeSpk = kaspa.payToAddressScript(changeAddr);
+      outputs.push({
+        value: bindingPolicy.change.amountSompi,
+        scriptPublicKey: new kaspa.ScriptPublicKey(changeSpk.version, changeSpk.script)
+      });
+    } else {
+      const outputAmount = bindingMode === "proof-and-output-bound" && bindingPolicy
+        ? bindingPolicy.payout.amountSompi
+        : params.utxo.amountSompi - fee;
+      outputs.push({
+        value: outputAmount,
+        scriptPublicKey: new kaspa.ScriptPublicKey(destSpk.version, destSpk.script)
+      });
+    }
+
     return new kaspa.Transaction({
       version: 1,
       inputs: [
@@ -588,12 +982,7 @@ export function buildR0Groth16Transaction(params: BuildR0Groth16TxParams): R0Gro
           utxo: utxoEntry
         }
       ],
-      outputs: [
-        {
-          value: outputAmount,
-          scriptPublicKey: new kaspa.ScriptPublicKey(destSpk.version, destSpk.script)
-        }
-      ],
+      outputs,
       lockTime: 0n,
       subnetworkId: "0000000000000000000000000000000000000000",
       gas: 0n,
@@ -603,16 +992,36 @@ export function buildR0Groth16Transaction(params: BuildR0Groth16TxParams): R0Gro
   };
 
   try {
-    // Pass 1: measure the real non-contextual mass (the output value is 8 bytes whatever the fee).
     const probe = makeTx(0n);
     const mass: bigint = kaspa.calculateTransactionMass(networkId, probe);
     const feeEstimate = estimateToccataZkFee(computeBudget, mass, params.feeOptions);
-    const feeSompi = params.feeSompi ?? feeEstimate.recommendedSompi;
 
-    if (params.feeSompi !== undefined && params.feeSompi < feeEstimate.minimumRequiredSompi) {
+    let feeSompi: bigint;
+    if (bindingMode === "proof-and-output-bound" && bindingPolicy) {
+      const requiredPayoutTotal = bindingPolicy.payout.amountSompi + (bindingPolicy.change?.amountSompi ?? 0n);
+      if (params.utxo.amountSompi <= requiredPayoutTotal) {
+        issues.push({
+          code: "ZK_INSUFFICIENT_INPUT_AMOUNT",
+          message: `UTXO amount ${params.utxo.amountSompi} sompi is insufficient to cover covenant payout total of ${requiredPayoutTotal} sompi plus transaction fee`
+        });
+        return emptyTxResult(feeEstimate, computeBudget, 0n, destinationAddress, networkId, warnings, issues, bindingMode);
+      }
+      feeSompi = params.utxo.amountSompi - requiredPayoutTotal;
+      if (params.feeSompi !== undefined && params.feeSompi !== feeSompi) {
+        issues.push({
+          code: "ZK_BINDING_AMOUNT_MISMATCH",
+          message: `Specified feeSompi (${params.feeSompi}) does not match the covenant's implied fee (${feeSompi} sompi: UTXO ${params.utxo.amountSompi} - payout total ${requiredPayoutTotal})`
+        });
+        return emptyTxResult(feeEstimate, computeBudget, feeSompi, destinationAddress, networkId, warnings, issues, bindingMode);
+      }
+    } else {
+      feeSompi = params.feeSompi ?? feeEstimate.recommendedSompi;
+    }
+
+    if (feeSompi < feeEstimate.minimumRequiredSompi) {
       warnings.push({
         code: "ZK_FEE_BELOW_MEMPOOL_MINIMUM",
-        message: `Specified fee of ${params.feeSompi} sompi is below the standard mempool minimum of ${feeEstimate.minimumRequiredSompi} sompi for compute mass ${feeEstimate.computeMass}`
+        message: `Fee of ${feeSompi} sompi is below the standard mempool minimum of ${feeEstimate.minimumRequiredSompi} sompi for compute mass ${feeEstimate.computeMass}`
       });
     }
     if (params.feeSompi === undefined && feeEstimate.cappedBelowMinimum) {
@@ -626,20 +1035,73 @@ export function buildR0Groth16Transaction(params: BuildR0Groth16TxParams): R0Gro
         code: "ZK_INSUFFICIENT_INPUT_AMOUNT",
         message: `UTXO amount ${params.utxo.amountSompi} sompi is insufficient to cover fee of ${feeSompi} sompi`
       });
-      return emptyTxResult(feeEstimate, computeBudget, feeSompi, destinationAddress, networkId, warnings, issues);
+      return emptyTxResult(feeEstimate, computeBudget, feeSompi, destinationAddress, networkId, warnings, issues, bindingMode);
     }
 
-    // Pass 2: the real transaction with the final fee.
     const tx = makeTx(feeSompi);
-    // Only the non-contextual mass is checked against the standard limit here. The node's limit on
-    // compute mass (budget term included) is not enforced locally: the mempool prices it (fee) and
-    // the consensus allowance is `budget * 10_000 + 9_999` script units per input.
     const withinStandardMaxMass = mass <= STANDARD_MAX_TRANSACTION_MASS;
     if (mass > STANDARD_MAX_TRANSACTION_MASS) {
       issues.push({
         code: "ZK_TX_EXCEEDS_MAX_STANDARD_MASS",
         message: `Transaction mass ${mass} exceeds standard max mass ${STANDARD_MAX_TRANSACTION_MASS}`
       });
+    }
+
+    let planArtifact: any;
+    let planArtifactId: string | undefined;
+    try {
+      planArtifact = buildR0Groth16Plan({
+        ...params,
+        feeSompi
+      });
+      const planIdCheck = checkArtifactIdentity(planArtifact);
+      planArtifactId = planIdCheck.ok ? planIdCheck.artifactId : undefined;
+    } catch {
+      // Ignore plan generation failures so tx building succeeds
+    }
+    const finalOutputAmount = params.utxo.amountSompi - feeSompi;
+
+    let zkFact: ZkVerificationFact | undefined;
+    try {
+      const vkHash = params.scripts.imageId
+        ? sha256Hex(params.scripts.imageId)
+        : "00".repeat(32);
+      const rawJournal = params.scripts.journalHash ?? "";
+      const journalHash = rawJournal.startsWith("0x") ? rawJournal.slice(2) : rawJournal;
+      const rawProof = typeof params.scripts.preparedProof === "string" ? params.scripts.preparedProof : "";
+      const proofHash = rawProof ? sha256Hex(rawProof) : "00".repeat(32);
+      const redeemHash = params.scripts.redeemScriptHash || sha256Hex(params.scripts.redeemScript || "");
+      const netKey = (networkId ?? "simnet") as "simnet" | "testnet-10" | "mainnet";
+      const p2shAddress =
+        (netKey === "testnet-10" ? params.scripts.p2shAddresses?.testnet10 : params.scripts.p2shAddresses?.[netKey]) ||
+        params.scripts.p2shAddresses?.simnet ||
+        "kaspasim:p2sh_zk_placeholder";
+
+      zkFact = createZkVerificationFactArtifact({
+        networkId,
+        provingSystem: "Groth16",
+        curve: "BN254",
+        guestSystem: "RISC Zero",
+        imageId: vkHash.padEnd(64, "0").slice(0, 64),
+        journalHash: (journalHash || "00".repeat(32)).padEnd(64, "0").slice(0, 64),
+        proofSha256: proofHash.padEnd(64, "0").slice(0, 64),
+        verifiedOffChain: params.mathVerified ?? false,
+        spendUtxo: {
+          transactionId: params.utxo.transactionId,
+          index: params.utxo.index,
+          amountSompi: String(params.utxo.amountSompi)
+        },
+        p2shAddress,
+        redeemScriptHash: redeemHash.padEnd(64, "0").slice(0, 64),
+        payoutAddress: destinationAddress,
+        payoutSompi: String(finalOutputAmount),
+        computeBudget,
+        feeSompi: String(feeSompi),
+        txId: String(tx.id),
+        ...(planArtifactId ? { planArtifactId } : {})
+      });
+    } catch {
+      // Ignore fact creation errors to avoid breaking tx building
     }
 
     return {
@@ -657,9 +1119,13 @@ export function buildR0Groth16Transaction(params: BuildR0Groth16TxParams): R0Gro
       feeSompi,
       destinationAddress,
       networkId,
+      bindingMode,
+      consensusEnforced: bindingMode === "proof-and-output-bound",
       experimental: true,
       warnings,
-      issues
+      issues,
+      planArtifact,
+      zkFact
     };
   } catch (error: any) {
     const msg = error instanceof Error ? error.message : String(error);
@@ -668,7 +1134,10 @@ export function buildR0Groth16Transaction(params: BuildR0Groth16TxParams): R0Gro
       message: `Failed to build R0 Groth16 transaction: ${msg}`
     });
     const estimate = estimateToccataZkFee(computeBudget, REFERENCE_BASE_COMPUTE_MASS, params.feeOptions);
-    return emptyTxResult(estimate, computeBudget, params.feeSompi ?? estimate.recommendedSompi, destinationAddress, networkId, warnings, issues);
+    const empty = emptyTxResult(estimate, computeBudget, params.feeSompi ?? estimate.recommendedSompi, destinationAddress, networkId, warnings, issues);
+    empty.bindingMode = bindingMode;
+    empty.consensusEnforced = bindingMode === "proof-and-output-bound";
+    return empty;
   }
 }
 
@@ -690,23 +1159,99 @@ export function verifyR0Groth16Scripts(
   if (sig.error) issues.push({ code: "ZK_SCRIPT_PARSE_ERROR", message: `sigScript: ${sig.error}` });
 
   const ops = redeem.ops;
-  const last = ops[ops.length - 1];
-  const beforeLast = ops[ops.length - 2];
-  const hasOpZkPrecompile = !redeem.error && last !== undefined && last.opcode === 0xa6 && last.data === undefined;
-  const hasGroth16Tag =
-    !redeem.error && beforeLast !== undefined && beforeLast.opcode === 0x01 && beforeLast.data === "20";
+  const zkPrecompileIndex = ops.findIndex(
+    (op, idx) => op.opcode === 0xa6 && idx > 0 && ops[idx - 1]!.opcode === 0x01 && ops[idx - 1]!.data === "20"
+  );
+  const hasOpZkPrecompile = zkPrecompileIndex !== -1;
+  const hasGroth16Tag = hasOpZkPrecompile;
 
   if (!hasOpZkPrecompile) {
     issues.push({
       code: "ZK_MISSING_PRECOMPILE_OPCODE",
-      message: "Redeem script does not end with OpZkPrecompile (0xa6)"
+      message: "Redeem script does not contain OpZkPrecompile (0xa6) preceded by Groth16 tag (0x20)"
     });
   }
-  if (!hasGroth16Tag) {
+
+  const isBoundMode = zkPrecompileIndex !== -1 && zkPrecompileIndex < ops.length - 1;
+  const bindingMode: ZkBindingMode = isBoundMode ? "proof-and-output-bound" : "proof-only";
+  let hasOutputIntrospection = false;
+  let enforcesOutputCount = false;
+  let enforcesPayoutSpk = false;
+  let enforcesPayoutAmount = false;
+  let enforcesUtxoBinding = false;
+  let boundPayoutSpk: string | undefined;
+  let boundPayoutAmount: bigint | undefined;
+
+  if (isBoundMode) {
+    const afterZk = ops.slice(zkPrecompileIndex + 1);
+    const hasVerifyAfterZk = afterZk.length > 0 && afterZk[0]!.opcode === 0x69; // OpVerify
+    if (!hasVerifyAfterZk) {
+      issues.push({
+        code: "ZK_BINDING_MISSING_VERIFY",
+        message: "OpZkPrecompile in bound mode must be immediately followed by OpVerify (0x69)"
+      });
+    }
+
+    const outputCountIdx = ops.findIndex((op) => op.opcode === 0xb4);
+    if (outputCountIdx !== -1) enforcesOutputCount = true;
+
+    const outputSpkIdx = ops.findIndex((op) => op.opcode === 0xc3);
+    if (outputSpkIdx !== -1 && outputSpkIdx + 1 < ops.length && ops[outputSpkIdx + 1]!.data) {
+      enforcesPayoutSpk = true;
+      boundPayoutSpk = ops[outputSpkIdx + 1]!.data;
+    }
+
+    const outputAmountIdx = ops.findIndex((op) => op.opcode === 0xc2);
+    if (outputAmountIdx !== -1 && outputAmountIdx + 1 < ops.length && ops[outputAmountIdx + 1]!.data) {
+      enforcesPayoutAmount = true;
+      const dataHex = ops[outputAmountIdx + 1]!.data!;
+      const buf = Buffer.from(dataHex, "hex");
+      let val = 0n;
+      for (let b = buf.length - 1; b >= 0; b--) {
+        val = (val << 8n) | BigInt(b === buf.length - 1 ? buf[b]! & 0x7f : buf[b]!);
+      }
+      boundPayoutAmount = (buf[buf.length - 1]! & 0x80) !== 0 ? -val : val;
+    }
+
+    const outpointTxIdIdx = ops.findIndex((op) => op.opcode === 0xba);
+    if (outpointTxIdIdx !== -1) enforcesUtxoBinding = true;
+
+    hasOutputIntrospection = enforcesOutputCount && enforcesPayoutSpk && enforcesPayoutAmount;
+  }
+
+  if (params.expectedBindingMode && params.expectedBindingMode !== bindingMode) {
     issues.push({
-      code: "ZK_MISSING_GROTH16_TAG",
-      message: "Redeem script does not push the Groth16 tag (OP_DATA_1 0x20) right before OpZkPrecompile"
+      code: "ZK_BINDING_MODE_MISMATCH",
+      message: `Expected script binding mode '${params.expectedBindingMode}' but script is '${bindingMode}'`
     });
+  }
+
+  if (params.expectedPayoutAddress && boundPayoutSpk) {
+    try {
+      const kaspa = loadManagedKaspaWasmSync();
+      const expectedAddr = new kaspa.Address(params.expectedPayoutAddress);
+      const expectedSpk = kaspa.payToAddressScript(expectedAddr);
+      if (boundPayoutSpk.toLowerCase() !== expectedSpk.script.toLowerCase()) {
+        issues.push({
+          code: "ZK_BOUND_PAYOUT_SPK_MISMATCH",
+          message: `Script binds SPK '${boundPayoutSpk}' which does not match expected address '${params.expectedPayoutAddress}' (${expectedSpk.script})`
+        });
+      }
+    } catch (e: any) {
+      issues.push({
+        code: "ZK_EXPECTED_ADDRESS_INVALID",
+        message: `Invalid expected payout address: ${e?.message ?? String(e)}`
+      });
+    }
+  }
+
+  if (params.expectedPayoutAmount !== undefined && boundPayoutAmount !== undefined) {
+    if (boundPayoutAmount !== params.expectedPayoutAmount) {
+      issues.push({
+        code: "ZK_BOUND_PAYOUT_AMOUNT_MISMATCH",
+        message: `Script binds payout amount ${boundPayoutAmount} sompi which does not match expected ${params.expectedPayoutAmount} sompi`
+      });
+    }
   }
 
   const redeemPushes = ops.filter((op) => op.data !== undefined).map((op) => op.data as string);
@@ -771,6 +1316,15 @@ export function verifyR0Groth16Scripts(
     largestRedeemPushBytes,
     ...(imageIdFound !== undefined ? { imageIdFound } : {}),
     ...(journalHashFound !== undefined ? { journalHashFound } : {}),
+    bindingMode,
+    consensusEnforced: isBoundMode && hasOutputIntrospection,
+    hasOutputIntrospection,
+    enforcesOutputCount,
+    enforcesPayoutSpk,
+    enforcesPayoutAmount,
+    enforcesUtxoBinding,
+    ...(boundPayoutSpk ? { boundPayoutSpk } : {}),
+    ...(boundPayoutAmount !== undefined ? { boundPayoutAmount } : {}),
     issues
   };
 }
@@ -798,5 +1352,53 @@ export function getToccataPrecompileRules(): ToccataPrecompileRules {
     maxStandardMass: STANDARD_MAX_TRANSACTION_MASS,
     consensusActivation: "KIP-16 (Toccata Hardfork)",
     scriptSource: KASPA_WASM_ZK_BUILDER_CLAIM
+  };
+}
+
+/**
+ * Observes a Toccata ZK transaction using HardKAS's common TxObserver pipeline and
+ * derives both the base transaction status and the unified ZK operation status.
+ */
+export async function observeZkSpendOnce(
+  client: KaspaRpcClient,
+  params: {
+    readonly txId: string;
+    readonly zkFact?: ZkVerificationFact | undefined;
+    readonly observerId?: string | undefined;
+    readonly networkId?: TxObservation["networkId"] | undefined;
+    readonly mode?: TxObservation["mode"] | undefined;
+  }
+): Promise<{
+  readonly observation: TxObservation;
+  readonly derivedStatus: DerivedTxStatus;
+  readonly zkStatus?: ZkOperationStatusResult | undefined;
+}> {
+  const recorder = rpcObserverFor(client);
+  const defaultObserverId = "obs_" + sha256Hex("zk-toccata-observer");
+  const observation = await observeTxOnce(
+    recorder,
+    {
+      txId: params.txId,
+      observerId: params.observerId ?? defaultObserverId,
+      networkId: params.networkId ?? "simnet",
+      mode: params.mode ?? "rpc"
+    },
+    systemRuntimeContext
+  );
+  const derivedStatus = deriveTxStatus({
+    txId: params.txId,
+    observations: [observation]
+  });
+  const zkStatus = params.zkFact
+    ? deriveZkOperationStatus({
+        zkFact: params.zkFact,
+        txStatus: derivedStatus
+      })
+    : undefined;
+
+  return {
+    observation,
+    derivedStatus,
+    ...(zkStatus ? { zkStatus } : {})
   };
 }

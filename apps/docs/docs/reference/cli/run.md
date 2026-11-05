@@ -16,7 +16,7 @@ title: hardkas run
 
 #### Options
 
-- `--network &lt;name&gt;` (Default: `simnet`): Network from the config (unknown names fall back to simulated)
+- `--network &lt;name&gt;`: Network from the workspace config (default: the workspace's network; an unknown name is refused)
 - `--accounts &lt;n&gt;` (Default: `3`): Number of harness accounts (simulated networks only)
 - `--balance &lt;sompi&gt;` (Default: `100000000000`): Initial balance per harness account, whole sompi (simulated networks only)
 - `--no-harness`: Skip automatic harness creation

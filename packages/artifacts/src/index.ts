@@ -71,3 +71,6 @@ export * from "./silver-refs.js";
 export * from "./artifact-handle.js";
 export * from "./lineage-error.js";
 export * from "./receipt-lookup-error.js";
+export * from "./covenant-fact.js";
+export * from "./zk-fact.js";
+export * from "./operation-status.js";

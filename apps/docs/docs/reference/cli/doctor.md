@@ -8,7 +8,7 @@ title: hardkas doctor
 
 ### Synopsis (Generated)
 
-**Purpose:** Perform a full system diagnostic and health report stable
+**Purpose:** Perform a full system diagnostic and health report (on a public network it contacts the workspace's declared endpoint) stable
 
 #### Arguments
 

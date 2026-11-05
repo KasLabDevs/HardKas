@@ -66,7 +66,13 @@ export type {
 } from "./multinode-read.js";
 export { HardkasFees } from "./fees.js";
 export { HardkasL2 } from "./l2.js";
-export { HardkasCovenants } from "./covenants.js";
+export {
+  HardkasCovenants,
+  deriveCovenantStatus,
+  createCovenantTransitionFactArtifact,
+  type CovenantTransitionFact,
+  type CovenantStatusResult
+} from "./covenants.js";
 export type { CovenantHistory, CovenantInspection, CovenantLineage, CovenantLineageOptions, CovenantStateCheck, CovenantStateView } from "./covenants.js";
 export { COVENANT_LINEAGE_SCOPE, collectCovenantTransactions, reconstructCovenantLineage } from "./covenant-lineage.js";
 export type { CovenantLineageOutput, CovenantLineageSkeleton, CovenantLineageTx } from "./covenant-lineage.js";
@@ -88,6 +94,12 @@ export {
   verifyZkProofMath,
   verifyZkCorpus,
   MAX_ZK_FILE_SIZE,
+  buildR0Groth16Plan,
+  observeZkSpendOnce,
+  deriveZkOperationStatus,
+  createZkVerificationFactArtifact,
+  type ZkVerificationFact,
+  type ZkOperationStatusResult,
   buildR0Groth16Scripts,
   prepareR0Groth16Proof,
   buildR0Groth16Transaction,
@@ -123,7 +135,16 @@ export {
   type R0Groth16VerifyScriptsResult,
   type ToccataPrecompileRules,
   type ToccataFeePolicyOptions,
-  type ToccataZkFeeEstimate
+  type ToccataZkFeeEstimate,
+  ZK_OUTPUT_BINDING_DOMAIN,
+  ZK_OUTPUT_BINDING_MAGIC,
+  createZkOutputBindingJournal,
+  type ZkBindingMode,
+  type ZkOutputTarget,
+  type ZkReplayBinding,
+  type ZkOutputBindingPolicy,
+  type ZkJournalBindingParams,
+  type ZkJournalBindingResult
 } from "./zk.js";
 export {
   verifyGroth16Math,

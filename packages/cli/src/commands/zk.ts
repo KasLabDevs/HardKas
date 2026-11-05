@@ -145,26 +145,113 @@ export function registerZkCommands(program: Command) {
 
   toccata
     .command("build-scripts")
-    .description("Build P2SH redeem and signature scripts for a RISC Zero Groth16 proof set (imageId/journalHash are not cross-checked against the receipt)")
+    .description("Build P2SH redeem and signature scripts for a RISC Zero Groth16 proof set (supports proof-only and proof-and-output-bound consensus modes)")
     .requiredOption("--image-id <hex>", "32-byte hex Image ID")
     .requiredOption("--journal-hash <hex>", "32-byte hex Journal Hash")
     .requiredOption("--receipt <pathOrHex>", "Path to receipt file (.hex) or raw receipt hex string")
+    .option("--mode <mode>", "Binding mode: 'proof-only' (unbound outputs) or 'proof-and-output-bound' (consensus output introspection)", "proof-only")
+    .option("--payout-address <address>", "Consensus-bound recipient address (required if mode is proof-and-output-bound)")
+    .option("--payout-amount <sompi>", "Consensus-bound payout amount in sompi (required if mode is proof-and-output-bound)")
+    .option("--change-address <address>", "Optional consensus-bound change address")
+    .option("--change-amount <sompi>", "Optional consensus-bound change amount in sompi")
+    .option("--utxo-txid <hex>", "Optional bound input UTXO transaction ID for replay protection")
+    .option("--utxo-index <index>", "Optional bound input UTXO index for replay protection")
     .option("--json", "Output as JSON", false)
-    .action(async (options: { imageId: string; journalHash: string; receipt: string; json?: boolean }) => {
+    .action(async (options: {
+      imageId: string;
+      journalHash: string;
+      receipt: string;
+      mode?: string;
+      payoutAddress?: string;
+      payoutAmount?: string;
+      changeAddress?: string;
+      changeAmount?: string;
+      utxoTxid?: string;
+      utxoIndex?: string;
+      json?: boolean;
+    }) => {
       const fs = await import("node:fs");
       let receiptHex = options.receipt;
       if (fs.existsSync(receiptHex)) {
         receiptHex = fs.readFileSync(receiptHex, "utf8").trim();
       }
       const { buildR0Groth16Scripts } = await import("@hardkas/sdk");
+
+      let bindingPolicy: any = undefined;
+      const mode = (options.mode ?? "proof-only") as "proof-only" | "proof-and-output-bound";
+      if (mode === "proof-and-output-bound") {
+        if (!options.payoutAddress || !options.payoutAmount) {
+          throw new HardkasCliError(
+            "ZK_BINDING_POLICY_INCOMPLETE",
+            "--payout-address and --payout-amount are required when mode is proof-and-output-bound",
+            { exitCode: 1 }
+          );
+        }
+        bindingPolicy = {
+          mode: "proof-and-output-bound",
+          payout: {
+            address: options.payoutAddress,
+            amountSompi: BigInt(options.payoutAmount)
+          },
+          change: options.changeAddress && options.changeAmount ? {
+            address: options.changeAddress,
+            amountSompi: BigInt(options.changeAmount)
+          } : undefined,
+          utxoBinding: options.utxoTxid && options.utxoIndex !== undefined ? {
+            transactionId: options.utxoTxid,
+            index: Number(options.utxoIndex)
+          } : undefined
+        };
+      } else if (options.mode === "proof-only") {
+        bindingPolicy = { mode: "proof-only" };
+      }
+
       const result = buildR0Groth16Scripts({
         imageId: options.imageId,
         journalHash: options.journalHash,
-        receiptHex
+        receiptHex,
+        bindingPolicy
       });
       printResult(result, options.json);
       if (!result.ok) {
         throw new HardkasCliError("ZK_TOCCATA_SCRIPT_BUILD_FAILED", "Failed to build Toccata ZK scripts", { exitCode: 1 });
+      }
+    });
+
+  toccata
+    .command("verify-scripts")
+    .description("Verify structural integrity and inspect consensus binding rules in Toccata P2SH scripts")
+    .requiredOption("--redeem-script <hex>", "Redeem script hex")
+    .requiredOption("--sig-script <hex>", "Signature script hex")
+    .option("--image-id <hex>", "Expected 32-byte hex Image ID")
+    .option("--journal-hash <hex>", "Expected 32-byte hex Journal Hash")
+    .option("--expected-mode <mode>", "Expected binding mode ('proof-only' or 'proof-and-output-bound')")
+    .option("--expected-payout-address <address>", "Expected consensus-bound payout address")
+    .option("--expected-payout-amount <sompi>", "Expected consensus-bound payout amount in sompi")
+    .option("--json", "Output as JSON", false)
+    .action(async (options: {
+      redeemScript: string;
+      sigScript: string;
+      imageId?: string;
+      journalHash?: string;
+      expectedMode?: "proof-only" | "proof-and-output-bound";
+      expectedPayoutAddress?: string;
+      expectedPayoutAmount?: string;
+      json?: boolean;
+    }) => {
+      const { verifyR0Groth16Scripts } = await import("@hardkas/sdk");
+      const result = verifyR0Groth16Scripts({
+        redeemScript: options.redeemScript,
+        sigScript: options.sigScript,
+        ...(options.imageId ? { imageId: options.imageId } : {}),
+        ...(options.journalHash ? { journalHash: options.journalHash } : {}),
+        ...(options.expectedMode ? { expectedBindingMode: options.expectedMode } : {}),
+        ...(options.expectedPayoutAddress ? { expectedPayoutAddress: options.expectedPayoutAddress } : {}),
+        ...(options.expectedPayoutAmount ? { expectedPayoutAmount: BigInt(options.expectedPayoutAmount) } : {})
+      });
+      printResult(result, options.json);
+      if (!result.ok) {
+        throw new HardkasCliError("ZK_SCRIPTS_VERIFY_FAILED", "Toccata ZK script verification failed", { exitCode: 1 });
       }
     });
 }

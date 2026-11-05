@@ -137,6 +137,15 @@
         "description": "Override workspace root directory"
       },
       {
+        "flags": "--password-env <env>",
+        "description": "Read the keystore password of the batch's encrypted payers from this environment variable (read once, before the first payment)"
+      },
+      {
+        "flags": "--password-stdin",
+        "description": "Read the keystore password of the batch's encrypted payers from stdin (read once, before the first payment)",
+        "defaultValue": false
+      },
+      {
         "flags": "--json",
         "description": "Output as JSON",
         "defaultValue": false
@@ -184,7 +193,11 @@
       },
       {
         "flags": "--fee-rate <sompiPerMass>",
-        "description": "Whole sompi per gram of mass (default: 1 in the simulator, 100 on real networks; not a live estimate)"
+        "description": "Whole sompi per gram of mass, at least 1 (default: 1 in the simulator, 100 on real networks; not a live estimate)"
+      },
+      {
+        "flags": "--max-fee <sompi>",
+        "description": "Total fee limit in sompi: the plan is refused (FEE_EXCEEDS_MAX) above it, and the limit is recorded in the plan and enforced again at sign and send. The workspace's networks[<net>].maxFeeSompi also applies; the lower one wins. No limit by default"
       },
       {
         "flags": "--change <accountOrAddress>",
@@ -197,7 +210,7 @@
       },
       {
         "flags": "--url <url>",
-        "description": "Node wRPC URL (default: ws://127.0.0.1:18210 for simnet and devnet; the config's rpcUrl is not used)"
+        "description": "Node wRPC URL (default: the network's rpcUrl in hardkas.config.ts; without one, ws://127.0.0.1:18210 for simnet and devnet)"
       },
       {
         "flags": "--out <path>",
@@ -330,6 +343,10 @@
         "description": "Network whose configured node observes (default: the network of the recorded submission)"
       },
       {
+        "flags": "--since <chainBlockHash>",
+        "description": "Scan the node's virtual chain from this chain block (64 hex; it must precede the tx's acceptance) — for a tx sent outside this workspace"
+      },
+      {
         "flags": "--json",
         "description": "Output as JSON",
         "defaultValue": false
@@ -375,6 +392,15 @@
         "description": "Fee rate in sompi per mass (shortcut mode)"
       },
       {
+        "flags": "--password-env <env>",
+        "description": "Shortcut mode: read the sender's keystore password (an encrypted account) from this environment variable"
+      },
+      {
+        "flags": "--password-stdin",
+        "description": "Shortcut mode: read the sender's keystore password (an encrypted account) from stdin",
+        "defaultValue": false
+      },
+      {
         "flags": "--provider <type>",
         "description": "Provider mode (auto, rpc, simulated; signed-artifact mode only)",
         "defaultValue": "auto"
@@ -406,6 +432,11 @@
       {
         "flags": "--track <label>",
         "description": "Signed-artifact mode: after an accepted broadcast, record a deployment with this label"
+      },
+      {
+        "flags": "--preflight",
+        "description": "Payments: right before the broadcast, check every input at the node (unspent, as planned, no covenant id, not pending in its mempool) and verify each input's signature against the node's UTXO; anything it cannot verify refuses the send. One node's view, not a consensus validation",
+        "defaultValue": false
       }
     ],
     "aliases": [],
@@ -462,6 +493,10 @@
       {
         "flags": "-n, --network <network>",
         "description": "Network whose configured node observes (default: the network of the recorded submission)"
+      },
+      {
+        "flags": "--since <chainBlockHash>",
+        "description": "Scan the node's virtual chain from this chain block (64 hex; it must precede the tx's acceptance) on the first look — for a tx sent outside this workspace"
       },
       {
         "flags": "--json",
@@ -756,6 +791,10 @@
         "description": "Node wRPC endpoint (default: the canonical localnet, ws://127.0.0.1:18210)"
       },
       {
+        "flags": "--network <name>",
+        "description": "Network from the workspace config: its declared endpoint, and the node must prove it serves that network (default: none — the --url or the canonical localnet, unchecked)"
+      },
+      {
         "flags": "--json",
         "description": "Output as JSON",
         "defaultValue": false
@@ -767,9 +806,17 @@
   },
   {
     "commandPath": "hardkas rpc health",
-    "description": "Check that the canonical localnet node (ws://127.0.0.1:18210) answers and is ready",
+    "description": "Check that a Kaspa node answers and is ready (default: the canonical localnet, ws://127.0.0.1:18210; --url or --network for another)",
     "arguments": [],
     "options": [
+      {
+        "flags": "--url <url>",
+        "description": "Node wRPC endpoint (default: the canonical localnet, ws://127.0.0.1:18210)"
+      },
+      {
+        "flags": "--network <name>",
+        "description": "Network from the workspace config: its declared endpoint, and the node must prove it serves that network (default: none — the --url or the canonical localnet, unchecked)"
+      },
       {
         "flags": "--wait",
         "description": "Wait until healthy"
@@ -803,6 +850,45 @@
     "status": "REGISTERED"
   },
   {
+    "commandPath": "hardkas rpc compare",
+    "description": "Read several nodes side by side, read-only: identity, lag, the UTXOs of addresses, one look at a transaction. Differences the nodes' lag accounts for are lag, others disagreements (exit 1). Nothing is sent; agreement among nodes is not consensus validation",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--endpoints <urls...>",
+        "description": "Node wRPC endpoints to read, separated by spaces (two or more)"
+      },
+      {
+        "flags": "--network <id>",
+        "description": "The network every node must say it serves (e.g. simnet, testnet-10); a node serving another is not read"
+      },
+      {
+        "flags": "--address <addresses...>",
+        "description": "Compare the UTXOs of these addresses"
+      },
+      {
+        "flags": "--tx <txId>",
+        "description": "Look at this transaction on every node"
+      },
+      {
+        "flags": "--since <hash>",
+        "description": "With --tx: a chain block every node holds to look from (default: each node's pruning point)"
+      },
+      {
+        "flags": "--lag-threshold <daa>",
+        "description": "DAA score behind the most advanced synced node beyond which a node is lagging (default: 100)"
+      },
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Rpc",
+    "status": "REGISTERED"
+  },
+  {
     "commandPath": "hardkas rpc dag",
     "description": "Show the node's DAG: network, virtual DAA score, sink and tips",
     "arguments": [],
@@ -810,6 +896,10 @@
       {
         "flags": "--url <url>",
         "description": "Node wRPC endpoint (default: the canonical localnet, ws://127.0.0.1:18210)"
+      },
+      {
+        "flags": "--network <name>",
+        "description": "Network from the workspace config: its declared endpoint, and the node must prove it serves that network (default: none — the --url or the canonical localnet, unchecked)"
       },
       {
         "flags": "--json",
@@ -837,6 +927,10 @@
         "description": "Node wRPC endpoint (default: the canonical localnet, ws://127.0.0.1:18210)"
       },
       {
+        "flags": "--network <name>",
+        "description": "Network from the workspace config: its declared endpoint, and the node must prove it serves that network (default: none — the --url or the canonical localnet, unchecked)"
+      },
+      {
         "flags": "--json",
         "description": "Output as JSON",
         "defaultValue": false
@@ -860,6 +954,10 @@
       {
         "flags": "--url <url>",
         "description": "Node wRPC endpoint (default: the canonical localnet, ws://127.0.0.1:18210)"
+      },
+      {
+        "flags": "--network <name>",
+        "description": "Network from the workspace config: its declared endpoint, and the node must prove it serves that network (default: none — the --url or the canonical localnet, unchecked)"
       },
       {
         "flags": "--json",
@@ -2114,8 +2212,7 @@
     "options": [
       {
         "flags": "--network <network>",
-        "description": "Only recorded in the results: tests use the config's default network",
-        "defaultValue": "simnet"
+        "description": "The network the scenarios run on: the workspace's network (default); a different one is refused"
       },
       {
         "flags": "--watch",
@@ -2161,7 +2258,7 @@
   },
   {
     "commandPath": "hardkas doctor",
-    "description": "Perform a full system diagnostic and health report stable",
+    "description": "Perform a full system diagnostic and health report (on a public network it contacts the workspace's declared endpoint) stable",
     "arguments": [
       {
         "name": "module",
@@ -2274,8 +2371,7 @@
     "options": [
       {
         "flags": "--network <name>",
-        "description": "Network from the config (unknown names fall back to simulated)",
-        "defaultValue": "simnet"
+        "description": "Network from the workspace config (default: the workspace's network; an unknown name is refused)"
       },
       {
         "flags": "--accounts <n>",
@@ -2513,7 +2609,7 @@
   },
   {
     "commandPath": "hardkas localnet account create",
-    "description": "Create a simulated localnet account alpha",
+    "description": "Create a real simnet account: a random key, stored in plaintext in .hardkas/accounts.real.json alpha",
     "arguments": [
       {
         "name": "name",
@@ -3110,7 +3206,7 @@
   },
   {
     "commandPath": "hardkas kaspa wallet send",
-    "description": "Plan, confirm (y/N), sign and submit a payment over --rpc-url; the network and target come from hardkas.config stable",
+    "description": "Plan a payment over --rpc-url with --dry-run (the node must serve the workspace's network); sending is disabled here: use 'tx plan', 'tx sign' and 'tx send' internal",
     "arguments": [
       {
         "name": "from",
@@ -3130,7 +3226,7 @@
       },
       {
         "flags": "--dry-run",
-        "description": "Plan but do not sign or broadcast",
+        "description": "Plan only (required: without it the command refuses, KASPA_WALLET_SEND_DISABLED)",
         "defaultValue": false
       },
       {
@@ -3454,7 +3550,7 @@
       },
       {
         "flags": "--tx <txId>",
-        "description": "Resolve the submission receipt for a txId (never the signed)"
+        "description": "Resolve the submission receipt for a txId (never the signed); with no submission here, the tx as observed by this workspace (origin: observed)"
       },
       {
         "flags": "--workflow <workflowId>",
@@ -3734,7 +3830,7 @@
       },
       {
         "flags": "--tx <txId>",
-        "description": "Resolve the submission receipt for a txId (never the signed)"
+        "description": "Resolve the submission receipt for a txId (never the signed); with no submission here, the tx as observed by this workspace (origin: observed)"
       },
       {
         "flags": "--workflow <workflowId>",
@@ -3755,7 +3851,7 @@
   },
   {
     "commandPath": "hardkas ci verify",
-    "description": "Non-interactively verify workspace integrity, artifacts, and projections",
+    "description": "Non-interactively verify workspace integrity, artifacts, and projections (offline: no public endpoint is contacted)",
     "arguments": [],
     "options": [],
     "aliases": [],
@@ -3777,17 +3873,225 @@
       },
       {
         "flags": "-p, --port <port>",
-        "description": "Port for dashboard",
+        "description": "Port for dev-server API",
         "defaultValue": "3000"
       },
       {
         "flags": "-h, --host <host>",
-        "description": "Host for dashboard",
+        "description": "Host for dev-server API",
         "defaultValue": "localhost"
       }
     ],
     "aliases": [],
     "category": "Sandbox",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas silver audit",
+    "description": "Run static security analysis over a SilverScript (.sil) contract or compile record (heuristic AST and source-text rules COV-AUTH-001..COV-BUDGET-001: findings to review, not a proof of security). Exit codes: 0 report written; 1 HIGH findings with --fail-on-high (SILVER_AUDIT_HIGH_FINDINGS); 2 usage (file not found, not a compile record); 4 tampered compile record",
+    "arguments": [
+      {
+        "name": "source-or-record",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--args <file>",
+        "description": "Optional constructor arguments JSON file"
+      },
+      {
+        "flags": "--fail-on-high",
+        "description": "Exit with non-zero code if any HIGH severity finding is detected",
+        "defaultValue": false
+      },
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Silver",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas silver preflight",
+    "description": "Run v1 covenant transition preflight on a generated local testbed UTXO (STRUCTURAL_PREFLIGHT, plus SCRIPT_VM_PREFLIGHT on the SilverScript runner) reporting mass, compute budget and both verdicts; never a node's acceptance. Exit codes: 0 PREFLIGHT PASS; 1 PREFLIGHT FAIL (structural or SCRIPT_VM rejection: SILVER_PREFLIGHT_FAILED) or a runner that gave no verdict (SILVER_RUNNER_NOT_FOUND, _START_FAILED, _TIMEOUT, _PROTOCOL_ERROR or _INTERNAL_ERROR); 2 usage; 3 runner refused by the trust policy (SILVER_RUNNER_UNVERIFIED); 4 tampered compile record",
+    "arguments": [
+      {
+        "name": "source-or-record",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--entry <name>",
+        "description": "Covenant policy or entrypoint name (e.g. bump)"
+      },
+      {
+        "flags": "--constructor-args <file>",
+        "description": "Constructor arguments JSON file"
+      },
+      {
+        "flags": "--args <json-or-file>",
+        "description": "Entry arguments JSON array or file path"
+      },
+      {
+        "flags": "--state <json-or-file>",
+        "description": "Current covenant state JSON object or file path"
+      },
+      {
+        "flags": "--next-state <json-or-file>",
+        "description": "Successor covenant state JSON object or file path"
+      },
+      {
+        "flags": "--demo-fixture",
+        "description": "Allow generated laboratory fixture parameters and synthetic UTXO when explicit transaction arguments are omitted",
+        "defaultValue": false
+      },
+      {
+        "flags": "--fee <sompi>",
+        "description": "Fee in sompi (default: 300000)"
+      },
+      {
+        "flags": "--compute-budget <n>",
+        "description": "Compute budget or 'estimate' (default: estimate)"
+      },
+      {
+        "flags": "--level <level>",
+        "description": "Preflight level: STRUCTURAL_PREFLIGHT or SCRIPT_VM_PREFLIGHT",
+        "defaultValue": "SCRIPT_VM_PREFLIGHT"
+      },
+      {
+        "flags": "--allow-unverified-runner",
+        "description": "Run a SilverScript runner (cli-debugger) that is not verified against a trusted reference. Upstream publishes no runner binary, so today every runner is an UNVERIFIED local build: without this flag none is executed. Its verdicts are labelled UNVERIFIED, never official",
+        "defaultValue": false
+      },
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Silver",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas silver debug",
+    "description": "Execute a covenant transition on the SilverScript runner (cli-debugger: a local build, no official binary exists) after the structural v1 validation, and emit source-mapped step traces, variable state and three verdicts (structural, SCRIPT_VM, global). Exit codes: 0 APPROVED (or any rejection with --allow-failure); 1 rejected (SILVER_DEBUG_STRUCTURAL_REJECTED, SILVER_DEBUG_CONTRACT_REJECTED) or a runner that gave no verdict (SILVER_RUNNER_NOT_FOUND, _START_FAILED, _TIMEOUT, _PROTOCOL_ERROR or _INTERNAL_ERROR); 2 usage; 3 runner refused by the trust policy (SILVER_RUNNER_UNVERIFIED); 4 tampered compile record",
+    "arguments": [
+      {
+        "name": "source-or-record",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--entry <name>",
+        "description": "Covenant policy or entrypoint name (e.g. bump)"
+      },
+      {
+        "flags": "--constructor-args <file>",
+        "description": "Constructor arguments JSON file"
+      },
+      {
+        "flags": "--args <json-or-file>",
+        "description": "Entry arguments JSON array or file path"
+      },
+      {
+        "flags": "--state <json-or-file>",
+        "description": "Current covenant state JSON object or file path"
+      },
+      {
+        "flags": "--next-state <json-or-file>",
+        "description": "Successor covenant state JSON object or file path"
+      },
+      {
+        "flags": "--demo-fixture",
+        "description": "Allow generated laboratory fixture parameters and synthetic UTXO when explicit transaction arguments are omitted",
+        "defaultValue": false
+      },
+      {
+        "flags": "--fee <sompi>",
+        "description": "Fee in sompi (default: 300000)"
+      },
+      {
+        "flags": "--compute-budget <n>",
+        "description": "Compute budget or 'estimate' (default: estimate)"
+      },
+      {
+        "flags": "--allow-failure",
+        "description": "Return exit code 0 when the transition is rejected (structural validation or SCRIPT_VM), for interactive inspection; the verdicts are unchanged",
+        "defaultValue": false
+      },
+      {
+        "flags": "--allow-unverified-runner",
+        "description": "Run a SilverScript runner (cli-debugger) that is not verified against a trusted reference. Upstream publishes no runner binary, so today every runner is an UNVERIFIED local build: without this flag none is executed. Its verdicts are labelled UNVERIFIED, never official",
+        "defaultValue": false
+      },
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Silver",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas silver fuzz",
+    "description": "Run bidirectional property-based fuzzing over a counter covenant transition: SCRIPT_VM checks the counter rule (accepted iff delta > 0 and next = previous + delta) on the SilverScript runner; SYNTHETIC checks the structural compute-budget bounds. Exit codes: 0 FUZZ PASS; 1 counterexample (SILVER_FUZZ_FAILED), too few samples of one direction (SILVER_FUZZ_INSUFFICIENT_COVERAGE), a sample without a VM verdict (SILVER_FUZZ_NO_VM_EVIDENCE), a testbed error (SILVER_FUZZ_EVALUATION_ERROR), a runner that gave no verdict (SILVER_RUNNER_NOT_FOUND, _START_FAILED, _TIMEOUT, _PROTOCOL_ERROR or _INTERNAL_ERROR) or one that changed during the run (SILVER_RUNNER_CHANGED); 2 usage (SILVER_OPTION_INVALID, SILVER_FUZZ_SHAPE_UNSUPPORTED); 3 runner refused by the trust policy (SILVER_RUNNER_UNVERIFIED); 4 tampered compile record",
+    "arguments": [
+      {
+        "name": "source-or-record",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--entry <name>",
+        "description": "Covenant entrypoint name: it must take (State, int delta, sig) over a state of one int field",
+        "defaultValue": "bump"
+      },
+      {
+        "flags": "--constructor-args <file>",
+        "description": "Constructor arguments JSON file"
+      },
+      {
+        "flags": "--runs <n>",
+        "description": "Generated samples (1-10000), run after the boundary samples that every run includes",
+        "defaultValue": "10"
+      },
+      {
+        "flags": "--seed <n>",
+        "description": "Deterministic RNG seed (32-bit integer)",
+        "defaultValue": "20261029"
+      },
+      {
+        "flags": "--backend <backend>",
+        "description": "SCRIPT_VM: the counter rule on the SilverScript runner; SYNTHETIC: the structural compute-budget bounds (no contract logic is judged without the VM)",
+        "defaultValue": "SCRIPT_VM"
+      },
+      {
+        "flags": "--allow-unverified-runner",
+        "description": "Run a SilverScript runner (cli-debugger) that is not verified against a trusted reference. Upstream publishes no runner binary, so today every runner is an UNVERIFIED local build: without this flag none is executed. Its verdicts are labelled UNVERIFIED, never official",
+        "defaultValue": false
+      },
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Silver",
     "status": "REGISTERED"
   },
   {
@@ -3819,6 +4123,10 @@
       {
         "flags": "--args <file>",
         "description": "Constructor arguments: JSON list of {kind, value}"
+      },
+      {
+        "flags": "--network <network>",
+        "description": "Network the record and its P2SH addresses are for (default: the workspace's network, else simnet; mainnet refused)"
       },
       {
         "flags": "--out <file>",
@@ -3882,7 +4190,7 @@
   },
   {
     "commandPath": "hardkas silver test",
-    "description": "Run a compiled contract's tests on the official SilverScript runner experimental (script engine on scenario transactions; not transaction validity)",
+    "description": "Run a compiled contract's tests on the SilverScript runner (cli-debugger) experimental (script engine on scenario transactions; not transaction validity). Exit codes: 0 every test passed; 1 a test failed (SILVER_TEST_FAILED) or the runner gave no verdict (SILVER_RUNNER_FAILED, _START_FAILED, _CHANGED, _TIMEOUT, _OUTPUT_UNRECOGNIZED, _PROTOCOL_ERROR or _INTERNAL_ERROR); 2 usage; 3 runner refused by the trust policy (SILVER_RUNNER_UNVERIFIED); 4 tampered compile record",
     "arguments": [
       {
         "name": "record",
@@ -3905,11 +4213,25 @@
       },
       {
         "flags": "--runner <path>",
-        "description": "SilverScript runner (cli-debugger) binary (default: $HARDKAS_SILVER_RUNNER)"
+        "description": "SilverScript runner (cli-debugger) binary (default: $HARDKAS_SILVER_RUNNER, else <HARDKAS_HOME>/toolchains/cli-debugger/1.0.0)"
+      },
+      {
+        "flags": "--allow-unverified-runner",
+        "description": "Run a SilverScript runner (cli-debugger) that is not verified against a trusted reference. Upstream publishes no runner binary, so today every runner is an UNVERIFIED local build: without this flag none is executed. Its verdicts are labelled UNVERIFIED, never official",
+        "defaultValue": false
       },
       {
         "flags": "--out <file>",
         "description": "Record path (default .hardkas/artifacts/silver-vm/)"
+      },
+      {
+        "flags": "--password-env <env>",
+        "description": "Read the keystore password of the encrypted account(s) this command signs with from this environment variable (development accounts need none)"
+      },
+      {
+        "flags": "--password-stdin",
+        "description": "Read the keystore password of the encrypted account(s) this command signs with from stdin",
+        "defaultValue": false
       },
       {
         "flags": "--json",
@@ -3950,6 +4272,11 @@
         "defaultValue": "simnet"
       },
       {
+        "flags": "--tx-version <n>",
+        "description": "Transaction version: 0 (the default, as certified) or 1 (the SDK's v1 engine: checks before any key, compute budgets)",
+        "defaultValue": "0"
+      },
+      {
         "flags": "--wait",
         "description": "Wait for confirmation",
         "defaultValue": false
@@ -3958,6 +4285,15 @@
         "flags": "--timeout <seconds>",
         "description": "Confirmation timeout",
         "defaultValue": "120"
+      },
+      {
+        "flags": "--password-env <env>",
+        "description": "Read the keystore password of the encrypted account(s) this command signs with from this environment variable (development accounts need none)"
+      },
+      {
+        "flags": "--password-stdin",
+        "description": "Read the keystore password of the encrypted account(s) this command signs with from stdin",
+        "defaultValue": false
       },
       {
         "flags": "--json",
@@ -3998,7 +4334,20 @@
       },
       {
         "flags": "--sig-op-count <n>",
-        "description": "Declared signature operations (default: the signature arguments, at least 1)"
+        "description": "Declared signature operations (default: the signature arguments, at least 1); transaction v0 only"
+      },
+      {
+        "flags": "--tx-version <n>",
+        "description": "Transaction version: 0 (the default, as certified) or 1 (the SDK's v1 engine: checks before any key, compute budgets)",
+        "defaultValue": "0"
+      },
+      {
+        "flags": "--constructor-args <file>",
+        "description": "With --tx-version 1: the constructor arguments the contract was compiled with (default: proven from this spend's signers, when they are the keys it checks)"
+      },
+      {
+        "flags": "--compute-budget <n>",
+        "description": "With --tx-version 1: the contract input's compute budget, or 'estimate' (rusty-kaspa's upper bound); default: the certified budget of this entry, else that estimate"
       },
       {
         "flags": "--wait",
@@ -4009,6 +4358,15 @@
         "flags": "--timeout <seconds>",
         "description": "Confirmation timeout",
         "defaultValue": "120"
+      },
+      {
+        "flags": "--password-env <env>",
+        "description": "Read the keystore password of the encrypted account(s) this command signs with from this environment variable (development accounts need none)"
+      },
+      {
+        "flags": "--password-stdin",
+        "description": "Read the keystore password of the encrypted account(s) this command signs with from stdin",
+        "defaultValue": false
       },
       {
         "flags": "--json",
@@ -4041,11 +4399,15 @@
       },
       {
         "flags": "--compute-budget <n>",
-        "description": "Compute budget of the funding input (explicit: no estimator exists)"
+        "description": "Compute budget of the funding inputs (default: the certified P2PK budget)"
       },
       {
         "flags": "--fee <sompi>",
-        "description": "Explicit fee (required when --compute-budget > 0: the SDK does not price v1 budgets)"
+        "description": "Fee in sompi: at least the node's floor for this transaction (the floor when omitted)"
+      },
+      {
+        "flags": "--constructor-args <file>",
+        "description": "Constructor arguments the contract was compiled with (default: proven from its initial State)"
       },
       {
         "flags": "--contract <name>",
@@ -4060,6 +4422,15 @@
         "flags": "--timeout <seconds>",
         "description": "Confirmation timeout",
         "defaultValue": "120"
+      },
+      {
+        "flags": "--password-env <env>",
+        "description": "Read the keystore password of the encrypted account(s) this command signs with from this environment variable (development accounts need none)"
+      },
+      {
+        "flags": "--password-stdin",
+        "description": "Read the keystore password of the encrypted account(s) this command signs with from stdin",
+        "defaultValue": false
       },
       {
         "flags": "--json",
@@ -4100,15 +4471,15 @@
       },
       {
         "flags": "--compute-budget <n>",
-        "description": "Compute budget of the covenant input (explicit: no estimator exists)"
+        "description": "Compute budget of the covenant input, or 'estimate' (rusty-kaspa's upper bound); default: the certified budget of this entry, else that estimate"
       },
       {
         "flags": "--args <file>",
-        "description": "Entry arguments: JSON list of {kind, value}"
+        "description": "Entry arguments: JSON list of {kind, value} and {\"kind\":\"signature\",\"account\":\"<name>\"}"
       },
       {
         "flags": "--fee <sompi>",
-        "description": "Explicit fee (required when --compute-budget > 0)"
+        "description": "Fee in sompi, paid from the covenant's value: at least the node's floor for this transaction (the floor when omitted)"
       },
       {
         "flags": "--emit-args <file>",
@@ -4125,6 +4496,15 @@
         "defaultValue": "120"
       },
       {
+        "flags": "--password-env <env>",
+        "description": "Read the keystore password of the encrypted account(s) this command signs with from this environment variable (development accounts need none)"
+      },
+      {
+        "flags": "--password-stdin",
+        "description": "Read the keystore password of the encrypted account(s) this command signs with from stdin",
+        "defaultValue": false
+      },
+      {
         "flags": "--json",
         "description": "Output as JSON",
         "defaultValue": false
@@ -4132,6 +4512,495 @@
     ],
     "aliases": [],
     "category": "Silver",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas silver covenant inspect",
+    "description": "A covenant's lineage and state (its id, or one of its covenant records): genesis anchored by its recomputed id, transitions linked by outpoints, the tip checked at the node",
+    "arguments": [
+      {
+        "name": "covenant",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--network <network>",
+        "description": "Network (default: the workspace's)"
+      },
+      {
+        "flags": "--no-node",
+        "description": "Do not ask the node for the tip (records only)"
+      },
+      {
+        "flags": "--no-states",
+        "description": "Do not check the declared states against the addresses"
+      },
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Silver",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas silver engine plan",
+    "description": "Plan a v1 transaction (genesis, transition, deploy or spend) from a JSON spec of the SDK's options, sompi as decimal strings",
+    "arguments": [
+      {
+        "name": "operation",
+        "required": true,
+        "description": ""
+      },
+      {
+        "name": "spec",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--network <network>",
+        "description": "Network (default: the workspace's)"
+      },
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Silver",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas silver engine sign",
+    "description": "Sign a v1 plan (its path or artifact id) with the SDK's engine: checked against the node and the compiler first, no key read for a plan it refuses",
+    "arguments": [
+      {
+        "name": "plan",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--network <network>",
+        "description": "Network (default: the plan's)"
+      },
+      {
+        "flags": "--password-env <env>",
+        "description": "Read the keystore password of the encrypted account(s) this command signs with from this environment variable (development accounts need none)"
+      },
+      {
+        "flags": "--password-stdin",
+        "description": "Read the keystore password of the encrypted account(s) this command signs with from stdin",
+        "defaultValue": false
+      },
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Silver",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas silver engine draft prepare",
+    "description": "Prepare a draft of a v1 plan (its path or artifact id): checked against the node and the compiler now, its signature slots unsigned",
+    "arguments": [
+      {
+        "name": "plan",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--network <network>",
+        "description": "Network (default: the plan's)"
+      },
+      {
+        "flags": "--out <file>",
+        "description": "Draft path (default .hardkas/drafts/)"
+      },
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Silver",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas silver engine draft sign",
+    "description": "Sign one account's slots of a draft with its local key (the draft checked first; each signature verified before it is kept)",
+    "arguments": [
+      {
+        "name": "draft",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--plan <plan>",
+        "description": "The plan the draft was prepared for (its path or artifact id)"
+      },
+      {
+        "flags": "--account <name>",
+        "description": "The account whose slots this signs"
+      },
+      {
+        "flags": "--network <network>",
+        "description": "Network (default: the plan's)"
+      },
+      {
+        "flags": "--out <file>",
+        "description": "Signed draft path (default .hardkas/drafts/)"
+      },
+      {
+        "flags": "--password-env <env>",
+        "description": "Read the keystore password of the encrypted account(s) this command signs with from this environment variable (development accounts need none)"
+      },
+      {
+        "flags": "--password-stdin",
+        "description": "Read the keystore password of the encrypted account(s) this command signs with from stdin",
+        "defaultValue": false
+      },
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Silver",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas silver engine draft combine",
+    "description": "Combine drafts signed by different parties: the same transaction and slots, every signature verified (one bad signature refuses all)",
+    "arguments": [
+      {
+        "name": "drafts",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--plan <plan>",
+        "description": "The plan the drafts were prepared for (its path or artifact id)"
+      },
+      {
+        "flags": "--out <file>",
+        "description": "Combined draft path (default .hardkas/drafts/)"
+      },
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Silver",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas silver engine draft finalize",
+    "description": "Finalize a fully signed draft into the signed transaction (checked against the node and the compiler again, every signature verified)",
+    "arguments": [
+      {
+        "name": "draft",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--plan <plan>",
+        "description": "The plan the draft was prepared for (its path or artifact id)"
+      },
+      {
+        "flags": "--network <network>",
+        "description": "Network (default: the plan's)"
+      },
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Silver",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas kcc dispatch",
+    "description": "The KCC-1 dispatch tag of a function signature written with dispatch type names, e.g. 'transfer({int,byte[32],byte,byte,byte[32],byte[32]}[],byte[])': Hash(UTF8(signature))[0:4]",
+    "arguments": [
+      {
+        "name": "signature",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Kcc",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas kcc template-hash",
+    "description": "The KCC-1 template hash Hash(LE64(len(prefix)) || prefix || LE64(len(suffix)) || suffix) of a template",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--prefix <hex>",
+        "description": "Template prefix (hex; empty is '')"
+      },
+      {
+        "flags": "--suffix <hex>",
+        "description": "Template suffix (hex; empty is '')"
+      },
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Kcc",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas kcc20 encode-state",
+    "description": "Encode a KCC20State (JSON file or inline: amount, owner, ownerScheme, borrowScheme, borrowGuard, extensionCommitment) as its 112-byte KCC-1 state encoding. Exit codes: 0 encoded; 2 an invalid state",
+    "arguments": [
+      {
+        "name": "state",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Kcc20",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas kcc20 decode-state",
+    "description": "Decode a 112-byte KCC20State encoding strictly (KCC-1 §3.7.1) and report any KCC-20 rule the state breaks. Exit codes: 0 decoded; 2 not a canonical KCC20State encoding",
+    "arguments": [
+      {
+        "name": "hex",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Kcc20",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas kcc20 check",
+    "description": "Check a KCC-20 transfer off chain against the leader's rules: inputs (leader first, with state, kasValueSompi, witness), nextStates, outputs (state, kasValueSompi), optional transactionInputs and config (a kcc20.json). Signatures are listed, never verified; continuation programs, covenant bindings and each input's entrypoint are not checked, and the input states and their order are taken as given (the token's program checks them on chain). Exit codes: 0 STRUCTURALLY_VALID; 1 REJECTED (KCC20_TRANSFER_REJECTED); 2 usage",
+    "arguments": [
+      {
+        "name": "transfer",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Kcc20",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas kcc20 artifact",
+    "description": "Read a KCC-20 program artifact (kcc20.json: program, entrypoints, owner_schemes, max_token_inputs, max_token_outputs) and print its configuration and KCC-1 dispatch tags. Exit codes: 0 valid; 2 invalid",
+    "arguments": [
+      {
+        "name": "file",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Kcc20",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas escrow rescue-v1 prepare",
+    "description": "Prepare a v1 escrow rescue draft spending an orphaned UTXO to a target address",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--address <address>",
+        "description": "Legacy escrow P2SH address"
+      },
+      {
+        "flags": "--outpoint <outpoint>",
+        "description": "Funding outpoint to spend (txId:index)"
+      },
+      {
+        "flags": "--to <address>",
+        "description": "Destination address to recover funds to"
+      },
+      {
+        "flags": "--network <network>",
+        "description": "Network id (default simnet)",
+        "defaultValue": "simnet"
+      },
+      {
+        "flags": "--out <file>",
+        "description": "Output draft file path (default rescue-v1-plan.draft.json)",
+        "defaultValue": "rescue-v1-plan.draft.json"
+      },
+      {
+        "flags": "--fee <sompi>",
+        "description": "Miner fee in sompi (default 400000 sompi = 0.004 KAS)",
+        "defaultValue": "400000"
+      },
+      {
+        "flags": "--buyer-pk <hex>",
+        "description": "Buyer x-only public key (32 bytes hex)"
+      },
+      {
+        "flags": "--seller-pk <hex>",
+        "description": "Seller x-only public key (32 bytes hex)"
+      },
+      {
+        "flags": "--arbiter-pk <hex>",
+        "description": "Arbiter x-only public key (32 bytes hex)"
+      },
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Escrow",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas escrow rescue-v1 sign",
+    "description": "Sign a rescue draft with a local dev or keystore account",
+    "arguments": [
+      {
+        "name": "draft-file",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--account <name>",
+        "description": "Account name or role (e.g. buyer, seller, or dev account name)"
+      },
+      {
+        "flags": "--role <role>",
+        "description": "Contract role (buyer or seller)",
+        "defaultValue": "buyer"
+      },
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Escrow",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas escrow rescue-v1 inspect",
+    "description": "Inspect a rescue draft and verify balance and signature status",
+    "arguments": [
+      {
+        "name": "draft-file",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Escrow",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas escrow rescue-v1 broadcast",
+    "description": "Finalize and broadcast the signed rescue transaction to the network",
+    "arguments": [
+      {
+        "name": "draft-file",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--network <network>",
+        "description": "Network (default simnet)",
+        "defaultValue": "simnet"
+      },
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Escrow",
     "status": "REGISTERED"
   },
   {
@@ -4197,7 +5066,7 @@
   },
   {
     "commandPath": "hardkas zk proof verify",
-    "description": "Verify a local proof fixture locally (No on-chain claims) alpha",
+    "description": "Verify local fixture coherence for a proof artifact (No cryptographic proof or on-chain claims) alpha",
     "arguments": [
       {
         "name": "path",
@@ -4219,8 +5088,8 @@
     "status": "REGISTERED"
   },
   {
-    "commandPath": "hardkas zk corpus verify",
-    "description": "Verify a local ZK corpus",
+    "commandPath": "hardkas zk proof verify-math",
+    "description": "Groth16 pairing check (snarkjs, BN254) of a fixture, bound to its content hashes by default; reports the key, inputs and proof digests it used (No on-chain claims) alpha",
     "arguments": [
       {
         "name": "path",
@@ -4229,6 +5098,88 @@
       }
     ],
     "options": [
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      },
+      {
+        "flags": "--timeout <ms>",
+        "description": "Verification timeout in milliseconds (integer, 1..600000)",
+        "defaultValue": "10000"
+      },
+      {
+        "flags": "--expect-vk-hash <sha256>",
+        "description": "Reject unless the verification key's domain digest equals this value"
+      },
+      {
+        "flags": "--math-only",
+        "description": "Skip the fixture-coherence binding; the result is labelled MATH_ONLY",
+        "defaultValue": false
+      },
+      {
+        "flags": "--allow-weak-vk",
+        "description": "Accept a verification key with a known trapdoor (toy fixtures only; proofs against such keys prove nothing)",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Zk",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas zk corpus verify",
+    "description": "Verify a local ZK corpus (coherence of every listed fixture; pairing check where a fixture claims it)",
+    "arguments": [
+      {
+        "name": "path",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Zk",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas zk toccata rules",
+    "description": "Show the Kaspa Toccata L1 Groth16 precompile facts HardKAS relies on (opcode, tag, costs, compute budget)",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Zk",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas zk toccata build-scripts",
+    "description": "Build P2SH redeem and signature scripts for a RISC Zero Groth16 proof set (imageId/journalHash are not cross-checked against the receipt)",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--image-id <hex>",
+        "description": "32-byte hex Image ID"
+      },
+      {
+        "flags": "--journal-hash <hex>",
+        "description": "32-byte hex Journal Hash"
+      },
+      {
+        "flags": "--receipt <pathOrHex>",
+        "description": "Path to receipt file (.hex) or raw receipt hex string"
+      },
       {
         "flags": "--json",
         "description": "Output as JSON",

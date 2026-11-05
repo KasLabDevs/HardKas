@@ -19,7 +19,7 @@ title: hardkas why
 - `--artifact &lt;id-or-path&gt;`: 64-hex artifactId or workspace path (same as the positional)
 - `--plan &lt;planId&gt;`: Resolve a plan by its derived label (verified against its hash)
 - `--signed &lt;signedId&gt;`: Resolve a signed transaction by its derived label (verified)
-- `--tx &lt;txId&gt;`: Resolve the submission receipt for a txId (never the signed)
+- `--tx &lt;txId&gt;`: Resolve the submission receipt for a txId (never the signed); with no submission here, the tx as observed by this workspace (origin: observed)
 - `--workflow &lt;workflowId&gt;`: Resolve a workflow run by its correlation id
 - `--json`: Output lineage graph in JSON format
 - `--workspace &lt;path&gt;`: Override workspace root directory

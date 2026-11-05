@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { HardkasError, HardkasSchemas, kaspaCovenantId, stripBom } from "@hardkas/core";
-import { checkArtifactIdentity, enumerateWorkspaceArtifactsSync, submitOutcomeOf } from "@hardkas/artifacts";
+import { checkArtifactIdentity, enumerateWorkspaceArtifactsSync, submitOutcomeOf, type CovenantTransitionFact } from "@hardkas/artifacts";
 
 /*
  * V1-ENGINE-2 · a covenant's history and lineage, from what this workspace recorded. The node has no query by covenant
@@ -38,8 +38,8 @@ export interface CovenantLineageOutput {
 export interface CovenantLineageTx {
   readonly txId: string;
   readonly kind: "genesis" | "transition";
-  /** The records it comes from: the engine's signed artifact, a `hardkas silver covenant` record, or both. */
-  readonly sources: ReadonlyArray<{ readonly kind: "v1-signed" | "silver-record"; readonly artifactId: string }>;
+  /** The records it comes from: the engine's signed artifact, a `hardkas silver covenant` record, a covenant transition fact, or any combination. */
+  readonly sources: ReadonlyArray<{ readonly kind: "v1-signed" | "silver-record" | "covenant-fact"; readonly artifactId: string }>;
   /** The covenant outpoints of this covenant it spends ("txid:index"). */
   readonly spends: readonly string[];
   readonly outputs: readonly CovenantLineageOutput[];
@@ -49,6 +49,8 @@ export interface CovenantLineageTx {
   readonly covenantIdFromNode?: string | undefined;
   /** What this workspace knows of its fate: its submission's recorded outcome, else the record's status. */
   readonly recorded: "accepted" | "rejected" | "unknown" | "confirmed" | "submitted" | "not-submitted";
+  /** Linked covenant transition fact, if available in workspace artifacts */
+  readonly fact?: CovenantTransitionFact | undefined;
 }
 
 export interface CovenantLineageSkeleton {
@@ -112,6 +114,7 @@ export function collectCovenantTransactions(workspaceRoot: string, covenantId: s
   const plans = new Map<string, any>();
   const outcomes = new Map<string, Set<string>>();
   const signed: Array<{ artifact: any; artifactId: string }> = [];
+  const facts = new Map<string, { fact: CovenantTransitionFact; artifactId: string }>();
   for (const e of entries) {
     const a: any = e.artifact;
     const artifactId = okId(a);
@@ -122,6 +125,10 @@ export function collectCovenantTransactions(workspaceRoot: string, covenantId: s
       const set = outcomes.get(a.txId.toLowerCase()) ?? new Set<string>();
       set.add(submitOutcomeOf(a.submitResult));
       outcomes.set(a.txId.toLowerCase(), set);
+    } else if (a.schema === HardkasSchemas.CovenantTransitionFactV1 && typeof a.txId === "string") {
+      if (String(a.covenantId ?? "").toLowerCase() === id) {
+        facts.set(a.txId.toLowerCase(), { fact: a, artifactId });
+      }
     }
   }
   const outcomeOf = (txId: string): CovenantLineageTx["recorded"] => {
@@ -161,20 +168,26 @@ export function collectCovenantTransactions(workspaceRoot: string, covenantId: s
         ...(declared.source ? { stateSource: declared.source } : {})
       };
     });
+    const factEntry = facts.get(txId);
     byTx.set(txId, {
       txId,
       kind: isGenesis ? "genesis" : "transition",
-      sources: [{ kind: "v1-signed", artifactId }],
+      sources: [
+        { kind: "v1-signed", artifactId },
+        ...(factEntry ? [{ kind: "covenant-fact" as const, artifactId: factEntry.artifactId }] : [])
+      ],
       spends,
       outputs,
       ...(isGenesis ? { anchor: { transactionId: String(tx.inputs[authorizing!].previousOutpoint.transactionId).toLowerCase(), index: Number(tx.inputs[authorizing!].previousOutpoint.index) } } : {}),
-      recorded: outcomeOf(txId)
+      recorded: outcomeOf(txId),
+      ...(factEntry ? { fact: factEntry.fact } : {})
     });
   }
 
   for (const { record: r, artifactId } of silverCovenantRecords(workspaceRoot)) {
     if (String(r.covenantId ?? "").toLowerCase() !== id || typeof r.txId !== "string") continue;
     const txId = r.txId.toLowerCase();
+    const factEntry = facts.get(txId);
     const output: CovenantLineageOutput = {
       outpoint: key(r.outpoint),
       address: String(r.address),
@@ -187,21 +200,53 @@ export function collectCovenantTransactions(workspaceRoot: string, covenantId: s
       // the same transaction from the engine's artifacts: the record adds its source and what the node reported
       byTx.set(txId, {
         ...known,
-        sources: [...known.sources, { kind: "silver-record", artifactId }],
+        sources: [
+          ...known.sources,
+          { kind: "silver-record", artifactId },
+          ...(factEntry && !known.sources.some((s) => s.kind === "covenant-fact") ? [{ kind: "covenant-fact" as const, artifactId: factEntry.artifactId }] : [])
+        ],
         outputs: known.outputs.map((o) => (o.outpoint === output.outpoint && !o.stateSource ? { ...o, stateSource: output.stateSource } : o)),
         ...(r.covenantIdFromNode ? { covenantIdFromNode: String(r.covenantIdFromNode).toLowerCase() } : {}),
-        recorded: known.recorded === "not-submitted" ? (r.status === "confirmed" ? "confirmed" : "submitted") : known.recorded
+        recorded: known.recorded === "not-submitted" ? (r.status === "confirmed" ? "confirmed" : "submitted") : known.recorded,
+        ...(factEntry && !known.fact ? { fact: factEntry.fact } : {})
       });
       continue;
     }
     byTx.set(txId, {
       txId,
       kind: r.kind === "genesis" ? "genesis" : "transition",
-      sources: [{ kind: "silver-record", artifactId }],
+      sources: [
+        { kind: "silver-record", artifactId },
+        ...(factEntry ? [{ kind: "covenant-fact" as const, artifactId: factEntry.artifactId }] : [])
+      ],
       spends: r.kind === "transition" && r.previous?.outpoint ? [key(r.previous.outpoint)] : [],
       outputs: [output],
       ...(r.covenantIdFromNode ? { covenantIdFromNode: String(r.covenantIdFromNode).toLowerCase() } : {}),
-      recorded: outcomes.has(txId) ? outcomeOf(txId) : r.status === "confirmed" ? "confirmed" : "submitted"
+      recorded: outcomes.has(txId) ? outcomeOf(txId) : r.status === "confirmed" ? "confirmed" : "submitted",
+      ...(factEntry ? { fact: factEntry.fact } : {})
+    });
+  }
+
+  for (const [txId, { fact, artifactId }] of facts) {
+    if (byTx.has(txId)) continue;
+    const spends = [key(fact.spentOutpoint)];
+    const outputs: CovenantLineageOutput[] = [];
+    if (fact.successorOutpoint) {
+      outputs.push({
+        outpoint: key(fact.successorOutpoint),
+        address: fact.covenantId,
+        amountSompi: BigInt(fact.successorAmountSompi ?? "0"),
+        ...(fact.nextState ? { declaredState: fact.nextState as any } : {})
+      });
+    }
+    byTx.set(txId, {
+      txId,
+      kind: "transition",
+      sources: [{ kind: "covenant-fact", artifactId }],
+      spends,
+      outputs,
+      recorded: outcomeOf(txId),
+      fact
     });
   }
   return [...byTx.values()];
@@ -237,6 +282,14 @@ export function reconstructCovenantLineage(covenantId: string, txs: readonly Cov
   const rejected = txs.filter((t) => t.recorded === "rejected");
   const unsent = txs.filter((t) => t.recorded === "not-submitted");
   const live = txs.filter((t) => t.recorded !== "rejected" && t.recorded !== "not-submitted");
+  for (const t of txs) {
+    if (t.fact && t.fact.validation.structuralPassed === false) {
+      findings.push(`transition ${t.txId} failed structural validation: ${t.fact.validation.diagnostic ?? "unknown error"}`);
+    }
+    if (t.fact && t.fact.validation.scriptVmPassed === false) {
+      findings.push(`transition ${t.txId} failed ScriptVM preflight: ${t.fact.validation.diagnostic ?? "unknown error"}`);
+    }
+  }
   for (const t of live) {
     if (t.recorded === "unknown") findings.push(`${t.kind} ${t.txId}: the outcome of its submission is unknown (the node may hold it); observe it before building another transaction`);
   }

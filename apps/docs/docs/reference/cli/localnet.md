@@ -70,7 +70,7 @@ title: hardkas localnet
 
 ### Synopsis (Generated)
 
-**Purpose:** Create a simulated localnet account alpha
+**Purpose:** Create a real simnet account: a random key, stored in plaintext in .hardkas/accounts.real.json alpha
 
 #### Arguments
 

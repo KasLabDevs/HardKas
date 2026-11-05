@@ -4,25 +4,35 @@ sidebar_label: Introduction
 sidebar_position: 1
 ---
 
-# HardKAS: Execution-safe development for Kaspa
+# HardKAS: Execution-safe development for Kaspa L1
 
-HardKAS is a deterministic, local-first developer operating system and framework for building Kaspa applications. 
+HardKAS is a deterministic, local-first developer operating system and framework for building native **Kaspa Layer 1** applications, SilverScript smart contracts, covenants, and Zero-Knowledge verification workflows.
 
-It provides developers with a reproducible CLI, local execution runtime, artifact engine, and simulation tools to replace the traditional "request-and-hope" blockchain development cycle with strict cryptographic accountability.
+It provides developers with a reproducible CLI, unified TypeScript SDK (`@hardkas/sdk`), three execution worlds (`simulator`, `localnet` on real `kaspad --simnet`, and `testnet`), and an immutable artifact engine to replace the traditional "request-and-hope" blockchain development cycle with strict cryptographic accountability.
 
-## Key Principles
+## Key Capabilities
 
-- **Local-first execution:** Build and test against a deterministic simulator instantly, or boot a real dockerized Kaspa `simnet` when you need true node validation.
-- **Evidence-driven:** Every transaction intent, signature, and receipt is materialized as an artifact on disk, forming an unbroken Evidence DAG.
-- **Developer Infrastructure, not Custody:** HardKAS orchestrates safety during development (e.g., maturity filtering, pending-spend protection) but relies on Kaspa consensus for finality.
+- **Three Execution Worlds:** Build and test instantly against the deterministic in-memory simulator, boot a real `rusty-kaspa` (`kaspad --simnet`) node for consensus validation, or connect to public testnets.
+- **SilverScript & Covenants (`silverc v1.0.0`):** Compile `.sil` contracts with byte-for-byte provenance, deploy P2SH outputs, and execute 1:1 auth-bound covenant genesis and state transitions.
+- **ZK L1 Verification & Toccata Scripts (`OpZkPrecompile`):** Verify Groth16 BN254 proofs mathematically (`hardkas zk proof verify-math`), reject weak trapdoor verification keys, and construct canonical Toccata L1 redeem/signature scripts (`hardkas zk toccata build-scripts`).
+- **Evidence-Driven Artifacts:** Every transaction plan, PSKT session, signature, and receipt is materialized as a content-addressed artifact on disk (`TxPlan` → `SignedTx` → `TxReceipt`), forming an auditable Evidence DAG.
+- **Production Backend Toolkit:** Build indexers, merchant checkouts, and custody backends using `@hardkas/toolkit`, `@hardkas/query-store`, and `@hardkas/pskt-native`.
 
 ## Get Started
 
-&rarr; [Installation](./getting-started/installation.md)
-&rarr; [5-Minute Quickstart](./getting-started/quickstart.md)
+&rarr; [Installation](./getting-started/installation.md)  
+&rarr; [5-Minute Quickstart](./getting-started/quickstart.md)  
+&rarr; [Examples & Builder Labs (11 Reference Apps)](./tutorials/builder-labs.md)
 
-## Dive Deeper
+## Smart Contracts, Covenants & ZK
 
-&rarr; [What is HardKAS?](./concepts/what-is-hardkas.md)
-&rarr; [Transaction Lifecycle](./concepts/transaction-lifecycle.md)
-&rarr; [CLI Reference](./reference/cli.md)
+&rarr; [What is SilverScript?](./concepts/silverscript/what-is-silverscript.md)  
+&rarr; [Testing Kaspa Covenants](./guides/testing-kaspa-covenants.md)  
+&rarr; [ZK L1 Proof Verification & Toccata Scripts](./guides/zk-l1-verification-and-settlement.md)
+
+## Architecture & Reference
+
+&rarr; [What is HardKAS?](./concepts/what-is-hardkas.md)  
+&rarr; [Architecture & Dependency Graph](./reference/architecture.md)  
+&rarr; [Package Map](./reference/packages.md)  
+&rarr; [CLI Reference](./reference/cli/index.md)

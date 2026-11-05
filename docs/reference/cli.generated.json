@@ -1,7 +1,7 @@
 {
   "schema": "hardkas.cliReference.v1",
   "generatedAt": "deterministic",
-  "totalCommands": 261,
+  "totalCommands": 259,
   "flatSurface": [
     "hardkas accounts",
     "hardkas accounts balance",
@@ -58,9 +58,6 @@
     "hardkas dev tx",
     "hardkas dev tx generate",
     "hardkas dev tx send",
-    "hardkas dev-server",
-    "hardkas dev-server start",
-    "hardkas dev-server token",
     "hardkas doctor",
     "hardkas env",
     "hardkas env check",
@@ -263,7 +260,8 @@
     "hardkas zk proof verify-math",
     "hardkas zk toccata",
     "hardkas zk toccata build-scripts",
-    "hardkas zk toccata rules"
+    "hardkas zk toccata rules",
+    "hardkas zk toccata verify-scripts"
   ],
   "commands": [
     {
@@ -1875,102 +1873,6 @@
               "subcommands": []
             }
           ]
-        }
-      ]
-    },
-    {
-      "path": "hardkas dev-server",
-      "name": "dev-server",
-      "aliases": [],
-      "description": "Manage the local HardKAS dev server stable",
-      "usage": "hardkas dev-server [options] [command]",
-      "arguments": [],
-      "options": [],
-      "subcommands": [
-        {
-          "path": "hardkas dev-server start",
-          "name": "start",
-          "aliases": [],
-          "description": "Start the dev server",
-          "usage": "hardkas dev-server start [options]",
-          "arguments": [],
-          "options": [
-            {
-              "flags": "--port <number>",
-              "description": "Port to bind to",
-              "default": "7420",
-              "required": true,
-              "mandatory": false
-            },
-            {
-              "flags": "--host <string>",
-              "description": "Host to bind to",
-              "default": "127.0.0.1",
-              "required": true,
-              "mandatory": false
-            },
-            {
-              "flags": "--dashboard",
-              "description": "Deprecated: the standalone dashboard UI has been retired; dev-server runs as a headless API service",
-              "default": false,
-              "required": false,
-              "mandatory": false
-            },
-            {
-              "flags": "--unsafe-external",
-              "description": "Allow external access (binds to 0.0.0.0 if host not specified)",
-              "default": false,
-              "required": false,
-              "mandatory": false
-            },
-            {
-              "flags": "--unsafe-no-auth",
-              "description": "Disable token authentication (requires --yes)",
-              "default": false,
-              "required": false,
-              "mandatory": false
-            },
-            {
-              "flags": "--yes",
-              "description": "Acknowledge unsafe flags",
-              "default": false,
-              "required": false,
-              "mandatory": false
-            },
-            {
-              "flags": "--with-node",
-              "description": "Spawn the localnet node and auto-fund simnet accounts",
-              "default": false,
-              "required": false,
-              "mandatory": false
-            },
-            {
-              "flags": "--json",
-              "description": "Output status as JSON",
-              "default": false,
-              "required": false,
-              "mandatory": false
-            }
-          ],
-          "subcommands": []
-        },
-        {
-          "path": "hardkas dev-server token",
-          "name": "token",
-          "aliases": [],
-          "description": "Print the current dev server token",
-          "usage": "hardkas dev-server token [options]",
-          "arguments": [],
-          "options": [
-            {
-              "flags": "--json",
-              "description": "Output as JSON",
-              "default": false,
-              "required": false,
-              "mandatory": false
-            }
-          ],
-          "subcommands": []
         }
       ]
     },
@@ -8292,7 +8194,7 @@
               "path": "hardkas zk toccata build-scripts",
               "name": "build-scripts",
               "aliases": [],
-              "description": "Build P2SH redeem and signature scripts for a RISC Zero Groth16 proof set (imageId/journalHash are not cross-checked against the receipt)",
+              "description": "Build P2SH redeem and signature scripts for a RISC Zero Groth16 proof set (supports proof-only and proof-and-output-bound consensus modes)",
               "usage": "hardkas zk toccata build-scripts [options]",
               "arguments": [],
               "options": [
@@ -8318,6 +8220,55 @@
                   "mandatory": true
                 },
                 {
+                  "flags": "--mode <mode>",
+                  "description": "Binding mode: 'proof-only' (unbound outputs) or 'proof-and-output-bound' (consensus output introspection)",
+                  "default": "proof-only",
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--payout-address <address>",
+                  "description": "Consensus-bound recipient address (required if mode is proof-and-output-bound)",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--payout-amount <sompi>",
+                  "description": "Consensus-bound payout amount in sompi (required if mode is proof-and-output-bound)",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--change-address <address>",
+                  "description": "Optional consensus-bound change address",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--change-amount <sompi>",
+                  "description": "Optional consensus-bound change amount in sompi",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--utxo-txid <hex>",
+                  "description": "Optional bound input UTXO transaction ID for replay protection",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--utxo-index <index>",
+                  "description": "Optional bound input UTXO index for replay protection",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
                   "flags": "--json",
                   "description": "Output as JSON",
                   "default": false,
@@ -8335,6 +8286,73 @@
               "usage": "hardkas zk toccata rules [options]",
               "arguments": [],
               "options": [
+                {
+                  "flags": "--json",
+                  "description": "Output as JSON",
+                  "default": false,
+                  "required": false,
+                  "mandatory": false
+                }
+              ],
+              "subcommands": []
+            },
+            {
+              "path": "hardkas zk toccata verify-scripts",
+              "name": "verify-scripts",
+              "aliases": [],
+              "description": "Verify structural integrity and inspect consensus binding rules in Toccata P2SH scripts",
+              "usage": "hardkas zk toccata verify-scripts [options]",
+              "arguments": [],
+              "options": [
+                {
+                  "flags": "--redeem-script <hex>",
+                  "description": "Redeem script hex",
+                  "default": null,
+                  "required": true,
+                  "mandatory": true
+                },
+                {
+                  "flags": "--sig-script <hex>",
+                  "description": "Signature script hex",
+                  "default": null,
+                  "required": true,
+                  "mandatory": true
+                },
+                {
+                  "flags": "--image-id <hex>",
+                  "description": "Expected 32-byte hex Image ID",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--journal-hash <hex>",
+                  "description": "Expected 32-byte hex Journal Hash",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--expected-mode <mode>",
+                  "description": "Expected binding mode ('proof-only' or 'proof-and-output-bound')",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--expected-payout-address <address>",
+                  "description": "Expected consensus-bound payout address",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--expected-payout-amount <sompi>",
+                  "description": "Expected consensus-bound payout amount in sompi",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
                 {
                   "flags": "--json",
                   "description": "Output as JSON",

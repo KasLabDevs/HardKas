@@ -1,12 +1,13 @@
-import { buildHardkasProgram } from "../../packages/cli/src/program.js";
-import { Command } from "commander";
+import type { Command } from "commander";
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { fileURLToPath } from "node:url";
+import { pathToFileURL } from "node:url";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const dynamicImport = new Function("u", "return import(u)") as (u: string) => Promise<any>;
 
-function extractInventory() {
+async function extractInventory() {
+  const programUrl = pathToFileURL(path.resolve(__dirname, "../../../packages/cli/dist/public.js")).href;
+  const { buildHardkasProgram } = await dynamicImport(programUrl);
   const program = buildHardkasProgram({ forDocs: true });
   const inventory: any[] = [];
 
@@ -17,13 +18,13 @@ function extractInventory() {
 
     if (fullName !== "hardkas" && (cmd.commands.length === 0 || (cmd as any)._actionHandler)) {
       const desc = cmd.description().replace(/\x1B\[[0-9;]*m/g, "");
-      
+
       const args = (cmd as any)._args.map((a: any) => ({
         name: a._name,
         required: a.required,
         description: a.description
       }));
-      
+
       const options = cmd.options.map((o: any) => ({
         flags: o.flags,
         description: o.description,
@@ -62,6 +63,7 @@ if (!fs.existsSync(outDir)) {
   fs.mkdirSync(outDir, { recursive: true });
 }
 
-const inventory = extractInventory();
-fs.writeFileSync(path.join(outDir, "cli-command-inventory.json"), JSON.stringify(inventory, null, 2));
-console.log("Wrote cli-command-inventory.json");
+extractInventory().then((inventory) => {
+  fs.writeFileSync(path.join(outDir, "cli-command-inventory.json"), JSON.stringify(inventory, null, 2));
+  console.log(`Wrote cli-command-inventory.json (${inventory.length} commands)`);
+});

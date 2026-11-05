@@ -1,31 +1,51 @@
 # ZK Primitives & Sequencing
 
-> **L1 Status:** ACTIVE CONSENSUS | **vProgs:** ACTIVE DEVELOPMENT / PROTOTYPE
+> **L1 Status:** ACTIVE CONSENSUS (`OpZkPrecompile` / KIP-16) | **HardKAS Tooling:** Groth16 Math Verification & Toccata Script Builders
 
-While Covenants allow L1 state machines, highly complex applications (like Order Books or AMMs) are too computationally heavy to run directly in Kaspa Script.
+While Covenants allow L1 state machines, computationally intensive applications (such as privacy pools, batch rollups, or order books) require off-chain execution paired with Layer 1 verification and settlement.
 
-Toccata introduces the foundational primitives required to move execution off-chain while using Kaspa L1 for verification and data settlement.
+Toccata introduces the foundational primitives required to verify Zero-Knowledge proofs and anchor sequencing commitments directly on Kaspa L1.
 
-## `OpZkPrecompile` (KIP-16)
+---
 
-Toccata introduced `OpZkPrecompile`, a native Kaspa Script opcode that can verify Zero-Knowledge (ZK) proofs directly during UTXO validation.
+## 1. `OpZkPrecompile` (`0xa8` / KIP-16)
 
-**What it does:** It allows a transaction to prove that a complex off-chain computation was executed correctly, without Kaspa nodes needing to execute the computation themselves. They only verify the mathematical proof.
+Toccata introduces `OpZkPrecompile` (`0xa8`), a native Kaspa Script opcode that verifies Zero-Knowledge proofs directly during UTXO script validation.
 
-## Sequencer Commitments & User Lanes (KIP-21)
+| Parameter | Canonical Value | Description |
+| :--- | :--- | :--- |
+| **Opcode** | `0xa8` (`OpZkPrecompile`) | Evaluates a tagged ZK proof payload from the script stack |
+| **Tag `0x20`** | `R0Groth16` | RISC Zero Groth16 proof envelope over BN254 |
+| **Base SigOp Cost** | `150` | Consensus signature-operation weight per precompile invocation |
+| **Compute Gram Cost** | `75,000` | Explicit Toccata v1 compute budget allocation required |
 
-To build a high-throughput off-chain application, the application must be able to order its transactions and commit to that order on L1.
+You can inspect these exact protocol constants at any time via the CLI:
 
-KIP-21 introduces partitioned sequencing commitments. Ordinary v1 transactions can carry "lane-oriented" data (User Lanes) in their payload. This allows an application to localize its activity to a specific lane, committing to off-chain state transitions.
+```bash
+hardkas zk toccata rules --json
+```
 
-> **Note:** A "lane" is not a shard, nor is it an independent blockchain. It is simply a structured partition of metadata embedded within standard Kaspa L1 transactions.
+---
 
-## The Boundary: L1 Primitive vs Based App
+## 2. Sequencer Commitments & User Lanes (KIP-21)
 
-Do not confuse the L1 capabilities with the application framework being built on top of them.
+To build a high-throughput off-chain application, the application must order its state transitions and commit to that ordering on L1.
 
-* **L1 ZK Primitives (Active):** Kaspa currently supports verifying specific proof tags via `OpZkPrecompile` at the consensus layer.
-* **Based ZK Applications / vProgs (Prototype):** The `vProgs` framework—which aims to orchestrate off-chain provers, sequencers, and automatic L1 settlement using these primitives—is currently in **Active Development / Prototype**.
+KIP-21 introduces partitioned sequencing commitments. Standard v1 transactions can carry structured lane commitments (User Lanes) in their payload or covenant scripts, localizing state transitions to a deterministic lineage without global state contention.
 
-HardKAS does not currently provide qualified orchestration for `vProgs`.
+> **Note:** A "lane" is not an independent blockchain or EVM sidechain. It is a deterministic partition of state commitments anchored inside standard Kaspa L1 UTXO transactions.
 
+---
+
+## 3. HardKAS ZK Tooling (`hardkas zk` & `@hardkas/sdk`)
+
+HardKAS provides three layers of Zero-Knowledge tooling for Kaspa L1 developers:
+
+1. **Fixture Coherence & Corpus Auditing (`hardkas zk proof inspect` / `verify` / `corpus verify`):**
+   Validates schema integrity, canonical SHA-256 domain digests, and public input bindings across local proof corpora (`fixtures/toccata-v2/zk`).
+2. **Cryptographic Groth16 Pairing Verification (`hardkas zk proof verify-math`):**
+   Executes real BN254 elliptic-curve pairing verification (`snarkjs`), enforces domain-separated verification key hashes (`--expect-vk-hash`), and automatically rejects degenerate/trapdoor verification keys (such as `[1]_2` delta/gamma points) unless `--allow-weak-vk` is explicitly passed for toy fixtures.
+3. **Toccata L1 Covenant Script Generation (`hardkas zk toccata build-scripts`):**
+   Uses `kaspa-wasm`'s `ZkScriptBuilder` to construct canonical P2SH redeem scripts and signature scripts for RISC Zero Groth16 receipts (`imageId`, `journalHash`, `receiptHex`).
+
+See the step-by-step developer walkthrough: **[ZK L1 Verification & Covenant Scripts Guide](../../guides/zk-l1-verification-and-settlement.md)**.

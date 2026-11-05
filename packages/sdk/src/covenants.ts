@@ -1,4 +1,13 @@
-import { HardkasSchemas, createV1TxPlanArtifact, decodeKaspaAddress } from "@hardkas/artifacts";
+import {
+  HardkasSchemas,
+  createV1TxPlanArtifact,
+  decodeKaspaAddress,
+  deriveCovenantStatus,
+  createCovenantTransitionFactArtifact,
+  type CovenantTransitionFact,
+  type CovenantStatusResult,
+  type DerivedTxStatus
+} from "@hardkas/artifacts";
 import {
   HardkasError,
   declaredNetworkIdOf,
@@ -433,6 +442,18 @@ export class HardkasCovenants {
     };
     const verified = anchor === "verified" && !gaps && conflicts === 0 && askNode && tip.every((t) => t.node === "unspent" && t.stateCheck?.status !== "mismatch");
     return { ...s, tip, findings, checks, verified, scope: COVENANT_LINEAGE_SCOPE };
+  }
+
+  /**
+   * Derives deterministic covenant lifecycle status from a transition fact and optional tx observation status.
+   */
+  deriveStatus(params: {
+    readonly transitionFact: CovenantTransitionFact;
+    readonly txStatus?: DerivedTxStatus | undefined;
+    readonly isTerminated?: boolean | undefined;
+    readonly conflictingTxIds?: readonly string[] | undefined;
+  }): CovenantStatusResult {
+    return deriveCovenantStatus(params);
   }
 
   /** The declared state of an output checked against its address: the P2SH commits to the script that holds the state. */
@@ -1048,3 +1069,10 @@ function p2pkOrP2shScriptBytes(address: string): number {
   if (d?.version === 1 && d.payload.length === 33) return 35;
   throw new HardkasError("V1_PLAN_INVALID", `${address} is not a P2PK or P2SH address`);
 }
+
+export {
+  deriveCovenantStatus,
+  createCovenantTransitionFactArtifact,
+  type CovenantTransitionFact,
+  type CovenantStatusResult
+};

@@ -1403,82 +1403,6 @@ No arguments.
 
 ---
 
-## hardkas dev-server
-
-Manage the local HardKAS dev server stable
-
-### Usage
-
-```bash
-hardkas dev-server [options] [command]
-```
-
-### Options
-
-No options.
-
-### Arguments
-
-No arguments.
-
-### Subcommands
-
-- [hardkas dev-server start](#hardkas-dev-server-start)
-- [hardkas dev-server token](#hardkas-dev-server-token)
-
----
-
-## hardkas dev-server start
-
-Start the dev server
-
-### Usage
-
-```bash
-hardkas dev-server start [options]
-```
-
-### Options
-
-| Flag | Description | Default |
-| :--- | :--- | :--- |
-| `--port <number>` | Port to bind to | 7420 |
-| `--host <string>` | Host to bind to | 127.0.0.1 |
-| `--dashboard` | Deprecated: the standalone dashboard UI has been retired; dev-server runs as a headless API service | false |
-| `--unsafe-external` | Allow external access (binds to 0.0.0.0 if host not specified) | false |
-| `--unsafe-no-auth` | Disable token authentication (requires --yes) | false |
-| `--yes` | Acknowledge unsafe flags | false |
-| `--with-node` | Spawn the localnet node and auto-fund simnet accounts | false |
-| `--json` | Output status as JSON | false |
-
-### Arguments
-
-No arguments.
-
----
-
-## hardkas dev-server token
-
-Print the current dev server token
-
-### Usage
-
-```bash
-hardkas dev-server token [options]
-```
-
-### Options
-
-| Flag | Description | Default |
-| :--- | :--- | :--- |
-| `--json` | Output as JSON | false |
-
-### Arguments
-
-No arguments.
-
----
-
 ## hardkas doctor
 
 Perform a full system diagnostic and health report (on a public network it contacts the workspace's declared endpoint) stable
@@ -6655,12 +6579,13 @@ No arguments.
 
 - [hardkas zk toccata build-scripts](#hardkas-zk-toccata-build-scripts)
 - [hardkas zk toccata rules](#hardkas-zk-toccata-rules)
+- [hardkas zk toccata verify-scripts](#hardkas-zk-toccata-verify-scripts)
 
 ---
 
 ## hardkas zk toccata build-scripts
 
-Build P2SH redeem and signature scripts for a RISC Zero Groth16 proof set (imageId/journalHash are not cross-checked against the receipt)
+Build P2SH redeem and signature scripts for a RISC Zero Groth16 proof set (supports proof-only and proof-and-output-bound consensus modes)
 
 ### Usage
 
@@ -6675,6 +6600,13 @@ hardkas zk toccata build-scripts [options]
 | `--image-id <hex>` | 32-byte hex Image ID |  |
 | `--journal-hash <hex>` | 32-byte hex Journal Hash |  |
 | `--receipt <pathOrHex>` | Path to receipt file (.hex) or raw receipt hex string |  |
+| `--mode <mode>` | Binding mode: 'proof-only' (unbound outputs) or 'proof-and-output-bound' (consensus output introspection) | proof-only |
+| `--payout-address <address>` | Consensus-bound recipient address (required if mode is proof-and-output-bound) |  |
+| `--payout-amount <sompi>` | Consensus-bound payout amount in sompi (required if mode is proof-and-output-bound) |  |
+| `--change-address <address>` | Optional consensus-bound change address |  |
+| `--change-amount <sompi>` | Optional consensus-bound change amount in sompi |  |
+| `--utxo-txid <hex>` | Optional bound input UTXO transaction ID for replay protection |  |
+| `--utxo-index <index>` | Optional bound input UTXO index for replay protection |  |
 | `--json` | Output as JSON | false |
 
 ### Arguments
@@ -6697,6 +6629,35 @@ hardkas zk toccata rules [options]
 
 | Flag | Description | Default |
 | :--- | :--- | :--- |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+No arguments.
+
+---
+
+## hardkas zk toccata verify-scripts
+
+Verify structural integrity and inspect consensus binding rules in Toccata P2SH scripts
+
+### Usage
+
+```bash
+hardkas zk toccata verify-scripts [options]
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--redeem-script <hex>` | Redeem script hex |  |
+| `--sig-script <hex>` | Signature script hex |  |
+| `--image-id <hex>` | Expected 32-byte hex Image ID |  |
+| `--journal-hash <hex>` | Expected 32-byte hex Journal Hash |  |
+| `--expected-mode <mode>` | Expected binding mode ('proof-only' or 'proof-and-output-bound') |  |
+| `--expected-payout-address <address>` | Expected consensus-bound payout address |  |
+| `--expected-payout-amount <sompi>` | Expected consensus-bound payout amount in sompi |  |
 | `--json` | Output as JSON | false |
 
 ### Arguments

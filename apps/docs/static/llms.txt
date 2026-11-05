@@ -1,68 +1,63 @@
 # HardKAS
 
-> Local-first development framework, transaction simulator, and visual IDE for Kaspa L1.
+> Local-first development framework, transaction simulator, and smart contract toolchain for Kaspa L1.
 
-HardKAS is an open-source development framework designed for building and testing applications on the Kaspa L1 BlockDAG network. Inspired by the local ergonomics of Ethereum tools like Hardhat and Foundry, HardKAS provides deterministic transaction planning, an in-memory synthetic simulator, managed Docker localnet (`rusty-kaspa` on `simnet`), cryptographic artifact verification, and SilverScript smart contract tooling.
+HardKAS is an open-source development framework designed for building and testing applications on the Kaspa L1 BlockDAG network. Inspired by the local ergonomics of Ethereum tools like Hardhat and Foundry, HardKAS provides deterministic transaction planning, an in-memory synthetic simulator, managed Docker/binary localnet (`rusty-kaspa` on `simnet`), cryptographic artifact verification, SilverScript smart contract compilation (`silverc v1.0.0`), Covenant state transitions, and Zero-Knowledge L1 proof verification (`OpZkPrecompile`).
 
 HardKAS is built specifically for Kaspa's UTXO and Kaspa Script architecture; it is NOT an EVM framework and does not execute EVM bytecode on Kaspa L1.
 
 ## Core Capabilities
 
-- **Instant In-Memory Simulator:** Fast, synchronous execution of Kaspa transactions in memory without running full nodes or waiting for mining.
-- **Docker Localnet Orchestration:** One-command local `simnet` network running official `rusty-kaspa` alongside an automated CPU miner (`hardkas localnet start`).
+- **Instant In-Memory Simulator:** Fast, synchronous execution of Kaspa transactions and scripts in memory without running full nodes or waiting for mining.
+- **Managed Localnet Orchestration:** One-command local `simnet` network running official `rusty-kaspa` alongside an automated CPU miner (`hardkas localnet start`).
 - **Verifiable Transaction Artifacts:** Every transaction plan, signed payload, and execution receipt is recorded as a cryptographically hashed JSON artifact (`TxPlan`, `SignedTx`, `TxReceipt`).
 - **Offline Workflow Replay:** Reconstruct and verify transaction state transitions at specific DAA scores without network access (`hardkas replay verify`).
-- **SilverScript Toolchain (silverc v1.0.0):** Managed compilation of `.sil` contracts, P2SH deploy/spend lifecycles, and relative timelocks.
-- **Toccata Covenants Baseline:** Supports 1:1 auth-bound covenant state transitions with machine-verifiable test fixtures.
-- **Partially Signed Kaspa Transactions (PSKT):** Native Rust NAPI binding for safe multi-party transaction signing and SIGHASH immutability.
-- **Visual Web Dashboard:** Local developer studio with React Flow DAG visualization, transaction inspector, and telemetry.
+- **SilverScript Toolchain (silverc v1.0.0):** Managed compilation of `.sil` contracts (`hardkas silver compile`), byte-for-byte reproducibility verification (`hardkas silver verify`), and P2SH deploy/spend lifecycles.
+- **Toccata Covenants:** Supports 1:1 auth-bound covenant genesis and state transitions (`hardkas silver covenant genesis` / `transition`) with machine-verifiable lineage records.
+- **ZK L1 Proof Verification & Toccata Script Building:** Cryptographic BN254 Groth16 pairing verification (`hardkas zk proof verify-math`), weak/trapdoor verification key rejection, and canonical `OpZkPrecompile` (`0xa8` / `0x20` R0Groth16) redeem/signature script construction (`hardkas zk toccata build-scripts`).
+- **Partially Signed Kaspa Transactions (PSKT):** Native Rust NAPI binding (`@hardkas/pskt-native`) for safe multi-party air-gapped transaction signing and SIGHASH immutability.
+- **Backend Toolkit & Query Store:** SQLite/PostgreSQL storage, mempool-aware UTXO reservation, job queues, and artifact lineage querying (`@hardkas/toolkit`, `@hardkas/query-store`).
 
 ## Explicit Non-Claims & Policy Restrictions
 
 - **Community-Led Framework:** HardKAS is an open-source community project by KasLabDevs; it is not the official Kaspa Foundation or consensus node.
 - **No Mainnet Broadcast:** Mainnet transaction broadcast is intentionally blocked by security policy in this developer runtime (`BLOCKED_BY_POLICY`).
-- **No Full Consensus Equivalence in Simulator:** The simulator validates transaction structure, mass, signatures, and fees; it does not claim full Kaspa node consensus equivalence.
-- **No General Covenants on Mainnet:** Advanced covenant patterns are subject to network-wide consensus activation under the Toccata upgrade.
-- **No On-Chain ZK Verification:** ZK tooling is limited to local fixture coherence and schema inspection.
+- **No Full Consensus Equivalence in Simulator:** The simulator validates transaction structure, mass, signatures, and scripts; always validate consensus-critical covenants on `kaspad --simnet` (`localnet`).
 - **No Production Wallet/Custody Claims:** HardKAS is a developer infrastructure tool, not a consumer wallet or custody engine.
 
 ## CLI Quick Commands
 
 ```bash
 # Initialize a new HardKAS workspace
-npx hardkas init my-kaspa-app
+npx @hardkas/cli init my-kaspa-app
 
 # Plan, sign, and verify a transaction in the local simulator
 hardkas tx plan --from alice --to bob --amount 10
 hardkas tx sign tx-plan.json --account alice
 hardkas tx verify --artifact tx-plan.json
 
+# Compile and verify a SilverScript contract
+hardkas silver compile contracts/vault.sil
+hardkas silver verify .hardkas/artifacts/silver/<record>.json
+
+# Verify a Groth16 ZK proof mathematically and inspect Toccata L1 precompile rules
+hardkas zk proof verify-math fixtures/toccata-v2/zk/valid-groth16.json --json
+hardkas zk toccata rules --json
+
 # Start a real local Kaspa simnet node with automatic mining
 hardkas localnet start
 hardkas localnet status
 hardkas localnet stop
-
-# Check local RPC connection and environment health
-hardkas rpc health
-hardkas doctor workspace
 ```
 
 ## Key Documentation & Developer Guides
 
-- **Framework Architecture:** https://hardkas.dev/docs/concepts/kaspa-l1-development-framework
+- **Framework Architecture:** https://hardkas.dev/docs/reference/architecture
+- **Package Map:** https://hardkas.dev/docs/reference/packages
+- **Examples & Builder Labs:** https://hardkas.dev/docs/tutorials/builder-labs
 - **Hardhat for Kaspa (EVM to Kaspa Guide):** https://hardkas.dev/docs/guides/hardhat-for-kaspa
-- **Kaspa Developer Tools & Ecosystem Directory:** https://hardkas.dev/docs/concepts/kaspa-developer-tools-and-ecosystem
 - **SilverScript IDE & Local Development:** https://hardkas.dev/docs/guides/silverscript-ide-and-local-development
 - **Testing Kaspa Covenants Guide:** https://hardkas.dev/docs/guides/testing-kaspa-covenants
+- **ZK L1 Verification & Toccata Scripts Guide:** https://hardkas.dev/docs/guides/zk-l1-verification-and-settlement
 - **5-Minute Quickstart:** https://hardkas.dev/docs/getting-started/quickstart
-- **Execution Contract Specification:** https://hardkas.dev/docs/concepts/execution-contract
-- **CLI Reference:** https://hardkas.dev/docs/reference/cli
-
-## Official Kaspa Network Resources
-
-- Official Website: https://kaspa.org/
-- Official Kaspa Documentation: https://docs.kaspa.org/
-- Rusty Kaspa Full Node: https://github.com/kaspanet/rusty-kaspa
-- Kaspa Improvement Proposals: https://github.com/kaspanet/kips
-- Community Hub: https://kaspahub.org/
-- HardKAS Repository: https://github.com/KasLabDevs/HardKas
+- **CLI Reference:** https://hardkas.dev/docs/reference/cli/
