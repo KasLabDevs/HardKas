@@ -3,6 +3,9 @@ import { HardkasCliError } from "../cli-errors.js";
 import type { KnownExtension } from "./api.js";
 import { type ExtensionRegistry, type ExtensionState, extensionStateOf } from "./registry.js";
 
+/** RC1-R2 (D5): the published-packages table, by URL (the same form the published READMEs use for repository docs). */
+export const PUBLISHED_PACKAGES_URL = "https://github.com/KasLabDevs/HardKas/blob/main/docs/status/versioning.md";
+
 /**
  * The typed error for a command, template or doctor module of an extension that is not loaded (P2): it names the
  * reason (not installed, disabled, incompatible) and the exact next step. Nothing of the extension is imported.
@@ -10,9 +13,12 @@ import { type ExtensionRegistry, type ExtensionState, extensionStateOf } from ".
 export function extensionUnavailableError(known: KnownExtension, state: ExtensionState | undefined, what: string): HardkasCliError {
   const install = `hardkas extension install ${known.id}`;
   // INT9: a package this release does not publish cannot come from the registry, so the next step never says it can.
+  // RC1-R2 (D5): the next step works from an installed CLI — the offline install from a tarball — and the list of what
+  // this release publishes is a URL; it named a repository path (docs/status/versioning.md) no installed package ships.
   const unpublished =
     `${known.packageName} is not published in this release, so '${install}' cannot fetch it from a registry; ` +
-    `it works only with a local build or tarballs (docs/status/versioning.md, "Not published").`;
+    `it works only from a local build: ${install} --from <tgz> --sha256 <hex> ` +
+    `(what this release publishes: ${PUBLISHED_PACKAGES_URL}).`;
   if (state?.status === "disabled") {
     return new HardkasCliError(
       "EXTENSION_DISABLED",

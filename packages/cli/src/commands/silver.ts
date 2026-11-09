@@ -9,7 +9,7 @@ import { UI } from "../ui.js";
 import { assertNodeKind, stripBom, summarizeNodeIdentity } from "@hardkas/core";
 // INT9-A (review M-3): `localnet` only for a record the managed localnet evidenced; a node proven by its endpoint is `rpc`
 import { recordModeOf } from "../runners/l1-node-target.js";
-import { ALLOW_UNVERIFIED_RUNNER_HELP, exactValuesText, readExactTestsJson, readExactValuesJson, registerSilverDevFrameworkCommands } from "./silver-dev-framework.js";
+import { ALLOW_UNVERIFIED_RUNNER_HELP, exactValuesText, readExactJson, readExactTestsJson, readExactValuesJson, registerSilverDevFrameworkCommands } from "./silver-dev-framework.js";
 
 /**
  * `hardkas silver` — SilverScript v1 through upstream authorities only.
@@ -578,6 +578,36 @@ async function entryArgs(file: string | undefined, keys: KeySource) {
 }
 
 /** P-1 / N-7: `--args` and `--constructor-args` of develop's commands, by the same rule as the dev-framework commands. */
+/**
+ * RC1 · `--state-map`: inline JSON (`{"value":0}`) or the path of a JSON file holding it — a file avoids each shell's quoting
+ * rules. It must map state field names to constructor parameter indexes (non-negative integers); anything else is a typed
+ * usage error (it used to be an untyped SyntaxError from JSON.parse).
+ */
+export function parseStateMapOption(raw: string): Record<string, number> {
+  const inline = /^\s*[[{]/.test(raw);
+  const text = inline ? raw : readFileOrFail(raw, "--state-map file").toString("utf8");
+  let parsed: unknown;
+  try {
+    // the exact reader (ISSUE-ONCHAIN-JSON-PRECISION-1): an index written as 1e0 or 1.0 is refused, never rounded
+    parsed = readExactJson(text, "--state-map");
+  } catch (e: unknown) {
+    if (e instanceof HardkasCliError) throw e;
+    return fail(
+      "SILVER_ARGS_INVALID",
+      `--state-map is not valid JSON${inline ? " (your shell may have stripped its quotes: pass the path of a JSON file instead)" : ` in ${raw}`}`,
+      HardkasExitCode.USAGE_ERROR
+    );
+  }
+  const ok =
+    parsed !== null &&
+    typeof parsed === "object" &&
+    !Array.isArray(parsed) &&
+    Object.keys(parsed).length > 0 &&
+    Object.values(parsed).every((v) => Number.isInteger(v) && (v as number) >= 0);
+  if (!ok) fail("SILVER_ARGS_INVALID", '--state-map must be a JSON object of state field -> constructor parameter index, e.g. {"value":0}', HardkasExitCode.USAGE_ERROR);
+  return parsed as Record<string, number>;
+}
+
 async function argsFromFile(file: string, option = "--args") {
   const { parseSilArtifactValuesJson, serializeSilArtifactValues } = await import("@hardkas/core");
   const text = readFileOrFail(file, "constructor-args file").toString("utf8");
@@ -617,12 +647,18 @@ export function registerSilverCommand(program: Command) {
       const { probeSilverReadiness } = await import("@hardkas/sdk");
       const readiness = await probeSilverReadiness(await silverReadinessOptions(opts));
       const silverc = readiness.toolchains.silverc;
+      // RC1-R2: `notSynced` (the SDK's verdict) is part of the JSON, always a boolean: a node that proved its identity
+      // but does not say it is synced is `true`; every other case `false` (it was only in the `detail` text). Its code
+      // when true is NODE_NOT_SYNCED, the refusal the Silver on-chain commands would raise.
       const node = {
         ok: readiness.node.ok,
         detail: readiness.node.detail,
+        notSynced: readiness.node.notSynced === true,
+        ...(readiness.node.notSynced === true ? { code: "NODE_NOT_SYNCED" } : {}),
         ...(readiness.node.verification ? { verification: readiness.node.verification } : {}),
         ...(readiness.node.url ? { url: readiness.node.url } : {}),
-        ...(readiness.node.network ? { network: readiness.node.network } : {})
+        ...(readiness.node.network ? { network: readiness.node.network } : {}),
+        ...(readiness.node.serverVersion ? { serverVersion: readiness.node.serverVersion } : {})
       };
       // Optional and experimental: no release binary exists, so it never gates the capabilities above. The runner is found
       // the way `silver test` finds it; `silver test` is usable only if its trust policy lets it run (F3, R-04).
@@ -1262,7 +1298,7 @@ export function registerSilverCommand(program: Command) {
     .description("Advance a 1:1 auth-bound covenant: successor state compiled by silverc, same covenant id")
     .requiredOption("--policy <name>", "Covenant declaration (policy function) to call")
     .requiredOption("--constructor-args <file>", "Constructor arguments of the current state (checked against the record)")
-    .requiredOption("--state-map <json>", 'State field -> constructor parameter index, e.g. {"value":0}')
+    .requiredOption("--state-map <json|file>", 'State field -> constructor parameter index: inline JSON such as {"value":0}, or the path of a JSON file with it')
     .requiredOption("--next-state <file>", 'Successor state: JSON object of {kind, value} per field')
     .option("--compute-budget <n>", "Compute budget of the covenant input, or 'estimate' (rusty-kaspa's upper bound); default: the certified budget of this entry, else that estimate")
     .option("--args <file>", 'Entry arguments: JSON list of {kind, value} and {"kind":"signature","account":"<name>"}')
@@ -1289,7 +1325,7 @@ export function registerSilverCommand(program: Command) {
       if (sha256(ctor.canonical) !== compileRecord.provenance.constructorArgsSha256) {
         fail("SILVER_CONSTRUCTOR_ARGS_MISMATCH", "these constructor arguments are not the ones the current state was compiled with", HardkasExitCode.USAGE_ERROR);
       }
-      const stateMap = JSON.parse(opts.stateMap);
+      const stateMap = parseStateMapOption(String(opts.stateMap));
       // ISSUE-ONCHAIN-JSON-PRECISION-1: the next state's ints by their literals, never through JSON.parse's double
       const nextRaw = readExactValuesJson(readFileOrFail(opts.nextState, "next-state file").toString("utf8"), "--next-state") as Record<string, unknown>;
       if (nextRaw === null || typeof nextRaw !== "object" || Array.isArray(nextRaw)) {

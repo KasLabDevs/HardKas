@@ -2,6 +2,7 @@ import type { Utxo, TxPlan } from "./index.js";
 import { filterMatureUtxos, adapterAuthority } from "./kaspa-wallet-adapter.js";
 import { GeneratorPlanError, planPaymentWithGenerator, planWithGenerator } from "./generator-plan.js";
 import { covenantIdOf, partitionCovenantUtxos } from "./covenant-utxos.js";
+import { assertSpendableAddressScheme, ecdsaSpendNotSupported, isEcdsaP2pkScript, kaspaAddressVersion } from "./address-scheme.js";
 
 export interface UtxoProvider {
   getUtxos(address: string): Promise<Utxo[]>;
@@ -190,6 +191,8 @@ export class TxPlanService {
 
   private async planPayment(request: PlanTransactionRequest, synthetic: boolean): Promise<TxPlanResult> {
     const networkId = request.networkId ?? "simnet";
+    // RC1 · D7: a spend from an ECDSA address cannot be signed by HardKAS (Schnorr only): refused before anything is read
+    assertSpendableAddressScheme(request.fromAddress, "the sender");
     const rpcUtxos = await this.provider.getUtxos(request.fromAddress);
     let virtualDaaScore: bigint | undefined;
     if (this.provider.getVirtualDaaScore) {
@@ -216,6 +219,8 @@ export class TxPlanService {
       // out (the node would refuse an immature one: ImmatureCoinbaseSpend), never spent on a guess
       candidates = candidates.filter((u) => !u.isCoinbase);
     }
+    // RC1-R2: the coinbase outputs the maturity rule left out, for the typed refusal below
+    const immatureCoinbase = rpcUtxos.length - candidates.length;
 
     if (request.excludeOutpoints && request.excludeOutpoints.size > 0) {
       candidates = candidates.filter(
@@ -229,8 +234,17 @@ export class TxPlanService {
     const covenantNote = `${covenant.length} covenant UTXO(s) excluded: a payment never spends a covenant's UTXO`;
 
     if (candidates.length === 0) {
-      throw new Error(
-        `Insufficient funds: no spendable UTXOs at ${request.fromAddress} (after maturity + excludeOutpoints filters${covenant.length > 0 ? `; ${covenantNote}` : ""}).`
+      // RC1-R2: typed — NO_SPENDABLE_UTXOS, the CLI's code for the same refusal — and it says when coinbase outputs were
+      // left out as immature; the message keeps its words
+      const immatureNote =
+        immatureCoinbase > 0
+          ? `; ${immatureCoinbase} coinbase UTXO(s) left out as immature${virtualDaaScore === undefined ? " (the virtual DAA score could not be read, so no coinbase maturity could be established)" : ": coinbase outputs are spendable only after the network's coinbase maturity"}`
+          : "";
+      throw Object.assign(
+        new Error(
+          `Insufficient funds: no spendable UTXOs at ${request.fromAddress} (after maturity + excludeOutpoints filters${covenant.length > 0 ? `; ${covenantNote}` : ""}${immatureNote}).`
+        ),
+        { code: "NO_SPENDABLE_UTXOS", found: rpcUtxos.length, immatureCoinbase }
       );
     }
 
@@ -274,6 +288,13 @@ export class TxPlanService {
    * (COVENANT_UTXO_NOT_PAYMENT_INPUT): consolidating it would end the covenant.
    */
   async planConsolidation(request: ConsolidationRequest): Promise<TxPlanResult> {
+    // RC1 · D7: no spend from an ECDSA address, named by the sender or by any selected UTXO's address or script
+    assertSpendableAddressScheme(request.fromAddress, "the sender");
+    request.selectedUtxos.forEach((u, i) => {
+      if (kaspaAddressVersion(u.address) === 1 || isEcdsaP2pkScript(u.scriptPublicKey)) {
+        throw ecdsaSpendNotSupported(`selected UTXO ${i} (${u.outpoint.transactionId}:${u.outpoint.index})`, u.address);
+      }
+    });
     const covenant = request.selectedUtxos.filter((u) => covenantIdOf(u) !== undefined);
     if (covenant.length > 0) {
       throw new GeneratorPlanError(

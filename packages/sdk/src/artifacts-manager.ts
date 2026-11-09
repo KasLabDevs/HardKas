@@ -475,8 +475,13 @@ export class HardkasArtifactsManager {
                         : "schema_invalid";
 
       if (throwOnInvalid) {
-        throw new Error(
-          `Artifact ${id} corrupted or invalid: ` + JSON.stringify(result.issues, null, 2)
+        // RC1-R2: typed, like the CLI's readers (@hardkas/artifacts io.ts): the first error issue's code
+        // (ARTIFACT_HASH_MISMATCH for a tampered artifact), else ARTIFACT_INVALID; the message is unchanged
+        const first = result.issues.find((i: any) => i?.severity === "error") ?? result.issues[0];
+        throw new HardkasError(
+          String(first?.code ?? "ARTIFACT_INVALID"),
+          `Artifact ${id} corrupted or invalid: ` + JSON.stringify(result.issues, null, 2),
+          { metadata: { artifactId: id, reason: mappedReason, issues: result.issues } }
         );
       }
       return {

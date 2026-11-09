@@ -522,6 +522,17 @@ describe("TX-SEND-BLOCKED-OUTCOME-1 · a submission refused before the transport
     expect(w.json?.state, w.brief).toBe("CONFIRMED");
     const rc = await run("BO-2-receipt", [cliDist, "tx", "receipt", txId, "--json"], ws);
     expect(rc.json?.result?.submitResult?.accepted, rc.brief).toBe(true);
+    // RC1 (hackathon guide finding): the plain-text receipt of a network submission printed `unknown` for sender,
+    // recipient, amount and fee; they come from the submission's signed artifact and its derived fee
+    const rcText = await run("BO-2-receipt-text", [cliDist, "tx", "receipt", txId], ws);
+    expect(rcText.exit, rcText.brief).toBe(0);
+    for (const field of ["From", "To", "Amount", "Fee"]) expect(rcText.stdout, `${field}: ${rcText.brief}`).not.toMatch(new RegExp(`${field}:\\s+unknown`));
+    // RC1 (oracle D1): the change is the plan's (never "unknown" when the plan is here), and the State section says what
+    // the submission recorded and where the current state comes from (it printed nothing)
+    const planChange = BigInt(String(JSON.parse(fs.readFileSync(path.join(ws, "plan.json"), "utf8"))?.change?.amountSompi ?? "0"));
+    expect(rcText.stdout, rcText.brief).toMatch(planChange > 0n ? /Change:\s+\d/ : /Change:\s+none/);
+    expect(rcText.stdout, rcText.brief).toMatch(/Submitted:\s+accepted by the node at virtual DAA \d+/);
+    expect(rcText.stdout, rcText.brief).toMatch(new RegExp(`Current state: hardkas tx status ${txId}`));
     const why = await run("BO-2-why", [cliDist, "why", "--tx", txId, "--json"], ws);
     expect(why.json?.origin, why.brief).toBe("submitted");
     expect(why.json?.target).toBe(subs[0].contentHash);

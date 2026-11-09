@@ -1959,7 +1959,7 @@
       "path": "hardkas doctor",
       "name": "doctor",
       "aliases": [],
-      "description": "Perform a full system diagnostic and health report (on a public network it contacts the workspace's declared endpoint) stable",
+      "description": "Perform a full system diagnostic and health report: local configuration, then the workspace's node (connectivity, network identity, sync, capability for a flow); mainnet is never contacted stable",
       "usage": "hardkas doctor [options] [module]",
       "arguments": [
         {
@@ -1973,6 +1973,34 @@
           "description": "Output results as stable JSON schema",
           "default": false,
           "required": false,
+          "mandatory": false
+        },
+        {
+          "flags": "--network <name>",
+          "description": "Check the node of this network of hardkas.config.ts (default: the workspace's network; mainnet is refused, a public testnet needs the payments' opt-in)",
+          "default": null,
+          "required": true,
+          "mandatory": false
+        },
+        {
+          "flags": "--url <url>",
+          "description": "Check the node at this endpoint, as the node of --network (default: the workspace's network)",
+          "default": null,
+          "required": true,
+          "mandatory": false
+        },
+        {
+          "flags": "--flow <flows>",
+          "description": "Report the node's capability for these flows and fail when one is not ready: payment, silver, covenant (comma-separated)",
+          "default": null,
+          "required": true,
+          "mandatory": false
+        },
+        {
+          "flags": "--timeout <ms>",
+          "description": "Bound the node check: connect and answer within this many milliseconds (default 8000)",
+          "default": null,
+          "required": true,
           "mandatory": false
         },
         {
@@ -5819,8 +5847,8 @@
                   "mandatory": true
                 },
                 {
-                  "flags": "--state-map <json>",
-                  "description": "State field -> constructor parameter index, e.g. {\"value\":0}",
+                  "flags": "--state-map <json|file>",
+                  "description": "State field -> constructor parameter index: inline JSON such as {\"value\":0}, or the path of a JSON file with it",
                   "default": null,
                   "required": true,
                   "mandatory": true
@@ -7918,7 +7946,14 @@
             },
             {
               "flags": "--address <address>",
-              "description": "An address the tx pays (repeatable), for a tx sent outside this workspace with no --since: the scan starts at the node's sink when the wait starts, an output of the tx listed there before that point ends the wait (TX_WAIT_ACCEPTED_BEFORE_CURSOR), and the UTXO view is checked there",
+              "description": "An address the tx pays (repeatable), for a tx sent outside this workspace with no --since: the scan starts at the node's sink when the wait starts; an output of the tx listed there before that point makes the wait walk back along the node's selected chain (--lookback) and scan from there, else it ends (TX_WAIT_ACCEPTED_BEFORE_CURSOR); the UTXO view is checked there",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--lookback <chainBlocks>",
+              "description": "With --address: chain blocks the wait may walk back from the node's sink (getBlock, selected parent) to find a tx accepted before it started (default 1000, at most 10000, 0 = never); the acceptance is the node's own virtual-chain answer from there. Given explicitly, the wait starts at the sink even when this workspace stored looks at the txId",
               "default": null,
               "required": true,
               "mandatory": false

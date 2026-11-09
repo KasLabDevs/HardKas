@@ -130,6 +130,13 @@ export interface SendTxOptions {
    * preflight (which needs the plan). Default false.
    */
   allowUnplannedSignedTransaction?: boolean;
+  /**
+   * RC1 · D3 · explicit, documented escape for a controlled local network only: send to a node that does not say it is
+   * synced. By default a real send asks the node (getServerInfo) before anything else and refuses one that does not
+   * say `isSynced: true` (NODE_NOT_SYNCED; nothing is sent or recorded), as the CLI does. Allowed on simnet and devnet
+   * only (SEND_UNSYNCED_NODE_NOT_ALLOWED elsewhere); never implied by another option; mainnet stays disabled. Default false.
+   */
+  allowUnsyncedNode?: boolean;
 }
 
 let amountNumberWarned = false;
@@ -219,12 +226,14 @@ import {
   deriveObserverId,
   submitOutcomeOf,
   TX_STATUS_POLICY_HARDKAS_DEFAULT_V1,
+  recomputeDeclaredContentHash,
   type DerivedTxStatus,
   type TxStatusPolicy,
   type TxObservation
 } from "@hardkas/artifacts";
 import { observeTxOnce, rpcObserverFor } from "./tx-observer.js";
 import { preflightPaymentSend } from "./payment-preflight.js";
+import { assertAllowUnsyncedOption, checkSendNodeSynced } from "./send-node-sync.js";
 import { checkWhatTheNodeHolds, nodeHoldsSentence, sendOutputsOf, SEND_NODE_CHECK_HOLDS, type SendNodeCheck, type SendOutput } from "./send-node-check.js";
 import {
   coreEvents,
@@ -264,8 +273,20 @@ import {
   planPaysFeeSompi,
   type NetworkId
 } from "@hardkas/core";
-import { TxPlanService, covenantIdOf, feeLimitInForce, assertFeeWithinLimitInForce, type UtxoProvider } from "@hardkas/tx-builder";
+import { TxPlanService, covenantIdOf, feeLimitInForce, assertFeeWithinLimitInForce, assertSpendableAddressScheme, type UtxoProvider } from "@hardkas/tx-builder";
 import { HardkasSchemas } from "@hardkas/artifacts";
+
+/** RC1 · D7: a lock time other than 0 asked of tx.plan (absolute time locks are not supported in this release). */
+function refuseNonZeroLockTime(stated: unknown): void {
+  if (stated === undefined || stated === null) return;
+  const zero = stated === 0 || stated === 0n || stated === "0";
+  if (zero) return;
+  throw new HardkasError(
+    "LOCK_TIME_NOT_SUPPORTED",
+    `tx.plan was asked for lock time ${JSON.stringify(typeof stated === "bigint" ? stated.toString() : stated)}: HardKAS plans and signs every ` +
+      `transaction with lock time 0 (absolute time locks, CLTV, are not supported in this release). Nothing was planned.`
+  );
+}
 
 /** An artifact's identity: its declared 64-hex contentHash, or the hash of its body when it declares none. */
 function artifactIdentity(artifact: any): string {
@@ -674,6 +695,9 @@ export class HardkasTx {
     // integer of sompi (INVALID_MAX_FEE). Decided before anything is read or planned.
     if (options.feeRate !== undefined) parseFeeRate(options.feeRate, "tx.plan feeRate");
     const planMaxFeeSompi = options.maxFeeSompi === undefined ? undefined : parseMaxFeeSompi(options.maxFeeSompi, "tx.plan maxFeeSompi");
+    // RC1 · D7: every plan has lock time 0 (no CLTV in this release). A caller asking for another one is told so; it used
+    // to be ignored silently (a plan with lock time 0 came back).
+    refuseNonZeroLockTime((options as { lockTime?: unknown }).lockTime);
     // WORKSPACE-AUTHORITY-2 (WA2-I2): the identities and the world of a plan come from the ONE resolved execution target
     // of this instance, and their compatibility is decided before any plan exists — the CLI's rule, shared from
     // @hardkas/accounts (`assertAccountCompatible`), never a world-mixing artifact caught later by the signer.
@@ -693,6 +717,8 @@ export class HardkasTx {
       throw new Error(`From account ${fromAccount.name} has no address.`);
     if (!toAccount.address)
       throw new Error(`To account ${toAccount.name} has no address.`);
+    // RC1 · D7: HardKAS signs Schnorr P2PK spends only — a spend from an ECDSA address is refused before the node is asked
+    assertSpendableAddressScheme(fromAccount.address, `the sender ${fromAccount.name}`);
 
     const activeNetwork = options.networkProfile || (this.sdk.network as string);
     // the world of this plan: the resolved execution target's mode when planning on this instance's network (the
@@ -1176,6 +1202,26 @@ export class HardkasTx {
       [(plan as any).networkId, (plan as any).execution?.network, this.sdk.network, declaredNetworkIdOf(this.sdk.config.config, this.sdk.network)],
       "tx.sign"
     );
+
+    // RC1-R2: a tampered plan (its content no longer hashes to the contentHash it carries) is refused first, typed
+    // ARTIFACT_HASH_MISMATCH: the fee and covenant checks below would otherwise judge the edited body and answer with
+    // their own codes. The full verification (lineage, semantics) still runs before signing, as before.
+    if (typeof (plan as any).contentHash === "string") {
+      let recomputed: string | undefined;
+      try {
+        recomputed = recomputeDeclaredContentHash(plan);
+      } catch {
+        recomputed = undefined; // an invalid hash version: the full verification below names it
+      }
+      if (recomputed !== undefined && recomputed !== (plan as any).contentHash) {
+        throw new HardkasError(
+          "ARTIFACT_HASH_MISMATCH",
+          `Artifact ${String((plan as any).planId ?? (plan as any).contentHash)} corrupted or invalid (content_hash_mismatch): its content does not hash to its contentHash ` +
+            `(declared ${(plan as any).contentHash}, computed ${recomputed}): it was modified after it was sealed. Refusing to sign; nothing was signed.`,
+          { metadata: { expected: (plan as any).contentHash, actual: recomputed } }
+        );
+      }
+    }
 
     // TX-FEE-GUARD-1: before any signer is asked, a plan's fee is within the limit in force (the plan's own and the
     // workspace's for its network, the lower one), measured on what the plan really pays (inputs - outputs - change),
@@ -2102,6 +2148,10 @@ export class HardkasTx {
       [(signedArtifact as any)?.networkId, (signedArtifact as any)?.execution?.network, activeNetwork, declaredNetworkIdOf(this.sdk.config.config, activeNetwork)],
       "tx.send"
     );
+    // RC1 · D3: the explicit escape from the synced-node rule — a boolean, and for a simnet or devnet instance only
+    // (decided before anything is read; the mainnet refusal above comes first whatever it says)
+    const declaredSendNetwork = declaredNetworkIdOf(this.sdk.config.config, activeNetwork) ?? activeNetwork;
+    const allowUnsynced = assertAllowUnsyncedOption(sendOptions.allowUnsyncedNode, declaredSendNetwork);
     // the world this instance runs on decides (WORKSPACE-AUTHORITY-2)
     const isSimulated = this.sdk.execution.mode === "simulator";
     const explicitUrl = typeof urlOrOptions === "string" ? urlOrOptions : sendOptions.url;
@@ -2264,6 +2314,10 @@ export class HardkasTx {
     refuseUnresolvedEndpoint(this.sdk);
     // EA-I1/EA-I2: the endpoint a submission records is the endpoint of the client that submits it
     const endpoint = endpointAuthority(this.sdk.rpc, url, "SEND");
+
+    // RC1 · D3: only a node that says it is synced gets a send (the CLI's rule): asked now, before any read the send
+    // depends on and before anything is sent or recorded (the explicit local escape was validated above).
+    await checkSendNodeSynced(this.sdk.rpc, { endpoint, network: declaredSendNetwork, allowUnsynced });
 
     const broadcastable = getBroadcastableSignedTransaction(signedArtifact);
 

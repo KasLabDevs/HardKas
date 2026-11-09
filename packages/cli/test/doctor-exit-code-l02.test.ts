@@ -128,8 +128,9 @@ describe("L-02 · hardkas doctor: the exit code follows the failed checks", () =
     expect(r.failed, r.brief).toContain("Docker daemon");
     expect(r.json.summary.failed, r.brief).toBe(r.failed.length);
     expect(r.exit, r.brief).toBe(1);
-    // the report is unchanged: one document with its own fields, no failure envelope around it or after it
-    expect(Object.keys(r.json).sort(), r.brief).toEqual(["checks", "summary", "timestamp", "version"]);
+    // the report is one document with its own fields, no failure envelope around it or after it. RC1-R2 (D4) added its
+    // schema id, the diagnosis scope, the node and the sections to that one document (still exact, still no `ok`/`error`)
+    expect(Object.keys(r.json).sort(), r.brief).toEqual(["checks", "diagnosis", "node", "schema", "sections", "summary", "timestamp", "version"]);
     expect(r.json.ok, r.brief).toBeUndefined();
   });
 

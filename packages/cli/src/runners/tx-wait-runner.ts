@@ -60,6 +60,12 @@ export interface TxWaitRunnerInput {
    * look, no --since). See `externalCursor`.
    */
   addresses?: string[];
+  /**
+   * RC1 · D2 (`--lookback`): with `addresses`, how many chain blocks the wait may walk back from its sink cursor, along
+   * the node's selected chain, when an output of the tx shows it was accepted before that cursor. Default
+   * TX_WAIT_DEFAULT_LOOKBACK; 0 never walks; at most TX_WAIT_MAX_LOOKBACK.
+   */
+  lookback?: number;
   workspaceRoot?: string;
   /** Test injection: an opened SDK whose RPC is scripted. */
   sdk?: any;
@@ -91,9 +97,70 @@ export interface TxWaitRunnerResult {
  */
 export interface TxWaitCursor {
   hash: string;
-  origin: "wait-start" | "since";
+  /**
+   * RC1 · D2 · `lookback`: the chain block the wait walked back to from its sink cursor (the first one, along the node's
+   * selected chain, whose DAA score is below the DAA score of the tx's listed output), see `lookback`.
+   */
+  origin: "wait-start" | "since" | "lookback";
   /** The DAA score of that chain block, read from its header (absent when the node did not serve it). */
   daaScore?: string;
+  /** RC1 · D2: how a `lookback` cursor was found. */
+  lookback?: TxWaitLookback;
+}
+
+/** RC1 · D2: the bounded walk back that found a `lookback` cursor (the node's own answers; never the mempool). */
+export interface TxWaitLookback {
+  /** The sink cursor the walk started from, and its DAA score. */
+  from: string;
+  fromDaaScore: string;
+  /** Selected-parent steps taken (≤ limit). */
+  steps: number;
+  /** --lookback in force. */
+  limit: number;
+  /** The output that showed the acceptance was behind the sink cursor, and its DAA score (its accepting chain block's). */
+  outpoint: string;
+  outputDaaScore: string;
+}
+
+/** RC1 · D2: chain blocks a `tx wait --address` may walk back by default, and at most (`--lookback`). */
+export const TX_WAIT_DEFAULT_LOOKBACK = 1000;
+export const TX_WAIT_MAX_LOOKBACK = 10_000;
+
+type LookbackWalk =
+  | { kind: "found"; hash: string; daaScore: bigint; steps: number }
+  | { kind: "exhausted"; steps: number; lastHash: string; lastDaaScore: bigint }
+  | { kind: "stopped"; steps: number; at: string; reason: string };
+
+/**
+ * RC1 · D2: from `from`, along the node's selected chain (getBlock → verboseData.selectedParentHash), to the first chain
+ * block whose DAA score is below `below`, taking at most `limit` steps. Every step is the node's own answer (rusty-kaspa
+ * 2.1.0 serves the verbose data with includeTransactions false; checked on a real node, R1 probe). A chain block's DAA
+ * score never exceeds its chain child's, so that block precedes the accepting one, and the virtual chain from it names
+ * the acceptance (getVirtualChainFromBlock), which the observer seals. Never unbounded; never the mempool.
+ */
+async function walkBackBelow(sdk: any, from: string, below: bigint, limit: number): Promise<LookbackWalk> {
+  let hash = from;
+  let steps = 0;
+  for (;;) {
+    let raw: any;
+    try {
+      raw = await sdk.rpc.call("getBlock", { hash, includeTransactions: false });
+    } catch (e: unknown) {
+      return { kind: "stopped", steps, at: hash, reason: `the node did not serve chain block ${hash} (${String((e as Error)?.message ?? e).slice(0, 200)})` };
+    }
+    const block: any = raw?.block ?? raw?.getBlockResponse?.block ?? raw;
+    const daa = block?.header?.daaScore;
+    if (daa === undefined || daa === null) return { kind: "stopped", steps, at: hash, reason: `chain block ${hash} came back with no DAA score` };
+    const daaScore = BigInt(daa);
+    if (daaScore < below) return { kind: "found", hash, daaScore, steps };
+    if (steps >= limit) return { kind: "exhausted", steps, lastHash: hash, lastDaaScore: daaScore };
+    const parent = block?.verboseData?.selectedParentHash;
+    if (typeof parent !== "string" || !/^[0-9a-f]{64}$/.test(parent) || /^0{64}$/.test(parent)) {
+      return { kind: "stopped", steps, at: hash, reason: `chain block ${hash} names no selected parent` };
+    }
+    hash = parent;
+    steps++;
+  }
 }
 
 const outpointKey = (o: { transactionId: string; index: number | string }) => `${o.transactionId}:${Number(o.index)}`;
@@ -245,18 +312,23 @@ async function waitForExternalUtxoView(args: {
   };
 }
 
-/** INT9 · C3: whether this workspace already gives the observer a cursor for `txId` (a recorded submission or a stored look). */
-async function hasLocalCursor(sdk: any, txId: string): Promise<boolean> {
+/**
+ * INT9 · C3: whether this workspace already gives the observer a cursor for `txId`: a recorded submission, a stored look,
+ * or none. RC1 · D2: a stored look alone is set aside when the caller asks for the walk back explicitly (`--lookback`):
+ * a wait that ended with TX_WAIT_ACCEPTED_BEFORE_CURSOR stored its looks, and the remedy it names (a larger --lookback)
+ * must start again from the sink, not continue the stored window forward.
+ */
+async function localCursorOf(sdk: any, txId: string): Promise<"submission" | "looks" | "none"> {
   try {
-    if (await sdk.artifacts.read({ tx: txId })) return true;
+    if (await sdk.artifacts.read({ tx: txId })) return "submission";
   } catch (e: unknown) {
-    if ((e as { code?: unknown } | null | undefined)?.code !== "RECEIPT_NOT_FOUND") return true;
+    if ((e as { code?: unknown } | null | undefined)?.code !== "RECEIPT_NOT_FOUND") return "submission";
   }
   try {
     const { ProjectArtifactStore } = await import("@hardkas/artifacts");
-    return new ProjectArtifactStore(sdk.workspace.root).listObservationsByTxId(txId).observations.length > 0;
+    return new ProjectArtifactStore(sdk.workspace.root).listObservationsByTxId(txId).observations.length > 0 ? "looks" : "none";
   } catch {
-    return false;
+    return "none";
   }
 }
 
@@ -356,13 +428,27 @@ async function waitOn(input: TxWaitRunnerInput, sdk: any, network: string): Prom
   // from the node's sink at the wait's first look, instead of from its pruning point. That cursor is right only for a tx
   // accepted after the wait started, so each look that has not found the acceptance yet reads the UTXOs at --address: an
   // output of the tx listed there carries the DAA score of its accepting chain block, and one at or before the cursor's
-  // means the acceptance is behind the scan — the wait ends at once (TX_WAIT_ACCEPTED_BEFORE_CURSOR), claiming nothing.
+  // means the acceptance is behind the scan. RC1 · D2: the wait then walks back from its sink cursor along the node's
+  // selected chain, at most `lookback` chain blocks, to the first chain block below that DAA score, and scans from
+  // there (the acceptance is the node's own virtual-chain answer, sealed in the observation). Past the bound, with
+  // --lookback 0, or behind an explicit --since, the wait ends at once (TX_WAIT_ACCEPTED_BEFORE_CURSOR), claiming nothing.
   const addresses = [...new Set(input.addresses ?? [])];
+  // RC1 · D2: the bounded walk back from the sink cursor (--lookback), and whether the last look was the one right after it
+  const lookback = input.lookback ?? TX_WAIT_DEFAULT_LOOKBACK;
+  if (!Number.isInteger(lookback) || lookback < 0 || lookback > TX_WAIT_MAX_LOOKBACK) {
+    throw new HardkasCliError("TX_WAIT_USAGE", `--lookback is a whole number of chain blocks from 0 to ${TX_WAIT_MAX_LOOKBACK}, got ${String(input.lookback)}. Nothing was observed.`, {
+      exitCode: HardkasExitCode.USAGE_ERROR
+    });
+  }
+  let lookbackLookPending = false;
   let cursor: TxWaitCursor | undefined;
   let needCursor = false;
   if (addresses.length > 0) {
     if (since !== undefined) cursor = { hash: since, origin: "since", ...(await headerDaaOf(sdk, since)) };
-    else needCursor = !(await hasLocalCursor(sdk, input.txId));
+    else {
+      const local = await localCursorOf(sdk, input.txId);
+      needCursor = local === "none" || (local === "looks" && input.lookback !== undefined);
+    }
   }
   for (;;) {
     try {
@@ -418,16 +504,67 @@ async function waitOn(input: TxWaitRunnerInput, sdk: any, network: string): Prom
           ...(cursor ? { cursor } : {})
         };
       }
+      const acceptedNow = ["ACCEPTED", "CONFIRMED", "FINALIZED", "REORGED"].includes(last.status);
+      // RC1 · D2: the look right after a walk back scanned from a chain block below the output's DAA score; when even
+      // that answer does not name the acceptance, the node's two views disagree (a reorg meanwhile, an index that trails
+      // its chain): nothing is claimed and the wait ends, typed, instead of scanning forward to its timeout
+      if (lookbackLookPending && !acceptedNow && cursor?.lookback) {
+        throw new HardkasCliError(
+          "TX_WAIT_ACCEPTED_BEFORE_CURSOR",
+          `${input.txId}: the node lists its output ${cursor.lookback.outpoint} at DAA score ${cursor.lookback.outputDaaScore}, and its virtual chain from ` +
+            `${cursor.hash} (DAA score ${cursor.daaScore}, reached by walking back ${cursor.lookback.steps} chain blocks from the sink) does not name its acceptance ` +
+            `(${stateHeadline(last)}). The node's chain and its UTXO index disagree right now, so no state is claimed; run the wait again, or give --since <a chain block before DAA score ${cursor.lookback.outputDaaScore}>.`,
+          { exitCode: HardkasExitCode.RUNTIME_FAILURE }
+        );
+      }
+      lookbackLookPending = false;
       // INT9 · C3: not accepted in the window scanned so far — is its acceptance behind the cursor?
-      if (cursor?.daaScore !== undefined && !["ACCEPTED", "CONFIRMED", "FINALIZED", "REORGED"].includes(last.status)) {
+      if (cursor?.daaScore !== undefined && !acceptedNow) {
         const listed = await listedOutputsOf(sdk, input.txId, addresses).catch(() => []);
         const behind = listed.find((o) => o.blockDaaScore !== undefined && o.blockDaaScore <= BigInt(cursor!.daaScore!));
         if (behind) {
+          const outputDaa = behind.blockDaaScore!;
+          const cursorDaa = BigInt(cursor.daaScore);
+          // RC1 · D2: a cursor this wait chose itself (the sink) is moved back, bounded, to a chain block before the
+          // acceptance; an explicit --since never is, and --lookback 0 never walks
+          let walk: LookbackWalk | undefined;
+          if (cursor.origin === "wait-start" && lookback > 0) {
+            walk = await walkBackBelow(sdk, cursor.hash, outputDaa, lookback);
+            if (walk.kind === "found") {
+              cursor = {
+                hash: walk.hash,
+                origin: "lookback",
+                daaScore: walk.daaScore.toString(),
+                lookback: { from: cursor.hash, fromDaaScore: cursor.daaScore, steps: walk.steps, limit: lookback, outpoint: behind.outpoint, outputDaaScore: outputDaa.toString() }
+              };
+              since = walk.hash;
+              lookbackLookPending = true;
+              input.onUpdate?.(
+                `accepted before this wait started (output ${behind.outpoint} at DAA score ${outputDaa}): walked back ${walk.steps} chain block(s) to ${walk.hash} (DAA score ${walk.daaScore}); scanning the node's virtual chain from there`,
+                last
+              );
+              continue;
+            }
+          }
+          const how =
+            cursor.origin === "since"
+              ? "The wait does not move a --since cursor."
+              : lookback === 0
+                ? "The wait does not walk back (--lookback 0)."
+                : walk?.kind === "exhausted"
+                  ? `Along the node's selected chain it walked back ${walk.steps} chain blocks (--lookback ${lookback}) and the last one read, ${walk.lastHash}, is still at DAA score ${walk.lastDaaScore}.`
+                  : walk?.kind === "stopped"
+                    ? `Walking back stopped after ${walk.steps} chain block(s): ${walk.reason}.`
+                    : "";
+          const fix =
+            cursor.origin === "since"
+              ? `Give an earlier --since (a chain block before DAA score ${outputDaa}), or drop --since and let the wait walk back from the sink (--lookback, at most ${TX_WAIT_MAX_LOOKBACK}).`
+              : `Give --since <a chain block before DAA score ${outputDaa}>, or a larger --lookback (at most ${TX_WAIT_MAX_LOOKBACK}; with --lookback the wait starts again from the node's sink).`;
           throw new HardkasCliError(
             "TX_WAIT_ACCEPTED_BEFORE_CURSOR",
-            `${input.txId} was accepted before the chain block this wait scans from: the node lists its output ${behind.outpoint} at ${behind.address}, accepted at DAA score ${behind.blockDaaScore}, ` +
-              `and the scan starts at ${cursor.hash} (DAA score ${cursor.daaScore}, ${cursor.origin === "wait-start" ? "the node's sink when this wait started" : "--since"}). ` +
-              `Scanning forward cannot find that acceptance, so no state is claimed. Give --since <a chain block before DAA score ${behind.blockDaaScore}>.`,
+            `${input.txId} was accepted before the chain block this wait scans from: the node lists its output ${behind.outpoint} at ${behind.address}, accepted at DAA score ${outputDaa}, ` +
+              `and the scan starts at ${cursor.hash} (DAA score ${cursor.daaScore}, ${cursor.origin === "wait-start" ? "the node's sink when this wait started" : "--since"}), ${cursorDaa - outputDaa} DAA behind. ` +
+              `${how ? `${how} ` : ""}Scanning forward cannot find that acceptance, so no state is claimed. ${fix}`,
             { exitCode: HardkasExitCode.RUNTIME_FAILURE }
           );
         }
@@ -463,7 +600,7 @@ async function waitOn(input: TxWaitRunnerInput, sdk: any, network: string): Prom
     `Timed out after ${Math.round(input.timeoutMs / 1000)}s waiting for ${input.txId} to be ${input.until.toUpperCase()}; last derived state: ${lastState}${lastError ? `; last observer error: ${lastError}` : ""}.` +
       (noCursor
         ? addresses.length > 0
-          ? ` No submission of this txId is recorded in this workspace: the looks scanned the node's virtual chain from ${cursor ? `${cursor.hash} (${cursor.origin === "wait-start" ? "its sink when this wait started" : "--since"})` : "no cursor (the node's sink could not be read)"} and did not find its acceptance, and no output of it is listed at ${addresses.join(", ")}. ` +
+          ? ` No submission of this txId is recorded in this workspace: the looks scanned the node's virtual chain from ${cursor ? `${cursor.hash} (${cursor.origin === "wait-start" ? "its sink when this wait started" : cursor.origin === "lookback" ? "the chain block the wait walked back to" : "--since"})` : "no cursor (the node's sink could not be read)"} and did not find its acceptance, and no output of it is listed at ${addresses.join(", ")}. ` +
             `It may not be accepted yet, or its outputs there were spent: run the wait again to continue, or pass --since <a chain block before its acceptance>.`
           : ` No submission of this txId is recorded in this workspace and no --since was given, so the looks scan the node's virtual chain from its pruning point onward, each one resuming where the previous one stopped. ` +
             `Pass --since <chainBlockHash> (a chain block before the tx's acceptance) to start there, or --address <an address it pays> to start at the node's sink when the wait starts (a tx accepted after that), or run the wait again to continue.`

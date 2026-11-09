@@ -57,8 +57,12 @@ const load = (config?: Record<string, unknown>) =>
 const l2 = (states: readonly ExtensionState[]) => states.find((s) => s.known.id === "l2")!;
 
 beforeEach(() => {
-  ws = fs.mkdtempSync(path.join(os.tmpdir(), "hk-ext-reg-"));
-  outside = fs.mkdtempSync(path.join(os.tmpdir(), "hk-ext-out-"));
+  // RC1 · R3: the long form of the temp directory. Where TEMP is an 8.3 short name (GitHub's Windows runner:
+  // C:\Users\RUNNER~1\...), pathToFileURL writes `~` as %7E and the dynamic import under vitest (vite-node) fails to
+  // load that URL ("Failed to load url …%7E1…"), which the registry then reports as load_failed. Node's own loader
+  // imports it; the registry is not at fault.
+  ws = fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(), "hk-ext-reg-")));
+  outside = fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(), "hk-ext-out-")));
   imported = [];
 });
 

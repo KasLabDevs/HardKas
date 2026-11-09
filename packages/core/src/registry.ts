@@ -151,6 +151,8 @@ export const HardkasSchemas = {
   AuditV1: "hardkas.audit.v1",
   PostReleaseBreakGauntletV1: "hardkas.postReleaseBreakGauntlet.v1",
   KaspaDoctorV1: "hardkas.kaspaDoctor.v1",
+  /** RC1 (D4) · `hardkas doctor --json`: the workspace diagnosis in sections (config, connectivity, identity, sync, capability). */
+  DoctorV1: "hardkas.doctor.v1",
   DevDoctorV1: "hardkas.devDoctor.v1",
   DevServerV1: "hardkas.devServer.v1",
   LocalWizardV1: "hardkas.localWizard.v1",

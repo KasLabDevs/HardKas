@@ -13,6 +13,9 @@ Returns a deterministic `signedTx` artifact object.
 
 ## `sdk.tx.send(signedTx)`
 Submits to the network and returns a `receipt` artifact.
+- On a real network the node must say it is synced (`getServerInfo.isSynced: true`), asked before anything is sent or
+  recorded; otherwise `NODE_NOT_SYNCED`. `{ allowUnsyncedNode: true }` lifts it on simnet and devnet only
+  (`SEND_UNSYNCED_NODE_NOT_ALLOWED` elsewhere). See `docs/status/send-routes-security.md`, note 7.
 
 ## `sdk.accounts.list()`
 Returns an array of strings representing available account addresses.

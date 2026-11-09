@@ -26,6 +26,8 @@ export interface FakeNodeOptions {
   readonly utxos?: ReadonlyArray<{ address: string; transactionId: string; index: number; amount: string; blockDaaScore: string }>;
   /** getVirtualChainFromBlock names acceptance data for the wrong blocks (rejected whole by the observer). */
   readonly incoherentChain?: boolean;
+  /** RC1-R2: chain blocks per getVirtualChainFromBlock answer (default 2000), to bound what one look can read. */
+  readonly chainBatch?: number;
 }
 
 export interface FakeNode {
@@ -176,7 +178,7 @@ export async function startFakeNode(label: string, opts: FakeNodeOptions): Promi
           if (i === undefined) return err(`cannot find header ${params?.startHash}`);
           const added: string[] = [];
           const acceptedIds: unknown[] = [];
-          for (let j = i + 1; j <= Math.min(i + 2000, tip); j++) {
+          for (let j = i + 1; j <= Math.min(i + (opts.chainBatch ?? 2000), tip); j++) {
             added.push(hashOf(j));
             acceptedIds.push({ acceptingBlockHash: opts.incoherentChain ? hashOf(j + 1) : hashOf(j), acceptedTransactionIds: [sha(`cb-${j}`), ...(acceptedAt.get(j) ?? [])] });
           }

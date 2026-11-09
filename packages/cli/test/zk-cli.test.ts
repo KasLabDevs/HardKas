@@ -298,7 +298,9 @@ describe("CLI ZK commands and truth in advertising", () => {
     const reqSdk = createRequire(resolve(repoRoot(), "packages", "sdk", "package.json"));
     const reqSnark = createRequire(reqSdk.resolve("snarkjs"));
     const ff = await import(pathToFileURL(reqSnark.resolve("ffjavascript")).href);
-    const curve = await (ff.buildBn128 ?? ff.default?.buildBn128)();
+    const buildBn128 = ff.buildBn128 ?? ff.default?.buildBn128;
+    if (typeof buildBn128 !== "function") throw new Error("ffjavascript exports no buildBn128");
+    const curve = await buildBn128();
     const target = mkdtempSync(resolve(os.tmpdir(), "hardkas-zk-cli-unpinned-"));
     try {
       const r = 21888242871839275222246405745257275088548364400416034343698204186575808495617n;

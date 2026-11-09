@@ -25,16 +25,16 @@ jobs:
     timeout-minutes: 90
 
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0 (tag v4 on 2026-11-06)
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0 (node24; resolved with git ls-remote on 2026-11-09)
 
       - name: Install Node.js
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0 (tag v4 on 2026-11-06)
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0 (node24; resolved with git ls-remote on 2026-11-09)
         with:
           # NODE-CI-PIN-1: the exact patched release this code was validated on (not a floating major).
           node-version: 24.22.1
 
       - name: Install pnpm
-        uses: pnpm/action-setup@a3252b78c470c02df07e9d59298aecedc3ccdd6d # v3.0.0 (branch v3 on 2026-11-06)
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0 (node24; resolved with git ls-remote on 2026-11-09)
         with:
           version: 9.15.4
 
@@ -44,10 +44,12 @@ jobs:
       - name: Build packages
         run: pnpm build
 
+      # RC1 · R3: cached per pin set, every file verified against the pin, only a failed download retried
+      # (.github/actions/hardkas-toolchains, scripts/ci-toolchain-install.mjs)
       - name: Install pinned Kaspa WASM and silverc toolchains
-        run: |
-          node packages/cli/dist/index.js toolchain install kaspa-wasm
-          node packages/cli/dist/index.js toolchain install silverc
+        uses: ./.github/actions/hardkas-toolchains
+        with:
+          ids: kaspa-wasm silverc
 
       - name: Pull the pinned node and miner images (by digest)
         run: |

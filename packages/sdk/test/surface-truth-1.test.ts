@@ -75,7 +75,10 @@ describe("SURFACE-TRUTH-1 · BEFORE · SDK surfaces", () => {
       const env = await sdk.capabilities.probeEnvironment();
       if (!env.kaspa.signingV1) return;
       const plan: any = await sdk.tx.plan({ from: "alice", to: "bob", amount: "1" });
-      const r: any = await attempt(() => sdk.tx.sign({ ...plan, txVersion: 1 }));
+      // RC1-R2: sealed, so the v1 decision is still what is reached (sign refuses an unsealed edit first, ARTIFACT_HASH_MISMATCH)
+      const { recomputeDeclaredContentHash } = await import("@hardkas/artifacts");
+      const v1: any = { ...plan, txVersion: 1 };
+      const r: any = await attempt(() => sdk.tx.sign({ ...v1, contentHash: recomputeDeclaredContentHash(v1) }));
       expect(r.error?.code === "BLOCKED_BY_DEPENDENCY" && /Upgrade to WASM v2/i.test(r.error.message)).toBe(false);
     });
   });

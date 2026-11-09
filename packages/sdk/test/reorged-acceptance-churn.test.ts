@@ -119,7 +119,8 @@ describe("False REORGED · accepting-block churn (live 2026-10-02 record run 2, 
     // The client the SDK holds is scripted; nothing leaves the process.
     vi.spyOn(sdk.rpc, "getBlockDagInfo").mockImplementation(async () => ({ networkId: "simnet", virtualDaaScore: node.virtualDaaScore, tipHashes: [node.sink], virtualParentHashes: [node.sink], sink: node.sink }) as any);
     vi.spyOn(sdk.rpc, "getSinkBlueScore").mockImplementation(async () => ({ blueScore: node.sinkBlueScore.toString() }));
-    vi.spyOn(sdk.rpc, "getServerInfo").mockImplementation(async () => ({ networkId: "simnet", serverVersion: "2.1.0" }) as any);
+    // RC1 · D3: a real send asks the node whether it is synced; this scripted node says it is (the suite is about churn)
+    vi.spyOn(sdk.rpc, "getServerInfo").mockImplementation(async () => ({ networkId: "simnet", serverVersion: "2.1.0", isSynced: true }) as any);
     vi.spyOn(sdk.rpc, "call").mockImplementation(async (method: string, params: any) => {
       switch (method) {
         case "getBlockDagInfo":

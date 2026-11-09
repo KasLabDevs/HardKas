@@ -23,7 +23,7 @@ function makePayload(data: string): PortableSigningPayload {
  */
 export class TestFakeAdapter implements PsktRuntimeAdapter {
   id = "test-fake-adapter";
-  kind: "custom" = "custom";
+  kind = "custom" as const;
 
   trustProfile: PsktAdapterTrustProfile = {
     processBoundary: "same-process",

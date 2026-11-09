@@ -1100,11 +1100,15 @@ export function registerTxCommands(program: Command) {
     )
     .option(
       "--address <address>",
-      "An address the tx pays (repeatable), for a tx sent outside this workspace with no --since: the scan starts at the node's sink when the wait starts, an output of the tx listed there before that point ends the wait (TX_WAIT_ACCEPTED_BEFORE_CURSOR), and the UTXO view is checked there",
+      "An address the tx pays (repeatable), for a tx sent outside this workspace with no --since: the scan starts at the node's sink when the wait starts; an output of the tx listed there before that point makes the wait walk back along the node's selected chain (--lookback) and scan from there, else it ends (TX_WAIT_ACCEPTED_BEFORE_CURSOR); the UTXO view is checked there",
       (value: string, previous: string[] = []) => [...previous, value]
     )
+    .option(
+      "--lookback <chainBlocks>",
+      "With --address: chain blocks the wait may walk back from the node's sink (getBlock, selected parent) to find a tx accepted before it started (default 1000, at most 10000, 0 = never); the acceptance is the node's own virtual-chain answer from there. Given explicitly, the wait starts at the sink even when this workspace stored looks at the txId"
+    )
     .option("--json", "Output as JSON", false)
-    .action(async (txId: string, options: { until: string; timeout: string; interval: string; network?: string; since?: string; address?: string[]; json: boolean }) => {
+    .action(async (txId: string, options: { until: string; timeout: string; interval: string; network?: string; since?: string; address?: string[]; lookback?: string; json: boolean }) => {
       if (options.json) UI.setJsonMode(true);
       const { HardkasCliError, HardkasExitCode } = await import("../cli-errors.js");
       if (options.until !== "accepted" && options.until !== "confirmed") {
@@ -1144,6 +1148,19 @@ export function registerTxCommands(program: Command) {
           if (!decodeKaspaAddress(a)) refuse(`--address must be a Kaspa address, got '${String(a).slice(0, 80)}'.`);
         }
       }
+      // RC1 · D2: --lookback bounds the walk back of a wait with --address; a misuse is refused before any connection
+      let lookback: number | undefined;
+      if (options.lookback !== undefined) {
+        const { TX_WAIT_MAX_LOOKBACK } = await import("../runners/tx-wait-runner.js");
+        const refuse = (why: string) => {
+          throw new HardkasCliError("TX_WAIT_USAGE", `${why} Nothing was observed.`, { exitCode: HardkasExitCode.USAGE_ERROR });
+        };
+        if (options.address === undefined) refuse("--lookback applies with --address (the walk back starts at the sink cursor a wait with --address chooses).");
+        if (!/^\d+$/.test(options.lookback) || Number(options.lookback) > TX_WAIT_MAX_LOOKBACK) {
+          refuse(`--lookback is a whole number of chain blocks from 0 to ${TX_WAIT_MAX_LOOKBACK}, got '${String(options.lookback).slice(0, 40)}'.`);
+        }
+        lookback = Number(options.lookback);
+      }
       // Demo-cut step 2 · T-A14b: the wait follows the Q4 derived state; it never
       // assumes confirmation and never prints "Settlement Proof".
       const { runTxWait, utxoViewRow } = await import("../runners/tx-wait-runner.js");
@@ -1156,6 +1173,7 @@ export function registerTxCommands(program: Command) {
         ...(options.network ? { network: options.network } : {}),
         ...(options.since !== undefined ? { since: options.since } : {}),
         ...(options.address !== undefined ? { addresses: options.address } : {}),
+        ...(lookback !== undefined ? { lookback } : {}),
         workspaceRoot: invocationWorkspaceRoot(),
         onUpdate: (line) => {
           if (!options.json) UI.logHuman(`  • ${line}`);
@@ -1190,6 +1208,12 @@ export function registerTxCommands(program: Command) {
       // Demo-ready: the node's UTXO view after the target was reached (a view, not a state).
       if (r.utxoView) {
         rows["UTXO View"] = utxoViewRow(r.utxoView);
+      }
+      // RC1 · D2: a tx accepted before the wait started, found by the bounded walk back (how the scan start was chosen)
+      if (r.cursor?.origin === "lookback" && r.cursor.lookback) {
+        rows["Scan Start"] =
+          `${r.cursor.hash} (DAA score ${r.cursor.daaScore}): accepted before this wait started, found by walking back ` +
+          `${r.cursor.lookback.steps} chain block(s) from the sink (--lookback ${r.cursor.lookback.limit})`;
       }
       UI.causality(
         r.outcome === "synthetic"

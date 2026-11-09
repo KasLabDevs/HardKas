@@ -37,6 +37,27 @@ const { receipt } = await sdk.tx.simulate(signed);
 
 For a real RPC-backed node, create the SDK with an explicit network/provider configuration and treat the send step as network-state dependent. Mainnet should remain outside the default local development flow.
 
+### Sending to a real node: the node must say it is synced
+
+`sdk.tx.send(signed)` on a real network first asks the node (`getServerInfo`) whether it is synced, before any read the send depends on and before anything is sent or recorded. Only `isSynced: true` lets the send go on; anything else (`false`, no answer about sync, a failed read) is refused with `NODE_NOT_SYNCED` (a `NodeSyncError` of `@hardkas/kaspa-rpc`), as the CLI's `hardkas tx send` does. `covenants.send` and every other SDK send go through `tx.send`. This is a **breaking change** of this release: before, the SDK sent to whatever node its client reached. A rusty-kaspad v2.1.0 node accepts a submission even while it says it is not synced, so the refusal is HardKAS's.
+
+```typescript
+try {
+  await sdk.tx.send(signed);
+} catch (e: any) {
+  if (e.code === "NODE_NOT_SYNCED") {
+    // a fresh local node with no miner says isSynced: false; mine a block (or let it sync) and retry
+  }
+}
+
+// Only for a controlled local simnet or devnet: send to a node that does not say it is synced.
+await sdk.tx.send(signed, { allowUnsyncedNode: true });
+```
+
+`allowUnsyncedNode` must be `true` or `false` (`SEND_OPTION_INVALID`), is refused on every network other than simnet and devnet (`SEND_UNSYNCED_NODE_NOT_ALLOWED`), and is never implied by another option. Mainnet broadcast stays disabled whatever it says. Being synced says nothing about a transaction: mempool, acceptance and confirmation are read with `sdk.tx.observe` / `sdk.tx.status`.
+
+What a plan cannot hold in this release, refused with a typed code: a lock time other than 0 (`LOCK_TIME_NOT_SUPPORTED`; no CLTV) and a spend from an ECDSA address (`ECDSA_SPEND_NOT_SUPPORTED`; paying to one works). See `docs/status/limitations.md`.
+
 ## 3. Artifacts And Queries
 
 The SDK can read artifacts, trace lineage, replay local records, and query the local projection:

@@ -14,7 +14,7 @@ export class HardkasL2 {
   }
   /**
    * L2 profiles live in `@hardkas/l2`, outside the core SDK (L2-EXT, D2): refuses with L2_EXTENSION_REQUIRED.
-   * Use `listL2Profiles()` from `@hardkas/l2` directly.
+   * Its replacement is `listL2Profiles()` in `@hardkas/l2`, which is not published in this release (a local build only).
    */
   listProfiles(): never {
     throw extensionRequired("listL2Profiles()");
@@ -22,7 +22,7 @@ export class HardkasL2 {
 
   /**
    * L2 profiles live in `@hardkas/l2`, outside the core SDK (L2-EXT, D2): refuses with L2_EXTENSION_REQUIRED.
-   * Use `getL2Profile(name)` from `@hardkas/l2` directly.
+   * Its replacement is `getL2Profile(name)` in `@hardkas/l2`, which is not published in this release (a local build only).
    */
   getProfile(_name: string): never {
     throw extensionRequired("getL2Profile(name)");

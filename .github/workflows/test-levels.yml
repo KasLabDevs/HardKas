@@ -34,10 +34,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0 (tag v4 on 2026-11-06)
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0 (node24; resolved with git ls-remote on 2026-11-09)
 
       - name: Check out the KCC-20 reference implementation (pinned commit)
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0 (tag v4 on 2026-11-06)
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0 (node24; resolved with git ls-remote on 2026-11-09)
         with:
           repository: argent-lang/kcc20-reference
           ref: ${{ env.KCC20_REFERENCE_COMMIT }}
@@ -45,13 +45,13 @@ jobs:
           persist-credentials: false
 
       - name: Install Node.js
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0 (tag v4 on 2026-11-06)
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0 (node24; resolved with git ls-remote on 2026-11-09)
         with:
           # NODE-CI-PIN-1: the exact patched release this code was validated on (not a floating major).
           node-version: 24.22.1
 
       - name: Install pnpm
-        uses: pnpm/action-setup@a3252b78c470c02df07e9d59298aecedc3ccdd6d # v3.0.0 (branch v3 on 2026-11-06)
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0 (node24; resolved with git ls-remote on 2026-11-09)
         with:
           version: 9.15.4
 
@@ -61,11 +61,12 @@ jobs:
       - name: Build packages
         run: pnpm build
 
-      - name: Install pinned Kaspa WASM toolchain
-        run: node packages/cli/dist/index.js toolchain install kaspa-wasm
-
-      - name: Install pinned silverc toolchain
-        run: node packages/cli/dist/index.js toolchain install silverc
+      # RC1 · R3: cached per pin set, every file verified against the pin, only a failed download retried
+      # (.github/actions/hardkas-toolchains, scripts/ci-toolchain-install.mjs)
+      - name: Install pinned Kaspa WASM and silverc toolchains
+        uses: ./.github/actions/hardkas-toolchains
+        with:
+          ids: kaspa-wasm silverc
 
       - name: silverc level
         env:
@@ -77,10 +78,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0 (tag v4 on 2026-11-06)
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0 (node24; resolved with git ls-remote on 2026-11-09)
 
       - name: Check out the KCC-20 reference implementation (pinned commit)
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0 (tag v4 on 2026-11-06)
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0 (node24; resolved with git ls-remote on 2026-11-09)
         with:
           repository: argent-lang/kcc20-reference
           ref: ${{ env.KCC20_REFERENCE_COMMIT }}
@@ -88,7 +89,7 @@ jobs:
           persist-credentials: false
 
       - name: Check out kaspanet/silverscript (pinned commit)
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0 (tag v4 on 2026-11-06)
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0 (node24; resolved with git ls-remote on 2026-11-09)
         with:
           repository: kaspanet/silverscript
           ref: ${{ env.SILVERSCRIPT_COMMIT }}
@@ -102,10 +103,10 @@ jobs:
           echo "silverscript HEAD: $head"
           test "$head" = "$SILVERSCRIPT_COMMIT" || { echo "::error::silverscript HEAD is $head, not the pinned $SILVERSCRIPT_COMMIT"; exit 1; }
 
-      # HK-22: pin this action to the commit of its v4 tag before the push (INT9 could not resolve it offline).
+      # HK-22 · RC1 R3: pinned by commit like every other action (it went by the floating tag v4 on 157fc03e4).
       - name: Cache the cli-debugger build of the pinned commit
         id: runner-cache
-        uses: actions/cache@v4
+        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0 (node24; resolved with git ls-remote on 2026-11-09)
         with:
           path: .silverscript/target/release/cli-debugger
           key: cli-debugger-${{ runner.os }}-${{ env.SILVERSCRIPT_COMMIT }}-${{ hashFiles('.silverscript/Cargo.lock', '.silverscript/rust-toolchain.toml', '.silverscript/rust-toolchain') }}
@@ -129,13 +130,13 @@ jobs:
           echo "HARDKAS_SILVER_RUNNER=$runner" >> "$GITHUB_ENV"
 
       - name: Install Node.js
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0 (tag v4 on 2026-11-06)
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0 (node24; resolved with git ls-remote on 2026-11-09)
         with:
           # NODE-CI-PIN-1: the exact patched release this code was validated on (not a floating major).
           node-version: 24.22.1
 
       - name: Install pnpm
-        uses: pnpm/action-setup@a3252b78c470c02df07e9d59298aecedc3ccdd6d # v3.0.0 (branch v3 on 2026-11-06)
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0 (node24; resolved with git ls-remote on 2026-11-09)
         with:
           version: 9.15.4
 
@@ -145,11 +146,12 @@ jobs:
       - name: Build packages
         run: pnpm build
 
-      - name: Install pinned Kaspa WASM toolchain
-        run: node packages/cli/dist/index.js toolchain install kaspa-wasm
-
-      - name: Install pinned silverc toolchain
-        run: node packages/cli/dist/index.js toolchain install silverc
+      # RC1 · R3: cached per pin set, every file verified against the pin, only a failed download retried
+      # (.github/actions/hardkas-toolchains, scripts/ci-toolchain-install.mjs)
+      - name: Install pinned Kaspa WASM and silverc toolchains
+        uses: ./.github/actions/hardkas-toolchains
+        with:
+          ids: kaspa-wasm silverc
 
       - name: SilverScript runner level
         env:
@@ -161,10 +163,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 120
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0 (tag v4 on 2026-11-06)
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0 (node24; resolved with git ls-remote on 2026-11-09)
 
       - name: Check out the KCC-20 reference implementation (pinned commit)
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0 (tag v4 on 2026-11-06)
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0 (node24; resolved with git ls-remote on 2026-11-09)
         with:
           repository: argent-lang/kcc20-reference
           ref: ${{ env.KCC20_REFERENCE_COMMIT }}
@@ -172,13 +174,13 @@ jobs:
           persist-credentials: false
 
       - name: Install Node.js
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0 (tag v4 on 2026-11-06)
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0 (node24; resolved with git ls-remote on 2026-11-09)
         with:
           # NODE-CI-PIN-1: the exact patched release this code was validated on (not a floating major).
           node-version: 24.22.1
 
       - name: Install pnpm
-        uses: pnpm/action-setup@a3252b78c470c02df07e9d59298aecedc3ccdd6d # v3.0.0 (branch v3 on 2026-11-06)
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0 (node24; resolved with git ls-remote on 2026-11-09)
         with:
           version: 9.15.4
 
@@ -188,11 +190,12 @@ jobs:
       - name: Build packages
         run: pnpm build
 
-      - name: Install pinned Kaspa WASM toolchain
-        run: node packages/cli/dist/index.js toolchain install kaspa-wasm
-
-      - name: Install pinned silverc toolchain
-        run: node packages/cli/dist/index.js toolchain install silverc
+      # RC1 · R3: cached per pin set, every file verified against the pin, only a failed download retried
+      # (.github/actions/hardkas-toolchains, scripts/ci-toolchain-install.mjs)
+      - name: Install pinned Kaspa WASM and silverc toolchains
+        uses: ./.github/actions/hardkas-toolchains
+        with:
+          ids: kaspa-wasm silverc
 
       - name: Pull the pinned node and miner images (by digest)
         run: |
@@ -220,7 +223,7 @@ jobs:
           if [ -n "$left" ]; then docker ps -a --filter "label=hardkas.ci.run=${{ github.run_id }}-${{ github.run_attempt }}"; echo "::error::harness containers left behind"; exit 1; fi
 
       - name: Upload the simnet evidence and the CLI lifecycle trace
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2 (tag v4 on 2026-11-06)
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0 (node24; resolved with git ls-remote on 2026-11-09)
         if: always()
         with:
           name: simnet-level-evidence

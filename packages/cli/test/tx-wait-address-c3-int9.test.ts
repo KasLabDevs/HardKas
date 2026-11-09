@@ -22,6 +22,15 @@ vi.setConfig({ testTimeout: 180_000, hookTimeout: 120_000 });
 //   * once the target is reached, the UTXO view is checked at --address (outputs only: the inputs are unknown here).
 // Without --address nothing changes (the pruning-point scan, STAGE-B-1's control). The fake answers like rusty-kaspa
 // 2.1.0 (JSON wRPC; UTXO rows carry the accepting block's DAA score, TN10-CONFIRMATION-RESEARCH-1). Loopback only.
+//
+// RC1 · D2 · a tx accepted BEFORE the wait started (its output's DAA score at or below the sink cursor's) is no longer
+// a dead end: the wait walks back from that cursor along the node's selected chain (getBlock → verboseData
+// .selectedParentHash), at most --lookback chain blocks (default 1000, hard maximum 10000, 0 = never), to the first
+// chain block whose DAA score is below the output's, and scans the virtual chain from there — the acceptance is then the
+// node's own getVirtualChainFromBlock answer, sealed in the observation like any other (never the UTXO row, never the
+// mempool). Checked first against a real rusty-kaspad v2.1.0 (R1 probe, evidence 01). Past the bound (or with --since,
+// which the wait never moves), TX_WAIT_ACCEPTED_BEFORE_CURSOR as before, now with both DAA scores, the distance and
+// what to pass. C3-2 keeps its case: its tx is 1500+ chain blocks behind, beyond the default bound.
 // -----------------------------------------------------------------------------
 
 const sha = (s: string) => crypto.createHash("sha256").update(s).digest("hex");
@@ -35,6 +44,8 @@ type Fake = {
   port: number;
   methods: string[];
   vcfStarts: string[];
+  /** RC1 · D2: the block hashes getBlock was asked for, in order. */
+  getBlocks: string[];
   hashOf(i: number): string;
   tip(): number;
   acceptAt?: number;
@@ -45,7 +56,20 @@ type Fake = {
  * A ticking simnet chain (one chain block per tick). `txid` pays `dest` 1 KAS; it is accepted at `acceptAt` — fixed, or
  * (`acceptAfterFirstScan`) that many blocks after the first virtual-chain request, i.e. after the wait started.
  */
-async function startFake(label: string, txid: string, opts: { acceptAt?: number; acceptAfterFirstScan?: number; tickMs?: number; startTip?: number }): Promise<Fake> {
+async function startFake(
+  label: string,
+  txid: string,
+  opts: {
+    acceptAt?: number;
+    acceptAfterFirstScan?: number;
+    tickMs?: number;
+    startTip?: number;
+    /** RC1 · D2: getBlock of this chain index fails */
+    brokenAt?: number;
+    /** RC1 · D2: the UTXO index lists the output, but no virtual-chain answer names the tx (the node's views disagree) */
+    chainOmitsTx?: boolean;
+  }
+): Promise<Fake> {
   const hashOf = (i: number) => sha(`c3-${label}-chain-${i}`);
   const index = new Map<string, number>();
   let tip = 0;
@@ -56,7 +80,7 @@ async function startFake(label: string, txid: string, opts: { acceptAt?: number;
   grow(opts.startTip ?? 2_000);
   const daa = (i: number) => DAA0 + i;
   const blue = (i: number) => BLUE0 + i;
-  const fake: Fake = { url: "", port: 0, methods: [], vcfStarts: [], hashOf, tip: () => tip, ...(opts.acceptAt !== undefined ? { acceptAt: opts.acceptAt } : {}), close: async () => {} };
+  const fake: Fake = { url: "", port: 0, methods: [], vcfStarts: [], getBlocks: [], hashOf, tip: () => tip, ...(opts.acceptAt !== undefined ? { acceptAt: opts.acceptAt } : {}), close: async () => {} };
   const accepted = () => fake.acceptAt !== undefined && tip >= fake.acceptAt;
   const timer = setInterval(() => grow(tip + 1), opts.tickMs ?? 10);
   const server = new WebSocketServer({ host: "127.0.0.1", port: 0 });
@@ -104,7 +128,9 @@ async function startFake(label: string, txid: string, opts: { acceptAt?: number;
         }
         case "getBlock": {
           const i = index.get(params?.hash);
+          fake.getBlocks.push(String(params?.hash));
           if (i === undefined) return err(`cannot find header ${params?.hash}`);
+          if (opts.brokenAt !== undefined && i === opts.brokenAt) return err(`some data is missing for block ${params?.hash}`);
           return ok({
             block: {
               header: { hash: hashOf(i), version: 1, parentsByLevel: i > 0 ? [[hashOf(i - 1)]] : [], hashMerkleRoot: zero, acceptedIdMerkleRoot: zero, utxoCommitment: zero, timestamp: 1792088193138 + i * 100, bits: 486722099, nonce: 0, daaScore: daa(i), blueWork: (blue(i) * 1000).toString(16), blueScore: blue(i), pruningPoint: hashOf(0) },
@@ -122,7 +148,7 @@ async function startFake(label: string, txid: string, opts: { acceptAt?: number;
           const acceptedIds: unknown[] = [];
           for (let j = i + 1; j <= Math.min(i + 1840, tip); j++) {
             added.push(hashOf(j));
-            acceptedIds.push({ acceptingBlockHash: hashOf(j), acceptedTransactionIds: j === fake.acceptAt ? [sha(`cb-${j}`), txid] : [sha(`cb-${j}`)] });
+            acceptedIds.push({ acceptingBlockHash: hashOf(j), acceptedTransactionIds: j === fake.acceptAt && !opts.chainOmitsTx ? [sha(`cb-${j}`), txid] : [sha(`cb-${j}`)] });
           }
           return ok({ removedChainBlockHashes: [], addedChainBlockHashes: added, acceptedTransactionIds: params?.includeAcceptedTransactionIds ? acceptedIds : [] });
         }
@@ -239,6 +265,112 @@ describe("INT9 · C3 · tx wait --address for a tx sent outside this workspace (
     expect(String(r.json.message), r.brief).toMatch(/--since/);
     expect(r.stdout, r.brief).not.toMatch(/"state"\s*:\s*"(ACCEPTED|CONFIRMED|FINALIZED)"/);
     expect(r.ms, `ended at once, not at the 120 s timeout: ${r.brief}`).toBeLessThan(60_000);
+    // RC1 · D2: the diagnosis names the cursor's DAA score, the distance, the bounded walk and how to go further
+    const m = /scan starts at ([0-9a-f]{64}) \(DAA score (\d+)/.exec(String(r.json.message));
+    expect(m, r.brief).not.toBeNull();
+    const cursorDaa = Number(m![2]);
+    expect(cursorDaa, r.brief).toBeGreaterThan(DAA0 + 500);
+    expect(String(r.json.message), r.brief).toContain(`${cursorDaa - (DAA0 + 500)} DAA behind`);
+    expect(String(r.json.message), r.brief).toMatch(/walked back 1000 chain blocks \(--lookback 1000\)/);
+    expect(String(r.json.message), r.brief).toMatch(/a larger --lookback \(at most 10000/);
+    // bounded: at most 1001 headers read on the walk, never a scan from the pruning point
+    expect(F.getBlocks.length, r.brief).toBeLessThanOrEqual(1001 + 5);
+    expect(F.vcfStarts, r.brief).not.toContain(F.hashOf(0));
+  });
+
+  it("C3-5 (RC1 · D2) accepted before the wait started, within --lookback: CONFIRMED in the node's own accepting block, found by walking back from the sink; the scan starts below the output's DAA score", async () => {
+    const TX = sha("c3-5-external");
+    const F = await startFake("c3-5", TX, { acceptAt: 1_960, startTip: 2_000, tickMs: 50 });
+    fakes.push(F);
+    const ws = workspace("c3-5", F.url);
+    const r = await run("C3-5", ["tx", "wait", TX, "--address", dest, "--until", "confirmed", "--timeout", "120", "--interval", "0.5", "--json"], ws);
+    expect(r.status, r.brief).toBe(0);
+    expect(r.json, r.brief).toMatchObject({ ok: true, command: "tx wait", outcome: "reached", state: "CONFIRMED" });
+    expect(r.json.derived.acceptingBlockHash, r.brief).toBe(F.hashOf(1_960));
+    expect(r.json.cursor, r.brief).toMatchObject({ origin: "lookback", hash: F.hashOf(1_959), daaScore: String(DAA0 + 1_959) });
+    expect(r.json.cursor.lookback, r.brief).toMatchObject({ limit: 1000, outputDaaScore: String(DAA0 + 1_960), outpoint: `${TX}:0` });
+    expect(r.json.cursor.lookback.from, r.brief).toMatch(/^[0-9a-f]{64}$/);
+    expect(Number(r.json.cursor.lookback.steps), r.brief).toBeGreaterThan(0);
+    expect(Number(r.json.cursor.lookback.steps), r.brief).toBeLessThanOrEqual(1000);
+    // the virtual chain was read from the walked-to block (and never from the pruning point)
+    expect(F.vcfStarts, r.brief).toContain(F.hashOf(1_959));
+    expect(F.vcfStarts, r.brief).not.toContain(F.hashOf(0));
+    expect(r.json.utxoView, r.brief).toMatchObject({ checked: true, converged: true, inputsUnknown: true });
+    // the acceptance is sealed in an observation of this workspace (the node's chain answer, not the UTXO row)
+    expect(observationsOf(ws).length, r.brief).toBeGreaterThan(0);
+    expect(r.dialled.every((d) => d === `LOOPBACK_CONNECT 127.0.0.1:${F.port}`), r.dialled.join(", ")).toBe(true);
+  });
+
+  it("C3-6 (RC1 · D2) --lookback too small for the distance: TX_WAIT_ACCEPTED_BEFORE_CURSOR, exit 1, after exactly that many chain blocks; no state claimed", async () => {
+    const TX = sha("c3-6-external");
+    const F = await startFake("c3-6", TX, { acceptAt: 1_900, startTip: 2_000, tickMs: 1_000 });
+    fakes.push(F);
+    const ws = workspace("c3-6", F.url);
+    const r = await run("C3-6", ["tx", "wait", TX, "--address", dest, "--lookback", "10", "--timeout", "120", "--interval", "0.5", "--json"], ws);
+    expect(r.status, r.brief).toBe(1);
+    expect(r.json, r.brief).toMatchObject({ ok: false, code: "TX_WAIT_ACCEPTED_BEFORE_CURSOR" });
+    expect(String(r.json.message), r.brief).toMatch(/walked back 10 chain blocks \(--lookback 10\)/);
+    expect(String(r.json.message), r.brief).toContain(`DAA score ${DAA0 + 1_900}`);
+    expect(r.stdout, r.brief).not.toMatch(/"state"\s*:\s*"(ACCEPTED|CONFIRMED|FINALIZED)"/);
+    expect(observationsOf(ws).every((f) => !/chain_accepted/.test(fs.readFileSync(path.join(ws, ".hardkas", "artifacts", "observations", f), "utf8"))), "no acceptance sealed").toBe(true);
+    const zero = await run("C3-6b", ["tx", "wait", TX, "--address", dest, "--lookback", "0", "--timeout", "120", "--interval", "0.5", "--json"], workspace("c3-6b", F.url));
+    expect(zero.status, zero.brief).toBe(1);
+    expect(zero.json, zero.brief).toMatchObject({ ok: false, code: "TX_WAIT_ACCEPTED_BEFORE_CURSOR" });
+    expect(String(zero.json.message), zero.brief).toMatch(/does not walk back \(--lookback 0\)/);
+    // the remedy the message names works in the SAME workspace: the failed wait stored its looks, and an explicit
+    // --lookback starts again from the sink instead of continuing that window forward (it would only time out)
+    const again = await run("C3-6c", ["tx", "wait", TX, "--address", dest, "--lookback", "1000", "--until", "accepted", "--timeout", "30", "--interval", "0.5", "--json"], ws);
+    expect(again.status, again.brief).toBe(0);
+    expect(again.json, again.brief).toMatchObject({ ok: true, outcome: "reached", cursor: { origin: "lookback" } });
+    expect(again.json.derived.acceptingBlockHash, again.brief).toBe(F.hashOf(1_900));
+  });
+
+  it("C3-7 (RC1 · D2) a walk the node cannot serve stops there: TX_WAIT_ACCEPTED_BEFORE_CURSOR naming the block, nothing claimed", async () => {
+    const TX = sha("c3-7-external");
+    const F = await startFake("c3-7", TX, { acceptAt: 1_950, startTip: 2_000, tickMs: 1_000, brokenAt: 1_980 });
+    fakes.push(F);
+    const ws = workspace("c3-7", F.url);
+    const r = await run("C3-7", ["tx", "wait", TX, "--address", dest, "--timeout", "120", "--interval", "0.5", "--json"], ws);
+    expect(r.status, r.brief).toBe(1);
+    expect(r.json, r.brief).toMatchObject({ ok: false, code: "TX_WAIT_ACCEPTED_BEFORE_CURSOR" });
+    expect(String(r.json.message), r.brief).toMatch(/walking back stopped/i);
+    expect(String(r.json.message), r.brief).toContain(F.hashOf(1_980));
+    expect(r.stdout, r.brief).not.toMatch(/"state"\s*:\s*"(ACCEPTED|CONFIRMED|FINALIZED)"/);
+  });
+
+  it("C3-9 (RC1 · D2) the UTXO index lists the output but the chain from the walked-to block does not name the tx: TX_WAIT_ACCEPTED_BEFORE_CURSOR at once (the views disagree), nothing claimed, never a forward scan to the timeout", async () => {
+    const TX = sha("c3-9-external");
+    const F = await startFake("c3-9", TX, { acceptAt: 1_970, startTip: 2_000, tickMs: 1_000, chainOmitsTx: true });
+    fakes.push(F);
+    const ws = workspace("c3-9", F.url);
+    const r = await run("C3-9", ["tx", "wait", TX, "--address", dest, "--timeout", "120", "--interval", "0.5", "--json"], ws);
+    expect(r.status, r.brief).toBe(1);
+    expect(r.json, r.brief).toMatchObject({ ok: false, code: "TX_WAIT_ACCEPTED_BEFORE_CURSOR" });
+    expect(String(r.json.message), r.brief).toMatch(/disagree/);
+    expect(String(r.json.message), r.brief).toContain(F.hashOf(1_969));
+    expect(F.vcfStarts, r.brief).toContain(F.hashOf(1_969));
+    expect(r.ms, `ended at once, not at the 120 s timeout: ${r.brief}`).toBeLessThan(60_000);
+    expect(r.stdout, r.brief).not.toMatch(/"state"\s*:\s*"(ACCEPTED|CONFIRMED|FINALIZED)"/);
+  });
+
+  it("C3-8 (RC1 · D2, usage) --lookback is an integer 0..10000 and applies with --address only: TX_WAIT_USAGE, exit 2, nothing contacted", async () => {
+    const F = await startFake("c3-8", sha("c3-8"), {});
+    fakes.push(F);
+    const ws = workspace("c3-8", F.url);
+    const cases = [
+      ["--address", dest, "--lookback", "10001"],
+      ["--address", dest, "--lookback", "ten"],
+      ["--address", dest, "--lookback", "1.5"],
+      ["--lookback", "10"]
+    ];
+    const dialled: string[] = [];
+    for (const [n, extra] of cases.entries()) {
+      const r = await run(`C3-8-${n}`, ["tx", "wait", sha("c3-8"), ...extra, "--json"], ws);
+      expect(r.status, r.brief).toBe(2);
+      expect(r.json, r.brief).toMatchObject({ ok: false, code: "TX_WAIT_USAGE" });
+      dialled.push(...r.dialled);
+    }
+    expect(dialled, "no connection").toEqual([]);
   });
 
   it("C3-3 (usage) --address that is not a Kaspa address, or on a simulator txId: TX_WAIT_USAGE, exit 2, nothing contacted", async () => {

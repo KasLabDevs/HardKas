@@ -79,7 +79,10 @@ They are not part of `pnpm test`. CI runs only the examples and the gauntlet (st
 | `pnpm docs:check-claims`, `pnpm check:docs`, `pnpm docs:check`, `pnpm docs:check-site` | nothing | pass |
 | `node scripts/check-dev-server-security.mjs` | a build | passes; the dev-server API is started with `hardkas sandbox` on a free port |
 | `pnpm example:*` (01 to 06) | a build, kaspa-wasm | pass offline; CI runs them in `hardkas-examples.yml` |
-| `node scripts/check-typescript-hygiene.mjs` | nothing | advisory only (style, about 170 `catch (e: any)`); not a gate |
+| `node scripts/check-typescript-hygiene.mjs` | nothing | advisory only (style): 187 `catch (e: any)` left on 2026-11-09, no other finding; not a gate |
+| `pnpm lint` | nothing | 0 errors on 2026-11-09 (541 `no-unused-vars` warnings); 14 packages have a `lint` script; not in CI yet |
+| `node scripts/check-artifact-registry.mjs` | a build | passes; three `hardkas.*` strings that are not artifact schemas (a ZK hash domain tag, two report-script schemas) are allowed only in their own file, with the reason |
+| `node scripts/check-release-tarballs.mjs --pack` | a build | packs the published packages with pnpm and audits each tarball offline (files, exports, README/LICENSE, no `workspace:`, no install scripts, no private paths or tokens, private packages left out) |
 | `pnpm gauntlet:toccata` | the canonical Docker localnet | CI runs it in `docker-suites.yml`; not run offline |
 | `pnpm qualification:public-npm` | the npm registry | not offline by design |
 

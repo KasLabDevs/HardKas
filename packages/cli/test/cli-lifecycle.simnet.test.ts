@@ -472,8 +472,12 @@ describe("CLI-LIFECYCLE-1 · the built CLI against a real rusty-kaspad (simnet)"
     expect(explain.stdout + explain.stderr, brief(explain)).toMatch(/signed in this workspace/);
   });
 
-  // INT9 · C3 against the real node: a second workspace with nothing of the transaction waits for it by an address it pays
-  it("C3 · tx wait --address from another workspace: CONFIRMED from the sink cursor, the same accepting block as the sender's; an old tx is TX_WAIT_ACCEPTED_BEFORE_CURSOR", async () => {
+  // INT9 · C3 against the real node: a second workspace with nothing of the transaction waits for it by an address it pays.
+  // RC1 · D2 (changed on purpose): a tx accepted long before the wait started used to end with
+  // TX_WAIT_ACCEPTED_BEFORE_CURSOR, always. The wait now walks back from the sink along the node's selected chain, at
+  // most --lookback chain blocks (default 1000), and finds it there: the old payment is CONFIRMED in the same accepting
+  // block as its sender's own wait. With a bound too small for the distance, the typed error stays, with its diagnosis.
+  it("C3 · tx wait --address from another workspace: CONFIRMED from the sink cursor, the same accepting block as the sender's; an old tx is found by the bounded walk back (or TX_WAIT_ACCEPTED_BEFORE_CURSOR past --lookback)", async () => {
     const other = path.join(parent, "watcher");
     fs.mkdirSync(path.join(other, ".hardkas"), { recursive: true });
     writeConfig(other);
@@ -498,11 +502,33 @@ describe("CLI-LIFECYCLE-1 · the built CLI against a real rusty-kaspad (simnet)"
     const own = await withMiner(() => hk("ext-wait-sender", ["tx", "wait", txId, "--timeout", "180", "--json"]));
     expect(own.json?.state, brief(own)).toBe("CONFIRMED");
     expect(watched.json?.derived?.acceptingBlockHash, brief(watched)).toBe(own.json?.derived?.acceptingBlockHash);
-    // invalid: a transaction accepted long before the watcher's wait starts
+    // RC1 · D2: a transaction accepted long before the watcher's wait starts. Precondition (the default bound): the
+    // node's sink is less than 1000 DAA past the payment's output.
+    const payOut = (await session.rpc.getUtxosByAddress(accounts.a2!)).find((u: any) => u.outpoint.transactionId === pay.txId);
+    const sinkDaa = BigInt(((await session.rpc.getBlockDagInfo()) as any).virtualDaaScore);
+    const outDaa = BigInt(payOut?.blockDaaScore ?? payOut?.raw?.utxoEntry?.blockDaaScore ?? -1);
+    trace.push({ label: "rc1-d2-distance", payOutput: `${pay.txId}:0`, outputDaaScore: String(outDaa), virtualDaaScore: String(sinkDaa) });
+    expect(sinkDaa - outDaa, "within the default --lookback of 1000 chain blocks").toBeLessThan(1000n);
+    // past the bound: --lookback 5 → the typed error, with both DAA scores and what to pass; no state claimed
+    const bounded = path.join(parent, "watcher-bounded");
+    fs.mkdirSync(path.join(bounded, ".hardkas"), { recursive: true });
+    writeConfig(bounded);
+    const tooFar = await hk("ext-wait-old-lookback-5", ["tx", "wait", pay.txId, "--address", accounts.a2!, "--lookback", "5", "--timeout", "120", "--json"], { cwd: bounded });
+    expect(tooFar.code, brief(tooFar)).toBe(1);
+    expect(tooFar.json, brief(tooFar)).toMatchObject({ ok: false, code: "TX_WAIT_ACCEPTED_BEFORE_CURSOR" });
+    expect(String(tooFar.json?.message), brief(tooFar)).toMatch(/walked back 5 chain blocks \(--lookback 5\)/);
+    expect(String(tooFar.json?.message), brief(tooFar)).toContain(`DAA score ${outDaa}`);
+    expect(tooFar.stdout, brief(tooFar)).not.toMatch(/"state"\s*:\s*"(ACCEPTED|CONFIRMED|FINALIZED)"/);
+    // within the bound (the default): CONFIRMED in the sender's own accepting block, scanned from the walked-to chain block
     const old = await hk("ext-wait-old", ["tx", "wait", pay.txId, "--address", accounts.a2!, "--timeout", "120", "--json"], { cwd: other });
-    expect(old.code, brief(old)).toBe(1);
-    expect(old.json, brief(old)).toMatchObject({ ok: false, code: "TX_WAIT_ACCEPTED_BEFORE_CURSOR" });
-    expect(old.stdout, brief(old)).not.toMatch(/"state"\s*:\s*"(ACCEPTED|CONFIRMED|FINALIZED)"/);
+    expect(old.code, brief(old)).toBe(0);
+    expect(old.json, brief(old)).toMatchObject({ outcome: "reached", state: "CONFIRMED", cursor: { origin: "lookback" } });
+    expect(old.json?.derived?.acceptingBlockHash, brief(old)).toBe(pay.acceptingBlockHash);
+    expect(BigInt(old.json?.cursor?.daaScore) < outDaa, brief(old)).toBe(true);
+    expect(old.json?.cursor?.lookback, brief(old)).toMatchObject({ limit: 1000, outpoint: `${pay.txId}:0`, outputDaaScore: String(outDaa) });
+    // oracle: the node's own header of that accepting block has the output's DAA score
+    const header: any = await session.rpc.call("getBlock", { hash: pay.acceptingBlockHash, includeTransactions: false });
+    expect(String(BigInt(header?.block?.header?.daaScore ?? header?.header?.daaScore)), brief(old)).toBe(String(outDaa));
     // invalid: not an address
     const bad = await hk("ext-wait-bad-address", ["tx", "wait", txId, "--address", "kaspasim:nope", "--json"], { cwd: other });
     expect(bad.code, brief(bad)).toBe(2);

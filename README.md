@@ -73,6 +73,9 @@ hardkas localnet status --json
 hardkas localnet fund alice --profile toccata-v2
 ```
 
+To run a node of your own instead (your container, your ports) and take one payment, a SilverScript contract and a
+covenant all the way to `artifact verify`, follow [Build on your own simnet](docs/start/build-on-simnet.md).
+
 ### 4. Visual Studio / IDE
 
 ```bash

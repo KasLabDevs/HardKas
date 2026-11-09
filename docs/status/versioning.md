@@ -114,7 +114,7 @@ These manifests are `private: true`:
 | Package | Why it is not published |
 | :-- | :-- |
 | `@hardkas/pskt-native` | On hold: its binary is built from rusty-kaspa 2.0.1 crates and exists for win32-x64 only. The SDK does not depend on it; its native PSKT adapter loads it on demand and reports `NATIVE_ADDON_NOT_INSTALLED` (provider version `unavailable`) without it. |
-| `@hardkas/ext-l2` | The L2 extension has never been published. `hardkas extension install l2` installs it from the registry, so it does not work against a registry until the package is published. The CLI's refusal of the extension's `l2` commands says so instead of recommending that install. |
+| `@hardkas/ext-l2` | The L2 extension has never been published. `hardkas extension install l2` refuses with `EXTENSION_NOT_PUBLISHED` before any package manager runs (nothing is installed); it works only from a local build, with `--from <tgz> --sha256 <hex>`. The CLI's refusal of the extension's `l2` commands says the same, with that offline command, instead of recommending a registry install. |
 | `@hardkas/l2` | Owner policy (2026-11-09, provisional): private until its API, its dependencies (`viem`) and its promises (signing and broadcasting on Igra, mainnet guard, fee ceilings) are reviewed. Its only workspace user is `@hardkas/ext-l2`; neither `@hardkas/cli` nor `@hardkas/sdk` depends on it. |
 | `@hardkas/storage-sqlite` | Internal. |
 | `@hardkas/testnet-qualification` | Internal qualification tooling. |

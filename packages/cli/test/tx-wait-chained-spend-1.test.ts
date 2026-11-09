@@ -116,7 +116,8 @@ describe("TX-WAIT-CHAINED-SPEND-1 · `tx wait` and an output of the transaction 
     node = new FakeNode();
     vi.spyOn(sdk.rpc, "getBlockDagInfo").mockImplementation(async () => ({ networkId: "simnet", virtualDaaScore: node.virtualDaaScore, tipHashes: [node.sink], virtualParentHashes: [node.sink], sink: node.sink }) as any);
     vi.spyOn(sdk.rpc, "getSinkBlueScore").mockImplementation(async () => ({ blueScore: node.sinkBlueScore.toString() }) as any);
-    vi.spyOn(sdk.rpc, "getServerInfo").mockImplementation(async () => ({ networkId: "simnet", serverVersion: "2.1.0" }) as any);
+    // RC1 · D3: the SDK's send asks the node whether it is synced; this scripted node says it is (the suite is about the UTXO view)
+    vi.spyOn(sdk.rpc, "getServerInfo").mockImplementation(async () => ({ networkId: "simnet", serverVersion: "2.1.0", isSynced: true }) as any);
     vi.spyOn(sdk.rpc, "call").mockImplementation(async (method: string, params: any) => node.call(method, params));
     vi.spyOn(sdk.rpc, "getUtxosByAddress").mockImplementation(async (address: string) => node.utxosByAddress(address) as any);
   });

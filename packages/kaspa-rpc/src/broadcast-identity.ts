@@ -1,5 +1,5 @@
-import { isMainnetNetworkId } from "@hardkas/core";
-import { NodeNetworkIdentityError, RpcError } from "./errors.js";
+import { isMainnetNetworkId, isSimnetNetworkId, networkTypeOf, redactUrlCredentials } from "@hardkas/core";
+import { NodeNetworkIdentityError, NodeSyncError, RpcError } from "./errors.js";
 
 /*
  * MAINNET-PERIMETER-1 (B1/B2) · the node's identity, decided right before a broadcast. A broadcast goes out only when
@@ -74,6 +74,64 @@ export function decideBroadcastIdentity(a: BroadcastIdentityAnswers): string {
     );
   }
   return a.server;
+}
+
+/*
+ * RC1 · D3 · the node's sync, decided before a broadcast by a caller that does not hold a client which already refuses
+ * an unsynced node at connection (the CLI's does, INT9-A I-3b): the SDK's tx.send and the wallet toolkit. Only
+ * `getServerInfo.isSynced === true` lets the broadcast go on; false, a missing or non-boolean value, a client with no
+ * getServerInfo, or a read that fails with anything but an RPC failure → NodeSyncError (NODE_NOT_SYNCED). An RPC failure
+ * (connection lost, timeout) propagates as it is. rusty-kaspad v2.1.0 itself accepts a submitTransaction while it says it
+ * is not synced (probed on simnet, RC1 R1 evidence 01): the refusal is HardKAS's. The explicit escape
+ * (`allowUnsynced`) is the caller's to validate — local networks only, see `unsyncedBroadcastAllowedOn`.
+ */
+
+/** RC1 · D3: the networks where a caller may explicitly broadcast to a node that does not say it is synced. */
+export function unsyncedBroadcastAllowedOn(network: string | undefined): boolean {
+  return isSimnetNetworkId(network) || networkTypeOf(network) === "devnet";
+}
+
+/** What the node said about its sync, as the check read it (never recorded). */
+export interface BroadcastNodeSync {
+  readonly isSynced: boolean | undefined;
+  /** True only when the node did not say it is synced and the caller allowed it explicitly. */
+  readonly allowedUnsynced: boolean;
+}
+
+/** RC1 · D3: asks the node, now, whether it is synced; refuses (NODE_NOT_SYNCED) unless it says so or `allowUnsynced`. */
+export async function assertBroadcastNodeSynced(
+  rpc: unknown,
+  args: { endpoint: string | undefined; expected: string; allowUnsynced?: boolean; operation: string }
+): Promise<BroadcastNodeSync> {
+  const client = rpc as { getServerInfo?: () => Promise<unknown> } | undefined;
+  let info: { isSynced?: unknown } | undefined;
+  let readFailure: string | undefined;
+  if (typeof client?.getServerInfo === "function") {
+    try {
+      info = (await client.getServerInfo()) as { isSynced?: unknown } | undefined;
+    } catch (e) {
+      if (e instanceof RpcError) throw e;
+      readFailure = e instanceof Error ? e.message : String(e);
+    }
+  } else {
+    readFailure = "the client offers no getServerInfo";
+  }
+  const isSynced = typeof info?.isSynced === "boolean" ? info.isSynced : undefined;
+  if (isSynced === true) return { isSynced, allowedUnsynced: false };
+  if (args.allowUnsynced === true) return { isSynced, allowedUnsynced: true };
+  const where = args.endpoint ? redactUrlCredentials(args.endpoint) : "the configured node";
+  const said =
+    isSynced === false
+      ? "says it is not synced (getServerInfo.isSynced: false)"
+      : readFailure !== undefined
+        ? `did not say whether it is synced (getServerInfo: ${readFailure})`
+        : "did not say whether it is synced (getServerInfo has no boolean isSynced)";
+  throw new NodeSyncError(
+    `NODE_NOT_SYNCED: the node at ${where} ${said}: ${args.operation} broadcasts only to a node that says it follows the current ` +
+      `chain (a well-identified node is not a synced node). Let it sync (a local node with no peers needs a recent block), ` +
+      `then retry; for a controlled simnet or devnet only, pass allowUnsyncedNode: true. Nothing was sent or recorded.`,
+    { endpoint: where, expected: args.expected, isSynced }
+  );
 }
 
 /** The two reads a broadcast check needs, as the HardKAS client interface offers them. */

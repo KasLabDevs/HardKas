@@ -9,6 +9,7 @@ import {
   feeLimitInForce,
   assertFeeWithinLimitInForce,
   resolveMaxFeeRate,
+  assertSpendableAddressScheme,
   type PendingSpendEvidence,
   type TxPlanResult,
   type UtxoProvider
@@ -145,6 +146,8 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
 
   const fromAddress = fromAccount.address as string;
   const toAddress = toAccount.address as string;
+  // RC1 · D7: HardKAS signs Schnorr P2PK spends only — a spend from an ECDSA address is refused before anything connects
+  assertSpendableAddressScheme(fromAddress, `the sender '${from}'`);
 
   // AUD-28: the change destination is resolved and checked like `to`; it is never inferred.
   let changeAddressResolved: string | undefined;

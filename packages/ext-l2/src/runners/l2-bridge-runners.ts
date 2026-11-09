@@ -84,10 +84,11 @@ function mapProfileToAssumptions(profile: L2NetworkProfile): L2BridgeAssumptions
     bridgePhase: profile.security.bridgePhase,
     trustlessExit: profile.security.trustlessExit,
     custodyModel: profile.security.custodyModel,
-    exitModel:
-      profile.security.bridgePhase === "zk"
-        ? "Trustless exit is available via ZK proofs."
-        : "Trustless exit is available only in the ZK phase.",
+    // RC1-R2 (D5): keyed on the profile's own trustlessExit, never on the phase name: a ZK phase alone does not make an
+    // exit trustless (packages/l2/src/bridge.ts), and these are static assumptions, not observations
+    exitModel: profile.security.trustlessExit
+      ? "This profile declares a trustless exit (a static assumption, not observed): verify the deployed proof-based withdrawal path before relying on it."
+      : "No trustless exit: that needs a deployed, working proof-based withdrawal path, and a ZK proof system alone is not enough (static assumption, not observed).",
     riskProfile: profile.security.riskProfile,
     notes: profile.security.notes,
     updatedAt: new Date().toISOString()

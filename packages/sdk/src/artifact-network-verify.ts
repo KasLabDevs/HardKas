@@ -44,7 +44,49 @@ export type ArtifactNetworkReason =
   | "MEMPOOL_IS_NOT_CONFIRMATION"
   | "BELOW_POLICY_DEPTH"
   | "ACCEPTING_BLOCK_NOT_LOCATED"
-  | "OBSERVATION_CONFLICTS_WITH_ARTIFACT";
+  | "OBSERVATION_CONFLICTS_WITH_ARTIFACT"
+  | "NOT_OBSERVABLE_HERE";
+
+/**
+ * RC1-R2 · why a transaction the node was asked about is NOT_OBSERVABLE_HERE: a limit of what THIS node can show now,
+ * never evidence that the transaction does not exist (an old payment, confirmed long ago, lands here):
+ *  - PRUNED_HISTORY           the virtual chain could only be read from the node's pruning point (not its genesis): an
+ *                             acceptance before it is no longer in the node's virtual chain;
+ *  - CURSOR_NOT_SERVED        the artifact's own cursor (a submission's submit point) is no longer served (pruned/unknown);
+ *  - OUTPUTS_SPENT_OR_ABSENT  the outputs the artifact names are not in the node's UTXO set: spent since, or never
+ *                             created — the UTXO set cannot tell which;
+ *  - NO_OUTPUTS_NAMED         the artifact names no output (a submission): the UTXO set cannot be asked;
+ *  - UTXO_LOOKUP_FAILED       the node did not answer the UTXO lookup;
+ *  - SCAN_INCOMPLETE          the virtual-chain read stopped before the node's tip (its batch bound, or the chain moved);
+ *  - NO_CHAIN_START           the node named no pruning point to read its virtual chain from;
+ *  - NODE_NOT_SYNCED          the node does not say it is synced: what it has not seen yet says nothing (found on
+ *                             rusty-kaspad: a confirmed payment read on another, unsynced simnet node came out NOT_FOUND).
+ * NOT_FOUND is kept only where absence is established: a node that says it is synced, the whole chain window from a
+ * cursor that precedes any acceptance (an explicit --since, the artifact's own served submit point, or a pruning point
+ * that is the genesis) up to the node's tip, nothing in the mempool, and no output in the UTXO set.
+ */
+export type ArtifactUnobservableCause =
+  | "NODE_NOT_SYNCED"
+  | "PRUNED_HISTORY"
+  | "CURSOR_NOT_SERVED"
+  | "OUTPUTS_SPENT_OR_ABSENT"
+  | "NO_OUTPUTS_NAMED"
+  | "UTXO_LOOKUP_FAILED"
+  | "SCAN_INCOMPLETE"
+  | "NO_CHAIN_START";
+
+/** The virtual-chain window one look read (RC1-R2): where it started, how that start was chosen, and whether it ended at the tip. */
+export interface ArtifactScanWindow {
+  readonly from?: string | undefined;
+  /** `explicit`: --since; `artifact`: the artifact's own cursor (a submission's submit point); `pruning-point`: the node's. */
+  readonly fromKind: "explicit" | "artifact" | "pruning-point";
+  readonly to?: string | undefined;
+  readonly chainBlocks: number;
+  /** Whether the node had no chain block after the last one read (`undefined`: it could not be asked). */
+  readonly reachedTip?: boolean | undefined;
+  /** For a pruning-point start: whether that block is the genesis (then the node's virtual chain holds all history). */
+  readonly fromGenesis?: boolean | undefined;
+}
 
 /** An output of the artifact's transaction, as the artifact describes it (to look up in a node's UTXO set). */
 export interface ArtifactSubjectOutput {
@@ -136,6 +178,10 @@ export interface ArtifactNetworkVerification {
     readonly message?: string | undefined;
     readonly node?: NetworkIdentity | undefined;
     readonly observation?: ArtifactNetworkObservation | undefined;
+    /** RC1-R2: for NOT_OBSERVABLE_HERE, why this node cannot show the transaction (a limitation, not inexistence). */
+    readonly causes?: readonly ArtifactUnobservableCause[] | undefined;
+    /** RC1-R2: for NOT_OBSERVED, the virtual-chain window the look read. */
+    readonly window?: ArtifactScanWindow | undefined;
   };
   readonly consensus: {
     readonly level: ArtifactConsensusLevel;
@@ -204,7 +250,7 @@ export async function verifyArtifactOnNetwork(input: {
   const { subject, client, node } = input;
   const policy = input.policy ?? TX_STATUS_POLICY_HARDKAS_DEFAULT_V1;
   if (isMainnetNetworkId(subject.networkId) || node.family === "mainnet") {
-    return notCheckedNetworkVerification("MAINNET_NETWORK_CHECK_BLOCKED", "HardKAS never contacts a mainnet node: mainnet records are verified offline only", { policy });
+    return notCheckedNetworkVerification("MAINNET_NETWORK_CHECK_BLOCKED", "artifact verification never contacts a mainnet node: mainnet records are verified offline only", { policy });
   }
   if (subject.simulated) {
     return notCheckedNetworkVerification("SIMULATED_ARTIFACT", "a simulated transaction exists on no network; its only evidence is the simulator's own, labelled as such", { policy });
@@ -241,13 +287,24 @@ export async function verifyArtifactOnNetwork(input: {
       systemRuntimeContext
     );
   let observation: TxObservation;
+  // RC1-R2: how the look's start was chosen, for the classification of a transaction the node does not show
+  let fromKind: ArtifactScanWindow["fromKind"] = input.since !== undefined ? "explicit" : subject.since !== undefined ? "artifact" : "pruning-point";
+  let cursorNotServed = false;
   try {
     try {
       observation = await look(input.since ?? subject.since);
+      if (fromKind === "artifact" && (observation.finding as { type: string }).type === "pruned_unobservable") {
+        // RC1-R2: the node answered the artifact's own cursor with "pruned/not found" (sealed, not thrown): as below
+        cursorNotServed = true;
+        fromKind = "pruning-point";
+        observation = await look(undefined);
+      }
     } catch (e) {
       // the artifact's own cursor (a submission's submit point) may be pruned by now: that says nothing about the
       // transaction, so the look is made again from the node's pruning point. An explicit --since is never replaced.
       if (input.since !== undefined || subject.since === undefined) throw e;
+      cursorNotServed = true;
+      fromKind = "pruning-point";
       observation = await look(undefined);
     }
   } catch (e: unknown) {
@@ -299,12 +356,14 @@ export async function verifyArtifactOnNetwork(input: {
   }
 
   // Not located in the virtual chain window the look read: the node's UTXO set can still show an output of it.
+  let utxoLookupFailed = false;
   const utxoHit = await (async () => {
     for (const out of subject.outputs) {
       let answer: any;
       try {
         answer = await client.getUtxosByAddresses([out.address]);
       } catch {
+        utxoLookupFailed = true;
         continue;
       }
       const hits = utxoEntriesOf(answer).filter((e) => e.transactionId === out.transactionId && (out.index === undefined || e.index === out.index));
@@ -376,14 +435,108 @@ export async function verifyArtifactOnNetwork(input: {
     };
   }
 
-  const window =
+  // RC1-R2: not shown by this node. Absence is established only by a complete window from a start that precedes any
+  // acceptance; otherwise the transaction is NOT_OBSERVABLE_HERE, with the causes that limit what this node can show.
+  const from: string | undefined = finding.scannedFrom ?? (finding.type === "not_found" && fromKind === "pruning-point" ? point.pruningPointHash : undefined);
+  const causes: ArtifactUnobservableCause[] = [];
+  let reachedTip: boolean | undefined;
+  let fromGenesis: boolean | undefined;
+  if (finding.type !== "not_found") {
+    // pruned_unobservable (the node could not serve the chain from where the look started), or any other finding
+    causes.push(cursorNotServed || fromKind === "artifact" ? "CURSOR_NOT_SERVED" : "PRUNED_HISTORY");
+  } else if (!from) {
+    causes.push("NO_CHAIN_START");
+  } else {
+    reachedTip = await chainEndsAt(client, finding.scannedTo ?? from);
+    if (reachedTip !== true) causes.push("SCAN_INCOMPLETE");
+    if (fromKind === "pruning-point") {
+      fromGenesis = await isGenesisBlock(client, from);
+      if (fromGenesis !== true) causes.push("PRUNED_HISTORY");
+    }
+  }
+  if (cursorNotServed && !causes.includes("CURSOR_NOT_SERVED")) causes.push("CURSOR_NOT_SERVED");
+  // RC1-R2: an unsynced node's view is not a negative either (no positive, no negative from it)
+  if (node.sync !== "synced") causes.unshift("NODE_NOT_SYNCED");
+  const scanWindow: ArtifactScanWindow = {
+    ...(from ? { from } : {}),
+    fromKind,
+    ...(finding.scannedTo ? { to: finding.scannedTo } : {}),
+    chainBlocks: Number(finding.scannedChainBlocks ?? 0),
+    ...(reachedTip !== undefined ? { reachedTip } : {}),
+    ...(fromGenesis !== undefined ? { fromGenesis } : {})
+  };
+  const read =
     finding.type === "not_found"
-      ? `not in the node's mempool, not in the virtual chain it read${finding.scannedFrom ? ` from ${finding.scannedFrom}` : ""} (${finding.scannedChainBlocks ?? 0} chain blocks)` +
+      ? `not in the node's mempool, not in the virtual chain it read${from ? ` from ${from}` : ""} (${finding.scannedChainBlocks ?? 0} chain blocks)` +
         `${subject.outputs.length ? ", no output of it in the UTXO set" : ""}`
       : `${finding.type}${finding.reason ? `: ${finding.reason}` : ""}`;
+  if (causes.length === 0) {
+    const start = fromKind === "explicit" ? "the --since block" : fromKind === "artifact" ? "the artifact's own submit point" : "the node's genesis";
+    return {
+      schema: "hardkas.artifactNetworkVerification.v1",
+      network: {
+        level: "NOT_OBSERVED",
+        reason: "NOT_FOUND",
+        message: `${read}: the whole window from ${start} to the node's tip was read and does not hold its acceptance`,
+        node,
+        window: scanWindow
+      },
+      consensus: { level: "NOT_CONFIRMED", reason: "NOT_FOUND", policy, scope: CONSENSUS_LEVEL_SCOPE }
+    };
+  }
+  causes.push(subject.outputs.length === 0 ? "NO_OUTPUTS_NAMED" : utxoLookupFailed ? "UTXO_LOOKUP_FAILED" : "OUTPUTS_SPENT_OR_ABSENT");
+  const why: Record<ArtifactUnobservableCause, string> = {
+    NODE_NOT_SYNCED: `the node ${node.sync === "not-synced" ? "says it is not synced" : "does not say it is synced"}, so what it has not seen says nothing`,
+    PRUNED_HISTORY: "the node's virtual chain starts at its pruning point, so an acceptance before it is no longer visible",
+    CURSOR_NOT_SERVED: "the artifact's own cursor is no longer served by the node (pruned or unknown)",
+    OUTPUTS_SPENT_OR_ABSENT: "its outputs are not in the node's UTXO set (spent since, or never created: the UTXO set cannot tell)",
+    NO_OUTPUTS_NAMED: "the artifact names no output to look up in the UTXO set",
+    UTXO_LOOKUP_FAILED: "the node did not answer the UTXO lookup",
+    SCAN_INCOMPLETE: "the virtual-chain read did not reach the node's tip",
+    NO_CHAIN_START: "the node named no pruning point to read its virtual chain from"
+  };
   return {
     schema: "hardkas.artifactNetworkVerification.v1",
-    network: { level: "NOT_OBSERVED", reason: "NOT_FOUND", message: window, node },
-    consensus: { level: "NOT_CONFIRMED", reason: "NOT_FOUND", policy, scope: CONSENSUS_LEVEL_SCOPE }
+    network: {
+      level: "NOT_OBSERVED",
+      reason: "NOT_OBSERVABLE_HERE",
+      message:
+        `${read}. Not observable on this node: ${causes.map((c) => why[c]).join("; ")}. ` +
+        `A limit of what this node can show now, not evidence that the transaction does not exist (an old transaction, confirmed long ago, looks like this)`,
+      causes,
+      node,
+      window: scanWindow
+    },
+    consensus: {
+      level: "NOT_CONFIRMED",
+      reason: "NOT_OBSERVABLE_HERE",
+      message: "this node cannot show the transaction, so it says nothing about its confirmation either way",
+      policy,
+      scope: CONSENSUS_LEVEL_SCOPE
+    }
   };
+}
+
+/** RC1-R2: whether the node has no chain block after `hash` (the read reached its tip); undefined when it cannot say. */
+async function chainEndsAt(client: KaspaRpcClient, hash: string): Promise<boolean | undefined> {
+  try {
+    const chain = await rpcObserverFor(client).rpc.getVirtualChainFromBlock(hash);
+    return Array.isArray(chain.addedChainBlockHashes) ? chain.addedChainBlockHashes.length === 0 : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/** RC1-R2: whether `hash` is the genesis (no parents, blue score 0): then the node's virtual chain holds all history. */
+async function isGenesisBlock(client: KaspaRpcClient, hash: string): Promise<boolean | undefined> {
+  try {
+    const raw: any = await client.call<any>("getBlock", { hash, includeTransactions: false });
+    const header: any = raw?.block?.header ?? raw?.getBlockResponse?.block?.header ?? raw?.header;
+    if (!header) return undefined;
+    const parents: unknown = header.parentsByLevel ?? header.parents;
+    const noParents = Array.isArray(parents) && parents.every((level) => !Array.isArray(level) || level.length === 0);
+    return noParents || String(header.blueScore ?? "") === "0";
+  } catch {
+    return undefined;
+  }
 }

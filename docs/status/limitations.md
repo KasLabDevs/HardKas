@@ -186,8 +186,20 @@ limits:
   offline only) and, on request, the network level (`NETWORK_OBSERVED`) and a
   confirmation by the declared policy (`CONSENSUS_CONFIRMED`, not finality) on a
   node of the artifact's own network. A transaction older than the node's pruning
-  point is seen only through an output still in its UTXO set; a spent one cannot
-  be observed there (`NOT_OBSERVED`);
+  point is seen only through an output still in its UTXO set; a spent one, an old
+  submission (it names no output) or one beyond the look's read window cannot be
+  observed there: `NOT_OBSERVED` with reason `NOT_OBSERVABLE_HERE` and its causes
+  (a limitation of that node, never evidence that the transaction does not exist);
+  `NOT_FOUND` only when the whole window from a start that precedes any acceptance
+  was read. There is no `--address` lookup of spent outputs;
+- `hardkas doctor` diagnoses the workspace's node (or `--url` / `--network`): one
+  bounded getServerInfo (`--timeout`, default 8000 ms), never mainnet (refused
+  without connecting), a public testnet only with the payments' opt-in, the
+  canonical localnet only when it is the workspace's node and Docker reports it
+  running. It reads what the node REPORTS (network, version, sync, UTXO index):
+  a node that lies consistently passes the endpoint checks; only the managed
+  localnet is proven by container and image digest. Without a node the diagnosis
+  is `partial` and says why;
 - the SilverScript runner (`SCRIPT_VM`, cli-debugger) has no official binary to
   pin and is always `UNVERIFIED`. It runs a scenario transaction, not the signed
   one. The `@hardkas/testing` covenant matchers therefore require
@@ -236,14 +248,36 @@ judge them: txids, fees at the node's minimum (one sompi less is refused), stora
 Schnorr signatures, coinbase maturity at the exact DAA boundary, relative time locks
 (sequence) and contract signature slots agree with the node. Known gaps:
 
-- a signed **v0 payment commits storage mass 0**: the node's mempool replaces the field with
-  its own value (HardKAS's computed one) and mines it, and the txid does not change, so a
-  payment sent through a node is unaffected; the signed artifact is not byte-for-byte the
-  mined transaction. The v1 engine commits the node's value;
-- HardKAS builds every transaction with **lock time 0**: an absolute time lock (CLTV)
-  cannot be satisfied by a HardKAS-built spend (NOT TESTED);
-- the accounts signer signs **Schnorr P2PK only**: paying an ECDSA address works, spending
-  from one is not supported (NOT TESTED).
+- a signed **v0 payment commits storage mass 0**, on purpose: payments stay v0 and their
+  signed bytes, txids and artifacts do not change (owner decision, 26-oct). The node's
+  mempool sets its own value, which is HardKAS's computed one (tx-builder, the node's
+  formula), and mines the transaction with it under the same txid: the transaction id does
+  not cover the storage-mass field, in v0 or in v1 (official kaspa-wasm 2.1.0). A payment
+  sent through a node is therefore unaffected; the signed artifact is not byte-for-byte the
+  mined transaction (that one field differs). Evidence: `v0-storage-mass-compat-rc1-d1`
+  pins a fixture payment's txid, fee and mass and the committed 0; rusty-kaspad v2.1.0 on
+  simnet holds and mines the computed value, with the exact fee, the exact output value and
+  the signed txid (`send-sync-v0-mass-rc1.simnet`, `construction-vectors-node.simnet` V-01).
+  The v1 engine commits the node's value. Changing the v0 representation needs a new,
+  versioned format and the owner's decision; none is proposed for this release;
+- HardKAS builds every transaction with **lock time 0** (no absolute time locks, CLTV, in
+  this release). `tx.plan({ lockTime })` other than 0 is refused (`LOCK_TIME_NOT_SUPPORTED`;
+  it used to be ignored), the CLI has no lock-time option (`UNKNOWN_OPTION`), the signer
+  refuses a plan that states another lock time (`LOCK_TIME_NOT_SUPPORTED`; it signed 0), and
+  a signed payment bound to its plan whose payload carries another lock time is not the
+  plan's transaction (`SIGNED_PLAN_MISMATCH` at send; it was sent). A transaction signed
+  elsewhere and sent with `allowUnplannedSignedTransaction` (`--allow-unplanned`) goes to the
+  node as it is: HardKAS does not evaluate lock times, the node does. NOT TESTED against a
+  node. Design for a later cycle: `docs/proposals/cltv-and-ecdsa-spends.md`;
+- the accounts signer signs **Schnorr P2PK only**. Paying an ECDSA address works (V-04, on
+  a real node). A spend **from** one is refused, typed, before any UTXO is read or any key
+  is used: by the planner (`tx.plan`, `hardkas tx plan`, consolidations) and by the signer
+  (`ECDSA_SPEND_NOT_SUPPORTED`). It used to be planned and then fail untyped at the signer
+  (`MISSING_INPUT_AUTHORIZER`), or, with a signing authorizer supplied, be signed with
+  Schnorr — a transaction the node can only reject. An unlocking script the caller makes
+  itself and hands the signer (a signature-script authorization, as for a P2SH input) is
+  used as given: HardKAS signs nothing for it. NOT TESTED against a node (nothing HardKAS
+  builds reaches one). Same proposal.
 
 ### `@hardkas/pskt-native` is on hold
 
@@ -309,10 +343,18 @@ Everything else runs at its own level, or in no gate at all:
 | the example programs 01 to 06 (`pnpm example:*`) | `.github/workflows/hardkas-examples.yml` | programs, not test suites; they run on the in-memory simulator and each one fails its CI step |
 
 The three CI jobs of `test-levels.yml` and the `docs-gates` job of `ci.yml` (the docs
-checks, `pnpm version:check`, `pnpm docs:check-apps-cli` and `pnpm check:licenses`) have
-not run in CI yet: they were added on a branch that is not pushed. The KCC-20 suites of
-these levels need `HARDKAS_TEST_KCC20_REFERENCE` (a checkout of argent-lang/kcc20-reference
-at its pinned commit, which CI makes) and fail without it.
+checks, `pnpm version:check`, `pnpm docs:check-apps-cli` and `pnpm check:licenses`) first ran
+in CI on 2026-11-09. The `docs-gates` job passed. The three levels, the semantic job, the
+Docker suites and the canonical gate on Ubuntu and macOS stopped while installing the pinned
+toolchains: GitHub answered anonymous release downloads with 504 that morning, and macOS was
+asked for a silverc that is not pinned there. The canonical gate on Windows ran and failed 3
+tests, all on the runner's 8.3 short temp path (`C:\Users\RUNNER~1\…`). The examples workflow
+failed its typecheck on a checkout with no `dist/`. The fixes (cached toolchains with a
+retried download, kaspa-wasm only on macOS, a long-name temp directory on Windows, a build of
+`@hardkas/testing` before the simulator's typecheck) have **not** run in CI yet, so none of
+those suites has a CI result. The KCC-20 suites of these levels need
+`HARDKAS_TEST_KCC20_REFERENCE` (a checkout of argent-lang/kcc20-reference at its pinned
+commit, which CI makes) and fail without it.
 
 The simnet harness keeps a node's data in a host directory only when asked: with
 `HARDKAS_TEST_SIMNET_DATA_ROOT` (or a suite's `dataRoot`) under that root, and with a
@@ -358,15 +400,40 @@ testnet-10). Two ways in:
   sink when the wait starts, which finds a transaction **accepted after the wait
   started**. Each look that has not found it yet reads the UTXOs at that address:
   an output of the transaction carries the DAA score of its accepting chain block
-  (checked on a rusty-kaspad 2.1.0 simnet), and one at or before the cursor's ends
-  the wait at once with `TX_WAIT_ACCEPTED_BEFORE_CURSOR` (no state is claimed;
-  give `--since`). Once the target is reached the UTXO view is checked at the
-  address, outputs only (the inputs are unknown here). An output spent before it
-  was seen leaves only the scan, which then times out if the acceptance was
-  before the wait. No backward header search is made.
+  (checked on a rusty-kaspad 2.1.0 simnet). Once the target is reached the UTXO
+  view is checked at the address, outputs only (the inputs are unknown here).
+- a transaction **accepted before the wait started** (RC1 · D2): when that output's
+  DAA score is at or below the sink cursor's, the wait walks back from the cursor
+  along the node's selected chain (`getBlock`, then the block's
+  `verboseData.selectedParentHash`), one chain block at a time, to the first chain
+  block whose DAA score is below the output's, and scans the virtual chain from
+  there (`getVirtualChainFromBlock` with accepted ids). The acceptance is then the
+  node's own chain answer, sealed in the observation like any other: never the
+  UTXO row, never the mempool. The walk is bounded: `--lookback <chain blocks>`,
+  default 1000, at most 10000, `0` = never walk. Each step is one `getBlock`
+  request (under a second for 1000 steps against the loopback stand-in node of the
+  tests; a remote node costs one round trip per step). Past the bound, with `--lookback 0`, behind an explicit `--since`
+  (never moved), or when the node does not serve a block of the walk, the wait ends
+  at once with `TX_WAIT_ACCEPTED_BEFORE_CURSOR`: no state is claimed, and the
+  message gives the output's DAA score, the cursor's, the distance, how far the walk
+  went and what to pass (`--since <a chain block before that DAA score>`, or a larger
+  `--lookback`). `--json` gives `cursor.origin: "lookback"` and `cursor.lookback`
+  (the start, the steps, the bound, the output) when the walk found the scan start.
+  A wait stores its looks, so a second wait in the same workspace continues the
+  stored window forward; an explicit `--lookback` starts again from the sink (the
+  remedy the error names works in the same workspace).
+  Checked first on a real node: the output's DAA score is its accepting block's, the
+  verbose data names the selected parent with `includeTransactions: false`, and the
+  chain from the walked-to block names the accepting block (R1 probe, simnet).
+- An output spent before it was seen leaves only the forward scan, which then
+  times out if the acceptance was before the wait.
 
-Evidence: simnet (rusty-kaspad 2.1.0, `cli-lifecycle.simnet`) and a loopback
-stand-in node (`tx-wait-address-c3-int9`). No testnet-10 evidence.
+Evidence: simnet (rusty-kaspad 2.1.0, `cli-lifecycle.simnet`: a payment accepted
+~700 DAA before the watcher's wait is CONFIRMED in the sender's own accepting
+block; `--lookback 5` gives the typed error) and a loopback stand-in node
+(`tx-wait-address-c3-int9`, C3-1 to C3-8). The bound is in chain blocks: one per
+DAA score on a single-miner simnet; fewer than the DAA distance on a busy network.
+No testnet-10 evidence.
 
 ### Snapshots do not capture remote node state
 
@@ -394,6 +461,23 @@ something else replaced the global after HardKAS loaded. This is a compatibility
 shim, not a HardKAS transport: the SDK still drives the connection. It comes out
 once the upstream combination is fixed (see
 `packages/kaspa-rpc/src/upstream/node-websocket-compat.ts`).
+
+### Rough edges on the start path (found running it as written)
+
+Running [Build on your own simnet](../start/build-on-simnet.md) as written, with
+the packages installed from this release's tarballs, found these. None blocks the
+path; the start pages work around each one. Four others it found are fixed in
+this release: `--state-map` takes a file path too and refuses an invalid value
+with `SILVER_ARGS_INVALID`; the plain-text `tx receipt` of a network submission
+shows its sender, recipient, amount and fee; a `getMempoolEntry` lookup answered
+"not found" is no longer logged as an error; `artifact inspect` of a plan no
+longer prints an invented receipt reference.
+
+| Rough edge | Workaround on the start pages |
+| :-- | :-- |
+| Some refusals print no error code in plain text (`tx send` of an edited artifact, `tx plan` with nothing to spend). | `--json` shows the `code`. |
+| `hardkas init` in a directory that already has a `package.json` adds no test script or test dependencies, yet its hint says `npm test`. | The install page adds `@hardkas/testing`, vitest and the script. |
+| No CLI command prints an account's x-only public key, which a SilverScript `pubkey` constructor argument needs as a list of bytes. | A short helper reads `.hardkas/accounts.real.json`. |
 
 ## Related
 

@@ -110,7 +110,9 @@ export function expectedScriptPublicKeyHex(address: string): string | undefined 
 /** Parses a signed payload into `{ inputs: outpoint keys, outputs: amounts (+script/address) }`, or explains why it cannot. */
 export function parseSignedTransactionPayload(
   payload: unknown
-): { ok: true; inputs: string[]; outputs: Array<{ amount: bigint; script?: string; address?: string }> } | { ok: false; reason: string } {
+):
+  | { ok: true; inputs: string[]; outputs: Array<{ amount: bigint; script?: string; address?: string }>; lockTime?: bigint | "invalid" }
+  | { ok: false; reason: string } {
   let parsed: any = payload;
   if (typeof payload === "string") {
     try {
@@ -147,7 +149,10 @@ export function parseSignedTransactionPayload(
     outputs.push({ amount, ...(script ? { script } : {}), ...(address ? { address } : {}) });
   }
   if (inputs.length === 0 || outputs.length === 0) return { ok: false, reason: "the signed transaction has no inputs or no outputs" };
-  return { ok: true, inputs, outputs };
+  // RC1 · D7: the lock time it states (absent = not stated); a value that is not an integer is reported as such
+  const rawLockTime = tx.lockTime ?? tx.lock_time;
+  const lockTime = rawLockTime === undefined || rawLockTime === null ? undefined : toBig(rawLockTime) ?? "invalid";
+  return { ok: true, inputs, outputs, ...(lockTime !== undefined ? { lockTime } : {}) };
 }
 
 type PlanLike = {
@@ -177,6 +182,10 @@ export function checkSignedAgainstPlan(
   }
   const parsed = parseSignedTransactionPayload(signedTransaction.payload);
   if (!parsed.ok) return insufficient(parsed.reason);
+  // RC1 · D7: a HardKAS plan authorizes lock time 0 only (no CLTV in this release); another one is another transaction
+  if (parsed.lockTime !== undefined && parsed.lockTime !== 0n) {
+    return mismatch(`the signed transaction has lock time ${String(parsed.lockTime)}, and a plan authorizes lock time 0 only`);
+  }
 
   // Inputs: 1:1 by outpoint, both directions.
   const planInputs = new Map<string, bigint>();

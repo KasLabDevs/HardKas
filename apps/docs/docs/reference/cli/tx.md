@@ -231,7 +231,8 @@ title: hardkas tx
 - `--interval &lt;seconds&gt;` (Default: `2`): Seconds between observations
 - `-n, --network &lt;network&gt;`: Network whose configured node observes (default: the network of the recorded submission)
 - `--since &lt;chainBlockHash&gt;`: Scan the node's virtual chain from this chain block (64 hex; it must precede the tx's acceptance) on the first look — for a tx sent outside this workspace
-- `--address &lt;address&gt;`: An address the tx pays (repeatable), for a tx sent outside this workspace with no --since: the scan starts at the node's sink when the wait starts, an output of the tx listed there before that point ends the wait (TX_WAIT_ACCEPTED_BEFORE_CURSOR), and the UTXO view is checked there
+- `--address &lt;address&gt;`: An address the tx pays (repeatable), for a tx sent outside this workspace with no --since: the scan starts at the node's sink when the wait starts; an output of the tx listed there before that point makes the wait walk back along the node's selected chain (--lookback) and scan from there, else it ends (TX_WAIT_ACCEPTED_BEFORE_CURSOR); the UTXO view is checked there
+- `--lookback &lt;chainBlocks&gt;`: With --address: chain blocks the wait may walk back from the node's sink (getBlock, selected parent) to find a tx accepted before it started (default 1000, at most 10000, 0 = never); the acceptance is the node's own virtual-chain answer from there. Given explicitly, the wait starts at the sink even when this workspace stored looks at the txId
 - `--json` (Default: `false`): Output as JSON
 
 ---

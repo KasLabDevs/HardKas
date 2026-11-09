@@ -1,0 +1,56 @@
+name: HardKAS pinned toolchains
+description: >-
+  RC1 · R3. Restores this pin set's verified toolchains from the Actions cache, installs what is missing with the
+  HardKAS CLI (release asset and every installed file checked against the pin; only a failed download is retried) and
+  saves a new install to the cache. A restored copy is never trusted as is: `hardkas toolchain install` verifies every
+  file against the pin and reinstalls on any mismatch.
+  Needs the repository checked out, Node.js and the built CLI (packages/cli/dist).
+
+inputs:
+  ids:
+    description: Space-separated toolchain ids, in install order (kaspa-wasm, silverc)
+    required: true
+
+runs:
+  using: composite
+  steps:
+    # The key names the OS, the architecture, the ids and the pins (packages/core/src/toolchains.ts): a new pin is a new
+    # cache entry, and a job that installs fewer toolchains never fills the entry of one that installs more.
+    - name: Cache key of this pin set
+      id: key
+      shell: bash
+      env:
+        IDS: ${{ inputs.ids }}
+        PINS: ${{ hashFiles('packages/core/src/toolchains.ts') }}
+      run: |
+        set -euo pipefail
+        test -n "$PINS" || { echo "::error::packages/core/src/toolchains.ts not found: check out the repository first"; exit 1; }
+        ids="$(echo "$IDS" | tr -s ' ' '+')"
+        echo "key=hardkas-toolchains-${RUNNER_OS}-${RUNNER_ARCH}-${ids}-${PINS}" >> "$GITHUB_OUTPUT"
+
+    - name: Restore the verified toolchains
+      id: restore
+      uses: actions/cache/restore@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0 (node24; resolved with git ls-remote on 2026-11-09)
+      with:
+        path: |
+          ~/.hardkas/toolchains
+          !~/.hardkas/toolchains/.downloads
+        key: ${{ steps.key.outputs.key }}
+
+    - name: Install and verify the pinned toolchains
+      shell: bash
+      env:
+        IDS: ${{ inputs.ids }}
+      # word splitting of $IDS is intended: one argument per id
+      run: node scripts/ci-toolchain-install.mjs $IDS
+
+    # Saved right after a verified install, whatever happens later in the job (the cache action's own post step saves
+    # only when the whole job passes).
+    - name: Save the verified toolchains
+      if: steps.restore.outputs.cache-hit != 'true'
+      uses: actions/cache/save@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0 (node24; resolved with git ls-remote on 2026-11-09)
+      with:
+        path: |
+          ~/.hardkas/toolchains
+          !~/.hardkas/toolchains/.downloads
+        key: ${{ steps.key.outputs.key }}

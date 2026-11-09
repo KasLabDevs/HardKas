@@ -1480,17 +1480,17 @@ hardkas chaos replay --run-seed 42">
                   architectural class.
                 </td>
 <td>
-                  Not part of the current HardKAS CLI: the L2 transaction, RPC and bridge
-                  commands are not registered. Moving this code to Labs is planned.
+                  Not part of the HardKAS core CLI: the L2 commands come only with the
+                  experimental l2 extension, which is not published in this release.
                 </td>
 </tr>
 <tr>
 <td>Bridge phases</td>
 <td>Pre-ZK → MPC/committee-style assumptions → ZK exit phase.</td>
 <td>
-                  Modelled in the unregistered <code>l2</code> package, where
-                  <code>trustlessExit</code> stays false until the ZK phase. No bridge
-                  workflow ships in the CLI.
+                  Modelled in the unpublished <code>l2</code> package, where
+                  <code>trustlessExit</code> is false: a ZK phase alone does not make an exit
+                  trustless. No bridge workflow ships in the CLI.
                 </td>
 </tr>
 </tbody>
@@ -2714,7 +2714,7 @@ hardkas chaos replay --run-seed 42">
 <div class="details-body">
 <p>
                   No. No bridge workflow ships in the CLI, and the bridge model keeps
-                  trustless exit false until a ZK phase exists and is explicitly implemented.
+                  trustless exit false: it would need a deployed, working proof-based withdrawal path.
                 </p>
 </div>
 </details>

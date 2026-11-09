@@ -67,7 +67,7 @@ export async function checkArtifactOnNetwork(artifact: unknown, opts: ArtifactNe
   if (core.isMainnetNetworkId(network) || core.isMainnetNetworkId(subject.networkId)) {
     return notCheckedNetworkVerification(
       "MAINNET_NETWORK_CHECK_BLOCKED",
-      "mainnet is verified offline only: HardKAS never contacts a mainnet node (not even read-only). Nothing was contacted.",
+      "mainnet is verified offline only: artifact verify never contacts a mainnet node (not even read-only). Nothing was contacted.",
       { policy }
     );
   }

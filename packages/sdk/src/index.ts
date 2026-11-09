@@ -43,6 +43,9 @@ export type { FundDevWalletsOptions } from "./node.js";
 export { HardkasAccounts } from "./accounts.js";
 export { HardkasTx } from "./tx.js";
 export { PAYMENT_PREFLIGHT_GUARANTEE, preflightPaymentSend } from "./payment-preflight.js";
+// RC1 · D3: tx.send's synced-node rule (NODE_NOT_SYNCED) and its explicit local escape (allowUnsyncedNode)
+export { unsyncedSendAllowedOn, type SendNodeSyncOptions } from "./send-node-sync.js";
+export type { SendTxOptions } from "./tx.js";
 // ESCROW-SAFETY-2 / MULTINODE-READ-1: one look at a node about a txId (mempool, accepting chain block), for callers that
 // hold their own client (the dev-server escrow; one look per node of a read-only set)
 export { observeTxOnce, rpcObserverFor } from "./tx-observer.js";

@@ -11,6 +11,9 @@
     "typecheck": {
       "dependsOn": ["^build"]
     },
+    "@hardkas/simulator#typecheck": {
+      "dependsOn": ["^build", "@hardkas/testing#build"]
+    },
     "lint": {},
     "dev": {
       "cache": false,

@@ -207,6 +207,12 @@ export interface SilverReadinessOptions {
   readonly endpoint?: { readonly url: string; readonly network: string } | undefined;
   /** No node could be chosen (why, with its code): reported as the node check, nothing contacted. */
   readonly unresolved?: string | undefined;
+  /**
+   * RC1-R2 (D4): the identity record the caller already probed for that same node (the endpoint's, or the canonical
+   * localnet's when `endpoint` is absent), with its own bounded timeout: judged by the same rules, never probed again.
+   * `hardkas doctor` passes the record its connectivity and identity sections were built from.
+   */
+  readonly identity?: NodeIdentityRecord | undefined;
 }
 
 /** How to check another node when the canonical one did not prove itself. */
@@ -225,7 +231,7 @@ async function nodeReadiness(options: SilverReadinessOptions): Promise<SilverRea
     if (network === "mainnet") return { ok: false, verification: "unresolved", url: shown, network, detail: "mainnet is refused: nothing was contacted" };
     try {
       const { verifyEndpointIdentity } = await import("@hardkas/node-runner");
-      const id = await verifyEndpointIdentity(url, network);
+      const id = options.identity ?? (await verifyEndpointIdentity(url, network));
       // INT9 (A × C5): identity first, then sync, as the Silver commands require both
       if (id.verified && id.kind === "rusty-kaspad" && syncOf(id) !== "synced") {
         return {
@@ -261,7 +267,7 @@ async function nodeReadiness(options: SilverReadinessOptions): Promise<SilverRea
   }
   try {
     const { verifyNodeIdentity } = await import("@hardkas/node-runner");
-    const id = await verifyNodeIdentity();
+    const id = options.identity ?? (await verifyNodeIdentity());
     // HK-01: only a verified rusty-kaspad counts (never a simulator, whatever the environment); the detail names the
     // container and the digest that were observed.
     const container = id.observed.container?.name;

@@ -284,7 +284,7 @@ title: hardkas silver
 
 - `--policy &lt;name&gt;`: Covenant declaration (policy function) to call
 - `--constructor-args &lt;file&gt;`: Constructor arguments of the current state (checked against the record)
-- `--state-map &lt;json&gt;`: State field -&gt; constructor parameter index, e.g. &#123;"value":0&#125;
+- `--state-map &lt;json|file&gt;`: State field -&gt; constructor parameter index: inline JSON such as &#123;"value":0&#125;, or the path of a JSON file with it
 - `--next-state &lt;file&gt;`: Successor state: JSON object of &#123;kind, value&#125; per field
 - `--compute-budget &lt;n&gt;`: Compute budget of the covenant input, or 'estimate' (rusty-kaspa's upper bound); default: the certified budget of this entry, else that estimate
 - `--args &lt;file&gt;`: Entry arguments: JSON list of &#123;kind, value&#125; and &#123;"kind":"signature","account":"&lt;name&gt;"&#125;

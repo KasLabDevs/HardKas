@@ -7,7 +7,7 @@ hardkas init boundary-project
 cd boundary-project
 ```
 
-By default, HardKAS runs its tests on `simnet` (a fully simulated memory graph) or a local Dockerized network (`localnet`). HardKAS prevents mainnet interaction unless explicitly overridden or allowed via policies.
+By default, HardKAS runs its tests on the in-memory simulator (`network: "simulated"`). `simnet` is not a simulation: it is a real Kaspa network run by a local `rusty-kaspad` node in Docker, either the managed localnet or a node of your own ([Run your own simnet node](../start/simnet-node.md)). Public testnets need an explicit opt-in in `hardkas.config.ts`, and mainnet signing and broadcast are refused in this release: no flag or policy lifts that.
 
 If you attempt to write a test scenario that enforces a capability it doesn't possess, it will fail predictably.
 

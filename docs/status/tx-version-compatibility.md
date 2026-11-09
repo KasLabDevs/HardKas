@@ -7,10 +7,20 @@ This document outlines the compatibility between HardKAS transaction abstraction
 | --- | --- | --- |
 | Standard Sends | Fully Supported | Supported via `version: 1` |
 | Fee Estimation | Heuristic | Dynamic Toccata Fee Model |
-| Signatures | ECDSA / Schnorr | Schnorr |
+| Signatures | HardKAS signs Schnorr P2PK. Paying TO an ECDSA address works; a spend FROM one is refused when planned and when signed (`ECDSA_SPEND_NOT_SUPPORTED`) | Schnorr (P2PK inputs; contract slots by the v1 engine) |
 | Covenants | Unsupported | Native Support |
-| Storage Mass | Unsupported | Calculated Contextually (Wire field available) |
+| Storage Mass | Computed by HardKAS (the node's formula) for the plan's mass and fee; the signed transaction **commits 0** (format kept on purpose). The node's mempool sets its own value, equal to HardKAS's, and mines it under the same txid: the id does not cover the field | Committed by the v1 engine (the node's value) |
+| Lock Time | Always 0 (`LOCK_TIME_NOT_SUPPORTED` for another one) | Always 0 |
 | Compute Budget | Unsupported | Required for V1 |
+
+RC1 · D1 · the v0 storage-mass commitment, measured: a fixture payment's txid, fee and mass are pinned by
+`packages/accounts/test/v0-storage-mass-compat-rc1-d1.test.ts` (txid `b26f6c31…f9d0`, fee 315 400 sompi, mass 4 890,
+committed storage mass 0); against rusty-kaspad v2.1.0 on simnet (`send-sync-v0-mass-rc1.simnet`) a HardKAS v0 payment
+committing 0 is held by the node's mempool with HardKAS's computed storage mass (9 701) and the plan's exact fee
+(315 400), mined in a block with that value under the signed txid, and the recipient's output holds exactly the amount
+planned. The signed artifact therefore differs from the mined transaction in that one field. Changing the v0
+representation would change certified signed records: it needs a new, versioned format and the owner's decision.
+Absolute time locks and ECDSA spends: `docs/proposals/cltv-and-ecdsa-spends.md`.
 
 ## Covenants Status Matrix
 

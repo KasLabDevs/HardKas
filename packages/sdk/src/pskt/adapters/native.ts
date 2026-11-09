@@ -86,7 +86,7 @@ export class NativePsktAdapter implements PsktRuntimeAdapter {
   private async loadAddon() {
     if (this.addon || this.loadError) return;
     try {
-      // @ts-ignore
+      // @ts-ignore - @hardkas/pskt-native is private and not a dependency of the SDK: loaded on demand, often absent
       this.addon = await import("@hardkas/pskt-native");
     } catch (e: any) {
       this.loadError = e;

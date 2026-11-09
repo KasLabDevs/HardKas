@@ -1416,7 +1416,7 @@ No arguments.
 
 ## hardkas doctor
 
-Perform a full system diagnostic and health report (on a public network it contacts the workspace's declared endpoint) stable
+Perform a full system diagnostic and health report: local configuration, then the workspace's node (connectivity, network identity, sync, capability for a flow); mainnet is never contacted stable
 
 ### Usage
 
@@ -1429,6 +1429,10 @@ hardkas doctor [options] [module]
 | Flag | Description | Default |
 | :--- | :--- | :--- |
 | `--json` | Output results as stable JSON schema | false |
+| `--network <name>` | Check the node of this network of hardkas.config.ts (default: the workspace's network; mainnet is refused, a public testnet needs the payments' opt-in) |  |
+| `--url <url>` | Check the node at this endpoint, as the node of --network (default: the workspace's network) |  |
+| `--flow <flows>` | Report the node's capability for these flows and fail when one is not ready: payment, silver, covenant (comma-separated) |  |
+| `--timeout <ms>` | Bound the node check: connect and answer within this many milliseconds (default 8000) |  |
 | `--capabilities` | With 'doctor node': report the node's capabilities (RPC, network, DAA advance) as JSON | false |
 | `--consistency` | Run advanced deterministic consistency checks | false |
 | `--strict` | Run the consistency checks in strict mode and report DOCTOR_FAILED when a check fails (any failed check exits 1) | false |
@@ -4811,7 +4815,7 @@ hardkas silver covenant transition [options] <covenant-record>
 | :--- | :--- | :--- |
 | `--policy <name>` | Covenant declaration (policy function) to call |  |
 | `--constructor-args <file>` | Constructor arguments of the current state (checked against the record) |  |
-| `--state-map <json>` | State field -> constructor parameter index, e.g. {"value":0} |  |
+| `--state-map <json|file>` | State field -> constructor parameter index: inline JSON such as {"value":0}, or the path of a JSON file with it |  |
 | `--next-state <file>` | Successor state: JSON object of {kind, value} per field |  |
 | `--compute-budget <n>` | Compute budget of the covenant input, or 'estimate' (rusty-kaspa's upper bound); default: the certified budget of this entry, else that estimate |  |
 | `--args <file>` | Entry arguments: JSON list of {kind, value} and {"kind":"signature","account":"<name>"} |  |
@@ -6104,7 +6108,8 @@ hardkas tx wait [options] <txId>
 | `--interval <seconds>` | Seconds between observations | 2 |
 | `-n, --network <network>` | Network whose configured node observes (default: the network of the recorded submission) |  |
 | `--since <chainBlockHash>` | Scan the node's virtual chain from this chain block (64 hex; it must precede the tx's acceptance) on the first look — for a tx sent outside this workspace |  |
-| `--address <address>` | An address the tx pays (repeatable), for a tx sent outside this workspace with no --since: the scan starts at the node's sink when the wait starts, an output of the tx listed there before that point ends the wait (TX_WAIT_ACCEPTED_BEFORE_CURSOR), and the UTXO view is checked there |  |
+| `--address <address>` | An address the tx pays (repeatable), for a tx sent outside this workspace with no --since: the scan starts at the node's sink when the wait starts; an output of the tx listed there before that point makes the wait walk back along the node's selected chain (--lookback) and scan from there, else it ends (TX_WAIT_ACCEPTED_BEFORE_CURSOR); the UTXO view is checked there |  |
+| `--lookback <chainBlocks>` | With --address: chain blocks the wait may walk back from the node's sink (getBlock, selected parent) to find a tx accepted before it started (default 1000, at most 10000, 0 = never); the acceptance is the node's own virtual-chain answer from there. Given explicitly, the wait starts at the sink even when this workspace stored looks at the txId |  |
 | `--json` | Output as JSON | false |
 
 ### Arguments

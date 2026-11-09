@@ -12,6 +12,7 @@ import { KeystoreManager } from "./keystore.js";
 import { DEV_ACCOUNTS_PASSWORD } from "./dev-accounts.js";
 import { parseWasmTxToRpc } from "./internal/wasm-rpc-serialization.js";
 import { createBalancedTransaction, toWasmScriptPublicKey } from "./wasm-transaction.js";
+import { ecdsaSpendNotSupported, isEcdsaP2pkScript, kaspaAddressVersion } from "@hardkas/tx-builder";
 
 export interface KaspaWasmSignerOptions {
   account?: HardkasKaspaAccount;
@@ -120,6 +121,21 @@ export class KaspaWasmPrivateKeySigner implements HardkasTxPlanSigner {
       network: plan.networkId,
       mode: plan.mode,
       allowMainnet: this.options.allowMainnet
+    });
+
+    // 2a. RC1 · D7: what this signer does not make, refused before any key is resolved — a lock time other than 0 (every
+    // transaction it builds has lock time 0; it used to sign 0 whatever the plan said) and a signature for an ECDSA P2PK
+    // input (it signs Schnorr only). An ECDSA input with no authorizer of the caller's is refused here (it used to fail
+    // untyped, MISSING_INPUT_AUTHORIZER); one with an authorizer of the caller's is refused below unless that authorizer
+    // hands its own unlocking script (a signature-script authorization, as for a P2SH input without a contract): with a
+    // signing authorizer it used to put a Schnorr signature on the ECDSA input.
+    assertPlanLockTimeZero(plan);
+    const ecdsaInputs = new Set<number>();
+    (plan.inputs || (plan as any).selectedUtxos || []).forEach((u: any, i: number) => {
+      if (kaspaAddressVersion(u?.address) === 1 || isEcdsaP2pkScript(u?.scriptPublicKey)) {
+        ecdsaInputs.add(i);
+        if (!input.authorizers?.[i]) throw ecdsaSpendNotSupported(`input ${i}`, u?.address);
+      }
     });
 
     // 2b. Each input's compute budget, before any key is resolved. v1: the budget the plan states for the input
@@ -276,9 +292,10 @@ export class KaspaWasmPrivateKeySigner implements HardkasTxPlanSigner {
           const stated = statedSequences[i];
           if (stated !== undefined) inputs[i].sequence = stated;
         }
-        // V1-TXID-1: the version, storage mass, compute budgets, sig-op counts and stated sequences set above are covered
-        // by the transaction's id, which kaspa-wasm recomputes only on finalize(): without it the txId declared below
-        // would be the id of the transaction as built (version 0), not of the one signed and serialized
+        // V1-TXID-1: the version, compute budgets, sig-op counts and stated sequences set above are covered by the
+        // transaction's id, which kaspa-wasm recomputes only on finalize(): without it the txId declared below would be
+        // the id of the transaction as built (version 0), not of the one signed and serialized. (RC1 · D1: the storage
+        // mass is not covered by the id, in v0 or v1 — measured with the official kaspa-wasm 2.1.0; it is committed.)
         if (isV1 || plan.computeBudget !== undefined || hasStatedSequence) unsignedTx.finalize();
         return unsignedTx;
       };
@@ -313,6 +330,8 @@ export class KaspaWasmPrivateKeySigner implements HardkasTxPlanSigner {
         let sigScript: string | undefined;
 
         if (p2shWithoutContract(i) && authorization.kind !== "signature-script") throw p2shUnlockUnavailable(i);
+        // RC1 · D7: an ECDSA input takes only the caller's own unlocking script; this signer never signs one (Schnorr only)
+        if (ecdsaInputs.has(i) && authorization.kind !== "signature-script") throw ecdsaSpendNotSupported(`input ${i}`, (sourceInputs[i] as any)?.address);
 
         if (authorization.kind === "signature-script") {
           sigScript = authorization.signatureScript;
@@ -358,6 +377,8 @@ export class KaspaWasmPrivateKeySigner implements HardkasTxPlanSigner {
         }
       };
     } catch (error: any) {
+      // RC1 · D7: the typed refusal of an ECDSA signature goes out as it is (it names no key material)
+      if (error?.code === "ECDSA_SPEND_NOT_SUPPORTED") throw error;
       // Never log the private key
       const wrapped = new Error(
         `Kaspa WASM signing failed: ${error instanceof Error ? error.stack || error.message : JSON.stringify(error, Object.getOwnPropertyNames(error))}`
@@ -370,6 +391,29 @@ export class KaspaWasmPrivateKeySigner implements HardkasTxPlanSigner {
 }
 
 const budgetError = (code: string, message: string) => Object.assign(new Error(`${code}: ${message}`), { code });
+
+/**
+ * RC1 · D7: HardKAS builds every transaction with lock time 0 (no CLTV in this release). A plan stating another lock
+ * time — or one that is not an integer — is refused (LOCK_TIME_NOT_SUPPORTED); an absent or explicit 0 is what is signed.
+ */
+export function assertPlanLockTimeZero(plan: unknown): void {
+  const stated = (plan as { lockTime?: unknown } | null | undefined)?.lockTime;
+  if (stated === undefined || stated === null) return;
+  let value: bigint | undefined;
+  try {
+    value = typeof stated === "bigint" ? stated : typeof stated === "number" || (typeof stated === "string" && /^\d+$/.test(stated)) ? BigInt(stated) : undefined;
+  } catch {
+    value = undefined;
+  }
+  if (value === 0n) return;
+  throw Object.assign(
+    new Error(
+      `LOCK_TIME_NOT_SUPPORTED: the plan states lock time ${JSON.stringify(typeof stated === "bigint" ? stated.toString() : stated)}; HardKAS builds and signs ` +
+        "every transaction with lock time 0 (absolute time locks, CLTV, are not supported in this release). Nothing was signed."
+    ),
+    { code: "LOCK_TIME_NOT_SUPPORTED" }
+  );
+}
 
 /**
  * The compute budget the internal signer commits for input `index` of `plan`. v1: the input's own `computeBudget` (a u16

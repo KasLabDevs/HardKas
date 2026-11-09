@@ -175,12 +175,26 @@ describe("SURFACE-TRUTH-1B · contract · SDK capabilities and v1 signing", () =
   it("tx.sign refuses a v1 plan in the simulator with TX_V1_SIMULATION_UNSUPPORTED (it does not model v1)", async () => {
     const sdk = await Hardkas.open({ cwd: workspace("v1-sim"), network: "simulated", autoBootstrap: true });
     const plan: any = await sdk.tx.plan({ from: "alice", to: "bob", amount: "1" });
+    // RC1-R2: sign now refuses an artifact whose content no longer hashes to its contentHash first (ARTIFACT_HASH_MISMATCH,
+    // before the fee, covenant and version checks judge an edited body). This test used to hand sign the plan with
+    // `txVersion: 1` added and the old hash; the v1 plan is now sealed, so the v1 refusal is still what is checked, and
+    // the unsealed variant is checked too.
+    const { recomputeDeclaredContentHash } = await import("@hardkas/artifacts");
+    const v1: any = { ...plan, txVersion: 1 };
+    const sealed = { ...v1, contentHash: recomputeDeclaredContentHash(v1) };
     let error: any;
     try {
-      await sdk.tx.sign({ ...plan, txVersion: 1 });
+      await sdk.tx.sign(sealed);
     } catch (e) {
       error = e;
     }
     expect(error?.code).toBe("TX_V1_SIMULATION_UNSUPPORTED");
+    let unsealed: any;
+    try {
+      await sdk.tx.sign(v1);
+    } catch (e) {
+      unsealed = e;
+    }
+    expect(unsealed?.code).toBe("ARTIFACT_HASH_MISMATCH");
   });
 });
