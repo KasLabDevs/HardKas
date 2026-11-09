@@ -149,7 +149,8 @@ describe("Wave 1.2 · N2 · query-store keys by recomputed identity and never le
     const later = Date.now() + 5000;
     fs.utimesSync(file, later / 1000, later / 1000);
     await indexer.sync();
-    const forFile = rows().filter((r) => r.file_path === file);
+    // the indexer keys files by their real path (on macOS the temp dir is under /var -> /private/var)
+    const forFile = rows().filter((r) => r.file_path === fs.realpathSync(file));
     expect(forFile).toHaveLength(1);
     expect(forFile[0]!.artifact_id).toBe(v2.contentHash);
     expect(rows().some((r) => r.artifact_id === v1.contentHash)).toBe(false);

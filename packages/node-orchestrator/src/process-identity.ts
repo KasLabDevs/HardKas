@@ -9,7 +9,8 @@ import path from "node:path";
  *
  *   Windows  Win32_Process.CreationDate (100 ns resolution) and ExecutablePath, through CIM
  *   Linux    /proc/<pid>/stat field 22 (starttime, in clock ticks since boot) and the /proc/<pid>/exe link
- *   macOS    `ps -o lstart=` and `ps -o comm=` (untested here: no macOS host in this audit)
+ *   macOS    `ps -o lstart=`, `ps -o comm=` and `ps -ww -o args=` (the command line; ps does not keep argument
+ *            boundaries, so it is compared whole: see `commandLine`)
  *
  * `undefined` means the identity could not be read (no such process, no permission, unreadable): callers treat that
  * as "not provably ours" and never act on it.
@@ -23,8 +24,14 @@ export interface ProcessIdentity {
   /**
    * F-03 (independent audit) · the process's real argument vector as the OS reports it (Windows: the command line,
    * split with the MSVCRT rules; Linux: /proc/<pid>/cmdline), argv[0] included. Undefined where it cannot be read.
+   * macOS: `commandLine` split on spaces, which is exact only when no argument contains a space.
    */
   readonly argv?: readonly string[] | undefined;
+  /**
+   * macOS only · the command line exactly as `ps -ww -o args=` prints it: the arguments joined by single spaces,
+   * argv[0] included. ps keeps no argument boundaries, so this whole string is what a record is compared with there.
+   */
+  readonly commandLine?: string | undefined;
 }
 
 /**
@@ -139,7 +146,15 @@ async function readDarwin(pid: number): Promise<ProcessIdentity | undefined> {
   const lstart = await run("ps", ["-o", "lstart=", "-p", String(pid)]);
   const comm = await run("ps", ["-o", "comm=", "-p", String(pid)]);
   if (!lstart?.trim() || !comm?.trim()) return undefined;
-  return { pid, startTime: lstart.trim(), executable: normalizeExecutable(comm.trim(), "darwin") };
+  // -ww: never truncated to the terminal width; the only column, so no padding but the line end
+  const args = await run("ps", ["-ww", "-o", "args=", "-p", String(pid)]);
+  const commandLine = args?.replace(/\r?\n$/, "");
+  return {
+    pid,
+    startTime: lstart.trim(),
+    executable: normalizeExecutable(comm.trim(), "darwin"),
+    ...(commandLine ? { commandLine, argv: commandLine.split(" ") } : {})
+  };
 }
 
 export const readProcessIdentity: ProcessIdentityReader = async (pid) => {

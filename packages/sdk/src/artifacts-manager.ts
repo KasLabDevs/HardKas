@@ -327,8 +327,18 @@ export class HardkasArtifactsManager {
     try {
       real = fs.realpathSync(candidate);
     } catch {}
-    const rel = path.relative(root, real);
-    if (rel === ".." || rel.startsWith(`..${path.sep}`) || path.isAbsolute(rel)) {
+    // The file's real path is compared with the root as written and with the root's own real path (as the artifact
+    // store and resolver do): a workspace opened through a symlink (on macOS every temp directory: /var is a link to
+    // /private/var) has its files under the root's real path, and a symlink inside it that leads out still fails both.
+    let realRoot = root;
+    try {
+      realRoot = fs.realpathSync(root);
+    } catch {}
+    const within = (base: string) => {
+      const rel = path.relative(base, real);
+      return !(rel === ".." || rel.startsWith(`..${path.sep}`) || path.isAbsolute(rel));
+    };
+    if (!within(root) && !within(realRoot)) {
       throw new HardkasError("PATH_TRAVERSAL", `Artifact path is outside the workspace: ${input}`);
     }
     if (!fs.existsSync(candidate) || !fs.statSync(candidate).isFile()) {

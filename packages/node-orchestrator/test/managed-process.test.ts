@@ -117,7 +117,8 @@ describe("managed process · lifecycle", () => {
     expect(alive(record.pid)).toBe(false);
     expect((await getManagedProcessStatus(spec)).state).toBe("not_running");
     expect(await stopManagedProcess(spec)).toMatchObject({ result: "not_running" });
-  });
+    // real starts and identity reads: on a Windows CI runner each CIM read through PowerShell takes seconds
+  }, 30_000);
 
   it("a process that died outside HardKAS: stale_record; stop clears the record and kills nothing", async () => {
     const spec = specFor(await freePort());
@@ -127,7 +128,7 @@ describe("managed process · lifecycle", () => {
     expect((await getManagedProcessStatus(spec)).state).toBe("stale_record");
     expect(await stopManagedProcess(spec)).toMatchObject({ result: "stale_record" });
     expect(fs.existsSync(path.join(spec.stateDir, "process.json"))).toBe(false);
-  });
+  }, 30_000);
 });
 
 describe("managed process · never another process (C1)", () => {
@@ -172,7 +173,7 @@ describe("managed process · never another process (C1)", () => {
     await expect(stopManagedProcess(spec, {}, deps)).rejects.toMatchObject({ code: "PROCESS_STATE_UNVERIFIABLE" });
     await expect(startManagedProcess(spec, deps)).rejects.toMatchObject({ code: "PROCESS_STATE_UNVERIFIABLE" });
     expect(alive(v.pid!)).toBe(true);
-  });
+  }, 30_000);
 
   it("the identity changes right before the forced kill (Windows path): nothing is killed", async () => {
     const spec = specFor(await freePort());
@@ -189,7 +190,7 @@ describe("managed process · never another process (C1)", () => {
     expect(await stopManagedProcess(spec, {}, deps)).toMatchObject({ result: "foreign_process" });
     expect(kills).toEqual([]);
     expect(alive(record.pid)).toBe(true);
-  });
+  }, 30_000);
 
   it.skipIf(process.platform !== "win32")("Windows path: the forced stop goes through the process handle with the recorded identity, never a kill by PID", async () => {
     const spec = specFor(await freePort());
@@ -227,7 +228,26 @@ describe("managed process · never another process (C1)", () => {
     expect(await stopManagedProcess(spec, { timeoutMs: 500 }, deps)).toMatchObject({ result: "stopped" });
     expect(kills).toEqual(["SIGTERM", "SIGKILL"]);
     expect(alive(record.pid)).toBe(false);
-  });
+  }, 30_000);
+
+  it("macOS path: the whole command line is compared with the recorded one (ps keeps no argument boundaries)", async () => {
+    const spec = specFor(await freePort());
+    const { record } = await startManagedProcess(spec);
+    started.push(record.pid);
+    const line = [record.binaryPath, ...record.args].join(" ");
+    const seenAs = (commandLine: string | undefined): ManagedProcessDeps => ({
+      platform: "darwin",
+      readIdentity: async () => ({ ...record.identity, commandLine })
+    });
+    expect((await getManagedProcessStatus(spec, seenAs(line))).state).toBe("running");
+    // the same identity running other arguments (another port): a record not written for it
+    expect(await getManagedProcessStatus(spec, seenAs(line.replace(` ${spec.port} `, " 1 ")))).toMatchObject({
+      state: "foreign_process",
+      detail: expect.stringContaining("not the recorded")
+    });
+    expect((await getManagedProcessStatus(spec, seenAs(undefined))).state).toBe("unverifiable");
+    expect(alive(record.pid)).toBe(true);
+  }, 30_000);
 });
 
 // F-03 (independent audit) · the record is checked against what the OS reports, not trusted.
