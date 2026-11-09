@@ -84,8 +84,12 @@ export function envelope(stdout: string): any {
   return jsonDocs(stdout).find((d) => d && typeof d === "object" && !Array.isArray(d));
 }
 
+/**
+ * A new temp directory, by its real path: on macOS `os.tmpdir()` is under the /var -> /private/var symlink, and a CLI
+ * run there reports paths from its working directory, which the OS gives already resolved (/private/var/...).
+ */
 export function tempDir(prefix: string): string {
-  return fs.mkdtempSync(path.join(os.tmpdir(), prefix));
+  return fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), prefix)));
 }
 
 /** Removes a test's temp directory (retrying while a killed child still releases its handles on Windows). */

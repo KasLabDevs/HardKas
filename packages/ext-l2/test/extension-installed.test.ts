@@ -4,6 +4,13 @@ import os from "node:os";
 import path from "node:path";
 import { Hardkas } from "@hardkas/sdk";
 import { installL2Extension, removeProject, cliIn, extManifest } from "./helpers/installed-l2.js";
+import { toolchainReferenceHere } from "../src/toolchains/verified.js";
+
+// Foundry and solc are pinned for some platforms only (macOS has no pin today): there the extension refuses with
+// TOOLCHAIN_PLATFORM_UNSUPPORTED (exit 2) and names no install command, rather than run anything unverified.
+const foundryPinned = toolchainReferenceHere("foundry") !== undefined;
+const solcPinned = toolchainReferenceHere("solc") !== undefined;
+const withoutFoundry = foundryPinned ? { status: 1, code: "TOOLCHAIN_NOT_INSTALLED" } : { status: 2, code: "TOOLCHAIN_PLATFORM_UNSUPPORTED" };
 
 // L2-EXT stage 2 · the built CLI with @hardkas/ext-l2 installed in the project (a real node_modules directory), through
 // the real registry: P2 (one CLI: the l2 commands and the moved ones work), lazy loading (an L1 command loads the
@@ -132,8 +139,11 @@ describe("L2-EXT · the CLI with the l2 extension installed in the project", () 
     expect(checks.map((c: any) => c.id)).toEqual(["l2.foundry", "l2.solc", "l2.sdk", "l2.node"]);
     expect(checks.find((c: any) => c.id === "l2.solc")).toMatchObject({ ok: false });
     const foundry = checks.find((c: any) => c.id === "l2.foundry");
-    if (foundry.detail.startsWith("no pinned Foundry")) expect(foundry.ok).toBe(false);
-    else expect(foundry).toMatchObject({ ok: false, fix: "hardkas toolchain install foundry" });
+    if (foundryPinned) expect(foundry).toMatchObject({ ok: false, fix: "hardkas toolchain install foundry" });
+    else {
+      expect(foundry).toMatchObject({ ok: false, detail: expect.stringMatching(/^no pinned foundry release for /) });
+      expect(foundry.fix).toBeUndefined();
+    }
   });
 
   // L2-EXT stage 4 · the node commands without Foundry, and what doctor l2 tells apart (the real Anvil runs are in
@@ -141,8 +151,8 @@ describe("L2-EXT · the CLI with the l2 extension installed in the project", () 
   it("`l2 node start` without Foundry: TOOLCHAIN_NOT_INSTALLED with the exact command; nothing started; status not_running", { timeout: 180_000 }, () => {
     const r = cliIn(ws, ["l2", "node", "start", "--port", "18545", "--json"], "node-start-nofoundry");
     const env = docs(r.stdout).find((d: any) => d?.ok === false);
-    expect({ status: r.status, code: env?.code }, r.stdout + r.stderr).toMatchObject({ status: 1, code: "TOOLCHAIN_NOT_INSTALLED" });
-    expect(r.stdout + r.stderr).toContain("hardkas toolchain install foundry");
+    expect({ status: r.status, code: env?.code }, r.stdout + r.stderr).toMatchObject(withoutFoundry);
+    if (foundryPinned) expect(r.stdout + r.stderr).toContain("hardkas toolchain install foundry");
     expect(fs.existsSync(path.join(ws, ".hardkas", "processes", "l2-anvil", "process.json"))).toBe(false);
     const s = cliIn(ws, ["l2", "node", "status", "--json"], "node-status-nofoundry");
     expect(s.json?.result?.state).toBe("not_running");
@@ -270,8 +280,8 @@ setInterval(() => {}, 1 << 30);`
     try {
       const r = cliIn(dir, ["l2", "compile", "--json"], "compile-nofoundry");
       const env = docs(r.stdout).find((d: any) => d?.ok === false);
-      expect({ status: r.status, code: env?.code }, r.stdout + r.stderr).toMatchObject({ status: 1, code: "TOOLCHAIN_NOT_INSTALLED" });
-      expect(r.stdout + r.stderr).toContain("hardkas toolchain install foundry");
+      expect({ status: r.status, code: env?.code }, r.stdout + r.stderr).toMatchObject(withoutFoundry);
+      if (foundryPinned) expect(r.stdout + r.stderr).toContain("hardkas toolchain install foundry");
       for (const d of ["out", "cache", path.join(".hardkas", "l2-build.json")]) expect(fs.existsSync(path.join(dir, d))).toBe(false);
     } finally {
       for (const l of projectLinks) fs.unlinkSync(l);
@@ -293,7 +303,9 @@ setInterval(() => {}, 1 << 30);`
     fs.mkdirSync(home, { recursive: true });
     const r = cliIn(ws, ["toolchain", "install", "solc", "--from-file", fake, "--json"], "solc-tampered", { HARDKAS_HOME: home });
     const env = docs(r.stdout).find((d: any) => d?.ok === false) ?? r.json;
-    expect({ status: r.status, code: env?.code }, r.stdout + r.stderr).toMatchObject({ code: "TOOLCHAIN_ASSET_DIGEST_MISMATCH" });
+    expect({ status: r.status, code: env?.code }, r.stdout + r.stderr).toMatchObject({
+      code: solcPinned ? "TOOLCHAIN_ASSET_DIGEST_MISMATCH" : "TOOLCHAIN_PLATFORM_UNSUPPORTED"
+    });
     expect(r.status).not.toBe(0);
     expect(fs.existsSync(path.join(home, "toolchains", "solc"))).toBe(false);
   });
@@ -301,7 +313,9 @@ setInterval(() => {}, 1 << 30);`
   it("`toolchain status` lists solc 0.8.38 as pinned and not installed (installing the extension installed nothing)", { timeout: 180_000 }, () => {
     const r = cliIn(ws, ["toolchain", "status", "--json"], "status-solc");
     const solc = r.json?.toolchains?.find((t: any) => t.id === "solc");
-    expect(solc, r.stdout + r.stderr).toMatchObject({ installed: false, verified: false, version: "0.8.38" });
+    // where solc is not pinned it is not offered, so it is not listed
+    if (solcPinned) expect(solc, r.stdout + r.stderr).toMatchObject({ installed: false, verified: false, version: "0.8.38" });
+    else expect(solc, r.stdout + r.stderr).toBeUndefined();
   });
 
   it("another installed version: EXTENSION_INCOMPATIBLE, and the extension's code is not loaded", { timeout: 180_000 }, () => {

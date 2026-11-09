@@ -289,23 +289,29 @@ async function main() {
     network: nodeIdentity.observed.server?.networkId
   });
 
-  // The repository root is the canonical localnet's workspace (its .hardkas/ holds the node's data). With --url there is
-  // no localnet there, and the real-node workspace keeps plaintext test keys on purpose (the doctor rightly fails it):
-  // the doctor checks a clean workspace of its own whose simnet is the --url node.
-  if (URL_MODE) {
+  // The doctor checks a clean workspace of its own whose simnet is the node this run uses: the --url node, or the
+  // canonical localnet's wRPC endpoint. Neither the repository root nor the real-node workspace fits: on a fresh
+  // checkout (CI) the root has no .hardkas/ and runs on the simulator, so the doctor diagnosed no node and failed on
+  // WORKSPACE_DIR_MISSING (it exits 1 on a failed check); the real-node workspace, where the canonical localnet is
+  // started, keeps plaintext test keys on purpose, which the doctor rightly fails. The canonical node's container and
+  // digest were already proven by the "node identity" phase above.
+  {
+    const doctorUrl = URL_MODE ? NODE_URL : `ws://${CANONICAL_LOCALNET.host}:${CANONICAL_LOCALNET.ports.jsonRpc}`;
     const doctorWs = path.join(realNodeDir, ".hardkas", "gauntlet-doctor");
     fs.rmSync(doctorWs, { recursive: true, force: true });
     fs.mkdirSync(path.join(doctorWs, ".hardkas"), { recursive: true });
     const doctorConfig = {
       execution: { default: "node", targets: { node: { mode: "rpc", domain: "kaspa-l1", network: "simnet" } } },
-      networks: { simnet: { kind: "kaspa-node", network: "simnet", rpcUrl: NODE_URL } }
+      networks: { simnet: { kind: "kaspa-node", network: "simnet", rpcUrl: doctorUrl } }
     };
     fs.writeFileSync(path.join(doctorWs, "hardkas.config.ts"), `export default ${JSON.stringify(doctorConfig, null, 2)};\n`);
-    runHardkas(["doctor", "--json"], { cwd: doctorWs });
-    record("doctor", "PASS", { workspace: path.relative(root, doctorWs).replace(/\\/g, "/") });
-  } else {
-    runHardkas(["doctor", "--json"]);
-    record("doctor", "PASS");
+    const doctorOut = runHardkas(["doctor", "--json"], { cwd: doctorWs });
+    const doctor = JSON.parse(doctorOut.slice(doctorOut.indexOf("{")));
+    record("doctor", "PASS", {
+      workspace: path.relative(root, doctorWs).replace(/\\/g, "/"),
+      url: doctorUrl,
+      diagnosis: doctor.diagnosis?.scope
+    });
   }
 
   runHardkas(["capabilities", "--json"]);

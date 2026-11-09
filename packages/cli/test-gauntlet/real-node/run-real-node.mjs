@@ -10,6 +10,7 @@ import {
   coinbaseMaturity,
   waitForDaaScore,
   readBalanceSompi,
+  readMatureBalanceSompi,
   cleanWorkspaceState
 } from "./real-node-helpers.mjs";
 import { CPUMINER_REFERENCE_IMAGE, CANONICAL_LOCALNET, nodeRpcUrl } from "@hardkas/core";
@@ -302,11 +303,15 @@ async function runRealNodeCert() {
   const balanceOut = run("accounts balance fixture --provider rpc");
   console.log("  Fixture balance:", balanceOut.trim().split("\n").filter(l => l.includes("Balance")).join(""));
 
-  // Cold start: on a fresh node nothing has mined to the fixture yet, so mine
-  // coinbase to it rather than assuming a pre-funded node. Coinbase needs to
-  // mature before it is spendable, which is why this mines rather than waits.
-  if (/Balance:\s*0(\D|$)/.test(balanceOut)) {
-    console.log("  Fixture is empty — mining coinbase to it first...");
+  // Cold start: on a fresh node nothing has mined to the fixture yet, or only the gauntlet's warm-up has (it brings an
+  // idle node back to "synced" by mining to the fixture), so the fixture holds no coinbase that is mature: its balance
+  // is not what it can spend. What decides is the mature balance (the planner's rule): below what step [3] sends, mine
+  // coinbase to the fixture and wait for it to mature rather than assuming a pre-funded node.
+  const fixtureSpendSompi = 100100000000n; // the 1000 KAS step [3] sends, plus 1 KAS for its fee
+  const fixtureMatureSompi = await readMatureBalanceSompi(RPC_URL, fixtureAddress);
+  console.log(`  Fixture mature balance: ${fixtureMatureSompi} sompi`);
+  if (fixtureMatureSompi < fixtureSpendSompi) {
+    console.log("  Fixture has no spendable coinbase for step [3] — mining coinbase to it and waiting for maturity...");
     await ensureFundingConfirmed(fixtureAddress, "fixture", 100000000000n, "coinbase -> fixture", { requireCoinbaseMaturity: true });
   }
 
