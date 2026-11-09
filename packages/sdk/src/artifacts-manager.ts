@@ -430,7 +430,9 @@ export class HardkasArtifactsManager {
     const { verifyArtifactIntegrity, verifyArtifactSemantics } =
       await import("@hardkas/artifacts");
 
-    const result = await verifyArtifactIntegrity(artifact);
+    // HK-11: `strict` reaches the integrity check too (MIGRATION_REQUIRED for a legacy hash version whose lineage and
+    // status are outside the hash); it used to stop at the semantic check, so a v1-3 artifact passed as LEGACY
+    const result = await verifyArtifactIntegrity(artifact, strict ? { strict: true } : {});
     if (result.ok && strict) {
       // References resolve from the workspace store only (IC-5′.6–.7); the cache is a
       // memo of that same store, so it adds nothing here.

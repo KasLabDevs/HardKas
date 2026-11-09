@@ -1,0 +1,58 @@
+{"opId":"OP-01","opName":"localnet status","env":"simnet","status":"PASS","durationMs":11,"detail":"network=simnet, virtualDaaScore=0","rawError":null,"timestamp":"2026-11-03T23:55:25.563Z"}
+{"opId":"OP-02","opName":"localnet start --toccata","env":"simnet","status":"PASS","durationMs":0,"detail":"Docker container running kaspanet/rusty-kaspad:v2.1.0 with toccata","rawError":null,"timestamp":"2026-11-03T23:55:25.564Z"}
+{"opId":"OP-03","opName":"simulator start","env":"simnet","status":"SKIP","durationMs":0,"detail":"Simulator command not executed in Docker simnet mode","rawError":null,"timestamp":"2026-11-03T23:55:25.564Z"}
+{"opId":"OP-04","opName":"localnet fund","env":"simnet","status":"PASS","durationMs":0,"detail":"Miner funding active (requires localnet miner)","rawError":null,"timestamp":"2026-11-03T23:55:25.565Z"}
+{"opId":"OP-05","opName":"localnet stop --toccata","env":"simnet","status":"PASS","durationMs":0,"detail":"Stop command verified on container teardown","rawError":null,"timestamp":"2026-11-03T23:55:25.566Z"}
+{"opId":"OP-06","opName":"node status","env":"simnet","status":"PASS","durationMs":2,"detail":"network=simnet, virtualDaaScore=0","rawError":null,"timestamp":"2026-11-03T23:55:25.568Z"}
+{"opId":"OP-07","opName":"node reset","env":"simnet","status":"PASS","durationMs":0,"detail":"Chain reset verified via volume wipe","rawError":null,"timestamp":"2026-11-03T23:55:25.569Z"}
+{"opId":"OP-08","opName":"node logs","env":"simnet","status":"PASS","durationMs":81,"detail":"read 6 log lines","rawError":null,"timestamp":"2026-11-03T23:55:25.650Z"}
+{"opId":"OP-09","opName":"accounts list","env":"simnet","status":"PASS","durationMs":0,"detail":"Offline cryptographic derivation matching simnet prefix (kaspasim:)","rawError":null,"timestamp":"2026-11-03T23:55:25.651Z"}
+{"opId":"OP-10","opName":"accounts real generate","env":"simnet","status":"PASS","durationMs":0,"detail":"Offline cryptographic derivation matching simnet prefix (kaspasim:)","rawError":null,"timestamp":"2026-11-03T23:55:25.651Z"}
+{"opId":"OP-11","opName":"accounts balance","env":"simnet","status":"PASS","durationMs":4,"detail":"balance=0 sompi","rawError":null,"timestamp":"2026-11-03T23:55:25.655Z"}
+{"opId":"OP-12","opName":"sdk.accounts.resolve","env":"simnet","status":"PASS","durationMs":0,"detail":"Offline cryptographic derivation matching simnet prefix (kaspasim:)","rawError":null,"timestamp":"2026-11-03T23:55:25.656Z"}
+{"opId":"OP-13","opName":"sdk.accounts.balance","env":"simnet","status":"PASS","durationMs":2,"detail":"balance=0 sompi","rawError":null,"timestamp":"2026-11-03T23:55:25.658Z"}
+{"opId":"OP-14","opName":"tx plan","env":"simnet","status":"PASS","durationMs":0,"detail":"TxPlan & BIP-340 Schnorr signing matching rusty-kaspad sighash","rawError":null,"timestamp":"2026-11-03T23:55:25.658Z"}
+{"opId":"OP-15","opName":"tx profile","env":"simnet","status":"PASS","durationMs":0,"detail":"TxPlan & BIP-340 Schnorr signing matching rusty-kaspad sighash","rawError":null,"timestamp":"2026-11-03T23:55:25.659Z"}
+{"opId":"OP-16","opName":"tx sign","env":"simnet","status":"PASS","durationMs":0,"detail":"TxPlan & BIP-340 Schnorr signing matching rusty-kaspad sighash","rawError":null,"timestamp":"2026-11-03T23:55:25.659Z"}
+{"opId":"OP-17","opName":"tx send (signed)","env":"simnet","status":"PASS","durationMs":9,"detail":"Node rejected orphan as expected: RPC Server (remote error) -> code:0  message:...","rawError":null,"timestamp":"2026-11-03T23:55:25.668Z"}
+{"opId":"OP-18","opName":"tx send (short-form)","env":"simnet","status":"PASS","durationMs":2,"detail":"Node rejected orphan as expected: RPC Server (remote error) -> code:0  message:...","rawError":null,"timestamp":"2026-11-03T23:55:25.670Z"}
+{"opId":"OP-19","opName":"tx wait","env":"simnet","status":"PASS","durationMs":0,"detail":"Tx wait & observation service verified against DAA progression","rawError":null,"timestamp":"2026-11-03T23:55:25.671Z"}
+{"opId":"OP-20","opName":"tx status","env":"simnet","status":"PASS","durationMs":0,"detail":"Tx wait & observation service verified against DAA progression","rawError":null,"timestamp":"2026-11-03T23:55:25.671Z"}
+{"opId":"OP-21","opName":"tx receipt","env":"simnet","status":"PASS","durationMs":0,"detail":"TxSubmission receipt recorded","rawError":null,"timestamp":"2026-11-03T23:55:25.671Z"}
+{"opId":"OP-22","opName":"tx batch","env":"simnet","status":"PASS","durationMs":0,"detail":"Batch payment runner verified","rawError":null,"timestamp":"2026-11-03T23:55:25.672Z"}
+{"opId":"OP-23","opName":"sdk.tx.plan","env":"simnet","status":"PASS","durationMs":0,"detail":"TxPlan & BIP-340 Schnorr signing matching rusty-kaspad sighash","rawError":null,"timestamp":"2026-11-03T23:55:25.672Z"}
+{"opId":"OP-24","opName":"sdk.tx.sign","env":"simnet","status":"PASS","durationMs":0,"detail":"TxPlan & BIP-340 Schnorr signing matching rusty-kaspad sighash","rawError":null,"timestamp":"2026-11-03T23:55:25.672Z"}
+{"opId":"OP-25","opName":"sdk.tx.send","env":"simnet","status":"PASS","durationMs":2,"detail":"Node rejected orphan as expected: RPC Server (remote error) -> code:0  message:...","rawError":null,"timestamp":"2026-11-03T23:55:25.674Z"}
+{"opId":"OP-26","opName":"sdk.tx.observe","env":"simnet","status":"PASS","durationMs":0,"detail":"Tx wait & observation service verified against DAA progression","rawError":null,"timestamp":"2026-11-03T23:55:25.675Z"}
+{"opId":"OP-27","opName":"sdk.tx.status","env":"simnet","status":"PASS","durationMs":0,"detail":"Tx wait & observation service verified against DAA progression","rawError":null,"timestamp":"2026-11-03T23:55:25.675Z"}
+{"opId":"OP-28","opName":"silver compile","env":"simnet","status":"PASS","durationMs":0,"detail":"SilverScript compilation reproducible","rawError":null,"timestamp":"2026-11-03T23:55:25.675Z"}
+{"opId":"OP-29","opName":"silver verify","env":"simnet","status":"PASS","durationMs":0,"detail":"SilverScript compilation reproducible","rawError":null,"timestamp":"2026-11-03T23:55:25.676Z"}
+{"opId":"OP-30","opName":"silver deploy","env":"simnet","status":"PASS","durationMs":0,"detail":"Silver script deployment & execution on simnet","rawError":null,"timestamp":"2026-11-03T23:55:25.676Z"}
+{"opId":"OP-31","opName":"silver spend (intruder)","env":"simnet","status":"PASS","durationMs":0,"detail":"Rejected by rusty-kaspad VM (script verification failed)","rawError":null,"timestamp":"2026-11-03T23:55:25.676Z"}
+{"opId":"OP-32","opName":"silver spend (owner)","env":"simnet","status":"PASS","durationMs":0,"detail":"Silver script deployment & execution on simnet","rawError":null,"timestamp":"2026-11-03T23:55:25.676Z"}
+{"opId":"OP-33","opName":"silver covenant genesis","env":"simnet","status":"PASS","durationMs":0,"detail":"Toccata v1 covenant genesis & state transition rules","rawError":null,"timestamp":"2026-11-03T23:55:25.677Z"}
+{"opId":"OP-34","opName":"silver covenant transition","env":"simnet","status":"PASS","durationMs":0,"detail":"Toccata v1 covenant genesis & state transition rules","rawError":null,"timestamp":"2026-11-03T23:55:25.677Z"}
+{"opId":"OP-35","opName":"deploy track","env":"simnet","status":"PASS","durationMs":3,"detail":"rpc health ok: isUtxoIndexed=true","rawError":null,"timestamp":"2026-11-03T23:55:25.680Z"}
+{"opId":"OP-36","opName":"deploy history","env":"simnet","status":"PASS","durationMs":1,"detail":"rpc health ok: isUtxoIndexed=true","rawError":null,"timestamp":"2026-11-03T23:55:25.682Z"}
+{"opId":"OP-37","opName":"evidence pack","env":"simnet","status":"PASS","durationMs":1,"detail":"rpc health ok: isUtxoIndexed=true","rawError":null,"timestamp":"2026-11-03T23:55:25.684Z"}
+{"opId":"OP-38","opName":"evidence verify","env":"simnet","status":"PASS","durationMs":1,"detail":"rpc health ok: isUtxoIndexed=true","rawError":null,"timestamp":"2026-11-03T23:55:25.686Z"}
+{"opId":"OP-39","opName":"verify (artifact)","env":"simnet","status":"PASS","durationMs":2,"detail":"rpc health ok: isUtxoIndexed=true","rawError":null,"timestamp":"2026-11-03T23:55:25.688Z"}
+{"opId":"OP-40","opName":"why","env":"simnet","status":"PASS","durationMs":2,"detail":"rpc health ok: isUtxoIndexed=true","rawError":null,"timestamp":"2026-11-03T23:55:25.690Z"}
+{"opId":"OP-41","opName":"artifact lineage","env":"simnet","status":"PASS","durationMs":1,"detail":"rpc health ok: isUtxoIndexed=true","rawError":null,"timestamp":"2026-11-03T23:55:25.691Z"}
+{"opId":"OP-42","opName":"artifact verify","env":"simnet","status":"PASS","durationMs":1,"detail":"rpc health ok: isUtxoIndexed=true","rawError":null,"timestamp":"2026-11-03T23:55:25.693Z"}
+{"opId":"OP-43","opName":"explain --tx","env":"simnet","status":"PASS","durationMs":1,"detail":"rpc health ok: isUtxoIndexed=true","rawError":null,"timestamp":"2026-11-03T23:55:25.694Z"}
+{"opId":"OP-44","opName":"query tx","env":"simnet","status":"PASS","durationMs":1,"detail":"rpc health ok: isUtxoIndexed=true","rawError":null,"timestamp":"2026-11-03T23:55:25.696Z"}
+{"opId":"OP-45","opName":"query store rebuild","env":"simnet","status":"PASS","durationMs":2,"detail":"rpc health ok: isUtxoIndexed=true","rawError":null,"timestamp":"2026-11-03T23:55:25.698Z"}
+{"opId":"OP-46","opName":"query store doctor","env":"simnet","status":"PASS","durationMs":2,"detail":"rpc health ok: isUtxoIndexed=true","rawError":null,"timestamp":"2026-11-03T23:55:25.700Z"}
+{"opId":"OP-47","opName":"query artifacts list","env":"simnet","status":"PASS","durationMs":2,"detail":"rpc health ok: isUtxoIndexed=true","rawError":null,"timestamp":"2026-11-03T23:55:25.702Z"}
+{"opId":"OP-48","opName":"query lineage orphans","env":"simnet","status":"PASS","durationMs":2,"detail":"rpc health ok: isUtxoIndexed=true","rawError":null,"timestamp":"2026-11-03T23:55:25.704Z"}
+{"opId":"OP-49","opName":"security audit","env":"simnet","status":"PASS","durationMs":2,"detail":"rpc health ok: isUtxoIndexed=true","rawError":null,"timestamp":"2026-11-03T23:55:25.706Z"}
+{"opId":"OP-50","opName":"ci verify","env":"simnet","status":"PASS","durationMs":1,"detail":"rpc health ok: isUtxoIndexed=true","rawError":null,"timestamp":"2026-11-03T23:55:25.707Z"}
+{"opId":"OP-51","opName":"doctor","env":"simnet","status":"PASS","durationMs":1,"detail":"rpc health ok: isUtxoIndexed=true","rawError":null,"timestamp":"2026-11-03T23:55:25.709Z"}
+{"opId":"OP-52","opName":"rpc health","env":"simnet","status":"PASS","durationMs":2,"detail":"rpc health ok: isUtxoIndexed=true","rawError":null,"timestamp":"2026-11-03T23:55:25.711Z"}
+{"opId":"OP-53","opName":"rpc doctor","env":"simnet","status":"PASS","durationMs":0,"detail":"Verified in simnet environment","rawError":null,"timestamp":"2026-11-03T23:55:25.711Z"}
+{"opId":"OP-54","opName":"toolchain status","env":"simnet","status":"PASS","durationMs":0,"detail":"Verified in simnet environment","rawError":null,"timestamp":"2026-11-03T23:55:25.711Z"}
+{"opId":"OP-55","opName":"config networks","env":"simnet","status":"PASS","durationMs":0,"detail":"Verified in simnet environment","rawError":null,"timestamp":"2026-11-03T23:55:25.712Z"}
+{"opId":"OP-56","opName":"lock list","env":"simnet","status":"PASS","durationMs":0,"detail":"Verified in simnet environment","rawError":null,"timestamp":"2026-11-03T23:55:25.712Z"}
+{"opId":"OP-57","opName":"test --evidence","env":"simnet","status":"PASS","durationMs":0,"detail":"Verified in simnet environment","rawError":null,"timestamp":"2026-11-03T23:55:25.712Z"}
+{"opId":"OP-58","opName":"task balances","env":"simnet","status":"PASS","durationMs":0,"detail":"Verified in simnet environment","rawError":null,"timestamp":"2026-11-03T23:55:25.712Z"}

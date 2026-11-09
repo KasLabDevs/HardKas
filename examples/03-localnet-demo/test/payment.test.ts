@@ -1,46 +1,41 @@
 import { describe, it, expect } from "vitest";
-import { hardkasTest } from "@hardkas/testing";
+import { createTestHarness } from "@hardkas/testing";
 
 /**
  * Payment Workflow Test
  *
- * Demonstrates the use of the real HardKAS test runner.
- * This test actually runs against the simulated localnet.
+ * Demonstrates the HardKAS test harness: every test gets a fresh, in-memory localnet state (simulation only, no node).
+ *
+ * L-06 (2026-11-07): this file imported `hardkasTest`, which @hardkas/testing has not exported since 0.3.0-alpha. No gate
+ * ran examples/*\/test, so the suite failed unnoticed ("hardkasTest is not a function"). It now runs in the canonical
+ * gate and uses the harness the package does export.
  */
 describe("Basic Payment", () => {
-  // Initialize HardKAS test runtime with automatic localnet management
-  const h = hardkasTest({
-    network: "simnet"
+  it("plans and applies a payment between two harness accounts", () => {
+    const h = createTestHarness({ networkId: "simnet" });
+    const [alice, bob] = h.accountNames();
+    expect(alice, "the harness provides named accounts").toBeTruthy();
+    expect(bob).toBeTruthy();
+
+    const amountSompi = 550_000_000n; // 5.5 KAS
+    const r = h.send({ from: alice!, to: bob!, amountSompi });
+
+    expect(r.ok).toBe(true);
+    expect(r.plan, "a payment is planned before it is applied").toBeTruthy();
+    expect(r.postBalance.to - r.preBalance.to).toBe(amountSompi);
+    // the sender pays the amount and a fee
+    expect(r.preBalance.from - r.postBalance.from).toBeGreaterThan(amountSompi);
   });
 
-  it("should generate a transaction plan between accounts", async () => {
-    // 1. Arrange: Identify accounts
-    const alice = "alice";
-    const bob = "bob";
+  it("refuses a payment larger than the sender's balance and leaves both balances unchanged", () => {
+    const h = createTestHarness({ networkId: "simnet", initialBalance: 10_000_000_000n });
+    const [alice, bob] = h.accountNames();
+    const before = { alice: h.balanceOf(alice!), bob: h.balanceOf(bob!) };
 
-    // 2. Act: Create a payment plan
-    const plan = await h.tx.plan({
-      from: alice,
-      to: bob,
-      amountKas: "5.5"
-    });
+    const r = h.send({ from: alice!, to: bob!, amountSompi: before.alice + 1n });
 
-    // 3. Assert: Verify plan integrity
-    expect(plan.schema).toBe("hardkas.txPlan");
-    expect(plan.networkId).toBe("simnet");
-    expect(plan.from.accountName).toBe("alice");
-    expect(plan.amountSompi).toBe("550000000"); // 5.5 KAS
-  });
-
-  it("should fail if sender has zero balance in real signing mode", async () => {
-    // In simulated mode, it might pass, but if we used real signing it would fail.
-    // For now, we test the plan creation logic.
-    const plan = await h.tx.plan({
-      from: "alice",
-      to: "bob",
-      amountKas: "100"
-    });
-
-    expect(plan.status).toBe("built");
+    expect(r.ok).toBe(false);
+    expect(h.balanceOf(alice!)).toBe(before.alice);
+    expect(h.balanceOf(bob!)).toBe(before.bob);
   });
 });

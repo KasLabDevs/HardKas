@@ -12,13 +12,46 @@ import type { CovenantEvidenceLevel, CovenantTransitionResult, CovenantUtxoFixtu
 export interface CovenantPassMatcherOptions {
   /**
    * Minimum evidence level required to consider the transition validated.
-   * Defaults to "SCRIPT_VM" so structural-only (SYNTHETIC) runs cannot silently pass as contract-validated.
+   * Defaults to "CONSENSUS_SIMNET" (SC-04): only a rusty-kaspad node's answer verifies a transition. Below it the matcher
+   * fails with an explicit "NOT VERIFIED" message: SYNTHETIC is structural only, and SCRIPT_VM runs the UNVERIFIED
+   * SilverScript runner on a scenario transaction (not the signed one). Pass `{ minEvidence: "SCRIPT_VM" }` to accept
+   * runner-level evidence on purpose.
    */
   minEvidence?: CovenantEvidenceLevel;
   /**
    * Set to true only when intentionally asserting structural-only (SYNTHETIC) validation.
    */
   allowSyntheticOnly?: boolean;
+}
+
+export interface CovenantSuccessorMatcherOptions {
+  /**
+   * Minimum evidence level at which the successor outputs count as observed. Defaults to "CONSENSUS_SIMNET" (SC-04):
+   * below it the successors (their covenant id, script and count) are the testbed's own ledger writes, copied from the
+   * spent UTXO, so the assertion would hold by construction; the matcher then fails with "NOT VERIFIED". At
+   * CONSENSUS_SIMNET the node's UTXO index listed every successor with its covenant id (consensus-submission.ts).
+   * Pass a lower level only to assert the testbed's own bookkeeping on purpose.
+   */
+  minEvidence?: CovenantEvidenceLevel;
+}
+
+const EVIDENCE_RANK: Record<CovenantEvidenceLevel, number> = {
+  SYNTHETIC: 1,
+  SCRIPT_VM: 2,
+  CONSENSUS_SIMNET: 3
+};
+
+function evidenceAtLeast(actual: CovenantEvidenceLevel | undefined, min: CovenantEvidenceLevel): boolean {
+  return actual !== undefined && EVIDENCE_RANK[actual] !== undefined && EVIDENCE_RANK[actual] >= EVIDENCE_RANK[min];
+}
+
+/** Why a result below the required level proves nothing about consensus (the text of every "NOT VERIFIED" failure). */
+function notVerifiedReason(actual: CovenantEvidenceLevel | undefined): string {
+  if (actual === "SYNTHETIC") return "SYNTHETIC is structural preflight only: no script ran and no node saw the transaction";
+  if (actual === "SCRIPT_VM") {
+    return "SCRIPT_VM ran the UNVERIFIED SilverScript runner on a scenario transaction, not the signed transaction, and no node saw it";
+  }
+  return "no evidence level was recorded";
 }
 
 export interface HardKasMatchers<R = void> {
@@ -45,18 +78,25 @@ export interface HardKasMatchers<R = void> {
   /** Assert a simulated DAG has exactly N tips. */
   toHaveDagWidth(width: number): R;
   /**
-   * Assert a covenant transition passed at the required evidence level (`SCRIPT_VM` or `CONSENSUS_SIMNET` by default).
-   * Rejects `SYNTHETIC`-only passes unless `{ allowSyntheticOnly: true }` or `{ minEvidence: "SYNTHETIC" }` is passed.
+   * Assert a covenant transition passed at the required evidence level (`CONSENSUS_SIMNET` by default, SC-04).
+   * A pass below it fails as "NOT VERIFIED" unless `{ minEvidence: "SCRIPT_VM" }`, `{ minEvidence: "SYNTHETIC" }` or
+   * `{ allowSyntheticOnly: true }` accepts that level explicitly.
    */
   toPassCovenantTransition(options?: CovenantPassMatcherOptions): R;
   /** Assert a covenant transition was rejected, optionally matching failure code or diagnostic message. */
   toRejectCovenantTransition(expectedCodeOrMessage?: string | RegExp): R;
   /** Assert the covenant UTXO or transition successor carries the expected state fields. */
   toHaveCovenantState(expectedState: Record<string, unknown>, outputIndex?: number): R;
-  /** Assert a covenant transition preserves the input covenantId across all successor outputs. */
-  toPreserveCovenantId(expectedCovenantId?: string): R;
-  /** Assert a covenant transition produces `expectedCount` covenant successor outputs (default: 1). */
-  toProduceSuccessor(expectedCount?: number): R;
+  /**
+   * Assert a covenant transition preserves the input covenantId across all successor outputs. Node-observed successors
+   * only (`CONSENSUS_SIMNET`) unless `options.minEvidence` lowers it; below it the matcher fails as "NOT VERIFIED".
+   */
+  toPreserveCovenantId(expectedCovenantId?: string, options?: CovenantSuccessorMatcherOptions): R;
+  /**
+   * Assert a covenant transition produces `expectedCount` covenant successor outputs (default: 1). Node-observed
+   * successors only (`CONSENSUS_SIMNET`) unless `options.minEvidence` lowers it; below it the matcher fails as "NOT VERIFIED".
+   */
+  toProduceSuccessor(expectedCount?: number, options?: CovenantSuccessorMatcherOptions): R;
   /** Assert a covenant transition was rejected specifically by the Kaspa Script VM (`SCRIPT_VM`), optionally at a `.sil` line or pattern. */
   toRejectWithScriptError(expectedLineOrPattern?: number | string | RegExp): R;
   /** Assert a covenant transition's declared compute budget is within `maxBudget` and did not fail budget checks. */
@@ -219,15 +259,9 @@ export const hardKasMatchers = {
 
   toPassCovenantTransition(received: CovenantTransitionResult, options?: CovenantPassMatcherOptions) {
     const minEvidence: CovenantEvidenceLevel =
-      options?.minEvidence ?? (options?.allowSyntheticOnly ? "SYNTHETIC" : "SCRIPT_VM");
-    const rank: Record<CovenantEvidenceLevel, number> = {
-      SYNTHETIC: 1,
-      SCRIPT_VM: 2,
-      CONSENSUS_SIMNET: 3
-    };
+      options?.minEvidence ?? (options?.allowSyntheticOnly ? "SYNTHETIC" : "CONSENSUS_SIMNET");
     const actualEvidence = received?.evidenceLevel;
-    const evidenceSufficient =
-      actualEvidence !== undefined && rank[actualEvidence] >= rank[minEvidence];
+    const evidenceSufficient = evidenceAtLeast(actualEvidence, minEvidence);
     const pass = received?.passed === true && evidenceSufficient;
     const loc = received?.diagnostic?.location;
     const vmLoc = loc ? ` at .sil:${loc.line}:${loc.column}` : "";
@@ -243,7 +277,10 @@ export const hardKasMatchers = {
           return `Expected covenant transition NOT to pass at ${actualEvidence} (${received.status})`;
         }
         if (received?.passed === true && !evidenceSufficient) {
-          return `Covenant transition passed structural checks only (evidenceLevel="${actualEvidence}", status="${received?.status}"), which is below required "${minEvidence}". Structural validation does NOT execute the SilverScript VM. Pass { allowSyntheticOnly: true } only when intentionally testing structural preflight.`;
+          if (actualEvidence === "SYNTHETIC") {
+            return `NOT VERIFIED: Covenant transition passed structural checks only (evidenceLevel="${actualEvidence}", status="${received?.status}"), which is below required "${minEvidence}". Structural validation does NOT execute the SilverScript VM. Pass { allowSyntheticOnly: true } only when intentionally testing structural preflight.`;
+          }
+          return `NOT VERIFIED: Covenant transition passed at evidenceLevel="${actualEvidence}" (status="${received?.status}"), which is below required "${minEvidence}": ${notVerifiedReason(actualEvidence)}.${actualEvidence ? ` Pass { minEvidence: "${actualEvidence}" } to accept that level explicitly.` : ""}`;
         }
         return `Expected covenant transition to pass (minEvidence="${minEvidence}"), but it failed with status "${received?.status ?? "UNKNOWN"}" [${received?.structuralErrorCode ?? "SCRIPT_VM"}]${vmLoc}: ${reason}`;
       }
@@ -338,35 +375,53 @@ export const hardKasMatchers = {
     };
   },
 
-  toPreserveCovenantId(received: CovenantTransitionResult, expectedCovenantId?: string) {
+  toPreserveCovenantId(
+    received: CovenantTransitionResult,
+    expectedCovenantId?: string,
+    options?: CovenantSuccessorMatcherOptions
+  ) {
+    const minEvidence: CovenantEvidenceLevel = options?.minEvidence ?? "CONSENSUS_SIMNET";
+    const actualEvidence = received?.evidenceLevel;
+    // SC-04: below the required level the successors are the testbed's own writes (covenantId copied from the spent
+    // UTXO), so the comparison would hold by construction: never a pass, an explicit "NOT VERIFIED".
+    const verified = evidenceAtLeast(actualEvidence, minEvidence);
     const inputCovId = expectedCovenantId ?? received?.covenantId;
     const successors = received?.successorUtxos ?? [];
-    const pass =
+    const holds =
       typeof inputCovId === "string" &&
       /^[0-9a-fA-F]{64}$/.test(inputCovId) &&
       successors.length > 0 &&
       successors.every((s) => s.covenantId?.toLowerCase() === inputCovId.toLowerCase());
+    const pass = verified && holds;
     return {
       pass,
       message: () =>
         pass
           ? `Expected transition NOT to preserve covenantId ${inputCovId}`
-          : `Expected transition to preserve covenantId ${inputCovId ?? "<missing>"} across ${successors.length} successor(s), got [${successors.map((s) => s.covenantId ?? "<none>").join(", ")}]`
+          : !verified
+            ? `NOT VERIFIED: covenantId preservation cannot be asserted at evidenceLevel="${actualEvidence}", which is below required "${minEvidence}": ${notVerifiedReason(actualEvidence)}, so the successors are the testbed's own writes. Pass { minEvidence: "${actualEvidence ?? "SYNTHETIC"}" } as the second argument to assert the testbed's bookkeeping on purpose.`
+            : `Expected transition to preserve covenantId ${inputCovId ?? "<missing>"} across ${successors.length} successor(s), got [${successors.map((s) => s.covenantId ?? "<none>").join(", ")}]`
     };
   },
 
-  toProduceSuccessor(received: CovenantTransitionResult, expectedCount = 1) {
+  toProduceSuccessor(received: CovenantTransitionResult, expectedCount = 1, options?: CovenantSuccessorMatcherOptions) {
+    const minEvidence: CovenantEvidenceLevel = options?.minEvidence ?? "CONSENSUS_SIMNET";
+    const actualEvidence = received?.evidenceLevel;
+    const verified = evidenceAtLeast(actualEvidence, minEvidence);
     const successors = received?.successorUtxos ?? [];
     const validScripts = successors.every(
       (s) => typeof s.scriptPublicKey === "string" && s.scriptPublicKey.length > 0
     );
-    const pass = successors.length === expectedCount && validScripts;
+    const holds = successors.length === expectedCount && validScripts;
+    const pass = verified && holds;
     return {
       pass,
       message: () =>
         pass
           ? `Expected transition NOT to produce ${expectedCount} successor output(s)`
-          : `Expected transition to produce ${expectedCount} valid successor output(s), but got ${successors.length}`
+          : !verified
+            ? `NOT VERIFIED: successor outputs cannot be asserted at evidenceLevel="${actualEvidence}", which is below required "${minEvidence}": ${notVerifiedReason(actualEvidence)}, so the successors are the testbed's own writes. Pass { minEvidence: "${actualEvidence ?? "SYNTHETIC"}" } as the second argument to assert the testbed's bookkeeping on purpose.`
+            : `Expected transition to produce ${expectedCount} valid successor output(s), but got ${successors.length}`
     };
   },
 

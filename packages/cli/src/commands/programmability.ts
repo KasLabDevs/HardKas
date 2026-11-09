@@ -8,7 +8,10 @@ type ProgramKind = "silver" | "zk" | "vprog" | "full-lab";
 export function registerProgrammabilityCommands(program: Command) {
   const programmability = program
     .command("programmability")
-    .description("Builder-ready local programmability surface (Outputs JSON by default)");
+    // L1-CORE-1 B4 (frozen area, help text only): it said "Builder-ready"; it is local inspection and fixture checks
+    .description(
+      "Experimental local programmability tools: inspection and fixture checks of Silver, ZK and vProgs artifacts; no vProgs runtime, no on-chain ZK verification (Outputs JSON by default)"
+    );
 
   programmability
     .command("capabilities")
@@ -21,7 +24,10 @@ export function registerProgrammabilityCommands(program: Command) {
 
   programmability
     .command("audit")
-    .description("Audit the boundaries and claims of programmability layers")
+    // L1-CORE-1 B4 (frozen area, help text only): "Audit" read like a check of something; it prints a fixed statement
+    .description(
+      "Print the fixed list of what this build's programmability layers do not do (on-chain ZK verification, vProgs runtime, L2 bridge and exit, real stable-asset issuer): a static statement that inspects and runs nothing"
+    )
     .option("--json", "Output as JSON", false)
     .action(async (options) => {
       const output = getOutput();

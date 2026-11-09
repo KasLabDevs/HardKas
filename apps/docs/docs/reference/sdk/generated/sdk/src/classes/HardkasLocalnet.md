@@ -6,7 +6,7 @@
 
 # Class: HardkasLocalnet
 
-Defined in: [packages/sdk/src/localnet.ts:57](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/localnet.ts#L57)
+Defined in: [packages/sdk/src/localnet.ts:57](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/localnet.ts#L57)
 
 HardKAS Localnet Simulation Module
 
@@ -16,7 +16,7 @@ HardKAS Localnet Simulation Module
 
 > **new HardkasLocalnet**(`sdk`): `HardkasLocalnet`
 
-Defined in: [packages/sdk/src/localnet.ts:58](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/localnet.ts#L58)
+Defined in: [packages/sdk/src/localnet.ts:58](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/localnet.ts#L58)
 
 #### Parameters
 
@@ -34,7 +34,7 @@ Defined in: [packages/sdk/src/localnet.ts:58](https://github.com/KasLabDevs/Hard
 
 > **fund**(`identifier`, `options?`): `Promise`\<`LocalnetFundingResult`\>
 
-Defined in: [packages/sdk/src/localnet.ts:152](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/localnet.ts#L152)
+Defined in: [packages/sdk/src/localnet.ts:154](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/localnet.ts#L154)
 
 Funds a simulated account through the SDK transaction flow.
 
@@ -62,7 +62,7 @@ network namespace, which is host state the SDK does not own.
 
 > **isAlive**(): `Promise`\<`boolean`\>
 
-Defined in: [packages/sdk/src/localnet.ts:63](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/localnet.ts#L63)
+Defined in: [packages/sdk/src/localnet.ts:63](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/localnet.ts#L63)
 
 Status check for the localnet simulation.
 
@@ -76,7 +76,7 @@ Status check for the localnet simulation.
 
 > **reset**(): `Promise`\<`void`\>
 
-Defined in: [packages/sdk/src/localnet.ts:186](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/localnet.ts#L186)
+Defined in: [packages/sdk/src/localnet.ts:188](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/localnet.ts#L188)
 
 Resets the localnet state (simulated or node).
 
@@ -90,7 +90,7 @@ Resets the localnet state (simulated or node).
 
 > **start**(`options?`): `Promise`\<`LocalnetControlResult`\>
 
-Defined in: [packages/sdk/src/localnet.ts:99](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/localnet.ts#L99)
+Defined in: [packages/sdk/src/localnet.ts:99](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/localnet.ts#L99)
 
 Initializes the in-memory simulated workspace.
 
@@ -113,7 +113,7 @@ Docker Toccata process control remains a CLI/localnet responsibility in
 
 > **status**(`options?`): `Promise`\<`LocalnetStatusResult`\>
 
-Defined in: [packages/sdk/src/localnet.ts:75](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/localnet.ts#L75)
+Defined in: [packages/sdk/src/localnet.ts:75](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/localnet.ts#L75)
 
 Status check with the same claim boundaries as `hardkas localnet status --json`.
 
@@ -133,7 +133,7 @@ Status check with the same claim boundaries as `hardkas localnet status --json`.
 
 > **stop**(`options?`): `Promise`\<`LocalnetControlResult`\>
 
-Defined in: [packages/sdk/src/localnet.ts:124](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/localnet.ts#L124)
+Defined in: [packages/sdk/src/localnet.ts:124](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/localnet.ts#L124)
 
 Stops the localnet simulation or indicates lack of support for Docker termination.
 

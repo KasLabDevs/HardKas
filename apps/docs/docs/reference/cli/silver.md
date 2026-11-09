@@ -100,10 +100,12 @@ title: hardkas silver
 
 ### Synopsis (Generated)
 
-**Purpose:** Report whether the pinned toolchains and the canonical node are ready
+**Purpose:** Report whether the pinned toolchains and the node the Silver on-chain commands would use are ready
 
 #### Options
 
+- `--network &lt;network&gt;`: Network (default: the workspace's, else simnet). mainnet is refused; testnet-&lt;n&gt; needs experimental + network.allowPublic in the config
+- `--url &lt;url&gt;`: Node wRPC (JSON) endpoint (default: the one the workspace declares for the network; simnet: the canonical localnet). Only the canonical localnet is proven by container and image digest; any other node by what it reports (network, version, synced)
 - `--json` (Default: `false`): Output as JSON
 
 ---
@@ -188,7 +190,7 @@ title: hardkas silver
 
 ### Synopsis (Generated)
 
-**Purpose:** Fund a compiled contract's P2SH output on the canonical localnet
+**Purpose:** Fund a compiled contract's P2SH output on a Kaspa node (the canonical localnet, or the node --url / the workspace names)
 
 #### Arguments
 
@@ -199,7 +201,8 @@ title: hardkas silver
 - `--from &lt;account&gt;`: Funding account (local key)
 - `--amount &lt;kas&gt;`: Value locked in the contract
 - `--contract &lt;name&gt;`: Contract, when the artifact has several
-- `--network &lt;network&gt;` (Default: `simnet`): Network
+- `--network &lt;network&gt;`: Network (default: the workspace's, else simnet). mainnet is refused; testnet-&lt;n&gt; needs experimental + network.allowPublic in the config
+- `--url &lt;url&gt;`: Node wRPC (JSON) endpoint (default: the one the workspace declares for the network; simnet: the canonical localnet). Only the canonical localnet is proven by container and image digest; any other node by what it reports (network, version, synced)
 - `--tx-version &lt;n&gt;` (Default: `0`): Transaction version: 0 (the default, as certified) or 1 (the SDK's v1 engine: checks before any key, compute budgets)
 - `--wait` (Default: `false`): Wait for confirmation
 - `--timeout &lt;seconds&gt;` (Default: `120`): Confirmation timeout
@@ -226,6 +229,8 @@ title: hardkas silver
 - `--args &lt;file&gt;`: Entry arguments: JSON list of &#123;kind, value&#125; and &#123;"kind":"signature","account":"&lt;name&gt;"&#125;
 - `--sequence &lt;n&gt;`: Input sequence (relative locks)
 - `--sig-op-count &lt;n&gt;`: Declared signature operations (default: the signature arguments, at least 1); transaction v0 only
+- `--network &lt;network&gt;`: Network (default: the deploy record's); mainnet refused; testnet-&lt;n&gt; needs experimental + network.allowPublic
+- `--url &lt;url&gt;`: Node wRPC (JSON) endpoint (default: the one the workspace declares for the network; simnet: the canonical localnet). Only the canonical localnet is proven by container and image digest; any other node by what it reports (network, version, synced)
 - `--tx-version &lt;n&gt;` (Default: `0`): Transaction version: 0 (the default, as certified) or 1 (the SDK's v1 engine: checks before any key, compute budgets)
 - `--constructor-args &lt;file&gt;`: With --tx-version 1: the constructor arguments the contract was compiled with (default: proven from this spend's signers, when they are the keys it checks)
 - `--compute-budget &lt;n&gt;`: With --tx-version 1: the contract input's compute budget, or 'estimate' (rusty-kaspa's upper bound); default: the certified budget of this entry, else that estimate
@@ -255,6 +260,8 @@ title: hardkas silver
 - `--fee &lt;sompi&gt;`: Fee in sompi: at least the node's floor for this transaction (the floor when omitted)
 - `--constructor-args &lt;file&gt;`: Constructor arguments the contract was compiled with (default: proven from its initial State)
 - `--contract &lt;name&gt;`: Contract, when the artifact has several
+- `--network &lt;network&gt;`: Network (default: the workspace's, else simnet). mainnet is refused; testnet-&lt;n&gt; needs experimental + network.allowPublic in the config
+- `--url &lt;url&gt;`: Node wRPC (JSON) endpoint (default: the one the workspace declares for the network; simnet: the canonical localnet). Only the canonical localnet is proven by container and image digest; any other node by what it reports (network, version, synced)
 - `--wait` (Default: `false`): Wait for confirmation and the node's covenant id
 - `--timeout &lt;seconds&gt;` (Default: `120`): Confirmation timeout
 - `--password-env &lt;env&gt;`: Read the keystore password of the encrypted account(s) this command signs with from this environment variable (development accounts need none)
@@ -283,6 +290,8 @@ title: hardkas silver
 - `--args &lt;file&gt;`: Entry arguments: JSON list of &#123;kind, value&#125; and &#123;"kind":"signature","account":"&lt;name&gt;"&#125;
 - `--fee &lt;sompi&gt;`: Fee in sompi, paid from the covenant's value: at least the node's floor for this transaction (the floor when omitted)
 - `--emit-args &lt;file&gt;`: Write the successor's constructor arguments here (for the next transition)
+- `--network &lt;network&gt;`: Network (default: the covenant record's); mainnet refused; testnet-&lt;n&gt; needs experimental + network.allowPublic
+- `--url &lt;url&gt;`: Node wRPC (JSON) endpoint (default: the one the workspace declares for the network; simnet: the canonical localnet). Only the canonical localnet is proven by container and image digest; any other node by what it reports (network, version, synced)
 - `--wait` (Default: `false`): Wait for confirmation and check the lineage
 - `--timeout &lt;seconds&gt;` (Default: `120`): Confirmation timeout
 - `--password-env &lt;env&gt;`: Read the keystore password of the encrypted account(s) this command signs with from this environment variable (development accounts need none)

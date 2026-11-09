@@ -43,7 +43,9 @@ export function registerArtifactCommands(program: Command) {
 
   artifactCmd
     .command("verify <path>")
-    .description(`Verify an artifact's integrity and schema ${UI.maturity("stable")}`)
+    .description(
+      `Verify an artifact: integrity (offline, every network), and on request its network level (NETWORK_OBSERVED by a node of its network) and consensus level (CONSENSUS_CONFIRMED by the declared confirmation policy; not finality). Mainnet: offline only ${UI.maturity("stable")}`
+    )
     .option("--json", "Output results as JSON", false)
     .option("--recursive", "Recursively verify all artifacts in a directory", false)
     .option(
@@ -51,6 +53,11 @@ export function registerArtifactCommands(program: Command) {
       "Perform deep semantic and operational safety verification",
       false
     )
+    .option("--network <network>", "Check the artifact's transaction on a node of this network (must be the artifact's own; mainnet is never contacted)")
+    .option("--url <url>", "Node wRPC (JSON) endpoint for the network check (default: the one the workspace declares for the network; local networks: their local default)")
+    .option("--since <blockHash>", "Virtual-chain cursor for the network check: a chain block before the transaction's acceptance (default: the artifact's own submit point, else the node's pruning point)")
+    .option("--min-confirmations <n>", "Blue-score depth for CONSENSUS_CONFIRMED (default: the HardKAS product policy, 100)")
+    .option("--require <level>", "Level the verification must reach to succeed: integrity (default), network or consensus")
     .option("--workspace <path>", "Override workspace root directory")
     .action(async (targetPath: string, options: any) => {
       try {

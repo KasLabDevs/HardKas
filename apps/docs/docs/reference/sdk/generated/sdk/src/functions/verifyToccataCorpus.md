@@ -8,7 +8,7 @@
 
 > **verifyToccataCorpus**(`targetPath`, `workspaceRoot?`): `Promise`\<`SilverCorpusVerifyResult`\>
 
-Defined in: [packages/sdk/src/corpus.ts:22](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/corpus.ts#L22)
+Defined in: [packages/sdk/src/corpus.ts:22](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/corpus.ts#L22)
 
 ## Parameters
 

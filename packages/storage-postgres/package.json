@@ -1,6 +1,7 @@
 {
   "name": "@hardkas/storage-postgres",
   "version": "0.13.0-rc.1",
+  "license": "MIT",
   "description": "PostgreSQL persistence layer for HardKAS",
   "type": "module",
   "main": "dist/index.js",
@@ -24,6 +25,8 @@
     "access": "public"
   },
   "files": [
-    "dist"
+    "dist",
+    "README.md",
+    "LICENSE"
   ]
 }

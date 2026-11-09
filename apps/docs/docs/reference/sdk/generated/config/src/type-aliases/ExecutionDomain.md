@@ -8,4 +8,4 @@
 
 > **ExecutionDomain** = `z.infer`\<*typeof* `executionDomainSchema`\>
 
-Defined in: packages/core/dist/index.d.ts:2225
+Defined in: [packages/core/dist/index.d.ts:4101](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/core/dist/index.d.ts#L4101)

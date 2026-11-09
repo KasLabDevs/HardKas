@@ -42,6 +42,7 @@ title: hardkas accounts
 
 - `--name &lt;name&gt;`: Account name: letters, digits, _ and - (default: default)
 - `--address &lt;address&gt;`: Kaspa address
+- `--network &lt;network&gt;`: Network the key is for (default: the address's: kaspasim simnet, kaspadev devnet; a kaspatest address needs testnet-&lt;n&gt; here or in the workspace)
 - `--private-key &lt;hex&gt;`: Deprecated. Unsafe: may leak through shell history. Prefer --private-key-stdin or --private-key-env.
 - `--private-key-stdin` (Default: `false`): Read private key from stdin
 - `--private-key-env &lt;env&gt;`: Read private key from environment variable
@@ -103,6 +104,9 @@ title: hardkas accounts
 
 #### Options
 
+- `--password-env &lt;env&gt;`: Read the current keystore password from this environment variable
+- `--password-stdin` (Default: `false`): Read the current keystore password from stdin (needs --new-password-env)
+- `--new-password-env &lt;env&gt;`: Read the new keystore password from this environment variable (no confirmation prompt)
 - `--wait-lock` (Default: `false`): Wait for workspace lock if held
 - `--lock-timeout &lt;ms&gt;` (Default: `30000`): Lock wait timeout in ms
 
@@ -187,6 +191,8 @@ title: hardkas accounts
 - `--execute`: Execute the consolidation (requires --yes to broadcast)
 - `--yes`: Confirm broadcast for execution
 - `--allow-mainnet`: No effect: executing on mainnet stays refused in this release (MAINNET_BROADCAST_DISABLED)
+- `--password-env &lt;env&gt;`: Read the encrypted account's keystore password from this environment variable (read once, before the first batch)
+- `--password-stdin`: Read the encrypted account's keystore password from stdin
 - `--json` (Default: `false`): Output as JSON
 
 ---

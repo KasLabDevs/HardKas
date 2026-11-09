@@ -404,7 +404,8 @@ describe("SECRET-SURFACE-2 · AFTER", () => {
       const keystore = JSON.parse(fs.readFileSync(path.join(ws, entry.keystore), "utf8"));
       expect(keystore).toMatchObject({
         type: "hardkas.encryptedKeystore.v2",
-        version: "2.0.0",
+        // TX-07: new keystores are format 2.1.0 (network and address authenticated as AES-GCM AAD)
+        version: "2.1.0",
         kdf: { algorithm: "argon2id" },
         cipher: { algorithm: "aes-256-gcm" },
         metadata: { address: entry.address, network: "mainnet" }

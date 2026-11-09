@@ -6,7 +6,7 @@
 
 # Interface: CreateTxPlanArtifactOptions
 
-Defined in: [packages/artifacts/src/tx-plan.ts:9](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/tx-plan.ts#L9)
+Defined in: [packages/artifacts/src/tx-plan.ts:10](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/tx-plan.ts#L10)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [packages/artifacts/src/tx-plan.ts:9](https://github.com/KasLabDevs/
 
 > **amountSompi**: `bigint`
 
-Defined in: [packages/artifacts/src/tx-plan.ts:21](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/tx-plan.ts#L21)
+Defined in: [packages/artifacts/src/tx-plan.ts:22](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/tx-plan.ts#L22)
 
 ***
 
@@ -22,7 +22,7 @@ Defined in: [packages/artifacts/src/tx-plan.ts:21](https://github.com/KasLabDevs
 
 > **ctx**: `RuntimeContext`
 
-Defined in: [packages/artifacts/src/tx-plan.ts:24](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/tx-plan.ts#L24)
+Defined in: [packages/artifacts/src/tx-plan.ts:25](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/tx-plan.ts#L25)
 
 ***
 
@@ -30,7 +30,7 @@ Defined in: [packages/artifacts/src/tx-plan.ts:24](https://github.com/KasLabDevs
 
 > **from**: `object`
 
-Defined in: [packages/artifacts/src/tx-plan.ts:12](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/tx-plan.ts#L12)
+Defined in: [packages/artifacts/src/tx-plan.ts:13](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/tx-plan.ts#L13)
 
 #### accountName?
 
@@ -46,11 +46,22 @@ Defined in: [packages/artifacts/src/tx-plan.ts:12](https://github.com/KasLabDevs
 
 ***
 
+### maxFeeSompi?
+
+> `optional` **maxFeeSompi?**: `bigint`
+
+Defined in: [packages/artifacts/src/tx-plan.ts:30](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/tx-plan.ts#L30)
+
+TX-FEE-GUARD-1: the total fee limit (sompi) this plan was made under, recorded inside its identity so signing and
+sending enforce it on the plan as authenticated. Absent = the plan carries no limit of its own.
+
+***
+
 ### mode
 
 > **mode**: `"rpc"` \| `"simulator"` \| `"localnet"`
 
-Defined in: [packages/artifacts/src/tx-plan.ts:11](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/tx-plan.ts#L11)
+Defined in: [packages/artifacts/src/tx-plan.ts:12](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/tx-plan.ts#L12)
 
 ***
 
@@ -58,7 +69,7 @@ Defined in: [packages/artifacts/src/tx-plan.ts:11](https://github.com/KasLabDevs
 
 > **networkId**: [`NetworkId`](../../../sdk/src/type-aliases/NetworkId.md)
 
-Defined in: [packages/artifacts/src/tx-plan.ts:10](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/tx-plan.ts#L10)
+Defined in: [packages/artifacts/src/tx-plan.ts:11](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/tx-plan.ts#L11)
 
 ***
 
@@ -66,7 +77,7 @@ Defined in: [packages/artifacts/src/tx-plan.ts:10](https://github.com/KasLabDevs
 
 > **plan**: `TxPlan`
 
-Defined in: [packages/artifacts/src/tx-plan.ts:22](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/tx-plan.ts#L22)
+Defined in: [packages/artifacts/src/tx-plan.ts:23](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/tx-plan.ts#L23)
 
 ***
 
@@ -74,7 +85,7 @@ Defined in: [packages/artifacts/src/tx-plan.ts:22](https://github.com/KasLabDevs
 
 > `optional` **rpcUrl?**: `string`
 
-Defined in: [packages/artifacts/src/tx-plan.ts:23](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/tx-plan.ts#L23)
+Defined in: [packages/artifacts/src/tx-plan.ts:24](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/tx-plan.ts#L24)
 
 ***
 
@@ -82,7 +93,7 @@ Defined in: [packages/artifacts/src/tx-plan.ts:23](https://github.com/KasLabDevs
 
 > **to**: `object`
 
-Defined in: [packages/artifacts/src/tx-plan.ts:17](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/tx-plan.ts#L17)
+Defined in: [packages/artifacts/src/tx-plan.ts:18](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/tx-plan.ts#L18)
 
 #### address
 

@@ -55,9 +55,9 @@ describe("Example 10 · Covenant Dev Framework (GuardedVaultCounter)", () => {
       captureTrace: true
     });
 
-    expect(valid).toPassCovenantTransition();
+    expect(valid).toPassCovenantTransition({ minEvidence: "SCRIPT_VM" }); // SC-04: runner-level evidence, accepted explicitly
     expect(valid).toHaveCovenantState({ value: 15n });
-    expect(valid).toPreserveCovenantId(genesis.covenantId);
+    expect(valid).toPreserveCovenantId(genesis.covenantId, { minEvidence: "SCRIPT_VM" });
     expect(valid.vmResult?.trace?.length).toBeGreaterThan(0);
     expect(valid.vmResult?.runnerIdentity?.trust).toBe("UNVERIFIED");
 

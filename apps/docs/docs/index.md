@@ -16,7 +16,7 @@ It provides developers with a reproducible CLI, unified TypeScript SDK (`@hardka
 - **SilverScript & Covenants (`silverc v1.0.0`):** Compile `.sil` contracts with byte-for-byte provenance, deploy P2SH outputs, and execute 1:1 auth-bound covenant genesis and state transitions.
 - **ZK L1 Verification & Toccata Scripts (`OpZkPrecompile`):** Verify Groth16 BN254 proofs mathematically (`hardkas zk proof verify-math`), reject weak trapdoor verification keys, and construct canonical Toccata L1 redeem/signature scripts (`hardkas zk toccata build-scripts`).
 - **Evidence-Driven Artifacts:** Every transaction plan, PSKT session, signature, and receipt is materialized as a content-addressed artifact on disk (`TxPlan` → `SignedTx` → `TxReceipt`), forming an auditable Evidence DAG.
-- **Production Backend Toolkit:** Build indexers, merchant checkouts, and custody backends using `@hardkas/toolkit`, `@hardkas/query-store`, and `@hardkas/pskt-native`.
+- **Backend toolkit (alpha):** build indexers and merchant checkouts with `@hardkas/toolkit` and `@hardkas/query-store`.
 
 ## Get Started
 

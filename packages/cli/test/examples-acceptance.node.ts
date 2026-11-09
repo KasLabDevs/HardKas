@@ -34,6 +34,8 @@ interface RunExampleOptions {
   command: string;
   cwd?: string;
   expectExitCode?: number;
+  /** Exit codes accepted besides expectExitCode, for commands whose result depends on the machine. */
+  acceptExitCodes?: number[];
   outputIncludes?: string[];
   outputExcludes?: string[];
   input?: string;
@@ -78,7 +80,8 @@ async function runCliExample(options: RunExampleOptions) {
       sdkMissing = true;
     }
 
-    const expectedCode = options.expectExitCode ?? 0;
+    // A command whose exit code depends on the machine (doctor exits 1 when a check fails, L-02) lists the accepted codes.
+    const expectedCode = options.acceptExitCodes?.includes(exitCode ?? -1) ? (exitCode as number) : options.expectExitCode ?? 0;
 
     if (exitCode === expectedCode) {
       if (expectedCode !== 0) expectedFailures++;
@@ -156,6 +159,8 @@ describe("HardKAS CLI Examples Acceptance Suite", () => {
       await runCliExample({
         name: "doctor",
         command: "doctor",
+        // 0 when every check passes, 1 when one fails (L-02); either way the report is printed
+        acceptExitCodes: [0, 1],
         outputIncludes: ["Doctor", "Operation", "Store"]
       });
     });

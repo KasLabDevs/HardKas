@@ -44,7 +44,7 @@ title: hardkas artifact
 
 ### Synopsis (Generated)
 
-**Purpose:** Verify an artifact's integrity and schema stable
+**Purpose:** Verify an artifact: integrity (offline, every network), and on request its network level (NETWORK_OBSERVED by a node of its network) and consensus level (CONSENSUS_CONFIRMED by the declared confirmation policy; not finality). Mainnet: offline only stable
 
 #### Arguments
 
@@ -55,6 +55,11 @@ title: hardkas artifact
 - `--json` (Default: `false`): Output results as JSON
 - `--recursive` (Default: `false`): Recursively verify all artifacts in a directory
 - `--strict` (Default: `false`): Perform deep semantic and operational safety verification
+- `--network &lt;network&gt;`: Check the artifact's transaction on a node of this network (must be the artifact's own; mainnet is never contacted)
+- `--url &lt;url&gt;`: Node wRPC (JSON) endpoint for the network check (default: the one the workspace declares for the network; local networks: their local default)
+- `--since &lt;blockHash&gt;`: Virtual-chain cursor for the network check: a chain block before the transaction's acceptance (default: the artifact's own submit point, else the node's pruning point)
+- `--min-confirmations &lt;n&gt;`: Blue-score depth for CONSENSUS_CONFIRMED (default: the HardKAS product policy, 100)
+- `--require &lt;level&gt;`: Level the verification must reach to succeed: integrity (default), network or consensus
 - `--workspace &lt;path&gt;`: Override workspace root directory
 
 ---

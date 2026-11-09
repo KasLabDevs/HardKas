@@ -130,10 +130,10 @@ describe("Fase 1 & 2 · Covenant Testbed & Kaspa Script VM Debugger (PRUEBAS A, 
       captureTrace: true
     });
 
-    expect(result).toPassCovenantTransition();
+    expect(result).toPassCovenantTransition({ minEvidence: "SCRIPT_VM" }); // SC-04: runner-level evidence, accepted explicitly
     expect(result).toHaveCovenantState({ value: 15n });
-    expect(result).toPreserveCovenantId(genesis.covenantId);
-    expect(result).toProduceSuccessor(1);
+    expect(result).toPreserveCovenantId(genesis.covenantId, { minEvidence: "SCRIPT_VM" });
+    expect(result).toProduceSuccessor(1, { minEvidence: "SCRIPT_VM" });
     expect(result).toConsumeComputeWithin(200_000);
     expect(result.vmResult?.trace?.length).toBeGreaterThan(0);
   });
@@ -259,7 +259,7 @@ describe("Fase 1 & 2 · Covenant Testbed & Kaspa Script VM Debugger (PRUEBAS A, 
       nextStates: [{ state: { value: 15n } }],
       feeSompi: 300_000n
     });
-    expect(validVault).toPassCovenantTransition();
+    expect(validVault).toPassCovenantTransition({ minEvidence: "SCRIPT_VM" });
     expect(validVault).toHaveCovenantState({ value: 15n });
 
     // D.4: Insufficient compute budget (computeBudget = 1) -> rejected with COMPUTE_BUDGET_INSUFFICIENT

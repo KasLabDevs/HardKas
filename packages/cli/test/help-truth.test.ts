@@ -75,4 +75,16 @@ describe("--help says what the CLI does", () => {
     expect(option("tx plan", "--from").description).toMatch(/default: alice/);
     expect(option("repair", "--force").description).toMatch(/only reports/);
   });
+
+  it("SIM-18 · every simulator subcommand carries the simulator's maturity (experimental), fund and account create included", () => {
+    expect(command("simulator fund").description()).toMatch(/synthetic/);
+    const leaves = (c: Command, prefix: string): Array<[string, Command]> =>
+      c.commands.length === 0 ? [[prefix, c]] : c.commands.flatMap((s) => leaves(s, `${prefix} ${s.name()}`));
+    const all = leaves(command("simulator"), "simulator");
+    expect(all.map(([p]) => p).sort()).toEqual(["simulator account create", "simulator fund", "simulator start"]);
+    for (const [p, c] of all) {
+      expect(c.description(), p).toMatch(/experimental/);
+      expect(c.description(), p).not.toMatch(/\bstable\b/);
+    }
+  });
 });

@@ -5,11 +5,13 @@ import os from "node:os";
 import path from "node:path";
 import {
   SILVERSCRIPT_RELEASE,
+  getHardkasHome,
   getSilvercReference,
   getToolchainInstallDir,
   verifyManagedToolchainSync,
   type ManagedToolchainReference
 } from "./toolchains.js";
+import { stagePinnedExecutable } from "./staged-executable.js";
 
 /**
  * SilverScript compilation through the pinned official silverc.
@@ -214,6 +216,14 @@ export function parseSilAbiArtifact(input: unknown): SilAbiArtifact {
     if (c.delegate_entry_abi !== undefined && typeof c.delegate_entry_abi !== "string") {
       invalid(`${where}.delegate_entry_abi`, "not an entry name");
     }
+    // SC-12 · silverscript-abi verify_compiled_contract: the covenant entries the artifact names exist (it used to be
+    // checked only by @hardkas/accounts v1ContractFactsFromArtifact)
+    const named = [...Object.values((c.cov_decl_to_abi ?? {}) as Record<string, string>), ...(c.delegate_entry_abi !== undefined ? [c.delegate_entry_abi as string] : [])];
+    for (const entry of named) {
+      if (!Object.prototype.hasOwnProperty.call(c.entries, entry)) {
+        throw silverError("SILVER_ARTIFACT_INCONSISTENT", `'${name}' names covenant entry '${entry}', which it does not have`);
+      }
+    }
 
     if (!isObject(c.compiled)) invalid(`${where}.compiled`, "not an object");
     onlyKeys(`${where}.compiled`, c.compiled, ["bytecode", "template_hash", "state_span"]);
@@ -397,9 +407,11 @@ export function serializeSilArtifactValues(values: readonly SilArtifactValue[]):
 // ---------------------------------------------------------------------------
 
 export interface ManagedSilverc {
-  /** Absolute path of the verified silverc binary. */
+  /** Absolute path of the verified silverc binary (verified there; never started from there, see runSilverc). */
   readonly path: string;
   readonly ref: ManagedToolchainReference;
+  /** The HARDKAS_HOME it was resolved in (its `run/silverc` holds the private copies that start). */
+  readonly home: string;
 }
 
 /**
@@ -408,7 +420,8 @@ export interface ManagedSilverc {
  */
 export function resolveManagedSilverc(home?: string): ManagedSilverc {
   const ref = getSilvercReference();
-  const dir = getToolchainInstallDir(ref, home);
+  const resolvedHome = home ?? getHardkasHome();
+  const dir = getToolchainInstallDir(ref, resolvedHome);
   const verification = verifyManagedToolchainSync(ref, dir);
   if (!verification.installed) {
     throw silverError(
@@ -423,7 +436,7 @@ export function resolveManagedSilverc(home?: string): ManagedSilverc {
         `Reinstall it with: hardkas toolchain install silverc --force`
     );
   }
-  return { path: path.join(dir, ref.entry), ref };
+  return { path: path.join(dir, ref.entry), ref, home: resolvedHome };
 }
 
 export const SILVER_COMPILE_PROVENANCE_SCHEMA = "hardkas.silver.compileProvenance.v1";
@@ -466,13 +479,39 @@ export interface SilverCompileRequest {
   readonly timeoutMs?: number | undefined;
 }
 
+/**
+ * SC-02 · silverc starts from a private copy of the bytes that matched the pin, never from the toolchain path: the file
+ * is read once, hashed against the pin, written to a new directory under `<home>/run/silverc`, hashed again right before
+ * the start, and removed after it (staged-executable.ts; the same staging the SilverScript runner uses).
+ */
 function runSilverc(silverc: ManagedSilverc, args: readonly string[], timeoutMs?: number): Promise<void> {
+  const pinned = silverc.ref.files[silverc.ref.entry]?.sha256;
+  if (!pinned) {
+    return Promise.reject(silverError("SILVERC_TOOLCHAIN_INTEGRITY_FAILED", `the silverc pin has no digest for ${silverc.ref.entry}`));
+  }
+  let staged: ReturnType<typeof stagePinnedExecutable>;
+  try {
+    staged = stagePinnedExecutable({
+      source: silverc.path,
+      expectedSha256: pinned,
+      stageRoot: path.join(silverc.home, "run", "silverc"),
+      fileName: path.basename(silverc.ref.entry),
+      label: "silverc",
+      mismatchCode: "SILVERC_TOOLCHAIN_INTEGRITY_FAILED",
+      changedCode: "SILVERC_CHANGED",
+      stageFailedCode: "SILVERC_START_FAILED"
+    });
+    staged.verify();
+  } catch (e) {
+    return Promise.reject(e);
+  }
   return new Promise<void>((resolve, reject) => {
     execFile(
-      silverc.path,
+      staged.path,
       [...args],
       { windowsHide: true, timeout: timeoutMs ?? 120_000, maxBuffer: 16 * 1024 * 1024 },
       (error, _stdout, stderr) => {
+        staged.cleanup();
         if (!error) return resolve();
         reject(silverError("SILVERC_COMPILE_FAILED", String(stderr || error.message).trim()));
       }

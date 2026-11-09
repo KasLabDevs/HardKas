@@ -8,7 +8,7 @@
 
 > **getMigrationPath**(`fromVersion`, `toVersion`): readonly [`MigrationStep`](../interfaces/MigrationStep.md)[]
 
-Defined in: [packages/artifacts/src/migration.ts:196](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/migration.ts#L196)
+Defined in: [packages/artifacts/src/migration.ts:253](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/migration.ts#L253)
 
 Resolves the ordered list of migration steps needed to go from
 `fromVersion` to `toVersion`.

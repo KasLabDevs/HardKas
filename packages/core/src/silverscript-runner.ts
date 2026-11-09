@@ -487,17 +487,48 @@ function onlyKeys(where: string, o: Record<string, unknown>, allowed: readonly s
   for (const k of Object.keys(o)) if (!allowed.includes(k)) invalidFile(where, `unknown field '${k}' (the runner would ignore it)`);
 }
 
-/** Every JSON number must survive JSON.parse exactly: the runner reads u64 and i64 values. */
-function checkNumbers(where: string, v: unknown): void {
-  if (typeof v === "number") {
-    if (!Number.isSafeInteger(v)) {
-      throw runnerError("SILVER_TEST_NUMBER_UNSAFE", `${where}: ${v} is not an exact integer; the runner would not receive this value (large amounts must stay below 2^53)`);
-    }
-  } else if (Array.isArray(v)) {
-    v.forEach((x, i) => checkNumbers(`${where}[${i}]`, x));
-  } else if (isObject(v)) {
-    for (const [k, x] of Object.entries(v)) checkNumbers(`${where}.${k}`, x);
+const RUNNER_U64_MAX = (1n << 64n) - 1n;
+const PLAIN_INTEGER = /^-?(?:0|[1-9][0-9]*)$/;
+const isRawJson = (v: unknown): v is { readonly rawJSON: string } =>
+  (JSON as unknown as { isRawJSON?: (x: unknown) => boolean }).isRawJSON?.(v) === true;
+
+/** The integer an exact test-file number holds (a safe JS number, a bigint, or a JSON.rawJSON integer). */
+function exactIntegerOf(v: unknown): bigint {
+  return isRawJson(v) ? BigInt(v.rawJSON) : BigInt(v as number | bigint | string);
+}
+
+/**
+ * Every number of a test file reaches the runner exactly (it reads u64 and i64 values). SC-09: an integer beyond 2^53 is
+ * written exactly: a JSON.rawJSON integer (how `hardkas silver test` reads the file) or a bigint (a programmatic caller),
+ * between i64::MIN and u64::MAX, becomes an exact JSON integer of the runner file. A JS number that is not a safe integer
+ * already lost its digits and is refused, as is any other exact literal (a fraction, an exponent, out of range). Returns
+ * the test with bigints turned into exact JSON integers; everything else is kept as given.
+ */
+function exactNumbers(where: string, v: unknown): unknown {
+  const unsafe = (shown: string): never => {
+    throw runnerError(
+      "SILVER_TEST_NUMBER_UNSAFE",
+      `${where}: ${shown} is not an exact integer between i64::MIN and u64::MAX; the runner would not receive this value`
+    );
+  };
+  if (typeof v === "number") return Number.isSafeInteger(v) ? v : unsafe(String(v));
+  if (typeof v === "bigint" || isRawJson(v)) {
+    const text = typeof v === "bigint" ? v.toString() : v.rawJSON;
+    if (!PLAIN_INTEGER.test(text)) return unsafe(text);
+    const n = BigInt(text);
+    if (n < RUNNER_I64_MIN || n > RUNNER_U64_MAX) return unsafe(text);
+    return typeof v === "bigint" ? jsonInteger64(n) : v;
   }
+  if (Array.isArray(v)) return v.map((x, i) => exactNumbers(`${where}[${i}]`, x));
+  if (isObject(v)) return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, exactNumbers(`${where}.${k}`, x)]));
+  return v;
+}
+
+/** An exact JSON integer (JSON.rawJSON) in the runner's i64..u64 range. */
+function jsonInteger64(n: bigint): unknown {
+  const rawJSON = (JSON as unknown as { rawJSON?: (text: string) => unknown }).rawJSON;
+  if (typeof rawJSON !== "function") throw runnerError("SILVER_TEST_VALUE_UNREPRESENTABLE", `${n}: this Node.js cannot write an exact JSON integer (JSON.rawJSON)`);
+  return rawJSON(n.toString());
 }
 
 function isSignatureSlot(v: unknown): v is { signature: string } {
@@ -547,8 +578,7 @@ function checkTest(where: string, t: unknown, names: Set<string>): Record<string
       invalidFile(`${where}.tx`, `active_input_index ${active} is not an input`);
     }
   }
-  checkNumbers(where, t);
-  return t;
+  return exactNumbers(where, t) as Record<string, any>;
 }
 
 function hexOf(where: string, raw: unknown, exactBytes?: number): string {
@@ -588,9 +618,9 @@ function scenarioTransaction(k: any, where: string, tx: Record<string, any> | un
     return {
       previousOutpoint: outpoint,
       signatureScript: "",
-      sequence: BigInt(input.sequence ?? 0),
+      sequence: exactIntegerOf(input.sequence ?? 0),
       sigOpCount: input.sig_op_count ?? 100,
-      utxo: { outpoint, amount: BigInt(input.utxo_value), scriptPublicKey: new k.ScriptPublicKey(0, spk), blockDaaScore: 0n, isCoinbase: false }
+      utxo: { outpoint, amount: exactIntegerOf(input.utxo_value), scriptPublicKey: new k.ScriptPublicKey(0, spk), blockDaaScore: 0n, isCoinbase: false }
     };
   });
   const outputs = scenario.outputs.map((output: Record<string, any>, index: number) => {
@@ -604,13 +634,13 @@ function scenarioTransaction(k: any, where: string, tx: Record<string, any> | un
       script = String(new k.ScriptBuilder().addData(hexOf(`${w}.p2pk_pubkey`, output.p2pk_pubkey)).addOp(k.Opcodes.OpCheckSig).drain());
     } else if (output.constructor_args !== undefined) return unsupported(w, "constructor_args");
     else script = lockHex;
-    return { value: BigInt(output.value), scriptPublicKey: new k.ScriptPublicKey(0, script) };
+    return { value: exactIntegerOf(output.value), scriptPublicKey: new k.ScriptPublicKey(0, script) };
   });
   return new k.Transaction({
     version: scenario.version ?? 1,
     inputs,
     outputs,
-    lockTime: BigInt(scenario.lock_time ?? 0),
+    lockTime: exactIntegerOf(scenario.lock_time ?? 0),
     subnetworkId: "00".repeat(20),
     gas: 0n,
     payload: ""

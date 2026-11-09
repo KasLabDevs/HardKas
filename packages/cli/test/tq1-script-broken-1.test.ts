@@ -7,6 +7,7 @@ import type { AddressInfo } from "node:net";
 import { WebSocketServer } from "ws";
 import { cliDist, repoRoot } from "./first-contact-helpers.js";
 import { hermeticChildEnv, assertHermeticPreloadActive } from "./hermetic-child.js";
+import { CANONICAL_WRPC_PORT, dialsPort, foreignLocalProbe, startOnFixedPort } from "./canonical-port-diagnostics.js";
 
 vi.setConfig({ testTimeout: 300_000, hookTimeout: 300_000 });
 
@@ -26,6 +27,10 @@ vi.setConfig({ testTimeout: 300_000, hookTimeout: 300_000 });
 // Fakes: T (the declared node, says testnet-10, holds the funding outpoint), U (another testnet-10 node), S on 18210
 // (says simnet). Every fake refuses `submitTransaction` — nothing is broadcast anywhere. Each run has its own hermetic
 // log of every address it tried. Traces in $HARDKAS_TQ1_TRACE_DIR.
+// N-5 (2026-11-07): S, on the canonical port, also counts connections from processes that are not the script under
+// test (a local wallet, another gate running this file); its count is a diagnostic. "Zero connections" is asserted on
+// the run's own dial log and on T and U, whose ports are ephemeral. Without the port (held elsewhere) the file runs
+// without S. TQ1-4 injects such foreign traffic while it measures.
 // -----------------------------------------------------------------------------
 
 const SCRIPT = path.join(repoRoot, "scripts", "testnet-qualification.mjs");
@@ -189,7 +194,8 @@ function receiptOf(ws: string): { file: string; text: string; json: any } | unde
 }
 const NO_STACK = /^\s+at .+\(.*:\d+:\d+\)$|^\s+at file:\/\//m;
 
-let S: Fake;
+let S: Fake | undefined; // undefined when another process holds 127.0.0.1:18210 (N-5)
+let sUnavailable: string | undefined;
 let T: Fake;
 let U: Fake;
 let R: Fake;
@@ -200,7 +206,9 @@ beforeAll(async () => {
   assertHermeticPreloadActive();
   const coreMod: any = await import("@hardkas/core");
   kaspa = coreMod.loadManagedKaspaWasmSync();
-  S = await startFake("S(:18210 simnet)", "simnet", { port: 18210 });
+  const s = await startOnFixedPort(() => startFake("S(:18210 simnet)", "simnet", { port: CANONICAL_WRPC_PORT }));
+  S = s.fake;
+  sUnavailable = s.unavailable;
   T = await startFake("T(declared, testnet-10)", "testnet-10");
   U = await startFake("U(other, testnet-10)", "testnet-10");
   // R rejects explicitly, with a consensus message
@@ -285,16 +293,29 @@ describe("TQ1-SCRIPT-BROKEN-1 · the script reaches one guarded submission and r
 });
 
 describe("TQ1-SCRIPT-BROKEN-1 · typed refusals before any connection", () => {
-  const refusal = async (name: string, ws: string, env: Record<string, string>, code: RegExp, network = "testnet-10") => {
-    const before = { T: T.connections, U: U.connections, S: S.connections };
+  const refusal = async (name: string, ws: string, env: Record<string, string>, code: RegExp, network = "testnet-10", opts: { foreignProbe?: boolean } = {}) => {
+    const before = { T: T.connections, U: U.connections, S: S?.connections ?? 0 };
+    // N-5: an unrelated local process touches the canonical port while the path is measured (only against our own S)
+    const foreign = opts.foreignProbe && S ? await foreignLocalProbe(CANONICAL_WRPC_PORT) : undefined;
     const r = await qualify(name, ws, env, network);
-    const seen = { exit: r.exit, dialled: r.dialled, fakes: { T: T.connections - before.T, U: U.connections - before.U, S: S.connections - before.S }, out: r.brief };
+    const seen = {
+      exit: r.exit,
+      dialled: r.dialled,
+      foreign,
+      fakes: { T: T.connections - before.T, U: U.connections - before.U },
+      // diagnostic only: S counts every connection to 127.0.0.1:18210, from the script under test or not
+      fakeS: S ? { connections: S.connections - before.S } : { unavailable: sUnavailable },
+      out: r.brief
+    };
     trace(name, seen);
     expect(r.exit, r.brief).toBe(4);
     expect(r.stderr, r.brief).toMatch(code);
     expect(r.stderr, `${name}: a configuration refusal is typed, not a stack trace`).not.toMatch(NO_STACK);
+    // the run's own dial log: no address at all, so never 127.0.0.1:18210
     expect(r.dialled, r.brief).toEqual([]);
-    expect(seen.fakes, r.brief).toEqual({ T: 0, U: 0, S: 0 });
+    expect(dialsPort(r.dialled, CANONICAL_WRPC_PORT), r.brief).toBe(false);
+    expect(seen.fakes, JSON.stringify(seen, null, 1)).toEqual({ T: 0, U: 0 });
+    if (foreign) expect(foreign.connected, `the foreign traffic reached S during the measured window: ${JSON.stringify(seen, null, 1)}`).toBe(true);
     expect(receiptOf(ws), r.brief).toBeUndefined();
   };
 
@@ -310,7 +331,7 @@ describe("TQ1-SCRIPT-BROKEN-1 · typed refusals before any connection", () => {
 
   it("TQ1-4 own node as `kaspa-node` without rpcUrl: NETWORK_ENDPOINT_REQUIRED, never 127.0.0.1:18210", async () => {
     const ws = workspace("V4", full({ "testnet-10": { kind: "kaspa-node", network: "testnet-10" } }));
-    await refusal("TQ1-4", ws, tqEnv(T.url, ws), /NETWORK_ENDPOINT_REQUIRED/);
+    await refusal("TQ1-4", ws, tqEnv(T.url, ws), /NETWORK_ENDPOINT_REQUIRED/, "testnet-10", { foreignProbe: true });
   });
 
   it("TQ1-6 an invalid workspace config (allowPublic without experimental): CONFIGURATION_REFUSED, typed", async () => {
@@ -329,5 +350,17 @@ describe("TQ1-SCRIPT-BROKEN-1 · typed refusals before any connection", () => {
     trace("TQ1-8", { exit: r.exit, dialled: r.dialled, out: r.brief });
     expect(r.exit, r.brief).toBe(4);
     expect(r.dialled).toEqual([]);
+  });
+});
+
+describe("N-5 · the canonical-port detector the zero-connection assertions rely on", () => {
+  it("names a dial to 18210 in every loopback spelling the hermetic preload records, let through or refused, and nothing else", () => {
+    for (const d of ["LOOPBACK_CONNECT 127.0.0.1:18210", "REFUSED_LOOPBACK_PORT 127.0.0.1:18210", "LOOPBACK_CONNECT localhost:18210", "LOOPBACK_CONNECT ::1:18210", "LOOPBACK_CONNECT 0.0.0.0:18210", "LOOPBACK_CONNECT 127.0.0.2:18210"]) {
+      expect(dialsPort([`LOOPBACK_CONNECT 127.0.0.1:40000`, d], CANONICAL_WRPC_PORT), d).toBe(true);
+    }
+    for (const d of ["LOOPBACK_CONNECT 127.0.0.1:182100", "LOOPBACK_CONNECT 127.0.0.1:28210", "LOOPBACK_CONNECT 127.0.0.1:1821", "REFUSED_CONNECT 18210.example:443"]) {
+      expect(dialsPort([d], CANONICAL_WRPC_PORT), d).toBe(false);
+    }
+    expect(dialsPort([], CANONICAL_WRPC_PORT)).toBe(false);
   });
 });

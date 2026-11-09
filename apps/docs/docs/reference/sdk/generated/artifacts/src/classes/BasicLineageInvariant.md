@@ -6,7 +6,7 @@
 
 # Class: BasicLineageInvariant
 
-Defined in: [packages/artifacts/src/invariants/definitions.ts:115](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/invariants/definitions.ts#L115)
+Defined in: [packages/artifacts/src/invariants/definitions.ts:129](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/invariants/definitions.ts#L129)
 
 Basic lineage invariant: if parentArtifactId is present, it should ideally be resolvable.
 
@@ -30,7 +30,7 @@ Basic lineage invariant: if parentArtifactId is present, it should ideally be re
 
 > `readonly` **description**: `"Parent artifact should be resolvable if specified"` = `"Parent artifact should be resolvable if specified"`
 
-Defined in: [packages/artifacts/src/invariants/definitions.ts:117](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/invariants/definitions.ts#L117)
+Defined in: [packages/artifacts/src/invariants/definitions.ts:131](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/invariants/definitions.ts#L131)
 
 #### Implementation of
 
@@ -42,7 +42,7 @@ Defined in: [packages/artifacts/src/invariants/definitions.ts:117](https://githu
 
 > `readonly` **id**: `"INVAR_BASIC_LINEAGE"` = `"INVAR_BASIC_LINEAGE"`
 
-Defined in: [packages/artifacts/src/invariants/definitions.ts:116](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/invariants/definitions.ts#L116)
+Defined in: [packages/artifacts/src/invariants/definitions.ts:130](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/invariants/definitions.ts#L130)
 
 #### Implementation of
 
@@ -54,7 +54,7 @@ Defined in: [packages/artifacts/src/invariants/definitions.ts:116](https://githu
 
 > **check**(`context`): `Promise`\<[`InvariantViolation`](../interfaces/InvariantViolation.md)[]\>
 
-Defined in: [packages/artifacts/src/invariants/definitions.ts:119](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/invariants/definitions.ts#L119)
+Defined in: [packages/artifacts/src/invariants/definitions.ts:133](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/invariants/definitions.ts#L133)
 
 #### Parameters
 

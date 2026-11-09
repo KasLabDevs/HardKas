@@ -22,7 +22,10 @@ export function registerStatusCommands(program: Command) {
         }
         const hardkasDir = path.join(root, ".hardkas");
         const artifactsDir = path.join(hardkasDir, "artifacts");
-        const hasWorkspace = fs.existsSync(hardkasDir);
+        // INT9 · CLI-CONTRACT-2B C4b: a workspace is its hardkas.config.* or its .hardkas/ (WA-1: the config is the root),
+        // the same rule the rest of the CLI applies; a config with no .hardkas/ yet is a workspace with nothing recorded
+        const { workspaceExists, loadHardkasConfig } = await import("@hardkas/config");
+        const hasWorkspace = workspaceExists(workspace);
 
         if (!hasWorkspace) {
           UI.info("No HardKAS workspace detected in current directory.");
@@ -31,6 +34,26 @@ export function registerStatusCommands(program: Command) {
         }
 
         UI.box("Workspace", root);
+
+        // INT9 · CLI-CONTRACT-2B C4: the config is loaded, and one that cannot load is reported (and fails the command at
+        // the end) instead of describing the workspace as if nothing were wrong
+        let configError: string | undefined;
+        if (workspace.configPath) {
+          try {
+            await loadHardkasConfig({ workspaceRoot: root });
+          } catch (e: unknown) {
+            configError = e instanceof Error ? e.message : String(e);
+          }
+        }
+        UI.field(
+          "Config",
+          workspace.configPath
+            ? configError
+              ? `${path.basename(workspace.configPath)} cannot load: ${configError}`
+              : `${path.basename(workspace.configPath)} (loaded)`
+            : "none (built-in defaults)"
+        );
+        if (!fs.existsSync(hardkasDir)) UI.field("State", "no .hardkas/ directory yet: nothing has been recorded in this workspace");
 
         // 2. Dev server (offline check). SURFACE-TRUTH-1B: the dev server `hardkas dev` starts (localhost:7420). This used
         // to ask the old dashboard (localhost:3333, a command the CLI does not register), and to report the Kaspa node
@@ -130,6 +153,13 @@ export function registerStatusCommands(program: Command) {
         }
 
         UI.printNextSteps(nextSteps);
+        if (configError) {
+          const { HardkasCliError } = await import("../cli-errors.js");
+          throw new HardkasCliError("CONFIG_LOAD_FAILED", `The workspace's ${path.basename(workspace.configPath!)} cannot load: ${configError}`, {
+            exitCode: 1,
+            suggestion: `Fix ${workspace.configPath} and run 'hardkas status' again.`
+          });
+        }
       } catch (e) {
         handleError(e, "Status Error");
       }

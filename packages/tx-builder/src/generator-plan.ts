@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { loadManagedKaspaWasmSync } from "@hardkas/core";
 import { buildTransactions } from "./kaspa-wallet-adapter.js";
 import { covenantIdOf } from "./covenant-utxos.js";
+import { generatorFeeRate } from "./fee-policy.js";
 import type { Utxo, TxPlan } from "./index.js";
 
 /*
@@ -35,7 +36,10 @@ export interface GeneratorPlanRequest {
   /** Payment outputs. Empty for a consolidation: every selected input goes to `changeAddress`. */
   readonly outputs: readonly { readonly address: string; readonly amountSompi: bigint }[];
   readonly changeAddress: string;
-  /** Sompi per gram; the Generator never charges less than the network minimum. */
+  /**
+   * Sompi per gram. At or below the relay minimum (100) the transaction pays the minimum, charged on the compute mass;
+   * above it the rate is priority, priced on max(compute, storage) as the mempool ranks it (FEE-POLICY-1).
+   */
   readonly feeRate?: bigint | undefined;
   /** Transaction payload (hex); the Generator prices its mass. */
   readonly payload?: string | undefined;
@@ -146,6 +150,7 @@ export async function planWithGenerator(request: GeneratorPlanRequest): Promise<
   });
 
   const txs: any[] = [];
+  const priorityRate = generatorFeeRate(request.feeRate);
   try {
     for await (const pt of buildTransactions({
       networkId,
@@ -155,7 +160,9 @@ export async function planWithGenerator(request: GeneratorPlanRequest): Promise<
       ...(request.outputs.length > 0
         ? { outputs: request.outputs.map((o) => ({ address: addressFor(o.address), amount: o.amountSompi })), priorityFee: 0n }
         : {}),
-      ...(request.feeRate !== undefined ? { feeRate: Number(request.feeRate) } : {}),
+      // FEE-POLICY-1 (CA-TX-03): a rate at or below the relay minimum is "the minimum", which the Generator charges on the
+      // compute mass when given no rate; only a priority rate above it is handed over (priced as the mempool ranks it)
+      ...(priorityRate !== undefined ? { feeRate: priorityRate } : {}),
       ...(request.payload ? { payload: request.payload } : {})
     })) {
       txs.push(pt);
@@ -256,9 +263,19 @@ function refusal(e: unknown, request: GeneratorPlanRequest): Error {
 
 /** A single-transaction payment plan in HardKAS's TxPlan shape. */
 export async function planPaymentWithGenerator(request: GeneratorPlanRequest & { readonly version?: 0 | 1 | undefined }): Promise<TxPlan> {
+  // L1-05: the Generator prices v0 transactions only (wallet/core/src/tx/mass.rs: "TODO: Add support for v1
+  // transactions" — no compute-budget bytes, no budget × 100 g): a v1 plan priced by it would carry budget 0 and a fee
+  // below the node's rule. v1 transactions are planned by `planV1Transaction` (v1-plan.ts), never here.
+  if (request.version !== undefined && request.version !== 0) {
+    throw new GeneratorPlanError(
+      "GENERATOR_V1_UNSUPPORTED",
+      `the Generator plans version-0 transactions only (requested version ${String(request.version)}); plan a v1 transaction ` +
+        "with the v1 planner (planV1Transaction / the v1 engine). Nothing was planned."
+    );
+  }
   const outcome = await planWithGenerator(request);
   return {
-    version: request.version ?? 0,
+    version: 0,
     inputs: outcome.inputs,
     outputs: outcome.outputs,
     ...(outcome.changeSompi > 0n ? { change: { address: request.changeAddress, amountSompi: outcome.changeSompi } } : {}),

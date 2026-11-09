@@ -177,6 +177,7 @@ title: hardkas tx
 - `--json` (Default: `false`): Output as JSON
 - `--track &lt;label&gt;`: Signed-artifact mode: after an accepted broadcast, record a deployment with this label
 - `--preflight` (Default: `false`): Payments: right before the broadcast, check every input at the node (unspent, as planned, no covenant id, not pending in its mempool) and verify each input's signature against the node's UTXO; anything it cannot verify refuses the send. One node's view, not a consensus validation
+- `--allow-unplanned` (Default: `false`): Signed-artifact mode: send a signed transaction that names no plan of this workspace (signed elsewhere). HardKAS then cannot check that it is a planned transaction nor its fee limit: you take both on yourself. Without it such a send is refused (SEND_PLAN_UNRESOLVED)
 
 ### Semantic Contract (Curated)
 
@@ -230,6 +231,7 @@ title: hardkas tx
 - `--interval &lt;seconds&gt;` (Default: `2`): Seconds between observations
 - `-n, --network &lt;network&gt;`: Network whose configured node observes (default: the network of the recorded submission)
 - `--since &lt;chainBlockHash&gt;`: Scan the node's virtual chain from this chain block (64 hex; it must precede the tx's acceptance) on the first look — for a tx sent outside this workspace
+- `--address &lt;address&gt;`: An address the tx pays (repeatable), for a tx sent outside this workspace with no --since: the scan starts at the node's sink when the wait starts, an output of the tx listed there before that point ends the wait (TX_WAIT_ACCEPTED_BEFORE_CURSOR), and the UTXO view is checked there
 - `--json` (Default: `false`): Output as JSON
 
 ---

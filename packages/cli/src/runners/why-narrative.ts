@@ -55,9 +55,18 @@ export function describeWhyNode(artifact: any): string | undefined {
     const guest = typeof artifact?.guestSystem === "string" ? artifact.guestSystem : "Guest";
     const sys = typeof artifact?.provingSystem === "string" ? artifact.provingSystem : "Groth16";
     const curve = typeof artifact?.curve === "string" ? artifact.curve : "BN254";
-    const math = artifact?.verifiedOffChain ? "Math verified locally" : "Math verification FAILED";
+    const offChain =
+      artifact?.offChainVerification === "FAILED"
+        ? "FAILED"
+        : artifact?.verifiedOffChain === true
+          ? "VERIFIED"
+          : "NOT_PERFORMED";
     const journal = typeof artifact?.journalHash === "string" ? `${String(artifact.journalHash).slice(0, 8)}...` : "unknown";
-    return `ZK proof (${guest} ${sys} ${curve}), journal ${journal}, ${math}. Cryptographic Groth16 proof verified off-chain; consensus acceptance requires OpZkPrecompile execution in DAG.`;
+    if (offChain === "VERIFIED") {
+      return `ZK proof (${guest} ${sys} ${curve}), journal ${journal}, Math verified locally. Cryptographic Groth16 proof verified off-chain; consensus acceptance requires OpZkPrecompile execution in DAG.`;
+    }
+    const math = offChain === "FAILED" ? "Local math verification FAILED" : "No local math verification was performed";
+    return `ZK proof (${guest} ${sys} ${curve}), journal ${journal}, ${math}. Only OpZkPrecompile execution in the DAG decides acceptance.`;
   }
   return undefined;
 }

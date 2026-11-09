@@ -239,10 +239,13 @@ describe("Wave 2(d) · the submission records a derived fee or insufficient evid
   // EXPECTED-TXID-1: an opaque payload is no longer sendable — its official id cannot be computed, so the TXID it is
   // sent under cannot be checked (and no HardKAS client could convert it to send it). The fee's insufficient-evidence
   // derivation itself stays covered by the artifacts suite (wave2-d-submission-fee).
-  it("an opaque payload is refused before the broadcast (SIGNED_TXID_UNVERIFIABLE); nothing is written", async () => {
+  // TX-05: a fee limit is now always in force (HardKAS's default when none is set), and with a limit in force a fee that
+  // cannot be derived refuses first (FEE_LIMIT_UNVERIFIABLE, the order TX-FEE-GUARD-1 documents); the opaque payload is
+  // refused before the broadcast either way.
+  it("an opaque payload is refused before the broadcast (FEE_LIMIT_UNVERIFIABLE under the default limit, else SIGNED_TXID_UNVERIFIABLE); nothing is written", async () => {
     const opaque = signedFromPlan(plan, "deadbeef");
     await sdk.artifacts.write(opaque);
-    expect(await codeOf(sdk.tx.send(opaque, LOOPBACK))).toBe("SIGNED_TXID_UNVERIFIABLE");
+    expect(["FEE_LIMIT_UNVERIFIABLE", "SIGNED_TXID_UNVERIFIABLE"]).toContain(await codeOf(sdk.tx.send(opaque, LOOPBACK)));
     expect(submit).not.toHaveBeenCalled();
     expect(submissions()).toEqual([]);
   });

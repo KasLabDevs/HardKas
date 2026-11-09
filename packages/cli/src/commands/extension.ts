@@ -251,11 +251,33 @@ export function registerExtensionCommands(program: Command, registry: ExtensionR
         spec = file;
       }
       const command = installCommand(pm, spec, { pnpmWorkspaceRoot: isPnpmWorkspaceRoot(workspaceRoot) });
-      const plan = { id: known.id, package: known.packageName, version: HARDKAS_VERSION, packageManager: pm, command, ...(verifiedSha256 ? { sha256: verifiedSha256 } : {}) };
+      const plan = {
+        id: known.id,
+        package: known.packageName,
+        version: HARDKAS_VERSION,
+        published: known.published,
+        packageManager: pm,
+        command,
+        ...(verifiedSha256 ? { sha256: verifiedSha256 } : {})
+      };
+      // INT9 · a registry install of an extension this release does not publish can only fail (a registry 404 after the
+      // package manager ran): refuse before it runs, and name the offline way.
+      const unpublishedFromRegistry = !options.from && !known.published;
+      const offlineWay = `hardkas extension install ${known.id} --from <tgz> --sha256 <hex>`;
       if (options.dryRun) {
         if (options.json) await writeJson({ ok: true, command: "extension install", mode: "dry-run", result: plan });
-        else UI.info(`Would run: ${command.join(" ")}`);
+        else {
+          UI.info(`Would run: ${command.join(" ")}`);
+          if (unpublishedFromRegistry) UI.warning(`${known.packageName} is not published in this release; only ${offlineWay} can install it.`);
+        }
         return;
+      }
+      if (unpublishedFromRegistry) {
+        throw new HardkasCliError(
+          "EXTENSION_NOT_PUBLISHED",
+          `${known.packageName} is not published in this release, so it cannot be installed from a registry. Nothing was run. Install it from a local tarball: ${offlineWay}`,
+          { exitCode: HardkasExitCode.USAGE_ERROR }
+        );
       }
       await confirmOrRefuse(command, options);
       await runPackageManager(command, workspaceRoot, Boolean(options.json));

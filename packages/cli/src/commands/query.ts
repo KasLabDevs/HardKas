@@ -720,7 +720,8 @@ export function registerQueryCommands(program: Command) {
 
         if (options.json) {
           const { getOutput } = await import("../output.js");
-          getOutput().writeJson({ ok: true, command: "query replay diff", mode: "cli", result });
+          // L1-CORE-1 B4: the envelope named another command ("query replay diff")
+          getOutput().writeJson({ ok: true, command: "query replay summary", mode: "cli", result });
         } else {
           printReplaySummary(result);
         }
@@ -748,7 +749,8 @@ export function registerQueryCommands(program: Command) {
 
         if (options.json) {
           const { getOutput } = await import("../output.js");
-          getOutput().writeJson({ ok: true, command: "query events list", mode: "cli", result });
+          // L1-CORE-1 B4: the envelope named another command ("query events list")
+          getOutput().writeJson({ ok: true, command: "query replay divergences", mode: "cli", result });
         } else {
           printDivergences(result);
         }
@@ -777,7 +779,8 @@ export function registerQueryCommands(program: Command) {
 
         if (options.json) {
           const { getOutput } = await import("../output.js");
-          getOutput().writeJson({ ok: true, command: "query events inspect", mode: "cli", result });
+          // L1-CORE-1 B4: the envelope named another command ("query events inspect")
+          getOutput().writeJson({ ok: true, command: "query replay invariants", mode: "cli", result });
         } else {
           printInvariants(result);
         }
@@ -813,7 +816,8 @@ export function registerQueryCommands(program: Command) {
         const result = await engine.execute(request);
         if (options.json) {
           const { getOutput } = await import("../output.js");
-          getOutput().writeJson({ ok: true, command: "query stats summary", mode: "cli", result });
+          // L1-CORE-1 B4: the envelope named another command ("query stats summary")
+          getOutput().writeJson({ ok: true, command: "query dag conflicts", mode: "cli", result });
         } else {
           printDagConflicts(result);
         }

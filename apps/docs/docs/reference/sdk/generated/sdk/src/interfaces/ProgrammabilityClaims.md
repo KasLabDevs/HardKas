@@ -6,14 +6,16 @@
 
 # Interface: ProgrammabilityClaims
 
-Defined in: [packages/sdk/src/programmability.ts:19](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/programmability.ts#L19)
+Defined in: [packages/sdk/src/programmability.ts:21](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/programmability.ts#L21)
 
 SilverScript claims mirror the exact capability IDs used across the corpus,
 evidence records and `hardkas corpus verify`. Each REAL_NODE_EVIDENCE value
 is backed by fixtures/toccata-v2/silver (recompiled by the managed silverc,
-re-derived by the Kaspa SDK, evidenced by a verified rusty-kaspad 2.0.1).
-Covenant support is exactly the 1:1 auth-bound transition; leader/cov-bound,
-N:M, derived state mappings and signed covenant metering are not claimed.
+re-derived by the Kaspa SDK, evidenced by the verified reference rusty-kaspad).
+Covenant EVIDENCE is exactly the 1:1 auth-bound transition. The v1 engine (hardkas.covenants, `silver engine`) also
+plans and checks 1:N, N:M and terminating transitions (F1.4), but no node has judged them: they are not claimed, and
+neither are leader/cov-bound, derived state mappings or signed covenant metering. Results of @hardkas/simulator or of
+the unverified SilverScript runner (SCRIPT_VM) are never REAL_NODE_EVIDENCE.
 
 ## Properties
 
@@ -21,7 +23,7 @@ N:M, derived state mappings and signed covenant metering are not claimed.
 
 > **artifactCoherence**: `"READY_MATCH"`
 
-Defined in: [packages/sdk/src/programmability.ts:20](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/programmability.ts#L20)
+Defined in: [packages/sdk/src/programmability.ts:22](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/programmability.ts#L22)
 
 ***
 
@@ -29,7 +31,7 @@ Defined in: [packages/sdk/src/programmability.ts:20](https://github.com/KasLabDe
 
 > **generalCovenantSupport**: `"NOT_CLAIMED"`
 
-Defined in: [packages/sdk/src/programmability.ts:28](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/programmability.ts#L28)
+Defined in: [packages/sdk/src/programmability.ts:30](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/programmability.ts#L30)
 
 ***
 
@@ -37,7 +39,7 @@ Defined in: [packages/sdk/src/programmability.ts:28](https://github.com/KasLabDe
 
 > **mainnet**: `"BLOCKED_BY_POLICY"`
 
-Defined in: [packages/sdk/src/programmability.ts:38](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/programmability.ts#L38)
+Defined in: [packages/sdk/src/programmability.ts:40](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/programmability.ts#L40)
 
 ***
 
@@ -45,7 +47,7 @@ Defined in: [packages/sdk/src/programmability.ts:38](https://github.com/KasLabDe
 
 > **risc0InspectSurface**: `"RISC0_INSPECT_SURFACE_READY"`
 
-Defined in: [packages/sdk/src/programmability.ts:31](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/programmability.ts#L31)
+Defined in: [packages/sdk/src/programmability.ts:33](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/programmability.ts#L33)
 
 ***
 
@@ -53,7 +55,7 @@ Defined in: [packages/sdk/src/programmability.ts:31](https://github.com/KasLabDe
 
 > **runtimeOutcome**: `"PARTIAL"`
 
-Defined in: [packages/sdk/src/programmability.ts:33](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/programmability.ts#L33)
+Defined in: [packages/sdk/src/programmability.ts:35](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/programmability.ts#L35)
 
 ***
 
@@ -61,7 +63,7 @@ Defined in: [packages/sdk/src/programmability.ts:33](https://github.com/KasLabDe
 
 > **silverCapabilities**: `object`
 
-Defined in: [packages/sdk/src/programmability.ts:21](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/programmability.ts#L21)
+Defined in: [packages/sdk/src/programmability.ts:23](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/programmability.ts#L23)
 
 ##### silver.compile.v1
 
@@ -85,7 +87,7 @@ Defined in: [packages/sdk/src/programmability.ts:21](https://github.com/KasLabDe
 
 > **silverCompiler**: `"OFFICIAL_SILVERC_V1_0_0_MANAGED"`
 
-Defined in: [packages/sdk/src/programmability.ts:27](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/programmability.ts#L27)
+Defined in: [packages/sdk/src/programmability.ts:29](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/programmability.ts#L29)
 
 ***
 
@@ -93,7 +95,7 @@ Defined in: [packages/sdk/src/programmability.ts:27](https://github.com/KasLabDe
 
 > **vmConsensusEquivalence**: `"NOT_CLAIMED"`
 
-Defined in: [packages/sdk/src/programmability.ts:34](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/programmability.ts#L34)
+Defined in: [packages/sdk/src/programmability.ts:36](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/programmability.ts#L36)
 
 ***
 
@@ -101,7 +103,7 @@ Defined in: [packages/sdk/src/programmability.ts:34](https://github.com/KasLabDe
 
 > **vProgsInspectSurface**: `"VPROGS_INSPECT_SURFACE_READY"`
 
-Defined in: [packages/sdk/src/programmability.ts:32](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/programmability.ts#L32)
+Defined in: [packages/sdk/src/programmability.ts:34](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/programmability.ts#L34)
 
 ***
 
@@ -109,7 +111,7 @@ Defined in: [packages/sdk/src/programmability.ts:32](https://github.com/KasLabDe
 
 > **vProgsRuntime**: `"NOT_CLAIMED"`
 
-Defined in: [packages/sdk/src/programmability.ts:36](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/programmability.ts#L36)
+Defined in: [packages/sdk/src/programmability.ts:38](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/programmability.ts#L38)
 
 ***
 
@@ -117,7 +119,7 @@ Defined in: [packages/sdk/src/programmability.ts:36](https://github.com/KasLabDe
 
 > **vProgsStableApi**: `"NOT_CLAIMED"`
 
-Defined in: [packages/sdk/src/programmability.ts:37](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/programmability.ts#L37)
+Defined in: [packages/sdk/src/programmability.ts:39](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/programmability.ts#L39)
 
 ***
 
@@ -125,7 +127,7 @@ Defined in: [packages/sdk/src/programmability.ts:37](https://github.com/KasLabDe
 
 > **zkCorpusSurface**: `"ZK_CORPUS_SURFACE_READY"`
 
-Defined in: [packages/sdk/src/programmability.ts:29](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/programmability.ts#L29)
+Defined in: [packages/sdk/src/programmability.ts:31](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/programmability.ts#L31)
 
 ***
 
@@ -133,7 +135,7 @@ Defined in: [packages/sdk/src/programmability.ts:29](https://github.com/KasLabDe
 
 > **zkLocalVerification**: `"READY_GROTH16_FIXTURE_COHERENCE"`
 
-Defined in: [packages/sdk/src/programmability.ts:30](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/programmability.ts#L30)
+Defined in: [packages/sdk/src/programmability.ts:32](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/programmability.ts#L32)
 
 ***
 
@@ -141,4 +143,4 @@ Defined in: [packages/sdk/src/programmability.ts:30](https://github.com/KasLabDe
 
 > **zkOnchainVerification**: `"NOT_CLAIMED"`
 
-Defined in: [packages/sdk/src/programmability.ts:35](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/programmability.ts#L35)
+Defined in: [packages/sdk/src/programmability.ts:37](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/programmability.ts#L37)

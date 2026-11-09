@@ -8,7 +8,7 @@
 
 > **migrateToCanonical**(`v1Artifact`): [`ArtifactPayload`](../type-aliases/ArtifactPayload.md)
 
-Defined in: [packages/artifacts/src/migration.ts:392](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/migration.ts#L392)
+Defined in: [packages/artifacts/src/migration.ts:721](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/migration.ts#L721)
 
 Migrates a v1 artifact to canonical format by updating the schema, version,
 and calculating the contentHash.

@@ -6,7 +6,7 @@
 
 # Interface: TxPlanServiceOptions
 
-Defined in: [packages/tx-builder/src/service.ts:13](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/service.ts#L13)
+Defined in: [packages/tx-builder/src/service.ts:11](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/service.ts#L11)
 
 ## Properties
 
@@ -14,28 +14,8 @@ Defined in: [packages/tx-builder/src/service.ts:13](https://github.com/KasLabDev
 
 > `optional` **coinbaseMaturity?**: `bigint`
 
-Defined in: [packages/tx-builder/src/service.ts:17](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/service.ts#L17)
+Defined in: [packages/tx-builder/src/service.ts:17](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/service.ts#L17)
 
-***
-
-### marginFeePerInput?
-
-> `optional` **marginFeePerInput?**: `bigint`
-
-Defined in: [packages/tx-builder/src/service.ts:16](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/service.ts#L16)
-
-***
-
-### maxInputsPerTx?
-
-> `optional` **maxInputsPerTx?**: `number`
-
-Defined in: [packages/tx-builder/src/service.ts:14](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/service.ts#L14)
-
-***
-
-### warnInputs?
-
-> `optional` **warnInputs?**: `number`
-
-Defined in: [packages/tx-builder/src/service.ts:15](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/service.ts#L15)
+Coinbase maturity, in DAA blocks, for the simulator's UTXOs
+(`planTransactionSynthetic`); simnet's when unset. Real networks take it from
+the SDK's network parameters.

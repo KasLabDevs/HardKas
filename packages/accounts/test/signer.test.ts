@@ -126,7 +126,9 @@ describe("signTxPlanArtifact", () => {
     ).rejects.toMatchObject({ code: "MAINNET_SIGNING_DISABLED" });
   });
 
-  it("should allow mainnet signing if allowMainnet is true", async () => {
+  // HK-12: the constant decides on every route (@hardkas/core mainnet-policy.ts: "a direct call never lift it");
+  // `allowMainnet: true` used to lift the guard for direct library calls and this case pinned that escape.
+  it("allowMainnet: true does not lift the mainnet guard (MAINNET_SIGNING_DISABLED)", async () => {
     const mainnetPlan: any = {
       ...mockRealPlan,
       networkId: "mainnet",
@@ -135,7 +137,6 @@ describe("signTxPlanArtifact", () => {
     const mainnetTarget = { mode: "localnet", domain: "kaspa-l1", network: "mainnet" } as const;
     const mainnetAccount = { ...realAccount, network: "mainnet" } as HardkasAccount;
 
-    // It will still fail due to missing backend, but NOT due to mainnet guard
     await expect(
       signTxPlanArtifact({
         target: mainnetTarget,
@@ -143,8 +144,7 @@ describe("signTxPlanArtifact", () => {
         account: mainnetAccount,
         allowMainnet: true
       })
-    // @ts-ignore
-    ).rejects.not.toThrow(/Mainnet signing is disabled/);
+    ).rejects.toMatchObject({ code: "MAINNET_SIGNING_DISABLED" });
   });
 });
 

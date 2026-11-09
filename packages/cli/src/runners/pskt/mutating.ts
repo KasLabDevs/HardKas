@@ -27,7 +27,35 @@ export async function runPsktImport(options: { file: string, payload: string, ou
   throw new HardkasCliError("PSKT_NOT_IMPLEMENTED", "import command not fully implemented yet", { exitCode: HardkasExitCode.RUNTIME_FAILURE });
 }
 
-export async function runPsktSign(sessionPath: string, options: { account?: string, keystore?: string, keyStdin?: boolean, privateKeyFile?: string, out: string, force: boolean, json: boolean }) {
+/**
+ * TX-09: the inputs a `pskt sign` signs: `--inputs 0,2` when given, else the session requirements this participant is
+ * eligible for. Never an empty list (the adapters refuse one), never every input by default.
+ */
+export function psktInputsToSign(
+  session: { requirements?: readonly { inputIndex: number; eligibleParticipants?: readonly string[] }[] },
+  participantId: string,
+  inputs?: string
+): number[] {
+  if (inputs !== undefined) {
+    const parts = String(inputs).split(",").map((s) => s.trim()).filter((s) => s !== "");
+    const indexes = parts.map((s) => (/^\d+$/.test(s) ? Number(s) : NaN));
+    if (indexes.length === 0 || indexes.some((i) => !Number.isSafeInteger(i)) || new Set(indexes).size !== indexes.length) {
+      throw new HardkasCliError("INVALID_ARGUMENT", `--inputs ${JSON.stringify(inputs)} must be a comma-separated list of distinct input indexes (e.g. 0,2).`, { exitCode: HardkasExitCode.USAGE_ERROR });
+    }
+    return indexes;
+  }
+  const eligible = (session.requirements ?? []).filter((r) => (r.eligibleParticipants ?? []).includes(participantId)).map((r) => r.inputIndex);
+  if (eligible.length === 0) {
+    throw new HardkasCliError(
+      "INVALID_ARGUMENT",
+      `No input of this session names "${participantId}" as an eligible signer; pass --inputs <indexes> to choose them explicitly. Nothing was signed.`,
+      { exitCode: HardkasExitCode.USAGE_ERROR }
+    );
+  }
+  return eligible;
+}
+
+export async function runPsktSign(sessionPath: string, options: { account?: string, keystore?: string, keyStdin?: boolean, privateKeyFile?: string, inputs?: string, out: string, force: boolean, json: boolean }) {
   if (options.json) UI.setJsonMode(true);
 
   let privateKey: string | undefined;
@@ -49,15 +77,27 @@ export async function runPsktSign(sessionPath: string, options: { account?: stri
   }
 
   const session = await loadSession(sessionPath);
-  
+
+  // TX-09: the adapters read `keyMaterial` (bytes) and refuse an empty `inputIndexes`; this used to pass `privateKey`
+  // (a field no adapter reads) and `inputIndexes: []`, so `hardkas pskt sign` could never sign
+  if (!privateKey || !/^[0-9a-fA-F]{64}$/.test(privateKey)) {
+    throw new HardkasCliError("INVALID_ARGUMENT", "The private key file must hold one 32-byte key as 64 hex characters.", { exitCode: HardkasExitCode.USAGE_ERROR });
+  }
+  const participantId = options.account || "cli-user";
+  const keyMaterial = Uint8Array.from(Buffer.from(privateKey, "hex"));
+  privateKey = undefined;
   const request = {
-    participantId: options.account || "cli-user",
-    privateKey, // This would ideally be passed securely or resolved by the adapter in a real system
-    // @ts-ignore - CLI command currently signs all inputs by default if inputIndexes is not provided
-    inputIndexes: []
+    participantId,
+    keyMaterial,
+    inputIndexes: psktInputsToSign(session as any, participantId, options.inputs)
   };
 
-  const newSession = await pskt.signSession(session, request);
+  let newSession;
+  try {
+    newSession = await pskt.signSession(session, request);
+  } finally {
+    keyMaterial.fill(0);
+  }
   await saveSession(newSession, options.out, options.force);
 
   if (!options.json) {

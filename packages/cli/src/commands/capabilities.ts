@@ -23,7 +23,11 @@ export function registerCapabilitiesCommand(program: Command) {
     }
   });
 
-  capsCmd.option("--json", "Output as stable JSON schema", false).action(async (opts) => {
+  capsCmd
+    .option("--network <network>", "Network whose node the Silver/covenant entries are checked on (default: the workspace's, else simnet; mainnet is never contacted)")
+    .option("--url <url>", "Node wRPC (JSON) endpoint those entries are checked on (default: the one the workspace declares; simnet: the canonical localnet)")
+    .option("--json", "Output as stable JSON schema", false)
+    .action(async (opts: { json: boolean; network?: string; url?: string }) => {
     const { HardkasCapabilitiesApi } = await import("@hardkas/sdk");
     // The workspace configuration, when there is one, as `Hardkas.open` would read it (a custom kaspa-wasm, an Igra
     // RPC URL); this command never bootstraps a workspace.
@@ -34,7 +38,18 @@ export function registerCapabilitiesCommand(program: Command) {
     } catch {
       workspace = undefined;
     }
-    const caps = await new HardkasCapabilitiesApi(workspace).get();
+    // INT9-C5: the Silver/covenant entries are checked on the node `hardkas silver deploy|spend|covenant` would use for
+    // the same --network/--url (as `hardkas silver doctor` reports them), not on the canonical localnet only. A network
+    // those commands refuse (mainnet included) is reported as the reason, never contacted.
+    const { silverReadinessOptions } = await import("./silver.js");
+    let readiness: Awaited<ReturnType<typeof silverReadinessOptions>>;
+    try {
+      readiness = await silverReadinessOptions(opts);
+    } catch (e: unknown) {
+      const err = e as { code?: unknown; message?: unknown } | null | undefined;
+      readiness = { unresolved: `${String(err?.code ?? "SILVER_NODE_UNRESOLVED")}: ${String(err?.message ?? e)}` };
+    }
+    const caps = await new HardkasCapabilitiesApi(workspace, readiness).get();
     if (opts.json) {
       getOutput().writeJson(caps);
     } else {
@@ -107,7 +122,7 @@ const NOT_IN_THIS_BUILD: Array<[CapabilityKey, string, string]> = [
   ["productionWallet", "Production wallet", ""],
   ["trustlessExit", "Trustless exit", ""],
   ["differentialDagValidation", "Differential DAG validation", ""],
-  ["l2Profiles", "L2 profiles", "Igra is a Lab, not the L1 core (@hardkas/sdk lists its profiles and refuses L2 operations; the separate experimental @hardkas/l2 package can sign and broadcast, chain-bound, mainnet-guarded and fee-capped)"],
+  ["l2Profiles", "L2 profiles", "Igra is a Lab, not the L1 core (@hardkas/sdk refuses L2 profiles and operations; the separate experimental @hardkas/l2 package, not published in this release, can sign and broadcast, chain-bound, mainnet-guarded and fee-capped)"],
   ["l2BridgeAssumptions", "Bridge model", "a Lab, not the L1 core"]
 ];
 
@@ -135,7 +150,7 @@ function renderHumanReadable(caps: HardkasCapabilities) {
 
   const node = caps.runtimeMatrix?.node;
   if (node) {
-    out.writeLine(`  ${pc.bold("Canonical node")}`);
+    out.writeLine(`  ${pc.bold("Node (the one the Silver commands would use)")}`);
     out.writeLine(
       node.version === "unknown"
         ? `    ${pc.dim("not observed: no node proved its identity, so none is reported as Toccata-capable")}`

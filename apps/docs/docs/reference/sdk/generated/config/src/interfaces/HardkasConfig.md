@@ -6,7 +6,7 @@
 
 # Interface: HardkasConfig
 
-Defined in: [packages/config/src/types.ts:67](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/config/src/types.ts#L67)
+Defined in: [packages/config/src/types.ts:75](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/config/src/types.ts#L75)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [packages/config/src/types.ts:67](https://github.com/KasLabDevs/Hard
 
 > `optional` **accounts?**: `Record`\<`string`, [`HardkasAccountConfig`](../type-aliases/HardkasAccountConfig.md)\>
 
-Defined in: [packages/config/src/types.ts:81](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/config/src/types.ts#L81)
+Defined in: [packages/config/src/types.ts:89](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/config/src/types.ts#L89)
 
 ***
 
@@ -22,7 +22,7 @@ Defined in: [packages/config/src/types.ts:81](https://github.com/KasLabDevs/Hard
 
 > `optional` **artifacts?**: `object`
 
-Defined in: [packages/config/src/types.ts:90](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/config/src/types.ts#L90)
+Defined in: [packages/config/src/types.ts:103](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/config/src/types.ts#L103)
 
 #### deterministic?
 
@@ -34,7 +34,7 @@ Defined in: [packages/config/src/types.ts:90](https://github.com/KasLabDevs/Hard
 
 > `optional` **defaultNetwork?**: `string`
 
-Defined in: [packages/config/src/types.ts:75](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/config/src/types.ts#L75)
+Defined in: [packages/config/src/types.ts:83](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/config/src/types.ts#L83)
 
 #### Deprecated
 
@@ -46,7 +46,7 @@ Use `execution` instead.
 
 > `optional` **execution?**: \{ `domain`: `"kaspa-l1"` \| `"evm-l2"`; `mode`: `"rpc"` \| `"simulator"` \| `"localnet"`; `network`: `string`; \} \| \{ `default`: `string`; `targets`: `Record`\<`string`, [`HardkasExecutionTarget`](../type-aliases/HardkasExecutionTarget.md)\>; \}
 
-Defined in: [packages/config/src/types.ts:68](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/config/src/types.ts#L68)
+Defined in: [packages/config/src/types.ts:76](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/config/src/types.ts#L76)
 
 ***
 
@@ -54,7 +54,18 @@ Defined in: [packages/config/src/types.ts:68](https://github.com/KasLabDevs/Hard
 
 > `optional` **experimental?**: `boolean`
 
-Defined in: [packages/config/src/types.ts:85](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/config/src/types.ts#L85)
+Defined in: [packages/config/src/types.ts:98](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/config/src/types.ts#L98)
+
+***
+
+### extensions?
+
+> `optional` **extensions?**: `Record`\<`string`, `boolean`\>
+
+Defined in: [packages/config/src/types.ts:97](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/config/src/types.ts#L97)
+
+First-party extensions installed in the project are enabled by default; `false` keeps one from loading
+(e.g. `extensions: { l2: false }`).
 
 ***
 
@@ -62,7 +73,7 @@ Defined in: [packages/config/src/types.ts:85](https://github.com/KasLabDevs/Hard
 
 > `optional` **l2?**: `object`
 
-Defined in: [packages/config/src/types.ts:82](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/config/src/types.ts#L82)
+Defined in: [packages/config/src/types.ts:90](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/config/src/types.ts#L90)
 
 #### networks?
 
@@ -74,7 +85,7 @@ Defined in: [packages/config/src/types.ts:82](https://github.com/KasLabDevs/Hard
 
 > `optional` **network?**: `object`
 
-Defined in: [packages/config/src/types.ts:76](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/config/src/types.ts#L76)
+Defined in: [packages/config/src/types.ts:84](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/config/src/types.ts#L84)
 
 #### allowPublic?
 
@@ -90,7 +101,7 @@ Defined in: [packages/config/src/types.ts:76](https://github.com/KasLabDevs/Hard
 
 > `optional` **networks?**: `Record`\<[`HardkasNetworkName`](../type-aliases/HardkasNetworkName.md), [`HardkasNetworkTarget`](../type-aliases/HardkasNetworkTarget.md)\>
 
-Defined in: [packages/config/src/types.ts:80](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/config/src/types.ts#L80)
+Defined in: [packages/config/src/types.ts:88](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/config/src/types.ts#L88)
 
 ***
 
@@ -98,7 +109,7 @@ Defined in: [packages/config/src/types.ts:80](https://github.com/KasLabDevs/Hard
 
 > `optional` **plugins?**: `any`[]
 
-Defined in: [packages/config/src/types.ts:94](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/config/src/types.ts#L94)
+Defined in: [packages/config/src/types.ts:107](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/config/src/types.ts#L107)
 
 ***
 
@@ -106,7 +117,7 @@ Defined in: [packages/config/src/types.ts:94](https://github.com/KasLabDevs/Hard
 
 > `optional` **tasks?**: `Record`\<`string`, `any`\>
 
-Defined in: [packages/config/src/types.ts:93](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/config/src/types.ts#L93)
+Defined in: [packages/config/src/types.ts:106](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/config/src/types.ts#L106)
 
 ***
 
@@ -114,7 +125,7 @@ Defined in: [packages/config/src/types.ts:93](https://github.com/KasLabDevs/Hard
 
 > `optional` **wasm?**: `object`
 
-Defined in: [packages/config/src/types.ts:86](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/config/src/types.ts#L86)
+Defined in: [packages/config/src/types.ts:99](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/config/src/types.ts#L99)
 
 #### path?
 

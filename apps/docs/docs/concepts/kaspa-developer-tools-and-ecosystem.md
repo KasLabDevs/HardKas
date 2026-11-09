@@ -110,7 +110,7 @@ flowchart TD
 
 ### HardKAS
 - **Role:** Open-source, community-led developer framework and testing operating system for native Kaspa L1 development, maintained by KasLabDevs.
-- **Language / Runtime:** TypeScript / Node.js (>= 22.5.0).
+- **Language / Runtime:** TypeScript / Node.js 24.22.1 (exactly).
 - **Key Features:**
   - **In-Memory Simulator:** Deterministic evaluation of transaction scripts and mass limits without network latency.
   - **Localnet Node Orchestration:** Single-command Docker lifecycle management for real `rusty-kaspa` nodes on simnet (`hardkas localnet start`).

@@ -1,7 +1,7 @@
 {
   "schema": "hardkas.cliReference.v1",
   "generatedAt": "deterministic",
-  "totalCommands": 259,
+  "totalCommands": 261,
   "flatSurface": [
     "hardkas accounts",
     "hardkas accounts balance",
@@ -213,6 +213,7 @@
     "hardkas simulator account",
     "hardkas simulator account create",
     "hardkas simulator fund",
+    "hardkas simulator start",
     "hardkas status",
     "hardkas task",
     "hardkas task <name>",
@@ -261,6 +262,7 @@
     "hardkas zk toccata",
     "hardkas zk toccata build-scripts",
     "hardkas zk toccata rules",
+    "hardkas zk toccata verify-receipt",
     "hardkas zk toccata verify-scripts"
   ],
   "commands": [
@@ -408,6 +410,20 @@
               "mandatory": false
             },
             {
+              "flags": "--password-env <env>",
+              "description": "Read the encrypted account's keystore password from this environment variable (read once, before the first batch)",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--password-stdin",
+              "description": "Read the encrypted account's keystore password from stdin",
+              "default": null,
+              "required": false,
+              "mandatory": false
+            },
+            {
               "flags": "--json",
               "description": "Output as JSON",
               "default": false,
@@ -487,6 +503,27 @@
                 }
               ],
               "options": [
+                {
+                  "flags": "--password-env <env>",
+                  "description": "Read the current keystore password from this environment variable",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--password-stdin",
+                  "description": "Read the current keystore password from stdin (needs --new-password-env)",
+                  "default": false,
+                  "required": false,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--new-password-env <env>",
+                  "description": "Read the new keystore password from this environment variable (no confirmation prompt)",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
                 {
                   "flags": "--wait-lock",
                   "description": "Wait for workspace lock if held",
@@ -603,6 +640,13 @@
                 {
                   "flags": "--address <address>",
                   "description": "Kaspa address",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--network <network>",
+                  "description": "Network the key is for (default: the address's: kaspasim simnet, kaspadev devnet; a kaspatest address needs testnet-<n> here or in the workspace)",
                   "default": null,
                   "required": true,
                   "mandatory": false
@@ -993,7 +1037,7 @@
           "path": "hardkas artifact verify",
           "name": "verify",
           "aliases": [],
-          "description": "Verify an artifact's integrity and schema stable",
+          "description": "Verify an artifact: integrity (offline, every network), and on request its network level (NETWORK_OBSERVED by a node of its network) and consensus level (CONSENSUS_CONFIRMED by the declared confirmation policy; not finality). Mainnet: offline only stable",
           "usage": "hardkas artifact verify [options] <path>",
           "arguments": [
             {
@@ -1021,6 +1065,41 @@
               "description": "Perform deep semantic and operational safety verification",
               "default": false,
               "required": false,
+              "mandatory": false
+            },
+            {
+              "flags": "--network <network>",
+              "description": "Check the artifact's transaction on a node of this network (must be the artifact's own; mainnet is never contacted)",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--url <url>",
+              "description": "Node wRPC (JSON) endpoint for the network check (default: the one the workspace declares for the network; local networks: their local default)",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--since <blockHash>",
+              "description": "Virtual-chain cursor for the network check: a chain block before the transaction's acceptance (default: the artifact's own submit point, else the node's pruning point)",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--min-confirmations <n>",
+              "description": "Blue-score depth for CONSENSUS_CONFIRMED (default: the HardKAS product policy, 100)",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--require <level>",
+              "description": "Level the verification must reach to succeed: integrity (default), network or consensus",
+              "default": null,
+              "required": true,
               "mandatory": false
             },
             {
@@ -1912,7 +1991,7 @@
         },
         {
           "flags": "--strict",
-          "description": "Fail strictly (exit 1) if invariants or consistency checks fail",
+          "description": "Run the consistency checks in strict mode and report DOCTOR_FAILED when a check fails (any failed check exits 1)",
           "default": false,
           "required": false,
           "mandatory": false
@@ -1989,8 +2068,15 @@
               "options": [
                 {
                   "flags": "--network <network>",
-                  "description": "Network (default simnet)",
-                  "default": "simnet",
+                  "description": "Network (default: the draft's); must be the draft's",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--url <url>",
+                  "description": "Node wRPC (JSON) endpoint (default: the one the workspace declares for the draft's network; simnet: the canonical localnet)",
+                  "default": null,
                   "required": true,
                   "mandatory": false
                 },
@@ -2058,8 +2144,15 @@
                 },
                 {
                   "flags": "--network <network>",
-                  "description": "Network id (default simnet)",
+                  "description": "Network id (default simnet); mainnet refused; testnet-<n> needs experimental + network.allowPublic",
                   "default": "simnet",
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--url <url>",
+                  "description": "Node wRPC (JSON) endpoint (default: the one the workspace declares for the network; simnet: the canonical localnet)",
+                  "default": null,
                   "required": true,
                   "mandatory": false
                 },
@@ -3520,7 +3613,7 @@
       "path": "hardkas programmability",
       "name": "programmability",
       "aliases": [],
-      "description": "Builder-ready local programmability surface (Outputs JSON by default)",
+      "description": "Experimental local programmability tools: inspection and fixture checks of Silver, ZK and vProgs artifacts; no vProgs runtime, no on-chain ZK verification (Outputs JSON by default)",
       "usage": "hardkas programmability [options] [command]",
       "arguments": [],
       "options": [],
@@ -3572,7 +3665,7 @@
           "path": "hardkas programmability audit",
           "name": "audit",
           "aliases": [],
-          "description": "Audit the boundaries and claims of programmability layers",
+          "description": "Print the fixed list of what this build's programmability layers do not do (on-chain ZK verification, vProgs runtime, L2 bridge and exit, real stable-asset issuer): a static statement that inspects and runs nothing",
           "usage": "hardkas programmability audit [options]",
           "arguments": [],
           "options": [
@@ -4001,6 +4094,13 @@
             {
               "flags": "--private-key-file <path>",
               "description": "Path to file containing raw private key (TEST ONLY)",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--inputs <indexes>",
+              "description": "Comma-separated input indexes to sign (default: the inputs this participant is eligible for)",
               "default": null,
               "required": true,
               "mandatory": false
@@ -5128,7 +5228,7 @@
             },
             {
               "flags": "--network <name>",
-              "description": "Network from the workspace config: its declared endpoint, and the node must prove it serves that network (default: none — the --url or the canonical localnet, unchecked)",
+              "description": "Network from the workspace config: its declared endpoint, and the node must prove it serves that network (default: the workspace's network; outside a workspace, the --url or the canonical localnet, unchecked)",
               "default": null,
               "required": true,
               "mandatory": false
@@ -5178,7 +5278,7 @@
             },
             {
               "flags": "--network <name>",
-              "description": "Network from the workspace config: its declared endpoint, and the node must prove it serves that network (default: none — the --url or the canonical localnet, unchecked)",
+              "description": "Network from the workspace config: its declared endpoint, and the node must prove it serves that network (default: the workspace's network; outside a workspace, the --url or the canonical localnet, unchecked)",
               "default": null,
               "required": true,
               "mandatory": false
@@ -5224,7 +5324,7 @@
             },
             {
               "flags": "--network <name>",
-              "description": "Network from the workspace config: its declared endpoint, and the node must prove it serves that network (default: none — the --url or the canonical localnet, unchecked)",
+              "description": "Network from the workspace config: its declared endpoint, and the node must prove it serves that network (default: the workspace's network; outside a workspace, the --url or the canonical localnet, unchecked)",
               "default": null,
               "required": true,
               "mandatory": false
@@ -5261,7 +5361,7 @@
             },
             {
               "flags": "--network <name>",
-              "description": "Network from the workspace config: its declared endpoint, and the node must prove it serves that network (default: none — the --url or the canonical localnet, unchecked)",
+              "description": "Network from the workspace config: its declared endpoint, and the node must prove it serves that network (default: the workspace's network; outside a workspace, the --url or the canonical localnet, unchecked)",
               "default": null,
               "required": true,
               "mandatory": false
@@ -5298,7 +5398,7 @@
             },
             {
               "flags": "--network <name>",
-              "description": "Network from the workspace config: its declared endpoint, and the node must prove it serves that network (default: none — the --url or the canonical localnet, unchecked)",
+              "description": "Network from the workspace config: its declared endpoint, and the node must prove it serves that network (default: the workspace's network; outside a workspace, the --url or the canonical localnet, unchecked)",
               "default": null,
               "required": true,
               "mandatory": false
@@ -5596,6 +5696,20 @@
                   "mandatory": false
                 },
                 {
+                  "flags": "--network <network>",
+                  "description": "Network (default: the workspace's, else simnet). mainnet is refused; testnet-<n> needs experimental + network.allowPublic in the config",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--url <url>",
+                  "description": "Node wRPC (JSON) endpoint (default: the one the workspace declares for the network; simnet: the canonical localnet). Only the canonical localnet is proven by container and image digest; any other node by what it reports (network, version, synced)",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
                   "flags": "--wait",
                   "description": "Wait for confirmation and the node's covenant id",
                   "default": false,
@@ -5747,6 +5861,20 @@
                   "mandatory": false
                 },
                 {
+                  "flags": "--network <network>",
+                  "description": "Network (default: the covenant record's); mainnet refused; testnet-<n> needs experimental + network.allowPublic",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--url <url>",
+                  "description": "Node wRPC (JSON) endpoint (default: the one the workspace declares for the network; simnet: the canonical localnet). Only the canonical localnet is proven by container and image digest; any other node by what it reports (network, version, synced)",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
                   "flags": "--wait",
                   "description": "Wait for confirmation and check the lineage",
                   "default": false,
@@ -5883,7 +6011,7 @@
           "path": "hardkas silver deploy",
           "name": "deploy",
           "aliases": [],
-          "description": "Fund a compiled contract's P2SH output on the canonical localnet",
+          "description": "Fund a compiled contract's P2SH output on a Kaspa node (the canonical localnet, or the node --url / the workspace names)",
           "usage": "hardkas silver deploy [options] <record>",
           "arguments": [
             {
@@ -5915,8 +6043,15 @@
             },
             {
               "flags": "--network <network>",
-              "description": "Network",
-              "default": "simnet",
+              "description": "Network (default: the workspace's, else simnet). mainnet is refused; testnet-<n> needs experimental + network.allowPublic in the config",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--url <url>",
+              "description": "Node wRPC (JSON) endpoint (default: the one the workspace declares for the network; simnet: the canonical localnet). Only the canonical localnet is proven by container and image digest; any other node by what it reports (network, version, synced)",
+              "default": null,
               "required": true,
               "mandatory": false
             },
@@ -5969,10 +6104,24 @@
           "path": "hardkas silver doctor",
           "name": "doctor",
           "aliases": [],
-          "description": "Report whether the pinned toolchains and the canonical node are ready",
+          "description": "Report whether the pinned toolchains and the node the Silver on-chain commands would use are ready",
           "usage": "hardkas silver doctor [options]",
           "arguments": [],
           "options": [
+            {
+              "flags": "--network <network>",
+              "description": "Network (default: the workspace's, else simnet). mainnet is refused; testnet-<n> needs experimental + network.allowPublic in the config",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--url <url>",
+              "description": "Node wRPC (JSON) endpoint (default: the one the workspace declares for the network; simnet: the canonical localnet). Only the canonical localnet is proven by container and image digest; any other node by what it reports (network, version, synced)",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
             {
               "flags": "--json",
               "description": "Output as JSON",
@@ -6489,6 +6638,20 @@
               "mandatory": false
             },
             {
+              "flags": "--network <network>",
+              "description": "Network (default: the deploy record's); mainnet refused; testnet-<n> needs experimental + network.allowPublic",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--url <url>",
+              "description": "Node wRPC (JSON) endpoint (default: the one the workspace declares for the network; simnet: the canonical localnet). Only the canonical localnet is proven by container and image digest; any other node by what it reports (network, version, synced)",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
               "flags": "--tx-version <n>",
               "description": "Transaction version: 0 (the default, as certified) or 1 (the SDK's v1 engine: checks before any key, compute budgets)",
               "default": "0",
@@ -6680,7 +6843,7 @@
               "path": "hardkas simulator account create",
               "name": "create",
               "aliases": [],
-              "description": "Create a synthetic simulated account stable",
+              "description": "Create a synthetic simulated account (a kaspa:sim_ identity without a real key, for the simulated network only) experimental",
               "usage": "hardkas simulator account create [options] <name>",
               "arguments": [
                 {
@@ -6705,7 +6868,7 @@
           "path": "hardkas simulator fund",
           "name": "fund",
           "aliases": [],
-          "description": "Fund a synthetic simulated account (the project's default network must be the simulator) stable",
+          "description": "Fund a synthetic simulated account (the project's default network must be the simulator; synthetic UTXOs, not a Kaspa node's) experimental",
           "usage": "hardkas simulator fund [options] <identifier>",
           "arguments": [
             {
@@ -6719,6 +6882,59 @@
               "description": "Amount in KAS, up to 8 decimals, above 0",
               "default": "1000",
               "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        },
+        {
+          "path": "hardkas simulator start",
+          "name": "start",
+          "aliases": [],
+          "description": "Start the in-memory Kaspa node simulator (approximate rules, not consensus-equivalent) experimental",
+          "usage": "hardkas simulator start [options]",
+          "arguments": [],
+          "options": [
+            {
+              "flags": "-p, --port <port>",
+              "description": "Port for the RPC server (HTTP JSON-RPC and wRPC JSON)",
+              "default": "19110",
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "-h, --host <host>",
+              "description": "Host to bind",
+              "default": "127.0.0.1",
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "-n, --network <network>",
+              "description": "Network ID (simnet, devnet, testnet-10, testnet-11)",
+              "default": "simnet",
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--automine",
+              "description": "Enable automine mode",
+              "default": true,
+              "required": false,
+              "mandatory": false
+            },
+            {
+              "flags": "--no-automine",
+              "description": "Disable automine mode",
+              "default": null,
+              "required": false,
               "mandatory": false
             },
             {
@@ -7467,6 +7683,13 @@
               "default": false,
               "required": false,
               "mandatory": false
+            },
+            {
+              "flags": "--allow-unplanned",
+              "description": "Signed-artifact mode: send a signed transaction that names no plan of this workspace (signed elsewhere). HardKAS then cannot check that it is a planned transaction nor its fee limit: you take both on yourself. Without it such a send is refused (SEND_PLAN_UNRESOLVED)",
+              "default": false,
+              "required": false,
+              "mandatory": false
             }
           ],
           "subcommands": []
@@ -7689,6 +7912,13 @@
             {
               "flags": "--since <chainBlockHash>",
               "description": "Scan the node's virtual chain from this chain block (64 hex; it must precede the tx's acceptance) on the first look — for a tx sent outside this workspace",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--address <address>",
+              "description": "An address the tx pays (repeatable), for a tx sent outside this workspace with no --since: the scan starts at the node's sink when the wait starts, an output of the tx listed there before that point ends the wait (TX_WAIT_ACCEPTED_BEFORE_CURSOR), and the UTXO view is checked there",
               "default": null,
               "required": true,
               "mandatory": false
@@ -8050,7 +8280,7 @@
               "path": "hardkas zk corpus verify",
               "name": "verify",
               "aliases": [],
-              "description": "Verify a local ZK corpus (coherence of every listed fixture; pairing check where a fixture claims it)",
+              "description": "Verify a local ZK corpus (coherence of every listed fixture; pairing check where a fixture claims it, which needs the optional peer snarkjs)",
               "usage": "hardkas zk corpus verify [options] <path>",
               "arguments": [
                 {
@@ -8132,7 +8362,7 @@
               "path": "hardkas zk proof verify-math",
               "name": "verify-math",
               "aliases": [],
-              "description": "Groth16 pairing check (snarkjs, BN254) of a fixture, bound to its content hashes by default; reports the key, inputs and proof digests it used (No on-chain claims) alpha",
+              "description": "Groth16 pairing check (snarkjs, BN254; snarkjs is an optional peer of @hardkas/sdk, without it ZK_ENGINE_UNAVAILABLE) of a fixture; VERIFIED only for a pinned verification key (--expect-vk-hash or the in-code registry), otherwise VALID_UNANCHORED_VK; fixture coherence is self-attested (No on-chain claims) alpha",
               "usage": "hardkas zk proof verify-math [options] <path>",
               "arguments": [
                 {
@@ -8157,14 +8387,14 @@
                 },
                 {
                   "flags": "--expect-vk-hash <sha256>",
-                  "description": "Reject unless the verification key's domain digest equals this value",
+                  "description": "Pin the verification key: its fingerprint (summary.verificationKeyFingerprint) or legacy digest, obtained from a source you trust",
                   "default": null,
                   "required": true,
                   "mandatory": false
                 },
                 {
                   "flags": "--math-only",
-                  "description": "Skip the fixture-coherence binding; the result is labelled MATH_ONLY",
+                  "description": "Skip the self-attested fixture-coherence check; the result is labelled MATH_ONLY",
                   "default": false,
                   "required": false,
                   "mandatory": false
@@ -8194,7 +8424,7 @@
               "path": "hardkas zk toccata build-scripts",
               "name": "build-scripts",
               "aliases": [],
-              "description": "Build P2SH redeem and signature scripts for a RISC Zero Groth16 proof set (supports proof-only and proof-and-output-bound consensus modes)",
+              "description": "Build P2SH redeem and signature scripts for a RISC Zero Groth16 receipt (the receipt's claim is cross-checked against imageId/journalHash). Modes: proof-only (default; the lock binds the image id only: any holder of a valid receipt spends) or proof-and-output-bound (the redeem script also enforces the payout/change outputs by introspection). Simnet address only unless public networks are requested (proof-only also needs the acknowledgement)",
               "usage": "hardkas zk toccata build-scripts [options]",
               "arguments": [],
               "options": [
@@ -8255,17 +8485,24 @@
                   "mandatory": false
                 },
                 {
-                  "flags": "--utxo-txid <hex>",
-                  "description": "Optional bound input UTXO transaction ID for replay protection",
+                  "flags": "--max-fee <sompi>",
+                  "description": "proof-and-output-bound: the most the lock may pay as fee; a UTXO above the bound outputs plus this stays locked (default 50000000)",
                   "default": null,
                   "required": true,
                   "mandatory": false
                 },
                 {
-                  "flags": "--utxo-index <index>",
-                  "description": "Optional bound input UTXO index for replay protection",
+                  "flags": "--address-network <networks>",
+                  "description": "Also return P2SH addresses for these public networks (comma-separated: testnet-10,mainnet); proof-only needs --ack-image-id-only-lock; never for a public test vector",
                   "default": null,
                   "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--ack-image-id-only-lock",
+                  "description": "Acknowledge that a proof-only lock binds only the image id (anyone with a valid receipt can spend, replay or front-run)",
+                  "default": false,
+                  "required": false,
                   "mandatory": false
                 },
                 {
@@ -8286,6 +8523,52 @@
               "usage": "hardkas zk toccata rules [options]",
               "arguments": [],
               "options": [
+                {
+                  "flags": "--json",
+                  "description": "Output as JSON",
+                  "default": false,
+                  "required": false,
+                  "mandatory": false
+                }
+              ],
+              "subcommands": []
+            },
+            {
+              "path": "hardkas zk toccata verify-receipt",
+              "name": "verify-receipt",
+              "aliases": [],
+              "description": "Verify a RISC Zero Groth16 receipt locally (snarkjs, BN254; without the optional peer snarkjs, ZK_ENGINE_UNAVAILABLE) against the pinned official RISC Zero verifying key, control root and BN254 control id, for the claim of (imageId, journalHash) (No on-chain claims) alpha",
+              "usage": "hardkas zk toccata verify-receipt [options]",
+              "arguments": [],
+              "options": [
+                {
+                  "flags": "--image-id <hex>",
+                  "description": "32-byte hex Image ID",
+                  "default": null,
+                  "required": true,
+                  "mandatory": true
+                },
+                {
+                  "flags": "--journal-hash <hex>",
+                  "description": "32-byte hex Journal Hash",
+                  "default": null,
+                  "required": true,
+                  "mandatory": true
+                },
+                {
+                  "flags": "--receipt <pathOrHex>",
+                  "description": "Path to receipt file (.hex) or raw receipt hex string",
+                  "default": null,
+                  "required": true,
+                  "mandatory": true
+                },
+                {
+                  "flags": "--timeout <ms>",
+                  "description": "Verification timeout in milliseconds (integer, 1..600000)",
+                  "default": "10000",
+                  "required": true,
+                  "mandatory": false
+                },
                 {
                   "flags": "--json",
                   "description": "Output as JSON",

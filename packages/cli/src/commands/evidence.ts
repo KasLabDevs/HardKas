@@ -87,11 +87,35 @@ export function registerEvidenceCommands(program: Command) {
     .option("--json", "Output results as JSON", false)
     .action(async (packagePath: string, options: any) => {
       try {
-        const expl = await EvidenceManager.explain(packagePath);
+        // L1-CORE-1 B4: a JSON file that is not an evidence package crashed here with a TypeError (UNKNOWN_ERROR); it is
+        // a typed refusal now, before anything is explained.
+        const fs = await import("node:fs");
+        if (fs.existsSync(packagePath)) {
+          const { stripBom } = await import("@hardkas/core");
+          let schema: unknown;
+          try {
+            schema = JSON.parse(stripBom(fs.readFileSync(packagePath, "utf8")))?.schema;
+          } catch {
+            schema = undefined;
+          }
+          if (schema !== "hardkas.evidencePackage.v1") {
+            const { HardkasCliError } = await import("../cli-errors.js");
+            throw new HardkasCliError(
+              "EVIDENCE_INVALID_SCHEMA",
+              `${packagePath} is not a hardkas.evidencePackage.v1 evidence package (schema: ${JSON.stringify(schema ?? null)}). Nothing was explained.`,
+              { exitCode: 1 }
+            );
+          }
+        }
+        // L1-CORE-1 B4: explain printed the package's recorded verdict and claims without saying whether the package
+        // verifies (an edited package was explained like an intact one); the verify verdict is part of the explanation.
+        const verdict = await EvidenceManager.verify(packagePath);
+        const verification = { ok: verdict.ok, status: verdict.status, ...(verdict.details ? { details: verdict.details } : {}) };
+        const expl =
+          (await EvidenceManager.explain(packagePath)) +
+          `\nVerification: ${verdict.status}${verdict.ok ? "" : ` (${verdict.details ?? "the package does not verify"})`}\n`;
         if (options.json) {
-          // Parse explanation if it's returning raw JSON string or string
-          // For now, EvidenceManager.explain returns a string. Let's just wrap it.
-          getOutput().writeJson({ ok: true, command: "evidence explain", mode: "cli", result: { explanation: expl } });
+          getOutput().writeJson({ ok: true, command: "evidence explain", mode: "cli", result: { explanation: expl, verification } });
         } else {
           getOutput().writeLine(expl);
         }

@@ -2,10 +2,12 @@ name: Docker suites (disposable runner)
 
 # REMED-CLOSE: the suites that need a Docker engine of their own run here, on GitHub's disposable runner VM, never on a
 # developer's engine:
-#   - the harness's container hygiene (T-A06a/b);
 #   - the node-management e2e, which resets the canonical localnet of the engine it reaches;
 #   - the gauntlet in its canonical mode (the canonical localnet and its miner).
 # Nothing is skipped: each one fails if its dependency is missing.
+# INT9 · D5: the simnet suites that ran here one by one (the harness's container hygiene T-A06a/b, the simulator against
+# rusty-kaspad, the CLI lifecycle and its trace) are part of the whole simnet level, `pnpm test:simnet`, in
+# test-levels.yml, with this run's labels and data root.
 
 on:
   push:
@@ -23,21 +25,21 @@ jobs:
     timeout-minutes: 90
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0 (tag v4 on 2026-11-06)
 
       - name: Install Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0 (tag v4 on 2026-11-06)
         with:
           # NODE-CI-PIN-1: the exact patched release this code was validated on (not a floating major).
           node-version: 24.22.1
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v3
+        uses: pnpm/action-setup@a3252b78c470c02df07e9d59298aecedc3ccdd6d # v3.0.0 (branch v3 on 2026-11-06)
         with:
           version: 9.15.4
 
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: Build packages
         run: pnpm build
@@ -53,8 +55,8 @@ jobs:
           cat images.txt
           xargs -n1 docker pull < images.txt
 
-      - name: Harness container hygiene (T-A06a / T-A06b)
-        run: pnpm vitest run --config vitest.simnet.config.ts packages/testing/test/harness-cleanup.simnet.test.ts
+      # The harness hygiene (T-A06a/b), the simulator against rusty-kaspad (HK-22 / HK-06) and the CLI lifecycle
+      # (L1-CORE-1 B1) run in test-levels.yml (simnet-level), inside `pnpm test:simnet`.
 
       - name: Node management e2e (resets the canonical localnet of THIS disposable engine)
         env:

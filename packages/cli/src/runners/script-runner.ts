@@ -2,7 +2,7 @@
 
 import { resolve, dirname } from "node:path";
 import { existsSync, unlinkSync, mkdirSync, readFileSync } from "node:fs";
-import { spawnSync } from "node:child_process";
+import { spawn } from "node:child_process";
 import { createRequire } from "node:module";
 import { pathToFileURL } from "node:url";
 import { loadHardkasConfig, resolveNodeEndpoint } from "@hardkas/config";
@@ -14,6 +14,74 @@ export interface RunScriptOptions {
   balance: string;
   harness: boolean;
   workspaceRoot?: string;
+  /** With --json the script's stdout goes to stderr: the command's stdout is its one JSON envelope. */
+  json?: boolean;
+}
+
+/** The packages the injected wrapper itself imports (buildRunInjection), as opposed to the user script's own. */
+const WRAPPER_PACKAGES = ["@hardkas/testing", "@hardkas/kaspa-rpc"];
+
+/**
+ * H3 (L1-CORE-1 B2): the error a failed script child printed — Node's uncaught-error line
+ * (`Error [CODE]: message`, `TypeError: message`, …) — as a cause the command can name.
+ */
+export function scriptFailureCause(stderr: string): { name: string; code?: string; message: string } | undefined {
+  const m = /^([A-Za-z]*Error)(?: \[([A-Z0-9_]+)\])?: (.+)$/m.exec(stderr);
+  if (!m) return undefined;
+  return { name: m[1]!, ...(m[2] ? { code: m[2] } : {}), message: m[3]!.trim() };
+}
+
+/** INT9 · how much of the script's stderr is kept to name a failure's cause: the first and the last bytes. */
+const STDERR_KEEP_BYTES = 256 * 1024;
+
+/**
+ * INT9 (B6 review M-5): the script child, run to its end with its output passed on as it is written. stdin is the
+ * terminal's; stdout is inherited, or (with --json) written live to this process's stderr; stderr is written live to
+ * this process's stderr, and only its first and last STDERR_KEEP_BYTES are kept for scriptFailureCause. Nothing caps
+ * the amount of output.
+ */
+export function runChildLive(
+  command: string,
+  args: string[],
+  options: { cwd: string; env: NodeJS.ProcessEnv; json: boolean }
+): Promise<{ status: number | null; signal: NodeJS.Signals | null; error?: Error; stderrHead: string; stderrTail: string }> {
+  return new Promise((resolve) => {
+    let head = Buffer.alloc(0);
+    let tail = Buffer.alloc(0);
+    let settled = false;
+    let spawnError: Error | undefined;
+    const child = spawn(command, args, {
+      stdio: ["inherit", options.json ? "pipe" : "inherit", "pipe"],
+      cwd: options.cwd,
+      shell: false,
+      env: options.env
+    });
+    // passed on with backpressure: a slow reader of this process's stderr slows the child, nothing piles up here
+    const relay = (from: NodeJS.ReadableStream, chunk: Buffer) => {
+      if (!process.stderr.write(chunk)) {
+        from.pause();
+        process.stderr.once("drain", () => from.resume());
+      }
+    };
+    child.stdout?.on("data", (chunk: Buffer) => relay(child.stdout!, chunk));
+    child.stderr?.on("data", (chunk: Buffer) => {
+      relay(child.stderr!, chunk);
+      if (head.length < STDERR_KEEP_BYTES) head = Buffer.concat([head, chunk.subarray(0, STDERR_KEEP_BYTES - head.length)]);
+      tail = Buffer.concat([tail, chunk]);
+      if (tail.length > STDERR_KEEP_BYTES) tail = tail.subarray(tail.length - STDERR_KEEP_BYTES);
+    });
+    const finish = (status: number | null, signal: NodeJS.Signals | null) => {
+      if (settled) return;
+      settled = true;
+      resolve({ status, signal, ...(spawnError ? { error: spawnError } : {}), stderrHead: head.toString("utf8"), stderrTail: tail.toString("utf8") });
+    };
+    child.on("error", (e) => {
+      spawnError = e;
+      // a child that never started emits no "close"
+      if (child.pid === undefined) finish(null, null);
+    });
+    child.on("close", (code, signal) => finish(code, signal));
+  });
 }
 
 /**
@@ -138,7 +206,14 @@ export async function runScript(script: string, opts: RunScriptOptions): Promise
     throw new HardkasCliError(e.code ?? "INVALID_ARGUMENT", e.message, { exitCode: 2 });
   }
 
-  const { config } = await loadHardkasConfig();
+  let config: any;
+  try {
+    ({ config } = await loadHardkasConfig());
+  } catch (e: unknown) {
+    const err = e as { code?: unknown; message?: unknown } | null | undefined;
+    const { HardkasCliError } = await import("../cli-errors.js");
+    throw new HardkasCliError(typeof err?.code === "string" ? err.code : "CONFIG_INVALID", String(err?.message ?? e), { exitCode: 1, cause: e });
+  }
   let network: string;
   try {
     network = resolveRunNetwork(config, opts.network);
@@ -156,8 +231,16 @@ export async function runScript(script: string, opts: RunScriptOptions): Promise
     throw new HardkasCliError("MISSING_DEPENDENCY", e.message, { exitCode: 1 });
   }
 
-  // Build a wrapper that creates the harness or RPC client and injects it as global
-  const injectionCode = buildRunInjection(config, { ...opts, network });
+  // Build a wrapper that creates the harness or RPC client and injects it as global. H3: a refusal here (an endpoint the
+  // network does not declare, invalid options) keeps its code; nothing reaches the user untyped.
+  let injectionCode: string;
+  try {
+    injectionCode = buildRunInjection(config, { ...opts, network });
+  } catch (e: unknown) {
+    const err = e as { code?: unknown; message?: unknown } | null | undefined;
+    const { HardkasCliError } = await import("../cli-errors.js");
+    throw new HardkasCliError(typeof err?.code === "string" ? err.code : "RUN_SETUP_FAILED", String(err?.message ?? e), { exitCode: 1, cause: e });
+  }
   const scriptFileUrl = pathToFileURL(scriptPath).href;
   const wrapperCode = `
 ${injectionCode}
@@ -184,11 +267,15 @@ ${injectionCode}
   writeFileAtomicSync(tempWrapper, wrapperCode);
 
   try {
-    // Execute safely without a shell using process.execPath and the resolved tsx cli
-    const result = spawnSync(process.execPath, [tsxCli, tempWrapper], {
-      stdio: "inherit",
+    // Execute safely without a shell using process.execPath and the resolved tsx cli. H3: the child's stderr is read
+    // so a failure is answered with its cause; with --json its stdout goes to stderr too, so the command's stdout stays
+    // its one JSON envelope. INT9 (B6 review M-5): the child's stderr (and, with --json, its stdout) is passed on LIVE,
+    // as it is written — a script that warns or asks on stderr no longer looks hung — and nothing is buffered whole: only
+    // a bounded head and tail of stderr are kept to name the cause, so any amount of output is fine (spawnSync's 64 MiB
+    // maxBuffer made a script that printed more fail with ENOBUFS).
+    const result = await runChildLive(process.execPath, [tsxCli, tempWrapper], {
       cwd: workspaceRoot,
-      shell: false,
+      json: opts.json === true,
       env: {
         ...process.env,
         HARDKAS_NETWORK: opts.network,
@@ -207,9 +294,23 @@ ${injectionCode}
 
     if (result.status !== 0) {
       const { HardkasCliError } = await import("../cli-errors.js");
-      throw new HardkasCliError("SCRIPT_EXECUTION_FAILED", `Script exited with non-zero code ${result.status ?? "unknown"}`, {
-        exitCode: result.status ?? 1
-      });
+      const cause = scriptFailureCause(result.stderrHead) ?? scriptFailureCause(result.stderrTail);
+      const missing = cause?.code === "ERR_MODULE_NOT_FOUND" ? /Cannot find package '([^']+)'/.exec(cause.message)?.[1] : undefined;
+      if (missing && opts.harness && WRAPPER_PACKAGES.includes(missing)) {
+        throw new HardkasCliError(
+          "RUN_DEPENDENCY_MISSING",
+          `The 'hardkas' global needs ${missing}, which this project does not have installed (${cause!.message}). ` +
+            `Install the project's dependencies (npm install in ${workspaceRoot}; a project made by 'hardkas init' lists it), ` +
+            `or run with --no-harness. The script did not run.`,
+          { exitCode: 1 }
+        );
+      }
+      throw new HardkasCliError(
+        "SCRIPT_EXECUTION_FAILED",
+        (result.signal ? `Script was terminated by ${result.signal}` : `Script exited with code ${result.status ?? "unknown"}`) +
+          (cause ? `: ${cause.name}${cause.code ? ` [${cause.code}]` : ""}: ${cause.message}` : " (it printed no error)"),
+        { exitCode: result.status ?? 1 }
+      );
     }
   } finally {
     if (existsSync(tempWrapper)) {

@@ -151,6 +151,21 @@ async function preflightRow(receipt: unknown): Promise<Record<string, string>> {
   };
 }
 
+/** INT9 · I-2: the one-line summary of the evidence that the node already has a transaction (human output). */
+function nodeEvidenceLine(e: Record<string, any>): string {
+  if (e?.kind === "mempool-entry") return `in the node's mempool${e.isOrphan ? " (as an orphan)" : ""}`;
+  if (e?.kind === "virtual-chain") {
+    return `accepted by chain block ${e.acceptingBlockHash}${e.confirmations?.blue ? ` (${e.confirmations.blue} blue-score confirmations)` : ""}, from this workspace's looks`;
+  }
+  if (e?.kind === "utxo-index" && Array.isArray(e.outputs)) {
+    return (
+      `output(s) ${e.outputs.map((o: any) => `${o.outpoint} (${o.amountSompi} sompi to ${o.address}${o.blockDaaScore ? `, accepted at DAA ${o.blockDaaScore}` : ""})`).join(", ")} listed unspent at the node` +
+      (e.virtualDaaScore ? `; virtual DAA ${e.virtualDaaScore}` : "")
+    );
+  }
+  return JSON.stringify(e);
+}
+
 export function registerTxCommands(program: Command) {
   const tx = program.command("tx").description("L1 Transaction commands");
 
@@ -576,6 +591,11 @@ export function registerTxCommands(program: Command) {
       "Payments: right before the broadcast, check every input at the node (unspent, as planned, no covenant id, not pending in its mempool) and verify each input's signature against the node's UTXO; anything it cannot verify refuses the send. One node's view, not a consensus validation",
       false
     )
+    .option(
+      "--allow-unplanned",
+      "Signed-artifact mode: send a signed transaction that names no plan of this workspace (signed elsewhere). HardKAS then cannot check that it is a planned transaction nor its fee limit: you take both on yourself. Without it such a send is refused (SEND_PLAN_UNRESOLVED)",
+      false
+    )
     .action(
       async (
         signedPath: string | undefined,
@@ -596,6 +616,7 @@ export function registerTxCommands(program: Command) {
           json: boolean;
           track?: string;
           preflight: boolean;
+          allowUnplanned: boolean;
         }
       ) => {
         try {
@@ -641,6 +662,11 @@ export function registerTxCommands(program: Command) {
               });
             }
 
+            // TX-SEND-IDEMPOTENT-2 (L1-CORE-1 B2): the node already holds a transaction this workspace has no record of
+            // (another workspace sent it, or the record was lost): nothing was sent or recorded, and the state stands
+            // INT9 · I-2 (TX-SEND-IDEMPOTENT-3): with its POSITIVE evidence (mempool entry, accepting chain block, or an output
+            // of this txId listed) and the reads the check made
+            let nodeAlreadyHolds: { txId?: string; state?: string; message: string; evidence?: Record<string, any>; checks?: unknown[] } | undefined;
             const result = await runTxSend({
               ...(options.target ? { targetName: options.target } : {}),
               signedArtifact: signedArtifact as any,
@@ -649,8 +675,46 @@ export function registerTxCommands(program: Command) {
               config: loaded.config,
               ...(options.url ? { url: options.url } : {}),
               ...(options.preflight ? { preflight: true } : {}),
+              ...(options.allowUnplanned ? { allowUnplanned: true } : {}),
               workspaceRoot
-            }).catch((e: unknown) => rethrowSendLedgerFailure(e, options.json, String(signedArtifact.networkId)));
+            }).catch((e: unknown) => {
+              if (errorCodeOf(e) === "ALREADY_SUBMITTED") {
+                nodeAlreadyHolds = { ...((e as { metadata?: Record<string, any> })?.metadata ?? {}), message: e instanceof Error ? e.message : String(e) };
+                return undefined;
+              }
+              return rethrowSendLedgerFailure(e, options.json, String(signedArtifact.networkId));
+            });
+            if (!result) {
+              const held = nodeAlreadyHolds ?? { message: "the node already holds this transaction" };
+              const heldTxId = held.txId ?? String(signedArtifact.txId);
+              if (options.json) {
+                UI.writeJson({
+                  ok: true,
+                  outcome: "already-submitted",
+                  code: "ALREADY_SUBMITTED",
+                  txId: heldTxId,
+                  ...(held.state ? { state: held.state } : {}),
+                  recorded: false,
+                  ...(held.evidence ? { evidence: held.evidence } : {}),
+                  ...(held.checks ? { nodeCheck: { state: held.state, checks: held.checks, ...(held.evidence ? { evidence: held.evidence } : {}) } } : {}),
+                  message: held.message,
+                  meta: { network: String(signedArtifact.networkId), workspace: workspaceRoot, mode: "developer" }
+                });
+              } else {
+                UI.causality(
+                  "Transaction already on the node: not sent again",
+                  {
+                    "Tx ID": heldTxId,
+                    State: held.state ?? "unknown",
+                    ...(held.evidence ? { Evidence: nodeEvidenceLine(held.evidence) } : {}),
+                    "Artifact Written": "none (nothing was sent or recorded)"
+                  },
+                  [`hardkas tx status ${heldTxId}`],
+                  "ok"
+                );
+              }
+              return;
+            }
 
             // Wave 1.2 · CLI-NEXTSTEPS-1 / IC-5′.11: artifactId is the receipt's
             // canonical identity; the txId is labelled as a txId.
@@ -712,9 +776,14 @@ export function registerTxCommands(program: Command) {
                 ok: result.accepted,
                 // AUX-11: one of three unambiguous outcomes (submitted | rejected | not_executed); EVENT-LEDGER-2 final
                 // closeout: `unknown` for a submit call that failed without an answer (never reported as rejected).
-                outcome: sendOutcomeLabel(result.receipt, result.accepted),
-                // TX-SEND-IDEMPOTENT-1: already submitted from this workspace and held by the node — not broadcast again
-                ...(result.alreadySubmitted ? { alreadySubmitted: true, ...(result.state ? { state: result.state } : {}) } : {}),
+                // TX-SEND-IDEMPOTENT-1/-2: already submitted from this workspace and held by the node — not broadcast
+                // again: a typed outcome of its own (it was reported as "submitted", which it was not, this time)
+                outcome: result.alreadySubmitted ? "already-submitted" : sendOutcomeLabel(result.receipt, result.accepted),
+                ...(result.alreadySubmitted
+                  ? { code: "ALREADY_SUBMITTED", alreadySubmitted: true, recorded: true, ...(result.state ? { state: result.state } : {}) }
+                  : {}),
+                // INT9 · I-2: the pre-broadcast node check that let this broadcast go ahead (NOT_OBSERVED / UNKNOWN)
+                ...(result.nodeCheck ? { nodeCheck: result.nodeCheck } : {}),
                 data: {
                   plan: undefined,
                   signed: signedArtifact,
@@ -753,7 +822,9 @@ export function registerTxCommands(program: Command) {
                   };
               UI.causality(
                 isSimulated
-                  ? "Transaction simulated successfully"
+                  ? result.alreadySubmitted
+                    ? "Transaction already applied by the simulator: not executed again"
+                    : "Transaction simulated successfully"
                   : result.alreadySubmitted
                     ? "Transaction already submitted from this workspace: not sent again"
                     : result.accepted
@@ -1027,8 +1098,13 @@ export function registerTxCommands(program: Command) {
       "--since <chainBlockHash>",
       "Scan the node's virtual chain from this chain block (64 hex; it must precede the tx's acceptance) on the first look — for a tx sent outside this workspace"
     )
+    .option(
+      "--address <address>",
+      "An address the tx pays (repeatable), for a tx sent outside this workspace with no --since: the scan starts at the node's sink when the wait starts, an output of the tx listed there before that point ends the wait (TX_WAIT_ACCEPTED_BEFORE_CURSOR), and the UTXO view is checked there",
+      (value: string, previous: string[] = []) => [...previous, value]
+    )
     .option("--json", "Output as JSON", false)
-    .action(async (txId: string, options: { until: string; timeout: string; interval: string; network?: string; since?: string; json: boolean }) => {
+    .action(async (txId: string, options: { until: string; timeout: string; interval: string; network?: string; since?: string; address?: string[]; json: boolean }) => {
       if (options.json) UI.setJsonMode(true);
       const { HardkasCliError, HardkasExitCode } = await import("../cli-errors.js");
       if (options.until !== "accepted" && options.until !== "confirmed") {
@@ -1056,6 +1132,18 @@ export function registerTxCommands(program: Command) {
         if (!/^[0-9a-f]{64}$/.test(options.since)) refuse(`--since must be a 64-hex chain block hash, got '${options.since.slice(0, 80)}'.`);
         if (!NETWORK_TXID.test(txId)) refuse("--since applies to a network txId (64 hex), not to a simulator txId.");
       }
+      // INT9 · C3: --address names Kaspa addresses the tx pays; a misuse is refused before any connection
+      if (options.address !== undefined) {
+        const { NETWORK_TXID } = await import("../runners/tx-status-runner.js");
+        const { decodeKaspaAddress } = await import("@hardkas/artifacts");
+        const refuse = (why: string) => {
+          throw new HardkasCliError("TX_WAIT_USAGE", `${why} Nothing was observed.`, { exitCode: HardkasExitCode.USAGE_ERROR });
+        };
+        if (!NETWORK_TXID.test(txId)) refuse("--address applies to a network txId (64 hex), not to a simulator txId.");
+        for (const a of options.address) {
+          if (!decodeKaspaAddress(a)) refuse(`--address must be a Kaspa address, got '${String(a).slice(0, 80)}'.`);
+        }
+      }
       // Demo-cut step 2 · T-A14b: the wait follows the Q4 derived state; it never
       // assumes confirmation and never prints "Settlement Proof".
       const { runTxWait, utxoViewRow } = await import("../runners/tx-wait-runner.js");
@@ -1067,6 +1155,7 @@ export function registerTxCommands(program: Command) {
         intervalMs: Math.max(0.2, Number(options.interval)) * 1000,
         ...(options.network ? { network: options.network } : {}),
         ...(options.since !== undefined ? { since: options.since } : {}),
+        ...(options.address !== undefined ? { addresses: options.address } : {}),
         workspaceRoot: invocationWorkspaceRoot(),
         onUpdate: (line) => {
           if (!options.json) UI.logHuman(`  • ${line}`);
@@ -1085,6 +1174,7 @@ export function registerTxCommands(program: Command) {
           ...(r.derived.confirmations ? { confirmations: r.derived.confirmations } : {}),
           looks: r.looks,
           ...(r.utxoView ? { utxoView: r.utxoView } : {}),
+          ...(r.cursor ? { cursor: r.cursor } : {}),
           derived: r.derived
         });
         return;

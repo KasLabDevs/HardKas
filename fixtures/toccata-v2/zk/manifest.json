@@ -15,7 +15,7 @@
   "claims": {
     "zkArtifactCoherence": "READY_MATCH",
     "zkLocalVerification": "READY_GROTH16_FIXTURE_COHERENCE",
-    "zkMathematicalVerification": "GROTH16_SNARKJS_BN254_FIXTURE_BOUND_TOY_KEY_ONLY",
+    "zkMathematicalVerification": "GROTH16_SNARKJS_BN254_PINNED_TOY_KEY_ONLY",
     "zkOnchainVerification": "NOT_CLAIMED",
     "runtimeOutcome": "PARTIAL",
     "vmConsensusEquivalence": "NOT_CLAIMED",
@@ -32,7 +32,8 @@
       "path": "groth16-multiplier/manifest.json",
       "expectedStatus": "ZK_FIXTURE_COHERENCE_PASS",
       "expectedMathStatus": "ZK_GROTH16_MATH_VERIFIED",
-      "allowWeakVerificationKey": true
+      "allowWeakVerificationKey": true,
+      "pinnedVerificationKeyId": "hardkas-groth16-multiplier-toy"
     },
     {
       "id": "risc0-smoke",

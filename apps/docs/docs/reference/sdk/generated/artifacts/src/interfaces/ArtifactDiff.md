@@ -6,7 +6,7 @@
 
 # Interface: ArtifactDiff
 
-Defined in: [packages/artifacts/src/diff.ts:11](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/diff.ts#L11)
+Defined in: [packages/artifacts/src/diff.ts:13](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/diff.ts#L13)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [packages/artifacts/src/diff.ts:11](https://github.com/KasLabDevs/Ha
 
 > **entries**: [`DiffEntry`](DiffEntry.md)[]
 
-Defined in: [packages/artifacts/src/diff.ts:13](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/diff.ts#L13)
+Defined in: [packages/artifacts/src/diff.ts:15](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/diff.ts#L15)
 
 ***
 
@@ -22,4 +22,4 @@ Defined in: [packages/artifacts/src/diff.ts:13](https://github.com/KasLabDevs/Ha
 
 > **identical**: `boolean`
 
-Defined in: [packages/artifacts/src/diff.ts:12](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/diff.ts#L12)
+Defined in: [packages/artifacts/src/diff.ts:14](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/diff.ts#L14)

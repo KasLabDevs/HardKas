@@ -1,32 +1,36 @@
 name: HardKAS Examples CI
 
 on:
-  # R-09: develop is where the work lands; the canonical gate on Linux (pnpm test) runs there too, not only on main.
+  # R-09: develop is where the work lands; these checks run there too, not only on main.
   push:
     branches: [main, develop]
   pull_request:
     branches: [main, develop]
+
+# HK-22: read-only token; no step here writes to the repository.
+permissions:
+  contents: read
 
 jobs:
   validate-examples:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0 (tag v4 on 2026-11-06)
 
       - name: Install Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0 (tag v4 on 2026-11-06)
         with:
           # NODE-CI-PIN-1: the exact patched release this code was validated on (not a floating major).
           node-version: 24.22.1
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v3
+        uses: pnpm/action-setup@a3252b78c470c02df07e9d59298aecedc3ccdd6d # v3.0.0 (branch v3 on 2026-11-06)
         with:
           version: 9.15.4
 
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: Typecheck
         run: pnpm typecheck
@@ -44,17 +48,20 @@ jobs:
       - name: Install pinned silverc toolchain
         run: node packages/cli/dist/index.js toolchain install silverc
 
-      - name: Run unit tests
-        run: pnpm test
+      # HK-22: the canonical gate (pnpm test) runs in ci.yml on Ubuntu, Windows and macOS; it is not repeated here.
 
+      # M-03 (2026-11-07): 01, 02, 03 and 06 ended in `|| echo "skipped (no node)"`, so a failure was reported as a
+      # pass. They run on the in-memory simulator (Hardkas.create() opens the simulated network) and need no node:
+      # all six pass offline (verified locally under the hermetic preload, 0 connection attempts). 03 failed for
+      # another reason (`tx.confirm` does not exist) that the mask hid; it is fixed. Every example now fails its step.
       - name: Example 01 - Hello Kaspa
-        run: pnpm example:hello || echo "Hello Kaspa skipped (no node)"
+        run: pnpm example:hello
 
       - name: Example 02 - Basic Transfer
-        run: pnpm example:transfer || echo "Basic Transfer skipped (no node)"
+        run: pnpm example:transfer
 
       - name: Example 03 - Localnet Demo
-        run: pnpm example:localnet || echo "Localnet Demo skipped (no node)"
+        run: pnpm example:localnet
 
       - name: Example 04 - Trace & Replay
         run: pnpm example:trace
@@ -63,5 +70,8 @@ jobs:
         run: pnpm example:snapshot
 
       - name: Example 06 - RPC Node Health
-        # Note: This might fail if no node is running in CI environment
-        run: pnpm example:rpc-health || echo "Node health skipped (no local node in runner)"
+        run: pnpm example:rpc-health
+
+      # L-04: an example run writes local output only (git-ignored .hardkas/), never a tracked file
+      - name: Examples leave their tracked files unchanged
+        run: git diff --exit-code --stat -- examples

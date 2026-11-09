@@ -28,7 +28,7 @@ export function registerDoctorCommand(program: Command, extensions: ExtensionReg
     .option("--consistency", "Run advanced deterministic consistency checks", false)
     .option(
       "--strict",
-      "Fail strictly (exit 1) if invariants or consistency checks fail",
+      "Run the consistency checks in strict mode and report DOCTOR_FAILED when a check fails (any failed check exits 1)",
       false
     )
     .option("--release", "With 'doctor workspace': also run the release checks (git, schemas, claims, raw appends, browser imports)", false)
@@ -50,7 +50,10 @@ export function registerDoctorCommand(program: Command, extensions: ExtensionReg
           await runExtensionDoctor(extensions, moduleStr, opts);
         } else {
           // WORKSPACE-AUTHORITY-1 (WA-I0): the invocation's one workspace root
-          await runDoctorChecks(invocationWorkspaceRoot(), opts);
+          const healthy = await runDoctorChecks(invocationWorkspaceRoot(), opts);
+          // L-02 (3-nov): a report with a failed check is a failed run, exit 1; warnings and skips keep exit 0. The
+          // report (human or --json) is unchanged. --strict additionally raises DOCTOR_FAILED.
+          if (!healthy && !process.exitCode) process.exitCode = 1;
         }
       } catch (err) {
         handleError(err);
@@ -104,7 +107,7 @@ async function workspaceNetworkOf(
 export async function runDoctorChecks(
   root: string,
   // HARDKAS-NETWORK-PORTABILITY-1-A: `network: false` (ci verify) never contacts the workspace's public endpoint
-  opts: { json?: boolean; consistency?: boolean; strict?: boolean; quiet?: boolean; network?: boolean }
+  opts: { json?: boolean; consistency?: boolean; strict?: boolean; quiet?: boolean; network?: boolean; onReport?: (report: DoctorReport) => void }
 ): Promise<boolean> {
   if (opts.json) UI.setJsonMode(true);
 
@@ -819,5 +822,7 @@ export async function runDoctorChecks(
     );
   }
 
+  // INT9 · CLI-CONTRACT-2B C5: a caller (ci verify) can name which checks failed
+  opts.onReport?.(report);
   return report.summary.failed === 0;
 }

@@ -10,8 +10,8 @@ import { HardkasCliError, HardkasExitCode } from "../cli-errors.js";
 
 /**
  * The environment variables HardKAS reads, with what they do. SECRET-SURFACE-2 (D3): a variable marked `secret` holds a
- * credential; `env check` reports it as configured and never prints its value (the explicit reveal of the dev server
- * token stays `hardkas dev-server token`).
+ * credential; `env check` reports it as configured and never prints its value (the dev server's token lives in
+ * `.hardkas/dev-server-token`; there is no `hardkas dev-server` command group, N-7).
  */
 export const HARDKAS_ENV_VARIABLES: ReadonlyArray<{ name: string; meaning: string; secret?: true }> = [
   { name: "HARDKAS_HOME", meaning: "home of the managed toolchains (kaspa-wasm, silverc)" },

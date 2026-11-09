@@ -59,7 +59,7 @@ export interface BuildV1TransactionInput {
   readonly node: V1EngineNode;
   readonly facts: V1EngineFacts;
   readonly keys: V1KeyResolver;
-  /** Library use only: no HardKAS path passes it (MAINNET_SIGNING_DISABLED). */
+  /** @deprecated HK-12: has no effect; mainnet signing stays disabled (MAINNET_SIGNING_DISABLED). */
   readonly allowMainnet?: boolean | undefined;
 }
 
@@ -242,7 +242,8 @@ export async function checkV1Plan(
   const identity = checkArtifactIdentity(plan);
   if (!identity.ok) throw fail("V1_PLAN_IDENTITY_INVALID", `the plan's identity does not verify (${identity.issues.map((i) => i.code).join(", ")})`);
   if (plan.schema !== "hardkas.txPlan" || plan.txVersion !== 1) throw fail("V1_PLAN_INVALID", "the engine signs v1 TxPlan artifacts only");
-  if (!input.allowMainnet) assertMainnetTransactionsDisabled("sign", [plan.networkId, input.node.networkId], "v1 engine");
+  // HK-12: the constant decides (the former `allowMainnet` escape was dead code: F1.4 refuses mainnet anyway)
+  assertMainnetTransactionsDisabled("sign", [plan.networkId, input.node.networkId], "v1 engine");
   const k = loadManagedKaspaWasmSync();
 
   // 2. The inputs as the node lists them now

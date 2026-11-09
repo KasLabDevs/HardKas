@@ -5,17 +5,16 @@ import { pathToFileURL } from "node:url";
 
 const root = process.cwd();
 const { HardkasSchemas } = await import(pathToFileURL(path.join(root, "packages", "artifacts", "dist", "index.js")));
-const { KASPAD_REFERENCE_IMAGE, CPUMINER_REFERENCE_IMAGE, CANONICAL_LOCALNET } = await import(
+const { KASPAD_REFERENCE_IMAGE, CPUMINER_REFERENCE_IMAGE, CANONICAL_LOCALNET, endpointNodeExpectation } = await import(
   pathToFileURL(path.join(root, "packages", "core", "dist", "index.js"))
 );
 
 const cli = path.join(root, "packages", "cli", "dist", "index.js");
 const realNodeDir = path.join(root, "packages", "cli", "test-gauntlet", "real-node");
-const reportPath = path.join(root, "docs", "internal", "audit", "gauntlet", "TOCCATA_GAUNTLET_RESULT.json");
 const phases = [];
 
 if (process.argv.includes("--help") || process.argv.includes("-h")) {
-  console.log(`Usage: pnpm gauntlet:toccata
+  console.log(`Usage: pnpm gauntlet:toccata [--url <ws-url> --node-container <name> --grpc-port <n> [--miner-label <key=value>]...] [--report <path>]
 
 Runs the local Toccata v2 baseline gauntlet.
 
@@ -26,15 +25,43 @@ Preconditions:
   - fixture account has mature simnet funds, or localnet fund has been run
   - managed toolchains installed: hardkas toolchain install kaspa-wasm && hardkas toolchain install silverc
 
+--url: run on a simnet node HardKAS does not manage instead of the canonical localnet. The node is proven by what it
+  reports at that URL (simnet, the reference rusty-kaspad version, synced, not the simulator), never by the canonical
+  container check; the canonical localnet and its miner are not used. --node-container is the Docker container that
+  runs it (the miner joins its network namespace, as <name>-miner, with the --miner-label labels) and --grpc-port the
+  port kaspad's gRPC listens on inside it. The Silver commands run with --url. Simnet only. A node whose only problem
+  is "not synced" (an idle simnet node with no peers) is warmed up first: the miner runs in its container until the
+  full check passes (HARDKAS_GAUNTLET_WARMUP_TIMEOUT_MS, default 60000).
+--report: where the JSON result is written (default docs/internal/audit/gauntlet/TOCCATA_GAUNTLET_RESULT.json).
+
 SilverScript capabilities, each reported on its own:
   silver.compile.v1, silver.p2sh.deploy-spend.v1, toccata.covenant.auth-1to1-transition.v1
   (and the golden corpus: fixtures/toccata-v2/silver). No simulated step counts.`);
   process.exit(0);
 }
 
+/** `--name value` (the last one), or every `--name value` when `all`. */
+function argOf(name, { all = false } = {}) {
+  const values = [];
+  for (let i = 2; i < process.argv.length; i++) {
+    if (process.argv[i] === name) {
+      const value = process.argv[i + 1];
+      if (value === undefined || value.startsWith("--")) throw new Error(`GAUNTLET_ARGUMENT_MISSING: ${name} needs a value`);
+      values.push(value);
+      i++;
+    }
+  }
+  return all ? values : values[values.length - 1];
+}
+
+const reportPath = path.resolve(root, argOf("--report") ?? path.join("docs", "internal", "audit", "gauntlet", "TOCCATA_GAUNTLET_RESULT.json"));
+// L1-CORE-1 B3: --url, a simnet node HardKAS does not manage (see --help).
+const NODE_URL = argOf("--url");
+const URL_MODE = NODE_URL !== undefined;
+
 function record(name, status, details = {}) {
   phases.push({ name, status, ...details });
-  const marker = status === "PASS" ? "PASS" : status === "WARN" ? "WARN" : "FAIL";
+  const marker = status === "PASS" ? "PASS" : status === "WARN" ? "WARN" : status === "SKIP" ? "SKIP" : "FAIL";
   console.log(`[${marker}] ${name}`);
 }
 
@@ -43,7 +70,8 @@ function runNode(args, options = {}) {
     cwd: options.cwd || root,
     encoding: "utf8",
     stdio: options.stdio || "pipe",
-    maxBuffer: 100 * 1024 * 1024
+    maxBuffer: 100 * 1024 * 1024,
+    ...(options.env ? { env: options.env } : {})
   });
 }
 
@@ -74,11 +102,19 @@ function runPnpm(args) {
   }
 }
 
+/** Which node the run used: the canonical localnet, or (--url) one HardKAS does not manage. */
+function nodeTarget() {
+  return URL_MODE
+    ? { mode: "endpoint", url: NODE_URL, container: NODE_CONTAINER, miner: MINER_CONTAINER, network: "simnet" }
+    : { mode: "canonical-localnet", container: CANONICAL_LOCALNET.containerName, network: CANONICAL_LOCALNET.network };
+}
+
 function writeReport(status, details = {}) {
   const report = {
     schema : HardkasSchemas.ToccataGauntletV1,
     status,
     generatedAt: new Date().toISOString(),
+    node: nodeTarget(),
     phases,
     ...details
   };
@@ -90,9 +126,9 @@ function tryDocker(args, stdio = "ignore") {
   execFileSync("docker", args, { cwd: root, stdio });
 }
 
-/** `hardkas silver ... --json` in the real-node workspace: the record it wrote. */
-function silverJson(args) {
-  const out = runHardkas(["silver", ...args, "--json"], { cwd: realNodeDir });
+/** `hardkas silver ... --json` in the real-node workspace: the record it wrote. `onNode`: the command talks to the node. */
+function silverJson(args, { onNode = false } = {}) {
+  const out = runHardkas(["silver", ...args, ...(onNode && URL_MODE ? ["--url", NODE_URL] : []), "--json"], { cwd: realNodeDir });
   return JSON.parse(out.slice(out.indexOf("{")));
 }
 
@@ -109,11 +145,44 @@ function expectHardkasFailure(args, code) {
 }
 
 const MINER_IMAGE = process.env.HARDKAS_TOCCATA_MINER_IMAGE || CPUMINER_REFERENCE_IMAGE;
-const MINER_CONTAINER = CANONICAL_LOCALNET.minerContainerName;
-const NODE_CONTAINER = CANONICAL_LOCALNET.containerName;
+const NODE_CONTAINER = URL_MODE ? argOf("--node-container") : CANONICAL_LOCALNET.containerName;
+const MINER_CONTAINER = URL_MODE ? `${NODE_CONTAINER}-miner` : CANONICAL_LOCALNET.minerContainerName;
+const NODE_GRPC_PORT = URL_MODE ? argOf("--grpc-port") : String(CANONICAL_LOCALNET.ports.rpc);
+const MINER_LABELS = URL_MODE ? argOf("--miner-label", { all: true }) : [];
+if (URL_MODE) {
+  let url;
+  try {
+    url = new URL(NODE_URL);
+  } catch {
+    url = undefined;
+  }
+  if (!url || (url.protocol !== "ws:" && url.protocol !== "wss:")) throw new Error(`GAUNTLET_URL_INVALID: --url ${NODE_URL} is not a ws:// URL`);
+  if (!NODE_CONTAINER || !NODE_GRPC_PORT || !/^\d+$/.test(NODE_GRPC_PORT)) {
+    throw new Error("GAUNTLET_URL_MODE_INCOMPLETE: --url needs --node-container <name> and --grpc-port <n> (the miner joins that container)");
+  }
+  // L1-CORE-1 B6 (review): the miner is <node-container>-miner and is removed with `docker rm -f`; a node container whose
+  // miner name is the canonical miner's (e.g. --node-container hardkas-toccata) would remove the canonical miner.
+  if (NODE_CONTAINER === CANONICAL_LOCALNET.containerName || MINER_CONTAINER === CANONICAL_LOCALNET.minerContainerName) {
+    throw new Error("GAUNTLET_URL_MODE_CANONICAL: --url never uses the canonical localnet container or its miner (run without --url for those)");
+  }
+  for (const label of MINER_LABELS) {
+    if (!/^[A-Za-z0-9._-]+=[^,\s]*$/.test(label)) throw new Error(`GAUNTLET_LABEL_INVALID: --miner-label ${label} is not key=value`);
+  }
+}
 // Set by the "node identity" phase and written into every report.
 let nodeIdentity;
-const NODE_GRPC_PORT = "16210";
+// --url warm-up: the real-node phase's fixture address (a public simnet test key, never real funds), so the blocks
+// mined to bring an idle node back to "synced" only add to the funds that phase spends anyway.
+const WARMUP_ADDRESS = process.env.HARDKAS_GAUNTLET_WARMUP_ADDRESS || "kaspasim:qr0lr4ml9fn3chekrqmjdkergxl93l4wrk3dankcgvjq776s9wn9jeadh9sjw";
+
+/**
+ * The node proved all it must except being synced. INT9-A: being synced is the record's own `sync` verdict, apart from
+ * the identity (a verified node may still be unsynced); identity records of an earlier build carried it as a problem.
+ */
+function isOnlyUnsynced(identity) {
+  if (identity.verified) return identity.sync !== undefined && identity.sync !== "synced";
+  return identity.problems.length > 0 && identity.problems.every((p) => /is not synced$/.test(p));
+}
 
 /**
  * The upstream Kaspa CPU miner, kept running while `--wait` commands poll for
@@ -136,7 +205,8 @@ function startMiner(address) {
   } catch {}
   const throttle = process.env.HARDKAS_TOCCATA_MINER_THROTTLE_MS ?? "5";
   tryDocker([
-    "run", "-d", "--name", MINER_CONTAINER, `--network=container:${NODE_CONTAINER}`, MINER_IMAGE,
+    "run", "-d", "--name", MINER_CONTAINER, ...MINER_LABELS.flatMap((label) => ["--label", label]),
+    `--network=container:${NODE_CONTAINER}`, MINER_IMAGE,
     "--mining-address", address, "--kaspad-address", "127.0.0.1", "--port", NODE_GRPC_PORT,
     "--threads", "1", "--mine-when-not-synced", ...(throttle !== "0" ? ["--throttle", throttle] : [])
   ]);
@@ -176,31 +246,95 @@ async function main() {
   const { verifyNodeIdentity } = await import(
     pathToFileURL(path.join(root, "packages", "node-runner", "dist", "index.js"))
   );
-  nodeIdentity = await verifyNodeIdentity();
+  // With --url: the node's own report at that URL (verification "endpoint"); no container is inspected.
+  const identityOptions = URL_MODE ? { expected: endpointNodeExpectation(NODE_URL, "simnet") } : {};
+  nodeIdentity = await verifyNodeIdentity(identityOptions);
+  // INT9-A: the managed localnet is held to the same sync rule now (I-3), so it is warmed up the same way
+  if (isOnlyUnsynced(nodeIdentity)) {
+    // A simnet node with no peers reports "not synced" once its last block is old (an idle node, or the build above
+    // took minutes). It has already proven everything else (simnet, the reference version, not the simulator): a few
+    // blocks from the miner, in its own container, bring it back; the full check then runs again from scratch.
+    const started = Date.now();
+    startMiner(WARMUP_ADDRESS);
+    try {
+      const deadline = started + Number(process.env.HARDKAS_GAUNTLET_WARMUP_TIMEOUT_MS || "60000");
+      while (isOnlyUnsynced(nodeIdentity) && Date.now() < deadline) {
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+        nodeIdentity = await verifyNodeIdentity(identityOptions);
+      }
+    } finally {
+      stopMiner();
+    }
+    record("node warm-up", nodeIdentity.verified && !isOnlyUnsynced(nodeIdentity) ? "PASS" : "FAIL", {
+      reason: "the node reported only 'not synced'",
+      minedTo: WARMUP_ADDRESS,
+      seconds: Math.round((Date.now() - started) / 1000)
+    });
+  }
   if (!nodeIdentity.verified) {
     record("node identity", "FAIL", { problems: nodeIdentity.problems });
     throw new Error(`NODE_IDENTITY_UNVERIFIED: ${nodeIdentity.problems.join("; ")}`);
   }
+  // INT9-A: the Silver phases need the current chain state: a well-identified node must also say it is synced
+  if (isOnlyUnsynced(nodeIdentity)) {
+    record("node identity", "FAIL", { sync: nodeIdentity.sync });
+    throw new Error(`NODE_NOT_SYNCED: the node proved its identity but reports sync '${nodeIdentity.sync}'`);
+  }
   record("node identity", "PASS", {
-    container: nodeIdentity.observed.container?.name,
-    imageDigest: nodeIdentity.expected.imageDigest,
+    verification: URL_MODE ? "endpoint" : "container",
+    ...(URL_MODE
+      ? { url: NODE_URL, container: NODE_CONTAINER }
+      : { container: nodeIdentity.observed.container?.name, imageDigest: nodeIdentity.expected.imageDigest }),
     serverVersion: nodeIdentity.observed.server?.serverVersion,
     network: nodeIdentity.observed.server?.networkId
   });
 
-  runHardkas(["doctor", "--json"]);
-  record("doctor", "PASS");
+  // The repository root is the canonical localnet's workspace (its .hardkas/ holds the node's data). With --url there is
+  // no localnet there, and the real-node workspace keeps plaintext test keys on purpose (the doctor rightly fails it):
+  // the doctor checks a clean workspace of its own whose simnet is the --url node.
+  if (URL_MODE) {
+    const doctorWs = path.join(realNodeDir, ".hardkas", "gauntlet-doctor");
+    fs.rmSync(doctorWs, { recursive: true, force: true });
+    fs.mkdirSync(path.join(doctorWs, ".hardkas"), { recursive: true });
+    const doctorConfig = {
+      execution: { default: "node", targets: { node: { mode: "rpc", domain: "kaspa-l1", network: "simnet" } } },
+      networks: { simnet: { kind: "kaspa-node", network: "simnet", rpcUrl: NODE_URL } }
+    };
+    fs.writeFileSync(path.join(doctorWs, "hardkas.config.ts"), `export default ${JSON.stringify(doctorConfig, null, 2)};\n`);
+    runHardkas(["doctor", "--json"], { cwd: doctorWs });
+    record("doctor", "PASS", { workspace: path.relative(root, doctorWs).replace(/\\/g, "/") });
+  } else {
+    runHardkas(["doctor", "--json"]);
+    record("doctor", "PASS");
+  }
 
   runHardkas(["capabilities", "--json"]);
   record("capabilities", "PASS");
 
-  runHardkas(["localnet", "status", "--json"]);
-  record("localnet status", "PASS");
+  if (URL_MODE) {
+    record("localnet status", "SKIP", { reason: "--url: the node is not the canonical localnet" });
+  } else {
+    runHardkas(["localnet", "status", "--json"]);
+    record("localnet status", "PASS");
+  }
 
-  runHardkas(["rpc", "health", "--wait", "--timeout", "10000"]);
-  record("docker rpc health", "PASS");
+  runHardkas(["rpc", "health", ...(URL_MODE ? ["--url", NODE_URL] : []), "--wait", "--timeout", "10000"]);
+  record(URL_MODE ? "rpc health" : "docker rpc health", "PASS");
 
-  runNode(["run-real-node.mjs"], { cwd: realNodeDir, stdio: "inherit" });
+  runNode(["run-real-node.mjs"], {
+    cwd: realNodeDir,
+    stdio: "inherit",
+    env: URL_MODE
+      ? {
+          ...process.env,
+          HARDKAS_GAUNTLET_RPC_URL: NODE_URL,
+          HARDKAS_GAUNTLET_NODE_CONTAINER: NODE_CONTAINER,
+          HARDKAS_GAUNTLET_MINER_CONTAINER: MINER_CONTAINER,
+          HARDKAS_GAUNTLET_GRPC_PORT: NODE_GRPC_PORT,
+          HARDKAS_GAUNTLET_MINER_LABELS: MINER_LABELS.join(",")
+        }
+      : undefined
+  });
   record("standard tx lifecycle", "PASS");
 
   const accounts = JSON.parse(
@@ -223,11 +357,14 @@ async function main() {
     return path.relative(realNodeDir, path.join(work, name));
   };
   const capabilities = {};
+  // Every Silver record this run writes, checked by `hardkas artifact verify` once the run is done.
+  const silverRecords = [];
+  const silverRecord = (result) => (silverRecords.push(result.recordPath), result);
 
   // silver.compile.v1: a SignedRelease owned by bob (the golden case's source), reproduced byte for byte.
   const releaseSource = writeWork("signed-release.sil", fs.readFileSync(path.join(corpusDir, "p2sh-signed-release", "contract.sil")));
   const ownerArgs = writeWork("signed-release.args.json", JSON.stringify([{ kind: "bytes", value: [...Buffer.from(bobXOnly, "hex")] }]));
-  const compiled = silverJson(["compile", releaseSource, "--args", ownerArgs]);
+  const compiled = silverRecord(silverJson(["compile", releaseSource, "--args", ownerArgs]));
   record("silver compile", "PASS", {
     capability: "silver.compile.v1",
     compiler: `silverc ${compiled.provenance.compiler.releaseTag} ${compiled.provenance.compiler.binarySha256}`,
@@ -247,7 +384,7 @@ async function main() {
   startMiner(bob.address);
   try {
     // silver.p2sh.deploy-spend.v1: the node accepts the funding and the signed entry call.
-    const deployed = silverJson(["deploy", compiled.recordPath, "--from", bob.name, "--amount", "1", "--wait"]);
+    const deployed = silverRecord(silverJson(["deploy", compiled.recordPath, "--from", bob.name, "--amount", "1", "--wait"], { onNode: true }));
     record("silver deploy real", "PASS", {
       capability: "silver.p2sh.deploy-spend.v1",
       txId: deployed.txId,
@@ -255,7 +392,7 @@ async function main() {
       confirmedAtBlockDaaScore: deployed.confirmedAtBlockDaaScore
     });
     const spendArgs = writeWork("release.args.json", JSON.stringify([{ kind: "signature", account: bob.name }]));
-    const spent = silverJson(["spend", deployed.recordPath, "--entry", "release", "--to", bob.address, "--args", spendArgs, "--wait"]);
+    const spent = silverRecord(silverJson(["spend", deployed.recordPath, "--entry", "release", "--to", bob.address, "--args", spendArgs, "--wait"], { onNode: true }));
     record("silver spend real", "PASS", {
       capability: "silver.p2sh.deploy-spend.v1",
       txId: spent.txId,
@@ -269,14 +406,14 @@ async function main() {
     // covenant id (reported back by the node), then one state transition.
     const counterSource = writeWork("counter.sil", fs.readFileSync(path.join(corpusDir, "covenant-counter-transition", "current.sil")));
     const counterArgs = writeWork("counter.args.json", JSON.stringify([{ kind: "int", value: 7 }]));
-    const counter = silverJson(["compile", counterSource, "--args", counterArgs]);
+    const counter = silverRecord(silverJson(["compile", counterSource, "--args", counterArgs]));
     // Budget 10 covers the P2PK funding input's Schnorr check (certified by the node in the corpus run).
     // The fee is explicit (the SDK does not price v1 budgets) and must clear the SDK minimum, which
     // storage mass drives: 10 KAS keeps it near 0.004 KAS (a 1 KAS output needs 0.04 KAS).
-    const genesis = silverJson([
+    const genesis = silverRecord(silverJson([
       "covenant", "genesis", counter.recordPath, "--from", bob.name, "--amount", "10",
       "--compute-budget", "10", "--fee", "1000000", "--wait"
-    ]);
+    ], { onNode: true }));
     if (genesis.covenantIdFromNode !== genesis.covenantId) {
       throw new Error(`COVENANT_ID_MISMATCH: node ${genesis.covenantIdFromNode}, SDK ${genesis.covenantId}`);
     }
@@ -288,11 +425,11 @@ async function main() {
     });
     const nextState = writeWork("counter.next-state.json", JSON.stringify({ value: { kind: "int", value: 12 } }));
     const bumpArgs = writeWork("bump.args.json", JSON.stringify([{ kind: "int", value: 5 }]));
-    const transition = silverJson([
+    const transition = silverRecord(silverJson([
       "covenant", "transition", genesis.recordPath, "--policy", "bump", "--constructor-args", counterArgs,
       "--state-map", JSON.stringify({ value: 0 }), "--next-state", nextState, "--args", bumpArgs,
       "--compute-budget", "0", "--wait"
-    ]);
+    ], { onNode: true }));
     if (transition.covenantIdFromNode !== genesis.covenantId) {
       throw new Error(`COVENANT_LINEAGE_BROKEN: successor carries ${transition.covenantIdFromNode}`);
     }
@@ -308,6 +445,15 @@ async function main() {
     stopMiner();
   }
 
+  // Each record this run wrote is a valid artifact of its schema (its node, network and identity included).
+  const verifiedRecords = silverRecords.map((recordPath) => {
+    const out = runHardkas(["artifact", "verify", recordPath, "--json"], { cwd: realNodeDir });
+    const verdict = JSON.parse(out.slice(out.indexOf("{")));
+    if (!verdict.ok) throw new Error(`SILVER_RECORD_INVALID: ${recordPath}: ${JSON.stringify(verdict.result?.errors)}`);
+    return path.basename(recordPath);
+  });
+  record("silver records verify", "PASS", { records: verifiedRecords });
+
   // Evidence/replay: the golden corpus, recompiled and re-derived offline, per capability.
   const corpus = JSON.parse(runHardkas(["corpus", "verify", "fixtures/toccata-v2/silver", "--json"]));
   if (!corpus.ok) throw new Error(`SILVER_CORPUS_VERIFY_FAIL: ${JSON.stringify(corpus.issues)}`);
@@ -322,6 +468,7 @@ async function main() {
     schema : HardkasSchemas.ToccataGauntletV1,
     status: "HARDKAS_TOCCATA_BASELINE_READY",
     generatedAt: new Date().toISOString(),
+    node: nodeTarget(),
     nodeIdentity,
     // Independent claims: one failing never voids the others.
     capabilities,

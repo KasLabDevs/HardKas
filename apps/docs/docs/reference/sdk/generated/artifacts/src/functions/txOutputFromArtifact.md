@@ -8,7 +8,7 @@
 
 > **txOutputFromArtifact**(`artifact`): `TxOutput`
 
-Defined in: [packages/artifacts/src/conversions.ts:60](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/conversions.ts#L60)
+Defined in: [packages/artifacts/src/conversions.ts:63](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/conversions.ts#L63)
 
 Converts a TxOutputArtifact back to a domain TxOutput.
 

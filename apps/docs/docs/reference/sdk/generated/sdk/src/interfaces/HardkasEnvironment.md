@@ -6,7 +6,7 @@
 
 # Interface: HardkasEnvironment
 
-Defined in: [packages/sdk/src/environment.ts:16](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/environment.ts#L16)
+Defined in: [packages/sdk/src/environment.ts:16](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/environment.ts#L16)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [packages/sdk/src/environment.ts:16](https://github.com/KasLabDevs/H
 
 > **accounts**: `object`
 
-Defined in: [packages/sdk/src/environment.ts:30](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/environment.ts#L30)
+Defined in: [packages/sdk/src/environment.ts:30](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/environment.ts#L30)
 
 Accounts API: list, resolve, balance, fund (localnet), etc.
 
@@ -32,9 +32,10 @@ Accounts API: list, resolve, balance, fund (localnet), etc.
 
 > **addressManager**: `object`
 
-Defined in: [packages/sdk/src/environment.ts:87](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/environment.ts#L87)
+Defined in: [packages/sdk/src/environment.ts:77](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/environment.ts#L77)
 
-Address Manager API
+Address Manager API — WALLET-HD-0: the SYNTHETIC derivation (keys computable from seedRef + path + network), not
+BIP32; simnet only, every other network is refused (SYNTHETIC_DERIVATION_NETWORK_BLOCKED).
 
 #### derive
 
@@ -58,7 +59,7 @@ Address Manager API
 
 > **artifacts**: `object`
 
-Defined in: [packages/sdk/src/environment.ts:39](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/environment.ts#L39)
+Defined in: [packages/sdk/src/environment.ts:39](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/environment.ts#L39)
 
 Artifacts API: explain, replay, watch
 
@@ -132,16 +133,13 @@ Artifacts API: explain, replay, watch
 
 > **coinSelector**: `object`
 
-Defined in: [packages/sdk/src/environment.ts:63](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/environment.ts#L63)
+Defined in: [packages/sdk/src/environment.ts:60](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/environment.ts#L60)
 
-Coin Selector API.
+Coin Selector API: the pinned kaspa-wasm `Generator`.
 
-- `select`: DEPRECATED — HardKAS-invented largest/smallest-first selector.
-  Diverges from upstream in fragmented-UTXO scenarios (M9 audit).
-  Kept for backwards compatibility; will be removed in a future release.
-- `buildTransactions`: recommended path — wraps kaspa-wasm 2.0.1 `Generator`
-  and yields upstream `PendingTransaction`s (authoritative fee/mass/coin
-  selection semantics).
+- `buildTransactions`: yields upstream `PendingTransaction`s (authoritative
+  fee/mass/coin selection semantics).
+- `estimateTransactions`: upstream `Generator.estimate()`.
 
 #### buildTransactions
 
@@ -178,44 +176,13 @@ upstream `GeneratorSummary` (fees, mass, utxos, transactions count, ids).
 
 `Promise`\<`any`\>
 
-#### ~~select~~
-
-> **select**: (`request`) => `CoinSelectionResult`
-
-##### Parameters
-
-###### request
-
-`CoinSelectionRequest`
-
-##### Returns
-
-`CoinSelectionResult`
-
-##### Deprecated
-
-Since M10-B. `selectCoins` is a HardKAS-invented largest-first
-selector that diverges from the upstream `Generator` in `kaspa-wasm` 2.0.1
-(M9 audit: PUBLIC RELEASE + TESTNET blocker). Use
-buildTransactions from `kaspa-wallet-adapter.ts` instead, which
-yields upstream `PendingTransaction`s with authoritative fee/mass/coin
-selection semantics.
-
-This function will continue to work through M10 for backward compatibility
-but SHOULD NOT be used in new code. It is expected to be deleted once every
-consumer migrates.
-
-##### Deprecated
-
-Use coinSelector.buildTransactions instead (M10-B).
-
 ***
 
 ### config
 
 > **config**: `HardkasConfig`
 
-Defined in: [packages/sdk/src/environment.ts:18](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/environment.ts#L18)
+Defined in: [packages/sdk/src/environment.ts:18](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/environment.ts#L18)
 
 The currently loaded HardKAS configuration.
 
@@ -225,7 +192,7 @@ The currently loaded HardKAS configuration.
 
 > **confirmationPolicy**: `object`
 
-Defined in: [packages/sdk/src/environment.ts:111](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/environment.ts#L111)
+Defined in: [packages/sdk/src/environment.ts:104](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/environment.ts#L104)
 
 Confirmation Policy API
 
@@ -249,7 +216,7 @@ Confirmation Policy API
 
 > **expect**: `any`
 
-Defined in: [packages/sdk/src/environment.ts:51](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/environment.ts#L51)
+Defined in: [packages/sdk/src/environment.ts:51](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/environment.ts#L51)
 
 The vitest `expect` function. 
 Available for convenience inside scenarios (e.g. `hk.expect(a).toBe(b)`).
@@ -260,46 +227,10 @@ Available for convenience inside scenarios (e.g. `hk.expect(a).toBe(b)`).
 
 > **feeEstimator**: `object`
 
-Defined in: [packages/sdk/src/environment.ts:80](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/environment.ts#L80)
+Defined in: [packages/sdk/src/environment.ts:69](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/environment.ts#L69)
 
-Fee Estimator API.
-
-- `estimate`: DEPRECATED — HardKAS `+10%` conservative padding on top of a
-  hardcoded `100n` sompi/gram default. Wrong for any real network (M9).
-- `estimateTransactions`: recommended path — upstream `Generator.estimate()`
-  with authoritative fee/mass, no invented padding.
-- `rpcFeeEstimate`: node's live fee estimate via wasm RpcClient. Prefer this
-  over any HardKAS-side default when a wasm RPC is available.
-
-#### ~~estimate~~
-
-> **estimate**: (`request`) => `FeeEstimationResult`
-
-##### Parameters
-
-###### request
-
-`FeeEstimationRequest`
-
-##### Returns
-
-`FeeEstimationResult`
-
-##### Deprecated
-
-Since M10-C. `estimateFee` implements a HardKAS "conservative"
-`+10%` heuristic over the pinned SDK mass, on top of a hardcoded
-`DEFAULT_MINIMUM_RELAY_RATE_SOMPI_PER_MASS = 100n`. Upstream
-`Generator.estimate()` (via `estimateTransactionsUpstream` in
-`kaspa-wallet-adapter.ts`) is exact — no +10% padding, and it reads the
-network params from the SDK. Use that for anything you plan to submit.
-
-This function will continue to work through M10 for backward compatibility
-but SHOULD NOT be used in new code.
-
-##### Deprecated
-
-Use feeEstimator.estimateTransactions instead (M10-C).
+Fee Estimator API: upstream `Generator.estimate()` with authoritative
+fee/mass, no invented padding.
 
 #### estimateTransactions
 
@@ -324,7 +255,7 @@ upstream `GeneratorSummary` (fees, mass, utxos, transactions count, ids).
 
 > **kaspaUri**: `object`
 
-Defined in: [packages/sdk/src/environment.ts:106](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/environment.ts#L106)
+Defined in: [packages/sdk/src/environment.ts:99](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/environment.ts#L99)
 
 Kaspa URI API
 
@@ -338,7 +269,7 @@ Kaspa URI API
 
 > **localnet**: `object`
 
-Defined in: [packages/sdk/src/environment.ts:33](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/environment.ts#L33)
+Defined in: [packages/sdk/src/environment.ts:33](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/environment.ts#L33)
 
 Localnet API: status, start, stop, etc.
 
@@ -356,7 +287,7 @@ Localnet API: status, start, stop, etc.
 
 > **mode**: [`HardkasMode`](../type-aliases/HardkasMode.md)
 
-Defined in: [packages/sdk/src/environment.ts:24](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/environment.ts#L24)
+Defined in: [packages/sdk/src/environment.ts:24](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/environment.ts#L24)
 
 The execution mode of the environment.
 
@@ -366,7 +297,7 @@ The execution mode of the environment.
 
 > **paymentReceipts**: `object`
 
-Defined in: [packages/sdk/src/environment.ts:121](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/environment.ts#L121)
+Defined in: [packages/sdk/src/environment.ts:114](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/environment.ts#L114)
 
 Payment Receipts API
 
@@ -380,7 +311,7 @@ Payment Receipts API
 
 > **paymentTracker**: `object`
 
-Defined in: [packages/sdk/src/environment.ts:116](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/environment.ts#L116)
+Defined in: [packages/sdk/src/environment.ts:109](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/environment.ts#L109)
 
 Payment Tracker API
 
@@ -404,7 +335,7 @@ Payment Tracker API
 
 > **policy**: `Policy`
 
-Defined in: [packages/sdk/src/environment.ts:27](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/environment.ts#L27)
+Defined in: [packages/sdk/src/environment.ts:27](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/environment.ts#L27)
 
 The evaluated policy constraints for the environment.
 
@@ -414,7 +345,7 @@ The evaluated policy constraints for the environment.
 
 > **query**: `any`
 
-Defined in: [packages/sdk/src/environment.ts:42](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/environment.ts#L42)
+Defined in: [packages/sdk/src/environment.ts:42](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/environment.ts#L42)
 
 Query API for querying the read model (stubbed from client if missing, or added)
 
@@ -424,7 +355,7 @@ Query API for querying the read model (stubbed from client if missing, or added)
 
 > **replay**: `object`
 
-Defined in: [packages/sdk/src/environment.ts:45](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/environment.ts#L45)
+Defined in: [packages/sdk/src/environment.ts:45](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/environment.ts#L45)
 
 Replay / Session API
 
@@ -524,7 +455,7 @@ Replay / Session API
 
 > **tx**: `object`
 
-Defined in: [packages/sdk/src/environment.ts:36](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/environment.ts#L36)
+Defined in: [packages/sdk/src/environment.ts:36](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/environment.ts#L36)
 
 Transaction API: plan, sign, send, receipt
 
@@ -582,6 +513,10 @@ Transaction API: plan, sign, send, receipt
 
 `boolean`
 
+###### allowNewPaymentAfterUnknown?
+
+`boolean`
+
 ###### amountSompi?
 
 `string`
@@ -591,6 +526,10 @@ Transaction API: plan, sign, send, receipt
 `string`
 
 ###### from?
+
+`string`
+
+###### idempotencyKey?
 
 `string`
 
@@ -632,9 +571,10 @@ Transaction API: plan, sign, send, receipt
 
 > **walletManager**: `object`
 
-Defined in: [packages/sdk/src/environment.ts:95](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/environment.ts#L95)
+Defined in: [packages/sdk/src/environment.ts:88](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/environment.ts#L88)
 
-Wallet Manager API
+Wallet Manager API — WALLET-HD-0: synthetic wallets whose keys derive from the PUBLIC walletId; simnet only.
+`importMnemonic` hashes the given text: it is NOT BIP39 recovery of any Kaspa wallet.
 
 #### create
 
@@ -658,7 +598,7 @@ Wallet Manager API
 
 > **walletQuery**: `WalletQuery`
 
-Defined in: [packages/sdk/src/environment.ts:103](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/environment.ts#L103)
+Defined in: [packages/sdk/src/environment.ts:96](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/environment.ts#L96)
 
 Wallet Query API
 
@@ -668,6 +608,6 @@ Wallet Query API
 
 > **workspaceRoot**: `string`
 
-Defined in: [packages/sdk/src/environment.ts:21](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/environment.ts#L21)
+Defined in: [packages/sdk/src/environment.ts:21](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/environment.ts#L21)
 
 The root directory of the workspace where the config was found.

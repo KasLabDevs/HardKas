@@ -6,7 +6,7 @@
 
 # Interface: ResolveExecutionTargetOptions
 
-Defined in: [packages/config/src/resolve.ts:4](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/config/src/resolve.ts#L4)
+Defined in: [packages/config/src/resolve.ts:5](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/config/src/resolve.ts#L5)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [packages/config/src/resolve.ts:4](https://github.com/KasLabDevs/Har
 
 > **config**: [`HardkasConfig`](HardkasConfig.md)
 
-Defined in: [packages/config/src/resolve.ts:5](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/config/src/resolve.ts#L5)
+Defined in: [packages/config/src/resolve.ts:6](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/config/src/resolve.ts#L6)
 
 ***
 
@@ -22,7 +22,7 @@ Defined in: [packages/config/src/resolve.ts:5](https://github.com/KasLabDevs/Har
 
 > `optional` **execution?**: `object`
 
-Defined in: [packages/config/src/resolve.ts:7](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/config/src/resolve.ts#L7)
+Defined in: [packages/config/src/resolve.ts:8](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/config/src/resolve.ts#L8)
 
 #### domain
 
@@ -42,7 +42,7 @@ Defined in: [packages/config/src/resolve.ts:7](https://github.com/KasLabDevs/Har
 
 > `optional` **network?**: `string`
 
-Defined in: [packages/config/src/resolve.ts:6](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/config/src/resolve.ts#L6)
+Defined in: [packages/config/src/resolve.ts:7](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/config/src/resolve.ts#L7)
 
 ***
 
@@ -50,4 +50,4 @@ Defined in: [packages/config/src/resolve.ts:6](https://github.com/KasLabDevs/Har
 
 > `optional` **targetName?**: `string`
 
-Defined in: [packages/config/src/resolve.ts:8](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/config/src/resolve.ts#L8)
+Defined in: [packages/config/src/resolve.ts:9](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/config/src/resolve.ts#L9)

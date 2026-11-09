@@ -6,7 +6,7 @@
 
 # Interface: EvidenceBatchExportFromIndexOptions
 
-Defined in: [packages/artifacts/src/evidence-batch.ts:13](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/evidence-batch.ts#L13)
+Defined in: [packages/artifacts/src/evidence-batch.ts:13](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/evidence-batch.ts#L13)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [packages/artifacts/src/evidence-batch.ts:13](https://github.com/Kas
 
 > `optional` **claims?**: `Record`\<`string`, `any`\>
 
-Defined in: [packages/artifacts/src/evidence-batch.ts:18](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/evidence-batch.ts#L18)
+Defined in: [packages/artifacts/src/evidence-batch.ts:18](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/evidence-batch.ts#L18)
 
 ***
 
@@ -22,7 +22,7 @@ Defined in: [packages/artifacts/src/evidence-batch.ts:18](https://github.com/Kas
 
 > `optional` **exportDir?**: `string`
 
-Defined in: [packages/artifacts/src/evidence-batch.ts:19](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/evidence-batch.ts#L19)
+Defined in: [packages/artifacts/src/evidence-batch.ts:19](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/evidence-batch.ts#L19)
 
 ***
 
@@ -30,7 +30,7 @@ Defined in: [packages/artifacts/src/evidence-batch.ts:19](https://github.com/Kas
 
 > `optional` **from?**: `string`
 
-Defined in: [packages/artifacts/src/evidence-batch.ts:16](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/evidence-batch.ts#L16)
+Defined in: [packages/artifacts/src/evidence-batch.ts:16](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/evidence-batch.ts#L16)
 
 ***
 
@@ -38,7 +38,7 @@ Defined in: [packages/artifacts/src/evidence-batch.ts:16](https://github.com/Kas
 
 > **name**: `string`
 
-Defined in: [packages/artifacts/src/evidence-batch.ts:15](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/evidence-batch.ts#L15)
+Defined in: [packages/artifacts/src/evidence-batch.ts:15](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/evidence-batch.ts#L15)
 
 ***
 
@@ -46,7 +46,7 @@ Defined in: [packages/artifacts/src/evidence-batch.ts:15](https://github.com/Kas
 
 > **schema**: `string`
 
-Defined in: [packages/artifacts/src/evidence-batch.ts:14](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/evidence-batch.ts#L14)
+Defined in: [packages/artifacts/src/evidence-batch.ts:14](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/evidence-batch.ts#L14)
 
 ***
 
@@ -54,4 +54,4 @@ Defined in: [packages/artifacts/src/evidence-batch.ts:14](https://github.com/Kas
 
 > `optional` **to?**: `string`
 
-Defined in: [packages/artifacts/src/evidence-batch.ts:17](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/evidence-batch.ts#L17)
+Defined in: [packages/artifacts/src/evidence-batch.ts:17](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/evidence-batch.ts#L17)

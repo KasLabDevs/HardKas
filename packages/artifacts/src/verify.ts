@@ -31,6 +31,7 @@ import { verifyLineage } from "./lineage.js";
 import { checkSyntheticAuthorization } from "./signed-tx.js";
 import { checkTxObservationCoherence } from "./tx-observation.js";
 import { checkSubmissionFeeCoherence } from "./submission-fee.js";
+import { checkSilverRecordNetworkCoherence } from "./silver-network-coherence.js";
 import { checkArtifactIdentity, resolveArtifactSync } from "./resolve.js";
 import {
   SilverCompileArtifactSchema,
@@ -459,6 +460,13 @@ export function verifyArtifactIntegritySync(
     if (v.schema === HardkasSchemas.TxObservationV1 && schema && schema.safeParse(v).success) {
       const coherence = checkTxObservationCoherence(v);
       if (!coherence.ok) addError("OBSERVATION_INCOHERENT", coherence.message, coherence.path);
+    }
+
+    // INT9-A (I-1): a Silver record agrees with the network it names (its node's reported network, its addresses'
+    // prefixes); offline, on every network
+    for (const issue of checkSilverRecordNetworkCoherence(v)) {
+      if (issue.severity === "error") addError(issue.code, issue.message, issue.path);
+      else result.issues.push({ code: issue.code, severity: "warning", message: issue.message, ...(issue.path ? { path: issue.path } : {}) });
     }
 
     result.ok = result.issues.every(
@@ -911,6 +919,9 @@ export function verifyArtifactSemantics(
           addr.startsWith("kaspa:sim_");
       } else if (networkIdStr.startsWith("testnet")) {
         mismatch = !addr.startsWith("kaspatest:");
+      } else if (networkIdStr === "devnet") {
+        // INT9-A: devnet has its own prefix (it fell into the simnet branch: every devnet plan was "corrupted or invalid")
+        mismatch = !addr.startsWith("kaspadev:");
       } else {
         mismatch = !addr.startsWith("kaspasim:") && !addr.startsWith("kaspa:sim_");
       }

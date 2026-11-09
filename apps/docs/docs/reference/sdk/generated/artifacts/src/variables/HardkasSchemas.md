@@ -8,7 +8,7 @@
 
 > `const` **HardkasSchemas**: `object`
 
-Defined in: packages/core/dist/index.d.ts:735
+Defined in: [packages/core/dist/index.d.ts:2170](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/core/dist/index.d.ts#L2170)
 
 ## Type Declaration
 
@@ -40,9 +40,17 @@ Defined in: packages/core/dist/index.d.ts:735
 
 > `readonly` **BridgeLocalSimulationV1**: `"hardkas.bridge.localSimulation.v1"`
 
+### CliErrorRendered
+
+> `readonly` **CliErrorRendered**: `"hardkas.cli.error.rendered"`
+
 ### CliReferenceV1
 
 > `readonly` **CliReferenceV1**: `"hardkas.cliReference.v1"`
+
+### CovenantTransitionFactV1
+
+> `readonly` **CovenantTransitionFactV1**: `"hardkas.covenantTransitionFact.v1"`
 
 ### CovenantV1
 
@@ -72,6 +80,10 @@ Defined in: packages/core/dist/index.d.ts:735
 
 > `readonly` **ErrorV1**: `"hardkas.error.v1"`
 
+### EscrowRescueV1
+
+> `readonly` **EscrowRescueV1**: `"hardkas.escrow.rescue.v1"`
+
 ### Event
 
 > `readonly` **Event**: `"hardkas.event"`
@@ -83,6 +95,10 @@ Defined in: packages/core/dist/index.d.ts:735
 ### ExampleDocumentAnchorV1
 
 > `readonly` **ExampleDocumentAnchorV1**: `"hardkas.example.documentAnchor.v1"`
+
+### ExtensionDoctorV1
+
+> `readonly` **ExtensionDoctorV1**: `"hardkas.extensionDoctor.v1"`
 
 ### IgraSignedTxV1
 
@@ -160,6 +176,10 @@ Defined in: packages/core/dist/index.d.ts:735
 
 > `readonly` **NetworkProfileV1**: `"hardkas.networkProfile.v1"`
 
+### NodeIdentityV1
+
+> `readonly` **NodeIdentityV1**: `"hardkas.nodeIdentity.v1"`
+
 ### NodeStatusV1
 
 > `readonly` **NodeStatusV1**: `"hardkas.nodeStatus.v1"`
@@ -167,6 +187,10 @@ Defined in: packages/core/dist/index.d.ts:735
 ### PaymentReceiptV1
 
 > `readonly` **PaymentReceiptV1**: `"hardkas.paymentReceipt.v1"`
+
+### PendingSpendsV1
+
+> `readonly` **PendingSpendsV1**: `"hardkas.pendingSpends.v1"`
 
 ### PolicyV1
 
@@ -215,6 +239,10 @@ Defined in: packages/core/dist/index.d.ts:735
 ### PruneReportV1
 
 > `readonly` **PruneReportV1**: `"hardkas.pruneReport.v1"`
+
+### PsktV1
+
+> `readonly` **PsktV1**: `"hardkas.pskt.v1"`
 
 ### QueryRebuildV1
 
@@ -280,6 +308,10 @@ Defined in: packages/core/dist/index.d.ts:735
 
 > `readonly` **SilverCompile**: `"hardkas.silver.compile"`
 
+### SilverCompileProvenanceV1
+
+> `readonly` **SilverCompileProvenanceV1**: `"hardkas.silver.compileProvenance.v1"`
+
 ### SilverCompileV1
 
 > `readonly` **SilverCompileV1**: `"hardkas.silverCompile.v1"`
@@ -296,9 +328,17 @@ Defined in: packages/core/dist/index.d.ts:735
 
 > `readonly` **SilverCorpusVerifyV1**: `"hardkas.silverCorpusVerify.v1"`
 
+### SilverCovenantInspectV1
+
+> `readonly` **SilverCovenantInspectV1**: `"hardkas.silverCovenantInspect.v1"`
+
 ### SilverCovenantV1
 
 > `readonly` **SilverCovenantV1**: `"hardkas.silverCovenant.v1"`
+
+### SilverDebugReportV1
+
+> `readonly` **SilverDebugReportV1**: `"hardkas.silver.debugReport.v1"`
 
 ### SilverDeploy
 
@@ -315,6 +355,34 @@ Defined in: packages/core/dist/index.d.ts:735
 ### SilverDeployV1
 
 > `readonly` **SilverDeployV1**: `"hardkas.silverDeploy.v1"`
+
+### SilverDoctorV1
+
+> `readonly` **SilverDoctorV1**: `"hardkas.silverDoctor.v1"`
+
+### SilverE2eEvidenceV1
+
+> `readonly` **SilverE2eEvidenceV1**: `"hardkas.silver.e2eEvidence.v1"`
+
+### SilverEngineDraftFinalizeV1
+
+> `readonly` **SilverEngineDraftFinalizeV1**: `"hardkas.silverEngineDraftFinalize.v1"`
+
+### SilverEngineDraftV1
+
+> `readonly` **SilverEngineDraftV1**: `"hardkas.silverEngineDraft.v1"`
+
+### SilverEnginePlanV1
+
+> `readonly` **SilverEnginePlanV1**: `"hardkas.silverEnginePlan.v1"`
+
+### SilverEngineSignV1
+
+> `readonly` **SilverEngineSignV1**: `"hardkas.silverEngineSign.v1"`
+
+### SilverPreflightV1
+
+> `readonly` **SilverPreflightV1**: `"hardkas.silver.preflight.v1"`
 
 ### SilverSimulationStateV1
 
@@ -336,9 +404,23 @@ Defined in: packages/core/dist/index.d.ts:735
 
 > `readonly` **SilverSpendV1**: `"hardkas.silverSpend.v1"`
 
+### SilverStaticAuditV1
+
+> `readonly` **SilverStaticAuditV1**: `"hardkas.silver.staticAudit.v1"`
+
 ### SilverTest
 
 > `readonly` **SilverTest**: `"hardkas.silver.test"`
+
+### SilverVerifyV1
+
+> `readonly` **SilverVerifyV1**: `"hardkas.silverVerify.v1"`
+
+### SilverVmTestV1
+
+> `readonly` **SilverVmTestV1**: `"hardkas.silverVmTest.v1"`
+
+The official SilverScript runner's verdicts on scenario transactions (contract execution, never node evidence).
 
 ### Snapshot
 
@@ -384,9 +466,17 @@ Defined in: packages/core/dist/index.d.ts:735
 
 > `readonly` **ToccataProgrammabilityCorpusV1**: `"hardkas.toccataProgrammabilityCorpus.v1"`
 
+### ToolchainInstallV1
+
+> `readonly` **ToolchainInstallV1**: `"hardkas.toolchain.install.v1"`
+
 ### TortureReportV1
 
 > `readonly` **TortureReportV1**: `"hardkas.tortureReport.v1"`
+
+### TxObservationV1
+
+> `readonly` **TxObservationV1**: `"hardkas.txObservation.v1"`
 
 ### TxPlan
 
@@ -419,6 +509,20 @@ Defined in: packages/core/dist/index.d.ts:735
 ### TxReceiptV3
 
 > `readonly` **TxReceiptV3**: `"hardkas.txReceipt.v3"`
+
+### TxStatusPolicyCaller
+
+> `readonly` **TxStatusPolicyCaller**: `"hardkas.txStatusPolicy.caller"`
+
+### TxStatusPolicyDefault
+
+> `readonly` **TxStatusPolicyDefault**: `"hardkas.txStatusPolicy.default"`
+
+### TxSubmissionV1
+
+> `readonly` **TxSubmissionV1**: `"hardkas.txSubmission.v1"`
+
+R-iii part 1 (Wave 1.3): the immutable record of a broadcast HardKAS performed.
 
 ### TxTrace
 
@@ -464,6 +568,10 @@ Defined in: packages/core/dist/index.d.ts:735
 
 > `readonly` **ZkCorpusVerificationV1**: `"hardkas.zkCorpusVerification.v1"`
 
+### ZkExecutionEvidenceV1
+
+> `readonly` **ZkExecutionEvidenceV1**: `"hardkas.zk.executionEvidence.v1"`
+
 ### ZkGroth16FixtureV1
 
 > `readonly` **ZkGroth16FixtureV1**: `"hardkas.zkGroth16Fixture.v1"`
@@ -492,6 +600,10 @@ Defined in: packages/core/dist/index.d.ts:735
 
 > `readonly` **ZkProofInspectV1**: `"hardkas.zkProofInspect.v1"`
 
+### ZkProofMathVerificationV1
+
+> `readonly` **ZkProofMathVerificationV1**: `"hardkas.zkProofMathVerification.v1"`
+
 ### ZkProofVerificationV1
 
 > `readonly` **ZkProofVerificationV1**: `"hardkas.zkProofVerification.v1"`
@@ -515,3 +627,15 @@ Defined in: packages/core/dist/index.d.ts:735
 ### ZkRisc0VerifyReportV1
 
 > `readonly` **ZkRisc0VerifyReportV1**: `"hardkas.zk.risc0.verifyReport.v1"`
+
+### ZkToccataScriptsV1
+
+> `readonly` **ZkToccataScriptsV1**: `"hardkas.zk.toccata.scripts.v1"`
+
+### ZkToccataTxV1
+
+> `readonly` **ZkToccataTxV1**: `"hardkas.zk.toccata.tx.v1"`
+
+### ZkVerificationFactV1
+
+> `readonly` **ZkVerificationFactV1**: `"hardkas.zkVerificationFact.v1"`

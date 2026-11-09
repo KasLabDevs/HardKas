@@ -8,4 +8,4 @@
 
 > **HardkasArtifactMode** = `"simulated"` \| `"node"` \| `"rpc"` \| `"l2-rpc"` \| `"real"`
 
-Defined in: [packages/artifacts/src/constants.ts:40](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/constants.ts#L40)
+Defined in: [packages/artifacts/src/constants.ts:41](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/constants.ts#L41)

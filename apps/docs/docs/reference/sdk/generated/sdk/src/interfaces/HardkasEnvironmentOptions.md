@@ -6,7 +6,7 @@
 
 # Interface: HardkasEnvironmentOptions
 
-Defined in: [packages/sdk/src/environment.ts:126](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/environment.ts#L126)
+Defined in: [packages/sdk/src/environment.ts:119](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/environment.ts#L119)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [packages/sdk/src/environment.ts:126](https://github.com/KasLabDevs/
 
 > `optional` **baseUrl?**: `string`
 
-Defined in: [packages/sdk/src/environment.ts:131](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/environment.ts#L131)
+Defined in: [packages/sdk/src/environment.ts:124](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/environment.ts#L124)
 
 ***
 
@@ -22,7 +22,7 @@ Defined in: [packages/sdk/src/environment.ts:131](https://github.com/KasLabDevs/
 
 > **config**: `HardkasConfig`
 
-Defined in: [packages/sdk/src/environment.ts:127](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/environment.ts#L127)
+Defined in: [packages/sdk/src/environment.ts:120](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/environment.ts#L120)
 
 ***
 
@@ -30,7 +30,7 @@ Defined in: [packages/sdk/src/environment.ts:127](https://github.com/KasLabDevs/
 
 > `optional` **expectFn?**: `any`
 
-Defined in: [packages/sdk/src/environment.ts:134](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/environment.ts#L134)
+Defined in: [packages/sdk/src/environment.ts:127](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/environment.ts#L127)
 
 ***
 
@@ -38,7 +38,7 @@ Defined in: [packages/sdk/src/environment.ts:134](https://github.com/KasLabDevs/
 
 > **mode**: [`HardkasMode`](../type-aliases/HardkasMode.md)
 
-Defined in: [packages/sdk/src/environment.ts:129](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/environment.ts#L129)
+Defined in: [packages/sdk/src/environment.ts:122](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/environment.ts#L122)
 
 ***
 
@@ -46,7 +46,7 @@ Defined in: [packages/sdk/src/environment.ts:129](https://github.com/KasLabDevs/
 
 > `optional` **network?**: `string`
 
-Defined in: [packages/sdk/src/environment.ts:132](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/environment.ts#L132)
+Defined in: [packages/sdk/src/environment.ts:125](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/environment.ts#L125)
 
 ***
 
@@ -54,7 +54,7 @@ Defined in: [packages/sdk/src/environment.ts:132](https://github.com/KasLabDevs/
 
 > **policy**: `Policy`
 
-Defined in: [packages/sdk/src/environment.ts:130](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/environment.ts#L130)
+Defined in: [packages/sdk/src/environment.ts:123](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/environment.ts#L123)
 
 ***
 
@@ -62,4 +62,4 @@ Defined in: [packages/sdk/src/environment.ts:130](https://github.com/KasLabDevs/
 
 > **workspaceRoot**: `string`
 
-Defined in: [packages/sdk/src/environment.ts:128](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/environment.ts#L128)
+Defined in: [packages/sdk/src/environment.ts:121](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/environment.ts#L121)

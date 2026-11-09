@@ -6,7 +6,7 @@
 
 # Interface: FilterMatureUtxosResult\<T\>
 
-Defined in: [packages/tx-builder/src/kaspa-wallet-adapter.ts:242](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/kaspa-wallet-adapter.ts#L242)
+Defined in: [packages/tx-builder/src/kaspa-wallet-adapter.ts:355](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/kaspa-wallet-adapter.ts#L355)
 
 ## Type Parameters
 
@@ -20,7 +20,7 @@ Defined in: [packages/tx-builder/src/kaspa-wallet-adapter.ts:242](https://github
 
 > `readonly` **coinbaseMaturity**: `bigint`
 
-Defined in: [packages/tx-builder/src/kaspa-wallet-adapter.ts:245](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/kaspa-wallet-adapter.ts#L245)
+Defined in: [packages/tx-builder/src/kaspa-wallet-adapter.ts:358](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/kaspa-wallet-adapter.ts#L358)
 
 ***
 
@@ -28,7 +28,7 @@ Defined in: [packages/tx-builder/src/kaspa-wallet-adapter.ts:245](https://github
 
 > `readonly` **immature**: `T`[]
 
-Defined in: [packages/tx-builder/src/kaspa-wallet-adapter.ts:244](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/kaspa-wallet-adapter.ts#L244)
+Defined in: [packages/tx-builder/src/kaspa-wallet-adapter.ts:357](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/kaspa-wallet-adapter.ts#L357)
 
 ***
 
@@ -36,4 +36,4 @@ Defined in: [packages/tx-builder/src/kaspa-wallet-adapter.ts:244](https://github
 
 > `readonly` **mature**: `T`[]
 
-Defined in: [packages/tx-builder/src/kaspa-wallet-adapter.ts:243](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/kaspa-wallet-adapter.ts#L243)
+Defined in: [packages/tx-builder/src/kaspa-wallet-adapter.ts:356](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/kaspa-wallet-adapter.ts#L356)

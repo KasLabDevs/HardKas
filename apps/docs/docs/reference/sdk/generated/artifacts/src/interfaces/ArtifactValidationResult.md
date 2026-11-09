@@ -6,7 +6,7 @@
 
 # Interface: ArtifactValidationResult
 
-Defined in: [packages/artifacts/src/validate.ts:13](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/validate.ts#L13)
+Defined in: [packages/artifacts/src/validate.ts:13](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/validate.ts#L13)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [packages/artifacts/src/validate.ts:13](https://github.com/KasLabDev
 
 > **errors**: `string`[]
 
-Defined in: [packages/artifacts/src/validate.ts:15](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/validate.ts#L15)
+Defined in: [packages/artifacts/src/validate.ts:15](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/validate.ts#L15)
 
 ***
 
@@ -22,4 +22,4 @@ Defined in: [packages/artifacts/src/validate.ts:15](https://github.com/KasLabDev
 
 > **ok**: `boolean`
 
-Defined in: [packages/artifacts/src/validate.ts:14](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/validate.ts#L14)
+Defined in: [packages/artifacts/src/validate.ts:14](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/validate.ts#L14)

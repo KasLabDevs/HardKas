@@ -5,9 +5,12 @@ import {
   HardkasError,
   assertMainnetTransactionsDisabled,
   declaredNetworkIdOf,
+  networkTypeOf,
+  isSimnetNetworkId,
   stripBom,
   redactUrlCredentials,
-  redactUrlCredentialsInText
+  redactUrlCredentialsInText,
+  loadManagedKaspaWasmSync
 } from "@hardkas/core";
 import { pollCondition } from "./waiters.js";
 import { Hardkas } from "./index.js";
@@ -117,6 +120,31 @@ export interface SendTxOptions {
    * submission records the check (`preflight`). One node's view, not a consensus validation. Default false: unchanged.
    */
   preflight?: boolean;
+  /**
+   * HK-11 · explicit, documented escape: send a signed payment that names NO plan (its lineage has no
+   * `parentArtifactId` — a transaction signed outside this workspace's plan → sign flow). By default a real send
+   * requires the plan that authorized the transaction (SEND_PLAN_UNRESOLVED otherwise). With this option HardKAS
+   * cannot compare the signed transaction with any plan (no SIGNED_PLAN_MISMATCH) nor derive its fee, so no fee limit
+   * can be checked: you take both on yourself; the submission records `fee: insufficient-evidence`. It never covers a
+   * parent that is named but is not a plan (SEND_PARENT_NOT_PLAN), a v1 transaction (V1_SEND_PLAN_UNRESOLVED), or the
+   * preflight (which needs the plan). Default false.
+   */
+  allowUnplannedSignedTransaction?: boolean;
+}
+
+let amountNumberWarned = false;
+/** L1-11: a `number` amount in tx.plan is KAS (core's parseKasToSompi(number) reads sompi): said once per process. */
+function warnAmountNumberIsKas(): void {
+  if (amountNumberWarned) return;
+  amountNumberWarned = true;
+  try {
+    process.emitWarning(
+      "tx.plan({ amount: <number> }) reads the number as KAS (parseKasToSompi(<number>) of @hardkas/core reads sompi). Pass a string (KAS) or a bigint (sompi) to be unambiguous.",
+      { code: "HARDKAS_AMOUNT_NUMBER_IS_KAS" }
+    );
+  } catch {
+    // no process (non-Node runtime): the JSDoc says it
+  }
 }
 
 /** The version a signed payload declares (0 when it says none or cannot be read). */
@@ -197,6 +225,7 @@ import {
 } from "@hardkas/artifacts";
 import { observeTxOnce, rpcObserverFor } from "./tx-observer.js";
 import { preflightPaymentSend } from "./payment-preflight.js";
+import { checkWhatTheNodeHolds, nodeHoldsSentence, sendOutputsOf, SEND_NODE_CHECK_HOLDS, type SendNodeCheck, type SendOutput } from "./send-node-check.js";
 import {
   coreEvents,
   createEventEnvelope,
@@ -232,12 +261,10 @@ import {
   parseKasToSompi,
   parseFeeRate,
   parseMaxFeeSompi,
-  effectiveFeeLimit,
-  assertFeeWithinLimit,
   planPaysFeeSompi,
   type NetworkId
 } from "@hardkas/core";
-import { TxPlanService, covenantIdOf, type UtxoProvider } from "@hardkas/tx-builder";
+import { TxPlanService, covenantIdOf, feeLimitInForce, assertFeeWithinLimitInForce, type UtxoProvider } from "@hardkas/tx-builder";
 import { HardkasSchemas } from "@hardkas/artifacts";
 
 /** An artifact's identity: its declared 64-hex contentHash, or the hash of its body when it declares none. */
@@ -616,13 +643,24 @@ export class HardkasTx {
   async plan(options: {
     from: string | HardkasAccount;
     to: string | HardkasAccount;
+    /**
+     * L1-11 · units: a `string` is KAS ("1.5"; "all" consolidates), a `bigint` is SOMPI (150_000_000n), and a `number`
+     * is KAS (1.5) — unlike `parseKasToSompi(number)` of @hardkas/core, which reads a number as sompi. A number is
+     * ambiguous across the two APIs and loses precision past 2^53: pass a string (KAS) or a bigint (sompi). Passing a
+     * number emits a one-time process warning (HARDKAS_AMOUNT_NUMBER_IS_KAS).
+     */
     amount: string | number | bigint;
+    /**
+     * Sompi per gram. Default: the node's fee estimate for "normal" priority (bounded, FEE_RATE_ABOVE_BOUND above
+     * `networks[<net>].maxFeeRate`, default 10,000), never below the relay minimum; at the minimum the plan pays the relay
+     * minimum on the compute mass (FEE-POLICY-1, HK-09).
+     */
     feeRate?: bigint;
     /**
      * TX-FEE-GUARD-1: the most this transaction may pay in total, in sompi. Refused with FEE_EXCEEDS_MAX when the
      * planned fee is above it (or above the workspace's `networks[<net>].maxFeeSompi`, the lower one applies); recorded
-     * in the plan and enforced again at sign and send. Optional: without it (and without a network limit) no limit is
-     * imposed.
+     * in the plan and enforced again at sign and send. Optional: without it (and without a network limit) HardKAS's
+     * default limit applies (`DEFAULT_MAX_FEE_SOMPI`, 10,000,000 sompi = 0.1 KAS; TX-05).
      */
     maxFeeSompi?: bigint | number | string;
     workflowId?: string;
@@ -681,7 +719,7 @@ export class HardkasTx {
       typeof options.amount === "string"
         ? parseKasToSompi(options.amount)
         : typeof options.amount === "number"
-          ? parseKasToSompi(options.amount.toString())
+          ? (warnAmountNumberIsKas(), parseKasToSompi(options.amount.toString()))
           : options.amount;
 
     if (amountSompi === 0n) {
@@ -695,10 +733,15 @@ export class HardkasTx {
       (this.sdk.config.config.networks?.mainnet as any)?.allowMainnet === true;
 
     // Address Preflight Validation
-    validateAddressNetwork(fromAccount.address, activeNetwork, allowMainnet);
-    validateAddressNetwork(toAccount.address, activeNetwork, allowMainnet);
+    // HK-14: addresses are checked against the network the config entry DECLARES (a workspace may name it anything);
+    // the simulator's synthetic identities (kaspa:sim_*) fit only a simulated world, whose own name may be an alias
+    const declaredForAddresses = declaredNetworkIdOf(this.sdk.config.config, activeNetwork) ?? activeNetwork;
+    const addressNetwork =
+      simulatedWorld && networkTypeOf(declaredForAddresses) === undefined && !isSimnetNetworkId(declaredForAddresses) ? "simulated" : declaredForAddresses;
+    validateAddressNetwork(fromAccount.address, addressNetwork, allowMainnet, { simulated: simulatedWorld });
+    validateAddressNetwork(toAccount.address, addressNetwork, allowMainnet, { simulated: simulatedWorld });
     if (options.changeAddress) {
-      validateAddressNetwork(options.changeAddress, activeNetwork, allowMainnet);
+      validateAddressNetwork(options.changeAddress, addressNetwork, allowMainnet, { simulated: simulatedWorld });
     }
     // AUD-28: validated above; forwarded to whichever planner runs (never dropped).
     const changeRequest = options.changeAddress ? { changeAddress: options.changeAddress } : {};
@@ -831,10 +874,11 @@ export class HardkasTx {
     }
 
     const builderPlan = result.plan;
-    // TX-FEE-GUARD-1: the planned fee within the lower of the plan's limit and the workspace's network limit
-    assertFeeWithinLimit(
+    // TX-FEE-GUARD-1 / TX-05: the planned fee within the lower of the plan's limit and the workspace's network limit, or
+    // HardKAS's default when neither is set (CA-TX-01: never an unlimited fee)
+    assertFeeWithinLimitInForce(
       BigInt(builderPlan.estimatedFeeSompi),
-      effectiveFeeLimit({ planMaxFeeSompi, config: this.sdk.config.config, network: activeNetwork }),
+      feeLimitInForce({ planMaxFeeSompi, config: this.sdk.config.config, network: activeNetwork }),
       "plan",
       activeNetwork
     );
@@ -1001,8 +1045,19 @@ export class HardkasTx {
     const activeNetwork = this.sdk.network as string;
     const isSimulated = world.mode === "simulator";
 
+    // HK-10: the consolidation planner leaves immature coinbases out, against the node's virtual DAA score (read here;
+    // without it, coinbases are left out on a real network)
     const dummyProvider: UtxoProvider = {
-      getUtxos: async () => []
+      getUtxos: async () => [],
+      ...(isSimulated
+        ? {}
+        : {
+            getVirtualDaaScore: async () => {
+              const info = await this.sdk.rpc.getBlockDagInfo();
+              if (info?.virtualDaaScore === undefined || info?.virtualDaaScore === null) throw new Error("no virtualDaaScore");
+              return BigInt(info.virtualDaaScore);
+            }
+          })
     };
     const networkConfig = this.sdk.config.config.networks?.[activeNetwork];
     const coinbaseMaturity = getCoinbaseMaturity(activeNetwork, networkConfig?.kind === "kaspa-node" || networkConfig?.kind === "kaspa-rpc" || networkConfig?.kind === "simulated" ? networkConfig.consensusParams : undefined);
@@ -1023,10 +1078,10 @@ export class HardkasTx {
       throw new Error("Consolidation failed: transaction builder produced no outputs.");
     }
     const outputAmount = firstOutput.amountSompi;
-    // TX-FEE-GUARD-1
-    assertFeeWithinLimit(
+    // TX-FEE-GUARD-1 / TX-05 (default limit when none is set)
+    assertFeeWithinLimitInForce(
       BigInt(builderPlan.estimatedFeeSompi),
-      effectiveFeeLimit({ planMaxFeeSompi, config: this.sdk.config.config, network: activeNetwork }),
+      feeLimitInForce({ planMaxFeeSompi, config: this.sdk.config.config, network: activeNetwork }),
       "plan",
       activeNetwork
     );
@@ -1127,17 +1182,18 @@ export class HardkasTx {
     // never only on the fee it declares: a plan built by another route cannot understate it.
     if ((plan as any).schema === HardkasSchemas.TxPlan || (plan as any).schema === HardkasSchemas.TxPlanV1) {
       const planNetwork = String((plan as any).networkId ?? this.sdk.network);
-      const limit = effectiveFeeLimit({ planMaxFeeSompi: (plan as any).maxFeeSompi, config: this.sdk.config.config, network: planNetwork });
-      if (limit) {
+      // TX-05 / CA-TX-01: a limit is always in force (HardKAS's default when neither the plan nor the workspace sets one)
+      const limit = feeLimitInForce({ planMaxFeeSompi: (plan as any).maxFeeSompi, config: this.sdk.config.config, network: planNetwork });
+      {
         const paid = planPaysFeeSompi(plan as any);
         const declared = /^\d+$/.test(String((plan as any).estimatedFeeSompi)) ? BigInt((plan as any).estimatedFeeSompi) : undefined;
         if (paid === undefined && declared === undefined) {
           throw new HardkasError(
             "FEE_LIMIT_UNVERIFIABLE",
-            `Refusing to sign: a fee limit of ${limit.maxFeeSompi} sompi is in force and this plan's fee cannot be computed from its amounts. Nothing was signed.`
+            `Refusing to sign: a fee limit of ${limit.maxFeeSompi} sompi is in force (${limit.source}) and this plan's fee cannot be computed from its amounts. Nothing was signed.`
           );
         }
-        assertFeeWithinLimit(paid !== undefined && declared !== undefined ? (paid > declared ? paid : declared) : (paid ?? declared)!, limit, "sign", planNetwork);
+        assertFeeWithinLimitInForce(paid !== undefined && declared !== undefined ? (paid > declared ? paid : declared) : (paid ?? declared)!, limit, "sign", planNetwork);
       }
     }
 
@@ -1714,7 +1770,7 @@ export class HardkasTx {
   async simulate(
     target: string | Partial<TxPlanArtifact> | SignedTxArtifact,
     options: { persist?: boolean; plan?: TxPlanArtifact } = {}
-  ): Promise<{ receipt: TxReceiptArtifact; receiptPath?: string; tracePath?: string }> {
+  ): Promise<{ receipt: TxReceiptArtifact; receiptPath?: string; tracePath?: string; alreadyApplied?: true }> {
     const explicitPlan = options.plan;
     const isSignedTarget =
       typeof target === "object" && target !== null && (target as any).schema === ARTIFACT_SCHEMAS.SIGNED_TX;
@@ -1768,12 +1824,13 @@ export class HardkasTx {
     target: string | Partial<TxPlanArtifact> | SignedTxArtifact,
     explicitPlan: TxPlanArtifact | undefined,
     persist: boolean
-  ): Promise<{ receipt: TxReceiptArtifact; receiptPath?: string; tracePath?: string }> {
+  ): Promise<{ receipt: TxReceiptArtifact; receiptPath?: string; tracePath?: string; alreadyApplied?: true }> {
     if (typeof target === "object" && target !== null && typeof (target as any).contentHash === "string") {
       // Idempotency by the executed artifact's identity (IC-5′.10), never by txId.
       const existing = await this.findExistingSubmission((target as any).contentHash);
       if (existing) {
-        return { receipt: existing.receipt, receiptPath: existing.receiptPath };
+        // INT9 · CLI-CONTRACT-2B C7: said, so a caller never presents the stored receipt as a fresh execution
+        return { receipt: existing.receipt, receiptPath: existing.receiptPath, alreadyApplied: true };
       }
     }
     const {
@@ -2015,6 +2072,13 @@ export class HardkasTx {
      * rejection (final: never retried, rebuilt or re-sent).
      */
     rejection?: NodeRejection;
+    /**
+     * INT9 · I-2 (TX-SEND-IDEMPOTENT-3): for a payment with no submission recorded here, the read-only node check that
+     * let the broadcast go ahead — NOT_OBSERVED (every read answered, nothing of it found) or UNKNOWN (a read the node
+     * could not answer). A positive state (MEMPOOL, IN_CHAIN, ACCEPTED, CONFIRMED, FINALIZED) refuses the send instead
+     * (ALREADY_SUBMITTED). Returned, never recorded.
+     */
+    nodeCheck?: SendNodeCheck;
   }> {
     const activeNetwork = this.sdk.network as string;
     const sendOptions: SendTxOptions = typeof urlOrOptions === "object" && urlOrOptions !== null ? urlOrOptions : {};
@@ -2022,6 +2086,13 @@ export class HardkasTx {
     if (sendOptions.preflight !== undefined && typeof sendOptions.preflight !== "boolean") {
       throw new HardkasError("SEND_OPTION_INVALID", `Refusing to broadcast: 'preflight' is true or false, not ${JSON.stringify(sendOptions.preflight)}. Nothing was sent or recorded.`);
     }
+    if (sendOptions.allowUnplannedSignedTransaction !== undefined && typeof sendOptions.allowUnplannedSignedTransaction !== "boolean") {
+      throw new HardkasError(
+        "SEND_OPTION_INVALID",
+        `Refusing to broadcast: 'allowUnplannedSignedTransaction' is true or false, not ${JSON.stringify(sendOptions.allowUnplannedSignedTransaction)}. Nothing was sent or recorded.`
+      );
+    }
+    const allowUnplanned = sendOptions.allowUnplannedSignedTransaction === true;
     // SDK-MAINNET-BROADCAST-GUARD-1: no broadcast on mainnet — decided from every network identity involved (the signed
     // artifact's own and its execution's, and this instance's) before any RPC request, receipt or submission event.
     // A transaction signed anywhere (outside HardKAS included) is refused the same way; allowPublic does not lift it.
@@ -2078,6 +2149,14 @@ export class HardkasTx {
               "V1_SEND_PLAN_UNRESOLVED",
               `Refusing to broadcast: a v1 transaction is sent only with the plan that authorized it, and its plan ` +
                 `(${String((signedArtifact as any).lineage?.parentArtifactId ?? "no lineage parent")}) is not in this workspace with a verified identity. Nothing was sent or recorded.`
+            );
+          }
+          // HK-11: a real send never goes out with a named plan that is not here
+          if (!isSimulated) {
+            throw new HardkasError(
+              "SEND_PLAN_UNRESOLVED",
+              `Refusing to broadcast: the signed transaction names its plan ${String((signedArtifact as any).lineage?.parentArtifactId)}, which is not in this ` +
+                `workspace with a verified identity. Nothing was sent or recorded.`
             );
           }
           throw new Error("parent_plan_unresolved: Missing context plan for simulation.");
@@ -2210,15 +2289,63 @@ export class HardkasTx {
     {
       let plan: any;
       const parentId = (signedArtifact as any).lineage?.parentArtifactId;
-      if (typeof parentId === "string" && /^[0-9a-f]{64}$/.test(parentId)) {
+      // HK-11 / CA-TX-02: the plan is read, and only "it does not exist" means "not resolved". A parent that is not a
+      // plan (another signed transaction of the store, say: lineage allows signedTx → signedTx) or that cannot be read
+      // with a verified identity is refused — it used to be swallowed into "no plan", skipping SIGNED_PLAN_MISMATCH and
+      // the plan's fee limit exactly like a signed artifact that names no plan.
+      if (parentId !== undefined && parentId !== null) {
+        if (typeof parentId !== "string" || !/^[0-9a-f]{64}$/.test(parentId)) {
+          throw new HardkasError(
+            "SEND_PLAN_UNRESOLVED",
+            `Refusing to broadcast: the signed artifact's lineage parent ${JSON.stringify(parentId)} is not an artifactId. Nothing was sent or recorded.`
+          );
+        }
         try {
           plan = await this.sdk.artifacts.read({ artifact: parentId }, { expectedSchema: ARTIFACT_SCHEMAS.TX_PLAN });
-        } catch {
-          plan = undefined;
+        } catch (e: any) {
+          if (e?.code === "ARTIFACT_NOT_FOUND") {
+            plan = undefined;
+          } else if (e?.code === "ARTIFACT_SCHEMA_MISMATCH") {
+            throw new HardkasError(
+              "SEND_PARENT_NOT_PLAN",
+              `Refusing to broadcast: the signed transaction's lineage parent ${parentId} is not a transaction plan (${withoutCode(e)}); ` +
+                `a transaction is sent only against the plan that authorized it. Nothing was sent or recorded.`,
+              { cause: e }
+            );
+          } else {
+            throw new HardkasError(
+              "SEND_PLAN_UNREADABLE",
+              `Refusing to broadcast: the signed transaction's plan ${parentId} could not be read with a verified identity (${withoutCode(e)}). Nothing was sent or recorded.`,
+              { cause: e }
+            );
+          }
+        }
+        // the plan's identity is FULL (current hash version): a legacy plan does not authenticate its fields
+        if (plan) {
+          const { checkArtifactIdentity: identityOf } = await import("@hardkas/artifacts");
+          const planIdentity = identityOf(plan);
+          if (!planIdentity.ok || planIdentity.authScope !== "FULL") {
+            throw new HardkasError(
+              "SEND_PLAN_UNRESOLVED",
+              `Refusing to broadcast: the plan ${parentId} does not carry a current, fully authenticated identity (${planIdentity.ok ? `authScope ${planIdentity.authScope}` : "identity check failed"}); migrate or re-plan it. Nothing was sent or recorded.`
+            );
+          }
         }
       }
       const payloadVersion = payloadVersionOf(broadcastable.rawTransaction);
       const isV1 = payloadVersion === 1 || (signedArtifact as any).txVersion === 1 || plan?.txVersion === 1;
+      // HK-11: a real payment is sent only with the plan that authorized it, unless the caller explicitly accepts sending
+      // one that names no plan (allowUnplannedSignedTransaction); a v1 transaction keeps its own code below
+      // the escape covers a signed artifact that names NO plan, never one whose named plan is absent
+      const unplannedAllowed = allowUnplanned && (parentId === undefined || parentId === null);
+      if (!plan && !isV1 && !unplannedAllowed) {
+        throw new HardkasError(
+          "SEND_PLAN_UNRESOLVED",
+          `Refusing to broadcast: the signed transaction ${parentId ? `names the plan ${parentId}, which is not in this workspace` : "names no plan (its lineage has no parentArtifactId)"}, ` +
+            "so HardKAS cannot check that it is the transaction a plan authorized (SIGNED_PLAN_MISMATCH) nor its fee limit. Sign it from a plan of this " +
+            "workspace, or pass allowUnplannedSignedTransaction: true (CLI: --allow-unplanned) to send it without those checks. Nothing was sent or recorded."
+        );
+      }
       if (isV1) {
         if (!plan) {
           throw new HardkasError(
@@ -2256,15 +2383,18 @@ export class HardkasTx {
       // TX-FEE-GUARD-1: before the broadcast, the fee the SIGNED transaction pays (derived from its outputs and the
       // plan's authenticated inputs) is within the limit in force — the plan's own and the workspace's for the network.
       // With a limit in force and no derived fee, nothing is sent (the limit cannot be checked).
-      const limit = effectiveFeeLimit({ planMaxFeeSompi: plan?.maxFeeSompi, config: this.sdk.config.config, network: activeNetwork });
-      if (limit) {
-        if (derived.status !== "derived") {
+      // TX-05 / CA-TX-01: a limit is always in force (HardKAS's default when neither the plan nor the workspace sets one).
+      // Only a send the caller explicitly allowed without a plan goes out with an underivable fee (documented above).
+      const limit = feeLimitInForce({ planMaxFeeSompi: plan?.maxFeeSompi, config: this.sdk.config.config, network: activeNetwork });
+      if (derived.status !== "derived") {
+        if (!(unplannedAllowed && !plan)) {
           throw new HardkasError(
             "FEE_LIMIT_UNVERIFIABLE",
-            `Refusing to broadcast: a fee limit of ${limit.maxFeeSompi} sompi is in force and the fee of the signed transaction cannot be derived (${derived.reason}). Nothing was sent or recorded.`
+            `Refusing to broadcast: a fee limit of ${limit.maxFeeSompi} sompi is in force (${limit.source}) and the fee of the signed transaction cannot be derived (${derived.reason}). Nothing was sent or recorded.`
           );
         }
-        assertFeeWithinLimit(BigInt(derived.feeSompi), limit, "send", activeNetwork);
+      } else {
+        assertFeeWithinLimitInForce(BigInt(derived.feeSompi), limit, "send", activeNetwork);
       }
       paymentPlan = plan;
     }
@@ -2315,13 +2445,17 @@ export class HardkasTx {
     const broadcast = { signedArtifact, url, activeNetwork, isSimulated, signedTxId, signedArtifactId, endpoint, broadcastable, pointCapture, feeEvidence, expectedTxId };
     return withLock(
       { rootDir: this.sdk.workspace.root, name: `tx-send-${expectedTxId}`, command: "tx send", wait: true, timeoutMs: TX_SEND_LOCK_WAIT_MS },
-      async () =>
-        (await this.alreadySubmittedReply(expectedTxId)) ??
-        (v1
-          ? this.sendV1Locked(broadcast, { ...v1, options: sendOptions })
-          : sendOptions.preflight === true
-            ? this.sendPaymentPreflighted(broadcast, paymentPlan)
-            : this.broadcastOnce(broadcast))
+      async () => {
+        const recorded = await this.alreadySubmittedReply(expectedTxId);
+        if (recorded) return recorded;
+        if (v1) return this.sendV1Locked(broadcast, { ...v1, options: sendOptions });
+        // TX-SEND-IDEMPOTENT-2/-3 (INT9 · I-2): nothing recorded here; the node is asked, read-only, for POSITIVE evidence
+        // that it already has the payment (mempool, this workspace's stored looks, an output of this txId listed): a
+        // refusal sends and records nothing; otherwise the check goes with the result (NOT_OBSERVED / UNKNOWN)
+        const nodeCheck = isSimulated ? undefined : await this.refuseWhatTheNodeHolds(expectedTxId, broadcastable.rawTransaction, paymentPlan, activeNetwork);
+        const checked = { ...broadcast, ...(nodeCheck ? { nodeCheck } : {}) };
+        return sendOptions.preflight === true ? this.sendPaymentPreflighted(checked, paymentPlan) : this.broadcastOnce(checked);
+      }
     );
   }
 
@@ -2335,10 +2469,15 @@ export class HardkasTx {
     try {
       preflight = await preflightPaymentSend({ plan, rawTransaction: broadcast.broadcastable.rawTransaction, txId: broadcast.expectedTxId, node: this.v1PreflightNode() });
     } catch (e: any) {
-      throw new HardkasError(typeof e?.code === "string" ? e.code : "PAYMENT_PREFLIGHT_FAILED", `Refusing to broadcast: ${withoutCode(e)}. Nothing was sent or recorded.`, {
+      const refusal = new HardkasError(typeof e?.code === "string" ? e.code : "PAYMENT_PREFLIGHT_FAILED", `Refusing to broadcast: ${withoutCode(e)}. Nothing was sent or recorded.`, {
         cause: e,
         ...(e?.detail ? { metadata: e.detail } : {})
       });
+      // TX-SEND-IDEMPOTENT-2: an unlisted input is told apart — this transaction already in the chain, or spent by another
+      if (refusal.code === "INPUT_NOT_UNSPENT") {
+        await this.classifyUnlistedInputs(broadcast.expectedTxId, broadcast.broadcastable.rawTransaction, plan, refusal);
+      }
+      throw refusal;
     }
     return this.broadcastOnce({ ...broadcast, v1Record: { preflight: { ...preflight.evidence } } });
   }
@@ -2510,8 +2649,10 @@ export class HardkasTx {
      * a payment sent with its preflight adds the check (`preflight`) only.
      */
     v1Record?: { covenantSpends?: unknown; preflight: unknown; replaces?: string[] };
+    /** INT9 · I-2: the pre-broadcast node check that let this broadcast go ahead (returned, never recorded). */
+    nodeCheck?: SendNodeCheck;
   }) {
-    const { signedArtifact, url, activeNetwork, isSimulated, signedTxId, signedArtifactId, endpoint, broadcastable, pointCapture, feeEvidence, expectedTxId, v1Record } =
+    const { signedArtifact, url, activeNetwork, isSimulated, signedTxId, signedArtifactId, endpoint, broadcastable, pointCapture, feeEvidence, expectedTxId, v1Record, nodeCheck } =
       args;
     // Attempt broadcast
     const broadcastRecord = broadcastable.rawTransaction as unknown as Record<
@@ -2719,7 +2860,8 @@ export class HardkasTx {
       mode: "real",
       submitted: submitResult.accepted,
       txId: submission.txId,
-      ...(rejection ? { rejection } : {})
+      ...(rejection ? { rejection } : {}),
+      ...(nodeCheck ? { nodeCheck } : {})
     };
   }
 
@@ -2762,6 +2904,145 @@ export class HardkasTx {
           : `and whether the node holds it could not be observed (${unobservable}). `) +
         `Broadcasting it again would record a second submission for the same txId, which the evidence model does not allow ` +
         `(one submission per txId). Nothing was sent. Observe it with 'hardkas tx status ${txId}'.`
+    );
+  }
+
+  /**
+   * TX-SEND-IDEMPOTENT-2 (L1-CORE-1 B2) → TX-SEND-IDEMPOTENT-3 (INT9 · I-2): a payment this workspace holds no submission of
+   * is never broadcast when the node shows, POSITIVELY, that it already has it (send-node-check.ts): its mempool holds
+   * the txId → MEMPOOL; this workspace's stored looks at the txId, looked at once more (not stored), accept it →
+   * ACCEPTED / CONFIRMED / FINALIZED; an output of THIS txId is listed at the address it pays with the amount and script
+   * the transaction gives it → IN_CHAIN. Each refuses with ALREADY_SUBMITTED, its state and evidence; nothing is sent or
+   * recorded. Called by send() under the transaction's lock, after alreadySubmittedReply() found no record and before the
+   * one broadcast; read-only.
+   *
+   * Never concluded here: anything from what the node does NOT list. The UTXO index lags behind the chain and the mempool
+   * (TX-BATCH-1, TX-WAIT-CHAINED-SPEND-1: a real kaspad behaviour) and an output may have been spent since, so a missing
+   * output is a false negative at worst: NOT_OBSERVED, and the broadcast goes ahead — the node judges, and its answer is
+   * recorded once. A read the node cannot answer gives UNKNOWN, and the broadcast goes ahead as well (the documented
+   * policy for the uncertain case: the node, which can answer the submit, judges). Returns the check for the result.
+   */
+  private async refuseWhatTheNodeHolds(txId: string, rawTransaction: unknown, plan: any, activeNetwork: string): Promise<SendNodeCheck> {
+    const check = await this.nodeCheckOf(txId, rawTransaction, plan, activeNetwork);
+    if (SEND_NODE_CHECK_HOLDS.has(check.state)) {
+      throw new HardkasError(
+        "ALREADY_SUBMITTED",
+        `Transaction ${txId} was not sent: ${nodeHoldsSentence(check)}. Nothing was sent or recorded. ` +
+          (check.state === "IN_CHAIN" && check.evidence?.kind === "utxo-index"
+            ? `Measure its blue-score confirmations with 'hardkas tx status ${txId} --since <a chain block before its acceptance>'.`
+            : `Observe it with 'hardkas tx status ${txId}'.`),
+        { metadata: { txId, state: check.state, recorded: false, ...(check.evidence ? { evidence: check.evidence } : {}), checks: check.checks } }
+      );
+    }
+    return check;
+  }
+
+  /** INT9 · I-2: the reads of the node check, through this instance's client (the generic `call`, as the observer reads). */
+  private async nodeCheckOf(txId: string, rawTransaction: unknown, plan: any, activeNetwork: string): Promise<SendNodeCheck> {
+    const client: any = this.sdk.rpc;
+    const observer = rpcObserverFor(this.sdk.rpc).rpc;
+    const networkId = declaredNetworkIdOf(this.sdk.config.config, activeNetwork) ?? activeNetwork;
+    const outputs: SendOutput[] = sendOutputsOf(rawTransaction, plan, (scriptHex, version) => {
+      const k: any = loadManagedKaspaWasmSync();
+      return String(k.addressFromScriptPublicKey(new k.ScriptPublicKey(version, scriptHex), networkId));
+    });
+    const { ProjectArtifactStore } = await import("@hardkas/artifacts");
+    const stored = new ProjectArtifactStore(this.sdk.workspace.root).listObservationsByTxId(txId).observations.length;
+    return checkWhatTheNodeHolds({
+      txId,
+      mempoolEntry: () => observer.getMempoolEntry(txId),
+      // only with looks stored here: they give the cursor (a look from the pruning point is not taken before a send)
+      storedLooks: async () => (stored > 0 ? (await this.observe(txId, { persist: false })).derived : undefined),
+      outputs,
+      utxosAt: async (addresses) => {
+        const raw: any = await client.call("getUtxosByAddresses", { addresses });
+        const answer: any = raw?.getUtxosByAddressesResponse ?? raw;
+        const entries = answer?.entries ?? answer?.utxos ?? answer;
+        if (!Array.isArray(entries)) throw new Error("the node's getUtxosByAddresses answer carries no entries");
+        return entries;
+      },
+      virtualDaaScore: async () => {
+        const raw: any = await client.call("getBlockDagInfo", {});
+        const info: any = raw?.getBlockDagInfoResponse ?? raw;
+        return info?.virtualDaaScore !== undefined && info?.virtualDaaScore !== null ? BigInt(info.virtualDaaScore) : undefined;
+      }
+    });
+  }
+
+  /**
+   * TX-SEND-IDEMPOTENT-2 under PAYMENT-PREFLIGHT-1: the checked send found an input the node no longer lists
+   * (INPUT_NOT_UNSPENT). Before refusing, it is told apart: an output of THIS transaction listed unspent, with its own
+   * amount and script, means the transaction is already in the chain → ALREADY_SUBMITTED (state IN_CHAIN); an input whose
+   * creator is still in the mempool is pending, not spent → the preflight's own refusal stands; otherwise →
+   * INPUTS_SPENT_UNATTRIBUTED (INT9 · I-2, B6 review M-1; it was INPUTS_SPENT, "spent by another transaction"): the
+   * input is not listed and nothing here says who spent it — another transaction, this one with its outputs spent since,
+   * or an index that has not applied its creator yet. Nothing is sent or recorded either way. Throws always.
+   */
+  private async classifyUnlistedInputs(txId: string, rawTransaction: any, plan: any, cause: any): Promise<never> {
+    const keyOf = (o: any) => `${String(o?.transactionId ?? o?.transaction_id ?? "").toLowerCase()}:${Number(o?.index ?? 0)}`;
+    // the broadcastable payload is the RPC transaction as JSON text (sometimes nested), as payloadVersionOf reads it
+    let tx: any = rawTransaction;
+    for (let depth = 0; typeof tx === "string" && depth < 3; depth++) {
+      try {
+        tx = JSON.parse(tx);
+      } catch {
+        throw cause;
+      }
+    }
+    const rawInputs = tx?.inputs ?? tx?.tx?.inner?.inputs;
+    const inputs: any[] = Array.isArray(rawInputs) ? rawInputs : [];
+    const addressesOf = (list: unknown[]) => [...new Set(list.filter((a): a is string => typeof a === "string" && a !== ""))];
+    const inputAddresses = addressesOf((plan?.inputs ?? []).map((i: any) => i?.address));
+    if (inputs.length === 0 || inputAddresses.length === 0) throw cause;
+    const node = this.v1PreflightNode();
+    const observer = rpcObserverFor(this.sdk.rpc).rpc;
+    let listed: ReadonlyMap<string, unknown>;
+    try {
+      listed = await node.utxosByAddresses(inputAddresses);
+    } catch {
+      throw cause;
+    }
+    const gone = inputs.map((i) => keyOf(i?.previousOutpoint ?? i?.previous_outpoint ?? i?.outpoint)).filter((k) => !listed.has(k));
+    if (gone.length === 0) throw cause;
+    // an input created by a transaction still in the mempool is pending, not spent: the preflight's own refusal stands
+    for (const k of gone) {
+      try {
+        if (await observer.getMempoolEntry(k.slice(0, k.indexOf(":")))) throw cause;
+      } catch (e) {
+        if (e === cause) throw e;
+        throw cause;
+      }
+    }
+    // an output of THIS transaction listed with its own amount and script: it is already in the chain
+    const outputs = sendOutputsOf(rawTransaction, plan);
+    let inChain: Array<{ outpoint: string; address: string; amountSompi: string }> = [];
+    try {
+      const byAddress = await node.utxosByAddresses(addressesOf(outputs.map((o) => o.address)));
+      inChain = outputs
+        .filter((o) => {
+          const u: any = byAddress.get(`${txId.toLowerCase()}:${o.index}`);
+          if (!u) return false;
+          const spk = String(u.scriptPublicKey ?? "").toLowerCase();
+          return BigInt(u.amountSompi ?? -1) === o.amountSompi && (spk === o.script || spk === Number(o.version ?? 0).toString(16).padStart(4, "0") + o.script);
+        })
+        .map((o) => ({ outpoint: `${txId.toLowerCase()}:${o.index}`, address: o.address!, amountSompi: o.amountSompi.toString() }));
+    } catch {
+      /* unknown: the inputs are gone all the same */
+    }
+    if (inChain.length > 0) {
+      throw new HardkasError(
+        "ALREADY_SUBMITTED",
+        `Transaction ${txId} was not sent: it is already in the chain (its inputs are no longer listed and its output(s) ${inChain.map((o) => o.outpoint).join(", ")} are listed unspent at the node, with the amount and script this transaction gives them). ` +
+          `Nothing was sent or recorded. Observe it with 'hardkas tx status ${txId}'.`,
+        { metadata: { txId, state: "IN_CHAIN", recorded: false, evidence: { kind: "utxo-index", outputs: inChain } } }
+      );
+    }
+    throw new HardkasError(
+      "INPUTS_SPENT_UNATTRIBUTED",
+      `Transaction ${txId} was not sent: input(s) ${gone.join(", ")} are not listed unspent at the node, no transaction in its mempool creates them, and no output of this transaction is listed. ` +
+        `Nothing here says who spent them: another transaction, this one with its outputs spent since, or a UTXO index that has not applied their creator yet ` +
+        `('hardkas tx status ${txId} --since <chain block hash>' tells whether this one was accepted). Nothing was sent or recorded.`,
+      { metadata: { txId, inputsSpent: gone, spentBy: "unknown" } }
     );
   }
 

@@ -1031,14 +1031,51 @@ const SilverScriptPublicKeySchema = z.object({ version: z.number(), script: z.st
 const Hex64 = z.string().regex(/^[0-9a-f]{64}$/);
 const SilverOutpointSchema = z.object({ transactionId: Hex64, index: z.number().int().nonnegative() });
 const SilverRecordRefSchema = z.object({ path: z.string(), contentHash: z.string(), artifactSha256: Hex64.optional() });
-const SilverNodeRefSchema = z.object({
-  verified: z.literal(true),
-  container: z.string().optional(),
-  imageDigest: z.string(),
-  serverVersion: z.string().optional()
-});
+const SilverNodeRefSchema = z
+  .object({
+    // HK-01: a Silver record names the node that accepted it; only a verified rusty-kaspad can. Records written before
+    // the field existed have no `kind` and stay readable; a simulator or unverified kind is refused.
+    kind: z.literal("rusty-kaspad").optional(),
+    verified: z.literal(true),
+    container: z.string().optional(),
+    // CA-TX-04: the OBSERVED image digest; `expectedImageDigest` is the pin it was checked against. Required for a node
+    // proven by its container (the default, and every record written before `verification` existed).
+    imageDigest: z.string().optional(),
+    expectedImageDigest: z.string().optional(),
+    serverVersion: z.string().optional(),
+    // L1-CORE-1 B3: how the node was proven. `endpoint`: a node HardKAS does not manage, proven by what it reported
+    // (network, version, synced, not the simulator); no container was inspected, so it has no container or digest.
+    verification: z.enum(["container", "endpoint"]).optional(),
+    network: z.string().optional(),
+    // INT9-A: the sync state the node reported when the command proved it (a record is written only after the node said
+    // it was synced, so a stored record says "synced"; records written before the field existed have none: unknown, never
+    // assumed), and the endpoint asked (credentials redacted)
+    sync: z.literal("synced").optional(),
+    endpoint: z.string().optional()
+  })
+  .superRefine((node, ctx) => {
+    if (node.verification === "endpoint") {
+      for (const field of ["container", "imageDigest", "expectedImageDigest"] as const) {
+        if (node[field] !== undefined) {
+          ctx.addIssue({ code: z.ZodIssueCode.custom, path: [field], message: "a node proven by its endpoint was not inspected as a container" });
+        }
+      }
+    } else if (node.imageDigest === undefined) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["imageDigest"], message: "Required" });
+    }
+  });
+/**
+ * INT9-A (I-1): the networks a Silver record can name. Deploy, spend and covenant records name the network they ran
+ * on: simnet, devnet (an own `rusty-kaspad --devnet`, proven by its endpoint), or testnet-<n> behind the payments'
+ * opt-in (it was simnet and testnet-<n> only: a devnet run was sent and its record then failed `artifact verify`).
+ * `mainnet` is accepted ONLY so a record can be read and its integrity verified offline: no HardKAS command writes one
+ * (Silver is refused on mainnet) and `artifact verify` never contacts a mainnet node. `simulated` is never a Silver
+ * network: HardKAS has no Silver simulator, and a Silver record must name a verified rusty-kaspad.
+ */
+export const SilverRecordNetworkIdSchema = z.union([z.literal("simnet"), z.literal("devnet"), z.string().regex(/^testnet-\d+$/), z.literal("mainnet")]);
+
 const SilverRecordBaseSchema = BaseArtifactSchema.extend({
-  networkId: z.literal("simnet"),
+  networkId: SilverRecordNetworkIdSchema,
   // v4 records carry `artifactId`; v5 records must not (IC-7.3, FORBIDDEN_IDENTITY_FIELD),
   // so requiring it rejected every record `hardkas silver` produces (first contact · E07).
   artifactId: z.string().optional(),
@@ -1055,8 +1092,9 @@ const SilverOnChainSchema = SilverRecordBaseSchema.extend({
 
 export const SilverCompileV1Schema = SilverRecordBaseSchema.extend({
   // HARDKAS-NETWORK-PORTABILITY-1 (C7): a compile record names the network its P2SH addresses are for (compilation does
-  // not depend on it); deploy, spend and covenant records stay canonical-simnet-only. Mainnet is never a compile network.
-  networkId: z.union([z.literal("simnet"), z.literal("devnet"), z.string().regex(/^testnet-\d+$/)]),
+  // not depend on it). INT9-A: the same networks as the on-chain records, so the compile record a mainnet record names
+  // can be verified offline too; `silver compile` still refuses mainnet.
+  networkId: SilverRecordNetworkIdSchema,
   schema: z.literal(HardkasSchemas.SilverCompileV1),
   source: z.object({ path: z.string(), sha256: Hex64, text: z.string() }),
   provenance: z
@@ -1433,8 +1471,11 @@ export const ZkG2PointSchema = z.tuple([
 ]);
 export const ZkSha256HexSchema = z.string().regex(/^[0-9a-f]{64}$/);
 
-// Strict objects: unknown keys are rejected, so a "verified" proof is a canonical object whose
-// digest is unique (Phase 3 remediation, L-01).
+// Strict objects: unknown keys are rejected, so the digest of a proof/key/inputs object covers exactly
+// the fields the verifier reads (Phase 3 remediation, L-01). It does NOT identify a proof uniquely: a
+// Groth16 proof can be re-randomised into infinitely many valid proofs of the same statement, and the
+// projective schema below admits several encodings of one point (the verifier rejects every encoding but
+// the canonical one, ZK-12 / CA-ZK-02). Identify a verification key by its fingerprint over its points.
 export const ZkGroth16ProofSchema = z
   .object({
     schema: z.literal(HardkasSchemas.ZkGroth16ProofV1),
@@ -1520,8 +1561,10 @@ export const ZkCorpusFixtureEntrySchema = z.object({
   expectedStatus: z.string().min(1),
   /** Required when the fixture claims a cryptographicVerification: the status `verify-math` must produce. */
   expectedMathStatus: z.string().min(1).optional(),
-  /** Only for TOY fixtures whose verification key has a known trapdoor. */
-  allowWeakVerificationKey: z.boolean().optional()
+  /** Only for TOY fixtures whose verification key has a known trapdoor; honoured only for a key pinned in code as such. */
+  allowWeakVerificationKey: z.boolean().optional(),
+  /** Id of the in-code pinned verification key (PINNED_GROTH16_VERIFICATION_KEYS) the fixture must use. */
+  pinnedVerificationKeyId: z.string().min(1).optional()
 });
 
 export const ZkCorpusSchema = z.object({
@@ -1544,6 +1587,7 @@ export const ZkProofMathVerificationSchema = z.object({
   curve: z.string(),
   status: z.enum([
     "ZK_GROTH16_MATH_VERIFIED",
+    "ZK_GROTH16_MATH_VALID_UNANCHORED_VK",
     "ZK_GROTH16_MATH_REJECTED",
     "ZK_GROTH16_VERIFIER_ERROR"
   ]),
@@ -1556,10 +1600,14 @@ export const ZkProofMathVerificationSchema = z.object({
     publicSignals: z.array(z.string()),
     mathCheck: z.enum(["PASS", "FAIL", "ERROR"]),
     verificationKeyHash: z.string(),
+    verificationKeyFingerprint: z.string(),
+    verificationKeyAnchor: z.enum(["CALLER_PIN", "PINNED_REGISTRY", "UNANCHORED"]),
+    pinnedVerificationKeyId: z.string().optional(),
     publicInputsHash: z.string(),
     proofHash: z.string(),
     verificationKeyStrength: z.enum(["NO_KNOWN_WEAKNESS", "WEAK_TRAPDOOR_SUSPECTED"]),
-    binding: z.enum(["FIXTURE_COHERENCE", "MATH_ONLY"])
+    /** Fixture coherence is SELF-ATTESTED (unkeyed digests in the same directory): never an anchor. */
+    binding: z.enum(["FIXTURE_COHERENCE_SELF_ATTESTED", "MATH_ONLY"])
   }),
   claims: z.record(z.string()),
   issues: z.array(
@@ -1584,11 +1632,15 @@ export const ZkToccataScriptsSchema = z.object({
     version: z.number().int(),
     script: z.string()
   }),
+  /** testnet10 / mainnet only on explicit, acknowledged request, never for a public test vector (HK-16). */
   p2shAddresses: z.object({
     simnet: z.string(),
-    testnet10: z.string(),
-    mainnet: z.string()
+    testnet10: z.string().optional(),
+    mainnet: z.string().optional()
   }),
+  authorizationModel: z.literal("IMAGE_ID_ONLY").optional(),
+  receiptClaimCrossCheck: z.enum(["MATCH", "NOT_CHECKED"]).optional(),
+  receiptClaimDigest: z.string().regex(/^[0-9a-f]{64}$/).optional(),
   precompileOpcode: z.literal("0xa6"),
   provingSystemTag: z.literal("0x20"),
   bindingMode: z.enum(["proof-only", "proof-and-output-bound"]).optional(),
@@ -1765,8 +1817,12 @@ export const ZkVerificationFactSchema = z.object({
   guestSystem: z.enum(["RISC Zero", "custom"]),
   imageId: z.string().regex(/^[0-9a-f]{64}$/i),
   journalHash: z.string().regex(/^[0-9a-f]{64}$/i),
-  proofSha256: z.string(),
+  /** SHA-256 of the proof BYTES (the 128-byte compressed proof the signature script pushes). */
+  proofSha256: z.string().regex(/^[0-9a-f]{64}$/i),
   verifiedOffChain: z.boolean(),
+  /** Who verified, if anyone: NOT_PERFORMED is not a failure; the node's precompile is the verifier of record. */
+  offChainVerification: z.enum(["VERIFIED", "NOT_PERFORMED", "FAILED"]).optional(),
+  offChainVerifier: z.string().optional(),
   spendUtxo: z.object({
     transactionId: z.string(),
     index: z.number().int().nonnegative(),
@@ -1781,7 +1837,8 @@ export const ZkVerificationFactSchema = z.object({
   payoutSompi: z.string(),
   computeBudget: z.number().int().nonnegative(),
   feeSompi: z.string(),
-  timestamp: z.string(),
+  /** Optional: omitted by default so the fact's identity does not depend on the clock (ZK-09). */
+  timestamp: z.string().optional(),
   contentHash: z.string().optional()
 });
 export type ZkVerificationFact = z.infer<typeof ZkVerificationFactSchema>;

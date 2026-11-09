@@ -5,6 +5,7 @@ export * from "./mass.js";
 export * from "./verify.js";
 export * from "./service.js";
 export * from "./generator-plan.js";
+export * from "./fee-policy.js";
 export * from "./kaspa-wallet-adapter.js";
 export * from "./kaspa-uri.js";
 export * from "./utxo-mapper.js";

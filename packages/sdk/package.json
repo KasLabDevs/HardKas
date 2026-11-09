@@ -42,15 +42,20 @@
     "@hardkas/query-store": "workspace:*",
     "@hardkas/simulator": "workspace:*",
     "@hardkas/toolkit": "workspace:*",
-    "@hardkas/tx-builder": "workspace:*",
+    "@hardkas/tx-builder": "workspace:*"
+  },
+  "peerDependencies": {
     "snarkjs": "0.7.6"
   },
-  "optionalDependencies": {
-    "@hardkas/pskt-native": "workspace:*"
+  "peerDependenciesMeta": {
+    "snarkjs": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@types/node": "^20.12.7",
     "@types/snarkjs": "0.7.9",
+    "snarkjs": "0.7.6",
     "tsup": "^8.3.5",
     "typescript": "^5.7.2",
     "vitest": "^2.1.8"

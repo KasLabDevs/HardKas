@@ -6,11 +6,15 @@
 
 # Function: createSimulatedSignedTxArtifact()
 
-> **createSimulatedSignedTxArtifact**(`plan`, `payload`, `ctx`): `object`
+> **createSimulatedSignedTxArtifact**(`plan`, `signer`, `ctx`): `object`
 
-Defined in: [packages/artifacts/src/signed-tx.ts:18](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/signed-tx.ts#L18)
+Defined in: [packages/artifacts/src/signed-tx.ts:98](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/signed-tx.ts#L98)
 
-Creates a canonical simulated signed transaction artifact.
+Creates the canonical synthetic authorization of `plan` by `signer` (the
+simulator's "signed" artifact). The signer MUST be the plan's `from` (IC-6′.2,
+`SIGNER_MISMATCH`); the plan MUST have a FULL identity (`PLAN_UNIDENTIFIED`,
+`MIGRATION_REQUIRED`). The binding lives in the authenticated body:
+`authorization.planArtifactId`, `lineage.parentArtifactId` and `txId`.
 
 ## Parameters
 
@@ -47,6 +51,10 @@ Creates a canonical simulated signed transaction artifact.
 #### contentHash?
 
 `string` = `...`
+
+#### covenantOutpoints?
+
+`string`[] = `...`
 
 #### createdAt?
 
@@ -92,6 +100,10 @@ Creates a canonical simulated signed transaction artifact.
 
 `string` = `...`
 
+#### genesisCovenantGroups?
+
+`object`[] = `...`
+
 #### hardkasVersion?
 
 `string` = `...`
@@ -136,6 +148,10 @@ Creates a canonical simulated signed transaction artifact.
 
 `number` = `...`
 
+#### maxFeeSompi?
+
+`string` = `...`
+
 #### metadata?
 
 `any` = `...`
@@ -152,6 +168,10 @@ Creates a canonical simulated signed transaction artifact.
 
 `string` = `...`
 
+#### nextState?
+
+(\{ `covenantId?`: `string`; `input?`: `number`; `outputs?`: `number`[]; `successor?`: \{ `artifactSha256?`: `string`; `constructorArgs?`: `unknown`[]; `state?`: `Record`\<`string`, `unknown`\>; `stateToConstructorArg?`: `Record`\<`string`, `number`\>; \}; \} \| \{ `covenantId?`: `string`; `input?`: `number`; `outputs?`: `number`[]; `states?`: `Record`\<`string`, `unknown`\>[]; \})[] = `...`
+
 #### outputs?
 
 `object`[] = `...`
@@ -160,13 +180,17 @@ Creates a canonical simulated signed transaction artifact.
 
 `string`[] = `...`
 
+#### payload?
+
+`string` = `...`
+
 #### planId?
 
 `string` = `...`
 
 #### plannerAuthority?
 
-`"KASPA_WASM_GENERATOR"` \| `"SYNTHETIC_SIMULATOR"` = `...`
+`"KASPA_WASM_GENERATOR"` \| `"SYNTHETIC_SIMULATOR"` \| `"HARDKAS_V1_PLANNER"` = `...`
 
 #### plannerAuthorityDetail?
 
@@ -222,7 +246,7 @@ Creates a canonical simulated signed transaction artifact.
 
 #### scriptProfile?
 
-`"experimental"` \| `"standard"` = `...`
+`"standard"` \| `"experimental"` = `...`
 
 #### storageMass?
 
@@ -256,9 +280,9 @@ Creates a canonical simulated signed transaction artifact.
 
 `string` = `...`
 
-### payload
+### signer
 
-`string`
+[`SyntheticSigner`](../type-aliases/SyntheticSigner.md)
 
 ### ctx
 
@@ -275,6 +299,22 @@ Creates a canonical simulated signed transaction artifact.
 ### assumptionLevel?
 
 > `optional` **assumptionLevel?**: `string`
+
+### authorization?
+
+> `optional` **authorization?**: `object`
+
+#### authorization.kind?
+
+> `optional` **kind?**: `"synthetic"`
+
+#### authorization.planArtifactId?
+
+> `optional` **planArtifactId?**: `string`
+
+#### authorization.signers?
+
+> `optional` **signers?**: `string`[]
 
 ### computeBudget?
 
@@ -430,7 +470,7 @@ Creates a canonical simulated signed transaction artifact.
 
 ### scriptProfile?
 
-> `optional` **scriptProfile?**: `"experimental"` \| `"standard"`
+> `optional` **scriptProfile?**: `"standard"` \| `"experimental"`
 
 ### signatureMetadata?
 

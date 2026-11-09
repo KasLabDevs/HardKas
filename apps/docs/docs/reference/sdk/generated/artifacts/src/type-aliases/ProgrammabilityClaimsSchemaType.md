@@ -8,4 +8,4 @@
 
 > **ProgrammabilityClaimsSchemaType** = `z.infer`\<*typeof* [`ProgrammabilityClaimsSchema`](../variables/ProgrammabilityClaimsSchema.md)\>
 
-Defined in: [packages/artifacts/src/schemas.ts:920](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/schemas.ts#L920)
+Defined in: [packages/artifacts/src/schemas.ts:1320](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/schemas.ts#L1320)

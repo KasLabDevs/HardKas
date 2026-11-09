@@ -55,8 +55,8 @@ export class HardkasL2 {
 function extensionRequired(replacement: string): HardkasError {
   return new HardkasError(
     "L2_EXTENSION_REQUIRED",
-    `L2 network profiles are not part of the HardKAS core SDK: install @hardkas/l2 and call ${replacement} from it ` +
-      "(for the CLI: hardkas extension install l2)."
+    `L2 network profiles are not part of the HardKAS core SDK: they are in @hardkas/l2 (${replacement}), which is not ` +
+      "published in this release, and neither is the CLI's l2 extension (@hardkas/ext-l2)."
   );
 }
 

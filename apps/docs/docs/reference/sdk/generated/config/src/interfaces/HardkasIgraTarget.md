@@ -6,7 +6,7 @@
 
 # Interface: HardkasIgraTarget
 
-Defined in: [packages/config/src/types.ts:47](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/config/src/types.ts#L47)
+Defined in: [packages/config/src/types.ts:55](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/config/src/types.ts#L55)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [packages/config/src/types.ts:47](https://github.com/KasLabDevs/Hard
 
 > **chainId**: `number`
 
-Defined in: [packages/config/src/types.ts:49](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/config/src/types.ts#L49)
+Defined in: [packages/config/src/types.ts:57](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/config/src/types.ts#L57)
 
 ***
 
@@ -22,7 +22,7 @@ Defined in: [packages/config/src/types.ts:49](https://github.com/KasLabDevs/Hard
 
 > `optional` **currencySymbol?**: `"iKAS"`
 
-Defined in: [packages/config/src/types.ts:51](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/config/src/types.ts#L51)
+Defined in: [packages/config/src/types.ts:59](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/config/src/types.ts#L59)
 
 ***
 
@@ -30,7 +30,7 @@ Defined in: [packages/config/src/types.ts:51](https://github.com/KasLabDevs/Hard
 
 > `optional` **description?**: `string`
 
-Defined in: [packages/config/src/types.ts:52](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/config/src/types.ts#L52)
+Defined in: [packages/config/src/types.ts:60](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/config/src/types.ts#L60)
 
 ***
 
@@ -38,7 +38,7 @@ Defined in: [packages/config/src/types.ts:52](https://github.com/KasLabDevs/Hard
 
 > **kind**: `"igra"`
 
-Defined in: [packages/config/src/types.ts:48](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/config/src/types.ts#L48)
+Defined in: [packages/config/src/types.ts:56](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/config/src/types.ts#L56)
 
 ***
 
@@ -46,4 +46,4 @@ Defined in: [packages/config/src/types.ts:48](https://github.com/KasLabDevs/Hard
 
 > **rpcUrl**: `string`
 
-Defined in: [packages/config/src/types.ts:50](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/config/src/types.ts#L50)
+Defined in: [packages/config/src/types.ts:58](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/config/src/types.ts#L58)

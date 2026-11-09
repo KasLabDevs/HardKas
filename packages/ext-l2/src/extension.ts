@@ -66,7 +66,7 @@ const extension: HardkasExtension = {
           const profiles = l2.listL2Profiles();
           return { ok: profiles.length > 0, detail: `@hardkas/l2 loads; ${profiles.length} built-in profiles (${profiles.map((p) => p.name).join(", ")})` };
         } catch (e) {
-          return { ok: false, detail: `@hardkas/l2 does not load: ${(e as Error)?.message ?? String(e)}`, fix: "Reinstall the extension: hardkas extension install l2" };
+          return { ok: false, detail: `@hardkas/l2 does not load: ${(e as Error)?.message ?? String(e)}`, fix: "Reinstall the extension at the CLI's version (@hardkas/ext-l2 and @hardkas/l2 are not published in this release: from a local build or tarballs)" };
         }
       }
     },

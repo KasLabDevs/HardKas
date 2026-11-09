@@ -11,7 +11,7 @@ HardKAS follows an **Application-First Philosophy**: every SDK primitive, UTXO p
 
 The repository includes two complementary layers of reference implementations:
 1. **Progressive SDK Examples (`examples/01` – `examples/11`):** Focused, runnable TypeScript workflows teaching one core Kaspa L1 concept at a time.
-2. **Production Builder Labs (`labs/`):** Full-featured reference architectures for wallets, merchant checkouts, offline PSKT custody, SilverScript covenants, and live indexers.
+2. **Production Builder Labs (`labs/`):** Full-featured reference architectures for wallets, merchant checkouts, offline PSKT co-signing, SilverScript covenants, and live indexers.
 
 ---
 
@@ -37,14 +37,14 @@ Every example in `examples/` runs deterministically against the local simulator 
 
 ## 2. Canonical Builder Labs (`labs/`)
 
-Builder Labs validate the full HardKAS stack (`@hardkas/sdk`, `@hardkas/toolkit`, `@hardkas/query-store`, `@hardkas/pskt-native`, `@hardkas/tx-builder`) under realistic operational load:
+Builder Labs exercise the HardKAS stack (`@hardkas/sdk`, `@hardkas/toolkit`, `@hardkas/query-store`, `@hardkas/tx-builder`, and in `bl-001` the workspace's `@hardkas/pskt-native`, which is on hold and not published):
 
-### Protocol & Custody Labs
+### Protocol & Signing Labs
 - **`labs/bl-001-offline-multisig` — Air-Gapped PSKT Multisig:** Demonstrates multi-party Partially Signed Kaspa Transactions (`@hardkas/pskt-native`), SIGHASH validation, and offline co-signing without exposing private keys to network hosts.
 - **`labs/bl-002-escrow-multisig` — 2-of-3 Escrow Covenant:** Implements conditional release and timeout recovery using deterministic script verification and auditable evidence packages.
 - **`labs/bl-003-silverscript-covenant` — Stateful SilverScript Vault:** Compiles `.sil` contracts via `silverc`, executes 1:1 auth-bound covenant genesis and state transitions (`hardkas silver covenant genesis` / `transition`), and verifies lineage on `simnet`.
 - **`labs/02-merchant-checkout` — Instant BlockDAG Checkout:** Handles invoice address derivation, mempool-aware UTXO detection, DAA confirmation tracking, and automated settlement receipts.
-- **`labs/exchange-backend` & `labs/treasury` — Institutional Custody & Consolidation:** Demonstrates hot-to-cold UTXO sweeping, coin-selection policies, background job queues (`@hardkas/jobs`), and SQLite/PostgreSQL persistence.
+- **`labs/exchange-backend` & `labs/treasury` — Treasury Sweeping & Consolidation:** Demonstrates hot-to-cold UTXO sweeping, coin-selection policies, background job queues (`@hardkas/jobs`), and SQLite/PostgreSQL persistence.
 
 ### Interactive Showcase Suite (`labs/showcase-suite/apps/`)
 Full-stack reference applications pairing `@hardkas/sdk` + `@hardkas/toolkit` backends with `@hardkas/client` + `@hardkas/react` frontends:
@@ -73,7 +73,7 @@ Sample output:
 ```text
 HardKAS Doctor
 
-  ✅ Node.js v24.22.1 (≥ 22.5 required)
+  ✅ Node.js version: v24.22.1 (the supported Node.js 24.22.1)
   ✅ pnpm 9.15.4
   ✅ .hardkas/ exists
   ✅ .gitignore protects .hardkas/

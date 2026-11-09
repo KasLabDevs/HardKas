@@ -31,8 +31,11 @@ export function registerRunCommand(program: Command): void {
           // ignore if .env doesn't exist
         }
 
-        const { logger } = await import("@hardkas/observability");
-        logger.info(`Running script: ${script}`, { script, network: opts.network });
+        // CLI-CONTRACT-2B D3 (L1-CORE-1 B2): with --json, stdout is one envelope; the log line was printed before it
+        if (!opts.json) {
+          const { logger } = await import("@hardkas/observability");
+          logger.info(`Running script: ${script}`, { script, network: opts.network });
+        }
 
         await runScript(script, { ...opts, workspaceRoot: process.cwd() });
         if (opts.json) {

@@ -17,7 +17,11 @@ import {
 
 const RECEIPT_PATH = join(__dirname, "../../../fixtures/toccata-v2/zk/r0-groth16-official/receipt.hex");
 const officialReceiptHex = readFileSync(RECEIPT_PATH, "utf8").trim();
-const officialImageId = "e2b3cbb7b2ee93da01a5fae56a42a537f88e104526d15a5fbcbc0241cf434e34";
+// The official RISC Zero vector (fixtures/toccata-v2/zk/r0-groth16-official): the receipt proves exactly this
+// (imageId, journalHash) pair. Develop's suite used an image id the receipt does not prove, which the HK-19 claim
+// cross-check now refuses (on-chain such a lock is unspendable). The HKZ1 journal is an off-chain convention only.
+const officialImageId = "75641a540ee2ad9ee5902bcdcdb8b55c0bef4a28287309b858f97b1356c6c2e0";
+const officialJournalHash = "5df6e0e2761359d30a8275058e299fcc0381534545f55cf43e41983f5d4c9456";
 
 describe("HardKAS ZK Consensus Binding — L1 Introspection & Policy Enforcer", () => {
   const kaspa = loadManagedKaspaWasmSync();
@@ -86,7 +90,7 @@ describe("HardKAS ZK Consensus Binding — L1 Introspection & Policy Enforcer", 
       const journal = createZkOutputBindingJournal({ payoutAddress: aliceAddr, amountSompi: 100000000n });
       const scripts = buildR0Groth16Scripts({
         imageId: officialImageId,
-        journalHash: journal.journalHash,
+        journalHash: officialJournalHash,
         receiptHex: officialReceiptHex,
         bindingPolicy: {
           mode: "proof-and-output-bound",
@@ -100,11 +104,26 @@ describe("HardKAS ZK Consensus Binding — L1 Introspection & Policy Enforcer", 
       expect(scripts.ok).toBe(true);
       expect(scripts.bindingMode).toBe("proof-and-output-bound");
       expect(scripts.consensusEnforced).toBe(true);
+      expect(scripts.authorizationModel).toBe("IMAGE_ID_AND_OUTPUTS");
       expect(scripts.boundPayoutAddress).toBe(aliceAddr);
       expect(scripts.boundPayoutAmount).toBe(100000000n);
       expect(scripts.p2shAddresses.simnet.startsWith("kaspasim:p")).toBe(true);
-      expect(scripts.p2shAddresses.testnet10.startsWith("kaspatest:p")).toBe(true);
-      expect(scripts.p2shAddresses.mainnet.startsWith("kaspa:p")).toBe(true);
+      // public-network addresses only on request, and never for this PUBLIC test vector (HK-16)
+      expect(scripts.p2shAddresses.testnet10).toBeUndefined();
+      expect(scripts.p2shAddresses.mainnet).toBeUndefined();
+      const publicAsked = buildR0Groth16Scripts({
+        imageId: officialImageId,
+        journalHash: officialJournalHash,
+        receiptHex: officialReceiptHex,
+        bindingPolicy: { mode: "proof-and-output-bound", payout: { address: aliceAddr, amountSompi: 100000000n } },
+        addressNetworks: ["testnet-10", "mainnet"]
+      });
+      expect(publicAsked.ok).toBe(false);
+      expect(publicAsked.issues.map((i) => i.code)).toContain("ZK_PUBLIC_VECTOR_PUBLIC_NETWORK_REFUSED");
+      expect(publicAsked.issues.map((i) => i.code)).not.toContain("ZK_IMAGE_ID_ONLY_LOCK_NOT_ACKNOWLEDGED");
+      // the funder learns the exact amount to lock (the fee is fixed once funded) and the largest UTXO accepted
+      expect(scripts.requiredFundingSompi!).toBeGreaterThan(100000000n);
+      expect(scripts.maxInputSompi).toBe(100000000n + 50000000n);
 
       // Verify that parsed script contains introspection opcodes
       const parsed = parseKaspaScript(scripts.redeemScript);
@@ -116,14 +135,22 @@ describe("HardKAS ZK Consensus Binding — L1 Introspection & Policy Enforcer", 
       expect(opcodes).toContain(0xc2); // OpTxOutputAmount
       expect(opcodes).toContain(0x9d); // OpNumEqualVerify
       expect(opcodes).toContain(0x88); // OpEqualVerify
+      expect(opcodes).toContain(0xb3); // OpTxInputCount: one input only
+      expect(opcodes).toContain(0xbe); // OpTxInputAmount: input limit
+      expect(opcodes).toContain(0xa1); // OpLessThanOrEqual
+      expect(opcodes).not.toContain(0xba); // never OpOutpointTxId (circular, unspendable)
       expect(opcodes[opcodes.length - 1]).toBe(0x51); // OpTrue (or 1)
+      // the bound payout is the introspection encoding OpTxOutputSpk pushes: version (u16 BE) ++ script
+      const spkPush = parsed.ops[parsed.ops.findIndex((o) => o.opcode === 0xc3) + 1]!.data!;
+      const aliceSpk = kaspa.payToAddressScript(new kaspa.Address(aliceAddr));
+      expect(spkPush).toBe("0000" + String(aliceSpk.script).toLowerCase());
     });
 
     it("builds script with change output policy (2 outputs enforced)", () => {
       const journal = createZkOutputBindingJournal({ payoutAddress: aliceAddr, amountSompi: 80000000n });
       const scripts = buildR0Groth16Scripts({
         imageId: officialImageId,
-        journalHash: journal.journalHash,
+        journalHash: officialJournalHash,
         receiptHex: officialReceiptHex,
         bindingPolicy: {
           mode: "proof-and-output-bound",
@@ -152,7 +179,7 @@ describe("HardKAS ZK Consensus Binding — L1 Introspection & Policy Enforcer", 
       expect(verified.enforcesPayoutAmount).toBe(true);
     });
 
-    it("builds script with outpoint replay protection", () => {
+    it("refuses outpoint binding: the funding txid commits to this P2SH, so a bound outpoint is circular and unspendable", () => {
       const boundOutpoint = { transactionId: "aa".repeat(32), index: 3 };
       const journal = createZkOutputBindingJournal({
         payoutAddress: aliceAddr,
@@ -161,7 +188,7 @@ describe("HardKAS ZK Consensus Binding — L1 Introspection & Policy Enforcer", 
       });
       const scripts = buildR0Groth16Scripts({
         imageId: officialImageId,
-        journalHash: journal.journalHash,
+        journalHash: officialJournalHash,
         receiptHex: officialReceiptHex,
         bindingPolicy: {
           mode: "proof-and-output-bound",
@@ -173,20 +200,18 @@ describe("HardKAS ZK Consensus Binding — L1 Introspection & Policy Enforcer", 
         }
       });
 
-      expect(scripts.ok).toBe(true);
-      const verified = verifyR0Groth16Scripts({
-        redeemScript: scripts.redeemScript,
-        sigScript: scripts.sigScript,
-        expectedBindingMode: "proof-and-output-bound"
-      });
-      expect(verified.ok).toBe(true);
-      expect(verified.enforcesUtxoBinding).toBe(true);
+      expect(scripts.ok).toBe(false);
+      expect(scripts.consensusEnforced).toBe(false);
+      expect(scripts.redeemScript).toBe("");
+      expect(scripts.issues.map((i) => i.code)).toContain("ZK_UTXO_BINDING_UNSATISFIABLE");
+      // the off-chain journal convention can still commit to an outpoint (it is not checked on-chain)
+      expect(journal.journalHash).toMatch(/^[0-9a-f]{64}$/);
     });
 
     it("preserves proof-only mode as an explicit non-enforced alternative with security warning", () => {
       const scripts = buildR0Groth16Scripts({
         imageId: officialImageId,
-        journalHash: "11".repeat(32),
+        journalHash: officialJournalHash,
         receiptHex: officialReceiptHex,
         bindingPolicy: { mode: "proof-only" }
       });
@@ -210,7 +235,7 @@ describe("HardKAS ZK Consensus Binding — L1 Introspection & Policy Enforcer", 
       const journal = createZkOutputBindingJournal({ payoutAddress: aliceAddr, amountSompi: 120000000n });
       const scripts = buildR0Groth16Scripts({
         imageId: officialImageId,
-        journalHash: journal.journalHash,
+        journalHash: officialJournalHash,
         receiptHex: officialReceiptHex,
         bindingPolicy: {
           mode: "proof-and-output-bound",
@@ -225,7 +250,7 @@ describe("HardKAS ZK Consensus Binding — L1 Introspection & Policy Enforcer", 
         redeemScript: scripts.redeemScript,
         sigScript: scripts.sigScript,
         imageId: officialImageId,
-        journalHash: journal.journalHash,
+        journalHash: officialJournalHash,
         expectedBindingMode: "proof-and-output-bound",
         expectedPayoutAddress: aliceAddr,
         expectedPayoutAmount: 120000000n
@@ -249,7 +274,7 @@ describe("HardKAS ZK Consensus Binding — L1 Introspection & Policy Enforcer", 
       const journal = createZkOutputBindingJournal({ payoutAddress: aliceAddr, amountSompi: 100000000n });
       const scripts = buildR0Groth16Scripts({
         imageId: officialImageId,
-        journalHash: journal.journalHash,
+        journalHash: officialJournalHash,
         receiptHex: officialReceiptHex,
         bindingPolicy: {
           mode: "proof-and-output-bound",
@@ -274,7 +299,7 @@ describe("HardKAS ZK Consensus Binding — L1 Introspection & Policy Enforcer", 
       const journal = createZkOutputBindingJournal({ payoutAddress: aliceAddr, amountSompi: 100000000n });
       const scripts = buildR0Groth16Scripts({
         imageId: officialImageId,
-        journalHash: journal.journalHash,
+        journalHash: officialJournalHash,
         receiptHex: officialReceiptHex,
         bindingPolicy: {
           mode: "proof-and-output-bound",
@@ -303,7 +328,7 @@ describe("HardKAS ZK Consensus Binding — L1 Introspection & Policy Enforcer", 
       const journal = createZkOutputBindingJournal({ payoutAddress: aliceAddr, amountSompi: payoutAmount });
       const scripts = buildR0Groth16Scripts({
         imageId: officialImageId,
-        journalHash: journal.journalHash,
+        journalHash: officialJournalHash,
         receiptHex: officialReceiptHex,
         bindingPolicy: {
           mode: "proof-and-output-bound",
@@ -336,7 +361,7 @@ describe("HardKAS ZK Consensus Binding — L1 Introspection & Policy Enforcer", 
       const journal = createZkOutputBindingJournal({ payoutAddress: aliceAddr, amountSompi: 100000000n });
       const scripts = buildR0Groth16Scripts({
         imageId: officialImageId,
-        journalHash: journal.journalHash,
+        journalHash: officialJournalHash,
         receiptHex: officialReceiptHex,
         bindingPolicy: {
           mode: "proof-and-output-bound",
@@ -363,7 +388,7 @@ describe("HardKAS ZK Consensus Binding — L1 Introspection & Policy Enforcer", 
       const journal = createZkOutputBindingJournal({ payoutAddress: aliceAddr, amountSompi: 100000000n });
       const scripts = buildR0Groth16Scripts({
         imageId: officialImageId,
-        journalHash: journal.journalHash,
+        journalHash: officialJournalHash,
         receiptHex: officialReceiptHex,
         bindingPolicy: {
           mode: "proof-and-output-bound",

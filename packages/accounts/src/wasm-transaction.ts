@@ -8,6 +8,8 @@
  * itself: an unbalanced plan must never silently turn the difference into fee.
  */
 
+import { scriptPublicKeyFromHex } from "@hardkas/tx-builder";
+
 export interface WasmUtxoEntrySource {
   readonly utxoEntry: { readonly amount: bigint };
 }
@@ -42,8 +44,9 @@ export function assertValueConservation(input: {
  * without the disable bit (1 << 63) is a RELATIVE LOCK in DAA (consensus check_sequence_lock: refused when the UTXO's
  * block DAA score + (sequence & 0xffffffff) - 1 >= the virtual DAA score), so input k could not spend a UTXO the node
  * accepted less than k DAA ago ("one of the transaction sequence locks conditions was not met"). An ordinary payment
- * sets no time condition: every input gets sequence 0 (`"zero"`, the default). `"as-built"` keeps the SDK's numbering,
- * for the covenant (V1) transactions this change leaves as they were.
+ * sets no time condition: every input gets sequence 0 (`"zero"`, the default). `"as-built"` keeps the SDK's numbering;
+ * since L1-14 no HardKAS signer uses it (the internal signer's v1 path was the last one: it now takes "zero" plus the
+ * sequences its plan states).
  */
 export type InputSequencePolicy = "zero" | "as-built";
 
@@ -69,7 +72,7 @@ export function createBalancedTransaction(
     readonly utxos: readonly WasmUtxoEntrySource[];
     readonly outputs: readonly BalancedOutput[];
     readonly feeSompi: bigint;
-    /** TX-SEQUENCE-1: `"zero"` (default) for an ordinary payment; `"as-built"` only for covenant (V1) transactions. */
+    /** TX-SEQUENCE-1: `"zero"` (default); `"as-built"` keeps kaspa-wasm's numbering (unused by HardKAS signers since L1-14). */
     readonly inputSequences?: InputSequencePolicy;
   }
 ): any {
@@ -153,9 +156,11 @@ export function createScriptTransaction(
 /**
  * A plan's scriptPublicKey as a WASM ScriptPublicKey with an explicit version
  * (ADJ-002 transport rule): `{ version, scriptPublicKey | script }` is used as
- * is; a 72-hex string starting with `0000` is version 0 + a 34-byte script;
- * any other string is a bare version-0 script. Handing the SDK a bare hex
- * string would make it read the first two bytes as the version.
+ * is; a hex string starting with `0000` is version 0 + its script, of any length
+ * (L1-12: it used to be decoded only at 72 hex, a 34-byte script; tx-builder
+ * `scriptPublicKeyFromHex`, the Generator planner's rule); any other string is a
+ * bare version-0 script. Handing the SDK a bare hex string would make it read
+ * the first two bytes as the version.
  */
 export function toWasmScriptPublicKey(sdk: any, spk: unknown): any {
   if (spk && typeof spk === "object") {
@@ -163,10 +168,8 @@ export function toWasmScriptPublicKey(sdk: any, spk: unknown): any {
     return new sdk.ScriptPublicKey(Number(o.version ?? 0), String(o.scriptPublicKey || o.script || ""));
   }
   const hex = String(spk ?? "");
-  if (/^[0-9a-fA-F]{72}$/.test(hex) && hex.startsWith("0000")) {
-    return new sdk.ScriptPublicKey(0, hex.slice(4));
-  }
-  return new sdk.ScriptPublicKey(0, hex);
+  const parsed = scriptPublicKeyFromHex(hex);
+  return parsed ? new sdk.ScriptPublicKey(parsed.version, parsed.script) : new sdk.ScriptPublicKey(0, hex);
 }
 
 /**

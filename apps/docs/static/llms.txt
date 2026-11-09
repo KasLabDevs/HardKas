@@ -2,7 +2,7 @@
 
 > Local-first development framework, transaction simulator, and smart contract toolchain for Kaspa L1.
 
-HardKAS is an open-source development framework designed for building and testing applications on the Kaspa L1 BlockDAG network. Inspired by the local ergonomics of Ethereum tools like Hardhat and Foundry, HardKAS provides deterministic transaction planning, an in-memory synthetic simulator, managed Docker/binary localnet (`rusty-kaspa` on `simnet`), cryptographic artifact verification, SilverScript smart contract compilation (`silverc v1.0.0`), Covenant state transitions, and Zero-Knowledge L1 proof verification (`OpZkPrecompile`).
+HardKAS is an open-source development framework designed for building and testing applications on the Kaspa L1 BlockDAG network. Inspired by the local ergonomics of Ethereum tools like Hardhat and Foundry, HardKAS provides deterministic transaction planning, an in-memory synthetic simulator, managed Docker/binary localnet (`rusty-kaspa` on `simnet`), cryptographic artifact verification, SilverScript smart contract compilation (`silverc v1.0.0`), Covenant state transitions, and experimental local ZK proof checks and Toccata `OpZkPrecompile` script building.
 
 HardKAS is built specifically for Kaspa's UTXO and Kaspa Script architecture; it is NOT an EVM framework and does not execute EVM bytecode on Kaspa L1.
 
@@ -14,8 +14,8 @@ HardKAS is built specifically for Kaspa's UTXO and Kaspa Script architecture; it
 - **Offline Workflow Replay:** Reconstruct and verify transaction state transitions at specific DAA scores without network access (`hardkas replay verify`).
 - **SilverScript Toolchain (silverc v1.0.0):** Managed compilation of `.sil` contracts (`hardkas silver compile`), byte-for-byte reproducibility verification (`hardkas silver verify`), and P2SH deploy/spend lifecycles.
 - **Toccata Covenants:** Supports 1:1 auth-bound covenant genesis and state transitions (`hardkas silver covenant genesis` / `transition`) with machine-verifiable lineage records.
-- **ZK L1 Proof Verification & Toccata Script Building:** Cryptographic BN254 Groth16 pairing verification (`hardkas zk proof verify-math`), weak/trapdoor verification key rejection, and canonical `OpZkPrecompile` (`0xa8` / `0x20` R0Groth16) redeem/signature script construction (`hardkas zk toccata build-scripts`).
-- **Partially Signed Kaspa Transactions (PSKT):** Native Rust NAPI binding (`@hardkas/pskt-native`) for safe multi-party air-gapped transaction signing and SIGHASH immutability.
+- **ZK proof checks & Toccata script building (experimental, local-only):** Groth16 pairing check over BN254 with snarkjs (`hardkas zk proof verify-math`; VERIFIED only for an anchored verification key, otherwise `ZK_GROTH16_MATH_VALID_UNANCHORED_VK`), local RISC Zero receipt verification against the pinned official key (`hardkas zk toccata verify-receipt`), and `OpZkPrecompile` (`0xa6`, Groth16 tag `0x20`) redeem/signature scripts built with kaspa-wasm's `ZkScriptBuilder` (`hardkas zk toccata build-scripts`). Two lock models: `IMAGE_ID_ONLY` (default `proof-only`: any holder of a valid receipt spends, to any outputs) and `IMAGE_ID_AND_OUTPUTS` (`proof-and-output-bound`: payout/change outputs bound by introspection, exactly one input, input at most outputs plus `maxFeeSompi`). No outpoint binding; the `HKZ1` journal is an off-chain convention. Nothing is signed or broadcast; on-chain acceptance is shown only by simnet suites.
+- **Partially Signed Kaspa Transactions (PSKT):** multi-party signing flows through the kaspa-wasm adapter. The native binding `@hardkas/pskt-native` is on hold (built from rusty-kaspa 2.0.1 crates, win32-x64 only; see docs/status/limitations.md).
 - **Backend Toolkit & Query Store:** SQLite/PostgreSQL storage, mempool-aware UTXO reservation, job queues, and artifact lineage querying (`@hardkas/toolkit`, `@hardkas/query-store`).
 
 ## Explicit Non-Claims & Policy Restrictions
@@ -40,8 +40,8 @@ hardkas tx verify --artifact tx-plan.json
 hardkas silver compile contracts/vault.sil
 hardkas silver verify .hardkas/artifacts/silver/<record>.json
 
-# Verify a Groth16 ZK proof mathematically and inspect Toccata L1 precompile rules
-hardkas zk proof verify-math fixtures/toccata-v2/zk/valid-groth16.json --json
+# Groth16 pairing check of a fixture against a pinned verification key, and the Toccata L1 precompile rules
+hardkas zk proof verify-math ./my-fixture --expect-vk-hash <fingerprint> --json
 hardkas zk toccata rules --json
 
 # Start a real local Kaspa simnet node with automatic mining

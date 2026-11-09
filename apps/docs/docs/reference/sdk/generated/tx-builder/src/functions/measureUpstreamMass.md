@@ -8,7 +8,7 @@
 
 > **measureUpstreamMass**(`input`): [`UpstreamMassResult`](../interfaces/UpstreamMassResult.md)
 
-Defined in: [packages/tx-builder/src/mass.ts:116](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/mass.ts#L116)
+Defined in: [packages/tx-builder/src/mass.ts:134](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/mass.ts#L134)
 
 Mass and minimum fee of a candidate transaction, from the pinned SDK.
 

@@ -2,10 +2,15 @@
 
 Generado desde los `dist/**/*.d.ts` publicados de la version `0.13.0-rc.1`.
 Este fichero es el **inventario** de lo que se exporta, no una promesa de estabilidad:
-las garantias por nivel viven en `EXPERIMENTAL_SURFACE.md` y `DEPRECATED_SURFACE.md`.
+los niveles de estabilidad (stable, preview, experimental) y como distinguirlos estan en
+[`docs/status/versioning.md`](docs/status/versioning.md).
 
-- Simbolos publicos: **1449** en **32** paquetes
-- Mencionados por alguna prueba: **504** (34.8%)
+Inventario tomado el 2026-11-02 y no regenerado (no hay generador versionado). El 2026-11-06 se retiro de el un
+paquete que no existe en este arbol (27 simbolos, 4 ejercitados) y se ajustaron los totales; tambien se retiraron dos
+referencias a ficheros de garantias que nunca existieron. No incluye `@hardkas/ext-l2` ni `@hardkas/pskt-native`.
+
+- Simbolos publicos: **1422** en **31** paquetes
+- Mencionados por alguna prueba: **500** (35.2%)
 
 La columna *Ejercitado* cuenta si el identificador aparece en el corpus de pruebas
 (`packages/*/test`, `examples/**`, `scripts/qualification`). Es un techo: mide mencion, no comportamiento.
@@ -35,7 +40,6 @@ La columna *Ejercitado* cuenta si el identificador aparece en el corpus de prueb
 | `@hardkas/query` | 78 | 30 | 38.5% |
 | `@hardkas/query-store` | 29 | 7 | 24.1% |
 | `@hardkas/react` | 7 | 0 | 0% |
-| `@hardkas/rpc-events` | 27 | 4 | 14.8% |
 | `@hardkas/sdk` | 118 | 44 | 37.3% |
 | `@hardkas/sessions` | 10 | 7 | 70% |
 | `@hardkas/simulator` | 75 | 33 | 44% |
@@ -1198,38 +1202,6 @@ La columna *Ejercitado* cuenta si el identificador aparece en el corpus de prueb
 - [ ] `useQuery`
 - [ ] `UseQueryOptions`
 - [ ] `useWallet`
-
-### `@hardkas/rpc-events`
-
-27 simbolos, 4 ejercitados (14.8%).
-
-- [ ] `AcceptedTransactionIds`
-- [ ] `BackoffConfig`
-- [ ] `BlockAddedEvent`
-- [ ] `ConnectionStateChangedEvent`
-- [ ] `ConnectionStatus`
-- [x] `DefaultReactiveEventProvider`
-- [ ] `DeterministicBackoff`
-- [x] `EventEnvelope`
-- [ ] `EventHandler`
-- [ ] `EventMap`
-- [ ] `EventMetadata`
-- [ ] `EventType`
-- [ ] `ReactiveEventProvider`
-- [ ] `ReconciliationEngine`
-- [x] `SimulatedTransportAdapter`
-- [x] `Subscription`
-- [ ] `SubscriptionManager`
-- [ ] `SubscriptionRequest`
-- [ ] `TransactionAcceptanceChangedEvent`
-- [ ] `TransactionFinalityChangedEvent`
-- [ ] `TransactionObservedEvent`
-- [ ] `TransportAdapter`
-- [ ] `TransportCapabilities`
-- [ ] `TransportSubscription`
-- [ ] `TransportSubscriptionRequest`
-- [ ] `UtxoChangedEvent`
-- [ ] `VirtualChainChangedEvent`
 
 ### `@hardkas/sdk`
 

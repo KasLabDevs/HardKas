@@ -6,7 +6,7 @@
 
 # Interface: TxPlanResult
 
-Defined in: [packages/tx-builder/src/service.ts:86](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/service.ts#L86)
+Defined in: [packages/tx-builder/src/service.ts:89](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/service.ts#L89)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [packages/tx-builder/src/service.ts:86](https://github.com/KasLabDev
 
 > **plan**: [`TxPlan`](TxPlan.md)
 
-Defined in: [packages/tx-builder/src/service.ts:87](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/service.ts#L87)
+Defined in: [packages/tx-builder/src/service.ts:90](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/service.ts#L90)
 
 ***
 
@@ -22,13 +22,9 @@ Defined in: [packages/tx-builder/src/service.ts:87](https://github.com/KasLabDev
 
 > `optional` **plannerAuthority?**: [`PlannerAuthority`](../type-aliases/PlannerAuthority.md)
 
-Defined in: [packages/tx-builder/src/service.ts:102](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/service.ts#L102)
+Defined in: [packages/tx-builder/src/service.ts:99](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/service.ts#L99)
 
-Provenance of the planning algorithm. Set on `planTransactionUpstream`
-(KASPA_WASM_GENERATOR) and `planTransactionSynthetic`
-(SYNTHETIC_SIMULATOR). Left undefined on the deprecated `planTransaction`
-to keep existing tests that assert its absence stable during the
-transition.
+Provenance of the plan; set on every plan.
 
 ***
 
@@ -36,10 +32,10 @@ transition.
 
 > `optional` **plannerAuthorityDetail?**: `string`
 
-Defined in: [packages/tx-builder/src/service.ts:107](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/service.ts#L107)
+Defined in: [packages/tx-builder/src/service.ts:104](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/service.ts#L104)
 
-Optional free-form detail for the authority (e.g. `2.0.1` for the WASM
-SDK version). Never a substitute for `plannerAuthority`.
+Optional free-form detail for the authority (e.g. `kaspa-wasm@<version>`).
+Never a substitute for `plannerAuthority`.
 
 ***
 
@@ -47,7 +43,7 @@ SDK version). Never a substitute for `plannerAuthority`.
 
 > **utxoSelection**: `object`
 
-Defined in: [packages/tx-builder/src/service.ts:88](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/service.ts#L88)
+Defined in: [packages/tx-builder/src/service.ts:91](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/service.ts#L91)
 
 #### purpose?
 
@@ -59,7 +55,7 @@ Defined in: [packages/tx-builder/src/service.ts:88](https://github.com/KasLabDev
 
 #### selectionStrategy
 
-> **selectionStrategy**: `"largest-first"` \| `"consolidation-smallest-first"` \| `"upstream-generator"`
+> **selectionStrategy**: `"consolidation-smallest-first"` \| `"upstream-generator"`
 
 #### totalUtxosSeen
 

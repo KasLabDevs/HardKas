@@ -6,7 +6,7 @@
 
 # Interface: TxReceiptArtifactV2
 
-Defined in: [packages/artifacts/src/types.ts:397](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/types.ts#L397)
+Defined in: [packages/artifacts/src/types.ts:410](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/types.ts#L410)
 
 ## Extends
 
@@ -18,7 +18,7 @@ Defined in: [packages/artifacts/src/types.ts:397](https://github.com/KasLabDevs/
 
 > **amountSompi**: `string`
 
-Defined in: [packages/artifacts/src/types.ts:402](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/types.ts#L402)
+Defined in: [packages/artifacts/src/types.ts:415](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/types.ts#L415)
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: [packages/artifacts/src/types.ts:402](https://github.com/KasLabDevs/
 
 > `optional` **assumptionLevel?**: [`AssumptionLevel`](../type-aliases/AssumptionLevel.md)
 
-Defined in: [packages/artifacts/src/types.ts:44](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/types.ts#L44)
+Defined in: [packages/artifacts/src/types.ts:44](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/types.ts#L44)
 
 #### Inherited from
 
@@ -38,7 +38,7 @@ Defined in: [packages/artifacts/src/types.ts:44](https://github.com/KasLabDevs/H
 
 > `optional` **assumptionRef?**: `string`
 
-Defined in: [packages/artifacts/src/types.ts:416](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/types.ts#L416)
+Defined in: [packages/artifacts/src/types.ts:429](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/types.ts#L429)
 
 ***
 
@@ -46,7 +46,7 @@ Defined in: [packages/artifacts/src/types.ts:416](https://github.com/KasLabDevs/
 
 > `optional` **confirmedAt?**: `string`
 
-Defined in: [packages/artifacts/src/types.ts:407](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/types.ts#L407)
+Defined in: [packages/artifacts/src/types.ts:420](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/types.ts#L420)
 
 ***
 
@@ -54,7 +54,7 @@ Defined in: [packages/artifacts/src/types.ts:407](https://github.com/KasLabDevs/
 
 > `optional` **contentHash?**: `ContentHash`
 
-Defined in: [packages/artifacts/src/types.ts:42](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/types.ts#L42)
+Defined in: [packages/artifacts/src/types.ts:42](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/types.ts#L42)
 
 #### Inherited from
 
@@ -66,7 +66,7 @@ Defined in: [packages/artifacts/src/types.ts:42](https://github.com/KasLabDevs/H
 
 > **createdAt**: `string`
 
-Defined in: [packages/artifacts/src/types.ts:40](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/types.ts#L40)
+Defined in: [packages/artifacts/src/types.ts:40](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/types.ts#L40)
 
 #### Inherited from
 
@@ -78,7 +78,7 @@ Defined in: [packages/artifacts/src/types.ts:40](https://github.com/KasLabDevs/H
 
 > `optional` **daaScore?**: `string`
 
-Defined in: [packages/artifacts/src/types.ts:405](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/types.ts#L405)
+Defined in: [packages/artifacts/src/types.ts:418](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/types.ts#L418)
 
 ***
 
@@ -86,7 +86,7 @@ Defined in: [packages/artifacts/src/types.ts:405](https://github.com/KasLabDevs/
 
 > `optional` **execution?**: `object`
 
-Defined in: [packages/artifacts/src/types.ts:46](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/types.ts#L46)
+Defined in: [packages/artifacts/src/types.ts:46](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/types.ts#L46)
 
 #### domain
 
@@ -110,7 +110,7 @@ Defined in: [packages/artifacts/src/types.ts:46](https://github.com/KasLabDevs/H
 
 > `optional` **executionMode?**: [`AnyExecutionMode`](../type-aliases/AnyExecutionMode.md)
 
-Defined in: [packages/artifacts/src/types.ts:45](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/types.ts#L45)
+Defined in: [packages/artifacts/src/types.ts:45](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/types.ts#L45)
 
 #### Inherited from
 
@@ -122,7 +122,7 @@ Defined in: [packages/artifacts/src/types.ts:45](https://github.com/KasLabDevs/H
 
 > **feeSompi**: `string`
 
-Defined in: [packages/artifacts/src/types.ts:403](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/types.ts#L403)
+Defined in: [packages/artifacts/src/types.ts:416](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/types.ts#L416)
 
 ***
 
@@ -130,7 +130,7 @@ Defined in: [packages/artifacts/src/types.ts:403](https://github.com/KasLabDevs/
 
 > **from**: `object`
 
-Defined in: [packages/artifacts/src/types.ts:400](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/types.ts#L400)
+Defined in: [packages/artifacts/src/types.ts:413](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/types.ts#L413)
 
 #### address
 
@@ -142,7 +142,7 @@ Defined in: [packages/artifacts/src/types.ts:400](https://github.com/KasLabDevs/
 
 > **hardkasVersion**: `string`
 
-Defined in: [packages/artifacts/src/types.ts:35](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/types.ts#L35)
+Defined in: [packages/artifacts/src/types.ts:35](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/types.ts#L35)
 
 #### Inherited from
 
@@ -154,7 +154,7 @@ Defined in: [packages/artifacts/src/types.ts:35](https://github.com/KasLabDevs/H
 
 > `optional` **hashVersion?**: `string` \| `number`
 
-Defined in: [packages/artifacts/src/types.ts:37](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/types.ts#L37)
+Defined in: [packages/artifacts/src/types.ts:37](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/types.ts#L37)
 
 #### Inherited from
 
@@ -166,23 +166,27 @@ Defined in: [packages/artifacts/src/types.ts:37](https://github.com/KasLabDevs/H
 
 > `optional` **lineage?**: `object`
 
-Defined in: [packages/artifacts/src/types.ts:48](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/types.ts#L48)
+Defined in: [packages/artifacts/src/types.ts:48](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/types.ts#L48)
 
 #### artifactId
 
 > **artifactId**: [`ArtifactId`](../../../sdk/src/type-aliases/ArtifactId.md)
 
-#### lineageId
+#### lineageId?
 
-> **lineageId**: [`LineageId`](../../../sdk/src/type-aliases/LineageId.md)
+> `optional` **lineageId?**: [`LineageId`](../../../sdk/src/type-aliases/LineageId.md)
+
+Absent on a version-5 root (it would be a self reference); required on children.
 
 #### parentArtifactId?
 
 > `optional` **parentArtifactId?**: [`ArtifactId`](../../../sdk/src/type-aliases/ArtifactId.md)
 
-#### rootArtifactId
+#### rootArtifactId?
 
-> **rootArtifactId**: [`ArtifactId`](../../../sdk/src/type-aliases/ArtifactId.md)
+> `optional` **rootArtifactId?**: [`ArtifactId`](../../../sdk/src/type-aliases/ArtifactId.md)
+
+Absent on a version-5 root; on children, the root's real artifactId.
 
 #### sequence?
 
@@ -198,7 +202,7 @@ Defined in: [packages/artifacts/src/types.ts:48](https://github.com/KasLabDevs/H
 
 > `optional` **mass?**: `string`
 
-Defined in: [packages/artifacts/src/types.ts:404](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/types.ts#L404)
+Defined in: [packages/artifacts/src/types.ts:417](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/types.ts#L417)
 
 ***
 
@@ -206,7 +210,7 @@ Defined in: [packages/artifacts/src/types.ts:404](https://github.com/KasLabDevs/
 
 > `optional` **metadata?**: `any`
 
-Defined in: [packages/artifacts/src/types.ts:417](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/types.ts#L417)
+Defined in: [packages/artifacts/src/types.ts:430](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/types.ts#L430)
 
 ***
 
@@ -214,7 +218,7 @@ Defined in: [packages/artifacts/src/types.ts:417](https://github.com/KasLabDevs/
 
 > **mode**: [`AnyExecutionMode`](../type-aliases/AnyExecutionMode.md)
 
-Defined in: [packages/artifacts/src/types.ts:39](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/types.ts#L39)
+Defined in: [packages/artifacts/src/types.ts:39](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/types.ts#L39)
 
 #### Inherited from
 
@@ -226,7 +230,7 @@ Defined in: [packages/artifacts/src/types.ts:39](https://github.com/KasLabDevs/H
 
 > **networkId**: [`NetworkId`](../../../sdk/src/type-aliases/NetworkId.md)
 
-Defined in: [packages/artifacts/src/types.ts:38](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/types.ts#L38)
+Defined in: [packages/artifacts/src/types.ts:38](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/types.ts#L38)
 
 #### Inherited from
 
@@ -238,7 +242,7 @@ Defined in: [packages/artifacts/src/types.ts:38](https://github.com/KasLabDevs/H
 
 > `optional` **networkProfileRef?**: `string`
 
-Defined in: [packages/artifacts/src/types.ts:413](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/types.ts#L413)
+Defined in: [packages/artifacts/src/types.ts:426](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/types.ts#L426)
 
 ***
 
@@ -246,7 +250,7 @@ Defined in: [packages/artifacts/src/types.ts:413](https://github.com/KasLabDevs/
 
 > `optional` **policyRef?**: `string`
 
-Defined in: [packages/artifacts/src/types.ts:414](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/types.ts#L414)
+Defined in: [packages/artifacts/src/types.ts:427](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/types.ts#L427)
 
 ***
 
@@ -254,7 +258,7 @@ Defined in: [packages/artifacts/src/types.ts:414](https://github.com/KasLabDevs/
 
 > `optional` **policyRefs?**: `string`[]
 
-Defined in: [packages/artifacts/src/types.ts:415](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/types.ts#L415)
+Defined in: [packages/artifacts/src/types.ts:428](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/types.ts#L428)
 
 ***
 
@@ -262,7 +266,7 @@ Defined in: [packages/artifacts/src/types.ts:415](https://github.com/KasLabDevs/
 
 > `optional` **postStateHash?**: `string`
 
-Defined in: [packages/artifacts/src/types.ts:409](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/types.ts#L409)
+Defined in: [packages/artifacts/src/types.ts:422](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/types.ts#L422)
 
 ***
 
@@ -270,7 +274,7 @@ Defined in: [packages/artifacts/src/types.ts:409](https://github.com/KasLabDevs/
 
 > `optional` **preStateHash?**: `string`
 
-Defined in: [packages/artifacts/src/types.ts:408](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/types.ts#L408)
+Defined in: [packages/artifacts/src/types.ts:421](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/types.ts#L421)
 
 ***
 
@@ -278,7 +282,7 @@ Defined in: [packages/artifacts/src/types.ts:408](https://github.com/KasLabDevs/
 
 > `optional` **rpcUrl?**: `string`
 
-Defined in: [packages/artifacts/src/types.ts:411](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/types.ts#L411)
+Defined in: [packages/artifacts/src/types.ts:424](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/types.ts#L424)
 
 ***
 
@@ -286,7 +290,7 @@ Defined in: [packages/artifacts/src/types.ts:411](https://github.com/KasLabDevs/
 
 > **schema**: `"hardkas.txReceipt.v2"`
 
-Defined in: [packages/artifacts/src/types.ts:33](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/types.ts#L33)
+Defined in: [packages/artifacts/src/types.ts:33](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/types.ts#L33)
 
 #### Inherited from
 
@@ -298,7 +302,7 @@ Defined in: [packages/artifacts/src/types.ts:33](https://github.com/KasLabDevs/H
 
 > `optional` **schemaVersion?**: `string`
 
-Defined in: [packages/artifacts/src/types.ts:34](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/types.ts#L34)
+Defined in: [packages/artifacts/src/types.ts:34](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/types.ts#L34)
 
 #### Inherited from
 
@@ -310,7 +314,7 @@ Defined in: [packages/artifacts/src/types.ts:34](https://github.com/KasLabDevs/H
 
 > `optional` **sourceSignedId?**: [`ArtifactId`](../../../sdk/src/type-aliases/ArtifactId.md)
 
-Defined in: [packages/artifacts/src/types.ts:412](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/types.ts#L412)
+Defined in: [packages/artifacts/src/types.ts:425](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/types.ts#L425)
 
 ***
 
@@ -318,7 +322,7 @@ Defined in: [packages/artifacts/src/types.ts:412](https://github.com/KasLabDevs/
 
 > **status**: `"submitted"` \| `"accepted"` \| `"confirmed"` \| `"failed"` \| `"pending"`
 
-Defined in: [packages/artifacts/src/types.ts:399](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/types.ts#L399)
+Defined in: [packages/artifacts/src/types.ts:412](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/types.ts#L412)
 
 ***
 
@@ -326,7 +330,7 @@ Defined in: [packages/artifacts/src/types.ts:399](https://github.com/KasLabDevs/
 
 > `optional` **submittedAt?**: `string`
 
-Defined in: [packages/artifacts/src/types.ts:406](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/types.ts#L406)
+Defined in: [packages/artifacts/src/types.ts:419](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/types.ts#L419)
 
 ***
 
@@ -334,7 +338,7 @@ Defined in: [packages/artifacts/src/types.ts:406](https://github.com/KasLabDevs/
 
 > **to**: `object`
 
-Defined in: [packages/artifacts/src/types.ts:401](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/types.ts#L401)
+Defined in: [packages/artifacts/src/types.ts:414](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/types.ts#L414)
 
 #### address
 
@@ -346,7 +350,7 @@ Defined in: [packages/artifacts/src/types.ts:401](https://github.com/KasLabDevs/
 
 > `optional` **tracePath?**: `string`
 
-Defined in: [packages/artifacts/src/types.ts:410](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/types.ts#L410)
+Defined in: [packages/artifacts/src/types.ts:423](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/types.ts#L423)
 
 ***
 
@@ -354,7 +358,7 @@ Defined in: [packages/artifacts/src/types.ts:410](https://github.com/KasLabDevs/
 
 > **txId**: [`TxId`](../../../sdk/src/type-aliases/TxId.md)
 
-Defined in: [packages/artifacts/src/types.ts:398](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/types.ts#L398)
+Defined in: [packages/artifacts/src/types.ts:411](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/types.ts#L411)
 
 ***
 
@@ -362,7 +366,7 @@ Defined in: [packages/artifacts/src/types.ts:398](https://github.com/KasLabDevs/
 
 > **version**: `string`
 
-Defined in: [packages/artifacts/src/types.ts:36](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/types.ts#L36)
+Defined in: [packages/artifacts/src/types.ts:36](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/types.ts#L36)
 
 #### Inherited from
 
@@ -374,7 +378,7 @@ Defined in: [packages/artifacts/src/types.ts:36](https://github.com/KasLabDevs/H
 
 > `optional` **workflowId?**: `WorkflowId`
 
-Defined in: [packages/artifacts/src/types.ts:43](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/types.ts#L43)
+Defined in: [packages/artifacts/src/types.ts:43](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/types.ts#L43)
 
 #### Inherited from
 

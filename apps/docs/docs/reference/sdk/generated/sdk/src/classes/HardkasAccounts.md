@@ -6,7 +6,7 @@
 
 # Class: HardkasAccounts
 
-Defined in: [packages/sdk/src/accounts.ts:9](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/accounts.ts#L9)
+Defined in: [packages/sdk/src/accounts.ts:9](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/accounts.ts#L9)
 
 **`Alpha`**
 
@@ -18,7 +18,7 @@ HardKAS Accounts Module
 
 > **new HardkasAccounts**(`sdk`): `HardkasAccounts`
 
-Defined in: [packages/sdk/src/accounts.ts:10](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/accounts.ts#L10)
+Defined in: [packages/sdk/src/accounts.ts:10](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/accounts.ts#L10)
 
 **`Alpha`**
 
@@ -38,7 +38,7 @@ Defined in: [packages/sdk/src/accounts.ts:10](https://github.com/KasLabDevs/Hard
 
 > **balance**(`accountNameOrAddress`): `Promise`\<\{ `formatted`: `string`; `sompi`: `bigint`; \}\>
 
-Defined in: [packages/sdk/src/accounts.ts:48](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/accounts.ts#L48)
+Defined in: [packages/sdk/src/accounts.ts:50](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/accounts.ts#L50)
 
 **`Alpha`**
 
@@ -60,7 +60,7 @@ Alias for getBalance.
 
 > **createDevSigner**(`accountNameOrAddress`): `Promise`\<`HardkasTxPlanSigner`\>
 
-Defined in: [packages/sdk/src/accounts.ts:117](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/accounts.ts#L117)
+Defined in: [packages/sdk/src/accounts.ts:120](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/accounts.ts#L120)
 
 **`Alpha`**
 
@@ -83,7 +83,7 @@ Do not use for production custody.
 
 > **derive**(`name`): `Promise`\<`HardkasAccount`\>
 
-Defined in: [packages/sdk/src/accounts.ts:55](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/accounts.ts#L55)
+Defined in: [packages/sdk/src/accounts.ts:57](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/accounts.ts#L57)
 
 **`Alpha`**
 
@@ -105,7 +105,7 @@ Derives a new random account on the fly.
 
 > **fund**(`accountNameOrAddress`, `options?`): `Promise`\<`any`\>
 
-Defined in: [packages/sdk/src/accounts.ts:71](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/accounts.ts#L71)
+Defined in: [packages/sdk/src/accounts.ts:74](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/accounts.ts#L74)
 
 **`Alpha`**
 
@@ -137,7 +137,7 @@ Funds an account from another account (defaults to 'default' account).
 
 > **getBalance**(`accountNameOrAddress`): `Promise`\<\{ `formatted`: `string`; `sompi`: `bigint`; \}\>
 
-Defined in: [packages/sdk/src/accounts.ts:29](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/accounts.ts#L29)
+Defined in: [packages/sdk/src/accounts.ts:31](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/accounts.ts#L31)
 
 **`Alpha`**
 
@@ -159,7 +159,7 @@ Fetches the balance for an account.
 
 > **list**(): `Promise`\<`Record`\<`string`, `unknown`\>[]\>
 
-Defined in: [packages/sdk/src/accounts.ts:62](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/accounts.ts#L62)
+Defined in: [packages/sdk/src/accounts.ts:64](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/accounts.ts#L64)
 
 **`Alpha`**
 
@@ -175,7 +175,7 @@ Lists available accounts in the current context.
 
 > **privateKeyAuthorizer**(`accountName`): `LazyAccountAuthorizer`
 
-Defined in: [packages/sdk/src/accounts.ts:125](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/accounts.ts#L125)
+Defined in: [packages/sdk/src/accounts.ts:128](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/accounts.ts#L128)
 
 **`Alpha`**
 
@@ -197,11 +197,13 @@ Creates an authorizer that lazily resolves an account's private key for signing.
 
 > **resolve**(`nameOrAddress`, `executionTarget?`): `Promise`\<`HardkasAccount`\>
 
-Defined in: [packages/sdk/src/accounts.ts:15](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/accounts.ts#L15)
+Defined in: [packages/sdk/src/accounts.ts:17](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/accounts.ts#L17)
 
 **`Alpha`**
 
-Resolves an account by name or address.
+Resolves an account by name or address — for the execution target given, else for the world this SDK instance
+runs on (WORKSPACE-AUTHORITY-2: the identities follow the same resolved target as the plans, never the config's
+default while the instance runs elsewhere).
 
 #### Parameters
 
@@ -233,7 +235,7 @@ Resolves an account by name or address.
 
 > **staticSignatureScriptAuthorizer**(`signatureScript`): [`StaticSignatureScriptAuthorizer`](StaticSignatureScriptAuthorizer.md)
 
-Defined in: [packages/sdk/src/accounts.ts:132](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/accounts.ts#L132)
+Defined in: [packages/sdk/src/accounts.ts:135](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/accounts.ts#L135)
 
 **`Alpha`**
 

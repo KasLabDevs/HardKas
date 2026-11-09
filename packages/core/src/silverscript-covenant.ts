@@ -43,10 +43,16 @@ export interface SilverCovenantDeclaration {
   readonly termination?: string;
 }
 
+/**
+ * SC-12 · a declaration argument as the official AST gives it: an int literal only as an exact non-negative safe integer
+ * (it was read with Number(), so null became 0, true 1, "1" 1 and 1.5 stayed 1.5; a literal past 2^53 - 1 lost its
+ * digits in JSON.parse already), an identifier only as a non-empty name. Anything else is undefined: the declaration is
+ * left out and its entries are refused.
+ */
 function literal(expr: AstNode | undefined): number | string | undefined {
   if (!expr) return undefined;
-  if (expr.kind === "int") return Number(expr.data);
-  if (expr.kind === "identifier") return String(expr.data);
+  if (expr.kind === "int") return typeof expr.data === "number" && Number.isSafeInteger(expr.data) && expr.data >= 0 ? expr.data : undefined;
+  if (expr.kind === "identifier") return typeof expr.data === "string" && expr.data !== "" ? expr.data : undefined;
   return undefined;
 }
 

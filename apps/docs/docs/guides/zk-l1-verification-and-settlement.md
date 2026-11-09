@@ -1,35 +1,37 @@
 ---
 title: ZK L1 Proof Verification & Toccata Script Building
-description: Practical guide to verifying Groth16 proofs mathematically, rejecting weak trapdoor keys, and building Kaspa Toccata L1 OpZkPrecompile scripts with HardKAS.
+description: Practical guide to checking Groth16 proofs against an anchored verification key, verifying RISC Zero receipts locally, and building Kaspa Toccata OpZkPrecompile scripts with HardKAS.
 sidebar_label: ZK L1 Verification & Scripts
 sidebar_position: 4
 ---
 
 # ZK L1 Proof Verification & Toccata Script Building
 
-HardKAS provides first-class CLI and SDK tooling for working with Zero-Knowledge proofs targeting Kaspa Layer 1 (`OpZkPrecompile` / KIP-16).
+HardKAS provides experimental, local-only CLI and SDK tooling for Zero-Knowledge proofs that target Kaspa Layer 1 (`OpZkPrecompile`, `0xa6`). Nothing here signs or broadcasts a transaction, and nothing here is an on-chain claim: a local result never predicts what a node will accept. On-chain acceptance is shown only by the simnet suites against a real rusty-kaspad v2.1.0.
 
-Every ZK operation in HardKAS separates **structural fixture coherence**, **cryptographic BN254 pairing verification**, and **Toccata L1 script construction** so that developers never confuse a structural mock with a real cryptographic check.
+HardKAS keeps three things apart: **fixture coherence** (self-attested digests), the **Groth16 pairing check** (snarkjs over BN254, trusted only for an anchored key), and **Toccata script construction** (kaspa-wasm `ZkScriptBuilder`).
 
 ---
 
-## 1. Cryptographic Groth16 Verification (`verify-math`)
+## 1. Groth16 Pairing Check (`verify-math`)
 
-To perform a full BN254 Groth16 elliptic-curve pairing check on a proof artifact:
-
-```bash
-hardkas zk proof verify-math fixtures/toccata-v2/zk/valid-groth16.json --json
-```
-
-### Enforcing Verification Key Pinning & Trapdoor Protection
-
-In production or audit pipelines, always pin the expected domain-separated SHA-256 digest of your circuit's verification key (`--expect-vk-hash`):
+The path is a fixture directory with `manifest.json`, `proof.json`, `public-inputs.json` and `verification-key.json` (see `fixtures/toccata-v2/zk/groth16-multiplier`):
 
 ```bash
-hardkas zk proof verify-math ./my-proof.json --expect-vk-hash <64-char-sha256> --timeout 10000 --json
+hardkas zk proof verify-math fixtures/toccata-v2/zk/groth16-multiplier --json
 ```
 
-HardKAS automatically inspects the verification key's G2 points (`vk_gamma_2`, `vk_delta_2`) and rejects known trapdoor/generator keys (`ZK_WEAK_VERIFICATION_KEY`) where discrete logarithms are trivially known, preventing forged proofs from passing verification.
+That fixture is a **toy with a known trapdoor**: by default it is refused (`ZK_GROTH16_MATH_REJECTED`, `ZK_VERIFICATION_KEY_WEAK_TRAPDOOR`). `--allow-weak-vk` runs the pairing anyway, for testing the verifier only; a proof against such a key proves nothing.
+
+### Anchor the verification key
+
+`ZK_GROTH16_MATH_VERIFIED` is returned only when the key is **anchored**: pinned by you with `--expect-vk-hash` (the key's `summary.verificationKeyFingerprint`, or its legacy digest, obtained from a source you trust) or pinned in code (`PINNED_GROTH16_VERIFICATION_KEYS`). A passing pairing against any other key is `ZK_GROTH16_MATH_VALID_UNANCHORED_VK` with `ok: false` and exit 1: the proof is consistent with that key, whose maker may know its trapdoor.
+
+```bash
+hardkas zk proof verify-math ./my-fixture --expect-vk-hash <64-hex fingerprint> --timeout 10000 --json
+```
+
+Non-canonical encodings, off-curve points and G2 points outside the subgroup are rejected before snarkjs. The weak-key check recognises an uncontributed setup (and keys pinned as toys); it detects accidents and is **not** a security boundary. The fixture-coherence binding is self-attested (`FIXTURE_COHERENCE_SELF_ATTESTED`); `--math-only` skips it and labels the result `MATH_ONLY`.
 
 ### Using the TypeScript SDK (`@hardkas/sdk`)
 
@@ -37,82 +39,137 @@ HardKAS automatically inspects the verification key's G2 points (`vk_gamma_2`, `
 import { verifyZkProofMath, inspectZkProof } from '@hardkas/sdk';
 
 // 1. Inspect proof metadata and canonical digests
-const inspection = await inspectZkProof('./fixtures/toccata-v2/zk/valid-groth16.json', process.cwd());
+const inspection = await inspectZkProof('./fixtures/toccata-v2/zk/groth16-multiplier', process.cwd());
 
-// 2. Run cryptographic BN254 Groth16 pairing check bound to fixture hashes
-const verification = await verifyZkProofMath(
-  './fixtures/toccata-v2/zk/valid-groth16.json',
-  process.cwd(),
-  {
-    timeoutMs: 10_000,
-    mathOnly: false,
-    allowWeakVerificationKey: false,
-  }
-);
+// 2. Pairing check, bound to the fixture's (self-attested) content hashes, against an anchored key
+const verification = await verifyZkProofMath('./my-fixture', process.cwd(), {
+  timeoutMs: 10_000,
+  expectedVerificationKeyHash: '<64-hex fingerprint from a trusted source>',
+  mathOnly: false,
+  allowWeakVerificationKey: false,
+});
 
-if (!verification.ok) {
-  throw new Error(`ZK verification failed: ${JSON.stringify(verification.issues)}`);
+if (verification.status !== 'ZK_GROTH16_MATH_VERIFIED') {
+  throw new Error(`ZK verification failed: ${verification.status} ${JSON.stringify(verification.issues)}`);
 }
 ```
 
 ---
 
-## 2. Inspecting Toccata L1 `OpZkPrecompile` Rules
+## 2. Verifying a RISC Zero Groth16 Receipt (`verify-receipt`)
 
-Before constructing a ZK-gated UTXO script, query the canonical Toccata L1 precompile parameters (`0xa8` opcode, `0x20` R0Groth16 tag, sig-op weight, and compute gram costs):
+```bash
+hardkas zk toccata verify-receipt \
+  --image-id 75641a540ee2ad9ee5902bcdcdb8b55c0bef4a28287309b858f97b1356c6c2e0 \
+  --journal-hash 5df6e0e2761359d30a8275058e299fcc0381534545f55cf43e41983f5d4c9456 \
+  --receipt fixtures/toccata-v2/zk/r0-groth16-official/receipt.hex \
+  --json
+```
+
+The receipt is checked with snarkjs against the pinned official RISC Zero verifying key, control root and BN254 control id, for the claim of `(imageId, journalHash)`. SDK: `verifyR0Groth16ReceiptLocal({ imageId, journalHash, receiptHex, timeoutMs })` returns `status: "ZK_R0_GROTH16_RECEIPT_VERIFIED"` on success. Only that result sets a ZK fact's `verifiedOffChain`. The vector above is the public one from kaspa-python-sdk: anyone can spend a lock built for it, so HardKAS returns only its simnet address.
+
+---
+
+## 3. Inspecting the Toccata `OpZkPrecompile` Rules
 
 ```bash
 hardkas zk toccata rules --json
 ```
 
-Or programmatically from `@hardkas/sdk`:
+Or programmatically:
 
 ```typescript
 import { getToccataPrecompileRules } from '@hardkas/sdk';
 
 const rules = getToccataPrecompileRules();
-console.log(rules.opcodeHex);        // "0xa8" (OpZkPrecompile)
-console.log(rules.tagHex);           // "0x20" (R0Groth16)
-console.log(rules.computeGramCost);  // 75000
+console.log(rules.opcode);                          // "0xa6" (OpZkPrecompile)
+console.log(rules.tag);                             // "0x20" (Groth16)
+console.log(rules.groth16PrecompileCostGrams);      // 140000 (= 14,000,000 script units)
+console.log(rules.groth16VkElementCostScriptUnits); // 250000 per verifying-key element
+console.log(rules.minimumR0Groth16ComputeBudget);   // 1550 (RISC Zero wrapper, 6 key elements)
+console.log(rules.recommendedComputeBudget);        // 1600
+console.log(rules.authorizationModel);              // "IMAGE_ID_ONLY" (the default lock)
 ```
+
+A compute budget below the minimum makes the node reject the spend; one whose compute mass exceeds the 500,000 block limit is refused by HardKAS.
 
 ---
 
-## 3. Building Toccata L1 ZK Covenant Scripts (`build-scripts`)
+## 4. Building Toccata L1 ZK Scripts (`build-scripts`)
 
-HardKAS integrates `kaspa-wasm`'s `ZkScriptBuilder` to generate canonical P2SH redeem scripts and unlocking signature scripts for RISC Zero Groth16 proofs:
+`build-scripts` calls kaspa-wasm's `ZkScriptBuilder` and returns the P2SH redeem script, the signature script and the simnet address. The receipt's claim is cross-checked against `(imageId, journalHash)` (`receiptClaimCrossCheck: "MATCH"`); a mismatch is refused. Choose the lock's authorization model with `--mode`.
+
+### `proof-only` (default): `IMAGE_ID_ONLY`
 
 ```bash
 hardkas zk toccata build-scripts \
-  --image-id aabbccddeeff00112233445566778899aabbccddeeff00112233445566778899 \
-  --journal-hash 1122334455667788990011223344556677889900112233445566778899001122 \
-  --receipt ./seal.hex \
+  --image-id 75641a540ee2ad9ee5902bcdcdb8b55c0bef4a28287309b858f97b1356c6c2e0 \
+  --journal-hash 5df6e0e2761359d30a8275058e299fcc0381534545f55cf43e41983f5d4c9456 \
+  --receipt fixtures/toccata-v2/zk/r0-groth16-official/receipt.hex \
   --json
 ```
+
+The lock binds the image id only: **anyone holding a valid receipt of that program spends** every UTXO at the address, to outputs of their choosing, on any network; a spend seen in the mempool can be replayed or front-run. Every result carries the warning `ZK_LOCK_BINDS_IMAGE_ID_ONLY`. testnet-10/mainnet addresses need `--address-network` plus `--ack-image-id-only-lock`, and are never returned for a public test vector.
+
+### `proof-and-output-bound`: `IMAGE_ID_AND_OUTPUTS`
+
+```bash
+hardkas zk toccata build-scripts \
+  --image-id <64-hex image id> --journal-hash <64-hex journal hash> --receipt ./receipt.hex \
+  --mode proof-and-output-bound \
+  --payout-address <kaspasim:...> --payout-amount 100000000 \
+  --max-fee 50000000 \
+  --json
+```
+
+After the Groth16 verifier, the redeem script checks by output introspection:
+
+- the output count, and the payout's script public key (as `OpTxOutputSpk` pushes it: version, then script) and amount; the same for the change output when `--change-address`/`--change-amount` are given;
+- exactly **one input** (`OpTxInputCount`), so several UTXOs of the lock cannot be merged into one spend and burnt as fee;
+- an input of **at most** the bound outputs plus `maxFeeSompi` (`OpTxInputAmount`); a larger deposit stays locked.
+
+Anyone with a valid receipt can trigger the spend, but only to those outputs; whatever the UTXO holds beyond them is the fee. Fund the lock with the returned `requiredFundingSompi` (bound outputs plus the recommended fee); `maxInputSompi` is the largest UTXO the script accepts. Results carry `ZK_LOCK_BINDS_IMAGE_ID_AND_OUTPUTS` and `consensusEnforced: true` (only for a successful bound build).
+
+What neither mode binds:
+
+- **The spent outpoint.** A redeem script cannot name it: the funding transaction's id commits to its outputs, this P2SH among them. HardKAS refuses such a binding (`ZK_UTXO_BINDING_UNSATISFIABLE`).
+- **The journal.** The unlocking script supplies the journal hash and nothing checks it on-chain. `createZkOutputBindingJournal` (the `HKZ1` layout: script public key digest, amount, outpoint digest, nonce) is an **off-chain convention**; its fields mean something only if the guest program enforces them.
 
 ### Programmatic Script Construction in TypeScript
 
 ```typescript
 import { buildR0Groth16Scripts } from '@hardkas/sdk';
 
-const scriptBundle = buildR0Groth16Scripts({
-  imageId: 'aabbccddeeff00112233445566778899aabbccddeeff00112233445566778899',
-  journalHash: '1122334455667788990011223344556677889900112233445566778899001122',
+const scripts = buildR0Groth16Scripts({
+  imageId: '<64-hex image id>',
+  journalHash: '<64-hex journal hash>',
   receiptHex: '<r0-groth16-receipt-hex>',
+  bindingPolicy: {
+    mode: 'proof-and-output-bound',
+    payout: { address: '<kaspasim:...>', amountSompi: 100_000_000n },
+    maxFeeSompi: 50_000_000n,
+  },
 });
 
-if (scriptBundle.ok) {
-  console.log('Redeem Script:', scriptBundle.redeemScriptHex);
-  console.log('P2SH ScriptPublicKey:', scriptBundle.scriptPublicKeyHex);
-  console.log('Signature Script:', scriptBundle.signatureScriptHex);
+if (scripts.ok) {
+  console.log('Authorization:', scripts.authorizationModel);    // "IMAGE_ID_AND_OUTPUTS"
+  console.log('Redeem script:', scripts.redeemScript);
+  console.log('P2SH script public key:', scripts.p2shScriptPublicKey.script);
+  console.log('Signature script:', scripts.sigScript);
+  console.log('P2SH address (simnet):', scripts.p2shAddresses.simnet);
+  console.log('Fund with (sompi):', scripts.requiredFundingSompi);
+} else {
+  console.error(scripts.issues);
 }
 ```
 
+`buildR0Groth16Transaction({ scripts, utxo, destinationAddress, networkId })` builds the unsigned version-1 spend (compute budget 1600 by default, fee capped by `feeOptions.maxFeeSompi`). `hardkas zk toccata verify-scripts` parses a redeem/signature script pair and reports which of these rules it enforces.
+
 ---
 
-## 4. Verifying a Complete ZK Corpus in CI
+## 5. Verifying a Complete ZK Corpus in CI
 
-To validate every positive and adversarial ZK fixture in your workspace during continuous integration:
+To check every positive and adversarial ZK fixture of a corpus:
 
 ```bash
 hardkas zk corpus verify fixtures/toccata-v2/zk --json
@@ -122,6 +179,6 @@ hardkas zk corpus verify fixtures/toccata-v2/zk --json
 
 ## Related Documentation
 
-- [ZK Primitives & Sequencing (KIP-16 / KIP-21)](../concepts/toccata/zk-and-sequencing.md)
+- [ZK Primitives & Sequencing](../concepts/toccata/zk-and-sequencing.md)
 - [Testing Kaspa Covenants with HardKAS](./testing-kaspa-covenants.md)
 - [`hardkas zk` CLI Reference](../reference/cli/zk.md)

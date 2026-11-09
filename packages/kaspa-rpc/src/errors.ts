@@ -12,7 +12,8 @@ export class RpcError extends Error {
 
 export class RpcTimeoutError extends RpcError {
   constructor(message: string = "RPC request timed out") {
-    super(message, undefined, undefined, true);
+    // L1-CORE-1 B2 · N-14: a code of its own, so no caller reports a transport failure as UNKNOWN_ERROR
+    super(message, "RPC_TIMEOUT", undefined, true);
     this.name = "RpcTimeoutError";
   }
 }
@@ -67,7 +68,9 @@ export class RpcIndexError extends RpcError {
 
 export class RpcConnectionError extends RpcError {
   constructor(message: string = "RPC connection failed", code?: number | string) {
-    super(message, code, undefined, true);
+    // L1-CORE-1 B2 · N-14: refused, lost or timed out while connecting — RPC_CONNECTION_FAILED unless the caller names
+    // its own code (it was undefined, and the CLI reported UNKNOWN_ERROR)
+    super(message, code ?? "RPC_CONNECTION_FAILED", undefined, true);
     this.name = "RpcConnectionError";
   }
 }
@@ -96,6 +99,26 @@ export class NodeNetworkIdentityError extends RpcError {
     super(message, code, identity, false);
     this.name = "NodeNetworkIdentityError";
   }
+}
+
+/**
+ * INT9-A (I-3b): the node serves the expected network but does not say it is synced (it says it is not, or says
+ * nothing). An operation that needs the current chain state (plan, send, wait) asked for a synced node, so nothing
+ * was asked of this one. Kept apart from the network identity: a well-identified node is not a synced node. Never
+ * retried; `endpoint` carries no URL credentials.
+ */
+export class NodeSyncError extends RpcError {
+  constructor(
+    message: string,
+    public readonly sync: { readonly endpoint: string; readonly expected: string; readonly isSynced?: boolean | undefined }
+  ) {
+    super(message, "NODE_NOT_SYNCED", sync, false);
+    this.name = "NodeSyncError";
+  }
+}
+
+export function isNodeSyncError(error: unknown): error is NodeSyncError {
+  return error instanceof NodeSyncError || (error as { code?: unknown } | null)?.code === "NODE_NOT_SYNCED";
 }
 
 export function isNodeNetworkIdentityError(error: unknown): error is NodeNetworkIdentityError {

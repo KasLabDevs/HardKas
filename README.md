@@ -4,7 +4,7 @@
 
 [![npm version](https://img.shields.io/badge/version-0.13.0--rc.1-blue.svg)](https://github.com/KasLabDevs/HardKas/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-teal.svg)](LICENSE)
-[![Node.js](https://img.shields.io/badge/node-%3E%3D22.5.0-emerald.svg)](package.json)
+[![Node.js](https://img.shields.io/badge/node-24.22.1-emerald.svg)](docs/start/installation.md)
 [![CI: Parity](https://img.shields.io/badge/CI-cross--platform%20truth-brightgreen.svg)](.github/workflows/ci.yml)
 [![Release Status](https://img.shields.io/badge/status-hardened--alpha-amber.svg)](docs/status/claims.generated.md)
 
@@ -12,8 +12,8 @@ HardKAS is an open-source, local-first development framework, transaction simula
 
 Inspired by the developer ergonomics of Ethereum tooling like **Hardhat** and **Foundry**, HardKAS provides:
 
-- **Instant In-Memory Simulator:** Execute and test Kaspa transactions in sub-milliseconds without network latency.
-- **Managed Docker Localnet:** One-command local `simnet` running official `rusty-kaspad` v2.0.0 with automatic CPU mining.
+- **Instant In-Memory Simulator (experimental):** Execute and test Kaspa transactions in sub-milliseconds without network latency. It is an approximate model: confirm timelock, covenant and mass behaviour on simnet ([limitations](docs/status/limitations.md#the-simulator-is-an-approximate-model)).
+- **Managed Docker Localnet:** One-command local `simnet` running official `rusty-kaspad` v2.1.0 (pinned by image digest) with automatic CPU mining.
 - **Deterministic Accounts & Funding:** Pre-configured developer accounts (`alice`, `bob`, `carol`) for reproducible test flows.
 - **SilverScript & Covenants Toolchain:** Managed integration for the official `silverc v1.0.0` compiler, P2SH deploy/spend, and Toccata 1:1 auth-bound covenants.
 - **Cryptographic Artifacts & Offline Replay:** Every transaction plan, signed payload, and receipt is hashed into immutable JSON artifacts that can be replayed and verified offline.
@@ -40,6 +40,8 @@ Inspired by the developer ergonomics of Ethereum tooling like **Hardhat** and **
 ---
 
 ## 60-Second Quickstart
+
+Requirements: **Node.js 24.22.1** exactly (the version HardKAS is built, tested and pinned on: `engines` declares it, and `hardkas doctor` warns on another 24.x and fails on other major lines) and npm. Docker only for the local node.
 
 ### 1. Initialize a Workspace
 
@@ -135,7 +137,7 @@ Current certified baseline:
   - Toccata v2 Docker `localnet` baseline (`rusty-kaspad` on Kaspa `simnet`).
 - Real local funding by mining with the upstream `kaspanet/cpuminer` image in `localnet`.
 - Standard transaction lifecycle against the local node.
-- SilverScript local OP_TRUE deploy/spend.
+- SilverScript through the official silverc v1.0.0: P2SH deploy/spend and 1:1 auth-bound covenants on the local node.
 - Artifact-coherence simulation.
 - Machine-verifiable golden corpus.
 - Release gauntlet through `pnpm gauntlet:toccata`.
@@ -147,7 +149,7 @@ Current certified baseline:
 
 The `0.13.0-rc.1` release line includes a normalized Toccata v2 localnet flow:
 
-- Docker `rusty-kaspad` v2.0.0 localnet funding with a compatible miner companion (`kaspanet/cpuminer`).
+- Docker `rusty-kaspad` v2.1.0 localnet (pinned by digest) funding with a compatible miner companion (`kaspanet/cpuminer`).
 - Standard transaction lifecycle against the local node.
 - Real Silver OP_TRUE deploy and spend receipts.
 - Silver simulator artifact-coherence comparison.
@@ -237,6 +239,40 @@ pnpm packaging:smoke
 pnpm gauntlet:toccata
 ```
 
+`pnpm test` is the canonical gate. CI runs it on Ubuntu, Windows and macOS from the frozen lockfile. For a release, run
+it hermetically:
+
+```bash
+node scripts/gate-hermetic.mjs --home <a HARDKAS_HOME with kaspa-wasm installed>
+```
+
+That run gives the gate a private HARDKAS_HOME, makes Docker unreachable, refuses every non-loopback connection and,
+by default, also refuses loopback connections to the canonical Kaspa wRPC ports 16210, 17210, 18210 and 18211. A
+kaspad or simulator that happens to run on the machine therefore cannot change the verdict. `--deny-ports a,b` replaces
+that list. `--allow-local-node-ports` turns it off for diagnosis only, and a run made that way is not the release gate.
+Node-dependent suites run at their own levels (`vitest.simnet.config.ts`, `vitest.silverc.config.ts`), never inside
+this gate.
+
+## Stable and experimental features
+
+Each CLI command states its maturity at the end of its `--help` description: `stable`, `preview`, `alpha`,
+`experimental`, `research` or `internal`. Only `stable` commands are covered by the release scope. On the SDK, the
+surfaces under `sdk.experimental.*` carry no stability promise. `hardkas capabilities --json` prints a warning that it
+is internal/experimental. The levels, and what each one promises, are described in
+[docs/status/versioning.md](docs/status/versioning.md), and the known gaps in
+[docs/status/limitations.md](docs/status/limitations.md).
+
+Not covered by any guarantee:
+
+- `@hardkas/simulator` (experimental: an approximate model, not consensus evidence);
+- the L2 extension (`@hardkas/ext-l2`) and the L2 library (`@hardkas/l2`), experimental and not published in this release;
+- `@hardkas/pskt-native`, which is on hold and not published; `@hardkas/sdk` does not depend on it. Its prebuilt binary is built from rusty-kaspa **2.0.1** crates (not v2.1.0,
+  which the rest of HardKAS pins). It ships for **win32-x64 only**, with no hash recorded in its provenance, and its
+  `index.d.ts` is empty, so TypeScript consumers that import it do not compile. Its signer is permissive (audit
+  HK-13). Rebuilding it is BLOCKED while the package is on hold. The SDK's PSKT surface uses the kaspa-wasm adapter
+  unless the native one is registered explicitly. See
+  [limitations](docs/status/limitations.md#hardkaspskt-native-is-on-hold).
+
 Toccata localnet and corpus commands:
 
 ```bash
@@ -260,9 +296,10 @@ const plan = await sdk.tx.plan({ from: "alice", to: "bob", amount: "10" });
 const signed = await sdk.tx.sign(plan, "alice");
 const { receipt } = await sdk.tx.simulate(signed);
 
-await sdk.replay.verify();
+// Replay is addressed by the receipt's artifact id (its contentHash), not by its txId.
+const replay = await sdk.replay.verify(receipt.contentHash);
 
-console.log(receipt.txId);
+console.log(receipt.txId, replay.passed); // synthetic-<64 hex> true
 ```
 
 ## CLI Reference

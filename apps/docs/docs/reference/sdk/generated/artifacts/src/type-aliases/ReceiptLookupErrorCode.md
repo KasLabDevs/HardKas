@@ -6,6 +6,6 @@
 
 # Type Alias: ReceiptLookupErrorCode
 
-> **ReceiptLookupErrorCode** = `"RECEIPT_NOT_FOUND"` \| `"RECEIPT_AMBIGUOUS_CONFLICT"`
+> **ReceiptLookupErrorCode** = `"RECEIPT_NOT_FOUND"` \| `"RECEIPT_AMBIGUOUS_CONFLICT"` \| `"CANDIDATE_INVALID"`
 
-Defined in: [packages/artifacts/src/receipt-lookup-error.ts:27](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/receipt-lookup-error.ts#L27)
+Defined in: [packages/artifacts/src/receipt-lookup-error.ts:27](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/receipt-lookup-error.ts#L27)

@@ -6,7 +6,7 @@
 
 # Class: HardkasExperimental
 
-Defined in: [packages/sdk/src/experimental.ts:20](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/experimental.ts#L20)
+Defined in: [packages/sdk/src/experimental.ts:20](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/experimental.ts#L20)
 
 HardKAS Experimental APIs
 
@@ -20,7 +20,7 @@ without notice. Use them for experimentation and feedback.
 
 > **new HardkasExperimental**(`sdk`): `HardkasExperimental`
 
-Defined in: [packages/sdk/src/experimental.ts:33](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/experimental.ts#L33)
+Defined in: [packages/sdk/src/experimental.ts:33](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/experimental.ts#L33)
 
 #### Parameters
 
@@ -38,7 +38,7 @@ Defined in: [packages/sdk/src/experimental.ts:33](https://github.com/KasLabDevs/
 
 > `readonly` **capabilitiesApi**: [`HardkasCapabilitiesApi`](HardkasCapabilitiesApi.md)
 
-Defined in: [packages/sdk/src/experimental.ts:25](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/experimental.ts#L25)
+Defined in: [packages/sdk/src/experimental.ts:25](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/experimental.ts#L25)
 
 ***
 
@@ -46,7 +46,7 @@ Defined in: [packages/sdk/src/experimental.ts:25](https://github.com/KasLabDevs/
 
 > `readonly` **corpus**: [`HardkasCorpus`](HardkasCorpus.md)
 
-Defined in: [packages/sdk/src/experimental.ts:26](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/experimental.ts#L26)
+Defined in: [packages/sdk/src/experimental.ts:26](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/experimental.ts#L26)
 
 ***
 
@@ -54,7 +54,7 @@ Defined in: [packages/sdk/src/experimental.ts:26](https://github.com/KasLabDevs/
 
 > `readonly` **l2**: [`HardkasL2`](HardkasL2.md)
 
-Defined in: [packages/sdk/src/experimental.ts:21](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/experimental.ts#L21)
+Defined in: [packages/sdk/src/experimental.ts:21](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/experimental.ts#L21)
 
 ***
 
@@ -62,7 +62,7 @@ Defined in: [packages/sdk/src/experimental.ts:21](https://github.com/KasLabDevs/
 
 > `readonly` **lineage**: [`HardkasLineage`](HardkasLineage.md)
 
-Defined in: [packages/sdk/src/experimental.ts:24](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/experimental.ts#L24)
+Defined in: [packages/sdk/src/experimental.ts:24](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/experimental.ts#L24)
 
 ***
 
@@ -70,7 +70,7 @@ Defined in: [packages/sdk/src/experimental.ts:24](https://github.com/KasLabDevs/
 
 > `readonly` **programmability**: [`HardkasProgrammability`](HardkasProgrammability.md)
 
-Defined in: [packages/sdk/src/experimental.ts:30](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/experimental.ts#L30)
+Defined in: [packages/sdk/src/experimental.ts:30](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/experimental.ts#L30)
 
 ***
 
@@ -78,7 +78,7 @@ Defined in: [packages/sdk/src/experimental.ts:30](https://github.com/KasLabDevs/
 
 > `readonly` **query**: [`HardkasQuery`](HardkasQuery.md)
 
-Defined in: [packages/sdk/src/experimental.ts:22](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/experimental.ts#L22)
+Defined in: [packages/sdk/src/experimental.ts:22](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/experimental.ts#L22)
 
 ***
 
@@ -86,7 +86,7 @@ Defined in: [packages/sdk/src/experimental.ts:22](https://github.com/KasLabDevs/
 
 > `readonly` **replay**: [`HardkasReplay`](HardkasReplay.md)
 
-Defined in: [packages/sdk/src/experimental.ts:23](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/experimental.ts#L23)
+Defined in: [packages/sdk/src/experimental.ts:23](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/experimental.ts#L23)
 
 ***
 
@@ -94,7 +94,7 @@ Defined in: [packages/sdk/src/experimental.ts:23](https://github.com/KasLabDevs/
 
 > `readonly` **silver**: [`HardkasSilver`](HardkasSilver.md)
 
-Defined in: [packages/sdk/src/experimental.ts:27](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/experimental.ts#L27)
+Defined in: [packages/sdk/src/experimental.ts:27](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/experimental.ts#L27)
 
 ***
 
@@ -102,7 +102,7 @@ Defined in: [packages/sdk/src/experimental.ts:27](https://github.com/KasLabDevs/
 
 > `readonly` **vprogs**: [`HardkasVprogs`](HardkasVprogs.md)
 
-Defined in: [packages/sdk/src/experimental.ts:29](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/experimental.ts#L29)
+Defined in: [packages/sdk/src/experimental.ts:29](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/experimental.ts#L29)
 
 ***
 
@@ -110,4 +110,4 @@ Defined in: [packages/sdk/src/experimental.ts:29](https://github.com/KasLabDevs/
 
 > `readonly` **zk**: [`HardkasZk`](HardkasZk.md)
 
-Defined in: [packages/sdk/src/experimental.ts:28](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/experimental.ts#L28)
+Defined in: [packages/sdk/src/experimental.ts:28](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/experimental.ts#L28)

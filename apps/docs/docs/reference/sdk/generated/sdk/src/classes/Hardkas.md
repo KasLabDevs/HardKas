@@ -6,7 +6,7 @@
 
 # Class: Hardkas
 
-Defined in: [packages/sdk/src/index.ts:163](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/index.ts#L163)
+Defined in: [packages/sdk/src/index.ts:310](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/index.ts#L310)
 
 HardKAS SDK - Main Entry Point
 
@@ -19,7 +19,7 @@ Acts as a DI container and coordinator.
 
 > `readonly` **accounts**: [`HardkasAccounts`](HardkasAccounts.md)
 
-Defined in: [packages/sdk/src/index.ts:167](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/index.ts#L167)
+Defined in: [packages/sdk/src/index.ts:314](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/index.ts#L314)
 
 ***
 
@@ -27,7 +27,7 @@ Defined in: [packages/sdk/src/index.ts:167](https://github.com/KasLabDevs/HardKa
 
 > `readonly` **artifacts**: [`HardkasArtifactsManager`](HardkasArtifactsManager.md)
 
-Defined in: [packages/sdk/src/index.ts:166](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/index.ts#L166)
+Defined in: [packages/sdk/src/index.ts:313](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/index.ts#L313)
 
 ***
 
@@ -35,7 +35,7 @@ Defined in: [packages/sdk/src/index.ts:166](https://github.com/KasLabDevs/HardKa
 
 > `readonly` **capabilities**: [`HardkasCapabilitiesApi`](HardkasCapabilitiesApi.md)
 
-Defined in: [packages/sdk/src/index.ts:177](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/index.ts#L177)
+Defined in: [packages/sdk/src/index.ts:324](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/index.ts#L324)
 
 ***
 
@@ -43,7 +43,7 @@ Defined in: [packages/sdk/src/index.ts:177](https://github.com/KasLabDevs/HardKa
 
 > `readonly` **config**: `LoadedHardkasConfig`
 
-Defined in: [packages/sdk/src/index.ts:206](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/index.ts#L206)
+Defined in: [packages/sdk/src/index.ts:397](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/index.ts#L397)
 
 ***
 
@@ -51,15 +51,42 @@ Defined in: [packages/sdk/src/index.ts:206](https://github.com/KasLabDevs/HardKa
 
 > `readonly` **covenants**: [`HardkasCovenants`](HardkasCovenants.md)
 
-Defined in: [packages/sdk/src/index.ts:175](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/index.ts#L175)
+Defined in: [packages/sdk/src/index.ts:322](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/index.ts#L322)
 
 ***
 
-### events
+### execution
 
-> `readonly` **events**: `ReactiveEventProvider`
+> `readonly` **execution**: `object`
 
-Defined in: [packages/sdk/src/index.ts:182](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/index.ts#L182)
+Defined in: [packages/sdk/src/index.ts:384](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/index.ts#L384)
+
+WORKSPACE-AUTHORITY-2 (WA2-I1): the execution target this instance runs on — resolved once, at open, by the
+resolver the CLI uses too (`resolveWorkspaceExecution`, @hardkas/config): the `target` option, else the `network`
+option, else the workspace's `execution` contract (else its legacy `defaultNetwork`). Every reader of "which world"
+in the SDK follows it: `network`, the provider, the accounts, the plans, the workflows, the observers.
+
+#### domain
+
+> **domain**: `"kaspa-l1"` \| `"evm-l2"`
+
+#### mode
+
+> **mode**: `"rpc"` \| `"simulator"` \| `"localnet"`
+
+#### network
+
+> **network**: `string`
+
+***
+
+### executionSource
+
+> `readonly` **executionSource**: `WorkspaceExecutionSource`
+
+Defined in: [packages/sdk/src/index.ts:386](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/index.ts#L386)
+
+What decided `execution`: "target", "network", "execution" or "defaultNetwork".
 
 ***
 
@@ -67,7 +94,7 @@ Defined in: [packages/sdk/src/index.ts:182](https://github.com/KasLabDevs/HardKa
 
 > `readonly` **experimental**: [`HardkasExperimental`](HardkasExperimental.md)
 
-Defined in: [packages/sdk/src/index.ts:173](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/index.ts#L173)
+Defined in: [packages/sdk/src/index.ts:320](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/index.ts#L320)
 
 ***
 
@@ -75,7 +102,7 @@ Defined in: [packages/sdk/src/index.ts:173](https://github.com/KasLabDevs/HardKa
 
 > `readonly` **fees**: [`HardkasFees`](HardkasFees.md)
 
-Defined in: [packages/sdk/src/index.ts:174](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/index.ts#L174)
+Defined in: [packages/sdk/src/index.ts:321](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/index.ts#L321)
 
 ***
 
@@ -83,7 +110,7 @@ Defined in: [packages/sdk/src/index.ts:174](https://github.com/KasLabDevs/HardKa
 
 > `readonly` **l2**: [`HardkasL2`](HardkasL2.md)
 
-Defined in: [packages/sdk/src/index.ts:176](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/index.ts#L176)
+Defined in: [packages/sdk/src/index.ts:323](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/index.ts#L323)
 
 ***
 
@@ -91,7 +118,7 @@ Defined in: [packages/sdk/src/index.ts:176](https://github.com/KasLabDevs/HardKa
 
 > `readonly` **lineage**: [`HardkasLineage`](HardkasLineage.md)
 
-Defined in: [packages/sdk/src/index.ts:171](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/index.ts#L171)
+Defined in: [packages/sdk/src/index.ts:318](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/index.ts#L318)
 
 ***
 
@@ -99,7 +126,7 @@ Defined in: [packages/sdk/src/index.ts:171](https://github.com/KasLabDevs/HardKa
 
 > `readonly` **localnet**: [`HardkasLocalnet`](HardkasLocalnet.md)
 
-Defined in: [packages/sdk/src/index.ts:170](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/index.ts#L170)
+Defined in: [packages/sdk/src/index.ts:317](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/index.ts#L317)
 
 ***
 
@@ -107,7 +134,7 @@ Defined in: [packages/sdk/src/index.ts:170](https://github.com/KasLabDevs/HardKa
 
 > `readonly` **mode**: `"developer"` \| `"agent"`
 
-Defined in: [packages/sdk/src/index.ts:200](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/index.ts#L200)
+Defined in: [packages/sdk/src/index.ts:373](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/index.ts#L373)
 
 ***
 
@@ -115,7 +142,7 @@ Defined in: [packages/sdk/src/index.ts:200](https://github.com/KasLabDevs/HardKa
 
 > `readonly` **node**: `HardkasNodeApi`
 
-Defined in: [packages/sdk/src/index.ts:165](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/index.ts#L165)
+Defined in: [packages/sdk/src/index.ts:312](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/index.ts#L312)
 
 ***
 
@@ -123,7 +150,7 @@ Defined in: [packages/sdk/src/index.ts:165](https://github.com/KasLabDevs/HardKa
 
 > `readonly` **observe**: `HardkasObserve`
 
-Defined in: [packages/sdk/src/index.ts:180](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/index.ts#L180)
+Defined in: [packages/sdk/src/index.ts:327](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/index.ts#L327)
 
 ***
 
@@ -131,7 +158,7 @@ Defined in: [packages/sdk/src/index.ts:180](https://github.com/KasLabDevs/HardKa
 
 > `readonly` **plugins**: `HardkasPluginManager`
 
-Defined in: [packages/sdk/src/index.ts:172](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/index.ts#L172)
+Defined in: [packages/sdk/src/index.ts:319](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/index.ts#L319)
 
 ***
 
@@ -139,7 +166,7 @@ Defined in: [packages/sdk/src/index.ts:172](https://github.com/KasLabDevs/HardKa
 
 > `readonly` **policy**: `Required`\<`NonNullable`\<[`HardkasOptions`](../interfaces/HardkasOptions.md)\[`"policy"`\]\>\>
 
-Defined in: [packages/sdk/src/index.ts:201](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/index.ts#L201)
+Defined in: [packages/sdk/src/index.ts:374](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/index.ts#L374)
 
 ***
 
@@ -147,7 +174,7 @@ Defined in: [packages/sdk/src/index.ts:201](https://github.com/KasLabDevs/HardKa
 
 > `readonly` **query**: [`HardkasQuery`](HardkasQuery.md)
 
-Defined in: [packages/sdk/src/index.ts:181](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/index.ts#L181)
+Defined in: [packages/sdk/src/index.ts:328](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/index.ts#L328)
 
 ***
 
@@ -155,7 +182,7 @@ Defined in: [packages/sdk/src/index.ts:181](https://github.com/KasLabDevs/HardKa
 
 > `readonly` **replay**: [`HardkasReplay`](HardkasReplay.md)
 
-Defined in: [packages/sdk/src/index.ts:178](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/index.ts#L178)
+Defined in: [packages/sdk/src/index.ts:325](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/index.ts#L325)
 
 ***
 
@@ -163,7 +190,7 @@ Defined in: [packages/sdk/src/index.ts:178](https://github.com/KasLabDevs/HardKa
 
 > `readonly` **rpc**: `KaspaRpcClient`
 
-Defined in: [packages/sdk/src/index.ts:203](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/index.ts#L203)
+Defined in: [packages/sdk/src/index.ts:376](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/index.ts#L376)
 
 ***
 
@@ -171,7 +198,7 @@ Defined in: [packages/sdk/src/index.ts:203](https://github.com/KasLabDevs/HardKa
 
 > `readonly` `optional` **signer?**: `ExternalHardkasSigner`
 
-Defined in: [packages/sdk/src/index.ts:198](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/index.ts#L198)
+Defined in: [packages/sdk/src/index.ts:371](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/index.ts#L371)
 
 ***
 
@@ -179,7 +206,7 @@ Defined in: [packages/sdk/src/index.ts:198](https://github.com/KasLabDevs/HardKa
 
 > `readonly` **tx**: [`HardkasTx`](HardkasTx.md)
 
-Defined in: [packages/sdk/src/index.ts:168](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/index.ts#L168)
+Defined in: [packages/sdk/src/index.ts:315](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/index.ts#L315)
 
 ***
 
@@ -187,7 +214,7 @@ Defined in: [packages/sdk/src/index.ts:168](https://github.com/KasLabDevs/HardKa
 
 > `readonly` **utxos**: `HardkasUtxos`
 
-Defined in: [packages/sdk/src/index.ts:169](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/index.ts#L169)
+Defined in: [packages/sdk/src/index.ts:316](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/index.ts#L316)
 
 ***
 
@@ -195,7 +222,7 @@ Defined in: [packages/sdk/src/index.ts:169](https://github.com/KasLabDevs/HardKa
 
 > `readonly` **wallet**: `object`
 
-Defined in: [packages/sdk/src/index.ts:184](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/index.ts#L184)
+Defined in: [packages/sdk/src/index.ts:330](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/index.ts#L330)
 
 #### open
 
@@ -221,7 +248,7 @@ Defined in: [packages/sdk/src/index.ts:184](https://github.com/KasLabDevs/HardKa
 
 > `readonly` **workflow**: `HardkasWorkflow`
 
-Defined in: [packages/sdk/src/index.ts:179](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/index.ts#L179)
+Defined in: [packages/sdk/src/index.ts:326](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/index.ts#L326)
 
 ***
 
@@ -229,7 +256,7 @@ Defined in: [packages/sdk/src/index.ts:179](https://github.com/KasLabDevs/HardKa
 
 > `readonly` **workspace**: [`HardkasWorkspace`](HardkasWorkspace.md)
 
-Defined in: [packages/sdk/src/index.ts:164](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/index.ts#L164)
+Defined in: [packages/sdk/src/index.ts:311](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/index.ts#L311)
 
 ## Accessors
 
@@ -239,7 +266,7 @@ Defined in: [packages/sdk/src/index.ts:164](https://github.com/KasLabDevs/HardKa
 
 > **get** **cwd**(): `string`
 
-Defined in: [packages/sdk/src/index.ts:354](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/index.ts#L354)
+Defined in: [packages/sdk/src/index.ts:598](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/index.ts#L598)
 
 ##### Returns
 
@@ -253,9 +280,10 @@ Defined in: [packages/sdk/src/index.ts:354](https://github.com/KasLabDevs/HardKa
 
 > **get** **network**(): [`NetworkId`](../type-aliases/NetworkId.md)
 
-Defined in: [packages/sdk/src/index.ts:346](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/index.ts#L346)
+Defined in: [packages/sdk/src/index.ts:590](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/index.ts#L590)
 
-Current active network name.
+The network this instance runs on: the network of its resolved execution target (WORKSPACE-AUTHORITY-2), not a
+reading of the legacy `defaultNetwork` key.
 
 ##### Returns
 
@@ -269,7 +297,7 @@ Current active network name.
 
 > **get** **sdkConfig**(): `HardkasConfig`
 
-Defined in: [packages/sdk/src/index.ts:350](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/index.ts#L350)
+Defined in: [packages/sdk/src/index.ts:594](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/index.ts#L594)
 
 ##### Returns
 
@@ -277,11 +305,28 @@ Defined in: [packages/sdk/src/index.ts:350](https://github.com/KasLabDevs/HardKa
 
 ## Methods
 
+### close()
+
+> **close**(): `Promise`\<`void`\>
+
+Defined in: [packages/sdk/src/index.ts:569](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/index.ts#L569)
+
+Releases what this instance created (its own RPC client), so a process that is done with the SDK can end by
+itself. Never a client it was given, or one assigned to `rpc` afterwards: that one is its caller's. Idempotent; it
+never throws, so it fits a `finally`. A later call that needs the node opens a new connection, which a later
+close() releases.
+
+#### Returns
+
+`Promise`\<`void`\>
+
+***
+
 ### enforcePolicy()
 
 > **enforcePolicy**(`action`, `context?`): `void`
 
-Defined in: [packages/sdk/src/index.ts:362](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/index.ts#L362)
+Defined in: [packages/sdk/src/index.ts:606](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/index.ts#L606)
 
 Validates an action against the active security policy.
 Throws HardkasError if the policy is violated.
@@ -306,7 +351,7 @@ Throws HardkasError if the policy is violated.
 
 > `static` **create**(`dirOrOptions?`): `Promise`\<`Hardkas`\>
 
-Defined in: [packages/sdk/src/index.ts:339](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/index.ts#L339)
+Defined in: [packages/sdk/src/index.ts:582](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/index.ts#L582)
 
 Alias for open(). Used in most examples.
 
@@ -326,7 +371,7 @@ Alias for open(). Used in most examples.
 
 > `static` **open**(`dirOrOptions?`): `Promise`\<`Hardkas`\>
 
-Defined in: [packages/sdk/src/index.ts:262](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/index.ts#L262)
+Defined in: [packages/sdk/src/index.ts:475](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/index.ts#L475)
 
 Opens a HardKAS project in the given directory.
 

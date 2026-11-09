@@ -1,6 +1,11 @@
 import { Command } from "commander";
 import { UI } from "../ui.js";
 
+/**
+ * NOT REGISTERED (N-7): `program.ts` does not call this since the dashboard was retired (HK-27, origin/main), so
+ * `hardkas dev-server ...` is an unknown command and this module is not bundled. The API runs through `hardkas sandbox`
+ * / `hardkas dev`; its token is in `.hardkas/dev-server-token`. Kept only as the reference of the former surface.
+ */
 export function registerDevServerCommands(program: Command) {
   const dsCmd = program
     .command("dev-server")

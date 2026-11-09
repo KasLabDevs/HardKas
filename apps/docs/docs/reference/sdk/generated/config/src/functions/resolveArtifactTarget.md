@@ -8,7 +8,7 @@
 
 > **resolveArtifactTarget**(`options`): `object`
 
-Defined in: [packages/config/src/resolve.ts:140](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/config/src/resolve.ts#L140)
+Defined in: [packages/config/src/resolve.ts:141](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/config/src/resolve.ts#L141)
 
 ## Parameters
 

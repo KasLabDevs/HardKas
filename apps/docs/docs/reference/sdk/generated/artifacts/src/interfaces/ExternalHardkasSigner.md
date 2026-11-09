@@ -6,7 +6,7 @@
 
 # Interface: ExternalHardkasSigner
 
-Defined in: [packages/artifacts/src/signer.ts:9](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/signer.ts#L9)
+Defined in: [packages/artifacts/src/signer.ts:9](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/signer.ts#L9)
 
 Interface for external wallets and signers.
 HardKAS uses this to delegate transaction signing to secure enclaves,
@@ -19,7 +19,7 @@ need to hold or manage private keys natively.
 
 > **getAddress**(): `Promise`\<`string`\>
 
-Defined in: [packages/artifacts/src/signer.ts:13](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/signer.ts#L13)
+Defined in: [packages/artifacts/src/signer.ts:13](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/signer.ts#L13)
 
 Retrieves the public Kaspa address managed by this signer.
 
@@ -33,7 +33,7 @@ Retrieves the public Kaspa address managed by this signer.
 
 > **signTransaction**(`txPlan`): `Promise`\<[`SignedTxArtifact`](SignedTxArtifact.md)\>
 
-Defined in: [packages/artifacts/src/signer.ts:20](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/signer.ts#L20)
+Defined in: [packages/artifacts/src/signer.ts:20](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/signer.ts#L20)
 
 Signs a prepared transaction plan.
 

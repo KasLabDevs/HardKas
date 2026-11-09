@@ -15,7 +15,11 @@ import {
 
 const RECEIPT_PATH = join(__dirname, "../../../fixtures/toccata-v2/zk/r0-groth16-official/receipt.hex");
 const officialReceiptHex = readFileSync(RECEIPT_PATH, "utf8").trim();
-const officialImageId = "e2b3cbb7b2ee93da01a5fae56a42a537f88e104526d15a5fbcbc0241cf434e34";
+// The official RISC Zero vector (fixtures/toccata-v2/zk/r0-groth16-official): the receipt proves exactly this
+// (imageId, journalHash) pair. Develop's suite used an image id the receipt does not prove, which the HK-19 claim
+// cross-check now refuses (on-chain such a lock is unspendable). The HKZ1 journal is an off-chain convention only.
+const officialImageId = "75641a540ee2ad9ee5902bcdcdb8b55c0bef4a28287309b858f97b1356c6c2e0";
+const officialJournalHash = "5df6e0e2761359d30a8275058e299fcc0381534545f55cf43e41983f5d4c9456";
 
 describe("HardKAS ZK Consensus Binding — 18 Adversarial Attack Vectors & Safety Campaign", () => {
   const kaspa = loadManagedKaspaWasmSync();
@@ -27,10 +31,15 @@ describe("HardKAS ZK Consensus Binding — 18 Adversarial Attack Vectors & Safet
   const attackerAddr = attackerKey.toKeypair().toAddress("simnet").toString();
 
   const standardPayoutSompi = 100000000n; // 1 KAS
-  const standardUtxoSompi = 200000000n;   // 2 KAS
-  const standardUtxo = { transactionId: "99".repeat(32), index: 0, amountSompi: standardUtxoSompi };
+  // The UTXO is funded with the scripts' requiredFundingSompi (bound payout + the fee for this spend), set below
+  // once the scripts are built. Develop's suite funded 2 KAS for a 1 KAS payout: the other 1 KAS would have been fee.
 
-  /** Helper to simulate consensus ScriptVM execution of output introspection rules against a transaction */
+  /**
+   * OFFLINE MODEL of the node's output/input introspection rules (not consensus evidence: kaspa-wasm exposes no
+   * script VM). It follows rusty-kaspa v2.1.0: OpTxOutputSpk pushes version (u16 BE) ++ script, OpTxInputCount the
+   * input count, OpTxInputAmount the spent amount. The same rules are exercised on a real rusty-kaspad by
+   * zk-output-bound-l1.simnet.test.ts.
+   */
   function evaluateConsensusOutputPolicy(
     redeemScriptHex: string,
     tx: any
@@ -74,7 +83,9 @@ describe("HardKAS ZK Consensus Binding — 18 Adversarial Attack Vectors & Safet
         const outIdx = indexPush.opcode === 0x00 ? 0 : (indexPush.opcode >= 0x51 && indexPush.opcode <= 0x60 ? indexPush.opcode - 0x50 : 0);
         const expectedSpkData = ops[i + 1]?.data ?? "";
         const verifyOp = ops[i + 2];
-        const actualSpk = tx.outputs[outIdx]?.scriptPublicKey?.script ?? "";
+        const outSpk = tx.outputs[outIdx]?.scriptPublicKey;
+        // what the node pushes: version (u16 big-endian) ++ script (SpkEncoding::to_bytes)
+        const actualSpk = outSpk ? Number(outSpk.version).toString(16).padStart(4, "0") + String(outSpk.script) : "";
         if (actualSpk.toLowerCase() !== expectedSpkData.toLowerCase()) {
           return {
             passed: false,
@@ -104,6 +115,34 @@ describe("HardKAS ZK Consensus Binding — 18 Adversarial Attack Vectors & Safet
         }
       }
 
+      if (ops[i].opcode === 0xb3) { // OpTxInputCount
+        const expectedOp = ops[i + 1];
+        const expected = expectedOp && expectedOp.opcode >= 0x51 && expectedOp.opcode <= 0x60 ? expectedOp.opcode - 0x50 : 1;
+        if (tx.inputs.length !== expected) {
+          return {
+            passed: false,
+            failureReason: `Consensus Rejection: OpTxInputCount expected ${expected} input(s), got ${tx.inputs.length}`,
+            failingOpcode: "OpNumEqualVerify"
+          };
+        }
+      }
+
+      if (ops[i].opcode === 0xbe) { // OpTxInputAmount (of OpTxInputIndex) <= max
+        const buf = Buffer.from(ops[i + 1]?.data ?? "", "hex");
+        let max = 0n;
+        for (let b = 0; b < buf.length; b++) max |= BigInt(buf[b]) << BigInt(8 * b);
+        for (const input of tx.inputs) {
+          const amount = BigInt(input?.utxo?.amount ?? 0n);
+          if (amount > max) {
+            return {
+              passed: false,
+              failureReason: `Consensus Rejection: OpTxInputAmount ${amount} exceeds the lock limit ${max}`,
+              failingOpcode: "OpVerify"
+            };
+          }
+        }
+      }
+
       if (ops[i].opcode === 0xba) { // OpOutpointTxId
         const expectedTxId = ops[i + 1]?.data ?? "";
         const actualTxId = tx.inputs[0]?.previousOutpoint?.transactionId ?? "";
@@ -124,7 +163,7 @@ describe("HardKAS ZK Consensus Binding — 18 Adversarial Attack Vectors & Safet
   const journal = createZkOutputBindingJournal({ payoutAddress: aliceAddr, amountSompi: standardPayoutSompi });
   const boundScripts = buildR0Groth16Scripts({
     imageId: officialImageId,
-    journalHash: journal.journalHash,
+    journalHash: officialJournalHash,
     receiptHex: officialReceiptHex,
     bindingPolicy: {
       mode: "proof-and-output-bound",
@@ -134,6 +173,8 @@ describe("HardKAS ZK Consensus Binding — 18 Adversarial Attack Vectors & Safet
       }
     }
   });
+  const standardUtxoSompi = boundScripts.requiredFundingSompi!;
+  const standardUtxo = { transactionId: "99".repeat(32), index: 0, amountSompi: standardUtxoSompi };
 
   // Vector 1: Valid proof + correct outputs
   it("Vector 1: Valid proof + correct outputs passes both SDK checks and consensus evaluation", () => {
@@ -271,7 +312,8 @@ describe("HardKAS ZK Consensus Binding — 18 Adversarial Attack Vectors & Safet
 
     const consensusEval = evaluateConsensusOutputPolicy(boundScripts.redeemScript, rawTx);
     expect(consensusEval.passed).toBe(false);
-    expect(consensusEval.failingOpcode).toBe("OpEqualVerify");
+    // the count is compared numerically (OpNumEqualVerify)
+    expect(consensusEval.failingOpcode).toBe("OpNumEqualVerify");
     expect(consensusEval.failureReason).toContain("OpTxOutputCount expected 1 outputs, got 2");
   });
 
@@ -279,7 +321,7 @@ describe("HardKAS ZK Consensus Binding — 18 Adversarial Attack Vectors & Safet
   it("Vector 5: Valid proof + manipulated change address/amount is REJECTED by change SPK guard", () => {
     const changeScripts = buildR0Groth16Scripts({
       imageId: officialImageId,
-      journalHash: journal.journalHash,
+      journalHash: officialJournalHash,
       receiptHex: officialReceiptHex,
       bindingPolicy: {
         mode: "proof-and-output-bound",
@@ -329,7 +371,7 @@ describe("HardKAS ZK Consensus Binding — 18 Adversarial Attack Vectors & Safet
   });
 
   // Vector 6: Valid proof + fee below compute mass floor
-  it("Vector 6: Valid proof + fee below compute mass floor triggers mempool violation warning", () => {
+  it("Vector 6: an under-funded output-bound lock (fee below the compute-mass floor) is refused: the bound outputs cannot change", () => {
     const feeEstimate = estimateToccataZkFee(1600, 1602n);
     expect(feeEstimate.minimumRequiredSompi).toBeGreaterThan(16000000n);
 
@@ -341,14 +383,18 @@ describe("HardKAS ZK Consensus Binding — 18 Adversarial Attack Vectors & Safet
       networkId: "simnet"
     });
 
-    expect(txRes.warnings.some((w) => w.code === "ZK_FEE_BELOW_MEMPOOL_MINIMUM")).toBe(true);
+    // proof-only can raise its fee, so there it is a warning; a bound lock's fee is fixed by its funding: an issue
+    expect(txRes.ok).toBe(false);
+    expect(txRes.issues.some((w) => w.code === "ZK_BOUND_FEE_BELOW_MEMPOOL_MINIMUM")).toBe(true);
+    // the scripts told the funder the amount that avoids this
+    expect(boundScripts.requiredFundingSompi! - standardPayoutSompi).toBeGreaterThanOrEqual(feeEstimate.minimumRequiredSompi);
   });
 
   // Vector 7: Valid proof + altered output ordering
   it("Vector 7: Valid proof + altered output ordering is REJECTED by index 0 SPK match", () => {
     const changeScripts = buildR0Groth16Scripts({
       imageId: officialImageId,
-      journalHash: journal.journalHash,
+      journalHash: officialJournalHash,
       receiptHex: officialReceiptHex,
       bindingPolicy: {
         mode: "proof-and-output-bound",
@@ -424,7 +470,7 @@ describe("HardKAS ZK Consensus Binding — 18 Adversarial Attack Vectors & Safet
   it("Vector 10: Invalid/forged proof bytes fail extraction or structural validation", () => {
     const res = buildR0Groth16Scripts({
       imageId: officialImageId,
-      journalHash: journal.journalHash,
+      journalHash: officialJournalHash,
       receiptHex: "deadbeef".repeat(16) // Not valid Borsh receipt
     });
     expect(res.ok).toBe(false);
@@ -453,63 +499,68 @@ describe("HardKAS ZK Consensus Binding — 18 Adversarial Attack Vectors & Safet
     expect(verification.issues.some((i) => i.code === "ZK_IMAGE_ID_MISMATCH")).toBe(true);
   });
 
-  // Vector 13: Proof reuse on another UTXO with utxoBinding
-  it("Vector 13: Proof reuse across different UTXOs is REJECTED by consensus OpOutpointTxId", () => {
-    const boundOutpoint = { transactionId: "aa".repeat(32), index: 0 };
-    const utxoBoundScripts = buildR0Groth16Scripts({
-      imageId: officialImageId,
-      journalHash: journal.journalHash,
-      receiptHex: officialReceiptHex,
-      bindingPolicy: {
-        mode: "proof-and-output-bound",
-        payout: { address: aliceAddr, amountSompi: standardPayoutSompi },
-        utxoBinding: boundOutpoint
-      }
-    });
-
-    // Attacker tries to spend a different UTXO ("bb".repeat(32)) with the same proof & script
-    const swappedUtxo = { transactionId: "bb".repeat(32), index: 0, amountSompi: standardUtxoSompi };
-    const rawTx = new kaspa.Transaction({
+  const spendOf = (scripts: any, inputs: Array<{ transactionId: string; amountSompi: bigint }>, outputs: Array<{ address: string; value: bigint }>, lockTime = 0n) =>
+    new kaspa.Transaction({
       version: 1,
-      inputs: [{
-        previousOutpoint: { transactionId: swappedUtxo.transactionId, index: swappedUtxo.index },
-        signatureScript: utxoBoundScripts.sigScript,
+      inputs: inputs.map((u) => ({
+        previousOutpoint: { transactionId: u.transactionId, index: 0 },
+        signatureScript: scripts.sigScript,
         sequence: 0n,
         sigOpCount: 0,
         computeBudget: 1600,
         utxo: {
-          outpoint: { transactionId: swappedUtxo.transactionId, index: swappedUtxo.index },
-          amount: swappedUtxo.amountSompi,
-          scriptPublicKey: new kaspa.ScriptPublicKey(utxoBoundScripts.p2shScriptPublicKey.version, utxoBoundScripts.p2shScriptPublicKey.script),
+          outpoint: { transactionId: u.transactionId, index: 0 },
+          amount: u.amountSompi,
+          scriptPublicKey: new kaspa.ScriptPublicKey(scripts.p2shScriptPublicKey.version, scripts.p2shScriptPublicKey.script),
           blockDaaScore: 0n,
           isCoinbase: false
         }
-      }],
-      outputs: [{
-        value: standardPayoutSompi,
-        scriptPublicKey: kaspa.payToAddressScript(new kaspa.Address(aliceAddr))
-      }],
-      lockTime: 0n,
+      })),
+      outputs: outputs.map((o) => ({ value: o.value, scriptPublicKey: kaspa.payToAddressScript(new kaspa.Address(o.address)) })),
+      lockTime,
       subnetworkId: "0000000000000000000000000000000000000000",
       gas: 0n,
       payload: "",
       storageMass: 0n
     });
 
-    const consensusEval = evaluateConsensusOutputPolicy(utxoBoundScripts.redeemScript, rawTx);
+  // Vector 13: Proof reuse across UTXOs. Binding the outpoint is circular (refused); merging UTXOs is rejected.
+  it("Vector 13: outpoint binding is refused (circular), and two UTXOs of the lock in one spend are REJECTED by OpTxInputCount", () => {
+    const refused = buildR0Groth16Scripts({
+      imageId: officialImageId,
+      journalHash: officialJournalHash,
+      receiptHex: officialReceiptHex,
+      bindingPolicy: {
+        mode: "proof-and-output-bound",
+        payout: { address: aliceAddr, amountSompi: standardPayoutSompi },
+        utxoBinding: { transactionId: "aa".repeat(32), index: 0 }
+      }
+    });
+    expect(refused.ok).toBe(false);
+    expect(refused.issues.map((i) => i.code)).toContain("ZK_UTXO_BINDING_UNSATISFIABLE");
+
+    // Each UTXO of the lock can be spent on its own, to the same bound outputs. Two at once would send the second
+    // UTXO's whole amount to the fee: the one-input rule refuses that.
+    const merged = spendOf(boundScripts, [standardUtxo, { transactionId: "bb".repeat(32), amountSompi: standardUtxoSompi }], [{ address: aliceAddr, value: standardPayoutSompi }]);
+    const consensusEval = evaluateConsensusOutputPolicy(boundScripts.redeemScript, merged);
     expect(consensusEval.passed).toBe(false);
-    expect(consensusEval.failureReason).toContain("OpOutpointTxId mismatch");
+    expect(consensusEval.failureReason).toContain("OpTxInputCount expected 1 input(s), got 2");
   });
 
-  // Vector 14: Proof reuse on another transaction (UTXO double-spend)
-  it("Vector 14: Proof reuse on already-spent UTXO is rejected by DAG UTXO spendability invariant", () => {
-    // In Kaspa DAG, spent outpoint cannot be spent again.
-    // The SDK utxo tracking and consensus reject spending a non-existent or spent UTXO.
-    expect(boundScripts.p2shAddresses.simnet.length).toBeGreaterThan(0);
+  // Vector 14: an oversized deposit at the lock cannot be burnt as fee
+  it("Vector 14: a UTXO above the bound outputs plus the fee cap is refused by the SDK and REJECTED by the input limit", () => {
+    const oversized = { transactionId: "cc".repeat(32), index: 0, amountSompi: boundScripts.maxInputSompi! + 1n };
+    const sdkRes = buildR0Groth16Transaction({ scripts: boundScripts, utxo: oversized, destinationAddress: aliceAddr, computeBudget: 1600, networkId: "simnet" });
+    expect(sdkRes.ok).toBe(false);
+    expect(sdkRes.issues.map((i) => i.code)).toEqual(expect.arrayContaining(["ZK_BOUND_INPUT_ABOVE_LOCK_LIMIT"]));
+    const consensusEval = evaluateConsensusOutputPolicy(boundScripts.redeemScript, spendOf(boundScripts, [oversized], [{ address: aliceAddr, value: standardPayoutSompi }]));
+    expect(consensusEval.passed).toBe(false);
+    expect(consensusEval.failureReason).toContain("exceeds the lock limit");
   });
 
-  // Vector 15: Post-signing field tampering
-  it("Vector 15: Post-signing field tampering alters transaction ID and invalidates P2SH commitment", () => {
+  // Vector 15: fields the lock does not bind. Develop's claim "invalidates P2SH commitment" was false: the proof
+  // binds no transaction field, so a spend with the bound outputs and another lockTime still satisfies the lock.
+  it("Vector 15: tampering a field the lock does not bind (lockTime) changes the txid but still satisfies the lock (documented property)", () => {
     const txRes = buildR0Groth16Transaction({
       scripts: boundScripts,
       utxo: standardUtxo,
@@ -548,15 +599,16 @@ describe("HardKAS ZK Consensus Binding — 18 Adversarial Attack Vectors & Safet
     });
 
     expect(tamperedTx.id).not.toBe(originalTxId);
+    // the outputs are still the bound ones: the lock is satisfied (the node also checks the lockTime itself)
+    expect(evaluateConsensusOutputPolicy(boundScripts.redeemScript, tamperedTx).passed).toBe(true);
   });
 
-  // Vector 16: Insufficient compute budget (< 1400)
-  it("Vector 16: Compute budget below required precompile limit is identified", () => {
-    const feeRules = estimateToccataZkFee(100, 1600n);
-    // At budget 100, allowed script units is 100 * 10,000 + 9,999 = 1,009,999 units,
-    // which is well below the 14,000,000 units needed for OpZkPrecompile.
-    const allowedUnits = 100 * 10000 + 9999;
-    expect(allowedUnits).toBeLessThan(14000000);
+  // Vector 16: Insufficient compute budget
+  it("Vector 16: a compute budget below the precompile's requirement is refused by the SDK (ZK_COMPUTE_BUDGET_INSUFFICIENT)", () => {
+    // budget 100 allows 100 * 10,000 + 9,999 script units, far below the Groth16 tag cost plus the VK elements
+    const txRes = buildR0Groth16Transaction({ scripts: boundScripts, utxo: standardUtxo, destinationAddress: aliceAddr, computeBudget: 100, networkId: "simnet" });
+    expect(txRes.ok).toBe(false);
+    expect(txRes.issues.map((i) => i.code)).toContain("ZK_COMPUTE_BUDGET_INSUFFICIENT");
   });
 
   // Vector 17: Insufficient UTXO amount for fee

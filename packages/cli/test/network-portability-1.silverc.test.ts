@@ -126,11 +126,19 @@ describe("C7 · a SilverScript compile record names the network it was compiled 
     expect(bad.out).toMatch(/address .*does not belong to|not the address of/i);
   });
 
-  it("NP-7e deploy stays canonical-simnet-only: a testnet-10 compile record is refused before any key or node is used", async () => {
-    const r = await run("NP-7e", ["silver", "deploy", path.relative(wsTn, tn.recordPath), "--from", "alice", "--amount", "1", "--json"], wsTn);
-    expect(r.exit, r.brief).toBe(2);
-    expect(r.out).toMatch(/SILVER_NETWORK_NOT_SUPPORTED/);
-    expect(r.dialled).toEqual([]);
+  // L1-CORE-1 B3: deploy, spend and covenants are no longer canonical-simnet-only. They run on the network their records
+  // are for (testnet-<n> behind the payments' opt-in, which this testnet-10 workspace has): a record of ANOTHER network
+  // than the command's is still refused before any key or node is used; a testnet-10 record in this workspace passes the
+  // network checks and stops, typed, at the next one before the node (here: an account the workspace does not have).
+  it("NP-7e (B3) deploy runs on its record's network: a record of another network is refused before any key or node; a testnet-10 one is accepted here", async () => {
+    const other = await run("NP-7e-other", ["silver", "deploy", path.relative(wsTn, sim.recordPath), "--from", "alice", "--amount", "1", "--json"], wsTn);
+    expect(other.exit, other.brief).toBe(2);
+    expect(other.out).toMatch(/SILVER_NETWORK_NOT_SUPPORTED/);
+    expect(other.dialled).toEqual([]);
+    const own = await run("NP-7e", ["silver", "deploy", path.relative(wsTn, tn.recordPath), "--from", "alice", "--amount", "1", "--json"], wsTn);
+    expect(own.out, own.brief).not.toMatch(/SILVER_NETWORK_NOT_SUPPORTED|UNKNOWN_ERROR/);
+    expect(own.out, own.brief).toMatch(/ACCOUNT_NOT_FOUND/);
+    expect(own.dialled).toEqual([]);
   });
 
   it("NP-7f spend refuses, before any key or node, a deploy record of another network — or one whose compile record is", async () => {
@@ -156,13 +164,18 @@ describe("C7 · a SilverScript compile record names the network it was compiled 
       status: "confirmed",
       node: { verified: true }
     });
-    for (const [label, networkId] of [["tn-deploy", "testnet-10"], ["sim-deploy-tn-compile", "simnet"]] as const) {
+    // L1-CORE-1 B3: a testnet-10 deploy record (compiled for testnet-10) is this opted-in workspace's: it passes the network
+    // checks and stops at the account; a simnet deploy record whose compile record is testnet-10's is still refused
+    for (const [label, networkId, expected] of [
+      ["tn-deploy", "testnet-10", /ACCOUNT_NOT_FOUND/],
+      ["sim-deploy-tn-compile", "simnet", /SILVER_NETWORK_NOT_SUPPORTED/]
+    ] as const) {
       const file = `${label}.json`;
       fs.writeFileSync(path.join(wsTn, file), JSON.stringify(seal(deployDraft(networkId)), null, 2));
       fs.writeFileSync(path.join(wsTn, "spend-args.json"), JSON.stringify([{ kind: "signature", account: "alice" }]));
       const r = await run(`NP-7f-${label}`, ["silver", "spend", file, "--entry", "release", "--to", sim.contracts[0].address, "--args", "spend-args.json", "--json"], wsTn);
       expect(r.exit, r.brief).toBe(2);
-      expect(r.out, label).toMatch(/SILVER_NETWORK_NOT_SUPPORTED/);
+      expect(r.out, label).toMatch(expected);
       expect(r.dialled, label).toEqual([]);
     }
   });

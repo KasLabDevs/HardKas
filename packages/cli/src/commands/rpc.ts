@@ -12,6 +12,16 @@ import { resolveRpcTarget, RPC_NETWORK_OPTION } from "../runners/rpc-target.js";
 // CANONICAL-RPC-URL: the help names the endpoint @hardkas/core declares canonical, never a copy.
 const URL_OPTION = `Node wRPC endpoint (default: the canonical localnet, ${nodeRpcUrl()})`;
 
+/**
+ * INT9 · CLI-CONTRACT-2B B4: why `rpc health` is not ready, as one code — a node that cannot be reached is the same
+ * RPC_CONNECTION_FAILED (or RPC_TIMEOUT) as on every other command; a node that answers but is not ready, RPC_NOT_READY.
+ */
+async function notReadyCode(error: unknown): Promise<string> {
+  const { classifyRpcError, transportCodeOf } = await import("../cli-errors.js");
+  const kind = classifyRpcError(String(error ?? ""));
+  return kind === "CONNECTION_REFUSED" || kind === "TIMEOUT" ? transportCodeOf(kind) : "RPC_NOT_READY";
+}
+
 export function registerRpcCommands(program: Command) {
   const rpcCmd = program.command("rpc").description("Kaspa RPC diagnostics and queries");
 
@@ -60,14 +70,14 @@ export function registerRpcCommands(program: Command) {
           // CLI-RUNTIME-CONTRACT-1: the verdict carries `ok` (and a code when not ready); the
           // health fields are unchanged.
           getOutput().writeJson(
-            res.result.ready ? { ok: true, ...res.result } : { ok: false, code: "RPC_NOT_READY", ...res.result }
+            res.result.ready ? { ok: true, ...res.result } : { ok: false, code: await notReadyCode(res.result.error), ...res.result }
           );
         } else {
           getOutput().writeLine(res.formatted);
         }
         if (!res.result.ready) {
           const { HardkasCliError } = await import("../cli-errors.js");
-          throw new HardkasCliError("RPC_NOT_READY", `The Kaspa RPC at ${res.result.endpoint ?? "the configured endpoint"} is not ready`, { exitCode: 1 });
+          throw new HardkasCliError(await notReadyCode(res.result.error), `The Kaspa RPC at ${res.result.endpoint ?? "the configured endpoint"} is not ready`, { exitCode: 1 });
         }
       } catch (e) {
         throw e;

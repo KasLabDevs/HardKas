@@ -20,7 +20,7 @@ title: hardkas programmability
 
 ### Synopsis (Generated)
 
-**Purpose:** Audit the boundaries and claims of programmability layers
+**Purpose:** Print the fixed list of what this build's programmability layers do not do (on-chain ZK verification, vProgs runtime, L2 bridge and exit, real stable-asset issuer): a static statement that inspects and runs nothing
 
 #### Options
 

@@ -13,8 +13,11 @@ export type ProgrammabilityKind = "silver" | "zk" | "vprog" | "full-lab";
  * evidence records and `hardkas corpus verify`. Each REAL_NODE_EVIDENCE value
  * is backed by fixtures/toccata-v2/silver (recompiled by the managed silverc,
  * re-derived by the Kaspa SDK, evidenced by the verified reference rusty-kaspad).
- * Covenant support is exactly the 1:1 auth-bound transition; leader/cov-bound,
- * N:M, derived state mappings and signed covenant metering are not claimed.
+ * Covenant EVIDENCE is exactly the 1:1 auth-bound transition. The v1 engine (hardkas.covenants, `silver engine`) also
+ * plans and checks 1:N, N:M and terminating transitions (F1.4); a simnet test judges them on a real rusty-kaspad
+ * (covenant-topologies-node.simnet, INT9), but they are no corpus capability and are not claimed, and neither are
+ * leader/cov-bound, derived state mappings or signed covenant metering. Results of @hardkas/simulator or of
+ * the unverified SilverScript runner (SCRIPT_VM) are never REAL_NODE_EVIDENCE.
  */
 export interface ProgrammabilityClaims {
   artifactCoherence: "READY_MATCH";
@@ -538,7 +541,8 @@ function nonClaims(): string[] {
     "no on-chain ZK verification",
     "no full vProgs runtime",
     "no VM/consensus equivalence",
-    "no general covenant support (leader/cov-bound, N:M, derived state mappings, signed covenant metering)",
+    "no general covenant support: only 1:1 auth-bound transitions have node evidence; the engine's 1:N, N:M and termination plans are checked locally (F1.4) only, and leader/cov-bound, derived state mappings and signed covenant metering are absent",
+    "no consensus evidence from @hardkas/simulator or the SilverScript runner (SCRIPT_VM)",
     "no production or audited SilverScript contracts"
   ];
 }

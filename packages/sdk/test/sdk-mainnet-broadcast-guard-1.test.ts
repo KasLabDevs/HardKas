@@ -139,6 +139,49 @@ function workspace(network: string, url: string, extra: Record<string, unknown> 
   return ws;
 }
 
+/**
+ * HK-12: a mainnet transaction signed OUTSIDE HardKAS — by kaspa-wasm itself, as any third party with the key can. Since
+ * HK-12 no signing route of @hardkas/accounts signs mainnet (an `allowMainnet: true` direct call included), so this
+ * stand-in for "a hardware wallet, a custodian" no longer borrows HardKAS's signer for mainnet.
+ */
+function thirdPartySignedMainnet(plan: any, keys: Keys): any {
+  const spkOf = (hex: string) => new kaspa.ScriptPublicKey(parseInt(hex.slice(0, 4), 16), hex.slice(4));
+  const inputs = (plan.inputs as any[]).map((i) => {
+    const raw = typeof i.scriptPublicKey === "string" ? i.scriptPublicKey : spkHex(keys.address);
+    const hex = raw.length === 68 ? "0000" + raw : raw;
+    return {
+      previousOutpoint: { transactionId: i.outpoint.transactionId, index: i.outpoint.index },
+      signatureScript: "",
+      sequence: 0n,
+      sigOpCount: 1,
+      utxo: {
+        outpoint: { transactionId: i.outpoint.transactionId, index: i.outpoint.index },
+        amount: BigInt(i.amountSompi),
+        scriptPublicKey: spkOf(hex),
+        blockDaaScore: BigInt(i.blockDaaScore ?? 0),
+        isCoinbase: Boolean(i.isCoinbase)
+      }
+    };
+  });
+  const outs = [...(plan.outputs as any[]), ...(plan.change ? [plan.change] : [])].map((o) => ({ value: BigInt(o.amountSompi), scriptPublicKey: kaspa.payToAddressScript(o.address) }));
+  const tx = new kaspa.Transaction({ version: 0, inputs, outputs: outs, lockTime: 0n, subnetworkId: "0000000000000000000000000000000000000000", gas: 0n, payload: "" });
+  const signed = kaspa.signTransaction(tx, [new kaspa.PrivateKey(keys.pk)], true);
+  return {
+    schema: HardkasSchemas.SignedTx,
+    hardkasVersion: HARDKAS_VERSION,
+    status: "signed",
+    networkId: plan.networkId,
+    mode: plan.mode,
+    execution: plan.execution,
+    from: { address: plan.from?.address },
+    to: { address: plan.to?.address },
+    amountSompi: plan.amountSompi,
+    txId: String(signed.id),
+    signedTransaction: { format: "hex", payload: JSON.stringify(signed.serializeToObject(), (_k, v) => (typeof v === "bigint" ? v.toString() : v)) },
+    lineage: { parentArtifactId: plan.contentHash }
+  };
+}
+
 /** An external signer (a hardware wallet, a custodian): it signs what it is given. Counts its calls. */
 function externalSigner(keys: Keys, network: "mainnet" | "testnet-10") {
   const calls = { n: 0 };
@@ -150,6 +193,7 @@ function externalSigner(keys: Keys, network: "mainnet" | "testnet-10") {
       },
       async signTransaction(plan: any) {
         calls.n++;
+        if (network === "mainnet") return thirdPartySignedMainnet(plan, keys);
         return signTxPlanArtifact({
           target: { mode: "rpc", domain: "kaspa-l1", network },
           planArtifact: plan,

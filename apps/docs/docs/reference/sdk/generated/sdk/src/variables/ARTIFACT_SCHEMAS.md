@@ -8,7 +8,7 @@
 
 > `const` **ARTIFACT\_SCHEMAS**: `object`
 
-Defined in: packages/artifacts/dist/index.d.ts:8
+Defined in: [packages/artifacts/dist/index.d.ts:8](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/dist/index.d.ts#L8)
 
 ## Type Declaration
 
@@ -119,6 +119,10 @@ Defined in: packages/artifacts/dist/index.d.ts:8
 ### TOCCATA\_PROGRAMMABILITY\_CORPUS
 
 > `readonly` **TOCCATA\_PROGRAMMABILITY\_CORPUS**: `"hardkas.toccataProgrammabilityCorpus.v1"`
+
+### TX\_OBSERVATION
+
+> `readonly` **TX\_OBSERVATION**: `"hardkas.txObservation.v1"`
 
 ### TX\_PLAN
 

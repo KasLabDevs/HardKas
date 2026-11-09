@@ -112,27 +112,39 @@ afterAll(async () => {
   for (const d of made) fs.rmSync(d, { recursive: true, force: true });
 });
 
-describe("RPC-DEFAULT-TARGET-NOTE-1 · an rpc command that falls back to the canonical localnet says so in a public-network workspace", () => {
-  it("R-1 `rpc health --json` in a testnet-10 workspace: same target and envelope, and a note on stderr naming the workspace's network", async () => {
+// L1-CORE-1 B2 · H1 (TN10-24): the note was not enough. In a workspace, an rpc command without --network and --url now
+// checks the WORKSPACE's network — its declared endpoint, with the node's identity — and never the canonical localnet
+// (18210) for a public network: a public network with no endpoint the user chose is NETWORK_ENDPOINT_REQUIRED, nothing
+// contacted. R-1 and R-2 pinned the old target (the canonical localnet plus a note); they now pin this one.
+describe("RPC-DEFAULT-TARGET-NOTE-1 / H1 · an rpc command without --network checks the workspace's network", () => {
+  it("R-1 (H1) `rpc health --json` in a testnet-10 workspace: the workspace's declared node, identity checked; 18210 never dialled", async () => {
     const r = await run("r1", ["rpc", "health", "--json"], workspace("r1", "testnet-10", T.url));
-    expect(r.exit, r.brief).toBe(1);
-    expect(r.json, r.brief).toMatchObject({ ok: false, code: "RPC_NOT_READY", endpoint: "ws://127.0.0.1:18210" });
-    expect(r.dialled.some((d) => d.endsWith(`:${T.port}`)), JSON.stringify(r.dialled)).toBe(false);
-    expect(r.stderr, r.brief).toMatch(NOTE);
-    expect(r.stderr, r.brief).toMatch(/testnet-10/);
-    expect(r.stderr, r.brief).toMatch(/--network testnet-10/);
+    expect(r.exit, r.brief).toBe(0);
+    expect(r.json, r.brief).toMatchObject({ ok: true, endpoint: T.url, networkId: "testnet-10" });
+    expect(r.dialled.some((d) => /:18210$/.test(d)), JSON.stringify(r.dialled)).toBe(false);
+    expect(r.dialled.some((d) => d.endsWith(`:${T.port}`)), JSON.stringify(r.dialled)).toBe(true);
+    expect(r.stderr, r.brief).not.toMatch(NOTE);
   });
 
-  it("R-2 the same note for `rpc info --json` (the shared target), its url unchanged (NP-3e)", async () => {
+  it("R-2 (H1) `rpc info --json` (the shared target) reads the workspace's declared node too", async () => {
     const r = await run("r2", ["rpc", "info", "--json"], workspace("r2", "testnet-10", T.url));
-    expect(r.json?.url, r.brief).toBe("ws://127.0.0.1:18210");
-    expect(r.stderr, r.brief).toMatch(NOTE);
-    expect(r.stderr, r.brief).toMatch(/--network testnet-10/);
+    expect(r.exit, r.brief).toBe(0);
+    expect(r.json?.url, r.brief).toBe(T.url);
+    expect(r.dialled.some((d) => /:18210$/.test(d)), JSON.stringify(r.dialled)).toBe(false);
+  });
+
+  it("R-2b (H1) a testnet-10 workspace that declares no endpoint: NETWORK_ENDPOINT_REQUIRED, nothing contacted (never 18210)", async () => {
+    const r = await run("r2b", ["rpc", "health", "--json"], workspace("r2b", "testnet-10"));
+    expect(r.exit, r.brief).not.toBe(0);
+    expect(r.stdout + r.stderr, r.brief).toMatch(/NETWORK_ENDPOINT_REQUIRED/);
+    expect(r.dialled.filter((d) => d.startsWith("LOOPBACK_CONNECT") || d.startsWith("REFUSED")), JSON.stringify(r.dialled)).toEqual([]);
   });
 
   it("R-3 (control) in a simnet workspace the canonical localnet is the workspace's node: no note", async () => {
     const r = await run("r3", ["rpc", "health", "--json"], workspace("r3", "simnet"));
-    expect(r.json, r.brief).toMatchObject({ ok: false, code: "RPC_NOT_READY" });
+    // INT9 · CLI-CONTRACT-2B B4: no node listens there, so the code is the one every command gives an unreachable node
+    // (RPC_CONNECTION_FAILED; it was RPC_NOT_READY here and UNKNOWN in `tx plan`). This control is about the note.
+    expect(r.json, r.brief).toMatchObject({ ok: false, code: "RPC_CONNECTION_FAILED", ready: false });
     expect(r.stderr, r.brief).not.toMatch(NOTE);
   });
 

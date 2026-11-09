@@ -48,6 +48,8 @@ export interface KaspaWrpcClientOptions {
    * request on a resumed connection; notifications are not covered, see onNotification).
    */
   expectedNetworkId?: string | undefined;
+  /** INT9-A (I-3b): see JsonWrpcKaspaClientOptions.requireSynced. */
+  requireSynced?: boolean | undefined;
 }
 
 export class KaspaWrpcClient {
@@ -78,7 +80,7 @@ export class KaspaWrpcClient {
     // The previous connection is detached and the new session registered before anything is awaited, so a
     // disconnect() from this point on closes the new session too (RL-I4).
     const released = this.disconnect();
-    const session = new OfficialRpcSession(this.url, timeoutMs, this.options.rpcFactory, this.options.expectedNetworkId);
+    const session = new OfficialRpcSession(this.url, timeoutMs, this.options.rpcFactory, this.options.expectedNetworkId, this.options.requireSynced === true);
     this.opening = session;
     await released;
     if (this.opening !== session) throw rpcClientClosedError(this.url);

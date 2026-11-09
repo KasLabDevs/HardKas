@@ -6,7 +6,7 @@
 
 # Interface: TxOutput
 
-Defined in: [packages/tx-builder/src/index.ts:36](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/index.ts#L36)
+Defined in: [packages/tx-builder/src/index.ts:41](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/index.ts#L41)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [packages/tx-builder/src/index.ts:36](https://github.com/KasLabDevs/
 
 > `readonly` **address**: `string`
 
-Defined in: [packages/tx-builder/src/index.ts:37](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/index.ts#L37)
+Defined in: [packages/tx-builder/src/index.ts:42](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/index.ts#L42)
 
 ***
 
@@ -22,7 +22,7 @@ Defined in: [packages/tx-builder/src/index.ts:37](https://github.com/KasLabDevs/
 
 > `readonly` **amountSompi**: `bigint`
 
-Defined in: [packages/tx-builder/src/index.ts:38](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/index.ts#L38)
+Defined in: [packages/tx-builder/src/index.ts:43](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/index.ts#L43)
 
 ***
 
@@ -30,7 +30,7 @@ Defined in: [packages/tx-builder/src/index.ts:38](https://github.com/KasLabDevs/
 
 > `readonly` `optional` **covenant?**: [`CovenantBindingInput`](CovenantBindingInput.md)
 
-Defined in: [packages/tx-builder/src/index.ts:41](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/index.ts#L41)
+Defined in: [packages/tx-builder/src/index.ts:46](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/index.ts#L46)
 
 ***
 
@@ -38,6 +38,6 @@ Defined in: [packages/tx-builder/src/index.ts:41](https://github.com/KasLabDevs/
 
 > `readonly` `optional` **scriptPublicKey?**: `string`
 
-Defined in: [packages/tx-builder/src/index.ts:40](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/index.ts#L40)
+Defined in: [packages/tx-builder/src/index.ts:45](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/index.ts#L45)
 
 Future: Silverscript / custom script support

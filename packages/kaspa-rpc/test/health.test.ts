@@ -114,3 +114,30 @@ describe("RPC Health API", () => {
     expect(mockClient.close).toHaveBeenCalledTimes(1);
   });
 });
+
+// L1-10 · protocol by scheme (or option), never by a port substring; a node that does not report sync is not "synced"
+describe("L1-10 · health protocol and sync", () => {
+  it("rpcHealthProtocolOf: ws/wss and host:port ? wRPC; http/https ? HTTP; the option decides when given", async () => {
+    const { rpcHealthProtocolOf } = await import("../src/health");
+    expect(rpcHealthProtocolOf("ws://127.0.0.1:18510")).toBe("wrpc");
+    expect(rpcHealthProtocolOf("127.0.0.1:18610")).toBe("wrpc");
+    expect(rpcHealthProtocolOf("http://127.0.0.1:18210")).toBe("http");
+    expect(rpcHealthProtocolOf("https://node.example:443")).toBe("http");
+    expect(rpcHealthProtocolOf("http://127.0.0.1:18210", "wrpc")).toBe("wrpc");
+  });
+
+  it("a node that does not report isSynced: isSynced undefined, stale, degraded (it used to be true / healthy)", async () => {
+    const mockClient = {
+      connect: vi.fn().mockResolvedValue(undefined),
+      getServerInfo: vi.fn().mockResolvedValue({ serverVersion: "2.1.0", networkId: "simnet" }),
+      getBlockDagInfo: vi.fn().mockResolvedValue({ virtualDaaScore: 1n }),
+      disconnect: vi.fn()
+    };
+    vi.mocked(KaspaWrpcClient).mockReturnValue(mockClient as any);
+    const r = await checkKaspaRpcHealth({ url: "ws://127.0.0.1:18510" });
+    expect(r.isSynced).toBeUndefined();
+    expect(r.stale).toBe(true);
+    expect(r.status).toBe("degraded");
+    expect(r.protocol).toBe("WebSocket");
+  });
+});

@@ -6,7 +6,7 @@
 
 # Interface: MigrationStep
 
-Defined in: [packages/artifacts/src/migration.ts:22](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/migration.ts#L22)
+Defined in: [packages/artifacts/src/migration.ts:29](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/migration.ts#L29)
 
 A single versioned migration step that transforms an artifact payload
 from one schema version to the next.
@@ -17,7 +17,7 @@ from one schema version to the next.
 
 > `readonly` **description**: `string`
 
-Defined in: [packages/artifacts/src/migration.ts:28](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/migration.ts#L28)
+Defined in: [packages/artifacts/src/migration.ts:35](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/migration.ts#L35)
 
 Human-readable description of what this migration does
 
@@ -27,7 +27,7 @@ Human-readable description of what this migration does
 
 > `readonly` **fromVersion**: `string`
 
-Defined in: [packages/artifacts/src/migration.ts:24](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/migration.ts#L24)
+Defined in: [packages/artifacts/src/migration.ts:31](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/migration.ts#L31)
 
 Source version string (e.g., "0.1.0", "1.0.0-alpha")
 
@@ -37,7 +37,7 @@ Source version string (e.g., "0.1.0", "1.0.0-alpha")
 
 > `readonly` **toVersion**: `string`
 
-Defined in: [packages/artifacts/src/migration.ts:26](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/migration.ts#L26)
+Defined in: [packages/artifacts/src/migration.ts:33](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/migration.ts#L33)
 
 Target version string
 
@@ -47,7 +47,7 @@ Target version string
 
 > **transform**(`artifact`): [`ArtifactPayload`](../type-aliases/ArtifactPayload.md)
 
-Defined in: [packages/artifacts/src/migration.ts:33](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/migration.ts#L33)
+Defined in: [packages/artifacts/src/migration.ts:40](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/migration.ts#L40)
 
 Transform function. Receives a shallow clone of the artifact payload
 and returns the migrated payload. MUST NOT mutate the input.

@@ -6,6 +6,6 @@
 
 # Type Alias: ArtifactHandleErrorCode
 
-> **ArtifactHandleErrorCode** = `"ARTIFACT_NOT_FOUND"` \| `"ARTIFACT_AMBIGUOUS"` \| `"ARTIFACT_INPUT_IS_DIRECTORY"` \| `"ARTIFACT_INPUT_UNRECOGNIZED"` \| `"ARTIFACT_PATH_OUTSIDE_WORKSPACE"` \| `"ARTIFACT_READ_FAILED"`
+> **ArtifactHandleErrorCode** = [`ResolveErrorCode`](ResolveErrorCode.md) \| `"ARTIFACT_AMBIGUOUS"`
 
-Defined in: [packages/artifacts/src/artifact-handle.ts:30](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/artifact-handle.ts#L30)
+Defined in: [packages/artifacts/src/artifact-handle.ts:25](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/artifact-handle.ts#L25)

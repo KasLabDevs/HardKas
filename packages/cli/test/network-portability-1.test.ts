@@ -266,11 +266,14 @@ describe("C5 · rpc commands follow a declared network, with its identity checke
     expect(loopbackOnly(r.dialled, T.port)).toBe(true);
   });
 
-  it("NP-3e (contract) without --network or --url, `rpc info` still means the canonical localnet", async () => {
+  // L1-CORE-1 B2 · H1: the contract changed — in a workspace, no --network means the workspace's network (it meant the
+  // canonical localnet, which a testnet-10 workspace's operator does not run); outside a workspace it still does
+  it("NP-3e (contract, H1) without --network or --url, `rpc info` in a testnet-10 workspace reads the workspace's declared node, never 18210", async () => {
     const ws = workspace("c5e", "testnet-10", T.url);
     const r = await run("NP-3e", ["rpc", "info", "--json"], ws);
-    expect(r.json?.url, r.brief).toBe("ws://127.0.0.1:18210");
-    expect(r.dialled.some((d) => d.endsWith(`:${T.port}`)), JSON.stringify(r.dialled)).toBe(false);
+    expect(r.json?.url, r.brief).toBe(T.url);
+    expect(r.dialled.some((d) => d.endsWith(`:${T.port}`)), JSON.stringify(r.dialled)).toBe(true);
+    expect(r.dialled.some((d) => d.endsWith(":18210")), JSON.stringify(r.dialled)).toBe(false);
   });
 
   it("NP-3f `rpc doctor --endpoints wss://host/path` probes port 443 (the URL's scheme), never 18210", async () => {

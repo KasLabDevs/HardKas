@@ -2,12 +2,31 @@ import { execSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import zlib from "node:zlib";
 
 console.log("=== PHASE 10: PACKAGING SMOKE ===");
 
 const workspaceRoot = process.cwd();
+// The release version is the root manifest's (never a literal here).
+const releaseVersion = JSON.parse(fs.readFileSync(path.join(workspaceRoot, "package.json"), "utf8")).version;
 const tempPackDir = path.join(workspaceRoot, "tmp-packaging");
 const tempConsumerDir = fs.mkdtempSync(path.join(os.tmpdir(), "hardkas-smoke-consumer-"));
+
+/** The entry names of an npm tarball (gzip + ustar), without extracting anything to disk. */
+function tarballEntries(tgz) {
+  const tar = zlib.gunzipSync(tgz);
+  const names = [];
+  for (let off = 0; off + 512 <= tar.length; ) {
+    const header = tar.subarray(off, off + 512);
+    if (header.every((b) => b === 0)) break;
+    const field = (start, len) => header.subarray(start, start + len).toString("utf8").replace(/\0.*$/s, "");
+    const prefix = field(345, 155);
+    names.push((prefix ? `${prefix}/${field(0, 100)}` : field(0, 100)).replace(/^\.\//, ""));
+    const size = parseInt(field(124, 12).trim() || "0", 8);
+    off += 512 + Math.ceil(size / 512) * 512;
+  }
+  return names;
+}
 
 function run(cmd, cwd = workspaceRoot) {
   console.log(`> ${cmd} (in ${cwd})`);
@@ -79,46 +98,61 @@ try {
   console.log("\n5. Running CLI smoke tests...");
   const versionOut = run(`npx hardkas --version`, tempConsumerDir).trim();
   console.log(`Version output: ${versionOut}`);
-  if (!versionOut.includes("0.13.0-rc.1")) {
-    throw new Error(`CLI version mismatch. Expected 0.13.0-rc.1, got ${versionOut}`);
+  if (!versionOut.includes(releaseVersion)) {
+    throw new Error(`CLI version mismatch. Expected ${releaseVersion}, got ${versionOut}`);
   }
 
   const capabilitiesOut = run(`npx hardkas capabilities --json`, tempConsumerDir);
   const capJson = JSON.parse(capabilitiesOut);
   if (!capJson.capabilities) throw new Error("Missing capabilities in JSON output");
 
-  // 5b. Extension CLI Smoke Test (@hardkas/ext-l2)
-  console.log("\n5b. Running @hardkas/ext-l2 extension CLI smoke tests...");
+  // 5b. L1-CORE-1 B5: @hardkas/ext-l2 and @hardkas/pskt-native are private (not published), so they are not packed and
+  // the consumer has neither. INT9: @hardkas/l2 is private too (owner policy, provisional). The CLI must report the l2
+  // extension as not installed, not fail.
+  console.log("\n5b. Checking that the private packages were not packed and the CLI works without them...");
+  const packed = fs.readdirSync(tempPackDir);
+  for (const privatePkg of ["hardkas-ext-l2-", "hardkas-pskt-native-", "hardkas-l2-"]) {
+    if (packed.some((f) => f.startsWith(privatePkg))) throw new Error(`${privatePkg}*.tgz was packed but the package is private`);
+  }
+  // INT9: every published tarball carries its README.md and LICENSE (B5 found 20 of 31 without a README).
+  for (const t of packed) {
+    const entries = tarballEntries(fs.readFileSync(path.join(tempPackDir, t)));
+    for (const required of ["package/README.md", "package/LICENSE", "package/package.json"]) {
+      if (!entries.includes(required)) throw new Error(`${t} has no ${required}`);
+    }
+  }
+  console.log(`Every one of the ${packed.length} tarballs carries README.md and LICENSE.`);
   const extListOut = run(`npx hardkas extension list --json`, tempConsumerDir);
   const extListJson = JSON.parse(extListOut);
   const l2Ext = extListJson.result?.extensions?.find(e => e.id === "l2");
-  if (!l2Ext) throw new Error("Extension 'l2' not found in hardkas extension list");
-  if (l2Ext.status !== "loaded") throw new Error(`Extension 'l2' expected status 'loaded', got '${l2Ext.status}'`);
-  console.log(`Extension 'l2' loaded successfully (v${l2Ext.version}).`);
+  if (l2Ext && l2Ext.status !== "not_installed") throw new Error(`Extension 'l2' expected status 'not_installed', got '${l2Ext.status}'`);
+  console.log(`Extension 'l2': ${l2Ext ? l2Ext.status : "not listed"} (not published).`);
 
-  const l2NetworksOut = run(`npx hardkas l2 networks --json`, tempConsumerDir);
-  const l2NetworksJson = JSON.parse(l2NetworksOut);
-  if (!Array.isArray(l2NetworksJson)) throw new Error("Expected array of profiles from hardkas l2 networks --json");
-  console.log(`Verified hardkas l2 networks: found ${l2NetworksJson.length} profiles.`);
-
-  // 6. SDK and Extension Module Smoke Test
-  console.log("\n6. Running SDK and extension module smoke tests...");
+  // 6. SDK module smoke test
+  console.log("\n6. Running SDK module smoke tests...");
   const consumerScript = path.join(tempConsumerDir, "smoke.mjs");
+  const zkFixture = path.join(workspaceRoot, "fixtures", "toccata-v2", "zk", "groth16-multiplier");
   fs.writeFileSync(consumerScript, `
-import { HARDKAS_VERSION } from "@hardkas/sdk";
+import { HARDKAS_VERSION, pskt, verifyZkProofMath } from "@hardkas/sdk";
 import { HardkasSchemas as CoreSchemas } from "@hardkas/core";
 import { HardkasSchemas as ArtifactSchemas } from "@hardkas/artifacts";
-import extL2 from "@hardkas/ext-l2";
 
 console.log("SDK Version:", HARDKAS_VERSION);
 console.log("Core Schema TxPlan:", CoreSchemas.TxPlan);
 console.log("Artifact Schema TxPlan:", ArtifactSchemas.TxPlan);
-console.log("ext-l2 id:", extL2.id, "apiVersion:", extL2.apiVersion);
 
-if (HARDKAS_VERSION !== "0.13.0-rc.1") throw new Error("SDK version mismatch");
+if (HARDKAS_VERSION !== ${JSON.stringify(releaseVersion)}) throw new Error("SDK version mismatch");
 if (!CoreSchemas.TxPlan) throw new Error("CoreSchemas missing");
 if (!ArtifactSchemas.TxPlan) throw new Error("ArtifactSchemas missing");
-if (!extL2 || extL2.id !== "l2" || extL2.apiVersion !== 1) throw new Error("ext-l2 extension export invalid");
+
+// L1-CORE-1 B5: without @hardkas/pskt-native the native PSKT adapter is unavailable, and the SDK still imports.
+if (await pskt.registerNativeAdapter()) throw new Error("the native PSKT adapter registered without @hardkas/pskt-native");
+// L1-CORE-1 B5: snarkjs is an optional peer and is not installed here: the pairing is an engine error, typed.
+const zk = await verifyZkProofMath(${JSON.stringify(zkFixture)}, ${JSON.stringify(workspaceRoot)}, { allowWeakVerificationKey: true });
+console.log("ZK without snarkjs:", zk.status, zk.issues.map((i) => i.code).join(","));
+if (zk.status !== "ZK_GROTH16_VERIFIER_ERROR" || zk.verified || !zk.issues.some((i) => i.code === "ZK_ENGINE_UNAVAILABLE")) {
+  throw new Error("expected ZK_GROTH16_VERIFIER_ERROR with ZK_ENGINE_UNAVAILABLE without snarkjs");
+}
 `);
 
   run(`node smoke.mjs`, tempConsumerDir);

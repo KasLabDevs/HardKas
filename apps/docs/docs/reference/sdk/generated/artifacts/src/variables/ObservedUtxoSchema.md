@@ -8,4 +8,4 @@
 
 > `const` **ObservedUtxoSchema**: `ZodObject`\<\{ `amount`: `ZodString`; `index`: `ZodNumber`; `txId`: `ZodString`; \}, `"strip"`, `ZodTypeAny`, \{ `amount?`: `string`; `index?`: `number`; `txId?`: `string`; \}, \{ `amount?`: `string`; `index?`: `number`; `txId?`: `string`; \}\>
 
-Defined in: [packages/artifacts/src/schemas.ts:986](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/schemas.ts#L986)
+Defined in: [packages/artifacts/src/schemas.ts:1397](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/schemas.ts#L1397)

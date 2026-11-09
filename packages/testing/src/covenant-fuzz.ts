@@ -15,8 +15,8 @@ import type {
   createCovenantTestbed
 } from "./covenant-testbed.js";
 
-/** Maximum Kaspa supply in sompi (~28.7B KAS = 2_870_000_000_000_000_000 sompi). */
-export const MAX_SOMPI = 2_870_000_000_000_000_000n;
+/** SC-10 · the consensus MAX_SOMPI: 29,000,000,000 KAS = 2_900_000_000_000_000_000 sompi (rusty-kaspa v2.1.0 consensus/core/src/constants.rs:34). */
+export const MAX_SOMPI = 2_900_000_000_000_000_000n;
 /** Standard dust threshold in sompi for test covenants. */
 export const MIN_NON_DUST_SOMPI = 10_000n;
 

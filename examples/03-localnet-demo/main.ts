@@ -48,11 +48,12 @@ async function main() {
     console.log(`  \x1b[32m✔\x1b[0m Broadcast successful`);
     console.log(`  TxID: \x1b[36m${receipt.txId}\x1b[0m`);
 
-    console.log("\x1b[1m[4/4] Confirming...\x1b[0m");
-    process.stdout.write("  [░░░░░░░░░░] Polling DAG acceptance...");
-
-    const finalized = await hardkas.tx.confirm(receipt.txId, { timeout: 30000 });
-    process.stdout.write("\r  [\x1b[32m██████████\x1b[0m] 100% (Finalized)        \n");
+    // L-06 (2026-11-07): `tx.confirm` does not exist in the SDK (the demo failed here with "is not a function", hidden
+    // in CI by `|| echo "skipped (no node)"`). `tx.status` derives the state from this workspace's evidence and prints
+    // what it is, never a "Finalized" the evidence does not show.
+    console.log("\x1b[1m[4/4] Status...\x1b[0m");
+    const derived = await hardkas.tx.status(receipt.txId);
+    console.log(`  Derived status: \x1b[36m${derived.status}\x1b[0m`);
     console.log("");
 
     UI_section("Summary");

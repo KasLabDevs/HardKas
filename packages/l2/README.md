@@ -2,7 +2,11 @@
 
 EVM JSON-RPC tooling for **Igra**, an EVM-compatible L2 built on Kaspa. Kaspa L1 does not execute EVM.
 This package is a Lab: it is not part of the HardKAS L1 core (neither `@hardkas/cli` nor `@hardkas/sdk` depends on it),
-and the `hardkas l2` CLI group comes with the `l2` extension, `@hardkas/ext-l2` (`hardkas extension install l2`).
+and the `hardkas l2` CLI group comes with the `l2` extension, `@hardkas/ext-l2`.
+
+**Not published in this release.** `@hardkas/l2` and `@hardkas/ext-l2` are private workspace packages (owner policy,
+provisional, until their API, dependencies and promises are reviewed): `npm install @hardkas/l2` and
+`hardkas extension install l2` cannot fetch them from npm. See `docs/status/versioning.md` ("Not published").
 
 **This package is not a bridge.** HardKAS performs no deposits, withdrawals or custody. The bridge
 information it returns is a set of static assumptions, not observations. Pre-ZK and MPC bridge phases

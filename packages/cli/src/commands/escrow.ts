@@ -2,8 +2,7 @@ import { Command } from "commander";
 import fs from "node:fs";
 import path from "node:path";
 import pc from "picocolors";
-import { JsonWrpcKaspaClient } from "@hardkas/kaspa-rpc";
-import { nodeRpcUrl } from "@hardkas/core";
+import { assertMainnetTransactionsDisabled, loadManagedKaspaWasmSync } from "@hardkas/core";
 import {
   compileSilverScript,
   getSilContract,
@@ -25,6 +24,64 @@ function fail(code: string, message: string, exitCode = HardkasExitCode.RUNTIME_
   throw new HardkasCliError(code, message, { exitCode });
 }
 
+/** The most a rescue may pay in fee (the limit `prepare` already applied), enforced again at sign and broadcast. */
+const RESCUE_MAX_FEE_SOMPI = 500_000n;
+
+export interface RescueDraftSummary {
+  readonly networkId: string;
+  readonly outpoint: string;
+  readonly totalSompi: bigint;
+  readonly recoveredSompi: bigint;
+  readonly feeSompi: bigint;
+  /** The destination script the DRAFT pays (what is signed), and the address it encodes on the draft's network. */
+  readonly destinationScript: { readonly version: number; readonly script: string };
+  readonly destinationAddress: string | undefined;
+}
+
+/**
+ * CA-TX-06 · what a rescue package's DRAFT (the transaction that is signed and broadcast) really does, checked against
+ * the package's displayed fields (destination, amounts, fee, outpoint, network). Any difference is RESCUE_DRAFT_MISMATCH:
+ * `inspect` used to print the file's fields while `sign` signed whatever draft the file carried.
+ */
+export function checkRescuePackage(pkg: any): RescueDraftSummary {
+  if (pkg?.schema !== "hardkas.escrow.rescue.v1") fail("RESCUE_SCHEMA_INVALID", `Invalid draft schema: ${pkg?.schema}`);
+  const d = pkg.draft;
+  const mismatch = (what: string) => fail("RESCUE_DRAFT_MISMATCH", `The rescue draft does not do what the package says: ${what}. Nothing was signed or sent.`);
+  if (!d || !d.input || !Array.isArray(d.outputs)) mismatch("the package carries no spend draft");
+  const big = (v: unknown, what: string): bigint => {
+    if (typeof v === "string" && /^\d+$/.test(v)) return BigInt(v);
+    if (typeof v === "bigint") return v;
+    return mismatch(`${what} is not an amount`);
+  };
+  if (d.networkId !== pkg.networkId) mismatch(`the draft is for network ${String(d.networkId)}, the package says ${String(pkg.networkId)}`);
+  const outpoint = `${String(d.input.outpoint?.transactionId).toLowerCase()}:${Number(d.input.outpoint?.index)}`;
+  if (outpoint !== String(pkg.outpoint).toLowerCase()) mismatch(`the draft spends ${outpoint}, the package says ${String(pkg.outpoint)}`);
+  if (d.outputs.length !== 1) mismatch(`the draft has ${d.outputs.length} outputs, a rescue has one`);
+  const total = big(d.input.amountSompi, "the draft's input");
+  const recovered = big(d.outputs[0].valueSompi, "the draft's output");
+  const fee = big(d.feeSompi, "the draft's fee");
+  if (total - recovered !== fee) mismatch(`input ${total} - output ${recovered} is not the declared fee ${fee}`);
+  if (big(pkg.totalSompi, "totalSompi") !== total) mismatch(`the draft spends ${total} sompi, the package says ${String(pkg.totalSompi)}`);
+  if (big(pkg.recoveredSompi, "recoveredSompi") !== recovered) mismatch(`the draft recovers ${recovered} sompi, the package says ${String(pkg.recoveredSompi)}`);
+  if (big(pkg.feeSompi, "feeSompi") !== fee) mismatch(`the draft pays ${fee} sompi of fee, the package says ${String(pkg.feeSompi)}`);
+  if (fee > RESCUE_MAX_FEE_SOMPI) fail("ESCROW_FEE_EXCESSIVE_REFUSED", `The rescue pays ${fee} sompi of fee, above ${RESCUE_MAX_FEE_SOMPI}. Nothing was signed or sent.`);
+  const k: any = loadManagedKaspaWasmSync();
+  const out0 = d.outputs[0].scriptPublicKey ?? {};
+  const destinationScript = { version: Number(out0.version ?? 0), script: String(out0.script ?? "").toLowerCase() };
+  if (typeof pkg.targetAddress !== "string" || !k.Address.validate(pkg.targetAddress)) mismatch(`the package's target ${String(pkg.targetAddress)} is not a Kaspa address`);
+  const target = k.payToAddressScript(new k.Address(pkg.targetAddress));
+  if (Number(target.version) !== destinationScript.version || String(target.script).toLowerCase() !== destinationScript.script) {
+    mismatch(`the draft pays script ${destinationScript.script}, not the package's target ${pkg.targetAddress}`);
+  }
+  let destinationAddress: string | undefined;
+  try {
+    destinationAddress = String(k.addressFromScriptPublicKey(new k.ScriptPublicKey(destinationScript.version, destinationScript.script), d.networkId));
+  } catch {
+    destinationAddress = undefined;
+  }
+  return { networkId: String(d.networkId), outpoint, totalSompi: total, recoveredSompi: recovered, feeSompi: fee, destinationScript, destinationAddress };
+}
+
 export function registerEscrowCommands(program: Command) {
   const escrow = program
     .command("escrow")
@@ -41,7 +98,8 @@ export function registerEscrowCommands(program: Command) {
     .requiredOption("--address <address>", "Legacy escrow P2SH address")
     .requiredOption("--outpoint <outpoint>", "Funding outpoint to spend (txId:index)")
     .requiredOption("--to <address>", "Destination address to recover funds to")
-    .option("--network <network>", "Network id (default simnet)", "simnet")
+    .option("--network <network>", "Network id (default simnet); mainnet refused; testnet-<n> needs experimental + network.allowPublic", "simnet")
+    .option("--url <url>", "Node wRPC (JSON) endpoint (default: the one the workspace declares for the network; simnet: the canonical localnet)")
     .option("--out <file>", "Output draft file path (default rescue-v1-plan.draft.json)", "rescue-v1-plan.draft.json")
     .option("--fee <sompi>", "Miner fee in sompi (default 400000 sompi = 0.004 KAS)", "400000")
     .option("--buyer-pk <hex>", "Buyer x-only public key (32 bytes hex)")
@@ -59,8 +117,11 @@ export function registerEscrowCommands(program: Command) {
         return fail("ESCROW_FEE_EXCESSIVE_REFUSED", `Requested rescue fee (${feeSompi} sompi) exceeds maximum safe fee of 500000 sompi.`);
       }
 
-      const rpcUrl = nodeRpcUrl();
-      const rpc = new JsonWrpcKaspaClient({ rpcUrl, expectedNetworkId: opts.network });
+      // L1-CORE-1 B3: the node of the network asked for (--url, else the workspace's declared endpoint; it was the
+      // canonical localnet only), proven before anything is read from it; never mainnet
+      assertMainnetTransactionsDisabled("broadcast", [opts.network], "escrow rescue-v1 prepare");
+      const { resolveL1NodeTarget, proveL1Node } = await import("../runners/l1-node-target.js");
+      const { rpc } = await proveL1Node(await resolveL1NodeTarget(String(opts.network), opts.url));
       let utxoEntry: any;
       try {
         const res = await rpc.getUtxosByAddresses([opts.address]);
@@ -185,9 +246,9 @@ export function registerEscrowCommands(program: Command) {
       const raw = fs.readFileSync(filePath, "utf8");
       const pkg = JSON.parse(raw);
 
-      if (pkg.schema !== "hardkas.escrow.rescue.v1") {
-        return fail("RESCUE_SCHEMA_INVALID", `Invalid draft schema: ${pkg.schema}`);
-      }
+      // CA-TX-06: what is signed is the draft; it must do exactly what the package shows (destination, amounts, fee)
+      checkRescuePackage(pkg);
+      assertMainnetTransactionsDisabled("sign", [pkg.networkId, pkg.draft?.networkId], "escrow rescue-v1 sign");
 
       const { listDevAccountsSync, getOrCreateDevAccount, signSilverSpend } = await import("@hardkas/accounts");
       const accounts = listDevAccountsSync(process.cwd());
@@ -223,15 +284,18 @@ export function registerEscrowCommands(program: Command) {
       const filePath = path.resolve(process.cwd(), draftFile);
       if (!fs.existsSync(filePath)) return fail("RESCUE_FILE_NOT_FOUND", `File not found: ${filePath}`);
       const pkg = JSON.parse(fs.readFileSync(filePath, "utf8"));
+      // CA-TX-06: shown from the DRAFT (what would be signed), after checking that the package's fields agree with it
+      const s = checkRescuePackage(pkg);
 
-      if (opts.json) return out().writeJson(pkg);
+      if (opts.json) return out().writeJson({ ...pkg, verifiedDraft: { ...s, totalSompi: s.totalSompi.toString(), recoveredSompi: s.recoveredSompi.toString(), feeSompi: s.feeSompi.toString() } });
 
-      out().writeLine(pc.bold("HardKAS Escrow v1 Rescue Plan"));
-      out().writeLine(`  Outpoint:    ${pkg.outpoint}`);
-      out().writeLine(`  Destination: ${pkg.targetAddress}`);
-      out().writeLine(`  Total Input: ${pkg.totalSompi} sompi`);
-      out().writeLine(`  Recovered:   ${pc.green(pkg.recoveredSompi)} sompi`);
-      out().writeLine(`  Miner Fee:   ${pc.yellow(pkg.feeSompi)} sompi`);
+      out().writeLine(pc.bold("HardKAS Escrow v1 Rescue Plan (from the draft that is signed)"));
+      out().writeLine(`  Network:     ${s.networkId}`);
+      out().writeLine(`  Outpoint:    ${s.outpoint}`);
+      out().writeLine(`  Destination: ${s.destinationAddress ?? `script ${s.destinationScript.script}`}`);
+      out().writeLine(`  Total Input: ${s.totalSompi} sompi`);
+      out().writeLine(`  Recovered:   ${pc.green(String(s.recoveredSompi))} sompi`);
+      out().writeLine(`  Miner Fee:   ${pc.yellow(String(s.feeSompi))} sompi`);
       out().writeLine(`  Signatures:  ${Object.keys(pkg.signatures || {}).join(", ") || "(none)"}`);
     });
 
@@ -239,12 +303,25 @@ export function registerEscrowCommands(program: Command) {
   rescue
     .command("broadcast <draft-file>")
     .description("Finalize and broadcast the signed rescue transaction to the network")
-    .option("--network <network>", "Network (default simnet)", "simnet")
+    .option("--network <network>", "Network (default: the draft's); must be the draft's")
+    .option("--url <url>", "Node wRPC (JSON) endpoint (default: the one the workspace declares for the draft's network; simnet: the canonical localnet)")
     .option("--json", "Output as JSON", false)
     .action(async (draftFile: string, opts: any) => {
       const filePath = path.resolve(process.cwd(), draftFile);
       if (!fs.existsSync(filePath)) return fail("RESCUE_FILE_NOT_FOUND", `File not found: ${filePath}`);
       const pkg = JSON.parse(fs.readFileSync(filePath, "utf8"));
+      // CA-TX-06: the draft is what is sent; the network is the draft's (a different --network is refused), never mainnet,
+      // and the node must prove its identity before anything is sent (L1-CORE-1 B3: any node network, see below)
+      const s = checkRescuePackage(pkg);
+      const network = opts.network ?? s.networkId;
+      if (network !== s.networkId) {
+        return fail("RESCUE_NETWORK_MISMATCH", `--network ${network} is not the draft's network ${s.networkId}. Nothing was sent.`);
+      }
+      assertMainnetTransactionsDisabled("broadcast", [network], "escrow rescue-v1 broadcast");
+      // L1-CORE-1 B3: the draft's network's node (--url, else the workspace's declared endpoint), proven before anything
+      // is sent: container + digest for the managed localnet, its own report for any other node (only simnet was proven)
+      const { resolveL1NodeTarget, proveL1Node } = await import("../runners/l1-node-target.js");
+      const target = await resolveL1NodeTarget(String(network), opts.url);
 
       if (!pkg.signatures?.buyer || !pkg.signatures?.seller) {
         return fail("RESCUE_INCOMPLETE_SIGNATURES", "Rescue requires both 'buyer' and 'seller' signatures before broadcast.");
@@ -258,8 +335,7 @@ export function registerEscrowCommands(program: Command) {
         pkg.signatures
       );
 
-      const rpcUrl = nodeRpcUrl();
-      const rpc = new JsonWrpcKaspaClient({ rpcUrl, expectedNetworkId: opts.network || pkg.networkId || "simnet" });
+      const { rpc } = await proveL1Node(target);
       let txId: string;
       try {
         txId = await submitSilverTransaction(rpc, finalized.rpcTransaction, "escrow-v1-rescue", finalized.txId);

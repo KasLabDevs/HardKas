@@ -1,12 +1,12 @@
 import { WalletManagerImpl, WalletStateStoreJson, AddressManager } from '@hardkas/accounts';
 import { WalletQuery, WalletQueryProvider } from '@hardkas/query';
-import { covenantIdOf, toTxBuilderUtxo, TxPlanService, type UtxoProvider, type Utxo } from '@hardkas/tx-builder';
+import { covenantIdOf, toTxBuilderUtxo, TxPlanService, assertFeeWithinLimitInForce, DEFAULT_MAX_FEE_SOMPI, type UtxoProvider, type Utxo } from '@hardkas/tx-builder';
 import { WalletUtxoApi } from './utxos.js';
 import { UtxoControlStore } from './stores/utxo-control-store.js';
 import { logger, metrics, tracer } from '@hardkas/observability';
 import { UtxoWatchEngine, type WalletWatchHandle, type WalletWatchListener } from './watch.js';
 import { calculateDynamicFeeRate, FeePriority } from './fee-estimator.js';
-import { assertMainnetTransactionsDisabled, HardkasError, networkTypeOf, isMainnetNetworkId, isSimnetNetworkId } from '@hardkas/core';
+import { assertMainnetTransactionsDisabled, HardkasError, networkTypeOf, isMainnetNetworkId, isSimnetNetworkId, parseMaxFeeSompi } from '@hardkas/core';
 import {
     assertBroadcastNodeIdentity,
     canonicalNetworkId,
@@ -46,6 +46,13 @@ export interface WalletToolkitOptions {
     coinbaseMaturity?: bigint;
     /** The node's wRPC endpoint for watch(). Supplied by the caller (the SDK passes its node's); the toolkit does not resolve configuration. */
     rpcUrl?: string;
+    /**
+     * TX-05: the most a spend of this wallet may pay in total fee, in sompi. Checked before signing (FEE_EXCEEDS_MAX);
+     * default 10,000,000 sompi (0.1 KAS, `DEFAULT_MAX_FEE_SOMPI` of @hardkas/tx-builder).
+     */
+    maxFeeSompi?: bigint | number | string;
+    /** CA-TX-01: upper bound on the node's fee-rate estimate, sompi per gram (FEE_RATE_ABOVE_BOUND above it); default 10,000. */
+    maxFeeRate?: bigint;
 }
 
 /**
@@ -289,6 +296,11 @@ export class WalletToolkit {
         };
     }
 
+    /** The fee rate for a priority, from the node's estimate (bounded), or the relay minimum (HK-09). */
+    private feeRateFor(priority: FeePriority | undefined) {
+        return calculateDynamicFeeRate(this.options.rpc, priority || "normal", undefined, this.options.maxFeeRate !== undefined ? { maxFeeRate: this.options.maxFeeRate } : {});
+    }
+
     public async estimateFee(opts: { to: string; amount: bigint; priority?: FeePriority; feeRate?: bigint }): Promise<{ fee: bigint; feeRate: bigint; estimatedMass: bigint; estimatedFee: bigint; totalOut: bigint; plan: any; evidence: "dynamic" | "heuristic"; mempoolSize?: number }> {
         const addr = await this.receive();
         const availableUtxos = await this.utxos.list();
@@ -298,7 +310,7 @@ export class WalletToolkit {
         let mempoolSize: number | undefined;
 
         if (!finalFeeRate) {
-            const dynamic = await calculateDynamicFeeRate(this.options.rpc, opts.priority || "normal");
+            const dynamic = await this.feeRateFor(opts.priority);
             finalFeeRate = dynamic.feeRate;
             evidence = dynamic.evidence;
             mempoolSize = dynamic.mempoolSize;
@@ -321,7 +333,7 @@ export class WalletToolkit {
             fromAddress: addr,
             availableUtxos: availableUtxos as any[],
             outputs: [{ address: opts.to, amountSompi: opts.amount }],
-            feeRate: finalFeeRate || 1n,
+            feeRate: finalFeeRate,
             ...(virtualDaaScore !== undefined ? { virtualDaaScore } : {}),
             ...(networkId !== undefined ? { networkId } : {})
         });
@@ -330,7 +342,7 @@ export class WalletToolkit {
 
         return {
             fee: plan.estimatedFeeSompi,
-            feeRate: finalFeeRate || 1n,
+            feeRate: finalFeeRate,
             estimatedMass: exactMass,
             estimatedFee: plan.estimatedFeeSompi,
             totalOut: opts.amount + plan.estimatedFeeSompi,
@@ -430,6 +442,16 @@ export class WalletToolkit {
             (err as any).code = "MISSING_SIGNER";
             throw err;
         }
+        // TX-05 / CA-TX-01: the planned fee is within the wallet's limit (`maxFeeSompi`, else HardKAS's default) before
+        // anything is signed — the toolkit used to have no fee limit at all
+        assertFeeWithinLimitInForce(
+            BigInt(plan.estimatedFeeSompi),
+            this.options.maxFeeSompi !== undefined
+                ? { maxFeeSompi: parseMaxFeeSompi(this.options.maxFeeSompi, "WalletToolkit maxFeeSompi"), source: "plan" }
+                : { maxFeeSompi: DEFAULT_MAX_FEE_SOMPI, source: "default" },
+            "sign",
+            this.options.networkId
+        );
         // P0-TX-SAFETY-1B: the identity is read again right before signing — nothing is signed for a node that does not
         // say, now, that it serves the declared network
         const network = await this.verifySpendNetwork("signAndBroadcast");
@@ -541,8 +563,7 @@ export class WalletToolkit {
 
         let finalFeeRate = opts.feeRate;
         if (!finalFeeRate) {
-            const dynamic = await calculateDynamicFeeRate(this.options.rpc, opts.priority || "normal");
-            finalFeeRate = dynamic.feeRate;
+            finalFeeRate = (await this.feeRateFor(opts.priority)).feeRate;
         }
 
         // Fetch current DAA score for coinbase maturity filtering (the network is the verified one, never this read's)
@@ -563,7 +584,7 @@ export class WalletToolkit {
             fromAddress: addr,
             availableUtxos: mappedUtxos,
             outputs: builderOutputs,
-            feeRate: finalFeeRate || 1n,
+            feeRate: finalFeeRate,
             ...(virtualDaaScore !== undefined ? { virtualDaaScore } : {}),
             networkId,
             ...(opts.changeAddress !== undefined ? { changeAddress: opts.changeAddress } : {})
@@ -618,13 +639,24 @@ export class WalletToolkit {
         networkId: string | undefined;
         insufficient: string;
     }) {
-        const service = new TxPlanService({ async getUtxos() { return []; } });
+        const service = new TxPlanService({ async getUtxos() { return []; } }, this.options.coinbaseMaturity !== undefined ? { coinbaseMaturity: this.options.coinbaseMaturity } : {});
+        // HK-10: the consolidation planner leaves immature coinbases out; it needs the virtual DAA score to tell
+        let virtualDaaScore: bigint | undefined;
+        if (this.options.rpc?.getBlockDagInfo) {
+            try {
+                const v = (await this.options.rpc.getBlockDagInfo())?.virtualDaaScore;
+                if (v !== undefined && v !== null) virtualDaaScore = BigInt(v);
+            } catch {
+                virtualDaaScore = undefined;
+            }
+        }
         try {
             const { plan } = await service.planConsolidation({
                 fromAddress: params.fromAddress,
                 selectedUtxos: params.utxos.map((u) => toTxBuilderUtxo(u)),
                 toAddress: params.toAddress,
                 feeRate: params.feeRate,
+                ...(virtualDaaScore !== undefined ? { virtualDaaScore } : {}),
                 ...(params.networkId !== undefined ? { networkId: params.networkId } : {})
             });
             return plan;
@@ -644,8 +676,7 @@ export class WalletToolkit {
 
         let finalFeeRate = opts.feeRate;
         if (!finalFeeRate) {
-            const dynamic = await calculateDynamicFeeRate(this.options.rpc, opts.priority || "normal");
-            finalFeeRate = dynamic.feeRate;
+            finalFeeRate = (await this.feeRateFor(opts.priority)).feeRate;
         }
 
         // Filter immature coinbase UTXOs (the network is the verified one, never this read's)
@@ -679,7 +710,7 @@ export class WalletToolkit {
             fromAddress: addr,
             utxos: availableUtxos,
             toAddress: opts.to,
-            feeRate: finalFeeRate || 1n,
+            feeRate: finalFeeRate,
             networkId,
             insufficient: "Insufficient funds to cover sweep fee"
         });
@@ -710,8 +741,7 @@ export class WalletToolkit {
 
         let finalFeeRate = opts.feeRate;
         if (!finalFeeRate) {
-            const dynamic = await calculateDynamicFeeRate(this.options.rpc, opts.priority || "normal");
-            finalFeeRate = dynamic.feeRate;
+            finalFeeRate = (await this.feeRateFor(opts.priority)).feeRate;
         }
 
         // the network is the verified one, never adopted from a read
@@ -721,7 +751,7 @@ export class WalletToolkit {
             fromAddress: addr,
             utxos: selectedUtxos,
             toAddress,
-            feeRate: finalFeeRate || 1n,
+            feeRate: finalFeeRate,
             networkId,
             insufficient: "Insufficient funds to cover consolidate fee"
         });

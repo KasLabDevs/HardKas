@@ -218,6 +218,10 @@ export class DockerKaspadRunner {
       "-d",
       "--name",
       this.options.containerName,
+      // L1-CORE-1 B4: the node HardKAS starts says so (the simnet harness labels its own containers the same way); the
+      // identity check stays the container + image digest + endpoint, never this label.
+      "--label",
+      "hardkas.role=localnet-node",
       "-p",
       `127.0.0.1:${this.options.ports.rpc}:${this.options.ports.rpc}`,
       "-p",

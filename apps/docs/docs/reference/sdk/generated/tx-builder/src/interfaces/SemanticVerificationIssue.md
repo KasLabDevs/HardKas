@@ -6,7 +6,7 @@
 
 # Interface: SemanticVerificationIssue
 
-Defined in: [packages/tx-builder/src/verify.ts:23](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/verify.ts#L23)
+Defined in: [packages/tx-builder/src/verify.ts:23](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/verify.ts#L23)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [packages/tx-builder/src/verify.ts:23](https://github.com/KasLabDevs
 
 > **code**: `string`
 
-Defined in: [packages/tx-builder/src/verify.ts:24](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/verify.ts#L24)
+Defined in: [packages/tx-builder/src/verify.ts:24](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/verify.ts#L24)
 
 ***
 
@@ -22,7 +22,7 @@ Defined in: [packages/tx-builder/src/verify.ts:24](https://github.com/KasLabDevs
 
 > **message**: `string`
 
-Defined in: [packages/tx-builder/src/verify.ts:26](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/verify.ts#L26)
+Defined in: [packages/tx-builder/src/verify.ts:26](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/verify.ts#L26)
 
 ***
 
@@ -30,7 +30,7 @@ Defined in: [packages/tx-builder/src/verify.ts:26](https://github.com/KasLabDevs
 
 > `optional` **path?**: `string`
 
-Defined in: [packages/tx-builder/src/verify.ts:27](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/verify.ts#L27)
+Defined in: [packages/tx-builder/src/verify.ts:27](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/verify.ts#L27)
 
 ***
 
@@ -38,4 +38,4 @@ Defined in: [packages/tx-builder/src/verify.ts:27](https://github.com/KasLabDevs
 
 > **severity**: [`SemanticVerificationSeverity`](../type-aliases/SemanticVerificationSeverity.md)
 
-Defined in: [packages/tx-builder/src/verify.ts:25](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/verify.ts#L25)
+Defined in: [packages/tx-builder/src/verify.ts:25](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/verify.ts#L25)

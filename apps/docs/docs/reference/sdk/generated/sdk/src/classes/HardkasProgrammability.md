@@ -6,7 +6,7 @@
 
 # Class: HardkasProgrammability
 
-Defined in: [packages/sdk/src/programmability.ts:117](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/programmability.ts#L117)
+Defined in: [packages/sdk/src/programmability.ts:119](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/programmability.ts#L119)
 
 ## Constructors
 
@@ -14,7 +14,7 @@ Defined in: [packages/sdk/src/programmability.ts:117](https://github.com/KasLabD
 
 > **new HardkasProgrammability**(`sdk`): `HardkasProgrammability`
 
-Defined in: [packages/sdk/src/programmability.ts:131](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/programmability.ts#L131)
+Defined in: [packages/sdk/src/programmability.ts:133](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/programmability.ts#L133)
 
 #### Parameters
 
@@ -32,7 +32,7 @@ Defined in: [packages/sdk/src/programmability.ts:131](https://github.com/KasLabD
 
 > `readonly` **app**: `object`
 
-Defined in: [packages/sdk/src/programmability.ts:124](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/programmability.ts#L124)
+Defined in: [packages/sdk/src/programmability.ts:126](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/programmability.ts#L126)
 
 #### plan
 
@@ -60,7 +60,7 @@ Defined in: [packages/sdk/src/programmability.ts:124](https://github.com/KasLabD
 
 > `readonly` **corpus**: `object`
 
-Defined in: [packages/sdk/src/programmability.ts:118](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/programmability.ts#L118)
+Defined in: [packages/sdk/src/programmability.ts:120](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/programmability.ts#L120)
 
 #### verify
 
@@ -88,7 +88,7 @@ Defined in: [packages/sdk/src/programmability.ts:118](https://github.com/KasLabD
 
 > **capabilities**(): `Promise`\<[`ProgrammabilityCapabilitiesResult`](../interfaces/ProgrammabilityCapabilitiesResult.md)\>
 
-Defined in: [packages/sdk/src/programmability.ts:140](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/programmability.ts#L140)
+Defined in: [packages/sdk/src/programmability.ts:142](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/programmability.ts#L142)
 
 #### Returns
 
@@ -100,7 +100,7 @@ Defined in: [packages/sdk/src/programmability.ts:140](https://github.com/KasLabD
 
 > **inspect**(`options`): `Promise`\<[`ProgrammabilityInspectResult`](../interfaces/ProgrammabilityInspectResult.md)\>
 
-Defined in: [packages/sdk/src/programmability.ts:144](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/programmability.ts#L144)
+Defined in: [packages/sdk/src/programmability.ts:146](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/programmability.ts#L146)
 
 #### Parameters
 
@@ -124,7 +124,7 @@ Defined in: [packages/sdk/src/programmability.ts:144](https://github.com/KasLabD
 
 > **verify**(`options`): `Promise`\<[`ProgrammabilityVerifyResult`](../interfaces/ProgrammabilityVerifyResult.md)\>
 
-Defined in: [packages/sdk/src/programmability.ts:187](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/programmability.ts#L187)
+Defined in: [packages/sdk/src/programmability.ts:189](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/programmability.ts#L189)
 
 #### Parameters
 

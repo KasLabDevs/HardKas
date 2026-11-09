@@ -4,6 +4,7 @@ import {
   KASPAD_REFERENCE_IMAGE,
   CANONICAL_NODE_EXPECTATION,
   assertNodeIdentityVerified,
+  assertNodeKind,
   nodeRpcUrl,
   type NodeIdentityRecord
 } from "@hardkas/core";
@@ -47,6 +48,92 @@ export interface SimnetNodeHarnessOptions {
   utxoIndex?: boolean;
   txIndex?: boolean;
   startupTimeoutMs?: number;
+  /**
+   * Keep the node's database in a host directory under this root (`<root>/hardkas-simnet-<port>-<stamp>`, bind-mounted
+   * on the container's `/app/data`) instead of the container's anonymous volume. Default: HARDKAS_TEST_SIMNET_DATA_ROOT.
+   * A node with host data can be restarted with its chain (restart()); the directory is left in place for inspection.
+   */
+  dataRoot?: string;
+  /** Like dataRoot, under the OS temp directory when neither dataRoot nor HARDKAS_TEST_SIMNET_DATA_ROOT is set. */
+  persistData?: boolean;
+  /** Extra Docker labels for the container, besides the harness role and run id. Default: HARDKAS_TEST_SIMNET_LABELS. */
+  labels?: Readonly<Record<string, string>>;
+}
+
+/** Root directory for host-side node data (see SimnetNodeHarnessOptions.dataRoot). */
+export const HARDKAS_TEST_SIMNET_DATA_ROOT_ENV = "HARDKAS_TEST_SIMNET_DATA_ROOT";
+/** Extra container labels, `key=value` pairs separated by commas (see SimnetNodeHarnessOptions.labels). */
+export const HARDKAS_TEST_SIMNET_LABELS_ENV = "HARDKAS_TEST_SIMNET_LABELS";
+
+/**
+ * Host port range `low-high` (inclusive) for the node the harness starts (default: any free port the OS gives). Lets
+ * several sessions share one machine, each inside its own range. A range touching a canonical localnet port is refused.
+ */
+export const HARDKAS_TEST_SIMNET_PORT_RANGE_ENV = "HARDKAS_TEST_SIMNET_PORT_RANGE";
+/** The canonical localnet's host ports (gRPC and JSON wRPC of every network): never inside a harness range. */
+const CANONICAL_LOCALNET_PORT_SPAN = { low: 16110, high: 18211 } as const;
+
+/** Parses HARDKAS_TEST_SIMNET_PORT_RANGE ("low-high"). Empty: unbounded (undefined). */
+export function parseSimnetPortRange(raw: string | undefined): { low: number; high: number } | undefined {
+  if (!raw || raw.trim() === "") return undefined;
+  const m = /^\s*(\d+)\s*-\s*(\d+)\s*$/.exec(raw);
+  const low = m ? Number(m[1]) : NaN;
+  const high = m ? Number(m[2]) : NaN;
+  if (!m || !(low >= 1024 && high <= 65535 && low <= high)) {
+    throw new Error(`SIMNET_PORT_RANGE_INVALID: '${raw}' is not low-high within 1024..65535 (${HARDKAS_TEST_SIMNET_PORT_RANGE_ENV})`);
+  }
+  if (low <= CANONICAL_LOCALNET_PORT_SPAN.high && high >= CANONICAL_LOCALNET_PORT_SPAN.low) {
+    throw new Error(`SIMNET_PORT_RANGE_CANONICAL: '${raw}' overlaps the canonical localnet ports ${CANONICAL_LOCALNET_PORT_SPAN.low}..${CANONICAL_LOCALNET_PORT_SPAN.high}`);
+  }
+  return { low, high };
+}
+
+/** The first port of `range`, from offset `start` and wrapping around, that `isFree` accepts. */
+export async function pickSimnetHostPort(
+  range: { low: number; high: number },
+  isFree: (port: number) => Promise<boolean>,
+  start = Math.floor(Math.random() * (range.high - range.low + 1))
+): Promise<number> {
+  const size = range.high - range.low + 1;
+  for (let n = 0; n < size; n++) {
+    const port = range.low + ((start + n) % size);
+    if (await isFree(port)) return port;
+  }
+  throw new Error(`SIMNET_PORT_RANGE_EXHAUSTED: no free port in ${range.low}-${range.high} (${HARDKAS_TEST_SIMNET_PORT_RANGE_ENV})`);
+}
+
+/** Whether nothing listens on 127.0.0.1:`port` and it can be bound there now. */
+export async function simnetHostPortIsFree(port: number): Promise<boolean> {
+  const listening = await new Promise<boolean>((resolve) => {
+    const socket = new net.Socket();
+    socket.setTimeout(300);
+    socket.once("error", () => (socket.destroy(), resolve(false)));
+    socket.once("timeout", () => (socket.destroy(), resolve(false)));
+    socket.connect(port, "127.0.0.1", () => (socket.destroy(), resolve(true)));
+  });
+  if (listening) return false;
+  return new Promise<boolean>((resolve) => {
+    const server = net.createServer();
+    server.unref();
+    server.once("error", () => resolve(false));
+    server.listen(port, "127.0.0.1", () => server.close(() => resolve(true)));
+  });
+}
+
+/** Parses HARDKAS_TEST_SIMNET_LABELS. A pair without `=`, an empty key, or a role/run label (the harness owns them) throws. */
+export function parseSimnetExtraLabels(raw: string | undefined): Record<string, string> {
+  const labels: Record<string, string> = {};
+  if (!raw || raw.trim() === "") return labels;
+  for (const pair of raw.split(",")) {
+    const at = pair.indexOf("=");
+    const key = at > 0 ? pair.slice(0, at).trim() : "";
+    if (!key) throw new Error(`SIMNET_LABEL_INVALID: '${pair}' is not key=value (${HARDKAS_TEST_SIMNET_LABELS_ENV})`);
+    if (key === SIMNET_HARNESS_ROLE_LABEL || key === SIMNET_HARNESS_RUN_LABEL) {
+      throw new Error(`SIMNET_LABEL_RESERVED: '${key}' is set by the harness itself`);
+    }
+    labels[key] = pair.slice(at + 1).trim();
+  }
+  return labels;
 }
 
 /** Environment variable carrying the run id shared by every worker of one test invocation. */
@@ -74,6 +161,12 @@ export interface SimnetDockerRunSpec {
   readonly runId: string;
   readonly utxoIndex?: boolean | undefined;
   readonly txIndex?: boolean | undefined;
+  /** Extra labels (never the role or run label, which are always the harness's own). */
+  readonly labels?: Readonly<Record<string, string>> | undefined;
+  /** Host directory bind-mounted on `/app/data` (the image's data volume). */
+  readonly hostDataDir?: string | undefined;
+  /** `--reset-db` (default true). A restart over existing host data omits it, so the chain survives. */
+  readonly resetDb?: boolean | undefined;
 }
 
 /**
@@ -94,16 +187,16 @@ export function buildSimnetDockerRunArgs(spec: SimnetDockerRunSpec): string[] {
     "--label",
     `${SIMNET_HARNESS_ROLE_LABEL}=${SIMNET_HARNESS_ROLE}`,
     "--label",
-    `${SIMNET_HARNESS_RUN_LABEL}=${spec.runId}`,
-    "-p",
-    `127.0.0.1:${spec.rpcPort}:${spec.rpcPort}`,
-    spec.image,
-    "kaspad",
-    "--simnet",
-    `--rpclisten-json=0.0.0.0:${spec.rpcPort}`,
-    "--enable-unsynced-mining",
-    "--reset-db"
+    `${SIMNET_HARNESS_RUN_LABEL}=${spec.runId}`
   ];
+  for (const [key, value] of Object.entries(spec.labels ?? {})) {
+    if (key === SIMNET_HARNESS_ROLE_LABEL || key === SIMNET_HARNESS_RUN_LABEL) continue;
+    args.push("--label", `${key}=${value}`);
+  }
+  args.push("-p", `127.0.0.1:${spec.rpcPort}:${spec.rpcPort}`);
+  if (spec.hostDataDir) args.push("-v", `${spec.hostDataDir}:/app/data`);
+  args.push(spec.image, "kaspad", "--simnet", `--rpclisten-json=0.0.0.0:${spec.rpcPort}`, "--enable-unsynced-mining");
+  if (spec.resetDb !== false) args.push("--reset-db");
   if (spec.utxoIndex) args.push("--utxoindex");
   if (spec.txIndex) args.push("--txindex");
   return args;
@@ -126,6 +219,8 @@ export interface SimnetBinarySpec {
   readonly appDir: string;
   readonly utxoIndex?: boolean | undefined;
   readonly txIndex?: boolean | undefined;
+  /** `--reset-db` (default true); a restart omits it. */
+  readonly resetDb?: boolean | undefined;
 }
 
 /**
@@ -144,9 +239,9 @@ export function buildSimnetBinaryArgs(spec: SimnetBinarySpec): string[] {
     "--nogrpc",
     "--disable-upnp",
     `--appdir=${spec.appDir}`,
-    "--enable-unsynced-mining",
-    "--reset-db"
+    "--enable-unsynced-mining"
   ];
+  if (spec.resetDb !== false) args.push("--reset-db");
   if (spec.utxoIndex) args.push("--utxoindex");
   if (spec.txIndex) args.push("--txindex");
   return args;
@@ -283,16 +378,30 @@ export class SimnetNodeHarness {
     }
     const rpcPort = options.rpcPort ?? await this.getFreePort();
     const rpcUrl = `ws://127.0.0.1:${rpcPort}`;
-    const dataDir = path.join(os.tmpdir(), `hardkas-simnet-${Date.now()}-${Math.random().toString(36).slice(2)}`);
-    
+    const stamp = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
     // For simplicity we use KASPAD_BIN or docker
     const binaryPath = options.binaryPath || process.env.KASPAD_BIN;
-    
+
+    // Host-side data for a container (bind-mounted on /app/data): an explicit root, the level's variable, or the OS temp
+    // directory when the caller asks for persistent data. Without it the container keeps its data in an anonymous volume
+    // and cannot be restarted with its chain.
+    const dataRoot =
+      options.dataRoot ??
+      (process.env[HARDKAS_TEST_SIMNET_DATA_ROOT_ENV]?.trim() || undefined) ??
+      (options.persistData ? os.tmpdir() : undefined);
+    const hostDataDir = !binaryPath && dataRoot ? path.join(dataRoot, `hardkas-simnet-${rpcPort}-${stamp}`) : undefined;
+    if (hostDataDir) fs.mkdirSync(hostDataDir, { recursive: true });
+    const dataDir = hostDataDir ?? path.join(os.tmpdir(), `hardkas-simnet-${stamp}`);
+    const labels = options.labels ?? parseSimnetExtraLabels(process.env[HARDKAS_TEST_SIMNET_LABELS_ENV]);
+
     let child: ChildProcess | undefined;
     let containerName: string | undefined;
+    let p2pPort: number | undefined;
+    let dockerImage = "";
 
     if (binaryPath) {
-      const p2pPort = await this.getFreePort();
+      p2pPort = await this.getFreePort();
       const args = buildSimnetBinaryArgs({ rpcPort, p2pPort, appDir: dataDir, utxoIndex: options.utxoIndex, txIndex: options.txIndex });
       child = spawn(binaryPath, args, { stdio: "ignore" });
       trackBinaryNode(child, dataDir);
@@ -309,7 +418,7 @@ export class SimnetNodeHarness {
         throw new Error(`ENVIRONMENT_NOT_QUALIFIED: Docker not available or command failed.`);
       }
 
-      const dockerImage = process.env.HARDKAS_KASPAD_IMAGE ?? KASPAD_REFERENCE_IMAGE;
+      dockerImage = process.env.HARDKAS_KASPAD_IMAGE ?? KASPAD_REFERENCE_IMAGE;
       // Name the container. Without a name Docker assigns a random one, which
       // leaves the node unaddressable (nothing can join its network namespace)
       // and unkillable by anything but the `docker run` client process.
@@ -325,7 +434,9 @@ export class SimnetNodeHarness {
         image: dockerImage,
         runId: resolveHarnessRunId(),
         utxoIndex: options.utxoIndex,
-        txIndex: options.txIndex
+        txIndex: options.txIndex,
+        labels,
+        hostDataDir
       });
       child = spawn("docker", args, { stdio: "ignore" });
       trackContainer(containerName);
@@ -336,14 +447,50 @@ export class SimnetNodeHarness {
     let spawnError: Error | undefined = undefined;
     let processExited = false;
     let exitedWith = "";
-    child.on("error", (err: any) => {
-      console.warn("[SimnetNodeHarness] Child process error:", err.message);
-      spawnError = err;
-    });
-    child.on("exit", (code, signal) => {
-      processExited = true;
-      exitedWith = signal ? `signal ${signal}` : `code ${code}`;
-    });
+    const watch = (proc: ChildProcess) => {
+      spawnError = undefined;
+      processExited = false;
+      exitedWith = "";
+      proc.on("error", (err: any) => {
+        console.warn("[SimnetNodeHarness] Child process error:", err.message);
+        spawnError = err;
+      });
+      proc.on("exit", (code, signal) => {
+        processExited = true;
+        exitedWith = signal ? `signal ${signal}` : `code ${code}`;
+      });
+    };
+    watch(child);
+
+    // Stops the node and waits for it to be gone, leaving its data: a container is stopped gracefully (`docker stop`,
+    // kaspad flushes its database) and removed (with --rm it already is); a binary gets SIGTERM and up to 20 s.
+    const stopKeepingData = async (): Promise<void> => {
+      const proc = child;
+      const exited = new Promise<void>((resolve) => {
+        if (!proc || proc.exitCode !== null || proc.signalCode !== null) return resolve();
+        const timer = setTimeout(resolve, 30_000);
+        proc.once("exit", () => {
+          clearTimeout(timer);
+          resolve();
+        });
+      });
+      if (containerName) {
+        await new Promise((resolve) => {
+          const stop = spawn("docker", ["stop", "-t", "20", containerName!], { stdio: "ignore" });
+          stop.on("exit", () => resolve(true));
+          stop.on("error", () => resolve(true));
+        });
+        await exited;
+        await new Promise((resolve) => {
+          const rm = spawn("docker", ["rm", "-f", containerName!], { stdio: "ignore" });
+          rm.on("exit", () => resolve(true));
+          rm.on("error", () => resolve(true));
+        });
+      } else {
+        proc?.kill("SIGTERM");
+        await exited;
+      }
+    };
 
     const client = new JsonWrpcKaspaClient({ rpcUrl });
 
@@ -393,9 +540,48 @@ export class SimnetNodeHarness {
         throw new Error(`ENVIRONMENT_NOT_QUALIFIED: Node did not become ready within ${timeoutMs}ms.`);
       },
       restart: async () => {
-        // Simple restart logic, mock for now
-        handle.kill();
-        // Here we would respawn with same args
+        // The same node again: same endpoint, same container name, same data, without --reset-db, so the chain (and the
+        // UTXO index) survive and only the process is new. The mempool is not persisted by kaspad: a transaction that
+        // was only there is gone after the restart, as on any real node.
+        if (!binaryPath && !hostDataDir) {
+          const err = new Error(
+            `SIMNET_RESTART_NEEDS_HOST_DATA: a container restart keeps its chain only with host-side data ` +
+              `(start with dataRoot or persistData, or set ${HARDKAS_TEST_SIMNET_DATA_ROOT_ENV}).`
+          );
+          (err as any).code = "SIMNET_RESTART_NEEDS_HOST_DATA";
+          throw err;
+        }
+        await stopKeepingData();
+        if (binaryPath) {
+          const args = buildSimnetBinaryArgs({
+            rpcPort,
+            p2pPort: p2pPort!,
+            appDir: dataDir,
+            utxoIndex: options.utxoIndex,
+            txIndex: options.txIndex,
+            resetDb: false
+          });
+          if (child) startedBinaries.delete(child);
+          child = spawn(binaryPath, args, { stdio: "ignore" });
+          trackBinaryNode(child, dataDir);
+        } else {
+          const args = buildSimnetDockerRunArgs({
+            containerName: containerName!,
+            rpcPort,
+            image: dockerImage,
+            runId: resolveHarnessRunId(),
+            utxoIndex: options.utxoIndex,
+            txIndex: options.txIndex,
+            labels,
+            hostDataDir,
+            resetDb: false
+          });
+          child = spawn("docker", args, { stdio: "ignore" });
+          trackContainer(containerName!);
+        }
+        watch(child);
+        (handle as { processId?: number | undefined }).processId = child.pid;
+        await handle.waitUntilReady({ timeoutMs: options.startupTimeoutMs ?? 90_000 });
       },
       stop: async () => {
         child?.kill("SIGTERM");
@@ -422,7 +608,9 @@ export class SimnetNodeHarness {
     let identity: NodeIdentityRecord | undefined;
     const normalized = rpcUrl.replace(/\/+$/, "").replace("://localhost:", "://127.0.0.1:");
     if (normalized === nodeRpcUrl()) {
-      identity = assertNodeIdentityVerified(await verifyNodeIdentity());
+      // HK-01: the canonical endpoint must be a verified rusty-kaspad (container + digest + endpoint): never a simulator
+      // that happens to listen there, whatever the environment says.
+      identity = assertNodeKind(await verifyNodeIdentity(), "rusty-kaspad");
     } else if (process.env.HARDKAS_ALLOW_UNVERIFIED_NODE === "1") {
       console.warn(`[SimnetNodeHarness] Attaching to ${rpcUrl} WITHOUT identity verification (HARDKAS_ALLOW_UNVERIFIED_NODE=1).`);
     } else {
@@ -479,6 +667,9 @@ export class SimnetNodeHarness {
   }
 
   private static async getFreePort(): Promise<number> {
+    // INT9-C: inside HARDKAS_TEST_SIMNET_PORT_RANGE when it is set
+    const range = parseSimnetPortRange(process.env[HARDKAS_TEST_SIMNET_PORT_RANGE_ENV]);
+    if (range) return pickSimnetHostPort(range, simnetHostPortIsFree);
     return new Promise((resolve, reject) => {
       const server = net.createServer();
       server.unref();

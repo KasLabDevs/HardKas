@@ -74,7 +74,9 @@ describe("CLI JSON Contract", () => {
   }, 180000);
 
   it("doctor --json produces strict parsable JSON with no stdout pollution", async () => {
-    const { stdout } = await runCli(["doctor", "--json"]);
+    // L-02 (3-nov): doctor exits 1 when a check fails (e.g. no Docker daemon on this machine), and the JSON must be
+    // as clean then as on a pass; execa would reject on exit 1, so the exit code is read, not thrown.
+    const { stdout, exitCode } = await runCli(["doctor", "--json"], { reject: false });
 
     let parsed: any;
     try {
@@ -89,6 +91,7 @@ describe("CLI JSON Contract", () => {
     expect(resultPayload.summary).toBeDefined();
     expect(resultPayload.checks).toBeDefined();
     expect(Array.isArray(resultPayload.checks)).toBe(true);
+    expect(exitCode).toBe(resultPayload.summary.failed > 0 ? 1 : 0);
   }, 180000);
 
   it("verify --json produces strict parsable JSON", async () => {

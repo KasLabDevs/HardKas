@@ -57,7 +57,7 @@ describe("Unified Lifecycle: Specialized Facts and Pure Status Derivation", () =
 
       const check = checkCovenantTransitionFactIdentity(fact);
       expect(check.ok).toBe(true);
-      expect(check.artifactId).toBe(fact.contentHash);
+      expect(check.ok ? check.artifactId : undefined).toBe(fact.contentHash);
     });
 
     it("detects tampering when content is modified", () => {
@@ -95,6 +95,33 @@ describe("Unified Lifecycle: Specialized Facts and Pure Status Derivation", () =
       expect(status.kind).toBe("TRANSITION_CONFIRMED");
       expect(status.activeOutpoint).toBe(`${"44".repeat(32)}:0`);
       expect(status.currentState).toEqual({ count: 11 });
+    });
+
+    it("ZK-10 pattern: an ACCEPTED transaction is TRANSITION_ACCEPTED, never 'confirmed', and not final", () => {
+      const fact = createCovenantTransitionFactArtifact(validParams);
+      const status = deriveCovenantStatus({ transitionFact: fact, txStatus: dummyTxStatus("ACCEPTED") });
+      expect(status.kind).toBe("TRANSITION_ACCEPTED");
+      expect(status.isFinal).toBe(false);
+      expect(status.activeOutpoint).toBe(`${"44".repeat(32)}:0`);
+      expect(status.reason).not.toMatch(/confirmed on L1/i);
+    });
+
+    it("ZK-10 pattern: a SYNTHETIC_EXECUTED run is TRANSITION_SYNTHETIC_ONLY, never an L1 outcome", () => {
+      const fact = createCovenantTransitionFactArtifact(validParams);
+      const status = deriveCovenantStatus({ transitionFact: fact, txStatus: dummyTxStatus("SYNTHETIC_EXECUTED") });
+      expect(status.kind).toBe("TRANSITION_SYNTHETIC_ONLY");
+      expect(status.isFinal).toBe(false);
+      expect(status.reason).toMatch(/not observed on L1/);
+      const terminated = deriveCovenantStatus({ transitionFact: fact, txStatus: dummyTxStatus("SYNTHETIC_EXECUTED"), isTerminated: true });
+      expect(terminated.kind).toBe("TRANSITION_SYNTHETIC_ONLY");
+      expect(terminated.activeOutpoint).toBeUndefined();
+    });
+
+    it("FINALIZED stays TRANSITION_CONFIRMED and is the only final transition", () => {
+      const fact = createCovenantTransitionFactArtifact(validParams);
+      const status = deriveCovenantStatus({ transitionFact: fact, txStatus: dummyTxStatus("FINALIZED") });
+      expect(status.kind).toBe("TRANSITION_CONFIRMED");
+      expect(status.isFinal).toBe(true);
     });
 
     it("derives TRANSITION_REJECTED when transaction is rejected by node", () => {
@@ -165,17 +192,50 @@ describe("Unified Lifecycle: Specialized Facts and Pure Status Derivation", () =
 
       const check = checkZkVerificationFactIdentity(fact);
       expect(check.ok).toBe(true);
-      expect(check.artifactId).toBe(fact.contentHash);
+      expect(check.ok ? check.artifactId : undefined).toBe(fact.contentHash);
     });
 
-    it("derives PROOF_VERIFICATION_FAILED when math verification was false", () => {
+    it("derives PROOF_NOT_VERIFIED_OFFCHAIN (not final, not a failure) when no off-chain verification was performed (HK-17)", () => {
       const fact = createZkVerificationFactArtifact({
         ...validParams,
         verifiedOffChain: false
       });
+      expect(fact.offChainVerification).toBe("NOT_PERFORMED");
+      const status = deriveZkOperationStatus({ zkFact: fact });
+      expect(status.kind).toBe("PROOF_NOT_VERIFIED_OFFCHAIN");
+      expect(status.isFinal).toBe(false);
+      // an accepted spend is the precompile's verification: never a definitive off-chain failure
+      const accepted = deriveZkOperationStatus({ zkFact: fact, txStatus: dummyTxStatus("ACCEPTED") });
+      expect(accepted.kind).toBe("TX_ACCEPTED");
+    });
+
+    it("derives PROOF_VERIFICATION_FAILED only when a verifier recorded a failure", () => {
+      const fact = createZkVerificationFactArtifact({
+        ...validParams,
+        verifiedOffChain: false,
+        offChainVerification: "FAILED"
+      });
       const status = deriveZkOperationStatus({ zkFact: fact });
       expect(status.kind).toBe("PROOF_VERIFICATION_FAILED");
-      expect(status.isFinal).toBe(true);
+      expect(status.isFinal).toBe(false);
+      expect(() => createZkVerificationFactArtifact({ ...validParams, verifiedOffChain: true, offChainVerification: "FAILED" })).toThrow(/contradicts/);
+    });
+
+    it("has a clock-free identity unless a timestamp is given (ZK-09)", () => {
+      const a = createZkVerificationFactArtifact(validParams);
+      const b = createZkVerificationFactArtifact(validParams);
+      expect(a.contentHash).toBe(b.contentHash);
+      expect(a.timestamp).toBeUndefined();
+      const stamped = createZkVerificationFactArtifact({ ...validParams, timestamp: "2026-11-06T00:00:00.000Z" });
+      expect(stamped.contentHash).not.toBe(a.contentHash);
+      expect(checkZkVerificationFactIdentity(stamped).ok).toBe(true);
+    });
+
+    it("never maps a synthetic execution to L1 settlement (ZK-10)", () => {
+      const fact = createZkVerificationFactArtifact(validParams);
+      const status = deriveZkOperationStatus({ zkFact: fact, txStatus: dummyTxStatus("SYNTHETIC_EXECUTED") });
+      expect(status.kind).toBe("SYNTHETIC_ONLY");
+      expect(status.isFinal).toBe(false);
     });
 
     it("derives PROOF_VERIFIED_OFFCHAIN when verified offchain but not yet observed", () => {

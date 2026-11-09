@@ -6,7 +6,7 @@
 
 # Interface: SemanticVerificationResult
 
-Defined in: [packages/tx-builder/src/verify.ts:30](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/verify.ts#L30)
+Defined in: [packages/tx-builder/src/verify.ts:30](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/verify.ts#L30)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [packages/tx-builder/src/verify.ts:30](https://github.com/KasLabDevs
 
 > **changeAmountSompi**: `bigint`
 
-Defined in: [packages/tx-builder/src/verify.ts:37](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/verify.ts#L37)
+Defined in: [packages/tx-builder/src/verify.ts:37](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/verify.ts#L37)
 
 ***
 
@@ -22,7 +22,7 @@ Defined in: [packages/tx-builder/src/verify.ts:37](https://github.com/KasLabDevs
 
 > **inputTotalSompi**: `bigint`
 
-Defined in: [packages/tx-builder/src/verify.ts:35](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/verify.ts#L35)
+Defined in: [packages/tx-builder/src/verify.ts:35](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/verify.ts#L35)
 
 ***
 
@@ -30,7 +30,7 @@ Defined in: [packages/tx-builder/src/verify.ts:35](https://github.com/KasLabDevs
 
 > **issues**: [`SemanticVerificationIssue`](SemanticVerificationIssue.md)[]
 
-Defined in: [packages/tx-builder/src/verify.ts:32](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/verify.ts#L32)
+Defined in: [packages/tx-builder/src/verify.ts:32](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/verify.ts#L32)
 
 ***
 
@@ -38,7 +38,7 @@ Defined in: [packages/tx-builder/src/verify.ts:32](https://github.com/KasLabDevs
 
 > **ok**: `boolean`
 
-Defined in: [packages/tx-builder/src/verify.ts:31](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/verify.ts#L31)
+Defined in: [packages/tx-builder/src/verify.ts:31](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/verify.ts#L31)
 
 ***
 
@@ -46,7 +46,7 @@ Defined in: [packages/tx-builder/src/verify.ts:31](https://github.com/KasLabDevs
 
 > **outputTotalSompi**: `bigint`
 
-Defined in: [packages/tx-builder/src/verify.ts:36](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/verify.ts#L36)
+Defined in: [packages/tx-builder/src/verify.ts:36](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/verify.ts#L36)
 
 ***
 
@@ -54,7 +54,7 @@ Defined in: [packages/tx-builder/src/verify.ts:36](https://github.com/KasLabDevs
 
 > **recomputedFeeSompi**: `bigint`
 
-Defined in: [packages/tx-builder/src/verify.ts:33](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/verify.ts#L33)
+Defined in: [packages/tx-builder/src/verify.ts:33](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/verify.ts#L33)
 
 ***
 
@@ -62,4 +62,4 @@ Defined in: [packages/tx-builder/src/verify.ts:33](https://github.com/KasLabDevs
 
 > **recomputedMass**: `bigint`
 
-Defined in: [packages/tx-builder/src/verify.ts:34](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/verify.ts#L34)
+Defined in: [packages/tx-builder/src/verify.ts:34](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/verify.ts#L34)

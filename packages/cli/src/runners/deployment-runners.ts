@@ -14,7 +14,6 @@ import {
 } from "@hardkas/artifacts";
 import { loadHardkasConfig, resolveExecutionTarget } from "@hardkas/config";
 import { NetworkId, ArtifactId, TxId } from "@hardkas/core";
-import { JsonWrpcKaspaClient } from "@hardkas/kaspa-rpc";
 
 // SAFETY_LEVEL: SIMULATION_ONLY
 
@@ -194,67 +193,69 @@ export async function verifyDeploymentStatus(opts: {
   }
 
   if (!record.txId) {
-    throw new Error(`Cannot verify deployment '${opts.label}' without a transaction ID.`);
+    throw new HardkasCliError("DEPLOYMENT_TXID_MISSING", `Cannot verify deployment '${opts.label}' without a transaction ID.`, { exitCode: 1 });
   }
 
-  UI.info(`Checking ${record.label} on ${record.networkId}...`);
   const { config } = await loadHardkasConfig();
   // the network must be one the config knows (the resolver refuses it otherwise)
   resolveExecutionTarget({ config, network: record.networkId });
-  // TESTNET-PORT-COLLISION-1 (D-TPC-2): only an endpoint the USER declared — a built-in public entry declares none
-  const { declaredNodeEndpoint } = await import("@hardkas/config");
-  const rpcUrl = declaredNodeEndpoint(config, String(record.networkId));
-  console.log(`  RPC: ${rpcUrl || "simulated"}`);
-  console.log(`  TxId: ${record.txId}`);
 
-  if (record.networkId === "simnet") {
-    UI.info("  Simnet deployment — status preserved.");
-  } else if (!rpcUrl) {
-    UI.error("  No RPC URL configured for this network.");
-  } else {
-    let client: JsonWrpcKaspaClient | undefined;
-    try {
-      // NODE-NETWORK-IDENTITY-1: a deployment's status is read only from a node of the deployment's network
-      client = new JsonWrpcKaspaClient({ rpcUrl: rpcUrl, expectedNetworkId: String(record.networkId) });
-      const tx = (await client.getTransaction(record.txId)) as Record<
-        string,
-        unknown
-      > | null;
-
-      let newStatus: DeploymentRecord["status"] = record.status;
-      if (tx) {
-        const txTransaction =
-          typeof tx.transaction === "object" && tx.transaction !== null
-            ? (tx.transaction as Record<string, unknown>)
-            : undefined;
-        const isAccepted =
-          tx.isAccepted === true ||
-          (txTransaction && typeof txTransaction.block_hash === "string");
-        if (isAccepted) newStatus = "confirmed";
-      } else {
-        // If not found, maybe it's still pending or failed.
-        // We'll keep it as is unless we know for sure it failed.
-      }
-
-      if (newStatus !== record.status) {
-        await withLock(
-          { rootDir, name: "deployments", command: "hardkas deploy status" },
-          async () => {
-            const updated = updateDeploymentStatus(record, newStatus);
-            await saveDeployment(rootDir, updated);
-            UI.success(`  Status updated: ${newStatus}`);
-          }
-        );
-      } else {
-        UI.info(`  Status remains: ${record.status}`);
-      }
-    } catch (e: unknown) {
-      UI.error(`  RPC check failed: ${((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e))}`);
-    } finally {
-      // RESOURCE-LIFECYCLE-1 (RL-I3): released on the error path too.
-      await client?.close();
-    }
+  // DEPLOY-VERIFY-OBSERVE-1 (L1-CORE-1 B2): the state is read the way `tx status` reads it — one observation of the
+  // node's virtual chain and mempool (sdk.tx.observe), which needs no TxIndex. It used `getTransaction`, which a node
+  // without TxIndex (rusty-kaspad's default) answers `null`, so a deployment was never confirmed; on simnet it did not
+  // look at all ("status preserved"); a failed look was printed and the command still exited 0; --json was ignored.
+  // Every network is read the same way now, through the endpoint the workspace declares for it (TESTNET-PORT-COLLISION-1:
+  // never an inferred one) and from a node that proves it serves that network (NODE-NETWORK-IDENTITY-1).
+  if (!opts.json) UI.info(`Checking ${record.label} on ${record.networkId}...`);
+  const { Hardkas } = await import("@hardkas/sdk");
+  const sdk = await Hardkas.open({ cwd: rootDir, network: String(record.networkId) });
+  let derived: { status: string; reasons?: string[]; confirmations?: unknown } | undefined;
+  try {
+    derived = (await sdk.tx.observe(String(record.txId))).derived as any;
+  } catch (e: unknown) {
+    const code = typeof (e as any)?.code === "string" ? (e as any).code : "DEPLOYMENT_VERIFY_FAILED";
+    throw new HardkasCliError(code, `Deployment '${record.label}' could not be verified: ${e instanceof Error ? e.message : String(e)}`, { exitCode: 1 });
+  } finally {
+    // RESOURCE-LIFECYCLE-1 (RL-I3): released on the error path too.
+    await sdk.close();
   }
+
+  const observed = String(derived?.status ?? "UNKNOWN");
+  let newStatus: DeploymentRecord["status"] = record.status;
+  if (observed === "CONFIRMED" || observed === "FINALIZED") newStatus = "confirmed";
+  else if (observed === "REJECTED" || observed === "REJECTED_BY_NODE") newStatus = "failed";
+
+  const updated = newStatus !== record.status;
+  if (updated) {
+    await withLock({ rootDir, name: "deployments", command: "hardkas deploy status" }, async () => {
+      await saveDeployment(rootDir, updateDeploymentStatus(record, newStatus));
+    });
+  }
+
+  if (opts.json) {
+    console.log(
+      JSON.stringify(
+        {
+          ok: true,
+          command: "deploy status",
+          label: record.label,
+          networkId: record.networkId,
+          txId: record.txId,
+          previousStatus: record.status,
+          status: newStatus,
+          updated,
+          observed: { state: observed, ...(derived?.reasons ? { reasons: derived.reasons } : {}) }
+        },
+        null,
+        2
+      )
+    );
+    return;
+  }
+  console.log(`  TxId: ${record.txId}`);
+  console.log(`  Observed: ${observed}`);
+  if (updated) UI.success(`  Status updated: ${newStatus}`);
+  else UI.info(`  Status remains: ${record.status}`);
 }
 
 export async function showDeploymentHistory(opts: {

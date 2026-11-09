@@ -6,7 +6,7 @@
 
 # Interface: DiffEntry
 
-Defined in: [packages/artifacts/src/diff.ts:4](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/diff.ts#L4)
+Defined in: [packages/artifacts/src/diff.ts:4](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/diff.ts#L4)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [packages/artifacts/src/diff.ts:4](https://github.com/KasLabDevs/Har
 
 > **kind**: `"added"` \| `"removed"` \| `"changed"`
 
-Defined in: [packages/artifacts/src/diff.ts:6](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/diff.ts#L6)
+Defined in: [packages/artifacts/src/diff.ts:6](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/diff.ts#L6)
 
 ***
 
@@ -22,7 +22,7 @@ Defined in: [packages/artifacts/src/diff.ts:6](https://github.com/KasLabDevs/Har
 
 > `optional` **left?**: `any`
 
-Defined in: [packages/artifacts/src/diff.ts:7](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/diff.ts#L7)
+Defined in: [packages/artifacts/src/diff.ts:7](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/diff.ts#L7)
 
 ***
 
@@ -30,7 +30,7 @@ Defined in: [packages/artifacts/src/diff.ts:7](https://github.com/KasLabDevs/Har
 
 > **path**: `string`
 
-Defined in: [packages/artifacts/src/diff.ts:5](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/diff.ts#L5)
+Defined in: [packages/artifacts/src/diff.ts:5](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/diff.ts#L5)
 
 ***
 
@@ -38,4 +38,14 @@ Defined in: [packages/artifacts/src/diff.ts:5](https://github.com/KasLabDevs/Har
 
 > `optional` **right?**: `any`
 
-Defined in: [packages/artifacts/src/diff.ts:8](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/diff.ts#L8)
+Defined in: [packages/artifacts/src/diff.ts:8](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/diff.ts#L8)
+
+***
+
+### secret?
+
+> `optional` **secret?**: `true`
+
+Defined in: [packages/artifacts/src/diff.ts:10](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/diff.ts#L10)
+
+A field that holds secret material differs: its values are never carried, only that it differs.

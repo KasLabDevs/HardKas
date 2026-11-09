@@ -88,6 +88,8 @@ hardkas accounts consolidate [options] <account>
 | `--execute` | Execute the consolidation (requires --yes to broadcast) |  |
 | `--yes` | Confirm broadcast for execution |  |
 | `--allow-mainnet` | No effect: executing on mainnet stays refused in this release (MAINNET_BROADCAST_DISABLED) |  |
+| `--password-env <env>` | Read the encrypted account's keystore password from this environment variable (read once, before the first batch) |  |
+| `--password-stdin` | Read the encrypted account's keystore password from stdin |  |
 | `--json` | Output as JSON | false |
 
 ### Arguments
@@ -188,6 +190,9 @@ hardkas accounts real change-password [options] <name>
 
 | Flag | Description | Default |
 | :--- | :--- | :--- |
+| `--password-env <env>` | Read the current keystore password from this environment variable |  |
+| `--password-stdin` | Read the current keystore password from stdin (needs --new-password-env) | false |
+| `--new-password-env <env>` | Read the new keystore password from this environment variable (no confirmation prompt) |  |
 | `--wait-lock` | Wait for workspace lock if held | false |
 | `--lock-timeout <ms>` | Lock wait timeout in ms | 30000 |
 
@@ -246,6 +251,7 @@ hardkas accounts real import [options]
 | :--- | :--- | :--- |
 | `--name <name>` | Account name: letters, digits, _ and - (default: default) |  |
 | `--address <address>` | Kaspa address |  |
+| `--network <network>` | Network the key is for (default: the address's: kaspasim simnet, kaspadev devnet; a kaspatest address needs testnet-<n> here or in the workspace) |  |
 | `--private-key <hex>` | Deprecated. Unsafe: may leak through shell history. Prefer --private-key-stdin or --private-key-env. |  |
 | `--private-key-stdin` | Read private key from stdin | false |
 | `--private-key-env <env>` | Read private key from environment variable |  |
@@ -505,7 +511,7 @@ hardkas artifact migrate [options] <path>
 
 ## hardkas artifact verify
 
-Verify an artifact's integrity and schema stable
+Verify an artifact: integrity (offline, every network), and on request its network level (NETWORK_OBSERVED by a node of its network) and consensus level (CONSENSUS_CONFIRMED by the declared confirmation policy; not finality). Mainnet: offline only stable
 
 ### Usage
 
@@ -520,6 +526,11 @@ hardkas artifact verify [options] <path>
 | `--json` | Output results as JSON | false |
 | `--recursive` | Recursively verify all artifacts in a directory | false |
 | `--strict` | Perform deep semantic and operational safety verification | false |
+| `--network <network>` | Check the artifact's transaction on a node of this network (must be the artifact's own; mainnet is never contacted) |  |
+| `--url <url>` | Node wRPC (JSON) endpoint for the network check (default: the one the workspace declares for the network; local networks: their local default) |  |
+| `--since <blockHash>` | Virtual-chain cursor for the network check: a chain block before the transaction's acceptance (default: the artifact's own submit point, else the node's pruning point) |  |
+| `--min-confirmations <n>` | Blue-score depth for CONSENSUS_CONFIRMED (default: the HardKAS product policy, 100) |  |
+| `--require <level>` | Level the verification must reach to succeed: integrity (default), network or consensus |  |
 | `--workspace <path>` | Override workspace root directory |  |
 
 ### Arguments
@@ -1420,7 +1431,7 @@ hardkas doctor [options] [module]
 | `--json` | Output results as stable JSON schema | false |
 | `--capabilities` | With 'doctor node': report the node's capabilities (RPC, network, DAA advance) as JSON | false |
 | `--consistency` | Run advanced deterministic consistency checks | false |
-| `--strict` | Fail strictly (exit 1) if invariants or consistency checks fail | false |
+| `--strict` | Run the consistency checks in strict mode and report DOCTOR_FAILED when a check fails (any failed check exits 1) | false |
 | `--release` | With 'doctor workspace': also run the release checks (git, schemas, claims, raw appends, browser imports) | false |
 
 ### Arguments
@@ -1542,7 +1553,8 @@ hardkas escrow rescue-v1 broadcast [options] <draft-file>
 
 | Flag | Description | Default |
 | :--- | :--- | :--- |
-| `--network <network>` | Network (default simnet) | simnet |
+| `--network <network>` | Network (default: the draft's); must be the draft's |  |
+| `--url <url>` | Node wRPC (JSON) endpoint (default: the one the workspace declares for the draft's network; simnet: the canonical localnet) |  |
 | `--json` | Output as JSON | false |
 
 ### Arguments
@@ -1594,7 +1606,8 @@ hardkas escrow rescue-v1 prepare [options]
 | `--address <address>` | Legacy escrow P2SH address |  |
 | `--outpoint <outpoint>` | Funding outpoint to spend (txId:index) |  |
 | `--to <address>` | Destination address to recover funds to |  |
-| `--network <network>` | Network id (default simnet) | simnet |
+| `--network <network>` | Network id (default simnet); mainnet refused; testnet-<n> needs experimental + network.allowPublic | simnet |
+| `--url <url>` | Node wRPC (JSON) endpoint (default: the one the workspace declares for the network; simnet: the canonical localnet) |  |
 | `--out <file>` | Output draft file path (default rescue-v1-plan.draft.json) | rescue-v1-plan.draft.json |
 | `--fee <sompi>` | Miner fee in sompi (default 400000 sompi = 0.004 KAS) | 400000 |
 | `--buyer-pk <hex>` | Buyer x-only public key (32 bytes hex) |  |
@@ -2932,7 +2945,7 @@ No arguments.
 
 ## hardkas programmability
 
-Builder-ready local programmability surface (Outputs JSON by default)
+Experimental local programmability tools: inspection and fixture checks of Silver, ZK and vProgs artifacts; no vProgs runtime, no on-chain ZK verification (Outputs JSON by default)
 
 ### Usage
 
@@ -3009,7 +3022,7 @@ No arguments.
 
 ## hardkas programmability audit
 
-Audit the boundaries and claims of programmability layers
+Print the fixed list of what this build's programmability layers do not do (on-chain ZK verification, vProgs runtime, L2 bridge and exit, real stable-asset issuer): a static statement that inspects and runs nothing
 
 ### Usage
 
@@ -3377,6 +3390,7 @@ hardkas pskt sign [options] <sessionPath>
 | `--keystore <path>` | Path to a HardKAS keystore JSON file |  |
 | `--key-stdin` | Read private key from standard input |  |
 | `--private-key-file <path>` | Path to file containing raw private key (TEST ONLY) |  |
+| `--inputs <indexes>` | Comma-separated input indexes to sign (default: the inputs this participant is eligible for) |  |
 | `--out <outputPath>` | Path to write the updated PSKT session JSON |  |
 | `--force` | Overwrite the output file if it exists | false |
 | `--json` | Output results as JSON | false |
@@ -4370,7 +4384,7 @@ hardkas rpc dag [options]
 | Flag | Description | Default |
 | :--- | :--- | :--- |
 | `--url <url>` | Node wRPC endpoint (default: the canonical localnet, ws://127.0.0.1:18210) |  |
-| `--network <name>` | Network from the workspace config: its declared endpoint, and the node must prove it serves that network (default: none — the --url or the canonical localnet, unchecked) |  |
+| `--network <name>` | Network from the workspace config: its declared endpoint, and the node must prove it serves that network (default: the workspace's network; outside a workspace, the --url or the canonical localnet, unchecked) |  |
 | `--json` | Output as JSON | false |
 
 ### Arguments
@@ -4416,7 +4430,7 @@ hardkas rpc health [options]
 | Flag | Description | Default |
 | :--- | :--- | :--- |
 | `--url <url>` | Node wRPC endpoint (default: the canonical localnet, ws://127.0.0.1:18210) |  |
-| `--network <name>` | Network from the workspace config: its declared endpoint, and the node must prove it serves that network (default: none — the --url or the canonical localnet, unchecked) |  |
+| `--network <name>` | Network from the workspace config: its declared endpoint, and the node must prove it serves that network (default: the workspace's network; outside a workspace, the --url or the canonical localnet, unchecked) |  |
 | `--wait` | Wait until healthy |  |
 | `--timeout <ms>` | With --wait: how long to wait in ms (default: 60000) |  |
 | `--json` | Output as JSON | false |
@@ -4442,7 +4456,7 @@ hardkas rpc info [options]
 | Flag | Description | Default |
 | :--- | :--- | :--- |
 | `--url <url>` | Node wRPC endpoint (default: the canonical localnet, ws://127.0.0.1:18210) |  |
-| `--network <name>` | Network from the workspace config: its declared endpoint, and the node must prove it serves that network (default: none — the --url or the canonical localnet, unchecked) |  |
+| `--network <name>` | Network from the workspace config: its declared endpoint, and the node must prove it serves that network (default: the workspace's network; outside a workspace, the --url or the canonical localnet, unchecked) |  |
 | `--json` | Output as JSON | false |
 
 ### Arguments
@@ -4466,7 +4480,7 @@ hardkas rpc mempool [options] [txId]
 | Flag | Description | Default |
 | :--- | :--- | :--- |
 | `--url <url>` | Node wRPC endpoint (default: the canonical localnet, ws://127.0.0.1:18210) |  |
-| `--network <name>` | Network from the workspace config: its declared endpoint, and the node must prove it serves that network (default: none — the --url or the canonical localnet, unchecked) |  |
+| `--network <name>` | Network from the workspace config: its declared endpoint, and the node must prove it serves that network (default: the workspace's network; outside a workspace, the --url or the canonical localnet, unchecked) |  |
 | `--json` | Output as JSON | false |
 
 ### Arguments
@@ -4492,7 +4506,7 @@ hardkas rpc utxos [options] <address>
 | Flag | Description | Default |
 | :--- | :--- | :--- |
 | `--url <url>` | Node wRPC endpoint (default: the canonical localnet, ws://127.0.0.1:18210) |  |
-| `--network <name>` | Network from the workspace config: its declared endpoint, and the node must prove it serves that network (default: none — the --url or the canonical localnet, unchecked) |  |
+| `--network <name>` | Network from the workspace config: its declared endpoint, and the node must prove it serves that network (default: the workspace's network; outside a workspace, the --url or the canonical localnet, unchecked) |  |
 | `--json` | Output as JSON | false |
 
 ### Arguments
@@ -4738,6 +4752,8 @@ hardkas silver covenant genesis [options] <record>
 | `--fee <sompi>` | Fee in sompi: at least the node's floor for this transaction (the floor when omitted) |  |
 | `--constructor-args <file>` | Constructor arguments the contract was compiled with (default: proven from its initial State) |  |
 | `--contract <name>` | Contract, when the artifact has several |  |
+| `--network <network>` | Network (default: the workspace's, else simnet). mainnet is refused; testnet-<n> needs experimental + network.allowPublic in the config |  |
+| `--url <url>` | Node wRPC (JSON) endpoint (default: the one the workspace declares for the network; simnet: the canonical localnet). Only the canonical localnet is proven by container and image digest; any other node by what it reports (network, version, synced) |  |
 | `--wait` | Wait for confirmation and the node's covenant id | false |
 | `--timeout <seconds>` | Confirmation timeout | 120 |
 | `--password-env <env>` | Read the keystore password of the encrypted account(s) this command signs with from this environment variable (development accounts need none) |  |
@@ -4801,6 +4817,8 @@ hardkas silver covenant transition [options] <covenant-record>
 | `--args <file>` | Entry arguments: JSON list of {kind, value} and {"kind":"signature","account":"<name>"} |  |
 | `--fee <sompi>` | Fee in sompi, paid from the covenant's value: at least the node's floor for this transaction (the floor when omitted) |  |
 | `--emit-args <file>` | Write the successor's constructor arguments here (for the next transition) |  |
+| `--network <network>` | Network (default: the covenant record's); mainnet refused; testnet-<n> needs experimental + network.allowPublic |  |
+| `--url <url>` | Node wRPC (JSON) endpoint (default: the one the workspace declares for the network; simnet: the canonical localnet). Only the canonical localnet is proven by container and image digest; any other node by what it reports (network, version, synced) |  |
 | `--wait` | Wait for confirmation and check the lineage | false |
 | `--timeout <seconds>` | Confirmation timeout | 120 |
 | `--password-env <env>` | Read the keystore password of the encrypted account(s) this command signs with from this environment variable (development accounts need none) |  |
@@ -4851,7 +4869,7 @@ hardkas silver debug [options] <source-or-record>
 
 ## hardkas silver deploy
 
-Fund a compiled contract's P2SH output on the canonical localnet
+Fund a compiled contract's P2SH output on a Kaspa node (the canonical localnet, or the node --url / the workspace names)
 
 ### Usage
 
@@ -4866,7 +4884,8 @@ hardkas silver deploy [options] <record>
 | `--from <account>` | Funding account (local key) |  |
 | `--amount <kas>` | Value locked in the contract |  |
 | `--contract <name>` | Contract, when the artifact has several |  |
-| `--network <network>` | Network | simnet |
+| `--network <network>` | Network (default: the workspace's, else simnet). mainnet is refused; testnet-<n> needs experimental + network.allowPublic in the config |  |
+| `--url <url>` | Node wRPC (JSON) endpoint (default: the one the workspace declares for the network; simnet: the canonical localnet). Only the canonical localnet is proven by container and image digest; any other node by what it reports (network, version, synced) |  |
 | `--tx-version <n>` | Transaction version: 0 (the default, as certified) or 1 (the SDK's v1 engine: checks before any key, compute budgets) | 0 |
 | `--wait` | Wait for confirmation | false |
 | `--timeout <seconds>` | Confirmation timeout | 120 |
@@ -4884,7 +4903,7 @@ hardkas silver deploy [options] <record>
 
 ## hardkas silver doctor
 
-Report whether the pinned toolchains and the canonical node are ready
+Report whether the pinned toolchains and the node the Silver on-chain commands would use are ready
 
 ### Usage
 
@@ -4896,6 +4915,8 @@ hardkas silver doctor [options]
 
 | Flag | Description | Default |
 | :--- | :--- | :--- |
+| `--network <network>` | Network (default: the workspace's, else simnet). mainnet is refused; testnet-<n> needs experimental + network.allowPublic in the config |  |
+| `--url <url>` | Node wRPC (JSON) endpoint (default: the one the workspace declares for the network; simnet: the canonical localnet). Only the canonical localnet is proven by container and image digest; any other node by what it reports (network, version, synced) |  |
 | `--json` | Output as JSON | false |
 
 ### Arguments
@@ -5225,6 +5246,8 @@ hardkas silver spend [options] <deploy-record>
 | `--args <file>` | Entry arguments: JSON list of {kind, value} and {"kind":"signature","account":"<name>"} |  |
 | `--sequence <n>` | Input sequence (relative locks) |  |
 | `--sig-op-count <n>` | Declared signature operations (default: the signature arguments, at least 1); transaction v0 only |  |
+| `--network <network>` | Network (default: the deploy record's); mainnet refused; testnet-<n> needs experimental + network.allowPublic |  |
+| `--url <url>` | Node wRPC (JSON) endpoint (default: the one the workspace declares for the network; simnet: the canonical localnet). Only the canonical localnet is proven by container and image digest; any other node by what it reports (network, version, synced) |  |
 | `--tx-version <n>` | Transaction version: 0 (the default, as certified) or 1 (the SDK's v1 engine: checks before any key, compute budgets) | 0 |
 | `--constructor-args <file>` | With --tx-version 1: the constructor arguments the contract was compiled with (default: proven from this spend's signers, when they are the keys it checks) |  |
 | `--compute-budget <n>` | With --tx-version 1: the contract input's compute budget, or 'estimate' (rusty-kaspa's upper bound); default: the certified budget of this entry, else that estimate |  |
@@ -5321,6 +5344,7 @@ No arguments.
 
 - [hardkas simulator account](#hardkas-simulator-account)
 - [hardkas simulator fund](#hardkas-simulator-fund)
+- [hardkas simulator start](#hardkas-simulator-start)
 
 ---
 
@@ -5350,7 +5374,7 @@ No arguments.
 
 ## hardkas simulator account create
 
-Create a synthetic simulated account stable
+Create a synthetic simulated account (a kaspa:sim_ identity without a real key, for the simulated network only) experimental
 
 ### Usage
 
@@ -5374,7 +5398,7 @@ hardkas simulator account create [options] <name>
 
 ## hardkas simulator fund
 
-Fund a synthetic simulated account (the project's default network must be the simulator) stable
+Fund a synthetic simulated account (the project's default network must be the simulator; synthetic UTXOs, not a Kaspa node's) experimental
 
 ### Usage
 
@@ -5394,6 +5418,33 @@ hardkas simulator fund [options] <identifier>
 | Argument | Description |
 | :--- | :--- |
 | `identifier` |  |
+
+---
+
+## hardkas simulator start
+
+Start the in-memory Kaspa node simulator (approximate rules, not consensus-equivalent) experimental
+
+### Usage
+
+```bash
+hardkas simulator start [options]
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `-p, --port <port>` | Port for the RPC server (HTTP JSON-RPC and wRPC JSON) | 19110 |
+| `-h, --host <host>` | Host to bind | 127.0.0.1 |
+| `-n, --network <network>` | Network ID (simnet, devnet, testnet-10, testnet-11) | simnet |
+| `--automine` | Enable automine mode | true |
+| `--no-automine` | Disable automine mode |  |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+No arguments.
 
 ---
 
@@ -5937,6 +5988,7 @@ hardkas tx send [options] [signedPath]
 | `--json` | Output as JSON | false |
 | `--track <label>` | Signed-artifact mode: after an accepted broadcast, record a deployment with this label |  |
 | `--preflight` | Payments: right before the broadcast, check every input at the node (unspent, as planned, no covenant id, not pending in its mempool) and verify each input's signature against the node's UTXO; anything it cannot verify refuses the send. One node's view, not a consensus validation | false |
+| `--allow-unplanned` | Signed-artifact mode: send a signed transaction that names no plan of this workspace (signed elsewhere). HardKAS then cannot check that it is a planned transaction nor its fee limit: you take both on yourself. Without it such a send is refused (SEND_PLAN_UNRESOLVED) | false |
 
 ### Arguments
 
@@ -6052,6 +6104,7 @@ hardkas tx wait [options] <txId>
 | `--interval <seconds>` | Seconds between observations | 2 |
 | `-n, --network <network>` | Network whose configured node observes (default: the network of the recorded submission) |  |
 | `--since <chainBlockHash>` | Scan the node's virtual chain from this chain block (64 hex; it must precede the tx's acceptance) on the first look — for a tx sent outside this workspace |  |
+| `--address <address>` | An address the tx pays (repeatable), for a tx sent outside this workspace with no --since: the scan starts at the node's sink when the wait starts, an output of the tx listed there before that point ends the wait (TX_WAIT_ACCEPTED_BEFORE_CURSOR), and the UTXO view is checked there |  |
 | `--json` | Output as JSON | false |
 
 ### Arguments
@@ -6431,7 +6484,7 @@ No arguments.
 
 ## hardkas zk corpus verify
 
-Verify a local ZK corpus (coherence of every listed fixture; pairing check where a fixture claims it)
+Verify a local ZK corpus (coherence of every listed fixture; pairing check where a fixture claims it, which needs the optional peer snarkjs)
 
 ### Usage
 
@@ -6531,7 +6584,7 @@ hardkas zk proof verify [options] <path>
 
 ## hardkas zk proof verify-math
 
-Groth16 pairing check (snarkjs, BN254) of a fixture, bound to its content hashes by default; reports the key, inputs and proof digests it used (No on-chain claims) alpha
+Groth16 pairing check (snarkjs, BN254; snarkjs is an optional peer of @hardkas/sdk, without it ZK_ENGINE_UNAVAILABLE) of a fixture; VERIFIED only for a pinned verification key (--expect-vk-hash or the in-code registry), otherwise VALID_UNANCHORED_VK; fixture coherence is self-attested (No on-chain claims) alpha
 
 ### Usage
 
@@ -6545,8 +6598,8 @@ hardkas zk proof verify-math [options] <path>
 | :--- | :--- | :--- |
 | `--json` | Output as JSON | false |
 | `--timeout <ms>` | Verification timeout in milliseconds (integer, 1..600000) | 10000 |
-| `--expect-vk-hash <sha256>` | Reject unless the verification key's domain digest equals this value |  |
-| `--math-only` | Skip the fixture-coherence binding; the result is labelled MATH_ONLY | false |
+| `--expect-vk-hash <sha256>` | Pin the verification key: its fingerprint (summary.verificationKeyFingerprint) or legacy digest, obtained from a source you trust |  |
+| `--math-only` | Skip the self-attested fixture-coherence check; the result is labelled MATH_ONLY | false |
 | `--allow-weak-vk` | Accept a verification key with a known trapdoor (toy fixtures only; proofs against such keys prove nothing) | false |
 
 ### Arguments
@@ -6579,13 +6632,14 @@ No arguments.
 
 - [hardkas zk toccata build-scripts](#hardkas-zk-toccata-build-scripts)
 - [hardkas zk toccata rules](#hardkas-zk-toccata-rules)
+- [hardkas zk toccata verify-receipt](#hardkas-zk-toccata-verify-receipt)
 - [hardkas zk toccata verify-scripts](#hardkas-zk-toccata-verify-scripts)
 
 ---
 
 ## hardkas zk toccata build-scripts
 
-Build P2SH redeem and signature scripts for a RISC Zero Groth16 proof set (supports proof-only and proof-and-output-bound consensus modes)
+Build P2SH redeem and signature scripts for a RISC Zero Groth16 receipt (the receipt's claim is cross-checked against imageId/journalHash). Modes: proof-only (default; the lock binds the image id only: any holder of a valid receipt spends) or proof-and-output-bound (the redeem script also enforces the payout/change outputs by introspection). Simnet address only unless public networks are requested (proof-only also needs the acknowledgement)
 
 ### Usage
 
@@ -6605,8 +6659,9 @@ hardkas zk toccata build-scripts [options]
 | `--payout-amount <sompi>` | Consensus-bound payout amount in sompi (required if mode is proof-and-output-bound) |  |
 | `--change-address <address>` | Optional consensus-bound change address |  |
 | `--change-amount <sompi>` | Optional consensus-bound change amount in sompi |  |
-| `--utxo-txid <hex>` | Optional bound input UTXO transaction ID for replay protection |  |
-| `--utxo-index <index>` | Optional bound input UTXO index for replay protection |  |
+| `--max-fee <sompi>` | proof-and-output-bound: the most the lock may pay as fee; a UTXO above the bound outputs plus this stays locked (default 50000000) |  |
+| `--address-network <networks>` | Also return P2SH addresses for these public networks (comma-separated: testnet-10,mainnet); proof-only needs --ack-image-id-only-lock; never for a public test vector |  |
+| `--ack-image-id-only-lock` | Acknowledge that a proof-only lock binds only the image id (anyone with a valid receipt can spend, replay or front-run) | false |
 | `--json` | Output as JSON | false |
 
 ### Arguments
@@ -6629,6 +6684,32 @@ hardkas zk toccata rules [options]
 
 | Flag | Description | Default |
 | :--- | :--- | :--- |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+No arguments.
+
+---
+
+## hardkas zk toccata verify-receipt
+
+Verify a RISC Zero Groth16 receipt locally (snarkjs, BN254; without the optional peer snarkjs, ZK_ENGINE_UNAVAILABLE) against the pinned official RISC Zero verifying key, control root and BN254 control id, for the claim of (imageId, journalHash) (No on-chain claims) alpha
+
+### Usage
+
+```bash
+hardkas zk toccata verify-receipt [options]
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--image-id <hex>` | 32-byte hex Image ID |  |
+| `--journal-hash <hex>` | 32-byte hex Journal Hash |  |
+| `--receipt <pathOrHex>` | Path to receipt file (.hex) or raw receipt hex string |  |
+| `--timeout <ms>` | Verification timeout in milliseconds (integer, 1..600000) | 10000 |
 | `--json` | Output as JSON | false |
 
 ### Arguments

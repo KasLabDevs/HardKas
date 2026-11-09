@@ -1,4 +1,5 @@
 import {
+  loadLocalnetState,
   loadOrCreateLocalnetState,
   saveLocalnetState,
   createSimulatedDag,
@@ -11,7 +12,13 @@ import { UI } from "../ui.js";
  * Runner for 'hardkas dag status'
  */
 export async function runDagStatus() {
-  const state = await loadOrCreateLocalnetState();
+  // L1-CORE-1 B4: a status read created the simulated state (.hardkas/localnet.json and its snapshot artifact) wherever
+  // it ran, a directory that was no workspace included; it reads the state that exists and writes nothing.
+  const state = await loadLocalnetState();
+  if (!state) {
+    UI.info("There is no simulated state here (.hardkas/localnet.json): no DAG simulation is initialized. Nothing was written.");
+    return;
+  }
 
   if (!state.dag) {
     UI.info("DAG simulation is not initialized in this localnet.");

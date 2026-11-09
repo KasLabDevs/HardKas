@@ -15,7 +15,8 @@ import { parseWasmTxToRpc } from "../src/internal/wasm-rpc-serialization.js";
 // DAA (consensus check_sequence_lock: block_daa_score + (sequence & 0xffffffff) - 1 >= virtual DAA => refused): input k
 // cannot spend a UTXO the node accepted less than k DAA ago. An ordinary payment sets no time condition, so every input
 // now gets sequence 0 and the transaction is finalized again (its id covers the sequences). Covenant (V1) transactions
-// keep the SDK's numbering ("as-built"), exactly as before; script builders were already at 0.
+// kept the SDK's numbering ("as-built") until L1-14 (7-nov-2026), which gives them sequence 0 too unless the plan
+// states one; script builders were already at 0.
 // Real pinned kaspa-wasm, no network.
 // -----------------------------------------------------------------------------
 
@@ -103,7 +104,9 @@ describe("TX-SEQUENCE-1 · ordinary payments carry sequence 0 on every input", (
     expect(() => createBalancedTransaction(k, { utxos: [utxo(0)], outputs: [{ amountSompi: 1n, output: new k.PaymentOutput(new k.Address(address), 1n) }], feeSompi: 1n })).toThrow(/TX_VALUE_NOT_CONSERVED/);
   });
 
-  it('"as-built" keeps the SDK numbering (the covenant V1 path, unchanged)', () => {
+  // L1-14: the internal signer's v1 path no longer uses "as-built" (l1-12-l1-14-signer-spk-sequence.test.ts); the policy
+  // itself still keeps the SDK numbering
+  it('"as-built" keeps the SDK numbering', () => {
     expect(seqs(build(3, 20_000n, { inputSequences: "as-built" }))).toEqual([0n, 1n, 2n]);
   });
 

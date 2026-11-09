@@ -7,6 +7,19 @@ import { sendGuardFor, idempotencyKeyOf, NOT_SENT_CODES } from "./send-guard.js"
 type DevEnv = { Variables: { sdk: Hardkas } };
 export const dappTxRoutes = new Hono<DevEnv>();
 
+/**
+ * TX-06 · whether THIS server signs with its own accounts for an HTTP client. The server's operator decides: the
+ * process environment `HARDKAS_DEV_SERVER_AUTOSIGN=1` opens it on any non-mainnet network; without it, only the local
+ * worlds (the simulator, simnet) auto-sign. The client's `allowDevAutoSign: true` is only its explicit request: it is
+ * required, and it is never enough by itself (it used to be the whole decision, taken by whoever sends the request).
+ * Mainnet never (MAINNET_SIGNING_DISABLED policy, and refused here first).
+ */
+export function serverAllowsDevAutoSign(network: string, env: NodeJS.ProcessEnv = process.env): boolean {
+  if (network === "mainnet") return false;
+  if (env.HARDKAS_DEV_SERVER_AUTOSIGN === "1") return true;
+  return network === "simulated" || network === "simnet" || network.startsWith("simnet-");
+}
+
 // Helper to create the standard stable JSON envelope
 function envelope(c: any, ok: boolean, data?: any, error?: any) {
   const sdk = c.get("sdk");
@@ -160,12 +173,26 @@ dappTxRoutes.post("/send", async (c) => {
           message: "Auto-signing on mainnet is strictly prohibited"
         });
       }
+      if (!serverAllowsDevAutoSign(String(sdk.network))) {
+        guard.abandon(pending);
+        return envelope(c, false, null, {
+          code: "DEV_AUTOSIGN_NOT_ALLOWED",
+          message:
+            `This dev-server does not sign for clients on "${String(sdk.network)}": auto-signing is the server operator's ` +
+            "decision (HARDKAS_DEV_SERVER_AUTOSIGN=1 in the server's environment), not the request's. Nothing was planned, signed or sent."
+        });
+      }
+      // the amount field is in sompi, and tx.plan reads a string as KAS (L1-11): it goes as a bigint
+      if (!/^\d+$/.test(String(body.amountSompi))) {
+        guard.abandon(pending);
+        return envelope(c, false, null, { code: "BAD_REQUEST", message: "amountSompi must be a whole number of sompi" });
+      }
 
       // 1. Plan
       planArtifact = await sdk.tx.plan({
         from: body.from,
         to: body.to,
-        amount: body.amountSompi,
+        amount: BigInt(String(body.amountSompi)),
         ...(body.feeRate ? { feeRate: BigInt(body.feeRate) } : {})
       });
       artifacts.push(planArtifact);

@@ -3,6 +3,7 @@ import {
   isNodeNetworkIdentityError,
   markRequestNotSent,
   NodeNetworkIdentityError,
+  NodeSyncError,
   normalizeRpcError,
   RpcRequestNotSentError,
   RpcConnectionError,
@@ -153,7 +154,10 @@ export class OfficialRpcSession {
     url: string,
     private readonly timeoutMs: number = 30000,
     private readonly factory: OfficialRpcFactory = officialRpcFactory,
-    private readonly expectedNetworkId?: string | undefined
+    private readonly expectedNetworkId?: string | undefined,
+    // INT9-A (I-3b): with an expected network, also refuse a node that does not say it is synced (NODE_NOT_SYNCED), from
+    // the same getServerInfo answer: for the operations that need the current chain state (plan, send, wait)
+    private readonly requireSynced: boolean = false
   ) {
     this.url = toWrpcUrl(url);
   }
@@ -313,6 +317,16 @@ export class OfficialRpcSession {
         "NODE_NETWORK_MISMATCH",
         `The node at ${endpoint} serves ${observed}, not ${expected}: HardKAS refuses to read from it or send to it as ${expected}.`,
         { expected, observed, endpoint }
+      );
+    }
+    // INT9-A (I-3b): the network is right; being synced is a separate verdict, asked only by callers that need it
+    if (this.requireSynced && info?.isSynced !== true) {
+      const said = info?.isSynced === false ? "says it is not synced" : "did not say whether it is synced";
+      throw new NodeSyncError(
+        `NODE_NOT_SYNCED: the node at ${endpoint} serves ${observed} but ${said}: an operation that needs the current chain state ` +
+          `uses nothing from it (a well-identified node is not a synced node). Let it sync (a local node with no peers needs ` +
+          `recent blocks), then retry; nothing was sent.`,
+        { endpoint, expected, isSynced: typeof info?.isSynced === "boolean" ? info.isSynced : undefined }
       );
     }
   }

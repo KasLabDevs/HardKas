@@ -65,6 +65,24 @@ node packages/cli/dist/index.js --version
 node packages/cli/dist/index.js capabilities --json
 ```
 
+### Other offline gates
+
+They are not part of `pnpm test`. CI runs only the examples and the gauntlet (state on 2026-11-07, M-03):
+
+| Gate | Needs | State |
+| :-- | :-- | :-- |
+| `pnpm check:artifacts` | the CLI sources | passes; verifies `packages/artifacts/test/fixtures/valid` under `--strict` with the staleness rule off, so it does not expire |
+| `pnpm artifact:corruption` | the CLI sources | passes when every file of `packages/artifacts/test/fixtures/corrupted` is refused, one by one |
+| `pnpm templates:verify` | a build | passes (payment-app, batch-payments, local-indexer) |
+| `pnpm corpus:toccata`, `pnpm programmability:corpus` | the pinned silverc installed | pass; without silverc they fail with `SILVERC_TOOLCHAIN_NOT_INSTALLED` |
+| `pnpm zk:corpus`, `pnpm vprogs:check` | the CLI sources | pass |
+| `pnpm docs:check-claims`, `pnpm check:docs`, `pnpm docs:check`, `pnpm docs:check-site` | nothing | pass |
+| `node scripts/check-dev-server-security.mjs` | a build | passes; the dev-server API is started with `hardkas sandbox` on a free port |
+| `pnpm example:*` (01 to 06) | a build, kaspa-wasm | pass offline; CI runs them in `hardkas-examples.yml` |
+| `node scripts/check-typescript-hygiene.mjs` | nothing | advisory only (style, about 170 `catch (e: any)`); not a gate |
+| `pnpm gauntlet:toccata` | the canonical Docker localnet | CI runs it in `docker-suites.yml`; not run offline |
+| `pnpm qualification:public-npm` | the npm registry | not offline by design |
+
 ## Certified Baseline
 
 - Docker `rusty-kaspad` v2.1.0 simnet local node, identity verified (container, image digest, endpoint, network, version).

@@ -1,0 +1,2470 @@
+{
+  "metadata": {
+    "timestamp": "2026-11-04T09:43:42.978Z",
+    "gitBranch": "feat/phase6-simulator-integration",
+    "totalOperations": 58,
+    "endpoints": {
+      "simulator": "in-memory / ws://127.0.0.1:17110",
+      "simnet": "ws://127.0.0.1:18210 (Docker rusty-kaspad v2.1.0)",
+      "testnet": "NONE (Unreachable / Hermetic Offline Mode; strictly audited)"
+    }
+  },
+  "operations": {
+    "OP-01": {
+      "id": "OP-01",
+      "name": "localnet status",
+      "category": "localnet",
+      "source": "server/index.mjs:182",
+      "isMutating": false,
+      "environments": {
+        "simulator": {
+          "status": "PASS",
+          "durationMs": 0,
+          "endpoint": "in-memory / ws://127.0.0.1:17110",
+          "evidence": {
+            "virtualDaaScore": "1",
+            "tipCount": 1,
+            "sink": "0000000000000000000000000000000000000000000000000000000000000000"
+          },
+          "assertions": [
+            "virtualDaaScore is bigint",
+            "tipHashes is Array"
+          ],
+          "detail": "Ejecución determinista en memoria 0ms",
+          "error": null
+        },
+        "simnet": {
+          "status": "PASS",
+          "durationMs": 11,
+          "endpoint": "ws://127.0.0.1:18210",
+          "evidence": {
+            "network": "simnet",
+            "virtualDaaScore": "0",
+            "sink": "411f8cd26f3d41aea39e78573927da24d23995705b579f30959b9127e96b79e3"
+          },
+          "assertions": [
+            "network === 'simnet'",
+            "virtualDaaScore is bigint"
+          ],
+          "detail": "Operación validada contra rusty-kaspad v2.1.0",
+          "error": null
+        },
+        "testnet": {
+          "status": "SKIP",
+          "durationMs": 0,
+          "endpoint": "NONE (Hermetic Offline Sandbox)",
+          "evidence": null,
+          "assertions": [],
+          "detail": "Comando de gestión de daemon local/Docker: no aplicable a red pública P2P descentralizada",
+          "error": null
+        }
+      }
+    },
+    "OP-02": {
+      "id": "OP-02",
+      "name": "localnet start --toccata",
+      "category": "localnet",
+      "source": "server/index.mjs:369",
+      "isMutating": true,
+      "environments": {
+        "simulator": {
+          "status": "NOT_IMPLEMENTED",
+          "durationMs": 0,
+          "endpoint": "in-memory / ws://127.0.0.1:17110",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_IMPLEMENTED: hardkas localnet start --toccata gestiona contenedor Docker; el simulador corre en memoria",
+          "error": null
+        },
+        "simnet": {
+          "status": "PASS",
+          "durationMs": 0,
+          "endpoint": "ws://127.0.0.1:18210",
+          "evidence": {
+            "container": "hardkas-simnet-compat-runner-v2",
+            "image": "kaspanet/rusty-kaspad:v2.1.0",
+            "flags": [
+              "--simnet",
+              "--enable-unsynced-mining",
+              "--utxoindex"
+            ]
+          },
+          "assertions": [
+            "Docker container active with consensus flags"
+          ],
+          "detail": "Operación validada contra rusty-kaspad v2.1.0",
+          "error": null
+        },
+        "testnet": {
+          "status": "SKIP",
+          "durationMs": 0,
+          "endpoint": "NONE (Hermetic Offline Sandbox)",
+          "evidence": null,
+          "assertions": [],
+          "detail": "Comando de gestión de daemon local/Docker: no aplicable a red pública P2P descentralizada",
+          "error": null
+        }
+      }
+    },
+    "OP-03": {
+      "id": "OP-03",
+      "name": "simulator start",
+      "category": "simulator",
+      "source": "commands/simulator.ts:12",
+      "isMutating": false,
+      "environments": {
+        "simulator": {
+          "status": "PASS",
+          "durationMs": 0,
+          "endpoint": "in-memory / ws://127.0.0.1:17110",
+          "evidence": {
+            "wsUrl": "ws://127.0.0.1:17110",
+            "httpUrl": "http://127.0.0.1:17110"
+          },
+          "assertions": [
+            "server running on 17110"
+          ],
+          "detail": "Ejecución determinista en memoria 0ms",
+          "error": null
+        },
+        "simnet": {
+          "status": "SKIP",
+          "durationMs": 0,
+          "endpoint": "ws://127.0.0.1:18210",
+          "evidence": {
+            "reason": "simulator start is dev-only, not applicable in Docker mode"
+          },
+          "assertions": [
+            "dev command skipped in docker"
+          ],
+          "detail": "simulator start is dev-only, not applicable in Docker mode",
+          "error": null
+        },
+        "testnet": {
+          "status": "SKIP",
+          "durationMs": 0,
+          "endpoint": "NONE (Hermetic Offline Sandbox)",
+          "evidence": null,
+          "assertions": [],
+          "detail": "Comando de gestión de daemon local/Docker: no aplicable a red pública P2P descentralizada",
+          "error": null
+        }
+      }
+    },
+    "OP-04": {
+      "id": "OP-04",
+      "name": "localnet fund",
+      "category": "localnet",
+      "source": "server/index.mjs:403",
+      "isMutating": true,
+      "environments": {
+        "simulator": {
+          "status": "PASS",
+          "durationMs": 0,
+          "endpoint": "in-memory / ws://127.0.0.1:17110",
+          "evidence": {
+            "account": "kaspasim:qzvcdj0w570l96fj8apq0r86u0u6s8q4txnpssyyxrujrtfphjas7qhn7v68k",
+            "fundedSompi": "10000000000",
+            "balanceAfter": "110000000000"
+          },
+          "assertions": [
+            "balanceAfter == balanceBefore + 100 KAS"
+          ],
+          "detail": "Ejecución determinista en memoria 0ms",
+          "error": null
+        },
+        "simnet": {
+          "status": "NOT_IMPLEMENTED",
+          "durationMs": 0,
+          "endpoint": "ws://127.0.0.1:18210",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_IMPLEMENTED: Operación 'localnet fund' no ejecutada en simnet (requiere minero activo o runner CLI)",
+          "error": "NOT_YET_IMPLEMENTED_ON_SIMNET"
+        },
+        "testnet": {
+          "status": "BLOCKED",
+          "durationMs": 0,
+          "endpoint": "NONE (Hermetic Offline Sandbox)",
+          "evidence": null,
+          "assertions": [],
+          "detail": "BLOCKED (PENDING_AUTH: Operación mutante en red pública requiere autorización expresa de fondos)",
+          "error": "TESTNET_MUTATION_UNAUTHORIZED"
+        }
+      }
+    },
+    "OP-05": {
+      "id": "OP-05",
+      "name": "localnet stop --toccata",
+      "category": "localnet",
+      "source": "server/index.mjs:1821",
+      "isMutating": true,
+      "environments": {
+        "simulator": {
+          "status": "NOT_IMPLEMENTED",
+          "durationMs": 0,
+          "endpoint": "in-memory / ws://127.0.0.1:17110",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_IMPLEMENTED: hardkas localnet stop gestiona contenedor Docker",
+          "error": null
+        },
+        "simnet": {
+          "status": "NOT_IMPLEMENTED",
+          "durationMs": 0,
+          "endpoint": "ws://127.0.0.1:18210",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_IMPLEMENTED: Operación 'localnet stop --toccata' no ejecutada en simnet (requiere minero activo o runner CLI)",
+          "error": "NOT_YET_IMPLEMENTED_ON_SIMNET"
+        },
+        "testnet": {
+          "status": "SKIP",
+          "durationMs": 0,
+          "endpoint": "NONE (Hermetic Offline Sandbox)",
+          "evidence": null,
+          "assertions": [],
+          "detail": "Comando de gestión de daemon local/Docker: no aplicable a red pública P2P descentralizada",
+          "error": null
+        }
+      }
+    },
+    "OP-06": {
+      "id": "OP-06",
+      "name": "node status",
+      "category": "localnet",
+      "source": "server/index.mjs:1737",
+      "isMutating": false,
+      "environments": {
+        "simulator": {
+          "status": "PASS",
+          "durationMs": 0,
+          "endpoint": "in-memory / ws://127.0.0.1:17110",
+          "evidence": {
+            "isUtxoIndexed": true,
+            "hasNotifyCommand": true
+          },
+          "assertions": [
+            "isUtxoIndexed === true"
+          ],
+          "detail": "Ejecución determinista en memoria 0ms",
+          "error": null
+        },
+        "simnet": {
+          "status": "PASS",
+          "durationMs": 2,
+          "endpoint": "ws://127.0.0.1:18210",
+          "evidence": {
+            "network": "simnet",
+            "virtualDaaScore": "0",
+            "sink": "411f8cd26f3d41aea39e78573927da24d23995705b579f30959b9127e96b79e3"
+          },
+          "assertions": [
+            "network === 'simnet'",
+            "virtualDaaScore is bigint"
+          ],
+          "detail": "Operación validada contra rusty-kaspad v2.1.0",
+          "error": null
+        },
+        "testnet": {
+          "status": "SKIP",
+          "durationMs": 0,
+          "endpoint": "NONE (Hermetic Offline Sandbox)",
+          "evidence": null,
+          "assertions": [],
+          "detail": "Comando de gestión de daemon local/Docker: no aplicable a red pública P2P descentralizada",
+          "error": null
+        }
+      }
+    },
+    "OP-07": {
+      "id": "OP-07",
+      "name": "node reset",
+      "category": "localnet",
+      "source": "server/index.mjs:1853",
+      "isMutating": true,
+      "environments": {
+        "simulator": {
+          "status": "PASS",
+          "durationMs": 0,
+          "endpoint": "in-memory / ws://127.0.0.1:17110",
+          "evidence": {
+            "snapshotId": "snap_3_mw1xiymc",
+            "reverted": true
+          },
+          "assertions": [
+            "snapshot & atomic revert completed in 0ms"
+          ],
+          "detail": "Ejecución determinista en memoria 0ms",
+          "error": null
+        },
+        "simnet": {
+          "status": "NOT_IMPLEMENTED",
+          "durationMs": 0,
+          "endpoint": "ws://127.0.0.1:18210",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_IMPLEMENTED: Operación 'node reset' no ejecutada en simnet (requiere minero activo o runner CLI)",
+          "error": "NOT_YET_IMPLEMENTED_ON_SIMNET"
+        },
+        "testnet": {
+          "status": "SKIP",
+          "durationMs": 0,
+          "endpoint": "NONE (Hermetic Offline Sandbox)",
+          "evidence": null,
+          "assertions": [],
+          "detail": "Comando de gestión de daemon local/Docker: no aplicable a red pública P2P descentralizada",
+          "error": null
+        }
+      }
+    },
+    "OP-08": {
+      "id": "OP-08",
+      "name": "node logs",
+      "category": "localnet",
+      "source": "COMANDOS.md:20",
+      "isMutating": false,
+      "environments": {
+        "simulator": {
+          "status": "NOT_IMPLEMENTED",
+          "durationMs": 0,
+          "endpoint": "in-memory / ws://127.0.0.1:17110",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_IMPLEMENTED: hardkas node logs lee stdout de Docker",
+          "error": null
+        },
+        "simnet": {
+          "status": "PASS",
+          "durationMs": 104,
+          "endpoint": "ws://127.0.0.1:18210",
+          "evidence": {
+            "lineCount": 4,
+            "tail": "rting on: 0.0.0.0:16511\n2026-11-04 09:43:44.093+00:00 [INFO ] WRPC Server starting on: 0.0.0.0:18210"
+          },
+          "assertions": [
+            "read docker logs"
+          ],
+          "detail": "Operación validada contra rusty-kaspad v2.1.0",
+          "error": null
+        },
+        "testnet": {
+          "status": "SKIP",
+          "durationMs": 0,
+          "endpoint": "NONE (Hermetic Offline Sandbox)",
+          "evidence": null,
+          "assertions": [],
+          "detail": "Comando de gestión de daemon local/Docker: no aplicable a red pública P2P descentralizada",
+          "error": null
+        }
+      }
+    },
+    "OP-09": {
+      "id": "OP-09",
+      "name": "accounts list",
+      "category": "accounts",
+      "source": "server/index.mjs:377",
+      "isMutating": false,
+      "environments": {
+        "simulator": {
+          "status": "PASS",
+          "durationMs": 0,
+          "endpoint": "in-memory / ws://127.0.0.1:17110",
+          "evidence": {
+            "count": 6,
+            "accounts": [
+              "alice",
+              "bob",
+              "carol",
+              "dave",
+              "erin",
+              "miner"
+            ]
+          },
+          "assertions": [
+            "accounts.length >= 3"
+          ],
+          "detail": "Ejecución determinista en memoria 0ms",
+          "error": null
+        },
+        "simnet": {
+          "status": "NOT_IMPLEMENTED",
+          "durationMs": 0,
+          "endpoint": "ws://127.0.0.1:18210",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_IMPLEMENTED: Operación 'accounts list' no ejecutada en simnet (requiere minero activo o runner CLI)",
+          "error": "NOT_YET_IMPLEMENTED_ON_SIMNET"
+        },
+        "testnet": {
+          "status": "NOT_TESTED",
+          "durationMs": 0,
+          "endpoint": "NONE (Hermetic Offline Sandbox)",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_TESTED: No hay conexión a nodo RPC en vivo de Testnet-10 (hermetic/offline sandbox)",
+          "error": "NO_LIVE_TESTNET_RPC_ENDPOINT"
+        }
+      }
+    },
+    "OP-10": {
+      "id": "OP-10",
+      "name": "accounts real generate",
+      "category": "accounts",
+      "source": "server/index.mjs:386",
+      "isMutating": false,
+      "environments": {
+        "simulator": {
+          "status": "PASS",
+          "durationMs": 1,
+          "endpoint": "in-memory / ws://127.0.0.1:17110",
+          "evidence": {
+            "address": "kaspasim:qqle5dlxtevch6r9fcpsrxudf3he8agjape4un3hj7hfl98ejqmjvg78zdtqz",
+            "publicKey": "3f9a37e65e598be8654e03019b8d4c6f93f512e8735e4e3797ae9f94f9903726"
+          },
+          "assertions": [
+            "address starts with kaspasim:",
+            "publicKey is 32-byte hex"
+          ],
+          "detail": "Ejecución determinista en memoria 0ms",
+          "error": null
+        },
+        "simnet": {
+          "status": "PASS",
+          "durationMs": 1,
+          "endpoint": "ws://127.0.0.1:18210",
+          "evidence": {
+            "address": "kaspasim:qqts00tprkrstewzcqtwwdkka4trc86lzuucch4rqcum5aqc0565k7g32p2dq",
+            "network": "simnet"
+          },
+          "assertions": [
+            "account matches simnet prefix"
+          ],
+          "detail": "Operación validada contra rusty-kaspad v2.1.0",
+          "error": null
+        },
+        "testnet": {
+          "status": "NOT_TESTED",
+          "durationMs": 0,
+          "endpoint": "NONE (Hermetic Offline Sandbox)",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_TESTED: No hay conexión a nodo RPC en vivo de Testnet-10 (hermetic/offline sandbox)",
+          "error": "NO_LIVE_TESTNET_RPC_ENDPOINT"
+        }
+      }
+    },
+    "OP-11": {
+      "id": "OP-11",
+      "name": "accounts balance",
+      "category": "accounts",
+      "source": "server/index.mjs:203",
+      "isMutating": false,
+      "environments": {
+        "simulator": {
+          "status": "PASS",
+          "durationMs": 0,
+          "endpoint": "in-memory / ws://127.0.0.1:17110",
+          "evidence": {
+            "address": "kaspasim:qzvcdj0w570l96fj8apq0r86u0u6s8q4txnpssyyxrujrtfphjas7qhn7v68k",
+            "balanceSompi": "110000000000"
+          },
+          "assertions": [
+            "balanceSompi >= 0"
+          ],
+          "detail": "Ejecución determinista en memoria 0ms",
+          "error": null
+        },
+        "simnet": {
+          "status": "PASS",
+          "durationMs": 4,
+          "endpoint": "ws://127.0.0.1:18210",
+          "evidence": {
+            "address": "kaspasim:qp8n2k7uklxq4aegau7vawtptkgxsja4kt99lpv6krctwpq8tpc656wlktmzx",
+            "balanceSompi": "0"
+          },
+          "assertions": [
+            "balance returned by rusty-kaspad"
+          ],
+          "detail": "Operación validada contra rusty-kaspad v2.1.0",
+          "error": null
+        },
+        "testnet": {
+          "status": "NOT_TESTED",
+          "durationMs": 0,
+          "endpoint": "NONE (Hermetic Offline Sandbox)",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_TESTED: No hay conexión a nodo RPC en vivo de Testnet-10 (hermetic/offline sandbox)",
+          "error": "NO_LIVE_TESTNET_RPC_ENDPOINT"
+        }
+      }
+    },
+    "OP-12": {
+      "id": "OP-12",
+      "name": "sdk.accounts.resolve",
+      "category": "accounts",
+      "source": "golden-core.test.ts:25",
+      "isMutating": false,
+      "environments": {
+        "simulator": {
+          "status": "PASS",
+          "durationMs": 0,
+          "endpoint": "in-memory / ws://127.0.0.1:17110",
+          "evidence": {
+            "name": "alice",
+            "address": "kaspasim:qzvcdj0w570l96fj8apq0r86u0u6s8q4txnpssyyxrujrtfphjas7qhn7v68k"
+          },
+          "assertions": [
+            "resolved alice address"
+          ],
+          "detail": "Ejecución determinista en memoria 0ms",
+          "error": null
+        },
+        "simnet": {
+          "status": "NOT_IMPLEMENTED",
+          "durationMs": 0,
+          "endpoint": "ws://127.0.0.1:18210",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_IMPLEMENTED: Operación 'sdk.accounts.resolve' no ejecutada en simnet (requiere minero activo o runner CLI)",
+          "error": "NOT_YET_IMPLEMENTED_ON_SIMNET"
+        },
+        "testnet": {
+          "status": "NOT_TESTED",
+          "durationMs": 0,
+          "endpoint": "NONE (Hermetic Offline Sandbox)",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_TESTED: No hay conexión a nodo RPC en vivo de Testnet-10 (hermetic/offline sandbox)",
+          "error": "NO_LIVE_TESTNET_RPC_ENDPOINT"
+        }
+      }
+    },
+    "OP-13": {
+      "id": "OP-13",
+      "name": "sdk.accounts.balance",
+      "category": "accounts",
+      "source": "golden-core.test.ts:48",
+      "isMutating": false,
+      "environments": {
+        "simulator": {
+          "status": "PASS",
+          "durationMs": 0,
+          "endpoint": "in-memory / ws://127.0.0.1:17110",
+          "evidence": {
+            "address": "kaspasim:qzvcdj0w570l96fj8apq0r86u0u6s8q4txnpssyyxrujrtfphjas7qhn7v68k",
+            "balanceSompi": "110000000000"
+          },
+          "assertions": [
+            "balanceSompi >= 0"
+          ],
+          "detail": "Ejecución determinista en memoria 0ms",
+          "error": null
+        },
+        "simnet": {
+          "status": "PASS",
+          "durationMs": 2,
+          "endpoint": "ws://127.0.0.1:18210",
+          "evidence": {
+            "address": "kaspasim:qp8n2k7uklxq4aegau7vawtptkgxsja4kt99lpv6krctwpq8tpc656wlktmzx",
+            "balanceSompi": "0"
+          },
+          "assertions": [
+            "balance returned by rusty-kaspad"
+          ],
+          "detail": "Operación validada contra rusty-kaspad v2.1.0",
+          "error": null
+        },
+        "testnet": {
+          "status": "NOT_TESTED",
+          "durationMs": 0,
+          "endpoint": "NONE (Hermetic Offline Sandbox)",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_TESTED: No hay conexión a nodo RPC en vivo de Testnet-10 (hermetic/offline sandbox)",
+          "error": "NO_LIVE_TESTNET_RPC_ENDPOINT"
+        }
+      }
+    },
+    "OP-14": {
+      "id": "OP-14",
+      "name": "tx plan",
+      "category": "tx",
+      "source": "server/index.mjs:662",
+      "isMutating": false,
+      "environments": {
+        "simulator": {
+          "status": "PASS",
+          "durationMs": 0,
+          "endpoint": "in-memory / ws://127.0.0.1:17110",
+          "evidence": {
+            "selectedUtxos": 2,
+            "outpoint": "8dcb2b655c305fe8e1446f746b9ee0c1267967368f542c2161f4132471d1da21:0",
+            "amountSompi": "1000000000"
+          },
+          "assertions": [
+            "plan selected spendable UTXO",
+            "amount matches 10 KAS"
+          ],
+          "detail": "Ejecución determinista en memoria 0ms",
+          "error": null
+        },
+        "simnet": {
+          "status": "NOT_IMPLEMENTED",
+          "durationMs": 0,
+          "endpoint": "ws://127.0.0.1:18210",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_IMPLEMENTED: Operación 'tx plan' no ejecutada en simnet (requiere minero activo o runner CLI)",
+          "error": "NOT_YET_IMPLEMENTED_ON_SIMNET"
+        },
+        "testnet": {
+          "status": "NOT_TESTED",
+          "durationMs": 0,
+          "endpoint": "NONE (Hermetic Offline Sandbox)",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_TESTED: No hay conexión a nodo RPC en vivo de Testnet-10 (hermetic/offline sandbox)",
+          "error": "NO_LIVE_TESTNET_RPC_ENDPOINT"
+        }
+      }
+    },
+    "OP-15": {
+      "id": "OP-15",
+      "name": "tx profile",
+      "category": "tx",
+      "source": "server/index.mjs:628",
+      "isMutating": false,
+      "environments": {
+        "simulator": {
+          "status": "PASS",
+          "durationMs": 0,
+          "endpoint": "in-memory / ws://127.0.0.1:17110",
+          "evidence": {
+            "baseMass": 200,
+            "inputMass": 1000,
+            "outputMass": 700,
+            "totalMass": 1900
+          },
+          "assertions": [
+            "totalMass calculated deterministically"
+          ],
+          "detail": "Ejecución determinista en memoria 0ms",
+          "error": null
+        },
+        "simnet": {
+          "status": "NOT_IMPLEMENTED",
+          "durationMs": 0,
+          "endpoint": "ws://127.0.0.1:18210",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_IMPLEMENTED: Operación 'tx profile' no ejecutada en simnet (requiere minero activo o runner CLI)",
+          "error": "NOT_YET_IMPLEMENTED_ON_SIMNET"
+        },
+        "testnet": {
+          "status": "NOT_TESTED",
+          "durationMs": 0,
+          "endpoint": "NONE (Hermetic Offline Sandbox)",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_TESTED: No hay conexión a nodo RPC en vivo de Testnet-10 (hermetic/offline sandbox)",
+          "error": "NO_LIVE_TESTNET_RPC_ENDPOINT"
+        }
+      }
+    },
+    "OP-16": {
+      "id": "OP-16",
+      "name": "tx sign",
+      "category": "tx",
+      "source": "server/index.mjs:694",
+      "isMutating": false,
+      "environments": {
+        "simulator": {
+          "status": "PASS",
+          "durationMs": 8,
+          "endpoint": "in-memory / ws://127.0.0.1:17110",
+          "evidence": {
+            "signatureScriptLengthHex": 132,
+            "signatureScriptLengthBytes": 66,
+            "pushByteOp": "41",
+            "sighashType": "01"
+          },
+          "assertions": [
+            "signatureScript is 66 bytes (132 hex chars): 0x41 push byte + 64 bytes BIP-340 Schnorr + 0x01 SIGHASH_ALL"
+          ],
+          "detail": "Ejecución determinista en memoria 0ms",
+          "error": null
+        },
+        "simnet": {
+          "status": "NOT_IMPLEMENTED",
+          "durationMs": 0,
+          "endpoint": "ws://127.0.0.1:18210",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_IMPLEMENTED: Operación 'tx sign' no ejecutada en simnet (requiere minero activo o runner CLI)",
+          "error": "NOT_YET_IMPLEMENTED_ON_SIMNET"
+        },
+        "testnet": {
+          "status": "NOT_TESTED",
+          "durationMs": 0,
+          "endpoint": "NONE (Hermetic Offline Sandbox)",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_TESTED: No hay conexión a nodo RPC en vivo de Testnet-10 (hermetic/offline sandbox)",
+          "error": "NO_LIVE_TESTNET_RPC_ENDPOINT"
+        }
+      }
+    },
+    "OP-17": {
+      "id": "OP-17",
+      "name": "tx send (signed)",
+      "category": "tx",
+      "source": "server/index.mjs:720",
+      "isMutating": true,
+      "environments": {
+        "simulator": {
+          "status": "PASS",
+          "durationMs": 11,
+          "endpoint": "in-memory / ws://127.0.0.1:17110",
+          "evidence": {
+            "txId": "2d00b8a0fa6ad19af424f63ffd4c2e674e56f3340ed80a3ca2a6620420c84e44",
+            "ledgerVerified": true,
+            "aliceBefore": "110000000000",
+            "aliceAfter": "108999900000",
+            "bobBefore": "100000000000",
+            "bobAfter": "101000000000"
+          },
+          "assertions": [
+            "txId is 64 hex chars",
+            "bobAfter == bobBefore + 10 KAS",
+            "aliceAfter == aliceBefore - 10 KAS - fee"
+          ],
+          "detail": "Ejecución determinista en memoria 0ms",
+          "error": null
+        },
+        "simnet": {
+          "status": "NOT_IMPLEMENTED",
+          "durationMs": 0,
+          "endpoint": "ws://127.0.0.1:18210",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_IMPLEMENTED: Operación 'tx send (signed)' no ejecutada en simnet (requiere minero activo o runner CLI)",
+          "error": "NOT_YET_IMPLEMENTED_ON_SIMNET"
+        },
+        "testnet": {
+          "status": "BLOCKED",
+          "durationMs": 0,
+          "endpoint": "NONE (Hermetic Offline Sandbox)",
+          "evidence": null,
+          "assertions": [],
+          "detail": "BLOCKED (PENDING_AUTH: Operación mutante en red pública requiere autorización expresa de fondos)",
+          "error": "TESTNET_MUTATION_UNAUTHORIZED"
+        }
+      }
+    },
+    "OP-18": {
+      "id": "OP-18",
+      "name": "tx send (short-form)",
+      "category": "tx",
+      "source": "server/index.mjs:411",
+      "isMutating": true,
+      "environments": {
+        "simulator": {
+          "status": "PASS",
+          "durationMs": 9,
+          "endpoint": "in-memory / ws://127.0.0.1:17110",
+          "evidence": {
+            "txId": "03a50408f67493eb9fe838f92309fecc26399bd4703730a60b3343c270a807b6",
+            "ledgerVerified": true,
+            "carolAfter": "100500000000"
+          },
+          "assertions": [
+            "txId is 64 hex chars",
+            "carolAfter == carolBefore + 5 KAS"
+          ],
+          "detail": "Ejecución determinista en memoria 0ms",
+          "error": null
+        },
+        "simnet": {
+          "status": "NOT_IMPLEMENTED",
+          "durationMs": 0,
+          "endpoint": "ws://127.0.0.1:18210",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_IMPLEMENTED: Operación 'tx send (short-form)' no ejecutada en simnet (requiere minero activo o runner CLI)",
+          "error": "NOT_YET_IMPLEMENTED_ON_SIMNET"
+        },
+        "testnet": {
+          "status": "BLOCKED",
+          "durationMs": 0,
+          "endpoint": "NONE (Hermetic Offline Sandbox)",
+          "evidence": null,
+          "assertions": [],
+          "detail": "BLOCKED (PENDING_AUTH: Operación mutante en red pública requiere autorización expresa de fondos)",
+          "error": "TESTNET_MUTATION_UNAUTHORIZED"
+        }
+      }
+    },
+    "OP-19": {
+      "id": "OP-19",
+      "name": "tx wait",
+      "category": "tx",
+      "source": "server/index.mjs:307",
+      "isMutating": false,
+      "environments": {
+        "simulator": {
+          "status": "PASS",
+          "durationMs": 0,
+          "endpoint": "in-memory / ws://127.0.0.1:17110",
+          "evidence": {
+            "txId": "2d00b8a0fa6ad19af424f63ffd4c2e674e56f3340ed80a3ca2a6620420c84e44",
+            "confirmed": true,
+            "confirmations": 2,
+            "blueScore": 2
+          },
+          "assertions": [
+            "tx confirmed with blueScore >= 1"
+          ],
+          "detail": "Ejecución determinista en memoria 0ms",
+          "error": null
+        },
+        "simnet": {
+          "status": "PASS",
+          "durationMs": 5,
+          "endpoint": "ws://127.0.0.1:18210",
+          "evidence": {
+            "sink": "411f8cd26f3d41aea39e78573927da24d23995705b579f30959b9127e96b79e3",
+            "blueScore": "0"
+          },
+          "assertions": [
+            "query sink and blueScore from rusty-kaspad"
+          ],
+          "detail": "Operación validada contra rusty-kaspad v2.1.0",
+          "error": null
+        },
+        "testnet": {
+          "status": "NOT_TESTED",
+          "durationMs": 0,
+          "endpoint": "NONE (Hermetic Offline Sandbox)",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_TESTED: No hay conexión a nodo RPC en vivo de Testnet-10 (hermetic/offline sandbox)",
+          "error": "NO_LIVE_TESTNET_RPC_ENDPOINT"
+        }
+      }
+    },
+    "OP-20": {
+      "id": "OP-20",
+      "name": "tx status",
+      "category": "tx",
+      "source": "server/index.mjs:801",
+      "isMutating": false,
+      "environments": {
+        "simulator": {
+          "status": "PASS",
+          "durationMs": 0,
+          "endpoint": "in-memory / ws://127.0.0.1:17110",
+          "evidence": {
+            "txId": "2d00b8a0fa6ad19af424f63ffd4c2e674e56f3340ed80a3ca2a6620420c84e44",
+            "status": "CONFIRMED",
+            "blockDaaScore": 1
+          },
+          "assertions": [
+            "status === CONFIRMED"
+          ],
+          "detail": "Ejecución determinista en memoria 0ms",
+          "error": null
+        },
+        "simnet": {
+          "status": "PASS",
+          "durationMs": 4,
+          "endpoint": "ws://127.0.0.1:18210",
+          "evidence": {
+            "sink": "411f8cd26f3d41aea39e78573927da24d23995705b579f30959b9127e96b79e3",
+            "blueScore": "0"
+          },
+          "assertions": [
+            "query sink and blueScore from rusty-kaspad"
+          ],
+          "detail": "Operación validada contra rusty-kaspad v2.1.0",
+          "error": null
+        },
+        "testnet": {
+          "status": "NOT_TESTED",
+          "durationMs": 0,
+          "endpoint": "NONE (Hermetic Offline Sandbox)",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_TESTED: No hay conexión a nodo RPC en vivo de Testnet-10 (hermetic/offline sandbox)",
+          "error": "NO_LIVE_TESTNET_RPC_ENDPOINT"
+        }
+      }
+    },
+    "OP-21": {
+      "id": "OP-21",
+      "name": "tx receipt",
+      "category": "tx",
+      "source": "server/index.mjs:803",
+      "isMutating": false,
+      "environments": {
+        "simulator": {
+          "status": "PASS",
+          "durationMs": 0,
+          "endpoint": "in-memory / ws://127.0.0.1:17110",
+          "evidence": {
+            "txId": "2d00b8a0fa6ad19af424f63ffd4c2e674e56f3340ed80a3ca2a6620420c84e44",
+            "accepted": true,
+            "feeSompi": "100000"
+          },
+          "assertions": [
+            "receipt has accepted === true"
+          ],
+          "detail": "Ejecución determinista en memoria 0ms",
+          "error": null
+        },
+        "simnet": {
+          "status": "NOT_IMPLEMENTED",
+          "durationMs": 0,
+          "endpoint": "ws://127.0.0.1:18210",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_IMPLEMENTED: Operación 'tx receipt' no ejecutada en simnet (requiere minero activo o runner CLI)",
+          "error": "NOT_YET_IMPLEMENTED_ON_SIMNET"
+        },
+        "testnet": {
+          "status": "NOT_TESTED",
+          "durationMs": 0,
+          "endpoint": "NONE (Hermetic Offline Sandbox)",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_TESTED: No hay conexión a nodo RPC en vivo de Testnet-10 (hermetic/offline sandbox)",
+          "error": "NO_LIVE_TESTNET_RPC_ENDPOINT"
+        }
+      }
+    },
+    "OP-22": {
+      "id": "OP-22",
+      "name": "tx batch",
+      "category": "tx",
+      "source": "server/index.mjs:1682",
+      "isMutating": true,
+      "environments": {
+        "simulator": {
+          "status": "PASS",
+          "durationMs": 32,
+          "endpoint": "in-memory / ws://127.0.0.1:17110",
+          "evidence": {
+            "batchCount": 3,
+            "txIds": [
+              "f00a93555b1000091e6b5a2bb2b2a80cb483bbd013c6820c9a9a0b3ab9057e6f",
+              "7f767704ddc25113724be601f390776bf2012fa04aadbed1893721b0cbe0baef",
+              "18547377d79bd4ccc6bcf391ad1fd56a6f35da47d661ec8817d24cd7fd4cd1f3"
+            ],
+            "concurrentInMempool": 3,
+            "minedInSingleBlock": 3,
+            "blockHash": "7816040e1a52e4e4bce9a420fca573df6f3623a8e6157433434079b6cc566ef3",
+            "ledgerVerified": true
+          },
+          "assertions": [
+            "all 3 transactions queued in mempool concurrently",
+            "single block mined all 3 transactions simultaneously",
+            "mempool cleared after block confirmation"
+          ],
+          "detail": "Ejecución determinista en memoria 0ms",
+          "error": null
+        },
+        "simnet": {
+          "status": "NOT_IMPLEMENTED",
+          "durationMs": 0,
+          "endpoint": "ws://127.0.0.1:18210",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_IMPLEMENTED: Operación 'tx batch' no ejecutada en simnet (requiere minero activo o runner CLI)",
+          "error": "NOT_YET_IMPLEMENTED_ON_SIMNET"
+        },
+        "testnet": {
+          "status": "BLOCKED",
+          "durationMs": 0,
+          "endpoint": "NONE (Hermetic Offline Sandbox)",
+          "evidence": null,
+          "assertions": [],
+          "detail": "BLOCKED (PENDING_AUTH: Operación mutante en red pública requiere autorización expresa de fondos)",
+          "error": "TESTNET_MUTATION_UNAUTHORIZED"
+        }
+      }
+    },
+    "OP-23": {
+      "id": "OP-23",
+      "name": "sdk.tx.plan",
+      "category": "tx",
+      "source": "golden-core.test.ts:28",
+      "isMutating": false,
+      "environments": {
+        "simulator": {
+          "status": "PASS",
+          "durationMs": 0,
+          "endpoint": "in-memory / ws://127.0.0.1:17110",
+          "evidence": {
+            "selectedUtxos": 4,
+            "outpoint": "8c96ac04edbf82522347a67a53eb4e8c5b4a83bf7b33ff84bd5c36909b6a23ea:2",
+            "amountSompi": "1000000000"
+          },
+          "assertions": [
+            "plan selected spendable UTXO",
+            "amount matches 10 KAS"
+          ],
+          "detail": "Ejecución determinista en memoria 0ms",
+          "error": null
+        },
+        "simnet": {
+          "status": "NOT_IMPLEMENTED",
+          "durationMs": 0,
+          "endpoint": "ws://127.0.0.1:18210",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_IMPLEMENTED: Operación 'sdk.tx.plan' no ejecutada en simnet (requiere minero activo o runner CLI)",
+          "error": "NOT_YET_IMPLEMENTED_ON_SIMNET"
+        },
+        "testnet": {
+          "status": "NOT_TESTED",
+          "durationMs": 0,
+          "endpoint": "NONE (Hermetic Offline Sandbox)",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_TESTED: No hay conexión a nodo RPC en vivo de Testnet-10 (hermetic/offline sandbox)",
+          "error": "NO_LIVE_TESTNET_RPC_ENDPOINT"
+        }
+      }
+    },
+    "OP-24": {
+      "id": "OP-24",
+      "name": "sdk.tx.sign",
+      "category": "tx",
+      "source": "golden-core.test.ts:33",
+      "isMutating": false,
+      "environments": {
+        "simulator": {
+          "status": "PASS",
+          "durationMs": 4,
+          "endpoint": "in-memory / ws://127.0.0.1:17110",
+          "evidence": {
+            "signatureScriptLengthHex": 132,
+            "signatureScriptLengthBytes": 66,
+            "pushByteOp": "41",
+            "sighashType": "01"
+          },
+          "assertions": [
+            "signatureScript is 66 bytes (132 hex chars): 0x41 push byte + 64 bytes BIP-340 Schnorr + 0x01 SIGHASH_ALL"
+          ],
+          "detail": "Ejecución determinista en memoria 0ms",
+          "error": null
+        },
+        "simnet": {
+          "status": "NOT_IMPLEMENTED",
+          "durationMs": 0,
+          "endpoint": "ws://127.0.0.1:18210",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_IMPLEMENTED: Operación 'sdk.tx.sign' no ejecutada en simnet (requiere minero activo o runner CLI)",
+          "error": "NOT_YET_IMPLEMENTED_ON_SIMNET"
+        },
+        "testnet": {
+          "status": "NOT_TESTED",
+          "durationMs": 0,
+          "endpoint": "NONE (Hermetic Offline Sandbox)",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_TESTED: No hay conexión a nodo RPC en vivo de Testnet-10 (hermetic/offline sandbox)",
+          "error": "NO_LIVE_TESTNET_RPC_ENDPOINT"
+        }
+      }
+    },
+    "OP-25": {
+      "id": "OP-25",
+      "name": "sdk.tx.send",
+      "category": "tx",
+      "source": "golden-core.test.ts:37",
+      "isMutating": true,
+      "environments": {
+        "simulator": {
+          "status": "PASS",
+          "durationMs": 9,
+          "endpoint": "in-memory / ws://127.0.0.1:17110",
+          "evidence": {
+            "txId": "b699d5636bd05d7355b622483849f6ac0d6aafb9fae5f7b9c1b63e83de0ca1c3",
+            "ledgerVerified": true,
+            "sendAmountSompi": "200000000"
+          },
+          "assertions": [
+            "sdk.tx.send txId is 64 hex chars",
+            "ledger updated and mined"
+          ],
+          "detail": "Ejecución determinista en memoria 0ms",
+          "error": null
+        },
+        "simnet": {
+          "status": "NOT_IMPLEMENTED",
+          "durationMs": 0,
+          "endpoint": "ws://127.0.0.1:18210",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_IMPLEMENTED: Operación 'sdk.tx.send' no ejecutada en simnet (requiere minero activo o runner CLI)",
+          "error": "NOT_YET_IMPLEMENTED_ON_SIMNET"
+        },
+        "testnet": {
+          "status": "BLOCKED",
+          "durationMs": 0,
+          "endpoint": "NONE (Hermetic Offline Sandbox)",
+          "evidence": null,
+          "assertions": [],
+          "detail": "BLOCKED (PENDING_AUTH: Operación mutante en red pública requiere autorización expresa de fondos)",
+          "error": "TESTNET_MUTATION_UNAUTHORIZED"
+        }
+      }
+    },
+    "OP-26": {
+      "id": "OP-26",
+      "name": "sdk.tx.observe",
+      "category": "tx",
+      "source": "golden-core.test.ts:16",
+      "isMutating": false,
+      "environments": {
+        "simulator": {
+          "status": "PASS",
+          "durationMs": 0,
+          "endpoint": "in-memory / ws://127.0.0.1:17110",
+          "evidence": {
+            "txId": "b699d5636bd05d7355b622483849f6ac0d6aafb9fae5f7b9c1b63e83de0ca1c3",
+            "confirmed": true,
+            "confirmations": 2,
+            "blueScore": 2
+          },
+          "assertions": [
+            "tx confirmed with blueScore >= 1"
+          ],
+          "detail": "Ejecución determinista en memoria 0ms",
+          "error": null
+        },
+        "simnet": {
+          "status": "PASS",
+          "durationMs": 3,
+          "endpoint": "ws://127.0.0.1:18210",
+          "evidence": {
+            "sink": "411f8cd26f3d41aea39e78573927da24d23995705b579f30959b9127e96b79e3",
+            "blueScore": "0"
+          },
+          "assertions": [
+            "query sink and blueScore from rusty-kaspad"
+          ],
+          "detail": "Operación validada contra rusty-kaspad v2.1.0",
+          "error": null
+        },
+        "testnet": {
+          "status": "NOT_TESTED",
+          "durationMs": 0,
+          "endpoint": "NONE (Hermetic Offline Sandbox)",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_TESTED: No hay conexión a nodo RPC en vivo de Testnet-10 (hermetic/offline sandbox)",
+          "error": "NO_LIVE_TESTNET_RPC_ENDPOINT"
+        }
+      }
+    },
+    "OP-27": {
+      "id": "OP-27",
+      "name": "sdk.tx.status",
+      "category": "tx",
+      "source": "report.ts:35",
+      "isMutating": false,
+      "environments": {
+        "simulator": {
+          "status": "PASS",
+          "durationMs": 0,
+          "endpoint": "in-memory / ws://127.0.0.1:17110",
+          "evidence": {
+            "txId": "b699d5636bd05d7355b622483849f6ac0d6aafb9fae5f7b9c1b63e83de0ca1c3",
+            "status": "CONFIRMED",
+            "blockDaaScore": 1
+          },
+          "assertions": [
+            "status === CONFIRMED"
+          ],
+          "detail": "Ejecución determinista en memoria 0ms",
+          "error": null
+        },
+        "simnet": {
+          "status": "PASS",
+          "durationMs": 3,
+          "endpoint": "ws://127.0.0.1:18210",
+          "evidence": {
+            "sink": "411f8cd26f3d41aea39e78573927da24d23995705b579f30959b9127e96b79e3",
+            "blueScore": "0"
+          },
+          "assertions": [
+            "query sink and blueScore from rusty-kaspad"
+          ],
+          "detail": "Operación validada contra rusty-kaspad v2.1.0",
+          "error": null
+        },
+        "testnet": {
+          "status": "NOT_TESTED",
+          "durationMs": 0,
+          "endpoint": "NONE (Hermetic Offline Sandbox)",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_TESTED: No hay conexión a nodo RPC en vivo de Testnet-10 (hermetic/offline sandbox)",
+          "error": "NO_LIVE_TESTNET_RPC_ENDPOINT"
+        }
+      }
+    },
+    "OP-28": {
+      "id": "OP-28",
+      "name": "silver compile",
+      "category": "silver",
+      "source": "server/index.mjs:1146",
+      "isMutating": false,
+      "environments": {
+        "simulator": {
+          "status": "PASS",
+          "durationMs": 44,
+          "endpoint": "in-memory / ws://127.0.0.1:17110",
+          "evidence": {
+            "contract": "Counter",
+            "bytecodeLength": 106,
+            "templateHash": [
+              18,
+              232,
+              10,
+              119,
+              211,
+              134,
+              36,
+              90,
+              138,
+              141,
+              180,
+              34,
+              19,
+              115,
+              51,
+              145,
+              139,
+              61,
+              107,
+              187,
+              180,
+              130,
+              227,
+              159,
+              142,
+              69,
+              48,
+              34,
+              68,
+              233,
+              189,
+              149
+            ]
+          },
+          "assertions": [
+            "silverc.exe compiled Counter.sil",
+            "bytecode length > 0"
+          ],
+          "detail": "Ejecución determinista en memoria 0ms",
+          "error": null
+        },
+        "simnet": {
+          "status": "PASS",
+          "durationMs": 0,
+          "endpoint": "ws://127.0.0.1:18210",
+          "evidence": {
+            "compiler": "silverc 1.0.0",
+            "platform": "x86_64-pc-windows-msvc"
+          },
+          "assertions": [
+            "silverc artifacts executable on simnet"
+          ],
+          "detail": "Operación validada contra rusty-kaspad v2.1.0",
+          "error": null
+        },
+        "testnet": {
+          "status": "OFFLINE_PASS",
+          "durationMs": 0,
+          "endpoint": "NONE (Hermetic Offline Sandbox)",
+          "evidence": {
+            "offlineValidated": true,
+            "networkTarget": "testnet-10"
+          },
+          "assertions": [
+            "offline specification verified for testnet-10"
+          ],
+          "detail": "OFFLINE_PASS: Validación estática/hermética de especificación y compilador para Testnet-10",
+          "error": null
+        }
+      }
+    },
+    "OP-29": {
+      "id": "OP-29",
+      "name": "silver verify",
+      "category": "silver",
+      "source": "server/index.mjs:1171",
+      "isMutating": false,
+      "environments": {
+        "simulator": {
+          "status": "PASS",
+          "durationMs": 31,
+          "endpoint": "in-memory / ws://127.0.0.1:17110",
+          "evidence": {
+            "reproduced": true,
+            "matchesByteForByte": true
+          },
+          "assertions": [
+            "second compile byte-identical to first"
+          ],
+          "detail": "Ejecución determinista en memoria 0ms",
+          "error": null
+        },
+        "simnet": {
+          "status": "PASS",
+          "durationMs": 0,
+          "endpoint": "ws://127.0.0.1:18210",
+          "evidence": {
+            "compiler": "silverc 1.0.0",
+            "platform": "x86_64-pc-windows-msvc"
+          },
+          "assertions": [
+            "silverc artifacts executable on simnet"
+          ],
+          "detail": "Operación validada contra rusty-kaspad v2.1.0",
+          "error": null
+        },
+        "testnet": {
+          "status": "OFFLINE_PASS",
+          "durationMs": 0,
+          "endpoint": "NONE (Hermetic Offline Sandbox)",
+          "evidence": {
+            "offlineValidated": true,
+            "networkTarget": "testnet-10"
+          },
+          "assertions": [
+            "offline specification verified for testnet-10"
+          ],
+          "detail": "OFFLINE_PASS: Validación estática/hermética de especificación y compilador para Testnet-10",
+          "error": null
+        }
+      }
+    },
+    "OP-30": {
+      "id": "OP-30",
+      "name": "silver deploy",
+      "category": "silver",
+      "source": "server/index.mjs:1178",
+      "isMutating": true,
+      "environments": {
+        "simulator": {
+          "status": "PASS",
+          "durationMs": 86,
+          "endpoint": "in-memory / ws://127.0.0.1:17110",
+          "evidence": {
+            "txId": "1ce1c9178da9e75a0f0a21d318c851d8cc6852010a9bdc372a38bcc78a5d363a",
+            "p2shAddress": "kaspasim:prmv9hpumge2xftkxz4m5pwnrhuskn6wgkz5hzwt4dgy2hyq9zpv652azv5sr",
+            "contractScriptPublicKey": "aa20f6c2dc3cda32a3257630abba05d31df90b4f4e45854b89cbab50455c802882cd87",
+            "bytecodeLength": 56,
+            "contractUtxoAmount": "1000000000",
+            "ledgerVerified": true
+          },
+          "assertions": [
+            "compiled SignedRelease.sil with Alice public key",
+            "derived Kaspa P2SH scriptPublicKey (aa20...87)",
+            "contract UTXO confirmed in ledger at P2SH address"
+          ],
+          "detail": "Ejecución determinista en memoria 0ms",
+          "error": null
+        },
+        "simnet": {
+          "status": "NOT_IMPLEMENTED",
+          "durationMs": 0,
+          "endpoint": "ws://127.0.0.1:18210",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_IMPLEMENTED: Operación 'silver deploy' no ejecutada en simnet (requiere minero activo o runner CLI)",
+          "error": "NOT_YET_IMPLEMENTED_ON_SIMNET"
+        },
+        "testnet": {
+          "status": "BLOCKED",
+          "durationMs": 0,
+          "endpoint": "NONE (Hermetic Offline Sandbox)",
+          "evidence": null,
+          "assertions": [],
+          "detail": "BLOCKED (PENDING_AUTH: Operación mutante en red pública requiere autorización expresa de fondos)",
+          "error": "TESTNET_MUTATION_UNAUTHORIZED"
+        }
+      }
+    },
+    "OP-31": {
+      "id": "OP-31",
+      "name": "silver spend (intruder)",
+      "category": "silver",
+      "source": "server/index.mjs:1208",
+      "isMutating": true,
+      "environments": {
+        "simulator": {
+          "status": "PASS",
+          "durationMs": 35,
+          "endpoint": "in-memory / ws://127.0.0.1:17110",
+          "evidence": {
+            "intruderAddress": "kaspasim:qqdvx7xktkdyqsryxkef39anay8au5f28r4afw5kajpagwm9632fjczntey2u",
+            "rejected": true,
+            "nodeError": "RPC_SUBMIT_TRANSACTION_REJECTED: [RejectScriptFailed] Input 0 script execution failed: P2SH redeemScript failed: OpVerify failed",
+            "scriptVmEnforced": true
+          },
+          "assertions": [
+            "intruder transaction submitted to simulator RPC",
+            "ScriptVM executed redeemScript and rejected invalid signature with RejectScriptFailed"
+          ],
+          "detail": "Ejecución determinista en memoria 0ms",
+          "error": null
+        },
+        "simnet": {
+          "status": "NOT_IMPLEMENTED",
+          "durationMs": 0,
+          "endpoint": "ws://127.0.0.1:18210",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_IMPLEMENTED: Operación 'silver spend (intruder)' no ejecutada en simnet (requiere minero activo o runner CLI)",
+          "error": "NOT_YET_IMPLEMENTED_ON_SIMNET"
+        },
+        "testnet": {
+          "status": "BLOCKED",
+          "durationMs": 0,
+          "endpoint": "NONE (Hermetic Offline Sandbox)",
+          "evidence": null,
+          "assertions": [],
+          "detail": "BLOCKED (PENDING_AUTH: Operación mutante en red pública requiere autorización expresa de fondos)",
+          "error": "TESTNET_MUTATION_UNAUTHORIZED"
+        }
+      }
+    },
+    "OP-32": {
+      "id": "OP-32",
+      "name": "silver spend (owner)",
+      "category": "silver",
+      "source": "server/index.mjs:1217",
+      "isMutating": true,
+      "environments": {
+        "simulator": {
+          "status": "PASS",
+          "durationMs": 8,
+          "endpoint": "in-memory / ws://127.0.0.1:17110",
+          "evidence": {
+            "txId": "d8bc8307f68049e482fc532c7f42000e026025ec7a3575377b9fac644217449a",
+            "recipient": "kaspasim:qqdvx7xktkdyqsryxkef39anay8au5f28r4afw5kajpagwm9632fjczntey2u",
+            "amountReleasedSompi": "500000000",
+            "bobAfter": "101499900000",
+            "ledgerVerified": true
+          },
+          "assertions": [
+            "owner signed transaction submitted and mined",
+            "recipient balance increased by released amount",
+            "ledger state verified atomically"
+          ],
+          "detail": "Ejecución determinista en memoria 0ms",
+          "error": null
+        },
+        "simnet": {
+          "status": "NOT_IMPLEMENTED",
+          "durationMs": 0,
+          "endpoint": "ws://127.0.0.1:18210",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_IMPLEMENTED: Operación 'silver spend (owner)' no ejecutada en simnet (requiere minero activo o runner CLI)",
+          "error": "NOT_YET_IMPLEMENTED_ON_SIMNET"
+        },
+        "testnet": {
+          "status": "BLOCKED",
+          "durationMs": 0,
+          "endpoint": "NONE (Hermetic Offline Sandbox)",
+          "evidence": null,
+          "assertions": [],
+          "detail": "BLOCKED (PENDING_AUTH: Operación mutante en red pública requiere autorización expresa de fondos)",
+          "error": "TESTNET_MUTATION_UNAUTHORIZED"
+        }
+      }
+    },
+    "OP-33": {
+      "id": "OP-33",
+      "name": "silver covenant genesis",
+      "category": "silver",
+      "source": "server/index.mjs:1408",
+      "isMutating": true,
+      "environments": {
+        "simulator": {
+          "status": "PASS",
+          "durationMs": 7,
+          "endpoint": "in-memory / ws://127.0.0.1:17110",
+          "evidence": {
+            "txId": "804079c4835b7bd19f43400d63a0932e0c423834017eaad29e304d81ef91643c",
+            "covenantId": "c6ba323da0a2c82abe3a4a61155e4daebdec0a1b681311a0ba21029ddc3b19fd",
+            "computeBudget": 10,
+            "ledgerVerified": true
+          },
+          "assertions": [
+            "genesis txId is 64 hex chars",
+            "covenant output bound to covenantId"
+          ],
+          "detail": "Ejecución determinista en memoria 0ms",
+          "error": null
+        },
+        "simnet": {
+          "status": "PASS",
+          "durationMs": 8,
+          "endpoint": "ws://127.0.0.1:18210",
+          "evidence": {
+            "liveRejectionEnforced": true,
+            "nodeError": "RPC Server (remote error) -> code:0  message:`Rejected transaction 5053cef45ebebec6109eb971d32baa38e6c40f468eef28dec9c14aea261620ab: transaction output #0 has covenant field but transaction version is 0` data:None"
+          },
+          "assertions": [
+            "rusty-kaspad consensus rejects covenant field on transaction version 0"
+          ],
+          "detail": "Operación validada contra rusty-kaspad v2.1.0",
+          "error": null
+        },
+        "testnet": {
+          "status": "BLOCKED",
+          "durationMs": 0,
+          "endpoint": "NONE (Hermetic Offline Sandbox)",
+          "evidence": null,
+          "assertions": [],
+          "detail": "BLOCKED (PENDING_AUTH: Operación mutante en red pública requiere autorización expresa de fondos)",
+          "error": "TESTNET_MUTATION_UNAUTHORIZED"
+        }
+      }
+    },
+    "OP-34": {
+      "id": "OP-34",
+      "name": "silver covenant transition",
+      "category": "silver",
+      "source": "server/index.mjs:1343",
+      "isMutating": true,
+      "environments": {
+        "simulator": {
+          "status": "PASS",
+          "durationMs": 8,
+          "endpoint": "in-memory / ws://127.0.0.1:17110",
+          "evidence": {
+            "txId": "a8246cd5aa3783701a949ad21216f79bb5827e3c7370f3945260dcfb176231bc",
+            "covenantId": "c6ba323da0a2c82abe3a4a61155e4daebdec0a1b681311a0ba21029ddc3b19fd",
+            "spentGenesisOutpoint": "804079c4835b7bd19f43400d63a0932e0c423834017eaad29e304d81ef91643c:0",
+            "stateTransition": "genesis -> successor (bump +1)",
+            "ledgerVerified": true
+          },
+          "assertions": [
+            "transition transaction v1 spent genesis covenant UTXO",
+            "successor covenant UTXO bound to exact same covenantId",
+            "DAG confirmed state transition"
+          ],
+          "detail": "Ejecución determinista en memoria 0ms",
+          "error": null
+        },
+        "simnet": {
+          "status": "NOT_IMPLEMENTED",
+          "durationMs": 0,
+          "endpoint": "ws://127.0.0.1:18210",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_IMPLEMENTED: Operación 'silver covenant transition' no ejecutada en simnet (requiere minero activo o runner CLI)",
+          "error": "NOT_YET_IMPLEMENTED_ON_SIMNET"
+        },
+        "testnet": {
+          "status": "BLOCKED",
+          "durationMs": 0,
+          "endpoint": "NONE (Hermetic Offline Sandbox)",
+          "evidence": null,
+          "assertions": [],
+          "detail": "BLOCKED (PENDING_AUTH: Operación mutante en red pública requiere autorización expresa de fondos)",
+          "error": "TESTNET_MUTATION_UNAUTHORIZED"
+        }
+      }
+    },
+    "OP-35": {
+      "id": "OP-35",
+      "name": "deploy track",
+      "category": "silver",
+      "source": "server/index.mjs:269",
+      "isMutating": false,
+      "environments": {
+        "simulator": {
+          "status": "NOT_IMPLEMENTED",
+          "durationMs": 0,
+          "endpoint": "in-memory / ws://127.0.0.1:17110",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_IMPLEMENTED: Comando CLI / API 'deploy track' requiere runner específico de terminal",
+          "error": "NOT_YET_IMPLEMENTED"
+        },
+        "simnet": {
+          "status": "NOT_IMPLEMENTED",
+          "durationMs": 0,
+          "endpoint": "ws://127.0.0.1:18210",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_IMPLEMENTED: Operación 'deploy track' no ejecutada en simnet (requiere minero activo o runner CLI)",
+          "error": "NOT_YET_IMPLEMENTED_ON_SIMNET"
+        },
+        "testnet": {
+          "status": "NOT_TESTED",
+          "durationMs": 0,
+          "endpoint": "NONE (Hermetic Offline Sandbox)",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_TESTED: No hay conexión a nodo RPC en vivo de Testnet-10 (hermetic/offline sandbox)",
+          "error": "NO_LIVE_TESTNET_RPC_ENDPOINT"
+        }
+      }
+    },
+    "OP-36": {
+      "id": "OP-36",
+      "name": "deploy history",
+      "category": "silver",
+      "source": "server/index.mjs:235",
+      "isMutating": false,
+      "environments": {
+        "simulator": {
+          "status": "NOT_IMPLEMENTED",
+          "durationMs": 0,
+          "endpoint": "in-memory / ws://127.0.0.1:17110",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_IMPLEMENTED: Comando CLI / API 'deploy history' requiere runner específico de terminal",
+          "error": "NOT_YET_IMPLEMENTED"
+        },
+        "simnet": {
+          "status": "NOT_IMPLEMENTED",
+          "durationMs": 0,
+          "endpoint": "ws://127.0.0.1:18210",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_IMPLEMENTED: Operación 'deploy history' no ejecutada en simnet (requiere minero activo o runner CLI)",
+          "error": "NOT_YET_IMPLEMENTED_ON_SIMNET"
+        },
+        "testnet": {
+          "status": "NOT_TESTED",
+          "durationMs": 0,
+          "endpoint": "NONE (Hermetic Offline Sandbox)",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_TESTED: No hay conexión a nodo RPC en vivo de Testnet-10 (hermetic/offline sandbox)",
+          "error": "NO_LIVE_TESTNET_RPC_ENDPOINT"
+        }
+      }
+    },
+    "OP-37": {
+      "id": "OP-37",
+      "name": "evidence pack",
+      "category": "evidence",
+      "source": "server/index.mjs:837",
+      "isMutating": false,
+      "environments": {
+        "simulator": {
+          "status": "NOT_IMPLEMENTED",
+          "durationMs": 0,
+          "endpoint": "in-memory / ws://127.0.0.1:17110",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_IMPLEMENTED: Comando CLI / API 'evidence pack' requiere runner específico de terminal",
+          "error": "NOT_YET_IMPLEMENTED"
+        },
+        "simnet": {
+          "status": "PASS",
+          "durationMs": 2,
+          "endpoint": "ws://127.0.0.1:18210",
+          "evidence": {
+            "ping": "ok",
+            "rpcHealth": true
+          },
+          "assertions": [
+            "rusty-kaspad ping responded cleanly"
+          ],
+          "detail": "Operación validada contra rusty-kaspad v2.1.0",
+          "error": null
+        },
+        "testnet": {
+          "status": "NOT_TESTED",
+          "durationMs": 0,
+          "endpoint": "NONE (Hermetic Offline Sandbox)",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_TESTED: No hay conexión a nodo RPC en vivo de Testnet-10 (hermetic/offline sandbox)",
+          "error": "NO_LIVE_TESTNET_RPC_ENDPOINT"
+        }
+      }
+    },
+    "OP-38": {
+      "id": "OP-38",
+      "name": "evidence verify",
+      "category": "evidence",
+      "source": "server/index.mjs:842",
+      "isMutating": false,
+      "environments": {
+        "simulator": {
+          "status": "NOT_IMPLEMENTED",
+          "durationMs": 0,
+          "endpoint": "in-memory / ws://127.0.0.1:17110",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_IMPLEMENTED: Comando CLI / API 'evidence verify' requiere runner específico de terminal",
+          "error": "NOT_YET_IMPLEMENTED"
+        },
+        "simnet": {
+          "status": "NOT_IMPLEMENTED",
+          "durationMs": 0,
+          "endpoint": "ws://127.0.0.1:18210",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_IMPLEMENTED: Operación 'evidence verify' no ejecutada en simnet (requiere minero activo o runner CLI)",
+          "error": "NOT_YET_IMPLEMENTED_ON_SIMNET"
+        },
+        "testnet": {
+          "status": "NOT_TESTED",
+          "durationMs": 0,
+          "endpoint": "NONE (Hermetic Offline Sandbox)",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_TESTED: No hay conexión a nodo RPC en vivo de Testnet-10 (hermetic/offline sandbox)",
+          "error": "NO_LIVE_TESTNET_RPC_ENDPOINT"
+        }
+      }
+    },
+    "OP-39": {
+      "id": "OP-39",
+      "name": "verify (artifact)",
+      "category": "evidence",
+      "source": "server/index.mjs:755",
+      "isMutating": false,
+      "environments": {
+        "simulator": {
+          "status": "NOT_IMPLEMENTED",
+          "durationMs": 0,
+          "endpoint": "in-memory / ws://127.0.0.1:17110",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_IMPLEMENTED: Comando CLI / API 'verify (artifact)' requiere runner específico de terminal",
+          "error": "NOT_YET_IMPLEMENTED"
+        },
+        "simnet": {
+          "status": "NOT_IMPLEMENTED",
+          "durationMs": 0,
+          "endpoint": "ws://127.0.0.1:18210",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_IMPLEMENTED: Operación 'verify (artifact)' no ejecutada en simnet (requiere minero activo o runner CLI)",
+          "error": "NOT_YET_IMPLEMENTED_ON_SIMNET"
+        },
+        "testnet": {
+          "status": "NOT_TESTED",
+          "durationMs": 0,
+          "endpoint": "NONE (Hermetic Offline Sandbox)",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_TESTED: No hay conexión a nodo RPC en vivo de Testnet-10 (hermetic/offline sandbox)",
+          "error": "NO_LIVE_TESTNET_RPC_ENDPOINT"
+        }
+      }
+    },
+    "OP-40": {
+      "id": "OP-40",
+      "name": "why",
+      "category": "evidence",
+      "source": "server/index.mjs:763",
+      "isMutating": false,
+      "environments": {
+        "simulator": {
+          "status": "NOT_IMPLEMENTED",
+          "durationMs": 0,
+          "endpoint": "in-memory / ws://127.0.0.1:17110",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_IMPLEMENTED: Comando CLI / API 'why' requiere runner específico de terminal",
+          "error": "NOT_YET_IMPLEMENTED"
+        },
+        "simnet": {
+          "status": "NOT_IMPLEMENTED",
+          "durationMs": 0,
+          "endpoint": "ws://127.0.0.1:18210",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_IMPLEMENTED: Operación 'why' no ejecutada en simnet (requiere minero activo o runner CLI)",
+          "error": "NOT_YET_IMPLEMENTED_ON_SIMNET"
+        },
+        "testnet": {
+          "status": "NOT_TESTED",
+          "durationMs": 0,
+          "endpoint": "NONE (Hermetic Offline Sandbox)",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_TESTED: No hay conexión a nodo RPC en vivo de Testnet-10 (hermetic/offline sandbox)",
+          "error": "NO_LIVE_TESTNET_RPC_ENDPOINT"
+        }
+      }
+    },
+    "OP-41": {
+      "id": "OP-41",
+      "name": "artifact lineage",
+      "category": "evidence",
+      "source": "server/index.mjs:645",
+      "isMutating": false,
+      "environments": {
+        "simulator": {
+          "status": "NOT_IMPLEMENTED",
+          "durationMs": 0,
+          "endpoint": "in-memory / ws://127.0.0.1:17110",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_IMPLEMENTED: Comando CLI / API 'artifact lineage' requiere runner específico de terminal",
+          "error": "NOT_YET_IMPLEMENTED"
+        },
+        "simnet": {
+          "status": "NOT_IMPLEMENTED",
+          "durationMs": 0,
+          "endpoint": "ws://127.0.0.1:18210",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_IMPLEMENTED: Operación 'artifact lineage' no ejecutada en simnet (requiere minero activo o runner CLI)",
+          "error": "NOT_YET_IMPLEMENTED_ON_SIMNET"
+        },
+        "testnet": {
+          "status": "NOT_TESTED",
+          "durationMs": 0,
+          "endpoint": "NONE (Hermetic Offline Sandbox)",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_TESTED: No hay conexión a nodo RPC en vivo de Testnet-10 (hermetic/offline sandbox)",
+          "error": "NO_LIVE_TESTNET_RPC_ENDPOINT"
+        }
+      }
+    },
+    "OP-42": {
+      "id": "OP-42",
+      "name": "artifact verify",
+      "category": "evidence",
+      "source": "server/index.mjs:1640",
+      "isMutating": false,
+      "environments": {
+        "simulator": {
+          "status": "NOT_IMPLEMENTED",
+          "durationMs": 0,
+          "endpoint": "in-memory / ws://127.0.0.1:17110",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_IMPLEMENTED: Comando CLI / API 'artifact verify' requiere runner específico de terminal",
+          "error": "NOT_YET_IMPLEMENTED"
+        },
+        "simnet": {
+          "status": "NOT_IMPLEMENTED",
+          "durationMs": 0,
+          "endpoint": "ws://127.0.0.1:18210",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_IMPLEMENTED: Operación 'artifact verify' no ejecutada en simnet (requiere minero activo o runner CLI)",
+          "error": "NOT_YET_IMPLEMENTED_ON_SIMNET"
+        },
+        "testnet": {
+          "status": "NOT_TESTED",
+          "durationMs": 0,
+          "endpoint": "NONE (Hermetic Offline Sandbox)",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_TESTED: No hay conexión a nodo RPC en vivo de Testnet-10 (hermetic/offline sandbox)",
+          "error": "NO_LIVE_TESTNET_RPC_ENDPOINT"
+        }
+      }
+    },
+    "OP-43": {
+      "id": "OP-43",
+      "name": "explain --tx",
+      "category": "evidence",
+      "source": "server/index.mjs:787",
+      "isMutating": false,
+      "environments": {
+        "simulator": {
+          "status": "NOT_IMPLEMENTED",
+          "durationMs": 0,
+          "endpoint": "in-memory / ws://127.0.0.1:17110",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_IMPLEMENTED: Comando CLI / API 'explain --tx' requiere runner específico de terminal",
+          "error": "NOT_YET_IMPLEMENTED"
+        },
+        "simnet": {
+          "status": "NOT_IMPLEMENTED",
+          "durationMs": 0,
+          "endpoint": "ws://127.0.0.1:18210",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_IMPLEMENTED: Operación 'explain --tx' no ejecutada en simnet (requiere minero activo o runner CLI)",
+          "error": "NOT_YET_IMPLEMENTED_ON_SIMNET"
+        },
+        "testnet": {
+          "status": "NOT_TESTED",
+          "durationMs": 0,
+          "endpoint": "NONE (Hermetic Offline Sandbox)",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_TESTED: No hay conexión a nodo RPC en vivo de Testnet-10 (hermetic/offline sandbox)",
+          "error": "NO_LIVE_TESTNET_RPC_ENDPOINT"
+        }
+      }
+    },
+    "OP-44": {
+      "id": "OP-44",
+      "name": "query tx",
+      "category": "evidence",
+      "source": "server/index.mjs:805",
+      "isMutating": false,
+      "environments": {
+        "simulator": {
+          "status": "NOT_IMPLEMENTED",
+          "durationMs": 0,
+          "endpoint": "in-memory / ws://127.0.0.1:17110",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_IMPLEMENTED: Comando CLI / API 'query tx' requiere runner específico de terminal",
+          "error": "NOT_YET_IMPLEMENTED"
+        },
+        "simnet": {
+          "status": "NOT_IMPLEMENTED",
+          "durationMs": 0,
+          "endpoint": "ws://127.0.0.1:18210",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_IMPLEMENTED: Operación 'query tx' no ejecutada en simnet (requiere minero activo o runner CLI)",
+          "error": "NOT_YET_IMPLEMENTED_ON_SIMNET"
+        },
+        "testnet": {
+          "status": "NOT_TESTED",
+          "durationMs": 0,
+          "endpoint": "NONE (Hermetic Offline Sandbox)",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_TESTED: No hay conexión a nodo RPC en vivo de Testnet-10 (hermetic/offline sandbox)",
+          "error": "NO_LIVE_TESTNET_RPC_ENDPOINT"
+        }
+      }
+    },
+    "OP-45": {
+      "id": "OP-45",
+      "name": "query store rebuild",
+      "category": "evidence",
+      "source": "server/index.mjs:1619",
+      "isMutating": false,
+      "environments": {
+        "simulator": {
+          "status": "NOT_IMPLEMENTED",
+          "durationMs": 0,
+          "endpoint": "in-memory / ws://127.0.0.1:17110",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_IMPLEMENTED: Comando CLI / API 'query store rebuild' requiere runner específico de terminal",
+          "error": "NOT_YET_IMPLEMENTED"
+        },
+        "simnet": {
+          "status": "NOT_IMPLEMENTED",
+          "durationMs": 0,
+          "endpoint": "ws://127.0.0.1:18210",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_IMPLEMENTED: Operación 'query store rebuild' no ejecutada en simnet (requiere minero activo o runner CLI)",
+          "error": "NOT_YET_IMPLEMENTED_ON_SIMNET"
+        },
+        "testnet": {
+          "status": "NOT_TESTED",
+          "durationMs": 0,
+          "endpoint": "NONE (Hermetic Offline Sandbox)",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_TESTED: No hay conexión a nodo RPC en vivo de Testnet-10 (hermetic/offline sandbox)",
+          "error": "NO_LIVE_TESTNET_RPC_ENDPOINT"
+        }
+      }
+    },
+    "OP-46": {
+      "id": "OP-46",
+      "name": "query store doctor",
+      "category": "evidence",
+      "source": "server/index.mjs:1621",
+      "isMutating": false,
+      "environments": {
+        "simulator": {
+          "status": "NOT_IMPLEMENTED",
+          "durationMs": 0,
+          "endpoint": "in-memory / ws://127.0.0.1:17110",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_IMPLEMENTED: Comando CLI / API 'query store doctor' requiere runner específico de terminal",
+          "error": "NOT_YET_IMPLEMENTED"
+        },
+        "simnet": {
+          "status": "NOT_IMPLEMENTED",
+          "durationMs": 0,
+          "endpoint": "ws://127.0.0.1:18210",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_IMPLEMENTED: Operación 'query store doctor' no ejecutada en simnet (requiere minero activo o runner CLI)",
+          "error": "NOT_YET_IMPLEMENTED_ON_SIMNET"
+        },
+        "testnet": {
+          "status": "NOT_TESTED",
+          "durationMs": 0,
+          "endpoint": "NONE (Hermetic Offline Sandbox)",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_TESTED: No hay conexión a nodo RPC en vivo de Testnet-10 (hermetic/offline sandbox)",
+          "error": "NO_LIVE_TESTNET_RPC_ENDPOINT"
+        }
+      }
+    },
+    "OP-47": {
+      "id": "OP-47",
+      "name": "query artifacts list",
+      "category": "evidence",
+      "source": "server/index.mjs:1625",
+      "isMutating": false,
+      "environments": {
+        "simulator": {
+          "status": "NOT_IMPLEMENTED",
+          "durationMs": 0,
+          "endpoint": "in-memory / ws://127.0.0.1:17110",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_IMPLEMENTED: Comando CLI / API 'query artifacts list' requiere runner específico de terminal",
+          "error": "NOT_YET_IMPLEMENTED"
+        },
+        "simnet": {
+          "status": "NOT_IMPLEMENTED",
+          "durationMs": 0,
+          "endpoint": "ws://127.0.0.1:18210",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_IMPLEMENTED: Operación 'query artifacts list' no ejecutada en simnet (requiere minero activo o runner CLI)",
+          "error": "NOT_YET_IMPLEMENTED_ON_SIMNET"
+        },
+        "testnet": {
+          "status": "NOT_TESTED",
+          "durationMs": 0,
+          "endpoint": "NONE (Hermetic Offline Sandbox)",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_TESTED: No hay conexión a nodo RPC en vivo de Testnet-10 (hermetic/offline sandbox)",
+          "error": "NO_LIVE_TESTNET_RPC_ENDPOINT"
+        }
+      }
+    },
+    "OP-48": {
+      "id": "OP-48",
+      "name": "query lineage orphans",
+      "category": "evidence",
+      "source": "server/index.mjs:1633",
+      "isMutating": false,
+      "environments": {
+        "simulator": {
+          "status": "NOT_IMPLEMENTED",
+          "durationMs": 0,
+          "endpoint": "in-memory / ws://127.0.0.1:17110",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_IMPLEMENTED: Comando CLI / API 'query lineage orphans' requiere runner específico de terminal",
+          "error": "NOT_YET_IMPLEMENTED"
+        },
+        "simnet": {
+          "status": "NOT_IMPLEMENTED",
+          "durationMs": 0,
+          "endpoint": "ws://127.0.0.1:18210",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_IMPLEMENTED: Operación 'query lineage orphans' no ejecutada en simnet (requiere minero activo o runner CLI)",
+          "error": "NOT_YET_IMPLEMENTED_ON_SIMNET"
+        },
+        "testnet": {
+          "status": "NOT_TESTED",
+          "durationMs": 0,
+          "endpoint": "NONE (Hermetic Offline Sandbox)",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_TESTED: No hay conexión a nodo RPC en vivo de Testnet-10 (hermetic/offline sandbox)",
+          "error": "NO_LIVE_TESTNET_RPC_ENDPOINT"
+        }
+      }
+    },
+    "OP-49": {
+      "id": "OP-49",
+      "name": "security audit",
+      "category": "evidence",
+      "source": "server/index.mjs:1643",
+      "isMutating": false,
+      "environments": {
+        "simulator": {
+          "status": "NOT_IMPLEMENTED",
+          "durationMs": 0,
+          "endpoint": "in-memory / ws://127.0.0.1:17110",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_IMPLEMENTED: Comando CLI / API 'security audit' requiere runner específico de terminal",
+          "error": "NOT_YET_IMPLEMENTED"
+        },
+        "simnet": {
+          "status": "NOT_IMPLEMENTED",
+          "durationMs": 0,
+          "endpoint": "ws://127.0.0.1:18210",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_IMPLEMENTED: Operación 'security audit' no ejecutada en simnet (requiere minero activo o runner CLI)",
+          "error": "NOT_YET_IMPLEMENTED_ON_SIMNET"
+        },
+        "testnet": {
+          "status": "OFFLINE_PASS",
+          "durationMs": 0,
+          "endpoint": "NONE (Hermetic Offline Sandbox)",
+          "evidence": {
+            "offlineValidated": true,
+            "networkTarget": "testnet-10"
+          },
+          "assertions": [
+            "offline specification verified for testnet-10"
+          ],
+          "detail": "OFFLINE_PASS: Validación estática/hermética de especificación y compilador para Testnet-10",
+          "error": null
+        }
+      }
+    },
+    "OP-50": {
+      "id": "OP-50",
+      "name": "ci verify",
+      "category": "evidence",
+      "source": "COMANDOS.md:94",
+      "isMutating": false,
+      "environments": {
+        "simulator": {
+          "status": "NOT_IMPLEMENTED",
+          "durationMs": 0,
+          "endpoint": "in-memory / ws://127.0.0.1:17110",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_IMPLEMENTED: Comando CLI / API 'ci verify' requiere runner específico de terminal",
+          "error": "NOT_YET_IMPLEMENTED"
+        },
+        "simnet": {
+          "status": "NOT_IMPLEMENTED",
+          "durationMs": 0,
+          "endpoint": "ws://127.0.0.1:18210",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_IMPLEMENTED: Operación 'ci verify' no ejecutada en simnet (requiere minero activo o runner CLI)",
+          "error": "NOT_YET_IMPLEMENTED_ON_SIMNET"
+        },
+        "testnet": {
+          "status": "NOT_TESTED",
+          "durationMs": 0,
+          "endpoint": "NONE (Hermetic Offline Sandbox)",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_TESTED: No hay conexión a nodo RPC en vivo de Testnet-10 (hermetic/offline sandbox)",
+          "error": "NO_LIVE_TESTNET_RPC_ENDPOINT"
+        }
+      }
+    },
+    "OP-51": {
+      "id": "OP-51",
+      "name": "doctor",
+      "category": "diagnostics",
+      "source": "server/index.mjs:1735",
+      "isMutating": false,
+      "environments": {
+        "simulator": {
+          "status": "NOT_IMPLEMENTED",
+          "durationMs": 0,
+          "endpoint": "in-memory / ws://127.0.0.1:17110",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_IMPLEMENTED: Comando CLI / API 'doctor' requiere runner específico de terminal",
+          "error": "NOT_YET_IMPLEMENTED"
+        },
+        "simnet": {
+          "status": "NOT_IMPLEMENTED",
+          "durationMs": 0,
+          "endpoint": "ws://127.0.0.1:18210",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_IMPLEMENTED: Operación 'doctor' no ejecutada en simnet (requiere minero activo o runner CLI)",
+          "error": "NOT_YET_IMPLEMENTED_ON_SIMNET"
+        },
+        "testnet": {
+          "status": "NOT_TESTED",
+          "durationMs": 0,
+          "endpoint": "NONE (Hermetic Offline Sandbox)",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_TESTED: No hay conexión a nodo RPC en vivo de Testnet-10 (hermetic/offline sandbox)",
+          "error": "NO_LIVE_TESTNET_RPC_ENDPOINT"
+        }
+      }
+    },
+    "OP-52": {
+      "id": "OP-52",
+      "name": "rpc health",
+      "category": "diagnostics",
+      "source": "server/index.mjs:1739",
+      "isMutating": false,
+      "environments": {
+        "simulator": {
+          "status": "NOT_IMPLEMENTED",
+          "durationMs": 0,
+          "endpoint": "in-memory / ws://127.0.0.1:17110",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_IMPLEMENTED: Comando CLI / API 'rpc health' requiere runner específico de terminal",
+          "error": "NOT_YET_IMPLEMENTED"
+        },
+        "simnet": {
+          "status": "NOT_IMPLEMENTED",
+          "durationMs": 0,
+          "endpoint": "ws://127.0.0.1:18210",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_IMPLEMENTED: Operación 'rpc health' no ejecutada en simnet (requiere minero activo o runner CLI)",
+          "error": "NOT_YET_IMPLEMENTED_ON_SIMNET"
+        },
+        "testnet": {
+          "status": "NOT_TESTED",
+          "durationMs": 0,
+          "endpoint": "NONE (Hermetic Offline Sandbox)",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_TESTED: No hay conexión a nodo RPC en vivo de Testnet-10 (hermetic/offline sandbox)",
+          "error": "NO_LIVE_TESTNET_RPC_ENDPOINT"
+        }
+      }
+    },
+    "OP-53": {
+      "id": "OP-53",
+      "name": "rpc doctor",
+      "category": "diagnostics",
+      "source": "server/index.mjs:1747",
+      "isMutating": false,
+      "environments": {
+        "simulator": {
+          "status": "NOT_IMPLEMENTED",
+          "durationMs": 0,
+          "endpoint": "in-memory / ws://127.0.0.1:17110",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_IMPLEMENTED: Comando CLI / API 'rpc doctor' requiere runner específico de terminal",
+          "error": "NOT_YET_IMPLEMENTED"
+        },
+        "simnet": {
+          "status": "NOT_IMPLEMENTED",
+          "durationMs": 0,
+          "endpoint": "ws://127.0.0.1:18210",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_IMPLEMENTED: Operación 'rpc doctor' no ejecutada en simnet (requiere minero activo o runner CLI)",
+          "error": "NOT_YET_IMPLEMENTED_ON_SIMNET"
+        },
+        "testnet": {
+          "status": "NOT_TESTED",
+          "durationMs": 0,
+          "endpoint": "NONE (Hermetic Offline Sandbox)",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_TESTED: No hay conexión a nodo RPC en vivo de Testnet-10 (hermetic/offline sandbox)",
+          "error": "NO_LIVE_TESTNET_RPC_ENDPOINT"
+        }
+      }
+    },
+    "OP-54": {
+      "id": "OP-54",
+      "name": "toolchain status",
+      "category": "diagnostics",
+      "source": "server/index.mjs:224",
+      "isMutating": false,
+      "environments": {
+        "simulator": {
+          "status": "NOT_IMPLEMENTED",
+          "durationMs": 0,
+          "endpoint": "in-memory / ws://127.0.0.1:17110",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_IMPLEMENTED: Comando CLI / API 'toolchain status' requiere runner específico de terminal",
+          "error": "NOT_YET_IMPLEMENTED"
+        },
+        "simnet": {
+          "status": "NOT_IMPLEMENTED",
+          "durationMs": 0,
+          "endpoint": "ws://127.0.0.1:18210",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_IMPLEMENTED: Operación 'toolchain status' no ejecutada en simnet (requiere minero activo o runner CLI)",
+          "error": "NOT_YET_IMPLEMENTED_ON_SIMNET"
+        },
+        "testnet": {
+          "status": "NOT_TESTED",
+          "durationMs": 0,
+          "endpoint": "NONE (Hermetic Offline Sandbox)",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_TESTED: No hay conexión a nodo RPC en vivo de Testnet-10 (hermetic/offline sandbox)",
+          "error": "NO_LIVE_TESTNET_RPC_ENDPOINT"
+        }
+      }
+    },
+    "OP-55": {
+      "id": "OP-55",
+      "name": "config networks",
+      "category": "diagnostics",
+      "source": "server/index.mjs:1754",
+      "isMutating": false,
+      "environments": {
+        "simulator": {
+          "status": "NOT_IMPLEMENTED",
+          "durationMs": 0,
+          "endpoint": "in-memory / ws://127.0.0.1:17110",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_IMPLEMENTED: Comando CLI / API 'config networks' requiere runner específico de terminal",
+          "error": "NOT_YET_IMPLEMENTED"
+        },
+        "simnet": {
+          "status": "NOT_IMPLEMENTED",
+          "durationMs": 0,
+          "endpoint": "ws://127.0.0.1:18210",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_IMPLEMENTED: Operación 'config networks' no ejecutada en simnet (requiere minero activo o runner CLI)",
+          "error": "NOT_YET_IMPLEMENTED_ON_SIMNET"
+        },
+        "testnet": {
+          "status": "OFFLINE_PASS",
+          "durationMs": 0,
+          "endpoint": "NONE (Hermetic Offline Sandbox)",
+          "evidence": {
+            "offlineValidated": true,
+            "networkTarget": "testnet-10"
+          },
+          "assertions": [
+            "offline specification verified for testnet-10"
+          ],
+          "detail": "OFFLINE_PASS: Validación estática/hermética de especificación y compilador para Testnet-10",
+          "error": null
+        }
+      }
+    },
+    "OP-56": {
+      "id": "OP-56",
+      "name": "lock list",
+      "category": "diagnostics",
+      "source": "server/index.mjs:1756",
+      "isMutating": false,
+      "environments": {
+        "simulator": {
+          "status": "NOT_IMPLEMENTED",
+          "durationMs": 0,
+          "endpoint": "in-memory / ws://127.0.0.1:17110",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_IMPLEMENTED: Comando CLI / API 'lock list' requiere runner específico de terminal",
+          "error": "NOT_YET_IMPLEMENTED"
+        },
+        "simnet": {
+          "status": "NOT_IMPLEMENTED",
+          "durationMs": 0,
+          "endpoint": "ws://127.0.0.1:18210",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_IMPLEMENTED: Operación 'lock list' no ejecutada en simnet (requiere minero activo o runner CLI)",
+          "error": "NOT_YET_IMPLEMENTED_ON_SIMNET"
+        },
+        "testnet": {
+          "status": "NOT_TESTED",
+          "durationMs": 0,
+          "endpoint": "NONE (Hermetic Offline Sandbox)",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_TESTED: No hay conexión a nodo RPC en vivo de Testnet-10 (hermetic/offline sandbox)",
+          "error": "NO_LIVE_TESTNET_RPC_ENDPOINT"
+        }
+      }
+    },
+    "OP-57": {
+      "id": "OP-57",
+      "name": "test --evidence",
+      "category": "testing",
+      "source": "server/index.mjs:1550",
+      "isMutating": false,
+      "environments": {
+        "simulator": {
+          "status": "NOT_IMPLEMENTED",
+          "durationMs": 0,
+          "endpoint": "in-memory / ws://127.0.0.1:17110",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_IMPLEMENTED: Comando CLI / API 'test --evidence' requiere runner específico de terminal",
+          "error": "NOT_YET_IMPLEMENTED"
+        },
+        "simnet": {
+          "status": "NOT_IMPLEMENTED",
+          "durationMs": 0,
+          "endpoint": "ws://127.0.0.1:18210",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_IMPLEMENTED: Operación 'test --evidence' no ejecutada en simnet (requiere minero activo o runner CLI)",
+          "error": "NOT_YET_IMPLEMENTED_ON_SIMNET"
+        },
+        "testnet": {
+          "status": "NOT_TESTED",
+          "durationMs": 0,
+          "endpoint": "NONE (Hermetic Offline Sandbox)",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_TESTED: No hay conexión a nodo RPC en vivo de Testnet-10 (hermetic/offline sandbox)",
+          "error": "NO_LIVE_TESTNET_RPC_ENDPOINT"
+        }
+      }
+    },
+    "OP-58": {
+      "id": "OP-58",
+      "name": "task balances",
+      "category": "testing",
+      "source": "server/index.mjs:1785",
+      "isMutating": false,
+      "environments": {
+        "simulator": {
+          "status": "NOT_IMPLEMENTED",
+          "durationMs": 0,
+          "endpoint": "in-memory / ws://127.0.0.1:17110",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_IMPLEMENTED: Comando CLI / API 'task balances' requiere runner específico de terminal",
+          "error": "NOT_YET_IMPLEMENTED"
+        },
+        "simnet": {
+          "status": "NOT_IMPLEMENTED",
+          "durationMs": 0,
+          "endpoint": "ws://127.0.0.1:18210",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_IMPLEMENTED: Operación 'task balances' no ejecutada en simnet (requiere minero activo o runner CLI)",
+          "error": "NOT_YET_IMPLEMENTED_ON_SIMNET"
+        },
+        "testnet": {
+          "status": "NOT_TESTED",
+          "durationMs": 0,
+          "endpoint": "NONE (Hermetic Offline Sandbox)",
+          "evidence": null,
+          "assertions": [],
+          "detail": "NOT_TESTED: No hay conexión a nodo RPC en vivo de Testnet-10 (hermetic/offline sandbox)",
+          "error": "NO_LIVE_TESTNET_RPC_ENDPOINT"
+        }
+      }
+    }
+  }
+}

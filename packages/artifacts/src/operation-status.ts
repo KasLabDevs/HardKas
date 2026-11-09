@@ -4,7 +4,11 @@ import type { DerivedTxStatus } from "./tx-status.js";
 export type CovenantStatusKind =
   | "PROPOSED"
   | "MEMPOOL_PENDING"
+  /** Accepted by the node's virtual chain; the confirmation policy has not been met yet (ZK-10 pattern). */
+  | "TRANSITION_ACCEPTED"
   | "TRANSITION_CONFIRMED"
+  /** Executed by the simulator or the script VM only: no L1 observation, nothing advanced on L1. */
+  | "TRANSITION_SYNTHETIC_ONLY"
   | "TRANSITION_REJECTED"
   | "TRANSITION_REORGED"
   | "TERMINATED"
@@ -94,6 +98,38 @@ export function deriveCovenantStatus(params: {
     case "CONFIRMED":
     case "FINALIZED":
     case "SYNTHETIC_EXECUTED": {
+      const succ = fact.successorOutpoint as { transactionId: string; index: number } | undefined;
+      const successor = succ
+        ? `${succ.transactionId}:${succ.index}`
+        : `${fact.txId}:0`;
+      // ZK-10 pattern (covenants): a synthetic execution is never an L1 outcome, and an accepted transaction is not yet
+      // a confirmed one. Only CONFIRMED / FINALIZED report TRANSITION_CONFIRMED (or TERMINATED).
+      if (txStatus.status === "SYNTHETIC_EXECUTED") {
+        return {
+          kind: "TRANSITION_SYNTHETIC_ONLY",
+          covenantId: String(fact.covenantId),
+          ...(isTerminated ? {} : { activeOutpoint: successor }),
+          currentState: (isTerminated ? fact.previousState : fact.nextState) as Readonly<Record<string, unknown>> | undefined,
+          txStatus,
+          reason: isTerminated
+            ? "Termination executed by the simulator or the script VM only; not observed on L1"
+            : `Transition executed by the simulator or the script VM only; not observed on L1 (simulated successor ${successor})`,
+          isFinal: false
+        };
+      }
+      if (txStatus.status === "ACCEPTED") {
+        return {
+          kind: "TRANSITION_ACCEPTED",
+          covenantId: String(fact.covenantId),
+          ...(isTerminated ? {} : { activeOutpoint: successor }),
+          currentState: (isTerminated ? fact.previousState : fact.nextState) as Readonly<Record<string, unknown>> | undefined,
+          txStatus,
+          reason: isTerminated
+            ? "Termination accepted by the node's virtual chain; not yet confirmed by the confirmation policy"
+            : `Transition accepted by the node's virtual chain; not yet confirmed by the confirmation policy (successor UTXO ${successor})`,
+          isFinal: false
+        };
+      }
       if (isTerminated) {
         return {
           kind: "TERMINATED",
@@ -104,10 +140,6 @@ export function deriveCovenantStatus(params: {
           isFinal: txStatus.status === "FINALIZED"
         };
       }
-      const succ = fact.successorOutpoint as { transactionId: string; index: number } | undefined;
-      const successor = succ
-        ? `${succ.transactionId}:${succ.index}`
-        : `${fact.txId}:0`;
       return {
         kind: "TRANSITION_CONFIRMED",
         covenantId: String(fact.covenantId),
@@ -132,10 +164,19 @@ export function deriveCovenantStatus(params: {
 
 export type ZkOperationStatusKind =
   | "PROOF_PREPARED"
+  /** HardKAS's own verifier verified the proof off-chain; the transaction is not observed yet. */
   | "PROOF_VERIFIED_OFFCHAIN"
+  /** No off-chain verification was performed (the default): not a failure, the node's precompile decides. */
+  | "PROOF_NOT_VERIFIED_OFFCHAIN"
+  /** A local verifier REJECTED the proof (only when the fact says so explicitly). */
   | "PROOF_VERIFICATION_FAILED"
   | "TX_SUBMITTED"
+  /** Accepted by the node's virtual chain (the precompile verified the proof); not yet confirmed. */
+  | "TX_ACCEPTED"
+  /** Confirmed (or finalized) on L1 under the confirmation policy. */
   | "SETTLED"
+  /** A synthetic (simulator) execution: never L1 settlement. */
+  | "SYNTHETIC_ONLY"
   | "TX_REJECTED"
   | "TX_REORGED"
   | "INCONCLUSIVE";
@@ -156,36 +197,59 @@ export interface ZkOperationStatusResult {
  * Pure function deriving end-to-end ZK operation lifecycle state from
  * cryptographic facts and L1 transaction confirmation status.
  * Distinguishes local mathematical proof verification from consensus settlement.
+ *
+ * The transaction status, when known, takes precedence: an accepted spend means the node's
+ * OpZkPrecompile verified the proof, whatever was (or was not) checked off-chain. Without a transaction
+ * status, an off-chain verification that was never performed is PROOF_NOT_VERIFIED_OFFCHAIN (not final),
+ * never a definitive failure (HK-17). Only consensus finality is final.
  */
 export function deriveZkOperationStatus(params: {
   readonly zkFact: ZkVerificationFact;
   readonly txStatus?: DerivedTxStatus | undefined;
 }): ZkOperationStatusResult {
   const { zkFact: fact, txStatus } = params;
-
-  if (!fact.verifiedOffChain) {
-    return {
-      kind: "PROOF_VERIFICATION_FAILED",
-      imageId: String(fact.imageId),
-      journalHash: String(fact.journalHash),
-      txId: String(fact.txId),
-      payoutAddress: String(fact.payoutAddress),
-      payoutSompi: String(fact.payoutSompi),
-      txStatus,
-      reason: "Mathematical off-chain Groth16 verification failed for the provided proof and journal",
-      isFinal: true
-    };
-  }
+  const offChain: "VERIFIED" | "NOT_PERFORMED" | "FAILED" =
+    (fact as any).offChainVerification === "FAILED"
+      ? "FAILED"
+      : fact.verifiedOffChain === true
+        ? "VERIFIED"
+        : "NOT_PERFORMED";
+  const offChainNote =
+    offChain === "VERIFIED"
+      ? "off-chain verification passed"
+      : offChain === "FAILED"
+        ? "the local off-chain verification FAILED"
+        : "no off-chain verification was performed";
+  const base = {
+    imageId: String(fact.imageId),
+    journalHash: String(fact.journalHash),
+    txId: String(fact.txId),
+    payoutAddress: String(fact.payoutAddress),
+    payoutSompi: String(fact.payoutSompi)
+  };
 
   if (!txStatus) {
+    if (offChain === "VERIFIED") {
+      return {
+        kind: "PROOF_VERIFIED_OFFCHAIN",
+        ...base,
+        reason: "Off-chain Groth16 BN254 mathematical verification passed; transaction prepared but unobserved",
+        isFinal: false
+      };
+    }
+    if (offChain === "FAILED") {
+      return {
+        kind: "PROOF_VERIFICATION_FAILED",
+        ...base,
+        reason: "The local off-chain Groth16 verification rejected the provided proof and journal; transaction unobserved",
+        isFinal: false
+      };
+    }
     return {
-      kind: "PROOF_VERIFIED_OFFCHAIN",
-      imageId: String(fact.imageId),
-      journalHash: String(fact.journalHash),
-      txId: String(fact.txId),
-      payoutAddress: String(fact.payoutAddress),
-      payoutSompi: String(fact.payoutSompi),
-      reason: "Off-chain Groth16 BN254 mathematical verification passed; transaction prepared but unobserved",
+      kind: "PROOF_NOT_VERIFIED_OFFCHAIN",
+      ...base,
+      reason:
+        "No off-chain verification was performed by HardKAS; only the node's OpZkPrecompile decides. Transaction prepared but unobserved",
       isFinal: false
     };
   }
@@ -194,11 +258,7 @@ export function deriveZkOperationStatus(params: {
     case "REJECTED_BY_NODE":
       return {
         kind: "TX_REJECTED",
-        imageId: String(fact.imageId),
-        journalHash: String(fact.journalHash),
-        txId: String(fact.txId),
-        payoutAddress: String(fact.payoutAddress),
-        payoutSompi: String(fact.payoutSompi),
+        ...base,
         txStatus,
         reason: "ZK spend transaction was rejected by rusty-kaspad consensus or precompile check",
         isFinal: true
@@ -207,11 +267,7 @@ export function deriveZkOperationStatus(params: {
     case "REORGED":
       return {
         kind: "TX_REORGED",
-        imageId: String(fact.imageId),
-        journalHash: String(fact.journalHash),
-        txId: String(fact.txId),
-        payoutAddress: String(fact.payoutAddress),
-        payoutSompi: String(fact.payoutSompi),
+        ...base,
         txStatus,
         reason: "ZK spend transaction was removed by a DAG reorganization",
         isFinal: false
@@ -222,40 +278,44 @@ export function deriveZkOperationStatus(params: {
     case "MEMPOOL_ORPHAN":
       return {
         kind: "TX_SUBMITTED",
-        imageId: String(fact.imageId),
-        journalHash: String(fact.journalHash),
-        txId: String(fact.txId),
-        payoutAddress: String(fact.payoutAddress),
-        payoutSompi: String(fact.payoutSompi),
+        ...base,
         txStatus,
-        reason: "ZK spend transaction received by node / mempool, waiting for block inclusion",
+        reason: `ZK spend transaction received by node / mempool, waiting for block inclusion (${offChainNote})`,
         isFinal: false
       };
 
     case "ACCEPTED":
+      return {
+        kind: "TX_ACCEPTED",
+        ...base,
+        txStatus,
+        reason: `ZK spend accepted by the node's virtual chain (its OpZkPrecompile verified the proof; ${offChainNote}); not yet confirmed under the confirmation policy`,
+        isFinal: false
+      };
+
     case "CONFIRMED":
     case "FINALIZED":
-    case "SYNTHETIC_EXECUTED":
       return {
         kind: "SETTLED",
-        imageId: String(fact.imageId),
-        journalHash: String(fact.journalHash),
-        txId: String(fact.txId),
-        payoutAddress: String(fact.payoutAddress),
-        payoutSompi: String(fact.payoutSompi),
+        ...base,
         txStatus,
-        reason: `ZK spend confirmed on L1; payout of ${fact.payoutSompi} sompi delivered to ${fact.payoutAddress}`,
+        reason: `ZK spend ${txStatus.status === "FINALIZED" ? "finalized" : "confirmed"} on L1; payout of ${fact.payoutSompi} sompi to ${fact.payoutAddress}`,
         isFinal: txStatus.status === "FINALIZED"
+      };
+
+    case "SYNTHETIC_EXECUTED":
+      return {
+        kind: "SYNTHETIC_ONLY",
+        ...base,
+        txStatus,
+        reason: "Synthetic execution (simulator namespace): not settlement, and no node verified the proof",
+        isFinal: false
       };
 
     default:
       return {
         kind: "INCONCLUSIVE",
-        imageId: String(fact.imageId),
-        journalHash: String(fact.journalHash),
-        txId: String(fact.txId),
-        payoutAddress: String(fact.payoutAddress),
-        payoutSompi: String(fact.payoutSompi),
+        ...base,
         txStatus,
         reason: `Transaction observation kind is ${txStatus.status}; settlement inconclusive`,
         isFinal: false

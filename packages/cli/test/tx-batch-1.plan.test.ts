@@ -69,7 +69,8 @@ describe("TX-BATCH-1 · the planner never selects what earlier payments of the b
   let ws: string;
   let config: any;
   const plan = (extra: Record<string, unknown> = {}, amount = "3") =>
-    runTxPlan({ from: FROM, to: TO, amount, networkId: "simnet", provider: "auto", url: "ws://127.0.0.1:1", feeRate: "1000", config, workspaceRoot: ws, ...extra } as any);
+    // TX-05: a fee limit is always in force (default 0.1 KAS); these plans pay 1000 sompi/g, so they raise it explicitly
+  runTxPlan({ from: FROM, to: TO, amount, networkId: "simnet", provider: "auto", url: "ws://127.0.0.1:1", feeRate: "1000", maxFee: "1000000000", config, workspaceRoot: ws, ...extra } as any);
   const reset = (entries: Array<[string, ReturnType<typeof utxo>[]]>) => {
     node.utxos = new Map(entries);
     node.reads = new Map();

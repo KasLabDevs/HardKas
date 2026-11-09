@@ -95,7 +95,17 @@ export function registerInitCommands(program: Command) {
             const pkgFile = path.join(targetDir, "package.json");
 
             if (fs.existsSync(configFile) && !options.force) {
-              throw new Error(`hardkas.config.ts already exists in ${name || "current directory"}. Use --force to overwrite.`);
+              // N-2: a typed refusal, so `--json` says PROJECT_ALREADY_INITIALIZED (it was UNKNOWN_ERROR) with exit code 1.
+              const { HardkasCliError, HardkasExitCode } = await import("../cli-errors.js");
+              throw new HardkasCliError(
+                "PROJECT_ALREADY_INITIALIZED",
+                `hardkas.config.ts already exists in ${targetDir}. Nothing was changed.`,
+                {
+                  exitCode: HardkasExitCode.RUNTIME_FAILURE,
+                  suggestion: "Use --force to overwrite hardkas.config.ts (the other scaffold files are kept).",
+                  context: { configFile }
+                }
+              );
             }
 
             // Create a basic package.json if it doesn't exist.

@@ -57,6 +57,7 @@ export const IDENTITY_CATEGORIES: Readonly<Record<string, IdentityCategory>> = O
   proofId: "LABEL", // ZK fixture labels (Phase 3 remediation, IC-7.1): names, never references
   verificationKeyId: "LABEL",
   receiptId: "LABEL",
+  pinnedVerificationKeyId: "LABEL", // id of an in-code pinned Groth16 key (corpus entries)
   // --- NETWORK: consensus-side identifiers, 1:N with artifacts ---
   txId: "NETWORK",
   deployTxId: "NETWORK",
@@ -141,11 +142,15 @@ export const IDENTITY_CATEGORIES: Readonly<Record<string, IdentityCategory>> = O
   contentHashes: "DOMAIN_DIGEST", // ZK fixture manifests: per-file legacy corpus digests
   journalHash: "DOMAIN_DIGEST", // RISC Zero journal digest (a public input of the precompile), never an identity
   imageIdHash: "DOMAIN_DIGEST", // digest of the image-id artifact file
+  proofSha256: "DOMAIN_DIGEST", // SHA-256 of the proof bytes recorded by the ZK fact
+  verificationKeyFingerprint: "DOMAIN_DIGEST", // portable fingerprint of a Groth16 key's curve points
+  receiptClaimDigest: "DOMAIN_DIGEST", // RISC Zero ReceiptClaim digest carried by a receipt
   manifestHash: "DOMAIN_DIGEST",
   corpusHash: "DOMAIN_DIGEST",
   sourceHash: "DOMAIN_DIGEST",
   bytecodeHash: "DOMAIN_DIGEST",
   imageDigest: "DOMAIN_DIGEST",
+  expectedImageDigest: "DOMAIN_DIGEST", // the pinned node image a Silver record's observed `imageDigest` was checked against (CA-TX-04)
   digest: "DOMAIN_DIGEST",
   responseDigest: "DOMAIN_DIGEST", // digest of a raw RPC response kept as observation evidence (Wave 2(a))
   fingerprint: "DOMAIN_DIGEST",

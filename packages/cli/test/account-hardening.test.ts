@@ -34,9 +34,12 @@ describe("Account Hardening & Security Guards", () => {
   });
 
   it("should import an account as encrypted by default and set 0600 permissions", async () => {
+    // INT9-C4: a testnet address names no testnet, and this workspace declares none: the import takes --network (it
+    // used to record "devnet" for it, which contradicts a kaspatest address and left the account unable to sign)
     await runAccountsKeystoreImport({
       name: "alice",
       address: "kaspatest:qrh60m5zv98m5l855l855l855l855l855l855l855l855l85sxtunx",
+      network: "testnet-10",
       privateKeyEnv: "HARDKAS_TEST_PK",
       passwordEnv: "HARDKAS_TEST_PW",
       workspaceRoot: tmpDir
@@ -44,6 +47,7 @@ describe("Account Hardening & Security Guards", () => {
 
     const keystorePath = path.join(keystoreDir, "alice.json");
     expect(fs.existsSync(keystorePath)).toBe(true);
+    expect(JSON.parse(fs.readFileSync(keystorePath, "utf8")).metadata.network).toBe("testnet-10");
 
     const stats = fs.statSync(keystorePath);
     // On Windows, mode might not show 0600 exactly via fs.stat, but we check if it was at least attempted or works on unix-like envs.

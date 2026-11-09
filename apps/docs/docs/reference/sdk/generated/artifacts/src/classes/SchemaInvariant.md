@@ -6,7 +6,7 @@
 
 # Class: SchemaInvariant
 
-Defined in: [packages/artifacts/src/invariants/definitions.ts:41](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/invariants/definitions.ts#L41)
+Defined in: [packages/artifacts/src/invariants/definitions.ts:55](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/invariants/definitions.ts#L55)
 
 Verifies that the artifact schema and version are supported.
 
@@ -30,7 +30,7 @@ Verifies that the artifact schema and version are supported.
 
 > `readonly` **description**: `"Artifact schema and version must be supported"` = `"Artifact schema and version must be supported"`
 
-Defined in: [packages/artifacts/src/invariants/definitions.ts:43](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/invariants/definitions.ts#L43)
+Defined in: [packages/artifacts/src/invariants/definitions.ts:57](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/invariants/definitions.ts#L57)
 
 #### Implementation of
 
@@ -42,7 +42,7 @@ Defined in: [packages/artifacts/src/invariants/definitions.ts:43](https://github
 
 > `readonly` **id**: `"INVAR_SCHEMA_SUPPORT"` = `"INVAR_SCHEMA_SUPPORT"`
 
-Defined in: [packages/artifacts/src/invariants/definitions.ts:42](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/invariants/definitions.ts#L42)
+Defined in: [packages/artifacts/src/invariants/definitions.ts:56](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/invariants/definitions.ts#L56)
 
 #### Implementation of
 
@@ -54,7 +54,7 @@ Defined in: [packages/artifacts/src/invariants/definitions.ts:42](https://github
 
 > **check**(`context`): `Promise`\<[`InvariantViolation`](../interfaces/InvariantViolation.md)[]\>
 
-Defined in: [packages/artifacts/src/invariants/definitions.ts:45](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/invariants/definitions.ts#L45)
+Defined in: [packages/artifacts/src/invariants/definitions.ts:59](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/invariants/definitions.ts#L59)
 
 #### Parameters
 

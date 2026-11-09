@@ -18,14 +18,17 @@ Only `delta` was randomised (`zkey contribute`). With `alpha`, `beta`, `gamma` a
 An earlier version of this README claimed a contributed ceremony. That claim was false and has been removed.
 
 ## 3. How HardKAS treats it
+- The key is pinned IN CODE as `hardkas-groth16-multiplier-toy` (`PINNED_GROTH16_VERIFICATION_KEYS`, trust `TOY_KNOWN_TRAPDOOR`, fingerprint `be0faa7e36dee2e5dce7d9ef044213a1a7337c9e9867af6cc5b044c4d3eea057`). Pinning anchors the key's IDENTITY (these exact points), never its soundness.
 - `hardkas zk proof verify-math <this dir>` → `ZK_GROTH16_MATH_REJECTED` with `ZK_VERIFICATION_KEY_WEAK_TRAPDOOR` by default.
-- `--allow-weak-vk` runs the pairing anyway (status `ZK_GROTH16_MATH_VERIFIED`, `summary.verificationKeyStrength = WEAK_TRAPDOOR_SUSPECTED`). This is the only legitimate use: testing that the verifier computes the pairing and rejects tampered inputs.
-- The corpus (`fixtures/toccata-v2/zk/manifest.json`) lists it with `allowWeakVerificationKey: true` and `expectedMathStatus: ZK_GROTH16_MATH_VERIFIED`; `claims.cryptographicVerification` is `TOY_KNOWN_TRAPDOOR`.
+- `--allow-weak-vk` runs the pairing anyway (status `ZK_GROTH16_MATH_VERIFIED`, `summary.verificationKeyAnchor = PINNED_REGISTRY`, `summary.verificationKeyStrength = WEAK_TRAPDOOR_SUSPECTED`). This is the only legitimate use: testing that the verifier computes the pairing and rejects tampered inputs.
+- The corpus (`fixtures/toccata-v2/zk/manifest.json`) lists it with `pinnedVerificationKeyId: hardkas-groth16-multiplier-toy`, `allowWeakVerificationKey: true` and `expectedMathStatus: ZK_GROTH16_MATH_VERIFIED`; `claims.cryptographicVerification` is `TOY_KNOWN_TRAPDOOR`. The corpus can only use `allowWeakVerificationKey` for a key pinned in code as a known-trapdoor toy, and passes the pin to the verifier.
 
+### What the weak-key check is, and what it is not
+The check (`assessVerificationKeyStrength`) is an ACCIDENT detector: it recognises an uncontributed powers of tau (alpha = G1, beta = G2, beta = gamma, IC[0] = O, compared as group elements, whatever the encoding) and keys pinned as toys. It is not a security boundary: a key whose maker knows ANY other trapdoor (alpha = 2·G1, beta = 7·G2, …) is indistinguishable from a sound one and passes it. That is why a passing pairing against a key that is not pinned (caller `--expect-vk-hash` or the in-code registry) is reported as `ZK_GROTH16_MATH_VALID_UNANCHORED_VK`, never `VERIFIED` (audit HK-04, counter-audit CA-EXP-04b). Non-canonical encodings (z ≠ 1, any infinity other than `[0,1,0]`), off-curve points and G2 points outside the subgroup are rejected before this check and before snarkjs, so the key that is judged is the key that would be verified. The fixture-coherence binding (`FIXTURE_COHERENCE_SELF_ATTESTED`) is self-attested: whoever writes the directory writes the manifest.
 ## 4. What it still tests
 - Pairing rejects an altered public signal (`34`), tampered coordinates, a swapped key (`ZK_GROTH16_PAIRING_FAILED`).
 - Coherence (`verify-local`) and fixture-bound math (`verify-math`) agree on the manifest's content hashes.
 - Canonical encodings, arity and range checks.
 
 ## 5. Replacement
-A Groth16 vector with a published verification key and verifiable provenance is still wanted (see the Phase 3 remediation report, H-01). Candidates: a RISC Zero Groth16 receipt verified against RISC Zero's published verifying key (the same key kaspa-wasm embeds in the Toccata redeem script), once its public inputs (claim digest) are derived with a reviewed procedure. Until then this directory stays a TOY.
+A Groth16 vector with a published verification key and verifiable provenance is still wanted (see the Phase 3 remediation report, H-01). The RISC Zero Groth16 receipt of `r0-groth16-official/` is now verified locally against RISC Zero's published verifying key (`hardkas zk toccata verify-receipt`, key pinned as `risc0-groth16-bn254-v3.0.4`); this directory stays a TOY.

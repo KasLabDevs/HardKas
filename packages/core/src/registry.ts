@@ -171,6 +171,10 @@ export const HardkasSchemas = {
   // Miscellaneous used in docs / examples
   // --- Node, Spends, PSKT & Escrow ---
   NodeIdentityV1: "hardkas.nodeIdentity.v1",
+  /** INT9-A · a network's identity as HardKAS knows it (family, id, observed id, endpoint, node kind, evidence, sync, trust). */
+  NetworkIdentityV1: "hardkas.networkIdentity.v1",
+  /** INT9-A · `artifact verify` against a node: integrity, network observation and consensus confirmation levels. */
+  ArtifactNetworkVerificationV1: "hardkas.artifactNetworkVerification.v1",
   PendingSpendsV1: "hardkas.pendingSpends.v1",
   PsktV1: "hardkas.pskt.v1",
   EscrowRescueV1: "hardkas.escrow.rescue.v1",

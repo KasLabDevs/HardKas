@@ -89,7 +89,11 @@ export function buildKaspaUri(request: KaspaUriRequest): KaspaUriResult {
     }
 
     const query = queryParts.length > 0 ? `?${queryParts.join("&")}` : "";
-    const uri = `kaspa:${request.address}${query}`;
+    // L1-07: a Kaspa address is its own URI — its prefix (kaspa / kaspatest / kaspasim / kaspadev, crypto/addresses
+    // Prefix) is the scheme; it used to be prefixed again ("kaspa:kaspatest:..."), which wallets cannot parse. A bare
+    // payload without a prefix keeps the legacy "kaspa:" scheme.
+    const address = request.address.trim();
+    const uri = `${/^(kaspa|kaspatest|kaspasim|kaspadev):/.test(address) ? address : `kaspa:${address}`}${query}`;
 
     return {
         uri,

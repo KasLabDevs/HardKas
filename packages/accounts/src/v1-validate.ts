@@ -258,6 +258,21 @@ export function validateV1Transition(input: V1ValidationInput): V1ValidationResu
     if (u.scriptPublicKey.toLowerCase() !== String(i.scriptPublicKey).toLowerCase()) {
       throw fail("INPUT_DIFFERS_FROM_NODE", `input ${idx}: its script differs from the node's`, { input: idx, field: "scriptPublicKey" });
     }
+    // SC-11 · the UTXO's block DAA score and coinbase flag, compared when the node reports them and the plan states them
+    // (the engine puts the plan's values in the kaspa-wasm UTXO; they enter neither the sighash nor the txid, but a plan
+    // whose snapshot disagrees with the node is not the node's UTXO)
+    if (i.blockDaaScore !== undefined && (typeof i.blockDaaScore !== "string" || !/^\d{1,20}$/.test(i.blockDaaScore) || BigInt(i.blockDaaScore) > 0xffffffffffffffffn)) {
+      throw fail("V1_PLAN_INVALID", `input ${idx}: blockDaaScore ${JSON.stringify(i.blockDaaScore)} is not a u64 (decimal string)`, { input: idx });
+    }
+    if (i.isCoinbase !== undefined && typeof i.isCoinbase !== "boolean") {
+      throw fail("V1_PLAN_INVALID", `input ${idx}: isCoinbase is not a boolean`, { input: idx });
+    }
+    if (u.blockDaaScore !== undefined && i.blockDaaScore !== undefined && u.blockDaaScore !== BigInt(i.blockDaaScore)) {
+      throw fail("INPUT_DIFFERS_FROM_NODE", `input ${idx}: block DAA score ${i.blockDaaScore} in the plan, ${u.blockDaaScore} at the node`, { input: idx, field: "blockDaaScore" });
+    }
+    if (u.isCoinbase !== undefined && i.isCoinbase !== undefined && u.isCoinbase !== i.isCoinbase) {
+      throw fail("INPUT_DIFFERS_FROM_NODE", `input ${idx}: coinbase ${i.isCoinbase} in the plan, ${u.isCoinbase} at the node`, { input: idx, field: "isCoinbase" });
+    }
     return u;
   });
 
@@ -288,6 +303,15 @@ export function validateV1Transition(input: V1ValidationInput): V1ValidationResu
       }
       factsOf.push(undefined);
       return;
+    }
+    // assertV1PlanShape lets a p2sh input omit its contract (a ZK lock's plan, whose unlock its own builder supplies):
+    // without a contract there is no unlock to build (engine, drafts) or to check (send). Refused, typed (it was a TypeError).
+    if (i.contract === undefined) {
+      throw fail(
+        "V1_P2SH_UNLOCK_UNAVAILABLE",
+        `${where}: a p2sh input without a contract (such as a ZK lock's plan): HardKAS has no unlocking script to build or check for it; spend it with the builder that supplies its unlock`,
+        { input: idx }
+      );
     }
     const f = input.facts(i.contract);
     if (!f || f.compileRecordHash !== i.contract.compileRecord.contentHash || f.artifactSha256 !== i.contract.compileRecord.artifactSha256 || f.contractName !== i.contract.contract) {

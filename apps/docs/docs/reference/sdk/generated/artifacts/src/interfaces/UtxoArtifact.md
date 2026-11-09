@@ -6,7 +6,7 @@
 
 # Interface: UtxoArtifact
 
-Defined in: [packages/artifacts/src/types.ts:74](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/types.ts#L74)
+Defined in: [packages/artifacts/src/types.ts:76](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/types.ts#L76)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [packages/artifacts/src/types.ts:74](https://github.com/KasLabDevs/H
 
 > `readonly` **address**: [`KaspaAddress`](../../../sdk/src/type-aliases/KaspaAddress.md)
 
-Defined in: [packages/artifacts/src/types.ts:79](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/types.ts#L79)
+Defined in: [packages/artifacts/src/types.ts:81](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/types.ts#L81)
 
 ***
 
@@ -22,7 +22,7 @@ Defined in: [packages/artifacts/src/types.ts:79](https://github.com/KasLabDevs/H
 
 > `readonly` **amountSompi**: `string`
 
-Defined in: [packages/artifacts/src/types.ts:80](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/types.ts#L80)
+Defined in: [packages/artifacts/src/types.ts:82](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/types.ts#L82)
 
 ***
 
@@ -30,7 +30,17 @@ Defined in: [packages/artifacts/src/types.ts:80](https://github.com/KasLabDevs/H
 
 > `readonly` `optional` **blockDaaScore?**: `string`
 
-Defined in: [packages/artifacts/src/types.ts:82](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/types.ts#L82)
+Defined in: [packages/artifacts/src/types.ts:84](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/types.ts#L84)
+
+***
+
+### covenantId?
+
+> `readonly` `optional` **covenantId?**: `string`
+
+Defined in: [packages/artifacts/src/types.ts:87](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/types.ts#L87)
+
+COVENANT-UTXO-PAYMENT-FILTER-1C: set when the UTXO belongs to a covenant (KIP-20); a payment never spends it.
 
 ***
 
@@ -38,7 +48,7 @@ Defined in: [packages/artifacts/src/types.ts:82](https://github.com/KasLabDevs/H
 
 > `readonly` `optional` **isCoinbase?**: `boolean`
 
-Defined in: [packages/artifacts/src/types.ts:83](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/types.ts#L83)
+Defined in: [packages/artifacts/src/types.ts:85](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/types.ts#L85)
 
 ***
 
@@ -46,7 +56,7 @@ Defined in: [packages/artifacts/src/types.ts:83](https://github.com/KasLabDevs/H
 
 > `readonly` **outpoint**: `object`
 
-Defined in: [packages/artifacts/src/types.ts:75](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/types.ts#L75)
+Defined in: [packages/artifacts/src/types.ts:77](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/types.ts#L77)
 
 #### index
 
@@ -62,4 +72,4 @@ Defined in: [packages/artifacts/src/types.ts:75](https://github.com/KasLabDevs/H
 
 > `readonly` **scriptPublicKey**: `string`
 
-Defined in: [packages/artifacts/src/types.ts:81](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/types.ts#L81)
+Defined in: [packages/artifacts/src/types.ts:83](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/types.ts#L83)

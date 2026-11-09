@@ -76,7 +76,11 @@ export interface UpstreamMassResult {
    * relayed.
    */
   readonly minimumFeeSompi: bigint;
-  /** False when the mass exceeds the maximum standard transaction mass: the node will not relay it. */
+  /**
+   * False when the mass exceeds the wallet's maximum standard transaction mass (100,000 g, wallet/core/src/tx/mass.rs).
+   * L1-08: a wallet policy the kaspa-wasm Generator applies, not a node relay rule (the v2.1.0 mempool bounds masses by the
+   * block limits); HardKAS does not build such a transaction.
+   */
   readonly standard: boolean;
   readonly maximumStandardMass: bigint;
   readonly authority: string;
@@ -96,16 +100,25 @@ function sdkNetwork(networkId: string | undefined): string {
   throw err;
 }
 
+/**
+ * L1-12 · a scriptPublicKey given as a hex string (ADJ-002 transport rule): the node's JSON form "<2-byte version as 4 hex>
+ * <script>" when it starts with `0000` (version 0, a script of ANY length: P2PK Schnorr 34 bytes, P2PK ECDSA 35, P2SH 35,
+ * ...); any other hex string is a bare version-0 script. The same rule as the Generator planner (generator-plan.ts
+ * `ownScriptHex`). It used to apply to 72-hex strings (a 34-byte script) only, so a versioned P2SH or ECDSA string was
+ * read as a 37-byte bare script. Not hex (or an odd length): undefined.
+ */
+export function scriptPublicKeyFromHex(spk: string): { version: number; script: string } | undefined {
+  if (typeof spk !== "string" || !HEX.test(spk)) return undefined;
+  return spk.startsWith("0000") ? { version: 0, script: spk.slice(4) } : { version: 0, script: spk };
+}
+
 function scriptFrom(spk: unknown): { version: number; script: string } | undefined {
   if (spk && typeof spk === "object") {
     const o = spk as { version?: number | string; scriptPublicKey?: string; script?: string };
     const script = String(o.scriptPublicKey || o.script || "");
     return HEX.test(script) ? { version: Number(o.version ?? 0), script } : undefined;
   }
-  if (typeof spk !== "string" || !HEX.test(spk)) return undefined;
-  // ADJ-002 transport form: 0000 + 34-byte script.
-  if (spk.length === 72 && spk.startsWith("0000")) return { version: 0, script: spk.slice(4) };
-  return { version: 0, script: spk };
+  return typeof spk === "string" ? scriptPublicKeyFromHex(spk) : undefined;
 }
 
 /**
@@ -237,7 +250,7 @@ export function calculateUpstreamStorageMass(
 
 /**
  * Like {@link measureUpstreamMass}, but a transaction above the maximum
- * standard mass (which the node will not relay) is an error.
+ * standard mass (the wallet's policy, 100,000 g; L1-08: not a node relay rule) is an error.
  */
 export function calculateUpstreamMass(input: UpstreamMassInput): UpstreamMassResult {
   const r = measureUpstreamMass(input);

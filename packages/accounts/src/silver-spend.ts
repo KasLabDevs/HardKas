@@ -1,4 +1,5 @@
 import {
+  assertMainnetTransactionsDisabled,
   encodeSilverEntryArgs,
   getSilContract,
   loadManagedKaspaWasmSync,
@@ -88,6 +89,8 @@ const PLACEHOLDER_SIG: SilArtifactValue = { kind: "bytes", value: new Uint8Array
  * unlock must have the size the fee was computed for.
  */
 export function buildSilverSweep(request: SilverSweepRequest): SilverSpendResult {
+  // CA-TX-05 / HK-12: this constructor signs; the product's mainnet policy decides first (MAINNET_SIGNING_DISABLED)
+  assertMainnetTransactionsDisabled("sign", [request?.networkId], "buildSilverSweep");
   const k = loadManagedKaspaWasmSync();
   const { name: contractName, contract } = getSilContract(request.artifact, request.contractName);
   const bytecode = silContractBytecodeHex(contract);
@@ -354,6 +357,8 @@ export function prepareSilverSpend(request: SilverSpendDraftRequest): SilverSpen
 /** One signer's `sig` value (65-byte hex) for a draft, from the SDK's input signature. */
 export function signSilverSpend(draft: SilverSpendDraft, privateKey: string): string {
   if (draft?.schema !== SILVER_SPEND_DRAFT_SCHEMA) throw spendError("SILVER_SPEND_DRAFT_INVALID", "not a SilverScript spend draft");
+  // CA-TX-05 / HK-12: no signature for a mainnet draft (MAINNET_SIGNING_DISABLED)
+  assertMainnetTransactionsDisabled("sign", [draft.networkId], "signSilverSpend");
   const k = loadManagedKaspaWasmSync();
   const unsigned = draftTx(k, draft, "", draft.networkId);
   if (String(unsigned.id) !== draft.unsignedTxId) throw spendError("SILVER_SPEND_DRAFT_INVALID", "the draft does not rebuild to the transaction it describes");

@@ -49,6 +49,10 @@ export async function signTxPlanArtifact(input: {
   account?: HardkasAccount;
   authorizers?: Readonly<Record<number, TxInputAuthorizer>>;
   config?: HardkasConfig;
+  /**
+   * @deprecated HK-12: has no effect. Mainnet signing is decided by @hardkas/core `MAINNET_TRANSACTIONS_ENABLED` (false
+   * in this release line) on every route, a direct library call included (MAINNET_SIGNING_DISABLED).
+   */
   allowMainnet?: boolean;
   /** The password of the account's keystore, in memory only: never stored, logged or echoed. */
   keystorePassword?: string;
@@ -123,11 +127,9 @@ export async function signTxPlanArtifact(input: {
     ) as SignedTxArtifact;
   }
 
-  // SDK-MAINNET-BROADCAST-GUARD-1: the product's mainnet policy, typed (MAINNET_SIGNING_DISABLED), from the plan's network
-  // and the target's. `allowMainnet: true` remains for direct library use only; no HardKAS path passes it.
-  if (!input.allowMainnet) {
-    assertMainnetTransactionsDisabled("sign", [planArtifact.networkId, input.target?.network], "accounts signer");
-  }
+  // SDK-MAINNET-BROADCAST-GUARD-1 / HK-12: the product's mainnet policy, typed (MAINNET_SIGNING_DISABLED), from the plan's
+  // network and the target's. The constant decides (MAINNET_TRANSACTIONS_ENABLED); `allowMainnet` no longer lifts it.
+  assertMainnetTransactionsDisabled("sign", [planArtifact.networkId, input.target?.network], "accounts signer");
 
   if (account && account.kind === "synthetic") {
     throw new Error(

@@ -13,7 +13,7 @@ title: hardkas rpc
 #### Options
 
 - `--url &lt;url&gt;`: Node wRPC endpoint (default: the canonical localnet, ws://127.0.0.1:18210)
-- `--network &lt;name&gt;`: Network from the workspace config: its declared endpoint, and the node must prove it serves that network (default: none — the --url or the canonical localnet, unchecked)
+- `--network &lt;name&gt;`: Network from the workspace config: its declared endpoint, and the node must prove it serves that network (default: the workspace's network; outside a workspace, the --url or the canonical localnet, unchecked)
 - `--json` (Default: `false`): Output as JSON
 
 ---
@@ -27,7 +27,7 @@ title: hardkas rpc
 #### Options
 
 - `--url &lt;url&gt;`: Node wRPC endpoint (default: the canonical localnet, ws://127.0.0.1:18210)
-- `--network &lt;name&gt;`: Network from the workspace config: its declared endpoint, and the node must prove it serves that network (default: none — the --url or the canonical localnet, unchecked)
+- `--network &lt;name&gt;`: Network from the workspace config: its declared endpoint, and the node must prove it serves that network (default: the workspace's network; outside a workspace, the --url or the canonical localnet, unchecked)
 - `--wait`: Wait until healthy
 - `--timeout &lt;ms&gt;`: With --wait: how long to wait in ms (default: 60000)
 - `--json` (Default: `false`): Output as JSON
@@ -73,7 +73,7 @@ title: hardkas rpc
 #### Options
 
 - `--url &lt;url&gt;`: Node wRPC endpoint (default: the canonical localnet, ws://127.0.0.1:18210)
-- `--network &lt;name&gt;`: Network from the workspace config: its declared endpoint, and the node must prove it serves that network (default: none — the --url or the canonical localnet, unchecked)
+- `--network &lt;name&gt;`: Network from the workspace config: its declared endpoint, and the node must prove it serves that network (default: the workspace's network; outside a workspace, the --url or the canonical localnet, unchecked)
 - `--json` (Default: `false`): Output as JSON
 
 ---
@@ -91,7 +91,7 @@ title: hardkas rpc
 #### Options
 
 - `--url &lt;url&gt;`: Node wRPC endpoint (default: the canonical localnet, ws://127.0.0.1:18210)
-- `--network &lt;name&gt;`: Network from the workspace config: its declared endpoint, and the node must prove it serves that network (default: none — the --url or the canonical localnet, unchecked)
+- `--network &lt;name&gt;`: Network from the workspace config: its declared endpoint, and the node must prove it serves that network (default: the workspace's network; outside a workspace, the --url or the canonical localnet, unchecked)
 - `--json` (Default: `false`): Output as JSON
 
 ---
@@ -109,7 +109,7 @@ title: hardkas rpc
 #### Options
 
 - `--url &lt;url&gt;`: Node wRPC endpoint (default: the canonical localnet, ws://127.0.0.1:18210)
-- `--network &lt;name&gt;`: Network from the workspace config: its declared endpoint, and the node must prove it serves that network (default: none — the --url or the canonical localnet, unchecked)
+- `--network &lt;name&gt;`: Network from the workspace config: its declared endpoint, and the node must prove it serves that network (default: the workspace's network; outside a workspace, the --url or the canonical localnet, unchecked)
 - `--json` (Default: `false`): Output as JSON
 
 ---

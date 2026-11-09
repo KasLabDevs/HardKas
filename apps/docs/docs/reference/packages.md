@@ -28,7 +28,7 @@ For standard application development, you only need to install **`@hardkas/cli`*
 | `@hardkas/core` | L0 | Canonical types, branded primitives, network constants, and error taxonomy |
 | `@hardkas/config` | L0.5 | `hardkas.config.ts` parser, schema validation, and execution target resolution |
 | `@hardkas/tx-builder` | L1 | UTXO coin selection, KIP-9 mass/fee calculator, Covenant & SilverScript builders, and ZK script construction |
-| `@hardkas/pskt-native` | L0 | Native Rust NAPI bindings for Partially Signed Kaspa Transactions (PSKT) |
+| `@hardkas/pskt-native` | L0 | Native Rust NAPI bindings for Partially Signed Kaspa Transactions (PSKT). On hold and not published (win32-x64 only) |
 | `@hardkas/artifacts` | L1 | Cryptographically hashed artifacts (`TxPlan`, `SignedTx`, `TxReceipt`) and Evidence Packages |
 | `@hardkas/accounts` | L1 | HD wallet key derivation, local keystore management, and signing authority guards |
 | `@hardkas/simulator` | L1 | Instant, deterministic in-memory BlockDAG and Kaspa Script execution engine |

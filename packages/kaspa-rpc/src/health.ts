@@ -7,6 +7,20 @@ import { nodeRpcUrl } from "@hardkas/core";
 export interface RpcHealthCheckOptions {
   readonly url?: string | undefined;
   readonly timeoutMs?: number | undefined;
+  /**
+   * L1-10: the protocol, when the URL's scheme does not say it. Default: ws:// / wss:// and scheme-less `host:port` are
+   * wRPC (the only RPC rusty-kaspad serves: JSON wRPC on 18110/18210/18510/18610, consensus/core/src/network.rs);
+   * http:// / https:// are HTTP JSON-RPC (an L2 or a proxy). Never decided by a port substring.
+   */
+  readonly protocol?: "wrpc" | "http" | undefined;
+}
+
+/** L1-10: wRPC or HTTP by the URL's scheme (or the explicit option), never by a port number inside the string. */
+export function rpcHealthProtocolOf(url: string, explicit?: "wrpc" | "http"): "wrpc" | "http" {
+  if (explicit) return explicit;
+  const u = url.trim().toLowerCase();
+  if (u.startsWith("http://") || u.startsWith("https://")) return "http";
+  return "wrpc";
 }
 
 export interface RpcReadinessWaitOptions extends RpcHealthCheckOptions {
@@ -40,13 +54,8 @@ export async function checkKaspaRpcHealth(
   const checkedAt = new Date().toISOString();
   const timeoutMs = options?.timeoutMs || 2000;
 
-  // wRPC (WebSocket) branch
-  if (
-    url.startsWith("ws://") ||
-    url.startsWith("wss://") ||
-    url.includes("18210") ||
-    url.includes("18110")
-  ) {
+  // wRPC (WebSocket) branch: by scheme or option (L1-10: `http://host:18210` used to be wRPC and `ws`-less :18510 HTTP)
+  if (rpcHealthProtocolOf(url, options?.protocol) === "wrpc") {
     const client = new KaspaWrpcClient(url);
     const start = Date.now();
     try {
@@ -58,8 +67,7 @@ export async function checkKaspaRpcHealth(
 
       return {
         endpoint: url,
-        protocol: url.startsWith("ws") ? "WebSocket" : "JSON-RPC",
-        status: "healthy",
+        protocol: "WebSocket",
         ready: true,
         checkedAt,
         latencyMs,
@@ -68,9 +76,11 @@ export async function checkKaspaRpcHealth(
         networkId: info?.networkId || dagInfo?.networkId || dagInfo?.network || "unknown",
         virtualDaaScore: dagInfo?.virtualDaaScore?.toString() || "0",
         serverVersion: info?.serverVersion || "unknown",
-        isSynced: info?.isSynced ?? true,
+        // L1-10: a node that does not say it is synced is not reported as synced (fail closed; it used to default to true)
+        isSynced: typeof info?.isSynced === "boolean" ? info.isSynced : undefined,
+        status: info?.isSynced === true ? "healthy" : info?.isSynced === false ? "stale" : "degraded",
         lastError: null,
-        stale: !(info?.isSynced ?? true)
+        stale: info?.isSynced !== true
       };
     } catch (e: unknown) {
       await client.disconnect();

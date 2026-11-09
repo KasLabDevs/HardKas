@@ -109,7 +109,14 @@ export async function runKaspaDoctor(options: { rpcUrl: string; json: boolean })
         status: finalStatus,
         checks
       };
-      console.log(JSON.stringify(result, null, 2));
+      // INT9 · CLI-CONTRACT-2B D4: ONE document on stdout. A failed doctor used to print its result and then the failure
+      // envelope; now the result is the envelope (ok, plus code/message when it failed) and the exit code follows it.
+      const { getOutput } = await import("../output.js");
+      getOutput().writeJson({
+        ok: finalStatus !== "failed",
+        ...(finalStatus === "failed" ? { code: "DOCTOR_FAILED", message: "Doctor checks failed" } : {}),
+        ...result
+      });
       if (finalStatus === "failed") {
         const { HardkasCliError } = await import("../cli-errors.js");
         throw new HardkasCliError("DOCTOR_FAILED", "Doctor checks failed", {

@@ -1,4 +1,13 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, beforeAll, afterAll } from "vitest";
+
+// TX-06: off the local worlds, auto-signing is the dev-server operator's decision (HARDKAS_DEV_SERVER_AUTOSIGN=1 in the
+// server's environment), not the request's: these cases run a server that opted in.
+beforeAll(() => {
+  process.env.HARDKAS_DEV_SERVER_AUTOSIGN = "1";
+});
+afterAll(() => {
+  delete process.env.HARDKAS_DEV_SERVER_AUTOSIGN;
+});
 import { Hono } from "hono";
 import * as fs from "node:fs";
 import * as os from "node:os";

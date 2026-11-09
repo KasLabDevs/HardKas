@@ -6,7 +6,7 @@
 
 # Interface: GeneratorSettingsInput
 
-Defined in: [packages/tx-builder/src/kaspa-wallet-adapter.ts:33](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/kaspa-wallet-adapter.ts#L33)
+Defined in: [packages/tx-builder/src/kaspa-wallet-adapter.ts:32](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/kaspa-wallet-adapter.ts#L32)
 
 Generator settings passed through unchanged to the WASM SDK.
 See kaspa-wasm's `IGeneratorSettingsObject` for the full field list. We
@@ -20,7 +20,7 @@ validating here would drift from upstream.
 
 > `readonly` **changeAddress**: `string`
 
-Defined in: [packages/tx-builder/src/kaspa-wallet-adapter.ts:37](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/kaspa-wallet-adapter.ts#L37)
+Defined in: [packages/tx-builder/src/kaspa-wallet-adapter.ts:37](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/kaspa-wallet-adapter.ts#L37)
 
 ***
 
@@ -28,7 +28,17 @@ Defined in: [packages/tx-builder/src/kaspa-wallet-adapter.ts:37](https://github.
 
 > `readonly` **entries**: `unknown`
 
-Defined in: [packages/tx-builder/src/kaspa-wallet-adapter.ts:35](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/kaspa-wallet-adapter.ts#L35)
+Defined in: [packages/tx-builder/src/kaspa-wallet-adapter.ts:34](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/kaspa-wallet-adapter.ts#L34)
+
+***
+
+### feeRate?
+
+> `readonly` `optional` **feeRate?**: `number`
+
+Defined in: [packages/tx-builder/src/kaspa-wallet-adapter.ts:41](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/kaspa-wallet-adapter.ts#L41)
+
+Fee rate in sompi per gram, applied by the Generator to every transaction it builds (never below the network minimum).
 
 ***
 
@@ -36,7 +46,7 @@ Defined in: [packages/tx-builder/src/kaspa-wallet-adapter.ts:35](https://github.
 
 > `readonly` `optional` **minimumSignatures?**: `number`
 
-Defined in: [packages/tx-builder/src/kaspa-wallet-adapter.ts:41](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/kaspa-wallet-adapter.ts#L41)
+Defined in: [packages/tx-builder/src/kaspa-wallet-adapter.ts:44](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/kaspa-wallet-adapter.ts#L44)
 
 ***
 
@@ -44,15 +54,17 @@ Defined in: [packages/tx-builder/src/kaspa-wallet-adapter.ts:41](https://github.
 
 > `readonly` **networkId**: `string`
 
-Defined in: [packages/tx-builder/src/kaspa-wallet-adapter.ts:34](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/kaspa-wallet-adapter.ts#L34)
+Defined in: [packages/tx-builder/src/kaspa-wallet-adapter.ts:33](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/kaspa-wallet-adapter.ts#L33)
 
 ***
 
-### outputs
+### outputs?
 
-> `readonly` **outputs**: `unknown`
+> `readonly` `optional` **outputs?**: `unknown`
 
-Defined in: [packages/tx-builder/src/kaspa-wallet-adapter.ts:36](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/kaspa-wallet-adapter.ts#L36)
+Defined in: [packages/tx-builder/src/kaspa-wallet-adapter.ts:36](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/kaspa-wallet-adapter.ts#L36)
+
+Payment outputs. Omit them (an empty list is refused) for a sweep: everything goes to `changeAddress`.
 
 ***
 
@@ -60,15 +72,17 @@ Defined in: [packages/tx-builder/src/kaspa-wallet-adapter.ts:36](https://github.
 
 > `readonly` `optional` **payload?**: `string` \| `Uint8Array`\<`ArrayBufferLike`\>
 
-Defined in: [packages/tx-builder/src/kaspa-wallet-adapter.ts:39](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/kaspa-wallet-adapter.ts#L39)
+Defined in: [packages/tx-builder/src/kaspa-wallet-adapter.ts:42](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/kaspa-wallet-adapter.ts#L42)
 
 ***
 
 ### priorityFee?
 
-> `readonly` `optional` **priorityFee?**: `number` \| `bigint` \| \{ `amount`: `bigint`; \} \| \{ `rate`: `bigint`; \}
+> `readonly` `optional` **priorityFee?**: `number` \| `bigint` \| \{ `amount`: `bigint`; \}
 
-Defined in: [packages/tx-builder/src/kaspa-wallet-adapter.ts:38](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/kaspa-wallet-adapter.ts#L38)
+Defined in: [packages/tx-builder/src/kaspa-wallet-adapter.ts:39](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/kaspa-wallet-adapter.ts#L39)
+
+Absolute extra fee in sompi (sender pays). Set it, even to 0, when there are outputs; leave it unset for a compound.
 
 ***
 
@@ -76,4 +90,4 @@ Defined in: [packages/tx-builder/src/kaspa-wallet-adapter.ts:38](https://github.
 
 > `readonly` `optional` **sigOpCount?**: `number`
 
-Defined in: [packages/tx-builder/src/kaspa-wallet-adapter.ts:40](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/kaspa-wallet-adapter.ts#L40)
+Defined in: [packages/tx-builder/src/kaspa-wallet-adapter.ts:43](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/kaspa-wallet-adapter.ts#L43)

@@ -7,7 +7,8 @@ import {
   PsktRuntimeBinding,
   PsktRuntimeAdapter,
   PsktCapabilitiesChangedError,
-  PsktAdapterMismatchError
+  PsktAdapterMismatchError,
+  assertMainnetTransactionsDisabled
 } from "@hardkas/core";
 import { DefaultPsktAdapterRegistry, PsktAdapterRegistry } from "./pskt/registry.js";
 import { WasmPsktAdapter } from "./pskt/adapters/wasm.js";
@@ -396,10 +397,13 @@ export async function signSession(
   session: PortableSigningSession, 
   request: import("@hardkas/core").PsktSignRequest
 ): Promise<PortableSigningSession> {
+  // HK-13: no PSKT signature on mainnet, whatever adapter (MAINNET_SIGNING_DISABLED); the session's network goes to the
+  // adapter, which cannot read it from a PSKT
+  assertMainnetTransactionsDisabled("sign", [session.networkId], "pskt.signSession");
   const adapter = adapterRegistry.get(session.runtimeBinding.adapterId);
   await verifyAdapterCapabilities(session, adapter);
 
-  const signedPayload = await adapter.sign(session.payload, request);
+  const signedPayload = await adapter.sign(session.payload, { ...request, networkId: session.networkId } as import("@hardkas/core").PsktSignRequest);
   
   const attestation: SessionAttestation = {
     participantId: request.participantId,

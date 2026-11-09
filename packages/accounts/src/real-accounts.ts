@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import util from "node:util";
 import type { NetworkId } from "@hardkas/core";
-import { writeFileAtomicSync, stripBom, isWindowsHostileName } from "@hardkas/core";
+import { writeFileAtomicSync, stripBom, isWindowsHostileName, networkTypeOf, isSimnetNetworkId } from "@hardkas/core";
 import {
   HardkasArtifactBase,
   HARDKAS_VERSION,
@@ -233,7 +233,9 @@ export function validateAddressPrefix(address: string): void {
   if (!address) {
     throw new Error("Address is required.");
   }
-  const validPrefixes = ["kaspa:", "kaspatest:", "kaspasim:"];
+  // HK-14: the four rusty-kaspa prefixes (crypto/addresses v2.1.0 Prefix: Mainnet kaspa, Testnet kaspatest, Simnet
+  // kaspasim, Devnet kaspadev)
+  const validPrefixes = ["kaspa:", "kaspatest:", "kaspasim:", "kaspadev:"];
   const hasValidPrefix = validPrefixes.some((prefix) => address.startsWith(prefix));
   if (!hasValidPrefix) {
     const err = new Error(
@@ -244,39 +246,41 @@ export function validateAddressPrefix(address: string): void {
   }
 }
 
+/** HK-14: the address prefix of each network TYPE (rusty-kaspa consensus/core/src/network.rs NetworkType ↔ Prefix). */
+const PREFIX_OF_NETWORK_TYPE = { mainnet: "kaspa:", testnet: "kaspatest:", simnet: "kaspasim:", devnet: "kaspadev:" } as const;
+
+/**
+ * HK-14 / TX-04 / L1-03 · an address fits a network when its prefix is the one of the network's TYPE (`networkTypeOf`:
+ * `<type>[-<suffix>]`, `kaspa-mainnet`, …; the HardKAS simnet aliases `simulated` / `local-docker-simnet`). An unknown
+ * network fails closed (NETWORK_UNKNOWN). `kaspa:sim_*` (the simulator's synthetic identities) fit only the simulator:
+ * network `simulated`, or `options.simulated` (an instance whose execution target is the simulator).
+ * `allowMainnet` is kept for compatibility and has no effect: a `kaspa:` address never fits another network.
+ */
 export function validateAddressNetwork(
   address: string,
   networkId: string,
-  allowMainnet?: boolean
+  allowMainnet?: boolean,
+  options: { simulated?: boolean } = {}
 ): void {
-  // Simulated internal addresses skip validation
-  if (address.startsWith("kaspa:sim_")) {
-    return;
+  void allowMainnet;
+  const type = networkTypeOf(networkId) ?? (isSimnetNetworkId(networkId) ? "simnet" : undefined);
+  if (type === undefined) {
+    const err = new Error(`NETWORK_UNKNOWN: '${networkId}' is not a Kaspa network id (mainnet, testnet-<n>, simnet, devnet): the address '${address}' cannot be checked against it.`);
+    (err as any).code = "NETWORK_UNKNOWN";
+    throw err;
+  }
+  if (typeof address === "string" && address.startsWith("kaspa:sim_")) {
+    if (networkId === "simulated" || options.simulated === true) return;
+    const err = new Error(
+      `NETWORK_ADDRESS_MISMATCH: '${address}' is a simulator identity; it exists only in the HardKAS simulator, not on network '${networkId}'.`
+    );
+    (err as any).code = "NETWORK_ADDRESS_MISMATCH";
+    throw err;
   }
 
   validateAddressPrefix(address);
 
-  let expectedPrefix: string;
-  if (networkId === "mainnet") {
-    expectedPrefix = "kaspa:";
-  } else if (networkId === "testnet-10" || networkId === "testnet-11") {
-    expectedPrefix = "kaspatest:";
-  } else if (
-    networkId === "simnet" ||
-    networkId === "devnet" ||
-    networkId === "simulated"
-  ) {
-    expectedPrefix = "kaspasim:";
-  } else {
-    // Unknown network, fallback to default validation
-    return;
-  }
-
-  // If allowMainnet is explicitly true, and the address is mainnet, allow it.
-  if (expectedPrefix !== "kaspa:" && address.startsWith("kaspa:") && allowMainnet) {
-    return;
-  }
-
+  const expectedPrefix: string = PREFIX_OF_NETWORK_TYPE[type];
   if (!address.startsWith(expectedPrefix)) {
     const err = new Error(
       `NETWORK_ADDRESS_MISMATCH: Address '${address}' does not match the expected prefix '${expectedPrefix}' for network '${networkId}'.`
@@ -288,8 +292,8 @@ export function validateAddressNetwork(
 
 /**
  * ACCOUNT-STORE-NETWORK-1: whether an address can belong to a network, by its prefix (the same rule as
- * validateAddressNetwork: kaspa: = mainnet, kaspatest: = testnet-*, kaspasim: = simnet/devnet/simulated).
- * An unknown network name is not judged (true).
+ * validateAddressNetwork: kaspa: = mainnet, kaspatest: = testnet-*, kaspasim: = simnet/simulated, kaspadev: = devnet).
+ * HK-14: an unknown network name fails closed (false).
  */
 export function addressMatchesNetwork(address: string, networkId: string): boolean {
   try {
@@ -380,7 +384,8 @@ export function resolveRealAccountOrAddress(
   if (
     nameOrAddress.startsWith("kaspa:") ||
     nameOrAddress.startsWith("kaspatest:") ||
-    nameOrAddress.startsWith("kaspasim:")
+    nameOrAddress.startsWith("kaspasim:") ||
+    nameOrAddress.startsWith("kaspadev:")
   ) {
     return { address: nameOrAddress };
   }

@@ -1,11 +1,12 @@
 import { createHash, randomBytes } from "node:crypto";
 import { loadManagedKaspaWasmSync, systemRuntimeContext } from "@hardkas/core";
-import type { KaspaRpcClient } from "@hardkas/kaspa-rpc";
+import { rpcEndpointOf, type KaspaRpcClient } from "@hardkas/kaspa-rpc";
 import {
   HardkasSchemas,
   createV1TxPlanArtifact,
   createZkVerificationFactArtifact,
   checkArtifactIdentity,
+  deriveObserverId,
   deriveTxStatus,
   deriveZkOperationStatus,
   type ZkToccataScriptsType,
@@ -18,6 +19,14 @@ import {
 } from "@hardkas/artifacts";
 import { observeTxOnce, rpcObserverFor } from "../tx-observer.js";
 import type { ZkIssue } from "../zk.js";
+import {
+  computeR0ReceiptClaimDigest,
+  findPublicR0TestVector,
+  isHardkasR0Groth16Verification,
+  parseR0Groth16Receipt,
+  R0_GROTH16_VERIFIER_ID,
+  type R0Groth16LocalVerificationResult
+} from "./risc0-groth16.js";
 
 function sha256Hex(data: string | Buffer): string {
   return createHash("sha256").update(data).digest("hex");
@@ -51,6 +60,52 @@ export const GROTH16_PRECOMPILE_COST_GRAMS = 140000n;
 export const GROTH16_PRECOMPILE_COST_SCRIPT_UNITS = 14000000n;
 
 /**
+ * Per-element price of the verifying key's gamma_abc_g1 (IC) vector, charged by the Groth16 precompile on
+ * top of the tag cost (rusty-kaspa 2.1.0 zk_precompiles/groth16/mod.rs GROTH16_GAMMA_ABC_G1_ELEMENT_SCRIPT_UNITS).
+ */
+export const GROTH16_VK_ELEMENT_COST_SCRIPT_UNITS = 250000n;
+/** IC elements of the RISC Zero Groth16 wrapper key (5 public inputs + 1). */
+export const R0_GROTH16_VK_ELEMENTS = 6;
+/**
+ * Script units the R0 redeem/signature scripts spend BEFORE the precompile (pushes and the claim-digest
+ * logic). OBSERVED, not derived: rusty-kaspad 2.1.0 simnet reported "used=14002811" when the 14,000,000 SU
+ * tag cost was charged (fixtures/toccata-v2/zk/r0-groth16-official/evidence.json).
+ */
+export const R0_GROTH16_OBSERVED_SCRIPT_OVERHEAD_SCRIPT_UNITS = 2811n;
+/** Consensus block compute-mass limit (rusty-kaspa 2.1.0 config/params.rs block_mass_limits.compute). */
+export const BLOCK_COMPUTE_MASS_LIMIT = 500000n;
+
+/**
+ * Smallest compute budget whose allowance (budget * 10,000 + 9,999 script units) covers the observed script
+ * overhead, the Groth16 tag cost and the per-element VK cost: 1550 for the RISC Zero wrapper (6 elements).
+ */
+export function minimumR0Groth16ComputeBudget(
+  vkElements: number = R0_GROTH16_VK_ELEMENTS,
+  overheadScriptUnits: bigint = R0_GROTH16_OBSERVED_SCRIPT_OVERHEAD_SCRIPT_UNITS
+): number {
+  const needed =
+    overheadScriptUnits +
+    GROTH16_PRECOMPILE_COST_SCRIPT_UNITS +
+    BigInt(vkElements) * GROTH16_VK_ELEMENT_COST_SCRIPT_UNITS -
+    FREE_SCRIPT_UNITS_PER_INPUT;
+  if (needed <= 0n) return 0;
+  return Number((needed + SCRIPT_UNITS_PER_COMPUTE_BUDGET_UNIT - 1n) / SCRIPT_UNITS_PER_COMPUTE_BUDGET_UNIT);
+}
+
+/** Reads the IC element count of the 424-byte-class verifying key pushed in a Groth16 redeem script. */
+export function groth16VkElementsInRedeemScript(redeemScriptHex: string): number | undefined {
+  const parsed = parseKaspaScript(redeemScriptHex);
+  if (parsed.error) return undefined;
+  for (const op of parsed.ops) {
+    if (op.data === undefined || op.data.length < 2 * 232) continue;
+    const bytes = Buffer.from(op.data, "hex");
+    const n = Number(bytes.readBigUInt64LE(224));
+    if (n > 0 && n < 1024 && bytes.length === 232 + 32 * n) return n;
+  }
+  return undefined;
+}
+
+/**
  * Historical trial fee used in the Phase 4 local simnet trial (20,000,000 sompi = 0.2 KAS).
  * It covered the 16,152,700 sompi minimum the node demanded for that transaction (compute mass
  * 161,527 at 100 sompi/gram). It is historical test evidence, not a universal constant.
@@ -66,7 +121,12 @@ export const DEFAULT_FEE_SAFETY_MARGIN_PERCENT = 20;
 /** Default safety cap to prevent runaway fee expenditure (0.5 KAS = 50,000,000 sompi). */
 export const DEFAULT_MAX_FEE_CAP_SOMPI = 50000000n;
 
-/** The base compute mass kaspa-wasm reports for the official RISC Zero vector spend (one input, one output). */
+/**
+ * The base compute mass kaspa-wasm 2.1.0 reports for ONE reference shape only: the official RISC Zero vector
+ * spent from one P2SH input to one P2SH output. It feeds DEFAULT_ZK_FEE_SOMPI and the fee estimate of error
+ * results; plans and transactions measure the real shape (ZK-08). kaspa-wasm overestimates consensus by
+ * ~64-75 g for this shape (the node measured 161,527 for a P2PK destination), a safe direction.
+ */
 export const REFERENCE_BASE_COMPUTE_MASS = 1602n;
 
 export interface ToccataFeePolicyOptions {
@@ -156,6 +216,8 @@ export const ZK_OUTPUT_BINDING_DOMAIN = "HARDKAS_ZK_OUTPUT_BINDING_V1" as const;
 export const ZK_OUTPUT_BINDING_MAGIC = "484b5a31"; // "HKZ1"
 
 export type ZkBindingMode = "proof-only" | "proof-and-output-bound";
+/** What a lock requires from a spender: a receipt of the image id only, or also exactly the bound outputs. */
+export type ZkLockAuthorizationModel = "IMAGE_ID_ONLY" | "IMAGE_ID_AND_OUTPUTS";
 
 export interface ZkOutputTarget {
   address: string;
@@ -171,6 +233,17 @@ export interface ZkOutputBindingPolicy {
   mode: ZkBindingMode;
   payout: ZkOutputTarget;
   change?: ZkOutputTarget;
+  /**
+   * The most the lock may pay as fee. The redeem script refuses an input holding more than the bound outputs plus
+   * this amount, so a larger deposit cannot be burnt as fee by whoever triggers the spend. Default
+   * DEFAULT_MAX_FEE_CAP_SOMPI.
+   */
+  maxFeeSompi?: bigint;
+  /**
+   * @deprecated Refused (ZK_UTXO_BINDING_UNSATISFIABLE): binding the spent outpoint is circular. The funding
+   * transaction's id commits to its outputs, this P2SH among them, so no redeem script can name that outpoint in
+   * advance; a lock that did would be unspendable. Replay across UTXOs is limited by the one-input rule instead.
+   */
   utxoBinding?: ZkReplayBinding;
 }
 
@@ -194,6 +267,10 @@ export interface ZkJournalBindingResult {
  * Creates a canonical, domain-separated journal for zkVM applications committing to transaction outputs.
  * Domain: HARDKAS_ZK_OUTPUT_BINDING_V1
  * Layout: [0..4] "HKZ1" | [4..36] SPK SHA-256 | [36..44] Amount u64 LE | [44..76] Outpoint Digest | [76..108] Nonce
+ *
+ * OFF-CHAIN CONVENTION ONLY: no HardKAS lock checks this journal. The redeem scripts verify a receipt of the image id
+ * for whatever journal hash the spender supplies; the outputs are bound by introspection in proof-and-output-bound
+ * mode, not through the journal. The fields mean something only if the guest program enforces them.
  */
 export function createZkOutputBindingJournal(params: ZkJournalBindingParams): ZkJournalBindingResult {
   const kaspa = loadManagedKaspaWasmSync();
@@ -234,12 +311,25 @@ export function createZkOutputBindingJournal(params: ZkJournalBindingParams): Zk
     nonceHex: nonce.toString("hex")
   };
 }
+export type ZkAddressNetwork = "simnet" | "testnet-10" | "mainnet";
 
 export interface R0Groth16ScriptParams {
   imageId: string;
   journalHash: string;
   receiptHex: string;
   bindingPolicy?: ZkOutputBindingPolicy;
+  /**
+   * Networks whose P2SH address is returned. The simnet address is always returned; "testnet-10" and
+   * "mainnet" are returned only when listed here AND acknowledgeImageIdOnlyLock is true, and never for a
+   * public test vector (PUBLIC_R0_TEST_VECTORS), whose lock anyone can spend (HK-16).
+   */
+  addressNetworks?: ZkAddressNetwork[];
+  /**
+   * Explicit confirmation of the proof-only authorization model: the lock binds ONLY the image id, so whoever
+   * holds a valid receipt of that program spends the UTXO, to any outputs, on any network, and can replay or
+   * front-run a spend seen in the mempool. Not needed in proof-and-output-bound mode.
+   */
+  acknowledgeImageIdOnlyLock?: boolean;
 }
 
 export interface R0Groth16ScriptsResult {
@@ -256,18 +346,32 @@ export interface R0Groth16ScriptsResult {
     version: number;
     script: string;
   };
+  /** testnet10 / mainnet are present only on explicit, acknowledged request (see R0Groth16ScriptParams). */
   p2shAddresses: {
     simnet: string;
-    testnet10: string;
-    mainnet: string;
+    testnet10?: string;
+    mainnet?: string;
   };
+  /** The lock's authorization model, stated on every result (IMAGE_ID_AND_OUTPUTS in proof-and-output-bound mode). */
+  authorizationModel: ZkLockAuthorizationModel;
+  /** MATCH: the receipt's pruned claim digest equals the claim of (imageId, journalHash) (HK-19). */
+  receiptClaimCrossCheck: "MATCH" | "NOT_CHECKED";
+  receiptClaimDigest?: string;
   precompileOpcode: typeof OP_ZK_PRECOMPILE;
   provingSystemTag: typeof GROTH16_PROVING_SYSTEM_TAG;
   bindingMode: ZkBindingMode;
   bindingPolicy?: ZkOutputBindingPolicy;
+  /** true only for a successful proof-and-output-bound build (the redeem script enforces the outputs). */
   consensusEnforced: boolean;
   boundPayoutAddress?: string;
   boundPayoutAmount?: bigint;
+  /**
+   * proof-and-output-bound: the amount to lock at the P2SH. The bound outputs plus the recommended fee for the
+   * measured spend (default compute budget). The fee is fixed once funded: the outputs are bound on-chain.
+   */
+  requiredFundingSompi?: bigint;
+  /** proof-and-output-bound: the largest UTXO the redeem script accepts (bound outputs + maxFeeSompi). */
+  maxInputSompi?: bigint;
   experimental: true;
   warnings: ZkIssue[];
   issues: ZkIssue[];
@@ -285,9 +389,21 @@ export interface BuildR0Groth16TxParams {
   feeOptions?: ToccataFeePolicyOptions;
   computeBudget?: number;
   networkId?: "simnet" | "testnet-10" | "mainnet";
-  /** Whether the Groth16 mathematical verification succeeded off-chain */
+  /**
+   * @deprecated Ignored (HK-17): the caller cannot assert off-chain verification. Passing true only adds the
+   * warning ZK_CALLER_VERIFICATION_CLAIM_IGNORED. Pass `localVerification` instead.
+   */
   mathVerified?: boolean | undefined;
   bindingPolicy?: ZkOutputBindingPolicy;
+  /**
+   * The result of verifyR0Groth16ReceiptLocal for this receipt. Only a genuine, verified result produced
+   * in this process for the same image id, journal and proof sets the fact's verifiedOffChain.
+   */
+  localVerification?: R0Groth16LocalVerificationResult | undefined;
+  /** Optional timestamp recorded in the ZK fact. It is not part of the fact's identity unless given. */
+  timestamp?: string | undefined;
+  /** Measured non-contextual mass of the spend; measured with kaspa-wasm when omitted. */
+  baseComputeMass?: bigint | undefined;
 }
 
 export interface R0Groth16TxResult {
@@ -314,7 +430,12 @@ export interface R0Groth16TxResult {
   issues: ZkIssue[];
   /** Unified V1 transaction plan artifact for this ZK spend */
   planArtifact?: TxPlanArtifact | undefined;
-  /** Immutable ZK verification fact binding proof, verification key, inputs and outputs */
+  /**
+   * Record of this ZK spend (image id, journal hash, SHA-256 of the proof bytes, scripts, outpoint, payout,
+   * off-chain verification status). It is an unkeyed RECORD, not a binding: a proof-only lock binds only the
+   * image id and nothing ties the proof to these outputs (HK-16); a proof-and-output-bound lock binds the outputs
+   * in its redeem script, not through this record.
+   */
   zkFact?: ZkVerificationFact | undefined;
 }
 
@@ -361,6 +482,10 @@ export interface R0Groth16VerifyScriptsResult {
   enforcesPayoutSpk?: boolean;
   enforcesPayoutAmount?: boolean;
   enforcesUtxoBinding?: boolean;
+  /** OpTxInputCount: the spend has exactly one input. */
+  enforcesSingleInput?: boolean;
+  /** OpTxInputAmount .. OpLessThanOrEqual: the spent UTXO is at most the bound outputs plus the fee cap. */
+  enforcesInputAmountLimit?: boolean;
   boundPayoutSpk?: string;
   boundPayoutAmount?: bigint;
   issues: ZkIssue[];
@@ -385,6 +510,23 @@ export interface ToccataPrecompileRules {
   requiredTransactionVersion: 1;
   sigOpCountRequirement: 0;
   maxStandardMass: bigint;
+  /** Price of each gamma_abc_g1 (IC) element of the verifying key, on top of the tag cost. */
+  groth16VkElementCostScriptUnits: number;
+  /** IC elements of the RISC Zero Groth16 wrapper key. */
+  r0Groth16VkElements: number;
+  /** Observed script units spent before the precompile by the R0 scripts (simnet evidence). */
+  r0Groth16ObservedOverheadScriptUnits: number;
+  /** Smallest compute budget that covers the R0 Groth16 spend (overhead + tag + VK elements). */
+  minimumR0Groth16ComputeBudget: number;
+  /** Largest compute budget whose compute mass still fits a block, for the reference spend shape. */
+  maximumComputeBudgetForBlockReferenceShape: number;
+  /** Consensus block compute-mass limit. */
+  blockComputeMassLimit: number;
+  /**
+   * The default (proof-only) lock binds the image id only: any holder of a valid receipt of that program can spend
+   * (HK-16). A proof-and-output-bound lock also binds the outputs (IMAGE_ID_AND_OUTPUTS, see buildR0Groth16Scripts).
+   */
+  authorizationModel: "IMAGE_ID_ONLY";
   consensusActivation: "KIP-16 (Toccata Hardfork)";
   scriptSource: typeof KASPA_WASM_ZK_BUILDER_CLAIM;
 }
@@ -499,12 +641,14 @@ function emptyScriptsResult(
     fullSignatureScript: "",
     redeemScriptHash: "",
     p2shScriptPublicKey: { version: 0, script: "" },
-    p2shAddresses: { simnet: "", testnet10: "", mainnet: "" },
+    p2shAddresses: { simnet: "" },
+    authorizationModel: zkLockAuthorizationModel(mode),
+    receiptClaimCrossCheck: "NOT_CHECKED",
     precompileOpcode: OP_ZK_PRECOMPILE,
     provingSystemTag: GROTH16_PROVING_SYSTEM_TAG,
     bindingMode: mode,
     ...(bindingPolicy ? { bindingPolicy } : {}),
-    consensusEnforced: mode === "proof-and-output-bound",
+    consensusEnforced: false,
     ...(bindingPolicy?.payout ? { boundPayoutAddress: bindingPolicy.payout.address, boundPayoutAmount: bindingPolicy.payout.amountSompi } : {}),
     experimental: true,
     warnings,
@@ -512,27 +656,85 @@ function emptyScriptsResult(
   };
 }
 
+/** Warning attached to every R0 script and transaction result: the lock's authorization model (HK-16). */
+export const ZK_LOCK_BINDS_IMAGE_ID_ONLY_WARNING: ZkIssue = Object.freeze({
+  code: "ZK_LOCK_BINDS_IMAGE_ID_ONLY",
+  message:
+    "Authorization model: this P2SH lock binds ONLY the RISC Zero image id (the upstream ZkScriptBuilder's minimal flow). " +
+    "Anyone holding a valid receipt of that program can spend every UTXO at this address, on any network, to outputs of their choosing; " +
+    "a spend seen in the mempool can be copied (replay / front-running). Nothing binds the proof to the transaction, its outputs, " +
+    "the outpoint or the network: security is whatever the guest program enforces through its journal."
+}) as ZkIssue;
+
+/** Authorization model of a lock built in proof-and-output-bound mode. */
+export const ZK_LOCK_BINDS_IMAGE_ID_AND_OUTPUTS_WARNING: ZkIssue = Object.freeze({
+  code: "ZK_LOCK_BINDS_IMAGE_ID_AND_OUTPUTS",
+  message:
+    "Authorization model: this P2SH lock requires a valid receipt of the RISC Zero image id AND, by output introspection, " +
+    "exactly the bound outputs (count, script and amount of the payout, and of the change when set). Anyone holding a valid receipt " +
+    "of that program can trigger the spend, but only to those outputs. The journal is supplied by the unlocking script and is not " +
+    "checked on-chain. The spend has exactly one input; every UTXO at this address is spendable the same way, one at a time; whatever " +
+    "a UTXO holds beyond the bound outputs is the fee, and a UTXO holding more than the outputs plus the fee cap stays locked. " +
+    "Fund it with requiredFundingSompi."
+}) as ZkIssue;
+
+/** The authorization-model warning for a lock of this mode (attached to every script and transaction result). */
+export function zkLockAuthorizationWarning(mode: ZkBindingMode, _policy?: ZkOutputBindingPolicy): ZkIssue {
+  return mode === "proof-and-output-bound" ? ZK_LOCK_BINDS_IMAGE_ID_AND_OUTPUTS_WARNING : ZK_LOCK_BINDS_IMAGE_ID_ONLY_WARNING;
+}
+
+/** proof-and-output-bound: the largest input the redeem script accepts (bound outputs plus the fee cap). */
+export function boundMaxInputSompi(policy: ZkOutputBindingPolicy): bigint {
+  return policy.payout.amountSompi + (policy.change?.amountSompi ?? 0n) + (policy.maxFeeSompi ?? DEFAULT_MAX_FEE_CAP_SOMPI);
+}
+
+/** The authorization model a lock of this mode carries. */
+export function zkLockAuthorizationModel(mode: ZkBindingMode): ZkLockAuthorizationModel {
+  return mode === "proof-and-output-bound" ? "IMAGE_ID_AND_OUTPUTS" : "IMAGE_ID_ONLY";
+}
+
+/**
+ * The bytes OpTxOutputSpk / OpTxInputSpk push for a script public key: the version as u16 big-endian, then the
+ * script (rusty-kaspa v2.1.0 crypto/txscript/src/lib.rs, SpkEncoding::to_bytes). Hex.
+ */
+export function spkIntrospectionBytesHex(spk: { version: number | bigint; script: string }): string {
+  const version = Number(spk.version);
+  if (!Number.isInteger(version) || version < 0 || version > 0xffff) throw new Error(`invalid script public key version ${String(spk.version)}`);
+  return version.toString(16).padStart(4, "0") + String(spk.script).toLowerCase();
+}
+
 /**
  * Builds the Kaspa Toccata P2SH redeem script (locking) and signature script (unlocking) for a
- * RISC Zero Groth16 receipt, through kaspa-wasm's ZkScriptBuilder.
+ * RISC Zero Groth16 receipt, through kaspa-wasm's ZkScriptBuilder (upstream minimal flow:
+ * commitToGroth16(imageId) + finalizeWithGroth16Proof(receipt, journalHash)).
  *
- * Known limit (audit L-04): the receipt's ReceiptClaim is pruned to a digest inside the Borsh
- * encoding, so the image id and journal hash given here CANNOT be cross-checked against the receipt
- * locally. A mismatching pair builds a script the node will never accept; `warnings` says so.
+ * Authorization model, proof-only (the default; HK-16, by upstream design): the lock binds the image id only.
+ * "Whoever holds a valid receipt of that program spends." The journal is supplied by the unlocking script;
+ * outputs, outpoint and network are not bound, so replay across UTXOs/networks and front-running of a mempool
+ * spend are properties of the design. Every result carries the warning ZK_LOCK_BINDS_IMAGE_ID_ONLY.
+ *
+ * proof-and-output-bound (`bindingPolicy`): after the Groth16 verifier, the redeem script checks by output
+ * introspection the output count and the payout's (and change's) script public key and amount, then requires exactly
+ * one input and an input of at most the bound outputs plus `maxFeeSompi`. A valid receipt can only send the funds to
+ * those outputs. The spent outpoint is never bound (circular: `utxoBinding` is refused). The bound script public key is
+ * the version-prefixed encoding OpTxOutputSpk pushes. Results carry ZK_LOCK_BINDS_IMAGE_ID_AND_OUTPUTS.
+ *
+ * Addresses: the simnet address is always returned. testnet-10/mainnet addresses are returned only when
+ * requested in `addressNetworks` (proof-only also needs `acknowledgeImageIdOnlyLock: true`), and never for a
+ * public test vector.
+ *
+ * Receipt cross-check (HK-19): when the receipt carries its claim pruned to a digest (the usual Borsh
+ * encoding), the digest is recomputed from (imageId, journalHash) and a mismatch is rejected
+ * (ZK_RECEIPT_CLAIM_MISMATCH): a wrong image id would lock funds to a program with no such receipt, a wrong
+ * journal would make the unlocking script fail.
  */
 export function buildR0Groth16Scripts(params: R0Groth16ScriptParams): R0Groth16ScriptsResult {
   const issues: ZkIssue[] = [];
-  const warnings: ZkIssue[] = [
-    {
-      code: "ZK_RECEIPT_CLAIM_NOT_CROSSCHECKED",
-      message:
-        "imageId and journalHash are not cross-checked against the receipt (its claim is a digest): the node decides. A wrong pair yields an unspendable P2SH address."
-    }
-  ];
+  const bindingMode: ZkBindingMode = params.bindingPolicy?.mode ?? "proof-only";
+  const warnings: ZkIssue[] = [{ ...zkLockAuthorizationWarning(bindingMode, params.bindingPolicy) }];
   const imageId = typeof params.imageId === "string" ? params.imageId.trim().toLowerCase() : "";
   const journalHash = typeof params.journalHash === "string" ? params.journalHash.trim().toLowerCase() : "";
   const receiptHex = typeof params.receiptHex === "string" ? params.receiptHex.trim() : "";
-  const bindingMode: ZkBindingMode = params.bindingPolicy?.mode ?? "proof-only";
 
   if (params.bindingPolicy?.mode === "proof-only") {
     warnings.push({
@@ -555,6 +757,32 @@ export function buildR0Groth16Scripts(params: R0Groth16ScriptParams): R0Groth16S
     });
   }
 
+  // Which public-network addresses were asked for (HK-16).
+  const requested = Array.isArray(params.addressNetworks) ? params.addressNetworks : [];
+  const publicNetworks: Array<"testnet-10" | "mainnet"> = [];
+  for (const net of requested) {
+    if (net === "simnet") continue;
+    if (net === "testnet-10" || net === "mainnet") {
+      if (!publicNetworks.includes(net)) publicNetworks.push(net);
+    } else {
+      issues.push({ code: "ZK_ADDRESS_NETWORK_UNSUPPORTED", message: `Unsupported address network '${String(net)}' (simnet, testnet-10, mainnet).` });
+    }
+  }
+  // The acknowledgement covers the image-id-only lock; an output-bound lock sends the funds only to the bound outputs.
+  if (publicNetworks.length > 0 && bindingMode !== "proof-and-output-bound" && params.acknowledgeImageIdOnlyLock !== true) {
+    issues.push({
+      code: "ZK_IMAGE_ID_ONLY_LOCK_NOT_ACKNOWLEDGED",
+      message: `Addresses for ${publicNetworks.join(", ")} were requested without acknowledgeImageIdOnlyLock: the lock binds only the image id, so anyone with a valid receipt of this program can spend it. Nothing was built.`
+    });
+  }
+  const publicVector = findPublicR0TestVector(imageId, journalHash);
+  if (publicNetworks.length > 0 && publicVector) {
+    issues.push({
+      code: "ZK_PUBLIC_VECTOR_PUBLIC_NETWORK_REFUSED",
+      message: `(${imageId}, ${journalHash}) is a PUBLIC test vector (${publicVector.name}): its receipt is published, so a ${publicNetworks.join("/")} address would be anyone-can-spend. HardKAS never returns it.`
+    });
+  }
+
   let preparedProof = "";
   try {
     preparedProof = prepareR0Groth16Proof(receiptHex);
@@ -562,6 +790,33 @@ export function buildR0Groth16Scripts(params: R0Groth16ScriptParams): R0Groth16S
     issues.push({
       code: "ZK_RECEIPT_EXTRACTION_FAILED",
       message: error instanceof Error ? error.message : String(error)
+    });
+  }
+
+  if (issues.length > 0) return emptyScriptsResult(imageId, journalHash, preparedProof, warnings, issues, params.bindingPolicy);
+
+  // Receipt claim cross-check (HK-19).
+  let receiptClaimCrossCheck: "MATCH" | "NOT_CHECKED" = "NOT_CHECKED";
+  let receiptClaimDigest: string | undefined;
+  const parsedReceipt = parseR0Groth16Receipt(receiptHex);
+  if (parsedReceipt.ok && parsedReceipt.claimEncoding === "PRUNED_DIGEST" && parsedReceipt.claimDigest) {
+    receiptClaimDigest = parsedReceipt.claimDigest;
+    const computed = computeR0ReceiptClaimDigest(imageId, journalHash);
+    if (computed !== parsedReceipt.claimDigest) {
+      issues.push({
+        code: "ZK_RECEIPT_CLAIM_MISMATCH",
+        message:
+          `The receipt proves claim ${parsedReceipt.claimDigest}, but (imageId, journalHash) gives claim ${computed}. ` +
+          "A wrong image id would lock funds to a program with no such receipt (unspendable); a wrong journal hash makes the unlocking script fail. Nothing was built."
+      });
+      return emptyScriptsResult(imageId, journalHash, preparedProof, warnings, issues, params.bindingPolicy);
+    }
+    receiptClaimCrossCheck = "MATCH";
+  } else {
+    warnings.push({
+      code: "ZK_RECEIPT_CLAIM_NOT_CROSSCHECKED",
+      message:
+        "The receipt does not carry its claim as a pruned digest (or could not be parsed here), so imageId/journalHash were not cross-checked against it. verifyR0Groth16ReceiptLocal checks the proof against the claim of (imageId, journalHash)."
     });
   }
 
@@ -600,19 +855,15 @@ export function buildR0Groth16Scripts(params: R0Groth16ScriptParams): R0Groth16S
         });
       }
     }
-    if (policy.utxoBinding) {
-      if (!/^[0-9a-fA-F]{64}$/.test(policy.utxoBinding.transactionId)) {
-        issues.push({
-          code: "ZK_BINDING_POLICY_INVALID",
-          message: "bindingPolicy.utxoBinding.transactionId must be a 32-byte hex transaction id"
-        });
-      }
-      if (!Number.isInteger(policy.utxoBinding.index) || policy.utxoBinding.index < 0) {
-        issues.push({
-          code: "ZK_BINDING_POLICY_INVALID",
-          message: "bindingPolicy.utxoBinding.index must be a non-negative integer"
-        });
-      }
+    if (policy.utxoBinding !== undefined) {
+      issues.push({
+        code: "ZK_UTXO_BINDING_UNSATISFIABLE",
+        message:
+          "bindingPolicy.utxoBinding is refused: binding the spent outpoint is circular (the funding transaction's id commits to this P2SH), so the lock could never be spent. Nothing was built."
+      });
+    }
+    if (policy.maxFeeSompi !== undefined && (typeof policy.maxFeeSompi !== "bigint" || policy.maxFeeSompi <= 0n)) {
+      issues.push({ code: "ZK_BINDING_POLICY_INVALID", message: "bindingPolicy.maxFeeSompi must be a positive bigint" });
     }
   }
 
@@ -638,12 +889,13 @@ export function buildR0Groth16Scripts(params: R0Groth16ScriptParams): R0Groth16S
       const expectedOutputCount = policy.change ? 2n : 1n;
       sb.addOp(kaspa.Opcodes.OpTxOutputCount);
       sb.addI64(expectedOutputCount);
-      sb.addOp(kaspa.Opcodes.OpEqualVerify);
+      sb.addOp(kaspa.Opcodes.OpNumEqualVerify);
 
-      // Enforce output 0 recipient
+      // Enforce output 0 recipient. OpTxOutputSpk pushes the SPK as version (u16 big-endian) followed by the script
+      // (rusty-kaspa v2.1.0 txscript SpkEncoding::to_bytes): the bound value carries the version too, or no spend matches.
       sb.addI64(0n);
       sb.addOp(kaspa.Opcodes.OpTxOutputSpk);
-      sb.addData(Buffer.from(payoutSpk.script, "hex"));
+      sb.addData(Buffer.from(spkIntrospectionBytesHex(payoutSpk), "hex"));
       sb.addOp(kaspa.Opcodes.OpEqualVerify);
 
       // Enforce output 0 amount
@@ -658,7 +910,7 @@ export function buildR0Groth16Scripts(params: R0Groth16ScriptParams): R0Groth16S
         const changeSpk = kaspa.payToAddressScript(changeAddr);
         sb.addI64(1n);
         sb.addOp(kaspa.Opcodes.OpTxOutputSpk);
-        sb.addData(Buffer.from(changeSpk.script, "hex"));
+        sb.addData(Buffer.from(spkIntrospectionBytesHex(changeSpk), "hex"));
         sb.addOp(kaspa.Opcodes.OpEqualVerify);
 
         sb.addI64(1n);
@@ -667,18 +919,19 @@ export function buildR0Groth16Scripts(params: R0Groth16ScriptParams): R0Groth16S
         sb.addOp(kaspa.Opcodes.OpNumEqualVerify);
       }
 
-      // Enforce UTXO outpoint binding if configured
-      if (policy.utxoBinding) {
-        sb.addOp(kaspa.Opcodes.OpTxInputIndex);
-        sb.addOp(kaspa.Opcodes.OpDup);
-        sb.addOp(kaspa.Opcodes.OpOutpointTxId);
-        sb.addData(Buffer.from(policy.utxoBinding.transactionId, "hex"));
-        sb.addOp(kaspa.Opcodes.OpEqualVerify);
+      // One input only: several UTXOs of this lock spent together would satisfy the same output checks and send
+      // their whole excess to the fee.
+      sb.addOp(kaspa.Opcodes.OpTxInputCount);
+      sb.addI64(1n);
+      sb.addOp(kaspa.Opcodes.OpNumEqualVerify);
 
-        sb.addOp(kaspa.Opcodes.OpOutpointIndex);
-        sb.addI64(BigInt(policy.utxoBinding.index));
-        sb.addOp(kaspa.Opcodes.OpEqualVerify);
-      }
+      // This input holds at most the bound outputs plus the fee cap: a larger deposit cannot be burnt as fee by
+      // whoever triggers the spend (it stays locked instead).
+      sb.addOp(kaspa.Opcodes.OpTxInputIndex);
+      sb.addOp(kaspa.Opcodes.OpTxInputAmount);
+      sb.addI64(boundMaxInputSompi(policy));
+      sb.addOp(kaspa.Opcodes.OpLessThanOrEqual);
+      sb.addOp(kaspa.Opcodes.OpVerify);
 
       sb.addOp(kaspa.Opcodes.OpTrue);
       redeemScript = String(sb.drain()).toLowerCase();
@@ -701,9 +954,15 @@ export function buildR0Groth16Scripts(params: R0Groth16ScriptParams): R0Groth16S
     const redeemScriptHash =
       spk.script.startsWith("aa20") && spk.script.endsWith("87") ? spk.script.slice(4, -2) : "";
 
-    const simnetAddr = kaspa.addressFromScriptPublicKey(spk, "simnet")?.toString() ?? "";
-    const testnet10Addr = kaspa.addressFromScriptPublicKey(spk, "testnet-10")?.toString() ?? "";
-    const mainnetAddr = kaspa.addressFromScriptPublicKey(spk, "mainnet")?.toString() ?? "";
+    const p2shAddresses: R0Groth16ScriptsResult["p2shAddresses"] = {
+      simnet: kaspa.addressFromScriptPublicKey(spk, "simnet")?.toString() ?? ""
+    };
+    if (publicNetworks.includes("testnet-10")) {
+      p2shAddresses.testnet10 = kaspa.addressFromScriptPublicKey(spk, "testnet-10")?.toString() ?? "";
+    }
+    if (publicNetworks.includes("mainnet")) {
+      p2shAddresses.mainnet = kaspa.addressFromScriptPublicKey(spk, "mainnet")?.toString() ?? "";
+    }
 
     const structural = verifyR0Groth16Scripts({
       redeemScript,
@@ -723,6 +982,34 @@ export function buildR0Groth16Scripts(params: R0Groth16ScriptParams): R0Groth16S
       });
     }
 
+    // proof-and-output-bound: the fee is fixed by the funding amount, so the funder needs it now (M1).
+    let funding: { requiredFundingSompi: bigint; maxInputSompi: bigint } | undefined;
+    if (bindingMode === "proof-and-output-bound" && issues.length === 0) {
+      const policy = params.bindingPolicy!;
+      const outputsTotal = policy.payout.amountSompi + (policy.change?.amountSompi ?? 0n);
+      const probeScripts = { ok: true, bindingMode, bindingPolicy: policy, sigScript, redeemScript, p2shScriptPublicKey: { version: spk.version, script: spk.script } } as unknown as R0Groth16ScriptsResult;
+      const probeMass = BigInt(
+        kaspa.calculateTransactionMass(
+          "simnet",
+          makeR0Groth16SpendTx(
+            kaspa,
+            { scripts: probeScripts, utxo: { transactionId: ZERO_TXID, index: 0, amountSompi: outputsTotal + 1n }, destinationAddress: policy.payout.address } as unknown as BuildR0Groth16TxParams,
+            DEFAULT_ZK_COMPUTE_BUDGET,
+            0n
+          )
+        )
+      );
+      const fee = estimateToccataZkFee(DEFAULT_ZK_COMPUTE_BUDGET, probeMass, policy.maxFeeSompi !== undefined ? { maxFeeSompi: policy.maxFeeSompi } : undefined);
+      if (fee.cappedBelowMinimum) {
+        issues.push({
+          code: "ZK_FEE_CAP_BELOW_REQUIRED_FEE",
+          message: `The fee cap (${policy.maxFeeSompi ?? DEFAULT_MAX_FEE_CAP_SOMPI} sompi) is below the minimum fee ${fee.minimumRequiredSompi} sompi of this spend: no funding amount could be spent. Nothing was built.`
+        });
+      } else {
+        funding = { requiredFundingSompi: outputsTotal + fee.recommendedSompi, maxInputSompi: boundMaxInputSompi(policy) };
+      }
+    }
+
     return {
       ok: issues.length === 0,
       schema: HardkasSchemas.ZkToccataScriptsV1,
@@ -734,16 +1021,20 @@ export function buildR0Groth16Scripts(params: R0Groth16ScriptParams): R0Groth16S
       fullSignatureScript,
       redeemScriptHash,
       p2shScriptPublicKey: { version: spk.version, script: spk.script },
-      p2shAddresses: { simnet: simnetAddr, testnet10: testnet10Addr, mainnet: mainnetAddr },
+      p2shAddresses,
+      authorizationModel: zkLockAuthorizationModel(bindingMode),
+      receiptClaimCrossCheck,
+      ...(receiptClaimDigest ? { receiptClaimDigest } : {}),
       precompileOpcode: OP_ZK_PRECOMPILE,
       provingSystemTag: GROTH16_PROVING_SYSTEM_TAG,
       bindingMode,
       ...(params.bindingPolicy ? { bindingPolicy: params.bindingPolicy } : {}),
-      consensusEnforced: bindingMode === "proof-and-output-bound",
+      consensusEnforced: bindingMode === "proof-and-output-bound" && issues.length === 0,
       ...(params.bindingPolicy?.payout ? {
         boundPayoutAddress: params.bindingPolicy.payout.address,
         boundPayoutAmount: params.bindingPolicy.payout.amountSompi
       } : {}),
+      ...(funding ?? {}),
       experimental: true,
       warnings,
       issues
@@ -784,37 +1075,128 @@ function emptyTxResult(
     destinationAddress,
     networkId,
     bindingMode,
-    consensusEnforced: bindingMode === "proof-and-output-bound",
+    consensusEnforced: false,
     experimental: true,
     warnings,
     issues
   };
 }
 
+/** The scripts' P2SH address for a network, or undefined when it was not built (never a placeholder). */
+function p2shAddressFor(
+  scripts: R0Groth16ScriptsResult,
+  networkId: "simnet" | "testnet-10" | "mainnet"
+): string | undefined {
+  const a = scripts?.p2shAddresses;
+  const v = networkId === "testnet-10" ? a?.testnet10 : networkId === "mainnet" ? a?.mainnet : a?.simnet;
+  return typeof v === "string" && v.length > 0 ? v : undefined;
+}
+
+/** The bound outputs of a proof-and-output-bound lock, or undefined for a proof-only lock. */
+function boundPolicyOf(scripts: R0Groth16ScriptsResult | undefined): ZkOutputBindingPolicy | undefined {
+  return scripts?.bindingMode === "proof-and-output-bound" && scripts.bindingPolicy?.mode === "proof-and-output-bound"
+    ? scripts.bindingPolicy
+    : undefined;
+}
+
+/**
+ * The outputs of the spend. proof-and-output-bound: exactly the bound payout (and change), as the redeem script checks
+ * them; the fee is whatever the UTXO holds beyond them. proof-only: one output to the destination, UTXO minus fee.
+ */
+function r0SpendOutputs(params: BuildR0Groth16TxParams, fee: bigint): Array<{ address: string; amountSompi: bigint; role: "payment" | "change" }> {
+  const policy = boundPolicyOf(params.scripts);
+  if (policy) {
+    return [
+      { address: policy.payout.address, amountSompi: policy.payout.amountSompi, role: "payment" },
+      ...(policy.change ? [{ address: policy.change.address, amountSompi: policy.change.amountSompi, role: "change" as const }] : [])
+    ];
+  }
+  return [{ address: String(params.destinationAddress ?? "").trim(), amountSompi: params.utxo.amountSompi - fee, role: "payment" }];
+}
+
+/** proof-and-output-bound: the fee the bound outputs leave (UTXO minus payout and change). */
+function impliedBoundFee(params: BuildR0Groth16TxParams, policy: ZkOutputBindingPolicy): bigint {
+  return params.utxo.amountSompi - policy.payout.amountSompi - (policy.change?.amountSompi ?? 0n);
+}
+
+function makeR0Groth16SpendTx(kaspa: any, params: BuildR0Groth16TxParams, computeBudget: number, fee: bigint) {
+  const outputs = r0SpendOutputs(params, fee).map((o) => {
+    const spk = kaspa.payToAddressScript(new kaspa.Address(o.address));
+    return { value: o.amountSompi, scriptPublicKey: new kaspa.ScriptPublicKey(spk.version, spk.script) };
+  });
+  const utxoOutpoint = { transactionId: params.utxo.transactionId, index: params.utxo.index };
+  const spk = params.scripts.p2shScriptPublicKey;
+  const utxoEntry = {
+    outpoint: utxoOutpoint,
+    amount: params.utxo.amountSompi,
+    scriptPublicKey: new kaspa.ScriptPublicKey(spk.version, spk.script),
+    blockDaaScore: 0n,
+    isCoinbase: false
+  };
+  return new kaspa.Transaction({
+    version: 1,
+    inputs: [
+      {
+        previousOutpoint: utxoOutpoint,
+        signatureScript: params.scripts.sigScript,
+        sequence: 0n,
+        sigOpCount: 0,
+        computeBudget,
+        utxo: utxoEntry
+      }
+    ],
+    outputs,
+    lockTime: 0n,
+    subnetworkId: "0000000000000000000000000000000000000000",
+    gas: 0n,
+    payload: "",
+    storageMass: 0n
+  });
+}
+
+/** Non-contextual mass kaspa-wasm reports for THIS spend shape (the output value is 8 bytes whatever the fee). */
+function measureR0Groth16SpendMass(params: BuildR0Groth16TxParams, computeBudget: number): bigint {
+  const kaspa = loadManagedKaspaWasmSync();
+  return kaspa.calculateTransactionMass(params.networkId ?? "simnet", makeR0Groth16SpendTx(kaspa, params, computeBudget, 0n));
+}
+
 /**
  * Builds a TxPlanArtifact (hardkas.txPlan.v1) for a Toccata ZK Groth16 spend.
- * Integrates ZK transactions directly into HardKAS's deterministic plan pipeline.
+ * Integrates ZK transactions directly into HardKAS's deterministic plan pipeline. The estimated mass is
+ * measured for the real shape with kaspa-wasm (ZK-08), never the 1602 reference constant. Throws
+ * `ZK_P2SH_ADDRESS_UNAVAILABLE` when the scripts carry no address for the plan's network (no placeholder).
  */
 export function buildR0Groth16Plan(params: BuildR0Groth16TxParams): TxPlanArtifact {
   const computeBudget = params.computeBudget ?? DEFAULT_ZK_COMPUTE_BUDGET;
-  const feeEstimate = estimateToccataZkFee(computeBudget, REFERENCE_BASE_COMPUTE_MASS, params.feeOptions);
-  const feeSompi = params.feeSompi ?? feeEstimate.recommendedSompi;
-  const spkHex = params.scripts.p2shScriptPublicKey
-    ? `${Number(params.scripts.p2shScriptPublicKey.version).toString(16).padStart(4, "0")}${params.scripts.p2shScriptPublicKey.script}`
-    : "0008" + "00".repeat(32);
   const netKey = (params.networkId ?? "simnet") as "simnet" | "testnet-10" | "mainnet";
-  const p2shAddress =
-    (netKey === "testnet-10" ? params.scripts.p2shAddresses?.testnet10 : params.scripts.p2shAddresses?.[netKey]) ||
-    params.scripts.p2shAddresses?.simnet ||
-    "kaspasim:p2sh_zk_placeholder";
-  const outputAmount = params.utxo.amountSompi > feeSompi ? params.utxo.amountSompi - feeSompi : 0n;
+  const p2shAddress = p2shAddressFor(params.scripts, netKey);
+  if (!p2shAddress) {
+    throw new Error(
+      `ZK_P2SH_ADDRESS_UNAVAILABLE: the scripts carry no P2SH address for '${netKey}' (public-network addresses need addressNetworks, + acknowledgeImageIdOnlyLock for a proof-only lock, and are never built for a public test vector)`
+    );
+  }
+  const baseComputeMass = params.baseComputeMass ?? measureR0Groth16SpendMass(params, computeBudget);
+  const feeEstimate = estimateToccataZkFee(computeBudget, baseComputeMass, params.feeOptions);
+  const policy = boundPolicyOf(params.scripts);
+  const feeSompi = policy ? impliedBoundFee(params, policy) : params.feeSompi ?? feeEstimate.recommendedSompi;
+  // Fails closed: the plan never carries a fee cap below its own fee, nor a fee above the cap (N-6).
+  const maxFeeSompi = policy?.maxFeeSompi ?? params.feeOptions?.maxFeeSompi ?? DEFAULT_MAX_FEE_CAP_SOMPI;
+  if (feeSompi <= 0n) {
+    throw new Error(`ZK_INSUFFICIENT_INPUT_AMOUNT: UTXO ${params.utxo.amountSompi} sompi does not cover the bound outputs and a fee`);
+  }
+  if (feeSompi > maxFeeSompi) {
+    throw new Error(`ZK_FEE_ABOVE_CAP: fee ${feeSompi} sompi exceeds the cap ${maxFeeSompi} (raise feeOptions.maxFeeSompi explicitly)`);
+  }
+  const spkHex = `${Number(params.scripts.p2shScriptPublicKey.version).toString(16).padStart(4, "0")}${params.scripts.p2shScriptPublicKey.script}`;
+  const outputs = r0SpendOutputs(params, feeSompi);
+  const payment = outputs[0]!;
 
   return createV1TxPlanArtifact({
     networkId: (params.networkId ?? "simnet") as any,
     mode: "rpc",
     from: { input: p2shAddress, address: p2shAddress },
-    to: { input: params.destinationAddress, address: params.destinationAddress },
-    amountSompi: outputAmount,
+    to: { input: payment.address, address: payment.address },
+    amountSompi: payment.amountSompi > 0n ? payment.amountSompi : 0n,
     body: {
       txVersion: 1,
       inputs: [
@@ -827,20 +1209,11 @@ export function buildR0Groth16Plan(params: BuildR0Groth16TxParams): TxPlanArtifa
           computeBudget
         }
       ],
-      outputs: [
-        {
-          address: params.destinationAddress,
-          amountSompi: String(outputAmount),
-          role: "payment"
-        }
-      ],
+      outputs: outputs.map((o) => ({ address: o.address, amountSompi: String(o.amountSompi), role: o.role })),
       estimatedFeeSompi: String(feeSompi),
       estimatedMass: String(feeEstimate.computeMass),
       storageMass: "0",
-      maxFeeSompi: String(
-        params.feeOptions?.maxFeeSompi ??
-        (feeSompi > DEFAULT_MAX_FEE_CAP_SOMPI ? feeSompi : DEFAULT_MAX_FEE_CAP_SOMPI)
-      )
+      maxFeeSompi: String(maxFeeSompi)
     },
     ctx: systemRuntimeContext,
     purpose: "ZK Groth16 spend"
@@ -849,17 +1222,24 @@ export function buildR0Groth16Plan(params: BuildR0Groth16TxParams): TxPlanArtifa
 
 /**
  * Builds (does not sign or broadcast) a version-1 transaction spending a P2SH UTXO locked by a
- * RISC Zero Groth16 covenant. The compute budget must be a u16; the fee is derived from the mass
- * kaspa-wasm reports for the real transaction plus the compute-budget term.
+ * RISC Zero Groth16 lock. The compute budget must be a u16 that covers the precompile (tag cost + 250,000
+ * script units per VK element + the observed script overhead; ZK-07) and whose compute mass fits a block;
+ * the fee is derived from the mass kaspa-wasm reports for the real transaction plus the compute-budget term.
+ * Every result carries the lock's authorization-model warning (ZK_LOCK_BINDS_IMAGE_ID_ONLY, HK-16, or
+ * ZK_LOCK_BINDS_IMAGE_ID_AND_OUTPUTS); public networks are refused for public vectors. In proof-and-output-bound
+ * mode the outputs are exactly the bound ones and the fee is what the UTXO holds beyond them; any fee above the cap
+ * (feeOptions.maxFeeSompi, default DEFAULT_MAX_FEE_CAP_SOMPI) is refused (ZK_FEE_ABOVE_CAP).
+ * The emitted ZK fact records the real image id, the SHA-256 of the proof BYTES, no placeholder and no
+ * clock (HK-20); verifiedOffChain is true only with a genuine verifyR0Groth16ReceiptLocal result (HK-17).
  */
 export function buildR0Groth16Transaction(params: BuildR0Groth16TxParams): R0Groth16TxResult {
   const issues: ZkIssue[] = [];
-  const warnings: ZkIssue[] = [];
+  const bindingMode = params.scripts?.bindingMode ?? "proof-only";
+  const bindingPolicy = params.scripts?.bindingPolicy;
+  const warnings: ZkIssue[] = [{ ...zkLockAuthorizationWarning(bindingMode, bindingPolicy) }];
   const networkId = params.networkId ?? "simnet";
   const computeBudget = params.computeBudget ?? DEFAULT_ZK_COMPUTE_BUDGET;
   const destinationAddress = String(params.destinationAddress ?? "").trim();
-  const bindingMode = params.scripts?.bindingMode ?? "proof-only";
-  const bindingPolicy = params.scripts?.bindingPolicy;
 
   if (params.scripts?.bindingPolicy?.mode === "proof-only") {
     warnings.push({
@@ -877,7 +1257,7 @@ export function buildR0Groth16Transaction(params: BuildR0Groth16TxParams): R0Gro
     const estimate = estimateToccataZkFee(DEFAULT_ZK_COMPUTE_BUDGET, REFERENCE_BASE_COMPUTE_MASS, params.feeOptions);
     const empty = emptyTxResult(estimate, Number(computeBudget), params.feeSompi ?? 0n, destinationAddress, networkId, warnings, issues);
     empty.bindingMode = bindingMode;
-    empty.consensusEnforced = bindingMode === "proof-and-output-bound";
+    empty.consensusEnforced = false;
     return empty;
   }
   if (networkId === "mainnet") {
@@ -885,6 +1265,13 @@ export function buildR0Groth16Transaction(params: BuildR0Groth16TxParams): R0Gro
       code: "ZK_MAINNET_BUILD_UNGUARDED",
       message:
         "Transaction built for mainnet. This tool never broadcasts; mainnet broadcasting is governed by the send guards (BLOCKED_BY_POLICY)."
+    });
+  }
+  if (params.mathVerified === true) {
+    warnings.push({
+      code: "ZK_CALLER_VERIFICATION_CLAIM_IGNORED",
+      message:
+        "mathVerified is ignored: the caller cannot assert off-chain verification of a RISC Zero receipt. Pass the result of verifyR0Groth16ReceiptLocal as localVerification."
     });
   }
 
@@ -915,85 +1302,43 @@ export function buildR0Groth16Transaction(params: BuildR0Groth16TxParams): R0Gro
         message: `Specified destinationAddress '${destinationAddress}' does not match the covenant's consensus-bound payout address '${bindingPolicy.payout.address}'`
       });
     }
-    if (bindingPolicy.utxoBinding) {
-      const expectedTxId = bindingPolicy.utxoBinding.transactionId.toLowerCase();
-      const actualTxId = String(params.utxo?.transactionId ?? "").toLowerCase();
-      if (expectedTxId !== actualTxId || bindingPolicy.utxoBinding.index !== params.utxo?.index) {
-        issues.push({
-          code: "ZK_BINDING_UTXO_MISMATCH",
-          message: `Spent UTXO ${params.utxo?.transactionId}:${params.utxo?.index} does not match the covenant's bound outpoint ${bindingPolicy.utxoBinding.transactionId}:${bindingPolicy.utxoBinding.index}`
-        });
-      }
+    // The redeem script refuses an input above the bound outputs plus the fee cap: such a UTXO stays locked.
+    if (typeof params.utxo?.amountSompi === "bigint" && params.utxo.amountSompi > boundMaxInputSompi(bindingPolicy)) {
+      issues.push({
+        code: "ZK_BOUND_INPUT_ABOVE_LOCK_LIMIT",
+        message: `The UTXO holds ${params.utxo.amountSompi} sompi, above the ${boundMaxInputSompi(bindingPolicy)} sompi the lock accepts (bound outputs + fee cap): the node would reject the spend.`
+      });
     }
   }
 
+  const publicVector = params.scripts ? findPublicR0TestVector(params.scripts.imageId, params.scripts.journalHash) : undefined;
+  if (publicVector && networkId !== "simnet") {
+    issues.push({
+      code: "ZK_PUBLIC_VECTOR_PUBLIC_NETWORK_REFUSED",
+      message: `This is a PUBLIC test vector (${publicVector.name}): anyone can spend its lock, so HardKAS builds it for simnet only.`
+    });
+  }
+  const p2shAddress = params.scripts ? p2shAddressFor(params.scripts, networkId) : undefined;
+  if (!p2shAddress && !publicVector) {
+    issues.push({
+      code: "ZK_P2SH_ADDRESS_UNAVAILABLE",
+      message:
+        bindingMode === "proof-and-output-bound"
+          ? `The scripts carry no P2SH address for '${networkId}': build them with addressNetworks including it.`
+          : `The scripts carry no P2SH address for '${networkId}': build them with addressNetworks including it and acknowledgeImageIdOnlyLock.`
+    });
+  }
   if (issues.length > 0) {
     const estimate = estimateToccataZkFee(computeBudget, REFERENCE_BASE_COMPUTE_MASS, params.feeOptions);
     const empty = emptyTxResult(estimate, computeBudget, params.feeSompi ?? estimate.recommendedSompi, destinationAddress, networkId, warnings, issues);
     empty.bindingMode = bindingMode;
-    empty.consensusEnforced = bindingMode === "proof-and-output-bound";
+    empty.consensusEnforced = false;
     return empty;
   }
 
-  const makeTx = (fee: bigint) => {
-    const destAddr = new kaspa.Address(destinationAddress);
-    const destSpk = kaspa.payToAddressScript(destAddr);
-    const utxoOutpoint = { transactionId: params.utxo.transactionId, index: params.utxo.index };
-    const spk = params.scripts.p2shScriptPublicKey;
-    const utxoEntry = {
-      outpoint: utxoOutpoint,
-      amount: params.utxo.amountSompi,
-      scriptPublicKey: new kaspa.ScriptPublicKey(spk.version, spk.script),
-      blockDaaScore: 0n,
-      isCoinbase: false
-    };
-
-    const outputs: any[] = [];
-    if (bindingMode === "proof-and-output-bound" && bindingPolicy?.change) {
-      outputs.push({
-        value: bindingPolicy.payout.amountSompi,
-        scriptPublicKey: new kaspa.ScriptPublicKey(destSpk.version, destSpk.script)
-      });
-      const changeAddr = new kaspa.Address(bindingPolicy.change.address);
-      const changeSpk = kaspa.payToAddressScript(changeAddr);
-      outputs.push({
-        value: bindingPolicy.change.amountSompi,
-        scriptPublicKey: new kaspa.ScriptPublicKey(changeSpk.version, changeSpk.script)
-      });
-    } else {
-      const outputAmount = bindingMode === "proof-and-output-bound" && bindingPolicy
-        ? bindingPolicy.payout.amountSompi
-        : params.utxo.amountSompi - fee;
-      outputs.push({
-        value: outputAmount,
-        scriptPublicKey: new kaspa.ScriptPublicKey(destSpk.version, destSpk.script)
-      });
-    }
-
-    return new kaspa.Transaction({
-      version: 1,
-      inputs: [
-        {
-          previousOutpoint: utxoOutpoint,
-          signatureScript: params.scripts.sigScript,
-          sequence: 0n,
-          sigOpCount: 0,
-          computeBudget,
-          utxo: utxoEntry
-        }
-      ],
-      outputs,
-      lockTime: 0n,
-      subnetworkId: "0000000000000000000000000000000000000000",
-      gas: 0n,
-      payload: "",
-      storageMass: 0n
-    });
-  };
-
   try {
-    const probe = makeTx(0n);
-    const mass: bigint = kaspa.calculateTransactionMass(networkId, probe);
+    // Pass 1: measure the real non-contextual mass (the output value is 8 bytes whatever the fee).
+    const mass: bigint = params.baseComputeMass ?? measureR0Groth16SpendMass({ ...params, networkId }, computeBudget);
     const feeEstimate = estimateToccataZkFee(computeBudget, mass, params.feeOptions);
 
     let feeSompi: bigint;
@@ -1018,11 +1363,33 @@ export function buildR0Groth16Transaction(params: BuildR0Groth16TxParams): R0Gro
       feeSompi = params.feeSompi ?? feeEstimate.recommendedSompi;
     }
 
-    if (feeSompi < feeEstimate.minimumRequiredSompi) {
-      warnings.push({
-        code: "ZK_FEE_BELOW_MEMPOOL_MINIMUM",
-        message: `Fee of ${feeSompi} sompi is below the standard mempool minimum of ${feeEstimate.minimumRequiredSompi} sompi for compute mass ${feeEstimate.computeMass}`
+    // Fee cap, fail closed (N-6). In bound mode a UTXO funded beyond the bound outputs would hand the excess to the miner.
+    const maxFeeSompi =
+      (bindingMode === "proof-and-output-bound" ? bindingPolicy?.maxFeeSompi : undefined) ??
+      params.feeOptions?.maxFeeSompi ??
+      DEFAULT_MAX_FEE_CAP_SOMPI;
+    if (feeSompi > maxFeeSompi) {
+      issues.push({
+        code: "ZK_FEE_ABOVE_CAP",
+        message:
+          bindingMode === "proof-and-output-bound"
+            ? `The UTXO (${params.utxo.amountSompi} sompi) holds ${feeSompi} sompi beyond the bound outputs; as a fee that exceeds the cap ${maxFeeSompi}. Fund the lock with the bound outputs plus the fee, or raise feeOptions.maxFeeSompi explicitly.`
+            : `Fee ${feeSompi} sompi exceeds the cap ${maxFeeSompi}; raise feeOptions.maxFeeSompi explicitly.`
       });
+      return emptyTxResult(feeEstimate, computeBudget, feeSompi, destinationAddress, networkId, warnings, issues, bindingMode);
+    }
+
+    if (feeSompi < feeEstimate.minimumRequiredSompi) {
+      const belowMinimum = {
+        code: bindingMode === "proof-and-output-bound" ? "ZK_BOUND_FEE_BELOW_MEMPOOL_MINIMUM" : "ZK_FEE_BELOW_MEMPOOL_MINIMUM",
+        message:
+          bindingMode === "proof-and-output-bound"
+            ? `The UTXO leaves ${feeSompi} sompi of fee beyond the bound outputs, below the mempool minimum ${feeEstimate.minimumRequiredSompi} sompi for compute mass ${feeEstimate.computeMass}: the node will not relay this spend, and the bound outputs cannot change. Fund the lock with requiredFundingSompi.`
+            : `Fee of ${feeSompi} sompi is below the standard mempool minimum of ${feeEstimate.minimumRequiredSompi} sompi for compute mass ${feeEstimate.computeMass}`
+      };
+      // proof-only: the caller can raise the fee, so it stays a warning; bound: nothing can fix it, so it is an issue.
+      if (bindingMode === "proof-and-output-bound") issues.push(belowMinimum);
+      else warnings.push(belowMinimum);
     }
     if (params.feeSompi === undefined && feeEstimate.cappedBelowMinimum) {
       warnings.push({
@@ -1038,7 +1405,29 @@ export function buildR0Groth16Transaction(params: BuildR0Groth16TxParams): R0Gro
       return emptyTxResult(feeEstimate, computeBudget, feeSompi, destinationAddress, networkId, warnings, issues, bindingMode);
     }
 
-    const tx = makeTx(feeSompi);
+    // Consensus allowance and block limit (ZK-07).
+    const vkElements = groth16VkElementsInRedeemScript(params.scripts.redeemScript) ?? R0_GROTH16_VK_ELEMENTS;
+    const minimumBudget = minimumR0Groth16ComputeBudget(vkElements);
+    if (computeBudget < minimumBudget) {
+      issues.push({
+        code: "ZK_COMPUTE_BUDGET_INSUFFICIENT",
+        message:
+          `computeBudget ${computeBudget} allows ${BigInt(computeBudget) * SCRIPT_UNITS_PER_COMPUTE_BUDGET_UNIT + FREE_SCRIPT_UNITS_PER_INPUT} script units, ` +
+          `but the spend needs about ${R0_GROTH16_OBSERVED_SCRIPT_OVERHEAD_SCRIPT_UNITS + GROTH16_PRECOMPILE_COST_SCRIPT_UNITS + BigInt(vkElements) * GROTH16_VK_ELEMENT_COST_SCRIPT_UNITS} ` +
+          `(Groth16 tag ${GROTH16_PRECOMPILE_COST_SCRIPT_UNITS} + ${vkElements} VK elements x ${GROTH16_VK_ELEMENT_COST_SCRIPT_UNITS} + observed overhead ${R0_GROTH16_OBSERVED_SCRIPT_OVERHEAD_SCRIPT_UNITS}): minimum ${minimumBudget}. The node would reject it.`
+      });
+    }
+    if (feeEstimate.computeMass > BLOCK_COMPUTE_MASS_LIMIT) {
+      issues.push({
+        code: "ZK_TX_EXCEEDS_BLOCK_COMPUTE_MASS_LIMIT",
+        message: `Compute mass ${feeEstimate.computeMass} (budget term included) exceeds the block compute-mass limit ${BLOCK_COMPUTE_MASS_LIMIT}: no block can include this transaction.`
+      });
+    }
+
+    // Pass 2: the real transaction with the final fee.
+    const tx = makeR0Groth16SpendTx(kaspa, { ...params, destinationAddress }, computeBudget, feeSompi);
+    // The non-contextual mass is checked against the standard limit; the compute mass (budget term
+    // included) against the block limit above.
     const withinStandardMaxMass = mass <= STANDARD_MAX_TRANSACTION_MASS;
     if (mass > STANDARD_MAX_TRANSACTION_MASS) {
       issues.push({
@@ -1047,61 +1436,74 @@ export function buildR0Groth16Transaction(params: BuildR0Groth16TxParams): R0Gro
       });
     }
 
-    let planArtifact: any;
-    let planArtifactId: string | undefined;
-    try {
-      planArtifact = buildR0Groth16Plan({
-        ...params,
-        feeSompi
-      });
-      const planIdCheck = checkArtifactIdentity(planArtifact);
-      planArtifactId = planIdCheck.ok ? planIdCheck.artifactId : undefined;
-    } catch {
-      // Ignore plan generation failures so tx building succeeds
+    const planArtifact = buildR0Groth16Plan({
+      ...params,
+      networkId,
+      destinationAddress,
+      feeSompi,
+      baseComputeMass: mass
+    });
+    const planIdCheck = checkArtifactIdentity(planArtifact);
+    const planArtifactId = planIdCheck.ok ? planIdCheck.artifactId : undefined;
+    // What the payout output receives: the bound payout amount, or the UTXO minus the fee.
+    const finalOutputAmount = r0SpendOutputs({ ...params, destinationAddress }, feeSompi)[0]!.amountSompi;
+
+    // Off-chain verification status: only HardKAS's own verifier can set it (HK-17).
+    let offChainVerification: "VERIFIED" | "NOT_PERFORMED" = "NOT_PERFORMED";
+    const lv = params.localVerification;
+    if (lv !== undefined) {
+      if (
+        isHardkasR0Groth16Verification(lv) &&
+        lv.verified &&
+        lv.imageId === params.scripts.imageId &&
+        lv.journalHash === params.scripts.journalHash &&
+        lv.compressedProof === params.scripts.preparedProof
+      ) {
+        offChainVerification = "VERIFIED";
+      } else {
+        warnings.push({
+          code: "ZK_LOCAL_VERIFICATION_NOT_ACCEPTED",
+          message:
+            "localVerification is not a verified verifyR0Groth16ReceiptLocal result for this image id, journal and proof: the fact records NOT_PERFORMED."
+        });
+      }
     }
-    const finalOutputAmount = params.utxo.amountSompi - feeSompi;
 
     let zkFact: ZkVerificationFact | undefined;
-    try {
-      const vkHash = params.scripts.imageId
-        ? sha256Hex(params.scripts.imageId)
-        : "00".repeat(32);
-      const rawJournal = params.scripts.journalHash ?? "";
-      const journalHash = rawJournal.startsWith("0x") ? rawJournal.slice(2) : rawJournal;
-      const rawProof = typeof params.scripts.preparedProof === "string" ? params.scripts.preparedProof : "";
-      const proofHash = rawProof ? sha256Hex(rawProof) : "00".repeat(32);
-      const redeemHash = params.scripts.redeemScriptHash || sha256Hex(params.scripts.redeemScript || "");
-      const netKey = (networkId ?? "simnet") as "simnet" | "testnet-10" | "mainnet";
-      const p2shAddress =
-        (netKey === "testnet-10" ? params.scripts.p2shAddresses?.testnet10 : params.scripts.p2shAddresses?.[netKey]) ||
-        params.scripts.p2shAddresses?.simnet ||
-        "kaspasim:p2sh_zk_placeholder";
-
-      zkFact = createZkVerificationFactArtifact({
-        networkId,
-        provingSystem: "Groth16",
-        curve: "BN254",
-        guestSystem: "RISC Zero",
-        imageId: vkHash.padEnd(64, "0").slice(0, 64),
-        journalHash: (journalHash || "00".repeat(32)).padEnd(64, "0").slice(0, 64),
-        proofSha256: proofHash.padEnd(64, "0").slice(0, 64),
-        verifiedOffChain: params.mathVerified ?? false,
-        spendUtxo: {
-          transactionId: params.utxo.transactionId,
-          index: params.utxo.index,
-          amountSompi: String(params.utxo.amountSompi)
-        },
-        p2shAddress,
-        redeemScriptHash: redeemHash.padEnd(64, "0").slice(0, 64),
-        payoutAddress: destinationAddress,
-        payoutSompi: String(finalOutputAmount),
-        computeBudget,
-        feeSompi: String(feeSompi),
-        txId: String(tx.id),
-        ...(planArtifactId ? { planArtifactId } : {})
-      });
-    } catch {
-      // Ignore fact creation errors to avoid breaking tx building
+    if (issues.length === 0) {
+      try {
+        zkFact = createZkVerificationFactArtifact({
+          networkId,
+          provingSystem: "Groth16",
+          curve: "BN254",
+          guestSystem: "RISC Zero",
+          imageId: params.scripts.imageId,
+          journalHash: params.scripts.journalHash,
+          proofSha256: sha256Hex(Buffer.from(params.scripts.preparedProof, "hex")),
+          verifiedOffChain: offChainVerification === "VERIFIED",
+          offChainVerification,
+          ...(offChainVerification === "VERIFIED" ? { offChainVerifier: R0_GROTH16_VERIFIER_ID } : {}),
+          spendUtxo: {
+            transactionId: params.utxo.transactionId,
+            index: params.utxo.index,
+            amountSompi: String(params.utxo.amountSompi)
+          },
+          p2shAddress: p2shAddress as string,
+          redeemScriptHash: params.scripts.redeemScriptHash,
+          payoutAddress: destinationAddress,
+          payoutSompi: String(finalOutputAmount),
+          computeBudget,
+          feeSompi: String(feeSompi),
+          txId: String(tx.id),
+          ...(planArtifactId ? { planArtifactId } : {}),
+          ...(params.timestamp !== undefined ? { timestamp: params.timestamp } : {})
+        });
+      } catch (error: any) {
+        issues.push({
+          code: "ZK_FACT_BUILD_FAILED",
+          message: `The ZK fact could not be built: ${error instanceof Error ? error.message : String(error)}`
+        });
+      }
     }
 
     return {
@@ -1120,7 +1522,7 @@ export function buildR0Groth16Transaction(params: BuildR0Groth16TxParams): R0Gro
       destinationAddress,
       networkId,
       bindingMode,
-      consensusEnforced: bindingMode === "proof-and-output-bound",
+      consensusEnforced: bindingMode === "proof-and-output-bound" && issues.length === 0,
       experimental: true,
       warnings,
       issues,
@@ -1136,7 +1538,7 @@ export function buildR0Groth16Transaction(params: BuildR0Groth16TxParams): R0Gro
     const estimate = estimateToccataZkFee(computeBudget, REFERENCE_BASE_COMPUTE_MASS, params.feeOptions);
     const empty = emptyTxResult(estimate, computeBudget, params.feeSompi ?? estimate.recommendedSompi, destinationAddress, networkId, warnings, issues);
     empty.bindingMode = bindingMode;
-    empty.consensusEnforced = bindingMode === "proof-and-output-bound";
+    empty.consensusEnforced = false;
     return empty;
   }
 }
@@ -1179,6 +1581,8 @@ export function verifyR0Groth16Scripts(
   let enforcesPayoutSpk = false;
   let enforcesPayoutAmount = false;
   let enforcesUtxoBinding = false;
+  let enforcesSingleInput = false;
+  let enforcesInputAmountLimit = false;
   let boundPayoutSpk: string | undefined;
   let boundPayoutAmount: bigint | undefined;
 
@@ -1214,7 +1618,23 @@ export function verifyR0Groth16Scripts(
     }
 
     const outpointTxIdIdx = ops.findIndex((op) => op.opcode === 0xba);
-    if (outpointTxIdIdx !== -1) enforcesUtxoBinding = true;
+    if (outpointTxIdIdx !== -1) {
+      enforcesUtxoBinding = true;
+      issues.push({
+        code: "ZK_UTXO_BINDING_UNSATISFIABLE",
+        message:
+          "The redeem script binds the spent outpoint (OpOutpointTxId): the funding transaction's id commits to this P2SH, so no spend can satisfy it."
+      });
+    }
+    // A payout SPK that is not the version-prefixed introspection encoding can never match a standard output.
+    if (boundPayoutSpk !== undefined && !/^0000/.test(boundPayoutSpk)) {
+      issues.push({
+        code: "ZK_BOUND_SPK_NOT_INTROSPECTION_ENCODED",
+        message: `The bound payout SPK '${boundPayoutSpk}' does not start with the u16 version OpTxOutputSpk pushes: no standard output matches it`
+      });
+    }
+    enforcesSingleInput = ops.some((op) => op.opcode === 0xb3); // OpTxInputCount
+    enforcesInputAmountLimit = ops.some((op, i) => op.opcode === 0xbe && ops.slice(i + 1, i + 4).some((o) => o.opcode === 0xa1)); // OpTxInputAmount .. OpLessThanOrEqual
 
     hasOutputIntrospection = enforcesOutputCount && enforcesPayoutSpk && enforcesPayoutAmount;
   }
@@ -1230,11 +1650,12 @@ export function verifyR0Groth16Scripts(
     try {
       const kaspa = loadManagedKaspaWasmSync();
       const expectedAddr = new kaspa.Address(params.expectedPayoutAddress);
-      const expectedSpk = kaspa.payToAddressScript(expectedAddr);
-      if (boundPayoutSpk.toLowerCase() !== expectedSpk.script.toLowerCase()) {
+      const expectedSpk = spkIntrospectionBytesHex(kaspa.payToAddressScript(expectedAddr));
+      // The bound value must be what OpTxOutputSpk pushes: version (u16 BE) ++ script. A script-only value never matches.
+      if (boundPayoutSpk.toLowerCase() !== expectedSpk) {
         issues.push({
           code: "ZK_BOUND_PAYOUT_SPK_MISMATCH",
-          message: `Script binds SPK '${boundPayoutSpk}' which does not match expected address '${params.expectedPayoutAddress}' (${expectedSpk.script})`
+          message: `Script binds SPK '${boundPayoutSpk}' which is not the introspection encoding of '${params.expectedPayoutAddress}' (${expectedSpk}): no spend could match it`
         });
       }
     } catch (e: any) {
@@ -1317,7 +1738,9 @@ export function verifyR0Groth16Scripts(
     ...(imageIdFound !== undefined ? { imageIdFound } : {}),
     ...(journalHashFound !== undefined ? { journalHashFound } : {}),
     bindingMode,
-    consensusEnforced: isBoundMode && hasOutputIntrospection,
+    consensusEnforced: isBoundMode && hasOutputIntrospection && enforcesSingleInput && enforcesInputAmountLimit && issues.length === 0,
+    enforcesSingleInput,
+    enforcesInputAmountLimit,
     hasOutputIntrospection,
     enforcesOutputCount,
     enforcesPayoutSpk,
@@ -1350,6 +1773,15 @@ export function getToccataPrecompileRules(): ToccataPrecompileRules {
     requiredTransactionVersion: 1,
     sigOpCountRequirement: 0,
     maxStandardMass: STANDARD_MAX_TRANSACTION_MASS,
+    groth16VkElementCostScriptUnits: Number(GROTH16_VK_ELEMENT_COST_SCRIPT_UNITS),
+    r0Groth16VkElements: R0_GROTH16_VK_ELEMENTS,
+    r0Groth16ObservedOverheadScriptUnits: Number(R0_GROTH16_OBSERVED_SCRIPT_OVERHEAD_SCRIPT_UNITS),
+    minimumR0Groth16ComputeBudget: minimumR0Groth16ComputeBudget(),
+    maximumComputeBudgetForBlockReferenceShape: Number(
+      (BLOCK_COMPUTE_MASS_LIMIT - REFERENCE_BASE_COMPUTE_MASS) / GRAMS_PER_COMPUTE_BUDGET_UNIT
+    ),
+    blockComputeMassLimit: Number(BLOCK_COMPUTE_MASS_LIMIT),
+    authorizationModel: "IMAGE_ID_ONLY",
     consensusActivation: "KIP-16 (Toccata Hardfork)",
     scriptSource: KASPA_WASM_ZK_BUILDER_CLAIM
   };
@@ -1374,13 +1806,19 @@ export async function observeZkSpendOnce(
   readonly zkStatus?: ZkOperationStatusResult | undefined;
 }> {
   const recorder = rpcObserverFor(client);
-  const defaultObserverId = "obs_" + sha256Hex("zk-toccata-observer");
+  // The network is the caller's or the fact's, never assumed (an observation attributed to simnet by default would be
+  // evidence for the wrong network). The observer is this client's endpoint on that network, as sdk.tx derives it.
+  const networkId = params.networkId ?? (params.zkFact?.networkId as TxObservation["networkId"] | undefined);
+  if (!networkId) {
+    throw new Error("ZK_OBSERVE_NETWORK_REQUIRED: observeZkSpendOnce needs networkId (or a zkFact that records it)");
+  }
+  const locator = rpcEndpointOf(client);
   const observation = await observeTxOnce(
     recorder,
     {
       txId: params.txId,
-      observerId: params.observerId ?? defaultObserverId,
-      networkId: params.networkId ?? "simnet",
+      observerId: params.observerId ?? deriveObserverId({ kind: "rpc", target: String(networkId), ...(locator !== undefined ? { locator } : {}) }),
+      networkId,
       mode: params.mode ?? "rpc"
     },
     systemRuntimeContext

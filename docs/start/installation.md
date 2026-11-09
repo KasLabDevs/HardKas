@@ -28,8 +28,8 @@ node --version
 > [!IMPORTANT]
 > `@hardkas/core`, `@hardkas/cli`, `@hardkas/testing` and `@hardkas/pskt-native`
 > declare `engines: 24.22.1`; the other packages do not declare an `engines`
-> field yet, and npm only warns about it. `hardkas doctor` currently checks for
-> Node 18 or later. Use Node.js 24.22.1 regardless of what either tool tells you.
+> field yet, and npm only warns about it. `hardkas doctor` passes on 24.22.1,
+> warns on another 24.x and fails on any other major line. Use Node.js 24.22.1.
 
 Docker is **not** required for the default development loop, which runs against
 the in-memory simulator. You only need it for the localnet baseline described in
@@ -59,6 +59,15 @@ travels with your lockfile:
 ```bash
 npm install --save-dev @hardkas/cli
 npm install @hardkas/sdk
+```
+
+In a TypeScript project, also install the Node.js type definitions. The
+packages' type declarations use Node.js types (`Buffer`, `node:events`), and
+`@hardkas/core` lists `@types/node` only as an optional peer dependency, so it
+is not installed for you:
+
+```bash
+npm install --save-dev @types/node
 ```
 
 Then invoke it through `npx`:

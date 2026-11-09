@@ -6,7 +6,7 @@
 
 # Class: TxPlanService
 
-Defined in: [packages/tx-builder/src/service.ts:110](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/service.ts#L110)
+Defined in: [packages/tx-builder/src/service.ts:140](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/service.ts#L140)
 
 ## Constructors
 
@@ -14,7 +14,7 @@ Defined in: [packages/tx-builder/src/service.ts:110](https://github.com/KasLabDe
 
 > **new TxPlanService**(`provider`, `options?`): `TxPlanService`
 
-Defined in: [packages/tx-builder/src/service.ts:127](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/service.ts#L127)
+Defined in: [packages/tx-builder/src/service.ts:148](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/service.ts#L148)
 
 #### Parameters
 
@@ -36,41 +36,11 @@ Defined in: [packages/tx-builder/src/service.ts:127](https://github.com/KasLabDe
 
 > `readonly` **coinbaseMaturity**: `bigint`
 
-Defined in: [packages/tx-builder/src/service.ts:125](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/service.ts#L125)
+Defined in: [packages/tx-builder/src/service.ts:146](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/service.ts#L146)
 
-Coinbase maturity, in DAA blocks.
-
-- **Legacy path** (`planTransaction`, `planConsolidation`): required. Passed
-  through to `buildPaymentPlan`, which enforces the maturity filter.
-- **Upstream path** (`planTransactionUpstream`): ignored. Maturity comes
-  from `k.getNetworkParams(networkId)` via `filterMatureUtxos`.
-
-Constructing the service without a maturity value is legal; only the
-legacy methods throw `COINBASE_MATURITY_UNRESOLVED` when invoked.
-
-***
-
-### marginFeePerInput
-
-> `readonly` **marginFeePerInput**: `bigint`
-
-Defined in: [packages/tx-builder/src/service.ts:113](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/service.ts#L113)
-
-***
-
-### maxInputsPerTx
-
-> `readonly` **maxInputsPerTx**: `number`
-
-Defined in: [packages/tx-builder/src/service.ts:111](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/service.ts#L111)
-
-***
-
-### warnInputs
-
-> `readonly` **warnInputs**: `number`
-
-Defined in: [packages/tx-builder/src/service.ts:112](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/service.ts#L112)
+Coinbase maturity, in DAA blocks, for the simulator's UTXOs; simnet's when
+unset. Real networks take it from `k.getNetworkParams(networkId)` via
+`filterMatureUtxos`.
 
 ## Methods
 
@@ -78,7 +48,13 @@ Defined in: [packages/tx-builder/src/service.ts:112](https://github.com/KasLabDe
 
 > **planConsolidation**(`request`): `Promise`\<[`TxPlanResult`](../interfaces/TxPlanResult.md)\>
 
-Defined in: [packages/tx-builder/src/service.ts:511](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/service.ts#L511)
+Defined in: [packages/tx-builder/src/service.ts:276](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/service.ts#L276)
+
+Plans a consolidation: every UTXO in `selectedUtxos` goes to one output at
+`toAddress`, priced by the `Generator`. UTXOs that do not fit in one standard
+transaction are refused (MULTI_TRANSACTION_PLAN_REQUIRED): consolidate them in
+smaller batches. A covenant's UTXO among them is refused
+(COVENANT_UTXO_NOT_PAYMENT_INPUT): consolidating it would end the covenant.
 
 #### Parameters
 
@@ -92,52 +68,20 @@ Defined in: [packages/tx-builder/src/service.ts:511](https://github.com/KasLabDe
 
 ***
 
-### ~~planTransaction()~~
-
-> **planTransaction**(`request`): `Promise`\<[`TxPlanResult`](../interfaces/TxPlanResult.md)\>
-
-Defined in: [packages/tx-builder/src/service.ts:154](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/service.ts#L154)
-
-#### Parameters
-
-##### request
-
-[`PlanTransactionRequest`](../interfaces/PlanTransactionRequest.md)
-
-#### Returns
-
-`Promise`\<[`TxPlanResult`](../interfaces/TxPlanResult.md)\>
-
-#### Deprecated
-
-Legacy HardKAS planner (largest-first + fee convergence over
-`buildPaymentPlan`). Kept solely as the machinery under
-`planTransactionSynthetic` (simulator-only) and as a comparison baseline
-for differential tests. NO real-network execution path should reach this
-method directly — real networks go through `planTransactionUpstream`.
-Callers wanting the simulator planner should use
-`planTransactionSynthetic`, which labels its output NON-AUTHORITATIVE via
-`plannerAuthority = SYNTHETIC_SIMULATOR`.
-
-***
-
 ### planTransactionSynthetic()
 
 > **planTransactionSynthetic**(`request`): `Promise`\<[`TxPlanResult`](../interfaces/TxPlanResult.md)\>
 
-Defined in: [packages/tx-builder/src/service.ts:502](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/service.ts#L502)
+Defined in: [packages/tx-builder/src/service.ts:187](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/service.ts#L187)
 
-Synthetic (simulator-only) planner. Runs the same legacy machinery as
-`planTransaction` but is explicitly labelled `SYNTHETIC_SIMULATOR` and
-documented as NON-AUTHORITATIVE. This exists so the `mode: simulated`
-developer harness (kaspa:sim_* accounts, `mock-script` SPKs) keeps
-working without ever being reachable from a real Kaspa execution path.
+Plans a payment for the HardKAS simulator: the same `Generator`, over the
+simulator's synthetic identities, labelled `SYNTHETIC_SIMULATOR`
+(NON-AUTHORITATIVE).
 
 Callers MUST route to this method only when the execution domain is a
-HardKAS simulator; real networks (mainnet/testnet-N/devnet/simnet with a
-real node/localnet) MUST use `planTransactionUpstream`. There is no
-automatic fallback from the upstream path to this one — an upstream
-failure must surface, not be silently downgraded.
+HardKAS simulator; real networks MUST use `planTransactionUpstream`. There
+is no automatic fallback from one to the other: a failure surfaces, it is
+never silently downgraded.
 
 #### Parameters
 
@@ -155,27 +99,24 @@ failure must surface, not be silently downgraded.
 
 > **planTransactionUpstream**(`request`): `Promise`\<[`TxPlanResult`](../interfaces/TxPlanResult.md)\>
 
-Defined in: [packages/tx-builder/src/service.ts:335](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/service.ts#L335)
+Defined in: [packages/tx-builder/src/service.ts:173](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/service.ts#L173)
 
-Upstream-authoritative planner (M10-B-completion). Uses kaspa-wasm 2.0.1
-`Generator` for coin selection, mass and fee. Adapts the resulting
-`PendingTransaction` into HardKAS `TxPlan` shape without inventing
-semantics.
+Plans a payment on a real Kaspa network with the pinned kaspa-wasm
+`Generator`, which selects the inputs, prices the transaction and makes the
+change (`planPaymentWithGenerator`). HardKAS only prepares its candidates:
 
-Rules honored:
-- `excludeOutpoints` is pre-filtered on entries; **not** re-applied after
-  selection (upstream owns selection).
-- `request.feeEstimator` custom callback is **ignored on this path**;
-  upstream is the fee authority. When callers set it, the effect is a
-  no-op here (documented; will be removed once every consumer migrates).
-- Coinbase maturity comes from `k.getNetworkParams(networkId)` via
-  `filterMatureUtxos`, plus the same `+10n` DAG safety margin the legacy
-  path used, to avoid mempool-vs-virtual-DAA races. This margin is a
-  HardKAS lifecycle tolerance, not an override of the protocol threshold.
-- `feePolicy`, `version`, `genesisCovenantGroups`, `computeBudget` are
-  currently NOT wired to the upstream planner (Generator has no per-output
-  covenant binding). Callers that need those still use covenant-specific
-  builders directly (see `@hardkas/accounts` `buildCovenantGenesis`).
+- immature coinbase UTXOs are dropped (maturity from the SDK's network
+  parameters, plus the 10-DAA margin above);
+- `excludeOutpoints` are dropped before the Generator, never after (it owns
+  selection);
+- a covenant's UTXOs (covenant id set) are dropped: a payment never spends
+  one (COVENANT-UTXO-PAYMENT-FILTER-1, see `covenant-utxos.ts`).
+
+A spend that does not fit in one standard transaction is refused
+(MULTI_TRANSACTION_PLAN_REQUIRED), and so is a change output too small to be
+standard (CHANGE_BELOW_STANDARD_OUTPUT). `version` is recorded as given;
+covenant bindings are not planned here (see `@hardkas/accounts`
+`buildCovenantGenesis`).
 
 #### Parameters
 

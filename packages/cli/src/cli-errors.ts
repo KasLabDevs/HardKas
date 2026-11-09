@@ -96,7 +96,9 @@ export class RpcConnectionError extends HardkasCliError {
       ? `${baseMessage}: ${options.rawError}`
       : baseMessage;
 
-    super(options.errorCode, fullMessage, {
+    // INT9 · CLI-CONTRACT-2B B1/B4: one unreachable node, one code on every command — the transport's own
+    // (RPC_CONNECTION_FAILED / RPC_TIMEOUT, L1-CORE-1 B2 · N-14), as `accounts balance` and `rpc health` answer it
+    super(transportCodeOf(options.errorCode), fullMessage, {
       suggestion: "Run 'hardkas node start' or check 'hardkas rpc health'",
       context: {
         endpoint: options.endpoint,
@@ -137,6 +139,16 @@ export class RpcSchemaError extends HardkasCliError {
 // ---------------------------------------------------------------------------
 
 /**
+ * INT9 · CLI-CONTRACT-2B B1/B4: the code a connection failure carries out of the CLI — the transport's (kaspa-rpc
+ * RpcConnectionError / RpcTimeoutError) for a refused or timed-out node; the classification otherwise.
+ */
+export function transportCodeOf(code: RpcErrorCode): string {
+  if (code === "CONNECTION_REFUSED") return "RPC_CONNECTION_FAILED";
+  if (code === "TIMEOUT") return "RPC_TIMEOUT";
+  return code;
+}
+
+/**
  * Classify a raw RPC error into a machine-readable {@link RpcErrorCode}.
  */
 export function classifyRpcError(error: Error | string): RpcErrorCode {
@@ -146,6 +158,9 @@ export function classifyRpcError(error: Error | string): RpcErrorCode {
       : `${error.message ?? ""} ${(error as any).code ?? ""}`;
 
   if (msg.includes("ECONNREFUSED")) return "CONNECTION_REFUSED";
+  // INT9 · CLI-CONTRACT-2B B1: the wRPC client's own words for a node that refuses, and the transport's typed code
+  if (/RPC_CONNECTION_FAILED|Unable to connect|Cannot connect to Kaspa RPC|ECONNRESET|socket hang up|WebSocket not connected/i.test(msg)) return "CONNECTION_REFUSED";
+  if (msg.includes("RPC_TIMEOUT")) return "TIMEOUT";
   if (msg.includes("ETIMEDOUT") || msg.includes("AbortError") || msg.includes("timeout"))
     return "TIMEOUT";
   if (msg.includes("ENOTFOUND") || msg.includes("getaddrinfo")) return "DNS_FAILURE";

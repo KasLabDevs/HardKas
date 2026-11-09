@@ -24,7 +24,7 @@ Igra L2
 
 EVM-compatible L2 execution environment in the based-rollup architectural class.
 
-The HardKAS L1 CLI and `@hardkas/sdk` do not send L2 transactions. The separate, experimental `@hardkas/l2` package (and the `hardkas l2` command group of the `l2` extension, `@hardkas/ext-l2`, installed with `hardkas extension install l2`) provides profiles, RPC health, balance/nonce queries and transaction build/sign/send, with chain binding, explicit mainnet authorization and fee ceilings. The default profile is `local` (Anvil); `igra-mainnet` is never selected implicitly. Receipts are what the RPC reports: HardKAS does not verify settlement on Kaspa L1.
+The HardKAS L1 CLI and `@hardkas/sdk` do not send L2 transactions. The separate, experimental `@hardkas/l2` package (and the `hardkas l2` command group of the `l2` extension, `@hardkas/ext-l2`) provides profiles, RPC health, balance/nonce queries and transaction build/sign/send, with chain binding, explicit mainnet authorization and fee ceilings. The default profile is `local` (Anvil); `igra-mainnet` is never selected implicitly. Receipts are what the RPC reports: HardKAS does not verify settlement on Kaspa L1. `@hardkas/l2` and `@hardkas/ext-l2` are not published in this release, so `hardkas extension install l2` cannot fetch the extension from npm (see `docs/status/versioning.md` in the repository).
 
 Bridge phases
 

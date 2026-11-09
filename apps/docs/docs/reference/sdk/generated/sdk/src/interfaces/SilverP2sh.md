@@ -6,7 +6,7 @@
 
 # Interface: SilverP2sh
 
-Defined in: [packages/sdk/src/silver.ts:30](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/silver.ts#L30)
+Defined in: [packages/sdk/src/silver.ts:34](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/silver.ts#L34)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [packages/sdk/src/silver.ts:30](https://github.com/KasLabDevs/HardKa
 
 > `readonly` **address**: `string`
 
-Defined in: [packages/sdk/src/silver.ts:34](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/silver.ts#L34)
+Defined in: [packages/sdk/src/silver.ts:38](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/silver.ts#L38)
 
 ***
 
@@ -22,7 +22,7 @@ Defined in: [packages/sdk/src/silver.ts:34](https://github.com/KasLabDevs/HardKa
 
 > `readonly` **bytecodeHex**: `string`
 
-Defined in: [packages/sdk/src/silver.ts:32](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/silver.ts#L32)
+Defined in: [packages/sdk/src/silver.ts:36](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/silver.ts#L36)
 
 ***
 
@@ -30,7 +30,7 @@ Defined in: [packages/sdk/src/silver.ts:32](https://github.com/KasLabDevs/HardKa
 
 > `readonly` **contract**: `string`
 
-Defined in: [packages/sdk/src/silver.ts:31](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/silver.ts#L31)
+Defined in: [packages/sdk/src/silver.ts:35](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/silver.ts#L35)
 
 ***
 
@@ -38,7 +38,7 @@ Defined in: [packages/sdk/src/silver.ts:31](https://github.com/KasLabDevs/HardKa
 
 > `readonly` **lockingScript**: `object`
 
-Defined in: [packages/sdk/src/silver.ts:33](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/silver.ts#L33)
+Defined in: [packages/sdk/src/silver.ts:37](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/silver.ts#L37)
 
 #### script
 

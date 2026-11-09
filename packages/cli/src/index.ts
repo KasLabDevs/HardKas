@@ -38,6 +38,16 @@ async function main() {
   const extensions = await loadExtensions({ workspaceRoot, loadedConfig, cliVersion: HARDKAS_VERSION });
 
   const program = buildHardkasProgram({ loadedConfig, extensions });
+  // INT9 · CLI-CONTRACT-2B D1/D2: under --json a usage error commander detects (unknown option, missing argument…) is the
+  // CLI's one envelope with the usage exit code (2). Commander used to print its text and call process.exit(1) itself;
+  // with the override it throws instead (its message still goes to stderr), and the renderer below answers.
+  if (isJson) {
+    const override = (cmd: { exitOverride(): unknown; commands: readonly any[] }) => {
+      cmd.exitOverride();
+      for (const sub of cmd.commands) override(sub);
+    };
+    override(program as any);
+  }
 
   // R0-I1: a command's result is its exit status, never an abrupt termination. The entry sets the status and returns;
   // the runtime then closes naturally, after draining its pending work (an abrupt process.exit() raced V8's background
@@ -47,7 +57,31 @@ async function main() {
     // F3: a command that finished normally may have set a nonzero exit code; it is never discarded.
     // CLI-RUNTIME-CONTRACT-1: an error a command rendered and then swallowed set that code too.
     process.exitCode = process.exitCode ?? 0;
-  } catch (err: any) {
+  } catch (caught: unknown) {
+    let err: any = caught;
+    // INT9 · CLI-CONTRACT-2B D1/D2: commander's own outcome under --json (exitOverride above): help and version keep
+    // their exit 0; a usage error becomes one typed envelope with the usage exit code
+    if (typeof err?.code === "string" && err.code.startsWith("commander.")) {
+      if (err.exitCode === 0) {
+        process.exitCode = 0;
+        return;
+      }
+      const { HardkasCliError, HardkasExitCode } = await import("./cli-errors.js");
+      const codes: Record<string, string> = {
+        "commander.unknownOption": "UNKNOWN_OPTION",
+        "commander.unknownCommand": "UNKNOWN_COMMAND",
+        "commander.missingArgument": "MISSING_ARGUMENT",
+        "commander.optionMissingArgument": "OPTION_MISSING_ARGUMENT",
+        "commander.missingMandatoryOptionValue": "MISSING_MANDATORY_OPTION",
+        "commander.excessArguments": "EXCESS_ARGUMENTS",
+        "commander.invalidArgument": "INVALID_ARGUMENT",
+        "commander.conflictingOption": "CONFLICTING_OPTIONS"
+      };
+      err = new HardkasCliError(codes[err.code] ?? "USAGE_ERROR", String(err.message ?? err).replace(/^error:\s*/, ""), {
+        exitCode: HardkasExitCode.USAGE_ERROR,
+        cause: err
+      });
+    }
     // CLI-RUNTIME-CONTRACT-1: the renderer owns the failure (one human rendering, one JSON envelope,
     // the typed code preserved) and the exit code follows the error — in one place, for every error type.
     const { handleError, exitCodeOf } = await import("./ui.js");

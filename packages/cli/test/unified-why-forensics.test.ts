@@ -732,6 +732,19 @@ describe("Unified Retrospective Forensics via `hardkas why`", () => {
     expect(out.chain[0].associatedFacts).toBeUndefined();
   });
 
+  // WHY-SUBMISSION-ROLE-1 (L1-CORE-1 B2 · H4, TN10-24): the submission that `tx send` writes was the one link of the chain
+  // named "Unknown"; every link is named for its schema
+  it("H4 · every link of a payment's chain is named for what it is: submission, signed transaction, plan", () => {
+    const r = runHardkas(`why --tx ${TX_L1} --json`);
+    expect(r.code, r.stderr).toBe(0);
+    const out = JSON.parse(r.stdout);
+    expect(out.chain.map((c: any) => c.role)).toEqual(["Transaction Submission", "Signed Transaction", "Transaction Plan"]);
+    const human = runHardkas(`why --tx ${TX_L1}`);
+    expect(human.code, human.stderr).toBe(0);
+    expect(human.stdout).toContain("Transaction Submission");
+    expect(human.stdout).not.toMatch(/\bUnknown\b/);
+  });
+
   // ---------------------------------------------------------------------------
   // Condition 2: Covenant transaction shows contract, method and transition
   // ---------------------------------------------------------------------------

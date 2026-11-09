@@ -39,6 +39,8 @@ export interface TxWaitUtxoView {
    * output of it and none of its inputs, so it has applied the tx and that output was spent since.
    */
   outputsNoLongerListed?: string[];
+  /** INT9 · C3: the view of a tx with no plan here (`--address`): its inputs are unknown, so they were not checked. */
+  inputsUnknown?: true;
   looks: number;
 }
 
@@ -53,6 +55,11 @@ export interface TxWaitRunnerInput {
    * continue from the window a stored look verified.
    */
   since?: string;
+  /**
+   * INT9 · C3: addresses the transaction pays (`--address`), for a tx with no local cursor (no submission, no stored
+   * look, no --since). See `externalCursor`.
+   */
+  addresses?: string[];
   workspaceRoot?: string;
   /** Test injection: an opened SDK whose RPC is scripted. */
   sdk?: any;
@@ -74,6 +81,19 @@ export interface TxWaitRunnerResult {
   lastObservationArtifactId?: string;
   /** The node's UTXO view after the target was reached (absent for a simulator txId). */
   utxoView?: TxWaitUtxoView;
+  /** INT9 · C3: the chain block the wait's first look scanned from, when the wait chose it (`--address`) or was given it. */
+  cursor?: TxWaitCursor;
+}
+
+/**
+ * INT9 · C3: where the virtual-chain scan of a wait starts when the wait itself had to choose. `wait-start`: the node's
+ * sink at the wait's first look (chosen with `--address`, for a tx with no local cursor); `since`: the caller's --since.
+ */
+export interface TxWaitCursor {
+  hash: string;
+  origin: "wait-start" | "since";
+  /** The DAA score of that chain block, read from its header (absent when the node did not serve it). */
+  daaScore?: string;
 }
 
 const outpointKey = (o: { transactionId: string; index: number | string }) => `${o.transactionId}:${Number(o.index)}`;
@@ -89,6 +109,8 @@ async function waitForUtxoView(args: {
   intervalMs: number;
   sleep: (ms: number) => Promise<void>;
   now: () => number;
+  /** INT9 · C3: `--address` — with no plan here, the view is checked at these addresses (outputs only). */
+  addresses?: string[];
 }): Promise<TxWaitUtxoView> {
   const { sdk, txId } = args;
   let plan: any;
@@ -98,6 +120,7 @@ async function waitForUtxoView(args: {
     if (typeof planId !== "string") throw Object.assign(new Error("the recorded submission names no plan"), { code: "PLAN_UNKNOWN" });
     plan = await sdk.artifacts.read({ artifact: planId });
   } catch (e: any) {
+    if (args.addresses && args.addresses.length > 0) return waitForExternalUtxoView({ ...args, addresses: args.addresses });
     return {
       checked: false,
       converged: false,
@@ -162,10 +185,123 @@ async function waitForUtxoView(args: {
   };
 }
 
+/**
+ * INT9 · C3: the UTXO view of a tx with no plan here, at the `--address` addresses it pays. kaspad's index applies a
+ * transaction's outputs in one diff, so an output of it listed at one of them means the view has applied it; the inputs
+ * it spent are not known here and are not checked (the row says so). Bounded like waitForUtxoView.
+ */
+async function waitForExternalUtxoView(args: {
+  sdk: any;
+  txId: string;
+  deadline: number;
+  intervalMs: number;
+  sleep: (ms: number) => Promise<void>;
+  now: () => number;
+  addresses: string[];
+}): Promise<TxWaitUtxoView> {
+  const addresses = [...new Set(args.addresses)];
+  const reason = "no plan for this transaction in the workspace: only its outputs at the --address addresses are checked (the inputs it spent are unknown here)";
+  let looks = 0;
+  let missing = addresses;
+  let lastError: string | undefined;
+  for (;;) {
+    looks++;
+    try {
+      const listedAt: string[] = [];
+      for (const a of addresses) {
+        if (((await args.sdk.rpc.getUtxosByAddress(a)) ?? []).some((u: any) => u?.outpoint?.transactionId === args.txId)) listedAt.push(a);
+      }
+      missing = addresses.filter((a) => !listedAt.includes(a));
+      lastError = undefined;
+      if (listedAt.length > 0) {
+        return {
+          checked: true,
+          converged: true,
+          reason,
+          inputsUnknown: true,
+          addresses,
+          missingOutputsFor: [],
+          inputsStillListed: [],
+          ...(missing.length > 0 ? { outputsNoLongerListed: missing } : {}),
+          looks
+        };
+      }
+    } catch (e: unknown) {
+      const err = e as { code?: unknown; message?: unknown } | null | undefined;
+      lastError = `${err?.code ? `[${String(err.code)}] ` : ""}${String(err?.message ?? e)}`;
+    }
+    if (args.now() >= args.deadline) break;
+    await args.sleep(args.intervalMs);
+  }
+  return {
+    checked: true,
+    converged: false,
+    reason: lastError ?`${reason}; the UTXO view could not be read: ${lastError}` : reason,
+    inputsUnknown: true,
+    addresses,
+    missingOutputsFor: missing,
+    inputsStillListed: [],
+    looks
+  };
+}
+
+/** INT9 · C3: whether this workspace already gives the observer a cursor for `txId` (a recorded submission or a stored look). */
+async function hasLocalCursor(sdk: any, txId: string): Promise<boolean> {
+  try {
+    if (await sdk.artifacts.read({ tx: txId })) return true;
+  } catch (e: unknown) {
+    if ((e as { code?: unknown } | null | undefined)?.code !== "RECEIPT_NOT_FOUND") return true;
+  }
+  try {
+    const { ProjectArtifactStore } = await import("@hardkas/artifacts");
+    return new ProjectArtifactStore(sdk.workspace.root).listObservationsByTxId(txId).observations.length > 0;
+  } catch {
+    return false;
+  }
+}
+
+/** INT9 · C3: the node's sink now, with its header's DAA score (a cursor for a wait that starts before the acceptance). */
+async function sinkNow(sdk: any): Promise<TxWaitCursor> {
+  const raw: any = await sdk.rpc.call("getBlockDagInfo", {});
+  const info: any = raw?.getBlockDagInfoResponse ?? raw;
+  const hash = String(info?.sink ?? info?.sinkHash ?? "");
+  if (!/^[0-9a-f]{64}$/.test(hash)) throw new Error("the node's getBlockDagInfo named no sink");
+  return { hash, origin: "wait-start", ...(await headerDaaOf(sdk, hash)) };
+}
+
+async function headerDaaOf(sdk: any, hash: string): Promise<{ daaScore?: string }> {
+  try {
+    const raw: any = await sdk.rpc.call("getBlock", { hash, includeTransactions: false });
+    const header: any = raw?.block?.header ?? raw?.getBlockResponse?.block?.header ?? raw?.header;
+    return header?.daaScore !== undefined && header?.daaScore !== null ? { daaScore: BigInt(header.daaScore).toString() } : {};
+  } catch {
+    return {};
+  }
+}
+
+/** INT9 · C3: the outputs of `txId` the node lists at `addresses`, with the DAA score each was accepted at. */
+async function listedOutputsOf(sdk: any, txId: string, addresses: string[]): Promise<Array<{ outpoint: string; address: string; blockDaaScore?: bigint }>> {
+  const found: Array<{ outpoint: string; address: string; blockDaaScore?: bigint }> = [];
+  for (const a of [...new Set(addresses)]) {
+    for (const u of ((await sdk.rpc.getUtxosByAddress(a)) ?? []) as any[]) {
+      if (u?.outpoint?.transactionId !== txId) continue;
+      const daa = u?.blockDaaScore ?? u?.utxoEntry?.blockDaaScore;
+      found.push({ outpoint: `${txId}:${Number(u.outpoint.index)}`, address: a, ...(daa !== undefined && daa !== null ? { blockDaaScore: BigInt(daa) } : {}) });
+    }
+  }
+  return found;
+}
+
 /** The `UTXO View` row of `tx wait`'s human output (a view, not a state). */
 export function utxoViewRow(view: TxWaitUtxoView): string {
   if (!view.checked) return `not checked: ${view.reason}`;
   const spentSince = view.outputsNoLongerListed ?? [];
+  if (view.inputsUnknown) {
+    return (
+      `reflects this transaction: an output of it is listed at ${view.addresses.length - spentSince.length} of ${view.addresses.length} --address address(es)` +
+      ` (no plan here: the inputs it spent are not known, so they were not checked) (${view.looks} look(s))`
+    );
+  }
   return spentSince.length === 0
     ? `reflects this transaction: an output of it is listed for ${view.addresses.length} address(es) and the inputs it spent are no longer listed (${view.looks} look(s))`
     : `reflects this transaction: an output of it is listed for ${view.addresses.length - spentSince.length} of ${view.addresses.length} address(es) ` +
@@ -183,7 +319,9 @@ export async function runTxWait(input: TxWaitRunnerInput): Promise<TxWaitRunnerR
   const workspaceRoot = input.workspaceRoot ?? process.cwd();
   const opened = input.sdk
     ? { sdk: input.sdk, network: String(input.network ?? input.sdk.network) }
-    : await openSdkForTx(input.txId, workspaceRoot, input.network);
+    : // INT9-A (I-3b): waiting needs the current chain state: every look asks a node that says it is synced. A look the
+      // node refuses that way (NODE_NOT_SYNCED) records nothing and the wait keeps trying until its timeout, which names it.
+      await openSdkForTx(input.txId, workspaceRoot, input.network, { requireSyncedNode: true });
   const { sdk, network } = opened;
   // RESOURCE-LIFECYCLE-1: an SDK opened here is released here, whatever the wait ends with (RL-I1/RL-I3); an injected
   // one is its caller's (RL-I2).
@@ -214,8 +352,24 @@ async function waitOn(input: TxWaitRunnerInput, sdk: any, network: string): Prom
   // STAGE-B-2 · C3: an explicit cursor applies until one look has been recorded (a transport error before that must not
   // drop it, or the next look would scan from the pruning point); from then on the stored window is the cursor.
   let since = input.since;
+  // INT9 · C3 (`--address`): a tx with no local cursor — no submission recorded, no stored look, no --since — is scanned
+  // from the node's sink at the wait's first look, instead of from its pruning point. That cursor is right only for a tx
+  // accepted after the wait started, so each look that has not found the acceptance yet reads the UTXOs at --address: an
+  // output of the tx listed there carries the DAA score of its accepting chain block, and one at or before the cursor's
+  // means the acceptance is behind the scan — the wait ends at once (TX_WAIT_ACCEPTED_BEFORE_CURSOR), claiming nothing.
+  const addresses = [...new Set(input.addresses ?? [])];
+  let cursor: TxWaitCursor | undefined;
+  let needCursor = false;
+  if (addresses.length > 0) {
+    if (since !== undefined) cursor = { hash: since, origin: "since", ...(await headerDaaOf(sdk, since)) };
+    else needCursor = !(await hasLocalCursor(sdk, input.txId));
+  }
   for (;;) {
     try {
+      if (needCursor && !cursor) {
+        cursor = await sinkNow(sdk);
+        since = cursor.hash;
+      }
       const r = await sdk.tx.observe(input.txId, since !== undefined ? { since } : {});
       since = undefined;
       looks++;
@@ -229,7 +383,15 @@ async function waitOn(input: TxWaitRunnerInput, sdk: any, network: string): Prom
       }
       if (targetReached(last, input.until)) {
         const reached = last;
-        const utxoView = await waitForUtxoView({ sdk, txId: input.txId, deadline: start + input.timeoutMs, intervalMs: input.intervalMs, sleep, now });
+        const utxoView = await waitForUtxoView({
+          sdk,
+          txId: input.txId,
+          deadline: start + input.timeoutMs,
+          intervalMs: input.intervalMs,
+          sleep,
+          now,
+          ...(addresses.length > 0 ? { addresses } : {})
+        });
         if (utxoView.checked && !utxoView.converged) {
           const gaps = [
             utxoView.missingOutputsFor.length > 0 ? `no output of the transaction is listed for ${utxoView.missingOutputsFor.join(", ")}` : undefined,
@@ -252,8 +414,23 @@ async function waitOn(input: TxWaitRunnerInput, sdk: any, network: string): Prom
           looks,
           elapsedMs: now() - start,
           ...(lastObservationArtifactId ? { lastObservationArtifactId } : {}),
-          utxoView
+          utxoView,
+          ...(cursor ? { cursor } : {})
         };
+      }
+      // INT9 · C3: not accepted in the window scanned so far — is its acceptance behind the cursor?
+      if (cursor?.daaScore !== undefined && !["ACCEPTED", "CONFIRMED", "FINALIZED", "REORGED"].includes(last.status)) {
+        const listed = await listedOutputsOf(sdk, input.txId, addresses).catch(() => []);
+        const behind = listed.find((o) => o.blockDaaScore !== undefined && o.blockDaaScore <= BigInt(cursor!.daaScore!));
+        if (behind) {
+          throw new HardkasCliError(
+            "TX_WAIT_ACCEPTED_BEFORE_CURSOR",
+            `${input.txId} was accepted before the chain block this wait scans from: the node lists its output ${behind.outpoint} at ${behind.address}, accepted at DAA score ${behind.blockDaaScore}, ` +
+              `and the scan starts at ${cursor.hash} (DAA score ${cursor.daaScore}, ${cursor.origin === "wait-start" ? "the node's sink when this wait started" : "--since"}). ` +
+              `Scanning forward cannot find that acceptance, so no state is claimed. Give --since <a chain block before DAA score ${behind.blockDaaScore}>.`,
+            { exitCode: HardkasExitCode.RUNTIME_FAILURE }
+          );
+        }
       }
       if (last.status === "REJECTED_BY_NODE" || last.status === "CONFLICTING_OBSERVATIONS") {
         throw new HardkasCliError(
@@ -285,8 +462,11 @@ async function waitOn(input: TxWaitRunnerInput, sdk: any, network: string): Prom
     "TX_WAIT_TIMEOUT",
     `Timed out after ${Math.round(input.timeoutMs / 1000)}s waiting for ${input.txId} to be ${input.until.toUpperCase()}; last derived state: ${lastState}${lastError ? `; last observer error: ${lastError}` : ""}.` +
       (noCursor
-        ? ` No submission of this txId is recorded in this workspace and no --since was given, so the looks scan the node's virtual chain from its pruning point onward, each one resuming where the previous one stopped. ` +
-          `Pass --since <chainBlockHash> (a chain block before the tx's acceptance) to start there, or run the wait again to continue.`
+        ? addresses.length > 0
+          ? ` No submission of this txId is recorded in this workspace: the looks scanned the node's virtual chain from ${cursor ? `${cursor.hash} (${cursor.origin === "wait-start" ? "its sink when this wait started" : "--since"})` : "no cursor (the node's sink could not be read)"} and did not find its acceptance, and no output of it is listed at ${addresses.join(", ")}. ` +
+            `It may not be accepted yet, or its outputs there were spent: run the wait again to continue, or pass --since <a chain block before its acceptance>.`
+          : ` No submission of this txId is recorded in this workspace and no --since was given, so the looks scan the node's virtual chain from its pruning point onward, each one resuming where the previous one stopped. ` +
+            `Pass --since <chainBlockHash> (a chain block before the tx's acceptance) to start there, or --address <an address it pays> to start at the node's sink when the wait starts (a tx accepted after that), or run the wait again to continue.`
         : ""),
     { exitCode: HardkasExitCode.RUNTIME_FAILURE }
   );

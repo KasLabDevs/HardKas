@@ -102,9 +102,15 @@ describe("SURFACE-TRUTH-1B · contract · SDK capabilities and v1 signing", () =
       fromAddress: alice.address,
       toAddress: bob.address,
       amountSompi: 100_000_000n,
-      networkId: "simnet",
-      version: 1
+      networkId: "simnet"
     });
+    // L1-05: the Generator planner refuses version 1 (GENERATOR_V1_UNSUPPORTED: it prices v0 mass only — no compute
+    // budget, a fee below the node's v1 rule — so a "v1 payment" planned by it was never sendable; no product path asks
+    // for one). What this case tests is the SIGNING runtime, so the v1 plan is a fixture: the v0 payment relabelled v1.
+    (planned.plan as any).version = 1;
+    // F1 follow-up (7-nov-2026): the internal signer no longer signs a v1 input with an unstated compute budget (it used 0:
+    // 9 999 script units, too few for the Schnorr check the node runs). The relabelled fixture states one, 10 (109 999 units).
+    (planned.plan as any).computeBudget = 10n;
     const plan = createTxPlanArtifact({
       ctx: systemRuntimeContext,
       networkId: asNetworkId("simnet") as any,

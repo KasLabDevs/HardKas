@@ -11,6 +11,7 @@ import {
   buildSimnetBinaryArgs,
   buildSimnetDockerRemoveArgs,
   buildSimnetDockerRunArgs,
+  parseSimnetExtraLabels,
   resolveHarnessRunId
 } from "../src/simnet-node-harness.js";
 
@@ -96,5 +97,29 @@ describe("T-A06b: simnet harness docker run arguments", () => {
   // itself, and the harness removes its containers first, so the removal itself must take the volumes (-v).
   it("removes a container together with its anonymous volumes", () => {
     expect(buildSimnetDockerRemoveArgs("hardkas-simnet-41234")).toEqual(["rm", "-f", "-v", "hardkas-simnet-41234"]);
+  });
+
+  // L1-CORE-1 B1: host-side data (a restart keeps the chain), extra labels, and a restart without --reset-db
+  it("B1 · extra labels are added after the harness's own, and never replace the role or run label", () => {
+    const args = buildSimnetDockerRunArgs({ ...spec, labels: { "hardkas.session": "l1c", [SIMNET_HARNESS_RUN_LABEL]: "forged" } });
+    const labels = args.filter((_, i) => args[i - 1] === "--label");
+    expect(labels).toEqual([`${SIMNET_HARNESS_ROLE_LABEL}=${SIMNET_HARNESS_ROLE}`, `${SIMNET_HARNESS_RUN_LABEL}=run-abc`, "hardkas.session=l1c"]);
+    expect(parseSimnetExtraLabels("hardkas.session=l1c, team = qa")).toEqual({ "hardkas.session": "l1c", team: "qa" });
+    expect(parseSimnetExtraLabels(undefined)).toEqual({});
+    expect(() => parseSimnetExtraLabels("novalue")).toThrow(/SIMNET_LABEL_INVALID/);
+    expect(() => parseSimnetExtraLabels(`${SIMNET_HARNESS_RUN_LABEL}=x`)).toThrow(/SIMNET_LABEL_RESERVED/);
+  });
+
+  it("B1 · host data is bind-mounted on the image's data volume; a restart omits --reset-db and keeps every other flag", () => {
+    const first = buildSimnetDockerRunArgs({ ...spec, utxoIndex: true, hostDataDir: "/data/hk-node" });
+    expect(first[first.indexOf("-v") + 1]).toBe("/data/hk-node:/app/data");
+    expect(first.indexOf("-v")).toBeLessThan(first.indexOf("kaspa/test:1"));
+    expect(first).toContain("--reset-db");
+    const again = buildSimnetDockerRunArgs({ ...spec, utxoIndex: true, hostDataDir: "/data/hk-node", resetDb: false });
+    expect(again).not.toContain("--reset-db");
+    expect(again.filter((a) => a !== "--reset-db")).toEqual(again);
+    expect(first.filter((a) => a !== "--reset-db")).toEqual(again);
+    expect(buildSimnetDockerRunArgs(spec)).not.toContain("-v");
+    expect(buildSimnetBinaryArgs({ rpcPort: 1, p2pPort: 2, appDir: "d", resetDb: false })).not.toContain("--reset-db");
   });
 });

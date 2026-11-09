@@ -6,7 +6,7 @@
 
 # Interface: InvariantViolation
 
-Defined in: [packages/artifacts/src/invariants/types.ts:7](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/invariants/types.ts#L7)
+Defined in: [packages/artifacts/src/invariants/types.ts:7](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/invariants/types.ts#L7)
 
 Invariant Violation details.
 
@@ -16,7 +16,7 @@ Invariant Violation details.
 
 > **code**: `string`
 
-Defined in: [packages/artifacts/src/invariants/types.ts:8](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/invariants/types.ts#L8)
+Defined in: [packages/artifacts/src/invariants/types.ts:8](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/invariants/types.ts#L8)
 
 ***
 
@@ -24,7 +24,7 @@ Defined in: [packages/artifacts/src/invariants/types.ts:8](https://github.com/Ka
 
 > **message**: `string`
 
-Defined in: [packages/artifacts/src/invariants/types.ts:10](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/invariants/types.ts#L10)
+Defined in: [packages/artifacts/src/invariants/types.ts:10](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/invariants/types.ts#L10)
 
 ***
 
@@ -32,7 +32,7 @@ Defined in: [packages/artifacts/src/invariants/types.ts:10](https://github.com/K
 
 > `optional` **metadata?**: `Record`\<`string`, `unknown`\>
 
-Defined in: [packages/artifacts/src/invariants/types.ts:11](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/invariants/types.ts#L11)
+Defined in: [packages/artifacts/src/invariants/types.ts:11](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/invariants/types.ts#L11)
 
 ***
 
@@ -40,4 +40,4 @@ Defined in: [packages/artifacts/src/invariants/types.ts:11](https://github.com/K
 
 > **severity**: `"error"` \| `"warning"` \| `"info"` \| `"critical"`
 
-Defined in: [packages/artifacts/src/invariants/types.ts:9](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/invariants/types.ts#L9)
+Defined in: [packages/artifacts/src/invariants/types.ts:9](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/invariants/types.ts#L9)

@@ -6,7 +6,7 @@
 
 # Interface: ConsensusMassInput
 
-Defined in: [packages/tx-builder/src/mass.ts:34](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/mass.ts#L34)
+Defined in: [packages/tx-builder/src/mass.ts:34](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/mass.ts#L34)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [packages/tx-builder/src/mass.ts:34](https://github.com/KasLabDevs/H
 
 > `optional` **hasChange?**: `boolean`
 
-Defined in: [packages/tx-builder/src/mass.ts:39](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/mass.ts#L39)
+Defined in: [packages/tx-builder/src/mass.ts:39](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/mass.ts#L39)
 
 ***
 
@@ -22,7 +22,7 @@ Defined in: [packages/tx-builder/src/mass.ts:39](https://github.com/KasLabDevs/H
 
 > **inputCount**: `number`
 
-Defined in: [packages/tx-builder/src/mass.ts:35](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/mass.ts#L35)
+Defined in: [packages/tx-builder/src/mass.ts:35](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/mass.ts#L35)
 
 ***
 
@@ -30,7 +30,7 @@ Defined in: [packages/tx-builder/src/mass.ts:35](https://github.com/KasLabDevs/H
 
 > `optional` **networkId?**: `string`
 
-Defined in: [packages/tx-builder/src/mass.ts:40](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/mass.ts#L40)
+Defined in: [packages/tx-builder/src/mass.ts:40](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/mass.ts#L40)
 
 ***
 
@@ -38,7 +38,7 @@ Defined in: [packages/tx-builder/src/mass.ts:40](https://github.com/KasLabDevs/H
 
 > **outputs**: readonly `object`[]
 
-Defined in: [packages/tx-builder/src/mass.ts:36](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/mass.ts#L36)
+Defined in: [packages/tx-builder/src/mass.ts:36](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/mass.ts#L36)
 
 ***
 
@@ -46,7 +46,7 @@ Defined in: [packages/tx-builder/src/mass.ts:36](https://github.com/KasLabDevs/H
 
 > `optional` **payloadBytes?**: `number`
 
-Defined in: [packages/tx-builder/src/mass.ts:37](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/mass.ts#L37)
+Defined in: [packages/tx-builder/src/mass.ts:37](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/mass.ts#L37)
 
 ***
 
@@ -54,7 +54,7 @@ Defined in: [packages/tx-builder/src/mass.ts:37](https://github.com/KasLabDevs/H
 
 > `optional` **signatureScriptBytes?**: `number`
 
-Defined in: [packages/tx-builder/src/mass.ts:38](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/mass.ts#L38)
+Defined in: [packages/tx-builder/src/mass.ts:38](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/mass.ts#L38)
 
 ***
 
@@ -62,4 +62,4 @@ Defined in: [packages/tx-builder/src/mass.ts:38](https://github.com/KasLabDevs/H
 
 > `optional` **version?**: `0` \| `1`
 
-Defined in: [packages/tx-builder/src/mass.ts:41](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/mass.ts#L41)
+Defined in: [packages/tx-builder/src/mass.ts:41](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/mass.ts#L41)

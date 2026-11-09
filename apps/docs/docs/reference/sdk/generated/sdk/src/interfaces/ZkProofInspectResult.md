@@ -6,7 +6,7 @@
 
 # Interface: ZkProofInspectResult
 
-Defined in: [packages/sdk/src/zk.ts:40](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/zk.ts#L40)
+Defined in: [packages/sdk/src/zk.ts:256](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/zk.ts#L256)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [packages/sdk/src/zk.ts:40](https://github.com/KasLabDevs/HardKas/bl
 
 > **claims**: `object`
 
-Defined in: [packages/sdk/src/zk.ts:53](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/zk.ts#L53)
+Defined in: [packages/sdk/src/zk.ts:269](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/zk.ts#L269)
 
 #### mainnet
 
@@ -32,9 +32,17 @@ Defined in: [packages/sdk/src/zk.ts:53](https://github.com/KasLabDevs/HardKas/bl
 
 > **zkLocalVerification**: `"EXPERIMENTAL_FIXTURE_ONLY"`
 
+#### zkMathematicalVerification?
+
+> `optional` **zkMathematicalVerification?**: [`ZkMathVerificationClaim`](../type-aliases/ZkMathVerificationClaim.md)
+
 #### zkOnchainVerification
 
 > **zkOnchainVerification**: `"NOT_CLAIMED"`
+
+#### zkToccataL1ScriptBuilding?
+
+> `optional` **zkToccataL1ScriptBuilding?**: `"KASPA_WASM_ZK_SCRIPT_BUILDER_2_1_0"`
 
 ***
 
@@ -42,7 +50,7 @@ Defined in: [packages/sdk/src/zk.ts:53](https://github.com/KasLabDevs/HardKas/bl
 
 > **experimental**: `true`
 
-Defined in: [packages/sdk/src/zk.ts:46](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/zk.ts#L46)
+Defined in: [packages/sdk/src/zk.ts:262](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/zk.ts#L262)
 
 ***
 
@@ -50,7 +58,7 @@ Defined in: [packages/sdk/src/zk.ts:46](https://github.com/KasLabDevs/HardKas/bl
 
 > **issues**: [`ZkIssue`](ZkIssue.md)[]
 
-Defined in: [packages/sdk/src/zk.ts:54](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/zk.ts#L54)
+Defined in: [packages/sdk/src/zk.ts:270](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/zk.ts#L270)
 
 ***
 
@@ -58,7 +66,7 @@ Defined in: [packages/sdk/src/zk.ts:54](https://github.com/KasLabDevs/HardKas/bl
 
 > **ok**: `boolean`
 
-Defined in: [packages/sdk/src/zk.ts:41](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/zk.ts#L41)
+Defined in: [packages/sdk/src/zk.ts:257](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/zk.ts#L257)
 
 ***
 
@@ -66,7 +74,7 @@ Defined in: [packages/sdk/src/zk.ts:41](https://github.com/KasLabDevs/HardKas/bl
 
 > **path**: `string`
 
-Defined in: [packages/sdk/src/zk.ts:43](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/zk.ts#L43)
+Defined in: [packages/sdk/src/zk.ts:259](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/zk.ts#L259)
 
 ***
 
@@ -74,7 +82,7 @@ Defined in: [packages/sdk/src/zk.ts:43](https://github.com/KasLabDevs/HardKas/bl
 
 > **proofSystem**: [`ZkProofSystem`](../type-aliases/ZkProofSystem.md)
 
-Defined in: [packages/sdk/src/zk.ts:44](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/zk.ts#L44)
+Defined in: [packages/sdk/src/zk.ts:260](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/zk.ts#L260)
 
 ***
 
@@ -82,7 +90,7 @@ Defined in: [packages/sdk/src/zk.ts:44](https://github.com/KasLabDevs/HardKas/bl
 
 > **schema**: `"hardkas.zkProofInspect.v1"`
 
-Defined in: [packages/sdk/src/zk.ts:42](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/zk.ts#L42)
+Defined in: [packages/sdk/src/zk.ts:258](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/zk.ts#L258)
 
 ***
 
@@ -90,7 +98,7 @@ Defined in: [packages/sdk/src/zk.ts:42](https://github.com/KasLabDevs/HardKas/bl
 
 > **status**: `"ZK_PROOF_INSPECTED"` \| `"ZK_PROOF_INSPECT_FAILED"`
 
-Defined in: [packages/sdk/src/zk.ts:45](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/zk.ts#L45)
+Defined in: [packages/sdk/src/zk.ts:261](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/zk.ts#L261)
 
 ***
 
@@ -98,7 +106,7 @@ Defined in: [packages/sdk/src/zk.ts:45](https://github.com/KasLabDevs/HardKas/bl
 
 > **summary**: `object`
 
-Defined in: [packages/sdk/src/zk.ts:47](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/zk.ts#L47)
+Defined in: [packages/sdk/src/zk.ts:263](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/zk.ts#L263)
 
 #### contentHashes
 

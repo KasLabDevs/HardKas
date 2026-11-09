@@ -6,7 +6,7 @@
 
 # Class: ArtifactHandleError
 
-Defined in: [packages/artifacts/src/artifact-handle.ts:38](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/artifact-handle.ts#L38)
+Defined in: [packages/artifacts/src/artifact-handle.ts:29](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/artifact-handle.ts#L29)
 
 ## Extends
 
@@ -18,7 +18,7 @@ Defined in: [packages/artifacts/src/artifact-handle.ts:38](https://github.com/Ka
 
 > **new ArtifactHandleError**(`code`, `message`, `context?`): `ArtifactHandleError`
 
-Defined in: [packages/artifacts/src/artifact-handle.ts:42](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/artifact-handle.ts#L42)
+Defined in: [packages/artifacts/src/artifact-handle.ts:33](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/artifact-handle.ts#L33)
 
 #### Parameters
 
@@ -32,7 +32,7 @@ Defined in: [packages/artifacts/src/artifact-handle.ts:42](https://github.com/Ka
 
 ##### context?
 
-`Record`\<`string`, `string`\>
+`Record`\<`string`, `unknown`\>
 
 #### Returns
 
@@ -48,7 +48,7 @@ Defined in: [packages/artifacts/src/artifact-handle.ts:42](https://github.com/Ka
 
 > `optional` **cause?**: `unknown`
 
-Defined in: node\_modules/.pnpm/typescript@5.7.3/node\_modules/typescript/lib/lib.es2022.error.d.ts:26
+Defined in: [node\_modules/.pnpm/typescript@5.7.3/node\_modules/typescript/lib/lib.es2022.error.d.ts:26](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/../node_modules/.pnpm/typescript@5.7.3/node_modules/typescript/lib/lib.es2022.error.d.ts#L26)
 
 #### Inherited from
 
@@ -60,15 +60,15 @@ Defined in: node\_modules/.pnpm/typescript@5.7.3/node\_modules/typescript/lib/li
 
 > `readonly` **code**: [`ArtifactHandleErrorCode`](../type-aliases/ArtifactHandleErrorCode.md)
 
-Defined in: [packages/artifacts/src/artifact-handle.ts:39](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/artifact-handle.ts#L39)
+Defined in: [packages/artifacts/src/artifact-handle.ts:30](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/artifact-handle.ts#L30)
 
 ***
 
 ### context?
 
-> `readonly` `optional` **context?**: `Record`\<`string`, `string`\>
+> `readonly` `optional` **context?**: `Record`\<`string`, `unknown`\>
 
-Defined in: [packages/artifacts/src/artifact-handle.ts:40](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/artifact-handle.ts#L40)
+Defined in: [packages/artifacts/src/artifact-handle.ts:31](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/artifact-handle.ts#L31)
 
 ***
 
@@ -76,7 +76,7 @@ Defined in: [packages/artifacts/src/artifact-handle.ts:40](https://github.com/Ka
 
 > **message**: `string`
 
-Defined in: node\_modules/.pnpm/typescript@5.7.3/node\_modules/typescript/lib/lib.es5.d.ts:1077
+Defined in: [node\_modules/.pnpm/typescript@5.7.3/node\_modules/typescript/lib/lib.es5.d.ts:1077](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/../node_modules/.pnpm/typescript@5.7.3/node_modules/typescript/lib/lib.es5.d.ts#L1077)
 
 #### Inherited from
 
@@ -88,7 +88,7 @@ Defined in: node\_modules/.pnpm/typescript@5.7.3/node\_modules/typescript/lib/li
 
 > **name**: `string`
 
-Defined in: node\_modules/.pnpm/typescript@5.7.3/node\_modules/typescript/lib/lib.es5.d.ts:1076
+Defined in: [node\_modules/.pnpm/typescript@5.7.3/node\_modules/typescript/lib/lib.es5.d.ts:1076](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/../node_modules/.pnpm/typescript@5.7.3/node_modules/typescript/lib/lib.es5.d.ts#L1076)
 
 #### Inherited from
 
@@ -100,7 +100,7 @@ Defined in: node\_modules/.pnpm/typescript@5.7.3/node\_modules/typescript/lib/li
 
 > `optional` **stack?**: `string`
 
-Defined in: node\_modules/.pnpm/typescript@5.7.3/node\_modules/typescript/lib/lib.es5.d.ts:1078
+Defined in: [node\_modules/.pnpm/typescript@5.7.3/node\_modules/typescript/lib/lib.es5.d.ts:1078](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/../node_modules/.pnpm/typescript@5.7.3/node_modules/typescript/lib/lib.es5.d.ts#L1078)
 
 #### Inherited from
 
@@ -112,7 +112,7 @@ Defined in: node\_modules/.pnpm/typescript@5.7.3/node\_modules/typescript/lib/li
 
 > `static` **stackTraceLimit**: `number`
 
-Defined in: node\_modules/.pnpm/@types+node@22.20.1/node\_modules/@types/node/globals.d.ts:68
+Defined in: [node\_modules/.pnpm/@types+node@22.20.1/node\_modules/@types/node/globals.d.ts:68](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/../node_modules/.pnpm/@types+node@22.20.1/node_modules/@types/node/globals.d.ts#L68)
 
 The `Error.stackTraceLimit` property specifies the number of stack frames
 collected by a stack trace (whether generated by `new Error().stack` or
@@ -134,7 +134,7 @@ not capture any frames.
 
 > `static` **captureStackTrace**(`targetObject`, `constructorOpt?`): `void`
 
-Defined in: node\_modules/.pnpm/@types+node@22.20.1/node\_modules/@types/node/globals.d.ts:52
+Defined in: [node\_modules/.pnpm/@types+node@22.20.1/node\_modules/@types/node/globals.d.ts:52](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/../node_modules/.pnpm/@types+node@22.20.1/node_modules/@types/node/globals.d.ts#L52)
 
 Creates a `.stack` property on `targetObject`, which when accessed returns
 a string representing the location in the code at which
@@ -204,7 +204,7 @@ a();
 
 > `static` **prepareStackTrace**(`err`, `stackTraces`): `any`
 
-Defined in: node\_modules/.pnpm/@types+node@22.20.1/node\_modules/@types/node/globals.d.ts:56
+Defined in: [node\_modules/.pnpm/@types+node@22.20.1/node\_modules/@types/node/globals.d.ts:56](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/../node_modules/.pnpm/@types+node@22.20.1/node_modules/@types/node/globals.d.ts#L56)
 
 #### Parameters
 

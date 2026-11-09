@@ -6,7 +6,7 @@
 
 # Interface: HardkasSimulatedTarget
 
-Defined in: [packages/config/src/types.ts:17](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/config/src/types.ts#L17)
+Defined in: [packages/config/src/types.ts:17](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/config/src/types.ts#L17)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [packages/config/src/types.ts:17](https://github.com/KasLabDevs/Hard
 
 > `optional` **consensusParams?**: `object`
 
-Defined in: [packages/config/src/types.ts:20](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/config/src/types.ts#L20)
+Defined in: [packages/config/src/types.ts:20](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/config/src/types.ts#L20)
 
 #### coinbaseMaturity?
 
@@ -26,7 +26,7 @@ Defined in: [packages/config/src/types.ts:20](https://github.com/KasLabDevs/Hard
 
 > `optional` **description?**: `string`
 
-Defined in: [packages/config/src/types.ts:19](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/config/src/types.ts#L19)
+Defined in: [packages/config/src/types.ts:19](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/config/src/types.ts#L19)
 
 ***
 
@@ -34,4 +34,4 @@ Defined in: [packages/config/src/types.ts:19](https://github.com/KasLabDevs/Hard
 
 > **kind**: `"simulated"`
 
-Defined in: [packages/config/src/types.ts:18](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/config/src/types.ts#L18)
+Defined in: [packages/config/src/types.ts:18](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/config/src/types.ts#L18)

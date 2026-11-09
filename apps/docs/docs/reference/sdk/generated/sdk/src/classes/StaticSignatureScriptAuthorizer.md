@@ -6,7 +6,7 @@
 
 # Class: StaticSignatureScriptAuthorizer
 
-Defined in: packages/accounts/dist/index.d.ts:27
+Defined in: [packages/accounts/dist/index.d.ts:27](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/accounts/dist/index.d.ts#L27)
 
 ## Implements
 
@@ -18,7 +18,7 @@ Defined in: packages/accounts/dist/index.d.ts:27
 
 > **new StaticSignatureScriptAuthorizer**(`signatureScript`): `StaticSignatureScriptAuthorizer`
 
-Defined in: packages/accounts/dist/index.d.ts:29
+Defined in: [packages/accounts/dist/index.d.ts:29](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/accounts/dist/index.d.ts#L29)
 
 #### Parameters
 
@@ -36,7 +36,7 @@ Defined in: packages/accounts/dist/index.d.ts:29
 
 > **authorize**(): `InputAuthorization`
 
-Defined in: packages/accounts/dist/index.d.ts:30
+Defined in: [packages/accounts/dist/index.d.ts:30](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/accounts/dist/index.d.ts#L30)
 
 #### Returns
 

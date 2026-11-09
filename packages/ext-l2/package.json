@@ -1,6 +1,7 @@
 {
   "name": "@hardkas/ext-l2",
   "version": "0.13.0-rc.1",
+  "private": true,
   "description": "HardKAS CLI extension: the Igra L2 (EVM) lab (profiles, JSON-RPC, EVM transactions and contracts)",
   "type": "module",
   "exports": {

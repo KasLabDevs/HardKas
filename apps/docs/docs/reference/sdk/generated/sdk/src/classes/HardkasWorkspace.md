@@ -6,7 +6,7 @@
 
 # Class: HardkasWorkspace
 
-Defined in: [packages/sdk/src/workspace.ts:9](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/workspace.ts#L9)
+Defined in: [packages/sdk/src/workspace.ts:11](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/workspace.ts#L11)
 
 Deterministic Workspace Abstraction.
 Encapsulates all filesystem boundary interactions and isolates paths
@@ -18,7 +18,7 @@ from the global process.cwd(), ensuring agent/script replayability.
 
 > **new HardkasWorkspace**(`cwd`, `overrideHardkasDir?`): `HardkasWorkspace`
 
-Defined in: [packages/sdk/src/workspace.ts:13](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/workspace.ts#L13)
+Defined in: [packages/sdk/src/workspace.ts:15](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/workspace.ts#L15)
 
 #### Parameters
 
@@ -40,7 +40,7 @@ Defined in: [packages/sdk/src/workspace.ts:13](https://github.com/KasLabDevs/Har
 
 > `readonly` **root**: `string`
 
-Defined in: [packages/sdk/src/workspace.ts:10](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/workspace.ts#L10)
+Defined in: [packages/sdk/src/workspace.ts:12](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/workspace.ts#L12)
 
 ## Accessors
 
@@ -50,7 +50,7 @@ Defined in: [packages/sdk/src/workspace.ts:10](https://github.com/KasLabDevs/Har
 
 > **get** **artifactsDir**(): `string`
 
-Defined in: [packages/sdk/src/workspace.ts:25](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/workspace.ts#L25)
+Defined in: [packages/sdk/src/workspace.ts:27](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/workspace.ts#L27)
 
 ##### Returns
 
@@ -64,7 +64,7 @@ Defined in: [packages/sdk/src/workspace.ts:25](https://github.com/KasLabDevs/Har
 
 > **get** **hardkasDir**(): `string`
 
-Defined in: [packages/sdk/src/workspace.ts:21](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/workspace.ts#L21)
+Defined in: [packages/sdk/src/workspace.ts:23](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/workspace.ts#L23)
 
 ##### Returns
 
@@ -78,7 +78,7 @@ Defined in: [packages/sdk/src/workspace.ts:21](https://github.com/KasLabDevs/Har
 
 > **get** **keystoreDir**(): `string`
 
-Defined in: [packages/sdk/src/workspace.ts:33](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/workspace.ts#L33)
+Defined in: [packages/sdk/src/workspace.ts:35](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/workspace.ts#L35)
 
 ##### Returns
 
@@ -92,7 +92,7 @@ Defined in: [packages/sdk/src/workspace.ts:33](https://github.com/KasLabDevs/Har
 
 > **get** **localnetStatePath**(): `string`
 
-Defined in: [packages/sdk/src/workspace.ts:29](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/workspace.ts#L29)
+Defined in: [packages/sdk/src/workspace.ts:31](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/workspace.ts#L31)
 
 ##### Returns
 
@@ -104,7 +104,7 @@ Defined in: [packages/sdk/src/workspace.ts:29](https://github.com/KasLabDevs/Har
 
 > **ensureHardkasDir**(): `void`
 
-Defined in: [packages/sdk/src/workspace.ts:54](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/workspace.ts#L54)
+Defined in: [packages/sdk/src/workspace.ts:83](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/workspace.ts#L83)
 
 Ensures the core .hardkas directory exists.
 
@@ -114,11 +114,34 @@ Ensures the core .hardkas directory exists.
 
 ***
 
+### keystorePath()
+
+> **keystorePath**(`name`): `string`
+
+Defined in: [packages/sdk/src/workspace.ts:45](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/workspace.ts#L45)
+
+CONTAINMENT-2 (R1-I1): the keystore file of account `name`, decided before anything is read or written: `name` is
+a valid account name and its keystore is ONE plain file directly in keystoreDir (which honours a configured
+hardkasDir). An existing entry there that is not a plain file (a link or a directory) is refused too, so nothing
+is ever read or replaced through it. Refusals are ACCOUNT_NAME_INVALID.
+
+#### Parameters
+
+##### name
+
+`unknown`
+
+#### Returns
+
+`string`
+
+***
+
 ### relativeFromRoot()
 
 > **relativeFromRoot**(`absolutePath`): `string`
 
-Defined in: [packages/sdk/src/workspace.ts:47](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/workspace.ts#L47)
+Defined in: [packages/sdk/src/workspace.ts:76](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/workspace.ts#L76)
 
 Safely builds a relative path from the workspace root to the target.
 
@@ -138,7 +161,7 @@ Safely builds a relative path from the workspace root to the target.
 
 > **resolvePath**(...`segments`): `string`
 
-Defined in: [packages/sdk/src/workspace.ts:40](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/workspace.ts#L40)
+Defined in: [packages/sdk/src/workspace.ts:69](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/workspace.ts#L69)
 
 Safely resolves a path relative to the workspace root.
 

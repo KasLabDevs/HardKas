@@ -46,6 +46,20 @@ export { PAYMENT_PREFLIGHT_GUARANTEE, preflightPaymentSend } from "./payment-pre
 // ESCROW-SAFETY-2 / MULTINODE-READ-1: one look at a node about a txId (mempool, accepting chain block), for callers that
 // hold their own client (the dev-server escrow; one look per node of a read-only set)
 export { observeTxOnce, rpcObserverFor } from "./tx-observer.js";
+// INT9-A (I-1): the network and consensus levels of `artifact verify`
+export {
+  artifactNetworkSubject,
+  verifyArtifactOnNetwork,
+  notCheckedNetworkVerification,
+  CONSENSUS_LEVEL_SCOPE,
+  type ArtifactNetworkSubject,
+  type ArtifactSubjectOutput,
+  type ArtifactNetworkVerification,
+  type ArtifactNetworkObservation,
+  type ArtifactNetworkLevel,
+  type ArtifactConsensusLevel,
+  type ArtifactNetworkReason
+} from "./artifact-network-verify.js";
 export type { ObserveTxOptions, TxObserverRpc, TxObserverRpcRecorder } from "./tx-observer.js";
 export {
   MULTINODE_GUARANTEE,
@@ -83,7 +97,7 @@ export { HardkasLineage } from "./lineage.js";
 export { HardkasWorkspace } from "./workspace.js";
 export { HardkasArtifactsManager } from "./artifacts-manager.js";
 export { HardkasCapabilitiesApi, createHardkasCapabilities, probeSilverReadiness } from "./capabilities.js";
-export type { SilverReadiness, ReadinessCheck } from "./capabilities.js";
+export type { SilverReadiness, SilverReadinessOptions, ReadinessCheck } from "./capabilities.js";
 export { HardkasCorpus, verifyToccataCorpus } from "./corpus.js";
 export { HardkasSilver } from "./silver.js";
 export {
@@ -123,6 +137,29 @@ export {
   GROTH16_PRECOMPILE_COST_SCRIPT_UNITS,
   KASPA_WASM_ZK_BUILDER_CLAIM,
   parseKaspaScript,
+  verifyR0Groth16ReceiptLocal,
+  computeR0ReceiptClaimDigest,
+  parseR0Groth16Receipt,
+  r0Groth16PublicSignals,
+  findPublicR0TestVector,
+  isHardkasR0Groth16Verification,
+  PUBLIC_R0_TEST_VECTORS,
+  R0_GROTH16_VERIFICATION_KEY,
+  R0_GROTH16_COMPRESSED_VERIFICATION_KEY_HEX,
+  R0_GROTH16_CONTROL_ROOT,
+  R0_GROTH16_BN254_CONTROL_ID,
+  R0_GROTH16_VERIFIER_ID,
+  R0_GROTH16_PINNED_KEY_ID,
+  minimumR0Groth16ComputeBudget,
+  groth16VkElementsInRedeemScript,
+  GROTH16_VK_ELEMENT_COST_SCRIPT_UNITS,
+  R0_GROTH16_VK_ELEMENTS,
+  R0_GROTH16_OBSERVED_SCRIPT_OVERHEAD_SCRIPT_UNITS,
+  BLOCK_COMPUTE_MASS_LIMIT,
+  ZK_LOCK_BINDS_IMAGE_ID_ONLY_WARNING,
+  type R0Groth16LocalVerificationResult,
+  type R0Groth16ReceiptParse,
+  type ZkAddressNetwork,
   type KaspaScriptOp,
   type ZkProofMathOptions,
   type ZkMathBinding,
@@ -159,9 +196,18 @@ export {
   BN254_G2_GENERATOR,
   DEFAULT_GROTH16_VERIFY_TIMEOUT_MS,
   MAX_GROTH16_VERIFY_TIMEOUT_MS,
+  groth16VerificationKeyFingerprint,
+  findPinnedGroth16VerificationKey,
+  PINNED_GROTH16_VERIFICATION_KEYS,
+  GROTH16_VK_FINGERPRINT_DOMAIN,
+  BN254_G1_INFINITY_JSON,
+  BN254_G2_INFINITY_JSON,
   type Groth16VerifyMathOptions,
   type Groth16MathVerificationOutput,
-  type Groth16VerificationKeyStrength
+  type Groth16MathStatus,
+  type Groth16VerificationKeyStrength,
+  type Groth16VerificationKeyAnchor,
+  type PinnedGroth16VerificationKey
 } from "./zk/groth16-verifier.js";
 export {
   HardkasVprogs,
@@ -249,6 +295,12 @@ export interface HardkasOptions {
    */
   target?: string;
   autoBootstrap?: boolean;
+  /**
+   * INT9-A (I-3b): the default RPC client of a real Kaspa world also refuses (NODE_NOT_SYNCED) a node that does not say
+   * it is synced — for callers whose operations need the current chain state (the CLI's `tx wait`). Off by default:
+   * a well-identified node is used for reads and diagnostics whatever its sync state.
+   */
+  requireSyncedNode?: boolean;
   signer?: ExternalHardkasSigner;
   logger?: {
     info: (msg: string) => void;
@@ -403,7 +455,7 @@ export class Hardkas {
               rpcUrl,
               // NODE-NETWORK-IDENTITY-1: a real Kaspa world uses its node only once the node says it serves that network
               ...(this.execution.mode !== "simulator" && this.execution.domain === "kaspa-l1"
-                ? { expectedNetworkId: this.activeNetwork }
+                ? { expectedNetworkId: this.activeNetwork, ...(options?.requireSyncedNode === true ? { requireSynced: true } : {}) }
                 : {})
             });
       this.ownedRpc = this.rpc;

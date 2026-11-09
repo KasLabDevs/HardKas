@@ -25,14 +25,26 @@ export function registerCiCommand(program: Command) {
         const artifactsDir = path.join(hardkasDir, "artifacts");
 
         let hasErrors = false;
+        // INT9 · CLI-CONTRACT-2B C5: what failed, by kind — the environment (Docker daemon, Node.js, pnpm) is not the
+        // workspace, so a run where only the environment failed never calls the workspace corrupted (same code, CI_VERIFY_FAILED)
+        const environmentFailures: string[] = [];
+        const workspaceFailures: string[] = [];
 
         // 1. Doctor checks
         UI.step(1, "Running environment doctor checks...");
         try {
           // HARDKAS-NETWORK-PORTABILITY-1-A: ci verify checks the workspace offline — it never contacts a public endpoint
-          const doctorOk = await runDoctorChecks(root, { quiet: true, network: false });
+          const doctorOk = await runDoctorChecks(root, {
+            quiet: true,
+            network: false,
+            onReport: (report) => {
+              for (const c of report.checks.filter((c) => c.status === "fail")) {
+                (c.category === "docker" || c.category === "runtime" ? environmentFailures : workspaceFailures).push(`${c.name}: ${c.message}`);
+              }
+            }
+          });
           if (!doctorOk) {
-            UI.error("Environment doctor checks failed.");
+            UI.error(`Environment doctor checks failed: ${[...environmentFailures, ...workspaceFailures].join("; ") || "see 'hardkas doctor'"}.`);
             hasErrors = true;
           } else {
             UI.success("Environment checks passed.");
@@ -40,6 +52,7 @@ export function registerCiCommand(program: Command) {
         } catch (e: unknown) {
           UI.error(`Doctor failed: ${((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e))}`);
           hasErrors = true;
+          workspaceFailures.push("doctor could not run");
         }
 
         // 2. Artifacts duplication/consistency
@@ -75,15 +88,23 @@ export function registerCiCommand(program: Command) {
         } else {
           UI.error(`Projection index is unreadable: ${projection.reason}`);
           hasErrors = true;
+          workspaceFailures.push(`projection index unreadable: ${projection.reason}`);
         }
 
         UI.emptyLine();
         UI.emptyLine();
         if (hasErrors) {
           const { HardkasCliError, HardkasExitCode } = await import("../cli-errors.js");
+          if (workspaceFailures.length === 0) {
+            throw new HardkasCliError(
+              "CI_VERIFY_FAILED",
+              `CI Verification Failed: the environment, not the workspace (${environmentFailures.join("; ")}). The workspace's own checks passed.`,
+              { exitCode: HardkasExitCode.RUNTIME_FAILURE, suggestion: "Fix the environment (for example, start Docker) and run 'hardkas ci verify' again." }
+            );
+          }
           throw new HardkasCliError(
             "CI_VERIFY_FAILED",
-            "CI Verification Failed. Workspace is corrupted or incorrectly configured.",
+            `CI Verification Failed. Workspace is corrupted or incorrectly configured (${workspaceFailures.join("; ")}${environmentFailures.length > 0 ? `; environment: ${environmentFailures.join("; ")}` : ""}).`,
             { exitCode: HardkasExitCode.RUNTIME_FAILURE }
           );
         } else {

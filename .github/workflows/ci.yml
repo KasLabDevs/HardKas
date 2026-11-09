@@ -12,7 +12,114 @@ on:
       - develop
   workflow_dispatch:
 
+# HK-22: read-only token; no step here writes to the repository.
+permissions:
+  contents: read
+
 jobs:
+  # HK-22 / M-04: the canonical gate (`pnpm test` = vitest.config.ts + test:workflows) on the three platforms, from the
+  # frozen lockfile. Only Ubuntu ran it before (hardkas-examples.yml); the gate there now lives here.
+  canonical-gate:
+    name: Canonical gate (pnpm test)
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        # NODE-CI-PIN-1: the exact patched release this code was validated on (not a floating major).
+        node-version: [24.22.1]
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0 (tag v4 on 2026-11-06)
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0 (tag v4 on 2026-11-06)
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@a3252b78c470c02df07e9d59298aecedc3ccdd6d # v3.0.0 (branch v3 on 2026-11-06)
+        with:
+          version: 9.15.4
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build Monorepo
+        run: pnpm build
+
+      # One step per install: on Windows (pwsh) a multi-line step only fails on the exit code of its last command.
+      - name: Install pinned Kaspa WASM toolchain
+        run: node packages/cli/dist/index.js toolchain install kaspa-wasm
+
+      - name: Install pinned silverc toolchain
+        run: node packages/cli/dist/index.js toolchain install silverc
+
+      - name: Canonical gate
+        run: pnpm test
+
+  # INT9 · D5: the release and docs gates, which ran only by hand: the published set and the version freeze, the CLI
+  # references (docs/reference/cli.* and the apps/docs pages) against the command tree, the generated claims, the docs
+  # links and versions, the site map, the known-gap skips, the forbidden claims and the dependency licenses of the
+  # published packages (offline, from the lockfile). One step per gate, so a red one names itself.
+  docs-gates:
+    name: Release and docs gates
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0 (tag v4 on 2026-11-06)
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0 (tag v4 on 2026-11-06)
+        with:
+          # NODE-CI-PIN-1: the exact patched release this code was validated on (not a floating major).
+          node-version: 24.22.1
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@a3252b78c470c02df07e9d59298aecedc3ccdd6d # v3.0.0 (branch v3 on 2026-11-06)
+        with:
+          version: 9.15.4
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build Monorepo
+        run: pnpm build
+
+      - name: Published set and version freeze (version:check)
+        run: pnpm version:check
+
+      - name: CLI reference (docs:check-cli)
+        run: pnpm docs:check-cli
+
+      - name: apps/docs CLI pages (docs:check-apps-cli)
+        run: pnpm docs:check-apps-cli
+
+      - name: Generated claims (docs:check-claims)
+        run: pnpm docs:check-claims
+
+      - name: Docs drift (check:docs)
+        run: pnpm check:docs
+
+      - name: Docs links and versions (docs:check)
+        run: pnpm docs:check
+
+      - name: Site map (docs:check-site)
+        run: pnpm docs:check-site
+
+      - name: Known-gap skips (check-known-gaps)
+        run: node scripts/check-known-gaps.mjs
+
+      - name: Forbidden claims (check-forbidden-claims)
+        run: node scripts/check-forbidden-claims.mjs
+
+      - name: Dependency licenses (check-licenses)
+        run: pnpm check:licenses
+
   semantic-equivalence:
     name: Cross-Platform Semantic Test
     runs-on: ${{ matrix.os }}
@@ -25,20 +132,20 @@ jobs:
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0 (tag v4 on 2026-11-06)
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0 (tag v4 on 2026-11-06)
         with:
           node-version: ${{ matrix.node-version }}
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v3
+        uses: pnpm/action-setup@a3252b78c470c02df07e9d59298aecedc3ccdd6d # v3.0.0 (branch v3 on 2026-11-06)
         with:
           version: 9.15.4
 
       - name: Install Dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: Build Monorepo
         run: pnpm build
@@ -67,10 +174,13 @@ jobs:
       # compared them across platforms anyway, so the step that only generated them is gone.
 
       - name: Upload Telemetry and Reports
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2 (tag v4 on 2026-11-06)
         if: always()
         with:
           name: torture-reports-${{ matrix.os }}
+          # N-9: `pnpm hardkas torture` runs the CLI's dev script in packages/cli, so its reports land there.
           path: |
+            packages/cli/.hardkas/reports/
+            packages/cli/.hardkas/telemetry/telemetry.jsonl
             .hardkas/reports/
             .hardkas/telemetry/telemetry.jsonl

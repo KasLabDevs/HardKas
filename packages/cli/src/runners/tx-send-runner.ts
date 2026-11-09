@@ -15,6 +15,8 @@ export interface TxSendRunnerInput {
   sync?: boolean;
   /** PAYMENT-PREFLIGHT-1 · check the inputs and signatures against the node before the broadcast (SDK `preflight`). */
   preflight?: boolean;
+  /** HK-11 · send a signed transaction that names no plan (SDK `allowUnplannedSignedTransaction`). */
+  allowUnplanned?: boolean;
 }
 
 export interface TxSendRunnerResult {
@@ -36,6 +38,8 @@ export interface TxSendRunnerResult {
    */
   alreadySubmitted?: boolean;
   state?: string;
+  /** INT9 · I-2: the SDK's pre-broadcast node check for a send with no record here (NOT_OBSERVED / UNKNOWN). */
+  nodeCheck?: unknown;
 }
 
 /**
@@ -121,7 +125,7 @@ export async function runTxSend(input: TxSendRunnerInput): Promise<TxSendRunnerR
           `Cannot run the send preflight: ${resolvedName} runs on the simulator, which has no node to check the inputs and signatures against. Nothing was sent or recorded.`
         );
       }
-      const { receipt, receiptPath } = await sdk.tx.simulate(signedArtifact);
+      const { receipt, receiptPath, alreadyApplied } = await sdk.tx.simulate(signedArtifact);
 
       return {
         accepted: sendOutcome(receipt).accepted,
@@ -130,7 +134,10 @@ export async function runTxSend(input: TxSendRunnerInput): Promise<TxSendRunnerR
         networkName: resolvedName,
         receipt,
         receiptPath,
-        executionId: `exec_${Date.now().toString(36)}`
+        executionId: `exec_${Date.now().toString(36)}`,
+        // INT9 · CLI-CONTRACT-2B C7: the simulator had already applied this signed transaction (its receipt is returned
+        // as stored, nothing executed again): an already-submitted outcome, never a fresh "submitted"
+        ...(alreadyApplied ? { alreadySubmitted: true, state: "SYNTHETIC_EXECUTED" } : {})
       };
     }
 
@@ -149,16 +156,23 @@ export async function runTxSend(input: TxSendRunnerInput): Promise<TxSendRunnerR
     const isWebSocket = rpcUrl.startsWith("ws://") || rpcUrl.startsWith("wss://");
     // NODE-NETWORK-IDENTITY-1: a signed transaction is sent only to a node that says it serves the transaction's network
     const expectedNetworkId = String(signedArtifact.networkId ?? resolvedName);
+    // INT9-A (I-3b): and only to a node that says it is synced (the send's checks read the current chain state), the
+    // managed localnet included — refused before anything is asked of it (NODE_NOT_SYNCED), so nothing is sent
     const rpcClient = isWebSocket
-      ? new KaspaWrpcClient(rpcUrl, { expectedNetworkId })
-      : new JsonWrpcKaspaClient({ rpcUrl: rpcUrl, expectedNetworkId });
+      ? new KaspaWrpcClient(rpcUrl, { expectedNetworkId, requireSynced: true })
+      : new JsonWrpcKaspaClient({ rpcUrl: rpcUrl, expectedNetworkId, requireSynced: true });
     if (isWebSocket) {
       await (rpcClient as InstanceType<typeof KaspaWrpcClient>).connect();
     }
     (sdk as any).rpc = rpcClient;
 
     try {
-      const { receipt, receiptPath, alreadySubmitted, derived } = await sdk.tx.send(signedArtifact, input.preflight ? { url: rpcUrl, preflight: true } : rpcUrl);
+      const { receipt, receiptPath, alreadySubmitted, derived, nodeCheck } = await sdk.tx.send(
+      signedArtifact,
+      input.preflight || input.allowUnplanned
+        ? { url: rpcUrl, ...(input.preflight ? { preflight: true } : {}), ...(input.allowUnplanned ? { allowUnplannedSignedTransaction: true } : {}) }
+        : rpcUrl
+    );
 
       // R-iii part 1 / IC-2′.8: the outcome comes from the submission's
       // authenticated submit result, never from a status field.
@@ -172,7 +186,8 @@ export async function runTxSend(input: TxSendRunnerInput): Promise<TxSendRunnerR
         receipt,
         receiptPath,
         executionId: `exec_${Date.now().toString(36)}`,
-        ...(alreadySubmitted ? { alreadySubmitted: true, ...(derived ? { state: derived.status } : {}) } : {})
+        ...(alreadySubmitted ? { alreadySubmitted: true, ...(derived ? { state: derived.status } : {}) } : {}),
+        ...(nodeCheck ? { nodeCheck } : {})
       };
     } finally {
       if (rpcClient) {

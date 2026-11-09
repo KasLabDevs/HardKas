@@ -1,10 +1,14 @@
+import fs from "node:fs";
+import path from "node:path";
 import { CURRENT_HASH_VERSION, HARDKAS_VERSION } from "@hardkas/artifacts";
 import {
   KASPAD_REFERENCE_IMAGE,
   CPUMINER_REFERENCE_IMAGE,
   SILVERSCRIPT_RELEASE,
+  nodeSyncStateOf,
   redactUrlCredentials,
-  redactUrlCredentialsInText
+  redactUrlCredentialsInText,
+  type NodeIdentityRecord
 } from "@hardkas/core";
 
 // SURFACE-TRUTH-1B (ST-A, D-ST1): one capability authority. The entries that depend on this environment are derived
@@ -46,11 +50,17 @@ export interface HardkasCapabilities {
     silverScript: boolean;
     /**
      * The real covenant builders are ready here: 1:1 auth-bound transitions only, built by
-     * `hardkas silver covenant genesis|transition` (managed silverc + verified kaspa-wasm + the canonical node). Not
+     * `hardkas silver covenant genesis|transition` (managed silverc + verified kaspa-wasm + the node those commands would
+     * use proving its identity: the canonical localnet unless another node is given, INT9-C5). Not
      * general covenant support, and not the SDK's planning (`sdkCovenantPlanning`).
      */
     covenants: boolean;
-    /** Always false in this build: `covenants.planDeploy()`/`planSpend()` refuse with COVENANT_PLAN_UNSUPPORTED. */
+    /**
+     * Generic covenant planning from the SDK (`covenants.planDeploy()`/`planSpend()`): false in this build, they refuse
+     * with COVENANT_PLAN_UNSUPPORTED. It does NOT say the SDK plans no covenant transaction: the v1 engine does
+     * (`covenants.planGenesis/planTransition/planContractDeploy/planContractSpend`, `sign`, `send`); see
+     * `scopes.sdkCovenantPlanning` for what of it a node has certified (HK-15).
+     */
     sdkCovenantPlanning: boolean;
     transactionV1: boolean;
     trustlessExit: boolean;
@@ -123,6 +133,10 @@ export interface EnvironmentCapabilities {
     installed: boolean;
     version?: string;
     reason?: string;
+    /** Where a `vprogs` was found on PATH (it is never executed by the probe). */
+    path?: string;
+    /** Always false: HardKAS pins no vprogs toolchain. */
+    verified?: false;
   };
   toccata: {
     available: boolean;
@@ -159,8 +173,23 @@ export interface ReadinessCheck {
  */
 export interface SilverReadiness {
   toolchains: { "kaspa-wasm": ReadinessCheck; silverc: ReadinessCheck };
-  /** The canonical localnet node proving its identity (container, image digest, endpoint, network and version). */
-  node: ReadinessCheck & { serverVersion?: string };
+  /**
+   * The node the Silver on-chain commands would use, proving its identity (INT9-C5): the canonical localnet by container,
+   * image digest, endpoint, network and version (`verification: "canonical"`); any other node by what it reports at its
+   * endpoint — network, this release's version, synced, not the simulator (`"endpoint"`); `"unresolved"` when no node
+   * could be chosen (a refused network, no endpoint declared), nothing contacted.
+   */
+  node: ReadinessCheck & {
+    serverVersion?: string;
+    verification?: "canonical" | "endpoint" | "unresolved";
+    url?: string;
+    network?: string;
+    /**
+     * INT9 (A × C5): the node proved its identity but does not say it is synced. Being synced is a verdict apart from
+     * identity, and the Silver on-chain commands require it on every node (NODE_NOT_SYNCED), so the node is not ready.
+     */
+    notSynced?: boolean;
+  };
   ready: {
     "silver.compile.v1": boolean;
     "silver.p2sh.deploy-spend.v1": boolean;
@@ -169,10 +198,106 @@ export interface SilverReadiness {
 }
 
 /**
- * The managed silverc resolves, the managed kaspa-wasm is verified on disk, and the canonical node proves its identity:
- * what `hardkas silver compile|deploy|spend|covenant` need. Read-only; failures are reported, never thrown.
+ * INT9-C5 · which node the readiness checks. Default: the canonical localnet. Since L1-CORE-1 B3 `hardkas silver
+ * deploy|spend|covenant` run on any node that proves its identity by what it reports (`--url`, or the endpoint the
+ * workspace declares), so `hardkas silver doctor` and `hardkas capabilities` pass the node those commands would use.
  */
-export async function probeSilverReadiness(): Promise<SilverReadiness> {
+export interface SilverReadinessOptions {
+  /** A node HardKAS does not manage, proven by what it reports at `url` for `network` (never mainnet). */
+  readonly endpoint?: { readonly url: string; readonly network: string } | undefined;
+  /** No node could be chosen (why, with its code): reported as the node check, nothing contacted. */
+  readonly unresolved?: string | undefined;
+}
+
+/** How to check another node when the canonical one did not prove itself. */
+const OTHER_NODE_HINT = "the Silver on-chain commands also run on another node that proves its identity: check one with `hardkas silver doctor --url <url>`";
+
+/** The record's sync verdict (records built before INT9-A carry none: read it from the observation). */
+function syncOf(id: NodeIdentityRecord): ReturnType<typeof nodeSyncStateOf> {
+  return (id as { sync?: ReturnType<typeof nodeSyncStateOf> }).sync ?? nodeSyncStateOf(id.observed);
+}
+
+async function nodeReadiness(options: SilverReadinessOptions): Promise<SilverReadiness["node"]> {
+  if (options.unresolved !== undefined) return { ok: false, verification: "unresolved", detail: options.unresolved };
+  if (options.endpoint) {
+    const { url, network } = options.endpoint;
+    const shown = redactUrlCredentials(url);
+    if (network === "mainnet") return { ok: false, verification: "unresolved", url: shown, network, detail: "mainnet is refused: nothing was contacted" };
+    try {
+      const { verifyEndpointIdentity } = await import("@hardkas/node-runner");
+      const id = await verifyEndpointIdentity(url, network);
+      // INT9 (A × C5): identity first, then sync, as the Silver commands require both
+      if (id.verified && id.kind === "rusty-kaspad" && syncOf(id) !== "synced") {
+        return {
+          ok: false,
+          verification: "endpoint",
+          url: shown,
+          network,
+          notSynced: true,
+          detail: `rusty-kaspad ${id.observed.server?.serverVersion} at ${shown} (${network}) proved its identity but is not synced (${syncOf(id)}): the Silver on-chain commands would refuse it with NODE_NOT_SYNCED`,
+          serverVersion: String(id.observed.server?.serverVersion)
+        };
+      }
+      // HK-01: only a verified rusty-kaspad counts, never a simulator; no container or image is checked for an endpoint
+      return id.verified && id.kind === "rusty-kaspad"
+        ? {
+            ok: true,
+            verification: "endpoint",
+            url: shown,
+            network,
+            detail: `rusty-kaspad ${id.observed.server?.serverVersion} at ${shown} (${network}), proven by what it reports: network, version, not the simulator; and synced; no container or image checked`,
+            serverVersion: String(id.observed.server?.serverVersion)
+          }
+        : {
+            ok: false,
+            verification: "endpoint",
+            url: shown,
+            network,
+            detail: id.verified ? `the node at ${shown} is a ${id.kind}, not a rusty-kaspad` : `the node at ${shown}: ${id.problems.join("; ")}`
+          };
+    } catch (e: unknown) {
+      return { ok: false, verification: "endpoint", url: shown, network, detail: `the node at ${shown}: ${String((e as Error | null | undefined)?.message ?? e)}` };
+    }
+  }
+  try {
+    const { verifyNodeIdentity } = await import("@hardkas/node-runner");
+    const id = await verifyNodeIdentity();
+    // HK-01: only a verified rusty-kaspad counts (never a simulator, whatever the environment); the detail names the
+    // container and the digest that were observed.
+    const container = id.observed.container?.name;
+    // INT9 (A × C5): the managed localnet too must say it is synced (the Silver commands require it there as well)
+    if (id.verified && id.kind === "rusty-kaspad" && container && syncOf(id) !== "synced") {
+      return {
+        ok: false,
+        verification: "canonical",
+        notSynced: true,
+        detail: `${container} rusty-kaspad ${id.observed.server?.serverVersion} proved its identity but is not synced (${syncOf(id)}): the Silver on-chain commands would refuse it with NODE_NOT_SYNCED`,
+        serverVersion: String(id.observed.server?.serverVersion)
+      };
+    }
+    return id.verified && id.kind === "rusty-kaspad" && container
+      ? {
+          ok: true,
+          verification: "canonical",
+          detail: `${container} rusty-kaspad ${id.observed.server?.serverVersion} (${id.observedImageDigest ?? "digest not observed"})`,
+          serverVersion: String(id.observed.server?.serverVersion)
+        }
+      : {
+          ok: false,
+          verification: "canonical",
+          detail: `${id.verified ? `the verified node is a ${id.kind}, not the canonical rusty-kaspad` : id.problems.join("; ")} (${OTHER_NODE_HINT})`
+        };
+  } catch (e: unknown) {
+    return { ok: false, verification: "canonical", detail: `${String((e as Error | null | undefined)?.message ?? e)} (${OTHER_NODE_HINT})` };
+  }
+}
+
+/**
+ * The managed silverc resolves, the managed kaspa-wasm is verified on disk, and the node the Silver on-chain commands
+ * would use proves its identity (the canonical localnet by default; `options.endpoint` for another node): what
+ * `hardkas silver compile|deploy|spend|covenant` need. Read-only; failures are reported, never thrown.
+ */
+export async function probeSilverReadiness(options: SilverReadinessOptions = {}): Promise<SilverReadiness> {
   const core = await import("@hardkas/core");
   const wasm = core.verifyManagedToolchainSync(core.KASPA_WASM_REFERENCE);
   let silverc: ReadinessCheck;
@@ -182,20 +307,7 @@ export async function probeSilverReadiness(): Promise<SilverReadiness> {
   } catch (e: any) {
     silverc = { ok: false, detail: String(e?.code ?? e?.message) };
   }
-  let node: SilverReadiness["node"];
-  try {
-    const { verifyNodeIdentity } = await import("@hardkas/node-runner");
-    const id = await verifyNodeIdentity();
-    node = id.verified
-      ? {
-          ok: true,
-          detail: `${id.observed.container?.name} rusty-kaspad ${id.observed.server?.serverVersion}`,
-          serverVersion: String(id.observed.server?.serverVersion)
-        }
-      : { ok: false, detail: id.problems.join("; ") };
-  } catch (e: any) {
-    node = { ok: false, detail: String(e?.message ?? e) };
-  }
+  const node = await nodeReadiness(options);
   const operational = silverc.ok && wasm.ok && node.ok;
   return {
     toolchains: {
@@ -211,11 +323,37 @@ export async function probeSilverReadiness(): Promise<SilverReadiness> {
   };
 }
 
+/** The first file named `command` (with PATHEXT on Windows) in a PATH directory, without running it. */
+export function findOnPath(command: string, env: NodeJS.ProcessEnv = process.env): string | undefined {
+  const dirs = String(env.PATH ?? env.Path ?? "").split(path.delimiter).filter(Boolean);
+  const exts = process.platform === "win32" ? ["", ...String(env.PATHEXT ?? ".EXE;.CMD;.BAT;.COM").split(";").filter(Boolean)] : [""];
+  for (const dir of dirs) {
+    for (const ext of exts) {
+      const candidate = path.join(dir, command + ext);
+      try {
+        if (fs.statSync(candidate).isFile()) return candidate;
+      } catch {
+        // not here
+      }
+    }
+  }
+  return undefined;
+}
+
+function nodeReason(node: SilverReadiness["node"]): string {
+  if (node.notSynced) {
+    return node.verification === "endpoint" ? `the node at ${node.url} is not synced (NODE_NOT_SYNCED)` : `the canonical node is not synced (NODE_NOT_SYNCED)`;
+  }
+  if (node.verification === "endpoint") return `the node at ${node.url} did not prove its identity`;
+  if (node.verification === "unresolved") return `no node to check: ${node.detail}`;
+  return `the canonical node did not prove its identity (${OTHER_NODE_HINT})`;
+}
+
 function covenantReason(r: SilverReadiness): string {
   const missing = [
     ...(r.toolchains.silverc.ok ? [] : ["the managed silverc does not resolve"]),
     ...(r.toolchains["kaspa-wasm"].ok ? [] : ["the managed kaspa-wasm is not verified"]),
-    ...(r.node.ok ? [] : ["the canonical node did not prove its identity"])
+    ...(r.node.ok ? [] : [nodeReason(r.node)])
   ];
   return `${missing.join("; ")} (see \`hardkas silver doctor\`)`;
 }
@@ -224,7 +362,11 @@ export class HardkasCapabilitiesApi {
   private _cachedEnv?: EnvironmentCapabilities;
   private _readiness?: SilverReadiness;
 
-  constructor(private sdk?: any) {}
+  /**
+   * `readiness`: which node the Silver readiness checks (INT9-C5; default the canonical localnet). `hardkas
+   * capabilities` passes the node the Silver on-chain commands would use (`--url`, or the workspace's endpoint).
+   */
+  constructor(private sdk?: any, private readonly readinessOptions: SilverReadinessOptions = {}) {}
 
   async get(): Promise<HardkasCapabilities> {
     const caps = createHardkasCapabilities();
@@ -269,7 +411,7 @@ export class HardkasCapabilitiesApi {
 
   /** The checks behind `silverScript`, `covenants` and the node matrix, cached like the environment probe. */
   async silverReadiness(options?: { refresh?: boolean }): Promise<SilverReadiness> {
-    if (!this._readiness || options?.refresh) this._readiness = await probeSilverReadiness();
+    if (!this._readiness || options?.refresh) this._readiness = await probeSilverReadiness(this.readinessOptions);
     return this._readiness;
   }
 
@@ -282,8 +424,6 @@ export class HardkasCapabilitiesApi {
     if (this._cachedEnv && !options?.refresh) {
       return this._cachedEnv;
     }
-
-    const { execFileSync } = await import("node:child_process");
 
     // SURFACE-TRUTH-1B: nothing is assumed; every field below starts false/"unknown" and is set by its probe (the former
     // baseline assumed wasm and RPC, a fixed "0.13.0" version and a Toccata node that nothing had reached).
@@ -322,16 +462,15 @@ export class HardkasCapabilitiesApi {
       env.toccata = { available: true };
       env.node = { version: readiness.node.serverVersion ?? "unknown" };
     } else {
-      env.toccata = { available: false, reason: "no node observed: the canonical node did not prove its identity (see `hardkas silver doctor`)" };
+      env.toccata = { available: false, reason: `no node observed: ${nodeReason(readiness.node)} (see \`hardkas silver doctor\`)` };
     }
 
-    // Probe vProgs
-    try {
-      execFileSync("vprogs", ["--version"], { stdio: "ignore" });
-      env.vprogs = { installed: true, version: "unknown" };
-    } catch {
-      env.vprogs = { installed: false, reason: "MISSING_DEPENDENCY: 'vprogs' CLI not found" };
-    }
+    // Probe vProgs (L-08, audit 3-nov): HardKAS pins no vprogs toolchain, so the probe only LOOKS for a `vprogs` on PATH
+    // and reports where it is, marked unverified; it no longer executes whatever binary of that name PATH resolves to.
+    const vprogsPath = findOnPath("vprogs");
+    env.vprogs = vprogsPath
+      ? { installed: true, version: "unknown", path: vprogsPath, verified: false, reason: "UNVERIFIED: found on PATH, not executed and not pinned by HardKAS" }
+      : { installed: false, reason: "MISSING_DEPENDENCY: 'vprogs' CLI not found on PATH" };
 
     // Probe kaspa-wasm for V1 support (P82/P87): the runtime `tx.sign` loads, with the check its signer applies
     // (`detectCapabilities`), so this report and the signer cannot disagree.
@@ -443,7 +582,8 @@ export function createHardkasCapabilities(): HardkasCapabilities {
       productionWallet: false,
       silverScript: false,
       covenants: false,
-      // the SDK plans no covenant transaction (SURFACE-TRUTH-1A: planDeploy/planSpend refuse); a fact of this build
+      // generic planning (planDeploy/planSpend) refuses (SURFACE-TRUTH-1A); the v1 engine's planning is described in
+      // scopes.sdkCovenantPlanning (HK-15): a fact of this build
       sdkCovenantPlanning: false,
       transactionV1: false,
       trustlessExit: false,
@@ -452,8 +592,15 @@ export function createHardkasCapabilities(): HardkasCapabilities {
     scopes: {
       silverScript: `compiler: managed silverc ${SILVERSCRIPT_RELEASE.releaseTag} (hardkas silver compile)`,
       covenants:
-        "1:1 auth-bound covenant transitions only, built by hardkas silver covenant genesis|transition against the canonical localnet; no general covenant support",
-      sdkCovenantPlanning: "not supported: the SDK's covenants.planDeploy/planSpend refuse with COVENANT_PLAN_UNSUPPORTED"
+        "1:1 auth-bound covenant transitions, built by hardkas silver covenant genesis|transition against the canonical localnet " +
+        "or another node that proves its identity by what it reports (--url, or the workspace's endpoint; a verified rusty-kaspad, " +
+        "never a simulator); node-certified for that topology only; no general covenant support",
+      sdkCovenantPlanning:
+        "generic planning not supported: the SDK's covenants.planDeploy/planSpend refuse with COVENANT_PLAN_UNSUPPORTED. " +
+        "The SDK's v1 engine plans, validates (F1.4), signs and sends covenant transactions (covenants.planGenesis/planTransition/" +
+        "planContractDeploy/planContractSpend, sign, send): node-certified for 1:1 auth-bound transitions (a corpus capability); " +
+        "1:N, N:M and termination judged by a real rusty-kaspad on simnet only (covenant-topologies-node.simnet), not a corpus " +
+        "capability, with no testnet-10 evidence"
     },
     reasons: { silverScript: notProbed, covenants: notProbed, transactionV1: notProbed },
     trustBoundaries: {

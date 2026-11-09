@@ -4,14 +4,17 @@
 //   - Docker unreachable (DOCKER_HOST points at a closed loopback port)
 //   - no non-loopback network: every Node process preloads scripts/hermetic/no-network-preload.cjs
 //   - no external-node or integration switches inherited from the shell
+//   - loopback connections to the canonical Kaspa wRPC ports refused by default (HK-06 / CA-EV-03): the result must
+//     not depend on a kaspad (or a simulator) that happens to listen on this machine
 // It fails if vitest fails, and also if any process tried to reach a
 // non-loopback host, even when every test passed.
 //
-// Usage: node scripts/gate-hermetic.mjs [--home <dir>] [--keep-home] [--deny-ports a,b] [-- <vitest args>]
+// Usage: node scripts/gate-hermetic.mjs [--home <dir>] [--keep-home] [--deny-ports a,b | --allow-local-node-ports] [-- <vitest args>]
 //   --home <dir>       HARDKAS_HOME to copy (e.g. one where `hardkas toolchain install kaspa-wasm` ran).
 //                      Without it the home is empty and every toolchain-dependent suite fails on purpose.
-//   --deny-ports a,b   Also refuse loopback connections to these ports (e.g. 16210,17210,18210 to
-//                      prove the gate does not depend on a kaspad that happens to run locally).
+//   --deny-ports a,b   Loopback ports to refuse. Default: 16210,17210,18210,18211 (the canonical wRPC ports and
+//                      18211, the port some suites fall back to); an explicit list replaces it.
+//   --allow-local-node-ports  Refuse no loopback port (diagnosis only: a gate run this way is not the release gate).
 import { spawnSync } from "node:child_process";
 import { cpSync, existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import os from "node:os";
@@ -25,12 +28,16 @@ const VITEST = path.join(ROOT, "node_modules", "vitest", "vitest.mjs");
 const argv = process.argv.slice(2);
 let sourceHome;
 let keepHome = false;
-let denyPorts = "";
+// HK-06 / CA-EV-03: the audited gate run (2026-11-06) had no --deny-ports and logged 82 connections to 127.0.0.1:18210.
+// A gate whose verdict changes with the owner's localnet is not hermetic, so the canonical ports are refused by default.
+const DEFAULT_DENY_PORTS = "16210,17210,18210,18211";
+let denyPorts = DEFAULT_DENY_PORTS;
 const vitestArgs = [];
 for (let i = 0; i < argv.length; i++) {
   if (argv[i] === "--home") sourceHome = path.resolve(argv[++i]);
   else if (argv[i] === "--keep-home") keepHome = true;
   else if (argv[i] === "--deny-ports") denyPorts = argv[++i] ?? "";
+  else if (argv[i] === "--allow-local-node-ports") denyPorts = "";
   else if (argv[i] === "--") vitestArgs.push(...argv.slice(i + 1)), (i = argv.length);
   else vitestArgs.push(argv[i]);
 }
@@ -58,7 +65,7 @@ if (denyPorts) env.HARDKAS_HERMETIC_DENY_PORTS = denyPorts;
 env.NODE_OPTIONS = `${env.NODE_OPTIONS ?? ""} --require="${PRELOAD.split(path.sep).join("/")}"`.trim();
 
 console.log(`gate-hermetic: HARDKAS_HOME=${home}${sourceHome ? ` (copy of ${sourceHome})` : " (empty)"}`);
-console.log(`gate-hermetic: DOCKER_HOST=${env.DOCKER_HOST}; preload=${PRELOAD}${denyPorts ? `; denied loopback ports=${denyPorts}` : ""}`);
+console.log(`gate-hermetic: DOCKER_HOST=${env.DOCKER_HOST}; preload=${PRELOAD}; denied loopback ports=${denyPorts || "none (--allow-local-node-ports: not the release gate)"}`);
 console.log(`gate-hermetic: vitest run ${vitestArgs.join(" ")}`);
 
 const started = Date.now();

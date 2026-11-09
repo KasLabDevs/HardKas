@@ -3,11 +3,28 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import http from "node:http";
+import net from "node:net";
 
 console.log("=== PHASE 11: DEV SERVER SECURITY AUDIT ===");
 
 const workspaceRoot = process.cwd();
-const PORT = 7421;
+// M-03 (2026-11-07): the port was fixed (7421). Another local service on it (here: a desktop app listening on
+// 127.0.0.1:7421) answered the probes instead of the dev server under test, and the audit reported its answers.
+// The port is now a free one chosen at run time, and the server must be the spawned process (alive, and announcing
+// that port) before anything is probed.
+async function freePort() {
+  return new Promise((resolve, reject) => {
+    const s = net.createServer();
+    s.unref();
+    s.on("error", reject);
+    s.listen(0, "127.0.0.1", () => {
+      const { port } = s.address();
+      s.close(() => resolve(port));
+    });
+  });
+}
+const PORT = await freePort();
+console.log(`Dev server under test: 127.0.0.1:${PORT}`);
 
 // Run audit in an isolated temporary workspace
 const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "hardkas-devserver-audit-"));
@@ -15,8 +32,10 @@ fs.writeFileSync(path.join(tmpDir, "hardkas.config.ts"), "export default {};\n")
 
 const cliPath = path.resolve(workspaceRoot, "packages", "cli", "dist", "index.js");
 
-// Launch the dev server with the correct CLI command: dev-server start
-const serverProc = spawn(process.execPath, [cliPath, "dev-server", "start", "--port", PORT.toString()], {
+// M-03 (2026-11-07): `dev-server start` is not a registered CLI command (packages/cli/src/commands/dev-server.ts is never
+// added to the program), so the script used to fail on "unknown command" and probe whatever else held its port. The CLI
+// entry point that serves the dev-server API on a chosen port is `hardkas sandbox --port --host`.
+const serverProc = spawn(process.execPath, [cliPath, "sandbox", "--port", PORT.toString(), "--host", "127.0.0.1"], {
   cwd: tmpDir,
   stdio: ["ignore", "pipe", "pipe"],
   shell: false,
@@ -24,6 +43,10 @@ const serverProc = spawn(process.execPath, [cliPath, "dev-server", "start", "--p
 });
 
 let serverOutput = "";
+let serverExit = null;
+serverProc.on("exit", (code, signal) => {
+  serverExit = { code, signal };
+});
 
 serverProc.stdout.on("data", (data) => {
   serverOutput += data.toString();
@@ -69,7 +92,13 @@ async function sleep(ms) {
 }
 
 async function waitForServer() {
-  for (let i = 0; i < 30; i++) {
+  for (let i = 0; i < 60; i++) {
+    // only the spawned server counts: it must still run and have announced the port it was given
+    if (serverExit) return false;
+    if (!serverOutput.includes(`:${PORT}`)) {
+      await sleep(500);
+      continue;
+    }
     try {
       const res = await fetchInternal("/");
       if (res.status === 200 || res.status === 404 || res.status === 403 || res.status === 401) {

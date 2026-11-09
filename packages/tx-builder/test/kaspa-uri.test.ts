@@ -32,7 +32,8 @@ describe("buildKaspaUri", () => {
             address: "kaspatest:qqabc123",
             amountSompi: 100_000_000n
         });
-        expect(result.uri).toBe("kaspa:kaspatest:qqabc123?amount=1");
+        // L1-07: the address is its own URI (its prefix is the scheme); it was pinned here as "kaspa:kaspatest:qqabc123?amount=1"
+        expect(result.uri).toBe("kaspatest:qqabc123?amount=1");
         expect(result.amountKasDisplay).toBe("1");
         expect(result.amountSompi).toBe(100_000_000n);
     });
@@ -44,7 +45,7 @@ describe("buildKaspaUri", () => {
             label: "Coffee Shop",
             message: "Order #42"
         });
-        expect(result.uri).toBe("kaspa:kaspatest:qqabc123?amount=2.5&label=Coffee%20Shop&message=Order%20%2342");
+        expect(result.uri).toBe("kaspatest:qqabc123?amount=2.5&label=Coffee%20Shop&message=Order%20%2342");
         expect(result.params["label"]).toBe("Coffee Shop");
         expect(result.params["message"]).toBe("Order #42");
     });
@@ -54,7 +55,7 @@ describe("buildKaspaUri", () => {
             address: "kaspatest:qqabc123",
             amountSompi: 0n
         });
-        expect(result.uri).toBe("kaspa:kaspatest:qqabc123");
+        expect(result.uri).toBe("kaspatest:qqabc123");
     });
 
     it("uses safe integer conversion — no floats", () => {

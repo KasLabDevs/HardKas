@@ -8,7 +8,7 @@
 
 > **canMigrate**(`artifact`, `targetVersion?`): `boolean`
 
-Defined in: [packages/artifacts/src/migration.ts:244](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/migration.ts#L244)
+Defined in: [packages/artifacts/src/migration.ts:301](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/migration.ts#L301)
 
 Checks whether a migration path exists from the artifact's current
 version to the target version.

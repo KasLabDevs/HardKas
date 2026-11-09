@@ -8,5 +8,8 @@
   },
   "dependencies": {
     "@hardkas/sdk": "workspace:*"
+  },
+  "devDependencies": {
+    "@hardkas/testing": "workspace:*"
   }
 }

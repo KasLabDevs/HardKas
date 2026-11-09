@@ -8,7 +8,7 @@
 
 > **buildTransactions**(`input`): `AsyncGenerator`\<`any`\>
 
-Defined in: [packages/tx-builder/src/kaspa-wallet-adapter.ts:63](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/kaspa-wallet-adapter.ts#L63)
+Defined in: [packages/tx-builder/src/kaspa-wallet-adapter.ts:93](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/kaspa-wallet-adapter.ts#L93)
 
 Iterates the WASM `Generator` and yields each `PendingTransaction`.
 Consumer is responsible for signing (`pt.sign([keys])` or `pt.signInput(...)`)

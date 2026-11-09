@@ -68,6 +68,7 @@ export * from "./store.js";
 export * from "./store-mutation.js";
 export * from "./resolve.js";
 export * from "./silver-refs.js";
+export * from "./silver-network-coherence.js";
 export * from "./artifact-handle.js";
 export * from "./lineage-error.js";
 export * from "./receipt-lookup-error.js";

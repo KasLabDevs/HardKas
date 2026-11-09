@@ -33,12 +33,13 @@ describe('WalletToolkit Fee Estimation', () => {
         const amount = 1_000_000_000n;
         const result = await wallet.estimateFee({ to: FIXTURE_DEST, amount, priority: "normal" });
 
-        expect(result.evidence).toBe("dynamic");
-        expect(result.feeRate).toBe(4n); // normal (2n) * dynamic multiplier for 15k mempool (2n)
+        // HK-09: this client answers getInfo only, no fee estimate: the rate is the relay minimum and the evidence says
+        // the node's estimate was not used (it used to say "dynamic" with a mempool-size multiplier, 2 × 2 = 4).
+        expect(result.evidence).toBe("heuristic");
+        expect(result.feeRate).toBe(100n);
         expect(result.mempoolSize).toBe(15000);
         expect(result.estimatedMass).toBeGreaterThan(0n);
-        // A rate of 4 sompi/gram is below the node's minimum (100 sompi/gram, per the
-        // SDK): the fee is the minimum the node requires, never mass * 4.
+        // At the relay minimum the fee is the minimum the node requires, charged on the compute mass.
         expect(result.fee).toBe(result.estimatedMass * 100n);
         expect(result.totalOut).toBe(amount + result.fee);
         expect(result.plan).toBeDefined();

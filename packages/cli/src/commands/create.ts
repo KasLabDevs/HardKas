@@ -1,5 +1,5 @@
 import type { Command } from "commander";
-import { UI, handleError } from "../ui.js";
+import { UI } from "../ui.js";
 import path from "node:path";
 import fs from "node:fs";
 import url from "node:url";
@@ -110,22 +110,20 @@ export function registerCreateCommand(program: Command, extensions: ExtensionReg
           UI.footer(`Next steps:\n  ` + nextSteps.join("\n  "));
         }
       } catch (e: any) {
-        // An extension's template while the extension is not loaded: the CLI's one typed refusal (exit ≠ 0), never
-        // the legacy create envelope (its exit-0 gap is CLI-CONTRACT-2B, out of this change).
+        // An extension's template while the extension is not loaded: the CLI's one typed refusal (exit ≠ 0).
         if (typeof e?.code === "string" && e.code.startsWith("EXTENSION_")) throw e;
-        if (options.json) {
-          const { getOutput } = await import("../output.js");
-          getOutput().writeJson({
-            ok: false,
-            error: {
-              code: "TEMPLATE_CREATE_FAILED",
-              message: e.message
-            }
-          });
-        } else {
-          handleError(e, "Create failed");
-          process.exit(1);
-        }
+        // INT9 · CLI-CONTRACT-2B C3: every other failure is the CLI's one typed failure too — one envelope
+        // { ok:false, code, message } and exit 1, rendered by the top-level renderer. It used to answer --json with a
+        // nested { ok:false, error:{ code } } and exit 0, and the human form called process.exit(1) itself.
+        const { HardkasCliError, HardkasExitCode } = await import("../cli-errors.js");
+        if (e?.name === "HardkasCliError") throw e;
+        const message = String(e?.message ?? e);
+        const code = /^Template '.*' not found\.$/.test(message)
+          ? "TEMPLATE_NOT_FOUND"
+          : /^Destination directory '.*' already exists\.$/.test(message)
+            ? "DESTINATION_EXISTS"
+            : "TEMPLATE_CREATE_FAILED";
+        throw new HardkasCliError(code, message, { exitCode: HardkasExitCode.RUNTIME_FAILURE, cause: e });
       }
     });
 }

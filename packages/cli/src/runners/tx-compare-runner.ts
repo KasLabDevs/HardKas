@@ -70,9 +70,10 @@ export async function runTxCompare(input: TxCompareRunnerInput): Promise<void> {
       b: real.metadata?.mass || real.mass
     },
     {
+      // L1-CORE-1 B4: a receipt records its fee as `feeSompi`; only `fees` was read, so this row always said N/A
       name: "Fees",
-      a: sim.metadata?.fees || sim.fees,
-      b: real.metadata?.fees || real.fees
+      a: sim.metadata?.fees || sim.feeSompi || sim.fees,
+      b: real.metadata?.fees || real.feeSompi || real.fees
     }
   ];
 

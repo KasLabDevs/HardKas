@@ -6,7 +6,7 @@
 
 # Interface: Invariant
 
-Defined in: [packages/artifacts/src/invariants/types.ts:36](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/invariants/types.ts#L36)
+Defined in: [packages/artifacts/src/invariants/types.ts:36](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/invariants/types.ts#L36)
 
 Core Invariant interface.
 
@@ -16,7 +16,7 @@ Core Invariant interface.
 
 > `readonly` **description**: `string`
 
-Defined in: [packages/artifacts/src/invariants/types.ts:38](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/invariants/types.ts#L38)
+Defined in: [packages/artifacts/src/invariants/types.ts:38](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/invariants/types.ts#L38)
 
 ***
 
@@ -24,7 +24,7 @@ Defined in: [packages/artifacts/src/invariants/types.ts:38](https://github.com/K
 
 > `readonly` **id**: `string`
 
-Defined in: [packages/artifacts/src/invariants/types.ts:37](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/invariants/types.ts#L37)
+Defined in: [packages/artifacts/src/invariants/types.ts:37](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/invariants/types.ts#L37)
 
 ## Methods
 
@@ -32,7 +32,7 @@ Defined in: [packages/artifacts/src/invariants/types.ts:37](https://github.com/K
 
 > **check**(`context`): `Promise`\<[`InvariantViolation`](InvariantViolation.md)[]\>
 
-Defined in: [packages/artifacts/src/invariants/types.ts:39](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/invariants/types.ts#L39)
+Defined in: [packages/artifacts/src/invariants/types.ts:39](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/invariants/types.ts#L39)
 
 #### Parameters
 

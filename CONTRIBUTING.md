@@ -8,7 +8,7 @@ HardKAS is a monorepo managed with **pnpm** and **Turbo**.
 
 ### Prerequisites
 
-- Node.js (v20+)
+- Node.js 24.22.1 (exactly: the version every package with `engines` pins and CI runs)
 - pnpm (v9+)
 
 ## Getting Started
@@ -47,6 +47,13 @@ If you want to contribute to the core or run examples from source:
 ```bash
 pnpm test
 ```
+
+`pnpm test` is the canonical gate (no Docker, no network). Before a release, run it hermetically:
+`node scripts/gate-hermetic.mjs --home <a HARDKAS_HOME with kaspa-wasm installed>`. That run gives the gate a private
+HARDKAS_HOME, an unreachable Docker and no non-loopback network. By default it also refuses loopback connections to the
+canonical Kaspa wRPC ports 16210, 17210, 18210 and 18211, so a local kaspad or simulator cannot change the verdict
+(`--allow-local-node-ports` is for diagnosis only). Tests that need a node belong to `*.simnet.test.ts`. They run with
+`vitest.simnet.config.ts`, which starts its own isolated node, and must fail, not pass, when that node is missing.
 
 ## Pull Requests
 

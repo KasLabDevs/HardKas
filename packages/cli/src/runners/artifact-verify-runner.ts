@@ -30,6 +30,16 @@ export interface ArtifactVerifyOptions {
    * MIGRATION_REQUIRED. Nothing else changes; no reference resolution is affected.
    */
   storeVerification?: boolean;
+  /**
+   * INT9-A (I-1): the network level. Without any of these the verification is offline (integrity only; the network and
+   * consensus levels are NOT_CHECKED). With them: one read-only look at a node of the artifact's network (never mainnet).
+   */
+  network?: string | undefined;
+  url?: string | undefined;
+  since?: string | undefined;
+  minConfirmations?: string | undefined;
+  /** The level the verification must reach to succeed: integrity (default), network or consensus. */
+  require?: string | undefined;
 }
 
 function realpathOr(p: string): string {
@@ -75,6 +85,19 @@ export async function runArtifactVerify(options: ArtifactVerifyOptions) {
   const stats = fs.statSync(absolutePath);
   const isDir = stats.isDirectory();
 
+  // INT9-A (I-1): the network check is per artifact (one look per transaction); it is never applied to a directory
+  const { networkCheckRequested, parseRequirement } = await import("./artifact-network-runner.js");
+  const requirement = parseRequirement(options.require);
+  const wantsNetwork = networkCheckRequested(options);
+  if (isDir && wantsNetwork) {
+    const { HardkasCliError } = await import("../cli-errors.js");
+    throw new HardkasCliError(
+      "ARTIFACT_VERIFY_NETWORK_SINGLE_FILE",
+      `--network, --url, --since and --require network|consensus verify one artifact on its network; ${options.path} is a directory (verify it offline, or name one artifact). Nothing was contacted.`,
+      { exitCode: 2 }
+    );
+  }
+
   if (isDir) {
     if (options.recursive ?? true) {
       return runRecursiveVerify(absolutePath, { ...options, strict, command });
@@ -95,7 +118,13 @@ export async function runArtifactVerify(options: ArtifactVerifyOptions) {
     workspaceRoot: options.workspaceRoot
   });
 
-  const artifact = JSON.parse(stripBom(fs.readFileSync(absolutePath, "utf-8")));
+  // N-6: a file that is not JSON is a typed refusal, never an untyped UNKNOWN_ERROR.
+  const parsedSingle = readArtifactJson(absolutePath);
+  if (!parsedSingle.ok) {
+    const { HardkasCliError } = await import("../cli-errors.js");
+    throw new HardkasCliError("ARTIFACT_JSON_INVALID", `${options.path} is not a JSON artifact: ${parsedSingle.message}`, { exitCode: 1 });
+  }
+  const artifact = parsedSingle.value;
   const semanticResult = verifyArtifactSemantics(artifact, {
     strict,
     workspaceRoot: options.workspaceRoot
@@ -119,16 +148,51 @@ export async function runArtifactVerify(options: ArtifactVerifyOptions) {
   // For now, we follow the user request: result.ok is true only if integrity and semantics are ok.
   // Replay issues will show as warnings/errors.
 
+  // INT9-A (I-1): the three levels. Integrity is the offline verdict above, on every network (mainnet included). The
+  // network and consensus levels are NOT_CHECKED unless a check was asked for, and never for a failed artifact.
+  const net = await import("./artifact-network-runner.js");
+  const { notCheckedNetworkVerification } = await import("@hardkas/sdk");
+  const networkCheck = !result.ok
+    ? notCheckedNetworkVerification("INTEGRITY_FAILED", "the artifact failed integrity: no node is asked about it")
+    : wantsNetwork
+      ? await net.checkArtifactOnNetwork(artifact, {
+          network: options.network,
+          url: options.url,
+          since: options.since,
+          minConfirmations: options.minConfirmations,
+          workspaceRoot: options.workspaceRoot
+        })
+      : notCheckedNetworkVerification("OFFLINE", "offline verification: no node was asked (use --network/--url for the network level)");
+  const verdict = net.verdictLevelOf(result.ok, networkCheck);
+  (result as any).levels = {
+    integrity: result.ok ? "INTEGRITY_VERIFIED" : "INTEGRITY_FAILED",
+    network: networkCheck.network,
+    consensus: networkCheck.consensus,
+    verdict,
+    required: requirement
+  };
+  const requirementOk = net.requirementMet(requirement, verdict);
+
   if (options.json) {
     // AUD-07 / IC-4′.6 (SEC-A): the envelope's `ok` IS the verdict, and a failed
     // verdict exits non-zero with a deterministic code.
     const { getOutput } = await import("../output.js");
-    getOutput().writeJson({ ok: result.ok, command, mode: "cli", result });
+    getOutput().writeJson({
+      ok: result.ok && requirementOk,
+      ...(result.ok && !requirementOk ? { code: "VERIFICATION_LEVEL_NOT_REACHED" } : {}),
+      command,
+      mode: "cli",
+      result
+    });
     if (!result.ok) {
       const { HardkasCliError } = await import("../cli-errors.js");
       throw new HardkasCliError("VERIFICATION_FAILED", "Artifact verification failed.", {
         exitCode: 1
       });
+    }
+    if (!requirementOk) {
+      const { HardkasCliError } = await import("../cli-errors.js");
+      throw new HardkasCliError("VERIFICATION_LEVEL_NOT_REACHED", `The artifact reached ${verdict}; --require ${requirement} was asked.`, { exitCode: 1 });
     }
     return result;
   }
@@ -165,6 +229,24 @@ export async function runArtifactVerify(options: ArtifactVerifyOptions) {
         UI.error("  ✗ Replay verification FAILED.");
       }
     }
+
+    // INT9-A (I-1): the three levels, each with what it rests on
+    const n = networkCheck.network as any;
+    const c = networkCheck.consensus as any;
+    console.log(`\nLevels:`);
+    console.log(`  Integrity: INTEGRITY_VERIFIED (offline)`);
+    const nodeLine = n.node
+      ? ` · node ${n.node.nodeType} ${n.node.evidence?.serverVersion ?? ""} at ${n.node.endpoint ?? "?"} (${n.node.trust}, sync ${n.node.sync})`
+      : "";
+    console.log(`  Network:   ${n.level}${n.reason ? ` [${n.reason}]` : ""}${n.observation ? ` · ${n.observation.source}: ${n.observation.scope}` : n.message ? ` · ${n.message}` : ""}${nodeLine}`);
+    console.log(
+      `  Consensus: ${c.level}${c.reason ? ` [${c.reason}]` : ""}${c.message ? ` · ${c.message}` : ""} · policy ${c.policy.policyId} v${c.policy.policyVersion} (≥ ${c.policy.minConfirmations} blue-score)`
+    );
+    console.log(`  Verdict:   ${verdict}${requirement !== "integrity" ? ` (required: ${requirement})` : ""}`);
+    if (!requirementOk) {
+      const { HardkasCliError } = await import("../cli-errors.js");
+      throw new HardkasCliError("VERIFICATION_LEVEL_NOT_REACHED", `The artifact reached ${verdict}; --require ${requirement} was asked.`, { exitCode: 1 });
+    }
   } else {
     UI.error("VERIFICATION FAILED");
     renderErrors(result);
@@ -175,6 +257,15 @@ export async function runArtifactVerify(options: ArtifactVerifyOptions) {
   }
 
   return result;
+}
+
+/** Reads and parses one artifact file (BOM tolerated); a parse failure is returned, never thrown. */
+function readArtifactJson(file: string): { ok: true; value: any } | { ok: false; message: string } {
+  try {
+    return { ok: true, value: JSON.parse(stripBom(fs.readFileSync(file, "utf-8"))) };
+  } catch (e: any) {
+    return { ok: false, message: String(e?.message ?? e).slice(0, 200) };
+  }
 }
 
 async function runRecursiveVerify(dir: string, options: ArtifactVerifyOptions & { strict: boolean; command: string }) {
@@ -197,8 +288,21 @@ async function runRecursiveVerify(dir: string, options: ArtifactVerifyOptions & 
       workspaceRoot: options.workspaceRoot
     });
 
-    // 2. Semantic & Lineage Audit
-    const artifact = JSON.parse(stripBom(fs.readFileSync(file, "utf-8")));
+    // 2. Semantic & Lineage Audit. N-6: one file that is not JSON fails on its own; the scan goes on.
+    const parsedFile = readArtifactJson(file);
+    if (!parsedFile.ok) {
+      result.ok = false;
+      result.issues.push({ code: "ARTIFACT_JSON_INVALID", severity: "error", message: `not a JSON artifact: ${parsedFile.message}` } as any);
+      result.errors.push(`not a JSON artifact: ${parsedFile.message}`);
+      if (options.json) jsonResults.push({ file: relativePath, result });
+      if (!options.json) {
+        console.log(`  ✗ ${relativePath.padEnd(40)} [FAIL]`);
+        console.log(`      [!] [ARTIFACT_JSON_INVALID] not a JSON artifact: ${parsedFile.message}`);
+      }
+      failCount++;
+      continue;
+    }
+    const artifact = parsedFile.value;
 
     // Source-side migration tolerance (review B1), store verification only: the
     // ONLY error may be MIGRATION_REQUIRED, and every supersession condition must

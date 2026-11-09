@@ -6,7 +6,7 @@
 
 # Interface: ArtifactIndexQuery
 
-Defined in: [packages/artifacts/src/artifact-index.ts:12](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/artifact-index.ts#L12)
+Defined in: [packages/artifacts/src/artifact-index.ts:12](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/artifact-index.ts#L12)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [packages/artifacts/src/artifact-index.ts:12](https://github.com/Kas
 
 > `optional` **from?**: `string`
 
-Defined in: [packages/artifacts/src/artifact-index.ts:14](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/artifact-index.ts#L14)
+Defined in: [packages/artifacts/src/artifact-index.ts:14](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/artifact-index.ts#L14)
 
 ***
 
@@ -22,7 +22,7 @@ Defined in: [packages/artifacts/src/artifact-index.ts:14](https://github.com/Kas
 
 > `optional` **schema?**: `string`
 
-Defined in: [packages/artifacts/src/artifact-index.ts:13](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/artifact-index.ts#L13)
+Defined in: [packages/artifacts/src/artifact-index.ts:13](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/artifact-index.ts#L13)
 
 ***
 
@@ -30,7 +30,7 @@ Defined in: [packages/artifacts/src/artifact-index.ts:13](https://github.com/Kas
 
 > `optional` **tags?**: `string`[]
 
-Defined in: [packages/artifacts/src/artifact-index.ts:16](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/artifact-index.ts#L16)
+Defined in: [packages/artifacts/src/artifact-index.ts:16](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/artifact-index.ts#L16)
 
 ***
 
@@ -38,4 +38,4 @@ Defined in: [packages/artifacts/src/artifact-index.ts:16](https://github.com/Kas
 
 > `optional` **to?**: `string`
 
-Defined in: [packages/artifacts/src/artifact-index.ts:15](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/artifact-index.ts#L15)
+Defined in: [packages/artifacts/src/artifact-index.ts:15](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/artifact-index.ts#L15)

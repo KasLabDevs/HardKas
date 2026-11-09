@@ -1,6 +1,6 @@
 import { getOutput } from "../output.js";
 import { UI, handleError } from "../ui.js";
-import { loadHardkasConfig, resolveExecutionTarget } from "@hardkas/config";
+import { loadHardkasConfig, resolveExecutionTarget, resolveNodeEndpoint } from "@hardkas/config";
 import { JsonWrpcKaspaClient } from "@hardkas/kaspa-rpc";
 import { forkFromNetwork, saveLocalnetState } from "@hardkas/localnet";
 import { resolve } from "node:path";
@@ -224,7 +224,9 @@ export async function runLocalnetStatus(opts: LocalnetStatusOptions): Promise<vo
   UI.header("HardKAS Toccata Localnet");
   UI.info(`Node:  ${node.ready ? "TOCCATA_NODE_READY" : "TOCCATA_NODE_UNAVAILABLE"}`);
   UI.info(`Miner: ${miner.running ? "TOCCATA_MINER_RUNNING" : "TOCCATA_MINER_STOPPED"}`);
-  UI.info(`Identity: ${identity.verified ? "VERIFIED" : "UNVERIFIED"} (${TOCCATA_NODE_CONTAINER}, ${identity.expected.imageDigest.slice(0, 19)}…)`);
+  // CA-TX-04: the digest shown is the one observed on the container (absent when none was), not the expected one
+  const observedDigest = identity.observedImageDigest ? `${identity.observedImageDigest.slice(0, 19)}…` : "no container observed";
+  UI.info(`Identity: ${identity.verified ? "VERIFIED" : "UNVERIFIED"} ${identity.kind} (${TOCCATA_NODE_CONTAINER}, observed ${observedDigest})`);
   for (const problem of identity.problems) UI.info(`  - ${problem}`);
   if (node.serverVersion) UI.info(`Version: ${node.serverVersion}`);
   if (node.virtualDaaScore) UI.info(`DAA: ${node.virtualDaaScore}`);
@@ -537,12 +539,20 @@ export async function runLocalnetFork(opts: {
   const { target } = resolveExecutionTarget({ config, network: opts.network });
 
   if (target.kind === "simulated") {
-    throw new Error("Cannot fork from a simulated network.");
+    // L1-CORE-1 B4: refused untyped (UNKNOWN_ERROR); it is a usage error, decided before anything is contacted
+    const { HardkasCliError, HardkasExitCode } = await import("../cli-errors.js");
+    throw new HardkasCliError(
+      "LOCALNET_FORK_SOURCE_SIMULATED",
+      `'${opts.network}' is the simulator: it runs no node to fork UTXOs from. Fork from a node network (e.g. --network simnet). Nothing was contacted or written.`,
+      { exitCode: HardkasExitCode.USAGE_ERROR }
+    );
   }
 
-  const targetObj = target as unknown as Record<string, unknown>;
-  const rpcUrl = typeof targetObj.rpcUrl === "string" ? targetObj.rpcUrl : undefined;
-  if (!rpcUrl) throw new Error(`No RPC URL configured for network '${opts.network}'.`);
+  // L1-CORE-1 B4: the endpoint came from the target's rpcUrl, and a network that declares none (a public one) was refused
+  // untyped with a wrong hint ("the node might still be starting"). It is the endpoint authority's now
+  // (TESTNET-PORT-COLLISION-1): the declared endpoint, else a local network's default, else NETWORK_ENDPOINT_REQUIRED,
+  // before any connection.
+  const rpcUrl = resolveNodeEndpoint({ config, networkId: opts.network }).url;
 
   UI.info(`Forking from: ${opts.network} (${rpcUrl})`);
   if (opts.addresses.length > 0) {

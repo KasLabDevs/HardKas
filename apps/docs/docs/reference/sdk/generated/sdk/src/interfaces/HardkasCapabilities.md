@@ -6,7 +6,7 @@
 
 # Interface: HardkasCapabilities
 
-Defined in: [packages/sdk/src/capabilities.ts:4](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/capabilities.ts#L4)
+Defined in: [packages/sdk/src/capabilities.ts:18](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/capabilities.ts#L18)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [packages/sdk/src/capabilities.ts:4](https://github.com/KasLabDevs/H
 
 > **capabilities**: `object`
 
-Defined in: [packages/sdk/src/capabilities.ts:9](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/capabilities.ts#L9)
+Defined in: [packages/sdk/src/capabilities.ts:23](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/capabilities.ts#L23)
 
 #### artifacts
 
@@ -35,6 +35,10 @@ Defined in: [packages/sdk/src/capabilities.ts:9](https://github.com/KasLabDevs/H
 #### covenants
 
 > **covenants**: `boolean`
+
+The real covenant builders are ready here: 1:1 auth-bound transitions only, built by
+`hardkas silver covenant genesis|transition` (managed silverc + verified kaspa-wasm + the canonical node). Not
+general covenant support, and not the SDK's planning (`sdkCovenantPlanning`).
 
 #### dagConflictResolution
 
@@ -100,6 +104,15 @@ Defined in: [packages/sdk/src/capabilities.ts:9](https://github.com/KasLabDevs/H
 
 > **scriptRunner**: `boolean`
 
+#### sdkCovenantPlanning
+
+> **sdkCovenantPlanning**: `boolean`
+
+Generic covenant planning from the SDK (`covenants.planDeploy()`/`planSpend()`): false in this build, they refuse
+with COVENANT_PLAN_UNSUPPORTED. It does NOT say the SDK plans no covenant transaction: the v1 engine does
+(`covenants.planGenesis/planTransition/planContractDeploy/planContractSpend`, `sign`, `send`); see
+`scopes.sdkCovenantPlanning` for what of it a node has certified (HK-15).
+
 #### secretRedaction
 
 > **secretRedaction**: `boolean`
@@ -107,6 +120,8 @@ Defined in: [packages/sdk/src/capabilities.ts:9](https://github.com/KasLabDevs/H
 #### silverScript
 
 > **silverScript**: `boolean`
+
+The SilverScript compiler: the managed silverc resolves (`hardkas silver compile`).
 
 #### simulationScenarios
 
@@ -134,7 +149,7 @@ Defined in: [packages/sdk/src/capabilities.ts:9](https://github.com/KasLabDevs/H
 
 > **hashVersion**: `number`
 
-Defined in: [packages/sdk/src/capabilities.ts:8](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/capabilities.ts#L8)
+Defined in: [packages/sdk/src/capabilities.ts:22](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/capabilities.ts#L22)
 
 ***
 
@@ -142,7 +157,7 @@ Defined in: [packages/sdk/src/capabilities.ts:8](https://github.com/KasLabDevs/H
 
 > **maturity**: `"alpha"` \| `"hardened-alpha"` \| `"beta"` \| `"stable"`
 
-Defined in: [packages/sdk/src/capabilities.ts:6](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/capabilities.ts#L6)
+Defined in: [packages/sdk/src/capabilities.ts:20](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/capabilities.ts#L20)
 
 ***
 
@@ -150,7 +165,30 @@ Defined in: [packages/sdk/src/capabilities.ts:6](https://github.com/KasLabDevs/H
 
 > **proofVersion**: `string`
 
-Defined in: [packages/sdk/src/capabilities.ts:7](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/capabilities.ts#L7)
+Defined in: [packages/sdk/src/capabilities.ts:21](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/capabilities.ts#L21)
+
+***
+
+### reasons?
+
+> `optional` **reasons?**: `object`
+
+Defined in: [packages/sdk/src/capabilities.ts:79](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/capabilities.ts#L79)
+
+Why an entry derived from this environment is false here (absent when it is true). `createHardkasCapabilities()`
+probes nothing, so it marks them "not probed".
+
+#### covenants?
+
+> `optional` **covenants?**: `string`
+
+#### silverScript?
+
+> `optional` **silverScript?**: `string`
+
+#### transactionV1?
+
+> `optional` **transactionV1?**: `string`
 
 ***
 
@@ -158,7 +196,7 @@ Defined in: [packages/sdk/src/capabilities.ts:7](https://github.com/KasLabDevs/H
 
 > `optional` **runtimeMatrix?**: `object`
 
-Defined in: [packages/sdk/src/capabilities.ts:46](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/capabilities.ts#L46)
+Defined in: [packages/sdk/src/capabilities.ts:93](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/capabilities.ts#L93)
 
 #### docker
 
@@ -175,6 +213,8 @@ Defined in: [packages/sdk/src/capabilities.ts:46](https://github.com/KasLabDevs/
 #### node
 
 > **node**: `object`
+
+The canonical localnet node, as its identity check observed it: "unknown" and false unless it was verified.
 
 ##### node.covenants
 
@@ -210,11 +250,34 @@ Defined in: [packages/sdk/src/capabilities.ts:46](https://github.com/KasLabDevs/
 
 ***
 
+### scopes?
+
+> `optional` **scopes?**: `object`
+
+Defined in: [packages/sdk/src/capabilities.ts:70](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/capabilities.ts#L70)
+
+The concrete surface each programmability entry covers, so a boolean is never read as generic support
+(SURFACE-TRUTH-1B: the compiler, the real covenant builders, and the SDK planning that is not supported).
+
+#### covenants
+
+> **covenants**: `string`
+
+#### sdkCovenantPlanning
+
+> **sdkCovenantPlanning**: `string`
+
+#### silverScript
+
+> **silverScript**: `string`
+
+***
+
 ### trustBoundaries
 
 > **trustBoundaries**: `object`
 
-Defined in: [packages/sdk/src/capabilities.ts:39](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/capabilities.ts#L39)
+Defined in: [packages/sdk/src/capabilities.ts:84](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/capabilities.ts#L84)
 
 #### artifacts
 
@@ -224,13 +287,17 @@ Defined in: [packages/sdk/src/capabilities.ts:39](https://github.com/KasLabDevs/
 
 > **l2Bridge**: `"pre-zk-assumptions"`
 
+The Igra bridge model (Labs; not part of the L1 core).
+
 #### queryStore
 
 > **queryStore**: `"rebuildable-read-model"`
 
 #### replay
 
-> **replay**: `"local-workflow-only"`
+> **replay**: `"local-simulator-only"`
+
+`hardkas replay verify`: simulator-mode receipts, replayed locally (no node or consensus replay).
 
 #### simulator
 
@@ -242,4 +309,4 @@ Defined in: [packages/sdk/src/capabilities.ts:39](https://github.com/KasLabDevs/
 
 > **version**: `string`
 
-Defined in: [packages/sdk/src/capabilities.ts:5](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/capabilities.ts#L5)
+Defined in: [packages/sdk/src/capabilities.ts:19](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/capabilities.ts#L19)

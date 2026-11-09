@@ -6,7 +6,7 @@
 
 # Class: HardkasLineage
 
-Defined in: [packages/sdk/src/lineage.ts:7](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/lineage.ts#L7)
+Defined in: [packages/sdk/src/lineage.ts:7](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/lineage.ts#L7)
 
 **`Alpha`**
 
@@ -18,7 +18,7 @@ HardKAS Lineage Module
 
 > **new HardkasLineage**(`sdk`): `HardkasLineage`
 
-Defined in: [packages/sdk/src/lineage.ts:8](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/lineage.ts#L8)
+Defined in: [packages/sdk/src/lineage.ts:8](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/lineage.ts#L8)
 
 **`Alpha`**
 
@@ -38,7 +38,7 @@ Defined in: [packages/sdk/src/lineage.ts:8](https://github.com/KasLabDevs/HardKa
 
 > **trace**(`target`, `options?`): `Promise`\<`any`\>
 
-Defined in: [packages/sdk/src/lineage.ts:13](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/lineage.ts#L13)
+Defined in: [packages/sdk/src/lineage.ts:13](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/lineage.ts#L13)
 
 **`Alpha`**
 

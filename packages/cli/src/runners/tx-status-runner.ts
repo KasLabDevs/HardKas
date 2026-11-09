@@ -42,9 +42,16 @@ export interface TxStatusRunnerResult {
  * The observer is always the node configured for that network (no ad-hoc URL: an
  * observation must be attributed to the observer that actually answered).
  */
-export async function openSdkForTx(txId: string, workspaceRoot: string, network?: string): Promise<{ sdk: Sdk; network: string }> {
+export async function openSdkForTx(
+  txId: string,
+  workspaceRoot: string,
+  network?: string,
+  /** INT9-A (I-3b): `tx wait` needs the current chain state, so its node must say it is synced (`tx status` does not). */
+  options: { requireSyncedNode?: boolean } = {}
+): Promise<{ sdk: Sdk; network: string }> {
   const { Hardkas } = await import("@hardkas/sdk");
-  const probe: Sdk = await Hardkas.open({ cwd: workspaceRoot });
+  const sync = options.requireSyncedNode === true ? { requireSyncedNode: true } : {};
+  const probe: Sdk = await Hardkas.open({ cwd: workspaceRoot, ...sync });
   let recorded: string | undefined;
   try {
     const submission: any = await probe.artifacts.read({ tx: txId });
@@ -56,7 +63,7 @@ export async function openSdkForTx(txId: string, workspaceRoot: string, network?
   if (target === String(probe.network)) return { sdk: probe, network: target };
   // RESOURCE-LIFECYCLE-1: the probe is not handed out, so it is released here; the caller owns the SDK returned.
   await probe.close();
-  return { sdk: await Hardkas.open({ cwd: workspaceRoot, network: target }), network: target };
+  return { sdk: await Hardkas.open({ cwd: workspaceRoot, network: target, ...sync }), network: target };
 }
 
 /** ONE look (unless disabled or synthetic), then the derived state from the stored evidence. */

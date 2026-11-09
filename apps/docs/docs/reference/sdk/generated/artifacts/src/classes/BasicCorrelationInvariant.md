@@ -6,7 +6,7 @@
 
 # Class: BasicCorrelationInvariant
 
-Defined in: [packages/artifacts/src/invariants/definitions.ts:82](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/invariants/definitions.ts#L82)
+Defined in: [packages/artifacts/src/invariants/definitions.ts:96](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/invariants/definitions.ts#L96)
 
 Basic correlation invariant: workflowId and correlationId should be present in events.
 
@@ -30,7 +30,7 @@ Basic correlation invariant: workflowId and correlationId should be present in e
 
 > `readonly` **description**: `"Events must have workflowId and correlationId"` = `"Events must have workflowId and correlationId"`
 
-Defined in: [packages/artifacts/src/invariants/definitions.ts:84](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/invariants/definitions.ts#L84)
+Defined in: [packages/artifacts/src/invariants/definitions.ts:98](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/invariants/definitions.ts#L98)
 
 #### Implementation of
 
@@ -42,7 +42,7 @@ Defined in: [packages/artifacts/src/invariants/definitions.ts:84](https://github
 
 > `readonly` **id**: `"INVAR_BASIC_CORRELATION"` = `"INVAR_BASIC_CORRELATION"`
 
-Defined in: [packages/artifacts/src/invariants/definitions.ts:83](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/invariants/definitions.ts#L83)
+Defined in: [packages/artifacts/src/invariants/definitions.ts:97](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/invariants/definitions.ts#L97)
 
 #### Implementation of
 
@@ -54,7 +54,7 @@ Defined in: [packages/artifacts/src/invariants/definitions.ts:83](https://github
 
 > **check**(`context`): `Promise`\<[`InvariantViolation`](../interfaces/InvariantViolation.md)[]\>
 
-Defined in: [packages/artifacts/src/invariants/definitions.ts:86](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/invariants/definitions.ts#L86)
+Defined in: [packages/artifacts/src/invariants/definitions.ts:100](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/invariants/definitions.ts#L100)
 
 #### Parameters
 

@@ -13,8 +13,13 @@ export const SILVER_RECORD_DIR = path.join(".hardkas", "artifacts", "silver");
 /** Runner verdicts on scenario transactions: kept apart from the node-evidenced records. */
 export const SILVER_VM_RECORD_DIR = path.join(".hardkas", "artifacts", "silver-vm");
 
-/** "localnet": evidenced by the canonical node. "vm": the official script engine on a scenario, no node. */
-export type SilverRecordMode = "localnet" | "vm";
+/**
+ * "localnet": evidenced by the canonical (managed) node. "rpc" (INT9-A, review M-3): evidenced by a node HardKAS does
+ * not manage, proven by its endpoint (an own simnet/devnet node, a testnet node); records written before this said
+ * "localnet" for those too, and their `node.verification` ("endpoint") is what tells them apart. "vm": the official
+ * script engine on a scenario, no node.
+ */
+export type SilverRecordMode = "localnet" | "rpc" | "vm";
 
 export interface SealedSilverRecord {
   [key: string]: unknown;

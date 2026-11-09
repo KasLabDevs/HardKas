@@ -164,6 +164,19 @@ function pushArgument(sb: any, structs: SilStructs, where: string, type: SilType
   }
 }
 
+/**
+ * silverscript-abi v1.0.0 `MAX_SIGNATURE_SCRIPT_LEN` (lib.rs:33): the consensus limit of a signature script, rusty-kaspa
+ * params `new_max_signature_script_len` (250 000 bytes).
+ */
+export const SILVER_MAX_SIGNATURE_SCRIPT_LEN = 250_000;
+
+/** rusty-kaspa txscript `ScriptBuilder::canonical_data_size`: the bytes a canonical push of `data` takes. */
+function canonicalDataSize(data: ArrayLike<number>): number {
+  const n = data.length;
+  if (n === 0 || (n === 1 && ((data[0]! >= 1 && data[0]! <= 16) || data[0] === 0x81))) return 1;
+  return n + (n <= 75 ? 1 : n <= 0xff ? 2 : n <= 0xffff ? 3 : 5);
+}
+
 export interface SilverEntryCall {
   readonly artifact: SilAbiArtifact;
   /** Needed only when the artifact holds more than one contract. */
@@ -197,7 +210,17 @@ export function encodeSilverEntryArgs(call: SilverEntryCall): string {
   const structs = silStructsOf(call.artifact, contract);
   entry.params.forEach((param, i) => pushArgument(sb, structs, `${contractName}::${call.entry}(${param.name})`, param.type, call.args[i]!));
   sb.addData(entry.dispatch_tag);
-  return String(sb.drain());
+  const argsHex = String(sb.drain());
+  // SC-08 · silverscript-abi encode_entry_sig_script (lib.rs:506-514): the caller appends the redeem script, so its push
+  // encoding counts in the size check (CodecError::SignatureScriptTooLarge, upstream's message)
+  const actual = argsHex.length / 2 + canonicalDataSize(contract.compiled.bytecode);
+  if (actual > SILVER_MAX_SIGNATURE_SCRIPT_LEN) {
+    throw abiError(
+      "SILVER_ABI_SIGNATURE_SCRIPT_TOO_LARGE",
+      `signature script is ${actual} bytes, exceeding the consensus limit of ${SILVER_MAX_SIGNATURE_SCRIPT_LEN}`
+    );
+  }
+  return argsHex;
 }
 
 /** The full P2SH signature script: entry arguments followed by the pushed redeem script. */

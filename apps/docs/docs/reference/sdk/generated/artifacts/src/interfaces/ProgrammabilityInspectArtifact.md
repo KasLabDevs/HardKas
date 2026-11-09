@@ -6,7 +6,7 @@
 
 # Interface: ProgrammabilityInspectArtifact
 
-Defined in: [packages/artifacts/src/types.ts:754](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/types.ts#L754)
+Defined in: [packages/artifacts/src/types.ts:785](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/types.ts#L785)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [packages/artifacts/src/types.ts:754](https://github.com/KasLabDevs/
 
 > **claims**: [`ProgrammabilityClaims`](ProgrammabilityClaims.md)
 
-Defined in: [packages/artifacts/src/types.ts:758](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/types.ts#L758)
+Defined in: [packages/artifacts/src/types.ts:789](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/types.ts#L789)
 
 ***
 
@@ -22,7 +22,7 @@ Defined in: [packages/artifacts/src/types.ts:758](https://github.com/KasLabDevs/
 
 > **ok**: `boolean`
 
-Defined in: [packages/artifacts/src/types.ts:756](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/types.ts#L756)
+Defined in: [packages/artifacts/src/types.ts:787](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/types.ts#L787)
 
 ***
 
@@ -30,7 +30,7 @@ Defined in: [packages/artifacts/src/types.ts:756](https://github.com/KasLabDevs/
 
 > **schema**: `"hardkas.programmability.inspect.v1"`
 
-Defined in: [packages/artifacts/src/types.ts:755](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/types.ts#L755)
+Defined in: [packages/artifacts/src/types.ts:786](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/types.ts#L786)
 
 ***
 
@@ -38,4 +38,4 @@ Defined in: [packages/artifacts/src/types.ts:755](https://github.com/KasLabDevs/
 
 > **status**: `"PROGRAMMABILITY_ARTIFACT_INSPECTED"` \| `"PROGRAMMABILITY_ARTIFACT_INVALID"`
 
-Defined in: [packages/artifacts/src/types.ts:757](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/types.ts#L757)
+Defined in: [packages/artifacts/src/types.ts:788](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/types.ts#L788)

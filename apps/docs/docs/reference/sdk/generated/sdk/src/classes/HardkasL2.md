@@ -6,7 +6,7 @@
 
 # Class: HardkasL2
 
-Defined in: [packages/sdk/src/l2.ts:9](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/l2.ts#L9)
+Defined in: [packages/sdk/src/l2.ts:9](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/l2.ts#L9)
 
 **`Alpha`**
 
@@ -18,7 +18,7 @@ HardKAS L2 Module
 
 > **new HardkasL2**(`sdk`): `HardkasL2`
 
-Defined in: [packages/sdk/src/l2.ts:12](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/l2.ts#L12)
+Defined in: [packages/sdk/src/l2.ts:12](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/l2.ts#L12)
 
 **`Alpha`**
 
@@ -38,7 +38,7 @@ Defined in: [packages/sdk/src/l2.ts:12](https://github.com/KasLabDevs/HardKas/bl
 
 > `readonly` **igra**: [`HardkasIgra`](HardkasIgra.md)
 
-Defined in: [packages/sdk/src/l2.ts:10](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/l2.ts#L10)
+Defined in: [packages/sdk/src/l2.ts:10](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/l2.ts#L10)
 
 **`Alpha`**
 
@@ -48,11 +48,11 @@ Defined in: [packages/sdk/src/l2.ts:10](https://github.com/KasLabDevs/HardKas/bl
 
 > **bridge**(): `Promise`\<`never`\>
 
-Defined in: [packages/sdk/src/l2.ts:46](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/l2.ts#L46)
+Defined in: [packages/sdk/src/l2.ts:48](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/l2.ts#L48)
 
 **`Alpha`**
 
-L2 bridge surface (Experimental)
+L2 bridge surface: not part of the L1 core (refuses with L2_NOT_IN_CORE).
 
 #### Returns
 
@@ -64,11 +64,11 @@ L2 bridge surface (Experimental)
 
 > **contract**(): `Promise`\<`never`\>
 
-Defined in: [packages/sdk/src/l2.ts:39](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/l2.ts#L39)
+Defined in: [packages/sdk/src/l2.ts:41](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/l2.ts#L41)
 
 **`Alpha`**
 
-L2 contract surface (Experimental)
+L2 contract surface: not part of the L1 core (refuses with L2_NOT_IN_CORE).
 
 #### Returns
 
@@ -80,7 +80,7 @@ L2 contract surface (Experimental)
 
 > **getProfile**(`_name`): `never`
 
-Defined in: [packages/sdk/src/l2.ts:25](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/l2.ts#L25)
+Defined in: [packages/sdk/src/l2.ts:27](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/l2.ts#L27)
 
 **`Alpha`**
 
@@ -103,7 +103,7 @@ Use `getL2Profile(name)` from `@hardkas/l2` directly.
 
 > **listProfiles**(): `never`
 
-Defined in: [packages/sdk/src/l2.ts:18](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/l2.ts#L18)
+Defined in: [packages/sdk/src/l2.ts:19](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/l2.ts#L19)
 
 **`Alpha`**
 
@@ -120,11 +120,11 @@ Use `listL2Profiles()` from `@hardkas/l2` directly.
 
 > **tx**(): `Promise`\<`never`\>
 
-Defined in: [packages/sdk/src/l2.ts:32](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/l2.ts#L32)
+Defined in: [packages/sdk/src/l2.ts:34](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/l2.ts#L34)
 
 **`Alpha`**
 
-L2 transaction surface (Experimental)
+L2 transaction surface: not part of the L1 core (refuses with L2_NOT_IN_CORE).
 
 #### Returns
 

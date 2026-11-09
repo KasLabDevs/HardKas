@@ -76,7 +76,7 @@ flowchart TD
 - **`@hardkas/core`**: Canonical types, branded identifiers (`TxId`, `ArtifactId`, `KaspaAddress`), error taxonomy, and cryptographic hashing.
 - **`@hardkas/observability`**: Structured logging, correlation IDs, and telemetry streams.
 - **`@hardkas/client`**: Zero-dependency HTTP/SSE client for browser environments.
-- **`@hardkas/pskt-native`**: Native Rust NAPI bindings for Partially Signed Kaspa Transactions (PSKT).
+- **`@hardkas/pskt-native`**: Native Rust NAPI bindings for Partially Signed Kaspa Transactions (PSKT). On hold and not published; `@hardkas/sdk` does not depend on it.
 
 ### Level 1 — Core Primitives & Execution Worlds
 - **`@hardkas/config`**: Workspace configuration loader (`hardkas.config.ts`) and execution target resolution.

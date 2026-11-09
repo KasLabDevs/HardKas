@@ -6,7 +6,7 @@
 
 # Interface: TxPlan
 
-Defined in: [packages/tx-builder/src/index.ts:75](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/index.ts#L75)
+Defined in: [packages/tx-builder/src/index.ts:80](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/index.ts#L80)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [packages/tx-builder/src/index.ts:75](https://github.com/KasLabDevs/
 
 > `readonly` `optional` **change?**: [`TxOutput`](TxOutput.md)
 
-Defined in: [packages/tx-builder/src/index.ts:79](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/index.ts#L79)
+Defined in: [packages/tx-builder/src/index.ts:84](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/index.ts#L84)
 
 ***
 
@@ -22,7 +22,7 @@ Defined in: [packages/tx-builder/src/index.ts:79](https://github.com/KasLabDevs/
 
 > `readonly` `optional` **computeBudget?**: `bigint`
 
-Defined in: [packages/tx-builder/src/index.ts:82](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/index.ts#L82)
+Defined in: [packages/tx-builder/src/index.ts:87](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/index.ts#L87)
 
 ***
 
@@ -30,7 +30,7 @@ Defined in: [packages/tx-builder/src/index.ts:82](https://github.com/KasLabDevs/
 
 > `readonly` **estimatedFeeSompi**: `bigint`
 
-Defined in: [packages/tx-builder/src/index.ts:81](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/index.ts#L81)
+Defined in: [packages/tx-builder/src/index.ts:86](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/index.ts#L86)
 
 ***
 
@@ -38,7 +38,7 @@ Defined in: [packages/tx-builder/src/index.ts:81](https://github.com/KasLabDevs/
 
 > `readonly` **estimatedMass**: `bigint`
 
-Defined in: [packages/tx-builder/src/index.ts:80](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/index.ts#L80)
+Defined in: [packages/tx-builder/src/index.ts:85](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/index.ts#L85)
 
 ***
 
@@ -46,7 +46,7 @@ Defined in: [packages/tx-builder/src/index.ts:80](https://github.com/KasLabDevs/
 
 > `readonly` **inputs**: readonly [`Utxo`](Utxo.md)[]
 
-Defined in: [packages/tx-builder/src/index.ts:77](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/index.ts#L77)
+Defined in: [packages/tx-builder/src/index.ts:82](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/index.ts#L82)
 
 ***
 
@@ -54,7 +54,7 @@ Defined in: [packages/tx-builder/src/index.ts:77](https://github.com/KasLabDevs/
 
 > `readonly` `optional` **lane?**: `string`
 
-Defined in: [packages/tx-builder/src/index.ts:84](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/index.ts#L84)
+Defined in: [packages/tx-builder/src/index.ts:89](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/index.ts#L89)
 
 ***
 
@@ -62,7 +62,7 @@ Defined in: [packages/tx-builder/src/index.ts:84](https://github.com/KasLabDevs/
 
 > `readonly` **outputs**: readonly [`TxOutput`](TxOutput.md)[]
 
-Defined in: [packages/tx-builder/src/index.ts:78](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/index.ts#L78)
+Defined in: [packages/tx-builder/src/index.ts:83](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/index.ts#L83)
 
 ***
 
@@ -70,7 +70,7 @@ Defined in: [packages/tx-builder/src/index.ts:78](https://github.com/KasLabDevs/
 
 > `readonly` `optional` **storageMass?**: `bigint`
 
-Defined in: [packages/tx-builder/src/index.ts:83](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/index.ts#L83)
+Defined in: [packages/tx-builder/src/index.ts:88](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/index.ts#L88)
 
 ***
 
@@ -78,4 +78,4 @@ Defined in: [packages/tx-builder/src/index.ts:83](https://github.com/KasLabDevs/
 
 > `readonly` **version**: `0` \| `1`
 
-Defined in: [packages/tx-builder/src/index.ts:76](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/index.ts#L76)
+Defined in: [packages/tx-builder/src/index.ts:81](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/index.ts#L81)
