@@ -4,7 +4,10 @@ import {
   endpointNodeExpectation,
   probeNodeIdentity,
   type NodeIdentityExpectation,
-  type NodeIdentityRecord
+  type NodeIdentityRecord,
+  assertMainnetConnectionsDisabled,
+  mainnetConnectionDisabledError,
+  redactUrlCredentials
 } from "@hardkas/core";
 import { JsonWrpcKaspaClient } from "@hardkas/kaspa-rpc";
 
@@ -45,9 +48,22 @@ export function verifyNodeIdentity(options: { expected?: NodeIdentityExpectation
   return probeNodeIdentity({ expected: options.expected ?? CANONICAL_NODE_EXPECTATION, getServerInfo });
 }
 
+/**
+ * MAINNET TOTAL LOCKDOWN (RC2 oracle O4): a probe whose node answered mainnet (the transport refused it after that one
+ * identity answer) fails with THAT code, MAINNET_CONNECTION_DISABLED, never the generic NODE_IDENTITY_UNVERIFIED with
+ * the mainnet refusal buried in its text.
+ */
+function refuseMainnetAnswer(record: NodeIdentityRecord, url: string): NodeIdentityRecord {
+  if (record.problems.some((p) => /MAINNET_CONNECTION_DISABLED/.test(p))) {
+    throw mainnetConnectionDisabledError(`the node at ${redactUrlCredentials(url)} says it serves mainnet`, { endpoint: redactUrlCredentials(url) }, "identity-only");
+  }
+  return record;
+}
+
 /** verifyNodeIdentity, failing closed (NODE_IDENTITY_UNVERIFIED) on any mismatch. */
 export async function requireNodeIdentity(options: { expected?: NodeIdentityExpectation } = {}): Promise<NodeIdentityRecord> {
-  return assertNodeIdentityVerified(await verifyNodeIdentity(options));
+  const record = await verifyNodeIdentity(options);
+  return assertNodeIdentityVerified(refuseMainnetAnswer(record, record.observed.server?.url ?? "the canonical localnet"));
 }
 
 /**
@@ -58,13 +74,16 @@ export async function requireNodeIdentity(options: { expected?: NodeIdentityExpe
  * requires it separately (`assertNodeSynced`), on this node and on the managed localnet alike.
  */
 export async function requireEndpointIdentity(url: string, network: string): Promise<NodeIdentityRecord> {
-  return assertNodeIdentityVerified(await verifyEndpointIdentity(url, network));
+  return assertNodeIdentityVerified(refuseMainnetAnswer(await verifyEndpointIdentity(url, network), url));
 }
 
 /**
  * INT9-C5: the endpoint check of {@link requireEndpointIdentity}, never throwing for a mismatch (see `verified`): what
  * `hardkas silver doctor` and `hardkas capabilities` report for a node HardKAS does not manage.
  */
-export function verifyEndpointIdentity(url: string, network: string): Promise<NodeIdentityRecord> {
+export async function verifyEndpointIdentity(url: string, network: string): Promise<NodeIdentityRecord> {
+  // MAINNET TOTAL LOCKDOWN: a node used as mainnet is never probed (MAINNET_CONNECTION_DISABLED, nothing contacted);
+  // a node used as another network that answers mainnet is refused by the transport after its one identity answer
+  assertMainnetConnectionsDisabled([network], `the identity of the node at ${redactUrlCredentials(url)}`);
   return probeNodeIdentity({ expected: endpointNodeExpectation(url, network), getServerInfo });
 }

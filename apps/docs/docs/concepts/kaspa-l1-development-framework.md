@@ -124,7 +124,7 @@ hardkas test
 In production systems, developer errors can lead to irreversible on-chain consequences (e.g., spending the wrong UTXO, broadcasting to mainnet during integration tests, or exhausting transaction mass).
 
 HardKAS enforces **Execution Guards**:
-- **Mainnet Broadcast Prevention (`BLOCKED_BY_POLICY`):** By default, developer commands refuse to broadcast transactions to `mainnet` unless explicitly configured and authenticated.
+- **Mainnet lockdown (`BLOCKED_BY_POLICY`):** Mainnet is locked down in this release: no connection (reads included, even to an endpoint you declare), no signing, no broadcast; no flag, option or configuration enables it (`MAINNET_CONNECTION_DISABLED`, `MAINNET_SIGNING_DISABLED`, `MAINNET_BROADCAST_DISABLED`).
 - **DAG Mempool Awareness:** RPC UTXO adapters track mempool-spent inputs to prevent double-spend planning errors before submitting transactions.
 - **Strict Network Matching:** Artifacts generated for `simulation` or `localnet` cannot be replayed or submitted to public networks without explicit migration.
 

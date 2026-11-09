@@ -73,11 +73,44 @@ async function compileNetwork(explicit: string | undefined): Promise<string> {
     }
     if (n === undefined || n === "simulated") n = NETWORK;
   }
-  if (n === "mainnet") fail("SILVERSCRIPT_MAINNET_NOT_ENABLED", "SilverScript is not enabled on mainnet", HardkasExitCode.USAGE_ERROR);
+  // MAINNET TOTAL LOCKDOWN: every mainnet spelling (kaspa, mainnet-1, kaspa-mainnet, any case), before any record, key or
+  // node is touched — compile included. RC2 oracle D2c: an explicit name that is a config alias declaring mainnet
+  // (`--network prod`) is the same refusal, never SILVER_NETWORK_NOT_SUPPORTED
+  const { isMainnetNetworkId, declaredNetworkIdOf } = await import("@hardkas/core");
+  let declared: string | undefined;
+  if (explicit !== undefined) {
+    try {
+      const { loadHardkasConfig } = await import("@hardkas/config");
+      declared = declaredNetworkIdOf((await loadHardkasConfig({ workspaceRoot: process.cwd() })).config, explicit);
+    } catch {
+      declared = undefined;
+    }
+  }
+  if (isMainnetNetworkId(n) || isMainnetNetworkId(declared)) fail("SILVERSCRIPT_MAINNET_NOT_ENABLED", "SilverScript is not enabled on mainnet (mainnet is locked down in HardKAS: no connection, no signature, no broadcast)", HardkasExitCode.USAGE_ERROR);
   if (n !== NETWORK && n !== "devnet" && !/^testnet-\d+$/.test(n)) {
     fail("SILVER_NETWORK_NOT_SUPPORTED", `'${n}' has no Kaspa address prefix a compile record can use (simnet, devnet, testnet-<n>)`, HardkasExitCode.USAGE_ERROR);
   }
   return n;
+}
+
+/**
+ * MAINNET TOTAL LOCKDOWN · the mainnet part of compileNetwork for the commands that read a record before they choose
+ * their network (`silver spend`, `silver covenant transition`): an explicit mainnet --network (any spelling or alias)
+ * is refused first, before the record is read (it used to answer SILVER_FILE_NOT_FOUND / a schema error first).
+ */
+async function refuseSilverMainnetFirst(explicit: string | undefined): Promise<void> {
+  if (explicit === undefined) return;
+  const { isMainnetNetworkId, declaredNetworkIdOf } = await import("@hardkas/core");
+  let declared: string | undefined;
+  try {
+    const { loadHardkasConfig } = await import("@hardkas/config");
+    declared = declaredNetworkIdOf((await loadHardkasConfig({ workspaceRoot: process.cwd() })).config, explicit);
+  } catch {
+    declared = undefined;
+  }
+  if (isMainnetNetworkId(explicit) || isMainnetNetworkId(declared)) {
+    fail("SILVERSCRIPT_MAINNET_NOT_ENABLED", "SilverScript is not enabled on mainnet (mainnet is locked down in HardKAS: no connection, no signature, no broadcast)", HardkasExitCode.USAGE_ERROR);
+  }
 }
 
 /**
@@ -1052,6 +1085,7 @@ export function registerSilverCommand(program: Command) {
     .option("--password-stdin", PASSWORD_STDIN_HELP, false)
     .option("--json", "Output as JSON", false)
     .action(async (file: string, opts: any) => {
+      await refuseSilverMainnetFirst(opts.network);
       const txVersion = txVersionOption(opts.txVersion);
       const core = await import("@hardkas/core");
       const { HARDKAS_VERSION } = await import("@hardkas/artifacts");
@@ -1312,6 +1346,7 @@ export function registerSilverCommand(program: Command) {
     .option("--password-stdin", PASSWORD_STDIN_HELP, false)
     .option("--json", "Output as JSON", false)
     .action(async (file: string, opts: any) => {
+      await refuseSilverMainnetFirst(opts.network);
       const core = await import("@hardkas/core");
       const { silToV1Arg } = await import("@hardkas/accounts");
       const { HARDKAS_VERSION } = await import("@hardkas/artifacts");

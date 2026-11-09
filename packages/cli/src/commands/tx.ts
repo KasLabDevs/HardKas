@@ -638,6 +638,28 @@ export function registerTxCommands(program: Command) {
           }
           const loaded = await loadHardkasConfig({ workspaceRoot });
 
+          // MAINNET TOTAL LOCKDOWN (RC2 oracle D2a/D2b, O5): a send on mainnet is MAINNET_BROADCAST_DISABLED, decided FIRST —
+          // before the artifact is validated, the confirmation asked, a name resolved (EXECUTION_NETWORK_MISMATCH) or the
+          // public-network gate reached (PUBLIC_NETWORK_BLOCKED), and in the shortcut mode before its plan step (it was
+          // TX_SEND_FAILED wrapping the plan's refusal). Any spelling, an alias that declares one, a --target on it, the
+          // artifact's own network, or (shortcut, nothing named) the workspace's own network.
+          {
+            const { refuseMainnetBroadcast, targetNetworkOf } = await import("../mainnet-guard.js");
+            let claimed: { networkId?: unknown; execution?: { network?: unknown } } | undefined;
+            if (signedPath) {
+              try {
+                claimed = JSON.parse((await import("node:fs")).readFileSync(signedPath, "utf8"));
+              } catch {
+                claimed = undefined; // the artifact's own validation below says why it cannot be read
+              }
+            }
+            refuseMainnetBroadcast(
+              loaded.config,
+              [options.network, targetNetworkOf(loaded.config, options.target), claimed?.networkId, claimed?.execution?.network],
+              "tx send",
+              !signedPath && !options.target
+            );
+          }
           if (signedPath) {
             const { readSignedTxArtifact } = await import("@hardkas/artifacts");
             const signedArtifact = await readSignedTxArtifact(signedPath);

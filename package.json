@@ -18,6 +18,7 @@
   "packageManager": "pnpm@9.15.4",
   "scripts": {
     "build": "turbo build --concurrency 1",
+    "release:build": "node scripts/release-build.mjs",
     "dev": "turbo dev",
     "test": "vitest run && pnpm test:workflows",
     "test:hermetic": "node scripts/gate-hermetic.mjs",

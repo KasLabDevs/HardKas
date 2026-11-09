@@ -15,7 +15,7 @@ import {
   type UtxoProvider
 } from "@hardkas/tx-builder";
 import { createTxPlanArtifact, TxPlanArtifact } from "@hardkas/artifacts";
-import { getCoinbaseMaturity, sha256hex, SelectedUtxoInvalidatedError, HardkasError } from "@hardkas/core";
+import { getCoinbaseMaturity, sha256hex, SelectedUtxoInvalidatedError, HardkasError, assertMainnetConnectionsDisabled, declaredNetworkIdOf } from "@hardkas/core";
 
 /**
  * HARDKAS-NETWORK-PORTABILITY-1 (C2): nothing spendable is the same typed refusal on every backend (it was an untyped
@@ -123,6 +123,11 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
 
   const { resolveWorkspaceExecution, resolveProvider } = await import("@hardkas/config");
   const { assertAccountCompatible, resolveHardkasAccount } = await import("@hardkas/accounts");
+  // MAINNET TOTAL LOCKDOWN (RC2 oracle D2b): mainnet first, before the name is resolved as a HardKAS network — every
+  // spelling (`kaspa`, `mainnet-1`, `kaspa-mainnet`…), an alias that declares one, a target on it, or the workspace's
+  // own network when none is named — so it is never UNKNOWN_NETWORK
+  const { refuseMainnetConnection, targetNetworkOf } = await import("../mainnet-guard.js");
+  refuseMainnetConnection(resolvedConfig, [networkId, targetNetworkOf(resolvedConfig, targetName)], "tx plan", !targetName);
 
   // WORKSPACE-AUTHORITY-2 (WA2-I1): the one resolution the SDK uses too — a named target (`--target`), else a network
   // id (`--network`, never a target name: a declared target for that network, else the mode the network implies), else
@@ -134,6 +139,12 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
     ...(networkId ? { network: networkId } : {})
   });
   const execution = resolvedExecution.execution;
+  // MAINNET TOTAL LOCKDOWN: a plan on mainnet reads mainnet (UTXOs, DAA score, fee estimate): refused before any account,
+  // toolchain or endpoint is resolved (the network asked for and what its config entry declares)
+  assertMainnetConnectionsDisabled(
+    [execution.network, resolvedExecution.networkId, declaredNetworkIdOf(resolvedConfig, execution.network), declaredNetworkIdOf(resolvedConfig, resolvedExecution.networkId)],
+    "tx plan"
+  );
 
   const resolvedTargetName = resolvedExecution.targetName ?? execution.network;
 

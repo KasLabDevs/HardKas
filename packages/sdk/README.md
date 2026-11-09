@@ -35,7 +35,16 @@ const signed = await sdk.tx.sign(plan, {
 const { receipt } = await sdk.tx.simulate(signed);
 ```
 
-For a real RPC-backed node, create the SDK with an explicit network/provider configuration and treat the send step as network-state dependent. Mainnet should remain outside the default local development flow.
+For a real RPC-backed node, create the SDK with an explicit network/provider configuration and treat the send step as network-state dependent.
+
+### Mainnet is locked down (breaking)
+
+The SDK makes **no connection to mainnet**, reads included, even to an endpoint the workspace declares (MAINNET TOTAL LOCKDOWN, owner decision 2026-11-09; it revokes the former "reading and planning on mainnet stay allowed"). `Hardkas.open` on a mainnet network (any spelling, or an alias whose config entry declares one; `policy.allowPublic` is still needed to open it) gives an **offline** instance: its `rpc` never connects and refuses every request with `MAINNET_CONNECTION_DISABLED`, and so do `tx.plan`, `tx.observe` / the waits, `accounts.getBalance`, `fees.estimate`, `observe.address`, `node.fundDevWallets` / `waitForSettlement` and `wallet.open`, before anything is read. `tx.sign` is `MAINNET_SIGNING_DISABLED` (no signer is asked, offline signing included) and `tx.send` `MAINNET_BROADCAST_DISABLED`, both before any connection or record. What needs no node keeps working (local records, `artifacts.verify` of a mainnet record offline). The raw clients of `@hardkas/kaspa-rpc` apply the same rule: a client used as a mainnet network never connects, and every connection asks the node its network once (`getServerInfo`) before anything else, closing it when the node answers mainnet. No option, flag, environment variable or configuration (`allowPublic`, `experimental`, `allowMainnet`, `HARDKAS_*`) changes this.
+
+```typescript
+const sdk = await Hardkas.open({ network: "mainnet", policy: { allowPublic: true } });
+await sdk.rpc.getBlockDagInfo(); // throws MAINNET_CONNECTION_DISABLED — nothing was contacted
+```
 
 ### Sending to a real node: the node must say it is synced
 

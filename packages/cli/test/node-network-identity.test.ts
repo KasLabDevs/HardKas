@@ -190,13 +190,14 @@ describe("NODE-NETWORK-IDENTITY-1 · CLI (built dist) against a loopback fake no
     }
   });
 
-  it("a mainnet node presented as testnet-10: tx plan refuses NODE_NETWORK_MISMATCH, no UTXO read, no plan written", async () => {
+  // MAINNET TOTAL LOCKDOWN: a node that answers mainnet is refused as such, before the mismatch rule (was NODE_NETWORK_MISMATCH)
+  it("a mainnet node presented as testnet-10: tx plan refuses MAINNET_CONNECTION_DISABLED, no UTXO read, no plan written", async () => {
     const fake = await startFake("mainnet");
     try {
       const ws = workspace(fake.url);
       const r = await run(["tx", "plan", "--network", "testnet-10", "--from", "alice", "--to", "bob", "--amount", "1", "--json"], ws);
       expect(r.status, r.brief).toBe(1);
-      expect(r.doc?.code, r.brief).toBe("NODE_NETWORK_MISMATCH");
+      expect(r.doc?.code, r.brief).toBe("MAINNET_CONNECTION_DISABLED");
       expect(fake.methods.filter((m) => DATA_METHODS.includes(m)), JSON.stringify(fake.methods)).toEqual([]);
       const plans = fs.readdirSync(path.join(ws, ".hardkas"), { recursive: true }).map(String).filter((f) => /plan/i.test(f) && f.endsWith(".json"));
       expect(plans).toEqual([]);
@@ -283,7 +284,9 @@ describe("NODE-NETWORK-IDENTITY-1 · SDK (built dist) against a loopback fake no
       });
       // first: nothing reached the node; then: the caller is told why, by its code
       expect(bad.methods, seen).not.toContain("submitTransaction");
-      expect(r.error?.code, seen).toBe("NODE_NETWORK_MISMATCH");
+      // MAINNET TOTAL LOCKDOWN: the node says mainnet — refused as such (was NODE_NETWORK_MISMATCH), its identity only
+      expect(r.error?.code, seen).toBe("MAINNET_CONNECTION_DISABLED");
+      expect(bad.methods.filter((m: string) => m !== "getServerInfo"), seen).toEqual([]);
     } finally {
       await bad.close();
     }

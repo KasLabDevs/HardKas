@@ -10,6 +10,10 @@ import { fakeOfficialRpc, nodeError } from "./helpers/fake-official-rpc.js";
 // that cannot be opened stays a connection failure. Without an expectation nothing changes (no extra call).
 // Reproduced live before the fix (L1-REALITY-1 E2 V1/V1m, E2b): balances, plans and a send went to a node that said
 // simnet or mainnet while HardKAS labelled everything testnet-10.
+// MAINNET TOTAL LOCKDOWN (owner decision 2026-11-09): a session used AS mainnet never connects, and every connection
+// is now identified (one getServerInfo) also without an expectation, so a node that answers mainnet is refused
+// MAINNET_CONNECTION_DISABLED (before the mismatch rule) whatever the caller expected — the cases below that pinned
+// NODE_NETWORK_MISMATCH for a mainnet node, or "no extra call" without an expectation, say so where they changed.
 // -----------------------------------------------------------------------------
 
 const UTXOS = { entries: [] };
@@ -72,9 +76,11 @@ describe("NODE-NETWORK-IDENTITY-1 · the session verifies the node's network bef
     // a well-formed request (the session converts it, storage mass included, before it connects)
     const transaction = { version: 0, inputs: [], outputs: [], lockTime: "0", subnetworkId: "00".repeat(20), gas: "0", payload: "", storageMass: "0" };
     const e = await failure(s.request("submitTransaction", { transaction }));
-    expect(e.code).toBe("NODE_NETWORK_MISMATCH");
+    // MAINNET TOTAL LOCKDOWN: a node that answers mainnet is refused as such, before the mismatch rule (it was
+    // NODE_NETWORK_MISMATCH); still its identity answer only
+    expect(e.code).toBe("MAINNET_CONNECTION_DISABLED");
     expect(e.data).toMatchObject({ expected: "testnet-10", observed: "mainnet" });
-    expect(methods()).not.toContain("submitTransaction");
+    expect(methods()).toEqual(["getServerInfo"]);
   });
 
   it("a node that does not say which network it is: NODE_NETWORK_UNKNOWN, nothing used", async () => {
@@ -123,15 +129,38 @@ describe("NODE-NETWORK-IDENTITY-1 · the session verifies the node's network bef
     const sb = session(b.fake, "testnet-10", "ws://127.0.0.1:28211");
     await sa.request("getBlockDagInfo");
     const e = await failure(sb.request("getBlockDagInfo"));
-    expect(e.code).toBe("NODE_NETWORK_MISMATCH");
+    expect(e.code).toBe("MAINNET_CONNECTION_DISABLED"); // MAINNET TOTAL LOCKDOWN (b says mainnet; was NODE_NETWORK_MISMATCH)
     expect(b.methods()).toEqual(["getServerInfo"]);
   });
 
-  it("without an expected network nothing changes: no identity call", async () => {
+  // MAINNET TOTAL LOCKDOWN: this case read "without an expected network nothing changes: no identity call". Every
+  // connection is now asked its identity once (the transport's mainnet check); without an expected network nothing
+  // ELSE changes: a non-mainnet node is used as before, whatever network it names.
+  it("without an expected network: one identity call (never mainnet), then the request, as before", async () => {
     const { fake, methods } = nodeClaiming("simnet");
     const s = session(fake);
     await s.request("getBlockDagInfo");
-    expect(methods()).toEqual(["getBlockDagInfo"]);
+    expect(methods()).toEqual(["getServerInfo", "getBlockDagInfo"]);
+    const other = nodeClaiming("testnet-11");
+    await session(other.fake).request("getBlockDagInfo");
+    expect(other.methods()).toEqual(["getServerInfo", "getBlockDagInfo"]);
+    const main = nodeClaiming("mainnet");
+    const raw = session(main.fake);
+    expect((await failure(raw.request("getBlockDagInfo"))).code).toBe("MAINNET_CONNECTION_DISABLED");
+    expect((await failure(raw.request("getBlockDagInfo"))).code).toBe("MAINNET_CONNECTION_DISABLED");
+    // asked once, never reconnected
+    expect(main.methods()).toEqual(["getServerInfo"]);
+    expect(main.fake.connects).toBe(1);
+  });
+
+  it("MAINNET TOTAL LOCKDOWN · a session used as mainnet (any spelling) never creates a client: zero connections", async () => {
+    for (const net of ["mainnet", "MAINNET", "mainnet-1", "kaspa", "kaspa-mainnet", " Mainnet "]) {
+      const { fake, methods } = nodeClaiming("testnet-10");
+      const e = await failure(session(fake, net).request("getBlockDagInfo"));
+      expect(e.code, net).toBe("MAINNET_CONNECTION_DISABLED");
+      expect(e.isRetriable, net).toBe(false);
+      expect({ urls: fake.urls, connects: fake.connects, methods: methods() }, net).toEqual({ urls: [], connects: 0, methods: [] });
+    }
   });
 
   it("the three HardKAS clients pass the expectation down; a mismatch is not retried", async () => {
@@ -149,7 +178,7 @@ describe("NODE-NETWORK-IDENTITY-1 · the session verifies the node's network bef
     const { fake, methods } = nodeClaiming("mainnet");
     const w = new KaspaWrpcClient("ws://127.0.0.1:28210", { rpcFactory: fake.factory, expectedNetworkId: "testnet-10" } as any);
     const e = await failure(w.connect(2000));
-    expect(e.code).toBe("NODE_NETWORK_MISMATCH");
+    expect(e.code).toBe("MAINNET_CONNECTION_DISABLED"); // MAINNET TOTAL LOCKDOWN (was NODE_NETWORK_MISMATCH)
     expect(methods()).toEqual(["getServerInfo"]);
     await w.disconnect();
   });

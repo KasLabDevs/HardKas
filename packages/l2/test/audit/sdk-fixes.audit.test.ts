@@ -39,6 +39,22 @@ async function honestNode(chainId: number, extra: Parameters<typeof startMockRpc
     ...extra
   });
 }
+/**
+ * MAINNET TOTAL LOCKDOWN: a raw Igra mainnet (38833) transaction signed OUTSIDE HardKAS (viem, as any key holder can) —
+ * HardKAS's own prepare and signer refuse mainnet whatever allowMainnet says, so the broadcast guards are fed this.
+ */
+async function mainnetRawSignedOutside() {
+  const rawTransaction = await privateKeyToAccount(TEST_PK).signTransaction({
+    type: "legacy",
+    chainId: 38833,
+    nonce: 0,
+    to: OTHER_ADDR as `0x${string}`,
+    value: 1n,
+    gas: 21000n,
+    gasPrice: 10n ** 9n
+  });
+  return { rawTransaction, txHash: keccak256(rawTransaction) };
+}
 async function signedLocal(rpc: MockRpc, overrides: Partial<L2.EvmTransactionRequest> = {}) {
   const client = new L2.EvmJsonRpcClient({ url: rpc.url, profile: "local" });
   const prepared = await L2.prepareEvmTransaction(client, TEST_ADDR, { to: OTHER_ADDR, value: 1n, ...overrides });
@@ -104,23 +120,27 @@ describe("H-02 mainnet guard (SDK)", () => {
     await expect(s2.signTransaction(tx)).rejects.toThrow(code("L2_MAINNET_WRITE_BLOCKED"));
   });
 
-  it("with explicit allowMainnet: true the full mainnet path works (mock only)", async () => {
+  // MAINNET TOTAL LOCKDOWN (owner decision 2026-11-09): this case read "with explicit allowMainnet: true the full mainnet
+  // path works (mock only)". The owner revoked every mainnet opt-in: the same calls on the same mock are now refused.
+  it("MAINNET TOTAL LOCKDOWN · with allowMainnet: true the mainnet path is still refused: prepare, sign and send; nothing reaches the RPC", async () => {
     const rpc = await honestNode(38833);
     const c = new L2.EvmJsonRpcClient({ url: rpc.url, profile: "igra-mainnet" });
     const opts = { allowMainnet: true, feeLimits: FEES };
-    const prepared = await L2.prepareEvmTransaction(c, TEST_ADDR, { to: OTHER_ADDR, value: 1n }, opts);
-    const { rawTransaction } = await new L2.EvmLocalAccountSigner(TEST_PK, { profile: "igra-mainnet", ...opts }).signTransaction(prepared);
-    const r = await L2.sendAndConfirmTransaction(c, rawTransaction, opts);
-    expect(r.status).toBe("success");
+    await expect(L2.prepareEvmTransaction(c, TEST_ADDR, { to: OTHER_ADDR, value: 1n }, opts)).rejects.toThrow(code("L2_MAINNET_WRITE_BLOCKED"));
+    const tx = { from: TEST_ADDR as `0x${string}`, to: OTHER_ADDR as `0x${string}`, value: 1n, data: "0x" as const, nonce: 0, gasLimit: 21000n, chainId: 38833, type: "legacy" as const, gasPrice: 10n ** 9n };
+    await expect(new L2.EvmLocalAccountSigner(TEST_PK, { profile: "igra-mainnet", ...opts }).signTransaction(tx)).rejects.toThrow(code("L2_MAINNET_WRITE_BLOCKED"));
+    const { rawTransaction } = await mainnetRawSignedOutside();
     expect(parseTransaction(rawTransaction).chainId).toBe(38833);
+    await expect(L2.sendAndConfirmTransaction(c, rawTransaction, opts)).rejects.toThrow(code("L2_MAINNET_WRITE_BLOCKED"));
+    expect(rpc.methods()).toEqual([]);
   });
 
-  it("sendAndConfirm refuses a mainnet raw tx without allowMainnet", async () => {
+  it("sendAndConfirm refuses a mainnet raw tx (signed outside HardKAS), with or without allowMainnet", async () => {
     const rpc = await honestNode(38833);
     const c = new L2.EvmJsonRpcClient({ url: rpc.url, profile: "igra-mainnet" });
-    const prepared = await L2.prepareEvmTransaction(c, TEST_ADDR, { to: OTHER_ADDR }, { allowMainnet: true, feeLimits: FEES });
-    const { rawTransaction } = await new L2.EvmLocalAccountSigner(TEST_PK, { profile: "igra-mainnet", allowMainnet: true, feeLimits: FEES }).signTransaction(prepared);
+    const { rawTransaction } = await mainnetRawSignedOutside();
     await expect(L2.sendAndConfirmTransaction(c, rawTransaction, { feeLimits: FEES })).rejects.toThrow(code("L2_MAINNET_WRITE_BLOCKED"));
+    await expect(L2.sendAndConfirmTransaction(c, rawTransaction, { allowMainnet: true, feeLimits: FEES })).rejects.toThrow(code("L2_MAINNET_WRITE_BLOCKED"));
     expect(rpc.methods()).not.toContain("eth_sendRawTransaction");
   });
 
@@ -141,10 +161,13 @@ describe("H-02 mainnet guard (SDK)", () => {
     expect(() => L2.assertL2WriteAllowed({ chainId: 38833, operation: "t" })).toThrow(code("L2_MAINNET_WRITE_BLOCKED"));
   });
 
-  it("a malicious endpoint cannot bypass: local-bound client + RPC claiming 38833 -> mismatch, nothing signed", async () => {
+  // MAINNET TOTAL LOCKDOWN: the RPC's eth_chainId answer naming a mainnet chain now ends the client before the chain
+  // mismatch rule (it was L2_CHAIN_ID_MISMATCH): MAINNET_CONNECTION_DISABLED, and nothing else is asked
+  it("a malicious endpoint cannot bypass: local-bound client + RPC claiming 38833 -> refused at its identity answer (MAINNET_CONNECTION_DISABLED), nothing signed", async () => {
     const rpc = await mock(38833);
     const c = new L2.EvmJsonRpcClient({ url: rpc.url, profile: "local" });
-    await expect(L2.prepareEvmTransaction(c, TEST_ADDR, { to: OTHER_ADDR })).rejects.toThrow(code("L2_CHAIN_ID_MISMATCH"));
+    await expect(L2.prepareEvmTransaction(c, TEST_ADDR, { to: OTHER_ADDR })).rejects.toThrow(code("MAINNET_CONNECTION_DISABLED"));
+    expect(rpc.methods()).toEqual(["eth_chainId"]);
   });
 });
 
@@ -260,23 +283,16 @@ describe("M-03 broadcast hash verification", () => {
     await expect(L2.sendRawTransactionResilient(lc, rawTransaction)).rejects.toThrow(code("L2_SIGNED_TX_MISMATCH"));
     expect(localNode.methods()).not.toContain("eth_sendRawTransaction");
   });
-  it("NEW-05 low-level resilient send on mainnet needs allowMainnet", async () => {
-    // Signed for 38833 with an explicit authorization; the broadcast must be authorized again.
+  // MAINNET TOTAL LOCKDOWN: this case read "NEW-05 low-level resilient send on mainnet needs allowMainnet" and ended with
+  // an authorized broadcast. No authorization opens mainnet now: every form of the same send is refused before the node.
+  it("NEW-05 low-level resilient send on mainnet is refused, with or without allowMainnet or fee ceilings (MAINNET TOTAL LOCKDOWN)", async () => {
     const mainNode = await honestNode(38833);
     const mc = new L2.EvmJsonRpcClient({ url: mainNode.url, profile: "igra-mainnet" });
-    const auth = { allowMainnet: true, feeLimits: FEES };
-    const prepared = await L2.prepareEvmTransaction(mc, TEST_ADDR, { to: OTHER_ADDR, value: 1n }, auth);
-    const { rawTransaction } = await new L2.EvmLocalAccountSigner(TEST_PK, { profile: "igra-mainnet", ...auth }).signTransaction(prepared);
-    await expect(L2.sendRawTransactionResilient(mc, rawTransaction, { feeLimits: FEES })).rejects.toThrow(code("L2_MAINNET_WRITE_BLOCKED"));
-    // Authorized, but no fee ceilings for a profile without feePolicy -> refused too.
-    await expect(L2.sendRawTransactionResilient(mc, rawTransaction, { allowMainnet: true })).rejects.toThrow(code("L2_FEE_POLICY_REQUIRED"));
-    // Ceilings tighter than the signed fees -> refused at broadcast (raw may have been signed elsewhere).
-    await expect(
-      L2.sendRawTransactionResilient(mc, rawTransaction, { allowMainnet: true, feeLimits: { ...FEES, maxGasLimit: 1n } })
-    ).rejects.toThrow(code("L2_FEE_LIMIT_EXCEEDED"));
-    expect(mainNode.methods()).not.toContain("eth_sendRawTransaction");
-    const ok = await L2.sendRawTransactionResilient(mc, rawTransaction, auth);
-    expect(ok.broadcastState).toBe("submitted");
+    const { rawTransaction } = await mainnetRawSignedOutside();
+    for (const opts of [{ feeLimits: FEES }, { allowMainnet: true }, { allowMainnet: true, feeLimits: { ...FEES, maxGasLimit: 1n } }, { allowMainnet: true, feeLimits: FEES }]) {
+      await expect(L2.sendRawTransactionResilient(mc, rawTransaction, opts as any)).rejects.toThrow(code("L2_MAINNET_WRITE_BLOCKED"));
+    }
+    expect(mainNode.methods()).toEqual([]);
   });
   it("NEW-06 raw tx of a type whose fees the ceilings cannot cover (eip7702) is refused before the node", async () => {
     const rpc = await honestNode(31337);
@@ -317,7 +333,9 @@ describe("R-SEND low-level EvmJsonRpcClient.sendRawTransaction is guarded", () =
   async function signedFor(profile: "igra-galleon" | "igra-mainnet", chainId: number) {
     const node = await honestNode(chainId);
     const client = new L2.EvmJsonRpcClient({ url: node.url, profile });
-    const auth = { allowMainnet: profile === "igra-mainnet", feeLimits: FEES };
+    // MAINNET TOTAL LOCKDOWN: HardKAS prepares and signs nothing for mainnet; the mainnet raw is signed outside HardKAS
+    if (profile === "igra-mainnet") return { node, client, ...(await mainnetRawSignedOutside()) };
+    const auth = { feeLimits: FEES };
     const prepared = await L2.prepareEvmTransaction(client, TEST_ADDR, { to: OTHER_ADDR, value: 1n }, auth);
     const { rawTransaction, txHash } = await new L2.EvmLocalAccountSigner(TEST_PK, { profile, ...auth }).signTransaction(prepared);
     return { node, client, rawTransaction, txHash };
@@ -343,15 +361,13 @@ describe("R-SEND low-level EvmJsonRpcClient.sendRawTransaction is guarded", () =
     await expect(lc.sendRawTransaction(rawTransaction, {})).rejects.toThrow(code("L2_SIGNED_TX_MISMATCH"));
     expect(localNode.methods()).not.toContain("eth_sendRawTransaction");
   });
-  it("mainnet without allowMainnet -> blocked; authorized without ceilings -> blocked; authorized + ceilings -> sent", async () => {
-    const { node, client, rawTransaction, txHash } = await signedFor("igra-mainnet", 38833);
-    await expect(client.sendRawTransaction(rawTransaction, { feeLimits: FEES })).rejects.toThrow(code("L2_MAINNET_WRITE_BLOCKED"));
-    await expect(client.sendRawTransaction(rawTransaction, { allowMainnet: true })).rejects.toThrow(code("L2_FEE_POLICY_REQUIRED"));
-    await expect(
-      client.sendRawTransaction(rawTransaction, { allowMainnet: true, feeLimits: { ...FEES, maxFeePerGasWei: 1n } })
-    ).rejects.toThrow(code("L2_FEE_LIMIT_EXCEEDED"));
-    expect(node.methods()).not.toContain("eth_sendRawTransaction");
-    expect(await client.sendRawTransaction(rawTransaction, { allowMainnet: true, feeLimits: FEES })).toBe(txHash);
+  // MAINNET TOTAL LOCKDOWN: this case read "... authorized + ceilings -> sent". No authorization opens mainnet now.
+  it("mainnet is blocked with or without allowMainnet and ceilings: never sent (MAINNET TOTAL LOCKDOWN)", async () => {
+    const { node, client, rawTransaction } = await signedFor("igra-mainnet", 38833);
+    for (const opts of [{ feeLimits: FEES }, { allowMainnet: true }, { allowMainnet: true, feeLimits: { ...FEES, maxFeePerGasWei: 1n } }, { allowMainnet: true, feeLimits: FEES }]) {
+      await expect(client.sendRawTransaction(rawTransaction, opts as any)).rejects.toThrow(code("L2_MAINNET_WRITE_BLOCKED"));
+    }
+    expect(node.methods()).toEqual([]);
   });
   it("Galleon (testnet): no mainnet authorization needed, but explicit fee ceilings are", async () => {
     const { node, client, rawTransaction, txHash } = await signedFor("igra-galleon", 38836);

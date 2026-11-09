@@ -270,7 +270,9 @@ describe("INT9-A · mainnet: integrity offline only; never contacted", () => {
   it("a testnet record checked on a URL whose node turns out to be mainnet: refused on its identity answer, nothing else asked", async () => {
     const f = await fake("mainnet-behind-tn10", { network: "mainnet" });
     const r = await verify("mainnet-behind-tn10", write("mainnet-behind-tn10", deployRecord("testnet-10", hex("mbt"))), ["--url", f.url]);
-    expect(levels(r)?.network, r.brief).toMatchObject({ level: "NOT_CHECKED", reason: "NODE_IDENTITY_UNVERIFIED" });
+    // MAINNET TOTAL LOCKDOWN: the transport closes the connection on the node's mainnet identity answer; the check
+    // names it as the mainnet block (it was NODE_IDENTITY_UNVERIFIED: the identity was judged after a full answer)
+    expect(levels(r)?.network, r.brief).toMatchObject({ level: "NOT_CHECKED", reason: "MAINNET_NETWORK_CHECK_BLOCKED" });
     expect(f.methods.filter((m) => m !== "getServerInfo"), r.brief).toEqual([]);
   });
 });

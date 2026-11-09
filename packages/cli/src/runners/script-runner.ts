@@ -214,6 +214,11 @@ export async function runScript(script: string, opts: RunScriptOptions): Promise
     const { HardkasCliError } = await import("../cli-errors.js");
     throw new HardkasCliError(typeof err?.code === "string" ? err.code : "CONFIG_INVALID", String(err?.message ?? e), { exitCode: 1, cause: e });
   }
+  // MAINNET TOTAL LOCKDOWN (RC2 oracle D2b): mainnet first — every spelling, an alias that declares one, or the
+  // workspace's own network when none is named — before the name is resolved (RUN_NETWORK_UNKNOWN) and before the script
+  // runs at all (its `hardkas` would be an RPC client to mainnet)
+  const { refuseMainnetConnection } = await import("../mainnet-guard.js");
+  refuseMainnetConnection(config, [opts.network], "run", true);
   let network: string;
   try {
     network = resolveRunNetwork(config, opts.network);

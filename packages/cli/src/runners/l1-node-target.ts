@@ -24,14 +24,17 @@ const norm = (u: string) => u.trim().replace(/\/+$/, "").replace("://localhost:"
 
 export async function resolveL1NodeTarget(network: string, url: string | undefined): Promise<L1NodeTarget> {
   const { loadHardkasConfig, resolveNodeEndpoint, isPublicKaspaNetwork } = await import("@hardkas/config");
-  const { nodeRpcUrl, isMainnetNetworkId } = await import("@hardkas/core");
-  // INT9-A: never mainnet, whatever the caller checked (defence in depth: nothing is loaded or contacted)
-  if (isMainnetNetworkId(network)) {
-    throw new HardkasCliError("MAINNET_TRANSACTIONS_DISABLED", `HardKAS does not sign or send on mainnet (${network}). Nothing was done.`, {
+  const { nodeRpcUrl, isMainnetNetworkId, declaredNetworkIdOf, MAINNET_CONNECTION_DISABLED, mainnetConnectionDisabledMessage } = await import("@hardkas/core");
+  // INT9-A: never mainnet, whatever the caller checked (defence in depth: nothing is loaded or contacted). MAINNET TOTAL
+  // LOCKDOWN: the command never gets as far as signing — its first step is the node, so the refusal is the connection
+  // one (MAINNET_CONNECTION_DISABLED; it was MAINNET_TRANSACTIONS_DISABLED), for the name asked and what it declares
+  const mainnetRefusal = () =>
+    new HardkasCliError(MAINNET_CONNECTION_DISABLED, mainnetConnectionDisabledMessage(`the node of ${network}; nothing was loaded, signed or sent`), {
       exitCode: HardkasExitCode.POLICY_DENIED
     });
-  }
+  if (isMainnetNetworkId(network)) throw mainnetRefusal();
   const { config } = await loadHardkasConfig({ workspaceRoot: process.cwd() });
+  if (isMainnetNetworkId(declaredNetworkIdOf(config, network))) throw mainnetRefusal();
   if (isPublicKaspaNetwork(network) && !((config as any).network?.allowPublic === true && (config as any).experimental === true)) {
     throw new HardkasCliError(
       "PUBLIC_NETWORK_BLOCKED",
@@ -45,7 +48,10 @@ export async function resolveL1NodeTarget(network: string, url: string | undefin
     rpcUrl = resolveNodeEndpoint({ config, networkId: network, ...(url !== undefined ? { explicitUrl: url } : {}) }).url;
   } catch (e: unknown) {
     const err = e as { code?: unknown; message?: unknown } | null | undefined;
-    throw new HardkasCliError(String(err?.code ?? "NETWORK_ENDPOINT_REQUIRED"), String(err?.message ?? e), { exitCode: HardkasExitCode.USAGE_ERROR });
+    const code = String(err?.code ?? "NETWORK_ENDPOINT_REQUIRED");
+    throw new HardkasCliError(code, String(err?.message ?? e), {
+      exitCode: code === MAINNET_CONNECTION_DISABLED ? HardkasExitCode.POLICY_DENIED : HardkasExitCode.USAGE_ERROR
+    });
   }
   return { network, rpcUrl, managed: network === "simnet" && norm(rpcUrl) === norm(nodeRpcUrl()) };
 }

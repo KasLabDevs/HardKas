@@ -45,8 +45,8 @@ The boundary differs per network:
 | Network | Default | What opens it |
 | :-- | :-- | :-- |
 | Kaspa L1 **testnet** | closed | `network.allowPublic: true` in `hardkas.config.ts` (which also requires `experimental: true`), or `policy: { allowPublic: true }` when creating the SDK. Once open, the CLI and SDK can plan, sign and send on testnet. HardKAS has not qualified that path for this release. |
-| Kaspa L1 **mainnet** | broadcast blocked | Nothing. `allowPublic`, an external signer or a direct call do not lift the transport block (`core/src/mainnet-policy.ts`). Library signers can still produce a mainnet signature (audit HK-12, CA-TX-05). |
-| **L2** mainnet (Igra mainnet, chain id 38833, or any profile marked mainnet; l2 extension) | writes blocked | `allowMainnet: true` (SDK) or `--allow-mainnet` (CLI), set explicitly on each call (`packages/l2/src/network-guard.ts`). This is unlike L1, by design. |
+| Kaspa L1 **mainnet** | **locked down**: no connection (reads included), no signature, no broadcast | Nothing (MAINNET TOTAL LOCKDOWN, owner decision 2026-11-09, until the product is complete, independently audited and the owner authorizes it). One common layer refuses it before any connection: the endpoint authority (`config/src/endpoint.ts`), the RPC transport (`kaspa-rpc/src/upstream/session.ts`) and `core/src/mainnet-policy.ts` (`MAINNET_CONNECTION_DISABLED`, `MAINNET_SIGNING_DISABLED`, `MAINNET_BROADCAST_DISABLED`). `allowPublic`, `experimental`, `allowMainnet`, an external signer, a direct call or a `HARDKAS_*` variable do not lift it. Only offline operations remain (integrity checks of mainnet records, address derivation), and none produces a signed mainnet transaction. Limit: an endpoint declared as another network whose node answers mainnet is refused after that one identity answer (`getServerInfo`), with nothing else asked. |
+| **L2** mainnet (Igra mainnet, chain id 38833, or any profile marked mainnet; l2 extension) | **locked down**: writes and connections blocked | Nothing. `allowMainnet: true` (SDK) and `--allow-mainnet` (CLI) no longer authorize anything (`packages/l2/src/network-guard.ts`: `L2_MAINNET_WRITE_BLOCKED`; an L2 client bound to a mainnet profile or chain, or whose node answers a mainnet `eth_chainId`, is refused `MAINNET_CONNECTION_DISABLED`). Limit: an unbound L2 client given a raw URL is identified only when it asks `eth_chainId` (every HardKAS L2 write binds a chain). |
 
 Do not route high-value transactions through HardKAS.
 
@@ -204,7 +204,8 @@ limits:
   pin and is always `UNVERIFIED`. It runs a scenario transaction, not the signed
   one. The `@hardkas/testing` covenant matchers therefore require
   `CONSENSUS_SIMNET` by default and answer "NOT VERIFIED" below it;
-- mainnet broadcast of custom scripts stays blocked like any other L1 mainnet send.
+- mainnet broadcast of custom scripts stays blocked like any other L1 mainnet send,
+  and no Silver or covenant command contacts a mainnet node (MAINNET TOTAL LOCKDOWN).
 
 ### The simulator is an approximate model
 

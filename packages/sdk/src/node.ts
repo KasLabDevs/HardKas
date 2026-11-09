@@ -1,5 +1,6 @@
 import { Hardkas } from "./index.js";
-import { HardkasError, getCoinbaseMaturity, CPUMINER_REFERENCE_IMAGE, CANONICAL_LOCALNET } from "@hardkas/core";
+import { HardkasError, getCoinbaseMaturity, CPUMINER_REFERENCE_IMAGE, CANONICAL_LOCALNET, isMainnetNetworkId, declaredNetworkIdOf } from "@hardkas/core";
+import { assertSdkMayConnect } from "./mainnet-lockdown.js";
 import { DockerKaspadRunner, KaspadNodeStatus, minerContainerNameFor, requireNodeIdentity } from "@hardkas/node-runner";
 
 export interface HardkasNodeStartOptions {
@@ -43,7 +44,8 @@ export class HardkasNodeApi {
    * Throws `NODE_MANAGEMENT_MAINNET_FORBIDDEN` if attempted on mainnet.
    */
   public async start(options?: HardkasNodeStartOptions): Promise<KaspadNodeStatus> {
-    if (this.sdk.network === "mainnet") {
+    // MAINNET TOTAL LOCKDOWN: a mainnet node would sync from mainnet peers — any spelling, any alias that declares it
+    if (isMainnetNetworkId(this.sdk.network) || isMainnetNetworkId(declaredNetworkIdOf(this.sdk.config.config, this.sdk.network)) || isMainnetNetworkId(options?.network)) {
       throw new HardkasError(
         "NETWORK_ACCOUNT_MISMATCH",
         "[NODE_MANAGEMENT_MAINNET_FORBIDDEN] Cannot programmatically start a mainnet node."
@@ -123,7 +125,9 @@ export class HardkasNodeApi {
     options?: FundDevWalletsOptions
   ): Promise<void> {
     if (wallets.length === 0) return;
-    
+    // MAINNET TOTAL LOCKDOWN: funding polls the node (UTXOs, DAA score)
+    assertSdkMayConnect(this.sdk, "sdk.node.fundDevWallets");
+
     const primaryInput = wallets[0];
     if (!primaryInput) return;
     
@@ -272,6 +276,8 @@ export class HardkasNodeApi {
     timeoutMs?: number;
     addresses?: string[];
   }): Promise<{ settled: boolean; evidence: string; samples: number }> {
+    // MAINNET TOTAL LOCKDOWN: settlement polls the node's DAA score
+    assertSdkMayConnect(this.sdk, "sdk.node.waitForSettlement");
     const stableSamples = options?.stableSamples ?? 3;
     const intervalMs = options?.intervalMs ?? 1000;
     const timeoutMs = options?.timeoutMs ?? 30000;

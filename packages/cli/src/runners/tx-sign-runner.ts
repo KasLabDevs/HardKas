@@ -49,6 +49,14 @@ export async function runTxSign(input: TxSignRunnerInput): Promise<SignedTxArtif
     signer
   } = input;
 
+  // MAINNET TOTAL LOCKDOWN: the signing refusal first — before the plan's target, a --target or an account is resolved
+  // (an unknown spelling or an account lookup used to answer before it) and before the SDK opens (PUBLIC_NETWORK_BLOCKED)
+  {
+    const { refuseMainnetSigning, targetNetworkOf } = await import("../mainnet-guard.js");
+    const claimed = planArtifact as { networkId?: unknown; execution?: { network?: unknown } };
+    refuseMainnetSigning(config as any, [claimed?.networkId, claimed?.execution?.network, targetNetworkOf(config as any, targetName)], "tx sign");
+  }
+
   const targetAccountName =
     accountName ||
     planArtifact.from?.accountName ||

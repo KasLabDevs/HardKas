@@ -7,10 +7,11 @@ import {
   type ResolvedWorkspaceExecution
 } from "@hardkas/config";
 import { isNetworkEndpointRequired, unresolvedEndpointRpc } from "./unresolved-endpoint-rpc.js";
+import { mainnetLockedRpc, assertSdkMayConnect } from "./mainnet-lockdown.js";
 import { resolveHardkasAccount, HardkasAccount } from "@hardkas/accounts";
 import { ExternalHardkasSigner } from "@hardkas/artifacts";
 import { JsonWrpcKaspaClient, KaspaRpcClient, canonicalNetworkId } from "@hardkas/kaspa-rpc";
-import { NetworkId, HardkasError, getCoinbaseMaturity, declaredNetworkIdOf, type HardkasExecutionTarget } from "@hardkas/core";
+import { NetworkId, HardkasError, getCoinbaseMaturity, declaredNetworkIdOf, isMainnetConnectionDisabledError, type HardkasExecutionTarget } from "@hardkas/core";
 import { assertPublicNetworkAllowed } from "./policy.js";
 import { HardkasAccounts } from "./accounts.js";
 import { HardkasTx } from "./tx.js";
@@ -352,6 +353,9 @@ export class Hardkas {
 
   public readonly wallet = {
     open: (name: string, opts?: Omit<WalletToolkitOptions, "rpc" | "signer">) => {
+      // MAINNET TOTAL LOCKDOWN: a wallet on a mainnet instance would only reach a mainnet node (balance, UTXOs, watch,
+      // fee estimate) or sign/broadcast there: refused at open, before anything is derived, resolved or read
+      assertSdkMayConnect(this, "sdk.wallet.open", opts?.networkId);
       const activeNetwork = this.network;
       const networkConfig = this.config.config.networks?.[activeNetwork];
       const coinbaseMaturity = getCoinbaseMaturity(activeNetwork, networkConfig?.kind === "kaspa-node" || networkConfig?.kind === "kaspa-rpc" || networkConfig?.kind === "simulated" ? networkConfig.consensusParams : undefined);
@@ -445,14 +449,19 @@ export class Hardkas {
     } else {
       // TESTNET-PORT-COLLISION-1: the endpoint by the shared authority; a public network with none chosen gets a client
       // that refuses every request (NETWORK_ENDPOINT_REQUIRED) and never connects — never an inferred node.
+      // MAINNET TOTAL LOCKDOWN: a mainnet network gets no endpoint (MAINNET_CONNECTION_DISABLED from the same authority):
+      // the instance opens offline, with a client that never connects and refuses every request (mainnet-lockdown.ts)
       let rpcUrl: string | undefined;
+      let mainnetLocked = false;
       try {
         rpcUrl = this.resolveRpcUrl();
       } catch (e) {
-        if (!isNetworkEndpointRequired(e)) throw e;
+        if (isMainnetConnectionDisabledError(e)) mainnetLocked = true;
+        else if (!isNetworkEndpointRequired(e)) throw e;
       }
-      this.rpc =
-        rpcUrl === undefined
+      this.rpc = mainnetLocked
+        ? mainnetLockedRpc(this.activeNetwork)
+        : rpcUrl === undefined
           ? unresolvedEndpointRpc(this.activeNetwork)
           : new JsonWrpcKaspaClient({
               rpcUrl,

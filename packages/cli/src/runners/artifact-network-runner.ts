@@ -109,6 +109,15 @@ export async function checkArtifactOnNetwork(artifact: unknown, opts: ArtifactNe
   const managed = network === "simnet" && norm(rpcUrl) === norm(core.nodeRpcUrl());
   const record = managed ? await verifyNodeIdentity() : await verifyNodeIdentity({ expected: core.endpointNodeExpectation(rpcUrl, network) });
   const node = core.networkIdentityOf(record, network);
+  // MAINNET TOTAL LOCKDOWN: the node behind the URL said mainnet in its one identity answer (the transport closed it
+  // there): the check is the mainnet one, never an "unreachable" node
+  if (record.problems.some((p: string) => /MAINNET_CONNECTION_DISABLED/.test(p))) {
+    return notCheckedNetworkVerification(
+      "MAINNET_NETWORK_CHECK_BLOCKED",
+      `the node at ${node.endpoint} says it serves mainnet (its one identity answer): artifact verify never reads mainnet; nothing else was asked of it.`,
+      { policy, node }
+    );
+  }
   if (!record.observed.server) {
     return notCheckedNetworkVerification("NODE_UNREACHABLE", `no node answered at ${node.endpoint}: ${record.problems.join("; ")}`, { policy, node });
   }

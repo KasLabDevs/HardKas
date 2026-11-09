@@ -6,7 +6,7 @@ HardKAS discovers its environment via `hardkas.config.ts`.
 import { defineConfig } from '@hardkas/cli';
 
 export default defineConfig({
-  network: 'simulated', // or 'testnet-10', 'mainnet'
+  network: 'simulated', // or 'simnet', 'devnet', 'testnet-10' ('mainnet' is locked down: MAINNET_CONNECTION_DISABLED)
   provider: {
     type: 'simulated' // or 'rpc'
   }

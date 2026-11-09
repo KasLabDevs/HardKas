@@ -393,7 +393,9 @@ export async function runTxWait(input: TxWaitRunnerInput): Promise<TxWaitRunnerR
     ? { sdk: input.sdk, network: String(input.network ?? input.sdk.network) }
     : // INT9-A (I-3b): waiting needs the current chain state: every look asks a node that says it is synced. A look the
       // node refuses that way (NODE_NOT_SYNCED) records nothing and the wait keeps trying until its timeout, which names it.
-      await openSdkForTx(input.txId, workspaceRoot, input.network, { requireSyncedNode: true });
+      // MAINNET TOTAL LOCKDOWN: a mainnet network (any spelling, alias, the workspace's own or the submission's) is
+      // refused here, MAINNET_CONNECTION_DISABLED, before any name is resolved and before the first look
+      await openSdkForTx(input.txId, workspaceRoot, input.network, { requireSyncedNode: true, observe: true });
   const { sdk, network } = opened;
   // RESOURCE-LIFECYCLE-1: an SDK opened here is released here, whatever the wait ends with (RL-I1/RL-I3); an injected
   // one is its caller's (RL-I2).
@@ -584,6 +586,10 @@ async function waitOn(input: TxWaitRunnerInput, sdk: any, network: string): Prom
       // STAGE-B-2 · C3: the node cannot serve the chain from the explicit --since (unknown or pruned); waiting cannot
       // change that, and the observer recorded nothing — end now with its typed refusal
       if (e?.code === "OBSERVE_SINCE_UNAVAILABLE") throw e;
+      // MAINNET TOTAL LOCKDOWN (RC2 oracle D1): a mainnet refusal is a decision, never a transient failure — waiting
+      // cannot change it, so the wait ends now with its typed code (it polled until --timeout and ended TX_WAIT_TIMEOUT,
+      // the code only inside that message). E.g. a node declared as another network that answered mainnet.
+      if (/^MAINNET_(CONNECTION|SIGNING|BROADCAST)_DISABLED$/.test(String(e?.code ?? ""))) throw e;
       lastError = `${e?.code ? `[${e.code}] ` : ""}${e?.message ?? String(e)}`;
     }
     if (now() - start >= input.timeoutMs) break;

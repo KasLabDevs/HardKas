@@ -1,4 +1,4 @@
-import { loadManagedKaspaWasmSync } from '@hardkas/core';
+import { loadManagedKaspaWasmSync, isMainnetNetworkId, mainnetConnectionDisabledError, redactUrlCredentials } from '@hardkas/core';
 import { covenantIdOf, createUtxoContext, type UtxoContextHandle } from '@hardkas/tx-builder';
 import { logger } from '@hardkas/observability';
 
@@ -91,6 +91,11 @@ export class UtxoWatchEngine {
         try {
             await this.connectWithin(CONNECT_TIMEOUT_MS);
             const { networkId } = await this.rpc.getServerInfo();
+            // MAINNET TOTAL LOCKDOWN: this engine holds its own kaspa-wasm client (the processor needs it), so it applies
+            // the transport's rule itself: a node that says mainnet is released after that one identity answer
+            if (isMainnetNetworkId(networkId)) {
+                throw mainnetConnectionDisabledError(`WalletToolkit.watch: the node at ${redactUrlCredentials(this.rpcUrl)} says it serves ${networkId}`, { observed: networkId }, "identity-only");
+            }
             const address = await this.getAddress();
             const handle = await createUtxoContext({ wasmRpc: this.rpc, networkId, addresses: [address] });
             this.handle = handle;

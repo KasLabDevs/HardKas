@@ -55,7 +55,7 @@ Example:
 hardkas tx send signed.json --network mainnet --provider rpc --url ws://...
 ```
 
-If `signed.json` was created for `simulated`, `simnet`, or `testnet-10`, the network context no longer matches. HardKas should abort before submitting to RPC.
+If `signed.json` was created for `simulated`, `simnet`, or `testnet-10`, the network context no longer matches. HardKas should abort before submitting to RPC. (With `--network mainnet` it aborts in any case: mainnet is locked down, `MAINNET_BROADCAST_DISABLED` / `MAINNET_CONNECTION_DISABLED`, before anything connects.)
 
 ## Incorrect: Using The Wrong Provider
 

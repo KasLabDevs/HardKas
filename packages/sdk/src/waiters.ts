@@ -39,6 +39,9 @@ export async function pollCondition<T>(
         return result.value as T;
       }
     } catch (e: any) {
+      // MAINNET TOTAL LOCKDOWN: a mainnet refusal is a decision, not a transient failure — never polled again (each
+      // poll would otherwise be refused once more until the timeout hid the typed code)
+      if (/^MAINNET_(CONNECTION|SIGNING|BROADCAST)_DISABLED$/.test(String(e?.code ?? ""))) throw e;
       // Ignore network errors or transient RPC errors, keep polling.
       // E.g., node might be restarting in localnet context.
       lastObservedState = { error: e.message || String(e) };

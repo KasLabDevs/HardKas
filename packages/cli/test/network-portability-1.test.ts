@@ -236,12 +236,14 @@ describe("C5 · rpc commands follow a declared network, with its identity checke
     expect(loopbackOnly(r.dialled, T.port)).toBe(true);
   });
 
-  it("NP-3b a node that serves another network than the one declared: refused (NODE_NETWORK_MISMATCH)", async () => {
+  // MAINNET TOTAL LOCKDOWN: M says mainnet, so the refusal is the lockdown's (MAINNET_CONNECTION_DISABLED, decided
+  // before the mismatch rule; it was NODE_NETWORK_MISMATCH) — still refused, still nothing read from it
+  it("NP-3b a node that serves another network than the one declared (here mainnet): refused (MAINNET_CONNECTION_DISABLED)", async () => {
     const ws = workspace("c5b", "testnet-10", M.url);
     for (const cmd of [["rpc", "info"], ["rpc", "dag"], ["rpc", "health"], ["rpc", "utxos", FUNDED.address], ["rpc", "mempool"]]) {
       const r = await run(`NP-3b-${cmd[1]}`, [...cmd, "--network", "testnet-10", "--json"], ws);
       expect(r.exit, `${cmd.join(" ")}\n${r.brief}`).not.toBe(0);
-      expect(r.stdout + r.stderr, cmd.join(" ")).toMatch(/NODE_NETWORK_MISMATCH/);
+      expect(r.stdout + r.stderr, cmd.join(" ")).toMatch(/MAINNET_CONNECTION_DISABLED/);
     }
   });
 

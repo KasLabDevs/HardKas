@@ -32,7 +32,7 @@ The `localnet` environment orchestrates an isolated, real `kaspad` node instance
 
 ## Testnet / Mainnet (RPC)
 
-The `rpc` mode connects HardKAS to an external, public, or private Kaspa node participating in a global network.
+The `rpc` mode connects HardKAS to an external, public, or private Kaspa node participating in a global network. On a public testnet only, behind the explicit opt-in: **mainnet is locked down in this release** — no connection (reads included), no signing, no broadcast (`MAINNET_CONNECTION_DISABLED`).
 
 - **What is real:** Everything. The node, the network, the UTXOs, and the consensus.
 - **What is simulated:** Nothing.

@@ -57,7 +57,10 @@ describe("R0 · CLI lifecycle: exit status set, natural close", () => {
       success: cli(["status"], ws),
       usage: cli(["verify", "--json"], empty),
       runtime: cli(["artifact", "verify", "no-such-file.json", "--json"], ws),
-      policy: cli(["tx", "send", "--from", "alice", "--to", "bob", "--amount", "1", "--network", "mainnet", "--json"], ws),
+      // a non-simulated network without --yes (the confirmation policy). Not mainnet any more: under the MAINNET TOTAL
+      // LOCKDOWN (RC2 oracle D2) the mainnet refusal comes first, MAINNET_BROADCAST_DISABLED, pinned with its envelope
+      // code in mainnet-lockdown-codes.test.ts
+      policy: cli(["tx", "send", "--from", "alice", "--to", "bob", "--amount", "1", "--network", "testnet-10", "--json"], ws),
       swallowed: cli(["dev", "accounts", "reveal", "nobody-here"], ws)
     };
     expect(Object.fromEntries(Object.entries(rows).map(([k, r]) => [k, { exit: r.status, code: k === "success" ? null : codeOf(r) }]))).toEqual({

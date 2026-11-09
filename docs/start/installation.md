@@ -14,11 +14,11 @@ If you would rather see a transaction first and read afterwards, go to the
 a node of your own, [Build on your own simnet](./build-on-simnet.md).
 
 > [!WARNING]
-> **Mainnet is NO-GO in this release.** HardKAS refuses to sign or broadcast on
-> mainnet. `doctor`, `artifact verify` (which checks a mainnet artifact offline
-> only) and the Silver commands never contact a mainnet node, and no mainnet
-> endpoint is built in: read-only commands such as `rpc info` reach one only if
-> you declare it yourself. Use simnet, or testnet-10 if you hold testnet funds.
+> **Mainnet is NO-GO in this release, and locked down.** HardKAS makes no
+> connection to a mainnet node — reads included, even to an endpoint you declare
+> yourself (`MAINNET_CONNECTION_DISABLED`) — and refuses to sign or broadcast on
+> mainnet. No flag or setting enables it. `artifact verify` checks a mainnet
+> artifact offline only. Use simnet, or testnet-10 if you hold testnet funds.
 
 ## Prerequisites
 

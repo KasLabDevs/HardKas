@@ -11,9 +11,9 @@ transaction it accepts and confirms, verify it, then deploy a SilverScript
 contract and run a covenant. About half an hour, most of it reading.
 
 > [!WARNING]
-> - **Mainnet is NO-GO in this release.** HardKAS refuses to sign or broadcast
->   on mainnet; `doctor`, `artifact verify` and the Silver commands never contact
->   a mainnet node, and no mainnet endpoint is built in. This path never uses it.
+> - **Mainnet is NO-GO in this release, and locked down.** HardKAS makes no
+>   connection to a mainnet node (reads included, even to an endpoint you
+>   declare) and refuses to sign or broadcast on mainnet. This path never uses it.
 > - **Testnet-10** only if you hold testnet funds; this path never needs it, and
 >   transactions there were not tested with this release.
 > - **vProgs is not active** on Kaspa L1; HardKAS only inspects vProgs artifacts.

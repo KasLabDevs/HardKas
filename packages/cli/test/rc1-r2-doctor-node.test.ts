@@ -215,13 +215,15 @@ describe("RC1-R2 D4 · nodes that lie, do not answer or are not synced", () => {
 });
 
 describe("RC1-R2 D4 · what is never contacted", () => {
-  it("D4-10 mainnet (workspace or --network): refused without connecting — SKIP MAINNET_NOT_CONTACTED, payments FAIL only when asked for", async () => {
+  // MAINNET TOTAL LOCKDOWN: the skip's code is the one every layer uses for a refused mainnet connection,
+  // MAINNET_CONNECTION_DISABLED (it was doctor's own MAINNET_NOT_CONTACTED); the behaviour is unchanged
+  it("D4-10 mainnet (workspace or --network): refused without connecting — SKIP MAINNET_CONNECTION_DISABLED, payments FAIL only when asked for", async () => {
     const mainnetNode = await fake("mainnet", { network: "mainnet" });
     const ws = workspace("d4-10", ownNode("mainnet", mainnetNode.url, { network: { allowPublic: true }, experimental: true }));
     const r = await doctor("d4-10", ["--json"], ws);
-    expect(r.connectivity, r.brief).toMatchObject({ code: "MAINNET_NOT_CONTACTED", status: "skip" });
+    expect(r.connectivity, r.brief).toMatchObject({ code: "MAINNET_CONNECTION_DISABLED", status: "skip" });
     expect(r.payment, r.brief).toMatchObject({ code: "MAINNET_TRANSACTIONS_DISABLED", status: "warn" });
-    expect(r.json.diagnosis, r.brief).toMatchObject({ scope: "partial", code: "MAINNET_NOT_CONTACTED" });
+    expect(r.json.diagnosis, r.brief).toMatchObject({ scope: "partial", code: "MAINNET_CONNECTION_DISABLED" });
     const f = await doctor("d4-10-flow", ["--json", "--network", "mainnet", "--url", mainnetNode.url, "--flow", "payment"], ws);
     expect(f.payment, f.brief).toMatchObject({ code: "MAINNET_TRANSACTIONS_DISABLED", status: "fail" });
     expect(f.status, f.brief).toBe(1);

@@ -8,6 +8,8 @@ import {
   nodeSyncStateOf,
   redactUrlCredentials,
   redactUrlCredentialsInText,
+  isMainnetNetworkId,
+  declaredNetworkIdOf,
   type NodeIdentityRecord
 } from "@hardkas/core";
 
@@ -228,7 +230,8 @@ async function nodeReadiness(options: SilverReadinessOptions): Promise<SilverRea
   if (options.endpoint) {
     const { url, network } = options.endpoint;
     const shown = redactUrlCredentials(url);
-    if (network === "mainnet") return { ok: false, verification: "unresolved", url: shown, network, detail: "mainnet is refused: nothing was contacted" };
+    // MAINNET TOTAL LOCKDOWN: any mainnet spelling (the caller passes the network the entry declares)
+    if (isMainnetNetworkId(network)) return { ok: false, verification: "unresolved", url: shown, network, detail: "MAINNET_CONNECTION_DISABLED: mainnet is refused: nothing was contacted" };
     try {
       const { verifyEndpointIdentity } = await import("@hardkas/node-runner");
       const id = options.identity ?? (await verifyEndpointIdentity(url, network));
@@ -513,8 +516,13 @@ export class HardkasCapabilitiesApi {
     if (!rpcUrl && process.env.IGRA_RPC_URL) {
        rpcUrl = process.env.IGRA_RPC_URL;
     }
+    // MAINNET TOTAL LOCKDOWN: on a mainnet instance the Igra endpoint (an L2 of Kaspa mainnet) is never probed
+    const instanceNetwork = this.sdk ? String(this.sdk.network ?? "") : "";
+    const onMainnet = this.sdk !== undefined && (isMainnetNetworkId(instanceNetwork) || isMainnetNetworkId(declaredNetworkIdOf(this.sdk.config?.config, instanceNetwork)));
 
-    if (rpcUrl) {
+    if (rpcUrl && onMainnet) {
+      env.igra = { available: false, rpcUrl: redactUrlCredentials(rpcUrl), reason: "MAINNET_CONNECTION_DISABLED: mainnet connections are disabled in HardKAS; nothing was contacted" };
+    } else if (rpcUrl) {
       // SURFACE-TRUTH-1B (ST-D): the raw URL is only used to probe; what this report returns is the URL and the error text
       // without credentials (the URL secret boundary of EVIDENCE-TRUST-1). It used to return both raw.
       const shownUrl = redactUrlCredentials(rpcUrl);

@@ -81,8 +81,11 @@ export class RpcConnectionError extends RpcError {
  * (another attempt asks the same node). `endpoint` carries no URL credentials.
  * MAINNET-PERIMETER-1: MAINNET_BROADCAST_DISABLED is the same kind of refusal, raised right before a broadcast when the
  * node (or the network it is used as) is of the mainnet type — the product policy (@hardkas/core mainnet-policy).
+ * MAINNET TOTAL LOCKDOWN: MAINNET_CONNECTION_DISABLED too — raised before a client is even created when the caller uses
+ * the node as a mainnet network, and right after the node's one identity answer when the node says it serves mainnet
+ * (whatever the caller expected, or when it expected nothing). Never retried, never failed over as "not sent".
  */
-export type NodeNetworkIdentityCode = "NODE_NETWORK_MISMATCH" | "NODE_NETWORK_UNKNOWN" | "MAINNET_BROADCAST_DISABLED";
+export type NodeNetworkIdentityCode = "NODE_NETWORK_MISMATCH" | "NODE_NETWORK_UNKNOWN" | "MAINNET_BROADCAST_DISABLED" | "MAINNET_CONNECTION_DISABLED";
 
 export interface NodeNetworkIdentity {
   readonly expected: string;
@@ -127,7 +130,7 @@ export function isNodeNetworkIdentityError(error: unknown): error is NodeNetwork
     error instanceof NodeNetworkIdentityError ||
     code === "NODE_NETWORK_MISMATCH" ||
     code === "NODE_NETWORK_UNKNOWN" ||
-    (error instanceof RpcError && code === "MAINNET_BROADCAST_DISABLED")
+    (error instanceof RpcError && (code === "MAINNET_BROADCAST_DISABLED" || code === "MAINNET_CONNECTION_DISABLED"))
   );
 }
 

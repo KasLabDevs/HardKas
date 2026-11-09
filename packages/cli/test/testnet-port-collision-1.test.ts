@@ -282,6 +282,20 @@ function expectEndpointRequired(rs: Array<{ name: string; exit: number | null; c
   }
 }
 
+/**
+ * MAINNET TOTAL LOCKDOWN (owner decision 2026-11-09): a mainnet network — declared, built in, or a custom name whose
+ * entry declares mainnet — never gets an endpoint, chosen or not: every client path refuses typed
+ * MAINNET_CONNECTION_DISABLED before ANY connection. These cases pinned NETWORK_ENDPOINT_REQUIRED before; the zero
+ * connections they protect are unchanged, only the reason is now the lockdown (it is decided first).
+ */
+function expectMainnetRefused(rs: Array<{ name: string; exit: number | null; code: string | null; dialled: string[]; brief: string }>, why: string) {
+  for (const r of rs) {
+    expect(r.dialled, `${r.name}: ${why}`).toEqual([]);
+    expect(r.code, `${r.name}: ${r.brief}`).toBe("MAINNET_CONNECTION_DISABLED");
+    if (r.name.includes("-cli-")) expect(r.exit, `${r.name}: ${r.brief}`).not.toBe(0);
+  }
+}
+
 let mainA = "";
 let mainB = "";
 beforeAll(() => {
@@ -322,7 +336,7 @@ describe("TESTNET-PORT-COLLISION-1 · a public network never gets an implicit en
     expectEndpointRequired(rs, JSON.stringify(seen, null, 1));
   });
 
-  it("TPC-5 mainnet without an endpoint (as `kaspa-node`, and with no entry): NETWORK_ENDPOINT_REQUIRED, zero connections", async () => {
+  it("TPC-5 mainnet without an endpoint (as `kaspa-node`, and with no entry): MAINNET_CONNECTION_DISABLED (MAINNET TOTAL LOCKDOWN; was NETWORK_ENDPOINT_REQUIRED), zero connections", async () => {
     const rs = [];
     for (const [label, networks] of [
       ["MK", { mainnet: { kind: "kaspa-node", network: "mainnet" } }],
@@ -337,7 +351,7 @@ describe("TESTNET-PORT-COLLISION-1 · a public network never gets an implicit en
     }
     const seen = { paths: summary(rs) };
     trace("TPC-5", seen);
-    expectEndpointRequired(rs, JSON.stringify(seen, null, 1));
+    expectMainnetRefused(rs, JSON.stringify(seen, null, 1));
   });
 
   it("TPC-7 an explicit endpoint is never silently replaced: `--url` T on the K workspace dials T only; a declared endpoint that is down fails on THAT endpoint, never on a fallback", async () => {
@@ -428,7 +442,9 @@ describe("TESTNET-PORT-COLLISION-1 · the user's choice survives (review 2026-10
         networks: {},
         expect: {
           "testnet-10": { code: "NETWORK_ENDPOINT_REQUIRED", workspace: null },
-          mainnet: { code: "NETWORK_ENDPOINT_REQUIRED", workspace: null },
+          // MAINNET TOTAL LOCKDOWN: mainnet gets no endpoint at all, whatever the form — the lockdown's typed refusal,
+          // decided before the "no endpoint chosen" rule (it was NETWORK_ENDPOINT_REQUIRED, also with zero connections)
+          mainnet: { code: "MAINNET_CONNECTION_DISABLED", workspace: null },
           simnet: { url: canonical, source: "declared", workspace: canonical }
         }
       },
@@ -470,7 +486,7 @@ describe("TESTNET-PORT-COLLISION-1 · the user's choice survives (review 2026-10
     });
   });
 
-  it("TPC-8c a public network under a CUSTOM name (`network: \"testnet-10\"` / `\"mainnet\"`) without a URL never gets a local fallback: NETWORK_ENDPOINT_REQUIRED, zero connections", async () => {
+  it("TPC-8c a public network under a CUSTOM name (`network: \"testnet-10\"` / `\"mainnet\"`) without a URL never gets a local fallback: NETWORK_ENDPOINT_REQUIRED (mainnet: MAINNET_CONNECTION_DISABLED), zero connections", async () => {
     const C8 = workspace(
       config(
         {
@@ -505,13 +521,17 @@ describe("TESTNET-PORT-COLLISION-1 · the user's choice survives (review 2026-10
     // `tx plan` does not reach the endpoint boundary under a custom network name: it refuses earlier, typed, because the
     // planner keys network parameters and account networks on the config KEY ("my-tn10", "prod"), not on the entry's
     // `network` (registered: CUSTOM-NETWORK-PLAN-AUTHORITY-1, pre-existing). What this case pins for it: no connection at all.
-    const plan = rs.filter((r) => r.name.endsWith("-cli-tx-plan"));
+    // MAINNET TOTAL LOCKDOWN: the custom name "prod" declares mainnet — every path, the plan included, is refused first
+    // by the lockdown (MAINNET_CONNECTION_DISABLED, before accounts or network parameters are read), zero connections
+    const prod = rs.filter((r) => r.name.startsWith("C8-prod-"));
+    expectMainnetRefused(prod, JSON.stringify(seen, null, 1));
+    const plan = rs.filter((r) => r.name.endsWith("-cli-tx-plan") && !prod.includes(r));
     for (const r of plan) {
       expect(r.dialled, `${r.name}: ${r.brief}`).toEqual([]);
       expect(r.exit, `${r.name}: ${r.brief}`).not.toBe(0);
       expect(["COINBASE_MATURITY_UNRESOLVED", "ACCOUNT_NETWORK_MISMATCH"], `${r.name}: ${r.brief}`).toContain(r.code);
     }
-    expectEndpointRequired(rs.filter((r) => !plan.includes(r)), JSON.stringify(seen, null, 1));
+    expectEndpointRequired(rs.filter((r) => !plan.includes(r) && !prod.includes(r)), JSON.stringify(seen, null, 1));
   });
 });
 

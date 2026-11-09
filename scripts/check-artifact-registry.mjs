@@ -28,6 +28,10 @@ const allowedNonSchema = new Map([
   ['hardkas.merchantCompat.output.v1', {
     file: 'scripts/run-merchant-compatibility-battery-evidence.mjs',
     reason: 'schema of the output file written by the same report script; no package reads it'
+  }],
+  ['hardkas.release-build.v1', {
+    file: 'scripts/check-release-tarballs.mjs',
+    reason: 'kind of the release-build stamp (node_modules/.cache/hardkas/release-build.json) that `pnpm release:build` writes and `--pack` checks; it is never packed and no package reads it'
   }]
 ]);
 

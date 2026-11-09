@@ -2,7 +2,7 @@
 
 ## `Hardkas.create(config)`
 Initializes the SDK instance.
-- **config.network**: `simulated`, `testnet-10`, `mainnet`.
+- **config.network**: `simulated`, `simnet`, `devnet`, `testnet-10`. A `mainnet` instance opens offline only: every node operation is refused (`MAINNET_CONNECTION_DISABLED`), signing and sending too (`MAINNET_SIGNING_DISABLED`, `MAINNET_BROADCAST_DISABLED`).
 - **config.provider**: `{ type: 'rpc', url: '...' }`
 
 ## `sdk.tx.plan(args)`

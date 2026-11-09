@@ -17,6 +17,8 @@ const URL_OPTION = `Node wRPC endpoint (default: the canonical localnet, ${nodeR
  * RPC_CONNECTION_FAILED (or RPC_TIMEOUT) as on every other command; a node that answers but is not ready, RPC_NOT_READY.
  */
 async function notReadyCode(error: unknown): Promise<string> {
+  // MAINNET TOTAL LOCKDOWN: the node said it serves mainnet and the transport refused it after that one answer
+  if (/MAINNET_CONNECTION_DISABLED/.test(String(error ?? ""))) return "MAINNET_CONNECTION_DISABLED";
   const { classifyRpcError, transportCodeOf } = await import("../cli-errors.js");
   const kind = classifyRpcError(String(error ?? ""));
   return kind === "CONNECTION_REFUSED" || kind === "TIMEOUT" ? transportCodeOf(kind) : "RPC_NOT_READY";

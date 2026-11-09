@@ -158,7 +158,7 @@ When moving from Hardhat to HardKAS, avoid these common assumptions:
 
 - **HardKAS is not Hardhat:** HardKAS is an independent framework engineered specifically for Kaspa L1; it is not a plugin or fork of Nomic Foundation's Hardhat.
 - **Simulation is not Consensus:** Passing a test in the HardKAS simulator verifies that your transaction conforms to protocol format and script rules, but only the live Kaspa mining network establishes final ordering and DAG inclusion.
-- **No Unsafe Broadcasts:** By default, HardKAS enforces strict policy boundaries (`BLOCKED_BY_POLICY`) against unintentional **Kaspa L1** mainnet transactions. The experimental `@hardkas/l2` package has its own guard: L2 mainnet writes need an explicit `allowMainnet` / `--allow-mainnet`.
+- **No mainnet at all:** Mainnet is locked down in this release: no connection (reads included, even to an endpoint you declare), no signing, no broadcast; no flag, option or configuration enables it (`MAINNET_CONNECTION_DISABLED`, `MAINNET_SIGNING_DISABLED`, `MAINNET_BROADCAST_DISABLED`). The experimental `@hardkas/l2` package refuses L2 mainnet writes too, whatever `allowMainnet` / `--allow-mainnet` say (`L2_MAINNET_WRITE_BLOCKED`).
 
 ---
 

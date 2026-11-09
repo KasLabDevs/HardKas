@@ -6,7 +6,7 @@ import { UtxoControlStore } from './stores/utxo-control-store.js';
 import { logger, metrics, tracer } from '@hardkas/observability';
 import { UtxoWatchEngine, type WalletWatchHandle, type WalletWatchListener } from './watch.js';
 import { calculateDynamicFeeRate, FeePriority } from './fee-estimator.js';
-import { assertMainnetTransactionsDisabled, HardkasError, networkTypeOf, isMainnetNetworkId, isSimnetNetworkId, parseMaxFeeSompi } from '@hardkas/core';
+import { assertMainnetTransactionsDisabled, assertMainnetConnectionsDisabled, HardkasError, networkTypeOf, isMainnetNetworkId, isSimnetNetworkId, parseMaxFeeSompi } from '@hardkas/core';
 import {
     assertBroadcastNodeIdentity,
     canonicalNetworkId,
@@ -274,6 +274,10 @@ export class WalletToolkit {
             (err as any).code = "WALLET_WATCH_REQUIRES_NODE";
             throw err;
         }
+        // MAINNET TOTAL LOCKDOWN: a wallet declared on mainnet never connects (MAINNET_CONNECTION_DISABLED); and the
+        // wallet's identity is checked BEFORE the node is contacted (it used to be asked only after connecting)
+        assertMainnetConnectionsDisabled([this.options.networkId, this.options.network], "WalletToolkit.watch");
+        this.assertSyntheticIdentityNetwork("watch");
         if (!this._watch) {
             const engine = new UtxoWatchEngine(this.options.rpcUrl, async () => this.receive());
             const watch = { engine, started: engine.start() };

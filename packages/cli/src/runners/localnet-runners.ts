@@ -536,6 +536,10 @@ export async function runLocalnetFork(opts: {
   UI.header(`HardKAS Localnet Fork`);
 
   const { config } = await loadHardkasConfig();
+  // MAINNET TOTAL LOCKDOWN (RC2 oracle D2b): mainnet first — every spelling and an alias that declares one — before the
+  // name is resolved as a HardKAS network ("Unknown HardKAS network")
+  const { refuseMainnetConnection } = await import("../mainnet-guard.js");
+  refuseMainnetConnection(config as any, [opts.network], "localnet fork");
   const { target } = resolveExecutionTarget({ config, network: opts.network });
 
   if (target.kind === "simulated") {

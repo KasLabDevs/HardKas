@@ -49,6 +49,15 @@ export interface TxSendRunnerResult {
 export async function runTxSend(input: TxSendRunnerInput): Promise<TxSendRunnerResult> {
   const { targetName, signedArtifact, network, config, url } = input;
 
+  // MAINNET TOTAL LOCKDOWN (RC2 oracle D2): the broadcast refusal first, for every caller of this runner — before the
+  // artifact's target is resolved, a --network compared (EXECUTION_NETWORK_MISMATCH) or the SDK opened
+  // (PUBLIC_NETWORK_BLOCKED)
+  {
+    const { refuseMainnetBroadcast, targetNetworkOf } = await import("../mainnet-guard.js");
+    const claimed = signedArtifact as { networkId?: unknown; execution?: { network?: unknown } };
+    refuseMainnetBroadcast(config as any, [network, targetNetworkOf(config as any, targetName), claimed?.networkId, claimed?.execution?.network], "tx send");
+  }
+
   const { resolveArtifactTarget, resolveLegacyArtifactTarget, resolveProvider } = await import("@hardkas/config");
   const { LegacyArtifactRequiresExplicitResolutionError } = await import("@hardkas/core");
 

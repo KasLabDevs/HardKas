@@ -1,15 +1,43 @@
 import { HardkasError } from "./errors.js";
 
 /*
- * SDK-MAINNET-BROADCAST-GUARD-1 · the product policy of this release line: HardKAS does not sign or broadcast
- * transactions on mainnet. One authority for every high-level path (SDK tx.sign / tx.send, workflows through them,
- * WalletToolkit, the CLI, the accounts signer). `allowPublic` (which may open testnet), `experimental`, an external
- * signer or a direct call never lift it. The raw RPC transport (`sdk.rpc`, @hardkas/kaspa-rpc) is a low-level API
- * outside this policy and is not a safe way to broadcast on mainnet.
+ * MAINNET TOTAL LOCKDOWN (owner decision, 2026-11-09) · the product policy of this release line: HardKAS makes NO
+ * network connection to mainnet — reads included — and signs, broadcasts or deploys nothing on it, until the product is
+ * complete, independently audited and the owner authorizes it explicitly. It revokes the read exception of
+ * SDK-MAINNET-BROADCAST-GUARD-1 (MG-C2: "reading and planning on mainnet stay allowed") and prevails over any policy,
+ * test or document that allowed a mainnet connection.
+ *
+ * Two constants, one layer shared by every path (CLI, SDK, RPC transport, toolkit, Silver, covenants, artifacts):
+ *  - MAINNET_TRANSACTIONS_ENABLED → `assertMainnetTransactionsDisabled`: MAINNET_SIGNING_DISABLED /
+ *    MAINNET_BROADCAST_DISABLED (offline signing included: no signed mainnet transaction is ever produced);
+ *  - MAINNET_CONNECTIONS_ENABLED → `assertMainnetConnectionsDisabled`: MAINNET_CONNECTION_DISABLED, raised before any
+ *    connection — by the endpoint authority (@hardkas/config resolveNodeEndpoint), by the RPC transport
+ *    (@hardkas/kaspa-rpc OfficialRpcSession, before it creates a client when the expected network is mainnet, and
+ *    right after the node's one identity answer when the node says mainnet), and by the paths that do not reach a node
+ *    through those two.
+ * `allowPublic` (which may open testnet), `experimental`, `allowMainnet`, an external signer, a direct call, a
+ * `HARDKAS_*` variable or any configuration never lift either: they are constants, not settings.
+ *
+ * Order (decided once, pinned by the tests): the operation's own guard names the refusal. A signature is
+ * MAINNET_SIGNING_DISABLED and a broadcast MAINNET_BROADCAST_DISABLED — both raised before any connection, signer call
+ * or record; every other operation that would reach a mainnet node (a read, a plan, a wait, a diagnostic, a deploy's
+ * reads) is MAINNET_CONNECTION_DISABLED. Only fully offline operations stay available (artifact integrity checks,
+ * address derivation, unsigned records), and none of them produces a signed mainnet transaction.
+ *
+ * The one unavoidable limit: an endpoint declared as ANOTHER network (or a raw `--url` with no network) can only be
+ * known to be mainnet from the node's own answer. The transport asks the node once (getServerInfo) before anything
+ * else; when it says mainnet, the connection is closed and refused (MAINNET_CONNECTION_DISABLED) and nothing else is
+ * asked. A node that lies about its network is outside what any client can decide.
  */
 
 /** Whether HardKAS signs or broadcasts on mainnet. A constant: enabling it is an explicit product decision. */
 export const MAINNET_TRANSACTIONS_ENABLED = false as const;
+
+/**
+ * MAINNET TOTAL LOCKDOWN: whether HardKAS connects to mainnet at all (reads included). A constant: enabling it is an
+ * explicit, later product decision of the owner — never a flag, option, variable or configuration.
+ */
+export const MAINNET_CONNECTIONS_ENABLED = false as const;
 
 /** The Kaspa network types (rusty-kaspa `NetworkType`). */
 export type KaspaNetworkType = "mainnet" | "testnet" | "devnet" | "simnet";
@@ -84,4 +112,52 @@ export function assertMainnetTransactionsDisabled(
       `Nothing was ${sign ? "signed" : "sent"} or recorded.`,
     { metadata: { operation, networks: [...new Set(seen)] } }
   );
+}
+
+/** The typed code of every mainnet connection refusal (core, config, RPC transport, toolkit, CLI, SDK). */
+export const MAINNET_CONNECTION_DISABLED = "MAINNET_CONNECTION_DISABLED" as const;
+
+/**
+ * The one text of a mainnet connection refusal. `context` names the operation or endpoint; `contacted` says whether
+ * the refusal came after the node's single identity answer (an endpoint declared as another network) or before any
+ * connection at all.
+ */
+export function mainnetConnectionDisabledMessage(context?: string, contacted: "nothing" | "identity-only" = "nothing"): string {
+  return (
+    `MAINNET_CONNECTION_DISABLED: mainnet connections are disabled in HardKAS${context ? ` (${context})` : ""}, reads ` +
+    `included, even to an endpoint you declare. No flag, option, environment variable or configuration enables them ` +
+    `(allowPublic, experimental, allowMainnet, HARDKAS_*). Use simnet, devnet or a testnet; mainnet records are verified ` +
+    `offline only. ` +
+    (contacted === "identity-only"
+      ? `The node answered only its identity (getServerInfo); the connection was closed and nothing else was asked. Nothing was sent.`
+      : `Nothing was contacted or sent.`)
+  );
+}
+
+export function mainnetConnectionDisabledError(
+  context?: string,
+  metadata: Record<string, unknown> = {},
+  contacted: "nothing" | "identity-only" = "nothing"
+): HardkasError {
+  return new HardkasError(MAINNET_CONNECTION_DISABLED, mainnetConnectionDisabledMessage(context, contacted), {
+    metadata: { ...metadata, contacted }
+  });
+}
+
+/** Whether an error is a mainnet connection refusal (any layer: a HardkasError or the RPC transport's typed error). */
+export function isMainnetConnectionDisabledError(e: unknown): boolean {
+  return (e as { code?: unknown } | null)?.code === MAINNET_CONNECTION_DISABLED;
+}
+
+/**
+ * MAINNET TOTAL LOCKDOWN · refuses, before any connection, an operation when ANY of the network identities involved
+ * (the name asked for, the network its config entry declares, the artifact's, the instance's) is of the mainnet type —
+ * `mainnet`, `mainnet-<n>`, `kaspa`, `kaspa-mainnet[-<n>]`, any case. Throws MAINNET_CONNECTION_DISABLED. Nothing in the
+ * environment or the configuration can make it return on mainnet.
+ */
+export function assertMainnetConnectionsDisabled(networkIds: ReadonlyArray<unknown>, context?: string): void {
+  if (MAINNET_CONNECTIONS_ENABLED) return;
+  const seen = networkIds.filter((n): n is string => typeof n === "string" && n.trim() !== "");
+  if (!seen.some(isMainnetNetworkId)) return;
+  throw mainnetConnectionDisabledError(context, { networks: [...new Set(seen)] });
 }

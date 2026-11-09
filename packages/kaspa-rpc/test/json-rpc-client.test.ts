@@ -76,7 +76,8 @@ describe("KaspaJsonRpcClient", () => {
       storageMass: 0
     });
 
-    expect(rpc.calls.map((c) => c.method)).toEqual(["getServerInfo", "getBlockDagInfo", "submitTransaction"]);
+    // MAINNET TOTAL LOCKDOWN: the connection's own identity read comes first (every connection, expected network or not)
+    expect(rpc.calls.map((c) => c.method)).toEqual(["getServerInfo", "getServerInfo", "getBlockDagInfo", "submitTransaction"]);
     const sent = (rpc.calls.find((c) => c.method === "submitTransaction")!.request as any).transaction;
     expect(sent.outputs[0]).toEqual({ value: 1000n, scriptPublicKey: "000020aa" });
     expect(sent.inputs[0].sequence).toBe(0n);

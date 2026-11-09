@@ -1231,7 +1231,7 @@ Replay Verification:
 <div class="grid cols-2">
 <div class="box">
 <h3>Policy Gates</h3>
-<p>HardKAS refuses to sign and to broadcast mainnet transactions in this release, and the release claims mark testnet and mainnet readiness as <code>BLOCKED_BY_POLICY</code>.</p>
+<p>HardKAS makes no connection to mainnet in this release (reads included, even to an endpoint you declare) and refuses to sign and to broadcast mainnet transactions; the release claims mark testnet and mainnet readiness as <code>BLOCKED_BY_POLICY</code>.</p>
 </div>
 <div class="box">
 <h3>Infrastructure, not Custody</h3>
@@ -1847,7 +1847,7 @@ hardkas chaos replay --run-seed 42">
 </tr>
 <tr>
 <td><code>--network &lt;name&gt;</code></td>
-<td><code>simulated</code> or <code>local</code> read the simulator; simnet, devnet, testnet-10 or mainnet ask a node on 127.0.0.1 (default simnet, even in a simulator project)</td>
+<td><code>simulated</code> or <code>local</code> read the simulator; simnet, devnet or testnet-10 ask a node on 127.0.0.1 (default simnet, even in a simulator project); mainnet is never contacted (<code>MAINNET_CONNECTION_DISABLED</code>)</td>
 </tr>
 <tr>
 <td><code>--url &lt;url&gt;</code></td>

@@ -164,7 +164,7 @@ The console allows you to:
 
 1. **Simulation vs. Mining Consensus:** Passing a SilverScript test in the local simulator confirms that the script logic, signature verification, and timelocks comply with protocol rules. However, it does not guarantee network acceptance if network mining fee policies are not met.
 2. **Covenants are Stateless:** SilverScript contracts do not possess internal persistent storage variables. State changes are modeled by passing funds into a new UTXO encumbered by an updated covenant contract.
-3. **Policy Restrictions:** By default, HardKAS enforces `BLOCKED_BY_POLICY` against unauthenticated mainnet broadcasts or contract deployments to live networks from local dev environments.
+3. **Policy Restrictions:** Mainnet is locked down in this release: no connection (reads included, even to an endpoint you declare), no signing, no broadcast; no flag, option or configuration enables it (`MAINNET_CONNECTION_DISABLED`, `MAINNET_SIGNING_DISABLED`, `MAINNET_BROADCAST_DISABLED`). SilverScript on mainnet is `SILVERSCRIPT_MAINNET_NOT_ENABLED`.
 
 ---
 

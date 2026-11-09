@@ -22,7 +22,7 @@ Without `network` (and without `target`) the SDK runs on the workspace's
 in a project whose `execution.default` is `localnet` talks to the node, never to
 the simulator. `target` selects a named target of `execution.targets` (as
 `--target` does in the CLI); `network` must be a network id of `networks`
-(`simulated`, `simnet`, `devnet`, `testnet-10`, `mainnet`, …), never a target
+(`simulated`, `simnet`, `devnet`, `testnet-10`, …; `mainnet` opens an offline instance only — mainnet is locked down), never a target
 name, and when both are given they must agree. Unknown names and disagreements
 are typed errors (`UNKNOWN_NETWORK`, `EXECUTION_TARGET_NOT_FOUND`,
 `EXECUTION_NETWORK_MISMATCH`); nothing falls back to the simulator. The resolved

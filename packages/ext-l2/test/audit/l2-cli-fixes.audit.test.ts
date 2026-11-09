@@ -117,38 +117,39 @@ describe("CLI fixes (formerly D1–D6)", () => {
     expect(rpc.calls).toEqual([]);
   });
 
-  it("D1 fixed: --yes is not mainnet authorization; --allow-mainnet must be repeated at send", async () => {
+  // MAINNET TOTAL LOCKDOWN (owner decision 2026-11-09): these two cases built and signed an igra-mainnet transaction with
+  // --allow-mainnet and then proved that the send needed --allow-mainnet again (D1b) and --yes as well (D2), ending in an
+  // authorized broadcast. --allow-mainnet no longer authorizes anything, so the mainnet artifact is never produced: the
+  // build is refused with it, with --yes, with both, and nothing reaches the RPC.
+  it("D1 fixed + MAINNET TOTAL LOCKDOWN: --allow-mainnet (with or without --yes) no longer authorizes an igra-mainnet build; nothing reaches the RPC", async () => {
     freshDir("d1b");
     const rpc = await node(38833);
-    const { signed } = await buildAndSign(rpc, "igra-mainnet", { allowMainnet: true, ...FEES });
-    await expect(
-      quiet(() => runL2TxSend({ signedPath: signed.artifactPath, url: rpc.url, yes: true, ...FEES }))
-    ).rejects.toThrow(code("L2_MAINNET_WRITE_BLOCKED"));
-    expect(rpc.methods()).not.toContain("eth_sendRawTransaction");
-    // explicit authorization + confirmation: allowed (mock node only)
-    await quiet(() =>
-      runL2TxSend({ signedPath: signed.artifactPath, url: rpc.url, yes: true, allowMainnet: true, ...FEES })
-    );
-    expect(rpc.methods()).toContain("eth_sendRawTransaction");
+    for (const extra of [{ allowMainnet: true }, { allowMainnet: true, yes: true }, { yes: true }]) {
+      await expect(
+        quiet(() => runL2TxBuild({ network: "igra-mainnet", url: rpc.url, from: TEST_ADDR, to: OTHER_ADDR, value: "1", ...extra, ...FEES } as any))
+      ).rejects.toThrow(code("L2_MAINNET_WRITE_BLOCKED"));
+    }
+    expect(rpc.calls).toEqual([]);
+    expect(fs.existsSync("plans")).toBe(false);
   });
 
-  it("D2: --allow-mainnet without --yes is still cancelled (two separate decisions)", async () => {
+  it("D2 + MAINNET TOTAL LOCKDOWN: no igra-mainnet signature either, with --allow-mainnet (nothing to send, nothing sent)", async () => {
     freshDir("d2");
     const rpc = await node(38833);
-    const { signed } = await buildAndSign(rpc, "igra-mainnet", { allowMainnet: true, ...FEES });
-    const before = rpc.calls.length;
-    await expect(
-      quiet(() => runL2TxSend({ signedPath: signed.artifactPath, url: rpc.url, allowMainnet: true, ...FEES }))
-    ).rejects.toThrow(/--yes/);
-    expect(rpc.calls.length).toBe(before);
+    await expect(buildAndSign(rpc, "igra-mainnet", { allowMainnet: true, ...FEES })).rejects.toThrow(code("L2_MAINNET_WRITE_BLOCKED"));
+    expect(rpc.methods()).not.toContain("eth_sendRawTransaction");
+    expect(rpc.calls).toEqual([]);
   });
 
-  it("D4 fixed: galleon profile + endpoint reporting 38833 -> build refused, nothing signed", async () => {
+  // MAINNET TOTAL LOCKDOWN: the endpoint's eth_chainId answer names a mainnet chain, so the client ends there with the
+  // lockdown's code (it was L2_CHAIN_ID_MISMATCH, decided after the same answer) — still refused, nothing signed
+  it("D4 fixed: galleon profile + endpoint reporting 38833 -> build refused (MAINNET_CONNECTION_DISABLED), nothing signed", async () => {
     freshDir("d4");
     const rpc = await node(38833);
     await expect(
       quiet(() => runL2TxBuild({ network: "igra-galleon", url: rpc.url, from: TEST_ADDR, to: OTHER_ADDR, ...FEES }))
-    ).rejects.toThrow(code("L2_CHAIN_ID_MISMATCH"));
+    ).rejects.toThrow(code("MAINNET_CONNECTION_DISABLED"));
+    expect(rpc.methods().filter((m: string) => m !== "eth_chainId")).toEqual([]);
     expect(fs.existsSync("plans")).toBe(false);
   });
 

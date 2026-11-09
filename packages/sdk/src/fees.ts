@@ -6,6 +6,7 @@ import {
   resolveMaxFeeRate,
   MINIMUM_RELAY_FEE_RATE_SOMPI_PER_GRAM
 } from "@hardkas/tx-builder";
+import { assertSdkMayConnect } from "./mainnet-lockdown.js";
 
 /**
  * HardKAS Fees Module
@@ -46,6 +47,9 @@ export class HardkasFees {
     nodeFeeRate?: number | undefined;
   }> {
       const network = options.network ?? (this.sdk as any).network;
+      // MAINNET TOTAL LOCKDOWN: the node's fee estimate on mainnet is a mainnet read — refused, never replaced by the
+      // relay minimum as if the node had been unreachable
+      assertSdkMayConnect(this.sdk as any, "sdk.fees.estimate", options.network);
       const maxFeeRate = resolveMaxFeeRate({ override: options.maxFeeRate, config: (this.sdk as any).config?.config, network });
       const dynamic = await calculateDynamicFeeRate(this.sdk.rpc, options.priority, MINIMUM_RELAY_FEE_RATE_SOMPI_PER_GRAM, { maxFeeRate });
 

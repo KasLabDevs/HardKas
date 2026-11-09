@@ -34,7 +34,8 @@ export interface L2EndpointVerification {
 
 /**
  * - allowed: signing/broadcast permitted (still subject to chain binding and fee policy).
- * - requires-explicit-mainnet-authorization: only with `allowMainnet: true` / `--allow-mainnet`.
+ * - requires-explicit-mainnet-authorization: a mainnet profile. MAINNET TOTAL LOCKDOWN: never signed for, broadcast to or
+ *   connected to; `allowMainnet: true` / `--allow-mainnet` no longer authorize it (they have no effect).
  * - disabled: never sign or broadcast for this profile.
  */
 export type L2WritePolicy = "allowed" | "requires-explicit-mainnet-authorization" | "disabled";
@@ -220,7 +221,7 @@ export const BUILTIN_L2_PROFILES: readonly L2NetworkProfile[] = [
       riskProfile: "high",
       notes: [
         "Igra MAINNET (chain ID 38833): real funds.",
-        "Signing and broadcasting require explicit mainnet authorization (allowMainnet / --allow-mainnet).",
+        "Mainnet is locked down in HardKAS: no signing, no broadcast and no connection (reads included); allowMainnet / --allow-mainnet have no effect.",
         ...IGRA_COMMON_NOTES
       ]
     }

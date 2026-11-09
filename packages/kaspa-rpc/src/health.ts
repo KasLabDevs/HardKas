@@ -13,6 +13,13 @@ export interface RpcHealthCheckOptions {
    * http:// / https:// are HTTP JSON-RPC (an L2 or a proxy). Never decided by a port substring.
    */
   readonly protocol?: "wrpc" | "http" | undefined;
+  /**
+   * MAINNET TOTAL LOCKDOWN (RC2 oracle O7): the network the caller uses the node as, when it knows it. A mainnet network
+   * (any spelling) is refused before any connection (`ready: false`, the error MAINNET_CONNECTION_DISABLED); another
+   * one is the transport's identity check (NODE-NETWORK-IDENTITY-1). Without it, the node is still asked its identity
+   * once and refused when it answers mainnet.
+   */
+  readonly expectedNetworkId?: string | undefined;
 }
 
 /** L1-10: wRPC or HTTP by the URL's scheme (or the explicit option), never by a port number inside the string. */
@@ -56,7 +63,7 @@ export async function checkKaspaRpcHealth(
 
   // wRPC (WebSocket) branch: by scheme or option (L1-10: `http://host:18210` used to be wRPC and `ws`-less :18510 HTTP)
   if (rpcHealthProtocolOf(url, options?.protocol) === "wrpc") {
-    const client = new KaspaWrpcClient(url);
+    const client = new KaspaWrpcClient(url, options?.expectedNetworkId !== undefined ? { expectedNetworkId: options.expectedNetworkId } : {});
     const start = Date.now();
     try {
       await client.connect(timeoutMs);
@@ -97,7 +104,7 @@ export async function checkKaspaRpcHealth(
   }
 
   // HTTP fallback branch (e.g. L2)
-  const client = new KaspaJsonRpcClient({ url, timeoutMs });
+  const client = new KaspaJsonRpcClient({ url, timeoutMs, ...(options?.expectedNetworkId !== undefined ? { expectedNetworkId: options.expectedNetworkId } : {}) });
   try {
     const health = await client.healthCheck();
 
@@ -152,8 +159,11 @@ export async function waitForKaspaRpcReady(
   while (Date.now() - start < maxWaitMs) {
     lastResult = await checkKaspaRpcHealth({
       url: options?.url,
-      timeoutMs: options?.timeoutMs
+      timeoutMs: options?.timeoutMs,
+      ...(options?.expectedNetworkId !== undefined ? { expectedNetworkId: options.expectedNetworkId } : {})
     });
+    // MAINNET TOTAL LOCKDOWN: a mainnet refusal is not a node that is still starting — waiting cannot change it
+    if (/MAINNET_CONNECTION_DISABLED/.test(`${lastResult.error ?? ""} ${lastResult.lastError ?? ""}`)) return lastResult;
 
     if (lastResult.ready) {
       return lastResult;

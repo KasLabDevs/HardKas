@@ -9,7 +9,7 @@ import { WebSocketServer } from "ws";
 import { Hardkas } from "../src/index.js";
 import { loadManagedKaspaWasmSync, attachLedgerAppender, eventLedgerPath } from "@hardkas/core";
 import { signTxPlanArtifact } from "@hardkas/accounts";
-import { deriveWorkflowId, HardkasSchemas, HARDKAS_VERSION } from "@hardkas/artifacts";
+import { deriveWorkflowId, finalizeTxPlanIdentity, HardkasSchemas, HARDKAS_VERSION } from "@hardkas/artifacts";
 
 vi.setConfig({ testTimeout: 120_000, hookTimeout: 120_000 });
 
@@ -17,13 +17,21 @@ vi.setConfig({ testTimeout: 120_000, hookTimeout: 120_000 });
 // SDK-MAINNET-BROADCAST-GUARD-1 (2026-10-13) · BEFORE on published develop e14138477. Policy under test:
 //   while HardKAS keeps mainnet transactions disabled, no SDK path signs or broadcasts on mainnet just because
 //   `allowPublic` is set, an external signer is given, or tx.send is called directly.
-// Reading and planning on mainnet stay allowed; testnet with allowPublic stays allowed.
+// MAINNET TOTAL LOCKDOWN (owner decision 2026-11-09) REVOKES this file's former control MG-C2 ("reading and planning
+// on mainnet stay allowed"): a mainnet instance now opens OFFLINE — no read, no plan, no connection at all. What each
+// case protects is unchanged (0 signer calls, 0 submitTransaction, nothing written) and every mainnet case now also
+// pins ZERO frames at the fake mainnet node. The mainnet plans the sign/send cases need are built offline (planned on a
+// testnet-10 fake, then labelled mainnet and resealed: what any key holder can build without contacting mainnet).
+// Order pinned here (@hardkas/core mainnet-policy): a signature is MAINNET_SIGNING_DISABLED, a broadcast
+// MAINNET_BROADCAST_DISABLED, everything else that would reach a node (reads, plans, a workflow's first step, a
+// wallet) MAINNET_CONNECTION_DISABLED — all before any connection, signer call or record. Testnet with allowPublic
+// stays allowed.
 // FAKE nodes on loopback only (never a real node): each says the network it is told to and REFUSES every
 // submitTransaction (it records only that one was attempted). Throwaway keys created in memory, no funds anywhere.
 // The run is hermetic (non-loopback connections refused by the gate's preload).
 // -----------------------------------------------------------------------------
 
-type Fake = { url: string; methods: string[]; close(): Promise<void> };
+type Fake = { url: string; methods: string[]; connections: () => number; close(): Promise<void> };
 
 let kaspa: any;
 const hashOf = (n: number) => n.toString(16).padStart(64, "0");
@@ -37,8 +45,10 @@ async function startFake(network: string): Promise<Fake> {
   const server = new WebSocketServer({ host: "127.0.0.1", port: 0 });
   await new Promise<void>((r) => server.on("listening", () => r()));
   const methods: string[] = [];
+  let connections = 0;
   const DAA = 50_000_000;
   server.on("connection", (socket) => {
+    connections++;
     socket.on("message", (data) => {
       const text = String(data);
       const id = /"id"\s*:\s*(\d+)/.exec(text)?.[1];
@@ -89,6 +99,7 @@ async function startFake(network: string): Promise<Fake> {
   return {
     url: `ws://127.0.0.1:${port}`,
     methods,
+    connections: () => connections,
     close: () =>
       new Promise<void>((r) => {
         for (const c of server.clients) c.terminate();
@@ -108,6 +119,37 @@ let M: Keys; // mainnet key of the EXTERNAL signer
 let M2: Keys; // mainnet receiver
 let T: Keys; // testnet-10 key of the EXTERNAL signer
 let T2: Keys; // testnet-10 receiver
+let TM: Keys; // T's key, mainnet address (the offline mainnet plans spend from it)
+let T2M: Keys; // T2's key, mainnet address
+
+/**
+ * MAINNET TOTAL LOCKDOWN: a mainnet plan built WITHOUT contacting mainnet — planned on a testnet-10 fake (T → T2), then
+ * labelled mainnet (network, addresses of the same keys) and resealed. The transaction bytes are the same: Kaspa's
+ * sighash commits to no network id, so it is what any key holder can build offline for mainnet.
+ */
+async function offlineMainnetPlan(): Promise<any> {
+  const node = await startFake("testnet-10");
+  try {
+    const sdk = await Hardkas.open({ cwd: workspace("testnet-10", node.url), network: "testnet-10", policy: { allowPublic: true } });
+    try {
+      const plan: any = await sdk.tx.plan({ from: T.address, to: T2.address, amount: "1" });
+      const swap = (a: unknown) => (a === T.address ? TM.address : a === T2.address ? T2M.address : a);
+      const p = JSON.parse(JSON.stringify(plan));
+      p.networkId = "mainnet";
+      if (p.execution) p.execution.network = "mainnet";
+      for (const ref of [p.from, p.to, p.change, ...(p.inputs ?? []), ...(p.outputs ?? [])]) if (ref?.address) ref.address = swap(ref.address);
+      delete p.rpcUrl;
+      return finalizeTxPlanIdentity(p);
+    } finally {
+      await sdk.close();
+    }
+  } finally {
+    await node.close();
+  }
+}
+
+/** What a mainnet fake saw: nothing at all, under the lockdown. */
+const untouched = (node: Fake) => ({ connections: node.connections(), methods: node.methods });
 const made: string[] = [];
 const PW = "mg-test-password-only";
 let template: string;
@@ -234,6 +276,8 @@ beforeAll(async () => {
   M2 = throwawayKey("mainnet", "HK_MG_MAIN2_PK");
   T = throwawayKey("testnet-10", "HK_MG_TEST_PK");
   T2 = throwawayKey("testnet-10", "HK_MG_TEST2_PK");
+  TM = { ...T, address: new kaspa.PrivateKey(T.pk).toAddress("mainnet").toString() };
+  T2M = { ...T2, address: new kaspa.PrivateKey(T2.pk).toAddress("mainnet").toString() };
   // encrypted keystore accounts for the INTERNAL signer, generated in a scaffold-shaped workspace (simulator default)
   template = fs.mkdtempSync(path.join(os.tmpdir(), "hk-mg-template-"));
   made.push(template);
@@ -252,20 +296,20 @@ afterAll(() => {
   for (const k of [M, M2, T, T2]) if (k) delete process.env[k.env];
 });
 
-const MAINNET_REFUSAL = /^MAINNET_(SIGNING|BROADCAST|TRANSACTIONS)_DISABLED$/;
-
 describe("SDK-MAINNET-BROADCAST-GUARD-1 · mainnet signing and broadcast are refused (allowPublic does not open them)", () => {
-  it("MG-1 internal signer on a mainnet instance (policy.allowPublic): refused with a typed mainnet code, nothing written", async () => {
+  it("MG-1 internal signer on a mainnet instance (policy.allowPublic): tx.plan MAINNET_CONNECTION_DISABLED; an offline mainnet plan's sign MAINNET_SIGNING_DISABLED; nothing written, zero frames", async () => {
     const node = await startFake("mainnet");
     try {
       const ws = workspace("mainnet", node.url);
       const sdk = await Hardkas.open({ cwd: ws, network: "mainnet", policy: { allowPublic: true } });
       try {
-        const plan: any = await sdk.tx.plan({ from: "main", to: M2.address, amount: "1" });
-        const r = await outcome(sdk.tx.sign(plan, { account: "main", keystorePassword: PW }));
+        const planned = await outcome(sdk.tx.plan({ from: "main", to: M2.address, amount: "1" }));
+        expect(planned.code, JSON.stringify(planned)).toBe("MAINNET_CONNECTION_DISABLED");
+        const r = await outcome(sdk.tx.sign(await offlineMainnetPlan(), { account: "main", keystorePassword: PW }));
         expect(r.ok, JSON.stringify(r)).toBe(false);
-        expect(String(r.code), JSON.stringify(r)).toMatch(MAINNET_REFUSAL);
+        expect(r.code, JSON.stringify(r)).toBe("MAINNET_SIGNING_DISABLED");
         expect(stored(ws, /signedTx/)).toEqual([]);
+        expect(untouched(node)).toEqual({ connections: 0, methods: [] });
       } finally {
         await sdk.close();
       }
@@ -274,18 +318,18 @@ describe("SDK-MAINNET-BROADCAST-GUARD-1 · mainnet signing and broadcast are ref
     }
   });
 
-  it("MG-2 external signer on a mainnet instance: refused before the external signer is asked, nothing written", async () => {
+  it("MG-2 external signer on a mainnet instance: refused before the external signer is asked (MAINNET_SIGNING_DISABLED), nothing written, zero frames", async () => {
     const node = await startFake("mainnet");
     try {
       const ws = workspace("mainnet", node.url);
       const ext = externalSigner(M, "mainnet");
       const sdk = await Hardkas.open({ cwd: ws, network: "mainnet", policy: { allowPublic: true }, signer: ext.signer as any });
       try {
-        const plan: any = await sdk.tx.plan({ from: M.address, to: M2.address, amount: "1" });
-        const r = await outcome(sdk.tx.sign(plan));
+        const r = await outcome(sdk.tx.sign(await offlineMainnetPlan()));
         expect({ ok: r.ok, signerCalls: ext.calls.n }, JSON.stringify(r)).toEqual({ ok: false, signerCalls: 0 });
-        expect(String(r.code), JSON.stringify(r)).toMatch(MAINNET_REFUSAL);
+        expect(r.code, JSON.stringify(r)).toBe("MAINNET_SIGNING_DISABLED");
         expect(stored(ws, /signedTx/)).toEqual([]);
+        expect(untouched(node)).toEqual({ connections: 0, methods: [] });
       } finally {
         await sdk.close();
       }
@@ -294,21 +338,21 @@ describe("SDK-MAINNET-BROADCAST-GUARD-1 · mainnet signing and broadcast are ref
     }
   });
 
-  it("MG-3 tx.send of a mainnet-signed artifact (signed outside HardKAS): refused before submitTransaction, no submission recorded", async () => {
+  it("MG-3 tx.send of a mainnet-signed artifact (signed outside HardKAS): MAINNET_BROADCAST_DISABLED before any connection, no submission recorded", async () => {
     const node = await startFake("mainnet");
     try {
       const ws = workspace("mainnet", node.url);
       const sdk = await Hardkas.open({ cwd: ws, network: "mainnet", policy: { allowPublic: true } });
       try {
-        const plan: any = await sdk.tx.plan({ from: M.address, to: M2.address, amount: "1" });
+        const plan: any = await offlineMainnetPlan();
         await sdk.artifacts.write(plan); // the plan is in the store, as a HardKAS sign would leave it
-        const signed = await externalSigner(M, "mainnet").signer.signTransaction(plan); // what any third party can do
+        const signed = await externalSigner(TM, "mainnet").signer.signTransaction(plan); // what any third party can do
         const r = await outcome(sdk.tx.send(signed as any));
-        const seen = { r, submitAttempts: node.methods.filter((m) => m === "submitTransaction").length, submissions: stored(ws, /txSubmission/) };
-        expect(seen.submitAttempts, JSON.stringify(seen)).toBe(0);
+        const seen = { r, ...untouched(node), submissions: stored(ws, /txSubmission/) };
         expect(r.ok, JSON.stringify(seen)).toBe(false);
-        expect(String(r.code), JSON.stringify(seen)).toMatch(MAINNET_REFUSAL);
+        expect(r.code, JSON.stringify(seen)).toBe("MAINNET_BROADCAST_DISABLED");
         expect(seen.submissions, JSON.stringify(seen)).toEqual([]);
+        expect({ connections: seen.connections, methods: seen.methods }, JSON.stringify(seen)).toEqual({ connections: 0, methods: [] });
       } finally {
         await sdk.close();
       }
@@ -317,19 +361,19 @@ describe("SDK-MAINNET-BROADCAST-GUARD-1 · mainnet signing and broadcast are ref
     }
   });
 
-  it("MG-4 the same through the workspace config (experimental + network.allowPublic, no per-call policy): refused before submitTransaction", async () => {
+  it("MG-4 the same through the workspace config (experimental + network.allowPublic, no per-call policy): MAINNET_BROADCAST_DISABLED, zero frames", async () => {
     const node = await startFake("mainnet");
     try {
       const ws = workspace("mainnet", node.url, { experimental: true, network: { allowPublic: true } });
       const sdk = await Hardkas.open({ cwd: ws, network: "mainnet" });
       try {
-        const plan: any = await sdk.tx.plan({ from: M.address, to: M2.address, amount: "1" });
+        const plan: any = await offlineMainnetPlan();
         await sdk.artifacts.write(plan);
-        const signed = await externalSigner(M, "mainnet").signer.signTransaction(plan);
+        const signed = await externalSigner(TM, "mainnet").signer.signTransaction(plan);
         const r = await outcome(sdk.tx.send(signed as any));
-        const seen = { r, submitAttempts: node.methods.filter((m) => m === "submitTransaction").length };
-        expect(seen.submitAttempts, JSON.stringify(seen)).toBe(0);
-        expect(String(r.code), JSON.stringify(seen)).toMatch(MAINNET_REFUSAL);
+        const seen = { r, ...untouched(node) };
+        expect(r.code, JSON.stringify(seen)).toBe("MAINNET_BROADCAST_DISABLED");
+        expect({ connections: seen.connections, methods: seen.methods }, JSON.stringify(seen)).toEqual({ connections: 0, methods: [] });
       } finally {
         await sdk.close();
       }
@@ -338,7 +382,7 @@ describe("SDK-MAINNET-BROADCAST-GUARD-1 · mainnet signing and broadcast are ref
     }
   });
 
-  it("MG-5 a workflow [tx.plan, tx.send] on a mainnet instance with an external signer: no signature, no submitTransaction", async () => {
+  it("MG-5 a workflow [tx.plan, tx.send] on a mainnet instance with an external signer: failed at its first step (MAINNET_CONNECTION_DISABLED), no signature, zero frames", async () => {
     const node = await startFake("mainnet");
     try {
       const ws = workspace("mainnet", node.url);
@@ -346,11 +390,11 @@ describe("SDK-MAINNET-BROADCAST-GUARD-1 · mainnet signing and broadcast are ref
       const sdk = await Hardkas.open({ cwd: ws, network: "mainnet", policy: { allowPublic: true }, signer: ext.signer as any });
       try {
         const run: any = await sdk.workflow.run({ steps: [{ type: "tx.plan", from: M.address, to: M2.address, amount: 1 } as any, { type: "tx.send" } as any] });
-        const seen = { status: run.status, code: run.errorEnvelope?.code, signerCalls: ext.calls.n, submitAttempts: node.methods.filter((m) => m === "submitTransaction").length };
-        expect(seen.submitAttempts, JSON.stringify(seen)).toBe(0);
+        const seen = { status: run.status, code: run.errorEnvelope?.code, signerCalls: ext.calls.n, ...untouched(node) };
         expect(seen.signerCalls, JSON.stringify(seen)).toBe(0);
         expect(seen.status, JSON.stringify(seen)).toBe("failed");
-        expect(String(seen.code), JSON.stringify(seen)).toMatch(MAINNET_REFUSAL);
+        expect(seen.code, JSON.stringify(seen)).toBe("MAINNET_CONNECTION_DISABLED");
+        expect({ connections: seen.connections, methods: seen.methods }, JSON.stringify(seen)).toEqual({ connections: 0, methods: [] });
       } finally {
         await sdk.close();
       }
@@ -362,7 +406,7 @@ describe("SDK-MAINNET-BROADCAST-GUARD-1 · mainnet signing and broadcast are ref
   it.each([
     ["the toolkit's default network", {}],
     ["network: mainnet", { network: "mainnet" }]
-  ])("MG-6 sdk.wallet (WalletToolkit) create + send on a mainnet instance with an external signer (%s): no submitTransaction", async (label, opts) => {
+  ])("MG-6 sdk.wallet (WalletToolkit) on a mainnet instance with an external signer (%s): refused at open (MAINNET_CONNECTION_DISABLED), no signature, zero frames", async (label, opts) => {
     const node = await startFake("mainnet");
     try {
       const ws = workspace("mainnet", node.url);
@@ -371,18 +415,12 @@ describe("SDK-MAINNET-BROADCAST-GUARD-1 · mainnet signing and broadcast are ref
       try {
         let wallet: any;
         const opened = await outcome(Promise.resolve().then(() => (wallet = sdk.wallet.open("mg-wallet", opts as any))).then(() => undefined));
-        const created = wallet ? await outcome(wallet.create()) : undefined;
         const r = wallet ? await outcome(wallet.send({ to: M2.address, amount: 100_000_000n })) : opened;
-        const seen = { label, created, r, signerCalls: ext.calls.n, submitAttempts: node.methods.filter((m) => m === "submitTransaction").length, nodeMethods: [...new Set(node.methods)] };
-        console.log("MG-6 seen:", JSON.stringify(seen));
-        expect(seen.submitAttempts, JSON.stringify(seen)).toBe(0);
+        const seen = { label, opened, r, signerCalls: ext.calls.n, ...untouched(node) };
+        expect(wallet, JSON.stringify(seen)).toBeUndefined();
+        expect(opened.code, JSON.stringify(seen)).toBe("MAINNET_CONNECTION_DISABLED");
         expect(seen.signerCalls, JSON.stringify(seen)).toBe(0);
-        expect(r.ok, JSON.stringify(seen)).toBe(false);
-        // refused BY POLICY, not by an incompatible address in the planner: either the toolkit's own explicit mainnet
-        // guard at open (WALLET_QUERY_MAINNET_BLOCKED) or the product policy before any planning read
-        const policy = String(r.code ?? "") === "MAINNET_BROADCAST_DISABLED" || /WALLET_QUERY_MAINNET_BLOCKED/.test(String(r.message));
-        expect(policy, JSON.stringify(seen)).toBe(true);
-        expect(seen.nodeMethods.filter((m) => m === "getUtxosByAddresses" || m === "getFeeEstimate"), JSON.stringify(seen)).toEqual([]);
+        expect({ connections: seen.connections, methods: seen.methods }, JSON.stringify(seen)).toEqual({ connections: 0, methods: [] });
       } finally {
         await sdk.close();
       }
@@ -405,13 +443,13 @@ describe("SDK-MAINNET-BROADCAST-GUARD-1 · every identity, every signing path, n
       const sdk = await Hardkas.open({ cwd: ws, network: "mainnet", policy: { allowPublic: true } });
       const detach = attachLedgerAppender(ws);
       try {
-        const plan: any = await sdk.tx.plan({ from: M.address, to: M2.address, amount: "1" });
+        const plan: any = await offlineMainnetPlan();
         await sdk.artifacts.write(plan);
-        const signed = await externalSigner(M, "mainnet").signer.signTransaction(plan);
+        const signed = await externalSigner(TM, "mainnet").signer.signTransaction(plan);
         const r = await outcome(sdk.tx.send(signed as any, node.url));
-        const seen = { r, submitAttempts: node.methods.filter((m) => m === "submitTransaction").length, submissions: stored(ws, /txSubmission/), events: ledgerKinds(ws) };
+        const seen = { r, ...untouched(node), submissions: stored(ws, /txSubmission/), events: ledgerKinds(ws) };
         expect(String(r.code), JSON.stringify(seen)).toBe("MAINNET_BROADCAST_DISABLED");
-        expect(seen.submitAttempts).toBe(0);
+        expect({ connections: seen.connections, methods: seen.methods }, JSON.stringify(seen)).toEqual({ connections: 0, methods: [] });
         expect(seen.submissions).toEqual([]);
         expect(seen.events.filter((k) => /workflow\.(submitted|failed)|rpc\.error/.test(k)), JSON.stringify(seen)).toEqual([]);
       } finally {
@@ -427,17 +465,18 @@ describe("SDK-MAINNET-BROADCAST-GUARD-1 · every identity, every signing path, n
     const node = await startFake("testnet-10");
     const mainNode = await startFake("mainnet");
     try {
-      // a mainnet plan and signature produced on a mainnet instance (allowed up to the plan), then handed to a testnet one
+      // a mainnet plan and signature built offline (MAINNET TOTAL LOCKDOWN: a mainnet instance plans nothing — it used to
+      // read mainnet up to the plan), then handed to a testnet one
       const mws = workspace("mainnet", mainNode.url);
       const msdk = await Hardkas.open({ cwd: mws, network: "mainnet", policy: { allowPublic: true } });
-      let plan: any;
       try {
-        plan = await msdk.tx.plan({ from: M.address, to: M2.address, amount: "1" });
+        expect((await outcome(msdk.tx.plan({ from: M.address, to: M2.address, amount: "1" }))).code).toBe("MAINNET_CONNECTION_DISABLED");
       } finally {
         await msdk.close();
       }
-      const signed = await externalSigner(M, "mainnet").signer.signTransaction(plan);
-      const ext = externalSigner(M, "mainnet");
+      const plan: any = await offlineMainnetPlan();
+      const signed = await externalSigner(TM, "mainnet").signer.signTransaction(plan);
+      const ext = externalSigner(TM, "mainnet");
       const tws = workspace("testnet-10", node.url);
       const tsdk = await Hardkas.open({ cwd: tws, network: "testnet-10", policy: { allowPublic: true }, signer: ext.signer as any });
       try {
@@ -448,6 +487,7 @@ describe("SDK-MAINNET-BROADCAST-GUARD-1 · every identity, every signing path, n
         expect(String(sendRefusal.code), JSON.stringify(seen)).toBe("MAINNET_BROADCAST_DISABLED");
         expect(seen.signerCalls).toBe(0);
         expect(seen.submitAttempts).toBe(0);
+        expect(untouched(mainNode)).toEqual({ connections: 0, methods: [] });
       } finally {
         await tsdk.close();
       }
@@ -473,6 +513,7 @@ describe("SDK-MAINNET-BROADCAST-GUARD-1 · every identity, every signing path, n
         const r = await outcome(sdk.tx.sign(partial, { account: "main", append: true, keystorePassword: PW } as any));
         expect(String(r.code), JSON.stringify(r)).toBe("MAINNET_SIGNING_DISABLED");
         expect(stored(ws, /signedTx/)).toEqual([]);
+        expect(untouched(node)).toEqual({ connections: 0, methods: [] });
       } finally {
         await sdk.close();
       }
@@ -538,20 +579,24 @@ describe("SDK-MAINNET-BROADCAST-GUARD-1 · what stays allowed (controls)", () =>
     }
   });
 
-  it("MG-C2 reading and planning on mainnet stay allowed (allowPublic)", async () => {
+  // MAINNET TOTAL LOCKDOWN (owner decision 2026-11-09): this control used to read "MG-C2 reading and planning on mainnet
+  // stay allowed (allowPublic)" and proved a mainnet instance read the DAG, a balance and planned from the node. The
+  // owner revoked that exception: it is now the opposite assertion, on the same fake and the same calls.
+  it("MG-C2 (revoked by the MAINNET TOTAL LOCKDOWN) reading and planning on mainnet are refused (allowPublic): MAINNET_CONNECTION_DISABLED, zero frames", async () => {
     const node = await startFake("mainnet");
     try {
       const ws = workspace("mainnet", node.url);
       const sdk = await Hardkas.open({ cwd: ws, network: "mainnet", policy: { allowPublic: true } });
       try {
-        const dag: any = await sdk.rpc.getBlockDagInfo();
-        const balance: any = await sdk.rpc.getBalanceByAddress(M.address);
-        const plan: any = await sdk.tx.plan({ from: M.address, to: M2.address, amount: "1" });
-        expect({ dagNetwork: dag.networkId ?? dag.network, balance: String(balance.balanceSompi), planNetwork: plan.networkId }).toEqual({
-          dagNetwork: "mainnet",
-          balance: "10000000000",
-          planNetwork: "mainnet"
+        const dag = await outcome(sdk.rpc.getBlockDagInfo());
+        const balance = await outcome(sdk.rpc.getBalanceByAddress(M.address));
+        const plan = await outcome(sdk.tx.plan({ from: M.address, to: M2.address, amount: "1" }));
+        expect({ dag: dag.code, balance: balance.code, plan: plan.code }).toEqual({
+          dag: "MAINNET_CONNECTION_DISABLED",
+          balance: "MAINNET_CONNECTION_DISABLED",
+          plan: "MAINNET_CONNECTION_DISABLED"
         });
+        expect(untouched(node)).toEqual({ connections: 0, methods: [] });
       } finally {
         await sdk.close();
       }

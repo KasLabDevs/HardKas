@@ -75,7 +75,7 @@ hardkas tx sign simnet-plan.json \
   --out simnet-signed.json
 ```
 
-For mainnet-like flows, signing should remain a separate deliberate step. Mainnet signing is guarded and should not be part of normal local development.
+Signing should remain a separate deliberate step. Mainnet is locked down in this release: no connection (reads included), no signing, no broadcast (`MAINNET_CONNECTION_DISABLED`, `MAINNET_SIGNING_DISABLED`, `MAINNET_BROADCAST_DISABLED`).
 
 ## 5. Send
 

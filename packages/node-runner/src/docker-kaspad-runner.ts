@@ -186,9 +186,11 @@ export class DockerKaspadRunner {
     } else if (network === "devnet") {
       networkFlag = "--devnet";
     } else if (network === "mainnet") {
+      // MAINNET TOTAL LOCKDOWN: a mainnet node would sync from mainnet peers — HardKAS runs none and connects to none
       throw new Error(
-        "[NODE_MANAGEMENT_MAINNET_FORBIDDEN] Local Docker node for 'mainnet' is currently unsupported by HardKAS.\n" +
-          "Please use a remote RPC provider or a manual kaspad setup for mainnet operations."
+        "[NODE_MANAGEMENT_MAINNET_FORBIDDEN] HardKAS does not run a mainnet node and makes no mainnet connection " +
+          "(MAINNET_CONNECTION_DISABLED: mainnet is locked down, reads included; no flag or configuration enables it). " +
+          "Use simnet, devnet or a testnet."
       );
     } else {
       throw new Error(`Unsupported network for Docker runner: ${network}`);

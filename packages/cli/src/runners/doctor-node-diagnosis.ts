@@ -232,16 +232,17 @@ async function resolveNode(opts: DoctorNodeOptions, timeoutMs: number): Promise<
       stop: { code: "SIMULATOR_HAS_NO_NODE", status: "skip", message: `'${name}' is the HardKAS simulator: it executes in this process and has no node. Nothing was contacted.` }
     };
   }
-  // never mainnet, whatever the endpoint: refused before any connection (not even a read)
-  if (core.isMainnetNetworkId(network)) {
+  // never mainnet, whatever the endpoint: refused before any connection (not even a read). MAINNET TOTAL LOCKDOWN: the
+  // one typed code every layer uses (it was MAINNET_NOT_CONTACTED here)
+  if (core.isMainnetNetworkId(network) || core.isMainnetNetworkId(name)) {
     return {
       node,
       simulatedWorkspace,
       publicOptIn,
       stop: {
-        code: "MAINNET_NOT_CONTACTED",
+        code: core.MAINNET_CONNECTION_DISABLED,
         status: "skip",
-        message: `${network}: doctor never contacts a mainnet node, not even to read, and HardKAS does not sign or send there. Nothing was contacted.`
+        message: core.mainnetConnectionDisabledMessage(`doctor, ${name === network ? network : `'${name}' (${network})`}`)
       }
     };
   }
@@ -385,6 +386,17 @@ export async function diagnoseNode(opts: DoctorNodeOptions): Promise<DoctorNodeD
 
   // ------------------------------------------------------------------ connectivity
   if (!server) {
+    // MAINNET TOTAL LOCKDOWN (RC2 oracle O8): the node answered its one identity question with mainnet and the transport
+    // closed it there — the headline and the identity check are that refusal, never "the identity could not be read"
+    const said = probe.error ?? record.problems.join("; ");
+    if (core.isMainnetConnectionDisabledError(probe.error) || /MAINNET_CONNECTION_DISABLED/.test(String((said as any)?.message ?? said))) {
+      const message = `MAINNET_CONNECTION_DISABLED: ${node.url} says it serves mainnet (its one identity answer, getServerInfo); HardKAS closed the connection and asked nothing else`;
+      add({ name: "Node connectivity", section: "connectivity", code: "NODE_REACHABLE", status: "pass", message: `${node.url} answered its identity question` });
+      add({ name: identityName, section: "network-identity", code: core.MAINNET_CONNECTION_DISABLED, status: "fail", message, suggestion: `Point the workspace at a rusty-kaspad that serves ${network}.` });
+      add({ name: "Node sync", section: "sync", code: "NODE_NOT_CHECKED", status: "skip", message: "not checked: the node says it serves mainnet" });
+      for (const flow of flows) flowCheck(flow, { ready: false, evaluated: true, code: core.MAINNET_CONNECTION_DISABLED, message: "the node says it serves mainnet" });
+      return { checks, node, partial: { code: core.MAINNET_CONNECTION_DISABLED, message } };
+    }
     const f = failureOf(probe.error ?? record.problems.join("; "));
     if (f.code === "NODE_ANSWER_UNREADABLE") {
       add({ name: "Node connectivity", section: "connectivity", code: "NODE_REACHABLE", status: "pass", message: `${node.url} answered, but not with a node identity it could read` });

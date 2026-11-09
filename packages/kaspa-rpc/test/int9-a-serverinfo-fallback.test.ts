@@ -31,8 +31,11 @@ describe("INT9-A · getServerInfo's fallback is bounded", () => {
       new Promise((r) => setTimeout(() => r({ kind: "hung" }), 3000))
     ]);
     expect((outcome as any).kind).not.toBe("hung");
-    expect(methods().filter((m) => m === "getServerInfo").length).toBe(1);
-    expect(methods().length).toBeLessThanOrEqual(3);
+    // MAINNET TOTAL LOCKDOWN: the session now asks every connection its identity once (getServerInfo) before anything
+    // else, also without an expected network; an answer it cannot decode identifies nothing (not refused, nothing shows
+    // mainnet). So: the identity read + the caller's own read — still bounded, still no loop (it was exactly 1)
+    expect(methods().filter((m) => m === "getServerInfo").length).toBe(2);
+    expect(methods().length).toBeLessThanOrEqual(4);
     // whatever it returns, it never names a network the node did not name
     if ((outcome as any).kind === "answer") expect((outcome as any).v.networkId).toBe("unknown");
     await client.close();

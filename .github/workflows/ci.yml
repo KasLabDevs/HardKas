@@ -139,6 +139,9 @@ jobs:
   # RC1 · R3: the release tarballs, packed as a publish packs them, before anything is published (nothing is published
   # here and no token exists in CI): first an offline audit of every tarball, then a consumer project that installs
   # the tarballs (their third-party dependencies from npmjs) and runs the CLI and the SDK from them.
+  # RC2 · P: they are packed from the release build (`pnpm release:build`: every published dist/ deleted, then built
+  # with turbo --force, so no cached output is restored over older files), and the audit refuses any other dist/ and
+  # flags every file the entry points do not reach (UNREFERENCED_FILE).
   release-tarballs:
     name: Release tarballs (audit and consumer smoke)
     runs-on: ubuntu-latest
@@ -162,10 +165,10 @@ jobs:
       - name: Install Dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build Monorepo
-        run: pnpm build
+      - name: Release build (clean dist, no turbo cache)
+        run: pnpm release:build
 
-      - name: Tarball audit (check-release-tarballs)
+      - name: Tarball audit (check-release-tarballs, unreferenced files included)
         run: node scripts/check-release-tarballs.mjs --pack --dir "$RUNNER_TEMP/release-tarballs" --report "$RUNNER_TEMP/release-tarballs.json"
 
       - name: Consumer smoke from the tarballs (packaging:smoke)

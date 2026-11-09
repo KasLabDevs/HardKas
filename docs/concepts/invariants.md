@@ -43,6 +43,6 @@ Artifact mutation checks, network checks, address checks, and signature structur
 
 ## 7. Mainnet Invariant
 
-Mainnet is outside the default alpha happy path.
+Mainnet is outside the default alpha happy path, and locked down: HardKAS makes no connection to mainnet (reads included), signs nothing for it and broadcasts nothing to it (MAINNET TOTAL LOCKDOWN, owner decision 2026-11-09; `MAINNET_CONNECTION_DISABLED`, `MAINNET_SIGNING_DISABLED`, `MAINNET_BROADCAST_DISABLED`). No flag, option, variable or configuration lifts it.
 
-Any future mainnet path must be explicit, guarded, documented separately, and harder to trigger than local simulation or simnet testing.
+Any future mainnet path needs the product complete, an independent audit, full validation and the owner's explicit authorization; it must be explicit, guarded, documented separately, and harder to trigger than local simulation or simnet testing.

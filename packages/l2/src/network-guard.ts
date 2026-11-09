@@ -64,15 +64,36 @@ export function assertL2WriteAllowed(input: L2WriteGuardInput): void {
     );
   }
 
-  if (isMainnetNetwork(chainId, profile) && input.allowMainnet !== true) {
+  // MAINNET TOTAL LOCKDOWN (owner decision 2026-11-09, @hardkas/core mainnet-policy): an L2 mainnet (Igra mainnet settles
+  // on Kaspa mainnet) is never signed for or broadcast to. `allowMainnet: true` / `--allow-mainnet` no longer authorize
+  // it: they are kept for compatibility and have no effect.
+  if (isMainnetNetwork(chainId, profile)) {
     throw new L2SafetyError(
       "L2_MAINNET_WRITE_BLOCKED",
       `${input.operation} refused: chain ID ${chainId} is a MAINNET network` +
         (profile ? ` (profile '${profile.name}')` : "") +
-        ". Pass allowMainnet: true (SDK) or --allow-mainnet (CLI) to authorize it explicitly.",
-      { chainId, profile: profile?.name }
+        ". Mainnet is locked down in HardKAS (no signature, no broadcast, no connection); allowMainnet / --allow-mainnet " +
+        "have no effect. Use a local or test network.",
+      { chainId, profile: profile?.name, allowMainnetIgnored: input.allowMainnet === true }
     );
   }
+}
+
+/**
+ * MAINNET TOTAL LOCKDOWN · the read side of the L2 guard: an L2 RPC client bound to a mainnet profile or chain never
+ * sends a request (MAINNET_CONNECTION_DISABLED, nothing contacted); an `eth_chainId` answer naming a mainnet chain
+ * ends the client (see EvmJsonRpcClient).
+ */
+export function assertL2ConnectionAllowed(input: { chainId?: number | undefined; profile?: L2NetworkProfile | undefined; operation: string }): void {
+  if (!isMainnetNetwork(input.chainId, input.profile)) return;
+  throw new L2SafetyError(
+    "MAINNET_CONNECTION_DISABLED",
+    `${input.operation} refused: chain ID ${input.chainId ?? "?"}` +
+      (input.profile ? ` (profile '${input.profile.name}')` : "") +
+      " is a MAINNET network. Mainnet connections are disabled in HardKAS, reads included; no flag, option or configuration " +
+      "enables them (allowMainnet included). Nothing was contacted.",
+    { chainId: input.chainId, profile: input.profile?.name }
+  );
 }
 
 export function assertChainIdMatches(expected: number, actual: number): void {

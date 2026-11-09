@@ -102,11 +102,14 @@ and sign again from the last intact step.
 
 ### Mainnet refusals
 
+`MAINNET_CONNECTION_DISABLED` (any command or SDK call that would reach a mainnet
+node: `rpc *`, `accounts balance`, `tx plan`, `tx wait`, `doctor`, … — reads
+included, even to an endpoint you declare),
 `SILVERSCRIPT_MAINNET_NOT_ENABLED` (`silver deploy|spend|covenant … --network mainnet`),
 `MAINNET_SIGNING_DISABLED` (`tx sign`; `--allow-mainnet-signing` has no effect in
 this release) and `MAINNET_BROADCAST_DISABLED`. These are policy, not bugs:
-mainnet is NO-GO in this release. In the test run the mainnet `silver deploy`
-was refused before any connection was attempted.
+mainnet is NO-GO and locked down in this release, and no flag or setting
+enables it. Each refusal comes before any connection is attempted.
 
 ## Verifying
 

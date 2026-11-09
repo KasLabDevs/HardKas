@@ -67,7 +67,7 @@ The real Kaspa network. Value is at stake.
 * **Validation & Consensus:** Global PoW.
 * **Evidence:** Permanent, immutable public ledger inclusion.
 
-**When to use:** Production deployments, real value transfers.
+**In this release: not available.** Mainnet is locked down: HardKAS makes no connection to a mainnet node (reads included, even to an endpoint you declare), signs nothing for it and broadcasts nothing to it (`MAINNET_CONNECTION_DISABLED`, `MAINNET_SIGNING_DISABLED`, `MAINNET_BROADCAST_DISABLED`). No flag or setting enables it. Mainnet records are verified offline only.
 
 ---
 
@@ -78,4 +78,4 @@ HardKAS is designed to escalate smoothly through these environments without chan
 1. **5-Minute Development (Simulator):** Start here. Get your workflow compiling, policies passing, and tests green. No infrastructure required.
 2. **First Real Node (Localnet):** Run `hardkas localnet start`. Point your SDK to `simnet`. Discover how your app handles block mining latency, real RPC errors, and real Kaspa cryptography.
 3. **Staging (Testnet):** Point your config to a public testnet RPC. Give your application to beta testers.
-4. **Production (Mainnet):** The final step. HardKAS ensures that the transaction shape you tested in the Simulator and Localnet is mathematically identical to what broadcasts on Mainnet.
+4. **Production (Mainnet):** Not part of this release: HardKAS does not connect to, sign for or broadcast to mainnet (locked down until the product is complete, independently audited and explicitly authorized).

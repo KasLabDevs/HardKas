@@ -21,8 +21,10 @@ Two different things appear side by side:
   result. A simulator result never counts.
 
 > [!WARNING]
-> **Mainnet: NO-GO.** No signing, no broadcast; `doctor`, `artifact verify` and
-> Silver never contact a mainnet node, and mainnet artifacts are verified offline only. **Testnet-10:** only for teams that hold testnet
+> **Mainnet: NO-GO, locked down.** No connection to a mainnet node at all (reads
+> included, even to an endpoint you declare), no signing, no broadcast
+> (`MAINNET_CONNECTION_DISABLED`, `MAINNET_SIGNING_DISABLED`, `MAINNET_BROADCAST_DISABLED`;
+> no flag or setting enables them); mainnet artifacts are verified offline only. **Testnet-10:** only for teams that hold testnet
 > funds; transactions were not tested with this release. **vProgs** is not
 > active. **No trustless bridge** exists in HardKAS.
 
@@ -66,8 +68,8 @@ Two different things appear side by side:
 
 | Feature | What Kaspa L1 does | HardKAS |
 | :-- | :-- | :-- |
-| Mainnet signing and broadcast | — | refused by policy (`MAINNET_SIGNING_DISABLED`, `MAINNET_BROADCAST_DISABLED`, `SILVERSCRIPT_MAINNET_NOT_ENABLED`) |
-| Reading from a mainnet node | serves its state over RPC | no mainnet endpoint is built in; `rpc info`, `accounts balance` and `tx plan` read only from one you declare yourself (planning needs no key and signs nothing); `doctor`, `artifact verify` and the Silver commands never contact mainnet |
+| Mainnet signing and broadcast | — | refused by policy (`MAINNET_SIGNING_DISABLED`, `MAINNET_BROADCAST_DISABLED`, `SILVERSCRIPT_MAINNET_NOT_ENABLED`), offline signing included |
+| Reading from a mainnet node | serves its state over RPC | refused (`MAINNET_CONNECTION_DISABLED`): no command and no SDK path connects to mainnet, not even to an endpoint you declare; an endpoint declared as another network whose node answers mainnet is closed after that one identity answer. Mainnet artifacts are verified offline only |
 | Absolute lock time (CLTV, `lockTime ≠ 0`) | supports it | never builds one |
 | Spending from an ECDSA address | supports it | the signer is Schnorr-only (paying to one works) |
 | Transaction v1 for plain payments | supports it | payments, batches and consolidations stay v0 by design |

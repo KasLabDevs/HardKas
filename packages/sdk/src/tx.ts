@@ -25,6 +25,7 @@ import {
   sameRpcEndpoint
 } from "@hardkas/kaspa-rpc";
 import { networkEndpointRequiredError } from "@hardkas/config";
+import { assertSdkMayConnect } from "./mainnet-lockdown.js";
 
 /**
  * EXPECTED-TXID-1: the TXID a real send is made under — the signed artifact's, provided it is the id the official
@@ -489,10 +490,13 @@ export class HardkasTx {
     const { ProjectArtifactStore } = await import("@hardkas/artifacts");
     // TESTNET-PORT-COLLISION-1: an instance whose public network has no endpoint the user chose observes nothing
     refuseUnresolvedEndpoint(this.sdk);
+    assertSdkMayConnect(this.sdk, "sdk.tx.observe");
     // ENDPOINT-AUTHORITY-1 (EA-I1/EA-I2): the observation is the observing client's; an explicit endpoint must be it
     const endpoint = endpointAuthority(this.sdk.rpc, options.rpcUrl, "OBSERVE");
     const store = new ProjectArtifactStore(this.sdk.workspace.root);
     const submission = await this.findSubmissionForTxId(txId);
+    // MAINNET TOTAL LOCKDOWN: observing on a mainnet instance, or a transaction recorded on mainnet, is a mainnet read
+    assertSdkMayConnect(this.sdk, "sdk.tx.observe", (submission as { networkId?: unknown } | undefined)?.networkId);
     const previous = store.listObservationsByTxId(txId).observations as any[];
     // The same order deriveTxStatus reads a history in: point, then time, then id (two looks at one
     // sink are not interchangeable — the later one holds the cursor).
@@ -698,6 +702,9 @@ export class HardkasTx {
     // RC1 · D7: every plan has lock time 0 (no CLTV in this release). A caller asking for another one is told so; it used
     // to be ignored silently (a plan with lock time 0 came back).
     refuseNonZeroLockTime((options as { lockTime?: unknown }).lockTime);
+    // MAINNET TOTAL LOCKDOWN: a plan on mainnet needs mainnet chain state (UTXOs, DAA score, fee estimate) — a mainnet
+    // read: refused before anything is resolved or read (the instance's network and a `networkProfile` alike)
+    assertSdkMayConnect(this.sdk, "sdk.tx.plan", options.networkProfile);
     // WORKSPACE-AUTHORITY-2 (WA2-I2): the identities and the world of a plan come from the ONE resolved execution target
     // of this instance, and their compatibility is decided before any plan exists — the CLI's rule, shared from
     // @hardkas/accounts (`assertAccountCompatible`), never a world-mixing artifact caught later by the signer.

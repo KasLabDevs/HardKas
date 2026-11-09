@@ -70,7 +70,7 @@ const BUILD_GROUPS = (caps: HardkasCapabilities): Array<[string, Array<[Capabili
       ["workspaceLocks", "Workspace locks", "O_EXCL + PID liveness + deadlock ordering"],
       ["corruptionDetection", "Corruption", "Machine-readable issue codes (hardkas verify, hardkas repair)"],
       ["secretRedaction", "Secret redaction", "Credentials redacted before they are persisted or printed"],
-      ["mainnetGuards", "Mainnet guards", "Mainnet signing refused in this release"]
+      ["mainnetGuards", "Mainnet guards", "Mainnet locked down: no connection (reads included), no signing, no broadcast"]
     ]
   ],
   [

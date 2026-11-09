@@ -118,8 +118,10 @@ export function registerEscrowCommands(program: Command) {
       }
 
       // L1-CORE-1 B3: the node of the network asked for (--url, else the workspace's declared endpoint; it was the
-      // canonical localnet only), proven before anything is read from it; never mainnet
-      assertMainnetTransactionsDisabled("broadcast", [opts.network], "escrow rescue-v1 prepare");
+      // canonical localnet only), proven before anything is read from it; never mainnet. MAINNET TOTAL LOCKDOWN (RC2 oracle
+      // O3): `prepare` reads the UTXO from the node, so its refusal is the connection one — the same code and exit for
+      // `--network mainnet` and an alias that declares it (it was MAINNET_BROADCAST_DISABLED, exit 1, for the name only),
+      // raised by resolveL1NodeTarget before anything is read; `broadcast` keeps MAINNET_BROADCAST_DISABLED
       const { resolveL1NodeTarget, proveL1Node } = await import("../runners/l1-node-target.js");
       const { rpc } = await proveL1Node(await resolveL1NodeTarget(String(opts.network), opts.url));
       let utxoEntry: any;
