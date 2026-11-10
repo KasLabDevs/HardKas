@@ -21,35 +21,27 @@ export async function runDevInit() {
 
   UI.info("Checking configuration...");
 
-  if (!fs.existsSync(configFile)) {
+  // ESCALÓN 3 · P1: an existing config is never touched, whatever its name: a new hardkas.config.ts next to a
+  // hardkas.config.mjs would shadow it (the loader prefers .ts). The generated config imports nothing (the old one
+  // imported @hardkas/config, which a project does not depend on, and never loaded) and is loaded before it is kept.
+  const { configFilesIn, scaffoldConfigSource, configLoadError } = await import("../config-scaffold.js");
+  const existingConfig = configFilesIn(targetDir)[0];
+  if (!existingConfig) {
     // PAPERCUTS #38: generated configs declare their target through the `execution` contract.
-    const template = `import { defineHardkasConfig } from "@hardkas/config";
-
-export default defineHardkasConfig({
-  execution: {
-    default: "simulator",
-    targets: {
-      simulator: { mode: "simulator", domain: "kaspa-l1", network: "simulated" }
-    }
-  },
-  networks: {
-    simulated: {
-      kind: "simulated",
-      description: "Local development simulation"
-    }
-  },
-  accounts: {
-    developer: {
-      kind: "simulated",
-      address: "kaspa:sim_developer"
-    }
-  }
-});
-`;
+    const template = scaffoldConfigSource({
+      description: "Local development simulation",
+      accounts: { developer: { kind: "simulated", address: "kaspa:sim_developer" } }
+    });
     fs.writeFileSync(configFile, template, "utf-8");
+    const loadError = await configLoadError(configFile);
+    if (loadError !== undefined) {
+      fs.rmSync(configFile, { force: true });
+      const { HardkasCliError } = await import("../cli-errors.js");
+      throw new HardkasCliError("CONFIG_TEMPLATE_INVALID", `The generated config did not load, so it was not kept: ${loadError}`);
+    }
     UI.success("Created hardkas.config.ts");
   } else {
-    UI.info("hardkas.config.ts already exists.");
+    UI.info(`${path.basename(existingConfig)} already exists; it is kept unchanged.`);
   }
 
   // Create SDK client facade stub

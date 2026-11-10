@@ -8,7 +8,7 @@ title: hardkas artifact
 
 ### Synopsis (Generated)
 
-**Purpose:** Create a new HardKAS artifact alpha
+**Purpose:** Wrap a JSON payload as a content-hashed artifact under a free &lt;type&gt; label; the payload is not validated against any schema (schemaValidation: NOT_VALIDATED) alpha
 
 #### Arguments
 

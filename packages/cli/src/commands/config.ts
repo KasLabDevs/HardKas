@@ -84,99 +84,113 @@ export function registerConfigCommands(program: Command) {
 
   configCmd
     .command("init")
-    .description("Initialize a basic hardkas.config.ts in the current directory")
-    .option("--force", "Overwrite existing config", false)
+    .description("Initialize a basic hardkas.config.ts in the current directory (the config imports nothing, so it loads before any install)")
+    .option("--force", "Replace an existing hardkas.config.ts; the original is first copied to a backup that never overwrites another", false)
     .option("--json", "Output results as JSON", false)
     .action(async (options) => {
       const { UI } = await import("../ui.js");
       const fs = await import("node:fs");
       const path = await import("node:path");
+      const { HardkasCliError } = await import("../cli-errors.js");
+      const { scaffoldConfigSource, configFilesIn, backupConfigFile, configLoadError } = await import("../config-scaffold.js");
 
       const configPath = path.join(process.cwd(), "hardkas.config.ts");
-      if (fs.existsSync(configPath) && !options.force) {
-        const { HardkasCliError } = await import("../cli-errors.js");
-        throw new HardkasCliError("CONFIG_EXISTS", "hardkas.config.ts already exists. Use --force to overwrite.");
+      // ESCALÓN 3 · P1: every hardkas.config.* counts. A new .ts next to a .mjs would silently shadow it (the loader
+      // prefers .ts), so --force replaces hardkas.config.ts only, and never shadows a config of another name.
+      const existing = configFilesIn(process.cwd());
+      const others = existing.filter((f) => f !== configPath);
+      if (others.length > 0) {
+        throw new HardkasCliError(
+          "CONFIG_EXISTS",
+          `${path.basename(others[0]!)} already exists. config init writes hardkas.config.ts, which would take precedence over it. Nothing was changed.`,
+          { suggestion: `Edit ${path.basename(others[0]!)}, or rename it yourself if you want a new hardkas.config.ts.` }
+        );
       }
+      if (existing.includes(configPath) && !options.force) {
+        throw new HardkasCliError("CONFIG_EXISTS", "hardkas.config.ts already exists. Nothing was changed. Use --force to replace it (a backup is kept).");
+      }
+      const backup = existing.includes(configPath) ? backupConfigFile(configPath) : undefined;
 
       // PAPERCUTS #38: generated configs declare their target through the `execution` contract.
-      const template = `import { defineHardkasConfig } from "@hardkas/config";
-
-export default defineHardkasConfig({
-  execution: {
-    default: "simulator",
-    targets: {
-      simulator: { mode: "simulator", domain: "kaspa-l1", network: "simulated" }
-    }
-  },
-  networks: {
-    simulated: { kind: "simulated" }
-  },
-  accounts: {
-    alice: { kind: "simulated", address: "kaspa:sim_alice" }
-  }
-});
-`;
-      fs.writeFileSync(configPath, template, "utf-8");
+      // DEF-2: no pre-declared accounts (the deterministic dev accounts are resolved per target, not declared).
+      fs.writeFileSync(configPath, scaffoldConfigSource(), "utf-8");
+      const loadError = await configLoadError(configPath);
+      if (loadError !== undefined) {
+        if (backup) fs.copyFileSync(backup, configPath);
+        else fs.rmSync(configPath, { force: true });
+        throw new HardkasCliError("CONFIG_TEMPLATE_INVALID", `The generated config did not load, so it was not kept: ${loadError}`);
+      }
       if (options.json) {
         const { getOutput } = await import("../output.js");
-        getOutput().writeJson({ ok: true, command: "config init", mode: "cli", result: { path: configPath } });
+        getOutput().writeJson({ ok: true, command: "config init", mode: "cli", result: { path: configPath, ...(backup ? { backup } : {}) } });
       } else {
         UI.success("Created hardkas.config.ts");
+        if (backup) UI.info(`The previous hardkas.config.ts was copied to ${path.basename(backup)}`);
       }
     });
 
   configCmd
     .command("repair")
-    .description("Repair an invalid or missing hardkas.config.ts")
+    .description("Repair an invalid or missing hardkas config: an invalid one is copied to a backup that never overwrites another, then replaced by a minimal config that loads")
     .option("--json", "Output results as JSON", false)
     .action(async (options: { json: boolean }) => {
       const { UI } = await import("../ui.js");
       const fs = await import("node:fs");
       const path = await import("node:path");
-      const configPath = path.join(process.cwd(), "hardkas.config.ts");
-
-      // PAPERCUTS #38: generated configs declare their target through the `execution` contract.
-      const template = `import { defineHardkasConfig } from "@hardkas/config";\n\nexport default defineHardkasConfig({\n  execution: {\n    default: "simulator",\n    targets: {\n      simulator: { mode: "simulator", domain: "kaspa-l1", network: "simulated" }\n    }\n  },\n  networks: {\n    simulated: { kind: "simulated" }\n  }\n});\n`;
-
-      if (!fs.existsSync(configPath)) {
-        UI.warning("Config file missing. Generating a new one...");
-        fs.writeFileSync(configPath, template, "utf-8");
+      const { HardkasCliError } = await import("../cli-errors.js");
+      const { scaffoldConfigSource, configFilesIn, backupConfigFile, configLoadError } = await import("../config-scaffold.js");
+      const write = async (status: string, extra: Record<string, unknown>, text: string) => {
         if (options.json) {
           const { getOutput } = await import("../output.js");
-          getOutput().writeJson({ ok: true, command: "config repair", mode: "cli", result: { status: "repaired_missing" } });
+          getOutput().writeJson({ ok: true, command: "config repair", mode: "cli", result: { status, ...extra } });
         } else {
-          UI.success("Repaired: Created fresh hardkas.config.ts");
+          UI.success(text);
         }
+      };
+
+      // ESCALÓN 3 · P1: the config repaired is the one the loader reads in this directory (any hardkas.config.*), never
+      // a new .ts that would shadow it. The template imports nothing and is loaded before it is kept, so a second run
+      // finds a valid config and changes nothing; the original's backup is never overwritten.
+      const template = scaffoldConfigSource();
+      const configPath = configFilesIn(process.cwd())[0];
+
+      if (!configPath) {
+        const created = path.join(process.cwd(), "hardkas.config.ts");
+        if (!options.json) UI.warning("Config file missing. Generating a new one...");
+        fs.writeFileSync(created, template, { encoding: "utf-8", flag: "wx" });
+        const loadError = await configLoadError(created);
+        if (loadError !== undefined) {
+          fs.rmSync(created, { force: true });
+          throw new HardkasCliError("CONFIG_TEMPLATE_INVALID", `The generated config did not load, so it was not kept: ${loadError}`);
+        }
+        await write("repaired_missing", { path: created }, "Repaired: Created fresh hardkas.config.ts");
         return;
       }
 
-      const { loadHardkasConfig } = await import("@hardkas/config");
-      try {
-        await loadHardkasConfig();
-        if (options.json) {
-          const { getOutput } = await import("../output.js");
-          getOutput().writeJson({ ok: true, command: "config repair", mode: "cli", result: { status: "valid" } });
-        } else {
-          UI.success("Config file is valid. No repair needed.");
-        }
-      } catch (err: any) {
-        const { HardkasCliError } = await import("../cli-errors.js");
-        if (options.json) {
-          // If in JSON mode, we shouldn't attempt an interactive backup/repair unless requested,
-          // but since this is a command we just throw the error or return success of repair.
-          fs.copyFileSync(configPath, `${configPath}.backup`);
-          fs.writeFileSync(configPath, template, "utf-8");
-          const { getOutput } = await import("../output.js");
-          getOutput().writeJson({ ok: true, command: "config repair", mode: "cli", result: { status: "repaired_invalid", backup: `${configPath}.backup` } });
-        } else {
-          UI.error(`Config file is invalid: ${((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err))}`);
-          UI.warning("Backing up and generating a fresh config...");
-          fs.copyFileSync(configPath, `${configPath}.backup`);
-          fs.writeFileSync(configPath, template, "utf-8");
-          UI.success(
-            "Repaired: Created fresh hardkas.config.ts (backup saved to hardkas.config.ts.backup)"
-          );
-        }
+      const loadError = await configLoadError(configPath);
+      if (loadError === undefined) {
+        await write("valid", { path: configPath }, `Config file is valid. No repair needed (${path.basename(configPath)}).`);
+        return;
       }
+
+      if (!options.json) {
+        UI.error(`Config file is invalid: ${loadError}`);
+        UI.warning("Backing up and generating a fresh config...");
+      }
+      const backup = backupConfigFile(configPath);
+      fs.writeFileSync(configPath, template, "utf-8");
+      const templateError = await configLoadError(configPath);
+      if (templateError !== undefined) {
+        fs.copyFileSync(backup, configPath); // the original goes back; its backup stays
+        throw new HardkasCliError(
+          "CONFIG_REPAIR_FAILED",
+          `The replacement config did not load, so the original was restored (backup: ${backup}): ${templateError}`
+        );
+      }
+      await write(
+        "repaired_invalid",
+        { path: configPath, backup },
+        `Repaired: Created fresh ${path.basename(configPath)} (backup saved to ${path.basename(backup)})`
+      );
     });
 }

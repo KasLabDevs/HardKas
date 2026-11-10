@@ -3,6 +3,8 @@ import { UI, handleError } from "../ui.js";
 import { runUp } from "../runners/up-runner.js";
 import { hardkasScaffoldDependencySpec } from "../lib/scaffold-versions.js";
 import { nodeRpcUrl } from "@hardkas/core";
+// ESCALÓN 2 · P18: the version init writes and prints is the build's own, never a literal in this file
+import { HARDKAS_VERSION } from "@hardkas/artifacts";
 
 /**
  * E39 · The generated test, signing and planning load the kaspa-wasm this
@@ -170,7 +172,7 @@ export default defineConfig({
             const template = `import { defineHardkasConfig } from "@hardkas/sdk";
 
 export default defineHardkasConfig({
-  // HardKAS v0.13.0-rc.1 Configuration
+  // HardKAS v${HARDKAS_VERSION} Configuration
   execution: {
     default: "simulator",
     targets: {
@@ -320,7 +322,7 @@ scenario("payment flow", async ({ hk }) => {
                 `HardKAS project '${name || "current"}' initialized successfully.`
               );
               if (name) UI.info(`Project folder: ${targetDir}`);
-              UI.info(`Created: hardkas.config.ts (0.13.0-rc.1)`);
+              UI.info(`Created: hardkas.config.ts (${HARDKAS_VERSION})`);
               UI.footer(`Next steps:\n  ` + (name ? `cd ${name}\n  ` : "") + (options.install ? "" : "npm install\n  ") + "npm test");
             }
           }
@@ -340,7 +342,7 @@ scenario("payment flow", async ({ hk }) => {
     .description(
       `Boot or validate the HardKAS developer runtime environment ${UI.maturity("stable")}`
     )
-    .option("--json", "Output results as JSON", false)
+    .option("--json", "No effect: up prints human output only", false)
     .action(async () => {
       // CLI-RUNTIME-CONTRACT-1: the runner's own error (and its code) reaches the top-level renderer
       // unchanged; the former `throw new Error("Bootstrap failed")` destroyed it.

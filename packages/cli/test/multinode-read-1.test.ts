@@ -206,4 +206,28 @@ describe("MULTINODE-READ-1 · hardkas rpc compare", () => {
     expect(spelled.doc.nodes.map((n: any) => n.standing)).toEqual(["usable", "duplicate"]);
     expect(spelled.doc.code).toBe("MULTINODE_INSUFFICIENT_NODES");
   });
+
+  // ESCALÓN 2 · P13: two endpoints that nobody answers compared nothing, and the command said ok:true with exit 0
+  it("CR-5 no node reachable: ok:false, exit 1, MULTINODE_NO_NODE_REACHABLE, naming each node that failed; one node down of two keeps the report", async () => {
+    const closedUrl = async () => {
+      const f = await startFake({ label: "gone", daa: 1 });
+      await f.close();
+      return f.url;
+    };
+    const down1 = await closedUrl();
+    const down2 = await closedUrl();
+    const r = await run("cr-5", ["rpc", "compare", "--endpoints", down1, down2, "--network", "simnet", "--json"]);
+    expect(r.status, r.brief).toBe(1);
+    expect(r.doc).toMatchObject({ ok: false, code: "MULTINODE_NO_NODE_REACHABLE", unreachable: ["node1", "node2"] });
+    expect(r.doc.nodes.map((n: any) => n.standing)).toEqual(["unreachable", "unreachable"]);
+    expect(String(r.doc.message)).toMatch(/node1 \(.+\).*node2 \(.+\)/);
+    const human = await run("cr-5h", ["rpc", "compare", "--endpoints", down1, down2, "--network", "simnet"]);
+    expect(human.status, human.brief).toBe(1);
+    expect(human.stderr).toMatch(/MULTINODE_NO_NODE_REACHABLE/);
+
+    const up = await fake({ label: "up", daa: 1000 });
+    const half = await run("cr-5b", ["rpc", "compare", "--endpoints", up.url, down1, "--network", "simnet", "--json"]);
+    expect(half.doc?.code, half.brief).not.toBe("MULTINODE_NO_NODE_REACHABLE");
+    expect(half.doc.nodes.map((n: any) => n.standing)).toEqual(["usable", "unreachable"]);
+  });
 });

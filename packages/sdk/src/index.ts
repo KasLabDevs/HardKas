@@ -246,6 +246,7 @@ export type {
 } from "./vprogs.js";
 export type {
   ProgrammabilityAppPlan,
+  ProgrammabilityArtifactEvidence,
   ProgrammabilityCapabilitiesResult,
   ProgrammabilityClaims,
   ProgrammabilityCorpusReport,

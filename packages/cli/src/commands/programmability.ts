@@ -16,7 +16,7 @@ export function registerProgrammabilityCommands(program: Command) {
   programmability
     .command("capabilities")
     .description("Show local programmability capabilities")
-    .option("--json", "Output as JSON", false)
+    .option("--json", "Output as JSON (always: this command only prints JSON; the flag changes nothing)", false)
     .action(async () => {
       const result = await withProgrammability((prog) => prog.capabilities());
       getOutput().writeJson({ ok: true, command: "programmability capabilities", mode: "cli", result });
@@ -49,9 +49,9 @@ export function registerProgrammabilityCommands(program: Command) {
 
   programmability
     .command("inspect <path>")
-    .description("Inspect a Silver, ZK, or vProgs artifact")
+    .description("Inspect a Silver, ZK, or vProgs artifact: its schema and content hash. It never establishes node evidence for the artifact (artifactEvidence.realNodeEvidence: NOT_ESTABLISHED); the product's claims are in 'programmability capabilities'")
     .requiredOption("--kind <kind>", "Artifact kind: silver, zk, or vprog")
-    .option("--json", "Output as JSON", false)
+    .option("--json", "Output as JSON (always: this command only prints JSON; the flag changes nothing)", false)
     .action(async (targetPath: string, options) => {
       const result = await withProgrammability((prog) => {
         const kind = normalizeInspectKind(options.kind);
@@ -68,9 +68,9 @@ export function registerProgrammabilityCommands(program: Command) {
 
   programmability
     .command("verify <path>")
-    .description("Verify a local programmability artifact")
+    .description("Verify a local programmability artifact's integrity. It never establishes node evidence for the artifact (artifactEvidence.realNodeEvidence: NOT_ESTABLISHED)")
     .requiredOption("--kind <kind>", "Artifact kind: silver, zk, or vprog")
-    .option("--json", "Output as JSON", false)
+    .option("--json", "Output as JSON (always: this command only prints JSON; the flag changes nothing)", false)
     .action(async (targetPath: string, options) => {
       const result = await withProgrammability((prog) => {
         const kind = normalizeInspectKind(options.kind);
@@ -92,7 +92,7 @@ export function registerProgrammabilityCommands(program: Command) {
   corpus
     .command("verify <path>")
     .description("Verify the root Toccata programmability corpus")
-    .option("--json", "Output as JSON", false)
+    .option("--json", "Output as JSON (always: this command only prints JSON; the flag changes nothing)", false)
     .action(async (targetPath: string) => {
       const result = await withProgrammability((prog) => prog.corpus.verify({ path: targetPath }));
       getOutput().writeJson({ ok: result.ok, command: "programmability corpus verify", mode: "cli", result });
@@ -111,7 +111,7 @@ export function registerProgrammabilityCommands(program: Command) {
     .description("Return a local app plan for a programmable HardKAS app")
     .option("--kind <kind>", "silver, zk, vprog, or full-lab", "full-lab")
     .option("--template <path>", "Template path")
-    .option("--json", "Output as JSON", false)
+    .option("--json", "Output as JSON (always: this command only prints JSON; the flag changes nothing)", false)
     .action(async (options) => {
       const result = await withProgrammability((prog) => {
         const kind = normalizeKind(options.kind, true) as ProgramKind;

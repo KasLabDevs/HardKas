@@ -782,11 +782,21 @@ export interface ProgrammabilityCapabilitiesArtifact {
   claims: ProgrammabilityClaims;
 }
 
+/**
+ * ESCALÓN 2 · P10: what a per-artifact programmability result says of that artifact. The product's claims
+ * (ProgrammabilityClaims, REAL_NODE_EVIDENCE among them) are backed by the corpus and are not part of it.
+ */
+export interface ProgrammabilityArtifactEvidence {
+  realNodeEvidence: "NOT_ESTABLISHED";
+  reason: string;
+  productClaims: "hardkas programmability capabilities";
+}
+
 export interface ProgrammabilityInspectArtifact {
   schema: typeof HardkasSchemas.ProgrammabilityInspectV1;
   ok: boolean;
   status: "PROGRAMMABILITY_ARTIFACT_INSPECTED" | "PROGRAMMABILITY_ARTIFACT_INVALID";
-  claims: ProgrammabilityClaims;
+  artifactEvidence: ProgrammabilityArtifactEvidence;
 }
 
 export interface ProgrammabilityVerifyArtifact {
@@ -796,7 +806,7 @@ export interface ProgrammabilityVerifyArtifact {
     | "PROGRAMMABILITY_VERIFY_PASS"
     | "PROGRAMMABILITY_VERIFY_FAIL"
     | "PROGRAMMABILITY_VERIFY_PARTIAL";
-  claims: ProgrammabilityClaims;
+  artifactEvidence: ProgrammabilityArtifactEvidence;
 }
 
 export interface ProgrammabilityCorpusReportArtifact {

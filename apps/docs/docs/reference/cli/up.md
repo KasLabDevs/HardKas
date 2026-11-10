@@ -12,7 +12,7 @@ title: hardkas up
 
 #### Options
 
-- `--json` (Default: `false`): Output results as JSON
+- `--json` (Default: `false`): No effect: up prints human output only
 
 ---
 

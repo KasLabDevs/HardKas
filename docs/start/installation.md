@@ -60,7 +60,7 @@ SDK, which pull in the rest of what they need.
 | `@hardkas/sdk` | Do the same programmatically from TypeScript or JavaScript. | Node.js |
 | `@hardkas/testing` | Write project tests (scenario runner and matchers, with vitest). | Node.js |
 | `@hardkas/client` | Talk to a running dev-server over HTTP from a browser. | Browser |
-| `@hardkas/react` | Use React bindings — `HardkasProvider` and hooks — over `@hardkas/client`. | Browser |
+| `@hardkas/react` | Use React bindings — `HardKASProvider` and hooks — over `@hardkas/client`. | Browser |
 
 `@hardkas/react` builds on `@hardkas/client`; install the client alongside it.
 The browser never imports the Node SDK directly — that boundary is deliberate

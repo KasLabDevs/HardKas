@@ -241,7 +241,7 @@ title: hardkas query
 
 ### Synopsis (Generated)
 
-**Purpose:** Detect receipts with replay divergence indicators
+**Purpose:** Static analysis of the stored receipts: hash, state, UTXO-count and fee (relay minimum) checks of their fields. Nothing is re-executed; 'hardkas replay verify' replays a receipt
 
 #### Options
 
@@ -254,7 +254,7 @@ title: hardkas query
 
 ### Synopsis (Generated)
 
-**Purpose:** Check replay invariants for a specific transaction
+**Purpose:** Static checks of one stored receipt: content hash, recorded state hashes, state change against status, non-empty UTXO lists. Nothing is re-executed; 'hardkas replay verify' replays it
 
 #### Arguments
 

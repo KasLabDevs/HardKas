@@ -1242,7 +1242,12 @@ export const ProgrammabilityInspectSchema = z.object({
   artifactSchema: z.string().optional(),
   contentHash: z.string().optional(),
   sourceStatus: z.string().optional(),
-  claims: ProgrammabilityClaimsSchema,
+  // ESCALÓN 2 · P10: a per-artifact result carries what it says of that artifact, never the product's claims
+  artifactEvidence: z.object({
+    realNodeEvidence: z.literal("NOT_ESTABLISHED"),
+    reason: z.string(),
+    productClaims: z.literal("hardkas programmability capabilities")
+  }),
   issues: z.array(
     z.object({
       code: z.string(),
@@ -1263,7 +1268,12 @@ export const ProgrammabilityVerifySchema = z.object({
   kind: z.enum(["silver", "zk", "vprog"]),
   path: z.string(),
   sourceStatus: z.string().optional(),
-  claims: ProgrammabilityClaimsSchema,
+  // ESCALÓN 2 · P10: a per-artifact result carries what it says of that artifact, never the product's claims
+  artifactEvidence: z.object({
+    realNodeEvidence: z.literal("NOT_ESTABLISHED"),
+    reason: z.string(),
+    productClaims: z.literal("hardkas programmability capabilities")
+  }),
   issues: z.array(
     z.object({
       code: z.string(),

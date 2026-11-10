@@ -219,17 +219,3 @@ export async function runDevServer(options: {
     handleError(e);
   }
 }
-
-export async function runDevServerToken(options: { json?: boolean; workspaceRoot?: string }) {
-  const wsRoot = options.workspaceRoot || process.cwd();
-  const tokenPath = path.join(wsRoot, ".hardkas", "dev-server-token");
-  if (!fs.existsSync(tokenPath)) {
-    throw new Error("Dev server is not running or token file not found.");
-  }
-  const token = fs.readFileSync(tokenPath, "utf8").trim();
-  if (options.json) {
-    UI.writeJson({ token });
-  } else {
-    console.log(token);
-  }
-}

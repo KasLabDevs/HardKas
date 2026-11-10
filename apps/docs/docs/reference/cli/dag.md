@@ -20,7 +20,7 @@ title: hardkas dag
 
 #### Options
 
-- `--depth &lt;n&gt;` (Default: `1`): Reorg depth
+- `--depth &lt;n&gt;` (Default: `1`): Reorg depth: a whole number of blocks, 0 or more
 
 ---
 

@@ -53,7 +53,7 @@ Two different things appear side by side:
 | Covenants 1:N, N:M and termination; the KCC-20 example transfer | Built by the SDK's v1 engine only (no `silver covenant` command); accepted by a real simnet node in the repository's node suite, and every invalid shape the engine refuses the node refused too. Not on testnet-10. |
 | Covenant policy logic (a `require`, amount conservation) | Not evaluated by HardKAS before sending: the node decides and refuses a violation. |
 | Testnet-10 transactions | Possible behind `experimental: true` and `network.allowPublic: true`; not tested with this release (read-only verification was). |
-| The simulator (`network: "simulated"`) | A fast, approximate in-memory model for the development loop. Never consensus evidence; the WrongMass divergence is UNVERIFIED. |
+| The simulated ledger (`network: "simulated"`) | A local UTXO ledger for the development loop (`@hardkas/localnet`, kept in `.hardkas/localnet.json`): synthetic accounts and transaction ids, no node and no script execution. Never network or consensus evidence. It is not `@hardkas/simulator`, the frozen in-memory node behind `hardkas simulator start`, whose known divergences (the UNVERIFIED `WrongMass` rule among them) are in [Limitations](../status/limitations.md#the-simulator-is-an-approximate-model). |
 | ZK: Groth16 math check of local fixtures, RISC Zero inspection | Local and experimental; needs the optional `snarkjs` (GPL-3.0). No on-chain ZK verification. |
 | Query store, replay, dev-server and dashboard | Local projections and views of the workspace; replay is for simulated records only. |
 

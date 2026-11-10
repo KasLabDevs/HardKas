@@ -148,9 +148,13 @@ one input and an input of at most the bound outputs plus `maxFeeSompi`. A valid 
 those outputs. The spent outpoint is never bound (circular: `utxoBinding` is refused). The bound script public key is
 the version-prefixed encoding OpTxOutputSpk pushes. Results carry ZK_LOCK_BINDS_IMAGE_ID_AND_OUTPUTS.
 
-Addresses: the simnet address is always returned. testnet-10/mainnet addresses are returned only when
-requested in `addressNetworks` (proof-only also needs `acknowledgeImageIdOnlyLock: true`), and never for a
-public test vector.
+Addresses: the simnet address is always returned. A testnet-10 address is returned only when requested in
+`addressNetworks` (proof-only also needs `acknowledgeImageIdOnlyLock: true`), and never for a public test vector.
+
+Mainnet (MAINNET TOTAL LOCKDOWN, P37): a lock's signature script IS the authorization of its spend (a ZK spend
+carries no signature), so no lock is built for mainnet. A mainnet entry in `addressNetworks`, in any spelling
+(`mainnet`, `mainnet-<n>`, `kaspa`, `kaspa-mainnet`, any case), or a bound payout or change address of mainnet
+(`kaspa:`) throws MAINNET_SIGNING_DISABLED before the receipt is read: no mainnet P2SH address and no signature script.
 
 Receipt cross-check (HK-19): when the receipt carries its claim pruned to a digest (the usual Borsh
 encoding), the digest is recomputed from (imageId, journalHash) and a mismatch is rejected

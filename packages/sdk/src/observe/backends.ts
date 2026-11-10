@@ -228,12 +228,10 @@ export function resolveObserverBackend(
   const execution = { mode: mode as any, domain: domain as any, network: network as any };
 
   if (mode === "simulator") {
-    console.log("[DEBUG] Using SimulatorObserverBackend for network", network);
     return new SimulatorObserverBackend(sdk, execution);
   } else {
-    // Both localnet and external RPC use the RpcObserverBackend, 
+    // Both localnet and external RPC use the RpcObserverBackend,
     // because localnet runs a real rusty-kaspad node accessible via RPC.
-    console.log("[DEBUG] Using RpcObserverBackend for network", network);
     return new RpcObserverBackend(sdk, execution);
   }
 }

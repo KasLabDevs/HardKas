@@ -40,10 +40,6 @@ The real covenant builders are ready here: 1:1 auth-bound transitions only, buil
 `hardkas silver covenant genesis|transition` (managed silverc + verified kaspa-wasm + the canonical node). Not
 general covenant support, and not the SDK's planning (`sdkCovenantPlanning`).
 
-#### dagConflictResolution
-
-> **dagConflictResolution**: `boolean`
-
 #### deterministicHashing
 
 > **deterministicHashing**: `boolean`
@@ -55,10 +51,6 @@ general covenant support, and not the SDK's planning (`sdkCovenantPlanning`).
 #### dockerNode
 
 > **dockerNode**: `boolean`
-
-#### ghostdagSimulation
-
-> **ghostdagSimulation**: `boolean`
 
 #### l2BridgeAssumptions
 

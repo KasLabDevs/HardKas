@@ -45,7 +45,7 @@ The boundary differs per network:
 | Network | Default | What opens it |
 | :-- | :-- | :-- |
 | Kaspa L1 **testnet** | closed | `network.allowPublic: true` in `hardkas.config.ts` (which also requires `experimental: true`), or `policy: { allowPublic: true }` when creating the SDK. Once open, the CLI and SDK can plan, sign and send on testnet. HardKAS has not qualified that path for this release. |
-| Kaspa L1 **mainnet** | **locked down**: no connection (reads included), no signature, no broadcast | Nothing (MAINNET TOTAL LOCKDOWN, owner decision 2026-11-09, until the product is complete, independently audited and the owner authorizes it). One common layer refuses it before any connection: the endpoint authority (`config/src/endpoint.ts`), the RPC transport (`kaspa-rpc/src/upstream/session.ts`) and `core/src/mainnet-policy.ts` (`MAINNET_CONNECTION_DISABLED`, `MAINNET_SIGNING_DISABLED`, `MAINNET_BROADCAST_DISABLED`). `allowPublic`, `experimental`, `allowMainnet`, an external signer, a direct call or a `HARDKAS_*` variable do not lift it. Only offline operations remain (integrity checks of mainnet records, address derivation), and none produces a signed mainnet transaction. Limit: an endpoint declared as another network whose node answers mainnet is refused after that one identity answer (`getServerInfo`), with nothing else asked. |
+| Kaspa L1 **mainnet** | **locked down**: no connection (reads included), no signature, no broadcast | Nothing (MAINNET TOTAL LOCKDOWN, owner decision 2026-11-09, until the product is complete, independently audited and the owner authorizes it). One common layer refuses it before any connection: the endpoint authority (`config/src/endpoint.ts`), the RPC transport (`kaspa-rpc/src/upstream/session.ts`) and `core/src/mainnet-policy.ts` (`MAINNET_CONNECTION_DISABLED`, `MAINNET_SIGNING_DISABLED`, `MAINNET_BROADCAST_DISABLED`). `allowPublic`, `experimental`, `allowMainnet`, an external signer, a direct call or a `HARDKAS_*` variable do not lift it. Only offline operations remain (integrity checks of mainnet records, address derivation), and none produces a signed mainnet transaction. A Toccata ZK spend counts as signed (its signature script is the authorization): `buildR0Groth16Transaction` / `buildR0Groth16Plan` refuse mainnet with `MAINNET_SIGNING_DISABLED`. No mainnet lock is built either (P37): `zk toccata build-scripts` / `buildR0Groth16Scripts` refuse a mainnet address network in any spelling, or a bound payout or change address of mainnet, with `MAINNET_SIGNING_DISABLED` (no address, no signature script). No mainnet key enters the account store (P36): `accounts real generate` and `accounts real import` refuse a mainnet network (any spelling, or a config alias declaring it) and a mainnet address with `MAINNET_SIGNING_DISABLED`; existing accounts are untouched. Limit: an endpoint declared as another network whose node answers mainnet is refused after that one identity answer (`getServerInfo`), with nothing else asked. |
 | **L2** mainnet (Igra mainnet, chain id 38833, or any profile marked mainnet; l2 extension) | **locked down**: writes and connections blocked | Nothing. `allowMainnet: true` (SDK) and `--allow-mainnet` (CLI) no longer authorize anything (`packages/l2/src/network-guard.ts`: `L2_MAINNET_WRITE_BLOCKED`; an L2 client bound to a mainnet profile or chain, or whose node answers a mainnet `eth_chainId`, is refused `MAINNET_CONNECTION_DISABLED`). Limit: an unbound L2 client given a raw URL is identified only when it asks `eth_chainId` (every HardKAS L2 write binds a chain). |
 
 Do not route high-value transactions through HardKAS.
@@ -108,8 +108,14 @@ What exists (all `experimental`, no on-chain claim, mainnet `BLOCKED_BY_POLICY`)
   inspect-only (`RISC0_LOCAL_VERIFICATION_NOT_IMPLEMENTED`).
 - **Toccata L1 scripts and transactions** (`zk toccata build-scripts`, SDK
   `buildR0Groth16Transaction`): built with the kaspa-wasm 2.1.0 `ZkScriptBuilder`
-  for `OpZkPrecompile` (`0xa6`, Groth16 tag `0x20`); never signed or broadcast.
-  The receipt's claim is cross-checked against (imageId, journalHash). The
+  for `OpZkPrecompile` (`0xa6`, Groth16 tag `0x20`); never broadcast, and never
+  built for mainnet (`MAINNET_SIGNING_DISABLED`: a ZK spend needs no signature, so
+  the built transaction would be complete). `zk toccata verify-scripts` accepts a
+  lock only over the pinned RISC Zero verifying key, control root and control id,
+  and says `consensusEnforced: true` only for an output-bound lock byte-identical
+  to the one HardKAS builds for the outputs it carries (payout, change, one input,
+  input limit); any other script is `ZK_REDEEM_SCRIPT_NOT_CANONICAL` and gets no
+  claim. The receipt's claim is cross-checked against (imageId, journalHash). The
   Groth16 precompile costs 140,000 grams (14,000,000 SU) for the tag plus
   250,000 SU per verifying-key element; the compute budget must cover that
   (minimum 1550 for RISC Zero, default 1600) and fit the 500,000 block
@@ -285,8 +291,9 @@ Schnorr signatures, coinbase maturity at the exact DAA boundary, relative time l
 The native PSKT bridge comes with no guarantee:
 
 - its prebuilt binary is built from rusty-kaspa **2.0.1** crates (`Cargo.toml`
-  pins rev `78257f27`), not v2.1.0, so it does not know the transaction-v1 fields
-  (covenants, compute budget);
+  pins rev `78257f27`), not v2.1.0. That PSKT format already carries the
+  transaction-v1 covenant fields (`covenantId` on an input's UTXO, `covenant` on an
+  output). It has no compute budget: inputs carry only `sigOpCount`;
 - it ships for **win32-x64 only**, and its provenance file records no hash of the binary;
 - `index.d.ts` is empty: a TypeScript consumer that imports the package does not compile;
 - its signer signs with the sighash type the PSKT carries, decides key ownership
@@ -307,7 +314,7 @@ every gate).
 
 ### Skipped tests that hide known gaps
 
-The canonical gate keeps 12 tests skipped with a `[known gap: …]` label. Each one
+The canonical gate keeps 11 tests skipped with a `[known gap: …]` label. Each one
 documents a defect that is known and not fixed yet. They are listed here so that
 none of them reads as a silent pass. `node scripts/check-known-gaps.mjs` fails
 when a label in a test file is missing from this table.
@@ -322,7 +329,6 @@ when a label in a test file is missing from this table.
 | replay verify fails on a signed multisig | evidence core | `packages/sdk/test/multisig-adversarial.test.ts` |
 | Hardkas.open connects to the public RPC before the test can inject one | — | `packages/sdk/test/audit-hardening.test.ts` |
 | query dag reads .hardkas/state.json, the simulator keeps its DAG in .hardkas/localnet.json | L1-CORE-1-B4 (simulator, frozen) | `packages/cli/test/l1-core-1-b4-query.test.ts` |
-| replay divergences flags every standard simulated payment as fee-mismatch (fee over 10 x mass) | L1-CORE-1-B4 (simulator, frozen) | `packages/cli/test/l1-core-1-b4-query.test.ts` |
 | up ignores --json | L1-CORE-1-B4 (needs a design: the dev server's JSON output prints its token) | `packages/cli/test/l1-core-1-b4-up-dev-accounts.test.ts` |
 
 ### Test levels: what the canonical gate does not run

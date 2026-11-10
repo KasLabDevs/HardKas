@@ -59,7 +59,7 @@
     "options": [
       {
         "flags": "--json",
-        "description": "Output results as JSON",
+        "description": "No effect: up prints human output only",
         "defaultValue": false
       }
     ],
@@ -274,7 +274,7 @@
       },
       {
         "flags": "--allow-mainnet-signing",
-        "description": "Mainnet signing stays refused in this release (MAINNET_SIGNING_DISABLED); the flag has no effect",
+        "description": "No effect: mainnet is blocked (MAINNET TOTAL LOCKDOWN) and mainnet signing stays refused (MAINNET_SIGNING_DISABLED)",
         "defaultValue": false
       },
       {
@@ -564,7 +564,7 @@
   },
   {
     "commandPath": "hardkas artifact create",
-    "description": "Create a new HardKAS artifact alpha",
+    "description": "Wrap a JSON payload as a content-hashed artifact under a free <type> label; the payload is not validated against any schema (schemaValidation: NOT_VALIDATED) alpha",
     "arguments": [
       {
         "name": "type",
@@ -884,7 +884,7 @@
   },
   {
     "commandPath": "hardkas rpc compare",
-    "description": "Read several nodes side by side, read-only: identity, lag, the UTXOs of addresses, one look at a transaction. Differences the nodes' lag accounts for are lag, others disagreements (exit 1). Nothing is sent; agreement among nodes is not consensus validation",
+    "description": "Read several nodes side by side, read-only: identity, lag, the UTXOs of addresses, one look at a transaction. Differences the nodes' lag accounts for are lag, others disagreements (exit 1); when no node can be read, nothing is compared (exit 1, MULTINODE_NO_NODE_REACHABLE). Nothing is sent; agreement among nodes is not consensus validation",
     "arguments": [],
     "options": [
       {
@@ -1018,7 +1018,7 @@
     "options": [
       {
         "flags": "--depth <n>",
-        "description": "Reorg depth",
+        "description": "Reorg depth: a whole number of blocks, 0 or more",
         "defaultValue": "1"
       }
     ],
@@ -1052,7 +1052,12 @@
     "options": [
       {
         "flags": "--force",
-        "description": "Overwrite existing store",
+        "description": "Replace an existing store with an empty one (the old store is copied to a backup first; refused when it holds accounts, unless --discard-accounts)",
+        "defaultValue": false
+      },
+      {
+        "flags": "--discard-accounts",
+        "description": "With --force: confirm that a store holding accounts is replaced (its backup is still written first)",
         "defaultValue": false
       },
       {
@@ -1090,7 +1095,7 @@
       },
       {
         "flags": "--network <network>",
-        "description": "Network the key is for (default: the address's: kaspasim simnet, kaspadev devnet; a kaspatest address needs testnet-<n> here or in the workspace)"
+        "description": "Network the key is for (default: the address's: kaspasim simnet, kaspadev devnet; a kaspatest address needs testnet-<n> here or in the workspace). A mainnet network or address is refused while mainnet is locked down (MAINNET_SIGNING_DISABLED)"
       },
       {
         "flags": "--private-key <hex>",
@@ -1257,7 +1262,7 @@
       },
       {
         "flags": "--network <network>",
-        "description": "Kaspa network (simnet, testnet-10, mainnet)",
+        "description": "Kaspa network (simnet, testnet-10; mainnet is refused while mainnet is locked down: MAINNET_SIGNING_DISABLED)",
         "defaultValue": "simnet"
       },
       {
@@ -1411,7 +1416,7 @@
       },
       {
         "flags": "--allow-mainnet",
-        "description": "No effect: executing on mainnet stays refused in this release (MAINNET_BROADCAST_DISABLED)"
+        "description": "No effect: mainnet is blocked (MAINNET TOTAL LOCKDOWN) and executing on mainnet stays refused (MAINNET_BROADCAST_DISABLED)"
       },
       {
         "flags": "--password-env <env>",
@@ -1438,11 +1443,11 @@
     "options": [
       {
         "flags": "--image <image>",
-        "description": "Docker image"
+        "description": "Docker image, pinned by digest: <repository>[:tag]@sha256:<64 hex> (default: the pinned rusty-kaspad); an image without a digest is refused (NODE_IMAGE_DIGEST_REQUIRED)"
       },
       {
         "flags": "--allow-floating-image",
-        "description": "Allow using a floating tag like 'latest' without warning",
+        "description": "No effect: the image must be pinned by digest (@sha256:<64 hex>); a floating tag is never run",
         "defaultValue": false
       },
       {
@@ -1577,7 +1582,7 @@
       },
       {
         "flags": "--follow",
-        "description": "Follow log output",
+        "description": "No effect: the logs are printed once (the last --tail lines), never followed",
         "defaultValue": false
       },
       {
@@ -1626,12 +1631,12 @@
   },
   {
     "commandPath": "hardkas config init",
-    "description": "Initialize a basic hardkas.config.ts in the current directory",
+    "description": "Initialize a basic hardkas.config.ts in the current directory (the config imports nothing, so it loads before any install)",
     "arguments": [],
     "options": [
       {
         "flags": "--force",
-        "description": "Overwrite existing config",
+        "description": "Replace an existing hardkas.config.ts; the original is first copied to a backup that never overwrites another",
         "defaultValue": false
       },
       {
@@ -1646,7 +1651,7 @@
   },
   {
     "commandPath": "hardkas config repair",
-    "description": "Repair an invalid or missing hardkas.config.ts",
+    "description": "Repair an invalid or missing hardkas config: an invalid one is copied to a backup that never overwrites another, then replaced by a minimal config that loads",
     "arguments": [],
     "options": [
       {
@@ -2045,7 +2050,7 @@
   },
   {
     "commandPath": "hardkas query replay divergences",
-    "description": "Detect receipts with replay divergence indicators",
+    "description": "Static analysis of the stored receipts: hash, state, UTXO-count and fee (relay minimum) checks of their fields. Nothing is re-executed; 'hardkas replay verify' replays a receipt",
     "arguments": [],
     "options": [
       {
@@ -2064,7 +2069,7 @@
   },
   {
     "commandPath": "hardkas query replay invariants",
-    "description": "Check replay invariants for a specific transaction",
+    "description": "Static checks of one stored receipt: content hash, recorded state hashes, state change against status, non-empty UTXO lists. Nothing is re-executed; 'hardkas replay verify' replays it",
     "arguments": [
       {
         "name": "txId",
@@ -2274,7 +2279,7 @@
       },
       {
         "flags": "--watch",
-        "description": "Passed to Vitest, but the CLI exits after the first run (watch does not persist)",
+        "description": "No effect: the CLI exits after the first run (the watch does not persist)",
         "defaultValue": false
       },
       {
@@ -2394,17 +2399,17 @@
   },
   {
     "commandPath": "hardkas verify-semantics",
-    "description": "Verify semantic truth agreement across all HardKAS subsystems alpha",
+    "description": "Unsupported: always refuses with VERIFY_SEMANTICS_UNSUPPORTED (no HardKAS subsystem records the semantic hashes it would compare); use 'hardkas verify' for artifact integrity and lineage",
     "arguments": [],
     "options": [
       {
         "flags": "--json",
-        "description": "Output machine-readable JSON",
+        "description": "Output the refusal as a JSON envelope",
         "defaultValue": false
       },
       {
         "flags": "--ci-mode",
-        "description": "Verify semantic truth equivalence across OS boundaries",
+        "description": "No effect: the command always refuses",
         "defaultValue": false
       }
     ],
@@ -2767,7 +2772,7 @@
     "options": [
       {
         "flags": "--consensus-validated",
-        "description": "Mark snapshot as validated by consensus (strict)",
+        "description": "Not supported: refused (SNAPSHOT_CONSENSUS_VALIDATION_UNSUPPORTED, exit 2). HardKAS does not validate snapshots against consensus, so a snapshot never declares it",
         "defaultValue": false
       },
       {
@@ -2812,7 +2817,7 @@
         "defaultValue": "19110"
       },
       {
-        "flags": "-h, --host <host>",
+        "flags": "-H, --host <host>",
         "description": "Host to bind",
         "defaultValue": "127.0.0.1"
       },
@@ -2823,7 +2828,7 @@
       },
       {
         "flags": "--automine",
-        "description": "Enable automine mode",
+        "description": "Automine is on by default (this flag changes nothing; --no-automine turns it off)",
         "defaultValue": true
       },
       {
@@ -3126,7 +3131,7 @@
   },
   {
     "commandPath": "hardkas dev tx send",
-    "description": "Quick send transaction",
+    "description": "Quick plan, sign and send on the simulated ledger or a local simnet, with no confirmation; any other network is refused (use 'hardkas tx send … --yes')",
     "arguments": [],
     "options": [
       {
@@ -3857,7 +3862,7 @@
       },
       {
         "flags": "--profile <smoke|targeted|full>",
-        "description": "Actor weight profile (smoke, targeted and full currently use the same weights)",
+        "description": "No effect: smoke, targeted and full use the same actor weights",
         "defaultValue": "smoke"
       },
       {
@@ -3866,22 +3871,22 @@
       },
       {
         "flags": "--isolate",
-        "description": "Always on: chaos runs in ./.hardkas-chaos-workspace (the flag has no effect)",
+        "description": "Always on: every campaign runs in its own new temporary directory, never in the current one (the flag has no effect)",
         "defaultValue": true
       },
       {
         "flags": "--unsafe-current-dir",
-        "description": "Request a run in the current directory (DANGEROUS; needs HARDKAS_ALLOW_UNSAFE_CHAOS=1). Known issue: only the safety checks run, the campaign stays in the isolated workspace",
+        "description": "No effect: a campaign never runs in the current directory; it runs in its own new temporary directory",
         "defaultValue": false
       },
       {
         "flags": "--force-ci-chaos",
-        "description": "Allow unsafe chaos in CI environments",
+        "description": "No effect: there is no current-directory run to allow in CI",
         "defaultValue": false
       },
       {
         "flags": "--force-chaos-destructive",
-        "description": "Bypass workspace protection guards",
+        "description": "No effect: there is no current-directory run whose guards could be bypassed",
         "defaultValue": false
       }
     ],
@@ -3891,7 +3896,7 @@
   },
   {
     "commandPath": "hardkas chaos replay",
-    "description": "Re-run one chaos run seed in a fresh isolated workspace (the actor is derived from the seed, so runs from an --actor campaign are not reproduced)",
+    "description": "Re-run one chaos run seed in a fresh temporary directory of its own (the actor is derived from the seed, so runs from an --actor campaign are not reproduced)",
     "arguments": [],
     "options": [
       {
@@ -3994,7 +3999,7 @@
         "defaultValue": "3000"
       },
       {
-        "flags": "-h, --host <host>",
+        "flags": "-H, --host <host>",
         "description": "Host for dev-server API",
         "defaultValue": "localhost"
       }
@@ -5366,7 +5371,7 @@
       },
       {
         "flags": "--address-network <networks>",
-        "description": "Also return P2SH addresses for these public networks (comma-separated: testnet-10,mainnet); proof-only needs --ack-image-id-only-lock; never for a public test vector"
+        "description": "Also return the P2SH address for testnet-10; proof-only needs --ack-image-id-only-lock; never for a public test vector. mainnet (any spelling) is refused while mainnet is locked down (MAINNET_SIGNING_DISABLED): nothing is built"
       },
       {
         "flags": "--ack-image-id-only-lock",
@@ -5417,7 +5422,7 @@
   },
   {
     "commandPath": "hardkas zk toccata verify-scripts",
-    "description": "Verify structural integrity and inspect consensus binding rules in Toccata P2SH scripts",
+    "description": "Verify Toccata P2SH scripts: the pinned RISC Zero verifying key, control root and control id, and a redeem script byte-identical to the one HardKAS builds for the parameters it carries; consensusEnforced only for such an output-bound lock (payout, change, one input, input limit), never from the presence of opcodes",
     "arguments": [],
     "options": [
       {
@@ -5447,6 +5452,14 @@
       {
         "flags": "--expected-payout-amount <sompi>",
         "description": "Expected consensus-bound payout amount in sompi"
+      },
+      {
+        "flags": "--expected-change-address <address>",
+        "description": "Expected consensus-bound change address (output 1)"
+      },
+      {
+        "flags": "--expected-change-amount <sompi>",
+        "description": "Expected consensus-bound change amount in sompi"
       },
       {
         "flags": "--json",
@@ -5516,7 +5529,7 @@
     "options": [
       {
         "flags": "--json",
-        "description": "Output as JSON",
+        "description": "Output as JSON (always: this command only prints JSON; the flag changes nothing)",
         "defaultValue": false
       }
     ],
@@ -5541,7 +5554,7 @@
   },
   {
     "commandPath": "hardkas programmability inspect",
-    "description": "Inspect a Silver, ZK, or vProgs artifact",
+    "description": "Inspect a Silver, ZK, or vProgs artifact: its schema and content hash. It never establishes node evidence for the artifact (artifactEvidence.realNodeEvidence: NOT_ESTABLISHED); the product's claims are in 'programmability capabilities'",
     "arguments": [
       {
         "name": "path",
@@ -5556,7 +5569,7 @@
       },
       {
         "flags": "--json",
-        "description": "Output as JSON",
+        "description": "Output as JSON (always: this command only prints JSON; the flag changes nothing)",
         "defaultValue": false
       }
     ],
@@ -5566,7 +5579,7 @@
   },
   {
     "commandPath": "hardkas programmability verify",
-    "description": "Verify a local programmability artifact",
+    "description": "Verify a local programmability artifact's integrity. It never establishes node evidence for the artifact (artifactEvidence.realNodeEvidence: NOT_ESTABLISHED)",
     "arguments": [
       {
         "name": "path",
@@ -5581,7 +5594,7 @@
       },
       {
         "flags": "--json",
-        "description": "Output as JSON",
+        "description": "Output as JSON (always: this command only prints JSON; the flag changes nothing)",
         "defaultValue": false
       }
     ],
@@ -5602,7 +5615,7 @@
     "options": [
       {
         "flags": "--json",
-        "description": "Output as JSON",
+        "description": "Output as JSON (always: this command only prints JSON; the flag changes nothing)",
         "defaultValue": false
       }
     ],
@@ -5626,7 +5639,7 @@
       },
       {
         "flags": "--json",
-        "description": "Output as JSON",
+        "description": "Output as JSON (always: this command only prints JSON; the flag changes nothing)",
         "defaultValue": false
       }
     ],
@@ -5840,7 +5853,7 @@
       },
       {
         "flags": "--network <net>",
-        "description": "Target network (e.g. simulated, testnet-10, mainnet)"
+        "description": "Target network (e.g. simulated, simnet, testnet-10; mainnet is blocked)"
       },
       {
         "flags": "--offline",

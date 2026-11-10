@@ -15,7 +15,7 @@ import {
   verifyArtifactSemantics,
   verifyFeeSemantics,
   verifyLineage,
-  ARTIFACT_SCHEMAS,
+  validateArtifactSchema,
   CURRENT_HASH_VERSION
 } from "@hardkas/artifacts";
 import { isSecretFieldName, redactUrlCredentialsInText } from "@hardkas/core";
@@ -36,8 +36,6 @@ import type {
 } from "../types.js";
 import type { QueryBackend } from "../backend.js";
 import { type ContentHash } from "@hardkas/core";
-
-const KNOWN_SCHEMAS = new Set(Object.values(ARTIFACT_SCHEMAS));
 
 // ---------------------------------------------------------------------------
 // Adapter
@@ -132,15 +130,10 @@ export class ArtifactQueryAdapter implements QueryAdapter {
         request.offset ?? 0,
         (request.offset ?? 0) + (request.limit ?? sorted.length)
       );
-      why = pagedForWhy.map((item) =>
-        explainIntegrity(item, {
-          ok: true,
-          hashMatch: true,
-          schemaValid: KNOWN_SCHEMAS.has(
-            item.schema as (typeof ARTIFACT_SCHEMAS)[keyof typeof ARTIFACT_SCHEMAS]
-          ),
-          errors: []
-        })
+      // ESCALÓN 3: the explanation of each listed artifact runs the same checks as inspect; it used to state a fixed
+      // `ok`/`hashMatch: true` and a schema verdict taken from the schema name alone.
+      why = await Promise.all(
+        pagedForWhy.map(async (item) => explainIntegrity(item, await this.integrityOf(item.payload)))
       );
     }
 
@@ -178,17 +171,8 @@ export class ArtifactQueryAdapter implements QueryAdapter {
 
     // Integrity. EVIDENCE-TRUST-1 (ET-C2): references are looked up in the workspace store this engine serves, as
     // `hardkas verify` does — a parent is never "not found in workspace" without the workspace being searched.
-    const integrityResult = await verifyArtifactIntegrity(raw, { workspaceRoot: this.rootDir });
-    const semanticResult = verifyArtifactSemantics(raw, { strict: true, workspaceRoot: this.rootDir });
+    const integrity = await this.integrityOf(raw);
     const parent = resolveParentReference(raw, { workspaceRoot: this.rootDir });
-    let hashMatch = true;
-    if (raw.contentHash) {
-      try {
-        hashMatch = recomputeDeclaredContentHash(raw) === raw.contentHash;
-      } catch {
-        hashMatch = false; // invalid or missing hashVersion: no identity can be established
-      }
-    }
 
     // Economics (for tx artifacts)
     let economics: ArtifactInspectResult["economics"];
@@ -230,17 +214,7 @@ export class ArtifactQueryAdapter implements QueryAdapter {
 
     const inspectResult: ArtifactInspectResult = {
       item,
-      integrity: {
-        ok: integrityResult.ok && hashMatch,
-        hashMatch,
-        schemaValid: KNOWN_SCHEMAS.has(
-          item.schema as (typeof ARTIFACT_SCHEMAS)[keyof typeof ARTIFACT_SCHEMAS]
-        ),
-        errors: [
-          ...integrityResult.issues.map((i) => i.message),
-          ...semanticResult.issues.map((i) => i.message)
-        ]
-      },
+      integrity,
       economics,
       staleness,
       lineageStatus,
@@ -352,6 +326,36 @@ export class ArtifactQueryAdapter implements QueryAdapter {
   // -------------------------------------------------------------------------
   // Helpers
   // -------------------------------------------------------------------------
+
+  /**
+   * Integrity of one artifact. EVIDENCE-TRUST-1 (ET-C2): references are looked up in the workspace store this engine
+   * serves, as `hardkas verify` does. ESCALÓN 3 (rest of ESCALÓN 2): `schemaValid` is the artifact parsed with the
+   * schema the artifact schema registry holds for it, never the schema name being known; a name with no registered
+   * schema is `schemaValidation: "NOT_VALIDATED"` (and `schemaValid: false`).
+   */
+  private async integrityOf(raw: any): Promise<ArtifactInspectResult["integrity"]> {
+    const integrityResult = await verifyArtifactIntegrity(raw, { workspaceRoot: this.rootDir });
+    const semanticResult = verifyArtifactSemantics(raw, { strict: true, workspaceRoot: this.rootDir });
+    let hashMatch = true;
+    if (raw?.contentHash) {
+      try {
+        hashMatch = recomputeDeclaredContentHash(raw) === raw.contentHash;
+      } catch {
+        hashMatch = false; // invalid or missing hashVersion: no identity can be established
+      }
+    }
+    const schemaCheck = validateArtifactSchema(raw);
+    return {
+      ok: integrityResult.ok && hashMatch,
+      hashMatch,
+      schemaValid: schemaCheck.status === "VALID",
+      schemaValidation: schemaCheck.status,
+      errors: [
+        ...integrityResult.issues.map((i) => i.message),
+        ...semanticResult.issues.map((i) => i.message)
+      ]
+    };
+  }
 
   private async scanArtifactFiles(): Promise<string[]> {
     const files: string[] = [];

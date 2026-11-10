@@ -3,6 +3,7 @@ import {
   DockerKaspadOptions,
   KaspadNodeStatus
 } from "@hardkas/node-runner";
+import { HardkasCliError, HardkasExitCode } from "../cli-errors.js";
 
 export interface NodeStartRunnerInput extends DockerKaspadOptions {
   json?: boolean;
@@ -13,9 +14,34 @@ export interface NodeStartRunnerResult {
   formatted: string;
 }
 
+/** An image pinned by its content digest: `<repository>[:tag]@sha256:<64 lowercase hex>` (a tag alone can move). */
+export const PINNED_NODE_IMAGE = /^[^\s@]+@sha256:[0-9a-f]{64}$/;
+
+/**
+ * ESCALÓN 4 · P39 · the image `node start` runs, decided before Docker is asked anything: `--image` when given, else
+ * `HARDKAS_KASPAD_IMAGE` (the runner's default comes from it), else the pinned reference image. An image given either
+ * way must be pinned by digest, or the command is the typed usage error NODE_IMAGE_DIGEST_REQUIRED and nothing is
+ * started (`--allow-floating-image` does not lift it).
+ */
+export function assertNodeStartImagePinned(input: { image?: string | undefined }, env: NodeJS.ProcessEnv = process.env): void {
+  const fromOption = input.image !== undefined;
+  const image = fromOption ? input.image : env.HARDKAS_KASPAD_IMAGE;
+  if (image === undefined) return;
+  if (typeof image === "string" && PINNED_NODE_IMAGE.test(image)) return;
+  const source = fromOption ? "--image" : "HARDKAS_KASPAD_IMAGE";
+  throw new HardkasCliError(
+    "NODE_IMAGE_DIGEST_REQUIRED",
+    `${source} '${String(image)}' is not pinned by digest. 'node start' runs only an image pinned as ` +
+      `<repository>[:tag]@sha256:<64 hex digits> (a tag can move to other bytes; --allow-floating-image does not lift this). ` +
+      `Nothing was started.`,
+    { exitCode: HardkasExitCode.USAGE_ERROR }
+  );
+}
+
 export async function runNodeStart(
   input: NodeStartRunnerInput
 ): Promise<NodeStartRunnerResult> {
+  assertNodeStartImagePinned(input);
   const runner = new DockerKaspadRunner(input);
   const status = await runner.start();
 

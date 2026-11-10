@@ -201,11 +201,13 @@ describe("Adversarial Campaign · Toccata KIP-16 & Script Construction (Fase B)"
       imageId: officialImageId,
       journalHash: officialJournalHash,
       receiptHex,
-      addressNetworks: ["mainnet", "testnet-10"],
+      // ESCALÓN 4 · P37: a mainnet entry is MAINNET_SIGNING_DISABLED before this check
+      addressNetworks: ["testnet-10"],
       acknowledgeImageIdOnlyLock: true
     });
     expect(asked.ok).toBe(false);
     expect(asked.issues.some((i) => i.code === "ZK_PUBLIC_VECTOR_PUBLIC_NETWORK_REFUSED")).toBe(true);
+    expect(asked.p2shAddresses.testnet10).toBeUndefined();
     expect(asked.p2shAddresses.mainnet).toBeUndefined();
   });
 });

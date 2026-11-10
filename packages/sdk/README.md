@@ -96,7 +96,7 @@ HardKAS relies on the authoritative Kaspa network for state validation and confl
 - **Exact Signed Submission**: HardKAS submits exactly what was signed, without hidden mutations.
 - **Receipt Semantics**: A `submitted` receipt is persisted *only* after successful transaction submission acceptance by the RPC path. A rejected submission must not produce a `submitted` receipt. (Note: `submitted` ≠ `confirmed` ≠ `final`).
 - **Artifact Authority**: Local state queries rely on immutable file artifacts, but network evidence rules absolute truth.
-- **Live Sync & Recovery**: Live sync leverages explicit `GetVirtualChainFromBlockV2` catch-up for deterministic gap recovery without relying on fragile heuristic polling.
+- **Observation & Recovery**: The transaction observer reads the node's virtual chain with `getVirtualChainFromBlock` (with accepted transaction ids) from the last verified cursor and seals each look as a `hardkas.txObservation.v1` artifact. An incoherent chain answer is rejected whole, and the next look re-reads from that cursor. The observer does not use `getVirtualChainFromBlockV2`.
 
 ## 5. Boundary
 
@@ -116,12 +116,18 @@ The SDK should be used from Node.js. Browser applications should talk to the dev
   `groth16VkElementCostScriptUnits` 250,000 per verifying-key element,
   `minimumR0Groth16ComputeBudget` 1550, `recommendedComputeBudget` 1600).
 - `buildR0Groth16Scripts` / `buildR0Groth16Transaction`: Toccata scripts (`redeemScript`,
-  `sigScript`, `p2shScriptPublicKey`, `p2shAddresses`) and an unsigned v1 spend; never signed or
-  broadcast. `authorizationModel` on every result:
+  `sigScript`, `p2shScriptPublicKey`, `p2shAddresses`) and the v1 spend, never broadcast. A ZK spend
+  needs no signature (its `sigScript` is the authorization), so the built transaction is complete:
+  `buildR0Groth16Transaction` and `buildR0Groth16Plan` refuse mainnet with `MAINNET_SIGNING_DISABLED`.
+  `verifyR0Groth16Scripts` accepts a lock only over the pinned RISC Zero verifying key, control root
+  and control id, and sets `consensusEnforced` only for an output-bound redeem script byte-identical
+  to the one HardKAS builds for the outputs it carries (`redeemScriptCanonical`; otherwise
+  `ZK_REDEEM_SCRIPT_NOT_CANONICAL`). `authorizationModel` on every result:
   - `IMAGE_ID_ONLY` (default, `bindingPolicy` absent or `proof-only`): the lock binds the image id
     only (any holder of a valid receipt spends, to any outputs; replay and front-running are possible
-    by design); testnet/mainnet addresses need `addressNetworks` + `acknowledgeImageIdOnlyLock` and
-    are never built for a public test vector.
+    by design); a testnet-10 address needs `addressNetworks` + `acknowledgeImageIdOnlyLock` and
+    is never built for a public test vector. Mainnet (any spelling, or a bound payout or change address
+    of mainnet) throws `MAINNET_SIGNING_DISABLED` while mainnet is locked down: no lock is built.
   - `IMAGE_ID_AND_OUTPUTS` (`bindingPolicy: { mode: "proof-and-output-bound", payout, change?,
     maxFeeSompi? }`): the redeem script also checks the output count and the payout/change script
     public key and amount by introspection, exactly one input, and an input of at most the bound

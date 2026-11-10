@@ -28,9 +28,10 @@ front-run a spend seen in the mempool. Not needed in proof-and-output-bound mode
 
 Defined in: [packages/sdk/src/zk/toccata.ts:326](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/zk/toccata.ts#L326)
 
-Networks whose P2SH address is returned. The simnet address is always returned; "testnet-10" and
-"mainnet" are returned only when listed here AND acknowledgeImageIdOnlyLock is true, and never for a
-public test vector (PUBLIC_R0_TEST_VECTORS), whose lock anyone can spend (HK-16).
+Networks whose P2SH address is returned. The simnet address is always returned; "testnet-10" is returned
+only when listed here AND acknowledgeImageIdOnlyLock is true, and never for a public test vector
+(PUBLIC_R0_TEST_VECTORS), whose lock anyone can spend (HK-16). "mainnet" (any spelling) throws
+MAINNET_SIGNING_DISABLED while mainnet is locked down (P37): nothing is built.
 
 ***
 

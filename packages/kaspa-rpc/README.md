@@ -16,7 +16,6 @@ npm install @hardkas/kaspa-rpc
 
 - `JsonWrpcKaspaClient`, a typed client over the official kaspa-wasm `RpcClient`.
 - Typed RPC errors, health checks and resilience helpers.
-- Adapters under `@hardkas/kaspa-rpc/adapters`.
 
 A client can be bound to a network: then a connection is refused unless the node says it serves that network.
 

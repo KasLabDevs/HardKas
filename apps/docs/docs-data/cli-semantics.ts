@@ -131,5 +131,18 @@ export const cliSemantics: Record<string, CliCommandSemantics> = {
     ],
     relatedConcepts: ["/concepts/toccata/zk-and-sequencing.md"],
     relatedGuides: ["/guides/zk-l1-verification-and-settlement.md"]
+  },
+  "hardkas zk toccata verify-scripts": {
+    commandPath: "hardkas zk toccata verify-scripts",
+    environments: ["Local (kaspa-wasm ZkScriptBuilder, to rebuild the lock); no node is contacted"],
+    reads: ["Redeem and signature scripts (hex)"],
+    evidenceMeaning:
+      "The lock uses the pinned RISC Zero verifying key, control root and control id, and its redeem script is byte-identical to the one build-scripts makes for the parameters it carries. consensusEnforced: true only for such an output-bound lock. The scripts are not executed; on-chain acceptance is shown only by the simnet suites.",
+    limitations: [
+      "A lock HardKAS cannot rebuild byte for byte (another builder, other opcodes, another encoding) is ZK_REDEEM_SCRIPT_NOT_CANONICAL: no claim is made about it, even when it may be sound.",
+      "Expected outputs asked of a lock that binds none (proof-only) are ZK_EXPECTED_BINDING_NOT_ENFORCED, never satisfied vacuously."
+    ],
+    relatedConcepts: ["/concepts/toccata/zk-and-sequencing.md"],
+    relatedGuides: ["/guides/zk-l1-verification-and-settlement.md"]
   }
 };

@@ -29,7 +29,7 @@ const plan = await sdk.tx.plan({
 });
 
 const signed = await sdk.tx.sign(plan, { account: "alice" });
-const receipt = await sdk.tx.simulate(signed);
+const { receipt } = await sdk.tx.simulate(signed);
 ```
 
 The signer does not contact the node. The sender does not touch private keys. Each step consumes the artifact from the previous step.

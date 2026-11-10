@@ -49,8 +49,9 @@ contract and run a covenant. About half an hour, most of it reading.
    what to do.
 
 Want to try HardKAS without Docker first? The [Quickstart](./quickstart.md)
-runs the same lifecycle in the in-memory simulator in five minutes; nothing it
-produces is network evidence.
+runs the same lifecycle on the simulated ledger (`network: "simulated"`, a local
+UTXO ledger with synthetic accounts, not the `@hardkas/simulator` node) in five
+minutes; nothing it produces is network evidence.
 
 ## Tested as written
 

@@ -67,6 +67,20 @@ export async function runAccountsKeystoreImport(options: {
   json?: boolean;
   workspaceRoot: string;
 }) {
+  // ESCALÓN 4 · P36 · MAINNET TOTAL LOCKDOWN: no mainnet key enters the store while mainnet is locked down (Kaspa's
+  // sighash does not commit to the network, so it could sign a manipulated plan). Refused with the signing code first,
+  // before any key, password or fixture is read: a `--network` of the mainnet type in any spelling, a config entry that
+  // declares one (an alias such as `prod`), and a mainnet address (`kaspa:`), which names mainnet by itself.
+  {
+    const { refuseMainnetSigning, workspaceConfigForGuard } = await import("../mainnet-guard.js");
+    const given = typeof options.address === "string" ? options.address.trim().toLowerCase() : "";
+    const addressNetwork = given.startsWith("kaspa:") && !given.startsWith("kaspa:sim_") ? "mainnet" : undefined;
+    refuseMainnetSigning(
+      await workspaceConfigForGuard(options.workspaceRoot),
+      [options.network, addressNetwork],
+      "accounts real import: no mainnet key is imported while mainnet is locked down"
+    );
+  }
   let name = options.name || "default";
   let address = options.address;
 

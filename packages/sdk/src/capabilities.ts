@@ -34,8 +34,8 @@ export interface HardkasCapabilities {
     secretRedaction: boolean;
     mainnetGuards: boolean;
     localnetSimulation: boolean;
-    ghostdagSimulation: boolean;
-    dagConflictResolution: boolean;
+    // ESCALÓN 2 · P8: `ghostdagSimulation` and `dagConflictResolution` are gone. No command runs GHOSTDAG, and the DAG
+    // conflict queries read a file nothing writes (they now refuse with DAG_DATA_UNAVAILABLE): neither was true.
     massProfiler: boolean;
     simulationScenarios: boolean;
     queryStore: boolean;
@@ -577,8 +577,6 @@ export function createHardkasCapabilities(): HardkasCapabilities {
       secretRedaction: true,
       mainnetGuards: true,
       localnetSimulation: true,
-      ghostdagSimulation: true,
-      dagConflictResolution: true,
       massProfiler: true,
       simulationScenarios: true,
       queryStore: true,

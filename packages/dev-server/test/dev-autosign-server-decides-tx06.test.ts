@@ -45,6 +45,7 @@ async function send(body: Record<string, unknown>) {
 
 beforeEach(() => {
   node.cwd = fs.mkdtempSync(path.join(os.tmpdir(), "hk-tx06-"));
+  node.network = "testnet-10";
   node.plans = [];
   delete process.env.HARDKAS_DEV_SERVER_AUTOSIGN;
 });
@@ -54,11 +55,14 @@ afterEach(() => {
 });
 
 describe("TX-06 · dev-server auto-signing is the server's decision", () => {
-  it("serverAllowsDevAutoSign: local worlds yes; testnet only with the server's opt-in; mainnet never", () => {
-    expect(serverAllowsDevAutoSign("simulated", {})).toBe(true);
-    expect(serverAllowsDevAutoSign("simnet", {})).toBe(true);
+  // ESCALÓN 4 · P38: off by default everywhere; with the server's opt-in, the local worlds only (dev-autosign-p38.test.ts)
+  it("serverAllowsDevAutoSign: nothing without the server's opt-in; with it, the local worlds only; testnet and mainnet never", () => {
+    expect(serverAllowsDevAutoSign("simulated", {})).toBe(false);
+    expect(serverAllowsDevAutoSign("simnet", {})).toBe(false);
     expect(serverAllowsDevAutoSign("testnet-10", {})).toBe(false);
-    expect(serverAllowsDevAutoSign("testnet-10", { HARDKAS_DEV_SERVER_AUTOSIGN: "1" })).toBe(true);
+    expect(serverAllowsDevAutoSign("simulated", { HARDKAS_DEV_SERVER_AUTOSIGN: "1" })).toBe(true);
+    expect(serverAllowsDevAutoSign("simnet", { HARDKAS_DEV_SERVER_AUTOSIGN: "1" })).toBe(true);
+    expect(serverAllowsDevAutoSign("testnet-10", { HARDKAS_DEV_SERVER_AUTOSIGN: "1" })).toBe(false);
     expect(serverAllowsDevAutoSign("mainnet", { HARDKAS_DEV_SERVER_AUTOSIGN: "1" })).toBe(false);
   });
 
@@ -69,8 +73,9 @@ describe("TX-06 · dev-server auto-signing is the server's decision", () => {
     expect(node.plans).toEqual([]);
   });
 
-  it("with the server's opt-in it plans, and the amount reaches tx.plan in sompi (bigint 1000n, not '1000' KAS)", async () => {
+  it("with the server's opt-in it plans (local simnet), and the amount reaches tx.plan in sompi (bigint 1000n, not '1000' KAS)", async () => {
     process.env.HARDKAS_DEV_SERVER_AUTOSIGN = "1";
+    node.network = "simnet";
     await send({ from: "alice", to: "bob", amountSompi: "1000", allowDevAutoSign: true });
     expect(node.plans).toHaveLength(1);
     expect(node.plans[0].amount).toBe(1000n);

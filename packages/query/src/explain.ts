@@ -65,6 +65,8 @@ export function explainIntegrity(
     ok: boolean;
     hashMatch: boolean;
     schemaValid: boolean;
+    /** How the schema was checked; without it, `schemaValid: false` reads as NOT_VALIDATED, never as checked. */
+    schemaValidation?: "VALID" | "INVALID" | "NOT_VALIDATED";
     errors: readonly string[];
   }
 ): WhyBlock {
@@ -77,14 +79,18 @@ export function explainIntegrity(
   }
   evidence.push({ type: "filePath", value: artifact.filePath });
 
-  // Step 1: Schema check
+  // Step 1: Schema check. ESCALÓN 3: the verdict is the artifact parsed with its registered schema, not the name.
+  const schemaValidation = integrity.schemaValidation ?? (integrity.schemaValid ? "VALID" : "NOT_VALIDATED");
   causalChain.push({
     order: order++,
-    assertion: integrity.schemaValid
-      ? `Schema "${artifact.schema}" is a recognized HardKAS artifact schema`
-      : `Schema "${artifact.schema}" is not recognized`,
-    evidence: `artifact.schema = "${artifact.schema}"`,
-    rule: "ARTIFACT_SCHEMAS constant (artifacts/constants.ts)"
+    assertion:
+      schemaValidation === "VALID"
+        ? `Artifact satisfies its registered schema "${artifact.schema}"`
+        : schemaValidation === "INVALID"
+          ? `Artifact does NOT satisfy its registered schema "${artifact.schema}"`
+          : `Schema "${artifact.schema}" is not recognized by the artifact schema registry: NOT_VALIDATED`,
+    evidence: `artifact.schema = "${artifact.schema}"; schemaValidation = ${schemaValidation}`,
+    rule: "artifact schema registry (validateArtifactSchema, artifacts/verify.ts)"
   });
 
   // Step 2: Content hash

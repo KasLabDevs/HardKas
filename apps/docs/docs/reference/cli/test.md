@@ -17,7 +17,7 @@ title: hardkas test
 #### Options
 
 - `--network &lt;network&gt;`: The network the scenarios run on: the workspace's network (default); a different one is refused
-- `--watch` (Default: `false`): Passed to Vitest, but the CLI exits after the first run (watch does not persist)
+- `--watch` (Default: `false`): No effect: the CLI exits after the first run (the watch does not persist)
 - `--mass-report` (Default: `false`): No effect in this release
 - `--mass-snapshot &lt;label&gt;`: No effect in this release
 - `--mass-compare &lt;label&gt;`: No effect in this release

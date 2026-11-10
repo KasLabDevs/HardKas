@@ -243,7 +243,13 @@ export interface ArtifactInspectResult {
   readonly integrity: {
     readonly ok: boolean;
     readonly hashMatch: boolean;
+    /** True only when the artifact was parsed with its registered schema and passed (`schemaValidation: "VALID"`). */
     readonly schemaValid: boolean;
+    /**
+     * VALID / INVALID: the artifact was parsed with the schema the artifact schema registry holds for it.
+     * NOT_VALIDATED: the registry has no schema for its schema name, so nothing was checked.
+     */
+    readonly schemaValidation: "VALID" | "INVALID" | "NOT_VALIDATED";
     readonly errors: readonly string[];
   };
   readonly economics?:
@@ -390,14 +396,24 @@ export interface ReplaySummaryResult {
   readonly traceEventCount: number;
 }
 
+/**
+ * ESCALÓN 2 · P9: static checks of one stored receipt (`hardkas query replay invariants`); nothing is re-executed (only
+ * `hardkas replay verify` replays). Each field names what it looks at.
+ */
 export interface ReplayInvariantsResult {
   readonly txId: TxId;
-  /** What the receipt's hash authenticated; status-based invariants are evaluated only for FULL. */
+  /** Always "static": the receipt's own fields were read, nothing was replayed. */
+  readonly analysis: "static";
+  /** What the receipt's hash authenticated; status-based checks are evaluated only for FULL. */
   readonly authScope: "FULL" | "LEGACY" | "NONE";
-  readonly planIntegrity: boolean;
-  readonly receiptReproducible: boolean;
-  readonly stateTransitionValid: boolean;
-  readonly utxoConservation: boolean;
+  /** The receipt's contentHash matches its recomputed hash (was `planIntegrity`). */
+  readonly contentHashMatches: boolean;
+  /** Pre and post state hashes are recorded; a replay could compare them (was `receiptReproducible`). */
+  readonly stateHashesPresent: boolean;
+  /** The recorded state change agrees with the status (was `stateTransitionValid`). */
+  readonly stateChangeMatchesStatus: boolean;
+  /** A confirmed transaction lists at least one spent and one created UTXO; no amount is summed (was `utxoConservation`). */
+  readonly utxoCountsNonZero: boolean;
   readonly issues: readonly string[];
 }
 

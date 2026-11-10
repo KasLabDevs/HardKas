@@ -12,7 +12,7 @@ title: hardkas programmability
 
 #### Options
 
-- `--json` (Default: `false`): Output as JSON
+- `--json` (Default: `false`): Output as JSON (always: this command only prints JSON; the flag changes nothing)
 
 ---
 
@@ -32,7 +32,7 @@ title: hardkas programmability
 
 ### Synopsis (Generated)
 
-**Purpose:** Inspect a Silver, ZK, or vProgs artifact
+**Purpose:** Inspect a Silver, ZK, or vProgs artifact: its schema and content hash. It never establishes node evidence for the artifact (artifactEvidence.realNodeEvidence: NOT_ESTABLISHED); the product's claims are in 'programmability capabilities'
 
 #### Arguments
 
@@ -41,7 +41,7 @@ title: hardkas programmability
 #### Options
 
 - `--kind &lt;kind&gt;`: Artifact kind: silver, zk, or vprog
-- `--json` (Default: `false`): Output as JSON
+- `--json` (Default: `false`): Output as JSON (always: this command only prints JSON; the flag changes nothing)
 
 ---
 
@@ -49,7 +49,7 @@ title: hardkas programmability
 
 ### Synopsis (Generated)
 
-**Purpose:** Verify a local programmability artifact
+**Purpose:** Verify a local programmability artifact's integrity. It never establishes node evidence for the artifact (artifactEvidence.realNodeEvidence: NOT_ESTABLISHED)
 
 #### Arguments
 
@@ -58,7 +58,7 @@ title: hardkas programmability
 #### Options
 
 - `--kind &lt;kind&gt;`: Artifact kind: silver, zk, or vprog
-- `--json` (Default: `false`): Output as JSON
+- `--json` (Default: `false`): Output as JSON (always: this command only prints JSON; the flag changes nothing)
 
 ---
 
@@ -74,7 +74,7 @@ title: hardkas programmability
 
 #### Options
 
-- `--json` (Default: `false`): Output as JSON
+- `--json` (Default: `false`): Output as JSON (always: this command only prints JSON; the flag changes nothing)
 
 ---
 
@@ -88,7 +88,7 @@ title: hardkas programmability
 
 - `--kind &lt;kind&gt;` (Default: `full-lab`): silver, zk, vprog, or full-lab
 - `--template &lt;path&gt;`: Template path
-- `--json` (Default: `false`): Output as JSON
+- `--json` (Default: `false`): Output as JSON (always: this command only prints JSON; the flag changes nothing)
 
 ---
 

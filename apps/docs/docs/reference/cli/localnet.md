@@ -126,7 +126,7 @@ title: hardkas localnet
 
 #### Options
 
-- `--consensus-validated` (Default: `false`): Mark snapshot as validated by consensus (strict)
+- `--consensus-validated` (Default: `false`): Not supported: refused (SNAPSHOT_CONSENSUS_VALIDATION_UNSUPPORTED, exit 2). HardKAS does not validate snapshots against consensus, so a snapshot never declares it
 - `--json` (Default: `false`): Output as JSON
 
 ---

@@ -8,10 +8,4 @@ DAG commands and query views are research/dev tooling. They are useful to inspec
 
 `hardkas dag simulate-reorg --depth 1`Simulate a local DAG reorg.
 
-`hardkas query dag conflicts --why`Explain local double-spend conflict analysis.
-
-`hardkas query dag sink-path`Show selected path from genesis to sink.
-
-`hardkas query dag displaced`Show displaced transactions.
-
-`hardkas query dag history <txId> --why`Trace simulator DAG lifecycle for a transaction.
+The `query dag` views (`conflicts`, `sink-path`, `displaced`, `history <txId>`, `anomalies`) read a light-model DAG from `.hardkas/state.json`. No HardKAS command writes that file (`dag simulate-reorg` keeps its DAG in `.hardkas/localnet.json`, with no transactions in it), so today each view fails with `DAG_DATA_UNAVAILABLE` (exit 1; `status: "NO_DATA"` in `--json`) instead of answering "no conflicts" without data. For a real node's DAG, use `hardkas rpc dag`.

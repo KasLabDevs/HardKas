@@ -13,9 +13,9 @@ title: hardkas simulator
 #### Options
 
 - `-p, --port &lt;port&gt;` (Default: `19110`): Port for the RPC server (HTTP JSON-RPC and wRPC JSON)
-- `-h, --host &lt;host&gt;` (Default: `127.0.0.1`): Host to bind
+- `-H, --host &lt;host&gt;` (Default: `127.0.0.1`): Host to bind
 - `-n, --network &lt;network&gt;` (Default: `simnet`): Network ID (simnet, devnet, testnet-10, testnet-11)
-- `--automine` (Default: `true`): Enable automine mode
+- `--automine` (Default: `true`): Automine is on by default (this flag changes nothing; --no-automine turns it off)
 - `--no-automine`: Disable automine mode
 - `--json` (Default: `false`): Output as JSON
 

@@ -103,7 +103,7 @@ title: hardkas tx
 - `--account &lt;name&gt;`: Account name to sign with
 - `--out &lt;path&gt;`: Save signed artifact JSON
 - `--fixture` (Default: `false`): Sign with the built-in fixture test key (any network except mainnet)
-- `--allow-mainnet-signing` (Default: `false`): Mainnet signing stays refused in this release (MAINNET_SIGNING_DISABLED); the flag has no effect
+- `--allow-mainnet-signing` (Default: `false`): No effect: mainnet is blocked (MAINNET TOTAL LOCKDOWN) and mainnet signing stays refused (MAINNET_SIGNING_DISABLED)
 - `--threshold &lt;number&gt;`: Synthetic multisig threshold for tests (no Kaspa multisig script is produced)
 - `--required-signers &lt;list&gt;`: Comma-separated signers, no spaces (with --threshold above 1)
 - `--append` (Default: `false`): Append signature to a partially signed transaction

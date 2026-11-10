@@ -357,10 +357,12 @@ describe("Accounts wave · AUD-20 · plaintext is never written for mainnet", ()
     fs.rmSync(ws, { recursive: true, force: true });
   });
 
-  it("generate --network mainnet --unsafe-plaintext: PLAINTEXT_MAINNET_FORBIDDEN before anything is written", () => {
+  // ESCALÓN 4 · P36: while mainnet is locked down no mainnet key is made or imported at all, so the lockdown's signing
+  // refusal (MAINNET_SIGNING_DISABLED) answers first; the plaintext refusal stays behind it for when mainnet opens.
+  it("generate --network mainnet --unsafe-plaintext: refused (MAINNET_SIGNING_DISABLED) before anything is written", () => {
     const r = run(["accounts", "real", "generate", "--name", "mainplain", "--network", "mainnet", "--unsafe-plaintext", "--yes", "--json"], ws);
     expect(r.status, r.all).not.toBe(0);
-    expect(jsonOf(r.stdout).code).toBe("PLAINTEXT_MAINNET_FORBIDDEN");
+    expect(jsonOf(r.stdout).code).toBe("MAINNET_SIGNING_DISABLED");
     expect(accountIn(ws, "mainplain")).toBeUndefined();
     expect(filesContaining(ws, '"privateKey"')).toEqual([]);
   });
@@ -376,7 +378,7 @@ describe("Accounts wave · AUD-20 · plaintext is never written for mainnet", ()
       { HK_WAVE_KEY: key }
     );
     expect(r.status, r.all).not.toBe(0);
-    expect(jsonOf(r.stdout).code).toBe("PLAINTEXT_MAINNET_FORBIDDEN");
+    expect(jsonOf(r.stdout).code).toBe("MAINNET_SIGNING_DISABLED");
     expect(accountIn(ws, "mainimport")).toBeUndefined();
     expect(filesContaining(ws, key)).toEqual([]);
     expect(r.all).not.toContain(key);

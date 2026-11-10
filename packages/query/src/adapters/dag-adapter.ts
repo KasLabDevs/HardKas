@@ -7,13 +7,15 @@
  * IMPORTANT: All results carry dagModel: "deterministic-light-model".
  * This is NOT GHOSTDAG consensus. It is a developer debugging tool.
  *
- * Source of truth: .hardkas/state.json → dag field
+ * Source of truth: .hardkas/state.json → dag field. No HardKAS command writes that file (the simulated ledger keeps
+ * its own DAG in .hardkas/localnet.json, with no transactions in it); without it every op refuses with
+ * DAG_DATA_UNAVAILABLE (ESCALÓN 2 · P8) instead of answering an empty, successful result.
  */
 import fs from "node:fs/promises";
 import path from "node:path";
 import type { TxId } from "@hardkas/core";
-import { computeQueryHash } from "../serialize.js";
 import { paginateAndFormatResult } from "../format.js";
+import { DagDataUnavailableError } from "../errors.js";
 import type {
   QueryAdapter,
   QueryRequest,
@@ -99,11 +101,7 @@ export class DagQueryAdapter implements QueryAdapter {
 
   private async executeConflicts(request: QueryRequest): Promise<QueryResult> {
     const start = Date.now();
-    const dag = await this.loadDag();
-
-    if (!dag) {
-      return emptyDagResult("conflicts", start);
-    }
+    const dag = await this.requireDag("conflicts");
 
     const items: DagConflict[] = dag.conflictSet.map((c) => ({
       outpoint: c.outpoint,
@@ -140,11 +138,7 @@ export class DagQueryAdapter implements QueryAdapter {
 
   private async executeDisplaced(request: QueryRequest): Promise<QueryResult> {
     const start = Date.now();
-    const dag = await this.loadDag();
-
-    if (!dag) {
-      return emptyDagResult("displaced", start);
-    }
+    const dag = await this.requireDag("displaced");
 
     const items: DagDisplacement[] = dag.displacedTxIds.map((txId) => {
       // Check if this tx is in any conflict as a loser
@@ -192,8 +186,7 @@ export class DagQueryAdapter implements QueryAdapter {
     const txId = request.params["txId"];
     if (!txId) throw new Error("history requires params.txId");
 
-    const dag = await this.loadDag();
-    if (!dag) throw new Error("No DAG state found. Run a simulation first.");
+    const dag = await this.requireDag("history");
 
     // Find which block contains this tx
     const entries: DagTxHistory[] = [];
@@ -251,11 +244,7 @@ export class DagQueryAdapter implements QueryAdapter {
 
   private async executeSinkPath(request: QueryRequest): Promise<QueryResult> {
     const start = Date.now();
-    const dag = await this.loadDag();
-
-    if (!dag) {
-      return emptyDagResult("sink-path", start);
-    }
+    const dag = await this.requireDag("sink-path");
 
     const nodes: DagSinkPathNode[] = dag.selectedPathToSink.map((blockId) => {
       const block = dag.blocks[blockId];
@@ -291,11 +280,7 @@ export class DagQueryAdapter implements QueryAdapter {
 
   private async executeAnomalies(request: QueryRequest): Promise<QueryResult> {
     const start = Date.now();
-    const dag = await this.loadDag();
-
-    if (!dag) {
-      return emptyDagResult("anomalies", start);
-    }
+    const dag = await this.requireDag("anomalies");
 
     const anomalies: DagAnomaly[] = [];
 
@@ -371,33 +356,26 @@ export class DagQueryAdapter implements QueryAdapter {
   // Load DAG from state.json
   // -------------------------------------------------------------------------
 
+  private statePath(): string {
+    return path.join(this.rootDir, ".hardkas", "state.json");
+  }
+
   private async loadDag(): Promise<SimDag | null> {
-    const statePath = path.join(this.rootDir, ".hardkas", "state.json");
     try {
-      const content = await fs.readFile(statePath, "utf-8");
+      const content = await fs.readFile(this.statePath(), "utf-8");
       const state = JSON.parse(content);
       return state.dag ?? null;
     } catch {
       return null;
     }
   }
-}
 
-// ---------------------------------------------------------------------------
-// Empty result helper
-// ---------------------------------------------------------------------------
-
-function emptyDagResult(op: string, start: number): QueryResult {
-  return {
-    domain: "dag",
-    op,
-    items: [],
-    total: 0,
-    truncated: false,
-    deterministic: true,
-    queryHash: computeQueryHash([]),
-    annotations: { executedAt: new Date().toISOString(), executionMs: Date.now() - start }
-  };
+  /** ESCALÓN 2 · P8: the DAG an op answers from; without one, DAG_DATA_UNAVAILABLE, never an empty "all clear". */
+  private async requireDag(op: string): Promise<SimDag> {
+    const dag = await this.loadDag();
+    if (!dag) throw new DagDataUnavailableError(op, this.statePath());
+    return dag;
+  }
 }
 
 // ---------------------------------------------------------------------------

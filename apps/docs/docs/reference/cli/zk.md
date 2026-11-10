@@ -115,7 +115,7 @@ title: hardkas zk
 - `--change-address &lt;address&gt;`: Optional consensus-bound change address
 - `--change-amount &lt;sompi&gt;`: Optional consensus-bound change amount in sompi
 - `--max-fee &lt;sompi&gt;`: proof-and-output-bound: the most the lock may pay as fee; a UTXO above the bound outputs plus this stays locked (default 50000000)
-- `--address-network &lt;networks&gt;`: Also return P2SH addresses for these public networks (comma-separated: testnet-10,mainnet); proof-only needs --ack-image-id-only-lock; never for a public test vector
+- `--address-network &lt;networks&gt;`: Also return the P2SH address for testnet-10; proof-only needs --ack-image-id-only-lock; never for a public test vector. mainnet (any spelling) is refused while mainnet is locked down (MAINNET_SIGNING_DISABLED): nothing is built
 - `--ack-image-id-only-lock` (Default: `false`): Acknowledge that a proof-only lock binds only the image id (anyone with a valid receipt can spend, replay or front-run)
 - `--json` (Default: `false`): Output as JSON
 
@@ -156,7 +156,7 @@ title: hardkas zk
 
 ### Synopsis (Generated)
 
-**Purpose:** Verify structural integrity and inspect consensus binding rules in Toccata P2SH scripts
+**Purpose:** Verify Toccata P2SH scripts: the pinned RISC Zero verifying key, control root and control id, and a redeem script byte-identical to the one HardKAS builds for the parameters it carries; consensusEnforced only for such an output-bound lock (payout, change, one input, input limit), never from the presence of opcodes
 
 #### Options
 
@@ -167,7 +167,23 @@ title: hardkas zk
 - `--expected-mode &lt;mode&gt;`: Expected binding mode ('proof-only' or 'proof-and-output-bound')
 - `--expected-payout-address &lt;address&gt;`: Expected consensus-bound payout address
 - `--expected-payout-amount &lt;sompi&gt;`: Expected consensus-bound payout amount in sompi
+- `--expected-change-address &lt;address&gt;`: Expected consensus-bound change address (output 1)
+- `--expected-change-amount &lt;sompi&gt;`: Expected consensus-bound change amount in sompi
 - `--json` (Default: `false`): Output as JSON
+
+### Semantic Contract (Curated)
+
+- **Environments:** Local (kaspa-wasm ZkScriptBuilder, to rebuild the lock); no node is contacted
+- **Reads:** Redeem and signature scripts (hex)
+- **Evidence Semantics:** The lock uses the pinned RISC Zero verifying key, control root and control id, and its redeem script is byte-identical to the one build-scripts makes for the parameters it carries. consensusEnforced: true only for such an output-bound lock. The scripts are not executed; on-chain acceptance is shown only by the simnet suites.
+
+#### Known Limitations
+- A lock HardKAS cannot rebuild byte for byte (another builder, other opcodes, another encoding) is ZK_REDEEM_SCRIPT_NOT_CANONICAL: no claim is made about it, even when it may be sound.
+- Expected outputs asked of a lock that binds none (proof-only) are ZK_EXPECTED_BINDING_NOT_ENFORCED, never satisfied vacuously.
+
+#### Related
+- Concept: /concepts/toccata/zk-and-sequencing.md
+- Guide: /guides/zk-l1-verification-and-settlement.md
 
 ---
 

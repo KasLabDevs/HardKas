@@ -87,7 +87,7 @@ hardkas accounts consolidate [options] <account>
 | `--dry-run` | Only estimate batches (default if --execute is not provided) |  |
 | `--execute` | Execute the consolidation (requires --yes to broadcast) |  |
 | `--yes` | Confirm broadcast for execution |  |
-| `--allow-mainnet` | No effect: executing on mainnet stays refused in this release (MAINNET_BROADCAST_DISABLED) |  |
+| `--allow-mainnet` | No effect: mainnet is blocked (MAINNET TOTAL LOCKDOWN) and executing on mainnet stays refused (MAINNET_BROADCAST_DISABLED) |  |
 | `--password-env <env>` | Read the encrypted account's keystore password from this environment variable (read once, before the first batch) |  |
 | `--password-stdin` | Read the encrypted account's keystore password from stdin |  |
 | `--json` | Output as JSON | false |
@@ -220,7 +220,7 @@ hardkas accounts real generate [options]
 | :--- | :--- | :--- |
 | `--name <name>` | Base name for account(s) |  |
 | `--count <number>` | Number of accounts to generate | 1 |
-| `--network <network>` | Kaspa network (simnet, testnet-10, mainnet) | simnet |
+| `--network <network>` | Kaspa network (simnet, testnet-10; mainnet is refused while mainnet is locked down: MAINNET_SIGNING_DISABLED) | simnet |
 | `--password-stdin` | Read keystore password from stdin | false |
 | `--password-env <env>` | Read password from environment variable |  |
 | `--unsafe-plaintext` | Generate accounts in plaintext (legacy/discouraged) | false |
@@ -251,7 +251,7 @@ hardkas accounts real import [options]
 | :--- | :--- | :--- |
 | `--name <name>` | Account name: letters, digits, _ and - (default: default) |  |
 | `--address <address>` | Kaspa address |  |
-| `--network <network>` | Network the key is for (default: the address's: kaspasim simnet, kaspadev devnet; a kaspatest address needs testnet-<n> here or in the workspace) |  |
+| `--network <network>` | Network the key is for (default: the address's: kaspasim simnet, kaspadev devnet; a kaspatest address needs testnet-<n> here or in the workspace). A mainnet network or address is refused while mainnet is locked down (MAINNET_SIGNING_DISABLED) |  |
 | `--private-key <hex>` | Deprecated. Unsafe: may leak through shell history. Prefer --private-key-stdin or --private-key-env. |  |
 | `--private-key-stdin` | Read private key from stdin | false |
 | `--private-key-env <env>` | Read private key from environment variable |  |
@@ -284,7 +284,8 @@ hardkas accounts real init [options]
 
 | Flag | Description | Default |
 | :--- | :--- | :--- |
-| `--force` | Overwrite existing store | false |
+| `--force` | Replace an existing store with an empty one (the old store is copied to a backup first; refused when it holds accounts, unless --discard-accounts) | false |
+| `--discard-accounts` | With --force: confirm that a store holding accounts is replaced (its backup is still written first) | false |
 | `--wait-lock` | Wait for workspace lock if held | false |
 | `--lock-timeout <ms>` | Lock wait timeout in ms | 30000 |
 | `--json` | Output as JSON | false |
@@ -381,7 +382,7 @@ No arguments.
 
 ## hardkas artifact create
 
-Create a new HardKAS artifact alpha
+Wrap a JSON payload as a content-hashed artifact under a free <type> label; the payload is not validated against any schema (schemaValidation: NOT_VALIDATED) alpha
 
 ### Usage
 
@@ -557,12 +558,12 @@ hardkas chaos [options] [command]
 | :--- | :--- | :--- |
 | `--runs <number>` | Number of chaos iterations to run | 300 |
 | `--seed <number>` | Deterministic PRNG seed | 1337 |
-| `--profile <smoke|targeted|full>` | Actor weight profile (smoke, targeted and full currently use the same weights) | smoke |
+| `--profile <smoke|targeted|full>` | No effect: smoke, targeted and full use the same actor weights | smoke |
 | `--actor <LockHell|RotBot|DriftHunter|HumanChaos>` | Target a specific chaos actor instead of using a profile |  |
-| `--isolate` | Always on: chaos runs in ./.hardkas-chaos-workspace (the flag has no effect) | true |
-| `--unsafe-current-dir` | Request a run in the current directory (DANGEROUS; needs HARDKAS_ALLOW_UNSAFE_CHAOS=1). Known issue: only the safety checks run, the campaign stays in the isolated workspace | false |
-| `--force-ci-chaos` | Allow unsafe chaos in CI environments | false |
-| `--force-chaos-destructive` | Bypass workspace protection guards | false |
+| `--isolate` | Always on: every campaign runs in its own new temporary directory, never in the current one (the flag has no effect) | true |
+| `--unsafe-current-dir` | No effect: a campaign never runs in the current directory; it runs in its own new temporary directory | false |
+| `--force-ci-chaos` | No effect: there is no current-directory run to allow in CI | false |
+| `--force-chaos-destructive` | No effect: there is no current-directory run whose guards could be bypassed | false |
 
 ### Arguments
 
@@ -576,7 +577,7 @@ No arguments.
 
 ## hardkas chaos replay
 
-Re-run one chaos run seed in a fresh isolated workspace (the actor is derived from the seed, so runs from an --actor campaign are not reproduced)
+Re-run one chaos run seed in a fresh temporary directory of its own (the actor is derived from the seed, so runs from an --actor campaign are not reproduced)
 
 ### Usage
 
@@ -670,7 +671,7 @@ No arguments.
 
 ## hardkas config init
 
-Initialize a basic hardkas.config.ts in the current directory
+Initialize a basic hardkas.config.ts in the current directory (the config imports nothing, so it loads before any install)
 
 ### Usage
 
@@ -682,7 +683,7 @@ hardkas config init [options]
 
 | Flag | Description | Default |
 | :--- | :--- | :--- |
-| `--force` | Overwrite existing config | false |
+| `--force` | Replace an existing hardkas.config.ts; the original is first copied to a backup that never overwrites another | false |
 | `--json` | Output results as JSON | false |
 
 ### Arguments
@@ -715,7 +716,7 @@ No arguments.
 
 ## hardkas config repair
 
-Repair an invalid or missing hardkas.config.ts
+Repair an invalid or missing hardkas config: an invalid one is copied to a backup that never overwrites another, then replaced by a minimal config that loads
 
 ### Usage
 
@@ -896,7 +897,7 @@ hardkas dag simulate-reorg [options]
 
 | Flag | Description | Default |
 | :--- | :--- | :--- |
-| `--depth <n>` | Reorg depth | 1 |
+| `--depth <n>` | Reorg depth: a whole number of blocks, 0 or more | 1 |
 
 ### Arguments
 
@@ -1391,7 +1392,7 @@ No arguments.
 
 ## hardkas dev tx send
 
-Quick send transaction
+Quick plan, sign and send on the simulated ledger or a local simnet, with no confirmation; any other network is refused (use 'hardkas tx send … --yes')
 
 ### Usage
 
@@ -2525,7 +2526,7 @@ hardkas localnet snapshot create [options] <name>
 
 | Flag | Description | Default |
 | :--- | :--- | :--- |
-| `--consensus-validated` | Mark snapshot as validated by consensus (strict) | false |
+| `--consensus-validated` | Not supported: refused (SNAPSHOT_CONSENSUS_VALIDATION_UNSUPPORTED, exit 2). HardKAS does not validate snapshots against consensus, so a snapshot never declares it | false |
 | `--json` | Output as JSON | false |
 
 ### Arguments
@@ -2816,7 +2817,7 @@ hardkas node logs [options]
 | Flag | Description | Default |
 | :--- | :--- | :--- |
 | `--tail <n>` | Number of lines to show | 100 |
-| `--follow` | Follow log output | false |
+| `--follow` | No effect: the logs are printed once (the last --tail lines), never followed | false |
 | `--json` | Output results as JSON | false |
 
 ### Arguments
@@ -2889,8 +2890,8 @@ hardkas node start [options]
 
 | Flag | Description | Default |
 | :--- | :--- | :--- |
-| `--image <image>` | Docker image |  |
-| `--allow-floating-image` | Allow using a floating tag like 'latest' without warning | false |
+| `--image <image>` | Docker image, pinned by digest: <repository>[:tag]@sha256:<64 hex> (default: the pinned rusty-kaspad); an image without a digest is refused (NODE_IMAGE_DIGEST_REQUIRED) |  |
+| `--allow-floating-image` | No effect: the image must be pinned by digest (@sha256:<64 hex>); a floating tag is never run | false |
 | `--wait-lock` | Wait for workspace lock if held | false |
 | `--lock-timeout <ms>` | Lock wait timeout in ms | 30000 |
 | `--json` | Output results as JSON | false |
@@ -3016,7 +3017,7 @@ hardkas programmability app plan [options]
 | :--- | :--- | :--- |
 | `--kind <kind>` | silver, zk, vprog, or full-lab | full-lab |
 | `--template <path>` | Template path |  |
-| `--json` | Output as JSON | false |
+| `--json` | Output as JSON (always: this command only prints JSON; the flag changes nothing) | false |
 
 ### Arguments
 
@@ -3060,7 +3061,7 @@ hardkas programmability capabilities [options]
 
 | Flag | Description | Default |
 | :--- | :--- | :--- |
-| `--json` | Output as JSON | false |
+| `--json` | Output as JSON (always: this command only prints JSON; the flag changes nothing) | false |
 
 ### Arguments
 
@@ -3106,7 +3107,7 @@ hardkas programmability corpus verify [options] <path>
 
 | Flag | Description | Default |
 | :--- | :--- | :--- |
-| `--json` | Output as JSON | false |
+| `--json` | Output as JSON (always: this command only prints JSON; the flag changes nothing) | false |
 
 ### Arguments
 
@@ -3118,7 +3119,7 @@ hardkas programmability corpus verify [options] <path>
 
 ## hardkas programmability inspect
 
-Inspect a Silver, ZK, or vProgs artifact
+Inspect a Silver, ZK, or vProgs artifact: its schema and content hash. It never establishes node evidence for the artifact (artifactEvidence.realNodeEvidence: NOT_ESTABLISHED); the product's claims are in 'programmability capabilities'
 
 ### Usage
 
@@ -3131,7 +3132,7 @@ hardkas programmability inspect [options] <path>
 | Flag | Description | Default |
 | :--- | :--- | :--- |
 | `--kind <kind>` | Artifact kind: silver, zk, or vprog |  |
-| `--json` | Output as JSON | false |
+| `--json` | Output as JSON (always: this command only prints JSON; the flag changes nothing) | false |
 
 ### Arguments
 
@@ -3143,7 +3144,7 @@ hardkas programmability inspect [options] <path>
 
 ## hardkas programmability verify
 
-Verify a local programmability artifact
+Verify a local programmability artifact's integrity. It never establishes node evidence for the artifact (artifactEvidence.realNodeEvidence: NOT_ESTABLISHED)
 
 ### Usage
 
@@ -3156,7 +3157,7 @@ hardkas programmability verify [options] <path>
 | Flag | Description | Default |
 | :--- | :--- | :--- |
 | `--kind <kind>` | Artifact kind: silver, zk, or vprog |  |
-| `--json` | Output as JSON | false |
+| `--json` | Output as JSON (always: this command only prints JSON; the flag changes nothing) | false |
 
 ### Arguments
 
@@ -3571,7 +3572,7 @@ No arguments.
 
 ## hardkas query dag
 
-Query simulated DAG state research
+Query a light-model DAG (NOT GHOSTDAG) read from .hardkas/state.json, which no HardKAS command writes; without it each query fails with DAG_DATA_UNAVAILABLE (exit 1) instead of answering without data research
 
 ### Usage
 
@@ -3873,7 +3874,7 @@ No arguments.
 
 ## hardkas query replay divergences
 
-Detect receipts with replay divergence indicators
+Static analysis of the stored receipts: hash, state, UTXO-count and fee (relay minimum) checks of their fields. Nothing is re-executed; 'hardkas replay verify' replays a receipt
 
 ### Usage
 
@@ -3896,7 +3897,7 @@ No arguments.
 
 ## hardkas query replay invariants
 
-Check replay invariants for a specific transaction
+Static checks of one stored receipt: content hash, recorded state hashes, state change against status, non-empty UTXO lists. Nothing is re-executed; 'hardkas replay verify' replays it
 
 ### Usage
 
@@ -4347,7 +4348,7 @@ No arguments.
 
 ## hardkas rpc compare
 
-Read several nodes side by side, read-only: identity, lag, the UTXOs of addresses, one look at a transaction. Differences the nodes' lag accounts for are lag, others disagreements (exit 1). Nothing is sent; agreement among nodes is not consensus validation
+Read several nodes side by side, read-only: identity, lag, the UTXOs of addresses, one look at a transaction. Differences the nodes' lag accounts for are lag, others disagreements (exit 1); when no node can be read, nothing is compared (exit 1, MULTINODE_NO_NODE_REACHABLE). Nothing is sent; agreement among nodes is not consensus validation
 
 ### Usage
 
@@ -4566,7 +4567,7 @@ hardkas sandbox [options]
 | `--with-node` | Not supported: the sandbox starts no node (refuses with SANDBOX_WITH_NODE_UNSUPPORTED) |  |
 | `--recipe <name>` | Run an initial recipe/template inside the sandbox |  |
 | `-p, --port <port>` | Port for dev-server API | 3000 |
-| `-h, --host <host>` | Host for dev-server API | localhost |
+| `-H, --host <host>` | Host for dev-server API | localhost |
 
 ### Arguments
 
@@ -5440,9 +5441,9 @@ hardkas simulator start [options]
 | Flag | Description | Default |
 | :--- | :--- | :--- |
 | `-p, --port <port>` | Port for the RPC server (HTTP JSON-RPC and wRPC JSON) | 19110 |
-| `-h, --host <host>` | Host to bind | 127.0.0.1 |
+| `-H, --host <host>` | Host to bind | 127.0.0.1 |
 | `-n, --network <network>` | Network ID (simnet, devnet, testnet-10, testnet-11) | simnet |
-| `--automine` | Enable automine mode | true |
+| `--automine` | Automine is on by default (this flag changes nothing; --no-automine turns it off) | true |
 | `--no-automine` | Disable automine mode |  |
 | `--json` | Output as JSON | false |
 
@@ -5624,7 +5625,7 @@ hardkas test [options] [files...]
 | Flag | Description | Default |
 | :--- | :--- | :--- |
 | `--network <network>` | The network the scenarios run on: the workspace's network (default); a different one is refused |  |
-| `--watch` | Passed to Vitest, but the CLI exits after the first run (watch does not persist) | false |
+| `--watch` | No effect: the CLI exits after the first run (the watch does not persist) | false |
 | `--mass-report` | No effect in this release | false |
 | `--mass-snapshot <label>` | No effect in this release |  |
 | `--mass-compare <label>` | No effect in this release |  |
@@ -6019,7 +6020,7 @@ hardkas tx sign [options] <planPath>
 | `--account <name>` | Account name to sign with |  |
 | `--out <path>` | Save signed artifact JSON |  |
 | `--fixture` | Sign with the built-in fixture test key (any network except mainnet) | false |
-| `--allow-mainnet-signing` | Mainnet signing stays refused in this release (MAINNET_SIGNING_DISABLED); the flag has no effect | false |
+| `--allow-mainnet-signing` | No effect: mainnet is blocked (MAINNET TOTAL LOCKDOWN) and mainnet signing stays refused (MAINNET_SIGNING_DISABLED) | false |
 | `--threshold <number>` | Synthetic multisig threshold for tests (no Kaspa multisig script is produced) |  |
 | `--required-signers <list>` | Comma-separated signers, no spaces (with --threshold above 1) |  |
 | `--append` | Append signature to a partially signed transaction | false |
@@ -6134,7 +6135,7 @@ hardkas up [options]
 
 | Flag | Description | Default |
 | :--- | :--- | :--- |
-| `--json` | Output results as JSON | false |
+| `--json` | No effect: up prints human output only | false |
 
 ### Arguments
 
@@ -6168,7 +6169,7 @@ hardkas verify [options] [path]
 
 ## hardkas verify-semantics
 
-Verify semantic truth agreement across all HardKAS subsystems alpha
+Unsupported: always refuses with VERIFY_SEMANTICS_UNSUPPORTED (no HardKAS subsystem records the semantic hashes it would compare); use 'hardkas verify' for artifact integrity and lineage
 
 ### Usage
 
@@ -6180,8 +6181,8 @@ hardkas verify-semantics [options]
 
 | Flag | Description | Default |
 | :--- | :--- | :--- |
-| `--json` | Output machine-readable JSON | false |
-| `--ci-mode` | Verify semantic truth equivalence across OS boundaries | false |
+| `--json` | Output the refusal as a JSON envelope | false |
+| `--ci-mode` | No effect: the command always refuses | false |
 
 ### Arguments
 
@@ -6401,7 +6402,7 @@ hardkas workflow run [options] <file>
 | Flag | Description | Default |
 | :--- | :--- | :--- |
 | `--dry-run` | Simulate the workflow without mutating the filesystem | false |
-| `--network <net>` | Target network (e.g. simulated, testnet-10, mainnet) |  |
+| `--network <net>` | Target network (e.g. simulated, simnet, testnet-10; mainnet is blocked) |  |
 | `--offline` | Force offline execution (rejects real RPC connections) | false |
 | `--timeout <ms>` | Maximum execution time in milliseconds |  |
 | `--json` | Output the final workflow artifact as JSON | false |
@@ -6665,7 +6666,7 @@ hardkas zk toccata build-scripts [options]
 | `--change-address <address>` | Optional consensus-bound change address |  |
 | `--change-amount <sompi>` | Optional consensus-bound change amount in sompi |  |
 | `--max-fee <sompi>` | proof-and-output-bound: the most the lock may pay as fee; a UTXO above the bound outputs plus this stays locked (default 50000000) |  |
-| `--address-network <networks>` | Also return P2SH addresses for these public networks (comma-separated: testnet-10,mainnet); proof-only needs --ack-image-id-only-lock; never for a public test vector |  |
+| `--address-network <networks>` | Also return the P2SH address for testnet-10; proof-only needs --ack-image-id-only-lock; never for a public test vector. mainnet (any spelling) is refused while mainnet is locked down (MAINNET_SIGNING_DISABLED): nothing is built |  |
 | `--ack-image-id-only-lock` | Acknowledge that a proof-only lock binds only the image id (anyone with a valid receipt can spend, replay or front-run) | false |
 | `--json` | Output as JSON | false |
 
@@ -6725,7 +6726,7 @@ No arguments.
 
 ## hardkas zk toccata verify-scripts
 
-Verify structural integrity and inspect consensus binding rules in Toccata P2SH scripts
+Verify Toccata P2SH scripts: the pinned RISC Zero verifying key, control root and control id, and a redeem script byte-identical to the one HardKAS builds for the parameters it carries; consensusEnforced only for such an output-bound lock (payout, change, one input, input limit), never from the presence of opcodes
 
 ### Usage
 
@@ -6744,6 +6745,8 @@ hardkas zk toccata verify-scripts [options]
 | `--expected-mode <mode>` | Expected binding mode ('proof-only' or 'proof-and-output-bound') |  |
 | `--expected-payout-address <address>` | Expected consensus-bound payout address |  |
 | `--expected-payout-amount <sompi>` | Expected consensus-bound payout amount in sompi |  |
+| `--expected-change-address <address>` | Expected consensus-bound change address (output 1) |  |
+| `--expected-change-amount <sompi>` | Expected consensus-bound change amount in sompi |  |
 | `--json` | Output as JSON | false |
 
 ### Arguments

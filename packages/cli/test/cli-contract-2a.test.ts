@@ -209,12 +209,15 @@ describe("CLI-CONTRACT-2A · B · `dev tx send` never announces a send it did no
     });
   });
 
-  it("B2 · with arguments: the flow's send step does not run (no consent), so TX_SEND_NOT_EXECUTED, exit 1, no claim, no receipt", () => {
+  // ESCALÓN 3 · P3: the flow used to run without consent, so its send step never ran (TX_SEND_NOT_EXECUTED on every
+  // run). On the simulated ledger it now runs with the confirmation policy of `tx send` (none needed there): the claim
+  // is the simulated execution, backed by the receipt it wrote, and never "submitted".
+  it("B2 · with arguments on the simulated ledger: the flow runs, a receipt is written, the claim names the simulated execution", () => {
     const r = run(["dev", "tx", "send", "--from", "alice", "--to", "bob", "--amount", "1"], ws);
     expect(
-      { exit: r.status, typed: /\[TX_SEND_NOT_EXECUTED\]/.test(r.all), reason: /did not broadcast/.test(r.all) && /--yes is required to broadcast/.test(r.all), claimed: /Transaction submitted/.test(r.all), receipts: receiptsOf(ws) },
+      { exit: r.status, executed: /executed on the simulated ledger/.test(r.stdout), claimedSubmitted: /Transaction submitted/.test(r.all), receipts: receiptsOf(ws) > 0 },
       brief(r)
-    ).toEqual({ exit: 1, typed: true, reason: true, claimed: false, receipts: 0 });
+    ).toEqual({ exit: 0, executed: true, claimedSubmitted: false, receipts: true });
   });
 });
 

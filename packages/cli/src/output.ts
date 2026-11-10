@@ -7,6 +7,33 @@ import { redactUrlCredentialsInText } from "@hardkas/core";
 
 export type OutputMode = "human" | "json" | "silent";
 
+/**
+ * ESCALÓN 2 · P19: options given on the command line that change nothing (no-effect-options.ts records them before the
+ * action runs, and warns on stderr). A JSON envelope, an object with a boolean `ok`, names them under `noEffectOptions`.
+ * A document that is an artifact (it has a `schema` or a `contentHash`) is never altered: its identity is its content,
+ * and the stderr warning is the notice.
+ */
+export interface NoEffectOptionNotice {
+  readonly code: "OPTION_NO_EFFECT";
+  readonly option: string;
+  readonly reason: string;
+}
+
+const noEffectOptionsGiven: NoEffectOptionNotice[] = [];
+
+export function recordNoEffectOption(notice: NoEffectOptionNotice): boolean {
+  if (noEffectOptionsGiven.some((n) => n.option === notice.option)) return false;
+  noEffectOptionsGiven.push(notice);
+  return true;
+}
+
+function withNoEffectOptions(value: unknown): unknown {
+  if (noEffectOptionsGiven.length === 0 || value === null || typeof value !== "object" || Array.isArray(value)) return value;
+  const doc = value as Record<string, unknown>;
+  if (typeof doc.ok !== "boolean" || "schema" in doc || "contentHash" in doc || "noEffectOptions" in doc) return value;
+  return { ...doc, noEffectOptions: [...noEffectOptionsGiven] };
+}
+
 export interface CommandOutputOptions {
   mode: OutputMode;
   stdout?: NodeJS.WriteStream | { write: (msg: string) => void };
@@ -49,7 +76,8 @@ export function createCommandOutput(options: CommandOutputOptions): CommandOutpu
       }
     },
     jsonWritten: false,
-    writeJson(value: unknown): void {
+    writeJson(input: unknown): void {
+      const value = withNoEffectOptions(input);
       const replacer = (k: string, v: unknown) =>
         typeof v === "bigint" ? v.toString() : typeof v === "string" ? redactUrlCredentialsInText(v) : v;
       if (mode === "human") {

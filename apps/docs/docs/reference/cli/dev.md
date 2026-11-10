@@ -77,7 +77,7 @@ title: hardkas dev
 
 ### Synopsis (Generated)
 
-**Purpose:** Quick send transaction
+**Purpose:** Quick plan, sign and send on the simulated ledger or a local simnet, with no confirmation; any other network is refused (use 'hardkas tx send … --yes')
 
 #### Options
 

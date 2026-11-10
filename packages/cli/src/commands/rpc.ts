@@ -102,7 +102,7 @@ export function registerRpcCommands(program: Command) {
   rpcCmd
     .command("compare")
     .description(
-      "Read several nodes side by side, read-only: identity, lag, the UTXOs of addresses, one look at a transaction. Differences the nodes' lag accounts for are lag, others disagreements (exit 1). Nothing is sent; agreement among nodes is not consensus validation"
+      "Read several nodes side by side, read-only: identity, lag, the UTXOs of addresses, one look at a transaction. Differences the nodes' lag accounts for are lag, others disagreements (exit 1); when no node can be read, nothing is compared (exit 1, MULTINODE_NO_NODE_REACHABLE). Nothing is sent; agreement among nodes is not consensus validation"
     )
     .requiredOption("--endpoints <urls...>", "Node wRPC endpoints to read, separated by spaces (two or more)")
     .requiredOption("--network <id>", "The network every node must say it serves (e.g. simnet, testnet-10); a node serving another is not read")
@@ -129,11 +129,28 @@ export function registerRpcCommands(program: Command) {
           ...(options.since ? { since: options.since } : {}),
           ...(options.lagThreshold !== undefined ? { lagThresholdDaa: BigInt(options.lagThreshold) } : {})
         });
-        const code = r.errors.length > 0 ? r.errors[0]!.code : r.disagreements > 0 ? "MULTINODE_DISAGREEMENT" : undefined;
+        // ESCALÓN 2 · P13: a comparison in which no node answered compared nothing; it is never a success (it was ok:true,
+        // exit 0). The nodes that failed are named, each with its reason; when nodes do answer, the report is unchanged.
+        const unreachable = r.set.nodes.filter((n) => n.standing === "unreachable");
+        const noneReached = r.set.nodes.length > 0 && unreachable.length === r.set.nodes.length;
+        const code = noneReached
+          ? "MULTINODE_NO_NODE_REACHABLE"
+          : r.errors.length > 0
+            ? r.errors[0]!.code
+            : r.disagreements > 0
+              ? "MULTINODE_DISAGREEMENT"
+              : undefined;
+        const message =
+          code === "MULTINODE_NO_NODE_REACHABLE"
+            ? `No node could be read, so nothing was compared: ${unreachable.map((n) => `${n.label} (${n.endpoint ?? "?"}): ${n.reasons.join("; ") || "unreachable"}`).join("; ")}. Nothing was sent.`
+            : code === "MULTINODE_DISAGREEMENT"
+              ? `${r.disagreements} disagreement(s) among the nodes (see the report). Nothing was sent.`
+              : `${r.errors.map((e) => `${e.section}: ${e.message}`).join("; ")}`;
         if (options.json) {
           getOutput().writeJson({
             ok: code === undefined,
             ...(code ? { code } : {}),
+            ...(noneReached ? { message, unreachable: unreachable.map((n) => n.label) } : {}),
             scope: r.set.scope,
             guarantee: r.set.guarantee,
             network: r.set.expectedNetwork,
@@ -149,11 +166,7 @@ export function registerRpcCommands(program: Command) {
         }
         if (code) {
           // the report above is the outcome; the exit code says it found something to look at (or could not compare)
-          throw new HardkasCliError(
-            code,
-            code === "MULTINODE_DISAGREEMENT" ? `${r.disagreements} disagreement(s) among the nodes (see the report). Nothing was sent.` : `${r.errors.map((e) => `${e.section}: ${e.message}`).join("; ")}`,
-            { exitCode: 1 }
-          );
+          throw new HardkasCliError(code, message, { exitCode: 1 });
         }
       }
     );

@@ -394,13 +394,15 @@ describe("HK-16 · the R0 lock binds the image id only: model stated, no public-
     expect(JSON.stringify(res)).not.toContain("kaspa:prr6mc7myqn2umzt758qhv2gnvahrqapq0d5zwul4y5t55gexw55geyupwjud");
   });
 
+  // ESCALÓN 4 · P37: mainnet is refused before this (MAINNET_SIGNING_DISABLED, zk-build-scripts-mainnet-p37.test.ts)
   it("public networks need an explicit acknowledgement, and the public vector is refused even then", () => {
-    const noAck = buildR0Groth16Scripts({ imageId: IMAGE, journalHash: JOURNAL, receiptHex: RECEIPT, addressNetworks: ["mainnet"] } as any);
+    const noAck = buildR0Groth16Scripts({ imageId: IMAGE, journalHash: JOURNAL, receiptHex: RECEIPT, addressNetworks: ["testnet-10"] } as any);
     expect(noAck.ok).toBe(false);
     expect(noAck.issues.some((i) => i.code === "ZK_IMAGE_ID_ONLY_LOCK_NOT_ACKNOWLEDGED")).toBe(true);
-    const ack = buildR0Groth16Scripts({ imageId: IMAGE, journalHash: JOURNAL, receiptHex: RECEIPT, addressNetworks: ["testnet-10", "mainnet"], acknowledgeImageIdOnlyLock: true } as any);
+    const ack = buildR0Groth16Scripts({ imageId: IMAGE, journalHash: JOURNAL, receiptHex: RECEIPT, addressNetworks: ["testnet-10"], acknowledgeImageIdOnlyLock: true } as any);
     expect(ack.ok).toBe(false);
     expect(ack.issues.some((i) => i.code === "ZK_PUBLIC_VECTOR_PUBLIC_NETWORK_REFUSED")).toBe(true);
+    expect(ack.p2shAddresses.testnet10).toBeUndefined();
     expect(ack.p2shAddresses.mainnet).toBeUndefined();
   });
 
@@ -415,16 +417,26 @@ describe("HK-16 · the R0 lock binds the image id only: model stated, no public-
     expect(tx.ok).toBe(true);
     expect(tx.warnings.some((w) => w.code === "ZK_LOCK_BINDS_IMAGE_ID_ONLY")).toBe(true);
     const kaspa = loadManagedKaspaWasmSync();
-    const mainnetDestination = new kaspa.PrivateKey("33".repeat(32)).toAddress("mainnet").toString();
-    const main = buildR0Groth16Transaction({
+    const testnetDestination = new kaspa.PrivateKey("33".repeat(32)).toAddress("testnet-10").toString();
+    const tn = buildR0Groth16Transaction({
       scripts,
       utxo: { transactionId: "11".repeat(32), index: 0, amountSompi: 200000000n },
-      destinationAddress: mainnetDestination,
-      networkId: "mainnet"
+      destinationAddress: testnetDestination,
+      networkId: "testnet-10"
     });
-    expect(main.issues.some((i) => i.code === "ZK_INVALID_DESTINATION_ADDRESS")).toBe(false);
-    expect(main.ok).toBe(false);
-    expect(main.issues.some((i) => i.code === "ZK_PUBLIC_VECTOR_PUBLIC_NETWORK_REFUSED")).toBe(true);
+    expect(tn.issues.some((i) => i.code === "ZK_INVALID_DESTINATION_ADDRESS")).toBe(false);
+    expect(tn.ok).toBe(false);
+    expect(tn.issues.some((i) => i.code === "ZK_PUBLIC_VECTOR_PUBLIC_NETWORK_REFUSED")).toBe(true);
+    // Mainnet is refused before the public-vector rule is even reached (MAINNET TOTAL LOCKDOWN, crypto review H5).
+    const mainnetDestination = new kaspa.PrivateKey("33".repeat(32)).toAddress("mainnet").toString();
+    expect(() =>
+      buildR0Groth16Transaction({
+        scripts,
+        utxo: { transactionId: "11".repeat(32), index: 0, amountSompi: 200000000n },
+        destinationAddress: mainnetDestination,
+        networkId: "mainnet"
+      })
+    ).toThrow(/Mainnet signing is disabled/);
   });
 });
 

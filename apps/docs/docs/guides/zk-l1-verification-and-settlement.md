@@ -109,7 +109,7 @@ hardkas zk toccata build-scripts \
   --json
 ```
 
-The lock binds the image id only: **anyone holding a valid receipt of that program spends** every UTXO at the address, to outputs of their choosing, on any network; a spend seen in the mempool can be replayed or front-run. Every result carries the warning `ZK_LOCK_BINDS_IMAGE_ID_ONLY`. testnet-10/mainnet addresses need `--address-network` plus `--ack-image-id-only-lock`, and are never returned for a public test vector.
+The lock binds the image id only: **anyone holding a valid receipt of that program spends** every UTXO at the address, to outputs of their choosing, on any network; a spend seen in the mempool can be replayed or front-run. Every result carries the warning `ZK_LOCK_BINDS_IMAGE_ID_ONLY`. A testnet-10 address needs `--address-network testnet-10` plus `--ack-image-id-only-lock`, and is never returned for a public test vector. Mainnet, in any spelling (or a bound payout or change address of mainnet), is refused while mainnet is locked down: `MAINNET_SIGNING_DISABLED`, with no address and no signature script, because the signature script is the authorization of the spend.
 
 ### `proof-and-output-bound`: `IMAGE_ID_AND_OUTPUTS`
 
@@ -163,7 +163,23 @@ if (scripts.ok) {
 }
 ```
 
-`buildR0Groth16Transaction({ scripts, utxo, destinationAddress, networkId })` builds the unsigned version-1 spend (compute budget 1600 by default, fee capped by `feeOptions.maxFeeSompi`). `hardkas zk toccata verify-scripts` parses a redeem/signature script pair and reports which of these rules it enforces.
+`buildR0Groth16Transaction({ scripts, utxo, destinationAddress, networkId })` builds the version-1 spend (compute budget 1600 by default, fee capped by `feeOptions.maxFeeSompi`). A ZK spend needs no signature: the signature script is its authorization, so the built transaction is complete. For that reason `buildR0Groth16Transaction` and `buildR0Groth16Plan` refuse mainnet (any spelling) with `MAINNET_SIGNING_DISABLED`, before anything is read (MAINNET TOTAL LOCKDOWN).
+
+### Checking a lock before funding it (`verify-scripts`)
+
+```bash
+hardkas zk toccata verify-scripts --redeem-script <hex> --sig-script <hex> \
+  --image-id <64-hex image id> --expected-mode proof-and-output-bound \
+  --expected-payout-address <kaspasim:...> --expected-payout-amount 100000000 \
+  --expected-change-address <kaspasim:...> --expected-change-amount 15000000 \
+  --json
+```
+
+`verify-scripts` does not trust what the script appears to contain:
+
+- **Pinned verifier.** The verifying key handed to `OpZkPrecompile` must be the pinned RISC Zero key (`verifyingKeyPinned`), and the script must push the pinned control root and BN254 control id (`controlRootPinned`, `controlIdPinned`). A lock over another key is refused (`ZK_VERIFYING_KEY_NOT_PINNED`) even when it pushes the right image id: whoever knows that key's trapdoor forges receipts.
+- **Byte-exact reconstruction.** The image id, and in output-bound mode the payout, the change and the input limit, are read back from the script, which is then rebuilt with the same builders as `build-scripts` and compared byte for byte (`redeemScriptCanonical`). Only an identical output-bound lock gets `consensusEnforced: true` and the `enforces*` / `bound*` fields (`boundPayoutSpk`, `boundChangeSpk`, `boundMaxInputSompi`, …). Anything else is `ZK_REDEEM_SCRIPT_NOT_CANONICAL`, and nothing is inferred from the presence of introspection opcodes.
+- **Expected outputs** are compared with what the lock binds (`ZK_BOUND_PAYOUT_*`, `ZK_BOUND_CHANGE_*`); asked of a lock that binds none, they are `ZK_EXPECTED_BINDING_NOT_ENFORCED`.
 
 ---
 

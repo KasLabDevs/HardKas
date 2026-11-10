@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import type { ZodTypeAny } from "zod";
 import { HardkasSchemas, SILVER_RUNNER_TRUSTED_REFERENCES } from "@hardkas/core";
 import {
   calculateContentHash,
@@ -114,6 +115,95 @@ export type ArtifactVerificationResult = {
   errors: string[]; // Legacy support
   issues: VerificationIssue[];
 };
+
+/**
+ * The artifact schema registry: the zod schema the integrity verifier applies to each artifact schema name. A name
+ * without an entry has no validator: nothing can say that such an artifact is schema-valid (ESCALÓN 3).
+ * Built on first use so that no import order can leave an entry undefined.
+ */
+let artifactSchemaRegistry: ReadonlyMap<string, ZodTypeAny> | undefined;
+
+function getArtifactSchemaRegistry(): ReadonlyMap<string, ZodTypeAny> {
+  artifactSchemaRegistry ??= new Map<string, ZodTypeAny>([
+    [HardkasSchemas.Snapshot, SnapshotSchema],
+    [HardkasSchemas.SnapshotV1, SnapshotSchema],
+    [HardkasSchemas.TxPlan, TxPlanSchema],
+    [HardkasSchemas.TxReceipt, TxReceiptSchema],
+    [HardkasSchemas.TxTrace, TxTraceSchema],
+    [HardkasSchemas.SignedTx, SignedTxSchema],
+    [HardkasSchemas.WorkflowV1, WorkflowSchema],
+    [HardkasSchemas.PolicyV1, PolicySchema],
+    [HardkasSchemas.NetworkProfileV1, NetworkProfileSchema],
+    [HardkasSchemas.AssumptionV1, AssumptionSchema],
+    [HardkasSchemas.MigrationReceiptV1, MigrationReceiptSchema],
+    [HardkasSchemas.TxSubmissionV1, TxSubmissionSchema],
+    [HardkasSchemas.TxObservationV1, TxObservationSchema],
+    [HardkasSchemas.ScenarioResultV1, ScenarioResultSchema],
+    [HardkasSchemas.ReplayReportV1, ReplayReportSchema],
+    [HardkasSchemas.SilverCompile, SilverCompileArtifactSchema],
+    [HardkasSchemas.SilverDeployPlan, SilverDeployPlanArtifactSchema],
+    [HardkasSchemas.SilverDeploy, SilverDeployArtifactSchema],
+    [HardkasSchemas.SilverTest, SilverTestArtifactSchema],
+    [HardkasSchemas.SilverSpendPlan, SilverSpendPlanArtifactSchema],
+    [HardkasSchemas.SilverSpendReceipt, SilverSpendReceiptArtifactSchema],
+    [HardkasSchemas.SilverDeploySimulation, SilverDeploySimulationArtifactSchema],
+    [HardkasSchemas.SilverSpendSimulation, SilverSpendSimulationArtifactSchema],
+    [HardkasSchemas.SilverCompileV1, SilverCompileV1Schema],
+    [HardkasSchemas.SilverDeployV1, SilverDeployV1Schema],
+    [HardkasSchemas.SilverSpendV1, SilverSpendV1Schema],
+    [HardkasSchemas.SilverCovenantV1, SilverCovenantV1Schema],
+    [HardkasSchemas.SilverVmTestV1, SilverVmTestV1Schema],
+    [HardkasSchemas.ZkGroth16ProofV1, ZkGroth16ProofSchema],
+    [HardkasSchemas.ZkGroth16VerificationKeyV1, ZkGroth16VerificationKeySchema],
+    [HardkasSchemas.ZkGroth16PublicInputsV1, ZkGroth16PublicInputsSchema],
+    [HardkasSchemas.ZkGroth16FixtureV1, ZkGroth16FixtureSchema],
+    [HardkasSchemas.ZkRisc0ReceiptV1, ZkRisc0ReceiptSchema],
+    [HardkasSchemas.ZkRisc0FixtureV1, ZkRisc0FixtureSchema],
+    [HardkasSchemas.ZkCorpusV1, ZkCorpusSchema],
+    [HardkasSchemas.ZkProofMathVerificationV1, ZkProofMathVerificationSchema],
+    [HardkasSchemas.ZkToccataScriptsV1, ZkToccataScriptsSchema],
+    [HardkasSchemas.ZkToccataTxV1, ZkToccataTxSchema],
+    [HardkasSchemas.ZkExecutionEvidenceV1, ZkExecutionEvidenceSchema]
+  ]);
+  return artifactSchemaRegistry;
+}
+
+/** The registered zod schema for an artifact schema name, or undefined when the registry has none. */
+export function artifactSchemaValidatorFor(schemaName: unknown): ZodTypeAny | undefined {
+  return typeof schemaName === "string" ? getArtifactSchemaRegistry().get(schemaName) : undefined;
+}
+
+/**
+ * VALID / INVALID: the artifact was parsed with its registered schema. NOT_VALIDATED: the registry has no schema for
+ * its schema name (or it is not an object), so nothing was checked.
+ */
+export type ArtifactSchemaValidationStatus = "VALID" | "INVALID" | "NOT_VALIDATED";
+
+export interface ArtifactSchemaValidation {
+  status: ArtifactSchemaValidationStatus;
+  /** The registered schema that was applied; absent when NOT_VALIDATED. */
+  schema?: string;
+  errors: string[];
+}
+
+/** Validates an artifact against the schema the registry holds for its `schema` name, as the integrity verifier does. */
+export function validateArtifactSchema(artifact: unknown): ArtifactSchemaValidation {
+  if (typeof artifact !== "object" || artifact === null || Array.isArray(artifact)) {
+    return { status: "NOT_VALIDATED", errors: ["the artifact is not a JSON object"] };
+  }
+  const name = (artifact as Record<string, unknown>).schema;
+  const schema = artifactSchemaValidatorFor(name);
+  if (!schema) {
+    return { status: "NOT_VALIDATED", errors: [`no registered schema for ${JSON.stringify(name ?? null)}`] };
+  }
+  const parsed = schema.safeParse(artifact);
+  if (parsed.success) return { status: "VALID", schema: name as string, errors: [] };
+  return {
+    status: "INVALID",
+    schema: name as string,
+    errors: parsed.error.issues.map((e) => `${e.path.join(".")}: ${e.message}`)
+  };
+}
 
 /**
  * Deterministically compares two strings.
@@ -277,126 +367,8 @@ export function verifyArtifactIntegritySync(
       }
     }
 
-    // 4. Zod Schema Validation
-    let schema;
-    switch (v.schema) {
-      case HardkasSchemas.Snapshot:
-      case HardkasSchemas.SnapshotV1:
-        schema = SnapshotSchema;
-        break;
-      case HardkasSchemas.TxPlan:
-        schema = TxPlanSchema;
-        break;
-      case HardkasSchemas.TxReceipt:
-        schema = TxReceiptSchema;
-        break;
-      case HardkasSchemas.TxTrace:
-        schema = TxTraceSchema;
-        break;
-      case HardkasSchemas.SignedTx:
-        schema = SignedTxSchema;
-        break;
-      case HardkasSchemas.WorkflowV1:
-        schema = WorkflowSchema;
-        break;
-      case HardkasSchemas.PolicyV1:
-        schema = PolicySchema;
-        break;
-      case HardkasSchemas.NetworkProfileV1:
-        schema = NetworkProfileSchema;
-        break;
-      case HardkasSchemas.AssumptionV1:
-        schema = AssumptionSchema;
-        break;
-      case HardkasSchemas.MigrationReceiptV1:
-        schema = MigrationReceiptSchema;
-        break;
-      case HardkasSchemas.TxSubmissionV1:
-        schema = TxSubmissionSchema;
-        break;
-      case HardkasSchemas.TxObservationV1:
-        schema = TxObservationSchema;
-        break;
-      case HardkasSchemas.ScenarioResultV1:
-        // First contact · E07: scenario runs and task runs are sealed artifacts.
-        schema = ScenarioResultSchema;
-        break;
-      case HardkasSchemas.ReplayReportV1:
-        schema = ReplayReportSchema;
-        break;
-      case HardkasSchemas.SilverCompile:
-        schema = SilverCompileArtifactSchema;
-        break;
-      case HardkasSchemas.SilverDeployPlan:
-        schema = SilverDeployPlanArtifactSchema;
-        break;
-      case HardkasSchemas.SilverDeploy:
-        schema = SilverDeployArtifactSchema;
-        break;
-      case HardkasSchemas.SilverTest:
-        schema = SilverTestArtifactSchema;
-        break;
-      case HardkasSchemas.SilverSpendPlan:
-        schema = SilverSpendPlanArtifactSchema;
-        break;
-      case HardkasSchemas.SilverSpendReceipt:
-        schema = SilverSpendReceiptArtifactSchema;
-        break;
-      case HardkasSchemas.SilverDeploySimulation:
-        schema = SilverDeploySimulationArtifactSchema;
-        break;
-      case HardkasSchemas.SilverSpendSimulation:
-        schema = SilverSpendSimulationArtifactSchema;
-        break;
-      case HardkasSchemas.SilverCompileV1:
-        schema = SilverCompileV1Schema;
-        break;
-      case HardkasSchemas.SilverDeployV1:
-        schema = SilverDeployV1Schema;
-        break;
-      case HardkasSchemas.SilverSpendV1:
-        schema = SilverSpendV1Schema;
-        break;
-      case HardkasSchemas.SilverCovenantV1:
-        schema = SilverCovenantV1Schema;
-        break;
-      case HardkasSchemas.SilverVmTestV1:
-        schema = SilverVmTestV1Schema;
-        break;
-      case HardkasSchemas.ZkGroth16ProofV1:
-        schema = ZkGroth16ProofSchema;
-        break;
-      case HardkasSchemas.ZkGroth16VerificationKeyV1:
-        schema = ZkGroth16VerificationKeySchema;
-        break;
-      case HardkasSchemas.ZkGroth16PublicInputsV1:
-        schema = ZkGroth16PublicInputsSchema;
-        break;
-      case HardkasSchemas.ZkGroth16FixtureV1:
-        schema = ZkGroth16FixtureSchema;
-        break;
-      case HardkasSchemas.ZkRisc0ReceiptV1:
-        schema = ZkRisc0ReceiptSchema;
-        break;
-      case HardkasSchemas.ZkRisc0FixtureV1:
-        schema = ZkRisc0FixtureSchema;
-        break;
-      case HardkasSchemas.ZkCorpusV1:
-        schema = ZkCorpusSchema;
-        break;
-      case HardkasSchemas.ZkProofMathVerificationV1:
-        schema = ZkProofMathVerificationSchema;
-        break;
-      case HardkasSchemas.ZkToccataScriptsV1:
-        schema = ZkToccataScriptsSchema;
-        break;
-      case HardkasSchemas.ZkToccataTxV1:
-        schema = ZkToccataTxSchema;
-        break;
-      case HardkasSchemas.ZkExecutionEvidenceV1:
-        schema = ZkExecutionEvidenceSchema;
-        break;
-    }
+    // 4. Zod Schema Validation: the schema the artifact schema registry holds for this artifact's schema name
+    const schema = artifactSchemaValidatorFor(v.schema);
 
     if (schema) {
       const validation = schema.safeParse(v);

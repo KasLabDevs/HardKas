@@ -39,6 +39,16 @@ export async function createSnapshot(
 ): Promise<SnapshotManifest> {
   const { hardkasDir, outputDir, deterministicScope = "local-only" } = options;
 
+  // ESCALÓN 2 · P12: nothing here checks a snapshot against consensus, so no caller can declare one validated: the scope
+  // "consensus-validated" only labelled the manifest (consensusValidated: true) from the caller's word. It stays in the
+  // manifest type so that older manifests still read; a new one is always local-only.
+  if (deterministicScope === "consensus-validated") {
+    throw new HardkasError(
+      "SNAPSHOT_CONSENSUS_VALIDATION_UNSUPPORTED",
+      "A snapshot cannot be marked consensus-validated: HardKAS does not validate snapshots against consensus (a snapshot is a local deterministic capture). Nothing was written."
+    );
+  }
+
   // An existing snapshot is never overwritten, merged into or replaced.
   if (await pathExists(outputDir)) {
     throw snapshotExists(outputDir, "already exists (snapshots are never overwritten; choose another name)");

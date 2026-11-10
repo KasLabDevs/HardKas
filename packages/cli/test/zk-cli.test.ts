@@ -255,13 +255,14 @@ describe("CLI ZK commands and truth in advertising", () => {
     expect(parsed.warnings.some((w: any) => w.code === "ZK_LOCK_BINDS_IMAGE_ID_ONLY")).toBe(true);
     // HK-19: the receipt's claim is cross-checked
     expect(parsed.receiptClaimCrossCheck).toBe("MATCH");
+    // ESCALÓN 4 · P37: mainnet is MAINNET_SIGNING_DISABLED before these checks (zk-build-scripts-mainnet-p37.test.ts)
     const noAck = runHardkas(
-      `zk toccata build-scripts --image-id ${imageId} --journal-hash ${journalHash} --receipt "${receiptPath}" --address-network mainnet --json`
+      `zk toccata build-scripts --image-id ${imageId} --journal-hash ${journalHash} --receipt "${receiptPath}" --address-network testnet-10 --json`
     );
     expect(noAck.status).toBe(1);
     expect(JSON.parse(noAck.stdout).issues.some((i: any) => i.code === "ZK_IMAGE_ID_ONLY_LOCK_NOT_ACKNOWLEDGED")).toBe(true);
     const publicVector = runHardkas(
-      `zk toccata build-scripts --image-id ${imageId} --journal-hash ${journalHash} --receipt "${receiptPath}" --address-network testnet-10,mainnet --ack-image-id-only-lock --json`
+      `zk toccata build-scripts --image-id ${imageId} --journal-hash ${journalHash} --receipt "${receiptPath}" --address-network testnet-10 --ack-image-id-only-lock --json`
     );
     expect(publicVector.status).toBe(1);
     expect(JSON.parse(publicVector.stdout).issues.some((i: any) => i.code === "ZK_PUBLIC_VECTOR_PUBLIC_NETWORK_REFUSED")).toBe(true);

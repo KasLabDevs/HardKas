@@ -3,7 +3,7 @@
 ## Provenance
 - `kaspanet/kaspa-python-sdk`: `examples/zk/groth16_onchain.py` (image id, journal hash, `TX_VERSION = 1`, `ZK_COMPUTE_BUDGET = 1600`).
 - `kaspanet/kaspa-python-sdk`: `examples/zk/data/groth.rcpt.hex` — `receipt.hex` here is byte-identical (650 hex chars; SHA-256 of the text `be2ad59c1f13bd996740cea0369f7429c174598c45978dd74e1686c9666f3b05`, re-verified 2026-11-01).
-- Scripts are produced by the `ZkScriptBuilder` of kaspa-wasm (rusty-kaspa 2.1.0, the pinned toolchain). There is no upstream package called "kaspa-txscript-zk-sdk"; earlier text used that name by mistake.
+- Scripts are produced by the `ZkScriptBuilder` of kaspa-wasm (rusty-kaspa 2.1.0, the pinned toolchain). Upstream also publishes that builder as the Rust crate `kaspa-txscript-zk-sdk` 2.1.0 (crates.io); HardKAS does not use the crate, it uses the same builder compiled into kaspa-wasm.
 
 ## Vector values
 - **Image ID**: `75641a540ee2ad9ee5902bcdcdb8b55c0bef4a28287309b858f97b1356c6c2e0`
@@ -18,7 +18,7 @@
 ## Authorization model (read before funding anything)
 - The lock built by the upstream `ZkScriptBuilder` minimal flow (`commitToGroth16(imageId)` + `finalizeWithGroth16Proof`) binds **only the image id**. The journal hash is supplied by the unlocking script; outputs, outpoint, transaction and network are not bound.
 - Consequence: **whoever holds a valid receipt of that program spends**, every UTXO at that address, to outputs of their choosing, on any network; a spend seen in the mempool can be copied (replay / front-running). Security is whatever the guest program enforces through its journal. This is upstream design (kaspa-python-sdk: "the zk proof is the authorization"), not a HardKAS bug.
-- This receipt is **public** (here and in kaspa-python-sdk), so its P2SH is anyone-can-spend. HardKAS returns only the simnet address for it (`PUBLIC_R0_TEST_VECTORS`) and refuses testnet/mainnet addresses and spends even with `--ack-image-id-only-lock`. For other receipts, testnet/mainnet addresses need `--address-network` + `--ack-image-id-only-lock` (SDK: `addressNetworks` + `acknowledgeImageIdOnlyLock`). Every result carries the warning `ZK_LOCK_BINDS_IMAGE_ID_ONLY`.
+- This receipt is **public** (here and in kaspa-python-sdk), so its P2SH is anyone-can-spend. HardKAS returns only the simnet address for it (`PUBLIC_R0_TEST_VECTORS`) and refuses testnet/mainnet addresses and spends even with `--ack-image-id-only-lock`. For other receipts, a testnet-10 address needs `--address-network testnet-10` + `--ack-image-id-only-lock` (SDK: `addressNetworks` + `acknowledgeImageIdOnlyLock`); mainnet is refused while mainnet is locked down (`MAINNET_SIGNING_DISABLED`: no address, no signature script). Every result carries the warning `ZK_LOCK_BINDS_IMAGE_ID_ONLY`.
 - HardKAS's proof-and-output-bound mode binds the OUTPUTS by Toccata introspection (see Limits). Binding the journal or the transaction itself (e.g. a key committed in the journal and a signature over the sighash) is not provided and requires external cryptographic review; binding the spent outpoint is impossible (the funding txid commits to the P2SH).
 
 ## Checks HardKAS performs

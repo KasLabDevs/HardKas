@@ -40,6 +40,9 @@ describe("hardkas capabilities", () => {
     if (!parsed.capabilities.silverScript) expect(parsed.reasons?.silverScript).toBeTruthy();
     expect(parsed.capabilities.l2Profiles).toBe(false);
     expect(parsed.trustBoundaries.replay).toBe("local-simulator-only");
+    // ESCALÓN 2 · P8: no command runs GHOSTDAG and the DAG conflict queries have no data source; neither claim is made
+    expect(parsed.capabilities).not.toHaveProperty("ghostdagSimulation");
+    expect(parsed.capabilities).not.toHaveProperty("dagConflictResolution");
   });
 
   it("human output shows checkmarks", () => {

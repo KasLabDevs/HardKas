@@ -7,7 +7,7 @@ export function registerTestCommands(program: Command) {
     .command("test [files...]")
     .description(`Run the project's tests with Vitest and the HardKAS test helpers ${UI.maturity("stable")}`)
     .option("--network <network>", "The network the scenarios run on: the workspace's network (default); a different one is refused")
-    .option("--watch", "Passed to Vitest, but the CLI exits after the first run (watch does not persist)", false)
+    .option("--watch", "No effect: the CLI exits after the first run (the watch does not persist)", false)
     .option("--mass-report", "No effect in this release", false)
     .option("--mass-snapshot <label>", "No effect in this release")
     .option("--mass-compare <label>", "No effect in this release")

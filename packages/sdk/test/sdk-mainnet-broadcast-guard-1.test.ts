@@ -286,9 +286,21 @@ beforeAll(async () => {
     path.join(template, "hardkas.config.ts"),
     'export default { execution: { default: "simulator", targets: { simulator: { mode: "simulator", domain: "kaspa-l1", network: "simulated" } } }, network: { allowPublic: false } };\n'
   );
-  for (const [name, network] of [["main", "mainnet"], ["test", "testnet-10"]] as const) {
-    const r = await cli(["accounts", "real", "generate", "--name", name, "--network", network, "--password-env", "HK_MG_PW", "--json"], template);
-    expect(r.status, r.out).toBe(0);
+  const r = await cli(["accounts", "real", "generate", "--name", "test", "--network", "testnet-10", "--password-env", "HK_MG_PW", "--json"], template);
+  expect(r.status, r.out).toBe(0);
+  // ESCALÓN 4 · P36: `accounts real generate --network mainnet` is refused while mainnet is locked down, so the mainnet
+  // keystore account is written the way such an account still exists (made before the lockdown, or by another tool):
+  // with @hardkas/accounts directly, as the CLI used to. What the cases pin is unchanged: the SDK never signs with it.
+  {
+    const { KeystoreManager, loadOrCreateRealAccountStore, importRealDevAccount, saveRealAccountStore } = await import("@hardkas/accounts");
+    const key = crypto.randomBytes(32).toString("hex");
+    const kp = new kaspa.PrivateKey(key).toKeypair();
+    const address = String(kp.toAddress("mainnet").toString());
+    const keystore = await KeystoreManager.createEncryptedKeystore({ address, privateKey: key, network: "mainnet" }, PW, { label: "main", network: "mainnet" });
+    await KeystoreManager.saveEncryptedKeystore(path.join(template, ".hardkas", "keystore", "main.json"), keystore);
+    let store = await loadOrCreateRealAccountStore({ cwd: template, networkId: "mainnet" as any });
+    store = importRealDevAccount(store, { name: "main", address, network: "mainnet" as any, publicKey: String(kp.publicKey), keystoreRef: ".hardkas/keystore/main.json" });
+    await saveRealAccountStore(store, { cwd: template });
   }
 });
 afterAll(() => {

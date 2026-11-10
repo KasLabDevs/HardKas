@@ -10,12 +10,11 @@ export const simnetRoutes = new Hono();
 simnetRoutes.post("/mine", async (c) => {
   try {
     const socketAddr = c.req.raw.headers.get("x-forwarded-for") || ((c.env as any)?.incoming?.socket?.remoteAddress);
-    
-    // Check if network is simnet
-    // Normally dev-server uses HARDKAS_NETWORK or just assume if not explicitly mainnet.
-    // In HardKas, we default to simnet or rely on process.env.HARDKAS_NETWORK
-    const isSimnet = process.env.HARDKAS_NETWORK === "simnet" || true; // Currently assumed simnet mode in dev-server
-    
+
+    // P34: no HARDKAS_NETWORK check here (the old "is simnet" flag was forced to true and never read). What limits this
+    // route is the loopback Host check below and the canonical node's identity proof (requireNodeIdentity: the managed
+    // localnet container, image digest and the network it must serve), which a non-canonical node fails.
+
     // We enforce local binding or strict loopback verification. Wait, Hono `c.env.incoming.socket` might not be typed or accessible depending on adapter.
     // For node, we can just reject if not explicitly authorized in dev mode.
     // Since we are in the Node adapter, the remote address is usually in c.env.incoming.socket.remoteAddress

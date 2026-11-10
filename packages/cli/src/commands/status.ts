@@ -38,9 +38,10 @@ export function registerStatusCommands(program: Command) {
         // INT9 · CLI-CONTRACT-2B C4: the config is loaded, and one that cannot load is reported (and fails the command at
         // the end) instead of describing the workspace as if nothing were wrong
         let configError: string | undefined;
+        let loadedConfig: Awaited<ReturnType<typeof loadHardkasConfig>>["config"] | undefined;
         if (workspace.configPath) {
           try {
-            await loadHardkasConfig({ workspaceRoot: root });
+            loadedConfig = (await loadHardkasConfig({ workspaceRoot: root })).config;
           } catch (e: unknown) {
             configError = e instanceof Error ? e.message : String(e);
           }
@@ -142,10 +143,18 @@ export function registerStatusCommands(program: Command) {
           // `dev` has no --with-node (the hint named an option it does not register), and it takes no --workspace: it
           // runs in the current directory
           nextSteps.push(`hardkas dev --headless`);
-        } else {
-          nextSteps.push(
-            `hardkas dev tx send --from alice --to bob --amount 1${wsSuffix}`
-          );
+        } else if (!configError) {
+          // ESCALÓN 3 · P3: `dev tx send` runs on the simulated ledger or a local simnet (it used to fail on every run);
+          // it is suggested only when the workspace targets one of them
+          const { DEFAULT_HARDKAS_CONFIG } = await import("@hardkas/config");
+          const { devTxSendTarget } = await import("../runners/dev-tx-runners.js");
+          let local = false;
+          try {
+            local = (await devTxSendTarget(loadedConfig ?? DEFAULT_HARDKAS_CONFIG)).local;
+          } catch {
+            // an execution contract that does not resolve: no send is suggested
+          }
+          if (local) nextSteps.push(`hardkas dev tx send --from alice --to bob --amount 1${wsSuffix}`);
         }
         if (latestWorkflow !== "none") {
           nextSteps.push(`hardkas why --workflow ${latestWorkflow}${wsSuffix}`);

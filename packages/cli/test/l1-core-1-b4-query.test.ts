@@ -23,31 +23,36 @@ describe("query dag · anomalies | conflicts | displaced | history | sink-path",
 
   const ops = ["anomalies", "conflicts", "displaced", "sink-path"] as const;
 
-  it("--json: each op answers ok, names its own command, and gives an empty dag result while no simulated DAG exists", () => {
+  // ESCALÓN 2 · P8: without DAG data (nothing writes .hardkas/state.json) an op used to answer ok:true with an empty
+  // result ("No conflicts detected"). It now fails, typed, with an explicit NO_DATA state and nothing "all clear".
+  it("--json: each op fails with DAG_DATA_UNAVAILABLE (exit 1, ok:false, status NO_DATA) under its own command name while no DAG data exists", () => {
     const seen = ops.map((op) => {
       const r = cli(["query", "dag", op, "--json"], ws);
       const e = envelope(r.stdout);
-      return { op, status: r.status, ok: e?.ok, command: e?.command, domain: e?.result?.domain, resultOp: e?.result?.op, items: e?.result?.items, total: e?.result?.total, deterministic: e?.result?.deterministic };
+      return { op, status: r.status, ok: e?.ok, command: e?.command, code: e?.code, dataStatus: e?.status, hasResult: e?.result !== undefined };
     });
     expect(seen).toEqual(
-      ops.map((op) => ({ op, status: 0, ok: true, command: `query dag ${op}`, domain: "dag", resultOp: op, items: [], total: 0, deterministic: true }))
+      ops.map((op) => ({ op, status: 1, ok: false, command: `query dag ${op}`, code: "DAG_DATA_UNAVAILABLE", dataStatus: "NO_DATA", hasResult: false }))
     );
+    const one = envelope(cli(["query", "dag", "conflicts", "--json"], ws).stdout);
+    expect(String(one?.source)).toMatch(/state\.json$/);
+    expect(String(one?.message)).toMatch(/no HardKAS command writes/);
   });
 
-  it("human: each op exits 0 and says the model is the deterministic light model, not GHOSTDAG", () => {
+  it("human: each op exits 1 with DAG_DATA_UNAVAILABLE and never prints an all-clear", () => {
     for (const op of ops) {
       const r = cli(["query", "dag", op], ws);
-      expect({ op, status: r.status }, r.all.slice(0, 600)).toEqual({ op, status: 0 });
-      expect(r.stdout, op).toMatch(/deterministic-light-model \(NOT GHOSTDAG\)/);
+      expect({ op, status: r.status }, r.all.slice(0, 600)).toEqual({ op, status: 1 });
+      expect(r.stderr, op).toMatch(/DAG_DATA_UNAVAILABLE/);
+      expect(r.all, op).not.toMatch(/No conflicts detected|No displaced transactions|No DAG anomalies detected/);
     }
   });
 
-  it("history <txId> without a simulated DAG fails: exit 1, one error envelope that says no DAG exists", () => {
+  it("history <txId> without DAG data fails the same way: exit 1, one error envelope with DAG_DATA_UNAVAILABLE", () => {
     const r = cli(["query", "dag", "history", p1.receipt.txId, "--json"], ws);
     expect(r.status, r.all.slice(0, 600)).toBe(1);
     const e = envelope(r.stdout);
-    expect(e?.ok).toBe(false);
-    expect(String(e?.message)).toMatch(/No DAG state/);
+    expect(e).toMatchObject({ ok: false, command: "query dag history", code: "DAG_DATA_UNAVAILABLE", status: "NO_DATA" });
   });
 
   it.skip("[known gap: query dag reads .hardkas/state.json, the simulator keeps its DAG in .hardkas/localnet.json -> L1-CORE-1-B4] after `dag simulate-reorg`, sink-path and history answer from the DAG that `dag status` shows", () => {
@@ -178,20 +183,27 @@ describe("query replay · divergences | invariants | list | summary", () => {
     expect(String(envelope(r.stdout)?.message)).toMatch(/Receipt not found for txId: synthetic-nope/);
   });
 
-  it("invariants <txId>: an intact, authenticated receipt holds every invariant, under its own command name", () => {
+  // ESCALÓN 2 · P9: static checks, named for what they look at (no "reproducible", no "conservation"); the envelope says
+  // it is static analysis
+  it("invariants <txId>: an intact, authenticated receipt passes every static check, under its own command name", () => {
     const r = cli(["query", "replay", "invariants", p1.receipt.txId, "--json"], ws);
     expect(r.status, r.all.slice(0, 600)).toBe(0);
     const e = envelope(r.stdout);
     expect(e).toMatchObject({ ok: true, command: "query replay invariants", result: { op: "invariants" } });
+    expect(String(e.analysis)).toMatch(/^static: .*nothing was re-executed/);
     expect(e.result.items[0]).toEqual({
       txId: p1.receipt.txId,
+      analysis: "static",
       authScope: "FULL",
-      planIntegrity: true,
-      receiptReproducible: true,
-      stateTransitionValid: true,
-      utxoConservation: true,
+      contentHashMatches: true,
+      stateHashesPresent: true,
+      stateChangeMatchesStatus: true,
+      utxoCountsNonZero: true,
       issues: []
     });
+    const human = cli(["query", "replay", "invariants", p1.receipt.txId], ws);
+    expect(human.stdout).toMatch(/Static receipt checks/);
+    expect(human.stdout).not.toMatch(/reproducible|conservation|Replay Invariants/i);
   });
 
   it("divergences: one envelope under its own command name, each item naming tx, kind, field, expected and actual", () => {
@@ -199,14 +211,20 @@ describe("query replay · divergences | invariants | list | summary", () => {
     expect(r.status, r.all.slice(0, 600)).toBe(0);
     const e = envelope(r.stdout);
     expect(e).toMatchObject({ ok: true, command: "query replay divergences", result: { domain: "replay", op: "divergences" } });
+    expect(String(e.analysis)).toMatch(/^static: /);
     for (const d of e.result.items) {
       expect(Object.keys(d).sort()).toEqual(["actual", "expected", "field", "kind", "txId"]);
     }
   });
 
-  it.skip("[known gap: replay divergences flags every standard simulated payment as fee-mismatch (fee over 10 x mass) -> L1-CORE-1-B4] two untouched simulated payments show no divergence", () => {
+  // ESCALÓN 2 · P9: the former `fee > 10 × mass` rule flagged every payment at the standard rate (100 sompi/gram); the
+  // relay-minimum rule flags none of them (this test was skipped as a known gap)
+  it("two untouched simulated payments at the standard fee show no finding (relay-minimum rule; was a known gap)", () => {
     const e = envelope(cli(["query", "replay", "divergences", "--json"], ws).stdout);
     expect(e.result.items).toEqual([]);
+    const human = cli(["query", "replay", "divergences"], ws);
+    expect(human.stdout).toMatch(/Static analysis found no inconsistency/);
+    expect(human.stdout).not.toMatch(/No replay divergences/);
   });
 
   it("a receipt edited after it was written: divergences reports its contentHash mismatch and invariants loses plan integrity", () => {
@@ -221,7 +239,7 @@ describe("query replay · divergences | invariants | list | summary", () => {
     expect(div.result.items.some((d: any) => d.txId === p2.receipt.txId && d.field === "contentHash")).toBe(false);
 
     const inv = envelope(cli(["query", "replay", "invariants", p1.receipt.txId, "--json"], ws).stdout).result.items[0];
-    expect(inv.planIntegrity).toBe(false);
+    expect(inv.contentHashMatches).toBe(false);
     expect(inv.issues.join("\n")).toMatch(/contentHash does not match/);
   });
 });

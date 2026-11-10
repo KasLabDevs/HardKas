@@ -161,7 +161,14 @@ export function registerLockCommands(program: Command) {
           const confirmed = await UI.confirm(
             `Clearing an active lock may lead to data corruption if another process is writing to the workspace.\n  Are you sure you want to clear '${name}'?`
           );
-          if (!confirmed) return;
+          // ESCALÓN 2 · P14: a declined confirmation (or stdin that ended) cleared nothing, and says so with a nonzero exit
+          // (it returned with exit 0, as if the lock were cleared)
+          if (!confirmed) {
+            const { HardkasCliError } = await import("../cli-errors.js");
+            throw new HardkasCliError("LOCK_CLEAR_NOT_CONFIRMED", `Lock '${name}' was not cleared: the confirmation was declined or stdin ended. Nothing was removed.`, {
+              suggestion: `Re-run with --yes to confirm without a prompt: hardkas lock clear ${name} --yes`
+            });
+          }
         }
 
         let result;

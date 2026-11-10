@@ -1066,7 +1066,8 @@ registerTortureBucket({
   name: "runtime-impurity-detection",
   expectedInvariant: "deterministic_runtime_rejects_ambient_impurity",
   async run(ctx) {
-    const rootDir = ctx.workspaceDir;
+    // ESCALÓN 3 · P20: the scan only reads; the matrix's scratch directory is a temporary one
+    const rootDir = ctx.sourceRoot ?? ctx.workspaceDir;
     const targetDirs = [
       "packages/sdk/src",
       "packages/cli/src",

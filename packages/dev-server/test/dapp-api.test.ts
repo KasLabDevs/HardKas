@@ -81,22 +81,40 @@ describe("Dev-Server dApp Endpoints Envelope", () => {
     expect(json.error?.code).toBe("DEV_AUTOSIGN_NOT_ALLOWED");
   });
 
-  it("allows auto-signing if allowDevAutoSign is present in simulated network", async () => {
+  // ESCALÓN 4 · P38: auto-signing is off by default, also on the simulated ledger; the server's operator opens it
+  it("allows auto-signing if allowDevAutoSign is present in simulated network and the server opted in", async () => {
+    process.env.HARDKAS_DEV_SERVER_AUTOSIGN = "1";
+    try {
+      const req = new Request("http://localhost/api/tx/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          from: "alice",
+          to: "bob",
+          amountSompi: "100",
+          allowDevAutoSign: true
+        })
+      });
+      const res = await app.request(req);
+      const json = await res.json();
+
+      expect(json.ok).toBe(true);
+      expect(json.data.artifacts).toBeDefined();
+      expect(json.data.receipt).toBeDefined();
+    } finally {
+      delete process.env.HARDKAS_DEV_SERVER_AUTOSIGN;
+    }
+  });
+
+  it("refuses auto-signing on the simulated ledger when the server did not opt in (off by default)", async () => {
+    delete process.env.HARDKAS_DEV_SERVER_AUTOSIGN;
     const req = new Request("http://localhost/api/tx/send", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        from: "alice",
-        to: "bob",
-        amountSompi: "100",
-        allowDevAutoSign: true
-      })
+      body: JSON.stringify({ from: "alice", to: "bob", amountSompi: "100", allowDevAutoSign: true, idempotencyKey: "p38-off" })
     });
-    const res = await app.request(req);
-    const json = await res.json();
-
-    expect(json.ok).toBe(true);
-    expect(json.data.artifacts).toBeDefined();
-    expect(json.data.receipt).toBeDefined();
+    const json = await (await app.request(req)).json();
+    expect(json.ok).toBe(false);
+    expect(json.error?.code).toBe("DEV_AUTOSIGN_NOT_ALLOWED");
   });
 });

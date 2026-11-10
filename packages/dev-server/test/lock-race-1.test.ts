@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterAll, beforeAll } from "vitest";
 
-// TX-06: off the local worlds, auto-signing is the dev-server operator's decision (HARDKAS_DEV_SERVER_AUTOSIGN=1 in the
-// server's environment), not the request's: these cases run a server that opted in.
+// TX-06 / ESCALÓN 4 · P38: auto-signing is the dev-server operator's decision (HARDKAS_DEV_SERVER_AUTOSIGN=1 in the
+// server's environment), off by default and only on the simulated ledger or a local simnet: these cases run a server
+// that opted in, on a local simnet (a network that broadcasts; they ran on testnet-10, which is refused now).
 beforeAll(() => {
   process.env.HARDKAS_DEV_SERVER_AUTOSIGN = "1";
 });
@@ -37,7 +38,7 @@ vi.mock("node:fs", async (importOriginal) => {
   return { ...patched, default: patched };
 });
 
-const node = vi.hoisted(() => ({ cwd: "", network: "testnet-10" as string, plans: 0, broadcasts: [] as string[], hang: false, release: undefined as undefined | (() => void) }));
+const node = vi.hoisted(() => ({ cwd: "", network: "simnet" as string, plans: 0, broadcasts: [] as string[], hang: false, release: undefined as undefined | (() => void) }));
 vi.mock("@hardkas/sdk", () => ({
   Hardkas: {
     create: vi.fn(async () => ({
@@ -94,7 +95,7 @@ function writeLock(content: Record<string, unknown>, root = node.cwd) {
 beforeEach(() => {
   node.cwd = fs.mkdtempSync(path.join(os.tmpdir(), "hk-lockrace-"));
   roots.push(node.cwd);
-  node.network = "testnet-10";
+  node.network = "simnet";
   node.plans = 0;
   node.broadcasts = [];
   node.hang = false;

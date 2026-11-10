@@ -354,7 +354,7 @@ export function registerTxCommands(program: Command) {
     .option("--account <name>", "Account name to sign with")
     .option("--out <path>", "Save signed artifact JSON")
     .option("--fixture", "Sign with the built-in fixture test key (any network except mainnet)", false)
-    .option("--allow-mainnet-signing", "Mainnet signing stays refused in this release (MAINNET_SIGNING_DISABLED); the flag has no effect", false)
+    .option("--allow-mainnet-signing", "No effect: mainnet is blocked (MAINNET TOTAL LOCKDOWN) and mainnet signing stays refused (MAINNET_SIGNING_DISABLED)", false)
     .option("--threshold <number>", "Synthetic multisig threshold for tests (no Kaspa multisig script is produced)")
     .option("--required-signers <list>", "Comma-separated signers, no spaces (with --threshold above 1)")
     .option("--append", "Append signature to a partially signed transaction", false)

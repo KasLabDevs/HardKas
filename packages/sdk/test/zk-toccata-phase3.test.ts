@@ -208,24 +208,23 @@ describe("HardKAS Phase 3 ZK / Toccata L1 script building (offline)", () => {
     expect(wrongNet.issues.some((i) => i.code === "ZK_DESTINATION_NETWORK_MISMATCH")).toBe(true);
   });
 
-  it("never builds a mainnet spend of the PUBLIC vector (anyone-can-spend), and warns on any mainnet build (HK-16)", () => {
+  it("never builds a mainnet spend (MAINNET TOTAL LOCKDOWN: refused like a signature, before anything is built; crypto review H5)", () => {
     const scripts = buildR0Groth16Scripts({
       imageId: officialImageId,
       journalHash: officialJournalHash,
       receiptHex: officialReceiptHex
     });
     const mainnetAddress = new (loadManagedKaspaWasmSync().PrivateKey)("33".repeat(32)).toAddress("mainnet").toString();
-    const tx = buildR0Groth16Transaction({
-      scripts,
-      utxo: { transactionId: "11".repeat(32), index: 0, amountSompi: 200000000n },
-      destinationAddress: mainnetAddress,
-      networkId: "mainnet"
-    });
-    expect(tx.ok).toBe(false);
-    expect(tx.networkId).toBe("mainnet");
-    expect(tx.warnings.some((w) => w.code === "ZK_MAINNET_BUILD_UNGUARDED")).toBe(true);
-    expect(tx.issues.some((i) => i.code === "ZK_PUBLIC_VECTOR_PUBLIC_NETWORK_REFUSED")).toBe(true);
-    expect(tx.transaction).toBeNull();
+    // It used to return a result with the warning ZK_MAINNET_BUILD_UNGUARDED (and, for a non-public receipt, a
+    // complete mainnet transaction: a ZK spend carries no signature).
+    expect(() =>
+      buildR0Groth16Transaction({
+        scripts,
+        utxo: { transactionId: "11".repeat(32), index: 0, amountSompi: 200000000n },
+        destinationAddress: mainnetAddress,
+        networkId: "mainnet"
+      })
+    ).toThrow(/MAINNET_SIGNING_DISABLED|Mainnet signing is disabled/);
   });
 
   it("verifies the structure of the built scripts by parsing opcodes", () => {

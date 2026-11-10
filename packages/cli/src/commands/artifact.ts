@@ -9,7 +9,9 @@ export function registerArtifactCommands(program: Command) {
 
   artifactCmd
     .command("create <type>")
-    .description(`Create a new HardKAS artifact ${UI.maturity("alpha")}`)
+    .description(
+      `Wrap a JSON payload as a content-hashed artifact under a free <type> label; the payload is not validated against any schema (schemaValidation: NOT_VALIDATED) ${UI.maturity("alpha")}`
+    )
     .requiredOption("--input <path>", "Input JSON payload file")
     .option("--out <path>", "Output artifact file path")
     .option("--json", "Output results as JSON", false)

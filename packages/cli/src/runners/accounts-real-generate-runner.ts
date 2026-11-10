@@ -34,6 +34,18 @@ export async function runAccountsRealGenerate(
   accounts: RealDevAccount[];
   formatted: string;
 }> {
+  // ESCALÓN 4 · P36 · MAINNET TOTAL LOCKDOWN: no mainnet key is made while mainnet is locked down. Kaspa's sighash does
+  // not commit to the network, so a mainnet key in the store could sign a manipulated plan. Refused with the signing code
+  // first, before any name, password or SDK is touched: every spelling (`mainnet`, `mainnet-<n>`, `kaspa`,
+  // `kaspa-mainnet`, any case) and every config entry that declares one (an alias such as `prod`).
+  {
+    const { refuseMainnetSigning, workspaceConfigForGuard } = await import("../mainnet-guard.js");
+    refuseMainnetSigning(
+      await workspaceConfigForGuard(options.workspaceRoot),
+      [options.networkId],
+      "accounts real generate: no mainnet key is made while mainnet is locked down"
+    );
+  }
   const generator = new KaspaSdkKeyGenerator(
     options.networkId ? { networkId: options.networkId } : {}
   );

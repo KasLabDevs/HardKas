@@ -5,10 +5,14 @@
  * receipts and traces in the .hardkas/ directory.
  *
  * Source of truth: .hardkas/receipts/*.json + .hardkas/traces/*.trace.json
+ *
+ * ESCALÓN 2 · P9: `divergences` and `invariants` are STATIC ANALYSIS of the stored receipts: they read their fields and
+ * re-execute nothing. Only `hardkas replay verify` replays (re-executes a plan and compares the receipt). Their results
+ * and explanations say so, and never call a receipt "reproducible" or a check a "replay".
  */
 import fs from "node:fs/promises";
 import path from "node:path";
-import { recomputeDeclaredContentHash, readDeclaredHashVersion, CURRENT_HASH_VERSION } from "@hardkas/artifacts";
+import { recomputeDeclaredContentHash, readDeclaredHashVersion, CURRENT_HASH_VERSION, planRelayMinimum } from "@hardkas/artifacts";
 import type { TxId } from "@hardkas/core";
 import { computeQueryHash } from "../serialize.js";
 import { paginateAndFormatResult } from "../format.js";
@@ -151,6 +155,17 @@ export class ReplayQueryAdapter implements QueryAdapter {
     const start = Date.now();
     const receipts = await this.backend.findReceipts();
     const divergences: ReplayDivergence[] = [];
+    // the plans, read once and only when a receipt names its lineage root (the fee check below)
+    let planIndex: Map<string, any> | undefined;
+    const plans = async (): Promise<Map<string, any>> => {
+      if (!planIndex) {
+        planIndex = new Map();
+        for (const doc of await this.backend.findArtifacts({ schema: "hardkas.txPlan" })) {
+          if (doc.contentHash) planIndex.set(doc.contentHash, doc.payload);
+        }
+      }
+      return planIndex;
+    };
 
     for (const doc of receipts) {
       const receipt = doc.payload;
@@ -200,19 +215,23 @@ export class ReplayQueryAdapter implements QueryAdapter {
         });
       }
 
-      // 3. Fee/mass consistency
-      if (receipt.mass && receipt.feeSompi) {
-        const mass = BigInt(receipt.mass);
-        const fee = BigInt(receipt.feeSompi);
-        if (mass > 0n && fee > 0n && fee > mass * 10n) {
-          divergences.push({
-            txId: receipt.txId,
-            kind: "fee-mismatch",
-            field: "feeSompi",
-            expected: `fee proportional to mass (mass=${mass})`,
-            actual: `fee=${fee} (ratio=${fee / mass})`
-          });
-        }
+      // 3. Fee against the node's relay minimum (ESCALÓN 2 · P9). The former rule (`fee > 10 × mass`) flagged every
+      // payment at the standard rate. The real rule is a floor: the node relays at MINIMUM_RELAY_FEE_RATE_SOMPI_PER_GRAM
+      // (100 sompi) per gram of COMPUTE mass, and a fee above it buys priority. A receipt records only the overall mass
+      // (a storage-bound payment records its storage mass, which has no relay floor), so the floor comes from the
+      // receipt's plan (its lineage root), priced by the pinned SDK (@hardkas/artifacts `planRelayMinimum`). Without
+      // that plan, or where it cannot be priced here, the fee is not judged.
+      const fee = parseBigIntSafe(receipt.feeSompi);
+      const root = receipt.lineage?.rootArtifactId;
+      const relay = fee !== undefined && typeof root === "string" ? relayMinimumOf(await plans(), root) : undefined;
+      if (fee !== undefined && relay && fee < relay.relayFeeSompi) {
+        divergences.push({
+          txId: receipt.txId,
+          kind: "fee-mismatch",
+          field: "feeSompi",
+          expected: `at least the relay minimum of its plan: ${relay.relayFeeSompi} sompi (compute mass ${relay.computeMass})`,
+          actual: `fee ${fee} sompi`
+        });
       }
 
       // 4. UTXO count consistency
@@ -285,37 +304,41 @@ export class ReplayQueryAdapter implements QueryAdapter {
 
     const issues: string[] = [];
 
-    // 1. Plan integrity — contentHash should be stable
-    const planIntegrity = receipt.contentHash
+    // ESCALÓN 2 · P9: static checks of the receipt's own fields; nothing is re-executed (`hardkas replay verify` does
+    // that). The fields say what each check looks at: the former names ("planIntegrity", "receiptReproducible",
+    // "utxoConservation") claimed a plan check, a replay and a value conservation that none of them performs.
+
+    // 1. The receipt's contentHash matches its recomputed hash
+    const contentHashMatches = receipt.contentHash
       ? computeContentHashSafe(receipt) === receipt.contentHash
       : true;
-    if (!planIntegrity) {
+    if (!contentHashMatches) {
       issues.push("Receipt contentHash does not match recomputed hash");
     }
 
-    // 2. Receipt reproducibility — pre/post state hashes present
-    const receiptReproducible = !!(receipt.preStateHash && receipt.postStateHash);
-    if (!receiptReproducible) {
-      issues.push("Missing pre/post state hashes — replay comparison not possible");
+    // 2. Pre/post state hashes are recorded (needed by a replay; their presence proves nothing by itself)
+    const stateHashesPresent = !!(receipt.preStateHash && receipt.postStateHash);
+    if (!stateHashesPresent) {
+      issues.push("Missing pre/post state hashes: 'hardkas replay verify' has nothing to compare against");
     }
 
-    // IC-2′.8 / IC-4′.4: status-based invariants are evaluated only when the
+    // IC-2′.8 / IC-4′.4: status-based checks are evaluated only when the
     // receipt's hash authenticates its status. Otherwise they are NOT established
     // (fail closed) and the reason is stated.
     const authScope = authScopeOf(receipt);
-    let stateTransitionValid = true;
-    let utxoConservation = true;
+    let stateChangeMatchesStatus = true;
+    let utxoCountsNonZero = true;
     if (authScope !== "FULL") {
-      stateTransitionValid = false;
-      utxoConservation = false;
+      stateChangeMatchesStatus = false;
+      utxoCountsNonZero = false;
       issues.push(
-        `Receipt status ${JSON.stringify(receipt.status)} is not authenticated (${describeUnauthenticated(receipt, authScope)}): state transition and UTXO conservation were not evaluated (IC-2′.8)`
+        `Receipt status ${JSON.stringify(receipt.status)} is not authenticated (${describeUnauthenticated(receipt, authScope)}): the state-change and UTXO-count checks were not evaluated (IC-2′.8)`
       );
     } else {
-      // 3. State transition validity
+      // 3. The recorded state change agrees with the status
       if (receipt.status === "confirmed") {
         if (receipt.preStateHash === receipt.postStateHash) {
-          stateTransitionValid = false;
+          stateChangeMatchesStatus = false;
           issues.push("Confirmed tx did not change state (pre === post)");
         }
       } else if (receipt.status === "failed") {
@@ -324,21 +347,21 @@ export class ReplayQueryAdapter implements QueryAdapter {
           receipt.postStateHash &&
           receipt.preStateHash !== receipt.postStateHash
         ) {
-          stateTransitionValid = false;
+          stateChangeMatchesStatus = false;
           issues.push("Failed tx changed state (pre !== post)");
         }
       }
 
-      // 4. UTXO conservation
+      // 4. A confirmed transaction lists spent and created UTXOs (counts only: no amount is summed)
       const spentCount = receipt.spentUtxoIds?.length ?? 0;
       const createdCount = receipt.createdUtxoIds?.length ?? 0;
       if (receipt.status === "confirmed") {
         if (spentCount === 0) {
-          utxoConservation = false;
+          utxoCountsNonZero = false;
           issues.push("Confirmed tx spent 0 UTXOs");
         }
         if (createdCount === 0) {
-          utxoConservation = false;
+          utxoCountsNonZero = false;
           issues.push("Confirmed tx created 0 UTXOs");
         }
       }
@@ -346,11 +369,12 @@ export class ReplayQueryAdapter implements QueryAdapter {
 
     const result: ReplayInvariantsResult = {
       txId: txId as TxId,
+      analysis: "static",
       authScope,
-      planIntegrity,
-      receiptReproducible,
-      stateTransitionValid,
-      utxoConservation,
+      contentHashMatches,
+      stateHashesPresent,
+      stateChangeMatchesStatus,
+      utxoCountsNonZero,
       issues
     };
 
@@ -407,6 +431,20 @@ function toSummary(receipt: any, trace: any | null): ReplaySummaryResult {
   };
 }
 
+/** The relay minimum of the plan a receipt's lineage starts from, when that plan is here and can be priced. */
+function relayMinimumOf(plans: Map<string, any>, root: string): { computeMass: bigint; relayFeeSompi: bigint } | undefined {
+  const plan = plans.get(root);
+  return plan ? planRelayMinimum(plan) : undefined;
+}
+
+function parseBigIntSafe(value: unknown): bigint | undefined {
+  try {
+    return typeof value === "string" || typeof value === "number" || typeof value === "bigint" ? BigInt(value) : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 function computeContentHashSafe(obj: any): string {
   try {
     return recomputeDeclaredContentHash(obj);
@@ -437,9 +475,9 @@ function describeUnauthenticated(receipt: any, scope: "LEGACY" | "NONE" | "FULL"
 
 const DIVERGENCE_RULES: Record<DivergenceKind, string> = {
   "state-hash-mismatch":
-    "Deterministic replay invariant: identical plan + identical state = identical postStateHash",
+    "The receipt's contentHash must match its recomputed hash, and a confirmed transaction records a state change (pre and post state hashes differ). Checked on the stored receipt only; nothing is re-executed.",
   "fee-mismatch":
-    "Fee must be proportional to estimated mass. Disproportionate fees indicate estimation drift.",
+    "A receipt pays at least the node's relay minimum: 100 sompi per gram of the compute mass of its plan's transaction (@hardkas/tx-builder MINIMUM_RELAY_FEE_RATE_SOMPI_PER_GRAM, measureRelayFee). A fee above it buys priority and is never a finding; without its plan the fee is not judged (the receipt records only the overall mass).",
   "utxo-count-mismatch":
     "Confirmed transactions must spend at least 1 UTXO (inputs) and create at least 1 (outputs).",
   "status-mismatch":
@@ -447,31 +485,31 @@ const DIVERGENCE_RULES: Record<DivergenceKind, string> = {
   "txid-mismatch":
     "Deterministic txId generation: same plan + same state + same daaScore = same txId.",
   "ordering-divergence":
-    "UTXO selection order must be deterministic. Non-deterministic ordering breaks replay invariants.",
+    "UTXO selection order must be deterministic.",
   "insufficient-evidence":
     "A status is a decision input only when the receipt's hash authenticates it (hashVersion 5). Legacy or unverifiable receipts yield no status-based verdict (IC-2′.8)."
 };
 
 function explainDivergence(d: ReplayDivergence): WhyBlock {
   return {
-    question: `Why is tx ${d.txId.slice(0, 16)}... divergent?`,
-    answer: `Field "${d.field}" shows unexpected non-deterministic behavior (${d.kind}).`,
+    question: `Why does static analysis flag tx ${d.txId.slice(0, 16)}...?`,
+    answer: `Field "${d.field}" of the stored receipt fails a static check (${d.kind}). Nothing was re-executed: 'hardkas replay verify' replays the plan.`,
     evidence: [{ type: "txId", value: d.txId }],
     causalChain: [
       {
         order: 1,
         assertion: `Value mismatch in "${d.field}"`,
-        evidence: `Expected: ${d.expected.slice(0, 40)}, Actual: ${d.actual.slice(0, 40)}`,
+        evidence: `Expected: ${d.expected.slice(0, 80)}, Actual: ${d.actual.slice(0, 80)}`,
         rule: DIVERGENCE_RULES[d.kind]
       },
       {
         order: 2,
-        assertion: "Divergence detected in replay comparison",
-        evidence: "Verification engine mismatch",
-        rule: "Invariant validation policy"
+        assertion: "Found by static analysis of the stored receipt (no replay)",
+        evidence: "The receipt's own fields",
+        rule: "Static receipt checks"
       }
     ],
-    model: "replay-analysis",
+    model: "static-analysis",
     confidence: "definitive"
   };
 }
@@ -482,49 +520,49 @@ function explainInvariants(result: ReplayInvariantsResult): WhyBlock {
 
   causalChain.push({
     order: order++,
-    assertion: result.planIntegrity ? "Plan integrity is OK" : "Plan integrity FAILED",
-    evidence: `planIntegrity=${result.planIntegrity}`,
+    assertion: result.contentHashMatches ? "The receipt's contentHash matches" : "The receipt's contentHash does NOT match",
+    evidence: `contentHashMatches=${result.contentHashMatches}`,
     rule: "SHA-256 canonical consistency"
   });
   causalChain.push({
     order: order++,
-    assertion: result.receiptReproducible
-      ? "Receipt is reproducible"
-      : "Receipt is NOT reproducible",
-    evidence: `receiptReproducible=${result.receiptReproducible}`,
-    rule: "Replay evidence requirements"
+    assertion: result.stateHashesPresent
+      ? "Pre and post state hashes are recorded (a replay could compare them; none was run)"
+      : "Pre or post state hash is missing",
+    evidence: `stateHashesPresent=${result.stateHashesPresent}`,
+    rule: "Fields a replay needs"
   });
   causalChain.push({
     order: order++,
-    assertion: result.stateTransitionValid
-      ? "State transition is valid"
-      : "State transition INVALID",
-    evidence: `stateTransitionValid=${result.stateTransitionValid}`,
+    assertion: result.stateChangeMatchesStatus
+      ? "The recorded state change agrees with the status"
+      : "The recorded state change contradicts the status",
+    evidence: `stateChangeMatchesStatus=${result.stateChangeMatchesStatus}`,
     rule: "Status/State alignment"
   });
   causalChain.push({
     order: order++,
-    assertion: result.utxoConservation
-      ? "UTXO conservation holds"
-      : "UTXO conservation VIOLATED",
-    evidence: `utxoConservation=${result.utxoConservation}`,
-    rule: "Value conservation policy"
+    assertion: result.utxoCountsNonZero
+      ? "Spent and created UTXO lists are not empty"
+      : "A spent or created UTXO list is empty",
+    evidence: `utxoCountsNonZero=${result.utxoCountsNonZero}`,
+    rule: "UTXO counts (no amount is summed)"
   });
 
   const allOk =
-    result.planIntegrity &&
-    result.receiptReproducible &&
-    result.stateTransitionValid &&
-    result.utxoConservation;
+    result.contentHashMatches &&
+    result.stateHashesPresent &&
+    result.stateChangeMatchesStatus &&
+    result.utxoCountsNonZero;
 
   return {
-    question: `Are replay invariants satisfied for tx ${result.txId.slice(0, 16)}...?`,
+    question: `Do the static checks of tx ${result.txId.slice(0, 16)}...'s receipt pass?`,
     answer: allOk
-      ? "All replay invariants satisfied."
-      : `Violations found: ${result.issues.join("; ")}`,
+      ? "All static checks pass (the receipt's fields only; nothing was re-executed)."
+      : `Static checks failed: ${result.issues.join("; ")}`,
     evidence: [{ type: "txId", value: result.txId }],
     causalChain,
-    model: "replay-invariants",
+    model: "static-analysis",
     confidence: "definitive"
   };
 }

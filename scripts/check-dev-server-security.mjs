@@ -32,8 +32,8 @@ fs.writeFileSync(path.join(tmpDir, "hardkas.config.ts"), "export default {};\n")
 
 const cliPath = path.resolve(workspaceRoot, "packages", "cli", "dist", "index.js");
 
-// M-03 (2026-11-07): `dev-server start` is not a registered CLI command (packages/cli/src/commands/dev-server.ts is never
-// added to the program), so the script used to fail on "unknown command" and probe whatever else held its port. The CLI
+// M-03 (2026-11-07): `dev-server start` is not a registered CLI command (packages/cli/src/commands/dev-server.ts was never
+// added to the program, and was removed as dead code in P27), so the script used to fail on "unknown command" and probe whatever else held its port. The CLI
 // entry point that serves the dev-server API on a chosen port is `hardkas sandbox --port --host`.
 const serverProc = spawn(process.execPath, [cliPath, "sandbox", "--port", PORT.toString(), "--host", "127.0.0.1"], {
   cwd: tmpDir,

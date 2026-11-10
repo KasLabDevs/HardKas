@@ -1,5 +1,5 @@
 import { createHash, randomBytes } from "node:crypto";
-import { loadManagedKaspaWasmSync, systemRuntimeContext } from "@hardkas/core";
+import { assertMainnetTransactionsDisabled, loadManagedKaspaWasmSync, systemRuntimeContext } from "@hardkas/core";
 import { rpcEndpointOf, type KaspaRpcClient } from "@hardkas/kaspa-rpc";
 import {
   HardkasSchemas,
@@ -24,6 +24,9 @@ import {
   findPublicR0TestVector,
   isHardkasR0Groth16Verification,
   parseR0Groth16Receipt,
+  R0_GROTH16_BN254_CONTROL_ID,
+  R0_GROTH16_COMPRESSED_VERIFICATION_KEY_HEX,
+  R0_GROTH16_CONTROL_ROOT,
   R0_GROTH16_VERIFIER_ID,
   type R0Groth16LocalVerificationResult
 } from "./risc0-groth16.js";
@@ -37,9 +40,12 @@ export const GROTH16_PROVING_SYSTEM_TAG = "0x20";
 export const DEFAULT_ZK_COMPUTE_BUDGET = 1600;
 
 /**
- * Where the Toccata scripts come from. HardKAS does not assemble ZK scripts itself: it calls the
- * `ZkScriptBuilder` shipped inside the pinned kaspa-wasm (rusty-kaspa 2.1.0). There is no upstream
- * package named "kaspa-txscript-zk-sdk"; the earlier claim label was imprecise (audit L-08).
+ * Where the Toccata scripts come from. HardKAS does not assemble the RISC Zero Groth16 verifier itself: it calls the
+ * `ZkScriptBuilder` shipped inside the pinned kaspa-wasm (rusty-kaspa 2.1.0). Upstream also publishes that builder as
+ * the Rust crate `kaspa-txscript-zk-sdk` 2.1.0 (crates.io, 2026-10-04; rusty-kaspa v2.1.0 crypto/txscript/zk-sdk).
+ * HardKAS does not use that crate: it uses the same builder compiled into kaspa-wasm. Only the output-bound
+ * introspection that follows the verifier in proof-and-output-bound mode is HardKAS's own (r0BoundRedeemScript).
+ * (Audit L-08 corrected the claim label; the crypto review's H3 corrected this comment, which said the crate did not exist.)
  */
 export const KASPA_WASM_ZK_BUILDER_CLAIM = "KASPA_WASM_ZK_SCRIPT_BUILDER_2_1_0" as const;
 
@@ -319,9 +325,10 @@ export interface R0Groth16ScriptParams {
   receiptHex: string;
   bindingPolicy?: ZkOutputBindingPolicy;
   /**
-   * Networks whose P2SH address is returned. The simnet address is always returned; "testnet-10" and
-   * "mainnet" are returned only when listed here AND acknowledgeImageIdOnlyLock is true, and never for a
-   * public test vector (PUBLIC_R0_TEST_VECTORS), whose lock anyone can spend (HK-16).
+   * Networks whose P2SH address is returned. The simnet address is always returned; "testnet-10" is returned
+   * only when listed here AND acknowledgeImageIdOnlyLock is true, and never for a public test vector
+   * (PUBLIC_R0_TEST_VECTORS), whose lock anyone can spend (HK-16). "mainnet" (any spelling) throws
+   * MAINNET_SIGNING_DISABLED while mainnet is locked down (P37): nothing is built.
    */
   addressNetworks?: ZkAddressNetwork[];
   /**
@@ -346,7 +353,7 @@ export interface R0Groth16ScriptsResult {
     version: number;
     script: string;
   };
-  /** testnet10 / mainnet are present only on explicit, acknowledged request (see R0Groth16ScriptParams). */
+  /** testnet10 is present only on explicit, acknowledged request (see R0Groth16ScriptParams); mainnet never while locked down. */
   p2shAddresses: {
     simnet: string;
     testnet10?: string;
@@ -447,6 +454,9 @@ export interface R0Groth16VerifyScriptsParams {
   expectedBindingMode?: ZkBindingMode | undefined;
   expectedPayoutAddress?: string | undefined;
   expectedPayoutAmount?: bigint | undefined;
+  /** Expected change output (output 1) of a proof-and-output-bound lock. */
+  expectedChangeAddress?: string | undefined;
+  expectedChangeAmount?: bigint | undefined;
 }
 
 export interface KaspaScriptOp {
@@ -475,19 +485,48 @@ export interface R0Groth16VerifyScriptsResult {
   largestRedeemPushBytes: number;
   imageIdFound?: boolean;
   journalHashFound?: boolean;
+  /**
+   * The redeem script is byte-identical to the script HardKAS builds for the parameters read back from it (the image id;
+   * in output-bound mode the outputs and the input limit), with the builders buildR0Groth16Scripts uses (crypto review H2).
+   */
+  redeemScriptCanonical: boolean;
+  /** The image id a canonical redeem script commits to. */
+  scriptImageId?: string;
+  /**
+   * The verifying key handed to OpZkPrecompile (the push right before the Groth16 tag) is the pinned RISC Zero key,
+   * R0_GROTH16_COMPRESSED_VERIFICATION_KEY_HEX (crypto review H1).
+   */
+  verifyingKeyPinned: boolean;
+  /** The script pushes split_digest(R0_GROTH16_CONTROL_ROOT): both 16-byte halves, zero-padded to 32 bytes. */
+  controlRootPinned: boolean;
+  /** The script pushes R0_GROTH16_BN254_CONTROL_ID. */
+  controlIdPinned: boolean;
   bindingMode?: ZkBindingMode;
+  /**
+   * true only for a canonical proof-and-output-bound lock over the pinned verifier with no issue. Never inferred from the
+   * presence of opcodes. The `enforces*` and `bound*` fields below are set from that byte-exact reconstruction only.
+   */
   consensusEnforced?: boolean;
   hasOutputIntrospection?: boolean;
   enforcesOutputCount?: boolean;
   enforcesPayoutSpk?: boolean;
   enforcesPayoutAmount?: boolean;
+  enforcesChangeSpk?: boolean;
+  enforcesChangeAmount?: boolean;
+  /** The script contains OpOutpointTxId (a defect: no spend can satisfy an outpoint binding). */
   enforcesUtxoBinding?: boolean;
   /** OpTxInputCount: the spend has exactly one input. */
   enforcesSingleInput?: boolean;
   /** OpTxInputAmount .. OpLessThanOrEqual: the spent UTXO is at most the bound outputs plus the fee cap. */
   enforcesInputAmountLimit?: boolean;
+  /** 1 (payout) or 2 (payout and change). */
+  boundOutputCount?: number;
   boundPayoutSpk?: string;
   boundPayoutAmount?: bigint;
+  boundChangeSpk?: string;
+  boundChangeAmount?: bigint;
+  /** The largest input the lock accepts (bound outputs plus the fee cap it was built with). */
+  boundMaxInputSompi?: bigint;
   issues: ZkIssue[];
 }
 
@@ -703,6 +742,82 @@ export function spkIntrospectionBytesHex(spk: { version: number | bigint; script
   return version.toString(16).padStart(4, "0") + String(spk.script).toLowerCase();
 }
 
+/** One output a proof-and-output-bound lock checks: the bytes OpTxOutputSpk pushes for it (hex) and its amount. */
+interface R0BoundOutputCheck {
+  spkIntrospectionHex: string;
+  amountSompi: bigint;
+}
+
+/** kaspa-wasm's R0-over-Groth16 verifier fragment for an image id: the whole redeem script of a proof-only lock. */
+function r0Groth16VerifierFragment(kaspa: any, imageId: string): string {
+  const zkBuilder = kaspa.ZkScriptBuilder.newR0();
+  zkBuilder.appendR0Groth16Verifier(imageId);
+  return String(zkBuilder.drain()).toLowerCase();
+}
+
+/**
+ * The redeem script of a proof-and-output-bound lock: the upstream verifier fragment for `imageId`, OpVerify, then the
+ * output and input checks by introspection. The ONE builder of this script: buildR0Groth16Scripts locks funds with it,
+ * and verifyR0Groth16Scripts rebuilds a script with it from the parameters it reads back and compares the bytes (H2).
+ */
+function r0BoundRedeemScript(kaspa: any, imageId: string, outputs: readonly R0BoundOutputCheck[], maxInputSompi: bigint): string {
+  const sb = new kaspa.ScriptBuilder();
+  sb.addOps(Buffer.from(r0Groth16VerifierFragment(kaspa, imageId), "hex"));
+  sb.addOp(kaspa.Opcodes.OpVerify);
+
+  sb.addOp(kaspa.Opcodes.OpTxOutputCount);
+  sb.addI64(BigInt(outputs.length));
+  sb.addOp(kaspa.Opcodes.OpNumEqualVerify);
+
+  // Output i (0 = payout, 1 = change): its SPK as OpTxOutputSpk pushes it (version u16 big-endian, then the script;
+  // rusty-kaspa v2.1.0 txscript SpkEncoding::to_bytes), then its amount.
+  outputs.forEach((output, index) => {
+    sb.addI64(BigInt(index));
+    sb.addOp(kaspa.Opcodes.OpTxOutputSpk);
+    sb.addData(Buffer.from(output.spkIntrospectionHex, "hex"));
+    sb.addOp(kaspa.Opcodes.OpEqualVerify);
+
+    sb.addI64(BigInt(index));
+    sb.addOp(kaspa.Opcodes.OpTxOutputAmount);
+    sb.addI64(output.amountSompi);
+    sb.addOp(kaspa.Opcodes.OpNumEqualVerify);
+  });
+
+  // One input only: several UTXOs of this lock spent together would satisfy the same output checks and send
+  // their whole excess to the fee.
+  sb.addOp(kaspa.Opcodes.OpTxInputCount);
+  sb.addI64(1n);
+  sb.addOp(kaspa.Opcodes.OpNumEqualVerify);
+
+  // This input holds at most the bound outputs plus the fee cap: a larger deposit cannot be burnt as fee by
+  // whoever triggers the spend (it stays locked instead).
+  sb.addOp(kaspa.Opcodes.OpTxInputIndex);
+  sb.addOp(kaspa.Opcodes.OpTxInputAmount);
+  sb.addI64(maxInputSompi);
+  sb.addOp(kaspa.Opcodes.OpLessThanOrEqual);
+  sb.addOp(kaspa.Opcodes.OpVerify);
+
+  sb.addOp(kaspa.Opcodes.OpTrue);
+  return String(sb.drain()).toLowerCase();
+}
+
+/** A mainnet address (`kaspa:`, not a simulator identity `kaspa:sim_`) names the mainnet network; any other value, none. */
+function mainnetOfAddress(address: unknown): string | undefined {
+  if (typeof address !== "string") return undefined;
+  const a = address.trim().toLowerCase();
+  return a.startsWith("kaspa:") && !a.startsWith("kaspa:sim_") ? "mainnet" : undefined;
+}
+
+/**
+ * P37 · every network a scripts request involves: each `addressNetworks` entry as given (any spelling), and the network
+ * of the bound payout and change addresses. The mainnet guard decides on all of them.
+ */
+function scriptsRequestNetworks(params: R0Groth16ScriptParams | undefined): unknown[] {
+  const asked: unknown[] = Array.isArray(params?.addressNetworks) ? [...params!.addressNetworks] : [];
+  const policy = params?.bindingPolicy as { payout?: { address?: unknown }; change?: { address?: unknown } } | undefined;
+  return [...asked, mainnetOfAddress(policy?.payout?.address), mainnetOfAddress(policy?.change?.address)];
+}
+
 /**
  * Builds the Kaspa Toccata P2SH redeem script (locking) and signature script (unlocking) for a
  * RISC Zero Groth16 receipt, through kaspa-wasm's ZkScriptBuilder (upstream minimal flow:
@@ -719,9 +834,13 @@ export function spkIntrospectionBytesHex(spk: { version: number | bigint; script
  * those outputs. The spent outpoint is never bound (circular: `utxoBinding` is refused). The bound script public key is
  * the version-prefixed encoding OpTxOutputSpk pushes. Results carry ZK_LOCK_BINDS_IMAGE_ID_AND_OUTPUTS.
  *
- * Addresses: the simnet address is always returned. testnet-10/mainnet addresses are returned only when
- * requested in `addressNetworks` (proof-only also needs `acknowledgeImageIdOnlyLock: true`), and never for a
- * public test vector.
+ * Addresses: the simnet address is always returned. A testnet-10 address is returned only when requested in
+ * `addressNetworks` (proof-only also needs `acknowledgeImageIdOnlyLock: true`), and never for a public test vector.
+ *
+ * Mainnet (MAINNET TOTAL LOCKDOWN, P37): a lock's signature script IS the authorization of its spend (a ZK spend
+ * carries no signature), so no lock is built for mainnet. A mainnet entry in `addressNetworks`, in any spelling
+ * (`mainnet`, `mainnet-<n>`, `kaspa`, `kaspa-mainnet`, any case), or a bound payout or change address of mainnet
+ * (`kaspa:`) throws MAINNET_SIGNING_DISABLED before the receipt is read: no mainnet P2SH address and no signature script.
  *
  * Receipt cross-check (HK-19): when the receipt carries its claim pruned to a digest (the usual Borsh
  * encoding), the digest is recomputed from (imageId, journalHash) and a mismatch is rejected
@@ -729,6 +848,8 @@ export function spkIntrospectionBytesHex(spk: { version: number | bigint; script
  * journal would make the unlocking script fail.
  */
 export function buildR0Groth16Scripts(params: R0Groth16ScriptParams): R0Groth16ScriptsResult {
+  // ESCALÓN 4 · P37 · MAINNET TOTAL LOCKDOWN: refused like a signature, first (see above).
+  assertMainnetTransactionsDisabled("sign", scriptsRequestNetworks(params), "buildR0Groth16Scripts");
   const issues: ZkIssue[] = [];
   const bindingMode: ZkBindingMode = params.bindingPolicy?.mode ?? "proof-only";
   const warnings: ZkIssue[] = [{ ...zkLockAuthorizationWarning(bindingMode, params.bindingPolicy) }];
@@ -875,66 +996,12 @@ export function buildR0Groth16Scripts(params: R0Groth16ScriptParams): R0Groth16S
 
     if (bindingMode === "proof-and-output-bound") {
       const policy = params.bindingPolicy!;
-      const payoutAddr = new kaspa.Address(policy.payout.address);
-      const payoutSpk = kaspa.payToAddressScript(payoutAddr);
-
-      const zkBuilder = kaspa.ZkScriptBuilder.newR0();
-      zkBuilder.appendR0Groth16Verifier(imageId);
-      const zkPart = zkBuilder.drain();
-
-      const sb = new kaspa.ScriptBuilder();
-      sb.addOps(Buffer.from(zkPart, "hex"));
-      sb.addOp(kaspa.Opcodes.OpVerify);
-
-      const expectedOutputCount = policy.change ? 2n : 1n;
-      sb.addOp(kaspa.Opcodes.OpTxOutputCount);
-      sb.addI64(expectedOutputCount);
-      sb.addOp(kaspa.Opcodes.OpNumEqualVerify);
-
-      // Enforce output 0 recipient. OpTxOutputSpk pushes the SPK as version (u16 big-endian) followed by the script
-      // (rusty-kaspa v2.1.0 txscript SpkEncoding::to_bytes): the bound value carries the version too, or no spend matches.
-      sb.addI64(0n);
-      sb.addOp(kaspa.Opcodes.OpTxOutputSpk);
-      sb.addData(Buffer.from(spkIntrospectionBytesHex(payoutSpk), "hex"));
-      sb.addOp(kaspa.Opcodes.OpEqualVerify);
-
-      // Enforce output 0 amount
-      sb.addI64(0n);
-      sb.addOp(kaspa.Opcodes.OpTxOutputAmount);
-      sb.addI64(policy.payout.amountSompi);
-      sb.addOp(kaspa.Opcodes.OpNumEqualVerify);
-
-      // Enforce change output if configured
-      if (policy.change) {
-        const changeAddr = new kaspa.Address(policy.change.address);
-        const changeSpk = kaspa.payToAddressScript(changeAddr);
-        sb.addI64(1n);
-        sb.addOp(kaspa.Opcodes.OpTxOutputSpk);
-        sb.addData(Buffer.from(spkIntrospectionBytesHex(changeSpk), "hex"));
-        sb.addOp(kaspa.Opcodes.OpEqualVerify);
-
-        sb.addI64(1n);
-        sb.addOp(kaspa.Opcodes.OpTxOutputAmount);
-        sb.addI64(policy.change.amountSompi);
-        sb.addOp(kaspa.Opcodes.OpNumEqualVerify);
-      }
-
-      // One input only: several UTXOs of this lock spent together would satisfy the same output checks and send
-      // their whole excess to the fee.
-      sb.addOp(kaspa.Opcodes.OpTxInputCount);
-      sb.addI64(1n);
-      sb.addOp(kaspa.Opcodes.OpNumEqualVerify);
-
-      // This input holds at most the bound outputs plus the fee cap: a larger deposit cannot be burnt as fee by
-      // whoever triggers the spend (it stays locked instead).
-      sb.addOp(kaspa.Opcodes.OpTxInputIndex);
-      sb.addOp(kaspa.Opcodes.OpTxInputAmount);
-      sb.addI64(boundMaxInputSompi(policy));
-      sb.addOp(kaspa.Opcodes.OpLessThanOrEqual);
-      sb.addOp(kaspa.Opcodes.OpVerify);
-
-      sb.addOp(kaspa.Opcodes.OpTrue);
-      redeemScript = String(sb.drain()).toLowerCase();
+      // The bound SPK is what OpTxOutputSpk pushes (version too), or no spend matches.
+      const outputs: R0BoundOutputCheck[] = [policy.payout, ...(policy.change ? [policy.change] : [])].map((o) => ({
+        spkIntrospectionHex: spkIntrospectionBytesHex(kaspa.payToAddressScript(new kaspa.Address(o.address))),
+        amountSompi: o.amountSompi
+      }));
+      redeemScript = r0BoundRedeemScript(kaspa, imageId, outputs, boundMaxInputSompi(policy));
 
       const sigBuilder = new kaspa.ScriptBuilder();
       sigBuilder.addData(Buffer.from(journalHash, "hex"));
@@ -964,15 +1031,21 @@ export function buildR0Groth16Scripts(params: R0Groth16ScriptParams): R0Groth16S
       p2shAddresses.mainnet = kaspa.addressFromScriptPublicKey(spk, "mainnet")?.toString() ?? "";
     }
 
+    // The outputs are an expectation only in output-bound mode (a proof-only lock binds none).
+    const boundPolicy = bindingMode === "proof-and-output-bound" ? params.bindingPolicy : undefined;
     const structural = verifyR0Groth16Scripts({
       redeemScript,
       sigScript,
       imageId,
       journalHash,
       expectedBindingMode: bindingMode,
-      ...(params.bindingPolicy?.payout ? {
-        expectedPayoutAddress: params.bindingPolicy.payout.address,
-        expectedPayoutAmount: params.bindingPolicy.payout.amountSompi
+      ...(boundPolicy?.payout ? {
+        expectedPayoutAddress: boundPolicy.payout.address,
+        expectedPayoutAmount: boundPolicy.payout.amountSompi
+      } : {}),
+      ...(boundPolicy?.change ? {
+        expectedChangeAddress: boundPolicy.change.address,
+        expectedChangeAmount: boundPolicy.change.amountSompi
       } : {})
     });
     if (!structural.ok) {
@@ -1029,7 +1102,7 @@ export function buildR0Groth16Scripts(params: R0Groth16ScriptParams): R0Groth16S
       provingSystemTag: GROTH16_PROVING_SYSTEM_TAG,
       bindingMode,
       ...(params.bindingPolicy ? { bindingPolicy: params.bindingPolicy } : {}),
-      consensusEnforced: bindingMode === "proof-and-output-bound" && issues.length === 0,
+      consensusEnforced: bindingMode === "proof-and-output-bound" && structural.consensusEnforced === true && issues.length === 0,
       ...(params.bindingPolicy?.payout ? {
         boundPayoutAddress: params.bindingPolicy.payout.address,
         boundPayoutAmount: params.bindingPolicy.payout.amountSompi
@@ -1164,9 +1237,13 @@ function measureR0Groth16SpendMass(params: BuildR0Groth16TxParams, computeBudget
  * Builds a TxPlanArtifact (hardkas.txPlan.v1) for a Toccata ZK Groth16 spend.
  * Integrates ZK transactions directly into HardKAS's deterministic plan pipeline. The estimated mass is
  * measured for the real shape with kaspa-wasm (ZK-08), never the 1602 reference constant. Throws
- * `ZK_P2SH_ADDRESS_UNAVAILABLE` when the scripts carry no address for the plan's network (no placeholder).
+ * `ZK_P2SH_ADDRESS_UNAVAILABLE` when the scripts carry no address for the plan's network (no placeholder), and
+ * `MAINNET_SIGNING_DISABLED` for mainnet, before anything is read (see buildR0Groth16Transaction).
  */
 export function buildR0Groth16Plan(params: BuildR0Groth16TxParams): TxPlanArtifact {
+  // MAINNET TOTAL LOCKDOWN (crypto review H5): the caller already holds this spend's signature script, so the plan
+  // describes a complete, authorized mainnet transaction. Refused like a signature, first.
+  assertMainnetTransactionsDisabled("sign", [params?.networkId], "buildR0Groth16Plan");
   const computeBudget = params.computeBudget ?? DEFAULT_ZK_COMPUTE_BUDGET;
   const netKey = (params.networkId ?? "simnet") as "simnet" | "testnet-10" | "mainnet";
   const p2shAddress = p2shAddressFor(params.scripts, netKey);
@@ -1231,8 +1308,14 @@ export function buildR0Groth16Plan(params: BuildR0Groth16TxParams): TxPlanArtifa
  * (feeOptions.maxFeeSompi, default DEFAULT_MAX_FEE_CAP_SOMPI) is refused (ZK_FEE_ABOVE_CAP).
  * The emitted ZK fact records the real image id, the SHA-256 of the proof BYTES, no placeholder and no
  * clock (HK-20); verifiedOffChain is true only with a genuine verifyR0Groth16ReceiptLocal result (HK-17).
+ *
+ * Mainnet (any spelling: `mainnet`, `mainnet-<n>`, `kaspa`, `kaspa-mainnet`, any case) throws MAINNET_SIGNING_DISABLED
+ * before anything is read or built (MAINNET TOTAL LOCKDOWN, crypto review H5): a ZK spend carries no signature, its
+ * signature script (journal hash, proof, redeem script) IS the authorization, so the transaction this returns is complete
+ * and any tool could broadcast it. The guard decides from the declared network (a Kaspa transaction does not commit to one).
  */
 export function buildR0Groth16Transaction(params: BuildR0Groth16TxParams): R0Groth16TxResult {
+  assertMainnetTransactionsDisabled("sign", [params?.networkId], "buildR0Groth16Transaction");
   const issues: ZkIssue[] = [];
   const bindingMode = params.scripts?.bindingMode ?? "proof-only";
   const bindingPolicy = params.scripts?.bindingPolicy;
@@ -1259,13 +1342,6 @@ export function buildR0Groth16Transaction(params: BuildR0Groth16TxParams): R0Gro
     empty.bindingMode = bindingMode;
     empty.consensusEnforced = false;
     return empty;
-  }
-  if (networkId === "mainnet") {
-    warnings.push({
-      code: "ZK_MAINNET_BUILD_UNGUARDED",
-      message:
-        "Transaction built for mainnet. This tool never broadcasts; mainnet broadcasting is governed by the send guards (BLOCKED_BY_POLICY)."
-    });
   }
   if (params.mathVerified === true) {
     warnings.push({
@@ -1543,10 +1619,88 @@ export function buildR0Groth16Transaction(params: BuildR0Groth16TxParams): R0Gro
   }
 }
 
+/** split_digest(R0_GROTH16_CONTROL_ROOT) as the R0 Groth16 verifier fragment pushes it: each 16-byte half, zero-padded. */
+const R0_CONTROL_ROOT_HALF_PUSHES: readonly string[] = [
+  R0_GROTH16_CONTROL_ROOT.slice(0, 32) + "00".repeat(16),
+  R0_GROTH16_CONTROL_ROOT.slice(32) + "00".repeat(16)
+];
+
 /**
- * Structural verification of RISC Zero Groth16 redeem and signature scripts by opcode parsing
- * (audit M-03 replaced the substring heuristics). It proves shape, not spendability: only the node
- * runs the precompile.
+ * The integer an op pushes as a script number: OP_0, OP_1NEGATE, OP_1..OP_16, or a data push of at most 8 bytes
+ * (little-endian magnitude, sign in the top bit of the last byte). Undefined for anything else.
+ */
+function scriptNumberOf(op: KaspaScriptOp | undefined): bigint | undefined {
+  if (!op) return undefined;
+  if (op.opcode === 0x4f) return -1n;
+  if (op.opcode >= 0x51 && op.opcode <= 0x60) return BigInt(op.opcode - 0x50);
+  if (op.data === undefined) return undefined;
+  const buf = Buffer.from(op.data, "hex");
+  if (buf.length === 0) return 0n;
+  if (buf.length > 8) return undefined;
+  let value = 0n;
+  for (let b = buf.length - 1; b >= 0; b--) value = (value << 8n) | BigInt(b === buf.length - 1 ? buf[b]! & 0x7f : buf[b]!);
+  return (buf[buf.length - 1]! & 0x80) !== 0 ? -value : value;
+}
+
+interface R0BoundLockParameters {
+  outputs: R0BoundOutputCheck[];
+  maxInputSompi: bigint;
+}
+
+/**
+ * Reads back the parameters of the output-bound part of a redeem script (the ops after the verifier fragment), in the
+ * layout r0BoundRedeemScript writes. A string says why it cannot: then nothing is claimed about the lock's outputs. The
+ * reading only proposes parameters; the decision is the byte comparison with the rebuilt script.
+ */
+function readR0BoundTail(ops: readonly KaspaScriptOp[]): R0BoundLockParameters | string {
+  let i = 0;
+  const next = () => ops[i++];
+  const opIs = (code: number) => {
+    const op = next();
+    return op !== undefined && op.opcode === code && op.data === undefined;
+  };
+  const num = () => scriptNumberOf(next());
+  if (!opIs(0x69)) return "the Groth16 verifier is not followed by OpVerify";
+  if (!opIs(0xb4)) return "no OpTxOutputCount check";
+  const count = num();
+  if (count !== 1n && count !== 2n) return "the output count is neither 1 (payout) nor 2 (payout and change)";
+  if (!opIs(0x9d)) return "the output count is not compared (OpNumEqualVerify)";
+  const outputs: R0BoundOutputCheck[] = [];
+  for (let k = 0n; k < count; k++) {
+    const what = k === 0n ? "payout (output 0)" : "change (output 1)";
+    if (num() !== k || !opIs(0xc3)) return `no OpTxOutputSpk check of the ${what}`;
+    const spk = next();
+    if (spk?.data === undefined || !opIs(0x88)) return `the ${what} script public key is not compared (OpEqualVerify)`;
+    if (num() !== k || !opIs(0xc2)) return `no OpTxOutputAmount check of the ${what}`;
+    const amount = num();
+    if (amount === undefined || !opIs(0x9d)) return `the ${what} amount is not compared (OpNumEqualVerify)`;
+    outputs.push({ spkIntrospectionHex: spk.data, amountSompi: amount });
+  }
+  if (!opIs(0xb3) || num() !== 1n || !opIs(0x9d)) return "no one-input rule (OpTxInputCount 1 OpNumEqualVerify)";
+  if (!opIs(0xb9) || !opIs(0xbe)) return "no input-amount limit (OpTxInputIndex OpTxInputAmount)";
+  const maxInputSompi = num();
+  if (maxInputSompi === undefined || !opIs(0xa1) || !opIs(0x69)) return "the input amount is not limited (OpLessThanOrEqual OpVerify)";
+  if (!opIs(0x51)) return "the script does not end with OpTrue";
+  if (i !== ops.length) return `${ops.length - i} opcode(s) follow OpTrue`;
+  return { outputs, maxInputSompi };
+}
+
+/**
+ * Verification of RISC Zero Groth16 redeem and signature scripts. It proves what the scripts ARE, not that they spend:
+ * only the node runs the precompile.
+ *  - Pinned verifier (crypto review H1): the verifying key handed to OpZkPrecompile (the push right before the Groth16
+ *    tag) must be R0_GROTH16_COMPRESSED_VERIFICATION_KEY_HEX, and the script must push the pinned control root (split
+ *    into its two 16-byte halves) and BN254 control id (risc0 v3.0.4). Any other key is refused even when the script
+ *    pushes the right image id: whoever knows its trapdoor forges receipts (ZK_VERIFYING_KEY_NOT_PINNED,
+ *    ZK_CONTROL_ROOT_NOT_PINNED, ZK_CONTROL_ID_NOT_PINNED).
+ *  - Byte-exact reconstruction (H2): the image id is read from the script's first push and, in output-bound mode, the
+ *    outputs and the input limit from what follows the verifier; the script is then rebuilt with the builders
+ *    buildR0Groth16Scripts uses (kaspa-wasm's verifier fragment, r0BoundRedeemScript) and compared byte for byte. Only
+ *    an identical script is `redeemScriptCanonical`; only a canonical output-bound lock over the pinned verifier, with
+ *    no issue, is `consensusEnforced` and gets its `enforces*` / `bound*` fields. Anything else is
+ *    ZK_REDEEM_SCRIPT_NOT_CANONICAL: nothing is inferred from the presence of opcodes.
+ *  - Expected outputs (payout, change) are compared with what a canonical output-bound lock binds; asked of any other
+ *    script they are ZK_EXPECTED_BINDING_NOT_ENFORCED, never satisfied vacuously.
  */
 export function verifyR0Groth16Scripts(
   params: R0Groth16VerifyScriptsParams
@@ -1573,70 +1727,119 @@ export function verifyR0Groth16Scripts(
       message: "Redeem script does not contain OpZkPrecompile (0xa6) preceded by Groth16 tag (0x20)"
     });
   }
+  const redeemPushes = ops.filter((op) => op.data !== undefined).map((op) => op.data as string);
+
+  // H1 · the pinned RISC Zero verifier: the key the precompile is handed, the control root and the BN254 control id.
+  const verifyingKeyHex = zkPrecompileIndex >= 2 ? ops[zkPrecompileIndex - 2]!.data : undefined;
+  const verifyingKeyPinned = verifyingKeyHex === R0_GROTH16_COMPRESSED_VERIFICATION_KEY_HEX;
+  const controlRootPinned = R0_CONTROL_ROOT_HALF_PUSHES.every((half) => redeemPushes.includes(half));
+  const controlIdPinned = redeemPushes.includes(R0_GROTH16_BN254_CONTROL_ID);
+  if (hasOpZkPrecompile && !redeem.error) {
+    if (verifyingKeyHex === undefined) {
+      issues.push({
+        code: "ZK_VERIFYING_KEY_NOT_FOUND",
+        message: "No verifying key is pushed right before the Groth16 tag: the key the precompile verifies against is not in the script"
+      });
+    } else if (!verifyingKeyPinned) {
+      issues.push({
+        code: "ZK_VERIFYING_KEY_NOT_PINNED",
+        message:
+          `The verifying key handed to OpZkPrecompile (${verifyingKeyHex.length / 2} bytes) is not the pinned RISC Zero Groth16 key ` +
+          "(R0_GROTH16_COMPRESSED_VERIFICATION_KEY_HEX, risc0 v3.0.4 as rusty-kaspa 2.1.0 embeds it): whoever knows the trapdoor of " +
+          "that key can forge a receipt for this image id. Do not fund this lock."
+      });
+    }
+    if (!controlRootPinned) {
+      issues.push({
+        code: "ZK_CONTROL_ROOT_NOT_PINNED",
+        message: `The redeem script does not push the pinned RISC Zero control root ${R0_GROTH16_CONTROL_ROOT} (as its two 16-byte halves): it verifies receipts of another recursion circuit set`
+      });
+    }
+    if (!controlIdPinned) {
+      issues.push({
+        code: "ZK_CONTROL_ID_NOT_PINNED",
+        message: `The redeem script does not push the pinned BN254 control id ${R0_GROTH16_BN254_CONTROL_ID}`
+      });
+    }
+  }
 
   const isBoundMode = zkPrecompileIndex !== -1 && zkPrecompileIndex < ops.length - 1;
   const bindingMode: ZkBindingMode = isBoundMode ? "proof-and-output-bound" : "proof-only";
-  let hasOutputIntrospection = false;
-  let enforcesOutputCount = false;
-  let enforcesPayoutSpk = false;
-  let enforcesPayoutAmount = false;
-  let enforcesUtxoBinding = false;
-  let enforcesSingleInput = false;
-  let enforcesInputAmountLimit = false;
-  let boundPayoutSpk: string | undefined;
-  let boundPayoutAmount: bigint | undefined;
+  if (isBoundMode && ops[zkPrecompileIndex + 1]!.opcode !== 0x69) {
+    issues.push({
+      code: "ZK_BINDING_MISSING_VERIFY",
+      message: "OpZkPrecompile in bound mode must be immediately followed by OpVerify (0x69)"
+    });
+  }
+  const enforcesUtxoBinding = isBoundMode && ops.some((op) => op.opcode === 0xba);
+  if (enforcesUtxoBinding) {
+    issues.push({
+      code: "ZK_UTXO_BINDING_UNSATISFIABLE",
+      message:
+        "The redeem script binds the spent outpoint (OpOutpointTxId): the funding transaction's id commits to this P2SH, so no spend can satisfy it."
+    });
+  }
 
-  if (isBoundMode) {
-    const afterZk = ops.slice(zkPrecompileIndex + 1);
-    const hasVerifyAfterZk = afterZk.length > 0 && afterZk[0]!.opcode === 0x69; // OpVerify
-    if (!hasVerifyAfterZk) {
-      issues.push({
-        code: "ZK_BINDING_MISSING_VERIFY",
-        message: "OpZkPrecompile in bound mode must be immediately followed by OpVerify (0x69)"
-      });
-    }
-
-    const outputCountIdx = ops.findIndex((op) => op.opcode === 0xb4);
-    if (outputCountIdx !== -1) enforcesOutputCount = true;
-
-    const outputSpkIdx = ops.findIndex((op) => op.opcode === 0xc3);
-    if (outputSpkIdx !== -1 && outputSpkIdx + 1 < ops.length && ops[outputSpkIdx + 1]!.data) {
-      enforcesPayoutSpk = true;
-      boundPayoutSpk = ops[outputSpkIdx + 1]!.data;
-    }
-
-    const outputAmountIdx = ops.findIndex((op) => op.opcode === 0xc2);
-    if (outputAmountIdx !== -1 && outputAmountIdx + 1 < ops.length && ops[outputAmountIdx + 1]!.data) {
-      enforcesPayoutAmount = true;
-      const dataHex = ops[outputAmountIdx + 1]!.data!;
-      const buf = Buffer.from(dataHex, "hex");
-      let val = 0n;
-      for (let b = buf.length - 1; b >= 0; b--) {
-        val = (val << 8n) | BigInt(b === buf.length - 1 ? buf[b]! & 0x7f : buf[b]!);
+  // H2 · byte-exact reconstruction with the builders buildR0Groth16Scripts uses.
+  let redeemScriptCanonical = false;
+  let scriptImageId: string | undefined;
+  let bound: R0BoundLockParameters | undefined;
+  let notCanonical: string | undefined;
+  const first = ops[0];
+  if (hasOpZkPrecompile && !redeem.error) {
+    if (first === undefined || first.opcode !== 0x20 || first.data?.length !== 64) {
+      notCanonical = "it does not start with the 32-byte image id push of the RISC Zero Groth16 verifier";
+    } else {
+      try {
+        const kaspa = loadManagedKaspaWasmSync();
+        const candidateImageId = first.data;
+        const fragment = r0Groth16VerifierFragment(kaspa, candidateImageId);
+        if (!redeemHex.startsWith(fragment)) {
+          notCanonical = "it is not the kaspa-wasm 2.1.0 RISC Zero Groth16 verifier for the image id it pushes";
+        } else if (redeemHex.length === fragment.length) {
+          redeemScriptCanonical = true;
+          scriptImageId = candidateImageId;
+        } else {
+          const tail = parseKaspaScript(redeemHex.slice(fragment.length));
+          const read = tail.error ?? readR0BoundTail(tail.ops);
+          if (typeof read === "string") {
+            notCanonical = `its output-bound part cannot be read back unambiguously (${read})`;
+          } else if (r0BoundRedeemScript(kaspa, candidateImageId, read.outputs, read.maxInputSompi) !== redeemHex) {
+            notCanonical = "its bytes differ from the output-bound lock HardKAS builds for the outputs and the input limit it carries";
+          } else {
+            redeemScriptCanonical = true;
+            scriptImageId = candidateImageId;
+            bound = read;
+          }
+        }
+      } catch (error: any) {
+        issues.push({
+          code: "ZK_SCRIPT_RECONSTRUCTION_FAILED",
+          message: `The redeem script could not be rebuilt with the pinned kaspa-wasm builder (${error instanceof Error ? error.message : String(error)}): nothing about it is claimed.`
+        });
       }
-      boundPayoutAmount = (buf[buf.length - 1]! & 0x80) !== 0 ? -val : val;
     }
+  }
+  if (notCanonical !== undefined) {
+    issues.push({
+      code: "ZK_REDEEM_SCRIPT_NOT_CANONICAL",
+      message:
+        `The redeem script is not byte-identical to the script HardKAS builds for the parameters it carries: ${notCanonical}. ` +
+        "consensusEnforced cannot be asserted, and nothing about its verifier, outputs or inputs is claimed."
+    });
+  }
 
-    const outpointTxIdIdx = ops.findIndex((op) => op.opcode === 0xba);
-    if (outpointTxIdIdx !== -1) {
-      enforcesUtxoBinding = true;
-      issues.push({
-        code: "ZK_UTXO_BINDING_UNSATISFIABLE",
-        message:
-          "The redeem script binds the spent outpoint (OpOutpointTxId): the funding transaction's id commits to this P2SH, so no spend can satisfy it."
-      });
-    }
-    // A payout SPK that is not the version-prefixed introspection encoding can never match a standard output.
-    if (boundPayoutSpk !== undefined && !/^0000/.test(boundPayoutSpk)) {
+  const payout = bound?.outputs[0];
+  const change = bound?.outputs[1];
+  const canonicalBound = bound !== undefined;
+  for (const [what, output] of [["payout", payout], ["change", change]] as const) {
+    // A bound SPK that is not the version-prefixed introspection encoding can never match a standard output.
+    if (output && !/^0000/.test(output.spkIntrospectionHex)) {
       issues.push({
         code: "ZK_BOUND_SPK_NOT_INTROSPECTION_ENCODED",
-        message: `The bound payout SPK '${boundPayoutSpk}' does not start with the u16 version OpTxOutputSpk pushes: no standard output matches it`
+        message: `The bound ${what} SPK '${output.spkIntrospectionHex}' does not start with the u16 version OpTxOutputSpk pushes: no standard output matches it`
       });
     }
-    enforcesSingleInput = ops.some((op) => op.opcode === 0xb3); // OpTxInputCount
-    enforcesInputAmountLimit = ops.some((op, i) => op.opcode === 0xbe && ops.slice(i + 1, i + 4).some((o) => o.opcode === 0xa1)); // OpTxInputAmount .. OpLessThanOrEqual
-
-    hasOutputIntrospection = enforcesOutputCount && enforcesPayoutSpk && enforcesPayoutAmount;
   }
 
   if (params.expectedBindingMode && params.expectedBindingMode !== bindingMode) {
@@ -1646,36 +1849,50 @@ export function verifyR0Groth16Scripts(
     });
   }
 
-  if (params.expectedPayoutAddress && boundPayoutSpk) {
+  const expectsPayoutAddress = typeof params.expectedPayoutAddress === "string" && params.expectedPayoutAddress !== "";
+  const expectsChangeAddress = typeof params.expectedChangeAddress === "string" && params.expectedChangeAddress !== "";
+  const expectsOutputs =
+    expectsPayoutAddress || expectsChangeAddress || params.expectedPayoutAmount !== undefined || params.expectedChangeAmount !== undefined;
+  if (expectsOutputs && !canonicalBound) {
+    issues.push({
+      code: "ZK_EXPECTED_BINDING_NOT_ENFORCED",
+      message:
+        "Expected outputs were given, but this redeem script is not an output-bound lock HardKAS can rebuild byte for byte: it enforces none of them."
+    });
+  }
+  const compareSpk = (what: "payout" | "change", address: string, boundSpk: string, code: string) => {
     try {
       const kaspa = loadManagedKaspaWasmSync();
-      const expectedAddr = new kaspa.Address(params.expectedPayoutAddress);
-      const expectedSpk = spkIntrospectionBytesHex(kaspa.payToAddressScript(expectedAddr));
+      const expectedSpk = spkIntrospectionBytesHex(kaspa.payToAddressScript(new kaspa.Address(address)));
       // The bound value must be what OpTxOutputSpk pushes: version (u16 BE) ++ script. A script-only value never matches.
-      if (boundPayoutSpk.toLowerCase() !== expectedSpk) {
+      if (boundSpk.toLowerCase() !== expectedSpk) {
         issues.push({
-          code: "ZK_BOUND_PAYOUT_SPK_MISMATCH",
-          message: `Script binds SPK '${boundPayoutSpk}' which is not the introspection encoding of '${params.expectedPayoutAddress}' (${expectedSpk}): no spend could match it`
+          code,
+          message: `Script binds ${what} SPK '${boundSpk}' which is not the introspection encoding of '${address}' (${expectedSpk})`
         });
       }
     } catch (e: any) {
-      issues.push({
-        code: "ZK_EXPECTED_ADDRESS_INVALID",
-        message: `Invalid expected payout address: ${e?.message ?? String(e)}`
-      });
+      issues.push({ code: "ZK_EXPECTED_ADDRESS_INVALID", message: `Invalid expected ${what} address: ${e?.message ?? String(e)}` });
     }
+  };
+  if (expectsPayoutAddress && payout) compareSpk("payout", params.expectedPayoutAddress!, payout.spkIntrospectionHex, "ZK_BOUND_PAYOUT_SPK_MISMATCH");
+  if (params.expectedPayoutAmount !== undefined && payout && payout.amountSompi !== params.expectedPayoutAmount) {
+    issues.push({
+      code: "ZK_BOUND_PAYOUT_AMOUNT_MISMATCH",
+      message: `Script binds payout amount ${payout.amountSompi} sompi which does not match expected ${params.expectedPayoutAmount} sompi`
+    });
+  }
+  if (canonicalBound && (expectsChangeAddress || params.expectedChangeAmount !== undefined) && !change) {
+    issues.push({ code: "ZK_BOUND_CHANGE_MISSING", message: "A change output was expected, but the lock binds a single output (no change)" });
+  }
+  if (expectsChangeAddress && change) compareSpk("change", params.expectedChangeAddress!, change.spkIntrospectionHex, "ZK_BOUND_CHANGE_SPK_MISMATCH");
+  if (params.expectedChangeAmount !== undefined && change && change.amountSompi !== params.expectedChangeAmount) {
+    issues.push({
+      code: "ZK_BOUND_CHANGE_AMOUNT_MISMATCH",
+      message: `Script binds change amount ${change.amountSompi} sompi which does not match expected ${params.expectedChangeAmount} sompi`
+    });
   }
 
-  if (params.expectedPayoutAmount !== undefined && boundPayoutAmount !== undefined) {
-    if (boundPayoutAmount !== params.expectedPayoutAmount) {
-      issues.push({
-        code: "ZK_BOUND_PAYOUT_AMOUNT_MISMATCH",
-        message: `Script binds payout amount ${boundPayoutAmount} sompi which does not match expected ${params.expectedPayoutAmount} sompi`
-      });
-    }
-  }
-
-  const redeemPushes = ops.filter((op) => op.data !== undefined).map((op) => op.data as string);
   const sigPushes = sig.ops.filter((op) => op.data !== undefined).map((op) => op.data as string);
   const largestRedeemPushBytes = redeemPushes.reduce((max, d) => Math.max(max, d.length / 2), 0);
   const proofPushFound = sigPushes.some((d) => d.length === 256);
@@ -1703,11 +1920,14 @@ export function verifyR0Groth16Scripts(
   let imageIdFound: boolean | undefined;
   if (params.imageId) {
     const targetImageId = params.imageId.trim().toLowerCase();
-    imageIdFound = redeemPushes.some((d) => d === targetImageId);
+    imageIdFound = scriptImageId !== undefined ? scriptImageId === targetImageId : redeemPushes.some((d) => d === targetImageId);
     if (!imageIdFound) {
       issues.push({
         code: "ZK_IMAGE_ID_MISMATCH",
-        message: `Image ID '${targetImageId}' is not pushed as a 32-byte item in the redeem script`
+        message:
+          scriptImageId !== undefined
+            ? `The redeem script commits to image id '${scriptImageId}', not '${targetImageId}'`
+            : `Image ID '${targetImageId}' is not pushed as a 32-byte item in the redeem script`
       });
     }
   }
@@ -1737,17 +1957,26 @@ export function verifyR0Groth16Scripts(
     largestRedeemPushBytes,
     ...(imageIdFound !== undefined ? { imageIdFound } : {}),
     ...(journalHashFound !== undefined ? { journalHashFound } : {}),
+    redeemScriptCanonical,
+    ...(scriptImageId !== undefined ? { scriptImageId } : {}),
+    verifyingKeyPinned,
+    controlRootPinned,
+    controlIdPinned,
     bindingMode,
-    consensusEnforced: isBoundMode && hasOutputIntrospection && enforcesSingleInput && enforcesInputAmountLimit && issues.length === 0,
-    enforcesSingleInput,
-    enforcesInputAmountLimit,
-    hasOutputIntrospection,
-    enforcesOutputCount,
-    enforcesPayoutSpk,
-    enforcesPayoutAmount,
+    consensusEnforced:
+      canonicalBound && verifyingKeyPinned && controlRootPinned && controlIdPinned && issues.length === 0,
+    enforcesSingleInput: canonicalBound,
+    enforcesInputAmountLimit: canonicalBound,
+    hasOutputIntrospection: canonicalBound,
+    enforcesOutputCount: canonicalBound,
+    enforcesPayoutSpk: canonicalBound,
+    enforcesPayoutAmount: canonicalBound,
+    enforcesChangeSpk: change !== undefined,
+    enforcesChangeAmount: change !== undefined,
     enforcesUtxoBinding,
-    ...(boundPayoutSpk ? { boundPayoutSpk } : {}),
-    ...(boundPayoutAmount !== undefined ? { boundPayoutAmount } : {}),
+    ...(bound ? { boundOutputCount: bound.outputs.length, boundMaxInputSompi: bound.maxInputSompi } : {}),
+    ...(payout ? { boundPayoutSpk: payout.spkIntrospectionHex, boundPayoutAmount: payout.amountSompi } : {}),
+    ...(change ? { boundChangeSpk: change.spkIntrospectionHex, boundChangeAmount: change.amountSompi } : {}),
     issues
   };
 }

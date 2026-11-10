@@ -1,5 +1,7 @@
 import { Hono } from "hono";
 import { Hardkas } from "@hardkas/sdk";
+import { declaredNetworkIdOf, isMainnetNetworkId, isSimnetNetworkId, networkTypeOf } from "@hardkas/core";
+import { resolveNodeEndpoint } from "@hardkas/config";
 import { getQueryBackend } from "../db.js";
 import { submitOutcomeOf } from "@hardkas/artifacts";
 import { sendGuardFor, idempotencyKeyOf, NOT_SENT_CODES } from "./send-guard.js";
@@ -7,17 +9,58 @@ import { sendGuardFor, idempotencyKeyOf, NOT_SENT_CODES } from "./send-guard.js"
 type DevEnv = { Variables: { sdk: Hardkas } };
 export const dappTxRoutes = new Hono<DevEnv>();
 
+/** P35 · the network a name is and the one its config entry declares (an alias such as `prod` decides by the latter too). */
+function namesOf(network: string, config: unknown): string[] {
+  return [network, declaredNetworkIdOf(config, network) ?? network];
+}
+
+/** P35 · mainnet by any spelling (`mainnet`, `mainnet-<n>`, `kaspa`, `kaspa-mainnet`, any case) or by its config entry. */
+export function isMainnetDevServerNetwork(network: string, config?: unknown): boolean {
+  return namesOf(network, config).some(isMainnetNetworkId);
+}
+
+const LOOPBACK_HOSTS = new Set(["127.0.0.1", "localhost", "[::1]", "::1"]);
+
+/** P38 · the node a simnet name reaches is on this machine: its endpoint (declared, else the canonical localnet) is loopback. */
+function simnetEndpointIsLocal(network: string, config: unknown): boolean {
+  try {
+    const { url } = resolveNodeEndpoint({ config: (config ?? {}) as any, networkId: network });
+    return LOOPBACK_HOSTS.has(new URL(url).hostname.toLowerCase());
+  } catch {
+    return false;
+  }
+}
+
 /**
- * TX-06 · whether THIS server signs with its own accounts for an HTTP client. The server's operator decides: the
- * process environment `HARDKAS_DEV_SERVER_AUTOSIGN=1` opens it on any non-mainnet network; without it, only the local
- * worlds (the simulator, simnet) auto-sign. The client's `allowDevAutoSign: true` is only its explicit request: it is
- * required, and it is never enough by itself (it used to be the whole decision, taken by whoever sends the request).
- * Mainnet never (MAINNET_SIGNING_DISABLED policy, and refused here first).
+ * TX-06 / ESCALÓN 4 · P38 · whether THIS server signs with its own accounts for an HTTP client (POST /send with
+ * `allowDevAutoSign`, POST /sign). Disabled by default: only the server's operator opens it, with
+ * `HARDKAS_DEV_SERVER_AUTOSIGN=1` in the server's environment, and then only on the local worlds: the simulated ledger
+ * (`simulated`, nothing reaches a node) and a local simnet (the name and the network its config entry declares are
+ * simnet, and its node endpoint is loopback). Any other network is refused, TN10 and devnet included, and mainnet in any
+ * spelling or alias always (P35). The client's `allowDevAutoSign: true` is only its explicit request on /send: required,
+ * never enough by itself.
  */
-export function serverAllowsDevAutoSign(network: string, env: NodeJS.ProcessEnv = process.env): boolean {
-  if (network === "mainnet") return false;
-  if (env.HARDKAS_DEV_SERVER_AUTOSIGN === "1") return true;
-  return network === "simulated" || network === "simnet" || network.startsWith("simnet-");
+export function serverAllowsDevAutoSign(network: string, env: NodeJS.ProcessEnv = process.env, config?: unknown): boolean {
+  if (env.HARDKAS_DEV_SERVER_AUTOSIGN !== "1") return false;
+  const name = String(network ?? "");
+  if (isMainnetDevServerNetwork(name, config)) return false;
+  const [own, declared] = namesOf(name, config) as [string, string];
+  if (own === "simulated" && declared === "simulated") return true;
+  // the declared network must be simnet; the name itself may be an alias, but never another network type
+  const ownType = networkTypeOf(own);
+  if (!isSimnetNetworkId(declared) || (ownType !== undefined && ownType !== "simnet")) return false;
+  return simnetEndpointIsLocal(name, config);
+}
+
+/** The refusal of a server signature for a client, with the network named and nothing planned, signed or sent. */
+function autoSignRefusal(network: string): { code: string; message: string } {
+  return {
+    code: "DEV_AUTOSIGN_NOT_ALLOWED",
+    message:
+      `This dev-server does not sign for clients on "${network}". Server-side signing for HTTP clients is off by default; ` +
+      "the server's operator enables it with HARDKAS_DEV_SERVER_AUTOSIGN=1 in the server's environment, and then only on " +
+      "the simulated ledger or a local simnet (never testnet, devnet or mainnet). Nothing was planned, signed or sent."
+  };
 }
 
 // Helper to create the standard stable JSON envelope
@@ -94,12 +137,18 @@ dappTxRoutes.post("/sign", async (c) => {
       });
     }
 
-    if (sdk.network === "mainnet") {
+    // P35: mainnet by any spelling or alias, not only the literal "mainnet"
+    if (isMainnetDevServerNetwork(String(sdk.network), sdk.sdkConfig)) {
       return envelope(c, false, null, {
         code: "HTTP_SIGNING_NOT_ALLOWED",
         message:
           "Signing transactions on mainnet via HTTP Dev Server is strictly prohibited for security reasons."
       });
+    }
+    // ESCALÓN 4 · P38: this route signs with the server's own accounts for an HTTP client — the same server decision as
+    // the auto-signed send (off by default; HARDKAS_DEV_SERVER_AUTOSIGN=1 on the simulated ledger or a local simnet only)
+    if (!serverAllowsDevAutoSign(String(sdk.network), process.env, sdk.sdkConfig)) {
+      return envelope(c, false, null, autoSignRefusal(String(sdk.network)));
     }
 
     let planArtifact = body.plan;
@@ -110,6 +159,22 @@ dappTxRoutes.post("/sign", async (c) => {
         (a) => a.artifactId === body.planId || a.payload?.id === body.planId
       )?.payload;
       if (!planArtifact) throw new Error("Plan not found");
+    }
+
+    // P38: the plan a client hands in is signed only when it is itself for a local world — every network it names (its
+    // own and its execution's) passes the same decision, mainnet in any spelling included (P35)
+    const planNetworks = [planArtifact?.networkId, planArtifact?.execution?.network].filter(
+      (n: unknown): n is string => typeof n === "string" && n.trim() !== ""
+    );
+    if (planNetworks.some((n) => isMainnetDevServerNetwork(n, sdk.sdkConfig))) {
+      return envelope(c, false, null, {
+        code: "HTTP_SIGNING_NOT_ALLOWED",
+        message: "Signing transactions on mainnet via HTTP Dev Server is strictly prohibited for security reasons."
+      });
+    }
+    const foreign = planNetworks.find((n) => !serverAllowsDevAutoSign(n, process.env, sdk.sdkConfig));
+    if (foreign !== undefined) {
+      return envelope(c, false, null, autoSignRefusal(foreign));
     }
 
     const signed = await sdk.tx.sign(planArtifact, body.account);
@@ -166,21 +231,18 @@ dappTxRoutes.post("/send", async (c) => {
             "Explicit allowDevAutoSign: true is required for dev-server auto-signing"
         });
       }
-      if (sdk.network === "mainnet") {
+      // P35: mainnet by any spelling or alias, not only the literal "mainnet"
+      if (isMainnetDevServerNetwork(network, sdk.sdkConfig)) {
         guard.abandon(pending);
         return envelope(c, false, null, {
           code: "DEV_AUTOSIGN_NOT_ALLOWED",
           message: "Auto-signing on mainnet is strictly prohibited"
         });
       }
-      if (!serverAllowsDevAutoSign(String(sdk.network))) {
+      // ESCALÓN 4 · P38: off by default; the server's operator opens it on the simulated ledger or a local simnet only
+      if (!serverAllowsDevAutoSign(network, process.env, sdk.sdkConfig)) {
         guard.abandon(pending);
-        return envelope(c, false, null, {
-          code: "DEV_AUTOSIGN_NOT_ALLOWED",
-          message:
-            `This dev-server does not sign for clients on "${String(sdk.network)}": auto-signing is the server operator's ` +
-            "decision (HARDKAS_DEV_SERVER_AUTOSIGN=1 in the server's environment), not the request's. Nothing was planned, signed or sent."
-        });
+        return envelope(c, false, null, autoSignRefusal(network));
       }
       // the amount field is in sompi, and tx.plan reads a string as KAS (L1-11): it goes as a bigint
       if (!/^\d+$/.test(String(body.amountSompi))) {

@@ -44,7 +44,8 @@ HardKAS uses strict typed errors for execution guardrails. This page documents t
 
 ### `MAINNET_SIGNING_DISABLED`, `MAINNET_BROADCAST_DISABLED`
 **Cause:** A signature (`tx sign`, `sdk.tx.sign`, an external signer, the accounts and PSKT signers, offline signing included) or a broadcast (`tx send`, `sdk.tx.send`, the toolkit wallet) involving mainnet in any of its identities: the artifact's network, its execution's, the instance's or what its config entry declares. Raised before any connection, any signer call and any record. The operation's own guard names the refusal: a signature is `MAINNET_SIGNING_DISABLED` and a broadcast `MAINNET_BROADCAST_DISABLED`; anything else that would reach a mainnet node is `MAINNET_CONNECTION_DISABLED` (above). On L2, an Igra mainnet write is `L2_MAINNET_WRITE_BLOCKED`, whatever `allowMainnet` / `--allow-mainnet` say.
-**Solution:** None in this release. HardKAS produces no signed mainnet transaction.
+A Toccata ZK spend is refused as a signature too: `buildR0Groth16Transaction` and `buildR0Groth16Plan` (`sdk.zk.toccata.buildTransaction` / `buildPlan`) with a mainnet `networkId` (any spelling) throw `MAINNET_SIGNING_DISABLED` before the scripts or the UTXO are read. A ZK spend carries no signature: its signature script (journal hash, proof, redeem script) is the authorization, so the transaction those functions build is complete and any tool could broadcast it. Until the crypto review's H5 they built it and only warned (`ZK_MAINNET_BUILD_UNGUARDED`, removed).
+**Solution:** None in this release. HardKAS produces no signed mainnet transaction, and no complete mainnet ZK spend.
 
 ### `NODE_NOT_SYNCED`
 **Cause:** The node proved its identity but does not say it is synced. Operations that need the current chain state (`tx plan|send|wait`, `silver deploy|spend|covenant genesis|transition`, `escrow rescue-v1`) refuse it, the managed localnet included. Since RC1 the SDK's `tx.send` (and `covenants.send`, which is `tx.send`) refuses it too, before anything is sent or recorded. A well-identified node is not a synced node.
@@ -85,6 +86,18 @@ HardKAS uses strict typed errors for execution guardrails. This page documents t
 ### `ZK_ENGINE_UNAVAILABLE`
 **Cause:** A Groth16 pairing check needs the optional peer dependency `snarkjs` (GPL-3.0), which is not installed next to `@hardkas/sdk` / `@hardkas/cli`. The check is never reported as verified.
 **Solution:** `npm install snarkjs@0.7.6` in the project that uses the SDK or the CLI, if you accept its license.
+
+### `ZK_VERIFYING_KEY_NOT_PINNED`, `ZK_VERIFYING_KEY_NOT_FOUND`, `ZK_CONTROL_ROOT_NOT_PINNED`, `ZK_CONTROL_ID_NOT_PINNED`
+**Cause:** `hardkas zk toccata verify-scripts` / `verifyR0Groth16Scripts` was given a RISC Zero Groth16 lock whose verifier is not the pinned one: the verifying key handed to `OpZkPrecompile` (the push right before the Groth16 tag `0x20`) is not `R0_GROTH16_COMPRESSED_VERIFICATION_KEY_HEX`, or no key is pushed there, or the script does not push the pinned control root (`R0_GROTH16_CONTROL_ROOT`, as its two 16-byte halves) or BN254 control id (`R0_GROTH16_BN254_CONTROL_ID`, risc0 v3.0.4). Whoever knows the trapdoor of another key can forge a receipt for the lock's image id, so pushing the right image id is not enough. The result has `ok: false` (CLI exit 1) and `verifyingKeyPinned` / `controlRootPinned` / `controlIdPinned` say which part differs.
+**Solution:** Do not fund such a lock. Build locks with `hardkas zk toccata build-scripts` (kaspa-wasm 2.1.0 `ZkScriptBuilder`).
+
+### `ZK_REDEEM_SCRIPT_NOT_CANONICAL`, `ZK_EXPECTED_BINDING_NOT_ENFORCED`
+**Cause:** `verify-scripts` rebuilds the redeem script from the parameters it carries (the image id of its first push; in output-bound mode the payout, the change and the input limit) with the builders `build-scripts` uses, and compares the bytes. `ZK_REDEEM_SCRIPT_NOT_CANONICAL`: they differ (the message says where the reading stopped), so `consensusEnforced` is `false` and no `enforces*` / `bound*` field is set: nothing is inferred from the presence of introspection opcodes (before the crypto review's H2 a count pushed and dropped, or a change never compared, passed). `ZK_EXPECTED_BINDING_NOT_ENFORCED`: expected outputs (`--expected-payout-*`, `--expected-change-*`) were given for a script that is not such an output-bound lock, for example a proof-only lock, which binds no output.
+**Solution:** Use a lock built by `build-scripts`, or review the foreign script by hand: HardKAS makes no claim about it.
+
+### `ZK_BOUND_PAYOUT_SPK_MISMATCH`, `ZK_BOUND_PAYOUT_AMOUNT_MISMATCH`, `ZK_BOUND_CHANGE_SPK_MISMATCH`, `ZK_BOUND_CHANGE_AMOUNT_MISMATCH`, `ZK_BOUND_CHANGE_MISSING`
+**Cause:** A canonical output-bound lock binds another payout or change (output 1) than the one expected (`--expected-payout-address|amount`, `--expected-change-address|amount`; SDK `expectedPayout*` / `expectedChange*`), or binds no change when one was expected. The bound values are in `boundPayoutSpk`, `boundPayoutAmount`, `boundChangeSpk`, `boundChangeAmount` and `boundMaxInputSompi`.
+**Solution:** Check the lock's outputs before funding it; the redeem script, not the expectation, decides where the funds can go.
 
 ### `ARTIFACT_HASH_MISMATCH`
 **Cause:** The artifact's content no longer hashes to the `contentHash` it carries: it was edited after it was sealed. `tx sign`, `tx send` and `artifact verify` (CLI), and `sdk.tx.sign`, `sdk.tx.send` and `sdk.artifacts.verify(..., { throwOnInvalid: true })` (SDK) refuse it with this code before anything is signed, sent or contacted.

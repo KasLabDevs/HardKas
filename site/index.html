@@ -1244,19 +1244,20 @@ Replay Verification:
 <section id="dag">
 <h2>DAG simulation</h2>
 <p>
-            The simulator keeps a small local DAG built with an approximate GHOSTDAG
-            model (K = 18 by default). It is research/dev tooling to see how the simulated sink
+            The simulated ledger (<code>network: "simulated"</code>) keeps a small synthetic DAG in
+            <code>.hardkas/localnet.json</code>. No GHOSTDAG runs on this path: a simulated reorg adds a
+            side block and moves the simulated sink to it. It is research/dev tooling to see how the simulated sink
             moves; it is not rusty-kaspa consensus and proves nothing about the real network.
           </p>
 <div class="command-grid">
 <div class="command">
-<code>hardkas dag status</code><span>Show the simulator DAG: sink, block count, selected path, accepted and displaced transactions.</span>
+<code>hardkas dag status</code><span>Show the simulated ledger's DAG: sink, block count, selected path, accepted and displaced transactions.</span>
 </div>
 <div class="command">
 <code>hardkas dag simulate-reorg --depth 1</code><span>Add one synthetic side block <code>--depth</code> blocks back on the selected path and move the simulated sink to it.</span>
 </div>
 </div>
-<p>The <code>query dag</code> views (conflicts, sink-path, displaced, history) are not listed: they currently read a state file that nothing writes, so they return nothing. They come back once that is fixed.</p>
+<p>The <code>query dag</code> views (conflicts, sink-path, displaced, history) are not listed: they currently read a state file that nothing writes, so each one fails with <code>DAG_DATA_UNAVAILABLE</code> instead of answering without data. They come back once that is fixed.</p>
 </section>
 <section id="query-store">
 <h2>Query store</h2>
@@ -1332,7 +1333,7 @@ Replay Verification:
 </div>
 <div class="box">
 <h4><code>hardkas verify</code></h4>
-<p>Verify artifact integrity (hashes, schema) and lineage continuity across the workspace. Cross-subsystem checks live in <code>hardkas verify-semantics</code> (alpha).</p>
+<p>Verify artifact integrity (hashes, schema) and lineage continuity across the workspace. There are no cross-subsystem semantic checks: <code>hardkas verify-semantics</code> refuses (no subsystem records the hashes it would compare).</p>
 </div>
 </div>
 <div class="warning">
@@ -1438,7 +1439,7 @@ hardkas chaos replay --run-seed 42">
 </tr>
 <tr>
 <td>3</td>
-<td>Unsafe configuration refused.</td>
+<td>Unsafe configuration refused (no longer produced: there is no current-directory mode).</td>
 </tr>
 <tr>
 <td>4</td>
@@ -1447,8 +1448,9 @@ hardkas chaos replay --run-seed 42">
 </tbody>
 </table>
 <div class="note">
-<strong>Isolation.</strong> Chaos runs in an isolated workspace by default and
-            refuses unsafe current-directory destruction without explicit opt-in.
+<strong>Isolation.</strong> Every campaign runs in a new directory of its own under the
+            OS temp dir, never in the current directory; it deletes only the workspace it created
+            there and keeps its reports next to it. The current-directory flags have no effect.
           </div>
 </section>
 <section id="l1l2">

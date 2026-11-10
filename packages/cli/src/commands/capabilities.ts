@@ -77,8 +77,6 @@ const BUILD_GROUPS = (caps: HardkasCapabilities): Array<[string, Array<[Capabili
     "Simulation",
     [
       ["localnetSimulation", "Localnet", "Simulated UTXO state + transactions"],
-      ["ghostdagSimulation", "GHOSTDAG", "Approximate engine (research; no equivalence with rusty-kaspa claimed)"],
-      ["dagConflictResolution", "DAG conflicts", "Double-spend conflict analysis on the light model (NOT GHOSTDAG)"],
       ["massProfiler", "Mass profiler", "@hardkas/simulator profiles + snapshots (library; `test --mass-*` has no effect)"],
       ["simulationScenarios", "Scenarios", "Linear, wide, fork, diamond"]
     ]

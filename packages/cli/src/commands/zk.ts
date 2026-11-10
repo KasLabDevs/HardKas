@@ -1,4 +1,5 @@
 import { Command } from "commander";
+import { assertMainnetTransactionsDisabled } from "@hardkas/core";
 import { getOutput } from "../output.js";
 import { UI } from "../ui.js";
 import { HardkasCliError, HardkasExitCode } from "../cli-errors.js";
@@ -191,7 +192,7 @@ export function registerZkCommands(program: Command) {
     .option("--change-address <address>", "Optional consensus-bound change address")
     .option("--change-amount <sompi>", "Optional consensus-bound change amount in sompi")
     .option("--max-fee <sompi>", "proof-and-output-bound: the most the lock may pay as fee; a UTXO above the bound outputs plus this stays locked (default 50000000)")
-    .option("--address-network <networks>", "Also return P2SH addresses for these public networks (comma-separated: testnet-10,mainnet); proof-only needs --ack-image-id-only-lock; never for a public test vector")
+    .option("--address-network <networks>", "Also return the P2SH address for testnet-10; proof-only needs --ack-image-id-only-lock; never for a public test vector. mainnet (any spelling) is refused while mainnet is locked down (MAINNET_SIGNING_DISABLED): nothing is built")
     .option("--ack-image-id-only-lock", "Acknowledge that a proof-only lock binds only the image id (anyone with a valid receipt can spend, replay or front-run)", false)
     .option("--json", "Output as JSON", false)
     .action(
@@ -209,8 +210,9 @@ export function registerZkCommands(program: Command) {
         ackImageIdOnlyLock?: boolean;
         json?: boolean;
       }) => {
-        const receiptHex = await readReceiptOption(options.receipt);
+        // ESCALÓN 4 · P37: the networks are decided first (a mainnet one is refused before the receipt is read)
         const addressNetworks = parseAddressNetworks(options.addressNetwork);
+        const receiptHex = await readReceiptOption(options.receipt);
         const mode = options.mode ?? "proof-only";
         if (mode !== "proof-only" && mode !== "proof-and-output-bound") {
           throw new HardkasCliError("ZK_BINDING_MODE_INVALID", `--mode must be 'proof-only' or 'proof-and-output-bound', got '${mode}'`, { exitCode: 1 });
@@ -289,7 +291,9 @@ export function registerZkCommands(program: Command) {
 
   toccata
     .command("verify-scripts")
-    .description("Verify structural integrity and inspect consensus binding rules in Toccata P2SH scripts")
+    .description(
+      "Verify Toccata P2SH scripts: the pinned RISC Zero verifying key, control root and control id, and a redeem script byte-identical to the one HardKAS builds for the parameters it carries; consensusEnforced only for such an output-bound lock (payout, change, one input, input limit), never from the presence of opcodes"
+    )
     .requiredOption("--redeem-script <hex>", "Redeem script hex")
     .requiredOption("--sig-script <hex>", "Signature script hex")
     .option("--image-id <hex>", "Expected 32-byte hex Image ID")
@@ -297,6 +301,8 @@ export function registerZkCommands(program: Command) {
     .option("--expected-mode <mode>", "Expected binding mode ('proof-only' or 'proof-and-output-bound')")
     .option("--expected-payout-address <address>", "Expected consensus-bound payout address")
     .option("--expected-payout-amount <sompi>", "Expected consensus-bound payout amount in sompi")
+    .option("--expected-change-address <address>", "Expected consensus-bound change address (output 1)")
+    .option("--expected-change-amount <sompi>", "Expected consensus-bound change amount in sompi")
     .option("--json", "Output as JSON", false)
     .action(async (options: {
       redeemScript: string;
@@ -306,6 +312,8 @@ export function registerZkCommands(program: Command) {
       expectedMode?: "proof-only" | "proof-and-output-bound";
       expectedPayoutAddress?: string;
       expectedPayoutAmount?: string;
+      expectedChangeAddress?: string;
+      expectedChangeAmount?: string;
       json?: boolean;
     }) => {
       const { verifyR0Groth16Scripts } = await import("@hardkas/sdk");
@@ -316,7 +324,11 @@ export function registerZkCommands(program: Command) {
         ...(options.journalHash ? { journalHash: options.journalHash } : {}),
         ...(options.expectedMode ? { expectedBindingMode: options.expectedMode } : {}),
         ...(options.expectedPayoutAddress ? { expectedPayoutAddress: options.expectedPayoutAddress } : {}),
-        ...(options.expectedPayoutAmount ? { expectedPayoutAmount: BigInt(options.expectedPayoutAmount) } : {})
+        ...(options.expectedPayoutAmount ? { expectedPayoutAmount: BigInt(options.expectedPayoutAmount) } : {}),
+        ...(options.expectedChangeAddress ? { expectedChangeAddress: options.expectedChangeAddress } : {}),
+        ...(options.expectedChangeAmount
+          ? { expectedChangeAmount: parseSompiOption("--expected-change-amount", options.expectedChangeAmount) }
+          : {})
       });
       printResult(result, options.json);
       if (!result.ok) {
@@ -341,14 +353,21 @@ function parseSompiOption(name: string, raw: string): bigint {
 }
 
 
-function parseAddressNetworks(raw: string | undefined): Array<"testnet-10" | "mainnet"> {
+/**
+ * ESCALÓN 4 · P37 · MAINNET TOTAL LOCKDOWN: a lock's signature script is the authorization of its spend, so a mainnet
+ * address network, in any spelling (`mainnet`, `mainnet-<n>`, `kaspa`, `kaspa-mainnet`, any case), is refused with
+ * MAINNET_SIGNING_DISABLED before anything is read or built (the SDK refuses it too). Then only testnet-10 is accepted.
+ */
+function parseAddressNetworks(raw: string | undefined): Array<"testnet-10"> {
   if (raw === undefined) return [];
-  const out: Array<"testnet-10" | "mainnet"> = [];
-  for (const part of raw.split(",").map((s) => s.trim()).filter(Boolean)) {
-    if (part !== "testnet-10" && part !== "mainnet") {
+  const parts = raw.split(",").map((s) => s.trim()).filter(Boolean);
+  assertMainnetTransactionsDisabled("sign", parts, "zk toccata build-scripts --address-network: no mainnet lock is built");
+  const out: Array<"testnet-10"> = [];
+  for (const part of parts) {
+    if (part !== "testnet-10") {
       throw new HardkasCliError(
         "ZK_ADDRESS_NETWORK_INVALID",
-        `--address-network accepts testnet-10 and mainnet (comma-separated), got '${part}'. Nothing was done.`,
+        `--address-network accepts testnet-10 (mainnet is locked down), got '${part}'. Nothing was done.`,
         { exitCode: HardkasExitCode.USAGE_ERROR }
       );
     }

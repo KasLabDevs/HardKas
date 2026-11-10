@@ -59,4 +59,6 @@ All of it is experimental, makes no on-chain claim, and keeps mainnet broadcast 
 
    Neither model binds the spent outpoint: a redeem script cannot name it, because the funding transaction's id commits to the P2SH itself (HardKAS refuses such a binding). The journal is supplied by the unlocking script and is not checked on-chain; the `HKZ1` journal layout of `createZkOutputBindingJournal` is an off-chain convention that only the guest program can enforce.
 
+   `verify-scripts` accepts a lock only over the pinned RISC Zero verifying key, control root and control id, rebuilds its redeem script from the parameters it carries with the same builders and compares the bytes: `consensusEnforced: true` only for an identical output-bound lock, never from the presence of opcodes. A ZK spend needs no signature, so HardKAS never builds one for mainnet (`MAINNET_SIGNING_DISABLED`).
+
 See the step-by-step walkthrough: **[ZK L1 Verification & Covenant Scripts Guide](../../guides/zk-l1-verification-and-settlement.md)** and the boundaries in `docs/status/limitations.md` §6.

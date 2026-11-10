@@ -389,13 +389,15 @@ describe("SECRET-SURFACE-2 · AFTER", () => {
       expect(r.stdout).toMatch(/nothing is saved/);
     });
 
-    it("the way out the refusal names is real and recoverable: accounts real generate --password-env (mainnet) writes an encrypted keystore v2 the CLI opens again with the password, holding the key of that address; the key is never printed; the workspace passes the audit", async () => {
+    // ESCALÓN 4 · P36: `accounts real generate --network mainnet` is refused while mainnet is locked down
+    // (accounts-real-mainnet-p36.test.ts), so the way out is proven on testnet-10, the highest network open.
+    it("the way out the refusal names is real and recoverable: accounts real generate --password-env (testnet-10) writes an encrypted keystore v2 the CLI opens again with the password, holding the key of that address; the key is never printed; the workspace passes the audit", async () => {
       const PW = "correct horse battery staple";
-      const gen = run(["accounts", "real", "generate", "--name", "vault", "--network", "mainnet", "--password-env", "HK_SS2_PW", "--json"], ws, { HK_SS2_PW: PW });
+      const gen = run(["accounts", "real", "generate", "--name", "vault", "--network", "testnet-10", "--password-env", "HK_SS2_PW", "--json"], ws, { HK_SS2_PW: PW });
       expect(gen.status, gen.all).toBe(0);
       const [entry] = JSON.parse(gen.stdout.trim());
-      expect(entry).toMatchObject({ name: "vault", network: "mainnet", storage: "encrypted-keystore", unsafePlaintext: false, keystore: ".hardkas/keystore/vault.json" });
-      expect(entry.address).toMatch(/^kaspa:q/);
+      expect(entry).toMatchObject({ name: "vault", network: "testnet-10", storage: "encrypted-keystore", unsafePlaintext: false, keystore: ".hardkas/keystore/vault.json" });
+      expect(entry.address).toMatch(/^kaspatest:q/);
 
       // the store holds a reference to the keystore, no key
       const store = fs.readFileSync(path.join(ws, ".hardkas", "accounts.real.json"), "utf8");
@@ -408,7 +410,7 @@ describe("SECRET-SURFACE-2 · AFTER", () => {
         version: "2.1.0",
         kdf: { algorithm: "argon2id" },
         cipher: { algorithm: "aes-256-gcm" },
-        metadata: { address: entry.address, network: "mainnet" }
+        metadata: { address: entry.address, network: "testnet-10" }
       });
 
       // the registered CLI path that opens it again: the right password verifies, a wrong one is refused
@@ -425,7 +427,7 @@ describe("SECRET-SURFACE-2 · AFTER", () => {
       expect(unlocked.payload?.address).toBe(entry.address);
       expect(unlocked.payload?.privateKey).toMatch(/^[0-9a-f]{64}$/i);
       const sdk = await loadKaspaWasm();
-      const derived = new sdk.PrivateKey(unlocked.payload!.privateKey).toKeypair().toAddress(getNetworkPrefix("mainnet")).toString();
+      const derived = new sdk.PrivateKey(unlocked.payload!.privateKey).toKeypair().toAddress(getNetworkPrefix("testnet-10")).toString();
       expect(derived, "the decrypted key derives the stored address").toBe(entry.address);
 
       // never printed (AUD-21), and the encrypted account is what the auditor accepts (D2)

@@ -116,7 +116,8 @@ describe("HardKAS ZK Consensus Binding — L1 Introspection & Policy Enforcer", 
         journalHash: officialJournalHash,
         receiptHex: officialReceiptHex,
         bindingPolicy: { mode: "proof-and-output-bound", payout: { address: aliceAddr, amountSompi: 100000000n } },
-        addressNetworks: ["testnet-10", "mainnet"]
+        // ESCALÓN 4 · P37: a mainnet entry would be MAINNET_SIGNING_DISABLED before this check
+        addressNetworks: ["testnet-10"]
       });
       expect(publicAsked.ok).toBe(false);
       expect(publicAsked.issues.map((i) => i.code)).toContain("ZK_PUBLIC_VECTOR_PUBLIC_NETWORK_REFUSED");

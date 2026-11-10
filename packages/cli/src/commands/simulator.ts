@@ -16,9 +16,10 @@ export function registerSimulatorCommands(program: Command) {
     .command("start")
     .description(`Start the in-memory Kaspa node simulator (approximate rules, not consensus-equivalent) ${UI.maturity("experimental")}`)
     .option("-p, --port <port>", "Port for the RPC server (HTTP JSON-RPC and wRPC JSON)", String(KASPA_SIMULATOR_DEFAULT_PORT))
-    .option("-h, --host <host>", "Host to bind", "127.0.0.1")
+    // ESCALÓN 2 · P17: the host's short flag is -H; -h is the help again (it was the host, so `-h` asked for a value)
+    .option("-H, --host <host>", "Host to bind", "127.0.0.1")
     .option("-n, --network <network>", "Network ID (simnet, devnet, testnet-10, testnet-11)", "simnet")
-    .option("--automine", "Enable automine mode", true)
+    .option("--automine", "Automine is on by default (this flag changes nothing; --no-automine turns it off)", true)
     .option("--no-automine", "Disable automine mode")
     .option("--json", "Output as JSON", false)
     .action(async (options: any) => {
