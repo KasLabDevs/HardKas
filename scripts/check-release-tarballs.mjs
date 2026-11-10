@@ -18,8 +18,8 @@
 // path (C:\Users, /Users/<name>, /home/<name>, jrodr, hkl1, D:\proyectos, AppData) or a token/private-key pattern in any
 // text entry; a `@hardkas/*` dependency on a package that is not published or not at the release version; a file that
 // nothing reaches (UNREFERENCED_FILE, below). With --pack, also a tarball whose `dist/` is not the release build's.
-// The run fails too when the published set is empty or when @hardkas/l2, @hardkas/ext-l2 or @hardkas/pskt-native is not
-// private (or was packed).
+// The run fails too when the published set is empty or when a package of MUST_BE_PRIVATE (@hardkas/l2, @hardkas/ext-l2,
+// @hardkas/pskt-native and the 8 without a consumer) is not private (or was packed).
 //
 // UNREFERENCED_FILE (RC2 · P). A tarball carries only what its entry points reach. The entry points are the manifest's
 // `main`, `module`, `browser`, `types`/`typings`, `bin`, `exports` and `typesVersions` targets (a subpath pattern such
@@ -49,7 +49,21 @@ import zlib from "node:zlib";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-export const MUST_BE_PRIVATE = ["@hardkas/l2", "@hardkas/ext-l2", "@hardkas/pskt-native"];
+// The packages this release does not publish: the L2 pair and pskt-native (L1-CORE-1 B5, INT9), and the 8 without a
+// consumer (surface audit 2026-11-09; docs/status/versioning.md, "Not published").
+export const MUST_BE_PRIVATE = [
+  "@hardkas/l2",
+  "@hardkas/ext-l2",
+  "@hardkas/pskt-native",
+  "@hardkas/client",
+  "@hardkas/react",
+  "@hardkas/wallet-adapter",
+  "@hardkas/simulator-adapters",
+  "@hardkas/plugin-local-indexer",
+  "@hardkas/plugin-rpc-backend",
+  "@hardkas/sync-daemon",
+  "@hardkas/storage-postgres"
+];
 const INSTALL_SCRIPTS = ["preinstall", "install", "postinstall"];
 const DEP_FIELDS = ["dependencies", "optionalDependencies", "peerDependencies", "devDependencies"];
 const ALWAYS_INCLUDED = /^(package\.json|readme(\.[^/]*)?|license(\.[^/]*)?|licence(\.[^/]*)?|changelog(\.[^/]*)?)$/i;
