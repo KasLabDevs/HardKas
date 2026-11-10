@@ -136,7 +136,7 @@ export function registerLocalnetCommands(program: Command): void {
     )
     .option(
       "--consensus-validated",
-      "Mark snapshot as validated by consensus (strict)",
+      "Not supported: refused (SNAPSHOT_CONSENSUS_VALIDATION_UNSUPPORTED, exit 2). HardKAS does not validate snapshots against consensus, so a snapshot never declares it",
       false
     )
     .option("--json", "Output as JSON", false)

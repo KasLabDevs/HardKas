@@ -6,7 +6,7 @@
 
 # Class: PrivateKeyAuthorizer
 
-Defined in: packages/accounts/dist/index.d.ts:32
+Defined in: [packages/accounts/dist/index.d.ts:32](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/accounts/dist/index.d.ts#L32)
 
 ## Implements
 
@@ -18,7 +18,7 @@ Defined in: packages/accounts/dist/index.d.ts:32
 
 > **new PrivateKeyAuthorizer**(`accountName`, `privateKeyHex`): `PrivateKeyAuthorizer`
 
-Defined in: packages/accounts/dist/index.d.ts:35
+Defined in: [packages/accounts/dist/index.d.ts:35](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/accounts/dist/index.d.ts#L35)
 
 #### Parameters
 
@@ -40,7 +40,7 @@ Defined in: packages/accounts/dist/index.d.ts:35
 
 > `readonly` **accountName**: `string`
 
-Defined in: packages/accounts/dist/index.d.ts:33
+Defined in: [packages/accounts/dist/index.d.ts:33](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/accounts/dist/index.d.ts#L33)
 
 ***
 
@@ -48,7 +48,7 @@ Defined in: packages/accounts/dist/index.d.ts:33
 
 > `readonly` **privateKeyHex**: `string`
 
-Defined in: packages/accounts/dist/index.d.ts:34
+Defined in: [packages/accounts/dist/index.d.ts:34](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/accounts/dist/index.d.ts#L34)
 
 ## Methods
 
@@ -56,7 +56,7 @@ Defined in: packages/accounts/dist/index.d.ts:34
 
 > **authorize**(`context`): `InputAuthorization`
 
-Defined in: packages/accounts/dist/index.d.ts:36
+Defined in: [packages/accounts/dist/index.d.ts:36](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/accounts/dist/index.d.ts#L36)
 
 #### Parameters
 

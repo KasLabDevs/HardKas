@@ -6,7 +6,7 @@
 
 # Interface: ProgrammabilityCapabilitiesResult
 
-Defined in: [packages/sdk/src/programmability.ts:47](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/programmability.ts#L47)
+Defined in: [packages/sdk/src/programmability.ts:49](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/programmability.ts#L49)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [packages/sdk/src/programmability.ts:47](https://github.com/KasLabDe
 
 > **claims**: [`ProgrammabilityClaims`](ProgrammabilityClaims.md)
 
-Defined in: [packages/sdk/src/programmability.ts:58](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/programmability.ts#L58)
+Defined in: [packages/sdk/src/programmability.ts:60](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/programmability.ts#L60)
 
 ***
 
@@ -22,7 +22,7 @@ Defined in: [packages/sdk/src/programmability.ts:58](https://github.com/KasLabDe
 
 > **nonClaims**: `string`[]
 
-Defined in: [packages/sdk/src/programmability.ts:59](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/programmability.ts#L59)
+Defined in: [packages/sdk/src/programmability.ts:61](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/programmability.ts#L61)
 
 ***
 
@@ -30,7 +30,7 @@ Defined in: [packages/sdk/src/programmability.ts:59](https://github.com/KasLabDe
 
 > **ok**: `boolean`
 
-Defined in: [packages/sdk/src/programmability.ts:48](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/programmability.ts#L48)
+Defined in: [packages/sdk/src/programmability.ts:50](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/programmability.ts#L50)
 
 ***
 
@@ -38,7 +38,7 @@ Defined in: [packages/sdk/src/programmability.ts:48](https://github.com/KasLabDe
 
 > **schema**: `"hardkas.programmability.capabilities.v1"`
 
-Defined in: [packages/sdk/src/programmability.ts:49](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/programmability.ts#L49)
+Defined in: [packages/sdk/src/programmability.ts:51](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/programmability.ts#L51)
 
 ***
 
@@ -46,7 +46,7 @@ Defined in: [packages/sdk/src/programmability.ts:49](https://github.com/KasLabDe
 
 > **status**: `"PROGRAMMABILITY_SURFACE_READY"`
 
-Defined in: [packages/sdk/src/programmability.ts:50](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/programmability.ts#L50)
+Defined in: [packages/sdk/src/programmability.ts:52](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/programmability.ts#L52)
 
 ***
 
@@ -54,7 +54,7 @@ Defined in: [packages/sdk/src/programmability.ts:50](https://github.com/KasLabDe
 
 > **surfaces**: `object`
 
-Defined in: [packages/sdk/src/programmability.ts:51](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/programmability.ts#L51)
+Defined in: [packages/sdk/src/programmability.ts:53](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/programmability.ts#L53)
 
 #### groth16FixtureCoherence
 

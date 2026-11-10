@@ -9,6 +9,8 @@ export type L2SafetyErrorCode =
   | "L2_CHAIN_ID_MISMATCH"
   | "L2_CHAIN_ID_INVALID"
   | "L2_MAINNET_WRITE_BLOCKED"
+  // MAINNET TOTAL LOCKDOWN: the same code as every L1 layer (@hardkas/core) for a refused mainnet connection
+  | "MAINNET_CONNECTION_DISABLED"
   | "L2_WRITE_DISABLED"
   | "L2_ENDPOINT_MISMATCH"
   | "L2_FEE_POLICY_REQUIRED"

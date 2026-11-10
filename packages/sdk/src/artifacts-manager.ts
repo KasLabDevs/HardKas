@@ -327,8 +327,18 @@ export class HardkasArtifactsManager {
     try {
       real = fs.realpathSync(candidate);
     } catch {}
-    const rel = path.relative(root, real);
-    if (rel === ".." || rel.startsWith(`..${path.sep}`) || path.isAbsolute(rel)) {
+    // The file's real path is compared with the root as written and with the root's own real path (as the artifact
+    // store and resolver do): a workspace opened through a symlink (on macOS every temp directory: /var is a link to
+    // /private/var) has its files under the root's real path, and a symlink inside it that leads out still fails both.
+    let realRoot = root;
+    try {
+      realRoot = fs.realpathSync(root);
+    } catch {}
+    const within = (base: string) => {
+      const rel = path.relative(base, real);
+      return !(rel === ".." || rel.startsWith(`..${path.sep}`) || path.isAbsolute(rel));
+    };
+    if (!within(root) && !within(realRoot)) {
       throw new HardkasError("PATH_TRAVERSAL", `Artifact path is outside the workspace: ${input}`);
     }
     if (!fs.existsSync(candidate) || !fs.statSync(candidate).isFile()) {
@@ -430,7 +440,9 @@ export class HardkasArtifactsManager {
     const { verifyArtifactIntegrity, verifyArtifactSemantics } =
       await import("@hardkas/artifacts");
 
-    const result = await verifyArtifactIntegrity(artifact);
+    // HK-11: `strict` reaches the integrity check too (MIGRATION_REQUIRED for a legacy hash version whose lineage and
+    // status are outside the hash); it used to stop at the semantic check, so a v1-3 artifact passed as LEGACY
+    const result = await verifyArtifactIntegrity(artifact, strict ? { strict: true } : {});
     if (result.ok && strict) {
       // References resolve from the workspace store only (IC-5′.6–.7); the cache is a
       // memo of that same store, so it adds nothing here.
@@ -473,8 +485,13 @@ export class HardkasArtifactsManager {
                         : "schema_invalid";
 
       if (throwOnInvalid) {
-        throw new Error(
-          `Artifact ${id} corrupted or invalid: ` + JSON.stringify(result.issues, null, 2)
+        // RC1-R2: typed, like the CLI's readers (@hardkas/artifacts io.ts): the first error issue's code
+        // (ARTIFACT_HASH_MISMATCH for a tampered artifact), else ARTIFACT_INVALID; the message is unchanged
+        const first = result.issues.find((i: any) => i?.severity === "error") ?? result.issues[0];
+        throw new HardkasError(
+          String(first?.code ?? "ARTIFACT_INVALID"),
+          `Artifact ${id} corrupted or invalid: ` + JSON.stringify(result.issues, null, 2),
+          { metadata: { artifactId: id, reason: mappedReason, issues: result.issues } }
         );
       }
       return {

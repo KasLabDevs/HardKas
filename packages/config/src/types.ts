@@ -34,6 +34,8 @@ export interface HardkasKaspaNodeTarget {
   };
   /** TX-FEE-GUARD-1: workspace limit on the TOTAL fee (sompi) of a transaction on this network, checked at plan, sign and send. */
   maxFeeSompi?: bigint | number | string;
+  /** HK-09 / CA-TX-01: the highest fee RATE (sompi per gram) accepted from this network's node estimate; above it the plan is refused (FEE_RATE_ABOVE_BOUND). */
+  maxFeeRate?: bigint | number | string;
 }
 
 export interface HardkasKaspaRpcTarget {
@@ -46,6 +48,8 @@ export interface HardkasKaspaRpcTarget {
   };
   /** TX-FEE-GUARD-1: workspace limit on the TOTAL fee (sompi) of a transaction on this network, checked at plan, sign and send. */
   maxFeeSompi?: bigint | number | string;
+  /** HK-09 / CA-TX-01: the highest fee RATE (sompi per gram) accepted from this network's node estimate; above it the plan is refused (FEE_RATE_ABOVE_BOUND). */
+  maxFeeRate?: bigint | number | string;
 }
 
 export interface HardkasIgraTarget {

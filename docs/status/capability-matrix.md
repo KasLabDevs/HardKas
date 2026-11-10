@@ -95,14 +95,17 @@ Status: certified alpha localnet gate
 
 Coverage:
 
-- Start Docker `rusty-kaspad` v2.0.0 in simnet.
+- Start Docker `rusty-kaspad` v2.1.0 in simnet, pinned by image digest (`KASPAD_REFERENCE_IMAGE`).
 - Fund local accounts through a compatible miner companion.
 - Run the standard transaction lifecycle against the local node.
-- Compile Silver OP_TRUE, create deploy/spend plans, and execute real
-  deploy/spend receipts.
-- Run simulator deploy/spend receipts.
+- Compile SilverScript with the official silverc v1.0.0, deploy and spend P2SH contracts, and run 1:1 auth-bound
+  covenant transitions (transaction v1), each with real-node evidence in `fixtures/toccata-v2/silver`.
+- Run simulator deploy/spend receipts (the simulator is experimental and approximate: not consensus evidence).
 - Compare simulator and Docker receipts in `artifact-coherence` mode.
-- Verify the OP_TRUE and failure golden corpus.
+- Verify the golden corpus (`hardkas corpus verify fixtures/toccata-v2/silver`).
+
+Covenant topologies other than 1:1 (1:N, N:M, termination): built by the SDK's v1 engine and judged by a real
+rusty-kaspad on simnet (`covenant-topologies-node.simnet`); not a corpus capability, not proven on testnet-10.
 
 Claims:
 

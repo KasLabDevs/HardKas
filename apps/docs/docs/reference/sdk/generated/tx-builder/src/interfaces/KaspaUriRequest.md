@@ -6,7 +6,7 @@
 
 # Interface: KaspaUriRequest
 
-Defined in: [packages/tx-builder/src/kaspa-uri.ts:15](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/kaspa-uri.ts#L15)
+Defined in: [packages/tx-builder/src/kaspa-uri.ts:15](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/kaspa-uri.ts#L15)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [packages/tx-builder/src/kaspa-uri.ts:15](https://github.com/KasLabD
 
 > `readonly` **address**: `string`
 
-Defined in: [packages/tx-builder/src/kaspa-uri.ts:16](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/kaspa-uri.ts#L16)
+Defined in: [packages/tx-builder/src/kaspa-uri.ts:16](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/kaspa-uri.ts#L16)
 
 ***
 
@@ -22,7 +22,7 @@ Defined in: [packages/tx-builder/src/kaspa-uri.ts:16](https://github.com/KasLabD
 
 > `readonly` **amountSompi**: `bigint`
 
-Defined in: [packages/tx-builder/src/kaspa-uri.ts:17](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/kaspa-uri.ts#L17)
+Defined in: [packages/tx-builder/src/kaspa-uri.ts:17](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/kaspa-uri.ts#L17)
 
 ***
 
@@ -30,7 +30,7 @@ Defined in: [packages/tx-builder/src/kaspa-uri.ts:17](https://github.com/KasLabD
 
 > `readonly` `optional` **label?**: `string`
 
-Defined in: [packages/tx-builder/src/kaspa-uri.ts:18](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/kaspa-uri.ts#L18)
+Defined in: [packages/tx-builder/src/kaspa-uri.ts:18](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/kaspa-uri.ts#L18)
 
 ***
 
@@ -38,4 +38,4 @@ Defined in: [packages/tx-builder/src/kaspa-uri.ts:18](https://github.com/KasLabD
 
 > `readonly` `optional` **message?**: `string`
 
-Defined in: [packages/tx-builder/src/kaspa-uri.ts:19](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/kaspa-uri.ts#L19)
+Defined in: [packages/tx-builder/src/kaspa-uri.ts:19](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/kaspa-uri.ts#L19)

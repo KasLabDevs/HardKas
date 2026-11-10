@@ -6,7 +6,7 @@
 
 # Interface: VprogsClaims
 
-Defined in: [packages/sdk/src/vprogs.ts:7](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/vprogs.ts#L7)
+Defined in: [packages/sdk/src/vprogs.ts:7](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/vprogs.ts#L7)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [packages/sdk/src/vprogs.ts:7](https://github.com/KasLabDevs/HardKas
 
 > **mainnet**: `"BLOCKED_BY_POLICY"`
 
-Defined in: [packages/sdk/src/vprogs.ts:13](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/vprogs.ts#L13)
+Defined in: [packages/sdk/src/vprogs.ts:13](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/vprogs.ts#L13)
 
 ***
 
@@ -22,7 +22,7 @@ Defined in: [packages/sdk/src/vprogs.ts:13](https://github.com/KasLabDevs/HardKa
 
 > **vmConsensusEquivalence**: `"NOT_CLAIMED"`
 
-Defined in: [packages/sdk/src/vprogs.ts:12](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/vprogs.ts#L12)
+Defined in: [packages/sdk/src/vprogs.ts:12](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/vprogs.ts#L12)
 
 ***
 
@@ -30,7 +30,7 @@ Defined in: [packages/sdk/src/vprogs.ts:12](https://github.com/KasLabDevs/HardKa
 
 > **vProgsArtifactInspection**: `"READY"`
 
-Defined in: [packages/sdk/src/vprogs.ts:8](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/vprogs.ts#L8)
+Defined in: [packages/sdk/src/vprogs.ts:8](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/vprogs.ts#L8)
 
 ***
 
@@ -38,7 +38,7 @@ Defined in: [packages/sdk/src/vprogs.ts:8](https://github.com/KasLabDevs/HardKas
 
 > **vProgsRuntime**: `"NOT_CLAIMED"`
 
-Defined in: [packages/sdk/src/vprogs.ts:9](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/vprogs.ts#L9)
+Defined in: [packages/sdk/src/vprogs.ts:9](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/vprogs.ts#L9)
 
 ***
 
@@ -46,7 +46,7 @@ Defined in: [packages/sdk/src/vprogs.ts:9](https://github.com/KasLabDevs/HardKas
 
 > **vProgsStableApi**: `"NOT_CLAIMED"`
 
-Defined in: [packages/sdk/src/vprogs.ts:10](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/vprogs.ts#L10)
+Defined in: [packages/sdk/src/vprogs.ts:10](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/vprogs.ts#L10)
 
 ***
 
@@ -54,4 +54,4 @@ Defined in: [packages/sdk/src/vprogs.ts:10](https://github.com/KasLabDevs/HardKa
 
 > **zkOnchainVerification**: `"NOT_CLAIMED"`
 
-Defined in: [packages/sdk/src/vprogs.ts:11](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/vprogs.ts#L11)
+Defined in: [packages/sdk/src/vprogs.ts:11](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/vprogs.ts#L11)

@@ -58,10 +58,12 @@ describe("Root Operational Commands", () => {
 
   it("hardkas doctor --json emits parseable deterministic JSON", () => {
     const res = run(["doctor", "--json"]);
-    expect(res.status).toBe(0);
     const parsed = JSON.parse(res.stdout);
     expect(parsed.summary).toBeDefined();
     expect(parsed.checks).toBeInstanceOf(Array);
+    // L-02 (3-nov): this pinned exit 0 although this directory has no .hardkas/ (a failed check). A report with a
+    // failed check now exits 1; the JSON on stdout is the same either way.
+    expect(res.status).toBe(parsed.summary.failed > 0 ? 1 : 0);
   });
 
   it("workflow run resolves implicit name and emits JSON", () => {

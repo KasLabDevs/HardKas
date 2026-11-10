@@ -1,4 +1,4 @@
-import { HardkasError, nodeRpcUrl, assertValidNodeEndpoint } from "@hardkas/core";
+import { HardkasError, nodeRpcUrl, assertValidNodeEndpoint, assertMainnetConnectionsDisabled } from "@hardkas/core";
 import { DEFAULT_HARDKAS_CONFIG } from "./defaults";
 import type { HardkasConfig } from "./types";
 
@@ -61,8 +61,15 @@ export function networkEndpointRequiredError(networkId: string): HardkasError {
   );
 }
 
-/** The node endpoint for a network, by the rules above; throws NETWORK_ENDPOINT_REQUIRED instead of guessing. */
+/**
+ * The node endpoint for a network, by the rules above; throws NETWORK_ENDPOINT_REQUIRED instead of guessing.
+ * MAINNET TOTAL LOCKDOWN: first of all, a network of the mainnet type — the name asked for or the network its config
+ * entry declares (an alias such as "prod" declaring `network: "mainnet"`, `kaspa`, `mainnet-1`, `kaspa-mainnet`) — gets
+ * NO endpoint: MAINNET_CONNECTION_DISABLED, before an explicit `--url`, a declared `rpcUrl` or a default is even read.
+ * Every client path that asks this authority for a node (CLI and SDK) is refused here, before any connection.
+ */
 export function resolveNodeEndpoint(options: { config: HardkasConfig; networkId: string; explicitUrl?: string | undefined }): ResolvedNodeEndpoint {
+  assertMainnetConnectionsDisabled([options.networkId, entryNetwork(options.config, options.networkId)], `the node endpoint of '${options.networkId}'`);
   // ENDPOINT-VALIDATION-1: an endpoint given or declared must be well formed, or nothing connects (NETWORK_ENDPOINT_INVALID)
   if (typeof options.explicitUrl === "string" && options.explicitUrl !== "") {
     return { url: assertValidNodeEndpoint(options.explicitUrl, "--url"), source: "explicit" };

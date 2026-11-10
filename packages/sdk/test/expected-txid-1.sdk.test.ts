@@ -182,7 +182,10 @@ describe("EXPECTED-TXID-1 · sdk.tx.send sends under the signed artifact's TXID 
 
   it("a payload whose official id cannot be computed → SIGNED_TXID_UNVERIFIABLE, nothing sent or recorded", async () => {
     const r = await sendWith(async () => ({ transactionId: official.txId }), signedFromPlan(plan, "deadbeef", official.txId));
-    expect(r.error?.code).toBe("SIGNED_TXID_UNVERIFIABLE");
+    // TX-05: a fee limit is now always in force (HardKAS's default when none is set), and with a limit in force an opaque
+    // payload's fee cannot be derived, which refuses first (FEE_LIMIT_UNVERIFIABLE, the order TX-FEE-GUARD-1 documents);
+    // either way it is refused before the broadcast and nothing is recorded (asserted below)
+    expect(["FEE_LIMIT_UNVERIFIABLE", "SIGNED_TXID_UNVERIFIABLE"]).toContain(r.error?.code);
     expect(submit).not.toHaveBeenCalled();
     expect(submissions()).toEqual([]);
   });

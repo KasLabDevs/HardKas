@@ -145,7 +145,6 @@ export class LoadBalancedRpcProvider implements KaspaRpcClient {
       startHash: options.startHash,
       includeAcceptedTransactionIds: options.dataVerbosityLevel === "LEGACY_RECOVERY"
     } as any;
-    console.log("[DEBUG] getVirtualChainFromBlockV2 payload:", payload);
     return this.withFailover((c) => c.getVirtualChainFromBlockV2(payload));
   }
 

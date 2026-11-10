@@ -48,6 +48,8 @@ export interface KaspaWrpcClientOptions {
    * request on a resumed connection; notifications are not covered, see onNotification).
    */
   expectedNetworkId?: string | undefined;
+  /** INT9-A (I-3b): see JsonWrpcKaspaClientOptions.requireSynced. */
+  requireSynced?: boolean | undefined;
 }
 
 export class KaspaWrpcClient {
@@ -78,7 +80,7 @@ export class KaspaWrpcClient {
     // The previous connection is detached and the new session registered before anything is awaited, so a
     // disconnect() from this point on closes the new session too (RL-I4).
     const released = this.disconnect();
-    const session = new OfficialRpcSession(this.url, timeoutMs, this.options.rpcFactory, this.options.expectedNetworkId);
+    const session = new OfficialRpcSession(this.url, timeoutMs, this.options.rpcFactory, this.options.expectedNetworkId, this.options.requireSynced === true);
     this.opening = session;
     await released;
     if (this.opening !== session) throw rpcClientClosedError(this.url);
@@ -108,7 +110,12 @@ export class KaspaWrpcClient {
       return await this.session.request(method, params ?? {}, timeoutMs);
     } catch (err) {
       metrics.inc("rpc_errors_total", { method });
-      logger.error("wRPC error response", { method, error: err instanceof Error ? err.message : String(err) });
+      const message = err instanceof Error ? err.message : String(err);
+      // RC1: a lookup the node answers "not found" (getMempoolEntry of a transaction that already left the mempool) is an
+      // expected negative answer, not an error: it is logged at debug level. It used to print a `level: "error"` line
+      // after every successful `tx send`. Every other failure is still logged as an error; the caller gets the error either way.
+      if (method.startsWith("get") && /\bnot found\b/i.test(message)) logger.debug("wRPC lookup: not found", { method, error: message });
+      else logger.error("wRPC error response", { method, error: message });
       throw err;
     }
   }

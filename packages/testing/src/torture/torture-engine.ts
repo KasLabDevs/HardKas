@@ -74,7 +74,10 @@ export interface TortureBucketContext {
   caseSeed: number;
   caseId: string;
   prng: LcgPrng;
+  /** The scratch directory a case writes in (ESCALÓN 3 · P20: the matrix's own temporary directory). */
   workspaceDir: string;
+  /** A directory a case only reads (the code the impurity bucket scans); `workspaceDir` when not given. */
+  sourceRoot?: string;
 }
 
 export type TortureBucketRunner = (ctx: TortureBucketContext) => Promise<{

@@ -5,7 +5,8 @@ import { schnorr } from "@noble/curves/secp256k1";
  * The Kaspa signature hash of a transaction input (rusty-kaspa v2.1.0 consensus/core/src/hashing/sighash.rs,
  * calc_schnorr_signature_hash), ported for one use: checking, before a transaction is finalized, a Schnorr signature
  * another party made for one of its inputs. kaspa-wasm signs inputs but exposes neither the hash nor a verifier. Checked
- * against the upstream test vectors and against kaspa-wasm's own signatures (core/test/kaspa-sighash.test.ts).
+ * against the upstream test vectors (core/test/kaspa-sighash.test.ts) and against kaspa-wasm's own signatures
+ * (accounts/test/v1-draft.test.ts, simulator/test/differential-wasm.test.ts).
  * A v1 transaction commits to its outputs' covenant bindings and not to its inputs' compute budgets; a v0 transaction
  * commits to its inputs' sig op counts.
  */

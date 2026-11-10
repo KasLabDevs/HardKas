@@ -6,7 +6,7 @@
 
 # Interface: MigrationResult
 
-Defined in: [packages/artifacts/src/migration.ts:39](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/migration.ts#L39)
+Defined in: [packages/artifacts/src/migration.ts:46](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/migration.ts#L46)
 
 Result of a migration operation.
 
@@ -16,7 +16,7 @@ Result of a migration operation.
 
 > **appliedSteps**: readonly `object`[]
 
-Defined in: [packages/artifacts/src/migration.ts:47](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/migration.ts#L47)
+Defined in: [packages/artifacts/src/migration.ts:54](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/migration.ts#L54)
 
 Ordered list of migration steps that were applied
 
@@ -26,7 +26,7 @@ Ordered list of migration steps that were applied
 
 > **artifact**: [`ArtifactPayload`](../type-aliases/ArtifactPayload.md)
 
-Defined in: [packages/artifacts/src/migration.ts:41](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/migration.ts#L41)
+Defined in: [packages/artifacts/src/migration.ts:48](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/migration.ts#L48)
 
 The migrated artifact payload
 
@@ -36,7 +36,7 @@ The migrated artifact payload
 
 > **migrated**: `boolean`
 
-Defined in: [packages/artifacts/src/migration.ts:43](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/migration.ts#L43)
+Defined in: [packages/artifacts/src/migration.ts:50](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/migration.ts#L50)
 
 Whether any migration was actually applied
 
@@ -46,6 +46,6 @@ Whether any migration was actually applied
 
 > **originalContentHash**: `string`
 
-Defined in: [packages/artifacts/src/migration.ts:45](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/migration.ts#L45)
+Defined in: [packages/artifacts/src/migration.ts:52](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/migration.ts#L52)
 
 The original content hash (before migration), preserved for lineage

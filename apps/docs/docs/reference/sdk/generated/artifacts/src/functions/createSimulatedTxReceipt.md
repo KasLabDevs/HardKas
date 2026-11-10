@@ -8,26 +8,7 @@
 
 > **createSimulatedTxReceipt**(`plan`, `txId`, `ctx`, `extra?`): `object`
 
-Defined in: [packages/artifacts/src/signed-tx.ts:78](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/signed-tx.ts#L78)
-
-Creates a canonical simulated receipt.
-
-DEF-1c (Wave 1 continuation): the receipt's `lineage.parentArtifactId` MUST
-be an artifact hash (per the lineage contract). Previously, this function
-overrode `parentArtifactId` with `preStateHash` — a state-machine hash from a
-DIFFERENT hash space — which caused every persisted simulator receipt to
-declare an unresolvable HardKAS parent. `preStateHash` and `postStateHash`
-remain first-class execution/state evidence fields on the receipt; they are
-never interpreted as artifact IDs.
-
-The `extra` bag also now accepts schema-owned lifecycle fields (already
-declared on `TxReceiptSchema` — `submittedAt`, `confirmedAt`, `rpcUrl`,
-`tracePath`, `sourceSignedId`) so callers can populate the single canonical
-receipt identity in one construction, rather than building a second wrapper
-receipt with its own contentHash. Optional `parentArtifact` overrides the
-lineage predecessor when the caller executed/submitted a signed artifact
-rather than a plan (the plan remains referenced via `sourceSignedId` →
-signed.sourcePlanId indirection preserved by the signed artifact).
+Defined in: [packages/artifacts/src/signed-tx.ts:340](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/signed-tx.ts#L340)
 
 ## Parameters
 
@@ -64,6 +45,10 @@ signed.sourcePlanId indirection preserved by the signed artifact).
 #### contentHash?
 
 `string` = `...`
+
+#### covenantOutpoints?
+
+`string`[] = `...`
 
 #### createdAt?
 
@@ -109,6 +94,10 @@ signed.sourcePlanId indirection preserved by the signed artifact).
 
 `string` = `...`
 
+#### genesisCovenantGroups?
+
+`object`[] = `...`
+
 #### hardkasVersion?
 
 `string` = `...`
@@ -153,6 +142,10 @@ signed.sourcePlanId indirection preserved by the signed artifact).
 
 `number` = `...`
 
+#### maxFeeSompi?
+
+`string` = `...`
+
 #### metadata?
 
 `any` = `...`
@@ -169,6 +162,10 @@ signed.sourcePlanId indirection preserved by the signed artifact).
 
 `string` = `...`
 
+#### nextState?
+
+(\{ `covenantId?`: `string`; `input?`: `number`; `outputs?`: `number`[]; `successor?`: \{ `artifactSha256?`: `string`; `constructorArgs?`: `unknown`[]; `state?`: `Record`\<`string`, `unknown`\>; `stateToConstructorArg?`: `Record`\<`string`, `number`\>; \}; \} \| \{ `covenantId?`: `string`; `input?`: `number`; `outputs?`: `number`[]; `states?`: `Record`\<`string`, `unknown`\>[]; \})[] = `...`
+
 #### outputs?
 
 `object`[] = `...`
@@ -177,13 +174,17 @@ signed.sourcePlanId indirection preserved by the signed artifact).
 
 `string`[] = `...`
 
+#### payload?
+
+`string` = `...`
+
 #### planId?
 
 `string` = `...`
 
 #### plannerAuthority?
 
-`"KASPA_WASM_GENERATOR"` \| `"SYNTHETIC_SIMULATOR"` = `...`
+`"KASPA_WASM_GENERATOR"` \| `"SYNTHETIC_SIMULATOR"` \| `"HARDKAS_V1_PLANNER"` = `...`
 
 #### plannerAuthorityDetail?
 
@@ -239,7 +240,7 @@ signed.sourcePlanId indirection preserved by the signed artifact).
 
 #### scriptProfile?
 
-`"experimental"` \| `"standard"` = `...`
+`"standard"` \| `"experimental"` = `...`
 
 #### storageMass?
 
@@ -597,7 +598,7 @@ signed.sourcePlanId indirection preserved by the signed artifact).
 
 ### scriptProfile?
 
-> `optional` **scriptProfile?**: `"experimental"` \| `"standard"`
+> `optional` **scriptProfile?**: `"standard"` \| `"experimental"`
 
 ### sourceSignedId?
 

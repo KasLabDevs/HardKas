@@ -6,7 +6,7 @@
 
 # Interface: TxOutputArtifact
 
-Defined in: [packages/artifacts/src/types.ts:86](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/types.ts#L86)
+Defined in: [packages/artifacts/src/types.ts:90](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/types.ts#L90)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [packages/artifacts/src/types.ts:86](https://github.com/KasLabDevs/H
 
 > `readonly` **address**: `string`
 
-Defined in: [packages/artifacts/src/types.ts:87](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/types.ts#L87)
+Defined in: [packages/artifacts/src/types.ts:91](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/types.ts#L91)
 
 ***
 
@@ -22,7 +22,7 @@ Defined in: [packages/artifacts/src/types.ts:87](https://github.com/KasLabDevs/H
 
 > `readonly` `optional` **amount?**: `string`
 
-Defined in: [packages/artifacts/src/types.ts:89](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/types.ts#L89)
+Defined in: [packages/artifacts/src/types.ts:93](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/types.ts#L93)
 
 ***
 
@@ -30,7 +30,7 @@ Defined in: [packages/artifacts/src/types.ts:89](https://github.com/KasLabDevs/H
 
 > `readonly` **amountSompi**: `string`
 
-Defined in: [packages/artifacts/src/types.ts:88](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/types.ts#L88)
+Defined in: [packages/artifacts/src/types.ts:92](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/types.ts#L92)
 
 ***
 
@@ -38,4 +38,4 @@ Defined in: [packages/artifacts/src/types.ts:88](https://github.com/KasLabDevs/H
 
 > `readonly` `optional` **script?**: `string`
 
-Defined in: [packages/artifacts/src/types.ts:90](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/types.ts#L90)
+Defined in: [packages/artifacts/src/types.ts:94](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/types.ts#L94)

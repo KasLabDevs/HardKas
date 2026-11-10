@@ -8,7 +8,7 @@
 
 > **resolveExecutionTarget**(`options`): `object`
 
-Defined in: [packages/config/src/resolve.ts:16](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/config/src/resolve.ts#L16)
+Defined in: [packages/config/src/resolve.ts:17](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/config/src/resolve.ts#L17)
 
 ## Parameters
 

@@ -17,7 +17,7 @@ export type { FixtureDefinition } from "./fixtures.js";
 export { createFixture } from "./fixtures.js";
 
 // ── Matchers ─────────────────────────────────────────────────────────────────
-export type { HardKasMatchers, CovenantPassMatcherOptions } from "./matchers.js";
+export type { HardKasMatchers, CovenantPassMatcherOptions, CovenantSuccessorMatcherOptions } from "./matchers.js";
 
 // ── Covenant Dev Framework (Testing, VM Preflight, Fuzzing, Isolated Simnet) ──
 export type {

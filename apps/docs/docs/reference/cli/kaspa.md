@@ -67,7 +67,7 @@ title: hardkas kaspa
 
 ### Synopsis (Generated)
 
-**Purpose:** Plan, confirm (y/N), sign and submit a payment over --rpc-url; the network and target come from hardkas.config stable
+**Purpose:** Plan a payment over --rpc-url with --dry-run (the node must serve the workspace's network); sending is disabled here: use 'tx plan', 'tx sign' and 'tx send' internal
 
 #### Arguments
 
@@ -77,7 +77,7 @@ title: hardkas kaspa
 #### Options
 
 - `--amount &lt;kas&gt;`: Amount in KAS to send
-- `--dry-run` (Default: `false`): Plan but do not sign or broadcast
+- `--dry-run` (Default: `false`): Plan only (required: without it the command refuses, KASPA_WALLET_SEND_DISABLED)
 - `--rpc-url &lt;url&gt;` (Default: `ws://127.0.0.1:18210`): Node wRPC endpoint (default: the canonical localnet, ws://127.0.0.1:18210)
 
 ---

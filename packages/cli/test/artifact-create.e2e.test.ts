@@ -64,5 +64,8 @@ describe("hardkas artifact create", () => {
     expect(out1.contentHash).toBe(out2.contentHash);
     expect(out1.type).toBe("test-type");
     expect(out1.payload.key).toBe("value");
+    // ESCALÓN 2 · P11: nothing validated the payload, and the artifact said `schemaValid: true` anyway
+    expect(out1).not.toHaveProperty("schemaValid");
+    expect(out1.schemaValidation).toBe("NOT_VALIDATED");
   }, 180000);
 });

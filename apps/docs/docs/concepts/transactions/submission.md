@@ -17,7 +17,7 @@ When you submit a transaction (via `hardkas tx send` or `tx.send()`), HardKAS pe
 If the environment is `simulator`, HardKAS applies the mutations directly to the local `.hardkas/localnet.json` state. It immediately generates a receipt indicating deterministic success.
 
 ### Node Mempool Acceptance
-If the environment is a real Kaspa node (`simnet`, `testnet`, `mainnet`), HardKAS dispatches the serialized transaction to the node via JSON-RPC. If the node validates the consensus rules, it accepts the transaction into its mempool and returns a protocol `txId`.
+If the environment is a real Kaspa node (`simnet`, `devnet`, `testnet`; mainnet is locked down and never contacted), HardKAS dispatches the serialized transaction to the node via JSON-RPC. If the node validates the consensus rules, it accepts the transaction into its mempool and returns a protocol `txId`.
 
 ## The `TxReceiptArtifact`
 

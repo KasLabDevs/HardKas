@@ -1,0 +1,11 @@
+[**HardKAS SDK**](../../../README.md)
+
+***
+
+[HardKAS SDK](../../../README.md) / [artifacts/src](../README.md) / V1NextStateSchema
+
+# Variable: V1NextStateSchema
+
+> `const` **V1NextStateSchema**: `ZodUnion`\<\[`ZodObject`\<\{ `covenantId`: `ZodString`; `input`: `ZodNumber`; `outputs`: `ZodArray`\<`ZodNumber`, `"many"`\>; `successor`: `ZodObject`\<\{ `artifactSha256`: `ZodString`; `constructorArgs`: `ZodArray`\<`ZodType`\<`unknown`, `ZodTypeDef`, `unknown`\>, `"many"`\>; `state`: `ZodRecord`\<`ZodString`, `ZodType`\<`unknown`, `ZodTypeDef`, `unknown`\>\>; `stateToConstructorArg`: `ZodRecord`\<`ZodString`, `ZodNumber`\>; \}, `"strict"`, `ZodTypeAny`, \{ `artifactSha256?`: `string`; `constructorArgs?`: `unknown`[]; `state?`: `Record`\<`string`, `unknown`\>; `stateToConstructorArg?`: `Record`\<`string`, `number`\>; \}, \{ `artifactSha256?`: `string`; `constructorArgs?`: `unknown`[]; `state?`: `Record`\<`string`, `unknown`\>; `stateToConstructorArg?`: `Record`\<`string`, `number`\>; \}\>; \}, `"strict"`, `ZodTypeAny`, \{ `covenantId?`: `string`; `input?`: `number`; `outputs?`: `number`[]; `successor?`: \{ `artifactSha256?`: `string`; `constructorArgs?`: `unknown`[]; `state?`: `Record`\<`string`, `unknown`\>; `stateToConstructorArg?`: `Record`\<`string`, `number`\>; \}; \}, \{ `covenantId?`: `string`; `input?`: `number`; `outputs?`: `number`[]; `successor?`: \{ `artifactSha256?`: `string`; `constructorArgs?`: `unknown`[]; `state?`: `Record`\<`string`, `unknown`\>; `stateToConstructorArg?`: `Record`\<`string`, `number`\>; \}; \}\>, `ZodObject`\<\{ `covenantId`: `ZodString`; `input`: `ZodNumber`; `outputs`: `ZodArray`\<`ZodNumber`, `"many"`\>; `states`: `ZodArray`\<`ZodRecord`\<`ZodString`, `ZodType`\<`unknown`, `ZodTypeDef`, `unknown`\>\>, `"many"`\>; \}, `"strict"`, `ZodTypeAny`, \{ `covenantId?`: `string`; `input?`: `number`; `outputs?`: `number`[]; `states?`: `Record`\<`string`, `unknown`\>[]; \}, \{ `covenantId?`: `string`; `input?`: `number`; `outputs?`: `number`[]; `states?`: `Record`\<`string`, `unknown`\>[]; \}\>\]\>
+
+Defined in: [packages/artifacts/src/schemas.ts:194](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/schemas.ts#L194)

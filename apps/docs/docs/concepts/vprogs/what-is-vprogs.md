@@ -18,7 +18,7 @@ The most common misconception is that Kaspa L1 executes vProgs applications nati
 | :--- | :--- | :--- | :--- |
 | **Kaspa L1 Covenants** | Kaspa Node | Evaluates Kaspa Script during UTXO spend | `ACTIVE CONSENSUS` |
 | **vProgs Execution** | Off-chain Runtime | Generates a ZK Validity Proof | `PROTOTYPE` |
-| **vProgs Settlement** | Kaspa Node | Evaluates the ZK Proof via `OpZkPrecompile` | `ACTIVE CONSENSUS (Primitive)` |
+| **vProgs Settlement** | Kaspa Node | Would evaluate the ZK Proof via the `OpZkPrecompile` primitive | `PRIMITIVE ONLY`: no vProgs settlement is claimed, and HardKAS verifies no ZK proof on-chain |
 
 Kaspa L1 validates only the specific L1 transaction, the Kaspa script constraints, and the ZK proof itself. It does not execute the application VM.
 

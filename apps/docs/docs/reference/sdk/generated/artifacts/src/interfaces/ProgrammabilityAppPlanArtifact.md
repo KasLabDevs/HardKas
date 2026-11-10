@@ -6,7 +6,7 @@
 
 # Interface: ProgrammabilityAppPlanArtifact
 
-Defined in: [packages/artifacts/src/types.ts:778](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/types.ts#L778)
+Defined in: [packages/artifacts/src/types.ts:809](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/types.ts#L809)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [packages/artifacts/src/types.ts:778](https://github.com/KasLabDevs/
 
 > **claims**: [`ProgrammabilityClaims`](ProgrammabilityClaims.md)
 
-Defined in: [packages/artifacts/src/types.ts:782](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/types.ts#L782)
+Defined in: [packages/artifacts/src/types.ts:813](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/types.ts#L813)
 
 ***
 
@@ -22,7 +22,7 @@ Defined in: [packages/artifacts/src/types.ts:782](https://github.com/KasLabDevs/
 
 > **ok**: `true`
 
-Defined in: [packages/artifacts/src/types.ts:780](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/types.ts#L780)
+Defined in: [packages/artifacts/src/types.ts:811](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/types.ts#L811)
 
 ***
 
@@ -30,7 +30,7 @@ Defined in: [packages/artifacts/src/types.ts:780](https://github.com/KasLabDevs/
 
 > **schema**: `"hardkas.programmability.appPlan.v1"`
 
-Defined in: [packages/artifacts/src/types.ts:779](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/types.ts#L779)
+Defined in: [packages/artifacts/src/types.ts:810](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/types.ts#L810)
 
 ***
 
@@ -38,4 +38,4 @@ Defined in: [packages/artifacts/src/types.ts:779](https://github.com/KasLabDevs/
 
 > **status**: `"PROGRAMMABILITY_APP_PLAN_READY"`
 
-Defined in: [packages/artifacts/src/types.ts:781](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/types.ts#L781)
+Defined in: [packages/artifacts/src/types.ts:812](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/types.ts#L812)

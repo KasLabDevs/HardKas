@@ -6,7 +6,7 @@
 
 # Interface: SignedTxArtifact
 
-Defined in: packages/artifacts/dist/index.d.ts:8739
+Defined in: [packages/artifacts/dist/index.d.ts:12025](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/dist/index.d.ts#L12025)
 
 ## Extends
 
@@ -18,7 +18,7 @@ Defined in: packages/artifacts/dist/index.d.ts:8739
 
 > **amountSompi**: `string`
 
-Defined in: packages/artifacts/dist/index.d.ts:8754
+Defined in: [packages/artifacts/dist/index.d.ts:12040](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/dist/index.d.ts#L12040)
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: packages/artifacts/dist/index.d.ts:8754
 
 > `optional` **assumptionLevel?**: `AssumptionLevel`
 
-Defined in: packages/artifacts/dist/index.d.ts:8454
+Defined in: [packages/artifacts/dist/index.d.ts:11736](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/dist/index.d.ts#L11736)
 
 #### Inherited from
 
@@ -38,7 +38,29 @@ Defined in: packages/artifacts/dist/index.d.ts:8454
 
 > `optional` **assumptionRef?**: `string`
 
-Defined in: packages/artifacts/dist/index.d.ts:8776
+Defined in: [packages/artifacts/dist/index.d.ts:12069](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/dist/index.d.ts#L12069)
+
+***
+
+### authorization?
+
+> `optional` **authorization?**: `object`
+
+Defined in: [packages/artifacts/dist/index.d.ts:12048](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/dist/index.d.ts#L12048)
+
+Wave 1.4 · IC-6′: the authenticated binding of a simulator authorization to its plan.
+
+#### kind
+
+> **kind**: `"synthetic"`
+
+#### planArtifactId
+
+> **planArtifactId**: `string`
+
+#### signers
+
+> **signers**: `string`[]
 
 ***
 
@@ -46,7 +68,7 @@ Defined in: packages/artifacts/dist/index.d.ts:8776
 
 > `optional` **contentHash?**: `ContentHash`
 
-Defined in: packages/artifacts/dist/index.d.ts:8452
+Defined in: [packages/artifacts/dist/index.d.ts:11734](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/dist/index.d.ts#L11734)
 
 #### Inherited from
 
@@ -58,7 +80,7 @@ Defined in: packages/artifacts/dist/index.d.ts:8452
 
 > **createdAt**: `string`
 
-Defined in: packages/artifacts/dist/index.d.ts:8451
+Defined in: [packages/artifacts/dist/index.d.ts:11733](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/dist/index.d.ts#L11733)
 
 #### Inherited from
 
@@ -70,7 +92,7 @@ Defined in: packages/artifacts/dist/index.d.ts:8451
 
 > **execution**: `object`
 
-Defined in: packages/artifacts/dist/index.d.ts:8740
+Defined in: [packages/artifacts/dist/index.d.ts:12026](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/dist/index.d.ts#L12026)
 
 #### domain
 
@@ -94,7 +116,7 @@ Defined in: packages/artifacts/dist/index.d.ts:8740
 
 > `optional` **executionMode?**: `AnyExecutionMode`
 
-Defined in: packages/artifacts/dist/index.d.ts:8455
+Defined in: [packages/artifacts/dist/index.d.ts:11737](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/dist/index.d.ts#L11737)
 
 #### Inherited from
 
@@ -106,7 +128,7 @@ Defined in: packages/artifacts/dist/index.d.ts:8455
 
 > **from**: `object`
 
-Defined in: packages/artifacts/dist/index.d.ts:8744
+Defined in: [packages/artifacts/dist/index.d.ts:12030](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/dist/index.d.ts#L12030)
 
 #### accountName?
 
@@ -126,7 +148,7 @@ Defined in: packages/artifacts/dist/index.d.ts:8744
 
 > **hardkasVersion**: `string`
 
-Defined in: packages/artifacts/dist/index.d.ts:8446
+Defined in: [packages/artifacts/dist/index.d.ts:11728](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/dist/index.d.ts#L11728)
 
 #### Inherited from
 
@@ -138,7 +160,7 @@ Defined in: packages/artifacts/dist/index.d.ts:8446
 
 > `optional` **hashVersion?**: `string` \| `number`
 
-Defined in: packages/artifacts/dist/index.d.ts:8448
+Defined in: [packages/artifacts/dist/index.d.ts:11730](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/dist/index.d.ts#L11730)
 
 #### Inherited from
 
@@ -150,23 +172,27 @@ Defined in: packages/artifacts/dist/index.d.ts:8448
 
 > `optional` **lineage?**: `object`
 
-Defined in: packages/artifacts/dist/index.d.ts:8457
+Defined in: [packages/artifacts/dist/index.d.ts:11739](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/dist/index.d.ts#L11739)
 
 #### artifactId
 
 > **artifactId**: [`ArtifactId`](../type-aliases/ArtifactId.md)
 
-#### lineageId
+#### lineageId?
 
-> **lineageId**: [`LineageId`](../type-aliases/LineageId.md)
+> `optional` **lineageId?**: [`LineageId`](../type-aliases/LineageId.md)
+
+Absent on a version-5 root (it would be a self reference); required on children.
 
 #### parentArtifactId?
 
 > `optional` **parentArtifactId?**: [`ArtifactId`](../type-aliases/ArtifactId.md)
 
-#### rootArtifactId
+#### rootArtifactId?
 
-> **rootArtifactId**: [`ArtifactId`](../type-aliases/ArtifactId.md)
+> `optional` **rootArtifactId?**: [`ArtifactId`](../type-aliases/ArtifactId.md)
+
+Absent on a version-5 root; on children, the root's real artifactId.
 
 #### sequence?
 
@@ -182,7 +208,7 @@ Defined in: packages/artifacts/dist/index.d.ts:8457
 
 > `optional` **metadata?**: `any`
 
-Defined in: packages/artifacts/dist/index.d.ts:8777
+Defined in: [packages/artifacts/dist/index.d.ts:12070](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/dist/index.d.ts#L12070)
 
 ***
 
@@ -190,7 +216,7 @@ Defined in: packages/artifacts/dist/index.d.ts:8777
 
 > **mode**: `AnyExecutionMode`
 
-Defined in: packages/artifacts/dist/index.d.ts:8450
+Defined in: [packages/artifacts/dist/index.d.ts:11732](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/dist/index.d.ts#L11732)
 
 #### Inherited from
 
@@ -202,7 +228,7 @@ Defined in: packages/artifacts/dist/index.d.ts:8450
 
 > `optional` **multisig?**: `object`
 
-Defined in: packages/artifacts/dist/index.d.ts:8761
+Defined in: [packages/artifacts/dist/index.d.ts:12053](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/dist/index.d.ts#L12053)
 
 #### requiredSigners
 
@@ -222,7 +248,7 @@ Defined in: packages/artifacts/dist/index.d.ts:8761
 
 > **networkId**: [`NetworkId`](../type-aliases/NetworkId.md)
 
-Defined in: packages/artifacts/dist/index.d.ts:8449
+Defined in: [packages/artifacts/dist/index.d.ts:11731](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/dist/index.d.ts#L11731)
 
 #### Inherited from
 
@@ -234,7 +260,7 @@ Defined in: packages/artifacts/dist/index.d.ts:8449
 
 > `optional` **networkProfileRef?**: `string`
 
-Defined in: packages/artifacts/dist/index.d.ts:8773
+Defined in: [packages/artifacts/dist/index.d.ts:12066](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/dist/index.d.ts#L12066)
 
 ***
 
@@ -242,7 +268,7 @@ Defined in: packages/artifacts/dist/index.d.ts:8773
 
 > `optional` **policyRef?**: `string`
 
-Defined in: packages/artifacts/dist/index.d.ts:8774
+Defined in: [packages/artifacts/dist/index.d.ts:12067](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/dist/index.d.ts#L12067)
 
 ***
 
@@ -250,7 +276,7 @@ Defined in: packages/artifacts/dist/index.d.ts:8774
 
 > `optional` **policyRefs?**: `string`[]
 
-Defined in: packages/artifacts/dist/index.d.ts:8775
+Defined in: [packages/artifacts/dist/index.d.ts:12068](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/dist/index.d.ts#L12068)
 
 ***
 
@@ -258,7 +284,7 @@ Defined in: packages/artifacts/dist/index.d.ts:8775
 
 > **schema**: `"hardkas.signedTx"`
 
-Defined in: packages/artifacts/dist/index.d.ts:8444
+Defined in: [packages/artifacts/dist/index.d.ts:11726](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/dist/index.d.ts#L11726)
 
 #### Inherited from
 
@@ -270,7 +296,7 @@ Defined in: packages/artifacts/dist/index.d.ts:8444
 
 > `optional` **schemaVersion?**: `string`
 
-Defined in: packages/artifacts/dist/index.d.ts:8445
+Defined in: [packages/artifacts/dist/index.d.ts:11727](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/dist/index.d.ts#L11727)
 
 #### Inherited from
 
@@ -282,7 +308,7 @@ Defined in: packages/artifacts/dist/index.d.ts:8445
 
 > `optional` **signatureMetadata?**: `object`[]
 
-Defined in: packages/artifacts/dist/index.d.ts:8769
+Defined in: [packages/artifacts/dist/index.d.ts:12062](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/dist/index.d.ts#L12062)
 
 #### signedAt
 
@@ -298,7 +324,7 @@ Defined in: packages/artifacts/dist/index.d.ts:8769
 
 > **signedId**: [`ArtifactId`](../type-aliases/ArtifactId.md)
 
-Defined in: packages/artifacts/dist/index.d.ts:8742
+Defined in: [packages/artifacts/dist/index.d.ts:12028](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/dist/index.d.ts#L12028)
 
 ***
 
@@ -306,7 +332,7 @@ Defined in: packages/artifacts/dist/index.d.ts:8742
 
 > `optional` **signedTransaction?**: `object`
 
-Defined in: packages/artifacts/dist/index.d.ts:8756
+Defined in: [packages/artifacts/dist/index.d.ts:12042](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/dist/index.d.ts#L12042)
 
 #### format
 
@@ -322,7 +348,7 @@ Defined in: packages/artifacts/dist/index.d.ts:8756
 
 > **sourcePlanId**: `string`
 
-Defined in: packages/artifacts/dist/index.d.ts:8743
+Defined in: [packages/artifacts/dist/index.d.ts:12029](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/dist/index.d.ts#L12029)
 
 ***
 
@@ -330,7 +356,7 @@ Defined in: packages/artifacts/dist/index.d.ts:8743
 
 > **status**: `"signed"` \| `"partially_signed"`
 
-Defined in: packages/artifacts/dist/index.d.ts:8741
+Defined in: [packages/artifacts/dist/index.d.ts:12027](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/dist/index.d.ts#L12027)
 
 ***
 
@@ -338,7 +364,7 @@ Defined in: packages/artifacts/dist/index.d.ts:8741
 
 > **to**: `object`
 
-Defined in: packages/artifacts/dist/index.d.ts:8749
+Defined in: [packages/artifacts/dist/index.d.ts:12035](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/dist/index.d.ts#L12035)
 
 #### accountName?
 
@@ -358,7 +384,7 @@ Defined in: packages/artifacts/dist/index.d.ts:8749
 
 > `optional` **txId?**: [`TxId`](../type-aliases/TxId.md)
 
-Defined in: packages/artifacts/dist/index.d.ts:8760
+Defined in: [packages/artifacts/dist/index.d.ts:12046](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/dist/index.d.ts#L12046)
 
 ***
 
@@ -366,7 +392,7 @@ Defined in: packages/artifacts/dist/index.d.ts:8760
 
 > `optional` **unsignedPayloadHash?**: `string`
 
-Defined in: packages/artifacts/dist/index.d.ts:8755
+Defined in: [packages/artifacts/dist/index.d.ts:12041](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/dist/index.d.ts#L12041)
 
 ***
 
@@ -374,7 +400,7 @@ Defined in: packages/artifacts/dist/index.d.ts:8755
 
 > **version**: `string`
 
-Defined in: packages/artifacts/dist/index.d.ts:8447
+Defined in: [packages/artifacts/dist/index.d.ts:11729](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/dist/index.d.ts#L11729)
 
 #### Inherited from
 
@@ -386,7 +412,7 @@ Defined in: packages/artifacts/dist/index.d.ts:8447
 
 > `optional` **workflowId?**: `WorkflowId`
 
-Defined in: packages/artifacts/dist/index.d.ts:8453
+Defined in: [packages/artifacts/dist/index.d.ts:11735](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/dist/index.d.ts#L11735)
 
 #### Inherited from
 

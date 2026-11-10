@@ -6,7 +6,7 @@
 
 # Interface: ObservedUtxo
 
-Defined in: [packages/artifacts/src/types.ts:791](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/types.ts#L791)
+Defined in: [packages/artifacts/src/types.ts:822](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/types.ts#L822)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [packages/artifacts/src/types.ts:791](https://github.com/KasLabDevs/
 
 > **amount**: `string`
 
-Defined in: [packages/artifacts/src/types.ts:794](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/types.ts#L794)
+Defined in: [packages/artifacts/src/types.ts:825](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/types.ts#L825)
 
 ***
 
@@ -22,7 +22,7 @@ Defined in: [packages/artifacts/src/types.ts:794](https://github.com/KasLabDevs/
 
 > **index**: `number`
 
-Defined in: [packages/artifacts/src/types.ts:793](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/types.ts#L793)
+Defined in: [packages/artifacts/src/types.ts:824](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/types.ts#L824)
 
 ***
 
@@ -30,4 +30,4 @@ Defined in: [packages/artifacts/src/types.ts:793](https://github.com/KasLabDevs/
 
 > **txId**: `string`
 
-Defined in: [packages/artifacts/src/types.ts:792](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/types.ts#L792)
+Defined in: [packages/artifacts/src/types.ts:823](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/types.ts#L823)

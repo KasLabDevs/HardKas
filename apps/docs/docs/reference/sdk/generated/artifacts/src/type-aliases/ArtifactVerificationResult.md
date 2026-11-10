@@ -8,7 +8,7 @@
 
 > **ArtifactVerificationResult** = `object`
 
-Defined in: [packages/artifacts/src/verify.ts:66](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/verify.ts#L66)
+Defined in: [packages/artifacts/src/verify.ts:105](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/verify.ts#L105)
 
 ## Properties
 
@@ -16,7 +16,7 @@ Defined in: [packages/artifacts/src/verify.ts:66](https://github.com/KasLabDevs/
 
 > `optional` **actualHash?**: `string`
 
-Defined in: [packages/artifacts/src/verify.ts:71](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/verify.ts#L71)
+Defined in: [packages/artifacts/src/verify.ts:110](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/verify.ts#L110)
 
 ***
 
@@ -24,7 +24,15 @@ Defined in: [packages/artifacts/src/verify.ts:71](https://github.com/KasLabDevs/
 
 > `optional` **artifactType?**: `string`
 
-Defined in: [packages/artifacts/src/verify.ts:68](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/verify.ts#L68)
+Defined in: [packages/artifacts/src/verify.ts:107](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/verify.ts#L107)
+
+***
+
+### authScope
+
+> **authScope**: [`AuthScope`](AuthScope.md)
+
+Defined in: [packages/artifacts/src/verify.ts:111](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/verify.ts#L111)
 
 ***
 
@@ -32,7 +40,7 @@ Defined in: [packages/artifacts/src/verify.ts:68](https://github.com/KasLabDevs/
 
 > **errors**: `string`[]
 
-Defined in: [packages/artifacts/src/verify.ts:72](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/verify.ts#L72)
+Defined in: [packages/artifacts/src/verify.ts:113](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/verify.ts#L113)
 
 ***
 
@@ -40,7 +48,7 @@ Defined in: [packages/artifacts/src/verify.ts:72](https://github.com/KasLabDevs/
 
 > `optional` **expectedHash?**: `string`
 
-Defined in: [packages/artifacts/src/verify.ts:70](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/verify.ts#L70)
+Defined in: [packages/artifacts/src/verify.ts:109](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/verify.ts#L109)
 
 ***
 
@@ -48,7 +56,7 @@ Defined in: [packages/artifacts/src/verify.ts:70](https://github.com/KasLabDevs/
 
 > **issues**: [`VerificationIssue`](VerificationIssue.md)[]
 
-Defined in: [packages/artifacts/src/verify.ts:73](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/verify.ts#L73)
+Defined in: [packages/artifacts/src/verify.ts:114](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/verify.ts#L114)
 
 ***
 
@@ -56,7 +64,15 @@ Defined in: [packages/artifacts/src/verify.ts:73](https://github.com/KasLabDevs/
 
 > **ok**: `boolean`
 
-Defined in: [packages/artifacts/src/verify.ts:67](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/verify.ts#L67)
+Defined in: [packages/artifacts/src/verify.ts:106](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/verify.ts#L106)
+
+***
+
+### unauthenticatedMaterialFields
+
+> **unauthenticatedMaterialFields**: `string`[]
+
+Defined in: [packages/artifacts/src/verify.ts:112](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/verify.ts#L112)
 
 ***
 
@@ -64,4 +80,4 @@ Defined in: [packages/artifacts/src/verify.ts:67](https://github.com/KasLabDevs/
 
 > `optional` **version?**: `string`
 
-Defined in: [packages/artifacts/src/verify.ts:69](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/verify.ts#L69)
+Defined in: [packages/artifacts/src/verify.ts:108](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/verify.ts#L108)

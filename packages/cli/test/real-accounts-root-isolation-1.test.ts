@@ -75,7 +75,8 @@ describe("E2E-REAL-ACCOUNTS-ISOLATION-1 · the real-accounts flow never touches 
     expect(listing(path.join(root, ".hardkas")), child.brief).toEqual(listingBefore);
   });
 
-  it("R-3 the flow itself still runs and passes (init, import, list, show, remove)", () => {
+  // P27: the flow is the registered `accounts real init` runner (the import/list/show/remove runners were never registered)
+  it("R-3 the flow itself still runs and passes (init, and a refused second init)", () => {
     expect(child.status, child.brief).toBe(0);
     expect(child.report?.numTotalTests, child.brief).toBe(1);
     expect(child.report?.numPassedTests, child.brief).toBe(1);

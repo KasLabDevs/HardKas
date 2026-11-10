@@ -56,9 +56,11 @@ const PLAIN_INTEGER = /^-?(?:0|[1-9][0-9]*)$/;
  * Node.js 21), never by the double it became. Deliberate rule: a JSON number is accepted only as a plain integer literal
  * between -(2^53 - 1) and 2^53 - 1. A fraction or an exponent is refused even when its value is an integer (5.0, 1e3) or
  * rounds to one (1.0000000000000001), and so is a larger integer: write it as {"kind":"int","value":"<digits>"}.
- * `largeIntegers: "as-digits"` (constructor arguments, N-1) keeps a larger plain integer as its exact digits instead.
+ * `largeIntegers: "as-digits"` (constructor arguments, N-1) keeps a larger plain integer as its exact digits instead;
+ * `"exact"` (SC-09, the `silver test` file) keeps it as an exact JSON integer (JSON.rawJSON), which JSON.stringify writes
+ * back with the same digits.
  */
-function parseJsonExact(text: string, largeIntegers: "refuse" | "as-digits" = "refuse"): unknown {
+function parseJsonExact(text: string, largeIntegers: "refuse" | "as-digits" | "exact" = "refuse"): unknown {
   return JSON.parse(text, (_key: string, value: unknown, context?: { source?: string }) => {
     if (typeof value !== "number") return value;
     const source = context?.source;
@@ -71,6 +73,13 @@ function parseJsonExact(text: string, largeIntegers: "refuse" | "as-digits" = "r
     }
     if (!PLAIN_INTEGER.test(source)) return { [INEXACT_NUMBER]: source };
     if (Number.isSafeInteger(value)) return value;
+    if (largeIntegers === "exact") {
+      const rawJSON = (JSON as unknown as { rawJSON?: (text: string) => unknown }).rawJSON;
+      if (typeof rawJSON !== "function") {
+        return fail("SILVER_JSON_SOURCE_UNAVAILABLE", "this Node.js cannot keep an exact JSON integer (JSON.rawJSON); use the supported Node.js 24.22.1", HardkasExitCode.RUNTIME_FAILURE);
+      }
+      return rawJSON(source);
+    }
     return largeIntegers === "as-digits" ? source : { [INEXACT_NUMBER]: source };
   });
 }
@@ -113,6 +122,18 @@ function rejectNonDecimalIntStrings(v: unknown, where: string): void {
 /** JSON read by B-2's rule, for other commands: every number judged by its own literal, a larger integer refused. */
 export function readExactJson(text: string, where: string): unknown {
   const parsed = parseJsonExact(stripBom(text));
+  rejectInexactJsonNumbers(parsed, where);
+  return parsed;
+}
+
+/**
+ * SC-09 · the `silver test --tests` reader: B-2's rule (a fraction or an exponent refused, whatever its value) except
+ * that a plain integer beyond 2^53 - 1 is kept exact (a JSON.rawJSON value) instead of refused: the runner reads u64 and
+ * i64 amounts, sequences, lock times and nested argument values, and the runner file carries them with their own digits.
+ * The range (i64::MIN..u64::MAX) is checked by @hardkas/core prepareSilverVmTests.
+ */
+export function readExactTestsJson(text: string, where: string): unknown {
+  const parsed = parseJsonExact(stripBom(text), "exact");
   rejectInexactJsonNumbers(parsed, where);
   return parsed;
 }

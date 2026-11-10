@@ -8,7 +8,7 @@
 
 > **serializeSession**(`session`): `string`
 
-Defined in: [packages/sdk/src/pskt.ts:133](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/pskt.ts#L133)
+Defined in: [packages/sdk/src/pskt.ts:134](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/pskt.ts#L134)
 
 ## Parameters
 

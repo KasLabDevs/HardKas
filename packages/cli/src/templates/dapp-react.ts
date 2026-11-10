@@ -544,8 +544,9 @@ export default function IgraReadOnlyPanel() {
     <div className="card">
       <h2>Igra L2 (Experimental)</h2>
       <p>
-        Igra L2 support is currently experimental and read-only. 
-        There is no trustless exit claim unless ZK exit is verified.
+        This panel is a placeholder: the template contains no Igra L2 code (the L2 lab is a separate,
+        experimental extension), and Kaspa L1 does not execute EVM. No trustless exit is claimed: an exit is
+        trustless only with a deployed, working proof-based withdrawal path, not because a ZK phase exists.
         Do not use for production assets.
       </p>
     </div>
@@ -622,7 +623,7 @@ Bootstrapped with \`hardkas dev create\`.
 - **Local/Dev Only:** This template uses a dev-server facade. It does not imply production browser wallet support.
 - **L1 Boundary:** Kaspa L1 does not execute EVM.
 - **Source of Truth:** Artifacts on disk are the canonical source of truth. The dev-server and SQLite DB are projections.
-- **Igra L2:** Any L2 interaction is experimental/read-only. Trustless exit must not be assumed without ZK verifiers.
+- **Igra L2:** not part of this template; the L2 lab is a separate, experimental extension. No trustless exit is claimed: an exit is trustless only with a deployed, working proof-based withdrawal path (a ZK verifier alone is not enough).
 `
   );
 }

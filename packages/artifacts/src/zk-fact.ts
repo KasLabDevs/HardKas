@@ -12,7 +12,15 @@ export interface CreateZkVerificationFactOptions {
   readonly imageId: string;
   readonly journalHash: string;
   readonly proofSha256: string;
+  /**
+   * The producer's statement that the proof was verified off-chain. HardKAS's own builder sets it only from
+   * its verifier (verifyR0Groth16ReceiptLocal); a hand-built fact carries whatever its author asserts.
+   */
   readonly verifiedOffChain: boolean;
+  /** VERIFIED / NOT_PERFORMED / FAILED; defaults from verifiedOffChain (true -> VERIFIED, false -> NOT_PERFORMED). */
+  readonly offChainVerification?: "VERIFIED" | "NOT_PERFORMED" | "FAILED" | undefined;
+  /** Id of the verifier that produced a VERIFIED / FAILED status. */
+  readonly offChainVerifier?: string | undefined;
   readonly spendUtxo: {
     readonly transactionId: string;
     readonly index: number;
@@ -27,12 +35,23 @@ export interface CreateZkVerificationFactOptions {
   readonly payoutSompi: string;
   readonly computeBudget: number;
   readonly feeSompi: string;
+  /**
+   * Optional wall-clock time. Omitted by default so that the fact's identity (contentHash) depends only on
+   * what it records, never on when it was built (ZK-09); when given, it is part of the identity.
+   */
   readonly timestamp?: string | undefined;
 }
 
 export function createZkVerificationFactArtifact(
   options: CreateZkVerificationFactOptions
 ): ZkVerificationFact {
+  const offChainVerification =
+    options.offChainVerification ?? (options.verifiedOffChain ? "VERIFIED" : "NOT_PERFORMED");
+  if ((offChainVerification === "VERIFIED") !== Boolean(options.verifiedOffChain)) {
+    throw new Error(
+      `ZkVerificationFact invalid: verifiedOffChain=${String(options.verifiedOffChain)} contradicts offChainVerification=${offChainVerification}`
+    );
+  }
   const body: Omit<ZkVerificationFact, "contentHash"> = {
     schema: HardkasSchemas.ZkVerificationFactV1 as any,
     hardkasVersion: HARDKAS_VERSION,
@@ -45,6 +64,8 @@ export function createZkVerificationFactArtifact(
     journalHash: options.journalHash.toLowerCase(),
     proofSha256: options.proofSha256.toLowerCase(),
     verifiedOffChain: Boolean(options.verifiedOffChain),
+    offChainVerification,
+    ...(options.offChainVerifier ? { offChainVerifier: options.offChainVerifier } : {}),
     spendUtxo: {
       transactionId: options.spendUtxo.transactionId.toLowerCase(),
       index: Number(options.spendUtxo.index),
@@ -59,7 +80,7 @@ export function createZkVerificationFactArtifact(
     payoutSompi: options.payoutSompi,
     computeBudget: options.computeBudget,
     feeSompi: options.feeSompi,
-    timestamp: options.timestamp ?? new Date().toISOString()
+    ...(options.timestamp !== undefined ? { timestamp: options.timestamp } : {})
   };
 
   const parsed = ZkVerificationFactSchema.safeParse({

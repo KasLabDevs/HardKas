@@ -33,11 +33,11 @@ title: hardkas config
 
 ### Synopsis (Generated)
 
-**Purpose:** Initialize a basic hardkas.config.ts in the current directory
+**Purpose:** Initialize a basic hardkas.config.ts in the current directory (the config imports nothing, so it loads before any install)
 
 #### Options
 
-- `--force` (Default: `false`): Overwrite existing config
+- `--force` (Default: `false`): Replace an existing hardkas.config.ts; the original is first copied to a backup that never overwrites another
 - `--json` (Default: `false`): Output results as JSON
 
 ---
@@ -46,7 +46,7 @@ title: hardkas config
 
 ### Synopsis (Generated)
 
-**Purpose:** Repair an invalid or missing hardkas.config.ts
+**Purpose:** Repair an invalid or missing hardkas config: an invalid one is copied to a backup that never overwrites another, then replaced by a minimal config that loads
 
 #### Options
 

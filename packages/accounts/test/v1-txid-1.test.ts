@@ -55,9 +55,11 @@ async function planPayment(version: 0 | 1, extra: { computeBudget?: number; amou
     fromAddress: alice,
     toAddress: bob,
     amountSompi: amount,
-    networkId: "simnet",
-    ...(version === 1 ? { version: 1 } : {})
+    networkId: "simnet"
   } as any);
+  // L1-05: the Generator planner now refuses version 1 (GENERATOR_V1_UNSUPPORTED: it prices v0 mass only). What this
+  // suite tests is the SIGNER's v1 id, so the v1 plan is a fixture: the planned v0 payment relabelled as version 1.
+  if (version === 1) (planned.plan as any).version = 1;
   const artifact: any = createTxPlanArtifact({
     ctx: systemRuntimeContext,
     networkId: asNetworkId("simnet") as any,
@@ -69,6 +71,9 @@ async function planPayment(version: 0 | 1, extra: { computeBudget?: number; amou
   } as any);
   // the upstream planner takes no compute budget: a plan that carries one (the field the signer reads) is a fixture
   if (extra.computeBudget !== undefined) artifact.computeBudget = String(extra.computeBudget);
+  // F1 follow-up (7-nov-2026): the signer refuses a v1 input with no stated budget (V1_COMPUTE_BUDGET_REQUIRED; it signed
+  // it as 0 = 9 999 script units, too few for the node's Schnorr check). The v1 fixture states 10 unless a case sets one.
+  else if (version === 1) artifact.computeBudget = "10";
   return artifact;
 }
 

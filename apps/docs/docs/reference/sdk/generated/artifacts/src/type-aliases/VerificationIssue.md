@@ -8,7 +8,7 @@
 
 > **VerificationIssue** = `object`
 
-Defined in: [packages/artifacts/src/verify.ts:57](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/verify.ts#L57)
+Defined in: [packages/artifacts/src/verify.ts:87](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/verify.ts#L87)
 
 ## Properties
 
@@ -16,7 +16,7 @@ Defined in: [packages/artifacts/src/verify.ts:57](https://github.com/KasLabDevs/
 
 > `optional` **artifactId?**: `string`
 
-Defined in: [packages/artifacts/src/verify.ts:63](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/verify.ts#L63)
+Defined in: [packages/artifacts/src/verify.ts:93](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/verify.ts#L93)
 
 ***
 
@@ -24,7 +24,7 @@ Defined in: [packages/artifacts/src/verify.ts:63](https://github.com/KasLabDevs/
 
 > **code**: `CorruptionCode` \| `string`
 
-Defined in: [packages/artifacts/src/verify.ts:58](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/verify.ts#L58)
+Defined in: [packages/artifacts/src/verify.ts:88](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/verify.ts#L88)
 
 ***
 
@@ -32,7 +32,7 @@ Defined in: [packages/artifacts/src/verify.ts:58](https://github.com/KasLabDevs/
 
 > **message**: `string`
 
-Defined in: [packages/artifacts/src/verify.ts:60](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/verify.ts#L60)
+Defined in: [packages/artifacts/src/verify.ts:90](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/verify.ts#L90)
 
 ***
 
@@ -40,7 +40,7 @@ Defined in: [packages/artifacts/src/verify.ts:60](https://github.com/KasLabDevs/
 
 > `optional` **path?**: `string`
 
-Defined in: [packages/artifacts/src/verify.ts:61](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/verify.ts#L61)
+Defined in: [packages/artifacts/src/verify.ts:91](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/verify.ts#L91)
 
 ***
 
@@ -48,7 +48,7 @@ Defined in: [packages/artifacts/src/verify.ts:61](https://github.com/KasLabDevs/
 
 > `optional` **pathStr?**: `string`
 
-Defined in: [packages/artifacts/src/verify.ts:62](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/verify.ts#L62)
+Defined in: [packages/artifacts/src/verify.ts:92](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/verify.ts#L92)
 
 ***
 
@@ -56,4 +56,4 @@ Defined in: [packages/artifacts/src/verify.ts:62](https://github.com/KasLabDevs/
 
 > **severity**: [`VerificationSeverity`](VerificationSeverity.md)
 
-Defined in: [packages/artifacts/src/verify.ts:59](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/verify.ts#L59)
+Defined in: [packages/artifacts/src/verify.ts:89](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/verify.ts#L89)

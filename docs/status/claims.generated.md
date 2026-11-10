@@ -96,8 +96,6 @@ Enabled:
 - `secretRedaction`
 - `mainnetGuards`
 - `localnetSimulation`
-- `ghostdagSimulation`
-- `dagConflictResolution`
 - `massProfiler`
 - `simulationScenarios`
 - `queryStore`

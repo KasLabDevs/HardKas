@@ -193,6 +193,19 @@ async function statusOf(stateDir: string, deps: ManagedProcessDeps): Promise<Man
           detail: `process ${record.pid} has the recorded identity but runs ${JSON.stringify(real)}, not the recorded ${JSON.stringify(record.args)}: the record was not written for it`
         };
       }
+    } else if (platform === "darwin") {
+      // macOS's ps keeps no argument boundaries: the whole command line is compared with the one this record started
+      // (spawn passes the binary path as argv[0]). Arguments that join to the same text cannot be told apart there.
+      if (now.commandLine === undefined) return { state: "unverifiable", record, identity: now, detail: `the command line of process ${record.pid} cannot be read` };
+      const expected = [record.binaryPath, ...record.args].join(" ");
+      if (now.commandLine !== expected) {
+        return {
+          state: "foreign_process",
+          record,
+          identity: now,
+          detail: `process ${record.pid} has the recorded identity but runs ${JSON.stringify(now.commandLine)}, not the recorded ${JSON.stringify(expected)}: the record was not written for it`
+        };
+      }
     }
     return { state: "running", record, identity: now, detail: `process ${record.pid} is the instance started at ${record.startedAt}` };
   }

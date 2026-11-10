@@ -482,4 +482,48 @@ describe("STAGE-B-1 · control · a tx sent from this workspace (tx plan → sig
       expect(both(r).includes(PW)).toBe(false);
     }
   });
+
+  // INT9 · I-2 (TX-SEND-IDEMPOTENT-3) at the CLI: the same CONFIRMED payment, its submission record lost. With the looks
+  // still stored the re-send is refused as CONFIRMED (accepting block, blue-score confirmations); with them gone too, as
+  // IN_CHAIN (its output listed at the node with the amount and script it pays). Neither reaches submitTransaction.
+  it("SB-CTL-2 re-sending a CONFIRMED payment whose submission record was lost: ALREADY_SUBMITTED with its evidence, CONFIRMED then IN_CHAIN; no second submitTransaction", async () => {
+    const F = await fakeFor("ctl2", { acceptAfter: 3 });
+    const ws = workspace("ctl2", F.url);
+    const plan = await run("SB-CTL-2-plan", [cliDist, "tx", "plan", "--from", "funder", "--to", dest, "--amount", "1", "--network", "testnet-10", "--out", "plan.json", "--json"], ws);
+    expect(plan.exit, plan.brief).toBe(0);
+    const sign = await run("SB-CTL-2-sign", [cliDist, "tx", "sign", "plan.json", "--account", "funder", "--password-env", PW_VAR, "--out", "signed.json", "--json"], ws);
+    expect(sign.exit, sign.brief).toBe(0);
+    const send = await run("SB-CTL-2-send", [cliDist, "tx", "send", "signed.json", "--yes", "--json"], ws);
+    expect(send.exit, send.brief).toBe(0);
+    expect(send.json?.nodeCheck?.state, send.brief).toBe("NOT_OBSERVED");
+    const txId = F.txid!;
+    const w = await run("SB-CTL-2-wait", [cliDist, "tx", "wait", txId, "--until", "confirmed", "--timeout", "120", "--json"], ws);
+    expect(w.json?.state, w.brief).toBe("CONFIRMED");
+    expect(F.submits).toBe(1);
+    // the record is lost: the submission artifacts go, the looks stay
+    const artifacts = path.join(ws, ".hardkas", "artifacts");
+    const all = fs.readdirSync(artifacts, { recursive: true }).map(String);
+    const removeAll = (re: RegExp) => {
+      for (const f of all.filter((n) => re.test(n) && n.endsWith(".json"))) fs.rmSync(path.join(artifacts, f), { force: true });
+    };
+    removeAll(/submission/i);
+    expect(submissionsOf(ws)).toEqual([]);
+    const again = await run("SB-CTL-2-resend-looks", [cliDist, "tx", "send", "signed.json", "--yes", "--json"], ws);
+    trace("SB-CTL-2-looks", { json: again.json, brief: again.brief });
+    expect(again.exit, again.brief).toBe(0);
+    expect(again.json, again.brief).toMatchObject({ ok: true, outcome: "already-submitted", code: "ALREADY_SUBMITTED", txId, state: "CONFIRMED", recorded: false });
+    expect(again.json.evidence, again.brief).toMatchObject({ kind: "virtual-chain", acceptingBlockHash: F.hashOf(F.acceptAt!) });
+    expect(F.submits, "no second submitTransaction").toBe(1);
+    // the looks are lost too: the UTXO index is what is left
+    removeAll(/observation/i);
+    const third = await run("SB-CTL-2-resend-utxo", [cliDist, "tx", "send", "signed.json", "--yes", "--json"], ws);
+    trace("SB-CTL-2-utxo", { json: third.json, brief: third.brief });
+    expect(third.exit, third.brief).toBe(0);
+    expect(third.json, third.brief).toMatchObject({ outcome: "already-submitted", code: "ALREADY_SUBMITTED", state: "IN_CHAIN", recorded: false });
+    expect(third.json.evidence?.kind, third.brief).toBe("utxo-index");
+    expect(third.json.evidence.outputs[0], third.brief).toMatchObject({ outpoint: `${txId}:0`, address: dest, amountSompi: "100000000" });
+    expect(F.submits, "no second submitTransaction").toBe(1);
+    expect(submissionsOf(ws)).toEqual([]);
+    for (const r of [plan, sign, send, w, again, third]) expect(onlyLoopback(r.dialled, F), `${r.name} ${JSON.stringify(r.dialled)}`).toBe(true);
+  });
 });

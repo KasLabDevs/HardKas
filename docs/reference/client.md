@@ -1,22 +1,38 @@
 # Client Reference
 
-The `@hardkas/client` package provides React hooks.
+The `@hardkas/client` package is the HTTP client for a running HardKAS dev
+server. It uses `fetch` and has no dependencies. The React bindings
+(`HardKASProvider` and hooks) are in `@hardkas/react`, which builds on it.
 
-## `HardkasProvider`
-Wrap your React application to inject the isomorphic SDK.
+## `createClient`
 
-```jsx
-import { HardkasProvider } from '@hardkas/client';
-import { HardkasSchemas } from "@hardkas/artifacts";
+```typescript
+import { createClient } from "@hardkas/client";
+
+const client = createClient({ baseUrl: "http://127.0.0.1:7420", timeout: 5000 });
+
+const response = await client.getWallet("alice");
+if (response.ok) console.log(response.data);
+else console.error(response.message);
+```
+
+## `HardKASProvider` (from `@hardkas/react`)
+
+Wrap your React application to give its hooks a `@hardkas/client` instance.
+
+```tsx
+import { HardKASProvider } from "@hardkas/react";
 
 function App() {
   return (
-    <HardkasProvider network="simulated">
+    <HardKASProvider baseUrl="http://127.0.0.1:7420">
       <WalletUI />
-    </HardkasProvider>
+    </HardKASProvider>
   );
 }
 ```
 
 > [!NOTE]
-> The client SDK performs planning and artifact generation exclusively in the browser context. It does not require a Node.js backend.
+> Neither package plans, signs or builds artifacts in the browser. They call the
+> dev server over HTTP, and the dev server does that work with the Node.js SDK.
+> Do not import `@hardkas/sdk` in the browser.

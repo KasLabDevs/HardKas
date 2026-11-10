@@ -1,6 +1,7 @@
 ﻿// SAFETY_LEVEL: SIMULATION_ONLY
 
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import crypto from "node:crypto";
 import pc from "picocolors";
@@ -22,6 +23,26 @@ export interface TortureReplayOptions {
   seed: number;
   caseId: string;
   profile?: string;
+}
+
+/**
+ * ESCALÓN 3 · P20: the buckets used to run in the current directory: the matrix deleted its
+ * ./.hardkas/telemetry/telemetry.jsonl and buckets pre-cleaned ./.tmp/<case dirs> there, whatever they held. Every run
+ * now works in a directory it creates under the OS temp dir (`hardkas-torture-XXXXXX`, new and empty: mkdtemp) and
+ * deletes only that directory. In the current directory the run only reads (`sourceRoot`, the code the impurity bucket
+ * scans), appends to the telemetry stream and writes its report (`.hardkas/reports/torture-<seed>.json`), as before.
+ */
+function createTortureRunDir(): string {
+  return fs.mkdtempSync(path.join(os.tmpdir(), "hardkas-torture-"));
+}
+
+/** Deletes a run directory this run created; a file still held open (Windows) leaves it in the temp dir, said so. */
+function removeTortureRunDir(runDir: string): void {
+  try {
+    fs.rmSync(runDir, { recursive: true, force: true, maxRetries: 3 });
+  } catch (e) {
+    UI.info(`  Could not remove the run directory ${runDir}: ${e instanceof Error ? e.message : String(e)}`);
+  }
 }
 
 /**
@@ -76,18 +97,14 @@ export async function runTortureMatrix(options: TortureMatrixOptions) {
 
   const iterations = options.iterations || 300;
 
+  // ESCALÓN 3 · P20: the cases run in the run's own directory. The workspace's telemetry stream is appended to, as
+  // before (telemetry inspect and the dev-server dashboard read it), but never cleared: it used to be deleted here.
+  // The heatmap reads only what this run appended.
+  const runDir = createTortureRunDir();
+  const sourceRoot = process.cwd();
   EnvironmentTelemetry.init(process.cwd());
-  const telemetryPath = path.join(
-    process.cwd(),
-    ".hardkas",
-    "telemetry",
-    "telemetry.jsonl"
-  );
-  if (fs.existsSync(telemetryPath)) {
-    try {
-      fs.unlinkSync(telemetryPath);
-    } catch (e) {} // Clear before matrix
-  }
+  const telemetryPath = path.join(process.cwd(), ".hardkas", "telemetry", "telemetry.jsonl");
+  const telemetryOffset = fs.existsSync(telemetryPath) ? fs.statSync(telemetryPath).size : 0;
 
   UI.info(`\n${pc.bold(pc.cyan("⚡ HardKAS Torture Matrix OS ⚡"))}`);
   UI.info(`  ${pc.dim("Global Seed:")}  ${pc.yellow(seed)}`);
@@ -125,7 +142,8 @@ export async function runTortureMatrix(options: TortureMatrixOptions) {
       caseSeed: item.caseSeed,
       caseId: item.caseId,
       prng: casePrng,
-      workspaceDir: process.cwd()
+      workspaceDir: runDir,
+      sourceRoot
     };
 
     EnvironmentTelemetry.setContext({
@@ -423,8 +441,11 @@ export async function runTortureMatrix(options: TortureMatrixOptions) {
   // 3. Output Telemetry Heatmap
   if (fs.existsSync(telemetryPath)) {
     try {
+      // only the events this run appended (the stream is never cleared any more)
       const lines = fs
-        .readFileSync(telemetryPath, "utf-8")
+        .readFileSync(telemetryPath)
+        .subarray(telemetryOffset)
+        .toString("utf-8")
         .split("\n")
         .filter((l) => l.trim() !== "");
       const events = lines.map((l) => JSON.parse(l) as AnomalyEvent);
@@ -494,6 +515,13 @@ export async function runTortureMatrix(options: TortureMatrixOptions) {
   } catch (err: any) {
     UI.info(`\n⚠️  Failed to save JSON report: ${((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err))}`);
   }
+
+  // Only the directory this run created is deleted; with failures it is kept for their sandboxes.
+  if (failedCount === 0) {
+    removeTortureRunDir(runDir);
+  } else {
+    UI.info(`  Run directory kept for inspection: ${pc.cyan(runDir)}`);
+  }
 }
 
 export async function runTortureReplay(options: TortureReplayOptions) {
@@ -519,12 +547,15 @@ export async function runTortureReplay(options: TortureReplayOptions) {
 
   const bucket = getAllTortureBuckets().find((b) => b.name === target.bucketName)!;
   const casePrng = new LcgPrng(target.caseSeed);
+  // ESCALÓN 3 · P20: a directory of its own under the OS temp dir, never the current one
+  const runDir = createTortureRunDir();
   const ctx = {
     globalSeed: seed,
     caseSeed: target.caseSeed,
     caseId: target.caseId,
     prng: casePrng,
-    workspaceDir: process.cwd()
+    workspaceDir: runDir,
+    sourceRoot: process.cwd()
   };
 
   const startTime = Date.now();
@@ -538,8 +569,10 @@ export async function runTortureReplay(options: TortureReplayOptions) {
       `  ${pc.dim("Expected Invariant:")} ${pc.green(runResult.expectedInvariant)}`
     );
     UI.info(`  ${pc.dim("Duration:")}           ${duration}ms`);
+    removeTortureRunDir(runDir);
   } catch (err: any) {
     const duration = Date.now() - startTime;
+    UI.info(`  ${pc.dim("Run directory kept:")} ${runDir}`);
     UI.info(`\n${pc.bold(pc.red("❌ CASE REPLAY INVARIANT VIOLATED"))}`);
     UI.info(`  ${pc.dim("Error Message:")}      ${pc.red(((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err)) || String(err))}`);
     UI.info(`  ${pc.dim("Stack Trace:")}`);

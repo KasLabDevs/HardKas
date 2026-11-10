@@ -8,4 +8,4 @@
 
 > **VerificationSeverity** = `CorruptionSeverity` \| `"info"` \| `"critical"`
 
-Defined in: [packages/artifacts/src/verify.ts:55](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/verify.ts#L55)
+Defined in: [packages/artifacts/src/verify.ts:85](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/verify.ts#L85)

@@ -32,24 +32,32 @@ export async function runUp() {
     // 3. Check RPC
     // TESTNET-PORT-COLLISION-1: the shared endpoint authority — the declared endpoint, else a local network's default
     // (the canonical localnet), else NETWORK_ENDPOINT_REQUIRED (a public network is never checked on a guess)
-    const rpcUrl = resolveNodeEndpoint({ config: loaded.config, networkId }).url;
+    // L1-CORE-1 B4: on the simulated network this dialled the canonical localnet endpoint (the simulator's "local
+    // default"): the simulator has no node, and the line printed depended on whatever listened on that port of the
+    // machine. There is no node to check there, and nothing is contacted.
+    const simulated = networkId === "simulated" || loaded.config.networks?.[networkId]?.kind === "simulated";
+    if (simulated) {
+      UI.info("RPC: none to check (the simulated network runs no node)");
+    } else {
+      const rpcUrl = resolveNodeEndpoint({ config: loaded.config, networkId }).url;
 
-    const client = new JsonWrpcKaspaClient({ rpcUrl });
-    try {
-      const health = await client.healthCheck();
-      if (health.reachable) {
-        UI.success(`RPC available at ${rpcUrl}`);
-      } else {
+      const client = new JsonWrpcKaspaClient({ rpcUrl });
+      try {
+        const health = await client.healthCheck();
+        if (health.reachable) {
+          UI.success(`RPC available at ${rpcUrl}`);
+        } else {
+          console.log(
+            `  \x1b[33m⚠\x1b[0m RPC not reachable at ${rpcUrl}. Run 'hardkas node start' or check kaspad.`
+          );
+        }
+      } catch (e) {
         console.log(
-          `  \x1b[33m⚠\x1b[0m RPC not reachable at ${rpcUrl}. Run 'hardkas node start' or check kaspad.`
+          `  \x1b[33m⚠\x1b[0m RPC check failed: ${e instanceof Error ? ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) : String(e)}`
         );
+      } finally {
+        await client.close();
       }
-    } catch (e) {
-      console.log(
-        `  \x1b[33m⚠\x1b[0m RPC check failed: ${e instanceof Error ? ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) : String(e)}`
-      );
-    } finally {
-      await client.close();
     }
 
     UI.success(`State directory:    .hardkas/runtime`);
@@ -70,7 +78,7 @@ export async function runUp() {
 
     const port = "7420";
     console.log(pc.green(`\n✔ HardKAS Runtime Started\n`));
-    console.log(`  ${pc.dim("Dashboard:")}`);
+    console.log(`  ${pc.dim("Dev Server API:")}`);
     console.log(`    ${pc.white("http://localhost:" + port)}\n`);
     console.log(`  ${pc.dim("Runtime:")}`);
     console.log(`    ${pc.white("local deterministic execution environment")}\n`);
@@ -87,7 +95,9 @@ export async function runUp() {
     const { runDevServer } = await import("./dev-server-runner.js");
     await runDevServer({
       port,
-      open: true,
+      // L1-CORE-1 B4: the system browser was launched on every run, with nobody at a terminal too (a script, CI, a
+      // test); only an interactive run opens it.
+      open: process.stdout.isTTY === true,
       host: "localhost",
       unsafeExternal: false,
       json: false,

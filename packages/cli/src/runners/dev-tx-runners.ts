@@ -2,6 +2,18 @@ import { UI } from "../ui.js";
 import { runTxFlow } from "./tx-flow.js";
 import { loadHardkasConfig } from "@hardkas/config";
 import { HardkasCliError, HardkasExitCode } from "../cli-errors.js";
+import type { HardkasConfig } from "@hardkas/config";
+
+/**
+ * ESCALÓN 3 · P3: where `dev tx send` runs — the workspace's resolved target, local when it is the simulated ledger or
+ * a local simnet (the networks `tx send` sends to without confirmation). `status` suggests the command only then.
+ */
+export async function devTxSendTarget(config: HardkasConfig): Promise<{ local: boolean; networkId: string }> {
+  const { resolveWorkspaceExecution } = await import("@hardkas/config");
+  const resolved = resolveWorkspaceExecution({ config });
+  const local = resolved.execution.mode === "simulator" || resolved.networkId === "simulated" || resolved.networkId === "simnet";
+  return { local, networkId: resolved.networkId };
+}
 
 export async function runDevTxSend(options: {
   from?: string;
@@ -23,12 +35,31 @@ export async function runDevTxSend(options: {
     options.workspaceRoot ? { cwd: options.workspaceRoot } : {}
   );
 
+  // ESCALÓN 3 · P3: the command never sent anything. It ran the `tx send` flow without the consent that flow requires
+  // ("--yes is required to broadcast"), so every run ended in TX_SEND_NOT_EXECUTED. It now applies the confirmation
+  // policy of `tx send`: the simulated ledger and a local simnet need no confirmation, and the flow runs with it. Any
+  // other network needs the explicit confirmation of `hardkas tx send … --yes`, which this quick command does not take:
+  // it refuses before anything is planned (DEV-TX-SEND-NETWORK-1).
+  const target = await devTxSendTarget(loaded.config);
+  if (!target.local) {
+    throw new HardkasCliError(
+      "DEV_TX_SEND_NETWORK_NOT_LOCAL",
+      `'dev tx send' runs only on the simulated ledger or a local simnet; this workspace targets ${target.networkId}. Nothing was planned, signed or sent.`,
+      {
+        exitCode: HardkasExitCode.POLICY_DENIED,
+        suggestion: `hardkas tx send --from ${options.from} --to ${options.to} --amount ${options.amount} --yes`,
+        context: { network: target.networkId }
+      }
+    );
+  }
+
   const flowInput: any = {
     ...options,
     amount: options.amount,
     from: options.from,
     to: options.to,
     send: true,
+    yes: true, // the confirmation policy of `tx send`: none is required on the simulated ledger or a local simnet
     feeRate: "1",
     config: loaded.config
   };
@@ -36,9 +67,8 @@ export async function runDevTxSend(options: {
 
   const result = await runTxFlow(flowInput);
 
-  // CLI-CONTRACT-2A: "submitted" is said only when the send step ran and produced a receipt. The flow refuses to
-  // broadcast without consent ("--yes is required to broadcast") and this command passes none, so until that is decided
-  // (DEV-TX-SEND-NETWORK-1) the truthful answer is a typed failure: nothing was sent, whatever was planned or signed.
+  // CLI-CONTRACT-2A: "submitted" is said only when the send step ran and produced a receipt; a flow whose send step did
+  // not run is a typed failure: nothing was sent, whatever was planned or signed.
   const sendStep = result.steps.send;
   const erroredStep = (["plan", "sign", "send"] as const).find((k) => result.steps[k]?.status === "error");
   if (result.result !== "broadcast" || sendStep?.status !== "ok") {
@@ -61,6 +91,13 @@ export async function runDevTxSend(options: {
   }
 
   const sendResult = sendStep;
+  // as `tx send`: a send the node (or the simulated ledger) did not accept is a failure, never "submitted"
+  if (sendResult.artifact && sendResult.artifact.accepted === false) {
+    const { notAcceptedFailure } = await import("./next-steps.js");
+    const failure = notAcceptedFailure(sendResult.artifact.receipt, sendResult.artifact.txId);
+    throw new HardkasCliError(failure.code, failure.message, { exitCode: HardkasExitCode.RUNTIME_FAILURE });
+  }
+  const simulated = result.mode === "simulator";
   // IC-5′.11: the canonical identity of the receipt; never the txId.
   const artifactId =
     sendResult?.artifact?.receipt?.contentHash ||
@@ -79,7 +116,11 @@ export async function runDevTxSend(options: {
     "unknown";
 
   if (!options.quiet) {
-    console.log(`\nTransaction submitted.`);
+    console.log(
+      simulated
+        ? `\nTransaction executed on the simulated ledger (local simulated execution; nothing was broadcast).`
+        : `\nTransaction submitted to the node.`
+    );
     console.log(`\nArtifacts:`);
     console.log(`  plan_${planId.substring(0, 8)}...`);
     console.log(`  signed_${signId.substring(0, 8)}...`);

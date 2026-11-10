@@ -91,11 +91,15 @@ describe("CLI Semantic Constraints", () => {
     expect(parsed.result.config.defaultNetwork).toBe("kaspa-testnet-10");
   });
 
-  it("errors in JSON mode go strictly to stderr", () => {
+  // INT9 · CLI-CONTRACT-2B D2: a usage error under --json is the CLI's one envelope on stdout with the usage exit code
+  // (2); commander's own text still goes to stderr. This case pinned the old behaviour (exit 1, nothing on stdout), which
+  // the CLI-CONTRACT-2 contract replaced (cli-contract-2.test.ts D1/D2).
+  it("errors in JSON mode: the human text goes to stderr, stdout is exactly one { ok:false } envelope, exit 2", () => {
     const res = run(["tx", "receipt", "--json"]); // missing required <txId> arg
-    expect(res.status).toBe(1);
-    // stdout should be empty because we never got far enough to print JSON or it was killed
-    expect(res.stdout.trim()).toBe("");
+    expect(res.status).toBe(2);
+    const docs = res.stdout.trim().split(/\r?\n(?=\{)/).filter(Boolean).map((d) => JSON.parse(d));
+    expect(docs).toHaveLength(1);
+    expect(docs[0]).toMatchObject({ ok: false, code: "MISSING_ARGUMENT" });
     expect(res.stderr.toLowerCase()).toContain("required");
   });
 });

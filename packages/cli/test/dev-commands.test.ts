@@ -18,18 +18,15 @@ describe("CLI dev namespace", () => {
     });
   });
 
-  it("dev init creates hardkas.config.ts and client.ts", async () => {
-    vi.mocked(fs.existsSync).mockReturnValue(true); // package.json exists
-    vi.mocked(fs.existsSync).mockImplementation((p: any) => p.endsWith("package.json")); // everything else doesn't
+  // ESCALÓN 3 · P1: `dev init` now loads the config it writes with the real loader, which a mocked fs cannot do. The
+  // config is checked on a real temp directory in config-commands.test.ts; here, the client stub on the mocks.
+  it("dev init writes the client stub (the config is checked for real in config-commands.test.ts)", async () => {
+    vi.mocked(fs.existsSync).mockImplementation((p: any) => p.endsWith("package.json") || p.endsWith("hardkas.config.ts"));
     const writeMock = vi.mocked(fs.writeFileSync);
 
     await runDevInit();
 
-    expect(writeMock).toHaveBeenCalledWith(
-      expect.stringContaining("hardkas.config.ts"),
-      expect.stringContaining("simulated"),
-      "utf-8"
-    );
+    expect(writeMock).not.toHaveBeenCalledWith(expect.stringContaining("hardkas.config"), expect.anything(), expect.anything());
     expect(writeMock).toHaveBeenCalledWith(
       expect.stringContaining("client.ts"),
       expect.stringContaining("createHardkasClient"),

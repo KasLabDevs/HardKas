@@ -54,6 +54,16 @@ export async function runSandbox(options: {
       preventTeardown: true
     } as any);
 
+    // The banner announces the Dev Server URL: print it only once the server listens on it. `server.start()` returns
+    // before the socket is bound, and on a loaded machine the announced URL refused connections for seconds.
+    const nodeServer = devCtx?.nodeServer;
+    if (nodeServer && typeof nodeServer.once === "function" && nodeServer.listening !== true) {
+      await new Promise<void>((resolve, reject) => {
+        nodeServer.once("listening", () => resolve());
+        nodeServer.once("error", (err: unknown) => reject(err));
+      });
+    }
+
     // Main Sandbox Banner (SURFACE-TRUTH-1A: only what this run did; no hard-coded network, node, mining or health)
     console.log(pc.bold("\nHardKAS Sandbox Runtime"));
     console.log(pc.dim("━━━━━━━━━━━━━━━━━━━━━━━\n"));

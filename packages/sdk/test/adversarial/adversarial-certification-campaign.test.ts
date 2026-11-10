@@ -11,7 +11,8 @@ import {
   DEFAULT_ZK_COMPUTE_BUDGET,
   HISTORICAL_TRIAL_ZK_FEE_SOMPI
 } from "../../src/index.js";
-import { verifyGroth16Math } from "../../src/zk/groth16-verifier.js";
+import { verifyGroth16Math, BN254_G2_GENERATOR } from "../../src/zk/groth16-verifier.js";
+import { g1Mul, g2Mul, type G2Affine } from "../../src/zk/bn254.js";
 import { Hardkas } from "../../src/index.js";
 
 function repoRoot(): string {
@@ -30,9 +31,9 @@ function readJson(relPath: string): any {
 const MULT_DIR = "fixtures/toccata-v2/zk/groth16-multiplier";
 const R0_DIR = "fixtures/toccata-v2/zk/r0-groth16-official";
 
-// BN254 base field prime (p) and scalar field prime (q)
+// BN254 base field prime (p) and scalar field order (r)
 const BN254_P = 21888242871839275222246405745257275088696311157297823662689037894645226208583n;
-const BN254_Q = 21888242871839275222246405745257275088548364400416034343698204186575808495617n;
+const BN254_R = 21888242871839275222246405745257275088548364400416034343698204186575808495617n;
 
 describe("Adversarial Campaign · Cryptographic & Fault Injection on ZK (Fase B)", () => {
   const vk = readJson(path.join(MULT_DIR, "verification-key.json"));
@@ -55,9 +56,9 @@ describe("Adversarial Campaign · Cryptographic & Fault Injection on ZK (Fase B)
     expect(res.summary.mathCheck).toBe("FAIL");
   });
 
-  it("ADV-ZK-02: Public inputs exceeding scalar field order q are rejected before pairing", async () => {
-    // Public input >= q must be rejected with explicit ZK_SCALAR_OUT_OF_RANGE error
-    const outOfFieldSignals = [(BN254_Q + 1n).toString()];
+  it("ADV-ZK-02: Public inputs exceeding scalar field order r are rejected before pairing", async () => {
+    // Public input >= r must be rejected with explicit ZK_SCALAR_OUT_OF_RANGE error
+    const outOfFieldSignals = [(BN254_R + 1n).toString()];
     const res = await verifyGroth16Math(
       vk,
       { schema: HardkasSchemas.ZkGroth16PublicInputsV1, publicSignals: outOfFieldSignals },
@@ -80,7 +81,9 @@ describe("Adversarial Campaign · Cryptographic & Fault Injection on ZK (Fase B)
     expect(res.verified).toBe(false);
   });
 
-  it("ADV-ZK-04: Concurrency stress: 30 parallel verification calls execute deterministically without race", { timeout: 20000 }, async () => {
+  // The SDK runs at most a few pairing processes at once and queues the rest, so 30 calls take several rounds: the
+  // test budget covers that on a slow runner (each call keeps its own 10 s pairing timeout).
+  it("ADV-ZK-04: Concurrency stress: 30 parallel verification calls execute deterministically without race", { timeout: 120000 }, async () => {
     const fakeInputs = {
       schema: HardkasSchemas.ZkGroth16PublicInputsV1,
       publicSignals: ["999999"]
@@ -102,6 +105,31 @@ describe("Adversarial Campaign · Cryptographic & Fault Injection on ZK (Fase B)
         expect(results[i].verified).toBe(false);
       }
     }
+  });
+
+  it("ADV-ZK-06 (CA-EV-10): a canonical key with a non-trivial known trapdoor and NO pin never yields VERIFIED", { timeout: 20000 }, async () => {
+    // alpha = 2·G1, beta = 7·G2, gamma = 3·G2, delta = 5·G2, IC = [G1, -G1]; forged A = (14 + 3(1 - c))·G1, B = G2, C = O
+    const G1 = { x: 1n, y: 2n, infinity: false };
+    const G2: G2Affine = {
+      x: [BigInt(BN254_G2_GENERATOR[0][0]), BigInt(BN254_G2_GENERATOR[0][1])],
+      y: [BigInt(BN254_G2_GENERATOR[1][0]), BigInt(BN254_G2_GENERATOR[1][1])],
+      infinity: false
+    };
+    const j1 = (k: bigint) => {
+      const p = g1Mul(G1, k);
+      return p.infinity ? ["0", "1", "0"] : [String(p.x), String(p.y), "1"];
+    };
+    const j2 = (k: bigint) => {
+      const p = g2Mul(G2, k);
+      return [[String(p.x[0]), String(p.x[1])], [String(p.y[0]), String(p.y[1])], ["1", "0"]];
+    };
+    const trapdoorVk = { ...vk, vk_alpha_1: j1(2n), vk_beta_2: j2(7n), vk_gamma_2: j2(3n), vk_delta_2: j2(5n), IC: [j1(1n), j1(-1n)], verificationKeyId: "adv-trapdoor" };
+    const forged = { ...proof, pi_a: j1(14n + 3n * (1n - 34n)), pi_b: j2(1n), pi_c: ["0", "1", "0"] };
+    const res = await verifyGroth16Math(trapdoorVk, { ...inputs, publicSignals: ["34"] }, forged);
+    expect(res.summary.mathCheck).toBe("PASS"); // the pairing equation holds for THIS key...
+    expect(res.status).toBe("ZK_GROTH16_MATH_VALID_UNANCHORED_VK"); // ...which nobody vouched for
+    expect(res.verified).toBe(false);
+    expect(res.ok).toBe(false);
   });
 
   it("ADV-ZK-05: Non-numeric and malformed string coordinates in proof fail with typed error", async () => {
@@ -159,7 +187,7 @@ describe("Adversarial Campaign · Toccata KIP-16 & Script Construction (Fase B)"
     expect(() => estimateToccataZkFee(65536)).toThrow(RangeError);
   });
 
-  it("ADV-TOC-04: P2SH addresses across mainnet, testnet, simnet are correctly formatted", () => {
+  it("ADV-TOC-04 (HK-16): the public vector yields a simnet address only; public networks are refused even when acknowledged", () => {
     const scripts = buildR0Groth16Scripts({
       imageId: officialImageId,
       journalHash: officialJournalHash,
@@ -167,9 +195,22 @@ describe("Adversarial Campaign · Toccata KIP-16 & Script Construction (Fase B)"
     });
 
     expect(scripts.ok).toBe(true);
-    expect(scripts.p2shAddresses.mainnet).toMatch(/^kaspa:p/);
-    expect(scripts.p2shAddresses.testnet10).toMatch(/^kaspatest:p/);
     expect(scripts.p2shAddresses.simnet).toMatch(/^kaspasim:p/);
+    expect(scripts.p2shAddresses.mainnet).toBeUndefined();
+    expect(scripts.p2shAddresses.testnet10).toBeUndefined();
+    expect(scripts.warnings.some((w) => w.code === "ZK_LOCK_BINDS_IMAGE_ID_ONLY")).toBe(true);
+    const asked = buildR0Groth16Scripts({
+      imageId: officialImageId,
+      journalHash: officialJournalHash,
+      receiptHex,
+      // ESCALÓN 4 · P37: a mainnet entry is MAINNET_SIGNING_DISABLED before this check
+      addressNetworks: ["testnet-10"],
+      acknowledgeImageIdOnlyLock: true
+    });
+    expect(asked.ok).toBe(false);
+    expect(asked.issues.some((i) => i.code === "ZK_PUBLIC_VECTOR_PUBLIC_NETWORK_REFUSED")).toBe(true);
+    expect(asked.p2shAddresses.testnet10).toBeUndefined();
+    expect(asked.p2shAddresses.mainnet).toBeUndefined();
   });
 });
 
@@ -203,7 +244,7 @@ describe("Adversarial Campaign · SDK Invariants & Isolation Boundaries (Fase B)
       const res = await zk.proof.verifyMath(MULT_DIR, { allowWeakVerificationKey: true });
       expect(res.ok).toBe(true);
       expect(res.claims.zkOnchainVerification).toBe("NOT_CLAIMED");
-      expect(res.claims.zkMathematicalVerification).toBe("GROTH16_SNARKJS_BN254_FIXTURE_BOUND");
+      expect(res.claims.zkMathematicalVerification).toBe("GROTH16_SNARKJS_BN254_PINNED_VK");
     } finally {
       fs.rmSync(ws, { recursive: true, force: true });
     }

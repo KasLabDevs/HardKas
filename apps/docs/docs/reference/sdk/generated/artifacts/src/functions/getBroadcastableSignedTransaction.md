@@ -8,9 +8,12 @@
 
 > **getBroadcastableSignedTransaction**(`artifact`): `object`
 
-Defined in: [packages/artifacts/src/signed-tx.ts:153](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/signed-tx.ts#L153)
+Defined in: [packages/artifacts/src/signed-tx.ts:429](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/signed-tx.ts#L429)
 
 Validates and extracts the raw transaction from a signed artifact.
+
+IC-6′.4: a synthetic authorization is never a signature, so it is never
+broadcastable: it can only be executed by the simulator.
 
 ## Parameters
 

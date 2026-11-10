@@ -6,7 +6,7 @@
 
 # Interface: ProgrammabilityCorpusReport
 
-Defined in: [packages/sdk/src/programmability.ts:89](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/programmability.ts#L89)
+Defined in: [packages/sdk/src/programmability.ts:91](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/programmability.ts#L91)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [packages/sdk/src/programmability.ts:89](https://github.com/KasLabDe
 
 > **claims**: [`ProgrammabilityClaims`](ProgrammabilityClaims.md)
 
-Defined in: [packages/sdk/src/programmability.ts:101](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/programmability.ts#L101)
+Defined in: [packages/sdk/src/programmability.ts:103](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/programmability.ts#L103)
 
 ***
 
@@ -22,7 +22,7 @@ Defined in: [packages/sdk/src/programmability.ts:101](https://github.com/KasLabD
 
 > **issues**: `ProgrammabilityIssue`[]
 
-Defined in: [packages/sdk/src/programmability.ts:102](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/programmability.ts#L102)
+Defined in: [packages/sdk/src/programmability.ts:104](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/programmability.ts#L104)
 
 ***
 
@@ -30,7 +30,7 @@ Defined in: [packages/sdk/src/programmability.ts:102](https://github.com/KasLabD
 
 > **ok**: `boolean`
 
-Defined in: [packages/sdk/src/programmability.ts:90](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/programmability.ts#L90)
+Defined in: [packages/sdk/src/programmability.ts:92](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/programmability.ts#L92)
 
 ***
 
@@ -38,7 +38,7 @@ Defined in: [packages/sdk/src/programmability.ts:90](https://github.com/KasLabDe
 
 > **path**: `string`
 
-Defined in: [packages/sdk/src/programmability.ts:92](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/programmability.ts#L92)
+Defined in: [packages/sdk/src/programmability.ts:94](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/programmability.ts#L94)
 
 ***
 
@@ -46,7 +46,7 @@ Defined in: [packages/sdk/src/programmability.ts:92](https://github.com/KasLabDe
 
 > **schema**: `"hardkas.programmability.corpusReport.v1"`
 
-Defined in: [packages/sdk/src/programmability.ts:91](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/programmability.ts#L91)
+Defined in: [packages/sdk/src/programmability.ts:93](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/programmability.ts#L93)
 
 ***
 
@@ -54,7 +54,7 @@ Defined in: [packages/sdk/src/programmability.ts:91](https://github.com/KasLabDe
 
 > **status**: `"PROGRAMMABILITY_CORPUS_PASS"` \| `"PROGRAMMABILITY_CORPUS_FAIL"`
 
-Defined in: [packages/sdk/src/programmability.ts:93](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/programmability.ts#L93)
+Defined in: [packages/sdk/src/programmability.ts:95](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/programmability.ts#L95)
 
 ***
 
@@ -62,7 +62,7 @@ Defined in: [packages/sdk/src/programmability.ts:93](https://github.com/KasLabDe
 
 > **summary**: `object`
 
-Defined in: [packages/sdk/src/programmability.ts:94](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/programmability.ts#L94)
+Defined in: [packages/sdk/src/programmability.ts:96](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/programmability.ts#L96)
 
 #### knownLimitations
 

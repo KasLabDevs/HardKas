@@ -8,6 +8,7 @@ import type { AddressInfo } from "node:net";
 import { WebSocketServer } from "ws";
 import { cliDist, repoRoot } from "./first-contact-helpers.js";
 import { hermeticChildEnv, assertHermeticPreloadActive } from "./hermetic-child.js";
+import { CANONICAL_WRPC_PORT, dialsPort, foreignLocalProbe, startOnFixedPort } from "./canonical-port-diagnostics.js";
 
 vi.setConfig({ testTimeout: 300_000, hookTimeout: 300_000 });
 
@@ -20,7 +21,11 @@ vi.setConfig({ testTimeout: 300_000, hookTimeout: 300_000 });
 // ws://127.0.0.1:18210 — the canonical HardKAS localnet's port (a SIMNET node), because 18210 is also the SDK's default
 // JSON-wRPC port for testnets. This file measures, per path, the exact address each one dials.
 //   * Two FAKE nodes on loopback only: S on 127.0.0.1:18210 says simnet (what the canonical localnet would be); T on a
-//     free port says testnet-10 (the operator's own testnet node). Nothing else runs: the port 18210 is free beforehand.
+//     free port says testnet-10 (the operator's own testnet node).
+//   * N-5 (2026-11-07): S also receives connections from processes that are not a tested path (a local wallet, the
+//     owner's localnet tooling, another worktree's gate running this file). Its connection count is a DIAGNOSTIC, never
+//     the assertion: the assertion is each path's own dial log. When another process already holds 18210 the file runs
+//     without S (the dial logs still prove the invariant). TPC-1 itself injects such foreign traffic while it measures.
 //   * Every path runs in its OWN process under the hermetic preload with its OWN log: every connection attempt it makes
 //     is recorded (loopback allowed, anything else refused) — TN10 and the internet are unreachable.
 //   * NNI refusing S (it says simnet) is NOT a correct endpoint resolution: the invariant measured is that a testnet-10
@@ -192,7 +197,8 @@ function workspace(cfg: string, from?: string): string {
 let alice = "";
 let carol = "";
 
-let S: Fake;
+let S: Fake | undefined; // undefined when another process holds 127.0.0.1:18210 (N-5)
+let sUnavailable: string | undefined;
 let T: Fake;
 let signed: { file: string; txId: string; ws: string } | undefined;
 
@@ -201,7 +207,9 @@ beforeAll(async () => {
   assertHermeticPreloadActive();
   const coreMod: any = await import("@hardkas/core");
   kaspa = coreMod.loadManagedKaspaWasmSync();
-  S = await startFake("S(:18210, says simnet)", "simnet", CANONICAL_PORT);
+  const s = await startOnFixedPort(() => startFake("S(:18210, says simnet)", "simnet", CANONICAL_PORT));
+  S = s.fake;
+  sUnavailable = s.unavailable;
   T = await startFake("T(own testnet-10)", "testnet-10");
   template = fs.mkdtempSync(path.join(os.tmpdir(), "hk-tpc-template-"));
   made.push(template);
@@ -250,7 +258,8 @@ async function testnetPaths(prefix: string, ws: string) {
     await sdk(`${prefix}-sdk-tx-observe`, ws, `await hk.tx.observe(${JSON.stringify(sw.txId)}, { maxBatches: 1 });`)
   ];
 }
-const dialledCanonical = (r: { dialled: string[] }) => r.dialled.some((d) => d.endsWith(`127.0.0.1:${CANONICAL_PORT}`) || d.endsWith(`localhost:${CANONICAL_PORT}`));
+// N-5: any loopback spelling of the canonical port (127.x, localhost, ::1, 0.0.0.0), let through or refused
+const dialledCanonical = (r: { dialled: string[] }) => dialsPort(r.dialled, CANONICAL_PORT);
 const summary = (rs: Awaited<ReturnType<typeof testnetPaths>>) =>
   rs.map((r) => ({ path: r.name, exit: r.exit, code: r.code, dialled: r.dialled, message: r.message, output: r.brief.slice(0, 700) }));
 
@@ -273,6 +282,20 @@ function expectEndpointRequired(rs: Array<{ name: string; exit: number | null; c
   }
 }
 
+/**
+ * MAINNET TOTAL LOCKDOWN (owner decision 2026-11-09): a mainnet network — declared, built in, or a custom name whose
+ * entry declares mainnet — never gets an endpoint, chosen or not: every client path refuses typed
+ * MAINNET_CONNECTION_DISABLED before ANY connection. These cases pinned NETWORK_ENDPOINT_REQUIRED before; the zero
+ * connections they protect are unchanged, only the reason is now the lockdown (it is decided first).
+ */
+function expectMainnetRefused(rs: Array<{ name: string; exit: number | null; code: string | null; dialled: string[]; brief: string }>, why: string) {
+  for (const r of rs) {
+    expect(r.dialled, `${r.name}: ${why}`).toEqual([]);
+    expect(r.code, `${r.name}: ${r.brief}`).toBe("MAINNET_CONNECTION_DISABLED");
+    if (r.name.includes("-cli-")) expect(r.exit, `${r.name}: ${r.brief}`).not.toBe(0);
+  }
+}
+
 let mainA = "";
 let mainB = "";
 beforeAll(() => {
@@ -284,18 +307,24 @@ describe("TESTNET-PORT-COLLISION-1 · a public network never gets an implicit en
   it("TPC-1 testnet-10 declared as `kaspa-node` WITHOUT rpcUrl: NETWORK_ENDPOINT_REQUIRED on every path, zero connections (never 127.0.0.1:18210)", async () => {
     // the same store (keys, the signed transaction), under the reviewer's case
     const K = workspace(config({ "testnet-10": { kind: "kaspa-node", network: "testnet-10" } }), signed!.ws);
-    const sBefore = { connections: S.connections, methods: S.methods.length };
+    const sBefore = S ? { connections: S.connections, methods: S.methods.length } : undefined;
+    // N-5: an unrelated local process touches the canonical port while the paths are measured (only against our own S)
+    const foreign = S ? await foreignLocalProbe(CANONICAL_WRPC_PORT) : { connected: false, detail: `S not started: ${sUnavailable}` };
     const rs = await testnetPaths("K", K);
     const seen = {
       paths: summary(rs),
       canonicalPortDialledBy: rs.filter(dialledCanonical).map((r) => r.name),
-      fakeS: { connections: S.connections - sBefore.connections, methods: S.methods.slice(sBefore.methods) },
-      submitTransactionAtS: S.methods.slice(sBefore.methods).filter((m) => m === "submitTransaction").length
+      foreignLocalProbe: foreign,
+      // diagnostic only: S counts every connection to 127.0.0.1:18210, from a tested path or not
+      fakeS: S && sBefore ? { connections: S.connections - sBefore.connections, methods: S.methods.slice(sBefore.methods) } : { unavailable: sUnavailable },
+      submitTransactionAtS: S && sBefore ? S.methods.slice(sBefore.methods).filter((m) => m === "submitTransaction").length : null
     };
     trace("TPC-1", seen);
-    // NNI refusing S afterwards does not make the resolution right: the connection itself must not happen
+    // NNI refusing S afterwards does not make the resolution right: the connection itself must not happen. The proof is
+    // each path's own dial log (its process, its preload), not what S saw.
     expect(seen.canonicalPortDialledBy, JSON.stringify(seen, null, 1)).toEqual([]);
-    expect(seen.fakeS.connections, JSON.stringify(seen, null, 1)).toBe(0);
+    // the foreign traffic really reached S during the measured window, and did not change the verdict
+    if (S) expect(foreign.connected, JSON.stringify(seen, null, 1)).toBe(true);
     expectEndpointRequired(rs, JSON.stringify(seen, null, 1));
   });
 
@@ -307,7 +336,7 @@ describe("TESTNET-PORT-COLLISION-1 · a public network never gets an implicit en
     expectEndpointRequired(rs, JSON.stringify(seen, null, 1));
   });
 
-  it("TPC-5 mainnet without an endpoint (as `kaspa-node`, and with no entry): NETWORK_ENDPOINT_REQUIRED, zero connections", async () => {
+  it("TPC-5 mainnet without an endpoint (as `kaspa-node`, and with no entry): MAINNET_CONNECTION_DISABLED (MAINNET TOTAL LOCKDOWN; was NETWORK_ENDPOINT_REQUIRED), zero connections", async () => {
     const rs = [];
     for (const [label, networks] of [
       ["MK", { mainnet: { kind: "kaspa-node", network: "mainnet" } }],
@@ -322,7 +351,7 @@ describe("TESTNET-PORT-COLLISION-1 · a public network never gets an implicit en
     }
     const seen = { paths: summary(rs) };
     trace("TPC-5", seen);
-    expectEndpointRequired(rs, JSON.stringify(seen, null, 1));
+    expectMainnetRefused(rs, JSON.stringify(seen, null, 1));
   });
 
   it("TPC-7 an explicit endpoint is never silently replaced: `--url` T on the K workspace dials T only; a declared endpoint that is down fails on THAT endpoint, never on a fallback", async () => {
@@ -413,7 +442,9 @@ describe("TESTNET-PORT-COLLISION-1 · the user's choice survives (review 2026-10
         networks: {},
         expect: {
           "testnet-10": { code: "NETWORK_ENDPOINT_REQUIRED", workspace: null },
-          mainnet: { code: "NETWORK_ENDPOINT_REQUIRED", workspace: null },
+          // MAINNET TOTAL LOCKDOWN: mainnet gets no endpoint at all, whatever the form — the lockdown's typed refusal,
+          // decided before the "no endpoint chosen" rule (it was NETWORK_ENDPOINT_REQUIRED, also with zero connections)
+          mainnet: { code: "MAINNET_CONNECTION_DISABLED", workspace: null },
           simnet: { url: canonical, source: "declared", workspace: canonical }
         }
       },
@@ -455,7 +486,7 @@ describe("TESTNET-PORT-COLLISION-1 · the user's choice survives (review 2026-10
     });
   });
 
-  it("TPC-8c a public network under a CUSTOM name (`network: \"testnet-10\"` / `\"mainnet\"`) without a URL never gets a local fallback: NETWORK_ENDPOINT_REQUIRED, zero connections", async () => {
+  it("TPC-8c a public network under a CUSTOM name (`network: \"testnet-10\"` / `\"mainnet\"`) without a URL never gets a local fallback: NETWORK_ENDPOINT_REQUIRED (mainnet: MAINNET_CONNECTION_DISABLED), zero connections", async () => {
     const C8 = workspace(
       config(
         {
@@ -490,13 +521,17 @@ describe("TESTNET-PORT-COLLISION-1 · the user's choice survives (review 2026-10
     // `tx plan` does not reach the endpoint boundary under a custom network name: it refuses earlier, typed, because the
     // planner keys network parameters and account networks on the config KEY ("my-tn10", "prod"), not on the entry's
     // `network` (registered: CUSTOM-NETWORK-PLAN-AUTHORITY-1, pre-existing). What this case pins for it: no connection at all.
-    const plan = rs.filter((r) => r.name.endsWith("-cli-tx-plan"));
+    // MAINNET TOTAL LOCKDOWN: the custom name "prod" declares mainnet — every path, the plan included, is refused first
+    // by the lockdown (MAINNET_CONNECTION_DISABLED, before accounts or network parameters are read), zero connections
+    const prod = rs.filter((r) => r.name.startsWith("C8-prod-"));
+    expectMainnetRefused(prod, JSON.stringify(seen, null, 1));
+    const plan = rs.filter((r) => r.name.endsWith("-cli-tx-plan") && !prod.includes(r));
     for (const r of plan) {
       expect(r.dialled, `${r.name}: ${r.brief}`).toEqual([]);
       expect(r.exit, `${r.name}: ${r.brief}`).not.toBe(0);
       expect(["COINBASE_MATURITY_UNRESOLVED", "ACCOUNT_NETWORK_MISMATCH"], `${r.name}: ${r.brief}`).toContain(r.code);
     }
-    expectEndpointRequired(rs.filter((r) => !plan.includes(r)), JSON.stringify(seen, null, 1));
+    expectEndpointRequired(rs.filter((r) => !plan.includes(r) && !prod.includes(r)), JSON.stringify(seen, null, 1));
   });
 });
 
@@ -520,9 +555,26 @@ describe("TESTNET-PORT-COLLISION-1 · what keeps working", () => {
     ];
     const seen = { paths: rs.map((r) => ({ path: r.name, exit: r.exit, code: r.code, dialled: r.dialled, message: r.message })) };
     trace("TPC-4", seen);
+    // CA-EV-03: the hermetic gate refuses loopback connections to the canonical ports by default, so a node that happens
+    // to run locally cannot change its verdict. Under that refusal the control still proves what it is about — the route
+    // targets the canonical localnet (the refused attempt is recorded) and fails instead of reaching anything else; with
+    // the port allowed (`--allow-local-node-ports`, or outside the gate) it also proves the call succeeds against S.
+    const canonicalDenied = String(process.env.HARDKAS_HERMETIC_DENY_PORTS ?? "")
+      .split(",")
+      .map((p) => Number(p.trim()))
+      .includes(CANONICAL_PORT);
     for (const r of rs) {
-      expect(r.exit, r.brief).toBe(0);
+      // also the positive control of the N-5 detector: a path that does dial 18210 is caught by its dial log
       expect(dialledCanonical(r), JSON.stringify(seen, null, 1)).toBe(true);
+      if (canonicalDenied) {
+        expect(r.dialled.some((d) => d.startsWith("REFUSED_LOOPBACK_PORT")), JSON.stringify(seen, null, 1)).toBe(true);
+        // the CLI exits non-zero; the SDK probe script reports `ok: false` (its wrapper always exits 0)
+        expect(r.exit !== 0 || /"ok"\s*:\s*false/.test(r.brief), r.brief).toBe(true);
+      } else if (S) {
+        expect(r.exit, r.brief).toBe(0);
+      }
+      // N-5: with the port allowed and 18210 held by another process, what answers there is not ours: only the dial
+      // target is asserted
     }
   });
 });

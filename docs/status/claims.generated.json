@@ -59,8 +59,6 @@
     "secretRedaction": true,
     "mainnetGuards": true,
     "localnetSimulation": true,
-    "ghostdagSimulation": true,
-    "dagConflictResolution": true,
     "massProfiler": true,
     "simulationScenarios": true,
     "queryStore": true,

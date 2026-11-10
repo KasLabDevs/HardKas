@@ -1,4 +1,14 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, beforeAll, afterAll } from "vitest";
+
+// TX-06 / ESCALÓN 4 · P38: auto-signing is the dev-server operator's decision (HARDKAS_DEV_SERVER_AUTOSIGN=1 in the
+// server's environment), off by default and only on the simulated ledger or a local simnet: these cases run a server
+// that opted in, on a local simnet (a network that broadcasts; they ran on testnet-10, which is refused now).
+beforeAll(() => {
+  process.env.HARDKAS_DEV_SERVER_AUTOSIGN = "1";
+});
+afterAll(() => {
+  delete process.env.HARDKAS_DEV_SERVER_AUTOSIGN;
+});
 import { Hono } from "hono";
 import * as fs from "node:fs";
 import * as os from "node:os";
@@ -11,7 +21,7 @@ import * as path from "node:path";
 
 const node = vi.hoisted(() => ({
   cwd: "",
-  network: "testnet-10" as string,
+  network: "simnet" as string,
   plans: 0,
   signs: 0,
   broadcasts: [] as string[],
@@ -78,7 +88,7 @@ const PAY = { from: "alice", to: "bob", amountSompi: "1000", allowDevAutoSign: t
 beforeEach(() => {
   // each case is its own workspace: the guard keeps its record there
   node.cwd = fs.mkdtempSync(path.join(os.tmpdir(), "hk-dapp-send-"));
-  node.network = "testnet-10";
+  node.network = "simnet";
   node.plans = 0;
   node.signs = 0;
   node.broadcasts = [];

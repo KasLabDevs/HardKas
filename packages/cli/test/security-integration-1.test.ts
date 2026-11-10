@@ -329,7 +329,7 @@ afterAll(() => {
 });
 
 describe("SECURITY-INTEGRATION-1 · a testnet artifact never reaches a node that declares mainnet (NNI + EA + MG)", () => {
-  it("SI-1 sdk.tx.send of a testnet-10 artifact, the instance's endpoint now answered by a node declaring mainnet: NODE_NETWORK_MISMATCH, nothing sent or recorded", async () => {
+  it("SI-1 sdk.tx.send of a testnet-10 artifact, the instance's endpoint now answered by a node declaring mainnet: MAINNET_CONNECTION_DISABLED (MAINNET TOTAL LOCKDOWN; was NODE_NETWORK_MISMATCH), nothing sent or recorded", async () => {
     const A = await startFake("A", "testnet-10");
     const M = await startFake("M", "mainnet");
     try {
@@ -348,7 +348,7 @@ describe("SECURITY-INTEGRATION-1 · a testnet artifact never reaches a node that
       }
       const seen = { refusal: { code: r.code, message: r.message.slice(0, 300) }, mMethods: M.methods, ...effects(ws, A, M) };
       trace("SI-1", seen);
-      expect(r.code, JSON.stringify(seen)).toBe("NODE_NETWORK_MISMATCH");
+      expect(r.code, JSON.stringify(seen)).toBe("MAINNET_CONNECTION_DISABLED"); // MAINNET TOTAL LOCKDOWN (M declares mainnet)
       expect(M.methods.filter((m) => m !== "getServerInfo"), JSON.stringify(seen)).toEqual([]);
       expectNoEffects(seen, JSON.stringify(seen));
     } finally {
@@ -357,7 +357,7 @@ describe("SECURITY-INTEGRATION-1 · a testnet artifact never reaches a node that
     }
   });
 
-  it("SI-1c CLI tx send --url <node declaring mainnet> in a testnet-10 workspace on A: refused NODE_NETWORK_MISMATCH; A and M receive no submission", async () => {
+  it("SI-1c CLI tx send --url <node declaring mainnet> in a testnet-10 workspace on A: refused MAINNET_CONNECTION_DISABLED (was NODE_NETWORK_MISMATCH); A and M receive no submission", async () => {
     const A = await startFake("A", "testnet-10");
     const M = await startFake("M", "mainnet");
     try {
@@ -367,7 +367,7 @@ describe("SECURITY-INTEGRATION-1 · a testnet artifact never reaches a node that
       const seen = { exit: r.status, code: r.doc?.code ?? null, mMethods: M.methods, ...effects(ws, A, M) };
       trace("SI-1c", seen);
       expect(r.status, r.brief).not.toBe(0);
-      expect(seen.code, r.brief).toBe("NODE_NETWORK_MISMATCH");
+      expect(seen.code, r.brief).toBe("MAINNET_CONNECTION_DISABLED"); // MAINNET TOTAL LOCKDOWN (M declares mainnet)
       expectNoEffects(seen, r.brief);
     } finally {
       await A.close();
@@ -375,7 +375,7 @@ describe("SECURITY-INTEGRATION-1 · a testnet artifact never reaches a node that
     }
   });
 
-  it("SI-1d CLI tx send without --url, the workspace's testnet-10 endpoint answered by a node declaring mainnet: refused NODE_NETWORK_MISMATCH", async () => {
+  it("SI-1d CLI tx send without --url, the workspace's testnet-10 endpoint answered by a node declaring mainnet: refused MAINNET_CONNECTION_DISABLED (was NODE_NETWORK_MISMATCH)", async () => {
     const A = await startFake("A", "testnet-10");
     const M = await startFake("M", "mainnet");
     try {
@@ -386,7 +386,7 @@ describe("SECURITY-INTEGRATION-1 · a testnet artifact never reaches a node that
       const seen = { exit: r.status, code: r.doc?.code ?? null, mMethods: M.methods, ...effects(ws, A, M) };
       trace("SI-1d", seen);
       expect(r.status, r.brief).not.toBe(0);
-      expect(seen.code, r.brief).toBe("NODE_NETWORK_MISMATCH");
+      expect(seen.code, r.brief).toBe("MAINNET_CONNECTION_DISABLED"); // MAINNET TOTAL LOCKDOWN (M declares mainnet)
       expectNoEffects(seen, r.brief);
     } finally {
       await A.close();
@@ -471,6 +471,8 @@ describe("SECURITY-INTEGRATION-1 · an external signer is never asked for mainne
       expect(seen.signerCalls).toBe(0);
       expect(seen.signed).toEqual([]);
       expect(M.methods).not.toContain("submitTransaction");
+      // MAINNET TOTAL LOCKDOWN: the mainnet instance opens offline — its node is not even read
+      expect(M.methods, JSON.stringify(seen)).toEqual([]);
     } finally {
       await A.close();
       await M.close();
@@ -521,6 +523,10 @@ describe("SECURITY-INTEGRATION-1 · an external signer is never asked for mainne
       expect(seen.signerCalls, JSON.stringify(seen)).toBe(0);
       expect(seen.submitTransaction, JSON.stringify(seen)).toEqual({ M: 0 });
       expect(seen.submissionRecords).toEqual([]);
+      // MAINNET TOTAL LOCKDOWN: the workflow stops at its first step (the plan would read mainnet), and the node is not
+      // even read
+      expect(seen.code, JSON.stringify(seen)).toBe("MAINNET_CONNECTION_DISABLED");
+      expect(M.methods, JSON.stringify(seen)).toEqual([]);
     } finally {
       await M.close();
     }
@@ -528,7 +534,7 @@ describe("SECURITY-INTEGRATION-1 · an external signer is never asked for mainne
 });
 
 describe("SECURITY-INTEGRATION-1 · a reconnection is verified again", () => {
-  it("SI-4 the node behind the instance's endpoint restarts as a node declaring mainnet: the next send is refused NODE_NETWORK_MISMATCH, no submitTransaction", async () => {
+  it("SI-4 the node behind the instance's endpoint restarts as a node declaring mainnet: the next send is refused MAINNET_CONNECTION_DISABLED, no submitTransaction", async () => {
     const A = await startFake("A", "testnet-10");
     let M: Fake | undefined;
     try {
@@ -554,7 +560,10 @@ describe("SECURITY-INTEGRATION-1 · a reconnection is verified again", () => {
       const seen = { refusal: { code: r.code, message: r.message.slice(0, 300) }, firstConnection, mBeforeSend, mMethods: M!.methods, ...effects(ws, A, M!) };
       trace("SI-4", seen);
       expect(firstConnection, JSON.stringify(seen)).toContain("getServerInfo");
-      expect(r.code, JSON.stringify(seen)).toBe("NODE_NETWORK_MISMATCH");
+      // MAINNET TOTAL LOCKDOWN: a node that answers mainnet is refused as such (MAINNET_CONNECTION_DISABLED) before the
+      // network-mismatch rule (it was NODE_NETWORK_MISMATCH); what this pins is unchanged: its identity answer only,
+      // nothing sent, no effect
+      expect(r.code, JSON.stringify(seen)).toBe("MAINNET_CONNECTION_DISABLED");
       expect(M!.methods, JSON.stringify(seen)).toContain("getServerInfo");
       expect(M!.methods.filter((m) => m !== "getServerInfo"), JSON.stringify(seen)).toEqual([]);
       expectNoEffects(seen, JSON.stringify(seen));
@@ -743,8 +752,8 @@ describe("SECURITY-INTEGRATION-1 · endpoint credentials never reach receipts, e
         submissionEvents: all.flatMap((e) => e.submissionEvents)
       };
       trace("SI-6b", seen);
-      expect(seen.codes.nniRead, JSON.stringify(seen)).toBe("NODE_NETWORK_MISMATCH");
-      expect(seen.codes.nniSend, JSON.stringify(seen)).toBe("NODE_NETWORK_MISMATCH");
+      expect(seen.codes.nniRead, JSON.stringify(seen)).toBe("MAINNET_CONNECTION_DISABLED"); // MAINNET TOTAL LOCKDOWN (M declares mainnet)
+      expect(seen.codes.nniSend, JSON.stringify(seen)).toBe("MAINNET_CONNECTION_DISABLED");
       expect(seen.codes.eaSend, JSON.stringify(seen)).toBe("SEND_ENDPOINT_MISMATCH");
       for (const [k, l] of Object.entries(seen.leaks)) expect(l, `${k}: ${JSON.stringify(seen)}`).toEqual([]);
       expect(seen.filesLeaking, JSON.stringify(seen)).toEqual([]);
@@ -771,7 +780,7 @@ describe("SECURITY-INTEGRATION-1 · endpoint credentials never reach receipts, e
         filesLeaking: filesLeaking(ws)
       };
       trace("SI-6c", seen);
-      expect(afterRefusal.code, refused.brief).toBe("NODE_NETWORK_MISMATCH");
+      expect(afterRefusal.code, refused.brief).toBe("MAINNET_CONNECTION_DISABLED"); // MAINNET TOTAL LOCKDOWN (M declares mainnet)
       expect(afterRefusal.outputLeaks, refused.brief).toEqual([]);
       expectNoEffects(afterRefusal, refused.brief);
       expect(seen.accepted.exit, human.brief).toBe(0);
@@ -887,9 +896,10 @@ describe("SECURITY-INTEGRATION-1 · D3 every refusal object (metadata included) 
       };
       trace("SI-7", seen);
       expect(seen.codes, JSON.stringify(seen)).toMatchObject({
-        nniRead: "NODE_NETWORK_MISMATCH",
-        nniPlan: "NODE_NETWORK_MISMATCH",
-        nniSend: "NODE_NETWORK_MISMATCH",
+        // MAINNET TOTAL LOCKDOWN: M declares mainnet — refused as such before the mismatch rule (was NODE_NETWORK_MISMATCH)
+        nniRead: "MAINNET_CONNECTION_DISABLED",
+        nniPlan: "MAINNET_CONNECTION_DISABLED",
+        nniSend: "MAINNET_CONNECTION_DISABLED",
         eaSend: "SEND_ENDPOINT_MISMATCH",
         eaObserve: "OBSERVE_ENDPOINT_MISMATCH",
         mgSend: "MAINNET_BROADCAST_DISABLED",

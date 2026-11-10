@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { parseSilArtifactValuesJson } from "@hardkas/core";
-import { readExactJson, readExactValuesJson } from "../src/commands/silver-dev-framework.js";
+import { readExactJson, readExactTestsJson, readExactValuesJson } from "../src/commands/silver-dev-framework.js";
 import { cliDist, childEnv } from "./first-contact-helpers.js";
 
 // -----------------------------------------------------------------------------
@@ -39,11 +39,17 @@ describe("ISSUE-ONCHAIN-JSON-PRECISION-1 · the exact readers", () => {
     expect(code(() => readExactValuesJson("[{", "--args"))).toBe("SILVER_ARGS_INVALID");
   });
 
-  it("N-2 · readExactJson (the --tests reader) refuses 1e3, 1.0000000000000001 and 0.0 instead of rewriting them", () => {
-    for (const lit of ["1e3", "1.0000000000000001", "0.0", "9007199254740993"]) {
+  // SC-09 (7-nov-2026): this test also pinned 9007199254740993 as refused by the --tests reader, which was the defect (a
+  // u64 amount past 2^53 could not be written at all). The --tests reader is now readExactTestsJson and keeps it exact
+  // (silver-test-exact-numbers-sc09.test.ts); readExactJson (kcc) still refuses it.
+  it("N-2 · the --tests reader refuses 1e3, 1.0000000000000001 and 0.0 instead of rewriting them; a larger integer is kept exact (SC-09)", () => {
+    for (const lit of ["1e3", "1.0000000000000001", "0.0"]) {
+      expect(code(() => readExactTestsJson(`{"tests":[{"tx":{"inputs":[{"utxo_value":${lit}}]}}]}`, "--tests")), lit).toBe("SILVER_JSON_NUMBER_UNSAFE");
       expect(code(() => readExactJson(`{"tests":[{"tx":{"inputs":[{"utxo_value":${lit}}]}}]}`, "--tests")), lit).toBe("SILVER_JSON_NUMBER_UNSAFE");
     }
-    expect(readExactJson('{"tests":[{"tx":{"inputs":[{"utxo_value":1000}]}}]}', "--tests")).toEqual({ tests: [{ tx: { inputs: [{ utxo_value: 1000 }] } }] });
+    expect(code(() => readExactJson('{"tests":[{"tx":{"inputs":[{"utxo_value":9007199254740993}]}}]}', "--tests"))).toBe("SILVER_JSON_NUMBER_UNSAFE");
+    expect(JSON.stringify(readExactTestsJson('{"tests":[{"tx":{"inputs":[{"utxo_value":9007199254740993}]}}]}', "--tests"))).toBe('{"tests":[{"tx":{"inputs":[{"utxo_value":9007199254740993}]}}]}');
+    expect(readExactTestsJson('{"tests":[{"tx":{"inputs":[{"utxo_value":1000}]}}]}', "--tests")).toEqual({ tests: [{ tx: { inputs: [{ utxo_value: 1000 }] } }] });
   });
 
   it("silver.ts reads no argument, next-state, spec or tests file with a bare JSON.parse any more", () => {

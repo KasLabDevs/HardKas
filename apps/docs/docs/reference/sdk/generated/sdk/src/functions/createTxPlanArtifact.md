@@ -8,9 +8,14 @@
 
 > **createTxPlanArtifact**(`options`): `object`
 
-Defined in: packages/artifacts/dist/index.d.ts:9597
+Defined in: [packages/artifacts/dist/index.d.ts:13523](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/dist/index.d.ts#L13523)
 
 Creates a canonical TxPlan artifact from a TxBuilder plan.
+
+The plan is a lineage ROOT: its lineage carries only its own artifactId
+(excluded from the hash by exact path) and a sequence. It stores no
+`lineageId`/`rootArtifactId` copies of itself; children reference the root's
+real artifactId instead (Closure Pack D-Q1.d, the two-pass hashing of H6 is gone).
 
 ## Parameters
 
@@ -53,6 +58,10 @@ Creates a canonical TxPlan artifact from a TxBuilder plan.
 ### contentHash?
 
 > `optional` **contentHash?**: `string`
+
+### covenantOutpoints?
+
+> `optional` **covenantOutpoints?**: `string`[]
 
 ### createdAt
 
@@ -98,6 +107,10 @@ Creates a canonical TxPlan artifact from a TxBuilder plan.
 
 > `optional` **input?**: `string`
 
+### genesisCovenantGroups?
+
+> `optional` **genesisCovenantGroups?**: `object`[]
+
 ### hardkasVersion
 
 > **hardkasVersion**: `string`
@@ -122,17 +135,17 @@ Creates a canonical TxPlan artifact from a TxBuilder plan.
 
 > **artifactId**: `string`
 
-#### lineage.lineageId
+#### lineage.lineageId?
 
-> **lineageId**: `string`
+> `optional` **lineageId?**: `string`
 
 #### lineage.parentArtifactId?
 
 > `optional` **parentArtifactId?**: `string`
 
-#### lineage.rootArtifactId
+#### lineage.rootArtifactId?
 
-> **rootArtifactId**: `string`
+> `optional` **rootArtifactId?**: `string`
 
 #### lineage.sequence?
 
@@ -141,6 +154,10 @@ Creates a canonical TxPlan artifact from a TxBuilder plan.
 ### lineageDepth?
 
 > `optional` **lineageDepth?**: `number`
+
+### maxFeeSompi?
+
+> `optional` **maxFeeSompi?**: `string`
 
 ### metadata?
 
@@ -158,6 +175,10 @@ Creates a canonical TxPlan artifact from a TxBuilder plan.
 
 > `optional` **networkProfileRef?**: `string`
 
+### nextState?
+
+> `optional` **nextState?**: (\{ `covenantId`: `string`; `input`: `number`; `outputs`: `number`[]; `successor`: \{ `artifactSha256`: `string`; `constructorArgs`: `unknown`[]; `state`: `Record`\<`string`, `unknown`\>; `stateToConstructorArg`: `Record`\<`string`, `number`\>; \}; \} \| \{ `covenantId`: `string`; `input`: `number`; `outputs`: `number`[]; `states`: `Record`\<`string`, `unknown`\>[]; \})[]
+
 ### outputs
 
 > **outputs**: `object`[]
@@ -166,13 +187,17 @@ Creates a canonical TxPlan artifact from a TxBuilder plan.
 
 > `optional` **parents?**: `string`[]
 
+### payload?
+
+> `optional` **payload?**: `string`
+
 ### planId
 
 > **planId**: `string`
 
 ### plannerAuthority?
 
-> `optional` **plannerAuthority?**: `"KASPA_WASM_GENERATOR"` \| `"SYNTHETIC_SIMULATOR"`
+> `optional` **plannerAuthority?**: `"KASPA_WASM_GENERATOR"` \| `"SYNTHETIC_SIMULATOR"` \| `"HARDKAS_V1_PLANNER"`
 
 ### plannerAuthorityDetail?
 
@@ -228,7 +253,7 @@ Creates a canonical TxPlan artifact from a TxBuilder plan.
 
 ### scriptProfile?
 
-> `optional` **scriptProfile?**: `"experimental"` \| `"standard"`
+> `optional` **scriptProfile?**: `"standard"` \| `"experimental"`
 
 ### storageMass?
 

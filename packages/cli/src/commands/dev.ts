@@ -84,7 +84,7 @@ export function registerDevCommands(program: Command) {
 
   txCmd
     .command("send")
-    .description("Quick send transaction")
+    .description("Quick plan, sign and send on the simulated ledger or a local simnet, with no confirmation; any other network is refused (use 'hardkas tx send … --yes')")
     .option("--from <accountOrAddress>", "Sender alias")
     .option("--to <address>", "Recipient address")
     .option("--amount <kas>", "Amount in KAS")

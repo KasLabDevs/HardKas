@@ -117,5 +117,32 @@ export const cliSemantics: Record<string, CliCommandSemantics> = {
     writes: [".hardkas/store.db (SQLite read-model)"],
     sideEffects: ["Rebuilds the ephemeral query projection from the Canonical Store."],
     evidenceMeaning: "Ensures the Query Store is in strict parity with the durable evidence DAG."
+  },
+  "hardkas zk toccata build-scripts": {
+    commandPath: "hardkas zk toccata build-scripts",
+    environments: ["Local (kaspa-wasm ZkScriptBuilder); simnet address always, testnet-10/mainnet only on request"],
+    reads: ["RISC Zero Groth16 receipt (file or hex)"],
+    evidenceMeaning:
+      "Scripts built and parsed, and the receipt's claim matches (imageId, journalHash). Nothing is signed or broadcast; on-chain acceptance is shown only by the simnet suites.",
+    limitations: [
+      "proof-only (default) is IMAGE_ID_ONLY: any holder of a valid receipt of the program spends every UTXO at the address, to any outputs, on any network (replay and front-running by design).",
+      "proof-and-output-bound is IMAGE_ID_AND_OUTPUTS: output count, payout/change script public key and amount by introspection, exactly one input, and an input of at most the bound outputs plus --max-fee. Fund it with requiredFundingSompi.",
+      "Neither mode binds the spent outpoint (circular: the funding transaction's id commits to the P2SH; refused as ZK_UTXO_BINDING_UNSATISFIABLE) or the journal (supplied by the unlocking script; the HKZ1 layout is an off-chain convention)."
+    ],
+    relatedConcepts: ["/concepts/toccata/zk-and-sequencing.md"],
+    relatedGuides: ["/guides/zk-l1-verification-and-settlement.md"]
+  },
+  "hardkas zk toccata verify-scripts": {
+    commandPath: "hardkas zk toccata verify-scripts",
+    environments: ["Local (kaspa-wasm ZkScriptBuilder, to rebuild the lock); no node is contacted"],
+    reads: ["Redeem and signature scripts (hex)"],
+    evidenceMeaning:
+      "The lock uses the pinned RISC Zero verifying key, control root and control id, and its redeem script is byte-identical to the one build-scripts makes for the parameters it carries. consensusEnforced: true only for such an output-bound lock. The scripts are not executed; on-chain acceptance is shown only by the simnet suites.",
+    limitations: [
+      "A lock HardKAS cannot rebuild byte for byte (another builder, other opcodes, another encoding) is ZK_REDEEM_SCRIPT_NOT_CANONICAL: no claim is made about it, even when it may be sound.",
+      "Expected outputs asked of a lock that binds none (proof-only) are ZK_EXPECTED_BINDING_NOT_ENFORCED, never satisfied vacuously."
+    ],
+    relatedConcepts: ["/concepts/toccata/zk-and-sequencing.md"],
+    relatedGuides: ["/guides/zk-l1-verification-and-settlement.md"]
   }
 };

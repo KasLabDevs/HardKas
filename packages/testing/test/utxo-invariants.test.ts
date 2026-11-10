@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { runUtxoFuzzer } from "../src/utxo-fuzzer.js";
+import { runUtxoFuzzer } from "./utxo-fuzzer.js";
 
 describe("Infrastructure Invariants: UTXO Stability", () => {
   it("should maintain sum(inputs) == sum(outputs) + fee over 100 random transactions", async () => {

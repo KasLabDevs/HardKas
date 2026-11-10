@@ -6,7 +6,7 @@
 
 # Class: ProjectArtifactStore
 
-Defined in: [packages/artifacts/src/store.ts:45](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/store.ts#L45)
+Defined in: [packages/artifacts/src/store.ts:84](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/store.ts#L84)
 
 ## Constructors
 
@@ -14,7 +14,7 @@ Defined in: [packages/artifacts/src/store.ts:45](https://github.com/KasLabDevs/H
 
 > **new ProjectArtifactStore**(`workspaceRoot`): `ProjectArtifactStore`
 
-Defined in: [packages/artifacts/src/store.ts:49](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/store.ts#L49)
+Defined in: [packages/artifacts/src/store.ts:88](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/store.ts#L88)
 
 #### Parameters
 
@@ -32,7 +32,7 @@ Defined in: [packages/artifacts/src/store.ts:49](https://github.com/KasLabDevs/H
 
 > **enumerateCanonicalArtifacts**(): `Promise`\<`object`[]\>
 
-Defined in: [packages/artifacts/src/store.ts:539](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/store.ts#L539)
+Defined in: [packages/artifacts/src/store.ts:456](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/store.ts#L456)
 
 #### Returns
 
@@ -44,7 +44,10 @@ Defined in: [packages/artifacts/src/store.ts:539](https://github.com/KasLabDevs/
 
 > **exists**(`id`): `Promise`\<`boolean`\>
 
-Defined in: [packages/artifacts/src/store.ts:101](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/store.ts#L101)
+Defined in: [packages/artifacts/src/store.ts:190](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/store.ts#L190)
+
+True when `id` (a contained path or a 64-hex artifactId) resolves to a verified
+artifact. A label needs its namespace and is refused (NAMESPACE_REQUIRED).
 
 #### Parameters
 
@@ -62,49 +65,7 @@ Defined in: [packages/artifacts/src/store.ts:101](https://github.com/KasLabDevs/
 
 > **findReceiptByTxId**(`txId`): `Promise`\<`unknown`\>
 
-Defined in: [packages/artifacts/src/store.ts:182](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/store.ts#L182)
-
-Wave 10 · RECEIPT-1 · exact receipt lookup by `.txId` field.
-
-The historical implementation delegated to `readArtifact(txId)`, which
-ultimately performs a filename-substring search via
-`findArtifactPathById`. That resolver keys on the artifact's own
-identity token (typically `artifactId` or `contentHash`), NOT the
-receipt's Kaspa consensus `.txId` field, so real-node receipts (whose
-filenames encode `artifactId`, a different 64-hex string from `txId`)
-silently returned `"not found in store"` even though the receipt was
-present on disk. A subset of simulator receipts happened to resolve
-only because their filename identity coincided with `.txId`.
-
-The correct algorithm — already proven by
-`packages/localnet/src/receipts.ts::loadSimulatedReceipt` — is:
-  1. Enumerate every canonical artifact under `.hardkas/artifacts/`.
-  2. Retain only those whose declared schema is an L1 receipt schema
-     (`hardkas.txReceipt` or `hardkas.txReceipt.v1`) checked against
-     BOTH the top-level `.schema` field AND `.schemaVersion` (some
-     simulator writers set the latter instead of the former; a valid
-     receipt is one that carries the schema string in either slot).
-  3. Retain only those whose `.txId` is a non-empty string that
-     exactly equals the requested `txId` (byte-for-byte, no
-     normalisation — `txId` is contractually `z.string()` and can be
-     lowercase 64-hex, a `simtx_failed_*` marker, or any deterministic
-     simulator id; imposing a shape here would break legitimate
-     lookups).
-  4. Zero matches → `RECEIPT_NOT_FOUND` typed error.
-  5. Exactly one match → return it.
-  6. Multiple matches → collapse ONLY if every match carries a
-     non-empty `.contentHash` string AND all values are identical
-     (i.e., duplicate copies of the same evidence). Any absent /
-     empty `.contentHash`, or any structural disagreement, throws
-     `RECEIPT_AMBIGUOUS_CONFLICT` with the observed identities.
-     This guard specifically avoids collapsing two distinct artifacts
-     that both happen to omit `contentHash` under the accidental
-     identity `undefined === undefined`.
-
-The signature (`(string) => Promise<unknown>`) is preserved so the
-existing sole consumer (`packages/cli/src/runners/tx-receipt-runner.ts`)
-continues to work unchanged; typed errors now propagate to the CLI's
-top-level renderer via Wave 8's owner-of-serialisation model.
+Defined in: [packages/artifacts/src/store.ts:299](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/store.ts#L299)
 
 #### Parameters
 
@@ -118,11 +79,68 @@ top-level renderer via Wave 8's owner-of-serialisation model.
 
 ***
 
+### listObservationsByTxId()
+
+> **listObservationsByTxId**(`txId`): `object`
+
+Defined in: [packages/artifacts/src/store.ts:268](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/store.ts#L268)
+
+Wave 2(a) · IC-2′.6: the observations recorded for `txId` — N by design. Every
+candidate is verified (strict, FULL) before it counts; the rest are reported,
+never silently dropped and never used to decide (IC-2′.8).
+
+#### Parameters
+
+##### txId
+
+`string`
+
+#### Returns
+
+`object`
+
+##### observations
+
+> **observations**: `unknown`[]
+
+##### rejected
+
+> **rejected**: `object`[]
+
+***
+
+### publishArtifact()
+
+> **publishArtifact**(`artifact`): `Promise`\<[`PublishedArtifact`](../interfaces/PublishedArtifact.md)\>
+
+Defined in: [packages/artifacts/src/store.ts:122](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/store.ts#L122)
+
+EVIDENCE-TRUST-1 (ET-C1): a published evidence identity is write-once.
+- No entry for the identity → the artifact is written (atomically, through the store's gate).
+- The entry holds a copy that verifies as this same identity → it is kept byte for byte and returned: the durable
+  copy is the authority for the fields outside the identity (createdAt, hardkasVersion, …), as for state snapshots.
+- Anything else (not JSON, a copy that does not verify — tampered —, another identity, or other bytes for an
+  artifact without contentHash) → ARTIFACT_IDENTITY_CONFLICT, and not a byte is touched: a second write never
+  "repairs" evidence that was changed.
+The check and the write happen in one holding of the store, so no cooperative writer comes in between.
+
+#### Parameters
+
+##### artifact
+
+`any`
+
+#### Returns
+
+`Promise`\<[`PublishedArtifact`](../interfaces/PublishedArtifact.md)\>
+
+***
+
 ### queryArtifacts()
 
 > **queryArtifacts**(`query`): `Promise`\<`any`[]\>
 
-Defined in: [packages/artifacts/src/store.ts:626](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/store.ts#L626)
+Defined in: [packages/artifacts/src/store.ts:488](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/store.ts#L488)
 
 #### Parameters
 
@@ -142,7 +160,16 @@ Defined in: [packages/artifacts/src/store.ts:626](https://github.com/KasLabDevs/
 
 > **readArtifact**(`id`): `Promise`\<`unknown`\>
 
-Defined in: [packages/artifacts/src/store.ts:105](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/store.ts#L105)
+Defined in: [packages/artifacts/src/store.ts:211](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/store.ts#L211)
+
+Wave 1.2 · IC-5′: reads a contained workspace path or a 64-hex artifactId
+(the recomputed contentHash). Both are verified before they are returned.
+Labels (`planId`, `signedId`), txIds and workflowIds are refused with
+NAMESPACE_REQUIRED: use `resolveArtifact(root, { plan | signed | tx | workflow })`.
+
+Paths are relative to the WORKSPACE ROOT (never process.cwd(), IC-5′.7) and
+are checked against the boundary whether or not they exist, so a traversal
+attempt is reported as such (PATH_TRAVERSAL) instead of as a missing artifact.
 
 #### Parameters
 
@@ -160,7 +187,7 @@ Defined in: [packages/artifacts/src/store.ts:105](https://github.com/KasLabDevs/
 
 > **resolveLineage**(`id`): `Promise`\<`any`[]\>
 
-Defined in: [packages/artifacts/src/store.ts:475](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/store.ts#L475)
+Defined in: [packages/artifacts/src/store.ts:392](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/store.ts#L392)
 
 #### Parameters
 
@@ -178,7 +205,9 @@ Defined in: [packages/artifacts/src/store.ts:475](https://github.com/KasLabDevs/
 
 > **writeArtifact**(`artifact`): `Promise`\<`string`\>
 
-Defined in: [packages/artifacts/src/store.ts:74](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/store.ts#L74)
+Defined in: [packages/artifacts/src/store.ts:108](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/store.ts#L108)
+
+Publishes an artifact (see `publishArtifact`) and returns the path of its store entry.
 
 #### Parameters
 

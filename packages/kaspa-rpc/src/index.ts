@@ -94,6 +94,11 @@ export interface JsonWrpcKaspaClientOptions {
    * testnet-10, mainnet…). Each connection is refused unless the node itself says it serves that network.
    */
   expectedNetworkId?: string | undefined;
+  /**
+   * INT9-A (I-3b): with `expectedNetworkId`, each connection is also refused (NODE_NOT_SYNCED) unless the node says it
+   * is synced — for the operations that need the current chain state (plan, send, wait). Diagnostics leave it off.
+   */
+  requireSynced?: boolean | undefined;
 }
 
 export interface BlockDagInfo {
@@ -110,6 +115,9 @@ export interface ServerInfo {
   readonly isSynced?: boolean;
   readonly hasUtxoIndex?: boolean;
   readonly virtualDaaScore?: bigint;
+  /** INT9-A: the node's RPC protocol version and revision (getServerInfo). */
+  readonly rpcApiVersion?: number;
+  readonly rpcApiRevision?: number;
 }
 
 export interface MempoolEntry {
@@ -179,7 +187,13 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
 
   constructor(options: JsonWrpcKaspaClientOptions) {
     this.rpcUrl = options.rpcUrl;
-    this.session = new OfficialRpcSession(options.rpcUrl, options.timeoutMs ?? 30000, options.rpcFactory, options.expectedNetworkId);
+    this.session = new OfficialRpcSession(
+      options.rpcUrl,
+      options.timeoutMs ?? 30000,
+      options.rpcFactory,
+      options.expectedNetworkId,
+      options.requireSynced === true
+    );
   }
 
   /** ENDPOINT-AUTHORITY-1: the endpoint this client was opened on (what a record names as its RPC endpoint). */
@@ -367,10 +381,15 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
       if (response?.isSynced !== undefined) result.isSynced = response.isSynced;
       if (response?.hasUtxoIndex !== undefined) result.hasUtxoIndex = response.hasUtxoIndex;
       if (response?.virtualDaaScore !== undefined) result.virtualDaaScore = BigInt(response.virtualDaaScore);
+      // INT9-A: the RPC protocol version and revision, which a node identity record keeps as endpoint evidence
+      if (typeof response?.rpcApiVersion === "number") result.rpcApiVersion = response.rpcApiVersion;
+      if (typeof response?.rpcApiRevision === "number") result.rpcApiRevision = response.rpcApiRevision;
       return result as ServerInfo;
     } catch (e) {
-      // Fallback to getInfo
-      const info: any = await this.getInfo();
+      // Fallback to the node's own getInfo answer. INT9-A: ONE read, never getInfo() — its networkId enrichment asks
+      // getServerInfo again, and an endpoint whose getServerInfo cannot be decoded looped here forever (every identity
+      // probe hung while hammering it). getInfo carries no network: the answer says "unknown", never a guess.
+      const info: any = mapKaspaNodeInfo(await this.session.request("getInfo"));
       const result: any = {
         networkId: (info.networkId as NetworkId) || "unknown"
       };
@@ -665,6 +684,8 @@ export * from "./health.js";
 
 export * from "./errors.js";
 export { assertBroadcastNodeIdentity, decideBroadcastIdentity, canonicalNetworkId, type BroadcastIdentitySource } from "./broadcast-identity.js";
+// RC1 · D3: the node's sync before a broadcast (SDK tx.send, wallet toolkit) and the networks of its explicit escape
+export { assertBroadcastNodeSynced, unsyncedBroadcastAllowedOn, type BroadcastNodeSync } from "./broadcast-identity.js";
 export { canonicalRpcEndpoint, sameRpcEndpoint, rpcEndpointOf } from "./endpoint.js";
 // The transport: the official kaspa-wasm RpcClient, and the factory seam tests use to stand in for it.
 export { officialRpcFactory, toWrpcUrl, type OfficialRpcClientLike, type OfficialRpcFactory } from "./upstream/session.js";

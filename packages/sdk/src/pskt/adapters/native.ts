@@ -7,6 +7,7 @@ import {
   PsktSignRequest,
   PsktInspection
 } from "@hardkas/core";
+import { preflightNativePsktSign } from "../native-sign-preflight.js";
 
 interface NativeExtractedTransaction {
   readonly version: number;
@@ -62,13 +63,17 @@ export class NativePsktAdapter implements PsktRuntimeAdapter {
   readonly id: string;
   readonly kind = "native-bridge";
   
+  // HK-13: what this adapter really is: an addon loaded into this process (no transport to encrypt, nothing that
+  // authenticates the binary — its provenance carries no hash, HK-23), and nothing verifies the unsigned transaction's
+  // identity against an approved plan. It used to declare transportEncrypted / adapterAuthenticated /
+  // verifiesUnsignedTxIdentity: true without any basis.
   readonly trustProfile: PsktAdapterTrustProfile = {
     processBoundary: "same-process",
     privateKeysLeaveProcess: false,
     payloadLeavesProcess: false,
-    verifiesUnsignedTxIdentity: true,
-    transportEncrypted: true,
-    adapterAuthenticated: true
+    verifiesUnsignedTxIdentity: false,
+    transportEncrypted: false,
+    adapterAuthenticated: false
   };
 
   private addon: any = null;
@@ -81,7 +86,7 @@ export class NativePsktAdapter implements PsktRuntimeAdapter {
   private async loadAddon() {
     if (this.addon || this.loadError) return;
     try {
-      // @ts-ignore
+      // @ts-ignore - @hardkas/pskt-native is private and not a dependency of the SDK: loaded on demand, often absent
       this.addon = await import("@hardkas/pskt-native");
     } catch (e: any) {
       this.loadError = e;
@@ -198,19 +203,35 @@ export class NativePsktAdapter implements PsktRuntimeAdapter {
       throw new Error("PSKT_SIGNING_KEY_REQUIRED: keyMaterial is required for native signing");
     }
 
+    if (payload.format !== "pskt-binary-base64") {
+      throw new Error(`PSKT_PAYLOAD_FORMAT_UNSUPPORTED: the native adapter signs a base64 PSKT, not '${payload.format}'`);
+    }
     const keyBuf = Buffer.from(request.keyMaterial);
     try {
+      // HK-13: HardKAS's signing policy, BEFORE the native code runs (SIGHASH_ALL only, ownership by the UTXO's script,
+      // network known and not mainnet). `networkId` is the session's (signSession passes it).
+      preflightNativePsktSign({
+        payloadBase64: payload.data,
+        inputIndexes: request.inputIndexes,
+        privateKey: keyBuf,
+        networkId: (request as { networkId?: string }).networkId
+      });
       const requestJson = JSON.stringify({ inputIndexes: request.inputIndexes });
-      const resultStr = this.addon.psktSign(
-        payload.data, 
-        [keyBuf],
-        requestJson
-      );
-      const result = JSON.parse(resultStr);
-
-      if (result.error) {
-         // handle structured error if we return it directly, but pskt_sign throws napi Error for Rust Err
+      let resultStr: string;
+      try {
+        resultStr = this.addon.psktSign(payload.data, [keyBuf], requestJson);
+      } catch (e: any) {
+        // the Rust side puts a structured error (JSON) in the message; its code is kept
+        let parsed: any;
+        try {
+          parsed = JSON.parse(e?.message);
+        } catch {
+          parsed = undefined;
+        }
+        if (parsed?.code) throw Object.assign(new Error(`${parsed.code}: ${parsed.message}`), { code: parsed.code });
+        throw new Error(`Native PSKT sign failed: ${e?.message ?? e}`);
       }
+      const result = JSON.parse(resultStr);
 
       return {
         format: "pskt-binary-base64",
@@ -219,14 +240,6 @@ export class NativePsktAdapter implements PsktRuntimeAdapter {
         payloadHash: result.outputPayloadHash,
         byteLength: Buffer.from(result.payloadBase64, "base64").length
       };
-    } catch (e: any) {
-      // The Rust side returns a JSON string inside the Error message if it's a structured error
-      try {
-        const parsedErr = JSON.parse(e.message);
-        throw new Error(`${parsedErr.code}: ${parsedErr.message}`);
-      } catch {
-        throw new Error(`Native PSKT sign failed: ${e.message}`);
-      }
     } finally {
       if (request.keyMaterial) {
         request.keyMaterial.fill(0);

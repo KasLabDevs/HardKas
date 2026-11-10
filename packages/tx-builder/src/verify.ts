@@ -2,11 +2,11 @@ import { TxPlan, TxOutput } from "./index.js";
 import { measureRelayFee, measureUpstreamMass, type UpstreamMassInput } from "./mass.js";
 
 /**
- * Kaspa dust threshold in sompi.
- * Based on the rusty-kaspa wallet heuristic for standard P2PK outputs:
- *   value * 1000 / (STANDARD_OUTPUT_SIZE_PLUS_INPUT_SIZE * 3) < MINIMUM_RELAY_TRANSACTION_FEE
- * For standard outputs this equates to ~546 sompi.
- * We use 600 as a conservative margin, consistent with the localnet.
+ * HardKAS's dust threshold in sompi: a HardKAS plan-verification heuristic, NOT a rusty-kaspa node rule.
+ * L1-06: the v2.1.0 mempool does not reject dust outputs by a threshold ("Mempool does not reject dust outputs by
+ * threshold", wallet/core/src/tx/mass.rs); the wallet's own dust heuristic, with MINIMUM_RELAY_TRANSACTION_FEE =
+ * 100,000 sompi/kg, gives ~60,300 sompi, and what really bounds small outputs is the storage mass (KIP-9: a single
+ * output needs ≥ 2,000,000 sompi to stay within 500,000 g). The value 600 is kept for compatibility of the check.
  */
 export const DUST_THRESHOLD_SOMPI = 600n;
 
@@ -165,7 +165,7 @@ export function verifyTxPlanSemantics(
     addIssue(
       "MASS_ABOVE_STANDARD_LIMIT",
       "critical",
-      `Mass ${recomputedMass} exceeds the maximum standard transaction mass ${upstream.maximumStandardMass}: the node will not relay it`
+      `Mass ${recomputedMass} exceeds the wallet's maximum standard transaction mass ${upstream.maximumStandardMass} (rusty-kaspa wallet/core MAXIMUM_STANDARD_TRANSACTION_MASS, a wallet policy: the v2.1.0 mempool limits masses by the block limits): HardKAS and the kaspa-wasm Generator do not build it`
     );
   } else if (recomputedFeeSompi < upstream.minimumFeeSompi) {
     // The SDK's figure prices storage mass too; the node relays at its minimum rate per
@@ -198,8 +198,9 @@ export function verifyTxPlanSemantics(
         `outputs[${i}]`
       );
     }
-    // Dust check: reject outputs below the Kaspa dust threshold (600 sompi)
-    // This must be an error, not a warning, to match real node behavior.
+    // Dust check: outputs below HardKAS's dust threshold (600 sompi) are refused. L1-06: a HardKAS heuristic, NOT a node
+    // rule — the rusty-kaspa v2.1.0 mempool does not reject dust by threshold (wallet/core/src/tx/mass.rs); small outputs
+    // are priced (and bounded) by the storage mass (KIP-9) instead.
     if (BigInt(o.amountSompi) < DUST_THRESHOLD_SOMPI) {
       addIssue(
         "DUST_OUTPUT",

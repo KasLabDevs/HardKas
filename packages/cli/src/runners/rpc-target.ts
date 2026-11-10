@@ -3,14 +3,13 @@ import { nodeRpcUrl } from "@hardkas/core";
 /**
  * HARDKAS-NETWORK-PORTABILITY-1 (C5): where an `rpc` command talks, and which network the node must prove it serves.
  *
- * - no `--network`: the explicit `--url`, else the canonical localnet — unchanged, and no identity is required (a raw
- *   diagnostic of whatever answers there);
+ * - `--url` without `--network`: that endpoint, and no identity is required (a raw diagnostic of whatever answers there);
  * - `--network <name>`: the endpoint the workspace declares for that network (or `--url`, when given), resolved by the
  *   shared endpoint authority (a public network with no endpoint the user chose is NETWORK_ENDPOINT_REQUIRED, nothing
- *   contacted), and the node must serve that network (NODE-NETWORK-IDENTITY-1) before anything is read from it.
- * RPC-DEFAULT-TARGET-NOTE-1: in a workspace whose network is public (testnet-<n>, mainnet), the canonical localnet of the
- * first case is not the workspace's node: the command says so on stderr, and how to check that node. The target, the
- * output and the exit code stay as above.
+ *   contacted), and the node must serve that network (NODE-NETWORK-IDENTITY-1) before anything is read from it;
+ * - neither (L1-CORE-1 B2 · H1, replacing RPC-DEFAULT-TARGET-NOTE-1's note): in a workspace whose network is a node
+ *   network, as `--network <the workspace's network>`; outside a workspace or in the simulator, the canonical localnet,
+ *   unchecked.
  */
 export interface RpcTarget {
   url: string;
@@ -20,8 +19,14 @@ export interface RpcTarget {
 
 export async function resolveRpcTarget(options: { url?: string | undefined; network?: string | undefined }): Promise<RpcTarget> {
   if (!options.network) {
-    if (!options.url) await noteCanonicalFallback();
-    return { url: options.url || nodeRpcUrl() };
+    if (options.url) return { url: options.url };
+    // L1-CORE-1 B2 · H1 (TN10-24): in a workspace whose network is a node network, the command checks THAT network, as
+    // `--network <it>` would: its declared endpoint, the node's identity, and NETWORK_ENDPOINT_REQUIRED (nothing contacted)
+    // for a public network that declares none — never the canonical localnet. Outside a workspace, or in the simulator,
+    // the raw diagnostic of the canonical localnet stays.
+    const workspaceNetwork = await workspaceNodeNetwork();
+    if (workspaceNetwork) return resolveRpcTarget({ network: workspaceNetwork });
+    return { url: nodeRpcUrl() };
   }
   const { loadHardkasConfig, resolveNodeEndpoint } = await import("@hardkas/config");
   const { config } = await loadHardkasConfig();
@@ -43,26 +48,30 @@ export async function resolveRpcTarget(options: { url?: string | undefined; netw
   return { url, expectedNetworkId };
 }
 
-/** RPC-DEFAULT-TARGET-NOTE-1: the note, when the workspace's network (its execution default's) is public. */
-async function noteCanonicalFallback(): Promise<void> {
+/**
+ * H1: the workspace's network (its execution default's, else `defaultNetwork`) when a workspace config file exists and
+ * names a node network; undefined outside a workspace, for the simulator, or when the config cannot be read. (It
+ * replaces RPC-DEFAULT-TARGET-NOTE-1's stderr note, which said the canonical localnet was checked instead.)
+ */
+async function workspaceNodeNetwork(): Promise<string | undefined> {
   try {
-    const { loadHardkasConfig, isPublicKaspaNetwork } = await import("@hardkas/config");
-    const { config } = await loadHardkasConfig();
-    const exec: any = (config as any).execution;
+    const { loadHardkasConfig } = await import("@hardkas/config");
+    const loaded: { path?: string; config: any } = await loadHardkasConfig();
+    if (!loaded.path) return undefined;
+    const config = loaded.config;
+    const exec: any = config?.execution;
     const target = exec?.default ? exec.targets?.[exec.default] : undefined;
-    const name: string | undefined = typeof target?.network === "string" ? target.network : (config as any).defaultNetwork;
-    const entry = name ? ((config.networks as any)?.[name] as { network?: unknown } | undefined) : undefined;
+    const name: string | undefined = typeof target?.network === "string" ? target.network : config?.defaultNetwork;
+    if (!name) return undefined;
+    const entry = (config.networks as any)?.[name] as { network?: unknown; kind?: unknown } | undefined;
     const network = typeof entry?.network === "string" ? entry.network : name;
-    if (!name || !network || !isPublicKaspaNetwork(network)) return;
-    const { UI } = await import("../ui.js");
-    UI.warning(
-      `No --network or --url: this checks the canonical localnet (${nodeRpcUrl()}), unchecked, not this workspace's network ` +
-        `${network}. Add --network ${name} to check the endpoint the workspace declares.`
-    );
+    if (network === "simulated" || entry?.kind === "simulated" || target?.mode === "simulator") return undefined;
+    return name;
   } catch {
-    // no readable workspace config: nothing to say
+    // no readable workspace config: the raw diagnostic
+    return undefined;
   }
 }
 
 export const RPC_NETWORK_OPTION =
-  "Network from the workspace config: its declared endpoint, and the node must prove it serves that network (default: none — the --url or the canonical localnet, unchecked)";
+  "Network from the workspace config: its declared endpoint, and the node must prove it serves that network (default: the workspace's network; outside a workspace, the --url or the canonical localnet, unchecked)";

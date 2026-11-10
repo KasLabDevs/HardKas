@@ -8,11 +8,13 @@
 
 > **canonicalStringify**(`obj`, `version?`, `keyName?`, `isRoot?`): `string`
 
-Defined in: [packages/artifacts/src/canonical.ts:96](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/canonical.ts#L96)
+Defined in: [packages/artifacts/src/canonical.ts:317](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/canonical.ts#L317)
 
 Deterministically stringifies an object by sorting keys recursively.
 Handles BigInt by converting to string with type marker.
-Excludes fields in SEMANTIC_EXCLUSIONS during serialization.
+Versions 1–4 drop the version's exclusion set by key name at any depth
+(legacy, frozen). Version 5 drops only the closed top-level list, the derived
+labels and the exact-path self references.
 Skips keys with undefined values (matching JSON.stringify behavior).
 
 ## Parameters

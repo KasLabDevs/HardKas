@@ -61,6 +61,11 @@ export interface KnownExtension {
   /** `hardkas toolchain install` ids it provides (L2-EXT stage 3). */
   readonly toolchains: readonly string[];
   readonly summary: string;
+  /**
+   * INT9: whether this release publishes the package to the registry (docs/status/versioning.md). When it does not,
+   * `hardkas extension install <id>` cannot fetch it, so no refusal recommends that command as the next step.
+   */
+  readonly published: boolean;
 }
 
 /**
@@ -77,7 +82,9 @@ export const KNOWN_EXTENSIONS: readonly KnownExtension[] = [
     subcommands: [["dev", "doctor"]],
     templates: ["l2-evm"],
     toolchains: ["foundry", "solc"],
-    summary: "Igra L2 (EVM) lab: profiles, JSON-RPC, EVM transactions and contracts"
+    summary: "Igra L2 (EVM) lab: profiles, JSON-RPC, EVM transactions and contracts",
+    // L1-CORE-1 B5 / INT9: @hardkas/ext-l2 and its dependency @hardkas/l2 are private in this release.
+    published: false
   }
 ];
 

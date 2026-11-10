@@ -4,7 +4,9 @@ import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const projectRoot = path.resolve(__dirname, "..");
+// `--root <dir>` checks another tree (used by its regression test); the default is this repository.
+const rootFlag = process.argv.indexOf("--root");
+const projectRoot = rootFlag > -1 && process.argv[rootFlag + 1] ? path.resolve(process.argv[rootFlag + 1]) : path.resolve(__dirname, "..");
 
 const rootMdFiles = [
   "README.md",
@@ -64,8 +66,9 @@ for (const file of mdFiles) {
     }
   }
 
-  // Check local links [text](path/to/file)
-  const linkRegex = /\[[^\]]+\]\(([^)http#\s]+)\)/g;
+  // Check local links [text](path/to/file). RC1: the class used to be `[^)http#\s]`, which excluded the LETTERS h, t and p
+  // (not the "http" prefix), so almost every link was skipped; external, hash and mailto links are filtered below.
+  const linkRegex = /\[[^\]]+\]\(([^)\s]+)\)/g;
   let match;
   while ((match = linkRegex.exec(content)) !== null) {
     const linkPath = match[1];

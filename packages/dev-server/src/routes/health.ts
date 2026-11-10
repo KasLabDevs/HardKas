@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { KaspaWrpcClient } from "@hardkas/kaspa-rpc";
 import { loadHardkasConfig } from "@hardkas/config";
+import { declaredNetworkIdOf, isMainnetNetworkId, MAINNET_CONNECTION_DISABLED } from "@hardkas/core";
 
 export const healthRoutes = new Hono();
 
@@ -24,10 +25,17 @@ healthRoutes.get("/", async (c) => {
   };
   let l2Status = { status: "not-configured" as string };
 
+  // MAINNET TOTAL LOCKDOWN: a workspace whose network is (or declares) mainnet is never contacted, whatever rpcUrl says
+  const declaredL1 = declaredNetworkIdOf(config, defaultNet) ?? defaultNet;
+  const mainnetL1 = isMainnetNetworkId(defaultNet) || isMainnetNetworkId(declaredL1);
+
   // L1 check via wRPC
   if (!l1Network || l1Network.kind === "simulated") {
     l1Status = { status: "simulated-mode", daaScore: 0, network: "simulated" };
+  } else if (mainnetL1) {
+    l1Status = { status: MAINNET_CONNECTION_DISABLED, daaScore: undefined, network: declaredL1 };
   } else if (l1Url) {
+    // a node that answers mainnet here is refused by the transport after its one identity answer
     const client = new KaspaWrpcClient(l1Url);
     try {
       await client.connect(800);

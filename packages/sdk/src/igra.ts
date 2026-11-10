@@ -28,13 +28,11 @@ export class HardkasIgra {
     }
 
     // Removed capabilitiesApi probe, default to missing for now
-    if (true) {
-      return {
-        ok: false,
-        schema: HardkasSchemas.IgraStatusV1,
-        status: "MISSING_DEPENDENCY",
-        error: "Igra capabilities removed."
-      };
-    }
+    return {
+      ok: false,
+      schema: HardkasSchemas.IgraStatusV1,
+      status: "MISSING_DEPENDENCY",
+      error: "Igra capabilities removed."
+    };
   }
 }

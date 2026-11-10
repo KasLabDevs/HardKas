@@ -6,7 +6,7 @@
 
 # Interface: HardkasKaspaNodeTarget
 
-Defined in: [packages/config/src/types.ts:25](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/config/src/types.ts#L25)
+Defined in: [packages/config/src/types.ts:25](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/config/src/types.ts#L25)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [packages/config/src/types.ts:25](https://github.com/KasLabDevs/Hard
 
 > `optional` **binaryPath?**: `string`
 
-Defined in: [packages/config/src/types.ts:30](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/config/src/types.ts#L30)
+Defined in: [packages/config/src/types.ts:30](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/config/src/types.ts#L30)
 
 ***
 
@@ -22,7 +22,7 @@ Defined in: [packages/config/src/types.ts:30](https://github.com/KasLabDevs/Hard
 
 > `optional` **consensusParams?**: `object`
 
-Defined in: [packages/config/src/types.ts:32](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/config/src/types.ts#L32)
+Defined in: [packages/config/src/types.ts:32](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/config/src/types.ts#L32)
 
 #### coinbaseMaturity?
 
@@ -34,7 +34,7 @@ Defined in: [packages/config/src/types.ts:32](https://github.com/KasLabDevs/Hard
 
 > `optional` **dataDir?**: `string`
 
-Defined in: [packages/config/src/types.ts:29](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/config/src/types.ts#L29)
+Defined in: [packages/config/src/types.ts:29](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/config/src/types.ts#L29)
 
 ***
 
@@ -42,7 +42,7 @@ Defined in: [packages/config/src/types.ts:29](https://github.com/KasLabDevs/Hard
 
 > `optional` **description?**: `string`
 
-Defined in: [packages/config/src/types.ts:31](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/config/src/types.ts#L31)
+Defined in: [packages/config/src/types.ts:31](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/config/src/types.ts#L31)
 
 ***
 
@@ -50,7 +50,27 @@ Defined in: [packages/config/src/types.ts:31](https://github.com/KasLabDevs/Hard
 
 > **kind**: `"kaspa-node"`
 
-Defined in: [packages/config/src/types.ts:26](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/config/src/types.ts#L26)
+Defined in: [packages/config/src/types.ts:26](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/config/src/types.ts#L26)
+
+***
+
+### maxFeeRate?
+
+> `optional` **maxFeeRate?**: `string` \| `number` \| `bigint`
+
+Defined in: [packages/config/src/types.ts:38](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/config/src/types.ts#L38)
+
+HK-09 / CA-TX-01: the highest fee RATE (sompi per gram) accepted from this network's node estimate; above it the plan is refused (FEE_RATE_ABOVE_BOUND).
+
+***
+
+### maxFeeSompi?
+
+> `optional` **maxFeeSompi?**: `string` \| `number` \| `bigint`
+
+Defined in: [packages/config/src/types.ts:36](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/config/src/types.ts#L36)
+
+TX-FEE-GUARD-1: workspace limit on the TOTAL fee (sompi) of a transaction on this network, checked at plan, sign and send.
 
 ***
 
@@ -58,7 +78,7 @@ Defined in: [packages/config/src/types.ts:26](https://github.com/KasLabDevs/Hard
 
 > **network**: `"simnet"` \| `"mainnet"` \| `"testnet-10"` \| `"testnet-11"` \| `"testnet-12"` \| `"devnet"`
 
-Defined in: [packages/config/src/types.ts:27](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/config/src/types.ts#L27)
+Defined in: [packages/config/src/types.ts:27](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/config/src/types.ts#L27)
 
 ***
 
@@ -66,4 +86,4 @@ Defined in: [packages/config/src/types.ts:27](https://github.com/KasLabDevs/Hard
 
 > `optional` **rpcUrl?**: `string`
 
-Defined in: [packages/config/src/types.ts:28](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/config/src/types.ts#L28)
+Defined in: [packages/config/src/types.ts:28](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/config/src/types.ts#L28)

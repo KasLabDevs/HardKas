@@ -111,7 +111,7 @@ export function silverRunnerIdentity(runner: SilverRunner, source: SilverRunnerS
   let claimedVersion: string | undefined;
   if (source === "home-toolchains") {
     try {
-      const text = fsSync.readFileSync(path.join(path.dirname(runner.path), "toolchain.json"), "utf8").replace(/^﻿/, "");
+      const text = fsSync.readFileSync(path.join(path.dirname(runner.path), "toolchain.json"), "utf8").replace(/^\uFEFF/, "");
       const claimed = JSON.parse(text)?.version;
       if (typeof claimed === "string" && claimed.trim() !== "") claimedVersion = claimed.trim();
     } catch {

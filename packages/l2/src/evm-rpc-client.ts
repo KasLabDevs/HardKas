@@ -4,6 +4,7 @@ import { getL2Profile } from "./registry.js";
 import { EvmSignerChainMismatchError, L2SafetyError } from "./errors.js";
 import { assertValidChainId, parseChainIdHex, parseHexQuantity } from "./hex.js";
 import { assertRawTransactionAllowed, type L2WriteOptions } from "./raw-tx-guard.js";
+import { assertL2ConnectionAllowed, isMainnetNetwork } from "./network-guard.js";
 
 export { EvmSignerChainMismatchError };
 
@@ -178,6 +179,12 @@ export class EvmJsonRpcClient {
   }
 
   async #rpc<T>(method: string, params: unknown[] = []): Promise<T> {
+    // MAINNET TOTAL LOCKDOWN: a client bound to a mainnet profile/chain never sends anything; one whose node said it is a
+    // mainnet chain (eth_chainId) is ended — no later request, read or write
+    if (this.#mainnetChainSeen !== undefined) {
+      assertL2ConnectionAllowed({ chainId: this.#mainnetChainSeen, operation: `${method} (the node at this URL said chain ${this.#mainnetChainSeen})` });
+    }
+    assertL2ConnectionAllowed({ chainId: this.expectedChainId, profile: this.profile, operation: method });
     const id = nextRequestId++;
     const body = JSON.stringify({
       jsonrpc: "2.0",
@@ -257,8 +264,23 @@ export class EvmJsonRpcClient {
       throw new EvmRpcInvalidResponseError("Response payload missing 'result' field");
     }
 
+    if (method === "eth_chainId") {
+      let said: number | undefined;
+      try {
+        said = parseChainIdHex(json.result);
+      } catch {
+        said = undefined;
+      }
+      if (said !== undefined && isMainnetNetwork(said)) {
+        this.#mainnetChainSeen = said;
+        assertL2ConnectionAllowed({ chainId: said, operation: `eth_chainId (the node at this URL says chain ${said}; nothing else is asked)` });
+      }
+    }
+
     return json.result as T;
   }
+
+  #mainnetChainSeen: number | undefined;
 
   /** Chain ID reported by the RPC (strictly parsed). This is provider data, not a proof. */
   async getChainId(): Promise<number> {

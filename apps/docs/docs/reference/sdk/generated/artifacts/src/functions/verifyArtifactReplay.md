@@ -8,7 +8,7 @@
 
 > **verifyArtifactReplay**(`_artifact`, `_context?`): `Promise`\<[`ArtifactVerificationResult`](../type-aliases/ArtifactVerificationResult.md)\>
 
-Defined in: [packages/artifacts/src/verify.ts:792](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/verify.ts#L792)
+Defined in: [packages/artifacts/src/verify.ts:935](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/verify.ts#L935)
 
 Verifies an artifact's replay consistency.
 Honest implementation: reports as unsupported or not implemented.

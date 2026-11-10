@@ -4,7 +4,7 @@ title: Security Boundaries
 
 ### Policy Gates
 
-HardKAS can enforce policy gates that block mainnet execution by default in supported workflows.
+Mainnet is locked down in this release: HardKAS makes no connection to a mainnet node (reads included, even to an endpoint you declare), signs nothing for it and broadcasts nothing to it. These are constants, not settings: no flag, option, environment variable or configuration enables them (`MAINNET_CONNECTION_DISABLED`, `MAINNET_SIGNING_DISABLED`, `MAINNET_BROADCAST_DISABLED`).
 
 ### Infrastructure, not Custody
 

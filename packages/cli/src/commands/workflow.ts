@@ -31,7 +31,7 @@ export function registerWorkflowCommands(program: Command) {
     .command("run <file>")
     .description("Execute a workflow JSON definition in Agent mode")
     .option("--dry-run", "Simulate the workflow without mutating the filesystem", false)
-    .option("--network <net>", "Target network (e.g. simulated, testnet-10, mainnet)")
+    .option("--network <net>", "Target network (e.g. simulated, simnet, testnet-10; mainnet is blocked)")
     .option("--offline", "Force offline execution (rejects real RPC connections)", false)
     .option("--timeout <ms>", "Maximum execution time in milliseconds")
     .option("--json", "Output the final workflow artifact as JSON", false)

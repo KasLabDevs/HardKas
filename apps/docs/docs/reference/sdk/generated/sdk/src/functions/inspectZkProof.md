@@ -8,7 +8,7 @@
 
 > **inspectZkProof**(`targetPath`, `workspaceRoot?`): `Promise`\<[`ZkProofInspectResult`](../interfaces/ZkProofInspectResult.md)\>
 
-Defined in: [packages/sdk/src/zk.ts:162](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/zk.ts#L162)
+Defined in: [packages/sdk/src/zk.ts:505](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/zk.ts#L505)
 
 ## Parameters
 

@@ -6,7 +6,7 @@
 
 # Class: LifecycleInvariant
 
-Defined in: [packages/artifacts/src/invariants/definitions.ts:151](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/invariants/definitions.ts#L151)
+Defined in: [packages/artifacts/src/invariants/definitions.ts:165](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/invariants/definitions.ts#L165)
 
 Contract/Stub: Lifecycle invariant (ordering of events).
 
@@ -30,7 +30,7 @@ Contract/Stub: Lifecycle invariant (ordering of events).
 
 > `readonly` **description**: `"Workflow events must follow valid lifecycle ordering"` = `"Workflow events must follow valid lifecycle ordering"`
 
-Defined in: [packages/artifacts/src/invariants/definitions.ts:153](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/invariants/definitions.ts#L153)
+Defined in: [packages/artifacts/src/invariants/definitions.ts:167](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/invariants/definitions.ts#L167)
 
 #### Implementation of
 
@@ -42,7 +42,7 @@ Defined in: [packages/artifacts/src/invariants/definitions.ts:153](https://githu
 
 > `readonly` **id**: `"INVAR_LIFECYCLE_ORDER"` = `"INVAR_LIFECYCLE_ORDER"`
 
-Defined in: [packages/artifacts/src/invariants/definitions.ts:152](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/invariants/definitions.ts#L152)
+Defined in: [packages/artifacts/src/invariants/definitions.ts:166](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/invariants/definitions.ts#L166)
 
 #### Implementation of
 
@@ -54,7 +54,7 @@ Defined in: [packages/artifacts/src/invariants/definitions.ts:152](https://githu
 
 > **check**(): `Promise`\<[`InvariantViolation`](../interfaces/InvariantViolation.md)[]\>
 
-Defined in: [packages/artifacts/src/invariants/definitions.ts:154](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/invariants/definitions.ts#L154)
+Defined in: [packages/artifacts/src/invariants/definitions.ts:168](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/invariants/definitions.ts#L168)
 
 #### Returns
 

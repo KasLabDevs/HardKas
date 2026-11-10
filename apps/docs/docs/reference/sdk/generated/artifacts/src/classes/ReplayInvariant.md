@@ -6,7 +6,7 @@
 
 # Class: ReplayInvariant
 
-Defined in: [packages/artifacts/src/invariants/definitions.ts:173](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/invariants/definitions.ts#L173)
+Defined in: [packages/artifacts/src/invariants/definitions.ts:187](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/invariants/definitions.ts#L187)
 
 Contract/Stub: Replay invariant (re-execution consistency).
 
@@ -30,7 +30,7 @@ Contract/Stub: Replay invariant (re-execution consistency).
 
 > `readonly` **description**: `"Replay execution must produce consistent results"` = `"Replay execution must produce consistent results"`
 
-Defined in: [packages/artifacts/src/invariants/definitions.ts:175](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/invariants/definitions.ts#L175)
+Defined in: [packages/artifacts/src/invariants/definitions.ts:189](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/invariants/definitions.ts#L189)
 
 #### Implementation of
 
@@ -42,7 +42,7 @@ Defined in: [packages/artifacts/src/invariants/definitions.ts:175](https://githu
 
 > `readonly` **id**: `"INVAR_REPLAY_CONSISTENCY"` = `"INVAR_REPLAY_CONSISTENCY"`
 
-Defined in: [packages/artifacts/src/invariants/definitions.ts:174](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/invariants/definitions.ts#L174)
+Defined in: [packages/artifacts/src/invariants/definitions.ts:188](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/invariants/definitions.ts#L188)
 
 #### Implementation of
 
@@ -54,7 +54,7 @@ Defined in: [packages/artifacts/src/invariants/definitions.ts:174](https://githu
 
 > **check**(): `Promise`\<[`InvariantViolation`](../interfaces/InvariantViolation.md)[]\>
 
-Defined in: [packages/artifacts/src/invariants/definitions.ts:176](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/invariants/definitions.ts#L176)
+Defined in: [packages/artifacts/src/invariants/definitions.ts:190](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/invariants/definitions.ts#L190)
 
 #### Returns
 

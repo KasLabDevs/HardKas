@@ -6,7 +6,7 @@
 
 # Interface: ArtifactExplanation
 
-Defined in: [packages/artifacts/src/explain.ts:9](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/explain.ts#L9)
+Defined in: [packages/artifacts/src/explain.ts:19](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/explain.ts#L19)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [packages/artifacts/src/explain.ts:9](https://github.com/KasLabDevs/
 
 > `optional` **economics?**: `object`
 
-Defined in: [packages/artifacts/src/explain.ts:25](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/explain.ts#L25)
+Defined in: [packages/artifacts/src/explain.ts:40](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/explain.ts#L40)
 
 #### balance
 
@@ -82,7 +82,7 @@ Defined in: [packages/artifacts/src/explain.ts:25](https://github.com/KasLabDevs
 
 > **identity**: `object`
 
-Defined in: [packages/artifacts/src/explain.ts:18](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/explain.ts#L18)
+Defined in: [packages/artifacts/src/explain.ts:28](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/explain.ts#L28)
 
 #### artifactId
 
@@ -95,6 +95,13 @@ Defined in: [packages/artifacts/src/explain.ts:18](https://github.com/KasLabDevs
 #### lineageId?
 
 > `optional` **lineageId?**: `string`
+
+#### parent
+
+> **parent**: [`ParentResolution`](ParentResolution.md)
+
+EVIDENCE-TRUST-1: what looking the parent up found — resolved (a verified copy), missing (searched, not there),
+invalid (a copy there does not verify as that identity), unresolved (nowhere was searched), or root (no parent).
 
 #### parentArtifactId?
 
@@ -110,7 +117,7 @@ Defined in: [packages/artifacts/src/explain.ts:18](https://github.com/KasLabDevs
 
 > **metadata**: `Record`\<`string`, `any`\>
 
-Defined in: [packages/artifacts/src/explain.ts:39](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/explain.ts#L39)
+Defined in: [packages/artifacts/src/explain.ts:54](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/explain.ts#L54)
 
 ***
 
@@ -118,7 +125,7 @@ Defined in: [packages/artifacts/src/explain.ts:39](https://github.com/KasLabDevs
 
 > **security**: `object`
 
-Defined in: [packages/artifacts/src/explain.ts:31](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/explain.ts#L31)
+Defined in: [packages/artifacts/src/explain.ts:46](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/explain.ts#L46)
 
 #### issues
 
@@ -134,7 +141,7 @@ Defined in: [packages/artifacts/src/explain.ts:31](https://github.com/KasLabDevs
 
 > **summary**: `object`
 
-Defined in: [packages/artifacts/src/explain.ts:10](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/explain.ts#L10)
+Defined in: [packages/artifacts/src/explain.ts:20](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/explain.ts#L20)
 
 #### createdAt
 

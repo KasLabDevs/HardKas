@@ -6,7 +6,7 @@
 
 # Interface: FeeAuditResult
 
-Defined in: [packages/artifacts/src/feeVerify.ts:5](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/feeVerify.ts#L5)
+Defined in: [packages/artifacts/src/feeVerify.ts:6](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/feeVerify.ts#L6)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [packages/artifacts/src/feeVerify.ts:5](https://github.com/KasLabDev
 
 > **actualFeeSompi**: `bigint`
 
-Defined in: [packages/artifacts/src/feeVerify.ts:9](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/feeVerify.ts#L9)
+Defined in: [packages/artifacts/src/feeVerify.ts:10](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/feeVerify.ts#L10)
 
 ***
 
@@ -22,7 +22,7 @@ Defined in: [packages/artifacts/src/feeVerify.ts:9](https://github.com/KasLabDev
 
 > **actualMass**: `bigint`
 
-Defined in: [packages/artifacts/src/feeVerify.ts:7](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/feeVerify.ts#L7)
+Defined in: [packages/artifacts/src/feeVerify.ts:8](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/feeVerify.ts#L8)
 
 ***
 
@@ -30,7 +30,7 @@ Defined in: [packages/artifacts/src/feeVerify.ts:7](https://github.com/KasLabDev
 
 > **deltaSompi**: `bigint`
 
-Defined in: [packages/artifacts/src/feeVerify.ts:12](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/feeVerify.ts#L12)
+Defined in: [packages/artifacts/src/feeVerify.ts:13](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/feeVerify.ts#L13)
 
 ***
 
@@ -38,7 +38,7 @@ Defined in: [packages/artifacts/src/feeVerify.ts:12](https://github.com/KasLabDe
 
 > **expectedFeeSompi**: `bigint`
 
-Defined in: [packages/artifacts/src/feeVerify.ts:10](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/feeVerify.ts#L10)
+Defined in: [packages/artifacts/src/feeVerify.ts:11](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/feeVerify.ts#L11)
 
 ***
 
@@ -46,7 +46,7 @@ Defined in: [packages/artifacts/src/feeVerify.ts:10](https://github.com/KasLabDe
 
 > **expectedMass**: `bigint`
 
-Defined in: [packages/artifacts/src/feeVerify.ts:8](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/feeVerify.ts#L8)
+Defined in: [packages/artifacts/src/feeVerify.ts:9](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/feeVerify.ts#L9)
 
 ***
 
@@ -54,7 +54,7 @@ Defined in: [packages/artifacts/src/feeVerify.ts:8](https://github.com/KasLabDev
 
 > **feeRateSompiPerMass**: `bigint`
 
-Defined in: [packages/artifacts/src/feeVerify.ts:11](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/feeVerify.ts#L11)
+Defined in: [packages/artifacts/src/feeVerify.ts:12](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/feeVerify.ts#L12)
 
 ***
 
@@ -62,7 +62,7 @@ Defined in: [packages/artifacts/src/feeVerify.ts:11](https://github.com/KasLabDe
 
 > **issues**: `string`[]
 
-Defined in: [packages/artifacts/src/feeVerify.ts:13](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/feeVerify.ts#L13)
+Defined in: [packages/artifacts/src/feeVerify.ts:14](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/feeVerify.ts#L14)
 
 ***
 
@@ -70,4 +70,4 @@ Defined in: [packages/artifacts/src/feeVerify.ts:13](https://github.com/KasLabDe
 
 > **ok**: `boolean`
 
-Defined in: [packages/artifacts/src/feeVerify.ts:6](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/feeVerify.ts#L6)
+Defined in: [packages/artifacts/src/feeVerify.ts:7](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/feeVerify.ts#L7)

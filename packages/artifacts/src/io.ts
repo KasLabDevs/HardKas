@@ -73,10 +73,21 @@ export async function readArtifact(filePath: string): Promise<unknown> {
   }
 }
 
+/**
+ * INT9 · the error a typed reader throws for an artifact that does not verify: the same message as before, plus the
+ * `code` of the first error issue (e.g. ARTIFACT_HASH_MISMATCH), so a caller (the CLI's error renderer) reports the
+ * cause `artifact verify` reports instead of UNKNOWN_ERROR.
+ */
+function invalidArtifactError(kind: string, result: Awaited<ReturnType<typeof verifyArtifact>>): Error {
+  const err = new Error(`Invalid ${kind} artifact: ${result.errors.join(", ")}`) as Error & { code: string };
+  err.code = result.issues.find((i) => i.severity === "error")?.code ?? "ARTIFACT_INVALID";
+  return err;
+}
+
 export async function readTxPlanArtifact(filePath: string): Promise<TxPlan> {
   const result = await verifyArtifact(filePath);
   if (!result.ok) {
-    throw new Error(`Invalid TxPlan artifact: ${result.errors.join(", ")}`);
+    throw invalidArtifactError("TxPlan", result);
   }
   const data = await readArtifact(filePath);
   return data as TxPlan;
@@ -85,7 +96,7 @@ export async function readTxPlanArtifact(filePath: string): Promise<TxPlan> {
 export async function readSignedTxArtifact(filePath: string): Promise<SignedTx> {
   const result = await verifyArtifact(filePath);
   if (!result.ok) {
-    throw new Error(`Invalid SignedTx artifact: ${result.errors.join(", ")}`);
+    throw invalidArtifactError("SignedTx", result);
   }
   const data = await readArtifact(filePath);
   return data as SignedTx;
@@ -94,7 +105,7 @@ export async function readSignedTxArtifact(filePath: string): Promise<SignedTx> 
 export async function readTxReceiptArtifact(filePath: string): Promise<TxReceipt> {
   const result = await verifyArtifact(filePath);
   if (!result.ok) {
-    throw new Error(`Invalid TxReceipt artifact: ${result.errors.join(", ")}`);
+    throw invalidArtifactError("TxReceipt", result);
   }
   const data = await readArtifact(filePath);
   return data as TxReceipt;

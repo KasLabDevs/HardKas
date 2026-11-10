@@ -6,7 +6,7 @@
 
 # Interface: UtxoProvider
 
-Defined in: [packages/tx-builder/src/service.ts:8](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/service.ts#L8)
+Defined in: [packages/tx-builder/src/service.ts:6](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/service.ts#L6)
 
 ## Methods
 
@@ -14,7 +14,7 @@ Defined in: [packages/tx-builder/src/service.ts:8](https://github.com/KasLabDevs
 
 > **getUtxos**(`address`): `Promise`\<[`Utxo`](Utxo.md)[]\>
 
-Defined in: [packages/tx-builder/src/service.ts:9](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/service.ts#L9)
+Defined in: [packages/tx-builder/src/service.ts:7](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/service.ts#L7)
 
 #### Parameters
 
@@ -32,7 +32,7 @@ Defined in: [packages/tx-builder/src/service.ts:9](https://github.com/KasLabDevs
 
 > `optional` **getVirtualDaaScore**(): `Promise`\<`bigint`\>
 
-Defined in: [packages/tx-builder/src/service.ts:10](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/service.ts#L10)
+Defined in: [packages/tx-builder/src/service.ts:8](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/service.ts#L8)
 
 #### Returns
 

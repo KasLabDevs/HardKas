@@ -156,14 +156,16 @@ describe("MPW `hardkas kaspa wallet send` · B1", () => {
     });
   }
 
-  it("MPW-4 --dry-run, testnet-10 workspace, MAINNET node: refused by the node's identity (NODE_NETWORK_MISMATCH) before any UTXO is read; no plan", async () => {
+  // MAINNET TOTAL LOCKDOWN: the node's identity answer says mainnet → the lockdown's refusal (was NODE_NETWORK_MISMATCH),
+  // and nothing but that one answer is asked
+  it("MPW-4 --dry-run, testnet-10 workspace, MAINNET node: refused by the node's identity (MAINNET_CONNECTION_DISABLED) before any UTXO is read; no plan", async () => {
     const F = await startFake("mainnet");
     fakes.push(F);
     const ws = workspace("dry-main", F.url);
     const r = await run("MPW-4", [cliDist, "kaspa", "wallet", "send", "sender", "recipient", "--amount", "1", "--rpc-url", F.url, "--dry-run"], ws, "");
     const seen = { exit: r.exit, methods: F.methods, tail: r.out.slice(-800) };
-    expect(r.out, JSON.stringify(seen)).toMatch(/NODE_NETWORK_MISMATCH/);
-    expect(F.methods, JSON.stringify(seen)).not.toContain("getUtxosByAddresses");
+    expect(r.out, JSON.stringify(seen)).toMatch(/MAINNET_CONNECTION_DISABLED/);
+    expect(F.methods.filter((m) => m !== "getServerInfo"), JSON.stringify(seen)).toEqual([]);
     expect(r.out, JSON.stringify(seen)).not.toMatch(/Transaction Plan/);
   });
 

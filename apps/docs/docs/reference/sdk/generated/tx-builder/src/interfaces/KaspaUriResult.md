@@ -6,7 +6,7 @@
 
 # Interface: KaspaUriResult
 
-Defined in: [packages/tx-builder/src/kaspa-uri.ts:22](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/kaspa-uri.ts#L22)
+Defined in: [packages/tx-builder/src/kaspa-uri.ts:22](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/kaspa-uri.ts#L22)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [packages/tx-builder/src/kaspa-uri.ts:22](https://github.com/KasLabD
 
 > `readonly` **address**: `string`
 
-Defined in: [packages/tx-builder/src/kaspa-uri.ts:24](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/kaspa-uri.ts#L24)
+Defined in: [packages/tx-builder/src/kaspa-uri.ts:24](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/kaspa-uri.ts#L24)
 
 ***
 
@@ -22,7 +22,7 @@ Defined in: [packages/tx-builder/src/kaspa-uri.ts:24](https://github.com/KasLabD
 
 > `readonly` **amountKasDisplay**: `string`
 
-Defined in: [packages/tx-builder/src/kaspa-uri.ts:26](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/kaspa-uri.ts#L26)
+Defined in: [packages/tx-builder/src/kaspa-uri.ts:26](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/kaspa-uri.ts#L26)
 
 ***
 
@@ -30,7 +30,7 @@ Defined in: [packages/tx-builder/src/kaspa-uri.ts:26](https://github.com/KasLabD
 
 > `readonly` **amountSompi**: `bigint`
 
-Defined in: [packages/tx-builder/src/kaspa-uri.ts:25](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/kaspa-uri.ts#L25)
+Defined in: [packages/tx-builder/src/kaspa-uri.ts:25](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/kaspa-uri.ts#L25)
 
 ***
 
@@ -38,7 +38,7 @@ Defined in: [packages/tx-builder/src/kaspa-uri.ts:25](https://github.com/KasLabD
 
 > `readonly` **claims**: `object`
 
-Defined in: [packages/tx-builder/src/kaspa-uri.ts:28](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/kaspa-uri.ts#L28)
+Defined in: [packages/tx-builder/src/kaspa-uri.ts:28](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/kaspa-uri.ts#L28)
 
 #### standardFormat
 
@@ -50,7 +50,7 @@ Defined in: [packages/tx-builder/src/kaspa-uri.ts:28](https://github.com/KasLabD
 
 > `readonly` **params**: `Record`\<`string`, `string`\>
 
-Defined in: [packages/tx-builder/src/kaspa-uri.ts:27](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/kaspa-uri.ts#L27)
+Defined in: [packages/tx-builder/src/kaspa-uri.ts:27](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/kaspa-uri.ts#L27)
 
 ***
 
@@ -58,4 +58,4 @@ Defined in: [packages/tx-builder/src/kaspa-uri.ts:27](https://github.com/KasLabD
 
 > `readonly` **uri**: `string`
 
-Defined in: [packages/tx-builder/src/kaspa-uri.ts:23](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/kaspa-uri.ts#L23)
+Defined in: [packages/tx-builder/src/kaspa-uri.ts:23](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/kaspa-uri.ts#L23)

@@ -11,7 +11,14 @@
 // Only a RECEIPT_NOT_FOUND may fall back here: a submission that does not verify (CANDIDATE_INVALID) or two that
 // conflict (RECEIPT_AMBIGUOUS_CONFLICT) stay errors. Nothing here contacts a node.
 
-import { ProjectArtifactStore, deriveTxStatus, type DerivedTxStatus } from "@hardkas/artifacts";
+import {
+  ProjectArtifactStore,
+  deriveTxStatus,
+  enumerateWorkspaceArtifactsSync,
+  checkArtifactIdentity,
+  HardkasSchemas,
+  type DerivedTxStatus
+} from "@hardkas/artifacts";
 import { NETWORK_TXID, stateHeadline } from "./tx-status-runner.js";
 
 export interface ObservedTxLook {
@@ -93,6 +100,83 @@ export function observedRows(o: ObservedTx): Record<string, string | undefined> 
     Ignored: o.ignored > 0 ? `${o.ignored} observation file(s) for this txId do not verify and decide nothing` : undefined,
     Why: o.derived.reasons.join(" · ")
   };
+}
+
+// INT9 · C4 — `why --tx` / `explain --tx` of a txId with no submission here also say what else the workspace holds: a
+// signed transaction under that txId (signed here: sent from elsewhere, not sent yet, or its submission record lost), with
+// the plan it names. A signed artifact is authorization, not a network fact: it decides no state and implies no send.
+// Only artifacts whose identity verifies count; nothing here contacts a node.
+
+export interface SignedTxHere {
+  artifactId: string;
+  signedId?: string;
+  path: string;
+  networkId?: string;
+  planArtifactId?: string;
+  createdAt?: string;
+}
+
+export const SIGNED_ONLY =
+  "a signed transaction with this txId is in this workspace, but no submission of it is recorded here: it was not sent from here, not sent yet, or its submission record was lost";
+
+/** The signed transactions of this workspace that carry `txId`, each verified (the store's copies of one identity once). */
+export function findSignedTx(txId: string, workspaceRoot: string): SignedTxHere[] {
+  if (!NETWORK_TXID.test(txId)) return [];
+  const seen = new Map<string, SignedTxHere>();
+  for (const entry of enumerateWorkspaceArtifactsSync(workspaceRoot)) {
+    const a: any = entry.artifact;
+    if (typeof a?.schema !== "string" || !a.schema.startsWith(HardkasSchemas.SignedTx) || String(a.txId ?? "").toLowerCase() !== txId) continue;
+    const check = checkArtifactIdentity(a);
+    if (!check.ok || seen.has(check.artifactId)) continue;
+    seen.set(check.artifactId, {
+      artifactId: check.artifactId,
+      ...(typeof a.signedId === "string" ? { signedId: a.signedId } : {}),
+      path: entry.path,
+      ...(typeof a.networkId === "string" ? { networkId: a.networkId } : {}),
+      ...(typeof a.lineage?.parentArtifactId === "string" ? { planArtifactId: a.lineage.parentArtifactId } : {}),
+      ...(typeof a.createdAt === "string" ? { createdAt: a.createdAt } : {})
+    });
+  }
+  return [...seen.values()].sort((x, y) => (x.artifactId < y.artifactId ? -1 : 1));
+}
+
+/** JSON for a txId known here only as signed (no submission, no observation): what is known, and no invented state. */
+export function signedOnlyJson(txId: string, signed: SignedTxHere[]): Record<string, unknown> {
+  const derived = deriveTxStatus({ txId, observations: [] });
+  return {
+    origin: "signed",
+    note: SIGNED_ONLY,
+    txId,
+    network: [...new Set(signed.map((s) => s.networkId ?? "unknown"))].join(", "),
+    state: derived.status,
+    submission: null,
+    signed,
+    observations: [],
+    derived
+  };
+}
+
+/** Human rows for a txId known here as signed (with the observations, if any). */
+export function signedRows(txId: string, signed: SignedTxHere[], observed?: ObservedTx): Record<string, string | undefined> {
+  return {
+    "Tx ID": txId,
+    Origin: observed ? `observed and signed here — ${OBSERVED_ONLY}; ${SIGNED_ONLY}` : `signed here — ${SIGNED_ONLY}`,
+    "Signed Artifact": signed.map((s) => `${s.artifactId}${s.signedId ? ` (${s.signedId})` : ""}`).join("; "),
+    Plan: signed.map((s) => s.planArtifactId ?? "none named").join("; "),
+    Network: [...new Set(signed.map((s) => s.networkId ?? "unknown"))].join(", "),
+    State: observed
+      ? observedStateLine(observed)
+      : "not observed here: no look at this txId is stored in this workspace, so no network state is derived (a signed transaction is authorization, not a network fact)",
+    Observe: `hardkas tx status ${txId} --since <a chain block before its acceptance>, or, for one not accepted yet, hardkas tx wait ${txId} --address <an address it pays>`
+  };
+}
+
+/** What `why --tx` / `explain --tx` say when this workspace holds nothing about a txId (no invention, no connection). */
+export function nothingKnownMessage(txId: string, original: string): string {
+  return (
+    `${original}. This workspace holds nothing about tx ${txId}: no submission, no signed transaction and no observation of it. ` +
+    `Nothing was contacted. To look at the network: hardkas tx status ${txId} --since <a chain block before its acceptance>, or, for one not accepted yet, hardkas tx wait ${txId} --address <an address it pays>.`
+  );
 }
 
 /** The refusal of `tx receipt` when the tx was only observed: still no receipt, but it says what the workspace holds. */

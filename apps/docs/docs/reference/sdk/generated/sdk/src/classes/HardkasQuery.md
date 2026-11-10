@@ -6,7 +6,7 @@
 
 # Class: HardkasQuery
 
-Defined in: [packages/sdk/src/query.ts:11](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/query.ts#L11)
+Defined in: [packages/sdk/src/query.ts:11](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/query.ts#L11)
 
 **`Alpha`**
 
@@ -18,7 +18,7 @@ HardKAS Operational Query Module
 
 > **new HardkasQuery**(`sdk`): `HardkasQuery`
 
-Defined in: [packages/sdk/src/query.ts:15](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/query.ts#L15)
+Defined in: [packages/sdk/src/query.ts:15](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/query.ts#L15)
 
 **`Alpha`**
 
@@ -40,7 +40,7 @@ Defined in: [packages/sdk/src/query.ts:15](https://github.com/KasLabDevs/HardKas
 
 > **get** **store**(): `object`
 
-Defined in: [packages/sdk/src/query.ts:185](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/query.ts#L185)
+Defined in: [packages/sdk/src/query.ts:191](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/query.ts#L191)
 
 **`Alpha`**
 
@@ -48,7 +48,7 @@ Direct SQL access to the internal Query Store.
 
 ##### Deprecated
 
-use hardkas.events / hardkas.store in a future release.
+use hardkas.store in a future release.
 
 ##### Returns
 
@@ -84,7 +84,7 @@ use hardkas.events / hardkas.store in a future release.
 
 > **balance**(`address`): `Promise`\<`QueryResponse`\<`bigint`\>\>
 
-Defined in: [packages/sdk/src/query.ts:28](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/query.ts#L28)
+Defined in: [packages/sdk/src/query.ts:28](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/query.ts#L28)
 
 **`Alpha`**
 
@@ -104,7 +104,7 @@ Defined in: [packages/sdk/src/query.ts:28](https://github.com/KasLabDevs/HardKas
 
 > **block**(`hash`): `Promise`\<`QueryResponse`\<`any`\>\>
 
-Defined in: [packages/sdk/src/query.ts:60](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/query.ts#L60)
+Defined in: [packages/sdk/src/query.ts:61](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/query.ts#L61)
 
 **`Alpha`**
 
@@ -124,7 +124,7 @@ Defined in: [packages/sdk/src/query.ts:60](https://github.com/KasLabDevs/HardKas
 
 > **confirmations**(`txid`): `Promise`\<`QueryResponse`\<`number`\>\>
 
-Defined in: [packages/sdk/src/query.ts:52](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/query.ts#L52)
+Defined in: [packages/sdk/src/query.ts:53](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/query.ts#L53)
 
 **`Alpha`**
 
@@ -144,7 +144,7 @@ Defined in: [packages/sdk/src/query.ts:52](https://github.com/KasLabDevs/HardKas
 
 > **events**(`filter?`): `Promise`\<readonly `EventEnvelope`\<`EventKind`\>[]\>
 
-Defined in: [packages/sdk/src/query.ts:156](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/query.ts#L156)
+Defined in: [packages/sdk/src/query.ts:162](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/query.ts#L162)
 
 **`Alpha`**
 
@@ -176,7 +176,7 @@ Fetches events from the query store.
 
 #### Deprecated
 
-use hardkas.events / hardkas.store in a future release.
+use hardkas.store in a future release.
 
 ***
 
@@ -184,7 +184,7 @@ use hardkas.events / hardkas.store in a future release.
 
 > **getSpendableUtxos**(`request`): `Promise`\<`QueryResponse`\<`any`[]\>\>
 
-Defined in: [packages/sdk/src/query.ts:36](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/query.ts#L36)
+Defined in: [packages/sdk/src/query.ts:36](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/query.ts#L36)
 
 **`Alpha`**
 
@@ -204,6 +204,10 @@ Defined in: [packages/sdk/src/query.ts:36](https://github.com/KasLabDevs/HardKas
 
 `boolean`
 
+###### observedAtDaaScore?
+
+`bigint`
+
 #### Returns
 
 `Promise`\<`QueryResponse`\<`any`[]\>\>
@@ -214,7 +218,7 @@ Defined in: [packages/sdk/src/query.ts:36](https://github.com/KasLabDevs/HardKas
 
 > **history**(`address`): `Promise`\<`QueryResponse`\<`any`[]\>\>
 
-Defined in: [packages/sdk/src/query.ts:44](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/query.ts#L44)
+Defined in: [packages/sdk/src/query.ts:45](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/query.ts#L45)
 
 **`Alpha`**
 
@@ -234,7 +238,7 @@ Defined in: [packages/sdk/src/query.ts:44](https://github.com/KasLabDevs/HardKas
 
 > **mempool**(`txid?`): `Promise`\<`QueryResponse`\<`any`\>\>
 
-Defined in: [packages/sdk/src/query.ts:56](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/query.ts#L56)
+Defined in: [packages/sdk/src/query.ts:57](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/query.ts#L57)
 
 **`Alpha`**
 
@@ -254,7 +258,7 @@ Defined in: [packages/sdk/src/query.ts:56](https://github.com/KasLabDevs/HardKas
 
 > **network**(): `Promise`\<`QueryResponse`\<`any`\>\>
 
-Defined in: [packages/sdk/src/query.ts:64](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/query.ts#L64)
+Defined in: [packages/sdk/src/query.ts:65](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/query.ts#L65)
 
 **`Alpha`**
 
@@ -268,7 +272,7 @@ Defined in: [packages/sdk/src/query.ts:64](https://github.com/KasLabDevs/HardKas
 
 > **sync**(`options?`): `Promise`\<`any`\>
 
-Defined in: [packages/sdk/src/query.ts:92](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/query.ts#L92)
+Defined in: [packages/sdk/src/query.ts:93](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/query.ts#L93)
 
 **`Alpha`**
 
@@ -288,7 +292,7 @@ Synchronizes the query store with the filesystem artifacts.
 
 #### Deprecated
 
-use hardkas.events / hardkas.store in a future release.
+use hardkas.store in a future release.
 
 ***
 
@@ -296,7 +300,7 @@ use hardkas.events / hardkas.store in a future release.
 
 > **syncStatus**(): `Promise`\<`QueryResponse`\<`any`\>\>
 
-Defined in: [packages/sdk/src/query.ts:68](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/query.ts#L68)
+Defined in: [packages/sdk/src/query.ts:69](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/query.ts#L69)
 
 **`Alpha`**
 
@@ -310,7 +314,7 @@ Defined in: [packages/sdk/src/query.ts:68](https://github.com/KasLabDevs/HardKas
 
 > **transaction**(`txid`): `Promise`\<`QueryResponse`\<`any`\>\>
 
-Defined in: [packages/sdk/src/query.ts:48](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/query.ts#L48)
+Defined in: [packages/sdk/src/query.ts:49](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/query.ts#L49)
 
 **`Alpha`**
 
@@ -330,7 +334,7 @@ Defined in: [packages/sdk/src/query.ts:48](https://github.com/KasLabDevs/HardKas
 
 > **utxos**(`address`): `Promise`\<`QueryResponse`\<`any`[]\>\>
 
-Defined in: [packages/sdk/src/query.ts:32](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/query.ts#L32)
+Defined in: [packages/sdk/src/query.ts:32](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/query.ts#L32)
 
 **`Alpha`**
 

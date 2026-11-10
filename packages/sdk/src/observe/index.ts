@@ -8,6 +8,7 @@ import {
 } from "./types.js";
 import { ARTIFACT_SCHEMAS, calculateContentHash, CURRENT_HASH_VERSION, HARDKAS_VERSION } from "@hardkas/artifacts";
 import { HardkasError } from "@hardkas/core";
+import { assertSdkMayConnect } from "../mainnet-lockdown.js";
 
 export class HardkasObserve {
   constructor(private sdk: Hardkas) {}
@@ -17,6 +18,8 @@ export class HardkasObserve {
    */
   async address(options: HardkasObserveAddressOptions): Promise<AddressObservationSnapshot> {
     const target = options.target || (this.sdk.network as string);
+    // MAINNET TOTAL LOCKDOWN: observing an address on mainnet is a mainnet read (watchAddress / waitForAddress too)
+    assertSdkMayConnect(this.sdk, "sdk.observe.address", options.target);
 
     if (options.target !== undefined) {
       // WORKSPACE-AUTHORITY-2 (closeout): an explicit target is resolved by the shared resolver and must be THIS

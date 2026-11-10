@@ -6,7 +6,7 @@
 
 # Interface: LoadedHardkasConfig
 
-Defined in: [packages/config/src/types.ts:97](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/config/src/types.ts#L97)
+Defined in: [packages/config/src/types.ts:110](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/config/src/types.ts#L110)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [packages/config/src/types.ts:97](https://github.com/KasLabDevs/Hard
 
 > **config**: [`HardkasConfig`](HardkasConfig.md)
 
-Defined in: [packages/config/src/types.ts:100](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/config/src/types.ts#L100)
+Defined in: [packages/config/src/types.ts:113](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/config/src/types.ts#L113)
 
 ***
 
@@ -22,7 +22,7 @@ Defined in: [packages/config/src/types.ts:100](https://github.com/KasLabDevs/Har
 
 > **cwd**: `string`
 
-Defined in: [packages/config/src/types.ts:99](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/config/src/types.ts#L99)
+Defined in: [packages/config/src/types.ts:112](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/config/src/types.ts#L112)
 
 ***
 
@@ -30,4 +30,4 @@ Defined in: [packages/config/src/types.ts:99](https://github.com/KasLabDevs/Hard
 
 > `optional` **path?**: `string`
 
-Defined in: [packages/config/src/types.ts:98](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/config/src/types.ts#L98)
+Defined in: [packages/config/src/types.ts:111](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/config/src/types.ts#L111)

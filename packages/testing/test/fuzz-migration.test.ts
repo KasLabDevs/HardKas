@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { Hardkas } from "@hardkas/sdk";
-import { mutateArtifact, writeReport } from "../src/fuzzing.js";
+import { mutateArtifact, writeReport } from "./fuzzing.js";
 import { calculateContentHash } from "@hardkas/artifacts";
 
 describe("Phase 6A: Migration Fuzzing", () => {

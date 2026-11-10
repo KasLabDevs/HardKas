@@ -9,6 +9,7 @@ export function registerSignCommand(pskt: Command) {
     .option("--keystore <path>", "Path to a HardKAS keystore JSON file")
     .option("--key-stdin", "Read private key from standard input")
     .option("--private-key-file <path>", "Path to file containing raw private key (TEST ONLY)")
+    .option("--inputs <indexes>", "Comma-separated input indexes to sign (default: the inputs this participant is eligible for)")
     .requiredOption("--out <outputPath>", "Path to write the updated PSKT session JSON")
     .option("--force", "Overwrite the output file if it exists", false)
     .option("--json", "Output results as JSON", false)

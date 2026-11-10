@@ -6,18 +6,12 @@
 
 # Function: resolveArtifactHandle()
 
-> **resolveArtifactHandle**(`input`, `workspaceRoot`): `Promise`\<[`ArtifactHandle`](../interfaces/ArtifactHandle.md)\>
+> **resolveArtifactHandle**(`input`, `workspaceRoot`, `options?`): `Promise`\<[`ArtifactHandle`](../interfaces/ArtifactHandle.md)\>
 
-Defined in: [packages/artifacts/src/artifact-handle.ts:232](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/artifact-handle.ts#L232)
+Defined in: [packages/artifacts/src/artifact-handle.ts:70](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/artifact-handle.ts#L70)
 
-Resolve an artifact from the two accepted CLI-facing identity forms.
-
-Accepted:
-  - absolute or workspace-relative filesystem path to a .json artifact file
-  - exact 64-hex lineage.artifactId
-
-Anything else throws a typed ArtifactHandleError. See the file header
-for the full contract.
+Resolve an artifact from the accepted CLI-facing identity forms (see header).
+Throws a typed ArtifactHandleError on every failure.
 
 ## Parameters
 
@@ -28,6 +22,10 @@ for the full contract.
 ### workspaceRoot
 
 `string`
+
+### options?
+
+[`ResolveArtifactHandleOptions`](../interfaces/ResolveArtifactHandleOptions.md) = `{}`
 
 ## Returns
 

@@ -16,6 +16,7 @@ export async function runSemanticVerify(_options: SemanticVerifyOptions): Promis
   throw new HardkasCliError(
     "VERIFY_SEMANTICS_UNSUPPORTED",
     "verify-semantics cannot verify semantic agreement: no HardKAS subsystem records the semantic hashes it would compare, so it refuses instead of writing a bundle of synthetic hashes. Nothing was read or written. `hardkas verify` checks artifact integrity and lineage.",
-    { exitCode: 1 }
+    // ESCALÓN 3 · P5: the refusal names what to use instead
+    { exitCode: 1, suggestion: "hardkas verify (artifact integrity and lineage of the workspace)" }
   );
 }

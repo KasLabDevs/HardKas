@@ -12,6 +12,7 @@ import {
   parseSilAbiArtifact,
   resolveManagedSilverc,
   serializeSilArtifactValues,
+  SILVERC_REFERENCES,
   silContractBytecodeHex,
   type SilArtifactValue
 } from "../src/index.js";
@@ -133,18 +134,24 @@ describe("managed silverc", () => {
     await fsp.rm(emptyHome, { recursive: true, force: true });
   });
 
+  // silverc is pinned for some platforms only (SILVERC_REFERENCES); on any other one (macOS today) there is no compiler
+  // at all, SILVERC_PLATFORM_UNSUPPORTED, rather than an unverified one.
+  const pinnedHere = SILVERC_REFERENCES[`${process.platform}-${process.arch}`] !== undefined;
+
   it("is never taken from PATH: without a managed install there is no compiler", async () => {
-    expect(() => resolveManagedSilverc(emptyHome)).toThrow(expect.objectContaining({ code: "SILVERC_TOOLCHAIN_NOT_INSTALLED" }));
-    await expect(compileSilverScript({ source: "contract X() {}", home: emptyHome })).rejects.toMatchObject({
-      code: "SILVERC_TOOLCHAIN_NOT_INSTALLED"
-    });
+    const code = pinnedHere ? "SILVERC_TOOLCHAIN_NOT_INSTALLED" : "SILVERC_PLATFORM_UNSUPPORTED";
+    expect(() => resolveManagedSilverc(emptyHome)).toThrow(expect.objectContaining({ code }));
+    await expect(compileSilverScript({ source: "contract X() {}", home: emptyHome })).rejects.toMatchObject({ code });
   });
 
   it("refuses a managed install that does not match the pin", async () => {
-    const ref = getSilvercReference();
+    // where silverc is not pinned, a file placed where a pinned platform's install would be is not used either
+    const ref = pinnedHere ? getSilvercReference() : getSilvercReference("linux", "x64");
     const dir = getToolchainInstallDir(ref, emptyHome);
     await fsp.mkdir(dir, { recursive: true });
     await fsp.writeFile(path.join(dir, ref.entry), "not silverc");
-    expect(() => resolveManagedSilverc(emptyHome)).toThrow(expect.objectContaining({ code: "SILVERC_TOOLCHAIN_INTEGRITY_FAILED" }));
+    expect(() => resolveManagedSilverc(emptyHome)).toThrow(
+      expect.objectContaining({ code: pinnedHere ? "SILVERC_TOOLCHAIN_INTEGRITY_FAILED" : "SILVERC_PLATFORM_UNSUPPORTED" })
+    );
   });
 });

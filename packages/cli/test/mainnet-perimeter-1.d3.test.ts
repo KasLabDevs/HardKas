@@ -433,14 +433,17 @@ async function planAndSign(name: string, ws: string) {
   return String(JSON.parse(fs.readFileSync(path.join(ws, "signed.json"), "utf8")).txId);
 }
 const send = (name: string, ws: string) => run(name, [cliDist, "tx", "send", "signed.json", "--yes", "--json"], ws);
-const NOT_SENT_OR_IDENTITY = /^(SUBMIT_NOT_SENT|NODE_NETWORK_UNKNOWN|NODE_NETWORK_MISMATCH|MAINNET_BROADCAST_DISABLED)$/;
+const NOT_SENT_OR_IDENTITY = /^(SUBMIT_NOT_SENT|NODE_NETWORK_UNKNOWN|NODE_NETWORK_MISMATCH|MAINNET_BROADCAST_DISABLED|MAINNET_CONNECTION_DISABLED)$/;
 
 describe("MAINNET-PERIMETER-1 × TX-SEND-BLOCKED-OUTCOME-1 · the pre-broadcast identity reads never produce a submission record", () => {
   for (const [mode, expectedCode, what] of [
     ["drop-after-point", "SUBMIT_NOT_SENT", "the node drops the connection on the SDK's identity read (after the submit point was captured)"],
     ["drop-on-session-reads", "SUBMIT_NOT_SENT", "the node drops the connection on the session's own identity read (the last thing before the frame)"],
     ["silent-after-point", "SUBMIT_NOT_SENT", "the node never answers the identity read (timeout)"],
-    ["mainnet-after-point", "MAINNET_BROADCAST_DISABLED", "the node starts saying mainnet after the connection was verified as testnet-10"],
+    // MAINNET TOTAL LOCKDOWN: the transport closes a connection whose node's identity answer now names mainnet — the SDK's
+    // own identity read before the broadcast is that answer — so the refusal is MAINNET_CONNECTION_DISABLED (it was
+    // MAINNET_BROADCAST_DISABLED); still zero frames and zero records
+    ["mainnet-after-point", "MAINNET_CONNECTION_DISABLED", "the node starts saying mainnet after the connection was verified as testnet-10"],
     ["two-answers-after-point", "NODE_NETWORK_MISMATCH", "the node's two answers disagree (testnet-10 / testnet-11)"]
   ] as const) {
     it(`MPD ${mode}: ${what} → ${expectedCode}, zero frames, zero submission records`, async () => {

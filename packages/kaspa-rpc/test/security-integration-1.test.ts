@@ -41,14 +41,16 @@ async function failure(p: Promise<unknown>): Promise<any> {
 }
 
 describe("SECURITY-INTEGRATION-1 · a connection the official client resumed by itself is verified again", () => {
-  it("resumed on a node that declares mainnet: NODE_NETWORK_MISMATCH before the request reaches it; the client is released", async () => {
+  // MAINNET TOTAL LOCKDOWN: the refusal of a node that answers mainnet is MAINNET_CONNECTION_DISABLED (it was
+  // NODE_NETWORK_MISMATCH: the mainnet check now comes first); what this pins is unchanged
+  it("resumed on a node that declares mainnet: MAINNET_CONNECTION_DISABLED before the request reaches it; the client is released", async () => {
     const { fake, state, methods } = nodeClaiming("testnet-10");
     const s = session(fake, "testnet-10");
     await s.request("getBlockDagInfo");
     state.networkId = "mainnet";
     silentReconnect(fake);
     const e = await failure(s.request("submitTransaction", { transaction: { version: 0, inputs: [], outputs: [], lockTime: "0", subnetworkId: "00".repeat(20), gas: "0", payload: "", storageMass: "0" } }));
-    expect(e.code).toBe("NODE_NETWORK_MISMATCH");
+    expect(e.code).toBe("MAINNET_CONNECTION_DISABLED");
     expect(methods()).toEqual(["getServerInfo", "getBlockDagInfo", "getServerInfo"]);
     expect(s.current()).toBeNull();
     expect(fake.connects).toBe(1);
@@ -75,13 +77,22 @@ describe("SECURITY-INTEGRATION-1 · a connection the official client resumed by 
     await s.close();
   });
 
-  it("without an expected network a resume changes nothing (no identity call)", async () => {
-    const { fake, methods } = nodeClaiming("simnet");
+  // MAINNET TOTAL LOCKDOWN: this case read "without an expected network a resume changes nothing (no identity call)".
+  // Every connection is now identified, a resumed one too, so a raw session cannot be carried onto a mainnet node by a
+  // silent reconnection
+  it("without an expected network a resume is identified again (one identity call), and a resume onto mainnet is refused", async () => {
+    const { fake, state, methods } = nodeClaiming("simnet");
     const s = session(fake);
     await s.request("getBlockDagInfo");
     silentReconnect(fake);
     await s.request("getBlockDagInfo");
-    expect(methods()).toEqual(["getBlockDagInfo", "getBlockDagInfo"]);
+    expect(methods()).toEqual(["getServerInfo", "getBlockDagInfo", "getServerInfo", "getBlockDagInfo"]);
+    state.networkId = "mainnet";
+    silentReconnect(fake);
+    const e = await failure(s.request("getBlockDagInfo"));
+    expect(e.code).toBe("MAINNET_CONNECTION_DISABLED");
+    expect(methods().slice(4)).toEqual(["getServerInfo"]);
+    expect(s.current()).toBeNull();
     await s.close();
   });
 });
@@ -93,7 +104,7 @@ describe("SECURITY-INTEGRATION-1 · the session's messages never carry endpoint 
   it("an identity refusal names the endpoint without userinfo and with secret query parameters redacted", async () => {
     const { fake } = nodeClaiming("mainnet");
     const e = await failure(session(fake, "testnet-10", SECRET_URL).request("getBlockDagInfo"));
-    expect(e.code).toBe("NODE_NETWORK_MISMATCH");
+    expect(e.code).toBe("MAINNET_CONNECTION_DISABLED"); // MAINNET TOTAL LOCKDOWN (was NODE_NETWORK_MISMATCH)
     expect(leaked(e)).toEqual([]);
     expect(String(e.message)).toContain("node.example:443/?token=REDACTED&net=t10");
   });
@@ -157,7 +168,8 @@ describe("SECURITY-INTEGRATION-1 · D1 concurrency and connection errors around 
       s.request("submitTransaction", TX),
       s.request("getBlockDagInfo")
     ]);
-    expect(results.map((r) => (r.status === "rejected" ? (r.reason as any).code : "fulfilled"))).toEqual(Array(5).fill("NODE_NETWORK_MISMATCH"));
+    // MAINNET TOTAL LOCKDOWN: the mainnet refusal (was NODE_NETWORK_MISMATCH); still asked once, nothing else sent
+    expect(results.map((r) => (r.status === "rejected" ? (r.reason as any).code : "fulfilled"))).toEqual(Array(5).fill("MAINNET_CONNECTION_DISABLED"));
     expect(methods()).toEqual(["getServerInfo", "getBlockDagInfo", "getServerInfo"]);
     expect(s.current()).toBeNull();
   });

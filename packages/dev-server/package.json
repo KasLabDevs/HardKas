@@ -34,7 +34,7 @@
     "@hardkas/tx-builder": "workspace:*",
     "@hono/node-server": "^1.13.7",
     "chokidar": "^3.5.3",
-    "hono": "^4.6.12",
+    "hono": "^4.13.11",
     "open": "^11.0.0"
   },
   "devDependencies": {

@@ -175,6 +175,27 @@ describe("DagQueryAdapter", () => {
 
   // ─── Engine capabilities ──────────────────────────────────────────────
 
+  // ESCALÓN 2 · P8: without .hardkas/state.json an op answered an empty, successful result ("no conflicts" from no data)
+  it("without DAG data every op refuses with DAG_DATA_UNAVAILABLE (status NO_DATA), never an empty result", async () => {
+    const empty = await fs.mkdtemp(path.join(os.tmpdir(), "hardkas-dag-empty-"));
+    try {
+      const bare = new QueryEngine({ artifactDir: empty });
+      for (const op of ["conflicts", "displaced", "sink-path", "anomalies"] as const) {
+        await expect(bare.execute(createQueryRequest({ domain: "dag", op })), op).rejects.toMatchObject({
+          code: "DAG_DATA_UNAVAILABLE",
+          status: "NO_DATA",
+          op,
+          source: path.join(empty, ".hardkas", "state.json")
+        });
+      }
+      await expect(bare.execute(createQueryRequest({ domain: "dag", op: "history", params: { txId: "tx-alice-1" } }))).rejects.toMatchObject({
+        code: "DAG_DATA_UNAVAILABLE"
+      });
+    } finally {
+      await fs.rm(empty, { recursive: true, force: true });
+    }
+  });
+
   it("engine lists all 4 domains", () => {
     const caps = engine.listCapabilities();
     const domains = caps.map((c) => c.domain);

@@ -239,7 +239,12 @@ describe("EVIDENCE-TRUST-1 · CLI", () => {
       const keys: string[] = [];
       const collect = (v: any) => {
         if (Array.isArray(v)) v.forEach(collect);
-        else if (v && typeof v === "object") for (const [k, x] of Object.entries(v)) k === "privateKey" && typeof x === "string" ? keys.push(x) : collect(x);
+        else if (v && typeof v === "object") {
+          for (const [k, x] of Object.entries(v)) {
+            if (k === "privateKey" && typeof x === "string") keys.push(x);
+            else collect(x);
+          }
+        }
       };
       for (const f of filesUnder(path.join(ws, ".hardkas")).filter((p) => p.endsWith(".json"))) {
         try { collect(JSON.parse(fs.readFileSync(f, "utf8"))); } catch {}

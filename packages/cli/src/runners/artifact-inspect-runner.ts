@@ -74,10 +74,9 @@ export async function runArtifactInspect(options: ArtifactInspectOptions) {
     artifact.parentTxIds ||
     (artifact.parentTxId ? [artifact.parentTxId] : undefined);
   const lineageId = artifact.lineageId;
-  const receiptRef =
-    artifact.receiptId ||
-    artifact.receiptPath ||
-    (type.includes("txPlan") ? `${artifact.txId}.receipt.json` : undefined);
+  // RC1: only a reference the artifact itself carries. It used to guess `${txId}.receipt.json` for a plan, but a plan has no
+  // txId (it is known after signing), so it printed `undefined.receipt.json`.
+  const receiptRef = artifact.receiptId || artifact.receiptPath || undefined;
 
   const isCoreArtifact = [
     HardkasSchemas.TxPlanV1,

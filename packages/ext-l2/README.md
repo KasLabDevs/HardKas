@@ -9,6 +9,10 @@ Igra is an EVM-compatible L2 built on Kaspa; Kaspa L1 does not execute EVM. This
 
 ## Install
 
+**Not published in this release.** `@hardkas/ext-l2` and its dependency `@hardkas/l2` are private workspace packages
+(owner policy, provisional): `hardkas extension install l2` cannot fetch them from npm, and works only with a local
+build or tarballs. See `docs/status/versioning.md` ("Not published"). Once published:
+
 In the project (it is a devDependency, at the CLI's exact version):
 
 ```bash
@@ -169,8 +173,8 @@ The extension mechanism is **not a security boundary** and gives no isolation. A
 Node.js code: once loaded, it runs inside the CLI process with the user's permissions (files, network, keys the user can
 read). The checks below reduce the chance of loading the wrong code by mistake — a package outside the first-party
 catalog, another version, a link out of the project, a tampered local tarball — but they do not make a malicious
-package safe to run. Install only the official `@hardkas/ext-l2`, from the registry at the CLI's version or from a
-tarball whose SHA-256 you got from the release.
+package safe to run. Install only the official `@hardkas/ext-l2`, from the registry at the CLI's version (once it is
+published) or from a tarball whose SHA-256 you got from the release.
 
 ## What the CLI checks before loading it
 
@@ -190,7 +194,7 @@ name) needs `--allow-mainnet`; non-local networks need explicit fee ceilings (`-
 
 | Before | Now |
 |---|---|
-| `HARDKAS_EXPERIMENTAL_L2=1 hardkas l2 …` | `hardkas extension install l2`, then `hardkas l2 …` (the variable no longer registers anything) |
+| `HARDKAS_EXPERIMENTAL_L2=1 hardkas l2 …` | `hardkas extension install l2` (from a local build or tarballs while it is not published), then `hardkas l2 …` (the variable no longer registers anything) |
 | `hardkas dev doctor` | Its L1 checks (workspace, config, artifacts, event ledger, query store, SDK, release checks) are `hardkas doctor workspace`, in the core, with the same report; its L2 checks are `hardkas l2 doctor`. `dev doctor` stays for one version as both together. |
 | `hardkas local wizard` | `hardkas l2 wizard` (`local wizard` stays as an alias for one version) |
 | `hardkas metamask …` (not registered since SURFACE-TRUTH-1B) | `hardkas l2 metamask …` |

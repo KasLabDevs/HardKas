@@ -8,4 +8,4 @@
 
 > **ProgrammabilityKind** = `"silver"` \| `"zk"` \| `"vprog"` \| `"full-lab"`
 
-Defined in: [packages/sdk/src/programmability.ts:9](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/programmability.ts#L9)
+Defined in: [packages/sdk/src/programmability.ts:9](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/programmability.ts#L9)

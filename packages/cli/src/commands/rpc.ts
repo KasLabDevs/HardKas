@@ -12,6 +12,18 @@ import { resolveRpcTarget, RPC_NETWORK_OPTION } from "../runners/rpc-target.js";
 // CANONICAL-RPC-URL: the help names the endpoint @hardkas/core declares canonical, never a copy.
 const URL_OPTION = `Node wRPC endpoint (default: the canonical localnet, ${nodeRpcUrl()})`;
 
+/**
+ * INT9 · CLI-CONTRACT-2B B4: why `rpc health` is not ready, as one code — a node that cannot be reached is the same
+ * RPC_CONNECTION_FAILED (or RPC_TIMEOUT) as on every other command; a node that answers but is not ready, RPC_NOT_READY.
+ */
+async function notReadyCode(error: unknown): Promise<string> {
+  // MAINNET TOTAL LOCKDOWN: the node said it serves mainnet and the transport refused it after that one answer
+  if (/MAINNET_CONNECTION_DISABLED/.test(String(error ?? ""))) return "MAINNET_CONNECTION_DISABLED";
+  const { classifyRpcError, transportCodeOf } = await import("../cli-errors.js");
+  const kind = classifyRpcError(String(error ?? ""));
+  return kind === "CONNECTION_REFUSED" || kind === "TIMEOUT" ? transportCodeOf(kind) : "RPC_NOT_READY";
+}
+
 export function registerRpcCommands(program: Command) {
   const rpcCmd = program.command("rpc").description("Kaspa RPC diagnostics and queries");
 
@@ -60,14 +72,14 @@ export function registerRpcCommands(program: Command) {
           // CLI-RUNTIME-CONTRACT-1: the verdict carries `ok` (and a code when not ready); the
           // health fields are unchanged.
           getOutput().writeJson(
-            res.result.ready ? { ok: true, ...res.result } : { ok: false, code: "RPC_NOT_READY", ...res.result }
+            res.result.ready ? { ok: true, ...res.result } : { ok: false, code: await notReadyCode(res.result.error), ...res.result }
           );
         } else {
           getOutput().writeLine(res.formatted);
         }
         if (!res.result.ready) {
           const { HardkasCliError } = await import("../cli-errors.js");
-          throw new HardkasCliError("RPC_NOT_READY", `The Kaspa RPC at ${res.result.endpoint ?? "the configured endpoint"} is not ready`, { exitCode: 1 });
+          throw new HardkasCliError(await notReadyCode(res.result.error), `The Kaspa RPC at ${res.result.endpoint ?? "the configured endpoint"} is not ready`, { exitCode: 1 });
         }
       } catch (e) {
         throw e;
@@ -90,7 +102,7 @@ export function registerRpcCommands(program: Command) {
   rpcCmd
     .command("compare")
     .description(
-      "Read several nodes side by side, read-only: identity, lag, the UTXOs of addresses, one look at a transaction. Differences the nodes' lag accounts for are lag, others disagreements (exit 1). Nothing is sent; agreement among nodes is not consensus validation"
+      "Read several nodes side by side, read-only: identity, lag, the UTXOs of addresses, one look at a transaction. Differences the nodes' lag accounts for are lag, others disagreements (exit 1); when no node can be read, nothing is compared (exit 1, MULTINODE_NO_NODE_REACHABLE). Nothing is sent; agreement among nodes is not consensus validation"
     )
     .requiredOption("--endpoints <urls...>", "Node wRPC endpoints to read, separated by spaces (two or more)")
     .requiredOption("--network <id>", "The network every node must say it serves (e.g. simnet, testnet-10); a node serving another is not read")
@@ -117,11 +129,28 @@ export function registerRpcCommands(program: Command) {
           ...(options.since ? { since: options.since } : {}),
           ...(options.lagThreshold !== undefined ? { lagThresholdDaa: BigInt(options.lagThreshold) } : {})
         });
-        const code = r.errors.length > 0 ? r.errors[0]!.code : r.disagreements > 0 ? "MULTINODE_DISAGREEMENT" : undefined;
+        // ESCALÓN 2 · P13: a comparison in which no node answered compared nothing; it is never a success (it was ok:true,
+        // exit 0). The nodes that failed are named, each with its reason; when nodes do answer, the report is unchanged.
+        const unreachable = r.set.nodes.filter((n) => n.standing === "unreachable");
+        const noneReached = r.set.nodes.length > 0 && unreachable.length === r.set.nodes.length;
+        const code = noneReached
+          ? "MULTINODE_NO_NODE_REACHABLE"
+          : r.errors.length > 0
+            ? r.errors[0]!.code
+            : r.disagreements > 0
+              ? "MULTINODE_DISAGREEMENT"
+              : undefined;
+        const message =
+          code === "MULTINODE_NO_NODE_REACHABLE"
+            ? `No node could be read, so nothing was compared: ${unreachable.map((n) => `${n.label} (${n.endpoint ?? "?"}): ${n.reasons.join("; ") || "unreachable"}`).join("; ")}. Nothing was sent.`
+            : code === "MULTINODE_DISAGREEMENT"
+              ? `${r.disagreements} disagreement(s) among the nodes (see the report). Nothing was sent.`
+              : `${r.errors.map((e) => `${e.section}: ${e.message}`).join("; ")}`;
         if (options.json) {
           getOutput().writeJson({
             ok: code === undefined,
             ...(code ? { code } : {}),
+            ...(noneReached ? { message, unreachable: unreachable.map((n) => n.label) } : {}),
             scope: r.set.scope,
             guarantee: r.set.guarantee,
             network: r.set.expectedNetwork,
@@ -137,11 +166,7 @@ export function registerRpcCommands(program: Command) {
         }
         if (code) {
           // the report above is the outcome; the exit code says it found something to look at (or could not compare)
-          throw new HardkasCliError(
-            code,
-            code === "MULTINODE_DISAGREEMENT" ? `${r.disagreements} disagreement(s) among the nodes (see the report). Nothing was sent.` : `${r.errors.map((e) => `${e.section}: ${e.message}`).join("; ")}`,
-            { exitCode: 1 }
-          );
+          throw new HardkasCliError(code, message, { exitCode: 1 });
         }
       }
     );

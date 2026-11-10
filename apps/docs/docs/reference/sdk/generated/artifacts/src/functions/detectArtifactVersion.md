@@ -8,7 +8,7 @@
 
 > **detectArtifactVersion**(`artifact`): `string`
 
-Defined in: [packages/artifacts/src/migration.ts:169](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/migration.ts#L169)
+Defined in: [packages/artifacts/src/migration.ts:226](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/migration.ts#L226)
 
 Determines the version of an artifact based on its `version` field,
 falling back to heuristics for truly legacy artifacts.

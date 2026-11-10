@@ -6,7 +6,7 @@
 
 # Interface: Utxo
 
-Defined in: [packages/tx-builder/src/index.ts:25](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/index.ts#L25)
+Defined in: [packages/tx-builder/src/index.ts:30](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/index.ts#L30)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [packages/tx-builder/src/index.ts:25](https://github.com/KasLabDevs/
 
 > `readonly` **address**: `string`
 
-Defined in: [packages/tx-builder/src/index.ts:27](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/index.ts#L27)
+Defined in: [packages/tx-builder/src/index.ts:32](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/index.ts#L32)
 
 ***
 
@@ -22,7 +22,7 @@ Defined in: [packages/tx-builder/src/index.ts:27](https://github.com/KasLabDevs/
 
 > `readonly` **amountSompi**: `bigint`
 
-Defined in: [packages/tx-builder/src/index.ts:28](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/index.ts#L28)
+Defined in: [packages/tx-builder/src/index.ts:33](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/index.ts#L33)
 
 ***
 
@@ -30,7 +30,7 @@ Defined in: [packages/tx-builder/src/index.ts:28](https://github.com/KasLabDevs/
 
 > `readonly` `optional` **blockDaaScore?**: `bigint`
 
-Defined in: [packages/tx-builder/src/index.ts:30](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/index.ts#L30)
+Defined in: [packages/tx-builder/src/index.ts:35](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/index.ts#L35)
 
 ***
 
@@ -38,7 +38,7 @@ Defined in: [packages/tx-builder/src/index.ts:30](https://github.com/KasLabDevs/
 
 > `readonly` `optional` **covenantId?**: `string`
 
-Defined in: [packages/tx-builder/src/index.ts:32](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/index.ts#L32)
+Defined in: [packages/tx-builder/src/index.ts:37](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/index.ts#L37)
 
 ***
 
@@ -46,7 +46,7 @@ Defined in: [packages/tx-builder/src/index.ts:32](https://github.com/KasLabDevs/
 
 > `readonly` `optional` **isCoinbase?**: `boolean`
 
-Defined in: [packages/tx-builder/src/index.ts:31](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/index.ts#L31)
+Defined in: [packages/tx-builder/src/index.ts:36](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/index.ts#L36)
 
 ***
 
@@ -54,7 +54,7 @@ Defined in: [packages/tx-builder/src/index.ts:31](https://github.com/KasLabDevs/
 
 > `readonly` `optional` **lane?**: `string`
 
-Defined in: [packages/tx-builder/src/index.ts:33](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/index.ts#L33)
+Defined in: [packages/tx-builder/src/index.ts:38](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/index.ts#L38)
 
 ***
 
@@ -62,7 +62,7 @@ Defined in: [packages/tx-builder/src/index.ts:33](https://github.com/KasLabDevs/
 
 > `readonly` **outpoint**: [`Outpoint`](Outpoint.md)
 
-Defined in: [packages/tx-builder/src/index.ts:26](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/index.ts#L26)
+Defined in: [packages/tx-builder/src/index.ts:31](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/index.ts#L31)
 
 ***
 
@@ -70,4 +70,4 @@ Defined in: [packages/tx-builder/src/index.ts:26](https://github.com/KasLabDevs/
 
 > `readonly` **scriptPublicKey**: `string`
 
-Defined in: [packages/tx-builder/src/index.ts:29](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/index.ts#L29)
+Defined in: [packages/tx-builder/src/index.ts:34](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/index.ts#L34)

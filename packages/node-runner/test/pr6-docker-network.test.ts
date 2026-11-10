@@ -86,8 +86,11 @@ describe("PR 6: Docker Runner Hardening", () => {
     expect(runCall[1]).not.toContain("--simnet");
   });
 
+  // MAINNET TOTAL LOCKDOWN: the refusal no longer calls a mainnet node "unsupported" (with advice to use a remote mainnet
+  // RPC); it names the lockdown. Still refused before anything runs: no docker call at all
   it("should fail for mainnet", async () => {
     const runner = new DockerKaspadRunner({ network: "mainnet" });
-    await expect(runner.start()).rejects.toThrow(/unsupported/);
+    await expect(runner.start()).rejects.toThrow(/NODE_MANAGEMENT_MAINNET_FORBIDDEN[\s\S]*MAINNET_CONNECTION_DISABLED/);
+    expect((execa as any).mock.calls.filter((c: any) => c[1]?.[0] === "run")).toEqual([]);
   });
 });

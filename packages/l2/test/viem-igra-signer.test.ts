@@ -101,25 +101,24 @@ describe("ViemIgraTxSigner", () => {
     ).rejects.toThrow(expect.objectContaining({ code: "L2_CHAIN_ID_MISMATCH" }));
   });
 
-  it("refuses mainnet (chain 38833 and chain 1) without allowMainnet, allows it with it", async () => {
+  // MAINNET TOTAL LOCKDOWN (owner decision 2026-11-09): this case read "... allows it with it" (allowMainnet: true signed
+  // for 38833). allowMainnet no longer authorizes anything: the same call is refused, with or without it.
+  it("refuses mainnet (chain 38833 and chain 1) with or without allowMainnet (MAINNET TOTAL LOCKDOWN)", async () => {
     const mainnet = getL2Profile("igra-mainnet")!;
     const feeLimits = { maxGasLimit: 100000n, maxFeePerGasWei: 10n ** 12n, maxTotalFeeWei: 10n ** 17n };
     for (const chainId of [38833, 1]) {
-      const guard = {
-        expectedChainId: chainId,
-        ...(chainId === 38833 ? { profile: mainnet } : {}),
-        feeLimits
-      };
-      await expect(
-        signerWith(setupMockViem()).sign({ plan: { ...mockPlan, chainId }, account: mockAccount, guard })
-      ).rejects.toThrow(expect.objectContaining({ code: "L2_MAINNET_WRITE_BLOCKED" }));
+      for (const allowMainnet of [undefined, true]) {
+        const guard = {
+          expectedChainId: chainId,
+          ...(chainId === 38833 ? { profile: mainnet } : {}),
+          ...(allowMainnet !== undefined ? { allowMainnet } : {}),
+          feeLimits
+        };
+        await expect(
+          signerWith(setupMockViem()).sign({ plan: { ...mockPlan, chainId }, account: mockAccount, guard })
+        ).rejects.toThrow(expect.objectContaining({ code: "L2_MAINNET_WRITE_BLOCKED" }));
+      }
     }
-    const ok = await signerWith(setupMockViem()).sign({
-      plan: { ...mockPlan, chainId: 38833 },
-      account: mockAccount,
-      guard: { expectedChainId: 38833, profile: mainnet, allowMainnet: true, feeLimits }
-    });
-    expect(ok.rawTransaction).toBe("0xsignedtx");
   });
 
   it("refuses when fee ceilings are missing or exceeded", async () => {

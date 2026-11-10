@@ -6,7 +6,7 @@
 
 # Interface: InvariantContext
 
-Defined in: [packages/artifacts/src/invariants/types.ts:25](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/invariants/types.ts#L25)
+Defined in: [packages/artifacts/src/invariants/types.ts:25](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/invariants/types.ts#L25)
 
 Context provided to invariant checks.
 Uses unknown + narrowing instead of any.
@@ -17,7 +17,7 @@ Uses unknown + narrowing instead of any.
 
 > `optional` **artifact?**: `unknown`
 
-Defined in: [packages/artifacts/src/invariants/types.ts:26](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/invariants/types.ts#L26)
+Defined in: [packages/artifacts/src/invariants/types.ts:26](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/invariants/types.ts#L26)
 
 ***
 
@@ -25,7 +25,7 @@ Defined in: [packages/artifacts/src/invariants/types.ts:26](https://github.com/K
 
 > `optional` **artifactStore?**: [`ArtifactLookup`](ArtifactLookup.md)
 
-Defined in: [packages/artifacts/src/invariants/types.ts:28](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/invariants/types.ts#L28)
+Defined in: [packages/artifacts/src/invariants/types.ts:28](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/invariants/types.ts#L28)
 
 ***
 
@@ -33,7 +33,7 @@ Defined in: [packages/artifacts/src/invariants/types.ts:28](https://github.com/K
 
 > `optional` **clock?**: [`Clock`](Clock.md)
 
-Defined in: [packages/artifacts/src/invariants/types.ts:29](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/invariants/types.ts#L29)
+Defined in: [packages/artifacts/src/invariants/types.ts:29](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/invariants/types.ts#L29)
 
 ***
 
@@ -41,7 +41,7 @@ Defined in: [packages/artifacts/src/invariants/types.ts:29](https://github.com/K
 
 > `optional` **event?**: `EventEnvelope`
 
-Defined in: [packages/artifacts/src/invariants/types.ts:27](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/invariants/types.ts#L27)
+Defined in: [packages/artifacts/src/invariants/types.ts:27](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/invariants/types.ts#L27)
 
 ***
 
@@ -49,4 +49,4 @@ Defined in: [packages/artifacts/src/invariants/types.ts:27](https://github.com/K
 
 > `optional` **strict?**: `boolean`
 
-Defined in: [packages/artifacts/src/invariants/types.ts:30](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/invariants/types.ts#L30)
+Defined in: [packages/artifacts/src/invariants/types.ts:30](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/invariants/types.ts#L30)

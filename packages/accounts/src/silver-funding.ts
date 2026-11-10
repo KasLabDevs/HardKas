@@ -1,4 +1,4 @@
-import { loadManagedKaspaWasmSync } from "@hardkas/core";
+import { assertMainnetTransactionsDisabled, loadManagedKaspaWasmSync } from "@hardkas/core";
 import { calculateUpstreamStorageMass, measureBuiltTransactionMass } from "@hardkas/tx-builder";
 import { parseWasmTxToRpc } from "./internal/wasm-rpc-serialization.js";
 import type { SilverContractUtxo } from "./silver-spend.js";
@@ -35,6 +35,8 @@ export interface ScriptFundingResult {
 }
 
 export function buildScriptFunding(request: ScriptFundingRequest): ScriptFundingResult {
+  // CA-TX-05 / HK-12: this constructor signs; the product's mainnet policy decides first (MAINNET_SIGNING_DISABLED)
+  assertMainnetTransactionsDisabled("sign", [request?.networkId], "buildScriptFunding");
   const k = loadManagedKaspaWasmSync();
   const key = new k.PrivateKey(request.privateKey);
   const address = key.toKeypair().toAddress(request.networkId);

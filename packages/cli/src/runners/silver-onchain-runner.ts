@@ -57,13 +57,31 @@ export function silverEngineKeys(accounts: readonly SilverEngineAccount[]): V1Ke
  * the canonical node's — the one that proved its identity. The caller closes it (the node's client stays the caller's).
  */
 export async function openCanonicalSilverSdk(workspaceRoot: string, rpc: unknown): Promise<Hardkas> {
+  return openSilverSdk(workspaceRoot, rpc, { network: NETWORK, managed: true });
+}
+
+/**
+ * L1-CORE-1 B3: the SDK on the network a Silver on-chain command runs on, its client the node that proved its identity.
+ * The managed localnet keeps the canonical rule (this workspace's simnet must be the localnet); any other node network
+ * (an operator's simnet/devnet kaspad, testnet-<n> behind experimental + allowPublic, which the SDK enforces when it
+ * opens) must be this workspace's kaspa-l1 execution of that network, by rpc or localnet. The caller closes it.
+ */
+export async function openSilverSdk(workspaceRoot: string, rpc: unknown, target: { readonly network: string; readonly managed: boolean }): Promise<Hardkas> {
   const { Hardkas } = await import("@hardkas/sdk");
   const { declaredNetworkIdOf } = await import("@hardkas/core");
-  const sdk = await Hardkas.open({ cwd: workspaceRoot, network: NETWORK, autoBootstrap: true });
+  const sdk = await Hardkas.open({ cwd: workspaceRoot, network: target.network, autoBootstrap: true });
   const e = sdk.execution;
-  if (e.mode !== "localnet" || e.domain !== "kaspa-l1" || sdk.network !== NETWORK || (declaredNetworkIdOf(sdk.config.config, NETWORK) ?? NETWORK) !== NETWORK) {
+  const declared = declaredNetworkIdOf(sdk.config.config, target.network) ?? target.network;
+  const modeOk = target.managed ? e.mode === "localnet" : e.mode === "localnet" || e.mode === "rpc";
+  if (!modeOk || e.domain !== "kaspa-l1" || sdk.network !== target.network || declared !== target.network) {
     await sdk.close();
-    fail("SILVER_NETWORK_NOT_SUPPORTED", `this workspace's ${NETWORK} is not the canonical localnet (${e.mode} ${e.domain} ${e.network})`, HardkasExitCode.USAGE_ERROR);
+    fail(
+      "SILVER_NETWORK_NOT_SUPPORTED",
+      target.managed
+        ? `this workspace's ${target.network} is not the canonical localnet (${e.mode} ${e.domain} ${e.network})`
+        : `this workspace does not run ${target.network} as a kaspa-l1 node network (${e.mode} ${e.domain} ${e.network}, declared ${declared})`,
+      HardkasExitCode.USAGE_ERROR
+    );
   }
   (sdk as any).rpc = rpc;
   return sdk;
@@ -113,10 +131,10 @@ function signatureScriptOf(signed: any, index: number): string {
   return typeof script === "string" ? script.toLowerCase() : fail("SILVER_SIGNED_TX_INVALID", `the signed transaction has no signature script at input ${index}`);
 }
 
-/** The address of a locking script on the canonical simnet. */
-function addressOfLock(lock: { readonly version: number; readonly script: string }): string {
+/** The address of a locking script on `network` (L1-CORE-1 B3: the network the engine's SDK runs on; it was simnet only). */
+function addressOfLock(lock: { readonly version: number; readonly script: string }, network: string = NETWORK): string {
   const k: any = loadManagedKaspaWasmSync();
-  return String(k.addressFromScriptPublicKey(new k.ScriptPublicKey(lock.version, lock.script), NETWORK));
+  return String(k.addressFromScriptPublicKey(new k.ScriptPublicKey(lock.version, lock.script), network));
 }
 
 /**
@@ -186,8 +204,9 @@ export async function silverEngineSpend(
   }
 ): Promise<{ txId: string; outputSompi: bigint; feeSompi: bigint; sequence: string; signatureScriptHex: string; computeBudget: number }> {
   const facts = await c.facts.contract(input.contract as any);
-  if (addressOfLock(facts.lock) !== input.address) {
-    fail("SILVER_RECORD_NOT_REPRODUCED", `the contract the pinned silverc reproduces with these constructor arguments is at ${addressOfLock(facts.lock)}, not at the deployed ${input.address}`);
+  const network = String(c.sdk.network);
+  if (addressOfLock(facts.lock, network) !== input.address) {
+    fail("SILVER_RECORD_NOT_REPRODUCED", `the contract the pinned silverc reproduces with these constructor arguments is at ${addressOfLock(facts.lock, network)}, not at the deployed ${input.address}`);
   }
   const computeBudget = input.computeBudget ?? (await defaultBudget("p2sh", facts.templateHash, input.entry));
   const plan = await c.sdk.covenants.planContractSpend(

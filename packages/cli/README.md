@@ -6,7 +6,7 @@ The HardKAS command line: create a Kaspa project, plan a transaction, sign it, s
 
 ## Install
 
-Requirements: Node.js 22.5 or newer and npm. Docker only for the local node.
+Requirements: Node.js 24.22.1 exactly (`engines` pins it; `hardkas doctor` warns on another 24.x and fails on other major lines) and npm. Docker only for the local node.
 
 ```bash
 mkdir my-kaspa-app && cd my-kaspa-app

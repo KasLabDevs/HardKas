@@ -83,7 +83,8 @@ const countsTheStore = (n: number, ws: string) => n >= distinctIdentities(ws) &&
 describe("WORKSPACE-AUTHORITY-1 · BEFORE", () => {
   let parent: string;
   beforeAll(() => {
-    parent = fs.mkdtempSync(path.join(os.tmpdir(), "hk-wa1-"));
+    // real path: on macOS the temp dir is under /var -> /private/var, and the CLI reports paths already resolved
+    parent = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "hk-wa1-")));
   });
   afterAll(() => {
     fs.rmSync(parent, { recursive: true, force: true });

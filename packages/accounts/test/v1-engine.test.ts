@@ -279,13 +279,37 @@ describe("F1.4 · the validator's negative matrix (each mutation, its code; neve
     ["a declared storage mass the node would not compute", () => run({ ...base(), storageMass: "0" }), "V1_PLAN_INVALID"],
     ["another network", () => run(base(), { node: { ...nodeT(), networkId: "testnet-10" } }), "V1_NETWORK_MISMATCH"],
     ["mainnet", () => run({ ...base(), networkId: "mainnet" }), "MAINNET_SIGNING_DISABLED"],
-    ["a P2PK input whose account does not hold the key", () => run(gbase(), { pub: { fixture: "11".repeat(32) } }), "PRIVATE_KEY_DOES_NOT_CONTROL_INPUT"]
+    ["a P2PK input whose account does not hold the key", () => run(gbase(), { pub: { fixture: "11".repeat(32) } }), "PRIVATE_KEY_DOES_NOT_CONTROL_INPUT"],
+    // SC-11 · the plan's block DAA score / coinbase flag against the node's UTXO, when both state them (they were not compared)
+    ["input that differs from the node (block DAA score)", () => { const p = base(); p.inputs[0].blockDaaScore = "100"; return run(p, { node: nodeT({ blockDaaScore: 101n }) }); }, "INPUT_DIFFERS_FROM_NODE"],
+    ["input that differs from the node (coinbase flag)", () => { const p = gbase(); p.inputs[0].isCoinbase = false; return run(p, { node: nodeG({ isCoinbase: true }) }); }, "INPUT_DIFFERS_FROM_NODE"],
+    ["a plan block DAA score that is not a u64", () => { const p = base(); p.inputs[0].blockDaaScore = "0x10"; return run(p, { node: nodeT({ blockDaaScore: 16n }) }); }, "V1_PLAN_INVALID"]
   ];
   for (const [name, fn, expected] of cases) {
     it(`V: ${name} → ${expected}`, () => {
       expect(fn()).toBe(expected);
     });
   }
+
+  it("SC-11 · equal block DAA score and coinbase flag are valid; a field only one side states is not compared", () => {
+    const p = base();
+    p.inputs[0].blockDaaScore = "100";
+    expect(run(p, { node: nodeT({ blockDaaScore: 100n, isCoinbase: false }) })).toBe("VALID");
+    expect(run(p, { node: nodeT() })).toBe("VALID"); // the node did not report them
+    expect(run(base(), { node: nodeT({ blockDaaScore: 5n, isCoinbase: false }) })).toBe("VALID"); // the plan did not state them
+    const g = gbase();
+    g.inputs[0].isCoinbase = true;
+    expect(run(g, { node: nodeG({ isCoinbase: true }) })).toBe("VALID");
+    const differs = (() => {
+      try {
+        validateV1Transition({ plan: (() => { const q = base(); q.inputs[0].blockDaaScore = "100"; return q; })(), node: nodeT({ blockDaaScore: 101n }), facts: () => counter, successor: () => successor });
+        return undefined;
+      } catch (e: any) {
+        return e;
+      }
+    })();
+    expect(differs?.detail).toEqual({ input: 0, field: "blockDaaScore" });
+  });
 
   it("V: a signature slot the contract checks against another key → SIGNER_SLOT_KEY_MISMATCH; an unknown account key → SIGNER_SLOT_KEY_UNRESOLVED", () => {
     const plan = {

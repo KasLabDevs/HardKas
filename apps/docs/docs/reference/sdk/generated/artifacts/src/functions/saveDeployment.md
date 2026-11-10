@@ -8,10 +8,7 @@
 
 > **saveDeployment**(`rootDir`, `record`): `Promise`\<`string`\>
 
-Defined in: [packages/artifacts/src/deployment-store.ts:14](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/deployment-store.ts#L14)
-
-Manages deployment records on the filesystem.
-Storage: `.hardkas/deployments/{networkId}/{label}.json`
+Defined in: [packages/artifacts/src/deployment-store.ts:56](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/deployment-store.ts#L56)
 
 ## Parameters
 

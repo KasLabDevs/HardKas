@@ -8,7 +8,7 @@
 
 > **createHardkasClient**(`options?`): `object`
 
-Defined in: [packages/sdk/src/client.ts:21](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/client.ts#L21)
+Defined in: [packages/sdk/src/client.ts:38](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/client.ts#L38)
 
 ## Parameters
 
@@ -276,6 +276,10 @@ Defined in: [packages/sdk/src/client.ts:21](https://github.com/KasLabDevs/HardKa
 
 `boolean`
 
+###### allowNewPaymentAfterUnknown?
+
+`boolean`
+
 ###### amountSompi?
 
 `string`
@@ -285,6 +289,10 @@ Defined in: [packages/sdk/src/client.ts:21](https://github.com/KasLabDevs/HardKa
 `string`
 
 ###### from?
+
+`string`
+
+###### idempotencyKey?
 
 `string`
 
@@ -336,6 +344,10 @@ Defined in: [packages/sdk/src/client.ts:21](https://github.com/KasLabDevs/HardKa
 
 `boolean`
 
+###### allowNewPaymentAfterUnknown?
+
+`boolean`
+
 ###### amountSompi
 
 `string`
@@ -345,6 +357,10 @@ Defined in: [packages/sdk/src/client.ts:21](https://github.com/KasLabDevs/HardKa
 `string`
 
 ###### from
+
+`string`
+
+###### idempotencyKey?
 
 `string`
 

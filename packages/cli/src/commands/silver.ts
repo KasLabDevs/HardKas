@@ -6,8 +6,10 @@ import pc from "picocolors";
 import { getOutput } from "../output.js";
 import { HardkasCliError, HardkasExitCode } from "../cli-errors.js";
 import { UI } from "../ui.js";
-import { stripBom } from "@hardkas/core";
-import { ALLOW_UNVERIFIED_RUNNER_HELP, exactValuesText, readExactJson, readExactValuesJson, registerSilverDevFrameworkCommands } from "./silver-dev-framework.js";
+import { assertNodeKind, stripBom, summarizeNodeIdentity } from "@hardkas/core";
+// INT9-A (review M-3): `localnet` only for a record the managed localnet evidenced; a node proven by its endpoint is `rpc`
+import { recordModeOf } from "../runners/l1-node-target.js";
+import { ALLOW_UNVERIFIED_RUNNER_HELP, exactValuesText, readExactJson, readExactTestsJson, readExactValuesJson, registerSilverDevFrameworkCommands } from "./silver-dev-framework.js";
 
 /**
  * `hardkas silver` — SilverScript v1 through upstream authorities only.
@@ -48,15 +50,6 @@ const fail = (code: string, message: string, exitCode = HardkasExitCode.RUNTIME_
   throw new HardkasCliError(code, message, { exitCode });
 };
 
-function assertNetwork(network: string | undefined) {
-  const n = network ?? NETWORK;
-  if (n === "mainnet") fail("SILVERSCRIPT_MAINNET_NOT_ENABLED", "SilverScript execution is not enabled on mainnet", HardkasExitCode.USAGE_ERROR);
-  if (n !== NETWORK) {
-    fail("SILVER_NETWORK_NOT_SUPPORTED", `only the canonical ${NETWORK} localnet is supported (its node identity can be verified)`, HardkasExitCode.USAGE_ERROR);
-  }
-  return n;
-}
-
 /**
  * HARDKAS-NETWORK-PORTABILITY-1 (C7): the network a compile record is for. Compilation itself does not depend on the
  * network (same silverc, same arguments, same artifact and script); the record's address and declared network do. It
@@ -80,19 +73,56 @@ async function compileNetwork(explicit: string | undefined): Promise<string> {
     }
     if (n === undefined || n === "simulated") n = NETWORK;
   }
-  if (n === "mainnet") fail("SILVERSCRIPT_MAINNET_NOT_ENABLED", "SilverScript is not enabled on mainnet", HardkasExitCode.USAGE_ERROR);
+  // MAINNET TOTAL LOCKDOWN: every mainnet spelling (kaspa, mainnet-1, kaspa-mainnet, any case), before any record, key or
+  // node is touched — compile included. RC2 oracle D2c: an explicit name that is a config alias declaring mainnet
+  // (`--network prod`) is the same refusal, never SILVER_NETWORK_NOT_SUPPORTED
+  const { isMainnetNetworkId, declaredNetworkIdOf } = await import("@hardkas/core");
+  let declared: string | undefined;
+  if (explicit !== undefined) {
+    try {
+      const { loadHardkasConfig } = await import("@hardkas/config");
+      declared = declaredNetworkIdOf((await loadHardkasConfig({ workspaceRoot: process.cwd() })).config, explicit);
+    } catch {
+      declared = undefined;
+    }
+  }
+  if (isMainnetNetworkId(n) || isMainnetNetworkId(declared)) fail("SILVERSCRIPT_MAINNET_NOT_ENABLED", "SilverScript is not enabled on mainnet (mainnet is locked down in HardKAS: no connection, no signature, no broadcast)", HardkasExitCode.USAGE_ERROR);
   if (n !== NETWORK && n !== "devnet" && !/^testnet-\d+$/.test(n)) {
     fail("SILVER_NETWORK_NOT_SUPPORTED", `'${n}' has no Kaspa address prefix a compile record can use (simnet, devnet, testnet-<n>)`, HardkasExitCode.USAGE_ERROR);
   }
   return n;
 }
 
-/** HARDKAS-NETWORK-PORTABILITY-1 (C7): deploy, spend and covenants run on the canonical simnet localnet only. */
-function assertCompiledForCanonical(compileRecord: any, file: string) {
-  if (compileRecord?.networkId !== NETWORK) {
+/**
+ * MAINNET TOTAL LOCKDOWN · the mainnet part of compileNetwork for the commands that read a record before they choose
+ * their network (`silver spend`, `silver covenant transition`): an explicit mainnet --network (any spelling or alias)
+ * is refused first, before the record is read (it used to answer SILVER_FILE_NOT_FOUND / a schema error first).
+ */
+async function refuseSilverMainnetFirst(explicit: string | undefined): Promise<void> {
+  if (explicit === undefined) return;
+  const { isMainnetNetworkId, declaredNetworkIdOf } = await import("@hardkas/core");
+  let declared: string | undefined;
+  try {
+    const { loadHardkasConfig } = await import("@hardkas/config");
+    declared = declaredNetworkIdOf((await loadHardkasConfig({ workspaceRoot: process.cwd() })).config, explicit);
+  } catch {
+    declared = undefined;
+  }
+  if (isMainnetNetworkId(explicit) || isMainnetNetworkId(declared)) {
+    fail("SILVERSCRIPT_MAINNET_NOT_ENABLED", "SilverScript is not enabled on mainnet (mainnet is locked down in HardKAS: no connection, no signature, no broadcast)", HardkasExitCode.USAGE_ERROR);
+  }
+}
+
+/**
+ * HARDKAS-NETWORK-PORTABILITY-1 (C7) · L1-CORE-1 B3: deploy, spend and covenants run on the network their records are
+ * for — the command's target network (it was the canonical simnet only). A record of another network is refused before
+ * any key is loaded or any node contacted.
+ */
+function assertCompiledForCanonical(compileRecord: any, file: string, network: string = NETWORK) {
+  if (compileRecord?.networkId !== network) {
     fail(
       "SILVER_NETWORK_NOT_SUPPORTED",
-      `${file} was compiled for ${String(compileRecord?.networkId)}; deploy and spend run on the canonical ${NETWORK} localnet only (recompile with --network ${NETWORK})`,
+      `${file} was compiled for ${String(compileRecord?.networkId)}; this command runs on ${network} (recompile with --network ${network})`,
       HardkasExitCode.USAGE_ERROR
     );
   }
@@ -103,15 +133,15 @@ function assertCompiledForCanonical(compileRecord: any, file: string) {
  * must be the canonical simnet's — checked before any key is loaded or any node contacted (a record of another network
  * cannot come from `deploy`/`genesis`, which refuse it, but can be written by hand with a recomputed identity).
  */
-function assertOnChainRecordForCanonical(record: any, compileRecord: any, file: string) {
-  if (record?.networkId !== NETWORK) {
+function assertOnChainRecordForCanonical(record: any, compileRecord: any, file: string, network: string = NETWORK) {
+  if (record?.networkId !== network) {
     fail(
       "SILVER_NETWORK_NOT_SUPPORTED",
-      `${file} is a record of ${String(record?.networkId)}; spend and covenant transitions run on the canonical ${NETWORK} localnet only`,
+      `${file} is a record of ${String(record?.networkId)}; this command runs on ${network}`,
       HardkasExitCode.USAGE_ERROR
     );
   }
-  assertCompiledForCanonical(compileRecord, `the compile record of ${file}`);
+  assertCompiledForCanonical(compileRecord, `the compile record of ${file}`, network);
 }
 
 function readFileOrFail(file: string, what: string): Buffer {
@@ -127,7 +157,7 @@ async function writeRecord(
   record: Record<string, unknown>,
   prefix: string,
   explicitOut?: string,
-  mode: "localnet" | "vm" = "localnet"
+  mode: "localnet" | "rpc" | "vm" = "localnet"
 ): Promise<{ path: string; record: any }> {
   const { writeSilverRecord } = await import("../runners/silver-records.js");
   return writeSilverRecord(record, prefix, explicitOut, mode);
@@ -192,6 +222,8 @@ interface KeySource {
   passwordStdin?: boolean | undefined;
   interactive: boolean;
   password?: string | undefined;
+  /** L1-CORE-1 B3: the network the command's keys must belong to (default: simnet). */
+  network?: string | undefined;
 }
 
 const keySource = (opts: any): KeySource => ({ passwordEnv: opts.passwordEnv, passwordStdin: Boolean(opts.passwordStdin), interactive: !opts.json });
@@ -202,17 +234,24 @@ const keySource = (opts: any): KeySource => ({ passwordEnv: opts.passwordEnv, pa
  * encrypted keystore (the owner's password from --password-env, --password-stdin or a terminal prompt). The account must
  * belong to the canonical localnet's network.
  */
-async function accountKey(nameOrAddress: string, keys: KeySource): Promise<{ privateKey: string; address: string }> {
+async function accountKey(nameOrAddress: string, keys: KeySource, network: string = keys.network ?? NETWORK): Promise<{ privateKey: string; address: string }> {
   const { loadHardkasConfig } = await import("@hardkas/config");
   const { resolveHardkasAccount, assertAccountCompatible, resolveAccountPrivateKey } = await import("@hardkas/accounts");
   const { accountNeedsKeystorePassword } = await import("../runners/tx-sign-runner.js");
   const loaded = await loadHardkasConfig({ workspaceRoot: process.cwd() });
-  const target = { mode: "localnet", domain: "kaspa-l1", network: NETWORK } as any;
-  const account: any = resolveHardkasAccount({
-    nameOrAddress,
-    config: { ...loaded.config, cwd: process.cwd() } as any,
-    executionTarget: target
-  });
+  const target = { mode: "localnet", domain: "kaspa-l1", network } as any;
+  let account: any;
+  try {
+    account = resolveHardkasAccount({
+      nameOrAddress,
+      config: { ...loaded.config, cwd: process.cwd() } as any,
+      executionTarget: target
+    });
+  } catch (e: unknown) {
+    // L1-CORE-1 B3: an account this workspace does not have on that network is a typed refusal (it was UNKNOWN_ERROR)
+    const err = e as { code?: unknown; message?: unknown } | null | undefined;
+    return fail(typeof err?.code === "string" ? err.code : "ACCOUNT_NOT_FOUND", String(err?.message ?? e), HardkasExitCode.USAGE_ERROR);
+  }
   try {
     assertAccountCompatible(account, target);
   } catch (e: any) {
@@ -231,7 +270,7 @@ async function accountKey(nameOrAddress: string, keys: KeySource): Promise<{ pri
     });
   }
   try {
-    const privateKey = await resolveAccountPrivateKey(account, { networkId: NETWORK, keystorePassword: keys.password });
+    const privateKey = await resolveAccountPrivateKey(account, { networkId: network, keystorePassword: keys.password });
     return { privateKey, address: String(account.address) };
   } catch (e: any) {
     const code = typeof e?.code === "string" ? e.code : "SILVER_ACCOUNT_KEY_UNAVAILABLE";
@@ -240,6 +279,11 @@ async function accountKey(nameOrAddress: string, keys: KeySource): Promise<{ pri
 }
 
 const PASSWORD_ENV_HELP = "Read the keystore password of the encrypted account(s) this command signs with from this environment variable (development accounts need none)";
+// L1-CORE-1 B3: the on-chain Silver commands take the network and endpoint the way `tx *` does
+const SILVER_NETWORK_HELP =
+  "Network (default: the workspace's, else simnet). mainnet is refused; testnet-<n> needs experimental + network.allowPublic in the config";
+const SILVER_URL_HELP =
+  "Node wRPC (JSON) endpoint (default: the one the workspace declares for the network; simnet: the canonical localnet). Only the canonical localnet is proven by container and image digest; any other node by what it reports (network, version, synced)";
 const PASSWORD_STDIN_HELP = "Read the keystore password of the encrypted account(s) this command signs with from stdin";
 
 /**
@@ -247,21 +291,26 @@ const PASSWORD_STDIN_HELP = "Read the keystore password of the encrypted account
  * canonical localnet — never its simulator, never another network under that name. Checked from the config before any
  * key is loaded or any node contacted. Returns the workspace root (the config's directory).
  */
-async function assertCanonicalWorkspace(): Promise<string> {
+async function assertCanonicalWorkspace(target: { readonly network: string; readonly managed: boolean } = { network: NETWORK, managed: true }): Promise<string> {
   const { loadHardkasConfig, resolveWorkspaceExecution } = await import("@hardkas/config");
   const { declaredNetworkIdOf } = await import("@hardkas/core");
   const { config, cwd } = await loadHardkasConfig({ workspaceRoot: process.cwd() });
+  const network = target.network;
   let execution: { mode: string; domain: string; network: string } | undefined;
   try {
-    execution = resolveWorkspaceExecution({ config, network: NETWORK }).execution as any;
+    execution = resolveWorkspaceExecution({ config, network }).execution as any;
   } catch (e: any) {
-    fail("SILVER_NETWORK_NOT_SUPPORTED", `this workspace has no canonical ${NETWORK} localnet: ${String(e?.message ?? e)}`, HardkasExitCode.USAGE_ERROR);
+    fail("SILVER_NETWORK_NOT_SUPPORTED", `this workspace has no ${network} execution: ${String(e?.message ?? e)}`, HardkasExitCode.USAGE_ERROR);
   }
-  const declared = declaredNetworkIdOf(config, NETWORK) ?? NETWORK;
-  if (execution?.mode !== "localnet" || execution.domain !== "kaspa-l1" || execution.network !== NETWORK || declared !== NETWORK) {
+  const declared = declaredNetworkIdOf(config, network) ?? network;
+  // L1-CORE-1 B3: the managed localnet keeps the canonical rule; another node network is this workspace's kaspa-l1
+  // execution of it, by rpc or localnet
+  const modeOk = target.managed ? execution?.mode === "localnet" : execution?.mode === "localnet" || execution?.mode === "rpc";
+  if (!modeOk || execution?.domain !== "kaspa-l1" || execution?.network !== network || declared !== network) {
     fail(
       "SILVER_NETWORK_NOT_SUPPORTED",
-      `this workspace runs ${NETWORK} as ${execution?.mode} ${execution?.domain} ${execution?.network} (declared ${declared}); deploy, spend and covenants run on the canonical ${NETWORK} localnet only`,
+      `this workspace runs ${network} as ${execution?.mode} ${execution?.domain} ${execution?.network} (declared ${declared}); ` +
+        (target.managed ? `deploy, spend and covenants on the canonical localnet need its localnet execution` : `deploy, spend and covenants need a kaspa-l1 node execution of ${network}`),
       HardkasExitCode.USAGE_ERROR
     );
   }
@@ -362,11 +411,12 @@ async function withEngine<T>(
   rpc: unknown,
   records: any[],
   accounts: ReadonlyArray<{ names: readonly string[]; privateKey: string; address: string }>,
-  use: (engine: typeof import("../runners/silver-onchain-runner.js"), ctx: import("../runners/silver-onchain-runner.js").SilverEngineContext) => Promise<T>
+  use: (engine: typeof import("../runners/silver-onchain-runner.js"), ctx: import("../runners/silver-onchain-runner.js").SilverEngineContext) => Promise<T>,
+  target: { readonly network: string; readonly managed: boolean } = { network: NETWORK, managed: true }
 ): Promise<T> {
   const engine = await import("../runners/silver-onchain-runner.js");
   const { createWorkspaceV1Facts } = await import("@hardkas/accounts");
-  const sdk = await engine.openCanonicalSilverSdk(workspaceRoot, rpc);
+  const sdk = await engine.openSilverSdk(workspaceRoot, rpc, target);
   try {
     const facts = createWorkspaceV1Facts({ workspaceRoot: sdk.workspace.root, records });
     return await use(engine, { sdk, facts, compileRecords: records, keys: engine.silverEngineKeys(accounts) });
@@ -375,13 +425,64 @@ async function withEngine<T>(
   }
 }
 
-/** The canonical node, after it proves its identity, and a client for it. */
-async function canonicalNode() {
-  const { requireNodeIdentity } = await import("@hardkas/node-runner");
-  const { nodeRpcUrl } = await import("@hardkas/core");
-  const { JsonWrpcKaspaClient } = await import("@hardkas/kaspa-rpc");
-  const identity = await requireNodeIdentity();
-  return { identity, rpc: new JsonWrpcKaspaClient({ rpcUrl: nodeRpcUrl() }) };
+/**
+ * The node a Silver record names (CA-TX-04 / HK-01): only a verified rusty-kaspad is ever recorded, with its kind, the
+ * digest observed on its container, the expected digest and the version it reported (it used to keep the expected digest
+ * under `imageDigest`, so a record could attest a digest nobody observed).
+ */
+function nodeRecordOf(identity: any) {
+  return summarizeNodeIdentity(assertNodeKind(identity, "rusty-kaspad"));
+}
+
+/**
+ * L1-CORE-1 B3 · where a Silver on-chain command (deploy, spend, covenant genesis/transition) runs. It ran on the
+ * canonical simnet localnet only (18210): no operator's kaspad, no testnet. Now, like `tx *`:
+ *  - the network: `--network`, else the workspace's, else simnet; mainnet refused; a public network (testnet-<n>) only
+ *    behind the payments' own opt-in (experimental: true and network.allowPublic: true);
+ *  - the endpoint: `--url`, else the one the workspace declares for that network (the shared endpoint authority: a
+ *    public network that declares none is NETWORK_ENDPOINT_REQUIRED, nothing contacted);
+ *  - `managed`: the endpoint is the canonical localnet's, the node HardKAS manages — proven by container + image digest
+ *    + endpoint ownership, as before. Any other node is proven by what it reports (network, version, synced): records
+ *    say which (`node.verification`).
+ */
+interface SilverTarget {
+  readonly network: string;
+  readonly rpcUrl: string;
+  readonly managed: boolean;
+}
+
+async function silverTarget(opts: { network?: string | undefined; url?: string | undefined }): Promise<SilverTarget> {
+  // the network a record can be for (mainnet and prefix-less networks refused), then the shared L1 node target
+  const network = await compileNetwork(opts.network);
+  const { resolveL1NodeTarget } = await import("../runners/l1-node-target.js");
+  return resolveL1NodeTarget(network, opts.url);
+}
+
+/**
+ * INT9-C5 (L1-CORE-1 B6 review M-4) · the node `silver doctor` and `capabilities` check: the one `silver deploy|spend|
+ * covenant` would use for the same --network/--url (silverTarget). The canonical localnet is checked as before (container
+ * + image digest); any other node by what it reports at its endpoint. They used to check the canonical localnet only, so
+ * they said "not ready" for a node the commands use. A network those commands refuse (mainnet, testnet-<n> without the
+ * payments' opt-in, a public network with no endpoint) is the node check's answer, with its code: nothing is contacted.
+ */
+export async function silverReadinessOptions(opts: { network?: string | undefined; url?: string | undefined }): Promise<{ endpoint?: { url: string; network: string }; unresolved?: string }> {
+  let target: SilverTarget;
+  try {
+    target = await silverTarget(opts);
+  } catch (e: unknown) {
+    if (e instanceof HardkasCliError) return { unresolved: `${e.code}: ${e.message}` };
+    throw e;
+  }
+  return target.managed ? {} : { endpoint: { url: target.rpcUrl, network: target.network } };
+}
+
+/**
+ * The target's node, after it proves its identity (container + digest when managed, its own report otherwise) and says
+ * it is synced (INT9-A: deploy, spend and covenants need the current chain state, on every node), and a client for it.
+ */
+async function silverNode(target: SilverTarget, operation = "this Silver command") {
+  const { proveL1Node } = await import("../runners/l1-node-target.js");
+  return proveL1Node(target, operation);
 }
 
 function contractUtxo(u: any) {
@@ -419,7 +520,7 @@ async function waitForUtxo(rpc: any, address: string, outpoint: { transactionId:
   return fail("SILVER_CONFIRMATION_TIMEOUT", `${outpoint.transactionId}:${outpoint.index} not confirmed within ${timeoutSeconds}s (is the localnet miner running?)`);
 }
 
-async function spendableCoins(rpc: any, address: string) {
+async function spendableCoins(rpc: any, address: string, network: string = NETWORK) {
   // Coinbase maturity comes from upstream network params (pinned kaspa-wasm
   // getNetworkParams via KaspaWalletAdapter) — no HardKAS-owned per-network
   // constants. See M10-D2 audit.
@@ -429,7 +530,7 @@ async function spendableCoins(rpc: any, address: string) {
   // covenant); a covenant is spent only by its own `covenant transition`, which reads its UTXO by outpoint
   const raw = (await rpc.getUtxosByAddress(address)).map(contractUtxo).filter((u: any) => !isCovenantUtxo(u));
   const { mature } = filterMatureUtxos<ReturnType<typeof contractUtxo>>({
-    networkId: NETWORK,
+    networkId: network,
     virtualDaaScore: virt,
     utxos: raw,
     readEntry: (u: any) => ({ blockDaaScore: BigInt(u.blockDaaScore), isCoinbase: Boolean(u.isCoinbase) })
@@ -510,6 +611,36 @@ async function entryArgs(file: string | undefined, keys: KeySource) {
 }
 
 /** P-1 / N-7: `--args` and `--constructor-args` of develop's commands, by the same rule as the dev-framework commands. */
+/**
+ * RC1 · `--state-map`: inline JSON (`{"value":0}`) or the path of a JSON file holding it — a file avoids each shell's quoting
+ * rules. It must map state field names to constructor parameter indexes (non-negative integers); anything else is a typed
+ * usage error (it used to be an untyped SyntaxError from JSON.parse).
+ */
+export function parseStateMapOption(raw: string): Record<string, number> {
+  const inline = /^\s*[[{]/.test(raw);
+  const text = inline ? raw : readFileOrFail(raw, "--state-map file").toString("utf8");
+  let parsed: unknown;
+  try {
+    // the exact reader (ISSUE-ONCHAIN-JSON-PRECISION-1): an index written as 1e0 or 1.0 is refused, never rounded
+    parsed = readExactJson(text, "--state-map");
+  } catch (e: unknown) {
+    if (e instanceof HardkasCliError) throw e;
+    return fail(
+      "SILVER_ARGS_INVALID",
+      `--state-map is not valid JSON${inline ? " (your shell may have stripped its quotes: pass the path of a JSON file instead)" : ` in ${raw}`}`,
+      HardkasExitCode.USAGE_ERROR
+    );
+  }
+  const ok =
+    parsed !== null &&
+    typeof parsed === "object" &&
+    !Array.isArray(parsed) &&
+    Object.keys(parsed).length > 0 &&
+    Object.values(parsed).every((v) => Number.isInteger(v) && (v as number) >= 0);
+  if (!ok) fail("SILVER_ARGS_INVALID", '--state-map must be a JSON object of state field -> constructor parameter index, e.g. {"value":0}', HardkasExitCode.USAGE_ERROR);
+  return parsed as Record<string, number>;
+}
+
 async function argsFromFile(file: string, option = "--args") {
   const { parseSilArtifactValuesJson, serializeSilArtifactValues } = await import("@hardkas/core");
   const text = readFileOrFail(file, "constructor-args file").toString("utf8");
@@ -535,16 +666,33 @@ export function registerSilverCommand(program: Command) {
   // ---------------------------------------------------------------- doctor
   silver
     .command("doctor")
-    .description("Report whether the pinned toolchains and the canonical node are ready")
+    .description("Report whether the pinned toolchains and the node the Silver on-chain commands would use are ready")
+    .option("--network <network>", SILVER_NETWORK_HELP)
+    .option("--url <url>", SILVER_URL_HELP)
     .option("--json", "Output as JSON", false)
-    .action(async (opts: { json: boolean }) => {
+    .action(async (opts: { json: boolean; network?: string; url?: string }) => {
       const core = await import("@hardkas/core");
+      // an explicit network the commands refuse is a usage error (mainnet: nothing contacted)
+      if (opts.network !== undefined) await compileNetwork(opts.network);
       // SURFACE-TRUTH-1B (D-ST1): the same checks the capability report derives `silverScript`, `covenants` and the
-      // node matrix from (one authority, `probeSilverReadiness`).
+      // node matrix from (one authority, `probeSilverReadiness`). INT9-C5: on the node `silver deploy|spend|covenant`
+      // would use for the same --network/--url (the workspace's endpoint by default), not the canonical localnet only.
       const { probeSilverReadiness } = await import("@hardkas/sdk");
-      const readiness = await probeSilverReadiness();
+      const readiness = await probeSilverReadiness(await silverReadinessOptions(opts));
       const silverc = readiness.toolchains.silverc;
-      const node = { ok: readiness.node.ok, detail: readiness.node.detail };
+      // RC1-R2: `notSynced` (the SDK's verdict) is part of the JSON, always a boolean: a node that proved its identity
+      // but does not say it is synced is `true`; every other case `false` (it was only in the `detail` text). Its code
+      // when true is NODE_NOT_SYNCED, the refusal the Silver on-chain commands would raise.
+      const node = {
+        ok: readiness.node.ok,
+        detail: readiness.node.detail,
+        notSynced: readiness.node.notSynced === true,
+        ...(readiness.node.notSynced === true ? { code: "NODE_NOT_SYNCED" } : {}),
+        ...(readiness.node.verification ? { verification: readiness.node.verification } : {}),
+        ...(readiness.node.url ? { url: readiness.node.url } : {}),
+        ...(readiness.node.network ? { network: readiness.node.network } : {}),
+        ...(readiness.node.serverVersion ? { serverVersion: readiness.node.serverVersion } : {})
+      };
       // Optional and experimental: no release binary exists, so it never gates the capabilities above. The runner is found
       // the way `silver test` finds it; `silver test` is usable only if its trust policy lets it run (F3, R-04).
       let runner: { ok: boolean; detail: string; trust?: string };
@@ -578,7 +726,7 @@ export function registerSilverCommand(program: Command) {
       const row = (ok: boolean, label: string, detail: string) => out().writeLine(`  ${ok ? pc.green("OK  ") : pc.red("MISS")} ${label}  ${pc.dim(detail)}`);
       row(report.toolchains["kaspa-wasm"].ok, "kaspa-wasm", report.toolchains["kaspa-wasm"].detail);
       row(silverc.ok, "silverc", silverc.detail);
-      row(node.ok, "canonical node", node.detail);
+      row(node.ok, node.verification === "endpoint" ? `node ${node.url} (${node.network})` : node.verification === "unresolved" ? "node" : "canonical node", node.detail);
       for (const [cap, ok] of Object.entries(report.ready)) row(ok, cap, ok ? "ready" : "not ready");
       row(runner.ok, "silver runner (experimental, optional)", runner.detail);
     });
@@ -733,8 +881,9 @@ export function registerSilverCommand(program: Command) {
       const testsBytes = readFileOrFail(opts.tests, "test file");
       let tests: unknown;
       try {
-        // N-2: each number by its literal (B-2's rule): 1e3, 1.0000000000000001 or 0.0 are refused, never sent rewritten
-        tests = readExactJson(testsBytes.toString("utf8"), "--tests");
+        // N-2: each number by its literal (B-2's rule): 1e3, 1.0000000000000001 or 0.0 are refused, never sent rewritten;
+        // SC-09: an integer past 2^53 is kept exact (u64/i64 amounts and nested values), not refused
+        tests = readExactTestsJson(testsBytes.toString("utf8"), "--tests");
       } catch (e) {
         if (e instanceof HardkasCliError) throw e;
         fail("SILVER_TEST_FILE_INVALID", `${opts.tests} is not JSON`, HardkasExitCode.USAGE_ERROR);
@@ -835,11 +984,12 @@ export function registerSilverCommand(program: Command) {
   // ---------------------------------------------------------------- deploy
   silver
     .command("deploy <record>")
-    .description("Fund a compiled contract's P2SH output on the canonical localnet")
+    .description("Fund a compiled contract's P2SH output on a Kaspa node (the canonical localnet, or the node --url / the workspace names)")
     .requiredOption("--from <account>", "Funding account (local key)")
     .requiredOption("--amount <kas>", "Value locked in the contract")
     .option("--contract <name>", "Contract, when the artifact has several")
-    .option("--network <network>", "Network", NETWORK)
+    .option("--network <network>", SILVER_NETWORK_HELP)
+    .option("--url <url>", SILVER_URL_HELP)
     .option("--tx-version <n>", TX_VERSION_HELP, "0")
     .option("--wait", "Wait for confirmation", false)
     .option("--timeout <seconds>", "Confirmation timeout", "120")
@@ -847,33 +997,38 @@ export function registerSilverCommand(program: Command) {
     .option("--password-stdin", PASSWORD_STDIN_HELP, false)
     .option("--json", "Output as JSON", false)
     .action(async (file: string, opts: any) => {
-      assertNetwork(opts.network);
+      const target = await silverTarget(opts);
       const txVersion = txVersionOption(opts.txVersion);
       const core = await import("@hardkas/core");
       const { HARDKAS_VERSION } = await import("@hardkas/artifacts");
       const S = await schemas();
       const compileRecord = await readRecord(file, S.SilverCompileV1);
-      assertCompiledForCanonical(compileRecord, file);
+      assertCompiledForCanonical(compileRecord, file, target.network);
       const artifact = await loadCompiled(compileRecord);
       const { name, contract } = core.getSilContract(artifact, opts.contract);
       const bytecode = core.silContractBytecodeHex(contract);
       const lock = core.silverP2shLock(bytecode);
-      const address = core.silverP2shAddress(bytecode, NETWORK);
+      const address = core.silverP2shAddress(bytecode, target.network);
       const value = parseKas(opts.amount);
-      const workspaceRoot = txVersion === 1 ? await assertCanonicalWorkspace() : undefined;
-      const funder = await accountKey(opts.from, keySource(opts));
-      const { identity, rpc } = await canonicalNode();
+      const workspaceRoot = txVersion === 1 ? await assertCanonicalWorkspace(target) : undefined;
+      const funder = await accountKey(opts.from, keySource(opts), target.network);
+      const { identity, rpc } = await silverNode(target);
       try {
         let funding: { txId: string; feeSompi: bigint };
         if (txVersion === 0) {
           // the certified v0 funding, unchanged
           const { buildScriptFunding } = await import("@hardkas/accounts");
-          const v0 = buildScriptFunding({ utxos: await spendableCoins(rpc, funder.address), privateKey: funder.privateKey, lockingScript: lock, valueSompi: value, networkId: NETWORK });
+          const v0 = buildScriptFunding({ utxos: await spendableCoins(rpc, funder.address, target.network), privateKey: funder.privateKey, lockingScript: lock, valueSompi: value, networkId: target.network });
           funding = { txId: await submit(rpc, v0.rpcTransaction, "deploy", (v0 as any).txId), feeSompi: v0.feeSompi };
         } else {
           // V1-ENGINE-2, asked for: the engine funds the P2SH of the record's own artifact (a payment: no constructor arguments)
-          funding = await withEngine(workspaceRoot!, rpc, [compileRecord], [{ names: [opts.from], ...funder }], (engine, ctx) =>
-            engine.silverEngineDeploy(ctx, { compileRecord: engineRecordRef(compileRecord, file, workspaceRoot!), contract: name, address, valueSompi: value, funder: funder.address })
+          funding = await withEngine(
+            workspaceRoot!,
+            rpc,
+            [compileRecord],
+            [{ names: [opts.from], ...funder }],
+            (engine, ctx) => engine.silverEngineDeploy(ctx, { compileRecord: engineRecordRef(compileRecord, file, workspaceRoot!), contract: name, address, valueSompi: value, funder: funder.address }),
+            target
           );
         }
         const txId = funding.txId;
@@ -884,7 +1039,7 @@ export function registerSilverCommand(program: Command) {
             schema: S.SilverDeployV1,
             hardkasVersion: HARDKAS_VERSION,
             createdAt: new Date().toISOString(),
-            networkId: NETWORK,
+            networkId: target.network,
             capability: "silver.p2sh.deploy-spend.v1",
             compileRecord: { path: path.relative(process.cwd(), path.resolve(file)).replace(/\\/g, "/"), contentHash: compileRecord.contentHash, artifactSha256: compileRecord.provenance.artifactSha256 },
             contract: name,
@@ -898,9 +1053,11 @@ export function registerSilverCommand(program: Command) {
             ...(txVersion === 1 ? { txVersion: 1 } : {}),
             status: confirmed ? "confirmed" : "submitted",
             ...(confirmed ? { confirmedAtBlockDaaScore: confirmed.blockDaaScore.toString() } : {}),
-            node: { verified: identity.verified, container: identity.observed.container?.name, imageDigest: identity.expected.imageDigest, serverVersion: identity.observed.server?.serverVersion }
+            node: nodeRecordOf(identity)
           },
-          "silverDeploy"
+          "silverDeploy",
+          undefined,
+          recordModeOf(target)
         );
         print(opts.json, record, recordPath, [`${pc.green("Deployed")} ${name} at ${address}`, `  tx ${txId} (${record.status}), ${value} sompi, fee ${funding.feeSompi}`]);
       } finally {
@@ -917,6 +1074,8 @@ export function registerSilverCommand(program: Command) {
     .option("--args <file>", 'Entry arguments: JSON list of {kind, value} and {"kind":"signature","account":"<name>"}')
     .option("--sequence <n>", "Input sequence (relative locks)")
     .option("--sig-op-count <n>", "Declared signature operations (default: the signature arguments, at least 1); transaction v0 only")
+    .option("--network <network>", "Network (default: the deploy record's); mainnet refused; testnet-<n> needs experimental + network.allowPublic")
+    .option("--url <url>", SILVER_URL_HELP)
     .option("--tx-version <n>", TX_VERSION_HELP, "0")
     .option("--constructor-args <file>", "With --tx-version 1: the constructor arguments the contract was compiled with (default: proven from this spend's signers, when they are the keys it checks)")
     .option("--compute-budget <n>", "With --tx-version 1: the contract input's compute budget, or 'estimate' (rusty-kaspa's upper bound); default: the certified budget of this entry, else that estimate")
@@ -926,23 +1085,27 @@ export function registerSilverCommand(program: Command) {
     .option("--password-stdin", PASSWORD_STDIN_HELP, false)
     .option("--json", "Output as JSON", false)
     .action(async (file: string, opts: any) => {
+      await refuseSilverMainnetFirst(opts.network);
       const txVersion = txVersionOption(opts.txVersion);
       const core = await import("@hardkas/core");
       const { HARDKAS_VERSION } = await import("@hardkas/artifacts");
       const S = await schemas();
       const deploy = await readRecord(file, S.SilverDeployV1);
       const compileRecord = await readReferencedRecord(deploy.compileRecord, S.SilverCompileV1, "the compile record");
-      assertOnChainRecordForCanonical(deploy, compileRecord, file);
+      // L1-CORE-1 B3: the spend runs on the deploy record's network (or the one asked for, which must be it)
+      const target = await silverTarget({ network: opts.network ?? deploy?.networkId, url: opts.url });
+      assertOnChainRecordForCanonical(deploy, compileRecord, file, target.network);
+      const keys: KeySource = { ...keySource(opts), network: target.network };
       const artifact = await loadCompiled(compileRecord);
-      const nodeOf = (identity: any) => ({ verified: identity.verified, container: identity.observed.container?.name, imageDigest: identity.expected.imageDigest, serverVersion: identity.observed.server?.serverVersion });
+      const nodeOf = nodeRecordOf;
       if (txVersion === 0) {
         if (opts.constructorArgs !== undefined || opts.computeBudget !== undefined) {
           fail("SILVER_OPTION_NEEDS_TX_V1", "--constructor-args and --compute-budget apply to --tx-version 1 (a v0 input declares its signature operations: --sig-op-count)", HardkasExitCode.USAGE_ERROR);
         }
         // the certified v0 spend, unchanged
         const { buildSilverSweep } = await import("@hardkas/accounts");
-        const args = await entryArgs(opts.args, keySource(opts));
-        const { identity, rpc } = await canonicalNode();
+        const args = await entryArgs(opts.args, keys);
+        const { identity, rpc } = await silverNode(target);
         try {
           const utxo = await findUtxo(rpc, deploy.address, deploy.outpoint);
           if (!utxo) fail("SILVER_CONTRACT_OUTPUT_NOT_FOUND", `${deploy.outpoint.transactionId}:${deploy.outpoint.index} is not an unspent output of ${deploy.address} (unconfirmed or already spent)`);
@@ -957,7 +1120,7 @@ export function registerSilverCommand(program: Command) {
             args,
             utxo: utxo!,
             to: opts.to,
-            networkId: NETWORK,
+            networkId: target.network,
             ...(opts.sequence !== undefined ? { sequence: BigInt(opts.sequence) } : {}),
             sigOpCount: opts.sigOpCount !== undefined ? Number(opts.sigOpCount) : Math.max(1, args.filter((a: any) => a.kind === "signature").length)
           });
@@ -969,7 +1132,7 @@ export function registerSilverCommand(program: Command) {
               schema: S.SilverSpendV1,
               hardkasVersion: HARDKAS_VERSION,
               createdAt: new Date().toISOString(),
-              networkId: NETWORK,
+              networkId: target.network,
               capability: "silver.p2sh.deploy-spend.v1",
               deployRecord: { path: path.relative(process.cwd(), path.resolve(file)).replace(/\\/g, "/"), contentHash: deploy.contentHash },
               contract: deploy.contract,
@@ -987,7 +1150,9 @@ export function registerSilverCommand(program: Command) {
               ...(confirmed ? { confirmedAtBlockDaaScore: confirmed.blockDaaScore.toString() } : {}),
               node: nodeOf(identity)
             },
-            "silverSpend"
+            "silverSpend",
+            undefined,
+            recordModeOf(target)
           );
           print(opts.json, record, recordPath, [`${pc.green("Spent")} ${deploy.contract}.${opts.entry} -> ${opts.to}`, `  tx ${txId} (${record.status}), ${built.outputSompi} sompi, fee ${built.feeSompi}`]);
         } finally {
@@ -1004,25 +1169,31 @@ export function registerSilverCommand(program: Command) {
       const { contract } = core.getSilContract(artifact, deploy.contract);
       const entry = contract.entries[opts.entry];
       if (!entry) fail("SILVER_ENTRY_NOT_FOUND", `${deploy.contract} has no entry '${opts.entry}' (entries: ${Object.keys(contract.entries).join(", ")})`, HardkasExitCode.USAGE_ERROR);
-      const workspaceRoot = await assertCanonicalWorkspace();
-      const { args, accounts, signers } = await engineEntryArgs(opts.args, keySource(opts), entry!.params);
+      const workspaceRoot = await assertCanonicalWorkspace(target);
+      const { args, accounts, signers } = await engineEntryArgs(opts.args, keys, entry!.params);
       const constructorArgs = await engineConstructorArgs(compileRecord, deploy.contract, opts.constructorArgs, { functionName: opts.entry, signers });
-      const { identity, rpc } = await canonicalNode();
+      const { identity, rpc } = await silverNode(target);
       try {
         const utxo = await findUtxo(rpc, deploy.address, deploy.outpoint);
         if (!utxo) fail("SILVER_CONTRACT_OUTPUT_NOT_FOUND", `${deploy.outpoint.transactionId}:${deploy.outpoint.index} is not an unspent output of ${deploy.address} (unconfirmed or already spent)`);
         const compileRef = engineRecordRef(compileRecord, deploy.compileRecord.path, workspaceRoot);
-        const built = await withEngine(workspaceRoot, rpc, [compileRecord], accounts, (engine, ctx) =>
-          engine.silverEngineSpend(ctx, {
-            contract: { compileRecord: compileRef, contract: deploy.contract, constructorArgs },
-            entry: opts.entry,
-            args,
-            outpoint: deploy.outpoint,
-            address: deploy.address,
-            to: opts.to,
-            ...(sequence !== undefined ? { sequence } : {}),
-            ...(computeBudget !== undefined ? { computeBudget } : {})
-          })
+        const built = await withEngine(
+          workspaceRoot,
+          rpc,
+          [compileRecord],
+          accounts,
+          (engine, ctx) =>
+            engine.silverEngineSpend(ctx, {
+              contract: { compileRecord: compileRef, contract: deploy.contract, constructorArgs },
+              entry: opts.entry,
+              args,
+              outpoint: deploy.outpoint,
+              address: deploy.address,
+              to: opts.to,
+              ...(sequence !== undefined ? { sequence } : {}),
+              ...(computeBudget !== undefined ? { computeBudget } : {})
+            }),
+          target
         );
         const txId = built.txId;
         const confirmed = opts.wait ? await waitForUtxo(rpc, opts.to, { transactionId: txId, index: 0 }, Number(opts.timeout)) : undefined;
@@ -1031,7 +1202,7 @@ export function registerSilverCommand(program: Command) {
             schema: S.SilverSpendV1,
             hardkasVersion: HARDKAS_VERSION,
             createdAt: new Date().toISOString(),
-            networkId: NETWORK,
+            networkId: target.network,
             capability: "silver.p2sh.deploy-spend.v1",
             deployRecord: { path: path.relative(process.cwd(), path.resolve(file)).replace(/\\/g, "/"), contentHash: deploy.contentHash },
             contract: deploy.contract,
@@ -1052,7 +1223,9 @@ export function registerSilverCommand(program: Command) {
             ...(confirmed ? { confirmedAtBlockDaaScore: confirmed.blockDaaScore.toString() } : {}),
             node: nodeOf(identity)
           },
-          "silverSpend"
+          "silverSpend",
+            undefined,
+            recordModeOf(target)
         );
         print(opts.json, record, recordPath, [`${pc.green("Spent")} ${deploy.contract}.${opts.entry} -> ${opts.to}`, `  tx ${txId} (${record.status}), ${built.outputSompi} sompi, fee ${built.feeSompi}`]);
       } finally {
@@ -1072,38 +1245,47 @@ export function registerSilverCommand(program: Command) {
     .option("--fee <sompi>", "Fee in sompi: at least the node's floor for this transaction (the floor when omitted)")
     .option("--constructor-args <file>", "Constructor arguments the contract was compiled with (default: proven from its initial State)")
     .option("--contract <name>", "Contract, when the artifact has several")
+    .option("--network <network>", SILVER_NETWORK_HELP)
+    .option("--url <url>", SILVER_URL_HELP)
     .option("--wait", "Wait for confirmation and the node's covenant id", false)
     .option("--timeout <seconds>", "Confirmation timeout", "120")
     .option("--password-env <env>", PASSWORD_ENV_HELP)
     .option("--password-stdin", PASSWORD_STDIN_HELP, false)
     .option("--json", "Output as JSON", false)
     .action(async (file: string, opts: any) => {
+      const target = await silverTarget(opts);
       const core = await import("@hardkas/core");
       const { HARDKAS_VERSION } = await import("@hardkas/artifacts");
       const S = await schemas();
       const compileRecord = await readRecord(file, S.SilverCompileV1);
-      assertCompiledForCanonical(compileRecord, file);
+      assertCompiledForCanonical(compileRecord, file, target.network);
       const artifact = await loadCompiled(compileRecord);
       const { name, contract } = core.getSilContract(artifact, opts.contract);
       const lockingScript = core.silverP2shLock(core.silContractBytecodeHex(contract));
-      const address = core.silverP2shAddress(core.silContractBytecodeHex(contract), NETWORK);
+      const address = core.silverP2shAddress(core.silContractBytecodeHex(contract), target.network);
       const value = parseKas(opts.amount);
       const fundingBudget = budgetOption(opts.computeBudget, false) as number | undefined;
       const fee = integerOption(opts.fee, "--fee");
-      const workspaceRoot = await assertCanonicalWorkspace();
+      const workspaceRoot = await assertCanonicalWorkspace(target);
       const constructorArgs = await engineConstructorArgs(compileRecord, name, opts.constructorArgs);
-      const funder = await accountKey(opts.from, keySource(opts));
-      const { identity, rpc } = await canonicalNode();
+      const funder = await accountKey(opts.from, keySource(opts), target.network);
+      const { identity, rpc } = await silverNode(target);
       try {
-        const genesis = await withEngine(workspaceRoot, rpc, [compileRecord], [{ names: [opts.from], ...funder }], (engine, ctx) =>
-          engine.silverEngineGenesis(ctx, {
-            contract: { compileRecord: engineRecordRef(compileRecord, file, workspaceRoot), contract: name, constructorArgs },
-            address,
-            valueSompi: value,
-            funder: funder.address,
-            ...(fundingBudget !== undefined ? { fundingComputeBudget: fundingBudget } : {}),
-            ...(fee !== undefined ? { feeSompi: fee } : {})
-          })
+        const genesis = await withEngine(
+          workspaceRoot,
+          rpc,
+          [compileRecord],
+          [{ names: [opts.from], ...funder }],
+          (engine, ctx) =>
+            engine.silverEngineGenesis(ctx, {
+              contract: { compileRecord: engineRecordRef(compileRecord, file, workspaceRoot), contract: name, constructorArgs },
+              address,
+              valueSompi: value,
+              funder: funder.address,
+              ...(fundingBudget !== undefined ? { fundingComputeBudget: fundingBudget } : {}),
+              ...(fee !== undefined ? { feeSompi: fee } : {})
+            }),
+          target
         );
         const txId = genesis.txId;
         const budget = genesis.computeBudget;
@@ -1117,7 +1299,7 @@ export function registerSilverCommand(program: Command) {
             schema: S.SilverCovenantV1,
             hardkasVersion: HARDKAS_VERSION,
             createdAt: new Date().toISOString(),
-            networkId: NETWORK,
+            networkId: target.network,
             capability: "toccata.covenant.auth-1to1-transition.v1",
             kind: "genesis",
             compileRecord: { path: path.relative(process.cwd(), path.resolve(file)).replace(/\\/g, "/"), contentHash: compileRecord.contentHash, artifactSha256: compileRecord.provenance.artifactSha256 },
@@ -1133,9 +1315,11 @@ export function registerSilverCommand(program: Command) {
             computeBudget: budget,
             status: confirmed ? "confirmed" : "submitted",
             ...(confirmed ? { confirmedAtBlockDaaScore: confirmed.blockDaaScore.toString() } : {}),
-            node: { verified: identity.verified, container: identity.observed.container?.name, imageDigest: identity.expected.imageDigest, serverVersion: identity.observed.server?.serverVersion }
+            node: nodeRecordOf(identity)
           },
-          "silverCovenant"
+          "silverCovenant",
+          undefined,
+          recordModeOf(target)
         );
         print(opts.json, record, recordPath, [`${pc.green("Covenant created")} ${name} ${genesis.covenantId}`, `  tx ${txId} (${record.status}), ${value} sompi, fee ${genesis.feeSompi}`]);
       } finally {
@@ -1148,30 +1332,35 @@ export function registerSilverCommand(program: Command) {
     .description("Advance a 1:1 auth-bound covenant: successor state compiled by silverc, same covenant id")
     .requiredOption("--policy <name>", "Covenant declaration (policy function) to call")
     .requiredOption("--constructor-args <file>", "Constructor arguments of the current state (checked against the record)")
-    .requiredOption("--state-map <json>", 'State field -> constructor parameter index, e.g. {"value":0}')
+    .requiredOption("--state-map <json|file>", 'State field -> constructor parameter index: inline JSON such as {"value":0}, or the path of a JSON file with it')
     .requiredOption("--next-state <file>", 'Successor state: JSON object of {kind, value} per field')
     .option("--compute-budget <n>", "Compute budget of the covenant input, or 'estimate' (rusty-kaspa's upper bound); default: the certified budget of this entry, else that estimate")
     .option("--args <file>", 'Entry arguments: JSON list of {kind, value} and {"kind":"signature","account":"<name>"}')
     .option("--fee <sompi>", "Fee in sompi, paid from the covenant's value: at least the node's floor for this transaction (the floor when omitted)")
     .option("--emit-args <file>", "Write the successor's constructor arguments here (for the next transition)")
+    .option("--network <network>", "Network (default: the covenant record's); mainnet refused; testnet-<n> needs experimental + network.allowPublic")
+    .option("--url <url>", SILVER_URL_HELP)
     .option("--wait", "Wait for confirmation and check the lineage", false)
     .option("--timeout <seconds>", "Confirmation timeout", "120")
     .option("--password-env <env>", PASSWORD_ENV_HELP)
     .option("--password-stdin", PASSWORD_STDIN_HELP, false)
     .option("--json", "Output as JSON", false)
     .action(async (file: string, opts: any) => {
+      await refuseSilverMainnetFirst(opts.network);
       const core = await import("@hardkas/core");
       const { silToV1Arg } = await import("@hardkas/accounts");
       const { HARDKAS_VERSION } = await import("@hardkas/artifacts");
       const S = await schemas();
       const prev = await readRecord(file, S.SilverCovenantV1);
       const compileRecord = await readReferencedRecord(prev.compileRecord, S.SilverCompileV1, "the compile record");
-      assertOnChainRecordForCanonical(prev, compileRecord, file);
+      // L1-CORE-1 B3: the transition runs on the covenant record's network (or the one asked for, which must be it)
+      const target = await silverTarget({ network: opts.network ?? prev?.networkId, url: opts.url });
+      assertOnChainRecordForCanonical(prev, compileRecord, file, target.network);
       const ctor = await argsFromFile(opts.constructorArgs, "--constructor-args");
       if (sha256(ctor.canonical) !== compileRecord.provenance.constructorArgsSha256) {
         fail("SILVER_CONSTRUCTOR_ARGS_MISMATCH", "these constructor arguments are not the ones the current state was compiled with", HardkasExitCode.USAGE_ERROR);
       }
-      const stateMap = JSON.parse(opts.stateMap);
+      const stateMap = parseStateMapOption(String(opts.stateMap));
       // ISSUE-ONCHAIN-JSON-PRECISION-1: the next state's ints by their literals, never through JSON.parse's double
       const nextRaw = readExactValuesJson(readFileOrFail(opts.nextState, "next-state file").toString("utf8"), "--next-state") as Record<string, unknown>;
       if (nextRaw === null || typeof nextRaw !== "object" || Array.isArray(nextRaw)) {
@@ -1196,28 +1385,34 @@ export function registerSilverCommand(program: Command) {
       const engineNextState = Object.fromEntries(Object.entries({ ...currentState, ...nextState }).map(([k, v]) => [k, silToV1Arg(v as any)]));
       const successorBytecode = core.silContractBytecodeHex(core.getSilContract(next.successor.artifact, prev.contract).contract);
       const successorLock = core.silverP2shLock(successorBytecode);
-      const successorAddress = core.silverP2shAddress(successorBytecode, NETWORK);
-      const workspaceRoot = await assertCanonicalWorkspace();
+      const successorAddress = core.silverP2shAddress(successorBytecode, target.network);
+      const workspaceRoot = await assertCanonicalWorkspace(target);
       // signed transitions: each signer's key resolved now, before the node (SILVER-KEYS-1)
-      const { args, accounts } = await engineEntryArgs(opts.args, keySource(opts));
-      const { identity, rpc } = await canonicalNode();
+      const { args, accounts } = await engineEntryArgs(opts.args, { ...keySource(opts), network: target.network });
+      const { identity, rpc } = await silverNode(target);
       try {
         const utxo = await findUtxo(rpc, prev.address, prev.outpoint);
         if (!utxo) fail("SILVER_CONTRACT_OUTPUT_NOT_FOUND", `${prev.outpoint.transactionId}:${prev.outpoint.index} is not unspent at ${prev.address}`);
         if (utxo!.covenantId !== prev.covenantId) fail("SILVER_COVENANT_ID_MISMATCH", `the node reports covenant id ${utxo!.covenantId} for this output, the record says ${prev.covenantId}`);
-        const built = await withEngine(workspaceRoot, rpc, [compileRecord], accounts, (engine, ctx) =>
-          engine.silverEngineTransition(ctx, {
-            contract: { compileRecord: engineRecordRef(compileRecord, prev.compileRecord.path, workspaceRoot), contract: prev.contract, constructorArgs: ctor.values.map((v: any) => silToV1Arg(v)) },
-            covenantId: prev.covenantId,
-            outpoint: prev.outpoint,
-            policy: opts.policy,
-            entry: entry!,
-            args,
-            nextState: engineNextState,
-            expectedSuccessorAddress: successorAddress,
-            ...(computeBudget !== undefined ? { computeBudget } : {}),
-            ...(fee !== undefined ? { feeSompi: fee } : {})
-          })
+        const built = await withEngine(
+          workspaceRoot,
+          rpc,
+          [compileRecord],
+          accounts,
+          (engine, ctx) =>
+            engine.silverEngineTransition(ctx, {
+              contract: { compileRecord: engineRecordRef(compileRecord, prev.compileRecord.path, workspaceRoot), contract: prev.contract, constructorArgs: ctor.values.map((v: any) => silToV1Arg(v)) },
+              covenantId: prev.covenantId,
+              outpoint: prev.outpoint,
+              policy: opts.policy,
+              entry: entry!,
+              args,
+              nextState: engineNextState,
+              expectedSuccessorAddress: successorAddress,
+              ...(computeBudget !== undefined ? { computeBudget } : {}),
+              ...(fee !== undefined ? { feeSompi: fee } : {})
+            }),
+          target
         );
         const txId = built.txId;
         const outpoint = { transactionId: txId, index: 0 };
@@ -1236,7 +1431,7 @@ export function registerSilverCommand(program: Command) {
             schema: S.SilverCompileV1,
             hardkasVersion: HARDKAS_VERSION,
             createdAt: new Date().toISOString(),
-            networkId: NETWORK,
+            networkId: target.network,
             capability: "silver.compile.v1",
             source: compileRecord.source,
             provenance: next.successor.provenance,
@@ -1250,7 +1445,7 @@ export function registerSilverCommand(program: Command) {
             schema: S.SilverCovenantV1,
             hardkasVersion: HARDKAS_VERSION,
             createdAt: new Date().toISOString(),
-            networkId: NETWORK,
+            networkId: target.network,
             capability: "toccata.covenant.auth-1to1-transition.v1",
             kind: "transition",
             previous: { path: path.relative(process.cwd(), path.resolve(file)).replace(/\\/g, "/"), contentHash: prev.contentHash, outpoint: prev.outpoint },
@@ -1270,9 +1465,11 @@ export function registerSilverCommand(program: Command) {
             computeBudget: built.computeBudget,
             status: confirmed ? "confirmed" : "submitted",
             ...(confirmed ? { confirmedAtBlockDaaScore: confirmed.blockDaaScore.toString() } : {}),
-            node: { verified: identity.verified, container: identity.observed.container?.name, imageDigest: identity.expected.imageDigest, serverVersion: identity.observed.server?.serverVersion }
+            node: nodeRecordOf(identity)
           },
-          "silverCovenant"
+          "silverCovenant",
+          undefined,
+          recordModeOf(target)
         );
         print(opts.json, record, recordPath, [`${pc.green("Covenant advanced")} ${prev.contract}.${opts.policy} ${prev.covenantId}`, `  tx ${txId} (${record.status}), successor ${successorAddress}`]);
       } finally {

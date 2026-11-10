@@ -6,7 +6,7 @@
 
 # Interface: SchemaMetadata
 
-Defined in: packages/core/dist/index.d.ts:728
+Defined in: [packages/core/dist/index.d.ts:2163](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/core/dist/index.d.ts#L2163)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: packages/core/dist/index.d.ts:728
 
 > **domain**: `"silver"` \| `"zk"` \| `"vprogs"` \| `"tx"` \| `"programmability"` \| `"corpus"` \| `"infra"` \| `"cli"` \| `"audit"`
 
-Defined in: packages/core/dist/index.d.ts:730
+Defined in: [packages/core/dist/index.d.ts:2165](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/core/dist/index.d.ts#L2165)
 
 ***
 
@@ -22,7 +22,7 @@ Defined in: packages/core/dist/index.d.ts:730
 
 > `optional` **legacy?**: `boolean`
 
-Defined in: packages/core/dist/index.d.ts:733
+Defined in: [packages/core/dist/index.d.ts:2168](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/core/dist/index.d.ts#L2168)
 
 ***
 
@@ -30,7 +30,7 @@ Defined in: packages/core/dist/index.d.ts:733
 
 > **stability**: `"experimental"` \| `"stable"` \| `"stable-local"` \| `"fixture-coherence"` \| `"inspect-only"` \| `"report"`
 
-Defined in: packages/core/dist/index.d.ts:732
+Defined in: [packages/core/dist/index.d.ts:2167](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/core/dist/index.d.ts#L2167)
 
 ***
 
@@ -38,7 +38,7 @@ Defined in: packages/core/dist/index.d.ts:732
 
 > **type**: `string`
 
-Defined in: packages/core/dist/index.d.ts:729
+Defined in: [packages/core/dist/index.d.ts:2164](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/core/dist/index.d.ts#L2164)
 
 ***
 
@@ -46,4 +46,4 @@ Defined in: packages/core/dist/index.d.ts:729
 
 > **version**: `string`
 
-Defined in: packages/core/dist/index.d.ts:731
+Defined in: [packages/core/dist/index.d.ts:2166](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/core/dist/index.d.ts#L2166)

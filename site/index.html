@@ -689,7 +689,7 @@ summary:hover { color: var(--accent); }
       "name": "HardKAS Monorepo",
       "codeRepository": "https://github.com/KasLabDevs/HardKas",
       "programmingLanguage": ["TypeScript", "Rust"],
-      "runtimePlatform": "Node.js >= 22.5.0",
+      "runtimePlatform": "Node.js 24.22.1",
       "license": "https://opensource.org/licenses/MIT"
     }
   ]
@@ -1012,7 +1012,7 @@ Account kind = synthetic · target mode = rpc<br/>
 </section>
 <section id="quickstart">
 <h2>Quickstart</h2>
-<p>A first run in the simulator, with no node and no Docker: create a project, then plan, sign and send a payment and replay it from its artifacts. You need Node.js 22.5 or newer; <code>hardkas init</code> downloads the pinned kaspa-wasm.</p>
+<p>A first run in the simulator, with no node and no Docker: create a project, then plan, sign and send a payment and replay it from its artifacts. You need Node.js 24.22.1 (exactly: the version HardKAS pins and tests); <code>hardkas init</code> downloads the pinned kaspa-wasm.</p>
 <div class="codeblock">
 <div class="codebar">execution-safe workflow <button class="copy" data-copy="hardkas init\nhardkas simulator fund alice --amount 100\nhardkas tx plan --from alice --to bob --amount 10 --network simulated --out tx-plan.json\nhardkas tx sign tx-plan.json --account alice --out tx-signed.json\nhardkas tx send tx-signed.json --network simulated --yes">Copy</button></div>
 <pre><span class="comment"># 0. Create the project and install the pinned kaspa-wasm</span>
@@ -1097,7 +1097,7 @@ Account kind = synthetic · target mode = rpc<br/>
 <tr><td>MCP server</td><td>Lets an AI agent compile, deploy and query the project through the IDE. It never sees private keys.</td></tr>
 </tbody>
 </table>
-<div class="note"><strong>What it needs.</strong> Node.js 22.5 or newer with npm (the IDE runs the <code>hardkas</code> CLI), and Docker Desktop for the local node and the cluster. The simulator needs neither Docker nor a node. Mainnet is blocked by HardKAS policy, so the IDE works with the simulator, the local simnet node and testnet-10. The installer is not code-signed yet, so Windows SmartScreen may ask you to confirm.</div>
+<div class="note"><strong>What it needs.</strong> Node.js 24.22.1 with npm (the IDE runs the <code>hardkas</code> CLI), and Docker Desktop for the local node and the cluster. The simulator needs neither Docker nor a node. Mainnet is blocked by HardKAS policy, so the IDE works with the simulator, the local simnet node and testnet-10. The installer is not code-signed yet, so Windows SmartScreen may ask you to confirm.</div>
 </section>
 <section id="examples">
 <h2>Examples &amp; Builder Labs</h2>
@@ -1124,7 +1124,7 @@ hardkas config show --json">
 <div class="codebar">real output: hardkas doctor, without Docker (excerpt)</div>
 <pre><span class="comment">HardKAS System Doctor</span>
 
-  <span style="color:#72f2c3">✅</span> Node.js version: v24.15.0 (>= 18 required)
+  <span style="color:#72f2c3">✅</span> Node.js version: v24.22.1 (the supported Node.js 24.22.1)
   <span style="color:#72f2c3">✅</span> pnpm: v11.1.3
   <span style="color:#72f2c3">✅</span> .hardkas/ directory: Exists and is active
   <span style="color:#72f2c3">✅</span> .gitignore protection: Contains .hardkas/
@@ -1231,7 +1231,7 @@ Replay Verification:
 <div class="grid cols-2">
 <div class="box">
 <h3>Policy Gates</h3>
-<p>HardKAS refuses to sign and to broadcast mainnet transactions in this release, and the release claims mark testnet and mainnet readiness as <code>BLOCKED_BY_POLICY</code>.</p>
+<p>HardKAS makes no connection to mainnet in this release (reads included, even to an endpoint you declare) and refuses to sign and to broadcast mainnet transactions; the release claims mark testnet and mainnet readiness as <code>BLOCKED_BY_POLICY</code>.</p>
 </div>
 <div class="box">
 <h3>Infrastructure, not Custody</h3>
@@ -1244,19 +1244,20 @@ Replay Verification:
 <section id="dag">
 <h2>DAG simulation</h2>
 <p>
-            The simulator keeps a small local DAG built with an approximate GHOSTDAG
-            model (K = 18 by default). It is research/dev tooling to see how the simulated sink
+            The simulated ledger (<code>network: "simulated"</code>) keeps a small synthetic DAG in
+            <code>.hardkas/localnet.json</code>. No GHOSTDAG runs on this path: a simulated reorg adds a
+            side block and moves the simulated sink to it. It is research/dev tooling to see how the simulated sink
             moves; it is not rusty-kaspa consensus and proves nothing about the real network.
           </p>
 <div class="command-grid">
 <div class="command">
-<code>hardkas dag status</code><span>Show the simulator DAG: sink, block count, selected path, accepted and displaced transactions.</span>
+<code>hardkas dag status</code><span>Show the simulated ledger's DAG: sink, block count, selected path, accepted and displaced transactions.</span>
 </div>
 <div class="command">
 <code>hardkas dag simulate-reorg --depth 1</code><span>Add one synthetic side block <code>--depth</code> blocks back on the selected path and move the simulated sink to it.</span>
 </div>
 </div>
-<p>The <code>query dag</code> views (conflicts, sink-path, displaced, history) are not listed: they currently read a state file that nothing writes, so they return nothing. They come back once that is fixed.</p>
+<p>The <code>query dag</code> views (conflicts, sink-path, displaced, history) are not listed: they currently read a state file that nothing writes, so each one fails with <code>DAG_DATA_UNAVAILABLE</code> instead of answering without data. They come back once that is fixed.</p>
 </section>
 <section id="query-store">
 <h2>Query store</h2>
@@ -1332,7 +1333,7 @@ Replay Verification:
 </div>
 <div class="box">
 <h4><code>hardkas verify</code></h4>
-<p>Verify artifact integrity (hashes, schema) and lineage continuity across the workspace. Cross-subsystem checks live in <code>hardkas verify-semantics</code> (alpha).</p>
+<p>Verify artifact integrity (hashes, schema) and lineage continuity across the workspace. There are no cross-subsystem semantic checks: <code>hardkas verify-semantics</code> refuses (no subsystem records the hashes it would compare).</p>
 </div>
 </div>
 <div class="warning">
@@ -1438,7 +1439,7 @@ hardkas chaos replay --run-seed 42">
 </tr>
 <tr>
 <td>3</td>
-<td>Unsafe configuration refused.</td>
+<td>Unsafe configuration refused (no longer produced: there is no current-directory mode).</td>
 </tr>
 <tr>
 <td>4</td>
@@ -1447,8 +1448,9 @@ hardkas chaos replay --run-seed 42">
 </tbody>
 </table>
 <div class="note">
-<strong>Isolation.</strong> Chaos runs in an isolated workspace by default and
-            refuses unsafe current-directory destruction without explicit opt-in.
+<strong>Isolation.</strong> Every campaign runs in a new directory of its own under the
+            OS temp dir, never in the current directory; it deletes only the workspace it created
+            there and keeps its reports next to it. The current-directory flags have no effect.
           </div>
 </section>
 <section id="l1l2">
@@ -1480,17 +1482,17 @@ hardkas chaos replay --run-seed 42">
                   architectural class.
                 </td>
 <td>
-                  Not part of the current HardKAS CLI: the L2 transaction, RPC and bridge
-                  commands are not registered. Moving this code to Labs is planned.
+                  Not part of the HardKAS core CLI: the L2 commands come only with the
+                  experimental l2 extension, which is not published in this release.
                 </td>
 </tr>
 <tr>
 <td>Bridge phases</td>
 <td>Pre-ZK → MPC/committee-style assumptions → ZK exit phase.</td>
 <td>
-                  Modelled in the unregistered <code>l2</code> package, where
-                  <code>trustlessExit</code> stays false until the ZK phase. No bridge
-                  workflow ships in the CLI.
+                  Modelled in the unpublished <code>l2</code> package, where
+                  <code>trustlessExit</code> is false: a ZK phase alone does not make an exit
+                  trustless. No bridge workflow ships in the CLI.
                 </td>
 </tr>
 </tbody>
@@ -1787,7 +1789,7 @@ hardkas chaos replay --run-seed 42">
 </table>
 </div>
 <div class="command">
-<code>hardkas l2 doctor --profile local --json</code><span>With the <code>l2</code> extension (<code>hardkas extension install l2</code>). Check an L2 profile (the local Anvil profile by default; Igra profiles only when named): the profile, its EVM JSON-RPC, the chain id and an EVM account in hardkas.config. The workspace checks (artifacts, event ledger, query store, SDK import) are <code>hardkas doctor workspace</code>, in the core; <code>dev doctor</code> runs both, for one version. It does not check the Kaspa node.</span>
+<code>hardkas l2 doctor --profile local --json</code><span>With the <code>l2</code> extension (<code>@hardkas/ext-l2</code>, not published in this release, so <code>hardkas extension install l2</code> cannot fetch it from npm). Check an L2 profile (the local Anvil profile by default; Igra profiles only when named): the profile, its EVM JSON-RPC, the chain id and an EVM account in hardkas.config. The workspace checks (artifacts, event ledger, query store, SDK import) are <code>hardkas doctor workspace</code>, in the core; <code>dev doctor</code> runs both, for one version. It does not check the Kaspa node.</span>
 <table class="flags">
 <tr>
 <td><code>--profile &lt;name&gt;</code></td>
@@ -1847,7 +1849,7 @@ hardkas chaos replay --run-seed 42">
 </tr>
 <tr>
 <td><code>--network &lt;name&gt;</code></td>
-<td><code>simulated</code> or <code>local</code> read the simulator; simnet, devnet, testnet-10 or mainnet ask a node on 127.0.0.1 (default simnet, even in a simulator project)</td>
+<td><code>simulated</code> or <code>local</code> read the simulator; simnet, devnet or testnet-10 ask a node on 127.0.0.1 (default simnet, even in a simulator project); mainnet is never contacted (<code>MAINNET_CONNECTION_DISABLED</code>)</td>
 </tr>
 <tr>
 <td><code>--url &lt;url&gt;</code></td>
@@ -2644,8 +2646,12 @@ hardkas chaos replay --run-seed 42">
 <td>Wallet adapter boundary and local wallet connection helpers.</td>
 </tr>
 <tr>
-<td><code>@hardkas/sessions</code> · <code>@hardkas/l2</code> · <code>@hardkas/bridge-local</code></td>
-<td>Experimental or unregistered surfaces (sessions, Igra L2, bridge). Moving the L2 and bridge code to Labs is planned.</td>
+<td><code>@hardkas/sessions</code> · <code>@hardkas/bridge-local</code></td>
+<td>Experimental or unregistered surfaces (sessions, bridge). Moving the bridge code to Labs is planned.</td>
+</tr>
+<tr>
+<td><code>@hardkas/l2</code> · <code>@hardkas/ext-l2</code></td>
+<td>Igra L2 (EVM) tooling and its CLI extension. Experimental and not published in this release.</td>
 </tr>
 </tbody>
 </table>
@@ -2710,7 +2716,7 @@ hardkas chaos replay --run-seed 42">
 <div class="details-body">
 <p>
                   No. No bridge workflow ships in the CLI, and the bridge model keeps
-                  trustless exit false until a ZK phase exists and is explicitly implemented.
+                  trustless exit false: it would need a deployed, working proof-based withdrawal path.
                 </p>
 </div>
 </details>

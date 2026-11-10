@@ -9,7 +9,7 @@ Welcome to the definitive structural and semantic reference for the HardKAS comm
 
 ## Map of the CLI
 
-The CLI is organized into strict functional domains. 
+The CLI is organized into strict functional domains.
 
 - [hardkas accounts](./accounts.md)
 - [hardkas artifact](./artifact.md)
@@ -24,12 +24,15 @@ The CLI is organized into strict functional domains.
 - [hardkas dev](./dev.md)
 - [hardkas doctor](./doctor.md)
 - [hardkas env](./env.md)
+- [hardkas escrow](./escrow.md)
 - [hardkas evidence](./evidence.md)
 - [hardkas explain](./explain.md)
 - [hardkas extension](./extension.md)
 - [hardkas init](./init.md)
 - [hardkas inspect](./inspect.md)
 - [hardkas kaspa](./kaspa.md)
+- [hardkas kcc](./kcc.md)
+- [hardkas kcc20](./kcc20.md)
 - [hardkas localnet](./localnet.md)
 - [hardkas lock](./lock.md)
 - [hardkas node](./node.md)
@@ -72,7 +75,7 @@ When a command accepts an artifact identifier (e.g. `hardkas explain <artifact>`
 1. An explicit **filepath** (e.g., `./.hardkas/artifacts/plans/my-plan.json`)
 2. The exact canonical **artifactId** (a 64-character hex string)
 
-Do **not** use the network `txId` as a generic locator. It will fail. 
+Do **not** use the network `txId` as a generic locator. It will fail.
 
 ### Side Effect Notation
 Commands that mutate your local workspace, broadcast to a network, or expose sensitive material (like private keys) are explicitly marked in the **Side Effects** semantic block. If a command does not have this block, it is considered a read-only operation.

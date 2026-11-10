@@ -47,12 +47,12 @@ Invariant violation (includes raw stack trace leaks).
 
 3
 
-Unsafe configuration refused.
+Unsafe configuration refused (no longer produced: there is no current-directory mode).
 
 4
 
 Internal chaos engine failure.
 
 :::note
-**Isolation.** Chaos runs in an isolated workspace by default and refuses unsafe current-directory destruction without explicit opt-in.
+**Isolation.** Every campaign runs in a new directory of its own under the OS temp dir, never in the current directory; it deletes only the workspace it created there and keeps its reports in `<run dir>/reports`. `--unsafe-current-dir`, `--force-ci-chaos` and `--force-chaos-destructive` have no effect.
 :::

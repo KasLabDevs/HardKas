@@ -42,9 +42,27 @@ export interface TxStatusRunnerResult {
  * The observer is always the node configured for that network (no ad-hoc URL: an
  * observation must be attributed to the observer that actually answered).
  */
-export async function openSdkForTx(txId: string, workspaceRoot: string, network?: string): Promise<{ sdk: Sdk; network: string }> {
+export async function openSdkForTx(
+  txId: string,
+  workspaceRoot: string,
+  network?: string,
+  /**
+   * INT9-A (I-3b): `tx wait` needs the current chain state, so its node must say it is synced (`tx status` does not).
+   * MAINNET TOTAL LOCKDOWN: `observe` — the caller will look at the node (`tx wait`, `tx status` without
+   * `--no-observe`, a network txId): a mainnet network (the explicit one, any spelling or alias; the workspace's own
+   * when none is given; the recorded submission's) is refused first, MAINNET_CONNECTION_DISABLED, before any name is
+   * resolved and before the public-network gate — never UNKNOWN_NETWORK, PUBLIC_NETWORK_BLOCKED or a timeout.
+   */
+  options: { requireSyncedNode?: boolean; observe?: boolean } = {}
+): Promise<{ sdk: Sdk; network: string }> {
+  const observing = options.observe === true && NETWORK_TXID.test(txId);
+  if (observing) {
+    const { workspaceConfigForGuard, refuseMainnetConnection } = await import("../mainnet-guard.js");
+    refuseMainnetConnection(await workspaceConfigForGuard(workspaceRoot), [network], "tx status / tx wait: the observation would read mainnet", true);
+  }
   const { Hardkas } = await import("@hardkas/sdk");
-  const probe: Sdk = await Hardkas.open({ cwd: workspaceRoot });
+  const sync = options.requireSyncedNode === true ? { requireSyncedNode: true } : {};
+  const probe: Sdk = await Hardkas.open({ cwd: workspaceRoot, ...sync });
   let recorded: string | undefined;
   try {
     const submission: any = await probe.artifacts.read({ tx: txId });
@@ -53,10 +71,19 @@ export async function openSdkForTx(txId: string, workspaceRoot: string, network?
     recorded = undefined;
   }
   const target = network ?? recorded ?? String(probe.network);
+  if (observing) {
+    try {
+      const { refuseMainnetConnection } = await import("../mainnet-guard.js");
+      refuseMainnetConnection(probe.config?.config, [target], "tx status / tx wait: the observation would read mainnet");
+    } catch (e) {
+      await probe.close();
+      throw e;
+    }
+  }
   if (target === String(probe.network)) return { sdk: probe, network: target };
   // RESOURCE-LIFECYCLE-1: the probe is not handed out, so it is released here; the caller owns the SDK returned.
   await probe.close();
-  return { sdk: await Hardkas.open({ cwd: workspaceRoot, network: target }), network: target };
+  return { sdk: await Hardkas.open({ cwd: workspaceRoot, network: target, ...sync }), network: target };
 }
 
 /** ONE look (unless disabled or synthetic), then the derived state from the stored evidence. */
@@ -72,7 +99,7 @@ export async function runTxStatus(input: {
   const workspaceRoot = input.workspaceRoot ?? process.cwd();
   const opened = input.sdk
     ? { sdk: input.sdk, network: String(input.network ?? input.sdk.network) }
-    : await openSdkForTx(input.txId, workspaceRoot, input.network);
+    : await openSdkForTx(input.txId, workspaceRoot, input.network, { observe: input.observe !== false });
   const { sdk, network } = opened;
   // RESOURCE-LIFECYCLE-1: an SDK opened here is released here (RL-I1); an injected one is its caller's (RL-I2).
   try {
@@ -93,6 +120,9 @@ async function lookAndDerive(input: { txId: string; observe?: boolean; since?: s
       const r = await sdk.tx.observe(input.txId, input.since !== undefined ? { since: input.since } : {});
       look = { taken: true, artifactId: r.observation.contentHash, ...(r.observationPath ? { path: r.observationPath } : {}) };
     } catch (e: any) {
+      // MAINNET TOTAL LOCKDOWN: a mainnet refusal is the command's answer (its JSON code), never a look "not taken" —
+      // e.g. a node declared as another network that answered mainnet to its one identity question
+      if (/^MAINNET_(CONNECTION|SIGNING|BROADCAST)_DISABLED$/.test(String(e?.code ?? ""))) throw e;
       look = { taken: false, reason: `the configured observer could not be read: ${e?.code ? `[${e.code}] ` : ""}${e?.message ?? String(e)}` };
     }
   }

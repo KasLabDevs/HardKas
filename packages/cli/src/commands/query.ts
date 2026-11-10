@@ -720,7 +720,8 @@ export function registerQueryCommands(program: Command) {
 
         if (options.json) {
           const { getOutput } = await import("../output.js");
-          getOutput().writeJson({ ok: true, command: "query replay diff", mode: "cli", result });
+          // L1-CORE-1 B4: the envelope named another command ("query replay diff")
+          getOutput().writeJson({ ok: true, command: "query replay summary", mode: "cli", result });
         } else {
           printReplaySummary(result);
         }
@@ -731,7 +732,9 @@ export function registerQueryCommands(program: Command) {
 
   replayCmd
     .command("divergences")
-    .description("Detect receipts with replay divergence indicators")
+    .description(
+      "Static analysis of the stored receipts: hash, state, UTXO-count and fee (relay minimum) checks of their fields. Nothing is re-executed; 'hardkas replay verify' replays a receipt"
+    )
     .option("--json", "Output as JSON", false)
     .option("--explain [level]", "Attach explain chains (brief and full currently give the same output)")
     .action(async (options) => {
@@ -748,7 +751,9 @@ export function registerQueryCommands(program: Command) {
 
         if (options.json) {
           const { getOutput } = await import("../output.js");
-          getOutput().writeJson({ ok: true, command: "query events list", mode: "cli", result });
+          // L1-CORE-1 B4: the envelope named another command ("query events list")
+          // ESCALÓN 2 · P9: the envelope says what kind of answer this is (static analysis, no replay)
+          getOutput().writeJson({ ok: true, command: "query replay divergences", mode: "cli", analysis: STATIC_ANALYSIS, result });
         } else {
           printDivergences(result);
         }
@@ -759,7 +764,9 @@ export function registerQueryCommands(program: Command) {
 
   replayCmd
     .command("invariants <txId>")
-    .description("Check replay invariants for a specific transaction")
+    .description(
+      "Static checks of one stored receipt: content hash, recorded state hashes, state change against status, non-empty UTXO lists. Nothing is re-executed; 'hardkas replay verify' replays it"
+    )
     .option("--json", "Output as JSON", false)
     .option("--explain [level]", "Attach explain chains (brief and full currently give the same output)")
     .action(async (txId, options) => {
@@ -777,7 +784,8 @@ export function registerQueryCommands(program: Command) {
 
         if (options.json) {
           const { getOutput } = await import("../output.js");
-          getOutput().writeJson({ ok: true, command: "query events inspect", mode: "cli", result });
+          // L1-CORE-1 B4: the envelope named another command ("query events inspect")
+          getOutput().writeJson({ ok: true, command: "query replay invariants", mode: "cli", analysis: STATIC_ANALYSIS, result });
         } else {
           printInvariants(result);
         }
@@ -792,7 +800,9 @@ export function registerQueryCommands(program: Command) {
 
   const dagCmd = queryCmd
     .command("dag")
-    .description(`Query simulated DAG state ${UI.maturity("research")}`);
+    .description(
+      `Query a light-model DAG (NOT GHOSTDAG) read from .hardkas/state.json, which no HardKAS command writes; without it each query fails with DAG_DATA_UNAVAILABLE (exit 1) instead of answering without data ${UI.maturity("research")}`
+    );
 
   dagCmd
     .command("conflicts")
@@ -810,10 +820,11 @@ export function registerQueryCommands(program: Command) {
             ? ("brief" as const)
             : options.explain || false;
         const request = createQueryRequest({ domain: "dag", op: "conflicts", explain });
-        const result = await engine.execute(request);
+        const result = await dagQuery("query dag conflicts", options.json, () => engine.execute(request));
         if (options.json) {
           const { getOutput } = await import("../output.js");
-          getOutput().writeJson({ ok: true, command: "query stats summary", mode: "cli", result });
+          // L1-CORE-1 B4: the envelope named another command ("query stats summary")
+          getOutput().writeJson({ ok: true, command: "query dag conflicts", mode: "cli", result });
         } else {
           printDagConflicts(result);
         }
@@ -834,7 +845,7 @@ export function registerQueryCommands(program: Command) {
         const explain =
           options.explain === true ? ("brief" as const) : options.explain || false;
         const request = createQueryRequest({ domain: "dag", op: "displaced", explain });
-        const result = await engine.execute(request);
+        const result = await dagQuery("query dag displaced", options.json, () => engine.execute(request));
         if (options.json) {
           const { getOutput } = await import("../output.js");
           getOutput().writeJson({ ok: true, command: "query dag displaced", mode: "cli", result });
@@ -867,7 +878,7 @@ export function registerQueryCommands(program: Command) {
           params: { txId },
           explain
         });
-        const result = await engine.execute(request);
+        const result = await dagQuery("query dag history", options.json, () => engine.execute(request));
         if (options.json) {
           const { getOutput } = await import("../output.js");
           getOutput().writeJson({ ok: true, command: "query dag history", mode: "cli", result });
@@ -888,7 +899,7 @@ export function registerQueryCommands(program: Command) {
         const { createQueryRequest } = await import("@hardkas/query");
         const engine = await getQueryEngine();
         const request = createQueryRequest({ domain: "dag", op: "sink-path" });
-        const result = await engine.execute(request);
+        const result = await dagQuery("query dag sink-path", options.json, () => engine.execute(request));
         if (options.json) {
           const { getOutput } = await import("../output.js");
           getOutput().writeJson({ ok: true, command: "query dag sink-path", mode: "cli", result });
@@ -912,7 +923,7 @@ export function registerQueryCommands(program: Command) {
         const explain =
           options.explain === true ? ("brief" as const) : options.explain || false;
         const request = createQueryRequest({ domain: "dag", op: "anomalies", explain });
-        const result = await engine.execute(request);
+        const result = await dagQuery("query dag anomalies", options.json, () => engine.execute(request));
         if (options.json) {
           const { getOutput } = await import("../output.js");
           getOutput().writeJson({ ok: true, command: "query dag anomalies", mode: "cli", result });
@@ -1052,6 +1063,8 @@ function printInspectResult(result: any): void {
   console.log(`  Created:    ${item.item.createdAt}`);
   console.log(`  Hash:       ${item.item.contentHash || "none"}`);
   console.log(`  Integrity:  ${item.integrity.ok ? "✓ VALID" : "✗ INVALID"}`);
+  // ESCALÓN 3: the artifact parsed with its registered schema (VALID/INVALID), or NOT_VALIDATED when there is none
+  console.log(`  Schema chk: ${item.integrity.schemaValidation ?? "NOT_VALIDATED"}`);
   console.log(`  Lineage:    ${item.lineageStatus}`);
   // EVIDENCE-TRUST-1: what looking the parent up in the workspace store found
   if (item.parent && item.parent.status !== "root") {
@@ -1176,12 +1189,17 @@ function printReplaySummary(result: any): void {
   console.log("");
 }
 
+/** ESCALÓN 2 · P9: what `query replay divergences|invariants` are: static analysis of stored receipts, never a replay. */
+const STATIC_ANALYSIS = "static: the stored receipts' fields were checked; nothing was re-executed ('hardkas replay verify' replays)";
+
 function printDivergences(result: any): void {
   if (result.total === 0) {
-    console.log("\n  ✓ No replay divergences detected.\n");
+    console.log(
+      `\n  ✓ Static analysis found no inconsistency in ${result.annotations?.filesScanned ?? "the"} stored receipt(s). Nothing was re-executed ('hardkas replay verify' replays a receipt).\n`
+    );
     return;
   }
-  console.log(`\n  ═══ Replay Divergences: ${result.total} ═══\n`);
+  console.log(`\n  ═══ Static receipt checks: ${result.total} finding(s) (no re-execution) ═══\n`);
   for (const d of result.items) {
     console.log(`  ✗ [${d.kind}] tx:${d.txId.slice(0, 16)}...`);
     console.log(`    Field:    ${d.field}`);
@@ -1196,16 +1214,17 @@ function printInvariants(result: any): void {
   const inv = result.items[0];
   if (!inv) return;
   const allOk =
-    inv.planIntegrity &&
-    inv.receiptReproducible &&
-    inv.stateTransitionValid &&
-    inv.utxoConservation;
-  console.log(`\n  ═══ Replay Invariants: ${inv.txId} ═══\n`);
-  console.log(`  Plan integrity:     ${inv.planIntegrity ? "✓" : "✗"}`);
-  console.log(`  Receipt reproducible: ${inv.receiptReproducible ? "✓" : "✗"}`);
-  console.log(`  State transition:   ${inv.stateTransitionValid ? "✓" : "✗"}`);
-  console.log(`  UTXO conservation:  ${inv.utxoConservation ? "✓" : "✗"}`);
-  console.log(`  Overall:            ${allOk ? "✓ ALL PASS" : "✗ VIOLATIONS FOUND"}`);
+    inv.contentHashMatches &&
+    inv.stateHashesPresent &&
+    inv.stateChangeMatchesStatus &&
+    inv.utxoCountsNonZero;
+  console.log(`\n  ═══ Static receipt checks: ${inv.txId} (no re-execution) ═══\n`);
+  console.log(`  Content hash matches:          ${inv.contentHashMatches ? "✓" : "✗"}`);
+  console.log(`  State hashes recorded:         ${inv.stateHashesPresent ? "✓" : "✗"}`);
+  console.log(`  State change matches status:   ${inv.stateChangeMatchesStatus ? "✓" : "✗"}`);
+  console.log(`  UTXO lists not empty:          ${inv.utxoCountsNonZero ? "✓" : "✗"}`);
+  console.log(`  Overall:                       ${allOk ? "✓ all static checks pass" : "✗ static checks failed"}`);
+  console.log(`  (Static analysis of the receipt's fields; 'hardkas replay verify' re-executes it.)`);
   if (inv.issues.length > 0) {
     console.log(`\n  Issues:`);
     for (const i of inv.issues) console.log(`    ✗ ${i}`);
@@ -1213,6 +1232,24 @@ function printInvariants(result: any): void {
   console.log("");
   printExplain(result.explain);
   printWhy(result.why);
+}
+
+/**
+ * ESCALÓN 2 · P8: a DAG query that has no DAG data (DAG_DATA_UNAVAILABLE from @hardkas/query) fails, typed, with an
+ * explicit NO_DATA state; it used to answer an empty result with ok:true ("No conflicts detected") from no data at all.
+ */
+async function dagQuery<T>(command: string, json: boolean, run: () => Promise<T>): Promise<T> {
+  try {
+    return await run();
+  } catch (e: any) {
+    if (e?.code !== "DAG_DATA_UNAVAILABLE") throw e;
+    if (json) {
+      const { getOutput } = await import("../output.js");
+      getOutput().writeJson({ ok: false, command, mode: "cli", code: e.code, status: "NO_DATA", source: e.source, message: e.message });
+    }
+    const { HardkasCliError } = await import("../cli-errors.js");
+    throw new HardkasCliError("DAG_DATA_UNAVAILABLE", e.message, { exitCode: 1, cause: e });
+  }
 }
 
 function printDagConflicts(result: any): void {

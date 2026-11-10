@@ -21,7 +21,8 @@ describe("KeystoreManager", () => {
     );
 
     // Keystore format version (separate from ARTIFACT_VERSION)
-    expect(keystore.version).toBe("2.0.0");
+    // TX-07: new keystores are format 2.1.0 (metadata authenticated as AES-GCM AAD); 2.0.0 files are still read
+    expect(keystore.version).toBe("2.1.0");
     expect(keystore.metadata.label).toBe("test-account");
     // @ts-ignore
     expect(keystore.encryptedPayload).not.toBe(JSON.stringify(mockPayload));

@@ -8,6 +8,8 @@ HardKAS is designed to fail loudly and recover explicitly. Operator commands exi
 
 Full workspace diagnostic: locks, JSONL streams, projection health, anomalies, authority status.
 
+Exit code: 1 when any check in the report is `fail`; 0 when every check is `pass`, `warn` or `skip`. The report (human or `--json`) is the same either way, so a script can rely on the exit code or read `summary.failed`.
+
 #### `hardkas repair`
 
 Recover JSONL tails, clear stale locks, rebuild SQLite, quarantine malformed files. Use `--dry-run` first.

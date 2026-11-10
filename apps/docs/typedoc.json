@@ -7,6 +7,7 @@
   ],
   "out": "docs/reference/sdk/generated",
   "plugin": ["typedoc-plugin-markdown"],
+  "sanitizeComments": true,
   "skipErrorChecking": true, "hideGenerator": true,
   "readme": "none",
   "githubPages": false,

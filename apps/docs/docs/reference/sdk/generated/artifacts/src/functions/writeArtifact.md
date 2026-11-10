@@ -6,9 +6,13 @@
 
 # Function: writeArtifact()
 
-> **writeArtifact**(`filePath`, `artifact`): `Promise`\<`void`\>
+> **writeArtifact**(`filePath`, `artifact`): `Promise`\<`string`\>
 
-Defined in: [packages/artifacts/src/io.ts:14](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/io.ts#L14)
+Defined in: [packages/artifacts/src/io.ts:20](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/io.ts#L20)
+
+Writes an artifact as JSON (atomically; through the store's gate when the target is inside an artifact store).
+Returns the absolute path written (a directory target gets a file named after the artifact), so the caller can
+announce the write (`emitArtifactWritten`, EVENT-LEDGER-2 D4). This function itself announces nothing.
 
 ## Parameters
 
@@ -22,4 +26,4 @@ Defined in: [packages/artifacts/src/io.ts:14](https://github.com/KasLabDevs/Hard
 
 ## Returns
 
-`Promise`\<`void`\>
+`Promise`\<`string`\>

@@ -46,9 +46,12 @@ describe("Execution Guard - CLI Runners", () => {
   const dummyConfig: HardkasConfig = {
     networks: {
       "testnet-10": { kind: "kaspa-rpc", rpcUrl: "http://mock" },
+      // MAINNET TOTAL LOCKDOWN: the mismatch is now shown on devnet — a mainnet plan is refused before any account is
+      // resolved (the case below pins that), so mainnet can no longer stand for "a network the account is not on"
+      devnet: { kind: "kaspa-rpc", rpcUrl: "http://mock" },
       mainnet: { kind: "kaspa-rpc", rpcUrl: "http://mock" }
     }
-  };
+  } as any;
 
   it("tx-plan-runner uses assertAccountCompatible and throws on mismatch", async () => {
     // If the CLI passes a network that mismatches the account network, it should throw
@@ -57,11 +60,17 @@ describe("Execution Guard - CLI Runners", () => {
         from: "alice",
         to: "bob",
         amount: "1",
-        networkId: "mainnet", // This will resolve to mainnet, but account alice is mocked as testnet-10
+        networkId: "devnet", // This will resolve to devnet, but account alice is mocked as testnet-10
         provider: "default",
         config: dummyConfig
       })
     ).rejects.toThrow("AccountNetworkMismatchError");
+  });
+
+  it("MAINNET TOTAL LOCKDOWN · tx-plan-runner refuses mainnet before any account is resolved (MAINNET_CONNECTION_DISABLED)", async () => {
+    await expect(
+      runTxPlan({ from: "alice", to: "bob", amount: "1", networkId: "mainnet", provider: "default", config: dummyConfig })
+    ).rejects.toMatchObject({ code: "MAINNET_CONNECTION_DISABLED" });
   });
 
   it("tx-plan-runner succeeds when account network matches execution target", async () => {

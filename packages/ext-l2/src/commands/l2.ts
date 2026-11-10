@@ -56,11 +56,12 @@ export function registerL2Commands(program: Command) {
       await runL2ProfileValidate({ name, ...options });
     });
 
-  // Flags of every command that signs or broadcasts. --allow-mainnet is the only mainnet authorization;
-  // --yes is a confirmation and never implies it. Fee ceilings are required unless the profile ships them (local).
+  // Flags of every command that signs or broadcasts. MAINNET TOTAL LOCKDOWN: --allow-mainnet no longer authorizes
+  // anything (kept so scripts do not break; it has no effect). --yes is a confirmation and never implies it. Fee
+  // ceilings are required unless the profile ships them (local).
   const writeFlags = (cmd: Command): Command =>
     cmd
-      .option("--allow-mainnet", "Explicitly authorize signing/broadcasting on a MAINNET chain")
+      .option("--allow-mainnet", "No effect: mainnet is locked down in HardKAS (no signing, broadcast or connection; L2_MAINNET_WRITE_BLOCKED)")
       .option("--max-gas-limit <gas>", "Fee ceiling: maximum gas limit")
       .option("--max-fee-per-gas <wei>", "Fee ceiling: maximum gas price / maxFeePerGas in wei")
       .option("--max-total-fee <wei>", "Fee ceiling: maximum worst-case total fee in wei");

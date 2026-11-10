@@ -6,7 +6,7 @@
 
 # Class: HardkasSilver
 
-Defined in: [packages/sdk/src/silver.ts:37](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/silver.ts#L37)
+Defined in: [packages/sdk/src/silver.ts:41](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/silver.ts#L41)
 
 ## Constructors
 
@@ -14,7 +14,7 @@ Defined in: [packages/sdk/src/silver.ts:37](https://github.com/KasLabDevs/HardKa
 
 > **new HardkasSilver**(`sdk`): `HardkasSilver`
 
-Defined in: [packages/sdk/src/silver.ts:38](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/silver.ts#L38)
+Defined in: [packages/sdk/src/silver.ts:42](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/silver.ts#L42)
 
 #### Parameters
 
@@ -32,7 +32,7 @@ Defined in: [packages/sdk/src/silver.ts:38](https://github.com/KasLabDevs/HardKa
 
 > **compile**(`options`): `Promise`\<`SilverCompileResult`\>
 
-Defined in: [packages/sdk/src/silver.ts:40](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/silver.ts#L40)
+Defined in: [packages/sdk/src/silver.ts:44](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/silver.ts#L44)
 
 #### Parameters
 
@@ -50,7 +50,7 @@ Defined in: [packages/sdk/src/silver.ts:40](https://github.com/KasLabDevs/HardKa
 
 > **p2sh**(`compiled`, `options?`): [`SilverP2sh`](../interfaces/SilverP2sh.md)
 
-Defined in: [packages/sdk/src/silver.ts:57](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/silver.ts#L57)
+Defined in: [packages/sdk/src/silver.ts:61](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/silver.ts#L61)
 
 The P2SH lock and address of a compiled contract.
 
@@ -80,7 +80,7 @@ The P2SH lock and address of a compiled contract.
 
 > **reproduce**(`options`): `Promise`\<`SilverCompileResult`\>
 
-Defined in: [packages/sdk/src/silver.ts:48](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/silver.ts#L48)
+Defined in: [packages/sdk/src/silver.ts:52](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/silver.ts#L52)
 
 Recompiles and requires silverc to reproduce `compiled` byte for byte.
 
@@ -100,7 +100,7 @@ Recompiles and requires silverc to reproduce `compiled` byte for byte.
 
 > **verifyCorpus**(`corpusPath?`): `Promise`\<`SilverCorpusVerifyResult`\>
 
-Defined in: [packages/sdk/src/silver.ts:68](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/silver.ts#L68)
+Defined in: [packages/sdk/src/silver.ts:72](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/silver.ts#L72)
 
 The golden corpus: every case recompiled, derived and checked against its evidence.
 

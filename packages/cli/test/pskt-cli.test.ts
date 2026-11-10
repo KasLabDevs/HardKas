@@ -103,8 +103,10 @@ describe("hardkas pskt CLI flow", () => {
     });
 
     it("signs the session", () => {
-      writeFileSync(resolve(tempDir, "key.txt"), "fake-key");
-      const res = runHardkas("sign session-0.json --private-key-file key.txt --out session-1.json --json");
+      // TX-09: the command now reads one 32-byte key (64 hex) and signs named inputs (it used to pass `privateKey` and
+      // `inputIndexes: []`, which no real adapter accepts); the test double accepts any key
+      writeFileSync(resolve(tempDir, "key.txt"), "11".repeat(32));
+      const res = runHardkas("sign session-0.json --private-key-file key.txt --inputs 0 --out session-1.json --json");
       expect(res.ok).toBe(true);
       
       const inspect = runHardkas("inspect session-1.json --json");
@@ -113,8 +115,8 @@ describe("hardkas pskt CLI flow", () => {
     });
 
     it("creates a conflicting signature session-2", () => {
-      writeFileSync(resolve(tempDir, "key2.txt"), "fake-key-2");
-      const res = runHardkas("sign session-0.json --private-key-file key2.txt --out session-2.json --json");
+      writeFileSync(resolve(tempDir, "key2.txt"), "22".repeat(32));
+      const res = runHardkas("sign session-0.json --private-key-file key2.txt --inputs 0 --out session-2.json --json");
       expect(res.ok).toBe(true);
     });
 

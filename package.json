@@ -18,6 +18,7 @@
   "packageManager": "pnpm@9.15.4",
   "scripts": {
     "build": "turbo build --concurrency 1",
+    "release:build": "node scripts/release-build.mjs",
     "dev": "turbo dev",
     "test": "vitest run && pnpm test:workflows",
     "test:hermetic": "node scripts/gate-hermetic.mjs",
@@ -42,6 +43,8 @@
     "format": "prettier --write .",
     "docs:generate-cli": "pnpm --filter @hardkas/cli docs:generate-cli",
     "docs:check-cli": "pnpm --filter @hardkas/cli docs:check-cli",
+    "docs:generate-apps-cli": "tsx apps/docs/scripts/cli-reference.mts --write",
+    "docs:check-apps-cli": "tsx apps/docs/scripts/cli-reference.mts --check",
     "docs:generate-claims": "node scripts/generate-claims-docs.mjs",
     "docs:check-claims": "node scripts/generate-claims-docs.mjs --check",
     "docs:check-site": "node scripts/check-site-map.mjs",
@@ -49,13 +52,14 @@
     "site:test": "node scripts/test-unified-site.mjs",
     "hardkas": "pnpm --filter @hardkas/cli run dev",
     "cli": "pnpm --filter @hardkas/cli run dev",
-    "check": "pnpm typecheck && pnpm build && pnpm version:check && pnpm docs:check-cli && pnpm docs:check-claims && pnpm check:docs && pnpm test",
+    "check": "pnpm typecheck && pnpm build && pnpm version:check && pnpm docs:check-cli && pnpm docs:check-apps-cli && pnpm docs:check-claims && pnpm check:docs && pnpm test",
     "test:repro": "pnpm --filter @hardkas/testing test",
     "version:check": "node scripts/check-versions.mjs",
+    "check:licenses": "node scripts/check-licenses.mjs",
     "check:docs": "pnpm --filter @hardkas/cli test:docs",
     "check:artifacts": "pnpm artifact:fixtures",
-    "artifact:fixtures": "tsx packages/cli/src/index.ts artifact verify packages/artifacts/test/fixtures/valid --recursive --strict",
-    "artifact:corruption": "pnpm hardkas artifact verify ../artifacts/test/fixtures/corrupted --recursive --strict",
+    "artifact:fixtures": "node scripts/check-artifact-fixtures.mjs packages/artifacts/test/fixtures/valid",
+    "artifact:corruption": "node scripts/check-artifact-fixtures.mjs packages/artifacts/test/fixtures/corrupted --reject",
     "example:hello": "tsx examples/01-hello-kaspa/main.ts",
     "example:transfer": "tsx examples/02-basic-transfer/main.ts",
     "example:localnet": "tsx examples/03-localnet-demo/main.ts",
@@ -111,7 +115,25 @@
   "pnpm": {
     "overrides": {
       "brace-expansion@2": "2.1.7",
-      "underscore": "1.13.8"
+      "underscore": "1.13.8",
+      "brace-expansion@<1.1.21": "^1.1.21",
+      "brace-expansion@>=5 <5.0.12": "^5.0.12",
+      "body-parser@>=1 <1.20.9": "~1.20.9",
+      "fast-uri@>=2 <2.4.8": "~2.4.8",
+      "fast-uri@>=3 <3.1.9": "^3.1.9",
+      "follow-redirects@<1.16.2": "^1.16.2",
+      "joi@>=17 <17.13.9": "^17.13.9",
+      "js-yaml@>=4 <4.3.2": "^4.3.2",
+      "launch-editor@<2.14.2": "^2.14.2",
+      "markdown-it@>=14 <14.3.3": "^14.3.3",
+      "nanoid@>=3 <3.3.18": "^3.3.18",
+      "postcss-selector-parser@>=6 <6.1.5": "~6.1.5",
+      "proxy-addr@<2.0.8": "^2.0.8",
+      "qs@>=6 <6.16.1": "^6.16.1",
+      "shell-quote@>=1.8.4 <1.11.0": "^1.11.0",
+      "smol-toml@<1.9.0": "^1.9.0",
+      "source-map-js@<1.2.2": "^1.2.2",
+      "undici@>=7 <7.30.1": "^7.30.1"
     }
   }
 }

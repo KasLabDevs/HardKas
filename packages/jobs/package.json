@@ -1,12 +1,13 @@
 {
   "name": "@hardkas/jobs",
   "version": "0.13.0-rc.1",
+  "license": "MIT",
   "private": false,
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsc",
+    "build": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\" && tsc",
     "test": "vitest run"
   },
   "dependencies": {
@@ -21,6 +22,8 @@
     "access": "public"
   },
   "files": [
-    "dist"
+    "dist",
+    "README.md",
+    "LICENSE"
   ]
 }

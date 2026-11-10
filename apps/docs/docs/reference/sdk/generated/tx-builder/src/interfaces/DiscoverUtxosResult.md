@@ -6,7 +6,7 @@
 
 # Interface: DiscoverUtxosResult
 
-Defined in: [packages/tx-builder/src/kaspa-wallet-adapter.ts:191](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/kaspa-wallet-adapter.ts#L191)
+Defined in: [packages/tx-builder/src/kaspa-wallet-adapter.ts:306](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/kaspa-wallet-adapter.ts#L306)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [packages/tx-builder/src/kaspa-wallet-adapter.ts:191](https://github
 
 > `readonly` **coinbaseMaturity**: `bigint`
 
-Defined in: [packages/tx-builder/src/kaspa-wallet-adapter.ts:194](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/kaspa-wallet-adapter.ts#L194)
+Defined in: [packages/tx-builder/src/kaspa-wallet-adapter.ts:309](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/kaspa-wallet-adapter.ts#L309)
 
 ***
 
@@ -22,7 +22,7 @@ Defined in: [packages/tx-builder/src/kaspa-wallet-adapter.ts:194](https://github
 
 > `readonly` **immatureCoinbaseCount**: `number`
 
-Defined in: [packages/tx-builder/src/kaspa-wallet-adapter.ts:195](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/kaspa-wallet-adapter.ts#L195)
+Defined in: [packages/tx-builder/src/kaspa-wallet-adapter.ts:310](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/kaspa-wallet-adapter.ts#L310)
 
 ***
 
@@ -30,7 +30,7 @@ Defined in: [packages/tx-builder/src/kaspa-wallet-adapter.ts:195](https://github
 
 > `readonly` **utxos**: `any`[]
 
-Defined in: [packages/tx-builder/src/kaspa-wallet-adapter.ts:192](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/kaspa-wallet-adapter.ts#L192)
+Defined in: [packages/tx-builder/src/kaspa-wallet-adapter.ts:307](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/kaspa-wallet-adapter.ts#L307)
 
 ***
 
@@ -38,4 +38,4 @@ Defined in: [packages/tx-builder/src/kaspa-wallet-adapter.ts:192](https://github
 
 > `readonly` **virtualDaaScore**: `bigint`
 
-Defined in: [packages/tx-builder/src/kaspa-wallet-adapter.ts:193](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/kaspa-wallet-adapter.ts#L193)
+Defined in: [packages/tx-builder/src/kaspa-wallet-adapter.ts:308](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/kaspa-wallet-adapter.ts#L308)

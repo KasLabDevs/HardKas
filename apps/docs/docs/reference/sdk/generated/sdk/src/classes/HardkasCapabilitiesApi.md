@@ -6,7 +6,7 @@
 
 # Class: HardkasCapabilitiesApi
 
-Defined in: [packages/sdk/src/capabilities.ts:109](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/capabilities.ts#L109)
+Defined in: [packages/sdk/src/capabilities.ts:258](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/capabilities.ts#L258)
 
 ## Constructors
 
@@ -14,7 +14,7 @@ Defined in: [packages/sdk/src/capabilities.ts:109](https://github.com/KasLabDevs
 
 > **new HardkasCapabilitiesApi**(`sdk?`): `HardkasCapabilitiesApi`
 
-Defined in: [packages/sdk/src/capabilities.ts:112](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/capabilities.ts#L112)
+Defined in: [packages/sdk/src/capabilities.ts:262](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/capabilities.ts#L262)
 
 #### Parameters
 
@@ -32,7 +32,7 @@ Defined in: [packages/sdk/src/capabilities.ts:112](https://github.com/KasLabDevs
 
 > **get**(): `Promise`\<[`HardkasCapabilities`](../interfaces/HardkasCapabilities.md)\>
 
-Defined in: [packages/sdk/src/capabilities.ts:114](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/capabilities.ts#L114)
+Defined in: [packages/sdk/src/capabilities.ts:264](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/capabilities.ts#L264)
 
 #### Returns
 
@@ -44,7 +44,7 @@ Defined in: [packages/sdk/src/capabilities.ts:114](https://github.com/KasLabDevs
 
 > **probeEnvironment**(`options?`): `Promise`\<`EnvironmentCapabilities`\>
 
-Defined in: [packages/sdk/src/capabilities.ts:150](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/capabilities.ts#L150)
+Defined in: [packages/sdk/src/capabilities.ts:316](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/capabilities.ts#L316)
 
 #### Parameters
 
@@ -62,7 +62,7 @@ Defined in: [packages/sdk/src/capabilities.ts:150](https://github.com/KasLabDevs
 
 > **probeWasm**(`options?`): `Promise`\<\{ `computeBudget`: `boolean`; `covenantOutputs`: `boolean`; `rpc`: `boolean`; `signingV1`: `boolean`; `storageMass`: `boolean`; `v1`: `boolean`; `version?`: `string`; `wasm`: `boolean`; \}\>
 
-Defined in: [packages/sdk/src/capabilities.ts:145](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/capabilities.ts#L145)
+Defined in: [packages/sdk/src/capabilities.ts:311](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/capabilities.ts#L311)
 
 #### Parameters
 
@@ -73,3 +73,25 @@ Defined in: [packages/sdk/src/capabilities.ts:145](https://github.com/KasLabDevs
 #### Returns
 
 `Promise`\<\{ `computeBudget`: `boolean`; `covenantOutputs`: `boolean`; `rpc`: `boolean`; `signingV1`: `boolean`; `storageMass`: `boolean`; `v1`: `boolean`; `version?`: `string`; `wasm`: `boolean`; \}\>
+
+***
+
+### silverReadiness()
+
+> **silverReadiness**(`options?`): `Promise`\<[`SilverReadiness`](../interfaces/SilverReadiness.md)\>
+
+Defined in: [packages/sdk/src/capabilities.ts:306](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/capabilities.ts#L306)
+
+The checks behind `silverScript`, `covenants` and the node matrix, cached like the environment probe.
+
+#### Parameters
+
+##### options?
+
+###### refresh?
+
+`boolean`
+
+#### Returns
+
+`Promise`\<[`SilverReadiness`](../interfaces/SilverReadiness.md)\>

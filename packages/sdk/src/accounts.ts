@@ -1,6 +1,7 @@
 import { Hardkas } from "./index.js";
 import { HardkasAccount, resolveHardkasAccount, LazyAccountAuthorizer, StaticSignatureScriptAuthorizer } from "@hardkas/accounts";
 import { formatSompiToKas } from "@hardkas/core";
+import { assertSdkMayConnect } from "./mainnet-lockdown.js";
 
 /**
  * HardKAS Accounts Module
@@ -31,6 +32,8 @@ export class HardkasAccounts {
   async getBalance(
     accountNameOrAddress: string
   ): Promise<{ sompi: bigint; formatted: string }> {
+    // MAINNET TOTAL LOCKDOWN: a mainnet balance is a mainnet read
+    assertSdkMayConnect(this.sdk, "sdk.accounts.getBalance");
     const account = await this.resolve(accountNameOrAddress);
     if (!account.address)
       throw new Error(`Account ${accountNameOrAddress} has no address`);

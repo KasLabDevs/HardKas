@@ -1,4 +1,4 @@
-import { HardkasError, redactUrlCredentials, redactUrlCredentialsInText, systemRuntimeContext } from "@hardkas/core";
+import { HardkasError, redactUrlCredentials, redactUrlCredentialsInText, systemRuntimeContext, assertMainnetConnectionsDisabled } from "@hardkas/core";
 import { deriveObserverId, type TxObservation } from "@hardkas/artifacts";
 import { canonicalNetworkId, rpcEndpointOf, type KaspaRpcClient } from "@hardkas/kaspa-rpc";
 import { v1NodeUtxoOf } from "@hardkas/accounts";
@@ -156,6 +156,9 @@ export async function readNodeSet(nodes: readonly ReadNode[], options: { expecte
   if (typeof options?.expectedNetwork !== "string" || options.expectedNetwork.trim() === "") {
     throw new HardkasError("MULTINODE_NETWORK_REQUIRED", "A node set is read for one network: say which (expectedNetwork). Nothing was read.");
   }
+  // MAINNET TOTAL LOCKDOWN: a mainnet node set is never read (MAINNET_CONNECTION_DISABLED, nothing contacted); a node of
+  // the set that answers mainnet is refused by the transport after its one identity answer
+  assertMainnetConnectionsDisabled([options.expectedNetwork], "readNodeSet");
   const labels = nodes.map((n) => n.label);
   if (new Set(labels).size !== labels.length) throw new HardkasError("MULTINODE_LABELS_NOT_UNIQUE", `Each node needs its own label (${labels.join(", ")}). Nothing was read.`);
   const threshold = options.lagThresholdDaa ?? DEFAULT_LAG_THRESHOLD_DAA;

@@ -22,7 +22,7 @@ import {
 } from "@hardkas/core";
 import { JsonWrpcKaspaClient } from "@hardkas/kaspa-rpc";
 import { buildCovenantGenesis, parseWasmTxToRpc } from "@hardkas/accounts";
-import { calculateUpstreamStorageMass } from "@hardkas/tx-builder";
+import { calculateUpstreamStorageMass, v1StorageMass, type V1StorageCell } from "@hardkas/tx-builder";
 import { SimnetNodeHarness, type SimnetNodeHandle } from "./simnet-node-harness.js";
 import { getHardkasFixtureKey, type HardkasFixtureName } from "./fixture-signer.js";
 import type { CompiledCovenantContract, CovenantUtxoFixture } from "./covenant-testbed.js";
@@ -53,6 +53,12 @@ export interface StartIsolatedSimnetOptions {
   minerFixture?: HardkasFixtureName;
   /** Startup timeout in ms (default: 90_000). */
   startupTimeoutMs?: number;
+  /** Host-side node data root (SimnetNodeHarnessOptions.dataRoot); needed for `session.handle.restart()`. */
+  dataRoot?: string;
+  /** Host-side node data under the OS temp directory when no root is given (SimnetNodeHarnessOptions.persistData). */
+  persistData?: boolean;
+  /** Extra container labels (SimnetNodeHarnessOptions.labels). */
+  labels?: Readonly<Record<string, string>>;
 }
 
 export interface SimnetOnChainUtxo {
@@ -107,6 +113,21 @@ export interface SimnetCovenantTransitionOutcome {
   inputSpentOnNode: boolean;
   successorUtxo?: CovenantUtxoFixture;
   virtualDaaScoreAfter: bigint;
+}
+
+/**
+ * L1-04 · the storage mass a v1 covenant transaction commits, by the node's rule (rusty-kaspa v2.1.0 mass/mod.rs
+ * `utxo_plurality`: a cell carrying a covenant id counts 32 bytes more, so a P2SH covenant cell has plurality 2). The
+ * mempool recomputes the field (TxValidationFlags::SkipMassCheck) but a block requires it to equal the node's value
+ * (`check_mass_commitment`, WrongMass). A shape the rule cannot price (a zero amount, an overflow) commits 0, so that the
+ * node, not the harness, gives the verdict on that adversarial transaction.
+ */
+function nodeStorageMass(inputs: readonly V1StorageCell[], outputs: readonly V1StorageCell[]): bigint {
+  try {
+    return v1StorageMass(inputs, outputs) ?? 0n;
+  } catch {
+    return 0n;
+  }
 }
 
 function normalizeOnChainUtxo(u: any): SimnetOnChainUtxo {
@@ -182,6 +203,9 @@ export async function startIsolatedSimnet(
   const minerKey = resolveFixtureAccount(minerFixture);
   const handle = await SimnetNodeHarness.start({
     ...(options.rpcPort !== undefined ? { rpcPort: options.rpcPort } : {}),
+    ...(options.dataRoot !== undefined ? { dataRoot: options.dataRoot } : {}),
+    ...(options.persistData !== undefined ? { persistData: options.persistData } : {}),
+    ...(options.labels !== undefined ? { labels: options.labels } : {}),
     utxoIndex: true,
     startupTimeoutMs: options.startupTimeoutMs ?? 90_000
   });
@@ -811,10 +835,9 @@ export async function executeSimnetCovenantTransition(
       gas: 0n,
       payload: ""
     });
-    tx.storageMass = calculateUpstreamStorageMass(
-      [input.inputUtxo.amountSompi],
-      [outputValue],
-      "simnet"
+    tx.storageMass = nodeStorageMass(
+      [{ amountSompi: input.inputUtxo.amountSompi, scriptBytes: inputLock.script.length / 2, covenantId: Boolean(input.inputUtxo.covenantId) }],
+      [{ amountSompi: outputValue, scriptBytes: successorLock.script.length / 2, covenantId: successorCovenantId.length > 0 }]
     );
     tx.finalize();
     return tx;

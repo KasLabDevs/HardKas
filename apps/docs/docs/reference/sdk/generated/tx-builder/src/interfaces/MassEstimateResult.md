@@ -6,7 +6,7 @@
 
 # Interface: MassEstimateResult
 
-Defined in: [packages/tx-builder/src/mass.ts:22](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/mass.ts#L22)
+Defined in: [packages/tx-builder/src/mass.ts:22](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/mass.ts#L22)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [packages/tx-builder/src/mass.ts:22](https://github.com/KasLabDevs/H
 
 > **assumptions**: `string`[]
 
-Defined in: [packages/tx-builder/src/mass.ts:30](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/mass.ts#L30)
+Defined in: [packages/tx-builder/src/mass.ts:30](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/mass.ts#L30)
 
 ***
 
@@ -22,7 +22,7 @@ Defined in: [packages/tx-builder/src/mass.ts:30](https://github.com/KasLabDevs/H
 
 > **breakdown**: [`MassBreakdown`](MassBreakdown.md)
 
-Defined in: [packages/tx-builder/src/mass.ts:29](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/mass.ts#L29)
+Defined in: [packages/tx-builder/src/mass.ts:29](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/mass.ts#L29)
 
 ***
 
@@ -30,7 +30,7 @@ Defined in: [packages/tx-builder/src/mass.ts:29](https://github.com/KasLabDevs/H
 
 > **computeMass**: `bigint`
 
-Defined in: [packages/tx-builder/src/mass.ts:24](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/mass.ts#L24)
+Defined in: [packages/tx-builder/src/mass.ts:24](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/mass.ts#L24)
 
 ***
 
@@ -38,7 +38,7 @@ Defined in: [packages/tx-builder/src/mass.ts:24](https://github.com/KasLabDevs/H
 
 > **feeMass**: `bigint`
 
-Defined in: [packages/tx-builder/src/mass.ts:26](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/mass.ts#L26)
+Defined in: [packages/tx-builder/src/mass.ts:26](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/mass.ts#L26)
 
 ***
 
@@ -46,7 +46,7 @@ Defined in: [packages/tx-builder/src/mass.ts:26](https://github.com/KasLabDevs/H
 
 > **feeSompi**: `bigint`
 
-Defined in: [packages/tx-builder/src/mass.ts:28](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/mass.ts#L28)
+Defined in: [packages/tx-builder/src/mass.ts:28](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/mass.ts#L28)
 
 ***
 
@@ -54,7 +54,7 @@ Defined in: [packages/tx-builder/src/mass.ts:28](https://github.com/KasLabDevs/H
 
 > **mass**: `bigint`
 
-Defined in: [packages/tx-builder/src/mass.ts:23](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/mass.ts#L23)
+Defined in: [packages/tx-builder/src/mass.ts:23](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/mass.ts#L23)
 
 ***
 
@@ -62,7 +62,7 @@ Defined in: [packages/tx-builder/src/mass.ts:23](https://github.com/KasLabDevs/H
 
 > **transientMass**: `bigint`
 
-Defined in: [packages/tx-builder/src/mass.ts:25](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/mass.ts#L25)
+Defined in: [packages/tx-builder/src/mass.ts:25](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/mass.ts#L25)
 
 ***
 
@@ -70,7 +70,7 @@ Defined in: [packages/tx-builder/src/mass.ts:25](https://github.com/KasLabDevs/H
 
 > **txBytes**: `bigint`
 
-Defined in: [packages/tx-builder/src/mass.ts:27](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/mass.ts#L27)
+Defined in: [packages/tx-builder/src/mass.ts:27](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/mass.ts#L27)
 
 ***
 
@@ -78,4 +78,4 @@ Defined in: [packages/tx-builder/src/mass.ts:27](https://github.com/KasLabDevs/H
 
 > **warnings**: `string`[]
 
-Defined in: [packages/tx-builder/src/mass.ts:31](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/mass.ts#L31)
+Defined in: [packages/tx-builder/src/mass.ts:31](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/mass.ts#L31)

@@ -24,7 +24,8 @@ import {
 //     above the lower of the two is refused with FEE_EXCEEDS_MAX when planning, again before signing (on the fee the
 //     plan really pays: inputs - outputs - change, so a plan built by another route cannot understate it) and again
 //     before sending (on the fee DERIVED from the signed transaction). With a limit in force and no way to derive the
-//     signed fee, the send is refused (FEE_LIMIT_UNVERIFIABLE). No limit is imposed when none is set (compatibility).
+//     signed fee, the send is refused (FEE_LIMIT_UNVERIFIABLE). TX-05: when none is set, HardKAS's default limit
+//     (10,000,000 sompi) is in force; the fees of this suite are below it, so the "no limit" control is unchanged.
 // Same hermetic setup as wave2-d-send-fee: a real-network simnet plan from the upstream Generator over a scripted node;
 // every client call is a stand-in. Nothing is signed with a key and nothing is sent to a node.
 

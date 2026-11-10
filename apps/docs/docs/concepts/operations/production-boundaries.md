@@ -21,7 +21,7 @@ Evidence of capability does not equal a certification of production readiness.
 > **Global Qualification:** HardKAS 0.13.0-rc.1 is currently in `NOT_ESTABLISHED` status for Mainnet Production deployment of Covenants and Based Applications.
 
 **Why?**
-1. **Network Policy:** HardKAS by default blocks interaction with Mainnet for experimental features (e.g., vProgs) unless strict overrides are used.
+1. **Network Policy:** Mainnet is locked down in this release: no connection (reads included, even to an endpoint you declare), no signing, no broadcast; no flag, option or configuration enables it (`MAINNET_CONNECTION_DISABLED`, `MAINNET_SIGNING_DISABLED`, `MAINNET_BROADCAST_DISABLED`). There are no overrides.
 2. **Upstream Evolution:** While Toccata is active, upstream Kaspa node implementations (like `rusty-kaspa v2.1.0`) are actively hardening their DoS vectors and P2P behaviors post-fork.
 
 Operators should confine current HardKAS workflows to `simnet` and `testnet-11`.

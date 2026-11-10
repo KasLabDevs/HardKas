@@ -19,6 +19,8 @@ import {
  */
 function networkFromAddressPrefix(address: string): string | undefined {
   if (address.startsWith("kaspasim:")) return "simnet";
+  // INT9-A: kaspadev: is the devnet family only (an imported devnet entry was bound to no network and unusable)
+  if (address.startsWith("kaspadev:")) return "devnet";
   if (address.startsWith("kaspa:") && !address.startsWith("kaspa:sim_")) return "mainnet";
   return undefined;
 }
@@ -44,10 +46,13 @@ export function resolveHardkasAccount(options: ResolveAccountOptions): HardkasAc
   if (
     nameOrAddress.startsWith("kaspa:") ||
     nameOrAddress.startsWith("kaspatest:") ||
-    nameOrAddress.startsWith("kaspasim:")
+    nameOrAddress.startsWith("kaspasim:") ||
+    nameOrAddress.startsWith("kaspadev:")
   ) {
     let network: string | undefined = "mainnet";
     if (nameOrAddress.startsWith("kaspasim:")) network = "simnet";
+    // INT9-A: a devnet address is an address (it was looked up as an account name: "Unknown HardKAS account")
+    else if (nameOrAddress.startsWith("kaspadev:")) network = "devnet";
     else if (nameOrAddress.startsWith("kaspatest:")) {
       const match = nameOrAddress.match(/^kaspatest:(\d+)_/);
       network = match ? `testnet-${match[1]}` : undefined;
@@ -75,9 +80,10 @@ export function resolveHardkasAccount(options: ResolveAccountOptions): HardkasAc
 
   // 6. Not found
   const available = accounts.map((a) => a.name).join(", ");
-  throw new Error(
-    `Unknown HardKAS account '${nameOrAddress}'. Available accounts: ${available}`
-  );
+  // INT9-A: a typed refusal (it surfaced as UNKNOWN_ERROR)
+  const err = new Error(`Unknown HardKAS account '${nameOrAddress}'. Available accounts: ${available}`);
+  (err as any).code = "ACCOUNT_NOT_FOUND";
+  throw err;
 }
 
 export function assertAccountCompatible(account: HardkasAccount, target: import("@hardkas/core").HardkasExecutionTarget): void {
@@ -368,7 +374,8 @@ export async function resolveHardkasAccountAddress(
   if (
     accountOrAddress.startsWith("kaspa:") ||
     accountOrAddress.startsWith("kaspatest:") ||
-    accountOrAddress.startsWith("kaspasim:")
+    accountOrAddress.startsWith("kaspasim:") ||
+    accountOrAddress.startsWith("kaspadev:")
   ) {
     if (context === "L2") {
       throw new Error(

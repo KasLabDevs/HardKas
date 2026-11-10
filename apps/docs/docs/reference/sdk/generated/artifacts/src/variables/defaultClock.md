@@ -8,4 +8,4 @@
 
 > `const` **defaultClock**: [`Clock`](../interfaces/Clock.md)
 
-Defined in: [packages/artifacts/src/verify.ts:40](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/verify.ts#L40)
+Defined in: [packages/artifacts/src/verify.ts:66](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/verify.ts#L66)

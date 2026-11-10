@@ -6,7 +6,7 @@
 
 # Interface: ObservedTransaction
 
-Defined in: [packages/artifacts/src/types.ts:785](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/types.ts#L785)
+Defined in: [packages/artifacts/src/types.ts:816](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/types.ts#L816)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [packages/artifacts/src/types.ts:785](https://github.com/KasLabDevs/
 
 > **amount**: `string`
 
-Defined in: [packages/artifacts/src/types.ts:787](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/types.ts#L787)
+Defined in: [packages/artifacts/src/types.ts:818](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/types.ts#L818)
 
 ***
 
@@ -22,7 +22,7 @@ Defined in: [packages/artifacts/src/types.ts:787](https://github.com/KasLabDevs/
 
 > `optional` **fee?**: `string`
 
-Defined in: [packages/artifacts/src/types.ts:788](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/types.ts#L788)
+Defined in: [packages/artifacts/src/types.ts:819](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/types.ts#L819)
 
 ***
 
@@ -30,4 +30,4 @@ Defined in: [packages/artifacts/src/types.ts:788](https://github.com/KasLabDevs/
 
 > **txId**: `string`
 
-Defined in: [packages/artifacts/src/types.ts:786](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/types.ts#L786)
+Defined in: [packages/artifacts/src/types.ts:817](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/types.ts#L817)

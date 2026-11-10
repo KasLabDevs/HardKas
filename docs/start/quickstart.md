@@ -79,4 +79,5 @@ run().catch((error) => {
 ```
 
 Use `simulate()` for the local loop. Move to `simnet` or testnet only when the
-local artifact lifecycle is already stable.
+local artifact lifecycle is already stable: [Build on your own simnet](./build-on-simnet.md)
+runs the same lifecycle against a real `rusty-kaspad` node of your own.

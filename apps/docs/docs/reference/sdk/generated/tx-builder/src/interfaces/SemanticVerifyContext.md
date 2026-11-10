@@ -6,7 +6,7 @@
 
 # Interface: SemanticVerifyContext
 
-Defined in: [packages/tx-builder/src/verify.ts:40](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/verify.ts#L40)
+Defined in: [packages/tx-builder/src/verify.ts:40](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/verify.ts#L40)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [packages/tx-builder/src/verify.ts:40](https://github.com/KasLabDevs
 
 > `optional` **expectedChangeAddress?**: `string`
 
-Defined in: [packages/tx-builder/src/verify.ts:48](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/verify.ts#L48)
+Defined in: [packages/tx-builder/src/verify.ts:48](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/verify.ts#L48)
 
 Expected change address
 
@@ -24,7 +24,7 @@ Expected change address
 
 > `optional` **minFeeRate?**: `bigint`
 
-Defined in: [packages/tx-builder/src/verify.ts:50](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/verify.ts#L50)
+Defined in: [packages/tx-builder/src/verify.ts:50](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/verify.ts#L50)
 
 Minimum fee rate required by the node
 
@@ -34,7 +34,7 @@ Minimum fee rate required by the node
 
 > `optional` **utxoContext?**: `object`[]
 
-Defined in: [packages/tx-builder/src/verify.ts:42](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/verify.ts#L42)
+Defined in: [packages/tx-builder/src/verify.ts:42](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/verify.ts#L42)
 
 Known UTXOs to verify lineage against
 

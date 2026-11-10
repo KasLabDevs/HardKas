@@ -6,7 +6,7 @@
 
 # Interface: ProgrammabilityCorpusReportArtifact
 
-Defined in: [packages/artifacts/src/types.ts:771](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/types.ts#L771)
+Defined in: [packages/artifacts/src/types.ts:802](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/types.ts#L802)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [packages/artifacts/src/types.ts:771](https://github.com/KasLabDevs/
 
 > **claims**: [`ProgrammabilityClaims`](ProgrammabilityClaims.md)
 
-Defined in: [packages/artifacts/src/types.ts:775](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/types.ts#L775)
+Defined in: [packages/artifacts/src/types.ts:806](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/types.ts#L806)
 
 ***
 
@@ -22,7 +22,7 @@ Defined in: [packages/artifacts/src/types.ts:775](https://github.com/KasLabDevs/
 
 > **ok**: `boolean`
 
-Defined in: [packages/artifacts/src/types.ts:773](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/types.ts#L773)
+Defined in: [packages/artifacts/src/types.ts:804](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/types.ts#L804)
 
 ***
 
@@ -30,7 +30,7 @@ Defined in: [packages/artifacts/src/types.ts:773](https://github.com/KasLabDevs/
 
 > **schema**: `"hardkas.programmability.corpusReport.v1"`
 
-Defined in: [packages/artifacts/src/types.ts:772](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/types.ts#L772)
+Defined in: [packages/artifacts/src/types.ts:803](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/types.ts#L803)
 
 ***
 
@@ -38,4 +38,4 @@ Defined in: [packages/artifacts/src/types.ts:772](https://github.com/KasLabDevs/
 
 > **status**: `"PROGRAMMABILITY_CORPUS_PASS"` \| `"PROGRAMMABILITY_CORPUS_FAIL"`
 
-Defined in: [packages/artifacts/src/types.ts:774](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/types.ts#L774)
+Defined in: [packages/artifacts/src/types.ts:805](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/types.ts#L805)

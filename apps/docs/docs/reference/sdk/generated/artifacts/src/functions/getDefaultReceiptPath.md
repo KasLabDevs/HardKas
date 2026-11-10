@@ -8,7 +8,7 @@
 
 > **getDefaultReceiptPath**(`txId`, `cwd?`): `string`
 
-Defined in: [packages/artifacts/src/io.ts:40](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/io.ts#L40)
+Defined in: [packages/artifacts/src/io.ts:54](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/io.ts#L54)
 
 ## Parameters
 

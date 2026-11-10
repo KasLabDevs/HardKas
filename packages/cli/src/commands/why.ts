@@ -61,16 +61,32 @@ export function registerWhyCommand(program: Command) {
             // STAGE-B-2 · C4: a txId with no submission here but with verified observations is explained from them,
             // labelled origin "observed" (nothing sent by this workspace is implied). Only RECEIPT_NOT_FOUND falls back.
             if (lookup.namespace === "tx" && e?.code === "RECEIPT_NOT_FOUND") {
-              const { findObservedTx, observedJson, observedRows } = await import("../runners/observed-tx.js");
+              const { findObservedTx, observedJson, observedRows, findSignedTx, signedOnlyJson, signedRows, nothingKnownMessage } = await import("../runners/observed-tx.js");
               const { observed } = findObservedTx(lookup.input, workspaceRoot);
+              // INT9 · C4: a signed transaction under this txId (no submission recorded here) is part of what is known
+              const signed = findSignedTx(lookup.input, workspaceRoot);
               if (observed) {
                 if (options.json) {
-                  UI.writeJson({ target: observed.txId, ...observedJson(observed) });
+                  UI.writeJson({ target: observed.txId, ...observedJson(observed), ...(signed.length > 0 ? { signed } : {}) });
                   return;
                 }
-                UI.causality(`Observed Transaction: ${observed.txId.substring(0, 8)}...`, observedRows(observed), [`hardkas tx status ${observed.txId}`], "info");
+                UI.causality(
+                  `Observed Transaction: ${observed.txId.substring(0, 8)}...`,
+                  signed.length > 0 ? { ...signedRows(observed.txId, signed, observed), Observations: observedRows(observed).Observations } : observedRows(observed),
+                  [`hardkas tx status ${observed.txId}`],
+                  "info"
+                );
                 return;
               }
+              if (signed.length > 0) {
+                if (options.json) {
+                  UI.writeJson({ target: lookup.input, ...signedOnlyJson(lookup.input, signed) });
+                  return;
+                }
+                UI.causality(`Signed Transaction, No Submission Here: ${lookup.input.substring(0, 8)}...`, signedRows(lookup.input, signed), [`hardkas tx status ${lookup.input} --since <chain block>`], "info");
+                return;
+              }
+              if (e instanceof Error) e.message = nothingKnownMessage(lookup.input, e.message.replace(/\.$/, ""));
             }
             if (e?.code === "NAMESPACE_REQUIRED" && !options.json) {
               UI.semanticError(
@@ -124,6 +140,13 @@ export function registerWhyCommand(program: Command) {
                 role = "Signed Transaction";
               if (artifact.schema.startsWith(HardkasSchemas.TxReceipt))
                 role = "Transaction Receipt";
+              // WHY-SUBMISSION-ROLE-1 (L1-CORE-1 B2 · H4): what `tx send` records today is a submission, not a receipt
+              if (artifact.schema === HardkasSchemas.TxSubmissionV1)
+                role = "Transaction Submission";
+              if (artifact.schema === HardkasSchemas.TxObservationV1)
+                role = "Transaction Observation";
+              if (artifact.schema === HardkasSchemas.MigrationReceiptV1)
+                role = "Migration Receipt";
               if (artifact.schema.startsWith(HardkasSchemas.ReplayV1))
                 role = "Replay Verification";
               if (artifact.schema === HardkasSchemas.CovenantTransitionFactV1)

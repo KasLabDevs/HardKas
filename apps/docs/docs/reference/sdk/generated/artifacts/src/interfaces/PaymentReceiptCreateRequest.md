@@ -6,7 +6,7 @@
 
 # Interface: PaymentReceiptCreateRequest
 
-Defined in: [packages/artifacts/src/payment-receipts.ts:5](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/payment-receipts.ts#L5)
+Defined in: [packages/artifacts/src/payment-receipts.ts:5](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/payment-receipts.ts#L5)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [packages/artifacts/src/payment-receipts.ts:5](https://github.com/Ka
 
 > **invoice**: `object`
 
-Defined in: [packages/artifacts/src/payment-receipts.ts:6](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/payment-receipts.ts#L6)
+Defined in: [packages/artifacts/src/payment-receipts.ts:6](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/payment-receipts.ts#L6)
 
 #### amountSompi
 
@@ -38,7 +38,7 @@ Defined in: [packages/artifacts/src/payment-receipts.ts:6](https://github.com/Ka
 
 > `optional` **networkId?**: `string`
 
-Defined in: [packages/artifacts/src/payment-receipts.ts:25](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/payment-receipts.ts#L25)
+Defined in: [packages/artifacts/src/payment-receipts.ts:25](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/payment-receipts.ts#L25)
 
 network the payment was received on — defaults to 'simnet'
 
@@ -48,7 +48,7 @@ network the payment was received on — defaults to 'simnet'
 
 > `optional` **paidAt?**: `number`
 
-Defined in: [packages/artifacts/src/payment-receipts.ts:23](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/payment-receipts.ts#L23)
+Defined in: [packages/artifacts/src/payment-receipts.ts:23](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/payment-receipts.ts#L23)
 
 epoch ms — inject a fixed value in tests to keep the content hash deterministic
 
@@ -58,7 +58,7 @@ epoch ms — inject a fixed value in tests to keep the content hash deterministi
 
 > **paymentCheckResult**: `object`
 
-Defined in: [packages/artifacts/src/payment-receipts.ts:12](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/payment-receipts.ts#L12)
+Defined in: [packages/artifacts/src/payment-receipts.ts:12](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/payment-receipts.ts#L12)
 
 #### amountFoundSompi
 
@@ -82,7 +82,7 @@ Defined in: [packages/artifacts/src/payment-receipts.ts:12](https://github.com/K
 
 > **policyResult**: `object`
 
-Defined in: [packages/artifacts/src/payment-receipts.ts:18](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/payment-receipts.ts#L18)
+Defined in: [packages/artifacts/src/payment-receipts.ts:18](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/payment-receipts.ts#L18)
 
 #### requiredConfirmations
 

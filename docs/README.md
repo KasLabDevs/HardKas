@@ -34,10 +34,12 @@ The real network remains the final validator for real transactions.
 
 ## 0.13.0-rc.1 Toccata Status
 
-The current alpha includes Docker `rusty-kaspad` v2.0.0 simnet funding, a real
-standard transaction lifecycle, real Silver OP_TRUE deploy/spend, simulator
-artifact-coherence comparison, and a machine-verifiable golden corpus in
-`pnpm gauntlet:toccata`.
+The current alpha includes Docker `rusty-kaspad` v2.1.0 (pinned by digest)
+simnet funding, a real standard transaction lifecycle, real SilverScript P2SH
+deploy/spend and 1:1 covenant transitions, simulator artifact-coherence
+comparison, and a machine-verifiable golden corpus in `pnpm gauntlet:toccata`.
+[What works in this release](./start/what-works.md) says where each feature was
+checked against a real node.
 
 Simulation claims are intentionally bounded:
 
@@ -58,7 +60,8 @@ Simulation claims are intentionally bounded:
 ## Documentation Levels
 
 - **New user:** [Installation](./start/installation.md) and
-  [Quickstart](./start/quickstart.md).
+  [Quickstart](./start/quickstart.md); for a real node of your own,
+  [Build on your own simnet](./start/build-on-simnet.md).
 - **Developer:** [Mental Model](./concepts/mental-model.md),
   [Transaction Lifecycle](./concepts/transaction-lifecycle.md), and
   [SDK Reference](./reference/sdk.md).
@@ -72,6 +75,17 @@ Simulation claims are intentionally bounded:
 ### Start here — [`start/`](./start/)
 
 Installing HardKAS and getting a first artifact on disk.
+
+**The real-node path, in order:** [Build on your own simnet](./start/build-on-simnet.md) →
+[Installation](./start/installation.md) →
+[Run your own simnet node](./start/simnet-node.md) →
+[Quickstart: a real transaction](./start/quickstart-simnet.md) →
+[SilverScript and covenants](./start/silverscript-covenants.md) →
+[Reading receipts and verification levels](./start/receipts-and-levels.md) →
+[What works in this release](./start/what-works.md) →
+[Common errors and recovery](./start/common-errors.md)
+
+Other start pages:
 
 [Installation](./start/installation.md) ·
 [Install and Init](./start/install-and-init.md) ·
@@ -177,7 +191,7 @@ code. The pages below are prose around those values, not a second source.
 [0.11 to 0.12](./migrations/0.11-to-0.12.md) ·
 [0.12](./migrations/0.12.md)
 
-### Internal — [`internal/`](./internal/)
+### Internal — `internal/`
 
-Audit evidence and historical validation records. Not user documentation, and
-excluded from `pnpm docs:verify-book`.
+Audit evidence and historical validation records, kept locally and not in the
+repository. Not user documentation, and excluded from `pnpm docs:verify-book`.

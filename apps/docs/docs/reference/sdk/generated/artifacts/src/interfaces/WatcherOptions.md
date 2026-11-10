@@ -6,7 +6,7 @@
 
 # Interface: WatcherOptions
 
-Defined in: [packages/artifacts/src/invariants/watcher.ts:17](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/invariants/watcher.ts#L17)
+Defined in: [packages/artifacts/src/invariants/watcher.ts:17](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/invariants/watcher.ts#L17)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [packages/artifacts/src/invariants/watcher.ts:17](https://github.com
 
 > `optional` **artifactStore?**: [`ArtifactLookup`](ArtifactLookup.md)
 
-Defined in: [packages/artifacts/src/invariants/watcher.ts:23](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/invariants/watcher.ts#L23)
+Defined in: [packages/artifacts/src/invariants/watcher.ts:23](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/invariants/watcher.ts#L23)
 
 ***
 
@@ -22,7 +22,7 @@ Defined in: [packages/artifacts/src/invariants/watcher.ts:23](https://github.com
 
 > **eventBus**: `object`
 
-Defined in: [packages/artifacts/src/invariants/watcher.ts:19](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/invariants/watcher.ts#L19)
+Defined in: [packages/artifacts/src/invariants/watcher.ts:19](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/invariants/watcher.ts#L19)
 
 #### emit()
 
@@ -58,4 +58,4 @@ Defined in: [packages/artifacts/src/invariants/watcher.ts:19](https://github.com
 
 > **invariants**: [`Invariant`](Invariant.md)[]
 
-Defined in: [packages/artifacts/src/invariants/watcher.ts:18](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/invariants/watcher.ts#L18)
+Defined in: [packages/artifacts/src/invariants/watcher.ts:18](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/invariants/watcher.ts#L18)

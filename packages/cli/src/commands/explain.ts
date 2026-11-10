@@ -79,9 +79,12 @@ export function registerExplainCommand(program: Command) {
           // STAGE-B-2 · C4: a txId with no submission here but with verified observations is explained from them,
           // labelled origin "observed" (nothing sent by this workspace is implied). Only RECEIPT_NOT_FOUND falls back.
           if (lookup.namespace === "tx" && e?.code === "RECEIPT_NOT_FOUND") {
-            const { findObservedTx, observedRows } = await import("../runners/observed-tx.js");
+            const { findObservedTx, observedRows, findSignedTx, signedRows, nothingKnownMessage } = await import("../runners/observed-tx.js");
             const { observed } = findObservedTx(lookup.input, workspaceRoot);
-            if (observed) {
+            // INT9 · C4: a signed transaction under this txId is what the workspace knows too (signed here, no submission
+            // recorded: sent from elsewhere, not sent yet, or its record lost) — explained as such, never as a send
+            const signed = findSignedTx(lookup.input, workspaceRoot);
+            if (observed && signed.length === 0) {
               console.log(`\n  ${pc.magenta("═════")} ${pc.bold("Deterministic Explanation")} ${pc.magenta("═════")}\n`);
               console.log(
                 pc.white(
@@ -95,6 +98,25 @@ export function registerExplainCommand(program: Command) {
               });
               return;
             }
+            if (signed.length > 0) {
+              console.log(`\n  ${pc.magenta("═════")} ${pc.bold("Deterministic Explanation")} ${pc.magenta("═════")}\n`);
+              console.log(
+                pc.white(
+                  `  This transaction was signed in this workspace, but no submission of it is recorded here: nothing says it was sent from here. ` +
+                    (observed
+                      ? `Its network state comes from the observations this workspace holds.\n`
+                      : `No look at it is stored here either, so no network state is derived.\n`)
+                )
+              );
+              UI.causality("Signed Transaction, No Submission Here", {
+                ...signedRows(lookup.input, signed, observed),
+                ...(observed ? { Observations: observedRows(observed).Observations } : {}),
+                "Source Authority": `filesystem artifacts: the signed transaction${observed ? " and hardkas.txObservation.v1 looks" : ""}, each verified before it counts`,
+                Replay: "not supported for network artifacts"
+              });
+              return;
+            }
+            if (e instanceof Error) e.message = nothingKnownMessage(lookup.input, e.message.replace(/\.$/, ""));
           }
           const code = e?.code || "ARTIFACT_UNKNOWN";
           UI.semanticError(

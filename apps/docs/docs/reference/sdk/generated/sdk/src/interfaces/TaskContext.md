@@ -6,7 +6,7 @@
 
 # Interface: TaskContext
 
-Defined in: [packages/sdk/src/tasks.ts:7](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/tasks.ts#L7)
+Defined in: [packages/sdk/src/tasks.ts:7](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/tasks.ts#L7)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [packages/sdk/src/tasks.ts:7](https://github.com/KasLabDevs/HardKas/
 
 > **args**: [`TaskArgs`](TaskArgs.md)
 
-Defined in: [packages/sdk/src/tasks.ts:9](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/tasks.ts#L9)
+Defined in: [packages/sdk/src/tasks.ts:9](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/tasks.ts#L9)
 
 ***
 
@@ -22,4 +22,4 @@ Defined in: [packages/sdk/src/tasks.ts:9](https://github.com/KasLabDevs/HardKas/
 
 > **hardkas**: [`Hardkas`](../classes/Hardkas.md)
 
-Defined in: [packages/sdk/src/tasks.ts:8](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/tasks.ts#L8)
+Defined in: [packages/sdk/src/tasks.ts:8](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/tasks.ts#L8)

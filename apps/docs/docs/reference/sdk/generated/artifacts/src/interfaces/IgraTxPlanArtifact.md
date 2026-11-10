@@ -6,7 +6,7 @@
 
 # Interface: IgraTxPlanArtifact
 
-Defined in: [packages/artifacts/src/igra-artifacts.ts:15](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/igra-artifacts.ts#L15)
+Defined in: [packages/artifacts/src/igra-artifacts.ts:15](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/igra-artifacts.ts#L15)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [packages/artifacts/src/igra-artifacts.ts:15](https://github.com/Kas
 
 > `readonly` **chainId**: `number`
 
-Defined in: [packages/artifacts/src/igra-artifacts.ts:23](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/igra-artifacts.ts#L23)
+Defined in: [packages/artifacts/src/igra-artifacts.ts:23](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/igra-artifacts.ts#L23)
 
 ***
 
@@ -22,7 +22,7 @@ Defined in: [packages/artifacts/src/igra-artifacts.ts:23](https://github.com/Kas
 
 > `readonly` **createdAt**: `string`
 
-Defined in: [packages/artifacts/src/igra-artifacts.ts:20](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/igra-artifacts.ts#L20)
+Defined in: [packages/artifacts/src/igra-artifacts.ts:20](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/igra-artifacts.ts#L20)
 
 ***
 
@@ -30,7 +30,7 @@ Defined in: [packages/artifacts/src/igra-artifacts.ts:20](https://github.com/Kas
 
 > `readonly` `optional` **estimatedFeeWei?**: `string`
 
-Defined in: [packages/artifacts/src/igra-artifacts.ts:27](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/igra-artifacts.ts#L27)
+Defined in: [packages/artifacts/src/igra-artifacts.ts:27](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/igra-artifacts.ts#L27)
 
 ***
 
@@ -38,7 +38,7 @@ Defined in: [packages/artifacts/src/igra-artifacts.ts:27](https://github.com/Kas
 
 > `readonly` `optional` **estimatedGas?**: `string`
 
-Defined in: [packages/artifacts/src/igra-artifacts.ts:26](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/igra-artifacts.ts#L26)
+Defined in: [packages/artifacts/src/igra-artifacts.ts:26](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/igra-artifacts.ts#L26)
 
 ***
 
@@ -46,7 +46,7 @@ Defined in: [packages/artifacts/src/igra-artifacts.ts:26](https://github.com/Kas
 
 > `readonly` **hardkasVersion**: `string`
 
-Defined in: [packages/artifacts/src/igra-artifacts.ts:17](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/igra-artifacts.ts#L17)
+Defined in: [packages/artifacts/src/igra-artifacts.ts:17](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/igra-artifacts.ts#L17)
 
 ***
 
@@ -54,7 +54,7 @@ Defined in: [packages/artifacts/src/igra-artifacts.ts:17](https://github.com/Kas
 
 > `readonly` **l2Network**: `string`
 
-Defined in: [packages/artifacts/src/igra-artifacts.ts:22](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/igra-artifacts.ts#L22)
+Defined in: [packages/artifacts/src/igra-artifacts.ts:22](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/igra-artifacts.ts#L22)
 
 ***
 
@@ -62,7 +62,7 @@ Defined in: [packages/artifacts/src/igra-artifacts.ts:22](https://github.com/Kas
 
 > `readonly` **mode**: `"l2-rpc"`
 
-Defined in: [packages/artifacts/src/igra-artifacts.ts:19](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/igra-artifacts.ts#L19)
+Defined in: [packages/artifacts/src/igra-artifacts.ts:19](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/igra-artifacts.ts#L19)
 
 ***
 
@@ -70,7 +70,7 @@ Defined in: [packages/artifacts/src/igra-artifacts.ts:19](https://github.com/Kas
 
 > `readonly` **networkId**: `string`
 
-Defined in: [packages/artifacts/src/igra-artifacts.ts:18](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/igra-artifacts.ts#L18)
+Defined in: [packages/artifacts/src/igra-artifacts.ts:18](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/igra-artifacts.ts#L18)
 
 ***
 
@@ -78,7 +78,7 @@ Defined in: [packages/artifacts/src/igra-artifacts.ts:18](https://github.com/Kas
 
 > `readonly` **planId**: `string`
 
-Defined in: [packages/artifacts/src/igra-artifacts.ts:21](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/igra-artifacts.ts#L21)
+Defined in: [packages/artifacts/src/igra-artifacts.ts:21](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/igra-artifacts.ts#L21)
 
 ***
 
@@ -86,7 +86,7 @@ Defined in: [packages/artifacts/src/igra-artifacts.ts:21](https://github.com/Kas
 
 > `readonly` **request**: [`IgraTxRequestArtifact`](IgraTxRequestArtifact.md)
 
-Defined in: [packages/artifacts/src/igra-artifacts.ts:25](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/igra-artifacts.ts#L25)
+Defined in: [packages/artifacts/src/igra-artifacts.ts:25](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/igra-artifacts.ts#L25)
 
 ***
 
@@ -94,7 +94,7 @@ Defined in: [packages/artifacts/src/igra-artifacts.ts:25](https://github.com/Kas
 
 > `readonly` **schema**: `"hardkas.igraTxPlan.v1"`
 
-Defined in: [packages/artifacts/src/igra-artifacts.ts:16](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/igra-artifacts.ts#L16)
+Defined in: [packages/artifacts/src/igra-artifacts.ts:16](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/igra-artifacts.ts#L16)
 
 ***
 
@@ -102,7 +102,7 @@ Defined in: [packages/artifacts/src/igra-artifacts.ts:16](https://github.com/Kas
 
 > `readonly` **status**: `"built"`
 
-Defined in: [packages/artifacts/src/igra-artifacts.ts:28](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/igra-artifacts.ts#L28)
+Defined in: [packages/artifacts/src/igra-artifacts.ts:28](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/igra-artifacts.ts#L28)
 
 ***
 
@@ -110,4 +110,4 @@ Defined in: [packages/artifacts/src/igra-artifacts.ts:28](https://github.com/Kas
 
 > `readonly` `optional` **txType?**: `"call"` \| `"contract-deploy"`
 
-Defined in: [packages/artifacts/src/igra-artifacts.ts:24](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/igra-artifacts.ts#L24)
+Defined in: [packages/artifacts/src/igra-artifacts.ts:24](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/igra-artifacts.ts#L24)

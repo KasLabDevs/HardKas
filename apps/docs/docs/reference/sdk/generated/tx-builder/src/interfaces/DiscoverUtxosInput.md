@@ -6,7 +6,7 @@
 
 # Interface: DiscoverUtxosInput
 
-Defined in: [packages/tx-builder/src/kaspa-wallet-adapter.ts:183](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/kaspa-wallet-adapter.ts#L183)
+Defined in: [packages/tx-builder/src/kaspa-wallet-adapter.ts:298](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/kaspa-wallet-adapter.ts#L298)
 
 One-shot UTXO discovery over a wasm RpcClient with **upstream-authoritative**
 coinbase-maturity filtering (via `k.getNetworkParams(networkId)`). Replaces
@@ -23,7 +23,7 @@ synchronous read.
 
 > `readonly` **address**: `string`
 
-Defined in: [packages/tx-builder/src/kaspa-wallet-adapter.ts:186](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/kaspa-wallet-adapter.ts#L186)
+Defined in: [packages/tx-builder/src/kaspa-wallet-adapter.ts:301](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/kaspa-wallet-adapter.ts#L301)
 
 ***
 
@@ -31,7 +31,7 @@ Defined in: [packages/tx-builder/src/kaspa-wallet-adapter.ts:186](https://github
 
 > `readonly` `optional` **includeImmatureCoinbase?**: `boolean`
 
-Defined in: [packages/tx-builder/src/kaspa-wallet-adapter.ts:188](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/kaspa-wallet-adapter.ts#L188)
+Defined in: [packages/tx-builder/src/kaspa-wallet-adapter.ts:303](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/kaspa-wallet-adapter.ts#L303)
 
 When true, skip the mature-only filter and return all UTXOs (mature + immature coinbases).
 
@@ -41,7 +41,7 @@ When true, skip the mature-only filter and return all UTXOs (mature + immature c
 
 > `readonly` **networkId**: `string`
 
-Defined in: [packages/tx-builder/src/kaspa-wallet-adapter.ts:185](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/kaspa-wallet-adapter.ts#L185)
+Defined in: [packages/tx-builder/src/kaspa-wallet-adapter.ts:300](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/kaspa-wallet-adapter.ts#L300)
 
 ***
 
@@ -49,4 +49,4 @@ Defined in: [packages/tx-builder/src/kaspa-wallet-adapter.ts:185](https://github
 
 > `readonly` **wasmRpc**: `any`
 
-Defined in: [packages/tx-builder/src/kaspa-wallet-adapter.ts:184](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/kaspa-wallet-adapter.ts#L184)
+Defined in: [packages/tx-builder/src/kaspa-wallet-adapter.ts:299](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/kaspa-wallet-adapter.ts#L299)

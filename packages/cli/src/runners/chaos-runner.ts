@@ -1,4 +1,5 @@
 ﻿import fs from "node:fs/promises";
+import os from "node:os";
 import path from "node:path";
 import { UI } from "../ui.js";
 import { ChaosExitCodes } from "../commands/chaos.js";
@@ -51,27 +52,34 @@ function selectActor(seed: number, profileName: string): string {
   return profile[0]!.actor;
 }
 
+/**
+ * ESCALÓN 3 · P20: a campaign (or a replay) runs in a directory it creates itself under the OS temp dir
+ * (`hardkas-chaos-XXXXXX`, new and empty: mkdtemp). It used to delete ./.hardkas-chaos and ./.hardkas-chaos-workspace in
+ * the current directory, without asking, whatever they held, and its actors then ran inside the user's project. The
+ * only path a run ever deletes is the `workspace` it created there; the reports stay in `<run dir>/reports`.
+ */
+export async function createChaosRunDir(): Promise<{ runDir: string; workspaceDir: string; reportsDir: string }> {
+  const runDir = await fs.mkdtemp(path.join(os.tmpdir(), "hardkas-chaos-"));
+  const workspaceDir = path.join(runDir, "workspace");
+  const reportsDir = path.join(runDir, "reports");
+  // Initialize a dummy project
+  await fs.mkdir(path.join(workspaceDir, ".hardkas", "keystore"), { recursive: true });
+  await fs.mkdir(path.join(reportsDir, "repro"), { recursive: true });
+  return { runDir, workspaceDir, reportsDir };
+}
+
+/** Deletes the workspace a run created inside its own run directory, and nothing else. */
+async function removeOwnWorkspace(runDir: string, workspaceDir: string): Promise<void> {
+  if (path.dirname(workspaceDir) !== runDir) throw new Error(`refusing to delete ${workspaceDir}: not this run's workspace`);
+  await fs.rm(workspaceDir, { recursive: true, force: true }).catch(() => {});
+}
+
 export async function runChaosEngine(options: any) {
   const runs = parseInt(options.runs, 10);
   const globalSeed = parseInt(options.seed, 10);
   const profile = options.profile;
-  const isolate = options.isolate;
 
-  const originalCwd = process.cwd();
-  const workspaceDir = isolate
-    ? path.join(originalCwd, ".hardkas-chaos-workspace")
-    : originalCwd;
-
-  if (isolate) {
-    await fs.rm(workspaceDir, { recursive: true, force: true }).catch(() => {});
-    await fs.mkdir(workspaceDir, { recursive: true });
-    // Initialize a dummy project
-    await fs.mkdir(path.join(workspaceDir, ".hardkas", "keystore"), { recursive: true });
-  }
-
-  const reportsDir = path.join(originalCwd, ".hardkas-chaos");
-  await fs.rm(reportsDir, { recursive: true, force: true }).catch(() => {});
-  await fs.mkdir(path.join(reportsDir, "repro"), { recursive: true });
+  const { runDir, workspaceDir, reportsDir } = await createChaosRunDir();
 
   UI.box(
     "HardKAS Chaos Engine",
@@ -163,6 +171,8 @@ ${results
   .join("\n")}
 `;
   await fs.writeFile(summaryFile, summary);
+  await removeOwnWorkspace(runDir, workspaceDir);
+  UI.info(`Chaos reports: ${reportsDir}`);
 
   if (failedRuns > 0) {
     const { HardkasCliError } = await import("../cli-errors.js");
@@ -192,21 +202,22 @@ export async function replayChaosRun(options: any) {
     };
   }
 
-  const workspaceDir = options.isolate
-    ? path.join(process.cwd(), ".hardkas-chaos-workspace")
-    : process.cwd();
-  if (options.isolate) {
-    await fs.rm(workspaceDir, { recursive: true, force: true }).catch(() => {});
-    await fs.mkdir(workspaceDir, { recursive: true });
-    await fs.mkdir(path.join(workspaceDir, ".hardkas", "keystore"), { recursive: true });
-  }
+  // ESCALÓN 3 · P20: a fresh directory of its own under the OS temp dir, never the current directory
+  const { runDir, workspaceDir } = await createChaosRunDir();
 
   UI.info(`Replaying chaos run with seed ${runSeed} via actor ${actorName}...`);
-  const { stdout, stderr, exitCode, action, expectedExitCodes } = await actor({
-    workspaceDir,
-    runId: 0,
-    runSeed
-  });
+  let replayed: Awaited<ReturnType<ChaosActor>>;
+  try {
+    replayed = await actor({
+      workspaceDir,
+      runId: 0,
+      runSeed
+    });
+  } finally {
+    await removeOwnWorkspace(runDir, workspaceDir);
+    await fs.rm(runDir, { recursive: true, force: true }).catch(() => {});
+  }
+  const { stdout, stderr, exitCode, action, expectedExitCodes } = replayed;
 
   console.log(pc.cyan(`\n--- Action Executed ---`));
   console.log(action);

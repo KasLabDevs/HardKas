@@ -8,7 +8,7 @@ title: hardkas ci
 
 ### Synopsis (Generated)
 
-**Purpose:** Non-interactively verify workspace integrity, artifacts, and projections
+**Purpose:** Non-interactively verify workspace integrity, artifacts, and projections (offline: no public endpoint is contacted)
 
 ---
 

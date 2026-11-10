@@ -8,7 +8,7 @@
 
 > **verifyFeeSemantics**(`artifact`): [`FeeAuditResult`](../interfaces/FeeAuditResult.md)
 
-Defined in: [packages/artifacts/src/feeVerify.ts:59](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/feeVerify.ts#L59)
+Defined in: [packages/artifacts/src/feeVerify.ts:117](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/feeVerify.ts#L117)
 
 Performs a deep economic audit of a transaction artifact.
 

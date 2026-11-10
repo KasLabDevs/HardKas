@@ -236,12 +236,14 @@ describe("C5 · rpc commands follow a declared network, with its identity checke
     expect(loopbackOnly(r.dialled, T.port)).toBe(true);
   });
 
-  it("NP-3b a node that serves another network than the one declared: refused (NODE_NETWORK_MISMATCH)", async () => {
+  // MAINNET TOTAL LOCKDOWN: M says mainnet, so the refusal is the lockdown's (MAINNET_CONNECTION_DISABLED, decided
+  // before the mismatch rule; it was NODE_NETWORK_MISMATCH) — still refused, still nothing read from it
+  it("NP-3b a node that serves another network than the one declared (here mainnet): refused (MAINNET_CONNECTION_DISABLED)", async () => {
     const ws = workspace("c5b", "testnet-10", M.url);
     for (const cmd of [["rpc", "info"], ["rpc", "dag"], ["rpc", "health"], ["rpc", "utxos", FUNDED.address], ["rpc", "mempool"]]) {
       const r = await run(`NP-3b-${cmd[1]}`, [...cmd, "--network", "testnet-10", "--json"], ws);
       expect(r.exit, `${cmd.join(" ")}\n${r.brief}`).not.toBe(0);
-      expect(r.stdout + r.stderr, cmd.join(" ")).toMatch(/NODE_NETWORK_MISMATCH/);
+      expect(r.stdout + r.stderr, cmd.join(" ")).toMatch(/MAINNET_CONNECTION_DISABLED/);
     }
   });
 
@@ -266,11 +268,14 @@ describe("C5 · rpc commands follow a declared network, with its identity checke
     expect(loopbackOnly(r.dialled, T.port)).toBe(true);
   });
 
-  it("NP-3e (contract) without --network or --url, `rpc info` still means the canonical localnet", async () => {
+  // L1-CORE-1 B2 · H1: the contract changed — in a workspace, no --network means the workspace's network (it meant the
+  // canonical localnet, which a testnet-10 workspace's operator does not run); outside a workspace it still does
+  it("NP-3e (contract, H1) without --network or --url, `rpc info` in a testnet-10 workspace reads the workspace's declared node, never 18210", async () => {
     const ws = workspace("c5e", "testnet-10", T.url);
     const r = await run("NP-3e", ["rpc", "info", "--json"], ws);
-    expect(r.json?.url, r.brief).toBe("ws://127.0.0.1:18210");
-    expect(r.dialled.some((d) => d.endsWith(`:${T.port}`)), JSON.stringify(r.dialled)).toBe(false);
+    expect(r.json?.url, r.brief).toBe(T.url);
+    expect(r.dialled.some((d) => d.endsWith(`:${T.port}`)), JSON.stringify(r.dialled)).toBe(true);
+    expect(r.dialled.some((d) => d.endsWith(":18210")), JSON.stringify(r.dialled)).toBe(false);
   });
 
   it("NP-3f `rpc doctor --endpoints wss://host/path` probes port 443 (the URL's scheme), never 18210", async () => {

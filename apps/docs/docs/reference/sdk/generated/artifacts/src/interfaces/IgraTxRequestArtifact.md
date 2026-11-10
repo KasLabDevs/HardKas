@@ -6,7 +6,7 @@
 
 # Interface: IgraTxRequestArtifact
 
-Defined in: [packages/artifacts/src/igra-artifacts.ts:5](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/igra-artifacts.ts#L5)
+Defined in: [packages/artifacts/src/igra-artifacts.ts:5](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/igra-artifacts.ts#L5)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [packages/artifacts/src/igra-artifacts.ts:5](https://github.com/KasL
 
 > `readonly` **data**: `string`
 
-Defined in: [packages/artifacts/src/igra-artifacts.ts:8](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/igra-artifacts.ts#L8)
+Defined in: [packages/artifacts/src/igra-artifacts.ts:8](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/igra-artifacts.ts#L8)
 
 ***
 
@@ -22,7 +22,7 @@ Defined in: [packages/artifacts/src/igra-artifacts.ts:8](https://github.com/KasL
 
 > `readonly` `optional` **from?**: `string`
 
-Defined in: [packages/artifacts/src/igra-artifacts.ts:6](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/igra-artifacts.ts#L6)
+Defined in: [packages/artifacts/src/igra-artifacts.ts:6](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/igra-artifacts.ts#L6)
 
 ***
 
@@ -30,7 +30,7 @@ Defined in: [packages/artifacts/src/igra-artifacts.ts:6](https://github.com/KasL
 
 > `readonly` `optional` **gasLimit?**: `string`
 
-Defined in: [packages/artifacts/src/igra-artifacts.ts:10](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/igra-artifacts.ts#L10)
+Defined in: [packages/artifacts/src/igra-artifacts.ts:10](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/igra-artifacts.ts#L10)
 
 ***
 
@@ -38,7 +38,7 @@ Defined in: [packages/artifacts/src/igra-artifacts.ts:10](https://github.com/Kas
 
 > `readonly` `optional` **gasPriceWei?**: `string`
 
-Defined in: [packages/artifacts/src/igra-artifacts.ts:11](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/igra-artifacts.ts#L11)
+Defined in: [packages/artifacts/src/igra-artifacts.ts:11](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/igra-artifacts.ts#L11)
 
 ***
 
@@ -46,7 +46,7 @@ Defined in: [packages/artifacts/src/igra-artifacts.ts:11](https://github.com/Kas
 
 > `readonly` `optional` **nonce?**: `string`
 
-Defined in: [packages/artifacts/src/igra-artifacts.ts:12](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/igra-artifacts.ts#L12)
+Defined in: [packages/artifacts/src/igra-artifacts.ts:12](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/igra-artifacts.ts#L12)
 
 ***
 
@@ -54,7 +54,7 @@ Defined in: [packages/artifacts/src/igra-artifacts.ts:12](https://github.com/Kas
 
 > `readonly` `optional` **to?**: `string`
 
-Defined in: [packages/artifacts/src/igra-artifacts.ts:7](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/igra-artifacts.ts#L7)
+Defined in: [packages/artifacts/src/igra-artifacts.ts:7](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/igra-artifacts.ts#L7)
 
 ***
 
@@ -62,4 +62,4 @@ Defined in: [packages/artifacts/src/igra-artifacts.ts:7](https://github.com/KasL
 
 > `readonly` **valueWei**: `string`
 
-Defined in: [packages/artifacts/src/igra-artifacts.ts:9](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/igra-artifacts.ts#L9)
+Defined in: [packages/artifacts/src/igra-artifacts.ts:9](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/igra-artifacts.ts#L9)

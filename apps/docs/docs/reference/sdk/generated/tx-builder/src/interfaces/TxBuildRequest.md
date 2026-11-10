@@ -6,7 +6,7 @@
 
 # Interface: TxBuildRequest
 
-Defined in: [packages/tx-builder/src/index.ts:44](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/index.ts#L44)
+Defined in: [packages/tx-builder/src/index.ts:49](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/index.ts#L49)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [packages/tx-builder/src/index.ts:44](https://github.com/KasLabDevs/
 
 > `readonly` **availableUtxos**: readonly [`Utxo`](Utxo.md)[]
 
-Defined in: [packages/tx-builder/src/index.ts:47](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/index.ts#L47)
+Defined in: [packages/tx-builder/src/index.ts:52](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/index.ts#L52)
 
 ***
 
@@ -22,7 +22,7 @@ Defined in: [packages/tx-builder/src/index.ts:47](https://github.com/KasLabDevs/
 
 > `readonly` `optional` **changeAddress?**: `string`
 
-Defined in: [packages/tx-builder/src/index.ts:49](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/index.ts#L49)
+Defined in: [packages/tx-builder/src/index.ts:54](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/index.ts#L54)
 
 ***
 
@@ -30,7 +30,7 @@ Defined in: [packages/tx-builder/src/index.ts:49](https://github.com/KasLabDevs/
 
 > `readonly` `optional` **coinbaseMaturity?**: `bigint`
 
-Defined in: [packages/tx-builder/src/index.ts:62](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/index.ts#L62)
+Defined in: [packages/tx-builder/src/index.ts:67](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/index.ts#L67)
 
 Coinbase maturity period in DAA blocks. Defaults to network specific value or 1000.
 
@@ -40,7 +40,7 @@ Coinbase maturity period in DAA blocks. Defaults to network specific value or 10
 
 > `readonly` `optional` **computeBudget?**: `bigint`
 
-Defined in: [packages/tx-builder/src/index.ts:54](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/index.ts#L54)
+Defined in: [packages/tx-builder/src/index.ts:59](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/index.ts#L59)
 
 ***
 
@@ -48,7 +48,7 @@ Defined in: [packages/tx-builder/src/index.ts:54](https://github.com/KasLabDevs/
 
 > `readonly` `optional` **computeGrams?**: `bigint`
 
-Defined in: [packages/tx-builder/src/index.ts:55](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/index.ts#L55)
+Defined in: [packages/tx-builder/src/index.ts:60](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/index.ts#L60)
 
 ***
 
@@ -56,7 +56,7 @@ Defined in: [packages/tx-builder/src/index.ts:55](https://github.com/KasLabDevs/
 
 > `readonly` `optional` **feeOverrideSompi?**: `bigint`
 
-Defined in: [packages/tx-builder/src/index.ts:72](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/index.ts#L72)
+Defined in: [packages/tx-builder/src/index.ts:77](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/index.ts#L77)
 
 When provided, overrides the mass-based fee calculation with this exact fee. Used by the convergence loop when an external feeEstimator has already determined the fee.
 
@@ -66,9 +66,9 @@ When provided, overrides the mass-based fee calculation with this exact fee. Use
 
 > `readonly` `optional` **feePolicy?**: `"legacy"` \| `"toccata"` \| `"auto"`
 
-Defined in: [packages/tx-builder/src/index.ts:67](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/index.ts#L67)
+Defined in: [packages/tx-builder/src/index.ts:72](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/index.ts#L72)
 
-Fee calculation policy. Auto uses toccata if version >= 1 or if node supports it.
+Fee calculation policy. Auto uses toccata if version \>= 1 or if node supports it.
 
 ***
 
@@ -76,7 +76,7 @@ Fee calculation policy. Auto uses toccata if version >= 1 or if node supports it
 
 > `readonly` **feeRateSompiPerMass**: `bigint`
 
-Defined in: [packages/tx-builder/src/index.ts:48](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/index.ts#L48)
+Defined in: [packages/tx-builder/src/index.ts:53](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/index.ts#L53)
 
 ***
 
@@ -84,7 +84,7 @@ Defined in: [packages/tx-builder/src/index.ts:48](https://github.com/KasLabDevs/
 
 > `readonly` **fromAddress**: `string`
 
-Defined in: [packages/tx-builder/src/index.ts:45](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/index.ts#L45)
+Defined in: [packages/tx-builder/src/index.ts:50](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/index.ts#L50)
 
 ***
 
@@ -92,7 +92,7 @@ Defined in: [packages/tx-builder/src/index.ts:45](https://github.com/KasLabDevs/
 
 > `readonly` `optional` **genesisCovenantGroups?**: readonly `object`[]
 
-Defined in: [packages/tx-builder/src/index.ts:69](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/index.ts#L69)
+Defined in: [packages/tx-builder/src/index.ts:74](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/index.ts#L74)
 
 ***
 
@@ -100,7 +100,7 @@ Defined in: [packages/tx-builder/src/index.ts:69](https://github.com/KasLabDevs/
 
 > `readonly` `optional` **lane?**: `string`
 
-Defined in: [packages/tx-builder/src/index.ts:57](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/index.ts#L57)
+Defined in: [packages/tx-builder/src/index.ts:62](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/index.ts#L62)
 
 ***
 
@@ -108,7 +108,7 @@ Defined in: [packages/tx-builder/src/index.ts:57](https://github.com/KasLabDevs/
 
 > `readonly` `optional` **networkId?**: `string`
 
-Defined in: [packages/tx-builder/src/index.ts:64](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/index.ts#L64)
+Defined in: [packages/tx-builder/src/index.ts:69](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/index.ts#L69)
 
 Network ID to determine default coinbase maturity.
 
@@ -118,7 +118,7 @@ Network ID to determine default coinbase maturity.
 
 > `readonly` **outputs**: readonly [`TxOutput`](TxOutput.md)[]
 
-Defined in: [packages/tx-builder/src/index.ts:46](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/index.ts#L46)
+Defined in: [packages/tx-builder/src/index.ts:51](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/index.ts#L51)
 
 ***
 
@@ -126,7 +126,7 @@ Defined in: [packages/tx-builder/src/index.ts:46](https://github.com/KasLabDevs/
 
 > `readonly` `optional` **payloadBytes?**: `number`
 
-Defined in: [packages/tx-builder/src/index.ts:50](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/index.ts#L50)
+Defined in: [packages/tx-builder/src/index.ts:55](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/index.ts#L55)
 
 ***
 
@@ -134,7 +134,7 @@ Defined in: [packages/tx-builder/src/index.ts:50](https://github.com/KasLabDevs/
 
 > `readonly` `optional` **storageMass?**: `bigint`
 
-Defined in: [packages/tx-builder/src/index.ts:56](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/index.ts#L56)
+Defined in: [packages/tx-builder/src/index.ts:61](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/index.ts#L61)
 
 ***
 
@@ -142,7 +142,7 @@ Defined in: [packages/tx-builder/src/index.ts:56](https://github.com/KasLabDevs/
 
 > `readonly` `optional` **version?**: `0` \| `1`
 
-Defined in: [packages/tx-builder/src/index.ts:53](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/index.ts#L53)
+Defined in: [packages/tx-builder/src/index.ts:58](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/index.ts#L58)
 
 ***
 
@@ -150,6 +150,6 @@ Defined in: [packages/tx-builder/src/index.ts:53](https://github.com/KasLabDevs/
 
 > `readonly` `optional` **virtualDaaScore?**: `bigint`
 
-Defined in: [packages/tx-builder/src/index.ts:60](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/index.ts#L60)
+Defined in: [packages/tx-builder/src/index.ts:65](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/index.ts#L65)
 
 Current virtual DAA score from the node. When provided, immature coinbase UTXOs are filtered out.

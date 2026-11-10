@@ -11,6 +11,9 @@ export interface FlatUtxo {
     address?: string;
     /** COVENANT-UTXO-PAYMENT-FILTER-1: kept so the planner can leave a covenant's UTXO out. */
     covenantId?: string;
+    /** HK-10: kept so the planners can leave an immature coinbase out. */
+    isCoinbase?: boolean;
+    blockDaaScore?: bigint | number | string;
 }
 
 /**
@@ -25,7 +28,10 @@ export function toTxBuilderUtxo(utxo: FlatUtxo, addressOverride?: string): Utxo 
         address: addressOverride || utxo.address || "",
         amountSompi: utxo.amountSompi,
         scriptPublicKey: utxo.scriptPublicKey,
-        ...(utxo.covenantId ? { covenantId: utxo.covenantId } : {})
+        ...(utxo.covenantId ? { covenantId: utxo.covenantId } : {}),
+        // HK-10: a coinbase stays a coinbase (the maturity filters read these; dropping them made every UTXO look mature)
+        ...(utxo.isCoinbase !== undefined ? { isCoinbase: Boolean(utxo.isCoinbase) } : {}),
+        ...(utxo.blockDaaScore !== undefined && utxo.blockDaaScore !== null ? { blockDaaScore: BigInt(utxo.blockDaaScore) } : {})
     };
 }
 
@@ -39,6 +45,8 @@ export function toWalletQueryUtxo(utxo: Utxo): FlatUtxo {
         amountSompi: utxo.amountSompi,
         scriptPublicKey: utxo.scriptPublicKey,
         address: utxo.address,
-        ...(utxo.covenantId ? { covenantId: utxo.covenantId } : {})
+        ...(utxo.covenantId ? { covenantId: utxo.covenantId } : {}),
+        ...(utxo.isCoinbase !== undefined ? { isCoinbase: utxo.isCoinbase } : {}),
+        ...(utxo.blockDaaScore !== undefined ? { blockDaaScore: utxo.blockDaaScore } : {})
     };
 }

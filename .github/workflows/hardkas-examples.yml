@@ -1,60 +1,70 @@
 name: HardKAS Examples CI
 
 on:
-  # R-09: develop is where the work lands; the canonical gate on Linux (pnpm test) runs there too, not only on main.
+  # R-09: develop is where the work lands; these checks run there too, not only on main.
   push:
     branches: [main, develop]
   pull_request:
     branches: [main, develop]
 
+# HK-22: read-only token; no step here writes to the repository.
+permissions:
+  contents: read
+
 jobs:
   validate-examples:
     runs-on: ubuntu-latest
+    # RC1 · R3: bounded like the other jobs (GitHub's default is 6 h); it took ~40 min on 230123e87.
+    timeout-minutes: 90
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0 (node24; resolved with git ls-remote on 2026-11-09)
 
       - name: Install Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0 (node24; resolved with git ls-remote on 2026-11-09)
         with:
           # NODE-CI-PIN-1: the exact patched release this code was validated on (not a floating major).
           node-version: 24.22.1
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v3
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0 (node24; resolved with git ls-remote on 2026-11-09)
         with:
           version: 9.15.4
 
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
+      # Typecheck runs on a checkout with no dist/ at all, as a fresh clone does. RC1 · R3: on 157fc03e4 it failed here
+      # (packages/simulator's consensus-vectors.simnet.test.ts imports @hardkas/testing, which the simulator cannot
+      # declare: testing depends on it). turbo.json now builds @hardkas/testing before the simulator's typecheck.
       - name: Typecheck
         run: pnpm typecheck
 
       - name: Build packages
         run: pnpm build
 
-      # HardKAS loads only the pinned official Kaspa WASM SDK; the install
-      # verifies the release asset and every file against the pin.
-      - name: Install pinned Kaspa WASM toolchain
-        run: node packages/cli/dist/index.js toolchain install kaspa-wasm
+      # HardKAS loads only the pinned official Kaspa WASM SDK and compiles SilverScript only with the pinned official
+      # silverc release (kaspanet/silverscript v1.0.0); the install verifies the release asset and every file against
+      # the pin. RC1 · R3: cached per pin set, only a failed download retried (.github/actions/hardkas-toolchains).
+      - name: Install pinned Kaspa WASM and silverc toolchains
+        uses: ./.github/actions/hardkas-toolchains
+        with:
+          ids: kaspa-wasm silverc
 
-      # SilverScript is compiled only by the pinned official silverc release
-      # (kaspanet/silverscript v1.0.0), verified the same way.
-      - name: Install pinned silverc toolchain
-        run: node packages/cli/dist/index.js toolchain install silverc
+      # HK-22: the canonical gate (pnpm test) runs in ci.yml on Ubuntu, Windows and macOS; it is not repeated here.
 
-      - name: Run unit tests
-        run: pnpm test
-
+      # M-03 (2026-11-07): 01, 02, 03 and 06 ended in `|| echo "skipped (no node)"`, so a failure was reported as a
+      # pass. They run on the in-memory simulator (Hardkas.create() opens the simulated network) and need no node:
+      # all six pass offline (verified locally under the hermetic preload, 0 connection attempts). 03 failed for
+      # another reason (`tx.confirm` does not exist) that the mask hid; it is fixed. Every example now fails its step.
       - name: Example 01 - Hello Kaspa
-        run: pnpm example:hello || echo "Hello Kaspa skipped (no node)"
+        run: pnpm example:hello
 
       - name: Example 02 - Basic Transfer
-        run: pnpm example:transfer || echo "Basic Transfer skipped (no node)"
+        run: pnpm example:transfer
 
       - name: Example 03 - Localnet Demo
-        run: pnpm example:localnet || echo "Localnet Demo skipped (no node)"
+        run: pnpm example:localnet
 
       - name: Example 04 - Trace & Replay
         run: pnpm example:trace
@@ -63,5 +73,8 @@ jobs:
         run: pnpm example:snapshot
 
       - name: Example 06 - RPC Node Health
-        # Note: This might fail if no node is running in CI environment
-        run: pnpm example:rpc-health || echo "Node health skipped (no local node in runner)"
+        run: pnpm example:rpc-health
+
+      # L-04: an example run writes local output only (git-ignored .hardkas/), never a tracked file
+      - name: Examples leave their tracked files unchanged
+        run: git diff --exit-code --stat -- examples

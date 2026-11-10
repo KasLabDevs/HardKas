@@ -58,6 +58,30 @@ export function coinbaseMaturity(networkId = "simnet") {
   return getCoinbaseMaturity(networkId);
 }
 
+/**
+ * What `address` can spend now, in sompi, by the CLI planner's own rule (packages/cli/src/runners/tx-plan-runner.ts):
+ * every non-coinbase output, and a coinbase output once `virtualDaaScore - blockDaaScore > coinbaseMaturity + 10`;
+ * covenant outputs never (payments leave them out). A balance is not this: on a fresh node the gauntlet's warm-up leaves
+ * the fixture holding only coinbase outputs that are not mature yet. Only reads the node.
+ */
+export async function readMatureBalanceSompi(rpcUrl, address, networkId = "simnet") {
+  return withClient(rpcUrl, async (client) => {
+    const info = await client.getBlockDagInfo();
+    if (info?.virtualDaaScore === undefined || info?.virtualDaaScore === null) {
+      throw new Error(`DAA_SCORE_UNAVAILABLE: ${rpcUrl} answered no virtualDaaScore`);
+    }
+    const virtualDaaScore = BigInt(info.virtualDaaScore);
+    const maturity = coinbaseMaturity(networkId);
+    let sompi = 0n;
+    for (const utxo of await client.getUtxosByAddress(address)) {
+      if (utxo.covenantId) continue;
+      if (utxo.isCoinbase && (utxo.blockDaaScore === undefined || virtualDaaScore - BigInt(utxo.blockDaaScore) <= maturity + 10n)) continue;
+      sompi += BigInt(utxo.amountSompi);
+    }
+    return sompi;
+  });
+}
+
 /** Resolves with the DAA score once it is at least `target`; throws TOCCATA_DAA_TIMEOUT after `timeoutMs`. */
 export async function waitForDaaScore({ rpcUrl, target, timeoutMs = 600_000, intervalMs = 1_000 }) {
   const deadline = Date.now() + timeoutMs;

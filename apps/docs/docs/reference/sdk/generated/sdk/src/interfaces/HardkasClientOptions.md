@@ -6,7 +6,7 @@
 
 # Interface: HardkasClientOptions
 
-Defined in: [packages/sdk/src/client.ts:1](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/client.ts#L1)
+Defined in: [packages/sdk/src/client.ts:1](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/client.ts#L1)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [packages/sdk/src/client.ts:1](https://github.com/KasLabDevs/HardKas
 
 > `optional` **baseUrl?**: `string`
 
-Defined in: [packages/sdk/src/client.ts:2](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/client.ts#L2)
+Defined in: [packages/sdk/src/client.ts:2](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/client.ts#L2)
 
 ***
 
@@ -22,4 +22,4 @@ Defined in: [packages/sdk/src/client.ts:2](https://github.com/KasLabDevs/HardKas
 
 > `optional` **network?**: `string`
 
-Defined in: [packages/sdk/src/client.ts:3](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/client.ts#L3)
+Defined in: [packages/sdk/src/client.ts:3](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/client.ts#L3)

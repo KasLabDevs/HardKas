@@ -1,4 +1,4 @@
-import { parseKasToSompi, systemRuntimeContext, NetworkId, parseFeeRate, parseMaxFeeSompi, effectiveFeeLimit, assertFeeWithinLimit } from "@hardkas/core";
+import { parseKasToSompi, systemRuntimeContext, NetworkId, parseFeeRate, parseMaxFeeSompi } from "@hardkas/core";
 import {
   TxPlanService,
   covenantIdOf,
@@ -6,12 +6,16 @@ import {
   utxoOutpointKey,
   PendingSpendAllExcludedError,
   PendingSpendEvidenceUnavailableError,
+  feeLimitInForce,
+  assertFeeWithinLimitInForce,
+  resolveMaxFeeRate,
+  assertSpendableAddressScheme,
   type PendingSpendEvidence,
   type TxPlanResult,
   type UtxoProvider
 } from "@hardkas/tx-builder";
 import { createTxPlanArtifact, TxPlanArtifact } from "@hardkas/artifacts";
-import { getCoinbaseMaturity, sha256hex, SelectedUtxoInvalidatedError, HardkasError } from "@hardkas/core";
+import { getCoinbaseMaturity, sha256hex, SelectedUtxoInvalidatedError, HardkasError, assertMainnetConnectionsDisabled, declaredNetworkIdOf } from "@hardkas/core";
 
 /**
  * HARDKAS-NETWORK-PORTABILITY-1 (C2): nothing spendable is the same typed refusal on every backend (it was an untyped
@@ -119,6 +123,11 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
 
   const { resolveWorkspaceExecution, resolveProvider } = await import("@hardkas/config");
   const { assertAccountCompatible, resolveHardkasAccount } = await import("@hardkas/accounts");
+  // MAINNET TOTAL LOCKDOWN (RC2 oracle D2b): mainnet first, before the name is resolved as a HardKAS network — every
+  // spelling (`kaspa`, `mainnet-1`, `kaspa-mainnet`…), an alias that declares one, a target on it, or the workspace's
+  // own network when none is named — so it is never UNKNOWN_NETWORK
+  const { refuseMainnetConnection, targetNetworkOf } = await import("../mainnet-guard.js");
+  refuseMainnetConnection(resolvedConfig, [networkId, targetNetworkOf(resolvedConfig, targetName)], "tx plan", !targetName);
 
   // WORKSPACE-AUTHORITY-2 (WA2-I1): the one resolution the SDK uses too — a named target (`--target`), else a network
   // id (`--network`, never a target name: a declared target for that network, else the mode the network implies), else
@@ -130,6 +139,12 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
     ...(networkId ? { network: networkId } : {})
   });
   const execution = resolvedExecution.execution;
+  // MAINNET TOTAL LOCKDOWN: a plan on mainnet reads mainnet (UTXOs, DAA score, fee estimate): refused before any account,
+  // toolchain or endpoint is resolved (the network asked for and what its config entry declares)
+  assertMainnetConnectionsDisabled(
+    [execution.network, resolvedExecution.networkId, declaredNetworkIdOf(resolvedConfig, execution.network), declaredNetworkIdOf(resolvedConfig, resolvedExecution.networkId)],
+    "tx plan"
+  );
 
   const resolvedTargetName = resolvedExecution.targetName ?? execution.network;
 
@@ -142,6 +157,8 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
 
   const fromAddress = fromAccount.address as string;
   const toAddress = toAccount.address as string;
+  // RC1 · D7: HardKAS signs Schnorr P2PK spends only — a spend from an ECDSA address is refused before anything connects
+  assertSpendableAddressScheme(fromAddress, `the sender '${from}'`);
 
   // AUD-28: the change destination is resolved and checked like `to`; it is never inferred.
   let changeAddressResolved: string | undefined;
@@ -262,8 +279,9 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
     try {
       const { JsonWrpcKaspaClient } = await import("@hardkas/kaspa-rpc");
 
-      // NODE-NETWORK-IDENTITY-1: the node's UTXOs are planned on only if the node says it serves the planned network
-      const client = new JsonWrpcKaspaClient({ rpcUrl, expectedNetworkId: resolvedNetwork });
+      // NODE-NETWORK-IDENTITY-1: the node's UTXOs are planned on only if the node says it serves the planned network.
+      // INT9-A (I-3b): and only if it says it is synced (a plan needs the current UTXO set), the managed localnet included
+      const client = new JsonWrpcKaspaClient({ rpcUrl, expectedNetworkId: resolvedNetwork, requireSynced: true });
       release = () => client.close();
       const MAX_PLAN_RETRIES = 3;
       let planSuccess = false;
@@ -380,14 +398,17 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
           // computed by the upstream Generator over the real transaction. The
           // shape is therefore a representative one, not every spendable UTXO (which
           // would describe a transaction far above the standard mass limit).
+          // HK-09: the node this plan reads its UTXOs from is asked for its fee estimate (it used to be a stand-in SDK
+          // without an RPC client, so the node was never asked); bounded (FEE_RATE_ABOVE_BOUND above
+          // networks[<net>].maxFeeRate, default 10,000 sompi/g), never below the relay minimum
           const { HardkasFees } = await import("@hardkas/sdk");
-          const tempFees = new HardkasFees({ provider: { rpcUrl: rpcUrl! }, config: { cwd: workspaceRoot || process.cwd(), config: resolvedConfig } } as any);
-          const { feeRate: estimated } = await tempFees.estimate({
+          const nodeFees = new HardkasFees({ rpc: client, network: resolvedNetwork, config: { config: resolvedConfig } } as any);
+          const { feeRate: estimated } = await nodeFees.estimate({
             priority: "normal",
             inputs: 1,
             outputs: 2,
-            version: 1,
-            network: resolvedNetwork as NetworkId
+            network: resolvedNetwork as NetworkId,
+            maxFeeRate: resolveMaxFeeRate({ config: resolvedConfig, network: resolvedNetwork })
           });
           actualFeeRate = estimated;
         }
@@ -479,10 +500,12 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
       if (e instanceof SelectedUtxoInvalidatedError) throw e;
       if (e instanceof UpstreamPlannerError) throw e;
       // NODE-NETWORK-IDENTITY-1: the wrong (or an unidentified) node is its own typed refusal, not a connection error
-      const { isNodeNetworkIdentityError } = await import("@hardkas/kaspa-rpc");
-      if (isNodeNetworkIdentityError(e)) throw e;
+      const { isNodeNetworkIdentityError, isNodeSyncError } = await import("@hardkas/kaspa-rpc");
+      if (isNodeNetworkIdentityError(e) || isNodeSyncError(e)) throw e;
       if (e instanceof PendingSpendEvidenceUnavailableError || e instanceof PendingSpendAllExcludedError) throw e;
       if (e instanceof HardkasError && e.code === "SPENT_OUTPOINTS_NOT_RELEASED") throw e;
+      // HK-09 / CA-TX-01: a node fee rate out of bounds (or an invalid bound) is a fee refusal, not a connection error
+      if ((e as any)?.code === "FEE_RATE_ABOVE_BOUND" || (e as any)?.code === "INVALID_FEE_RATE") throw e;
       if (e instanceof Error && (e.message.includes("No UTXOs found") || e.message.includes("Insufficient funds"))) throw e;
 
       const protocol = rpcUrl?.startsWith("ws") ? "WebSocket" : "JSON-RPC";
@@ -528,10 +551,11 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
   if (!planResult) {
     throw new Error("PLANNER_NO_RESULT: no plan was produced");
   }
-  // TX-FEE-GUARD-1: the planned fee within the lower of --max-fee and the workspace's networks[<net>].maxFeeSompi
-  assertFeeWithinLimit(
+  // TX-FEE-GUARD-1 / TX-05: the planned fee within the lower of --max-fee and the workspace's networks[<net>].maxFeeSompi,
+  // or HardKAS's default limit when neither is set
+  assertFeeWithinLimitInForce(
     BigInt(planResult.plan.estimatedFeeSompi),
-    effectiveFeeLimit({ planMaxFeeSompi, config: resolvedConfig, network: resolvedNetwork }),
+    feeLimitInForce({ planMaxFeeSompi, config: resolvedConfig, network: resolvedNetwork }),
     "plan",
     resolvedNetwork
   );

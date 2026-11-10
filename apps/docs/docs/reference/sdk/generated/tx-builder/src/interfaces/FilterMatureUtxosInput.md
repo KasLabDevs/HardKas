@@ -6,11 +6,11 @@
 
 # Interface: FilterMatureUtxosInput
 
-Defined in: [packages/tx-builder/src/kaspa-wallet-adapter.ts:234](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/kaspa-wallet-adapter.ts#L234)
+Defined in: [packages/tx-builder/src/kaspa-wallet-adapter.ts:347](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/kaspa-wallet-adapter.ts#L347)
 
 Pure filter over an already-fetched UTXO list, using **upstream** coinbase
-maturity (`k.getNetworkParams(networkId).coinbaseTransactionMaturityPeriod`
-or equivalent). Callers can supply UTXOs from any RPC client (@hardkas/kaspa-rpc,
+maturity (`k.getNetworkParams(networkId).coinbaseTransactionMaturityPeriodDaa`).
+Callers can supply UTXOs from any RPC client (@hardkas/kaspa-rpc,
 wasm RpcClient, or a mock) — this function only classifies.
 
 Replaces the HardKAS pattern `!u.isCoinbase || u.blockDaaScore + N < virt`
@@ -22,7 +22,7 @@ with hardcoded `N` (600/100/1000). N is read from upstream network params.
 
 > `readonly` **networkId**: `string`
 
-Defined in: [packages/tx-builder/src/kaspa-wallet-adapter.ts:235](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/kaspa-wallet-adapter.ts#L235)
+Defined in: [packages/tx-builder/src/kaspa-wallet-adapter.ts:348](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/kaspa-wallet-adapter.ts#L348)
 
 ***
 
@@ -30,7 +30,7 @@ Defined in: [packages/tx-builder/src/kaspa-wallet-adapter.ts:235](https://github
 
 > `readonly` `optional` **readEntry?**: (`u`) => `object`
 
-Defined in: [packages/tx-builder/src/kaspa-wallet-adapter.ts:239](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/kaspa-wallet-adapter.ts#L239)
+Defined in: [packages/tx-builder/src/kaspa-wallet-adapter.ts:352](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/kaspa-wallet-adapter.ts#L352)
 
 How to read the score / coinbase flag from each element. Defaults to `utxoEntry` wrapper shape.
 
@@ -58,7 +58,7 @@ How to read the score / coinbase flag from each element. Defaults to `utxoEntry`
 
 > `readonly` **utxos**: readonly `any`[]
 
-Defined in: [packages/tx-builder/src/kaspa-wallet-adapter.ts:237](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/kaspa-wallet-adapter.ts#L237)
+Defined in: [packages/tx-builder/src/kaspa-wallet-adapter.ts:350](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/kaspa-wallet-adapter.ts#L350)
 
 ***
 
@@ -66,4 +66,4 @@ Defined in: [packages/tx-builder/src/kaspa-wallet-adapter.ts:237](https://github
 
 > `readonly` **virtualDaaScore**: `bigint`
 
-Defined in: [packages/tx-builder/src/kaspa-wallet-adapter.ts:236](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/kaspa-wallet-adapter.ts#L236)
+Defined in: [packages/tx-builder/src/kaspa-wallet-adapter.ts:349](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/kaspa-wallet-adapter.ts#L349)

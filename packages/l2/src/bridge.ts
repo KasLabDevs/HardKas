@@ -24,7 +24,8 @@ const IGRA_BRIDGE_ASSUMPTIONS: L2BridgeAssumptions = {
   custodyModel:
     "Phase-dependent bridge custody; verify current bridge implementation before use.",
   validatorModel: "Phase-dependent",
-  exitModel: "Trustless exit is available only in the ZK phase.",
+  // RC1-R2 (D5): never "trustless in the ZK phase" — the notes below say why a phase alone is not enough
+  exitModel: "No trustless exit: that needs a deployed, working proof-based withdrawal path, and a ZK proof system alone is not enough (static assumption, not observed).",
   riskProfile: "high",
   notes: [
     "Bridge security is phase-dependent: pre-ZK -> MPC -> ZK.",

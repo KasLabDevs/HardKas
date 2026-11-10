@@ -15,9 +15,38 @@ import {
 import type { Hardkas } from "./index.js";
 import {
   verifyGroth16Math,
+  findPinnedGroth16VerificationKey,
   type Groth16VerifyMathOptions,
-  type Groth16VerificationKeyStrength
+  type Groth16VerificationKeyStrength,
+  type Groth16VerificationKeyAnchor
 } from "./zk/groth16-verifier.js";
+import {
+  verifyR0Groth16ReceiptLocal,
+  computeR0ReceiptClaimDigest,
+  parseR0Groth16Receipt,
+  r0Groth16PublicSignals,
+  findPublicR0TestVector,
+  isHardkasR0Groth16Verification,
+  PUBLIC_R0_TEST_VECTORS,
+  R0_GROTH16_VERIFICATION_KEY,
+  R0_GROTH16_COMPRESSED_VERIFICATION_KEY_HEX,
+  R0_GROTH16_CONTROL_ROOT,
+  R0_GROTH16_BN254_CONTROL_ID,
+  R0_GROTH16_VERIFIER_ID,
+  R0_GROTH16_PINNED_KEY_ID,
+  type R0Groth16LocalVerificationResult,
+  type R0Groth16ReceiptParse
+} from "./zk/risc0-groth16.js";
+import {
+  minimumR0Groth16ComputeBudget,
+  groth16VkElementsInRedeemScript,
+  GROTH16_VK_ELEMENT_COST_SCRIPT_UNITS,
+  R0_GROTH16_VK_ELEMENTS,
+  R0_GROTH16_OBSERVED_SCRIPT_OVERHEAD_SCRIPT_UNITS,
+  BLOCK_COMPUTE_MASS_LIMIT,
+  ZK_LOCK_BINDS_IMAGE_ID_ONLY_WARNING,
+  type ZkAddressNetwork
+} from "./zk/toccata.js";
 import {
   buildR0Groth16Plan,
   buildR0Groth16Scripts,
@@ -53,7 +82,16 @@ import {
   type R0Groth16VerifyScriptsResult,
   type ToccataPrecompileRules,
   type ToccataFeePolicyOptions,
-  type ToccataZkFeeEstimate
+  type ToccataZkFeeEstimate,
+  ZK_OUTPUT_BINDING_DOMAIN,
+  ZK_OUTPUT_BINDING_MAGIC,
+  createZkOutputBindingJournal,
+  type ZkBindingMode,
+  type ZkOutputTarget,
+  type ZkReplayBinding,
+  type ZkOutputBindingPolicy,
+  type ZkJournalBindingParams,
+  type ZkJournalBindingResult
 } from "./zk/toccata.js";
 import {
   deriveZkOperationStatus,
@@ -63,6 +101,29 @@ import {
 } from "@hardkas/artifacts";
 
 export {
+  verifyR0Groth16ReceiptLocal,
+  computeR0ReceiptClaimDigest,
+  parseR0Groth16Receipt,
+  r0Groth16PublicSignals,
+  findPublicR0TestVector,
+  isHardkasR0Groth16Verification,
+  PUBLIC_R0_TEST_VECTORS,
+  R0_GROTH16_VERIFICATION_KEY,
+  R0_GROTH16_COMPRESSED_VERIFICATION_KEY_HEX,
+  R0_GROTH16_CONTROL_ROOT,
+  R0_GROTH16_BN254_CONTROL_ID,
+  R0_GROTH16_VERIFIER_ID,
+  R0_GROTH16_PINNED_KEY_ID,
+  type R0Groth16LocalVerificationResult,
+  type R0Groth16ReceiptParse,
+  minimumR0Groth16ComputeBudget,
+  groth16VkElementsInRedeemScript,
+  GROTH16_VK_ELEMENT_COST_SCRIPT_UNITS,
+  R0_GROTH16_VK_ELEMENTS,
+  R0_GROTH16_OBSERVED_SCRIPT_OVERHEAD_SCRIPT_UNITS,
+  BLOCK_COMPUTE_MASS_LIMIT,
+  ZK_LOCK_BINDS_IMAGE_ID_ONLY_WARNING,
+  type ZkAddressNetwork,
   buildR0Groth16Plan,
   buildR0Groth16Scripts,
   prepareR0Groth16Proof,
@@ -101,7 +162,16 @@ export {
   type R0Groth16VerifyScriptsResult,
   type ToccataPrecompileRules,
   type ToccataFeePolicyOptions,
-  type ToccataZkFeeEstimate
+  type ToccataZkFeeEstimate,
+  ZK_OUTPUT_BINDING_DOMAIN,
+  ZK_OUTPUT_BINDING_MAGIC,
+  createZkOutputBindingJournal,
+  type ZkBindingMode,
+  type ZkOutputTarget,
+  type ZkReplayBinding,
+  type ZkOutputBindingPolicy,
+  type ZkJournalBindingParams,
+  type ZkJournalBindingResult
 };
 
 export const MAX_ZK_FILE_SIZE = 10 * 1024 * 1024; // 10 MB maximum per fixture file
@@ -124,12 +194,26 @@ export interface ZkIssue {
   file?: string;
 }
 
-/** How a mathematical verification result is bound to its inputs. */
-export type ZkMathBinding = "FIXTURE_COHERENCE" | "MATH_ONLY";
+/**
+ * How a mathematical verification result is tied to its input files.
+ *   FIXTURE_COHERENCE_SELF_ATTESTED  the proof, inputs and key match the fixture manifest's content hashes.
+ *                                    The digests are unkeyed and the manifest lives in the same directory,
+ *                                    so whoever writes the directory writes the binding: it is coherence,
+ *                                    never provenance, and never an anchor for the key (HK-04).
+ *   MATH_ONLY                        no fixture binding at all.
+ */
+export type ZkMathBinding = "FIXTURE_COHERENCE_SELF_ATTESTED" | "MATH_ONLY";
 
+/**
+ * What a mathematical verification result claims.
+ *   GROTH16_SNARKJS_BN254_PINNED_VK       pairing checked against an anchored (pinned) key;
+ *   GROTH16_SNARKJS_BN254_UNANCHORED_VK   pairing checked against a key nobody vouched for;
+ *   GROTH16_SNARKJS_BN254_PINNED_VK_ONLY  capability: VERIFIED is only ever claimed for a pinned key.
+ */
 export type ZkMathVerificationClaim =
-  | "GROTH16_SNARKJS_BN254_FIXTURE_BOUND"
-  | "GROTH16_SNARKJS_BN254_MATH_ONLY";
+  | "GROTH16_SNARKJS_BN254_PINNED_VK"
+  | "GROTH16_SNARKJS_BN254_UNANCHORED_VK"
+  | "GROTH16_SNARKJS_BN254_PINNED_VK_ONLY";
 
 export interface ZkCapabilities {
   schema: typeof HardkasSchemas.ZkCapabilitiesV1;
@@ -138,14 +222,20 @@ export interface ZkCapabilities {
     groth16: {
       inspect: true;
       verifyLocal: "FIXTURE_COHERENCE_ONLY";
-      /** Pairing check (snarkjs, BN254) over the fixture's own key, bound to the fixture's content hashes by default. */
-      verifyMath?: "SNARKJS_BN254_FIXTURE_BOUND";
+      /**
+       * Pairing check (snarkjs, BN254). VERIFIED only against a pinned key (caller pin or the in-code
+       * registry); otherwise the result is ZK_GROTH16_MATH_VALID_UNANCHORED_VK.
+       */
+      verifyMath?: "SNARKJS_BN254_PINNED_VK_ONLY";
       proofGeneration: "NOT_CLAIMED";
       trustedSetupProvenance: "NOT_CLAIMED";
     };
     risc0: {
       inspect: true;
+      /** Generic zkVM receipts (succinct/composite) are inspect-only. */
       verifyLocal: "RISC0_LOCAL_VERIFICATION_NOT_IMPLEMENTED";
+      /** RISC Zero GROTH16 receipts: local snarkjs check against the pinned official RISC Zero key (CA-ZK-03). */
+      groth16ReceiptVerifyLocal?: "SNARKJS_BN254_PINNED_RISC0_VK_3_0_4";
       /** Scripts come from the ZkScriptBuilder shipped in the pinned kaspa-wasm (rusty-kaspa 2.1.0). */
       toccataL1Scripts?: "KASPA_WASM_ZK_SCRIPT_BUILDER_2_1_0";
       proofGeneration: "NOT_CLAIMED";
@@ -203,9 +293,9 @@ export interface ZkProofVerifyResult {
 
 export interface ZkProofMathOptions extends Groth16VerifyMathOptions {
   /**
-   * Skip the fixture-coherence binding. The result then carries binding "MATH_ONLY" and the claim
-   * GROTH16_SNARKJS_BN254_MATH_ONLY: "this proof is consistent with the key found next to it",
-   * nothing about where that key came from.
+   * Skip the (self-attested) fixture-coherence check. The result then carries binding "MATH_ONLY".
+   * Trust in the key still comes only from an anchor (expectedVerificationKeyHash or the in-code
+   * registry): without one a passing pairing is ZK_GROTH16_MATH_VALID_UNANCHORED_VK.
    */
   mathOnly?: boolean;
 }
@@ -217,8 +307,10 @@ export interface ZkProofMathVerifyResult {
   proofSystem: ZkProofSystem;
   engine: "snarkjs-bn254";
   curve: string;
+  /** See Groth16MathVerificationOutput.status: VERIFIED needs an anchored key. */
   status:
     | "ZK_GROTH16_MATH_VERIFIED"
+    | "ZK_GROTH16_MATH_VALID_UNANCHORED_VK"
     | "ZK_GROTH16_MATH_REJECTED"
     | "ZK_GROTH16_VERIFIER_ERROR";
   verified: boolean;
@@ -231,6 +323,10 @@ export interface ZkProofMathVerifyResult {
     mathCheck: "PASS" | "FAIL" | "ERROR";
     /** Legacy corpus digest of the verification key object actually used ("" when it could not be read). */
     verificationKeyHash: string;
+    /** Portable fingerprint of the key's curve points ("" when unavailable). */
+    verificationKeyFingerprint: string;
+    verificationKeyAnchor: Groth16VerificationKeyAnchor;
+    pinnedVerificationKeyId?: string;
     publicInputsHash: string;
     proofHash: string;
     verificationKeyStrength: Groth16VerificationKeyStrength;
@@ -290,9 +386,11 @@ export class HardkasZk {
     prepareProof: typeof prepareR0Groth16Proof;
     buildTransaction: typeof buildR0Groth16Transaction;
     verifyScripts: typeof verifyR0Groth16Scripts;
+    verifyReceipt: typeof verifyR0Groth16ReceiptLocal;
     rules: typeof getToccataPrecompileRules;
     deriveStatus: typeof deriveZkOperationStatus;
     observeSpendOnce: (txId: string, zkFact?: ZkVerificationFact) => Promise<{ observation: any; derivedStatus: any; zkStatus?: any }>;
+    createJournal: typeof createZkOutputBindingJournal;
   };
 
   constructor(private sdk: Hardkas) {
@@ -311,10 +409,17 @@ export class HardkasZk {
       prepareProof: prepareR0Groth16Proof,
       buildTransaction: buildR0Groth16Transaction,
       verifyScripts: verifyR0Groth16Scripts,
+      verifyReceipt: verifyR0Groth16ReceiptLocal,
       rules: getToccataPrecompileRules,
       deriveStatus: deriveZkOperationStatus,
       observeSpendOnce: (txId: string, zkFact?: ZkVerificationFact) =>
-        observeZkSpendOnce(this.sdk.rpc, { txId, zkFact })
+        observeZkSpendOnce(this.sdk.rpc, {
+          txId,
+          zkFact,
+          networkId: (zkFact?.networkId ?? this.sdk.network) as any,
+          observerId: this.sdk.tx.observerId()
+        }),
+      createJournal: createZkOutputBindingJournal
     };
   }
 
@@ -331,20 +436,21 @@ export function createZkCapabilities(): ZkCapabilities {
       groth16: {
         inspect: true,
         verifyLocal: "FIXTURE_COHERENCE_ONLY",
-        verifyMath: "SNARKJS_BN254_FIXTURE_BOUND",
+        verifyMath: "SNARKJS_BN254_PINNED_VK_ONLY",
         proofGeneration: "NOT_CLAIMED",
         trustedSetupProvenance: "NOT_CLAIMED"
       },
       risc0: {
         inspect: true,
         verifyLocal: "RISC0_LOCAL_VERIFICATION_NOT_IMPLEMENTED",
+        groth16ReceiptVerifyLocal: "SNARKJS_BN254_PINNED_RISC0_VK_3_0_4",
         toccataL1Scripts: KASPA_WASM_ZK_BUILDER_CLAIM,
         proofGeneration: "NOT_CLAIMED"
       }
     },
     claims: {
       ...zkClaims(),
-      zkMathematicalVerification: "GROTH16_SNARKJS_BN254_FIXTURE_BOUND",
+      zkMathematicalVerification: "GROTH16_SNARKJS_BN254_PINNED_VK_ONLY",
       zkToccataL1ScriptBuilding: KASPA_WASM_ZK_BUILDER_CLAIM
     },
     errors: [
@@ -374,7 +480,24 @@ export function createZkCapabilities(): ZkCapabilities {
       "ZK_FIXTURE_MATH_STATUS_MISMATCH",
       "ZK_FIXTURE_CLAIM_OVERSTATED",
       "ZK_SCRIPT_PARSE_ERROR",
-      "ZK_COMPUTE_BUDGET_OUT_OF_RANGE"
+      "ZK_COMPUTE_BUDGET_OUT_OF_RANGE",
+      "ZK_POINT_NOT_CANONICAL",
+      "ZK_POINT_NOT_ON_CURVE",
+      "ZK_POINT_NOT_IN_SUBGROUP",
+      "ZK_VERIFICATION_KEY_UNANCHORED",
+      "ZK_CORPUS_VK_NOT_PINNED",
+      "ZK_CORPUS_WEAK_KEY_NOT_PINNED",
+      "ZK_CORPUS_PINNED_KEY_UNKNOWN",
+      "ZK_JSON_NOT_OBJECT",
+      "ZK_RECEIPT_CLAIM_MISMATCH",
+      "ZK_LOCK_BINDS_IMAGE_ID_ONLY",
+      "ZK_IMAGE_ID_ONLY_LOCK_NOT_ACKNOWLEDGED",
+      "ZK_PUBLIC_VECTOR_PUBLIC_NETWORK_REFUSED",
+      "ZK_P2SH_ADDRESS_UNAVAILABLE",
+      "ZK_COMPUTE_BUDGET_INSUFFICIENT",
+      "ZK_TX_EXCEEDS_BLOCK_COMPUTE_MASS_LIMIT",
+      "ZK_CALLER_VERIFICATION_CLAIM_IGNORED",
+      "ZK_FACT_BUILD_FAILED"
     ]
   };
 }
@@ -386,7 +509,7 @@ export async function inspectZkProof(
   const resolved = path.resolve(workspaceRoot, targetPath);
   const issues: ZkIssue[] = [];
   const manifestPath = resolveManifestPath(resolved, issues);
-  const manifest = manifestPath ? readJson(manifestPath, issues) : undefined;
+  const manifest = manifestPath ? readManifestObject(manifestPath, issues) : undefined;
   const dir = manifestPath ? path.dirname(manifestPath) : path.dirname(resolved);
   const proofSystem = detectProofSystem(manifest, resolved);
   const fixtureFiles = collectFixtureFiles(manifest);
@@ -395,7 +518,7 @@ export async function inspectZkProof(
 
   for (const { key, file } of fixtureFiles) {
     const filePath = path.join(dir, file);
-    const value = readJson(filePath, issues, dir);
+    const value = readJsonObject(filePath, issues, dir);
     if (!value) continue;
     const actual = corpusDigest(value);
     contentHashes[file] = actual;
@@ -443,7 +566,7 @@ export async function verifyZkProofLocal(
   const resolved = path.resolve(workspaceRoot, targetPath);
   const issues: ZkIssue[] = [];
   const manifestPath = resolveManifestPath(resolved, issues);
-  const manifest = manifestPath ? readJson(manifestPath, issues) : undefined;
+  const manifest = manifestPath ? readManifestObject(manifestPath, issues) : undefined;
   const dir = manifestPath ? path.dirname(manifestPath) : path.dirname(resolved);
   const proofSystem = detectProofSystem(manifest, resolved);
 
@@ -458,6 +581,20 @@ export async function verifyZkProofLocal(
         });
       }
     }
+    // ZK-11: the content hashes are actually checked, never reported as a constant PASS.
+    if (manifest) {
+      for (const { key, file } of collectFixtureFiles(manifest)) {
+        const filePath = path.join(dir, file);
+        const value = readJsonObject(filePath, issues, dir);
+        if (value) verifyManifestHash(manifest, key, value, issues, filePath);
+      }
+    } else if (manifestPath) {
+      issues.push({
+        code: "ZK_FIXTURE_MANIFEST_REQUIRED",
+        message: "A RISC0 fixture needs its manifest to check content hashes.",
+        file: manifestPath
+      });
+    }
     return {
       ok: false,
       schema: HardkasSchemas.ZkProofVerificationV1,
@@ -467,19 +604,23 @@ export async function verifyZkProofLocal(
       experimental: true,
       summary: {
         verifierAdapter: manifest?.verifierAdapter ?? "risc0-helper",
-        contentHashes: "PASS",
+        contentHashes:
+          issues.some((issue) => issue.code.includes("HASH") || issue.code.includes("MANIFEST") || issue.code.includes("FILE") || issue.code.includes("JSON"))
+            ? "FAIL"
+            : "PASS",
         localVerification: "NOT_IMPLEMENTED"
       },
       claims: zkClaims(),
       issues: [
+        ...issues,
         {
           code: "RISC0_VERIFIER_UNAVAILABLE",
           message:
-            "RISC0 local receipt verification helper is not bundled in 0.13.0-rc.1."
+            "No local verifier for generic RISC Zero zkVM receipts (succinct/composite). RISC Zero GROTH16 receipts are verified with `hardkas zk toccata verify-receipt` / verifyR0Groth16ReceiptLocal."
         },
         {
           code: "RISC0_LOCAL_VERIFICATION_NOT_IMPLEMENTED",
-          message: "RISC0 is inspect-only in this experimental lab scaffold."
+          message: "RISC0 fixtures are inspect-only through this command."
         }
       ]
     };
@@ -520,14 +661,19 @@ export async function verifyZkProofLocal(
 /**
  * Mathematical (pairing) verification of a Groth16 fixture.
  *
- * Default binding = FIXTURE_COHERENCE: the proof, public inputs and verification key must first
- * pass the fixture's own coherence check (manifest content hashes, cross hashes, coherence digest).
- * Only then is the pairing computed, and the result names the digests of the three objects it used.
- * `mathOnly` skips the binding and says so in `summary.binding` and in the claim.
+ * Default binding = FIXTURE_COHERENCE_SELF_ATTESTED: the proof, public inputs and verification key must
+ * first pass the fixture's own coherence check (manifest content hashes, cross hashes, coherence digest).
+ * That binding is SELF-ATTESTED: the digests are unkeyed and the manifest sits in the same directory, so
+ * whoever writes the directory writes the binding. It catches accidents and swapped files; it is never
+ * provenance and never anchors the key. `mathOnly` skips it and says so in `summary.binding`.
  *
- * A verification key from a provably weak trusted setup is rejected unless
- * `allowWeakVerificationKey` is passed (toy fixtures). `expectedVerificationKeyHash` lets a caller
- * with key provenance pin the key. None of this says anything about on-chain acceptance.
+ * Trust in the key comes only from an ANCHOR: `expectedVerificationKeyHash` (a pin the caller obtained from
+ * a trusted source: the key fingerprint or its legacy digest) or the in-code registry
+ * PINNED_GROTH16_VERIFICATION_KEYS. A passing pairing against an unanchored key is reported as
+ * ZK_GROTH16_MATH_VALID_UNANCHORED_VK (ok/verified false), never ZK_GROTH16_MATH_VERIFIED (HK-04).
+ * Non-canonical encodings, off-curve and non-subgroup points are rejected before the weak-key heuristic
+ * and before snarkjs; the heuristic itself only detects accidents (allowWeakVerificationKey for toys).
+ * None of this says anything about on-chain acceptance.
  */
 export async function verifyZkProofMath(
   targetPath: string,
@@ -538,11 +684,11 @@ export async function verifyZkProofMath(
   const resolved = path.resolve(workspaceRoot, targetPath);
   const relPath = path.relative(workspaceRoot, resolved).replace(/\\/g, "/");
   const issues: ZkIssue[] = [];
-  const binding: ZkMathBinding = options.mathOnly ? "MATH_ONLY" : "FIXTURE_COHERENCE";
-  const claims = (): ZkCapabilities["claims"] => ({
+  const binding: ZkMathBinding = options.mathOnly ? "MATH_ONLY" : "FIXTURE_COHERENCE_SELF_ATTESTED";
+  const claims = (anchor: Groth16VerificationKeyAnchor = "UNANCHORED"): ZkCapabilities["claims"] => ({
     ...zkClaims(),
     zkMathematicalVerification:
-      binding === "MATH_ONLY" ? "GROTH16_SNARKJS_BN254_MATH_ONLY" : "GROTH16_SNARKJS_BN254_FIXTURE_BOUND"
+      anchor === "UNANCHORED" ? "GROTH16_SNARKJS_BN254_UNANCHORED_VK" : "GROTH16_SNARKJS_BN254_PINNED_VK"
   });
   const emptySummary = (
     ps: string,
@@ -555,6 +701,8 @@ export async function verifyZkProofMath(
     publicSignals,
     mathCheck,
     verificationKeyHash: "",
+    verificationKeyFingerprint: "",
+    verificationKeyAnchor: "UNANCHORED",
     publicInputsHash: "",
     proofHash: "",
     verificationKeyStrength: "NO_KNOWN_WEAKNESS",
@@ -582,7 +730,7 @@ export async function verifyZkProofMath(
   });
 
   const manifestPath = resolveManifestPath(resolved, issues);
-  const target = manifestPath ? readJson(manifestPath, issues) : undefined;
+  const target = manifestPath ? readManifestObject(manifestPath, issues) : undefined;
   const dir = manifestPath ? path.dirname(manifestPath) : path.dirname(resolved);
   // The target may be the fixture manifest (directory or manifest.json) or a bare proof file.
   // Only a real fixture manifest can bind the verification; a bare proof file detects its system
@@ -612,9 +760,9 @@ export async function verifyZkProofMath(
   const proofPath = path.join(dir, manifest?.proof ?? "proof.json");
   const inputsPath = path.join(dir, manifest?.publicInputs ?? "public-inputs.json");
   const keyPath = path.join(dir, manifest?.verificationKey ?? "verification-key.json");
-  const proof = readJson(proofPath, issues, dir);
-  const publicInputs = readJson(inputsPath, issues, dir);
-  const verificationKey = readJson(keyPath, issues, dir);
+  const proof = readJsonObject(proofPath, issues, dir);
+  const publicInputs = readJsonObject(inputsPath, issues, dir);
+  const verificationKey = readJsonObject(keyPath, issues, dir);
   if (!proof || !publicInputs || !verificationKey) {
     return fail("ZK_GROTH16_VERIFIER_ERROR", "groth16");
   }
@@ -648,8 +796,8 @@ export async function verifyZkProofMath(
   }
   if (issues.length > 0) return fail("ZK_GROTH16_MATH_REJECTED", "groth16", curve, signals);
 
-  // Binding: the key, inputs and proof must be the ones the fixture manifest commits to.
-  if (binding === "FIXTURE_COHERENCE") {
+  // Binding (self-attested): the key, inputs and proof must be the ones the fixture manifest commits to.
+  if (binding === "FIXTURE_COHERENCE_SELF_ATTESTED") {
     if (!manifest) {
       issues.push({
         code: "ZK_FIXTURE_MANIFEST_REQUIRED",
@@ -691,7 +839,7 @@ export async function verifyZkProofMath(
     durationMs: Date.now() - start,
     experimental: true,
     summary: { ...mathResult.summary, binding },
-    claims: claims(),
+    claims: claims(mathResult.summary.verificationKeyAnchor),
     issues: mathResult.issues
   };
 }
@@ -704,7 +852,16 @@ export async function verifyZkCorpus(
   const issues: ZkIssue[] = [];
   // Paths resolve against the given workspace root only: never against process.cwd() (M-05).
   const manifestPath = path.join(corpusPath, "manifest.json");
-  const manifest = readJson(manifestPath, issues);
+  const rawManifest = readJson(manifestPath, issues);
+  // HK-18: a corpus manifest that is not an object (null, 0, false, "") is invalid, never an empty PASS.
+  const manifest = isPlainObject(rawManifest) ? rawManifest : undefined;
+  if (rawManifest !== undefined && !manifest) {
+    issues.push({
+      code: "ZK_CORPUS_MANIFEST_INVALID",
+      message: `ZK corpus manifest must be a JSON object, got ${rawManifest === null ? "null" : JSON.stringify(rawManifest)}.`,
+      file: manifestPath
+    });
+  }
 
   if (manifest) {
     const corpusParsed = ZkCorpusSchema.safeParse(manifest);
@@ -816,8 +973,35 @@ export async function verifyZkCorpus(
             });
           } else {
             mathChecked += 1;
+            // CA-ZK-05 / CA-EV-10: the corpus does not decide its own tolerance. The key must be pinned IN
+            // CODE (PINNED_GROTH16_VERIFICATION_KEYS) and allowWeak is honoured only for a key pinned there
+            // as a known-trapdoor toy; the pin is passed to the verifier, so VERIFIED means "this exact key".
+            const pinId = typeof fixture.pinnedVerificationKeyId === "string" ? fixture.pinnedVerificationKeyId : undefined;
+            const pinned = pinId ? findPinnedGroth16VerificationKey(pinId) : undefined;
+            if (pinId && !pinned) {
+              issues.push({
+                code: "ZK_CORPUS_PINNED_KEY_UNKNOWN",
+                message: `Fixture ${fixture.id} names pinnedVerificationKeyId '${pinId}', which is not pinned in code.`,
+                file: fixturePath
+              });
+            }
+            if (!pinned) {
+              issues.push({
+                code: "ZK_CORPUS_VK_NOT_PINNED",
+                message: `Fixture ${fixture.id} claims cryptographicVerification=${mathClaim} without a verification key pinned in code: its result can never be VERIFIED.`,
+                file: fixturePath
+              });
+            }
+            if (fixture.allowWeakVerificationKey === true && pinned?.knownTrapdoor !== true) {
+              issues.push({
+                code: "ZK_CORPUS_WEAK_KEY_NOT_PINNED",
+                message: `Fixture ${fixture.id} asks for allowWeakVerificationKey, which the corpus may only use for a key pinned in code as a known-trapdoor toy.`,
+                file: fixturePath
+              });
+            }
             const math = await verifyZkProofMath(fixturePath, workspaceRoot, {
-              allowWeakVerificationKey: fixture.allowWeakVerificationKey === true
+              allowWeakVerificationKey: fixture.allowWeakVerificationKey === true && pinned?.knownTrapdoor === true,
+              ...(pinned ? { expectedVerificationKeyHash: pinned.fingerprint } : {})
             });
             if (math.status !== fixture.expectedMathStatus) {
               issues.push({
@@ -828,7 +1012,7 @@ export async function verifyZkCorpus(
               issues.push(...math.issues);
             }
             if (
-              math.summary.verificationKeyStrength === "WEAK_TRAPDOOR_SUSPECTED" &&
+              (math.summary.verificationKeyStrength === "WEAK_TRAPDOOR_SUSPECTED" || pinned?.knownTrapdoor === true) &&
               !/TOY|TRAPDOOR|INSECURE/i.test(mathClaim)
             ) {
               issues.push({
@@ -891,7 +1075,17 @@ export async function verifyZkCorpus(
 }
 
 function verifyGroth16Fixture(dir: string, manifest: any, issues: ZkIssue[]) {
-  if (!manifest) return;
+  // HK-18: a missing or non-object manifest (null, 0, false, "") is a failure, never a silent pass.
+  if (!isPlainObject(manifest)) {
+    if (!issues.some((issue) => issue.code === "ZK_FIXTURE_MANIFEST_REQUIRED")) {
+      issues.push({
+        code: "ZK_FIXTURE_MANIFEST_REQUIRED",
+        message: "Groth16 fixture coherence needs a fixture manifest object; nothing was checked.",
+        file: path.join(dir, "manifest.json")
+      });
+    }
+    return;
+  }
   const manifestParse = ZkGroth16FixtureSchema.safeParse(manifest);
   if (!manifestParse.success) {
     issues.push({
@@ -909,11 +1103,11 @@ function verifyGroth16Fixture(dir: string, manifest: any, issues: ZkIssue[]) {
     manifest.verifierMetadata ?? "verifier-metadata.json"
   );
   const reportPath = path.join(dir, manifest.verifyReport ?? "verify-report.json");
-  const proof = readJson(proofPath, issues, dir);
-  const publicInputs = readJson(inputsPath, issues, dir);
-  const verificationKey = readJson(keyPath, issues, dir);
-  const metadata = readJson(metadataPath, issues, dir);
-  const report = readJson(reportPath, issues, dir);
+  const proof = readJsonObject(proofPath, issues, dir);
+  const publicInputs = readJsonObject(inputsPath, issues, dir);
+  const verificationKey = readJsonObject(keyPath, issues, dir);
+  const metadata = readJsonObject(metadataPath, issues, dir);
+  const report = readJsonObject(reportPath, issues, dir);
 
   if (!proof || !publicInputs || !verificationKey || !metadata || !report) return;
 
@@ -1166,6 +1360,42 @@ function readJson(filePath: string, issues: ZkIssue[], baseDir?: string): any | 
     });
     return undefined;
   }
+}
+
+function isPlainObject(value: unknown): value is Record<string, any> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+/** Reads a JSON file that must hold an object; any other JSON value (null, 0, false, "", [...]) is an issue. */
+function readJsonObject(filePath: string, issues: ZkIssue[], baseDir?: string): any | undefined {
+  const before = issues.length;
+  const value = readJson(filePath, issues, baseDir);
+  if (issues.length > before) return undefined;
+  if (!isPlainObject(value)) {
+    issues.push({
+      code: "ZK_JSON_NOT_OBJECT",
+      message: `${filePath} must contain a JSON object, got ${value === null ? "null" : Array.isArray(value) ? "an array" : typeof value}.`,
+      file: filePath
+    });
+    return undefined;
+  }
+  return value;
+}
+
+/** Reads a fixture manifest: anything but a JSON object is ZK_FIXTURE_MANIFEST_REQUIRED (HK-18). */
+function readManifestObject(filePath: string, issues: ZkIssue[]): Record<string, any> | undefined {
+  const before = issues.length;
+  const value = readJson(filePath, issues);
+  if (issues.length > before) return undefined;
+  if (!isPlainObject(value)) {
+    issues.push({
+      code: "ZK_FIXTURE_MANIFEST_REQUIRED",
+      message: `${filePath} must contain a JSON object (a fixture manifest or proof), got ${value === null ? "null" : Array.isArray(value) ? "an array" : JSON.stringify(value)}.`,
+      file: filePath
+    });
+    return undefined;
+  }
+  return value;
 }
 
 function expectEqual(

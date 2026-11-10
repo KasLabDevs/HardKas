@@ -101,7 +101,8 @@ describe("Demo-cut · T-A14b · tx status / tx wait present the derived Q4 state
     node = new FakeNode();
     vi.spyOn(sdk.rpc, "getBlockDagInfo").mockImplementation(async () => ({ networkId: "simnet", virtualDaaScore: node.virtualDaaScore, tipHashes: [node.sink], virtualParentHashes: [node.sink], sink: node.sink }) as any);
     vi.spyOn(sdk.rpc, "getSinkBlueScore").mockImplementation(async () => ({ blueScore: node.sinkBlueScore.toString() }) as any);
-    vi.spyOn(sdk.rpc, "getServerInfo").mockImplementation(async () => ({ networkId: "simnet", serverVersion: "2.0.1" }) as any);
+    // RC1 · D3: the SDK's send asks the node whether it is synced; this scripted node says it is (the suite is about the states)
+    vi.spyOn(sdk.rpc, "getServerInfo").mockImplementation(async () => ({ networkId: "simnet", serverVersion: "2.0.1", isSynced: true }) as any);
     vi.spyOn(sdk.rpc, "call").mockImplementation(async (method: string, params: any) => node.call(method, params));
     // Demo-ready: `tx wait` also reads the node's UTXO view once the target state is reached.
     vi.spyOn(sdk.rpc, "getUtxosByAddress").mockImplementation(async (address: string) => node.utxosByAddress(address) as any);

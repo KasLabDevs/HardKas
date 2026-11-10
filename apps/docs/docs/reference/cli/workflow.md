@@ -17,7 +17,7 @@ title: hardkas workflow
 #### Options
 
 - `--dry-run` (Default: `false`): Simulate the workflow without mutating the filesystem
-- `--network &lt;net&gt;`: Target network (e.g. simulated, testnet-10, mainnet)
+- `--network &lt;net&gt;`: Target network (e.g. simulated, simnet, testnet-10; mainnet is blocked)
 - `--offline` (Default: `false`): Force offline execution (rejects real RPC connections)
 - `--timeout &lt;ms&gt;`: Maximum execution time in milliseconds
 - `--json` (Default: `false`): Output the final workflow artifact as JSON

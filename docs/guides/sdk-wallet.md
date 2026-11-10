@@ -12,13 +12,13 @@ async function sendFunds() {
   const plan = await sdk.tx.plan({ from: 'kaspa:sim_alice', to: 'kaspa:sim_bob', amount: '10' });
   
   // 2. Sign
-  const signed = await sdk.tx.sign(plan, 'kaspa:sim_alice');
+  const signed = await sdk.tx.sign(plan, { account: 'kaspa:sim_alice' });
   
-  // 3. Send
-  const receipt = await sdk.tx.simulate(signed);
+  // 3. Execute on the simulated ledger
+  const { receipt } = await sdk.tx.simulate(signed);
   
   console.log("Success:", receipt.txId);
 }
 ```
 > [!TIP]
-> Do not use deep imports like `import { planner } from '@hardkas/sdk/dist/planner'`. Only use the top-level `Hardkas` export.
+> Import only the entry points a package declares: `@hardkas/sdk` (and `@hardkas/sdk/client` for the dev-server client). Paths inside `dist/` are not exported, and Node refuses them.

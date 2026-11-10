@@ -82,18 +82,23 @@ describe("HardKAS Phase 2 ZK — Groth16 pairing check (snarkjs / BN254)", () =>
     expect(result.issues.some((i) => i.code === "ZK_GROTH16_PAIRING_FAILED")).toBe(true);
   });
 
-  it("rejects a proof when curve points are tampered", async () => {
+  it("rejects a proof when curve points are tampered (off the curve: refused before snarkjs)", async () => {
     const tamperedProof: ZkGroth16ProofType = JSON.parse(JSON.stringify(proof));
     tamperedProof.pi_a[0] = "99999999999999999999";
     const result = await verifyGroth16Math(vk, publicInputs, tamperedProof, TOY);
     expect(result.ok).toBe(false);
     expect(result.status).toBe("ZK_GROTH16_MATH_REJECTED");
-    expect(result.issues.some((i) => i.code === "ZK_GROTH16_PAIRING_FAILED")).toBe(true);
+    expect(result.issues.some((i) => i.code === "ZK_POINT_NOT_ON_CURVE")).toBe(true);
   });
 
   it("rejects verification against a different verification key", async () => {
     const wrongVk: ZkGroth16VerificationKeyType = JSON.parse(JSON.stringify(vk));
-    wrongVk.vk_alpha_1 = ["2", "3", "1"];
+    // 2·G1: a valid curve point, so the refusal comes from the pairing itself
+    wrongVk.vk_alpha_1 = [
+      "1368015179489954701390400359078579693043519447331113978918064868415326638035",
+      "9918110051302171585080402603319702774565515993150576347155970296011118125764",
+      "1"
+    ];
     const result = await verifyGroth16Math(wrongVk, publicInputs, proof, TOY);
     expect(result.ok).toBe(false);
     expect(result.status).toBe("ZK_GROTH16_MATH_REJECTED");
@@ -176,14 +181,14 @@ describe("HardKAS Phase 2 ZK — Groth16 pairing check (snarkjs / BN254)", () =>
       const mathResult2 = await verifyZkProofMath(tempCorpus, os.tmpdir(), TOY);
       expect(mathResult2.ok).toBe(false);
       expect(mathResult2.status).toBe("ZK_GROTH16_MATH_REJECTED");
-      expect(mathResult2.summary.binding).toBe("FIXTURE_COHERENCE");
+      expect(mathResult2.summary.binding).toBe("FIXTURE_COHERENCE_SELF_ATTESTED");
       expect(mathResult2.issues.some((i) => i.code === "ZK_GROTH16_PAIRING_FAILED")).toBe(true);
     } finally {
       fs.rmSync(tempCorpus, { recursive: true, force: true });
     }
   });
 
-  it("verifies the toy fixture through the HardkasZk class with the fixture-bound claim", async () => {
+  it("verifies the toy fixture through the HardkasZk class: its key is pinned in code, the coherence is self-attested", async () => {
     const ws = fs.mkdtempSync(path.join(os.tmpdir(), "hardkas-sdk-zk-ws-"));
     for (const rel of ["fixtures/toccata-v2/zk"]) {
       fs.cpSync(path.join(repoRoot(), rel), path.join(ws, rel), { recursive: true });
@@ -196,8 +201,9 @@ describe("HardKAS Phase 2 ZK — Groth16 pairing check (snarkjs / BN254)", () =>
     expect(result.verified).toBe(true);
     expect(result.status).toBe("ZK_GROTH16_MATH_VERIFIED");
     expect(result.engine).toBe("snarkjs-bn254");
-    expect(result.summary.binding).toBe("FIXTURE_COHERENCE");
-    expect(result.claims.zkMathematicalVerification).toBe("GROTH16_SNARKJS_BN254_FIXTURE_BOUND");
+    expect(result.summary.binding).toBe("FIXTURE_COHERENCE_SELF_ATTESTED");
+    expect(result.summary.verificationKeyAnchor).toBe("PINNED_REGISTRY");
+    expect(result.claims.zkMathematicalVerification).toBe("GROTH16_SNARKJS_BN254_PINNED_VK");
     expect(result.claims.zkOnchainVerification).toBe("NOT_CLAIMED");
     fs.rmSync(ws, { recursive: true, force: true });
   });

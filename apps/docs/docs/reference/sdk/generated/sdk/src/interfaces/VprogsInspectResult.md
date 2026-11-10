@@ -6,7 +6,7 @@
 
 # Interface: VprogsInspectResult
 
-Defined in: [packages/sdk/src/vprogs.ts:31](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/vprogs.ts#L31)
+Defined in: [packages/sdk/src/vprogs.ts:31](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/vprogs.ts#L31)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [packages/sdk/src/vprogs.ts:31](https://github.com/KasLabDevs/HardKa
 
 > `optional` **artifactHash?**: `string`
 
-Defined in: [packages/sdk/src/vprogs.ts:36](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/vprogs.ts#L36)
+Defined in: [packages/sdk/src/vprogs.ts:36](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/vprogs.ts#L36)
 
 ***
 
@@ -22,7 +22,7 @@ Defined in: [packages/sdk/src/vprogs.ts:36](https://github.com/KasLabDevs/HardKa
 
 > `optional` **artifactSchema?**: `string`
 
-Defined in: [packages/sdk/src/vprogs.ts:37](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/vprogs.ts#L37)
+Defined in: [packages/sdk/src/vprogs.ts:37](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/vprogs.ts#L37)
 
 ***
 
@@ -30,7 +30,7 @@ Defined in: [packages/sdk/src/vprogs.ts:37](https://github.com/KasLabDevs/HardKa
 
 > **claims**: [`VprogsClaims`](VprogsClaims.md)
 
-Defined in: [packages/sdk/src/vprogs.ts:38](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/vprogs.ts#L38)
+Defined in: [packages/sdk/src/vprogs.ts:38](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/vprogs.ts#L38)
 
 ***
 
@@ -38,7 +38,7 @@ Defined in: [packages/sdk/src/vprogs.ts:38](https://github.com/KasLabDevs/HardKa
 
 > **issues**: `object`[]
 
-Defined in: [packages/sdk/src/vprogs.ts:39](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/vprogs.ts#L39)
+Defined in: [packages/sdk/src/vprogs.ts:39](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/vprogs.ts#L39)
 
 #### code
 
@@ -58,7 +58,7 @@ Defined in: [packages/sdk/src/vprogs.ts:39](https://github.com/KasLabDevs/HardKa
 
 > **ok**: `boolean`
 
-Defined in: [packages/sdk/src/vprogs.ts:32](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/vprogs.ts#L32)
+Defined in: [packages/sdk/src/vprogs.ts:32](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/vprogs.ts#L32)
 
 ***
 
@@ -66,7 +66,7 @@ Defined in: [packages/sdk/src/vprogs.ts:32](https://github.com/KasLabDevs/HardKa
 
 > **path**: `string`
 
-Defined in: [packages/sdk/src/vprogs.ts:35](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/vprogs.ts#L35)
+Defined in: [packages/sdk/src/vprogs.ts:35](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/vprogs.ts#L35)
 
 ***
 
@@ -74,7 +74,7 @@ Defined in: [packages/sdk/src/vprogs.ts:35](https://github.com/KasLabDevs/HardKa
 
 > **schema**: `"hardkas.vprogsInspect.v1"`
 
-Defined in: [packages/sdk/src/vprogs.ts:33](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/vprogs.ts#L33)
+Defined in: [packages/sdk/src/vprogs.ts:33](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/vprogs.ts#L33)
 
 ***
 
@@ -82,4 +82,4 @@ Defined in: [packages/sdk/src/vprogs.ts:33](https://github.com/KasLabDevs/HardKa
 
 > **status**: `"VPROGS_ARTIFACT_INSPECTED"` \| `"VPROGS_ARTIFACT_INVALID"`
 
-Defined in: [packages/sdk/src/vprogs.ts:34](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/vprogs.ts#L34)
+Defined in: [packages/sdk/src/vprogs.ts:34](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/vprogs.ts#L34)

@@ -4,7 +4,7 @@
  * Provides a deterministic policy for required transaction confirmations
  * based on the payment amount and the merchant's risk profile.
  * 
- * NOTE: Kaspa is a fast block DAG (~1 block/sec). Confirmations scale differently
+ * NOTE: Kaspa is a fast block DAG (10 blocks per second on every network: rusty-kaspa v2.1.0 params.rs, TenBps). Confirmations scale differently
  * than traditional chains (e.g., Bitcoin).
  */
 

@@ -88,6 +88,20 @@ export function createDevServer(config: DevServerConfig) {
     )
   );
 
+  // L-09 (3-nov): nothing this server answers is kept by a browser or proxy cache (workspace data, the catalog, refusals).
+  // The session token is never embedded in a response: a client gets it out of band (the 0600 file
+  // .hardkas/dev-server-token the CLI writes, or HARDKAS_DEV_TOKEN). A route that needs another policy (the SSE stream:
+  // no-cache) sets its own.
+  app.use("*", async (c, next) => {
+    c.header("Cache-Control", "no-store");
+    await next();
+    try {
+      if (!c.res.headers.has("Cache-Control")) c.res.headers.set("Cache-Control", "no-store");
+    } catch {
+      /* a response with immutable headers keeps its own */
+    }
+  });
+
   // 1. Host Header Validation (DNS Rebinding Defense)
   app.use("*", async (c, next) => {
     if (!config.unsafeExternal) {
@@ -255,11 +269,16 @@ export function createDevServer(config: DevServerConfig) {
       if (config.open) {
         open(url);
       }
+      // N-13 (7-nov): `localhost` is bound as 127.0.0.1. Node binds the first address `localhost` resolves to (::1 on
+      // Linux), while Node clients resolve it with AI_ADDRCONFIG: on a host without a non-loopback IPv6 address (Docker,
+      // most CI runners) they get 127.0.0.1 only, and the URL the CLI announced refused them. Every client reaches
+      // 127.0.0.1 for `localhost`, directly or after trying ::1. The printed URL and the Host check are unchanged.
+      const bindHost = config.host === "localhost" ? "127.0.0.1" : config.host;
       try {
         const server = serve({
           fetch: app.fetch,
           port: config.port,
-          hostname: config.host
+          hostname: bindHost
         });
         const origClose = server.close.bind(server);
         (server as any).close = (cb?: any) => {

@@ -29,7 +29,10 @@ export async function runArtifactCreate(options: ArtifactCreateOptions) {
     throw new Error(`Invalid JSON in input file: ${(e as Error).message}`);
   }
 
-  const schemaValid = true;
+  // ESCALÓN 2 · P11: nothing validates this payload. <type> is a free label, not a schema of the artifact registry, and
+  // the wrapper written here has no `schema` for the registry's validator to check, so the artifact says
+  // NOT_VALIDATED. It used to carry a fixed `schemaValid: true`.
+  const schemaValidation = "NOT_VALIDATED" as const;
 
   const createdAt = systemRuntimeContext.clock.now();
 
@@ -37,7 +40,7 @@ export async function runArtifactCreate(options: ArtifactCreateOptions) {
   // random top-level artifactId is written (createdAt is operational, IC-1′.1b).
   const artifact = {
     type: options.type,
-    schemaValid,
+    schemaValidation,
     payload,
     createdAt,
     hashVersion: CURRENT_HASH_VERSION
@@ -63,6 +66,7 @@ export async function runArtifactCreate(options: ArtifactCreateOptions) {
     UI.success(`Artifact created: ${contentHash}`);
     UI.info(`Type: ${options.type}`);
     UI.info(`Hash: ${contentHash}`);
+    UI.info(`Schema: ${schemaValidation} (the payload is wrapped as given; '${options.type}' is a label, not a validated schema)`);
     if (options.out) {
       UI.info(`Saved to: ${options.out}`);
     }

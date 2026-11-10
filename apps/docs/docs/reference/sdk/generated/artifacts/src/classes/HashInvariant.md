@@ -6,7 +6,7 @@
 
 # Class: HashInvariant
 
-Defined in: [packages/artifacts/src/invariants/definitions.ts:8](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/invariants/definitions.ts#L8)
+Defined in: [packages/artifacts/src/invariants/definitions.ts:8](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/invariants/definitions.ts#L8)
 
 Verifies that the artifact's contentHash field matches the calculated hash.
 
@@ -30,7 +30,7 @@ Verifies that the artifact's contentHash field matches the calculated hash.
 
 > `readonly` **description**: `"Artifact content hash must match payload"` = `"Artifact content hash must match payload"`
 
-Defined in: [packages/artifacts/src/invariants/definitions.ts:10](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/invariants/definitions.ts#L10)
+Defined in: [packages/artifacts/src/invariants/definitions.ts:10](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/invariants/definitions.ts#L10)
 
 #### Implementation of
 
@@ -42,7 +42,7 @@ Defined in: [packages/artifacts/src/invariants/definitions.ts:10](https://github
 
 > `readonly` **id**: `"INVAR_HASH_MATCH"` = `"INVAR_HASH_MATCH"`
 
-Defined in: [packages/artifacts/src/invariants/definitions.ts:9](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/invariants/definitions.ts#L9)
+Defined in: [packages/artifacts/src/invariants/definitions.ts:9](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/invariants/definitions.ts#L9)
 
 #### Implementation of
 
@@ -54,7 +54,7 @@ Defined in: [packages/artifacts/src/invariants/definitions.ts:9](https://github.
 
 > **check**(`context`): `Promise`\<[`InvariantViolation`](../interfaces/InvariantViolation.md)[]\>
 
-Defined in: [packages/artifacts/src/invariants/definitions.ts:12](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/invariants/definitions.ts#L12)
+Defined in: [packages/artifacts/src/invariants/definitions.ts:12](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/invariants/definitions.ts#L12)
 
 #### Parameters
 

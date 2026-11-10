@@ -126,27 +126,37 @@ export class QueryToolkit {
     );
   }
 
-  public async transaction(txid: string): Promise<QueryResponse<any>> {
-    // If indexer had a transaction endpoint, we'd use it here.
-    // For now, we fallback to RPC.
+  /**
+   * TX-LOOKUP-NO-TXINDEX-1 (L1-CORE-1 B2): a node without a TxIndex (rusty-kaspad's default) answers `null` for every
+   * transaction id, so `null` is not "not found". The mempool is asked; otherwise the answer is a typed
+   * TX_LOOKUP_UNAVAILABLE that names what can tell (the SDK's observation of the virtual chain: `sdk.tx.observe`,
+   * `hardkas tx status`). Nothing here observes the chain itself (the toolkit is frozen; the SDK owns observation).
+   */
+  private async lookUp(txid: string): Promise<{ tx: any; inMempool: boolean }> {
+    const tx = await this.rpc.getTransaction(txid);
+    if (tx !== null && tx !== undefined) return { tx, inMempool: false };
+    const entry = await this.rpc.getMempoolEntry(txid);
+    if (entry) return { tx: entry, inMempool: true };
+    const err = new Error(
+      `TX_LOOKUP_UNAVAILABLE: the node returned no transaction ${txid} and does not hold it in its mempool. Without a TxIndex ` +
+        `(rusty-kaspad's default) a node cannot look a transaction up by id, so this does not mean it does not exist. ` +
+        `Observe it on the virtual chain instead: sdk.tx.observe('${txid}') or 'hardkas tx status ${txid}'.`
+    );
+    (err as any).code = "TX_LOOKUP_UNAVAILABLE";
+    throw err;
+  }
 
-    // Will throw if the node doesn't have txindex enabled.
-    // We let this bubble up as designed.
-    const data = await this.rpc.getTransaction(txid);
-    if (data === null) {
-      // Not found
-      throw new Error(`Transaction ${txid} not found.`);
-    }
-    return { data, source: "rpc" };
+  public async transaction(txid: string): Promise<QueryResponse<any>> {
+    // If indexer had a transaction endpoint, we'd use it here. For now, the node (see lookUp).
+    const { tx } = await this.lookUp(txid);
+    return { data: tx, source: "rpc" };
   }
 
   public async confirmations(txid: string): Promise<QueryResponse<number>> {
     // A high-level helper to calculate confirmations.
-    // 1. Get the transaction to find its accepting block DAA score.
-    const tx = await this.rpc.getTransaction(txid) as any;
-    if (!tx) {
-      throw new Error(`Transaction ${txid} not found.`);
-    }
+    // 1. Get the transaction to find its accepting block DAA score (a transaction in the mempool has none: 0).
+    const { tx, inMempool } = await this.lookUp(txid);
+    if (inMempool) return { data: 0, source: "rpc" };
 
     // Unconfirmed TX in mempool has no accepting block score
     if (!tx.acceptingBlockHash || !tx.acceptingBlockBlueScore) {

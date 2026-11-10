@@ -97,6 +97,7 @@ title: hardkas pskt
 - `--keystore &lt;path&gt;`: Path to a HardKAS keystore JSON file
 - `--key-stdin`: Read private key from standard input
 - `--private-key-file &lt;path&gt;`: Path to file containing raw private key (TEST ONLY)
+- `--inputs &lt;indexes&gt;`: Comma-separated input indexes to sign (default: the inputs this participant is eligible for)
 - `--out &lt;outputPath&gt;`: Path to write the updated PSKT session JSON
 - `--force` (Default: `false`): Overwrite the output file if it exists
 - `--json` (Default: `false`): Output results as JSON

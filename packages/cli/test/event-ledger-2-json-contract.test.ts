@@ -91,7 +91,8 @@ describe("EVENT-LEDGER-2 final check · `tx send --json` with a ledger failure w
   };
 
   beforeEach(async () => {
-    ws = fs.mkdtempSync(path.join(os.tmpdir(), "hk-el2-json-"));
+    // real path: on macOS the temp dir is under /var -> /private/var, and the CLI reports paths already resolved
+    ws = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "hk-el2-json-")));
     sdk = await Hardkas.create({ cwd: ws, autoBootstrap: true, network: "simulated" });
   });
 

@@ -6,7 +6,7 @@
 
 # Interface: ExecutionAwareArtifactConfig
 
-Defined in: [packages/config/src/resolve.ts:136](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/config/src/resolve.ts#L136)
+Defined in: [packages/config/src/resolve.ts:137](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/config/src/resolve.ts#L137)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [packages/config/src/resolve.ts:136](https://github.com/KasLabDevs/H
 
 > `optional` **execution?**: `object`
 
-Defined in: [packages/config/src/resolve.ts:137](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/config/src/resolve.ts#L137)
+Defined in: [packages/config/src/resolve.ts:138](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/config/src/resolve.ts#L138)
 
 #### domain
 

@@ -10,20 +10,39 @@ import {
   coinbaseMaturity,
   waitForDaaScore,
   readBalanceSompi,
+  readMatureBalanceSompi,
   cleanWorkspaceState
 } from "./real-node-helpers.mjs";
 import { CPUMINER_REFERENCE_IMAGE, CANONICAL_LOCALNET, nodeRpcUrl } from "@hardkas/core";
-import { requireNodeIdentity } from "@hardkas/node-runner";
+import { requireNodeIdentity, requireEndpointIdentity } from "@hardkas/node-runner";
 
 // Upstream Kaspa CPU miner, pinned by digest. Do not swap this for a bespoke
 // image: funding must be reproducible from public artifacts on any machine.
 const MINER_IMAGE = process.env.HARDKAS_TOCCATA_MINER_IMAGE || CPUMINER_REFERENCE_IMAGE;
-// kaspad's gRPC port, reached inside the canonical node's own network namespace.
-const MINER_GRPC_PORT = String(CANONICAL_LOCALNET.ports.rpc);
 // How long to let the DAG settle after mining, before selecting UTXOs.
 const SETTLE_MS = parseInt(process.env.HARDKAS_TOCCATA_SETTLE_MS || "5000", 10);
-// wRPC endpoint of the canonical node (the one requireNodeIdentity verifies).
-const RPC_URL = nodeRpcUrl();
+
+// HARDKAS_GAUNTLET_RPC_URL (set by `toccata-gauntlet.mjs --url`): this phase runs on a simnet node HardKAS does not
+// manage — the caller's own container, named by HARDKAS_GAUNTLET_NODE_CONTAINER. Its identity is what it reports at
+// that URL (network, version, synced, not the simulator), not the canonical container + image check. The miner joins
+// that container's network namespace under its own name (HARDKAS_GAUNTLET_MINER_CONTAINER) and labels
+// (HARDKAS_GAUNTLET_MINER_LABELS, comma-separated key=value): the canonical localnet and its miner are never used.
+const URL_MODE = Boolean(process.env.HARDKAS_GAUNTLET_RPC_URL);
+// wRPC endpoint of the node: the caller's (URL mode), or the canonical one (the one requireNodeIdentity verifies).
+const RPC_URL = process.env.HARDKAS_GAUNTLET_RPC_URL || nodeRpcUrl();
+// kaspad's gRPC port, reached inside the node container's own network namespace.
+const MINER_GRPC_PORT = URL_MODE ? String(process.env.HARDKAS_GAUNTLET_GRPC_PORT || "") : String(CANONICAL_LOCALNET.ports.rpc);
+const NODE_CONTAINER = URL_MODE ? String(process.env.HARDKAS_GAUNTLET_NODE_CONTAINER || "") : CANONICAL_LOCALNET.containerName;
+const MINER_CONTAINER = URL_MODE ? String(process.env.HARDKAS_GAUNTLET_MINER_CONTAINER || "") : CANONICAL_LOCALNET.minerContainerName;
+const MINER_LABELS = URL_MODE
+  ? String(process.env.HARDKAS_GAUNTLET_MINER_LABELS || "").split(",").map((l) => l.trim()).filter(Boolean)
+  : [];
+const HARDKAS_VERSION = JSON.parse(fs.readFileSync(new URL("../../package.json", import.meta.url), "utf8")).version;
+
+/** The node this phase runs on, proven before anything is asked of it. */
+function proveNode() {
+  return URL_MODE ? requireEndpointIdentity(RPC_URL, "simnet") : requireNodeIdentity();
+}
 
 // Written on failure so the gauntlet report keeps the real reason, not just "command failed".
 const FAILURE_FILE = path.join(".hardkas", "real-node-failure.json");
@@ -113,17 +132,17 @@ function run(cmd) {
 async function ensureFundingConfirmed(minerAddress, targetAccountName, expectedSompi, label, { requireCoinbaseMaturity = false } = {}) {
   if (DISPOSABLE) return ensureFundingDisposable(minerAddress, targetAccountName, expectedSompi, label, { requireCoinbaseMaturity });
   console.log(`  Mining confirmation blocks for ${label}...`);
-  // The canonical node, and only after it proves its identity (never "the first
-  // container whose name looks like kaspad").
-  await requireNodeIdentity();
+  // The canonical node (or, in URL mode, the caller's), and only after it proves its
+  // identity (never "the first container whose name looks like kaspad").
+  await proveNode();
   const strategy = {
-    type: "canonical-node",
-    containerName: CANONICAL_LOCALNET.containerName,
+    type: URL_MODE ? "endpoint-node" : "canonical-node",
+    containerName: NODE_CONTAINER,
     kaspadAddress: `127.0.0.1:${MINER_GRPC_PORT}`
   };
   console.log(`  [Diagnostic] Node: ${strategy.containerName} (identity verified)`);
 
-  const minerName = CANONICAL_LOCALNET.minerContainerName;
+  const minerName = MINER_CONTAINER;
   let daaStart = await getVirtualDaaScoreBestEffort(RPC_URL);
 
   try {
@@ -136,6 +155,7 @@ async function ensureFundingConfirmed(minerAddress, targetAccountName, expectedS
     const dockerCmd = [
       "docker run -d",
       `--name ${minerName}`,
+      ...MINER_LABELS.map((label) => `--label ${label}`),
       `--network=container:${strategy.containerName}`,
       MINER_IMAGE,
       `--mining-address ${minerAddress}`,
@@ -205,10 +225,27 @@ async function ensureFundingConfirmed(minerAddress, targetAccountName, expectedS
 }
 
 async function runRealNodeCert() {
-  console.log("=== Real Node 0.13.0-rc.1 / Toccata Certification ===");
+  console.log(`=== Real Node ${HARDKAS_VERSION} / Toccata Certification ===`);
+
+  if (DISPOSABLE && URL_MODE) {
+    throw new Error("GAUNTLET_NODE_MODE_CONFLICT: HARDKAS_GAUNTLET_NODE=disposable and HARDKAS_GAUNTLET_RPC_URL are exclusive");
+  }
+  if (URL_MODE && (!NODE_CONTAINER || !MINER_CONTAINER || !/^\d+$/.test(MINER_GRPC_PORT))) {
+    throw new Error("GAUNTLET_URL_MODE_INCOMPLETE: URL mode needs HARDKAS_GAUNTLET_NODE_CONTAINER, HARDKAS_GAUNTLET_MINER_CONTAINER and HARDKAS_GAUNTLET_GRPC_PORT");
+  }
+  if (URL_MODE && (NODE_CONTAINER === CANONICAL_LOCALNET.containerName || MINER_CONTAINER === CANONICAL_LOCALNET.minerContainerName)) {
+    throw new Error("GAUNTLET_URL_MODE_CANONICAL: URL mode never uses the canonical localnet or its miner (run without --url for those)");
+  }
 
   if (DISPOSABLE) {
     disposable = await startDisposableNode();
+  } else if (URL_MODE) {
+    // Fail before touching anything if the node does not prove what it is.
+    const identity = await proveNode();
+    console.log(
+      `  Node identity verified by endpoint: ${RPC_URL} in ${NODE_CONTAINER} ` +
+        `(rusty-kaspad ${identity.observed.server?.serverVersion}, ${identity.observed.server?.networkId}, synced)`
+    );
   } else {
     // Fail before touching anything if the node is not the canonical one.
     const identity = await requireNodeIdentity();
@@ -225,13 +262,15 @@ async function runRealNodeCert() {
   // `{ network: "simnet" }` leaves the default target at `simulated`, and every
   // command against a kaspasim: account then fails with "Account network
   // mismatch". Declare the execution target explicitly instead.
+  // In URL mode the node is an RPC target HardKAS does not manage, not the localnet.
+  const target = URL_MODE ? "node" : "localnet";
   fs.writeFileSync(
     "hardkas.config.ts",
     `export default {
   execution: {
-    default: "localnet",
+    default: "${target}",
     targets: {
-      localnet: { mode: "localnet", domain: "kaspa-l1", network: "simnet" }
+      ${target}: { mode: "${URL_MODE ? "rpc" : "localnet"}", domain: "kaspa-l1", network: "simnet" }
     }
   },
   networks: {
@@ -264,11 +303,15 @@ async function runRealNodeCert() {
   const balanceOut = run("accounts balance fixture --provider rpc");
   console.log("  Fixture balance:", balanceOut.trim().split("\n").filter(l => l.includes("Balance")).join(""));
 
-  // Cold start: on a fresh node nothing has mined to the fixture yet, so mine
-  // coinbase to it rather than assuming a pre-funded node. Coinbase needs to
-  // mature before it is spendable, which is why this mines rather than waits.
-  if (/Balance:\s*0(\D|$)/.test(balanceOut)) {
-    console.log("  Fixture is empty — mining coinbase to it first...");
+  // Cold start: on a fresh node nothing has mined to the fixture yet, or only the gauntlet's warm-up has (it brings an
+  // idle node back to "synced" by mining to the fixture), so the fixture holds no coinbase that is mature: its balance
+  // is not what it can spend. What decides is the mature balance (the planner's rule): below what step [3] sends, mine
+  // coinbase to the fixture and wait for it to mature rather than assuming a pre-funded node.
+  const fixtureSpendSompi = 100100000000n; // the 1000 KAS step [3] sends, plus 1 KAS for its fee
+  const fixtureMatureSompi = await readMatureBalanceSompi(RPC_URL, fixtureAddress);
+  console.log(`  Fixture mature balance: ${fixtureMatureSompi} sompi`);
+  if (fixtureMatureSompi < fixtureSpendSompi) {
+    console.log("  Fixture has no spendable coinbase for step [3] — mining coinbase to it and waiting for maturity...");
     await ensureFundingConfirmed(fixtureAddress, "fixture", 100000000000n, "coinbase -> fixture", { requireCoinbaseMaturity: true });
   }
 

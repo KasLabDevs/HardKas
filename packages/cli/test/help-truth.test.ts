@@ -34,7 +34,17 @@ describe("--help says what the CLI does", () => {
       ["test", "--mass-compare"],
       ["localnet start", "--detached"],
       ["chaos", "--isolate"],
-      ["chaos replay", "--isolate"]
+      ["chaos replay", "--isolate"],
+      // ESCALÓN 2 · P19: the ones whose help did not say it, and the --allow-mainnet* flags (mainnet is blocked)
+      ["chaos", "--profile"],
+      ["test", "--watch"],
+      ["node logs", "--follow"],
+      ["up", "--json"],
+      ["tx plan", "--wait-lock"],
+      ["tx sign", "--lock-timeout"],
+      ["tx send", "--wait-lock"],
+      ["tx sign", "--allow-mainnet-signing"],
+      ["accounts consolidate", "--allow-mainnet"]
     ];
     for (const [path, long] of noEffect) expect(option(path, long).description).toMatch(/no effect/i);
 
@@ -71,8 +81,25 @@ describe("--help says what the CLI does", () => {
     expect(command("localnet fork").description()).toMatch(/current UTXOs/);
     expect(option("localnet fork", "--at-daa-score").description).toMatch(/label/);
     expect(option("tx sign", "--allow-mainnet-signing").description).toMatch(/stays refused/);
+    // ESCALÓN 2 · P12, P17: a snapshot never declares a consensus validation; -h is the help, the host is -H
+    expect(option("localnet snapshot create", "--consensus-validated").description).toMatch(/^Not supported: refused/);
+    expect(option("simulator start", "--host").short).toBe("-H");
+    expect(option("sandbox", "--host").short).toBe("-H");
+    expect(option("simulator start", "--automine").description).toMatch(/on by default/);
     expect(option("tx send", "--yes").description).toMatch(/simulated or simnet/);
     expect(option("tx plan", "--from").description).toMatch(/default: alice/);
     expect(option("repair", "--force").description).toMatch(/only reports/);
+  });
+
+  it("SIM-18 · every simulator subcommand carries the simulator's maturity (experimental), fund and account create included", () => {
+    expect(command("simulator fund").description()).toMatch(/synthetic/);
+    const leaves = (c: Command, prefix: string): Array<[string, Command]> =>
+      c.commands.length === 0 ? [[prefix, c]] : c.commands.flatMap((s) => leaves(s, `${prefix} ${s.name()}`));
+    const all = leaves(command("simulator"), "simulator");
+    expect(all.map(([p]) => p).sort()).toEqual(["simulator account create", "simulator fund", "simulator start"]);
+    for (const [p, c] of all) {
+      expect(c.description(), p).toMatch(/experimental/);
+      expect(c.description(), p).not.toMatch(/\bstable\b/);
+    }
   });
 });

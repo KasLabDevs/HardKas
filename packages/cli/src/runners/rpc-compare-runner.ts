@@ -29,6 +29,9 @@ export async function runRpcCompare(input: RpcCompareInput): Promise<RpcCompareR
   if (input.endpoints.length < 2) {
     throw new HardkasCliError("MULTINODE_INSUFFICIENT_NODES", "rpc compare reads two or more endpoints (--endpoints a b …). Nothing was contacted.", { exitCode: HardkasExitCode.USAGE_ERROR });
   }
+  // MAINNET TOTAL LOCKDOWN: a comparison of mainnet nodes reads mainnet — refused before any client exists
+  const { assertMainnetConnectionsDisabled } = await import("@hardkas/core");
+  assertMainnetConnectionsDisabled([input.network], "rpc compare");
   const { JsonWrpcKaspaClient, sameRpcEndpoint } = await import("@hardkas/kaspa-rpc");
   for (let i = 0; i < input.endpoints.length; i++) {
     for (let j = i + 1; j < input.endpoints.length; j++) {

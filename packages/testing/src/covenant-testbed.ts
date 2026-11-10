@@ -1425,6 +1425,9 @@ export function createCovenantTestbed(options: CovenantTestbedOptions = {}) {
       utxos.delete(outpointKey(u.outpoint));
     }
 
+    // SC-04: these successors are the testbed's own ledger writes (covenantId copied from the spent UTXO, script and state
+    // from the requested continuations). Only at CONSENSUS_SIMNET did the node's UTXO index list each of them with its
+    // covenant id (consensus-submission.ts), so the successor matchers refuse them below that level as "NOT VERIFIED".
     const successorUtxos: CovenantLiveUtxo[] = resolvedContinuations.map((c, idx) => {
       const succ: CovenantLiveUtxo = {
         outpoint: { transactionId: txId, index: idx },

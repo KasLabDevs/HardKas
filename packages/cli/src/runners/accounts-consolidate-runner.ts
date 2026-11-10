@@ -16,6 +16,9 @@ export interface AccountsConsolidateOptions {
   yes: boolean;
   allowMainnet: boolean;
   json: boolean;
+  /** CONSOLIDATE-PASSWORD-1: where an encrypted account's keystore password comes from (never from argv). */
+  passwordEnv?: string | undefined;
+  passwordStdin?: boolean | undefined;
 }
 
 export async function runAccountsConsolidate(options: AccountsConsolidateOptions) {
@@ -74,6 +77,24 @@ async function consolidate(options: AccountsConsolidateOptions, sdk: Hardkas, cr
     throw err;
   }
 
+  // CONSOLIDATE-PASSWORD-1 (L1-CORE-1 B2): every batch is signed; an encrypted account opens only with its owner's
+  // password, read ONCE here, before anything is planned (as `tx batch` does): from the named variable, from stdin, or
+  // a prompt on a terminal (never with --json). It stays in memory for this command. A wrong one fails the first
+  // signature, before the first broadcast.
+  let keystorePassword: string | undefined;
+  if (options.execute) {
+    const { accountNeedsKeystorePassword } = await import("./tx-sign-runner.js");
+    if (accountNeedsKeystorePassword(resolvedAccount)) {
+      const { acquirePassword } = await import("./secrets.js");
+      keystorePassword = await acquirePassword({
+        env: options.passwordEnv,
+        stdin: options.passwordStdin,
+        interactive: !options.json,
+        message: `Enter the keystore password of account '${String((resolvedAccount as any).name ?? options.account)}':`
+      });
+    }
+  }
+
   let allUtxos: any[] = [];
   try {
     if (provider.mode !== "simulator") {
@@ -85,15 +106,36 @@ async function consolidate(options: AccountsConsolidateOptions, sdk: Hardkas, cr
       if (covenant.length > 0) {
         getOutput().warn(`${covenant.length} covenant UTXO(s) left out: a consolidation never spends a covenant's UTXO.`);
       }
-      allUtxos = spendable.map((u: any) => ({
+      const mapped = spendable.map((u: any) => ({
         outpoint: {
           transactionId: u.outpoint.transactionId,
           index: u.outpoint.index
         },
         address: u.address,
         amountSompi: BigInt(u.amountSompi),
-        scriptPublicKey: u.scriptPublicKey || ""
+        scriptPublicKey: u.scriptPublicKey || "",
+        // HK-10: a coinbase stays a coinbase (dropping these made every coinbase look mature to the planner)
+        ...(u.isCoinbase !== undefined ? { isCoinbase: Boolean(u.isCoinbase) } : {}),
+        ...(u.blockDaaScore !== undefined && u.blockDaaScore !== null ? { blockDaaScore: BigInt(u.blockDaaScore) } : {})
       }));
+      // HK-10: immature coinbases are left out BEFORE batching (the node would refuse a batch with one —
+      // ImmatureCoinbaseSpend — after the earlier batches were already sent); the planner applies the same rule again
+      let virtualDaaScore: bigint | undefined;
+      try {
+        const v = (await sdk.rpc.getBlockDagInfo())?.virtualDaaScore;
+        virtualDaaScore = v === undefined || v === null ? undefined : BigInt(v);
+      } catch {
+        virtualDaaScore = undefined;
+      }
+      const { excludeImmatureCoinbase } = await import("@hardkas/tx-builder");
+      const mature = excludeImmatureCoinbase(mapped, { networkId: provider.network ?? resolvedName, virtualDaaScore });
+      if (mature.excluded > 0) {
+        getOutput().warn(
+          `${mature.excluded} coinbase UTXO(s) left out: not provably mature (coinbase maturity ${mature.coinbaseMaturity} DAA + 10 margin, ` +
+            `virtual DAA ${virtualDaaScore ?? "unknown"}).`
+        );
+      }
+      allUtxos = mature.spendable;
     } else {
       const { loadOrCreateLocalnetState, getSpendableUtxos } =
         await import("@hardkas/localnet");
@@ -225,7 +267,7 @@ async function consolidate(options: AccountsConsolidateOptions, sdk: Hardkas, cr
       totalUtxosSeen: beforeCount
     });
 
-    const signed = await sdk.tx.sign(plan, resolvedAccount);
+    const signed = await sdk.tx.sign(plan, resolvedAccount, keystorePassword !== undefined ? { keystorePassword } : undefined);
 
     let receipt;
     if (provider.mode === "simulator") {

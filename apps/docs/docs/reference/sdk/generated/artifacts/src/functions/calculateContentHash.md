@@ -8,10 +8,11 @@
 
 > **calculateContentHash**(`obj`, `version?`): `string`
 
-Defined in: [packages/artifacts/src/canonical.ts:184](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/canonical.ts#L184)
+Defined in: [packages/artifacts/src/canonical.ts:341](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/canonical.ts#L341)
 
-Calculates a SHA-256 hash of the canonical JSON representation.
-Always excludes fields in SEMANTIC_EXCLUSIONS from the calculation.
+Calculates a SHA-256 hash of the canonical JSON representation under `version`.
+Producers pass the version they write into the artifact; everything else must
+use [recomputeDeclaredContentHash](recomputeDeclaredContentHash.md).
 
 ## Parameters
 

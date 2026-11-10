@@ -58,13 +58,15 @@ export function registerAccountsCommands(program: Command) {
   realAccountsCmd
     .command("init")
     .description(`Initialize real dev account store ${UI.maturity("stable")}`)
-    .option("--force", "Overwrite existing store", false)
+    .option("--force", "Replace an existing store with an empty one (the old store is copied to a backup first; refused when it holds accounts, unless --discard-accounts)", false)
+    .option("--discard-accounts", "With --force: confirm that a store holding accounts is replaced (its backup is still written first)", false)
     .option("--wait-lock", "Wait for workspace lock if held", false)
     .option("--lock-timeout <ms>", "Lock wait timeout in ms", "30000")
     .option("--json", "Output as JSON", false)
     .action(
       async (options: {
         force: boolean;
+        discardAccounts: boolean;
         waitLock: boolean;
         lockTimeout: string;
         json: boolean;
@@ -82,6 +84,7 @@ export function registerAccountsCommands(program: Command) {
             async () => {
               const result = await runAccountsRealInit({
                 force: options.force,
+                discardAccounts: options.discardAccounts,
                 workspaceRoot: process.cwd()
               });
               if (options.json) getOutput().writeJson(result);
@@ -99,6 +102,10 @@ export function registerAccountsCommands(program: Command) {
     .description(`Import an account into the persistent store ${UI.maturity("stable")}`)
     .option("--name <name>", "Account name: letters, digits, _ and - (default: default)")
     .option("--address <address>", "Kaspa address")
+    .option(
+      "--network <network>",
+      "Network the key is for (default: the address's: kaspasim simnet, kaspadev devnet; a kaspatest address needs testnet-<n> here or in the workspace). A mainnet network or address is refused while mainnet is locked down (MAINNET_SIGNING_DISABLED)"
+    )
     .option(
       "--private-key <hex>",
       "Deprecated. Unsafe: may leak through shell history. Prefer --private-key-stdin or --private-key-env."
@@ -197,6 +204,10 @@ export function registerAccountsCommands(program: Command) {
   realAccountsCmd
     .command("change-password <name>")
     .description(`Change password for an encrypted account ${UI.maturity("stable")}`)
+    // L1-CORE-1 B4: without a terminal it could not run at all (its error told the user to pass options it rejected)
+    .option("--password-env <env>", "Read the current keystore password from this environment variable")
+    .option("--password-stdin", "Read the current keystore password from stdin (needs --new-password-env)", false)
+    .option("--new-password-env <env>", "Read the new keystore password from this environment variable (no confirmation prompt)")
     .option("--wait-lock", "Wait for workspace lock if held", false)
     .option("--lock-timeout <ms>", "Lock wait timeout in ms", "30000")
     .action(async (name: string, options: any) => {
@@ -215,7 +226,10 @@ export function registerAccountsCommands(program: Command) {
               await import("../runners/accounts-keystore-runners.js");
             await runAccountsKeystoreChangePassword({
               name,
-              workspaceRoot: process.cwd()
+              workspaceRoot: process.cwd(),
+              passwordEnv: options.passwordEnv,
+              passwordStdin: options.passwordStdin,
+              newPasswordEnv: options.newPasswordEnv
             });
           }
         );
@@ -233,7 +247,7 @@ export function registerAccountsCommands(program: Command) {
     .option("--count <number>", "Number of accounts to generate", "1")
     .option(
       "--network <network>",
-      "Kaspa network (simnet, testnet-10, mainnet)",
+      "Kaspa network (simnet, testnet-10; mainnet is refused while mainnet is locked down: MAINNET_SIGNING_DISABLED)",
       "simnet"
     )
     .option("--password-stdin", "Read keystore password from stdin", false)
@@ -372,7 +386,9 @@ export function registerAccountsCommands(program: Command) {
     .option("--dry-run", "Only estimate batches (default if --execute is not provided)")
     .option("--execute", "Execute the consolidation (requires --yes to broadcast)")
     .option("--yes", "Confirm broadcast for execution")
-    .option("--allow-mainnet", "No effect: executing on mainnet stays refused in this release (MAINNET_BROADCAST_DISABLED)")
+    .option("--allow-mainnet", "No effect: mainnet is blocked (MAINNET TOTAL LOCKDOWN) and executing on mainnet stays refused (MAINNET_BROADCAST_DISABLED)")
+    .option("--password-env <env>", "Read the encrypted account's keystore password from this environment variable (read once, before the first batch)")
+    .option("--password-stdin", "Read the encrypted account's keystore password from stdin")
     .option("--json", "Output as JSON", false)
     .action(async (account: string, options: any) => {
       try {
@@ -390,6 +406,8 @@ export function registerAccountsCommands(program: Command) {
           execute: options.execute === true,
           yes: options.yes === true,
           allowMainnet: options.allowMainnet === true,
+          ...(options.passwordEnv ? { passwordEnv: String(options.passwordEnv) } : {}),
+          ...(options.passwordStdin ? { passwordStdin: true } : {}),
           json: options.json === true
         });
       } catch (e: unknown) {

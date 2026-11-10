@@ -36,7 +36,8 @@ export class PaymentToolkit {
 
         const id = `inv_${Date.now()}`;
         const result = buildKaspaUri({
-            address: `kaspa:${this.merchantId}`,
+            // L1-07: the merchant's address is its own URI scheme; it used to be prefixed again ("kaspa:kaspa:...")
+            address: this.merchantId,
             amountSompi: sompi,
             message: `Invoice ${id}`
         });

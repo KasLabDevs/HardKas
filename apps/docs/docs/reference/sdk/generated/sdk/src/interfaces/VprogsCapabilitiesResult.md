@@ -6,7 +6,7 @@
 
 # Interface: VprogsCapabilitiesResult
 
-Defined in: [packages/sdk/src/vprogs.ts:16](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/vprogs.ts#L16)
+Defined in: [packages/sdk/src/vprogs.ts:16](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/vprogs.ts#L16)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [packages/sdk/src/vprogs.ts:16](https://github.com/KasLabDevs/HardKa
 
 > **claims**: [`VprogsClaims`](VprogsClaims.md)
 
-Defined in: [packages/sdk/src/vprogs.ts:20](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/vprogs.ts#L20)
+Defined in: [packages/sdk/src/vprogs.ts:20](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/vprogs.ts#L20)
 
 ***
 
@@ -22,7 +22,7 @@ Defined in: [packages/sdk/src/vprogs.ts:20](https://github.com/KasLabDevs/HardKa
 
 > **errors**: `string`[]
 
-Defined in: [packages/sdk/src/vprogs.ts:21](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/vprogs.ts#L21)
+Defined in: [packages/sdk/src/vprogs.ts:21](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/vprogs.ts#L21)
 
 ***
 
@@ -30,7 +30,7 @@ Defined in: [packages/sdk/src/vprogs.ts:21](https://github.com/KasLabDevs/HardKa
 
 > **ok**: `boolean`
 
-Defined in: [packages/sdk/src/vprogs.ts:17](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/vprogs.ts#L17)
+Defined in: [packages/sdk/src/vprogs.ts:17](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/vprogs.ts#L17)
 
 ***
 
@@ -38,7 +38,7 @@ Defined in: [packages/sdk/src/vprogs.ts:17](https://github.com/KasLabDevs/HardKa
 
 > **schema**: `"hardkas.vprogsCapabilities.v1"`
 
-Defined in: [packages/sdk/src/vprogs.ts:18](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/vprogs.ts#L18)
+Defined in: [packages/sdk/src/vprogs.ts:18](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/vprogs.ts#L18)
 
 ***
 
@@ -46,4 +46,4 @@ Defined in: [packages/sdk/src/vprogs.ts:18](https://github.com/KasLabDevs/HardKa
 
 > **status**: `"VPROGS_INSPECT_SURFACE_READY"`
 
-Defined in: [packages/sdk/src/vprogs.ts:19](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/vprogs.ts#L19)
+Defined in: [packages/sdk/src/vprogs.ts:19](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/vprogs.ts#L19)

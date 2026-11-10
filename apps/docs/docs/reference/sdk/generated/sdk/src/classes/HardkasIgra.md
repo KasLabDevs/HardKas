@@ -6,7 +6,7 @@
 
 # Class: HardkasIgra
 
-Defined in: [packages/sdk/src/igra.ts:13](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/igra.ts#L13)
+Defined in: [packages/sdk/src/igra.ts:13](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/igra.ts#L13)
 
 ## Constructors
 
@@ -14,7 +14,7 @@ Defined in: [packages/sdk/src/igra.ts:13](https://github.com/KasLabDevs/HardKas/
 
 > **new HardkasIgra**(`sdk`): `HardkasIgra`
 
-Defined in: [packages/sdk/src/igra.ts:14](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/igra.ts#L14)
+Defined in: [packages/sdk/src/igra.ts:14](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/igra.ts#L14)
 
 #### Parameters
 
@@ -32,7 +32,7 @@ Defined in: [packages/sdk/src/igra.ts:14](https://github.com/KasLabDevs/HardKas/
 
 > **probe**(`igraRpcUrl?`): `Promise`\<`IgraStatusResult`\>
 
-Defined in: [packages/sdk/src/igra.ts:20](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/igra.ts#L20)
+Defined in: [packages/sdk/src/igra.ts:20](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/igra.ts#L20)
 
 Probes the given RPC URL for Igra capabilities.
 Igra is treated as a separate L2 endpoint.

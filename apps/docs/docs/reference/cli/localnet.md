@@ -70,7 +70,7 @@ title: hardkas localnet
 
 ### Synopsis (Generated)
 
-**Purpose:** Create a simulated localnet account alpha
+**Purpose:** Create a real simnet account: a random key, stored in plaintext in .hardkas/accounts.real.json alpha
 
 #### Arguments
 
@@ -126,7 +126,7 @@ title: hardkas localnet
 
 #### Options
 
-- `--consensus-validated` (Default: `false`): Mark snapshot as validated by consensus (strict)
+- `--consensus-validated` (Default: `false`): Not supported: refused (SNAPSHOT_CONSENSUS_VALIDATION_UNSUPPORTED, exit 2). HardKAS does not validate snapshots against consensus, so a snapshot never declares it
 - `--json` (Default: `false`): Output as JSON
 
 ---

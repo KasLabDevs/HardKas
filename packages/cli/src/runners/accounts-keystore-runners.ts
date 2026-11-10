@@ -14,11 +14,48 @@ import { withSdk } from "./with-sdk.js";
 import { assertAccountName, assertAccountNamesFree, keystorePathIn } from "./keystore-names.js";
 
 /**
+ * INT9-C4 · the network an imported key is for. It was "devnet" for every address that is not mainnet's, so a simnet
+ * (kaspasim:) import wrote a keystore that contradicts its own address and the account could not sign
+ * (AccountNetworkConflictError). Now: `--network` (it must fit the address), else what the address prefix settles
+ * (kaspa → mainnet, kaspasim → simnet, kaspadev → devnet). A testnet address (kaspatest) names no testnet: the workspace's
+ * testnet-<n>, else undefined (the caller decides whether it needs one). Simulator identities (kaspa:sim_…) keep the
+ * former value. Decided before any key or password is read.
+ */
+async function importNetworkOf(address: string, explicit: string | undefined, workspaceRoot: string): Promise<string | undefined> {
+  const { validateAddressNetwork } = await import("@hardkas/accounts");
+  if (explicit !== undefined) {
+    validateAddressNetwork(address, explicit);
+    return explicit;
+  }
+  if (address.startsWith("kaspa:sim_")) return "devnet";
+  if (address.startsWith("kaspa:")) return "mainnet";
+  if (address.startsWith("kaspasim:")) return "simnet";
+  if (address.startsWith("kaspadev:")) return "devnet";
+  if (address.startsWith("kaspatest:")) {
+    try {
+      const { loadHardkasConfig } = await import("@hardkas/config");
+      const { config } = await loadHardkasConfig({ workspaceRoot });
+      const exec: any = (config as any).execution;
+      const target = exec?.default ? exec.targets?.[exec.default] : undefined;
+      const name: string | undefined = typeof target?.network === "string" ? target.network : (config as any).defaultNetwork;
+      const entry = name ? ((config as any).networks?.[name] as { network?: unknown } | undefined) : undefined;
+      const network = typeof entry?.network === "string" ? entry.network : name;
+      if (typeof network === "string" && /^testnet-\d+$/.test(network)) return network;
+    } catch {
+      // no workspace configuration: no testnet to take
+    }
+  }
+  return undefined;
+}
+
+/**
  * Runner for 'hardkas accounts import --encrypted'
  */
 export async function runAccountsKeystoreImport(options: {
   name?: string;
   address?: string;
+  /** INT9-C4: the network the key is for (default: from the address; a testnet address needs it or the workspace's testnet). */
+  network?: string;
   privateKey?: string;
   privateKeyStdin?: boolean;
   privateKeyEnv?: string;
@@ -30,6 +67,20 @@ export async function runAccountsKeystoreImport(options: {
   json?: boolean;
   workspaceRoot: string;
 }) {
+  // ESCALÓN 4 · P36 · MAINNET TOTAL LOCKDOWN: no mainnet key enters the store while mainnet is locked down (Kaspa's
+  // sighash does not commit to the network, so it could sign a manipulated plan). Refused with the signing code first,
+  // before any key, password or fixture is read: a `--network` of the mainnet type in any spelling, a config entry that
+  // declares one (an alias such as `prod`), and a mainnet address (`kaspa:`), which names mainnet by itself.
+  {
+    const { refuseMainnetSigning, workspaceConfigForGuard } = await import("../mainnet-guard.js");
+    const given = typeof options.address === "string" ? options.address.trim().toLowerCase() : "";
+    const addressNetwork = given.startsWith("kaspa:") && !given.startsWith("kaspa:sim_") ? "mainnet" : undefined;
+    refuseMainnetSigning(
+      await workspaceConfigForGuard(options.workspaceRoot),
+      [options.network, addressNetwork],
+      "accounts real import: no mainnet key is imported while mainnet is locked down"
+    );
+  }
   let name = options.name || "default";
   let address = options.address;
 
@@ -89,7 +140,28 @@ export async function runAccountsKeystoreImport(options: {
   }
 
   if (!address) {
-    throw new Error("Address is required for import.");
+    const { HardkasCliError, HardkasExitCode } = await import("../cli-errors.js");
+    throw new HardkasCliError("ACCOUNT_ADDRESS_REQUIRED", "--address is required for import (the account's Kaspa address). Nothing was read or imported.", {
+      exitCode: HardkasExitCode.USAGE_ERROR
+    });
+  }
+
+  // INT9-C4: the network the key is for, before any key or password is read (an encrypted keystore records it)
+  let network: string | undefined;
+  try {
+    network = await importNetworkOf(address, options.network, options.workspaceRoot);
+  } catch (e: unknown) {
+    const err = e as { code?: unknown; message?: unknown } | null | undefined;
+    const { HardkasCliError, HardkasExitCode } = await import("../cli-errors.js");
+    throw new HardkasCliError(String(err?.code ?? "NETWORK_ADDRESS_MISMATCH"), `${String(err?.message ?? e)} Nothing was imported.`, { exitCode: HardkasExitCode.USAGE_ERROR });
+  }
+  if (network === undefined && !options.unsafePlaintext) {
+    const { HardkasCliError, HardkasExitCode } = await import("../cli-errors.js");
+    throw new HardkasCliError(
+      "ACCOUNT_NETWORK_REQUIRED",
+      `'${address}' is a testnet address and names no testnet: pass --network testnet-<n> (the workspace declares none). Nothing was imported.`,
+      { exitCode: HardkasExitCode.USAGE_ERROR }
+    );
   }
 
   if (name === "hardkas-local-docker-test-only") {
@@ -156,18 +228,12 @@ export async function runAccountsKeystoreImport(options: {
       {
         address,
         privateKey: finalKey,
-        network:
-          address.startsWith("kaspa:") && !address.startsWith("kaspa:sim_")
-            ? "mainnet"
-            : "devnet"
+        network: network!
       },
       password,
       {
         label: name,
-        network:
-          address.startsWith("kaspa:") && !address.startsWith("kaspa:sim_")
-            ? "mainnet"
-            : "devnet"
+        network: network!
       }
     );
 
@@ -187,6 +253,8 @@ export async function runAccountsKeystoreImport(options: {
   const nextStore = importRealDevAccount(baseStore, {
     name,
     address,
+    // INT9-C4: the store entry names the network too (ACCOUNT-STORE-NETWORK-1), except a simulator identity's
+    ...(network !== undefined && !address.startsWith("kaspa:sim_") ? { network: network as any } : {}),
     ...(options.unsafePlaintext ? { privateKey: finalKey } : {}),
     ...(options.privateKeyEnv ? { privateKeyEnv: options.privateKeyEnv } : {}),
     ...(keystoreRef ? { keystoreRef } : {})
@@ -258,29 +326,50 @@ export async function runAccountsSessionOpen(options: {
 export async function runAccountsKeystoreChangePassword(options: {
   name: string;
   workspaceRoot: string;
+  passwordEnv?: string | undefined;
+  passwordStdin?: boolean | undefined;
+  newPasswordEnv?: string | undefined;
 }) {
   const { name } = options;
   // CONTAINMENT-2 (R1-I1): the name is checked before anything else happens (opening the workspace included), then
   // its one plain keystore file of this workspace is decided before anything is read or prompted for
   assertAccountName(name);
+  // L1-CORE-1 B4: the new password comes from --new-password-env, or from a prompt (with confirmation) on a terminal.
+  // Without either the command fails here, typed, before the keystore is read or any password is asked for.
+  if (!options.newPasswordEnv && (options.passwordStdin || !process.stdin.isTTY)) {
+    const { HardkasCliError, HardkasExitCode } = await import("../cli-errors.js");
+    throw new HardkasCliError(
+      "KEYSTORE_PASSWORD_REQUIRED",
+      `A new keystore password is required: ${options.passwordStdin ? "stdin carries the current one" : "there is no terminal to prompt on"}. Pass it with --new-password-env <VAR>. Nothing was changed.`,
+      { exitCode: HardkasExitCode.USAGE_ERROR }
+    );
+  }
   const filePath = await withSdk({ cwd: options.workspaceRoot }, (sdk) => keystorePathIn(sdk, name));
 
   const keystore = await KeystoreManager.loadEncryptedKeystore(filePath);
 
   const oldPassword = await acquirePassword({
+    stdin: options.passwordStdin,
+    env: options.passwordEnv,
     message: "Enter current password:"
   });
 
-  const newPassword = await acquirePassword({
-    message: "Enter new password:"
-  });
+  let newPassword: string;
+  if (options.newPasswordEnv) {
+    // a variable is not mistyped: no confirmation
+    newPassword = await acquirePassword({ env: options.newPasswordEnv });
+  } else {
+    newPassword = await acquirePassword({
+      message: "Enter new password:"
+    });
 
-  const confirm = await acquirePassword({
-    message: "Confirm new password:"
-  });
+    const confirm = await acquirePassword({
+      message: "Confirm new password:"
+    });
 
-  if (newPassword !== confirm) {
-    throw new Error("New passwords do not match.");
+    if (newPassword !== confirm) {
+      throw new Error("New passwords do not match.");
+    }
   }
 
   const updatedKeystore = await KeystoreManager.changeKeystorePassword(

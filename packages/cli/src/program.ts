@@ -24,7 +24,6 @@ import { registerSimulatorCommands } from "./commands/simulator.js";
 import { registerDeployCommands } from "./commands/deploy.js";
 import { registerDevCommands } from "./commands/dev.js";
 import { registerKaspaCommands } from "./commands/kaspa.js";
-import { registerBridgeCommands } from "./commands/bridge.js";
 import { registerSessionCommands } from "./commands/session.js";
 import { registerPsktCommands } from "./commands/pskt/index.js";
 
@@ -56,6 +55,7 @@ import { HARDKAS_VERSION } from "@hardkas/artifacts";
 
 import { registerTaskCommands } from "./commands/task.js";
 import { noteParsedWorkspace, refuseIgnoredWorkspace } from "./workspace-root.js";
+import { warnNoEffectOptions } from "./no-effect-options.js";
 import { LoadedHardkasConfig } from "@hardkas/config";
 import { EMPTY_EXTENSION_REGISTRY, type ExtensionRegistry, type ExtensionState } from "./extensions/registry.js";
 import { registerExtensionRefusals } from "./extensions/refusal.js";
@@ -94,6 +94,8 @@ export function buildHardkasProgram(options?: {
     .hook("preAction", (thisCommand, actionCommand) => {
       noteParsedWorkspace(thisCommand.opts().workspace);
       refuseIgnoredWorkspace(actionCommand);
+      // ESCALÓN 2 · P19: an option that changes nothing is said so before the command runs, never accepted in silence
+      warnNoEffectOptions(actionCommand);
     });
 
   // Register modular command groups

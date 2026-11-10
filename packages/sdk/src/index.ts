@@ -7,10 +7,11 @@ import {
   type ResolvedWorkspaceExecution
 } from "@hardkas/config";
 import { isNetworkEndpointRequired, unresolvedEndpointRpc } from "./unresolved-endpoint-rpc.js";
+import { mainnetLockedRpc, assertSdkMayConnect } from "./mainnet-lockdown.js";
 import { resolveHardkasAccount, HardkasAccount } from "@hardkas/accounts";
 import { ExternalHardkasSigner } from "@hardkas/artifacts";
 import { JsonWrpcKaspaClient, KaspaRpcClient, canonicalNetworkId } from "@hardkas/kaspa-rpc";
-import { NetworkId, HardkasError, getCoinbaseMaturity, declaredNetworkIdOf, type HardkasExecutionTarget } from "@hardkas/core";
+import { NetworkId, HardkasError, getCoinbaseMaturity, declaredNetworkIdOf, isMainnetConnectionDisabledError, type HardkasExecutionTarget } from "@hardkas/core";
 import { assertPublicNetworkAllowed } from "./policy.js";
 import { HardkasAccounts } from "./accounts.js";
 import { HardkasTx } from "./tx.js";
@@ -43,9 +44,26 @@ export type { FundDevWalletsOptions } from "./node.js";
 export { HardkasAccounts } from "./accounts.js";
 export { HardkasTx } from "./tx.js";
 export { PAYMENT_PREFLIGHT_GUARANTEE, preflightPaymentSend } from "./payment-preflight.js";
+// RC1 · D3: tx.send's synced-node rule (NODE_NOT_SYNCED) and its explicit local escape (allowUnsyncedNode)
+export { unsyncedSendAllowedOn, type SendNodeSyncOptions } from "./send-node-sync.js";
+export type { SendTxOptions } from "./tx.js";
 // ESCROW-SAFETY-2 / MULTINODE-READ-1: one look at a node about a txId (mempool, accepting chain block), for callers that
 // hold their own client (the dev-server escrow; one look per node of a read-only set)
 export { observeTxOnce, rpcObserverFor } from "./tx-observer.js";
+// INT9-A (I-1): the network and consensus levels of `artifact verify`
+export {
+  artifactNetworkSubject,
+  verifyArtifactOnNetwork,
+  notCheckedNetworkVerification,
+  CONSENSUS_LEVEL_SCOPE,
+  type ArtifactNetworkSubject,
+  type ArtifactSubjectOutput,
+  type ArtifactNetworkVerification,
+  type ArtifactNetworkObservation,
+  type ArtifactNetworkLevel,
+  type ArtifactConsensusLevel,
+  type ArtifactNetworkReason
+} from "./artifact-network-verify.js";
 export type { ObserveTxOptions, TxObserverRpc, TxObserverRpcRecorder } from "./tx-observer.js";
 export {
   MULTINODE_GUARANTEE,
@@ -83,7 +101,7 @@ export { HardkasLineage } from "./lineage.js";
 export { HardkasWorkspace } from "./workspace.js";
 export { HardkasArtifactsManager } from "./artifacts-manager.js";
 export { HardkasCapabilitiesApi, createHardkasCapabilities, probeSilverReadiness } from "./capabilities.js";
-export type { SilverReadiness, ReadinessCheck } from "./capabilities.js";
+export type { SilverReadiness, SilverReadinessOptions, ReadinessCheck } from "./capabilities.js";
 export { HardkasCorpus, verifyToccataCorpus } from "./corpus.js";
 export { HardkasSilver } from "./silver.js";
 export {
@@ -123,6 +141,29 @@ export {
   GROTH16_PRECOMPILE_COST_SCRIPT_UNITS,
   KASPA_WASM_ZK_BUILDER_CLAIM,
   parseKaspaScript,
+  verifyR0Groth16ReceiptLocal,
+  computeR0ReceiptClaimDigest,
+  parseR0Groth16Receipt,
+  r0Groth16PublicSignals,
+  findPublicR0TestVector,
+  isHardkasR0Groth16Verification,
+  PUBLIC_R0_TEST_VECTORS,
+  R0_GROTH16_VERIFICATION_KEY,
+  R0_GROTH16_COMPRESSED_VERIFICATION_KEY_HEX,
+  R0_GROTH16_CONTROL_ROOT,
+  R0_GROTH16_BN254_CONTROL_ID,
+  R0_GROTH16_VERIFIER_ID,
+  R0_GROTH16_PINNED_KEY_ID,
+  minimumR0Groth16ComputeBudget,
+  groth16VkElementsInRedeemScript,
+  GROTH16_VK_ELEMENT_COST_SCRIPT_UNITS,
+  R0_GROTH16_VK_ELEMENTS,
+  R0_GROTH16_OBSERVED_SCRIPT_OVERHEAD_SCRIPT_UNITS,
+  BLOCK_COMPUTE_MASS_LIMIT,
+  ZK_LOCK_BINDS_IMAGE_ID_ONLY_WARNING,
+  type R0Groth16LocalVerificationResult,
+  type R0Groth16ReceiptParse,
+  type ZkAddressNetwork,
   type KaspaScriptOp,
   type ZkProofMathOptions,
   type ZkMathBinding,
@@ -135,7 +176,16 @@ export {
   type R0Groth16VerifyScriptsResult,
   type ToccataPrecompileRules,
   type ToccataFeePolicyOptions,
-  type ToccataZkFeeEstimate
+  type ToccataZkFeeEstimate,
+  ZK_OUTPUT_BINDING_DOMAIN,
+  ZK_OUTPUT_BINDING_MAGIC,
+  createZkOutputBindingJournal,
+  type ZkBindingMode,
+  type ZkOutputTarget,
+  type ZkReplayBinding,
+  type ZkOutputBindingPolicy,
+  type ZkJournalBindingParams,
+  type ZkJournalBindingResult
 } from "./zk.js";
 export {
   verifyGroth16Math,
@@ -150,9 +200,18 @@ export {
   BN254_G2_GENERATOR,
   DEFAULT_GROTH16_VERIFY_TIMEOUT_MS,
   MAX_GROTH16_VERIFY_TIMEOUT_MS,
+  groth16VerificationKeyFingerprint,
+  findPinnedGroth16VerificationKey,
+  PINNED_GROTH16_VERIFICATION_KEYS,
+  GROTH16_VK_FINGERPRINT_DOMAIN,
+  BN254_G1_INFINITY_JSON,
+  BN254_G2_INFINITY_JSON,
   type Groth16VerifyMathOptions,
   type Groth16MathVerificationOutput,
-  type Groth16VerificationKeyStrength
+  type Groth16MathStatus,
+  type Groth16VerificationKeyStrength,
+  type Groth16VerificationKeyAnchor,
+  type PinnedGroth16VerificationKey
 } from "./zk/groth16-verifier.js";
 export {
   HardkasVprogs,
@@ -187,6 +246,7 @@ export type {
 } from "./vprogs.js";
 export type {
   ProgrammabilityAppPlan,
+  ProgrammabilityArtifactEvidence,
   ProgrammabilityCapabilitiesResult,
   ProgrammabilityClaims,
   ProgrammabilityCorpusReport,
@@ -240,6 +300,12 @@ export interface HardkasOptions {
    */
   target?: string;
   autoBootstrap?: boolean;
+  /**
+   * INT9-A (I-3b): the default RPC client of a real Kaspa world also refuses (NODE_NOT_SYNCED) a node that does not say
+   * it is synced — for callers whose operations need the current chain state (the CLI's `tx wait`). Off by default:
+   * a well-identified node is used for reads and diagnostics whatever its sync state.
+   */
+  requireSyncedNode?: boolean;
   signer?: ExternalHardkasSigner;
   logger?: {
     info: (msg: string) => void;
@@ -288,6 +354,9 @@ export class Hardkas {
 
   public readonly wallet = {
     open: (name: string, opts?: Omit<WalletToolkitOptions, "rpc" | "signer">) => {
+      // MAINNET TOTAL LOCKDOWN: a wallet on a mainnet instance would only reach a mainnet node (balance, UTXOs, watch,
+      // fee estimate) or sign/broadcast there: refused at open, before anything is derived, resolved or read
+      assertSdkMayConnect(this, "sdk.wallet.open", opts?.networkId);
       const activeNetwork = this.network;
       const networkConfig = this.config.config.networks?.[activeNetwork];
       const coinbaseMaturity = getCoinbaseMaturity(activeNetwork, networkConfig?.kind === "kaspa-node" || networkConfig?.kind === "kaspa-rpc" || networkConfig?.kind === "simulated" ? networkConfig.consensusParams : undefined);
@@ -381,20 +450,25 @@ export class Hardkas {
     } else {
       // TESTNET-PORT-COLLISION-1: the endpoint by the shared authority; a public network with none chosen gets a client
       // that refuses every request (NETWORK_ENDPOINT_REQUIRED) and never connects — never an inferred node.
+      // MAINNET TOTAL LOCKDOWN: a mainnet network gets no endpoint (MAINNET_CONNECTION_DISABLED from the same authority):
+      // the instance opens offline, with a client that never connects and refuses every request (mainnet-lockdown.ts)
       let rpcUrl: string | undefined;
+      let mainnetLocked = false;
       try {
         rpcUrl = this.resolveRpcUrl();
       } catch (e) {
-        if (!isNetworkEndpointRequired(e)) throw e;
+        if (isMainnetConnectionDisabledError(e)) mainnetLocked = true;
+        else if (!isNetworkEndpointRequired(e)) throw e;
       }
-      this.rpc =
-        rpcUrl === undefined
+      this.rpc = mainnetLocked
+        ? mainnetLockedRpc(this.activeNetwork)
+        : rpcUrl === undefined
           ? unresolvedEndpointRpc(this.activeNetwork)
           : new JsonWrpcKaspaClient({
               rpcUrl,
               // NODE-NETWORK-IDENTITY-1: a real Kaspa world uses its node only once the node says it serves that network
               ...(this.execution.mode !== "simulator" && this.execution.domain === "kaspa-l1"
-                ? { expectedNetworkId: this.activeNetwork }
+                ? { expectedNetworkId: this.activeNetwork, ...(options?.requireSyncedNode === true ? { requireSynced: true } : {}) }
                 : {})
             });
       this.ownedRpc = this.rpc;

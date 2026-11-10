@@ -3,8 +3,8 @@ import { HardkasError } from "./errors.js";
 // TX-FEE-GUARD-1: the two fee notions HardKAS distinguishes, and their checks.
 //  - A fee RATE is sompi per gram of mass (`--fee-rate`, `feeRate`): a positive integer that fits Kaspa's u64.
 //  - A fee LIMIT is a TOTAL fee in sompi (`--max-fee`, `maxFeeSompi`, `networks[<net>].maxFeeSompi`): the most a
-//    transaction may pay. There is no product-wide default: no limit is imposed unless the caller or the workspace sets
-//    one. When several are set, the lowest applies.
+//    transaction may pay. When several are set, the lowest applies. Without any, the plan, sign and send paths apply
+//    HardKAS's default ceiling (`DEFAULT_MAX_FEE_SOMPI` in @hardkas/tx-builder `fee-policy.ts`, HK-09 / CA-TX-01).
 
 const U64_MAX = (1n << 64n) - 1n;
 

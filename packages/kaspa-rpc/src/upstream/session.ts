@@ -1,8 +1,17 @@
-import { loadManagedKaspaWasmSync, redactUrlCredentials, redactUrlCredentialsInText, assertValidNodeEndpoint } from "@hardkas/core";
+import {
+  loadManagedKaspaWasmSync,
+  redactUrlCredentials,
+  redactUrlCredentialsInText,
+  assertValidNodeEndpoint,
+  isMainnetNetworkId,
+  mainnetConnectionDisabledMessage,
+  MAINNET_CONNECTIONS_ENABLED
+} from "@hardkas/core";
 import {
   isNodeNetworkIdentityError,
   markRequestNotSent,
   NodeNetworkIdentityError,
+  NodeSyncError,
   normalizeRpcError,
   RpcRequestNotSentError,
   RpcConnectionError,
@@ -127,6 +136,44 @@ export function rpcClientClosedError(url: string): RpcError {
   return new RpcError(`The Kaspa RPC connection to ${redactUrlCredentials(url)} was closed while it was being opened.`, "RPC_CLIENT_CLOSED", undefined, false);
 }
 
+/*
+ * MAINNET TOTAL LOCKDOWN (@hardkas/core mainnet-policy) · the transport's share of the common layer. Every HardKAS
+ * client of a Kaspa node (JsonWrpcKaspaClient, KaspaWrpcClient, KaspaJsonRpcClient, the health checks, the SDK's own,
+ * one a caller builds directly) goes through this session, so:
+ *  1. a session whose caller uses the node AS a mainnet network refuses before an official client is even created —
+ *     zero connections (MAINNET_CONNECTION_DISABLED);
+ *  2. every connection the session opens (the first and each one the official client resumes on by itself) asks the
+ *     node ONE question before anything else — getServerInfo — also when the caller expects no network; a node that
+ *     answers mainnet is released and refused (MAINNET_CONNECTION_DISABLED), whatever the caller expected, and nothing
+ *     else is asked of it. That single identity exchange is the unavoidable limit when an endpoint is declared as
+ *     another network (or given raw): only the node can say what it serves;
+ *  3. an identity answer seen later on the same connection (a caller's own getServerInfo / getBlockDagInfo /
+ *     getCurrentNetwork, the identity reads before a broadcast) that names mainnet drops the connection the same way.
+ * A raw session (no expected network) whose node does not say which network it serves keeps working as before: that
+ * node cannot be shown to be mainnet, and a node that hides or lies about its network is the same documented limit.
+ */
+function mainnetConnectionError(endpoint: string, detail: { expected?: string | undefined; observed?: string | undefined }): NodeNetworkIdentityError {
+  const contacted = detail.observed !== undefined ? "identity-only" : "nothing";
+  const context =
+    detail.observed !== undefined
+      ? `the node at ${endpoint} says it serves ${detail.observed}${detail.expected !== undefined ? `, used as ${detail.expected}` : ""}`
+      : `${endpoint}, used as ${detail.expected}`;
+  return new NodeNetworkIdentityError("MAINNET_CONNECTION_DISABLED", mainnetConnectionDisabledMessage(context, contacted), {
+    expected: detail.expected ?? "a non-mainnet network",
+    ...(detail.observed !== undefined ? { observed: detail.observed } : {}),
+    endpoint
+  });
+}
+
+/** The network an identity-bearing answer names (getServerInfo / getBlockDagInfo / getCurrentNetwork), if any. */
+function identityNamedBy(method: string, answer: any): string | undefined {
+  const pick = (...values: unknown[]) => values.find((v): v is string => typeof v === "string" && v.trim() !== "");
+  if (method === "getServerInfo") return pick(answer?.networkId);
+  if (method === "getBlockDagInfo") return pick(answer?.network, answer?.networkName, answer?.networkId);
+  if (method === "getCurrentNetwork") return pick(answer?.network, answer?.networkId);
+  return undefined;
+}
+
 export class OfficialRpcSession {
   readonly url: string;
   private client: OfficialRpcClientLike | null = null;
@@ -141,19 +188,26 @@ export class OfficialRpcSession {
   private verifiedClient: OfficialRpcClientLike | null = null;
   private verifying: Promise<OfficialRpcClientLike> | null = null;
   private readonly disconnects = new WeakMap<OfficialRpcClientLike, number>();
+  // MAINNET TOTAL LOCKDOWN: once the node behind this session's URL said it serves mainnet, the session never connects
+  // again (a later request, a retry or a poll would otherwise open a new connection only to be refused once more)
+  private mainnetObserved: string | undefined;
 
   /**
    * @param expectedNetworkId NODE-NETWORK-IDENTITY-1: the network the caller uses this node as. When given, every
    * connection this session opens (the first one and each one after the node went away) asks the node which network
    * it serves before it is handed out, and is released and refused when the node answers another network
    * (NODE_NETWORK_MISMATCH) or none (NODE_NETWORK_UNKNOWN). A verdict is never carried from one connection to the
-   * next, and a session serves one URL only.
+   * next, and a session serves one URL only. MAINNET TOTAL LOCKDOWN: a mainnet-type `expectedNetworkId` is refused
+   * before any connection, and without one the node is still asked its network once per connection (see above).
    */
   constructor(
     url: string,
     private readonly timeoutMs: number = 30000,
     private readonly factory: OfficialRpcFactory = officialRpcFactory,
-    private readonly expectedNetworkId?: string | undefined
+    private readonly expectedNetworkId?: string | undefined,
+    // INT9-A (I-3b): with an expected network, also refuse a node that does not say it is synced (NODE_NOT_SYNCED), from
+    // the same getServerInfo answer: for the operations that need the current chain state (plan, send, wait)
+    private readonly requireSynced: boolean = false
   ) {
     this.url = toWrpcUrl(url);
   }
@@ -165,10 +219,18 @@ export class OfficialRpcSession {
 
   /** The connected official client; connects on first use and again after the node went away. */
   async connected(): Promise<OfficialRpcClientLike> {
+    // MAINNET TOTAL LOCKDOWN (1): used as a mainnet network → refused before any official client exists (0 connections)
+    if (!MAINNET_CONNECTIONS_ENABLED && isMainnetNetworkId(this.expectedNetworkId)) {
+      throw mainnetConnectionError(redactUrlCredentials(this.url), { expected: this.expectedNetworkId });
+    }
+    if (this.mainnetObserved !== undefined) {
+      throw mainnetConnectionError(redactUrlCredentials(this.url), { expected: this.expectedNetworkId, observed: this.mainnetObserved });
+    }
     if (this.client && this.client.isConnected !== false) {
-      if (this.expectedNetworkId === undefined || this.verifiedClient === this.client) return this.client;
+      if (this.verifiedClient === this.client) return this.client;
       // the official client resumed on a new connection by itself (the node went away and something answers again
-      // behind the URL): that connection is verified like any other before it is used
+      // behind the URL): that connection is verified like any other before it is used (MAINNET TOTAL LOCKDOWN (2):
+      // also when the caller expects no network — the node's identity is asked again)
       if (!this.verifying) {
         const verifying: Promise<OfficialRpcClientLike> = this.reverify(this.client).finally(() => {
           if (this.verifying === verifying) this.verifying = null;
@@ -203,32 +265,34 @@ export class OfficialRpcSession {
       if (e instanceof RpcConnectionError) throw e;
       throw new RpcConnectionError(redacted(`Cannot connect to Kaspa RPC at ${this.url}. Is kaspad running with --rpclisten-json? (${messageOf(e)})`));
     }
-    if (this.expectedNetworkId !== undefined) {
-      try {
-        // registered before the question: a drop while it is asked is not lost
-        this.disconnects.set(client, 0);
+    // NODE-NETWORK-IDENTITY-1 / MAINNET TOTAL LOCKDOWN (2): every connection is identified before it is handed out —
+    // against the expected network when there is one, and never mainnet in any case
+    try {
+      // registered before the question: a drop while it is asked is not lost
+      this.disconnects.set(client, 0);
+      if (typeof client.addEventListener === "function") {
         client.addEventListener("disconnect", () => {
           this.disconnects.set(client, (this.disconnects.get(client) ?? 0) + 1);
           if (this.verifiedClient === client) this.verifiedClient = null;
         });
-        await this.verifyNetwork(client, this.expectedNetworkId);
-      } catch (e) {
-        await release(client);
-        throw e;
       }
+      await this.verifyNetwork(client, this.expectedNetworkId);
+    } catch (e) {
+      await release(client);
+      throw e;
     }
     if (epoch !== this.epoch) {
       // close() ran while this connection was being opened: it is released here and never handed out.
       await release(client);
       throw rpcClientClosedError(this.url);
     }
-    if (this.expectedNetworkId !== undefined && (this.disconnects.get(client) ?? 0) !== 0) {
+    if ((this.disconnects.get(client) ?? 0) !== 0) {
       // the connection dropped while its network was being asked: whatever it resumed on did not answer the question
       await release(client);
       throw this.lostWhileVerifying();
     }
     this.client = client;
-    if (this.expectedNetworkId !== undefined) this.verifiedClient = client;
+    this.verifiedClient = client;
     return client;
   }
 
@@ -252,7 +316,7 @@ export class OfficialRpcSession {
       await release(client);
     };
     try {
-      await this.verifyNetwork(client, this.expectedNetworkId!);
+      await this.verifyNetwork(client, this.expectedNetworkId);
     } catch (e) {
       await discard();
       throw e;
@@ -270,8 +334,11 @@ export class OfficialRpcSession {
    * NODE-NETWORK-IDENTITY-1: the node's own answer to getServerInfo decides. A connection lost or timed out while
    * asking stays a connection failure; a node that answers without a network, or refuses the question, is UNKNOWN;
    * a node that names another network is a MISMATCH.
+   * MAINNET TOTAL LOCKDOWN (2): asked on every connection, `expected` or not; a node that names a network of the
+   * mainnet type is refused first (MAINNET_CONNECTION_DISABLED), whatever was expected. Without an expected network, a
+   * node that does not identify itself is not refused (nothing shows it is mainnet; see the note above).
    */
-  private async verifyNetwork(client: OfficialRpcClientLike, expected: string): Promise<void> {
+  private async verifyNetwork(client: OfficialRpcClientLike, expected: string | undefined): Promise<void> {
     const endpoint = redactUrlCredentials(this.url);
     let info: any;
     try {
@@ -290,6 +357,7 @@ export class OfficialRpcSession {
       if (NOT_CONNECTED.test(raw)) {
         throw new RpcConnectionError(redacted(`Connection to Kaspa RPC at ${endpoint} was lost while its network was being verified: ${raw}`));
       }
+      if (expected === undefined) return;
       throw new NodeNetworkIdentityError(
         "NODE_NETWORK_UNKNOWN",
         redacted(
@@ -300,7 +368,12 @@ export class OfficialRpcSession {
       );
     }
     const observed = info?.networkId;
+    if (!MAINNET_CONNECTIONS_ENABLED && isMainnetNetworkId(observed)) {
+      this.mainnetObserved = observed;
+      throw mainnetConnectionError(endpoint, { expected, observed });
+    }
     if (typeof observed !== "string" || observed.trim() === "" || observed === "undefined") {
+      if (expected === undefined) return;
       throw new NodeNetworkIdentityError(
         "NODE_NETWORK_UNKNOWN",
         `The node at ${endpoint} did not say which network it serves (getServerInfo has no networkId); ` +
@@ -308,11 +381,22 @@ export class OfficialRpcSession {
         { expected, endpoint }
       );
     }
+    if (expected === undefined) return;
     if (canonicalNetworkId(observed) !== canonicalNetworkId(expected)) {
       throw new NodeNetworkIdentityError(
         "NODE_NETWORK_MISMATCH",
         `The node at ${endpoint} serves ${observed}, not ${expected}: HardKAS refuses to read from it or send to it as ${expected}.`,
         { expected, observed, endpoint }
+      );
+    }
+    // INT9-A (I-3b): the network is right; being synced is a separate verdict, asked only by callers that need it
+    if (this.requireSynced && info?.isSynced !== true) {
+      const said = info?.isSynced === false ? "says it is not synced" : "did not say whether it is synced";
+      throw new NodeSyncError(
+        `NODE_NOT_SYNCED: the node at ${endpoint} serves ${observed} but ${said}: an operation that needs the current chain state ` +
+          `uses nothing from it (a well-identified node is not a synced node). Let it sync (a local node with no peers needs ` +
+          `recent blocks), then retry; nothing was sent.`,
+        { endpoint, expected, isSynced: typeof info?.isSynced === "boolean" ? info.isSynced : undefined }
       );
     }
   }
@@ -386,17 +470,24 @@ export class OfficialRpcSession {
       try {
         await this.verifyBroadcastIdentity(client);
       } catch (e) {
+        // MAINNET TOTAL LOCKDOWN (3): a node that now says mainnet is not asked anything else on this connection
+        if ((e as { code?: unknown } | null)?.code === "MAINNET_BROADCAST_DISABLED") {
+          const said = (e as { identity?: { observed?: unknown } }).identity?.observed;
+          if (typeof said === "string" && isMainnetNetworkId(said)) this.mainnetObserved = said;
+          await this.drop(client);
+        }
         if (isNodeNetworkIdentityError(e)) throw e;
         throw markRequestNotSent(e);
       }
     }
+    let wire: unknown;
     try {
       const result = await withTimeout(
         Promise.resolve(fn.call(client, request)),
         timeoutMs,
         () => new RpcTimeoutError(`RPC request ${name} timed out after ${timeoutMs}ms`)
       );
-      return toWire(result) as T;
+      wire = toWire(result);
     } catch (e) {
       // an interceptor in front of the transport refused the submission (code RPC_REQUEST_NOT_SENT): nothing left
       if (isSubmit && (e as { code?: unknown } | null)?.code === "RPC_REQUEST_NOT_SENT" && !(e instanceof RpcRequestNotSentError)) {
@@ -413,6 +504,22 @@ export class OfficialRpcSession {
       const err = new Error(nodeMessage(raw));
       throw normalizeRpcError(err, { method: name, params });
     }
+    // MAINNET TOTAL LOCKDOWN (3): an identity answer that names mainnet on a connection identified as something else
+    // (the node changed what it says): the connection is dropped and the answer never reaches the caller
+    const named = identityNamedBy(name, wire);
+    if (!MAINNET_CONNECTIONS_ENABLED && isMainnetNetworkId(named)) {
+      this.mainnetObserved = named;
+      await this.drop(client);
+      throw mainnetConnectionError(redactUrlCredentials(this.url), { expected: this.expectedNetworkId, observed: named });
+    }
+    return wire as T;
+  }
+
+  /** Forgets and releases a client that must not be asked anything else (a later request opens a new connection). */
+  private async drop(client: OfficialRpcClientLike): Promise<void> {
+    if (this.client === client) this.client = null;
+    if (this.verifiedClient === client) this.verifiedClient = null;
+    await release(client);
   }
 
   /**

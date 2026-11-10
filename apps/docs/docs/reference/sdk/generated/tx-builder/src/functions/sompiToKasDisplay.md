@@ -8,7 +8,7 @@
 
 > **sompiToKasDisplay**(`sompi`): `string`
 
-Defined in: [packages/tx-builder/src/kaspa-uri.ts:43](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/tx-builder/src/kaspa-uri.ts#L43)
+Defined in: [packages/tx-builder/src/kaspa-uri.ts:43](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/tx-builder/src/kaspa-uri.ts#L43)
 
 Convert sompi to a KAS display string using pure integer arithmetic.
 No floats. No Number(). No precision loss.

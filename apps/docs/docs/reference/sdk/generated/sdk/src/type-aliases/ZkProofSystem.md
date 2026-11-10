@@ -8,4 +8,4 @@
 
 > **ZkProofSystem** = `"groth16"` \| `"risc0"` \| `"unknown"`
 
-Defined in: [packages/sdk/src/zk.ts:7](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/zk.ts#L7)
+Defined in: [packages/sdk/src/zk.ts:189](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/zk.ts#L189)

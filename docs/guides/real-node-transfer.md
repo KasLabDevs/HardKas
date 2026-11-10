@@ -2,6 +2,9 @@
 
 This guide shows the advanced path for sending through a real `rusty-kaspad` node running in `simnet`. It is useful for integration testing, but it is not the default HardKas happy path. Start with the simulated flow first.
 
+> [!NOTE]
+> For a step-by-step path that was run as written for this release (your own node in Docker, real accounts, plan → sign → send → wait → verify), follow [Build on your own simnet](../start/build-on-simnet.md). The flags below are a reference; the account names `kaspa:sim_*` are simulator accounts and do not sign on simnet.
+
 ## 1. Prepare The Node
 
 Make sure your local node is running and exposes WRPC on the expected simnet endpoint:
@@ -72,7 +75,7 @@ hardkas tx sign simnet-plan.json \
   --out simnet-signed.json
 ```
 
-For mainnet-like flows, signing should remain a separate deliberate step. Mainnet signing is guarded and should not be part of normal local development.
+Signing should remain a separate deliberate step. Mainnet is locked down in this release: no connection (reads included), no signing, no broadcast (`MAINNET_CONNECTION_DISABLED`, `MAINNET_SIGNING_DISABLED`, `MAINNET_BROADCAST_DISABLED`).
 
 ## 5. Send
 

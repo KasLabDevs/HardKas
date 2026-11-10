@@ -100,6 +100,7 @@ export * from "./fee-guard.js";
 export * from "./endpoint-validation.js";
 export * from "./node-images.js";
 export * from "./node-identity.js";
+export * from "./network-identity.js";
 export * from "./toolchains.js";
 export * from "./kaspa-wasm.js";
 export * from "./kaspa-sighash.js";

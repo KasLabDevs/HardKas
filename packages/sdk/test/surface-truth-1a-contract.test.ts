@@ -28,7 +28,10 @@ describe("SURFACE-TRUTH-1A · contract · SDK covenants refuse with typed codes"
     const out: string[] = [];
     const walk = (d: string) => {
       if (!fs.existsSync(d)) return;
-      for (const e of fs.readdirSync(d, { withFileTypes: true })) e.isDirectory() ? walk(path.join(d, e.name)) : out.push(path.join(d, e.name));
+      for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+        if (e.isDirectory()) walk(path.join(d, e.name));
+        else out.push(path.join(d, e.name));
+      }
     };
     walk(path.join(dir, ".hardkas", "artifacts"));
     return out.sort();

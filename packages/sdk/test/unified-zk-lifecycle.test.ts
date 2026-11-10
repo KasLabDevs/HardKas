@@ -10,6 +10,7 @@ import {
   observeZkSpendOnce,
   deriveZkOperationStatus,
   createZkVerificationFactArtifact,
+  verifyR0Groth16ReceiptLocal,
   type ZkVerificationFact
 } from "../src/index.js";
 import type { KaspaRpcClient } from "@hardkas/kaspa-rpc";
@@ -29,7 +30,7 @@ describe("Unified ZK Lifecycle (Persist Facts, Derive States)", () => {
   const officialJournalHash = "5df6e0e2761359d30a8275058e299fcc0381534545f55cf43e41983f5d4c9456";
   const officialReceiptHex = fs.readFileSync(path.join(officialFixtureDir, "receipt.hex"), "utf8").trim();
 
-  it("completes full ZK lifecycle: parse -> build scripts -> build plan -> build tx -> fact emitted -> observe -> SETTLED", async () => {
+  it("completes full ZK lifecycle: parse -> build scripts -> verify receipt locally -> build plan -> build tx -> fact emitted -> observe -> TX_ACCEPTED", { timeout: 30000 }, async () => {
     // 1. Prepare proof & scripts
     const proof = prepareR0Groth16Proof(officialReceiptHex);
     expect(proof.length).toBe(256);
@@ -40,6 +41,14 @@ describe("Unified ZK Lifecycle (Persist Facts, Derive States)", () => {
       receiptHex: officialReceiptHex
     });
     expect(scripts.ok).toBe(true);
+
+    // HardKAS's own verifier (pinned RISC Zero key) is the only source of verifiedOffChain (HK-17 / CA-ZK-03).
+    const localVerification = await verifyR0Groth16ReceiptLocal({
+      receiptHex: officialReceiptHex,
+      imageId: officialImageId,
+      journalHash: officialJournalHash
+    });
+    expect(localVerification.verified).toBe(true);
 
     const spendParams = {
       scripts,
@@ -52,7 +61,7 @@ describe("Unified ZK Lifecycle (Persist Facts, Derive States)", () => {
       computeBudget: 1600,
       feeSompi: 20_000_000n,
       networkId: "simnet" as const,
-      mathVerified: true
+      localVerification
     };
 
     // 2. Build Plan Artifact
@@ -159,18 +168,18 @@ describe("Unified ZK Lifecycle (Persist Facts, Derive States)", () => {
     expect(observationResult.observation.schema).toBe("hardkas.txObservation.v1");
     expect(observationResult.derivedStatus.status).toBe("ACCEPTED");
     expect(observationResult.zkStatus).toBeDefined();
-    expect(observationResult.zkStatus?.kind).toBe("SETTLED");
+    // ACCEPTED = accepted by the virtual chain (the precompile verified the proof), not yet confirmed (ZK-10)
+    expect(observationResult.zkStatus?.kind).toBe("TX_ACCEPTED");
     expect(observationResult.zkStatus?.txId).toBe(txResult.transactionId);
     expect(observationResult.zkStatus?.isFinal).toBe(false); // ACCEPTED is not FINALIZED yet
   });
 
-  it("handles mathematical verification failure: derives PROOF_VERIFICATION_FAILED", () => {
-    const failedFact = createZkVerificationFactArtifact({
+  it("distinguishes 'not verified off-chain' (the default, not final) from an explicit local verification failure (HK-17)", () => {
+    const params = {
       networkId: "simnet",
       imageId: "00".repeat(32),
       journalHash: "11".repeat(32),
       proofSha256: "22".repeat(32),
-      verifiedOffChain: false,
       spendUtxo: { transactionId: "33".repeat(32), index: 0, amountSompi: "100000000" },
       p2shAddress: "kaspasim:p2sh_test",
       redeemScriptHash: "44".repeat(32),
@@ -179,16 +188,21 @@ describe("Unified ZK Lifecycle (Persist Facts, Derive States)", () => {
       computeBudget: 1600,
       feeSompi: "20000000",
       txId: "55".repeat(32)
-    });
+    };
+    const notVerified = deriveZkOperationStatus({ zkFact: createZkVerificationFactArtifact({ ...params, verifiedOffChain: false }) });
+    expect(notVerified.kind).toBe("PROOF_NOT_VERIFIED_OFFCHAIN");
+    expect(notVerified.isFinal).toBe(false);
 
-    const status = deriveZkOperationStatus({
-      zkFact: failedFact,
-      mathVerificationError: "Pairing equation check failed: e(A, B) != e(alpha, beta) * e(x, gamma) * e(C, delta)"
+    const failedFact = createZkVerificationFactArtifact({
+      ...params,
+      verifiedOffChain: false,
+      offChainVerification: "FAILED",
+      offChainVerifier: "hardkas-r0-groth16-snarkjs-v1"
     });
-
+    const status = deriveZkOperationStatus({ zkFact: failedFact });
     expect(status.kind).toBe("PROOF_VERIFICATION_FAILED");
-    expect(status.isFinal).toBe(true);
-    expect(status.reason).toContain("Mathematical off-chain Groth16 verification failed");
+    expect(status.isFinal).toBe(false); // only consensus finality is final
+    expect(status.reason).toContain("rejected");
   });
 
   it("handles node consensus rejection: derives TX_REJECTED", () => {

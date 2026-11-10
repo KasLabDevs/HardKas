@@ -96,3 +96,28 @@ describe("QueryToolkit - spendableUtxos", () => {
     // Should not have called mempool (we can reset mocks before each test ideally, but this is fine for now)
   });
 });
+
+// L1-CORE-1 B2 · TX-LOOKUP-NO-TXINDEX-1: `getTransaction` is `null` on a node without TxIndex (rusty-kaspad's default);
+// that was reported as "Transaction … not found" for every transaction, a confirmed one included
+describe("QueryToolkit - transaction lookups on a node without TxIndex", () => {
+  const rpc = { getTransaction: vi.fn(), getMempoolEntry: vi.fn() } as any;
+  const query = new QueryToolkit(rpc);
+
+  it("null and not in the mempool: TX_LOOKUP_UNAVAILABLE (never 'not found'), naming the observation that can tell", async () => {
+    rpc.getTransaction.mockResolvedValue(null);
+    rpc.getMempoolEntry.mockResolvedValue(null);
+    for (const ask of [() => query.transaction("ab".repeat(32)), () => query.confirmations("ab".repeat(32))]) {
+      const err: any = await ask().catch((e) => e);
+      expect(err.code).toBe("TX_LOOKUP_UNAVAILABLE");
+      expect(err.message).not.toMatch(/not found\./);
+      expect(err.message).toMatch(/sdk\.tx\.observe|hardkas tx status/);
+    }
+  });
+
+  it("null but in the mempool: the mempool entry, 0 confirmations", async () => {
+    rpc.getTransaction.mockResolvedValue(null);
+    rpc.getMempoolEntry.mockResolvedValue({ txId: "cd".repeat(32) });
+    expect((await query.transaction("cd".repeat(32))).data).toEqual({ txId: "cd".repeat(32) });
+    expect((await query.confirmations("cd".repeat(32))).data).toBe(0);
+  });
+});

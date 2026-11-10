@@ -6,7 +6,7 @@
 
 # Class: HardkasVprogs
 
-Defined in: [packages/sdk/src/vprogs.ts:42](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/vprogs.ts#L42)
+Defined in: [packages/sdk/src/vprogs.ts:42](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/vprogs.ts#L42)
 
 ## Constructors
 
@@ -14,7 +14,7 @@ Defined in: [packages/sdk/src/vprogs.ts:42](https://github.com/KasLabDevs/HardKa
 
 > **new HardkasVprogs**(`sdk`): `HardkasVprogs`
 
-Defined in: [packages/sdk/src/vprogs.ts:43](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/vprogs.ts#L43)
+Defined in: [packages/sdk/src/vprogs.ts:43](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/vprogs.ts#L43)
 
 #### Parameters
 
@@ -32,7 +32,7 @@ Defined in: [packages/sdk/src/vprogs.ts:43](https://github.com/KasLabDevs/HardKa
 
 > **capabilities**(): `Promise`\<[`VprogsCapabilitiesResult`](../interfaces/VprogsCapabilitiesResult.md)\>
 
-Defined in: [packages/sdk/src/vprogs.ts:45](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/vprogs.ts#L45)
+Defined in: [packages/sdk/src/vprogs.ts:45](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/vprogs.ts#L45)
 
 #### Returns
 
@@ -44,7 +44,7 @@ Defined in: [packages/sdk/src/vprogs.ts:45](https://github.com/KasLabDevs/HardKa
 
 > **inspect**(`targetPath`): `Promise`\<[`VprogsInspectResult`](../interfaces/VprogsInspectResult.md)\>
 
-Defined in: [packages/sdk/src/vprogs.ts:53](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/vprogs.ts#L53)
+Defined in: [packages/sdk/src/vprogs.ts:53](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/vprogs.ts#L53)
 
 #### Parameters
 
@@ -62,7 +62,7 @@ Defined in: [packages/sdk/src/vprogs.ts:53](https://github.com/KasLabDevs/HardKa
 
 > **status**(): `Promise`\<[`VprogsStatusResult`](../interfaces/VprogsStatusResult.md)\>
 
-Defined in: [packages/sdk/src/vprogs.ts:49](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/vprogs.ts#L49)
+Defined in: [packages/sdk/src/vprogs.ts:49](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/vprogs.ts#L49)
 
 #### Returns
 

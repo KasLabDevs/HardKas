@@ -6,7 +6,7 @@
 
 # Interface: ClientEnvelope\<T\>
 
-Defined in: [packages/sdk/src/client.ts:6](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/client.ts#L6)
+Defined in: [packages/sdk/src/client.ts:6](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/client.ts#L6)
 
 ## Type Parameters
 
@@ -20,7 +20,7 @@ Defined in: [packages/sdk/src/client.ts:6](https://github.com/KasLabDevs/HardKas
 
 > `optional` **data?**: `T`
 
-Defined in: [packages/sdk/src/client.ts:8](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/client.ts#L8)
+Defined in: [packages/sdk/src/client.ts:8](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/client.ts#L8)
 
 ***
 
@@ -28,11 +28,17 @@ Defined in: [packages/sdk/src/client.ts:8](https://github.com/KasLabDevs/HardKas
 
 > `optional` **error?**: `object`
 
-Defined in: [packages/sdk/src/client.ts:9](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/client.ts#L9)
+Defined in: [packages/sdk/src/client.ts:9](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/client.ts#L9)
 
 #### code
 
 > **code**: `string`
+
+#### idempotencyKey?
+
+> `optional` **idempotencyKey?**: `string`
+
+P0-1A: on TX_SEND_OUTCOME_UNKNOWN, the key that makes a repeated request for the same payment safe.
 
 #### message
 
@@ -44,7 +50,7 @@ Defined in: [packages/sdk/src/client.ts:9](https://github.com/KasLabDevs/HardKas
 
 > **meta**: `object`
 
-Defined in: [packages/sdk/src/client.ts:14](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/client.ts#L14)
+Defined in: [packages/sdk/src/client.ts:16](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/client.ts#L16)
 
 #### mode?
 
@@ -64,7 +70,7 @@ Defined in: [packages/sdk/src/client.ts:14](https://github.com/KasLabDevs/HardKa
 
 > **ok**: `boolean`
 
-Defined in: [packages/sdk/src/client.ts:7](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/client.ts#L7)
+Defined in: [packages/sdk/src/client.ts:7](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/client.ts#L7)
 
 ***
 
@@ -72,4 +78,4 @@ Defined in: [packages/sdk/src/client.ts:7](https://github.com/KasLabDevs/HardKas
 
 > **warnings**: `string`[]
 
-Defined in: [packages/sdk/src/client.ts:13](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/client.ts#L13)
+Defined in: [packages/sdk/src/client.ts:15](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/client.ts#L15)

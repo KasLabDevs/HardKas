@@ -67,6 +67,49 @@ for (const workspace of workspaces) {
 }
 
 // ---------------------------------------------------------------------------
+// 1b. Published set (L1-CORE-1 B5, INT9): what a release publishes is every workspace manifest without
+//     `private: true`. That set must be exactly the "Published packages" table of docs/status/versioning.md, and every
+//     package of its "Not published" table must be private (INT9: @hardkas/l2 joined @hardkas/ext-l2 and
+//     @hardkas/pskt-native there). packages/testing/test/l1-core-1-b5-publish-set.test.ts checks the same and more.
+// ---------------------------------------------------------------------------
+{
+  const doc = readFileSync(path.join(rootDir, "docs", "status", "versioning.md"), "utf8").replace(/\r\n/g, "\n");
+  const tableOf = (heading) => {
+    const start = doc.indexOf(`\n${heading}\n`);
+    if (start < 0) {
+      fail(`docs/status/versioning.md has no "${heading}" section`);
+      return [];
+    }
+    const rest = doc.slice(start + heading.length + 2);
+    const end = rest.search(/\n#{2,3} /);
+    const section = end >= 0 ? rest.slice(0, end) : rest;
+    return [...section.matchAll(/^\|\s*`(@hardkas\/[a-z0-9-]+)`\s*\|/gm)].map((m) => m[1]);
+  };
+  const listed = tableOf("## Published packages");
+  const notPublished = tableOf("### Not published");
+  const manifests = new Map();
+  for (const workspace of workspaces) {
+    if (path.resolve(workspace.path) === rootDir || !workspace.name) continue;
+    const pkgPath = path.join(workspace.path, "package.json");
+    if (existsSync(pkgPath)) manifests.set(workspace.name, JSON.parse(readFileSync(pkgPath, "utf8")));
+  }
+  const published = [...manifests].filter(([, m]) => m.private !== true).map(([name]) => name);
+  for (const name of published) {
+    if (!listed.includes(name)) fail(`${name} is published (not private) but is not listed under "Published packages" in docs/status/versioning.md`);
+  }
+  for (const name of listed) {
+    if (!manifests.has(name)) fail(`docs/status/versioning.md lists ${name} as published, but no workspace package has that name`);
+    else if (manifests.get(name).private === true) fail(`docs/status/versioning.md lists ${name} as published, but its manifest is private`);
+  }
+  for (const name of notPublished) {
+    if (manifests.has(name) && manifests.get(name).private !== true) fail(`docs/status/versioning.md lists ${name} as not published, but its manifest is not private`);
+  }
+  console.log(
+    `\nPublished set: ${published.length} workspace manifests are not private; docs/status/versioning.md lists ${listed.length} as published and ${notPublished.length} as not published.`
+  );
+}
+
+// ---------------------------------------------------------------------------
 // 2. Version freeze
 // ---------------------------------------------------------------------------
 const versionShape = /^(\d+)\.(\d+)\.(\d+)-([A-Za-z]+)\.(\d+)$/.exec(expectedVersion);

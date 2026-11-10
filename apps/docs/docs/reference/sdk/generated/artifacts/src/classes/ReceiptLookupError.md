@@ -6,7 +6,7 @@
 
 # Class: ReceiptLookupError
 
-Defined in: [packages/artifacts/src/receipt-lookup-error.ts:31](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/receipt-lookup-error.ts#L31)
+Defined in: [packages/artifacts/src/receipt-lookup-error.ts:33](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/receipt-lookup-error.ts#L33)
 
 ## Extends
 
@@ -18,7 +18,7 @@ Defined in: [packages/artifacts/src/receipt-lookup-error.ts:31](https://github.c
 
 > **new ReceiptLookupError**(`code`, `message`, `context?`): `ReceiptLookupError`
 
-Defined in: [packages/artifacts/src/receipt-lookup-error.ts:35](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/receipt-lookup-error.ts#L35)
+Defined in: [packages/artifacts/src/receipt-lookup-error.ts:37](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/receipt-lookup-error.ts#L37)
 
 #### Parameters
 
@@ -48,7 +48,7 @@ Defined in: [packages/artifacts/src/receipt-lookup-error.ts:35](https://github.c
 
 > `optional` **cause?**: `unknown`
 
-Defined in: node\_modules/.pnpm/typescript@5.7.3/node\_modules/typescript/lib/lib.es2022.error.d.ts:26
+Defined in: [node\_modules/.pnpm/typescript@5.7.3/node\_modules/typescript/lib/lib.es2022.error.d.ts:26](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/../node_modules/.pnpm/typescript@5.7.3/node_modules/typescript/lib/lib.es2022.error.d.ts#L26)
 
 #### Inherited from
 
@@ -60,7 +60,7 @@ Defined in: node\_modules/.pnpm/typescript@5.7.3/node\_modules/typescript/lib/li
 
 > `readonly` **code**: [`ReceiptLookupErrorCode`](../type-aliases/ReceiptLookupErrorCode.md)
 
-Defined in: [packages/artifacts/src/receipt-lookup-error.ts:32](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/receipt-lookup-error.ts#L32)
+Defined in: [packages/artifacts/src/receipt-lookup-error.ts:34](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/receipt-lookup-error.ts#L34)
 
 ***
 
@@ -68,7 +68,7 @@ Defined in: [packages/artifacts/src/receipt-lookup-error.ts:32](https://github.c
 
 > `readonly` `optional` **context?**: `Record`\<`string`, `string`\>
 
-Defined in: [packages/artifacts/src/receipt-lookup-error.ts:33](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/receipt-lookup-error.ts#L33)
+Defined in: [packages/artifacts/src/receipt-lookup-error.ts:35](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/receipt-lookup-error.ts#L35)
 
 ***
 
@@ -76,7 +76,7 @@ Defined in: [packages/artifacts/src/receipt-lookup-error.ts:33](https://github.c
 
 > **message**: `string`
 
-Defined in: node\_modules/.pnpm/typescript@5.7.3/node\_modules/typescript/lib/lib.es5.d.ts:1077
+Defined in: [node\_modules/.pnpm/typescript@5.7.3/node\_modules/typescript/lib/lib.es5.d.ts:1077](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/../node_modules/.pnpm/typescript@5.7.3/node_modules/typescript/lib/lib.es5.d.ts#L1077)
 
 #### Inherited from
 
@@ -88,7 +88,7 @@ Defined in: node\_modules/.pnpm/typescript@5.7.3/node\_modules/typescript/lib/li
 
 > **name**: `string`
 
-Defined in: node\_modules/.pnpm/typescript@5.7.3/node\_modules/typescript/lib/lib.es5.d.ts:1076
+Defined in: [node\_modules/.pnpm/typescript@5.7.3/node\_modules/typescript/lib/lib.es5.d.ts:1076](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/../node_modules/.pnpm/typescript@5.7.3/node_modules/typescript/lib/lib.es5.d.ts#L1076)
 
 #### Inherited from
 
@@ -100,7 +100,7 @@ Defined in: node\_modules/.pnpm/typescript@5.7.3/node\_modules/typescript/lib/li
 
 > `optional` **stack?**: `string`
 
-Defined in: node\_modules/.pnpm/typescript@5.7.3/node\_modules/typescript/lib/lib.es5.d.ts:1078
+Defined in: [node\_modules/.pnpm/typescript@5.7.3/node\_modules/typescript/lib/lib.es5.d.ts:1078](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/../node_modules/.pnpm/typescript@5.7.3/node_modules/typescript/lib/lib.es5.d.ts#L1078)
 
 #### Inherited from
 
@@ -112,7 +112,7 @@ Defined in: node\_modules/.pnpm/typescript@5.7.3/node\_modules/typescript/lib/li
 
 > `static` **stackTraceLimit**: `number`
 
-Defined in: node\_modules/.pnpm/@types+node@22.20.1/node\_modules/@types/node/globals.d.ts:68
+Defined in: [node\_modules/.pnpm/@types+node@22.20.1/node\_modules/@types/node/globals.d.ts:68](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/../node_modules/.pnpm/@types+node@22.20.1/node_modules/@types/node/globals.d.ts#L68)
 
 The `Error.stackTraceLimit` property specifies the number of stack frames
 collected by a stack trace (whether generated by `new Error().stack` or
@@ -134,7 +134,7 @@ not capture any frames.
 
 > `static` **captureStackTrace**(`targetObject`, `constructorOpt?`): `void`
 
-Defined in: node\_modules/.pnpm/@types+node@22.20.1/node\_modules/@types/node/globals.d.ts:52
+Defined in: [node\_modules/.pnpm/@types+node@22.20.1/node\_modules/@types/node/globals.d.ts:52](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/../node_modules/.pnpm/@types+node@22.20.1/node_modules/@types/node/globals.d.ts#L52)
 
 Creates a `.stack` property on `targetObject`, which when accessed returns
 a string representing the location in the code at which
@@ -204,7 +204,7 @@ a();
 
 > `static` **prepareStackTrace**(`err`, `stackTraces`): `any`
 
-Defined in: node\_modules/.pnpm/@types+node@22.20.1/node\_modules/@types/node/globals.d.ts:56
+Defined in: [node\_modules/.pnpm/@types+node@22.20.1/node\_modules/@types/node/globals.d.ts:56](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/../node_modules/.pnpm/@types+node@22.20.1/node_modules/@types/node/globals.d.ts#L56)
 
 #### Parameters
 

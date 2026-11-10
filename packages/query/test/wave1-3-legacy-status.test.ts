@@ -74,17 +74,17 @@ describe("Wave 1.3 · replay queries never decide on a legacy status", () => {
     expect(evidence.actual).toMatch(/hashVersion 4/);
   });
 
-  it("invariants: a legacy receipt's transition and conservation are NOT evaluated from its status", async () => {
+  it("invariants: a legacy receipt's state-change and UTXO-count checks are NOT evaluated from its status (ESCALÓN 2 · P9 field names)", async () => {
     const legacy: any = (await engine.execute(createQueryRequest({ domain: "replay", op: "invariants", params: { txId: "tx-legacy" } }))).items[0];
     expect(legacy.authScope).toBe("LEGACY");
-    expect(legacy.stateTransitionValid).toBe(false);
-    expect(legacy.utxoConservation).toBe(false);
+    expect(legacy.stateChangeMatchesStatus).toBe(false);
+    expect(legacy.utxoCountsNonZero).toBe(false);
     expect(legacy.issues.some((i: string) => /status/.test(i) && /not authenticated/.test(i))).toBe(true);
     expect(legacy.issues.some((i: string) => /did not change state/.test(i))).toBe(false);
 
     const full: any = (await engine.execute(createQueryRequest({ domain: "replay", op: "invariants", params: { txId: "tx-full" } }))).items[0];
     expect(full.authScope).toBe("FULL");
-    expect(full.stateTransitionValid).toBe(false);
+    expect(full.stateChangeMatchesStatus).toBe(false);
     expect(full.issues.some((i: string) => /did not change state/.test(i))).toBe(true);
   });
 });

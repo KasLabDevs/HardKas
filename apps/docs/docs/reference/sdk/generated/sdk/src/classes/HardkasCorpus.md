@@ -6,7 +6,7 @@
 
 # Class: HardkasCorpus
 
-Defined in: [packages/sdk/src/corpus.ts:14](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/corpus.ts#L14)
+Defined in: [packages/sdk/src/corpus.ts:14](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/corpus.ts#L14)
 
 ## Constructors
 
@@ -14,7 +14,7 @@ Defined in: [packages/sdk/src/corpus.ts:14](https://github.com/KasLabDevs/HardKa
 
 > **new HardkasCorpus**(`sdk`): `HardkasCorpus`
 
-Defined in: [packages/sdk/src/corpus.ts:15](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/corpus.ts#L15)
+Defined in: [packages/sdk/src/corpus.ts:15](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/corpus.ts#L15)
 
 #### Parameters
 
@@ -32,7 +32,7 @@ Defined in: [packages/sdk/src/corpus.ts:15](https://github.com/KasLabDevs/HardKa
 
 > **verify**(`targetPath`): `Promise`\<`SilverCorpusVerifyResult`\>
 
-Defined in: [packages/sdk/src/corpus.ts:17](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/corpus.ts#L17)
+Defined in: [packages/sdk/src/corpus.ts:17](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/corpus.ts#L17)
 
 #### Parameters
 

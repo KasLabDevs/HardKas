@@ -6,7 +6,7 @@
 
 # Interface: EvidencePackOptions
 
-Defined in: [packages/sdk/src/evidence.ts:7](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/evidence.ts#L7)
+Defined in: [packages/sdk/src/evidence.ts:20](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/evidence.ts#L20)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [packages/sdk/src/evidence.ts:7](https://github.com/KasLabDevs/HardK
 
 > `optional` **outPath?**: `string`
 
-Defined in: [packages/sdk/src/evidence.ts:10](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/evidence.ts#L10)
+Defined in: [packages/sdk/src/evidence.ts:23](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/evidence.ts#L23)
 
 ***
 
@@ -22,7 +22,7 @@ Defined in: [packages/sdk/src/evidence.ts:10](https://github.com/KasLabDevs/Hard
 
 > **scenarioResultPath**: `string`
 
-Defined in: [packages/sdk/src/evidence.ts:8](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/evidence.ts#L8)
+Defined in: [packages/sdk/src/evidence.ts:21](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/evidence.ts#L21)
 
 ***
 
@@ -30,4 +30,4 @@ Defined in: [packages/sdk/src/evidence.ts:8](https://github.com/KasLabDevs/HardK
 
 > **workspaceRoot**: `string`
 
-Defined in: [packages/sdk/src/evidence.ts:9](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/evidence.ts#L9)
+Defined in: [packages/sdk/src/evidence.ts:22](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/evidence.ts#L22)

@@ -6,7 +6,7 @@
 
 # Class: InvariantWatcher
 
-Defined in: [packages/artifacts/src/invariants/watcher.ts:31](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/invariants/watcher.ts#L31)
+Defined in: [packages/artifacts/src/invariants/watcher.ts:31](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/invariants/watcher.ts#L31)
 
 Lightweight, opt-in watcher for system invariants.
 Listens to the event bus and performs validation.
@@ -18,7 +18,7 @@ Non-global, non-singleton.
 
 > **new InvariantWatcher**(`options`): `InvariantWatcher`
 
-Defined in: [packages/artifacts/src/invariants/watcher.ts:37](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/invariants/watcher.ts#L37)
+Defined in: [packages/artifacts/src/invariants/watcher.ts:37](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/invariants/watcher.ts#L37)
 
 #### Parameters
 
@@ -36,7 +36,7 @@ Defined in: [packages/artifacts/src/invariants/watcher.ts:37](https://github.com
 
 > **dispose**(): `void`
 
-Defined in: [packages/artifacts/src/invariants/watcher.ts:94](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/invariants/watcher.ts#L94)
+Defined in: [packages/artifacts/src/invariants/watcher.ts:94](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/invariants/watcher.ts#L94)
 
 Alias for stop().
 
@@ -50,7 +50,7 @@ Alias for stop().
 
 > **start**(): `void`
 
-Defined in: [packages/artifacts/src/invariants/watcher.ts:46](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/invariants/watcher.ts#L46)
+Defined in: [packages/artifacts/src/invariants/watcher.ts:46](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/invariants/watcher.ts#L46)
 
 Starts watching for events.
 
@@ -64,7 +64,7 @@ Starts watching for events.
 
 > **stop**(): `void`
 
-Defined in: [packages/artifacts/src/invariants/watcher.ts:84](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/invariants/watcher.ts#L84)
+Defined in: [packages/artifacts/src/invariants/watcher.ts:84](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/invariants/watcher.ts#L84)
 
 Stops watching and clears subscriptions.
 

@@ -17,6 +17,7 @@ import {
   STANDARD_MAX_TRANSACTION_MASS,
   KASPA_WASM_ZK_BUILDER_CLAIM
 } from "../src/index.js";
+import { loadManagedKaspaWasmSync } from "@hardkas/core";
 
 function repoRoot(): string {
   let current = path.dirname(fileURLToPath(import.meta.url));
@@ -57,11 +58,14 @@ describe("HardKAS Phase 3 ZK / Toccata L1 script building (offline)", () => {
     expect(result.sigScript.length).toBe(1934);
     expect(result.sigScript.includes(officialJournalHash)).toBe(true);
     expect(result.fullSignatureScript).toBe(result.sigScript);
-    // The claim cross-check limit is stated, never hidden (L-04).
-    expect(result.warnings.some((w) => w.code === "ZK_RECEIPT_CLAIM_NOT_CROSSCHECKED")).toBe(true);
+    // HK-19: the receipt's pruned claim digest is recomputed and matches; HK-16: the model is stated.
+    expect(result.receiptClaimCrossCheck).toBe("MATCH");
+    expect(result.warnings.some((w) => w.code === "ZK_RECEIPT_CLAIM_NOT_CROSSCHECKED")).toBe(false);
+    expect(result.warnings.some((w) => w.code === "ZK_LOCK_BINDS_IMAGE_ID_ONLY")).toBe(true);
+    expect(result.authorizationModel).toBe("IMAGE_ID_ONLY");
   });
 
-  it("derives the same P2SH addresses deterministically across networks", () => {
+  it("derives the P2SH lock deterministically and returns only the simnet address for the public vector (HK-16)", () => {
     const result = buildR0Groth16Scripts({
       imageId: officialImageId,
       journalHash: officialJournalHash,
@@ -72,13 +76,14 @@ describe("HardKAS Phase 3 ZK / Toccata L1 script building (offline)", () => {
     expect(result.p2shScriptPublicKey.script).toBe(
       "aa20c7ade3db2026ae6c4bf50e0bb1489b3b7183a103db413b9fa928ba511933a94487"
     );
-    expect(result.p2shAddresses.testnet10).toBe(
-      "kaspatest:prr6mc7myqn2umzt758qhv2gnvahrqapq0d5zwul4y5t55gexw55gcz66pvdf"
-    );
     expect(result.p2shAddresses.simnet).toBe(
       "kaspasim:prr6mc7myqn2umzt758qhv2gnvahrqapq0d5zwul4y5t55gexw55gk5pqjvz7"
     );
-    expect(result.p2shAddresses.mainnet).toBe("kaspa:prr6mc7myqn2umzt758qhv2gnvahrqapq0d5zwul4y5t55gexw55geyupwjud");
+    // The receipt is public (kaspa-python-sdk): a testnet/mainnet address would be anyone-can-spend.
+    expect(result.p2shAddresses.testnet10).toBeUndefined();
+    expect(result.p2shAddresses.mainnet).toBeUndefined();
+    expect(JSON.stringify(result)).not.toContain("kaspa:prr6mc7myqn2umzt758qhv2gnvahrqapq0d5zwul4y5t55gexw55geyupwjud");
+    expect(JSON.stringify(result)).not.toContain("kaspatest:prr6mc7myqn2umzt758qhv2gnvahrqapq0d5zwul4y5t55gexw55gcz66pvdf");
   });
 
   it("constructs a version 1 transaction with compute budget 1600 and prices it from the measured mass", () => {
@@ -138,7 +143,7 @@ describe("HardKAS Phase 3 ZK / Toccata L1 script building (offline)", () => {
     });
     expect(dynamicTx.ok).toBe(true);
     expect(dynamicTx.feeSompi).toBe(19392240n);
-    expect(dynamicTx.warnings).toEqual([]);
+    expect(dynamicTx.warnings.map((w) => w.code)).toEqual(["ZK_LOCK_BINDS_IMAGE_ID_ONLY"]);
   });
 
   it("rejects compute budgets outside the u16 range and flags a fee cap below the minimum", () => {
@@ -175,7 +180,7 @@ describe("HardKAS Phase 3 ZK / Toccata L1 script building (offline)", () => {
     expect(cappedTx.warnings.some((w) => w.code === "ZK_FEE_CAP_BELOW_MINIMUM")).toBe(true);
   });
 
-  it("re-audit RA-1/RA-4: withinStandardMaxMass is about the non-contextual mass, and the destination must match the network", () => {
+  it("re-audit RA-1/RA-4: withinStandardMaxMass is about the non-contextual mass, the block compute limit is enforced (ZK-07), and the destination must match the network", () => {
     const scripts = buildR0Groth16Scripts({
       imageId: officialImageId,
       journalHash: officialJournalHash,
@@ -188,34 +193,38 @@ describe("HardKAS Phase 3 ZK / Toccata L1 script building (offline)", () => {
       computeBudget: 65535,
       networkId: "simnet"
     });
-    expect(big.ok).toBe(true);
     expect(big.withinStandardMaxMass).toBe(true);
     expect(big.computeMass).toBe(1602n + 6553500n);
+    expect(big.ok).toBe(false);
+    expect(big.issues.some((i) => i.code === "ZK_TX_EXCEEDS_BLOCK_COMPUTE_MASS_LIMIT")).toBe(true);
+    const mainnetAddress = new (loadManagedKaspaWasmSync().PrivateKey)("33".repeat(32)).toAddress("mainnet").toString();
     const wrongNet = buildR0Groth16Transaction({
       scripts,
       utxo: { transactionId: "11".repeat(32), index: 0, amountSompi: 200000000n },
-      destinationAddress: scripts.p2shAddresses.mainnet,
+      destinationAddress: mainnetAddress,
       networkId: "simnet"
     });
     expect(wrongNet.ok).toBe(false);
     expect(wrongNet.issues.some((i) => i.code === "ZK_DESTINATION_NETWORK_MISMATCH")).toBe(true);
   });
 
-  it("builds for mainnet only with an explicit unguarded-build warning", () => {
+  it("never builds a mainnet spend (MAINNET TOTAL LOCKDOWN: refused like a signature, before anything is built; crypto review H5)", () => {
     const scripts = buildR0Groth16Scripts({
       imageId: officialImageId,
       journalHash: officialJournalHash,
       receiptHex: officialReceiptHex
     });
-    const tx = buildR0Groth16Transaction({
-      scripts,
-      utxo: { transactionId: "11".repeat(32), index: 0, amountSompi: 200000000n },
-      destinationAddress: scripts.p2shAddresses.mainnet,
-      networkId: "mainnet"
-    });
-    expect(tx.ok).toBe(true);
-    expect(tx.networkId).toBe("mainnet");
-    expect(tx.warnings.some((w) => w.code === "ZK_MAINNET_BUILD_UNGUARDED")).toBe(true);
+    const mainnetAddress = new (loadManagedKaspaWasmSync().PrivateKey)("33".repeat(32)).toAddress("mainnet").toString();
+    // It used to return a result with the warning ZK_MAINNET_BUILD_UNGUARDED (and, for a non-public receipt, a
+    // complete mainnet transaction: a ZK spend carries no signature).
+    expect(() =>
+      buildR0Groth16Transaction({
+        scripts,
+        utxo: { transactionId: "11".repeat(32), index: 0, amountSompi: 200000000n },
+        destinationAddress: mainnetAddress,
+        networkId: "mainnet"
+      })
+    ).toThrow(/MAINNET_SIGNING_DISABLED|Mainnet signing is disabled/);
   });
 
   it("verifies the structure of the built scripts by parsing opcodes", () => {
@@ -276,8 +285,14 @@ describe("HardKAS Phase 3 ZK / Toccata L1 script building (offline)", () => {
     expect(rules.maxStandardMass).toBe(100000n);
     expect(rules.scriptSource).toBe(KASPA_WASM_ZK_BUILDER_CLAIM);
     expect((rules as any).computeBudgetGramsEquivalent).toBeUndefined();
-    // allowed units for the recommended budget cover the precompile cost plus pushes
-    expect(1600 * rules.scriptUnitsPerComputeBudgetUnit + rules.freeScriptUnitsPerInput).toBeGreaterThan(14002811);
+    // allowed units for the recommended budget cover the observed overhead, the tag cost and the 6 VK elements
+    expect(rules.groth16VkElementCostScriptUnits).toBe(250000);
+    expect(rules.r0Groth16VkElements).toBe(6);
+    expect(rules.minimumR0Groth16ComputeBudget).toBe(1550);
+    expect(rules.blockComputeMassLimit).toBe(500000);
+    expect(rules.maximumComputeBudgetForBlockReferenceShape).toBe(4983);
+    expect(rules.authorizationModel).toBe("IMAGE_ID_ONLY");
+    expect(1600 * rules.scriptUnitsPerComputeBudgetUnit + rules.freeScriptUnitsPerInput).toBeGreaterThan(14002811 + 6 * 250000);
   });
 
   it("rejects corrupted or non-hex receipts with a descriptive error", () => {

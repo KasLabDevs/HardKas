@@ -162,12 +162,14 @@ describe("Phase 3 remediation · M-01 binding and provenance", { timeout: 20000 
       fs.writeFileSync(vkPath, JSON.stringify(vk, null, 2));
       const bound = await verifyZkProofMath(d, os.tmpdir(), TOY);
       expect(bound.ok).toBe(false);
-      expect(bound.summary.binding).toBe("FIXTURE_COHERENCE");
+      expect(bound.summary.binding).toBe("FIXTURE_COHERENCE_SELF_ATTESTED");
       expect(bound.issues.some((i) => i.code === "ZK_FIXTURE_INCOHERENT")).toBe(true);
       expect(bound.issues.some((i) => i.code === "ZK_CORPUS_HASH_MISMATCH")).toBe(true);
       const unbound = await verifyZkProofMath(d, os.tmpdir(), { ...TOY, mathOnly: true });
       expect(unbound.summary.binding).toBe("MATH_ONLY");
-      expect(unbound.claims.zkMathematicalVerification).toBe("GROTH16_SNARKJS_BN254_MATH_ONLY");
+      // the swapped key is not the pinned toy key: unanchored, and the pairing fails anyway
+      expect(unbound.summary.verificationKeyAnchor).toBe("UNANCHORED");
+      expect(unbound.claims.zkMathematicalVerification).toBe("GROTH16_SNARKJS_BN254_UNANCHORED_VK");
       expect(unbound.issues.some((i) => i.code === "ZK_GROTH16_PAIRING_FAILED")).toBe(true);
     } finally {
       fs.rmSync(d, { recursive: true, force: true });
@@ -248,13 +250,15 @@ describe("Phase 3 remediation · L-01 / L-02 / L-09 canonical and strict validat
       const p = rj(pp);
       p.evil = "x".repeat(10);
       fs.writeFileSync(pp, JSON.stringify(p, null, 2));
-      return verifyZkProofMath(d, os.tmpdir(), { ...TOY, mathOnly: true }).then((r) => {
-        expect(r.ok).toBe(false);
-        expect(r.issues.some((i) => i.code === "ZK_ARTIFACT_SCHEMA_INVALID")).toBe(true);
-      });
-    } finally {
-      // the promise above still reads from d before this runs? No: readJson is synchronous inside verifyZkProofMath
-      // before the first await, so the directory can be removed afterwards by the caller of the returned promise.
+      return verifyZkProofMath(d, os.tmpdir(), { ...TOY, mathOnly: true })
+        .then((r) => {
+          expect(r.ok).toBe(false);
+          expect(r.issues.some((i) => i.code === "ZK_ARTIFACT_SCHEMA_INVALID")).toBe(true);
+        })
+        .finally(() => fs.rmSync(d, { recursive: true, force: true })); // ZK-16: no leaked temp directory
+    } catch (error) {
+      fs.rmSync(d, { recursive: true, force: true });
+      throw error;
     }
   });
 
@@ -370,10 +374,10 @@ describe("Phase 3 remediation · M-08 identity categories, L-07 evidence schema,
 
   it("capabilities name the real sources and never a cryptographic provenance", () => {
     const caps = createZkCapabilities();
-    expect(caps.proofSystems.groth16.verifyMath).toBe("SNARKJS_BN254_FIXTURE_BOUND");
+    expect(caps.proofSystems.groth16.verifyMath).toBe("SNARKJS_BN254_PINNED_VK_ONLY");
     expect(caps.proofSystems.groth16.trustedSetupProvenance).toBe("NOT_CLAIMED");
     expect(caps.proofSystems.risc0.toccataL1Scripts).toBe("KASPA_WASM_ZK_SCRIPT_BUILDER_2_1_0");
-    expect(caps.claims.zkMathematicalVerification).toBe("GROTH16_SNARKJS_BN254_FIXTURE_BOUND");
+    expect(caps.claims.zkMathematicalVerification).toBe("GROTH16_SNARKJS_BN254_PINNED_VK_ONLY");
     expect(caps.claims.zkOnchainVerification).toBe("NOT_CLAIMED");
     expect(caps.errors).toContain("ZK_VERIFICATION_KEY_WEAK_TRAPDOOR");
   });

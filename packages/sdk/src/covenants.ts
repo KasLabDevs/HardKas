@@ -299,8 +299,8 @@ export interface CovenantArtifact {
  * Covenants are protocol-native, recursive spending rules embedded in UTXOs,
  * enforced at the consensus layer (KIP-17, KIP-20).
  *
- * This is NOT experimental — covenants are live on Kaspa mainnet since
- * DAA score 474,165,565 (June 30, 2026).
+ * Covenants are live on Kaspa mainnet since DAA score 474,165,565 (June 30, 2026). In HardKAS, mainnet signing and
+ * broadcast stay BLOCKED_BY_POLICY (SC-13); see docs/status/limitations.md for the networks each method accepts.
  *
  * **The v1 engine (phase 3):** `planGenesis`, `planTransition`, `planContractDeploy` and `planContractSpend` plan v1
  * transactions (sealed and stored in the workspace); `check` runs the engine's validation (F1.4) without any private

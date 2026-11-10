@@ -20,10 +20,10 @@ export function registerNodeCommands(program: Command) {
   nodeCmd
     .command("start")
     .description(`Start local node ${UI.maturity("stable")}`)
-    .option("--image <image>", "Docker image")
+    .option("--image <image>", "Docker image, pinned by digest: <repository>[:tag]@sha256:<64 hex> (default: the pinned rusty-kaspad); an image without a digest is refused (NODE_IMAGE_DIGEST_REQUIRED)")
     .option(
       "--allow-floating-image",
-      "Allow using a floating tag like 'latest' without warning",
+      "No effect: the image must be pinned by digest (@sha256:<64 hex>); a floating tag is never run",
       false
     )
     .option("--wait-lock", "Wait for workspace lock if held", false)
@@ -32,6 +32,9 @@ export function registerNodeCommands(program: Command) {
     .action(async (options) => {
       const { withLock } = await import("@hardkas/core");
       try {
+        // ESCALÓN 4 · P39: the image is pinned by digest, decided before the lock or Docker is touched
+        const { assertNodeStartImagePinned } = await import("../runners/node-start-runner.js");
+        assertNodeStartImagePinned(options);
         await withLock(
           {
             rootDir: process.cwd(),
@@ -264,7 +267,7 @@ export function registerNodeCommands(program: Command) {
     .command("logs")
     .description(`View node logs ${UI.maturity("preview")}`)
     .option("--tail <n>", "Number of lines to show", "100")
-    .option("--follow", "Follow log output", false)
+    .option("--follow", "No effect: the logs are printed once (the last --tail lines), never followed", false)
     .option("--json", "Output results as JSON", false)
     .action(async (options) => {
       try {

@@ -53,6 +53,7 @@ function keystoreNetworkOf(root: string, account: RealDevAccount): string | null
 
 function prefixNetwork(address: string): string | null {
   if (address.startsWith("kaspasim:")) return "simnet";
+  if (address.startsWith("kaspadev:")) return "devnet"; // INT9-A: the devnet family only, as in resolve.ts
   if (address.startsWith("kaspa:") && !address.startsWith("kaspa:sim_")) return "mainnet";
   return null; // kaspatest: names no single network
 }

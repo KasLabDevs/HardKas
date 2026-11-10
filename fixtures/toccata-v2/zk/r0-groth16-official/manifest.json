@@ -14,8 +14,8 @@
   },
   "expectedStatus": "RISC0_LOCAL_VERIFICATION_NOT_IMPLEMENTED",
   "claims": {
-    "localReceiptVerification": "NOT_IMPLEMENTED",
-    "receiptClaimCrossCheck": "NOT_IMPLEMENTED",
+    "localReceiptVerification": "GROTH16_SNARKJS_PINNED_RISC0_VK (zk toccata verify-receipt)",
+    "receiptClaimCrossCheck": "IMPLEMENTED (zk toccata build-scripts)",
     "zkOnchainVerification": "NOT_CLAIMED",
     "vmConsensusEquivalence": "NOT_CLAIMED",
     "mainnet": "BLOCKED_BY_POLICY"

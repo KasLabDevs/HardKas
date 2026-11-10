@@ -75,7 +75,15 @@ describe("covenant transactions (v1)", () => {
       expect(rpc.outputs[0].covenant).toEqual({ authorizingInput: 0, covenantId: expectedId });
       expect(rpc.outputs[1].covenant).toBeUndefined();
       expect(rpc.outputs[0].scriptPublicKey).toEqual({ version: 0, scriptPublicKey: lock.script });
-      expect(g.storageMass).toBe(calculateUpstreamStorageMass([5_000_000_000n], [1_000_000_000n, g.changeSompi], "simnet"));
+      // L1-04 / SC-03: the committed storage mass is the node's (rusty-kaspa v2.1.0 consensus/core/src/mass/mod.rs,
+      // `utxo_plurality` + `calc_storage_mass`), derived here by hand with C = 1e12:
+      //   input  P2PK 34 B  → plurality ceil((63+34)/100)    = 1, 5_000_000_000
+      //   output P2SH 35 B + covenant id 32 B → ceil(130/100) = 2, 1_000_000_000 → C·4/1e9   = 4000
+      //   change P2PK 34 B  → plurality 1,       3_999_500_000                  → C/3.9995e9 = 250
+      //   |I| = 1 → relaxed path: 4000 + 250 − C/5e9 (200) = 4050
+      // The amounts-only value (plurality 1 everywhere, kaspa-wasm `calculateStorageMass`) is 1050 and is no longer committed.
+      expect(g.storageMass).toBe(4050n);
+      expect(BigInt(calculateUpstreamStorageMass([5_000_000_000n], [1_000_000_000n, g.changeSompi], "simnet"))).toBe(1050n);
       expect(rpc.storageMass).toBe(Number(g.storageMass));
       expect("mass" in rpc).toBe(false);
       expect(g.changeSompi + g.feeSompi + 1_000_000_000n).toBe(5_000_000_000n);

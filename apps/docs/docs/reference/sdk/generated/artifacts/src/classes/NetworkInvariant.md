@@ -6,7 +6,7 @@
 
 # Class: NetworkInvariant
 
-Defined in: [packages/artifacts/src/invariants/definitions.ts:162](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/invariants/definitions.ts#L162)
+Defined in: [packages/artifacts/src/invariants/definitions.ts:176](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/invariants/definitions.ts#L176)
 
 Contract/Stub: Network invariant (address prefix matching).
 
@@ -30,7 +30,7 @@ Contract/Stub: Network invariant (address prefix matching).
 
 > `readonly` **description**: `"Network ID must match address prefixes"` = `"Network ID must match address prefixes"`
 
-Defined in: [packages/artifacts/src/invariants/definitions.ts:164](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/invariants/definitions.ts#L164)
+Defined in: [packages/artifacts/src/invariants/definitions.ts:178](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/invariants/definitions.ts#L178)
 
 #### Implementation of
 
@@ -42,7 +42,7 @@ Defined in: [packages/artifacts/src/invariants/definitions.ts:164](https://githu
 
 > `readonly` **id**: `"INVAR_NETWORK_PREFIX"` = `"INVAR_NETWORK_PREFIX"`
 
-Defined in: [packages/artifacts/src/invariants/definitions.ts:163](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/invariants/definitions.ts#L163)
+Defined in: [packages/artifacts/src/invariants/definitions.ts:177](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/invariants/definitions.ts#L177)
 
 #### Implementation of
 
@@ -54,7 +54,7 @@ Defined in: [packages/artifacts/src/invariants/definitions.ts:163](https://githu
 
 > **check**(): `Promise`\<[`InvariantViolation`](../interfaces/InvariantViolation.md)[]\>
 
-Defined in: [packages/artifacts/src/invariants/definitions.ts:165](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/invariants/definitions.ts#L165)
+Defined in: [packages/artifacts/src/invariants/definitions.ts:179](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/invariants/definitions.ts#L179)
 
 #### Returns
 

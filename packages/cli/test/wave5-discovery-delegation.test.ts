@@ -47,7 +47,8 @@ let SIGNED_ID: string;
 let RECEIPT_ID: string;
 
 beforeAll(async () => {
-  workspaceRoot = await fsp.mkdtemp(path.join(os.tmpdir(), "hk-wave5-cli-"));
+  // real path: on macOS the temp dir is under /var -> /private/var, and the CLI prints paths already resolved
+  workspaceRoot = await fsp.realpath(await fsp.mkdtemp(path.join(os.tmpdir(), "hk-wave5-cli-")));
   const artifactsDir = path.join(workspaceRoot, ".hardkas", "artifacts");
   await fsp.mkdir(path.join(artifactsDir, "signed"), { recursive: true });
   await fsp.mkdir(path.join(artifactsDir, "receipts"), { recursive: true });

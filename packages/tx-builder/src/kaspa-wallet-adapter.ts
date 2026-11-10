@@ -366,9 +366,20 @@ function defaultReadEntry(u: any): { blockDaaScore: bigint; isCoinbase: boolean 
   };
 }
 
-/** Coinbase maturity in DAA blocks, from the SDK's network parameters (no HardKAS default). */
+/**
+ * Consensus coinbase maturity at 10 BPS: 100 × BPS = 1000 DAA (rusty-kaspa v2.1.0 consensus/core/src/config/bps.rs
+ * `coinbase_maturity`; every network, devnet included — params.rs DEVNET_PARAMS `BlockrateParams::new::<10>()`).
+ */
+const CONSENSUS_COINBASE_MATURITY_DAA = 1000n;
+
+/**
+ * Coinbase maturity in DAA blocks, from the SDK's network parameters. L1-09: the SDK's devnet setting is a wallet
+ * constant of 100 DAA (wallet/core/src/utxo/settings.rs) while consensus requires 1000, so a coinbase of 100-999 DAA
+ * would be selected and refused (ImmatureCoinbaseSpend); on devnet the consensus value applies when it is higher.
+ */
 function coinbaseMaturityOf(networkId: string): bigint {
-  return getCoinbaseMaturity(networkId);
+  const sdk = getCoinbaseMaturity(networkId);
+  return /^devnet(-\d+)?$/.test(networkId) && sdk < CONSENSUS_COINBASE_MATURITY_DAA ? CONSENSUS_COINBASE_MATURITY_DAA : sdk;
 }
 
 export function filterMatureUtxos<T = any>(input: FilterMatureUtxosInput): FilterMatureUtxosResult<T> {

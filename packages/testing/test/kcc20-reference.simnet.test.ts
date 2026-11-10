@@ -46,7 +46,7 @@ import {
 } from "@hardkas/core";
 import { parseWasmTxToRpc } from "@hardkas/accounts";
 import { classifyNodeRejection, type NodeRejectionCode } from "@hardkas/artifacts";
-import { calculateUpstreamStorageMass } from "@hardkas/tx-builder";
+import { calculateUpstreamStorageMass, v1StorageMass } from "@hardkas/tx-builder";
 
 // -----------------------------------------------------------------------------
 // KCC-20 on a real rusty-kaspad v2.1.0 simnet node (CONSENSUS_SIMNET): the reference KCC20 program
@@ -264,7 +264,11 @@ async function transfer(c: TransferCase): Promise<Outcome> {
       gas: 0n,
       payload: ""
     });
-    tx.storageMass = calculateUpstreamStorageMass(inputs.map((i) => i.amount), outputs.map((o) => o.value), "simnet");
+    // L1-04: the node's storage mass (covenant cells have utxo_plurality 2), as a block would require it
+    tx.storageMass = v1StorageMass(
+      inputs.map((i) => ({ amountSompi: i.amount, scriptBytes: i.spk.script.length / 2, covenantId: Boolean(i.covenantId) })),
+      outputs.map((o) => ({ amountSompi: o.value, scriptBytes: o.spk.script.length / 2, covenantId: true }))
+    )!;
     tx.finalize();
     return tx;
   };

@@ -3,12 +3,22 @@ import { HardkasCliError } from "../cli-errors.js";
 import type { KnownExtension } from "./api.js";
 import { type ExtensionRegistry, type ExtensionState, extensionStateOf } from "./registry.js";
 
+/** RC1-R2 (D5): the published-packages table, by URL (the same form the published READMEs use for repository docs). */
+export const PUBLISHED_PACKAGES_URL = "https://github.com/KasLabDevs/HardKas/blob/main/docs/status/versioning.md";
+
 /**
  * The typed error for a command, template or doctor module of an extension that is not loaded (P2): it names the
  * reason (not installed, disabled, incompatible) and the exact next step. Nothing of the extension is imported.
  */
 export function extensionUnavailableError(known: KnownExtension, state: ExtensionState | undefined, what: string): HardkasCliError {
   const install = `hardkas extension install ${known.id}`;
+  // INT9: a package this release does not publish cannot come from the registry, so the next step never says it can.
+  // RC1-R2 (D5): the next step works from an installed CLI — the offline install from a tarball — and the list of what
+  // this release publishes is a URL; it named a repository path (docs/status/versioning.md) no installed package ships.
+  const unpublished =
+    `${known.packageName} is not published in this release, so '${install}' cannot fetch it from a registry; ` +
+    `it works only from a local build: ${install} --from <tgz> --sha256 <hex> ` +
+    `(what this release publishes: ${PUBLISHED_PACKAGES_URL}).`;
   if (state?.status === "disabled") {
     return new HardkasCliError(
       "EXTENSION_DISABLED",
@@ -23,7 +33,7 @@ export function extensionUnavailableError(known: KnownExtension, state: Extensio
     return new HardkasCliError(
       "EXTENSION_INCOMPATIBLE",
       `${what} belongs to the '${known.id}' extension, but the installed ${known.packageName} was not loaded: ${state.detail}.`,
-      { suggestion: `Reinstall it at the CLI's version: ${install}`, context }
+      { suggestion: known.published ? `Reinstall it at the CLI's version: ${install}` : `Reinstall it at the CLI's version. ${unpublished}`, context }
     );
   }
   const experimental =
@@ -34,7 +44,10 @@ export function extensionUnavailableError(known: KnownExtension, state: Extensio
   return new HardkasCliError(
     "EXTENSION_NOT_INSTALLED",
     `${what} belongs to the '${known.id}' extension (${known.packageName}: ${known.summary}), which is not installed in this project; it is not part of the HardKAS core.${declaredOnly}${experimental}`,
-    { suggestion: `Install it in this project: ${install}`, context: { extension: known.id, package: known.packageName } }
+    {
+      suggestion: known.published ? `Install it in this project: ${install}` : unpublished,
+      context: { extension: known.id, package: known.packageName }
+    }
   );
 }
 

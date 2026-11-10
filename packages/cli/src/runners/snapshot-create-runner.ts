@@ -14,6 +14,16 @@ export interface SnapshotCreateOptions {
 
 export async function runSnapshotCreate(options: SnapshotCreateOptions) {
   const { name, workspaceRoot } = options;
+  // ESCALÓN 2 · P12: --consensus-validated asked the snapshot to declare itself validated by consensus, with nothing
+  // checked ("Consensus Validated: YES"). Refused, as a usage error, before anything is opened or written.
+  if (options.consensusValidated) {
+    const { HardkasCliError, HardkasExitCode } = await import("../cli-errors.js");
+    throw new HardkasCliError(
+      "SNAPSHOT_CONSENSUS_VALIDATION_UNSUPPORTED",
+      "--consensus-validated is not supported: HardKAS does not validate snapshots against consensus, and a snapshot never declares it. Nothing was written.",
+      { exitCode: HardkasExitCode.USAGE_ERROR, suggestion: `Create a local snapshot without it: hardkas localnet snapshot create ${name}` }
+    );
+  }
   snapshotDirFor(workspaceRoot, name); // refused before the workspace is even opened
 
   try {
@@ -25,9 +35,7 @@ export async function runSnapshotCreate(options: SnapshotCreateOptions) {
     const manifest = await createSnapshot({
       hardkasDir,
       outputDir,
-      deterministicScope: options.consensusValidated
-        ? "consensus-validated"
-        : "local-only"
+      deterministicScope: "local-only"
     });
 
     if (options.json) {
@@ -43,7 +51,8 @@ export async function runSnapshotCreate(options: SnapshotCreateOptions) {
       "Snapshot Version": String(manifest.snapshotVersion),
       "Included Artifacts": String(manifest.includedArtifacts),
       "Excluded/Corrupted": `${manifest.excludedArtifacts} / ${manifest.corruptedArtifacts}`,
-      "Consensus Validated": options.consensusValidated ? "YES" : "NO",
+      // what the manifest says, which is never a consensus validation (createSnapshot refuses that scope)
+      "Consensus Validated": manifest.consensusValidated ? "YES" : "NO",
       Notice: "Snapshots are portable local deterministic captures, NOT consensus proofs"
     });
   } catch (err: any) {

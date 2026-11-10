@@ -6,7 +6,7 @@
 
 # Interface: ProgrammabilityAppPlan
 
-Defined in: [packages/sdk/src/programmability.ts:105](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/programmability.ts#L105)
+Defined in: [packages/sdk/src/programmability.ts:107](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/programmability.ts#L107)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [packages/sdk/src/programmability.ts:105](https://github.com/KasLabD
 
 > **claims**: [`ProgrammabilityClaims`](ProgrammabilityClaims.md)
 
-Defined in: [packages/sdk/src/programmability.ts:113](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/programmability.ts#L113)
+Defined in: [packages/sdk/src/programmability.ts:115](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/programmability.ts#L115)
 
 ***
 
@@ -22,7 +22,7 @@ Defined in: [packages/sdk/src/programmability.ts:113](https://github.com/KasLabD
 
 > **commands**: `string`[]
 
-Defined in: [packages/sdk/src/programmability.ts:111](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/programmability.ts#L111)
+Defined in: [packages/sdk/src/programmability.ts:113](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/programmability.ts#L113)
 
 ***
 
@@ -30,7 +30,7 @@ Defined in: [packages/sdk/src/programmability.ts:111](https://github.com/KasLabD
 
 > **kind**: [`ProgrammabilityKind`](../type-aliases/ProgrammabilityKind.md)
 
-Defined in: [packages/sdk/src/programmability.ts:109](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/programmability.ts#L109)
+Defined in: [packages/sdk/src/programmability.ts:111](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/programmability.ts#L111)
 
 ***
 
@@ -38,7 +38,7 @@ Defined in: [packages/sdk/src/programmability.ts:109](https://github.com/KasLabD
 
 > **nonClaims**: `string`[]
 
-Defined in: [packages/sdk/src/programmability.ts:114](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/programmability.ts#L114)
+Defined in: [packages/sdk/src/programmability.ts:116](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/programmability.ts#L116)
 
 ***
 
@@ -46,7 +46,7 @@ Defined in: [packages/sdk/src/programmability.ts:114](https://github.com/KasLabD
 
 > **ok**: `boolean`
 
-Defined in: [packages/sdk/src/programmability.ts:106](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/programmability.ts#L106)
+Defined in: [packages/sdk/src/programmability.ts:108](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/programmability.ts#L108)
 
 ***
 
@@ -54,7 +54,7 @@ Defined in: [packages/sdk/src/programmability.ts:106](https://github.com/KasLabD
 
 > **schema**: `"hardkas.programmability.appPlan.v1"`
 
-Defined in: [packages/sdk/src/programmability.ts:107](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/programmability.ts#L107)
+Defined in: [packages/sdk/src/programmability.ts:109](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/programmability.ts#L109)
 
 ***
 
@@ -62,7 +62,7 @@ Defined in: [packages/sdk/src/programmability.ts:107](https://github.com/KasLabD
 
 > **sdkSurfaces**: `string`[]
 
-Defined in: [packages/sdk/src/programmability.ts:112](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/programmability.ts#L112)
+Defined in: [packages/sdk/src/programmability.ts:114](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/programmability.ts#L114)
 
 ***
 
@@ -70,7 +70,7 @@ Defined in: [packages/sdk/src/programmability.ts:112](https://github.com/KasLabD
 
 > **status**: `"PROGRAMMABILITY_APP_PLAN_READY"`
 
-Defined in: [packages/sdk/src/programmability.ts:108](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/programmability.ts#L108)
+Defined in: [packages/sdk/src/programmability.ts:110](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/programmability.ts#L110)
 
 ***
 
@@ -78,4 +78,4 @@ Defined in: [packages/sdk/src/programmability.ts:108](https://github.com/KasLabD
 
 > **template**: `string`
 
-Defined in: [packages/sdk/src/programmability.ts:110](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/sdk/src/programmability.ts#L110)
+Defined in: [packages/sdk/src/programmability.ts:112](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/sdk/src/programmability.ts#L112)

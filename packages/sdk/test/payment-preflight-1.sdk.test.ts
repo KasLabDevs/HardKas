@@ -198,14 +198,19 @@ afterAll(async () => {
 });
 
 describe("PAYMENT-PREFLIGHT-1 · sdk.tx.send with and without the payment preflight", () => {
-  it("PP-S1 without the option the send is unchanged (no UTXO or mempool read, no preflight in the record); with it, one check, the same record plus `preflight`", async () => {
+  // L1-CORE-1 B2 (TX-SEND-IDEMPOTENT-2): without the option a send asks the node only whether it holds the txId in its
+  // mempool (one lookup by id, not an address read): still no UTXO read and no address mempool, no preflight recorded
+  it("PP-S1 without the option no input or mempool read and no preflight in the record (only the node check's one read of the output addresses); with it, one check, the same record plus `preflight`", async () => {
     const off = await signedPayment();
     const r0 = { utxo: off.state.utxoReads, mempool: off.state.mempoolReads };
     const plain = await send(off.ws, off.signed, off.fake.url);
     expect(plain.error, String(plain.error?.message)).toBeUndefined();
     expect(plain.result.submitted).toBe(true);
     expect(plain.result.rejection).toBeUndefined();
-    expect({ utxo: off.state.utxoReads - r0.utxo, mempool: off.state.mempoolReads - r0.mempool }).toEqual({ utxo: 0, mempool: 0 });
+    // INT9 · I-2 (TX-SEND-IDEMPOTENT-3): the default send now makes ONE UTXO read before the broadcast — the node check
+    // looks for an output of this txId at the addresses it pays (positive evidence it is already in the chain). It reads
+    // no input and no mempool by address; the inputs and the mempool stay the preflight's (below). Was { utxo: 0 }.
+    expect({ utxo: off.state.utxoReads - r0.utxo, mempool: off.state.mempoolReads - r0.mempool }).toEqual({ utxo: 1, mempool: 0 });
     const [offRecord] = submissions(off.ws);
     expect(offRecord.preflight).toBeUndefined();
 
@@ -215,7 +220,8 @@ describe("PAYMENT-PREFLIGHT-1 · sdk.tx.send with and without the payment prefli
     expect(checked.error, String(checked.error?.message)).toBeUndefined();
     expect(checked.result.submitted).toBe(true);
     expect(on.state.submits).toEqual([on.signed.txId]);
-    expect({ utxo: on.state.utxoReads - r1.utxo, mempool: on.state.mempoolReads - r1.mempool }).toEqual({ utxo: 1, mempool: 1 });
+    // INT9 · I-2: the node check's one UTXO read (the transaction's output addresses), then the preflight's own (its inputs)
+    expect({ utxo: on.state.utxoReads - r1.utxo, mempool: on.state.mempoolReads - r1.mempool }).toEqual({ utxo: 2, mempool: 1 });
     const [record] = submissions(on.ws);
     expect(record.preflight).toEqual({ observedAtDaaScore: String(DAA), inputs: on.plan.inputs.length, scope: "observer-local", guarantee: PAYMENT_PREFLIGHT_GUARANTEE });
     expect(Object.keys(record).sort()).toEqual([...Object.keys(offRecord), "preflight"].sort());
@@ -241,7 +247,9 @@ describe("PAYMENT-PREFLIGHT-1 · sdk.tx.send with and without the payment prefli
 
   it("PP-S3 the node changed after signing: spent, a covenant's UTXO, another amount, cannot list, cannot read its mempool — each refused with its code; nothing sent or recorded", async () => {
     const cases: Array<[string, (s: State) => void, string]> = [
-      ["spent", (s) => (s.entries = []), "INPUT_NOT_UNSPENT"],
+      // L1-CORE-1 B2 (TX-SEND-IDEMPOTENT-2): an unlisted input, and no output of this transaction listed. INT9 · I-2 (B6
+      // review M-1): nothing proves who spent it, so the code claims no spender (was INPUTS_SPENT)
+      ["spent", (s) => (s.entries = []), "INPUTS_SPENT_UNATTRIBUTED"],
       ["covenant", (s) => (s.entries = [{ ...s.entries[0]!, covenantId: COVENANT_ID }]), "COVENANT_UTXO_NOT_PAYMENT_INPUT"],
       ["amount", (s) => (s.entries = [{ ...s.entries[0]!, sompi: s.entries[0]!.sompi + 1 }]), "INPUT_DIFFERS_FROM_NODE"],
       ["no index", (s) => (s.failUtxoReads = true), "PREFLIGHT_NODE_UNAVAILABLE"],
@@ -285,11 +293,23 @@ describe("PAYMENT-PREFLIGHT-1 · sdk.tx.send with and without the payment prefli
     // stays behind them, fail closed)
     const elsewhere = workspace(p.fake.url);
     const absent = await send(elsewhere, p.signed, { preflight: true });
-    expect(String(absent.error?.message)).toMatch(/parent_plan_unresolved/);
-    const orphan = resealed(p.signed, () => {});
-    delete orphan.lineage.parentArtifactId;
-    const unnamed = await send(p.ws, resealed(orphan, () => {}), { preflight: true });
-    expect(String(unnamed.error?.message)).toMatch(/corrupted or invalid/);
+    // HK-11: a named plan that is not here has its own code (it used to be a generic "parent_plan_unresolved")
+    expect(absent.error?.code).toBe("SEND_PLAN_UNRESOLVED");
+    // HK-11 (C/X3): a WELL-FORMED root lineage (no parent, no lineageId/rootArtifactId) passes the strict verification;
+    // the send refuses it for naming no plan. (The former case only deleted parentArtifactId and failed on
+    // LINEAGE_ROOT_SELF_REFERENCE, never on the missing plan.)
+    const root: any = structuredClone(p.signed);
+    delete root.contentHash;
+    delete root.signedId;
+    root.lineage = { artifactId: "" };
+    root.contentHash = calculateContentHash(root, CURRENT_HASH_VERSION);
+    root.lineage.artifactId = root.contentHash;
+    root.signedId = `signed-${root.contentHash.slice(0, 16)}`;
+    const unnamed = await send(p.ws, root, { preflight: true });
+    expect(unnamed.error?.code).toBe("SEND_PLAN_UNRESOLVED");
+    // with the explicit escape the preflight still needs the plan
+    const unnamedAllowed = await send(p.ws, root, { preflight: true, allowUnplannedSignedTransaction: true });
+    expect(unnamedAllowed.error?.code).toBe("SEND_PREFLIGHT_PLAN_UNRESOLVED");
     const simulator = fs.mkdtempSync(path.join(os.tmpdir(), "hk-pp1-sim-"));
     made.push(simulator);
     expect((await send(simulator, p.signed, { preflight: true })).error?.code).toBe("SEND_PREFLIGHT_ON_SIMULATOR");

@@ -10,18 +10,20 @@ import { HardkasCliError, HardkasExitCode } from "../cli-errors.js";
 
 /**
  * The environment variables HardKAS reads, with what they do. SECRET-SURFACE-2 (D3): a variable marked `secret` holds a
- * credential; `env check` reports it as configured and never prints its value (the explicit reveal of the dev server
- * token stays `hardkas dev-server token`).
+ * credential; `env check` reports it as configured and never prints its value (the dev server's token lives in
+ * `.hardkas/dev-server-token`; there is no `hardkas dev-server` command group, N-7). P33: a variable marked `obsolete`
+ * is still recognised (never a typo), but setting it no longer does what it once did; its meaning says what to use.
  */
-export const HARDKAS_ENV_VARIABLES: ReadonlyArray<{ name: string; meaning: string; secret?: true }> = [
+export const HARDKAS_ENV_VARIABLES: ReadonlyArray<{ name: string; meaning: string; secret?: true; obsolete?: true }> = [
   { name: "HARDKAS_HOME", meaning: "home of the managed toolchains (kaspa-wasm, silverc)" },
-  { name: "HARDKAS_KASPAD_IMAGE", meaning: "Docker image of the local node (default: the pinned rusty-kaspad)" },
+  { name: "HARDKAS_KASPAD_IMAGE", meaning: "Docker image of the local node (default: the pinned rusty-kaspad); node start requires it pinned by digest (@sha256:)" },
   { name: "HARDKAS_ALLOW_SIMULATED_NODE", meaning: "1: report a simulated node when Docker is unavailable (never a real node)" },
   { name: "HARDKAS_ALLOW_UNVERIFIED_NODE", meaning: "testing harness: accept a node whose identity does not verify" },
   { name: "HARDKAS_SILVER_RUNNER", meaning: "SilverScript runner (cli-debugger) binary of silver test, debug, preflight and fuzz" },
   { name: "HARDKAS_SILVER_RUNNER_TRUST", meaning: "allow-unverified: run a SilverScript runner that is not verified (its verdicts labelled UNVERIFIED)" },
   { name: "HARDKAS_TOCCATA_MINER_THROTTLE_MS", meaning: "pause between blocks of the localnet miner" },
-  { name: "HARDKAS_ALLOW_UNSAFE_CHAOS", meaning: "1: allow a chaos campaign in the current directory" },
+  // ESCALÓN 3 · P20: chaos never runs in the current directory any more, so nothing reads it
+  { name: "HARDKAS_ALLOW_UNSAFE_CHAOS", meaning: "obsolete: chaos always runs in its own temporary directory; nothing reads it", obsolete: true },
   // SURFACE-TRUTH-1B (ST-J): what it does, not what it was meant to do. It "exposed the experimental command groups",
   // but it never changed the command tree; HARDKAS_EXPERIMENTAL_VPROGS was read by nothing and is no longer listed.
   { name: "HARDKAS_EXPERIMENTAL", meaning: "1: silence the warning of the internal or unavailable groups (capabilities, pskt, session); the commands are the same" },
@@ -29,8 +31,14 @@ export const HARDKAS_ENV_VARIABLES: ReadonlyArray<{ name: string; meaning: strin
   { name: "HARDKAS_QUERY_STORE_PATH", meaning: "path of the query store database" },
   { name: "HARDKAS_ROOT", meaning: "workspace root used by the dev server" },
   { name: "HARDKAS_DEV_TOKEN", meaning: "dev server access token", secret: true },
+  // P33: the dev server's variables are listed, not exempt by prefix (a typo of HARDKAS_DEV_SERVER_AUTOSIGN used to pass)
+  // ESCALÓN 4 · P38: off by default, and only the local worlds even when set (dev-server/routes/dapp-tx.ts)
+  { name: "HARDKAS_DEV_SERVER_AUTOSIGN", meaning: "dev server: 1 lets the server sign dApp requests (POST /api/tx/send with allowDevAutoSign, POST /api/tx/sign) with its own accounts, on the simulated ledger or a local simnet only (never testnet, devnet or mainnet); unset, the server signs for no client" },
+  { name: "HARDKAS_DEV_SERVER_URL", meaning: "tests only: base URL of the dev server for the escrow integration suites" },
   { name: "HARDKAS_WATCH_POLLING", meaning: "dev server: poll the filesystem instead of watching it" },
-  { name: "HARDKAS_NETWORK", meaning: "dev server: network of the simnet routes" },
+  // P34: no HardKAS package reads it (the dev server's simnet route computed it and never used it); `hardkas test` and
+  // `hardkas run` set it for the tests and scripts they start.
+  { name: "HARDKAS_NETWORK", meaning: "set by hardkas test and hardkas run for the tests and scripts they start: the selected network (HardKAS itself does not read it)" },
   { name: "HARDKAS_KEYSTORE_LOCK_STALE_MS", meaning: "age after which a keystore lock is stale" },
   { name: "HARDKAS_KEYSTORE_LOCK_TIMEOUT_MS", meaning: "how long to wait for a keystore lock" },
   { name: "HARDKAS_KEEP_RUNS", meaning: "hardkas test: keep the scenario workspaces" },
@@ -39,7 +47,9 @@ export const HARDKAS_ENV_VARIABLES: ReadonlyArray<{ name: string; meaning: strin
   { name: "HARDKAS_TEST_IGNORE_STALENESS", meaning: "tests only: skip the staleness check of artifacts" },
   { name: "HARDKAS_HERMETIC_LOG", meaning: "hermetic gate: where attempted non-loopback connections are logged" },
   { name: "HARDKAS_HERMETIC_DENY_PORTS", meaning: "hermetic gate: loopback ports refused on purpose" },
-  { name: "HARDKAS_HERMETIC_TRACE", meaning: "hermetic gate: trace every connection attempt" }
+  { name: "HARDKAS_HERMETIC_TRACE", meaning: "hermetic gate: trace every connection attempt" },
+  { name: "IGRA_RPC_URL", meaning: "capabilities: the Igra L2 JSON-RPC endpoint probed when neither the call nor hardkas.config names one (never probed on mainnet)" },
+  { name: "HARDKAS_EXPERIMENTAL_L2", meaning: "obsolete: it no longer registers the l2 commands; install the l2 extension instead (only the refusal of an l2 command mentions it)", obsolete: true }
 ];
 
 /**
@@ -69,7 +79,12 @@ export const ENV_POLICY_WARNINGS: Readonly<Record<string, (value: string) => str
       ? "relaxes the SilverScript runner trust policy for every command: any runner found (the <HARDKAS_HOME>/toolchains one included) starts UNVERIFIED; prefer --allow-unverified-runner on the command that needs it"
       : undefined,
   HARDKAS_ALLOW_UNVERIFIED_NODE: (value) =>
-    value === "1" ? "the simnet test harness attaches to a node whose identity it cannot prove" : undefined
+    value === "1" ? "the simnet test harness attaches to a node whose identity it cannot prove" : undefined,
+  // P33 / ESCALÓN 4 · P38: what `serverAllowsDevAutoSign` (dev-server/routes/dapp-tx.ts) does with it
+  HARDKAS_DEV_SERVER_AUTOSIGN: (value) =>
+    value === "1"
+      ? "the dev server signs dApp requests with its own accounts for any HTTP client that asks, on the simulated ledger or a local simnet (testnet, devnet and mainnet stay refused); unset it unless a local dApp needs it"
+      : undefined
 };
 
 /** What a secret-bearing variable's value is reported as (SECRET-SURFACE-2 D3): the marker, never the value. */
@@ -86,6 +101,8 @@ export interface EnvCheckReport {
     /** Only on a secret-bearing variable: it is configured (non-empty); its value is not part of this report. */
     configured?: true;
     secret?: true;
+    /** P33: a recognised variable that no longer has its former effect (its meaning says what to use instead). */
+    obsolete?: true;
     /** R-08: set when this value relaxes a safety policy for every command. */
     warning?: string;
   }>;
@@ -109,12 +126,13 @@ export function checkEnvironment(processEnv: NodeJS.ProcessEnv, dotEnv: Record<s
       source: merged[v.name]!.source,
       meaning: v.meaning,
       ...(v.secret ? { configured: true as const, secret: true as const } : {}),
+      ...(v.obsolete ? { obsolete: true as const } : {}),
       ...(warning ? { warning } : {})
     };
   });
   const warnings = known.filter((k) => k.warning !== undefined).map((k) => ({ name: k.name, message: k.warning! }));
   const unknown = Object.keys(merged)
-    .filter((k) => k.startsWith("HARDKAS_") && !knownNames.has(k) && !k.startsWith("HARDKAS_TEST_") && !k.startsWith("HARDKAS_HARNESS_") && !k.startsWith("HARDKAS_ESCROW_") && !k.startsWith("HARDKAS_DEV_SERVER_"))
+    .filter((k) => k.startsWith("HARDKAS_") && !knownNames.has(k) && !k.startsWith("HARDKAS_TEST_") && !k.startsWith("HARDKAS_HARNESS_") && !k.startsWith("HARDKAS_ESCROW_"))
     .sort();
 
   // The deployment profile is only a topic when a .env declares any of it.
@@ -156,6 +174,7 @@ export function registerEnvCommands(program: Command) {
         for (const v of report.known) {
           // a secret-bearing variable is reported as configured; its value is never printed (D3)
           if (v.warning) out.writeLine(`  ⚠️ ${v.name}=${v.value}  (${v.source}; ${v.warning})`);
+          else if (v.obsolete) out.writeLine(`  ⚠️ ${v.name}=${v.value}  (${v.source}; ${v.meaning})`);
           else out.writeLine(v.secret ? `  ✅ ${v.name}=${v.value}  (configured; ${v.source}; ${v.meaning})` : `  ✅ ${v.name}=${v.value}  (${v.source}; ${v.meaning})`);
         }
         for (const name of report.unknown) out.writeLine(`  ❌ ${name}: not a variable HardKAS reads (a typo?)`);

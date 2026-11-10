@@ -2,7 +2,6 @@ import { measureRelayFee, measureUpstreamMass, v1StorageMass, type UpstreamMassI
 import { TxPlan, SignedTx, TxReceipt } from "./schemas.js";
 import { HardkasSchemas } from "@hardkas/core";
 import { expectedScriptPublicKeyHex } from "./submission-fee.js";
-
 export interface FeeAuditResult {
   ok: boolean;
   actualMass: bigint;
@@ -30,6 +29,26 @@ function planMassInput(plan: TxPlan): UpstreamMassInput | undefined {
       ...(plan.change ? [{ amountSompi: BigInt(plan.change.amountSompi || 0), address: plan.change.address }] : [])
     ]
   };
+}
+
+/**
+ * ESCALÓN 2 · P9: the node's relay minimum for a plan's own transaction: MINIMUM_RELAY_FEE_RATE_SOMPI_PER_GRAM
+ * (100 sompi) per gram of COMPUTE mass (@hardkas/tx-builder `measureRelayFee`, the rule `verifyFeeSemantics` applies to
+ * plans). A receipt records only its transaction's overall mass (compute or storage mass, whichever binds) and the
+ * storage mass has no relay floor, so a receipt's fee is judged against its plan's relay minimum, never against
+ * 100 × the mass it records. Undefined when it cannot be measured here: a plan without inputs, a v1-engine plan (its
+ * compute mass depends on contract facts) or no pinned kaspa-wasm.
+ */
+export function planRelayMinimum(plan: unknown): { computeMass: bigint; relayFeeSompi: bigint } | undefined {
+  const p = plan as any;
+  if (p?.schema !== HardkasSchemas.TxPlan) return undefined;
+  if (p.txVersion === 1 && p.plannerAuthority === "HARDKAS_V1_PLANNER") return undefined;
+  try {
+    const input = planMassInput(p as TxPlan);
+    return input ? measureRelayFee(input) : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 /** SDK mass of the plan's own transaction; undefined for a plan without inputs (it has no mass). */

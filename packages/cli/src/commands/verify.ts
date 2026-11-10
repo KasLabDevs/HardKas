@@ -61,11 +61,12 @@ export function registerVerifyCommand(program: Command) {
 
   program
     .command("verify-semantics")
+    // ESCALÓN 3 · P5: the command refuses (VERIFY_SEMANTICS_UNSUPPORTED); its help no longer says it verifies anything
     .description(
-      `Verify semantic truth agreement across all HardKAS subsystems ${UI.maturity("alpha")}`
+      "Unsupported: always refuses with VERIFY_SEMANTICS_UNSUPPORTED (no HardKAS subsystem records the semantic hashes it would compare); use 'hardkas verify' for artifact integrity and lineage"
     )
-    .option("--json", "Output machine-readable JSON", false)
-    .option("--ci-mode", "Verify semantic truth equivalence across OS boundaries", false)
+    .option("--json", "Output the refusal as a JSON envelope", false)
+    .option("--ci-mode", "No effect: the command always refuses", false)
     .action(async (opts) => {
       if (opts.json) UI.setJsonMode(true);
       // SURFACE-TRUTH-1A: the runner's typed error reaches the renderer unchanged. Rewrapping every error as

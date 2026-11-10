@@ -6,7 +6,7 @@
 
 # Interface: VerificationContext
 
-Defined in: [packages/artifacts/src/verify.ts:44](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/verify.ts#L44)
+Defined in: [packages/artifacts/src/verify.ts:70](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/verify.ts#L70)
 
 ## Properties
 
@@ -14,7 +14,9 @@ Defined in: [packages/artifacts/src/verify.ts:44](https://github.com/KasLabDevs/
 
 > `optional` **artifactsDir?**: `string`
 
-Defined in: [packages/artifacts/src/verify.ts:49](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/verify.ts#L49)
+Defined in: [packages/artifacts/src/verify.ts:78](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/verify.ts#L78)
+
+Legacy locator of the store (`<workspaceRoot>/.hardkas/artifacts`); the root is derived from it.
 
 ***
 
@@ -22,7 +24,7 @@ Defined in: [packages/artifacts/src/verify.ts:49](https://github.com/KasLabDevs/
 
 > `optional` **clock?**: [`Clock`](Clock.md)
 
-Defined in: [packages/artifacts/src/verify.ts:45](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/verify.ts#L45)
+Defined in: [packages/artifacts/src/verify.ts:71](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/verify.ts#L71)
 
 ***
 
@@ -30,7 +32,7 @@ Defined in: [packages/artifacts/src/verify.ts:45](https://github.com/KasLabDevs/
 
 > `optional` **enforceMetadata?**: `boolean`
 
-Defined in: [packages/artifacts/src/verify.ts:50](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/verify.ts#L50)
+Defined in: [packages/artifacts/src/verify.ts:79](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/verify.ts#L79)
 
 ***
 
@@ -38,7 +40,7 @@ Defined in: [packages/artifacts/src/verify.ts:50](https://github.com/KasLabDevs/
 
 > `optional` **networkId?**: [`NetworkId`](../../../sdk/src/type-aliases/NetworkId.md)
 
-Defined in: [packages/artifacts/src/verify.ts:47](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/verify.ts#L47)
+Defined in: [packages/artifacts/src/verify.ts:73](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/verify.ts#L73)
 
 ***
 
@@ -46,7 +48,7 @@ Defined in: [packages/artifacts/src/verify.ts:47](https://github.com/KasLabDevs/
 
 > `optional` **parent?**: `unknown`
 
-Defined in: [packages/artifacts/src/verify.ts:48](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/verify.ts#L48)
+Defined in: [packages/artifacts/src/verify.ts:74](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/verify.ts#L74)
 
 ***
 
@@ -54,7 +56,9 @@ Defined in: [packages/artifacts/src/verify.ts:48](https://github.com/KasLabDevs/
 
 > `optional` **resolveArtifact?**: (`id`) => `any`
 
-Defined in: [packages/artifacts/src/verify.ts:51](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/verify.ts#L51)
+Defined in: [packages/artifacts/src/verify.ts:81](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/verify.ts#L81)
+
+Optional override returning an already-verified artifact for a 64-hex artifactId, or null.
 
 #### Parameters
 
@@ -72,7 +76,7 @@ Defined in: [packages/artifacts/src/verify.ts:51](https://github.com/KasLabDevs/
 
 > `optional` **strict?**: `boolean`
 
-Defined in: [packages/artifacts/src/verify.ts:46](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/verify.ts#L46)
+Defined in: [packages/artifacts/src/verify.ts:72](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/verify.ts#L72)
 
 ***
 
@@ -80,4 +84,14 @@ Defined in: [packages/artifacts/src/verify.ts:46](https://github.com/KasLabDevs/
 
 > `optional` **visitedArtifacts?**: `Set`\<`string`\>
 
-Defined in: [packages/artifacts/src/verify.ts:52](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/verify.ts#L52)
+Defined in: [packages/artifacts/src/verify.ts:82](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/verify.ts#L82)
+
+***
+
+### workspaceRoot?
+
+> `optional` **workspaceRoot?**: `string`
+
+Defined in: [packages/artifacts/src/verify.ts:76](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/verify.ts#L76)
+
+The workspace whose store resolves persisted references (IC-5′.7).

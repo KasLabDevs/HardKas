@@ -35,7 +35,14 @@ export default defineConfig({
     hookTimeout: 120000,
     // REMED-CLOSE: a run that leaves anything in the repository root's .hardkas fails, naming it
     globalSetup: ["./scripts/vitest-root-hygiene.global-setup.ts"],
-    include: ["packages/*/test/**/*.test.ts"],
+    // L-06 (2026-11-07): the hermetic suites of examples/ and labs/ run here too. Their node/Docker/silverc suites keep
+    // their own levels through the suffix exclusions below; the lab suites that write into their tracked directories,
+    // need Docker or the win32-only native PSKT binary stay out (docs/status/limitations.md, "Test levels").
+    include: [
+      "packages/*/test/**/*.test.ts",
+      "examples/*/test/**/*.test.ts",
+      "labs/testnet-runner/test/**/*.test.ts"
+    ],
     exclude: [
       "**/node_modules/**",
       "**/dist/**",

@@ -78,6 +78,11 @@ describe("RESOURCE-LIFECYCLE-1 · a finite command closes what it opened and end
     bob = (await getOrCreateDevAccount(ws, 1, "bob")).address;
     const track = spawnSync(process.execPath, [cliDist, "deploy", "track", "lbl", "--network", "nodenet", "--tx-id", "f".repeat(64), "--json"], { cwd: ws, env: childEnv(), encoding: "utf8", input: "", timeout: 60_000 });
     expect(track.status, `${track.stdout}${track.stderr}`).toBe(0);
+    // L1-CORE-1 B2 (DEPLOY-VERIFY-OBSERVE-1): `deploy status --verify` observes through the SDK, which opens a network
+    // its policy allows (the kaspa-rpc entry `nodenet` is external without allowPublic, as for `tx status`): the control
+    // runs on simnet
+    const trackSimnet = spawnSync(process.execPath, [cliDist, "deploy", "track", "lbl", "--network", "simnet", "--tx-id", "f".repeat(64), "--json"], { cwd: ws, env: childEnv(), encoding: "utf8", input: "", timeout: 60_000 });
+    expect(trackSimnet.status, `${trackSimnet.stdout}${trackSimnet.stderr}`).toBe(0);
   });
 
   afterAll(async () => {
@@ -99,7 +104,8 @@ describe("RESOURCE-LIFECYCLE-1 · a finite command closes what it opened and end
     // NODE-NETWORK-IDENTITY-1: the fake now answers getServerInfo (it identifies itself as simnet), so `rpc info`, which
     // reads exactly that, succeeds; what this control pins is unchanged: the command ends by itself
     ["control: rpc info --url (already closed in a finally)", () => ["rpc", "info", "--url", node.url, "--json"], 0, null],
-    ["control: deploy status --verify (closed before)", () => ["deploy", "status", "lbl", "--network", "nodenet", "--verify"], 0, null]
+    // L1-CORE-1 B2: a node that refuses the observation is a typed failure now (it was printed and the command exited 0)
+    ["control: deploy status --verify (the SDK's observation, closed before)", () => ["deploy", "status", "lbl", "--network", "simnet", "--verify"], 1, "DEPLOYMENT_VERIFY_FAILED"]
   ];
 
   for (const [id, argv, exit, code] of MATRIX) {
@@ -127,7 +133,8 @@ describe("RESOURCE-LIFECYCLE-1 · a finite command closes what it opened and end
     // Released: the nearest enclosing function has a `finally` that closes (`.close(`, `.disconnect(`, `release?.(`).
     // Anything else must be listed here, with how it is still released.
     const RELEASED_OTHERWISE: Record<string, string> = {
-      "commands/silver.ts#canonicalNode": "returns the client; every caller closes it in its own finally",
+      // L1-CORE-1 B3: the node of a Silver/escrow v1 command (it was commands/silver.ts#canonicalNode, canonical localnet only)
+      "runners/l1-node-target.ts#proveL1Node": "returns the client; every caller (silver deploy/spend/covenant, escrow rescue-v1 prepare/broadcast) closes it in its own finally",
       "runners/tx-status-runner.ts#openSdkForTx": "returns the SDK (runTxStatus / runTxWait close it); a probe it does not return is closed here",
       "runners/accounts-consolidate-runner.ts#consolidate": "hands the client to runAccountsConsolidate, whose finally closes it",
       "runners/tx-flow.ts#txFlow": "hands the SDK to runTxFlow, whose finally closes it",
@@ -136,7 +143,8 @@ describe("RESOURCE-LIFECYCLE-1 · a finite command closes what it opened and end
       "runners/doctor-node-runner.ts#runCapabilitiesReport": "closes the client on every path (the loop's catch and after the loop)",
       "runners/rpc-doctor-runner.ts#checkKaspaEndpoint": "disconnects on each of its three paths (connect refused, answered, request refused)",
       "runners/workflow-runner.ts#runWorkflowRun": "closes the SDK when the run settles, not in a finally: a --timeout must not close it under the abandoned run (WORKFLOW-TIMEOUT-CANCELLATION-1)",
-      "runners/silver-onchain-runner.ts#openCanonicalSilverSdk": "returns the SDK (closing it when it refuses the workspace); withEngine in commands/silver.ts, its only caller, closes it in its finally"
+      // L1-CORE-1 B3: openCanonicalSilverSdk now delegates to openSilverSdk (any node network)
+      "runners/silver-onchain-runner.ts#openSilverSdk": "returns the SDK (closing it when it refuses the workspace); withEngine in commands/silver.ts, its only caller, closes it in its finally"
     };
     const srcRoot = path.resolve(__dirname, "../src");
     const files: string[] = [];

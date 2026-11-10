@@ -1,4 +1,5 @@
 import {
+  assertMainnetTransactionsDisabled,
   encodeSilverEntryArgs,
   getSilContract,
   loadManagedKaspaWasmSync,
@@ -8,7 +9,7 @@ import {
   type SilAbiArtifact,
   type SilArtifactValue
 } from "@hardkas/core";
-import { calculateUpstreamStorageMass, measureBuiltTransactionMass } from "@hardkas/tx-builder";
+import { measureBuiltTransactionMass, v1StorageMass, V1_MASS_PARAMS, type V1StorageCell } from "@hardkas/tx-builder";
 import { parseWasmTxToRpc } from "./internal/wasm-rpc-serialization.js";
 import type { SilverContractUtxo } from "./silver-spend.js";
 
@@ -31,6 +32,26 @@ function covenantError(code: string, message: string): Error {
 }
 
 const ZERO_SUBNET = "0000000000000000000000000000000000000000";
+
+/**
+ * L1-04 / SC-03 · the storage mass a v1 transaction commits, by the node's rule (mass/mod.rs `calc_storage_mass` with the
+ * Toccata `utxo_plurality`: a P2SH output carrying a covenant id has plurality 2), the same function the v1 engine uses
+ * (`v1StorageMass`). kaspa-wasm `calculateStorageMass` takes amounts only (plurality 1 for all) and under-reported it up
+ * to ×4 (corpus genesis: 1,083 instead of ~4,083). The mempool recomputes the field and neither the sighash nor the v1
+ * id cover it, so this changes no signature or txid: it makes the committed and reported value the node's, and checks it
+ * against the block storage limit before anything is signed.
+ */
+function committedStorageMass(inputs: readonly V1StorageCell[], outputs: readonly V1StorageCell[]): bigint {
+  const mass = v1StorageMass(inputs, outputs);
+  if (mass === undefined || mass > V1_MASS_PARAMS.blockLimits.storage) {
+    throw covenantError(
+      "TX_MASS_ABOVE_STANDARD_LIMIT",
+      `storage mass ${mass === undefined ? "overflows" : `${mass} exceeds the block limit ${V1_MASS_PARAMS.blockLimits.storage}`}: the node would never include this transaction`
+    );
+  }
+  return mass;
+}
+const scriptBytesOf = (script: unknown): number => String(script ?? "").length / 2;
 
 function checkBudget(budget: number, where: string): number {
   if (!Number.isInteger(budget) || budget < 0 || budget > 0xffff) {
@@ -127,6 +148,8 @@ export interface CovenantTransactionResult {
  * from input 0's outpoint; output 1 returns the change.
  */
 export function buildCovenantGenesis(request: CovenantGenesisRequest): CovenantTransactionResult & { readonly changeSompi: bigint } {
+  // CA-TX-05 / HK-12: this constructor signs; the product's mainnet policy decides first (MAINNET_SIGNING_DISABLED)
+  assertMainnetTransactionsDisabled("sign", [request?.networkId], "buildCovenantGenesis");
   const k = loadManagedKaspaWasmSync();
   const { contract } = getSilContract(request.artifact, request.contractName);
   const lock = silverP2shLock(silContractBytecodeHex(contract));
@@ -170,12 +193,15 @@ export function buildCovenantGenesis(request: CovenantGenesisRequest): CovenantT
       gas: 0n,
       payload: ""
     });
-    // Before signing: the sighash commits to output bindings and the storage mass.
+    // Before signing: the sighash commits to the output bindings (not to the storage mass, which the node recomputes).
     tx.populateGenesisCovenants([{ authorizingInput: 0, outputs: [0] }]);
-    tx.storageMass = calculateUpstreamStorageMass(
-      inputs.map((f) => f.amountSompi),
-      change > 0n ? [request.valueSompi, change] : [request.valueSompi],
-      request.networkId
+    const changeScript = change > 0n ? String(k.payToAddressScript(new k.Address(request.changeAddress)).script) : "";
+    tx.storageMass = committedStorageMass(
+      inputs.map((f) => ({ amountSompi: f.amountSompi, scriptBytes: scriptBytesOf(f.scriptPublicKey.script), covenantId: false })),
+      [
+        { amountSompi: request.valueSompi, scriptBytes: scriptBytesOf(lock.script), covenantId: true },
+        ...(change > 0n ? [{ amountSompi: change, scriptBytes: scriptBytesOf(changeScript), covenantId: false }] : [])
+      ]
     );
     return tx;
   };
@@ -250,6 +276,8 @@ export interface CovenantTransitionRequest {
  * leader contracts (cov binding, with a delegate entry) are NOT_IMPLEMENTED.
  */
 export function buildCovenantTransition(request: CovenantTransitionRequest): CovenantTransactionResult & { readonly successorSompi: bigint } {
+  // CA-TX-05 / HK-12: the product's mainnet policy decides first (MAINNET_SIGNING_DISABLED)
+  assertMainnetTransactionsDisabled("sign", [request?.networkId], "buildCovenantTransition");
   const k = loadManagedKaspaWasmSync();
   const { name, contract } = getSilContract(request.current, request.contractName);
   const next = getSilContract(request.successor, name).contract;
@@ -295,7 +323,9 @@ export function buildCovenantTransition(request: CovenantTransitionRequest): Cov
           scriptPublicKey: new k.ScriptPublicKey(lock.version, lock.script),
           blockDaaScore: u.blockDaaScore,
           isCoinbase: u.isCoinbase,
-          covenantId: u.covenantId
+          // SC-03: kaspa-wasm 2.1.0 reads a UTXO's covenant id only from `covenant_id` (consensus/client/src/utxo.rs); the
+          // former `covenantId` key was ignored without notice
+          covenant_id: u.covenantId
         }
       }],
       outputs: [{
@@ -308,7 +338,10 @@ export function buildCovenantTransition(request: CovenantTransitionRequest): Cov
       gas: 0n,
       payload: ""
     });
-    tx.storageMass = calculateUpstreamStorageMass([u.amountSompi], [value], request.networkId);
+    tx.storageMass = committedStorageMass(
+      [{ amountSompi: u.amountSompi, scriptBytes: scriptBytesOf(lock.script), covenantId: true }],
+      [{ amountSompi: value, scriptBytes: scriptBytesOf(successorLock.script), covenantId: true }]
+    );
     return tx;
   };
 

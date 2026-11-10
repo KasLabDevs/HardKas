@@ -1,6 +1,7 @@
 {
   "name": "@hardkas/l2",
   "version": "0.13.0-rc.1",
+  "private": true,
   "type": "module",
   "exports": {
     ".": {

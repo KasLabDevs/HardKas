@@ -6,7 +6,7 @@
 
 # Class: ArtifactIndexStoreJson
 
-Defined in: [packages/artifacts/src/artifact-index.ts:23](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/artifact-index.ts#L23)
+Defined in: [packages/artifacts/src/artifact-index.ts:23](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/artifact-index.ts#L23)
 
 ## Constructors
 
@@ -14,7 +14,7 @@ Defined in: [packages/artifacts/src/artifact-index.ts:23](https://github.com/Kas
 
 > **new ArtifactIndexStoreJson**(`options?`): `ArtifactIndexStoreJson`
 
-Defined in: [packages/artifacts/src/artifact-index.ts:26](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/artifact-index.ts#L26)
+Defined in: [packages/artifacts/src/artifact-index.ts:26](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/artifact-index.ts#L26)
 
 #### Parameters
 
@@ -32,7 +32,7 @@ Defined in: [packages/artifacts/src/artifact-index.ts:26](https://github.com/Kas
 
 > **find**(`query`): [`ArtifactEntry`](../interfaces/ArtifactEntry.md)[]
 
-Defined in: [packages/artifacts/src/artifact-index.ts:65](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/artifact-index.ts#L65)
+Defined in: [packages/artifacts/src/artifact-index.ts:65](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/artifact-index.ts#L65)
 
 #### Parameters
 
@@ -50,7 +50,7 @@ Defined in: [packages/artifacts/src/artifact-index.ts:65](https://github.com/Kas
 
 > **get**(`hash`): [`ArtifactEntry`](../interfaces/ArtifactEntry.md)
 
-Defined in: [packages/artifacts/src/artifact-index.ts:57](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/artifact-index.ts#L57)
+Defined in: [packages/artifacts/src/artifact-index.ts:57](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/artifact-index.ts#L57)
 
 #### Parameters
 
@@ -68,7 +68,7 @@ Defined in: [packages/artifacts/src/artifact-index.ts:57](https://github.com/Kas
 
 > **getAll**(): `Record`\<`string`, [`ArtifactEntry`](../interfaces/ArtifactEntry.md)\>
 
-Defined in: [packages/artifacts/src/artifact-index.ts:37](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/artifact-index.ts#L37)
+Defined in: [packages/artifacts/src/artifact-index.ts:37](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/artifact-index.ts#L37)
 
 #### Returns
 
@@ -80,7 +80,7 @@ Defined in: [packages/artifacts/src/artifact-index.ts:37](https://github.com/Kas
 
 > **index**(`artifact`): `void`
 
-Defined in: [packages/artifacts/src/artifact-index.ts:51](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/artifact-index.ts#L51)
+Defined in: [packages/artifacts/src/artifact-index.ts:51](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/artifact-index.ts#L51)
 
 #### Parameters
 
@@ -98,7 +98,7 @@ Defined in: [packages/artifacts/src/artifact-index.ts:51](https://github.com/Kas
 
 > **list**(): [`ArtifactEntry`](../interfaces/ArtifactEntry.md)[]
 
-Defined in: [packages/artifacts/src/artifact-index.ts:61](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/artifact-index.ts#L61)
+Defined in: [packages/artifacts/src/artifact-index.ts:61](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/artifact-index.ts#L61)
 
 #### Returns
 
@@ -110,7 +110,7 @@ Defined in: [packages/artifacts/src/artifact-index.ts:61](https://github.com/Kas
 
 > **setAll**(`data`): `void`
 
-Defined in: [packages/artifacts/src/artifact-index.ts:46](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/artifact-index.ts#L46)
+Defined in: [packages/artifacts/src/artifact-index.ts:46](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/artifact-index.ts#L46)
 
 #### Parameters
 

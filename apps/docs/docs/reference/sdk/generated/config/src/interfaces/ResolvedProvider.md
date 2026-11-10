@@ -6,7 +6,7 @@
 
 # Interface: ResolvedProvider
 
-Defined in: [packages/config/src/provider.ts:11](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/config/src/provider.ts#L11)
+Defined in: [packages/config/src/provider.ts:19](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/config/src/provider.ts#L19)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [packages/config/src/provider.ts:11](https://github.com/KasLabDevs/H
 
 > `optional` **endpoint?**: `string`
 
-Defined in: [packages/config/src/provider.ts:14](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/config/src/provider.ts#L14)
+Defined in: [packages/config/src/provider.ts:22](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/config/src/provider.ts#L22)
 
 ***
 
@@ -22,7 +22,7 @@ Defined in: [packages/config/src/provider.ts:14](https://github.com/KasLabDevs/H
 
 > **mode**: [`ProviderMode`](../type-aliases/ProviderMode.md)
 
-Defined in: [packages/config/src/provider.ts:12](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/config/src/provider.ts#L12)
+Defined in: [packages/config/src/provider.ts:20](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/config/src/provider.ts#L20)
 
 ***
 
@@ -30,4 +30,4 @@ Defined in: [packages/config/src/provider.ts:12](https://github.com/KasLabDevs/H
 
 > **network**: `string`
 
-Defined in: [packages/config/src/provider.ts:13](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/config/src/provider.ts#L13)
+Defined in: [packages/config/src/provider.ts:21](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/config/src/provider.ts#L21)

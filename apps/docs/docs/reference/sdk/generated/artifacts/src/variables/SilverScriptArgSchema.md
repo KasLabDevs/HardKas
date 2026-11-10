@@ -8,4 +8,4 @@
 
 > `const` **SilverScriptArgSchema**: `ZodObject`\<\{ `type`: `ZodLiteral`\<`"hex"`\>; `value`: `ZodString`; \}, `"strip"`, `ZodTypeAny`, \{ `type?`: `"hex"`; `value?`: `string`; \}, \{ `type?`: `"hex"`; `value?`: `string`; \}\>
 
-Defined in: [packages/artifacts/src/schemas.ts:544](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/artifacts/src/schemas.ts#L544)
+Defined in: [packages/artifacts/src/schemas.ts:888](https://github.com/KasLabDevs/HardKas/blob/7bbdee0c1ac0aa0959d14402d59daa0c3e101af8/packages/artifacts/src/schemas.ts#L888)

@@ -126,7 +126,10 @@ export const UI = {
   async confirm(message: string): Promise<boolean> {
     const readline = await import("node:readline/promises");
     const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-    const answer = await rl.question(pc.yellow(`  ⚠️  ${message} (y/N): `));
+    // ESCALÓN 2 · P14: stdin that ends before an answer (EOF) is a "no". The question's promise never settles then, and the
+    // process used to end with exit 0 having done nothing; now the caller sees the refusal and says so.
+    const eof = new Promise<string>((resolve) => rl.once("close", () => resolve("")));
+    const answer = await Promise.race([rl.question(pc.yellow(`  ⚠️  ${message} (y/N): `)), eof]);
     rl.close();
     return answer.toLowerCase() === "y";
   },

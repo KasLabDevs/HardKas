@@ -144,8 +144,10 @@ export async function runDevServer(options: {
         console.log(pc.bold("Projection:"));
         console.log(`  rebuilt from the workspace artifacts\n`);
 
-        console.log(pc.bold("Dashboard:"));
-        console.log(`  http://localhost:${port}\n`);
+        // L-09: no dashboard is served (retired in 0.13.0-rc.1); the root answers the endpoint catalog, and the token
+        // reaches a client only out of band
+        console.log(pc.bold("Dev Server API:"));
+        console.log(`  http://localhost:${port} (endpoint catalog; /api/* needs the token in .hardkas/dev-server-token)\n`);
 
         console.log(pc.bold("Accounts"));
         console.log(pc.dim("━━━━━━━━━━━━━━━━━━━━━━\n"));
@@ -215,19 +217,5 @@ export async function runDevServer(options: {
     await new Promise(() => {});
   } catch (e) {
     handleError(e);
-  }
-}
-
-export async function runDevServerToken(options: { json?: boolean; workspaceRoot?: string }) {
-  const wsRoot = options.workspaceRoot || process.cwd();
-  const tokenPath = path.join(wsRoot, ".hardkas", "dev-server-token");
-  if (!fs.existsSync(tokenPath)) {
-    throw new Error("Dev server is not running or token file not found.");
-  }
-  const token = fs.readFileSync(tokenPath, "utf8").trim();
-  if (options.json) {
-    UI.writeJson({ token });
-  } else {
-    console.log(token);
   }
 }

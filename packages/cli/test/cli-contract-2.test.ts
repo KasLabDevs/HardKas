@@ -158,7 +158,7 @@ describe("CLI-CONTRACT-2 · A · the `hardkas test` verdict (TEST-VACUOUS-PASS)"
     expect({ exit: r.status, ok: e?.ok, code: codeOf(r) }, brief(r)).toEqual({ exit: 1, ok: false, code: "TESTS_FAILED" });
   });
 
-  it.skip("[known gap: the report records the --network option, not the resolved execution network -> CLI-CONTRACT-2B] A6 · the report names the world the tests ran in (this workspace executes in the simulator), not an option default", () => {
+  it("A6 · fixed (INT9 · CLI-CONTRACT-2B: was the known gap: the report records the --network option, not the resolved execution network) · the report names the world the tests ran in (this workspace executes in the simulator), not an option default", () => {
     writeTest(ws, "pass.test.ts", PASSING);
     const r = run(["test", "--json"], ws);
     const e = envelope(r);
@@ -180,14 +180,14 @@ describe("CLI-CONTRACT-2 · B · one unreachable node, one typed code", () => {
     expect({ exit: r.status, code: codeOf(r), docs: r.docs.length }, brief(r)).toEqual({ exit: 1, code: "UNKNOWN_NETWORK", docs: 1 });
   });
 
-  it.skip("[known gap: a refused node is classified UNKNOWN -> CLI-CONTRACT-2B] B1 · `tx plan --json` against a node that refuses: a typed connection code, never UNKNOWN", () => {
+  it("B1 · fixed (INT9 · CLI-CONTRACT-2B: was the known gap: a refused node is classified UNKNOWN) · `tx plan --json` against a node that refuses: a typed connection code, never UNKNOWN", () => {
     const r = run(["tx", "plan", "--from", "alice", "--to", "bob", "--amount", "1", "--json"], ws);
     expect(r.status, brief(r)).not.toBe(0);
     expect(codeOf(r), brief(r)).not.toBeNull();
     expect(codeOf(r), brief(r)).not.toMatch(UNTYPED);
   });
 
-  it.skip("[known gap: accounts balance answers UNKNOWN_ERROR on a refused node -> CLI-CONTRACT-2B] B2 · `accounts balance alice --json` against the same node: typed, never UNKNOWN_ERROR", () => {
+  it("B2 · fixed (L1-CORE-1 B2, N-14: the transport errors carry RPC_CONNECTION_FAILED / RPC_TIMEOUT) · `accounts balance alice --json` against the same node: typed, never UNKNOWN_ERROR", () => {
     const r = run(["accounts", "balance", "alice", "--json"], ws);
     expect(r.status, brief(r)).not.toBe(0);
     expect(codeOf(r), brief(r)).not.toBeNull();
@@ -201,7 +201,7 @@ describe("CLI-CONTRACT-2 · B · one unreachable node, one typed code", () => {
     expect(codeOf(r), brief(r)).not.toMatch(UNTYPED);
   });
 
-  it.skip("[known gap: one unreachable node, three codes -> CLI-CONTRACT-2B] B4 · the three commands name one failure (the node refuses) with one code", () => {
+  it("B4 · fixed (INT9 · CLI-CONTRACT-2B: was the known gap: one unreachable node, three codes) · the three commands name one failure (the node refuses) with one code", () => {
     const codes = [
       run(["tx", "plan", "--from", "alice", "--to", "bob", "--amount", "1", "--json"], ws),
       run(["accounts", "balance", "alice", "--json"], ws),
@@ -234,30 +234,31 @@ describe("CLI-CONTRACT-2 · C · an error shown is a failure of the run; a claim
     ).toEqual({ wentToTheLocalnetNode: false, claimWithoutReceipt: false });
   });
 
-  it.skip("[known gap: create --json answers ok:false with exit 0 and a nested envelope -> CLI-CONTRACT-2B] C3 · `create <unknown template> <dest> --json`: exit ≠ 0 and the CLI's one envelope shape ({ ok:false, code })", () => {
+  it("C3 · fixed (INT9 · CLI-CONTRACT-2B: was the known gap: create --json answers ok:false with exit 0 and a nested envelope) · `create <unknown template> <dest> --json`: exit ≠ 0 and the CLI's one envelope shape ({ ok:false, code })", () => {
     const r = run(["create", "no-such-template", "dest-dir", "--json"], ws);
     const e = envelope(r);
     expect({ failed: r.status !== 0, topLevelCode: typeof e?.code === "string" }, brief(r)).toEqual({ failed: true, topLevelCode: true });
   });
 
-  it.skip("[known gap: status never loads the config -> CLI-CONTRACT-2B] C4 · `status` reports a hardkas.config.ts that cannot load, instead of describing the workspace as if nothing were wrong", () => {
+  it("C4 · fixed (INT9 · CLI-CONTRACT-2B: was the known gap: status never loads the config) · `status` reports a hardkas.config.ts that cannot load, instead of describing the workspace as if nothing were wrong", () => {
     fs.writeFileSync(path.join(ws, "hardkas.config.ts"), 'throw new Error("this config cannot load");\n');
     const r = run(["status"], ws);
     expect(r.status !== 0 || /config/i.test(r.all), brief(r)).toBe(true);
   });
 
-  it.skip("[known gap: status never loads the config -> CLI-CONTRACT-2B] C4b · `status` in a directory that holds a hardkas.config.ts but no .hardkas/ does not call it 'no workspace' (WA-1: the config is the root)", () => {
+  it("C4b · fixed (INT9 · CLI-CONTRACT-2B: was the known gap: status never loads the config) · `status` in a directory that holds a hardkas.config.ts but no .hardkas/ does not call it 'no workspace' (WA-1: the config is the root)", () => {
     fs.rmSync(path.join(ws, ".hardkas"), { recursive: true, force: true });
     const r = run(["status"], ws);
     expect(r.all, brief(r)).not.toMatch(/No HardKAS workspace detected/);
   });
 
-  it.skip("[known gap: ci verify blames the workspace when only Docker is down -> CLI-CONTRACT-2B] C5 · `ci verify` in a pristine simulator workspace when only Docker is down: no 'corrupted workspace' verdict", () => {
+  it("C5 · fixed (INT9 · CLI-CONTRACT-2B: was the known gap: ci verify blames the workspace when only Docker is down) · `ci verify` in a pristine simulator workspace when only Docker is down: no 'corrupted workspace' verdict", () => {
     const r = run(["ci", "verify"], ws, DOCKER_DOWN);
     if (r.status !== 0) expect(r.all, brief(r)).not.toMatch(/corrupted|incorrectly configured/i);
   });
 
-  it.skip("[known gap: doctor exits 0 with failed checks, a decision -> CLI-CONTRACT-2B] C6 · `doctor --json`: failed checks and the exit code agree (a verdict that reports failures does not exit 0)", () => {
+  // L-02 (3-nov): fixed, doctor exits 1 when a check fails (warnings keep 0); see doctor-exit-code-l02.test.ts.
+  it("C6 · `doctor --json`: failed checks and the exit code agree (a verdict that reports failures does not exit 0)", () => {
     const r = run(["doctor", "--json"], ws, DOCKER_DOWN);
     const report = r.docs.find((d) => d?.summary || d?.result?.summary);
     const failed = Number(report?.summary?.failed ?? report?.result?.summary?.failed ?? 0);
@@ -265,7 +266,7 @@ describe("CLI-CONTRACT-2 · C · an error shown is a failure of the run; a claim
     expect({ failedChecks: failed, exit: r.status }, brief(r)).toSatisfy((x: any) => (x.failedChecks > 0) === (x.exit !== 0));
   });
 
-  it.skip("[known gap: an idempotent re-send is labelled submitted -> CLI-CONTRACT-2B] C7 · re-sending an already applied signed transaction: the answer never reads as a fresh submission without saying it was already applied", () => {
+  it("C7 · fixed (INT9 · CLI-CONTRACT-2B: was the known gap: an idempotent re-send is labelled submitted) · re-sending an already applied signed transaction: the answer never reads as a fresh submission without saying it was already applied", () => {
     const plan = run(["tx", "plan", "--from", "alice", "--to", "bob", "--amount", "1", "--out", "p.json", "--json"], ws);
     expect(plan.status, brief(plan)).toBe(0);
     const sign = run(["tx", "sign", "p.json", "--out", "s.json", "--json"], ws);
@@ -290,22 +291,22 @@ describe("CLI-CONTRACT-2 · D · `--json` answers with exactly one envelope, usa
   });
   afterEach(() => rmWs(ws));
 
-  it.skip("[known gap: commander usage errors print text and exit 1 -> CLI-CONTRACT-2B] D1 · an unknown option under --json: one { ok:false } envelope on stdout and the usage exit code (2)", () => {
+  it("D1 · fixed (INT9 · CLI-CONTRACT-2B: was the known gap: commander usage errors print text and exit 1) · an unknown option under --json: one { ok:false } envelope on stdout and the usage exit code (2)", () => {
     const r = run(["tx", "plan", "--no-such-option", "--json"], ws);
     expect({ docs: r.docs.length, exit: r.status }, brief(r)).toEqual({ docs: 1, exit: 2 });
   });
 
-  it.skip("[known gap: commander usage errors print text and exit 1 -> CLI-CONTRACT-2B] D2 · a missing required argument under --json (`artifact verify --json`): the same", () => {
+  it("D2 · fixed (INT9 · CLI-CONTRACT-2B: was the known gap: commander usage errors print text and exit 1) · a missing required argument under --json (`artifact verify --json`): the same", () => {
     const r = run(["artifact", "verify", "--json"], ws);
     expect({ docs: r.docs.length, exit: r.status }, brief(r)).toEqual({ docs: 1, exit: 2 });
   });
 
-  it.skip("[known gap: run --json prints a logger line before the envelope -> CLI-CONTRACT-2B] D3 · `run <missing file> --json`: one document, not two", () => {
+  it("D3 · fixed (L1-CORE-1 B2, H3: no log line under --json) · `run <missing file> --json`: one document, not two", () => {
     const r = run(["run", "no-such-script.ts", "--json"], ws);
     expect(r.docs.length, brief(r)).toBe(1);
   });
 
-  it.skip("[known gap: kaspa doctor --json prints its result document and then a failure envelope -> CLI-CONTRACT-2B] D4 · `kaspa doctor --json`: one document, not two", () => {
+  it("D4 · fixed (INT9 · CLI-CONTRACT-2B: was the known gap: kaspa doctor --json prints its result document and then a failure envelope) · `kaspa doctor --json`: one document, not two", () => {
     const r = run(["kaspa", "doctor", "--json"], ws);
     expect(r.docs.length, brief(r)).toBe(1);
   });

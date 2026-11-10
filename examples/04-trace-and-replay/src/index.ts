@@ -31,8 +31,12 @@ async function main() {
 
   // 1. Initialize Hardkas SDK
   const hardkas = await Hardkas.create();
-  const artifactsDir = path.join(process.cwd(), "artifacts");
-  if (!fs.existsSync(artifactsDir)) fs.mkdirSync(artifactsDir);
+  // L-04: the run's artifacts are local output, never files of the repository. They go to the example's own
+  // `.hardkas/` (git-ignored) unless HARDKAS_EXAMPLE_OUT_DIR names another directory.
+  const artifactsDir = process.env.HARDKAS_EXAMPLE_OUT_DIR
+    ? path.resolve(process.env.HARDKAS_EXAMPLE_OUT_DIR)
+    : path.join(process.cwd(), ".hardkas", "example-04-artifacts");
+  fs.mkdirSync(artifactsDir, { recursive: true });
 
   const alice = await hardkas.accounts.resolve("alice");
   const bob = await hardkas.accounts.resolve("bob");
@@ -169,9 +173,9 @@ async function main() {
   await writeArtifact(tracePath, trace);
   await writeArtifact(receiptPath, receipt);
 
-  console.log(`✓ tx-plan.json    -> ${path.basename(planPath)}`);
-  console.log(`✓ tx-trace.json   -> ${path.basename(tracePath)}`);
-  console.log(`✓ tx-receipt.json -> ${path.basename(receiptPath)}\n`);
+  console.log(`✓ tx-plan.json    -> ${planPath}`);
+  console.log(`✓ tx-trace.json   -> ${tracePath}`);
+  console.log(`✓ tx-receipt.json -> ${receiptPath}\n`);
 
   // 8. Replay & Verify
   console.log("# Replay Verification");
