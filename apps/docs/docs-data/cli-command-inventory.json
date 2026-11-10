@@ -3248,7 +3248,7 @@
     "options": [
       {
         "flags": "--network <id>",
-        "description": "Kaspa network ID",
+        "description": "Kaspa network ID (simnet, testnet-10; mainnet, in any spelling or through a config alias, is refused while mainnet is locked down: MAINNET_SIGNING_DISABLED, nothing is generated)",
         "defaultValue": "simnet"
       },
       {

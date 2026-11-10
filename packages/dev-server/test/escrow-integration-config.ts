@@ -2,6 +2,8 @@
 // The global-setup funds `alice` (dev account #0) and starts a background miner.
 // Here we materialize buyer=alice, seller=bob, arbiter=charlie so the dev-server
 // signer lookup (by x-only key) actually finds them.
+// The dev server under test must run with HARDKAS_DEV_SERVER_AUTOSIGN=1 in its own environment: its escrow fund and
+// sign routes sign with its dev accounts only then, and refuse with DEV_AUTOSIGN_NOT_ALLOWED otherwise (TX-06 / P38).
 import { getOrCreateDevAccount, loadKaspaWasm } from "@hardkas/accounts";
 
 export interface EscrowIntegrationConfig {

@@ -5,7 +5,9 @@ description: Complete directory of packages in the HardKAS monorepo organized by
 
 # Package Map
 
-For standard application development, you only need to install **`@hardkas/cli`** (for terminal workflows) and **`@hardkas/sdk`** (for TypeScript integration), plus **`@hardkas/react`** if building a web frontend. All underlying primitives are composed automatically.
+For standard application development, you only need to install **`@hardkas/cli`** (for terminal workflows) and **`@hardkas/sdk`** (for TypeScript integration). All underlying primitives are composed automatically.
+
+This map lists packages of the monorepo, published or not. A release publishes 22 packages; the ones marked *workspace only* below are not published in this release ([Versioning](https://github.com/KasLabDevs/HardKas/blob/main/docs/status/versioning.md#not-published) lists them with the reason for each).
 
 ---
 
@@ -16,8 +18,8 @@ For standard application development, you only need to install **`@hardkas/cli`*
 | `@hardkas/sdk` | L2 | Unified TypeScript SDK for transactions, SilverScript (`silverc`), Covenants, ZK verification, localnet, and queries |
 | `@hardkas/cli` | L4 | The `hardkas` command-line interface and workflow runner |
 | `@hardkas/testing` | L3 | Deterministic scenario runner, assertions, and fuzz/chaos testing utilities |
-| `@hardkas/client` | L0 | Lightweight browser-safe HTTP/SSE client |
-| `@hardkas/react` | L4 | React hooks and providers for Kaspa L1 web applications |
+| `@hardkas/client` | L0 | Lightweight browser-safe HTTP/SSE client. *Workspace only* |
+| `@hardkas/react` | L4 | React hooks and providers for Kaspa L1 web applications. *Workspace only* |
 
 ---
 
@@ -46,10 +48,10 @@ For standard application development, you only need to install **`@hardkas/cli`*
 | `@hardkas/query-store` | L3 | SQLite read-model index for artifacts, events, and lineage graphs |
 | `@hardkas/query` | L3 | High-level query engine over `@hardkas/query-store` and workspace artifacts |
 | `@hardkas/toolkit` | L3 | Backend application kit combining UTXO reservation, RPC resilience, queries, and jobs |
-| `@hardkas/sync-daemon` | L3 | Continuous BlockDAG synchronization and UTXO indexing daemon |
+| `@hardkas/sync-daemon` | L3 | Continuous BlockDAG synchronization and UTXO indexing daemon. *Workspace only* |
 | `@hardkas/jobs` | L3 | Asynchronous job queue and retry engine for transaction pipelines |
-| `@hardkas/storage-sqlite` | L3 | SQLite persistence adapter for `@hardkas/toolkit` backends |
-| `@hardkas/storage-postgres` | L3 | PostgreSQL persistence adapter for production `@hardkas/toolkit` backends |
+| `@hardkas/storage-sqlite` | L3 | SQLite persistence adapter for `@hardkas/toolkit` backends. *Workspace only* |
+| `@hardkas/storage-postgres` | L3 | PostgreSQL persistence adapter for production `@hardkas/toolkit` backends. *Workspace only* |
 | `@hardkas/observability` | L0 | Structured JSON logging, metrics, and telemetry tracing |
-| `@hardkas/wallet-adapter` | L3 | External wallet connection boundary and signing adapters |
+| `@hardkas/wallet-adapter` | L3 | External wallet connection boundary and signing adapters. *Workspace only* |
 | `@hardkas/dev-server` | L4 | Headless Hono HTTP/SSE developer server (`hardkas sandbox`) |

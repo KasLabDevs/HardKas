@@ -112,4 +112,4 @@ Likely cause:
 A raw Kaspa WASM object was passed between processes, threads, or browser/Node boundaries.
 
 Resolution:
-Only pass portable data across boundaries. Browser apps should use `@hardkas/client` or `@hardkas/react` against the dev server instead of importing the Node SDK directly.
+Only pass portable data across boundaries. Browser apps should talk to the dev server over HTTP instead of importing the Node SDK directly. (`@hardkas/client` and `@hardkas/react` are workspace packages: they are not published in this release.)

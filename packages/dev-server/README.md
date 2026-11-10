@@ -10,7 +10,7 @@ Part of [HardKAS](https://github.com/KasLabDevs/HardKas), local-first developer 
 npm install @hardkas/dev-server
 ```
 
-`@hardkas/cli` depends on it. Web apps talk to it through `@hardkas/client` and `@hardkas/react`.
+`@hardkas/cli` depends on it. Web apps talk to it over HTTP. (`@hardkas/client` and `@hardkas/react`, the monorepo's browser client and its React bindings, are not published in this release.)
 
 ## What it contains
 

@@ -16,7 +16,7 @@ title: hardkas kaspa
 
 #### Options
 
-- `--network &lt;id&gt;` (Default: `simnet`): Kaspa network ID
+- `--network &lt;id&gt;` (Default: `simnet`): Kaspa network ID (simnet, testnet-10; mainnet, in any spelling or through a config alias, is refused while mainnet is locked down: MAINNET_SIGNING_DISABLED, nothing is generated)
 - `--show-private-key` (Default: `false`): Print the new private key once; you keep the only copy (HardKAS stores nothing and cannot recover it). Without it the command refuses before generating anything
 - `--json` (Default: `false`): Output as JSON (the private key is included only with --show-private-key)
 

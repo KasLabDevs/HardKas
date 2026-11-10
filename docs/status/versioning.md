@@ -74,8 +74,6 @@ it fails when a published package requires a GPL, AGPL, LGPL or unknown license.
 | `@hardkas/cli` | The `hardkas` command. Entry point. |
 | `@hardkas/sdk` | The TypeScript API. Entry point. |
 | `@hardkas/testing` | Scenario runner and matchers for project tests; a dependency of the CLI. |
-| `@hardkas/client` | Browser-safe HTTP/SSE client for the dev server. Entry point for web apps. |
-| `@hardkas/react` | React hooks over `@hardkas/client`. Entry point for web apps. |
 | `@hardkas/core` | Types, errors, network rules and node identity. Every other package needs it. |
 | `@hardkas/config` | `hardkas.config.*` loading and target resolution; a dependency of the CLI and the SDK. |
 | `@hardkas/tx-builder` | Planning, mass and fee rules; a dependency of the CLI and the SDK. |
@@ -95,12 +93,8 @@ it fails when a published package requires a GPL, AGPL, LGPL or unknown license.
 | `@hardkas/escrow` | Escrow records and rescue drafts; a dependency of the CLI and the dev server. |
 | `@hardkas/bridge-local` | Offline L1 to L2 bridge lab (no production bridge); a dependency of the CLI and the dev server. |
 | `@hardkas/node-orchestrator` | Multi-node topologies; a dependency of the CLI. |
-| `@hardkas/simulator-adapters` | React Query adapters over `@hardkas/bridge-local`. Standalone library. |
-| `@hardkas/wallet-adapter` | External wallet boundary. Standalone library. |
-| `@hardkas/plugin-local-indexer` | Local indexer plugin. Standalone library. |
-| `@hardkas/plugin-rpc-backend` | RPC backend plugin over `@hardkas/toolkit`. Standalone library. |
-| `@hardkas/sync-daemon` | DAG and UTXO sync daemon over `@hardkas/toolkit`. Standalone library. |
-| `@hardkas/storage-postgres` | PostgreSQL storage for `@hardkas/toolkit`. Standalone library. |
+
+That is 22 packages.
 
 `@hardkas/sdk` declares `snarkjs` (GPL-3.0) as an optional peer dependency:
 installing the SDK does not install it, and the Groth16 verifier reports
@@ -119,6 +113,19 @@ These manifests are `private: true`:
 | `@hardkas/storage-sqlite` | Internal. |
 | `@hardkas/testnet-qualification` | Internal qualification tooling. |
 | `@hardkas/docs` | The documentation site (`apps/docs`). |
+| `@hardkas/client` | No consumer (surface audit, 2026-11-09): no published package depends on it, and it cannot send the dev server's access token, which `/api/*` requires. Its only workspace user is `@hardkas/react`. |
+| `@hardkas/react` | No consumer: nothing in the workspace imports it. It builds on `@hardkas/client`, which is not published either. |
+| `@hardkas/wallet-adapter` | No consumer: the showcase apps declare it, but nothing in the workspace imports it. |
+| `@hardkas/simulator-adapters` | No consumer: nothing in the workspace imports it. |
+| `@hardkas/plugin-local-indexer` | No consumer outside the showcase lab (`explorer-live`); no published package depends on it. |
+| `@hardkas/plugin-rpc-backend` | No consumer outside the merchant backend reference app and the testnet runner lab; no published package depends on it. |
+| `@hardkas/sync-daemon` | No consumer outside the merchant backend reference app and the exchange backend, treasury and testnet runner labs; no published package depends on it. |
+| `@hardkas/storage-postgres` | No consumer outside the merchant backend reference app; no published package depends on it. |
+
+This release publishes no version of the last eight: they are `private`
+workspace packages, and the labs, reference apps and showcase apps of the
+monorepo keep using them through the workspace. Whether the versions an earlier
+release put on npm get deprecated is the owner's decision (`npm deprecate`).
 
 The labs, examples and showcase apps of the workspace are private as well.
 

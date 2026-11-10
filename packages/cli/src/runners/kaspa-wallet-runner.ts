@@ -46,6 +46,20 @@ const ONLY_COPY_WARNING = (name: string, network: string) => [
 ];
 
 export async function runKaspaWalletCreate(name: string, options: KaspaWalletCreateOptions) {
+  // Pre-release round · evasion route (a) of step 4 · MAINNET TOTAL LOCKDOWN: no mainnet key is made while mainnet is
+  // locked down, printed or not (as `accounts real generate|import`, P36: Kaspa's sighash does not commit to the
+  // network, so a mainnet key could sign a manipulated plan). Refused with the signing code first — before the key
+  // output choice below, whose ways out are refused on mainnet too, and before the accounts package is loaded: every
+  // spelling (`mainnet`, `mainnet-<n>`, `kaspa`, `kaspa-mainnet`, any case) and every config entry that declares one
+  // (an alias such as `prod`), with or without `--show-private-key`, JSON mode included.
+  {
+    const { refuseMainnetSigning, workspaceConfigForGuard } = await import("../mainnet-guard.js");
+    refuseMainnetSigning(
+      await workspaceConfigForGuard(),
+      [options.network],
+      "kaspa wallet create: no mainnet key is made while mainnet is locked down"
+    );
+  }
   // D1: decided before the accounts package is even loaded — no key, no file, no output but the typed error.
   assertWalletKeyOutputChosen(name, options);
   try {

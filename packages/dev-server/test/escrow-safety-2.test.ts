@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, beforeEach, afterEach, vi } from "vitest";
+import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach, vi } from "vitest";
 import crypto from "node:crypto";
 import fs from "node:fs";
 import os from "node:os";
@@ -62,7 +62,13 @@ const post = async (p: string) => {
   return { status: res.status, body: (await res.json()) as any };
 };
 
+// Pre-release round: /fund and /sign sign with the server's dev accounts, so they run only with the server's opt-in
+// (TX-06 / P38; their refusal without it is escrow-autosign-route-f.test.ts). These checks are about what comes after it.
+afterAll(() => {
+  delete process.env.HARDKAS_DEV_SERVER_AUTOSIGN;
+});
 beforeAll(async () => {
+  process.env.HARDKAS_DEV_SERVER_AUTOSIGN = "1";
   const { getOrCreateDevAccount, loadKaspaWasm } = await import("@hardkas/accounts");
   const k: any = await loadKaspaWasm();
   dir = fs.mkdtempSync(path.join(os.tmpdir(), "hk-es2-"));

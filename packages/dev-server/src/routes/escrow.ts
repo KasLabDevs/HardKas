@@ -13,6 +13,7 @@ import crypto from "node:crypto";
 import { JsonWrpcKaspaClient, type OfficialRpcFactory } from "@hardkas/kaspa-rpc";
 import { nodeRpcUrl } from "@hardkas/core";
 import { AtomicJournalEscrowStore } from "../store/atomic-journal.js";
+import { autoSignRefusal, serverAllowsDevAutoSign } from "./dev-autosign.js";
 
 export type EscrowDomainState =
   | "CREATED"
@@ -119,6 +120,19 @@ function nodeClient(timeoutMs?: number): JsonWrpcKaspaClient {
 }
 
 const messageOf = (e: unknown) => (e instanceof Error ? e.message : String(e));
+
+/**
+ * Pre-release round · evasion route (f) of step 4: `POST /:id/fund` (the buyer's dev account signs the funding) and
+ * `POST /:id/sign` (a role's dev account signs the spend) sign with THIS server's own accounts for an HTTP client, so
+ * they take the same server decision as the dApp routes (TX-06 / P38, dev-autosign.ts): off by default, opened only by
+ * `HARDKAS_DEV_SERVER_AUTOSIGN=1` in the server's environment, and then only on a local simnet. These routes always
+ * reach the canonical localnet (`RPC_URL`, loopback) as simnet, so the decision is asked for that network with no
+ * workspace config: a config cannot move the node they use. The refusal comes first, before the escrow record, any
+ * account or key is read and before the node is contacted. Undefined when the server may sign.
+ */
+function escrowAutoSignRefusal(): { code: string; message: string } | undefined {
+  return serverAllowsDevAutoSign(NETWORK_ID, process.env) ? undefined : autoSignRefusal(NETWORK_ID);
+}
 
 /** The chain block the node's virtual chain ends at now (undefined when it does not say). */
 async function sinkOf(rpc: JsonWrpcKaspaClient): Promise<string | undefined> {
@@ -286,6 +300,9 @@ escrowRoutes.get("/:id", (c) => {
 
 escrowRoutes.post("/:id/fund", async (c) => {
   try {
+    // the server's own decision on signing for a client (TX-06 / P38), before anything is read, signed or sent
+    const refused = escrowAutoSignRefusal();
+    if (refused) return c.json({ ok: false, code: refused.code, error: `${refused.code}: ${refused.message}` }, 403);
     const id = c.req.param("id");
     const record = memoryStore.get(id);
     if (!record) return c.json({ ok: false, error: "Not found" }, 404);
@@ -605,6 +622,9 @@ escrowRoutes.post("/:id/release/prepare", async (c) => {
 
 escrowRoutes.post("/:id/sign", async (c) => {
   try {
+    // the server's own decision on signing for a client (TX-06 / P38), before anything is read or signed
+    const refused = escrowAutoSignRefusal();
+    if (refused) return c.json({ ok: false, code: refused.code, error: `${refused.code}: ${refused.message}` }, 403);
     const id = c.req.param("id");
     const { role } = await c.req.json();
 

@@ -47,7 +47,7 @@ Builder Labs exercise the HardKAS stack (`@hardkas/sdk`, `@hardkas/toolkit`, `@h
 - **`labs/exchange-backend` & `labs/treasury` — Treasury Sweeping & Consolidation:** Demonstrates hot-to-cold UTXO sweeping, coin-selection policies, background job queues (`@hardkas/jobs`), and SQLite/PostgreSQL persistence.
 
 ### Interactive Showcase Suite (`labs/showcase-suite/apps/`)
-Full-stack reference applications pairing `@hardkas/sdk` + `@hardkas/toolkit` backends with `@hardkas/client` + `@hardkas/react` frontends:
+Full-stack reference applications pairing `@hardkas/sdk` + `@hardkas/toolkit` backends with browser frontends (inside the monorepo only: they are private workspace apps, and some use workspace packages that are not published in this release):
 - **`wallet-pro`** — HD wallet management, UTXO coin control, and fee-mass preview.
 - **`merchant-terminal`** — Point-of-sale payment processor with live DAG confirmation streaming.
 - **`explorer-live`** — Local BlockDAG, transaction, and artifact lineage explorer.

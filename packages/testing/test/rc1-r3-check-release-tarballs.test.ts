@@ -143,8 +143,20 @@ describe("RC1 · R3 · scripts/check-release-tarballs.mjs", () => {
     expect(findings(clean({ "package/README.md": "//registry.npmjs.org/:_authToken=${NPM_TOKEN}\n" }))).toEqual([]);
   });
 
-  it("keeps the three packages this release does not publish in its private list", () => {
-    expect(MUST_BE_PRIVATE).toEqual(["@hardkas/l2", "@hardkas/ext-l2", "@hardkas/pskt-native"]);
+  it("keeps the eleven packages this release does not publish in its private list (the L2 pair, pskt-native and the 8 without a consumer)", () => {
+    expect(MUST_BE_PRIVATE).toEqual([
+      "@hardkas/l2",
+      "@hardkas/ext-l2",
+      "@hardkas/pskt-native",
+      "@hardkas/client",
+      "@hardkas/react",
+      "@hardkas/wallet-adapter",
+      "@hardkas/simulator-adapters",
+      "@hardkas/plugin-local-indexer",
+      "@hardkas/plugin-rpc-backend",
+      "@hardkas/sync-daemon",
+      "@hardkas/storage-postgres"
+    ]);
   });
 
   it("reports a broken archive instead of throwing", () => {

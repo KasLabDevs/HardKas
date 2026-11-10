@@ -5,7 +5,7 @@ HardKAS is designed to isolate risk.
 ## Package Separation
 - **@hardkas/sdk**: The core logic. Contains the Planner, Signer, and Provider interfaces.
 - **@hardkas/cli**: The orchestration layer. Never imports private key logic directly into global scope; relies on strict boundaries.
-- **@hardkas/client**: The DOM layer. Isolates React state from WASM lifecycle events.
+- **@hardkas/client**: The DOM layer. Isolates React state from WASM lifecycle events. A workspace package: not published in this release ([why](../status/versioning.md#not-published)).
 - **@hardkas/accounts**: The keystore implementation.
 
 ## Why this Architecture?

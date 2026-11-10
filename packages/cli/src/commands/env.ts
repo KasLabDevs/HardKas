@@ -33,7 +33,7 @@ export const HARDKAS_ENV_VARIABLES: ReadonlyArray<{ name: string; meaning: strin
   { name: "HARDKAS_DEV_TOKEN", meaning: "dev server access token", secret: true },
   // P33: the dev server's variables are listed, not exempt by prefix (a typo of HARDKAS_DEV_SERVER_AUTOSIGN used to pass)
   // ESCALÓN 4 · P38: off by default, and only the local worlds even when set (dev-server/routes/dapp-tx.ts)
-  { name: "HARDKAS_DEV_SERVER_AUTOSIGN", meaning: "dev server: 1 lets the server sign dApp requests (POST /api/tx/send with allowDevAutoSign, POST /api/tx/sign) with its own accounts, on the simulated ledger or a local simnet only (never testnet, devnet or mainnet); unset, the server signs for no client" },
+  { name: "HARDKAS_DEV_SERVER_AUTOSIGN", meaning: "dev server: 1 lets the server sign dApp requests (POST /api/tx/send with allowDevAutoSign, POST /api/tx/sign) and escrow fundings and signatures (POST /api/escrows/:id/fund, /sign) with its own accounts, on the simulated ledger or a local simnet only (never testnet, devnet or mainnet); unset, the server signs for no client" },
   { name: "HARDKAS_DEV_SERVER_URL", meaning: "tests only: base URL of the dev server for the escrow integration suites" },
   { name: "HARDKAS_WATCH_POLLING", meaning: "dev server: poll the filesystem instead of watching it" },
   // P34: no HardKAS package reads it (the dev server's simnet route computed it and never used it); `hardkas test` and
@@ -80,10 +80,10 @@ export const ENV_POLICY_WARNINGS: Readonly<Record<string, (value: string) => str
       : undefined,
   HARDKAS_ALLOW_UNVERIFIED_NODE: (value) =>
     value === "1" ? "the simnet test harness attaches to a node whose identity it cannot prove" : undefined,
-  // P33 / ESCALÓN 4 · P38: what `serverAllowsDevAutoSign` (dev-server/routes/dapp-tx.ts) does with it
+  // P33 / ESCALÓN 4 · P38: what `serverAllowsDevAutoSign` (dev-server/routes/dev-autosign.ts) does with it
   HARDKAS_DEV_SERVER_AUTOSIGN: (value) =>
     value === "1"
-      ? "the dev server signs dApp requests with its own accounts for any HTTP client that asks, on the simulated ledger or a local simnet (testnet, devnet and mainnet stay refused); unset it unless a local dApp needs it"
+      ? "the dev server signs dApp requests and escrow fundings and signatures with its own accounts for any HTTP client that asks, on the simulated ledger or a local simnet (testnet, devnet and mainnet stay refused); unset it unless a local dApp needs it"
       : undefined
 };
 

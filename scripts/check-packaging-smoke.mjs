@@ -107,11 +107,24 @@ try {
   if (!capJson.capabilities) throw new Error("Missing capabilities in JSON output");
 
   // 5b. L1-CORE-1 B5: @hardkas/ext-l2 and @hardkas/pskt-native are private (not published), so they are not packed and
-  // the consumer has neither. INT9: @hardkas/l2 is private too (owner policy, provisional). The CLI must report the l2
+  // the consumer has neither. INT9: @hardkas/l2 is private too (owner policy, provisional). Surface audit 2026-11-09: so
+  // are the 8 packages without a consumer (docs/status/versioning.md, "Not published"). The CLI must report the l2
   // extension as not installed, not fail.
   console.log("\n5b. Checking that the private packages were not packed and the CLI works without them...");
   const packed = fs.readdirSync(tempPackDir);
-  for (const privatePkg of ["hardkas-ext-l2-", "hardkas-pskt-native-", "hardkas-l2-"]) {
+  for (const privatePkg of [
+    "hardkas-ext-l2-",
+    "hardkas-pskt-native-",
+    "hardkas-l2-",
+    "hardkas-client-",
+    "hardkas-react-",
+    "hardkas-wallet-adapter-",
+    "hardkas-simulator-adapters-",
+    "hardkas-plugin-local-indexer-",
+    "hardkas-plugin-rpc-backend-",
+    "hardkas-sync-daemon-",
+    "hardkas-storage-postgres-"
+  ]) {
     if (packed.some((f) => f.startsWith(privatePkg))) throw new Error(`${privatePkg}*.tgz was packed but the package is private`);
   }
   // INT9: every published tarball carries its README.md and LICENSE (B5 found 20 of 31 without a README).

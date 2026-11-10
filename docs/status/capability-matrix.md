@@ -73,6 +73,8 @@ Coverage:
 - The dashboard reads the dev-server API instead of inventing state.
 - `@hardkas/client` remains browser-safe and talks HTTP to the dev server.
 - `@hardkas/react` provides React bindings over `@hardkas/client`.
+- Both are workspace packages only: they are not published in this release
+  ([Versioning: not published](./versioning.md#not-published)).
 - The browser does not import the Node SDK directly.
 
 ## Real Simnet RPC

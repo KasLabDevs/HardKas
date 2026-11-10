@@ -10,7 +10,7 @@ Part of [HardKAS](https://github.com/KasLabDevs/HardKas), local-first developer 
 npm install @hardkas/jobs
 ```
 
-`@hardkas/toolkit` and `@hardkas/storage-postgres` depend on it.
+`@hardkas/toolkit` depends on it, and so does `@hardkas/storage-postgres`, a workspace package that is not published in this release.
 
 ## What it contains
 

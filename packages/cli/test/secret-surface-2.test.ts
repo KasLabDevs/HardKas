@@ -117,15 +117,15 @@ describe("SECRET-SURFACE-2 · BEFORE", () => {
 
   describe("SS2-B · a mainnet private key is not printed by default", () => {
     // D1 / P1: a key nobody chose a destination for is not generated at all (an address without its key is the loss
-    // this contract exists to prevent), so there is no address to show either.
-    it("kaspa wallet create <name> --network mainnet refuses (WALLET_KEY_OUTPUT_REQUIRED, exit 2): no key, no address, the two ways out named", () => {
-      const r = run(["kaspa", "wallet", "create", "vault", "--network", "mainnet"], ws);
+    // this contract exists to prevent), so there is no address to show either. Pre-release round (route (a) of step
+    // 4): while mainnet is locked down no mainnet key is made at all, flag or no flag (MAINNET_SIGNING_DISABLED, decided
+    // first; kaspa-wallet-create-mainnet.test.ts covers every spelling and alias).
+    it("kaspa wallet create <name> --network mainnet refuses (MAINNET_SIGNING_DISABLED): no key, no address", () => {
+      const r = run(["kaspa", "wallet", "create", "vault", "--network", "mainnet", "--json"], ws);
       const text = stripAnsi(r.all);
-      expect({ exit: r.status, code: /WALLET_KEY_OUTPUT_REQUIRED/.test(text) }, r.all).toEqual({ exit: 2, code: true });
+      expect({ failed: r.status !== 0, code: JSON.parse(r.stdout.trim()).code }, r.all).toEqual({ failed: true, code: "MAINNET_SIGNING_DISABLED" });
       expect(text, "no 64-hex value (the private key) in stdout or stderr").not.toMatch(HEX64);
       expect(text, "no address either: nothing was generated").not.toMatch(/kaspa(sim|test)?:q[0-9a-z]{20,}/);
-      expect(text).toMatch(/--show-private-key/);
-      expect(text).toMatch(/accounts real generate/);
     });
   });
 
@@ -313,10 +313,11 @@ describe("SECRET-SURFACE-2 · AFTER", () => {
   // is the only copy. The way out the refusal names, `accounts real generate --password-env`, is checked to be a real,
   // registered path whose encrypted keystore opens again with its password and holds the key of its address.
   describe("D1 · kaspa wallet create: the key goes where the user says, decided before anything is generated", () => {
+    // Pre-release round (route (a) of step 4): mainnet is refused before the output choice (MAINNET_SIGNING_DISABLED,
+    // kaspa-wallet-create-mainnet.test.ts), so the contract is shown on the networks that still make a key.
     const networks: Array<[string, string[], RegExp]> = [
       ["simnet (the default)", [], /^kaspasim:q/],
-      ["testnet-10", ["--network", "testnet-10"], /^kaspatest:q/],
-      ["mainnet", ["--network", "mainnet"], /^kaspa:q/]
+      ["testnet-10", ["--network", "testnet-10"], /^kaspatest:q/]
     ];
     const ADDRESS = /kaspa(sim|test)?:q[0-9a-z]{20,}/;
     // the workspace and HARDKAS_HOME (the hermetic gate's copy, inherited by the child) before and after a command
@@ -339,7 +340,7 @@ describe("SECRET-SURFACE-2 · AFTER", () => {
 
     it("--json without the flag: exactly one JSON document (ok: false, the code), exit 2, no secret, nothing written", () => {
       const before = snapshot();
-      const r = run(["kaspa", "wallet", "create", "vault", "--network", "mainnet", "--json"], ws);
+      const r = run(["kaspa", "wallet", "create", "vault", "--network", "testnet-10", "--json"], ws);
       expect(r.status, r.all).toBe(2);
       const doc = JSON.parse(r.stdout.trim()); // a second document on stdout would break this parse
       expect(doc).toMatchObject({ ok: false, code: "WALLET_KEY_OUTPUT_REQUIRED" });
@@ -367,15 +368,15 @@ describe("SECRET-SURFACE-2 · AFTER", () => {
 
     it("--show-private-key --json: one document carrying the key (once), the warning on stderr, nothing written", () => {
       const before = snapshot();
-      const r = run(["kaspa", "wallet", "create", "vault", "--network", "mainnet", "--show-private-key", "--json"], ws);
+      const r = run(["kaspa", "wallet", "create", "vault", "--network", "testnet-10", "--show-private-key", "--json"], ws);
       expect(r.status, r.all).toBe(0);
       const doc = JSON.parse(r.stdout.trim());
       expect(doc).toMatchObject({
         ok: true,
         command: "kaspa wallet create",
-        result: { name: "vault", network: "mainnet", privateKeyEnv: "VAULT_PRIVATE_KEY", persisted: false }
+        result: { name: "vault", network: "testnet-10", privateKeyEnv: "VAULT_PRIVATE_KEY", persisted: false }
       });
-      expect(doc.result.address).toMatch(/^kaspa:q/);
+      expect(doc.result.address).toMatch(/^kaspatest:q/);
       expect(doc.result.privateKey).toMatch(/^[0-9a-f]{64}$/i);
       expect(r.all.split(doc.result.privateKey).length - 1, "the key appears exactly once: in the document").toBe(1);
       expect(stripAnsi(r.stderr), "the warning still reaches the user, on stderr").toMatch(/only copy/i);

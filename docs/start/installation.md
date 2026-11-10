@@ -49,7 +49,7 @@ node --version
 
 ## Choose your packages
 
-A release publishes 30 packages; the full list, and why each one is published, is
+A release publishes 22 packages; the full list, and why each one is published, is
 in [Versioning: published packages](../status/versioning.md#published-packages).
 Install only what your project uses. Most projects start with the CLI and the
 SDK, which pull in the rest of what they need.
@@ -59,15 +59,17 @@ SDK, which pull in the rest of what they need.
 | `@hardkas/cli` | Drive workflows from the terminal: plan, sign, send, wait, verify, inspect. | Node.js |
 | `@hardkas/sdk` | Do the same programmatically from TypeScript or JavaScript. | Node.js |
 | `@hardkas/testing` | Write project tests (scenario runner and matchers, with vitest). | Node.js |
-| `@hardkas/client` | Talk to a running dev-server over HTTP from a browser. | Browser |
-| `@hardkas/react` | Use React bindings — `HardKASProvider` and hooks — over `@hardkas/client`. | Browser |
 
-`@hardkas/react` builds on `@hardkas/client`; install the client alongside it.
 The browser never imports the Node SDK directly — that boundary is deliberate
 and is listed in the [Capability Matrix](../status/capability-matrix.md).
 
-Not published, so not installable from npm: `@hardkas/l2`, `@hardkas/ext-l2` (the
-L2 extension) and `@hardkas/pskt-native`
+Not published in this release, so not installable from npm: `@hardkas/l2`,
+`@hardkas/ext-l2` (the L2 extension), `@hardkas/pskt-native`, and the eight
+packages no published package depends on: `@hardkas/client` and
+`@hardkas/react` (the browser HTTP client and its React bindings),
+`@hardkas/wallet-adapter`, `@hardkas/simulator-adapters`,
+`@hardkas/plugin-local-indexer`, `@hardkas/plugin-rpc-backend`,
+`@hardkas/sync-daemon` and `@hardkas/storage-postgres`
 ([why](../status/versioning.md#not-published)).
 
 ### Optional peer: snarkjs (GPL-3.0)

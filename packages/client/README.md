@@ -2,6 +2,8 @@
 
 The official HTTP client for the HardKAS Dev Server.
 
+**Not published in this release.** `@hardkas/client` is a private workspace package: no published HardKAS package depends on it, so this release puts no version of it on npm and the install command below does not fetch this version. Inside the HardKAS monorepo it stays a workspace package. See [Versioning](https://github.com/KasLabDevs/HardKas/blob/main/docs/status/versioning.md#not-published) ("Not published").
+
 > [!WARNING]
 > **DO NOT import `@hardkas/sdk` in the browser!**
 > The main `@hardkas/sdk` package contains Node.js-specific native dependencies (like `fs`, `crypto`, and `better-sqlite3`) and will crash your web application.
