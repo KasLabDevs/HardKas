@@ -19,7 +19,8 @@ describe("Config Commands", () => {
   const USER_CONFIG = "// the user's config: TN10 endpoint and a syntax error\nexport default { networks: { tn10: { kind: \"kaspa-node\", network: \"testnet-10\", rpcUrl: \"ws://127.0.0.1:17210\" } } ;\n";
 
   beforeEach(() => {
-    tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "hardkas-e3-config-"));
+    // real path: on macOS the temp dir is under /var -> /private/var, and the CLI reports paths already resolved
+    tempDir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "hardkas-e3-config-")));
   });
 
   afterEach(() => {
@@ -127,7 +128,7 @@ describe("Config Commands", () => {
     expect(fs.readFileSync(cfg(), "utf8")).toContain("sim_developer");
     expect(loads()).toBe(cfg());
 
-    const other = fs.mkdtempSync(path.join(os.tmpdir(), "hardkas-e3-devinit-"));
+    const other = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "hardkas-e3-devinit-")));
     try {
       fs.writeFileSync(path.join(other, "package.json"), JSON.stringify({ name: "e3-dapp-2" }));
       const mjs = path.join(other, "hardkas.config.mjs");

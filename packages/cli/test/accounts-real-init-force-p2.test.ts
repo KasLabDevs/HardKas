@@ -40,8 +40,9 @@ function cli(args: string[]) {
 }
 
 beforeEach(() => {
-  ws = fs.mkdtempSync(path.join(os.tmpdir(), "hardkas-e3-p2-ws-"));
-  home = fs.mkdtempSync(path.join(os.tmpdir(), "hardkas-e3-p2-home-"));
+  // real paths: on macOS the temp dir is under /var -> /private/var, and the CLI reports paths already resolved
+  ws = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "hardkas-e3-p2-ws-")));
+  home = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "hardkas-e3-p2-home-")));
   storePath = getDefaultRealAccountsPath(ws);
 });
 
