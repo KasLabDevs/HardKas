@@ -1,6 +1,6 @@
 ## [0.13.0-rc.1] - 2026-11-02 - Covenant engine v1, L2 extension, experimental simulator
 
-Not published on npm yet: `latest` is still `0.12.0-rc.29`, and this release candidate is meant for the `next` tag. The
+Published on npm on 2026-11-10 (22 packages): `latest` and `next` both point to `0.13.0-rc.1`. The
 release publishes 22 packages, listed with the reason for each in
 [docs/status/versioning.md](docs/status/versioning.md#published-packages); `@hardkas/ext-l2` (never published),
 `@hardkas/pskt-native` (on hold), `@hardkas/l2` (until its API is reviewed) and the 8 packages no published package
