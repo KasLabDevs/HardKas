@@ -81,7 +81,9 @@ describe("Adversarial Campaign · Cryptographic & Fault Injection on ZK (Fase B)
     expect(res.verified).toBe(false);
   });
 
-  it("ADV-ZK-04: Concurrency stress: 30 parallel verification calls execute deterministically without race", { timeout: 20000 }, async () => {
+  // The SDK runs at most a few pairing processes at once and queues the rest, so 30 calls take several rounds: the
+  // test budget covers that on a slow runner (each call keeps its own 10 s pairing timeout).
+  it("ADV-ZK-04: Concurrency stress: 30 parallel verification calls execute deterministically without race", { timeout: 120000 }, async () => {
     const fakeInputs = {
       schema: HardkasSchemas.ZkGroth16PublicInputsV1,
       publicSignals: ["999999"]

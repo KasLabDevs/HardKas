@@ -1,6 +1,7 @@
 import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import { createRequire } from "node:module";
+import os from "node:os";
 import { pathToFileURL } from "node:url";
 import {
   legacyDomainDigest,
@@ -630,6 +631,33 @@ try {
 process.exit(0);
 `;
 
+/**
+ * At most this many pairing processes run at once. Each one is a Node process that loads snarkjs, and its ffjavascript
+ * curve starts a worker pool sized to the CPU count: callers that start many verifications together (30 at once in
+ * ADV-ZK-04) would start dozens of processes and hundreds of threads, and on a busy machine (CI's macOS runner) some ran
+ * out their timeout with a valid proof. Further calls wait for a free slot; each call's timeout counts from the moment
+ * its own process starts, so waiting never turns into a timeout.
+ */
+const MAX_CONCURRENT_PAIRINGS = Math.max(
+  1,
+  Math.min(4, typeof os.availableParallelism === "function" ? os.availableParallelism() : os.cpus().length)
+);
+let activePairings = 0;
+const pairingQueue: Array<() => void> = [];
+
+async function withPairingSlot<T>(run: () => Promise<T>): Promise<T> {
+  if (activePairings < MAX_CONCURRENT_PAIRINGS) activePairings++;
+  // a finishing call hands its slot straight to the next waiter, so the limit is never exceeded
+  else await new Promise<void>((resolve) => pairingQueue.push(resolve));
+  try {
+    return await run();
+  } finally {
+    const next = pairingQueue.shift();
+    if (next) next();
+    else activePairings--;
+  }
+}
+
 async function runPairingInChildProcess(
   snarkjsUrl: string,
   vk: unknown,
@@ -844,7 +872,7 @@ export async function verifyGroth16Math(
   }
   let pairingOk = false;
   try {
-    pairingOk = await runPairingInChildProcess(engine.snarkjsUrl, vk, signals, proof, timeoutMs);
+    pairingOk = await withPairingSlot(() => runPairingInChildProcess(engine.snarkjsUrl, vk, signals, proof, timeoutMs));
   } catch (error: any) {
     issues.push({
       code: "ZK_GROTH16_VERIFIER_ERROR",
