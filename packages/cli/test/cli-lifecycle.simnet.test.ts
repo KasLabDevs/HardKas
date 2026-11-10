@@ -384,7 +384,19 @@ describe("CLI-LIFECYCLE-1 · the built CLI against a real rusty-kaspad (simnet)"
       const r = await hk(label, [...args]);
       expect(r.code, brief(r)).toBe(0);
     }
-    // a1 holds a few UTXOs by now: --target-utxos 1 makes the consolidation real (the default target is 20)
+    // --target-utxos 1 makes the consolidation real (the default target is 20), but only if a1 holds more than one
+    // SPENDABLE UTXO. Its five funding coinbases become spendable only past maturity + 10 DAA, and how far the DAA got
+    // depends on how many blocks the background miner made during the earlier waits: on a busy CI runner a1 was left
+    // with a single spendable UTXO (CONSOLIDATION_NOT_REQUIRED). A self-payment a1 → a1 leaves two plain outputs at a1
+    // (the payment and its change), spendable at once. It is paid by a1 itself: a2's UTXOs stay untouched (C3 looks up
+    // the first payment's output at a2), and three blocks keep the DAA distance C3 relies on.
+    const topUp = await planSignSend("topup-a1", "a1", accounts.a1!, "1");
+    await mineBlocks(session, 3);
+    await untilTrue(
+      "the self-payment's two outputs at a1",
+      async () => (await session.rpc.getUtxosByAddress(accounts.a1!)).filter((u: any) => u.outpoint.transactionId === topUp.txId).length >= 2,
+      60_000
+    );
     const consolidate = await withMiner(() =>
       hk("consolidate-a1", ["accounts", "consolidate", "a1", "--target-utxos", "1", "--execute", "--yes", "--password-env", PW_ENV, "--json"])
     );
