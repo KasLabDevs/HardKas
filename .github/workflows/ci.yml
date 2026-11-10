@@ -57,8 +57,21 @@ jobs:
       - name: Install Dependencies
         run: pnpm install --frozen-lockfile
 
+      # CI-WIN-TURBO: twice (570ea6cc9, c4577a4b3) turbo exited 1 on the Windows runner right after a task had finished
+      # cleanly (the task's own output ends in "Build success", and no turbo summary follows), on trees that built on
+      # every other job. The same command as `pnpm build` (`turbo build --concurrency 1`), plus: no writes to turbo's
+      # local cache, which CI never reuses between runs (--cache=local:r); streamed logs, so a real error shows in the
+      # log; no telemetry. On Windows only, a failed build is tried once more: a real compile error fails both attempts.
       - name: Build Monorepo
-        run: pnpm build
+        shell: bash
+        env:
+          TURBO_TELEMETRY_DISABLED: "1"
+        run: |
+          build() { pnpm exec turbo build --concurrency 1 --cache=local:r --log-order=stream; }
+          if build; then exit 0; fi
+          if [ "$RUNNER_OS" != "Windows" ]; then exit 1; fi
+          echo "::warning::turbo build failed on the Windows runner; trying once more (CI-WIN-TURBO)"
+          build
 
       # RC1 · R3: cached per pin set, every file verified against the pin, only a failed download retried
       # (.github/actions/hardkas-toolchains, scripts/ci-toolchain-install.mjs). silverc is pinned only for linux-x64 and
@@ -211,8 +224,17 @@ jobs:
       - name: Install Dependencies
         run: pnpm install --frozen-lockfile
 
+      # CI-WIN-TURBO: the same build step as the canonical gate (see there).
       - name: Build Monorepo
-        run: pnpm build
+        shell: bash
+        env:
+          TURBO_TELEMETRY_DISABLED: "1"
+        run: |
+          build() { pnpm exec turbo build --concurrency 1 --cache=local:r --log-order=stream; }
+          if build; then exit 0; fi
+          if [ "$RUNNER_OS" != "Windows" ]; then exit 1; fi
+          echo "::warning::turbo build failed on the Windows runner; trying once more (CI-WIN-TURBO)"
+          build
 
       # HardKAS loads only the pinned official Kaspa WASM SDK; the install
       # verifies the release asset and every file against the pin.
