@@ -9,9 +9,22 @@ import { fileURLToPath } from "node:url";
 // says, within three lines, that the package is not published. Scanned: the docs people read (root and docs/ Markdown,
 // apps/docs pages, the landing page), package READMEs, the sources of the packages (CLI help and messages, SDK errors)
 // and the templates. CHANGELOG.md is history and docs/internal is local-only; both are left out. The READMEs of the
-// unpublished L2 packages themselves document how they install once published: instead of the three-line rule, each
-// must open its install story with a "Not published in this release." notice.
-const OWN_READMES = new Set(["packages/l2/README.md", "packages/ext-l2/README.md"]);
+// unpublished packages themselves document how they install once published: instead of the three-line rule, each
+// must open its install story with a "Not published in this release." notice. That is the L2 pair and, since the
+// surface audit (2026-11-09), the 8 packages without a consumer.
+const UNPUBLISHED_OWN = [
+  "l2",
+  "ext-l2",
+  "client",
+  "react",
+  "wallet-adapter",
+  "simulator-adapters",
+  "plugin-local-indexer",
+  "plugin-rpc-backend",
+  "sync-daemon",
+  "storage-postgres"
+];
+const OWN_READMES = new Set(UNPUBLISHED_OWN.map((pkg) => `packages/${pkg}/README.md`));
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 
@@ -64,8 +77,9 @@ describe("INT9 · texts do not recommend installing unpublished packages", () =>
     "i"
   );
 
-  it("the unpublished list includes the L2 packages and pskt-native", () => {
+  it("the unpublished list includes the L2 packages, pskt-native and the 8 without a consumer", () => {
     expect(unpublished).toEqual(expect.arrayContaining(["@hardkas/ext-l2", "@hardkas/l2", "@hardkas/pskt-native"]));
+    expect(unpublished).toEqual(expect.arrayContaining(UNPUBLISHED_OWN.filter((p) => p !== "l2" && p !== "ext-l2").map((p) => `@hardkas/${p}`)));
   });
 
   it("every recommendation to install one of them says, within three lines, that it is not published", () => {
@@ -85,8 +99,8 @@ describe("INT9 · texts do not recommend installing unpublished packages", () =>
     expect(offenders).toEqual([]);
   });
 
-  it("the READMEs of @hardkas/l2 and @hardkas/ext-l2 say they are not published in this release", () => {
-    for (const pkg of ["l2", "ext-l2"]) {
+  it("the READMEs of the unpublished packages (@hardkas/l2, @hardkas/ext-l2 and the 8 without a consumer) say they are not published in this release", () => {
+    for (const pkg of UNPUBLISHED_OWN) {
       const text = readFileSync(path.join(ROOT, "packages", pkg, "README.md"), "utf8");
       const notice = text.search(/\*\*Not published in this release\.\*\*/);
       expect(notice, pkg).toBeGreaterThanOrEqual(0);

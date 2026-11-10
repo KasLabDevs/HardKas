@@ -100,7 +100,7 @@ HardKAS relies on the authoritative Kaspa network for state validation and confl
 
 ## 5. Boundary
 
-The SDK should be used from Node.js. Browser applications should talk to the dev server through `@hardkas/client`, not import `@hardkas/sdk` directly.
+The SDK should be used from Node.js. Browser applications should talk to the dev server over HTTP, not import `@hardkas/sdk` directly. (The browser client `@hardkas/client` is a workspace package of the HardKAS monorepo: it is not published in this release.)
 
 ## 6. Experimental ZK (Groth16 / RISC Zero / Toccata)
 

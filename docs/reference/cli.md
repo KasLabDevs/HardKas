@@ -2096,7 +2096,7 @@ hardkas kaspa wallet create [options] <name>
 
 | Flag | Description | Default |
 | :--- | :--- | :--- |
-| `--network <id>` | Kaspa network ID | simnet |
+| `--network <id>` | Kaspa network ID (simnet, testnet-10; mainnet, in any spelling or through a config alias, is refused while mainnet is locked down: MAINNET_SIGNING_DISABLED, nothing is generated) | simnet |
 | `--show-private-key` | Print the new private key once; you keep the only copy (HardKAS stores nothing and cannot recover it). Without it the command refuses before generating anything | false |
 | `--json` | Output as JSON (the private key is included only with --show-private-key) | false |
 

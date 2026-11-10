@@ -1,6 +1,7 @@
 {
   "name": "@hardkas/wallet-adapter",
   "version": "0.13.0-rc.1",
+  "private": true,
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

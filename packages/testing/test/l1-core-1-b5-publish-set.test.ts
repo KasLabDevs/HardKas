@@ -11,6 +11,11 @@ import { fileURLToPath } from "node:url";
 // - `@hardkas/ext-l2` was never published: private.
 // - `@hardkas/l2` (INT9, owner policy 2026-11-09, provisional): private until its API, dependencies and promises are
 //   reviewed. Its only workspace user is `@hardkas/ext-l2`, private as well.
+// - The 8 packages without a consumer (surface audit 2026-11-09, inventory §1.1 and §1.4; owner order, pre-release
+//   round): `@hardkas/client`, `@hardkas/react`, `@hardkas/wallet-adapter`, `@hardkas/simulator-adapters`,
+//   `@hardkas/plugin-local-indexer`, `@hardkas/plugin-rpc-backend`, `@hardkas/sync-daemon` and
+//   `@hardkas/storage-postgres` are private: no published package depends on them, and the monorepo's labs, reference
+//   apps and showcase apps keep using them through the workspace. The published set goes from 30 to 22.
 // - `snarkjs` (GPL-3.0) is an OPTIONAL peer dependency of `@hardkas/sdk`, not a dependency: installing the SDK does
 //   not install it (packages/sdk/README.md §7).
 // - INT9: every published package ships a README.md that its `files` names explicitly (B5 found 20 tarballs without one).
@@ -65,11 +70,32 @@ describe("L1-CORE-1 B5 · the published set", () => {
   const byName = new Map(all.filter((w) => w.manifest.name).map((w) => [w.manifest.name!, w]));
   const published = all.filter((w) => w.manifest.name && w.manifest.private !== true);
 
-  it("is exactly the list of docs/status/versioning.md, 30 packages", () => {
+  it("is exactly the list of docs/status/versioning.md, 22 packages", () => {
     const listed = documentedPackages("## Published packages");
     expect(new Set(listed).size, "no package is listed twice").toBe(listed.length);
     expect(sorted(published.map((w) => w.manifest.name!))).toEqual(sorted(listed));
-    expect(listed).toHaveLength(30);
+    expect(listed).toHaveLength(22);
+  });
+
+  it("the 8 packages without a consumer are private, listed as not published, and still workspace packages", () => {
+    const eight = [
+      "@hardkas/client",
+      "@hardkas/react",
+      "@hardkas/wallet-adapter",
+      "@hardkas/simulator-adapters",
+      "@hardkas/plugin-local-indexer",
+      "@hardkas/plugin-rpc-backend",
+      "@hardkas/sync-daemon",
+      "@hardkas/storage-postgres"
+    ];
+    const notPublished = documentedPackages("### Not published");
+    const listed = documentedPackages("## Published packages");
+    for (const name of eight) {
+      expect(byName.has(name), `${name} is still a workspace package`).toBe(true);
+      expect(byName.get(name)!.manifest.private, `${name} is private`).toBe(true);
+      expect(notPublished, `${name} is listed under "Not published"`).toContain(name);
+      expect(listed, `${name} is not listed as published`).not.toContain(name);
+    }
   });
 
   it("the packages the document lists as not published are private", () => {

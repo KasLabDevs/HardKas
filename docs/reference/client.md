@@ -1,5 +1,10 @@
 # Client Reference
 
+> **Not published in this release.** `@hardkas/client` and `@hardkas/react` are
+> private workspace packages: no published package depends on them, so they are
+> not on npm in this release ([Versioning: not published](../status/versioning.md#not-published)).
+> This page describes them as they are inside the HardKAS monorepo.
+
 The `@hardkas/client` package is the HTTP client for a running HardKAS dev
 server. It uses `fetch` and has no dependencies. The React bindings
 (`HardKASProvider` and hooks) are in `@hardkas/react`, which builds on it.

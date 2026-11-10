@@ -20,7 +20,7 @@ export function registerKaspaCommands(program: Command) {
   walletCmd
     .command("create <name>")
     .description(`Generate a key pair and print its address and config snippet; the private key is printed once, only with --show-private-key; nothing is saved. For a stored, encrypted account use 'accounts real generate' ${UI.maturity("stable")}`)
-    .option("--network <id>", "Kaspa network ID", "simnet")
+    .option("--network <id>", "Kaspa network ID (simnet, testnet-10; mainnet, in any spelling or through a config alias, is refused while mainnet is locked down: MAINNET_SIGNING_DISABLED, nothing is generated)", "simnet")
     .option("--show-private-key", "Print the new private key once; you keep the only copy (HardKAS stores nothing and cannot recover it). Without it the command refuses before generating anything", false)
     .option("--json", "Output as JSON (the private key is included only with --show-private-key)", false)
     .action(async (name: string, options: any) => {

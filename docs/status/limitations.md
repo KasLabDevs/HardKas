@@ -453,7 +453,8 @@ the local simulation boundary.
 
 `@hardkas/plugin-rpc-backend` routes `balance()`, `history()`, and `utxos()`
 reliably, but has no resilient connection pooling and no retry jitter. If the
-node disconnects, restart the script.
+node disconnects, restart the script. It is a workspace package: it is not
+published in this release ([Versioning](./versioning.md#not-published)).
 
 ### Node on Windows: the SDK uses the `ws` WebSocket
 

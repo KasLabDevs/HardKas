@@ -5,7 +5,7 @@
 > another lockfile, and when a published package requires a GPL, AGPL, LGPL or unknown license.
 
 - Lockfile sha256 (LF): `1ff178743a38f7056b3e3b24907aa6dafb03fbdf5b4843fd5dcb17d416d0ef4d`
-- Published packages: 30 (all MIT). Third-party packages in their production trees: 295.
+- Published packages: 22 (all MIT). Third-party packages in their production trees: 286.
 - Required: reached through `dependencies` (and required peers). Optional: reached only through
   `optionalDependencies` or optional peers; a consumer gets them only by installing them.
 - A package that is optional and not installed on the machine that wrote this report (a platform binary) has
@@ -37,7 +37,6 @@ installing the SDK does not install it, and without it the Groth16 verifier repo
 | `@hardkas/artifacts` | MIT | 4 | 2 | 0 |
 | `@hardkas/bridge-local` | MIT | 7 | 2 | 0 |
 | `@hardkas/cli` | MIT | 73 | 213 | 9 |
-| `@hardkas/client` | MIT | 0 | 0 | 0 |
 | `@hardkas/config` | MIT | 5 | 2 | 0 |
 | `@hardkas/core` | MIT | 4 | 2 | 0 |
 | `@hardkas/dev-server` | MIT | 62 | 37 | 9 |
@@ -48,21 +47,14 @@ installing the SDK does not install it, and without it the Groth16 verifier repo
 | `@hardkas/node-orchestrator` | MIT | 4 | 2 | 0 |
 | `@hardkas/node-runner` | MIT | 28 | 2 | 0 |
 | `@hardkas/observability` | MIT | 0 | 0 | 0 |
-| `@hardkas/plugin-local-indexer` | MIT | 4 | 2 | 0 |
-| `@hardkas/plugin-rpc-backend` | MIT | 11 | 2 | 0 |
 | `@hardkas/query` | MIT | 4 | 2 | 0 |
 | `@hardkas/query-store` | MIT | 4 | 2 | 0 |
-| `@hardkas/react` | MIT | 5 | 0 | 0 |
 | `@hardkas/sdk` | MIT | 34 | 36 | 9 |
 | `@hardkas/sessions` | MIT | 4 | 2 | 0 |
 | `@hardkas/simulator` | MIT | 5 | 2 | 0 |
-| `@hardkas/simulator-adapters` | MIT | 10 | 2 | 0 |
-| `@hardkas/storage-postgres` | MIT | 12 | 2 | 0 |
-| `@hardkas/sync-daemon` | MIT | 11 | 2 | 0 |
 | `@hardkas/testing` | MIT | 36 | 188 | 9 |
 | `@hardkas/toolkit` | MIT | 11 | 2 | 0 |
 | `@hardkas/tx-builder` | MIT | 4 | 2 | 0 |
-| `@hardkas/wallet-adapter` | MIT | 5 | 2 | 0 |
 
 ## Every third-party package
 
@@ -138,9 +130,9 @@ installing the SDK does not install it, and without it the Groth16 verifier repo
 | `@jridgewell/sourcemap-codec` | 1.5.5 | MIT | 0 | 2 |
 | `@jridgewell/trace-mapping` | 0.3.31 | MIT | 0 | 2 |
 | `@napi-rs/lzma-linux-x64-gnu` | 1.5.1 | (not read) | 0 | 2 |
-| `@noble/curves` | 1.9.1 | MIT | 26 | 0 |
-| `@noble/hashes` | 1.8.0 | MIT | 26 | 0 |
-| `@noble/hashes` | 2.2.0 | MIT | 26 | 0 |
+| `@noble/curves` | 1.9.1 | MIT | 20 | 0 |
+| `@noble/hashes` | 1.8.0 | MIT | 20 | 0 |
+| `@noble/hashes` | 2.2.0 | MIT | 20 | 0 |
 | `@rollup/rollup-android-arm-eabi` | 4.62.4 | (not read) | 0 | 2 |
 | `@rollup/rollup-android-arm64` | 4.62.4 | (not read) | 0 | 2 |
 | `@rollup/rollup-darwin-arm64` | 4.62.4 | (not read) | 0 | 2 |
@@ -168,10 +160,8 @@ installing the SDK does not install it, and without it the Groth16 verifier repo
 | `@rollup/rollup-win32-x64-msvc` | 4.62.4 | MIT | 0 | 2 |
 | `@sec-ant/readable-stream` | 0.4.1 | MIT | 5 | 0 |
 | `@sindresorhus/merge-streams` | 4.0.0 | MIT | 5 | 0 |
-| `@tanstack/query-core` | 5.101.4 | MIT | 1 | 0 |
-| `@tanstack/react-query` | 5.101.4 | MIT | 1 | 0 |
 | `@types/estree` | 1.0.9 | MIT | 0 | 2 |
-| `@types/node` | 22.20.1 | MIT | 0 | 26 |
+| `@types/node` | 22.20.1 | MIT | 0 | 20 |
 | `@types/node` | 26.1.2 | MIT | 0 | 2 |
 | `@vitest/expect` | 2.1.9 | MIT | 0 | 2 |
 | `@vitest/mocker` | 2.1.9 | MIT | 0 | 2 |
@@ -235,12 +225,12 @@ installing the SDK does not install it, and without it the Groth16 verifier repo
 | `figures` | 6.1.0 | MIT | 5 | 0 |
 | `filelist` | 1.0.6 | Apache-2.0 | 0 | 4 |
 | `fill-range` | 7.1.1 | MIT | 2 | 0 |
-| `fs-extra` | 11.4.0 | MIT | 8 | 0 |
+| `fs-extra` | 11.4.0 | MIT | 5 | 0 |
 | `fsevents` | 2.3.3 | (not read) | 0 | 3 |
 | `get-stream` | 9.0.1 | MIT | 5 | 0 |
 | `glob-parent` | 5.1.2 | ISC | 2 | 0 |
-| `graceful-fs` | 4.2.11 | ISC | 8 | 0 |
-| `hash-wasm` | 4.12.0 | MIT | 11 | 0 |
+| `graceful-fs` | 4.2.11 | ISC | 5 | 0 |
+| `hash-wasm` | 4.12.0 | MIT | 7 | 0 |
 | `hono` | 4.13.16 | MIT | 2 | 0 |
 | `hoopy` | 0.1.4 | MIT | 0 | 4 |
 | `html-encoding-sniffer` | 6.0.0 | MIT | 0 | 2 |
@@ -259,10 +249,9 @@ installing the SDK does not install it, and without it the Groth16 verifier repo
 | `is-wsl` | 3.1.1 | MIT | 2 | 0 |
 | `isexe` | 2.0.0 | ISC | 5 | 0 |
 | `jake` | 10.9.4 | Apache-2.0 | 0 | 4 |
-| `jiti` | 2.7.0 | MIT | 12 | 0 |
-| `js-tokens` | 4.0.0 | MIT | 1 | 0 |
+| `jiti` | 2.7.0 | MIT | 8 | 0 |
 | `jsdom` | 29.1.1 | MIT | 0 | 2 |
-| `jsonfile` | 6.2.1 | MIT | 8 | 0 |
+| `jsonfile` | 6.2.1 | MIT | 5 | 0 |
 | `jsonpath` | 1.3.0 | MIT | 0 | 4 |
 | `lightningcss-android-arm64` | 1.32.0 | (not read) | 0 | 2 |
 | `lightningcss-darwin-arm64` | 1.32.0 | (not read) | 0 | 2 |
@@ -277,7 +266,6 @@ installing the SDK does not install it, and without it the Groth16 verifier repo
 | `lightningcss-win32-x64-msvc` | 1.32.0 | MPL-2.0 | 0 | 2 |
 | `lightningcss` | 1.32.0 | MPL-2.0 | 0 | 2 |
 | `logplease` | 1.2.15 | MIT | 0 | 4 |
-| `loose-envify` | 1.4.0 | MIT | 1 | 0 |
 | `loupe` | 3.2.1 | MIT | 0 | 2 |
 | `lru-cache` | 11.5.2 | BlueOak-1.0.0 | 0 | 2 |
 | `magic-string` | 0.30.21 | MIT | 0 | 2 |
@@ -297,21 +285,16 @@ installing the SDK does not install it, and without it the Groth16 verifier repo
 | `picocolors` | 1.1.1 | ISC | 1 | 3 |
 | `picomatch` | 2.3.2 | MIT | 2 | 0 |
 | `postcss` | 8.5.25 | MIT | 0 | 2 |
-| `postgres` | 3.4.9 | Unlicense | 1 | 0 |
 | `powershell-utils` | 0.1.0 | MIT | 2 | 0 |
 | `pretty-ms` | 9.3.0 | MIT | 5 | 0 |
 | `punycode` | 2.3.1 | MIT | 0 | 2 |
 | `pure-rand` | 8.4.2 | MIT | 2 | 0 |
 | `r1csfile` | 0.0.48 | GPL-3.0 | 0 | 4 |
-| `react-dom` | 18.3.1 | MIT | 1 | 0 |
-| `react` | 18.3.1 | MIT | 1 | 0 |
-| `react` | 19.2.8 | MIT | 1 | 0 |
 | `readdirp` | 3.6.0 | MIT | 2 | 0 |
 | `require-from-string` | 2.0.2 | MIT | 0 | 2 |
 | `rollup` | 4.62.4 | MIT | 0 | 2 |
 | `run-applescript` | 7.1.0 | MIT | 2 | 0 |
 | `saxes` | 6.0.0 | ISC | 0 | 2 |
-| `scheduler` | 0.23.2 | MIT | 1 | 0 |
 | `shebang-command` | 2.0.0 | MIT | 5 | 0 |
 | `shebang-regex` | 3.0.0 | MIT | 5 | 0 |
 | `siginfo` | 2.0.0 | ISC | 0 | 2 |
@@ -340,11 +323,11 @@ installing the SDK does not install it, and without it the Groth16 verifier repo
 | `tryer` | 1.0.1 | MIT | 0 | 4 |
 | `tsx` | 4.23.7 | MIT | 1 | 0 |
 | `underscore` | 1.13.8 | MIT | 0 | 4 |
-| `undici-types` | 6.21.0 | MIT | 0 | 26 |
+| `undici-types` | 6.21.0 | MIT | 0 | 20 |
 | `undici-types` | 8.3.0 | MIT | 0 | 2 |
 | `undici` | 7.30.2 | MIT | 0 | 2 |
 | `unicorn-magic` | 0.3.0 | MIT | 5 | 0 |
-| `universalify` | 2.0.1 | MIT | 8 | 0 |
+| `universalify` | 2.0.1 | MIT | 5 | 0 |
 | `vite-node` | 2.1.9 | MIT | 0 | 2 |
 | `vite` | 5.4.21 | MIT | 0 | 2 |
 | `vitest` | 2.1.9 | MIT | 0 | 2 |
@@ -357,9 +340,9 @@ installing the SDK does not install it, and without it the Groth16 verifier repo
 | `whatwg-url` | 16.0.1 | MIT | 0 | 2 |
 | `which` | 2.0.2 | ISC | 5 | 0 |
 | `why-is-node-running` | 2.3.0 | MIT | 0 | 2 |
-| `ws` | 8.21.2 | MIT | 16 | 0 |
+| `ws` | 8.21.2 | MIT | 11 | 0 |
 | `wsl-utils` | 0.3.1 | MIT | 2 | 0 |
 | `xml-name-validator` | 5.0.0 | Apache-2.0 | 0 | 2 |
 | `xmlchars` | 2.2.0 | MIT | 0 | 2 |
 | `yoctocolors` | 2.2.0 | MIT | 5 | 0 |
-| `zod` | 3.25.76 | MIT | 26 | 0 |
+| `zod` | 3.25.76 | MIT | 20 | 0 |

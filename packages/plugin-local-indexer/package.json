@@ -1,6 +1,7 @@
 {
   "name": "@hardkas/plugin-local-indexer",
   "version": "0.13.0-rc.1",
+  "private": true,
   "license": "MIT",
   "description": "Local Indexer Plugin for HardKAS",
   "type": "module",

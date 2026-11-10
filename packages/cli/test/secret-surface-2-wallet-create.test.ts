@@ -3,6 +3,8 @@ import { createCommandOutput, setGlobalOutput } from "../src/output.js";
 
 // SECRET-SURFACE-2 · D1 (P1) — the part a process cannot show from outside: the refusal is decided BEFORE the key
 // generator runs. The generator is replaced by a spy; the runner is driven directly, its output captured.
+// Pre-release round (route (a) of step 4): mainnet is refused before this choice (MAINNET_SIGNING_DISABLED,
+// kaspa-wallet-create-mainnet.test.ts), so these cases run on simnet and testnet-10.
 
 const { generate } = vi.hoisted(() => ({
   generate: vi.fn(async () => ({ address: "kaspasim:qtestaddress", publicKey: "02" + "ab".repeat(32), privateKey: "cd".repeat(32) }))
@@ -32,7 +34,7 @@ describe("SECRET-SURFACE-2 · D1 · the refusal happens before any key exists", 
   it("without --show-private-key: a typed usage refusal, the generator never called, nothing printed (human)", async () => {
     const io = capture("human");
     const { runKaspaWalletCreate } = await runner();
-    await expect(runKaspaWalletCreate("vault", { network: "mainnet" })).rejects.toMatchObject({
+    await expect(runKaspaWalletCreate("vault", { network: "testnet-10" })).rejects.toMatchObject({
       name: "HardkasCliError",
       code: "WALLET_KEY_OUTPUT_REQUIRED",
       exitCode: 2
@@ -76,10 +78,10 @@ describe("SECRET-SURFACE-2 · D1 · the refusal happens before any key exists", 
   it("with --show-private-key --json: one document on stdout with the key, the warning on stderr, the key once in all", async () => {
     const io = capture("json");
     const { runKaspaWalletCreate } = await runner();
-    await runKaspaWalletCreate("vault", { network: "mainnet", showPrivateKey: true, json: true });
+    await runKaspaWalletCreate("vault", { network: "testnet-10", showPrivateKey: true, json: true });
     expect(generate).toHaveBeenCalledTimes(1);
     const doc = JSON.parse(io.out().trim());
-    expect(doc).toMatchObject({ ok: true, command: "kaspa wallet create", result: { name: "vault", network: "mainnet", address: "kaspasim:qtestaddress", privateKeyEnv: "VAULT_PRIVATE_KEY", privateKey: KEY, persisted: false } });
+    expect(doc).toMatchObject({ ok: true, command: "kaspa wallet create", result: { name: "vault", network: "testnet-10", address: "kaspasim:qtestaddress", privateKeyEnv: "VAULT_PRIVATE_KEY", privateKey: KEY, persisted: false } });
     expect(io.err()).toMatch(/only copy/i);
     expect((io.out() + io.err()).split(KEY).length - 1).toBe(1);
   });

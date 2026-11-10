@@ -60,6 +60,9 @@ async function readyToRelease(): Promise<string> {
 }
 
 beforeAll(async () => {
+  // Pre-release round: /sign signs with the server's dev accounts, so it runs only with the server's opt-in (TX-06 /
+  // P38; the refusal without it is escrow-autosign-route-f.test.ts). These checks are about what comes after it.
+  process.env.HARDKAS_DEV_SERVER_AUTOSIGN = "1";
   const { getOrCreateDevAccount, loadKaspaWasm } = await import("@hardkas/accounts");
   const k: any = await loadKaspaWasm();
   dir = fs.mkdtempSync(path.join(os.tmpdir(), "hk-es2s-"));
@@ -78,7 +81,10 @@ beforeAll(async () => {
     releaseAmount: "100000000"
   };
 });
-afterAll(() => fs.rmSync(dir, { recursive: true, force: true }));
+afterAll(() => {
+  delete process.env.HARDKAS_DEV_SERVER_AUTOSIGN;
+  fs.rmSync(dir, { recursive: true, force: true });
+});
 beforeEach(() => {
   memoryStore.clear();
   cwd = vi.spyOn(process, "cwd").mockReturnValue(dir);

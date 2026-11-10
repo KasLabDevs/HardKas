@@ -68,6 +68,8 @@ flowchart TD
     CLIENT --> REACT
 ```
 
+The graph shows workspace packages, published or not. Not published in this release: `@hardkas/client`, `@hardkas/react`, `@hardkas/wallet-adapter`, `@hardkas/sync-daemon`, `@hardkas/storage-postgres`, `@hardkas/storage-sqlite` and `@hardkas/pskt-native` ([Versioning](https://github.com/KasLabDevs/HardKas/blob/main/docs/status/versioning.md#not-published) gives the reason for each).
+
 ---
 
 ## Layer Responsibilities

@@ -2,6 +2,8 @@
 
 Zero-dependency React hooks for HardKAS.
 
+**Not published in this release.** `@hardkas/react` is a private workspace package: no published HardKAS package depends on it, so this release puts no version of it on npm and the install command below does not fetch this version. Inside the HardKAS monorepo it stays a workspace package. See [Versioning](https://github.com/KasLabDevs/HardKas/blob/main/docs/status/versioning.md#not-published) ("Not published").
+
 > [!WARNING]
 > **DO NOT import `@hardkas/sdk` in the browser!**
 > The main SDK package contains Node.js specific libraries. Use `@hardkas/react` for your web UI.

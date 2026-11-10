@@ -3,7 +3,7 @@
 HardKAS allows you to seamlessly transition your local app to a real Kaspa node without altering your public API surface.
 
 ## Using the RPC Backend Plugin
-By default, `IndexerToolkit` uses an instant, local memory layout. To point it at a real network, supply the `@hardkas/plugin-rpc-backend`:
+By default, `IndexerToolkit` uses an instant, local memory layout. To point it at a real network, supply the `@hardkas/plugin-rpc-backend` (a workspace package inside the HardKAS monorepo: it is not published in this release, see [Versioning](../status/versioning.md#not-published)):
 
 ```ts
 import { kaspaRpcBackendPlugin } from '@hardkas/plugin-rpc-backend';
