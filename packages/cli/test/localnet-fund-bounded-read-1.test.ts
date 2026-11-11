@@ -4,7 +4,7 @@ import { fakeOfficialRpc, type FakeOfficialRpc } from "../../kaspa-rpc/test/help
 
 vi.setConfig({ testTimeout: 90_000, hookTimeout: 60_000 });
 
-// LOCALNET-FUND-BOUNDED-READ-1 (seen 2026-11-11 on 0.13.0-rc.1 with a 7.9 GB simnet chain, and 2026-10-21 with 10.66 GB,
+// LOCALNET-FUND-BOUNDED-READ-1 (seen 2026-11-11 on 0.13.0-rc.2 with a 7.9 GB simnet chain, and 2026-10-21 with 10.66 GB,
 // about 1.34 M UTXOs): `localnet fund` read EVERY UTXO of the funded address just to compute its total and mature
 // balance, through a client with a fixed 10 s timeout. On a localnet that has mined to that address for a long time
 // (the miner's own account, `--keep-miner`), the read of its coinbase UTXOs does not finish in time and fund fails with

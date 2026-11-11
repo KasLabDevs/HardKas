@@ -14,7 +14,7 @@ import { QueryEngine, createQueryRequest } from "../src/engine.js";
 function receiptBody(txId: string, status: string, overrides: Record<string, unknown> = {}) {
   return {
     schema: "hardkas.txReceipt",
-    hardkasVersion: "0.13.0-rc.1",
+    hardkasVersion: "0.13.0-rc.2",
     version: "1.0.0-alpha",
     txId,
     status,

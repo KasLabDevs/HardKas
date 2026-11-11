@@ -119,7 +119,7 @@ if (!versionShape) {
 const [, major, minor, patch, tag, currentNumber] = versionShape ?? [];
 const line = versionShape ? `${major}.${minor}.${patch}` : null;
 const escape = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-// Full tokens of the product line, e.g. 0.13.0-rc.1
+// Full tokens of the product line, e.g. 0.13.0-rc.2
 const fullToken = versionShape ? new RegExp(`\\b${escape(line)}-${tag}\\.(\\d+)\\b`, "g") : null;
 // Bare pre-release mentions need an unambiguous release line in the document.
 const bareToken = versionShape ? new RegExp(`\\b${tag}\\.?(\\d+)\\b`, "gi") : null;
@@ -207,7 +207,7 @@ function checkNewerOnly(text, relPosix) {
   // Tests also name historical fixtures (for example published-rc23.json).
   if (/\.(?:test|spec)\.[cm]?[jt]sx?$/.test(relPosix)) return;
   // RC counters restart on a new release line. An unqualified historical rc.21
-  // cannot be compared with 0.13.0-rc.1, especially in mixed-release documents.
+  // cannot be compared with 0.13.0-rc.2, especially in mixed-release documents.
   const releaseLines = new Set(
     [...text.matchAll(new RegExp(`\\b(\\d+\\.\\d+\\.\\d+)-${tag}\\.\\d+\\b`, "g"))].map((m) => m[1])
   );

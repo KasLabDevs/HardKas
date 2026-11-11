@@ -11,7 +11,7 @@ HardKAS is a Node.js framework and CLI tool distributed via npm.
 
 - **Node.js**: 24.22.1 exactly (the version HardKAS is built and tested on; `hardkas doctor` warns on another 24.x and fails on other major lines).
 - **Package Manager**: We strongly recommend `pnpm` or `npm`.
-- **OS**: this release candidate was exercised end to end (install, an own simnet node, payment, SilverScript and covenants) on Windows 11 x64. Linux and macOS are expected to work but were not verified for this release.
+- **OS**: `0.13.0-rc.1` was exercised end to end (install, an own simnet node, payment, SilverScript and covenants) on Windows 11 x64. Linux and macOS were not verified for that release.
 - **TypeScript projects**: install `@types/node` as a development dependency (`npm install --save-dev @types/node`). The type declarations use Node.js types, and `@types/node` is only an optional peer dependency of `@hardkas/core`, so it is not installed for you.
 
 > **Note on Docker:** HardKAS uses a local deterministic Simulator by default. You do **not** need Docker installed unless you plan to boot a real local Kaspa node via `hardkas node start` (Localnet).
@@ -29,7 +29,7 @@ Verify the installation:
 ```bash
 hardkas --version
 ```
-*(Should output `0.13.0-rc.1` or higher)*
+This reports the installed version. A build of this candidate reports `0.13.0-rc.2`.
 
 ## Create a New Project
 

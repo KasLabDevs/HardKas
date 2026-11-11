@@ -6,7 +6,7 @@ export { runDoctorNode } from "./runners/doctor-node-runner.js";
 export { runDevInit } from "./runners/dev-init-runner.js";
 export { runDevTxSend } from "./runners/dev-tx-runners.js";
 export { runTxFlow } from "./runners/tx-flow.js";
-// RETIRED in 0.13.0-rc.1: runDashboard has been removed alongside the retirement of apps/dashboard.
+// runDashboard was removed when apps/dashboard was retired in the first 0.13 release candidate.
 // The local development API is provided headlessly by @hardkas/dev-server.
 
 
