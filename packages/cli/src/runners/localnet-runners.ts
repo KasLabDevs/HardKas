@@ -5,11 +5,20 @@ import { JsonWrpcKaspaClient } from "@hardkas/kaspa-rpc";
 import { forkFromNetwork, saveLocalnetState } from "@hardkas/localnet";
 import { resolve } from "node:path";
 import fs from "node:fs/promises";
-import { withLock, sha256hex, UtxoSetNotStableError, CPUMINER_REFERENCE_IMAGE, CANONICAL_LOCALNET, nodeRpcUrl } from "@hardkas/core";
+import { withLock, sha256hex, getCoinbaseMaturity, CPUMINER_REFERENCE_IMAGE, CANONICAL_LOCALNET, nodeRpcUrl } from "@hardkas/core";
 import { DockerKaspadRunner, verifyNodeIdentity, requireNodeIdentity } from "@hardkas/node-runner";
 import { resolveHardkasAccountAddress, listHardkasAccounts } from "@hardkas/accounts";
 import { execa } from "execa";
 import { HardkasSchemas } from "@hardkas/artifacts";
+import {
+  createFundingStateReader,
+  fundingStateJson,
+  type FundingReadOrder,
+  type FundingSnapshot,
+  type FundingStateJson,
+  type FundingStateReader,
+  type FundingStateRpc
+} from "./localnet-funding-state.js";
 
 // The canonical real localnet (@hardkas/core). The container name only locates
 // the node; before using it, localnet proves its identity (verifyNodeIdentity).
@@ -286,7 +295,11 @@ export async function runLocalnetFund(opts: LocalnetFundOptions): Promise<void> 
   // The miner joins the node's namespace by container name, so the node must
   // first prove it is the canonical one.
   await requireNodeIdentity();
-  const before = await getAddressFundingState(address, !!opts.json);
+  // LOCALNET-FUND-BOUNDED-READ-1: every read below takes the total from the node's balance and the immature part from
+  // the coinbase-maturity window of the chain, never the list of the address's UTXOs (see localnet-funding-state.ts).
+  const reader = createFundingStateReader(address, getCoinbaseMaturity("simnet"));
+  // the chain first: if a miner still pays this address, the target below leans high, never short of the amount
+  const before = await getAddressFundingState(reader, "dag-then-balance", !!opts.json);
   await restartToccataMiner(address);
 
   const { Hardkas } = await import("@hardkas/sdk");
@@ -304,8 +317,8 @@ export async function runLocalnetFund(opts: LocalnetFundOptions): Promise<void> 
   // whatever they end with.
   try {
     try {
-      await sdk.utxos.waitForSpendableFunding({
-        address,
+      // not the SDK's waitForSpendableFunding: it lists every UTXO of the address on each poll
+      await waitForMatureFunding(sdk.rpc, reader, {
         minSpendableSompi: targetAmount,
         timeoutMs
       });
@@ -313,21 +326,22 @@ export async function runLocalnetFund(opts: LocalnetFundOptions): Promise<void> 
       if (e.code !== "LOCALNET_FUND_MATURITY_TIMEOUT") {
         if (!opts.keepMiner) {
           await stopToccataMiner();
-          await waitForFundingSpendability(sdk.rpc, { address, minSpendableSompi: targetAmount });
+          await waitForFundingSpendability(sdk.rpc, reader, { minSpendableSompi: targetAmount });
         }
         throw e;
       }
     } finally {
       if (!opts.keepMiner) {
         await stopToccataMiner();
-        await waitForFundingSpendability(sdk.rpc, { address, minSpendableSompi: targetAmount });
+        await waitForFundingSpendability(sdk.rpc, reader, { minSpendableSompi: targetAmount });
       }
     }
   } finally {
     await sdk.close();
   }
 
-  const current = await getAddressFundingState(address, !!opts.json);
+  // the total first: what is reported as mature is never above what the node holds as mature
+  const current = await getAddressFundingState(reader, "balance-then-dag", !!opts.json);
 
   const status =
     current.matureBalanceSompi > before.matureBalanceSompi
@@ -410,18 +424,39 @@ async function getVirtualFingerprint(rpc: any): Promise<VirtualFingerprint> {
   return { virtualDaaScore, virtualParentHashes, sink, hash };
 }
 
-function computeUtxoSetHash(utxos: any[]): string {
-  const keys = utxos
-    .map(u => [
-      u.outpoint.transactionId,
-      u.outpoint.index,
-      u.amountSompi.toString(),
-      u.blockDaaScore?.toString() ?? "",
-      u.isCoinbase ? "1" : "0"
-    ].join(":"))
-    .sort();
+/** The SDK wait's tolerance over coinbase maturity for DAG merge propagation (packages/sdk/src/utxos.ts), kept here. */
+const FUNDING_WAIT_MARGIN_DAA = 10n;
 
-  return sha256hex(keys.join("|"));
+/**
+ * Waits until the address's mature balance reaches `minSpendableSompi`. The contract of the SDK's
+ * waitForSpendableFunding that fund used before (a poll every 2 s, +10 DAA over coinbase maturity, read errors retried
+ * except a mainnet refusal, LOCALNET_FUND_MATURITY_TIMEOUT at the deadline), without listing the address's UTXOs
+ * (LOCALNET-FUND-BOUNDED-READ-1). The total first, so the wait never ends on a mature balance the node does not hold.
+ */
+async function waitForMatureFunding(
+  rpc: FundingStateRpc,
+  reader: FundingStateReader,
+  opts: { minSpendableSompi: bigint; timeoutMs: number; pollIntervalMs?: number }
+): Promise<void> {
+  const deadline = Date.now() + opts.timeoutMs;
+  const interval = opts.pollIntervalMs ?? 2000;
+  let lastObservedState: Record<string, string> | undefined;
+  while (Date.now() < deadline) {
+    try {
+      const s = await reader.read(rpc, { order: "balance-then-dag", marginDaa: FUNDING_WAIT_MARGIN_DAA });
+      lastObservedState = {
+        matureValue: s.matureBalanceSompi.toString(),
+        required: opts.minSpendableSompi.toString(),
+        virtualDaaScore: s.virtualDaaScore.toString()
+      };
+      if (s.matureBalanceSompi >= opts.minSpendableSompi) return;
+    } catch (e: any) {
+      if (/^MAINNET_(CONNECTION|SIGNING|BROADCAST)_DISABLED$/.test(String(e?.code ?? ""))) throw e;
+      lastObservedState = { error: e?.message || String(e) };
+    }
+    await sleep(interval);
+  }
+  throw Object.assign(new Error("Timeout waiting for spendable funding"), { code: "LOCALNET_FUND_MATURITY_TIMEOUT", lastObservedState });
 }
 
 async function waitForVirtualDagSettle(
@@ -451,76 +486,66 @@ async function waitForVirtualDagSettle(
 }
 
 async function waitForFundingSpendability(
-  rpc: any,
+  rpc: FundingStateRpc,
+  reader: FundingStateReader,
   opts: {
-    address: string;
     minSpendableSompi?: bigint;
     stablePolls?: number;
     pollIntervalMs?: number;
   }
-): Promise<{ virtualFingerprint: VirtualFingerprint; spendableCount: number; spendableSompi: bigint }> {
+): Promise<{ virtualFingerprint: VirtualFingerprint; spendableSompi: bigint }> {
   const REQUIRED = opts.stablePolls ?? 3;
   const INTERVAL = opts.pollIntervalMs ?? 500;
 
-  let utxoStableCount = 0;
-  let lastUtxoHash = "";
-  let lastUtxos: any[] = [];
+  let stableCount = 0;
+  let lastKey = "";
+  let state: FundingSnapshot | undefined;
 
   // Phase 1: Virtual DAG convergence (initial)
   let vfp = await waitForVirtualDagSettle(rpc);
 
-  // Phase 2: UTXO set convergence for this address
-  while (utxoStableCount < REQUIRED) {
-    lastUtxos = await rpc.getUtxosByAddress(opts.address);
-    const hash = computeUtxoSetHash(lastUtxos);
+  // Phase 2: the address's funding state converges (its UTXO index entries have caught up with the settled chain).
+  // LOCALNET-FUND-BOUNDED-READ-1: its balance and the immature coinbases of the chain, not the list of its UTXOs.
+  while (stableCount < REQUIRED) {
+    state = await reader.read(rpc, { order: "balance-then-dag" });
+    const key = `${state.sink}|${state.virtualDaaScore}|${state.balanceSompi}|${state.immatureCoinbaseSompi}`;
 
-    if (hash === lastUtxoHash && lastUtxos.length > 0) {
-      utxoStableCount++;
+    if (key === lastKey && state.balanceSompi > 0n) {
+      stableCount++;
     } else {
-      lastUtxoHash = hash;
-      utxoStableCount = 0;
+      lastKey = key;
+      stableCount = 0;
     }
 
-    // Check if virtual state shifted during UTXO convergence
+    // Check if virtual state shifted during the convergence
     const currentVfp = await waitForVirtualDagSettle(rpc);
     if (currentVfp.hash !== vfp.hash) {
       // Restart convergence cycle
       vfp = currentVfp;
-      lastUtxoHash = "";
-      utxoStableCount = 0;
+      lastKey = "";
+      stableCount = 0;
     }
 
-    if (utxoStableCount < REQUIRED) {
+    if (stableCount < REQUIRED) {
       await new Promise(r => setTimeout(r, INTERVAL));
     }
   }
 
-  // Phase 3: Maturity check on converged set using the stable virtualDaaScore
-  const { getCoinbaseMaturity } = await import("@hardkas/core");
-  const maturityThreshold = getCoinbaseMaturity("simnet");
-
-  const spendable = lastUtxos.filter(u => {
-    if (!u.isCoinbase) return true;
-    if (u.blockDaaScore === undefined) return false;
-    return vfp.virtualDaaScore - BigInt(u.blockDaaScore) >= maturityThreshold;
-  });
-
-  const spendableSompi = spendable.reduce((sum, u) => sum + BigInt(u.amountSompi), 0n);
+  // Phase 3: Maturity on the converged state (its own virtualDaaScore: the settled one)
+  const spendableSompi = state!.matureBalanceSompi;
 
   if (opts.minSpendableSompi && spendableSompi < opts.minSpendableSompi) {
-    throw new UtxoSetNotStableError({
-      address: opts.address,
-      utxoCount: lastUtxos.length,
-      spendableCount: spendable.length,
-      spendableSompi: spendableSompi.toString(),
-      required: opts.minSpendableSompi.toString(),
-      virtualDaaScore: vfp.virtualDaaScore.toString()
-    });
+    const { HardkasCliError } = await import("../cli-errors.js");
+    throw new HardkasCliError(
+      "UTXO_SET_NOT_STABLE",
+      `UTXO_SET_NOT_STABLE: the funding of ${reader.address} did not converge to the required spendable amount. ` +
+        `spendable=${spendableSompi.toString()} required=${opts.minSpendableSompi.toString()} ` +
+        `immature_coinbase=${state!.immatureCoinbaseSompi.toString()} virtualDaaScore=${state!.virtualDaaScore.toString()}`
+    );
   }
 
   return {
     virtualFingerprint: vfp,
-    spendableCount: spendable.length,
     spendableSompi
   };
 }
@@ -731,30 +756,15 @@ async function inspectDockerContainer(name: string) {
   }
 }
 
-async function getAddressFundingState(address: string, quiet = false) {
+/**
+ * The `before` / `after` record of `localnet fund`. LOCALNET-FUND-BOUNDED-READ-1: the node's balance of the address
+ * and the coinbase-maturity window of its chain, a bounded number of small requests whatever the address holds; it
+ * used to list every UTXO of the address, a read that cannot finish on a localnet that has mined to it for long.
+ */
+async function getAddressFundingState(reader: FundingStateReader, order: FundingReadOrder, quiet = false): Promise<FundingStateJson> {
   const client = new JsonWrpcKaspaClient({ rpcUrl: TOCCATA_RPC_URL, timeoutMs: 10000 });
-  const { getCoinbaseMaturity } = await import("@hardkas/core");
-  const maturityThreshold = getCoinbaseMaturity("simnet");
-
   try {
-    const { info, utxos } = await withOptionalSilentConsole(quiet, async () => ({
-      info: await client.getInfo(),
-      utxos: await client.getUtxosByAddress(address)
-    }));
-    const virtualDaaScore = info.virtualDaaScore ?? 0n;
-    const matureUtxos = utxos.filter((utxo) => {
-      if (!utxo.isCoinbase) return true;
-      if (utxo.blockDaaScore === undefined) return false;
-      return virtualDaaScore - BigInt(utxo.blockDaaScore) >= maturityThreshold;
-    });
-    await client.close();
-    return {
-      balanceSompi: utxos.reduce((sum, utxo) => sum + utxo.amountSompi, 0n),
-      matureBalanceSompi: matureUtxos.reduce((sum, utxo) => sum + utxo.amountSompi, 0n),
-      utxoCount: utxos.length,
-      matureUtxoCount: matureUtxos.length,
-      virtualDaaScore: virtualDaaScore.toString()
-    };
+    return fundingStateJson(await withOptionalSilentConsole(quiet, () => reader.read(client, { order })));
   } finally {
     await client.close().catch(() => {});
   }
