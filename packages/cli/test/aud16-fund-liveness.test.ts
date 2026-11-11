@@ -34,11 +34,15 @@ vi.mock("@hardkas/accounts", async (orig) => ({
 }));
 // The node as `fund` reads it: before funding the account is empty, afterwards it holds a mature coinbase output.
 const matureUtxo = { outpoint: { transactionId: "ab".repeat(32), index: 0 }, amountSompi: 200_000_000_000n, isCoinbase: true, blockDaaScore: 100n };
+// LOCALNET-FUND-BOUNDED-READ-1: fund reads the address's balance and the chain's coinbase-maturity window, not its UTXO
+// list. The sink sits at DAA 100 (virtual 5000) and its coinbase pays nobody: the whole balance is mature.
+const sinkBlock = { block: { header: { daaScore: 100n, parentsByLevel: [["aa"]] }, transactions: [{ outputs: [] }], verboseData: { selectedParentHash: "aa" } } };
 vi.mock("@hardkas/kaspa-rpc", async (orig) => ({
   ...(await orig<any>()),
   JsonWrpcKaspaClient: class {
-    async getInfo() { h.log.push({ kind: "funding-state-read" }); return { virtualDaaScore: 5000n }; }
-    async getUtxosByAddress() { return h.fundingReads++ === 0 ? [] : [matureUtxo]; }
+    async getBlockDagInfo() { h.log.push({ kind: "funding-state-read" }); return { virtualDaaScore: 5000n, sink: "bb" }; }
+    async getBalanceByAddress() { return { balanceSompi: h.fundingReads++ === 0 ? 0n : matureUtxo.amountSompi }; }
+    async call() { return sinkBlock; }
     async close() {}
   }
 }));
@@ -49,7 +53,9 @@ vi.mock("@hardkas/sdk", () => ({
       utxos: { waitForSpendableFunding: vi.fn(async () => ({})) },
       rpc: {
         getBlockDagInfo: async () => ({ virtualDaaScore: 5000n, virtualParentHashes: ["aa"], sink: "bb" }),
-        getUtxosByAddress: async () => [matureUtxo]
+        getUtxosByAddress: async () => [matureUtxo],
+        getBalanceByAddress: async () => ({ balanceSompi: matureUtxo.amountSompi }),
+        call: async () => sinkBlock
       },
       close: vi.fn(async () => {})
     }))

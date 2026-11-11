@@ -1,3 +1,9 @@
+## [0.13.0-rc.2] - 2026-11-11 - Release candidate
+
+- Synchronize the coordinated package versions, runtime identity, scaffolds and current documentation to `0.13.0-rc.2`.
+- Keep generated `@hardkas/*` dependencies pinned to the exact CLI version.
+- Preserve the published `0.13.0-rc.1` notes and qualification evidence.
+
 ## [0.13.0-rc.1] - 2026-11-02 - Covenant engine v1, L2 extension, experimental simulator
 
 Published on npm on 2026-11-10 (22 packages): `latest` and `next` both point to `0.13.0-rc.1`. The

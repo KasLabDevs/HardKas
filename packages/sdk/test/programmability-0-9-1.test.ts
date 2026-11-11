@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { Hardkas, HardkasProgrammability } from "../src/index.js";
 
-describe("0.13.0-rc.1 programmability SDK surface", () => {
+describe("0.13.0-rc.2 programmability SDK surface", () => {
   // REMED-CLOSE · test isolation: an SDK opened with autoBootstrap writes its workspace state (.hardkas); these surfaces
   // read nothing from the workspace, so each test gets an empty temporary one, never the repository root
   let workspaceRoot = "";
