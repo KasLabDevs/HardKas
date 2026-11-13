@@ -76,6 +76,8 @@ export class HardkasReplay {
 
     let plan: any;
     let receipt: any;
+    let submission: any;
+    let realNodeError: string | undefined;
     let verifyErrorMsg: string | undefined;
     let report: any = null;
     let artifactCount = 0;
@@ -129,14 +131,40 @@ export class HardkasReplay {
 
           if (item.schema === HardkasSchemas.TxPlan) plan = item;
           if (item.schema === HardkasSchemas.TxReceipt) receipt = item;
+          if (item.schema === HardkasSchemas.TxSubmissionV1) submission = item;
         }
 
-        if (!plan) throw new Error("Lineage is missing a TxPlan artifact.");
-        if (!receipt) throw new Error("Lineage is missing a TxReceipt artifact.");
+        // REPLAY-REAL-NODE-1: a real-node send records a TxSubmission, never a TxReceipt, and a plan for a node was never
+        // run by the simulator: say so (the help's own words) instead of "Lineage is missing a TxReceipt artifact".
+        const planMode = plan ? String(plan.execution?.mode ?? plan.mode ?? "") : "";
+        if (!receipt && (submission || (planMode !== "" && planMode !== "simulator" && planMode !== "simulated"))) {
+          realNodeError =
+            `replay verify replays simulator runs only (a TxPlan and the TxReceipt the simulator wrote for it). ` +
+            (submission
+              ? `${idOrPath} is a real-node send: it records a TxSubmission (${String(submission.contentHash)}) of transaction ${String(submission.txId)}, not a TxReceipt`
+              : `${idOrPath} is a plan for a node (execution mode ${planMode}, network ${String(plan.networkId)}): the simulator never ran it`) +
+            `, so there is nothing to replay. Check a real send with 'hardkas verify <submission>' and 'hardkas tx status <txId>'. Nothing was executed.`;
+        } else {
+          if (!plan) throw new Error("Lineage is missing a TxPlan artifact.");
+          if (!receipt) throw new Error("Lineage is missing a TxReceipt artifact.");
+        }
 
       } catch (err: unknown) {
         verifyErrorMsg = ((err instanceof Error) ? err.message : String(err));
         lineageOk = false;
+      }
+
+      if (realNodeError && !verifyErrorMsg) {
+        return {
+          passed: false,
+          artifactsScanned: artifactCount,
+          lineage: lineageOk ? "valid" : "invalid",
+          determinism: determinismOk ? "verified" : "failed",
+          contamination: contaminationOk ? "clean" : "contaminated",
+          report: null,
+          error: realNodeError,
+          code: "REPLAY_MODE_UNSUPPORTED"
+        };
       }
 
       // Wave 1.3 · IC-4′.4 / IC-2′.8: a replay verdict is a decision path and

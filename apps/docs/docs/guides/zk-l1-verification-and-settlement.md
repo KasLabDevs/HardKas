@@ -193,6 +193,19 @@ hardkas zk corpus verify fixtures/toccata-v2/zk --json
 
 ---
 
+## 6. What a node has decided about these locks
+
+HardKAS builds locks and spends; it has no command that broadcasts a ZK spend, and the verdict is always the node's. Two receipts are in the repository: the public kaspa-python-sdk vector (`fixtures/toccata-v2/zk/r0-groth16-official`) and one HardKAS made itself (`fixtures/toccata-v2/zk/r0-groth16-hardkas`, another program and journal).
+
+- **Local node (rusty-kaspad v2.1.0 in Docker, the repository's node suites, also run in CI on Linux):** valid spends accepted, proof-only and proof-and-output-bound, for both receipts; rejected: an altered proof or journal, a truncated proof, a v0 transaction, a compute budget or a fee too low, a wrong payout script or amount, two inputs, an input above the bound.
+- **Testnet-10 (2026-11-13, test funds, the 0.13.0-rc.2 candidate):** two proof-and-output-bound locks over HardKAS's own receipt, funded and spent to their bound payout; the node rejected the payout one sompi short, another payee, a flipped proof byte, a valid proof of another program and the proof with another journal hash.
+
+Two properties to keep in mind:
+- **Groth16 is malleable.** (A, B, C) → (r⁻¹·A, r·B, C) is another valid proof of the same statement, so a ZK fact's `proofSha256` records the bytes it was built from and never identifies a proof or a spend. Identify a spend by its txid and outpoint; note that a Kaspa txid does not cover the signature script, so every spend of one outpoint to the same outputs has the same txid whatever proof it carries.
+- **The verifier is pinned end to end.** Besides the key, control root and control id, a receipt's verifier parameters must be the pinned RISC Zero verifier's (`ZK_RECEIPT_VERIFIER_PARAMETERS_MISMATCH` otherwise): a receipt made for another verifier never unlocks the lock.
+
+---
+
 ## Related Documentation
 
 - [ZK Primitives & Sequencing](../concepts/toccata/zk-and-sequencing.md)

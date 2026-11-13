@@ -1,7 +1,7 @@
 {
   "schema": "hardkas.cliReference.v1",
   "generatedAt": "deterministic",
-  "totalCommands": 261,
+  "totalCommands": 262,
   "flatSurface": [
     "hardkas accounts",
     "hardkas accounts balance",
@@ -100,6 +100,7 @@
     "hardkas localnet account create",
     "hardkas localnet fork",
     "hardkas localnet fund",
+    "hardkas localnet seed",
     "hardkas localnet snapshot",
     "hardkas localnet snapshot create",
     "hardkas localnet snapshot replay",
@@ -3128,6 +3129,13 @@
               "mandatory": false
             },
             {
+              "flags": "--treasury",
+              "description": "Transfer exact non-coinbase UTXOs from the localnet Treasury instead of mining directly to the account",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            },
+            {
               "flags": "--timeout <ms>",
               "description": "Funding/maturity wait timeout in ms",
               "default": "300000",
@@ -3144,6 +3152,66 @@
             {
               "flags": "--stop-miner",
               "description": "Leave the chain stopped after funding: no new blocks until you mine again",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            },
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        },
+        {
+          "path": "hardkas localnet seed",
+          "name": "seed",
+          "aliases": [],
+          "description": "Distribute an exact initial KAS balance to dev accounts from the localnet Treasury (1 -> N) alpha",
+          "usage": "hardkas localnet seed [options]",
+          "arguments": [],
+          "options": [
+            {
+              "flags": "--profile <name>",
+              "description": "Funding profile",
+              "default": "toccata-v2",
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--amount <kas>",
+              "description": "KAS per dev account",
+              "default": "100",
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--only-empty",
+              "description": "Only fund accounts whose balance is currently 0",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            },
+            {
+              "flags": "--accounts <names>",
+              "description": "Comma-separated account names or simnet addresses to seed",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--timeout <ms>",
+              "description": "Funding/confirmation timeout in ms",
+              "default": "300000",
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--stop-miner",
+              "description": "Leave the chain stopped after seeding: no new blocks until you mine again",
               "default": false,
               "required": false,
               "mandatory": false
@@ -3263,6 +3331,27 @@
             {
               "flags": "--toccata",
               "description": "Shortcut for --profile toccata-v2",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            },
+            {
+              "flags": "--seed",
+              "description": "Distribute an initial exact balance (default 100 KAS) to empty dev accounts from the localnet Treasury after start",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            },
+            {
+              "flags": "--seed-amount <kas>",
+              "description": "KAS per account when --seed is set",
+              "default": "100",
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--stop-miner",
+              "description": "With --seed: leave the chain stopped after seeding",
               "default": false,
               "required": false,
               "mandatory": false
@@ -7721,7 +7810,7 @@
             },
             {
               "flags": "--allow-unplanned",
-              "description": "Signed-artifact mode: send a signed transaction that names no plan of this workspace (signed elsewhere). HardKAS then cannot check that it is a planned transaction nor its fee limit: you take both on yourself. Without it such a send is refused (SEND_PLAN_UNRESOLVED)",
+              "description": "Signed-artifact mode: send a signed transaction that names no plan of this workspace (signed elsewhere). HardKAS then cannot check that it is a planned transaction nor its fee limit: you take both on yourself. Without it such a send is refused (SEND_PLAN_UNRESOLVED). Never on mainnet (MAINNET_UNPLANNED_SEND_REFUSED)",
               "default": false,
               "required": false,
               "mandatory": false
@@ -7759,13 +7848,6 @@
             {
               "flags": "--fixture",
               "description": "Sign with the built-in fixture test key (any network except mainnet)",
-              "default": false,
-              "required": false,
-              "mandatory": false
-            },
-            {
-              "flags": "--allow-mainnet-signing",
-              "description": "No effect: mainnet is blocked (MAINNET TOTAL LOCKDOWN) and mainnet signing stays refused (MAINNET_SIGNING_DISABLED)",
               "default": false,
               "required": false,
               "mandatory": false

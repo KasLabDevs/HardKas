@@ -1,0 +1,23 @@
+================================================================================
+GATE ID           : 10_docs-check
+REQUIREMENT ID    : HK-REQ-070
+COMMAND           : node scripts/docs-check.mjs
+GIT COMMIT HEAD   : 33a934331d5d9a13af48408dcd82f0dd0daa646f
+START TIME (UTC)  : 2026-11-11T14:11:34.821946+00:00
+END TIME (UTC)    : 2026-11-11T14:11:35.570890+00:00
+DURATION (ms)     : 748.92
+EXIT CODE         : 1
+STATUS            : INCUMPLIDO (FAIL)
+================================================================================
+
+--- STDOUT ---
+(empty)
+
+--- STDERR ---
+❌ [docs\community\rc-0.13.0-rc.1\EVIDENCE_INDEX.md] Broken link: X_POST.md
+❌ [docs\community\rc-0.13.0-rc.1\EVIDENCE_INDEX.md] Broken link: DISCORD_ANNOUNCEMENT.md
+❌ [docs\internal\audit\surface-2026-11-09\inventario.md] Broken link: C:\Users\jrodr\hkl1\rc2\upstream-dup-report.md
+❌ [docs\internal\audit\surface-2026-11-09\inventario.md] Broken link: C:\Users\jrodr\hkl1\rc2\crypto-review-plan.md
+
+docs:check FAILED!
+

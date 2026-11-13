@@ -1,6 +1,6 @@
 # HardKAS
 
-> **Kaspa L1 Development Framework, Transaction Simulator & Visual IDE**
+> **Kaspa L1 Development Framework, Transaction Simulator & Developer Platform**
 
 [![npm version](https://img.shields.io/badge/version-0.13.0--rc.2-blue.svg)](https://github.com/KasLabDevs/HardKas/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-teal.svg)](LICENSE)
@@ -8,7 +8,7 @@
 [![CI: Parity](https://img.shields.io/badge/CI-cross--platform%20truth-brightgreen.svg)](.github/workflows/ci.yml)
 [![Release Status](https://img.shields.io/badge/status-hardened--alpha-amber.svg)](docs/status/claims.generated.md)
 
-HardKAS is an open-source, local-first development framework, transaction simulator, and visual IDE for building and testing applications on **Kaspa L1**.
+HardKAS is an open-source, local-first development framework, transaction simulator, and development environment for building and testing applications on **Kaspa L1**.
 
 Inspired by the developer ergonomics of Ethereum tooling like **Hardhat** and **Foundry**, HardKAS provides:
 
@@ -17,7 +17,7 @@ Inspired by the developer ergonomics of Ethereum tooling like **Hardhat** and **
 - **Deterministic Accounts & Funding:** Pre-configured developer accounts (`alice`, `bob`, `carol`) for reproducible test flows.
 - **SilverScript & Covenants Toolchain:** Managed integration for the official `silverc v1.0.0` compiler, P2SH deploy/spend, and Toccata 1:1 auth-bound covenants.
 - **Cryptographic Artifacts & Offline Replay:** Every transaction plan, signed payload, and receipt is hashed into immutable JSON artifacts that can be replayed and verified offline.
-- **Visual Web Studio & IDE:** Interactive local console with React Flow DAG visualization, transaction inspector, and SSE telemetry.
+- **Visual IDE & Studio:** Standalone visual developer workbench with Monaco editor, SilverScript compiler, Deploy & Run, Covenant graph and local node telemetry ([HardKas IDE](https://github.com/KasLabDevs/HardKasIDE)).
 
 > [!IMPORTANT]
 > **Kaspa L1 is a UTXO BlockDAG, NOT an EVM.**
@@ -76,11 +76,14 @@ hardkas localnet fund alice --profile toccata-v2
 To run a node of your own instead (your container, your ports) and take one payment, a SilverScript contract and a
 covenant all the way to `artifact verify`, follow [Build on your own simnet](docs/start/build-on-simnet.md).
 
-### 4. Visual Studio / IDE
+### 4. Local Dev Server & Visual IDE
 
 ```bash
-# Launch the interactive visual developer console (http://localhost:7420)
+# Launch the headless local developer API & telemetry daemon (http://localhost:7420)
 hardkas dev
+
+# For the complete visual studio & workbench (editor, compiler, covenant graph, node manager):
+# Run HardKas IDE (https://github.com/KasLabDevs/HardKasIDE)
 ```
 
 ---

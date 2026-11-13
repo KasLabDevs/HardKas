@@ -28,6 +28,7 @@ import {
   R0_GROTH16_COMPRESSED_VERIFICATION_KEY_HEX,
   R0_GROTH16_CONTROL_ROOT,
   R0_GROTH16_VERIFIER_ID,
+  r0VerifierParametersIssue,
   type R0Groth16LocalVerificationResult
 } from "./risc0-groth16.js";
 
@@ -932,6 +933,12 @@ export function buildR0Groth16Scripts(params: R0Groth16ScriptParams): R0Groth16S
       });
       return emptyScriptsResult(imageId, journalHash, preparedProof, warnings, issues, params.bindingPolicy);
     }
+    // H7: a receipt made for another RISC Zero verifier would never unlock this lock (its key and control root are pinned)
+    const paramsIssue = r0VerifierParametersIssue(parsedReceipt.verifierParameters);
+    if (paramsIssue) {
+      issues.push({ ...paramsIssue, message: `${paramsIssue.message} Nothing was built.` });
+      return emptyScriptsResult(imageId, journalHash, preparedProof, warnings, issues, params.bindingPolicy);
+    }
     receiptClaimCrossCheck = "MATCH";
   } else {
     warnings.push({
@@ -1555,6 +1562,7 @@ export function buildR0Groth16Transaction(params: BuildR0Groth16TxParams): R0Gro
           guestSystem: "RISC Zero",
           imageId: params.scripts.imageId,
           journalHash: params.scripts.journalHash,
+          // H6: a record of these bytes, never an identity — Groth16 is malleable ((A,B,C) → (r⁻¹A, rB, C) is valid too)
           proofSha256: sha256Hex(Buffer.from(params.scripts.preparedProof, "hex")),
           verifiedOffChain: offChainVerification === "VERIFIED",
           offChainVerification,

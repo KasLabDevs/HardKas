@@ -42,6 +42,30 @@ export const R0_GROTH16_CONTROL_ROOT = "a54dc85ac99f851c92d7c96d7318af41dbe7c019
 /** risc0 v3.0.4 BN254_IDENTITY_CONTROL_ID. */
 export const R0_GROTH16_BN254_CONTROL_ID = "c07a65145c3cb48b6101962ea607a4dd93c753bb26975cb47feb00d3666e4404";
 
+/**
+ * H7 · the digest of RISC Zero's default Groth16ReceiptVerifierParameters, which every receipt of this verifier carries
+ * (the last 32 bytes of a pruned-claim receipt). Upstream definition: risc0-zkvm `src/receipt/groth16.rs` (`impl Default`
+ * and `impl Digestible`: tagged_struct("risc0.Groth16ReceiptVerifierParameters", [control_root, bn254_control_id,
+ * verifying_key.digest()], [])), identical in risc0-zkvm 3.0.4 and 3.0.5. Computed with that code on 2026-11-13 from the
+ * control root and BN254 control id pinned above and the verifying-key digest 21c5fdd9…11ab; the public kaspa-python-sdk
+ * vector and HardKAS's own receipt carry the same value. A receipt with another value was made for another verifier
+ * (another risc0 release): its proof does not verify against the key and control root this lock pins.
+ */
+export const R0_GROTH16_VERIFIER_PARAMETERS_DIGEST = "73c457ba541936f0d907daf0c7253a39a9c5c427c225ba7709e44702d3c6eedc";
+
+/** H7: the issue a receipt gets when its verifier parameters are not the pinned verifier's, or undefined. */
+export function r0VerifierParametersIssue(verifierParameters: string | undefined): { code: string; message: string } | undefined {
+  if (verifierParameters === undefined) return undefined;
+  const got = String(verifierParameters).toLowerCase();
+  if (got === R0_GROTH16_VERIFIER_PARAMETERS_DIGEST) return undefined;
+  return {
+    code: "ZK_RECEIPT_VERIFIER_PARAMETERS_MISMATCH",
+    message:
+      `The receipt names verifier parameters ${got}, not the pinned RISC Zero Groth16 verifier's ${R0_GROTH16_VERIFIER_PARAMETERS_DIGEST} ` +
+      `(risc0 3.0.4/3.0.5 control root and verifying key): it was made for another verifier, and its proof would not verify against this lock's key.`
+  };
+}
+
 export const R0_GROTH16_VERIFIER_ID = "hardkas-r0-groth16-snarkjs-v1";
 export const R0_GROTH16_PINNED_KEY_ID = "risc0-groth16-bn254-v3.0.4";
 
@@ -336,6 +360,9 @@ export async function verifyR0Groth16ReceiptLocal(params: {
       message: `The receipt's claim digest ${receiptClaimDigest} is not the claim of (imageId, journalHash) = ${claimDigest}.`
     });
   }
+  // H7: the verifier the receipt was made for is the pinned one
+  const paramsIssue = r0VerifierParametersIssue(parsed.verifierParameters);
+  if (paramsIssue) issues.push(paramsIssue);
   const seal = r0SealToProof(parsed.sealHex);
   if (!seal.ok) {
     issues.push({ code: "ZK_RECEIPT_SEAL_INVALID", message: seal.reason });

@@ -1,0 +1,30 @@
+================================================================================
+GATE ID           : 01_check-versions
+REQUIREMENT ID    : HK-REQ-064
+COMMAND           : node scripts/check-versions.mjs
+GIT COMMIT HEAD   : 33a934331d5d9a13af48408dcd82f0dd0daa646f
+START TIME (UTC)  : 2026-11-11T14:10:36.738508+00:00
+END TIME (UTC)    : 2026-11-11T14:10:42.834222+00:00
+DURATION (ms)     : 6095.68
+EXIT CODE         : 0
+STATUS            : VERIFICADO (PASS)
+================================================================================
+
+--- STDOUT ---
+Checking version synchronization across workspace...
+Expected version (from root package.json): 0.13.0-rc.2
+   (exempt) @hardkas/docs 0.1.0 — private Docusaurus app (apps/docs); never published; Q13(a) 2026-09-25 / AUD-37
+
+Published set: 22 workspace manifests are not private; docs/status/versioning.md lists 22 as published and 14 as not published.
+
+Version freeze: no reference newer than 0.13.0-rc.2; manifests and package sources pinned to it exactly.
+   scanned 6295 text files (144 manifests, 826 package/script sources, 5325 other)
+
+✨ All workspace packages match version 0.13.0-rc.2 and the tree references no newer version.
+
+
+--- STDERR ---
+[WARN] Issue while reading "C:\Users\jrodr\.npmrc". EPERM: operation not permitted, open 'C:\Users\jrodr\.npmrc'
+[WARN] The "pnpm" field in package.json is no longer read by pnpm. The following keys were ignored: "pnpm.overrides". See https://pnpm.io/settings for the new home of each setting.
+ WARN  Issue while reading "C:\Users\jrodr\.npmrc". EPERM: operation not permitted, open 'C:\Users\jrodr\.npmrc'
+

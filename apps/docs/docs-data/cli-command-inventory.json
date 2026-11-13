@@ -273,11 +273,6 @@
         "defaultValue": false
       },
       {
-        "flags": "--allow-mainnet-signing",
-        "description": "No effect: mainnet is blocked (MAINNET TOTAL LOCKDOWN) and mainnet signing stays refused (MAINNET_SIGNING_DISABLED)",
-        "defaultValue": false
-      },
-      {
         "flags": "--threshold <number>",
         "description": "Synthetic multisig threshold for tests (no Kaspa multisig script is produced)"
       },
@@ -440,7 +435,7 @@
       },
       {
         "flags": "--allow-unplanned",
-        "description": "Signed-artifact mode: send a signed transaction that names no plan of this workspace (signed elsewhere). HardKAS then cannot check that it is a planned transaction nor its fee limit: you take both on yourself. Without it such a send is refused (SEND_PLAN_UNRESOLVED)",
+        "description": "Signed-artifact mode: send a signed transaction that names no plan of this workspace (signed elsewhere). HardKAS then cannot check that it is a planned transaction nor its fee limit: you take both on yourself. Without it such a send is refused (SEND_PLAN_UNRESOLVED). Never on mainnet (MAINNET_UNPLANNED_SEND_REFUSED)",
         "defaultValue": false
       }
     ],

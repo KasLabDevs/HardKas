@@ -544,6 +544,12 @@ describe("INT9-C4 · the v1 engine's construction (sdk.covenants) of a P2SH cont
     const earlyNode = earlyPlan ? await rawV1(earlyPlan) : { accepted: false, reason: "not planned" };
     record({ id: "V-07b", vector: `reclaim with sequence ${PERIOD} at UTXO age ${PERIOD / 2 + 2} (sequence lock not met)`, hardkas: earlyEngine.ok ? { ok: true } : { ok: false, code: (earlyEngine as any).code }, node: earlyNode, agree: !earlyNode.accepted });
     expect(earlyNode.accepted, earlyNode.reason).toBe(false);
+    // ESCROW-REFUND-RETRY-1: the same early spend through HardKAS's send is refused by its preflight, before the
+    // broadcast, so nothing is recorded and the identical spend can be sent once the lock is met (V-07c)
+    const earlySigned = await sdk.covenants.sign(earlyPlan, { keys });
+    const earlySend = await settle(sdk.covenants.send(earlySigned.signed));
+    record({ id: "V-07b2", vector: `the same early reclaim through sdk.covenants.send`, hardkas: earlySend.ok ? { ok: true } : { ok: false, code: (earlySend as any).code }, node: { accepted: false, reason: "not sent" }, agree: !earlySend.ok });
+    expect(earlySend.ok ? "SENT" : (earlySend as any).code).toBe("SEQUENCE_LOCK_NOT_YET_MET");
 
     // old enough: the engine's spend, and first the same spend one sompi under the engine's floor
     await mineTo(deployed.blockDaaScore + BigInt(PERIOD) + 2n);
@@ -565,6 +571,8 @@ describe("INT9-C4 · the v1 engine's construction (sdk.covenants) of a P2SH cont
     });
     expect(ok, JSON.stringify(sent)).toBe(true);
     expect(String((sent as any).value?.txId ?? "").toLowerCase()).toBe(signed.txId.toLowerCase());
+    // ESCROW-REFUND-RETRY-1: the spend sent now is the very transaction refused early (same txId), and it went out
+    expect(signed.txId.toLowerCase(), "the early and the valid reclaim are one transaction").toBe(earlySigned.txId.toLowerCase());
     // the node's minimum is the engine's floor when one sompi less is refused for its fee; recorded either way
     if (underNode.accepted) console.warn(`[V-07c] the node accepted one sompi under the engine's v1 floor (${floor}): the floor is above the node's minimum`);
     expect(underNode.accepted, underNode.reason).toBe(false);

@@ -291,7 +291,7 @@ describe("MAINNET TOTAL LOCKDOWN · CLI · an explicit endpoint, an alias and ev
     });
   }
 
-  it("no environment variable, flag or config key opens it (HARDKAS_* set, allowPublic, experimental, allowMainnet, --allow-mainnet-signing)", async () => {
+  it("no environment variable, flag or config key opens it (HARDKAS_* set, allowPublic, experimental, allowMainnet)", async () => {
     const d = await decoy("mainnet");
     const ws = workspace("env", cfgFor("mainnet", "mainnet", d.url));
     const env = {

@@ -46,6 +46,10 @@ export interface TxFlowInput {
   outDir?: string;
   name?: string;
 
+  /**
+   * @deprecated No effect, kept so existing callers still type-check: HardKAS never signs on mainnet
+   * (MAINNET_SIGNING_DISABLED), whatever this says. The CLI flag `--allow-mainnet-signing` was removed on 2026-11-11.
+   */
   allowMainnetSigning?: boolean;
   workspaceRoot?: string;
 
@@ -127,7 +131,6 @@ async function txFlow(input: TxFlowInput, opened: { sdk?: { close(): Promise<voi
     yes,
     outDir,
     name,
-    allowMainnetSigning,
     workspaceRoot
   } = input;
 
@@ -369,7 +372,6 @@ async function txFlow(input: TxFlowInput, opened: { sdk?: { close(): Promise<voi
       const signedArtifact = await runTxSign({
         planArtifact,
         config,
-        ...(allowMainnetSigning !== undefined ? { allowMainnetSigning } : {}),
         ...(workspaceRoot ? { workspaceRoot } : {}),
         ...(input.keystorePassword !== undefined ? { keystorePassword: input.keystorePassword } : {}),
         ...(input.passwordEnv ? { passwordEnv: input.passwordEnv } : {}),

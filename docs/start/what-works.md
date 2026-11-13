@@ -50,11 +50,12 @@ Two different things appear side by side:
 
 | Feature | Status |
 | :-- | :-- |
-| Covenants 1:N, N:M and termination; the KCC-20 example transfer | Built by the SDK's v1 engine only (no `silver covenant` command); accepted by a real simnet node in the repository's node suite, and every invalid shape the engine refuses the node refused too. Not on testnet-10. |
+| Covenants 1:N, N:M and termination; the KCC-20 example transfer | Built by the SDK's v1 engine only (no `silver covenant` command); accepted by a real simnet node in the repository's node suite, and every invalid shape the engine refuses the node refused too. Exercised on Testnet-10 with 0.13.0-rc.1 from npm (1:3, 2:1, 2:2 transitions, a time-locked escrow, a KCC-20 transfer; the attack cases were rejected by the node). |
 | Covenant policy logic (a `require`, amount conservation) | Not evaluated by HardKAS before sending: the node decides and refuses a violation. |
-| Testnet-10 transactions | Possible behind `experimental: true` and `network.allowPublic: true`; not tested with this release (read-only verification was). |
+| Testnet-10 transactions | Behind `experimental: true` and `network.allowPublic: true`. Exercised with 0.13.0-rc.1 from npm against a public Testnet-10 node: payments, a batch, a consolidation, a double spend (the second rejected by the node), SilverScript deploy and spend, covenants and the escrow above. Test funds only; the transaction ids are in the [evidence index](../community/rc-0.13.0-rc.1/EVIDENCE_INDEX.md). |
 | The simulated ledger (`network: "simulated"`) | A local UTXO ledger for the development loop (`@hardkas/localnet`, kept in `.hardkas/localnet.json`): synthetic accounts and transaction ids, no node and no script execution. Never network or consensus evidence. It is not `@hardkas/simulator`, the frozen in-memory node behind `hardkas simulator start`, whose known divergences (the UNVERIFIED `WrongMass` rule among them) are in [Limitations](../status/limitations.md#the-simulator-is-an-approximate-model). |
-| ZK: Groth16 math check of local fixtures, RISC Zero inspection | Local and experimental; needs the optional `snarkjs` (GPL-3.0). No on-chain ZK verification. |
+| ZK: Groth16 math check of local fixtures, RISC Zero inspection | Local and experimental; needs the optional `snarkjs` (GPL-3.0). |
+| ZK: RISC Zero Groth16 locks and spends for Toccata (`OpZkPrecompile`) | Experimental. HardKAS builds the lock and its spend (kaspa-wasm's `ZkScriptBuilder`, `buildR0Groth16Transaction`) and has no command that broadcasts them; the verdict is the node's. In the repository's node suites (rusty-kaspad v2.1.0 in Docker, also in CI on Linux) the node accepted a valid spend (proof-only and proof-and-output-bound) and rejected every tampered one: altered proof or journal, truncated proof, v0 transaction, compute budget or fee too low, wrong payout script or amount, two inputs, an input above the bound. Exercised on Testnet-10 on 2026-11-13 with the 0.13.0-rc.2 candidate and a receipt HardKAS made itself (`fixtures/toccata-v2/zk/r0-groth16-hardkas`): two proof-and-output-bound locks funded with test funds and spent to their bound payout; the node rejected the payout one sompi short, another payee, a flipped proof byte, a valid proof of another program and the proof with another journal hash. The public RISC Zero test vector is refused on testnet and mainnet (anyone could spend its lock). HardKAS claims no on-chain ZK verification of its own. |
 | Query store, replay, dev-server and dashboard | Local projections and views of the workspace; replay is for simulated records only. |
 
 ## Not verified
@@ -62,7 +63,7 @@ Two different things appear side by side:
 | Feature | Why |
 | :-- | :-- |
 | SilverScript runner (`silver test`, `silver debug`, `silver preflight` at `SCRIPT_VM`) | Upstream publishes no runner binary; a local build is labelled UNVERIFIED and needs `--allow-unverified-runner`. Its verdicts are never a node's acceptance. |
-| Linux and macOS | This release candidate was exercised on Windows 11 x64 only. |
+| Linux and macOS | CI runs the hermetic test gate on Linux, Windows and macOS; the node suites run in CI on Linux only, and the manual and Testnet-10 runs were on Windows 11 x64 only. |
 
 ## Not supported
 

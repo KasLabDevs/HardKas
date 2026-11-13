@@ -99,8 +99,7 @@ describe("Account Hardening & Security Guards", () => {
       runTxSign({
         planArtifact,
         accountName: planArtifact.from.address,
-        config,
-        allowMainnetSigning: false
+        config
       })
     ).rejects.toMatchObject({ code: "MAINNET_SIGNING_DISABLED" });
   });
@@ -129,15 +128,14 @@ describe("Account Hardening & Security Guards", () => {
       runTxSign({
         planArtifact,
         accountName: planArtifact.from.address,
-        config,
-        allowMainnetSigning: true
+        config
       })
       // refused as a network mismatch — here by the account/target compatibility check (WORKSPACE-AUTHORITY-2), which
       // runs before the runner's own artifact/address comparison
     ).rejects.toThrow(/network mismatch/i);
   });
 
-  it("a mainnet plan is refused MAINNET_SIGNING_DISABLED even with --allow-mainnet-signing (the flag stays refused)", async () => {
+  it("a mainnet plan is refused MAINNET_SIGNING_DISABLED, and the runner has no option that lifts it", async () => {
     const planArtifact: any = {
       planId: "test-plan",
       networkId: "mainnet",
@@ -148,7 +146,7 @@ describe("Account Hardening & Security Guards", () => {
       amountSompi: 100000000n
     };
     await expect(
-      runTxSign({ planArtifact, accountName: planArtifact.from.address, config: { defaultNetwork: "mainnet", accounts: {} } as any, allowMainnetSigning: true })
+      runTxSign({ planArtifact, accountName: planArtifact.from.address, config: { defaultNetwork: "mainnet", accounts: {} } as any, ...({ allowMainnetSigning: true } as any) })
     ).rejects.toMatchObject({ code: "MAINNET_SIGNING_DISABLED" });
   });
 });

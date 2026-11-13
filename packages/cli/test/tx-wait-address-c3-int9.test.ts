@@ -68,6 +68,11 @@ async function startFake(
     brokenAt?: number;
     /** RC1 · D2: the UTXO index lists the output, but no virtual-chain answer names the tx (the node's views disagree) */
     chainOmitsTx?: boolean;
+    /**
+     * TX-WAIT-ADDRESS-SPENT-1: the tx's output at `dest` was spent since. "with-later-output": the index lists there an
+     * output of a later transaction (accepted 3 chain blocks after this one); "no-trace": only an older output is listed.
+     */
+    spent?: "with-later-output" | "no-trace";
   }
 ): Promise<Fake> {
   const hashOf = (i: number) => sha(`c3-${label}-chain-${i}`);
@@ -120,8 +125,13 @@ async function startFake(
         case "getUtxosByAddresses": {
           const entries: unknown[] = [];
           for (const address of params?.addresses ?? []) {
-            if (address === dest && accepted()) {
-              entries.push({ address, outpoint: { transactionId: txid, index: 0 }, utxoEntry: { amount: 100_000_000, blockDaaScore: daa(fake.acceptAt!), covenantId: null, isCoinbase: false, scriptPublicKey: "0000" + "20" + "11".repeat(32) + "ac" } });
+            const spk = "0000" + "20" + "11".repeat(32) + "ac";
+            if (address === dest && accepted() && opts.spent === "with-later-output") {
+              entries.push({ address, outpoint: { transactionId: sha(`c3-${label}-later`), index: 1 }, utxoEntry: { amount: 50_000_000, blockDaaScore: daa(fake.acceptAt! + 3), covenantId: null, isCoinbase: false, scriptPublicKey: spk } });
+            } else if (address === dest && accepted() && opts.spent === "no-trace") {
+              entries.push({ address, outpoint: { transactionId: sha(`c3-${label}-older`), index: 0 }, utxoEntry: { amount: 50_000_000, blockDaaScore: daa(fake.acceptAt! - 10), covenantId: null, isCoinbase: false, scriptPublicKey: spk } });
+            } else if (address === dest && accepted()) {
+              entries.push({ address, outpoint: { transactionId: txid, index: 0 }, utxoEntry: { amount: 100_000_000, blockDaaScore: daa(fake.acceptAt!), covenantId: null, isCoinbase: false, scriptPublicKey: spk } });
             }
           }
           return ok({ entries });
@@ -351,6 +361,40 @@ describe("INT9 · C3 · tx wait --address for a tx sent outside this workspace (
     expect(F.vcfStarts, r.brief).toContain(F.hashOf(1_969));
     expect(r.ms, `ended at once, not at the 120 s timeout: ${r.brief}`).toBeLessThan(60_000);
     expect(r.stdout, r.brief).not.toMatch(/"state"\s*:\s*"(ACCEPTED|CONFIRMED|FINALIZED)"/);
+  });
+
+  it("C3-10 (TX-WAIT-ADDRESS-SPENT-1) --since, the output at --address spent since by a later payment back to it: CONFIRMED at once, the view proved by the later output (never TX_WAIT_UTXO_VIEW_STALE after the timeout)", async () => {
+    const TX = sha("c3-10-external");
+    const F = await startFake("c3-10", TX, { acceptAt: 500, startTip: 2_000, tickMs: 1_000, spent: "with-later-output" });
+    fakes.push(F);
+    const ws = workspace("c3-10", F.url);
+    const r = await run("C3-10", ["tx", "wait", TX, "--address", dest, "--since", F.hashOf(400), "--until", "confirmed", "--timeout", "90", "--interval", "0.5", "--json"], ws);
+    expect(r.status, r.brief).toBe(0);
+    expect(r.json, r.brief).toMatchObject({ ok: true, command: "tx wait", outcome: "reached", state: "CONFIRMED" });
+    expect(r.json.derived.acceptingBlockHash, r.brief).toBe(F.hashOf(500));
+    expect(r.json.utxoView, r.brief).toMatchObject({
+      checked: true,
+      converged: true,
+      inputsUnknown: true,
+      outputsNoLongerListed: [dest],
+      indexPastAcceptance: { address: dest, outpoint: `${sha("c3-c3-10-later")}:1`, blockDaaScore: String(DAA0 + 503), acceptingDaaScore: String(DAA0 + 500) }
+    });
+    expect(r.ms, `ended at once, not at the 90 s timeout: ${r.brief}`).toBeLessThan(45_000);
+    const human = await run("C3-10h", ["tx", "wait", TX, "--address", dest, "--since", F.hashOf(400), "--until", "confirmed", "--timeout", "90", "--interval", "0.5"], workspace("c3-10h", F.url));
+    expect(human.status, human.brief).toBe(0);
+    expect(human.stdout, human.brief).toMatch(/spent since/);
+  });
+
+  it("C3-11 (TX-WAIT-ADDRESS-SPENT-1) the output spent to elsewhere and only an OLDER output at --address: nothing proves the view, TX_WAIT_UTXO_VIEW_STALE names both causes and the accepting DAA score", async () => {
+    const TX = sha("c3-11-external");
+    const F = await startFake("c3-11", TX, { acceptAt: 500, startTip: 2_000, tickMs: 1_000, spent: "no-trace" });
+    fakes.push(F);
+    const ws = workspace("c3-11", F.url);
+    const r = await run("C3-11", ["tx", "wait", TX, "--address", dest, "--since", F.hashOf(400), "--until", "confirmed", "--timeout", "8", "--interval", "0.5", "--json"], ws);
+    expect(r.status, r.brief).toBe(1);
+    expect(r.json, r.brief).toMatchObject({ ok: false, code: "TX_WAIT_UTXO_VIEW_STALE" });
+    expect(String(r.json.message), r.brief).toMatch(/spent since by a transaction that pays elsewhere/);
+    expect(String(r.json.message), r.brief).toContain(`DAA score ${DAA0 + 500}`);
   });
 
   it("C3-8 (RC1 · D2, usage) --lookback is an integer 0..10000 and applies with --address only: TX_WAIT_USAGE, exit 2, nothing contacted", async () => {

@@ -2376,6 +2376,7 @@ No arguments.
 - [hardkas localnet account](#hardkas-localnet-account)
 - [hardkas localnet fork](#hardkas-localnet-fork)
 - [hardkas localnet fund](#hardkas-localnet-fund)
+- [hardkas localnet seed](#hardkas-localnet-seed)
 - [hardkas localnet snapshot](#hardkas-localnet-snapshot)
 - [hardkas localnet start](#hardkas-localnet-start)
 - [hardkas localnet status](#hardkas-localnet-status)
@@ -2473,6 +2474,7 @@ hardkas localnet fund [options] <identifier>
 | :--- | :--- | :--- |
 | `--profile <name>` | Funding profile | toccata-v2 |
 | `--amount <kas>` | KAS to wait for: mine until the mature balance grows by this amount | 1000 |
+| `--treasury` | Transfer exact non-coinbase UTXOs from the localnet Treasury instead of mining directly to the account | false |
 | `--timeout <ms>` | Funding/maturity wait timeout in ms | 300000 |
 | `--keep-miner` | Keep mining to the funded account after funding (its balance keeps growing) | false |
 | `--stop-miner` | Leave the chain stopped after funding: no new blocks until you mine again | false |
@@ -2483,6 +2485,34 @@ hardkas localnet fund [options] <identifier>
 | Argument | Description |
 | :--- | :--- |
 | `identifier` |  |
+
+---
+
+## hardkas localnet seed
+
+Distribute an exact initial KAS balance to dev accounts from the localnet Treasury (1 -> N) alpha
+
+### Usage
+
+```bash
+hardkas localnet seed [options]
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--profile <name>` | Funding profile | toccata-v2 |
+| `--amount <kas>` | KAS per dev account | 100 |
+| `--only-empty` | Only fund accounts whose balance is currently 0 | false |
+| `--accounts <names>` | Comma-separated account names or simnet addresses to seed |  |
+| `--timeout <ms>` | Funding/confirmation timeout in ms | 300000 |
+| `--stop-miner` | Leave the chain stopped after seeding: no new blocks until you mine again | false |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+No arguments.
 
 ---
 
@@ -2601,6 +2631,9 @@ hardkas localnet start [options]
 | :--- | :--- | :--- |
 | `--profile <name>` | Localnet profile: toccata-v2 (the only one, required; or use --toccata) |  |
 | `--toccata` | Shortcut for --profile toccata-v2 | false |
+| `--seed` | Distribute an initial exact balance (default 100 KAS) to empty dev accounts from the localnet Treasury after start | false |
+| `--seed-amount <kas>` | KAS per account when --seed is set | 100 |
+| `--stop-miner` | With --seed: leave the chain stopped after seeding | false |
 | `--detached` | No effect: the node always runs as a detached Docker container | false |
 | `--json` | Output as JSON | false |
 
@@ -5993,7 +6026,7 @@ hardkas tx send [options] [signedPath]
 | `--json` | Output as JSON | false |
 | `--track <label>` | Signed-artifact mode: after an accepted broadcast, record a deployment with this label |  |
 | `--preflight` | Payments: right before the broadcast, check every input at the node (unspent, as planned, no covenant id, not pending in its mempool) and verify each input's signature against the node's UTXO; anything it cannot verify refuses the send. One node's view, not a consensus validation | false |
-| `--allow-unplanned` | Signed-artifact mode: send a signed transaction that names no plan of this workspace (signed elsewhere). HardKAS then cannot check that it is a planned transaction nor its fee limit: you take both on yourself. Without it such a send is refused (SEND_PLAN_UNRESOLVED) | false |
+| `--allow-unplanned` | Signed-artifact mode: send a signed transaction that names no plan of this workspace (signed elsewhere). HardKAS then cannot check that it is a planned transaction nor its fee limit: you take both on yourself. Without it such a send is refused (SEND_PLAN_UNRESOLVED). Never on mainnet (MAINNET_UNPLANNED_SEND_REFUSED) | false |
 
 ### Arguments
 
@@ -6020,7 +6053,6 @@ hardkas tx sign [options] <planPath>
 | `--account <name>` | Account name to sign with |  |
 | `--out <path>` | Save signed artifact JSON |  |
 | `--fixture` | Sign with the built-in fixture test key (any network except mainnet) | false |
-| `--allow-mainnet-signing` | No effect: mainnet is blocked (MAINNET TOTAL LOCKDOWN) and mainnet signing stays refused (MAINNET_SIGNING_DISABLED) | false |
 | `--threshold <number>` | Synthetic multisig threshold for tests (no Kaspa multisig script is produced) |  |
 | `--required-signers <list>` | Comma-separated signers, no spaces (with --threshold above 1) |  |
 | `--append` | Append signature to a partially signed transaction | false |

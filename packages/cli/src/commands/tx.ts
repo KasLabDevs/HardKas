@@ -354,7 +354,6 @@ export function registerTxCommands(program: Command) {
     .option("--account <name>", "Account name to sign with")
     .option("--out <path>", "Save signed artifact JSON")
     .option("--fixture", "Sign with the built-in fixture test key (any network except mainnet)", false)
-    .option("--allow-mainnet-signing", "No effect: mainnet is blocked (MAINNET TOTAL LOCKDOWN) and mainnet signing stays refused (MAINNET_SIGNING_DISABLED)", false)
     .option("--threshold <number>", "Synthetic multisig threshold for tests (no Kaspa multisig script is produced)")
     .option("--required-signers <list>", "Comma-separated signers, no spaces (with --threshold above 1)")
     .option("--append", "Append signature to a partially signed transaction", false)
@@ -371,7 +370,6 @@ export function registerTxCommands(program: Command) {
           account?: string;
           out?: string;
           fixture: boolean;
-          allowMainnetSigning: boolean;
           threshold?: string;
           requiredSigners?: string;
           append: boolean;
@@ -420,7 +418,6 @@ export function registerTxCommands(program: Command) {
             config: loaded.config,
             ...(options.target ? { targetName: options.target } : {}),
             ...(signer ? { signer } : {}),
-            allowMainnetSigning: options.allowMainnetSigning,
             append: options.append,
             ...(options.threshold !== undefined
               ? { threshold: parseInt(options.threshold) }
@@ -593,7 +590,7 @@ export function registerTxCommands(program: Command) {
     )
     .option(
       "--allow-unplanned",
-      "Signed-artifact mode: send a signed transaction that names no plan of this workspace (signed elsewhere). HardKAS then cannot check that it is a planned transaction nor its fee limit: you take both on yourself. Without it such a send is refused (SEND_PLAN_UNRESOLVED)",
+      "Signed-artifact mode: send a signed transaction that names no plan of this workspace (signed elsewhere). HardKAS then cannot check that it is a planned transaction nor its fee limit: you take both on yourself. Without it such a send is refused (SEND_PLAN_UNRESOLVED). Never on mainnet (MAINNET_UNPLANNED_SEND_REFUSED)",
       false
     )
     .action(

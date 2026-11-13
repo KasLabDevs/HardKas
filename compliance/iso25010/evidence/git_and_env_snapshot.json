@@ -1,0 +1,21 @@
+{
+  "captured_at_utc": "2026-11-11T14:10:36.566006+00:00",
+  "repository_root": "c:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo",
+  "git_commit_head": "33a934331d5d9a13af48408dcd82f0dd0daa646f",
+  "git_branch": "develop",
+  "git_status_short": [
+    "?? compliance/"
+  ],
+  "git_recent_commits": [
+    "33a934331 (HEAD -> develop, origin/develop) Merge branch 'develop' of https://github.com/KasLabDevs/HardKas into develop",
+    "7e6712fa9 [KLD]: 0.13.0-rc.2 version",
+    "4ac6ab0e0 Create EVIDENCE_INDEX.md",
+    "6ccde6ac6 [KLD]: 0.13.0-rc.2 version",
+    "f05b3f9aa [KLD]: 0.13.0-rc.2 version"
+  ],
+  "node_version": "v24.22.1",
+  "pnpm_version": "9.15.4",
+  "python_version": "3.14.4 (tags/v3.14.4:23116f9, Apr  7 2026, 14:10:54) [MSC v.1944 64 bit (AMD64)]",
+  "os_platform": "Windows-11-10.0.26300-SP0",
+  "production_tree_modified": false
+}

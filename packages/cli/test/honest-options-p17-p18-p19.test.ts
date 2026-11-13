@@ -99,20 +99,28 @@ describe("P19 · options with no effect are never accepted in silence", () => {
     }
   });
 
-  it("the --allow-mainnet* flags say they have no effect and that mainnet is blocked", () => {
-    for (const [p, flag] of [["tx sign", "--allow-mainnet-signing"], ["accounts consolidate", "--allow-mainnet"]] as const) {
+  it("the --allow-mainnet flag says it has no effect and that mainnet is blocked", () => {
+    for (const [p, flag] of [["accounts consolidate", "--allow-mainnet"]] as const) {
       const option = command(program, p).options.find((o) => o.long === flag)!;
       expect(option.description).toMatch(/^No effect: mainnet is blocked/);
       expect(NO_EFFECT_OPTIONS[p]![flag]).toMatch(/mainnet is blocked/);
     }
   });
 
-  it("tx sign --allow-mainnet-signing --wait-lock: warned on stderr and listed in the JSON envelope, whatever the outcome", () => {
-    const r = run(["tx", "sign", path.join(dir, "no-such-plan.json"), "--allow-mainnet-signing", "--wait-lock", "--json"]);
-    expect(r.stderr).toMatch(/--allow-mainnet-signing has no effect \(OPTION_NO_EFFECT\): mainnet is blocked/);
+  it("tx sign --wait-lock: warned on stderr and listed in the JSON envelope, whatever the outcome", () => {
+    const r = run(["tx", "sign", path.join(dir, "no-such-plan.json"), "--wait-lock", "--json"]);
     expect(r.stderr).toMatch(/--wait-lock has no effect \(OPTION_NO_EFFECT\)/);
-    expect(r.doc?.noEffectOptions?.map((n: any) => n.option)).toEqual(["--allow-mainnet-signing", "--wait-lock"]);
+    expect(r.doc?.noEffectOptions?.map((n: any) => n.option)).toEqual(["--wait-lock"]);
     expect(r.doc.noEffectOptions[0]).toMatchObject({ code: "OPTION_NO_EFFECT" });
+  });
+
+  it("tx sign --allow-mainnet-signing was removed (2026-11-11, owner): an unknown option, nothing read or signed", () => {
+    expect(command(program, "tx sign").options.find((o) => o.long === "--allow-mainnet-signing")).toBeUndefined();
+    expect(NO_EFFECT_OPTIONS["tx sign"]?.["--allow-mainnet-signing"]).toBeUndefined();
+    const r = run(["tx", "sign", path.join(dir, "no-such-plan.json"), "--allow-mainnet-signing", "--json"]);
+    expect(r.status, `${r.stdout}\n${r.stderr}`).not.toBe(0);
+    expect(`${r.stdout}\n${r.stderr}`).toMatch(/unknown option '--allow-mainnet-signing'/);
+    expect(`${r.stdout}\n${r.stderr}`).not.toMatch(/OPTION_NO_EFFECT/);
   });
 
   it("accounts consolidate --allow-mainnet: warned on stderr, mainnet blocked", () => {

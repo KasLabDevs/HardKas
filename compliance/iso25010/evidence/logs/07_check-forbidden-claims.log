@@ -1,0 +1,20 @@
+================================================================================
+GATE ID           : 07_check-forbidden-claims
+REQUIREMENT ID    : HK-REQ-048
+COMMAND           : node scripts/check-forbidden-claims.mjs
+GIT COMMIT HEAD   : 33a934331d5d9a13af48408dcd82f0dd0daa646f
+START TIME (UTC)  : 2026-11-11T14:10:51.621805+00:00
+END TIME (UTC)    : 2026-11-11T14:11:00.066526+00:00
+DURATION (ms)     : 8444.7
+EXIT CODE         : 0
+STATUS            : VERIFICADO (PASS)
+================================================================================
+
+--- STDOUT ---
+PROGRAMMABILITY_SURFACE_CLAIMS_FROZEN
+ZK_CLAIM_BOUNDARIES_FROZEN
+VPROGS_INSPECT_BOUNDARY_FROZEN
+
+
+--- STDERR ---
+(empty)

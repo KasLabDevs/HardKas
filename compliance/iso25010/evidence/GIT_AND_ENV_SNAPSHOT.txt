@@ -1,0 +1,19 @@
+================================================================================
+HARDKAS v0.13.0-rc.2 — INSTANTÁNEA DE CONGELACIÓN DE REPOSITORIO Y ENTORNO
+================================================================================
+Fecha UTC          : 2026-11-11T14:10:36.566006+00:00
+Commit HEAD (Git)  : 33a934331d5d9a13af48408dcd82f0dd0daa646f
+Rama (Git)         : develop
+Node.js            : v24.22.1
+pnpm               : 9.15.4
+Sistema Operativo  : Windows-11-10.0.26300-SP0
+
+--- Últimos 5 Commits ---
+33a934331 (HEAD -> develop, origin/develop) Merge branch 'develop' of https://github.com/KasLabDevs/HardKas into develop
+7e6712fa9 [KLD]: 0.13.0-rc.2 version
+4ac6ab0e0 Create EVIDENCE_INDEX.md
+6ccde6ac6 [KLD]: 0.13.0-rc.2 version
+f05b3f9aa [KLD]: 0.13.0-rc.2 version
+
+--- Estado del Árbol de Trabajo (git status --short) ---
+?? compliance/

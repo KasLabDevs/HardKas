@@ -1,0 +1,19 @@
+================================================================================
+GATE ID           : 09_check-artifact-fixtures-valid
+REQUIREMENT ID    : HK-REQ-071
+COMMAND           : node scripts/check-artifact-fixtures.mjs packages/artifacts/test/fixtures/valid
+GIT COMMIT HEAD   : 33a934331d5d9a13af48408dcd82f0dd0daa646f
+START TIME (UTC)  : 2026-11-11T14:11:32.033225+00:00
+END TIME (UTC)    : 2026-11-11T14:11:34.813064+00:00
+DURATION (ms)     : 2779.81
+EXIT CODE         : 1
+STATUS            : INCUMPLIDO (FAIL)
+================================================================================
+
+--- STDOUT ---
+check-artifact-fixtures: packages/artifacts/test/fixtures/valid: scanned 0, refused 0, CLI exit 1
+
+
+--- STDERR ---
+check-artifact-fixtures: FAIL - the corpus is empty, the gate would pass with nothing verified
+

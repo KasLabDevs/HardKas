@@ -22,10 +22,10 @@ import {
 
 // The canonical real localnet (@hardkas/core). The container name only locates
 // the node; before using it, localnet proves its identity (verifyNodeIdentity).
-const TOCCATA_PROFILE = CANONICAL_LOCALNET.profile;
+export const TOCCATA_PROFILE = CANONICAL_LOCALNET.profile;
 const TOCCATA_IMAGE = CANONICAL_LOCALNET.image;
 const OFFICIAL_MINER_IMAGE = CPUMINER_REFERENCE_IMAGE;
-const TOCCATA_MINER_CONTAINER = CANONICAL_LOCALNET.minerContainerName;
+export const TOCCATA_MINER_CONTAINER = CANONICAL_LOCALNET.minerContainerName;
 const TOCCATA_NODE_CONTAINER = CANONICAL_LOCALNET.containerName;
 const TOCCATA_RPC_URL = nodeRpcUrl();
 const TOCCATA_KASPAD_ADDRESS = "host.docker.internal:16210";
@@ -33,6 +33,9 @@ const TOCCATA_KASPAD_ADDRESS = "host.docker.internal:16210";
 export interface LocalnetStartOptions {
   profile?: string;
   json?: boolean;
+  seed?: boolean;
+  seedAmountSompi?: bigint;
+  stopMiner?: boolean;
   workspaceRoot?: string;
 }
 
@@ -47,11 +50,38 @@ export interface LocalnetFundOptions {
   profile?: string;
   json?: boolean;
   timeoutMs?: number;
+  /** Fund from the deterministic localnet Treasury (fast 1-confirmation transfer, never keeps mining to the recipient). */
+  treasury?: boolean;
   /** Keep mining to the funded account after funding (its balance keeps growing). */
   keepMiner?: boolean;
   /** Leave the chain stopped after funding: no liveness miner, no new blocks. */
   stopMiner?: boolean;
   workspaceRoot?: string;
+}
+
+async function maybeSeedLocalnet(opts: LocalnetStartOptions, profile: string) {
+  if (!opts.seed) return undefined;
+  const { runLocalnetSeed } = await import("./localnet-treasury.js");
+  return runLocalnetSeed({
+    ...(opts.seedAmountSompi !== undefined ? { amountSompi: opts.seedAmountSompi } : {}),
+    onlyEmpty: true,
+    profile,
+    json: !!opts.json,
+    silentOutput: true,
+    stopMiner: !!opts.stopMiner,
+    ...(opts.workspaceRoot ? { workspaceRoot: opts.workspaceRoot } : {})
+  });
+}
+
+function logSeedSummaryHuman(seed: { status: string; treasuryAddress: string; txIds: string[]; accounts: Array<{ name: string; skipped: boolean; afterBalanceSompi: string }> }): void {
+  UI.info(`Seed: ${seed.status} (treasury ${seed.treasuryAddress})`);
+  if (seed.txIds.length > 0) {
+    UI.info(`Seed tx: ${seed.txIds.join(", ")}`);
+  }
+  for (const a of seed.accounts) {
+    const kas = (Number(a.afterBalanceSompi) / 1e8).toString();
+    UI.info(`  ${a.name.padEnd(8)} ${a.skipped ? "kept  " : "seeded"} ${kas} KAS`);
+  }
 }
 
 export async function runLocalnetStart(opts: LocalnetStartOptions): Promise<void> {
@@ -87,12 +117,14 @@ export async function runLocalnetStart(opts: LocalnetStartOptions): Promise<void
     // Running under the canonical name is not enough: it must prove digest,
     // endpoint ownership, network and version before it is reported READY.
     const identity = await requireNodeIdentity();
+    const seed = await maybeSeedLocalnet(opts, profile);
     const payload = {
       schema: HardkasSchemas.LocalnetStatusV1,
       profile,
       node: existing,
       identity,
-      status: "TOCCATA_NODE_READY"
+      status: "TOCCATA_NODE_READY",
+      ...(seed ? { seed } : {})
     };
     if (opts.json) {
       getOutput().writeJson(payload);
@@ -101,6 +133,7 @@ export async function runLocalnetStart(opts: LocalnetStartOptions): Promise<void
       UI.info(`RPC: ${TOCCATA_RPC_URL}`);
       UI.info(`Version: ${existing.serverVersion || "unknown"}`);
       UI.info(`DAA: ${existing.virtualDaaScore || "unknown"}`);
+      if (seed) logSeedSummaryHuman(seed);
     }
     return;
   }
@@ -115,13 +148,15 @@ export async function runLocalnetStart(opts: LocalnetStartOptions): Promise<void
   // start() verifies the identity of the node it starts or adopts.
   const status = await runner.start();
   const identity = await runner.identity();
+  const seed = await maybeSeedLocalnet(opts, profile);
 
   const payload = {
     schema: HardkasSchemas.LocalnetStatusV1,
     profile,
     status: status.rpcReady ? "TOCCATA_NODE_READY" : "TOCCATA_NODE_STARTING",
     node: status,
-    identity
+    identity,
+    ...(seed ? { seed } : {})
   };
 
   if (opts.json) {
@@ -131,6 +166,7 @@ export async function runLocalnetStart(opts: LocalnetStartOptions): Promise<void
     UI.info(`Image: ${status.image}`);
     UI.info(`Container: ${status.containerName}`);
     UI.info(`RPC: ${status.rpcUrl}`);
+    if (seed) logSeedSummaryHuman(seed);
   }
 }
 
@@ -254,6 +290,14 @@ export async function runLocalnetFund(opts: LocalnetFundOptions): Promise<void> 
       { exitCode: HardkasExitCode.USAGE_ERROR }
     );
   }
+  if (opts.keepMiner && opts.treasury) {
+    const { HardkasCliError, HardkasExitCode } = await import("../cli-errors.js");
+    throw new HardkasCliError(
+      "LOCALNET_FUND_MINER_FLAGS_CONFLICT",
+      "--keep-miner and --treasury are mutually exclusive: treasury distribution transfers a fixed amount and never keeps mining to the recipient.",
+      { exitCode: HardkasExitCode.USAGE_ERROR }
+    );
+  }
 
   const { config } = await loadHardkasConfig({});
   let address: string;
@@ -295,6 +339,21 @@ export async function runLocalnetFund(opts: LocalnetFundOptions): Promise<void> 
   // The miner joins the node's namespace by container name, so the node must
   // first prove it is the canonical one.
   await requireNodeIdentity();
+
+  if (opts.treasury) {
+    const { runLocalnetFundTreasury, DEFAULT_LOCALNET_SEED_AMOUNT_SOMPI } = await import("./localnet-treasury.js");
+    await runLocalnetFundTreasury({
+      address,
+      identifier: opts.identifier,
+      amountSompi: opts.amountSompi ?? DEFAULT_LOCALNET_SEED_AMOUNT_SOMPI,
+      profile,
+      timeoutMs: opts.timeoutMs ?? 300000,
+      stopMiner: !!opts.stopMiner,
+      json: !!opts.json,
+      workspaceRoot: opts.workspaceRoot || process.cwd()
+    });
+    return;
+  }
   // LOCALNET-FUND-BOUNDED-READ-1: every read below takes the total from the node's balance and the immature part from
   // the coinbase-maturity window of the chain, never the list of the address's UTXOs (see localnet-funding-state.ts).
   const reader = createFundingStateReader(address, getCoinbaseMaturity("simnet"));
@@ -394,7 +453,7 @@ export async function runLocalnetFund(opts: LocalnetFundOptions): Promise<void> 
  * OP_RETURN. Spending it means revealing that script, whose execution always fails, so its coinbase is spendable by
  * nobody: no account, key or secret exists. Built from the pinned SDK, never hard-coded.
  */
-async function livenessMinerRewardAddress(): Promise<string> {
+export async function livenessMinerRewardAddress(): Promise<string> {
   const { loadKaspaWasm } = await import("@hardkas/accounts");
   const k = await loadKaspaWasm();
   const redeemScript = new k.ScriptBuilder().addOp(k.Opcodes.OpReturn).toString();
@@ -433,7 +492,7 @@ const FUNDING_WAIT_MARGIN_DAA = 10n;
  * except a mainnet refusal, LOCALNET_FUND_MATURITY_TIMEOUT at the deadline), without listing the address's UTXOs
  * (LOCALNET-FUND-BOUNDED-READ-1). The total first, so the wait never ends on a mature balance the node does not hold.
  */
-async function waitForMatureFunding(
+export async function waitForMatureFunding(
   rpc: FundingStateRpc,
   reader: FundingStateReader,
   opts: { minSpendableSompi: bigint; timeoutMs: number; pollIntervalMs?: number }
@@ -459,7 +518,7 @@ async function waitForMatureFunding(
   throw Object.assign(new Error("Timeout waiting for spendable funding"), { code: "LOCALNET_FUND_MATURITY_TIMEOUT", lastObservedState });
 }
 
-async function waitForVirtualDagSettle(
+export async function waitForVirtualDagSettle(
   rpc: any,
   opts?: { stablePolls?: number; pollIntervalMs?: number }
 ): Promise<VirtualFingerprint> {
@@ -720,16 +779,16 @@ export function toccataMinerArgs(address: string, env: NodeJS.ProcessEnv = proce
   ];
 }
 
-async function restartToccataMiner(address: string) {
+export async function restartToccataMiner(address: string) {
   await execa("docker", ["rm", "-f", TOCCATA_MINER_CONTAINER]).catch(() => {});
   await execa("docker", toccataMinerArgs(address));
 }
 
-async function stopToccataMiner() {
+export async function stopToccataMiner() {
   await execa("docker", ["stop", TOCCATA_MINER_CONTAINER]).catch(() => {});
 }
 
-async function inspectDockerContainer(name: string) {
+export async function inspectDockerContainer(name: string) {
   try {
     const { stdout } = await execa("docker", [
       "inspect",
@@ -761,7 +820,7 @@ async function inspectDockerContainer(name: string) {
  * and the coinbase-maturity window of its chain, a bounded number of small requests whatever the address holds; it
  * used to list every UTXO of the address, a read that cannot finish on a localnet that has mined to it for long.
  */
-async function getAddressFundingState(reader: FundingStateReader, order: FundingReadOrder, quiet = false): Promise<FundingStateJson> {
+export async function getAddressFundingState(reader: FundingStateReader, order: FundingReadOrder, quiet = false): Promise<FundingStateJson> {
   const client = new JsonWrpcKaspaClient({ rpcUrl: TOCCATA_RPC_URL, timeoutMs: 10000 });
   try {
     return fundingStateJson(await withOptionalSilentConsole(quiet, () => reader.read(client, { order })));
@@ -770,7 +829,7 @@ async function getAddressFundingState(reader: FundingStateReader, order: Funding
   }
 }
 
-function sleep(ms: number) {
+export function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
@@ -778,7 +837,7 @@ function bigintReplacer(_key: string, value: unknown) {
   return typeof value === "bigint" ? value.toString() : value;
 }
 
-async function withOptionalSilentConsole<T>(
+export async function withOptionalSilentConsole<T>(
   quiet: boolean,
   fn: () => Promise<T>
 ): Promise<T> {

@@ -7,6 +7,7 @@ import {
   runLocalnetStatus,
   runLocalnetStop
 } from "../runners/localnet-runners.js";
+import { runLocalnetSeed } from "../runners/localnet-treasury.js";
 import { parseKasToSompi } from "@hardkas/core";
 import { invocationWorkspaceRoot } from "../workspace-root.js";
 
@@ -20,11 +21,17 @@ export function registerLocalnetCommands(program: Command): void {
     .description(`Start (or adopt) the Docker rusty-kaspad node for the toccata-v2 profile and create dev accounts alice…erin; needs Docker ${UI.maturity("alpha")}`)
     .option("--profile <name>", "Localnet profile: toccata-v2 (the only one, required; or use --toccata)")
     .option("--toccata", "Shortcut for --profile toccata-v2", false)
+    .option("--seed", "Distribute an initial exact balance (default 100 KAS) to empty dev accounts from the localnet Treasury after start", false)
+    .option("--seed-amount <kas>", "KAS per account when --seed is set", "100")
+    .option("--stop-miner", "With --seed: leave the chain stopped after seeding", false)
     .option("--detached", "No effect: the node always runs as a detached Docker container", false)
     .option("--json", "Output as JSON", false)
     .action(async (opts) => {
       await runLocalnetStart({
         profile: opts.toccata ? "toccata-v2" : opts.profile,
+        seed: !!opts.seed,
+        ...(opts.seed ? { seedAmountSompi: parseKasToSompi(opts.seedAmount) } : {}),
+        stopMiner: !!opts.stopMiner,
         json: opts.json,
         workspaceRoot: process.cwd()
       });
@@ -60,6 +67,7 @@ export function registerLocalnetCommands(program: Command): void {
     .description(`Fund a local Toccata/simnet account ${UI.maturity("alpha")}`)
     .option("--profile <name>", "Funding profile", "toccata-v2")
     .option("--amount <kas>", "KAS to wait for: mine until the mature balance grows by this amount", "1000")
+    .option("--treasury", "Transfer exact non-coinbase UTXOs from the localnet Treasury instead of mining directly to the account", false)
     .option("--timeout <ms>", "Funding/maturity wait timeout in ms", "300000")
     .option("--keep-miner", "Keep mining to the funded account after funding (its balance keeps growing)", false)
     .option("--stop-miner", "Leave the chain stopped after funding: no new blocks until you mine again", false)
@@ -70,10 +78,38 @@ export function registerLocalnetCommands(program: Command): void {
         amountSompi: parseKasToSompi(opts.amount),
         profile: opts.profile,
         timeoutMs: parseInt(opts.timeout, 10),
+        treasury: !!opts.treasury,
         keepMiner: opts.keepMiner,
         stopMiner: opts.stopMiner,
         json: opts.json,
         workspaceRoot: process.cwd()
+      });
+    });
+
+  localnet
+    .command("seed")
+    .description(`Distribute an exact initial KAS balance to dev accounts from the localnet Treasury (1 -> N) ${UI.maturity("alpha")}`)
+    .option("--profile <name>", "Funding profile", "toccata-v2")
+    .option("--amount <kas>", "KAS per dev account", "100")
+    .option("--only-empty", "Only fund accounts whose balance is currently 0", false)
+    .option("--accounts <names>", "Comma-separated account names or simnet addresses to seed")
+    .option("--timeout <ms>", "Funding/confirmation timeout in ms", "300000")
+    .option("--stop-miner", "Leave the chain stopped after seeding: no new blocks until you mine again", false)
+    .option("--json", "Output as JSON", false)
+    .action(async (opts) => {
+      const accounts =
+        typeof opts.accounts === "string" && opts.accounts.trim()
+          ? opts.accounts.split(",").map((s: string) => s.trim()).filter(Boolean)
+          : undefined;
+      await runLocalnetSeed({
+        amountSompi: parseKasToSompi(opts.amount),
+        onlyEmpty: !!opts.onlyEmpty,
+        ...(accounts ? { accounts } : {}),
+        profile: opts.profile,
+        timeoutMs: parseInt(opts.timeout, 10),
+        stopMiner: !!opts.stopMiner,
+        json: !!opts.json,
+        workspaceRoot: invocationWorkspaceRoot()
       });
     });
 

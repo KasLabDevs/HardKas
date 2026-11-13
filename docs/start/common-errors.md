@@ -106,8 +106,8 @@ and sign again from the last intact step.
 node: `rpc *`, `accounts balance`, `tx plan`, `tx wait`, `doctor`, … — reads
 included, even to an endpoint you declare),
 `SILVERSCRIPT_MAINNET_NOT_ENABLED` (`silver deploy|spend|covenant … --network mainnet`),
-`MAINNET_SIGNING_DISABLED` (`tx sign`; `--allow-mainnet-signing` has no effect in
-this release) and `MAINNET_BROADCAST_DISABLED`. These are policy, not bugs:
+`MAINNET_SIGNING_DISABLED` (`tx sign`; HardKAS never signs on mainnet, and
+`--allow-mainnet-signing` no longer exists) and `MAINNET_BROADCAST_DISABLED`. These are policy, not bugs:
 mainnet is NO-GO and locked down in this release, and no flag or setting
 enables it. Each refusal comes before any connection is attempted.
 

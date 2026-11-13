@@ -1,0 +1,22 @@
+================================================================================
+GATE ID           : 05_check-artifact-registry
+REQUIREMENT ID    : HK-REQ-014
+COMMAND           : node scripts/check-artifact-registry.mjs
+GIT COMMIT HEAD   : 33a934331d5d9a13af48408dcd82f0dd0daa646f
+START TIME (UTC)  : 2026-11-11T14:10:44.806433+00:00
+END TIME (UTC)    : 2026-11-11T14:10:51.518835+00:00
+DURATION (ms)     : 6712.38
+EXIT CODE         : 0
+STATUS            : VERIFICADO (PASS)
+================================================================================
+
+--- STDOUT ---
+[allowed, not a schema] hardkas.zk.groth16.bn254.vkFingerprint.v1 in packages/sdk/src/zk/groth16-verifier.ts: domain-separation tag hashed into the Groth16 verification-key fingerprint (CA-ZK-04); renaming it changes every fingerprint, and ZK is frozen
+[allowed, not a schema] hardkas.merchantCompat.v3 in scripts/run-merchant-compatibility-battery-evidence.mjs: schema of the results file written by this report script; no package reads it
+[allowed, not a schema] hardkas.merchantCompat.output.v1 in scripts/run-merchant-compatibility-battery-evidence.mjs: schema of the output file written by the same report script; no package reads it
+[allowed, not a schema] hardkas.release-build.v1 in scripts/check-release-tarballs.mjs: kind of the release-build stamp (node_modules/.cache/hardkas/release-build.json) that `pnpm release:build` writes and `--pack` checks; it is never packed and no package reads it
+Registry validation passed! No stray 'hardkas.*' strings found in TS, and all JSON fixtures use valid schemas.
+
+
+--- STDERR ---
+(empty)

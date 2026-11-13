@@ -43,7 +43,6 @@ describe("--help says what the CLI does", () => {
       ["tx plan", "--wait-lock"],
       ["tx sign", "--lock-timeout"],
       ["tx send", "--wait-lock"],
-      ["tx sign", "--allow-mainnet-signing"],
       ["accounts consolidate", "--allow-mainnet"]
     ];
     for (const [path, long] of noEffect) expect(option(path, long).description).toMatch(/no effect/i);
@@ -80,7 +79,9 @@ describe("--help says what the CLI does", () => {
     expect(command("kaspa wallet create").description()).toMatch(/nothing is saved/);
     expect(command("localnet fork").description()).toMatch(/current UTXOs/);
     expect(option("localnet fork", "--at-daa-score").description).toMatch(/label/);
-    expect(option("tx sign", "--allow-mainnet-signing").description).toMatch(/stays refused/);
+    // 2026-11-11 (owner): HardKAS never signs on mainnet, so `tx sign` has no flag that suggests it could
+    expect(command("tx sign").options.find((o) => o.long === "--allow-mainnet-signing")).toBeUndefined();
+    expect(option("tx send", "--allow-unplanned").description).toMatch(/Never on mainnet \(MAINNET_UNPLANNED_SEND_REFUSED\)/);
     // ESCALÓN 2 · P12, P17: a snapshot never declares a consensus validation; -h is the help, the host is -H
     expect(option("localnet snapshot create", "--consensus-validated").description).toMatch(/^Not supported: refused/);
     expect(option("simulator start", "--host").short).toBe("-H");

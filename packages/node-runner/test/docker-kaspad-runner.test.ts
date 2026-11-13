@@ -176,6 +176,49 @@ describe("DockerKaspadRunner", () => {
     expect(KASPAD_REFERENCE_IMAGE).toMatch(/^kaspanet\/rusty-kaspad:v\d+\.\d+\.\d+@sha256:[0-9a-f]{64}$/);
   });
 
+  // Route 7 (10-nov), closed 2026-11-11: an image taken from HARDKAS_KASPAD_IMAGE is held to the digest rule of
+  // `hardkas node start` (P39) here too — sdk.node.start, localnet start, node restart and reset build this runner.
+  describe("HARDKAS_KASPAD_IMAGE must be pinned by digest", () => {
+    const dockerDown = () =>
+      vi.mocked(execa).mockImplementation(((file: string, args: string[]) =>
+        args?.[0] === "version" ? Promise.reject(new Error("daemon not running")) : Promise.reject(new Error("No such object"))) as any);
+    afterEach(() => {
+      vi.unstubAllEnvs();
+    });
+
+    it("a floating image: start() and restart() are NODE_IMAGE_DIGEST_REQUIRED before Docker is asked anything", async () => {
+      for (const image of ["kaspanet/rusty-kaspad:latest", "kaspanet/rusty-kaspad:v2.1.0", ""]) {
+        vi.stubEnv("HARDKAS_KASPAD_IMAGE", image);
+        vi.mocked(execa).mockClear();
+        await expect(new DockerKaspadRunner().start(), JSON.stringify(image)).rejects.toMatchObject({ code: "NODE_IMAGE_DIGEST_REQUIRED" });
+        await expect(new DockerKaspadRunner().restart(), JSON.stringify(image)).rejects.toMatchObject({ code: "NODE_IMAGE_DIGEST_REQUIRED" });
+        expect(vi.mocked(execa), "Docker was never called (no inspect, stop or run)").not.toHaveBeenCalled();
+      }
+      vi.stubEnv("HARDKAS_KASPAD_IMAGE", "kaspanet/rusty-kaspad:latest");
+      await expect(new DockerKaspadRunner().start()).rejects.toThrow(/\[NODE_IMAGE_DIGEST_REQUIRED\].*allowFloatingImage does not lift this/);
+      await expect(new DockerKaspadRunner({ allowFloatingImage: true }).start()).rejects.toMatchObject({ code: "NODE_IMAGE_DIGEST_REQUIRED" });
+    });
+
+    it("controls: a pinned HARDKAS_KASPAD_IMAGE, no variable, or an image given in code pass the check (Docker is asked)", async () => {
+      dockerDown();
+      vi.stubEnv("HARDKAS_KASPAD_IMAGE", KASPAD_REFERENCE_IMAGE);
+      await expect(new DockerKaspadRunner().start()).rejects.toMatchObject({ code: "DOCKER_UNAVAILABLE" });
+      vi.stubEnv("HARDKAS_KASPAD_IMAGE", undefined);
+      await expect(new DockerKaspadRunner().start()).rejects.toMatchObject({ code: "DOCKER_UNAVAILABLE" });
+      vi.stubEnv("HARDKAS_KASPAD_IMAGE", "kaspanet/rusty-kaspad:latest");
+      await expect(new DockerKaspadRunner({ image: "test-image" }).start(), "the image option decides when given").rejects.toMatchObject({ code: "DOCKER_UNAVAILABLE" });
+    });
+
+    it("status, stop and logs still work with a floating variable (only running an image is refused)", async () => {
+      vi.stubEnv("HARDKAS_KASPAD_IMAGE", "kaspanet/rusty-kaspad:latest");
+      vi.mocked(execa).mockImplementation((() => Promise.reject(new Error("No such object"))) as any);
+      const status = await new DockerKaspadRunner().status();
+      expect(status.running).toBe(false);
+      const stopped = await new DockerKaspadRunner({ containerName: "n" }).stop();
+      expect(stopped.stopped).toBe(false);
+    });
+  });
+
   it("should stop the container if it exists", async () => {
     const runner = new DockerKaspadRunner({ containerName: "stop-me" });
     vi.mocked(execa).mockResolvedValue({} as any);
@@ -308,6 +351,23 @@ describe("DockerKaspadRunner", () => {
       await expect(new DockerKaspadRunner({ cwd, containerName: "n", image: "pinned-image" }).reset({ removeData: true })).rejects.toMatchObject({ code: "EBUSY" });
       expect(runs).toEqual([]);
       expect(fs.existsSync(path.join(dataDir, ".rusty-kaspa", "kaspa-simnet", "marker"))).toBe(true);
+    });
+
+    it("with a floating HARDKAS_KASPAD_IMAGE the removal container is never run: NODE_IMAGE_DIGEST_REQUIRED, the data stays", async () => {
+      vi.stubEnv("HARDKAS_KASPAD_IMAGE", "kaspanet/rusty-kaspad:latest");
+      try {
+        rmSpy = vi.spyOn(fsp, "rm").mockRejectedValueOnce(eacces());
+        const runs: string[][] = [];
+        engine(async (args) => {
+          runs.push(args);
+          return {};
+        });
+        await expect(new DockerKaspadRunner({ cwd, containerName: "n" }).reset({ removeData: true })).rejects.toMatchObject({ code: "NODE_IMAGE_DIGEST_REQUIRED" });
+        expect(runs).toEqual([]);
+        expect(fs.existsSync(path.join(dataDir, ".rusty-kaspa", "kaspa-simnet", "marker"))).toBe(true);
+      } finally {
+        vi.unstubAllEnvs();
+      }
     });
 
     it("a removal container that fails is NODE_DATA_NOT_REMOVED, never a success, and the data stays", async () => {

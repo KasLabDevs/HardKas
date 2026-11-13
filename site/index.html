@@ -28,9 +28,9 @@
    Dark is the default because the page script treats "no data-theme" as dark. */
 
 :root {
-  --bg: #0b0d0e;
-  --bg-elev: #121517;
-  --bg-sunk: #08090a;
+  --bg: #1f1f1f;
+  --bg-elev: #252526;
+  --bg-sunk: #181818;
   --line: rgba(255, 255, 255, 0.08);
   --line-strong: rgba(255, 255, 255, 0.15);
   --text: #ecebe7;
@@ -47,7 +47,7 @@
   --danger-tint: rgba(239, 122, 106, 0.09);
   --chip-bg: rgba(255, 255, 255, 0.055);
 
-  --code-bg: #0e1113;
+  --code-bg: #181818;
   --code-edge: rgba(255, 255, 255, 0.07);
   --code-text: #d8dbd5;
   --code-dim: #7a847f;
@@ -770,7 +770,7 @@ summary:hover { color: var(--accent); }
 <p class="hero-ide-text">Editor, compiler, Deploy &amp; Run, local node and tests in one window.</p>
 <a class="button primary" href="https://github.com/KasLabDevs/HardKasIDE/releases/latest/download/HardKas-IDE-setup.exe" rel="noopener">Download for Windows</a>
 <a class="hero-ide-more" href="#ide">Learn more</a>
-<p class="hero-ide-meta">0.2.0 / Windows, macOS, Linux</p>
+<p class="hero-ide-meta">0.3.0 / Windows, macOS, Linux</p>
 </div><h1>Execution-safe development for Kaspa.</h1>
 <p class="hero-desc">
                 HardKAS is a local-first developer environment for Kaspa L1, including
@@ -1078,7 +1078,7 @@ Account kind = synthetic · target mode = rpc<br/>
 <a class="button" href="https://github.com/KasLabDevs/HardKasIDE" rel="noreferrer" target="_blank">Source on GitHub</a>
 </div>
 <div class="meta">
-<span class="badge accent">0.2.0</span>
+<span class="badge accent">0.3.0</span>
 <span class="badge">Windows 10 / 11, x64</span>
 <span class="badge">macOS and Linux on the releases page</span>
 <span class="badge">Installer not code-signed</span>
@@ -2100,10 +2100,6 @@ hardkas chaos replay --run-seed 42">
 <tr>
 <td><code>--threshold &lt;n&gt;</code></td>
 <td>Above 1, starts a synthetic multisig for tests; no Kaspa multisig script is produced</td>
-</tr>
-<tr>
-<td><code>--allow-mainnet-signing</code></td>
-<td>No effect in this release: mainnet signing is always refused</td>
 </tr>
 </table>
 </div>

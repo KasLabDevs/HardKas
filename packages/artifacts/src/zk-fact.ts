@@ -11,6 +11,12 @@ export interface CreateZkVerificationFactOptions {
   readonly guestSystem?: "RISC Zero" | "custom" | undefined;
   readonly imageId: string;
   readonly journalHash: string;
+  /**
+   * SHA-256 of the proof bytes this fact was built from. NOT an identity of the proof or of the spend (H6): Groth16 proofs
+   * are malleable — (A, B, C) → (r⁻¹·A, r·B, C) is another valid proof of the same statement — so anyone who sees a proof
+   * (in the mempool, for example) can produce others with different bytes and hashes. Identify a spend by its txId and
+   * spent outpoint, and a statement by (imageId, journalHash); never deduplicate or index by this value.
+   */
   readonly proofSha256: string;
   /**
    * The producer's statement that the proof was verified off-chain. HardKAS's own builder sets it only from

@@ -2,6 +2,8 @@ import { ChildProcess, spawn, execFileSync } from "child_process";
 import { JsonWrpcKaspaClient } from "@hardkas/kaspa-rpc";
 import {
   KASPAD_REFERENCE_IMAGE,
+  NODE_IMAGE_DIGEST_REQUIRED,
+  isPinnedImageReference,
   CANONICAL_NODE_EXPECTATION,
   assertNodeIdentityVerified,
   assertNodeKind,
@@ -383,6 +385,19 @@ export class SimnetNodeHarness {
     // For simplicity we use KASPAD_BIN or docker
     const binaryPath = options.binaryPath || process.env.KASPAD_BIN;
 
+    // A Docker node's image taken from HARDKAS_KASPAD_IMAGE must be pinned by digest (the rule of `hardkas node start`
+    // and the node runner), decided before any directory is made or Docker is asked anything: NODE_IMAGE_DIGEST_REQUIRED.
+    const envImage = process.env.HARDKAS_KASPAD_IMAGE;
+    if (!binaryPath && envImage !== undefined && !isPinnedImageReference(envImage)) {
+      throw Object.assign(
+        new Error(
+          `[${NODE_IMAGE_DIGEST_REQUIRED}] HARDKAS_KASPAD_IMAGE '${envImage}' is not pinned by digest. The simnet harness runs only ` +
+            `an image pinned as <repository>[:tag]@sha256:<64 hex digits> (a tag can move to other bytes). Nothing was started.`
+        ),
+        { code: NODE_IMAGE_DIGEST_REQUIRED }
+      );
+    }
+
     // Host-side data for a container (bind-mounted on /app/data): an explicit root, the level's variable, or the OS temp
     // directory when the caller asks for persistent data. Without it the container keeps its data in an anonymous volume
     // and cannot be restarted with its chain.
@@ -418,7 +433,7 @@ export class SimnetNodeHarness {
         throw new Error(`ENVIRONMENT_NOT_QUALIFIED: Docker not available or command failed.`);
       }
 
-      dockerImage = process.env.HARDKAS_KASPAD_IMAGE ?? KASPAD_REFERENCE_IMAGE;
+      dockerImage = envImage ?? KASPAD_REFERENCE_IMAGE;
       // Name the container. Without a name Docker assigns a random one, which
       // leaves the node unaddressable (nothing can join its network namespace)
       // and unkillable by anything but the `docker run` client process.
