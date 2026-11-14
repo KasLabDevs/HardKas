@@ -22,7 +22,9 @@ const mockQueryProvider = {
 };
 
 const queryEngine = new WalletQuery({ provider: mockQueryProvider });
-const webhookTransport = new FetchWebhookTransport();
+// Set WEBHOOK_SECRET to sign every delivery (HMAC-SHA256, see WebhookTransport.ts); unset, deliveries are unsigned.
+const webhookSecret = process.env.WEBHOOK_SECRET;
+const webhookTransport = new FetchWebhookTransport(webhookSecret ? { secret: webhookSecret } : {});
 const paymentService = new PaymentService(queryEngine, webhookTransport);
 
 fastify.post('/merchants', async (request, reply) => {

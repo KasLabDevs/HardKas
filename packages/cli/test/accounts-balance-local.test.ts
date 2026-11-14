@@ -46,5 +46,9 @@ describe("Accounts Balance Local", () => {
     const expectedBalance = 1000n * 100000000n; // 1000 KAS in Sompi
     expect(result.balanceSompi).toBe(expectedBalance);
     expect(result.network).toBe("simulated");
+    // G7 g: the simulator holds no covenant coins, so all of it is spendable
+    expect(result.spendableSompi).toBe(expectedBalance);
+    expect(result.covenantBoundSompi).toBe(0n);
+    expect(result.covenantUtxoCount).toBe(0);
   });
 });

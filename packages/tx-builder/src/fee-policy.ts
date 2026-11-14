@@ -42,6 +42,15 @@ export function generatorFeeRate(feeRate: bigint | undefined): number | undefine
   return Number(feeRate);
 }
 
+/**
+ * G3 · the same rule for builders that price their own transaction (the v0 SilverScript and covenant builders): a rate
+ * above the relay minimum buys priority, priced by the caller on the SDK's max(compute, storage) mass; a rate at or below
+ * it (or none) is "pay the node's floor" (undefined), never the floor rate multiplied by the storage mass.
+ */
+export function priorityFeeRate(feeRate: bigint | undefined): bigint | undefined {
+  return feeRate !== undefined && feeRate > MINIMUM_RELAY_FEE_RATE_SOMPI_PER_GRAM ? feeRate : undefined;
+}
+
 /** The bound on a node-supplied fee rate: the caller's, else the workspace's `networks[<net>].maxFeeRate`, else the default. */
 export function resolveMaxFeeRate(input: { override?: unknown; config?: unknown; network?: string | undefined } = {}): bigint {
   if (input.override !== undefined && input.override !== null) return parseFeeRate(input.override, "maxFeeRate");

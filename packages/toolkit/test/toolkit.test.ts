@@ -50,16 +50,20 @@ describe('@hardkas/toolkit V1', () => {
             expect(inv.uri).toContain('amount=150');
             expect(inv.status).toBe('pending');
 
-            const status = await pt.check(inv.id);
-            expect(status).toBe('pending');
+            // G6 (notes cross-check): without a node, check() used to return the stored status ('pending', then 'paid'
+            // after simulatePay) as if it had checked. It now refuses and says what is stored.
+            await expect(pt.check(inv.id)).rejects.toMatchObject({ code: 'PAYMENT_CHECK_NO_NODE', metadata: { checked: false, storedStatus: 'pending' } });
 
             // Simulate payment
             await pt.simulatePay(inv.id);
-            const paidStatus = await pt.check(inv.id);
-            expect(paidStatus).toBe('paid');
+            await expect(pt.check(inv.id)).rejects.toMatchObject({ code: 'PAYMENT_CHECK_NO_NODE', metadata: { storedStatus: 'paid', settlement: 'simulated' } });
+            expect((await pt.getInvoice(inv.id))?.status).toBe('paid');
 
+            // G6: the receipt of a simulated payment is synthetic (it was schema 'paymentReceipt.v1', like a real one)
             const receipt = await pt.receipt(inv.id);
-            expect(receipt.schema).toBe('paymentReceipt.v1');
+            expect(receipt.schema).toBe('hardkas.synthetic.paymentReceipt.v1');
+            expect(receipt).toMatchObject({ synthetic: true, settlement: 'simulated', evidence: 'none', status: 'paid', amountSompi: '15000000000' });
+            expect(receipt.txIds).toBeUndefined();
             expect(receipt.merchantId).toBe('store-1');
 
             const list = await pt.listInvoices();
@@ -82,7 +86,9 @@ describe('@hardkas/toolkit V1', () => {
             const pt = PaymentToolkit.openMerchant('store-sompi', { storePath: path.join(tmpDir, 'invoices-sompi.json') });
             const inv = await pt.createInvoice({ amountSompi: 150000000n }); // 1.5 KAS
             
-            expect(inv.amount).toBe(1n); // 150000000 / 100000000 = 1 (truncates)
+            expect(inv.amount).toBe(1n); // the legacy whole-KAS field: 150000000 / 100000000 = 1 (truncates)
+            // G6: the exact amount is kept, in sompi
+            expect(inv.amountSompi).toBe(150000000n);
             expect(inv.uri).toContain('amount=1.5');
         });
     });

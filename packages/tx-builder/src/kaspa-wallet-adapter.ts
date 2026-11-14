@@ -182,6 +182,33 @@ export interface CreateUtxoContextInput {
    * nothing is read, and the failure goes to `onError` listeners.
    */
   readonly beforeResnapshot?: () => Promise<void>;
+  /**
+   * The longest one call of a post-reconnect re-snapshot (`clear()`, `trackAddresses()`) may take, and the longest
+   * `stop()` waits for a re-snapshot in flight, in ms (default 120 000). A node that keeps the socket open and stops
+   * answering used to hold the re-snapshot for ever: every later reconnect was skipped and `stop()` never returned.
+   * Past the bound the pass fails with `KASPA_WALLET_ADAPTER_RESNAPSHOT_TIMEOUT` (to `onError`) and the next reconnect
+   * re-snapshots again; `stop()` goes on and stops the processor. The abandoned call is not cancelled.
+   */
+  readonly resnapshotTimeoutMs?: number;
+}
+
+const DEFAULT_RESNAPSHOT_TIMEOUT_MS = 120_000;
+
+/** `promise`, or a KASPA_WALLET_ADAPTER_RESNAPSHOT_TIMEOUT error once `ms` have passed (the timer never outlives it). */
+function boundedResnapshotCall<T>(promise: Promise<T>, ms: number, operation: string): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => {
+      const err = new Error(
+        `KASPA_WALLET_ADAPTER_RESNAPSHOT_TIMEOUT: ${operation} did not finish within ${ms} ms after a reconnect; ` +
+          "the re-snapshot was abandoned and the next reconnect tries again"
+      );
+      (err as any).code = "KASPA_WALLET_ADAPTER_RESNAPSHOT_TIMEOUT";
+      (err as any).operation = operation;
+      reject(err);
+    }, ms);
+  });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
 }
 
 /**
@@ -205,6 +232,10 @@ export async function createUtxoContext(input: CreateUtxoContextInput): Promise<
     await context.trackAddresses([...tracked.values()]);
   }
 
+  const limitMs =
+    typeof input.resnapshotTimeoutMs === "number" && Number.isFinite(input.resnapshotTimeoutMs) && input.resnapshotTimeoutMs > 0
+      ? input.resnapshotTimeoutMs
+      : DEFAULT_RESNAPSHOT_TIMEOUT_MS;
   const resyncListeners = new Set<() => void>();
   const errorListeners = new Set<(error: unknown) => void>();
   const notify = <A extends unknown[]>(listeners: Set<(...a: A) => void>, ...args: A) => {
@@ -229,9 +260,11 @@ export async function createUtxoContext(input: CreateUtxoContextInput): Promise<
           // A4: the caller's identity check of the new connection, before anything is cleared or read from it
           if (input.beforeResnapshot) await input.beforeResnapshot();
           if (closed) return;
-          await context.clear();
+          await boundedResnapshotCall(context.clear(), limitMs, "clear()");
           if (closed) return;
-          if (tracked.size > 0) await context.trackAddresses([...tracked.values()]);
+          if (tracked.size > 0) {
+            await boundedResnapshotCall(context.trackAddresses([...tracked.values()]), limitMs, "trackAddresses()");
+          }
           if (closed) return;
           completed = true;
         }
@@ -284,10 +317,15 @@ export async function createUtxoContext(input: CreateUtxoContextInput): Promise<
       closed = true;
       resyncListeners.clear();
       errorListeners.clear();
-      // A re-snapshot in flight finishes its current await and then stops (it checks `closed`).
-      if (running) await running;
+      // A re-snapshot in flight finishes its current await and then stops (it checks `closed`); a hung one is
+      // waited for at most `resnapshotTimeoutMs`, then the processor is stopped anyway.
+      if (running) {
+        try {
+          await boundedResnapshotCall(running, limitMs, "stop() waiting for the re-snapshot in flight");
+        } catch {}
+      }
       try {
-        await context.clear();
+        await boundedResnapshotCall(context.clear(), limitMs, "clear()");
       } catch {}
       await processor.stop();
     }

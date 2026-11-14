@@ -29,6 +29,11 @@ export interface Invoice {
     expiresAt: number;
     paidAt?: number;
     txId?: string;
+    /**
+     * What the payment check found at the address (plain KAS), in sompi as a decimal string (it serializes as JSON as
+     * it is): an overpayment shows here, not in amountSompi.
+     */
+    amountFoundSompi?: string;
     confirmations: number;
     requiredConfirmations: number;
 }
@@ -203,10 +208,11 @@ export class CheckoutService {
         });
 
         if (result.status === "confirmed") {
-            return await this.markPaid(invoice.id, result.txId!, result.confirmations);
+            return await this.markPaid(invoice.id, result.txId!, result.confirmations, result.amountFoundSompi);
         } else if (result.status === "mempool") {
             (this.invoices.get(invoiceId) as any).status = "mempool";
             (this.invoices.get(invoiceId) as any).confirmations = result.confirmations;
+            (this.invoices.get(invoiceId) as any).amountFoundSompi = result.amountFoundSompi.toString();
         }
 
         return this.invoices.get(invoiceId)!;
@@ -237,10 +243,14 @@ export class CheckoutService {
     /**
      * Internal: Mark an invoice as paid.
      * Would be called by the PaymentTracker when it detects enough confirmations.
+     * `amountFoundSompi` is what the payment check found (`result.amountFoundSompi`): the receipt records it as found.
      */
-    public async markPaid(invoiceId: string, txId: string, confirmations: number): Promise<Invoice> {
+    public async markPaid(invoiceId: string, txId: string, confirmations: number, amountFoundSompi?: bigint): Promise<Invoice> {
         const invoice = this.invoices.get(invoiceId);
         if (!invoice) throw new Error("Invoice not found");
+        if (typeof amountFoundSompi !== "bigint") {
+            throw new Error("CheckoutService.markPaid: pass the amount the payment check found (amountFoundSompi); a receipt records what was found, never the invoice amount.");
+        }
 
         // FRICTION #05 RESOLVED: We emit a PaymentReceipt evidence artifact
         const hkArtifacts = await import('@hardkas/artifacts');
@@ -254,7 +264,8 @@ export class CheckoutService {
             },
             paymentCheckResult: {
                 status: "confirmed",
-                amountFoundSompi: invoice.amountSompi,
+                // G6 (notes cross-check): it used to record invoice.amountSompi here, so an overpayment was never seen
+                amountFoundSompi,
                 txId,
                 confirmations
             },
@@ -269,6 +280,7 @@ export class CheckoutService {
         (invoice as any).paidAt = Date.now();
         (invoice as any).txId = txId;
         (invoice as any).confirmations = confirmations;
+        (invoice as any).amountFoundSompi = amountFoundSompi.toString();
 
         // In a fully integrated app we would use hk.artifacts.write(receipt)
         // Here we write it manually to the workspace artifacts directory.

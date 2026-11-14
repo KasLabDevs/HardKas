@@ -10,22 +10,62 @@ import {
   type SilAbiArtifact,
   type SilArtifactValue
 } from "@hardkas/core";
-import { calculateUpstreamStorageMass, measureBuiltTransactionMass } from "@hardkas/tx-builder";
+import {
+  calculateUpstreamStorageMass,
+  measureBuiltTransactionMass,
+  measureBuiltTransactionNodeMass,
+  priorityFeeRate,
+  type BuiltTransactionNodeMass
+} from "@hardkas/tx-builder";
 import { parseWasmTxToRpc } from "./internal/wasm-rpc-serialization.js";
+import { addressMatchesNetwork } from "./real-accounts.js";
 
 /**
  * Spending a SilverScript P2SH output.
  *
  * Every consensus-relevant piece comes from upstream: the lock and the unlock
  * layout from the SDK (see @hardkas/core silverscript-abi), the signature from
- * the SDK's `createInputSignature`, mass, fee and the storage-mass commitment
- * from the SDK's mass calculator. HardKAS only assembles them in order.
+ * the SDK's `createInputSignature`, the storage-mass commitment from the SDK's
+ * mass calculator. HardKAS only assembles them in order.
+ *
+ * G3 · the minimum fee and the mass limits are the node's (tx-builder
+ * measureBuiltTransactionNodeMass): 100 sompi per gram of compute mass, storage
+ * mass within the block limit of 500,000 g. The SDK's calculateTransactionFee
+ * charged the storage mass too, so a spend into small outputs was refused (or
+ * priced far above the node's minimum) once the contract was funded.
  */
 
-function spendError(code: string, message: string): Error {
+function spendError(code: string, message: string, extra: Record<string, string> = {}): Error {
   const err = new Error(`${code}: ${message}`);
   (err as any).code = code;
+  Object.assign(err, extra);
   return err;
+}
+
+/**
+ * G7-e · a recipient address must be of the spend's network (its prefix, the account store's rule
+ * `addressMatchesNetwork`), not only a Kaspa address: the value would go to the same key's script on this network while
+ * the record and `--wait` name an address of another one.
+ */
+function assertRecipientNetwork(address: string, networkId: string, where: string): void {
+  if (!addressMatchesNetwork(address, networkId)) {
+    throw spendError(
+      "NETWORK_ADDRESS_MISMATCH",
+      `${where} '${address}' is not an address of network '${networkId}' (its prefix is another network's). Nothing was signed.`
+    );
+  }
+}
+
+/** The SilverScript input and the outputs as KIP-9 storage cells (v0: no covenant ids). */
+function v0Cells(inputAmount: bigint, inputScript: string, outputs: readonly { amountSompi: bigint; script: string }[]) {
+  return {
+    inputs: [{ amountSompi: inputAmount, scriptBytes: inputScript.length / 2, covenantId: false }],
+    outputs: outputs.map((o) => ({ amountSompi: o.amountSompi, scriptBytes: o.script.length / 2, covenantId: false }))
+  };
+}
+
+function refuseUnrelayable(node: BuiltTransactionNodeMass): void {
+  if (!node.relayable) throw spendError("TX_MASS_ABOVE_STANDARD_LIMIT", `${node.exceededText}: the node would not relay this spend. Nothing was signed.`);
 }
 
 /** A contract output as the node reports it. */
@@ -58,7 +98,10 @@ export interface SilverSweepRequest {
   readonly sequence?: bigint | undefined;
   /** Declared signature operations of the input (script-execution budget). Default 1. */
   readonly sigOpCount?: number | undefined;
-  /** Fee rate above the node minimum, sompi per gram. Default: the minimum. */
+  /**
+   * Fee rate above the node minimum, sompi per gram, priced on the SDK's max(compute, storage) mass (priority). At or
+   * below the minimum (100), or absent: the node's floor.
+   */
   readonly feeRateSompiPerGram?: bigint | undefined;
 }
 
@@ -85,8 +128,10 @@ const PLACEHOLDER_SIG: SilArtifactValue = { kind: "bytes", value: new Uint8Array
  * entirely to `to`, through the named entry.
  *
  * Fails closed: the output must be locked to this contract's bytecode, the
- * fee must meet the SDK's minimum for the final transaction, and the signed
- * unlock must have the size the fee was computed for.
+ * recipient must be an address of `networkId` (NETWORK_ADDRESS_MISMATCH), the
+ * fee must meet the node's minimum for the final transaction and its masses the
+ * node's limits (G3), and the signed unlock must have the size the fee was
+ * computed for.
  */
 export function buildSilverSweep(request: SilverSweepRequest): SilverSpendResult {
   // CA-TX-05 / HK-12: this constructor signs; the product's mainnet policy decides first (MAINNET_SIGNING_DISABLED)
@@ -104,6 +149,8 @@ export function buildSilverSweep(request: SilverSweepRequest): SilverSpendResult
     );
   }
   if (!k.Address.validate(request.to)) throw spendError("SILVER_SPEND_INVALID_RECIPIENT", `'${request.to}' is not a Kaspa address`);
+  assertRecipientNetwork(request.to, request.networkId, "recipient");
+  const toScript = String(k.payToAddressScript(new k.Address(request.to)).script);
 
   const sequence = request.sequence ?? 0n;
   const sigOpCount = request.sigOpCount ?? 1;
@@ -148,24 +195,28 @@ export function buildSilverSweep(request: SilverSweepRequest): SilverSpendResult
 
   // Price the final shape: signatures are fixed-size, so placeholders give the exact unlock length.
   const placeholderUnlock = silverUnlockScript(bytecode, entryArgs(() => PLACEHOLDER_SIG));
-  // Storage mass depends on the output amount, which depends on the fee: raise
-  // the fee until it covers the mass of the transaction it leaves behind.
+  // G3: the fee is the node's floor (100 sompi/g of the compute mass, which does not depend on the amounts), or a
+  // priority rate above the minimum priced on the SDK's max(compute, storage) mass; the storage mass of the output the
+  // fee leaves must stay within the node's limit. A priority fee depends on the output amount: raise it until it covers
+  // the transaction it leaves behind.
+  const priority = priorityFeeRate(request.feeRateSompiPerGram);
   let fee = 0n;
   let priced: ReturnType<typeof measureBuiltTransactionMass> | undefined;
+  let node: BuiltTransactionNodeMass | undefined;
   let converged = false;
   for (let round = 0; round < 8 && !converged; round++) {
     const amountOut = amountIn - fee;
     if (amountOut <= 0n) throw spendError("SILVER_SPEND_INSUFFICIENT_VALUE", `output of ${amountIn} sompi cannot pay a fee of ${fee}`);
-    priced = measureBuiltTransactionMass(makeTx(amountOut, placeholderUnlock), request.networkId);
-    if (!priced.standard) {
-      throw spendError("TX_MASS_ABOVE_STANDARD_LIMIT", `mass ${priced.mass} exceeds the maximum standard mass ${priced.maximumStandardMass}`);
-    }
-    const byRate = request.feeRateSompiPerGram !== undefined ? priced.mass * request.feeRateSompiPerGram : 0n;
-    const required = priced.minimumFeeSompi > byRate ? priced.minimumFeeSompi : byRate;
+    const tx = makeTx(amountOut, placeholderUnlock);
+    node = measureBuiltTransactionNodeMass(tx, v0Cells(amountIn, lock.script, [{ amountSompi: amountOut, script: toScript }]));
+    refuseUnrelayable(node);
+    priced = measureBuiltTransactionMass(tx, request.networkId);
+    const byRate = priority !== undefined ? priced.mass * priority : 0n;
+    const required = node.minimumFeeSompi > byRate ? node.minimumFeeSompi : byRate;
     if (required <= fee) converged = true;
     else fee = required;
   }
-  if (!priced || !converged) throw spendError("SILVER_SPEND_FEE_UNRESOLVED", "the fee did not converge");
+  if (!priced || !node || !converged) throw spendError("SILVER_SPEND_FEE_UNRESOLVED", "the fee did not converge");
   const amountOut = amountIn - fee;
 
   // Sign the final transaction. The sighash does not cover signature scripts,
@@ -194,7 +245,11 @@ export function buildSilverSweep(request: SilverSweepRequest): SilverSpendResult
     mass: priced.mass,
     storageMass: BigInt(signed.storageMass),
     signatureScriptHex: unlock,
-    assumptions: [...priced.assumptions, `sigOpCount ${sigOpCount}`]
+    assumptions: [
+      ...priced.assumptions,
+      `minimum fee: the node's relay floor, 100 sompi/g × ${node.feeMass} g (compute mass); storage mass ${node.storageMass} g within the node's ${node.limits.storage} g`,
+      `sigOpCount ${sigOpCount}`
+    ]
   };
 }
 
@@ -293,8 +348,11 @@ function draftUnlock(artifact: SilAbiArtifact, contractName: string, entry: stri
 
 /**
  * Prepares a spend of one SilverScript output into fixed outputs. Fails
- * closed if the output is not locked to the contract or if what the outputs
- * leave as fee is below the SDK minimum for the final (signed) transaction.
+ * closed if the output is not locked to the contract, if an output address is
+ * not of `networkId`, if a mass is above the node's limit, or if what the
+ * outputs leave as fee is below the node's minimum relay fee for the final
+ * (signed) transaction (FEE_BELOW_NETWORK_MINIMUM, which carries `feeSompi` and
+ * `minimumFeeSompi` as decimal strings).
  */
 export function prepareSilverSpend(request: SilverSpendDraftRequest): SilverSpendDraft {
   const k = loadManagedKaspaWasmSync();
@@ -309,6 +367,7 @@ export function prepareSilverSpend(request: SilverSpendDraftRequest): SilverSpen
     let spk = o.scriptPublicKey;
     if (!spk && o.address) {
       if (!k.Address.validate(o.address)) throw spendError("SILVER_SPEND_INVALID_RECIPIENT", `output ${i}: '${o.address}' is not a Kaspa address`);
+      assertRecipientNetwork(o.address, request.networkId, `output ${i}:`);
       const s = k.payToAddressScript(new k.Address(o.address));
       spk = { version: Number(s.version), script: String(s.script) };
     }
@@ -335,11 +394,22 @@ export function prepareSilverSpend(request: SilverSpendDraftRequest): SilverSpen
     outputs
   };
   const placeholder = draftUnlock(request.artifact, contractName, request.entry, request.args, () => PLACEHOLDER_SIG);
-  const priced = measureBuiltTransactionMass(draftTx(k, base, placeholder, request.networkId), request.networkId);
-  if (!priced.standard) throw spendError("TX_MASS_ABOVE_STANDARD_LIMIT", `mass ${priced.mass} exceeds the maximum standard mass ${priced.maximumStandardMass}`);
+  const placed = draftTx(k, base, placeholder, request.networkId);
+  // G3: the node's floor and limits (the SDK's figure, kept as the draft's `mass`, charged the storage mass)
+  const node = measureBuiltTransactionNodeMass(
+    placed,
+    v0Cells(u.amountSompi, lock.script, outputs.map((o) => ({ amountSompi: BigInt(o.valueSompi), script: o.scriptPublicKey.script })))
+  );
+  refuseUnrelayable(node);
+  const priced = measureBuiltTransactionMass(placed, request.networkId);
   const fee = u.amountSompi - totalOut;
-  if (fee < priced.minimumFeeSompi) {
-    throw spendError("FEE_BELOW_NETWORK_MINIMUM", `the outputs leave ${fee} sompi of fee; the SDK minimum for this spend is ${priced.minimumFeeSompi}`);
+  if (fee < node.minimumFeeSompi) {
+    throw spendError(
+      "FEE_BELOW_NETWORK_MINIMUM",
+      `the outputs leave ${fee} sompi of fee; the node's minimum relay fee for this spend is ${node.minimumFeeSompi} sompi ` +
+        `(100 sompi/g × ${node.feeMass} g of compute mass; the storage mass, ${node.storageMass} g, has no fee floor)`,
+      { feeSompi: fee.toString(), minimumFeeSompi: node.minimumFeeSompi.toString() }
+    );
   }
   const unsigned = draftTx(k, base, "", request.networkId);
   return {

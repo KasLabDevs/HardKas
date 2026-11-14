@@ -99,6 +99,8 @@ class FakeNode {
   mempool = new Set<string>();
   /** Transactions this node refuses as a double spend (another one spent their inputs). */
   doubleSpent = new Set<string>();
+  /** Transactions this node refuses because a redeem script's time-lock check fails against the input's sequence. */
+  scriptLockRefused = new Set<string>();
   /** The next submitTransaction: the node receives it, but the answer is lost. */
   loseNextAnswer = false;
   /** The next submitTransaction never reaches the node (the client says so). */
@@ -132,6 +134,8 @@ class FakeNode {
     if (this.mempool.has(txId)) throw new Error(`Rejected transaction ${txId}: transaction ${txId} is already in the mempool`);
     if (this.accepted(txId)) throw new Error(`Rejected transaction ${txId}: transaction ${txId} is an orphan where orphan is disallowed`);
     if (this.doubleSpent.has(txId)) throw new Error(`Rejected transaction ${txId}: output ${"c".repeat(64)}:0 already spent by transaction ${"d".repeat(64)} in the memory pool`);
+    // the text of fixtures/toccata-v2/silver/p2sh-transfer-with-timeout/evidence.json (rusty-kaspad 2.1.0)
+    if (this.scriptLockRefused.has(txId)) throw new Error(`Rejected transaction ${txId}: Unsatisfied lock time: locktime requirement not satisfied -- 500 > 0`);
     this.mempool.add(txId);
     if (this.loseNextAnswer) {
       this.loseNextAnswer = false;
@@ -313,6 +317,21 @@ describe("TX-SEND-IDEMPOTENT-1 · sdk.tx.send never broadcasts a transaction thi
     expect(node.submits).toHaveLength(1);
     expect(submissions()).toHaveLength(1);
     expect((await sdk.tx.status(official.txId)).status).toBe("REJECTED_BY_NODE");
+  });
+
+  it("T6b · a script time-lock refusal (SCRIPT_LOCK_UNSATISFIED): the re-send names the sequence, not waiting; nothing sent again", async () => {
+    const sdk = await openSdk();
+    node.scriptLockRefused.add(official.txId);
+    const first = await sdk.tx.send(signed, LOOPBACK);
+    expect(submitOutcomeOf((first.submission as any).submitResult)).toBe("rejected");
+    const again = await outcome(sdk.tx.send(signed, LOOPBACK));
+    expect(again.error?.code).toBe("TX_ALREADY_SUBMITTED");
+    expect(again.error?.message).toMatch(/SCRIPT_LOCK_UNSATISFIED/);
+    expect(again.error?.message).toMatch(/Waiting never helps/);
+    expect(again.error?.message).toMatch(/--sequence/);
+    expect(again.error?.message).not.toMatch(/time lock was not met yet/);
+    expect((again.error as any)?.metadata?.remedy).toBe("replan-new-txid");
+    expect(node.submits).toHaveLength(1);
   });
 
   it("T7 · two sends of the same signed artifact at once: one broadcast, one submission; the other returns it", async () => {

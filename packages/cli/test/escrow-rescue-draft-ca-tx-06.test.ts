@@ -64,7 +64,10 @@ describe("CA-TX-06 · rescue-v1 shows, signs and sends the same draft", () => {
     expect(codeOf(() => checkRescuePackage(pkg({ network: "testnet-10" })))).toBe("RESCUE_DRAFT_MISMATCH");
   });
 
+  // G3: CHANGED LIMIT. Old: 500,000 sompi (a 600,000 fee was refused). New: 2,500,000 sompi, room above the node's
+  // minimum relay fee of a rescue (≈ 300,000 sompi), still a fixed bound the file cannot raise.
   it("a draft paying more than the rescue fee limit is refused at sign/broadcast too", () => {
-    expect(codeOf(() => checkRescuePackage(pkg({ fee: "600000" })))).toBe("ESCROW_FEE_EXCESSIVE_REFUSED");
+    expect(codeOf(() => checkRescuePackage(pkg({ fee: "2500001" })))).toBe("ESCROW_FEE_EXCESSIVE_REFUSED");
+    expect(checkRescuePackage(pkg({ fee: "2500000" })).feeSompi).toBe(2_500_000n);
   });
 });

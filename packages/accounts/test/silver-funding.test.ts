@@ -26,6 +26,36 @@ describe("buildScriptFunding", () => {
     expect("mass" in rpc).toBe(false);
   });
 
+  // G3: the fee is the node's relay floor for 1 P2PK input, the P2SH output and the change (100 sompi/g × compute mass:
+  // 2,046 g here; the P2SH script is one byte longer than a P2PK one), not the SDK's storage-inclusive figure
+  const FLOOR_1_IN_2_OUT = 204_700n;
+
+  it("G3 pays the node's floor; a small script output whose storage mass the SDK called non-standard (> 100,000 g) is funded", () => {
+    const big = buildScriptFunding({ utxos: [coin(0, 600_000_000n)], privateKey: KEY, lockingScript: lock, valueSompi: 100_000_000n, networkId: "simnet" });
+    expect(big.feeSompi).toBe(FLOOR_1_IN_2_OUT);
+    // 0.025 KAS: storage mass ≈ 1e12 / 2.5e6 = 400,000 g (it used to be TX_MASS_ABOVE_STANDARD_LIMIT)
+    const small = buildScriptFunding({ utxos: [coin(0, 600_000_000n)], privateKey: KEY, lockingScript: lock, valueSompi: 2_500_000n, networkId: "simnet" });
+    expect(small.feeSompi).toBe(FLOOR_1_IN_2_OUT);
+    expect(small.changeSompi).toBe(600_000_000n - 2_500_000n - FLOOR_1_IN_2_OUT);
+  });
+
+  it("G7-l a change too small for a standard output is named (the payment planner's CHANGE_BELOW_STANDARD_OUTPUT), so is a script output too small", () => {
+    // value + floor + 1,000,000 sompi of change: storage mass ≈ 1e12 / 1e6 = 1,000,000 g, above the node's 500,000 g
+    expect(() =>
+      buildScriptFunding({ utxos: [coin(0, 100_000_000n + FLOOR_1_IN_2_OUT + 1_000_000n)], privateKey: KEY, lockingScript: lock, valueSompi: 100_000_000n, networkId: "simnet" })
+    ).toThrow(expect.objectContaining({ code: "CHANGE_BELOW_STANDARD_OUTPUT", message: expect.stringMatching(/the change this funding leaves \(1000000 sompi\) is too small/) }));
+    expect(() => buildScriptFunding({ utxos: [coin(0, 600_000_000n)], privateKey: KEY, lockingScript: lock, valueSompi: 1_000_000n, networkId: "simnet" })).toThrow(
+      expect.objectContaining({ code: "OUTPUT_BELOW_STANDARD_AMOUNT" })
+    );
+  });
+
+  it("G7-l a remainder that cannot pay the fee is not judged as change: the next output is taken", () => {
+    // the first coin covers the value with 1,000 sompi to spare (under the fee): the second one is added, the change is large
+    const r = buildScriptFunding({ utxos: [coin(0, 100_001_000n), coin(1, 500_000_000n)], privateKey: KEY, lockingScript: lock, valueSompi: 100_000_000n, networkId: "simnet" });
+    expect(r.spent).toHaveLength(2);
+    expect(r.changeSompi + r.feeSompi + 100_000_000n).toBe(600_001_000n);
+  });
+
   it("refuses what it cannot fund or does not own", () => {
     expect(() => buildScriptFunding({ utxos: [coin(0, 100n)], privateKey: KEY, lockingScript: lock, valueSompi: 1_000n, networkId: "simnet" })).toThrow(
       expect.objectContaining({ code: "FUNDING_INSUFFICIENT" })

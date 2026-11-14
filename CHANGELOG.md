@@ -112,6 +112,48 @@ An internal review of the candidate (five areas: security, transaction lifecycle
 - `@hono/node-server` raised to `^1.19.19` (GHSA-jpvv-r467-5p4w). The other advisory on 1.x (GHSA-rmxm-3fg6-px4f, `serveStatic`) is fixed only in 2.x; HardKAS does not use `serveStatic`.
 - `zod` stays on 3.x in this candidate. GHSA-mrhx-c7xc-m3w5 (memory exhaustion validating oversized collections) is fixed only in zod ≥ 4.6.6. In HardKAS it is reachable only by validating a hostile local file, which can stall that one process. Moving to zod 4 changes the module that decides which evidence is accepted, so it is planned for the next candidate with a full re-validation.
 
+### Node-rule review (2026-11-14)
+
+HardKAS was compared with public field notes on rusty-kaspa 2.1.0, Toccata, SilverScript, PSKT and wallets. Every node rule changed here was first checked against an isolated rusty-kaspad 2.1.0 node on simnet, both ways (accepted at the limit, refused one step past it). The rules: the minimum relay fee is 100 sompi per gram of compute mass (or normalized transient mass, when larger), never of storage mass; storage mass is limited to 500,000 g, not 100,000; this holds for transaction versions 0 and 1.
+
+#### Fixed
+- **`silver deploy` and `silver covenant genesis` refuse a contract above 15 signature operations** (`SILVER_SIG_OPS_ABOVE_STANDARD`, exit 2), before any key is read or anything is funded. A node's mempool counts them over the whole redeem script, helpers inlined, and refuses every spend of such a P2SH output, for transaction versions 0 and 1 (checked on the node at 15, 16 and 17). Before, the contract was funded and its first spend refused.
+- **ZK output-bound locks with a small bound output** (`zk toccata build-scripts`, `buildR0Groth16Scripts`): a lock whose funded spend would have a storage mass above 500,000 g (a payout or change of about 0.01 KAS) was reported as ready to fund, and could then never be spent. It is now refused with `ZK_BOUND_OUTPUT_STORAGE_MASS_ABOVE_LIMIT`, naming the smallest amounts that fit, and nothing is returned to fund. `verifyR0Groth16Scripts` refuses such a lock too. A warning, `ZK_BOUND_LOCK_OVERFUNDING_UNSPENDABLE`, says when a UTXO larger than asked would pass the limit.
+- **ZK spends price their fee as the node does** (`buildR0Groth16Transaction`): the floor no longer counts storage mass, and the storage limit is 500,000 g (`ZK_TX_EXCEEDS_BLOCK_STORAGE_MASS_LIMIT`). Spends of 0.02–0.17 KAS bound outputs, which the node accepts, are no longer refused by HardKAS's own builder. New result fields: `nodeComputeMass`, `minimumRelayFeeSompi`, `storageMass`, `spendStorageMass`, `minimumBoundAmountsSompi`.
+- **SilverScript v0 spends and fundings, and covenant genesis and transitions,** are priced at the node's minimum relay fee and bounded by its limits. Small contract outputs were refused, or charged the SDK's storage-inclusive figure (up to 60 times the minimum). New in `@hardkas/tx-builder`: `measureBuiltTransactionNodeMass`, `priorityFeeRate`.
+- **Dev-server escrow:** an `EscrowFull` below about 1.5 KAS can now be released through its 50/50 mutual release. A fee budget below the node's minimum for one of the escrow's branches is refused before funding (`ESCROW_FEE_BUDGET_BELOW_MINIMUM`), instead of leaving a funded escrow that cannot be released. `ESCROW_FEE_BELOW_MINIMUM` names the node's minimum, not a fixed 10,000 sompi.
+- **`silver spend --to`, spend drafts and `escrow rescue-v1 prepare --to` refuse an address of another network** (`NETWORK_ADDRESS_MISMATCH`).
+- **A SilverScript funding whose change is too small** says so (`CHANGE_BELOW_STANDARD_OUTPUT`, or `OUTPUT_BELOW_STANDARD_AMOUNT`) instead of `TX_MASS_ABOVE_STANDARD_LIMIT`.
+- **`@hardkas/toolkit` `PaymentToolkit`:** invoice amounts are kept exactly in sompi (`amountSompi`; 0.5 KAS was stored as 0). `check()` asks the node given in the new `options.rpc` and counts plain KAS only, one coin for one invoice; without a node it throws `PAYMENT_CHECK_NO_NODE` instead of returning the stored flag.
+- **`@hardkas/query` `checkPaymentStatus`** no longer counts covenant-bound coins, lists every paying transaction (`txIds`, `outpoints`), and derives depth from `blockDaaScore` and the caller's `virtualDaaScore` (`depthKnown`, `confirmationSource`). A paid invoice no longer stays "mempool" for ever behind a node.
+- **The payment-service and merchant-checkout templates** record the amount found (an overpayment included), not the invoice amount.
+- **`WalletToolkit.watch()` bounds its node calls** (`WALLET_WATCH_NODE_TIMEOUT`), and `createUtxoContext` bounds each re-snapshot call after a reconnect (`resnapshotTimeoutMs`, `KASPA_WALLET_ADAPTER_RESNAPSHOT_TIMEOUT`). A node that kept the socket open and stopped answering blocked every later reconnect, and `unwatch()` never returned.
+- **`WalletToolkit.history()`** on a wallet that reads through a node only throws `WALLET_HISTORY_UNSUPPORTED` instead of an empty history. With a query provider it returns the provider's items (it returned the provider's whole result object), and a failing provider throws `WALLET_QUERY_PROVIDER_UNAVAILABLE`.
+- `escrow rescue-v1 prepare` and `accounts balance` show KAS exactly (they rounded above 2⁵³ sompi).
+- **A re-send refused over a script time-lock failure** (`TX_ALREADY_SUBMITTED` over `SCRIPT_LOCK_UNSATISFIED`) says to build the spend again with the sequence the lock needs; it no longer suggests waiting.
+
+#### Changed
+- **`silver audit`:** a path guarded only by a hash or a time lock, with no signature, is HIGH (MEDIUM when its outputs are pinned); it was LOW, and a time lock was not detected at all. A revealed secret can be copied from the mempool by anyone. New rules: `COV-INPUT-001` (no single-input rule), `COV-SIGOPS-001` (more than 15 signature operations), `COV-LOCKTIME-001` (lock time read without CheckLockTimeVerify).
+- **Node rejection classes:** `SCRIPT_LOCK_UNSATISFIED` (a script time-lock check failed; the hint names `--sequence`) and `STORAGE_MASS_ABOVE_LIMIT` are new. A script time-lock failure is no longer `LOCK_TIME_REJECTED`.
+- **`escrow rescue-v1`:** the fee limit is 2,500,000 sompi (was 500,000). The default fee of 400,000 is raised to the node's minimum when that is higher, and a `--fee` below the minimum is refused with it (`FEE_BELOW_NETWORK_MINIMUM`).
+- **The receipt of an invoice marked paid by `PaymentToolkit.simulatePay()`** says `schema: "hardkas.synthetic.paymentReceipt.v1"`, `synthetic: true` and `settlement: "simulated"`, with no transaction. It used to look like a real receipt. A receipt of an invoice checked on a node keeps `paymentReceipt.v1` and names its transactions.
+
+#### Security
+- **`pskt sign` / `pskt.signSession` read back what the signer returned** before recording it: an input asked for without the signer's signature (`PSKT_SIGNATURE_MISSING`), a transaction that is not the one sent (`PSKT_SIGNED_TRANSACTION_CHANGED`), or a payload that cannot be read (`PSKT_SIGNED_PAYLOAD_UNREADABLE`) is refused and nothing is recorded. The native extract refuses a transaction with an empty signature script (`PSKT_EXTRACTED_INPUT_UNSIGNED`).
+- **`WalletToolkit.watch()` builds its client through `@hardkas/kaspa-rpc`'s guarded factory,** so closing a connection after a timed-out handshake cannot end the process on Windows.
+
+#### Added
+- `accounts balance` reports `spendableSompi`, `covenantBoundSompi` and `covenantUtxoCount` (JSON), and prints the covenant-bound and spendable amounts when there are covenant-bound coins: they are part of the node's balance, but no payment spends them.
+- `silver deploy` warns when the contract's P2SH address already holds outputs (count and amount), before funding.
+- `silver spend` warns when the redeem script counts more signature operations than the spend declares, and `--sig-op-count` was not given.
+- `countScriptSigOps` (`@hardkas/tx-builder`) and `MAX_STANDARD_P2SH_SIG_OPS` (`@hardkas/core`).
+- Optional signed webhooks in the payment-service template: with `WEBHOOK_SECRET` set, each delivery carries an HMAC-SHA256 signature and a timestamp, and `verifyWebhookSignature` shows the receiving side's check.
+
+#### Documented
+- The escrow contracts are unchanged, because a changed byte changes every escrow address. What their scripts do not enforce (fixed amounts instead of the coin's value, no single-input rule, no recovery branch) and what the tool does about it are in [limitations](docs/status/limitations.md#the-escrow-contracts-what-the-script-itself-does-not-enforce).
+- `silver spend` takes the input's sequence and the declared signature operations from the caller; the SilverScript runner's scenario transaction declares 100 signature operations and is version 1, so a runner pass says nothing about either.
+- `KaspaWrpcClient.onNotification` stops receiving events when its connection is replaced without a new `connect()`. No HardKAS command uses it.
+
 ## [0.13.0-rc.1] - 2026-11-02 - Covenant engine v1, L2 extension, experimental simulator
 
 Published on npm on 2026-11-10 (22 packages): `latest` and `next` both point to `0.13.0-rc.1`. The

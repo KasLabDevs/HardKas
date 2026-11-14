@@ -181,6 +181,52 @@ describe("Surface Cut 3b · R1: createUtxoContext re-snapshots after every recon
     expect(fake.state.calls.slice(callsAtStop).some((c) => c.startsWith("track:"))).toBe(false);
   });
 
+  // G7 h (kaspa-agent-notes cross-check): a node that keeps the socket and stops answering held the re-snapshot for
+  // ever, so every later reconnect returned at `if (running)` and stop() never returned.
+  const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+  it("a re-snapshot call that never answers fails after resnapshotTimeoutMs, and the next reconnect re-snapshots", async () => {
+    fake.state.node.set("a:0", fake.entry("a", 0));
+    const handle: any = await createUtxoContext({ wasmRpc: {}, networkId: "simnet", addresses: [ADDRESS], resnapshotTimeoutMs: 30 });
+    const processor = fake.state.processors[0];
+    fake.state.calls.length = 0;
+    const errors: any[] = [];
+    let resyncs = 0;
+    handle.onError((e: unknown) => errors.push(e));
+    handle.onResync(() => resyncs++);
+    const hung = (fake.state.holdClear = fake.hold()); // clear() never answers
+    reconnect(processor);
+    await flush();
+    expect(handle.resyncing).toBe(true);
+    await sleep(80);
+    expect(errors.map((e) => e.code)).toEqual(["KASPA_WALLET_ADAPTER_RESNAPSHOT_TIMEOUT"]);
+    expect(errors[0].operation).toBe("clear()");
+    expect(handle.resyncing).toBe(false);
+    expect(resyncs).toBe(0);
+    // the node answers again: the next reconnect is not skipped
+    fake.state.holdClear = null;
+    reconnect(processor);
+    await flush();
+    expect(resyncs).toBe(1);
+    expect(fake.state.calls.slice(-2)).toEqual(["clear", `track:${ADDRESS}`]);
+    hung.release();
+    await handle.stop();
+  });
+
+  it("stop() returns while a re-snapshot is hung, and stops the processor", async () => {
+    const handle: any = await createUtxoContext({ wasmRpc: {}, networkId: "simnet", addresses: [ADDRESS], resnapshotTimeoutMs: 30 });
+    const processor = fake.state.processors[0];
+    const hung = (fake.state.holdClear = fake.hold()); // clear() never answers, the one stop() calls included
+    reconnect(processor);
+    await flush();
+    expect(handle.resyncing).toBe(true);
+    const started = Date.now();
+    await handle.stop();
+    expect(Date.now() - started).toBeLessThan(2_000);
+    expect(processor.stopped).toBe(true);
+    hung.release();
+  });
+
   it("a failed re-snapshot is reported to onError, not swallowed", async () => {
     const { handle, processor } = await open();
     const errors: unknown[] = [];

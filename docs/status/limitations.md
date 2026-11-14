@@ -208,10 +208,64 @@ limits:
   is `partial` and says why;
 - the SilverScript runner (`SCRIPT_VM`, cli-debugger) has no official binary to
   pin and is always `UNVERIFIED`. It runs a scenario transaction, not the signed
-  one. The `@hardkas/testing` covenant matchers therefore require
-  `CONSENSUS_SIMNET` by default and answer "NOT VERIFIED" below it;
+  one: that transaction is version 1 and declares 100 signature operations,
+  while a real v0 `silver spend` declares 1 to n. A runner pass therefore says
+  nothing about the declared count or the node's standardness rules. The
+  `@hardkas/testing` covenant matchers require `CONSENSUS_SIMNET` by default and
+  answer "NOT VERIFIED" below it;
+- `silver spend` does not read the redeem script for time locks or signature
+  operations. The input's sequence is `--sequence` (default 0) and the declared
+  signature operations are `--sig-op-count` (default: the number of signature
+  arguments, at least 1). A wrong value is refused by the node and nothing is
+  lost, but a branch that checks a signature argument against several keys, or
+  that uses `checkMsgSig`, may need a higher `--sig-op-count` than the default.
+  Without `--sig-op-count`, `silver spend` warns when the redeem script counts
+  more signature operations than it declares. A contract above 15 signature
+  operations is refused at `silver deploy` and `silver covenant genesis`: a node
+  refuses every spend of it;
 - mainnet broadcast of custom scripts stays blocked like any other L1 mainnet send,
   and no Silver or covenant command contacts a mainnet node (MAINNET TOTAL LOCKDOWN).
+
+### The escrow contracts: what the script itself does not enforce
+
+The three escrow contracts (`EscrowFull`, `EscrowSplit` and the legacy `Escrow`,
+in `packages/escrow/src/escrow-source.ts`) are unchanged in this release:
+changing a byte of a contract changes the address of every escrow built from it,
+so a stricter contract needs a new contract version. What the scripts do not
+enforce, and what HardKAS does about it in the tool:
+
+- **Outputs are fixed amounts, not the coin's value.** Every `EscrowFull` and
+  `EscrowSplit` branch pays exactly the principal (or the two allocations). The
+  fee is whatever the coin holds above that. A coin worth less than the
+  principal cannot be spent by any branch. A coin worth more pays the excess as
+  miner fee. The dev server funds exactly the principal plus the fee budget it
+  states, refuses to fund an escrow whose fee budget is below the node's minimum
+  for one of its branches (`ESCROW_FEE_BUDGET_BELOW_MINIMUM`), and refuses to sign
+  a spend whose fee is above its cap, so it never burns an excess; a coin sent to
+  the escrow address by anything else is not spent by the tool.
+- **No one-input rule.** No branch requires `tx.inputs.length == 1`. Two coins
+  at the same escrow address could be spent together against one output set, and
+  the second would become fee. Only the signers can build that transaction
+  (every branch needs two of the three signatures). HardKAS's builders spend one
+  input, the dev server refuses a second active escrow at the same address, and
+  the per-order nonce of the v2 contracts makes each address unique. The legacy
+  v1 contract has no nonce: the same parties and amounts give the same address.
+- **No timeout or recovery branch.** Each escrow is two of three. If two of the
+  three keys are lost, the coin cannot be spent. `escrow rescue-v1` recovers a
+  legacy v1 escrow through its `mutualRelease` branch, so it needs both the
+  buyer's and the seller's keys.
+- **The legacy v1 `mutualRelease` pins nothing**: buyer and seller together
+  decide the outputs. This is by design.
+- **The release is prepared from the escrow record.** The dev server marks an
+  escrow funded when it broadcasts the funding, and prepares the release from the
+  recorded outpoint without asking the node again. A release of a funding the
+  node has not accepted yet is refused by the node; nothing is lost.
+
+The SilverScript Counter fixture used by the covenant demos
+(`fixtures/toccata-v2/silver/covenant-counter-transition/current.sil`) has no
+signature and no value check: anyone can advance it and choose the successor's
+value. `silver audit` says so (`COV-VALUE-001`). It is a demonstration, not a
+pattern to copy.
 
 ### The simulator is an approximate model
 
@@ -455,6 +509,14 @@ the local simulation boundary.
 reliably, but has no resilient connection pooling and no retry jitter. If the
 node disconnects, restart the script. It is a workspace package: it is not
 published in this release ([Versioning](./versioning.md#not-published)).
+
+`KaspaWrpcClient.onNotification` (`@hardkas/kaspa-rpc`) receives the events of
+the connection opened by `connect()` only. When that connection is replaced
+without a new `connect()`, events stop without an error, and they are not
+checked against the node's identity. No HardKAS command uses them; an
+application that needs live events should call `connect()` again after a
+disconnect, or use the watch in `@hardkas/toolkit`, which re-subscribes and
+reports the gap.
 
 ### Node on Windows: the SDK uses the `ws` WebSocket
 

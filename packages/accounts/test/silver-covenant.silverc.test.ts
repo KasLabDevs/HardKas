@@ -9,7 +9,7 @@ import {
   silverUnlockScript,
   type SilAbiArtifact
 } from "@hardkas/core";
-import { calculateUpstreamStorageMass } from "@hardkas/tx-builder";
+import { calculateUpstreamStorageMass, v1FeeMass, v1MinimumRelayFee, v1NonContextualMasses } from "@hardkas/tx-builder";
 import { buildCovenantGenesis, buildCovenantTransition, type CovenantUtxo } from "../src/silver-covenant.js";
 
 const COUNTER = `pragma silverscript ^0.1.0;
@@ -98,6 +98,31 @@ describe("covenant transactions (v1)", () => {
       expect(() => buildCovenantGenesis({ artifact: current, valueSompi: 1n, funding: [funding({ computeBudget: 70000 })], changeAddress: address, networkId: "simnet" })).toThrow(
         expect.objectContaining({ code: "COVENANT_COMPUTE_BUDGET_INVALID" })
       );
+    });
+
+    // G3: the fee is the node's v1 floor (tx-builder v1-mass, the v1 engine's rule: 100 sompi/g of the compute mass, the
+    // compute budgets and the covenant binding bytes included), not kaspa-wasm calculateTransactionFee (storage-inclusive,
+    // budgets ignored). An explicit fee one sompi under that floor is refused before anything is signed.
+    it("G3 pays the node's v1 floor, and checks an explicit fee against it (compute budgets included)", () => {
+      const floorOf = (budget: number) =>
+        v1MinimumRelayFee(
+          v1FeeMass(
+            v1NonContextualMasses({
+              version: 1,
+              inputs: [{ signatureScriptBytes: 66, computeBudget: budget }],
+              outputs: [{ scriptBytes: 35, covenant: true }, { scriptBytes: 34, covenant: false }],
+              payloadBytes: 0
+            })
+          )
+        );
+      const a = buildCovenantGenesis({ artifact: current, valueSompi: 1_000_000_000n, funding: [funding({ computeBudget: 0 })], changeAddress: address, networkId: "simnet" });
+      expect(a.feeSompi).toBe(floorOf(0));
+      const floor25 = floorOf(25);
+      expect(floor25 - floorOf(0)).toBe(25n * 100n * 100n);
+      expect(buildCovenantGenesis({ artifact: current, valueSompi: 1_000_000_000n, funding: [funding({ computeBudget: 25 })], changeAddress: address, networkId: "simnet", feeSompi: floor25 }).feeSompi).toBe(floor25);
+      expect(() =>
+        buildCovenantGenesis({ artifact: current, valueSompi: 1_000_000_000n, funding: [funding({ computeBudget: 25 })], changeAddress: address, networkId: "simnet", feeSompi: floor25 - 1n })
+      ).toThrow(expect.objectContaining({ code: "FEE_BELOW_NETWORK_MINIMUM", message: expect.stringMatching(/below the node's minimum relay fee/) }));
     });
 
     it("does not price a committed budget it cannot price: the fee must then be explicit", () => {

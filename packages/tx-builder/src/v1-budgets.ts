@@ -138,6 +138,20 @@ function sigOpsOf(ops: readonly ScriptOp[]): number {
   return n;
 }
 
+/**
+ * The signature operations a static scan of `script` finds (sigOpsOf over its opcodes, the from-stack checks included), the
+ * scan the budget estimate below uses, exported unchanged. For a P2SH redeem script it is what the mempool compares with
+ * its standardness limit of 15 per input (rusty-kaspa mining/src/mempool/check_transaction_standard.rs, its post-Toccata
+ * P2SH scanner, which counts the from-stack checks too): every entry and every inlined helper call site of the script,
+ * whatever entry a spend calls. Two differences from that scanner, both toward more: a multisig whose key count is pushed
+ * as data (not OP_1..OP_16) counts 20 here, and a script that stops parsing counts what was read (the node counts 0).
+ */
+export function countScriptSigOps(script: Uint8Array | string): number {
+  if (typeof script === "string" && !/^(?:[0-9a-f]{2})*$/i.test(script)) throw v1PlanError("V1_PLAN_INVALID", "a signature-operation count needs the script in hex");
+  const bytes = typeof script === "string" ? Uint8Array.from(Buffer.from(script, "hex")) : script;
+  return sigOpsOf(parseScript(bytes).ops);
+}
+
 const isP2sh = (script: Uint8Array) => script.length === 35 && script[0] === OP_BLAKE2B && script[1] === 0x20 && script[34] === OP_EQUAL;
 
 export interface V1BudgetEstimate {

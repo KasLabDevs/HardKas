@@ -8,7 +8,7 @@ title: hardkas silver
 
 ### Synopsis (Generated)
 
-**Purpose:** Run static security analysis over a SilverScript (.sil) contract or compile record (heuristic AST and source-text rules COV-AUTH-001..COV-BUDGET-001: findings to review, not a proof of security). Exit codes: 0 report written; 1 HIGH findings with --fail-on-high (SILVER_AUDIT_HIGH_FINDINGS); 2 usage (file not found, not a compile record); 4 tampered compile record
+**Purpose:** Run static security analysis over a SilverScript (.sil) contract or compile record (heuristic AST and source-text rules COV-AUTH-001..COV-BUDGET-001, COV-INPUT-001, COV-SIGOPS-001 and COV-LOCKTIME-001: findings to review, not a proof of security).Exit codes: 0 report written; 1 HIGH findings with --fail-on-high (SILVER_AUDIT_HIGH_FINDINGS); 2 usage (file not found, not a compile record); 4 tampered compile record
 
 #### Arguments
 
