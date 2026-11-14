@@ -9,7 +9,18 @@ export type CovenantStaticRuleId =
   | "COV-STATE-001"
   | "COV-INDEX-001"
   | "COV-TERM-001"
-  | "COV-BUDGET-001";
+  | "COV-BUDGET-001"
+  | "COV-INPUT-001"
+  | "COV-SIGOPS-001"
+  | "COV-LOCKTIME-001";
+
+/**
+ * G2 · the mempool's standardness limit on the signature operations of ONE P2SH input (rusty-kaspa
+ * mining/src/mempool/check_transaction_standard.rs, MAX_STANDARD_P2SH_SIG_OPS), counted statically over the whole redeem
+ * script: every entry, every inlined helper call site, whatever entry the spend runs. Proven on a rusty-kaspad v2.1.0
+ * simnet for v0 and v1 transactions (packages/testing/test/p2sh-sig-op-limit-g2.simnet.test.ts): 16 refused, 15 accepted.
+ */
+export const MAX_STANDARD_P2SH_SIG_OPS = 15;
 
 export type CovenantStaticSeverity = "HIGH" | "MEDIUM" | "LOW" | "INFO";
 export type CovenantStaticConfidence = "HIGH" | "MEDIUM" | "LOW";
@@ -31,7 +42,10 @@ export interface CovenantStaticFinding {
     | "SUCCESSOR_STATE"
     | "UNSAFE_INDEXING"
     | "TERMINATION"
-    | "COMPUTE_BUDGET";
+    | "COMPUTE_BUDGET"
+    | "INPUT_COUNT"
+    | "STANDARDNESS"
+    | "TIME_LOCK";
   readonly severity: CovenantStaticSeverity;
   readonly confidence: CovenantStaticConfidence;
   readonly contractName: string;
@@ -202,6 +216,85 @@ function collectIdentifiers(node: unknown): Set<string> {
   return out;
 }
 
+const callName = (n: AstNode): string | undefined =>
+  (n.kind === "call" || n.kind === "function_call") && typeof n.data?.name === "string" ? String(n.data.name) : undefined;
+
+const HASH_BUILTINS = new Set(["sha256", "blake2b", "blake3"]);
+// silverc v1.0.0: checkSig → OpCheckSig, checkMsgSig → OpCheckSigFromStack (the post-Toccata P2SH scan counts both);
+// checkDataSig / checkMultiSig are not silverc v1.0.0 builtins, counted in case a later compiler adds them
+const SIG_BUILTINS = new Set(["checkSig", "checkMsgSig", "checkDataSig"]);
+const MULTISIG_BUILTINS = new Set(["checkMultiSig"]);
+const MAX_PUB_KEYS_PER_MULTISIG = 20;
+
+/** The introspection fields a set of nodes reads (`tx_inputs_length`, `output_value`, `output_script_pub_key`, …). */
+function introspectionKinds(nodes: readonly AstNode[]): Set<string> {
+  const out = new Set<string>();
+  for (const n of nodes) {
+    if (n.kind === "introspection" && typeof n.data === "string") out.add(n.data);
+    if (n.kind === "indexed_introspection" && typeof n.data?.kind === "string") out.add(String(n.data.kind));
+  }
+  return out;
+}
+
+/** `require(tx.inputs.length == 1)` (either side). */
+function requiresSingleInput(nodes: readonly AstNode[]): boolean {
+  const isLen = (e: AstNode | undefined) => e?.kind === "introspection" && e.data === "tx_inputs_length";
+  const isOne = (e: AstNode | undefined) => e?.kind === "int" && e.data === 1;
+  return nodes.some((n) => {
+    if (n.kind !== "require") return false;
+    const e = n.data?.expr as AstNode | undefined;
+    if (e?.kind === "binary" && e.data?.op === "eq" && ((isLen(e.data.left) && isOne(e.data.right)) || (isOne(e.data.left) && isLen(e.data.right)))) return true;
+    return /\btx\.inputs\.length\s*==\s*1\b/.test(String(n.data?.span ?? ""));
+  });
+}
+
+/**
+ * The signature operations a function's body adds to the redeem script, as silverc lays it out: each signature builtin
+ * once per call site, a helper's own count at each of its call sites (silverc inlines helpers), a loop's body times its
+ * bound (silverc unrolls loops). `exact` is false when a loop bound is not a literal (its body is then counted once).
+ */
+function countSourceSigOps(body: unknown, allFunctions: readonly AstNode[], stack: readonly string[]): { count: number; exact: boolean } {
+  let count = 0;
+  let exact = true;
+  const visit = (node: unknown): void => {
+    if (node === null || typeof node !== "object") return;
+    if (Array.isArray(node)) {
+      for (const item of node) visit(item);
+      return;
+    }
+    const n = node as AstNode;
+    if (n.kind === "for" && n.data) {
+      const bound = n.data.max_iterations ?? n.data.bound;
+      const times = bound?.kind === "int" && typeof bound.data === "number" ? bound.data : undefined;
+      const inner = countSourceSigOps(n.data.body, allFunctions, stack);
+      if (!inner.exact) exact = false;
+      if (inner.count > 0 && times === undefined) exact = false;
+      count += inner.count * (times ?? 1);
+      return;
+    }
+    const name = callName(n);
+    if (name !== undefined) {
+      if (SIG_BUILTINS.has(name)) count += 1;
+      else if (MULTISIG_BUILTINS.has(name)) {
+        const keys = (n.data.args as AstNode[] | undefined)?.[1];
+        const k = keys && callName(keys) === "pubkey[]" && Array.isArray(keys.data.args) ? keys.data.args.length : undefined;
+        // a key count the source does not fix counts the maximum, as the node's scan does when it cannot read one
+        count += k !== undefined && k >= 1 && k <= MAX_PUB_KEYS_PER_MULTISIG ? k : MAX_PUB_KEYS_PER_MULTISIG;
+      } else if (!stack.includes(name)) {
+        const helper = allFunctions.find((f) => f.name === name && !f.entrypoint && !isCovenantFunction(f));
+        if (helper) {
+          const inner = countSourceSigOps(helper.body, allFunctions, [...stack, name]);
+          count += inner.count;
+          if (!inner.exact) exact = false;
+        }
+      }
+    }
+    for (const value of Object.values(n)) visit(value);
+  };
+  visit(body);
+  return { count, exact };
+}
+
 /**
  * Performs static security analysis over a SilverScript contract using the official
  * `silverc --ast-only` AST and optional compiled `SilAbiArtifact`.
@@ -242,32 +335,107 @@ export async function analyzeSilverScriptSecurity(params: {
       return false;
     });
 
+    // what the function reads of the transaction (G5): outputs pinned = an output's script AND its value are checked
+    const readKinds = introspectionKinds(reachable);
+    const readsOutputs = [...readKinds].some((k) => k.startsWith("output_") || k === "tx_outputs_length");
+    const pinsOutputs = readKinds.has("output_script_pub_key") && readKinds.has("output_value");
+
     if (!hasAuthCheck) {
-      const hasTimelockOrSecretGuard = reachable.some(
+      // G5 (SEC-01): a hash preimage or a time lock is not an authorization. The secret travels in the spend that reveals
+      // it, so anyone who sees that spend in the mempool can copy it into their own; a matured lock is open to everyone.
+      // (Time locks are silverc's require_age_daa / require_tx_daa / require_tx_time statements, not `require` nodes.)
+      const hashGuard = reachable.some((n) => n.kind === "require" && [...walkAstNodes(n.data?.expr)].some((x) => HASH_BUILTINS.has(callName(x) ?? "")));
+      const timeGuard = reachable.some(
         (n) =>
-          n.kind === "require" &&
-          typeof n.data?.span === "string" &&
-          (n.data.span.includes("this.age") || n.data.span.includes("tx.time") || n.data.span.includes("sha256") || n.data.span.includes("blake3"))
+          (typeof n.kind === "string" && /^require_(age|tx_)/.test(n.kind)) ||
+          (n.kind === "require" && /this\.age|tx\.time|tx\.daa/.test(String(n.data?.span ?? "")))
       );
+      const guards = [...(hashGuard ? ["a hash preimage"] : []), ...(timeGuard ? ["a time lock"] : [])];
+      const guarded = guards.length > 0;
       findings.push({
         ruleId: "COV-AUTH-001",
-        title: "Entrypoint lacks explicit cryptographic authorization (checkSig / checkMultiSig)",
+        title: guarded
+          ? `Entrypoint guarded only by ${guards.join(" and ")}: no signature binds the spend to its claimer`
+          : "Entrypoint lacks explicit cryptographic authorization (checkSig / checkMultiSig)",
         category: "AUTHORIZATION",
-        severity: hasTimelockOrSecretGuard ? "LOW" : "HIGH",
-        confidence: hasTimelockOrSecretGuard ? "LOW" : "HIGH",
+        // G5: a guarded path without a signature was LOW / LOW; it is HIGH unless the outputs are pinned
+        severity: guarded ? (pinsOutputs ? "MEDIUM" : "HIGH") : "HIGH",
+        confidence: guarded ? "MEDIUM" : "HIGH",
         contractName,
         functionName: fnName,
         ...(params.file ? { file: params.file } : {}),
         location: resolveAstSpanLocation(params.source, fn.name_span ?? fnSpan, fnSpan),
-        description: `Function '${fnName}' can be invoked without verifying a Schnorr signature (checkSig/checkMultiSig) or input script/covenant witness.`,
+        description: guarded
+          ? `Function '${fnName}' is guarded only by ${guards.join(" and ")} and verifies no signature (checkSig/checkMultiSig) or input script/covenant witness${pinsOutputs ? "; its outputs are checked (script and value)" : "; nothing pins where its value goes"}.`
+          : `Function '${fnName}' can be invoked without verifying a Schnorr signature (checkSig/checkMultiSig) or input script/covenant witness.`,
+        threatModel: guarded
+          ? "A hash guard is not an authorization: the spend that reveals the secret waits in the mempool, where anyone can copy the secret into a spend of their own, to their own outputs, and race it. A time lock, once matured, admits everyone. Without pinned outputs the first transaction mined takes the coin."
+          : "Any network participant observing the UTXO on the Kaspa DAG can construct a spending transaction calling this entrypoint unless intentional permissionless invariants restrict the transition.",
+        reproductionCondition: guarded
+          ? "Watch the mempool for a spend of this entrypoint, copy its arguments (the revealed secret) into a transaction paying yourself, and broadcast it; for a time lock, spend it from any account after it matures."
+          : "Build a spending transaction invoking this entrypoint from an arbitrary third-party account without holding the contract owner's private key.",
+        mitigation: guarded
+          ? "Require the claimer's signature as well (`require(checkSig(s, claimer));`), or pin every output (its script and value), the fee and `tx.inputs.length == 1`, so that a copied spend can only pay the same recipients."
+          : "Add a `sig` parameter and enforce `require(checkSig(s, authorized_pubkey));` (or document the entrypoint as intentionally permissionless).",
+        limitations: guarded
+          ? pinsOutputs
+            ? "The function checks an output's script and value: a copier can only send the same payment, so what is left is the race for the fee and the timing. The analyzer does not prove every output and the fee are pinned: review them."
+            : "Raised even when the entry is meant to be open: a revealed secret and a matured lock are public, so whoever spends first decides the outputs."
+          : "An entry meant to be callable by anyone (a public counter, a fully pinned payout) omits a signature on purpose; review it against the contract's intent, and check that every output and the fee are pinned."
+      });
+    }
+
+    // -----------------------------------------------------------------------
+    // Rule 7: COV-INPUT-001 — no single-input rule (IN-01)
+    // -----------------------------------------------------------------------
+    // A plain entry that pins its outputs but not the input count can be spent together with another coin at the same
+    // address (same contract and arguments = same address) against ONE output set: the other coin's value is free to go
+    // anywhere. Covenant functions declare their inputs (`from = …`) and are left out.
+    if (!isCov && readsOutputs && !requiresSingleInput(reachable)) {
+      findings.push({
+        ruleId: "COV-INPUT-001",
+        title: "Entrypoint constrains outputs but not the input count (no `require(tx.inputs.length == 1)`)",
+        category: "INPUT_COUNT",
+        severity: hasAuthCheck ? "LOW" : "MEDIUM",
+        confidence: "MEDIUM",
+        contractName,
+        functionName: fnName,
+        ...(params.file ? { file: params.file } : {}),
+        location: resolveAstSpanLocation(params.source, fn.name_span ?? fnSpan, fnSpan),
+        description: `Function '${fnName}' checks the transaction's outputs but never requires a single input. Two coins at this contract's address satisfy it together with the output set meant for one of them.`,
+        threatModel: hasAuthCheck
+          ? "The signers' own transaction can merge several coins of this address into one spend: the value above the pinned outputs becomes fee or goes where the signers choose (no third party can do it without their signature)."
+          : "Anyone can merge another coin of this address into the spend: the pinned outputs are paid once, and the second coin's value goes to an output of their choosing.",
+        reproductionCondition: "Fund this contract's address twice, then spend both coins in one transaction through this entry, with the outputs checked for one coin and a free output for the rest.",
+        mitigation: "Add `require(tx.inputs.length == 1);` (or tie the output values to `tx.inputs[this.activeInputIndex].value`).",
+        limitations: "Detects only a literal `tx.inputs.length == 1` requirement; a contract that ties every output value to the active input's value is not exposed in the same way."
+      });
+    }
+
+    // -----------------------------------------------------------------------
+    // Rule 8: COV-LOCKTIME-001 — the lock time read without CheckLockTimeVerify
+    // -----------------------------------------------------------------------
+    // `OpTxLockTime()` reads the transaction's lock time; only `require(tx.daa >= …)` / `require(tx.time >= …)` compile to
+    // OpCheckLockTimeVerify (silverc v1.0.0), which refuses an input whose sequence is the maximum (a finalized input).
+    const readsLockTime = reachable.some((n) => callName(n) === "OpTxLockTime" || (n.kind === "introspection" && n.data === "tx_lock_time"));
+    const hasCltv = reachable.some((n) => n.kind === "require_tx_daa" || n.kind === "require_tx_time");
+    if (readsLockTime && !hasCltv) {
+      findings.push({
+        ruleId: "COV-LOCKTIME-001",
+        title: "Lock time read with OpTxLockTime() without a CheckLockTimeVerify guard (tx.daa / tx.time)",
+        category: "TIME_LOCK",
+        severity: "MEDIUM",
+        confidence: "HIGH",
+        contractName,
+        functionName: fnName,
+        ...(params.file ? { file: params.file } : {}),
+        location: resolveAstSpanLocation(params.source, fn.name_span ?? fnSpan, fnSpan),
+        description: `Function '${fnName}' compares the transaction's lock time (OpTxLockTime()) but never requires tx.daa or tx.time, the statements that compile to OpCheckLockTimeVerify.`,
         threatModel:
-          "Any network participant observing the UTXO on the Kaspa DAG can construct a spending transaction calling this entrypoint unless intentional permissionless invariants restrict the transition.",
-        reproductionCondition:
-          "Build a spending transaction invoking this entrypoint from an arbitrary third-party account without holding the contract owner's private key.",
-        mitigation:
-          "Add a `sig` parameter and enforce `require(checkSig(s, authorized_pubkey));` (or document the entrypoint as intentionally permissionless).",
-        limitations:
-          "Permissionless covenants (e.g., public counters, hashlock puzzles, or matured timelocks) legitimately omit signature checks; review confidence level against contract intent."
+          "The spender chooses the lock time. With every input's sequence at the maximum the node does not enforce it, so a spend can state the lock time the script asks for and be mined at once: the time condition does not hold.",
+        reproductionCondition: "Spend through this entry before the intended time, with the lock time set to the required value and every input's sequence at 0xffffffffffffffff.",
+        mitigation: "Use `require(tx.daa >= x);` or `require(tx.time >= t);` for an absolute lock (CheckLockTimeVerify), `require(this.ageDaa >= n);` for a relative one (CheckSequenceVerify).",
+        limitations: "Does not apply if the lock time is read for something other than a time condition. HardKAS itself builds and signs lock time 0 only."
       });
     }
 
@@ -475,6 +643,44 @@ export async function analyzeSilverScriptSecurity(params: {
         }
       }
     }
+  }
+
+  // -------------------------------------------------------------------------
+  // Rule 9: COV-SIGOPS-001 — more than 15 signature operations in the redeem script (G2)
+  // -------------------------------------------------------------------------
+  // One redeem script holds every entry and covenant function, and the node counts its signature operations statically,
+  // whatever entry a spend runs: above 15 no standard node relays any spend of it, so funds sent there stay locked.
+  const perFunction = publicFunctions.map((fn) => ({ fn, ...countSourceSigOps(fn.body, allFunctions, [String(fn.name)]) }));
+  const totalSigOps = perFunction.reduce((s, f) => s + f.count, 0);
+  const sigOpsExact = perFunction.every((f) => f.exact);
+  if (totalSigOps > MAX_STANDARD_P2SH_SIG_OPS) {
+    const heaviest = perFunction.reduce((a, b) => (b.count > a.count ? b : a));
+    const span = typeof heaviest.fn.span === "string" ? heaviest.fn.span : undefined;
+    const atLeast = sigOpsExact ? "" : "at least ";
+    findings.push({
+      ruleId: "COV-SIGOPS-001",
+      title: `Redeem script counts ${atLeast}${totalSigOps} signature operations: above the mempool's limit of ${MAX_STANDARD_P2SH_SIG_OPS} per P2SH input`,
+      category: "STANDARDNESS",
+      severity: "HIGH",
+      confidence: sigOpsExact ? "HIGH" : "MEDIUM",
+      contractName,
+      functionName: String(heaviest.fn.name),
+      ...(params.file ? { file: params.file } : {}),
+      location: resolveAstSpanLocation(params.source, heaviest.fn.name_span ?? span, span),
+      description:
+        `The contract's signature checks, counted over every entry and covenant function (a helper at each call site, a loop by its bound): ` +
+        `${perFunction.filter((f) => f.count > 0).map((f) => `${String(f.fn.name)} ${f.exact ? "" : "≥"}${f.count}`).join(", ")}; ${atLeast}${totalSigOps} in all. ` +
+        `The node counts them over the whole redeem script, whatever entry a spend runs, and refuses any spend of an input above ${MAX_STANDARD_P2SH_SIG_OPS} ` +
+        "(verified on rusty-kaspad 2.1.0 simnet for transaction v0 and v1).",
+      threatModel:
+        "Value sent to this contract's P2SH address cannot be spent through a standard node: every spend is refused as non-standard (\"… signature operations which is more than the allowed max amount of 15\"), through any entry.",
+      reproductionCondition: "Fund the contract's address and spend it through any entry, even one that runs a single signature check: the node refuses the spend.",
+      mitigation:
+        `Keep the whole contract at ${MAX_STANDARD_P2SH_SIG_OPS} signature checks or fewer (split it into several contracts, or check fewer signatures per path). ` +
+        "`hardkas silver deploy` counts the compiled redeem script and refuses above the limit before funding.",
+      limitations:
+        "Counted from the source (checkSig and checkMsgSig call sites, helpers inlined, loops unrolled), not from the compiled bytecode; a loop whose bound is not a literal counts once, so the total is then a lower bound."
+    });
   }
 
   const summary = {

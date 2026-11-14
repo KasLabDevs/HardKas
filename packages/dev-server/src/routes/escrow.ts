@@ -3,6 +3,8 @@ import {
   createEscrow,
   escrowResolution,
   escrowSigners,
+  ESCROW_FULL_BRANCHES,
+  ESCROW_SPLIT_BRANCHES,
   type EscrowBranch,
   type EscrowConfig,
   type EscrowState,
@@ -239,6 +241,61 @@ function toContractUtxo(entry: any) {
   };
 }
 
+/**
+ * G3 · before an escrow is funded, each branch of its contract, with the outputs this server prepares for it (the
+ * default resolution), is drafted against the funding it would receive (prepareSilverSpend, offline: the node's
+ * minimum relay fee and mass limits). The contract pins the outputs, so the fee of every release is what the funding
+ * adds to them (the fee budget): below the node's minimum, the escrow could never be released by its one input, and it
+ * is not funded. A branch whose default outputs are above the node's storage-mass limit (a small allocation) is only a
+ * warning: another split or another branch still releases the escrow. Legacy v1 escrows (no budget) are not checked.
+ */
+async function releaseFeeCheck(record: EscrowRecord, totalAmount: bigint, mode: "full" | "split"): Promise<{ refusal?: string; warnings: string[] }> {
+  const { prepareSilverSpend } = await import("@hardkas/accounts");
+  const branches = Object.keys(mode === "split" ? ESCROW_SPLIT_BRANCHES : ESCROW_FULL_BRANCHES) as EscrowBranch[];
+  const contractName = record.provenance?.contractName || (mode === "split" ? "EscrowSplit" : "EscrowFull");
+  const warnings: string[] = [];
+  for (const branch of branches) {
+    let resolution: ReturnType<typeof escrowResolution>;
+    try {
+      resolution = escrowResolution(record.config, branch);
+    } catch {
+      continue;
+    }
+    if (!resolution.requiredOutputs || resolution.requiredOutputs.length === 0) continue;
+    try {
+      prepareSilverSpend({
+        artifact: record.artifact,
+        contractName,
+        entry: branch,
+        args: resolution.args,
+        sigOpCount: mode === "split" ? 4 : undefined,
+        utxo: {
+          outpoint: { transactionId: "00".repeat(32), index: 0 },
+          amountSompi: totalAmount,
+          scriptPublicKey: { version: 0, script: record.p2shState.lockingScriptHex },
+          blockDaaScore: 0n,
+          isCoinbase: false
+        },
+        outputs: resolution.requiredOutputs.map((o) => ({ amountSompi: o.amountSompi, scriptPublicKey: o.scriptPublicKey })),
+        networkId: NETWORK_ID
+      });
+    } catch (e: any) {
+      if (e?.code === "FEE_BELOW_NETWORK_MINIMUM") {
+        return {
+          refusal:
+            `ESCROW_FEE_BUDGET_BELOW_MINIMUM: this escrow's release fee is its fee budget (${e.feeSompi} sompi: the contract fixes the outputs, the funding adds the fee), ` +
+            `below the node's minimum relay fee for its ${branch} release (${e.minimumFeeSompi} sompi). Funded, it could not be released. ` +
+            `Create the escrow with feeBudgetSompi of at least ${e.minimumFeeSompi}. Nothing was signed or sent.`,
+          warnings
+        };
+      }
+      if (e?.code === "TX_MASS_ABOVE_STANDARD_LIMIT") warnings.push(`${branch} with its default outputs cannot be released: ${messageOf(e)}`);
+      // anything else (a record whose artifact does not rebuild its lock) is release/prepare's to report
+    }
+  }
+  return { warnings };
+}
+
 /** The local dev account whose x-only Schnorr key (as the v1 escrow takes it) is `xOnlyHex`. */
 async function findDevAccount(xOnlyHex: string) {
   const { listDevAccountsSync, getOrCreateDevAccount, loadKaspaWasm } = await import("@hardkas/accounts");
@@ -327,9 +384,13 @@ escrowRoutes.post("/:id/fund", async (c) => {
 
     let totalAmount: bigint;
     const isLegacy = record.config.version === "v1" || (!record.config.version && !record.config.principal && !record.config.mode && !record.config.feeBudgetSompi);
+    // The default fee budget (the fee of every release: the contract fixes the outputs) is a few times the node's minimum
+    // relay fee of an escrow release (about 300,000–600,000 sompi, 100 sompi/g of its compute mass); releaseFeeCheck
+    // below refuses a budget under that minimum before anything is sent (G3).
+    const splitMode = record.config.mode === "split" || (record.config.buyerAmount !== undefined && record.config.sellerAmount !== undefined);
     if (isLegacy) {
       totalAmount = BigInt(record.config.refundAmount ?? 0) + BigInt(record.config.releaseAmount ?? 0);
-    } else if (record.config.mode === "split" || (record.config.buyerAmount !== undefined && record.config.sellerAmount !== undefined)) {
+    } else if (splitMode) {
       const bAmt = BigInt(record.config.buyerAmount ?? record.config.refundAmount ?? 0);
       const sAmt = BigInt(record.config.sellerAmount ?? record.config.releaseAmount ?? 0);
       const feeBudget = BigInt(record.config.feeBudgetSompi ?? 2_000_000n);
@@ -339,6 +400,11 @@ escrowRoutes.post("/:id/fund", async (c) => {
       const feeBudget = BigInt(record.config.feeBudgetSompi ?? 2_000_000n);
       totalAmount = principal + feeBudget;
     }
+    // G3: an escrow whose releases could not pay the node's minimum relay fee is never funded (nothing read, signed or sent)
+    // (the mode as release/prepare reads it)
+    const releaseMode = record.config.mode ?? (record.config.buyerAmount !== undefined && record.config.sellerAmount !== undefined ? "split" : "full");
+    const releases = isLegacy ? { warnings: [] as string[] } : await releaseFeeCheck(record, totalAmount, releaseMode === "split" ? "split" : "full");
+    if (releases.refusal) return c.json({ ok: false, code: "ESCROW_FEE_BUDGET_BELOW_MINIMUM", error: releases.refusal }, 400);
 
     const fundingEntry = {
       amount: totalAmount.toString(),
@@ -442,7 +508,7 @@ escrowRoutes.post("/:id/fund", async (c) => {
     record.state = "FUNDED";
     memoryStore.set(id, record);
 
-    return c.json({ ok: true, data: { txId: funded.txId, status: record.funding.status } });
+    return c.json({ ok: true, data: { txId: funded.txId, status: record.funding.status, ...(releases.warnings.length > 0 ? { warnings: releases.warnings } : {}) } });
   } catch (err: any) {
     console.error("Fund error:", err);
     return c.json({ ok: false, error: err.message }, 500);
@@ -561,7 +627,9 @@ escrowRoutes.post("/:id/release/prepare", async (c) => {
 
     // Reject excessive fee: any fee exceeding the explicitly authorized feeBudgetSompi
     // (or default safe ceiling of 2,500,000 sompi / 0.025 KAS if unconfigured) is strictly refused.
-    // This prevents silent fund inflation or user fund leakage into miner fees.
+    // This prevents silent fund inflation or user fund leakage into miner fees. G3: the ceiling is several times the
+    // node's minimum relay fee of an escrow release (about 300,000–600,000 sompi); a budget below that minimum is refused
+    // before funding (releaseFeeCheck) and a fee below it here, with the node's figure (ESCROW_FEE_BELOW_MINIMUM).
     const authorizedFeeCeilingSompi = record.config.feeBudgetSompi
       ? BigInt(record.config.feeBudgetSompi)
       : 2_500_000n;
@@ -575,15 +643,21 @@ escrowRoutes.post("/:id/release/prepare", async (c) => {
         400
       );
     }
-    if (effectiveFeeSompi < 10_000n) {
-      return c.json(
+    // G3: the minimum is the node's relay fee for this very release, measured by prepareSilverSpend below (it used to be a
+    // fixed 10,000 sompi here, and the SDK's storage-inclusive figure in the builder)
+    const belowMinimum = (minimum: string) =>
+      c.json(
         {
           ok: false,
-          error: `ESCROW_FEE_BELOW_MINIMUM: effective release fee (${effectiveFeeSompi} sompi) is below minimum network relay fee (10000 sompi). Outputs sum ${totalOutputsSompi} sompi from ${fundingAmountSompi} sompi funding.`
+          code: "ESCROW_FEE_BELOW_MINIMUM",
+          error:
+            `ESCROW_FEE_BELOW_MINIMUM: effective release fee (${effectiveFeeSompi} sompi) is below ${minimum}. ` +
+            `Outputs sum ${totalOutputsSompi} sompi from ${fundingAmountSompi} sompi funding.` +
+            (record.config.feeBudgetSompi && !isLegacy ? ` The fee is this escrow's fee budget (feeBudgetSompi ${record.config.feeBudgetSompi}): the contract fixes the outputs.` : "")
         },
         400
       );
-    }
+    if (effectiveFeeSompi <= 0n) return belowMinimum("zero: the outputs take the whole funding or more");
 
     const contractName = record.provenance?.contractName || (isLegacy ? "Escrow" : (mode === "split" ? "EscrowSplit" : "EscrowFull"));
     const { prepareSilverSpend } = await import("@hardkas/accounts");
@@ -600,6 +674,9 @@ escrowRoutes.post("/:id/release/prepare", async (c) => {
         networkId: NETWORK_ID
       });
     } catch (e: any) {
+      if (e?.code === "FEE_BELOW_NETWORK_MINIMUM" && typeof e.minimumFeeSompi === "string") {
+        return belowMinimum(`the node's minimum relay fee for this release (${e.minimumFeeSompi} sompi: 100 sompi/g of its compute mass)`);
+      }
       return c.json({ ok: false, error: `ESCROW_PREPARE_FAILED: ${e?.message || String(e)}` }, 400);
     }
 

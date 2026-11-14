@@ -72,6 +72,8 @@ export class WalletToolkit {
 
     private _utxosApi: WalletUtxoApi;
     private _watch: { engine: UtxoWatchEngine; started: Promise<void> } | undefined;
+    /** G7 k: true when the query provider is the one built over `options.rpc`, which has no history source. */
+    private readonly historyFromRpcOnly: boolean;
 
     private constructor(
         public readonly name: string,
@@ -82,6 +84,7 @@ export class WalletToolkit {
         this.addressManager = AddressManager;
 
         let provider = options.provider;
+        this.historyFromRpcOnly = !provider && Boolean(options.rpc);
         if (!provider && options.rpc) {
             provider = {
                 source: "rpc",
@@ -248,16 +251,37 @@ export class WalletToolkit {
         return this._utxosApi;
     }
 
+    /**
+     * The wallet's history, from the query provider given in `options.provider`. G7 k (notes cross-check): a wallet that
+     * reads through a node (`options.rpc` alone) has no history source — a Kaspa node keeps no address history — and
+     * used to answer an empty history; it now refuses with WALLET_HISTORY_UNSUPPORTED. A provider that fails is
+     * WALLET_QUERY_PROVIDER_UNAVAILABLE, never an empty list.
+     */
     public async history(): Promise<any[]> {
         const addr = await this.receive();
+        if (this.historyFromRpcOnly) {
+            throw new HardkasError(
+                "WALLET_HISTORY_UNSUPPORTED",
+                "WalletToolkit.history(): this wallet reads through a node (options.rpc), and a Kaspa node keeps no address history, " +
+                    "so there is none to return (it used to answer an empty list). Give the wallet a query provider that keeps history " +
+                    "(options.provider, e.g. an indexer), or use watch() for live activity.",
+                { metadata: { address: addr, source: "rpc", supported: false } }
+            );
+        }
         // Return local observed history (best-effort locally + remote if available)
-        const remoteHistory = await this.walletQuery.getHistory({ addresses: [addr] }) as any;
+        const remoteHistory = await this.walletQuery.getHistory({ addresses: [addr] });
+        if (!remoteHistory.ok) {
+            throw new HardkasError(
+                remoteHistory.code,
+                `WalletToolkit.history(): the query provider (${remoteHistory.source}) failed: ${remoteHistory.error ?? "no detail"}. No history was read.`,
+                { metadata: { address: addr, source: remoteHistory.source } }
+            );
+        }
 
         // Enhance with local mock/artifacts if needed, but per specs:
         // "txs enviadas por HardKAS, UTXO changes observados, receipts locales"
-        // For now, we return remoteHistory items + potentially local state from utxos store
-        const items = remoteHistory?.items || remoteHistory || [];
-        return items;
+        // For now, we return the provider's page of items (it used to return WalletQuery's whole result object)
+        return [...(remoteHistory.history?.items ?? [])];
     }
 
     /**

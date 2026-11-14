@@ -14,6 +14,7 @@ import { DefaultPsktAdapterRegistry, PsktAdapterRegistry } from "./pskt/registry
 import { WasmPsktAdapter } from "./pskt/adapters/wasm.js";
 import { UnavailablePsktAdapter } from "./pskt/adapters/unavailable.js";
 import { assertPsktInputsOnSignerNetwork, assertPsktSignerNetwork, type PsktSignContext } from "./pskt/input-verification.js";
+import { assertSignedPsktPayload, psktSignerPublicKey } from "./pskt/signed-payload-check.js";
 
 export type { PsktSignContext, PsktUtxoSource } from "./pskt/input-verification.js";
 
@@ -415,6 +416,9 @@ export async function assertSessionSignable(
  * Signs the inputs `request.inputIndexes` of a session. A1 (rc2 audit): `context` is the CALLER's side and is required at
  * runtime: its own network (never the session file's label; a signature does not commit to a network) and its node for
  * that network, which must list every input to be signed as unspent. Without them nothing is signed.
+ * What the adapter returns is read before it is recorded (notes cross-check §2.3 item 4): the same transaction as sent
+ * (PSKT_SIGNED_TRANSACTION_CHANGED), and a non-empty signature by the signer on every input asked for
+ * (PSKT_SIGNATURE_MISSING); an unreadable payload is PSKT_SIGNED_PAYLOAD_UNREADABLE.
  */
 export async function signSession(
   session: PortableSigningSession,
@@ -429,8 +433,12 @@ export async function signSession(
   const adapter = adapterRegistry.get(session.runtimeBinding.adapterId);
   await verifyAdapterCapabilities(session, adapter);
 
+  // the signer's public key, read before the adapter runs (the native adapter zeroes the key material afterwards)
+  const signerPublicKey = psktSignerPublicKey(request.keyMaterial);
   const signedPayload = await adapter.sign(session.payload, { ...request, networkId: session.networkId } as import("@hardkas/core").PsktSignRequest);
-  
+  // §2.3 item 4: what came back is the transaction that was sent, signed on every input asked for, or nothing is recorded
+  assertSignedPsktPayload(session.payload, signedPayload, request.inputIndexes, signerPublicKey);
+
   const attestation: SessionAttestation = {
     participantId: request.participantId,
     action: "sign",

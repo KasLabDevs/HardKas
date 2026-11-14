@@ -90,6 +90,40 @@ describe("multi-party SilverScript spend drafts", () => {
     );
   });
 
+  it("G3 small outputs at the node's floor: drafted where the SDK's storage-inclusive minimum refused them; the refusal names the node's minimum", () => {
+    // 0.2 KAS into two 0.1 KAS outputs less the floor: storage mass ≈ 3 × 1e12 / 2e7 = 150,000 g (SDK: non-standard)
+    const coin = { ...utxo(), amountSompi: 20_000_000n };
+    const probe = (fee: bigint) => {
+      const half = (20_000_000n - fee) / 2n;
+      return prepare({ utxo: coin, outputs: [{ amountSompi: half, address: dest }, { amountSompi: 20_000_000n - fee - half, address: dest }] });
+    };
+    let floor = 0n;
+    try {
+      probe(1n);
+    } catch (e: any) {
+      expect(e.code).toBe("FEE_BELOW_NETWORK_MINIMUM");
+      expect(e.message).toMatch(/the node's minimum relay fee for this spend is \d+ sompi/);
+      floor = BigInt(e.minimumFeeSompi);
+      expect(e.feeSompi).toBe("1");
+    }
+    expect(floor).toBeGreaterThan(0n);
+    expect(floor).toBeLessThan(1_000_000n);
+    const draft = probe(floor);
+    expect(BigInt(draft.feeSompi)).toBe(floor);
+    expect(BigInt(draft.storageMass)).toBeGreaterThan(100_000n);
+    expect(() => probe(floor - 1n)).toThrow(expect.objectContaining({ code: "FEE_BELOW_NETWORK_MINIMUM" }));
+    // an output so small that the storage mass passes the node's 500,000 g
+    expect(() => prepare({ utxo: coin, outputs: [{ amountSompi: 1_000_000n, address: dest }, { amountSompi: 18_000_000n, address: dest }] })).toThrow(
+      expect.objectContaining({ code: "TX_MASS_ABOVE_STANDARD_LIMIT" })
+    );
+  });
+
+  it("G7-e refuses an output address of another network (prefix)", () => {
+    const k = loadManagedKaspaWasmSync();
+    const testnet = new k.PrivateKey(KEY_A).toKeypair().toAddress("testnet-10").toString();
+    expect(() => prepare({ outputs: [{ amountSompi: AMOUNT, address: testnet }] })).toThrow(expect.objectContaining({ code: "NETWORK_ADDRESS_MISMATCH" }));
+  });
+
   it("refuses an output not locked to the contract", () => {
     expect(() => prepare({ utxo: { ...utxo(), scriptPublicKey: { version: 0, script: "aa20" + "00".repeat(32) + "87" } } })).toThrow(
       expect.objectContaining({ code: "SILVER_SPEND_LOCK_MISMATCH" })

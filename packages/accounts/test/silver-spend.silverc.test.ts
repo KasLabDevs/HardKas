@@ -8,7 +8,7 @@ import {
   silverP2shLock,
   type SilAbiArtifact
 } from "@hardkas/core";
-import { calculateUpstreamStorageMass, measureBuiltTransactionMass } from "@hardkas/tx-builder";
+import { calculateUpstreamStorageMass, measureBuiltTransactionMass, measureBuiltTransactionNodeMass } from "@hardkas/tx-builder";
 import { buildSilverSweep, type SilverContractUtxo } from "../src/silver-spend.js";
 
 const SOURCE = `pragma silverscript ^0.1.0;
@@ -77,11 +77,19 @@ describe("buildSilverSweep", () => {
     expect(r.txId).toMatch(/^[0-9a-f]{64}$/);
   });
 
-  it("pays at least the SDK minimum fee for the final transaction and commits its storage mass", () => {
+  // G3: CHANGED EXPECTATION. Old: the fee was at least the SDK's minimum (kaspa-wasm calculateTransactionFee, which also
+  // adds a signature allowance to the signed transaction and charges the storage mass). New: the fee is the node's relay
+  // floor of the final transaction (100 sompi/g of its compute mass), which rusty-kaspad accepts and refuses one sompi
+  // under (silver-v0-node-floor-g3.simnet.test.ts); the SDK's figure is never below it.
+  it("pays the node's relay floor for the final transaction and commits its storage mass", () => {
     const r = sweep();
     expect(r.outputSompi + r.feeSompi).toBe(utxo.amountSompi);
-    const measured = measureBuiltTransactionMass(r.transaction, "simnet");
-    expect(r.feeSompi).toBeGreaterThanOrEqual(measured.minimumFeeSompi);
+    const node = measureBuiltTransactionNodeMass(r.transaction, {
+      inputs: [{ amountSompi: utxo.amountSompi, scriptBytes: utxo.scriptPublicKey.script.length / 2, covenantId: false }],
+      outputs: [{ amountSompi: r.outputSompi, scriptBytes: 34, covenantId: false }]
+    });
+    expect(r.feeSompi).toBe(node.minimumFeeSompi);
+    expect(r.feeSompi).toBeLessThanOrEqual(measureBuiltTransactionMass(r.transaction, "simnet").minimumFeeSompi);
     expect(r.storageMass).toBe(calculateUpstreamStorageMass([utxo.amountSompi], [r.outputSompi], "simnet"));
     expect(BigInt(r.rpcTransaction.storageMass)).toBe(r.storageMass);
     expect(BigInt(r.rpcTransaction.outputs[0].amount)).toBe(r.outputSompi);
@@ -114,6 +122,34 @@ describe("buildSilverSweep", () => {
     expect(() => sweep({ to: "kaspasim:nope" })).toThrow(expect.objectContaining({ code: "SILVER_SPEND_INVALID_RECIPIENT" }));
     expect(() => sweep({ entry: "steal" })).toThrow(expect.objectContaining({ code: "SILVER_ABI_UNKNOWN_ENTRY" }));
     expect(() => sweep({ args: [] })).toThrow(expect.objectContaining({ code: "SILVER_ABI_ARGUMENT_INVALID" }));
+  });
+
+  it("G3 a small coin, whose storage-inclusive SDK fee is above its value, sweeps at the node's floor; one whose output would exceed the node's storage limit is refused", () => {
+    // 0.025 KAS: the SDK charged 100 × max(compute, storage ≈ 50,000 g) ≈ 5,000,000 sompi, twice the coin
+    const small = sweep({ utxo: { ...utxo, amountSompi: 2_500_000n } });
+    expect(small.outputSompi + small.feeSompi).toBe(2_500_000n);
+    expect(small.feeSompi).toBeLessThan(500_000n);
+    const storage = calculateUpstreamStorageMass([2_500_000n], [small.outputSompi], "simnet");
+    expect(storage * 100n).toBeGreaterThan(2_500_000n);
+    // 0.005 KAS: what the floor leaves is so small that the storage mass passes 500,000 g
+    expect(() => sweep({ utxo: { ...utxo, amountSompi: 500_000n } })).toThrow(
+      expect.objectContaining({ code: "TX_MASS_ABOVE_STANDARD_LIMIT", message: expect.stringMatching(/storage mass \d+ g is above the node's limit of 500000 g/) })
+    );
+  });
+
+  it("G3 a fee rate at or below the relay minimum pays the floor; a priority rate above it is priced on the SDK's mass", () => {
+    const floor = sweep();
+    expect(sweep({ feeRateSompiPerGram: 100n }).feeSompi).toBe(floor.feeSompi);
+    const fast = sweep({ feeRateSompiPerGram: 1000n });
+    expect(fast.feeSompi).toBe(fast.mass * 1000n);
+    expect(fast.feeSompi).toBeGreaterThan(floor.feeSompi);
+  });
+
+  it("G7-e refuses a recipient address of another network (prefix), before anything is signed", () => {
+    const k = loadManagedKaspaWasmSync();
+    const testnet = new k.PrivateKey(OWNER_KEY).toKeypair().toAddress("testnet-10").toString();
+    expect(() => sweep({ to: testnet })).toThrow(expect.objectContaining({ code: "NETWORK_ADDRESS_MISMATCH" }));
+    expect(() => sweep({ to: testnet, networkId: "testnet-10" })).not.toThrow();
   });
 
   it("uses the canonical entry encoding, not the pre-v1 one", () => {

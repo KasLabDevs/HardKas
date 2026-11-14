@@ -22,6 +22,8 @@ export type NodeRejectionCode =
   | "SCRIPT_POLICY_REJECTED"
   | "SEQUENCE_LOCK_REJECTED"
   | "LOCK_TIME_REJECTED"
+  | "SCRIPT_LOCK_UNSATISFIED"
+  | "STORAGE_MASS_ABOVE_LIMIT"
   | "INPUT_ALREADY_SPENT"
   | "ORPHAN_REJECTED"
   | "NODE_REJECTED_UNCLASSIFIED";
@@ -33,15 +35,29 @@ export interface NodeRejection {
   /** COMPUTE_BUDGET_INSUFFICIENT: the script units the node counted and the limit the input committed, as it reports them. */
   readonly usedUnits?: string;
   readonly limitUnits?: string;
+  /** SCRIPT_LOCK_UNSATISFIED ("… N > M"): the value the script requires (N) and the transaction's own field (M), as reported. */
+  readonly lockRequired?: string;
+  readonly lockDeclared?: string;
+  /** STORAGE_MASS_ABOVE_LIMIT: the storage mass the node computed and its limit, as it reports them. */
+  readonly storageMass?: string;
+  readonly storageMassLimit?: string;
+  /** What to change, for the classes where the text alone says it (SCRIPT_LOCK_UNSATISFIED, STORAGE_MASS_ABOVE_LIMIT). */
+  readonly hint?: string;
 }
 
-// First match wins. The order matters where one text holds two: a compute budget or a lock time failure is reported
+// First match wins. The order matters where one text holds two: a compute budget or a script lock failure is reported
 // inside "failed to verify the signature script: …", so both are tried before the script class.
 const RULES: ReadonlyArray<readonly [NodeRejectionCode, RegExp]> = [
   // txscript: "script units exceeded the amount committed in the input: used=…, limit=…"
   ["COMPUTE_BUDGET_INSUFFICIENT", /script units exceeded the amount committed/i],
-  // txscript "Unsatisfied lock time: locktime requirement not satisfied …"; TxRuleError::NotFinalized
-  ["LOCK_TIME_REJECTED", /unsatisfied lock ?time|locktime requirement not satisfied|input #\d+ is not finalized/i],
+  // txscript TxScriptError::UnsatisfiedLockTime, "Unsatisfied lock time: …" (opcodes OpCheckLockTimeVerify and
+  // OpCheckSequenceVerify: "locktime requirement not satisfied -- locktime is greater than the transaction locktime: N > M",
+  // "mismatched locktime types …", "transaction input is finalized", "… sequence locktime disabled bit set …"). The script
+  // compared its value with the transaction's own field (the lock time for CLTV, the input's sequence for CSV): waiting
+  // never changes the answer. Real text: fixtures/toccata-v2/silver/p2sh-transfer-with-timeout (a CSV spend with sequence 0).
+  ["SCRIPT_LOCK_UNSATISFIED", /unsatisfied lock ?time|locktime requirement not satisfied/i],
+  // TxRuleError::NotFinalized: the transaction's lock time is not reached yet (a later send can pass)
+  ["LOCK_TIME_REJECTED", /input #\d+ is not finalized/i],
   // TxRuleError::SequenceLockConditionsAreNotMet
   ["SEQUENCE_LOCK_REJECTED", /sequence locks? conditions? (?:was|were) not met/i],
   // TxRuleError::CovenantBindingInV0, SigopCountInV1, ComputeBudgetInV0, UnknownTxVersion; NonStandardError::RejectVersion
@@ -53,6 +69,10 @@ const RULES: ReadonlyArray<readonly [NodeRejectionCode, RegExp]> = [
   ["COVENANT_RULE_REJECTED", /covenants error/i],
   // NonStandardError::RejectInsufficientComputeFee / RejectInsufficientTransientFee
   ["FEE_BELOW_NODE_MINIMUM", /fees which is under the required amount/i],
+  // RuleError::RejectStorageMass / NonStandardError::RejectStorageMass, "transaction storage mass of N is larger than max
+  // allowed size of L" (mining/src/mempool/check_transaction_limits.rs: L is the block's storage limit; before Toccata the
+  // standard cap). Not the transient mass ("transaction transient (storage) mass of …"), not the committed-mass mismatch.
+  ["STORAGE_MASS_ABOVE_LIMIT", /transaction storage mass of \d+ is larger than max allowed size of \d+/i],
   // RuleError::RejectDoubleSpendInMempool, RejectMissingOutpoint, RejectImpossibleOutpoint; TxRuleError::MissingTxOutpoints
   [
     "INPUT_ALREADY_SPENT",
@@ -76,6 +96,32 @@ export function classifyNodeRejection(message: string): NodeRejection {
     if (code === "COMPUTE_BUDGET_INSUFFICIENT") {
       const units = /used\s*=\s*(\d+)\s*,\s*limit\s*=\s*(\d+)/i.exec(text);
       return { code, retriable: false, ...(units ? { usedUnits: units[1]!, limitUnits: units[2]! } : {}) };
+    }
+    if (code === "SCRIPT_LOCK_UNSATISFIED") {
+      const lock = /locktime requirement not satisfied[^:]*:\s*(\d+)\s*>\s*(\d+)/i.exec(text);
+      const required = lock?.[1];
+      return {
+        code,
+        retriable: false,
+        ...(lock ? { lockRequired: required!, lockDeclared: lock[2]! } : {}),
+        // HardKAS signs lock time 0 (LOCK_TIME_NOT_SUPPORTED otherwise), so on its own spends this is the relative lock
+        hint:
+          "the redeem script's time lock (CheckSequenceVerify or CheckLockTimeVerify) is above the transaction's own field. HardKAS " +
+          "signs lock time 0, so on a HardKAS spend it is a relative lock (CheckSequenceVerify) and the field is the input's " +
+          `sequence: declare it${required !== undefined ? ` at least ${required}` : ""} (silver spend --sequence). This transaction ` +
+          "never passes, at any time: build a new one."
+      };
+    }
+    if (code === "STORAGE_MASS_ABOVE_LIMIT") {
+      const mass = /storage mass of (\d+) is larger than max allowed size of (\d+)/i.exec(text);
+      return {
+        code,
+        retriable: false,
+        ...(mass ? { storageMass: mass[1]!, storageMassLimit: mass[2]! } : {}),
+        hint:
+          "the storage mass (KIP-9) grows as 10^12 / amount for every output, so a small output dominates it: raise the smallest " +
+          "output or merge it into another one, then build a new transaction."
+      };
     }
     return { code, retriable: false };
   }

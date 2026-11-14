@@ -75,7 +75,8 @@ and none is invented: the list of trusted digests is empty and cannot be extende
 
 ```bash
 # 1. Static Security Audit: heuristic AST/source rules (COV-AUTH-001, COV-VALUE-001, COV-STATE-001, COV-INDEX-001,
-#    COV-TERM-001, COV-BUDGET-001). Findings to review, not a proof of security. Exit 1 only with --fail-on-high.
+#    COV-TERM-001, COV-BUDGET-001, COV-INPUT-001, COV-SIGOPS-001, COV-LOCKTIME-001). Findings to review, not a proof
+#    of security. Exit 1 only with --fail-on-high.
 node packages/cli/dist/index.js silver audit examples/09-silver-reference/contracts/owned-counter.sil --json
 node packages/cli/dist/index.js silver audit examples/10-covenant-dev-framework/contracts/guarded-vault-counter.sil --json
 

@@ -85,7 +85,8 @@ describe('Payment Service', () => {
         // so we can test the webhook and evidence generation, which are the main focus of this lab.
         const originalCheck = paymentService.checkPayment.bind(paymentService);
         paymentService.checkPayment = async (id) => {
-            return await (paymentService as any).markPaid(id, "mock_tx_id", 100);
+            // markPaid records the amount the check found (here: exactly the invoice amount)
+            return await (paymentService as any).markPaid(id, "mock_tx_id", 100, BigInt(amountSompi));
         };
 
         res = await fastify.inject({
@@ -102,6 +103,7 @@ describe('Payment Service', () => {
         expect(memoryTransport.delivered.length).toBe(1);
         expect(memoryTransport.delivered[0].event.type).toBe("invoice.paid");
         expect(memoryTransport.delivered[0].event.payload.txId).toBe("mock_tx_id");
+        expect(memoryTransport.delivered[0].event.payload.amountFoundSompi).toBe(amountSompi);
 
         // 6. Verify reconciliation
         res = await fastify.inject({
@@ -121,6 +123,7 @@ describe('Payment Service', () => {
         const evidence = JSON.parse(res.payload);
         expect(evidence.receipts.length).toBe(1);
         expect(evidence.receipts[0].schema).toBe("hardkas.paymentReceipt.v1");
+        expect(evidence.receipts[0].amountFoundSompi).toBe(amountSompi);
         expect(evidence.receipts[0].claims.absoluteFinality).toBe(false);
         expect(evidence.receipts[0].claims.economicSafetyGuarantee).toBe(false);
     });

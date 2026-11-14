@@ -2,15 +2,34 @@ import { loadHardkasConfig, declaredNodeEndpoint, resolveNodeEndpoint } from "@h
 import { loadRealAccountStore, getRealDevAccount } from "@hardkas/accounts";
 import { JsonWrpcKaspaClient } from "@hardkas/kaspa-rpc";
 import { formatSompiToKas, type NetworkId } from "@hardkas/core";
+import { partitionCovenantUtxos } from "@hardkas/tx-builder";
 import { invocationWorkspaceRoot, requireExistingWorkspace } from "../workspace-root.js";
 import { HardkasCliError, HardkasExitCode } from "../cli-errors.js";
 
 export interface AccountBalanceResult {
   name: string;
   address: string;
+  /** The balance as read (the node's, or the simulator state's sum); covenant-bound coins included. */
   balanceSompi: bigint;
   utxoCount: number;
   network: string;
+  /**
+   * G7 g (notes cross-check): the listed UTXOs without a covenant id — what a payment, sweep or consolidation may select
+   * (every planner leaves covenant-bound UTXOs out). A coinbase output still maturing is counted here. Read from the
+   * UTXO list, a second read after the balance's: with coins arriving between the two, spendable + covenant-bound may
+   * differ from `balanceSompi`.
+   */
+  spendableSompi: bigint;
+  /** G7 g: the listed UTXOs that carry a covenant id (KIP-20): they belong to a covenant and are spent only through it. */
+  covenantBoundSompi: bigint;
+  covenantUtxoCount: number;
+}
+
+/** G7 g: the amounts of a UTXO list split into plain (spendable by a payment) and covenant-bound. */
+export function splitCovenantBalance(utxos: readonly unknown[]): { spendableSompi: bigint; covenantBoundSompi: bigint; covenantUtxoCount: number } {
+  const { spendable, covenant } = partitionCovenantUtxos(utxos);
+  const sum = (list: readonly unknown[]) => list.reduce<bigint>((acc, u) => acc + BigInt((u as { amountSompi?: bigint | number | string }).amountSompi ?? 0), 0n);
+  return { spendableSompi: sum(spendable), covenantBoundSompi: sum(covenant), covenantUtxoCount: covenant.length };
 }
 
 export interface AccountsBalanceOptions {
@@ -118,7 +137,8 @@ export async function runAccountsBalance(
       address: queried,
       balanceSompi,
       utxoCount: utxos.length,
-      network: "simulated"
+      network: "simulated",
+      ...splitCovenantBalance(utxos)
     };
   } else {
     // TESTNET-PORT-COLLISION-1: the shared endpoint authority — given, declared, a local network's default, or
@@ -137,7 +157,9 @@ export async function runAccountsBalance(
         address,
         balanceSompi: balance.balanceSompi,
         utxoCount: utxos.length,
-        network
+        network,
+        // G7 g: the balance is the node's, covenant-bound coins included, while every planner refuses to spend them
+        ...splitCovenantBalance(utxos)
       };
     } finally {
       await client.close();

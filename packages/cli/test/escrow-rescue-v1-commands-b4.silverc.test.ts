@@ -32,6 +32,8 @@ const REFUND = 6_00000000;
 const RELEASE = 4_00000000;
 const FUNDED = "ab".repeat(32);
 const DUST = "cd".repeat(32);
+/** G3: a 0.1 KAS escrow output (the SDK's storage-inclusive minimum, ≈ 416,000 sompi, was above the default fee). */
+const SMALL = "5a".repeat(32);
 const TOTAL = 10_00000000;
 const FEE = 400000;
 
@@ -69,7 +71,8 @@ async function startFake(): Promise<Fake> {
           return ok({
             entries: (params?.addresses ?? []).flatMap((address: string) => [
               { address, outpoint: { transactionId: FUNDED, index: 0 }, utxoEntry: { amount: TOTAL, scriptPublicKey: fake.lockSpk, blockDaaScore: 3000, isCoinbase: false } },
-              { address, outpoint: { transactionId: DUST, index: 1 }, utxoEntry: { amount: 300000, scriptPublicKey: fake.lockSpk, blockDaaScore: 3000, isCoinbase: false } }
+              { address, outpoint: { transactionId: DUST, index: 1 }, utxoEntry: { amount: 300000, scriptPublicKey: fake.lockSpk, blockDaaScore: 3000, isCoinbase: false } },
+              { address, outpoint: { transactionId: SMALL, index: 2 }, utxoEntry: { amount: 10_000_000, scriptPublicKey: fake.lockSpk, blockDaaScore: 3000, isCoinbase: false } }
             ])
           });
         case "submitTransaction":
@@ -197,7 +200,8 @@ describe("L1-CORE-1 B4 · escrow rescue-v1, the commands", () => {
     const bad = await run("prepare-bad-outpoint", ["escrow", "rescue-v1", "prepare", "--address", ESCROW_ADDRESS, "--outpoint", "nope", "--to", ADDRESS, ...escrowArgs, "--json"]);
     expect(bad.status, bad.brief).not.toBe(0);
     expect(bad.all).toMatch(/RESCUE_OUTPOINT_INVALID/);
-    const fee = await run("prepare-fee", prepareArgs("x.json", ["--fee", "500001"]));
+    // G3: CHANGED LIMIT (old 500,000 → new 2,500,000 sompi: room above the node's minimum relay fee of a rescue)
+    const fee = await run("prepare-fee", prepareArgs("x.json", ["--fee", "2500001"]));
     expect(fee.all, fee.brief).toMatch(/ESCROW_FEE_EXCESSIVE_REFUSED/);
     expect(fake.methods.length).toBe(before);
     for (const r of [bad, fee]) expect(r.dialled.filter((d) => d.startsWith("LOOPBACK_CONNECT")), r.brief).toEqual([]);
@@ -278,6 +282,37 @@ describe("L1-CORE-1 B4 · escrow rescue-v1, the commands", () => {
     } finally {
       fake.lockSpk = real;
     }
+  });
+
+  it("R-11 (G7 e) a --to of another network (a testnet address on simnet): NETWORK_ADDRESS_MISMATCH, exit 2, after the node's identity only; nothing written", async () => {
+    const { loadManagedKaspaWasmSync } = await import("@hardkas/core");
+    const k: any = loadManagedKaspaWasmSync();
+    // the same key on testnet-10: kaspa-wasm re-encodes it with that network's prefix and checksum
+    const testnetTo = String(k.addressFromScriptPublicKey(k.payToAddressScript(new k.Address(ADDRESS)), "testnet-10").toString());
+    expect(testnetTo.startsWith("kaspatest:")).toBe(true);
+    const before = fake.methods.length;
+    const r = await run("prepare-foreign-to", ["escrow", "rescue-v1", "prepare", "--address", ESCROW_ADDRESS, "--outpoint", `${FUNDED}:0`, "--to", testnetTo, ...escrowArgs, "--out", "foreign.json", "--json"]);
+    expect(r.status, r.brief).toBe(2);
+    expect(r.all, r.brief).toMatch(/NETWORK_ADDRESS_MISMATCH/);
+    expect(onlyIdentity(before), JSON.stringify(fake.methods.slice(before))).toBe(true);
+    expect(fs.existsSync(path.join(ws, "foreign.json"))).toBe(false);
+  });
+
+  it("R-10 (G3) a 0.1 KAS escrow output is rescued at the default fee (above the node's minimum); a --fee under that minimum is refused with the node's figure, nothing written", async () => {
+    const small = await run("prepare-small", ["escrow", "rescue-v1", "prepare", "--address", ESCROW_ADDRESS, "--outpoint", `${SMALL}:2`, "--to", ADDRESS, ...escrowArgs, "--out", "small.json", "--json"]);
+    expect(small.status, small.brief).toBe(0);
+    expect(read("small.json")).toMatchObject({ outpoint: `${SMALL}:2`, totalSompi: "10000000", feeSompi: String(FEE), recoveredSompi: String(10_000_000 - FEE) });
+    const low = await run("prepare-low-fee", ["escrow", "rescue-v1", "prepare", "--address", ESCROW_ADDRESS, "--outpoint", `${SMALL}:2`, "--to", ADDRESS, ...escrowArgs, "--out", "low.json", "--fee", "100000", "--json"]);
+    expect(low.status, low.brief).not.toBe(0);
+    expect(low.all, low.brief).toMatch(/FEE_BELOW_NETWORK_MINIMUM/);
+    const minimum = Number(/minimum relay fee for this rescue \((\d+) sompi/.exec(low.all)?.[1]);
+    expect(minimum, low.brief).toBeGreaterThan(100_000);
+    expect(minimum).toBeLessThan(FEE);
+    expect(fs.existsSync(path.join(ws, "low.json"))).toBe(false);
+    // at the node's minimum exactly: written, that fee
+    const exact = await run("prepare-min-fee", ["escrow", "rescue-v1", "prepare", "--address", ESCROW_ADDRESS, "--outpoint", `${SMALL}:2`, "--to", ADDRESS, ...escrowArgs, "--out", "exact.json", "--fee", String(minimum), "--json"]);
+    expect(exact.status, exact.brief).toBe(0);
+    expect(read("exact.json").feeSompi).toBe(String(minimum));
   });
 
   it("R-4 inspect shows the draft (what is signed); a package edited to say otherwise is refused by inspect, sign and broadcast, and left as it was", async () => {

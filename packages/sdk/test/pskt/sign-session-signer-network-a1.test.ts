@@ -45,6 +45,19 @@ const input = (transactionId = OUTPOINT) => ({
   proprietaries: {}
 });
 
+/**
+ * What the native signer returns: the same PSKT with a partial signature by the key on each input asked for, in the
+ * format the real addon writes ({ "<compressed pubkey>": { "schnorr": <64 bytes> } }). Since the notes cross-check §2.3
+ * item 4, signSession refuses a payload returned without them (the stand-in used to hand the PSKT back unsigned).
+ */
+function standInSign(data: string, keys: Uint8Array[], requestJson: string): string {
+  const pub = String(new k.PrivateKey(Buffer.from(keys[0]!).toString("hex")).toPublicKey().toString());
+  const bundle = JSON.parse(Buffer.from(Buffer.from(data, "base64").toString("utf8").slice(4), "hex").toString("utf8"));
+  for (const inner of bundle) for (const i of JSON.parse(requestJson).inputIndexes) inner.inputs[i].partialSigs = { ...inner.inputs[i].partialSigs, [pub]: { schnorr: "ab".repeat(64) } };
+  const out = Buffer.from("PSKB" + Buffer.from(JSON.stringify(bundle), "utf8").toString("hex"), "utf8").toString("base64");
+  return JSON.stringify({ payloadBase64: out, outputPayloadHash: hex(out) });
+}
+
 let adapterSeq = 0;
 /** A native adapter over a stand-in addon, registered in the SDK registry, and a session bound to it. */
 async function sessionFor(networkId: string, payload = payloadOf([input()])) {
@@ -52,9 +65,9 @@ async function sessionFor(networkId: string, payload = payloadOf([input()])) {
   const adapter: any = new NativePsktAdapter(`a1-native-${++adapterSeq}`);
   adapter.addon = {
     psktProbe: () => JSON.stringify({ bridge_version: "0.0.0-test", rusty_kaspa_commit: "test", operations: { inspect: true, sign: true, combine: true, finalize: true, extract: true } }),
-    psktSign: (data: string) => {
+    psktSign: (data: string, keys: Uint8Array[], requestJson: string) => {
       calls.sign++;
-      return JSON.stringify({ payloadBase64: data, outputPayloadHash: hex(data) });
+      return standInSign(data, keys, requestJson);
     }
   };
   pskt.adapterRegistry.register(adapter);

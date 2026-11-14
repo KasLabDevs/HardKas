@@ -1,4 +1,5 @@
 import {
+  HardkasError,
   PsktRuntimeAdapter,
   PsktAdapterTrustProfile,
   PsktRuntimeCapabilities,
@@ -310,12 +311,13 @@ export class NativePsktAdapter implements PsktRuntimeAdapter {
       });
     }
 
+    let extracted: { transaction: NativeExtractedTransaction; transactionId: unknown; transactionVersion: unknown; networkId: unknown; sourcePayloadHash: unknown };
     try {
       const resultStr = this.addon.psktExtract(payload.data, networkId);
       const result = JSON.parse(resultStr);
 
       const parsedTx = JSON.parse(result.transactionJson);
-      
+
       if (!validateNativeTransaction(parsedTx)) {
         throw new Error("Native PSKT extract failed: returned transaction does not match NativeExtractedTransaction schema");
       }
@@ -344,7 +346,7 @@ export class NativePsktAdapter implements PsktRuntimeAdapter {
         subnetworkId: parsedTx.subnetwork_id
       };
 
-      return {
+      extracted = {
         transaction: mappedTx,
         transactionId: result.transactionId,
         transactionVersion: result.transactionVersion,
@@ -354,5 +356,19 @@ export class NativePsktAdapter implements PsktRuntimeAdapter {
     } catch (e: any) {
       throw new Error(`Native PSKT extract failed: ${e.message}`);
     }
+    // §2.3 item 4 (notes cross-check): an input whose signature script is empty (or not hex) is unsigned; the node would
+    // refuse the transaction, and a P2SH input always pushes at least its redeem script.
+    const unsigned = extracted.transaction.inputs
+      .map((input, index) => ({ index, script: input.signatureScript }))
+      .filter(({ script }) => typeof script !== "string" || !/^(?:[0-9a-fA-F]{2})+$/.test(script))
+      .map(({ index }) => index);
+    if (unsigned.length > 0) {
+      throw new HardkasError(
+        "PSKT_EXTRACTED_INPUT_UNSIGNED",
+        `The extracted transaction has an empty or malformed signature script on input(s) ${unsigned.join(", ")}: it is not signed there, and the node would refuse it. Nothing was extracted.`,
+        { metadata: { inputs: unsigned, payloadHash: payload.payloadHash } }
+      );
+    }
+    return extracted;
   }
 }

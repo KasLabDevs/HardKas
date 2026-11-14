@@ -334,9 +334,18 @@ export function registerAccountsCommands(program: Command) {
         } else {
           getOutput().writeLine(`\nAccount:  ${result.name}`);
           getOutput().writeLine(`Address:  ${result.address}`);
+          // G7 n: sompi formatted as a bigint (Number() rounded above 2^53 sompi and printed 1e-8 for one sompi)
+          const { formatSompiToKas } = await import("@hardkas/core");
           getOutput().writeLine(
-            `Balance:  ${Number(result.balanceSompi) / 100_000_000} KAS`
+            `Balance:  ${formatSompiToKas(result.balanceSompi)} KAS`
           );
+          // G7 g: covenant-bound coins are in the node's balance but no payment spends them (shown only when there are some)
+          if (result.covenantUtxoCount > 0) {
+            getOutput().writeLine(
+              `Covenant: ${formatSompiToKas(result.covenantBoundSompi)} KAS in ${result.covenantUtxoCount} covenant-bound UTXO(s), not spendable by a payment`
+            );
+            getOutput().writeLine(`Spendable: ${formatSompiToKas(result.spendableSompi)} KAS`);
+          }
           getOutput().writeLine(`UTXOs:    ${result.utxoCount}`);
           getOutput().writeLine(`Network:  ${result.network}`);
         }

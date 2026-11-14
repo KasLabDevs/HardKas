@@ -546,7 +546,7 @@ async function spendableCoins(rpc: any, address: string, network: string = NETWO
  */
 export async function submitSilverTransaction(rpc: any, rpcTransaction: any, label: string, expectedTxId?: string): Promise<string> {
   const { acceptedTxIdOf, isNodeNetworkIdentityError, isRpcRequestNotSentError, knownTxIdOf } = await import("@hardkas/kaspa-rpc");
-  const { submitOutcomeOf } = await import("@hardkas/artifacts");
+  const { classifyNodeRejection, submitOutcomeOf } = await import("@hardkas/artifacts");
   const txId = typeof expectedTxId === "string" && /^[0-9a-f]{64}$/i.test(expectedTxId) ? expectedTxId.toLowerCase() : knownTxIdOf(rpcTransaction);
   let res: any;
   try {
@@ -555,7 +555,11 @@ export async function submitSilverTransaction(rpc: any, rpcTransaction: any, lab
     if (e instanceof HardkasCliError) throw e;
     const message = String(e?.message ?? e);
     if (isRpcRequestNotSentError(e) || isNodeNetworkIdentityError(e)) return fail("SILVER_SUBMIT_NOT_SENT", `${label}: nothing was sent (${message})`);
-    if (submitOutcomeOf({ accepted: false, error: message }) === "rejected") return fail("SILVER_REJECTED_BY_NODE", `${label}: ${message}`);
+    if (submitOutcomeOf({ accepted: false, error: message }) === "rejected") {
+      // G7 c, d: where the node's text says what to change (a script time lock: --sequence; the storage mass), it is added
+      const { code, hint } = classifyNodeRejection(message);
+      return fail("SILVER_REJECTED_BY_NODE", `${label}: ${message}${hint ? ` [${code}: ${hint}]` : ""}`);
+    }
     return fail(
       "SILVER_SUBMIT_OUTCOME_UNKNOWN",
       `${label}: the outcome is unknown (${message}); the node may have transaction ${txId ?? "(id unknown)"}. It was not ` +
@@ -570,6 +574,59 @@ export async function submitSilverTransaction(rpc: any, rpcTransaction: any, lab
 }
 
 const submit = submitSilverTransaction;
+
+/**
+ * G2 · the signature operations of a contract's redeem script, counted statically (tx-builder countScriptSigOps): every
+ * entry and every inlined helper call site, whatever entry a spend runs. A node's mempool refuses any spend of a P2SH input
+ * above core.MAX_STANDARD_P2SH_SIG_OPS (15), transaction v0 and v1 alike — proven on rusty-kaspad 2.1.0 simnet
+ * (packages/testing/test/p2sh-sig-op-limit-g2.simnet.test.ts).
+ */
+async function redeemScriptSigOps(bytecodeHex: string): Promise<number> {
+  const { countScriptSigOps } = await import("@hardkas/tx-builder");
+  return countScriptSigOps(bytecodeHex);
+}
+
+/**
+ * G2: a redeem script above the mempool's signature-operation limit can never be spent through a standard node. Refused
+ * before any key is read, any node contacted or anything funded, by `silver deploy` and `silver covenant genesis` (a
+ * covenant output is a P2SH input of every transition). No override: every HardKAS spend goes through a node's mempool.
+ */
+async function assertSigOpsStandard(name: string, bytecodeHex: string): Promise<void> {
+  const core = await import("@hardkas/core");
+  const sigOps = await redeemScriptSigOps(bytecodeHex);
+  if (sigOps > core.MAX_STANDARD_P2SH_SIG_OPS) {
+    fail(
+      "SILVER_SIG_OPS_ABOVE_STANDARD",
+      `${name}'s redeem script counts ${sigOps} signature operations; a node's mempool refuses every spend of a P2SH input above ` +
+        `${core.MAX_STANDARD_P2SH_SIG_OPS} (counted over the whole script — every entry, every inlined helper — whatever entry the spend runs; ` +
+        `transaction v0 and v1 alike). Nothing was funded: bring the contract to ${core.MAX_STANDARD_P2SH_SIG_OPS} signature checks or fewer (split it)`,
+      HardkasExitCode.USAGE_ERROR
+    );
+  }
+}
+
+/**
+ * G7 f · same bytecode, same P2SH address: coins already there were funded by another deploy (or sent by anything else).
+ * Informational: this deploy adds one output and its record tracks only that outpoint. A failed listing is a warning too
+ * (the funding read that follows meets the node's failure with its usual code).
+ */
+async function warnCoinsAlreadyAtContract(rpc: any, address: string): Promise<void> {
+  let listed: unknown;
+  try {
+    listed = await rpc.getUtxosByAddress(address);
+  } catch (e: any) {
+    out().warn(pc.yellow(`warning: the outputs already at ${address} could not be listed (${String(e?.message ?? e)})`));
+    return;
+  }
+  if (!Array.isArray(listed) || listed.length === 0) return;
+  const total = listed.reduce((s: bigint, u: any) => s + BigInt(u?.amountSompi ?? 0), 0n);
+  out().warn(
+    pc.yellow(
+      `warning: ${address} already holds ${listed.length} output(s), ${total} sompi in all: this contract (same bytecode, same address) was funded before. ` +
+        "This deploy adds one more output; its record tracks only that outpoint, and `silver spend` spends only the outpoint of the record it is given."
+    )
+  );
+}
 
 /**
  * V1-COMPAT (the owner's decision, 26-oct): `deploy` and `spend` send transaction v0 by default — the certified path, its
@@ -1010,10 +1067,12 @@ export function registerSilverCommand(program: Command) {
       const lock = core.silverP2shLock(bytecode);
       const address = core.silverP2shAddress(bytecode, target.network);
       const value = parseKas(opts.amount);
+      await assertSigOpsStandard(name, bytecode);
       const workspaceRoot = txVersion === 1 ? await assertCanonicalWorkspace(target) : undefined;
       const funder = await accountKey(opts.from, keySource(opts), target.network);
       const { identity, rpc } = await silverNode(target);
       try {
+        await warnCoinsAlreadyAtContract(rpc, address);
         let funding: { txId: string; feeSompi: bigint };
         if (txVersion === 0) {
           // the certified v0 funding, unchanged
@@ -1105,6 +1164,24 @@ export function registerSilverCommand(program: Command) {
         // the certified v0 spend, unchanged
         const { buildSilverSweep } = await import("@hardkas/accounts");
         const args = await entryArgs(opts.args, keys);
+        const signatureArgs = Math.max(1, args.filter((a: any) => a.kind === "signature").length);
+        if (opts.sigOpCount === undefined) {
+          // G7 a (a warning; the default is unchanged): the declared count is the signature arguments, while the entry may
+          // run more checks (checkMsgSig, a repeated or looped check). The node refuses a v0 input that runs more than it
+          // declares ("sig op count exceeds passed limit"); the static count covers every entry, so it is an upper bound
+          const staticOps = await redeemScriptSigOps(core.silContractBytecodeHex(core.getSilContract(artifact, deploy.contract).contract));
+          if (staticOps > signatureArgs) {
+            out().warn(
+              pc.yellow(
+                `warning: ${deploy.contract}'s redeem script counts ${staticOps} signature operations (all its entries); this spend declares ${signatureArgs} ` +
+                  `(its signature arguments). If '${opts.entry}' runs more checks than that, the node refuses the spend: give the count with --sig-op-count.` +
+                  (staticOps > core.MAX_STANDARD_P2SH_SIG_OPS
+                    ? ` Above ${core.MAX_STANDARD_P2SH_SIG_OPS}, a node's mempool refuses every spend of this contract, whatever is declared.`
+                    : "")
+              )
+            );
+          }
+        }
         const { identity, rpc } = await silverNode(target);
         try {
           const utxo = await findUtxo(rpc, deploy.address, deploy.outpoint);
@@ -1122,7 +1199,7 @@ export function registerSilverCommand(program: Command) {
             to: opts.to,
             networkId: target.network,
             ...(opts.sequence !== undefined ? { sequence: BigInt(opts.sequence) } : {}),
-            sigOpCount: opts.sigOpCount !== undefined ? Number(opts.sigOpCount) : Math.max(1, args.filter((a: any) => a.kind === "signature").length)
+            sigOpCount: opts.sigOpCount !== undefined ? Number(opts.sigOpCount) : signatureArgs
           });
           const txId = await submit(rpc, built.rpcTransaction, "spend", (built as any).txId);
           const confirmed = opts.wait ? await waitForUtxo(rpc, opts.to, { transactionId: txId, index: 0 }, Number(opts.timeout)) : undefined;
@@ -1264,6 +1341,7 @@ export function registerSilverCommand(program: Command) {
       const lockingScript = core.silverP2shLock(core.silContractBytecodeHex(contract));
       const address = core.silverP2shAddress(core.silContractBytecodeHex(contract), target.network);
       const value = parseKas(opts.amount);
+      await assertSigOpsStandard(name, core.silContractBytecodeHex(contract));
       const fundingBudget = budgetOption(opts.computeBudget, false) as number | undefined;
       const fee = integerOption(opts.fee, "--fee");
       const workspaceRoot = await assertCanonicalWorkspace(target);

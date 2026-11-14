@@ -4079,7 +4079,7 @@
   },
   {
     "commandPath": "hardkas silver audit",
-    "description": "Run static security analysis over a SilverScript (.sil) contract or compile record (heuristic AST and source-text rules COV-AUTH-001..COV-BUDGET-001: findings to review, not a proof of security). Exit codes: 0 report written; 1 HIGH findings with --fail-on-high (SILVER_AUDIT_HIGH_FINDINGS); 2 usage (file not found, not a compile record); 4 tampered compile record",
+    "description": "Run static security analysis over a SilverScript (.sil) contract or compile record (heuristic AST and source-text rules COV-AUTH-001..COV-BUDGET-001, COV-INPUT-001, COV-SIGOPS-001 and COV-LOCKTIME-001: findings to review, not a proof of security).Exit codes: 0 report written; 1 HIGH findings with --fail-on-high (SILVER_AUDIT_HIGH_FINDINGS); 2 usage (file not found, not a compile record); 4 tampered compile record",
     "arguments": [
       {
         "name": "source-or-record",
@@ -5159,8 +5159,7 @@
       },
       {
         "flags": "--fee <sompi>",
-        "description": "Miner fee in sompi (default 400000 sompi = 0.004 KAS)",
-        "defaultValue": "400000"
+        "description": "Miner fee in sompi (default 400000 sompi = 0.004 KAS, raised to the node's minimum relay fee for this rescue when that is higher; at most 2500000)"
       },
       {
         "flags": "--json",

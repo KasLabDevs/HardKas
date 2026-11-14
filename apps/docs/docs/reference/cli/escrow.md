@@ -25,7 +25,7 @@ title: hardkas escrow
 - `--network &lt;network&gt;` (Default: `simnet`): Network id (default simnet); mainnet refused; testnet-&lt;n&gt; needs experimental + network.allowPublic
 - `--url &lt;url&gt;`: Node wRPC (JSON) endpoint (default: the one the workspace declares for the network; simnet: the canonical localnet)
 - `--out &lt;file&gt;` (Default: `rescue-v1-plan.draft.json`): Output draft file path (default rescue-v1-plan.draft.json)
-- `--fee &lt;sompi&gt;` (Default: `400000`): Miner fee in sompi (default 400000 sompi = 0.004 KAS)
+- `--fee &lt;sompi&gt;`: Miner fee in sompi (default 400000 sompi = 0.004 KAS, raised to the node's minimum relay fee for this rescue when that is higher; at most 2500000)
 - `--json` (Default: `false`): Output as JSON
 
 ---

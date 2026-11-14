@@ -102,9 +102,19 @@ beforeAll(async () => {
   const adapter: any = new NativePsktAdapter(ADAPTER);
   adapter.addon = {
     psktProbe: () => JSON.stringify({ bridge_version: "0.0.0-test", rusty_kaspa_commit: "test", operations: { inspect: true, sign: true, combine: true, finalize: true, extract: true } }),
-    psktSign: (data: string) => {
+    // a stand-in for the Rust signer: the same bundle with the key's partial signature on each input asked for, since
+    // pskt.signSession now refuses a payload returned unsigned (kaspa-agent-notes cross-check §2.3 item 4)
+    psktSign: (data: string, keys: Uint8Array[], requestJson: string) => {
       calls.sign++;
-      return JSON.stringify({ payloadBase64: data, outputPayloadHash: hex(data) });
+      const pub = String(new k.PrivateKey(Buffer.from(keys[0]!).toString("hex")).toPublicKey().toString());
+      const bundle = JSON.parse(Buffer.from(Buffer.from(data, "base64").toString("utf8").slice(4), "hex").toString("utf8"));
+      for (const inner of bundle) {
+        for (const i of JSON.parse(requestJson).inputIndexes) {
+          inner.inputs[i].partialSigs = { ...inner.inputs[i].partialSigs, [pub]: { schnorr: "ab".repeat(64) } };
+        }
+      }
+      const out = Buffer.from("PSKB" + Buffer.from(JSON.stringify(bundle), "utf8").toString("hex"), "utf8").toString("base64");
+      return JSON.stringify({ payloadBase64: out, outputPayloadHash: hex(out) });
     }
   };
   if (!pskt.adapterRegistry.has(ADAPTER)) pskt.adapterRegistry.register(adapter);

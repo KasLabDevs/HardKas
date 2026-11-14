@@ -1623,7 +1623,7 @@ hardkas escrow rescue-v1 prepare [options]
 | `--network <network>` | Network id (default simnet); mainnet refused; testnet-<n> needs experimental + network.allowPublic | simnet |
 | `--url <url>` | Node wRPC (JSON) endpoint (default: the one the workspace declares for the network; simnet: the canonical localnet) |  |
 | `--out <file>` | Output draft file path (default rescue-v1-plan.draft.json) | rescue-v1-plan.draft.json |
-| `--fee <sompi>` | Miner fee in sompi (default 400000 sompi = 0.004 KAS) | 400000 |
+| `--fee <sompi>` | Miner fee in sompi (default 400000 sompi = 0.004 KAS, raised to the node's minimum relay fee for this rescue when that is higher; at most 2500000) |  |
 | `--json` | Output as JSON | false |
 
 ### Arguments
@@ -4700,7 +4700,7 @@ No arguments.
 
 ## hardkas silver audit
 
-Run static security analysis over a SilverScript (.sil) contract or compile record (heuristic AST and source-text rules COV-AUTH-001..COV-BUDGET-001: findings to review, not a proof of security). Exit codes: 0 report written; 1 HIGH findings with --fail-on-high (SILVER_AUDIT_HIGH_FINDINGS); 2 usage (file not found, not a compile record); 4 tampered compile record
+Run static security analysis over a SilverScript (.sil) contract or compile record (heuristic AST and source-text rules COV-AUTH-001..COV-BUDGET-001, COV-INPUT-001, COV-SIGOPS-001 and COV-LOCKTIME-001: findings to review, not a proof of security).Exit codes: 0 report written; 1 HIGH findings with --fail-on-high (SILVER_AUDIT_HIGH_FINDINGS); 2 usage (file not found, not a compile record); 4 tampered compile record
 
 ### Usage
 

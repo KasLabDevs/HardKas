@@ -9,7 +9,14 @@ import {
   type SilAbiArtifact,
   type SilArtifactValue
 } from "@hardkas/core";
-import { measureBuiltTransactionMass, v1StorageMass, V1_MASS_PARAMS, type V1StorageCell } from "@hardkas/tx-builder";
+import {
+  measureBuiltTransactionMass,
+  measureBuiltTransactionNodeMass,
+  priorityFeeRate,
+  v1StorageMass,
+  V1_MASS_PARAMS,
+  type V1StorageCell
+} from "@hardkas/tx-builder";
 import { parseWasmTxToRpc } from "./internal/wasm-rpc-serialization.js";
 import type { SilverContractUtxo } from "./silver-spend.js";
 
@@ -18,8 +25,9 @@ import type { SilverContractUtxo } from "./silver-spend.js";
  *
  * Covenant bindings exist only in v1 transactions, whose inputs commit a
  * compute budget instead of a sig-op count. The covenant id of a genesis is
- * computed by the SDK (`populateGenesisCovenants`), storage mass and fee by the
- * SDK's mass calculator, the successor state by silverc (see
+ * computed by the SDK (`populateGenesisCovenants`), the storage mass and the
+ * minimum fee by the node's rule (G3; tx-builder v1-mass, as the v1 engine
+ * prices them), the successor state by silverc (see
  * @hardkas/core compileSilverSuccessor). Compute budgets are the caller's:
  * the SDK has no estimator, so HardKAS takes them explicitly and the node
  * decides whether they suffice.
@@ -65,7 +73,8 @@ function checkBudget(budget: number, where: string): number {
  * from its sig-op count only — v1 compute budgets are an upstream TODO
  * (wallet/core/src/tx/mass.rs) — so it cannot price a v1 input that commits a
  * budget. Such transactions take an explicit fee, which the node validates;
- * HardKAS does not add a formula of its own.
+ * HardKAS checks it against the node's floor (v1-mass, budgets included) and
+ * never pays that floor unasked for a budget it has not measured.
  */
 function requireExplicitFeeForBudgets(budgets: readonly number[], feeSompi: bigint | undefined): void {
   if (budgets.some((b) => b > 0) && feeSompi === undefined) {
@@ -76,29 +85,42 @@ function requireExplicitFeeForBudgets(budgets: readonly number[], feeSompi: bigi
   }
 }
 
+/** A P2PK Schnorr unlock at its final length (OP_DATA_65 + signature + SIGHASH_ALL), for the node's mass. */
+const P2PK_SIGNATURE_PLACEHOLDER = "41" + "00".repeat(65);
+
 /**
- * Raises the fee until it covers the SDK's minimum for the transaction it
- * leaves behind; an explicit fee is used as given if it is at least that minimum.
+ * G3 · the fee is the node's minimum relay fee (100 sompi/g of the v1 compute mass, compute budgets and covenant
+ * bindings included, as the v1 engine prices it: tx-builder measureBuiltTransactionNodeMass), not the SDK's
+ * calculateTransactionFee, which charged the storage mass and ignores v1 compute budgets; each mass must be within its
+ * block limit (the v1 engine's rule; the storage mass is the committed, node-rule value). Without an explicit fee it
+ * raises the fee until it covers that minimum, or a priority rate above the minimum priced on the SDK's mass, for the
+ * transaction it leaves behind; an explicit fee is used as given if it is at least that minimum. `build(fee, true)` is
+ * the transaction with every signature script at its final length; `build(fee, false)` the one the SDK prices (its
+ * unsigned P2PK inputs carry one signature allowance each), whose mass the result reports as before.
  */
-function settleFee(build: (fee: bigint) => any, networkId: string, feeRate?: bigint, explicitFee?: bigint) {
+function settleFee(build: (fee: bigint, finalLength: boolean) => any, networkId: string, feeRate?: bigint, explicitFee?: bigint) {
+  const measure = (fee: bigint) => {
+    const placed = build(fee, true);
+    const node = measureBuiltTransactionNodeMass(placed, { storageMass: BigInt(placed.storageMass) });
+    if (!node.relayable) throw covenantError("TX_MASS_ABOVE_STANDARD_LIMIT", `${node.exceededText}: the node would never include this transaction`);
+    return { node, measured: measureBuiltTransactionMass(build(fee, false), networkId) };
+  };
   if (explicitFee !== undefined) {
-    const measured = measureBuiltTransactionMass(build(explicitFee), networkId);
-    if (!measured.standard) {
-      throw covenantError("TX_MASS_ABOVE_STANDARD_LIMIT", `mass ${measured.mass} exceeds the maximum standard mass ${measured.maximumStandardMass}`);
-    }
-    if (explicitFee < measured.minimumFeeSompi) {
-      throw covenantError("FEE_BELOW_NETWORK_MINIMUM", `fee ${explicitFee} is below the SDK minimum ${measured.minimumFeeSompi}`);
+    const { node, measured } = measure(explicitFee);
+    if (explicitFee < node.minimumFeeSompi) {
+      throw covenantError(
+        "FEE_BELOW_NETWORK_MINIMUM",
+        `fee ${explicitFee} is below the node's minimum relay fee ${node.minimumFeeSompi} (100 sompi/g × ${node.feeMass} g of compute mass, compute budgets included)`
+      );
     }
     return { fee: explicitFee, measured };
   }
+  const priority = priorityFeeRate(feeRate);
   let fee = 0n;
   for (let round = 0; round < 8; round++) {
-    const measured = measureBuiltTransactionMass(build(fee), networkId);
-    if (!measured.standard) {
-      throw covenantError("TX_MASS_ABOVE_STANDARD_LIMIT", `mass ${measured.mass} exceeds the maximum standard mass ${measured.maximumStandardMass}`);
-    }
-    const byRate = feeRate !== undefined ? measured.mass * feeRate : 0n;
-    const required = measured.minimumFeeSompi > byRate ? measured.minimumFeeSompi : byRate;
+    const { node, measured } = measure(fee);
+    const byRate = priority !== undefined ? measured.mass * priority : 0n;
+    const required = node.minimumFeeSompi > byRate ? node.minimumFeeSompi : byRate;
     if (required <= fee) return { fee, measured };
     fee = required;
   }
@@ -206,9 +228,14 @@ export function buildCovenantGenesis(request: CovenantGenesisRequest): CovenantT
     return tx;
   };
 
-  // Unsigned P2PK inputs: the SDK prices each with one expected signature.
+  // The node's mass with each P2PK unlock at its signed length; the SDK prices the unsigned inputs (one expected signature each).
   requireExplicitFeeForBudgets(inputs.map((f) => f.computeBudget), request.feeSompi);
-  const { fee, measured } = settleFee((f) => make(f), request.networkId, request.feeRateSompiPerGram, request.feeSompi);
+  const { fee, measured } = settleFee(
+    (f, finalLength) => make(f, finalLength ? inputs.map(() => P2PK_SIGNATURE_PLACEHOLDER) : undefined),
+    request.networkId,
+    request.feeRateSompiPerGram,
+    request.feeSompi
+  );
   const unsigned = make(fee);
   const signatures = inputs.map((f, i) => String(k.createInputSignature(unsigned, i, f.key, k.SighashType.All)));
   const signed = make(fee, signatures);

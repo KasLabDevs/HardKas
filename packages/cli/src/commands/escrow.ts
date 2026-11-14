@@ -2,7 +2,7 @@ import { Command } from "commander";
 import fs from "node:fs";
 import path from "node:path";
 import pc from "picocolors";
-import { assertMainnetTransactionsDisabled, loadManagedKaspaWasmSync } from "@hardkas/core";
+import { assertMainnetTransactionsDisabled, formatSompiToKas, loadManagedKaspaWasmSync } from "@hardkas/core";
 import {
   compileSilverScript,
   getSilContract,
@@ -24,8 +24,17 @@ function fail(code: string, message: string, exitCode = HardkasExitCode.RUNTIME_
   throw new HardkasCliError(code, message, { exitCode });
 }
 
-/** The most a rescue may pay in fee (the limit `prepare` already applied), enforced again at sign and broadcast. */
-const RESCUE_MAX_FEE_SOMPI = 500_000n;
+/**
+ * The most a rescue may pay in fee (the limit `prepare` already applied), enforced again at sign and broadcast.
+ *
+ * G3 · an emergency path needs room above the node's minimum relay fee (100 sompi/g of the rescue's compute mass, about
+ * 300,000 sompi for a v1 escrow): the limit was 500,000, so a larger script or a higher floor left no fee that passed.
+ * It is now the dev-server escrow's default fee ceiling (2,500,000 sompi = 0.025 KAS), several times that minimum and
+ * still a fixed bound that no file can raise.
+ */
+const RESCUE_MAX_FEE_SOMPI = 2_500_000n;
+/** The fee `prepare` pays when --fee is not given, raised to the node's minimum relay fee for the rescue when that is higher. */
+const RESCUE_DEFAULT_FEE_SOMPI = 400_000n;
 
 export interface RescueDraftSummary {
   readonly networkId: string;
@@ -166,7 +175,10 @@ export function registerEscrowCommands(program: Command) {
     .option("--network <network>", "Network id (default simnet); mainnet refused; testnet-<n> needs experimental + network.allowPublic", "simnet")
     .option("--url <url>", "Node wRPC (JSON) endpoint (default: the one the workspace declares for the network; simnet: the canonical localnet)")
     .option("--out <file>", "Output draft file path (default rescue-v1-plan.draft.json)", "rescue-v1-plan.draft.json")
-    .option("--fee <sompi>", "Miner fee in sompi (default 400000 sompi = 0.004 KAS)", "400000")
+    .option(
+      "--fee <sompi>",
+      "Miner fee in sompi (default 400000 sompi = 0.004 KAS, raised to the node's minimum relay fee for this rescue when that is higher; at most 2500000)"
+    )
     .option("--json", "Output as JSON", false)
     .action(async (opts: any) => {
       const [txId, idxStr] = opts.outpoint.split(":");
@@ -174,9 +186,11 @@ export function registerEscrowCommands(program: Command) {
         return fail("RESCUE_OUTPOINT_INVALID", `Invalid outpoint '${opts.outpoint}'; expected format txid:index`);
       }
       const outputIndex = parseInt(idxStr, 10);
-      const feeSompi = BigInt(opts.fee || "400000");
-      if (feeSompi > 500_000n) {
-        return fail("ESCROW_FEE_EXCESSIVE_REFUSED", `Requested rescue fee (${feeSompi} sompi) exceeds maximum safe fee of 500000 sompi.`);
+      // G3: an explicit --fee is used as given (if it meets the node's minimum); the default is raised to that minimum
+      const explicitFee = opts.fee !== undefined && opts.fee !== "";
+      let feeSompi = explicitFee ? BigInt(opts.fee) : RESCUE_DEFAULT_FEE_SOMPI;
+      if (feeSompi > RESCUE_MAX_FEE_SOMPI) {
+        return fail("ESCROW_FEE_EXCESSIVE_REFUSED", `Requested rescue fee (${feeSompi} sompi) exceeds maximum safe fee of ${RESCUE_MAX_FEE_SOMPI} sompi.`);
       }
 
       // L1-CORE-1 B3: the node of the network asked for (--url, else the workspace's declared endpoint; it was the
@@ -187,6 +201,17 @@ export function registerEscrowCommands(program: Command) {
       // answers mainnet is refused by its one identity answer (proveL1Node). Both come before the escrow's arguments.
       const { resolveL1NodeTarget, proveL1Node } = await import("../runners/l1-node-target.js");
       const { rpc } = await proveL1Node(await resolveL1NodeTarget(String(opts.network), opts.url));
+      // G7 e (kaspa-agent-notes cross-check): the destination must be an address of the rescue's own network. Another
+      // prefix would pay the same key's script here while the package named a foreign address. After the node's proof,
+      // so the mainnet and identity refusals keep coming first.
+      const { addressMatchesNetwork } = await import("@hardkas/accounts");
+      if (!addressMatchesNetwork(String(opts.to), String(opts.network))) {
+        return fail(
+          "NETWORK_ADDRESS_MISMATCH",
+          `--to ${opts.to} is not an address of ${opts.network}: give the destination on the rescue's own network. Nothing was read or written.`,
+          HardkasExitCode.USAGE_ERROR
+        );
+      }
       let utxoEntry: any;
       let compiled: Awaited<ReturnType<typeof compileSilverScript>>;
       let lock: { version: number; script: string };
@@ -239,10 +264,8 @@ export function registerEscrowCommands(program: Command) {
       }
 
       const totalSompi = BigInt(u.amount);
-      if (totalSompi <= feeSompi) {
-        return fail("RESCUE_INSUFFICIENT_FUNDS", `Outpoint amount (${totalSompi} sompi) is smaller than fee (${feeSompi} sompi)`);
-      }
-      const recoverSompi = totalSompi - feeSompi;
+      const insufficient = () => fail("RESCUE_INSUFFICIENT_FUNDS", `Outpoint amount (${totalSompi} sompi) is smaller than fee (${feeSompi} sompi)`);
+      if (totalSompi <= feeSompi) return insufficient();
 
       const targetScript = k.payToAddressScript(new k.Address(opts.to));
       const targetSpkHex = targetScript.script;
@@ -255,23 +278,43 @@ export function registerEscrowCommands(program: Command) {
         isCoinbase: !!u.isCoinbase
       };
 
-      const outputs = [
-        {
-          amountSompi: recoverSompi,
-          scriptPublicKey: { version: 0 as const, script: targetSpkHex }
-        }
-      ];
-
       const { prepareSilverSpend } = await import("@hardkas/accounts");
-      const draft = prepareSilverSpend({
-        artifact: compiled.artifact,
-        contractName: ESCROW_V1_CONTRACT_NAME,
-        entry: "mutualRelease",
-        args: [{ kind: "signer", signer: "buyer" }, { kind: "signer", signer: "seller" }],
-        utxo: contractUtxo,
-        outputs,
-        networkId: opts.network
-      });
+      const draftFor = (fee: bigint) =>
+        prepareSilverSpend({
+          artifact: compiled.artifact,
+          contractName: ESCROW_V1_CONTRACT_NAME,
+          entry: "mutualRelease",
+          args: [{ kind: "signer", signer: "buyer" }, { kind: "signer", signer: "seller" }],
+          utxo: contractUtxo,
+          outputs: [{ amountSompi: totalSompi - fee, scriptPublicKey: { version: 0 as const, script: targetSpkHex } }],
+          networkId: opts.network
+        });
+      // G3: the node's minimum relay fee for this rescue (prepareSilverSpend measures it: 100 sompi/g of the compute mass;
+      // it used to be the SDK's storage-inclusive figure, which a 0.1 KAS escrow output could not pay at the default fee)
+      let draft: ReturnType<typeof draftFor>;
+      try {
+        draft = draftFor(feeSompi);
+      } catch (e: any) {
+        if (e?.code !== "FEE_BELOW_NETWORK_MINIMUM" || typeof e.minimumFeeSompi !== "string") throw e;
+        const minimum = BigInt(e.minimumFeeSompi);
+        if (explicitFee) {
+          return fail(
+            "FEE_BELOW_NETWORK_MINIMUM",
+            `--fee ${feeSompi} sompi is below the node's minimum relay fee for this rescue (${minimum} sompi: 100 sompi/g of its compute mass). ` +
+              `Pass --fee ${minimum} or more (at most ${RESCUE_MAX_FEE_SOMPI}). Nothing was written.`
+          );
+        }
+        if (minimum > RESCUE_MAX_FEE_SOMPI) {
+          return fail(
+            "ESCROW_FEE_EXCESSIVE_REFUSED",
+            `The node's minimum relay fee for this rescue (${minimum} sompi) is above the rescue fee limit of ${RESCUE_MAX_FEE_SOMPI} sompi. Nothing was written.`
+          );
+        }
+        feeSompi = minimum;
+        if (totalSompi <= feeSompi) return insufficient();
+        draft = draftFor(feeSompi);
+      }
+      const recoverSompi = totalSompi - feeSompi;
 
       const rescuePackage = {
         schema: "hardkas.escrow.rescue.v1",
@@ -296,7 +339,8 @@ export function registerEscrowCommands(program: Command) {
 
       out().writeLine(pc.bold(pc.green("✓ Rescue Draft Created Successfully")));
       out().writeLine(`  File:      ${pc.cyan(outFile)}`);
-      out().writeLine(`  Recover:   ${pc.yellow((Number(recoverSompi) / 100_000_000).toFixed(4))} KAS (${recoverSompi} sompi)`);
+      // G7-n: exact (bigint) sompi → KAS; Number() lost precision above 2^53 sompi
+      out().writeLine(`  Recover:   ${pc.yellow(formatSompiToKas(recoverSompi))} KAS (${recoverSompi} sompi)`);
       out().writeLine(`  Miner fee: ${pc.dim(`${feeSompi} sompi`)}`);
       out().writeLine(`  Target:    ${pc.dim(opts.to)}`);
       out().writeLine(pc.dim(`Next: hardkas escrow rescue-v1 sign ${opts.out} --account <name>`));

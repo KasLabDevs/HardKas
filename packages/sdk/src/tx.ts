@@ -3038,6 +3038,9 @@ export class HardkasTx {
     // yet, recorded before the send preflight checked it): the same transaction can never be sent again, so say how on
     const rejection = recordedOutcome === "rejected" && recorded.schema === HardkasSchemas.TxSubmissionV1 ? nodeRejectionOf(recorded.submitResult) : undefined;
     const tooEarly = rejection?.code === "SEQUENCE_LOCK_REJECTED" || rejection?.code === "LOCK_TIME_REJECTED";
+    // the redeem script's own time-lock check failed against a field of the transaction (for a HardKAS spend, the input's
+    // sequence): waiting never helps, only a transaction with the field the lock needs (a new txId)
+    const scriptLock = rejection?.code === "SCRIPT_LOCK_UNSATISFIED";
     // B3: the node observably does not hold it (accepted by a submit and seen nowhere since — a restart empties kaspad's
     // mempool, an eviction —, removed from the chain, or refused): the same txId can never be sent again, so say how out.
     // A state that decides nothing (unknown submit outcome, pruned, conflicting) keeps the "observe it" advice only.
@@ -3053,13 +3056,22 @@ export class HardkasTx {
         `(one submission per txId). Nothing was sent. ` +
         (tooEarly
           ? `The node refused it only because its time lock was not met yet: to send it now, plan it again with any change that gives a new txId (for example a fee 1 sompi higher), sign and send that one.`
+          : scriptLock
+            ? `The node refused it because the redeem script's time-lock check failed against the transaction's own field ` +
+              `(for a HardKAS spend, the input's sequence${rejection?.hint ? `; ${rejection.hint}` : ""}). Waiting never helps: build it ` +
+              `again with the sequence the lock needs (silver spend --sequence), which gives a new txId, and send that one.`
           : notHeld
             ? `HardKAS never sends it again on its own. To make this payment now: first check 'hardkas tx status ${txId}' and that the payment ` +
               `did not reach its recipient (if the inputs it spends are no longer unspent, it was accepted or replaced: do not pay again); ` +
               `then plan it again with a different fee or amount, which gives a new txId, and sign and send that one.`
             : `Observe it with 'hardkas tx status ${txId}'.`),
       rejection || notHeld
-        ? { metadata: { ...(rejection ? { recordedRejection: rejection.code } : {}), ...(notHeld ? { derivedStatus: derived!.status, remedy: "replan-new-txid" } : {}) } }
+        ? {
+            metadata: {
+              ...(rejection ? { recordedRejection: rejection.code } : {}),
+              ...(notHeld ? { derivedStatus: derived!.status, remedy: "replan-new-txid" } : scriptLock ? { remedy: "replan-new-txid" } : {})
+            }
+          }
         : undefined
     );
   }

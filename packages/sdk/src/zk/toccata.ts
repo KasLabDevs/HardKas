@@ -17,6 +17,15 @@ import {
   type DerivedTxStatus,
   type TxObservation
 } from "@hardkas/artifacts";
+import {
+  V1_MASS_PARAMS,
+  v1FeeMass,
+  v1MassShapeOfWasmTransaction,
+  v1MinimumRelayFee,
+  v1NonContextualMasses,
+  v1StorageMass,
+  type V1NonContextualMasses
+} from "@hardkas/tx-builder";
 import { observeTxOnce, rpcObserverFor } from "../tx-observer.js";
 import type { ZkIssue } from "../zk.js";
 import {
@@ -81,6 +90,14 @@ export const R0_GROTH16_VK_ELEMENTS = 6;
 export const R0_GROTH16_OBSERVED_SCRIPT_OVERHEAD_SCRIPT_UNITS = 2811n;
 /** Consensus block compute-mass limit (rusty-kaspa 2.1.0 config/params.rs block_mass_limits.compute). */
 export const BLOCK_COMPUTE_MASS_LIMIT = 500000n;
+/**
+ * G1 · the storage-mass limit a ZK spend must fit: the block's (rusty-kaspa 2.1.0 config/params.rs
+ * block_mass_limits.storage, V1_MASS_PARAMS). rusty-kaspad 2.1.0's mempool relays a version-1 transaction up to it at the
+ * compute/transient relay floor and refuses one above it ("transaction storage mass of 550000 is larger than max allowed
+ * size of 500000"); proven on simnet with plain v1 transactions (zk-storage-mass-node-rule.simnet.test.ts). Storage mass
+ * (KIP-9) is C/output - C/input per cell, C = 10^12: a small output makes it large, and no fee lowers it.
+ */
+export const BLOCK_STORAGE_MASS_LIMIT: bigint = V1_MASS_PARAMS.blockLimits.storage;
 
 /**
  * Smallest compute budget whose allowance (budget * 10,000 + 9,999 script units) covers the observed script
@@ -381,6 +398,16 @@ export interface R0Groth16ScriptsResult {
   requiredFundingSompi?: bigint;
   /** proof-and-output-bound: the largest UTXO the redeem script accepts (bound outputs + maxFeeSompi). */
   maxInputSompi?: bigint;
+  /**
+   * G1 · proof-and-output-bound: the storage mass (KIP-9, the node's rule) of the spend funded with requiredFundingSompi;
+   * at most BLOCK_STORAGE_MASS_LIMIT, or the lock is refused (ZK_BOUND_OUTPUT_STORAGE_MASS_ABOVE_LIMIT).
+   */
+  spendStorageMass?: bigint;
+  /**
+   * G1 · set when the lock is refused with ZK_BOUND_OUTPUT_STORAGE_MASS_ABOVE_LIMIT: the smallest amount of each bound output
+   * whose spend fits the storage-mass limit, the other output unchanged. Absent for an output no amount of which would fit.
+   */
+  minimumBoundAmountsSompi?: { payout?: bigint; change?: bigint };
   experimental: true;
   warnings: ZkIssue[];
   issues: ZkIssue[];
@@ -424,6 +451,15 @@ export interface R0Groth16TxResult {
   mass: bigint;
   /** mass + computeBudget * 100 grams: what the mempool prices. */
   computeMass: bigint;
+  /** G1 · the node's compute mass of this spend (rusty-kaspa 2.1.0 rule, v1NonContextualMasses; budget term included). */
+  nodeComputeMass?: bigint;
+  /**
+   * G1 · the node's minimum relay fee for this spend (v1FeeMass / v1MinimumRelayFee: compute or normalized transient mass,
+   * never storage mass): the floor below which ZK_FEE_BELOW_MEMPOOL_MINIMUM / ZK_BOUND_FEE_BELOW_MEMPOOL_MINIMUM is raised.
+   */
+  minimumRelayFeeSompi?: bigint;
+  /** G1 · the storage mass (KIP-9) of this spend by the node's rule; above BLOCK_STORAGE_MASS_LIMIT no node includes it. */
+  storageMass?: bigint;
   feeEstimate: ToccataZkFeeEstimate;
   standardMaxMass: bigint;
   withinStandardMaxMass: boolean;
@@ -849,6 +885,13 @@ function scriptsRequestNetworks(params: R0Groth16ScriptParams | undefined): unkn
  * those outputs. The spent outpoint is never bound (circular: `utxoBinding` is refused). The bound script public key is
  * the version-prefixed encoding OpTxOutputSpk pushes. Results carry ZK_LOCK_BINDS_IMAGE_ID_AND_OUTPUTS.
  *
+ * Storage mass (G1): the spend of an output-bound lock is measured as it will be funded (one input of
+ * requiredFundingSompi, the bound outputs, the default compute budget; fee never below the node's relay floor). If its
+ * storage mass (KIP-9, C/output - C/input) is above BLOCK_STORAGE_MASS_LIMIT, which a small payout or change causes, no
+ * node will ever include it: the lock is refused (ZK_BOUND_OUTPUT_STORAGE_MASS_ABOVE_LIMIT, nothing built) with the
+ * smallest amounts that fit (minimumBoundAmountsSompi). Storage mass grows with the amount funded; when a UTXO within the
+ * lock's input limit would exceed it, the warning ZK_BOUND_LOCK_OVERFUNDING_UNSPENDABLE says from which amount.
+ *
  * Addresses: the simnet address is always returned. A testnet-10 address is returned only when requested in
  * `addressNetworks` (proof-only also needs `acknowledgeImageIdOnlyLock: true`), and never for a proof-only lock of a
  * public test program (its image id is in PUBLIC_R0_TEST_VECTORS); an output-bound lock of one is built with the warning
@@ -1090,7 +1133,9 @@ export function buildR0Groth16Scripts(params: R0Groth16ScriptParams): R0Groth16S
         expectedChangeAmount: boundPolicy.change.amountSompi
       } : {})
     });
-    if (!structural.ok) {
+    // G1 · a lock that is only unspendable by its storage mass is refused below, with the amounts that would fit
+    const structuralStorageOnly = !structural.ok && onlyStorageRefusal(structural.issues);
+    if (!structural.ok && !structuralStorageOnly) {
       issues.push({
         code: "ZK_REDEEM_SCRIPT_INVALID_STRUCTURE",
         message: `Built scripts failed structural verification: ${structural.issues.map((i) => i.code).join(", ")}`
@@ -1098,30 +1143,88 @@ export function buildR0Groth16Scripts(params: R0Groth16ScriptParams): R0Groth16S
     }
 
     // proof-and-output-bound: the fee is fixed by the funding amount, so the funder needs it now (M1).
-    let funding: { requiredFundingSompi: bigint; maxInputSompi: bigint } | undefined;
+    let funding: { requiredFundingSompi: bigint; maxInputSompi: bigint; spendStorageMass: bigint } | undefined;
     if (bindingMode === "proof-and-output-bound" && issues.length === 0) {
       const policy = params.bindingPolicy!;
       const outputsTotal = policy.payout.amountSompi + (policy.change?.amountSompi ?? 0n);
+      const cap = policy.maxFeeSompi ?? DEFAULT_MAX_FEE_CAP_SOMPI;
       const probeScripts = { ok: true, bindingMode, bindingPolicy: policy, sigScript, redeemScript, p2shScriptPublicKey: { version: spk.version, script: spk.script } } as unknown as R0Groth16ScriptsResult;
-      const probeMass = BigInt(
-        kaspa.calculateTransactionMass(
-          "simnet",
-          makeR0Groth16SpendTx(
-            kaspa,
-            { scripts: probeScripts, utxo: { transactionId: ZERO_TXID, index: 0, amountSompi: outputsTotal + 1n }, destinationAddress: policy.payout.address } as unknown as BuildR0Groth16TxParams,
-            DEFAULT_ZK_COMPUTE_BUDGET,
-            0n
-          )
-        )
-      );
+      // G1 · the REAL spend: one input of the funding asked for, the bound outputs, the default compute budget
+      const spendOf = (amountSompi: bigint) =>
+        ({ scripts: probeScripts, utxo: { transactionId: ZERO_TXID, index: 0, amountSompi }, destinationAddress: policy.payout.address }) as unknown as BuildR0Groth16TxParams;
+      // the fee depends on the shape only (compute mass), never on the amounts
+      const probeMass = measureR0Groth16SpendMass(spendOf(outputsTotal + 1n), DEFAULT_ZK_COMPUTE_BUDGET);
       const fee = estimateToccataZkFee(DEFAULT_ZK_COMPUTE_BUDGET, probeMass, policy.maxFeeSompi !== undefined ? { maxFeeSompi: policy.maxFeeSompi } : undefined);
-      if (fee.cappedBelowMinimum) {
+      const nodeFloor = r0SpendNodeMasses(kaspa, spendOf(outputsTotal + 1n), DEFAULT_ZK_COMPUTE_BUDGET).minimumRelayFeeSompi;
+      // never below the node's floor (the spend builder refuses below it), never above the cap (the redeem script does)
+      const spendFee = fee.recommendedSompi > nodeFloor ? fee.recommendedSompi : nodeFloor;
+      if (fee.cappedBelowMinimum || spendFee > cap) {
         issues.push({
           code: "ZK_FEE_CAP_BELOW_REQUIRED_FEE",
-          message: `The fee cap (${policy.maxFeeSompi ?? DEFAULT_MAX_FEE_CAP_SOMPI} sompi) is below the minimum fee ${fee.minimumRequiredSompi} sompi of this spend: no funding amount could be spent. Nothing was built.`
+          message: `The fee cap (${cap} sompi) is below the minimum fee ${fee.minimumRequiredSompi > nodeFloor ? fee.minimumRequiredSompi : nodeFloor} sompi of this spend: no funding amount could be spent. Nothing was built.`
         });
       } else {
-        funding = { requiredFundingSompi: outputsTotal + fee.recommendedSompi, maxInputSompi: boundMaxInputSompi(policy) };
+        const requiredFundingSompi = outputsTotal + spendFee;
+        const storage = r0SpendStorageMass(kaspa, spendOf(requiredFundingSompi), spendFee);
+        if (storage === undefined || storage > BLOCK_STORAGE_MASS_LIMIT) {
+          // G1 · funded, this lock could never be spent: no fee lowers storage mass, and the outputs are bound for ever
+          const p2shBytes = scriptBytesOf(spk.script);
+          const cells = [policy.payout, ...(policy.change ? [policy.change] : [])].map((o) => ({
+            amountSompi: o.amountSompi,
+            scriptBytes: scriptBytesOf(kaspa.payToAddressScript(new kaspa.Address(o.address)).script)
+          }));
+          const minPayout = smallestFittingBoundAmount(cells, 0, spendFee, p2shBytes);
+          const minChange = policy.change ? smallestFittingBoundAmount(cells, 1, spendFee, p2shBytes) : undefined;
+          const hints = [
+            minPayout !== undefined
+              ? `a payout of at least ${sompiText(minPayout)}${policy.change ? " with this change" : ""}`
+              : `no payout amount while the change is ${sompiText(policy.change!.amountSompi)}`,
+            ...(policy.change
+              ? [minChange !== undefined ? `a change of at least ${sompiText(minChange)} with this payout` : "no change amount with this payout"]
+              : [])
+          ];
+          issues.push({
+            code: "ZK_BOUND_OUTPUT_STORAGE_MASS_ABOVE_LIMIT",
+            message:
+              `The spend of this lock (one input of ${sompiText(requiredFundingSompi)}: the bound outputs plus the fee ${spendFee} sompi) has storage mass ` +
+              `${storage ?? "beyond u64"} g, above the limit ${BLOCK_STORAGE_MASS_LIMIT} g every node and block applies (KIP-9: C/output - C/input, C = 10^12). ` +
+              `No node would ever include it and the bound outputs cannot change: funds locked here would stay locked for ever. ` +
+              `What fits: ${hints.join("; ")}. Nothing was built.`
+          });
+          const refused = emptyScriptsResult(imageId, journalHash, preparedProof, warnings, issues, params.bindingPolicy);
+          refused.minimumBoundAmountsSompi = {
+            ...(minPayout !== undefined ? { payout: minPayout } : {}),
+            ...(minChange !== undefined ? { change: minChange } : {})
+          };
+          return refused;
+        }
+        if (structuralStorageOnly) {
+          // cannot happen (storage mass grows with the input, and the funded spend's input is above the cheapest one):
+          // fail closed on the verification's verdict anyway
+          issues.push(...structural.issues);
+        } else {
+          funding = { requiredFundingSompi, maxInputSompi: boundMaxInputSompi(policy), spendStorageMass: storage };
+          // storage mass grows with the input: a UTXO funded above requiredFunding (but within the lock's input limit)
+          // may be unspendable. Say where that starts, so the funder funds exactly what is asked.
+          const maxInput = boundMaxInputSompi(policy);
+          const atMax = r0SpendStorageMass(kaspa, spendOf(maxInput), maxInput - outputsTotal);
+          if (atMax === undefined || atMax > BLOCK_STORAGE_MASS_LIMIT) {
+            let lo = requiredFundingSompi; // fits
+            let hi = maxInput; // does not
+            while (hi - lo > 1n) {
+              const mid = (lo + hi) / 2n;
+              const m = r0SpendStorageMass(kaspa, spendOf(mid), mid - outputsTotal);
+              if (m !== undefined && m <= BLOCK_STORAGE_MASS_LIMIT) lo = mid;
+              else hi = mid;
+            }
+            warnings.push({
+              code: "ZK_BOUND_LOCK_OVERFUNDING_UNSPENDABLE",
+              message:
+                `Fund this lock with exactly requiredFundingSompi (${requiredFundingSompi} sompi). Its spend's storage mass grows with the amount funded: ` +
+                `a UTXO above ${lo} sompi (the lock accepts up to ${maxInput}) would have a storage mass above ${BLOCK_STORAGE_MASS_LIMIT} g and could never be spent.`
+            });
+          }
+        }
       }
     }
 
@@ -1238,8 +1341,18 @@ function r0LockEnforcesBoundOutputs(
       expectedPayoutAmount: policy.payout.amountSompi,
       ...(policy.change ? { expectedChangeAddress: policy.change.address, expectedChangeAmount: policy.change.amountSompi } : {})
     });
+    // G1 · a canonical lock over the pinned verifier that is only unspendable by its storage mass still binds its outputs:
+    // the spend builder refuses that spend itself (ZK_TX_EXCEEDS_BLOCK_STORAGE_MASS_LIMIT), without calling the lock unbound
+    const enforced =
+      check.consensusEnforced === true ||
+      (onlyStorageRefusal(check.issues) &&
+        check.redeemScriptCanonical &&
+        check.verifyingKeyPinned &&
+        check.controlRootPinned &&
+        check.controlIdPinned &&
+        check.bindingMode === "proof-and-output-bound");
     return (
-      check.consensusEnforced === true &&
+      enforced &&
       check.boundOutputCount === (policy.change ? 2 : 1) &&
       check.boundMaxInputSompi === boundMaxInputSompi(policy)
     );
@@ -1303,10 +1416,120 @@ function makeR0Groth16SpendTx(kaspa: any, params: BuildR0Groth16TxParams, comput
   });
 }
 
-/** Non-contextual mass kaspa-wasm reports for THIS spend shape (the output value is 8 bytes whatever the fee). */
+/** An amount so large that a spend's storage mass vanishes (C / amount < 1 g). */
+const SHAPE_ONLY_AMOUNT_SOMPI = 100_000_000_000_000n;
+
+/**
+ * G1 · the same spend with amounts so large that its storage mass vanishes: its shape (scripts, outputs' scripts, budget)
+ * is unchanged, so its compute and transient masses are the real spend's. kaspa-wasm's calculateTransactionMass is
+ * max(compute, storage); priced on the real amounts it charged a small output's storage mass as if it were compute mass
+ * (the same technique as tx-builder's measureRelayFee).
+ */
+function shapeOnlyParams(params: BuildR0Groth16TxParams): BuildR0Groth16TxParams {
+  const policy = boundPolicyOf(params.scripts);
+  const utxo = { ...params.utxo, amountSompi: 4n * SHAPE_ONLY_AMOUNT_SOMPI };
+  if (!policy) return { ...params, utxo };
+  const bindingPolicy: ZkOutputBindingPolicy = {
+    ...policy,
+    payout: { ...policy.payout, amountSompi: SHAPE_ONLY_AMOUNT_SOMPI },
+    ...(policy.change ? { change: { ...policy.change, amountSompi: SHAPE_ONLY_AMOUNT_SOMPI } } : {})
+  };
+  return { ...params, utxo, scripts: { ...params.scripts, bindingPolicy } };
+}
+
+/**
+ * Non-contextual (compute) mass kaspa-wasm reports for THIS spend shape, without the compute-budget term (the output value
+ * is 8 bytes whatever the fee). G1: measured on the shape, so a small output's storage mass is never counted as compute mass.
+ */
 function measureR0Groth16SpendMass(params: BuildR0Groth16TxParams, computeBudget: number): bigint {
   const kaspa = loadManagedKaspaWasmSync();
-  return kaspa.calculateTransactionMass(params.networkId ?? "simnet", makeR0Groth16SpendTx(kaspa, params, computeBudget, 0n));
+  return BigInt(kaspa.calculateTransactionMass(params.networkId ?? "simnet", makeR0Groth16SpendTx(kaspa, shapeOnlyParams(params), computeBudget, 0n)));
+}
+
+/** G1 · what the node measures of this spend's shape, and the relay floor it applies (the v1 engine's rule). */
+interface R0SpendNodeMasses extends V1NonContextualMasses {
+  feeMass: bigint;
+  minimumRelayFeeSompi: bigint;
+}
+
+/**
+ * G1 · the node's compute and transient masses of the spend and its minimum relay fee, by the rule the v1 engine uses
+ * (@hardkas/tx-builder v1NonContextualMasses, v1FeeMass, v1MinimumRelayFee: 100 sompi per gram of max(compute, transient
+ * / 2); storage mass is not in the floor). Proven on rusty-kaspad 2.1.0 simnet: the floor is accepted, one sompi less is
+ * refused (zk-storage-mass-node-rule.simnet.test.ts); for the official vector it gives the 161,527 g the node reported.
+ */
+function r0SpendNodeMasses(kaspa: any, params: BuildR0Groth16TxParams, computeBudget: number): R0SpendNodeMasses {
+  const masses = v1NonContextualMasses(v1MassShapeOfWasmTransaction(makeR0Groth16SpendTx(kaspa, shapeOnlyParams(params), computeBudget, 0n)));
+  const feeMass = v1FeeMass(masses);
+  return { ...masses, feeMass, minimumRelayFeeSompi: v1MinimumRelayFee(feeMass) };
+}
+
+const U64_MAX = 2n ** 64n - 1n;
+const scriptBytesOf = (scriptHex: unknown): number => String(scriptHex ?? "").length / 2;
+/** A P2SH script public key: OpBlake2b OpData32 <32-byte hash> OpEqual. */
+const P2SH_SCRIPT_BYTES = 35;
+/** G1 · the code of a lock whose cheapest spend is above the storage-mass limit (build-scripts and verify-scripts). */
+const STORAGE_REFUSAL = "ZK_BOUND_OUTPUT_STORAGE_MASS_ABOVE_LIMIT";
+/** True when every issue of a verification is the storage-mass refusal (the lock is canonical, only unspendable). */
+const onlyStorageRefusal = (issues: readonly ZkIssue[]): boolean => issues.length > 0 && issues.every((i) => i.code === STORAGE_REFUSAL);
+
+/**
+ * G1 · the storage mass (KIP-9, the node's rule: tx-builder v1StorageMass) of one spend of a lock: one input of
+ * `inputSompi` at the lock's P2SH script, outputs of the given amounts and scripts. Undefined when an amount is not
+ * positive (other checks refuse that); an overflow is reported as u64::MAX (the node refuses it too).
+ */
+function r0StorageMass(inputSompi: bigint, p2shScriptBytes: number, outputs: ReadonlyArray<{ amountSompi: bigint; scriptBytes: number }>): bigint | undefined {
+  if (inputSompi <= 0n || outputs.some((o) => o.amountSompi <= 0n)) return undefined;
+  const mass = v1StorageMass(
+    [{ amountSompi: inputSompi, scriptBytes: p2shScriptBytes, covenantId: false }],
+    outputs.map((o) => ({ amountSompi: o.amountSompi, scriptBytes: o.scriptBytes, covenantId: false }))
+  );
+  return mass ?? U64_MAX;
+}
+
+/** G1 · the storage mass of THIS spend (its UTXO, its outputs after `fee`). */
+function r0SpendStorageMass(kaspa: any, params: BuildR0Groth16TxParams, fee: bigint): bigint | undefined {
+  const outputs = r0SpendOutputs(params, fee).map((o) => ({
+    amountSompi: o.amountSompi,
+    scriptBytes: scriptBytesOf(kaspa.payToAddressScript(new kaspa.Address(o.address)).script)
+  }));
+  return r0StorageMass(params.utxo.amountSompi, scriptBytesOf(params.scripts.p2shScriptPublicKey.script), outputs);
+}
+
+/**
+ * G1 · the smallest amount of bound output `index` (0 payout, 1 change) whose spend fits BLOCK_STORAGE_MASS_LIMIT, every
+ * other output unchanged and the lock funded with the outputs plus `fee` (the fee does not depend on the amounts). The
+ * storage mass falls as the output grows; undefined when no amount fits (the other outputs alone exceed the limit).
+ */
+function smallestFittingBoundAmount(
+  outputs: ReadonlyArray<{ amountSompi: bigint; scriptBytes: number }>,
+  index: number,
+  fee: bigint,
+  p2shScriptBytes: number
+): bigint | undefined {
+  const fits = (amount: bigint): boolean => {
+    const candidate = outputs.map((o, i) => (i === index ? { ...o, amountSompi: amount } : o));
+    const total = candidate.reduce((s, o) => s + o.amountSompi, 0n);
+    const mass = r0StorageMass(total + fee, p2shScriptBytes, candidate);
+    return mass !== undefined && mass <= BLOCK_STORAGE_MASS_LIMIT;
+  };
+  let hi = V1_MASS_PARAMS.maxSompi;
+  if (!fits(hi)) return undefined;
+  let lo = 1n;
+  if (fits(lo)) return lo;
+  while (hi - lo > 1n) {
+    const mid = (lo + hi) / 2n;
+    if (fits(mid)) hi = mid;
+    else lo = mid;
+  }
+  return hi;
+}
+
+/** "N sompi (X KAS)" for messages. */
+function sompiText(v: bigint): string {
+  const whole = v / 100_000_000n;
+  const frac = (v % 100_000_000n).toString().padStart(8, "0").replace(/0+$/, "");
+  return `${v} sompi (${whole}${frac ? "." + frac : ""} KAS)`;
 }
 
 /**
@@ -1385,6 +1608,9 @@ export function buildR0Groth16Plan(params: BuildR0Groth16TxParams): TxPlanArtifa
  * `bindingMode` label (C-7). In proof-and-output-bound
  * mode the outputs are exactly the bound ones and the fee is what the UTXO holds beyond them; any fee above the cap
  * (feeOptions.maxFeeSompi, default DEFAULT_MAX_FEE_CAP_SOMPI) is refused (ZK_FEE_ABOVE_CAP).
+ * G1 · the fee floor is the node's (minimumRelayFeeSompi: v1FeeMass / v1MinimumRelayFee, compute or transient mass, never
+ * storage mass) and the storage mass (storageMass, KIP-9) must fit BLOCK_STORAGE_MASS_LIMIT
+ * (ZK_TX_EXCEEDS_BLOCK_STORAGE_MASS_LIMIT): both are the rusty-kaspad 2.1.0 rules, proven on simnet.
  * The emitted ZK fact records the real image id, the SHA-256 of the proof BYTES, no placeholder and no
  * clock (HK-20); verifiedOffChain is true only with a genuine verifyR0Groth16ReceiptLocal result (HK-17).
  *
@@ -1511,6 +1737,9 @@ export function buildR0Groth16Transaction(params: BuildR0Groth16TxParams): R0Gro
     // Pass 1: measure the real non-contextual mass (the output value is 8 bytes whatever the fee).
     const mass: bigint = params.baseComputeMass ?? measureR0Groth16SpendMass({ ...params, networkId }, computeBudget);
     const feeEstimate = estimateToccataZkFee(computeBudget, mass, params.feeOptions);
+    // G1 · the node's floor for this shape (compute / transient mass only, as the v1 engine prices it; never storage)
+    const nodeMasses = r0SpendNodeMasses(kaspa, { ...params, networkId, destinationAddress }, computeBudget);
+    const minimumRelayFeeSompi = nodeMasses.minimumRelayFeeSompi;
 
     let feeSompi: bigint;
     if (bindingMode === "proof-and-output-bound" && bindingPolicy) {
@@ -1550,13 +1779,13 @@ export function buildR0Groth16Transaction(params: BuildR0Groth16TxParams): R0Gro
       return emptyTxResult(feeEstimate, computeBudget, feeSompi, destinationAddress, networkId, warnings, issues, bindingMode);
     }
 
-    if (feeSompi < feeEstimate.minimumRequiredSompi) {
+    if (feeSompi < minimumRelayFeeSompi) {
       const belowMinimum = {
         code: bindingMode === "proof-and-output-bound" ? "ZK_BOUND_FEE_BELOW_MEMPOOL_MINIMUM" : "ZK_FEE_BELOW_MEMPOOL_MINIMUM",
         message:
           bindingMode === "proof-and-output-bound"
-            ? `The UTXO leaves ${feeSompi} sompi of fee beyond the bound outputs, below the mempool minimum ${feeEstimate.minimumRequiredSompi} sompi for compute mass ${feeEstimate.computeMass}: the node will not relay this spend, and the bound outputs cannot change. Fund the lock with requiredFundingSompi.`
-            : `Fee of ${feeSompi} sompi is below the standard mempool minimum of ${feeEstimate.minimumRequiredSompi} sompi for compute mass ${feeEstimate.computeMass}`
+            ? `The UTXO leaves ${feeSompi} sompi of fee beyond the bound outputs, below the mempool minimum ${minimumRelayFeeSompi} sompi for compute mass ${nodeMasses.computeMass}: the node will not relay this spend, and the bound outputs cannot change. Fund the lock with requiredFundingSompi.`
+            : `Fee of ${feeSompi} sompi is below the standard mempool minimum of ${minimumRelayFeeSompi} sompi for compute mass ${nodeMasses.computeMass}`
       };
       // proof-only: the caller can raise the fee, so it stays a warning; bound: nothing can fix it, so it is an issue.
       if (bindingMode === "proof-and-output-bound") issues.push(belowMinimum);
@@ -1592,6 +1821,47 @@ export function buildR0Groth16Transaction(params: BuildR0Groth16TxParams): R0Gro
       issues.push({
         code: "ZK_TX_EXCEEDS_BLOCK_COMPUTE_MASS_LIMIT",
         message: `Compute mass ${feeEstimate.computeMass} (budget term included) exceeds the block compute-mass limit ${BLOCK_COMPUTE_MASS_LIMIT}: no block can include this transaction.`
+      });
+    }
+    // G1 · storage mass (KIP-9) against the node's limit, the block's 500,000 g (proven on simnet): no fee lowers it
+    const storageMass = r0SpendStorageMass(kaspa, { ...params, destinationAddress }, feeSompi);
+    if (storageMass !== undefined && storageMass > BLOCK_STORAGE_MASS_LIMIT) {
+      const policy = bindingMode === "proof-and-output-bound" ? bindingPolicy : undefined;
+      let remedy: string;
+      if (policy) {
+        // storage mass grows with the input (C/output - C/input): the smallest UTXO the lock can spend is its best case
+        const outputs = r0SpendOutputs({ ...params, destinationAddress }, feeSompi).map((o) => ({
+          amountSompi: o.amountSompi,
+          scriptBytes: scriptBytesOf(kaspa.payToAddressScript(new kaspa.Address(o.address)).script)
+        }));
+        const p2shBytes = scriptBytesOf(params.scripts.p2shScriptPublicKey.script);
+        const smallest = outputs.reduce((s, o) => s + o.amountSompi, 0n) + minimumRelayFeeSompi;
+        const fitsAt = (input: bigint) => {
+          const m = r0StorageMass(input, p2shBytes, outputs);
+          return m !== undefined && m <= BLOCK_STORAGE_MASS_LIMIT;
+        };
+        if (!fitsAt(smallest)) {
+          remedy =
+            `Not even the smallest UTXO this lock can spend (the bound outputs plus the relay floor, ${smallest} sompi) fits: ` +
+            "the bound outputs are too small and no spend of this lock will ever be included.";
+        } else {
+          let lo = smallest; // fits
+          let hi = params.utxo.amountSompi; // does not
+          while (hi - lo > 1n) {
+            const mid = (lo + hi) / 2n;
+            if (fitsAt(mid)) lo = mid;
+            else hi = mid;
+          }
+          remedy = `The bound outputs cannot change; a UTXO of this lock holding from ${smallest} to ${lo} sompi would fit (this one holds more).`;
+        }
+      } else {
+        remedy = "The payout (the UTXO minus the fee) is too small for this UTXO: spend a larger UTXO or pay a smaller fee.";
+      }
+      issues.push({
+        code: "ZK_TX_EXCEEDS_BLOCK_STORAGE_MASS_LIMIT",
+        message:
+          `Storage mass ${storageMass} g (KIP-9: C/output - C/input, C = 10^12) exceeds the limit ${BLOCK_STORAGE_MASS_LIMIT} g every node and block applies: ` +
+          `no node will include this transaction. ${remedy}`
       });
     }
 
@@ -1685,6 +1955,9 @@ export function buildR0Groth16Transaction(params: BuildR0Groth16TxParams): R0Gro
       transactionId: tx.id,
       mass,
       computeMass: feeEstimate.computeMass,
+      nodeComputeMass: nodeMasses.computeMass,
+      minimumRelayFeeSompi,
+      ...(storageMass !== undefined ? { storageMass } : {}),
       feeEstimate,
       standardMaxMass: STANDARD_MAX_TRANSACTION_MASS,
       withinStandardMaxMass,
@@ -1797,6 +2070,9 @@ function readR0BoundTail(ops: readonly KaspaScriptOp[]): R0BoundLockParameters |
  *    ZK_REDEEM_SCRIPT_NOT_CANONICAL: nothing is inferred from the presence of opcodes.
  *  - Expected outputs (payout, change) are compared with what a canonical output-bound lock binds; asked of any other
  *    script they are ZK_EXPECTED_BINDING_NOT_ENFORCED, never satisfied vacuously.
+ *  - G1 · a canonical output-bound lock whose cheapest spend (one input of the bound outputs plus the node's relay floor at
+ *    the smallest compute budget that covers the verifier) has a storage mass above BLOCK_STORAGE_MASS_LIMIT can never be
+ *    included by any node: ZK_BOUND_OUTPUT_STORAGE_MASS_ABOVE_LIMIT (not consensus-enforced, do not fund it).
  */
 export function verifyR0Groth16Scripts(
   params: R0Groth16VerifyScriptsParams
@@ -1954,6 +2230,40 @@ export function verifyR0Groth16Scripts(
         code: "ZK_BOUND_LOCK_UNSPENDABLE",
         message: `The lock's input limit (${bound.maxInputSompi} sompi) is not above its bound outputs (${total} sompi): the single input it accepts can never pay them and a fee. A UTXO funded here stays locked forever; do not fund it.`
       });
+    } else if (!sig.error) {
+      // G1 · storage mass (KIP-9: C/output - C/input) grows with the input, so the best spend of this lock is its smallest:
+      // one input of the bound outputs plus the node's relay floor (at the smallest compute budget that covers the
+      // verifier). If even that spend is above the storage-mass limit, no node will ever include a spend of this lock.
+      const vkElements = groth16VkElementsInRedeemScript(redeemHex) ?? R0_GROTH16_VK_ELEMENTS;
+      const cells = bound.outputs.map((o) => ({ amountSompi: o.amountSompi, scriptBytes: Math.max(0, o.spkIntrospectionHex.length / 2 - 2) }));
+      const floor = v1MinimumRelayFee(
+        v1FeeMass(
+          v1NonContextualMasses({
+            version: 1,
+            inputs: [{ signatureScriptBytes: sigHex.length / 2, computeBudget: minimumR0Groth16ComputeBudget(vkElements) }],
+            outputs: cells.map((c) => ({ scriptBytes: c.scriptBytes, covenant: false })),
+            payloadBytes: 0
+          })
+        )
+      );
+      const smallestInput = total + floor;
+      const best = r0StorageMass(smallestInput, P2SH_SCRIPT_BYTES, cells);
+      if (best === undefined || best > BLOCK_STORAGE_MASS_LIMIT) {
+        const fee = smallestInput - total;
+        const minimums = bound.outputs.map((_, index) => smallestFittingBoundAmount(cells, index, fee, P2SH_SCRIPT_BYTES));
+        const what = ["payout", "change"]
+          .slice(0, bound.outputs.length)
+          .map((name, i) => (minimums[i] !== undefined ? `a ${name} of at least ${sompiText(minimums[i]!)}` : `no ${name} amount`))
+          .join("; ");
+        issues.push({
+          code: "ZK_BOUND_OUTPUT_STORAGE_MASS_ABOVE_LIMIT",
+          message:
+            `Even the cheapest spend of this lock (one input of ${sompiText(smallestInput)}: the bound outputs plus the relay floor ${fee} sompi) has storage mass ` +
+            `${best ?? "beyond u64"} g, above the limit ${BLOCK_STORAGE_MASS_LIMIT} g every node and block applies (KIP-9: C/output - C/input, C = 10^12): ` +
+            `no node will ever include a spend of it, and the bound outputs cannot change. A UTXO funded here stays locked for ever; do not fund it. ` +
+            `With the other output unchanged, ${what} would fit.`
+        });
+      }
     }
   }
 

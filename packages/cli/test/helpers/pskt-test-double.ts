@@ -1,4 +1,4 @@
-import { PsktRuntimeAdapter, PortableSigningPayload, PsktInspection, PsktRuntimeCapabilities, PsktAdapterTrustProfile } from "@hardkas/core";
+import { PsktRuntimeAdapter, PortableSigningPayload, PsktInspection, PsktRuntimeCapabilities, PsktAdapterTrustProfile, loadManagedKaspaWasmSync } from "@hardkas/core";
 import crypto from "node:crypto";
 
 function hashBase64(data: string): string {
@@ -74,9 +74,21 @@ export class TestFakeAdapter implements PsktRuntimeAdapter {
     };
   }
 
+  /**
+   * Like the native signer: the same PSKB bundle, with the key's partial signature on each input asked for.
+   * `pskt.signSession` reads it back and refuses an input left unsigned or a changed transaction (kaspa-agent-notes
+   * cross-check §2.3 item 4), so the double can no longer return an arbitrary "signed" blob.
+   */
   async sign(payload: PortableSigningPayload, request: any): Promise<PortableSigningPayload> {
-    const data = Buffer.from(JSON.stringify({ state: "signed", participant: request.participantId })).toString("base64");
-    return makePayload(data);
+    const k: any = loadManagedKaspaWasmSync();
+    const pub = String(new k.PrivateKey(Buffer.from(request.keyMaterial).toString("hex")).toPublicKey().toString());
+    const bundle = JSON.parse(Buffer.from(Buffer.from(payload.data, "base64").toString("utf8").slice(4), "hex").toString("utf8"));
+    for (const inner of bundle) {
+      for (const i of request.inputIndexes) {
+        inner.inputs[i].partialSigs = { ...(inner.inputs[i].partialSigs ?? {}), [pub]: { schnorr: "ab".repeat(64) } };
+      }
+    }
+    return makePayload(Buffer.from("PSKB" + Buffer.from(JSON.stringify(bundle), "utf8").toString("hex"), "utf8").toString("base64"));
   }
 
   async combine(payloads: readonly PortableSigningPayload[]): Promise<PortableSigningPayload> {

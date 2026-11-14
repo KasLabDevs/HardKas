@@ -112,6 +112,18 @@ The CLI commands that make a key or a lock refuse mainnet with `MAINNET_SIGNING_
 **Cause:** A canonical output-bound lock binds another payout or change (output 1) than the one expected (`--expected-payout-address|amount`, `--expected-change-address|amount`; SDK `expectedPayout*` / `expectedChange*`), or binds no change when one was expected. The bound values are in `boundPayoutSpk`, `boundPayoutAmount`, `boundChangeSpk`, `boundChangeAmount` and `boundMaxInputSompi`.
 **Solution:** Check the lock's outputs before funding it; the redeem script, not the expectation, decides where the funds can go.
 
+### `ZK_BOUND_OUTPUT_STORAGE_MASS_ABOVE_LIMIT`
+**Cause:** `hardkas zk toccata build-scripts --mode proof-and-output-bound` / `buildR0Groth16Scripts`, and `verify-scripts` / `verifyR0Groth16Scripts`. The spend of the lock would have a storage mass (KIP-9: C/output − C/input, C = 10¹²) above 500,000 g, the limit a rusty-kaspad 2.1.0 node and every block apply. A small bound output (payout or change) causes it. No fee lowers it, and a lock's outputs cannot change once it is funded, so a funded lock would stay locked for ever. `build-scripts` measures the spend funded with the amount it asks for and returns nothing to fund (no script, no address); the message and `minimumBoundAmountsSompi` name the smallest payout and change that fit (with the default fee, about 0.0183 KAS for a payout alone). `verify-scripts` raises it for a canonical lock whose cheapest possible spend is above the limit.
+**Solution:** Bind a larger payout or change. Do not fund a lock `verify-scripts` refuses with this code.
+
+### `ZK_TX_EXCEEDS_BLOCK_STORAGE_MASS_LIMIT`
+**Cause:** `buildR0Groth16Transaction`: the spend's storage mass is above 500,000 g, so no node relays it and no block can include it (the node says "transaction storage mass of N is larger than max allowed size of 500000"). Proof-only: what is left after the fee is too small for that UTXO. Output-bound: storage mass grows with the input, so an over-funded UTXO of a lock with a small output can pass the limit while a smaller one fits; the message names the UTXO range that fits, or says no spend of the lock can ever be included.
+**Solution:** Proof-only: spend a larger UTXO or pay a smaller fee. Output-bound: spend a UTXO in the range named.
+
+### `ZK_BOUND_LOCK_OVERFUNDING_UNSPENDABLE` (warning)
+**Cause:** `buildR0Groth16Scripts`: the lock is spendable when funded with exactly `requiredFundingSompi`, but a UTXO above the amount named (still within the lock's input limit) would have a storage mass above 500,000 g and could never be spent.
+**Solution:** Fund exactly the amount asked for.
+
 ### `ARTIFACT_HASH_MISMATCH`
 **Cause:** The artifact's content no longer hashes to the `contentHash` it carries: it was edited after it was sealed. `tx sign`, `tx send` and `artifact verify` (CLI), and `sdk.tx.sign`, `sdk.tx.send` and `sdk.artifacts.verify(..., { throwOnInvalid: true })` (SDK) refuse it with this code before anything is signed, sent or contacted.
 **Solution:** Use the artifact as it was written, or produce a new one (`tx plan`, `tx sign`).
@@ -196,6 +208,27 @@ The CLI commands that make a key or a lock refuse mainnet with `MAINNET_SIGNING_
 **Cause:** `tx plan` / `sdk.tx.plan`: the inputs the planner (kaspa-wasm's Generator) chose cover the payment and fee so closely that the change left is too small for a standard output: its storage mass (KIP-9) would put the transaction above the standard limit. The planner turns only dust into fee; any larger remainder stays the sender's, so the plan is refused instead of paying it to the miner. Nothing is planned.
 **Solution:** Adjust the amount slightly, send the whole balance, or consolidate first (`hardkas accounts consolidate`).
 
+The same code (or `OUTPUT_BELOW_STANDARD_AMOUNT`, when the script output itself is the small one) comes from a SilverScript v0 funding (`silver deploy`, the dev server's escrow funding): the change is so small that the transaction's storage mass would pass the node's limit of 500,000 g. The remainder is never paid to the miner.
+
+### `FEE_BELOW_NETWORK_MINIMUM`, `ESCROW_FEE_BELOW_MINIMUM`, `ESCROW_FEE_BUDGET_BELOW_MINIMUM`
+**Cause:** A SilverScript v0 spend or funding, a covenant genesis or transition, an escrow release or `escrow rescue-v1 prepare --fee` pays less than the node's minimum relay fee. The node's minimum is 100 sompi per gram of the transaction's compute mass (or of its normalized transient mass, when larger); storage mass has no fee floor and is limited separately to 500,000 g. Both rules were checked against a rusty-kaspad 2.1.0 node, for transaction versions 0 and 1. The message names the minimum. `ESCROW_FEE_BUDGET_BELOW_MINIMUM` comes from the dev server's `POST /api/escrows/:id/fund` (HTTP 400): an escrow contract fixes its release outputs, so the fee of every release is the escrow's `feeBudgetSompi` (default 2,000,000). Every branch is drafted before anything is read from the node, signed or sent, and a budget below the node's minimum for one of them would leave the escrow funded and impossible to release, so it is not funded.
+**Solution:** Pay at least the minimum named. For an escrow, create it again with a `feeBudgetSompi` of at least that minimum.
+
+### `SILVER_SIG_OPS_ABOVE_STANDARD`
+**Cause:** `hardkas silver deploy` or `hardkas silver covenant genesis` was given a contract whose redeem script counts more than 15 signature operations. A node's mempool counts them over the whole redeem script (every entry, every inlined helper call site, every unrolled loop iteration), whatever entry a spend runs, and refuses every spend of such a P2SH input as non-standard ("transaction input #0 has 16 signature operations which is more than the allowed max amount of 15"), for transaction versions 0 and 1. Checked against a rusty-kaspad 2.1.0 node. The check runs before any key is read, any node is contacted or anything is funded. Exit code 2. There is no override: every HardKAS spend goes through a node's mempool.
+**Solution:** Bring the contract to 15 signature checks or fewer, for example by splitting it into several contracts. `silver audit` reports the count (`COV-SIGOPS-001`).
+
+### Node rejection classes `SCRIPT_LOCK_UNSATISFIED`, `STORAGE_MASS_ABOVE_LIMIT`
+**Cause:** How HardKAS classifies a node's refusal (`classifyNodeRejection` in `@hardkas/artifacts`, the `rejection.code` of a send result, and a `[CODE: hint]` suffix on `SILVER_REJECTED_BY_NODE`).
+- `SCRIPT_LOCK_UNSATISFIED`: the redeem script's own time-lock check (CheckSequenceVerify or CheckLockTimeVerify; node text "Unsatisfied lock time: locktime requirement not satisfied -- 500 > 0") failed against a field of the transaction. HardKAS signs lock time 0, so for a HardKAS spend it is the input's sequence. Waiting never helps: the same transaction never passes. It was classified `LOCK_TIME_REJECTED`, which now means only the finality refusal "transaction input #N is not finalized". Carries `lockRequired` and `lockDeclared` when the text has them.
+- `STORAGE_MASS_ABOVE_LIMIT`: "transaction storage mass of N is larger than max allowed size of 500000". The storage mass (KIP-9, about 10¹² divided by each output's amount, so a small output dominates) is above the node's limit. Carries `storageMass` and `storageMassLimit`.
+
+**Solution:** `SCRIPT_LOCK_UNSATISFIED`: build the spend again with the sequence the lock needs (`silver spend --sequence`, at least the first number of the text). `STORAGE_MASS_ABOVE_LIMIT`: raise the smallest output or merge it into another, and build a new transaction.
+
+### `NETWORK_ADDRESS_MISMATCH` (SilverScript spends)
+**Cause:** `hardkas silver spend --to` (`buildSilverSweep`), a spend draft output given by address (`prepareSilverSpend`) or `hardkas escrow rescue-v1 prepare --to` names an address of another network (for example `kaspatest:` on simnet). The value would go to the same key's script on the spend's network while the record named a foreign address. Nothing is signed or written. The rescue checks it after the node has proved its identity, so the mainnet and identity refusals come first (exit 2). See also [error recovery](./error-recovery.md#network_address_mismatch).
+**Solution:** Give an address of the spend's network.
+
 ### `PSKT_SIGNER_NETWORK_REQUIRED`, `PSKT_NETWORK_MISMATCH`, `PSKT_INPUTS_UNVERIFIED`, `PSKT_INPUT_NOT_ON_NETWORK`
 **Cause:** `pskt sign` / `pskt.signSession`. A PSKT session's `networkId` is only what its author wrote, and a Kaspa signature does not commit to a network, so HardKAS signs only for the network the signer names, and only inputs that network's node lists as unspent. These checks run after the mainnet refusal and before the key file is read.
 - `PSKT_SIGNER_NETWORK_REQUIRED` (exit 2): no signer network was given (`--network`, the workspace config's network, SDK `context.networkId`).
@@ -205,6 +238,18 @@ The CLI commands that make a key or a lock refuse mainnet with `MAINNET_SIGNING_
 
 Nothing is signed.
 **Solution:** Sign in a workspace of the session's network, with that network's node declared (`rpcUrl`).
+
+### `PSKT_SIGNATURE_MISSING`, `PSKT_SIGNED_TRANSACTION_CHANGED`, `PSKT_SIGNED_PAYLOAD_UNREADABLE`
+**Cause:** `pskt sign` / `pskt.signSession` read back what the signer returned before recording it. Nothing is recorded and the session is unchanged.
+- `PSKT_SIGNATURE_MISSING`: an input the caller asked to sign came back without a 64-byte Schnorr signature by the signer's key (a wallet has been seen returning an empty one without an error). A transaction finalized from it would be refused.
+- `PSKT_SIGNED_TRANSACTION_CHANGED`: what came back is not the transaction that was sent: another number of PSKTs, inputs or outputs; another outpoint, UTXO entry, sequence, minimum time, sighash type, signature-operation count or redeem script on an input; another amount, script or covenant on an output; another version, lock time or payload; or partial signatures removed, changed, or added on an input not asked for. Values are compared as written (u64 values without loss; an absent field equals null).
+- `PSKT_SIGNED_PAYLOAD_UNREADABLE`: the payload sent or returned is not a PSKB bundle HardKAS can read (`pskt-binary-base64`), so the two cannot be compared.
+
+**Solution:** Use a signer that signs the inputs asked for and returns the same transaction. Do not combine or finalize the payload it returned.
+
+### `PSKT_EXTRACTED_INPUT_UNSIGNED`
+**Cause:** `pskt extract` / `pskt.extractSession` (native adapter): the extracted transaction has an empty or non-hex signature script on the inputs listed in `metadata.inputs`. It is unsigned there and a node would refuse it. Nothing is returned.
+**Solution:** Collect the missing signatures, then finalize and extract again.
 
 ### `DEPLOY_INIT_FILE_EXISTS`
 **Cause:** `hardkas deploy init` would overwrite profile files already in the directory (`docker-compose.yml`, `Dockerfile`, `.env.example`, `PRODUCTION_CHECKLIST.md`). Every target is checked before anything is written. Exit code 2.
@@ -217,6 +262,22 @@ Nothing is signed.
 ### `WALLET_TOOLKIT_METHOD_UNSUPPORTED`, `INDEXER_ARTIFACT_IDENTITY_INVALID`
 **Cause:** `WalletToolkit.planSend()` and `sendSimulated()` never planned or sent anything (they returned placeholder data) and now refuse. `IndexerToolkit.ingestArtifact()` indexes only a HardKAS artifact whose `contentHash` its content verifies; the artifact given has none, or a wrong one.
 **Solution:** Use `wallet.estimateFee()` (its `plan` is the real plan), `wallet.send()`, or `hardkas.tx.plan` / `hardkas.tx.send`. Index artifacts as HardKAS writes them.
+
+### `PAYMENT_CHECK_NO_NODE`, `PAYMENT_CHECK_NODE_FAILED`
+**Cause:** `PaymentToolkit.check(invoiceId)` (`@hardkas/toolkit`). `PAYMENT_CHECK_NO_NODE`: the toolkit was opened without a node (`options.rpc`), so nothing was checked. The error's metadata gives the stored status (`storedStatus`) and, for a paid invoice, how it was marked (`settlement: "simulated"` when `simulatePay()` set it). `PAYMENT_CHECK_NODE_FAILED`: the node was asked for the UTXOs at the merchant address and failed (connection, refusal, an address of another network). Nothing was marked paid; the cause is attached.
+**Solution:** Open the toolkit with `{ rpc }` (a client that lists the UTXOs at an address) to check on a node, or read the stored record with `getInvoice()`. For a node failure, fix the node or the merchant address and check again.
+
+### `PAYMENT_INVOICE_AMOUNT_CONTRADICTORY`, `PAYMENT_INVOICE_AMOUNT_UNKNOWN`
+**Cause:** `PaymentToolkit`. `PAYMENT_INVOICE_AMOUNT_CONTRADICTORY`: `createInvoice()` was given both `amount` (whole KAS) and `amountSompi`, and they differ; no invoice was created. `PAYMENT_INVOICE_AMOUNT_UNKNOWN`: `check()` found an invoice stored before amounts were kept in sompi, whose whole-KAS amount was truncated to 0 (an invoice for less than 1 KAS), so the amount due is unknown and nothing was checked.
+**Solution:** Give one amount (`amountSompi` is exact). Create an old invoice of less than 1 KAS again.
+
+### `WALLET_WATCH_NODE_TIMEOUT`, `WALLET_WATCH_RESNAPSHOT_TIMEOUT`
+**Cause:** `WalletToolkit.watch()`. `WALLET_WATCH_NODE_TIMEOUT`: a call of the watch got no answer within its bound: the node's identity (`getServerInfo`, 30 s, on the first connection or after a reconnection), the first snapshot of the address (120 s), or stopping while a re-snapshot was still running (30 s). On start the watch is not opened and its client is released; after a reconnection that pass is abandoned and the next reconnection tries again; on stop the client is released and `unwatch()` rejects with this code. `metadata.operation` names the call. `WALLET_WATCH_RESNAPSHOT_TIMEOUT` is logged, not thrown: the re-snapshot after a reconnection has not finished within 120 s, and until it does `utxos()` serves the view from before the disconnection. Underneath, `createUtxoContext` (`@hardkas/tx-builder`) bounds each re-snapshot call (`resnapshotTimeoutMs`, default 120,000) and reports `KASPA_WALLET_ADAPTER_RESNAPSHOT_TIMEOUT` to its `onError` listeners.
+**Solution:** Usually a node that keeps the connection open and stops answering. Restart the watch or the node.
+
+### `WALLET_HISTORY_UNSUPPORTED`, `WALLET_QUERY_PROVIDER_UNAVAILABLE`
+**Cause:** `WalletToolkit.history()`. `WALLET_HISTORY_UNSUPPORTED`: the wallet reads through a node only (`options.rpc`, no `options.provider`). A Kaspa node keeps no address history, so there is none to return (it used to answer an empty one). `WALLET_QUERY_PROVIDER_UNAVAILABLE`: the wallet's query provider failed; `history()` used to return the provider's failed result as if it were the history.
+**Solution:** Give the wallet a query provider that keeps history (`options.provider`, for example an indexer), or use `watch()` for live activity.
 
 ### `WALLET_WATCH_NODE_NETWORK_CHANGED`
 **Cause:** After a reconnection, the node behind a `WalletToolkit.watch()` URL named another network than before. The watch was stopped, and nothing that node answered was reported. A node naming mainnet gives `MAINNET_CONNECTION_DISABLED`.

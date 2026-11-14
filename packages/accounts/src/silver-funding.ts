@@ -1,5 +1,5 @@
 import { assertMainnetTransactionsDisabled, loadManagedKaspaWasmSync } from "@hardkas/core";
-import { calculateUpstreamStorageMass, measureBuiltTransactionMass } from "@hardkas/tx-builder";
+import { calculateUpstreamStorageMass, measureBuiltTransactionNodeMass } from "@hardkas/tx-builder";
 import { parseWasmTxToRpc } from "./internal/wasm-rpc-serialization.js";
 import type { SilverContractUtxo } from "./silver-spend.js";
 
@@ -7,8 +7,23 @@ import type { SilverContractUtxo } from "./silver-spend.js";
  * Funding a script (P2SH) output from a key's P2PK outputs, as a v0
  * transaction: the script output first, the change back to the key's address.
  * Inputs are taken in the given order until they cover the value and the fee;
- * the fee, storage mass and signatures come from the SDK.
+ * the committed storage mass and the signatures come from the SDK.
+ *
+ * G3 · the fee is the node's relay floor (100 sompi/g of compute mass) and the
+ * masses must be within the node's limits (tx-builder
+ * measureBuiltTransactionNodeMass); the SDK's fee charged the storage mass, and
+ * its 100,000 g limit refused small script outputs the node relays.
+ *
+ * G7-l · a transaction above the storage-mass limit because of a small output is
+ * refused naming that output, as the payment planner refuses it (generator-plan
+ * `refusal`): CHANGE_BELOW_STANDARD_OUTPUT when the change is the smaller one,
+ * OUTPUT_BELOW_STANDARD_AMOUNT when the script output is. Like the payment
+ * planner, the remainder is never paid to the miner and no further output is
+ * taken to grow it.
  */
+
+/** A P2PK Schnorr unlock at its final length (OP_DATA_65 + signature + SIGHASH_ALL), for the node's mass. */
+const P2PK_SIGNATURE_PLACEHOLDER = "41" + "00".repeat(65);
 
 function fundingError(code: string, message: string): Error {
   const err = new Error(`${code}: ${message}`);
@@ -89,12 +104,42 @@ export function buildScriptFunding(request: ScriptFundingRequest): ScriptFunding
     selected.push(u);
     const total = selected.reduce((s, x) => s + x.amountSompi, 0n);
     if (total <= request.valueSompi) continue;
-    // Unsigned P2PK inputs: the SDK prices each with one expected signature.
+    // The node's masses of the final shape: each P2PK input with a placeholder unlock of the signed length.
     let fee = 0n;
     for (let round = 0; round < 8; round++) {
       if (total < request.valueSompi + fee) break;
-      const measured = measureBuiltTransactionMass(make(selected, fee).tx, request.networkId);
-      if (!measured.standard) throw fundingError("TX_MASS_ABOVE_STANDARD_LIMIT", `mass ${measured.mass} exceeds the maximum standard mass`);
+      const { tx: placed, change } = make(selected, fee, selected.map(() => P2PK_SIGNATURE_PLACEHOLDER));
+      const measured = measureBuiltTransactionNodeMass(placed, {
+        inputs: selected.map((s) => ({ amountSompi: s.amountSompi, scriptBytes: own.script.length / 2, covenantId: false })),
+        outputs: [
+          { amountSompi: request.valueSompi, scriptBytes: lock.script.length / 2, covenantId: false },
+          ...(change > 0n ? [{ amountSompi: change, scriptBytes: own.script.length / 2, covenantId: false }] : [])
+        ]
+      });
+      if (!measured.relayable) {
+        if (measured.exceeded?.mass === "storage") {
+          // before the fee is known (fee 0) the change is the whole remainder: price the fee first, then judge the change
+          // it really leaves (or, if the remainder cannot pay it, take the next output)
+          if (fee === 0n && change > 0n) {
+            fee = measured.minimumFeeSompi;
+            continue;
+          }
+          // G7-l: the payment planner's rule — the smaller output is what broke the limit
+          if (change > 0n && change <= request.valueSompi) {
+            throw fundingError(
+              "CHANGE_BELOW_STANDARD_OUTPUT",
+              `the change this funding leaves (${change} sompi) is too small for a standard output: ${measured.exceededText}. ` +
+                "Fund a slightly different amount, or from outputs that leave no change or a larger one. Nothing was signed."
+            );
+          }
+          throw fundingError(
+            "OUTPUT_BELOW_STANDARD_AMOUNT",
+            `the script output of ${request.valueSompi} sompi is too small for a standard output from these outputs: ${measured.exceededText}. ` +
+              "Fund a larger amount. Nothing was signed."
+          );
+        }
+        throw fundingError("TX_MASS_ABOVE_STANDARD_LIMIT", `${measured.exceededText}. Nothing was signed.`);
+      }
       if (measured.minimumFeeSompi <= fee) {
         const unsigned = make(selected, fee).tx;
         const signatures = selected.map((_, i) => String(k.createInputSignature(unsigned, i, key, k.SighashType.All)));

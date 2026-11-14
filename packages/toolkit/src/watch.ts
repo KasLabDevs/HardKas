@@ -1,4 +1,5 @@
-import { loadManagedKaspaWasmSync, isMainnetNetworkId, mainnetConnectionDisabledError, redactUrlCredentials } from '@hardkas/core';
+import { HardkasError, isMainnetNetworkId, mainnetConnectionDisabledError, redactUrlCredentials } from '@hardkas/core';
+import { officialRpcFactory } from '@hardkas/kaspa-rpc';
 import { covenantIdOf, createUtxoContext, type UtxoContextHandle } from '@hardkas/tx-builder';
 import { logger } from '@hardkas/observability';
 
@@ -53,8 +54,20 @@ const REMOVED = new Set(["external", "reorg"]);
 // is a coinbase not yet listed: neither is a transaction.
 const LIVE = new Set(["pending", "maturity", "reorg"]);
 const DEDUPE_LIMIT = 1000;
-// The first connection is bounded like kaspa-rpc's default request timeout; reconnects are not.
+// The first connection is bounded like kaspa-rpc's default request timeout; reconnects are not (kaspa-wasm retries).
 const CONNECT_TIMEOUT_MS = 30_000;
+// G7 h (notes cross-check): each identity question (getServerInfo) is bounded like kaspa-rpc's default request timeout,
+// and the first snapshot (processor start + the address's UTXOs) gets more room; a call that never settled used to block
+// the watch (and every later reconnect) for ever.
+const REQUEST_TIMEOUT_MS = 30_000;
+const SNAPSHOT_TIMEOUT_MS = 120_000;
+
+/** Bounds of the watch engine's own calls, in ms (defaults: connect 30 s, request 30 s, snapshot 120 s). */
+export interface UtxoWatchEngineTimeouts {
+    connectMs?: number;
+    requestMs?: number;
+    snapshotMs?: number;
+}
 
 const keyOf = (o: { transactionId: string; index: number }) => `${o.transactionId}:${o.index}`;
 const byOutpoint = (a: WalletOutpoint, b: WalletOutpoint) =>
@@ -84,17 +97,28 @@ export class UtxoWatchEngine {
     private networkId: string | undefined;
     /** A4: false from a disconnect until the new connection's node has named that network again. */
     private identityVerified = true;
+    /** G7 h: armed when a re-snapshot starts; fires if it has not finished within the snapshot bound. */
+    private resyncWatchdog: ReturnType<typeof setTimeout> | undefined;
+    private readonly connectMs: number;
+    private readonly requestMs: number;
+    private readonly snapshotMs: number;
 
-    constructor(private readonly rpcUrl: string, private readonly getAddress: () => Promise<string>) {}
+    constructor(private readonly rpcUrl: string, private readonly getAddress: () => Promise<string>, timeouts: UtxoWatchEngineTimeouts = {}) {
+        this.connectMs = timeouts.connectMs ?? CONNECT_TIMEOUT_MS;
+        this.requestMs = timeouts.requestMs ?? REQUEST_TIMEOUT_MS;
+        this.snapshotMs = timeouts.snapshotMs ?? SNAPSHOT_TIMEOUT_MS;
+    }
 
     async start(): Promise<void> {
-        const k: any = loadManagedKaspaWasmSync();
         // Its own client, with kaspa-wasm's default Retry strategy, so the processor sees every
-        // disconnect and reconnect and the context re-snapshots after each one.
-        this.rpc = new k.RpcClient({ url: this.rpcUrl, encoding: k.Encoding.SerdeJson });
+        // disconnect and reconnect and the context re-snapshots after each one. G7 i (notes cross-check): built by
+        // kaspa-rpc's factory, the same JSON-encoded official RpcClient plus the process guard it installs
+        // (useWsWebSocketForSdk: `ws` with an 'error' listener), so a disconnect after a connect that timed out
+        // mid-handshake cannot end the process even when this is the process's first client.
+        this.rpc = officialRpcFactory(this.rpcUrl);
         try {
-            await this.connectWithin(CONNECT_TIMEOUT_MS);
-            const { networkId } = await this.rpc.getServerInfo();
+            await this.connectWithin(this.connectMs);
+            const { networkId } = await this.within<any>(this.rpc.getServerInfo(), this.requestMs, "getServerInfo (the node's identity)");
             // MAINNET TOTAL LOCKDOWN: this engine holds its own kaspa-wasm client (the processor needs it), so it applies
             // the transport's rule itself: a node that says mainnet is released after that one identity answer
             if (isMainnetNetworkId(networkId)) {
@@ -105,12 +129,21 @@ export class UtxoWatchEngine {
             // A4 (rc2 audit): every reconnection of this client is identified again before the context re-reads the address
             // from it (the transport's rule, session.ts): a node behind the URL that now names mainnet or another network
             // stops the watch, and nothing it answers is reported
-            const handle = await createUtxoContext({ wasmRpc: this.rpc, networkId, addresses: [address], beforeResnapshot: () => this.reverifyIdentity() });
+            const handle = await this.within(
+                createUtxoContext({ wasmRpc: this.rpc, networkId, addresses: [address], beforeResnapshot: () => this.reverifyIdentity() }),
+                this.snapshotMs,
+                "the first snapshot of the address (UtxoProcessor start + trackAddresses)",
+                // a snapshot that completes after the bound was given up: release it
+                (late) => void late.stop().catch(() => {})
+            );
             this.handle = handle;
             this.lastSeen = this.read();
             handle.processor.addEventListener((event: any) => this.onUpstream(event));
             handle.onResync(() => this.onResync());
-            handle.onError((error) => logger.error("Wallet watch re-snapshot failed; the next reconnect retries", { error }));
+            handle.onError((error) => {
+                this.disarmResyncWatchdog();
+                logger.error("Wallet watch re-snapshot failed; the next reconnect retries", { error, code: (error as { code?: unknown } | null)?.code });
+            });
         } catch (e) {
             await this.rpc.disconnect().catch(() => {});
             throw e;
@@ -123,8 +156,10 @@ export class UtxoWatchEngine {
      * more) and the re-snapshot is refused.
      */
     private async reverifyIdentity(): Promise<void> {
-        // a failure here (the connection went away again) refuses this re-snapshot too; the next reconnect asks again
-        const observed: unknown = (await this.rpc.getServerInfo())?.networkId;
+        // a failure here (the connection went away again) refuses this re-snapshot too; the next reconnect asks again.
+        // G7 h: bounded, so a node that keeps the socket and stops answering fails this pass (WALLET_WATCH_NODE_TIMEOUT,
+        // to onError) instead of holding the re-snapshot, and with it every later reconnect, for ever
+        const observed: unknown = (await this.within<any>(this.rpc.getServerInfo(), this.requestMs, "getServerInfo after a reconnection"))?.networkId;
         if (isMainnetNetworkId(observed) || String(observed) !== this.networkId) {
             const where = redactUrlCredentials(this.rpcUrl);
             const err = isMainnetNetworkId(observed)
@@ -160,6 +195,65 @@ export class UtxoWatchEngine {
         }
     }
 
+    /**
+     * G7 h: `work`, or WALLET_WATCH_NODE_TIMEOUT after `ms`. The call itself cannot be cancelled: if it settles later,
+     * its value goes to `onLate` (to release what it opened) and is otherwise ignored.
+     */
+    private async within<T>(work: Promise<T>, ms: number, operation: string, onLate?: (value: T) => void): Promise<T> {
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        let timedOut = false;
+        const timeout = new Promise<never>((_, reject) => {
+            timer = setTimeout(() => {
+                timedOut = true;
+                reject(
+                    new HardkasError(
+                        "WALLET_WATCH_NODE_TIMEOUT",
+                        `WalletToolkit.watch: ${operation} got no answer from the node at ${redactUrlCredentials(this.rpcUrl)} within ${ms / 1000} s.`,
+                        { metadata: { operation, timeoutMs: ms } }
+                    )
+                );
+            }, ms);
+        });
+        work.then(
+            (value) => {
+                if (timedOut) onLate?.(value);
+            },
+            () => {}
+        );
+        try {
+            return await Promise.race([work, timeout]);
+        } finally {
+            clearTimeout(timer);
+        }
+    }
+
+    /**
+     * G7 h: the re-snapshot after a reconnection runs in tx-builder's UtxoContext handle, whose trackAddresses() has no
+     * bound of its own. If it has not finished within the snapshot bound, the watch says so (WALLET_WATCH_RESNAPSHOT_TIMEOUT,
+     * logged): until it does, utxos() serves the view from before the disconnection and no event is reported.
+     */
+    private armResyncWatchdog(): void {
+        if (this.resyncWatchdog !== undefined || this.closed) return;
+        const ms = this.snapshotMs;
+        this.resyncWatchdog = setTimeout(() => {
+            this.resyncWatchdog = undefined;
+            if (this.closed || !this.handle?.resyncing) return;
+            const error = new HardkasError(
+                "WALLET_WATCH_RESNAPSHOT_TIMEOUT",
+                `WalletToolkit.watch: the re-snapshot after a reconnection to ${redactUrlCredentials(this.rpcUrl)} has not finished within ${ms / 1000} s. ` +
+                    `Until it does, utxos() serves the view from before the disconnection and no event is reported.`,
+                { metadata: { timeoutMs: ms } }
+            );
+            logger.error("Wallet watch re-snapshot is not finishing", { error, code: error.code });
+        }, ms);
+        (this.resyncWatchdog as { unref?: () => void }).unref?.();
+    }
+
+    private disarmResyncWatchdog(): void {
+        if (this.resyncWatchdog !== undefined) clearTimeout(this.resyncWatchdog);
+        this.resyncWatchdog = undefined;
+    }
+
     add(listener: WalletWatchListener): void {
         this.listeners.add(listener);
     }
@@ -184,8 +278,11 @@ export class UtxoWatchEngine {
         if (this.closed) return;
         this.closed = true;
         this.listeners.clear();
+        this.disarmResyncWatchdog();
         try {
-            await this.handle?.stop();
+            // G7 h: the handle's stop() waits for a re-snapshot in flight; one that never settles would hold stop() (and
+            // unwatch()) for ever, and the client would never be released. Bounded: the client is released either way.
+            if (this.handle) await this.within(this.handle.stop(), this.requestMs, "stopping the watch (a re-snapshot was still in flight)");
         } finally {
             await this.rpc?.disconnect().catch(() => {});
         }
@@ -234,6 +331,11 @@ export class UtxoWatchEngine {
             this.identityVerified = false;
             return;
         }
+        if (type === "connect") {
+            // G7 h: tx-builder's handle starts the re-snapshot on this same event (its listener comes first)
+            if (this.handle.resyncing) this.armResyncWatchdog();
+            return;
+        }
         if (!LIVE.has(type) || this.beforeGap || this.handle.resyncing) return;
         const record = recordOf(event.data);
         const kind = String(record?.data?.type ?? "");
@@ -259,6 +361,7 @@ export class UtxoWatchEngine {
     }
 
     private onResync(): void {
+        this.disarmResyncWatchdog();
         if (this.closed || !this.handle || !this.identityVerified) return;
         const before = this.beforeGap ?? this.lastSeen;
         const now = this.read();

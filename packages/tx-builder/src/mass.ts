@@ -1,4 +1,15 @@
 import { KASPA_WASM_REFERENCE, getNetworkPrefix, loadManagedKaspaWasmSync } from "@hardkas/core";
+import { WALLET_MAXIMUM_STANDARD_TRANSACTION_MASS } from "./fee-policy.js";
+import {
+  V1_MASS_AUTHORITY,
+  V1_MASS_PARAMS,
+  v1FeeMass,
+  v1MassShapeOfWasmTransaction,
+  v1MinimumRelayFee,
+  v1NonContextualMasses,
+  v1StorageMass,
+  type V1StorageCell
+} from "./v1-mass.js";
 
 /**
  * Transaction mass and minimum fee.
@@ -225,6 +236,91 @@ export function measureBuiltTransactionMass(tx: unknown, networkId?: string | un
     maximumStandardMass: k.maximumStandardTransactionMass(),
     authority: MASS_AUTHORITY,
     assumptions: ["signature scripts measured at their final length; the SDK adds one signature allowance per input on top"]
+  };
+}
+
+/** The node's figures for a built transaction, and whether the node relays it at those masses. */
+export interface BuiltTransactionNodeMass {
+  readonly version: number;
+  readonly computeMass: bigint;
+  readonly transientMass: bigint;
+  readonly storageMass: bigint;
+  /** max(compute, transient normalized to the compute limit): the mass the relay fee is charged on. */
+  readonly feeMass: bigint;
+  /** The node's minimum relay fee: 100 sompi per gram of `feeMass`. The storage mass has no fee floor of its own. */
+  readonly minimumFeeSompi: bigint;
+  /**
+   * The limits checked: compute mass within the standard 100,000 g for v0 (the v1 engine's block limit for v1), storage
+   * and transient mass within the block limits (500,000 g and 1,000,000 g).
+   */
+  readonly limits: { readonly compute: bigint; readonly storage: bigint; readonly transient: bigint };
+  /** False when a mass is above its limit: the node never relays the transaction. */
+  readonly relayable: boolean;
+  /** The first mass above its limit, when not relayable, and the same in words. */
+  readonly exceeded?: { readonly mass: "compute" | "storage" | "transient"; readonly value: bigint; readonly limit: bigint } | undefined;
+  readonly exceededText?: string | undefined;
+  readonly authority: string;
+}
+
+/**
+ * G3 · the node's relay floor and mass limits of a transaction the caller has built as a WASM `Transaction`, for a
+ * minimum fee and a refusal that are the node's, not the SDK's.
+ *
+ * {@link measureBuiltTransactionMass} prices the SDK's max(compute, storage) mass: when storage mass binds (a small
+ * output) its minimum fee is far above what the node requires, and its `standard` flag refuses storage mass above
+ * 100,000 g, where the node's limit is the block's 500,000 g. Proven on rusty-kaspad 2.1.0 (simnet,
+ * silver-v0-node-floor-g3.simnet.test.ts): v0 transactions with storage mass 125,000 g (P2PK) and 395,886 g (a two-
+ * signature P2SH spend) are accepted at 100 sompi/g of the compute mass and refused one sompi under it; storage mass
+ * 703,499 g is refused ("larger than max allowed size of 500000"). HK-09 certified the same floor for a v0 payment.
+ *
+ * The masses are the node's (v1-mass.ts, term by term: the v0 sig-op count at 1000 g, v1 compute budgets at 100 g),
+ * read from the transaction's own fields: its signature scripts must be at their FINAL length (fill unsigned P2PK
+ * inputs with a 66-byte placeholder), unlike {@link measureBuiltTransactionMass}, which adds a signature per input. The
+ * storage mass is given: the spent and created cells (KIP-9 with the Toccata plurality, {@link v1StorageMass}), or the
+ * value already computed by that rule. Nothing is signed or rounded up: the fee is the node's floor, exactly.
+ */
+export function measureBuiltTransactionNodeMass(
+  tx: unknown,
+  storage: { readonly inputs: readonly V1StorageCell[]; readonly outputs: readonly V1StorageCell[] } | { readonly storageMass: bigint }
+): BuiltTransactionNodeMass {
+  const shape = v1MassShapeOfWasmTransaction(tx);
+  const masses = v1NonContextualMasses(shape);
+  const storageMass = "storageMass" in storage ? storage.storageMass : v1StorageMass(storage.inputs, storage.outputs);
+  if (storageMass === undefined) {
+    const err = new Error("TX_MASS_ABOVE_STANDARD_LIMIT: storage mass overflows (an output is far too small): the node refuses the transaction");
+    (err as any).code = "TX_MASS_ABOVE_STANDARD_LIMIT";
+    throw err;
+  }
+  const feeMass = v1FeeMass(masses);
+  const block = V1_MASS_PARAMS.blockLimits;
+  const limits = { compute: shape.version >= 1 ? block.compute : WALLET_MAXIMUM_STANDARD_TRANSACTION_MASS, storage: block.storage, transient: block.transient };
+  const exceeded =
+    masses.computeMass > limits.compute
+      ? { mass: "compute" as const, value: masses.computeMass, limit: limits.compute }
+      : storageMass > limits.storage
+        ? { mass: "storage" as const, value: storageMass, limit: limits.storage }
+        : masses.transientMass > limits.transient
+          ? { mass: "transient" as const, value: masses.transientMass, limit: limits.transient }
+          : undefined;
+  return {
+    version: shape.version,
+    computeMass: masses.computeMass,
+    transientMass: masses.transientMass,
+    storageMass,
+    feeMass,
+    minimumFeeSompi: v1MinimumRelayFee(feeMass),
+    limits,
+    relayable: exceeded === undefined,
+    ...(exceeded
+      ? {
+          exceeded,
+          exceededText:
+            exceeded.mass === "storage"
+              ? `storage mass ${exceeded.value} g is above the node's limit of ${exceeded.limit} g (KIP-9: an output is too small for the value it comes from)`
+              : `${exceeded.mass} mass ${exceeded.value} g is above the ${exceeded.mass === "compute" && shape.version < 1 ? "standard" : "block"} limit of ${exceeded.limit} g`
+        }
+      : {}),
+    authority: V1_MASS_AUTHORITY
   };
 }
 

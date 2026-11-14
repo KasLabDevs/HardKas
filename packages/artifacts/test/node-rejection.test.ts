@@ -47,7 +47,9 @@ const EXPECTED: Record<string, Record<string, NodeRejectionCode>> = {
   "p2sh-transfer-with-timeout": {
     ".transferBranch.beforeTimeout.rejectedWrongKey": "SCRIPT_POLICY_REJECTED",
     ".reclaimBranch.beforeThreshold.attempts[0]": "SEQUENCE_LOCK_REJECTED",
-    ".reclaimBranch.beforeThreshold.attempts[1]": "LOCK_TIME_REJECTED",
+    // G7 c (changed on purpose; it was LOCK_TIME_REJECTED): the script's CheckSequenceVerify refused the input's sequence
+    // ("… 500 > 0", reclaim-with-sequence-below-period), which no later send of that transaction passes
+    ".reclaimBranch.beforeThreshold.attempts[1]": "SCRIPT_LOCK_UNSATISFIED",
     ".reclaimBranch.afterThreshold.attempts[0]": "SCRIPT_POLICY_REJECTED"
   }
 };
@@ -112,5 +114,36 @@ describe("F1.6 · classifyNodeRejection (product)", () => {
     expect(nodeRejectionOf({ accepted: false, error: "RPC request timed out after 30000ms (socket hang up)" })).toBeUndefined();
     expect(nodeRejectionOf({ accepted: false, error: UPSTREAM[0]![0] })?.code).toBe("INPUT_ALREADY_SPENT");
     expect(nodeRejectionOf({ accepted: false })?.code).toBe("NODE_REJECTED_UNCLASSIFIED");
+  });
+
+  // G7 c · the script's own time-lock check (txscript UnsatisfiedLockTime, always "Unsatisfied lock time: …") is not the
+  // consensus finality rule: it compared the script's value with the transaction's field, so the hint names --sequence
+  // (HardKAS signs lock time 0) and the value the script asks for. The corpus text is a real rusty-kaspad answer; the
+  // others are the v2.1.0 format strings (crypto/txscript/src/opcodes/mod.rs).
+  it("NR-5 a script time-lock failure is SCRIPT_LOCK_UNSATISFIED, with the values and a --sequence hint; finality stays LOCK_TIME_REJECTED", () => {
+    const real = nodeErrors(path.join(CORPUS, "p2sh-transfer-with-timeout", "evidence.json")).find((f) => f.where === ".reclaimBranch.beforeThreshold.attempts[1]")!.message;
+    const r = classifyNodeRejection(real);
+    expect(r).toMatchObject({ code: "SCRIPT_LOCK_UNSATISFIED", retriable: false, lockRequired: "500", lockDeclared: "0" });
+    expect(r.hint).toMatch(/--sequence/);
+    expect(r.hint).toMatch(/at least 500/);
+    const wrap = (s: string) => `Rejected transaction ${TX}: failed to verify the signature script: Unsatisfied lock time: ${s}`;
+    for (const t of ["mismatched locktime types -- tx locktime 0, stack locktime 600000000000", "transaction input is finalized", "transaction sequence has sequence locktime disabled bit set: 0x80000000"]) {
+      const c = classifyNodeRejection(wrap(t));
+      expect(c.code, t).toBe("SCRIPT_LOCK_UNSATISFIED");
+      expect(c.lockRequired, t).toBeUndefined();
+      expect(c.hint, t).toMatch(/--sequence/);
+    }
+    expect(classifyNodeRejection(`Rejected transaction ${TX}: transaction input #0 is not finalized`)).toEqual({ code: "LOCK_TIME_REJECTED", retriable: false });
+  });
+
+  // G7 d · the storage-mass refusal (mining/errors/src/mempool.rs RejectStorageMass, the RuleError and the NonStandardError
+  // forms). The transient mass and the committed-mass mismatch are other rules.
+  it("NR-6 the storage-mass refusal is STORAGE_MASS_ABOVE_LIMIT with the mass, the limit and a hint; neighbouring mass texts are not", () => {
+    const rule = classifyNodeRejection(`Rejected transaction ${TX}: transaction storage mass of 10000000 is larger than max allowed size of 500000`);
+    expect(rule).toMatchObject({ code: "STORAGE_MASS_ABOVE_LIMIT", retriable: false, storageMass: "10000000", storageMassLimit: "500000" });
+    expect(rule.hint).toMatch(/smallest output/);
+    expect(classifyNodeRejection(`Rejected transaction ${TX}: transaction ${TX} is not standard: transaction storage mass of 120000 is larger than max allowed size of 100000`)).toMatchObject({ code: "STORAGE_MASS_ABOVE_LIMIT", storageMass: "120000", storageMassLimit: "100000" });
+    expect(classifyNodeRejection(`Rejected transaction ${TX}: transaction transient (storage) mass of 600000 is larger than max allowed size of 500000`).code).toBe("NODE_REJECTED_UNCLASSIFIED");
+    expect(classifyNodeRejection(`Rejected transaction ${TX}: calculated contextual mass (including storage mass) 4083 is not equal to the committed mass field 1083`).code).toBe("NODE_REJECTED_UNCLASSIFIED");
   });
 });

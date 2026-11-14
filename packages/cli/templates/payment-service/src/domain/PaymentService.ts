@@ -22,6 +22,11 @@ export interface Invoice {
     expiresAt: number;
     paidAt?: number;
     txId?: string;
+    /**
+     * What the payment check found at the address (plain KAS), in sompi as a decimal string (it serializes as JSON as
+     * it is): an overpayment shows here, not in amountSompi.
+     */
+    amountFoundSompi?: string;
     confirmations: number;
     requiredConfirmations: number;
 }
@@ -129,16 +134,21 @@ export class PaymentService {
         });
 
         if (result.status === "confirmed") {
-            return await this.markPaid(invoice.id, result.txId!, result.confirmations);
+            return await this.markPaid(invoice.id, result.txId!, result.confirmations, result.amountFoundSompi);
         } else if (result.status === "mempool") {
             invoice.status = "mempool";
             invoice.confirmations = result.confirmations;
+            invoice.amountFoundSompi = result.amountFoundSompi.toString();
         }
 
         return invoice;
     }
 
-    private async markPaid(invoiceId: string, txId: string, confirmations: number): Promise<Invoice> {
+    /** `amountFoundSompi`: what the payment check found, recorded as found (it is not the invoice amount). */
+    private async markPaid(invoiceId: string, txId: string, confirmations: number, amountFoundSompi: bigint): Promise<Invoice> {
+        if (typeof amountFoundSompi !== "bigint") {
+            throw new Error("PaymentService.markPaid: pass the amount the payment check found (amountFoundSompi); a receipt records what was found, never the invoice amount.");
+        }
         const invoice = await this.getInvoice(invoiceId);
         const receipt = createPaymentReceipt({
             invoice: {
@@ -149,7 +159,8 @@ export class PaymentService {
             },
             paymentCheckResult: {
                 status: "confirmed",
-                amountFoundSompi: invoice.amountSompi,
+                // G6 (notes cross-check): it used to record invoice.amountSompi here, so an overpayment was never seen
+                amountFoundSompi,
                 txId,
                 confirmations
             },
@@ -163,15 +174,16 @@ export class PaymentService {
         invoice.paidAt = Date.now();
         invoice.txId = txId;
         invoice.confirmations = confirmations;
+        invoice.amountFoundSompi = amountFoundSompi.toString();
 
         await writeArtifact(path.join(this.artifactsDir, `payment-receipt-${invoice.id}.json`), receipt);
-        
+
         const merchant = this.merchants.get(invoice.merchantId);
         if (merchant?.webhookUrl) {
             const event: WebhookEvent = {
                 id: randomUUID(),
                 type: "invoice.paid",
-                payload: { invoiceId: invoice.id, txId, amountSompi: invoice.amountSompi.toString() },
+                payload: { invoiceId: invoice.id, txId, amountSompi: invoice.amountSompi.toString(), amountFoundSompi: amountFoundSompi.toString() },
                 timestamp: Date.now()
             };
             await this.webhookTransport.send(merchant.webhookUrl, event);
