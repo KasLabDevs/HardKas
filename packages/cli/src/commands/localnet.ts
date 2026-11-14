@@ -10,6 +10,40 @@ import {
 import { runLocalnetSeed } from "../runners/localnet-treasury.js";
 import { parseKasToSompi } from "@hardkas/core";
 import { invocationWorkspaceRoot } from "../workspace-root.js";
+import { HardkasCliError, HardkasExitCode } from "../cli-errors.js";
+
+/**
+ * B4 (rc2 audit): `--timeout` is a positive whole number of milliseconds, refused (exit 2) before anything is contacted.
+ * It was `parseInt`, so "abc" became NaN: the treasury transaction went out and the wait "timed out" at once.
+ */
+export function parseLocalnetTimeoutMs(raw: unknown): number {
+  const text = typeof raw === "string" ? raw.trim() : "";
+  if (!/^[1-9][0-9]*$/.test(text) || !Number.isSafeInteger(Number(text))) {
+    throw new HardkasCliError(
+      "LOCALNET_TIMEOUT_INVALID",
+      `--timeout must be a positive whole number of milliseconds, got '${String(raw)}'. Nothing was done.`,
+      { exitCode: HardkasExitCode.USAGE_ERROR }
+    );
+  }
+  return Number(text);
+}
+
+/** B4: a KAS amount that must be above zero (a seed amount, a treasury transfer); anything else is a usage error (exit 2). */
+export function parsePositiveKasOption(raw: unknown, flag: string, code: string): bigint {
+  let sompi: bigint | undefined;
+  let why = "it is not above zero";
+  try {
+    sompi = parseKasToSompi(String(raw ?? ""));
+  } catch (e) {
+    why = e instanceof Error ? e.message : String(e);
+  }
+  if (sompi === undefined || sompi <= 0n) {
+    throw new HardkasCliError(code, `${flag} must be a positive KAS amount, got '${String(raw)}' (${why}). Nothing was done.`, {
+      exitCode: HardkasExitCode.USAGE_ERROR
+    });
+  }
+  return sompi;
+}
 
 export function registerLocalnetCommands(program: Command): void {
   const localnet = program
@@ -21,7 +55,7 @@ export function registerLocalnetCommands(program: Command): void {
     .description(`Start (or adopt) the Docker rusty-kaspad node for the toccata-v2 profile and create dev accounts alice…erin; needs Docker ${UI.maturity("alpha")}`)
     .option("--profile <name>", "Localnet profile: toccata-v2 (the only one, required; or use --toccata)")
     .option("--toccata", "Shortcut for --profile toccata-v2", false)
-    .option("--seed", "Distribute an initial exact balance (default 100 KAS) to empty dev accounts from the localnet Treasury after start", false)
+    .option("--seed", "Distribute an initial exact balance (default 100 KAS) to empty dev accounts from the localnet Treasury after start (its key is public by design, the same on every HardKAS localnet, and used on simnet only)", false)
     .option("--seed-amount <kas>", "KAS per account when --seed is set", "100")
     .option("--stop-miner", "With --seed: leave the chain stopped after seeding", false)
     .option("--detached", "No effect: the node always runs as a detached Docker container", false)
@@ -30,7 +64,7 @@ export function registerLocalnetCommands(program: Command): void {
       await runLocalnetStart({
         profile: opts.toccata ? "toccata-v2" : opts.profile,
         seed: !!opts.seed,
-        ...(opts.seed ? { seedAmountSompi: parseKasToSompi(opts.seedAmount) } : {}),
+        ...(opts.seed ? { seedAmountSompi: parsePositiveKasOption(opts.seedAmount, "--seed-amount", "LOCALNET_SEED_INVALID_AMOUNT") } : {}),
         stopMiner: !!opts.stopMiner,
         json: opts.json,
         workspaceRoot: process.cwd()
@@ -66,18 +100,29 @@ export function registerLocalnetCommands(program: Command): void {
     .command("fund <identifier>")
     .description(`Fund a local Toccata/simnet account ${UI.maturity("alpha")}`)
     .option("--profile <name>", "Funding profile", "toccata-v2")
-    .option("--amount <kas>", "KAS to wait for: mine until the mature balance grows by this amount", "1000")
-    .option("--treasury", "Transfer exact non-coinbase UTXOs from the localnet Treasury instead of mining directly to the account", false)
+    .option(
+      "--amount <kas>",
+      "KAS to fund: without --treasury, mine to the account until its mature balance grows by this amount; with --treasury, transfer exactly this amount from the localnet Treasury",
+      "1000"
+    )
+    .option(
+      "--treasury",
+      "Transfer exactly --amount KAS from the localnet Treasury instead of mining to the account (an amount too large for one transaction is sent in several). The Treasury key is public by design, the same on every HardKAS localnet, and used on simnet only",
+      false
+    )
     .option("--timeout <ms>", "Funding/maturity wait timeout in ms", "300000")
     .option("--keep-miner", "Keep mining to the funded account after funding (its balance keeps growing)", false)
     .option("--stop-miner", "Leave the chain stopped after funding: no new blocks until you mine again", false)
     .option("--json", "Output as JSON", false)
     .action(async (identifier, opts) => {
+      const timeoutMs = parseLocalnetTimeoutMs(opts.timeout);
       await runLocalnetFund({
         identifier,
-        amountSompi: parseKasToSompi(opts.amount),
+        amountSompi: opts.treasury
+          ? parsePositiveKasOption(opts.amount, "--amount", "LOCALNET_FUND_INVALID_AMOUNT")
+          : parseKasToSompi(opts.amount),
         profile: opts.profile,
-        timeoutMs: parseInt(opts.timeout, 10),
+        timeoutMs,
         treasury: !!opts.treasury,
         keepMiner: opts.keepMiner,
         stopMiner: opts.stopMiner,
@@ -88,7 +133,9 @@ export function registerLocalnetCommands(program: Command): void {
 
   localnet
     .command("seed")
-    .description(`Distribute an exact initial KAS balance to dev accounts from the localnet Treasury (1 -> N) ${UI.maturity("alpha")}`)
+    .description(
+      `Distribute an exact initial KAS balance to dev accounts from the localnet Treasury (1 -> N; the Treasury key is public by design, the same on every HardKAS localnet, and used on simnet only) ${UI.maturity("alpha")}`
+    )
     .option("--profile <name>", "Funding profile", "toccata-v2")
     .option("--amount <kas>", "KAS per dev account", "100")
     .option("--only-empty", "Only fund accounts whose balance is currently 0", false)
@@ -101,12 +148,14 @@ export function registerLocalnetCommands(program: Command): void {
         typeof opts.accounts === "string" && opts.accounts.trim()
           ? opts.accounts.split(",").map((s: string) => s.trim()).filter(Boolean)
           : undefined;
+      const amountSompi = parsePositiveKasOption(opts.amount, "--amount", "LOCALNET_SEED_INVALID_AMOUNT");
+      const timeoutMs = parseLocalnetTimeoutMs(opts.timeout);
       await runLocalnetSeed({
-        amountSompi: parseKasToSompi(opts.amount),
+        amountSompi,
         onlyEmpty: !!opts.onlyEmpty,
         ...(accounts ? { accounts } : {}),
         profile: opts.profile,
-        timeoutMs: parseInt(opts.timeout, 10),
+        timeoutMs,
         stopMiner: !!opts.stopMiner,
         json: !!opts.json,
         workspaceRoot: invocationWorkspaceRoot()

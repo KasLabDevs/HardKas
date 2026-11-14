@@ -48,7 +48,9 @@ node --version
 > [!IMPORTANT]
 > `@hardkas/core`, `@hardkas/cli` and `@hardkas/testing` declare
 > `engines: 24.22.1`; the other packages do not declare an `engines` field yet,
-> and npm only warns about it. `hardkas doctor` passes on 24.22.1, warns on
+> and npm only warns about it. Yarn classic, and npm or pnpm with
+> `engine-strict` enabled, refuse to install on any other Node version,
+> including a later 24.x patch. `hardkas doctor` passes on 24.22.1, warns on
 > another 24.x and fails on any other major line. Use Node.js 24.22.1.
 
 ## Choose your packages
@@ -105,7 +107,7 @@ npm pkg set type=module
 Add the CLI as a development dependency so the version is pinned per project and
 travels with your lockfile. Name the version: until this release is tagged
 `latest` on npm, a bare `npm install @hardkas/cli` installs the previous one
-(`0.12.0-rc.29`).
+(`0.13.0-rc.1`). Do not use the `rc` dist-tag: it still points to the 0.12 line.
 
 ```bash
 npm install --save-dev @hardkas/cli@0.13.0-rc.2

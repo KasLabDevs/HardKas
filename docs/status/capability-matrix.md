@@ -1,4 +1,6 @@
-# Certification Capability Matrix
+# Capability Matrix
+
+What the release checks verify, by capability. This is the repository's own verification, not a third-party certification.
 > **Claims are generated.** The authoritative values live in
 > [claims.generated.md](./claims.generated.md), produced from `packages/sdk` by
 > `pnpm docs:generate-claims`. Anything restated below is prose, not the source.
@@ -93,7 +95,7 @@ This is important, but it is not the default happy path.
 
 ## Toccata v2 Localnet Baseline
 
-Status: certified alpha localnet gate
+Status: alpha localnet gate, verified by the release checks
 
 Coverage:
 

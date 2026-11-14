@@ -243,8 +243,33 @@ describe("F1.6 · preflightV1Send: read-only, right before the broadcast", () =>
     expect((await run("500", 1_500n)).error?.code).not.toBe("SEQUENCE_LOCK_NOT_YET_MET");
     expect((await run(String((1n << 63n) | 500n), 1_234n)).error?.code, "a disabled lock").not.toBe("SEQUENCE_LOCK_NOT_YET_MET");
     expect((await run("0", 1_234n)).error?.code, "no lock").not.toBe("SEQUENCE_LOCK_NOT_YET_MET");
-    expect((await run("500", 1_234n, null)).error?.code, "the node gave no DAA score for the UTXO").not.toBe("SEQUENCE_LOCK_NOT_YET_MET");
+    // C-11 (audit 2026-11-13): CHANGED. Without the UTXO's DAA score this check used to step aside ("does not decide") and
+    // the time-locked spend was sent; now it is SEQUENCE_LOCK_UNVERIFIABLE before any broadcast (see PF-10)
+    expect((await run("500", 1_234n, null)).error?.code, "the node gave no DAA score for the UTXO").toBe("SEQUENCE_LOCK_UNVERIFIABLE");
     expect([relativeLockOf(0), relativeLockOf("500"), relativeLockOf(500n), relativeLockOf((1n << 63n) | 5n), relativeLockOf("not a number")]).toEqual([undefined, 500n, 500n, undefined, undefined]);
+  });
+
+  it("PF-10 (C-11) an enabled relative lock whose DAA scores cannot be read is SEQUENCE_LOCK_UNVERIFIABLE before any broadcast; a disabled lock or none is not refused for it", async () => {
+    const t = await signedTransition();
+    const locked = (sequence: string) => ({ ...t.plan, inputs: [{ ...t.plan.inputs[0], sequence }] });
+    const node = (virtualDaaScore: () => Promise<bigint | undefined>, utxoDaa: bigint | null = 1_000n) => ({
+      ...fakeNode(transitionUtxo(utxoDaa === null ? {} : { blockDaaScore: utxoDaa })),
+      virtualDaaScore
+    });
+    const run = (sequence: string, n: ReturnType<typeof node>) => settle(preflightV1Send({ plan: locked(sequence), signatureScripts: t.r.signatureScripts, node: n, facts: facts() }));
+    const unknown = async () => undefined;
+    const down = async (): Promise<bigint | undefined> => {
+      throw new Error("getBlockDagInfo failed");
+    };
+    for (const [label, n] of [["the node reports no virtual DAA score", node(unknown)], ["reading the node's DAA score fails", node(down)], ["neither score", node(unknown, null)]] as const) {
+      const r = await run("500", n);
+      expect(r.error?.code, label).toBe("SEQUENCE_LOCK_UNVERIFIABLE");
+      expect(String(r.error?.message), label).toMatch(/relative time lock of 500 DAA/);
+      expect(String(r.error?.message), label).toMatch(/Nothing was sent/);
+    }
+    // a lock that is disabled, or no lock at all: the DAA score is not needed, so its absence refuses nothing here
+    expect((await run(String((1n << 63n) | 500n), node(unknown))).error?.code, "a disabled lock").not.toBe("SEQUENCE_LOCK_UNVERIFIABLE");
+    expect((await run("0", node(unknown, null))).error?.code, "no lock").not.toBe("SEQUENCE_LOCK_UNVERIFIABLE");
   });
 
   it("PF-2 each input fact the node contradicts has its code: spent, amount, script, covenant id changed, pending in its mempool", async () => {

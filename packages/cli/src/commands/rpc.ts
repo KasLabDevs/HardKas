@@ -93,7 +93,19 @@ export function registerRpcCommands(program: Command) {
     .action(async (options: { endpoints?: string[] }) => {
       const { runRpcDoctor } = await import("../runners/rpc-doctor-runner.js");
       try {
-        await runRpcDoctor(options);
+        const results = await runRpcDoctor(options);
+        // D-09 (rc2 audit): a diagnostic scripts can trust — exit 1 when any endpoint asked for is not ready (it exited 0
+        // even when every endpoint failed). The report above is unchanged.
+        const notReady = results.filter((r) => r.health.status !== "ready");
+        if (notReady.length > 0) {
+          const { HardkasCliError } = await import("../cli-errors.js");
+          const { redactUrlCredentials } = await import("@hardkas/core");
+          throw new HardkasCliError(
+            "RPC_DOCTOR_NOT_READY",
+            `${notReady.length} of ${results.length} endpoint(s) not ready: ${notReady.map((r) => `${redactUrlCredentials(r.url)} (${r.health.status})`).join(", ")}`,
+            { exitCode: 1 }
+          );
+        }
       } catch (e) {
         handleError(e);
       }

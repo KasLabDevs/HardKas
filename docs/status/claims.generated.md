@@ -16,7 +16,9 @@ below is read from `packages/sdk` at generation time, so prose elsewhere in
 
 Release status: `LOCAL_FIRST_DEVELOPER_RUNTIME_HARDENED`
 
-## Certified
+## Verified by the release checks
+
+These are claims the repository's own release checks verify. They are not a third-party certification.
 
 | Claim | Value |
 | :---- | :---- |

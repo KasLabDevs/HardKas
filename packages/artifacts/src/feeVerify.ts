@@ -215,6 +215,13 @@ export function verifyFeeSemantics(artifact: any): FeeAuditResult {
     issues.push(
       `Economic violation: Total inputs (${inputTotal}) less than outputs + fee (${outputTotal + artifactFee})`
     );
+  } else if (artifact.schema === HardkasSchemas.TxPlan && inputTotal > 0n && inputTotal !== outputTotal + artifactFee) {
+    // B5: a plan's stated fee is what its transaction pays: inputs == outputs + change + estimatedFeeSompi, as the v1
+    // branch requires. The check above only caught an overstated fee; an understated one (1000 KAS in, 1 KAS out, a
+    // stated fee of 2036 sompi) passed although the transaction would pay the difference to the miners.
+    issues.push(
+      `Fee mismatch: artifact reports ${artifactFee}, its inputs minus outputs and change pay ${inputTotal - outputTotal}`
+    );
   }
 
   // 4. Negative Fee Check

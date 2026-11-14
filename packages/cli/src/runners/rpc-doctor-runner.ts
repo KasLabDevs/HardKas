@@ -1,6 +1,7 @@
 import { UI } from "../ui.js";
 import { KaspaWrpcClient } from "@hardkas/kaspa-rpc";
 import { loadHardkasConfig, resolveNodeEndpoint } from "@hardkas/config";
+import { MAINNET_CONNECTION_DISABLED, isMainnetNetworkId, mainnetConnectionDisabledMessage, redactUrlCredentials } from "@hardkas/core";
 import net from "node:net";
 
 export interface RpcDoctorOptions {
@@ -8,11 +9,39 @@ export interface RpcDoctorOptions {
   config?: string;
 }
 
+/**
+ * A5 (rc2 audit): the EVM chain ids that are always mainnet. It MIRRORS `KNOWN_MAINNET_CHAIN_IDS` of @hardkas/l2
+ * (packages/l2/src/network-guard.ts: 1 = Ethereum mainnet, 38833 = Igra mainnet), which the CLI cannot import (the L2
+ * package is not a CLI dependency in this release). Keep the two lists equal.
+ */
+const L2_MAINNET_CHAIN_IDS: ReadonlySet<number> = new Set([1, 38833]);
+
+/** Whether a config entry (its name and what it declares) is a mainnet, L1 or L2. */
+function configDeclaresMainnet(name: string, entry: Record<string, unknown>): boolean {
+  const chainId = typeof entry.chainId === "string" ? Number(entry.chainId) : entry.chainId;
+  return (
+    isMainnetNetworkId(name) ||
+    isMainnetNetworkId(entry.network) ||
+    entry.environment === "mainnet" ||
+    (typeof chainId === "number" && L2_MAINNET_CHAIN_IDS.has(chainId))
+  );
+}
+
+function mainnetRefused(url: string, contacted: "nothing" | "identity-only"): LayeredHealthResult {
+  return {
+    tcpReachable: contacted === "identity-only",
+    protocolReachable: false,
+    rpcReachable: false,
+    status: "mainnet_refused",
+    error: mainnetConnectionDisabledMessage(`rpc doctor: ${redactUrlCredentials(url)}`, contacted)
+  };
+}
+
 interface LayeredHealthResult {
   tcpReachable: boolean;
   protocolReachable: boolean;
   rpcReachable: boolean;
-  status: "ready" | "tcp_unreachable" | "protocol_error" | "rpc_error" | "unsupported";
+  status: "ready" | "tcp_unreachable" | "protocol_error" | "rpc_error" | "unsupported" | "mainnet_refused";
   latencyMs?: number;
   network?: string;
   daaScore?: number;
@@ -82,6 +111,8 @@ async function checkKaspaEndpoint(rpcUrl: string): Promise<LayeredHealthResult> 
     await client.connect(3000);
   } catch (err) {
     await client.disconnect();
+    // A5: the transport asked the node its identity and dropped it because it serves mainnet
+    if (/MAINNET_CONNECTION_DISABLED/.test(err instanceof Error ? err.message : String(err))) return mainnetRefused(rpcUrl, "identity-only");
     return {
       tcpReachable: true,
       protocolReachable: false,
@@ -135,6 +166,12 @@ async function checkHttpJsonRpcEndpoint(url: string): Promise<LayeredHealthResul
     const latencyMs = Date.now() - start;
     if (res.ok) {
       const data = (await res.json()) as Record<string, unknown>;
+      // A5 (rc2 audit): an EVM mainnet answered its identity (eth_chainId) and nothing else is asked; it is reported as
+      // refused, never as "ready"
+      const chainId = typeof data.result === "string" && /^0x[0-9a-fA-F]+$/.test(data.result) ? Number.parseInt(data.result, 16) : undefined;
+      if (chainId !== undefined && L2_MAINNET_CHAIN_IDS.has(chainId)) {
+        return mainnetRefused(url, "identity-only");
+      }
       return {
         tcpReachable: true,
         protocolReachable: true,
@@ -165,7 +202,16 @@ async function checkHttpJsonRpcEndpoint(url: string): Promise<LayeredHealthResul
   }
 }
 
-export async function runRpcDoctor(options: RpcDoctorOptions) {
+export interface RpcDoctorResult {
+  readonly url: string;
+  readonly health: LayeredHealthResult;
+}
+
+/**
+ * Probes each endpoint and prints its report; returns every endpoint's result. D-09 (rc2 audit): the caller decides the
+ * exit code from them (`hardkas rpc doctor` exits 1 when any endpoint is not ready; it used to exit 0 in every case).
+ */
+export async function runRpcDoctor(options: RpcDoctorOptions): Promise<RpcDoctorResult[]> {
   let endpoints = options.endpoints || [];
   let loadedNetworks: Record<string, unknown> = {};
 
@@ -184,17 +230,18 @@ export async function runRpcDoctor(options: RpcDoctorOptions) {
   UI.header("HardKAS RPC Doctor");
   console.log(`Auditing ${endpoints.length} endpoint(s)...\n`);
 
-  const results = [];
+  const results: RpcDoctorResult[] = [];
 
   for (const url of endpoints) {
     // Resolve kind for the url
     let kind = "kaspa-rpc"; // default to Kaspa L1
-    const foundNetwork = Object.values(loadedNetworks).find(
-      (n) =>
+    const found = Object.entries(loadedNetworks).find(
+      ([, n]) =>
         typeof n === "object" &&
         n !== null &&
         (n as Record<string, unknown>).rpcUrl === url
-    ) as Record<string, unknown> | undefined;
+    ) as [string, Record<string, unknown>] | undefined;
+    const foundNetwork = found?.[1];
     if (foundNetwork && typeof foundNetwork.kind === "string") {
       kind = foundNetwork.kind;
     } else if (url.startsWith("http://") && !url.includes("18210")) {
@@ -202,7 +249,11 @@ export async function runRpcDoctor(options: RpcDoctorOptions) {
     }
 
     let result: LayeredHealthResult;
-    if (kind === "kaspa-rpc" || kind === "kaspa-node") {
+    // A5 (rc2 audit): an endpoint the config declares as a mainnet (by name, by its network, its environment or its
+    // chain id) is refused before any TCP or HTTP contact
+    if (found && configDeclaresMainnet(found[0], found[1])) {
+      result = mainnetRefused(url, "nothing");
+    } else if (kind === "kaspa-rpc" || kind === "kaspa-node") {
       result = await checkKaspaEndpoint(url);
     } else {
       result = await checkHttpJsonRpcEndpoint(url);
@@ -211,7 +262,15 @@ export async function runRpcDoctor(options: RpcDoctorOptions) {
     results.push({ url, health: result });
 
     console.log("┌── RPC HEALTH ────────────────────────────────────────────────");
-    console.log(`│ ENDPOINT:   ${url.padEnd(48)} │`);
+    console.log(`│ ENDPOINT:   ${redactUrlCredentials(url).padEnd(48)} │`);
+    if (result.status === "mainnet_refused") {
+      console.log(`│ REFUSED:    ${MAINNET_CONNECTION_DISABLED.padEnd(48)} │`);
+      console.log(`│ STATUS:     ${result.status.padEnd(48)} │`);
+      console.log(`│ CONTACTED:  ${(result.tcpReachable ? "identity request only, then closed" : "nothing").padEnd(48)} │`);
+      console.log("└──────────────────────────────────────────────────────────────");
+      console.log("");
+      continue;
+    }
     console.log(
       `│ TCP:        ${(result.tcpReachable ? "✅ reachable" : "❌ unreachable").padEnd(48)} │`
     );
@@ -245,4 +304,5 @@ export async function runRpcDoctor(options: RpcDoctorOptions) {
     console.log("└──────────────────────────────────────────────────────────────");
     console.log("");
   }
+  return results;
 }

@@ -149,6 +149,51 @@ jobs:
       - name: Artifact schema registry (check-artifact-registry)
         run: node scripts/check-artifact-registry.mjs
 
+  # rc2 audit E-08: the lint and the static security checks, which ran only in the local gauntlet
+  # (scripts/run-full-gauntlet.mjs). All offline: eslint (and `tsc --noEmit` where a package's lint is that), the dev
+  # server's CORS/Host/token/CSRF/redaction probes against `hardkas sandbox` on a free 127.0.0.1 port (no node, no
+  # network), and two source scans. One step per gate, so a red one names itself. check-typescript-hygiene.mjs is not
+  # here: it is advisory (its `catch (e: any)` count fails today and is not a release gate).
+  static-checks:
+    name: Lint and static security checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0 (node24; resolved with git ls-remote on 2026-11-09)
+
+      - name: Setup Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0 (node24; resolved with git ls-remote on 2026-11-09)
+        with:
+          # NODE-CI-PIN-1: the exact patched release this code was validated on (not a floating major).
+          node-version: 24.22.1
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0 (node24; resolved with git ls-remote on 2026-11-09)
+        with:
+          version: 9.15.4
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      # the lint of @hardkas/artifacts and @hardkas/l2 is `tsc --noEmit`, which reads its dependencies' declarations, and
+      # the dev-server check runs packages/cli/dist
+      - name: Build Monorepo
+        run: pnpm build
+
+      - name: Lint (pnpm lint)
+        run: pnpm lint
+
+      - name: Dev server security (check-dev-server-security)
+        run: node scripts/check-dev-server-security.mjs
+
+      - name: Query store security (check-query-store-security)
+        run: node scripts/check-query-store-security.mjs
+
+      - name: No shell execution in SilverScript paths (check-silver-no-shell-exec)
+        run: node scripts/check-silver-no-shell-exec.mjs
+
   # RC1 · R3: the release tarballs, packed as a publish packs them, before anything is published (nothing is published
   # here and no token exists in CI): first an offline audit of every tarball, then a consumer project that installs
   # the tarballs (their third-party dependencies from npmjs) and runs the CLI and the SDK from them.
@@ -184,8 +229,8 @@ jobs:
       - name: Tarball audit (check-release-tarballs, unreferenced files included)
         run: node scripts/check-release-tarballs.mjs --pack --dir "$RUNNER_TEMP/release-tarballs" --report "$RUNNER_TEMP/release-tarballs.json"
 
-      - name: Consumer smoke from the tarballs (packaging:smoke)
-        run: pnpm packaging:smoke
+      - name: Consumer smoke from the audited tarballs (packaging:smoke)
+        run: pnpm packaging:smoke --tarballs "$RUNNER_TEMP/release-tarballs"
 
   semantic-equivalence:
     name: Cross-Platform Semantic Test

@@ -898,6 +898,8 @@ export function registerTxCommands(program: Command) {
 
             // a ledger failure that stops the flow itself (before its first step) is reported with its outcome too
             const result = await runTxFlow({
+              // D-06: --target decides where the flow plans, signs and sends (it used to reach only the mainnet guard)
+              ...(options.target ? { targetName: options.target } : {}),
               amount: options.amount!,
               from: options.from!,
               to: options.to!,
@@ -1014,7 +1016,8 @@ export function registerTxCommands(program: Command) {
                   })
                 },
                 meta: {
-                  network: options.network || "simulated",
+                  // D-06: the network the flow really ran on (it said "simulated" whenever --network was omitted)
+                  network: String(result.networkId),
                   workspace: workspaceRoot,
                   mode: "developer"
                 }
@@ -1024,7 +1027,7 @@ export function registerTxCommands(program: Command) {
               const sendResult = result.steps.send;
               const isSimulated =
                 sendResult?.artifact?.rpcUrl === "simulated://local" ||
-                options.network === "simulated";
+                String(result.networkId) === "simulated";
               // Demo-cut · T-A14b: the network state is derived, never asserted.
               const flowTxId = sendResult?.artifact?.txId;
               const txIdShown = flowTxId && /^[0-9a-f]{64}$/.test(flowTxId) ? flowTxId : (result.steps.sign.artifact as any)?.txId;
@@ -1051,7 +1054,7 @@ export function registerTxCommands(program: Command) {
                   "Execution ID": `exec_${Date.now().toString(36)}`,
                   "Artifact ID": receiptArtifactId(sendResult?.artifact?.receipt) ?? "unknown",
                   [txIdShown === flowTxId ? "Tx ID" : "Tx ID (as signed)"]: txIdShown ?? "unknown",
-                  Network: options.network || "simulated",
+                  Network: String(result.networkId),
                   "Execution Scope": isSimulated
                     ? "local simulated execution"
                     : "network submission",
@@ -1180,6 +1183,23 @@ export function registerTxCommands(program: Command) {
         }
         lookback = Number(options.lookback);
       }
+      // D-09: --timeout / --interval are durations: a non-negative number of seconds, or with a unit (500ms, 60s, 2m).
+      // Anything else (abc, -5, Infinity) is a usage error before any connection; it used to become NaN, so the wait never
+      // timed out and the node was polled with no pause.
+      const { parseWaitSeconds } = await import("../runners/tx-wait-runner.js");
+      const durationOf = (name: "--timeout" | "--interval", value: string): number => {
+        const seconds = parseWaitSeconds(value);
+        if (seconds === undefined) {
+          throw new HardkasCliError(
+            "TX_WAIT_USAGE",
+            `${name} is a non-negative number of seconds, optionally with a unit (500ms, 60s, 2m), got '${String(value).slice(0, 40)}'. Nothing was observed.`,
+            { exitCode: HardkasExitCode.USAGE_ERROR }
+          );
+        }
+        return seconds;
+      };
+      const timeoutSeconds = durationOf("--timeout", options.timeout);
+      const intervalSeconds = durationOf("--interval", options.interval);
       // Demo-cut step 2 · T-A14b: the wait follows the Q4 derived state; it never
       // assumes confirmation and never prints "Settlement Proof".
       const { runTxWait, utxoViewRow } = await import("../runners/tx-wait-runner.js");
@@ -1187,8 +1207,8 @@ export function registerTxCommands(program: Command) {
       const r = await runTxWait({
         txId,
         until: options.until,
-        timeoutMs: Math.max(0, Number(options.timeout)) * 1000,
-        intervalMs: Math.max(0.2, Number(options.interval)) * 1000,
+        timeoutMs: timeoutSeconds * 1000,
+        intervalMs: Math.max(0.2, intervalSeconds) * 1000,
         ...(options.network ? { network: options.network } : {}),
         ...(options.since !== undefined ? { since: options.since } : {}),
         ...(options.address !== undefined ? { addresses: options.address } : {}),

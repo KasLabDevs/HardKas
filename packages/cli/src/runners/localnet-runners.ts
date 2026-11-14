@@ -375,6 +375,7 @@ export async function runLocalnetFund(opts: LocalnetFundOptions): Promise<void> 
   // RESOURCE-LIFECYCLE-1 (RL-I1/RL-I3): the SDK opened above is released once the wait and the settling are done,
   // whatever they end with.
   try {
+    let failed: unknown;
     try {
       // not the SDK's waitForSpendableFunding: it lists every UTXO of the address on each poll
       await waitForMatureFunding(sdk.rpc, reader, {
@@ -382,18 +383,25 @@ export async function runLocalnetFund(opts: LocalnetFundOptions): Promise<void> 
         timeoutMs
       });
     } catch (e: any) {
-      if (e.code !== "LOCALNET_FUND_MATURITY_TIMEOUT") {
-        if (!opts.keepMiner) {
-          await stopToccataMiner();
-          await waitForFundingSpendability(sdk.rpc, reader, { minSpendableSompi: targetAmount });
-        }
-        throw e;
-      }
-    } finally {
+      if (e?.code !== "LOCALNET_FUND_MATURITY_TIMEOUT") failed = e;
+    }
+    if (failed !== undefined) {
+      // rc2 re-audit F5: a failure keeps its own error (the settle wait that followed could replace it with
+      // UTXO_SET_NOT_STABLE; with no result to measure there is nothing to settle for) and leaves no stopped chain
+      // behind: the recipient's miner is stopped and the liveness miner restarted unless --stop-miner.
       if (!opts.keepMiner) {
-        await stopToccataMiner();
-        await waitForFundingSpendability(sdk.rpc, reader, { minSpendableSompi: targetAmount });
+        await stopToccataMiner().catch(() => undefined);
+        if (!opts.stopMiner) {
+          await livenessMinerRewardAddress()
+            .then((liveness) => restartToccataMiner(liveness))
+            .catch(() => undefined);
+        }
       }
+      throw failed;
+    }
+    if (!opts.keepMiner) {
+      await stopToccataMiner();
+      await waitForFundingSpendability(sdk.rpc, reader, { minSpendableSompi: targetAmount });
     }
   } finally {
     await sdk.close();
@@ -518,18 +526,45 @@ export async function waitForMatureFunding(
   throw Object.assign(new Error("Timeout waiting for spendable funding"), { code: "LOCALNET_FUND_MATURITY_TIMEOUT", lastObservedState });
 }
 
+/**
+ * B1 (rc2 audit): how long the chain may take to settle when the caller has no time of its own left, or names none. A
+ * settle normally takes a few seconds once the miner is stopped; this only bounds the case where it never happens.
+ */
+export const DEFAULT_DAG_SETTLE_TIMEOUT_MS = 60_000;
+
+async function dagSettleTimeout(timeoutMs: number, last: VirtualFingerprint | null): Promise<Error> {
+  const { HardkasCliError } = await import("../cli-errors.js");
+  const why = !last
+    ? "the node gave no virtual state"
+    : last.virtualDaaScore === 0n
+      ? "the node reports virtual DAA score 0: no block has been mined on this chain (the miner produced none)"
+      : `its virtual state was still changing (last virtual DAA score ${last.virtualDaaScore}): something is still producing blocks`;
+  return new HardkasCliError(
+    "LOCALNET_DAG_SETTLE_TIMEOUT",
+    `The localnet chain did not settle within ${Math.ceil(timeoutMs / 1000)} s: ${why}.`
+  );
+}
+
+/**
+ * Waits until the virtual DAG reports the same state on `stablePolls` consecutive polls (with a virtual DAA score above
+ * 0). B1 (rc2 audit): bounded by `timeoutMs` (default DEFAULT_DAG_SETTLE_TIMEOUT_MS); past it, LOCALNET_DAG_SETTLE_TIMEOUT.
+ * It used to loop forever on a chain that never settles (a miner still running) or never started (virtual DAA 0).
+ */
 export async function waitForVirtualDagSettle(
   rpc: any,
-  opts?: { stablePolls?: number; pollIntervalMs?: number }
+  opts?: { stablePolls?: number; pollIntervalMs?: number; timeoutMs?: number }
 ): Promise<VirtualFingerprint> {
   const REQUIRED = opts?.stablePolls ?? 3;
   const INTERVAL = opts?.pollIntervalMs ?? 300;
+  const timeoutMs = opts?.timeoutMs ?? DEFAULT_DAG_SETTLE_TIMEOUT_MS;
+  const deadline = Date.now() + timeoutMs;
 
   let lastHash = "";
   let stableCount = 0;
   let lastFingerprint: VirtualFingerprint | null = null;
 
   while (stableCount < REQUIRED) {
+    if (lastFingerprint !== null && Date.now() >= deadline) throw await dagSettleTimeout(timeoutMs, lastFingerprint);
     const fp = await getVirtualFingerprint(rpc);
     if (fp.hash === lastHash && fp.virtualDaaScore > 0n) {
       stableCount++;
@@ -551,21 +586,36 @@ async function waitForFundingSpendability(
     minSpendableSompi?: bigint;
     stablePolls?: number;
     pollIntervalMs?: number;
+    /** B1 (rc2 audit): the whole wait is bounded (default DEFAULT_DAG_SETTLE_TIMEOUT_MS); it used to have no deadline. */
+    timeoutMs?: number;
   }
 ): Promise<{ virtualFingerprint: VirtualFingerprint; spendableSompi: bigint }> {
   const REQUIRED = opts.stablePolls ?? 3;
   const INTERVAL = opts.pollIntervalMs ?? 500;
+  const timeoutMs = opts.timeoutMs ?? DEFAULT_DAG_SETTLE_TIMEOUT_MS;
+  const deadline = Date.now() + timeoutMs;
+  const remaining = () => Math.max(1, deadline - Date.now());
 
   let stableCount = 0;
   let lastKey = "";
   let state: FundingSnapshot | undefined;
 
   // Phase 1: Virtual DAG convergence (initial)
-  let vfp = await waitForVirtualDagSettle(rpc);
+  let vfp = await waitForVirtualDagSettle(rpc, { timeoutMs: remaining() });
 
   // Phase 2: the address's funding state converges (its UTXO index entries have caught up with the settled chain).
   // LOCALNET-FUND-BOUNDED-READ-1: its balance and the immature coinbases of the chain, not the list of its UTXOs.
   while (stableCount < REQUIRED) {
+    if (state !== undefined && Date.now() >= deadline) {
+      // B1: an address whose balance stays 0 (the miner produced nothing for it) never converged and used to hang here
+      const { HardkasCliError } = await import("../cli-errors.js");
+      throw new HardkasCliError(
+        "UTXO_SET_NOT_STABLE",
+        `UTXO_SET_NOT_STABLE: the funding of ${reader.address} did not converge within ${Math.ceil(timeoutMs / 1000)} s. ` +
+          `balance=${state.balanceSompi.toString()} immature_coinbase=${state.immatureCoinbaseSompi.toString()} ` +
+          `virtualDaaScore=${state.virtualDaaScore.toString()}`
+      );
+    }
     state = await reader.read(rpc, { order: "balance-then-dag" });
     const key = `${state.sink}|${state.virtualDaaScore}|${state.balanceSompi}|${state.immatureCoinbaseSompi}`;
 
@@ -577,7 +627,7 @@ async function waitForFundingSpendability(
     }
 
     // Check if virtual state shifted during the convergence
-    const currentVfp = await waitForVirtualDagSettle(rpc);
+    const currentVfp = await waitForVirtualDagSettle(rpc, { timeoutMs: remaining() });
     if (currentVfp.hash !== vfp.hash) {
       // Restart convergence cycle
       vfp = currentVfp;
@@ -784,8 +834,13 @@ export async function restartToccataMiner(address: string) {
   await execa("docker", toccataMinerArgs(address));
 }
 
+/**
+ * B1 (rc2 audit): verified like the node's stop (stopToccataContainerVerified): a miner Docker cannot stop, or one still
+ * up after `docker stop`, is LOCALNET_STOP_FAILED (Docker unreachable: LOCALNET_DOCKER_UNAVAILABLE). A miner that does
+ * not exist is stopped. Every error used to be swallowed, so a miner still running made the settle that follows wait forever.
+ */
 export async function stopToccataMiner() {
-  await execa("docker", ["stop", TOCCATA_MINER_CONTAINER]).catch(() => {});
+  await stopToccataContainerVerified(TOCCATA_MINER_CONTAINER);
 }
 
 export async function inspectDockerContainer(name: string) {

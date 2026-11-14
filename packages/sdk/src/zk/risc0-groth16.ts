@@ -246,9 +246,11 @@ export function r0SealToProof(sealHex: string):
 // --- Public test vectors ---------------------------------------------------------------------------
 
 /**
- * Receipts that are PUBLIC: their (imageId, journalHash) claim has a published valid receipt, so a P2SH
- * locked to that image id can be spent by anyone (the R0 lock binds only the image id; HK-16). HardKAS
- * never returns testnet/mainnet addresses for these.
+ * Programs with a PUBLIC receipt: a valid receipt of the image id is published, so a proof-only P2SH locked to that
+ * image id can be spent by anyone (a proof-only lock binds the image id only, whatever the journal: HK-16). The journal
+ * hash recorded here is the published receipt's; the match is on the image id alone (C-1). HardKAS never returns a
+ * testnet/mainnet address for a proof-only lock of these programs; an output-bound lock (whose funds go only to the
+ * bound outputs) is built with a warning that anyone can trigger its payout at any time.
  */
 export const PUBLIC_R0_TEST_VECTORS: ReadonlyArray<{ readonly name: string; readonly imageId: string; readonly journalHash: string }> =
   Object.freeze([
@@ -256,13 +258,22 @@ export const PUBLIC_R0_TEST_VECTORS: ReadonlyArray<{ readonly name: string; read
       name: "kaspanet/kaspa-python-sdk examples/zk groth.rcpt.hex (fixtures/toccata-v2/zk/r0-groth16-official)",
       imageId: "75641a540ee2ad9ee5902bcdcdb8b55c0bef4a28287309b858f97b1356c6c2e0",
       journalHash: "5df6e0e2761359d30a8275058e299fcc0381534545f55cf43e41983f5d4c9456"
+    }),
+    Object.freeze({
+      name: "HardKAS's own receipt, public since its Testnet-10 spends (fixtures/toccata-v2/zk/r0-groth16-hardkas)",
+      imageId: "04c1cd7cafedbda5f993500071da6b4a1b1193799c0d6dd1e02174857a5dd826",
+      journalHash: "19c4db53d64ab877a70009036c906ae3d8c1b9fb7925f32c9bf039a5c52e5592"
     })
   ]);
 
-export function findPublicR0TestVector(imageId: string, journalHash: string) {
+/**
+ * The public program of an image id, or undefined. Matched on the image id only (C-1): a proof-only lock depends on the
+ * image id alone, so a receipt of that program with ANY journal opens the address. `journalHash` is accepted for
+ * compatibility and no longer narrows the match.
+ */
+export function findPublicR0TestVector(imageId: string, _journalHash?: string) {
   const i = String(imageId ?? "").trim().toLowerCase();
-  const j = String(journalHash ?? "").trim().toLowerCase();
-  return PUBLIC_R0_TEST_VECTORS.find((v) => v.imageId === i && v.journalHash === j);
+  return PUBLIC_R0_TEST_VECTORS.find((v) => v.imageId === i);
 }
 
 // --- Local verification (CA-ZK-03) ----------------------------------------------------------------

@@ -13,6 +13,9 @@ import {
 import { DefaultPsktAdapterRegistry, PsktAdapterRegistry } from "./pskt/registry.js";
 import { WasmPsktAdapter } from "./pskt/adapters/wasm.js";
 import { UnavailablePsktAdapter } from "./pskt/adapters/unavailable.js";
+import { assertPsktInputsOnSignerNetwork, assertPsktSignerNetwork, type PsktSignContext } from "./pskt/input-verification.js";
+
+export type { PsktSignContext, PsktUtxoSource } from "./pskt/input-verification.js";
 
 // Global registry instance for the SDK
 export const adapterRegistry: PsktAdapterRegistry = new DefaultPsktAdapterRegistry();
@@ -393,13 +396,36 @@ export async function extractSession(session: PortableSigningSession): Promise<a
   return adapter.extract(session.payload, session.networkId);
 }
 
+/**
+ * A1 (rc2 audit): checks, without any key, that a session may be signed by this caller: the caller's own network
+ * (`context.networkId`) is given, is the session's and is not mainnet, and the caller's node (`context.node`) lists every
+ * input to be signed as unspent. Fail closed (PSKT_SIGNER_NETWORK_REQUIRED, PSKT_NETWORK_MISMATCH,
+ * PSKT_INPUTS_UNVERIFIED, PSKT_INPUT_NOT_ON_NETWORK). `signSession` runs it; a caller may run it before it reads a key.
+ */
+export async function assertSessionSignable(
+  session: PortableSigningSession,
+  inputIndexes: readonly number[],
+  context: PsktSignContext | undefined
+): Promise<void> {
+  const networkId = assertPsktSignerNetwork(session.networkId, context, "pskt.signSession");
+  await assertPsktInputsOnSignerNetwork(session.payload, inputIndexes, networkId, context?.node);
+}
+
+/**
+ * Signs the inputs `request.inputIndexes` of a session. A1 (rc2 audit): `context` is the CALLER's side and is required at
+ * runtime: its own network (never the session file's label; a signature does not commit to a network) and its node for
+ * that network, which must list every input to be signed as unspent. Without them nothing is signed.
+ */
 export async function signSession(
-  session: PortableSigningSession, 
-  request: import("@hardkas/core").PsktSignRequest
+  session: PortableSigningSession,
+  request: import("@hardkas/core").PsktSignRequest,
+  context?: PsktSignContext
 ): Promise<PortableSigningSession> {
   // HK-13: no PSKT signature on mainnet, whatever adapter (MAINNET_SIGNING_DISABLED); the session's network goes to the
   // adapter, which cannot read it from a PSKT
   assertMainnetTransactionsDisabled("sign", [session.networkId], "pskt.signSession");
+  // A1: the caller's own network and node decide, before any adapter (or key) is used
+  await assertSessionSignable(session, request.inputIndexes, context);
   const adapter = adapterRegistry.get(session.runtimeBinding.adapterId);
   await verifyAdapterCapabilities(session, adapter);
 

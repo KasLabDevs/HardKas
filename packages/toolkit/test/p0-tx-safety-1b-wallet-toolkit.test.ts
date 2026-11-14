@@ -271,23 +271,25 @@ describe("LOTE 1B — WalletToolkit network/mainnet guard (BEFORE)", () => {
   });
 });
 
-describe("LOTE 1B — deprecated stubs (documentation only)", () => {
-  it("DOC-1 planSend returns a stub message, no plan", async () => {
+// E-03 (rc2 audit): the two deprecated stubs answered success-shaped data for work they never did (DOC-1 pinned a
+// `{ message: "…stub…" }` object, DOC-2 a `sim_tx_<timestamp>` id). Now both throw WALLET_TOOLKIT_METHOD_UNSUPPORTED,
+// naming what to use, and still touch no rpc, signer or state.
+describe("LOTE 1B — deprecated stubs refuse (E-03)", () => {
+  it("DOC-1 planSend throws WALLET_TOOLKIT_METHOD_UNSUPPORTED, no plan, nothing touched", async () => {
     const ctx = makeWallet(undefined, { dag: [{ networkId: "simnet" }] });
-    const r = await ctx.w.planSend({ to: "kaspasim:qfakedest", amount: 1n });
-    // eslint-disable-next-line no-console
-    console.log("[DOC-1]", JSON.stringify(r));
-    expect(r).toHaveProperty("message");
-    expect(String(r.message)).toMatch(/stub/i);
+    await expect(ctx.w.planSend({ to: "kaspasim:qfakedest", amount: 1n })).rejects.toMatchObject({
+      code: "WALLET_TOOLKIT_METHOD_UNSUPPORTED",
+      message: expect.stringMatching(/estimateFee/)
+    });
     expect(ctx.events).toEqual([]);
   });
 
-  it("DOC-2 sendSimulated returns sim_tx_<timestamp>, touches no rpc/signer/state", async () => {
+  it("DOC-2 sendSimulated throws WALLET_TOOLKIT_METHOD_UNSUPPORTED (no invented id), touches no rpc/signer/state", async () => {
     const ctx = makeWallet("kaspa-mainnet", { dag: [{ network: "mainnet" }] });
-    const r = await ctx.w.sendSimulated({ to: "kaspa:qfakedest", amount: 1n });
-    // eslint-disable-next-line no-console
-    console.log("[DOC-2]", r, JSON.stringify(ctx.events));
-    expect(r).toMatch(/^sim_tx_\d+$/);
+    await expect(ctx.w.sendSimulated({ to: "kaspa:qfakedest", amount: 1n })).rejects.toMatchObject({
+      code: "WALLET_TOOLKIT_METHOD_UNSUPPORTED",
+      message: expect.not.stringMatching(/sim_tx_/)
+    });
     expect(ctx.events).toEqual([]);
     expect(ctx.rpc.submits).toBe(0);
   });

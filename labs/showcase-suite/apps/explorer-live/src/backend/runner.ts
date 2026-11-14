@@ -32,7 +32,8 @@ async function run() {
             } else if (opType === 2) {
                 await client.findReceipts({ tags: ['showcase'] });
             } else {
-                await client.ingestArtifact({ id: `art_${i}`, schema: 'txReceipt.v1', tags: ['showcase'] });
+                // ingestArtifact now requires a real artifact with a verified content hash; this lab has none to index
+                await client.findReceipts({ tags: ['showcase'] });
             }
             await new Promise(resolve => setTimeout(resolve, 150));
             opsCount++;

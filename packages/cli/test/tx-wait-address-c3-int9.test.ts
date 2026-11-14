@@ -382,7 +382,10 @@ describe("INT9 · C3 · tx wait --address for a tx sent outside this workspace (
     expect(r.ms, `ended at once, not at the 90 s timeout: ${r.brief}`).toBeLessThan(45_000);
     const human = await run("C3-10h", ["tx", "wait", TX, "--address", dest, "--since", F.hashOf(400), "--until", "confirmed", "--timeout", "90", "--interval", "0.5"], workspace("c3-10h", F.url));
     expect(human.status, human.brief).toBe(0);
-    expect(human.stdout, human.brief).toMatch(/spent since/);
+    // B8: the row states what is proven (the index is at or past the accepting block) and no longer claims a spend it
+    // did not observe; it used to say "its outputs there were spent since"
+    expect(human.stdout, human.brief).toMatch(/the node's index is at or past this transaction's accepting block/);
+    expect(human.stdout, human.brief).not.toMatch(/its outputs there were spent since/);
   });
 
   it("C3-11 (TX-WAIT-ADDRESS-SPENT-1) the output spent to elsewhere and only an OLDER output at --address: nothing proves the view, TX_WAIT_UTXO_VIEW_STALE names both causes and the accepting DAA score", async () => {

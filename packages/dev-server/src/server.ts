@@ -151,19 +151,36 @@ export function createDevServer(config: DevServerConfig) {
   );
 
   // 3. Bearer Token Authentication Middleware
+  // A8 (rc2 audit): the token in the query string (`?token=`, which an EventSource needs: it cannot send headers) is
+  // accepted on GET/HEAD requests only; a mutating request carries it in `Authorization: Bearer`, so it never ends in a
+  // shell history or a proxy log through a POST URL. The comparison is constant-time (crypto.timingSafeEqual over
+  // fixed-length digests); it was a plain `!==`.
+  const expectedDigest = crypto.createHash("sha256").update(devServerToken, "utf8").digest();
+  const tokenMatches = (candidate: string): boolean =>
+    candidate.length > 0 && crypto.timingSafeEqual(crypto.createHash("sha256").update(candidate, "utf8").digest(), expectedDigest);
   app.use("/api/*", async (c, next) => {
     const authHeader = c.req.header("Authorization");
     const queryToken = c.req.query("token");
+    const method = c.req.method.toUpperCase();
+    const queryTokenAllowed = method === "GET" || method === "HEAD";
     let token = "";
 
     if (authHeader && authHeader.startsWith("Bearer ")) {
       token = authHeader.substring(7);
-    } else if (queryToken) {
+    } else if (queryToken && queryTokenAllowed) {
       token = queryToken;
     }
 
-    if (!config.unsafeNoAuth && token !== devServerToken) {
-      return c.json({ error: "Unauthorized: Invalid or missing bearer token." }, 401);
+    if (!config.unsafeNoAuth && !tokenMatches(token)) {
+      const queryOnly = !token && Boolean(queryToken) && !queryTokenAllowed;
+      return c.json(
+        {
+          error: queryOnly
+            ? `Unauthorized: Invalid or missing bearer token. The ?token= query parameter is accepted on GET requests only; send ${method} requests with the header Authorization: Bearer <token>.`
+            : "Unauthorized: Invalid or missing bearer token."
+        },
+        401
+      );
     }
     await next();
   });

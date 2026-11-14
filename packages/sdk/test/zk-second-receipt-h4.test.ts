@@ -16,7 +16,8 @@ import {
 // receipt hides (one image id, one journal, one seal) could not show. fixtures/toccata-v2/zk/r0-groth16-hardkas is a
 // second, independent receipt HardKAS made itself (13-nov, its own guest program, risc0 3.0.5 crates with risc0-groth16
 // 3.0.4 / recursion 4.0.4): its claim, its verifier parameters and the scripts built from it are checked here the same
-// way; it is not a public test vector (it was private until spent on Testnet-10), so a testnet address is built for it.
+// way. It was private until spent on Testnet-10; it is public since (its README), so it is a public test program like the
+// other one (C-1, audit 2026-11-13): no proof-only testnet lock, an output-bound one with a warning.
 // The pairing check (snarkjs) is exercised by the CLI suites; this file needs no snarkjs.
 // -----------------------------------------------------------------------------
 
@@ -42,15 +43,21 @@ describe("H4 · a second, independent RISC Zero receipt", () => {
     expect(parsed.sealHex).not.toBe(parseR0Groth16Receipt(official.receiptHex).sealHex);
   });
 
-  it("is not a public test vector: a testnet-10 address is built for it (with the acknowledgement); the public one is refused there", () => {
-    expect(findPublicR0TestVector(hardkas.imageId, hardkas.journalHash)).toBeUndefined();
+  // C-1 (audit 2026-11-13): INVERTED. This test asserted that the HardKAS receipt is NOT a public vector and that a
+  // testnet-10 proof-only (image-id-only) address IS built for it. Its receipt is public since its Testnet-10 spends, and
+  // a proof-only lock binds the image id only, so that address was anyone-can-spend. Now it is a public test program: the
+  // proof-only testnet lock is refused for it exactly as for the official vector.
+  it("is a public test program now: a testnet-10 proof-only lock is refused for it (acknowledged or not), as for the official vector", () => {
+    expect(findPublicR0TestVector(hardkas.imageId, hardkas.journalHash)?.name).toMatch(/r0-groth16-hardkas/);
     const own = buildR0Groth16Scripts({ ...hardkas, addressNetworks: ["testnet-10"], acknowledgeImageIdOnlyLock: true });
-    expect(own.ok, JSON.stringify(own.issues)).toBe(true);
-    expect(own.receiptClaimCrossCheck).toBe("MATCH");
-    expect(own.p2shAddresses.testnet10).toMatch(/^kaspatest:p/);
+    expect(own.ok).toBe(false);
+    expect(own.issues.map((i) => i.code)).toContain("ZK_PUBLIC_VECTOR_PUBLIC_NETWORK_REFUSED");
+    expect(own.p2shAddresses.testnet10).toBeUndefined();
     const pub = buildR0Groth16Scripts({ ...official, addressNetworks: ["testnet-10"], acknowledgeImageIdOnlyLock: true });
     expect(pub.ok).toBe(false);
     expect(pub.issues.map((i) => i.code)).toContain("ZK_PUBLIC_VECTOR_PUBLIC_NETWORK_REFUSED");
+    // simnet stays available for both (the suites' own node)
+    expect(buildR0Groth16Scripts({ ...hardkas }).p2shAddresses.simnet).toMatch(/^kaspasim:p/);
   });
 
   it("its scripts differ from the public vector's only where the program, journal and proof differ; both pass the structural check", () => {

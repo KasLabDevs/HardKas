@@ -108,9 +108,12 @@ describe("HardKAS ZK Consensus Binding — L1 Introspection & Policy Enforcer", 
       expect(scripts.boundPayoutAddress).toBe(aliceAddr);
       expect(scripts.boundPayoutAmount).toBe(100000000n);
       expect(scripts.p2shAddresses.simnet.startsWith("kaspasim:p")).toBe(true);
-      // public-network addresses only on request, and never for this PUBLIC test vector (HK-16)
+      // public-network addresses only on request (HK-16)
       expect(scripts.p2shAddresses.testnet10).toBeUndefined();
       expect(scripts.p2shAddresses.mainnet).toBeUndefined();
+      // C-1 (audit 2026-11-13): CHANGED. An output-bound lock of this PUBLIC test program was refused on testnet-10
+      // (ZK_PUBLIC_VECTOR_PUBLIC_NETWORK_REFUSED), although a published proof cannot redirect its funds. Now it is built,
+      // with the warning that anyone can trigger the bound payout at any time; only a proof-only lock of it is refused.
       const publicAsked = buildR0Groth16Scripts({
         imageId: officialImageId,
         journalHash: officialJournalHash,
@@ -119,8 +122,10 @@ describe("HardKAS ZK Consensus Binding — L1 Introspection & Policy Enforcer", 
         // ESCALÓN 4 · P37: a mainnet entry would be MAINNET_SIGNING_DISABLED before this check
         addressNetworks: ["testnet-10"]
       });
-      expect(publicAsked.ok).toBe(false);
-      expect(publicAsked.issues.map((i) => i.code)).toContain("ZK_PUBLIC_VECTOR_PUBLIC_NETWORK_REFUSED");
+      expect(publicAsked.ok, JSON.stringify(publicAsked.issues)).toBe(true);
+      expect(publicAsked.consensusEnforced).toBe(true);
+      expect(publicAsked.p2shAddresses.testnet10).toMatch(/^kaspatest:p/);
+      expect(publicAsked.warnings.map((w) => w.code)).toContain("ZK_PUBLIC_PROGRAM_PAYOUT_TRIGGERABLE");
       expect(publicAsked.issues.map((i) => i.code)).not.toContain("ZK_IMAGE_ID_ONLY_LOCK_NOT_ACKNOWLEDGED");
       // the funder learns the exact amount to lock (the fee is fixed once funded) and the largest UTXO accepted
       expect(scripts.requiredFundingSompi!).toBeGreaterThan(100000000n);

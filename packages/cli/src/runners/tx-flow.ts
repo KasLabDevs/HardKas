@@ -33,6 +33,11 @@ export interface TxFlowInput {
   to: string;
   amount: string;
   network?: string;
+  /**
+   * D-06: a named execution target of the workspace (`--target`): it decides where the flow plans, signs and sends,
+   * through the same resolver as `tx plan` (with `network`, they must agree: EXECUTION_NETWORK_MISMATCH).
+   */
+  targetName?: string;
   config: HardkasConfig;
   url?: string;
   feeRate?: string;
@@ -137,7 +142,9 @@ async function txFlow(input: TxFlowInput, opened: { sdk?: { close(): Promise<voi
   // WORKSPACE-AUTHORITY-2: the effective network comes from the one resolver the steps and the SDK use (`--network` as
   // a network id, else the workspace's `execution` contract); an unknown name is a typed refusal before anything runs.
   const { resolveWorkspaceExecution } = await import("@hardkas/config");
-  const resolvedWorkspace = resolveWorkspaceExecution({ config, ...(network ? { network } : {}) });
+  // D-06: a named target is resolved here too (it was dropped: the flow ran on the workspace's default network)
+  const targetName = input.targetName;
+  const resolvedWorkspace = resolveWorkspaceExecution({ config, ...(targetName ? { target: targetName } : {}), ...(network ? { network } : {}) });
   const resolvedNetwork: string = resolvedWorkspace.networkId;
   // PAYMENT-PREFLIGHT-1: the simulator has no node to check against; refused before anything is planned or signed
   if (input.preflight && send && resolvedWorkspace.execution?.mode === "simulator") {
@@ -265,6 +272,7 @@ async function txFlow(input: TxFlowInput, opened: { sdk?: { close(): Promise<voi
   try {
     // 1. Plan
     const planInput: any = {
+      ...(targetName ? { targetName } : {}),
       from,
       to,
       amount,
@@ -441,6 +449,7 @@ async function txFlow(input: TxFlowInput, opened: { sdk?: { close(): Promise<voi
         } else {
           current = "send";
           sendResult = await runTxSend({
+            ...(targetName ? { targetName } : {}),
             signedArtifact,
             config,
             ...(url ? { url } : {}),

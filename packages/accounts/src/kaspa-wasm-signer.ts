@@ -6,7 +6,7 @@ import {
   SignTxPlanResult,
   HardkasSignerKind
 } from "./types.js";
-import { NetworkId, getNetworkPrefix, assertMainnetTransactionsDisabled } from "@hardkas/core";
+import { NetworkId, getNetworkPrefix, assertMainnetTransactionsDisabled, isMainnetNetworkId } from "@hardkas/core";
 import { loadKaspaWasm, WasmProviderConfig } from "./signer-backend.js";
 import { KeystoreManager } from "./keystore.js";
 import { DEV_ACCOUNTS_PASSWORD } from "./dev-accounts.js";
@@ -63,7 +63,9 @@ export async function resolveAccountPrivateKey(
   let pkValue = account.privateKeyEnv ? process.env[account.privateKeyEnv] : undefined;
 
   if (!pkValue && account.privateKey) {
-    if (options.networkId === "mainnet") {
+    // A6 (rc2 audit): every mainnet spelling (`mainnet-<n>`, `kaspa`, `kaspa-mainnet`, any case), not the literal string
+    // "mainnet" only: this refusal must still hold the day the signing lockdown (which runs first today) is lifted
+    if (isMainnetNetworkId(options.networkId)) {
       throw new Error(
         `Mainnet guard: Unsafe plaintext privateKey fallback is forbidden on mainnet for account '${account.name}'. Use privateKeyEnv instead.`
       );

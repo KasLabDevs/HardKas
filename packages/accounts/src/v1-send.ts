@@ -187,7 +187,8 @@ export interface V1PreflightEvidence {
 /**
  * F1.6 · the read-only check right before a v1 broadcast. Codes: INPUT_NOT_UNSPENT, COVENANT_UTXO_NOT_PAYMENT_INPUT,
  * INPUT_DIFFERS_FROM_NODE (amount, script or covenant id), INPUT_PENDING_SPEND, SEQUENCE_LOCK_NOT_YET_MET (a relative
- * time lock the node's virtual DAA score has not reached: ESCROW-REFUND-RETRY-1), then every F1.4 code (validateV1Transition
+ * time lock the node's virtual DAA score has not reached: ESCROW-REFUND-RETRY-1), SEQUENCE_LOCK_UNVERIFIABLE (an enabled
+ * relative lock with the node's or the UTXO's DAA score unknown: C-11), then every F1.4 code (validateV1Transition
  * with the node's inputs and the signed signature scripts; keys are not checked: nothing is signed). Nothing is sent and
  * nothing recorded when it throws.
  */
@@ -231,6 +232,18 @@ export async function preflightV1Send(input: {
     // so it could never be sent again (TX_ALREADY_SUBMITTED). Refused here, nothing is recorded and it can be sent later.
     // The rule is rusty-kaspa's (and the simulator's): an enabled lock is met when virtual DAA ≥ UTXO DAA + (seq & mask).
     const lock = relativeLockOf(i.sequence);
+    // C-11 · the same reason when the lock cannot be checked: an enabled relative lock with the node's virtual DAA score or
+    // the UTXO's DAA score unknown is refused here too (sent and rejected, the identical transaction could never be sent
+    // again). Nothing is sent or recorded; it can be sent once the node reports both scores.
+    if (lock !== undefined && (observedAt === undefined || u.blockDaaScore === undefined)) {
+      const missing = observedAt === undefined ? "the node's virtual DAA score could not be read" : "the node gives no DAA score for this UTXO";
+      throw fail(
+        "SEQUENCE_LOCK_UNVERIFIABLE",
+        `input ${idx} (${key}) enables a relative time lock of ${lock} DAA, and ${missing}, so whether the lock is met cannot be checked. ` +
+          "Sent now, a node rejection would be the transaction's one submission (one submission per txId) and the identical transaction could not be sent again later. Nothing was sent; send it again when the node reports its DAA score",
+        { input: idx, sequenceLock: lock.toString(), ...(observedAt !== undefined ? { virtualDaaScore: observedAt.toString() } : {}) }
+      );
+    }
     if (lock !== undefined && observedAt !== undefined && u.blockDaaScore !== undefined) {
       const unlockAt = u.blockDaaScore + lock;
       if (observedAt < unlockAt) {

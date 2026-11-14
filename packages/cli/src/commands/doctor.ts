@@ -132,6 +132,23 @@ async function workspaceNetworkOf(
   }
 }
 
+/**
+ * D-05: whether the workspace's default target is the HardKAS simulator (no node, so no Docker), read through the one
+ * resolver the commands use; with whether it also declares a localnet target. Undefined when it is not, or when the
+ * configuration cannot be read (the Docker check then stays a failure, as before).
+ */
+async function defaultTargetIsSimulator(root: string): Promise<{ declaresLocalnet: boolean } | undefined> {
+  try {
+    const { config } = await loadHardkasConfig({ cwd: root });
+    const { resolveWorkspaceExecution } = await import("@hardkas/config");
+    if (resolveWorkspaceExecution({ config }).execution?.mode !== "simulator") return undefined;
+    const exec: any = (config as any).execution;
+    return { declaresLocalnet: Object.values(exec?.targets ?? {}).some((t: any) => t?.mode === "localnet") };
+  } catch {
+    return undefined;
+  }
+}
+
 export async function runDoctorChecks(
   root: string,
   // HARDKAS-NETWORK-PORTABILITY-1-A: `network: false` (ci verify) never contacts the workspace's endpoint
@@ -203,13 +220,13 @@ export async function runDoctorChecks(
       message: `v${stdout.trim()}`
     });
   } catch {
+    // D-05: HardKAS installs and runs with any package manager (npm, pnpm or yarn); a missing pnpm is not a failure
     addCheck({
       name: "pnpm",
       category: "runtime",
       code: "PNPM_NOT_FOUND",
-      status: "fail",
-      message: "Not found in PATH",
-      suggestion: "Install pnpm (npm install -g pnpm)."
+      status: "skip",
+      message: "Not found in PATH; not required (npm, pnpm or yarn all work)"
     });
   }
 
@@ -524,6 +541,9 @@ export async function runDoctorChecks(
   // RC1-R2 (D4): the same holds for a workspace whose node is its own declared RPC node (not the canonical localnet's
   // endpoint) and that declares no localnet target: no local Docker serves it
   const ownNodeNetwork = !publicNetwork && workspaceNet?.ownNode && !workspaceNet.declaresLocalnet ? workspaceNet.network : undefined;
+  // D-05: a workspace whose default target is the simulator needs no Docker either (the simulated loop runs without it):
+  // an unreachable daemon is skipped there, or a warning when the workspace also declares a localnet target
+  const simulatorDefault = !publicNetwork && !ownNodeNetwork ? await defaultTargetIsSimulator(root) : undefined;
   let dockerDaemonOk = false;
   try {
     await execa("docker", ["info"]);
@@ -545,7 +565,18 @@ export async function runDoctorChecks(
             status: "skip",
             message: `Not reachable; not needed by this workspace: it runs on ${publicNetwork ?? ownNodeNetwork} through the endpoint it declares and has no localnet target (the localnet and node commands, and 'hardkas doctor node', need it)`
           }
-        : {
+        : simulatorDefault
+          ? {
+              name: "Docker daemon",
+              category: "docker",
+              code: "DOCKER_NOT_NEEDED",
+              status: simulatorDefault.declaresLocalnet ? "warn" : "skip",
+              message: simulatorDefault.declaresLocalnet
+                ? "Not reachable; the workspace's default target is the simulator, which needs no Docker, but it also declares a localnet target, which does (the localnet and node commands, and 'hardkas doctor node', need it)"
+                : "Not reachable; not needed by this workspace: its default target is the simulator, which needs no Docker (the localnet and node commands, and 'hardkas doctor node', need it)",
+              ...(simulatorDefault.declaresLocalnet ? { suggestion: "Start Docker before using the localnet target." } : {})
+            }
+          : {
             name: "Docker daemon",
             category: "docker",
             code: "DOCKER_UNREACHABLE",

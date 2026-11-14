@@ -10,6 +10,10 @@ title: hardkas deploy
 
 **Purpose:** Generate deployment profiles (Docker Compose, Dockerfile, .env.example) alpha
 
+#### Options
+
+- `--force` (Default: `false`): Replace the profile files that already exist in this directory
+
 ---
 
 ## `hardkas deploy track`

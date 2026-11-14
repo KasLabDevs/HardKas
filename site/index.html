@@ -951,11 +951,11 @@ Account kind = synthetic · target mode = rpc<br/>
 <table>
 <thead><tr><th>Status</th><th>Meaning</th></tr></thead>
 <tbody>
-<tr><td>🟢 <strong>READY</strong></td><td>Certified for local development by the release checks.</td></tr>
+<tr><td>🟢 <strong>READY</strong></td><td>Verified for local development by the repository's release checks.</td></tr>
 <tr><td>🟢 <strong>REAL_NODE_EVIDENCE</strong></td><td>Proven end to end against a real rusty-kaspa node (local simnet), with recorded evidence.</td></tr>
 <tr><td>🟡 <strong>PARTIAL</strong></td><td>Works for some cases; the limits are stated next to it.</td></tr>
 <tr><td>🟡 <strong>EXPERIMENTAL</strong></td><td>Available, but the command or API may change.</td></tr>
-<tr><td>🔴 <strong>BLOCKED_BY_POLICY</strong></td><td>Deliberately not enabled yet (testnet and mainnet readiness).</td></tr>
+<tr><td>🔴 <strong>BLOCKED_BY_POLICY</strong></td><td>Not claimed: testnet readiness (Testnet-10 use is an explicit, experimental opt-in with test funds) and mainnet (locked down).</td></tr>
 <tr><td>⚪ <strong>NOT_CLAIMED</strong></td><td>Explicitly not supported or guaranteed by HardKAS.</td></tr>
 </tbody>
 </table>
@@ -979,7 +979,7 @@ Account kind = synthetic · target mode = rpc<br/>
 <tr><td>Lane metadata</td><td>⚪ NOT_CLAIMED: schema field only, planning ignores it</td><td>—</td></tr>
 <tr><td>PSKT (partially signed transactions)</td><td>🟡 EXPERIMENTAL: no operation available from the CLI by default</td><td>—</td></tr>
 <tr><td>Transaction tracing</td><td>🟡 PARTIAL: traces are written; the <code>tx trace</code> command is disabled</td><td>—</td></tr>
-<tr><td>ZK corpus</td><td>🟡 EXPERIMENTAL: inspect surface only; on-chain ZK verification is NOT_CLAIMED</td><td>—</td></tr>
+<tr><td>ZK (RISC Zero Groth16 locks)</td><td>🟡 EXPERIMENTAL: local receipt verification against the pinned RISC Zero key, and lock and spend builders; no command broadcasts a ZK spend; on-chain ZK verification by HardKAS is NOT_CLAIMED</td><td><code>zk toccata</code></td></tr>
 <tr><td>VM / consensus equivalence</td><td>⚪ NOT_CLAIMED</td><td>—</td></tr>
 </tbody>
 </table>
@@ -1075,6 +1075,7 @@ Account kind = synthetic · target mode = rpc<br/>
 <div class="actions">
 <a class="button primary" href="https://github.com/KasLabDevs/HardKasIDE/releases/latest/download/HardKas-IDE-setup.exe" rel="noopener">Download for Windows</a>
 <a class="button" href="https://github.com/KasLabDevs/HardKasIDE/releases/latest" rel="noreferrer" target="_blank">All downloads (macOS, Linux)</a>
+<a class="button" href="/docs/ide/">Read the IDE docs</a>
 <a class="button" href="https://github.com/KasLabDevs/HardKasIDE" rel="noreferrer" target="_blank">Source on GitHub</a>
 </div>
 <div class="meta">
@@ -1089,15 +1090,14 @@ Account kind = synthetic · target mode = rpc<br/>
 <tr><td>Editor</td><td>SilverScript syntax highlighting and completions, compile with Ctrl+Enter, errors shown in the editor, and the real project folder on disk.</td></tr>
 <tr><td>Deploy &amp; Run</td><td>Plan, sign and send from a form against the simulator, the local node or testnet-10. Deploy a SilverScript contract and call each of its entries. A history per contract with amounts, fees and balances.</td></tr>
 <tr><td>Local node</td><td>Start, stop, restart or reset the Docker rusty-kaspad node, with visible progress. Dev accounts with their balances and the simnet keys to import into KasWare. A node explorer: DAA score, mined blocks, mempool and UTXOs.</td></tr>
-<tr><td>Cluster</td><td>Start extra simnet nodes next to the HardKAS node, scale them up and down, and watch each node's height and sync.</td></tr>
 <tr><td>Artifacts and index</td><td>Browse every artifact and its lineage, compare two of them, verify integrity, and query the HardKAS query store with read-only SQL.</td></tr>
 <tr><td>Tests</td><td>Run the project's vitest tests, see each result, and debug them with breakpoints, stepping, variables and watches.</td></tr>
 <tr><td>Terminal and console</td><td>Real terminals in the project folder, next to a console of every command the IDE runs.</td></tr>
-<tr><td>Assistant</td><td>A chat grounded in the official Kaspa docs. You bring your own API key; nothing is sent until you add one.</td></tr>
+<tr><td>Assistant</td><td>A chat and an agent, run by the open-source OpenCode agent on free hosted models: no key needed. It is off until you turn it on, and the panel says what is sent. Edits, commands and HardKAS actions that change something ask first. Claude or an OpenAI-compatible provider also work with your own key.</td></tr>
 <tr><td>MCP server</td><td>Lets an AI agent compile, deploy and query the project through the IDE. It never sees private keys.</td></tr>
 </tbody>
 </table>
-<div class="note"><strong>What it needs.</strong> Node.js 24.22.1 with npm (the IDE runs the <code>hardkas</code> CLI), and Docker Desktop for the local node and the cluster. The simulator needs neither Docker nor a node. Mainnet is blocked by HardKAS policy, so the IDE works with the simulator, the local simnet node and testnet-10. The installer is not code-signed yet, so Windows SmartScreen may ask you to confirm.</div>
+<div class="note"><strong>What it needs.</strong> Node.js 24.22.1 with npm (the IDE runs the <code>hardkas</code> CLI), and Docker Desktop for the local node. The simulator needs neither Docker nor a node. Mainnet is blocked by HardKAS policy, so the IDE works with the simulator, the local simnet node and testnet-10. The installer is not code-signed yet, so Windows SmartScreen may ask you to confirm.</div>
 </section>
 <section id="examples">
 <h2>Examples &amp; Builder Labs</h2>
@@ -1295,8 +1295,8 @@ Replay Verification:
 <p>
                 Workspace diagnostic: Node and pnpm, the <code>.hardkas/</code> folder and its
                 .gitignore, the query store, locks, the event and telemetry streams,
-                keystore permissions and Docker. Known issues: it exits 0 even when a check
-                fails, and its lock check looks in the wrong folder (use
+                keystore permissions and Docker. A failed check exits 1; warnings and skips
+                exit 0. Known issue: its lock check looks in the wrong folder (use
                 <code>hardkas lock doctor</code>).
               </p>
 </div>
@@ -1541,7 +1541,7 @@ hardkas chaos replay --run-seed 42">
           </p>
 <div class="command-grid">
 <div class="command">
-<code>hardkas rpc health</code><span>Check that the local node at ws://127.0.0.1:18210 answers and is ready; it exits non-zero when it is not. It has no <code>--url</code> option.</span>
+<code>hardkas rpc health</code><span>Check that the local node at ws://127.0.0.1:18210 answers and is ready; it exits non-zero when it is not. <code>--url</code> or <code>--network</code> checks another node.</span>
 <table class="flags">
 <tr>
 <td><code>--wait</code></td>
@@ -1571,7 +1571,7 @@ hardkas chaos replay --run-seed 42">
 </table>
 </div>
 <div class="command">
-<code>hardkas rpc doctor --endpoints &lt;url&gt; &lt;url&gt;</code><span>Diagnose one or more endpoints: TCP reach, wRPC connection, server and DAG info. It always exits 0, even when an endpoint fails (known issue).</span>
+<code>hardkas rpc doctor --endpoints &lt;url&gt; &lt;url&gt;</code><span>Diagnose one or more endpoints: TCP reach, wRPC connection, server and DAG info. It exits 1 when any endpoint is not ready (<code>RPC_DOCTOR_NOT_READY</code>); a mainnet endpoint is refused.</span>
 <table class="flags">
 <tr>
 <td><code>--endpoints &lt;urls...&gt;</code></td>
@@ -1682,7 +1682,7 @@ hardkas chaos replay --run-seed 42">
 </tr>
 <tr>
 <td><code>--strict</code></td>
-<td>Meant to fail on any failed check; it currently still exits 0 (known issue)</td>
+<td>Run the consistency checks in strict mode and report DOCTOR_FAILED when a check fails (any failed check exits 1)</td>
 </tr>
 </table>
 </div>
@@ -1742,7 +1742,7 @@ hardkas chaos replay --run-seed 42">
 </tr>
 <tr>
 <td><code>--network</code> · <code>--mass-*</code></td>
-<td>Accepted but ignored in this release: tests use the config's default network</td>
+<td><code>--network</code>: the workspace's network (default); a different one is refused. <code>--mass-*</code>: no effect in this release</td>
 </tr>
 </table>
 </div>
@@ -1755,7 +1755,7 @@ hardkas chaos replay --run-seed 42">
 </tr>
 <tr>
 <td><code>--network &lt;name&gt;</code></td>
-<td>A network from the config (built-in: simulated, simnet, devnet, testnet-10, testnet-11, mainnet); default simnet; an unknown name falls back to simulated</td>
+<td>A network from the workspace config; default: the workspace's network; an unknown name is refused</td>
 </tr>
 <tr>
 <td><code>--accounts &lt;n&gt;</code></td>
@@ -1887,7 +1887,7 @@ hardkas chaos replay --run-seed 42">
 </tr>
 <tr>
 <td><code>--network &lt;network&gt;</code></td>
-<td><code>simnet</code> (default), testnet-10 or another testnet-*, or mainnet; devnet currently fails</td>
+<td><code>simnet</code> (default), testnet-10 or another testnet-*; mainnet is refused (<code>MAINNET_SIGNING_DISABLED</code>); devnet currently fails</td>
 </tr>
 <tr>
 <td><code>--password-env &lt;env&gt;</code></td>
@@ -1904,7 +1904,7 @@ hardkas chaos replay --run-seed 42">
 </table>
 </div>
 <div class="command">
-<code>hardkas accounts real import</code><span>Import an existing key into the real-account store. Known issue: importing a name that already exists overwrites its keystore file before failing, so always use a new name.</span>
+<code>hardkas accounts real import</code><span>Import an existing key into the real-account store. A name that already exists is refused before anything is written (<code>ACCOUNT_NAME_TAKEN</code>).</span>
 <table class="flags">
 <tr>
 <td><code>--name &lt;name&gt;</code></td>
@@ -1912,7 +1912,7 @@ hardkas chaos replay --run-seed 42">
 </tr>
 <tr>
 <td><code>--address &lt;address&gt;</code></td>
-<td>kaspa:, kaspatest: or kaspasim: address; required unless <code>--fixture</code>. It is not checked against the key</td>
+<td>kaspa:, kaspatest: or kaspasim: address; required unless <code>--fixture</code>. It must be the key's own address on that network (<code>ACCOUNT_ADDRESS_KEY_MISMATCH</code>)</td>
 </tr>
 <tr>
 <td><code>--private-key-env &lt;env&gt;</code></td>
@@ -1960,7 +1960,7 @@ hardkas chaos replay --run-seed 42">
 <summary>Kaspa L1 and node</summary>
 <div class="details-body command-grid">
 <div class="command">
-<code>hardkas localnet start --toccata</code><span>Start (or adopt) the Docker rusty-kaspad node with the toccata-v2 simnet profile, and create dev accounts alice…erin in .hardkas/dev-accounts. Needs Docker and kaspa-wasm.</span>
+<code>hardkas localnet start --toccata</code><span>Start (or adopt) the Docker rusty-kaspad node with the toccata-v2 simnet profile, and create dev accounts alice…erin in .hardkas/dev-accounts. Needs Docker and kaspa-wasm. With <code>--seed</code> (alpha), it then pays each empty dev account an exact balance (<code>--seed-amount</code>, default 100 KAS) from the localnet treasury, whose key is public by design and used on simnet only; <code>hardkas localnet seed</code> does the same on a running localnet.</span>
 <table class="flags">
 <tr>
 <td><code>--toccata</code></td>
@@ -1982,7 +1982,7 @@ hardkas chaos replay --run-seed 42">
 </table>
 </div>
 <div class="command">
-<code>hardkas localnet fund &lt;identifier&gt; --amount 1000</code><span>Mine to an account on the local node until its mature balance grows by the amount, then stop the miner.</span>
+<code>hardkas localnet fund &lt;identifier&gt; --amount 1000</code><span>Mine to an account on the local node until its mature balance grows by the amount, then stop the miner. With <code>--treasury</code>, transfer exactly that amount from the localnet treasury instead.</span>
 <table class="flags">
 <tr>
 <td><code>&lt;identifier&gt;</code></td>
@@ -2007,7 +2007,7 @@ hardkas chaos replay --run-seed 42">
 <table class="flags">
 <tr>
 <td><code>--network &lt;name&gt;</code></td>
-<td>A network with an RPC URL: simnet, devnet, testnet-10, testnet-11, mainnet or one from the config</td>
+<td>A network with an RPC URL: simnet, devnet, testnet-10 or one from the config; mainnet is refused (<code>MAINNET_CONNECTION_DISABLED</code>)</td>
 </tr>
 <tr>
 <td><code>--addresses &lt;addrs...&gt;</code></td>
@@ -2391,7 +2391,7 @@ hardkas chaos replay --run-seed 42">
 </table>
 </div>
 <div class="command">
-<code>hardkas artifact verify &lt;path&gt;</code><span>Verify one artifact file, or a folder with <code>--recursive</code>: hash, schema and semantics. Artifacts older than 30 days fail as stale.</span>
+<code>hardkas artifact verify &lt;path&gt;</code><span>Verify one artifact file, or a folder with <code>--recursive</code>: hash, schema and semantics. Age never fails integrity: an artifact older than 30 days verifies, with a warning naming its age; plans and signed transactions that old are refused for signing and sending.</span>
 <table class="flags">
 <tr>
 <td><code>&lt;path&gt;</code></td>

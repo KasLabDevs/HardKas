@@ -128,11 +128,15 @@ const SKIP_DIRS = new Set(["node_modules", "dist", "dist-release", "coverage", "
 // Hidden directories are tool state, except .github, which can carry version references.
 const SCANNED_HIDDEN_DIRS = new Set([".github"]);
 const TEXT_EXT = new Set([".ts", ".tsx", ".js", ".mjs", ".cjs", ".json", ".md", ".mdx", ".yml", ".yaml", ".txt", ".html"]);
+// Git-ignored, never published: dated local audit records whose version mentions are history. Skipping it keeps the
+// local result equal to CI's, where the folder does not exist.
+const SKIP_REL_DIRS = new Set([path.join("docs", "internal")]);
 
 function* walk(dir) {
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
     if (entry.isDirectory()) {
       if (SKIP_DIRS.has(entry.name)) continue;
+      if (SKIP_REL_DIRS.has(path.relative(rootDir, path.join(dir, entry.name)))) continue;
       if (entry.name.startsWith(".") && !SCANNED_HIDDEN_DIRS.has(entry.name)) continue;
       yield* walk(path.join(dir, entry.name));
     } else if (entry.isFile()) {

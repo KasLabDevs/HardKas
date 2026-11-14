@@ -79,6 +79,12 @@ describe("--help says what the CLI does", () => {
     expect(command("kaspa wallet create").description()).toMatch(/nothing is saved/);
     expect(command("localnet fork").description()).toMatch(/current UTXOs/);
     expect(option("localnet fork", "--at-daa-score").description).toMatch(/label/);
+    // rc2 audit B9: `fund --amount` says what each mode does (--treasury transfers exactly that amount), and the Treasury
+    // is named for what it is: a public key by design, shared by every HardKAS localnet, used on simnet only
+    expect(option("localnet fund", "--amount").description).toMatch(/without --treasury, mine .*with --treasury, transfer exactly this amount/);
+    expect(option("localnet fund", "--treasury").description).toMatch(/Transfer exactly --amount KAS.*several.*public by design.*simnet only/);
+    expect(command("localnet seed").description()).toMatch(/public by design.*simnet only/);
+    expect(option("localnet start", "--seed").description).toMatch(/public by design.*simnet only/);
     // 2026-11-11 (owner): HardKAS never signs on mainnet, so `tx sign` has no flag that suggests it could
     expect(command("tx sign").options.find((o) => o.long === "--allow-mainnet-signing")).toBeUndefined();
     expect(option("tx send", "--allow-unplanned").description).toMatch(/Never on mainnet \(MAINNET_UNPLANNED_SEND_REFUSED\)/);

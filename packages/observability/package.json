@@ -21,13 +21,23 @@
   "scripts": {
     "build": "tsup src/index.ts --format esm --dts --clean",
     "dev": "tsup src/index.ts --format esm --watch",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "test": "vitest run"
   },
   "devDependencies": {
     "@types/node": "^20.12.06",
     "tsup": "^8.0.2",
     "typescript": "^5.3.3"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KasLabDevs/HardKas.git",
+    "directory": "packages/observability"
+  },
+  "bugs": {
+    "url": "https://github.com/KasLabDevs/HardKas/issues"
+  },
+  "homepage": "https://github.com/KasLabDevs/HardKas/tree/main/packages/observability#readme",
   "publishConfig": {
     "access": "public"
   }

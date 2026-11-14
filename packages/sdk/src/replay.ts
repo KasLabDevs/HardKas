@@ -19,9 +19,14 @@ export interface ReplayVerifyOptions {
 export interface ReplayVerifyResult {
   passed: boolean;
   artifactsScanned: number;
-  lineage: "valid" | "invalid";
-  determinism: "verified" | "failed";
-  contamination: "clean" | "contaminated";
+  /**
+   * B10: `"not-run"` when the SDK declined to replay (REPLAY_MODE_UNSUPPORTED): nothing was replayed, so nothing is
+   * claimed valid, verified or clean. A negative finding of a check that did run ("invalid", "failed", "contaminated")
+   * is still reported.
+   */
+  lineage: "valid" | "invalid" | "not-run";
+  determinism: "verified" | "failed" | "not-run";
+  contamination: "clean" | "contaminated" | "not-run";
   report: any;
   error?: string;
   /**
@@ -155,12 +160,13 @@ export class HardkasReplay {
       }
 
       if (realNodeError && !verifyErrorMsg) {
+        // B10: nothing was replayed — no positive claim (a negative finding of a check that ran is kept)
         return {
           passed: false,
           artifactsScanned: artifactCount,
-          lineage: lineageOk ? "valid" : "invalid",
-          determinism: determinismOk ? "verified" : "failed",
-          contamination: contaminationOk ? "clean" : "contaminated",
+          lineage: lineageOk ? "not-run" : "invalid",
+          determinism: determinismOk ? "not-run" : "failed",
+          contamination: contaminationOk ? "not-run" : "contaminated",
           report: null,
           error: realNodeError,
           code: "REPLAY_MODE_UNSUPPORTED"
@@ -207,12 +213,13 @@ export class HardkasReplay {
       ) {
         const observedMode = receipt.mode;
         const supportedModes = Array.from(REPLAY_SUPPORTED_MODES).join(", ");
+        // B10: nothing was replayed — no positive claim (a negative finding of a check that ran is kept)
         return {
           passed: false,
           artifactsScanned: artifactCount,
-          lineage: lineageOk ? "valid" : "invalid",
-          determinism: determinismOk ? "verified" : "failed",
-          contamination: contaminationOk ? "clean" : "contaminated",
+          lineage: lineageOk ? "not-run" : "invalid",
+          determinism: determinismOk ? "not-run" : "failed",
+          contamination: contaminationOk ? "not-run" : "contaminated",
           report: null,
           error:
             `Replay execution for receipt mode "${observedMode}" is not ` +

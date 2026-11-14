@@ -12,7 +12,8 @@ vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
 const h = vi.hoisted(() => ({
   log: [] as Array<{ kind: "docker"; args: string[] } | { kind: "funding-state-read" }>,
   RECIPIENT: "kaspasim:qqlpk9rs7yag6eqj3lttzqd8vgvssz8l8fxlpdag4h7zx2rjjr8lkkerwkezn",
-  fundingReads: 0
+  fundingReads: 0,
+  failFunding: false
 }));
 
 vi.mock("execa", () => ({
@@ -54,7 +55,11 @@ vi.mock("@hardkas/sdk", () => ({
       rpc: {
         getBlockDagInfo: async () => ({ virtualDaaScore: 5000n, virtualParentHashes: ["aa"], sink: "bb" }),
         getUtxosByAddress: async () => [matureUtxo],
-        getBalanceByAddress: async () => ({ balanceSompi: matureUtxo.amountSompi }),
+        getBalanceByAddress: async () => {
+          // a refusal while the funding is awaited: the one kind of error the wait does not retry
+          if (h.failFunding) throw Object.assign(new Error("the node now says mainnet"), { code: "MAINNET_CONNECTION_DISABLED" });
+          return { balanceSompi: matureUtxo.amountSompi };
+        },
         call: async () => sinkBlock
       },
       close: vi.fn(async () => {})
@@ -80,6 +85,7 @@ beforeAll(async () => {
 beforeEach(() => {
   h.log.length = 0;
   h.fundingReads = 0;
+  h.failFunding = false;
   printed = [];
   // writeJson as the real renderer does it (bigint values become strings): fund's result goes through writeJson
   setGlobalOutput({
@@ -128,6 +134,26 @@ describe("AUD-16 · FUND-LIVENESS-1: the localnet keeps producing blocks after `
     const steps = lifecycle();
     expect(steps.filter((s) => s.startsWith("run:"))).toEqual([`run:${h.RECIPIENT}`]);
     expect(steps).not.toContain("stop");
+  });
+
+  it("re-audit F5: a failure while funding keeps its own code, and the chain is not left stopped (liveness miner restarted)", async () => {
+    h.failFunding = true;
+    await expect(runLocalnetFund({ identifier: "alice", amountSompi: 100_000_000_000n, json: true })).rejects.toMatchObject({
+      code: "MAINNET_CONNECTION_DISABLED"
+    });
+    const steps = lifecycle();
+    expect(steps.slice(0, 3)).toEqual(["read", `run:${h.RECIPIENT}`, "stop"]);
+    expect(steps.at(-1)).toBe(`run:${neutral.address}`);
+  });
+
+  it("re-audit F5 with --stop-miner: the failure keeps its code and the chain stays stopped, as asked", async () => {
+    h.failFunding = true;
+    await expect(runLocalnetFund({ identifier: "alice", amountSompi: 100_000_000_000n, json: true, stopMiner: true } as any)).rejects.toMatchObject({
+      code: "MAINNET_CONNECTION_DISABLED"
+    });
+    const steps = lifecycle();
+    expect(steps.filter((s) => s.startsWith("run:"))).toEqual([`run:${h.RECIPIENT}`]);
+    expect(steps.at(-1)).toBe("stop");
   });
 
   it("--keep-miner with --stop-miner is refused before anything is mined", async () => {

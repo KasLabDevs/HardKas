@@ -25,7 +25,7 @@ HardKAS separates the lifecycle:
 HardKAS is **local-first**:
 
 - Use `simulated` for the main development loop.
-- Use Toccata v2 `simnet` when you need the certified local real-node baseline.
+- Use Toccata v2 `simnet` when you need the local real-node baseline verified by the release checks.
 - Use testnet only when you need external integration.
 - Treat mainnet as out of scope for the alpha happy path.
 

@@ -1,6 +1,7 @@
-## [0.13.0-rc.2] - 2026-11-11 - Release candidate
+## [0.13.0-rc.2] - 2026-11-14 - Release candidate
 
 - Synchronize the coordinated package versions, runtime identity, scaffolds and current documentation to `0.13.0-rc.2`.
+- Added: `hardkas localnet seed`, `localnet fund --treasury` and `localnet start --seed` (alpha): pay dev accounts an exact balance from a localnet treasury whose key is public by design and used on simnet only ([simnet node](docs/start/simnet-node.md#funding-dev-accounts-from-the-localnet-treasury-alpha)).
 - Keep generated `@hardkas/*` dependencies pinned to the exact CLI version.
 - Preserve the published `0.13.0-rc.1` notes and qualification evidence.
 
@@ -23,6 +24,93 @@
 - **H4: a second, independent receipt.** `fixtures/toccata-v2/zk/r0-groth16-hardkas` is a RISC Zero Groth16 receipt HardKAS made itself (its own guest program, risc0 3.0.5 crates with risc0-groth16 3.0.4 and recursion 4.0.4, the versions rusty-kaspa 2.1.0 pins), so the ZK checks no longer rest on the one public vector. The hermetic suite and the node suite (`zk-output-bound-l1.simnet.test.ts`, now run for both receipts) use it.
 - **First ZK spends on Testnet-10** (test funds, the 0.13.0-rc.2 candidate tarballs, that receipt): two proof-and-output-bound locks funded and spent to their bound payout; the node rejected the payout one sompi short, another payee, a flipped proof byte, a valid proof of another program and the proof with another journal hash. HardKAS still has no command that broadcasts a ZK spend (the SDK builds it; the run submitted it through the RPC client), and claims no on-chain ZK verification of its own.
 - **H6 documented:** Groth16 proofs are malleable ((A, B, C) → (r⁻¹·A, r·B, C) is valid too), so a ZK fact's `proofSha256` records bytes and is never an identity of a proof or a spend.
+
+### Audit remediation (2026-11-13)
+
+An internal review of the candidate (five areas: security, transaction lifecycle and evidence, ZK and covenants, docs against code, release) found no blocker in the code and 54 findings. This section lists what changed.
+
+#### Breaking
+- **`hardkas escrow rescue-v1 prepare` takes the escrow's seven constructor arguments**, all required (`--buyer-pk`, `--seller-pk`, `--arbiter-pk`, `--buyer-destination`, `--seller-destination`, `--refund-amount`, `--release-amount`). It compares the lock they compile with `--address` and with the listed UTXO before anything else (`RESCUE_ESCROW_ARGS_INVALID`, `RESCUE_LOCK_MISMATCH`). Before, it compiled placeholder keys and halved amounts, and could not rebuild a real v1 escrow.
+- **`@hardkas/escrow`: a configuration without `version` is v2**, and a v2 full escrow refuses different refund and release amounts (`ESCROW_CONFIG_INVALID`). `createEscrow` and `escrowResolution` used to read such a config differently, so the arbiter could never release to the seller. A legacy escrow says `version: "v1"`. `escrowTermsOf` is new.
+- **`pskt sign` / `pskt.signSession` sign only for the signer's own network** (see Security).
+- **`WalletToolkit.planSend()` and `sendSimulated()` throw `WALLET_TOOLKIT_METHOD_UNSUPPORTED`.** They returned placeholder data (an invented transaction id) and never planned or sent anything. `IndexerToolkit.ingestArtifact()` requires an artifact with a verified content hash (`INDEXER_ARTIFACT_IDENTITY_INVALID`) and takes an optional `{ filePath, tags }`.
+
+#### Security
+- **PSKT signing no longer trusts the session file's network.** A Kaspa signature does not commit to a network, so the session's `networkId` is only what its author wrote. `pskt sign` (`--network`, else the workspace's network) and `pskt.signSession` (new optional third argument `context`, and `pskt.assertSessionSignable`) refuse in this order:
+  - a mainnet session or signer;
+  - a missing signer network (`PSKT_SIGNER_NETWORK_REQUIRED`);
+  - another network than the session's (`PSKT_NETWORK_MISMATCH`);
+  - any input the signer's node does not list as unspent, failing closed when no node is configured (`PSKT_INPUTS_UNVERIFIED`, `PSKT_INPUT_NOT_ON_NETWORK`).
+
+  All of this happens before the key file is read.
+- **Endpoint credentials** (`user:pass@`, `?api_key=`) no longer appear in the errors and logs of `WalletToolkit.watch()`, `plugin-rpc-backend` and `sync-daemon`.
+- **`WalletToolkit.watch()` identifies its node again on every reconnection**, and stops if it names mainnet or another network (`WALLET_WATCH_NODE_NETWORK_CHANGED`). `@hardkas/tx-builder` gains the `beforeResnapshot` hook this needs.
+- **`hardkas rpc doctor` no longer reports an EVM mainnet** (chain id 1, 38833), or an endpoint the config declares as mainnet, as ready.
+- **The "no plaintext key on mainnet" refusals** cover every mainnet spelling and config alias, not only the literal `mainnet`.
+- **The dev server accepts `?token=` on GET/HEAD only**, and compares the token in constant time.
+- **Release tarballs carry committed files only.** `check-release-tarballs.mjs --pack` refuses a packed file outside `dist/` that git does not track (`UNTRACKED_FILE`), and scans `.jsonl`, `.log` and `.csv` entries for private paths and tokens. A git-ignored event log with a local user path sat in the CLI's `templates/` of a working tree and would have been packed; it was moved out of the tree.
+
+#### Changed
+- **Evidence does not expire.** `hardkas artifact verify` reported an intact artifact older than 30 days as `INTEGRITY_FAILED` (exit 1). Age is now a warning that names it. The 30-day rule applies only before execution: signing a plan, and sending or simulating a signed transaction, refuse an artifact that old (`STALE_ARTIFACT_REFUSED`). Receipts, submissions and observations are never refused for their age.
+- **v1 engine fees by omission are capped.** `sdk.covenants.planContractSpend` without `sweepTo`, and `planTransition` without a funder or a `"rest"` continuation, paid whatever the outputs left as fee, with no limit. A 100 KAS contract output spent with one 1 KAS payment paid 99 KAS to the miner. Without an explicit `maxFeeSompi` the fee is now limited to the larger of 0.1 KAS and the node's floor (`V1_REMAINDER_FEE_ABOVE_LIMIT`); `hardkas silver engine plan` gets the same protection.
+- `hardkas deploy init` refuses to overwrite existing profile files unless `--force` (`DEPLOY_INIT_FILE_EXISTS`), and writes the pinned reference node image instead of `kaspanet/kaspad:latest`.
+- `scripts/bump-version.mjs <old> <new> [--dry-run]` takes both versions and never rewrites `CHANGELOG.md`, `docs/release/`, `docs/community/` or `docs/internal/`.
+- The `apps/merchant-backend` example binds 127.0.0.1 and requires `DATABASE_URL` (no default password).
+
+#### Fixed
+- **`hardkas localnet seed`, `localnet fund --treasury` and `localnet start --seed`** (added in this candidate, alpha):
+  - They can no longer hang: the settle wait after mining is bounded (`LOCALNET_DAG_SETTLE_TIMEOUT`), and the miner's stop is verified. Plain `localnet fund` is bounded the same way; when it fails it keeps its own error and restarts the liveness miner unless `--stop-miner`.
+  - A run that fails midway restarts the liveness miner (unless `--stop-miner`), and its error lists the transactions already broadcast and the accounts already funded.
+  - A broadcast without an answer is an unknown outcome. It is recorded in `HARDKAS_HOME/localnet/treasury-pending.json` (one journal per machine, like the localnet), and the next run, from any workspace, sends that same transaction again. It never pays twice, and it pays the rest of a split payment.
+  - `--timeout` and amounts are validated (exit 2).
+  - The treasury broadcasts to the node whose identity was checked.
+  - A large amount is split over several transactions.
+- `TX_ALREADY_SUBMITTED` for a transaction the node no longer holds names the way out: check `tx status`, then re-plan with a different fee or amount for a new txId. HardKAS never re-sends it.
+- `tx send --from/--to/--amount` honours `--target`, and its JSON `meta.network` and `Network:` row name the network it really ran on (they said `simulated` for a real send).
+- `tx wait --timeout` / `--interval` refuse values that are not numbers, are negative or are infinite (`TX_WAIT_USAGE`, exit 2), and accept `500ms`, `60s` and `2m`. `60s` used to make the wait endless.
+- `hardkas rpc doctor` exits 1 when any endpoint is not ready (`RPC_DOCTOR_NOT_READY`).
+- `hardkas doctor` no longer fails on a missing pnpm, or on an unreachable Docker when the workspace's default target is the simulator.
+- `hardkas verify` reports a v0 plan whose stated fee differs from inputs − outputs − change.
+- `sdk.replay.verify` no longer says lineage `valid`, determinism `verified` or contamination `clean` for a replay it declined (`REPLAY_MODE_UNSUPPORTED`); those fields are `not-run`.
+- The `tx wait --address` UTXO-view row states only what is proven: the node's index is at or past the accepting block.
+- A v1 send with an enabled relative time lock whose DAA score cannot be read is refused before the broadcast (`SEQUENCE_LOCK_UNVERIFIABLE`).
+- `accounts real import` refuses an `--address` that is not the key's own (`ACCOUNT_ADDRESS_KEY_MISMATCH`).
+- Dev-server: the session routes that do nothing answer 501 (`SESSION_OPERATION_UNSUPPORTED`), and `POST /api/simnet/mine` bounds `blocks` (1–100) and reports the DAA score before and after.
+- `IndexerToolkit.watch()` without a backend that lists UTXOs starts no polling timer (it kept the process alive, watching nothing) and warns once (`HARDKAS_INDEXER_WATCH_INACTIVE`).
+- `hardkas torture` passes the CLI's own entry to its cases, so its local bucket runs under pnpm's isolated layout (`CLI_ENTRY_NOT_FOUND` otherwise).
+- npm metadata of `@hardkas/jobs`, `@hardkas/observability`, `@hardkas/toolkit` and `@hardkas/escrow`.
+
+#### ZK (experimental)
+- **HardKAS's own receipt is now a public test program.**
+  - `PUBLIC_R0_TEST_VECTORS` is keyed on the image id and lists both receipts.
+  - A proof-only lock of a public program gets no public-network address.
+  - A proof-and-output-bound lock of one is built, with `ZK_PUBLIC_PROGRAM_PAYOUT_TRIGGERABLE`: its funds can only reach the bound outputs, but anyone can trigger that payout. Before, the official vector's output-bound lock was refused and HardKAS's own proof-only lock was built.
+- `verifyR0Groth16Scripts` refuses a canonical output-bound lock that can never be spent (`ZK_BOUND_LOCK_UNSPENDABLE`).
+- `buildR0Groth16Transaction` derives `consensusEnforced` from the redeem script, not from the scripts object's label (`ZK_BINDING_LABEL_NOT_ENFORCED`).
+- A receipt whose claim cannot be cross-checked (unpruned) gets no public-network address (`ZK_RECEIPT_CLAIM_UNCHECKED_PUBLIC_NETWORK_REFUSED`).
+- Known limit, now in the lock's warning: the output-bound script does not constrain the outputs' covenant binding. A real node accepts a payout output declared as a covenant genesis, which HardKAS payments then skip.
+
+#### Release, CI and docs
+- `--pack` packs a committed tree only. It refuses:
+  - a release build stamped dirty (`RELEASE_BUILD_DIRTY`) or made at another commit (`RELEASE_BUILD_WRONG_COMMIT`);
+  - a tree with uncommitted changes (`RELEASE_TREE_DIRTY`);
+  - a folder outside git (`RELEASE_GIT_UNAVAILABLE`);
+  - a `--dir` holding anything but tarballs (`PACK_DIR_INVALID`), which it used to empty.
+
+  The report gives each tarball's sha512 `integrity` and whether the run is `publishable`. `--allow-dirty` is for local proofs only. CI's consumer smoke now installs exactly the audited tarballs (`packaging:smoke --tarballs`).
+- New CI job `static-checks`: `pnpm lint`, the dev-server and query-store security checks, and the SilverScript no-shell-exec scan. That scan now covers the files that really start silverc and the runner, and fails on a missing path.
+- The forbidden-claims check also scans `README.md`, `CHANGELOG.md`, `site/` and `apps/docs/`, and catches certification wording. "Certified" headings now read "verified by the release checks": nobody certified HardKAS.
+- The ISO 25010 self-assessment folder (`compliance/`) was removed from the public tree: it held facts that were false at this commit, and local paths.
+- Docs:
+  - the README quickstart works as written;
+  - the two covenant guides that taught `planDeploy` / `planSpend` (which always throw) and a script-executing simulator were rewritten;
+  - the error reference gained the codes above and the common first-hour ones;
+  - the landing page's stale rows were corrected.
+- New tests for `@hardkas/observability`, which had none.
+
+#### Dependencies
+- `@hono/node-server` raised to `^1.19.19` (GHSA-jpvv-r467-5p4w). The other advisory on 1.x (GHSA-rmxm-3fg6-px4f, `serveStatic`) is fixed only in 2.x; HardKAS does not use `serveStatic`.
+- `zod` stays on 3.x in this candidate. GHSA-mrhx-c7xc-m3w5 (memory exhaustion validating oversized collections) is fixed only in zod ≥ 4.6.6. In HardKAS it is reachable only by validating a hostile local file, which can stall that one process. Moving to zod 4 changes the module that decides which evidence is accepted, so it is planned for the next candidate with a full re-validation.
 
 ## [0.13.0-rc.1] - 2026-11-02 - Covenant engine v1, L2 extension, experimental simulator
 

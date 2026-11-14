@@ -83,6 +83,10 @@ describe("REPLAY-REAL-NODE-1 · replay verify of a real-node send says what it i
       expect(r.error).toMatch(/hardkas verify <submission>/);
       expect(r.error).not.toMatch(/Lineage is missing a TxReceipt/);
       expect(r.report).toBeNull();
+      // B10: nothing was replayed, so nothing is claimed valid, verified or clean (a negative finding of the integrity
+      // check that did run, "failed", is still reported: these fixtures are not all sealed)
+      expect({ lineage: r.lineage, contamination: r.contamination }).toEqual({ lineage: "not-run", contamination: "not-run" });
+      expect(["not-run", "failed"]).toContain(r.determinism);
     } finally {
       await sdk.close();
     }

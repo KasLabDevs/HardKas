@@ -1,6 +1,6 @@
 # HardKAS v0.13.0-rc.1 — Evidence Index
 
-This index traces every public claim in the progress report, the X post and the Discord announcement back to its evidence.
+This index traces the public claims of the 0.13.0-rc.1 announcements (the progress report, the X post and the Discord message, which are not kept in this repository) back to their evidence, and, from row 26, the claims of the 0.13.0-rc.2 candidate.
 
 **Evidence strength:**
 - **A**: a node's own answer, or a public registry or CI record anyone can check;
@@ -60,17 +60,18 @@ This index traces every public claim in the progress report, the X post and the 
 | 35 | The whole real-node ZK matrix of the Docker suites, repeated on Testnet-10 | the second ZK appendix below: a proof-only lock (7 invalid spends rejected, then the SDK's spend) and a proof-and-output-bound lock (4 invalid spends rejected, then two SDK bound spends); all 7 accepted transactions CONFIRMED with `tx wait`; HardKAS's own `ZkExecutionEvidence` artifact for each lock validates against its schema, outcome `ALL_AS_EXPECTED` | Testnet-10 | 2026-11-13 | A + C | Yes, qualified | Experimental. Test funds: 2.09 TKAS spent (0.59 in fees, 1.50000001 left locked on purpose). Only HardKAS's own receipt: the SDK refuses the official one on Testnet-10 (row 36). A proof-only lock is anyone-can-spend once its proof is public, and this proof already was: the lock held 1 TKAS for about 3 s |
 | 36 | HardKAS refuses to build the ZK locks it cannot keep safe on a public network | the same run, before anything was sent: a proof-only Testnet-10 lock without `acknowledgeImageIdOnlyLock` (`ZK_IMAGE_ID_ONLY_LOCK_NOT_ACKNOWLEDGED`); the official receipt on Testnet-10, in both modes (`ZK_PUBLIC_VECTOR_PUBLIC_NETWORK_REFUSED`); a mainnet address (`MAINNET_SIGNING_DISABLED`); a spend of an input above the bound lock's limit (`ZK_BOUND_INPUT_ABOVE_LOCK_LIMIT`). The repository's ZK tests check the same codes | local (candidate tarballs) | 2026-11-13 | B + C | Yes | — |
 | 37 | One proof spends every output of its lock | the same run: the output-bound lock's second output was spent with the same proof (`ca4ebcdd…8445`) | Testnet-10 | 2026-11-13 | A + C | Yes | By design: a proof is not tied to an outpoint. In proof-only mode a public proof empties every output of the lock; in output-bound mode each spend still pays only the bound output |
+| 38 | Rule change after rows 35–36 (audit of 2026-11-13, C-1): HardKAS's own receipt is now treated as public | `PUBLIC_R0_TEST_VECTORS` is keyed on the image id and lists both receipts. On a public network a proof-only lock of a public program is refused (`ZK_PUBLIC_VECTOR_PUBLIC_NETWORK_REFUSED`), and a proof-and-output-bound lock of one is built with the warning `ZK_PUBLIC_PROGRAM_PAYOUT_TRIGGERABLE`; [`zk-public-program-c1.test.ts`](../../../packages/sdk/test/zk-public-program-c1.test.ts) | local | 2026-11-13 | B | Yes | The proof-only Testnet-10 lock of row 35 could not be built again with the candidate as it now stands; rows 35–36 describe the code that ran them. The output-bound locks of rows 26 and 35 rebuild to the same bytes |
 
 ## Contradictions resolved
 
 - **`actions/cache` pin.** The 9 November internal evaluation listed it as pending. The workflow file has carried the SHA pin since 2026-11-09, so the newer source wins: FIXED.
 - **"No ZK on any network"** (an earlier internal remark) was imprecise. HardKAS does not broadcast ZK transactions, but its own test suite submits the ZK transactions HardKAS builds to a real local node. On Testnet-10 HardKAS refuses public test receipts by design; since 2026-11-13 a receipt HardKAS made itself (rows 26–28, 35–37) has been spent there, in both lock modes.
 - **`develop` version.** `develop` now reads `0.13.0-rc.2`, but npm has only `0.13.0-rc.1`, re-checked 2026-11-11. Nothing on `develop` is published.
-- **The reference document `HardKAS_RC1_Progress_Report.docx` was not found** in the repository or on the maintainer's machine. This package was written from the primary sources listed above.
+- **This index was written from the primary sources listed above**, not from an earlier progress report.
 
 ## Appendix: Testnet-10 transactions
 
-All are on Testnet-10 (network id `testnet-10`), from 2026-11-11, with HardKAS `0.13.0-rc.1` installed from npm. Anyone can check them with a TN10 node, for example `hardkas tx status <txid> --network testnet-10`, or with a TN10 explorer: `[TN10_EXPLORER_URL]/txs/<txid>`.
+All are on Testnet-10 (network id `testnet-10`), from 2026-11-11, with HardKAS `0.13.0-rc.1` installed from npm. Anyone can check them with a TN10 node, for example `hardkas tx status <txid> --network testnet-10`, or by searching the transaction id in a Testnet-10 block explorer.
 
 **L1 payments**
 

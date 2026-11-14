@@ -14,6 +14,9 @@ title: hardkas localnet
 
 - `--profile &lt;name&gt;`: Localnet profile: toccata-v2 (the only one, required; or use --toccata)
 - `--toccata` (Default: `false`): Shortcut for --profile toccata-v2
+- `--seed` (Default: `false`): Distribute an initial exact balance (default 100 KAS) to empty dev accounts from the localnet Treasury after start (its key is public by design, the same on every HardKAS localnet, and used on simnet only)
+- `--seed-amount &lt;kas&gt;` (Default: `100`): KAS per account when --seed is set
+- `--stop-miner` (Default: `false`): With --seed: leave the chain stopped after seeding
 - `--detached` (Default: `false`): No effect: the node always runs as a detached Docker container
 - `--json` (Default: `false`): Output as JSON
 
@@ -58,10 +61,29 @@ title: hardkas localnet
 #### Options
 
 - `--profile &lt;name&gt;` (Default: `toccata-v2`): Funding profile
-- `--amount &lt;kas&gt;` (Default: `1000`): KAS to wait for: mine until the mature balance grows by this amount
+- `--amount &lt;kas&gt;` (Default: `1000`): KAS to fund: without --treasury, mine to the account until its mature balance grows by this amount; with --treasury, transfer exactly this amount from the localnet Treasury
+- `--treasury` (Default: `false`): Transfer exactly --amount KAS from the localnet Treasury instead of mining to the account (an amount too large for one transaction is sent in several). The Treasury key is public by design, the same on every HardKAS localnet, and used on simnet only
 - `--timeout &lt;ms&gt;` (Default: `300000`): Funding/maturity wait timeout in ms
 - `--keep-miner` (Default: `false`): Keep mining to the funded account after funding (its balance keeps growing)
 - `--stop-miner` (Default: `false`): Leave the chain stopped after funding: no new blocks until you mine again
+- `--json` (Default: `false`): Output as JSON
+
+---
+
+## `hardkas localnet seed`
+
+### Synopsis (Generated)
+
+**Purpose:** Distribute an exact initial KAS balance to dev accounts from the localnet Treasury (1 -&gt; N; the Treasury key is public by design, the same on every HardKAS localnet, and used on simnet only) alpha
+
+#### Options
+
+- `--profile &lt;name&gt;` (Default: `toccata-v2`): Funding profile
+- `--amount &lt;kas&gt;` (Default: `100`): KAS per dev account
+- `--only-empty` (Default: `false`): Only fund accounts whose balance is currently 0
+- `--accounts &lt;names&gt;`: Comma-separated account names or simnet addresses to seed
+- `--timeout &lt;ms&gt;` (Default: `300000`): Funding/confirmation timeout in ms
+- `--stop-miner` (Default: `false`): Leave the chain stopped after seeding: no new blocks until you mine again
 - `--json` (Default: `false`): Output as JSON
 
 ---

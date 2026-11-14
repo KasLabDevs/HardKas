@@ -4,6 +4,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import crypto from "node:crypto";
+import { createRequire } from "node:module";
 import pc from "picocolors";
 import { UI, errorCodeOf } from "../ui.js";
 import { getAllTortureBuckets, LcgPrng, TortureCaseResult } from "@hardkas/testing";
@@ -34,6 +35,21 @@ export interface TortureReplayOptions {
  */
 function createTortureRunDir(): string {
   return fs.mkdtempSync(path.join(os.tmpdir(), "hardkas-torture-"));
+}
+
+/**
+ * rc2 audit E-10: the CLI's own entry (`@hardkas/cli/bin`, its dist/index.js), passed to the buckets that run the CLI
+ * (`cliEntry`). Resolved by the package's own name from this module (Node's self-reference through `exports`), so it
+ * holds under any node_modules layout, pnpm's isolated one included, where @hardkas/testing cannot see @hardkas/cli.
+ * undefined when it cannot be resolved (no build): the bucket then looks for the CLI itself and fails typed.
+ */
+export function resolveOwnCliEntry(fromUrl: string = import.meta.url): string | undefined {
+  try {
+    const entry = createRequire(fromUrl).resolve("@hardkas/cli/bin");
+    return fs.existsSync(entry) ? entry : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 /** Deletes a run directory this run created; a file still held open (Windows) leaves it in the temp dir, said so. */
@@ -102,6 +118,7 @@ export async function runTortureMatrix(options: TortureMatrixOptions) {
   // The heatmap reads only what this run appended.
   const runDir = createTortureRunDir();
   const sourceRoot = process.cwd();
+  const cliEntry = resolveOwnCliEntry();
   EnvironmentTelemetry.init(process.cwd());
   const telemetryPath = path.join(process.cwd(), ".hardkas", "telemetry", "telemetry.jsonl");
   const telemetryOffset = fs.existsSync(telemetryPath) ? fs.statSync(telemetryPath).size : 0;
@@ -143,7 +160,8 @@ export async function runTortureMatrix(options: TortureMatrixOptions) {
       caseId: item.caseId,
       prng: casePrng,
       workspaceDir: runDir,
-      sourceRoot
+      sourceRoot,
+      ...(cliEntry !== undefined && { cliEntry })
     };
 
     EnvironmentTelemetry.setContext({
@@ -549,13 +567,15 @@ export async function runTortureReplay(options: TortureReplayOptions) {
   const casePrng = new LcgPrng(target.caseSeed);
   // ESCALÓN 3 · P20: a directory of its own under the OS temp dir, never the current one
   const runDir = createTortureRunDir();
+  const cliEntry = resolveOwnCliEntry();
   const ctx = {
     globalSeed: seed,
     caseSeed: target.caseSeed,
     caseId: target.caseId,
     prng: casePrng,
     workspaceDir: runDir,
-    sourceRoot: process.cwd()
+    sourceRoot: process.cwd(),
+    ...(cliEntry !== undefined && { cliEntry })
   };
 
   const startTime = Date.now();

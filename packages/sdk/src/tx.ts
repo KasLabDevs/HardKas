@@ -61,6 +61,74 @@ function signedTxIdToSend(signedArtifact: { txId?: unknown }, rawTransaction: un
   return official;
 }
 
+/**
+ * D-02: freshness is enforced where it matters, and only there: signing a plan and sending (or executing in the
+ * simulator) a signed transaction. `artifact verify` reports age as a warning and never fails an intact artifact for it.
+ * A plan older than the limit, or a signed transaction older than it or descending from such a plan, is refused with
+ * STALE_ARTIFACT_REFUSED before anything is signed, sent, executed or recorded. The plan a signed transaction descends
+ * from is the explicit one when given, else its lineage parent read from the store; a parent that cannot be read here
+ * is left to the checks that follow (they refuse it with their own codes).
+ */
+async function refuseStaleForExecution(
+  sdk: Hardkas,
+  artifact: unknown,
+  operation: "sign" | "send" | "simulate",
+  plan?: unknown
+): Promise<void> {
+  const { checkExecutionFreshness } = await import("@hardkas/artifacts");
+  const candidates: unknown[] = [artifact];
+  if (plan !== undefined && plan !== null) {
+    candidates.push(plan);
+  } else {
+    // Every ancestor up to the plan (re-audit F3): a multisig signed transaction completed with an append descends from
+    // the partial signed transaction, not from the plan, and its plan is also named by `authorization.planArtifactId`.
+    // Ancestors of any schema are read; the walk stops at a plan, at an unreadable ancestor (the verification and plan
+    // resolution that follow decide, with their own codes) or after a bounded depth.
+    const isSigned = (x: any): boolean => typeof x?.schema === "string" && x.schema.startsWith("hardkas.signedTx");
+    const isHex64 = (v: unknown): v is string => typeof v === "string" && /^[0-9a-f]{64}$/.test(v);
+    const readAny = async (id: string): Promise<unknown> => {
+      try {
+        return await sdk.artifacts.read({ artifact: id });
+      } catch {
+        return undefined;
+      }
+    };
+    if (isSigned(artifact)) {
+      const seen = new Set<string>();
+      const authPlan = (artifact as any)?.authorization?.planArtifactId;
+      if (isHex64(authPlan)) {
+        seen.add(authPlan);
+        const p = await readAny(authPlan);
+        if (p !== undefined) candidates.push(p);
+      }
+      let current: any = artifact;
+      for (let depth = 0; depth < 16; depth++) {
+        const parentId = current?.lineage?.parentArtifactId;
+        if (!isHex64(parentId) || seen.has(parentId)) break;
+        seen.add(parentId);
+        const parent = await readAny(parentId);
+        if (parent === undefined) break;
+        candidates.push(parent);
+        if (!isSigned(parent)) break;
+        current = parent;
+      }
+    }
+  }
+  for (const candidate of candidates) {
+    const fresh = checkExecutionFreshness(candidate, operation);
+    if (!fresh.ok) {
+      throw new HardkasError(fresh.code, fresh.message, {
+        metadata: {
+          operation,
+          createdAt: fresh.age.createdAt,
+          ageDays: fresh.age.ageDays,
+          artifactId: (candidate as { contentHash?: unknown }).contentHash ?? null
+        }
+      });
+    }
+  }
+}
+
 /** TESTNET-PORT-COLLISION-1: the instance's client stands for "no endpoint chosen" (see unresolved-endpoint-rpc.ts). */
 function refuseUnresolvedEndpoint(sdk: Hardkas): void {
   if ((sdk.rpc as { endpointUnresolved?: unknown } | undefined)?.endpointUnresolved === true) {
@@ -1380,6 +1448,8 @@ export class HardkasTx {
         enforceMetadata: false,
         ...(actualOptions.plan ? { parent: actualOptions.plan } : {})
       });
+      // D-02: freshness is the signer's rule (verification reports age as a warning only)
+      await refuseStaleForExecution(this.sdk, plan, "sign", actualOptions.plan);
     }
 
     if (this.sdk.signer && plan.schema === HardkasSchemas.TxPlan) {
@@ -1865,6 +1935,8 @@ export class HardkasTx {
         }
         throw e;
       }
+      // D-02: freshness is the executor's rule (verification reports age as a warning only)
+      await refuseStaleForExecution(this.sdk, target, "simulate", explicitPlan);
     }
     const persist = options.persist ?? true;
     // SIMULATOR-EXECUTION-UNIT-1: a persisted execution reads the simulated state, checks idempotency and its inputs,
@@ -2222,6 +2294,9 @@ export class HardkasTx {
         }
         throw e;
       }
+      // D-02: freshness is the sender's rule (verification reports age as a warning only)
+      // (and its lineage parent read from the store; an explicit simulator plan is checked by simulate(), after its identity)
+      await refuseStaleForExecution(this.sdk, signedArtifact, "send");
     }
 
     // Perform pre-broadcast semantic verification (VULN-05)
@@ -2963,6 +3038,10 @@ export class HardkasTx {
     // yet, recorded before the send preflight checked it): the same transaction can never be sent again, so say how on
     const rejection = recordedOutcome === "rejected" && recorded.schema === HardkasSchemas.TxSubmissionV1 ? nodeRejectionOf(recorded.submitResult) : undefined;
     const tooEarly = rejection?.code === "SEQUENCE_LOCK_REJECTED" || rejection?.code === "LOCK_TIME_REJECTED";
+    // B3: the node observably does not hold it (accepted by a submit and seen nowhere since — a restart empties kaspad's
+    // mempool, an eviction —, removed from the chain, or refused): the same txId can never be sent again, so say how out.
+    // A state that decides nothing (unknown submit outcome, pruned, conflicting) keeps the "observe it" advice only.
+    const notHeld = derived !== undefined && !tooEarly && (derived.status === "SUBMITTED" || derived.status === "REORGED" || derived.status === "REJECTED_BY_NODE");
     throw new HardkasError(
       "TX_ALREADY_SUBMITTED",
       `Transaction ${txId} was not sent again: this workspace already recorded a submission of it (${String(recorded.contentHash)}, outcome ${recordedOutcome}` +
@@ -2974,8 +3053,14 @@ export class HardkasTx {
         `(one submission per txId). Nothing was sent. ` +
         (tooEarly
           ? `The node refused it only because its time lock was not met yet: to send it now, plan it again with any change that gives a new txId (for example a fee 1 sompi higher), sign and send that one.`
-          : `Observe it with 'hardkas tx status ${txId}'.`),
-      rejection ? { metadata: { recordedRejection: rejection.code } } : undefined
+          : notHeld
+            ? `HardKAS never sends it again on its own. To make this payment now: first check 'hardkas tx status ${txId}' and that the payment ` +
+              `did not reach its recipient (if the inputs it spends are no longer unspent, it was accepted or replaced: do not pay again); ` +
+              `then plan it again with a different fee or amount, which gives a new txId, and sign and send that one.`
+            : `Observe it with 'hardkas tx status ${txId}'.`),
+      rejection || notHeld
+        ? { metadata: { ...(rejection ? { recordedRejection: rejection.code } : {}), ...(notHeld ? { derivedStatus: derived!.status, remedy: "replan-new-txid" } : {}) } }
+        : undefined
     );
   }
 

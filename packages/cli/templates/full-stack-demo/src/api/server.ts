@@ -1,6 +1,5 @@
 import Fastify from 'fastify';
 import { WalletToolkit, PaymentToolkit, IndexerToolkit, JobsToolkit } from '@hardkas/toolkit';
-import { randomUUID } from 'node:crypto';
 
 export async function buildServer() {
     const fastify = Fastify({ logger: true });
@@ -41,23 +40,15 @@ export async function buildServer() {
         
         if (!inv) return reply.status(404).send({ error: 'Invoice not found' });
         
-        // Simulate wallet sending funds
-        await wallet.sendSimulated({ to: 'kaspa:store', amount: inv.amount });
-        
-        // Toolkit handles state update
+        // A simulated payment: the invoice is marked paid in the toolkit's own store. No transaction is planned, signed
+        // or sent (WalletToolkit.sendSimulated() is not supported: use wallet.send() against a localnet for a real one).
         await payment.simulatePay(invoiceId);
 
-        // Generate receipt using toolkit
+        // Generate receipt using toolkit. It is not a content-addressed HardKAS artifact, so it is not ingested into the
+        // indexer (IndexerToolkit.ingestArtifact() indexes only artifacts whose content hash verifies).
         const receipt = await payment.receipt(invoiceId);
-        
-        // Ingest artifact using indexer toolkit
-        await indexer.ingestArtifact({
-            id: randomUUID(),
-            schema: receipt.schema,
-            tags: [`merchant:${receipt.merchantId}`, `invoice:${invoiceId}`]
-        });
 
-        return { success: true, invoiceId };
+        return { success: true, invoiceId, receipt };
     });
 
     // --- EXPLORER API ---

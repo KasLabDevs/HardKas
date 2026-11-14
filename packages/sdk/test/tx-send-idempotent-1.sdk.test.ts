@@ -37,6 +37,11 @@ vi.setConfig({ testTimeout: 60_000 });
 // -----------------------------------------------------------------------------
 
 const LOOPBACK = "http://127.0.0.1:16110";
+// D-02: the signed artifacts below are dated SIGNED_AT, and a send refuses a signed transaction (or plan) older than 30
+// days (STALE_ARTIFACT_REFUSED), so the suite runs on a controlled clock that same day (only Date is controlled; timers
+// are real), as wave2-d-send-fee does. On the wall clock it would turn red on 2026-11-21 with no product defect.
+const SIGNED_AT = "2026-10-21T00:00:00.000Z";
+const NOW = Date.parse("2026-10-21T12:00:00.000Z");
 const FROM = "kaspasim:qpumuen7l8wthtz45p3ftn58pvrs9xlumvkuu2xet8egzkcklqtes65ue9mw6";
 const TO = "kaspasim:qrrqglu5g8kh6mfsg4qxa9wq0nv9cauwfwxw70984wkqnw2uwz0w27rvnw0sc";
 const script = (address: string) => expectedScriptPublicKeyHex(address)!;
@@ -65,7 +70,7 @@ function signedFromPlan(plan: any, payload: string, txId: string): any {
     hardkasVersion: HARDKAS_VERSION,
     version: ARTIFACT_VERSION,
     hashVersion: CURRENT_HASH_VERSION,
-    createdAt: "2026-10-21T00:00:00.000Z",
+    createdAt: SIGNED_AT,
     status: "signed",
     sourcePlanId: plan.planId,
     networkId: plan.networkId,
@@ -207,6 +212,7 @@ describe("TX-SEND-IDEMPOTENT-1 · sdk.tx.send never broadcasts a transaction thi
   const observations = () => filesIn("observations");
 
   beforeEach(async () => {
+    vi.useFakeTimers({ toFake: ["Date"], now: NOW });
     ws = fs.mkdtempSync(path.join(os.tmpdir(), "hk-tsi1-"));
     fs.mkdirSync(path.join(ws, ".hardkas"));
     node = new FakeNode();
@@ -225,6 +231,7 @@ describe("TX-SEND-IDEMPOTENT-1 · sdk.tx.send never broadcasts a transaction thi
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     vi.restoreAllMocks();
     fs.rmSync(ws, { recursive: true, force: true });
   });
@@ -301,6 +308,8 @@ describe("TX-SEND-IDEMPOTENT-1 · sdk.tx.send never broadcasts a transaction thi
     expect(again.error?.code).toBe("TX_ALREADY_SUBMITTED");
     expect(again.error?.message).toMatch(/Nothing was sent/);
     expect(again.error?.message).toMatch(/outcome rejected/);
+    // B3: the node refused it, so the way out is named (re-plan for a new txId), never an automatic re-send
+    expect(again.error?.message).toMatch(/plan it again with a different fee or amount/);
     expect(node.submits).toHaveLength(1);
     expect(submissions()).toHaveLength(1);
     expect((await sdk.tx.status(official.txId)).status).toBe("REJECTED_BY_NODE");
@@ -349,6 +358,24 @@ describe("TX-SEND-IDEMPOTENT-1 · sdk.tx.send never broadcasts a transaction thi
     expect(node.submits).toHaveLength(1);
     expect(submissions()).toHaveLength(1);
     expect(observations()).toHaveLength(looks + 1);
+    // B3: an unknown outcome decides nothing, so no re-plan is suggested (it could pay twice): observe only
+    expect(again.error?.message).toMatch(/Observe it with 'hardkas tx status/);
+    expect(again.error?.message).not.toMatch(/plan it again/);
+  });
+
+  it("T12 · B3 · accepted, then the node lost it (a restart empties kaspad's mempool): TX_ALREADY_SUBMITTED says how out — check tx status, re-plan with a different fee or amount for a new txId; nothing re-sent", async () => {
+    const sdk = await openSdk();
+    await sdk.tx.send(signed, LOOPBACK);
+    node.mempool.delete(official.txId); // node restart: the mempool is gone, nothing accepted it
+    const again = await outcome(sdk.tx.send(signed, LOOPBACK));
+    expect(again.error?.code).toBe("TX_ALREADY_SUBMITTED");
+    expect(again.error?.message).toMatch(/derived state SUBMITTED/);
+    expect(again.error?.message).toMatch(/never sends it again on its own/);
+    expect(again.error?.message).toMatch(new RegExp(`first check 'hardkas tx status ${official.txId}'`));
+    expect(again.error?.message).toMatch(/plan it again with a different fee or amount, which gives a new txId/);
+    expect(again.error?.metadata).toMatchObject({ derivedStatus: "SUBMITTED", remedy: "replan-new-txid" });
+    expect(node.submits).toHaveLength(1); // never re-sent
+    expect(submissions()).toHaveLength(1);
   });
 
   it("T11 · the re-send observes through a client with no typed getSinkBlueScore (the CLI's wRPC client): the same request through its generic call; no broadcast", async () => {

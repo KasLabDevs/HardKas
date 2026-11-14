@@ -1,7 +1,7 @@
 {
   "name": "@hardkas/escrow",
   "version": "0.13.0-rc.2",
-  "description": "HardKAS Escrow SDK (BL-002B certified)",
+  "description": "HardKAS escrow records and rescue drafts (typed createEscrow, resolution and signers)",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -33,12 +33,12 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/KasLabDevs/HardKas.git",
-    "directory": "packages/core"
+    "directory": "packages/escrow"
   },
   "bugs": {
     "url": "https://github.com/KasLabDevs/HardKas/issues"
   },
-  "homepage": "https://github.com/KasLabDevs/HardKas/tree/main/packages/core#readme",
+  "homepage": "https://github.com/KasLabDevs/HardKas/tree/main/packages/escrow#readme",
   "files": [
     "dist",
     "LICENSE",

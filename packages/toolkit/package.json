@@ -41,6 +41,15 @@
     "typescript": "^5.6.3",
     "vitest": "^2.1.2"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KasLabDevs/HardKas.git",
+    "directory": "packages/toolkit"
+  },
+  "bugs": {
+    "url": "https://github.com/KasLabDevs/HardKas/issues"
+  },
+  "homepage": "https://github.com/KasLabDevs/HardKas/tree/main/packages/toolkit#readme",
   "publishConfig": {
     "access": "public"
   }

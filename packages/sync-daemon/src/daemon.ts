@@ -1,4 +1,4 @@
-import { IndexerToolkit, WalletToolkit, JobsToolkit } from '@hardkas/toolkit';
+import { IndexerToolkit, WalletToolkit, JobsToolkit, redactUrlCredentialsInText } from '@hardkas/toolkit';
 import { BackendPlugin } from '@hardkas/core';
 import fs from 'fs';
 import path from 'path';
@@ -193,8 +193,10 @@ export class SyncDaemon {
                 span.end();
 
             } catch (err: any) {
-                logger.error('SyncDaemon error', { error: err.message });
-                span.fail(err);
+                // A3 (rc2 audit): a backend's error can carry its endpoint; the log never keeps its credentials
+                const message = redactUrlCredentialsInText(String(err?.message ?? err));
+                logger.error('SyncDaemon error', { error: message });
+                span.fail(new Error(message));
                 this.metrics.errors++;
                 metrics.inc("sync_daemon_errors_total");
                 // Silently absorb structural connection errors and wait longer to retry

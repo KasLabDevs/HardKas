@@ -16,7 +16,12 @@ npm install @hardkas/escrow
 
 - `createEscrow` and its typed `EscrowError`.
 - `escrowResolution` and `escrowSigners`.
+- `escrowTermsOf`: the version, mode and principal a configuration means, the same reading `createEscrow` and `escrowResolution` use.
 - The escrow record types and sources.
+
+## Versions
+
+A configuration without `version` is a **v2** escrow. A v2 escrow in full mode (the default) has one principal: give `principal`, or `refundAmount` and `releaseAmount` with the same value. Different amounts are refused with `ESCROW_CONFIG_INVALID`. A legacy escrow whose refund and release amounts differ says `version: "v1"`.
 
 ## Status
 

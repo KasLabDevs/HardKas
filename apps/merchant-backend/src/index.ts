@@ -9,9 +9,13 @@ import http from 'http';
 async function main() {
     console.log("Starting App 1: Merchant Backend (PostgreSQL)");
 
-    const storage = postgresStorage({ 
-        url: process.env.DATABASE_URL || 'postgres://hardkas:hardkaspassword@127.0.0.1:5432/hardkas_db' 
-    });
+    // A11 (rc2 audit): no built-in database password (it defaulted to postgres://hardkas:hardkaspassword@…): the
+    // connection string is the operator's, from DATABASE_URL, or the app does not start
+    const databaseUrl = process.env.DATABASE_URL;
+    if (!databaseUrl || databaseUrl.trim() === '') {
+        throw new Error("DATABASE_URL is required (e.g. postgres://<user>:<password>@127.0.0.1:5432/<db>); the app carries no default credentials. Nothing was started.");
+    }
+    const storage = postgresStorage({ url: databaseUrl });
     await storage.migrate();
 
     // Setup HTTP Observability Server
@@ -28,9 +32,12 @@ async function main() {
         }
     });
 
-    const PORT = process.env.PORT || 3000;
-    server.listen(PORT, () => {
-        logger.info(`Observability server listening on port ${PORT}`);
+    // A11 (rc2 audit): loopback only, like everything else in the repository (it listened on every interface, so /health
+    // and /metrics were served to the LAN)
+    const PORT = Number(process.env.PORT || 3000);
+    const HOST = '127.0.0.1';
+    server.listen(PORT, HOST, () => {
+        logger.info(`Observability server listening on http://${HOST}:${PORT}`);
     });
 
     const users: WalletToolkit[] = [];
@@ -124,7 +131,7 @@ async function main() {
     await daemon.stop();
     console.log(await daemon.status());
     console.log("Merchant Backend finished successfully!");
-    console.log(`Observability is still running on http://localhost:${PORT}/metrics and /health. Press Ctrl+C to exit.`);
+    console.log(`Observability is still running on http://${HOST}:${PORT}/metrics and /health. Press Ctrl+C to exit.`);
     // Omit process.exit() so the server stays up
 }
 

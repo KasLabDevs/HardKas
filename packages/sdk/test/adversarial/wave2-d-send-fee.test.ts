@@ -221,19 +221,27 @@ describe("Wave 2(d) · the submission records a derived fee or insufficient evid
     expect(submissions()).toEqual([]);
   });
 
-  it("STALE-CLOCK-1 · the staleness rule still holds: the same signed artifact, 31 days after it was signed, is refused (STALE_ARTIFACT); nothing broadcast or written", async () => {
+  // D-02: the rule moved from verification (where it failed integrity) to the sender's call site, with its own code:
+  // this case expected the verifier's STALE_ARTIFACT error in the message; it now expects STALE_ARTIFACT_REFUSED.
+  it("STALE-CLOCK-1 · the staleness rule still holds: the same signed artifact, 31 days after it was signed, is refused (STALE_ARTIFACT_REFUSED); nothing broadcast or written", async () => {
     const s = signedFromPlan(plan, () => {});
     await sdk.artifacts.write(s);
     vi.setSystemTime(Date.parse(SIGNED_AT) + 31 * 24 * 60 * 60 * 1000);
+    let code = "";
     let message = "";
     try {
       await sdk.tx.send(s, LOOPBACK);
     } catch (e: any) {
+      code = String(e?.code ?? "");
       message = String(e?.message ?? e);
     }
-    expect(message).toMatch(/STALE_ARTIFACT/);
+    expect(code).toBe("STALE_ARTIFACT_REFUSED");
+    expect(message).toMatch(/Refusing to send a signed transaction created 2026-09-26T00:00:00\.000Z \(31 days ago\)/);
     expect(submit).not.toHaveBeenCalled();
     expect(submissions()).toEqual([]);
+    // verification itself no longer fails on age: the same artifact verifies, with a warning naming its age
+    const verdict: any = await sdk.artifacts.verify(s, { strict: true, enforceMetadata: false, throwOnInvalid: false });
+    expect(verdict.valid).toBe(true);
   });
 
   // EXPECTED-TXID-1: an opaque payload is no longer sendable — its official id cannot be computed, so the TXID it is

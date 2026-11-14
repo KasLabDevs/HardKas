@@ -1,6 +1,6 @@
 # RISC Zero Groth16 receipt made by HardKAS (second, independent vector)
 
-The second RISC Zero Groth16 receipt of the repository, made by HardKAS itself, so that the ZK checks no longer rest on one receipt (crypto review H4). Unlike [`r0-groth16-official`](../r0-groth16-official/README.md) it was **not public** until it was spent on Testnet-10 on 2026-11-13; it is public now (every spend reveals its proof), so treat it as a test vector like the other one.
+The second RISC Zero Groth16 receipt of the repository, made by HardKAS itself, so that the ZK checks no longer rest on one receipt (crypto review H4). Unlike [`r0-groth16-official`](../r0-groth16-official/README.md) it was **not public** until it was spent on Testnet-10 on 2026-11-13; it is public now (every spend reveals its proof), so it is a test vector like the other one. Its image id is listed in `PUBLIC_R0_TEST_VECTORS`: HardKAS builds no proof-only Testnet-10 lock for it (anyone could spend it), and builds proof-and-output-bound locks with the warning `ZK_PUBLIC_PROGRAM_PAYOUT_TRIGGERABLE`.
 
 ## Provenance
 - **Guest program:** [`guest/main.rs`](guest/main.rs). It reads a private 32-byte input and commits the journal `"hardkas-r0-probe-v1" || SHA-256(input)` (51 bytes). The input never leaves the zkVM.

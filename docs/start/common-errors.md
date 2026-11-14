@@ -7,8 +7,10 @@ description: The errors a team meets on the simnet path, with their real codes, 
 
 Every error below was produced on purpose while testing
 [Build on your own simnet](./build-on-simnet.md), against a real `rusty-kaspad`
-v2.1.0 simnet node. The full catalogue is in [Errors](../reference/errors.md) and
-[Error Recovery](../reference/error-recovery.md).
+v2.1.0 simnet node. More codes, with their causes and fixes, are in
+[Errors](../reference/errors.md) and [Error Recovery](../reference/error-recovery.md). Those pages
+cover the common codes, not every one: every error carries its stable `code` and a message
+that says what was refused and what was not done.
 
 **Tip:** add `--json` to see the stable error `code`. Some plain-text messages
 print only the explanation (for example `tx send` of an edited file, or
