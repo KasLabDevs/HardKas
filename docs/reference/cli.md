@@ -988,7 +988,9 @@ hardkas deploy init [options]
 
 ### Options
 
-No options.
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--force` | Replace the profile files that already exist in this directory | false |
 
 ### Arguments
 
@@ -1596,7 +1598,7 @@ hardkas escrow rescue-v1 inspect [options] <draft-file>
 
 ## hardkas escrow rescue-v1 prepare
 
-Prepare a v1 escrow rescue draft spending an orphaned UTXO to a target address
+Prepare a v1 escrow rescue draft spending an orphaned UTXO to a target address. The escrow is recompiled from the constructor arguments it was created with (createEscrow's v1 config); its lock must be --address and the UTXO's script, or nothing is read or written
 
 ### Usage
 
@@ -1611,13 +1613,17 @@ hardkas escrow rescue-v1 prepare [options]
 | `--address <address>` | Legacy escrow P2SH address |  |
 | `--outpoint <outpoint>` | Funding outpoint to spend (txId:index) |  |
 | `--to <address>` | Destination address to recover funds to |  |
+| `--buyer-pk <hex>` | Required: buyer x-only public key the escrow was created with (32 bytes hex) |  |
+| `--seller-pk <hex>` | Required: seller x-only public key the escrow was created with (32 bytes hex) |  |
+| `--arbiter-pk <hex>` | Required: arbiter x-only public key the escrow was created with (32 bytes hex) |  |
+| `--buyer-destination <address|spk>` | Required: the buyer destination the escrow was created with: an address, or its script public key in hex without the version (EscrowConfig.buyerDestinationSpk) |  |
+| `--seller-destination <address|spk>` | Required: the seller destination the escrow was created with: an address, or its script public key in hex without the version (EscrowConfig.sellerDestinationSpk) |  |
+| `--refund-amount <sompi>` | Required: the escrow's refundAmount (sompi), as it was created |  |
+| `--release-amount <sompi>` | Required: the escrow's releaseAmount (sompi), as it was created |  |
 | `--network <network>` | Network id (default simnet); mainnet refused; testnet-<n> needs experimental + network.allowPublic | simnet |
 | `--url <url>` | Node wRPC (JSON) endpoint (default: the one the workspace declares for the network; simnet: the canonical localnet) |  |
 | `--out <file>` | Output draft file path (default rescue-v1-plan.draft.json) | rescue-v1-plan.draft.json |
 | `--fee <sompi>` | Miner fee in sompi (default 400000 sompi = 0.004 KAS) | 400000 |
-| `--buyer-pk <hex>` | Buyer x-only public key (32 bytes hex) |  |
-| `--seller-pk <hex>` | Seller x-only public key (32 bytes hex) |  |
-| `--arbiter-pk <hex>` | Arbiter x-only public key (32 bytes hex) |  |
 | `--json` | Output as JSON | false |
 
 ### Arguments
@@ -2376,6 +2382,7 @@ No arguments.
 - [hardkas localnet account](#hardkas-localnet-account)
 - [hardkas localnet fork](#hardkas-localnet-fork)
 - [hardkas localnet fund](#hardkas-localnet-fund)
+- [hardkas localnet seed](#hardkas-localnet-seed)
 - [hardkas localnet snapshot](#hardkas-localnet-snapshot)
 - [hardkas localnet start](#hardkas-localnet-start)
 - [hardkas localnet status](#hardkas-localnet-status)
@@ -2472,7 +2479,8 @@ hardkas localnet fund [options] <identifier>
 | Flag | Description | Default |
 | :--- | :--- | :--- |
 | `--profile <name>` | Funding profile | toccata-v2 |
-| `--amount <kas>` | KAS to wait for: mine until the mature balance grows by this amount | 1000 |
+| `--amount <kas>` | KAS to fund: without --treasury, mine to the account until its mature balance grows by this amount; with --treasury, transfer exactly this amount from the localnet Treasury | 1000 |
+| `--treasury` | Transfer exactly --amount KAS from the localnet Treasury instead of mining to the account (an amount too large for one transaction is sent in several). The Treasury key is public by design, the same on every HardKAS localnet, and used on simnet only | false |
 | `--timeout <ms>` | Funding/maturity wait timeout in ms | 300000 |
 | `--keep-miner` | Keep mining to the funded account after funding (its balance keeps growing) | false |
 | `--stop-miner` | Leave the chain stopped after funding: no new blocks until you mine again | false |
@@ -2483,6 +2491,34 @@ hardkas localnet fund [options] <identifier>
 | Argument | Description |
 | :--- | :--- |
 | `identifier` |  |
+
+---
+
+## hardkas localnet seed
+
+Distribute an exact initial KAS balance to dev accounts from the localnet Treasury (1 -> N; the Treasury key is public by design, the same on every HardKAS localnet, and used on simnet only) alpha
+
+### Usage
+
+```bash
+hardkas localnet seed [options]
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--profile <name>` | Funding profile | toccata-v2 |
+| `--amount <kas>` | KAS per dev account | 100 |
+| `--only-empty` | Only fund accounts whose balance is currently 0 | false |
+| `--accounts <names>` | Comma-separated account names or simnet addresses to seed |  |
+| `--timeout <ms>` | Funding/confirmation timeout in ms | 300000 |
+| `--stop-miner` | Leave the chain stopped after seeding: no new blocks until you mine again | false |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+No arguments.
 
 ---
 
@@ -2601,6 +2637,9 @@ hardkas localnet start [options]
 | :--- | :--- | :--- |
 | `--profile <name>` | Localnet profile: toccata-v2 (the only one, required; or use --toccata) |  |
 | `--toccata` | Shortcut for --profile toccata-v2 | false |
+| `--seed` | Distribute an initial exact balance (default 100 KAS) to empty dev accounts from the localnet Treasury after start (its key is public by design, the same on every HardKAS localnet, and used on simnet only) | false |
+| `--seed-amount <kas>` | KAS per account when --seed is set | 100 |
+| `--stop-miner` | With --seed: leave the chain stopped after seeding | false |
 | `--detached` | No effect: the node always runs as a detached Docker container | false |
 | `--json` | Output as JSON | false |
 
@@ -3396,6 +3435,7 @@ hardkas pskt sign [options] <sessionPath>
 | `--key-stdin` | Read private key from standard input |  |
 | `--private-key-file <path>` | Path to file containing raw private key (TEST ONLY) |  |
 | `--inputs <indexes>` | Comma-separated input indexes to sign (default: the inputs this participant is eligible for) |  |
+| `--network <name>` | The network you sign for (default: the workspace's); it must be the session's, and its node must list every input to sign as unspent |  |
 | `--out <outputPath>` | Path to write the updated PSKT session JSON |  |
 | `--force` | Overwrite the output file if it exists | false |
 | `--json` | Output results as JSON | false |
@@ -5993,7 +6033,7 @@ hardkas tx send [options] [signedPath]
 | `--json` | Output as JSON | false |
 | `--track <label>` | Signed-artifact mode: after an accepted broadcast, record a deployment with this label |  |
 | `--preflight` | Payments: right before the broadcast, check every input at the node (unspent, as planned, no covenant id, not pending in its mempool) and verify each input's signature against the node's UTXO; anything it cannot verify refuses the send. One node's view, not a consensus validation | false |
-| `--allow-unplanned` | Signed-artifact mode: send a signed transaction that names no plan of this workspace (signed elsewhere). HardKAS then cannot check that it is a planned transaction nor its fee limit: you take both on yourself. Without it such a send is refused (SEND_PLAN_UNRESOLVED) | false |
+| `--allow-unplanned` | Signed-artifact mode: send a signed transaction that names no plan of this workspace (signed elsewhere). HardKAS then cannot check that it is a planned transaction nor its fee limit: you take both on yourself. Without it such a send is refused (SEND_PLAN_UNRESOLVED). Never on mainnet (MAINNET_UNPLANNED_SEND_REFUSED) | false |
 
 ### Arguments
 
@@ -6020,7 +6060,6 @@ hardkas tx sign [options] <planPath>
 | `--account <name>` | Account name to sign with |  |
 | `--out <path>` | Save signed artifact JSON |  |
 | `--fixture` | Sign with the built-in fixture test key (any network except mainnet) | false |
-| `--allow-mainnet-signing` | No effect: mainnet is blocked (MAINNET TOTAL LOCKDOWN) and mainnet signing stays refused (MAINNET_SIGNING_DISABLED) | false |
 | `--threshold <number>` | Synthetic multisig threshold for tests (no Kaspa multisig script is produced) |  |
 | `--required-signers <list>` | Comma-separated signers, no spaces (with --threshold above 1) |  |
 | `--append` | Append signature to a partially signed transaction | false |
@@ -6666,7 +6705,7 @@ hardkas zk toccata build-scripts [options]
 | `--change-address <address>` | Optional consensus-bound change address |  |
 | `--change-amount <sompi>` | Optional consensus-bound change amount in sompi |  |
 | `--max-fee <sompi>` | proof-and-output-bound: the most the lock may pay as fee; a UTXO above the bound outputs plus this stays locked (default 50000000) |  |
-| `--address-network <networks>` | Also return the P2SH address for testnet-10; proof-only needs --ack-image-id-only-lock; never for a public test vector. mainnet (any spelling) is refused while mainnet is locked down (MAINNET_SIGNING_DISABLED): nothing is built |  |
+| `--address-network <networks>` | Also return the P2SH address for testnet-10; proof-only needs --ack-image-id-only-lock, and is never built for a public test program (an output-bound lock of one is, with a warning: anyone can trigger its payout). mainnet (any spelling) is refused while mainnet is locked down (MAINNET_SIGNING_DISABLED): nothing is built |  |
 | `--ack-image-id-only-lock` | Acknowledge that a proof-only lock binds only the image id (anyone with a valid receipt can spend, replay or front-run) | false |
 | `--json` | Output as JSON | false |
 

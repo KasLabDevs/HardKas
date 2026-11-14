@@ -6,7 +6,7 @@ import { createDevServer } from "../src/server.js";
 // -----------------------------------------------------------------------------
 // L-09 (3-nov audit). The dev server read the dashboard's index.html and injected
 // `window.__HARDKAS_DEV_TOKEN__ = "<token>"` into every `GET /*` whose Host was valid; with --unsafe-external the Host
-// check is off, so any client that reached the port got the session token from the HTML. The owner's 0.13.0-rc.1
+// check is off, so any client that reached the port got the session token from the HTML. The owner's 0.13.0-rc.2
 // (5ee6b2545) retired the dashboard: `GET /` answers the JSON endpoint catalog and no route embeds the token. These
 // cases pin that, for both configurations, and add `Cache-Control: no-store` to every response (workspace data and the
 // catalog are never kept by a browser or proxy cache). The token reaches a client only out of band: the 0600 file

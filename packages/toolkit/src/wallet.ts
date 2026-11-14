@@ -357,19 +357,31 @@ export class WalletToolkit {
     }
 
     /**
-     * @deprecated Use hardkas.tx.plan directly or the specific operation helpers like send() or consolidate()
+     * @deprecated Not supported: it never planned anything. Use `estimateFee()` (which returns the plan), `send()`, or
+     * `hardkas.tx.plan`. Throws WALLET_TOOLKIT_METHOD_UNSUPPORTED.
      */
     public async planSend(opts: { to: string; amount: bigint; priority?: FeePriority; feeRate?: bigint }): Promise<any> {
-        return {
-            message: "This is a stub, as requested by P61 audit. Real planning requires UTXO orchestration."
-        };
+        // E-03 (rc2 audit): it used to resolve to `{ message: "This is a stub…" }`, an object that is not a plan
+        throw new HardkasError(
+            "WALLET_TOOLKIT_METHOD_UNSUPPORTED",
+            "WalletToolkit.planSend() is not supported: it never planned anything. Use wallet.estimateFee({ to, amount }) " +
+                "(its `plan` is the real plan), wallet.send({ to, amount }), or hardkas.tx.plan. Nothing was planned.",
+            { metadata: { method: "planSend", use: ["estimateFee", "send", "hardkas.tx.plan"] } }
+        );
     }
 
     /**
-     * @deprecated sendSimulated is moved to testing patterns. Use hardkas.localnet.mine() and standard send() flows.
+     * @deprecated Not supported: it never sent anything. Use `send()` against a localnet (or the SDK's simulator mode,
+     * `hardkas.tx.send` on network "simulated"). Throws WALLET_TOOLKIT_METHOD_UNSUPPORTED.
      */
     public async sendSimulated(opts: { to: string; amount: bigint; priority?: FeePriority; feeRate?: bigint }): Promise<string> {
-        return `sim_tx_${Date.now()}`;
+        // E-03 (rc2 audit): it used to return `sim_tx_<timestamp>`, a string shaped like a transaction id, for nothing
+        throw new HardkasError(
+            "WALLET_TOOLKIT_METHOD_UNSUPPORTED",
+            "WalletToolkit.sendSimulated() is not supported: it never planned, signed or sent anything (it returned an " +
+                "invented id). Use wallet.send({ to, amount }) on a localnet, or hardkas.tx.send on the 'simulated' network. Nothing was sent.",
+            { metadata: { method: "sendSimulated", use: ["send", "hardkas.tx.send"] } }
+        );
     }
 
     /**

@@ -5,18 +5,27 @@ import { JsonWrpcKaspaClient } from "@hardkas/kaspa-rpc";
 import { forkFromNetwork, saveLocalnetState } from "@hardkas/localnet";
 import { resolve } from "node:path";
 import fs from "node:fs/promises";
-import { withLock, sha256hex, UtxoSetNotStableError, CPUMINER_REFERENCE_IMAGE, CANONICAL_LOCALNET, nodeRpcUrl } from "@hardkas/core";
+import { withLock, sha256hex, getCoinbaseMaturity, CPUMINER_REFERENCE_IMAGE, CANONICAL_LOCALNET, nodeRpcUrl } from "@hardkas/core";
 import { DockerKaspadRunner, verifyNodeIdentity, requireNodeIdentity } from "@hardkas/node-runner";
 import { resolveHardkasAccountAddress, listHardkasAccounts } from "@hardkas/accounts";
 import { execa } from "execa";
 import { HardkasSchemas } from "@hardkas/artifacts";
+import {
+  createFundingStateReader,
+  fundingStateJson,
+  type FundingReadOrder,
+  type FundingSnapshot,
+  type FundingStateJson,
+  type FundingStateReader,
+  type FundingStateRpc
+} from "./localnet-funding-state.js";
 
 // The canonical real localnet (@hardkas/core). The container name only locates
 // the node; before using it, localnet proves its identity (verifyNodeIdentity).
-const TOCCATA_PROFILE = CANONICAL_LOCALNET.profile;
+export const TOCCATA_PROFILE = CANONICAL_LOCALNET.profile;
 const TOCCATA_IMAGE = CANONICAL_LOCALNET.image;
 const OFFICIAL_MINER_IMAGE = CPUMINER_REFERENCE_IMAGE;
-const TOCCATA_MINER_CONTAINER = CANONICAL_LOCALNET.minerContainerName;
+export const TOCCATA_MINER_CONTAINER = CANONICAL_LOCALNET.minerContainerName;
 const TOCCATA_NODE_CONTAINER = CANONICAL_LOCALNET.containerName;
 const TOCCATA_RPC_URL = nodeRpcUrl();
 const TOCCATA_KASPAD_ADDRESS = "host.docker.internal:16210";
@@ -24,6 +33,9 @@ const TOCCATA_KASPAD_ADDRESS = "host.docker.internal:16210";
 export interface LocalnetStartOptions {
   profile?: string;
   json?: boolean;
+  seed?: boolean;
+  seedAmountSompi?: bigint;
+  stopMiner?: boolean;
   workspaceRoot?: string;
 }
 
@@ -38,11 +50,38 @@ export interface LocalnetFundOptions {
   profile?: string;
   json?: boolean;
   timeoutMs?: number;
+  /** Fund from the deterministic localnet Treasury (fast 1-confirmation transfer, never keeps mining to the recipient). */
+  treasury?: boolean;
   /** Keep mining to the funded account after funding (its balance keeps growing). */
   keepMiner?: boolean;
   /** Leave the chain stopped after funding: no liveness miner, no new blocks. */
   stopMiner?: boolean;
   workspaceRoot?: string;
+}
+
+async function maybeSeedLocalnet(opts: LocalnetStartOptions, profile: string) {
+  if (!opts.seed) return undefined;
+  const { runLocalnetSeed } = await import("./localnet-treasury.js");
+  return runLocalnetSeed({
+    ...(opts.seedAmountSompi !== undefined ? { amountSompi: opts.seedAmountSompi } : {}),
+    onlyEmpty: true,
+    profile,
+    json: !!opts.json,
+    silentOutput: true,
+    stopMiner: !!opts.stopMiner,
+    ...(opts.workspaceRoot ? { workspaceRoot: opts.workspaceRoot } : {})
+  });
+}
+
+function logSeedSummaryHuman(seed: { status: string; treasuryAddress: string; txIds: string[]; accounts: Array<{ name: string; skipped: boolean; afterBalanceSompi: string }> }): void {
+  UI.info(`Seed: ${seed.status} (treasury ${seed.treasuryAddress})`);
+  if (seed.txIds.length > 0) {
+    UI.info(`Seed tx: ${seed.txIds.join(", ")}`);
+  }
+  for (const a of seed.accounts) {
+    const kas = (Number(a.afterBalanceSompi) / 1e8).toString();
+    UI.info(`  ${a.name.padEnd(8)} ${a.skipped ? "kept  " : "seeded"} ${kas} KAS`);
+  }
 }
 
 export async function runLocalnetStart(opts: LocalnetStartOptions): Promise<void> {
@@ -78,12 +117,14 @@ export async function runLocalnetStart(opts: LocalnetStartOptions): Promise<void
     // Running under the canonical name is not enough: it must prove digest,
     // endpoint ownership, network and version before it is reported READY.
     const identity = await requireNodeIdentity();
+    const seed = await maybeSeedLocalnet(opts, profile);
     const payload = {
       schema: HardkasSchemas.LocalnetStatusV1,
       profile,
       node: existing,
       identity,
-      status: "TOCCATA_NODE_READY"
+      status: "TOCCATA_NODE_READY",
+      ...(seed ? { seed } : {})
     };
     if (opts.json) {
       getOutput().writeJson(payload);
@@ -92,6 +133,7 @@ export async function runLocalnetStart(opts: LocalnetStartOptions): Promise<void
       UI.info(`RPC: ${TOCCATA_RPC_URL}`);
       UI.info(`Version: ${existing.serverVersion || "unknown"}`);
       UI.info(`DAA: ${existing.virtualDaaScore || "unknown"}`);
+      if (seed) logSeedSummaryHuman(seed);
     }
     return;
   }
@@ -106,13 +148,15 @@ export async function runLocalnetStart(opts: LocalnetStartOptions): Promise<void
   // start() verifies the identity of the node it starts or adopts.
   const status = await runner.start();
   const identity = await runner.identity();
+  const seed = await maybeSeedLocalnet(opts, profile);
 
   const payload = {
     schema: HardkasSchemas.LocalnetStatusV1,
     profile,
     status: status.rpcReady ? "TOCCATA_NODE_READY" : "TOCCATA_NODE_STARTING",
     node: status,
-    identity
+    identity,
+    ...(seed ? { seed } : {})
   };
 
   if (opts.json) {
@@ -122,6 +166,7 @@ export async function runLocalnetStart(opts: LocalnetStartOptions): Promise<void
     UI.info(`Image: ${status.image}`);
     UI.info(`Container: ${status.containerName}`);
     UI.info(`RPC: ${status.rpcUrl}`);
+    if (seed) logSeedSummaryHuman(seed);
   }
 }
 
@@ -245,6 +290,14 @@ export async function runLocalnetFund(opts: LocalnetFundOptions): Promise<void> 
       { exitCode: HardkasExitCode.USAGE_ERROR }
     );
   }
+  if (opts.keepMiner && opts.treasury) {
+    const { HardkasCliError, HardkasExitCode } = await import("../cli-errors.js");
+    throw new HardkasCliError(
+      "LOCALNET_FUND_MINER_FLAGS_CONFLICT",
+      "--keep-miner and --treasury are mutually exclusive: treasury distribution transfers a fixed amount and never keeps mining to the recipient.",
+      { exitCode: HardkasExitCode.USAGE_ERROR }
+    );
+  }
 
   const { config } = await loadHardkasConfig({});
   let address: string;
@@ -286,7 +339,26 @@ export async function runLocalnetFund(opts: LocalnetFundOptions): Promise<void> 
   // The miner joins the node's namespace by container name, so the node must
   // first prove it is the canonical one.
   await requireNodeIdentity();
-  const before = await getAddressFundingState(address, !!opts.json);
+
+  if (opts.treasury) {
+    const { runLocalnetFundTreasury, DEFAULT_LOCALNET_SEED_AMOUNT_SOMPI } = await import("./localnet-treasury.js");
+    await runLocalnetFundTreasury({
+      address,
+      identifier: opts.identifier,
+      amountSompi: opts.amountSompi ?? DEFAULT_LOCALNET_SEED_AMOUNT_SOMPI,
+      profile,
+      timeoutMs: opts.timeoutMs ?? 300000,
+      stopMiner: !!opts.stopMiner,
+      json: !!opts.json,
+      workspaceRoot: opts.workspaceRoot || process.cwd()
+    });
+    return;
+  }
+  // LOCALNET-FUND-BOUNDED-READ-1: every read below takes the total from the node's balance and the immature part from
+  // the coinbase-maturity window of the chain, never the list of the address's UTXOs (see localnet-funding-state.ts).
+  const reader = createFundingStateReader(address, getCoinbaseMaturity("simnet"));
+  // the chain first: if a miner still pays this address, the target below leans high, never short of the amount
+  const before = await getAddressFundingState(reader, "dag-then-balance", !!opts.json);
   await restartToccataMiner(address);
 
   const { Hardkas } = await import("@hardkas/sdk");
@@ -303,31 +375,40 @@ export async function runLocalnetFund(opts: LocalnetFundOptions): Promise<void> 
   // RESOURCE-LIFECYCLE-1 (RL-I1/RL-I3): the SDK opened above is released once the wait and the settling are done,
   // whatever they end with.
   try {
+    let failed: unknown;
     try {
-      await sdk.utxos.waitForSpendableFunding({
-        address,
+      // not the SDK's waitForSpendableFunding: it lists every UTXO of the address on each poll
+      await waitForMatureFunding(sdk.rpc, reader, {
         minSpendableSompi: targetAmount,
         timeoutMs
       });
     } catch (e: any) {
-      if (e.code !== "LOCALNET_FUND_MATURITY_TIMEOUT") {
-        if (!opts.keepMiner) {
-          await stopToccataMiner();
-          await waitForFundingSpendability(sdk.rpc, { address, minSpendableSompi: targetAmount });
-        }
-        throw e;
-      }
-    } finally {
+      if (e?.code !== "LOCALNET_FUND_MATURITY_TIMEOUT") failed = e;
+    }
+    if (failed !== undefined) {
+      // rc2 re-audit F5: a failure keeps its own error (the settle wait that followed could replace it with
+      // UTXO_SET_NOT_STABLE; with no result to measure there is nothing to settle for) and leaves no stopped chain
+      // behind: the recipient's miner is stopped and the liveness miner restarted unless --stop-miner.
       if (!opts.keepMiner) {
-        await stopToccataMiner();
-        await waitForFundingSpendability(sdk.rpc, { address, minSpendableSompi: targetAmount });
+        await stopToccataMiner().catch(() => undefined);
+        if (!opts.stopMiner) {
+          await livenessMinerRewardAddress()
+            .then((liveness) => restartToccataMiner(liveness))
+            .catch(() => undefined);
+        }
       }
+      throw failed;
+    }
+    if (!opts.keepMiner) {
+      await stopToccataMiner();
+      await waitForFundingSpendability(sdk.rpc, reader, { minSpendableSompi: targetAmount });
     }
   } finally {
     await sdk.close();
   }
 
-  const current = await getAddressFundingState(address, !!opts.json);
+  // the total first: what is reported as mature is never above what the node holds as mature
+  const current = await getAddressFundingState(reader, "balance-then-dag", !!opts.json);
 
   const status =
     current.matureBalanceSompi > before.matureBalanceSompi
@@ -380,7 +461,7 @@ export async function runLocalnetFund(opts: LocalnetFundOptions): Promise<void> 
  * OP_RETURN. Spending it means revealing that script, whose execution always fails, so its coinbase is spendable by
  * nobody: no account, key or secret exists. Built from the pinned SDK, never hard-coded.
  */
-async function livenessMinerRewardAddress(): Promise<string> {
+export async function livenessMinerRewardAddress(): Promise<string> {
   const { loadKaspaWasm } = await import("@hardkas/accounts");
   const k = await loadKaspaWasm();
   const redeemScript = new k.ScriptBuilder().addOp(k.Opcodes.OpReturn).toString();
@@ -410,32 +491,80 @@ async function getVirtualFingerprint(rpc: any): Promise<VirtualFingerprint> {
   return { virtualDaaScore, virtualParentHashes, sink, hash };
 }
 
-function computeUtxoSetHash(utxos: any[]): string {
-  const keys = utxos
-    .map(u => [
-      u.outpoint.transactionId,
-      u.outpoint.index,
-      u.amountSompi.toString(),
-      u.blockDaaScore?.toString() ?? "",
-      u.isCoinbase ? "1" : "0"
-    ].join(":"))
-    .sort();
+/** The SDK wait's tolerance over coinbase maturity for DAG merge propagation (packages/sdk/src/utxos.ts), kept here. */
+const FUNDING_WAIT_MARGIN_DAA = 10n;
 
-  return sha256hex(keys.join("|"));
+/**
+ * Waits until the address's mature balance reaches `minSpendableSompi`. The contract of the SDK's
+ * waitForSpendableFunding that fund used before (a poll every 2 s, +10 DAA over coinbase maturity, read errors retried
+ * except a mainnet refusal, LOCALNET_FUND_MATURITY_TIMEOUT at the deadline), without listing the address's UTXOs
+ * (LOCALNET-FUND-BOUNDED-READ-1). The total first, so the wait never ends on a mature balance the node does not hold.
+ */
+export async function waitForMatureFunding(
+  rpc: FundingStateRpc,
+  reader: FundingStateReader,
+  opts: { minSpendableSompi: bigint; timeoutMs: number; pollIntervalMs?: number }
+): Promise<void> {
+  const deadline = Date.now() + opts.timeoutMs;
+  const interval = opts.pollIntervalMs ?? 2000;
+  let lastObservedState: Record<string, string> | undefined;
+  while (Date.now() < deadline) {
+    try {
+      const s = await reader.read(rpc, { order: "balance-then-dag", marginDaa: FUNDING_WAIT_MARGIN_DAA });
+      lastObservedState = {
+        matureValue: s.matureBalanceSompi.toString(),
+        required: opts.minSpendableSompi.toString(),
+        virtualDaaScore: s.virtualDaaScore.toString()
+      };
+      if (s.matureBalanceSompi >= opts.minSpendableSompi) return;
+    } catch (e: any) {
+      if (/^MAINNET_(CONNECTION|SIGNING|BROADCAST)_DISABLED$/.test(String(e?.code ?? ""))) throw e;
+      lastObservedState = { error: e?.message || String(e) };
+    }
+    await sleep(interval);
+  }
+  throw Object.assign(new Error("Timeout waiting for spendable funding"), { code: "LOCALNET_FUND_MATURITY_TIMEOUT", lastObservedState });
 }
 
-async function waitForVirtualDagSettle(
+/**
+ * B1 (rc2 audit): how long the chain may take to settle when the caller has no time of its own left, or names none. A
+ * settle normally takes a few seconds once the miner is stopped; this only bounds the case where it never happens.
+ */
+export const DEFAULT_DAG_SETTLE_TIMEOUT_MS = 60_000;
+
+async function dagSettleTimeout(timeoutMs: number, last: VirtualFingerprint | null): Promise<Error> {
+  const { HardkasCliError } = await import("../cli-errors.js");
+  const why = !last
+    ? "the node gave no virtual state"
+    : last.virtualDaaScore === 0n
+      ? "the node reports virtual DAA score 0: no block has been mined on this chain (the miner produced none)"
+      : `its virtual state was still changing (last virtual DAA score ${last.virtualDaaScore}): something is still producing blocks`;
+  return new HardkasCliError(
+    "LOCALNET_DAG_SETTLE_TIMEOUT",
+    `The localnet chain did not settle within ${Math.ceil(timeoutMs / 1000)} s: ${why}.`
+  );
+}
+
+/**
+ * Waits until the virtual DAG reports the same state on `stablePolls` consecutive polls (with a virtual DAA score above
+ * 0). B1 (rc2 audit): bounded by `timeoutMs` (default DEFAULT_DAG_SETTLE_TIMEOUT_MS); past it, LOCALNET_DAG_SETTLE_TIMEOUT.
+ * It used to loop forever on a chain that never settles (a miner still running) or never started (virtual DAA 0).
+ */
+export async function waitForVirtualDagSettle(
   rpc: any,
-  opts?: { stablePolls?: number; pollIntervalMs?: number }
+  opts?: { stablePolls?: number; pollIntervalMs?: number; timeoutMs?: number }
 ): Promise<VirtualFingerprint> {
   const REQUIRED = opts?.stablePolls ?? 3;
   const INTERVAL = opts?.pollIntervalMs ?? 300;
+  const timeoutMs = opts?.timeoutMs ?? DEFAULT_DAG_SETTLE_TIMEOUT_MS;
+  const deadline = Date.now() + timeoutMs;
 
   let lastHash = "";
   let stableCount = 0;
   let lastFingerprint: VirtualFingerprint | null = null;
 
   while (stableCount < REQUIRED) {
+    if (lastFingerprint !== null && Date.now() >= deadline) throw await dagSettleTimeout(timeoutMs, lastFingerprint);
     const fp = await getVirtualFingerprint(rpc);
     if (fp.hash === lastHash && fp.virtualDaaScore > 0n) {
       stableCount++;
@@ -451,76 +580,81 @@ async function waitForVirtualDagSettle(
 }
 
 async function waitForFundingSpendability(
-  rpc: any,
+  rpc: FundingStateRpc,
+  reader: FundingStateReader,
   opts: {
-    address: string;
     minSpendableSompi?: bigint;
     stablePolls?: number;
     pollIntervalMs?: number;
+    /** B1 (rc2 audit): the whole wait is bounded (default DEFAULT_DAG_SETTLE_TIMEOUT_MS); it used to have no deadline. */
+    timeoutMs?: number;
   }
-): Promise<{ virtualFingerprint: VirtualFingerprint; spendableCount: number; spendableSompi: bigint }> {
+): Promise<{ virtualFingerprint: VirtualFingerprint; spendableSompi: bigint }> {
   const REQUIRED = opts.stablePolls ?? 3;
   const INTERVAL = opts.pollIntervalMs ?? 500;
+  const timeoutMs = opts.timeoutMs ?? DEFAULT_DAG_SETTLE_TIMEOUT_MS;
+  const deadline = Date.now() + timeoutMs;
+  const remaining = () => Math.max(1, deadline - Date.now());
 
-  let utxoStableCount = 0;
-  let lastUtxoHash = "";
-  let lastUtxos: any[] = [];
+  let stableCount = 0;
+  let lastKey = "";
+  let state: FundingSnapshot | undefined;
 
   // Phase 1: Virtual DAG convergence (initial)
-  let vfp = await waitForVirtualDagSettle(rpc);
+  let vfp = await waitForVirtualDagSettle(rpc, { timeoutMs: remaining() });
 
-  // Phase 2: UTXO set convergence for this address
-  while (utxoStableCount < REQUIRED) {
-    lastUtxos = await rpc.getUtxosByAddress(opts.address);
-    const hash = computeUtxoSetHash(lastUtxos);
+  // Phase 2: the address's funding state converges (its UTXO index entries have caught up with the settled chain).
+  // LOCALNET-FUND-BOUNDED-READ-1: its balance and the immature coinbases of the chain, not the list of its UTXOs.
+  while (stableCount < REQUIRED) {
+    if (state !== undefined && Date.now() >= deadline) {
+      // B1: an address whose balance stays 0 (the miner produced nothing for it) never converged and used to hang here
+      const { HardkasCliError } = await import("../cli-errors.js");
+      throw new HardkasCliError(
+        "UTXO_SET_NOT_STABLE",
+        `UTXO_SET_NOT_STABLE: the funding of ${reader.address} did not converge within ${Math.ceil(timeoutMs / 1000)} s. ` +
+          `balance=${state.balanceSompi.toString()} immature_coinbase=${state.immatureCoinbaseSompi.toString()} ` +
+          `virtualDaaScore=${state.virtualDaaScore.toString()}`
+      );
+    }
+    state = await reader.read(rpc, { order: "balance-then-dag" });
+    const key = `${state.sink}|${state.virtualDaaScore}|${state.balanceSompi}|${state.immatureCoinbaseSompi}`;
 
-    if (hash === lastUtxoHash && lastUtxos.length > 0) {
-      utxoStableCount++;
+    if (key === lastKey && state.balanceSompi > 0n) {
+      stableCount++;
     } else {
-      lastUtxoHash = hash;
-      utxoStableCount = 0;
+      lastKey = key;
+      stableCount = 0;
     }
 
-    // Check if virtual state shifted during UTXO convergence
-    const currentVfp = await waitForVirtualDagSettle(rpc);
+    // Check if virtual state shifted during the convergence
+    const currentVfp = await waitForVirtualDagSettle(rpc, { timeoutMs: remaining() });
     if (currentVfp.hash !== vfp.hash) {
       // Restart convergence cycle
       vfp = currentVfp;
-      lastUtxoHash = "";
-      utxoStableCount = 0;
+      lastKey = "";
+      stableCount = 0;
     }
 
-    if (utxoStableCount < REQUIRED) {
+    if (stableCount < REQUIRED) {
       await new Promise(r => setTimeout(r, INTERVAL));
     }
   }
 
-  // Phase 3: Maturity check on converged set using the stable virtualDaaScore
-  const { getCoinbaseMaturity } = await import("@hardkas/core");
-  const maturityThreshold = getCoinbaseMaturity("simnet");
-
-  const spendable = lastUtxos.filter(u => {
-    if (!u.isCoinbase) return true;
-    if (u.blockDaaScore === undefined) return false;
-    return vfp.virtualDaaScore - BigInt(u.blockDaaScore) >= maturityThreshold;
-  });
-
-  const spendableSompi = spendable.reduce((sum, u) => sum + BigInt(u.amountSompi), 0n);
+  // Phase 3: Maturity on the converged state (its own virtualDaaScore: the settled one)
+  const spendableSompi = state!.matureBalanceSompi;
 
   if (opts.minSpendableSompi && spendableSompi < opts.minSpendableSompi) {
-    throw new UtxoSetNotStableError({
-      address: opts.address,
-      utxoCount: lastUtxos.length,
-      spendableCount: spendable.length,
-      spendableSompi: spendableSompi.toString(),
-      required: opts.minSpendableSompi.toString(),
-      virtualDaaScore: vfp.virtualDaaScore.toString()
-    });
+    const { HardkasCliError } = await import("../cli-errors.js");
+    throw new HardkasCliError(
+      "UTXO_SET_NOT_STABLE",
+      `UTXO_SET_NOT_STABLE: the funding of ${reader.address} did not converge to the required spendable amount. ` +
+        `spendable=${spendableSompi.toString()} required=${opts.minSpendableSompi.toString()} ` +
+        `immature_coinbase=${state!.immatureCoinbaseSompi.toString()} virtualDaaScore=${state!.virtualDaaScore.toString()}`
+    );
   }
 
   return {
     virtualFingerprint: vfp,
-    spendableCount: spendable.length,
     spendableSompi
   };
 }
@@ -695,16 +829,21 @@ export function toccataMinerArgs(address: string, env: NodeJS.ProcessEnv = proce
   ];
 }
 
-async function restartToccataMiner(address: string) {
+export async function restartToccataMiner(address: string) {
   await execa("docker", ["rm", "-f", TOCCATA_MINER_CONTAINER]).catch(() => {});
   await execa("docker", toccataMinerArgs(address));
 }
 
-async function stopToccataMiner() {
-  await execa("docker", ["stop", TOCCATA_MINER_CONTAINER]).catch(() => {});
+/**
+ * B1 (rc2 audit): verified like the node's stop (stopToccataContainerVerified): a miner Docker cannot stop, or one still
+ * up after `docker stop`, is LOCALNET_STOP_FAILED (Docker unreachable: LOCALNET_DOCKER_UNAVAILABLE). A miner that does
+ * not exist is stopped. Every error used to be swallowed, so a miner still running made the settle that follows wait forever.
+ */
+export async function stopToccataMiner() {
+  await stopToccataContainerVerified(TOCCATA_MINER_CONTAINER);
 }
 
-async function inspectDockerContainer(name: string) {
+export async function inspectDockerContainer(name: string) {
   try {
     const { stdout } = await execa("docker", [
       "inspect",
@@ -731,36 +870,21 @@ async function inspectDockerContainer(name: string) {
   }
 }
 
-async function getAddressFundingState(address: string, quiet = false) {
+/**
+ * The `before` / `after` record of `localnet fund`. LOCALNET-FUND-BOUNDED-READ-1: the node's balance of the address
+ * and the coinbase-maturity window of its chain, a bounded number of small requests whatever the address holds; it
+ * used to list every UTXO of the address, a read that cannot finish on a localnet that has mined to it for long.
+ */
+export async function getAddressFundingState(reader: FundingStateReader, order: FundingReadOrder, quiet = false): Promise<FundingStateJson> {
   const client = new JsonWrpcKaspaClient({ rpcUrl: TOCCATA_RPC_URL, timeoutMs: 10000 });
-  const { getCoinbaseMaturity } = await import("@hardkas/core");
-  const maturityThreshold = getCoinbaseMaturity("simnet");
-
   try {
-    const { info, utxos } = await withOptionalSilentConsole(quiet, async () => ({
-      info: await client.getInfo(),
-      utxos: await client.getUtxosByAddress(address)
-    }));
-    const virtualDaaScore = info.virtualDaaScore ?? 0n;
-    const matureUtxos = utxos.filter((utxo) => {
-      if (!utxo.isCoinbase) return true;
-      if (utxo.blockDaaScore === undefined) return false;
-      return virtualDaaScore - BigInt(utxo.blockDaaScore) >= maturityThreshold;
-    });
-    await client.close();
-    return {
-      balanceSompi: utxos.reduce((sum, utxo) => sum + utxo.amountSompi, 0n),
-      matureBalanceSompi: matureUtxos.reduce((sum, utxo) => sum + utxo.amountSompi, 0n),
-      utxoCount: utxos.length,
-      matureUtxoCount: matureUtxos.length,
-      virtualDaaScore: virtualDaaScore.toString()
-    };
+    return fundingStateJson(await withOptionalSilentConsole(quiet, () => reader.read(client, { order })));
   } finally {
     await client.close().catch(() => {});
   }
 }
 
-function sleep(ms: number) {
+export function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
@@ -768,7 +892,7 @@ function bigintReplacer(_key: string, value: unknown) {
   return typeof value === "bigint" ? value.toString() : value;
 }
 
-async function withOptionalSilentConsole<T>(
+export async function withOptionalSilentConsole<T>(
   quiet: boolean,
   fn: () => Promise<T>
 ): Promise<T> {

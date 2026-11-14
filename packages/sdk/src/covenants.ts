@@ -45,6 +45,7 @@ import {
   type V1TxDraft
 } from "@hardkas/accounts";
 import {
+  DEFAULT_MAX_FEE_SOMPI,
   estimateV1ComputeBudget,
   observePendingSpends,
   proposeComputeBudget,
@@ -257,6 +258,10 @@ export interface CovenantTransitionOptions {
   /** Who pays the fee: a funder account (its P2PK coins; the covenant keeps its value). Omitted: the covenant's value. */
   readonly funder?: string | undefined;
   readonly feeSompi?: bigint | undefined;
+  /**
+   * The plan's fee limit (default: the fee it pays). With no funder and no "rest" continuation the fee is what the outputs
+   * leave: without this limit it is refused above the larger of 0.1 KAS and the node's floor (V1_REMAINDER_FEE_ABOVE_LIMIT).
+   */
   readonly maxFeeSompi?: bigint | undefined;
 }
 
@@ -684,11 +689,12 @@ export class HardkasCovenants {
       throw new HardkasError("V1_FEE_UNSTABLE", "the fee and the continuation that pays it did not settle in six rounds");
     }
     if (!options.funder) {
-      // the covenant's value pays: the fee is what the outputs leave
+      // the covenant's value pays: the fee is what the outputs leave (held to a limit when the caller set none: C-2)
       const fee = covenantIn - out;
       const body = this.bodyOf(inputs, [...continuations, ...payments], fee, options.maxFeeSompi, { nextState });
       const floor = await this.floorOf(body, from, facts);
       if (fee < floor) throw new HardkasError("FEE_BELOW_V1_FLOOR", `the covenant's inputs leave ${fee} sompi for the fee; the node's floor for this transaction is ${floor}`, { metadata: { feeSompi: String(fee), floorSompi: String(floor) } });
+      this.assertRemainderFee("transition", fee, floor, options.maxFeeSompi, covenantIn);
       return this.plan({ body, from: { address: from }, purpose: "covenant transition" });
     }
     const p2pkBudget = proposeComputeBudget({ kind: "p2pk" })!.budget;
@@ -748,9 +754,10 @@ export class HardkasCovenants {
 
   /**
    * A contract spend (P2SH, no covenant): the input as the node lists it, the entry and its arguments (signer slots
-   * filled at signing), the declared payments; the fee is what the payments leave (at least the node's floor). With
-   * `sweepTo`, that address takes what the payments and the fee leave — the fee then the node's floor measured on this
-   * very transaction, or `feeSompi` if larger — so no value is left to the miner beyond the fee.
+   * filled at signing), the declared payments; the fee is what the payments leave (at least the node's floor, and without
+   * `maxFeeSompi` at most the larger of 0.1 KAS and that floor: V1_REMAINDER_FEE_ABOVE_LIMIT). With `sweepTo`, that
+   * address takes what the payments and the fee leave — the fee then the node's floor measured on this very transaction,
+   * or `feeSompi` if larger — so no value is left to the miner beyond the fee.
    */
   async planContractSpend(
     options: {
@@ -765,6 +772,10 @@ export class HardkasCovenants {
       readonly computeBudget?: number | "estimate" | undefined;
       /** The input's sequence (u64; default 0), for contracts that read it (relative time locks). */
       readonly sequence?: bigint | undefined;
+      /**
+       * The plan's fee limit (default: the fee it pays). Without `sweepTo` the fee is what the payments leave: without this
+       * limit it is refused above the larger of 0.1 KAS and the node's floor (V1_REMAINDER_FEE_ABOVE_LIMIT).
+       */
       readonly maxFeeSompi?: bigint | undefined;
     },
     sign: CovenantSignOptions = {}
@@ -808,10 +819,12 @@ export class HardkasCovenants {
       }
       throw new HardkasError("V1_FEE_UNSTABLE", "the fee and the output that pays it did not settle in six rounds");
     }
+    // no sweepTo: the fee is what the payments leave (held to a limit when the caller set none: C-2)
     const fee = utxo.amountSompi - paid;
     const body = this.bodyOf(inputs, payments, fee, options.maxFeeSompi, {});
     const floor = await this.floorOf(body, address, facts);
     if (fee < floor) throw new HardkasError("FEE_BELOW_V1_FLOOR", `the payments leave ${fee} sompi for the fee; the node's floor for this transaction is ${floor}`, { metadata: { feeSompi: String(fee), floorSompi: String(floor) } });
+    this.assertRemainderFee("spend", fee, floor, options.maxFeeSompi, utxo.amountSompi);
     return this.plan({ body, from: { address }, purpose });
   }
 
@@ -976,6 +989,32 @@ export class HardkasCovenants {
       computeBudget: budget,
       signer
     };
+  }
+
+  /**
+   * C-2 · a fee that is "what the outputs leave" (a contract spend without `sweepTo`, a transition the covenant pays without
+   * a "rest" continuation) is a number nobody chose: an output left out of the plan becomes miner fee. Without an explicit
+   * `maxFeeSompi` it is held to HardKAS's default total-fee limit (DEFAULT_MAX_FEE_SOMPI of @hardkas/tx-builder, 0.1 KAS:
+   * the relay minimum of a maximum-standard-mass transaction, the limit every v0 transaction already has), or to the node's
+   * floor for this very transaction when that is higher (a heavy contract input: a fee the node requires is never refused).
+   * Above it: V1_REMAINDER_FEE_ABOVE_LIMIT, before the plan is sealed or stored, so nothing can be signed. An explicit
+   * `maxFeeSompi` is the caller's own decision (the plan's shape check holds the fee to it).
+   */
+  private assertRemainderFee(what: "spend" | "transition", fee: bigint, floor: bigint, maxFee: bigint | undefined, inputSompi: bigint): void {
+    if (maxFee !== undefined) return;
+    const limit = floor > DEFAULT_MAX_FEE_SOMPI ? floor : DEFAULT_MAX_FEE_SOMPI;
+    if (fee <= limit) return;
+    const leave = what === "spend" ? "the payments leave" : "the continuations and payments leave";
+    const ways =
+      what === "spend"
+        ? "give sweepTo (an address that takes the rest; the fee is then the node's floor), or an explicit maxFeeSompi of at least this fee to pay it on purpose"
+        : 'give a continuation with amountSompi "rest" (it takes the rest, like sweepTo; the fee is then the node\'s floor) or a funder, or an explicit maxFeeSompi of at least this fee to pay it on purpose';
+    throw new HardkasError(
+      "V1_REMAINDER_FEE_ABOVE_LIMIT",
+      `${leave} ${fee} sompi of the ${inputSompi} sompi input as the fee, above the limit of ${limit} sompi for a fee nobody set ` +
+        `(the larger of HardKAS's default ${DEFAULT_MAX_FEE_SOMPI} and the node's floor ${floor} for this transaction): ${ways}. Nothing was planned or signed.`,
+      { metadata: { feeSompi: String(fee), limitSompi: String(limit), floorSompi: String(floor), inputSompi: String(inputSompi) } }
+    );
   }
 
   /** A body with its storage mass (rusty-kaspa 2.1.0) and fee; the covenant outpoints it spends. */

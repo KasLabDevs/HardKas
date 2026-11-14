@@ -5,13 +5,14 @@ import os from "node:os";
 import { runAccountsKeystoreImport } from "../src/runners/accounts-keystore-runners";
 import { runAccountsRealGenerate } from "../src/runners/accounts-real-generate-runner";
 import { runTxSign } from "../src/runners/tx-sign-runner";
-import { loadRealAccountStoreSync } from "@hardkas/accounts";
+import { loadKaspaWasm, loadRealAccountStoreSync } from "@hardkas/accounts";
 
 describe("Account Hardening & Security Guards", () => {
   let tmpDir: string;
   let accountsFile: string;
   let keystoreDir: string;
   let dummyConfig: string;
+  let keyAddress: string;
 
   beforeEach(async () => {
     tmpDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), "account-hardening-test-"));
@@ -24,7 +25,11 @@ describe("Account Hardening & Security Guards", () => {
     if (fs.existsSync(keystoreDir))
       fs.rmSync(keystoreDir, { recursive: true, force: true });
     process.env.HARDKAS_TEST_PW = "test-password";
-    process.env.HARDKAS_TEST_PK = "0".repeat(64);
+    // rc2 audit A9: import refuses a key that is not a valid secp256k1 secret (this test used 64 zeros) and an --address
+    // that is not the key's own (it used a made-up one); a valid key and the testnet address it controls are used
+    process.env.HARDKAS_TEST_PK = "01".repeat(32);
+    const k: any = await loadKaspaWasm();
+    keyAddress = new k.PrivateKey(process.env.HARDKAS_TEST_PK).toKeypair().toAddress("testnet-10").toString();
   });
 
   afterEach(() => {
@@ -38,7 +43,7 @@ describe("Account Hardening & Security Guards", () => {
     // used to record "devnet" for it, which contradicts a kaspatest address and left the account unable to sign)
     await runAccountsKeystoreImport({
       name: "alice",
-      address: "kaspatest:qrh60m5zv98m5l855l855l855l855l855l855l855l855l85sxtunx",
+      address: keyAddress,
       network: "testnet-10",
       privateKeyEnv: "HARDKAS_TEST_PK",
       passwordEnv: "HARDKAS_TEST_PW",
@@ -66,7 +71,7 @@ describe("Account Hardening & Security Guards", () => {
   it("should allow unsafe plaintext import with explicit flag", async () => {
     await runAccountsKeystoreImport({
       name: "bob",
-      address: "kaspatest:qrh60m5zv98m5l855l855l855l855l855l855l855l855l85sxtunx",
+      address: keyAddress,
       privateKeyEnv: "HARDKAS_TEST_PK",
       unsafePlaintext: true,
       yes: true,
@@ -99,8 +104,7 @@ describe("Account Hardening & Security Guards", () => {
       runTxSign({
         planArtifact,
         accountName: planArtifact.from.address,
-        config,
-        allowMainnetSigning: false
+        config
       })
     ).rejects.toMatchObject({ code: "MAINNET_SIGNING_DISABLED" });
   });
@@ -129,15 +133,14 @@ describe("Account Hardening & Security Guards", () => {
       runTxSign({
         planArtifact,
         accountName: planArtifact.from.address,
-        config,
-        allowMainnetSigning: true
+        config
       })
       // refused as a network mismatch — here by the account/target compatibility check (WORKSPACE-AUTHORITY-2), which
       // runs before the runner's own artifact/address comparison
     ).rejects.toThrow(/network mismatch/i);
   });
 
-  it("a mainnet plan is refused MAINNET_SIGNING_DISABLED even with --allow-mainnet-signing (the flag stays refused)", async () => {
+  it("a mainnet plan is refused MAINNET_SIGNING_DISABLED, and the runner has no option that lifts it", async () => {
     const planArtifact: any = {
       planId: "test-plan",
       networkId: "mainnet",
@@ -148,7 +151,7 @@ describe("Account Hardening & Security Guards", () => {
       amountSompi: 100000000n
     };
     await expect(
-      runTxSign({ planArtifact, accountName: planArtifact.from.address, config: { defaultNetwork: "mainnet", accounts: {} } as any, allowMainnetSigning: true })
+      runTxSign({ planArtifact, accountName: planArtifact.from.address, config: { defaultNetwork: "mainnet", accounts: {} } as any, ...({ allowMainnetSigning: true } as any) })
     ).rejects.toMatchObject({ code: "MAINNET_SIGNING_DISABLED" });
   });
 });

@@ -5,6 +5,7 @@ import {
   type EscrowRole
 } from "./escrow-source.js";
 import type { EscrowConfig } from "./types.js";
+import { escrowTermsOf } from "./create-escrow.js";
 
 export { ESCROW_FULL_BRANCHES, ESCROW_SPLIT_BRANCHES, type EscrowBranch, type EscrowRole } from "./escrow-source.js";
 
@@ -20,38 +21,43 @@ export interface EscrowResolution {
     readonly requiredOutputs?: readonly { readonly amountSompi: bigint; readonly scriptPublicKey: { readonly version: 0; readonly script: string } }[];
 }
 
+/**
+ * The arguments and the outputs a branch of the escrow `config` describes must have. The config is read by
+ * escrowTermsOf, as createEscrow reads it to compile the contract (C-10): no `version` is v2 (EscrowFull, or EscrowSplit
+ * with both split amounts), a legacy v1 escrow says `version: "v1"`; a v2 full config naming different amounts for its
+ * principal is ESCROW_CONFIG_INVALID here as it is at creation.
+ */
 export function escrowResolution(
   config: EscrowConfig,
   branch: EscrowBranch,
   options?: EscrowResolutionOptions
 ): EscrowResolution {
-    const isLegacy = config.version === "v1" || (!config.version && !config.principal && !config.mode);
-    const mode = config.mode ?? (config.buyerAmount !== undefined && config.sellerAmount !== undefined ? "split" : "full");
+    const terms = escrowTermsOf(config);
 
     const pay = (amount: bigint | string, spk: string) => ({
         amountSompi: BigInt(amount),
         scriptPublicKey: { version: 0 as const, script: spk.replace(/^0x/, "").toLowerCase() }
     });
 
-    if (isLegacy) {
+    if (terms.version === "v1") {
       const spec = ESCROW_FULL_BRANCHES[branch as keyof typeof ESCROW_FULL_BRANCHES];
       if (!spec) throw new Error(`ESCROW_BRANCH_UNKNOWN: '${branch}' is not an escrow branch`);
       const args = spec.signers.map((signer) => ({ kind: "signer" as const, signer }));
       if (branch === "refundBuyer") {
-        return { branch, args, requiredOutputs: [pay(config.refundAmount!, config.buyerDestinationSpk)] };
+        return { branch, args, requiredOutputs: [pay(terms.refundAmount!, config.buyerDestinationSpk)] };
       }
       if (branch === "releaseToSeller") {
-        return { branch, args, requiredOutputs: [pay(config.releaseAmount!, config.sellerDestinationSpk)] };
+        return { branch, args, requiredOutputs: [pay(terms.releaseAmount!, config.sellerDestinationSpk)] };
       }
       return { branch, args };
     }
 
-    if (mode === "split") {
+    if (terms.mode === "split") {
       const spec = ESCROW_SPLIT_BRANCHES[branch as keyof typeof ESCROW_SPLIT_BRANCHES];
       if (!spec) throw new Error(`ESCROW_BRANCH_UNKNOWN: '${branch}' is not an escrow branch`);
       const args = spec.signers.map((signer) => ({ kind: "signer" as const, signer }));
-      const bAmt = BigInt(config.buyerAmount ?? config.refundAmount ?? 0n);
-      const sAmt = BigInt(config.sellerAmount ?? config.releaseAmount ?? 0n);
+      const bAmt = terms.buyerAmount!;
+      const sAmt = terms.sellerAmount!;
 
       if (branch === "executeSplit") {
         return {
@@ -91,7 +97,8 @@ export function escrowResolution(
     const spec = ESCROW_FULL_BRANCHES[branch as keyof typeof ESCROW_FULL_BRANCHES];
     if (!spec) throw new Error(`ESCROW_BRANCH_UNKNOWN: '${branch}' is not an escrow branch`);
     const args = spec.signers.map((signer) => ({ kind: "signer" as const, signer }));
-    const principal = BigInt(config.principal ?? (branch === "releaseToSeller" ? config.releaseAmount : config.refundAmount) ?? 0n);
+    // the one principal the contract was compiled with (escrowTermsOf: the same for every branch)
+    const principal = terms.principal!;
 
     if (branch === "releaseToSeller") {
       return {

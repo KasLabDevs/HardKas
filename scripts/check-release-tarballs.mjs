@@ -2,13 +2,26 @@
 // (No shebang: it is always run as `node scripts/…`, and its test imports it; on a Windows checkout with autocrlf the
 // shebang line ends in "\r" and the test runner's transform refused the file.)
 //
-//   node scripts/check-release-tarballs.mjs --pack [--pnpm <pnpm.cjs>] [--dir <out>] [--report <file.json>]
+//   node scripts/check-release-tarballs.mjs --pack [--pnpm <pnpm.cjs>] [--dir <out>] [--report <file.json>] [--allow-dirty]
 //       packs every published package (packages/*, not `private`) from its own directory with pnpm (so `workspace:`
 //       ranges are rewritten as on publish) into <out>, then audits the tarballs. It packs only from the `dist/` that
 //       `pnpm release:build` (scripts/release-build.mjs) wrote: without that build's stamp, or when a published package's
-//       `dist/` or its build inputs differ from the stamp (a file added, removed or changed since), it packs nothing;
+//       `dist/` or its build inputs differ from the stamp (a file added, removed or changed since), it packs nothing.
+//       It packs only a committed tree (rc2 audit E-02): it refuses when the stamp says the build ran on a tree with
+//       uncommitted changes (`gitDirty` not false), when the stamp's `gitHead` is not `git rev-parse HEAD`, when the
+//       tree has uncommitted changes now, and outside a git checkout. Every packed entry outside `dist/` must be a file
+//       git tracks (rc2 audit E-01: a git-ignored event log under templates/ was packed, and npm ignores .gitignore when
+//       `files` names the directory). <out> may hold only .tgz files (rc2 audit E-09): --pack deletes those first.
+//       --allow-dirty is for proving uncommitted changes on real tarballs (a scratch clone with a patch applied, as the
+//       packed-consumer checks do) and never for a publish: it excuses uncommitted changes in the stamp and in the tree,
+//       and untracked files that git does not ignore; never a stamp of another commit, an ignored file or a missing git;
+//       the report then says `publishable: false`;
 //   node scripts/check-release-tarballs.mjs --dir <dir with .tgz> [--report <file.json>]
 //       audits tarballs already packed.
+//
+// The report lists every tarball's size and its sha512 in npm's integrity format ("sha512-<base64>"), the value
+// `npm view <pkg>@<version> dist.integrity` prints after a publish, so the published bytes can be checked against the
+// audited ones.
 //
 // Each tarball fails on: a missing package.json, README.md or LICENSE; a license other than MIT or a LICENSE that is not
 // the MIT text; a version other than the root manifest's; a `workspace:`/`link:`/`file:` range; an install script
@@ -17,7 +30,8 @@
 // file, nested tarball, `node_modules/` or `.hardkas/` entry, or the owner's audits (HARDKAS_*_AUDIT.md); a private
 // path (C:\Users, /Users/<name>, /home/<name>, jrodr, hkl1, D:\proyectos, AppData) or a token/private-key pattern in any
 // text entry; a `@hardkas/*` dependency on a package that is not published or not at the release version; a file that
-// nothing reaches (UNREFERENCED_FILE, below). With --pack, also a tarball whose `dist/` is not the release build's.
+// nothing reaches (UNREFERENCED_FILE, below). With --pack, also a tarball whose `dist/` is not the release build's, and
+// an entry outside `dist/` that git does not track (UNTRACKED_FILE).
 // The run fails too when the published set is empty or when a package of MUST_BE_PRIVATE (@hardkas/l2, @hardkas/ext-l2,
 // @hardkas/pskt-native and the 8 without a consumer) is not private (or was packed).
 //
@@ -67,7 +81,8 @@ export const MUST_BE_PRIVATE = [
 const INSTALL_SCRIPTS = ["preinstall", "install", "postinstall"];
 const DEP_FIELDS = ["dependencies", "optionalDependencies", "peerDependencies", "devDependencies"];
 const ALWAYS_INCLUDED = /^(package\.json|readme(\.[^/]*)?|license(\.[^/]*)?|licence(\.[^/]*)?|changelog(\.[^/]*)?)$/i;
-const TEXT_EXT = /\.(js|mjs|cjs|ts|mts|cts|map|json|md|txt|yml|yaml|html|css|sh|ps1|cmd|bat|toml|sil|d\.ts)$|(^|\/)[^./]+$/i;
+// rc2 audit E-01: .jsonl, .log and .csv too (an event log under templates/ carried a user name and home path unseen).
+const TEXT_EXT = /\.(js|mjs|cjs|ts|mts|cts|map|json|jsonl|log|csv|md|txt|yml|yaml|html|css|sh|ps1|cmd|bat|toml|sil|d\.ts)$|(^|\/)[^./]+$/i;
 
 /** Entry names and contents of an npm tarball (gzip + ustar), in memory, without extracting anything to disk. */
 export function readTarball(tgz) {
@@ -484,6 +499,134 @@ export function verifyReleaseBuild(packages, stamp, { releaseVersion, root = ROO
   return problems;
 }
 
+// ---- what --pack packs must be a commit's files (rc2 audit E-01, E-02, E-09) --------------------------------------
+
+/** Runs one read-only git command in `root`; never throws. */
+function git(root, args) {
+  let r;
+  try {
+    r = spawnSync("git", ["-C", root, ...args], { encoding: "utf8", windowsHide: true, maxBuffer: 1 << 28 });
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : String(e) };
+  }
+  if (r.error) return { ok: false, error: r.error.code === "ENOENT" ? "git is not installed or not on PATH" : r.error.message };
+  if (r.status !== 0) return { ok: false, error: (r.stderr || "").trim().split(/\r?\n/)[0] || `git ${args[0]} exited ${r.status}` };
+  return { ok: true, stdout: r.stdout };
+}
+
+const samePath = (a, b) => {
+  const norm = (p) => {
+    let real = path.resolve(p);
+    try {
+      real = fs.realpathSync.native(real);
+    } catch {
+      /* compared as written */
+    }
+    return process.platform === "win32" ? real.toLowerCase() : real;
+  };
+  return norm(a) === norm(b);
+};
+
+/**
+ * The git state --pack checks: HEAD, the uncommitted changes git reports (ignored files aside), every tracked file and
+ * every untracked file git does not ignore (paths relative to `root`). `{ available: false, error }` when git cannot
+ * tell: no git, not a checkout, or `root` is not the top of its checkout (then `git ls-files` would describe another
+ * tree). Read-only: rev-parse, status, ls-files.
+ */
+export function readGitState(root = ROOT) {
+  const top = git(root, ["rev-parse", "--show-toplevel"]);
+  if (!top.ok) return { available: false, error: top.error };
+  if (!samePath(top.stdout.trim(), root)) return { available: false, error: `${root} is not the top of its git checkout (that is ${top.stdout.trim()})` };
+  const head = git(root, ["rev-parse", "HEAD"]);
+  if (!head.ok) return { available: false, error: head.error };
+  const status = git(root, ["status", "--porcelain", "--untracked-files=all"]);
+  if (!status.ok) return { available: false, error: status.error };
+  const tracked = git(root, ["ls-files", "-z"]);
+  if (!tracked.ok) return { available: false, error: tracked.error };
+  const others = git(root, ["ls-files", "-z", "--others", "--exclude-standard"]);
+  if (!others.ok) return { available: false, error: others.error };
+  const list = (out) => out.split("\0").filter(Boolean);
+  return {
+    available: true,
+    head: head.stdout.trim(),
+    changes: status.stdout.split(/\r?\n/).filter((l) => l.trim()),
+    tracked: new Set(list(tracked.stdout)),
+    untracked: new Set(list(others.stdout))
+  };
+}
+
+/**
+ * Why --pack may not pack this tree (rc2 audit E-02): empty when the release build was stamped on a clean tree at the
+ * current HEAD and the tree has no uncommitted change now. `stamp` is readReleaseBuildStamp() (its absence is
+ * verifyReleaseBuild's finding); `gitState` is readGitState(). `allowDirty` excuses uncommitted changes only (in the
+ * stamp and now), never another commit or a missing git.
+ */
+export function verifyReleaseProvenance(stamp, gitState, { allowDirty = false } = {}) {
+  if (!gitState?.available) {
+    return [
+      `RELEASE_GIT_UNAVAILABLE: --pack packs only a committed tree and needs git to check it (${gitState?.error ?? "no git state"}); pack from a git checkout: a fresh clone of the release commit`
+    ];
+  }
+  const problems = [];
+  if (stamp?.kind === RELEASE_BUILD_KIND) {
+    if (stamp.gitDirty !== false && !allowDirty) {
+      problems.push(
+        stamp.gitDirty === true
+          ? "RELEASE_BUILD_DIRTY: the release build ran on a tree with uncommitted changes (gitDirty: true); commit or discard them, then run `pnpm release:build` again"
+          : `RELEASE_BUILD_DIRTY: the release build could not tell whether its tree was clean (gitDirty: ${JSON.stringify(stamp.gitDirty ?? null)}); run \`pnpm release:build\` in a git checkout`
+      );
+    }
+    if (stamp.gitHead !== gitState.head) {
+      problems.push(`RELEASE_BUILD_WRONG_COMMIT: the release build was made at ${stamp.gitHead ?? "an unknown commit"}, HEAD is ${gitState.head}; run \`pnpm release:build\` at this commit`);
+    }
+  }
+  if (gitState.changes.length && !allowDirty) {
+    const shown = gitState.changes.slice(0, 5).map((l) => l.trim()).join("; ");
+    problems.push(
+      `RELEASE_TREE_DIRTY: the tree has ${gitState.changes.length} uncommitted change(s) now (${shown}${gitState.changes.length > 5 ? "; …" : ""}); a release tarball holds a commit's files only`
+    );
+  }
+  return problems;
+}
+
+/**
+ * The entries of a tarball packed from the package directory `pkgRel` ("packages/cli", relative to the root) that git
+ * does not track, outside `dist/` (rc2 audit E-01). `dist/` is the release build's output, held to its stamp instead.
+ * `entries` are paths in the package ("templates/x/events.jsonl"); `tracked` is readGitState().tracked. With
+ * `untracked` (allowDirty only) a new file git does not ignore is accepted too; an ignored file never is.
+ */
+export function untrackedEntries(entries, pkgRel, tracked, untracked = new Set()) {
+  const prefix = pkgRel ? `${pkgRel.replace(/\\/g, "/").replace(/\/+$/, "")}/` : "";
+  return entries.filter((rel) => !rel.startsWith("dist/") && !tracked.has(prefix + rel) && !untracked.has(prefix + rel));
+}
+
+/**
+ * Why `dir` may not be --pack's output folder (rc2 audit E-09): --pack deletes the .tgz files there before packing,
+ * so the folder must not exist or hold only .tgz files (a folder named by mistake used to be emptied whole).
+ */
+export function packDirProblems(dir) {
+  let st;
+  try {
+    st = fs.lstatSync(dir);
+  } catch {
+    return []; // does not exist: --pack creates it
+  }
+  if (!st.isDirectory()) return [`PACK_DIR_INVALID: ${dir} exists and is not a directory`];
+  const other = fs
+    .readdirSync(dir, { withFileTypes: true })
+    .filter((d) => !(d.isFile() && d.name.toLowerCase().endsWith(".tgz")))
+    .map((d) => (d.isDirectory() ? `${d.name}/` : d.name))
+    .sort();
+  if (other.length === 0) return [];
+  const shown = other.slice(0, 5).join(", ") + (other.length > 5 ? ` and ${other.length - 5} more` : "");
+  return [`PACK_DIR_INVALID: ${dir} holds ${other.length} entr${other.length === 1 ? "y" : "ies"} that ${other.length === 1 ? "is" : "are"} not a .tgz file (${shown}); --pack replaces the tarballs in its output folder, so name a new folder or one that holds only .tgz files`];
+}
+
+/** A tarball's sha512 in npm's integrity format ("sha512-<base64>"), as `npm view … dist.integrity` prints it. */
+export function tarballIntegrity(buf) {
+  return `sha512-${createHash("sha512").update(buf).digest("base64")}`;
+}
+
 /** The published packages of the workspace (packages/*, not private), by name. */
 export function publishedPackages(root = ROOT) {
   const out = new Map();
@@ -505,9 +648,10 @@ function arg(name) {
 
 async function main() {
   const pack = process.argv.includes("--pack");
+  const allowDirty = process.argv.includes("--allow-dirty");
   const dir = arg("--dir") ? path.resolve(arg("--dir")) : pack ? path.join(ROOT, "tmp-release-tarballs") : undefined;
-  if (!dir) {
-    console.error("usage: node scripts/check-release-tarballs.mjs (--pack [--pnpm <pnpm.cjs>] [--dir <out>] | --dir <tarballs>) [--report <file.json>]");
+  if (!dir || (allowDirty && !pack)) {
+    console.error("usage: node scripts/check-release-tarballs.mjs (--pack [--pnpm <pnpm.cjs>] [--dir <out>] [--allow-dirty] | --dir <tarballs>) [--report <file.json>]");
     return 2;
   }
   const releaseVersion = JSON.parse(fs.readFileSync(path.join(ROOT, "package.json"), "utf8")).version;
@@ -522,23 +666,28 @@ async function main() {
   }
 
   let stamp;
+  let gitState;
   if (pack) {
     // RC2 · P: pack only the release build's output, never a dist/ that a cache restored over older files.
+    // rc2 audit E-02: and only a committed tree: the stamp's commit is HEAD, and neither then nor now uncommitted changes.
+    // rc2 audit E-09: and never into a folder that holds anything but tarballs.
     stamp = readReleaseBuildStamp();
-    const refused = verifyReleaseBuild(all, stamp, { releaseVersion });
+    gitState = readGitState();
+    const refused = [...packDirProblems(dir), ...verifyReleaseBuild(all, stamp, { releaseVersion }), ...verifyReleaseProvenance(stamp, gitState, { allowDirty })];
     if (refused.length) {
       for (const p of [...problems, ...refused]) console.log(`FAIL ${p}`);
-      console.log(`release ${releaseVersion}: nothing packed; the dist/ to pack is not the release build's (\`pnpm release:build\`)`);
+      console.log(`release ${releaseVersion}: nothing packed; --pack packs only the release build's dist/ (\`pnpm release:build\`) of a committed tree, into a folder of tarballs only`);
       const report = arg("--report");
       if (report) {
-        const summary = { kind: "release-tarball-audit", releaseVersion, published: published.size, tarballs: 0, failedTarballs: 0, problems: [...problems, ...refused], results: [] };
+        const summary = { kind: "release-tarball-audit", releaseVersion, published: published.size, tarballs: 0, failedTarballs: 0, publishable: false, problems: [...problems, ...refused], results: [] };
         fs.writeFileSync(path.resolve(report), JSON.stringify(summary, null, 2) + "\n");
       }
       return 1;
     }
-    console.log(`release build stamp ok: ${published.size} published dist/ unchanged since ${stamp.builtAt}`);
-    fs.rmSync(dir, { recursive: true, force: true });
+    console.log(`release build stamp ok: ${published.size} published dist/ unchanged since ${stamp.builtAt}, built at ${stamp.gitHead}${stamp.gitDirty === false ? "" : " (with uncommitted changes)"}`);
+    if (allowDirty) console.log("--allow-dirty: uncommitted changes are packed; these tarballs are NOT FOR PUBLISHING (report: publishable false)");
     fs.mkdirSync(dir, { recursive: true });
+    for (const f of fs.readdirSync(dir)) if (f.toLowerCase().endsWith(".tgz")) fs.rmSync(path.join(dir, f), { force: true });
     const pnpm = arg("--pnpm");
     for (const [name, info] of [...all].sort()) {
       if (info.private) continue;
@@ -554,10 +703,18 @@ async function main() {
   const results = [];
   const seen = new Set();
   for (const t of tarballs) {
-    const r = auditTarball(fs.readFileSync(path.join(dir, t)), { releaseVersion, published, mitText });
-    results.push({ tarball: t, ...r });
+    const tgz = fs.readFileSync(path.join(dir, t));
+    const r = auditTarball(tgz, { releaseVersion, published, mitText });
+    results.push({ tarball: t, bytes: tgz.length, integrity: tarballIntegrity(tgz), ...r });
     if (r.name) seen.add(r.name);
     if (r.name && MUST_BE_PRIVATE.includes(r.name)) r.findings.push("this package must not be packed for this release");
+    // rc2 audit E-01: with --pack, every entry outside dist/ is a file git tracks (an ignored file never ships).
+    if (gitState?.available && r.name && all.has(r.name) && r.entries) {
+      const pkgRel = path.relative(ROOT, all.get(r.name).dir).split(path.sep).join("/");
+      for (const e of untrackedEntries(r.entries, pkgRel, gitState.tracked, allowDirty ? gitState.untracked : undefined)) {
+        r.findings.push(`UNTRACKED_FILE: ${e} is not a file git tracks (${pkgRel}/${e}); a release tarball carries committed files only, never an ignored or untracked one`);
+      }
+    }
     // With --pack: the tarball's dist/ must be the release build's file set, no more and no less.
     if (stamp && r.name && stamp.packages?.[r.name] && r.entries) {
       const built = new Set(Object.keys(stamp.packages[r.name].dist ?? {}));
@@ -567,7 +724,7 @@ async function main() {
       if (extra.length) r.findings.push(`dist/ entries the release build did not write: ${extra.join(", ")}`);
       if (missing.length) r.findings.push(`release build files left out of the tarball: ${missing.join(", ")}`);
     }
-    console.log(`${r.findings.length ? "FAIL" : "ok  "} ${t} (${r.name ?? "?"} ${r.version ?? "?"}, ${r.files} files)`);
+    console.log(`${r.findings.length ? "FAIL" : "ok  "} ${t} (${r.name ?? "?"} ${r.version ?? "?"}, ${r.files} files, ${tgz.length} bytes, ${tarballIntegrity(tgz)})`);
     for (const f of r.findings) console.log(`       - ${f}`);
   }
   for (const name of published) if (!seen.has(name)) problems.push(`${name}: published package without a tarball in ${dir}`);
@@ -580,9 +737,12 @@ async function main() {
     published: published.size,
     tarballs: results.length,
     failedTarballs: failed,
+    // only a --pack run of a committed tree, without --allow-dirty and without a finding, is one a publish may use
+    publishable: pack && !allowDirty && failed === 0 && problems.length === 0,
     problems,
     fromReleaseBuild: stamp ? { builtAt: stamp.builtAt, gitHead: stamp.gitHead, gitDirty: stamp.gitDirty } : undefined,
-    results: results.map(({ tarball, name, version, files, unreferencedBytes, findings }) => ({ tarball, name, version, files, unreferencedBytes, findings }))
+    git: gitState?.available ? { head: gitState.head, uncommittedChanges: gitState.changes.length, allowDirty } : undefined,
+    results: results.map(({ tarball, bytes, integrity, name, version, files, unreferencedBytes, findings }) => ({ tarball, name, version, bytes, integrity, files, unreferencedBytes, findings }))
   };
   const report = arg("--report");
   if (report) fs.writeFileSync(path.resolve(report), JSON.stringify(summary, null, 2) + "\n");

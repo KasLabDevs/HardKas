@@ -3,7 +3,7 @@
 > [claims.generated.md](./claims.generated.md), produced from `packages/sdk` by
 > `pnpm docs:generate-claims`. Anything restated below is prose, not the source.
 
-HardKAS is currently in the `0.13.0-rc.1` release cycle.
+HardKAS is currently in the `0.13.0-rc.2` release cycle.
 
 The project is stable enough for local development workflows, but it is still an
 alpha. APIs, command names, and advanced integrations may change while the
@@ -44,7 +44,7 @@ These systems exist and are useful, but are still being hardened:
 These surfaces may change quickly:
 
 - Mainnet-related signing flags and RPC paths. Mainnet is blocked by policy for
-  the 0.13.0-rc.1 release claim.
+  the 0.13.0-rc.2 release claim.
 - L2, bridge, MetaMask, KasWare, and sandbox integrations.
 - Chaos, torture, and certification tooling.
 - SilverScript/Toccata behavior beyond the verified localnet baseline (covenant
@@ -55,7 +55,7 @@ These surfaces may change quickly:
 - `@hardkas/pskt-native`, which is on hold, carries no guarantee at all and is
   not published.
 
-Mainnet is not part of the 0.13.0-rc.1 happy path.
+Mainnet is not part of the 0.13.0-rc.2 happy path.
 
 ## Published packages
 

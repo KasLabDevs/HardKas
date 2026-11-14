@@ -10,8 +10,16 @@ const pathsToCheck = [
   'scripts',
   'docs',
   'artifacts',
-  'test-gauntlet'
+  'test-gauntlet',
+  // The most public surfaces (audit D-08): the repository README, the changelog, the landing page and the docs site.
+  'README.md',
+  'CHANGELOG.md',
+  'site',
+  path.join('apps', 'docs', 'docs')
 ];
+
+// Git-ignored local records (audits, dossiers) are not public and quote claims to discuss them.
+const ignoredDirs = [path.join(rootDir, 'docs', 'internal')];
 
 // We don't want to fail if the scanner itself contains the string, so we obfuscate them slightly in the regex
 const forbiddenClaims = [
@@ -25,7 +33,13 @@ const forbiddenClaims = [
   { pattern: '\\bTRUSTLESS_BRIDGE_READY\\b', reason: 'Trustless bridge is explicitly not claimed.' },
   { pattern: '\\bVM_CONSENSUS_EQUIVALENCE_READY\\b', reason: 'VM consensus equivalence is explicitly not claimed.' },
   { pattern: '\\bstable vProgs API\\b', reason: 'Stable vProgs API is explicitly not claimed.' },
-  { pattern: '\\bTRUSTLESS_EXIT_READY\\b', reason: 'Trustless exit is not part of programmability surface.' }
+  { pattern: '\\bTRUSTLESS_EXIT_READY\\b', reason: 'Trustless exit is not part of programmability surface.' },
+  // Prose claims (audit D-08): nobody certified HardKAS. "Verified by the release checks" is the honest wording; the
+  // technical use "a budget certified by the node" is lower case and not matched.
+  { pattern: '^\\s*#+\\s*Certified\\b', reason: 'A heading claiming certification: HardKAS is verified by its own release checks, not certified.' },
+  { pattern: '\\bCertified (for|by|Status|Baseline)\\b', reason: 'A certification claim: say "verified by the release checks".' },
+  { pattern: '\\bproduction[- ]ready\\b', flags: 'i', reason: 'Production readiness is not claimed.' },
+  { pattern: '\\b(ISO(/IEC)?[ -]?25010|AENOR|AQC ?Lab)\\b.{0,80}\\bcertif', flags: 'i', reason: 'No certification by a standards body exists; do not imply one.' }
 ];
 
 const ignoredFiles = [
@@ -48,9 +62,10 @@ function scanDir(dir) {
   const files = fs.readdirSync(dir, { withFileTypes: true });
   for (const f of files) {
     // skip node_modules and .git
-    if (f.name === 'node_modules' || f.name === '.git' || f.name === 'dist') continue;
-    
+    if (f.name === 'node_modules' || f.name === '.git' || f.name === 'dist' || f.name === 'build' || f.name === '.docusaurus') continue;
+
     const fullPath = path.join(dir, f.name);
+    if (ignoredDirs.includes(fullPath)) continue;
     if (f.isDirectory()) {
       scanDir(fullPath);
     } else if (f.isFile() && !ignoredFiles.includes(f.name)) {
@@ -61,7 +76,7 @@ function scanDir(dir) {
 
 function scanFile(filePath) {
   // Only scan text-based files
-  if (!filePath.match(/\.(js|mjs|cjs|ts|tsx|md|json|txt|mdx)$/)) return;
+  if (!filePath.match(/\.(js|mjs|cjs|ts|tsx|md|json|txt|mdx|html)$/)) return;
   if (!fs.existsSync(filePath)) return;
   
   const content = fs.readFileSync(filePath, 'utf8');
@@ -71,10 +86,12 @@ function scanFile(filePath) {
     const line = lines[i];
 
     for (const claim of forbiddenClaims) {
-      const regex = new RegExp(claim.pattern);
+      const regex = new RegExp(claim.pattern, claim.flags ?? '');
       if (regex.test(line)) {
         // Double check it's not a documentation of "Prohibited: ZK_READY"
         if (line.includes('Prohibir:') || line.includes('Forbidden:') || line.includes('Prohibited:')) continue;
+        // ...or a line that states the boundary by negating it ("we do NOT claim X", "purged unsupported claims").
+        if (/\bdo(es)?\s+\**not\**\s+claim\b|\bnot claimed\b|\bnever claim|\bpurged unsupported claims\b/i.test(line)) continue;
         
         console.error(`[FAIL] ${filePath}:${i + 1}`);
         console.error(`       Found forbidden claim: ${regex.source}`);
@@ -97,12 +114,30 @@ if (process.argv.includes('--self-test')) {
   const testClaims = [
     "ZK_READY", "ONCHAIN_ZK_READY", "ZK_ONCHAIN_VERIFICATION_READY",
     "VPROGS_READY", "VPROGS_RUNTIME_READY", "MAINNET_READY",
-    "TESTNET_READY", "TRUSTLESS_BRIDGE_READY", "VM_CONSENSUS_EQUIVALENCE_READY"
+    "TESTNET_READY", "TRUSTLESS_BRIDGE_READY", "VM_CONSENSUS_EQUIVALENCE_READY",
+    "## Certified", "Certified for local development", "a production-ready toolkit",
+    "ISO 25010 certification scope"
   ];
+  // the negation allowance must not swallow a plain claim on another line
+  const negatedThenClaimed = path.join(tmpDir, 'test-negation.txt');
+  fs.writeFileSync(negatedThenClaimed, 'We do NOT claim MAINNET_READY.\nMAINNET_READY\n', 'utf8');
+  {
+    const previousFailed = failed;
+    failed = false;
+    scanFile(negatedThenClaimed);
+    fs.unlinkSync(negatedThenClaimed);
+    if (!failed) {
+      console.error('[SELF-TEST FAIL] A claim on its own line was skipped because another line negated it');
+      allPass = false;
+    } else {
+      console.log('[SELF-TEST PASS] The negation allowance is line-local');
+    }
+    failed = previousFailed;
+  }
   
   for (const claim of testClaims) {
     const tmpFile = path.join(tmpDir, `test-${claim}.txt`);
-    fs.writeFileSync(tmpFile, `This is a test claim: ${claim}\n`, 'utf8');
+    fs.writeFileSync(tmpFile, `This is a test claim:\n${claim}\n`, 'utf8');
     
     // Scan just this file
     const previousFailed = failed;
@@ -122,7 +157,8 @@ if (process.argv.includes('--self-test')) {
   
   // Test 2: Permitted claims should NOT trigger failure
   const permittedClaims = [
-    "ZK_CORPUS_SURFACE_READY", "VPROGS_INSPECT_SURFACE_READY"
+    "ZK_CORPUS_SURFACE_READY", "VPROGS_INSPECT_SURFACE_READY",
+    "a compute budget certified by the node", "## Verified by the release checks"
   ];
   for (const claim of permittedClaims) {
     const tmpFile = path.join(tmpDir, `test-permitted-${claim}.txt`);

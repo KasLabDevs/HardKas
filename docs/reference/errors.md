@@ -48,6 +48,18 @@ A Toccata ZK spend is refused as a signature too: `buildR0Groth16Transaction` an
 The CLI commands that make a key or a lock refuse mainnet with `MAINNET_SIGNING_DISABLED` too, before any key exists: `accounts real generate` and `accounts real import`, `kaspa wallet create` (with or without `--show-private-key`) and `zk toccata build-scripts --address-network`, for every spelling of mainnet (and, for the account and wallet commands, every config alias that declares it).
 **Solution:** None in this release. HardKAS produces no signed mainnet transaction, and no complete mainnet ZK spend.
 
+### `ZK_RECEIPT_VERIFIER_PARAMETERS_MISMATCH`
+**Cause:** A RISC Zero Groth16 receipt (`zk toccata verify-receipt`, `zk toccata build-scripts`, `verifyR0Groth16ReceiptLocal`, `buildR0Groth16Scripts`) names verifier parameters other than the pinned RISC Zero verifier's (`R0_GROTH16_VERIFIER_PARAMETERS_DIGEST`, risc0 3.0.4/3.0.5): it was made for another verifier, for example another risc0 release, and its proof would not verify against the verifying key and control root the Toccata lock pins. `build-scripts` builds nothing.
+**Solution:** Prove the program again with the risc0 release rusty-kaspa 2.1.0 pins (risc0-groth16 3.0.4, risc0-circuit-recursion 4.0.4).
+
+### `SEQUENCE_LOCK_NOT_YET_MET`
+**Cause:** A v1 spend (`sdk.tx.send` / `sdk.covenants.send`, e.g. an escrow refund after its timeout) has an input whose relative time lock (its `sequence`, in DAA) the node's virtual DAA score has not reached: the input's UTXO was accepted at DAA score S, the lock is N, so it can be spent from DAA score S + N. Refused by the send preflight before the broadcast, so nothing is sent or recorded. Sent anyway, the node would reject it (`SEQUENCE_LOCK_REJECTED`) and that rejection would be the transaction's one recorded submission; the identical valid spend has the same txId and could never be sent again (`TX_ALREADY_SUBMITTED`).
+**Solution:** Send the same signed transaction again once the node's virtual DAA score reaches the score the message names (at 10 blocks per second, about N/10 seconds after the UTXO was accepted).
+
+### `MAINNET_UNPLANNED_SEND_REFUSED`
+**Cause:** A send of a signed transaction that names no plan of the workspace (`sdk.tx.send(signed, { allowUnplannedSignedTransaction: true })`, CLI `tx send --allow-unplanned`) involving mainnet in any of its identities. A mainnet transaction goes out only with the plan that authorized it, so HardKAS can check the signed transaction against it (`SIGNED_PLAN_MISMATCH`) and check its fee limit. This rule is permanent: it does not depend on the mainnet lockdown, so lifting the lockdown would not lift it. While the lockdown holds, a mainnet send is refused first with `MAINNET_BROADCAST_DISABLED` (above). Raised before any connection or record.
+**Solution:** Send a mainnet transaction from a plan of the workspace (plan → sign → send). The escape is for simnet, devnet and testnets only.
+
 ### `NODE_NOT_SYNCED`
 **Cause:** The node proved its identity but does not say it is synced. Operations that need the current chain state (`tx plan|send|wait`, `silver deploy|spend|covenant genesis|transition`, `escrow rescue-v1`) refuse it, the managed localnet included. Since RC1 the SDK's `tx.send` (and `covenants.send`, which is `tx.send`) refuses it too, before anything is sent or recorded. A well-identified node is not a synced node.
 **Solution:** Wait until the node reports `isSynced: true` (a fresh simnet node with no miner says `false` until it mines a block with a current timestamp, and an idle one turns unsynced after a while), then run the command again. Offline and diagnostic commands (`doctor`, `rpc info`, offline `artifact verify`) do not require it. For a controlled local simnet or devnet only, the SDK's `tx.send(signed, { allowUnsyncedNode: true })` sends anyway.
@@ -111,3 +123,157 @@ The CLI commands that make a key or a lock refuse mainnet with `MAINNET_SIGNING_
 ### `DOCTOR_NETWORK_REQUIRED`, `DOCTOR_FLOW_INVALID`, `DOCTOR_TIMEOUT_INVALID`
 **Cause:** Usage errors of `hardkas doctor`'s node options, raised before anything runs: `--url` with no network for the node to prove (the workspace runs on the simulator, or there is none); a `--flow` other than `payment`, `silver`, `covenant`; a `--timeout` outside 100–120000 ms.
 **Solution:** Pass `--network <name>` with `--url`; fix the option. The node checks' own codes (`NODE_REACHABLE`, `NODE_UNREACHABLE`, `NODE_TIMEOUT`, `NODE_NETWORK_MISMATCH`, `NODE_IS_SIMULATOR`, `NODE_VERSION_UNEXPECTED`, `NODE_NOT_SYNCED`, `MAINNET_CONNECTION_DISABLED` (it was `MAINNET_NOT_CONTACTED`), `PUBLIC_NETWORK_BLOCKED`, `NO_NODE_CONFIGURED`, `FLOW_READY`, …) are in the report's `checks[].code`, not errors.
+
+### `TX_SEND_CONFIRMATION_REQUIRED`
+**Cause:** `tx send` on a network that is not local (a testnet, or a node endpoint) without `--yes`. Nothing was planned, signed, broadcast or written. Exit code 3 (policy denied); with `--json` the envelope has `outcome: "not_executed"` and the command to run.
+**Solution:** Run the same command again with `--yes` once you mean to send.
+
+### `TX_ALREADY_SUBMITTED`
+**Cause:** `sdk.tx.send` (and `tx send` of a signed file) found a submission of this txId already recorded in the workspace. HardKAS sends a transaction once: it never sends a recorded txId again, whatever happened to it. The message names the state derived from the record and the node's answers. When the node no longer holds the transaction (the state is `SUBMITTED`, `REORGED` or `REJECTED_BY_NODE`: for example a node or container restart emptied its mempool), it says how to get out, and the error's metadata carries `remedy: "replan-new-txid"`. When the outcome is unknown, it only says to observe it, because a new payment could pay twice.
+**Solution:** Run `hardkas tx status <txId>` first. If the payment reached its recipient, or its inputs are spent, do not pay again. Otherwise plan the payment again with a different fee or amount (a new txId), then sign and send that one.
+
+### `SEND_PLAN_UNRESOLVED`
+**Cause:** A real (non-simulated) send of a signed transaction that names its plan (`lineage.parentArtifactId`), when that plan is not in this workspace with a verified identity. HardKAS checks a signed transaction against the plan that authorized it before broadcasting, so it refuses to send without it. Nothing is sent or recorded.
+**Solution:** Send from the workspace that holds the plan, or copy the plan's artifact into `.hardkas/artifacts`. A signed transaction with no plan at all can be sent with `--allow-unplanned` (`allowUnplannedSignedTransaction`), never on mainnet (`MAINNET_UNPLANNED_SEND_REFUSED`).
+
+### `FEE_EXCEEDS_MAX`
+**Cause:** The transaction pays a fee above its limit: the plan's `maxFeeSompi`, or `networks.<name>.maxFeeSompi` in the workspace config when that is lower. Raised at plan, sign or send time, before the step is done (the message says which). A v1 plan (`sdk.covenants`) checks its own recorded limit the same way.
+**Solution:** Check the outputs: a fee far above the node's minimum usually means change was not returned. Raise the limit only if the fee is intended.
+
+### `TX_WAIT_TIMEOUT`
+**Cause:** `tx wait` reached `--timeout` before the transaction reached the `--until` state. The message gives the last derived state and, when nothing locates the transaction (no recorded submission, no `--since`), how the scan of the node's chain proceeds.
+**Solution:** Run the wait again to continue from where it stopped, or pass `--since <a chain block hash before its acceptance>`, or `--address <an address it pays>`.
+
+### `TX_WAIT_UTXO_VIEW_STALE`
+**Cause:** `tx wait --address` reached the requested state from the node's chain, but the node's UTXO index does not show it yet at the addresses given: no output of the transaction is listed there, and nothing accepted at or after its accepting block is listed either. The index may trail the chain, or the transaction's outputs there were spent since by a transaction that pays elsewhere. Balances read from the node now could be stale.
+**Solution:** Wait again with a larger `--timeout`, or pass an address where something newer is listed (for example the change address of a later payment).
+
+### `REPLAY_MODE_UNSUPPORTED`
+**Cause:** `hardkas replay verify` / `sdk.replay.verify` was given a real-node send or a node plan. Replay re-executes simulator runs only. Nothing was executed.
+**Solution:** Check a real send with `hardkas verify <submission>` and `hardkas tx status <txId>`.
+
+### `NODE_IMAGE_DIGEST_REQUIRED`
+**Cause:** `HARDKAS_KASPAD_IMAGE` (or `node start --image`) names a node image by tag only (for example `kaspanet/rusty-kaspad:latest`). A tag can be moved; only a digest names the image that was validated. Refused before Docker is asked to run anything, by `hardkas node start`, the node runner (`localnet start`, `node restart|reset`, `sdk.node.start`) and the simnet test harness.
+**Solution:** Pin the image by digest (`<image>@sha256:<64 hex>`), or unset the variable to use the reference image HardKAS pins.
+
+### `UTXO_SET_NOT_STABLE`
+**Cause:** `localnet fund` mined, but the funded address's UTXO set did not converge to the required spendable amount: part of the balance is immature coinbase, or the node's index had not settled. The message gives the spendable and required amounts, the immature coinbase and the DAA score.
+**Solution:** Run `localnet fund` again, or wait for the coinbase outputs to mature (1,000 DAA on simnet).
+
+### `LOCALNET_PORT_CONFLICT`
+**Cause:** `localnet start` found the localnet's RPC port already served by a node HardKAS does not manage. HardKAS refuses to adopt it, because `localnet fund` attaches the miner by container name and would fail.
+**Solution:** Stop the other node, or run `hardkas localnet stop --profile toccata-v2` first.
+
+### `LOCALNET_DOCKER_UNAVAILABLE`
+**Cause:** Docker could not report the state of a localnet container, so nothing about the localnet can be confirmed. Usually Docker is not running.
+**Solution:** Start Docker (Docker Desktop on Windows and macOS) and run the command again.
+
+### `KEYSTORE_PASSWORD_REQUIRED`
+**Cause:** An encrypted keystore account must be opened (to sign, export or change its password) and no password was given. A prompt is offered only on a terminal, for commands that allow one. Nothing is written. Exit code 2.
+**Solution:** Pass the password with `--password-env <VAR>` or `--password-stdin` (SDK: `keystorePassword`).
+
+### `ACCOUNT_NAME_TAKEN`
+**Cause:** `accounts real generate` or `accounts real import` was given a name that already exists in the workspace, in `.hardkas/accounts.real.json` or `.hardkas/keystore/` (case-insensitive). Nothing is created or overwritten. Exit code 2.
+**Solution:** Choose another `--name`.
+
+### `ACCOUNT_ADDRESS_KEY_MISMATCH`, `INVALID_PRIVATE_KEY_MATERIAL`
+**Cause:** `accounts real import`: the `--address` given is not the address of the imported key on its network, so the account could never sign for it (the message gives the key's real address); or the key is not a 32-byte key (64 hex characters). Nothing is imported. Exit code 2. A simulator identity (`kaspa:sim_…`) is not checked.
+**Solution:** Pass the key's own address, or omit `--address`.
+
+### `STALE_ARTIFACT_REFUSED`
+**Cause:** Signing, sending or simulating refused a plan or signed transaction older than 30 days, or a signed transaction whose plan is: the outputs it spends have most likely moved since it was planned. Its integrity is not in question: `hardkas artifact verify` still verifies it, with a `STALE_ARTIFACT` warning that names its age. Receipts, submissions and observations are records of the past and are never refused for their age. Nothing is signed, sent or recorded.
+**Solution:** Plan the payment again.
+
+### `TX_WAIT_USAGE`
+**Cause:** A usage error of `tx wait`, raised before anything is contacted: among others, a `--timeout` or `--interval` that is not a non-negative number of seconds (`500ms`, `60s` and `2m` are accepted). Exit code 2.
+**Solution:** Fix the option.
+
+### `V1_REMAINDER_FEE_ABOVE_LIMIT`
+**Cause:** A v1 engine plan whose fee is "whatever the outputs leave" would pay more than the larger of HardKAS's default fee limit (0.1 KAS, `DEFAULT_MAX_FEE_SOMPI`) and the node's floor for that transaction, and the caller set no `maxFeeSompi`. This is `sdk.covenants.planContractSpend` without `sweepTo`, or `planTransition` paid by the covenant without a `"rest"` continuation (also `hardkas silver engine plan spend|transition`). Usually an output was left out: a 100 KAS contract output spent with one 1 KAS payment would otherwise pay 99 KAS to the miner. Nothing is planned, stored or signed. Metadata: `feeSompi`, `limitSompi`, `floorSompi`, `inputSompi`.
+**Solution:** Give `sweepTo` (a contract spend), or a `"rest"` continuation or a funder (a transition), so the rest comes back and the fee is the floor. To pay that fee on purpose, give an explicit `maxFeeSompi` of at least that amount.
+
+### `CHANGE_BELOW_STANDARD_OUTPUT`
+**Cause:** `tx plan` / `sdk.tx.plan`: the inputs the planner (kaspa-wasm's Generator) chose cover the payment and fee so closely that the change left is too small for a standard output: its storage mass (KIP-9) would put the transaction above the standard limit. The planner turns only dust into fee; any larger remainder stays the sender's, so the plan is refused instead of paying it to the miner. Nothing is planned.
+**Solution:** Adjust the amount slightly, send the whole balance, or consolidate first (`hardkas accounts consolidate`).
+
+### `PSKT_SIGNER_NETWORK_REQUIRED`, `PSKT_NETWORK_MISMATCH`, `PSKT_INPUTS_UNVERIFIED`, `PSKT_INPUT_NOT_ON_NETWORK`
+**Cause:** `pskt sign` / `pskt.signSession`. A PSKT session's `networkId` is only what its author wrote, and a Kaspa signature does not commit to a network, so HardKAS signs only for the network the signer names, and only inputs that network's node lists as unspent. These checks run after the mainnet refusal and before the key file is read.
+- `PSKT_SIGNER_NETWORK_REQUIRED` (exit 2): no signer network was given (`--network`, the workspace config's network, SDK `context.networkId`).
+- `PSKT_NETWORK_MISMATCH` (exit 3): the session declares another network than the signer's.
+- `PSKT_INPUTS_UNVERIFIED` (exit 1): the inputs could not be checked: no node is configured for that network (the simulator, or a testnet without `networks[<name>].rpcUrl`), the node could not be asked, or the payload's inputs cannot be read.
+- `PSKT_INPUT_NOT_ON_NETWORK` (exit 1): the node does not list an input to be signed as unspent. It may be spent or not yet accepted, or an output of another network, mainnet included, where a signature would be valid.
+
+Nothing is signed.
+**Solution:** Sign in a workspace of the session's network, with that network's node declared (`rpcUrl`).
+
+### `DEPLOY_INIT_FILE_EXISTS`
+**Cause:** `hardkas deploy init` would overwrite profile files already in the directory (`docker-compose.yml`, `Dockerfile`, `.env.example`, `PRODUCTION_CHECKLIST.md`). Every target is checked before anything is written. Exit code 2.
+**Solution:** Move the files aside, or pass `--force`.
+
+### `RPC_DOCTOR_NOT_READY`
+**Cause:** `hardkas rpc doctor` found at least one requested endpoint not ready: unreachable, a protocol or RPC error, or refused as mainnet (`REFUSED: MAINNET_CONNECTION_DISABLED` in the report). The report names each one. Exit code 1.
+**Solution:** Fix or remove the endpoint the report names.
+
+### `WALLET_TOOLKIT_METHOD_UNSUPPORTED`, `INDEXER_ARTIFACT_IDENTITY_INVALID`
+**Cause:** `WalletToolkit.planSend()` and `sendSimulated()` never planned or sent anything (they returned placeholder data) and now refuse. `IndexerToolkit.ingestArtifact()` indexes only a HardKAS artifact whose `contentHash` its content verifies; the artifact given has none, or a wrong one.
+**Solution:** Use `wallet.estimateFee()` (its `plan` is the real plan), `wallet.send()`, or `hardkas.tx.plan` / `hardkas.tx.send`. Index artifacts as HardKAS writes them.
+
+### `WALLET_WATCH_NODE_NETWORK_CHANGED`
+**Cause:** After a reconnection, the node behind a `WalletToolkit.watch()` URL named another network than before. The watch was stopped, and nothing that node answered was reported. A node naming mainnet gives `MAINNET_CONNECTION_DISABLED`.
+**Solution:** Check what serves that URL, then start the watch again.
+
+### `SESSION_OPERATION_UNSUPPORTED`, `SIMNET_MINE_BLOCKS_INVALID`, `SIMNET_MINE_NO_PROGRESS`, `SIMNET_MINE_UNOBSERVED`
+**Cause:** Dev-server API.
+- The session routes `start`, `snapshot`, `time-travel`, `export` and `import` are not implemented (HTTP 501); they used to answer `ok: true` with invented ids.
+- `POST /api/simnet/mine?blocks=N` needs an integer N from 1 to 100 (HTTP 400).
+- After mining, the node's DAA score did not advance, or could not be read (HTTP 502); the answer carries the scores seen.
+**Solution:** Do not rely on the session routes. Mine 1–100 blocks at a time, and check the node when mining makes no progress.
+
+### `SEQUENCE_LOCK_UNVERIFIABLE`
+**Cause:** A v1 transaction about to be sent has an input whose sequence enables a relative time lock, and the node's virtual DAA score or the UTXO's DAA score could not be read, so whether the lock is met cannot be checked. Sent and rejected, the identical transaction could never be sent again (one submission per txId). Nothing is sent or recorded.
+**Solution:** Retry when the node answers `getBlockDagInfo` and lists the UTXO with its DAA score.
+
+### `ESCROW_CONFIG_INVALID`
+**Cause:** `createEscrow` / `escrowResolution` refused the escrow's configuration. Among other cases: a v2 full escrow (no `version`, or `version: "v2"`, not split) that names different amounts for its one principal (`principal`, `refundAmount`, `releaseAmount`), or none; or an `escrowNonce` that is not 32-byte hex.
+**Solution:** Give `principal` alone, or `version: "v1"` for a legacy escrow whose refund and release amounts differ.
+
+### `RESCUE_ESCROW_ARGS_INVALID`, `RESCUE_LOCK_MISMATCH`
+**Cause:** `hardkas escrow rescue-v1 prepare` rebuilds the v1 escrow's script from its seven constructor arguments (`--buyer-pk`, `--seller-pk`, `--arbiter-pk`, `--buyer-destination`, `--seller-destination`, `--refund-amount`, `--release-amount`).
+- `RESCUE_ESCROW_ARGS_INVALID` (exit 2): one is missing or malformed: a key that is not 32-byte x-only hex, a destination that is neither an address nor script hex, an amount that is not a positive integer.
+- `RESCUE_LOCK_MISMATCH` (exit 1): the script they compile is not `--address`, or the outpoint the node lists is locked to another script.
+
+Nothing is read or written.
+**Solution:** Give the exact values of the escrow's `createEscrow({ version: "v1" })` config.
+
+### `ZK_PUBLIC_VECTOR_PUBLIC_NETWORK_REFUSED`, `ZK_PUBLIC_PROGRAM_PAYOUT_TRIGGERABLE`
+**Cause:** The RISC Zero program's receipts are published (`PUBLIC_R0_TEST_VECTORS`: the kaspa-python-sdk vector and HardKAS's own fixture receipt), matched on the image id whatever the journal.
+- A **proof-only** lock of such a program (or a lock whose redeem script does not bind the outputs) on a public network is anyone-can-spend, so no address is built (`ZK_PUBLIC_VECTOR_PUBLIC_NETWORK_REFUSED`).
+- A **proof-and-output-bound** lock is built, with the warning `ZK_PUBLIC_PROGRAM_PAYOUT_TRIGGERABLE`: its funds can only go to the bound outputs, but anyone holding the published receipt can trigger that payout at any time.
+**Solution:** Build a proof-and-output-bound lock, use simnet, or use a program whose receipts are private.
+
+### `ZK_BOUND_LOCK_UNSPENDABLE`, `ZK_BINDING_LABEL_NOT_ENFORCED`, `ZK_RECEIPT_CLAIM_UNCHECKED_PUBLIC_NETWORK_REFUSED`
+**Cause:**
+- `ZK_BOUND_LOCK_UNSPENDABLE`: `verifyR0Groth16Scripts` found a canonical output-bound lock that can never be spent: a bound output of zero or less, or an input limit not above the sum of the bound outputs. A UTXO funded there stays locked forever.
+- `ZK_BINDING_LABEL_NOT_ENFORCED` (warning): `buildR0Groth16Transaction` was given a scripts object labelled `proof-and-output-bound` whose redeem script does not enforce that binding. `consensusEnforced` is then false.
+- `ZK_RECEIPT_CLAIM_UNCHECKED_PUBLIC_NETWORK_REFUSED`: the receipt carries its claim unpruned, so neither the claim cross-check nor the verifier-parameters check could run. No testnet address is built; simnet still is, with `ZK_RECEIPT_CLAIM_NOT_CROSSCHECKED`.
+**Solution:** Do not fund an unspendable lock. Rebuild scripts with `buildR0Groth16Scripts` instead of assembling them. Use a receipt with its claim pruned (the rusty-kaspa zk-sdk format, 325 bytes).
+
+### `LOCALNET_TIMEOUT_INVALID`, `LOCALNET_SEED_INVALID_AMOUNT`, `LOCALNET_FUND_INVALID_AMOUNT`
+**Cause:** `localnet fund` / `localnet seed`: `--timeout` is not a positive whole number of milliseconds, or an amount cannot be parsed or is not positive. Nothing is done. Exit code 2.
+**Solution:** Fix the option.
+
+### `LOCALNET_DAG_SETTLE_TIMEOUT`
+**Cause:** After the localnet miner was stopped, the chain did not settle (the same virtual state on consecutive reads) within the bound (the caller's remaining time, at least 60 s). The message says why: the node reports virtual DAA score 0 (no block was ever mined), or its virtual state kept changing (something still produces blocks).
+**Solution:** Check the miner container and that nothing else mines on the node, then run the command again.
+
+### `LOCALNET_TREASURY_SUBMIT_OUTCOME_UNKNOWN`, `LOCALNET_TREASURY_PENDING_UNRESOLVED`
+**Cause:** `localnet seed` / `localnet fund --treasury` pay from the localnet treasury, whose key is public by design and used on simnet only.
+- `LOCALNET_TREASURY_SUBMIT_OUTCOME_UNKNOWN`: a treasury transaction was sent and no usable answer came back, so the node may hold it. It is recorded in `localnet/treasury-pending.json` under `HARDKAS_HOME` (`~/.hardkas` by default): one journal per machine, like the localnet. The next `localnet seed` or `fund --treasury` on this machine, from any workspace, sends that same transaction again and waits for it; it never pays again.
+- `LOCALNET_TREASURY_PENDING_UNRESOLVED`: such a transaction is now refused by the node and no output of it is found, so HardKAS cannot tell whether its recipients were paid. It pays nobody from the treasury in this workspace.
+**Solution:** For the second code, check the recipients' balances, then remove `<HARDKAS_HOME>/localnet/treasury-pending.json` to pay them again.
+
+### `LOCALNET_TREASURY_INCOMPLETE`, `LOCALNET_TREASURY_TRANSFER_UNPLANNABLE`
+**Cause:**
+- `LOCALNET_TREASURY_INCOMPLETE`: a treasury run failed after it broadcast something. The message lists what was broadcast and which accounts were funded, and the liveness miner is restarted unless `--stop-miner` was asked. Failures that have their own code keep it and carry the same lists.
+- `LOCALNET_TREASURY_TRANSFER_UNPLANNABLE`: one payment does not fit in one standard transaction and is too small to split further (parts are at least 1 KAS). Larger payments are split over several transactions.
+**Solution:** Check the listed accounts before running again; `--only-empty` skips the funded ones.

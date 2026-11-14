@@ -47,6 +47,8 @@ export const HardkasSchemas = {
   LocalnetStatusV1: "hardkas.localnetStatus.v1",
   LocalnetControlV1: "hardkas.localnetControl.v1",
   LocalnetFundingV1: "hardkas.localnetFunding.v1",
+  /** The JSON record of `hardkas localnet seed` (treasury distribution to dev accounts, simnet only). */
+  LocalnetSeedV1: "hardkas.localnetSeed.v1",
   RealAccountStoreV1: "hardkas.realAccountStore.v1",
   EncryptedKeystoreV2: "hardkas.encryptedKeystore.v2",
   NodeStatusV1: "hardkas.nodeStatus.v1",

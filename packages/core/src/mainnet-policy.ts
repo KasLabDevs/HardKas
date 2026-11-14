@@ -114,6 +114,29 @@ export function assertMainnetTransactionsDisabled(
   );
 }
 
+/** The typed code of the permanent refusal of an unplanned send on mainnet (see `assertUnplannedSendNotOnMainnet`). */
+export const MAINNET_UNPLANNED_SEND_REFUSED = "MAINNET_UNPLANNED_SEND_REFUSED" as const;
+
+/**
+ * Owner rule (2026-11-11), permanent: NOT tied to MAINNET_TRANSACTIONS_ENABLED, so lifting the lockdown one day does not
+ * lift it. A mainnet broadcast goes out only with the plan that authorized it, so that HardKAS can check the signed
+ * transaction against that plan (SIGNED_PLAN_MISMATCH) and check its fee limit. The unplanned-send escape
+ * (`allowUnplannedSignedTransaction`, CLI `--allow-unplanned`) is for simnet, devnet and testnets only. Throws when ANY
+ * of the network identities involved is of the mainnet type. While the lockdown holds, its own refusal
+ * (MAINNET_BROADCAST_DISABLED) comes first.
+ */
+export function assertUnplannedSendNotOnMainnet(networkIds: ReadonlyArray<unknown>, context?: string): void {
+  const seen = networkIds.filter((n): n is string => typeof n === "string" && n.trim() !== "");
+  if (!seen.some(isMainnetNetworkId)) return;
+  throw new HardkasError(
+    MAINNET_UNPLANNED_SEND_REFUSED,
+    `An unplanned send is never allowed on mainnet${context ? ` (${context})` : ""}: a mainnet transaction goes out only ` +
+      `with the plan that authorized it, so that HardKAS can check the signed transaction against it and check its fee limit. ` +
+      `allowUnplannedSignedTransaction (CLI --allow-unplanned) applies to simnet, devnet and testnets only. Nothing was sent or recorded.`,
+    { metadata: { networks: [...new Set(seen)] } }
+  );
+}
+
 /** The typed code of every mainnet connection refusal (core, config, RPC transport, toolkit, CLI, SDK). */
 export const MAINNET_CONNECTION_DISABLED = "MAINNET_CONNECTION_DISABLED" as const;
 

@@ -63,17 +63,21 @@ async function startFake(network: string): Promise<Fake> {
   };
 }
 
-function workspace(label: string, rpcUrl?: string): string {
+/** D-05: "localnet" is a workspace whose default target is the managed localnet, the one that really needs Docker. */
+function workspace(label: string, rpcUrl?: string | "localnet"): string {
   const ws = tmp(`hk-l02-${label}-`);
   fs.mkdirSync(path.join(ws, ".hardkas"));
-  const cfg = rpcUrl
-    ? {
-        execution: { default: "tn", targets: { tn: { mode: "rpc", domain: "kaspa-l1", network: "testnet-10" } } },
-        network: { allowPublic: true },
-        experimental: true,
-        networks: { "testnet-10": { kind: "kaspa-rpc", network: "testnet-10", rpcUrl } }
-      }
-    : { execution: { default: "simulator", targets: { simulator: { mode: "simulator", domain: "kaspa-l1", network: "simulated" } } } };
+  const cfg =
+    rpcUrl === "localnet"
+      ? { execution: { default: "local", targets: { local: { mode: "localnet", domain: "kaspa-l1", network: "simnet" } } } }
+      : rpcUrl
+        ? {
+            execution: { default: "tn", targets: { tn: { mode: "rpc", domain: "kaspa-l1", network: "testnet-10" } } },
+            network: { allowPublic: true },
+            experimental: true,
+            networks: { "testnet-10": { kind: "kaspa-rpc", network: "testnet-10", rpcUrl } }
+          }
+        : { execution: { default: "simulator", targets: { simulator: { mode: "simulator", domain: "kaspa-l1", network: "simulated" } } } };
   fs.writeFileSync(path.join(ws, "hardkas.config.ts"), `export default ${JSON.stringify(cfg, null, 2)};\n`);
   return ws;
 }
@@ -82,11 +86,11 @@ const logs = tmp("hk-l02-logs-");
 const pathKey = Object.keys(process.env).find((k) => k.toUpperCase() === "PATH") ?? "PATH";
 let shim: string;
 
-async function doctor(name: string, args: string[], cwd: string) {
+async function doctor(name: string, args: string[], cwd: string, pathValue?: string) {
   const env = hermeticChildEnv(path.join(logs, `${name}.net.log`), {
     HARDKAS_HERMETIC_DENY_PORTS: "16210,17210,18210",
     DOCKER_HOST: "tcp://127.0.0.1:1",
-    [pathKey]: `${shim}${path.delimiter}${process.env[pathKey] ?? ""}`
+    [pathKey]: pathValue ?? `${shim}${path.delimiter}${process.env[pathKey] ?? ""}`
   });
   const r = await new Promise<{ status: number | null; stdout: string; stderr: string }>((resolve) => {
     const child = spawn(process.execPath, [cliDist, ...args], { cwd, env });
@@ -121,9 +125,11 @@ afterAll(async () => {
   for (const d of made) fs.rmSync(d, { recursive: true, force: true });
 });
 
+// D-05: the failing cases used a SIMULATOR workspace with Docker unreachable; that is no longer a failure (the simulator
+// needs no Docker), so they now use a workspace whose default target is the managed localnet, which does need it.
 describe("L-02 · hardkas doctor: the exit code follows the failed checks", () => {
-  it("--json with a failed check (Docker unreachable in a simulator workspace) exits 1 and prints only the report", async () => {
-    const r = await doctor("fail-json", ["doctor", "--json"], workspace("fail-json"));
+  it("--json with a failed check (Docker unreachable in a localnet workspace) exits 1 and prints only the report", async () => {
+    const r = await doctor("fail-json", ["doctor", "--json"], workspace("fail-json", "localnet"));
     expect(r.json, r.brief).toBeDefined();
     expect(r.failed, r.brief).toContain("Docker daemon");
     expect(r.json.summary.failed, r.brief).toBe(r.failed.length);
@@ -135,7 +141,7 @@ describe("L-02 · hardkas doctor: the exit code follows the failed checks", () =
   });
 
   it("the human report with a failed check exits 1 too", async () => {
-    const r = await doctor("fail-human", ["doctor"], workspace("fail-human"));
+    const r = await doctor("fail-human", ["doctor"], workspace("fail-human", "localnet"));
     expect(r.all, r.brief).toMatch(/Docker daemon: Not reachable/);
     expect(r.all, r.brief).toMatch(/Summary: \d+ passed, [1-9]\d* failed/);
     expect(r.exit, r.brief).toBe(1);
@@ -151,8 +157,34 @@ describe("L-02 · hardkas doctor: the exit code follows the failed checks", () =
   });
 
   it("--strict with a failed check keeps exit 1 and raises DOCTOR_FAILED in the human form", async () => {
-    const r = await doctor("strict", ["doctor", "--strict"], workspace("strict"));
+    const r = await doctor("strict", ["doctor", "--strict"], workspace("strict", "localnet"));
     expect(r.all, r.brief).toMatch(/DOCTOR_FAILED/);
+    expect(r.exit, r.brief).toBe(1);
+  });
+});
+
+describe("D-05 · a correct fresh install is not a failure: no pnpm, no Docker, simulator workspace", () => {
+  it("Docker unreachable in a simulator workspace: skipped (DOCKER_NOT_NEEDED), not failed", async () => {
+    const r = await doctor("sim-no-docker", ["doctor", "--json"], workspace("sim-no-docker"));
+    expect(r.json, r.brief).toBeDefined();
+    expect(r.json.checks.find((c: any) => c.name === "Docker daemon"), r.brief).toMatchObject({ status: "skip", code: "DOCKER_NOT_NEEDED" });
+    expect(r.failed, r.brief).not.toContain("Docker daemon");
+    // the machine's Node.js major is the one check this file cannot fix
+    expect(r.failed.filter((n) => n !== "Node.js version"), r.brief).toEqual([]);
+    expect(r.exit, r.brief).toBe(r.failed.length > 0 ? 1 : 0);
+  });
+
+  it("no pnpm on PATH (an npm-only install): skipped (PNPM_NOT_FOUND), not failed", async () => {
+    const emptyBin = tmp("hk-d05-empty-bin-");
+    const r = await doctor("no-pnpm", ["doctor", "--json"], workspace("no-pnpm"), emptyBin);
+    expect(r.json, r.brief).toBeDefined();
+    expect(r.json.checks.find((c: any) => c.name === "pnpm"), r.brief).toMatchObject({ status: "skip", code: "PNPM_NOT_FOUND" });
+    expect(r.failed.filter((n) => n !== "Node.js version"), r.brief).toEqual([]);
+  });
+
+  it("(control) a localnet workspace still needs Docker: unreachable is a failure (DOCKER_UNREACHABLE)", async () => {
+    const r = await doctor("local-no-docker", ["doctor", "--json"], workspace("local-no-docker", "localnet"));
+    expect(r.json.checks.find((c: any) => c.name === "Docker daemon"), r.brief).toMatchObject({ status: "fail", code: "DOCKER_UNREACHABLE" });
     expect(r.exit, r.brief).toBe(1);
   });
 });

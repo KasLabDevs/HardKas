@@ -18,9 +18,18 @@ vi.setConfig({ testTimeout: 180_000, hookTimeout: 180_000 });
 // canonical localnet is caught by its connection log. What is checked: refusals happen before any node is contacted;
 // the draft does what the package says (CA-TX-06) through every command; signing needs a workspace account; the
 // broadcast proves the node, then sends exactly the draft (its outpoint, its destination) and reports its txid.
+//
+// C-4 (audit 2026-11-13): CHANGED FIXTURE. The escrow UTXOs used to be locked to the escrow `prepare` itself compiled
+// (placeholder keys 11/22/33, the rescue target as both destinations, half the UTXO as both amounts), so the suite passed
+// while `prepare` could not rebuild a real v1 escrow. Now the fixture is a v1 escrow as createEscrow makes one (the
+// workspace's alice, bob and carol as buyer, seller and arbiter; two other destinations; refund 6 KAS, release 4 KAS),
+// `prepare` is given those constructor arguments, and the old command-shaped arguments are refused (R-7).
 // -----------------------------------------------------------------------------
 
+/** The rescue target (`--to`): neither destination of the escrow. */
 const ADDRESS = "kaspasim:qpumuen7l8wthtz45p3ftn58pvrs9xlumvkuu2xet8egzkcklqtes65ue9mw6";
+const REFUND = 6_00000000;
+const RELEASE = 4_00000000;
 const FUNDED = "ab".repeat(32);
 const DUST = "cd".repeat(32);
 const TOTAL = 10_00000000;
@@ -118,7 +127,10 @@ async function run(name: string, args: string[]) {
 const contactedFake = (d: string[]) => d.some((x) => x.endsWith(`:${fake.port}`));
 const canonical = (d: string[]) => d.filter((x) => /:(16110|16210|17110|17210|18110|18210|18211)$/.test(x));
 const read = (file: string) => JSON.parse(fs.readFileSync(path.join(ws, file), "utf8"));
-const prepareArgs = (out: string, extra: string[] = []) => ["escrow", "rescue-v1", "prepare", "--address", ADDRESS, "--outpoint", `${FUNDED}:0`, "--to", ADDRESS, "--out", out, "--json", ...extra];
+/** The escrow's P2SH address and the constructor arguments it was created with (set in beforeAll). */
+let ESCROW_ADDRESS = "";
+let escrowArgs: string[] = [];
+const prepareArgs = (out: string, extra: string[] = []) => ["escrow", "rescue-v1", "prepare", "--address", ESCROW_ADDRESS, "--outpoint", `${FUNDED}:0`, "--to", ADDRESS, ...escrowArgs, "--out", out, "--json", ...extra];
 
 beforeAll(async () => {
   assertHermeticPreloadActive();
@@ -136,14 +148,27 @@ beforeAll(async () => {
   // the workspace's dev accounts (alice..erin), as `up` and `localnet start` provision them
   const { ensureDevAccounts } = await import("@hardkas/accounts");
   await ensureDevAccounts(ws);
-  // The escrow UTXOs the fake holds are locked to the v1 escrow `prepare` compiles (its default keys, the target's
-  // script, half the amount each): compiled here by `silver compile`, so the lock is the pinned silverc's own.
+  // C-4: the escrow UTXOs the fake holds are locked to a v1 escrow as createEscrow({ version: "v1" }) makes one: the
+  // workspace's alice (buyer), bob (seller) and carol (arbiter), a buyer and a seller destination that are not the
+  // rescue target, refund 6 KAS and release 4 KAS (not half the UTXO). Compiled here by `silver compile`, so the lock
+  // is the pinned silverc's own, independently of `prepare`.
   const { ESCROW_V1_SOURCE, ESCROW_V1_CONTRACT_NAME } = await import("@hardkas/escrow");
   const { loadManagedKaspaWasmSync } = await import("@hardkas/core");
+  const { listDevAccountsSync, getOrCreateDevAccount } = await import("@hardkas/accounts");
   const k: any = loadManagedKaspaWasmSync();
-  const targetSpk = String(k.payToAddressScript(new k.Address(ADDRESS)).script);
+  const accounts = listDevAccountsSync(ws);
+  const xOnly = async (name: string) => {
+    const i = accounts.findIndex((a: any) => a?.name === name);
+    expect(i, `dev account ${name}`).toBeGreaterThanOrEqual(0);
+    const full = await getOrCreateDevAccount(ws, i, name);
+    return String(new k.PrivateKey(full.privateKey).toPublicKey().toXOnlyPublicKey().toString()).toLowerCase();
+  };
+  const [buyer, seller, arbiter] = [await xOnly("alice"), await xOnly("bob"), await xOnly("carol")];
+  const buyerDestination = new k.PrivateKey("b1".repeat(32)).toAddress("simnet").toString();
+  const sellerSpk = String(k.payToAddressScript(new k.Address(new k.PrivateKey("b2".repeat(32)).toAddress("simnet").toString())).script);
+  const buyerSpk = String(k.payToAddressScript(new k.Address(buyerDestination)).script);
   const bytes = (hex: string) => ({ kind: "bytes", value: [...Buffer.from(hex, "hex")] });
-  const args = [bytes("11".repeat(32)), bytes("22".repeat(32)), bytes("33".repeat(32)), bytes(`0000${targetSpk}`), bytes(`0000${targetSpk}`), { kind: "int", value: TOTAL / 2 }, { kind: "int", value: TOTAL / 2 }];
+  const args = [bytes(buyer), bytes(seller), bytes(arbiter), bytes(`0000${buyerSpk}`), bytes(`0000${sellerSpk}`), { kind: "int", value: REFUND }, { kind: "int", value: RELEASE }];
   fs.writeFileSync(path.join(ws, "escrow.sil"), ESCROW_V1_SOURCE);
   fs.writeFileSync(path.join(ws, "escrow.args.json"), JSON.stringify(args));
   const compiled = await run("compile-escrow", ["silver", "compile", "escrow.sil", "--args", "escrow.args.json", "--json"]);
@@ -151,6 +176,14 @@ beforeAll(async () => {
   const lock = compiled.json.contracts.find((c: any) => c.name === ESCROW_V1_CONTRACT_NAME)?.lockingScript;
   expect(lock?.script, JSON.stringify(compiled.json.contracts)).toMatch(/^[0-9a-f]+$/);
   fake.lockSpk = Number(lock.version).toString(16).padStart(4, "0") + lock.script;
+  ESCROW_ADDRESS = String(k.addressFromScriptPublicKey(new k.ScriptPublicKey(Number(lock.version), lock.script), "simnet"));
+  expect(ESCROW_ADDRESS).toMatch(/^kaspasim:p/);
+  // the buyer destination given as an address, the seller's as its script (both forms the command takes)
+  escrowArgs = [
+    "--buyer-pk", buyer, "--seller-pk", seller, "--arbiter-pk", arbiter,
+    "--buyer-destination", buyerDestination, "--seller-destination", sellerSpk,
+    "--refund-amount", String(REFUND), "--release-amount", String(RELEASE)
+  ];
 });
 
 afterAll(async () => {
@@ -161,7 +194,7 @@ afterAll(async () => {
 describe("L1-CORE-1 B4 · escrow rescue-v1, the commands", () => {
   it("R-1 prepare refuses a malformed outpoint and an excessive fee before any node is contacted", async () => {
     const before = fake.methods.length;
-    const bad = await run("prepare-bad-outpoint", ["escrow", "rescue-v1", "prepare", "--address", ADDRESS, "--outpoint", "nope", "--to", ADDRESS, "--json"]);
+    const bad = await run("prepare-bad-outpoint", ["escrow", "rescue-v1", "prepare", "--address", ESCROW_ADDRESS, "--outpoint", "nope", "--to", ADDRESS, ...escrowArgs, "--json"]);
     expect(bad.status, bad.brief).not.toBe(0);
     expect(bad.all).toMatch(/RESCUE_OUTPOINT_INVALID/);
     const fee = await run("prepare-fee", prepareArgs("x.json", ["--fee", "500001"]));
@@ -172,9 +205,9 @@ describe("L1-CORE-1 B4 · escrow rescue-v1, the commands", () => {
   });
 
   it("R-2 prepare on the workspace's node: identity first; an outpoint it does not hold, or one smaller than the fee, is refused and nothing is written", async () => {
-    const missing = await run("prepare-missing", ["escrow", "rescue-v1", "prepare", "--address", ADDRESS, "--outpoint", `${"ef".repeat(32)}:0`, "--to", ADDRESS, "--out", "m.json", "--json"]);
+    const missing = await run("prepare-missing", ["escrow", "rescue-v1", "prepare", "--address", ESCROW_ADDRESS, "--outpoint", `${"ef".repeat(32)}:0`, "--to", ADDRESS, ...escrowArgs, "--out", "m.json", "--json"]);
     expect(missing.all, missing.brief).toMatch(/RESCUE_UTXO_NOT_FOUND/);
-    const dust = await run("prepare-dust", ["escrow", "rescue-v1", "prepare", "--address", ADDRESS, "--outpoint", `${DUST}:1`, "--to", ADDRESS, "--out", "d.json", "--json"]);
+    const dust = await run("prepare-dust", ["escrow", "rescue-v1", "prepare", "--address", ESCROW_ADDRESS, "--outpoint", `${DUST}:1`, "--to", ADDRESS, ...escrowArgs, "--out", "d.json", "--json"]);
     expect(dust.all, dust.brief).toMatch(/RESCUE_INSUFFICIENT_FUNDS/);
     expect(fake.methods.indexOf("getServerInfo")).toBeLessThan(fake.methods.indexOf("getUtxosByAddresses"));
     for (const r of [missing, dust]) expect(canonical(r.dialled), r.brief).toEqual([]);
@@ -186,9 +219,65 @@ describe("L1-CORE-1 B4 · escrow rescue-v1, the commands", () => {
     expect(r.status, r.brief).toBe(0);
     expect(contactedFake(r.dialled) && canonical(r.dialled).length === 0, r.brief).toBe(true);
     const pkg = read("rescue.json");
-    expect(pkg).toMatchObject({ schema: "hardkas.escrow.rescue.v1", networkId: "simnet", address: ADDRESS, outpoint: `${FUNDED}:0`, targetAddress: ADDRESS, totalSompi: String(TOTAL), feeSompi: String(FEE), recoveredSompi: String(TOTAL - FEE), signatures: {} });
+    expect(pkg).toMatchObject({ schema: "hardkas.escrow.rescue.v1", networkId: "simnet", address: ESCROW_ADDRESS, outpoint: `${FUNDED}:0`, targetAddress: ADDRESS, totalSompi: String(TOTAL), feeSompi: String(FEE), recoveredSompi: String(TOTAL - FEE), signatures: {} });
     expect(pkg.draft.unsignedTxId).toMatch(/^[0-9a-f]{64}$/);
     expect(r.json?.ok).toBe(true);
+  });
+
+  // C-4: the escrow's arguments are checked after the two mainnet refusals (the network's name, then the node's one
+  // identity answer, as for every command that reads a node) and before anything is read from the node
+  const onlyIdentity = (before: number) => fake.methods.slice(before).every((m) => m === "getServerInfo");
+
+  it("R-7 (C-4) the arguments the command used to invent (placeholder keys, --to as both destinations, half the UTXO as both amounts) are not the escrow's: RESCUE_LOCK_MISMATCH before anything is read from the node, nothing written", async () => {
+    const before = fake.methods.length;
+    const { loadManagedKaspaWasmSync } = await import("@hardkas/core");
+    const k: any = loadManagedKaspaWasmSync();
+    const toSpk = String(k.payToAddressScript(new k.Address(ADDRESS)).script);
+    const shaped = [
+      "--buyer-pk", "11".repeat(32), "--seller-pk", "22".repeat(32), "--arbiter-pk", "33".repeat(32),
+      "--buyer-destination", toSpk, "--seller-destination", toSpk,
+      "--refund-amount", String(TOTAL / 2), "--release-amount", String(TOTAL / 2)
+    ];
+    const r = await run("prepare-shaped", ["escrow", "rescue-v1", "prepare", "--address", ESCROW_ADDRESS, "--outpoint", `${FUNDED}:0`, "--to", ADDRESS, ...shaped, "--out", "shaped.json", "--json"]);
+    expect(r.status, r.brief).not.toBe(0);
+    expect(r.all, r.brief).toMatch(/RESCUE_LOCK_MISMATCH/);
+    expect(onlyIdentity(before), JSON.stringify(fake.methods.slice(before))).toBe(true);
+    expect(fs.existsSync(path.join(ws, "shaped.json"))).toBe(false);
+    // one amount off is enough
+    const off = escrowArgs.map((a) => (a === String(RELEASE) ? String(RELEASE + 1) : a));
+    const r2 = await run("prepare-off-by-one", ["escrow", "rescue-v1", "prepare", "--address", ESCROW_ADDRESS, "--outpoint", `${FUNDED}:0`, "--to", ADDRESS, ...off, "--out", "off.json", "--json"]);
+    expect(r2.all, r2.brief).toMatch(/RESCUE_LOCK_MISMATCH/);
+    expect(fs.existsSync(path.join(ws, "off.json"))).toBe(false);
+  });
+
+  it("R-8 (C-4) the keys and the other constructor arguments are required and checked before anything is read from the node", async () => {
+    const before = fake.methods.length;
+    const withoutKey = escrowArgs.slice(2); // no --buyer-pk
+    const missing = await run("prepare-no-key", ["escrow", "rescue-v1", "prepare", "--address", ESCROW_ADDRESS, "--outpoint", `${FUNDED}:0`, "--to", ADDRESS, ...withoutKey, "--out", "nokey.json", "--json"]);
+    expect(missing.status, missing.brief).not.toBe(0);
+    expect(missing.all, missing.brief).toMatch(/RESCUE_ESCROW_ARGS_INVALID/);
+    expect(missing.all, missing.brief).toMatch(/missing --buyer-pk/);
+    expect(fs.existsSync(path.join(ws, "nokey.json"))).toBe(false);
+    const none = await run("prepare-no-args", ["escrow", "rescue-v1", "prepare", "--address", ESCROW_ADDRESS, "--outpoint", `${FUNDED}:0`, "--to", ADDRESS, "--json"]);
+    expect(none.all, none.brief).toMatch(/missing --buyer-pk, --seller-pk, --arbiter-pk, --buyer-destination, --seller-destination, --refund-amount, --release-amount/);
+    const badKey = await run("prepare-bad-key", ["escrow", "rescue-v1", "prepare", "--address", ESCROW_ADDRESS, "--outpoint", `${FUNDED}:0`, "--to", ADDRESS, ...escrowArgs.map((a, i) => (i === 1 ? "03" + a : a)), "--json"]);
+    expect(badKey.all, badKey.brief).toMatch(/RESCUE_ESCROW_ARGS_INVALID/);
+    const badAmount = await run("prepare-bad-amount", ["escrow", "rescue-v1", "prepare", "--address", ESCROW_ADDRESS, "--outpoint", `${FUNDED}:0`, "--to", ADDRESS, ...escrowArgs.map((a) => (a === String(REFUND) ? "0" : a)), "--json"]);
+    expect(badAmount.all, badAmount.brief).toMatch(/RESCUE_ESCROW_ARGS_INVALID/);
+    expect(onlyIdentity(before), JSON.stringify(fake.methods.slice(before))).toBe(true);
+    for (const x of [missing, none, badKey, badAmount]) expect(canonical(x.dialled), x.brief).toEqual([]);
+  });
+
+  it("R-9 (C-4) the escrow's arguments but a UTXO the node lists under another script: RESCUE_LOCK_MISMATCH, nothing written", async () => {
+    const real = fake.lockSpk;
+    fake.lockSpk = "0000aa20" + "ee".repeat(32) + "87";
+    try {
+      const r = await run("prepare-other-script", prepareArgs("other.json"));
+      expect(r.all, r.brief).toMatch(/RESCUE_LOCK_MISMATCH/);
+      expect(fs.existsSync(path.join(ws, "other.json"))).toBe(false);
+    } finally {
+      fake.lockSpk = real;
+    }
   });
 
   it("R-4 inspect shows the draft (what is signed); a package edited to say otherwise is refused by inspect, sign and broadcast, and left as it was", async () => {

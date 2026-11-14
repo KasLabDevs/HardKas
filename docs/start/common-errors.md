@@ -7,8 +7,10 @@ description: The errors a team meets on the simnet path, with their real codes, 
 
 Every error below was produced on purpose while testing
 [Build on your own simnet](./build-on-simnet.md), against a real `rusty-kaspad`
-v2.1.0 simnet node. The full catalogue is in [Errors](../reference/errors.md) and
-[Error Recovery](../reference/error-recovery.md).
+v2.1.0 simnet node. More codes, with their causes and fixes, are in
+[Errors](../reference/errors.md) and [Error Recovery](../reference/error-recovery.md). Those pages
+cover the common codes, not every one: every error carries its stable `code` and a message
+that says what was refused and what was not done.
 
 **Tip:** add `--json` to see the stable error `code`. Some plain-text messages
 print only the explanation (for example `tx send` of an edited file, or
@@ -106,8 +108,8 @@ and sign again from the last intact step.
 node: `rpc *`, `accounts balance`, `tx plan`, `tx wait`, `doctor`, … — reads
 included, even to an endpoint you declare),
 `SILVERSCRIPT_MAINNET_NOT_ENABLED` (`silver deploy|spend|covenant … --network mainnet`),
-`MAINNET_SIGNING_DISABLED` (`tx sign`; `--allow-mainnet-signing` has no effect in
-this release) and `MAINNET_BROADCAST_DISABLED`. These are policy, not bugs:
+`MAINNET_SIGNING_DISABLED` (`tx sign`; HardKAS never signs on mainnet, and
+`--allow-mainnet-signing` no longer exists) and `MAINNET_BROADCAST_DISABLED`. These are policy, not bugs:
 mainnet is NO-GO and locked down in this release, and no flag or setting
 enables it. Each refusal comes before any connection is attempted.
 

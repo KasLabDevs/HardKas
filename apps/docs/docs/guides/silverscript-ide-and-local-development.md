@@ -1,176 +1,91 @@
 ---
 title: SilverScript IDE & Local Development
-description: A complete guide to writing, compiling, inspecting, and testing SilverScript smart contracts and covenants locally using HardKAS and the official silverc compiler.
+description: Write, compile and run SilverScript contracts locally with the official silverc compiler, a simnet node and HardKAS.
 sidebar_label: SilverScript IDE & Local Dev
 sidebar_position: 2
 ---
 
-# SilverScript IDE & Local Development: Write, Compile & Test Kaspa Covenants
+# SilverScript: Local Development
 
-**SilverScript** is Kaspa's domain-specific programming language for writing native smart contracts and covenants on Layer 1. Unlike Ethereum's Solidity, which compiles to bytecode executed in a stateful Virtual Machine, SilverScript compiles to structured Kaspa script encumbering Unspent Transaction Outputs (UTXOs).
+**SilverScript** is Kaspa's language for L1 contracts and covenants. It compiles to Kaspa script that locks UTXOs; there is no virtual machine and no contract storage. A covenant's "state" is carried by the next UTXO it creates.
 
-With the network-wide activation of the **Toccata upgrade on Kaspa mainnet on June 30, 2026 (at DAA score 474,165,565)**, native covenants became active at the protocol level. On **September 9, 2026**, the **SilverScript compiler v1.0.0 (`silverc`)** was officially released.
+## The stack
 
-When engineering automated payment vaults, escrows, inheritance timelocks, or atomic swaps on Kaspa, developers require a structured development environment to compile contracts, inspect binary program hashes, and test spending conditions before deploying to testnet.
+1. **The protocol.** Toccata, active on Kaspa mainnet since 30 June 2026. The node validates covenant opcodes, signatures and mass.
+2. **The compiler.** `silverc` v1.0.0, the official release (9 September 2026). It turns `.sil` source into script and an ABI.
+3. **HardKAS.** It installs the pinned `silverc`, compiles through it, deploys and spends on a node you run, and writes verifiable records of each step. It never signs, sends or connects to mainnet in this release.
+4. **Experimental.** vProgs is an inspect-only research surface, not part of this workflow.
 
-This guide explains how to set up a local-first SilverScript development workflow using the official compiler and the **HardKAS** deterministic test environment.
+## Browser IDE or local workflow
 
----
-
-## What is SilverScript?
-
-SilverScript abstracts low-level Kaspa script opcodes into a type-safe, human-readable language. It allows developers to express complex spending conditions:
-- **Covenants:** Restricting not just *who* can spend a coin, but *how* and *where* the coin can be spent in subsequent transaction outputs.
-- **Multi-Party Spending:** Dynamic threshold multisig and cooperative release rules.
-- **Timelocks:** Sequence-based and absolute block-time maturation conditions.
-
-### The Developer Stack: Compiler vs. Protocol Consensus
-A critical technical distinction must be maintained when developing SilverScript contracts:
-1. **The Protocol (Toccata Consensus):** Active on Kaspa mainnet since June 30, 2026 (DAA 474,165,565). The consensus engine validates covenant opcodes, signature checks, and transaction mass.
-2. **The Compiler (`silverc v1.0.0`):** The official standalone compiler released on September 9, 2026. Developers use `silverc` to compile `.sil` source code into script bytecodes and generate ABIs.
-3. **The Framework (HardKAS):** An open-source local framework providing in-memory simulation, Dockerized `rusty-kaspa` localnets, and automated Vitest testing harnesses.
-4. **Experimental Modules (vProgs):** Advanced programmability extensions (vProgs) are experimental research prototypes and not part of the standard production pipeline.
-
----
-
-## Browser IDE (SilverScript Studio) vs. Local Engineering (HardKAS)
-
-The Kaspa ecosystem provides two complementary environments for SilverScript development:
-
-| Capability | SilverScript Studio (Web IDE) | HardKAS (Local-First Framework) |
+| | SilverScript Studio (web) | HardKAS (local) |
 |---|---|---|
-| **Environment** | Web browser (cloud / client-side) | Local machine CLI, IDE & CI/CD pipeline |
-| **Best For** | Rapid prototyping, visual exploration, learning | Automated test suites, backend daemons, production pipelines |
-| **Testing** | Visual input parameters in UI | Automated test scripts using TypeScript / Vitest |
-| **Node Connection** | Public wRPC endpoints | In-memory simulator + local Dockerized `rusty-kaspa` node |
-| **Artifact Lineage** | In-browser session state | Version-controlled JSON Evidence Packages |
+| Best for | Learning, quick experiments | Repeatable tests, CI, evidence |
+| Runs against | Public endpoints | Your own simnet node in Docker |
+| Output | Session state in the browser | Compile, deploy, spend and covenant records you can verify offline |
 
----
+The [HardKAS IDE](https://github.com/KasLabDevs/HardKasIDE) is a separate desktop workbench built on the same CLI.
 
-## Step-by-Step: Setting Up a Local SilverScript Project
-
-### 1. Initialize a HardKAS Workspace
-Create a local workspace configured for SilverScript development:
+## Set up
 
 ```bash
-npx hardkas init kaspa-covenants-lab
-cd kaspa-covenants-lab
+mkdir kaspa-covenants-lab && cd kaspa-covenants-lab
+npx @hardkas/cli@0.13.0-rc.2 init .
+npm install
+npx hardkas toolchain install silverc
+npx hardkas silver doctor --network simnet
 ```
 
-Your workspace will contain a `contracts/` directory dedicated to SilverScript `.sil` source files.
+`toolchain install silverc` downloads the official `silverc` v1.0.0 asset for your platform and checks its SHA-256. `silver doctor` checks the compiler and your node (see [Run your own simnet node](https://github.com/KasLabDevs/HardKas/blob/main/docs/start/simnet-node.md)).
 
-### 2. Author a SilverScript Contract
-Create a simple 2-of-2 escrow with a refund timelock: `contracts/EscrowTimelock.sil`:
+## A first contract
 
-```solidity
-contract EscrowTimelock(
-    pubkey buyer,
-    pubkey seller,
-    pubkey arbiter,
-    int timeoutBlock
-) {
-    // Path 1: Mutual release (Buyer + Seller) OR Dispute resolution (Arbiter + either party)
-    entry release(sig s1, sig s2) {
-        require(checkSig(s1, buyer) && checkSig(s2, seller) ||
-                checkSig(s1, arbiter) && (checkSig(s2, buyer) || checkSig(s2, seller)));
-    }
+Save as `contracts/signed-release.sil`:
 
-    // Path 2: Timeout refund to buyer after specified block maturation
-    entry refund(sig buyerSig) {
-        require(checkLockTime(timeoutBlock));
-        require(checkSig(buyerSig, buyer));
+```text
+pragma silverscript ^0.1.0;
+
+contract SignedRelease(pubkey owner) {
+    entry release(sig ownerSig) {
+        require(checkSig(ownerSig, owner));
     }
 }
 ```
 
-### 3. Compile Contracts to Kaspa Bytecode
-Compile the contract using the integrated toolchain:
+Compile it with its constructor arguments, then check that the record reproduces:
 
 ```bash
-hardkas run compile
+npx hardkas silver compile contracts/signed-release.sil --args contracts/owner.args.json --network simnet --out contracts/signed-release.compile.json
+npx hardkas silver verify contracts/signed-release.compile.json --args contracts/owner.args.json
 ```
 
-This compiles `EscrowTimelock.sil` and generates structured artifacts in `.hardkas/artifacts/`:
-- **ABI Definition:** Parameter types, entrypoint names, and method signatures.
-- **Covenant Script Public Key:** The exact `scriptPublicKey` format required to lock coins onto the contract.
-- **Program Hash:** Cryptographic commitment identifying the covenant on the BlockDAG.
+The compile record names the compiler release and binary hash, the source and argument digests, and the contract's P2SH address.
 
----
-
-## Simulating and Testing Covenant Execution with the HardKAS SDK
-
-Once compiled, you can test deployment and spending paths deterministically using the real HardKAS SDK:
-
-```typescript
-import { describe, it, expect } from 'vitest';
-import { Hardkas } from '@hardkas/sdk';
-
-describe('EscrowTimelock Covenant Tests', () => {
-  it('should plan and simulate covenant deployment and valid mutual spend', async () => {
-    // 1. Initialize HardKAS in deterministic simulation mode
-    const sdk = await Hardkas.create({
-      execution: { mode: 'simulator', domain: 'kaspa-l1', network: 'simulated' }
-    });
-
-    const compiledScript = '20abcdef...ac'; // Compiled bytecode from EscrowTimelock.sil
-
-    // 2. Plan the covenant deployment (locking 20 KAS into the covenant script)
-    const deployPlan = await sdk.covenants.planDeploy({
-      script: compiledScript,
-      amount: 2_000_000_000n, // 20 KAS in sompi
-      from: 'alice',
-    });
-
-    expect(deployPlan.summary.outputsCount).toBeGreaterThanOrEqual(1);
-
-    // 3. Sign and simulate the deployment
-    const signedDeploy = await sdk.tx.sign(deployPlan, 'alice');
-    const { receipt } = await sdk.tx.simulate(signedDeploy);
-    expect(receipt.txId).toBeDefined();
-
-    // 4. Plan spending from the covenant UTXO
-    const spendPlan = await sdk.covenants.planSpend({
-      covenantId: receipt.txId,
-      to: 'kaspa:precipient...',
-      amount: 1_990_000_000n,
-      from: 'alice',
-    });
-
-    // 5. Verify the spending transaction logic
-    const verified = await sdk.tx.verify(spendPlan);
-    expect(verified.isValid).toBe(true);
-  });
-});
-```
-
----
-
-## Inspecting Transactions in the HardKAS Visual Console
-
-For visual inspection of UTXO graphs and covenant state transitions, launch the HardKAS developer suite:
+Then deploy and spend it on your node:
 
 ```bash
-hardkas console
+npx hardkas silver deploy contracts/signed-release.compile.json --from alice --amount 1 --network simnet --password-env HARDKAS_PASSWORD --wait
+npx hardkas silver spend .hardkas/artifacts/silver/silverDeploy-<id>.json --entry release --to <address> --args contracts/release.args.json --password-env HARDKAS_PASSWORD --wait
 ```
 
-The console allows you to:
-- Inspect decoded SilverScript opcodes and stack execution traces.
-- Verify signature verification hashes (Schnorr signatures).
-- Audit change outputs and mass calculations in real time.
+How to write the constructor arguments, a covenant example (genesis and transition), and real output from a node are in [SilverScript and covenants on your simnet](https://github.com/KasLabDevs/HardKas/blob/main/docs/start/silverscript-covenants.md).
 
----
+## Testing
 
-## Technical Boundaries & Honest Limitations
+See [Testing Kaspa Covenants](./testing-kaspa-covenants.md). In short:
+- the simulator does not execute Kaspa script, so covenant logic is tested on a simnet node;
+- a refusal is tested by sending the breaking transaction and asserting that the node rejects it.
 
-1. **Simulation vs. Mining Consensus:** Passing a SilverScript test in the local simulator confirms that the script logic, signature verification, and timelocks comply with protocol rules. However, it does not guarantee network acceptance if network mining fee policies are not met.
-2. **Covenants are Stateless:** SilverScript contracts do not possess internal persistent storage variables. State changes are modeled by passing funds into a new UTXO encumbered by an updated covenant contract.
-3. **Policy Restrictions:** Mainnet is locked down in this release: no connection (reads included, even to an endpoint you declare), no signing, no broadcast; no flag, option or configuration enables it (`MAINNET_CONNECTION_DISABLED`, `MAINNET_SIGNING_DISABLED`, `MAINNET_BROADCAST_DISABLED`). SilverScript on mainnet is `SILVERSCRIPT_MAINNET_NOT_ENABLED`.
+## Limits
 
----
+1. **Timelocks.** HardKAS builds relative timelocks (sequence locks) and refuses to send one before it is met. It does not build absolute lock times (`checkLockTime`).
+2. **What a policy computes** is evaluated by the node, not by HardKAS before sending.
+3. **Covenant shapes.** `silver covenant` commands cover 1:1 transitions. Other shapes (1:N, N:M, termination) are built by the SDK's v1 engine (`sdk.covenants`) and proven by the repository's node suite only.
+4. **Mainnet** is locked down in this release: no connection (reads included), no signing, no broadcast, and no flag enables it (`MAINNET_CONNECTION_DISABLED`, `MAINNET_SIGNING_DISABLED`, `MAINNET_BROADCAST_DISABLED`). SilverScript on mainnet is `SILVERSCRIPT_MAINNET_NOT_ENABLED`.
 
-## Related Documentation & Resources
+## Related
 
-- [Official SilverScript Compiler Specification](https://github.com/kaspanet/silverscript)
-- [SilverScript Studio (Browser IDE)](https://silverscriptstudio.com)
-- [Testing Kaspa Covenants Guide](./testing-kaspa-covenants.md)
-- [HardKAS Execution Contracts Architecture](../concepts/execution-contract.md)
+- [Official SilverScript compiler](https://github.com/kaspanet/silverscript)
+- [SilverScript Studio (browser IDE)](https://silverscriptstudio.com)
+- [Testing Kaspa Covenants](./testing-kaspa-covenants.md)
+- [Execution contracts & evidence](../concepts/execution-contract.md)

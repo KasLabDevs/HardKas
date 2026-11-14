@@ -137,6 +137,12 @@ the levels are under `result.levels`:
   (`NODE_NOT_SYNCED`).
 - **`INTEGRITY_VERIFIED` means the file is intact**, the one HardKAS wrote with
   its lineage. It says nothing about the network.
+- **Evidence does not expire.** An artifact older than 30 days still verifies;
+  `artifact verify` adds a `STALE_ARTIFACT` warning that names its age. Age
+  matters only before execution: a plan or signed transaction older than 30
+  days is refused for signing and sending (`STALE_ARTIFACT_REFUSED`), because
+  the outputs it spends have most likely moved. Receipts, submissions and
+  observations are never refused for their age.
 - **Simulator records never count as network evidence.** Their network level is
   `NOT_CHECKED [SIMULATED_ARTIFACT]`; replay (`hardkas replay verify`) exists for
   simulated records only.

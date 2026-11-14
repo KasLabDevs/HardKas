@@ -38,21 +38,20 @@ export async function runAccountsRealGenerate(
   // not commit to the network, so a mainnet key in the store could sign a manipulated plan. Refused with the signing code
   // first, before any name, password or SDK is touched: every spelling (`mainnet`, `mainnet-<n>`, `kaspa`,
   // `kaspa-mainnet`, any case) and every config entry that declares one (an alias such as `prod`).
-  {
-    const { refuseMainnetSigning, workspaceConfigForGuard } = await import("../mainnet-guard.js");
-    refuseMainnetSigning(
-      await workspaceConfigForGuard(options.workspaceRoot),
-      [options.networkId],
-      "accounts real generate: no mainnet key is made while mainnet is locked down"
-    );
-  }
+  const { refuseMainnetSigning, workspaceConfigForGuard } = await import("../mainnet-guard.js");
+  const guardConfig = await workspaceConfigForGuard(options.workspaceRoot);
+  refuseMainnetSigning(guardConfig, [options.networkId], "accounts real generate: no mainnet key is made while mainnet is locked down");
   const generator = new KaspaSdkKeyGenerator(
     options.networkId ? { networkId: options.networkId } : {}
   );
   const count = options.count || 1;
 
-  // AUD-20: a mainnet key is never written in plaintext; refused before anything is generated.
-  if (options.unsafePlaintext && (options.networkId ?? "simnet") === "mainnet") {
+  // AUD-20: a mainnet key is never written in plaintext; refused before anything is generated. A6 (rc2 audit): every
+  // mainnet spelling and every config alias that declares mainnet, not the literal "mainnet" only, so the refusal still
+  // holds the day the signing lockdown above (which answers first today) is lifted.
+  const { isMainnetNetworkId, declaredNetworkIdOf } = await import("@hardkas/core");
+  const plaintextNetwork = options.networkId ?? "simnet";
+  if (options.unsafePlaintext && (isMainnetNetworkId(plaintextNetwork) || isMainnetNetworkId(declaredNetworkIdOf(guardConfig, plaintextNetwork)))) {
     const { HardkasCliError, HardkasExitCode } = await import("../cli-errors.js");
     throw new HardkasCliError(
       "PLAINTEXT_MAINNET_FORBIDDEN",

@@ -1,4 +1,4 @@
-import { IndexerBackendPlugin } from '@hardkas/toolkit';
+import { IndexerBackendPlugin, redactUrlCredentials, redactUrlCredentialsInText } from '@hardkas/toolkit';
 import { KaspaJsonRpcClient, KaspaWrpcClient } from '@hardkas/kaspa-rpc';
 import { HardkasRpcSemanticError } from './errors.js';
 import { ResilienceEngine, RpcResilienceOptions, RpcStats } from './resilience.js';
@@ -20,6 +20,8 @@ export function kaspaRpcBackendPlugin(options: KaspaRpcBackendOptions): KaspaRpc
     const httpClient = isWs ? null : new KaspaJsonRpcClient({ url: options.url });
     const wsClient = isWs ? new KaspaWrpcClient(options.url) : null;
     const engine = new ResilienceEngine(options.resilience);
+    // A3 (rc2 audit): what an error says of the endpoint, without its credentials (user:password, api_key=…)
+    const endpoint = redactUrlCredentials(options.url);
     let isConnected = false;
     let isShuttingDown = false;
 
@@ -80,7 +82,7 @@ export function kaspaRpcBackendPlugin(options: KaspaRpcBackendOptions): KaspaRpc
                     return 0n;
                 } catch (e: any) {
                     if (e?.message?.includes("request deserialization error") || e?.message?.includes("not have UTXO index")) {
-                        throw new HardkasRpcSemanticError(`RPC Node at ${options.url} does not have UTXO index enabled. Expected for standard nodes. Error: ${e.message}`);
+                        throw new HardkasRpcSemanticError(`RPC Node at ${endpoint} does not have UTXO index enabled. Expected for standard nodes. Error: ${redactUrlCredentialsInText(String(e.message))}`);
                     }
                     throw e;
                 }
@@ -117,7 +119,7 @@ export function kaspaRpcBackendPlugin(options: KaspaRpcBackendOptions): KaspaRpc
                     });
                 } catch (e: any) {
                     if (e?.message?.includes("request deserialization error") || e?.message?.includes("not have UTXO index")) {
-                        throw new HardkasRpcSemanticError(`RPC Node at ${options.url} does not have UTXO index enabled. Expected for standard nodes. Error: ${e.message}`);
+                        throw new HardkasRpcSemanticError(`RPC Node at ${endpoint} does not have UTXO index enabled. Expected for standard nodes. Error: ${redactUrlCredentialsInText(String(e.message))}`);
                     }
                     throw e;
                 }

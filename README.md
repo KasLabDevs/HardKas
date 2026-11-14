@@ -1,23 +1,23 @@
 # HardKAS
 
-> **Kaspa L1 Development Framework, Transaction Simulator & Visual IDE**
+> **Kaspa L1 Development Framework, Transaction Simulator & Developer Platform**
 
-[![npm version](https://img.shields.io/badge/version-0.13.0--rc.1-blue.svg)](https://github.com/KasLabDevs/HardKas/releases)
+[![npm](https://img.shields.io/npm/v/@hardkas/cli?label=npm%20%40hardkas%2Fcli)](https://www.npmjs.com/package/@hardkas/cli)
 [![License: MIT](https://img.shields.io/badge/License-MIT-teal.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/node-24.22.1-emerald.svg)](docs/start/installation.md)
-[![CI: Parity](https://img.shields.io/badge/CI-cross--platform%20truth-brightgreen.svg)](.github/workflows/ci.yml)
+[![CI](https://github.com/KasLabDevs/HardKas/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/KasLabDevs/HardKas/actions/workflows/ci.yml)
 [![Release Status](https://img.shields.io/badge/status-hardened--alpha-amber.svg)](docs/status/claims.generated.md)
 
-HardKAS is an open-source, local-first development framework, transaction simulator, and visual IDE for building and testing applications on **Kaspa L1**.
+HardKAS is an open-source, local-first development framework, transaction simulator, and development environment for building and testing applications on **Kaspa L1**.
 
 Inspired by the developer ergonomics of Ethereum tooling like **Hardhat** and **Foundry**, HardKAS provides:
 
-- **Instant In-Memory Simulator (experimental):** Execute and test Kaspa transactions in sub-milliseconds without network latency. It is an approximate model: confirm timelock, covenant and mass behaviour on simnet ([limitations](docs/status/limitations.md#the-simulator-is-an-approximate-model)).
+- **Instant In-Memory Simulator (experimental):** Plan, sign and simulate Kaspa transactions locally in seconds, with no node and no network. It is an approximate model: confirm timelock, covenant and mass behaviour on simnet ([limitations](docs/status/limitations.md#the-simulator-is-an-approximate-model)).
 - **Managed Docker Localnet:** One-command local `simnet` running official `rusty-kaspad` v2.1.0 (pinned by image digest) with automatic CPU mining.
 - **Deterministic Accounts & Funding:** Pre-configured developer accounts (`alice`, `bob`, `carol`) for reproducible test flows.
 - **SilverScript & Covenants Toolchain:** Managed integration for the official `silverc v1.0.0` compiler, P2SH deploy/spend, and Toccata 1:1 auth-bound covenants.
-- **Cryptographic Artifacts & Offline Replay:** Every transaction plan, signed payload, and receipt is hashed into immutable JSON artifacts that can be replayed and verified offline.
-- **Visual Web Studio & IDE:** Interactive local console with React Flow DAG visualization, transaction inspector, and SSE telemetry.
+- **Cryptographic Artifacts:** Every transaction plan, signed payload, and receipt is hashed into immutable JSON artifacts that can be verified offline. Simulator runs can also be replayed.
+- **Visual IDE & Studio:** Standalone visual developer workbench with Monaco editor, SilverScript compiler, Deploy & Run, Covenant graph and local node telemetry ([HardKas IDE](https://github.com/KasLabDevs/HardKasIDE)).
 
 > [!IMPORTANT]
 > **Kaspa L1 is a UTXO BlockDAG, NOT an EVM.**
@@ -34,7 +34,7 @@ Inspired by the developer ergonomics of Ethereum tooling like **Hardhat** and **
 | **Fast Unit Testing** | Hardhat Network / Anvil (local EVM) | HardKAS Simulator (in-memory synchronous UTXO engine) |
 | **Local Node Testing** | Local `geth` or `anvil` container | Managed Docker `rusty-kaspad` on `simnet` with CPU miner |
 | **State Inspection** | Transaction traces & state diffs | Verifiable JSON Artifacts (`TxPlan`, `SignedTx`, `TxReceipt`) |
-| **Verification & Debug** | Hardhat console / console.log | Deterministic Workflow Replay at specific DAA scores |
+| **Verification & Debug** | Hardhat console / console.log | Offline artifact verification; deterministic replay of simulator runs |
 | **Dev Server & APIs** | Hardhat Node / Remix | HardKAS Dev Server (`@hardkas/dev-server` REST & SSE) |
 
 ---
@@ -47,40 +47,45 @@ Requirements: **Node.js 24.22.1** exactly (the version HardKAS is built, tested 
 
 ```bash
 # Initialize a new HardKAS workspace with deterministic accounts
-npx @hardkas/cli init my-kaspa-app
+npx @hardkas/cli@0.13.0-rc.2 init my-kaspa-app
 cd my-kaspa-app
+# init writes a package.json that pins @hardkas/cli; install it so `npx hardkas` runs the project's copy
+npm install
 ```
 
 ### 2. Fast In-Memory Simulation (No Node Required)
 
 ```bash
-# Plan, verify, and simulate an in-memory transaction instantly
-hardkas tx plan --from alice --to bob --amount 10 --network simulated --out tx-plan.json
-hardkas artifact verify tx-plan.json --strict
-hardkas tx sign tx-plan.json --account alice --out tx-signed.json
-hardkas tx send tx-signed.json --network simulated --yes
+# Plan, verify, and simulate an in-memory transaction
+npx hardkas tx plan --from alice --to bob --amount 10 --network simulated --out tx-plan.json
+npx hardkas artifact verify tx-plan.json --strict
+npx hardkas tx sign tx-plan.json --account alice --out tx-signed.json
+npx hardkas tx send tx-signed.json --network simulated --yes
 
-# Verify deterministic simulator replay using the receipt ID printed by send
-hardkas replay verify <receipt-id>
+# Replay the simulator run, using the receipt ID printed by send (replay covers simulator runs only)
+npx hardkas replay verify <receipt-id>
 ```
 
 ### 3. Managed Localnet (Real rusty-kaspad + Mining)
 
 ```bash
 # Start a real local Kaspa simnet node in Docker with automated mining
-hardkas localnet start --profile toccata-v2
-hardkas localnet status --json
-hardkas localnet fund alice --profile toccata-v2
+npx hardkas localnet start --profile toccata-v2
+npx hardkas localnet status --json
+npx hardkas localnet fund alice --profile toccata-v2
 ```
 
 To run a node of your own instead (your container, your ports) and take one payment, a SilverScript contract and a
 covenant all the way to `artifact verify`, follow [Build on your own simnet](docs/start/build-on-simnet.md).
 
-### 4. Visual Studio / IDE
+### 4. Local Dev Server & Visual IDE
 
 ```bash
-# Launch the interactive visual developer console (http://localhost:7420)
-hardkas dev
+# Launch the headless local developer API & telemetry daemon (http://localhost:7420)
+npx hardkas dev
+
+# For the complete visual studio & workbench (editor, compiler, covenant graph, node manager):
+# Run HardKas IDE (https://github.com/KasLabDevs/HardKasIDE)
 ```
 
 ---
@@ -99,11 +104,11 @@ HardKAS:
 intent -> artifact -> verification -> execution -> replay
 ```
 
-The entire lifecycle of Kaspa UTXOs—from genesis injection to final signature submission—can be tracked, hashed, signed, processed in the simulator, receipted, indexed, and replayed.
+The entire lifecycle of Kaspa UTXOs—from genesis injection to final signature submission—can be tracked, hashed, signed, processed in the simulator, receipted and indexed. Simulator runs can be replayed; real-node sends are checked with `hardkas verify` and `hardkas tx status`.
 
 ## The Execution Contract
 
-HardKAS `0.13.0-rc.1` introduces the strictly partitioned Execution Contract.
+HardKAS `0.13.0-rc.2` uses the strictly partitioned Execution Contract.
 The Execution Contract is a tuple of `(mode, domain, network)` that unambiguously identifies the context in which an artifact was created, an execution target is connected, or an account exists.
 
 - **`mode`**: The environment topology (`simulator`, `localnet`, `rpc`, `l2-rpc`)
@@ -115,7 +120,7 @@ Common targets:
   The JS-based, in-memory, synchronous transaction simulator. Accounts, UTXOs, and funds are strictly synthetic.
 - **Localnet**: `{ mode: "localnet", domain: "kaspa-l1", network: "simnet" }`
   A real Kaspa node (`rusty-kaspad`) running locally via Docker on `simnet` with real Proof-of-Work and local mining.
-- **RPC**: `{ mode: "rpc", domain: "kaspa-l1", network: "testnet-11" }`
+- **RPC**: `{ mode: "rpc", domain: "kaspa-l1", network: "testnet-10" }`
   A remote connection to a configured Kaspa node.
 
 **Compatibility Invariants:**
@@ -131,10 +136,10 @@ Common targets:
 
 ## Local-First Status
 
-HardKAS `0.13.0-rc.1` is local-first deterministic transaction infrastructure
+HardKAS `0.13.0-rc.2` is local-first deterministic transaction infrastructure
 for Kaspa/Toccata development.
 
-Current certified baseline:
+Current baseline, verified by the release checks:
 
 - `simulator` is the recommended default for fast, synchronous testing.
   - Toccata v2 Docker `localnet` baseline (`rusty-kaspad` on Kaspa `simnet`).
@@ -144,13 +149,13 @@ Current certified baseline:
 - Artifact-coherence simulation.
 - Machine-verifiable golden corpus.
 - Release gauntlet through `pnpm gauntlet:toccata`.
-- mainnet is intentionally blocked outside the alpha happy path.
+- mainnet is blocked: nothing in HardKAS signs, sends or connects to mainnet in this release line.
 - HardKAS is not a wallet, custody system, consensus layer, or production mainnet
   signing environment.
 
 ### Toccata v2 Alpha Baseline
 
-The `0.13.0-rc.1` release line includes a normalized Toccata v2 localnet flow:
+The `0.13.0-rc.2` release line includes a normalized Toccata v2 localnet flow:
 
 - Docker `rusty-kaspad` v2.1.0 localnet (pinned by digest) funding with a compatible miner companion (`kaspanet/cpuminer`).
 - Standard transaction lifecycle against the local node.
@@ -169,20 +174,20 @@ Official release claims:
 - `vmConsensusEquivalence`: `NOT_CLAIMED`
 - `mainnet`: `BLOCKED_BY_POLICY`
 
-### 0.13.0-rc.1 SDK Parity
+### 0.13.0-rc.2 SDK Parity
 
-`0.13.0-rc.1` is a SDK parity / developer experience patch. It adds high-level
+`0.13.0-rc.2` includes high-level
 SDK surfaces for capabilities, localnet status/start/fund, corpus verification,
 and Silver planning/simulation/compare flows without changing the release
 claims above. It enforces strict separation of execution environments across Artifact lineage.
 
 SDK real Silver RPC/Docker execution remains explicitly unsupported in
-`0.13.0-rc.1` via `SDK_SILVER_REAL_LIFECYCLE_UNSUPPORTED`; certified real
-lifecycle execution remains CLI/localnet bounded.
+`0.13.0-rc.2` via `SDK_SILVER_REAL_LIFECYCLE_UNSUPPORTED`; the real
+lifecycle verified by the release checks remains CLI/localnet bounded.
 
-### 0.13.0-rc.1 Programmability Builder Surface
+### 0.13.0-rc.2 Programmability Builder Surface
 
-`0.13.0-rc.1` also includes a local-only builder surface for SilverScript,
+`0.13.0-rc.2` also includes a local-only builder surface for SilverScript,
 ZK corpus fixtures, and vProgs artifact inspection. This is a programmability
 surface, not a protocol/runtime claim.
 
@@ -226,7 +231,7 @@ ZK/vProgs lab claims:
 - `ZK_CORPUS_SURFACE_READY`
 - `VPROGS_INSPECT_SURFACE_READY`
 - Groth16 corpus verification is local fixture coherence only.
-- RISC0 is inspect-only unless a future helper is bundled.
+- RISC Zero Groth16 receipts are verified locally against the pinned RISC Zero key (`hardkas zk toccata verify-receipt`); HardKAS builds the lock scripts but has no command that broadcasts a ZK spend.
 - vProgs is inspect-only.
 - `ZK_ONCHAIN_VERIFICATION_NOT_CLAIMED`
 - `VPROGS_STABLE_API_NOT_CLAIMED`
@@ -333,7 +338,7 @@ hardkas localnet fund treasury
 Low-level primitive for running the Kaspa node binary. It provides a bare `rusty-kaspad` with no funding orchestration, no account lifecycle, and no miner management.
 
 ```bash
-hardkas localnet start
+hardkas node start
 ```
 
 For the explicit artifact boundary:
@@ -361,8 +366,8 @@ which points back to the original plan.
 
 ### Replay
 
-The local verification engine that reconstructs a workflow from artifacts and
-checks whether the observed state transition remains deterministic.
+The local verification engine that reconstructs a simulator workflow from artifacts and
+checks whether the observed state transition remains deterministic. It covers simulator runs only.
 
 ### Query Store
 
@@ -377,7 +382,7 @@ source of truth.
 - Planning and signing isolation.
 - Rebuildable projections from committed artifacts.
 - Toccata v2 localnet baseline guarded by `pnpm gauntlet:toccata`.
-- Mainnet broadcast blocked in this alpha release.
+- Mainnet signing, broadcast and connections blocked in this alpha release.
 
 ## What HardKAS Is Not
 

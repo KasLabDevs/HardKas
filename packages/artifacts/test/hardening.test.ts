@@ -43,7 +43,11 @@ describe("Artifact Hardening (Phase 4)", () => {
     const resultStale = verifyArtifactSemantics(artifact, { clock: oldClock });
     const staleIssueFound = resultStale.issues.find((i) => i.code === "STALE_ARTIFACT");
     expect(staleIssueFound).toBeDefined();
-    expect(staleIssueFound?.severity).toBe("error");
+    // D-02: age is a warning that names the age, never an error (evidence does not expire). It used to be severity
+    // "error", which made `artifact verify` report INTEGRITY_FAILED on an intact artifact older than 30 days.
+    expect(staleIssueFound?.severity).toBe("warning");
+    expect(staleIssueFound?.message).toMatch(/36 days old/);
+    expect(resultStale.ok).toBe(true);
   });
 
   it("should distinguish between normal and strict mode for hardening fields", () => {

@@ -46,16 +46,22 @@ describe("createEscrow (SilverScript v1, managed silverc installed)", () => {
     expect(a.state.lockingScriptHex).toBe(b.state.lockingScriptHex);
   });
 
+  // C-10 (audit 2026-11-13): CHANGED. The v2 cases used the v1 config (refund 1 KAS ≠ release 2 KAS), compiled as an
+  // EscrowFull with principal = refund; that config is now ESCROW_CONFIG_INVALID for v2. They use a v2 config (principal).
   it("v2, the default: deterministic for the same parties and nonce, a different address for each escrow without one", async () => {
+    const { refundAmount: _r, releaseAmount: _s, ...parties } = config;
+    const v2 = { ...parties, principal: 100000000n };
     const escrowNonce = "11".repeat(32);
-    const a = await createEscrow({ ...config, escrowNonce });
-    const b = await createEscrow({ ...config, escrowNonce });
+    const a = await createEscrow({ ...v2, escrowNonce });
+    const b = await createEscrow({ ...v2, escrowNonce });
     expect(a.provenance.contractName).toBe("EscrowFull");
     expect(a.provenance.contractVersion).toBe("v2");
     expect(a.provenance.artifactSha256).toBe(b.provenance.artifactSha256);
     expect(a.state.lockingScriptHex).toBe(b.state.lockingScriptHex);
-    const c = await createEscrow(config);
-    const d = await createEscrow(config);
+    const c = await createEscrow(v2);
+    const d = await createEscrow(v2);
+    // the versionless v1-shaped config is refused for v2 before any compile (one principal)
+    await expect(createEscrow(config)).rejects.toMatchObject({ code: "ESCROW_CONFIG_INVALID" });
     expect(c.effectiveConfig.escrowNonce).toMatch(/^[0-9a-f]{64}$/);
     expect(c.effectiveConfig.escrowNonce).not.toBe(d.effectiveConfig.escrowNonce);
     expect(c.state.lockingScriptHex).not.toBe(d.state.lockingScriptHex);

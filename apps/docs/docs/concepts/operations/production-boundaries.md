@@ -18,7 +18,7 @@ Evidence of capability does not equal a certification of production readiness.
 
 ## Production Qualification: NOT ESTABLISHED
 
-> **Global Qualification:** HardKAS 0.13.0-rc.1 is currently in `NOT_ESTABLISHED` status for Mainnet Production deployment of Covenants and Based Applications.
+> **Global Qualification:** HardKAS 0.13.0-rc.2 is currently in `NOT_ESTABLISHED` status for Mainnet Production deployment of Covenants and Based Applications.
 
 **Why?**
 1. **Network Policy:** Mainnet is locked down in this release: no connection (reads included, even to an endpoint you declare), no signing, no broadcast; no flag, option or configuration enables it (`MAINNET_CONNECTION_DISABLED`, `MAINNET_SIGNING_DISABLED`, `MAINNET_BROADCAST_DISABLED`). There are no overrides.

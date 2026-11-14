@@ -5,7 +5,9 @@
 
 Date: 2026-06-23
 
-## Certified Status
+## Status verified by the release checks
+
+These are the repository's own checks, not a third-party certification.
 
 LOCAL_FIRST_DEVELOPER_RUNTIME_HARDENED
 
@@ -67,7 +69,7 @@ node packages/cli/dist/index.js capabilities --json
 
 ### Other offline gates
 
-They are not part of `pnpm test`. CI runs only the examples and the gauntlet (state on 2026-11-07, M-03):
+They are not part of `pnpm test`. Since 2026-11-09 CI also runs the release and docs gates (`ci.yml`, job `docs-gates`: version check, CLI references, claims, docs links, site map, known gaps, forbidden claims, licenses, artifact registry), besides the examples and the gauntlet. The table records each gate's local state:
 
 | Gate | Needs | State |
 | :-- | :-- | :-- |
@@ -82,11 +84,11 @@ They are not part of `pnpm test`. CI runs only the examples and the gauntlet (st
 | `node scripts/check-typescript-hygiene.mjs` | nothing | advisory only (style): 187 `catch (e: any)` left on 2026-11-09, no other finding; not a gate |
 | `pnpm lint` | nothing | 0 errors on 2026-11-09 (541 `no-unused-vars` warnings); 14 packages have a `lint` script; not in CI yet |
 | `node scripts/check-artifact-registry.mjs` | a build | passes; three `hardkas.*` strings that are not artifact schemas (a ZK hash domain tag, two report-script schemas) are allowed only in their own file, with the reason |
-| `node scripts/check-release-tarballs.mjs --pack` | `pnpm release:build` (every published `dist/` deleted, built with turbo `--force`) | refuses to pack any other `dist/`; packs the published packages with pnpm and audits each tarball offline (files, exports, README/LICENSE, no `workspace:`, no install scripts, no private paths or tokens, private packages left out, no file the entry points do not reach: `UNREFERENCED_FILE`) |
+| `node scripts/check-release-tarballs.mjs --pack` | `pnpm release:build` (every published `dist/` deleted, built with turbo `--force`) | refuses to pack any other `dist/`, a build made on a tree with uncommitted changes (`RELEASE_BUILD_DIRTY`) or at another commit (`RELEASE_BUILD_WRONG_COMMIT`), a tree with uncommitted changes (`RELEASE_TREE_DIRTY`), a folder git cannot describe (`RELEASE_GIT_UNAVAILABLE`) and a `--dir` holding anything but tarballs (`PACK_DIR_INVALID`); packs the published packages with pnpm and audits each tarball offline (files, exports, README/LICENSE, no `workspace:`, no install scripts, no private paths or tokens in text files including `.jsonl`, `.log` and `.csv`, private packages left out, no file the entry points do not reach: `UNREFERENCED_FILE`, no file outside `dist/` that git does not track: `UNTRACKED_FILE`). The report gives each tarball's `integrity` (sha512) and `publishable`. `--allow-dirty` packs uncommitted changes for local proofs only (`publishable: false`); it never excuses another commit or an ignored file. CI installs exactly these tarballs in its consumer smoke (`packaging:smoke --tarballs`) |
 | `pnpm gauntlet:toccata` | the canonical Docker localnet | CI runs it in `docker-suites.yml`; not run offline |
 | `pnpm qualification:public-npm` | the npm registry | not offline by design |
 
-## Certified Baseline
+## Baseline verified by the release checks
 
 - Docker `rusty-kaspad` v2.1.0 simnet local node, identity verified (container, image digest, endpoint, network, version).
 - Upstream `kaspanet/cpuminer` miner, joined to the node's network namespace.

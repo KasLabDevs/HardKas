@@ -192,7 +192,7 @@ export function registerZkCommands(program: Command) {
     .option("--change-address <address>", "Optional consensus-bound change address")
     .option("--change-amount <sompi>", "Optional consensus-bound change amount in sompi")
     .option("--max-fee <sompi>", "proof-and-output-bound: the most the lock may pay as fee; a UTXO above the bound outputs plus this stays locked (default 50000000)")
-    .option("--address-network <networks>", "Also return the P2SH address for testnet-10; proof-only needs --ack-image-id-only-lock; never for a public test vector. mainnet (any spelling) is refused while mainnet is locked down (MAINNET_SIGNING_DISABLED): nothing is built")
+    .option("--address-network <networks>", "Also return the P2SH address for testnet-10; proof-only needs --ack-image-id-only-lock, and is never built for a public test program (an output-bound lock of one is, with a warning: anyone can trigger its payout). mainnet (any spelling) is refused while mainnet is locked down (MAINNET_SIGNING_DISABLED): nothing is built")
     .option("--ack-image-id-only-lock", "Acknowledge that a proof-only lock binds only the image id (anyone with a valid receipt can spend, replay or front-run)", false)
     .option("--json", "Output as JSON", false)
     .action(

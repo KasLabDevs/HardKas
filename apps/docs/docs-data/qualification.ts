@@ -24,7 +24,7 @@ export const qualificationData: Record<string, CapabilityState> = {
   'artifact-identity': {
     id: 'artifact-identity',
     name: 'Artifact Identity (artifactId)',
-    hardkasVersion: '0.13.0-rc.1',
+    hardkasVersion: '0.13.0-rc.2',
     maturity: 'STABLE',
     evidenceLevel: 'L2',
     environments: {
@@ -40,7 +40,7 @@ export const qualificationData: Record<string, CapabilityState> = {
   'replay': {
     id: 'replay',
     name: 'Replay Engine',
-    hardkasVersion: '0.13.0-rc.1',
+    hardkasVersion: '0.13.0-rc.2',
     maturity: 'PARTIAL',
     evidenceLevel: 'L2',
     environments: {
@@ -56,7 +56,7 @@ export const qualificationData: Record<string, CapabilityState> = {
   'transaction-planning': {
     id: 'transaction-planning',
     name: 'Transaction Planning',
-    hardkasVersion: '0.13.0-rc.1',
+    hardkasVersion: '0.13.0-rc.2',
     maturity: 'PARTIAL',
     evidenceLevel: 'L3',
     environments: {

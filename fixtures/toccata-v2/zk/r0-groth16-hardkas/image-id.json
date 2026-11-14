@@ -1,0 +1,7 @@
+{
+  "guestElfBytes": 268308,
+  "guestElfSha256": "f917077ae697a6b503716608686ff57a7bbdac9e0d0703482dd03c8810fa10da",
+  "imageId": "04c1cd7cafedbda5f993500071da6b4a1b1193799c0d6dd1e02174857a5dd826",
+  "provenance": "HardKAS hk-r0-probe guest (guest/ in this directory), proven 2026-11-13 with the risc0 v3.0.5 crate set (risc0-zkvm 3.0.5, risc0-groth16 3.0.4, risc0-circuit-recursion 4.0.4: the versions rusty-kaspa v2.1.0 pins), LocalProver on CPU, Groth16 wrap by risczero/risc0-groth16-prover:v2025-04-03.1; Borsh Groth16Receipt<ReceiptClaim> with the claim pruned to its digest (the rusty-kaspa v2.1.0 zk-sdk format). Spent on Testnet-10 on 2026-11-13 (see README.md), so it is public now.",
+  "schema": "hardkas.zk.risc0.imageId.v1"
+}

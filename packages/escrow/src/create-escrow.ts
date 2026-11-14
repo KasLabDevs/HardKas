@@ -70,6 +70,67 @@ function nonceArg(nonceHex?: string): { arg: SilArtifactValue; hex: string } {
   return { arg: { kind: "bytes", value: Buffer.from(h, "hex") }, hex: h.toLowerCase() };
 }
 
+/**
+ * C-10 · what an escrow config means: its contract version, its mode and the amounts its branches pay. The ONE reading
+ * of a config, used by createEscrow (what is compiled) and escrowResolution (what each branch must pay), so the two can
+ * never disagree:
+ *  - version: `config.version`, else "v2" (EscrowFull or EscrowSplit); a legacy v1 escrow says `version: "v1"`;
+ *  - mode (v2): `config.mode`, else "split" when both buyerAmount and sellerAmount are given, else "full";
+ *  - v1: refundAmount and releaseAmount, each paid by its own branch;
+ *  - v2 split: buyerAmount (else refundAmount) and sellerAmount (else releaseAmount);
+ *  - v2 full: ONE principal. principal, refundAmount and releaseAmount all name it (the legacy two map to it), so every
+ *    one of them the config gives must be the same amount: different ones are ESCROW_CONFIG_INVALID (an EscrowFull
+ *    compiled with one of them could never pay the other).
+ * Every amount is a positive integer (ESCROW_CONFIG_INVALID otherwise).
+ */
+export interface EscrowTerms {
+  readonly version: EscrowVersion;
+  readonly mode: EscrowMode;
+  /** v1: what refundBuyer pays the buyer. */
+  readonly refundAmount?: bigint;
+  /** v1: what releaseToSeller pays the seller. */
+  readonly releaseAmount?: bigint;
+  /** v2 split: the buyer's allocation. */
+  readonly buyerAmount?: bigint;
+  /** v2 split: the seller's allocation. */
+  readonly sellerAmount?: bigint;
+  /** v2 full: the principal every branch pays. */
+  readonly principal?: bigint;
+}
+
+export function escrowTermsOf(config: EscrowConfig): EscrowTerms {
+  const amount = (name: string, value: unknown): bigint => amountArg(name, value).value as bigint;
+  const version: EscrowVersion = config?.version ?? "v2";
+  if (version !== "v1" && version !== "v2") throw new EscrowError("ESCROW_CONFIG_INVALID", `version must be "v1" or "v2", got ${JSON.stringify(version)}`);
+  const mode: EscrowMode = config?.mode ?? (config?.buyerAmount !== undefined && config?.sellerAmount !== undefined ? "split" : "full");
+  if (mode !== "full" && mode !== "split") throw new EscrowError("ESCROW_CONFIG_INVALID", `mode must be "full" or "split", got ${JSON.stringify(mode)}`);
+  if (version === "v1") {
+    return { version, mode, refundAmount: amount("refundAmount", config.refundAmount), releaseAmount: amount("releaseAmount", config.releaseAmount) };
+  }
+  if (mode === "split") {
+    return {
+      version,
+      mode,
+      buyerAmount: amount("buyerAmount", config.buyerAmount ?? config.refundAmount),
+      sellerAmount: amount("sellerAmount", config.sellerAmount ?? config.releaseAmount)
+    };
+  }
+  const named = (["principal", "refundAmount", "releaseAmount"] as const)
+    .filter((name) => config[name] !== undefined)
+    .map((name) => [name, amount(name, config[name])] as const);
+  if (named.length === 0) {
+    throw new EscrowError("ESCROW_CONFIG_INVALID", "a v2 full escrow (EscrowFull) needs its principal: give principal (refundAmount or releaseAmount are read as it too)");
+  }
+  if (new Set(named.map(([, v]) => v)).size > 1) {
+    throw new EscrowError(
+      "ESCROW_CONFIG_INVALID",
+      `a v2 full escrow (EscrowFull) has one principal, and this config names different amounts for it (${named.map(([n, v]) => `${n} ${v}`).join(", ")}): ` +
+        `its contract could never pay the others. Give principal alone, or version "v1" for a legacy escrow whose refund and release amounts differ`
+    );
+  }
+  return { version, mode, principal: named[0]![1] };
+}
+
 export interface CreateEscrowOptions {
   /** Network the P2SH address is derived for (default simnet). */
   readonly networkId?: string | undefined;
@@ -98,8 +159,10 @@ export async function createEscrow(
   if (config.buyerAmount !== undefined) amountArg("buyerAmount", config.buyerAmount);
   if (config.sellerAmount !== undefined) amountArg("sellerAmount", config.sellerAmount);
 
-  const version: EscrowVersion = config.version ?? "v2";
-  const mode: EscrowMode = config.mode ?? (config.buyerAmount !== undefined && config.sellerAmount !== undefined ? "split" : "full");
+  // C-10: the one reading of the config that escrowResolution uses too
+  const terms = escrowTermsOf(config);
+  const version: EscrowVersion = terms.version;
+  const mode: EscrowMode = terms.mode;
 
   let source: string;
   let contractName: string;
@@ -115,8 +178,8 @@ export async function createEscrow(
       pubkeyArg("arbiter", config?.arbiter?.publicKeyHex),
       destinationArg("buyerDestinationSpk", config?.buyerDestinationSpk),
       destinationArg("sellerDestinationSpk", config?.sellerDestinationSpk),
-      amountArg("refundAmount", config?.refundAmount),
-      amountArg("releaseAmount", config?.releaseAmount)
+      amountArg("refundAmount", terms.refundAmount),
+      amountArg("releaseAmount", terms.releaseAmount)
     ];
   } else if (mode === "split") {
     source = ESCROW_SPLIT_SOURCE;
@@ -129,8 +192,8 @@ export async function createEscrow(
       pubkeyArg("arbiter", config?.arbiter?.publicKeyHex),
       destinationArg("buyerDestinationSpk", config?.buyerDestinationSpk),
       destinationArg("sellerDestinationSpk", config?.sellerDestinationSpk),
-      amountArg("buyerAmount", config?.buyerAmount ?? config?.refundAmount),
-      amountArg("sellerAmount", config?.sellerAmount ?? config?.releaseAmount),
+      amountArg("buyerAmount", terms.buyerAmount),
+      amountArg("sellerAmount", terms.sellerAmount),
       arg
     ];
   } else {
@@ -138,7 +201,7 @@ export async function createEscrow(
     contractName = ESCROW_CONTRACT_NAME;
     const { arg, hex } = nonceArg(config.escrowNonce);
     effectiveNonce = hex;
-    const principal = config.principal !== undefined ? config.principal : (config.refundAmount !== undefined ? config.refundAmount : config.releaseAmount);
+    const principal = terms.principal;
     constructorArgs = [
       pubkeyArg("buyer", config?.buyer?.publicKeyHex),
       pubkeyArg("seller", config?.seller?.publicKeyHex),

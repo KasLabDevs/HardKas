@@ -1,6 +1,7 @@
 // SAFETY_LEVEL: SIMULATION_ONLY
 
 import fs from "node:fs";
+import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { execSync } from "node:child_process";
@@ -10,17 +11,60 @@ import {
   TortureInvariantError
 } from "./torture-engine.js";
 
+/** The context of a bucket that runs the CLI: `hardkas torture` adds the path of its own entry (`cliEntry`). */
+export type LocalBucketContext = TortureBucketContext & {
+  /** Absolute path of the HardKAS CLI entry (`@hardkas/cli/bin`, its dist/index.js) the bucket runs with `node`. */
+  cliEntry?: string;
+};
+
+/**
+ * rc2 audit E-10: the CLI entry the local bucket runs. It was always `../../cli/dist/index.js` next to this package's
+ * bundle, which only a flat node_modules (npm) or the monorepo satisfies: under pnpm's isolated layout
+ * (node_modules/.pnpm/@hardkas+testing@<v>/node_modules/@hardkas/) there is no cli beside it, since @hardkas/testing
+ * does not depend on @hardkas/cli, and the first case failed with INIT_FAILED. Now, in order:
+ *   1. `given`: the entry `hardkas torture` passes (the CLI resolves itself, so it holds under any layout); it must exist;
+ *   2. `@hardkas/cli/bin` as Node resolves it from this module (a flat or hoisted node_modules);
+ *   3. the former sibling path (the monorepo, where packages/testing/dist and packages/cli/dist are siblings).
+ * None found: a typed CLI_ENTRY_NOT_FOUND naming what was tried, instead of a failed `node <missing file>`.
+ */
+export function resolveTortureCliEntry(given?: string, fromUrl: string = import.meta.url): string {
+  if (given !== undefined) {
+    if (fs.existsSync(given)) return given;
+    throw new TortureInvariantError(
+      `the CLI entry this torture run was given does not exist: ${given}`,
+      "CLI_ENTRY_NOT_FOUND",
+      "critical"
+    );
+  }
+  const tried: string[] = [];
+  try {
+    const resolved = createRequire(fromUrl).resolve("@hardkas/cli/bin");
+    if (fs.existsSync(resolved)) return resolved;
+    tried.push(resolved);
+  } catch {
+    tried.push(`@hardkas/cli/bin (not resolvable from ${fileURLToPath(fromUrl)})`);
+  }
+  const sibling = fileURLToPath(new URL("../../cli/dist/index.js", fromUrl));
+  if (fs.existsSync(sibling)) return sibling;
+  tried.push(sibling);
+  throw new TortureInvariantError(
+    `could not find the HardKAS CLI entry (tried ${tried.join("; ")}); run this bucket through \`hardkas torture\`, which passes its own entry`,
+    "CLI_ENTRY_NOT_FOUND",
+    "critical"
+  );
+}
+
 registerTortureBucket({
   name: "local-first-lifecycle",
   profiles: ["local"],
   expectedInvariant:
     "Workspace init, basic transfer, and workspace doctor checks succeed without mutation side effects",
-  run: async (ctx: TortureBucketContext) => {
+  run: async (ctx: LocalBucketContext) => {
+    const cliPath = resolveTortureCliEntry(ctx.cliEntry);
+
     const runDir = path.join(ctx.workspaceDir, ".tmp", `local-${ctx.caseId}`);
     fs.rmSync(runDir, { recursive: true, force: true });
     fs.mkdirSync(runDir, { recursive: true });
-
-    const cliPath = fileURLToPath(new URL("../../cli/dist/index.js", import.meta.url));
 
     // 0. Dummy package.json
     fs.writeFileSync(path.join(runDir, "package.json"), "{}");

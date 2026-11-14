@@ -11,6 +11,10 @@
 // `node scripts/check-release-tarballs.mjs --pack` packs only when every published `dist/` still matches that stamp,
 // file for file, and its inputs are unchanged. Nothing is packed, installed or published here.
 //
+// The stamp also records the commit (`gitHead`) and whether the tree had uncommitted changes (`gitDirty`). A build of a
+// dirty tree still succeeds (local checks use it), but says so, and `--pack` refuses it (rc2 audit E-02) unless it is
+// given `--allow-dirty`, which marks its tarballs as not for publishing.
+//
 // Exit 0: built and stamped. Exit 1: a refusal or a failed build (no stamp is left behind). Exit 2: usage.
 
 import { spawnSync } from "node:child_process";
@@ -139,6 +143,11 @@ async function main() {
     }
   }
   console.log(`release-build: ${published.length} published packages built from scratch (${files} dist files, ${bytes} bytes); stamp ${posix(path.relative(ROOT, stampFile))}`);
+  if (stamp.gitDirty !== false) {
+    console.log(
+      `release-build: WARNING: ${stamp.gitDirty === true ? "the tree has uncommitted changes" : "git could not tell whether the tree is clean"} (HEAD ${stamp.gitHead ?? "unknown"}); \`check-release-tarballs.mjs --pack\` refuses this build for a release (only --allow-dirty packs it, not for publishing)`
+    );
+  }
   return 0;
 }
 

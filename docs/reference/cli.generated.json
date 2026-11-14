@@ -1,7 +1,7 @@
 {
   "schema": "hardkas.cliReference.v1",
   "generatedAt": "deterministic",
-  "totalCommands": 261,
+  "totalCommands": 262,
   "flatSurface": [
     "hardkas accounts",
     "hardkas accounts balance",
@@ -100,6 +100,7 @@
     "hardkas localnet account create",
     "hardkas localnet fork",
     "hardkas localnet fund",
+    "hardkas localnet seed",
     "hardkas localnet snapshot",
     "hardkas localnet snapshot create",
     "hardkas localnet snapshot replay",
@@ -1512,7 +1513,15 @@
           "description": "Generate deployment profiles (Docker Compose, Dockerfile, .env.example) alpha",
           "usage": "hardkas deploy init [options]",
           "arguments": [],
-          "options": [],
+          "options": [
+            {
+              "flags": "--force",
+              "description": "Replace the profile files that already exist in this directory",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
           "subcommands": []
         },
         {
@@ -2152,7 +2161,7 @@
               "path": "hardkas escrow rescue-v1 prepare",
               "name": "prepare",
               "aliases": [],
-              "description": "Prepare a v1 escrow rescue draft spending an orphaned UTXO to a target address",
+              "description": "Prepare a v1 escrow rescue draft spending an orphaned UTXO to a target address. The escrow is recompiled from the constructor arguments it was created with (createEscrow's v1 config); its lock must be --address and the UTXO's script, or nothing is read or written",
               "usage": "hardkas escrow rescue-v1 prepare [options]",
               "arguments": [],
               "options": [
@@ -2176,6 +2185,55 @@
                   "default": null,
                   "required": true,
                   "mandatory": true
+                },
+                {
+                  "flags": "--buyer-pk <hex>",
+                  "description": "Required: buyer x-only public key the escrow was created with (32 bytes hex)",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--seller-pk <hex>",
+                  "description": "Required: seller x-only public key the escrow was created with (32 bytes hex)",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--arbiter-pk <hex>",
+                  "description": "Required: arbiter x-only public key the escrow was created with (32 bytes hex)",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--buyer-destination <address|spk>",
+                  "description": "Required: the buyer destination the escrow was created with: an address, or its script public key in hex without the version (EscrowConfig.buyerDestinationSpk)",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--seller-destination <address|spk>",
+                  "description": "Required: the seller destination the escrow was created with: an address, or its script public key in hex without the version (EscrowConfig.sellerDestinationSpk)",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--refund-amount <sompi>",
+                  "description": "Required: the escrow's refundAmount (sompi), as it was created",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--release-amount <sompi>",
+                  "description": "Required: the escrow's releaseAmount (sompi), as it was created",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
                 },
                 {
                   "flags": "--network <network>",
@@ -2202,27 +2260,6 @@
                   "flags": "--fee <sompi>",
                   "description": "Miner fee in sompi (default 400000 sompi = 0.004 KAS)",
                   "default": "400000",
-                  "required": true,
-                  "mandatory": false
-                },
-                {
-                  "flags": "--buyer-pk <hex>",
-                  "description": "Buyer x-only public key (32 bytes hex)",
-                  "default": null,
-                  "required": true,
-                  "mandatory": false
-                },
-                {
-                  "flags": "--seller-pk <hex>",
-                  "description": "Seller x-only public key (32 bytes hex)",
-                  "default": null,
-                  "required": true,
-                  "mandatory": false
-                },
-                {
-                  "flags": "--arbiter-pk <hex>",
-                  "description": "Arbiter x-only public key (32 bytes hex)",
-                  "default": null,
                   "required": true,
                   "mandatory": false
                 },
@@ -3122,9 +3159,16 @@
             },
             {
               "flags": "--amount <kas>",
-              "description": "KAS to wait for: mine until the mature balance grows by this amount",
+              "description": "KAS to fund: without --treasury, mine to the account until its mature balance grows by this amount; with --treasury, transfer exactly this amount from the localnet Treasury",
               "default": "1000",
               "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--treasury",
+              "description": "Transfer exactly --amount KAS from the localnet Treasury instead of mining to the account (an amount too large for one transaction is sent in several). The Treasury key is public by design, the same on every HardKAS localnet, and used on simnet only",
+              "default": false,
+              "required": false,
               "mandatory": false
             },
             {
@@ -3144,6 +3188,66 @@
             {
               "flags": "--stop-miner",
               "description": "Leave the chain stopped after funding: no new blocks until you mine again",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            },
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        },
+        {
+          "path": "hardkas localnet seed",
+          "name": "seed",
+          "aliases": [],
+          "description": "Distribute an exact initial KAS balance to dev accounts from the localnet Treasury (1 -> N; the Treasury key is public by design, the same on every HardKAS localnet, and used on simnet only) alpha",
+          "usage": "hardkas localnet seed [options]",
+          "arguments": [],
+          "options": [
+            {
+              "flags": "--profile <name>",
+              "description": "Funding profile",
+              "default": "toccata-v2",
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--amount <kas>",
+              "description": "KAS per dev account",
+              "default": "100",
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--only-empty",
+              "description": "Only fund accounts whose balance is currently 0",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            },
+            {
+              "flags": "--accounts <names>",
+              "description": "Comma-separated account names or simnet addresses to seed",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--timeout <ms>",
+              "description": "Funding/confirmation timeout in ms",
+              "default": "300000",
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--stop-miner",
+              "description": "Leave the chain stopped after seeding: no new blocks until you mine again",
               "default": false,
               "required": false,
               "mandatory": false
@@ -3263,6 +3367,27 @@
             {
               "flags": "--toccata",
               "description": "Shortcut for --profile toccata-v2",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            },
+            {
+              "flags": "--seed",
+              "description": "Distribute an initial exact balance (default 100 KAS) to empty dev accounts from the localnet Treasury after start (its key is public by design, the same on every HardKAS localnet, and used on simnet only)",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            },
+            {
+              "flags": "--seed-amount <kas>",
+              "description": "KAS per account when --seed is set",
+              "default": "100",
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--stop-miner",
+              "description": "With --seed: leave the chain stopped after seeding",
               "default": false,
               "required": false,
               "mandatory": false
@@ -4136,6 +4261,13 @@
             {
               "flags": "--inputs <indexes>",
               "description": "Comma-separated input indexes to sign (default: the inputs this participant is eligible for)",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--network <name>",
+              "description": "The network you sign for (default: the workspace's); it must be the session's, and its node must list every input to sign as unspent",
               "default": null,
               "required": true,
               "mandatory": false
@@ -7721,7 +7853,7 @@
             },
             {
               "flags": "--allow-unplanned",
-              "description": "Signed-artifact mode: send a signed transaction that names no plan of this workspace (signed elsewhere). HardKAS then cannot check that it is a planned transaction nor its fee limit: you take both on yourself. Without it such a send is refused (SEND_PLAN_UNRESOLVED)",
+              "description": "Signed-artifact mode: send a signed transaction that names no plan of this workspace (signed elsewhere). HardKAS then cannot check that it is a planned transaction nor its fee limit: you take both on yourself. Without it such a send is refused (SEND_PLAN_UNRESOLVED). Never on mainnet (MAINNET_UNPLANNED_SEND_REFUSED)",
               "default": false,
               "required": false,
               "mandatory": false
@@ -7759,13 +7891,6 @@
             {
               "flags": "--fixture",
               "description": "Sign with the built-in fixture test key (any network except mainnet)",
-              "default": false,
-              "required": false,
-              "mandatory": false
-            },
-            {
-              "flags": "--allow-mainnet-signing",
-              "description": "No effect: mainnet is blocked (MAINNET TOTAL LOCKDOWN) and mainnet signing stays refused (MAINNET_SIGNING_DISABLED)",
               "default": false,
               "required": false,
               "mandatory": false
@@ -8535,7 +8660,7 @@
                 },
                 {
                   "flags": "--address-network <networks>",
-                  "description": "Also return the P2SH address for testnet-10; proof-only needs --ack-image-id-only-lock; never for a public test vector. mainnet (any spelling) is refused while mainnet is locked down (MAINNET_SIGNING_DISABLED): nothing is built",
+                  "description": "Also return the P2SH address for testnet-10; proof-only needs --ack-image-id-only-lock, and is never built for a public test program (an output-bound lock of one is, with a warning: anyone can trigger its payout). mainnet (any spelling) is refused while mainnet is locked down (MAINNET_SIGNING_DISABLED): nothing is built",
                   "default": null,
                   "required": true,
                   "mandatory": false

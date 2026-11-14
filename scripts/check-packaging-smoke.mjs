@@ -33,18 +33,37 @@ function run(cmd, cwd = workspaceRoot) {
   return execSync(cmd, { cwd, encoding: "utf8", stdio: "pipe" });
 }
 
+// `--tarballs <dir>`: install exactly these tarballs (the ones `check-release-tarballs.mjs --pack` audited) instead of
+// packing again, so the consumer smoke runs the bytes that were audited (rc2 audit E-02).
+const tarballsArg = process.argv.indexOf("--tarballs");
+const auditedTarballsDir = tarballsArg >= 0 ? process.argv[tarballsArg + 1] : undefined;
+if (tarballsArg >= 0 && !auditedTarballsDir) {
+  console.error("usage: node scripts/check-packaging-smoke.mjs [--tarballs <dir of .tgz files>]");
+  process.exit(2);
+}
+
 try {
-  // 1. Pack tarballs
-  console.log("\n1. Packing tarballs...");
   if (fs.existsSync(tempPackDir)) fs.rmSync(tempPackDir, { recursive: true, force: true });
   fs.mkdirSync(tempPackDir, { recursive: true });
+  let packedCount = 0;
+
+  if (auditedTarballsDir) {
+    // 1. Use the audited tarballs
+    console.log(`\n1. Using the audited tarballs in ${auditedTarballsDir}...`);
+    const given = fs.readdirSync(auditedTarballsDir).filter((f) => f.endsWith(".tgz"));
+    if (given.length === 0) throw new Error(`no .tgz file in ${auditedTarballsDir}`);
+    for (const t of given) {
+      fs.copyFileSync(path.join(auditedTarballsDir, t), path.join(tempPackDir, t));
+      packedCount++;
+    }
+  } else {
+  // 1. Pack tarballs
+  console.log("\n1. Packing tarballs...");
 
   const packagesDir = path.join(workspaceRoot, "packages");
   const packageFolders = fs.readdirSync(packagesDir, { withFileTypes: true })
     .filter(dirent => dirent.isDirectory())
     .map(dirent => dirent.name);
-
-  let packedCount = 0;
 
   for (const folder of packageFolders) {
     const pkgFolder = path.join(packagesDir, folder);
@@ -72,8 +91,9 @@ try {
       packedCount++;
     }
   }
+  }
 
-  console.log(`Successfully packed ${packedCount} tarballs.`);
+  console.log(`${auditedTarballsDir ? "Using" : "Successfully packed"} ${packedCount} tarballs.`);
 
   // 2. Setup external consumer in isolated temporary directory
   console.log("\n2. Setting up external consumer in isolated temporary directory...");
