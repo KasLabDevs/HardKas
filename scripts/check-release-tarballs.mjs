@@ -539,7 +539,9 @@ export function readGitState(root = ROOT) {
   if (!samePath(top.stdout.trim(), root)) return { available: false, error: `${root} is not the top of its git checkout (that is ${top.stdout.trim()})` };
   const head = git(root, ["rev-parse", "HEAD"]);
   if (!head.ok) return { available: false, error: head.error };
-  const status = git(root, ["status", "--porcelain", "--untracked-files=all"]);
+  // core.fileMode=false: an executable bit set by the package manager on a bin target (pnpm install does it on Linux and
+  // macOS) is not an uncommitted change of the source; the content checks below are untouched
+  const status = git(root, ["-c", "core.fileMode=false", "status", "--porcelain", "--untracked-files=all"]);
   if (!status.ok) return { available: false, error: status.error };
   const tracked = git(root, ["ls-files", "-z"]);
   if (!tracked.ok) return { available: false, error: tracked.error };

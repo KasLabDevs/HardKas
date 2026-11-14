@@ -21,7 +21,7 @@ npm install @hardkas/escrow
 
 ## Versions
 
-A configuration without `version` is a **v2** escrow. A v2 escrow in full mode (the default) has one principal: give `principal`, or `refundAmount` and `releaseAmount` with the same value. Different amounts are refused with `ESCROW_CONFIG_INVALID`. A legacy escrow whose refund and release amounts differ says `version: "v1"`.
+A configuration without `version` is a **v2** escrow. A v2 escrow in full mode (the default) has one principal. `principal`, when given, is it. Without `principal`, `refundAmount` and `releaseAmount` name it and must have the same value: different amounts are refused with `ESCROW_CONFIG_INVALID`. A legacy escrow whose refund and release amounts differ says `version: "v1"`.
 
 ## Status
 

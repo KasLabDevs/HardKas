@@ -5,7 +5,7 @@ sidebar_label: Assistant
 sidebar_position: 10
 ---
 
-# Assistant
+# <img src="/docs/img/ide/icons/assistant.png" alt="" width="28" height="28" /> Assistant
 
 The **Assistant** panel answers questions about Kaspa, SilverScript and your project (**Chat**), and can work on the project for you (**Agent**): edit files, compile, run tests and run HardKAS commands, asking you before anything that changes something.
 
@@ -18,6 +18,8 @@ By default the IDE runs **OpenCode**, an open-source coding agent (MIT license) 
 You can use your own provider instead: Anthropic (Claude) or any OpenAI-compatible endpoint, with your own API key. See [Settings](#settings) below.
 
 ## Off until you turn it on
+
+<img src="/docs/img/ide/assistant-consent.png" alt="The assistant panel before it is turned on" width="282" />
 
 A fresh install sends nothing. Until you agree, the panel shows "The assistant is off until you turn it on" with what will be sent, and two buttons:
 

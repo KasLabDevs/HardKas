@@ -5,34 +5,21 @@ sidebar_label: Tests and debugging
 sidebar_position: 8
 ---
 
-# Tests and debugging
+# <img src="/docs/img/ide/icons/tests.png" alt="" width="28" height="28" /> Tests and debugging
 
-The IDE runs the project's own **vitest** tests. HardKAS project templates ship vitest; the project needs its Node dependencies installed (`npm install`).
+The IDE runs the project's own **vitest** tests (HardKAS templates ship vitest; run `npm install` first).
+
+<img src="/docs/img/ide/tests.png" alt="The Tests view after a run with one failure" width="352" />
 
 ## Running tests
 
-Open **Tests** from the rail or **View → Tests**. It also opens by itself when a run starts.
-
-Start a run from:
-
-- **Run all** in the Tests view;
-- **Run → Run all tests** or **Run → Run tests in this file** (on a `.test` or `.spec` file);
-- right-click in a test file → **Run tests in this file** or **Run all tests**;
-- right-click a file in the Explorer → **Run As**;
-- the command palette.
-
-The IDE runs `npx vitest run [files] --reporter=json --outputFile=.hardkas/ide/test-results.json --reporter=default` in the Console. A project with nested sub-projects (their own `package.json` or vitest config) has each one run from its own folder, and the results are merged.
-
-There is no keyboard shortcut for a run and no button to stop one.
+**Run all** in the Tests view, **Run → Run tests in this file**, or right-click a test file. The IDE runs `npx vitest run` in the Console and shows the results here. There is no shortcut for a run and no stop button.
 
 ## Reading the results
 
-- The bar at the top shows runs, failures, skipped tests and time, in green or red.
-- Files expand into their tests (`describe › title`, with the duration). Double-click a row to open the file at that test.
-- Select a failing test for its full name, duration, a **file:line** button, the failure message, **Debug this test** and **Fix with AI** (which hands the failure to the [assistant's agent](./assistant.md)).
-- The Console sums up each run ("Tests: N failed, M passed").
-
-If vitest does not produce a report, the view says so and suggests `npm install`.
+- The bar shows runs, failures, skipped and time, in green or red.
+- Files expand into their tests; double-click one to open it at that line.
+- Select a failing test for the message, **Debug this test** and **Fix with AI** (hands it to the [assistant's agent](./assistant.md)).
 
 ## Debugging tests
 

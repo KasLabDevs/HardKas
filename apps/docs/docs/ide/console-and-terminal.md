@@ -11,6 +11,8 @@ The bottom panel has two kinds of tabs: the **Console** and the **terminals**. A
 
 ## Console
 
+![The Console after a compile](/img/ide/console.png)
+
 The Console is the IDE's log. Every `hardkas` command the IDE runs, from any view, appears there with its output, so you can always see what a button really did.
 
 - Warnings and errors are colored. JSON results show as a line you click to expand.
@@ -24,6 +26,8 @@ At the `hardkas ›` prompt, type a HardKAS command without the word `hardkas`, 
 The Console only runs `hardkas` commands, from the project folder. For anything else, use a terminal.
 
 ## Terminals
+
+![A PowerShell terminal in the project folder](/img/ide/terminal.png)
 
 The terminals are real shells, opened in the project folder:
 

@@ -94,9 +94,21 @@ describe("C-10 · createEscrow and escrowResolution read a config the same way (
     for (const branch of ["refundBuyer", "releaseToSeller", "mutualRelease"] as const) {
       expect(codeOf(() => escrowResolution(config, branch)), branch).toBe("ESCROW_CONFIG_INVALID");
     }
-    // principal given and a legacy amount that differs from it: the same refusal
-    expect(codeOf(() => escrowTermsOf({ ...parties, principal: 100000000n, releaseAmount: 200000000n }))).toBe("ESCROW_CONFIG_INVALID");
     expect(codeOf(() => escrowTermsOf({ ...parties } as any))).toBe("ESCROW_CONFIG_INVALID");
+  });
+
+  it("C10-1b `principal`, when given, is the principal for both, whatever legacy amounts ride along (creation and resolution always agreed there)", () => {
+    // 14-nov: the first C-10 fix refused this shape too, which broke configs the dev server's escrow flow sends
+    // (principal 1.98 KAS next to refund/release 1 KAS: escrow-safety-2.silverc). Only the config WITHOUT principal is ambiguous.
+    for (const c of [
+      { ...parties, principal: 198000000n, refundAmount: 100000000n, releaseAmount: 100000000n },
+      { ...parties, principal: "198000000", refundAmount: "100000000", releaseAmount: "200000000" },
+      { ...parties, principal: 198000000n, releaseAmount: 200000000n }
+    ]) {
+      expect(escrowTermsOf(c as any)).toEqual({ version: "v2", mode: "full", principal: 198000000n });
+      expect(escrowResolution(c as any, "releaseToSeller").requiredOutputs?.[0]?.amountSompi).toBe(198000000n);
+      expect(escrowResolution(c as any, "refundBuyer").requiredOutputs?.[0]?.amountSompi).toBe(198000000n);
+    }
   });
 
   it("C10-2 one (version, mode, principal) for both: a v2 full config pays the same principal on every branch; equal legacy amounts are that principal", () => {

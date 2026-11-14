@@ -78,9 +78,9 @@ function nonceArg(nonceHex?: string): { arg: SilArtifactValue; hex: string } {
  *  - mode (v2): `config.mode`, else "split" when both buyerAmount and sellerAmount are given, else "full";
  *  - v1: refundAmount and releaseAmount, each paid by its own branch;
  *  - v2 split: buyerAmount (else refundAmount) and sellerAmount (else releaseAmount);
- *  - v2 full: ONE principal. principal, refundAmount and releaseAmount all name it (the legacy two map to it), so every
- *    one of them the config gives must be the same amount: different ones are ESCROW_CONFIG_INVALID (an EscrowFull
- *    compiled with one of them could never pay the other).
+ *  - v2 full: ONE principal. `principal`, when given, is it (legacy amounts next to it are not read). Without it, the
+ *    legacy refundAmount and releaseAmount name it, and when both are given they must be the same amount: different
+ *    ones are ESCROW_CONFIG_INVALID (an EscrowFull compiled with one of them could never pay the other).
  * Every amount is a positive integer (ESCROW_CONFIG_INVALID otherwise).
  */
 export interface EscrowTerms {
@@ -115,20 +115,26 @@ export function escrowTermsOf(config: EscrowConfig): EscrowTerms {
       sellerAmount: amount("sellerAmount", config.sellerAmount ?? config.releaseAmount)
     };
   }
-  const named = (["principal", "refundAmount", "releaseAmount"] as const)
+  // `principal`, when given, is the principal: creation and resolution always agreed on that, and a config may carry
+  // the legacy amounts next to it (records and callers written before `principal` existed do). The C-10 defect was only
+  // the config WITHOUT `principal` whose two legacy amounts differ: creation compiled one and resolution paid the other.
+  if (config.principal !== undefined) {
+    return { version, mode, principal: amount("principal", config.principal) };
+  }
+  const legacy = (["refundAmount", "releaseAmount"] as const)
     .filter((name) => config[name] !== undefined)
     .map((name) => [name, amount(name, config[name])] as const);
-  if (named.length === 0) {
+  if (legacy.length === 0) {
     throw new EscrowError("ESCROW_CONFIG_INVALID", "a v2 full escrow (EscrowFull) needs its principal: give principal (refundAmount or releaseAmount are read as it too)");
   }
-  if (new Set(named.map(([, v]) => v)).size > 1) {
+  if (new Set(legacy.map(([, v]) => v)).size > 1) {
     throw new EscrowError(
       "ESCROW_CONFIG_INVALID",
-      `a v2 full escrow (EscrowFull) has one principal, and this config names different amounts for it (${named.map(([n, v]) => `${n} ${v}`).join(", ")}): ` +
-        `its contract could never pay the others. Give principal alone, or version "v1" for a legacy escrow whose refund and release amounts differ`
+      `a v2 full escrow (EscrowFull) has one principal, and this config names different amounts for it (${legacy.map(([n, v]) => `${n} ${v}`).join(", ")}) ` +
+        `without saying which is the principal: its contract could never pay the other. Give principal, or version "v1" for a legacy escrow whose refund and release amounts differ`
     );
   }
-  return { version, mode, principal: named[0]![1] };
+  return { version, mode, principal: legacy[0]![1] };
 }
 
 export interface CreateEscrowOptions {

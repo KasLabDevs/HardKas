@@ -7,56 +7,40 @@ sidebar_position: 6
 
 # Artifacts, history and index
 
-Everything HardKAS does leaves an artifact under `.hardkas/artifacts`: plans, signed transactions, receipts, SilverScript records, traces. The IDE has four ways to look at them. None of them edits an artifact.
+Everything HardKAS does leaves an artifact under `.hardkas/artifacts`: plans, signed transactions, receipts, SilverScript records. The IDE shows them four ways and never edits them.
 
-## The dev-server
+## <img src="/docs/img/ide/icons/history.png" alt="" width="24" height="24" /> Run history
 
-The **Artifacts** panel and the **Lineage** view are live when HardKAS' dev-server runs (`hardkas dev`, on `http://127.0.0.1:7420`). Without it they show a snapshot read from disk and offer **Start dev-server**, which runs `hardkas dev --headless` in the Console. You can also start it with **Terminal → Start HardKas dev-server (headless)**.
+![Run history](/img/ide/history.png)
 
-The **Replay verify** buttons need the dev-server. Without it they fail with a message that asks you to start it.
+A readable log of what you did: payments, deploys and contract calls, with amounts, fees, change and status. One tab for everything, one for payments and one per deployed contract. Open it from the rail or the **Run history** button in Deploy & Run.
 
-## Artifacts panel
+## <img src="/docs/img/ide/icons/artifacts.png" alt="" width="24" height="24" /> Artifacts panel
 
-**Artifacts** (rail icon, **View → Artifacts**) lists the artifacts, newest first: kind, id, transaction id, mode, network, integrity and time. When the dev-server is off, a "Snapshot (dev-server off)" strip says so.
+<img src="/docs/img/ide/artifacts.png" alt="The Artifacts panel" width="352" />
 
-- The filter shows all kinds, or only plans, signed transactions, receipts or SilverScript records.
-- **Open JSON** opens the artifact file in the editor.
-- **Replay verify** (shield icon) asks the dev-server to replay the artifact and writes the verdict to the Console.
+Every artifact, newest first, with a filter by kind. **Open JSON** opens the file; **Replay verify** (shield) asks HardKAS to replay it.
 
-The list reloads after each transaction made from Deploy & Run; use the refresh button otherwise.
+The Artifacts panel and Lineage are live when HardKAS' dev-server runs (`hardkas dev`). Without it they show a snapshot from disk and a **Start dev-server** button. **Replay verify** needs the dev-server.
 
-## Run history
+## <img src="/docs/img/ide/icons/lineage.png" alt="" width="24" height="24" /> Lineage
 
-**Run history** (button in Deploy & Run, rail icon, **View → Run history**) is a readable log of what you did: payments, contract deploys and entry calls. It reads the receipts and SilverScript records; it runs no command.
+![Lineage timeline](/img/ide/lineage.png)
 
-- Tabs: **All activity**, **Payments**, and one tab per deployed contract (with a lock icon while it holds coins).
-- Totals: calls, KAS moved, fees paid, and coins still locked or accounts involved, plus each account's balance now.
-- Each row: time, call, from → to, amount, fee, change or contract balance, and status. Row buttons copy the transaction id or open the artifact.
+How artifacts lead to each other: plan → signed → receipt, and so on. **Timeline** shows one row per artifact with colored lanes; **Flow** draws a graph. Click an artifact for its details, its JSON and **Replay verify**.
 
-## Lineage
+## <img src="/docs/img/ide/icons/index.png" alt="" width="24" height="24" /> Index
 
-**Lineage** (rail icon, **View → Lineage graph**, or the Explorer's right-click menu) draws how artifacts derive from each other: a plan leads to a signed transaction, then to a receipt, and so on.
+![The Index view](/img/ide/index.png)
 
-- **Timeline** (the default) is one row per artifact, newest on top, with colored lanes for the derivation. The filter box fades the rows that do not match.
-- **Flow** is a graph you can pan and zoom, one row per flow.
-- Select an artifact to see its id, transaction, mode and network, integrity, parent and replay state. **Open JSON** opens the file. **Replay verify** works for plans, signed transactions, receipts and submissions, and needs the dev-server. The verdict (passed, diverged, missing dependency, unsupported or error) shows on the node and in the Console.
+HardKAS keeps an index of artifacts, events and lineage in `.hardkas/store.db`. The Index view reads it; changes go through the CLI.
 
-New artifacts pulse for a few seconds when they arrive.
-
-## Index view
-
-HardKAS keeps an index of its artifacts, events, lineage links and workflow traces in `.hardkas/store.db`. The **Index** view (rail icon, **View → Index (artifacts, events, SQL)**) reads it. The IDE only reads that database. Anything that changes it goes through the CLI.
-
-| Tab | What it shows |
+| Tab | What it does |
 | --- | --- |
-| **Overview** | Whether the index is current, its counts and size, and breakdowns by kind, mode, network, event and trace status. Click a kind, mode or network bar to filter the Artifacts tab. Buttons: **Sync** (`hardkas query store sync`), **Rebuild** (`hardkas query store rebuild`, asks first), **Doctor** (`hardkas query store doctor`, answer in the Console) and **Check for problems**. A project with no index gets **Build the index**. |
-| **Artifacts** | A table of everything indexed, 50 rows per page, with search (id, hash, transaction id, file, kind) and filters. Select a row for its JSON, its lineage and a field-by-field comparison with another artifact. |
-| **Transactions** | Paste or pick a transaction id to see its artifacts in order (plan, signed, submission or receipt, trace), their key facts and their events. **Explain** runs `hardkas explain --tx` in the Console. |
-| **SQL** | A read-only SQL console: one `SELECT`, `WITH`, `EXPLAIN`, `VALUES` or `PRAGMA` query at a time, at most 500 rows, stopped after 6 seconds. Ctrl+Enter runs it. It has the list of tables and columns, examples, a history of the last 20 queries and **Copy as CSV**. |
-| **Problems** | **Run all checks** runs every HardKAS integrity check and lists what it finds: `hardkas doctor`, whether the index is current, `hardkas verify`, broken lineage links (`query lineage orphans`), receipts that differ from their replay (`query replay divergences`) and unfinished workflow traces. Click an item to open it. |
+| **Overview** | Counts and charts. When the index is behind the files, **Sync now**. Buttons for **Sync**, **Rebuild**, **Doctor** and **Check for problems**. |
+| **Artifacts** | Searchable table; select a row for its JSON, lineage and a comparison with another artifact. |
+| **Transactions** | Paste a transaction id to see its plan, signature, receipt and events. **Explain** runs `hardkas explain --tx`. |
+| **SQL** | Read-only SQL: one `SELECT` at a time, up to 500 rows. Ctrl+Enter runs it. |
+| **Problems** | **Run all checks**: doctor, verification, broken lineage, replay differences. |
 
-Good to know:
-
-- When the index is behind the files on disk, the view says so and Overview offers **Sync now**.
-- The counts are the index's. A few files under `.hardkas/artifacts` are not indexed on purpose, so a file count on disk will not match.
-- **Doctor** can report problems even when the index is current: it also counts artifacts that fail verification, which **Problems** lists one by one.
+The counts are the index's; a few files on disk are left out on purpose, so they will not match a file count.

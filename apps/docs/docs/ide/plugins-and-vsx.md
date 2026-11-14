@@ -5,7 +5,12 @@ sidebar_label: Plugins and extensions
 sidebar_position: 11
 ---
 
-# Plugins and extensions
+# <img src="/docs/img/ide/icons/plugins.png" alt="" width="28" height="28" /> Plugins and extensions
+
+<p>
+  <img src="/docs/img/ide/plugins.png" alt="The Plugins view, Installed tab" width="352" />
+  <img src="/docs/img/ide/plugins-vsx.png" alt="The Plugins view, Open VSX search" width="352" />
+</p>
 
 The **Plugins** view (puzzle icon in the rail, **View → Plugin manager**) has three tabs:
 

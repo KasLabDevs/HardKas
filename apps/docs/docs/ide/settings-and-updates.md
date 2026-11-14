@@ -7,7 +7,9 @@ sidebar_position: 12
 
 # Settings and updates
 
-## Settings
+## <img src="/docs/img/ide/icons/settings.png" alt="" width="24" height="24" /> Settings
+
+<img src="/docs/img/ide/settings.png" alt="The Settings view" width="352" />
 
 **Settings** (the gear at the bottom of the rail) shows:
 

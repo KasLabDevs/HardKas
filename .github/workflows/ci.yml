@@ -185,6 +185,14 @@ jobs:
       - name: Lint (pnpm lint)
         run: pnpm lint
 
+      # The dev-server check starts the CLI (`hardkas sandbox`), which loads only the pinned Kaspa WASM SDK. Without it
+      # the server does not boot (the first run of this job, on c0e3a6ef1, failed there).
+      # RC1 · R3: cached per pin set, only a failed download retried (.github/actions/hardkas-toolchains).
+      - name: Install pinned Kaspa WASM toolchain
+        uses: ./.github/actions/hardkas-toolchains
+        with:
+          ids: kaspa-wasm
+
       - name: Dev server security (check-dev-server-security)
         run: node scripts/check-dev-server-security.mjs
 

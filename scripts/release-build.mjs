@@ -45,9 +45,14 @@ function gitHead(root) {
   return r.status === 0 ? r.stdout.trim() : null;
 }
 
-/** Whether the working tree has changes git does not ignore (then the stamp's HEAD is not the whole source). */
+/**
+ * Whether the working tree has changes git does not ignore (then the stamp's HEAD is not the whole source).
+ * `core.fileMode=false`: a file whose only change is its executable bit is not a change of the source. On Linux and
+ * macOS `pnpm install` sets that bit on the bin targets of workspace packages (packages/simulator/bin/…), which made a
+ * fresh CI checkout look dirty right after the install (the release-tarballs job on c0e3a6ef1).
+ */
 function gitDirty(root) {
-  const r = spawnSync("git", ["-C", root, "status", "--porcelain"], { encoding: "utf8", windowsHide: true, maxBuffer: 1 << 26 });
+  const r = spawnSync("git", ["-C", root, "-c", "core.fileMode=false", "status", "--porcelain"], { encoding: "utf8", windowsHide: true, maxBuffer: 1 << 26 });
   return r.status === 0 ? r.stdout.trim().length > 0 : null;
 }
 

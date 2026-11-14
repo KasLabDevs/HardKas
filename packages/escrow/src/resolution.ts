@@ -24,8 +24,8 @@ export interface EscrowResolution {
 /**
  * The arguments and the outputs a branch of the escrow `config` describes must have. The config is read by
  * escrowTermsOf, as createEscrow reads it to compile the contract (C-10): no `version` is v2 (EscrowFull, or EscrowSplit
- * with both split amounts), a legacy v1 escrow says `version: "v1"`; a v2 full config naming different amounts for its
- * principal is ESCROW_CONFIG_INVALID here as it is at creation.
+ * with both split amounts), a legacy v1 escrow says `version: "v1"`; a v2 full config without `principal` whose two
+ * legacy amounts differ is ESCROW_CONFIG_INVALID here as it is at creation.
  */
 export function escrowResolution(
   config: EscrowConfig,

@@ -234,8 +234,8 @@ Nothing is signed.
 **Solution:** Retry when the node answers `getBlockDagInfo` and lists the UTXO with its DAA score.
 
 ### `ESCROW_CONFIG_INVALID`
-**Cause:** `createEscrow` / `escrowResolution` refused the escrow's configuration. Among other cases: a v2 full escrow (no `version`, or `version: "v2"`, not split) that names different amounts for its one principal (`principal`, `refundAmount`, `releaseAmount`), or none; or an `escrowNonce` that is not 32-byte hex.
-**Solution:** Give `principal` alone, or `version: "v1"` for a legacy escrow whose refund and release amounts differ.
+**Cause:** `createEscrow` / `escrowResolution` refused the escrow's configuration. Among other cases: a v2 full escrow (no `version`, or `version: "v2"`, not split) that gives no `principal` and names different `refundAmount` and `releaseAmount`, or no amount at all; or an `escrowNonce` that is not 32-byte hex. When `principal` is given it is the principal, whatever legacy amounts ride along.
+**Solution:** Give `principal`, or `version: "v1"` for a legacy escrow whose refund and release amounts differ.
 
 ### `RESCUE_ESCROW_ARGS_INVALID`, `RESCUE_LOCK_MISMATCH`
 **Cause:** `hardkas escrow rescue-v1 prepare` rebuilds the v1 escrow's script from its seven constructor arguments (`--buyer-pk`, `--seller-pk`, `--arbiter-pk`, `--buyer-destination`, `--seller-destination`, `--refund-amount`, `--release-amount`).
