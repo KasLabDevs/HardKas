@@ -22,7 +22,8 @@ It provides developers with a reproducible CLI, unified TypeScript SDK (`@hardka
 
 &rarr; [Installation](./getting-started/installation.md)  
 &rarr; [5-Minute Quickstart](./getting-started/quickstart.md)  
-&rarr; [Examples & Builder Labs (11 Reference Apps)](./tutorials/builder-labs.md)
+&rarr; [Examples & Builder Labs (11 Reference Apps)](./tutorials/builder-labs.md)  
+&rarr; [HardKAS IDE (desktop app)](./ide/index.md)
 
 ## Smart Contracts, Covenants & ZK
 

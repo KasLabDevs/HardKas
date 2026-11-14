@@ -12,6 +12,8 @@ import { UI } from "../ui.js";
 import { acquirePassword, acquirePrivateKey } from "./secrets.js";
 import { withSdk } from "./with-sdk.js";
 import { assertAccountName, assertAccountNamesFree, keystorePathIn } from "./keystore-names.js";
+import { getNetworkPrefix, loadManagedKaspaWasmSync } from "@hardkas/core";
+import { HardkasCliError, HardkasExitCode } from "../cli-errors.js";
 
 /**
  * INT9-C4 · the network an imported key is for. It was "devnet" for every address that is not mainnet's, so a simnet
@@ -46,6 +48,45 @@ async function importNetworkOf(address: string, explicit: string | undefined, wo
     }
   }
   return undefined;
+}
+
+/**
+ * A9 (rc2 audit): refuses (ACCOUNT_ADDRESS_KEY_MISMATCH) an imported address that is not the key's own (Schnorr P2PK)
+ * address on the address's network; INVALID_PRIVATE_KEY_MATERIAL for a key that is not one. A simulator identity
+ * (`kaspa:sim_…`) is no key's address by construction (the simulator signs nothing with it) and is left as it was.
+ */
+export function assertAddressOfKey(privateKey: string, address: string, network: string | undefined): void {
+  if (address.startsWith("kaspa:sim_")) return;
+  const prefixNetwork = address.startsWith("kaspasim:")
+    ? "simnet"
+    : address.startsWith("kaspatest:")
+      ? "testnet-10"
+      : address.startsWith("kaspadev:")
+        ? "devnet"
+        : address.startsWith("kaspa:")
+          ? "mainnet"
+          : network !== undefined
+            ? getNetworkPrefix(network)
+            : undefined;
+  const invalidKey = (why: string) =>
+    new HardkasCliError("INVALID_PRIVATE_KEY_MATERIAL", `The private key is not a valid 32-byte key (64 hex characters): ${why}. Nothing was imported.`, {
+      exitCode: HardkasExitCode.USAGE_ERROR
+    });
+  if (!/^[0-9a-fA-F]{64}$/.test(privateKey.trim())) throw invalidKey("not 64 hex characters");
+  const k: any = loadManagedKaspaWasmSync();
+  let derived: string | undefined;
+  try {
+    derived = prefixNetwork ? String(new k.PrivateKey(privateKey.trim()).toPublicKey().toAddress(prefixNetwork).toString()) : undefined;
+  } catch (e: any) {
+    throw invalidKey(String(e?.message ?? e));
+  }
+  if (derived === undefined || derived !== address.trim()) {
+    throw new HardkasCliError(
+      "ACCOUNT_ADDRESS_KEY_MISMATCH",
+      `--address ${address} is not the address of this key${derived ? ` (on its network the key's address is ${derived})` : ""}: the account could never sign for it. Nothing was imported.`,
+      { exitCode: HardkasExitCode.USAGE_ERROR }
+    );
+  }
 }
 
 /**
@@ -207,6 +248,11 @@ export async function runAccountsKeystoreImport(options: {
   if (!finalKey) {
     throw new Error("Private key is required for import.");
   }
+
+  // A9 (rc2 audit): the address is the one the key controls, before any password is read or anything is written. It was
+  // whatever --address said, sealed into the keystore's authenticated metadata unchecked, so a mistyped address was
+  // imported "successfully" and signing failed later (MISSING_INPUT_AUTHORIZER), after it may have been funded.
+  assertAddressOfKey(finalKey, address, network);
 
   let keystoreRef: string | undefined;
 

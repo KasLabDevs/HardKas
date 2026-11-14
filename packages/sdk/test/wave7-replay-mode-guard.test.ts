@@ -147,12 +147,12 @@ describe("Wave 7 · REPLAY-MODE-1 · SDK mode guard", () => {
     const sdk = await Hardkas.open({ cwd: ws });
 
     const result = await sdk.replay.verify({ path: receiptPath });
-    // Lineage was resolved successfully — we know the receipt IS reachable.
-    expect(result.lineage).toBe("valid");
-    // Artifact contentHash integrity is a static check, unaffected by the
-    // execution guard. Wave 7 preserves whatever it evaluated to.
-    expect(result.determinism).toMatch(/^(verified|failed)$/);
-    expect(result.contamination).toBe("clean");
+    // B10: nothing was replayed, so no field claims "valid", "verified" or "clean" (it used to report lineage "valid",
+    // determinism "verified|failed" and contamination "clean", the initial values of flags no replay ran against). A
+    // negative finding of a check that did run (integrity failure → "failed") is still reported.
+    expect(result.lineage).toBe("not-run");
+    expect(result.determinism).toMatch(/^(not-run|failed)$/);
+    expect(result.contamination).toBe("not-run");
     // 3-node chain resolved (plan + signed + receipt).
     expect(result.artifactsScanned).toBe(3);
   });

@@ -23,7 +23,7 @@ function readJson(filePath: string): any {
   return JSON.parse(fs.readFileSync(filePath, "utf8"));
 }
 
-describe("0.13.0-rc.1 SDK parity surface (silverc installed)", () => {
+describe("0.13.0-rc.2 SDK parity surface (silverc installed)", () => {
   let workspaceRoot: string;
 
   beforeEach(() => {

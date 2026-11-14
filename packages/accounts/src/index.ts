@@ -26,6 +26,7 @@ export * from "./kaspa-sdk-keygen.js";
 export * from "./keystore.js";
 export * from "./keystore-lock.js";
 export * from "./dev-accounts.js";
+export * from "./treasury-account.js";
 export * from "./address-manager.js";
 export * from "./wallet-manager.js";
 export * from "./authorizers.js";

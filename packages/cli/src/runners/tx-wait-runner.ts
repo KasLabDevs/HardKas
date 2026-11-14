@@ -41,6 +41,13 @@ export interface TxWaitUtxoView {
   outputsNoLongerListed?: string[];
   /** INT9 · C3: the view of a tx with no plan here (`--address`): its inputs are unknown, so they were not checked. */
   inputsUnknown?: true;
+  /**
+   * TX-WAIT-ADDRESS-SPENT-1 (`--address`): no output of the tx is listed at the --address addresses any more, but the
+   * node's index lists there an output of ANOTHER transaction accepted at or after this one's accepting chain block. The
+   * index applies chain blocks in order, so it is at or past this transaction's accepting block. B8: that is all it
+   * proves: no spend of this transaction's outputs is observed (the address may never have been paid by it).
+   */
+  indexPastAcceptance?: { address: string; outpoint: string; blockDaaScore: string; acceptingDaaScore: string };
   looks: number;
 }
 
@@ -178,6 +185,8 @@ async function waitForUtxoView(args: {
   now: () => number;
   /** INT9 · C3: `--address` — with no plan here, the view is checked at these addresses (outputs only). */
   addresses?: string[];
+  /** TX-WAIT-ADDRESS-SPENT-1: the chain block the observations say accepted the tx (for the `--address` view). */
+  acceptingBlockHash?: string;
 }): Promise<TxWaitUtxoView> {
   const { sdk, txId } = args;
   let plan: any;
@@ -256,6 +265,12 @@ async function waitForUtxoView(args: {
  * INT9 · C3: the UTXO view of a tx with no plan here, at the `--address` addresses it pays. kaspad's index applies a
  * transaction's outputs in one diff, so an output of it listed at one of them means the view has applied it; the inputs
  * it spent are not known here and are not checked (the row says so). Bounded like waitForUtxoView.
+ *
+ * TX-WAIT-ADDRESS-SPENT-1: an output spent since is never listed again (the sender's own wait already tolerates that:
+ * TX-WAIT-CHAINED-SPEND-1). Here, with no output of the tx listed, the view has still applied it when the index lists,
+ * at one of those addresses, an output of another transaction whose accepting chain block's DAA score is at or above
+ * this one's: the index applies chain blocks in order, so the missing outputs were spent since. With nothing like that
+ * listed (the outputs were spent to elsewhere and nothing else arrived), the view proves nothing and the wait goes on.
  */
 async function waitForExternalUtxoView(args: {
   sdk: any;
@@ -265,9 +280,12 @@ async function waitForExternalUtxoView(args: {
   sleep: (ms: number) => Promise<void>;
   now: () => number;
   addresses: string[];
+  acceptingBlockHash?: string;
 }): Promise<TxWaitUtxoView> {
   const addresses = [...new Set(args.addresses)];
   const reason = "no plan for this transaction in the workspace: only its outputs at the --address addresses are checked (the inputs it spent are unknown here)";
+  // the accepting chain block's DAA score, read once from its header (the node's own answer); unknown → no such proof
+  const acceptedDaa = args.acceptingBlockHash ? (await headerDaaOf(args.sdk, args.acceptingBlockHash)).daaScore : undefined;
   let looks = 0;
   let missing = addresses;
   let lastError: string | undefined;
@@ -275,12 +293,24 @@ async function waitForExternalUtxoView(args: {
     looks++;
     try {
       const listedAt: string[] = [];
+      let past: TxWaitUtxoView["indexPastAcceptance"];
       for (const a of addresses) {
-        if (((await args.sdk.rpc.getUtxosByAddress(a)) ?? []).some((u: any) => u?.outpoint?.transactionId === args.txId)) listedAt.push(a);
+        const rows: any[] = (await args.sdk.rpc.getUtxosByAddress(a)) ?? [];
+        if (rows.some((u: any) => u?.outpoint?.transactionId === args.txId)) listedAt.push(a);
+        if (!past && acceptedDaa !== undefined) {
+          for (const u of rows) {
+            const daa = u?.blockDaaScore ?? u?.utxoEntry?.blockDaaScore;
+            if (u?.outpoint?.transactionId === args.txId || daa === undefined || daa === null) continue;
+            if (BigInt(daa) >= BigInt(acceptedDaa)) {
+              past = { address: a, outpoint: `${u.outpoint.transactionId}:${Number(u.outpoint.index)}`, blockDaaScore: BigInt(daa).toString(), acceptingDaaScore: acceptedDaa };
+              break;
+            }
+          }
+        }
       }
       missing = addresses.filter((a) => !listedAt.includes(a));
       lastError = undefined;
-      if (listedAt.length > 0) {
+      if (listedAt.length > 0 || past) {
         return {
           checked: true,
           converged: true,
@@ -290,6 +320,7 @@ async function waitForExternalUtxoView(args: {
           missingOutputsFor: [],
           inputsStillListed: [],
           ...(missing.length > 0 ? { outputsNoLongerListed: missing } : {}),
+          ...(listedAt.length === 0 && past ? { indexPastAcceptance: past } : {}),
           looks
         };
       }
@@ -300,10 +331,14 @@ async function waitForExternalUtxoView(args: {
     if (args.now() >= args.deadline) break;
     await args.sleep(args.intervalMs);
   }
+  const unproven =
+    `no output of it is listed at the --address addresses, and nothing accepted at or after its accepting chain block is listed there either` +
+    `${acceptedDaa !== undefined ? ` (DAA score ${acceptedDaa})` : " (its accepting block's DAA score could not be read)"}: ` +
+    `the node's index may trail, or its outputs there were spent since by a transaction that pays elsewhere`;
   return {
     checked: true,
     converged: false,
-    reason: lastError ?`${reason}; the UTXO view could not be read: ${lastError}` : reason,
+    reason: lastError ? `${reason}; the UTXO view could not be read: ${lastError}` : `${reason}; ${unproven}`,
     inputsUnknown: true,
     addresses,
     missingOutputsFor: missing,
@@ -368,6 +403,17 @@ async function listedOutputsOf(sdk: any, txId: string, addresses: string[]): Pro
 export function utxoViewRow(view: TxWaitUtxoView): string {
   if (!view.checked) return `not checked: ${view.reason}`;
   const spentSince = view.outputsNoLongerListed ?? [];
+  if (view.inputsUnknown && view.indexPastAcceptance) {
+    const p = view.indexPastAcceptance;
+    // B8: what this proves is that the node's index is at or past the accepting block (an output accepted at or after its
+    // DAA score is listed); no spend of this transaction's outputs is observed, so none is claimed
+    return (
+      `the node's index is at or past this transaction's accepting block: it lists ${p.outpoint} at ${p.address}, accepted at DAA score ` +
+      `${p.blockDaaScore} (this transaction's accepting block: ${p.acceptingDaaScore}); no output of this transaction is listed at the ` +
+      `${view.addresses.length} --address address(es), and why (spent since, or never paid there) is not observed ` +
+      `(no plan here: the inputs it spent are not known, so they were not checked) (${view.looks} look(s))`
+    );
+  }
   if (view.inputsUnknown) {
     return (
       `reflects this transaction: an output of it is listed at ${view.addresses.length - spentSince.length} of ${view.addresses.length} --address address(es)` +
@@ -387,7 +433,30 @@ export function targetReached(derived: DerivedTxStatus, until: TxWaitTarget): bo
   return isConfirmed(derived);
 }
 
+/**
+ * D-09: a `tx wait` duration in seconds: a non-negative decimal number, optionally with one unit — `ms`, `s` or `m`
+ * (500ms, 60s, 2m); a bare number is seconds. Anything else (abc, -5, 1e3, Infinity, 2h) is undefined: the caller
+ * refuses it with TX_WAIT_USAGE.
+ */
+export function parseWaitSeconds(value: unknown): number | undefined {
+  const m = /^\s*(\d+(?:\.\d+)?)\s*(ms|s|m)?\s*$/.exec(String(value ?? ""));
+  if (!m) return undefined;
+  const n = Number(m[1]);
+  const seconds = m[2] === "ms" ? n / 1000 : m[2] === "m" ? n * 60 : n;
+  return Number.isFinite(seconds) && seconds >= 0 ? seconds : undefined;
+}
+
 export async function runTxWait(input: TxWaitRunnerInput): Promise<TxWaitRunnerResult> {
+  // D-09: a timeout or interval that is not a finite, non-negative number of milliseconds would never end the wait (a
+  // comparison with NaN is false) or poll with no pause: refused before anything is opened
+  for (const [name, ms] of [["timeout", input.timeoutMs], ["interval", input.intervalMs]] as const) {
+    if (typeof ms !== "number" || !Number.isFinite(ms) || ms < 0) {
+      const { HardkasCliError, HardkasExitCode } = await import("../cli-errors.js");
+      throw new HardkasCliError("TX_WAIT_USAGE", `The wait's ${name} must be a finite, non-negative duration, got ${String(ms)}. Nothing was observed.`, {
+        exitCode: HardkasExitCode.USAGE_ERROR
+      });
+    }
+  }
   const workspaceRoot = input.workspaceRoot ?? process.cwd();
   const opened = input.sdk
     ? { sdk: input.sdk, network: String(input.network ?? input.sdk.network) }
@@ -478,7 +547,8 @@ async function waitOn(input: TxWaitRunnerInput, sdk: any, network: string): Prom
           intervalMs: input.intervalMs,
           sleep,
           now,
-          ...(addresses.length > 0 ? { addresses } : {})
+          ...(addresses.length > 0 ? { addresses } : {}),
+          ...(reached.acceptingBlockHash ? { acceptingBlockHash: reached.acceptingBlockHash } : {})
         });
         if (utxoView.checked && !utxoView.converged) {
           const gaps = [

@@ -4,8 +4,10 @@ import { getOutput, recordNoEffectOption } from "./output.js";
 /**
  * ESCALÓN 2 · P19 · options kept for compatibility that change nothing. Their help says so; given on the command line
  * (never by default), each one is also named on stderr before the command runs and, in a JSON envelope, under
- * `noEffectOptions` (output.ts). None is accepted in silence any more, and none was removed: scripts that pass them keep
- * working. Keyed by the command's path (as `hardkas <path> --help` names it), then by long flag.
+ * `noEffectOptions` (output.ts). None is accepted in silence any more, and scripts that pass them keep working — except
+ * `tx sign --allow-mainnet-signing`, removed on 2026-11-11 by the owner's decision: HardKAS never signs on mainnet, so no
+ * flag may suggest it could (the CLI now rejects it as an unknown option). Keyed by the command's path (as
+ * `hardkas <path> --help` names it), then by long flag.
  */
 const MAINNET_LOCKED =
   "mainnet is blocked in this release (MAINNET TOTAL LOCKDOWN): nothing is signed, sent or read on mainnet, whatever this flag says";
@@ -13,11 +15,7 @@ const NO_LOCK = "the command takes no lock of its own; each store write already 
 
 export const NO_EFFECT_OPTIONS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
   "tx plan": { "--wait-lock": NO_LOCK, "--lock-timeout": NO_LOCK },
-  "tx sign": {
-    "--allow-mainnet-signing": `${MAINNET_LOCKED} (MAINNET_SIGNING_DISABLED)`,
-    "--wait-lock": NO_LOCK,
-    "--lock-timeout": NO_LOCK
-  },
+  "tx sign": { "--wait-lock": NO_LOCK, "--lock-timeout": NO_LOCK },
   "tx send": { "--wait-lock": NO_LOCK, "--lock-timeout": NO_LOCK },
   "accounts consolidate": { "--allow-mainnet": `${MAINNET_LOCKED} (MAINNET_BROADCAST_DISABLED)` },
   init: {

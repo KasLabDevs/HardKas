@@ -5,7 +5,7 @@ Every artifact shares a common header:
 {
   "schema": HardkasSchemas.TxPlan,
   "schemaVersion": HardkasSchemas.ArtifactV1,
-  "hardkasVersion": "0.13.0-rc.1",
+  "hardkasVersion": "0.13.0-rc.2",
   "hashVersion": 5,
   "createdAt": "2026-06-06T12:00:00Z"
 }

@@ -132,6 +132,12 @@ export function registerSecurityCommand(program: Command) {
       }
 
       const ignoreExtensions = [".key"];
+      // SECURITY-AUDIT-NODE-DATA-1: a Kaspa node's own data directory (rusty-kaspa's `.rusty-kaspa`, which the managed
+      // localnet keeps under `.hardkas/kaspad/`) holds the node's databases and logs, never a HardKAS secret format. On a
+      // long-lived chain it is gigabytes of binary data, and reading it all as text kept the audit from finishing. It is
+      // not searched, and every directory left out is named in the result.
+      const NODE_DATA_DIR = ".rusty-kaspa";
+      const skippedNodeData: string[] = [];
 
       function searchDirectory(dir: string) {
         if (!fs.existsSync(dir)) return;
@@ -139,6 +145,10 @@ export function registerSecurityCommand(program: Command) {
         for (const entry of entries) {
           const fullPath = path.join(dir, entry.name);
           if (entry.isDirectory()) {
+            if (entry.name === NODE_DATA_DIR) {
+              skippedNodeData.push(path.relative(workspaceRoot, fullPath).split(path.sep).join("/"));
+              continue;
+            }
             searchDirectory(fullPath);
           } else {
             const ext = path.extname(fullPath);
@@ -167,7 +177,8 @@ export function registerSecurityCommand(program: Command) {
 
       if (failed) {
         const { HardkasCliError } = await import("../cli-errors.js");
-        throw new HardkasCliError("SECURITY_AUDIT_FAILED", "Security audit failed:\n" + issues.map(i => `- ${i}`).join("\n"), {
+        const notSearched = skippedNodeData.map((d) => `\nNot searched (a Kaspa node's data directory): ${d}`).join("");
+        throw new HardkasCliError("SECURITY_AUDIT_FAILED", "Security audit failed:\n" + issues.map(i => `- ${i}`).join("\n") + notSearched, {
           exitCode: 1,
           suggestion:
             "Store keys encrypted: 'hardkas accounts real generate --password-env <VAR>' (or re-import a plaintext account with 'hardkas accounts real import'), and remove the plaintext copies."
@@ -182,12 +193,14 @@ export function registerSecurityCommand(program: Command) {
           result: {
             mainnetFirewall,
             issues,
-            status: "PASS"
+            status: "PASS",
+            skippedNodeData
           }
         });
       } else {
         output.writeLine(`Mainnet Firewall: ${JSON.stringify(mainnetFirewall)}`);
         output.writeLine("Security audit passed. No secret leaks or policy violations detected.");
+        for (const dir of skippedNodeData) output.writeLine(`Not searched (a Kaspa node's data directory): ${dir}`);
       }
     });
 }

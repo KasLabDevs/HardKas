@@ -52,8 +52,19 @@ export class TestFakeAdapter implements PsktRuntimeAdapter {
     };
   }
 
+  /**
+   * A1 (rc2 audit): the exported payload is a PSKB bundle (the native wire format: base64 of "PSKB" + hex of the bundle
+   * JSON) whose inputs are the plan's, so `pskt sign` can read each input's outpoint and UTXO script and ask the
+   * signer's node about it, as it does for a real PSKT.
+   */
   async exportPlan(plan: any): Promise<PortableSigningPayload> {
-    const data = Buffer.from(JSON.stringify({ state: "exported", plan: plan.planId })).toString("base64");
+    const inputs = (Array.isArray(plan?.inputs) ? plan.inputs : []).map((u: any) => ({
+      utxoEntry: { amount: Number(u.amountSompi ?? 0), scriptPublicKey: u.scriptPublicKey, blockDaaScore: 0, isCoinbase: false, covenantId: null },
+      previousOutpoint: { transactionId: u.outpoint?.transactionId, index: u.outpoint?.index },
+      sighashType: 1
+    }));
+    const bundle = [{ global: { version: 1, plan: plan.planId }, inputs, outputs: [] }];
+    const data = Buffer.from("PSKB" + Buffer.from(JSON.stringify(bundle), "utf8").toString("hex"), "utf8").toString("base64");
     return makePayload(data);
   }
 

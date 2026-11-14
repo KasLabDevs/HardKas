@@ -100,10 +100,9 @@ async function main() {
             // Check balance and send if possible
             const balance = await wallet.balance();
             if (balance > 10000n) {
-                logger.info("Funds detected! Simulating active send...", { balance: balance.toString() });
-                const dest = await wallet.receive(); // Send to self
-                await wallet.sendSimulated({ to: dest, amount: 10000n });
-                metrics.inc("wallet_tx_submitted_total");
+                // WalletToolkit.sendSimulated never sent anything (it returned a made-up id) and now throws; this lab
+                // does not send. A real send goes through `hardkas tx send` or `wallet.send()` on simnet.
+                logger.info("Funds detected; this lab does not send (no transaction counted)", { balance: balance.toString() });
             } else {
                 logger.debug("Running in read-only mode, insufficient funds", { balance: balance.toString() });
             }

@@ -10,6 +10,7 @@ export function registerSignCommand(pskt: Command) {
     .option("--key-stdin", "Read private key from standard input")
     .option("--private-key-file <path>", "Path to file containing raw private key (TEST ONLY)")
     .option("--inputs <indexes>", "Comma-separated input indexes to sign (default: the inputs this participant is eligible for)")
+    .option("--network <name>", "The network you sign for (default: the workspace's); it must be the session's, and its node must list every input to sign as unspent")
     .requiredOption("--out <outputPath>", "Path to write the updated PSKT session JSON")
     .option("--force", "Overwrite the output file if it exists", false)
     .option("--json", "Output results as JSON", false)

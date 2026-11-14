@@ -35,7 +35,7 @@ read that one for the current values.
 
 ### 1. Local-first, with explicit doors to public networks
 
-HardKAS is built around `network: "simulated"`. The certified real-node baseline
+HardKAS is built around `network: "simulated"`. The real-node baseline verified by the release checks
 is a local Toccata simnet with rusty-kaspad v2.1.0 (pinned by digest). It covers
 Docker funding, the standard transaction lifecycle, SilverScript P2SH deploy and
 spend through the official silverc v1.0.0, and 1:1 auth-bound covenants.

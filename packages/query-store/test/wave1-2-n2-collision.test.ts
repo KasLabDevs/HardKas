@@ -19,7 +19,7 @@ function receipt(extra: Record<string, unknown> = {}) {
     schema: "hardkas.txReceipt",
     version: "1.0.0-alpha",
     hashVersion: CURRENT_HASH_VERSION,
-    hardkasVersion: "0.13.0-rc.1",
+    hardkasVersion: "0.13.0-rc.2",
     networkId: "simnet",
     mode: "simulator",
     execution: { mode: "simulator", domain: "kaspa-l1", network: "simnet" },

@@ -14,7 +14,7 @@ const H = "ab".repeat(32);
 function record(evidence: string, trust?: string) {
   const r: any = {
     schema: "hardkas.silverVmTest.v1",
-    hardkasVersion: "0.13.0-rc.1",
+    hardkasVersion: "0.13.0-rc.2",
     version: "1.0.0-alpha",
     hashVersion: CURRENT_HASH_VERSION,
     createdAt: "2026-10-31T00:00:00.000Z",

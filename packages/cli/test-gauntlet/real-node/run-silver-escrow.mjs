@@ -58,7 +58,10 @@ async function main() {
     return { priv, xonly: String(key.toPublicKey().toXOnlyPublicKey().toString()), address, script: String(spk.script) };
   };
   const buyer = party("buyer"), seller = party("seller"), arbiter = party("arbiter");
+  // A legacy v1 escrow (refundBuyer pays REFUND, release pays RELEASE). Since the rc2 audit (C-10) a config without
+  // `version` is read as v2, whose single principal cannot have two different amounts, so v1 is named.
   const config = {
+    version: "v1",
     buyer: { publicKeyHex: buyer.xonly },
     seller: { publicKeyHex: seller.xonly },
     arbiter: { publicKeyHex: arbiter.xonly },

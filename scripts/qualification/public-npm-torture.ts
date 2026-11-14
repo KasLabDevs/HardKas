@@ -28,7 +28,7 @@ async function main() {
 
   const version = values.version as string;
   if (!version) {
-    console.error("Missing required --version (e.g. --version 0.13.0-rc.1)");
+    console.error("Missing required --version (e.g. --version 0.13.0-rc.2)");
     process.exit(1);
   }
 

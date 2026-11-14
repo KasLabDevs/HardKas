@@ -10,6 +10,8 @@ import {
   CANONICAL_NODE_EXPECTATION,
   KASPAD_REFERENCE_VERSION,
   CPUMINER_REFERENCE_IMAGE,
+  NODE_IMAGE_DIGEST_REQUIRED,
+  isPinnedImageReference,
   assertNodeIdentityVerified,
   type NodeIdentityExpectation,
   type NodeIdentityRecord
@@ -70,12 +72,17 @@ interface InternalDockerKaspadOptions extends Required<
 
 export class DockerKaspadRunner {
   private readonly options: InternalDockerKaspadOptions;
+  /** The image came from HARDKAS_KASPAD_IMAGE (no `image` option was given). */
+  private readonly imageFromEnv: boolean;
 
   constructor(options?: DockerKaspadOptions) {
     const cwd = options?.cwd || process.cwd();
+    // read when the runner is made (DEFAULT_IMAGE keeps the value at import, for callers that read it)
+    const envImage = process.env.HARDKAS_KASPAD_IMAGE;
+    this.imageFromEnv = !options?.image && envImage !== undefined;
     this.options = {
       cwd,
-      image: options?.image || DEFAULT_IMAGE,
+      image: options?.image || (envImage ?? CANONICAL_LOCALNET.image),
       containerName: options?.containerName || DEFAULT_CONTAINER_NAME,
       network: options?.network || DEFAULT_NETWORK,
       dataDir: options?.dataDir || path.join(".hardkas", "kaspad"),
@@ -101,6 +108,20 @@ export class DockerKaspadRunner {
       containerName: this.options.containerName,
       rpcPort: this.options.ports.jsonRpc
     };
+  }
+
+  /**
+   * An image taken from HARDKAS_KASPAD_IMAGE must be pinned by digest, the same rule `hardkas node start` applies (P39):
+   * decided before Docker is asked anything, and no option lifts it (`allowFloatingImage` covers only an image given in
+   * code). Typed NODE_IMAGE_DIGEST_REQUIRED.
+   */
+  private assertEnvImagePinned(outcome: string): void {
+    if (!this.imageFromEnv || isPinnedImageReference(this.options.image)) return;
+    throw nodeRunnerError(
+      NODE_IMAGE_DIGEST_REQUIRED,
+      `HARDKAS_KASPAD_IMAGE '${this.options.image}' is not pinned by digest. A node runs only an image pinned as ` +
+        `<repository>[:tag]@sha256:<64 hex digits> (a tag can move to other bytes; allowFloatingImage does not lift this). ${outcome}`
+    );
   }
 
   /** Proves the running node is the one this runner manages (see verifyNodeIdentity). */
@@ -139,6 +160,7 @@ export class DockerKaspadRunner {
   }
 
   async start(): Promise<KaspadNodeStatus> {
+    this.assertEnvImagePinned("Nothing was started or adopted.");
     const status = await this.status();
     if (status.running) {
       // A running container with the expected name is not trusted on its name:
@@ -478,6 +500,8 @@ export class DockerKaspadRunner {
   }
 
   async restart(): Promise<KaspadNodeStatus> {
+    // decided before the stop, so a restart never leaves the node stopped over an image it would refuse
+    this.assertEnvImagePinned("Nothing was stopped or started.");
     await this.stop();
     return this.start();
   }
@@ -526,6 +550,8 @@ export class DockerKaspadRunner {
       throw notRemoved(e);
     }
     if (entries.length > 0) {
+      // the removal container runs the node's image: held to the same digest rule (the data stays when it is refused)
+      this.assertEnvImagePinned(`No container was run, and the node's data at ${absoluteDataDir} was not removed.`);
       try {
         await execa("docker", [
           "run", "--rm", "--pull", "never", "--network", "none", "--user", "0:0",

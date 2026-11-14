@@ -110,6 +110,23 @@ describe("Fee Correctness (Fase 1 Hardening)", () => {
     );
   });
 
+  it("B5 · a v0 plan whose stated fee is lower than what it pays fails (inputs must equal outputs + change + fee, as for v1)", () => {
+    // 1000 KAS in, 500 KAS out, no change, a stated fee of 203600 sompi: the transaction would really pay ~500 KAS
+    const artifact = createTxPlanArtifact({
+      ctx: systemRuntimeContext,
+      networkId: asNetworkId("simnet") as any,
+      mode: "simulator",
+      from: { input: "alice", address: "kaspa:qalice" },
+      to: { input: "bob", address: "kaspa:qbob" },
+      amountSompi: 50_000_000_000n,
+      plan: { ...basePlan, change: undefined } as any
+    });
+    const audit = verifyFeeSemantics(artifact);
+    expect(audit.ok).toBe(false);
+    expect(audit.issues).toContain(`Fee mismatch: artifact reports 203600, its inputs minus outputs and change pay ${100_000_000_000n - 50_000_000_000n}`);
+    // the balanced plan of the same shape still passes (see "should pass verification for a valid fee artifact")
+  });
+
   it("should fail on dust outputs", () => {
     const artifact = createTxPlanArtifact({
       ctx: systemRuntimeContext,

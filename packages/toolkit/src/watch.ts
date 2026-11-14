@@ -80,6 +80,10 @@ export class UtxoWatchEngine {
     private lastSeen = new Map<string, WalletWatchUtxo>();
     private readonly reported = new Set<string>();
     private readonly reportedOrder: string[] = [];
+    /** A4: the network the first connection's node named; every later connection must name the same one. */
+    private networkId: string | undefined;
+    /** A4: false from a disconnect until the new connection's node has named that network again. */
+    private identityVerified = true;
 
     constructor(private readonly rpcUrl: string, private readonly getAddress: () => Promise<string>) {}
 
@@ -96,8 +100,12 @@ export class UtxoWatchEngine {
             if (isMainnetNetworkId(networkId)) {
                 throw mainnetConnectionDisabledError(`WalletToolkit.watch: the node at ${redactUrlCredentials(this.rpcUrl)} says it serves ${networkId}`, { observed: networkId }, "identity-only");
             }
+            this.networkId = String(networkId);
             const address = await this.getAddress();
-            const handle = await createUtxoContext({ wasmRpc: this.rpc, networkId, addresses: [address] });
+            // A4 (rc2 audit): every reconnection of this client is identified again before the context re-reads the address
+            // from it (the transport's rule, session.ts): a node behind the URL that now names mainnet or another network
+            // stops the watch, and nothing it answers is reported
+            const handle = await createUtxoContext({ wasmRpc: this.rpc, networkId, addresses: [address], beforeResnapshot: () => this.reverifyIdentity() });
             this.handle = handle;
             this.lastSeen = this.read();
             handle.processor.addEventListener((event: any) => this.onUpstream(event));
@@ -109,12 +117,38 @@ export class UtxoWatchEngine {
         }
     }
 
+    /**
+     * A4: the identity of a resumed connection, before the re-snapshot reads anything from it. The node must name the
+     * network the first connection's node named, and never mainnet; otherwise the watch stops (its listeners get nothing
+     * more) and the re-snapshot is refused.
+     */
+    private async reverifyIdentity(): Promise<void> {
+        // a failure here (the connection went away again) refuses this re-snapshot too; the next reconnect asks again
+        const observed: unknown = (await this.rpc.getServerInfo())?.networkId;
+        if (isMainnetNetworkId(observed) || String(observed) !== this.networkId) {
+            const where = redactUrlCredentials(this.rpcUrl);
+            const err = isMainnetNetworkId(observed)
+                ? mainnetConnectionDisabledError(`WalletToolkit.watch: after a reconnection the node at ${where} says it serves ${String(observed)}`, { observed }, "identity-only")
+                : Object.assign(
+                      new Error(
+                          `WALLET_WATCH_NODE_NETWORK_CHANGED: after a reconnection the node at ${where} says it serves ${String(observed)}, not ${this.networkId}; the watch was stopped and nothing it answered was reported.`
+                      ),
+                      { code: "WALLET_WATCH_NODE_NETWORK_CHANGED", expected: this.networkId, observed }
+                  );
+            logger.error("Wallet watch stopped: the node changed its network", { expected: this.networkId, observed: String(observed) });
+            void this.stop().catch(() => {});
+            throw err;
+        }
+        this.identityVerified = true;
+    }
+
     /** Retry keeps connect() pending until the node answers; without a bound, watch() would hang on a node that is down. */
     private async connectWithin(ms: number): Promise<void> {
         let timer: ReturnType<typeof setTimeout> | undefined;
         const timeout = new Promise<never>((_, reject) => {
             timer = setTimeout(() => {
-                const err = new Error(`WALLET_WATCH_NODE_UNREACHABLE: watch() could not reach the node at ${this.rpcUrl} within ${ms / 1000} s`);
+                // A3: the endpoint without its credentials (user:password, api_key=…), as everywhere else
+                const err = new Error(`WALLET_WATCH_NODE_UNREACHABLE: watch() could not reach the node at ${redactUrlCredentials(this.rpcUrl)} within ${ms / 1000} s`);
                 (err as any).code = "WALLET_WATCH_NODE_UNREACHABLE";
                 reject(err);
             }, ms);
@@ -196,6 +230,8 @@ export class UtxoWatchEngine {
         if (type === "disconnect") {
             // Frozen until the reconnect's re-snapshot; later disconnects keep the first view.
             if (!this.beforeGap) this.beforeGap = this.handle.resyncing ? this.lastSeen : this.read();
+            // A4: whatever answers next is unidentified until reverifyIdentity() names the same network again
+            this.identityVerified = false;
             return;
         }
         if (!LIVE.has(type) || this.beforeGap || this.handle.resyncing) return;
@@ -223,7 +259,7 @@ export class UtxoWatchEngine {
     }
 
     private onResync(): void {
-        if (this.closed || !this.handle) return;
+        if (this.closed || !this.handle || !this.identityVerified) return;
         const before = this.beforeGap ?? this.lastSeen;
         const now = this.read();
         this.beforeGap = null;

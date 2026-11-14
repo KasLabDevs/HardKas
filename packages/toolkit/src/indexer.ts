@@ -1,6 +1,6 @@
-import { EventSubscriber, BackendPlugin } from '@hardkas/core';
+import { EventSubscriber, BackendPlugin, HardkasError } from '@hardkas/core';
 import { ProjectionStoreJson } from '@hardkas/query-store';
-import { ArtifactIndexStoreJson } from '@hardkas/artifacts';
+import { ArtifactIndexStoreJson, checkArtifactIdentity } from '@hardkas/artifacts';
 import { DagApi } from './dag/index.js';
 import { SnapshotParticipant } from './snapshot/types.js';
 
@@ -18,6 +18,7 @@ export interface IndexerToolkitOptions {
 export type WatchHandler = (evt: any) => Promise<void> | void;
 
 export class IndexerToolkit implements SnapshotParticipant {
+    private static inactiveWatchWarned = false;
     private subscriber: EventSubscriber;
     private projection?: ProjectionStoreJson;
     private artifactIndex?: ArtifactIndexStoreJson;
@@ -53,9 +54,41 @@ export class IndexerToolkit implements SnapshotParticipant {
 
     public async watch(address: string | string[], handler?: WatchHandler): Promise<void> {
         const addresses = Array.isArray(address) ? address : [address];
-        // Polling wrapper as per V1 rules.
+        // rc2 audit (E-03): this used to poll a placeholder source (`source: {}`) every second forever: nothing was
+        // ever watched, and the timer kept the process alive. Without a backend that can list UTXOs there is nothing
+        // to poll, so no timer is started and the caller is told once.
+        const backend = this.backend;
+        if (!backend?.utxos) {
+            if (!IndexerToolkit.inactiveWatchWarned) {
+                IndexerToolkit.inactiveWatchWarned = true;
+                process.emitWarning(
+                    "IndexerToolkit.watch(): no backend that lists UTXOs is configured, so nothing is watched. " +
+                        "Open the indexer with a backend that implements utxos(address), or use WalletToolkit.watch() for a node.",
+                    { code: "HARDKAS_INDEXER_WATCH_INACTIVE" }
+                );
+            }
+            return;
+        }
+        const source = {
+            getUtxos: async (watched: string[]) => {
+                const entries = await Promise.all(
+                    watched.map(async (a) => {
+                        const listed = (await backend.utxos!(a)) as any[];
+                        return [
+                            a,
+                            listed.map((u) => ({
+                                transactionId: u?.transactionId ?? u?.outpoint?.transactionId,
+                                outputIndex: u?.outputIndex ?? u?.index ?? u?.outpoint?.index,
+                                amountSompi: u?.amountSompi ?? u?.amount
+                            }))
+                        ] as const;
+                    })
+                );
+                return { ok: true, utxos: Object.fromEntries(entries) };
+            }
+        };
         this.subscriber.subscribe({
-            source: {}, // mock source for facade
+            source,
             type: "payment",
             intervalMs: 1000,
             watchedAddresses: addresses,
@@ -97,14 +130,30 @@ export class IndexerToolkit implements SnapshotParticipant {
         return this.artifactIndex.find(opts);
     }
 
-    public async ingestArtifact(artifact: any): Promise<void> {
+    /**
+     * Indexes a HardKAS artifact under its content hash. E-03 (rc2 audit): the artifact must carry a real content hash
+     * that its content verifies (`checkArtifactIdentity`); anything else is refused (INDEXER_ARTIFACT_IDENTITY_INVALID)
+     * and nothing is indexed. It used to index any object under `artifact.id || 'mock_hash'` with the invented path
+     * `/mock/path/<id>.json`. `options.filePath` is where the artifact is stored, when the caller knows it (else empty);
+     * `options.tags` (else the artifact's own `tags`) are the tags `findReceipts` matches.
+     */
+    public async ingestArtifact(artifact: any, options: { filePath?: string; tags?: string[] } = {}): Promise<void> {
+        const check = checkArtifactIdentity(artifact ?? {});
+        if (!check.ok) {
+            throw new HardkasError(
+                "INDEXER_ARTIFACT_IDENTITY_INVALID",
+                `IndexerToolkit.ingestArtifact() indexes a HardKAS artifact under its verified content hash; this one has none ` +
+                    `(${check.issues.map((i) => `${i.code}: ${i.message}`).join("; ")}). Nothing was indexed.`,
+                { metadata: { issues: check.issues.map((i) => i.code) } }
+            );
+        }
         if (!this.artifactIndex) return;
         this.artifactIndex.index({
-            hash: artifact.id || 'mock_hash',
-            schema: artifact.schema || 'unknown.v1',
+            hash: check.artifactId,
+            schema: typeof artifact.schema === 'string' ? artifact.schema : 'unknown.v1',
             timestamp: new Date().toISOString(),
-            filePath: `/mock/path/${artifact.id}.json`,
-            tags: artifact.tags || []
+            filePath: typeof options.filePath === 'string' ? options.filePath : '',
+            tags: options.tags ?? (Array.isArray(artifact.tags) ? artifact.tags : [])
         });
     }
 

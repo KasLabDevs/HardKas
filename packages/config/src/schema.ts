@@ -1,7 +1,7 @@
 import type { HardkasConfig } from "./types.js";
 
 /**
- * Enforces strict configuration schema for 0.13.0-rc.1+
+ * Enforces the strict 0.13 configuration schema.
  */
 export function validateHardkasConfig(config: HardkasConfig): void {
   // allowPublic defaults to false. If explicitly true, it must be allowed or experimental enabled if we want to restrict it.

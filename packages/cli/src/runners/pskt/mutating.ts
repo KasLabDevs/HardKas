@@ -6,7 +6,7 @@ import { loadSession, saveSession } from "./fs.js";
 import { HardkasCliError, HardkasExitCode } from "../../cli-errors.js";
 import { pskt } from "@hardkas/sdk";
 import { ArtifactStoreMutation } from "@hardkas/artifacts";
-import { stripBom } from "@hardkas/core";
+import { stripBom, assertMainnetTransactionsDisabled } from "@hardkas/core";
 
 export async function runPsktExport(options: { plan: string, out: string, adapter?: string, force: boolean, json: boolean }) {
   if (options.json) UI.setJsonMode(true);
@@ -55,7 +55,82 @@ export function psktInputsToSign(
   return eligible;
 }
 
-export async function runPsktSign(sessionPath: string, options: { account?: string, keystore?: string, keyStdin?: boolean, privateKeyFile?: string, inputs?: string, out: string, force: boolean, json: boolean }) {
+/** A HardkasError (code + message) of the SDK as the CLI's typed error, with the exit code its kind calls for. */
+function asCliError(e: any): unknown {
+  if (e instanceof HardkasCliError || typeof e?.code !== "string") return e;
+  const policy = /^MAINNET_/.test(e.code) || e.code === "PSKT_NETWORK_MISMATCH";
+  const usage = e.code === "PSKT_SIGNER_NETWORK_REQUIRED" || e.code === "NETWORK_ENDPOINT_INVALID";
+  return new HardkasCliError(e.code, String(e.message ?? e).replace(new RegExp(`^${e.code}: `), ""), {
+    exitCode: policy ? HardkasExitCode.POLICY_DENIED : usage ? HardkasExitCode.USAGE_ERROR : HardkasExitCode.RUNTIME_FAILURE
+  });
+}
+
+export interface PsktSigner {
+  /** The network name as the caller gave it (`--network` or the workspace's). */
+  readonly name: string;
+  /** The network that name declares (`networks[name].network`, else the name): what the session must say. */
+  readonly networkId: string;
+  /** The signer's node for that network, by the shared endpoint authority. */
+  readonly rpcUrl: string;
+}
+
+/**
+ * A1 (rc2 audit): the signer's OWN network and node, never the session file's label (a signature does not commit to a
+ * network). The network is `--network`, else the workspace's (its execution default's, else `defaultNetwork`) when a
+ * workspace config file exists; none is PSKT_SIGNER_NETWORK_REQUIRED. Mainnet is refused. Its node is the one the shared
+ * endpoint authority gives (the declared `rpcUrl`, or a local network's default); a network without one (the simulator,
+ * a public testnet that declares none) leaves the inputs unverified: PSKT_INPUTS_UNVERIFIED, nothing signed. Reads no key
+ * and contacts nothing.
+ */
+export async function resolvePsktSigner(explicitNetwork: string | undefined): Promise<PsktSigner> {
+  const { loadHardkasConfig, resolveNodeEndpoint } = await import("@hardkas/config");
+  const { declaredNetworkIdOf, assertMainnetTransactionsDisabled } = await import("@hardkas/core");
+  const loaded: { path?: string; config: any } = await loadHardkasConfig();
+  const config = loaded.config ?? {};
+  let name = typeof explicitNetwork === "string" && explicitNetwork.trim() !== "" ? explicitNetwork.trim() : undefined;
+  let simulatorTarget = false;
+  if (!name && loaded.path) {
+    const exec = config.execution;
+    const target = exec?.default ? exec.targets?.[exec.default] : undefined;
+    name = typeof target?.network === "string" ? target.network : typeof config.defaultNetwork === "string" ? config.defaultNetwork : undefined;
+    simulatorTarget = target?.mode === "simulator";
+  }
+  if (!name) {
+    throw new HardkasCliError(
+      "PSKT_SIGNER_NETWORK_REQUIRED",
+      "Name the network you sign for with --network, or run in a workspace whose config names one. A PSKT is never signed for the network the session file declares (a signature does not commit to a network). Nothing was signed.",
+      { exitCode: HardkasExitCode.USAGE_ERROR }
+    );
+  }
+  const networkId = declaredNetworkIdOf(config, name) ?? name;
+  try {
+    assertMainnetTransactionsDisabled("sign", [name, networkId], "pskt sign");
+  } catch (e) {
+    throw asCliError(e);
+  }
+  const entry = config.networks?.[name];
+  if (networkId === "simulated" || entry?.kind === "simulated" || simulatorTarget) {
+    throw new HardkasCliError(
+      "PSKT_INPUTS_UNVERIFIED",
+      `Network '${name}' is the HardKAS simulator: it has no node that could list the inputs to be signed, and a PSKT is signed only on inputs the signer's own node lists as unspent. Use --network with a node network (simnet, testnet-10, …). Nothing was signed.`,
+      { exitCode: HardkasExitCode.RUNTIME_FAILURE }
+    );
+  }
+  try {
+    return { name, networkId, rpcUrl: resolveNodeEndpoint({ config, networkId: name }).url };
+  } catch (e: any) {
+    if (e?.code === "NETWORK_ENDPOINT_REQUIRED") {
+      throw new HardkasCliError(
+        "PSKT_INPUTS_UNVERIFIED",
+        `No node is configured for '${name}', so the inputs to be signed cannot be checked on it, and a PSKT is signed only on inputs the signer's own node lists as unspent. Declare networks['${name}'].rpcUrl in hardkas.config.ts. Nothing was signed.`,
+        { exitCode: HardkasExitCode.RUNTIME_FAILURE }
+      );
+    }
+    throw asCliError(e);
+  }
+}
+
+export async function runPsktSign(sessionPath: string, options: { account?: string, keystore?: string, keyStdin?: boolean, privateKeyFile?: string, inputs?: string, network?: string, out: string, force: boolean, json: boolean }) {
   if (options.json) UI.setJsonMode(true);
 
   let privateKey: string | undefined;
@@ -64,7 +139,7 @@ export async function runPsktSign(sessionPath: string, options: { account?: stri
     if (process.env.NODE_ENV !== "test") {
       UI.warning("--private-key-file is intended for TEST ONLY.");
     }
-    privateKey = (await fs.readFile(path.resolve(options.privateKeyFile), "utf8")).trim();
+    // A1: the key file is read only after the signer's network and node have accepted the session (below)
   } else if (options.keyStdin) {
     // Read from stdin... not implemented for brevity
     throw new HardkasCliError("PSKT_NOT_IMPLEMENTED", "stdin not implemented in this prototype", { exitCode: HardkasExitCode.RUNTIME_FAILURE });
@@ -77,26 +152,48 @@ export async function runPsktSign(sessionPath: string, options: { account?: stri
   }
 
   const session = await loadSession(sessionPath);
-
-  // TX-09: the adapters read `keyMaterial` (bytes) and refuse an empty `inputIndexes`; this used to pass `privateKey`
-  // (a field no adapter reads) and `inputIndexes: []`, so `hardkas pskt sign` could never sign
-  if (!privateKey || !/^[0-9a-fA-F]{64}$/.test(privateKey)) {
-    throw new HardkasCliError("INVALID_ARGUMENT", "The private key file must hold one 32-byte key as 64 hex characters.", { exitCode: HardkasExitCode.USAGE_ERROR });
+  // HK-13: no PSKT signature on mainnet, first of all (MAINNET_SIGNING_DISABLED)
+  try {
+    assertMainnetTransactionsDisabled("sign", [session.networkId], "pskt sign");
+  } catch (e) {
+    throw asCliError(e);
   }
+  // A1: the signer's own network (never the session's label) and its node; the session must be for that network and
+  // the node must list every input to be signed as unspent, all before the key file is read. Resolved before the inputs
+  // are read, so a mainnet signer network is refused first, whatever `--inputs` says (re-audit F4).
+  const signer = await resolvePsktSigner(options.network);
   const participantId = options.account || "cli-user";
-  const keyMaterial = Uint8Array.from(Buffer.from(privateKey, "hex"));
-  privateKey = undefined;
-  const request = {
-    participantId,
-    keyMaterial,
-    inputIndexes: psktInputsToSign(session as any, participantId, options.inputs)
-  };
-
+  const inputIndexes = psktInputsToSign(session as any, participantId, options.inputs);
+  const { JsonWrpcKaspaClient } = await import("@hardkas/kaspa-rpc");
+  const node = new JsonWrpcKaspaClient({ rpcUrl: signer.rpcUrl, expectedNetworkId: signer.networkId });
+  const context = { networkId: signer.networkId, node };
+  let keyMaterial: Uint8Array | undefined;
   let newSession;
   try {
-    newSession = await pskt.signSession(session, request);
+    try {
+      await pskt.assertSessionSignable(session, inputIndexes, context);
+    } catch (e) {
+      throw asCliError(e);
+    }
+
+    privateKey = (await fs.readFile(path.resolve(options.privateKeyFile!), "utf8")).trim();
+    // TX-09: the adapters read `keyMaterial` (bytes) and refuse an empty `inputIndexes`; this used to pass `privateKey`
+    // (a field no adapter reads) and `inputIndexes: []`, so `hardkas pskt sign` could never sign
+    if (!privateKey || !/^[0-9a-fA-F]{64}$/.test(privateKey)) {
+      throw new HardkasCliError("INVALID_ARGUMENT", "The private key file must hold one 32-byte key as 64 hex characters.", { exitCode: HardkasExitCode.USAGE_ERROR });
+    }
+    keyMaterial = Uint8Array.from(Buffer.from(privateKey, "hex"));
+    privateKey = undefined;
+    const request = { participantId, keyMaterial, inputIndexes };
+    try {
+      newSession = await pskt.signSession(session, request, context);
+    } catch (e) {
+      throw asCliError(e);
+    }
   } finally {
-    keyMaterial.fill(0);
+    keyMaterial?.fill(0);
+    privateKey = undefined;
+    await node.close();
   }
   await saveSession(newSession, options.out, options.force);
 

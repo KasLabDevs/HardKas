@@ -11,6 +11,10 @@
 // `node scripts/check-release-tarballs.mjs --pack` packs only when every published `dist/` still matches that stamp,
 // file for file, and its inputs are unchanged. Nothing is packed, installed or published here.
 //
+// The stamp also records the commit (`gitHead`) and whether the tree had uncommitted changes (`gitDirty`). A build of a
+// dirty tree still succeeds (local checks use it), but says so, and `--pack` refuses it (rc2 audit E-02) unless it is
+// given `--allow-dirty`, which marks its tarballs as not for publishing.
+//
 // Exit 0: built and stamped. Exit 1: a refusal or a failed build (no stamp is left behind). Exit 2: usage.
 
 import { spawnSync } from "node:child_process";
@@ -41,9 +45,14 @@ function gitHead(root) {
   return r.status === 0 ? r.stdout.trim() : null;
 }
 
-/** Whether the working tree has changes git does not ignore (then the stamp's HEAD is not the whole source). */
+/**
+ * Whether the working tree has changes git does not ignore (then the stamp's HEAD is not the whole source).
+ * `core.fileMode=false`: a file whose only change is its executable bit is not a change of the source. On Linux and
+ * macOS `pnpm install` sets that bit on the bin targets of workspace packages (packages/simulator/bin/…), which made a
+ * fresh CI checkout look dirty right after the install (the release-tarballs job on c0e3a6ef1).
+ */
 function gitDirty(root) {
-  const r = spawnSync("git", ["-C", root, "status", "--porcelain"], { encoding: "utf8", windowsHide: true, maxBuffer: 1 << 26 });
+  const r = spawnSync("git", ["-C", root, "-c", "core.fileMode=false", "status", "--porcelain"], { encoding: "utf8", windowsHide: true, maxBuffer: 1 << 26 });
   return r.status === 0 ? r.stdout.trim().length > 0 : null;
 }
 
@@ -139,6 +148,11 @@ async function main() {
     }
   }
   console.log(`release-build: ${published.length} published packages built from scratch (${files} dist files, ${bytes} bytes); stamp ${posix(path.relative(ROOT, stampFile))}`);
+  if (stamp.gitDirty !== false) {
+    console.log(
+      `release-build: WARNING: ${stamp.gitDirty === true ? "the tree has uncommitted changes" : "git could not tell whether the tree is clean"} (HEAD ${stamp.gitHead ?? "unknown"}); \`check-release-tarballs.mjs --pack\` refuses this build for a release (only --allow-dirty packs it, not for publishing)`
+    );
+  }
   return 0;
 }
 

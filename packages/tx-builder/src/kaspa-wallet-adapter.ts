@@ -176,6 +176,12 @@ export interface CreateUtxoContextInput {
   readonly addresses?: readonly (string | any)[];
   /** Optional 32-byte hex id for the UtxoContext. If omitted, upstream generates one. */
   readonly id?: string;
+  /**
+   * A4 (rc2 audit): runs before every post-reconnect re-snapshot, before the context is cleared or any address is read
+   * from the node again. It throws to refuse the re-snapshot (e.g. the node behind the URL now serves another network):
+   * nothing is read, and the failure goes to `onError` listeners.
+   */
+  readonly beforeResnapshot?: () => Promise<void>;
 }
 
 /**
@@ -220,6 +226,9 @@ export async function createUtxoContext(input: CreateUtxoContextInput): Promise<
       try {
         while (requested && !closed) {
           requested = false;
+          // A4: the caller's identity check of the new connection, before anything is cleared or read from it
+          if (input.beforeResnapshot) await input.beforeResnapshot();
+          if (closed) return;
           await context.clear();
           if (closed) return;
           if (tracked.size > 0) await context.trackAddresses([...tracked.values()]);

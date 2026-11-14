@@ -49,7 +49,7 @@ describe("Wave 2(e) · AUX-11 · tx send outcomes are unambiguous", () => {
     const signed: any = {
       schema: "hardkas.signedTx",
       schemaVersion: "hardkas.artifact.v1",
-      hardkasVersion: "0.13.0-rc.1",
+      hardkasVersion: "0.13.0-rc.2",
       version: "1.0.0-alpha",
       hashVersion: CURRENT_HASH_VERSION,
       createdAt: "2026-09-26T00:00:00.000Z",

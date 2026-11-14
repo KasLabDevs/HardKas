@@ -1642,7 +1642,7 @@ export const ZkToccataScriptsSchema = z.object({
     version: z.number().int(),
     script: z.string()
   }),
-  /** testnet10 / mainnet only on explicit, acknowledged request, never for a public test vector (HK-16). */
+  /** testnet10 / mainnet only on explicit, acknowledged request, never for a proof-only lock of a public test program (HK-16). */
   p2shAddresses: z.object({
     simnet: z.string(),
     testnet10: z.string().optional(),

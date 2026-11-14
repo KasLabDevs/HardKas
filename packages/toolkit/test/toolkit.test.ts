@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { WalletToolkit, PaymentToolkit, IndexerToolkit } from '../src/index.js';
+import { calculateContentHash, CURRENT_HASH_VERSION } from '@hardkas/artifacts';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 
@@ -121,20 +122,29 @@ describe('@hardkas/toolkit V1', () => {
             // But we can verify it registers correctly.
             await idx.watch(['kaspa:store-1', 'kaspa:store-2']); // should also work
         });
-        it('should ingest and find artifacts', async () => {
+        // E-03 (rc2 audit): ingestArtifact used to index any object under `artifact.id || 'mock_hash'` with an invented
+        // `/mock/path/<id>.json` (this test pinned hash '123'). Now only an artifact whose content hash its content
+        // verifies is indexed, under that hash; one without is refused (INDEXER_ARTIFACT_IDENTITY_INVALID).
+        it('should ingest a verified artifact under its content hash and find it', async () => {
             const idx = IndexerToolkit.open({ dataDir: tmpDir });
-            
+
             await idx.watch('kaspa:store-1'); // should just bind
 
-            await idx.ingestArtifact({
-                id: '123',
-                schema: 'test.v1',
-                tags: ['test:abc']
-            });
+            const body = { schema: 'test.v1', hashVersion: CURRENT_HASH_VERSION, tags: ['test:abc'], note: 'receipt' };
+            const artifact = { ...body, contentHash: calculateContentHash(body, CURRENT_HASH_VERSION) };
+            await idx.ingestArtifact(artifact, { filePath: '/store/receipt.json' });
 
             const found = await idx.findReceipts({ tags: ['test:abc'] });
             expect(found.length).toBe(1);
-            expect(found[0].hash).toBe('123');
+            expect(found[0].hash).toBe(artifact.contentHash);
+            expect(found[0].filePath).toBe('/store/receipt.json');
+        });
+        it('refuses an artifact without a verifiable content hash, and indexes nothing', async () => {
+            const idx = IndexerToolkit.open({ dataDir: path.join(tmpDir, 'refuse') });
+            await expect(idx.ingestArtifact({ id: '123', schema: 'test.v1', tags: ['test:refused'] })).rejects.toMatchObject({ code: 'INDEXER_ARTIFACT_IDENTITY_INVALID' });
+            const body = { schema: 'test.v1', hashVersion: CURRENT_HASH_VERSION, tags: ['test:refused'] };
+            await expect(idx.ingestArtifact({ ...body, contentHash: 'ab'.repeat(32) })).rejects.toMatchObject({ code: 'INDEXER_ARTIFACT_IDENTITY_INVALID' });
+            expect(await idx.findReceipts({ tags: ['test:refused'] })).toEqual([]);
         });
     });
 });

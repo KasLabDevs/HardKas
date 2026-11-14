@@ -95,7 +95,7 @@ Defined in: [packages/sdk/src/localnet.ts:99](https://github.com/KasLabDevs/Hard
 Initializes the in-memory simulated workspace.
 
 Docker Toccata process control remains a CLI/localnet responsibility in
-0.13.0-rc.1; the SDK reports that boundary instead of silently shelling out.
+0.13.0-rc.2; the SDK reports that boundary instead of silently shelling out.
 
 #### Parameters
 

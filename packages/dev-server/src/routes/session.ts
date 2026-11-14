@@ -32,24 +32,32 @@ sessionRoutes.get("/list", (c) => {
   return c.json({ sessions: list, diagnostics });
 });
 
+/**
+ * A7 (rc2 audit): what a session operation that is not implemented answers. `/start`, `/snapshot`, `/time-travel`,
+ * `/export` and `/import` used to answer `ok: true` with invented ids ("sess_<now>", "snap_<now>", "view_<now>",
+ * `exported: true, content: {}`, `imported: true`) although nothing was created, stored, exported or imported. They now
+ * say so: HTTP 501, `ok: false`, SESSION_OPERATION_UNSUPPORTED, `data.status: "unsupported"` (as `/replay` does).
+ */
+function unsupported(c: any, operation: string, reason: string) {
+  return c.json(
+    {
+      ok: false,
+      code: "SESSION_OPERATION_UNSUPPORTED",
+      error: `Session ${operation} is not implemented in this dev server: ${reason} Nothing was changed.`,
+      data: { status: "unsupported", operation, reason },
+      warnings: [],
+      meta: { network: "simulated" }
+    },
+    501
+  );
+}
+
 sessionRoutes.post("/start", async (c) => {
-  // In a real implementation this would initialize a fresh active session context
-  return c.json({
-    ok: true,
-    data: { sessionId: "sess_" + Date.now() },
-    warnings: [],
-    meta: { network: "simulated" }
-  });
+  return unsupported(c, "start", "no session context is created.");
 });
 
 sessionRoutes.post("/snapshot", async (c) => {
-  // Creates an immutable SessionSnapshot artifact capturing current lineage and workflow IDs
-  return c.json({
-    ok: true,
-    data: { snapshotId: "snap_" + Date.now(), status: "created" },
-    warnings: [],
-    meta: { network: "simulated" }
-  });
+  return unsupported(c, "snapshot", "no SessionSnapshot artifact is written.");
 });
 
 // Wave 1.5 · AUD-14: a verdict is reported only when something computed it. Session-level
@@ -83,36 +91,13 @@ sessionRoutes.post("/diff-replay/:id", async (c) => {
 });
 
 sessionRoutes.post("/time-travel", async (c) => {
-  // Creates a temporary historical view/sandbox anchored at artifactId.
-  // Must NOT mutate active workspace state.
-  return c.json({
-    ok: true,
-    data: {
-      viewId: "view_" + Date.now(),
-      status: "ready",
-      message: "Historical read-only view created in temporary sandbox."
-    },
-    warnings: [],
-    meta: { network: "simulated" }
-  });
+  return unsupported(c, "time-travel", "no historical view or sandbox is created.");
 });
 
 sessionRoutes.get("/export", async (c) => {
-  // Exports portable reproducible runtime state
-  return c.json({
-    ok: true,
-    data: { exported: true, content: {} },
-    warnings: [],
-    meta: { network: "simulated" }
-  });
+  return unsupported(c, "export", "no runtime state is exported (it used to answer an empty `content: {}` as an export).");
 });
 
 sessionRoutes.post("/import", async (c) => {
-  // Imports state into a new namespace unless force=true
-  return c.json({
-    ok: true,
-    data: { imported: true, namespace: "imported_" + Date.now() },
-    warnings: [],
-    meta: { network: "simulated" }
-  });
+  return unsupported(c, "import", "no state is imported.");
 });

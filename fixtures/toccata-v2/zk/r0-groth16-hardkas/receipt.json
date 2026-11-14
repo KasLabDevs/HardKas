@@ -1,0 +1,14 @@
+{
+  "claimDigest": "003fd63976c4b49b8ad7458fd7945d0c5535665f4e0b269f2e8bbd77bb7b5ff9",
+  "controlRoot": "a54dc85ac99f851c92d7c96d7318af41dbe7c0194edfcc37eb4d422a998c1f56",
+  "encoding": "borsh-hex",
+  "imageId": "04c1cd7cafedbda5f993500071da6b4a1b1193799c0d6dd1e02174857a5dd826",
+  "journalHash": "19c4db53d64ab877a70009036c906ae3d8c1b9fb7925f32c9bf039a5c52e5592",
+  "lengthBytes": 325,
+  "provenance": "HardKAS hk-r0-probe guest (guest/ in this directory), proven 2026-11-13 with the risc0 v3.0.5 crate set (risc0-zkvm 3.0.5, risc0-groth16 3.0.4, risc0-circuit-recursion 4.0.4: the versions rusty-kaspa v2.1.0 pins), LocalProver on CPU, Groth16 wrap by risczero/risc0-groth16-prover:v2025-04-03.1; Borsh Groth16Receipt<ReceiptClaim> with the claim pruned to its digest (the rusty-kaspa v2.1.0 zk-sdk format). Spent on Testnet-10 on 2026-11-13 (see README.md), so it is public now.",
+  "receiptFile": "receipt.hex",
+  "receiptHexTextSha256": "37accf58dfd67741fc4e129796d8cef31b33a98ca9a3321f2ac4d489453b9381",
+  "receiptSha256": "cf74db6228d5ee9b4e2036f9a256ae093d9ff7a2b2a6d527681c36fbcf7d121d",
+  "schema": "hardkas.zk.risc0.receipt.v1",
+  "verifierParameters": "73c457ba541936f0d907daf0c7253a39a9c5c427c225ba7709e44702d3c6eedc"
+}

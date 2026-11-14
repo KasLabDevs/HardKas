@@ -45,7 +45,7 @@ describe("DEF-1a · StoredSimulatedTxTrace schema optionally carries lineage/wor
     const dir = mkTmp();
     const modern: any = {
       schema: "hardkas.txTrace",
-      hardkasVersion: "0.13.0-rc.1",
+      hardkasVersion: "0.13.0-rc.2",
       version: "1.0.0-alpha",
       hashVersion: 4,
       createdAt: "2026-09-18T00:00:00.000Z",

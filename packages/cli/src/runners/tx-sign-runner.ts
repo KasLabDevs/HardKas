@@ -9,7 +9,6 @@ export interface TxSignRunnerInput {
   planArtifact: TxPlanArtifact;
   accountName?: string;
   config: HardkasConfig;
-  allowMainnetSigning?: boolean;
   append?: boolean;
   threshold?: number;
   requiredSigners?: string[];
@@ -40,7 +39,6 @@ export async function runTxSign(input: TxSignRunnerInput): Promise<SignedTxArtif
     planArtifact,
     accountName,
     config,
-    allowMainnetSigning,
     append,
     threshold,
     requiredSigners,
@@ -105,9 +103,8 @@ export async function runTxSign(input: TxSignRunnerInput): Promise<SignedTxArtif
   const accountAddressNetwork = getNetworkFromAddress(account.address || "");
 
   // SDK-MAINNET-BROADCAST-GUARD-1: mainnet signing is refused (MAINNET_SIGNING_DISABLED, the product policy shared
-  // with the SDK) whatever --allow-mainnet-signing says: the flag stays refused in this release.
+  // with the SDK); no flag lifts it (`--allow-mainnet-signing` was removed on 2026-11-11).
   // (the account/artifact network mismatch below keeps its own refusal; the SDK checks the instance's network too)
-  void allowMainnetSigning;
   assertMainnetTransactionsDisabled("sign", [artifactNetwork], "tx sign");
 
   // Check for network mismatch

@@ -126,7 +126,9 @@ The SDK should be used from Node.js. Browser applications should talk to the dev
   - `IMAGE_ID_ONLY` (default, `bindingPolicy` absent or `proof-only`): the lock binds the image id
     only (any holder of a valid receipt spends, to any outputs; replay and front-running are possible
     by design); a testnet-10 address needs `addressNetworks` + `acknowledgeImageIdOnlyLock` and
-    is never built for a public test vector. Mainnet (any spelling, or a bound payout or change address
+    is never built for a proof-only lock of a program whose receipts are published
+    (`PUBLIC_R0_TEST_VECTORS`, matched on the image id); a proof-and-output-bound lock of such a
+    program is built, with the warning `ZK_PUBLIC_PROGRAM_PAYOUT_TRIGGERABLE`. Mainnet (any spelling, or a bound payout or change address
     of mainnet) throws `MAINNET_SIGNING_DISABLED` while mainnet is locked down: no lock is built.
   - `IMAGE_ID_AND_OUTPUTS` (`bindingPolicy: { mode: "proof-and-output-bound", payout, change?,
     maxFeeSompi? }`): the redeem script also checks the output count and the payout/change script

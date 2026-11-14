@@ -103,7 +103,6 @@ title: hardkas tx
 - `--account &lt;name&gt;`: Account name to sign with
 - `--out &lt;path&gt;`: Save signed artifact JSON
 - `--fixture` (Default: `false`): Sign with the built-in fixture test key (any network except mainnet)
-- `--allow-mainnet-signing` (Default: `false`): No effect: mainnet is blocked (MAINNET TOTAL LOCKDOWN) and mainnet signing stays refused (MAINNET_SIGNING_DISABLED)
 - `--threshold &lt;number&gt;`: Synthetic multisig threshold for tests (no Kaspa multisig script is produced)
 - `--required-signers &lt;list&gt;`: Comma-separated signers, no spaces (with --threshold above 1)
 - `--append` (Default: `false`): Append signature to a partially signed transaction
@@ -177,7 +176,7 @@ title: hardkas tx
 - `--json` (Default: `false`): Output as JSON
 - `--track &lt;label&gt;`: Signed-artifact mode: after an accepted broadcast, record a deployment with this label
 - `--preflight` (Default: `false`): Payments: right before the broadcast, check every input at the node (unspent, as planned, no covenant id, not pending in its mempool) and verify each input's signature against the node's UTXO; anything it cannot verify refuses the send. One node's view, not a consensus validation
-- `--allow-unplanned` (Default: `false`): Signed-artifact mode: send a signed transaction that names no plan of this workspace (signed elsewhere). HardKAS then cannot check that it is a planned transaction nor its fee limit: you take both on yourself. Without it such a send is refused (SEND_PLAN_UNRESOLVED)
+- `--allow-unplanned` (Default: `false`): Signed-artifact mode: send a signed transaction that names no plan of this workspace (signed elsewhere). HardKAS then cannot check that it is a planned transaction nor its fee limit: you take both on yourself. Without it such a send is refused (SEND_PLAN_UNRESOLVED). Never on mainnet (MAINNET_UNPLANNED_SEND_REFUSED)
 
 ### Semantic Contract (Curated)
 

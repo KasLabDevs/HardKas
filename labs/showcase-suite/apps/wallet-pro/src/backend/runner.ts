@@ -55,7 +55,7 @@ async function run() {
         networkSettlementReal: false,
         fallbackUsed: true,
         packagesExercised: ['@hardkas/toolkit', '@hardkas/core', '@hardkas/react', '@hardkas/simulator-adapters', '@hardkas/wallet-adapter'],
-        publicApisExercised: ['WalletToolkit.open', 'WalletToolkit.balance', 'WalletToolkit.history', 'WalletToolkit.sendSimulated'],
+        publicApisExercised: ['WalletToolkit.open', 'WalletToolkit.balance', 'WalletToolkit.history'],
         errors,
         expectedGuards: [],
         unsupportedCapabilities: []

@@ -8,26 +8,57 @@ import {
   showDeploymentHistory
 } from "../runners/deployment-runners.js";
 
-export function registerDeployCommands(program: Command) {
-  const deployCmd = program.command("deploy").description("Track and manage deployments");
+/** The files `hardkas deploy init` writes into the current directory, in order. */
+export const DEPLOY_INIT_FILES = ["docker-compose.yml", "Dockerfile", ".env.example", "PRODUCTION_CHECKLIST.md"] as const;
 
-  deployCmd
-    .command("init")
-    .description(`Generate deployment profiles (Docker Compose, Dockerfile, .env.example) ${UI.maturity("alpha")}`)
-    .action(async () => {
-      const { getOutput } = await import("../output.js");
-      const out = getOutput();
-      const fs = await import("node:fs/promises");
-      const path = await import("node:path");
-      
-      const cwd = process.cwd();
-      
-      out.writeLine("Generating deployment artifacts...");
+/**
+ * `hardkas deploy init`: writes the deployment profile into `cwd`. A2 (rc2 audit): it used to overwrite a developer's
+ * existing `Dockerfile`, `docker-compose.yml`, `.env.example` and `PRODUCTION_CHECKLIST.md` without asking, and named the
+ * floating `kaspanet/kaspad:latest` image that every HardKAS node path refuses (NODE_IMAGE_DIGEST_REQUIRED). Now any
+ * existing target is refused, before anything is written (DEPLOY_INIT_FILE_EXISTS), unless `force`; the image is the
+ * pinned reference image.
+ */
+export async function runDeployInit(options: { cwd: string; force?: boolean }): Promise<{ written: string[] }> {
+  const { getOutput } = await import("../output.js");
+  const out = getOutput();
+  const fs = await import("node:fs/promises");
+  const path = await import("node:path");
+  const { KASPAD_REFERENCE_IMAGE } = await import("@hardkas/core");
+  const { HardkasCliError, HardkasExitCode } = await import("../cli-errors.js");
 
-      // SURFACE-TRUTH-1B (ST-J): the variables of the one contract `hardkas env check` and `doctor` apply. HardKAS reads no
-      // HARDKAS_DATA_DIR (the profile used to set it to /app/data and mount the volume there); its data is the
-      // workspace's `.hardkas`, so that is what the volume keeps.
-      const dockerCompose = `version: '3.8'
+  const cwd = options.cwd;
+  if (options.force !== true) {
+    const existing: string[] = [];
+    for (const file of DEPLOY_INIT_FILES) {
+      try {
+        await fs.lstat(path.join(cwd, file));
+        existing.push(file);
+      } catch (e: any) {
+        if (e?.code !== "ENOENT") throw e;
+      }
+    }
+    if (existing.length > 0) {
+      throw new HardkasCliError(
+        "DEPLOY_INIT_FILE_EXISTS",
+        `deploy init would overwrite ${existing.join(", ")} in ${cwd}. Move ${existing.length === 1 ? "it" : "them"} aside, or pass --force to replace ${existing.length === 1 ? "it" : "them"}. Nothing was written.`,
+        { exitCode: HardkasExitCode.USAGE_ERROR }
+      );
+    }
+  }
+
+  out.writeLine("Generating deployment artifacts...");
+  const written: string[] = [];
+  const write = async (file: (typeof DEPLOY_INIT_FILES)[number], content: string) => {
+    await fs.writeFile(path.join(cwd, file), content, "utf8");
+    written.push(file);
+    out.writeLine(`  ✅ Created ${file}`);
+  };
+
+  // SURFACE-TRUTH-1B (ST-J): the variables of the one contract `hardkas env check` and `doctor` apply. HardKAS reads no
+  // HARDKAS_DATA_DIR (the profile used to set it to /app/data and mount the volume there); its data is the
+  // workspace's `.hardkas`, so that is what the volume keeps.
+  // A2: HARDKAS_KASPAD_IMAGE defaults to the pinned reference image (a floating tag is refused by every node path).
+  const dockerCompose = `version: '3.8'
 services:
   app:
     build: .
@@ -36,7 +67,7 @@ services:
     environment:
       - NETWORK=\${NETWORK:-testnet}
       - KASPAD_URL=\${KASPAD_URL}
-      - HARDKAS_KASPAD_IMAGE=\${HARDKAS_KASPAD_IMAGE:-kaspanet/kaspad:latest}
+      - HARDKAS_KASPAD_IMAGE=\${HARDKAS_KASPAD_IMAGE:-${KASPAD_REFERENCE_IMAGE}}
       - LOG_LEVEL=\${LOG_LEVEL:-info}
       - DATABASE_URL=\${DATABASE_URL}
     volumes:
@@ -45,12 +76,11 @@ services:
 volumes:
   hardkas_data:
 `;
-      await fs.writeFile(path.join(cwd, "docker-compose.yml"), dockerCompose, "utf8");
-      out.writeLine("  ✅ Created docker-compose.yml");
+  await write("docker-compose.yml", dockerCompose);
 
-      // NODE-DEPLOY-IMAGE-1: Node 18 is end-of-life and has no fix for the October 2026 Node.js security release.
-      // The patched 24 LTS image, pinned by its digest: a tag can be moved, the digest is the image that was validated.
-      const dockerfile = `FROM node:24.22.1-alpine@sha256:06d7adf3e0ef61a13f1d28682726366f97a15aa1888c934d3ecec86c33918b53
+  // NODE-DEPLOY-IMAGE-1: Node 18 is end-of-life and has no fix for the October 2026 Node.js security release.
+  // The patched 24 LTS image, pinned by its digest: a tag can be moved, the digest is the image that was validated.
+  const dockerfile = `FROM node:24.22.1-alpine@sha256:06d7adf3e0ef61a13f1d28682726366f97a15aa1888c934d3ecec86c33918b53
 WORKDIR /app
 
 # Copy package files and install dependencies
@@ -69,22 +99,20 @@ EXPOSE 3000
 
 CMD ["pnpm", "start"]
 `;
-      await fs.writeFile(path.join(cwd, "Dockerfile"), dockerfile, "utf8");
-      out.writeLine("  ✅ Created Dockerfile");
+  await write("Dockerfile", dockerfile);
 
-      const envExample = `NETWORK=testnet
+  const envExample = `NETWORK=testnet
 KASPAD_URL=127.0.0.1:16210
-HARDKAS_KASPAD_IMAGE=kaspanet/kaspad:latest
+HARDKAS_KASPAD_IMAGE=${KASPAD_REFERENCE_IMAGE}
 LOG_LEVEL=info
 
 # Optional
 # DATABASE_URL=postgres://user:pass@localhost:5432/db
 # PROMETHEUS_PORT=9090
 `;
-      await fs.writeFile(path.join(cwd, ".env.example"), envExample, "utf8");
-      out.writeLine("  ✅ Created .env.example");
+  await write(".env.example", envExample);
 
-      const checklist = `# Production Deployment Checklist
+  const checklist = `# Production Deployment Checklist
 
 ## Environment
 - [ ] Ensure \`.env\` is created based on \`.env.example\`.
@@ -101,11 +129,22 @@ LOG_LEVEL=info
 - [ ] Ensure Docker volume \`hardkas_data\` is properly mapped and backed up.
 - [ ] If using SQLite, ensure the database file resides within the persistent volume.
 `;
-      await fs.writeFile(path.join(cwd, "PRODUCTION_CHECKLIST.md"), checklist, "utf8");
-      out.writeLine("  ✅ Created PRODUCTION_CHECKLIST.md");
+  await write("PRODUCTION_CHECKLIST.md", checklist);
 
-      out.writeLine("\\nDeployment profile generated successfully!");
-      out.writeLine("Review PRODUCTION_CHECKLIST.md before deploying.");
+  out.writeLine("\\nDeployment profile generated successfully!");
+  out.writeLine("Review PRODUCTION_CHECKLIST.md before deploying.");
+  return { written };
+}
+
+export function registerDeployCommands(program: Command) {
+  const deployCmd = program.command("deploy").description("Track and manage deployments");
+
+  deployCmd
+    .command("init")
+    .description(`Generate deployment profiles (Docker Compose, Dockerfile, .env.example) ${UI.maturity("alpha")}`)
+    .option("--force", "Replace the profile files that already exist in this directory", false)
+    .action(async (opts: { force?: boolean }) => {
+      await runDeployInit({ cwd: process.cwd(), force: opts.force === true });
     });
 
   deployCmd

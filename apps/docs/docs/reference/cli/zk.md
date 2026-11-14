@@ -115,7 +115,7 @@ title: hardkas zk
 - `--change-address &lt;address&gt;`: Optional consensus-bound change address
 - `--change-amount &lt;sompi&gt;`: Optional consensus-bound change amount in sompi
 - `--max-fee &lt;sompi&gt;`: proof-and-output-bound: the most the lock may pay as fee; a UTXO above the bound outputs plus this stays locked (default 50000000)
-- `--address-network &lt;networks&gt;`: Also return the P2SH address for testnet-10; proof-only needs --ack-image-id-only-lock; never for a public test vector. mainnet (any spelling) is refused while mainnet is locked down (MAINNET_SIGNING_DISABLED): nothing is built
+- `--address-network &lt;networks&gt;`: Also return the P2SH address for testnet-10; proof-only needs --ack-image-id-only-lock, and is never built for a public test program (an output-bound lock of one is, with a warning: anyone can trigger its payout). mainnet (any spelling) is refused while mainnet is locked down (MAINNET_SIGNING_DISABLED): nothing is built
 - `--ack-image-id-only-lock` (Default: `false`): Acknowledge that a proof-only lock binds only the image id (anyone with a valid receipt can spend, replay or front-run)
 - `--json` (Default: `false`): Output as JSON
 

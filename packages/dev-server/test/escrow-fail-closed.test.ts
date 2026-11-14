@@ -19,6 +19,10 @@ await vi.hoisted(async () => {
 
 const json = { "Content-Type": "application/json" };
 
+// Two cases search every local dev keystore for a key that is not there. That is seconds of key derivation (about
+// 3.5–4.8 s measured here), too close to vitest's 5 s default: under a loaded machine they timed out without failing.
+const SLOW_KEYSTORE_SEARCH_MS = 30_000;
+
 // x-only public keys that match no local dev account.
 const config = {
   buyer: { publicKeyHex: "11".repeat(32) },
@@ -138,7 +142,8 @@ describe("escrow routes fail closed", () => {
     expect(memoryStore.get(record.id)?.state).toBe("CREATED");
     expect(memoryStore.get(record.id)?.funding.status).toBe("none");
     expect(memoryStore.get(record.id)?.funding.transactionId).toBeUndefined();
-  });
+    // the route opens every local dev keystore (Argon2) looking for the buyer: about 4 s of CPU, more on a busy machine
+  }, SLOW_KEYSTORE_SEARCH_MS);
 
   it("sign refuses to sign without the signer's key and stores no signature", async () => {
     const record = readyToRelease();
@@ -150,7 +155,7 @@ describe("escrow routes fail closed", () => {
     expect(body.error).toMatch(/^ESCROW_SIGNER_NOT_FOUND/);
     expect(memoryStore.get(record.id)?.signatures).toEqual({});
     expect(memoryStore.get(record.id)?.state).toBe("PARTIALLY_SIGNED");
-  });
+  }, SLOW_KEYSTORE_SEARCH_MS);
 
   it("release never reports success when unlock or submission fails", async () => {
     const record = readyToRelease();

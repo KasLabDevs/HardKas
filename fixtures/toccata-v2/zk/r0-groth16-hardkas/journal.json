@@ -1,0 +1,10 @@
+{
+  "inputCommitmentSha256": "6002d1c4082ea219a547538e663a4a669ff5bf27c27fbf14e62b3b780017e82e",
+  "journalHash": "19c4db53d64ab877a70009036c906ae3d8c1b9fb7925f32c9bf039a5c52e5592",
+  "journalHex": "686172646b61732d72302d70726f62652d76316002d1c4082ea219a547538e663a4a669ff5bf27c27fbf14e62b3b780017e82e",
+  "journalLengthBytes": 51,
+  "label": "hardkas-r0-probe-v1",
+  "layout": "utf8 'hardkas-r0-probe-v1' (19 bytes) || SHA-256(private 32-byte input) (32 bytes)",
+  "provenance": "HardKAS hk-r0-probe guest (guest/ in this directory), proven 2026-11-13 with the risc0 v3.0.5 crate set (risc0-zkvm 3.0.5, risc0-groth16 3.0.4, risc0-circuit-recursion 4.0.4: the versions rusty-kaspa v2.1.0 pins), LocalProver on CPU, Groth16 wrap by risczero/risc0-groth16-prover:v2025-04-03.1; Borsh Groth16Receipt<ReceiptClaim> with the claim pruned to its digest (the rusty-kaspa v2.1.0 zk-sdk format). Spent on Testnet-10 on 2026-11-13 (see README.md), so it is public now.",
+  "schema": "hardkas.zk.risc0.journal.v1"
+}

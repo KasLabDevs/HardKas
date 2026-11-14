@@ -14,7 +14,8 @@ import {
 
 /*
  * ZK-16 + the output-bound repair, on a real rusty-kaspad v2.1.0 (simnet): the SDK's OWN builders
- * (buildR0Groth16Scripts / buildR0Groth16Transaction) end to end, with the official RISC Zero receipt.
+ * (buildR0Groth16Scripts / buildR0Groth16Transaction) end to end, with the official RISC Zero receipt and, since H4,
+ * with HardKAS's own receipt (fixtures/toccata-v2/zk/r0-groth16-hardkas: another program, journal and seal).
  * - proof-only: the SDK transaction is accepted and pays out.
  * - proof-and-output-bound: the redeem script binds the payout by introspection (version-prefixed SPK), one input,
  *   and an input limit. The node accepts the bound spend, and rejects wrong outputs, two inputs at once and an
@@ -30,11 +31,17 @@ function repoRoot(): string {
   throw new Error("repo root not found");
 }
 
-const imageId = "75641a540ee2ad9ee5902bcdcdb8b55c0bef4a28287309b858f97b1356c6c2e0";
-const journalHash = "5df6e0e2761359d30a8275058e299fcc0381534545f55cf43e41983f5d4c9456";
 const PAYOUT = 100_000_000n;
+// H4: the same suite for the public kaspa-python-sdk vector and for HardKAS's own receipt (another program and journal)
+const VECTORS = [
+  { name: "the official kaspa-python-sdk vector", dir: "r0-groth16-official" },
+  { name: "HardKAS's own receipt (H4)", dir: "r0-groth16-hardkas" }
+];
 
-describe("ZK output-bound locks and the SDK transaction builder on a real rusty-kaspad (simnet)", () => {
+describe.each(VECTORS)("ZK output-bound locks and the SDK transaction builder on a real rusty-kaspad (simnet), $name", ({ dir }) => {
+  const fixture = path.join(repoRoot(), "fixtures", "toccata-v2", "zk", dir);
+  const imageId: string = JSON.parse(fs.readFileSync(path.join(fixture, "image-id.json"), "utf8")).imageId;
+  const journalHash: string = JSON.parse(fs.readFileSync(path.join(fixture, "journal.json"), "utf8")).journalHash;
   let node: SimnetNodeHandle;
   let client: JsonWrpcKaspaClient;
   let kaspa: any;
@@ -132,7 +139,7 @@ describe("ZK output-bound locks and the SDK transaction builder on a real rusty-
     minerSpk = kaspa.payToAddressScript(new kaspa.Address(minerAddress));
     payeeAddress = new kaspa.PrivateKey("44".repeat(32)).toAddress("simnet").toString();
     payeeSpk = kaspa.payToAddressScript(new kaspa.Address(payeeAddress));
-    receiptHex = fs.readFileSync(path.join(repoRoot(), "fixtures", "toccata-v2", "zk", "r0-groth16-official", "receipt.hex"), "utf8").trim();
+    receiptHex = fs.readFileSync(path.join(fixture, "receipt.hex"), "utf8").trim();
   }, 300000);
 
   afterAll(async () => {

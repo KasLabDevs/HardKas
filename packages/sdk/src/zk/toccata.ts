@@ -28,6 +28,7 @@ import {
   R0_GROTH16_COMPRESSED_VERIFICATION_KEY_HEX,
   R0_GROTH16_CONTROL_ROOT,
   R0_GROTH16_VERIFIER_ID,
+  r0VerifierParametersIssue,
   type R0Groth16LocalVerificationResult
 } from "./risc0-groth16.js";
 
@@ -326,8 +327,9 @@ export interface R0Groth16ScriptParams {
   bindingPolicy?: ZkOutputBindingPolicy;
   /**
    * Networks whose P2SH address is returned. The simnet address is always returned; "testnet-10" is returned
-   * only when listed here AND acknowledgeImageIdOnlyLock is true, and never for a public test vector
-   * (PUBLIC_R0_TEST_VECTORS), whose lock anyone can spend (HK-16). "mainnet" (any spelling) throws
+   * only when listed here (a proof-only lock also needs acknowledgeImageIdOnlyLock: true), never for a proof-only lock
+   * of a public test program (PUBLIC_R0_TEST_VECTORS, matched on the image id), which anyone can spend (HK-16, C-1);
+   * an output-bound lock of such a program gets ZK_PUBLIC_PROGRAM_PAYOUT_TRIGGERABLE. "mainnet" (any spelling) throws
    * MAINNET_SIGNING_DISABLED while mainnet is locked down (P37): nothing is built.
    */
   addressNetworks?: ZkAddressNetwork[];
@@ -714,12 +716,25 @@ export const ZK_LOCK_BINDS_IMAGE_ID_AND_OUTPUTS_WARNING: ZkIssue = Object.freeze
     "of that program can trigger the spend, but only to those outputs. The journal is supplied by the unlocking script and is not " +
     "checked on-chain. The spend has exactly one input; every UTXO at this address is spendable the same way, one at a time; whatever " +
     "a UTXO holds beyond the bound outputs is the fee, and a UTXO holding more than the outputs plus the fee cap stays locked. " +
+    "The outputs' covenant binding is not checked (C-6, observed on rusty-kaspad 2.1.0): whoever triggers the spend can declare the bound " +
+    "payout a covenant genesis, so the payee gets the right amount at the right script as a covenant-tagged UTXO, which HardKAS payments " +
+    "skip and the v1 engine does not spend (the key holder can still spend it with a covenant-aware tool). " +
     "Fund it with requiredFundingSompi."
 }) as ZkIssue;
 
 /** The authorization-model warning for a lock of this mode (attached to every script and transaction result). */
 export function zkLockAuthorizationWarning(mode: ZkBindingMode, _policy?: ZkOutputBindingPolicy): ZkIssue {
   return mode === "proof-and-output-bound" ? ZK_LOCK_BINDS_IMAGE_ID_AND_OUTPUTS_WARNING : ZK_LOCK_BINDS_IMAGE_ID_ONLY_WARNING;
+}
+
+/** C-1 · the warning an output-bound lock of a program with a published receipt gets on a public network. */
+function publicProgramPayoutWarning(imageId: string, vectorName: string): ZkIssue {
+  return {
+    code: "ZK_PUBLIC_PROGRAM_PAYOUT_TRIGGERABLE",
+    message:
+      `Image id ${imageId} is a PUBLIC test program (${vectorName}): its receipt is published, so anyone can trigger this lock's bound payout at any time, ` +
+      "as soon as it is funded. The funds still go only to the bound outputs (the redeem script checks them); the payee does not choose when."
+  };
 }
 
 /** proof-and-output-bound: the largest input the redeem script accepts (bound outputs plus the fee cap). */
@@ -835,7 +850,9 @@ function scriptsRequestNetworks(params: R0Groth16ScriptParams | undefined): unkn
  * the version-prefixed encoding OpTxOutputSpk pushes. Results carry ZK_LOCK_BINDS_IMAGE_ID_AND_OUTPUTS.
  *
  * Addresses: the simnet address is always returned. A testnet-10 address is returned only when requested in
- * `addressNetworks` (proof-only also needs `acknowledgeImageIdOnlyLock: true`), and never for a public test vector.
+ * `addressNetworks` (proof-only also needs `acknowledgeImageIdOnlyLock: true`), and never for a proof-only lock of a
+ * public test program (its image id is in PUBLIC_R0_TEST_VECTORS); an output-bound lock of one is built with the warning
+ * ZK_PUBLIC_PROGRAM_PAYOUT_TRIGGERABLE (C-1).
  *
  * Mainnet (MAINNET TOTAL LOCKDOWN, P37): a lock's signature script IS the authorization of its spend (a ZK spend
  * carries no signature), so no lock is built for mainnet. A mainnet entry in `addressNetworks`, in any spelling
@@ -896,12 +913,19 @@ export function buildR0Groth16Scripts(params: R0Groth16ScriptParams): R0Groth16S
       message: `Addresses for ${publicNetworks.join(", ")} were requested without acknowledgeImageIdOnlyLock: the lock binds only the image id, so anyone with a valid receipt of this program can spend it. Nothing was built.`
     });
   }
-  const publicVector = findPublicR0TestVector(imageId, journalHash);
+  // C-1 · a program with a published receipt (matched on the image id: a proof-only lock binds nothing else). A proof-only
+  // lock of it is anyone-can-spend on a public network: refused. An output-bound lock sends its funds only to the bound
+  // outputs, so it is built, with a warning that anyone holding the published receipt can trigger that payout at any time.
+  const publicVector = findPublicR0TestVector(imageId);
   if (publicNetworks.length > 0 && publicVector) {
-    issues.push({
-      code: "ZK_PUBLIC_VECTOR_PUBLIC_NETWORK_REFUSED",
-      message: `(${imageId}, ${journalHash}) is a PUBLIC test vector (${publicVector.name}): its receipt is published, so a ${publicNetworks.join("/")} address would be anyone-can-spend. HardKAS never returns it.`
-    });
+    if (bindingMode !== "proof-and-output-bound") {
+      issues.push({
+        code: "ZK_PUBLIC_VECTOR_PUBLIC_NETWORK_REFUSED",
+        message: `Image id ${imageId} is a PUBLIC test program (${publicVector.name}): a receipt of it is published, and a proof-only lock binds only the image id, so a ${publicNetworks.join("/")} address would be anyone-can-spend (with any journal). HardKAS never returns it; a proof-and-output-bound lock can be built instead.`
+      });
+    } else {
+      warnings.push(publicProgramPayoutWarning(imageId, publicVector.name));
+    }
   }
 
   let preparedProof = "";
@@ -932,6 +956,12 @@ export function buildR0Groth16Scripts(params: R0Groth16ScriptParams): R0Groth16S
       });
       return emptyScriptsResult(imageId, journalHash, preparedProof, warnings, issues, params.bindingPolicy);
     }
+    // H7: a receipt made for another RISC Zero verifier would never unlock this lock (its key and control root are pinned)
+    const paramsIssue = r0VerifierParametersIssue(parsedReceipt.verifierParameters);
+    if (paramsIssue) {
+      issues.push({ ...paramsIssue, message: `${paramsIssue.message} Nothing was built.` });
+      return emptyScriptsResult(imageId, journalHash, preparedProof, warnings, issues, params.bindingPolicy);
+    }
     receiptClaimCrossCheck = "MATCH";
   } else {
     warnings.push({
@@ -939,6 +969,18 @@ export function buildR0Groth16Scripts(params: R0Groth16ScriptParams): R0Groth16S
       message:
         "The receipt does not carry its claim as a pruned digest (or could not be parsed here), so imageId/journalHash were not cross-checked against it. verifyR0Groth16ReceiptLocal checks the proof against the claim of (imageId, journalHash)."
     });
+    // C-8 · neither the claim (HK-19) nor the verifier parameters (H7) were checked: a mistyped image id would give a
+    // fundable public-network address of a program the user holds no receipt of. Simnet only.
+    if (publicNetworks.length > 0) {
+      issues.push({
+        code: "ZK_RECEIPT_CLAIM_UNCHECKED_PUBLIC_NETWORK_REFUSED",
+        message:
+          `The receipt does not carry its claim as a pruned digest, so neither its claim nor its verifier parameters were cross-checked against (imageId, journalHash): ` +
+          `a wrong image id would lock funds to a program you hold no receipt of. HardKAS returns no ${publicNetworks.join("/")} address for it (simnet only). ` +
+          "Use the receipt with its claim pruned to a digest (the rusty-kaspa zk-sdk format), or check it first with verifyR0Groth16ReceiptLocal. Nothing was built."
+      });
+      return emptyScriptsResult(imageId, journalHash, preparedProof, warnings, issues, params.bindingPolicy);
+    }
   }
 
   const kaspa = loadManagedKaspaWasmSync();
@@ -1173,6 +1215,40 @@ function boundPolicyOf(scripts: R0Groth16ScriptsResult | undefined): ZkOutputBin
 }
 
 /**
+ * C-7 · true only when the scripts' redeem script IS a canonical proof-and-output-bound lock over the pinned verifier
+ * (verifyR0Groth16Scripts: rebuilt byte for byte, key, control root and control id pinned, no issue) that binds exactly
+ * the policy's outputs and input limit. The label of a scripts object (its `bindingMode` and `bindingPolicy`, reloaded
+ * from JSON or assembled by hand) never makes it true on its own.
+ */
+function r0LockEnforcesBoundOutputs(
+  scripts: R0Groth16ScriptsResult | undefined,
+  bindingMode: ZkBindingMode,
+  policy: ZkOutputBindingPolicy | undefined
+): boolean {
+  if (bindingMode !== "proof-and-output-bound" || policy?.mode !== "proof-and-output-bound" || !policy.payout) return false;
+  if (typeof scripts?.redeemScript !== "string" || typeof scripts.sigScript !== "string") return false;
+  try {
+    const check = verifyR0Groth16Scripts({
+      redeemScript: scripts.redeemScript,
+      sigScript: scripts.sigScript,
+      imageId: scripts.imageId,
+      journalHash: scripts.journalHash,
+      expectedBindingMode: "proof-and-output-bound",
+      expectedPayoutAddress: policy.payout.address,
+      expectedPayoutAmount: policy.payout.amountSompi,
+      ...(policy.change ? { expectedChangeAddress: policy.change.address, expectedChangeAmount: policy.change.amountSompi } : {})
+    });
+    return (
+      check.consensusEnforced === true &&
+      check.boundOutputCount === (policy.change ? 2 : 1) &&
+      check.boundMaxInputSompi === boundMaxInputSompi(policy)
+    );
+  } catch {
+    return false;
+  }
+}
+
+/**
  * The outputs of the spend. proof-and-output-bound: exactly the bound payout (and change), as the redeem script checks
  * them; the fee is whatever the UTXO holds beyond them. proof-only: one output to the destination, UTXO minus fee.
  */
@@ -1249,7 +1325,7 @@ export function buildR0Groth16Plan(params: BuildR0Groth16TxParams): TxPlanArtifa
   const p2shAddress = p2shAddressFor(params.scripts, netKey);
   if (!p2shAddress) {
     throw new Error(
-      `ZK_P2SH_ADDRESS_UNAVAILABLE: the scripts carry no P2SH address for '${netKey}' (public-network addresses need addressNetworks, + acknowledgeImageIdOnlyLock for a proof-only lock, and are never built for a public test vector)`
+      `ZK_P2SH_ADDRESS_UNAVAILABLE: the scripts carry no P2SH address for '${netKey}' (public-network addresses need addressNetworks, + acknowledgeImageIdOnlyLock for a proof-only lock, and are never built for a proof-only lock of a public test program)`
     );
   }
   const baseComputeMass = params.baseComputeMass ?? measureR0Groth16SpendMass(params, computeBudget);
@@ -1303,7 +1379,10 @@ export function buildR0Groth16Plan(params: BuildR0Groth16TxParams): TxPlanArtifa
  * script units per VK element + the observed script overhead; ZK-07) and whose compute mass fits a block;
  * the fee is derived from the mass kaspa-wasm reports for the real transaction plus the compute-budget term.
  * Every result carries the lock's authorization-model warning (ZK_LOCK_BINDS_IMAGE_ID_ONLY, HK-16, or
- * ZK_LOCK_BINDS_IMAGE_ID_AND_OUTPUTS); public networks are refused for public vectors. In proof-and-output-bound
+ * ZK_LOCK_BINDS_IMAGE_ID_AND_OUTPUTS); a public network is refused for a lock of a public test program unless its
+ * redeem script really binds the outputs (C-1; then ZK_PUBLIC_PROGRAM_PAYOUT_TRIGGERABLE). Whether it does, and so
+ * `consensusEnforced`, is read from the redeem script with verifyR0Groth16Scripts, never from the scripts object's
+ * `bindingMode` label (C-7). In proof-and-output-bound
  * mode the outputs are exactly the bound ones and the fee is what the UTXO holds beyond them; any fee above the cap
  * (feeOptions.maxFeeSompi, default DEFAULT_MAX_FEE_CAP_SOMPI) is refused (ZK_FEE_ABOVE_CAP).
  * The emitted ZK fact records the real image id, the SHA-256 of the proof BYTES, no placeholder and no
@@ -1387,15 +1466,31 @@ export function buildR0Groth16Transaction(params: BuildR0Groth16TxParams): R0Gro
     }
   }
 
-  const publicVector = params.scripts ? findPublicR0TestVector(params.scripts.imageId, params.scripts.journalHash) : undefined;
-  if (publicVector && networkId !== "simnet") {
-    issues.push({
-      code: "ZK_PUBLIC_VECTOR_PUBLIC_NETWORK_REFUSED",
-      message: `This is a PUBLIC test vector (${publicVector.name}): anyone can spend its lock, so HardKAS builds it for simnet only.`
+  // C-7 · whether this lock binds the outputs is read from its redeem script, never from the scripts object's label.
+  const outputsEnforced = r0LockEnforcesBoundOutputs(params.scripts, bindingMode, bindingPolicy);
+  if (bindingMode === "proof-and-output-bound" && !outputsEnforced) {
+    warnings.push({
+      code: "ZK_BINDING_LABEL_NOT_ENFORCED",
+      message:
+        "The scripts object says proof-and-output-bound, but its redeem script is not a canonical output-bound lock over the pinned verifier for that policy (verifyR0Groth16Scripts): " +
+        "nothing on-chain binds the outputs of this spend, and consensusEnforced is false."
     });
   }
+
+  // C-1 · a lock of a public test program (matched on the image id): a public network only when the redeem script binds
+  // the outputs (then anyone can trigger the bound payout, nothing more); a proof-only lock of it is anyone-can-spend.
+  const publicVector = params.scripts ? findPublicR0TestVector(params.scripts.imageId) : undefined;
+  const publicRefused = publicVector !== undefined && networkId !== "simnet" && !outputsEnforced;
+  if (publicRefused) {
+    issues.push({
+      code: "ZK_PUBLIC_VECTOR_PUBLIC_NETWORK_REFUSED",
+      message: `Image id ${params.scripts.imageId} is a PUBLIC test program (${publicVector!.name}) and this lock does not bind the outputs: anyone can spend it, so HardKAS builds such a spend for simnet only.`
+    });
+  } else if (publicVector !== undefined && networkId !== "simnet") {
+    warnings.push(publicProgramPayoutWarning(params.scripts.imageId, publicVector.name));
+  }
   const p2shAddress = params.scripts ? p2shAddressFor(params.scripts, networkId) : undefined;
-  if (!p2shAddress && !publicVector) {
+  if (!p2shAddress && !publicRefused) {
     issues.push({
       code: "ZK_P2SH_ADDRESS_UNAVAILABLE",
       message:
@@ -1555,6 +1650,7 @@ export function buildR0Groth16Transaction(params: BuildR0Groth16TxParams): R0Gro
           guestSystem: "RISC Zero",
           imageId: params.scripts.imageId,
           journalHash: params.scripts.journalHash,
+          // H6: a record of these bytes, never an identity — Groth16 is malleable ((A,B,C) → (r⁻¹A, rB, C) is valid too)
           proofSha256: sha256Hex(Buffer.from(params.scripts.preparedProof, "hex")),
           verifiedOffChain: offChainVerification === "VERIFIED",
           offChainVerification,
@@ -1598,7 +1694,7 @@ export function buildR0Groth16Transaction(params: BuildR0Groth16TxParams): R0Gro
       destinationAddress,
       networkId,
       bindingMode,
-      consensusEnforced: bindingMode === "proof-and-output-bound" && issues.length === 0,
+      consensusEnforced: outputsEnforced && issues.length === 0,
       experimental: true,
       warnings,
       issues,
@@ -1838,6 +1934,25 @@ export function verifyR0Groth16Scripts(
       issues.push({
         code: "ZK_BOUND_SPK_NOT_INTROSPECTION_ENCODED",
         message: `The bound ${what} SPK '${output.spkIntrospectionHex}' does not start with the u16 version OpTxOutputSpk pushes: no standard output matches it`
+      });
+    }
+  }
+
+  // C-5 · a canonical output-bound lock can still be unspendable: its one input holds at most the limit and must pay every
+  // bound output (and a fee), and an output carries a positive amount. HardKAS's builder never makes such a lock
+  // (boundMaxInputSompi adds a positive fee cap); one handed over by someone else is refused before it is funded.
+  if (bound) {
+    const total = bound.outputs.reduce((s, o) => s + o.amountSompi, 0n);
+    const nonPositive = bound.outputs.findIndex((o) => o.amountSompi <= 0n);
+    if (nonPositive !== -1) {
+      issues.push({
+        code: "ZK_BOUND_LOCK_UNSPENDABLE",
+        message: `The lock binds output ${nonPositive} to ${bound.outputs[nonPositive]!.amountSompi} sompi: an output carries a positive amount, so no spend can match it. A UTXO funded here stays locked forever; do not fund it.`
+      });
+    } else if (bound.maxInputSompi <= total) {
+      issues.push({
+        code: "ZK_BOUND_LOCK_UNSPENDABLE",
+        message: `The lock's input limit (${bound.maxInputSompi} sompi) is not above its bound outputs (${total} sompi): the single input it accepts can never pay them and a fee. A UTXO funded here stays locked forever; do not fund it.`
       });
     }
   }

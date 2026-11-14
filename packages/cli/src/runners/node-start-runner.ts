@@ -3,6 +3,7 @@ import {
   DockerKaspadOptions,
   KaspadNodeStatus
 } from "@hardkas/node-runner";
+import { PINNED_IMAGE_REFERENCE, NODE_IMAGE_DIGEST_REQUIRED } from "@hardkas/core";
 import { HardkasCliError, HardkasExitCode } from "../cli-errors.js";
 
 export interface NodeStartRunnerInput extends DockerKaspadOptions {
@@ -14,8 +15,8 @@ export interface NodeStartRunnerResult {
   formatted: string;
 }
 
-/** An image pinned by its content digest: `<repository>[:tag]@sha256:<64 lowercase hex>` (a tag alone can move). */
-export const PINNED_NODE_IMAGE = /^[^\s@]+@sha256:[0-9a-f]{64}$/;
+/** An image pinned by its content digest: `<repository>[:tag]@sha256:<64 lowercase hex>` (a tag alone can move). The one rule, from @hardkas/core. */
+export const PINNED_NODE_IMAGE = PINNED_IMAGE_REFERENCE;
 
 /**
  * ESCALÓN 4 · P39 · the image `node start` runs, decided before Docker is asked anything: `--image` when given, else
@@ -30,7 +31,7 @@ export function assertNodeStartImagePinned(input: { image?: string | undefined }
   if (typeof image === "string" && PINNED_NODE_IMAGE.test(image)) return;
   const source = fromOption ? "--image" : "HARDKAS_KASPAD_IMAGE";
   throw new HardkasCliError(
-    "NODE_IMAGE_DIGEST_REQUIRED",
+    NODE_IMAGE_DIGEST_REQUIRED,
     `${source} '${String(image)}' is not pinned by digest. 'node start' runs only an image pinned as ` +
       `<repository>[:tag]@sha256:<64 hex digits> (a tag can move to other bytes; --allow-floating-image does not lift this). ` +
       `Nothing was started.`,

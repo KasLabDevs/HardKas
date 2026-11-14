@@ -72,7 +72,7 @@ describe("First contact · E07 · scenario results are sealed v5 artifacts", () 
   it("the pre-fix shape (no hashVersion, mode \"agent\") is still rejected — the verifier was right", () => {
     const legacy = {
       schema: "hardkas.scenarioResult.v1",
-      hardkasVersion: "0.13.0-rc.1",
+      hardkasVersion: "0.13.0-rc.2",
       version: "1.0.0-alpha",
       networkId: "simulated",
       mode: "agent",

@@ -28,7 +28,7 @@ function corpusWorkspace(): string {
   return ws;
 }
 
-describe("0.13.0-rc.1 programmability SDK surface (silverc installed)", () => {
+describe("0.13.0-rc.2 programmability SDK surface (silverc installed)", () => {
   let workspaceRoot = "";
 
   beforeEach(() => {

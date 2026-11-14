@@ -1,9 +1,11 @@
-# Certification Capability Matrix
+# Capability Matrix
+
+What the release checks verify, by capability. This is the repository's own verification, not a third-party certification.
 > **Claims are generated.** The authoritative values live in
 > [claims.generated.md](./claims.generated.md), produced from `packages/sdk` by
 > `pnpm docs:generate-claims`. Anything restated below is prose, not the source.
 
-This matrix describes the capabilities HardKas should prove before a release is treated as stable. For 0.13.0-rc.1, the priority is the local-first development loop.
+This matrix describes the capabilities HardKas should prove before a release is treated as stable. For 0.13.0-rc.2, the priority is the local-first development loop.
 
 ## Local Transaction Lifecycle
 
@@ -93,7 +95,7 @@ This is important, but it is not the default happy path.
 
 ## Toccata v2 Localnet Baseline
 
-Status: certified alpha localnet gate
+Status: alpha localnet gate, verified by the release checks
 
 Coverage:
 
@@ -121,6 +123,6 @@ That drift is expected and does not block the alpha localnet gate.
 
 ## Mainnet
 
-Status: out of scope for the 0.13.0-rc.1 happy path
+Status: out of scope for the 0.13.0-rc.2 happy path
 
 Any future mainnet certification must be separate from local simulation and simnet tests. It needs stronger UX guards, signing policy, documentation, and operational review.

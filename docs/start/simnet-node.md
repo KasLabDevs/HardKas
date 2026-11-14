@@ -214,6 +214,38 @@ manages itself (fixed container names and ports, one per machine) and proves by
 container and image digest. This page uses a node of your own instead: your
 names, your ports, your data folder, and the same pinned image.
 
+### Funding dev accounts from the localnet treasury (alpha)
+
+On the managed localnet, `hardkas localnet seed` pays an exact balance to the
+workspace's dev accounts from a **treasury** account, instead of mining to each
+one:
+
+```bash
+npx hardkas localnet seed --profile toccata-v2 --amount 100 --only-empty
+npx hardkas localnet start --profile toccata-v2 --seed --seed-amount 100
+npx hardkas localnet fund alice --profile toccata-v2 --treasury --amount 250
+```
+
+- **The treasury key is public by design.** It is derived from a fixed string,
+  the same in every HardKAS localnet, so anyone can spend its coins. It is used
+  on simnet only: the commands have no `--network`, sign for simnet, and refuse
+  any node that does not answer simnet.
+- The treasury is mined to when it holds too little mature balance. Payments go
+  out in as few transactions as fit; a large amount is split over several.
+- `--stop-miner` leaves the chain stopped after seeding. Without it, the
+  liveness miner keeps running, and it is restarted if a run fails.
+- A transaction whose outcome is unknown (no answer from the node) is recorded
+  in `localnet/treasury-pending.json` under `HARDKAS_HOME` (`~/.hardkas`), one
+  per machine like the localnet. The next run, from any workspace, sends that same
+  transaction again; it never pays twice.
+- These treasury transactions are not recorded as plan, signed and submission
+  artifacts. The command's JSON output (`hardkas.localnetSeed.v1`) lists their
+  txIds and the accounts funded.
+
+Error codes: `LOCALNET_TIMEOUT_INVALID`, `LOCALNET_DAG_SETTLE_TIMEOUT`,
+`LOCALNET_TREASURY_SUBMIT_OUTCOME_UNKNOWN`, `LOCALNET_TREASURY_PENDING_UNRESOLVED`,
+`LOCALNET_TREASURY_INCOMPLETE` ([Errors](../reference/errors.md)).
+
 ## Next
 
 - [Quickstart: a real transaction on your simnet](./quickstart-simnet.md)

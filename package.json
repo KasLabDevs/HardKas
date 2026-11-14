@@ -110,7 +110,7 @@
     "vitest": "^2.1.9",
     "ws": "^8.18.0"
   },
-  "version": "0.13.0-rc.1",
+  "version": "0.13.0-rc.2",
   "dependencies": {},
   "pnpm": {
     "overrides": {

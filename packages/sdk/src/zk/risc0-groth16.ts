@@ -42,6 +42,30 @@ export const R0_GROTH16_CONTROL_ROOT = "a54dc85ac99f851c92d7c96d7318af41dbe7c019
 /** risc0 v3.0.4 BN254_IDENTITY_CONTROL_ID. */
 export const R0_GROTH16_BN254_CONTROL_ID = "c07a65145c3cb48b6101962ea607a4dd93c753bb26975cb47feb00d3666e4404";
 
+/**
+ * H7 · the digest of RISC Zero's default Groth16ReceiptVerifierParameters, which every receipt of this verifier carries
+ * (the last 32 bytes of a pruned-claim receipt). Upstream definition: risc0-zkvm `src/receipt/groth16.rs` (`impl Default`
+ * and `impl Digestible`: tagged_struct("risc0.Groth16ReceiptVerifierParameters", [control_root, bn254_control_id,
+ * verifying_key.digest()], [])), identical in risc0-zkvm 3.0.4 and 3.0.5. Computed with that code on 2026-11-13 from the
+ * control root and BN254 control id pinned above and the verifying-key digest 21c5fdd9…11ab; the public kaspa-python-sdk
+ * vector and HardKAS's own receipt carry the same value. A receipt with another value was made for another verifier
+ * (another risc0 release): its proof does not verify against the key and control root this lock pins.
+ */
+export const R0_GROTH16_VERIFIER_PARAMETERS_DIGEST = "73c457ba541936f0d907daf0c7253a39a9c5c427c225ba7709e44702d3c6eedc";
+
+/** H7: the issue a receipt gets when its verifier parameters are not the pinned verifier's, or undefined. */
+export function r0VerifierParametersIssue(verifierParameters: string | undefined): { code: string; message: string } | undefined {
+  if (verifierParameters === undefined) return undefined;
+  const got = String(verifierParameters).toLowerCase();
+  if (got === R0_GROTH16_VERIFIER_PARAMETERS_DIGEST) return undefined;
+  return {
+    code: "ZK_RECEIPT_VERIFIER_PARAMETERS_MISMATCH",
+    message:
+      `The receipt names verifier parameters ${got}, not the pinned RISC Zero Groth16 verifier's ${R0_GROTH16_VERIFIER_PARAMETERS_DIGEST} ` +
+      `(risc0 3.0.4/3.0.5 control root and verifying key): it was made for another verifier, and its proof would not verify against this lock's key.`
+  };
+}
+
 export const R0_GROTH16_VERIFIER_ID = "hardkas-r0-groth16-snarkjs-v1";
 export const R0_GROTH16_PINNED_KEY_ID = "risc0-groth16-bn254-v3.0.4";
 
@@ -222,9 +246,11 @@ export function r0SealToProof(sealHex: string):
 // --- Public test vectors ---------------------------------------------------------------------------
 
 /**
- * Receipts that are PUBLIC: their (imageId, journalHash) claim has a published valid receipt, so a P2SH
- * locked to that image id can be spent by anyone (the R0 lock binds only the image id; HK-16). HardKAS
- * never returns testnet/mainnet addresses for these.
+ * Programs with a PUBLIC receipt: a valid receipt of the image id is published, so a proof-only P2SH locked to that
+ * image id can be spent by anyone (a proof-only lock binds the image id only, whatever the journal: HK-16). The journal
+ * hash recorded here is the published receipt's; the match is on the image id alone (C-1). HardKAS never returns a
+ * testnet/mainnet address for a proof-only lock of these programs; an output-bound lock (whose funds go only to the
+ * bound outputs) is built with a warning that anyone can trigger its payout at any time.
  */
 export const PUBLIC_R0_TEST_VECTORS: ReadonlyArray<{ readonly name: string; readonly imageId: string; readonly journalHash: string }> =
   Object.freeze([
@@ -232,13 +258,22 @@ export const PUBLIC_R0_TEST_VECTORS: ReadonlyArray<{ readonly name: string; read
       name: "kaspanet/kaspa-python-sdk examples/zk groth.rcpt.hex (fixtures/toccata-v2/zk/r0-groth16-official)",
       imageId: "75641a540ee2ad9ee5902bcdcdb8b55c0bef4a28287309b858f97b1356c6c2e0",
       journalHash: "5df6e0e2761359d30a8275058e299fcc0381534545f55cf43e41983f5d4c9456"
+    }),
+    Object.freeze({
+      name: "HardKAS's own receipt, public since its Testnet-10 spends (fixtures/toccata-v2/zk/r0-groth16-hardkas)",
+      imageId: "04c1cd7cafedbda5f993500071da6b4a1b1193799c0d6dd1e02174857a5dd826",
+      journalHash: "19c4db53d64ab877a70009036c906ae3d8c1b9fb7925f32c9bf039a5c52e5592"
     })
   ]);
 
-export function findPublicR0TestVector(imageId: string, journalHash: string) {
+/**
+ * The public program of an image id, or undefined. Matched on the image id only (C-1): a proof-only lock depends on the
+ * image id alone, so a receipt of that program with ANY journal opens the address. `journalHash` is accepted for
+ * compatibility and no longer narrows the match.
+ */
+export function findPublicR0TestVector(imageId: string, _journalHash?: string) {
   const i = String(imageId ?? "").trim().toLowerCase();
-  const j = String(journalHash ?? "").trim().toLowerCase();
-  return PUBLIC_R0_TEST_VECTORS.find((v) => v.imageId === i && v.journalHash === j);
+  return PUBLIC_R0_TEST_VECTORS.find((v) => v.imageId === i);
 }
 
 // --- Local verification (CA-ZK-03) ----------------------------------------------------------------
@@ -336,6 +371,9 @@ export async function verifyR0Groth16ReceiptLocal(params: {
       message: `The receipt's claim digest ${receiptClaimDigest} is not the claim of (imageId, journalHash) = ${claimDigest}.`
     });
   }
+  // H7: the verifier the receipt was made for is the pinned one
+  const paramsIssue = r0VerifierParametersIssue(parsed.verifierParameters);
+  if (paramsIssue) issues.push(paramsIssue);
   const seal = r0SealToProof(parsed.sealHex);
   if (!seal.ok) {
     issues.push({ code: "ZK_RECEIPT_SEAL_INVALID", message: seal.reason });

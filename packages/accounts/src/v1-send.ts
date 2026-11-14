@@ -148,6 +148,23 @@ export function checkSignedV1AgainstPlan(rawTransaction: unknown, plan: Record<s
   return { ok: true, signatureScripts };
 }
 
+/** rusty-kaspa `SEQUENCE_LOCK_TIME_DISABLED` / `SEQUENCE_LOCK_TIME_MASK` (consensus/core/src/constants.rs). */
+const SEQUENCE_LOCK_TIME_DISABLED = 1n << 63n;
+const SEQUENCE_LOCK_TIME_MASK = 0xffffffffn;
+
+/** ESCROW-REFUND-RETRY-1: the relative lock (DAA) an input's sequence enables, or undefined when it enables none. */
+export function relativeLockOf(sequence: unknown): bigint | undefined {
+  let seq: bigint;
+  try {
+    seq = BigInt.asUintN(64, BigInt(String(sequence ?? 0)));
+  } catch {
+    return undefined;
+  }
+  if ((seq & SEQUENCE_LOCK_TIME_DISABLED) === SEQUENCE_LOCK_TIME_DISABLED) return undefined;
+  const lock = seq & SEQUENCE_LOCK_TIME_MASK;
+  return lock > 0n ? lock : undefined;
+}
+
 /** The node a v1 send checks against, read-only. */
 export interface V1PreflightNode {
   readonly networkId: string;
@@ -169,7 +186,9 @@ export interface V1PreflightEvidence {
 
 /**
  * F1.6 · the read-only check right before a v1 broadcast. Codes: INPUT_NOT_UNSPENT, COVENANT_UTXO_NOT_PAYMENT_INPUT,
- * INPUT_DIFFERS_FROM_NODE (amount, script or covenant id), INPUT_PENDING_SPEND, then every F1.4 code (validateV1Transition
+ * INPUT_DIFFERS_FROM_NODE (amount, script or covenant id), INPUT_PENDING_SPEND, SEQUENCE_LOCK_NOT_YET_MET (a relative
+ * time lock the node's virtual DAA score has not reached: ESCROW-REFUND-RETRY-1), SEQUENCE_LOCK_UNVERIFIABLE (an enabled
+ * relative lock with the node's or the UTXO's DAA score unknown: C-11), then every F1.4 code (validateV1Transition
  * with the node's inputs and the signed signature scripts; keys are not checked: nothing is signed). Nothing is sent and
  * nothing recorded when it throws.
  */
@@ -206,6 +225,36 @@ export async function preflightV1Send(input: {
     }
     if (pending.has(key)) {
       throw fail("INPUT_PENDING_SPEND", `input ${idx} (${key}) is being spent by a transaction in the node's mempool; nothing was sent`, { input: idx });
+    }
+    // ESCROW-REFUND-RETRY-1: a relative time lock not met yet is refused HERE, before the broadcast. Sent now, the node
+    // would reject it (SEQUENCE_LOCK_REJECTED) and that rejection would be the transaction's one recorded submission; the
+    // identical transaction, valid once the lock is met, has the same txId (a v1 id covers neither signatures nor time),
+    // so it could never be sent again (TX_ALREADY_SUBMITTED). Refused here, nothing is recorded and it can be sent later.
+    // The rule is rusty-kaspa's (and the simulator's): an enabled lock is met when virtual DAA ≥ UTXO DAA + (seq & mask).
+    const lock = relativeLockOf(i.sequence);
+    // C-11 · the same reason when the lock cannot be checked: an enabled relative lock with the node's virtual DAA score or
+    // the UTXO's DAA score unknown is refused here too (sent and rejected, the identical transaction could never be sent
+    // again). Nothing is sent or recorded; it can be sent once the node reports both scores.
+    if (lock !== undefined && (observedAt === undefined || u.blockDaaScore === undefined)) {
+      const missing = observedAt === undefined ? "the node's virtual DAA score could not be read" : "the node gives no DAA score for this UTXO";
+      throw fail(
+        "SEQUENCE_LOCK_UNVERIFIABLE",
+        `input ${idx} (${key}) enables a relative time lock of ${lock} DAA, and ${missing}, so whether the lock is met cannot be checked. ` +
+          "Sent now, a node rejection would be the transaction's one submission (one submission per txId) and the identical transaction could not be sent again later. Nothing was sent; send it again when the node reports its DAA score",
+        { input: idx, sequenceLock: lock.toString(), ...(observedAt !== undefined ? { virtualDaaScore: observedAt.toString() } : {}) }
+      );
+    }
+    if (lock !== undefined && observedAt !== undefined && u.blockDaaScore !== undefined) {
+      const unlockAt = u.blockDaaScore + lock;
+      if (observedAt < unlockAt) {
+        throw fail(
+          "SEQUENCE_LOCK_NOT_YET_MET",
+          `input ${idx} (${key}) is time-locked: its sequence lock of ${lock} DAA counts from DAA score ${u.blockDaaScore} (when the node accepted it), ` +
+            `so it can be spent from DAA score ${unlockAt}; the node is at ${observedAt}, ${unlockAt - observedAt} DAA before. Sent now the node would reject it ` +
+            `(SEQUENCE_LOCK_REJECTED) and the identical transaction could not be sent again later (one submission per txId). Send it again from DAA score ${unlockAt}`,
+          { input: idx, unlockDaaScore: unlockAt.toString(), virtualDaaScore: observedAt.toString() }
+        );
+      }
     }
   });
   const planFacts = await resolveV1PlanFacts(plan, input.facts);

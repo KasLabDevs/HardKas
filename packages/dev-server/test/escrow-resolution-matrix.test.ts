@@ -23,6 +23,9 @@ describe.runIf(INTEGRATION)("[conditional integration] Resolution Matrix", () =>
     
     async function executeBranch(branch: string, signers: string[], offset: number) {
         const testConfig = JSON.parse(JSON.stringify(config));
+        // A distinct address per branch: both amounts move together (rc2 audit C-10: a versionless config is v2, and
+        // its one principal cannot have a refund amount different from its release amount).
+        testConfig.refundAmount = (BigInt(config.refundAmount) + BigInt(offset)).toString();
         testConfig.releaseAmount = (BigInt(config.releaseAmount) + BigInt(offset)).toString();
         
         const createRes = await fetch(`${BASE_URL}/api/escrows`, { method: "POST", headers, body: JSON.stringify(testConfig) });

@@ -19,9 +19,14 @@ export interface ReplayVerifyOptions {
 export interface ReplayVerifyResult {
   passed: boolean;
   artifactsScanned: number;
-  lineage: "valid" | "invalid";
-  determinism: "verified" | "failed";
-  contamination: "clean" | "contaminated";
+  /**
+   * B10: `"not-run"` when the SDK declined to replay (REPLAY_MODE_UNSUPPORTED): nothing was replayed, so nothing is
+   * claimed valid, verified or clean. A negative finding of a check that did run ("invalid", "failed", "contaminated")
+   * is still reported.
+   */
+  lineage: "valid" | "invalid" | "not-run";
+  determinism: "verified" | "failed" | "not-run";
+  contamination: "clean" | "contaminated" | "not-run";
   report: any;
   error?: string;
   /**
@@ -76,6 +81,8 @@ export class HardkasReplay {
 
     let plan: any;
     let receipt: any;
+    let submission: any;
+    let realNodeError: string | undefined;
     let verifyErrorMsg: string | undefined;
     let report: any = null;
     let artifactCount = 0;
@@ -129,14 +136,41 @@ export class HardkasReplay {
 
           if (item.schema === HardkasSchemas.TxPlan) plan = item;
           if (item.schema === HardkasSchemas.TxReceipt) receipt = item;
+          if (item.schema === HardkasSchemas.TxSubmissionV1) submission = item;
         }
 
-        if (!plan) throw new Error("Lineage is missing a TxPlan artifact.");
-        if (!receipt) throw new Error("Lineage is missing a TxReceipt artifact.");
+        // REPLAY-REAL-NODE-1: a real-node send records a TxSubmission, never a TxReceipt, and a plan for a node was never
+        // run by the simulator: say so (the help's own words) instead of "Lineage is missing a TxReceipt artifact".
+        const planMode = plan ? String(plan.execution?.mode ?? plan.mode ?? "") : "";
+        if (!receipt && (submission || (planMode !== "" && planMode !== "simulator" && planMode !== "simulated"))) {
+          realNodeError =
+            `replay verify replays simulator runs only (a TxPlan and the TxReceipt the simulator wrote for it). ` +
+            (submission
+              ? `${idOrPath} is a real-node send: it records a TxSubmission (${String(submission.contentHash)}) of transaction ${String(submission.txId)}, not a TxReceipt`
+              : `${idOrPath} is a plan for a node (execution mode ${planMode}, network ${String(plan.networkId)}): the simulator never ran it`) +
+            `, so there is nothing to replay. Check a real send with 'hardkas verify <submission>' and 'hardkas tx status <txId>'. Nothing was executed.`;
+        } else {
+          if (!plan) throw new Error("Lineage is missing a TxPlan artifact.");
+          if (!receipt) throw new Error("Lineage is missing a TxReceipt artifact.");
+        }
 
       } catch (err: unknown) {
         verifyErrorMsg = ((err instanceof Error) ? err.message : String(err));
         lineageOk = false;
+      }
+
+      if (realNodeError && !verifyErrorMsg) {
+        // B10: nothing was replayed — no positive claim (a negative finding of a check that ran is kept)
+        return {
+          passed: false,
+          artifactsScanned: artifactCount,
+          lineage: lineageOk ? "not-run" : "invalid",
+          determinism: determinismOk ? "not-run" : "failed",
+          contamination: contaminationOk ? "not-run" : "contaminated",
+          report: null,
+          error: realNodeError,
+          code: "REPLAY_MODE_UNSUPPORTED"
+        };
       }
 
       // Wave 1.3 · IC-4′.4 / IC-2′.8: a replay verdict is a decision path and
@@ -179,12 +213,13 @@ export class HardkasReplay {
       ) {
         const observedMode = receipt.mode;
         const supportedModes = Array.from(REPLAY_SUPPORTED_MODES).join(", ");
+        // B10: nothing was replayed — no positive claim (a negative finding of a check that ran is kept)
         return {
           passed: false,
           artifactsScanned: artifactCount,
-          lineage: lineageOk ? "valid" : "invalid",
-          determinism: determinismOk ? "verified" : "failed",
-          contamination: contaminationOk ? "clean" : "contaminated",
+          lineage: lineageOk ? "not-run" : "invalid",
+          determinism: determinismOk ? "not-run" : "failed",
+          contamination: contaminationOk ? "not-run" : "contaminated",
           report: null,
           error:
             `Replay execution for receipt mode "${observedMode}" is not ` +

@@ -4,7 +4,7 @@
 > `node_modules`, offline. Do not edit by hand: `pnpm check:licenses` fails when this report was made from
 > another lockfile, and when a published package requires a GPL, AGPL, LGPL or unknown license.
 
-- Lockfile sha256 (LF): `1ff178743a38f7056b3e3b24907aa6dafb03fbdf5b4843fd5dcb17d416d0ef4d`
+- Lockfile sha256 (LF): `0c1ac103607c3134b93cb35ae04e3fdffcb8db26c6274302b0678f59dfbc1382`
 - Published packages: 22 (all MIT). Third-party packages in their production trees: 286.
 - Required: reached through `dependencies` (and required peers). Optional: reached only through
   `optionalDependencies` or optional peers; a consumer gets them only by installing them.
@@ -121,7 +121,7 @@ installing the SDK does not install it, and without it the Groth16 verifier repo
 | `@esbuild/win32-x64` | 0.21.5 | MIT | 0 | 2 |
 | `@esbuild/win32-x64` | 0.28.1 | MIT | 0 | 1 |
 | `@exodus/bytes` | 1.15.1 | MIT | 0 | 2 |
-| `@hono/node-server` | 1.19.17 | MIT | 2 | 0 |
+| `@hono/node-server` | 1.19.19 | MIT | 2 | 0 |
 | `@iden3/bigarray` | 0.0.2 | GPL-3.0 | 0 | 4 |
 | `@iden3/binfileutils` | 0.0.12 | GPL-3.0 | 0 | 4 |
 | `@jridgewell/gen-mapping` | 0.3.13 | MIT | 0 | 2 |

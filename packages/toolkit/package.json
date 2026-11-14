@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/toolkit",
-  "version": "0.13.0-rc.1",
+  "version": "0.13.0-rc.2",
   "license": "MIT",
   "private": false,
   "type": "module",
@@ -41,6 +41,15 @@
     "typescript": "^5.6.3",
     "vitest": "^2.1.2"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KasLabDevs/HardKas.git",
+    "directory": "packages/toolkit"
+  },
+  "bugs": {
+    "url": "https://github.com/KasLabDevs/HardKas/issues"
+  },
+  "homepage": "https://github.com/KasLabDevs/HardKas/tree/main/packages/toolkit#readme",
   "publishConfig": {
     "access": "public"
   }

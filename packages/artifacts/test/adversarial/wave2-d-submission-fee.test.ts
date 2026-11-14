@@ -168,7 +168,7 @@ describe("Wave 2(d) · signed ↔ plan equivalence before any fee is derived", (
     const plan = makePlan();
     const submission: any = {
       schema: "hardkas.txSubmission.v1",
-      hardkasVersion: "0.13.0-rc.1",
+      hardkasVersion: "0.13.0-rc.2",
       version: "1.0.0-alpha",
       hashVersion: CURRENT_HASH_VERSION,
       networkId: "simnet",

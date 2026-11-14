@@ -8,20 +8,24 @@ title: hardkas escrow
 
 ### Synopsis (Generated)
 
-**Purpose:** Prepare a v1 escrow rescue draft spending an orphaned UTXO to a target address
+**Purpose:** Prepare a v1 escrow rescue draft spending an orphaned UTXO to a target address. The escrow is recompiled from the constructor arguments it was created with (createEscrow's v1 config); its lock must be --address and the UTXO's script, or nothing is read or written
 
 #### Options
 
 - `--address &lt;address&gt;`: Legacy escrow P2SH address
 - `--outpoint &lt;outpoint&gt;`: Funding outpoint to spend (txId:index)
 - `--to &lt;address&gt;`: Destination address to recover funds to
+- `--buyer-pk &lt;hex&gt;`: Required: buyer x-only public key the escrow was created with (32 bytes hex)
+- `--seller-pk &lt;hex&gt;`: Required: seller x-only public key the escrow was created with (32 bytes hex)
+- `--arbiter-pk &lt;hex&gt;`: Required: arbiter x-only public key the escrow was created with (32 bytes hex)
+- `--buyer-destination &lt;address|spk&gt;`: Required: the buyer destination the escrow was created with: an address, or its script public key in hex without the version (EscrowConfig.buyerDestinationSpk)
+- `--seller-destination &lt;address|spk&gt;`: Required: the seller destination the escrow was created with: an address, or its script public key in hex without the version (EscrowConfig.sellerDestinationSpk)
+- `--refund-amount &lt;sompi&gt;`: Required: the escrow's refundAmount (sompi), as it was created
+- `--release-amount &lt;sompi&gt;`: Required: the escrow's releaseAmount (sompi), as it was created
 - `--network &lt;network&gt;` (Default: `simnet`): Network id (default simnet); mainnet refused; testnet-&lt;n&gt; needs experimental + network.allowPublic
 - `--url &lt;url&gt;`: Node wRPC (JSON) endpoint (default: the one the workspace declares for the network; simnet: the canonical localnet)
 - `--out &lt;file&gt;` (Default: `rescue-v1-plan.draft.json`): Output draft file path (default rescue-v1-plan.draft.json)
 - `--fee &lt;sompi&gt;` (Default: `400000`): Miner fee in sompi (default 400000 sompi = 0.004 KAS)
-- `--buyer-pk &lt;hex&gt;`: Buyer x-only public key (32 bytes hex)
-- `--seller-pk &lt;hex&gt;`: Seller x-only public key (32 bytes hex)
-- `--arbiter-pk &lt;hex&gt;`: Arbiter x-only public key (32 bytes hex)
 - `--json` (Default: `false`): Output as JSON
 
 ---

@@ -144,7 +144,7 @@ export async function runDevServer(options: {
         console.log(pc.bold("Projection:"));
         console.log(`  rebuilt from the workspace artifacts\n`);
 
-        // L-09: no dashboard is served (retired in 0.13.0-rc.1); the root answers the endpoint catalog, and the token
+        // L-09: no dashboard is served; the root answers the endpoint catalog, and the token
         // reaches a client only out of band
         console.log(pc.bold("Dev Server API:"));
         console.log(`  http://localhost:${port} (endpoint catalog; /api/* needs the token in .hardkas/dev-server-token)\n`);

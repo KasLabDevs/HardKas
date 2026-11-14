@@ -69,6 +69,72 @@ export const defaultClock: Clock = {
   now: () => Date.now() // hardkas-determinism-allow: default clock ambient source
 };
 
+/**
+ * D-02: the age past which a plan or a signed transaction is refused for SIGNING and SENDING (the simulator's execution
+ * included): the inputs it spends have most likely moved since it was planned. Age never fails integrity:
+ * `verifyArtifactSemantics` reports it as a warning that names the age, and a receipt, submission or observation (a
+ * record of the past) is never refused for it.
+ */
+export const STALE_ARTIFACT_MAX_AGE_HOURS = 24 * 30;
+
+/** An artifact's age, read from its `createdAt` on a clock. */
+export interface ArtifactAge {
+  createdAt: string;
+  ageHours: number;
+  /** Whole days, rounded down. */
+  ageDays: number;
+}
+
+/** The artifact's age from its `createdAt` on `clock`; undefined when it carries no parseable `createdAt`. */
+export function artifactAgeOf(artifact: unknown, clock: Clock = defaultClock): ArtifactAge | undefined {
+  const createdAt = (artifact as { createdAt?: unknown } | null | undefined)?.createdAt;
+  if (typeof createdAt !== "string" || createdAt === "") return undefined;
+  const created = new Date(createdAt).getTime();
+  if (!Number.isFinite(created)) return undefined;
+  const ageHours = (clock.now() - created) / (1000 * 60 * 60);
+  return { createdAt, ageHours, ageDays: Math.floor(ageHours / 24) };
+}
+
+/** Plans and signed transactions are executed (signed, sent); every other artifact records something. */
+function isExecutableArtifact(artifact: unknown): boolean {
+  const schema = (artifact as { schema?: unknown } | null | undefined)?.schema;
+  return typeof schema === "string" && (schema.startsWith("hardkas.txPlan") || schema.startsWith("hardkas.signedTx"));
+}
+
+export type ExecutionFreshness =
+  | { ok: true; age?: ArtifactAge }
+  | { ok: false; code: "STALE_ARTIFACT_REFUSED"; age: ArtifactAge; message: string };
+
+/**
+ * D-02: the freshness rule of SIGNING and SENDING, applied by the executors at their call sites (it is not part of
+ * integrity, and `artifact verify` never fails on it). A plan or signed transaction older than
+ * STALE_ARTIFACT_MAX_AGE_HOURS is not fresh. Any other artifact is always fresh: records of the past do not expire.
+ * HARDKAS_TEST_IGNORE_STALENESS (tests only) skips the rule, as it did in the verifier.
+ */
+export function checkExecutionFreshness(
+  artifact: unknown,
+  operation: "sign" | "send" | "simulate",
+  clock: Clock = defaultClock
+): ExecutionFreshness {
+  const age = artifactAgeOf(artifact, clock);
+  if (!age) return { ok: true };
+  if (process.env.HARDKAS_TEST_IGNORE_STALENESS || !isExecutableArtifact(artifact) || age.ageHours <= STALE_ARTIFACT_MAX_AGE_HOURS) {
+    return { ok: true, age };
+  }
+  const kind = String((artifact as { schema?: unknown }).schema).startsWith("hardkas.signedTx") ? "signed transaction" : "plan";
+  const verb = operation === "sign" ? "sign" : operation === "send" ? "send" : "execute";
+  const maxDays = STALE_ARTIFACT_MAX_AGE_HOURS / 24;
+  return {
+    ok: false,
+    code: "STALE_ARTIFACT_REFUSED",
+    age,
+    message:
+      `Refusing to ${verb} a ${kind} created ${age.createdAt} (${age.ageDays} days ago): a ${kind} older than ${maxDays} days is not ` +
+      `${operation === "sign" ? "signed" : operation === "send" ? "sent" : "executed"}, because the outputs it spends have most likely moved since it was planned. ` +
+      `Its integrity is not in question (hardkas artifact verify still verifies it). Plan the payment again. Nothing was signed, sent or recorded.`
+  };
+}
+
 export interface VerificationContext {
   clock?: Clock;
   strict?: boolean;
@@ -783,25 +849,26 @@ export function verifyArtifactSemantics(
     }
   }
 
-  // 2. Staleness Check
-  if (v.createdAt && typeof v.createdAt === "string" && !process.env.HARDKAS_TEST_IGNORE_STALENESS) {
-    const created = new Date(v.createdAt).getTime();
-    const now = clock.now();
-    const ageHours = (now - created) / (1000 * 60 * 60);
-
-    if (ageHours > 24 * 30) {
-      addIssue({
-        code: "STALE_ARTIFACT",
-        severity: "error",
-        message: `Artifact is too old (${Math.round(ageHours / 24)} days). High risk of DAA divergence.`
-      });
-    } else if (ageHours > 24) {
-      addIssue({
-        code: "STALE_ARTIFACT",
-        severity: "warning",
-        message: `Artifact is over 24h old. May be stale.`
-      });
-    }
+  // 2. Staleness Check. D-02: age is a warning that names the age, never an error: evidence does not expire, and an
+  // intact artifact keeps verifying however old it is. Freshness is enforced where it matters, by the executors that
+  // sign and send a plan or signed transaction (checkExecutionFreshness, STALE_ARTIFACT_REFUSED).
+  const age = process.env.HARDKAS_TEST_IGNORE_STALENESS ? undefined : artifactAgeOf(v, clock);
+  if (age && age.ageHours > 24) {
+    const ageText = `${age.ageDays} day${age.ageDays === 1 ? "" : "s"}`;
+    const executable = isExecutableArtifact(v);
+    const consequence =
+      age.ageHours > STALE_ARTIFACT_MAX_AGE_HOURS
+        ? executable
+          ? `older than ${STALE_ARTIFACT_MAX_AGE_HOURS / 24} days, so it is refused for signing and sending (STALE_ARTIFACT_REFUSED): the outputs it spends have most likely moved; plan again`
+          : "a record of the past: age does not affect it"
+        : executable
+          ? "the outputs it spends may have moved since it was planned"
+          : "a record of the past: age does not affect it";
+    addIssue({
+      code: "STALE_ARTIFACT",
+      severity: "warning",
+      message: `Artifact is ${ageText} old (created ${age.createdAt}). Its age does not affect its integrity; ${consequence}.`
+    });
   }
 
   // 3. Lineage Audit (Harden and Harmonize)

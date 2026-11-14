@@ -206,6 +206,10 @@ export async function runArtifactVerify(options: ArtifactVerifyOptions) {
     console.log(`  Hash:    ${result.actualHash}`);
     // D-Q21 / AUX-03: `valid` means integrity for THIS authentication scope.
     console.log(`  Scope:   ${result.authScope}${result.unauthenticatedMaterialFields.length ? ` (never authenticated: ${result.unauthenticatedMaterialFields.join(", ")})` : ""}`);
+    // D-02: an artifact's age is reported, never an integrity failure (evidence does not expire)
+    for (const issue of result.issues.filter((i) => i.code === "STALE_ARTIFACT")) {
+      UI.warning(`  ⚠ Age: ${issue.message}`);
+    }
 
     if (strict) {
       console.log(`\nOperational Audit (STRICT):`);
@@ -359,7 +363,13 @@ async function runRecursiveVerify(dir: string, options: ArtifactVerifyOptions & 
     }
 
     if (result.ok) {
-      if (!options.json) console.log(`  ✓ ${relativePath.padEnd(40)} [MATCH]`);
+      if (!options.json) {
+        console.log(`  ✓ ${relativePath.padEnd(40)} [MATCH]`);
+        // D-02: the age is reported, never a failure
+        for (const issue of result.issues.filter((i) => i.code === "STALE_ARTIFACT")) {
+          console.log(`      [?] [STALE_ARTIFACT] ${issue.message}`);
+        }
+      }
       successCount++;
     } else {
       if (!options.json) {

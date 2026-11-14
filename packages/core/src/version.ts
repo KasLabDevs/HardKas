@@ -3,4 +3,4 @@
  * @hardkas/core: the workspace runtime version (`.hardkas/version.json`) and the snapshot manifest
  * read it from here, and `pnpm version:check` keeps it equal to the package version.
  */
-export const HARDKAS_RUNTIME_VERSION = "0.13.0-rc.1";
+export const HARDKAS_RUNTIME_VERSION = "0.13.0-rc.2";
