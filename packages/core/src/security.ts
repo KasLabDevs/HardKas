@@ -89,7 +89,11 @@ export function maskSecrets(data: any): any {
           lower.includes("password") ||
           lower.includes("xprv") ||
           lower.includes("kprv") ||
-          lower.includes("ktrv")
+          lower.includes("ktrv") ||
+          // WALLET-HD-1: a BIP39 passphrase and any recovery/seed/mnemonic phrase field (kaspa-wasm's Mnemonic.toJSON is
+          // `{ phrase, entropy }`), and the BIP39 entropy, which IS the recovery phrase in another encoding — when the
+          // value is text (a flag such as `passphraseRequired: true` is not secret material)
+          (typeof data[key] === "string" && (lower.includes("phrase") || lower === "entropy" || lower.includes("bip39entropy")))
         ) {
           redactedObj[key] = "[REDACTED]";
         } else {
@@ -120,6 +124,16 @@ const SECRET_FIELD_NAMES: ReadonlySet<string> = new Set([
   "extendedprivatekey",
   "masterxprv",
   "accountxprv",
+  // WALLET-HD-1: the Kaspa spellings of the same fields, and the BIP39 material of an HD wallet
+  "masterkprv",
+  "masterktrv",
+  "accountkprv",
+  "accountktrv",
+  "recoveryphrase",
+  "mnemonicphrase",
+  "phrase",
+  "entropy",
+  "bip39entropy",
   "seedhex",
   "bip39seed",
   "mnemonic",

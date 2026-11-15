@@ -75,22 +75,24 @@ async function settle(p: Promise<unknown>): Promise<{ ok: true; value: any } | {
 }
 
 describe("RC1 · D7 · the accounts signer does not spend from ECDSA and does not sign a lock time, and says so", () => {
-  it("D7-E1 an input at an ECDSA address (script 21…ab): ECDSA_SPEND_NOT_SUPPORTED, typed, naming the input", async () => {
+  // CHANGED by ECDSA spends (D7-E1/E2/E3): old ECDSA_SPEND_NOT_SUPPORTED; new INPUT_KEY_SCHEME_MISMATCH — the signer
+  // signs an ECDSA input for an ECDSA account (ecdsa-signer.test.ts) and refuses a Schnorr key or signer on one
+  it("D7-E1 an input at an ECDSA address (script 21…ab) and a Schnorr account: INPUT_KEY_SCHEME_MISMATCH, typed, naming the input", async () => {
     const p = await plan(ecdsaA);
     expect(p.inputs[0].scriptPublicKey).toMatch(/^21(02|03)[0-9a-f]{64}ab$/);
     const r = await settle(signer().signTxPlan({ planArtifact: p } as any));
     expect(r.ok).toBe(false);
-    expect((r as any).code).toBe("ECDSA_SPEND_NOT_SUPPORTED");
+    expect((r as any).code).toBe("INPUT_KEY_SCHEME_MISMATCH");
     expect((r as any).message).toMatch(/input 0/);
     expect((r as any).message).toMatch(/Schnorr/);
   });
 
-  it("D7-E2 even with an authorizer supplied for it, an ECDSA input is never signed (it was signed with Schnorr)", async () => {
+  it("D7-E2 even with a (Schnorr) authorizer supplied for it, an ECDSA input is never signed with Schnorr (it was)", async () => {
     const p = await plan(ecdsaA);
     const authorizers = Object.fromEntries(p.inputs.map((_: unknown, i: number) => [i, new PrivateKeyAuthorizer("alice", KEY_A)]));
     const r = await settle(signer().signTxPlan({ planArtifact: p, authorizers } as any));
     expect(r.ok).toBe(false);
-    expect((r as any).code).toBe("ECDSA_SPEND_NOT_SUPPORTED");
+    expect((r as any).code).toBe("INPUT_KEY_SCHEME_MISMATCH");
   });
 
   it("D7-E4 an unlocking script the caller supplies for an ECDSA input (a signature-script authorization) is used as given: HardKAS signs nothing for it (as for a P2SH input without a contract, L1-12)", async () => {
@@ -107,14 +109,16 @@ describe("RC1 · D7 · the accounts signer does not spend from ECDSA and does no
     const p = await plan(ecdsaA);
     for (const i of p.inputs) delete i.address;
     const r = await settle(signer().signTxPlan({ planArtifact: p } as any));
-    expect((r as any).code).toBe("ECDSA_SPEND_NOT_SUPPORTED");
+    expect((r as any).code).toBe("INPUT_KEY_SCHEME_MISMATCH");
   });
 
-  it("D7-L1 a plan carrying a lock time other than 0: LOCK_TIME_NOT_SUPPORTED (it was signed with lock time 0)", async () => {
+  it("D7-L1 a plan carrying a bare lock time other than 0: refused (it was signed with lock time 0)", async () => {
+    // CHANGED by CLTV: old LOCK_TIME_NOT_SUPPORTED; new LOCK_TIME_INVALID — the signer signs a typed lock time
+    // ({ daaScore } | { timestampMs }, cltv-signer.test.ts) and refuses a bare one
     for (const lockTime of [5, "5", "1700000000000"]) {
       const r = await settle(signer().signTxPlan({ planArtifact: await plan(schnorrA, { lockTime }) } as any));
       expect(r.ok, String(lockTime)).toBe(false);
-      expect((r as any).code, String(lockTime)).toBe("LOCK_TIME_NOT_SUPPORTED");
+      expect((r as any).code, String(lockTime)).toBe("LOCK_TIME_INVALID");
     }
   });
 

@@ -65,7 +65,7 @@ await sdk.tx.send(signed, { allowUnsyncedNode: true });
 
 `allowUnsyncedNode` must be `true` or `false` (`SEND_OPTION_INVALID`), is refused on every network other than simnet and devnet (`SEND_UNSYNCED_NODE_NOT_ALLOWED`), and is never implied by another option. Mainnet broadcast stays disabled whatever it says. Being synced says nothing about a transaction: mempool, acceptance and confirmation are read with `sdk.tx.observe` / `sdk.tx.status`.
 
-What a plan cannot hold in this release, refused with a typed code: a lock time other than 0 (`LOCK_TIME_NOT_SUPPORTED`; no CLTV) and a spend from an ECDSA address (`ECDSA_SPEND_NOT_SUPPORTED`; paying to one works). See `docs/status/limitations.md`.
+A plan can hold an absolute lock time (`lockTime: { daaScore } | { timestampMs }`; `tx.send` refuses to broadcast before the node passes it, `LOCK_TIME_NOT_REACHED`) and can spend from an ECDSA account. The simulator and consolidations keep lock time 0 (`LOCK_TIME_NOT_SUPPORTED`), and v1 transactions stay Schnorr-only (`ECDSA_SPEND_NOT_SUPPORTED`). See `docs/status/limitations.md`.
 
 ## 3. Artifacts And Queries
 

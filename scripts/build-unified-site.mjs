@@ -7,7 +7,7 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import { execSync } from "node:child_process";
+import { execFileSync, execSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -63,42 +63,131 @@ function copyDirRecursive(src, dest) {
 
 copyDirRecursive(DOCS_BUILD, distDocs);
 
+// Copy standalone /ide/ landing page if present
+const ideSrc = path.join(SITE_SRC, "ide");
+if (fs.existsSync(ideSrc)) {
+  copyDirRecursive(ideSrc, path.join(DIST_SITE, "ide"));
+  console.log("  Deployed IDE landing page to dist/site/ide/");
+}
+
 // 5. Build Unified Sitemap, robots.txt, and llms.txt
 console.log("\n[5/5] Generating unified sitemap.xml, robots.txt, and llms.txt...");
 
-// Read URLs from Docusaurus generated sitemap
+const today = new Date().toISOString().split("T")[0];
+const isValidDate = (d) => typeof d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(d) && d <= today;
+
+/**
+ * Index last commit dates (%cs = YYYY-MM-DD) for all tracked files under site/ and apps/docs/docs/
+ * in a single git invocation. If git is unavailable, returns an empty map so <lastmod> is omitted.
+ */
+function buildGitLastModifiedMap() {
+  const map = new Map();
+  try {
+    const out = execFileSync(
+      "git",
+      ["log", "--name-only", "--format=DATE:%cs", "--", "site/", "apps/docs/docs/"],
+      { cwd: ROOT, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 }
+    );
+    let currentDate = null;
+    for (const rawLine of out.split(/\r?\n/)) {
+      const line = rawLine.trim();
+      if (!line) continue;
+      if (line.startsWith("DATE:")) {
+        const d = line.slice(5).trim();
+        currentDate = isValidDate(d) ? d : null;
+      } else if (currentDate) {
+        const normalized = line.replace(/\\/g, "/");
+        if (!map.has(normalized)) {
+          map.set(normalized, currentDate);
+        }
+      }
+    }
+  } catch {
+    // Git unavailable or not a git repository: omit <lastmod> rather than inventing dates.
+  }
+  return map;
+}
+
+const gitDates = buildGitLastModifiedMap();
+
+function gitLastModified(relPath) {
+  return gitDates.get(relPath.replace(/\\/g, "/")) ?? null;
+}
+
+function resolveDocSourceDate(url) {
+  const prefix = "https://hardkas.dev/docs";
+  if (!url.startsWith(prefix)) return null;
+  const rel = url.slice(prefix.length).replace(/^\/+|\/+$/g, "");
+  const candidates = rel
+    ? [
+        `apps/docs/docs/${rel}.md`,
+        `apps/docs/docs/${rel}.mdx`,
+        `apps/docs/docs/${rel}/index.md`,
+        `apps/docs/docs/${rel}/index.mdx`,
+        `apps/docs/docs/${rel}/README.md`
+      ]
+    : ["apps/docs/docs/index.md", "apps/docs/docs/index.mdx", "apps/docs/docs/README.md"];
+  for (const c of candidates) {
+    const d = gitLastModified(c);
+    if (d) return d;
+  }
+  return null;
+}
+
+function lastmodXml(date) {
+  return isValidDate(date) ? `\n    <lastmod>${date}</lastmod>` : "";
+}
+
+// Read URLs (and any existing valid <lastmod>) from Docusaurus generated sitemap
 const docusaurusSitemapPath = path.join(DOCS_BUILD, "sitemap.xml");
-const docUrls = [];
+const docEntries = [];
+const seenUrls = new Set();
 if (fs.existsSync(docusaurusSitemapPath)) {
   const content = fs.readFileSync(docusaurusSitemapPath, "utf8");
-  const regex = /<loc>([^<]+)<\/loc>/g;
+  const urlBlockRegex = /<url>([\s\S]*?)<\/url>/g;
   let m;
-  while ((m = regex.exec(content)) !== null) {
-    const url = m[1];
-    if (!docUrls.includes(url)) docUrls.push(url);
+  while ((m = urlBlockRegex.exec(content)) !== null) {
+    const block = m[1];
+    const locMatch = /<loc>([^<]+)<\/loc>/.exec(block);
+    if (!locMatch) continue;
+    const url = locMatch[1];
+    if (seenUrls.has(url)) continue;
+    seenUrls.add(url);
+    const lmMatch = /<lastmod>([^<]+)<\/lastmod>/.exec(block);
+    const docusaurusLastmod = lmMatch && isValidDate(lmMatch[1].slice(0, 10)) ? lmMatch[1].slice(0, 10) : null;
+    docEntries.push({ url, lastmod: docusaurusLastmod ?? resolveDocSourceDate(url) });
   }
 }
 
 // Construct unified sitemap
-const today = new Date().toISOString().split("T")[0];
+const homeLastmod = gitLastModified("site/index.html");
+const ideIndexPath = path.join(SITE_SRC, "ide", "index.html");
+const hasIdeLanding = fs.existsSync(ideIndexPath);
+const ideLastmod = hasIdeLanding ? gitLastModified("site/ide/index.html") : null;
 let sitemapXml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
 sitemapXml += `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
 
 // Apex Landing Page
 sitemapXml += `  <!-- HardKAS Apex Landing Page -->\n`;
-sitemapXml += `  <url>\n    <loc>https://hardkas.dev/</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>1.0</priority>\n  </url>\n`;
+sitemapXml += `  <url>\n    <loc>https://hardkas.dev/</loc>${lastmodXml(homeLastmod)}\n    <changefreq>weekly</changefreq>\n    <priority>1.0</priority>\n  </url>\n`;
+
+// HardKAS IDE Landing Page
+if (hasIdeLanding) {
+  sitemapXml += `  <!-- HardKAS IDE Landing Page (/ide/) -->\n`;
+  sitemapXml += `  <url>\n    <loc>https://hardkas.dev/ide/</loc>${lastmodXml(ideLastmod)}\n    <changefreq>weekly</changefreq>\n    <priority>0.9</priority>\n  </url>\n`;
+}
 
 // Documentation URLs
 sitemapXml += `  <!-- HardKAS Documentation (/docs/) -->\n`;
-for (const url of docUrls) {
-  // Give /docs/ entry high priority
+for (const { url, lastmod } of docEntries) {
   const priority = url === "https://hardkas.dev/docs/" ? "0.9" : "0.7";
-  sitemapXml += `  <url>\n    <loc>${url}</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>${priority}</priority>\n  </url>\n`;
+  sitemapXml += `  <url>\n    <loc>${url}</loc>${lastmodXml(lastmod)}\n    <changefreq>weekly</changefreq>\n    <priority>${priority}</priority>\n  </url>\n`;
 }
 sitemapXml += `</urlset>\n`;
 
+const totalSitemapUrls = docEntries.length + 1 + (hasIdeLanding ? 1 : 0);
 fs.writeFileSync(path.join(DIST_SITE, "sitemap.xml"), sitemapXml, "utf8");
-console.log(`  ✓ Generated dist/site/sitemap.xml (${docUrls.length + 1} verified URLs)`);
+console.log(`  ✓ Generated dist/site/sitemap.xml (${totalSitemapUrls} verified URLs)`);
 
 // Unified robots.txt
 const robotsTxt = `# HardKAS Unified Robots Directive
@@ -143,6 +232,7 @@ const llmsTxt = `# HardKAS — Developer Framework & Transaction Simulator for K
 
 ## Canonical Web Endpoints
 - Homepage: https://hardkas.dev/
+- HardKAS IDE: https://hardkas.dev/ide/
 - Documentation Base: https://hardkas.dev/docs/
 - 5-Minute Quickstart: https://hardkas.dev/docs/getting-started/quickstart
 - Installation Guide: https://hardkas.dev/docs/getting-started/installation

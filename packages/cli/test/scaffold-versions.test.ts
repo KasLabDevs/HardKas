@@ -173,8 +173,11 @@ describe("scaffold-versions — static templates", () => {
   });
 });
 
+// Each `hardkas init` here runs the CLI from its TypeScript source through tsx, which transpiles every module the CLI
+// loads: ~4.5 s on Windows since the CLI gained its escrow, KCC-20, HD wallet, watch and history commands (it was
+// ~2.5-3 s), above vitest's 5 s default. Every test that runs it has the same bound as the two that run it twice.
 describe("scaffold-versions — end-to-end via `hardkas init`", () => {
-  it("generated package.json for `hardkas init` pins @hardkas/* to the CLI's exact version", async () => {
+  it("generated package.json for `hardkas init` pins @hardkas/* to the CLI's exact version", { timeout: 20_000 }, async () => {
     const dir = await tmpDir();
     // Invoke the CLI in source form via tsx.
     runHardkasInit(dir);
@@ -218,7 +221,7 @@ describe("scaffold-versions — end-to-end via `hardkas init`", () => {
     }
   });
 
-  it("regression: `latest` never appears in generated @hardkas/* dep values (bug historically observed on rc.21)", async () => {
+  it("regression: `latest` never appears in generated @hardkas/* dep values (bug historically observed on rc.21)", { timeout: 20_000 }, async () => {
     const dir = await tmpDir();
     runHardkasInit(dir);
     const pkg = await readJson(path.join(dir, "package.json"));
@@ -233,7 +236,7 @@ describe("scaffold-versions — end-to-end via `hardkas init`", () => {
 });
 
 describe("scaffold-versions — post-publish coherence property", () => {
-  it("`CLI release X -> hardkas init -> generated @hardkas/* deps === X`", async () => {
+  it("`CLI release X -> hardkas init -> generated @hardkas/* deps === X`", { timeout: 20_000 }, async () => {
     // This is the core invariant the qualification defect violated on rc.21.
     // Under this property, an already-published CLI cannot silently generate
     // a different dependency graph as npm dist-tags evolve.

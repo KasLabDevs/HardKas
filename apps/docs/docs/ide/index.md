@@ -6,7 +6,7 @@ sidebar_label: HardKAS IDE
 
 # HardKAS IDE
 
-A desktop app for HardKAS projects: editor, SilverScript compiler, Deploy & Run, local node, accounts, artifacts, tests, terminals and an assistant, in one window. It has its own releases on [KasLabDevs/HardKasIDE](https://github.com/KasLabDevs/HardKasIDE). These pages describe version 0.3.0.
+A desktop app for HardKAS projects: editor, SilverScript compiler, Deploy & Run, local node, accounts, artifacts, tests, terminals and an assistant, in one window. For downloads and a visual overview, see the [HardKAS IDE landing page](https://hardkas.dev/ide/). It has its own releases on [KasLabDevs/HardKasIDE](https://github.com/KasLabDevs/HardKasIDE). These pages describe version 0.3.0.
 
 ![The HardKAS IDE with a SilverScript contract open](/img/ide/workbench.png)
 

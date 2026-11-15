@@ -7,6 +7,16 @@ import {
 
 export const ARTIFACT_VERSION = "1.0.0-alpha";
 
+/**
+ * zod 4 · the ISO date-time artifacts have always been checked against (zod 3's `isoDateTime()`): a valid
+ * calendar date, `T`, hours and minutes, optional seconds with an optional fraction, UTC `Z` only. zod 4's own check
+ * requires the seconds, which would refuse a record written as `…T10:30Z`; the pattern is kept here so what verifies
+ * does not depend on the zod release.
+ */
+const ISO_DATETIME_UTC =
+  /^((\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-((0[13578]|1[02])-(0[1-9]|[12]\d|3[01])|(0[469]|11)-(0[1-9]|[12]\d|30)|(02)-(0[1-9]|1\d|2[0-8])))T([01]\d|2[0-3]):[0-5]\d(:[0-5]\d(\.\d+)?)?(Z)$/;
+const isoDateTime = () => z.string().regex(ISO_DATETIME_UTC, "Invalid datetime");
+
 export type DraftArtifact<TFinal, THashFields extends keyof TFinal> = Omit<
   TFinal,
   THashFields
@@ -49,7 +59,7 @@ export const BaseArtifactSchema = z.object({
   networkId: kaspaNetworkIdSchema,
   mode: executionModeSchema,
   contentHash: z.string().optional(),
-  createdAt: z.string().datetime(),
+  createdAt: isoDateTime(),
   lineage: ArtifactLineageSchema.optional(),
   parents: z.array(z.string()).optional(),
   lineageDepth: z.number().optional(),
@@ -83,7 +93,7 @@ export const NetworkProfileSchema = BaseArtifactSchema.extend({
   schema: z.literal(HardkasSchemas.NetworkProfileV1),
   networkProfileId: z.string(),
   layer: z.string(),
-  capabilities: z.record(z.any())
+  capabilities: z.record(z.string(), z.any())
 });
 
 export const AssumptionSchema = BaseArtifactSchema.extend({
@@ -92,7 +102,7 @@ export const AssumptionSchema = BaseArtifactSchema.extend({
   securityModel: z.string().optional(),
   bridgePhase: z.string().optional(),
   exitModel: z.string().optional(),
-  customAssumptions: z.record(z.any()).optional()
+  customAssumptions: z.record(z.string(), z.any()).optional()
 });
 
 export const MigrationReceiptSchema = BaseArtifactSchema.extend({
@@ -170,7 +180,7 @@ export const V1ArgValueSchema: z.ZodType<unknown> = z.lazy(() =>
     z.object({ kind: z.literal("bytes"), value: z.array(z.number().int().min(0).max(255)) }).strict(),
     z.object({ kind: z.literal("text"), value: z.string() }).strict(),
     z.object({ kind: z.literal("array"), value: z.array(V1ArgValueSchema) }).strict(),
-    z.object({ kind: z.literal("object"), value: z.record(V1ArgValueSchema) }).strict(),
+    z.object({ kind: z.literal("object"), value: z.record(z.string(), V1ArgValueSchema) }).strict(),
     z.object({ kind: z.literal("signer"), signer: z.string().min(1) }).strict()
   ])
 );
@@ -185,7 +195,7 @@ export const V1ContractRefSchema = z
     contract: z.string().min(1),
     constructorArgs: z.array(V1ArgValueSchema),
     // F1 phase 2: the State of the spent UTXO, when it is not the compile record's own
-    state: z.record(V1ArgValueSchema).optional(),
+    state: z.record(z.string(), V1ArgValueSchema).optional(),
     entry: z.string().min(1),
     policy: z.string().min(1).optional(),
     args: z.array(V1ArgValueSchema)
@@ -201,8 +211,8 @@ export const V1NextStateSchema = z.union([
         .object({
           artifactSha256: Hex64Schema,
           constructorArgs: z.array(V1ArgValueSchema),
-          stateToConstructorArg: z.record(z.number().int().min(0)),
-          state: z.record(V1ArgValueSchema)
+          stateToConstructorArg: z.record(z.string(), z.number().int().min(0)),
+          state: z.record(z.string(), V1ArgValueSchema)
         })
         .strict()
     })
@@ -213,7 +223,7 @@ export const V1NextStateSchema = z.union([
       covenantId: Hex64Schema,
       input: z.number().int().min(0),
       outputs: z.array(z.number().int().min(0)),
-      states: z.array(z.record(V1ArgValueSchema))
+      states: z.array(z.record(z.string(), V1ArgValueSchema))
     })
     .strict()
 ]);
@@ -279,7 +289,7 @@ export const TxPlanSchema = BaseArtifactSchema.extend({
         contract: V1CompiledContractSchema.optional(),
         covenantId: Hex64Schema.optional(),
         // F1 phase 2: the State each output starts with (encoded into the contract's template), in output order
-        states: z.array(z.record(V1ArgValueSchema)).optional()
+        states: z.array(z.record(z.string(), V1ArgValueSchema)).optional()
       })
     )
     .optional(),
@@ -302,7 +312,15 @@ export const TxPlanSchema = BaseArtifactSchema.extend({
   plannerAuthority: z.enum(["KASPA_WASM_GENERATOR", "SYNTHETIC_SIMULATOR", "HARDKAS_V1_PLANNER"]).optional(),
   plannerAuthorityDetail: z.string().optional(),
   // TX-FEE-GUARD-1: the total fee limit (sompi) the plan was made under; enforced again at sign and send
-  maxFeeSompi: z.string().regex(/^\d+$/).optional()
+  maxFeeSompi: z.string().regex(/^\d+$/).optional(),
+  // CLTV · the absolute lock time the plan authorizes, typed (a DAA score or a time in ms; the threshold is checked by
+  // tx-builder planLockTimeValue), with where the node was when the plan was made. Absent = lock time 0 (never written).
+  lockTime: z
+    .union([
+      z.object({ daaScore: z.string().regex(/^\d{1,20}$/), observedAt: z.object({ virtualDaaScore: z.string().regex(/^\d+$/).optional(), pastMedianTimeMs: z.string().regex(/^\d+$/).optional() }).strict().optional() }).strict(),
+      z.object({ timestampMs: z.string().regex(/^\d{1,20}$/), observedAt: z.object({ virtualDaaScore: z.string().regex(/^\d+$/).optional(), pastMedianTimeMs: z.string().regex(/^\d+$/).optional() }).strict().optional() }).strict()
+    ])
+    .optional()
 });
 
 export const DagContextSchema = z.object({
@@ -607,11 +625,12 @@ export const TxObservationSchema = BaseArtifactSchema.extend({
   evidence: z.array(
     z.object({
       method: z.string(),
-      params: z.any(),
+      // zod 4 requires a key whose schema is z.any() unless it is .optional(); zod 3 let it be absent
+      params: z.any().optional(),
       responseDigest: hex64
     })
   ),
-  observedAt: z.string().datetime(),
+  observedAt: isoDateTime(),
   rpcUrl: z.string().optional()
 });
 
@@ -666,7 +685,7 @@ export const SyntheticAuthorizationSchema = z
 
 export const SignatureMetadataEntrySchema = z.object({
   signer: z.string(),
-  signedAt: z.string().datetime()
+  signedAt: isoDateTime()
 });
 
 export const SignedTxSchemaV2 = BaseArtifactSchema.extend({
@@ -746,7 +765,7 @@ export const TxTraceSchema = BaseArtifactSchema.extend({
     z.object({
       phase: z.string(),
       status: z.string(),
-      timestamp: z.string().datetime(),
+      timestamp: isoDateTime(),
       details: z.any().optional()
     })
   ),
@@ -757,13 +776,13 @@ export const WorkflowSchema = BaseArtifactSchema.extend({
   schema: z.literal(HardkasSchemas.WorkflowV1),
   workflowId: z.string(),
   status: z.enum(["pending", "running", "completed", "failed"]),
-  inputs: z.record(z.any()).optional(),
+  inputs: z.record(z.string(), z.any()).optional(),
   steps: z.array(
     z.object({
       type: z.string(),
       status: z.enum(["pending", "success", "failed", "skipped"]),
-      startedAt: z.string().datetime().optional(),
-      completedAt: z.string().datetime().optional(),
+      startedAt: isoDateTime().optional(),
+      completedAt: isoDateTime().optional(),
       producedArtifactId: z.string().optional(),
       error: z.string().optional()
     })
@@ -822,7 +841,7 @@ export const RuntimeSessionSchema = BaseArtifactSchema.extend({
   sessionId: z.string(),
   workflowIds: z.array(z.string()),
   artifactIds: z.array(z.string()),
-  startedAt: z.string().datetime(),
+  startedAt: isoDateTime(),
   network: z.string(),
   deterministic: z.boolean(),
   snapshotOf: z.string().optional(),
@@ -1057,11 +1076,11 @@ const SilverNodeRefSchema = z
     if (node.verification === "endpoint") {
       for (const field of ["container", "imageDigest", "expectedImageDigest"] as const) {
         if (node[field] !== undefined) {
-          ctx.addIssue({ code: z.ZodIssueCode.custom, path: [field], message: "a node proven by its endpoint was not inspected as a container" });
+          ctx.addIssue({ code: "custom", path: [field], message: "a node proven by its endpoint was not inspected as a container" });
         }
       }
     } else if (node.imageDigest === undefined) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["imageDigest"], message: "Required" });
+      ctx.addIssue({ code: "custom", path: ["imageDigest"], message: "Required" });
     }
   });
 /**
@@ -1129,6 +1148,8 @@ export const SilverSpendV1Schema = SilverOnChainSchema.omit({ outpoint: true }).
   to: z.string(),
   outputSompi: z.string().regex(/^\d+$/),
   sequence: z.string(),
+  // R3-F · CLTV: the spend transaction's absolute lock time (u64 decimal, DAA score below 500000000000, else ms); absent = 0
+  lockTime: z.string().regex(/^[1-9]\d{0,19}$/).optional(),
   sigOpCount: z.number().int().nonnegative(),
   signatureScriptSha256: Hex64
 });
@@ -1347,7 +1368,7 @@ export const ToccataProgrammabilityCorpusSchema = BaseArtifactSchema.extend({
   network: z.literal("simnet"),
   profile: z.literal("toccata-v2"),
   status: z.literal("PROGRAMMABILITY_SURFACE_READY"),
-  components: z.record(z.any()),
+  components: z.record(z.string(), z.any()),
   claims: z.object({
     artifactCoherence: z.literal("READY_MATCH"),
     runtimeOutcome: z.literal("PARTIAL"),
@@ -1463,7 +1484,7 @@ export const AddressObservationSchema = BaseArtifactSchema.extend({
   virtual: z.object({
     daaScore: z.string().optional()
   }),
-  observedAt: z.string().datetime()
+  observedAt: isoDateTime()
 });
 
 
@@ -1538,9 +1559,9 @@ export const ZkGroth16FixtureSchema = z.object({
   verificationKey: z.string(),
   verifierMetadata: z.string().optional(),
   verifyReport: z.string().optional(),
-  contentHashes: z.record(z.string()),
+  contentHashes: z.record(z.string(), z.string()),
   expectedStatus: z.string(),
-  claims: z.record(z.string())
+  claims: z.record(z.string(), z.string())
 });
 
 export const ZkRisc0ReceiptSchema = z.object({
@@ -1560,9 +1581,9 @@ export const ZkRisc0FixtureSchema = z.object({
   journal: z.string(),
   imageId: z.string(),
   verifyReport: z.string().optional(),
-  contentHashes: z.record(z.string()),
+  contentHashes: z.record(z.string(), z.string()),
   expectedStatus: z.string(),
-  claims: z.record(z.string())
+  claims: z.record(z.string(), z.string())
 });
 
 export const ZkCorpusFixtureEntrySchema = z.object({
@@ -1585,7 +1606,7 @@ export const ZkCorpusSchema = z.object({
   experimental: z.literal(true),
   proofSystems: z.array(z.string()),
   expectedKnownLimitations: z.array(z.string()),
-  claims: z.record(z.string()),
+  claims: z.record(z.string(), z.string()),
   fixtures: z.array(ZkCorpusFixtureEntrySchema)
 });
 
@@ -1619,7 +1640,7 @@ export const ZkProofMathVerificationSchema = z.object({
     /** Fixture coherence is SELF-ATTESTED (unkeyed digests in the same directory): never an anchor. */
     binding: z.enum(["FIXTURE_COHERENCE_SELF_ATTESTED", "MATH_ONLY"])
   }),
-  claims: z.record(z.string()),
+  claims: z.record(z.string(), z.string()),
   issues: z.array(
     z.object({
       code: z.string(),
@@ -1787,8 +1808,8 @@ export const CovenantTransitionFactSchema = z.object({
   artifactSha256: z.string(),
   entrypoint: z.string(),
   policy: z.string().optional(),
-  previousState: z.record(z.unknown()).optional(),
-  nextState: z.record(z.unknown()).optional(),
+  previousState: z.record(z.string(), z.unknown()).optional(),
+  nextState: z.record(z.string(), z.unknown()).optional(),
   spentOutpoint: z.object({
     transactionId: z.string(),
     index: z.number().int().nonnegative()

@@ -1,3 +1,4 @@
+/ide               /ide/                         301
 /getting-started/*  /docs/getting-started/:splat  301
 /concepts/*         /docs/concepts/:splat         301
 /guides/*           /docs/guides/:splat           301

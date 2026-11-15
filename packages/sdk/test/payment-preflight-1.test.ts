@@ -241,11 +241,10 @@ describe("PAYMENT-PREFLIGHT-1 · preflightPaymentSend, against an in-memory node
     expect(ok.error, String(ok.error?.message)).toBeUndefined();
   });
 
-  it("PU-10 the node's script is not a Schnorr P2PK (P2SH, ECDSA): PREFLIGHT_SIGNATURE_UNVERIFIABLE (only the node could verify it)", async () => {
-    for (const [name, spk] of [
-      ["p2sh", `0000aa20${hash("pp1 p2sh")}87`],
-      ["ecdsa", `000021${"02" + hash("pp1 ecdsa")}ab`]
-    ] as const) {
+  // CHANGED by ECDSA spends: old — an ECDSA script at the node was PREFLIGHT_SIGNATURE_UNVERIFIABLE; new — an ECDSA P2PK
+  // input is verified with ECDSA (payment-preflight-ecdsa.test.ts), so here only the P2SH case stays unverifiable
+  it("PU-10 the node's script is not a P2PK (P2SH): PREFLIGHT_SIGNATURE_UNVERIFIABLE (only the node could verify it)", async () => {
+    for (const [name, spk] of [["p2sh", `0000aa20${hash("pp1 p2sh")}87`]] as const) {
       const f = payment();
       delete f.plan.inputs[0].scriptPublicKey; // the plan states none: the node's is used as it is
       f.node.utxos[0]!.utxo = { ...f.node.utxos[0]!.utxo, scriptPublicKey: spk };

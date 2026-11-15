@@ -1,7 +1,7 @@
 {
   "schema": "hardkas.cliReference.v1",
   "generatedAt": "deterministic",
-  "totalCommands": 262,
+  "totalCommands": 289,
   "flatSurface": [
     "hardkas accounts",
     "hardkas accounts balance",
@@ -62,11 +62,18 @@
     "hardkas env",
     "hardkas env check",
     "hardkas escrow",
+    "hardkas escrow create",
+    "hardkas escrow fund",
+    "hardkas escrow prepare",
+    "hardkas escrow reconcile",
+    "hardkas escrow release",
     "hardkas escrow rescue-v1",
     "hardkas escrow rescue-v1 broadcast",
     "hardkas escrow rescue-v1 inspect",
     "hardkas escrow rescue-v1 prepare",
     "hardkas escrow rescue-v1 sign",
+    "hardkas escrow sign",
+    "hardkas escrow status",
     "hardkas evidence",
     "hardkas evidence explain",
     "hardkas evidence pack",
@@ -77,6 +84,7 @@
     "hardkas extension install",
     "hardkas extension list",
     "hardkas extension remove",
+    "hardkas history",
     "hardkas init",
     "hardkas inspect",
     "hardkas kaspa",
@@ -92,9 +100,12 @@
     "hardkas kcc template-hash",
     "hardkas kcc20",
     "hardkas kcc20 artifact",
+    "hardkas kcc20 balance",
     "hardkas kcc20 check",
     "hardkas kcc20 decode-state",
+    "hardkas kcc20 deploy",
     "hardkas kcc20 encode-state",
+    "hardkas kcc20 transfer",
     "hardkas localnet",
     "hardkas localnet account",
     "hardkas localnet account create",
@@ -190,8 +201,10 @@
     "hardkas silver audit",
     "hardkas silver compile",
     "hardkas silver covenant",
+    "hardkas silver covenant advance",
     "hardkas silver covenant genesis",
     "hardkas silver covenant inspect",
+    "hardkas silver covenant start",
     "hardkas silver covenant transition",
     "hardkas silver debug",
     "hardkas silver deploy",
@@ -247,6 +260,18 @@
     "hardkas vprogs capabilities",
     "hardkas vprogs inspect",
     "hardkas vprogs status",
+    "hardkas wallet",
+    "hardkas wallet hd",
+    "hardkas wallet hd address",
+    "hardkas wallet hd balance",
+    "hardkas wallet hd change-password",
+    "hardkas wallet hd create",
+    "hardkas wallet hd import",
+    "hardkas wallet hd import-watch-only",
+    "hardkas wallet hd list",
+    "hardkas wallet hd reveal",
+    "hardkas wallet hd send",
+    "hardkas watch",
     "hardkas why",
     "hardkas workflow",
     "hardkas workflow diff",
@@ -262,7 +287,9 @@
     "hardkas zk proof verify-math",
     "hardkas zk toccata",
     "hardkas zk toccata build-scripts",
+    "hardkas zk toccata observe",
     "hardkas zk toccata rules",
+    "hardkas zk toccata spend",
     "hardkas zk toccata verify-receipt",
     "hardkas zk toccata verify-scripts"
   ],
@@ -593,6 +620,13 @@
                   "mandatory": false
                 },
                 {
+                  "flags": "--ecdsa",
+                  "description": "Make ECDSA accounts: the address is the key's ECDSA P2PK address (version 1), recorded with the account and in its keystore's authenticated metadata; HardKAS signs their payments with ECDSA (RFC 6979, low-S). Default: Schnorr",
+                  "default": false,
+                  "required": false,
+                  "mandatory": false
+                },
+                {
                   "flags": "--yes",
                   "description": "Skip confirmation for unsafe operations",
                   "default": false,
@@ -699,6 +733,13 @@
                   "description": "Import deterministic fixture test account",
                   "default": null,
                   "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--ecdsa",
+                  "description": "The key is imported as an ECDSA account: --address must be its ECDSA P2PK address (an ECDSA address without this flag is refused: ACCOUNT_KEY_SCHEME_MISMATCH). Default: Schnorr",
+                  "default": false,
+                  "required": false,
                   "mandatory": false
                 },
                 {
@@ -1106,6 +1147,20 @@
             {
               "flags": "--require <level>",
               "description": "Level the verification must reach to succeed: integrity (default), network or consensus",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--address <address>",
+              "description": "Network check: locate the transaction through the history of an address it pays or spends from (a bounded window of the node's selected chain, from --since or the last --lookback chain blocks): found, its acceptance is looked at from the chain block before it, also when its outputs were spent since; not found, the result names the window read",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--lookback <chainBlocks>",
+              "description": "With --address and no --since: the history's window, in chain blocks back from the node's sink (default 1000, at most 100000)",
               "default": null,
               "required": true,
               "mandatory": false
@@ -2089,6 +2144,326 @@
       "options": [],
       "subcommands": [
         {
+          "path": "hardkas escrow create",
+          "name": "create",
+          "aliases": [],
+          "description": "Create a v2 escrow (EscrowFull with --amount, EscrowSplit with --buyer-amount and --seller-amount), compiled by the pinned silverc for the network, and record it in this workspace. Nothing is sent",
+          "usage": "hardkas escrow create [options]",
+          "arguments": [],
+          "options": [
+            {
+              "flags": "--buyer <party>",
+              "description": "The buyer: an account of this workspace, a Schnorr address of the network, or a 32-byte x-only public key (hex)",
+              "default": null,
+              "required": true,
+              "mandatory": true
+            },
+            {
+              "flags": "--seller <party>",
+              "description": "The seller (account, address or x-only public key)",
+              "default": null,
+              "required": true,
+              "mandatory": true
+            },
+            {
+              "flags": "--arbiter <party>",
+              "description": "The arbiter (account, address or x-only public key)",
+              "default": null,
+              "required": true,
+              "mandatory": true
+            },
+            {
+              "flags": "--buyer-destination <address|spk>",
+              "description": "Where refunds pay (default: the buyer's own address): an address of the network, or a script public key in hex without the version",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--seller-destination <address|spk>",
+              "description": "Where releases pay (default: the seller's own address)",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--amount <kas>",
+              "description": "EscrowFull: the principal every branch pays (KAS)",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--buyer-amount <kas>",
+              "description": "EscrowSplit: the buyer's allocation (KAS), with --seller-amount",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--seller-amount <kas>",
+              "description": "EscrowSplit: the seller's allocation (KAS), with --buyer-amount",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--fee-budget <sompi>",
+              "description": "The fee of every release, added to the funding (sompi; default 2000000 = 0.02 KAS; at least the node's minimum relay fee of a release, checked before funding)",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--nonce <hex>",
+              "description": "32-byte nonce that makes the escrow's address unique (default: random)",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--network <network>",
+              "description": "Network (default: the escrow's own, else the workspace's, else simnet). mainnet is refused; testnet-<n> needs experimental + network.allowPublic in the config",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        },
+        {
+          "path": "hardkas escrow fund",
+          "name": "fund",
+          "aliases": [],
+          "description": "Fund an escrow from the buyer's account: one payment of its funding amount (principal + fee budget) to its address, planned, signed and sent by HardKAS's payment path. Refused before anything is signed if any release could not pay the node's minimum relay fee",
+          "usage": "hardkas escrow fund [options] <id>",
+          "arguments": [
+            {
+              "name": "id",
+              "description": ""
+            }
+          ],
+          "options": [
+            {
+              "flags": "--from <account>",
+              "description": "The buyer's account of this workspace (its key must be the escrow's buyer key)",
+              "default": null,
+              "required": true,
+              "mandatory": true
+            },
+            {
+              "flags": "--network <network>",
+              "description": "Network (default: the escrow's own, else the workspace's, else simnet). mainnet is refused; testnet-<n> needs experimental + network.allowPublic in the config",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--url <url>",
+              "description": "Node wRPC (JSON) endpoint (default: the one the workspace declares for the network; simnet: the canonical localnet). The canonical localnet is proven by container and image digest; any other node by what it reports (network, version, synced)",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--wait",
+              "description": "Wait until a chain block accepts the funding",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            },
+            {
+              "flags": "--timeout <seconds>",
+              "description": "With --wait: how long to wait",
+              "default": "120",
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--password-env <env>",
+              "description": "Read the keystore password of the encrypted account this command signs with from this environment variable (development accounts need none)",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--password-stdin",
+              "description": "Read the keystore password of the encrypted account this command signs with from stdin",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            },
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        },
+        {
+          "path": "hardkas escrow prepare",
+          "name": "prepare",
+          "aliases": [],
+          "description": "Prepare the release of one branch over the recorded funding and write the release request each required signer signs (in this workspace, or in their own with `escrow sign <file>`)",
+          "usage": "hardkas escrow prepare [options] <id>",
+          "arguments": [
+            {
+              "name": "id",
+              "description": ""
+            }
+          ],
+          "options": [
+            {
+              "flags": "--branch <branch>",
+              "description": "EscrowFull: mutualRelease, refundBuyer, releaseToSeller; EscrowSplit: executeSplit, fullRefund, fullRelease, mutualRelease",
+              "default": null,
+              "required": true,
+              "mandatory": true
+            },
+            {
+              "flags": "--buyer-share <kas>",
+              "description": "mutualRelease: what the buyer receives (KAS), with --seller-share; together the principal (default: the contract's default allocation)",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--seller-share <kas>",
+              "description": "mutualRelease: what the seller receives (KAS), with --buyer-share",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--out <file>",
+              "description": "The release request file (default escrow-<id>-<branch>.request.json)",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--network <network>",
+              "description": "Network (default: the escrow's own, else the workspace's, else simnet). mainnet is refused; testnet-<n> needs experimental + network.allowPublic in the config",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        },
+        {
+          "path": "hardkas escrow reconcile",
+          "name": "reconcile",
+          "aliases": [],
+          "description": "Look at the node once for an escrow's pending funding and release (its mempool, then its chain) and record what it shows: accepted by a chain block → confirmed (FUNDED / RELEASED)",
+          "usage": "hardkas escrow reconcile [options] <id>",
+          "arguments": [
+            {
+              "name": "id",
+              "description": ""
+            }
+          ],
+          "options": [
+            {
+              "flags": "--network <network>",
+              "description": "Network (default: the escrow's own, else the workspace's, else simnet). mainnet is refused; testnet-<n> needs experimental + network.allowPublic in the config",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--url <url>",
+              "description": "Node wRPC (JSON) endpoint (default: the one the workspace declares for the network; simnet: the canonical localnet). The canonical localnet is proven by container and image digest; any other node by what it reports (network, version, synced)",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        },
+        {
+          "path": "hardkas escrow release",
+          "name": "release",
+          "aliases": [],
+          "description": "Send an escrow's prepared release once every required role signed: each signature verified (BIP340) before anything is sent, then one send through HardKAS's send machinery. An unknown outcome is recorded and never sent again before reconcile",
+          "usage": "hardkas escrow release [options] <id>",
+          "arguments": [
+            {
+              "name": "id",
+              "description": ""
+            }
+          ],
+          "options": [
+            {
+              "flags": "--signatures <files...>",
+              "description": "Signed release request files to take the signatures from (each checked against this escrow's prepared release)",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--network <network>",
+              "description": "Network (default: the escrow's own, else the workspace's, else simnet). mainnet is refused; testnet-<n> needs experimental + network.allowPublic in the config",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--url <url>",
+              "description": "Node wRPC (JSON) endpoint (default: the one the workspace declares for the network; simnet: the canonical localnet). The canonical localnet is proven by container and image digest; any other node by what it reports (network, version, synced)",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--wait",
+              "description": "Wait until a chain block accepts the release (RELEASED)",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            },
+            {
+              "flags": "--timeout <seconds>",
+              "description": "With --wait: how long to wait",
+              "default": "120",
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        },
+        {
           "path": "hardkas escrow rescue-v1",
           "name": "rescue-v1",
           "aliases": [],
@@ -2311,6 +2686,94 @@
               "subcommands": []
             }
           ]
+        },
+        {
+          "path": "hardkas escrow sign",
+          "name": "sign",
+          "aliases": [],
+          "description": "Sign an escrow's prepared release as one role: an escrow id of this workspace (the signature goes into its record), or a release request file, checked first against the escrow's own terms (the contract recompiled, the draft prepared again) and signed here, in the signer's own workspace",
+          "usage": "hardkas escrow sign [options] <id-or-request>",
+          "arguments": [
+            {
+              "name": "id-or-request",
+              "description": ""
+            }
+          ],
+          "options": [
+            {
+              "flags": "--role <role>",
+              "description": "buyer, seller or arbiter: a role the prepared branch requires",
+              "default": null,
+              "required": true,
+              "mandatory": true
+            },
+            {
+              "flags": "--account <account>",
+              "description": "The account of this workspace that signs (its key must be the escrow's key for the role)",
+              "default": null,
+              "required": true,
+              "mandatory": true
+            },
+            {
+              "flags": "--out <file>",
+              "description": "With a request file: where the signed request is written (default: the request file itself)",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--network <network>",
+              "description": "Network (default: the escrow's own, else the workspace's, else simnet). mainnet is refused; testnet-<n> needs experimental + network.allowPublic in the config",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--password-env <env>",
+              "description": "Read the keystore password of the encrypted account this command signs with from this environment variable (development accounts need none)",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--password-stdin",
+              "description": "Read the keystore password of the encrypted account this command signs with from stdin",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            },
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        },
+        {
+          "path": "hardkas escrow status",
+          "name": "status",
+          "aliases": [],
+          "description": "Show an escrow recorded in this workspace: its state, funding, prepared release, signatures and release (no node is contacted)",
+          "usage": "hardkas escrow status [options] <id>",
+          "arguments": [
+            {
+              "name": "id",
+              "description": ""
+            }
+          ],
+          "options": [
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
         }
       ]
     },
@@ -2600,6 +3063,92 @@
           "subcommands": []
         }
       ]
+    },
+    {
+      "path": "hardkas history",
+      "name": "history",
+      "aliases": [],
+      "description": "The history of an address over a bounded window of a Kaspa node's selected chain: every transaction accepted in it that pays the address or spends an output of it, with its depth; this workspace's own records merged in. The result says what the window covered and what it did not. Read-only; mainnet is refused",
+      "usage": "hardkas history [options] <address>",
+      "arguments": [
+        {
+          "name": "address",
+          "description": ""
+        }
+      ],
+      "options": [
+        {
+          "flags": "--since <blockOrDaa>",
+          "description": "Start of the window: a chain block hash (64 hex: the transactions accepted after it) or a DAA score (the transactions accepted at or above it). Default: the last --lookback chain blocks. Never before the node's pruning point",
+          "default": null,
+          "required": true,
+          "mandatory": false
+        },
+        {
+          "flags": "--lookback <chainBlocks>",
+          "description": "Default window: chain blocks back from the node's sink (default 1000, at most 100000)",
+          "default": null,
+          "required": true,
+          "mandatory": false
+        },
+        {
+          "flags": "--max-blocks <n>",
+          "description": "Chain blocks this call may walk back to the start, and read forward from it (default 10000 each, at most 200000); the rest is the result's continueFrom",
+          "default": null,
+          "required": true,
+          "mandatory": false
+        },
+        {
+          "flags": "--limit <n>",
+          "description": "Entries per page (default 100, at most 1000)",
+          "default": null,
+          "required": true,
+          "mandatory": false
+        },
+        {
+          "flags": "--cursor <cursor>",
+          "description": "The next page of the same window (page.nextCursor of a previous result)",
+          "default": null,
+          "required": true,
+          "mandatory": false
+        },
+        {
+          "flags": "--timeout <seconds>",
+          "description": "Deadline for the whole read (default 60, at most 600): a window cut short by it says so",
+          "default": null,
+          "required": true,
+          "mandatory": false
+        },
+        {
+          "flags": "--network <name>",
+          "description": "Network from the workspace config: its declared endpoint, and the node must prove it serves that network (default: the workspace's network; outside a workspace, the --url or the canonical localnet)",
+          "default": null,
+          "required": true,
+          "mandatory": false
+        },
+        {
+          "flags": "--url <url>",
+          "description": "Node wRPC (JSON) endpoint",
+          "default": null,
+          "required": true,
+          "mandatory": false
+        },
+        {
+          "flags": "--no-workspace-records",
+          "description": "Do not merge this workspace's own records (submissions, receipts) into the history",
+          "default": null,
+          "required": false,
+          "mandatory": false
+        },
+        {
+          "flags": "--json",
+          "description": "Output as JSON",
+          "default": false,
+          "required": false,
+          "mandatory": false
+        }
+      ],
+      "subcommands": []
     },
     {
       "path": "hardkas init",
@@ -2949,7 +3498,7 @@
       "path": "hardkas kcc20",
       "name": "kcc20",
       "aliases": [],
-      "description": "KCC-20 fungible tokens on L1 covenants (kaspanet/kccs, Final), off chain: state codec, transfer checks, program artifacts experimental. Not KRC-20",
+      "description": "KCC-20 fungible tokens on L1 covenants (kaspanet/kccs, Final): off chain, the state codec, transfer checks and program artifacts; on a node, deploy, transfer and balance through the SDK's v1 engine experimental. Not KRC-20",
       "usage": "hardkas kcc20 [options] [command]",
       "arguments": [],
       "options": [],
@@ -2967,6 +3516,50 @@
             }
           ],
           "options": [
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        },
+        {
+          "path": "hardkas kcc20 balance",
+          "name": "balance",
+          "aliases": [],
+          "description": "KCC-20 balances on a node: the holder's live token outputs (or every holder's), from this workspace's records of the token's covenant, each listed unspent at the node with the covenant id and its state checked against its address. The node has no query by covenant id: an output this workspace did not record is not seen. Mainnet refused (MAINNET_CONNECTION_DISABLED) before anything is read",
+          "usage": "hardkas kcc20 balance [options] [holder]",
+          "arguments": [
+            {
+              "name": "holder",
+              "description": ""
+            }
+          ],
+          "options": [
+            {
+              "flags": "--covenant <id>",
+              "description": "The token's covenant id (32 bytes, hex)",
+              "default": null,
+              "required": true,
+              "mandatory": true
+            },
+            {
+              "flags": "--network <network>",
+              "description": "Network (default: the workspace's, else simnet). mainnet is refused; testnet-<n> needs experimental + network.allowPublic in the config",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--url <url>",
+              "description": "Node wRPC (JSON) endpoint (default: the one the workspace declares for the network; simnet: the canonical localnet). Only the canonical localnet is proven by container and image digest; any other node by what it reports (network, version, synced)",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
             {
               "flags": "--json",
               "description": "Output as JSON",
@@ -3024,6 +3617,127 @@
           "subcommands": []
         },
         {
+          "path": "hardkas kcc20 deploy",
+          "name": "deploy",
+          "aliases": [],
+          "description": "Create a KCC-20 token on a node (transaction v1): a covenant genesis of the token program — its compile record, e.g. the reference KCC20.sil compiled by `hardkas silver compile` — with one token output per initial holder, all one covenant id; planned, checked, signed and sent by the SDK's v1 engine (sdk.kcc20). Mainnet refused (MAINNET_SIGNING_DISABLED) before anything is read; testnet-<n> needs experimental + network.allowPublic",
+          "usage": "hardkas kcc20 deploy [options] <record>",
+          "arguments": [
+            {
+              "name": "record",
+              "description": ""
+            }
+          ],
+          "options": [
+            {
+              "flags": "--from <account>",
+              "description": "Funding account (local key): pays the token outputs' KAS and the fee, gets the change",
+              "default": null,
+              "required": true,
+              "mandatory": true
+            },
+            {
+              "flags": "--holder <spec>",
+              "description": "An initial holder, in output order (repeatable): '<owner>=<amount>', the owner an account of this workspace, a P2PK address or a 32-byte x-only public key (hex), owner scheme p2pk-schnorr/v1; the amount an exact integer",
+              "default": [],
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--kas <kas>",
+              "description": "KAS locked in each token output",
+              "default": "10",
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--extension-commitment <hex>",
+              "description": "The token's extension commitment (32 bytes, hex; default zero): every output of the token carries it",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--artifact <file>",
+              "description": "The program's KCC-20 artifact (kcc20.json: entrypoints, owner schemes, bounds); default: KCC-20's default configuration",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--constructor-args <file>",
+              "description": "Constructor arguments the program was compiled with (default: proven from its initial State)",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--contract <name>",
+              "description": "Contract, when the artifact has several (default: KCC20)",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--fee <sompi>",
+              "description": "Fee in sompi: at least the node's floor for this transaction (the floor when omitted)",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--network <network>",
+              "description": "Network (default: the workspace's, else simnet). mainnet is refused; testnet-<n> needs experimental + network.allowPublic in the config",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--url <url>",
+              "description": "Node wRPC (JSON) endpoint (default: the one the workspace declares for the network; simnet: the canonical localnet). Only the canonical localnet is proven by container and image digest; any other node by what it reports (network, version, synced)",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--wait",
+              "description": "Wait until every token output is confirmed with the covenant id",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            },
+            {
+              "flags": "--timeout <seconds>",
+              "description": "Confirmation timeout",
+              "default": "120",
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--password-env <env>",
+              "description": "Read the keystore password of the encrypted account(s) this command signs with from this environment variable (development accounts need none)",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--password-stdin",
+              "description": "Read the keystore password of the encrypted account(s) this command signs with from stdin",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            },
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        },
+        {
           "path": "hardkas kcc20 encode-state",
           "name": "encode-state",
           "aliases": [],
@@ -3036,6 +3750,129 @@
             }
           ],
           "options": [
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        },
+        {
+          "path": "hardkas kcc20 transfer",
+          "name": "transfer",
+          "aliases": [],
+          "description": "Transfer KCC-20 tokens on a node (transaction v1): --from's token outputs (or the --input ones) to the recipients, the change back to --from, through the program's transfer (the leader) and transfer_delegator (the other inputs). Checked against the KCC-20 rules (the model `kcc20 check` runs) before anything is signed, and refused there when they reject it (KCC20_TRANSFER_REJECTED); the owners' signatures go in the witnesses; planned, signed and sent by the SDK's v1 engine (sdk.kcc20); the token's program on the node is the final judge. Mainnet refused (MAINNET_SIGNING_DISABLED) before anything is read",
+          "usage": "hardkas kcc20 transfer [options]",
+          "arguments": [],
+          "options": [
+            {
+              "flags": "--covenant <id>",
+              "description": "The token's covenant id (32 bytes, hex)",
+              "default": null,
+              "required": true,
+              "mandatory": true
+            },
+            {
+              "flags": "--from <account>",
+              "description": "The holder whose token outputs are spent and who signs them (local key); the change in tokens goes back to it",
+              "default": null,
+              "required": true,
+              "mandatory": true
+            },
+            {
+              "flags": "--to <spec>",
+              "description": "A recipient, in output order (repeatable): '<owner>=<amount>', the owner an account of this workspace, a P2PK address or a 32-byte x-only public key (hex)",
+              "default": [],
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--input <outpoint>",
+              "description": "Spend this token output 'txid:index' (repeatable, the leader first); default: --from's live outputs, largest first, as few as cover the amounts",
+              "default": [],
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--funder <account>",
+              "description": "Pay the fee from this account's coins (local key); default: the tokens' KAS (the first new output keeps what the fee leaves)",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--artifact <file>",
+              "description": "The program's KCC-20 artifact (kcc20.json); default: KCC-20's default configuration",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--fee <sompi>",
+              "description": "Fee in sompi: at least the node's floor for this transaction (the floor when omitted)",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--max-fee <sompi>",
+              "description": "The plan's fee limit (default: the fee it pays)",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--compute-budget <n>",
+              "description": "Compute budget of each token input, or 'estimate' (the default: rusty-kaspa's upper bound)",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--network <network>",
+              "description": "Network (default: the workspace's, else simnet). mainnet is refused; testnet-<n> needs experimental + network.allowPublic in the config",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--url <url>",
+              "description": "Node wRPC (JSON) endpoint (default: the one the workspace declares for the network; simnet: the canonical localnet). Only the canonical localnet is proven by container and image digest; any other node by what it reports (network, version, synced)",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--wait",
+              "description": "Wait until every new token output is confirmed with the covenant id",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            },
+            {
+              "flags": "--timeout <seconds>",
+              "description": "Confirmation timeout",
+              "default": "120",
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--password-env <env>",
+              "description": "Read the keystore password of the encrypted account(s) this command signs with from this environment variable (development accounts need none)",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--password-stdin",
+              "description": "Read the keystore password of the encrypted account(s) this command signs with from stdin",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            },
             {
               "flags": "--json",
               "description": "Output as JSON",
@@ -5802,11 +6639,188 @@
           "path": "hardkas silver covenant",
           "name": "covenant",
           "aliases": [],
-          "description": "Toccata covenants (transaction v1): 1:1 auth-bound transitions",
+          "description": "Toccata covenants (transaction v1): genesis and 1:1 auth-bound transitions; start (several outputs) and advance (1:N, N:M with delegates, termination)",
           "usage": "hardkas silver covenant [options] [command]",
           "arguments": [],
           "options": [],
           "subcommands": [
+            {
+              "path": "hardkas silver covenant advance",
+              "name": "advance",
+              "aliases": [],
+              "description": "Advance a covenant through any transition its declaration allows — one input to several continuations (1:N), several inputs with a leader and delegates (N:M), or none (termination) — planned, checked against the node and the compiler before any key is read, signed and sent by the SDK's v1 engine. <record> is the covenant's compile record (its template); `transition` keeps the 1:1 form and its records",
+              "usage": "hardkas silver covenant advance [options] <record>",
+              "arguments": [
+                {
+                  "name": "record",
+                  "description": ""
+                }
+              ],
+              "options": [
+                {
+                  "flags": "--covenant <id>",
+                  "description": "The covenant id (32 bytes, hex)",
+                  "default": null,
+                  "required": true,
+                  "mandatory": true
+                },
+                {
+                  "flags": "--policy <name>",
+                  "description": "Covenant declaration (policy function) the transition runs",
+                  "default": null,
+                  "required": true,
+                  "mandatory": true
+                },
+                {
+                  "flags": "--input <spec>",
+                  "description": "A covenant input, in input order, the leader first (repeatable): 'txid:index' (its state: the one this workspace's records of the covenant declare for that output, checked against its address), or 'txid:index=<state-file>'",
+                  "default": [],
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--next <spec>",
+                  "description": "A continuation, in output order (repeatable): '<state-file>=<kas>', or '<state-file>' for the one that keeps what the other outputs and the fee leave of the covenant's value (one at most; not with --funder)",
+                  "default": [],
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--pay <spec>",
+                  "description": "A payment out of the covenant (repeatable): '<address or account>=<kas>'",
+                  "default": [],
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--terminate",
+                  "description": "End the covenant: no continuation (its policy decides whether it may); its value goes to the --pay outputs and the fee",
+                  "default": false,
+                  "required": false,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--args <file>",
+                  "description": "The leader entry's arguments other than its next states (filled from --next): JSON list of {kind, value} and {\"kind\":\"signature\",\"account\":\"<name>\"}",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--delegate-args <file>",
+                  "description": "A delegate input's entry arguments, same form, one file per delegate in input order (repeatable; default: none)",
+                  "default": [],
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--funder <account>",
+                  "description": "Pay the fee from this account's coins (local key); the covenant keeps its value",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--fee <sompi>",
+                  "description": "Fee in sompi, with a continuation that takes the rest or with --funder: at least the node's floor (the floor when omitted). Otherwise the fee is what the outputs leave of the covenant's value",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--max-fee <sompi>",
+                  "description": "The plan's fee limit (default: the fee it pays; a fee the outputs leave is refused above the larger of 0.1 KAS and the node's floor unless this is given)",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--lock-time-daa <n>",
+                  "description": "Absolute lock time as a DAA score (below 500000000000), for an entry that requires tx.daa >= x (CheckLockTimeVerify): checked against the entry's tx.daa statements before signing, and the spend is refused before the broadcast until the node's virtual DAA score is above it (LOCK_TIME_NOT_REACHED, nothing sent). Not with --lock-time-ms",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--lock-time-ms <t>",
+                  "description": "Absolute lock time in milliseconds since the epoch (at or above 500000000000), for an entry that requires tx.time >= t: checked against the entry's tx.time statements before signing, and refused before the broadcast until the node's past median time is above it. Not with --lock-time-daa",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--compute-budget <n>",
+                  "description": "Compute budget of each covenant input, or 'estimate' (rusty-kaspa's upper bound); default: the certified budget of its entry, else that estimate",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--constructor-args <file>",
+                  "description": "Constructor arguments the contract was compiled with (default: proven from its initial State)",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--contract <name>",
+                  "description": "Contract, when the artifact has several",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--network <network>",
+                  "description": "Network (default: the workspace's, else simnet). mainnet is refused; testnet-<n> needs experimental + network.allowPublic in the config",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--url <url>",
+                  "description": "Node wRPC (JSON) endpoint (default: the one the workspace declares for the network; simnet: the canonical localnet). Only the canonical localnet is proven by container and image digest; any other node by what it reports (network, version, synced)",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--wait",
+                  "description": "Wait until every continuation is confirmed with the covenant id (termination: the first output)",
+                  "default": false,
+                  "required": false,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--timeout <seconds>",
+                  "description": "Confirmation timeout",
+                  "default": "120",
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--password-env <env>",
+                  "description": "Read the keystore password of the encrypted account(s) this command signs with from this environment variable (development accounts need none)",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--password-stdin",
+                  "description": "Read the keystore password of the encrypted account(s) this command signs with from stdin",
+                  "default": false,
+                  "required": false,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--json",
+                  "description": "Output as JSON",
+                  "default": false,
+                  "required": false,
+                  "mandatory": false
+                }
+              ],
+              "subcommands": []
+            },
             {
               "path": "hardkas silver covenant genesis",
               "name": "genesis",
@@ -5959,6 +6973,113 @@
               "subcommands": []
             },
             {
+              "path": "hardkas silver covenant start",
+              "name": "start",
+              "aliases": [],
+              "description": "Create a covenant with one or more outputs, each holding its own state, all bound to the one covenant id the SDK derives (what an N:M transition spends): planned, checked, signed and sent by the SDK's v1 engine. `genesis` keeps the one-output form and its record",
+              "usage": "hardkas silver covenant start [options] <record>",
+              "arguments": [
+                {
+                  "name": "record",
+                  "description": ""
+                }
+              ],
+              "options": [
+                {
+                  "flags": "--from <account>",
+                  "description": "Funding account (local key): pays the outputs and the fee, gets the change",
+                  "default": null,
+                  "required": true,
+                  "mandatory": true
+                },
+                {
+                  "flags": "--output <spec>",
+                  "description": "A covenant output, in output order (repeatable): '<kas>', or '<state-file>=<kas>' for an output holding the state in that JSON file ({field: {kind, value}}); every output a state, or none (each then holds the record's own)",
+                  "default": [],
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--fee <sompi>",
+                  "description": "Fee in sompi: at least the node's floor for this transaction (the floor when omitted)",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--compute-budget <n>",
+                  "description": "Compute budget of the funding inputs (default: the certified P2PK budget)",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--constructor-args <file>",
+                  "description": "Constructor arguments the contract was compiled with (default: proven from its initial State)",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--contract <name>",
+                  "description": "Contract, when the artifact has several",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--network <network>",
+                  "description": "Network (default: the workspace's, else simnet). mainnet is refused; testnet-<n> needs experimental + network.allowPublic in the config",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--url <url>",
+                  "description": "Node wRPC (JSON) endpoint (default: the one the workspace declares for the network; simnet: the canonical localnet). Only the canonical localnet is proven by container and image digest; any other node by what it reports (network, version, synced)",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--wait",
+                  "description": "Wait until every output is confirmed with the covenant id",
+                  "default": false,
+                  "required": false,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--timeout <seconds>",
+                  "description": "Confirmation timeout",
+                  "default": "120",
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--password-env <env>",
+                  "description": "Read the keystore password of the encrypted account(s) this command signs with from this environment variable (development accounts need none)",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--password-stdin",
+                  "description": "Read the keystore password of the encrypted account(s) this command signs with from stdin",
+                  "default": false,
+                  "required": false,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--json",
+                  "description": "Output as JSON",
+                  "default": false,
+                  "required": false,
+                  "mandatory": false
+                }
+              ],
+              "subcommands": []
+            },
+            {
               "path": "hardkas silver covenant transition",
               "name": "transition",
               "aliases": [],
@@ -6016,6 +7137,20 @@
                 {
                   "flags": "--fee <sompi>",
                   "description": "Fee in sompi, paid from the covenant's value: at least the node's floor for this transaction (the floor when omitted)",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--lock-time-daa <n>",
+                  "description": "Absolute lock time as a DAA score (below 500000000000), for an entry that requires tx.daa >= x (CheckLockTimeVerify): checked against the entry's tx.daa statements before signing, and the spend is refused before the broadcast until the node's virtual DAA score is above it (LOCK_TIME_NOT_REACHED, nothing sent). Not with --lock-time-ms",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--lock-time-ms <t>",
+                  "description": "Absolute lock time in milliseconds since the epoch (at or above 500000000000), for an entry that requires tx.time >= t: checked against the entry's tx.time statements before signing, and refused before the broadcast until the node's past median time is above it. Not with --lock-time-daa",
                   "default": null,
                   "required": true,
                   "mandatory": false
@@ -6793,6 +7928,20 @@
             {
               "flags": "--sequence <n>",
               "description": "Input sequence (relative locks)",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--lock-time-daa <n>",
+              "description": "Absolute lock time as a DAA score (below 500000000000), for an entry that requires tx.daa >= x (CheckLockTimeVerify): checked against the entry's tx.daa statements before signing, and the spend is refused before the broadcast until the node's virtual DAA score is above it (LOCK_TIME_NOT_REACHED, nothing sent). Not with --lock-time-ms",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--lock-time-ms <t>",
+              "description": "Absolute lock time in milliseconds since the epoch (at or above 500000000000), for an entry that requires tx.time >= t: checked against the entry's tx.time statements before signing, and refused before the broadcast until the node's past median time is above it. Not with --lock-time-daa",
               "default": null,
               "required": true,
               "mandatory": false
@@ -7615,6 +8764,27 @@
               "mandatory": false
             },
             {
+              "flags": "--lock-time-daa <n>",
+              "description": "Absolute lock time as a DAA score (below 500000000000): the transaction is valid only once the node's virtual DAA score is above it; `tx send` refuses to broadcast it earlier (LOCK_TIME_NOT_REACHED, nothing sent). Not with --lock-time-ms; not on the simulator",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--lock-time-ms <t>",
+              "description": "Absolute lock time as milliseconds since the epoch (at or above 500000000000): valid only once the node's past median time is above it; `tx send` refuses to broadcast it earlier. Not with --lock-time-daa; not on the simulator",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--confirm-distant-lock-time",
+              "description": "Plan a lock time more than about a day past the node's position (864000 DAA, or 86400000 ms); refused without it (LOCK_TIME_DISTANT_UNCONFIRMED)",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            },
+            {
               "flags": "--provider <type>",
               "description": "Provider mode (auto, rpc, simulated)",
               "default": "auto",
@@ -7779,6 +8949,27 @@
               "description": "Fee rate in sompi per mass (shortcut mode)",
               "default": null,
               "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--lock-time-daa <n>",
+              "description": "Shortcut mode: Absolute lock time as a DAA score (below 500000000000): the transaction is valid only once the node's virtual DAA score is above it; `tx send` refuses to broadcast it earlier (LOCK_TIME_NOT_REACHED, nothing sent). Not with --lock-time-ms; not on the simulator",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--lock-time-ms <t>",
+              "description": "Shortcut mode: Absolute lock time as milliseconds since the epoch (at or above 500000000000): valid only once the node's past median time is above it; `tx send` refuses to broadcast it earlier. Not with --lock-time-daa; not on the simulator",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--confirm-distant-lock-time",
+              "description": "Shortcut mode: Plan a lock time more than about a day past the node's position (864000 DAA, or 86400000 ms); refused without it (LOCK_TIME_DISTANT_UNCONFIRMED)",
+              "default": false,
+              "required": false,
               "mandatory": false
             },
             {
@@ -7991,6 +9182,20 @@
             {
               "flags": "--since <chainBlockHash>",
               "description": "Scan the node's virtual chain from this chain block (64 hex; it must precede the tx's acceptance) — for a tx sent outside this workspace",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--address <address>",
+              "description": "Locate the transaction first through the history of an address it pays or spends from (a bounded window of the node's selected chain: from --since, else the last --lookback chain blocks); found, the new look scans from the chain block before its acceptance (also when its outputs were spent since)",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--lookback <chainBlocks>",
+              "description": "With --address and no --since: the history's window, in chain blocks back from the node's sink (default 1000, at most 100000)",
               "default": null,
               "required": true,
               "mandatory": false
@@ -8237,6 +9442,581 @@
           "subcommands": []
         }
       ]
+    },
+    {
+      "path": "hardkas wallet",
+      "name": "wallet",
+      "aliases": [],
+      "description": "Wallets kept in the workspace",
+      "usage": "hardkas wallet [options] [command]",
+      "arguments": [],
+      "options": [],
+      "subcommands": [
+        {
+          "path": "hardkas wallet hd",
+          "name": "hd",
+          "aliases": [],
+          "description": "Recoverable HD wallets: a BIP39 recovery phrase (12 or 24 English words) and Kaspa's BIP32 derivation (m/44'/111111'/<account>'/<0 receive|1 change>/<index>), encrypted in .hardkas/wallets/; they receive on many addresses and spend from all of them. Mainnet is refused while it is locked down experimental",
+          "usage": "hardkas wallet hd [options] [command]",
+          "arguments": [],
+          "options": [],
+          "subcommands": [
+            {
+              "path": "hardkas wallet hd address",
+              "name": "address",
+              "aliases": [],
+              "description": "Show a receive (or --change) address. Without --index: the next unused one, and the wallet's index advances. An HD wallet is opened with its password first, so the address comes from its authenticated keys experimental",
+              "usage": "hardkas wallet hd address [options] <wallet>",
+              "arguments": [
+                {
+                  "name": "wallet",
+                  "description": ""
+                }
+              ],
+              "options": [
+                {
+                  "flags": "--change",
+                  "description": "A change address instead of a receive address",
+                  "default": false,
+                  "required": false,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--index <n>",
+                  "description": "This address index (the wallet's index does not move)",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--account <n>",
+                  "description": "Account index (default 0)",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--password-env <env>",
+                  "description": "Read the wallet password from this environment variable",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--password-stdin",
+                  "description": "Read the wallet password from stdin",
+                  "default": false,
+                  "required": false,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--passphrase-env <env>",
+                  "description": "Read the wallet's BIP39 passphrase (the optional \"25th word\") from this environment variable; never stored",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--json",
+                  "description": "Output as JSON",
+                  "default": false,
+                  "required": false,
+                  "mandatory": false
+                }
+              ],
+              "subcommands": []
+            },
+            {
+              "path": "hardkas wallet hd balance",
+              "name": "balance",
+              "aliases": [],
+              "description": "Scan the wallet's receive and change addresses on the node (gap limit) and show what they hold. Mainnet is refused: MAINNET_CONNECTION_DISABLED experimental",
+              "usage": "hardkas wallet hd balance [options] <wallet>",
+              "arguments": [
+                {
+                  "name": "wallet",
+                  "description": ""
+                }
+              ],
+              "options": [
+                {
+                  "flags": "--network <network>",
+                  "description": "The workspace network to read (default: the workspace's): it must be the wallet's",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--gap-limit <n>",
+                  "description": "Consecutive unused addresses per chain before the scan stops (default 20)",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--account <n>",
+                  "description": "Account index (default 0)",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--password-env <env>",
+                  "description": "Read the wallet password from this environment variable (optional: the scan then uses the authenticated keys; without it the result says verified: false)",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--password-stdin",
+                  "description": "Read the wallet password from stdin",
+                  "default": false,
+                  "required": false,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--passphrase-env <env>",
+                  "description": "Read the wallet's BIP39 passphrase (the optional \"25th word\") from this environment variable; never stored",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--json",
+                  "description": "Output as JSON",
+                  "default": false,
+                  "required": false,
+                  "mandatory": false
+                }
+              ],
+              "subcommands": []
+            },
+            {
+              "path": "hardkas wallet hd change-password",
+              "name": "change-password",
+              "aliases": [],
+              "description": "Re-encrypt the wallet under a new password (the recovery phrase and the addresses do not change) experimental",
+              "usage": "hardkas wallet hd change-password [options] <wallet>",
+              "arguments": [
+                {
+                  "name": "wallet",
+                  "description": ""
+                }
+              ],
+              "options": [
+                {
+                  "flags": "--password-env <env>",
+                  "description": "Read the CURRENT wallet password from this environment variable",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--password-stdin",
+                  "description": "Read the CURRENT wallet password from stdin",
+                  "default": false,
+                  "required": false,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--new-password-env <env>",
+                  "description": "Read the NEW wallet password (at least 8 characters) from this environment variable",
+                  "default": null,
+                  "required": true,
+                  "mandatory": true
+                },
+                {
+                  "flags": "--json",
+                  "description": "Output as JSON",
+                  "default": false,
+                  "required": false,
+                  "mandatory": false
+                }
+              ],
+              "subcommands": []
+            },
+            {
+              "path": "hardkas wallet hd create",
+              "name": "create",
+              "aliases": [],
+              "description": "Create a wallet with a new random recovery phrase, encrypted under its password (the phrase is not printed: back it up with 'wallet hd reveal') experimental",
+              "usage": "hardkas wallet hd create [options]",
+              "arguments": [],
+              "options": [
+                {
+                  "flags": "--name <name>",
+                  "description": "Wallet name: 1 to 64 letters, digits, _ and -",
+                  "default": null,
+                  "required": true,
+                  "mandatory": true
+                },
+                {
+                  "flags": "--network <network>",
+                  "description": "Network the wallet is declared on: a network id (simnet, devnet, testnet-<n>) or a workspace network entry (default: the workspace's network, else simnet). Mainnet, in any spelling or through a config alias, is refused: MAINNET_SIGNING_DISABLED, nothing is generated",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--words <count>",
+                  "description": "Recovery phrase length: 12 or 24 (default 24)",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--password-env <env>",
+                  "description": "Read the wallet password from this environment variable",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--password-stdin",
+                  "description": "Read the wallet password from stdin",
+                  "default": false,
+                  "required": false,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--passphrase-env <env>",
+                  "description": "Read the wallet's BIP39 passphrase (the optional \"25th word\") from this environment variable; never stored",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--json",
+                  "description": "Output as JSON",
+                  "default": false,
+                  "required": false,
+                  "mandatory": false
+                }
+              ],
+              "subcommands": []
+            },
+            {
+              "path": "hardkas wallet hd import",
+              "name": "import",
+              "aliases": [],
+              "description": "Recover a wallet from its BIP39 recovery phrase (12 or 24 English words) and, if it had one, its passphrase experimental",
+              "usage": "hardkas wallet hd import [options]",
+              "arguments": [],
+              "options": [
+                {
+                  "flags": "--name <name>",
+                  "description": "Wallet name: 1 to 64 letters, digits, _ and -",
+                  "default": null,
+                  "required": true,
+                  "mandatory": true
+                },
+                {
+                  "flags": "--network <network>",
+                  "description": "Network the wallet is declared on (as for create). Mainnet is refused: MAINNET_SIGNING_DISABLED, nothing is read or written",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--mnemonic-env <env>",
+                  "description": "Read the recovery phrase from this environment variable",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--mnemonic-stdin",
+                  "description": "Read the recovery phrase from stdin (then the password must come from --password-env)",
+                  "default": false,
+                  "required": false,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--password-env <env>",
+                  "description": "Read the wallet password from this environment variable",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--password-stdin",
+                  "description": "Read the wallet password from stdin",
+                  "default": false,
+                  "required": false,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--passphrase-env <env>",
+                  "description": "Read the wallet's BIP39 passphrase (the optional \"25th word\") from this environment variable; never stored",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--json",
+                  "description": "Output as JSON",
+                  "default": false,
+                  "required": false,
+                  "mandatory": false
+                }
+              ],
+              "subcommands": []
+            },
+            {
+              "path": "hardkas wallet hd import-watch-only",
+              "name": "import-watch-only",
+              "aliases": [],
+              "description": "Add a watch-only wallet from an account's extended public key (kpub/ktub of m/44'/111111'/<account>'): addresses and balance, no keys, nothing to sign with experimental",
+              "usage": "hardkas wallet hd import-watch-only [options]",
+              "arguments": [],
+              "options": [
+                {
+                  "flags": "--name <name>",
+                  "description": "Wallet name: 1 to 64 letters, digits, _ and -",
+                  "default": null,
+                  "required": true,
+                  "mandatory": true
+                },
+                {
+                  "flags": "--xpub <kpub>",
+                  "description": "The account-level extended public key (a master key is refused: HD_WALLET_XPUB_INVALID)",
+                  "default": null,
+                  "required": true,
+                  "mandatory": true
+                },
+                {
+                  "flags": "--network <network>",
+                  "description": "Network the wallet is declared on (as for create). Mainnet is refused: MAINNET_CONNECTION_DISABLED",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--json",
+                  "description": "Output as JSON",
+                  "default": false,
+                  "required": false,
+                  "mandatory": false
+                }
+              ],
+              "subcommands": []
+            },
+            {
+              "path": "hardkas wallet hd list",
+              "name": "list",
+              "aliases": [],
+              "description": "List the workspace's HD wallets (public header only; nothing is decrypted) experimental",
+              "usage": "hardkas wallet hd list [options]",
+              "arguments": [],
+              "options": [
+                {
+                  "flags": "--json",
+                  "description": "Output as JSON",
+                  "default": false,
+                  "required": false,
+                  "mandatory": false
+                }
+              ],
+              "subcommands": []
+            },
+            {
+              "path": "hardkas wallet hd reveal",
+              "name": "reveal",
+              "aliases": [],
+              "description": "Print the wallet's recovery phrase (SECRET: anyone who reads it owns the funds). Needs the password and --yes experimental",
+              "usage": "hardkas wallet hd reveal [options] <wallet>",
+              "arguments": [
+                {
+                  "name": "wallet",
+                  "description": ""
+                }
+              ],
+              "options": [
+                {
+                  "flags": "--yes",
+                  "description": "Confirm that the recovery phrase is printed to this terminal (or to stdout with --json)",
+                  "default": false,
+                  "required": false,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--password-env <env>",
+                  "description": "Read the wallet password from this environment variable",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--password-stdin",
+                  "description": "Read the wallet password from stdin",
+                  "default": false,
+                  "required": false,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--json",
+                  "description": "Output as JSON",
+                  "default": false,
+                  "required": false,
+                  "mandatory": false
+                }
+              ],
+              "subcommands": []
+            },
+            {
+              "path": "hardkas wallet hd send",
+              "name": "send",
+              "aliases": [],
+              "description": "Pay from the wallet: one plan over the UTXOs of all its addresses (the payment planner), change to its next unused change address, each input signed with its own address's key, sent through the same send path as 'tx send' (synced node, one submission per txId, records). Mainnet is refused: MAINNET_BROADCAST_DISABLED, before the password is read experimental",
+              "usage": "hardkas wallet hd send [options] <wallet>",
+              "arguments": [
+                {
+                  "name": "wallet",
+                  "description": ""
+                }
+              ],
+              "options": [
+                {
+                  "flags": "--to <address>",
+                  "description": "Recipient: a Kaspa address or a workspace account name",
+                  "default": null,
+                  "required": true,
+                  "mandatory": true
+                },
+                {
+                  "flags": "--amount <kas>",
+                  "description": "Amount in KAS (decimal string)",
+                  "default": null,
+                  "required": true,
+                  "mandatory": true
+                },
+                {
+                  "flags": "--network <network>",
+                  "description": "The workspace network to send on (default: the workspace's): it must be the wallet's",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--fee-rate <sompiPerGram>",
+                  "description": "Fee rate in sompi per gram (default: the node's normal estimate)",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--max-fee-sompi <sompi>",
+                  "description": "The most this payment may pay in fees, in sompi (the workspace's or HardKAS's default limit applies anyway)",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--gap-limit <n>",
+                  "description": "Consecutive unused addresses per chain before the scan stops (default 20)",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--account <n>",
+                  "description": "Account index (default 0)",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--preflight",
+                  "description": "Check every input and signature against the node right before the broadcast (as 'tx send --preflight')",
+                  "default": false,
+                  "required": false,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--password-env <env>",
+                  "description": "Read the wallet password from this environment variable",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--password-stdin",
+                  "description": "Read the wallet password from stdin",
+                  "default": false,
+                  "required": false,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--passphrase-env <env>",
+                  "description": "Read the wallet's BIP39 passphrase (the optional \"25th word\") from this environment variable; never stored",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--json",
+                  "description": "Output as JSON",
+                  "default": false,
+                  "required": false,
+                  "mandatory": false
+                }
+              ],
+              "subcommands": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "hardkas watch",
+      "name": "watch",
+      "aliases": [],
+      "description": "Watch an address's UTXOs on a Kaspa node: one line per event (outputs added, removed, matured; a resync after every reconnect; errors), covenant outputs labelled. Read-only; mainnet is refused",
+      "usage": "hardkas watch [options] <address>",
+      "arguments": [
+        {
+          "name": "address",
+          "description": ""
+        }
+      ],
+      "options": [
+        {
+          "flags": "--network <name>",
+          "description": "Network from the workspace config: its declared endpoint, and the node must prove it serves that network (default: the workspace's network; outside a workspace, the --url or the canonical localnet)",
+          "default": null,
+          "required": true,
+          "mandatory": false
+        },
+        {
+          "flags": "--url <url>",
+          "description": "Node wRPC (JSON) endpoint",
+          "default": null,
+          "required": true,
+          "mandatory": false
+        },
+        {
+          "flags": "--timeout <seconds>",
+          "description": "Stop after this many seconds (default: until interrupted)",
+          "default": null,
+          "required": true,
+          "mandatory": false
+        },
+        {
+          "flags": "--until <n>",
+          "description": "Stop after n events (added, removed, matured or resync)",
+          "default": null,
+          "required": true,
+          "mandatory": false
+        },
+        {
+          "flags": "--json",
+          "description": "JSON lines: one compact JSON document per event (snapshot first, end last)",
+          "default": false,
+          "required": false,
+          "mandatory": false
+        }
+      ],
+      "subcommands": []
     },
     {
       "path": "hardkas why",
@@ -8582,7 +10362,7 @@
           "path": "hardkas zk toccata",
           "name": "toccata",
           "aliases": [],
-          "description": "Kaspa Toccata L1 Zero-Knowledge covenant script tools (kaspa-wasm ZkScriptBuilder; builds only, never broadcasts)",
+          "description": "Kaspa Toccata L1 Zero-Knowledge lock tools (kaspa-wasm ZkScriptBuilder): build and verify locks; `spend` sends a lock's spend through HardKAS's send (recorded, one submission per txId) and `observe` looks at it",
           "usage": "hardkas zk toccata [options] [command]",
           "arguments": [],
           "options": [],
@@ -8683,6 +10463,50 @@
               "subcommands": []
             },
             {
+              "path": "hardkas zk toccata observe",
+              "name": "observe",
+              "aliases": [],
+              "description": "One look at a ZK spend through the node (as 'tx status' looks: the observation is recorded) and its ZK operation status, from the ZK fact 'zk toccata spend' recorded (or --fact). mainnet is refused",
+              "usage": "hardkas zk toccata observe [options] <txId>",
+              "arguments": [
+                {
+                  "name": "txId",
+                  "description": ""
+                }
+              ],
+              "options": [
+                {
+                  "flags": "--fact <file>",
+                  "description": "The ZK fact (hardkas.zkVerificationFact.v1) of the spend, when the workspace does not hold it",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--network <name>",
+                  "description": "Network: simnet or testnet-10 (default: the workspace's, else simnet). mainnet is refused; testnet-10 needs experimental + network.allowPublic in the config",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--url <url>",
+                  "description": "Node wRPC (JSON) endpoint (default: the one the workspace declares for the network; simnet: the canonical localnet)",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--json",
+                  "description": "Output as JSON",
+                  "default": false,
+                  "required": false,
+                  "mandatory": false
+                }
+              ],
+              "subcommands": []
+            },
+            {
               "path": "hardkas zk toccata rules",
               "name": "rules",
               "aliases": [],
@@ -8690,6 +10514,164 @@
               "usage": "hardkas zk toccata rules [options]",
               "arguments": [],
               "options": [
+                {
+                  "flags": "--json",
+                  "description": "Output as JSON",
+                  "default": false,
+                  "required": false,
+                  "mandatory": false
+                }
+              ],
+              "subcommands": []
+            },
+            {
+              "path": "hardkas zk toccata spend",
+              "name": "spend",
+              "aliases": [],
+              "description": "Spend a RISC Zero Groth16 lock through HardKAS's send (the SDK's spendR0Groth16Lock): the lock is rebuilt from the receipt and its record (--scripts) or its parameters and checked as verify-scripts checks it; the plan, the signed transaction, the ZK fact and the submission are recorded in the workspace (one submission per txId); the node must prove its network and say it is synced. mainnet is refused; testnet-10 needs experimental + network.allowPublic",
+              "usage": "hardkas zk toccata spend [options]",
+              "arguments": [],
+              "options": [
+                {
+                  "flags": "--receipt <pathOrHex>",
+                  "description": "Path to receipt file (.hex) or raw receipt hex string (the lock's proof)",
+                  "default": null,
+                  "required": true,
+                  "mandatory": true
+                },
+                {
+                  "flags": "--utxo <txid:index>",
+                  "description": "The lock's UTXO to spend (its amount is read from the node)",
+                  "default": null,
+                  "required": true,
+                  "mandatory": true
+                },
+                {
+                  "flags": "--scripts <file>",
+                  "description": "The lock's record: the JSON 'zk toccata build-scripts --json' printed (its parameters are used; its scripts must be the ones the receipt rebuilds)",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--image-id <hex>",
+                  "description": "Without --scripts: the lock's 32-byte hex Image ID",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--journal-hash <hex>",
+                  "description": "Without --scripts: the lock's 32-byte hex Journal Hash",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--mode <mode>",
+                  "description": "Without --scripts: the lock's binding mode, 'proof-only' (default) or 'proof-and-output-bound'",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--payout-address <address>",
+                  "description": "Without --scripts, proof-and-output-bound: the lock's bound payout address",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--payout-amount <sompi>",
+                  "description": "Without --scripts, proof-and-output-bound: the lock's bound payout amount in sompi",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--change-address <address>",
+                  "description": "Without --scripts, proof-and-output-bound: the lock's bound change address",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--change-amount <sompi>",
+                  "description": "Without --scripts, proof-and-output-bound: the lock's bound change amount in sompi",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--max-fee <sompi>",
+                  "description": "Without --scripts, proof-and-output-bound: the lock's fee cap (default 50000000)",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--to <address>",
+                  "description": "proof-only: where the UTXO minus the fee goes (required); proof-and-output-bound: the bound payout (default; another address is refused)",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--fee <sompi>",
+                  "description": "proof-only: the fee in sompi (default: the recommended fee for the measured spend); proof-and-output-bound: implied by the lock (a different one is refused)",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--compute-budget <n>",
+                  "description": "The input's compute budget (default 1600; at least what the verifier needs)",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--ack-image-id-only-lock",
+                  "description": "testnet-10, proof-only: acknowledge that the lock binds only the image id (whoever sees the proof in the mempool can redirect the spend)",
+                  "default": false,
+                  "required": false,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--network <name>",
+                  "description": "Network: simnet or testnet-10 (default: the workspace's, else simnet). mainnet is refused; testnet-10 needs experimental + network.allowPublic in the config",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--url <url>",
+                  "description": "Node wRPC (JSON) endpoint (default: the one the workspace declares for the network; simnet: the canonical localnet)",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--yes",
+                  "description": "Confirm the broadcast. Required unless the network is simnet: without it the spend is refused (NOT EXECUTED, exit 3) and nothing is written",
+                  "default": false,
+                  "required": false,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--wait",
+                  "description": "After the send, wait until the node accepts the spend (observed, as 'tx wait --until accepted')",
+                  "default": false,
+                  "required": false,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--timeout <seconds>",
+                  "description": "With --wait: how long to wait (integer seconds, 1..3600)",
+                  "default": "120",
+                  "required": true,
+                  "mandatory": false
+                },
                 {
                   "flags": "--json",
                   "description": "Output as JSON",

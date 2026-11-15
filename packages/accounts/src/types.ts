@@ -9,6 +9,8 @@ export interface KeystorePayload {
   privateKey: string;
   publicKey?: string;
   network: string;
+  /** ECDSA spends · the key's scheme when it is not Schnorr (absent = Schnorr, every keystore before ECDSA). */
+  keyScheme?: "ecdsa";
 }
 
 export interface KeystoreKdfParams {
@@ -83,6 +85,12 @@ export interface HardkasKaspaAccount extends HardkasBaseAccount {
    */
   keystoreKind?: "dev-account";
   address: string;
+  /**
+   * ECDSA spends · the signature scheme of the account's key and address: "ecdsa" for an ECDSA P2PK address (version 1,
+   * script `21 <33-byte key> ab`); absent or "schnorr" for a Schnorr P2PK one. The same key has one address per scheme;
+   * the account owns the one its scheme names (accountKeyScheme checks they agree).
+   */
+  keyScheme?: "schnorr" | "ecdsa";
 }
 
 export interface HardkasExternalWalletAccount extends HardkasBaseAccount {

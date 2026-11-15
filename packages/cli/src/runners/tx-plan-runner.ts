@@ -10,11 +10,19 @@ import {
   assertFeeWithinLimitInForce,
   resolveMaxFeeRate,
   assertSpendableAddressScheme,
+  describeLockTime,
+  lockTimeDistance,
+  lockTimeValueOf,
+  parseLockTimeRequest,
+  planLockTimeRecord,
+  readLockTimeChainPoint,
+  type LockTimeChainPoint,
   type PendingSpendEvidence,
+  type PlanLockTime,
   type TxPlanResult,
   type UtxoProvider
 } from "@hardkas/tx-builder";
-import { createTxPlanArtifact, TxPlanArtifact } from "@hardkas/artifacts";
+import { createTxPlanArtifact, finalizeTxPlanIdentity, TxPlanArtifact } from "@hardkas/artifacts";
 import { getCoinbaseMaturity, sha256hex, SelectedUtxoInvalidatedError, HardkasError, assertMainnetConnectionsDisabled, declaredNetworkIdOf } from "@hardkas/core";
 
 /**
@@ -78,6 +86,36 @@ export interface TxPlanRunnerInput {
    */
   spentOutpoints?: ReadonlyMap<string, string>;
   spentReleaseTimeoutMs?: number;
+  /** CLTV · `--lock-time-daa <n>`: an absolute lock time as a DAA score (decimal; below 500,000,000,000). */
+  lockTimeDaa?: string;
+  /** CLTV · `--lock-time-ms <t>`: an absolute lock time as milliseconds since the epoch (at or above 500,000,000,000). */
+  lockTimeMs?: string;
+  /** CLTV · `--confirm-distant-lock-time`: allow a lock more than about a day past the node's position (refused otherwise). */
+  confirmDistantLockTime?: boolean;
+}
+
+/**
+ * CLTV · how far ahead a lock may be without `--confirm-distant-lock-time`: one day of past median time, or one day of
+ * DAA at Kaspa's target rate of 10 DAA per second (a DAA-score lock computed on another network's rate, or a time taken
+ * for a score, would lock the funds far longer than meant).
+ */
+const DISTANT_LOCK_MS = 86_400_000n;
+const DISTANT_LOCK_DAA = 864_000n;
+
+/** CLTV · the typed lock time of `--lock-time-daa` / `--lock-time-ms` (one of them), checked before anything connects. */
+function cliLockTime(input: TxPlanRunnerInput): PlanLockTime | undefined {
+  const daa = input.lockTimeDaa;
+  const ms = input.lockTimeMs;
+  if (daa !== undefined && ms !== undefined) {
+    throw new HardkasError("LOCK_TIME_INVALID", "--lock-time-daa and --lock-time-ms are two kinds of lock: give one of them. Nothing was planned.");
+  }
+  const decimal = (v: string, flag: string) => {
+    if (!/^\d{1,20}$/.test(v.trim())) throw new HardkasError("LOCK_TIME_INVALID", `${flag} ${JSON.stringify(v)} is not a whole number. Nothing was planned.`);
+    return v.trim();
+  };
+  if (daa !== undefined) return parseLockTimeRequest({ daaScore: decimal(daa, "--lock-time-daa") }, "--lock-time-daa");
+  if (ms !== undefined) return parseLockTimeRequest({ timestampMs: decimal(ms, "--lock-time-ms") }, "--lock-time-ms");
+  return undefined;
 }
 
 /** TX-BATCH-1: how long a payment waits for the node's UTXO index to release what earlier payments spent, and how often it looks. */
@@ -120,6 +158,9 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
   // (INVALID_MAX_FEE); both are decided before anything connects
   const feeRateSompiPerMass = feeRate !== undefined ? parseFeeRate(feeRate, "--fee-rate") : undefined;
   const planMaxFeeSompi = input.maxFee !== undefined ? parseMaxFeeSompi(input.maxFee, "--max-fee") : undefined;
+  // CLTV · the lock time asked for (LOCK_TIME_INVALID), decided before anything connects
+  const lockTime = cliLockTime(input);
+  let lockTimePoint: LockTimeChainPoint = {};
 
   const { resolveWorkspaceExecution, resolveProvider } = await import("@hardkas/config");
   const { assertAccountCompatible, resolveHardkasAccount } = await import("@hardkas/accounts");
@@ -157,8 +198,8 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
 
   const fromAddress = fromAccount.address as string;
   const toAddress = toAccount.address as string;
-  // RC1 · D7: HardKAS signs Schnorr P2PK spends only — a spend from an ECDSA address is refused before anything connects
-  assertSpendableAddressScheme(fromAddress, `the sender '${from}'`);
+  // ECDSA spends: a payment from an ECDSA account is planned on a node network (the signer signs it with ECDSA); the
+  // simulator keeps refusing one, before anything connects (below). RC1 · D7 refused every spend from an ECDSA address.
 
   // AUD-28: the change destination is resolved and checked like `to`; it is never inferred.
   let changeAddressResolved: string | undefined;
@@ -215,6 +256,13 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
   );
 
   if (backend === "simulator") {
+    assertSpendableAddressScheme(fromAddress, `the sender '${from}'`);
+    if (lockTime !== undefined) {
+      throw new HardkasError(
+        "LOCK_TIME_NOT_SUPPORTED",
+        "--lock-time-daa / --lock-time-ms: the simulator's lock-time rule is its own and UNVERIFIED against a node; plan a lock time against a node (simnet, devnet). Nothing was planned."
+      );
+    }
     const { loadOrCreateLocalnetState, getSpendableUtxos } = await import(
       "@hardkas/localnet"
     );
@@ -379,10 +427,17 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
         // observer-local protection, never a statement about the network.
         const observedPending = await observePendingSpends(client, fromAddress, vBefore.virtualDaaScore);
         const pendingOutpoints = observedPending.outpoints;
+        // TX-BATCH-1: the outpoints of THIS read that earlier payments of this run spent, pending in the mempool or not.
+        // A wait for the index waits on them: the node can accept those payments (and the index drop their inputs)
+        // between this read and the next look, and an outpoint gone since this read is a release, never "the failure
+        // is this payment's own" (CI: PENDING_SPEND_ALL_EXCLUDED on the third payment of a batch).
+        const spentInRead: ReadonlySet<string> = new Set(
+          spentEarlier ? matureUtxos.map((u) => utxoOutpointKey(u) ?? "").filter((key) => spentEarlier.has(key)) : []
+        );
         const unpendingUtxos = matureUtxos.filter((u) => !pendingOutpoints.has(utxoOutpointKey(u) ?? ""));
         if (unpendingUtxos.length === 0) {
           const failure = new PendingSpendAllExcludedError(observedPending.evidence, matureUtxos.length);
-          if (await spentReleased(none, failure)) continue;
+          if (await spentReleased(spentInRead, failure)) continue;
           throw failure;
         }
         // TX-BATCH-1: what an earlier payment of this run spent is never selected, whatever the index still lists
@@ -435,7 +490,7 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
         } catch (plannerError: unknown) {
           // TX-BATCH-1: short of funds while the index still lists what earlier payments of this run spent: read
           // again once it releases them
-          if (isInsufficientFunds(plannerError) && (await spentReleased(spentListed, plannerError))) continue;
+          if (isInsufficientFunds(plannerError) && (await spentReleased(spentInRead, plannerError))) continue;
           // A planner refusal (invalid address, insufficient funds, Generator error) is
           // not a transport failure: it surfaces as itself, never as an RPC connection error.
           throw new UpstreamPlannerError(plannerError);
@@ -483,6 +538,8 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
           }
         };
         planSuccess = true;
+        // CLTV · where the node is, recorded with the lock time (its virtual DAA score and past median time)
+        if (lockTime !== undefined) lockTimePoint = await readLockTimeChainPoint(client as any);
         break;
       }
 
@@ -581,6 +638,27 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
       ...(planningWindow ? { planningWindow } : {})
     }
   }) as unknown as TxPlanArtifact;
+
+  // CLTV · the typed lock time, with where the node was, authenticated with the plan (sealed again). A lock more than
+  // about a day past the node's position needs --confirm-distant-lock-time (a DAA score taken for a time, or computed on
+  // another network's rate, locks the funds far longer than meant); one the node position cannot place is refused too.
+  if (lockTime !== undefined) {
+    const value = lockTimeValueOf(lockTime);
+    const distance = lockTimeDistance(value, lockTimePoint);
+    const limit = "daaScore" in lockTime ? DISTANT_LOCK_DAA : DISTANT_LOCK_MS;
+    if (!input.confirmDistantLockTime && (distance === undefined || distance > limit)) {
+      const where = "daaScore" in lockTime ? `virtual DAA score ${lockTimePoint.virtualDaaScore ?? "unknown"}` : `past median time ${lockTimePoint.pastMedianTimeMs ?? "unknown"} ms`;
+      throw new HardkasError(
+        "LOCK_TIME_DISTANT_UNCONFIRMED",
+        `the lock time ${describeLockTime(value)} is ${distance === undefined ? "at an unknown distance" : `${distance} ${"daaScore" in lockTime ? "DAA" : "ms"}`} past the node's ${where}, ` +
+          `more than about a day (${limit} ${"daaScore" in lockTime ? "DAA at 10 DAA per second" : "ms"}): the funds stay unspendable by this transaction until then. ` +
+          "Check the value and pass --confirm-distant-lock-time to plan it. Nothing was planned.",
+        { metadata: { lockTime: value.toString(), ...(distance !== undefined ? { distance: distance.toString() } : {}) } }
+      );
+    }
+    (artifact as any).lockTime = planLockTimeRecord(lockTime, lockTimePoint);
+    finalizeTxPlanIdentity(artifact as any);
+  }
 
   // EVENT-LEDGER-2 (EVENT-EMISSION-1): the raw `workflow.plan.created` object this runner handed to normalizeAndEmit
   // was discarded by it (no envelope, no correlation). It is gone: the formal `workflow.plan.created` belongs to the

@@ -231,7 +231,7 @@ ZK/vProgs lab claims:
 - `ZK_CORPUS_SURFACE_READY`
 - `VPROGS_INSPECT_SURFACE_READY`
 - Groth16 corpus verification is local fixture coherence only.
-- RISC Zero Groth16 receipts are verified locally against the pinned RISC Zero key (`hardkas zk toccata verify-receipt`); HardKAS builds the lock scripts but has no command that broadcasts a ZK spend.
+- RISC Zero Groth16 receipts are verified locally against the pinned RISC Zero key (`hardkas zk toccata verify-receipt`); HardKAS builds the lock scripts, and `hardkas zk toccata spend` sends a lock's spend through HardKAS's own send (recorded, one submission per txId; simnet and testnet-10 only, proven on simnet). The node verifies the proof: HardKAS claims no on-chain ZK verification of its own.
 - vProgs is inspect-only.
 - `ZK_ONCHAIN_VERIFICATION_NOT_CLAIMED`
 - `VPROGS_STABLE_API_NOT_CLAIMED`

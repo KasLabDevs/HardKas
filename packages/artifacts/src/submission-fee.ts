@@ -2,6 +2,8 @@
 // transaction consumes and produces, never copied from an estimate and never "0"
 // by default. When the evidence does not allow the derivation, the submission says
 // `insufficient-evidence` and why.
+
+import { planLockTimeValue } from "@hardkas/tx-builder";
 //
 // Security review of 2(d): the derivation is only meaningful for THE transaction the
 // plan authorized. Before any fee is called `derived`, the signed transaction must
@@ -157,6 +159,8 @@ export function parseSignedTransactionPayload(
 
 type PlanLike = {
   contentHash?: string;
+  /** CLTV · the typed lock time the plan authorizes ({ daaScore } | { timestampMs }); absent = 0. */
+  lockTime?: unknown;
   inputs?: Array<{ outpoint: { transactionId: string; index: number }; amountSompi: string | bigint }>;
   outputs?: Array<{ address: string; amountSompi: string | bigint }>;
   change?: { address: string; amountSompi: string | bigint } | undefined;
@@ -182,9 +186,16 @@ export function checkSignedAgainstPlan(
   }
   const parsed = parseSignedTransactionPayload(signedTransaction.payload);
   if (!parsed.ok) return insufficient(parsed.reason);
-  // RC1 · D7: a HardKAS plan authorizes lock time 0 only (no CLTV in this release); another one is another transaction
-  if (parsed.lockTime !== undefined && parsed.lockTime !== 0n) {
-    return mismatch(`the signed transaction has lock time ${String(parsed.lockTime)}, and a plan authorizes lock time 0 only`);
+  // CLTV · a plan authorizes exactly the lock time it states (absent = 0, as every plan before CLTV: unchanged); a signed
+  // transaction carrying any other one is another transaction (RC1 · D7 refused every lock time other than 0)
+  let authorized: bigint;
+  try {
+    authorized = planLockTimeValue(plan);
+  } catch (e) {
+    return mismatch(`the plan's lock time is not valid (${e instanceof Error ? e.message : String(e)})`);
+  }
+  if ((parsed.lockTime ?? 0n) !== authorized) {
+    return mismatch(`the signed transaction has lock time ${String(parsed.lockTime ?? 0)}, and its plan authorizes lock time ${authorized}`);
   }
 
   // Inputs: 1:1 by outpoint, both directions.

@@ -40,6 +40,10 @@ export interface ArtifactVerifyOptions {
   minConfirmations?: string | undefined;
   /** The level the verification must reach to succeed: integrity (default), network or consensus. */
   require?: string | undefined;
+  /** R3-D: locate the transaction through the history of an address it pays or spends from (`--address`). */
+  address?: string | undefined;
+  /** R3-D: with `address`, the history's window in chain blocks back from the sink (`--lookback`). */
+  lookback?: string | undefined;
 }
 
 function realpathOr(p: string): string {
@@ -93,7 +97,7 @@ export async function runArtifactVerify(options: ArtifactVerifyOptions) {
     const { HardkasCliError } = await import("../cli-errors.js");
     throw new HardkasCliError(
       "ARTIFACT_VERIFY_NETWORK_SINGLE_FILE",
-      `--network, --url, --since and --require network|consensus verify one artifact on its network; ${options.path} is a directory (verify it offline, or name one artifact). Nothing was contacted.`,
+      `--network, --url, --since, --address and --require network|consensus verify one artifact on its network; ${options.path} is a directory (verify it offline, or name one artifact). Nothing was contacted.`,
       { exitCode: 2 }
     );
   }
@@ -160,6 +164,8 @@ export async function runArtifactVerify(options: ArtifactVerifyOptions) {
           url: options.url,
           since: options.since,
           minConfirmations: options.minConfirmations,
+          ...(options.address !== undefined ? { address: options.address } : {}),
+          ...(options.lookback !== undefined ? { lookback: options.lookback } : {}),
           workspaceRoot: options.workspaceRoot
         })
       : notCheckedNetworkVerification("OFFLINE", "offline verification: no node was asked (use --network/--url for the network level)");

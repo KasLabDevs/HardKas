@@ -84,6 +84,69 @@ export class PrivateKeyAuthorizer implements TxInputAuthorizer {
   }
 }
 
+/** ECDSA spends · what an ECDSA signer is: a WasmInputSigner that says it signs ECDSA P2PK inputs. */
+export interface EcdsaWasmInputSigner extends WasmInputSigner {
+  readonly scheme: "ecdsa";
+}
+
+function authorizerError(code: string, message: string, extra: Record<string, unknown> = {}): Error {
+  return Object.assign(new Error(`${code}: ${message}`), { code, ...extra });
+}
+
+/**
+ * ECDSA spends · signs an ECDSA P2PK input (script `21 <33-byte compressed key> ab`) with one key: RFC 6979, low-S, over
+ * rusty-kaspa's calc_ecdsa_signature_hash of the transaction as built (core signKaspaInputEcdsa; kaspa-wasm 2.1.0 has no
+ * ECDSA input signer). The input's UTXO script decides, never an address string: it must be this key's ECDSA P2PK
+ * script (INPUT_KEY_SCHEME_MISMATCH for a Schnorr input, PRIVATE_KEY_DOES_NOT_CONTROL_INPUT for another key's). The
+ * unlocking script is one 65-byte push (the 64-byte signature and SIGHASH_ALL), as for Schnorr.
+ */
+export class EcdsaPrivateKeyAuthorizer implements TxInputAuthorizer {
+  constructor(
+    public readonly accountName: string,
+    private readonly privateKeyHex: string
+  ) {}
+
+  authorize(context: TxInputAuthorizationContext): InputAuthorization {
+    if (!context.plan.inputs[context.inputIndex]) {
+      throw new Error(`INVALID_AUTHORIZER_INPUT_INDEX: Input index ${context.inputIndex} does not exist in plan.`);
+    }
+    const key = this.privateKeyHex;
+    const accountName = this.accountName;
+    const signer: EcdsaWasmInputSigner = {
+      scheme: "ecdsa",
+      signInput: async (ctx) => {
+        const { ecdsaCompressedPublicKey, kaspaSighashInputsFromWasm, signKaspaInputEcdsa } = await import("@hardkas/core");
+        const { tx, utxos } = kaspaSighashInputsFromWasm((ctx.wasmTransaction as any).serializeToObject());
+        const utxo = utxos[ctx.inputIndex];
+        if (!utxo) throw authorizerError("UTXO_ENTRY_MISSING", `input ${ctx.inputIndex} carries no UTXO entry to sign against`, { input: ctx.inputIndex });
+        const ecdsaScript = /^21(02|03)[0-9a-f]{64}ab$/;
+        if (utxo.scriptPublicKey.version !== 0 || !ecdsaScript.test(utxo.scriptPublicKey.script)) {
+          throw authorizerError(
+            "INPUT_KEY_SCHEME_MISMATCH",
+            `input ${ctx.inputIndex} is not an ECDSA P2PK input (its UTXO script is not 21 <33-byte key> ab); the ECDSA key of account '${accountName}' does not sign it`,
+            { input: ctx.inputIndex }
+          );
+        }
+        if (utxo.scriptPublicKey.script !== `21${ecdsaCompressedPublicKey(key)}ab`) {
+          throw authorizerError(
+            "PRIVATE_KEY_DOES_NOT_CONTROL_INPUT",
+            `the ECDSA key of account '${accountName}' is not the key input ${ctx.inputIndex}'s script commits to`,
+            { input: ctx.inputIndex }
+          );
+        }
+        // OP_DATA_65 <64-byte compact signature ‖ SIGHASH_ALL>
+        return `41${signKaspaInputEcdsa({ tx, inputIndex: ctx.inputIndex, utxo, privateKey: key })}`;
+      }
+    };
+    return { kind: "wasm-signer", signer };
+  }
+}
+
+/** Whether an authorization's signer signs ECDSA (EcdsaPrivateKeyAuthorizer); any other signer signs Schnorr (kaspa-wasm). */
+export function isEcdsaInputSigner(authorization: InputAuthorization): boolean {
+  return authorization.kind === "wasm-signer" && (authorization.signer as Partial<EcdsaWasmInputSigner>).scheme === "ecdsa";
+}
+
 export class LazyAccountAuthorizer implements TxInputAuthorizer {
   public constructor(
     public readonly accountName: string,

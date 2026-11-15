@@ -344,19 +344,28 @@ import {
   planPaysFeeSompi,
   type NetworkId
 } from "@hardkas/core";
-import { TxPlanService, covenantIdOf, feeLimitInForce, assertFeeWithinLimitInForce, assertSpendableAddressScheme, type UtxoProvider } from "@hardkas/tx-builder";
+import {
+  TxPlanService,
+  covenantIdOf,
+  feeLimitInForce,
+  assertFeeWithinLimitInForce,
+  assertSpendableAddressScheme,
+  assertLockTimeReached,
+  lockTimeOfPayload,
+  parseLockTimeRequest,
+  planLockTimeRecord,
+  readLockTimeChainPoint,
+  type LockTimeRequest,
+  type UtxoProvider
+} from "@hardkas/tx-builder";
 import { HardkasSchemas } from "@hardkas/artifacts";
 
-/** RC1 · D7: a lock time other than 0 asked of tx.plan (absolute time locks are not supported in this release). */
-function refuseNonZeroLockTime(stated: unknown): void {
-  if (stated === undefined || stated === null) return;
-  const zero = stated === 0 || stated === 0n || stated === "0";
-  if (zero) return;
-  throw new HardkasError(
-    "LOCK_TIME_NOT_SUPPORTED",
-    `tx.plan was asked for lock time ${JSON.stringify(typeof stated === "bigint" ? stated.toString() : stated)}: HardKAS plans and signs every ` +
-      `transaction with lock time 0 (absolute time locks, CLTV, are not supported in this release). Nothing was planned.`
-  );
+/**
+ * CLTV · where a lock time is still not supported, refused before anything is read (LOCK_TIME_NOT_SUPPORTED): the
+ * simulator (its lock-time rule is its own, UNVERIFIED against a node) and consolidations (`amount: "all"`).
+ */
+function refuseLockTimeHere(where: string, why: string): never {
+  throw new HardkasError("LOCK_TIME_NOT_SUPPORTED", `${where}: ${why}. Nothing was planned.`);
 }
 
 /** An artifact's identity: its declared 64-hex contentHash, or the hash of its body when it declares none. */
@@ -764,14 +773,23 @@ export class HardkasTx {
     assumption?: string;
     /** AUD-28: explicit change destination; default = the sender's address. Validated, then forwarded to the planner. */
     changeAddress?: string;
+    /**
+     * CLTV · an absolute lock time, typed: `{ daaScore: bigint }` (a DAA score below 500,000,000,000) or
+     * `{ timestampMs: bigint }` (milliseconds since the epoch, at or above it); never a bare number (LOCK_TIME_INVALID).
+     * The plan records it with the node's virtual DAA score and past median time when it was made; the signer writes it
+     * into the transaction (every input at sequence 0, so consensus enforces it) and `send` refuses to broadcast before
+     * the node has passed it (LOCK_TIME_NOT_REACHED: nothing sent or recorded). Absent: lock time 0, the plan as before.
+     * Not on the simulator nor for `amount: "all"` (LOCK_TIME_NOT_SUPPORTED).
+     */
+    lockTime?: LockTimeRequest;
   }): Promise<TxPlanArtifact> {
     // TX-FEE-GUARD-1: a fee rate, when given, is a positive integer (INVALID_FEE_RATE); a plan limit is a positive
     // integer of sompi (INVALID_MAX_FEE). Decided before anything is read or planned.
     if (options.feeRate !== undefined) parseFeeRate(options.feeRate, "tx.plan feeRate");
     const planMaxFeeSompi = options.maxFeeSompi === undefined ? undefined : parseMaxFeeSompi(options.maxFeeSompi, "tx.plan maxFeeSompi");
-    // RC1 · D7: every plan has lock time 0 (no CLTV in this release). A caller asking for another one is told so; it used
-    // to be ignored silently (a plan with lock time 0 came back).
-    refuseNonZeroLockTime((options as { lockTime?: unknown }).lockTime);
+    // CLTV · the lock time asked for, typed and checked against Kaspa's threshold before anything is read
+    // (LOCK_TIME_INVALID); absent or a bare 0 is none (RC1 · D7 refused every other one: LOCK_TIME_NOT_SUPPORTED)
+    const lockTimeRequest = parseLockTimeRequest((options as { lockTime?: unknown }).lockTime, "tx.plan lockTime");
     // MAINNET TOTAL LOCKDOWN: a plan on mainnet needs mainnet chain state (UTXOs, DAA score, fee estimate) — a mainnet
     // read: refused before anything is resolved or read (the instance's network and a `networkProfile` alike)
     assertSdkMayConnect(this.sdk, "sdk.tx.plan", options.networkProfile);
@@ -794,9 +812,6 @@ export class HardkasTx {
       throw new Error(`From account ${fromAccount.name} has no address.`);
     if (!toAccount.address)
       throw new Error(`To account ${toAccount.name} has no address.`);
-    // RC1 · D7: HardKAS signs Schnorr P2PK spends only — a spend from an ECDSA address is refused before the node is asked
-    assertSpendableAddressScheme(fromAccount.address, `the sender ${fromAccount.name}`);
-
     const activeNetwork = options.networkProfile || (this.sdk.network as string);
     // the world of this plan: the resolved execution target's mode when planning on this instance's network (the
     // authority; a `{ mode: "simulator", network: "simnet" }` target is the simulator whatever the label says), else
@@ -805,8 +820,18 @@ export class HardkasTx {
       activeNetwork === (this.sdk.network as string)
         ? this.sdk.execution.mode === "simulator"
         : activeNetwork === "simulated" || this.sdk.config.config.networks?.[activeNetwork]?.kind === "simulated";
+    // ECDSA spends: a payment from an ECDSA account is planned on a node network (the signer signs it with ECDSA); the
+    // simulator and consolidations keep refusing one before the node is asked (ECDSA_SPEND_NOT_SUPPORTED; RC1 · D7
+    // refused every spend from an ECDSA address)
+    if (simulatedWorld || (typeof options.amount === "string" && options.amount.toLowerCase() === "all")) {
+      assertSpendableAddressScheme(fromAccount.address, `the sender ${fromAccount.name}`);
+    }
+    if (lockTimeRequest !== undefined && simulatedWorld) {
+      refuseLockTimeHere("tx.plan lockTime", "the simulator's lock-time rule is its own and UNVERIFIED against a node; plan a lock time against a node (simnet, devnet)");
+    }
 
     if (typeof options.amount === "string" && options.amount.toLowerCase() === "all") {
+      if (lockTimeRequest !== undefined) refuseLockTimeHere("tx.plan lockTime", 'a consolidation (amount "all") is planned with lock time 0 only');
       const res = await this.sdk.query.getSpendableUtxos({ address: fromAccount.address, excludePending: true });
       return this.createConsolidationPlan({
          account: fromAccount,
@@ -1069,6 +1094,12 @@ export class HardkasTx {
 
     if (options.assumption) {
       (basePlan as any).assumptionRef = await resolveReference(options.assumption, "assumption");
+    }
+
+    // CLTV · the typed lock time, authenticated with the plan, and where the node was when it was made (its virtual DAA
+    // score and past median time: a lock far off is visible in the plan). Absent: nothing written, the plan as before.
+    if (lockTimeRequest !== undefined) {
+      (basePlan as any).lockTime = planLockTimeRecord(lockTimeRequest, await readLockTimeChainPoint(this.sdk.rpc as any));
     }
 
     // Seal the identity now that references are injected: one pass, root form (D-Q1.d).
@@ -2586,6 +2617,10 @@ export class HardkasTx {
       async () => {
         const recorded = await this.alreadySubmittedReply(expectedTxId);
         if (recorded) return recorded;
+        // CLTV · a transaction whose lock time the node has not passed is refused here, read-only, before the broadcast
+        // (LOCK_TIME_NOT_REACHED / LOCK_TIME_UNVERIFIABLE): nothing is sent or recorded, so the same transaction can be
+        // sent once the lock is reached (one submission per txId). A transaction with lock time 0 reads nothing more.
+        if (!isSimulated) await this.refuseLockTimeNotReached(broadcastable.rawTransaction);
         if (v1) return this.sendV1Locked(broadcast, { ...v1, options: sendOptions });
         // TX-SEND-IDEMPOTENT-2/-3 (INT9 · I-2): nothing recorded here; the node is asked, read-only, for POSITIVE evidence
         // that it already has the payment (mempool, this workspace's stored looks, an output of this txId listed): a
@@ -2595,6 +2630,27 @@ export class HardkasTx {
         return sendOptions.preflight === true ? this.sendPaymentPreflighted(checked, paymentPlan) : this.broadcastOnce(checked);
       }
     );
+  }
+
+  /**
+   * CLTV · the lock-time preflight of a send: with a lock time other than 0 in the payload, the node's virtual DAA score
+   * (or past median time) is read now and the transaction must be final there (rusty-kaspa check_transaction_finality:
+   * lock time strictly below it, or every input at the maximum sequence). Throws LOCK_TIME_NOT_REACHED /
+   * LOCK_TIME_UNVERIFIABLE; nothing is sent or recorded.
+   */
+  private async refuseLockTimeNotReached(rawTransaction: unknown): Promise<void> {
+    const carried = lockTimeOfPayload(rawTransaction);
+    if (!carried || carried.lockTime === 0n) return;
+    const point = await readLockTimeChainPoint(this.sdk.rpc as any);
+    try {
+      assertLockTimeReached({ lockTime: carried.lockTime, sequences: carried.sequences, point });
+    } catch (e: any) {
+      const code = typeof e?.code === "string" ? e.code : "LOCK_TIME_NOT_REACHED";
+      throw new HardkasError(code, `Refusing to broadcast (${code}): ${withoutCode(e)}`, {
+        cause: e,
+        ...(e?.metadata ? { metadata: e.metadata } : {})
+      });
+    }
   }
 
   /**
@@ -3058,8 +3114,8 @@ export class HardkasTx {
           ? `The node refused it only because its time lock was not met yet: to send it now, plan it again with any change that gives a new txId (for example a fee 1 sompi higher), sign and send that one.`
           : scriptLock
             ? `The node refused it because the redeem script's time-lock check failed against the transaction's own field ` +
-              `(for a HardKAS spend, the input's sequence${rejection?.hint ? `; ${rejection.hint}` : ""}). Waiting never helps: build it ` +
-              `again with the sequence the lock needs (silver spend --sequence), which gives a new txId, and send that one.`
+              `(the input's sequence, or the transaction's lock time${rejection?.hint ? `; ${rejection.hint}` : ""}). Waiting never helps: build it ` +
+              `again with the field the lock needs (silver spend --sequence, or --lock-time-daa | --lock-time-ms), which gives a new txId, and send that one.`
           : notHeld
             ? `HardKAS never sends it again on its own. To make this payment now: first check 'hardkas tx status ${txId}' and that the payment ` +
               `did not reach its recipient (if the inputs it spends are no longer unspent, it was accepted or replaced: do not pay again); ` +

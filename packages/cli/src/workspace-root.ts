@@ -68,7 +68,9 @@ export const COMMANDS_HONORING_WORKSPACE: readonly string[] = [
   // V1-ENGINE-2: a covenant's lineage is read from the invocation root's records
   "silver covenant inspect",
   // L2-EXT stage 2: extensions are installed in, and read from, the invocation root's project
-  "extension"
+  "extension",
+  // HD wallets live in the invocation root's .hardkas/wallets/ and are spent through its SDK
+  "wallet hd"
 ];
 
 /** A command's path under the program ("localnet snapshot verify"). */

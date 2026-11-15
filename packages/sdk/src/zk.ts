@@ -101,8 +101,13 @@ import {
   type ZkVerificationFact,
   type ZkOperationStatusResult
 } from "@hardkas/artifacts";
+import { spendR0Groth16Lock, assertSpendableZkLock, type ZkSpendParams, type ZkSpendResult } from "./zk/spend.js";
 
 export {
+  spendR0Groth16Lock,
+  assertSpendableZkLock,
+  type ZkSpendParams,
+  type ZkSpendResult,
   verifyR0Groth16ReceiptLocal,
   computeR0ReceiptClaimDigest,
   parseR0Groth16Receipt,
@@ -395,6 +400,8 @@ export class HardkasZk {
     deriveStatus: typeof deriveZkOperationStatus;
     observeSpendOnce: (txId: string, zkFact?: ZkVerificationFact) => Promise<{ observation: any; derivedStatus: any; zkStatus?: any }>;
     createJournal: typeof createZkOutputBindingJournal;
+    /** ZK-SEND-1 · plans, records and sends a lock's spend through sdk.tx.send (spendR0Groth16Lock). */
+    spend: (params: ZkSpendParams) => Promise<ZkSpendResult>;
   };
 
   constructor(private sdk: Hardkas) {
@@ -423,7 +430,8 @@ export class HardkasZk {
           networkId: (zkFact?.networkId ?? this.sdk.network) as any,
           observerId: this.sdk.tx.observerId()
         }),
-      createJournal: createZkOutputBindingJournal
+      createJournal: createZkOutputBindingJournal,
+      spend: (params: ZkSpendParams) => spendR0Groth16Lock(this.sdk, params)
     };
   }
 

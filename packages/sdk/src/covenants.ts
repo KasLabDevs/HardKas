@@ -68,6 +68,16 @@ import {
   type CovenantLineageSkeleton,
   type CovenantLineageTx
 } from "./covenant-lineage.js";
+// R3-C · a v1 draft's slots signed by a browser wallet (walletDraftRequest, fillDraftFromWallet)
+import { CURRENT_HASH_VERSION, calculateContentHash } from "@hardkas/artifacts";
+import { assertMainnetTransactionsDisabled, kaspaSighashInputsFromWasm } from "@hardkas/core";
+import { buildV1WasmTransaction } from "@hardkas/accounts";
+import { WALLET_SIGN_REQUEST_SCHEMA, type WalletSignRequest } from "./wallets/browser-signer.js";
+import { addressNetworkFamily, networkFamilyOf } from "./wallets/networks.js";
+import { verifyWalletSignedTransaction, walletPublicKeyOf } from "./wallets/wallet-payments.js";
+// R3-F · CLTV on the v1 engine (planContractSpend({ lockTime })): the typed lock time, and what the entry asks of it
+import { assertLockTimeEnforceable, lockTimeValueOf, parseLockTimeRequest, planLockTimeRecord, readLockTimeChainPoint, type LockTimeRequest } from "@hardkas/tx-builder";
+import { assertLockTimeMeetsContractEntry, contractEntryLockTimeRequirements } from "./contract-lock-time.js";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -263,6 +273,13 @@ export interface CovenantTransitionOptions {
    * leave: without this limit it is refused above the larger of 0.1 KAS and the node's floor (V1_REMAINDER_FEE_ABOVE_LIMIT).
    */
   readonly maxFeeSompi?: bigint | undefined;
+  /**
+   * R3-F · CLTV · the transition's absolute lock time, typed ({ daaScore } | { timestampMs }), for a policy that requires
+   * `tx.daa >= x` / `tx.time >= t`. The leader's policy is checked before the plan is sealed (LOCK_TIME_KIND_MISMATCH,
+   * LOCK_TIME_BELOW_ENTRY_REQUIREMENT); recorded with the node's position; sent only once the node passes it
+   * (LOCK_TIME_NOT_REACHED before). Absent: 0, the plan as before.
+   */
+  readonly lockTime?: LockTimeRequest | undefined;
 }
 
 export interface CovenantSignOptions {
@@ -630,6 +647,8 @@ export class HardkasCovenants {
    * upstream estimate when asked for ("estimate"); else V1_COMPUTE_BUDGET_REQUIRED.
    */
   async planTransition(options: CovenantTransitionOptions, sign: CovenantSignOptions = {}): Promise<any> {
+    // R3-F · CLTV: a lock time that is not a typed value is refused before anything is read (LOCK_TIME_INVALID)
+    const lockTime = parseLockTimeRequest(options.lockTime, "planTransition lockTime");
     const facts = this.factsOf(sign);
     const covenantId = options.covenantId.toLowerCase();
     const inputs: any[] = [];
@@ -638,6 +657,15 @@ export class HardkasCovenants {
       const base = await facts.contract(input.contract as any);
       const at = input.contract.state ? v1ContractFactsAtState(base, this.sil(input.contract.state)) : base;
       if (i === 0) leaderFacts = at;
+      // R3-F · the leader's policy: its top-level `require(tx.daa >= x)` / `require(tx.time >= t)` against the lock time
+      const policy = input.contract.policy;
+      if (i === 0 && policy !== undefined && getSilContract(at.artifact, at.contractName).contract.cov_decl_to_abi?.[policy] === input.contract.entry) {
+        assertLockTimeMeetsContractEntry(
+          lockTime !== undefined ? lockTimeValueOf(lockTime) : 0n,
+          contractEntryLockTimeRequirements({ ast: at.ast, entry: input.contract.entry, policy, constructorArgs: at.constructorArgs }),
+          `${at.contractName}.${policy} (covenant ${covenantId})`
+        );
+      }
       const address = this.addressOf(at);
       const listed = await this.listed(address);
       const key = `${input.outpoint.transactionId.toLowerCase()}:${input.outpoint.index}`;
@@ -670,6 +698,8 @@ export class HardkasCovenants {
     const continuations = continuationsAt(0n);
     const payments = (options.payments ?? []).map((p) => ({ address: p.address, amountSompi: String(p.amountSompi), role: "payment" as const }));
     const nextState = [{ covenantId, input: 0, outputs: continuations.map((_, k) => k), states: options.continuations.map((c) => c.state) }];
+    // R3-F · CLTV: every input here is at sequence 0 (never void); the plan records the lock with the node's position
+    const lockExtra: Record<string, unknown> = lockTime !== undefined ? { lockTime: planLockTimeRecord(lockTime, await readLockTimeChainPoint(this.sdk.rpc as any)) } : {};
     const covenantIn = inputs.reduce((s, i) => s + BigInt(i.amountSompi), 0n);
     const out = [...continuations, ...payments].reduce((s, o) => s + BigInt(o.amountSompi), 0n);
     const from = options.funder ? this.funderAddress(options.funder) : (inputs[0]!.address as string);
@@ -680,7 +710,7 @@ export class HardkasCovenants {
       for (let round = 0; round < 6; round++) {
         const rest = covenantIn - out - fee;
         if (rest <= 0n) throw new HardkasError("FEE_BELOW_V1_FLOOR", `the covenant's value (${covenantIn}) does not cover its other outputs (${out}) and a fee of ${fee}`, { metadata: { feeSompi: String(fee) } });
-        const body = this.bodyOf(inputs, [...continuationsAt(rest), ...payments], fee, options.maxFeeSompi, { nextState });
+        const body = this.bodyOf(inputs, [...continuationsAt(rest), ...payments], fee, options.maxFeeSompi, { nextState, ...lockExtra });
         const floor = await this.floorOf(body, from, facts);
         const next = options.feeSompi !== undefined && options.feeSompi > floor ? options.feeSompi : floor;
         if (next === fee) return this.plan({ body, from: { address: from }, purpose: "covenant transition" });
@@ -691,7 +721,7 @@ export class HardkasCovenants {
     if (!options.funder) {
       // the covenant's value pays: the fee is what the outputs leave (held to a limit when the caller set none: C-2)
       const fee = covenantIn - out;
-      const body = this.bodyOf(inputs, [...continuations, ...payments], fee, options.maxFeeSompi, { nextState });
+      const body = this.bodyOf(inputs, [...continuations, ...payments], fee, options.maxFeeSompi, { nextState, ...lockExtra });
       const floor = await this.floorOf(body, from, facts);
       if (fee < floor) throw new HardkasError("FEE_BELOW_V1_FLOOR", `the covenant's inputs leave ${fee} sompi for the fee; the node's floor for this transaction is ${floor}`, { metadata: { feeSompi: String(fee), floorSompi: String(floor) } });
       this.assertRemainderFee("transition", fee, floor, options.maxFeeSompi, covenantIn);
@@ -703,7 +733,7 @@ export class HardkasCovenants {
       const change = covenantIn + coins.reduce((s, c) => s + c.amountSompi, 0n) - out - fee;
       const outs: any[] = [...continuations, ...payments];
       if (change > 0n) outs.push({ address: from, amountSompi: String(change), role: "change" });
-      return this.bodyOf([...inputs, ...feeInputs], outs, fee, options.maxFeeSompi, { nextState });
+      return this.bodyOf([...inputs, ...feeInputs], outs, fee, options.maxFeeSompi, { nextState, ...lockExtra });
     };
     const body = await this.withFloor(from, out - covenantIn > 0n ? out - covenantIn : 0n, options.feeSompi, build, facts);
     return this.plan({ body, from: { address: from, input: options.funder }, purpose: "covenant transition (fee from the funder)" });
@@ -777,18 +807,37 @@ export class HardkasCovenants {
        * limit it is refused above the larger of 0.1 KAS and the node's floor (V1_REMAINDER_FEE_ABOVE_LIMIT).
        */
       readonly maxFeeSompi?: bigint | undefined;
+      /**
+       * R3-F · CLTV · the transaction's absolute lock time, typed ({ daaScore } | { timestampMs }), for an entry that
+       * requires `tx.daa >= x` / `tx.time >= t` (OpCheckLockTimeVerify). Checked against the entry's top-level lock-time
+       * statements before the plan is sealed (LOCK_TIME_KIND_MISMATCH, LOCK_TIME_BELOW_ENTRY_REQUIREMENT); recorded with
+       * the node's position (`observedAt`); sent only once the node passes it (LOCK_TIME_NOT_REACHED before). Absent: 0,
+       * the plan as before.
+       */
+      readonly lockTime?: LockTimeRequest | undefined;
     },
     sign: CovenantSignOptions = {}
   ): Promise<any> {
+    // R3-F · CLTV: a lock time that is not a typed value is refused before anything is read (LOCK_TIME_INVALID)
+    const lockTime = parseLockTimeRequest(options.lockTime, "planContractSpend lockTime");
     const facts = this.factsOf(sign);
     const base = await facts.contract(options.contract as any);
     const at = options.contract.state ? v1ContractFactsAtState(base, this.sil(options.contract.state)) : base;
+    // R3-F · what the entry's top-level `require(tx.daa >= x)` / `require(tx.time >= t)` ask of the lock time (0 when none)
+    assertLockTimeMeetsContractEntry(
+      lockTime !== undefined ? lockTimeValueOf(lockTime) : 0n,
+      contractEntryLockTimeRequirements({ ast: at.ast, entry: options.contract.entry, constructorArgs: at.constructorArgs, entryArgs: options.contract.args }),
+      `${at.contractName}.${options.contract.entry}`
+    );
     const address = this.addressOf(at);
     const key = `${options.outpoint.transactionId.toLowerCase()}:${options.outpoint.index}`;
     const utxo = (await this.listed(address)).get(key);
     if (!utxo) throw new HardkasError("INPUT_NOT_UNSPENT", `${key} is not listed unspent at ${address}`);
     if (utxo.covenantId !== undefined) throw new HardkasError("COVENANT_INPUT_UNDECLARED", `${key} belongs to covenant ${utxo.covenantId}: it moves through a covenant transition`);
     if (options.sequence !== undefined && (options.sequence < 0n || options.sequence > 0xffffffffffffffffn)) throw new HardkasError("V1_PLAN_INVALID", `sequence ${options.sequence} is not a u64`);
+    // R3-F · CLTV: a maximum sequence voids the lock (LOCK_TIME_VOID_SEQUENCE); the plan records where the node was
+    if (lockTime !== undefined) assertLockTimeEnforceable(lockTimeValueOf(lockTime), [options.sequence ?? 0n], "the spend");
+    const extra: Record<string, unknown> = lockTime !== undefined ? { lockTime: planLockTimeRecord(lockTime, await readLockTimeChainPoint(this.sdk.rpc as any)) } : {};
     if (options.feeSompi !== undefined && options.sweepTo === undefined) throw new HardkasError("V1_PLAN_INVALID", "feeSompi applies with sweepTo; without it the fee is what the payments leave");
     if (options.payments.length === 0 && options.sweepTo === undefined) throw new HardkasError("V1_PLAN_INVALID", "a spend pays someone: give payments, sweepTo, or both");
     const budget = this.budgetFor("input 0", "p2sh", at, options.contract, utxo.scriptPublicKey, options.computeBudget);
@@ -811,7 +860,7 @@ export class HardkasCovenants {
       for (let round = 0; round < 6; round++) {
         const rest = utxo.amountSompi - paid - fee;
         if (rest <= 0n) throw new HardkasError("FEE_BELOW_V1_FLOOR", `the input (${utxo.amountSompi}) does not cover the payments (${paid}) and a fee of ${fee}`, { metadata: { feeSompi: String(fee) } });
-        const body = this.bodyOf(inputs, [...payments, { address: options.sweepTo, amountSompi: String(rest), role: "payment" as const }], fee, options.maxFeeSompi, {});
+        const body = this.bodyOf(inputs, [...payments, { address: options.sweepTo, amountSompi: String(rest), role: "payment" as const }], fee, options.maxFeeSompi, extra);
         const floor = await this.floorOf(body, address, facts);
         const next = options.feeSompi !== undefined && options.feeSompi > floor ? options.feeSompi : floor;
         if (next === fee) return this.plan({ body, from: { address }, purpose });
@@ -821,7 +870,7 @@ export class HardkasCovenants {
     }
     // no sweepTo: the fee is what the payments leave (held to a limit when the caller set none: C-2)
     const fee = utxo.amountSompi - paid;
-    const body = this.bodyOf(inputs, payments, fee, options.maxFeeSompi, {});
+    const body = this.bodyOf(inputs, payments, fee, options.maxFeeSompi, extra);
     const floor = await this.floorOf(body, address, facts);
     if (fee < floor) throw new HardkasError("FEE_BELOW_V1_FLOOR", `the payments leave ${fee} sompi for the fee; the node's floor for this transaction is ${floor}`, { metadata: { feeSompi: String(fee), floorSompi: String(floor) } });
     this.assertRemainderFee("spend", fee, floor, options.maxFeeSompi, utxo.amountSompi);
@@ -901,13 +950,100 @@ export class HardkasCovenants {
     return { signed: r.signed, txId: r.txId };
   }
 
+  /**
+   * R3-C · the request a browser wallet signs for its slots of a v1 draft (`connectBrowserWallet(...).signTransaction`):
+   * the draft checked as sealed for this plan, the slots checked against the key of `address` (a Schnorr P2PK address on
+   * this instance's network) that are still unsigned — P2PK inputs and contract signer slots alike —, and the SDK's safe
+   * JSON of the plan's v1 transaction. The wallet signs those inputs with SIGHASH_ALL and returns the bare
+   * `41 <64-byte signature> 01` (autoFinalized false): HardKAS assembles every unlock (`finalizeDraft`). Mainnet is refused
+   * first; nothing is signed here and no key is read.
+   */
+  async walletDraftRequest(draft: V1TxDraft, plan: any, address: string): Promise<WalletSignRequest> {
+    this.assertWalletDraftNetwork(draft, plan, address, "sdk.covenants.walletDraftRequest");
+    this.checkDraft(draft, plan);
+    return this.walletRequestOf(draft, plan, address).request;
+  }
+
+  /**
+   * R3-C · fills a draft's slots with a browser wallet's signatures: the request must be the one this draft and plan give
+   * now (WALLET_REQUEST_MISMATCH), what the wallet returned is checked (the same transaction, every asked input signed
+   * `41 <sig> 01`, nothing else changed) and each signature verified against the address's key over HardKAS's signature
+   * hash of the plan's transaction (WALLET_SIGNATURE_INVALID); each slot of that key on those inputs takes its input's
+   * signature, and the draft is combined (`combineDrafts`: every signature verified again against its slot's key). Then
+   * `finalizeDraft` assembles the unlocks (signatures, entry arguments, dispatch tag, redeem script) and `send` sends it.
+   */
+  fillDraftFromWallet(draft: V1TxDraft, plan: any, request: WalletSignRequest, returned: unknown): V1TxDraft {
+    this.assertWalletDraftNetwork(draft, plan, request?.address, "sdk.covenants.fillDraftFromWallet", [request?.networkId]);
+    this.checkDraft(draft, plan);
+    if (request?.schema !== WALLET_SIGN_REQUEST_SCHEMA || request.purpose !== "contract") {
+      throw new HardkasError("WALLET_SIGN_REQUEST_INVALID", "not a HardKAS wallet request for a v1 draft. Nothing was signed.");
+    }
+    const { request: rebuilt, sighash } = this.walletRequestOf(draft, plan, request.address);
+    const same = (r: WalletSignRequest) => JSON.stringify([r.networkId, r.publicKey, r.txJsonString, r.txId, r.signInputs.map((i) => [i.index, i.sighashType]), r.autoFinalized, r.planArtifactId, r.draftContentHash]);
+    if (same(rebuilt) !== same(request)) {
+      throw new HardkasError("WALLET_REQUEST_MISMATCH", "the request is not the one this draft and plan give for this address (another transaction, inputs or draft). Nothing was signed.");
+    }
+    const check = verifyWalletSignedTransaction({ request: rebuilt, returned, sighash });
+    const slots = draft.slots.map((s) =>
+      s.signature === undefined && s.publicKey === rebuilt.publicKey && check.signatures[s.input] !== undefined ? { ...s, signature: check.signatures[s.input] } : s
+    );
+    const { contentHash: _previous, ...rest } = draft;
+    const body: any = JSON.parse(JSON.stringify({ ...rest, slots }));
+    const filled = { ...body, contentHash: calculateContentHash(body, CURRENT_HASH_VERSION) } as V1TxDraft;
+    return combineV1Drafts([filled], plan);
+  }
+
   /** F1.6 · sends a signed v1 artifact: the one send of every HardKAS transaction (sdk.tx.send). */
   async send(signed: any, options: SendTxOptions & Pick<CovenantSignOptions, "facts" | "compileRecords"> = {}): Promise<any> {
     const { facts, compileRecords, ...rest } = options;
     return this.sdk.tx.send(signed, { ...rest, ...(facts || compileRecords ? { v1Facts: this.factsOf({ facts, compileRecords }) } : {}) });
   }
 
+  /**
+   * R3 · the key resolver `sign` uses when given none: public keys from this workspace's P2PK account addresses (no
+   * keystore opened), a private key only when asked for. For the SDK's own callers that sign what the engine cannot (the
+   * owner signature inside a KCC-20 witness, sdk.kcc20), so they resolve keys exactly as the engine does.
+   * @internal
+   */
+  defaultKeys(keystorePassword?: string): V1KeyResolver {
+    return this.accountKeys(keystorePassword);
+  }
+
   // ------------------------------------------------------------------------------------------------------------ helpers
+  /** R3-C · mainnet (any network involved, the address's prefix included) refused first; the address on this instance's network. */
+  private assertWalletDraftNetwork(draft: V1TxDraft, plan: any, address: unknown, where: string, more: readonly unknown[] = []): void {
+    const family = addressNetworkFamily(address);
+    assertMainnetTransactionsDisabled("sign", [draft?.networkId, plan?.networkId, this.networkId(), ...(family === "mainnet" ? ["mainnet"] : []), ...more], where);
+    if (family === undefined || family !== networkFamilyOf(this.networkId())) {
+      throw new HardkasError("WALLET_NETWORK_MISMATCH", `${where}: ${String(address)} is not an address of ${this.networkId()}, this instance's network. Nothing was signed.`);
+    }
+  }
+
+  /** R3-C · the wallet request of a checked draft for `address`, and the signature hash context of the plan's transaction. */
+  private walletRequestOf(draft: V1TxDraft, plan: any, address: string): { request: WalletSignRequest; sighash: ReturnType<typeof kaspaSighashInputsFromWasm> } {
+    const publicKey = walletPublicKeyOf(address);
+    const mine = draft.slots.filter((s) => s.publicKey === publicKey && s.signature === undefined);
+    if (mine.length === 0) {
+      throw new HardkasError("SILVER_SPEND_SIGNER_NOT_IN_DRAFT", `no unsigned slot of the draft is checked against the key of ${address}`);
+    }
+    const tx = buildV1WasmTransaction(loadManagedKaspaWasmSync(), plan);
+    const inputs = [...new Set(mine.map((s) => s.input))].sort((a, b) => a - b);
+    const request: WalletSignRequest = {
+      schema: WALLET_SIGN_REQUEST_SCHEMA,
+      purpose: "contract",
+      networkId: this.networkId(),
+      address,
+      publicKey,
+      txJsonString: String(tx.serializeToSafeJSON()),
+      txId: draft.txId,
+      signInputs: inputs.map((index) => ({ index, sighashType: 1 as const })),
+      autoFinalized: false,
+      planArtifactId: draft.planArtifactId,
+      draftContentHash: draft.contentHash
+    };
+    return { request, sighash: kaspaSighashInputsFromWasm(tx.serializeToObject()) };
+  }
+
   private networkId(): string {
     return declaredNetworkIdOf(this.sdk.config.config, this.sdk.network) ?? String(this.sdk.network);
   }

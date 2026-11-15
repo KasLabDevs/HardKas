@@ -9,6 +9,7 @@ import {
   ARTIFACT_SCHEMAS,
   ARTIFACT_VERSION
 } from "@hardkas/artifacts";
+import { accountKeyScheme } from "./account-key-scheme.js";
 
 /**
  * Secret-bearing account fields — these must never reach stdout, stderr,
@@ -85,6 +86,11 @@ export interface RealDevAccount {
   readonly privateKeyEnv?: string;
   /** Reference to the encrypted keystore file in .hardkas/keystore/ */
   readonly keystoreRef?: string;
+  /**
+   * ECDSA spends · "ecdsa" for an account whose address is its key's ECDSA P2PK address (version 1); absent = Schnorr
+   * (every entry written before). Must agree with the address (importRealDevAccount, accountKeyScheme).
+   */
+  readonly keyScheme?: "ecdsa";
   readonly createdAt: string;
 }
 
@@ -315,11 +321,14 @@ export function importRealDevAccount(
     readonly privateKey?: string;
     readonly privateKeyEnv?: string;
     readonly keystoreRef?: string;
+    /** ECDSA spends · "ecdsa" for an ECDSA P2PK address; it must agree with the address (ACCOUNT_KEY_SCHEME_MISMATCH). */
+    readonly keyScheme?: "ecdsa";
   }
 ): RealAccountStore {
   validateAccountName(account.name);
   validateAddressPrefix(account.address);
   if (account.network !== undefined) validateAddressNetwork(account.address, account.network);
+  accountKeyScheme(account);
 
   if (store.accounts.some((a) => a.name.toLowerCase() === account.name.toLowerCase())) {
     throw new Error(`Account with name '${account.name}' already exists.`);

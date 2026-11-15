@@ -228,6 +228,8 @@ title: hardkas silver
 - `--to &lt;address&gt;`: Recipient of the whole value (minus the fee)
 - `--args &lt;file&gt;`: Entry arguments: JSON list of &#123;kind, value&#125; and &#123;"kind":"signature","account":"&lt;name&gt;"&#125;
 - `--sequence &lt;n&gt;`: Input sequence (relative locks)
+- `--lock-time-daa &lt;n&gt;`: Absolute lock time as a DAA score (below 500000000000), for an entry that requires tx.daa &gt;= x (CheckLockTimeVerify): checked against the entry's tx.daa statements before signing, and the spend is refused before the broadcast until the node's virtual DAA score is above it (LOCK_TIME_NOT_REACHED, nothing sent). Not with --lock-time-ms
+- `--lock-time-ms &lt;t&gt;`: Absolute lock time in milliseconds since the epoch (at or above 500000000000), for an entry that requires tx.time &gt;= t: checked against the entry's tx.time statements before signing, and refused before the broadcast until the node's past median time is above it. Not with --lock-time-daa
 - `--sig-op-count &lt;n&gt;`: Declared signature operations (default: the signature arguments, at least 1); transaction v0 only
 - `--network &lt;network&gt;`: Network (default: the deploy record's); mainnet refused; testnet-&lt;n&gt; needs experimental + network.allowPublic
 - `--url &lt;url&gt;`: Node wRPC (JSON) endpoint (default: the one the workspace declares for the network; simnet: the canonical localnet). Only the canonical localnet is proven by container and image digest; any other node by what it reports (network, version, synced)
@@ -289,6 +291,8 @@ title: hardkas silver
 - `--compute-budget &lt;n&gt;`: Compute budget of the covenant input, or 'estimate' (rusty-kaspa's upper bound); default: the certified budget of this entry, else that estimate
 - `--args &lt;file&gt;`: Entry arguments: JSON list of &#123;kind, value&#125; and &#123;"kind":"signature","account":"&lt;name&gt;"&#125;
 - `--fee &lt;sompi&gt;`: Fee in sompi, paid from the covenant's value: at least the node's floor for this transaction (the floor when omitted)
+- `--lock-time-daa &lt;n&gt;`: Absolute lock time as a DAA score (below 500000000000), for an entry that requires tx.daa &gt;= x (CheckLockTimeVerify): checked against the entry's tx.daa statements before signing, and the spend is refused before the broadcast until the node's virtual DAA score is above it (LOCK_TIME_NOT_REACHED, nothing sent). Not with --lock-time-ms
+- `--lock-time-ms &lt;t&gt;`: Absolute lock time in milliseconds since the epoch (at or above 500000000000), for an entry that requires tx.time &gt;= t: checked against the entry's tx.time statements before signing, and refused before the broadcast until the node's past median time is above it. Not with --lock-time-daa
 - `--emit-args &lt;file&gt;`: Write the successor's constructor arguments here (for the next transition)
 - `--network &lt;network&gt;`: Network (default: the covenant record's); mainnet refused; testnet-&lt;n&gt; needs experimental + network.allowPublic
 - `--url &lt;url&gt;`: Node wRPC (JSON) endpoint (default: the one the workspace declares for the network; simnet: the canonical localnet). Only the canonical localnet is proven by container and image digest; any other node by what it reports (network, version, synced)
@@ -315,6 +319,72 @@ title: hardkas silver
 - `--network &lt;network&gt;`: Network (default: the workspace's)
 - `--no-node`: Do not ask the node for the tip (records only)
 - `--no-states`: Do not check the declared states against the addresses
+- `--json` (Default: `false`): Output as JSON
+
+---
+
+## `hardkas silver covenant start`
+
+### Synopsis (Generated)
+
+**Purpose:** Create a covenant with one or more outputs, each holding its own state, all bound to the one covenant id the SDK derives (what an N:M transition spends): planned, checked, signed and sent by the SDK's v1 engine. `genesis` keeps the one-output form and its record
+
+#### Arguments
+
+- `&lt;record&gt;` (Required): 
+
+#### Options
+
+- `--from &lt;account&gt;`: Funding account (local key): pays the outputs and the fee, gets the change
+- `--output &lt;spec&gt;` (Default: ``): A covenant output, in output order (repeatable): '&lt;kas&gt;', or '&lt;state-file&gt;=&lt;kas&gt;' for an output holding the state in that JSON file (&#123;field: &#123;kind, value&#125;&#125;); every output a state, or none (each then holds the record's own)
+- `--fee &lt;sompi&gt;`: Fee in sompi: at least the node's floor for this transaction (the floor when omitted)
+- `--compute-budget &lt;n&gt;`: Compute budget of the funding inputs (default: the certified P2PK budget)
+- `--constructor-args &lt;file&gt;`: Constructor arguments the contract was compiled with (default: proven from its initial State)
+- `--contract &lt;name&gt;`: Contract, when the artifact has several
+- `--network &lt;network&gt;`: Network (default: the workspace's, else simnet). mainnet is refused; testnet-&lt;n&gt; needs experimental + network.allowPublic in the config
+- `--url &lt;url&gt;`: Node wRPC (JSON) endpoint (default: the one the workspace declares for the network; simnet: the canonical localnet). Only the canonical localnet is proven by container and image digest; any other node by what it reports (network, version, synced)
+- `--wait` (Default: `false`): Wait until every output is confirmed with the covenant id
+- `--timeout &lt;seconds&gt;` (Default: `120`): Confirmation timeout
+- `--password-env &lt;env&gt;`: Read the keystore password of the encrypted account(s) this command signs with from this environment variable (development accounts need none)
+- `--password-stdin` (Default: `false`): Read the keystore password of the encrypted account(s) this command signs with from stdin
+- `--json` (Default: `false`): Output as JSON
+
+---
+
+## `hardkas silver covenant advance`
+
+### Synopsis (Generated)
+
+**Purpose:** Advance a covenant through any transition its declaration allows — one input to several continuations (1:N), several inputs with a leader and delegates (N:M), or none (termination) — planned, checked against the node and the compiler before any key is read, signed and sent by the SDK's v1 engine. &lt;record&gt; is the covenant's compile record (its template); `transition` keeps the 1:1 form and its records
+
+#### Arguments
+
+- `&lt;record&gt;` (Required): 
+
+#### Options
+
+- `--covenant &lt;id&gt;`: The covenant id (32 bytes, hex)
+- `--policy &lt;name&gt;`: Covenant declaration (policy function) the transition runs
+- `--input &lt;spec&gt;` (Default: ``): A covenant input, in input order, the leader first (repeatable): 'txid:index' (its state: the one this workspace's records of the covenant declare for that output, checked against its address), or 'txid:index=&lt;state-file&gt;'
+- `--next &lt;spec&gt;` (Default: ``): A continuation, in output order (repeatable): '&lt;state-file&gt;=&lt;kas&gt;', or '&lt;state-file&gt;' for the one that keeps what the other outputs and the fee leave of the covenant's value (one at most; not with --funder)
+- `--pay &lt;spec&gt;` (Default: ``): A payment out of the covenant (repeatable): '&lt;address or account&gt;=&lt;kas&gt;'
+- `--terminate` (Default: `false`): End the covenant: no continuation (its policy decides whether it may); its value goes to the --pay outputs and the fee
+- `--args &lt;file&gt;`: The leader entry's arguments other than its next states (filled from --next): JSON list of &#123;kind, value&#125; and &#123;"kind":"signature","account":"&lt;name&gt;"&#125;
+- `--delegate-args &lt;file&gt;` (Default: ``): A delegate input's entry arguments, same form, one file per delegate in input order (repeatable; default: none)
+- `--funder &lt;account&gt;`: Pay the fee from this account's coins (local key); the covenant keeps its value
+- `--fee &lt;sompi&gt;`: Fee in sompi, with a continuation that takes the rest or with --funder: at least the node's floor (the floor when omitted). Otherwise the fee is what the outputs leave of the covenant's value
+- `--max-fee &lt;sompi&gt;`: The plan's fee limit (default: the fee it pays; a fee the outputs leave is refused above the larger of 0.1 KAS and the node's floor unless this is given)
+- `--lock-time-daa &lt;n&gt;`: Absolute lock time as a DAA score (below 500000000000), for an entry that requires tx.daa &gt;= x (CheckLockTimeVerify): checked against the entry's tx.daa statements before signing, and the spend is refused before the broadcast until the node's virtual DAA score is above it (LOCK_TIME_NOT_REACHED, nothing sent). Not with --lock-time-ms
+- `--lock-time-ms &lt;t&gt;`: Absolute lock time in milliseconds since the epoch (at or above 500000000000), for an entry that requires tx.time &gt;= t: checked against the entry's tx.time statements before signing, and refused before the broadcast until the node's past median time is above it. Not with --lock-time-daa
+- `--compute-budget &lt;n&gt;`: Compute budget of each covenant input, or 'estimate' (rusty-kaspa's upper bound); default: the certified budget of its entry, else that estimate
+- `--constructor-args &lt;file&gt;`: Constructor arguments the contract was compiled with (default: proven from its initial State)
+- `--contract &lt;name&gt;`: Contract, when the artifact has several
+- `--network &lt;network&gt;`: Network (default: the workspace's, else simnet). mainnet is refused; testnet-&lt;n&gt; needs experimental + network.allowPublic in the config
+- `--url &lt;url&gt;`: Node wRPC (JSON) endpoint (default: the one the workspace declares for the network; simnet: the canonical localnet). Only the canonical localnet is proven by container and image digest; any other node by what it reports (network, version, synced)
+- `--wait` (Default: `false`): Wait until every continuation is confirmed with the covenant id (termination: the first output)
+- `--timeout &lt;seconds&gt;` (Default: `120`): Confirmation timeout
+- `--password-env &lt;env&gt;`: Read the keystore password of the encrypted account(s) this command signs with from this environment variable (development accounts need none)
+- `--password-stdin` (Default: `false`): Read the keystore password of the encrypted account(s) this command signs with from stdin
 - `--json` (Default: `false`): Output as JSON
 
 ---

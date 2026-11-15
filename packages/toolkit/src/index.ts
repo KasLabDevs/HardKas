@@ -9,6 +9,7 @@ export * from './snapshot/index.js';
 // SilverScript lives in @hardkas/core (managed silverc v1.0.0 + Kaspa SDK) and
 // `hardkas silver`; the toolkit carries no Silver compiler, simulator or evidence.
 export type { WalletOutpoint, WalletWatchUtxo, WalletWatchEvent, WalletWatchListener, WalletWatchHandle } from './watch.js';
+export { watchAddress, type AddressWatchEvent, type AddressWatchListener, type AddressWatchHandle, type WalletWatchMaturityEvent, type UtxoWatchEngineOptions } from './watch.js';
 export * from './fee-estimator.js';
 // A3 (rc2 audit): the credential redaction every HardKAS error text applies to a node endpoint, for the packages built on
 // the toolkit that do not depend on @hardkas/core themselves (plugin-rpc-backend, sync-daemon).

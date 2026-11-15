@@ -58,6 +58,9 @@ title: hardkas tx
 - `--fee-rate &lt;sompiPerMass&gt;`: Whole sompi per gram of mass, at least 1 (default: 1 in the simulator, 100 on real networks; not a live estimate)
 - `--max-fee &lt;sompi&gt;`: Total fee limit in sompi: the plan is refused (FEE_EXCEEDS_MAX) above it, and the limit is recorded in the plan and enforced again at sign and send. The workspace's networks[&lt;net&gt;].maxFeeSompi also applies; the lower one wins. No limit by default
 - `--change &lt;accountOrAddress&gt;`: Change destination (account name or address); default: the sender
+- `--lock-time-daa &lt;n&gt;`: Absolute lock time as a DAA score (below 500000000000): the transaction is valid only once the node's virtual DAA score is above it; `tx send` refuses to broadcast it earlier (LOCK_TIME_NOT_REACHED, nothing sent). Not with --lock-time-ms; not on the simulator
+- `--lock-time-ms &lt;t&gt;`: Absolute lock time as milliseconds since the epoch (at or above 500000000000): valid only once the node's past median time is above it; `tx send` refuses to broadcast it earlier. Not with --lock-time-daa; not on the simulator
+- `--confirm-distant-lock-time` (Default: `false`): Plan a lock time more than about a day past the node's position (864000 DAA, or 86400000 ms); refused without it (LOCK_TIME_DISTANT_UNCONFIRMED)
 - `--provider &lt;type&gt;` (Default: `auto`): Provider mode (auto, rpc, simulated)
 - `--url &lt;url&gt;`: Node wRPC URL (default: the network's rpcUrl in hardkas.config.ts; without one, ws://127.0.0.1:18210 for simnet and devnet)
 - `--out &lt;path&gt;`: Save plan as artifact JSON
@@ -144,6 +147,8 @@ title: hardkas tx
 - `--no-observe`: Derive from the evidence already in the workspace; take no new observation
 - `-n, --network &lt;network&gt;`: Network whose configured node observes (default: the network of the recorded submission)
 - `--since &lt;chainBlockHash&gt;`: Scan the node's virtual chain from this chain block (64 hex; it must precede the tx's acceptance) — for a tx sent outside this workspace
+- `--address &lt;address&gt;`: Locate the transaction first through the history of an address it pays or spends from (a bounded window of the node's selected chain: from --since, else the last --lookback chain blocks); found, the new look scans from the chain block before its acceptance (also when its outputs were spent since)
+- `--lookback &lt;chainBlocks&gt;`: With --address and no --since: the history's window, in chain blocks back from the node's sink (default 1000, at most 100000)
 - `--json` (Default: `false`): Output as JSON
 
 ---
@@ -166,6 +171,9 @@ title: hardkas tx
 - `--amount &lt;kas&gt;`: Amount in KAS (shortcut mode)
 - `--network &lt;name&gt;`: Network name
 - `--fee-rate &lt;sompiPerMass&gt;`: Fee rate in sompi per mass (shortcut mode)
+- `--lock-time-daa &lt;n&gt;`: Shortcut mode: Absolute lock time as a DAA score (below 500000000000): the transaction is valid only once the node's virtual DAA score is above it; `tx send` refuses to broadcast it earlier (LOCK_TIME_NOT_REACHED, nothing sent). Not with --lock-time-ms; not on the simulator
+- `--lock-time-ms &lt;t&gt;`: Shortcut mode: Absolute lock time as milliseconds since the epoch (at or above 500000000000): valid only once the node's past median time is above it; `tx send` refuses to broadcast it earlier. Not with --lock-time-daa; not on the simulator
+- `--confirm-distant-lock-time` (Default: `false`): Shortcut mode: Plan a lock time more than about a day past the node's position (864000 DAA, or 86400000 ms); refused without it (LOCK_TIME_DISTANT_UNCONFIRMED)
 - `--password-env &lt;env&gt;`: Shortcut mode: read the sender's keystore password (an encrypted account) from this environment variable
 - `--password-stdin` (Default: `false`): Shortcut mode: read the sender's keystore password (an encrypted account) from stdin
 - `--provider &lt;type&gt;` (Default: `auto`): Provider mode (auto, rpc, simulated; signed-artifact mode only)

@@ -289,7 +289,9 @@ export function listHardkasAccounts(config?: HardkasConfig, executionTarget?: im
         ...(network ? { network } : {}),
         address: realAcc.address,
         ...(realAcc.privateKeyEnv ? { privateKeyEnv: realAcc.privateKeyEnv } : {}),
-        ...(realAcc.privateKey ? { privateKey: realAcc.privateKey } : {})
+        ...(realAcc.privateKey ? { privateKey: realAcc.privateKey } : {}),
+        // ECDSA spends · the entry's key scheme (absent = Schnorr)
+        ...(realAcc.keyScheme === "ecdsa" ? { keyScheme: "ecdsa" } : {})
       } as HardkasAccount);
     }
   }
@@ -325,12 +327,22 @@ export function listHardkasAccounts(config?: HardkasConfig, executionTarget?: im
               if (typeof entryAddress === "string" && typeof keystoreAddress === "string" && entryAddress !== keystoreAddress) {
                 throw new AccountNetworkConflictError({ account: name, sources: { storeEntryAddress: entryAddress, keystoreAddress }, detail: "the store entry and the keystore name different addresses" });
               }
+              // ECDSA spends · the store entry and the keystore (whose metadata authenticates it) record one key scheme
+              const entryScheme = (accounts.get(name) as any)?.keyScheme;
+              if ((entryScheme ?? "schnorr") !== (keystore.metadata?.keyScheme ?? "schnorr")) {
+                throw new AccountNetworkConflictError({
+                  account: name,
+                  sources: { storeEntryKeyScheme: String(entryScheme ?? "schnorr"), keystoreKeyScheme: String(keystore.metadata?.keyScheme ?? "schnorr") },
+                  detail: "the store entry and the keystore record different key schemes"
+                });
+              }
             }
             accounts.set(name, {
               name,
               kind: "kaspa", network: keystoreNetwork,
               address: keystoreAddress,
-              keystorePath: path.join(keystoreDir, file)
+              keystorePath: path.join(keystoreDir, file),
+              ...(keystore.metadata?.keyScheme === "ecdsa" ? { keyScheme: "ecdsa" as const } : {})
             });
           }
         } catch (e) {

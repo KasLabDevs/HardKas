@@ -11,11 +11,15 @@ import {
   type SilArtifactValue
 } from "@hardkas/core";
 import {
+  assertLockTimeEnforceable,
   calculateUpstreamStorageMass,
+  lockTimeValueOf,
   measureBuiltTransactionMass,
   measureBuiltTransactionNodeMass,
+  parseLockTimeRequest,
   priorityFeeRate,
-  type BuiltTransactionNodeMass
+  type BuiltTransactionNodeMass,
+  type LockTimeRequest
 } from "@hardkas/tx-builder";
 import { parseWasmTxToRpc } from "./internal/wasm-rpc-serialization.js";
 import { addressMatchesNetwork } from "./real-accounts.js";
@@ -68,6 +72,20 @@ function refuseUnrelayable(node: BuiltTransactionNodeMass): void {
   if (!node.relayable) throw spendError("TX_MASS_ABOVE_STANDARD_LIMIT", `${node.exceededText}: the node would not relay this spend. Nothing was signed.`);
 }
 
+/**
+ * CLTV · the u64 lock time of a SilverScript spend: 0 without one (the transaction as before), else the typed request
+ * ({ daaScore } | { timestampMs }, LOCK_TIME_INVALID otherwise) — refused with the input at the maximum sequence, which
+ * would void it (LOCK_TIME_VOID_SEQUENCE). A contract entry that requires `tx.daa >= x` / `tx.time >= t`
+ * (OpCheckLockTimeVerify) is spendable only by a transaction whose lock time is at least x (of the same kind); the node
+ * refuses the transaction until its lock time is reached (tx-builder assertLockTimeReached is the send preflight).
+ */
+function spendLockTime(request: LockTimeRequest | undefined, sequence: bigint): bigint {
+  const typed = parseLockTimeRequest(request, "lockTime");
+  const value = typed === undefined ? 0n : lockTimeValueOf(typed);
+  assertLockTimeEnforceable(value, [sequence], "the spend");
+  return value;
+}
+
 /** A contract output as the node reports it. */
 export interface SilverContractUtxo {
   readonly outpoint: { readonly transactionId: string; readonly index: number };
@@ -103,6 +121,12 @@ export interface SilverSweepRequest {
    * below the minimum (100), or absent: the node's floor.
    */
   readonly feeRateSompiPerGram?: bigint | undefined;
+  /**
+   * CLTV · the transaction's absolute lock time, typed: `{ daaScore }` or `{ timestampMs }` (for an entry that requires
+   * `tx.daa >= x` or `tx.time >= t`). Default: none (lock time 0). Before broadcasting, check it is reached
+   * (tx-builder `assertPayloadLockTimeReached`): the node refuses a transaction whose lock time is not reached yet.
+   */
+  readonly lockTime?: LockTimeRequest | undefined;
 }
 
 export interface SilverSpendResult {
@@ -119,6 +143,8 @@ export interface SilverSpendResult {
   readonly storageMass: bigint;
   readonly signatureScriptHex: string;
   readonly assumptions: readonly string[];
+  /** CLTV · the lock time the transaction carries (present only when it is not 0). */
+  readonly lockTime?: bigint | undefined;
 }
 
 const PLACEHOLDER_SIG: SilArtifactValue = { kind: "bytes", value: new Uint8Array(65) };
@@ -153,6 +179,7 @@ export function buildSilverSweep(request: SilverSweepRequest): SilverSpendResult
   const toScript = String(k.payToAddressScript(new k.Address(request.to)).script);
 
   const sequence = request.sequence ?? 0n;
+  const lockTime = spendLockTime(request.lockTime, sequence);
   const sigOpCount = request.sigOpCount ?? 1;
   const amountIn = request.utxo.amountSompi;
   const { transactionId, index } = request.utxo.outpoint;
@@ -176,7 +203,7 @@ export function buildSilverSweep(request: SilverSweepRequest): SilverSpendResult
         }
       ],
       outputs: [{ value: amountOut, scriptPublicKey: k.payToAddressScript(new k.Address(request.to)) }],
-      lockTime: 0n,
+      lockTime,
       subnetworkId: "0000000000000000000000000000000000000000",
       gas: 0n,
       payload: ""
@@ -249,7 +276,8 @@ export function buildSilverSweep(request: SilverSweepRequest): SilverSpendResult
       ...priced.assumptions,
       `minimum fee: the node's relay floor, 100 sompi/g × ${node.feeMass} g (compute mass); storage mass ${node.storageMass} g within the node's ${node.limits.storage} g`,
       `sigOpCount ${sigOpCount}`
-    ]
+    ],
+    ...(lockTime !== 0n ? { lockTime } : {})
   };
 }
 
@@ -294,6 +322,8 @@ export interface SilverSpendDraft {
   /** Hex length of the final signature script the fee was checked against. */
   readonly unlockHexLength: number;
   readonly unsignedTxId: string;
+  /** CLTV · the transaction's lock time (u64, decimal); absent = 0, so a draft without one is unchanged. */
+  readonly lockTime?: string | undefined;
 }
 
 export interface SilverSpendDraftRequest {
@@ -309,10 +339,18 @@ export interface SilverSpendDraftRequest {
   readonly sequence?: bigint | undefined;
   /** Declared signature operations; defaults to the number of signer slots. */
   readonly sigOpCount?: number | undefined;
+  /** CLTV · the transaction's absolute lock time, typed ({ daaScore } | { timestampMs }); default none (0). */
+  readonly lockTime?: LockTimeRequest | undefined;
 }
 
 function draftTx(k: any, draft: Omit<SilverSpendDraft, "unsignedTxId" | "feeSompi" | "mass" | "storageMass" | "unlockHexLength" | "schema" | "signers"> & { storageMass?: string }, signatureScript: string, networkId: string) {
   const i = draft.input;
+  let lockTime: bigint;
+  try {
+    lockTime = draft.lockTime === undefined ? 0n : BigInt(draft.lockTime);
+  } catch {
+    throw spendError("SILVER_SPEND_DRAFT_INVALID", `the draft's lock time ${JSON.stringify(draft.lockTime)} is not a u64`);
+  }
   const tx = new k.Transaction({
     version: 0,
     inputs: [{
@@ -329,7 +367,7 @@ function draftTx(k: any, draft: Omit<SilverSpendDraft, "unsignedTxId" | "feeSomp
       }
     }],
     outputs: draft.outputs.map((o) => ({ value: BigInt(o.valueSompi), scriptPublicKey: new k.ScriptPublicKey(o.scriptPublicKey.version, o.scriptPublicKey.script) })),
-    lockTime: 0n,
+    lockTime,
     subnetworkId: "0000000000000000000000000000000000000000",
     gas: 0n,
     payload: ""
@@ -377,6 +415,7 @@ export function prepareSilverSpend(request: SilverSpendDraftRequest): SilverSpen
   });
   const totalOut = outputs.reduce((s, o) => s + BigInt(o.valueSompi), 0n);
   if (totalOut > u.amountSompi) throw spendError("SILVER_SPEND_INSUFFICIENT_VALUE", `outputs ${totalOut} exceed the contract output ${u.amountSompi}`);
+  const lockTime = spendLockTime(request.lockTime, request.sequence ?? 0n);
 
   const base = {
     networkId: request.networkId,
@@ -391,7 +430,8 @@ export function prepareSilverSpend(request: SilverSpendDraftRequest): SilverSpen
       sequence: (request.sequence ?? 0n).toString(),
       sigOpCount: request.sigOpCount ?? Math.max(1, signers.length)
     },
-    outputs
+    outputs,
+    ...(lockTime !== 0n ? { lockTime: lockTime.toString() } : {})
   };
   const placeholder = draftUnlock(request.artifact, contractName, request.entry, request.args, () => PLACEHOLDER_SIG);
   const placed = draftTx(k, base, placeholder, request.networkId);
@@ -434,6 +474,19 @@ export function signSilverSpend(draft: SilverSpendDraft, privateKey: string): st
   if (String(unsigned.id) !== draft.unsignedTxId) throw spendError("SILVER_SPEND_DRAFT_INVALID", "the draft does not rebuild to the transaction it describes");
   const inputSignature = String(k.createInputSignature(unsigned, 0, new k.PrivateKey(privateKey), k.SighashType.All));
   return Buffer.from(silverSigFromInputSignature(inputSignature)).toString("hex");
+}
+
+/**
+ * R3-C · the unsigned transaction a draft's signers sign (rebuilt, its id checked), for an external signer such as a
+ * browser wallet: the same transaction `signSilverSpend` signs. No key is read.
+ */
+export function silverSpendUnsignedTransaction(draft: SilverSpendDraft): any {
+  if (draft?.schema !== SILVER_SPEND_DRAFT_SCHEMA) throw spendError("SILVER_SPEND_DRAFT_INVALID", "not a SilverScript spend draft");
+  assertMainnetTransactionsDisabled("sign", [draft.networkId], "silverSpendUnsignedTransaction");
+  const k = loadManagedKaspaWasmSync();
+  const unsigned = draftTx(k, draft, "", draft.networkId);
+  if (String(unsigned.id) !== draft.unsignedTxId) throw spendError("SILVER_SPEND_DRAFT_INVALID", "the draft does not rebuild to the transaction it describes");
+  return unsigned;
 }
 
 /**

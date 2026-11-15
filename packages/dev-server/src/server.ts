@@ -22,6 +22,7 @@ import { streamRoutes } from "./routes/stream.js";
 import { devAccountsRoutes } from "./routes/dev-accounts.js";
 import { escrowRoutes } from "./routes/escrow.js";
 import { simnetRoutes } from "./routes/simnet.js";
+import { walletProbeRoutes } from "./routes/wallet-probe.js";
 
 import path from "node:path";
 import fs from "node:fs";
@@ -236,6 +237,7 @@ export function createDevServer(config: DevServerConfig) {
   app.route("/api/dev-accounts", devAccountsRoutes);
   app.route("/api/escrows", escrowRoutes);
   app.route("/api/simnet", simnetRoutes);
+  app.route("/", walletProbeRoutes); // R3-C · /wallet-probe (page) and /api/wallet-probe/* (loopback only)
   app.route("/api", devStatusRoutes);
   app.route("/api", observabilityRoutes);
 

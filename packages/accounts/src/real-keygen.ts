@@ -3,11 +3,15 @@ export interface GeneratedKaspaDevAccount {
   readonly publicKey?: string;
   readonly privateKey: string;
   readonly mnemonic?: string;
+  /** ECDSA spends · "ecdsa" when `address` is the key's ECDSA P2PK address; absent = Schnorr. */
+  readonly keyScheme?: "ecdsa";
 }
 
 export interface KaspaKeyGenerator {
   generateAccount(options?: {
     readonly networkId?: "simnet" | "testnet-10" | "mainnet";
+    /** ECDSA spends · the address scheme of the generated account (default Schnorr). */
+    readonly keyScheme?: "schnorr" | "ecdsa";
   }): Promise<GeneratedKaspaDevAccount>;
 }
 

@@ -34,6 +34,26 @@ export interface TxStatusRunnerResult {
   network: string;
   derived: DerivedTxStatus;
   look: TxStatusLook;
+  /** R3-D: the `--address` lookup, when one was asked. */
+  addressLookup?: TxStatusAddressLookup;
+}
+
+/**
+ * R3-D · `tx status --address`: the history of an address the transaction pays or spends from, over a bounded window of
+ * the node's selected chain. Found: the chain block before its acceptance is the look's cursor, so the acceptance is the
+ * look's own chain answer, sealed like any other observation (an output spent since is no longer in the UTXO set, but
+ * its acceptance is still in the chain). Not found: the window read, and the look goes on from --since or the stored
+ * evidence as without it.
+ */
+export interface TxStatusAddressLookup {
+  address: string;
+  found: boolean;
+  acceptingBlockHash?: string;
+  /** The look's cursor it gave: the chain block before the acceptance. */
+  cursor?: string;
+  window?: { from: string; firstCoveredDaaScore: string; to?: string; toDaaScore?: string; chainBlocks: number; reachedTip: boolean; startsAtPruningPoint: boolean };
+  /** The lookup could not be made (its code and message); the look went on without it. */
+  error?: string;
 }
 
 /**
@@ -93,6 +113,10 @@ export async function runTxStatus(input: {
   network?: string;
   /** TN10-CONFIRMATION-FIX-1: the new look's virtual-chain cursor (a chain block preceding the acceptance). */
   since?: string;
+  /** R3-D: locate the acceptance first through the history of this address (see TxStatusAddressLookup). */
+  address?: string;
+  /** R3-D: with `address` and no `since`, the history's window in chain blocks back from the sink (default 1000). */
+  lookback?: number;
   workspaceRoot?: string;
   sdk?: Sdk;
 }): Promise<TxStatusRunnerResult> {
@@ -109,15 +133,54 @@ export async function runTxStatus(input: {
   }
 }
 
-async function lookAndDerive(input: { txId: string; observe?: boolean; since?: string }, sdk: Sdk, network: string): Promise<TxStatusRunnerResult> {
+/** R3-D: the `--address` lookup (bounded; a failure is reported, never a state, and never stops the look). */
+async function addressLookupFor(sdk: Sdk, input: { txId: string; since?: string; address: string; lookback?: number }): Promise<TxStatusAddressLookup> {
+  const { locateTransactionOnNode } = await import("@hardkas/sdk");
+  try {
+    const located = await locateTransactionOnNode(sdk, input.txId, input.address, {
+      ...(input.since !== undefined ? { since: input.since } : {}),
+      ...(input.lookback !== undefined ? { lookback: input.lookback } : {})
+    });
+    const w = located.coverage.window;
+    return {
+      address: input.address,
+      found: located.found,
+      ...(located.acceptance ? { acceptingBlockHash: located.acceptance.chainBlockHash, cursor: located.acceptance.previousChainBlockHash } : {}),
+      window: {
+        from: w.from.hash,
+        firstCoveredDaaScore: w.firstCoveredDaaScore,
+        ...(w.to ? { to: w.to.hash, toDaaScore: w.to.daaScore } : {}),
+        chainBlocks: w.chainBlocks,
+        reachedTip: w.reachedTip,
+        startsAtPruningPoint: w.startsAtPruningPoint
+      }
+    };
+  } catch (e: any) {
+    // MAINNET TOTAL LOCKDOWN: a mainnet refusal is the command's answer, never a lookup "not made"
+    if (/^MAINNET_(CONNECTION|SIGNING|BROADCAST)_DISABLED$/.test(String(e?.code ?? ""))) throw e;
+    return { address: input.address, found: false, error: `${e?.code ? `[${e.code}] ` : ""}${e?.message ?? String(e)}` };
+  }
+}
+
+async function lookAndDerive(
+  input: { txId: string; observe?: boolean; since?: string; address?: string; lookback?: number },
+  sdk: Sdk,
+  network: string
+): Promise<TxStatusRunnerResult> {
   let look: TxStatusLook;
+  let addressLookup: TxStatusAddressLookup | undefined;
   if (SYNTHETIC_TXID.test(input.txId)) {
     look = { taken: false, reason: "a simulator txId: there is no network to observe; the state derives from the simulator receipt" };
   } else if (input.observe === false) {
     look = { taken: false, reason: "not requested (--no-observe): derived from the evidence already in this workspace" };
   } else {
+    let since = input.since;
+    if (input.address !== undefined) {
+      addressLookup = await addressLookupFor(sdk, { txId: input.txId, address: input.address, ...(input.since !== undefined ? { since: input.since } : {}), ...(input.lookback !== undefined ? { lookback: input.lookback } : {}) });
+      if (addressLookup.found && addressLookup.cursor) since = addressLookup.cursor;
+    }
     try {
-      const r = await sdk.tx.observe(input.txId, input.since !== undefined ? { since: input.since } : {});
+      const r = await sdk.tx.observe(input.txId, since !== undefined ? { since } : {});
       look = { taken: true, artifactId: r.observation.contentHash, ...(r.observationPath ? { path: r.observationPath } : {}) };
     } catch (e: any) {
       // MAINNET TOTAL LOCKDOWN: a mainnet refusal is the command's answer (its JSON code), never a look "not taken" —
@@ -127,7 +190,20 @@ async function lookAndDerive(input: { txId: string; observe?: boolean; since?: s
     }
   }
   const derived: DerivedTxStatus = await sdk.tx.status(input.txId);
-  return { txId: input.txId, network, derived, look };
+  return { txId: input.txId, network, derived, look, ...(addressLookup ? { addressLookup } : {}) };
+}
+
+/** R3-D: the `Address Lookup` row of `tx status --address`. */
+export function addressLookupRow(l: TxStatusAddressLookup | undefined): string | undefined {
+  if (!l) return undefined;
+  if (l.error) return `not made at ${l.address}: ${l.error}`;
+  const w = l.window;
+  const window = w
+    ? `chain blocks after ${w.from} (DAA score ≥ ${w.firstCoveredDaaScore})${w.to ? ` up to DAA score ${w.toDaaScore}` : ""}, ${w.chainBlocks} chain block(s)${w.reachedTip ? ", to the tip" : ", not to the tip"}`
+    : "no window";
+  return l.found
+    ? `found in the history of ${l.address} (${window}): accepted by ${l.acceptingBlockHash}; this look scanned from ${l.cursor}`
+    : `not in the history of ${l.address} over ${window}: an acceptance outside that window is not covered`;
 }
 
 /** `STATE` plus its depth when the model defines one, e.g. `CONFIRMED (142 blue-score confirmations)`. */
@@ -177,6 +253,7 @@ export function renderTxStatusRows(result: TxStatusRunnerResult): Record<string,
     "Per Observer": perObserver,
     Evidence: evidence,
     "This Look": result.look.taken ? `new observation ${result.look.artifactId}` : `no new observation: ${result.look.reason}`,
+    "Address Lookup": addressLookupRow(result.addressLookup),
     Why: d.reasons.join(" · ")
   };
 }
@@ -192,6 +269,7 @@ export function txStatusJson(result: TxStatusRunnerResult): Record<string, unkno
     ...(result.derived.confirmations ? { confirmations: result.derived.confirmations } : {}),
     isFinal: result.derived.isFinal,
     look: result.look,
+    ...(result.addressLookup ? { addressLookup: result.addressLookup } : {}),
     derived: result.derived
   };
 }

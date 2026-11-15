@@ -1,5 +1,6 @@
 import { blake2b } from "@noble/hashes/blake2.js";
-import { schnorr } from "@noble/curves/secp256k1";
+import { sha256 } from "@noble/hashes/sha2.js";
+import { schnorr, secp256k1 } from "@noble/curves/secp256k1";
 
 /*
  * The Kaspa signature hash of a transaction input (rusty-kaspa v2.1.0 consensus/core/src/hashing/sighash.rs,
@@ -172,6 +173,83 @@ export function kaspaSchnorrSignatureHash(tx: KaspaSighashTransaction, inputInde
   h.u64(utxo.amount).u64(input.sequence);
   if (tx.version < 1) h.u8(input.sigOpCount ?? 0);
   return h.bytes(outputsHash(tx, hashType, inputIndex)).u64(tx.lockTime).bytes(subnetwork).u64(tx.gas).bytes(payloadHash(tx)).u8(hashType).digest();
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+// ECDSA P2PK inputs (script `21 <33-byte compressed key> ab`, OP_CHECKSIGECDSA). kaspa-wasm 2.1.0 signs Schnorr only and
+// exposes just the ECDSA hasher (TransactionSigningHashECDSA), so the ECDSA signature is made here with @noble/curves
+// (audited; RFC 6979 deterministic nonces, low-S), over the hash rusty-kaspa v2.1.0 verifies:
+// calc_ecdsa_signature_hash = SHA-256(SHA-256("TransactionSigningHashECDSA") ‖ calc_schnorr_signature_hash), checked
+// against kaspa-wasm's TransactionSigningHashECDSA (core/test/kaspa-sighash-ecdsa.test.ts). The node verifies it with
+// libsecp256k1 (Signature::from_compact, verify_ecdsa: a high-S signature does not verify).
+// ---------------------------------------------------------------------------------------------------------------------
+
+const ECDSA_DOMAIN = sha256(new TextEncoder().encode("TransactionSigningHashECDSA"));
+/** secp256k1 group order n, and n / 2 (a signature's s above it is high-S). */
+const SECP256K1_N = 0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141n;
+const SECP256K1_HALF_N = SECP256K1_N >> 1n;
+
+/** calc_ecdsa_signature_hash: the 32-byte message an ECDSA signature of input `inputIndex` signs. */
+export function kaspaEcdsaSignatureHash(tx: KaspaSighashTransaction, inputIndex: number, utxo: KaspaSighashUtxo, hashType: number = SIGHASH_ALL): Uint8Array {
+  const schnorrHash = kaspaSchnorrSignatureHash(tx, inputIndex, utxo, hashType);
+  const preimage = new Uint8Array(ECDSA_DOMAIN.length + schnorrHash.length);
+  preimage.set(ECDSA_DOMAIN, 0);
+  preimage.set(schnorrHash, ECDSA_DOMAIN.length);
+  return sha256(preimage);
+}
+
+/** The 33-byte compressed public key (hex) of a 32-byte private key (hex): what an ECDSA P2PK script commits to. */
+export function ecdsaCompressedPublicKey(privateKeyHex: string): string {
+  if (typeof privateKeyHex !== "string" || !/^[0-9a-f]{64}$/i.test(privateKeyHex)) throw sighashError("an ECDSA private key is 32 bytes (64 hex)");
+  return Buffer.from(secp256k1.getPublicKey(Uint8Array.from(Buffer.from(privateKeyHex, "hex")), true)).toString("hex");
+}
+
+/**
+ * The ECDSA signature of input `inputIndex` (65 bytes hex: the 64-byte compact signature r ‖ s, low-S, and the sighash
+ * type), deterministic (RFC 6979: the same transaction and key give the same signature). The private key is used here
+ * only and never appears in an error.
+ */
+export function signKaspaInputEcdsa(input: {
+  readonly tx: KaspaSighashTransaction;
+  readonly inputIndex: number;
+  readonly utxo: KaspaSighashUtxo;
+  readonly privateKey: string;
+  readonly hashType?: number | undefined;
+}): string {
+  const hashType = input.hashType ?? SIGHASH_ALL;
+  if (typeof input.privateKey !== "string" || !/^[0-9a-f]{64}$/i.test(input.privateKey)) throw sighashError("an ECDSA private key is 32 bytes (64 hex)");
+  const msg = kaspaEcdsaSignatureHash(input.tx, input.inputIndex, input.utxo, hashType);
+  const sig = secp256k1.sign(msg, Uint8Array.from(Buffer.from(input.privateKey, "hex")), { lowS: true, prehash: false });
+  if (sig.s > SECP256K1_HALF_N) throw sighashError("the signature is not low-S");
+  return Buffer.from(sig.toCompactRawBytes()).toString("hex") + hashType.toString(16).padStart(2, "0");
+}
+
+/**
+ * Whether `signature` (65 bytes hex: the compact ECDSA signature and its sighash type) is a valid ECDSA signature by
+ * the 33-byte compressed `publicKey` of input `inputIndex` of `tx` spending `utxo`, as the node checks it: low-S only (a
+ * high-S signature is refused), the sighash type one of `allowedTypes` (default SIGHASH_ALL). Never throws.
+ */
+export function verifyKaspaInputSignatureEcdsa(input: {
+  readonly tx: KaspaSighashTransaction;
+  readonly inputIndex: number;
+  readonly utxo: KaspaSighashUtxo;
+  readonly publicKey: string;
+  readonly signature: string;
+  readonly allowedTypes?: readonly number[] | undefined;
+}): boolean {
+  try {
+    if (!/^[0-9a-f]{130}$/i.test(input.signature) || !/^(02|03)[0-9a-f]{64}$/i.test(input.publicKey)) return false;
+    const sig = Buffer.from(input.signature, "hex");
+    const hashType = sig[64]!;
+    if (!(input.allowedTypes ?? [SIGHASH_ALL]).includes(hashType)) return false;
+    const compact = Uint8Array.from(sig.subarray(0, 64));
+    const s = BigInt("0x" + Buffer.from(compact.subarray(32)).toString("hex"));
+    if (s === 0n || s > SECP256K1_HALF_N) return false;
+    const msg = kaspaEcdsaSignatureHash(input.tx, input.inputIndex, input.utxo, hashType);
+    return secp256k1.verify(compact, msg, Uint8Array.from(Buffer.from(input.publicKey, "hex")), { lowS: true, prehash: false });
+  } catch {
+    return false;
+  }
 }
 
 /** "vvvvscript" (the version as 2 bytes, then the script, hex) as kaspa-wasm serializes a script public key. */

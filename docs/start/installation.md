@@ -129,15 +129,18 @@ Then invoke it through `npx`:
 npx hardkas --version
 ```
 
-npm 11 may warn that `esbuild` has an install script not covered by
-`allowScripts`. HardKAS does not need that script to run.
+npm 11 may warn that `esbuild` has an install script that is not approved. It
+comes through `tsx`, which `hardkas run` uses to run your scripts. HardKAS does
+not need that script: esbuild finds its platform binary in its optional package
+at run time. You can leave it unapproved (or approve it: it is the official
+`esbuild` package). Do not install with `--omit=optional` if you use
+`hardkas run`.
 
-`npm audit` reports advisories in this release's dependency tree: `zod` 3
-(GHSA-mrhx-c7xc-m3w5, fixed only in zod 4, a major upgrade), `@hono/node-server`
-used by the local dev-server (GHSA-rmxm-3fg6-px4f), and, after the test step
-below, `vitest` 2. They are known and tracked for the next cycle; this release
-does not upgrade them. Keep HardKAS to local development networks, as the rest of
-this guide does.
+`npm audit` may report advisories in the dependency tree: `@hono/node-server`
+used by the local dev-server (GHSA-rmxm-3fg6-px4f, in a feature HardKAS does not
+use) and, after the test step below, `vitest` 2. (`zod` moved to 4.6.7 after
+0.13.0-rc.2, which fixes GHSA-mrhx-c7xc-m3w5.) Keep HardKAS to local development
+networks, as the rest of this guide does.
 
 ### Installing the CLI globally
 

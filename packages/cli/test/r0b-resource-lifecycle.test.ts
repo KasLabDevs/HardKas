@@ -144,7 +144,10 @@ describe("RESOURCE-LIFECYCLE-1 · a finite command closes what it opened and end
       "runners/rpc-doctor-runner.ts#checkKaspaEndpoint": "disconnects on each of its three paths (connect refused, answered, request refused)",
       "runners/workflow-runner.ts#runWorkflowRun": "closes the SDK when the run settles, not in a finally: a --timeout must not close it under the abandoned run (WORKFLOW-TIMEOUT-CANCELLATION-1)",
       // L1-CORE-1 B3: openCanonicalSilverSdk now delegates to openSilverSdk (any node network)
-      "runners/silver-onchain-runner.ts#openSilverSdk": "returns the SDK (closing it when it refuses the workspace); withEngine in commands/silver.ts, its only caller, closes it in its finally"
+      "runners/silver-onchain-runner.ts#openSilverSdk": "returns the SDK (closing it when it refuses the workspace); withEngine in commands/silver.ts, its only caller, closes it in its finally",
+      // R3 · the escrow lifecycle and ZK spend commands open their SDK the same way
+      "commands/escrow.ts#openEscrowSdk": "returns the SDK (closing it when the workspace is not a node network); withEscrowSdk and withEscrowNode, its only callers, close it in their finally",
+      "commands/zk.ts#openZkSdk": "returns the SDK (closing it when the workspace has no node execution); runZkSpend, its only caller, closes it and the node's client in its finally"
     };
     const srcRoot = path.resolve(__dirname, "../src");
     const files: string[] = [];

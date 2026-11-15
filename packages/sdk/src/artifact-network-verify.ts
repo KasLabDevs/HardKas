@@ -22,6 +22,7 @@ import {
   type TxStatusPolicy
 } from "@hardkas/artifacts";
 import { isMainnetNetworkId, networkFamilyOf, systemRuntimeContext, type NetworkFamily, type NetworkIdentity } from "@hardkas/core";
+import { locateTransactionByAddress, type AddressHistoryRpc } from "@hardkas/query";
 import { observeTxOnce, rpcObserverFor } from "./tx-observer.js";
 
 export type ArtifactNetworkLevel = "NETWORK_OBSERVED" | "NOT_OBSERVED" | "NOT_CHECKED";
@@ -170,6 +171,43 @@ export interface ArtifactNetworkObservation {
   readonly point: { readonly virtualDaaScore: string; readonly sinkHash: string; readonly sinkBlueScore: string; readonly pruningPointHash?: string | undefined };
 }
 
+/**
+ * R3-D · the `--address` lookup: the history of an address the transaction pays or spends from, read over a bounded
+ * window of the node's selected chain (@hardkas/query locateTransactionByAddress). When it finds the transaction, its
+ * accepting chain block's predecessor is the look's cursor, and the acceptance is the look's own chain answer (sealed
+ * like any other); when it does not, it says which window it read — never an absence beyond it.
+ */
+export interface ArtifactAddressLookup {
+  readonly address: string;
+  readonly found: boolean;
+  /** The chain block the history saw accept it (found only). */
+  readonly acceptingBlockHash?: string | undefined;
+  /** The look's cursor it gave (found only): the chain block before the acceptance. */
+  readonly cursor?: string | undefined;
+  /** The window the history read. */
+  readonly window?: {
+    readonly from: string;
+    readonly firstCoveredDaaScore: string;
+    readonly to?: string | undefined;
+    readonly toDaaScore?: string | undefined;
+    readonly chainBlocks: number;
+    readonly reachedTip: boolean;
+    readonly startsAtPruningPoint: boolean;
+    readonly pruningPointIsGenesis: boolean;
+  } | undefined;
+  /** The lookup could not be made (its typed code and message); the look went on without it. */
+  readonly error?: string | undefined;
+}
+
+export interface ArtifactAddressLookupRequest {
+  readonly address: string;
+  /** The history's window start (a chain block hash or a DAA score); default: its last `lookback` chain blocks. */
+  readonly since?: string | bigint | number | undefined;
+  readonly lookback?: number | undefined;
+  readonly maxChainBlocks?: number | undefined;
+  readonly timeoutMs?: number | undefined;
+}
+
 export interface ArtifactNetworkVerification {
   readonly schema: "hardkas.artifactNetworkVerification.v1";
   readonly network: {
@@ -182,6 +220,8 @@ export interface ArtifactNetworkVerification {
     readonly causes?: readonly ArtifactUnobservableCause[] | undefined;
     /** RC1-R2: for NOT_OBSERVED, the virtual-chain window the look read. */
     readonly window?: ArtifactScanWindow | undefined;
+    /** R3-D: the `--address` lookup, when one was asked. */
+    readonly addressLookup?: ArtifactAddressLookup | undefined;
   };
   readonly consensus: {
     readonly level: ArtifactConsensusLevel;
@@ -246,6 +286,8 @@ export async function verifyArtifactOnNetwork(input: {
   /** A virtual-chain cursor: a chain block the node holds that precedes the acceptance (default: the artifact's own). */
   readonly since?: string | undefined;
   readonly maxBatches?: number | undefined;
+  /** R3-D: find the acceptance first through the history of an address the transaction pays or spends from. */
+  readonly addressLookup?: ArtifactAddressLookupRequest | undefined;
 }): Promise<ArtifactNetworkVerification> {
   const { subject, client, node } = input;
   const policy = input.policy ?? TX_STATUS_POLICY_HARDKAS_DEFAULT_V1;
@@ -272,27 +314,83 @@ export async function verifyArtifactOnNetwork(input: {
   }
 
   const txId = subject.txId;
-  const look = (since: string | undefined) =>
+  const look = (since: string | undefined, explicit = input.since !== undefined) =>
     observeTxOnce(
       rpcObserverFor(client),
       {
         txId,
         observerId: deriveObserverId({ kind: "rpc", target: subject.networkId, ...(node.endpoint ? { locator: node.endpoint } : {}) }),
         ...(since ? { since } : {}),
-        ...(input.since !== undefined ? { sinceExplicit: true } : {}),
+        ...(explicit ? { sinceExplicit: true } : {}),
         ...(input.maxBatches !== undefined ? { maxBatches: input.maxBatches } : {}),
         networkId: subject.networkId as TxObservation["networkId"],
         mode: "rpc"
       },
       systemRuntimeContext
     );
-  let observation: TxObservation;
+
+  // R3-D · `--address`: the history of an address the transaction pays or spends from, over its bounded window. Found,
+  // the chain block before its acceptance is the look's cursor, so the acceptance is the look's own chain answer, sealed
+  // like any other (an output spent since is no longer in the UTXO set, but its acceptance is still in the chain). Not
+  // found, it says which window it read, and the look goes on as without it: never a NOT_FOUND it did not establish.
+  let addressLookup: ArtifactAddressLookup | undefined;
+  let addressCursor: string | undefined;
+  if (input.addressLookup) {
+    const req = input.addressLookup;
+    try {
+      const located = await locateTransactionByAddress(client as unknown as AddressHistoryRpc, {
+        txId,
+        address: req.address,
+        networkId: subject.networkId,
+        ...(req.since !== undefined ? { since: req.since } : {}),
+        ...(req.lookback !== undefined ? { lookback: req.lookback } : {}),
+        ...(req.maxChainBlocks !== undefined ? { maxChainBlocks: req.maxChainBlocks } : {}),
+        ...(req.timeoutMs !== undefined ? { timeoutMs: req.timeoutMs } : {})
+      });
+      const w = located.coverage.window;
+      addressLookup = {
+        address: req.address,
+        found: located.found,
+        ...(located.acceptance ? { acceptingBlockHash: located.acceptance.chainBlockHash, cursor: located.acceptance.previousChainBlockHash } : {}),
+        window: {
+          from: w.from.hash,
+          firstCoveredDaaScore: w.firstCoveredDaaScore,
+          ...(w.to ? { to: w.to.hash, toDaaScore: w.to.daaScore } : {}),
+          chainBlocks: w.chainBlocks,
+          reachedTip: w.reachedTip,
+          startsAtPruningPoint: w.startsAtPruningPoint,
+          pruningPointIsGenesis: w.pruningPoint.isGenesis
+        }
+      };
+      if (located.found && located.acceptance) addressCursor = located.acceptance.previousChainBlockHash;
+    } catch (e: unknown) {
+      const err = e as { code?: unknown; message?: unknown } | null | undefined;
+      // a mainnet refusal is a decision, never "the lookup failed"
+      if (/^MAINNET_(CONNECTION|SIGNING|BROADCAST)_DISABLED$/.test(String(err?.code ?? ""))) throw e;
+      addressLookup = { address: req.address, found: false, error: `${err?.code ? `[${String(err.code)}] ` : ""}${String(err?.message ?? e)}` };
+    }
+  }
+  const withLookup = (v: ArtifactNetworkVerification): ArtifactNetworkVerification =>
+    addressLookup ? { ...v, network: { ...v.network, addressLookup } } : v;
+
+  let observation: TxObservation | undefined;
+  if (addressCursor) {
+    try {
+      const found = await look(addressCursor, false);
+      const t = (found.finding as { type: string }).type;
+      // only the acceptance the lookup pointed at is taken from this look; anything else (the chain moved meanwhile)
+      // falls back to the look the verification makes without the lookup
+      if (t === "chain_accepted" || t === "finality_reached") observation = found;
+    } catch {
+      observation = undefined;
+    }
+  }
   // RC1-R2: how the look's start was chosen, for the classification of a transaction the node does not show
   let fromKind: ArtifactScanWindow["fromKind"] = input.since !== undefined ? "explicit" : subject.since !== undefined ? "artifact" : "pruning-point";
   let cursorNotServed = false;
   try {
     try {
-      observation = await look(input.since ?? subject.since);
+      if (!observation) observation = await look(input.since ?? subject.since);
       if (fromKind === "artifact" && (observation.finding as { type: string }).type === "pruned_unobservable") {
         // RC1-R2: the node answered the artifact's own cursor with "pruned/not found" (sealed, not thrown): as below
         cursorNotServed = true;
@@ -310,10 +408,16 @@ export async function verifyArtifactOnNetwork(input: {
   } catch (e: unknown) {
     const err = e as { code?: unknown; message?: unknown } | null | undefined;
     const message = `the look failed: ${err?.code ? `[${String(err.code)}] ` : ""}${String(err?.message ?? e)}`;
-    return {
+    return withLookup({
       ...notCheckedNetworkVerification("OBSERVATION_FAILED", message, { policy, node }),
       network: { level: "NOT_CHECKED", reason: "OBSERVATION_FAILED", message, node }
-    };
+    });
+  }
+  if (!observation) {
+    return withLookup({
+      ...notCheckedNetworkVerification("OBSERVATION_FAILED", "the look sealed no observation", { policy, node }),
+      network: { level: "NOT_CHECKED", reason: "OBSERVATION_FAILED", message: "the look sealed no observation", node }
+    });
   }
   const point = {
     virtualDaaScore: observation.point.virtualDaaScore,
@@ -338,21 +442,25 @@ export async function verifyArtifactOnNetwork(input: {
   if (finding.type === "chain_accepted" || finding.type === "finality_reached") {
     const blue = BigInt(finding.confirmationsBlue ?? "0");
     const c = consensusFor(blue, `accepting chain block ${finding.acceptingBlockHash}`);
-    return {
+    const via =
+      addressLookup?.found && addressCursor
+        ? `; located through the history of ${addressLookup.address} (chain blocks after ${addressLookup.window?.from}, DAA score ≥ ${addressLookup.window?.firstCoveredDaaScore}), looked at from ${addressCursor}`
+        : "";
+    return withLookup({
       schema: "hardkas.artifactNetworkVerification.v1",
       network: {
         level: "NETWORK_OBSERVED",
         node,
         observation: {
           source: "virtual-chain",
-          scope: `accepted in the node's virtual chain by ${finding.acceptingBlockHash} (derived ${derived.status}); one node, one look`,
+          scope: `accepted in the node's virtual chain by ${finding.acceptingBlockHash} (derived ${derived.status}); one node, one look${via}`,
           acceptingBlockHash: finding.acceptingBlockHash,
           confirmationsBlue: blue.toString(),
           point
         }
       },
       consensus: { ...c, policy, scope: CONSENSUS_LEVEL_SCOPE }
-    };
+    });
   }
 
   // Not located in the virtual chain window the look read: the node's UTXO set can still show an output of it.
@@ -376,7 +484,7 @@ export async function verifyArtifactOnNetwork(input: {
   if (utxoHit) {
     const { out, hit } = utxoHit;
     if (out.amountSompi !== undefined && hit.amount !== undefined && out.amountSompi !== hit.amount) {
-      return {
+      return withLookup({
         schema: "hardkas.artifactNetworkVerification.v1",
         network: {
           level: "NOT_OBSERVED",
@@ -385,7 +493,7 @@ export async function verifyArtifactOnNetwork(input: {
           node
         },
         consensus: { level: "NOT_CONFIRMED", reason: "OBSERVATION_CONFLICTS_WITH_ARTIFACT", policy, scope: CONSENSUS_LEVEL_SCOPE }
-      };
+      });
     }
     // Consensus by a sound lower bound only: an accepting chain block whose DAA score is below the pruning point's
     // precedes it on the selected chain, so its blue-score depth is at least sink − pruning point.
@@ -407,7 +515,7 @@ export async function verifyArtifactOnNetwork(input: {
         // the bound is unavailable: the level stays NOT_CONFIRMED with its reason
       }
     }
-    return {
+    return withLookup({
       schema: "hardkas.artifactNetworkVerification.v1",
       network: {
         level: "NETWORK_OBSERVED",
@@ -420,11 +528,11 @@ export async function verifyArtifactOnNetwork(input: {
         }
       },
       consensus
-    };
+    });
   }
 
   if (finding.type === "mempool_entry") {
-    return {
+    return withLookup({
       schema: "hardkas.artifactNetworkVerification.v1",
       network: {
         level: "NETWORK_OBSERVED",
@@ -432,7 +540,7 @@ export async function verifyArtifactOnNetwork(input: {
         observation: { source: "mempool", scope: `in the node's mempool${finding.isOrphan ? " (orphan)" : ""}: local and transient`, point }
       },
       consensus: { level: "NOT_CONFIRMED", reason: "MEMPOOL_IS_NOT_CONFIRMATION", message: "mempool is not confirmation", policy, scope: CONSENSUS_LEVEL_SCOPE }
-    };
+    });
   }
 
   // RC1-R2: not shown by this node. Absence is established only by a complete window from a start that precedes any
@@ -472,7 +580,7 @@ export async function verifyArtifactOnNetwork(input: {
       : `${finding.type}${finding.reason ? `: ${finding.reason}` : ""}`;
   if (causes.length === 0) {
     const start = fromKind === "explicit" ? "the --since block" : fromKind === "artifact" ? "the artifact's own submit point" : "the node's genesis";
-    return {
+    return withLookup({
       schema: "hardkas.artifactNetworkVerification.v1",
       network: {
         level: "NOT_OBSERVED",
@@ -482,7 +590,7 @@ export async function verifyArtifactOnNetwork(input: {
         window: scanWindow
       },
       consensus: { level: "NOT_CONFIRMED", reason: "NOT_FOUND", policy, scope: CONSENSUS_LEVEL_SCOPE }
-    };
+    });
   }
   causes.push(subject.outputs.length === 0 ? "NO_OUTPUTS_NAMED" : utxoLookupFailed ? "UTXO_LOOKUP_FAILED" : "OUTPUTS_SPENT_OR_ABSENT");
   const why: Record<ArtifactUnobservableCause, string> = {
@@ -495,14 +603,21 @@ export async function verifyArtifactOnNetwork(input: {
     SCAN_INCOMPLETE: "the virtual-chain read did not reach the node's tip",
     NO_CHAIN_START: "the node named no pruning point to read its virtual chain from"
   };
-  return {
+  // R3-D: what the `--address` lookup read, when it did not find the transaction either
+  const lookupRead = !addressLookup
+    ? ""
+    : addressLookup.error
+      ? ` The --address lookup at ${addressLookup.address} could not be made (${addressLookup.error}).`
+      : ` The history of ${addressLookup.address} does not show it either in the window it read (chain blocks after ${addressLookup.window?.from}, DAA score ≥ ${addressLookup.window?.firstCoveredDaaScore}` +
+        `${addressLookup.window?.to ? ` up to ${addressLookup.window.toDaaScore}` : ""}${addressLookup.window?.reachedTip ? ", to the tip" : ", not to the tip"}): an acceptance outside that window is not covered.`;
+  return withLookup({
     schema: "hardkas.artifactNetworkVerification.v1",
     network: {
       level: "NOT_OBSERVED",
       reason: "NOT_OBSERVABLE_HERE",
       message:
         `${read}. Not observable on this node: ${causes.map((c) => why[c]).join("; ")}. ` +
-        `A limit of what this node can show now, not evidence that the transaction does not exist (an old transaction, confirmed long ago, looks like this)`,
+        `A limit of what this node can show now, not evidence that the transaction does not exist (an old transaction, confirmed long ago, looks like this).${lookupRead}`,
       causes,
       node,
       window: scanWindow
@@ -514,7 +629,7 @@ export async function verifyArtifactOnNetwork(input: {
       policy,
       scope: CONSENSUS_LEVEL_SCOPE
     }
-  };
+  });
 }
 
 /** RC1-R2: whether the node has no chain block after `hash` (the read reached its tip); undefined when it cannot say. */

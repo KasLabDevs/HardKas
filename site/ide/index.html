@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<title>HardKAS IDE – Visual Development Environment for Kaspa L1 &amp; SilverScript</title>
+<meta content="Download HardKAS IDE (0.3.0) for Windows, macOS and Linux. SilverScript editor and compiler, local rusty-kaspad simnet, Deploy &amp; Run, artifacts, vitest debugger and AI assistant." name="description"/>
+<link href="https://hardkas.dev/ide/" rel="canonical"/>
+
+<!-- Open Graph / Social Previews -->
+<meta content="website" property="og:type"/>
+<meta content="HardKAS" property="og:site_name"/>
+<meta content="https://hardkas.dev/ide/" property="og:url"/>
+<meta content="HardKAS IDE – Visual Development Environment for Kaspa L1 &amp; SilverScript" property="og:title"/>
+<meta content="Download HardKAS IDE (0.3.0) for Windows, macOS and Linux. SilverScript editor and compiler, local rusty-kaspad simnet, Deploy &amp; Run, artifacts, vitest debugger and AI assistant." property="og:description"/>
+<meta content="https://hardkas.dev/docs/img/ide/workbench.png" property="og:image"/>
+
+<!-- Twitter / X Cards -->
+<meta content="summary_large_image" name="twitter:card"/>
+<meta content="HardKAS IDE – Visual Development Environment for Kaspa L1 &amp; SilverScript" name="twitter:title"/>
+<meta content="Download HardKAS IDE (0.3.0) for Windows, macOS and Linux. SilverScript editor and compiler, local rusty-kaspad simnet, Deploy &amp; Run, artifacts, vitest debugger and AI assistant." name="twitter:description"/>
+<meta content="https://hardkas.dev/docs/img/ide/workbench.png" name="twitter:image"/>
+
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebPage",
+      "@id": "https://hardkas.dev/ide/#webpage",
+      "url": "https://hardkas.dev/ide/",
+      "name": "HardKAS IDE – Visual Development Environment for Kaspa L1 & SilverScript",
+      "description": "Desktop workbench for HardKAS projects: SilverScript editor and compiler, local rusty-kaspad simnet, Deploy & Run, artifacts, vitest debugger and AI assistant.",
+      "inLanguage": "en-US"
+    },
+    {
+      "@type": "SoftwareApplication",
+      "@id": "https://hardkas.dev/ide/#software",
+      "name": "HardKAS IDE",
+      "applicationCategory": "DeveloperApplication",
+      "operatingSystem": "Windows, macOS, Linux",
+      "softwareVersion": "0.3.0",
+      "license": "https://opensource.org/licenses/MIT",
+      "url": "https://hardkas.dev/ide/",
+      "downloadUrl": "https://github.com/KasLabDevs/HardKasIDE/releases/latest",
+      "screenshot": "https://hardkas.dev/docs/img/ide/workbench.png",
+      "description": "Desktop workbench for HardKAS projects on Kaspa L1: SilverScript editor, compiler, Deploy & Run, local Docker rusty-kaspad simnet, artifact lineage, vitest test runner and debugger, and AI assistant.",
+      "author": {
+        "@type": "Organization",
+        "name": "KasLabDevs",
+        "url": "https://github.com/KasLabDevs"
+      }
+    }
+  ]
+}
+</script>
+<style>
+:root {
+  --bg: #1f1f1f;
+  --bg-elev: #252526;
+  --bg-sunk: #181818;
+  --line: rgba(255, 255, 255, 0.08);
+  --line-strong: rgba(255, 255, 255, 0.15);
+  --text: #ecebe7;
+  --text-2: #b8b6b0;
+  --muted: #86847e;
+  --accent: #70c7ba;
+  --accent-rgb: 112, 199, 186;
+  --accent-ink: #0a1715;
+  --accent-tint: rgba(112, 199, 186, 0.09);
+  --accent-line: rgba(112, 199, 186, 0.35);
+  --warn: #e0b44f;
+  --warn-tint: rgba(224, 180, 79, 0.09);
+  --chip-bg: rgba(255, 255, 255, 0.055);
+  --radius: 10px;
+  --radius-sm: 7px;
+  --sans: "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --top-h: 60px;
+  color-scheme: dark;
+}
+
+:root[data-theme="light"] {
+  --bg: #f6f5f1;
+  --bg-elev: #ffffff;
+  --bg-sunk: #eceae4;
+  --line: rgba(20, 22, 25, 0.1);
+  --line-strong: rgba(20, 22, 25, 0.2);
+  --text: #15171a;
+  --text-2: #3c3f44;
+  --muted: #6c6e72;
+  --accent: #1b7d70;
+  --accent-rgb: 27, 125, 112;
+  --accent-ink: #ffffff;
+  --accent-tint: rgba(27, 125, 112, 0.07);
+  --accent-line: rgba(27, 125, 112, 0.35);
+  --warn: #946500;
+  --warn-tint: rgba(148, 101, 0, 0.07);
+  --chip-bg: rgba(20, 22, 25, 0.05);
+  color-scheme: light;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: calc(var(--top-h) + 20px); }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 400 16px/1.65 var(--sans);
+  -webkit-font-smoothing: antialiased;
+}
+::selection { background: var(--accent); color: var(--accent-ink); }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; text-underline-offset: 3px; }
+code, pre { font-family: var(--mono); }
+code {
+  font-size: 0.86em;
+  background: var(--chip-bg);
+  padding: 0.1em 0.38em;
+  border-radius: 5px;
+}
+
+/* Topbar */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  height: var(--top-h);
+  background: color-mix(in srgb, var(--bg) 84%, transparent);
+  backdrop-filter: saturate(140%) blur(10px);
+  -webkit-backdrop-filter: saturate(140%) blur(10px);
+  border-bottom: 1px solid var(--line);
+}
+.top-inner {
+  height: 100%;
+  max-width: 1220px;
+  margin: 0 auto;
+  padding: 0 28px;
+  display: flex;
+  align-items: center;
+  gap: 32px;
+}
+.brand { display: inline-flex; align-items: center; flex: none; }
+.brand-logo { height: 26px; width: auto; display: block; }
+nav[aria-label="Top navigation"] { display: flex; align-items: center; gap: 24px; }
+nav[aria-label="Top navigation"] a {
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: color 0.15s;
+}
+nav[aria-label="Top navigation"] a:hover,
+nav[aria-label="Top navigation"] a[aria-current="page"] {
+  color: var(--text);
+  text-decoration: none;
+}
+.top-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.theme-toggle, .github {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+.theme-toggle:hover, .github:hover {
+  color: var(--text);
+  border-color: var(--line-strong);
+  background: var(--bg-elev);
+  text-decoration: none;
+}
+.github-icon { width: 16px; height: 16px; }
+
+/* Main container */
+.container {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 28px;
+}
+
+/* Hero */
+.hero {
+  padding: 56px 0 44px;
+  border-bottom: 1px solid var(--line);
+}
+.hero-kicker {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 14px;
+}
+.hero h1 {
+  font-size: clamp(2rem, 4vw, 3rem);
+  line-height: 1.12;
+  letter-spacing: -0.025em;
+  margin: 0 0 18px;
+  max-width: 22ch;
+}
+.hero-lead {
+  font-size: 1.08rem;
+  color: var(--text-2);
+  max-width: 68ch;
+  margin: 0 0 24px;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line-strong);
+  background: var(--bg-elev);
+  color: var(--text);
+  font-size: 0.92rem;
+  font-weight: 500;
+  transition: border-color 0.15s, background 0.15s, transform 0.1s;
+}
+.button:hover {
+  border-color: var(--accent);
+  text-decoration: none;
+}
+.button.primary {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-color: var(--accent);
+  font-weight: 600;
+}
+.button.primary:hover {
+  filter: brightness(1.06);
+}
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 30px;
+}
+.badge {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  color: var(--text-2);
+  background: var(--chip-bg);
+  border: 1px solid var(--line);
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+.badge.accent {
+  color: var(--accent);
+  background: var(--accent-tint);
+  border-color: var(--accent-line);
+}
+.shot-frame {
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--bg-sunk);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+}
+.shot-frame.panel {
+  max-width: 380px;
+  margin: 0 auto;
+}
+.shot-frame img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.shot-caption {
+  padding: 10px 14px;
+  font-size: 0.85rem;
+  color: var(--muted);
+  border-top: 1px solid var(--line);
+  background: var(--bg-elev);
+}
+
+/* Feature sections */
+section.feature {
+  padding: 52px 0;
+  border-bottom: 1px solid var(--line);
+}
+.feature-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.15fr;
+  gap: 36px;
+  align-items: center;
+}
+.feature-grid.reverse .feature-media { order: -1; }
+.feature-tag {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 8px;
+}
+section.feature h2 {
+  font-size: clamp(1.45rem, 2.5vw, 1.9rem);
+  line-height: 1.2;
+  margin: 0 0 14px;
+}
+section.feature p {
+  color: var(--text-2);
+  margin: 0 0 14px;
+}
+section.feature ul {
+  margin: 0 0 16px;
+  padding-left: 20px;
+  color: var(--text-2);
+}
+section.feature li { margin-bottom: 8px; }
+.media-stack {
+  display: grid;
+  gap: 16px;
+}
+
+/* Requirements & Getting Started */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin: 24px 0;
+}
+.card {
+  background: var(--bg-elev);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 20px;
+}
+.card h3 {
+  margin: 0 0 8px;
+  font-size: 1.02rem;
+}
+.card p {
+  margin: 0;
+  font-size: 0.92rem;
+  color: var(--text-2);
+}
+.note {
+  border: 1px solid var(--accent-line);
+  background: var(--accent-tint);
+  padding: 14px 18px;
+  border-radius: var(--radius-sm);
+  font-size: 0.93rem;
+  color: var(--text-2);
+  margin-top: 20px;
+}
+.note.warn {
+  border-color: rgba(224, 180, 79, 0.35);
+  background: var(--warn-tint);
+}
+
+.site-footer {
+  margin-top: 48px;
+  background: var(--bg-sunk);
+  border-top: 1px solid var(--line);
+  padding: 48px 0 36px;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+.footer-grid {
+  display: grid;
+  grid-template-columns: 1.5fr repeat(3, minmax(0, 1fr));
+  gap: 32px;
+  padding-bottom: 32px;
+  border-bottom: 1px solid var(--line);
+}
+.footer-brand p {
+  margin: 12px 0 0;
+  color: var(--text-2);
+  font-size: 0.88rem;
+  max-width: 34ch;
+  line-height: 1.55;
+}
+.footer-col h4 {
+  margin: 0 0 12px;
+  font-family: var(--mono);
+  font-size: 0.74rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+.footer-col ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 9px;
+}
+.footer-col a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-2);
+  transition: color 0.15s;
+}
+.footer-col a:hover {
+  color: var(--accent);
+  text-decoration: none;
+}
+.footer-col svg {
+  width: 15px;
+  height: 15px;
+  flex: none;
+  opacity: 0.85;
+}
+.footer-bottom {
+  padding-top: 22px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.82rem;
+}
+.footer-socials {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.footer-socials a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  color: var(--text-2);
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+.footer-socials a:hover {
+  color: var(--accent);
+  border-color: var(--accent-line);
+  background: var(--bg-elev);
+}
+.footer-socials svg {
+  width: 15px;
+  height: 15px;
+}
+
+@media (max-width: 900px) {
+  .feature-grid { grid-template-columns: 1fr; }
+  .feature-grid.reverse .feature-media { order: 0; }
+  .cards { grid-template-columns: 1fr; }
+  .footer-grid { grid-template-columns: 1fr 1fr; }
+  nav[aria-label="Top navigation"] { gap: 14px; font-size: 0.85rem; }
+}
+@media (max-width: 680px) {
+  .topbar { height: auto; min-height: var(--top-h); }
+  .top-inner { flex-wrap: wrap; padding: 10px 16px; gap: 10px 16px; }
+  nav[aria-label="Top navigation"] { order: 3; width: 100%; flex-wrap: wrap; gap: 10px 16px; padding-bottom: 4px; }
+  .container { padding: 0 18px; }
+  .footer-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="top-inner">
+    <a class="brand" href="/">
+      <img alt="HardKAS — Kaspa Developer Toolkit" class="brand-logo" decoding="async" height="91" src="/docs/img/logo.png" width="432"/>
+    </a>
+    <nav aria-label="Top navigation">
+      <a href="/">Home</a>
+      <a aria-current="page" href="/ide/">IDE</a>
+      <a href="/docs/">Docs</a>
+      <a href="/#cli">CLI</a>
+      <a href="/#packages">SDK</a>
+      <a href="/#examples">Examples</a>
+    </nav>
+    <div class="top-actions">
+      <button aria-label="Toggle theme" class="theme-toggle" type="button">☀</button>
+      <a aria-label="HardKAS IDE on GitHub" class="github" href="https://github.com/KasLabDevs/HardKasIDE" rel="noreferrer" target="_blank">
+        <svg aria-hidden="true" class="github-icon" viewBox="0 0 16 16">
+          <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z" fill="currentColor"></path>
+        </svg>
+      </a>
+    </div>
+  </div>
+</header>
+
+<main class="container">
+  <!-- 1. Hero -->
+  <section class="hero" id="top">
+    <div class="hero-kicker">HardKAS IDE · Desktop Workbench 0.3.0</div>
+    <h1>HardKAS IDE — Build, Test &amp; Debug Kaspa L1 Covenants</h1>
+    <p class="hero-lead">
+      Write and compile SilverScript covenants, run a private <code>rusty-kaspad</code> simnet node in Docker,
+      deploy and spend P2SH contracts from a form, inspect verifiable artifacts, and debug <code>vitest</code> suites in one desktop window.
+    </p>
+    <div class="actions">
+      <a class="button primary" href="https://github.com/KasLabDevs/HardKasIDE/releases/latest" rel="noreferrer" target="_blank">Download HardKAS IDE</a>
+      <a class="button" href="/docs/ide/">Read IDE documentation</a>
+      <a class="button" href="https://github.com/KasLabDevs/HardKasIDE" rel="noreferrer" target="_blank">Source on GitHub</a>
+    </div>
+    <div class="meta">
+      <span class="badge accent">IDE 0.3.0</span>
+      <span class="badge">Runs on HardKAS CLI 0.13.0-rc.2</span>
+      <span class="badge">Windows · macOS · Linux</span>
+      <span class="badge">Simulator · Local Simnet · Testnet-10</span>
+    </div>
+    <div class="shot-frame">
+      <img alt="HardKAS IDE workbench with a SilverScript covenant open, compiler output and project explorer" decoding="async" fetchpriority="high" height="900" src="/docs/img/ide/workbench.png" width="1440"/>
+      <div class="shot-caption">HardKAS IDE workbench: SilverScript editor, compiler diagnostics, project folder on disk and integrated HardKAS panels.</div>
+    </div>
+  </section>
+
+  <!-- 2. SilverScript -->
+  <section class="feature" id="silverscript">
+    <div class="feature-grid">
+      <div>
+        <div class="feature-tag">01 · SilverScript</div>
+        <h2>Editor, compiler and covenant inspection</h2>
+        <p>
+          Edit <code>.sil</code> contracts directly in your real project folder with SilverScript syntax highlighting,
+          completions and instant compilation with <code>Ctrl+Enter</code>.
+        </p>
+        <ul>
+          <li>Compile with the pinned <code>silverc</code> toolchain and see diagnostics inline in the editor.</li>
+          <li>Inspect compiled contract artifacts, entry points, dispatch tags and P2SH script details.</li>
+          <li>Every action executes the underlying <code>hardkas</code> CLI and saves standard <code>.hardkas/</code> records.</li>
+        </ul>
+        <a href="/docs/ide/editor-and-compiler">Read Editor &amp; Compiler docs →</a>
+      </div>
+      <div class="feature-media">
+        <div class="shot-frame panel">
+          <img alt="SilverScript compiler view inside HardKAS IDE" decoding="async" height="900" loading="lazy" src="/docs/img/ide/compiler.png" width="352"/>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Local Simnet -->
+  <section class="feature" id="simnet">
+    <div class="feature-grid reverse">
+      <div>
+        <div class="feature-tag">02 · Local Simnet</div>
+        <h2>Real rusty-kaspad node in Docker, plus synthetic simulator</h2>
+        <p>
+          Switch between the instant in-memory simulator, a private <code>rusty-kaspad</code> simnet node managed in Docker,
+          and public <code>testnet-10</code> from the environment bar.
+        </p>
+        <ul>
+          <li>Start, stop, restart or reset the local Docker node with live progress.</li>
+          <li>Manage dev accounts, inspect balances and export simnet keys to import into KasWare.</li>
+          <li>Built-in node explorer for virtual DAA score, mined blocks, mempool and UTXOs.</li>
+        </ul>
+        <a href="/docs/ide/local-node-and-accounts">Read Local Node &amp; Accounts docs →</a>
+      </div>
+      <div class="feature-media">
+        <div class="shot-frame panel">
+          <img alt="HardKAS IDE local node and server control panel" decoding="async" height="900" loading="lazy" src="/docs/img/ide/servers.png" width="352"/>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. Deploy & Debug -->
+  <section class="feature" id="deploy-debug">
+    <div class="feature-grid">
+      <div>
+        <div class="feature-tag">03 · Deploy, Artifacts &amp; Debug</div>
+        <h2>Deploy &amp; Run, artifact lineage and vitest debugging</h2>
+        <p>
+          Build, sign and broadcast transactions or call SilverScript covenant entries from a structured form,
+          with full artifact traceability and integrated test debugging.
+        </p>
+        <ul>
+          <li><strong>Deploy &amp; Run:</strong> fund covenants, invoke each entry point and track per-contract balances and fees.</li>
+          <li><strong>Artifacts &amp; Index:</strong> browse <code>TxPlan</code> → <code>SignedTx</code> → <code>TxReceipt</code> lineage, diff artifacts and run read-only SQL over the query store.</li>
+          <li><strong>Tests &amp; Debugger:</strong> run <code>vitest</code> suites and debug with breakpoints, stepping, variables and watches.</li>
+        </ul>
+        <a href="/docs/ide/deploy-and-run">Read Deploy &amp; Run docs →</a> · <a href="/docs/ide/tests-and-debugging">Tests &amp; Debugging →</a>
+      </div>
+      <div class="feature-media media-stack">
+        <div class="shot-frame panel">
+          <img alt="Deploy and Run contracts panel in HardKAS IDE" decoding="async" height="900" loading="lazy" src="/docs/img/ide/deploy-run-contracts.png" width="352"/>
+        </div>
+        <div class="shot-frame panel">
+          <img alt="Vitest runner and debugger in HardKAS IDE" decoding="async" height="900" loading="lazy" src="/docs/img/ide/tests.png" width="352"/>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. AI Assistant -->
+  <section class="feature" id="assistant">
+    <div class="feature-grid reverse">
+      <div>
+        <div class="feature-tag">04 · AI Assistant &amp; MCP</div>
+        <h2>Integrated assistant with explicit consent and key isolation</h2>
+        <p>
+          Work with an integrated chat and coding agent powered by open-source OpenCode (or bring your own Claude / OpenAI-compatible key),
+          plus a local MCP server for external agents.
+        </p>
+        <ul>
+          <li>Off until you enable it; the panel clearly shows what context is sent.</li>
+          <li>File edits, shell commands and state-changing HardKAS actions always ask for confirmation first.</li>
+          <li>The MCP server lets agents compile, deploy and query your project without ever seeing private keys.</li>
+        </ul>
+        <a href="/docs/ide/assistant">Read Assistant docs →</a>
+      </div>
+      <div class="feature-media">
+        <div class="shot-frame panel">
+          <img alt="HardKAS IDE AI assistant consent prompt" decoding="async" height="612" loading="lazy" src="/docs/img/ide/assistant-consent.png" width="282"/>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6. Getting Started -->
+  <section class="feature" id="getting-started">
+    <div class="feature-tag">05 · Getting Started</div>
+    <h2>Install HardKAS IDE and open your first project</h2>
+    <p>
+      Every HardKAS IDE project is a standard folder on disk with <code>hardkas.config.ts</code> and <code>.hardkas/</code>,
+      so you can switch seamlessly between the visual workbench and your terminal.
+    </p>
+    <div class="cards">
+      <div class="card">
+        <h3>1. Requirements</h3>
+        <p>Node.js <code>24.22.1</code> with <code>npm</code> (the IDE drives the <code>hardkas</code> CLI). Docker Desktop is only required for the local <code>rusty-kaspad</code> node; the simulator needs no Docker.</p>
+      </div>
+      <div class="card">
+        <h3>2. Install &amp; Open</h3>
+        <p>Download the installer for Windows, macOS or Linux from GitHub Releases, then create a new project or open an existing HardKAS workspace.</p>
+      </div>
+      <div class="card">
+        <h3>3. Docs &amp; Source</h3>
+        <p>Follow the <a href="/docs/ide/install">IDE installation guide</a>, browse the <a href="/docs/ide/">full IDE reference</a>, or inspect the <a href="https://github.com/KasLabDevs/HardKasIDE" rel="noreferrer" target="_blank">HardKasIDE repository</a>.</p>
+      </div>
+    </div>
+    <div class="note">
+      <strong>Execution worlds &amp; policy:</strong> Mainnet signing and broadcast are disabled by HardKAS policy.
+      Use the IDE across the in-memory simulator, local Docker simnet and public <code>testnet-10</code>.
+    </div>
+    <div class="note warn">
+      <strong>Installer note:</strong> The Windows installer is not code-signed yet, so Windows SmartScreen may ask you to confirm before running.
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <a class="brand" href="/">
+          <img alt="HardKAS — Kaspa Developer Toolkit" class="brand-logo" decoding="async" height="91" src="/docs/img/logo.png" width="432"/>
+        </a>
+        <p>Local-first development framework, transaction simulator and visual IDE for Kaspa L1 &amp; SilverScript.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Product</h4>
+        <ul>
+          <li><a href="/">HardKAS Home</a></li>
+          <li><a href="/ide/">HardKAS IDE</a></li>
+          <li><a href="https://github.com/KasLabDevs/HardKasIDE/releases/latest" rel="noreferrer" target="_blank">Download Releases</a></li>
+          <li><a href="/#cli">CLI Reference</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Documentation</h4>
+        <ul>
+          <li><a href="/docs/ide/">IDE Overview</a></li>
+          <li><a href="/docs/ide/install">Installation</a></li>
+          <li><a href="/docs/ide/editor-and-compiler">Editor &amp; Compiler</a></li>
+          <li><a href="/docs/">All Docs</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Community</h4>
+        <ul>
+          <li>
+            <a href="https://discord.gg/bFCVymNHnu" rel="noreferrer" target="_blank">
+              <svg aria-hidden="true" viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994.021-.041.001-.09-.041-.106a13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.061 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.028zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg>
+              Discord
+            </a>
+          </li>
+          <li>
+            <a href="https://x.com/HardKASOfficial" rel="noreferrer" target="_blank">
+              <svg aria-hidden="true" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+              X (@HardKASOfficial)
+            </a>
+          </li>
+          <li>
+            <a href="https://www.youtube.com/@kaslabdevs" rel="noreferrer" target="_blank">
+              <svg aria-hidden="true" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+              YouTube (@kaslabdevs)
+            </a>
+          </li>
+          <li>
+            <a href="https://github.com/KasLabDevs/HardKasIDE" rel="noreferrer" target="_blank">
+              <svg aria-hidden="true" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
+              GitHub (HardKasIDE)
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div>HardKAS IDE 0.3.0 · HardKAS CLI 0.13.0-rc.2 · MIT License</div>
+      <div class="footer-socials">
+        <a aria-label="Discord" href="https://discord.gg/bFCVymNHnu" rel="noreferrer" target="_blank"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994.021-.041.001-.09-.041-.106a13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.061 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.028zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg></a>
+        <a aria-label="X" href="https://x.com/HardKASOfficial" rel="noreferrer" target="_blank"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></a>
+        <a aria-label="YouTube" href="https://www.youtube.com/@kaslabdevs" rel="noreferrer" target="_blank"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg></a>
+        <a aria-label="GitHub" href="https://github.com/KasLabDevs/HardKas" rel="noreferrer" target="_blank"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg></a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+const toggle = document.querySelector(".theme-toggle");
+const saved = localStorage.getItem("hardkas-theme");
+if (saved) {
+  document.documentElement.setAttribute("data-theme", saved);
+}
+if (toggle) {
+  const current = document.documentElement.getAttribute("data-theme");
+  toggle.textContent = current === "light" ? "☾" : "☀";
+  toggle.addEventListener("click", () => {
+    const cur = document.documentElement.getAttribute("data-theme");
+    const next = cur === "light" ? "dark" : "light";
+    document.documentElement.setAttribute("data-theme", next);
+    localStorage.setItem("hardkas-theme", next);
+    toggle.textContent = next === "light" ? "☾" : "☀";
+  });
+}
+</script>
+</body>
+</html>

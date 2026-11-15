@@ -21,6 +21,14 @@ import { invocationWorkspace, invocationWorkspaceRoot } from "../workspace-root.
  */
 export const TX_SEND_CONFIRMATION_REQUIRED = "TX_SEND_CONFIRMATION_REQUIRED";
 
+/** CLTV · the lock-time options of `tx plan` and `tx send` (shortcut mode). */
+export const LOCK_TIME_DAA_HELP =
+  "Absolute lock time as a DAA score (below 500000000000): the transaction is valid only once the node's virtual DAA score is above it; `tx send` refuses to broadcast it earlier (LOCK_TIME_NOT_REACHED, nothing sent). Not with --lock-time-ms; not on the simulator";
+export const LOCK_TIME_MS_HELP =
+  "Absolute lock time as milliseconds since the epoch (at or above 500000000000): valid only once the node's past median time is above it; `tx send` refuses to broadcast it earlier. Not with --lock-time-daa; not on the simulator";
+export const CONFIRM_DISTANT_LOCK_HELP =
+  "Plan a lock time more than about a day past the node's position (864000 DAA, or 86400000 ms); refused without it (LOCK_TIME_DISTANT_UNCONFIRMED)";
+
 async function declineUnconfirmedSend(args: {
   json: boolean;
   network: string;
@@ -141,11 +149,11 @@ async function networkSendState(txId: string | undefined, network: string): Prom
 async function preflightRow(receipt: unknown): Promise<Record<string, string>> {
   const p: any = (receipt as any)?.preflight;
   if (!p || typeof p.inputs !== "number") return {};
-  const { PAYMENT_PREFLIGHT_GUARANTEE } = await import("@hardkas/sdk");
+  const { PAYMENT_PREFLIGHT_GUARANTEE, PAYMENT_PREFLIGHT_GUARANTEE_ECDSA } = await import("@hardkas/sdk");
   const at = p.observedAtDaaScore ? ` (DAA ${p.observedAtDaaScore})` : "";
   return {
     Preflight:
-      p.guarantee === PAYMENT_PREFLIGHT_GUARANTEE
+      p.guarantee === PAYMENT_PREFLIGHT_GUARANTEE || p.guarantee === PAYMENT_PREFLIGHT_GUARANTEE_ECDSA
         ? `${p.inputs} input(s) checked at the node${at} and their signatures verified against its UTXOs; one node's view, not a consensus validation`
         : `${p.inputs} input(s) checked at the node${at}; the signatures are verified by the node only`
   };
@@ -212,6 +220,9 @@ export function registerTxCommands(program: Command) {
     .option("--fee-rate <sompiPerMass>", "Whole sompi per gram of mass, at least 1 (default: 1 in the simulator, 100 on real networks; not a live estimate)")
     .option("--max-fee <sompi>", "Total fee limit in sompi: the plan is refused (FEE_EXCEEDS_MAX) above it, and the limit is recorded in the plan and enforced again at sign and send. The workspace's networks[<net>].maxFeeSompi also applies; the lower one wins. No limit by default")
     .option("--change <accountOrAddress>", "Change destination (account name or address); default: the sender")
+    .option("--lock-time-daa <n>", LOCK_TIME_DAA_HELP)
+    .option("--lock-time-ms <t>", LOCK_TIME_MS_HELP)
+    .option("--confirm-distant-lock-time", CONFIRM_DISTANT_LOCK_HELP, false)
     .option("--provider <type>", "Provider mode (auto, rpc, simulated)", "auto")
     .option("--url <url>", `Node wRPC URL (default: the network's rpcUrl in hardkas.config.ts; without one, ${nodeRpcUrl()} for simnet and devnet)`)
     .option("--out <path>", "Save plan as artifact JSON")
@@ -278,6 +289,10 @@ export function registerTxCommands(program: Command) {
             ...(options.feeRate !== undefined ? { feeRate: options.feeRate } : {}),
             ...(options.maxFee !== undefined ? { maxFee: options.maxFee } : {}),
             ...(options.change ? { changeAddress: options.change } : {}),
+            // CLTV · a given value is always validated (LOCK_TIME_INVALID), never dropped
+            ...(options.lockTimeDaa !== undefined ? { lockTimeDaa: options.lockTimeDaa } : {}),
+            ...(options.lockTimeMs !== undefined ? { lockTimeMs: options.lockTimeMs } : {}),
+            ...(options.confirmDistantLockTime ? { confirmDistantLockTime: true } : {}),
             config: loaded.config,
             ...(options.workflowId ? { workflowId: options.workflowId } : {}),
             ...(options.assumptionLevel
@@ -465,8 +480,13 @@ export function registerTxCommands(program: Command) {
       "--since <chainBlockHash>",
       "Scan the node's virtual chain from this chain block (64 hex; it must precede the tx's acceptance) — for a tx sent outside this workspace"
     )
+    .option(
+      "--address <address>",
+      "Locate the transaction first through the history of an address it pays or spends from (a bounded window of the node's selected chain: from --since, else the last --lookback chain blocks); found, the new look scans from the chain block before its acceptance (also when its outputs were spent since)"
+    )
+    .option("--lookback <chainBlocks>", "With --address and no --since: the history's window, in chain blocks back from the node's sink (default 1000, at most 100000)")
     .option("--json", "Output as JSON", false)
-    .action(async (artifactPath: string, options: { json: boolean; observe: boolean; network?: string; since?: string }) => {
+    .action(async (artifactPath: string, options: { json: boolean; observe: boolean; network?: string; since?: string; address?: string; lookback?: string }) => {
       try {
         if (options.json) UI.setJsonMode(true);
         // Demo-cut step 2 · T-A14b: a txId shows the Q4 derived state (the same
@@ -484,12 +504,27 @@ export function registerTxCommands(program: Command) {
           if (options.observe === false) refuse("--since sets where the new observation scans from; it cannot be combined with --no-observe.");
           if (!NETWORK_TXID.test(artifactPath) || fsMod.existsSync(artifactPath)) refuse("--since applies to a network txId (64 hex), not to a simulator txId or an artifact path.");
         }
+        // R3-D: --address locates the tx through the address's bounded history first; same usage rules as --since
+        if (options.address !== undefined || options.lookback !== undefined) {
+          const { HardkasCliError, HardkasExitCode } = await import("../cli-errors.js");
+          const refuse = (why: string) => {
+            throw new HardkasCliError("TX_STATUS_USAGE", `${why} Nothing was observed.`, { exitCode: HardkasExitCode.USAGE_ERROR });
+          };
+          if (options.address === undefined) refuse("--lookback sets the window of --address; give --address too.");
+          if (options.observe === false) refuse("--address locates the transaction for the new observation; it cannot be combined with --no-observe.");
+          if (!NETWORK_TXID.test(artifactPath) || fsMod.existsSync(artifactPath)) refuse("--address applies to a network txId (64 hex), not to a simulator txId or an artifact path.");
+          if (options.lookback !== undefined && (!/^\d{1,6}$/.test(options.lookback) || Number(options.lookback) < 1 || Number(options.lookback) > 100000)) {
+            refuse(`--lookback must be a number of chain blocks from 1 to 100000, got '${String(options.lookback).slice(0, 40)}'.`);
+          }
+        }
         if (isTxIdentifier(artifactPath) && !fsMod.existsSync(artifactPath)) {
           const r = await runTxStatus({
             txId: artifactPath,
             observe: options.observe !== false,
             ...(options.network ? { network: options.network } : {}),
             ...(options.since !== undefined ? { since: options.since } : {}),
+            ...(options.address !== undefined ? { address: options.address } : {}),
+            ...(options.lookback !== undefined ? { lookback: Number(options.lookback) } : {}),
             workspaceRoot: invocationWorkspaceRoot()
           });
           if (options.json) {
@@ -570,6 +605,9 @@ export function registerTxCommands(program: Command) {
     .option("--amount <kas>", "Amount in KAS (shortcut mode)")
     .option("--network <name>", "Network name")
     .option("--fee-rate <sompiPerMass>", "Fee rate in sompi per mass (shortcut mode)")
+    .option("--lock-time-daa <n>", `Shortcut mode: ${LOCK_TIME_DAA_HELP}`)
+    .option("--lock-time-ms <t>", `Shortcut mode: ${LOCK_TIME_MS_HELP}`)
+    .option("--confirm-distant-lock-time", `Shortcut mode: ${CONFIRM_DISTANT_LOCK_HELP}`, false)
     .option("--password-env <env>", "Shortcut mode: read the sender's keystore password (an encrypted account) from this environment variable")
     .option("--password-stdin", "Shortcut mode: read the sender's keystore password (an encrypted account) from stdin", false)
     .option("--provider <type>", "Provider mode (auto, rpc, simulated; signed-artifact mode only)", "auto")
@@ -603,6 +641,9 @@ export function registerTxCommands(program: Command) {
           amount?: string;
           network?: string;
           feeRate?: string;
+          lockTimeDaa?: string;
+          lockTimeMs?: string;
+          confirmDistantLockTime?: boolean;
           passwordEnv?: string;
           passwordStdin: boolean;
           provider: string;
@@ -658,6 +699,16 @@ export function registerTxCommands(program: Command) {
             );
           }
           if (signedPath) {
+            // CLTV · a signed transaction already carries its lock time (bound to its plan): the lock-time options plan one
+            // and apply to the shortcut mode only; never silently ignored
+            if (options.lockTimeDaa !== undefined || options.lockTimeMs !== undefined || options.confirmDistantLockTime) {
+              const { HardkasCliError, HardkasExitCode } = await import("../cli-errors.js");
+              throw new HardkasCliError(
+                "LOCK_TIME_OPTION_SHORTCUT_ONLY",
+                "--lock-time-daa, --lock-time-ms and --confirm-distant-lock-time plan a lock time (shortcut mode, or `hardkas tx plan`); a signed transaction carries the lock time of its plan. Nothing was sent or recorded.",
+                { exitCode: HardkasExitCode.USAGE_ERROR }
+              );
+            }
             const { readSignedTxArtifact } = await import("@hardkas/artifacts");
             const signedArtifact = await readSignedTxArtifact(signedPath);
 
@@ -909,6 +960,9 @@ export function registerTxCommands(program: Command) {
               config: loaded.config,
               ...(options.network ? { network: options.network } : {}),
               ...(options.feeRate ? { feeRate: options.feeRate } : {}),
+              ...(options.lockTimeDaa !== undefined ? { lockTimeDaa: options.lockTimeDaa } : {}),
+              ...(options.lockTimeMs !== undefined ? { lockTimeMs: options.lockTimeMs } : {}),
+              ...(options.confirmDistantLockTime ? { confirmDistantLockTime: true } : {}),
               ...(options.url ? { url: options.url } : {}),
               // TX-SEND-PASSWORD-1: an encrypted sender's keystore password, read by the sign step (never prompted with --json)
               ...(options.passwordEnv ? { passwordEnv: options.passwordEnv } : {}),

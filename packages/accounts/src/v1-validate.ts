@@ -4,6 +4,7 @@ import {
   isMainnetNetworkId,
   loadManagedKaspaWasmSync,
   silverDeclarationBound,
+  silverP2shLock,
   silverUnlockScript,
   type SilArtifactValue
 } from "@hardkas/core";
@@ -72,6 +73,57 @@ export interface V1ValidationInput {
    * plan's entry and arguments with a SIGHASH_ALL signature in each signer slot), and the mass is measured with them.
    */
   readonly signatureScripts?: readonly string[] | undefined;
+  /** EXPERIMENTAL, HardKAS's ZK path only (V1P2shUnlockSource): the unlock of a p2sh input that names no contract. */
+  readonly p2shUnlock?: V1P2shUnlockSource | undefined;
+}
+
+/**
+ * EXPERIMENTAL · internal to HardKAS's ZK spend (@hardkas/sdk spendR0Groth16Lock); no other caller sets it. The unlock of a p2sh
+ * input that names no contract (a ZK lock: its unlock is the proof the ZK builder made), supplied by that builder, which
+ * checks it is its canonical lock unlock. The validator does not take it on trust: the unlock must be push-only and its
+ * last push (the redeem script) must hash to the input's P2SH script (V1_P2SH_UNLOCK_MISMATCH), and at a send the signed
+ * script must be exactly this unlock (SIGNED_PLAN_MISMATCH). Without it such an input is V1_P2SH_UNLOCK_UNAVAILABLE.
+ */
+export type V1P2shUnlockSource = (request: { readonly plan: Record<string, any>; readonly inputIndex: number }) => { readonly unlockScript: string };
+
+/** The data of the last push of a push-only script (lowercase hex), or undefined when it is not push-only or ends otherwise. */
+function lastPushOfPushOnly(scriptHex: string): string | undefined {
+  if (!/^(?:[0-9a-f]{2})+$/.test(scriptHex)) return undefined;
+  const b = Buffer.from(scriptHex, "hex");
+  let i = 0;
+  let last: string | undefined;
+  while (i < b.length) {
+    const op = b[i++]!;
+    let n: number;
+    if (op <= 0x4b) n = op;
+    else if (op === 0x4c && i + 1 <= b.length) (n = b[i]!), (i += 1);
+    else if (op === 0x4d && i + 2 <= b.length) (n = b.readUInt16LE(i)), (i += 2);
+    else if (op === 0x4e && i + 4 <= b.length) (n = b.readUInt32LE(i)), (i += 4);
+    else if (op === 0x4f || (op >= 0x51 && op <= 0x60)) {
+      last = undefined; // a small-number push: push-only, but no redeem script
+      continue;
+    } else return undefined;
+    if (i + n > b.length) return undefined;
+    last = b.subarray(i, i + n).toString("hex");
+    i += n;
+  }
+  return last;
+}
+
+/** The unlock a V1P2shUnlockSource supplies for input `idx`, checked against the input's P2SH script (see the type). */
+function suppliedP2shUnlock(source: V1P2shUnlockSource, plan: Record<string, any>, idx: number, scriptPublicKey: string): string {
+  const where = `input ${idx}`;
+  let unlock: string;
+  try {
+    unlock = String(source({ plan, inputIndex: idx })?.unlockScript ?? "").toLowerCase();
+  } catch (e: any) {
+    throw fail(typeof e?.code === "string" ? e.code : "V1_P2SH_UNLOCK_UNAVAILABLE", `${where}: ${String(e?.message ?? e).replace(/^[A-Z][A-Z0-9_]+:\s*/, "")}`, { input: idx });
+  }
+  const redeem = lastPushOfPushOnly(unlock);
+  if (!redeem || lockHex(silverP2shLock(redeem)) !== String(scriptPublicKey).toLowerCase()) {
+    throw fail("V1_P2SH_UNLOCK_MISMATCH", `${where}: the unlock supplied for this p2sh input is not a push-only script whose redeem script hashes to the input's P2SH script`, { input: idx });
+  }
+  return unlock;
 }
 
 /** One signature slot the engine fills after validation: the account and the key the contract names for it. */
@@ -278,6 +330,8 @@ export function validateV1Transition(input: V1ValidationInput): V1ValidationResu
 
   // 3. Kind of each input: what the node says decides, the plan's declaration must agree
   const factsOf: (V1ContractFacts | undefined)[] = [];
+  /** EXPERIMENTAL (ZK path): the supplied unlock of each p2sh input without a contract, checked against its P2SH script. */
+  const suppliedUnlocks = new Map<number, string>();
   inputs.forEach((i, idx) => {
     const u = nodeOf[idx]!;
     const where = `input ${idx}`;
@@ -306,6 +360,12 @@ export function validateV1Transition(input: V1ValidationInput): V1ValidationResu
     }
     // assertV1PlanShape lets a p2sh input omit its contract (a ZK lock's plan, whose unlock its own builder supplies):
     // without a contract there is no unlock to build (engine, drafts) or to check (send). Refused, typed (it was a TypeError).
+    // EXPERIMENTAL: HardKAS's ZK spend supplies the unlock (p2shUnlock); it is checked against the input's P2SH script here.
+    if (i.contract === undefined && i.kind === "p2sh" && input.p2shUnlock) {
+      suppliedUnlocks.set(idx, suppliedP2shUnlock(input.p2shUnlock, plan, idx, String(i.scriptPublicKey)));
+      factsOf.push(undefined);
+      return;
+    }
     if (i.contract === undefined) {
       throw fail(
         "V1_P2SH_UNLOCK_UNAVAILABLE",
@@ -510,6 +570,15 @@ export function validateV1Transition(input: V1ValidationInput): V1ValidationResu
       // the x-only key the P2PK script pays to (step 3 checked it is the signer's when signing)
       const publicKey = P2PK_SCRIPT.exec(String(i.scriptPublicKey).toLowerCase())![1]!.slice(2, 66);
       return { index: idx, kind: "p2pk", signer: { account: i.signer, publicKey }, signatureScriptBytes: 66 };
+    }
+    // EXPERIMENTAL (ZK path): a supplied unlock (step 3) is the input's whole signature script; a send signs exactly it
+    const supplied = suppliedUnlocks.get(idx);
+    if (supplied !== undefined) {
+      const signedUnlock = input.signatureScripts?.[idx];
+      if (signedUnlock !== undefined && String(signedUnlock).toLowerCase() !== supplied) {
+        throw fail("SIGNED_PLAN_MISMATCH", `input ${idx}: the signed unlock is not the unlock its builder supplied for this p2sh input`, { input: idx });
+      }
+      return { index: idx, kind: "p2sh", signatureScriptBytes: supplied.length / 2 };
     }
     const f = factsOf[idx]!;
     const where = `input ${idx}`;

@@ -39,10 +39,21 @@ function kdfParamsProblem(kdf: { memory?: unknown; iterations?: unknown; paralle
 }
 
 /**
+ * WALLET-HD-1 · the same bound check, for the HD wallet keystore (hd-keystore.ts), which uses this keystore's KDF and
+ * its bounds: what is out of range in `kdf` (`creating`: the creation floor applies), or undefined when it is in range.
+ */
+export function keystoreKdfParamsProblem(
+  kdf: { memory?: unknown; iterations?: unknown; parallelism?: unknown; salt?: unknown },
+  creating: boolean
+): string | undefined {
+  return kdfParamsProblem(kdf, creating);
+}
+
+/**
  * TX-07 · the authenticated data of a 2.1.0 keystore: its type and version, the KDF parameters and the metadata that
  * decides where the key may be used (network, address). Any edit of these makes AES-GCM refuse to decrypt.
  */
-function keystoreAad(k: { type: string; version: string; kdf: { algorithm: string; memory: number; iterations: number; parallelism: number; salt: string }; metadata: { network?: unknown; address?: unknown } }): Buffer {
+function keystoreAad(k: { type: string; version: string; kdf: { algorithm: string; memory: number; iterations: number; parallelism: number; salt: string }; metadata: { network?: unknown; address?: unknown; keyScheme?: unknown } }): Buffer {
   return Buffer.from(
     JSON.stringify([
       "hardkas.keystore.aad.v1",
@@ -54,7 +65,10 @@ function keystoreAad(k: { type: string; version: string; kdf: { algorithm: strin
       k.kdf.parallelism,
       k.kdf.salt,
       String(k.metadata.network ?? ""),
-      String(k.metadata.address ?? "")
+      String(k.metadata.address ?? ""),
+      // ECDSA spends · the key's scheme is authenticated too, when the keystore records one (absent = Schnorr: every
+      // keystore written before keeps exactly the authenticated data it was sealed with)
+      ...(k.metadata.keyScheme !== undefined ? [`keyScheme:${String(k.metadata.keyScheme)}`] : [])
     ]),
     "utf8"
   );
@@ -109,7 +123,9 @@ export class KeystoreManager {
     if (weak) throw keystoreError("KEYSTORE_KDF_PARAMS_OUT_OF_BOUNDS", `Argon2id ${weak} is outside the accepted range (see KEYSTORE_KDF_BOUNDS).`);
 
     const kdf = { algorithm: "argon2id" as const, memory, iterations, parallelism, salt: salt.toString("base64") };
-    const metadata = { label: options.label, network: options.network, address: payload.address };
+    // ECDSA spends · an ECDSA key's keystore says so in its authenticated metadata (and in its encrypted payload)
+    if (payload.keyScheme !== undefined && payload.keyScheme !== "ecdsa") throw keystoreError("ACCOUNT_KEY_SCHEME_INVALID", `a keystore's key scheme is "ecdsa" or absent (Schnorr).`);
+    const metadata = { label: options.label, network: options.network, address: payload.address, ...(payload.keyScheme === "ecdsa" ? { keyScheme: "ecdsa" as const } : {}) };
 
     // Derive key using Argon2id
     const derivedKeyHex = await argon2id({
@@ -233,6 +249,14 @@ export class KeystoreManager {
           code: "KEYSTORE_METADATA_MISMATCH"
         };
       }
+    }
+    // ECDSA spends · the scheme the metadata records (authenticated above) is the one the encrypted payload carries
+    if ((payload.keyScheme ?? undefined) !== (keystore.metadata?.keyScheme ?? undefined)) {
+      return {
+        success: false,
+        error: "KEYSTORE_METADATA_MISMATCH: the keystore's key scheme in its metadata does not match its encrypted payload; it was not opened.",
+        code: "KEYSTORE_METADATA_MISMATCH"
+      };
     }
     return { success: true, payload, metadataAuthenticated: !legacy };
   }

@@ -43,6 +43,9 @@ import { registerKccCommands } from "./commands/kcc.js";
 import { registerEscrowCommands } from "./commands/escrow.js";
 import { registerCorpusCommands } from "./commands/corpus.js";
 import { registerZkCommands } from "./commands/zk.js";
+import { registerWatchCommand } from "./commands/watch.js";
+// R3-D: `hardkas history <address>` (a bounded window of the node's selected chain)
+import { registerHistoryCommand } from "./commands/history.js";
 import { registerVprogsCommands } from "./commands/vprogs.js";
 import { registerProgrammabilityCommands } from "./commands/programmability.js";
 import { registerSecurityCommand } from "./commands/security.js";
@@ -50,6 +53,8 @@ import { registerEvidenceCommands } from "./commands/evidence.js";
 import { registerEnvCommands } from "./commands/env.js";
 import { registerToolchainCommands } from "./commands/toolchain.js";
 import { registerExtensionCommands } from "./commands/extension.js";
+// WALLET-HD-1: `hardkas wallet hd …` (recoverable BIP39/BIP32 HD wallets)
+import { registerWalletHdCommands } from "./commands/wallet-hd.js";
 
 import { HARDKAS_VERSION } from "@hardkas/artifacts";
 
@@ -144,6 +149,10 @@ export function buildHardkasProgram(options?: {
   registerEscrowCommands(program);
   registerCorpusCommands(program);
   registerZkCommands(program);
+  // WATCH-CLI-1: an address's UTXO watch (toolkit watchAddress)
+  registerWatchCommand(program);
+  // R3-D: an address's history over a bounded chain window (@hardkas/query readAddressHistory)
+  registerHistoryCommand(program);
   registerVprogsCommands(program);
   registerProgrammabilityCommands(program);
   registerSecurityCommand(program);
@@ -151,6 +160,7 @@ export function buildHardkasProgram(options?: {
   registerToolchainCommands(program, loadedRegistry);
   registerTaskCommands(program, options?.loadedConfig);
   registerExtensionCommands(program, loadedRegistry);
+  registerWalletHdCommands(program);
 
   // Programmable workflows & Agent Mode
   registerWorkflowCommands(program);

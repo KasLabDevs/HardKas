@@ -69,6 +69,28 @@ export interface UtxoWatchEngineTimeouts {
     snapshotMs?: number;
 }
 
+/**
+ * WATCH-CLI-1 · `maturity`: outputs the watch reported as received became mature (kaspa-wasm's `maturity` record of an
+ * incoming transaction). Reported only by watchAddress (reportMaturity); WalletToolkit.watch() never emits it.
+ */
+export interface WalletWatchMaturityEvent {
+    type: "maturity";
+    txid: string;
+    details: { matured: WalletOutpoint[] };
+}
+export type AddressWatchEvent = WalletWatchEvent | WalletWatchMaturityEvent;
+export type AddressWatchListener = (event: AddressWatchEvent) => void | Promise<void>;
+
+/** The engine's options: its bounds, and what watchAddress adds (all off for WalletToolkit.watch()). */
+export interface UtxoWatchEngineOptions extends UtxoWatchEngineTimeouts {
+    /** Report `maturity` events. */
+    reportMaturity?: boolean;
+    /** What the engine otherwise only logs: a failed or stalled re-snapshot, a node that changed its network (the watch then stops). */
+    onError?: (error: unknown) => void;
+    /** The connection went away (`disconnected`) or came back (`reconnected`: the re-snapshot follows, then a `resync`). */
+    onConnection?: (state: "disconnected" | "reconnected") => void;
+}
+
 const keyOf = (o: { transactionId: string; index: number }) => `${o.transactionId}:${o.index}`;
 const byOutpoint = (a: WalletOutpoint, b: WalletOutpoint) =>
     a.transactionId < b.transactionId ? -1 : a.transactionId > b.transactionId ? 1 : a.index - b.index;
@@ -83,7 +105,8 @@ function recordOf(data: any): any {
 }
 
 export class UtxoWatchEngine {
-    private readonly listeners = new Set<WalletWatchListener>();
+    /** WalletToolkit.watch() listeners, and watchAddress's (which alone may receive `maturity`, when asked for). */
+    private readonly listeners = new Set<(event: any) => void | Promise<void>>();
     private rpc: any;
     private handle: UtxoContextHandle | null = null;
     private closed = false;
@@ -102,11 +125,27 @@ export class UtxoWatchEngine {
     private readonly connectMs: number;
     private readonly requestMs: number;
     private readonly snapshotMs: number;
+    private readonly options: UtxoWatchEngineOptions;
 
-    constructor(private readonly rpcUrl: string, private readonly getAddress: () => Promise<string>, timeouts: UtxoWatchEngineTimeouts = {}) {
+    constructor(private readonly rpcUrl: string, private readonly getAddress: () => Promise<string>, timeouts: UtxoWatchEngineOptions = {}) {
         this.connectMs = timeouts.connectMs ?? CONNECT_TIMEOUT_MS;
         this.requestMs = timeouts.requestMs ?? REQUEST_TIMEOUT_MS;
         this.snapshotMs = timeouts.snapshotMs ?? SNAPSHOT_TIMEOUT_MS;
+        this.options = timeouts;
+    }
+
+    /** WATCH-CLI-1 · the network the first connection's node named (undefined before it answered). */
+    get nodeNetworkId(): string | undefined {
+        return this.networkId;
+    }
+
+    /** WATCH-CLI-1 · the caller's error hook (watchAddress), never allowed to throw into the engine. */
+    private report(error: unknown): void {
+        try {
+            this.options.onError?.(error);
+        } catch {
+            // the caller's hook failed: the engine keeps its own log
+        }
     }
 
     async start(): Promise<void> {
@@ -143,6 +182,7 @@ export class UtxoWatchEngine {
             handle.onError((error) => {
                 this.disarmResyncWatchdog();
                 logger.error("Wallet watch re-snapshot failed; the next reconnect retries", { error, code: (error as { code?: unknown } | null)?.code });
+                this.report(error);
             });
         } catch (e) {
             await this.rpc.disconnect().catch(() => {});
@@ -171,6 +211,7 @@ export class UtxoWatchEngine {
                       { code: "WALLET_WATCH_NODE_NETWORK_CHANGED", expected: this.networkId, observed }
                   );
             logger.error("Wallet watch stopped: the node changed its network", { expected: this.networkId, observed: String(observed) });
+            this.report(err);
             void this.stop().catch(() => {});
             throw err;
         }
@@ -245,6 +286,7 @@ export class UtxoWatchEngine {
                 { metadata: { timeoutMs: ms } }
             );
             logger.error("Wallet watch re-snapshot is not finishing", { error, code: error.code });
+            this.report(error);
         }, ms);
         (this.resyncWatchdog as { unref?: () => void }).unref?.();
     }
@@ -254,12 +296,12 @@ export class UtxoWatchEngine {
         this.resyncWatchdog = undefined;
     }
 
-    add(listener: WalletWatchListener): void {
+    add(listener: WalletWatchListener | AddressWatchListener): void {
         this.listeners.add(listener);
     }
 
     /** Removes a listener; returns how many remain. */
-    remove(listener: WalletWatchListener): number {
+    remove(listener: WalletWatchListener | AddressWatchListener): number {
         this.listeners.delete(listener);
         return this.listeners.size;
     }
@@ -329,16 +371,23 @@ export class UtxoWatchEngine {
             if (!this.beforeGap) this.beforeGap = this.handle.resyncing ? this.lastSeen : this.read();
             // A4: whatever answers next is unidentified until reverifyIdentity() names the same network again
             this.identityVerified = false;
+            this.connection("disconnected");
             return;
         }
         if (type === "connect") {
             // G7 h: tx-builder's handle starts the re-snapshot on this same event (its listener comes first)
             if (this.handle.resyncing) this.armResyncWatchdog();
+            this.connection("reconnected");
             return;
         }
         if (!LIVE.has(type) || this.beforeGap || this.handle.resyncing) return;
         const record = recordOf(event.data);
         const kind = String(record?.data?.type ?? "");
+        // WATCH-CLI-1 (watchAddress only): received outputs that became mature
+        if (type === "maturity" && this.options.reportMaturity === true && ADDED.has(kind)) {
+            this.emitMaturity(record);
+            return;
+        }
         const direction = ADDED.has(kind) && type !== "maturity" ? "added" : REMOVED.has(kind) ? "removed" : null;
         if (!direction) return;
         const txid = String(record?.id ?? "");
@@ -372,7 +421,31 @@ export class UtxoWatchEngine {
         this.emit({ type: "resync", reason: "reconnect", removed, added });
     }
 
-    private emit(event: WalletWatchEvent): void {
+    /** WATCH-CLI-1 · the caller's connection hook (watchAddress), never allowed to throw into the engine. */
+    private connection(state: "disconnected" | "reconnected"): void {
+        try {
+            this.options.onConnection?.(state);
+        } catch {
+            // the caller's hook failed: nothing else depends on it
+        }
+    }
+
+    /** WATCH-CLI-1 · a `maturity` record of received outputs (reportMaturity), deduplicated like the live events. */
+    private emitMaturity(record: any): void {
+        const txid = String(record?.id ?? "");
+        const entries: any[] = record?.data?.data?.utxoEntries ?? [];
+        const matured = entries.map((u) => ({ transactionId: txid, index: Number(u.index), amountSompi: BigInt(u.amount ?? 0) })).sort(byOutpoint);
+        if (matured.length === 0) return;
+        const dedupeKey = `matured|${txid}|${matured.map((o) => o.index).join(",")}`;
+        if (this.reported.has(dedupeKey)) return;
+        this.reported.add(dedupeKey);
+        this.reportedOrder.push(dedupeKey);
+        if (this.reportedOrder.length > DEDUPE_LIMIT) this.reported.delete(this.reportedOrder.shift()!);
+        this.lastSeen = this.read();
+        this.emit({ type: "maturity", txid, details: { matured } });
+    }
+
+    private emit(event: AddressWatchEvent): void {
         for (const listener of [...this.listeners]) {
             try {
                 const result = listener(event);
@@ -384,4 +457,82 @@ export class UtxoWatchEngine {
             }
         }
     }
+}
+
+/** WATCH-CLI-1 · what watchAddress returns. */
+export interface AddressWatchHandle {
+    /** Stops the watch and releases its client. */
+    stop(): Promise<void>;
+    /** The address's UTXOs (mature and pending) as the watch sees them now. */
+    utxos(): WalletWatchUtxo[];
+    balance(): { mature: bigint; pending: bigint; stasisCount: number };
+    /** The network the node named. */
+    readonly networkId: string;
+}
+
+/** The network type a Kaspa address prefix names. */
+function prefixNetwork(address: string): "mainnet" | "testnet" | "simnet" | "devnet" | undefined {
+    const prefix = String(address).split(":")[0]!.toLowerCase();
+    return prefix === "kaspa" ? "mainnet" : prefix === "kaspatest" ? "testnet" : prefix === "kaspasim" ? "simnet" : prefix === "kaspadev" ? "devnet" : undefined;
+}
+
+const nodeNetworkType = (networkId: string) => {
+    const n = String(networkId).toLowerCase().replace(/^kaspa-/, "");
+    return n.startsWith("testnet") ? "testnet" : n.startsWith("simnet") ? "simnet" : n.startsWith("devnet") ? "devnet" : n.startsWith("mainnet") ? "mainnet" : n;
+};
+
+/**
+ * WATCH-CLI-1 · watches ANY address (WalletToolkit.watch() watches its own wallet's) with the same engine: kaspa-wasm's
+ * UtxoProcessor + UtxoContext, a re-snapshot (`resync`) after every reconnect, every reconnection identified again.
+ * Refused before any connection: a mainnet address (MAINNET_CONNECTION_DISABLED). After the node's first answer: a node
+ * that says mainnet (the engine's own refusal), a node of another network than `expectedNetworkId`
+ * (WATCH_NODE_NETWORK_MISMATCH), an address of another network than the node's (WATCH_ADDRESS_NETWORK_MISMATCH); nothing
+ * is tracked then. Events: `transaction` (outputs added or removed), `resync`, and `maturity` with `reportMaturity`.
+ */
+export async function watchAddress(
+    rpcUrl: string,
+    address: string,
+    listener: AddressWatchListener,
+    options: UtxoWatchEngineOptions & { expectedNetworkId?: string | undefined } = {}
+): Promise<AddressWatchHandle> {
+    const addressNetwork = prefixNetwork(address);
+    if (addressNetwork === "mainnet" || isMainnetNetworkId(options.expectedNetworkId)) {
+        throw mainnetConnectionDisabledError(`watchAddress: ${addressNetwork === "mainnet" ? `${address} is a mainnet address` : `network ${options.expectedNetworkId}`}; nothing was contacted`, {}, "identity-only");
+    }
+    if (addressNetwork === undefined) {
+        throw new HardkasError("WATCH_ADDRESS_INVALID", `watchAddress: '${address}' is not a Kaspa address (kaspasim:, kaspatest:, kaspadev:). Nothing was contacted.`);
+    }
+    const { expectedNetworkId, ...engineOptions } = options;
+    let engine: UtxoWatchEngine;
+    engine = new UtxoWatchEngine(
+        rpcUrl,
+        async () => {
+            // asked after the node named its network (mainnet already refused by the engine) and before anything is tracked
+            const observed = String(engine.nodeNetworkId);
+            if (expectedNetworkId !== undefined && observed.toLowerCase() !== String(expectedNetworkId).toLowerCase()) {
+                throw new HardkasError(
+                    "WATCH_NODE_NETWORK_MISMATCH",
+                    `watchAddress: the node at ${redactUrlCredentials(rpcUrl)} says it serves ${observed}, not ${expectedNetworkId}. Nothing was tracked.`,
+                    { metadata: { expected: expectedNetworkId, observed } }
+                );
+            }
+            if (nodeNetworkType(observed) !== addressNetwork) {
+                throw new HardkasError(
+                    "WATCH_ADDRESS_NETWORK_MISMATCH",
+                    `watchAddress: ${address} is a ${addressNetwork} address and the node at ${redactUrlCredentials(rpcUrl)} serves ${observed}. Nothing was tracked.`,
+                    { metadata: { address, observed } }
+                );
+            }
+            return address;
+        },
+        engineOptions
+    );
+    engine.add(listener);
+    await engine.start();
+    return {
+        stop: () => engine.stop(),
+        utxos: () => engine.utxos(),
+        balance: () => engine.balance(),
+        networkId: String(engine.nodeNetworkId)
+    };
 }

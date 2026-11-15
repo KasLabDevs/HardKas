@@ -191,8 +191,10 @@ export class TxPlanService {
 
   private async planPayment(request: PlanTransactionRequest, synthetic: boolean): Promise<TxPlanResult> {
     const networkId = request.networkId ?? "simnet";
-    // RC1 · D7: a spend from an ECDSA address cannot be signed by HardKAS (Schnorr only): refused before anything is read
-    assertSpendableAddressScheme(request.fromAddress, "the sender");
+    // ECDSA spends: a payment from an ECDSA P2PK address is planned like a Schnorr one on a real network (the Generator
+    // prices one 65-byte signature push and one signature operation per input either way; the accounts signer signs it
+    // with ECDSA). The simulator keeps refusing it (ECDSA_SPEND_NOT_SUPPORTED): its ECDSA rule is not node evidence.
+    if (synthetic) assertSpendableAddressScheme(request.fromAddress, "the sender");
     const rpcUtxos = await this.provider.getUtxos(request.fromAddress);
     let virtualDaaScore: bigint | undefined;
     if (this.provider.getVirtualDaaScore) {
@@ -288,7 +290,8 @@ export class TxPlanService {
    * (COVENANT_UTXO_NOT_PAYMENT_INPUT): consolidating it would end the covenant.
    */
   async planConsolidation(request: ConsolidationRequest): Promise<TxPlanResult> {
-    // RC1 · D7: no spend from an ECDSA address, named by the sender or by any selected UTXO's address or script
+    // RC1 · D7: no spend from an ECDSA address, named by the sender or by any selected UTXO's address or script. ECDSA
+    // spends: payments from one are supported; consolidations still are not (ECDSA_SPEND_NOT_SUPPORTED)
     assertSpendableAddressScheme(request.fromAddress, "the sender");
     request.selectedUtxos.forEach((u, i) => {
       if (kaspaAddressVersion(u.address) === 1 || isEcdsaP2pkScript(u.scriptPublicKey)) {

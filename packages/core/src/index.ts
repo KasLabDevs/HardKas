@@ -81,14 +81,27 @@ export const hardkasConfigSchema = z.object({
   }),
   network: z.object({
     id: kaspaNetworkIdSchema,
-    rpcUrl: z.string().url().optional()
+    // zod 4's url check stores the URL trimmed and without tabs or newlines; zod 3's (`new URL()` parses it) kept the
+    // configured text as written, and so does this one
+    rpcUrl: z
+      .string()
+      .refine((value) => {
+        try {
+          new URL(value);
+          return true;
+        } catch {
+          return false;
+        }
+      }, "Invalid url")
+      .optional()
   }),
   localnet: z
     .object({
       mode: z.enum(["simulator", "local-node"]).default("simulator"),
       dataDir: z.string().optional()
     })
-    .default({ mode: "simulator" })
+    // zod 4: `.prefault` parses the default through the object, as zod 3's `.default` did (a fresh object per parse)
+    .prefault({ mode: "simulator" })
 });
 
 export type HardkasConfig = z.infer<typeof hardkasConfigSchema>;

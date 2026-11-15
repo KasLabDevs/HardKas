@@ -1,5 +1,5 @@
 import { WalletManagerImpl, WalletStateStoreJson, AddressManager } from '@hardkas/accounts';
-import { WalletQuery, WalletQueryProvider } from '@hardkas/query';
+import { WalletQuery, WalletQueryProvider, readAddressHistory, type AddressHistoryCoverage, type AddressHistoryResult } from '@hardkas/query';
 import { covenantIdOf, toTxBuilderUtxo, TxPlanService, assertFeeWithinLimitInForce, DEFAULT_MAX_FEE_SOMPI, type UtxoProvider, type Utxo } from '@hardkas/tx-builder';
 import { WalletUtxoApi } from './utxos.js';
 import { UtxoControlStore } from './stores/utxo-control-store.js';
@@ -54,6 +54,26 @@ export interface WalletToolkitOptions {
     /** CA-TX-01: upper bound on the node's fee-rate estimate, sompi per gram (FEE_RATE_ABOVE_BOUND above it); default 10,000. */
     maxFeeRate?: bigint;
 }
+
+/** R3-D · the window of a node wallet's history (see `WalletToolkit.history`); ignored by a wallet with a query provider. */
+export interface WalletHistoryOptions {
+    /** A chain block hash (64 hex) or a DAA score where the window starts; default: the last `lookback` chain blocks. */
+    since?: string | bigint | number;
+    lookback?: number;
+    maxChainBlocks?: number;
+    limit?: number;
+    cursor?: string;
+    timeoutMs?: number;
+    /** A workspace whose own records (submissions, receipts) are merged in. */
+    workspaceRoot?: string;
+}
+
+/** R3-D · history entries; a node wallet's array also carries what its window covered. */
+export type WalletHistory = any[] & {
+    readonly coverage?: AddressHistoryCoverage;
+    readonly page?: AddressHistoryResult["page"];
+    readonly total?: number;
+};
 
 /**
  * WALLET-HD-0 · identity notice. The only identity this toolkit has today is the SYNTHETIC legacy one
@@ -252,21 +272,21 @@ export class WalletToolkit {
     }
 
     /**
-     * The wallet's history, from the query provider given in `options.provider`. G7 k (notes cross-check): a wallet that
-     * reads through a node (`options.rpc` alone) has no history source — a Kaspa node keeps no address history — and
-     * used to answer an empty history; it now refuses with WALLET_HISTORY_UNSUPPORTED. A provider that fails is
-     * WALLET_QUERY_PROVIDER_UNAVAILABLE, never an empty list.
+     * The wallet's history.
+     *  - With a query provider (`options.provider`): the provider's page of items, as before. A provider that fails is
+     *    WALLET_QUERY_PROVIDER_UNAVAILABLE, never an empty list.
+     *  - R3-D · through a node (`options.rpc` alone): a Kaspa node keeps no address history, so it is read from the node's
+     *    selected chain over a bounded window (`readAddressHistory`, @hardkas/query): `options.since` (a chain block hash
+     *    or a DAA score), else the last `lookback` chain blocks (default 1000), never past the pruning point. The array
+     *    holds the window's entries (oldest first) and carries `coverage` (what the window covered, and what it did not),
+     *    `page` and `total`; `historyPage()` returns the whole result. WALLET_HISTORY_UNSUPPORTED (G7 k) stays only for a
+     *    node client that cannot read a chain (no generic `call`) when no window is given, or a node that cannot bound one.
      */
-    public async history(): Promise<any[]> {
+    public async history(options: WalletHistoryOptions = {}): Promise<WalletHistory> {
         const addr = await this.receive();
         if (this.historyFromRpcOnly) {
-            throw new HardkasError(
-                "WALLET_HISTORY_UNSUPPORTED",
-                "WalletToolkit.history(): this wallet reads through a node (options.rpc), and a Kaspa node keeps no address history, " +
-                    "so there is none to return (it used to answer an empty list). Give the wallet a query provider that keeps history " +
-                    "(options.provider, e.g. an indexer), or use watch() for live activity.",
-                { metadata: { address: addr, source: "rpc", supported: false } }
-            );
+            const result = await this.nodeHistory(addr, options);
+            return Object.assign([...result.entries], { coverage: result.coverage, page: result.page, total: result.total });
         }
         // Return local observed history (best-effort locally + remote if available)
         const remoteHistory = await this.walletQuery.getHistory({ addresses: [addr] });
@@ -282,6 +302,59 @@ export class WalletToolkit {
         // "txs enviadas por HardKAS, UTXO changes observados, receipts locales"
         // For now, we return the provider's page of items (it used to return WalletQuery's whole result object)
         return [...(remoteHistory.history?.items ?? [])];
+    }
+
+    /**
+     * R3-D · the whole history result of a wallet that reads through a node: one page of entries and the coverage of the
+     * window (see `history()`). A wallet with a query provider has no window to report: WALLET_HISTORY_UNSUPPORTED.
+     */
+    public async historyPage(options: WalletHistoryOptions = {}): Promise<AddressHistoryResult> {
+        const addr = await this.receive();
+        if (!this.historyFromRpcOnly) {
+            throw new HardkasError(
+                "WALLET_HISTORY_UNSUPPORTED",
+                "WalletToolkit.historyPage() reads a node's chain window; this wallet's history comes from its query provider (options.provider): use history().",
+                { metadata: { address: addr, source: "provider", supported: false } }
+            );
+        }
+        return this.nodeHistory(addr, options);
+    }
+
+    /** R3-D · the node path of history(): refuses mainnet first, then reads the bounded window (@hardkas/query). */
+    private async nodeHistory(addr: string, options: WalletHistoryOptions): Promise<AddressHistoryResult> {
+        // the identity exists on simnet only (receive() refused anything else), so the network read is the declared one
+        const networkId = this.options.networkId ?? "simnet";
+        assertMainnetConnectionsDisabled([this.options.networkId, this.options.network], "WalletToolkit.history");
+        const windowGiven = options.since !== undefined || options.cursor !== undefined;
+        const unsupported = (why: string, cause?: unknown) =>
+            new HardkasError(
+                "WALLET_HISTORY_UNSUPPORTED",
+                `WalletToolkit.history(): this wallet reads through a node (options.rpc), and a Kaspa node keeps no address history; ${why}. ` +
+                    "Give the wallet a node client that serves getVirtualChainFromBlockV2 (the SDK's), a window (since), or a query provider " +
+                    "that keeps history (options.provider), or use watch() for live activity. Nothing was returned.",
+                { ...(cause !== undefined ? { cause } : {}), metadata: { address: addr, source: "rpc", supported: false } }
+            );
+        const rpc = this.options.rpc;
+        if (!rpc || typeof rpc.call !== "function") throw unsupported("its node client cannot read the node's chain (it has no generic call)");
+        try {
+            return await readAddressHistory(rpc, {
+                address: addr,
+                networkId,
+                ...(options.since !== undefined ? { since: options.since } : {}),
+                ...(options.lookback !== undefined ? { lookback: options.lookback } : {}),
+                ...(options.maxChainBlocks !== undefined ? { maxChainBlocks: options.maxChainBlocks } : {}),
+                ...(options.limit !== undefined ? { limit: options.limit } : {}),
+                ...(options.cursor !== undefined ? { cursor: options.cursor } : {}),
+                ...(options.timeoutMs !== undefined ? { timeoutMs: options.timeoutMs } : {}),
+                ...(options.workspaceRoot !== undefined ? { workspaceRoot: options.workspaceRoot } : {})
+            });
+        } catch (e) {
+            // the node cannot bound a window and none was given: the history stays unsupported, typed, with its cause
+            if (!windowGiven && (e as { code?: unknown } | null)?.code === "ADDRESS_HISTORY_NODE_UNSUPPORTED") {
+                throw unsupported("the node cannot bound a window (it does not serve its sink, its pruning point or its chain's accepted transactions)", e);
+            }
+            throw e;
+        }
     }
 
     /**

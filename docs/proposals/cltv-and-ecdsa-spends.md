@@ -1,9 +1,8 @@
 # Proposal: absolute time locks (CLTV) and spends from ECDSA addresses
 
-Status: **proposal for the next cycle, not implemented**. Version 1, 2026-11-09 (RC1 · D7).
-Nothing in this release builds, signs or sends either of them; this page says what would have to be true first.
+Status: **implemented after 0.13.0-rc.2** (Version 1, 2026-11-09, RC1 · D7). Absolute lock times for payments, SilverScript spends and the v1 engine, and payments from ECDSA accounts, are built and proven on an isolated rusty-kaspad 2.1.0 node (`cltv-ecdsa-node.simnet`). What remains refused is in [limitations](../status/limitations.md) and the [errors reference](../reference/errors.md#lock_time_not_supported). The sections below are the design as proposed; "What this release does" describes 0.13.0-rc.2.
 
-## What this release does
+## What 0.13.0-rc.2 did
 
 - **Lock time.** Every transaction HardKAS builds has lock time 0 (tx-builder, the accounts signer, the v1 engine).
   Asking for another one is refused with a typed code: `tx.plan({ lockTime })` → `LOCK_TIME_NOT_SUPPORTED`; the CLI

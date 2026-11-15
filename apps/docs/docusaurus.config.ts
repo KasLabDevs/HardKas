@@ -43,6 +43,7 @@ const config: Config = {
         target: '_self',
       },
       items: [
+        { href: 'https://hardkas.dev/ide/', position: 'left', label: 'IDE', target: '_self' },
         { to: '/', position: 'left', label: 'Docs' },
         { href: 'https://hardkas.dev/#cli', position: 'left', label: 'CLI', target: '_self' },
         { href: 'https://hardkas.dev/#packages', position: 'left', label: 'SDK', target: '_self' },
@@ -55,6 +56,39 @@ const config: Config = {
           'aria-label': 'GitHub repository',
         },
       ],
+    },
+    footer: {
+      style: 'dark',
+      links: [
+        {
+          title: 'Product',
+          items: [
+            { label: 'HardKAS Home', href: 'https://hardkas.dev/', target: '_self' },
+            { label: 'HardKAS IDE', href: 'https://hardkas.dev/ide/', target: '_self' },
+            { label: 'CLI Reference', href: 'https://hardkas.dev/#cli', target: '_self' },
+            { label: 'SDK Packages', href: 'https://hardkas.dev/#packages', target: '_self' },
+          ],
+        },
+        {
+          title: 'Documentation',
+          items: [
+            { label: 'Overview', to: '/' },
+            { label: 'IDE Guide', to: '/ide/' },
+            { label: 'Examples', href: 'https://hardkas.dev/#examples', target: '_self' },
+            { label: 'Security', href: 'https://hardkas.dev/#security', target: '_self' },
+          ],
+        },
+        {
+          title: 'Community',
+          items: [
+            { label: 'Discord', href: 'https://discord.gg/bFCVymNHnu' },
+            { label: 'X (Twitter)', href: 'https://x.com/HardKASOfficial' },
+            { label: 'YouTube', href: 'https://www.youtube.com/@kaslabdevs' },
+            { label: 'GitHub', href: 'https://github.com/KasLabDevs/HardKas' },
+          ],
+        },
+      ],
+      copyright: `<div class="docs-footer-meta">HardKAS 0.13.0-rc.2 · MIT License · Local-first Kaspa developer tooling</div>`,
     },
     prism: { theme: prismThemes.github, darkTheme: prismThemes.dracula },
   } satisfies Preset.ThemeConfig,

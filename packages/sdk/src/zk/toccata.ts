@@ -1566,6 +1566,10 @@ export function buildR0Groth16Plan(params: BuildR0Groth16TxParams): TxPlanArtifa
   const spkHex = `${Number(params.scripts.p2shScriptPublicKey.version).toString(16).padStart(4, "0")}${params.scripts.p2shScriptPublicKey.script}`;
   const outputs = r0SpendOutputs(params, feeSompi);
   const payment = outputs[0]!;
+  // ZK-SEND-1 · the plan is the transaction HardKAS sends (sdk.zk.toccata.spend through sdk.tx.send), so it states what the
+  // send check recomputes: the node's storage mass (KIP-9, the value a block requires; it was "0"), and every output as
+  // "payment" — the lock declares its payout and its bound change on purpose; neither is change back to the P2SH funder.
+  const storageMass = r0SpendStorageMass(loadManagedKaspaWasmSync(), params, feeSompi) ?? 0n;
 
   return createV1TxPlanArtifact({
     networkId: (params.networkId ?? "simnet") as any,
@@ -1585,10 +1589,10 @@ export function buildR0Groth16Plan(params: BuildR0Groth16TxParams): TxPlanArtifa
           computeBudget
         }
       ],
-      outputs: outputs.map((o) => ({ address: o.address, amountSompi: String(o.amountSompi), role: o.role })),
+      outputs: outputs.map((o) => ({ address: o.address, amountSompi: String(o.amountSompi), role: "payment" as const })),
       estimatedFeeSompi: String(feeSompi),
       estimatedMass: String(feeEstimate.computeMass),
-      storageMass: "0",
+      storageMass: String(storageMass),
       maxFeeSompi: String(maxFeeSompi)
     },
     ctx: systemRuntimeContext,
@@ -1867,6 +1871,8 @@ export function buildR0Groth16Transaction(params: BuildR0Groth16TxParams): R0Gro
 
     // Pass 2: the real transaction with the final fee.
     const tx = makeR0Groth16SpendTx(kaspa, { ...params, destinationAddress }, computeBudget, feeSompi);
+    // ZK-SEND-1 · the transaction commits the storage mass its plan states (the node's value; not covered by the txid)
+    if (storageMass !== undefined) tx.storageMass = storageMass;
     // The non-contextual mass is checked against the standard limit; the compute mass (budget term
     // included) against the block limit above.
     const withinStandardMaxMass = mass <= STANDARD_MAX_TRANSACTION_MASS;

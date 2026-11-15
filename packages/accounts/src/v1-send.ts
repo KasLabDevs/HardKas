@@ -3,7 +3,7 @@ import path from "node:path";
 import { createHash } from "node:crypto";
 import { HardkasSchemas, loadManagedKaspaWasmSync, stripBom } from "@hardkas/core";
 import { checkArtifactIdentity } from "@hardkas/artifacts";
-import { PENDING_SPEND_GUARANTEE } from "@hardkas/tx-builder";
+import { PENDING_SPEND_GUARANTEE, planLockTimeValue } from "@hardkas/tx-builder";
 import { buildV1WasmTransaction, resolveV1PlanFacts, v1EngineError, type V1EngineFacts } from "./v1-engine.js";
 import { validateV1Transition, type V1NodeUtxo, type V1ValidationResult } from "./v1-validate.js";
 import { gatherV1ContractFacts, gatherV1SuccessorFacts, v1ArgToSil, type SilverCompileRecordLike, type V1ContractFacts } from "./v1-contract-facts.js";
@@ -132,7 +132,16 @@ export function checkSignedV1AgainstPlan(rawTransaction: unknown, plan: Record<s
   }
   const payload = typeof tx.payload === "string" ? tx.payload.toLowerCase() : "";
   if (payload !== (typeof plan.payload === "string" ? plan.payload.toLowerCase() : "")) return mismatch("the signed transaction's payload is not the plan's");
-  if (num(tx.lockTime ?? tx.lock_time) !== 0n) return mismatch(`the signed transaction has lock time ${String(tx.lockTime ?? tx.lock_time)}; the plan's transactions use 0`);
+  // CLTV · the lock time the plan authorizes (absent = 0, as before)
+  let plannedLockTime: bigint;
+  try {
+    plannedLockTime = planLockTimeValue(plan);
+  } catch (e) {
+    return mismatch(`the plan's lock time is not valid (${e instanceof Error ? e.message : String(e)})`);
+  }
+  if (num(tx.lockTime ?? tx.lock_time) !== plannedLockTime) {
+    return mismatch(`the signed transaction has lock time ${String(tx.lockTime ?? tx.lock_time ?? 0)}; the plan authorizes ${plannedLockTime}`);
+  }
   if (num(tx.gas) !== 0n) return mismatch(`the signed transaction has gas ${String(tx.gas)}; the plan's transactions use 0`);
   const subnetwork = String(tx.subnetworkId ?? tx.subnetwork_id ?? SUBNETWORK_NATIVE).toLowerCase();
   if (subnetwork !== SUBNETWORK_NATIVE) return mismatch(`the signed transaction is for subnetwork ${subnetwork}; the plan's transactions are native`);
@@ -263,7 +272,9 @@ export async function preflightV1Send(input: {
     node: { networkId: input.node.networkId, utxos: listed },
     facts: planFacts.contract,
     successor: planFacts.successor,
-    signatureScripts: input.signatureScripts
+    signatureScripts: input.signatureScripts,
+    // EXPERIMENTAL: the ZK spend's supplied unlock of a p2sh input without a contract (checked by the validator)
+    ...(input.facts.p2shUnlock ? { p2shUnlock: input.facts.p2shUnlock } : {})
   });
   return {
     evidence: { ...(observedAt !== undefined ? { observedAtDaaScore: observedAt.toString() } : {}), inputs: inputs.length, scope: "observer-local", guarantee: PENDING_SPEND_GUARANTEE },

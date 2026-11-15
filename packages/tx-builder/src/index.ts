@@ -12,6 +12,7 @@ export * from "./utxo-mapper.js";
 export * from "./pending-spends.js";
 export * from "./covenant-utxos.js";
 export * from "./address-scheme.js";
+export * from "./lock-time.js";
 export * from "./v1-mass.js";
 export * from "./v1-plan.js";
 export * from "./v1-fee-inputs.js";

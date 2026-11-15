@@ -31,7 +31,11 @@ const node = {
   /** getUtxosByAddress calls, per address. */
   reads: new Map<string, number>(),
   /** Runs after every getUtxosByAddress (the index catching up, in a test's own time). */
-  afterRead: undefined as undefined | ((address: string, reads: number) => void)
+  afterRead: undefined as undefined | ((address: string, reads: number) => void),
+  /** The outpoints the node's mempool shows `address` spending (one transaction per entry). */
+  mempool: new Map<string, Array<Array<{ transactionId: string; index: number }>>>(),
+  /** Runs after every getMempoolEntriesByAddresses (the node accepting a transaction, in a test's own time). */
+  afterMempoolRead: undefined as undefined | (() => void)
 };
 
 vi.mock("@hardkas/kaspa-rpc", async () => {
@@ -47,8 +51,18 @@ vi.mock("@hardkas/kaspa-rpc", async () => {
       node.afterRead?.(address, n);
       return listed;
     }
-    async getMempoolEntriesByAddresses() {
-      return { entries: [] };
+    async getMempoolEntriesByAddresses({ addresses }: { addresses: string[] }) {
+      const seen = new Map(node.mempool);
+      node.afterMempoolRead?.();
+      return {
+        entries: addresses
+          .filter((a) => (seen.get(a) ?? []).length > 0)
+          .map((address) => ({
+            address,
+            sending: seen.get(address)!.map((inputs) => ({ transaction: { inputs: inputs.map((previousOutpoint) => ({ previousOutpoint })) } })),
+            receiving: []
+          }))
+      };
     }
     async close() {}
   }
@@ -75,6 +89,8 @@ describe("TX-BATCH-1 · the planner never selects what earlier payments of the b
     node.utxos = new Map(entries);
     node.reads = new Map();
     node.afterRead = undefined;
+    node.mempool = new Map();
+    node.afterMempoolRead = undefined;
   };
 
   beforeAll(async () => {
@@ -175,5 +191,57 @@ describe("TX-BATCH-1 · the planner never selects what earlier payments of the b
     const r = await outcome(plan({ spentOutpoints: new Map([[key(PAYROLL_IN), TO]]) }, "1"));
     expect(r.code, r.message).toBe("OK");
     expect(r.plan.inputs.map((i: any) => key(i.outpoint))).toEqual([key(RECEIVED)]);
+  });
+
+  // CI simnet (cli-lifecycle, `tx batch` of 3): the third payment read an index listing only what the first two spent,
+  // both still in the mempool; the node accepted them before the planner looked at the index again, so that look listed
+  // none of them and the release was taken for "the failure is this payment's own": PENDING_SPEND_ALL_EXCLUDED. What the
+  // snapshot listed is what it waits on: an outpoint gone since then is a release, and it reads again.
+  it("everything listed is spent by earlier payments still in the mempool, and the node accepts them right after the read: it reads again and plans on the change, never PENDING_SPEND_ALL_EXCLUDED", async () => {
+    const A = op("a");
+    const B = op("b");
+    const CHANGE_A = op("1", 1);
+    const CHANGE_B = op("2", 1);
+    reset([[FROM, [utxo(FROM, A, 10), utxo(FROM, B, 10)]]]);
+    node.mempool.set(FROM, [[A], [B]]);
+    let mempoolReads = 0;
+    node.afterMempoolRead = () => {
+      if (++mempoolReads === 1) {
+        node.mempool.set(FROM, []);
+        node.utxos.set(FROM, [utxo(FROM, CHANGE_A, 9), utxo(FROM, CHANGE_B, 9)]);
+      }
+    };
+    const r = await outcome(plan({ spentOutpoints: new Map([[key(A), FROM], [key(B), FROM]]) }));
+    expect(r.code, r.message).toBe("OK");
+    expect(r.plan.inputs.map((i: any) => key(i.outpoint)).every((k: string) => k === key(CHANGE_A) || k === key(CHANGE_B))).toBe(true);
+  });
+
+  it("short of funds while what earlier payments spent is pending in the mempool, and the node accepts it right after the read: it reads again and plans", async () => {
+    const A = op("a");
+    const SMALL = op("d");
+    const CHANGE_A = op("1", 1);
+    reset([[FROM, [utxo(FROM, A, 10), utxo(FROM, SMALL, 1)]]]);
+    node.mempool.set(FROM, [[A]]);
+    let mempoolReads = 0;
+    node.afterMempoolRead = () => {
+      if (++mempoolReads === 1) {
+        node.mempool.set(FROM, []);
+        node.utxos.set(FROM, [utxo(FROM, CHANGE_A, 9), utxo(FROM, SMALL, 1)]);
+      }
+    };
+    const r = await outcome(plan({ spentOutpoints: new Map([[key(A), FROM]]) }));
+    expect(r.code, r.message).toBe("OK");
+    expect(r.plan.inputs.map((i: any) => key(i.outpoint))).toContain(key(CHANGE_A));
+  });
+
+  it("everything listed is pending in the mempool and none of it was spent by this run: PENDING_SPEND_ALL_EXCLUDED at once, as before", async () => {
+    const A = op("a");
+    const OTHER = op("9");
+    reset([[FROM, [utxo(FROM, A, 10)]]]);
+    node.mempool.set(FROM, [[A]]);
+    const t0 = Date.now();
+    const r = await outcome(plan({ spentOutpoints: new Map([[key(OTHER), FROM]]) }));
+    expect(r.code, r.message).toBe("PENDING_SPEND_ALL_EXCLUDED");
+    expect(Date.now() - t0).toBeLessThan(5_000);
   });
 });

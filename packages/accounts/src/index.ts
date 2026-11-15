@@ -29,5 +29,11 @@ export * from "./dev-accounts.js";
 export * from "./treasury-account.js";
 export * from "./address-manager.js";
 export * from "./wallet-manager.js";
+// WALLET-HD-1: recoverable BIP39/BIP32 Kaspa HD wallets (derivation, encrypted wallet keystore, manager)
+export * from "./hd-derivation.js";
+export * from "./hd-keystore.js";
+export * from "./hd-wallet-manager.js";
 export * from "./authorizers.js";
+// ECDSA spends: the key scheme of an account (Schnorr or ECDSA P2PK)
+export * from "./account-key-scheme.js";
 export * from "./wallet-state-store.js";

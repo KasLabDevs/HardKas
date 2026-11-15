@@ -462,4 +462,432 @@ export function registerEscrowCommands(program: Command) {
       out().writeLine(`  TXID: ${pc.cyan(txId)}`);
       out().writeLine(`  Recovered: ${pkg.recoveredSompi} sompi`);
     });
+
+  // ESCROW-LIFECYCLE-1: create, fund, status, prepare, sign, release, reconcile (v2 EscrowFull / EscrowSplit)
+  registerEscrowLifecycleCommands(escrow);
+}
+
+// =====================================================================================================================
+// ESCROW-LIFECYCLE-1 · the v2 escrow lifecycle (EscrowFull, EscrowSplit) on any node that proves its identity, through
+// sdk.escrow: the dev server's rules (shared from @hardkas/sdk), records in .hardkas/escrows/, the workspace's accounts
+// (development accounts and encrypted keystores, as `silver spend`), every transaction sent by sdk.tx.send. Signers may
+// be different people: `prepare` writes a release request, each signer runs `escrow sign <file>` in their own workspace,
+// then `escrow release <id> --signatures <file...>`. Mainnet is refused first; a public testnet needs the payments'
+// opt-in (experimental: true and network.allowPublic: true).
+// =====================================================================================================================
+
+const ESCROW_NETWORK_HELP =
+  "Network (default: the escrow's own, else the workspace's, else simnet). mainnet is refused; testnet-<n> needs experimental + network.allowPublic in the config";
+const ESCROW_URL_HELP =
+  "Node wRPC (JSON) endpoint (default: the one the workspace declares for the network; simnet: the canonical localnet). The canonical localnet is proven by container and image digest; any other node by what it reports (network, version, synced)";
+const ESCROW_PASSWORD_ENV_HELP = "Read the keystore password of the encrypted account this command signs with from this environment variable (development accounts need none)";
+const ESCROW_PASSWORD_STDIN_HELP = "Read the keystore password of the encrypted account this command signs with from stdin";
+const ESCROW_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+
+/** A HardkasError of the SDK as the CLI fails with it: same code, an exit code for its kind. */
+function escrowSdkFailure(e: unknown): never {
+  if (e instanceof HardkasCliError) throw e;
+  const code = typeof (e as any)?.code === "string" ? String((e as any).code) : "ESCROW_FAILED";
+  const message = String((e as any)?.message ?? e).replace(new RegExp(`^${code}:\\s*`), "");
+  const usage = /^(ESCROW_(CONFIG_INVALID|NOT_FOUND|RECORD_INVALID|REQUEST_INVALID|REQUEST_MISMATCH|NETWORK_MISMATCH|NETWORK_NOT_SUPPORTED|ROLE_NOT_REQUIRED|SIGNER_NOT_FOUND|BUYER_ACCOUNT_NOT_FOUND|BRANCH_UNKNOWN|SPLIT_SUM_MISMATCH|NOT_FUNDED|NOT_PREPARED|NOT_READY)|ACCOUNT_|KEYSTORE_|NETWORK_ADDRESS_MISMATCH)/.test(code);
+  const policy = /^MAINNET_|^PUBLIC_NETWORK_BLOCKED$/.test(code);
+  throw new HardkasCliError(code, message, { exitCode: policy ? HardkasExitCode.POLICY_DENIED : usage ? HardkasExitCode.USAGE_ERROR : HardkasExitCode.RUNTIME_FAILURE, cause: e });
+}
+
+async function escrowConfig(): Promise<any> {
+  const { loadHardkasConfig } = await import("@hardkas/config");
+  return (await loadHardkasConfig({ workspaceRoot: process.cwd() })).config as any;
+}
+
+/** MAINNET TOTAL LOCKDOWN first (the name and what its config entry declares), then the payments' public opt-in. */
+async function gateEscrowNetwork(network: string, config?: any): Promise<void> {
+  const { isMainnetNetworkId, declaredNetworkIdOf, MAINNET_CONNECTION_DISABLED, mainnetConnectionDisabledMessage } = await import("@hardkas/core");
+  const refuseMainnet = () =>
+    fail(MAINNET_CONNECTION_DISABLED, mainnetConnectionDisabledMessage(`the escrow on ${network}; nothing was read, signed or sent`), HardkasExitCode.POLICY_DENIED);
+  if (isMainnetNetworkId(network)) refuseMainnet();
+  let cfg = config;
+  if (cfg === undefined) {
+    try {
+      cfg = await escrowConfig();
+    } catch {
+      cfg = {};
+    }
+  }
+  if (isMainnetNetworkId(declaredNetworkIdOf(cfg, network))) refuseMainnet();
+  const { isPublicKaspaNetwork } = await import("@hardkas/config");
+  if (isPublicKaspaNetwork(network) && !(cfg?.network?.allowPublic === true && cfg?.experimental === true)) {
+    fail(
+      "PUBLIC_NETWORK_BLOCKED",
+      `${network} needs the same opt-in as payments there: experimental: true and network.allowPublic: true in hardkas.config.ts. Nothing was done.`,
+      HardkasExitCode.POLICY_DENIED
+    );
+  }
+}
+
+/**
+ * The network an escrow command runs on: `--network` (checked first, before anything is read), else the record's (for a
+ * command naming an escrow of this workspace), else the workspace's execution network, else simnet. Gated (mainnet,
+ * public opt-in) before it is used.
+ */
+async function escrowNetworkOf(explicit: string | undefined, id?: string): Promise<string> {
+  if (explicit !== undefined) {
+    await gateEscrowNetwork(String(explicit));
+    return String(explicit);
+  }
+  let network: string | undefined;
+  if (id !== undefined && ESCROW_ID_RE.test(id)) {
+    try {
+      const { loadHardkasConfig } = await import("@hardkas/config");
+      const { cwd } = await loadHardkasConfig({ workspaceRoot: process.cwd() });
+      const record = JSON.parse(fs.readFileSync(path.join(cwd ?? process.cwd(), ".hardkas", "escrows", `${id}.json`), "utf8"));
+      if (typeof record?.networkId === "string") network = record.networkId;
+    } catch {
+      network = undefined;
+    }
+  }
+  const config = await escrowConfig().catch(() => ({}) as any);
+  if (network === undefined) {
+    const exec: any = config?.execution;
+    const target = exec?.default ? exec.targets?.[exec.default] : undefined;
+    network = typeof target?.network === "string" ? target.network : typeof config?.defaultNetwork === "string" ? config.defaultNetwork : "simnet";
+    if (network === "simulated") network = "simnet";
+  }
+  await gateEscrowNetwork(network!, config);
+  return network!;
+}
+
+/** The SDK on this workspace's `network`, a Kaspa node network (never the simulator); its client `rpc` when given. */
+async function openEscrowSdk(network: string, rpc?: unknown): Promise<import("@hardkas/sdk").Hardkas> {
+  const { Hardkas } = await import("@hardkas/sdk");
+  let sdk: import("@hardkas/sdk").Hardkas;
+  try {
+    sdk = await Hardkas.open({ cwd: process.cwd(), network, autoBootstrap: true });
+  } catch (e) {
+    return escrowSdkFailure(e);
+  }
+  const e = sdk.execution;
+  if (e.mode === "simulator" || e.domain !== "kaspa-l1") {
+    await sdk.close();
+    fail(
+      "ESCROW_NETWORK_NOT_SUPPORTED",
+      `the escrow lifecycle runs on a Kaspa node network; this workspace runs ${network} as ${e.mode} ${e.domain} ${e.network}. Nothing was read or written.`,
+      HardkasExitCode.USAGE_ERROR
+    );
+  }
+  if (rpc !== undefined) (sdk as any).rpc = rpc;
+  return sdk;
+}
+
+/** `use` with the SDK on `network`, offline (no node is contacted). */
+async function withEscrowSdk<T>(network: string, use: (sdk: import("@hardkas/sdk").Hardkas) => Promise<T>): Promise<T> {
+  const sdk = await openEscrowSdk(network);
+  try {
+    return await use(sdk);
+  } catch (e) {
+    return escrowSdkFailure(e);
+  } finally {
+    await sdk.close();
+  }
+}
+
+/** `use` with the SDK on the node of `network` (--url, else the workspace's), after it proved its identity and sync. */
+async function withEscrowNode<T>(
+  network: string,
+  url: string | undefined,
+  operation: string,
+  use: (sdk: import("@hardkas/sdk").Hardkas, node: any) => Promise<T>
+): Promise<T> {
+  const { resolveL1NodeTarget, proveL1Node } = await import("../runners/l1-node-target.js");
+  const target = await resolveL1NodeTarget(network, url);
+  const { identity, rpc } = await proveL1Node(target, operation);
+  try {
+    const sdk = await openEscrowSdk(network, rpc);
+    try {
+      return await use(sdk, { managed: target.managed, rpcUrl: target.rpcUrl, identity });
+    } catch (e) {
+      return escrowSdkFailure(e);
+    } finally {
+      await sdk.close();
+    }
+  } finally {
+    await rpc.close().catch(() => {});
+  }
+}
+
+/** The keystore password of `account` when it is an encrypted one (never argv; at most once). */
+async function escrowPassword(sdk: import("@hardkas/sdk").Hardkas, account: string, opts: any): Promise<string | undefined> {
+  const { accountNeedsKeystorePassword } = await import("../runners/tx-sign-runner.js");
+  let resolved: any;
+  try {
+    resolved = await sdk.accounts.resolve(account);
+  } catch (e) {
+    return escrowSdkFailure(e);
+  }
+  if (!accountNeedsKeystorePassword(resolved)) return undefined;
+  const { acquirePassword } = await import("../runners/secrets.js");
+  return acquirePassword({ env: opts.passwordEnv, stdin: Boolean(opts.passwordStdin), interactive: !opts.json, message: `Enter the keystore password of account '${resolved.name ?? account}':` });
+}
+
+function kasOption(value: unknown, flag: string): bigint {
+  const v = String(value ?? "").trim();
+  if (!/^\d+(\.\d{1,8})?$/.test(v)) fail("ESCROW_CONFIG_INVALID", `${flag} '${v}' is not an amount of KAS (up to 8 decimals). Nothing was created.`, HardkasExitCode.USAGE_ERROR);
+  const [whole, frac = ""] = v.split(".");
+  const sompi = BigInt(whole!) * 100_000_000n + BigInt((frac + "00000000").slice(0, 8));
+  if (sompi <= 0n) fail("ESCROW_CONFIG_INVALID", `${flag} must be positive. Nothing was created.`, HardkasExitCode.USAGE_ERROR);
+  return sompi;
+}
+
+function sompiOption(value: unknown, flag: string): bigint {
+  const v = String(value ?? "").trim();
+  if (!/^\d{1,20}$/.test(v) || BigInt(v) <= 0n) fail("ESCROW_CONFIG_INVALID", `${flag} '${v}' is not a positive amount in sompi. Nothing was created.`, HardkasExitCode.USAGE_ERROR);
+  return BigInt(v);
+}
+
+const kas = (sompi: unknown) => `${formatSompiToKas(BigInt(String(sompi)))} KAS (${String(sompi)} sompi)`;
+
+/** A record as the commands print it: everything but the compiled artifact. */
+const shownRecord = (r: any) => ({ ...r, artifact: undefined });
+
+function readRequestFile(file: string): any {
+  const p = path.resolve(process.cwd(), file);
+  let text: string;
+  try {
+    text = fs.readFileSync(p, "utf8");
+  } catch (e: any) {
+    return fail("ESCROW_REQUEST_INVALID", `release request ${file}: ${e?.code ?? e?.message}. Nothing was signed.`, HardkasExitCode.USAGE_ERROR);
+  }
+  try {
+    return JSON.parse(text.replace(/^\uFEFF/, ""));
+  } catch {
+    return fail("ESCROW_REQUEST_INVALID", `release request ${file} is not JSON. Nothing was signed.`, HardkasExitCode.USAGE_ERROR);
+  }
+}
+
+function writeJsonFile(file: string, value: unknown): string {
+  const p = path.resolve(process.cwd(), file);
+  fs.writeFileSync(p, JSON.stringify(value, null, 2), "utf8");
+  return p;
+}
+
+function printRelease(request: any) {
+  out().writeLine(`  Branch:    ${request.branch} (signed by ${request.requiredSigners.join(" and ")})`);
+  for (const o of request.outputs ?? []) out().writeLine(`  Pays:      ${kas(o.amountSompi)} to ${o.address ?? `script ${o.scriptPublicKey}`}`);
+  out().writeLine(`  Fee:       ${kas(request.feeSompi)}`);
+  out().writeLine(`  Signed by: ${Object.keys(request.signatures ?? {}).join(", ") || "(nobody yet)"}`);
+}
+
+export function registerEscrowLifecycleCommands(escrow: Command) {
+  // ---------------------------------------------------------------- create
+  escrow
+    .command("create")
+    .description(
+      "Create a v2 escrow (EscrowFull with --amount, EscrowSplit with --buyer-amount and --seller-amount), compiled by the pinned silverc for the network, and record it in this workspace. Nothing is sent"
+    )
+    .requiredOption("--buyer <party>", "The buyer: an account of this workspace, a Schnorr address of the network, or a 32-byte x-only public key (hex)")
+    .requiredOption("--seller <party>", "The seller (account, address or x-only public key)")
+    .requiredOption("--arbiter <party>", "The arbiter (account, address or x-only public key)")
+    .option("--buyer-destination <address|spk>", "Where refunds pay (default: the buyer's own address): an address of the network, or a script public key in hex without the version")
+    .option("--seller-destination <address|spk>", "Where releases pay (default: the seller's own address)")
+    .option("--amount <kas>", "EscrowFull: the principal every branch pays (KAS)")
+    .option("--buyer-amount <kas>", "EscrowSplit: the buyer's allocation (KAS), with --seller-amount")
+    .option("--seller-amount <kas>", "EscrowSplit: the seller's allocation (KAS), with --buyer-amount")
+    .option("--fee-budget <sompi>", "The fee of every release, added to the funding (sompi; default 2000000 = 0.02 KAS; at least the node's minimum relay fee of a release, checked before funding)")
+    .option("--nonce <hex>", "32-byte nonce that makes the escrow's address unique (default: random)")
+    .option("--network <network>", ESCROW_NETWORK_HELP)
+    .option("--json", "Output as JSON", false)
+    .action(async (opts: any) => {
+      const network = await escrowNetworkOf(opts.network);
+      const full = opts.amount !== undefined;
+      const split = opts.buyerAmount !== undefined || opts.sellerAmount !== undefined;
+      if (full === split || (split && (opts.buyerAmount === undefined || opts.sellerAmount === undefined))) {
+        fail(
+          "ESCROW_CONFIG_INVALID",
+          "give --amount (EscrowFull) or both --buyer-amount and --seller-amount (EscrowSplit), not both and not neither. Nothing was created.",
+          HardkasExitCode.USAGE_ERROR
+        );
+      }
+      const record = await withEscrowSdk(network, async (sdk) => {
+        const [buyer, seller, arbiter] = [await sdk.escrow.partyOf(opts.buyer), await sdk.escrow.partyOf(opts.seller), await sdk.escrow.partyOf(opts.arbiter)];
+        const config: any = {
+          buyer: { publicKeyHex: buyer.publicKeyHex },
+          seller: { publicKeyHex: seller.publicKeyHex },
+          arbiter: { publicKeyHex: arbiter.publicKeyHex },
+          buyerDestinationSpk: opts.buyerDestination !== undefined ? sdk.escrow.destinationOf(opts.buyerDestination) : buyer.destinationSpk,
+          sellerDestinationSpk: opts.sellerDestination !== undefined ? sdk.escrow.destinationOf(opts.sellerDestination) : seller.destinationSpk,
+          version: "v2",
+          mode: full ? "full" : "split",
+          ...(full ? { principal: kasOption(opts.amount, "--amount").toString() } : {}),
+          ...(split ? { buyerAmount: kasOption(opts.buyerAmount, "--buyer-amount").toString(), sellerAmount: kasOption(opts.sellerAmount, "--seller-amount").toString() } : {}),
+          ...(opts.feeBudget !== undefined ? { feeBudgetSompi: sompiOption(opts.feeBudget, "--fee-budget").toString() } : {}),
+          ...(opts.nonce !== undefined ? { escrowNonce: String(opts.nonce) } : {})
+        };
+        return sdk.escrow.create(config);
+      });
+      const { escrowFundingAmount } = await import("@hardkas/sdk");
+      const funding = escrowFundingAmount(record.config).toString();
+      if (opts.json) return out().writeJson({ ok: true, id: record.id, address: record.p2shState.address, contract: record.provenance.contractName, networkId: record.networkId, fundingSompi: funding, escrow: shownRecord(record) });
+      out().writeLine(pc.bold(pc.green(`✓ Escrow created (${record.provenance.contractName})`)));
+      out().writeLine(`  Id:       ${pc.cyan(record.id)}`);
+      out().writeLine(`  Address:  ${record.p2shState.address}`);
+      out().writeLine(`  Network:  ${record.networkId}`);
+      out().writeLine(`  Funding:  ${kas(funding)} (principal + fee budget)`);
+      out().writeLine(pc.dim(`Next: hardkas escrow fund ${record.id} --from <buyer account>`));
+    });
+
+  // ---------------------------------------------------------------- fund
+  escrow
+    .command("fund <id>")
+    .description("Fund an escrow from the buyer's account: one payment of its funding amount (principal + fee budget) to its address, planned, signed and sent by HardKAS's payment path. Refused before anything is signed if any release could not pay the node's minimum relay fee")
+    .requiredOption("--from <account>", "The buyer's account of this workspace (its key must be the escrow's buyer key)")
+    .option("--network <network>", ESCROW_NETWORK_HELP)
+    .option("--url <url>", ESCROW_URL_HELP)
+    .option("--wait", "Wait until a chain block accepts the funding", false)
+    .option("--timeout <seconds>", "With --wait: how long to wait", "120")
+    .option("--password-env <env>", ESCROW_PASSWORD_ENV_HELP)
+    .option("--password-stdin", ESCROW_PASSWORD_STDIN_HELP, false)
+    .option("--json", "Output as JSON", false)
+    .action(async (id: string, opts: any) => {
+      const network = await escrowNetworkOf(opts.network, id);
+      const result = await withEscrowNode(network, opts.url, "escrow fund", async (sdk) => {
+        const keystorePassword = await escrowPassword(sdk, String(opts.from), opts);
+        return sdk.escrow.fund(id, { account: String(opts.from), ...(keystorePassword !== undefined ? { keystorePassword } : {}), ...(opts.wait ? { waitMs: Number(opts.timeout) * 1000 } : {}) });
+      });
+      if (opts.json) return out().writeJson({ ok: true, id, txId: result.txId, status: result.status, submissionArtifactId: result.submissionArtifactId, ...(result.warnings ? { warnings: result.warnings } : {}), escrow: shownRecord(result.record) });
+      for (const w of result.warnings ?? []) out().warn(pc.yellow(`warning: ${w}`));
+      out().writeLine(pc.bold(pc.green(`✓ Escrow funded (${result.status})`)));
+      out().writeLine(`  TXID:    ${pc.cyan(result.txId)}`);
+      out().writeLine(`  Amount:  ${kas(result.record.funding.amountSompi)}`);
+      out().writeLine(pc.dim(`Next: hardkas escrow prepare ${id} --branch <branch>`));
+    });
+
+  // ---------------------------------------------------------------- status
+  escrow
+    .command("status <id>")
+    .description("Show an escrow recorded in this workspace: its state, funding, prepared release, signatures and release (no node is contacted)")
+    .option("--json", "Output as JSON", false)
+    .action(async (id: string, opts: any) => {
+      const network = await escrowNetworkOf(undefined, id);
+      const record = await withEscrowSdk(network, (sdk) => sdk.escrow.status(id));
+      if (opts.json) return out().writeJson({ ok: true, escrow: shownRecord(record) });
+      out().writeLine(pc.bold(`Escrow ${record.id} (${record.provenance?.contractName ?? "?"}, ${record.networkId ?? "simnet"})`));
+      out().writeLine(`  State:     ${record.state}`);
+      out().writeLine(`  Address:   ${record.p2shState.address}`);
+      out().writeLine(`  Funding:   ${record.funding.status}${record.funding.transactionId ? ` ${record.funding.transactionId}` : ""}`);
+      if (record.preparedRelease) out().writeLine(`  Release:   ${record.preparedRelease.branch} prepared; signed by ${Object.keys(record.signatures).join(", ") || "(nobody yet)"}`);
+      if (record.release) out().writeLine(`  Sent:      ${record.release.transactionId} (${record.release.status})`);
+    });
+
+  // ---------------------------------------------------------------- prepare
+  escrow
+    .command("prepare <id>")
+    .description("Prepare the release of one branch over the recorded funding and write the release request each required signer signs (in this workspace, or in their own with `escrow sign <file>`)")
+    .requiredOption("--branch <branch>", "EscrowFull: mutualRelease, refundBuyer, releaseToSeller; EscrowSplit: executeSplit, fullRefund, fullRelease, mutualRelease")
+    .option("--buyer-share <kas>", "mutualRelease: what the buyer receives (KAS), with --seller-share; together the principal (default: the contract's default allocation)")
+    .option("--seller-share <kas>", "mutualRelease: what the seller receives (KAS), with --buyer-share")
+    .option("--out <file>", "The release request file (default escrow-<id>-<branch>.request.json)")
+    .option("--network <network>", ESCROW_NETWORK_HELP)
+    .option("--json", "Output as JSON", false)
+    .action(async (id: string, opts: any) => {
+      const network = await escrowNetworkOf(opts.network, id);
+      if ((opts.buyerShare === undefined) !== (opts.sellerShare === undefined)) {
+        fail("ESCROW_CONFIG_INVALID", "give both --buyer-share and --seller-share, or neither. Nothing was prepared.", HardkasExitCode.USAGE_ERROR);
+      }
+      const share = (v: unknown, flag: string): bigint => {
+        const s = String(v ?? "").trim();
+        if (/^0+(\.0*)?$/.test(s)) return 0n;
+        return kasOption(s, flag);
+      };
+      const mutualSplit = opts.buyerShare !== undefined ? { buyerSompi: share(opts.buyerShare, "--buyer-share"), sellerSompi: share(opts.sellerShare, "--seller-share") } : undefined;
+      const request = await withEscrowSdk(network, (sdk) => sdk.escrow.prepare(id, { branch: String(opts.branch), ...(mutualSplit ? { mutualSplit } : {}) }));
+      const file = writeJsonFile(opts.out ?? `escrow-${id.slice(0, 8)}-${request.branch}.request.json`, request);
+      if (opts.json) return out().writeJson({ ok: true, id, file, request });
+      out().writeLine(pc.bold(pc.green("✓ Release prepared")));
+      out().writeLine(`  Request:   ${pc.cyan(file)}`);
+      printRelease(request);
+      out().writeLine(pc.dim(`Next: each of ${request.requiredSigners.join(" and ")} runs  hardkas escrow sign ${path.basename(file)} --role <role> --account <account>`));
+      out().writeLine(pc.dim(`      then  hardkas escrow release ${id} --signatures <signed request file>...`));
+    });
+
+  // ---------------------------------------------------------------- sign
+  escrow
+    .command("sign <id-or-request>")
+    .description(
+      "Sign an escrow's prepared release as one role: an escrow id of this workspace (the signature goes into its record), or a release request file, checked first against the escrow's own terms (the contract recompiled, the draft prepared again) and signed here, in the signer's own workspace"
+    )
+    .requiredOption("--role <role>", "buyer, seller or arbiter: a role the prepared branch requires")
+    .requiredOption("--account <account>", "The account of this workspace that signs (its key must be the escrow's key for the role)")
+    .option("--out <file>", "With a request file: where the signed request is written (default: the request file itself)")
+    .option("--network <network>", ESCROW_NETWORK_HELP)
+    .option("--password-env <env>", ESCROW_PASSWORD_ENV_HELP)
+    .option("--password-stdin", ESCROW_PASSWORD_STDIN_HELP, false)
+    .option("--json", "Output as JSON", false)
+    .action(async (target: string, opts: any) => {
+      if (opts.network !== undefined) await gateEscrowNetwork(String(opts.network));
+      const role = String(opts.role);
+      const account = String(opts.account);
+      if (ESCROW_ID_RE.test(target) && !fs.existsSync(path.resolve(process.cwd(), target))) {
+        const network = await escrowNetworkOf(opts.network, target);
+        const r = await withEscrowSdk(network, async (sdk) => {
+          const keystorePassword = await escrowPassword(sdk, account, opts);
+          return sdk.escrow.sign(target, { role, account, ...(keystorePassword !== undefined ? { keystorePassword } : {}) });
+        });
+        if (opts.json) return out().writeJson({ ok: true, id: target, role, state: r.record.state, signatures: Object.keys(r.record.signatures) });
+        out().writeLine(pc.bold(pc.green(`✓ Signed escrow ${target} as ${role} with '${account}'`)));
+        out().writeLine(`  State:     ${r.record.state}`);
+        return;
+      }
+      const request = readRequestFile(target);
+      const network = await escrowNetworkOf(opts.network ?? (typeof request?.networkId === "string" ? request.networkId : undefined));
+      const signed = await withEscrowSdk(network, async (sdk) => {
+        const keystorePassword = await escrowPassword(sdk, account, opts);
+        return sdk.escrow.signRequest(request, { role, account, ...(keystorePassword !== undefined ? { keystorePassword } : {}) });
+      });
+      const file = writeJsonFile(opts.out ?? target, signed.request);
+      if (opts.json) return out().writeJson({ ok: true, id: signed.request.escrowId, role, file, signatures: Object.keys(signed.request.signatures) });
+      out().writeLine(pc.bold(pc.green(`✓ Signed the release request as ${role} with '${account}'`)));
+      out().writeLine(`  Request:   ${pc.cyan(file)}`);
+      printRelease(signed.request);
+    });
+
+  // ---------------------------------------------------------------- release
+  escrow
+    .command("release <id>")
+    .description("Send an escrow's prepared release once every required role signed: each signature verified (BIP340) before anything is sent, then one send through HardKAS's send machinery. An unknown outcome is recorded and never sent again before reconcile")
+    .option("--signatures <files...>", "Signed release request files to take the signatures from (each checked against this escrow's prepared release)")
+    .option("--network <network>", ESCROW_NETWORK_HELP)
+    .option("--url <url>", ESCROW_URL_HELP)
+    .option("--wait", "Wait until a chain block accepts the release (RELEASED)", false)
+    .option("--timeout <seconds>", "With --wait: how long to wait", "120")
+    .option("--json", "Output as JSON", false)
+    .action(async (id: string, opts: any) => {
+      const network = await escrowNetworkOf(opts.network, id);
+      const requests = ((opts.signatures ?? []) as string[]).map((f) => readRequestFile(f));
+      if (requests.length > 0) {
+        await withEscrowSdk(network, async (sdk) => {
+          for (const r of requests) await sdk.escrow.addSignatures(id, r);
+        });
+      }
+      const result = await withEscrowNode(network, opts.url, "escrow release", (sdk) => sdk.escrow.release(id, opts.wait ? { waitMs: Number(opts.timeout) * 1000 } : {}));
+      if (opts.json) return out().writeJson({ ok: true, id, txId: result.txId, status: result.status, state: result.record.state, submissionArtifactId: result.submissionArtifactId, escrow: shownRecord(result.record) });
+      out().writeLine(pc.bold(pc.green(`✓ Escrow release sent (${result.status})`)));
+      out().writeLine(`  TXID:    ${pc.cyan(result.txId)}`);
+      out().writeLine(`  State:   ${result.record.state}`);
+      if (result.record.state !== "RELEASED") out().writeLine(pc.dim(`Next: hardkas escrow reconcile ${id}`));
+    });
+
+  // ---------------------------------------------------------------- reconcile
+  escrow
+    .command("reconcile <id>")
+    .description("Look at the node once for an escrow's pending funding and release (its mempool, then its chain) and record what it shows: accepted by a chain block → confirmed (FUNDED / RELEASED)")
+    .option("--network <network>", ESCROW_NETWORK_HELP)
+    .option("--url <url>", ESCROW_URL_HELP)
+    .option("--json", "Output as JSON", false)
+    .action(async (id: string, opts: any) => {
+      const network = await escrowNetworkOf(opts.network, id);
+      const r = await withEscrowNode(network, opts.url, "escrow reconcile", (sdk) => sdk.escrow.reconcile(id));
+      if (opts.json) return out().writeJson({ ok: true, id, state: r.record.state, observations: r.observations, escrow: shownRecord(r.record) });
+      out().writeLine(pc.bold(`Escrow ${id}: ${r.record.state}`));
+      for (const [what, look] of Object.entries(r.observations)) out().writeLine(`  ${what.padEnd(8)} ${look.state}${look.error ? ` (${look.error})` : ""}`);
+      out().writeLine(`  Funding:  ${r.record.funding.status}${r.record.release ? `; release ${r.record.release.status}` : ""}`);
+    });
 }

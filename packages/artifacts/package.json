@@ -35,7 +35,7 @@
   "dependencies": {
     "@hardkas/core": "workspace:*",
     "@hardkas/tx-builder": "workspace:*",
-    "zod": "^3.24.1"
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "tsup": "^8.3.5",

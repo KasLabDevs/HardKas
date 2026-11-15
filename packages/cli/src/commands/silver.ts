@@ -640,6 +640,68 @@ function txVersionOption(value: unknown): 0 | 1 {
   return fail("SILVER_TX_VERSION_INVALID", `--tx-version '${String(value)}' is not 0 or 1`, HardkasExitCode.USAGE_ERROR);
 }
 
+// R3-F · CLTV · `silver spend --lock-time-daa | --lock-time-ms` (transaction v0 and v1)
+const LOCK_TIME_DAA_HELP =
+  "Absolute lock time as a DAA score (below 500000000000), for an entry that requires tx.daa >= x (CheckLockTimeVerify): checked against the entry's tx.daa statements before signing, and the spend is refused before the broadcast until the node's virtual DAA score is above it (LOCK_TIME_NOT_REACHED, nothing sent). Not with --lock-time-ms";
+const LOCK_TIME_MS_HELP =
+  "Absolute lock time in milliseconds since the epoch (at or above 500000000000), for an entry that requires tx.time >= t: checked against the entry's tx.time statements before signing, and refused before the broadcast until the node's past median time is above it. Not with --lock-time-daa";
+/** What the caller must change (usage, exit 2) and what is only "not yet" (runtime) among the lock-time refusals. */
+const LOCK_TIME_USAGE_CODES = new Set(["LOCK_TIME_INVALID", "LOCK_TIME_VOID_SEQUENCE", "LOCK_TIME_KIND_MISMATCH", "LOCK_TIME_BELOW_ENTRY_REQUIREMENT"]);
+const LOCK_TIME_RUNTIME_CODES = new Set(["LOCK_TIME_NOT_REACHED", "LOCK_TIME_UNVERIFIABLE"]);
+
+/** A lock-time refusal of the builder or the SDK as the CLI's typed error (same code); anything else is left as it is. */
+function rethrowLockTimeRefusal(e: unknown): void {
+  const code = (e as { code?: unknown } | null | undefined)?.code;
+  if (e instanceof HardkasCliError || typeof code !== "string") return;
+  const message = String((e as any)?.message ?? e).replace(/^Refusing to broadcast \([A-Z_]+\):\s*/, "").replace(new RegExp(`^${code}:\\s*`), "");
+  if (LOCK_TIME_USAGE_CODES.has(code)) fail(code, message, HardkasExitCode.USAGE_ERROR);
+  if (LOCK_TIME_RUNTIME_CODES.has(code)) fail(code, message);
+}
+
+/** The typed lock time `--lock-time-daa | --lock-time-ms` ask for, checked before anything is read or contacted. */
+async function lockTimeOptions(opts: any): Promise<{ daaScore: string } | { timestampMs: string } | undefined> {
+  if (opts.lockTimeDaa !== undefined && opts.lockTimeMs !== undefined) {
+    fail("LOCK_TIME_INVALID", "--lock-time-daa and --lock-time-ms are two kinds of lock: give one of them", HardkasExitCode.USAGE_ERROR);
+  }
+  const flag = opts.lockTimeDaa !== undefined ? "--lock-time-daa" : opts.lockTimeMs !== undefined ? "--lock-time-ms" : undefined;
+  if (flag === undefined) return undefined;
+  const value = String(flag === "--lock-time-daa" ? opts.lockTimeDaa : opts.lockTimeMs).trim();
+  if (!/^\d{1,20}$/.test(value)) fail("LOCK_TIME_INVALID", `${flag} '${value}' is not a non-negative integer`, HardkasExitCode.USAGE_ERROR);
+  const { parseLockTimeRequest } = await import("@hardkas/tx-builder");
+  try {
+    return parseLockTimeRequest(flag === "--lock-time-daa" ? { daaScore: value } : { timestampMs: value }, flag)!;
+  } catch (e) {
+    rethrowLockTimeRefusal(e);
+    throw e;
+  }
+}
+
+/**
+ * R3-F · transaction v0: the entry's top-level `require(tx.daa >= x)` / `require(tx.time >= t)` statements (the compile
+ * record's source, read by the pinned silverc's parser) against the spend's lock time (0 when none), before it is signed.
+ * A v0 spend has the constructor arguments' digest only, so x is known when it is a literal or an entry argument; the
+ * kind is always checked. A source that does not parse here is a warning: the node decides.
+ */
+async function assertV0EntryLockTime(compileRecord: any, entry: string, args: readonly unknown[], lockTime: bigint, what: string): Promise<void> {
+  const text = String(compileRecord?.source?.text ?? "");
+  if (!/\btx\s*\.\s*(daa|time)\b/.test(text)) return;
+  let ast: Record<string, unknown>;
+  try {
+    const { parseSilverSourceAst } = await import("@hardkas/core");
+    ast = await parseSilverSourceAst(text);
+  } catch (e: any) {
+    out().warn(pc.yellow(`warning: ${what}'s lock-time statements were not read (${String(e?.code ?? e?.message ?? e)}); the node decides whether the lock time meets them`));
+    return;
+  }
+  const { assertLockTimeMeetsContractEntry, contractEntryLockTimeRequirements } = await import("@hardkas/sdk");
+  try {
+    assertLockTimeMeetsContractEntry(lockTime, contractEntryLockTimeRequirements({ ast, entry, entryArgs: args }), what);
+  } catch (e) {
+    rethrowLockTimeRefusal(e);
+    throw e;
+  }
+}
+
 function parseKas(amount: string): bigint {
   if (!/^\d+(\.\d{1,8})?$/.test(amount ?? "")) fail("SILVER_AMOUNT_INVALID", `'${amount}' is not a KAS amount`, HardkasExitCode.USAGE_ERROR);
   const [whole, frac = ""] = amount.split(".");
@@ -713,6 +775,154 @@ function print(json: boolean, record: any, file: string, lines: string[]) {
   for (const l of lines) out().writeLine(l);
   out().writeLine(pc.dim(`record: ${file}`));
 }
+
+// ---------------------------------------------------------------------------------------------------------------------
+// R3-A3 · `covenant start` and `covenant advance`: the topologies the SDK's v1 engine plans beyond 1:1 (several covenant
+// outputs in their own states, 1:N, N:M with a leader and delegates, termination), from the command line. The planner,
+// the validation before any key is read, the signing and the one send are the engine's (sdk.covenants); these helpers
+// only read the options. `covenant genesis` and `covenant transition` keep their 1:1 form, options, records and codes.
+// ---------------------------------------------------------------------------------------------------------------------
+
+/** A repeatable option's values, in the order given. */
+function collectOption(value: string, previous: string[] = []): string[] {
+  return [...previous, value];
+}
+
+/** "<left>=<right>" split at the LAST '=' (paths and addresses contain ':' but no '='); no '=': [spec, undefined]. */
+function splitAtLastEquals(spec: string): [string, string | undefined] {
+  const at = spec.lastIndexOf("=");
+  return at < 0 ? [spec, undefined] : [spec.slice(0, at), spec.slice(at + 1)];
+}
+
+/** An outpoint option: "txid:index". */
+function outpointOption(spec: string, option: string): { transactionId: string; index: number } {
+  const m = /^([0-9a-fA-F]{64}):(\d{1,10})$/.exec(String(spec ?? "").trim());
+  if (!m) return fail("SILVER_OPTION_INVALID", `${option} '${spec}' is not an outpoint (txid:index)`, HardkasExitCode.USAGE_ERROR);
+  return { transactionId: m[1]!.toLowerCase(), index: Number(m[2]) };
+}
+
+/** A covenant id option: 32 bytes, hex. */
+function covenantIdOption(value: string, option = "--covenant"): string {
+  const id = String(value ?? "").trim().toLowerCase();
+  if (!/^[0-9a-f]{64}$/.test(id)) fail("SILVER_OPTION_INVALID", `${option} '${value}' is not a covenant id (32 bytes, hex)`, HardkasExitCode.USAGE_ERROR);
+  return id;
+}
+
+/** A JSON state file ({field: {kind, value}}) as the engine's state; every integer by its literal (exact). */
+async function stateFromFile(file: string, option: string): Promise<Record<string, any>> {
+  const core = await import("@hardkas/core");
+  const { silToV1Arg } = await import("@hardkas/accounts");
+  const raw = readExactValuesJson(stripBom(readFileOrFail(file, `${option} state file`).toString("utf8")), option) as Record<string, unknown>;
+  if (raw === null || typeof raw !== "object" || Array.isArray(raw) || Object.keys(raw).length === 0) {
+    fail("SILVER_ARGS_INVALID", `${option} ${file}: a state is a JSON object of {kind, value} per field`, HardkasExitCode.USAGE_ERROR);
+  }
+  return Object.fromEntries(Object.entries(raw).map(([k, v]) => [k, silToV1Arg(core.parseSilArtifactValuesJson(JSON.stringify([v]))[0]!)]));
+}
+
+/** A P2PK/P2SH address as given, or the address of an account of this workspace on `network` (no key is read). */
+async function accountAddress(nameOrAddress: string, network: string): Promise<string> {
+  if (/^[a-z]+:[a-z0-9]+$/.test(nameOrAddress)) return nameOrAddress;
+  const { loadHardkasConfig } = await import("@hardkas/config");
+  const { resolveHardkasAccount } = await import("@hardkas/accounts");
+  const loaded = await loadHardkasConfig({ workspaceRoot: process.cwd() });
+  let account: any;
+  try {
+    account = resolveHardkasAccount({ nameOrAddress, config: { ...loaded.config, cwd: process.cwd() } as any, executionTarget: { mode: "localnet", domain: "kaspa-l1", network } as any });
+  } catch (e: unknown) {
+    const err = e as { code?: unknown; message?: unknown } | null | undefined;
+    return fail(typeof err?.code === "string" ? err.code : "ACCOUNT_NOT_FOUND", String(err?.message ?? e), HardkasExitCode.USAGE_ERROR);
+  }
+  if (typeof account?.address !== "string") fail("ACCOUNT_NOT_FOUND", `no account '${nameOrAddress}' with an address on ${network}`, HardkasExitCode.USAGE_ERROR);
+  return String(account.address);
+}
+
+const isStateParam = (t: any) => t?.kind === "struct" && t.name === "State";
+const isStatesParam = (t: any) => (t?.kind === "dynamic_array" || t?.kind === "fixed_array") && t.item?.kind === "struct" && t.item.name === "State";
+
+/**
+ * The arguments of a covenant entry for `covenant advance`: its State / State[] parameters are the transition's next
+ * states (the engine requires exactly those), the others come from the arguments file, in order — `{kind, value}` values
+ * and `{"kind":"signature","account":"<name>"}` signer slots, each account's key resolved now (before any node).
+ */
+async function advanceEntryArgs(file: string | undefined, params: ReadonlyArray<{ name: string; type: any }>, nextStates: ReadonlyArray<Record<string, any>>, keys: KeySource, where: string) {
+  const own = params.filter((p) => !isStateParam(p.type) && !isStatesParam(p.type));
+  const given = await engineEntryArgs(file, keys, own);
+  if (given.args.length !== own.length) {
+    fail(
+      "SILVER_ARGS_INVALID",
+      `${where} takes ${own.length} argument(s) besides the next states (${own.map((p) => p.name).join(", ") || "none"}); ${file ? `${file} gives ${given.args.length}` : "no arguments file was given"}`,
+      HardkasExitCode.USAGE_ERROR
+    );
+  }
+  let k = 0;
+  const args = params.map((p) => {
+    if (isStatesParam(p.type)) return { kind: "array", value: nextStates.map((s) => ({ kind: "object", value: s })) };
+    if (isStateParam(p.type)) {
+      if (nextStates.length !== 1) fail("SILVER_ARGS_INVALID", `${where}: '${p.name}' takes one next state; the transition has ${nextStates.length}`, HardkasExitCode.USAGE_ERROR);
+      return { kind: "object", value: nextStates[0] };
+    }
+    return given.args[k++];
+  });
+  return { args, accounts: given.accounts };
+}
+
+/** Where the workspace store holds an artifact the SDK wrote (nothing is written here). */
+async function storePathOf(sdk: { workspace: { root: string } }, artifact: unknown): Promise<string> {
+  const { storeEntryFor } = await import("@hardkas/artifacts");
+  return path.join(sdk.workspace.root, ".hardkas", "artifacts", storeEntryFor(artifact as any).rel);
+}
+
+const engineSignOptions = (c: import("../runners/silver-onchain-runner.js").SilverEngineContext) => ({ facts: c.facts, compileRecords: c.compileRecords, keys: c.keys });
+
+/**
+ * bigint → decimal string, everywhere in a summary (what JSON.stringify would keep: undefined and functions dropped from
+ * objects, `toJSON` honoured), without a JSON round trip (ISSUE-ONCHAIN-JSON-PRECISION-1: no bare JSON.parse here).
+ */
+const jsonSafe = (v: unknown): any => {
+  if (typeof v === "bigint") return v.toString();
+  if (v === null || typeof v !== "object") return v;
+  if (typeof (v as { toJSON?: unknown }).toJSON === "function") return jsonSafe((v as { toJSON(): unknown }).toJSON());
+  if (Array.isArray(v)) return v.map((x) => (x === undefined || typeof x === "function" ? null : jsonSafe(x)));
+  return Object.fromEntries(
+    Object.entries(v as Record<string, unknown>)
+      .filter(([, x]) => x !== undefined && typeof x !== "function")
+      .map(([k, x]) => [k, jsonSafe(x)])
+  );
+};
+
+/**
+ * R3-A3 · the on-chain plumbing of the Silver commands, shared with `hardkas kcc20 deploy|transfer|balance` (KCC-20 tokens
+ * are SilverScript covenants): the same network target (mainnet and public-network gates), records, workspace check,
+ * key resolution before any node, node identity proof, engine context, confirmation wait and option readers.
+ */
+export const silverOnChainKit = {
+  silverTarget,
+  schemas,
+  readRecord,
+  loadCompiled,
+  assertCompiledForCanonical,
+  assertCanonicalWorkspace,
+  assertSigOpsStandard,
+  engineConstructorArgs,
+  engineRecordRef,
+  accountKey,
+  keySource,
+  silverNode,
+  withEngine,
+  waitForUtxo,
+  integerOption,
+  budgetOption,
+  parseKas,
+  collectOption,
+  splitAtLastEquals,
+  outpointOption,
+  covenantIdOption,
+  storePathOf,
+  nodeRecordOf,
+  engineSignOptions,
+  jsonSafe,
+  relativePath
+};
 
 export function registerSilverCommand(program: Command) {
   const silver = program
@@ -1132,6 +1342,8 @@ export function registerSilverCommand(program: Command) {
     .requiredOption("--to <address>", "Recipient of the whole value (minus the fee)")
     .option("--args <file>", 'Entry arguments: JSON list of {kind, value} and {"kind":"signature","account":"<name>"}')
     .option("--sequence <n>", "Input sequence (relative locks)")
+    .option("--lock-time-daa <n>", LOCK_TIME_DAA_HELP)
+    .option("--lock-time-ms <t>", LOCK_TIME_MS_HELP)
     .option("--sig-op-count <n>", "Declared signature operations (default: the signature arguments, at least 1); transaction v0 only")
     .option("--network <network>", "Network (default: the deploy record's); mainnet refused; testnet-<n> needs experimental + network.allowPublic")
     .option("--url <url>", SILVER_URL_HELP)
@@ -1146,6 +1358,8 @@ export function registerSilverCommand(program: Command) {
     .action(async (file: string, opts: any) => {
       await refuseSilverMainnetFirst(opts.network);
       const txVersion = txVersionOption(opts.txVersion);
+      // R3-F · CLTV: the typed lock time (LOCK_TIME_INVALID before any record, key or node)
+      const lockTime = await lockTimeOptions(opts);
       const core = await import("@hardkas/core");
       const { HARDKAS_VERSION } = await import("@hardkas/artifacts");
       const S = await schemas();
@@ -1182,6 +1396,9 @@ export function registerSilverCommand(program: Command) {
             );
           }
         }
+        // R3-F · CLTV: the entry's top-level tx.daa / tx.time statements against the lock time (0 when none), before the node
+        const { lockTimeValueOf } = await import("@hardkas/tx-builder");
+        await assertV0EntryLockTime(compileRecord, opts.entry, args, lockTime !== undefined ? lockTimeValueOf(lockTime) : 0n, `${deploy.contract}.${opts.entry}`);
         const { identity, rpc } = await silverNode(target);
         try {
           const utxo = await findUtxo(rpc, deploy.address, deploy.outpoint);
@@ -1190,17 +1407,36 @@ export function registerSilverCommand(program: Command) {
           if (utxo!.covenantId) {
             fail("COVENANT_INPUT_UNDECLARED", `${deploy.outpoint.transactionId}:${deploy.outpoint.index} belongs to covenant ${utxo!.covenantId}: it moves through \`hardkas silver covenant transition\`, never a contract spend`);
           }
-          const built = buildSilverSweep({
-            artifact,
-            contractName: deploy.contract,
-            entry: opts.entry,
-            args,
-            utxo: utxo!,
-            to: opts.to,
-            networkId: target.network,
-            ...(opts.sequence !== undefined ? { sequence: BigInt(opts.sequence) } : {}),
-            sigOpCount: opts.sigOpCount !== undefined ? Number(opts.sigOpCount) : signatureArgs
-          });
+          let built!: ReturnType<typeof buildSilverSweep>;
+          try {
+            built = buildSilverSweep({
+              artifact,
+              contractName: deploy.contract,
+              entry: opts.entry,
+              args,
+              utxo: utxo!,
+              to: opts.to,
+              networkId: target.network,
+              ...(opts.sequence !== undefined ? { sequence: BigInt(opts.sequence) } : {}),
+              sigOpCount: opts.sigOpCount !== undefined ? Number(opts.sigOpCount) : signatureArgs,
+              ...(lockTime !== undefined ? { lockTime } : {})
+            });
+          } catch (e) {
+            rethrowLockTimeRefusal(e);
+            throw e;
+          }
+          // R3-F · CLTV: a lock the node has not passed is refused before the broadcast (LOCK_TIME_NOT_REACHED /
+          // LOCK_TIME_UNVERIFIABLE): the node would refuse it now; nothing is sent or recorded, and the spend can be run again
+          if (built.lockTime !== undefined && built.lockTime !== 0n) {
+            const { assertLockTimeReached, readLockTimeChainPoint } = await import("@hardkas/tx-builder");
+            const point = await readLockTimeChainPoint(rpc);
+            try {
+              assertLockTimeReached({ lockTime: built.lockTime, sequences: built.rpcTransaction.inputs.map((i: any) => BigInt(i.sequence ?? 0)), point, what: `the spend of ${deploy.contract}.${opts.entry}` });
+            } catch (e) {
+              rethrowLockTimeRefusal(e);
+              throw e;
+            }
+          }
           const txId = await submit(rpc, built.rpcTransaction, "spend", (built as any).txId);
           const confirmed = opts.wait ? await waitForUtxo(rpc, opts.to, { transactionId: txId, index: 0 }, Number(opts.timeout)) : undefined;
           const { contract } = core.getSilContract(artifact, deploy.contract);
@@ -1221,6 +1457,8 @@ export function registerSilverCommand(program: Command) {
               outputSompi: built.outputSompi.toString(),
               feeSompi: built.feeSompi.toString(),
               sequence: String(built.rpcTransaction.inputs[0].sequence),
+              // R3-F · CLTV: the transaction's lock time (u64), only when it has one
+              ...(built.lockTime !== undefined && built.lockTime !== 0n ? { lockTime: built.lockTime.toString() } : {}),
               sigOpCount: built.rpcTransaction.inputs[0].sigOpCount,
               signatureScriptSha256: sha256(Buffer.from(built.signatureScriptHex, "hex")),
               status: confirmed ? "confirmed" : "submitted",
@@ -1254,24 +1492,32 @@ export function registerSilverCommand(program: Command) {
         const utxo = await findUtxo(rpc, deploy.address, deploy.outpoint);
         if (!utxo) fail("SILVER_CONTRACT_OUTPUT_NOT_FOUND", `${deploy.outpoint.transactionId}:${deploy.outpoint.index} is not an unspent output of ${deploy.address} (unconfirmed or already spent)`);
         const compileRef = engineRecordRef(compileRecord, deploy.compileRecord.path, workspaceRoot);
-        const built = await withEngine(
-          workspaceRoot,
-          rpc,
-          [compileRecord],
-          accounts,
-          (engine, ctx) =>
-            engine.silverEngineSpend(ctx, {
-              contract: { compileRecord: compileRef, contract: deploy.contract, constructorArgs },
-              entry: opts.entry,
-              args,
-              outpoint: deploy.outpoint,
-              address: deploy.address,
-              to: opts.to,
-              ...(sequence !== undefined ? { sequence } : {}),
-              ...(computeBudget !== undefined ? { computeBudget } : {})
-            }),
-          target
-        );
+        let built!: Awaited<ReturnType<typeof import("../runners/silver-onchain-runner.js").silverEngineSpend>>;
+        try {
+          built = await withEngine(
+            workspaceRoot,
+            rpc,
+            [compileRecord],
+            accounts,
+            (engine, ctx) =>
+              engine.silverEngineSpend(ctx, {
+                contract: { compileRecord: compileRef, contract: deploy.contract, constructorArgs },
+                entry: opts.entry,
+                args,
+                outpoint: deploy.outpoint,
+                address: deploy.address,
+                to: opts.to,
+                ...(sequence !== undefined ? { sequence } : {}),
+                ...(computeBudget !== undefined ? { computeBudget } : {}),
+                // R3-F · CLTV: checked against the entry by the engine's planner, refused by sdk.tx.send until reached
+                ...(lockTime !== undefined ? { lockTime } : {})
+              }),
+            target
+          );
+        } catch (e) {
+          rethrowLockTimeRefusal(e);
+          throw e;
+        }
         const txId = built.txId;
         const confirmed = opts.wait ? await waitForUtxo(rpc, opts.to, { transactionId: txId, index: 0 }, Number(opts.timeout)) : undefined;
         const { path: recordPath, record } = await writeRecord(
@@ -1291,6 +1537,8 @@ export function registerSilverCommand(program: Command) {
             outputSompi: built.outputSompi.toString(),
             feeSompi: built.feeSompi.toString(),
             sequence: built.sequence,
+            // R3-F · CLTV: the transaction's lock time (u64), only when it has one
+            ...(built.lockTime !== undefined ? { lockTime: built.lockTime } : {}),
             // the transaction's own field: a v1 input declares no signature operations (its compute budget bounds them)
             sigOpCount: 0,
             signatureScriptSha256: sha256(Buffer.from(built.signatureScriptHex, "hex")),
@@ -1311,7 +1559,9 @@ export function registerSilverCommand(program: Command) {
     });
 
   // ---------------------------------------------------------------- covenant
-  const covenant = silver.command("covenant").description("Toccata covenants (transaction v1): 1:1 auth-bound transitions");
+  const covenant = silver
+    .command("covenant")
+    .description("Toccata covenants (transaction v1): genesis and 1:1 auth-bound transitions; start (several outputs) and advance (1:N, N:M with delegates, termination)");
 
   covenant
     .command("genesis <record>")
@@ -1415,6 +1665,8 @@ export function registerSilverCommand(program: Command) {
     .option("--compute-budget <n>", "Compute budget of the covenant input, or 'estimate' (rusty-kaspa's upper bound); default: the certified budget of this entry, else that estimate")
     .option("--args <file>", 'Entry arguments: JSON list of {kind, value} and {"kind":"signature","account":"<name>"}')
     .option("--fee <sompi>", "Fee in sompi, paid from the covenant's value: at least the node's floor for this transaction (the floor when omitted)")
+    .option("--lock-time-daa <n>", LOCK_TIME_DAA_HELP)
+    .option("--lock-time-ms <t>", LOCK_TIME_MS_HELP)
     .option("--emit-args <file>", "Write the successor's constructor arguments here (for the next transition)")
     .option("--network <network>", "Network (default: the covenant record's); mainnet refused; testnet-<n> needs experimental + network.allowPublic")
     .option("--url <url>", SILVER_URL_HELP)
@@ -1425,6 +1677,8 @@ export function registerSilverCommand(program: Command) {
     .option("--json", "Output as JSON", false)
     .action(async (file: string, opts: any) => {
       await refuseSilverMainnetFirst(opts.network);
+      // CLTV: the typed lock time, refused (LOCK_TIME_INVALID) before any record, key or node
+      const lockTime = await lockTimeOptions(opts);
       const core = await import("@hardkas/core");
       const { silToV1Arg } = await import("@hardkas/accounts");
       const { HARDKAS_VERSION } = await import("@hardkas/artifacts");
@@ -1472,26 +1726,33 @@ export function registerSilverCommand(program: Command) {
         const utxo = await findUtxo(rpc, prev.address, prev.outpoint);
         if (!utxo) fail("SILVER_CONTRACT_OUTPUT_NOT_FOUND", `${prev.outpoint.transactionId}:${prev.outpoint.index} is not unspent at ${prev.address}`);
         if (utxo!.covenantId !== prev.covenantId) fail("SILVER_COVENANT_ID_MISMATCH", `the node reports covenant id ${utxo!.covenantId} for this output, the record says ${prev.covenantId}`);
-        const built = await withEngine(
-          workspaceRoot,
-          rpc,
-          [compileRecord],
-          accounts,
-          (engine, ctx) =>
-            engine.silverEngineTransition(ctx, {
-              contract: { compileRecord: engineRecordRef(compileRecord, prev.compileRecord.path, workspaceRoot), contract: prev.contract, constructorArgs: ctor.values.map((v: any) => silToV1Arg(v)) },
-              covenantId: prev.covenantId,
-              outpoint: prev.outpoint,
-              policy: opts.policy,
-              entry: entry!,
-              args,
-              nextState: engineNextState,
-              expectedSuccessorAddress: successorAddress,
-              ...(computeBudget !== undefined ? { computeBudget } : {}),
-              ...(fee !== undefined ? { feeSompi: fee } : {})
-            }),
-          target
-        );
+        let built: { txId: string; valueSompi: bigint; feeSompi: bigint; computeBudget: number };
+        try {
+          built = await withEngine(
+            workspaceRoot,
+            rpc,
+            [compileRecord],
+            accounts,
+            (engine, ctx) =>
+              engine.silverEngineTransition(ctx, {
+                contract: { compileRecord: engineRecordRef(compileRecord, prev.compileRecord.path, workspaceRoot), contract: prev.contract, constructorArgs: ctor.values.map((v: any) => silToV1Arg(v)) },
+                covenantId: prev.covenantId,
+                outpoint: prev.outpoint,
+                policy: opts.policy,
+                entry: entry!,
+                args,
+                nextState: engineNextState,
+                expectedSuccessorAddress: successorAddress,
+                ...(computeBudget !== undefined ? { computeBudget } : {}),
+                ...(fee !== undefined ? { feeSompi: fee } : {}),
+                ...(lockTime !== undefined ? { lockTime } : {})
+              }),
+            target
+          );
+        } catch (e) {
+          rethrowLockTimeRefusal(e);
+          throw e;
+        }
         const txId = built.txId;
         const outpoint = { transactionId: txId, index: 0 };
         const confirmed = opts.wait ? await waitForUtxo(rpc, successorAddress, outpoint, Number(opts.timeout)) : undefined;
@@ -1604,6 +1865,354 @@ export function registerSilverCommand(program: Command) {
       out().writeLine(`  ${report.active ? `active: ${report.utxoCount} output(s), ${report.totalValueLocked} sompi` : "not active at the node"}`);
       for (const f of l.findings) out().writeLine(pc.yellow(`  - ${f}`));
       out().writeLine(pc.dim(`  ${l.scope}`));
+    });
+
+  // ---------------------------------------------------------------- covenant start / advance (R3-A3)
+  covenant
+    .command("start <record>")
+    .description(
+      "Create a covenant with one or more outputs, each holding its own state, all bound to the one covenant id the SDK derives (what an N:M transition spends): planned, checked, signed and sent by the SDK's v1 engine. `genesis` keeps the one-output form and its record"
+    )
+    .requiredOption("--from <account>", "Funding account (local key): pays the outputs and the fee, gets the change")
+    .option(
+      "--output <spec>",
+      "A covenant output, in output order (repeatable): '<kas>', or '<state-file>=<kas>' for an output holding the state in that JSON file ({field: {kind, value}}); every output a state, or none (each then holds the record's own)",
+      collectOption,
+      []
+    )
+    .option("--fee <sompi>", "Fee in sompi: at least the node's floor for this transaction (the floor when omitted)")
+    .option("--compute-budget <n>", "Compute budget of the funding inputs (default: the certified P2PK budget)")
+    .option("--constructor-args <file>", "Constructor arguments the contract was compiled with (default: proven from its initial State)")
+    .option("--contract <name>", "Contract, when the artifact has several")
+    .option("--network <network>", SILVER_NETWORK_HELP)
+    .option("--url <url>", SILVER_URL_HELP)
+    .option("--wait", "Wait until every output is confirmed with the covenant id", false)
+    .option("--timeout <seconds>", "Confirmation timeout", "120")
+    .option("--password-env <env>", PASSWORD_ENV_HELP)
+    .option("--password-stdin", PASSWORD_STDIN_HELP, false)
+    .option("--json", "Output as JSON", false)
+    .action(async (file: string, opts: any) => {
+      // mainnet (any spelling or alias) refused here, before any record is read (compileNetwork)
+      const target = await silverTarget(opts);
+      const core = await import("@hardkas/core");
+      const S = await schemas();
+      const compileRecord = await readRecord(file, S.SilverCompileV1);
+      assertCompiledForCanonical(compileRecord, file, target.network);
+      const artifact = await loadCompiled(compileRecord);
+      const { name, contract } = core.getSilContract(artifact, opts.contract);
+      await assertSigOpsStandard(name, core.silContractBytecodeHex(contract));
+      const specs = (opts.output as string[]).map((spec) => {
+        const [left, right] = splitAtLastEquals(spec);
+        return right === undefined ? { kas: parseKas(left), stateFile: undefined } : { kas: parseKas(right), stateFile: left };
+      });
+      if (specs.length === 0) fail("SILVER_OPTION_INVALID", "give the covenant's outputs: --output <kas> or --output <state-file>=<kas>, repeatable", HardkasExitCode.USAGE_ERROR);
+      const withState = specs.filter((s) => s.stateFile !== undefined).length;
+      if (withState !== 0 && withState !== specs.length) {
+        fail("SILVER_OPTION_INVALID", "every --output holds a state (<state-file>=<kas>), or none does (each then holds the record's own)", HardkasExitCode.USAGE_ERROR);
+      }
+      const fundingBudget = budgetOption(opts.computeBudget, false) as number | undefined;
+      const fee = integerOption(opts.fee, "--fee");
+      const states = withState > 0 ? await Promise.all(specs.map((s) => stateFromFile(s.stateFile!, "--output"))) : undefined;
+      const workspaceRoot = await assertCanonicalWorkspace(target);
+      const constructorArgs = await engineConstructorArgs(compileRecord, name, opts.constructorArgs);
+      const funder = await accountKey(opts.from, keySource(opts), target.network);
+      const { identity, rpc } = await silverNode(target);
+      try {
+        const r = await withEngine(
+          workspaceRoot,
+          rpc,
+          [compileRecord],
+          [{ names: [opts.from], ...funder }],
+          async (engine, ctx) => {
+            let plan: any;
+            try {
+              plan = await ctx.sdk.covenants.planGenesis(
+                {
+                  contract: { compileRecord: engineRecordRef(compileRecord, file, workspaceRoot), contract: name, constructorArgs } as any,
+                  outputs: specs.map((s, k) => ({ amountSompi: s.kas, ...(states ? { state: states[k] } : {}) })),
+                  funder: funder.address,
+                  ...(fee !== undefined ? { feeSompi: fee } : {}),
+                  ...(fundingBudget !== undefined ? { fundingComputeBudget: fundingBudget } : {})
+                },
+                engineSignOptions(ctx)
+              );
+            } catch (e: any) {
+              if (e?.code === "V1_FEE_INPUTS_INSUFFICIENT") fail("SILVER_INSUFFICIENT_FUNDS", `${funder.address} cannot pay this transaction: ${String(e?.message ?? e).replace("V1_FEE_INPUTS_INSUFFICIENT: ", "")}`);
+              throw e;
+            }
+            const s = await ctx.sdk.covenants.sign(plan, engineSignOptions(ctx));
+            // read exactly (ISSUE-ONCHAIN-JSON-PRECISION-1): a large amount in the payload keeps its digits
+            const outputs: any[] = (readExactTestsJson(String(s.signed.signedTransaction.payload), "the signed genesis payload") as any)?.outputs ?? [];
+            const covenantId = String(outputs[0]?.covenant?.covenantId ?? "").toLowerCase();
+            if (!/^[0-9a-f]{64}$/.test(covenantId)) fail("SILVER_COVENANT_ID_MISSING", "the signed genesis binds no covenant id to its first output");
+            for (let k = 0; k < specs.length; k++) {
+              if (String(outputs[k]?.covenant?.covenantId ?? "").toLowerCase() !== covenantId) fail("SILVER_COVENANT_ID_MISMATCH", `the signed genesis binds output ${k} to ${outputs[k]?.covenant?.covenantId ?? "no covenant"}, output 0 to ${covenantId}`);
+            }
+            const txId = await engine.sendSilverEngineTransaction(ctx.sdk, s.signed, "covenant start", engineSignOptions(ctx));
+            return { plan, signed: s.signed, txId, covenantId, planPath: await storePathOf(ctx.sdk, plan), signedPath: await storePathOf(ctx.sdk, s.signed) };
+          },
+          target
+        );
+        const confirmed: any[] = [];
+        if (opts.wait) {
+          for (let k = 0; k < specs.length; k++) {
+            const u = await waitForUtxo(rpc, r.plan.outputs[k].address, { transactionId: r.txId, index: k }, Number(opts.timeout));
+            if (u.covenantId !== r.covenantId) fail("SILVER_COVENANT_ID_MISMATCH", `the node reports covenant id ${u.covenantId} for output ${k}, the SDK computed ${r.covenantId}`);
+            confirmed.push(u);
+          }
+        }
+        const summary = jsonSafe({
+          schema: "hardkas.silverCovenantStart.v1",
+          networkId: target.network,
+          contract: name,
+          covenantId: r.covenantId,
+          txId: r.txId,
+          status: opts.wait ? "confirmed" : "submitted",
+          feeSompi: r.plan.estimatedFeeSompi,
+          outputs: specs.map((_, k) => ({
+            outpoint: `${r.txId}:${k}`,
+            address: r.plan.outputs[k].address,
+            amountSompi: r.plan.outputs[k].amountSompi,
+            ...(states ? { state: states[k] } : {}),
+            ...(confirmed[k] ? { confirmedAtBlockDaaScore: confirmed[k].blockDaaScore } : {})
+          })),
+          plan: relativePath(r.planPath),
+          signed: relativePath(r.signedPath),
+          node: nodeRecordOf(identity)
+        });
+        if (opts.json) return out().writeJson(summary);
+        out().writeLine(`${pc.green("Covenant started")} ${name} ${r.covenantId}`);
+        out().writeLine(`  tx ${r.txId} (${summary.status}), ${specs.length} output(s), fee ${summary.feeSompi} sompi`);
+        for (const o of summary.outputs) out().writeLine(`  ${o.outpoint} ${o.amountSompi} sompi at ${o.address}`);
+      } finally {
+        await rpc.close?.();
+      }
+    });
+
+  covenant
+    .command("advance <record>")
+    .description(
+      "Advance a covenant through any transition its declaration allows — one input to several continuations (1:N), several inputs with a leader and delegates (N:M), or none (termination) — planned, checked against the node and the compiler before any key is read, signed and sent by the SDK's v1 engine. <record> is the covenant's compile record (its template); `transition` keeps the 1:1 form and its records"
+    )
+    .requiredOption("--covenant <id>", "The covenant id (32 bytes, hex)")
+    .requiredOption("--policy <name>", "Covenant declaration (policy function) the transition runs")
+    .option(
+      "--input <spec>",
+      "A covenant input, in input order, the leader first (repeatable): 'txid:index' (its state: the one this workspace's records of the covenant declare for that output, checked against its address), or 'txid:index=<state-file>'",
+      collectOption,
+      []
+    )
+    .option(
+      "--next <spec>",
+      "A continuation, in output order (repeatable): '<state-file>=<kas>', or '<state-file>' for the one that keeps what the other outputs and the fee leave of the covenant's value (one at most; not with --funder)",
+      collectOption,
+      []
+    )
+    .option("--pay <spec>", "A payment out of the covenant (repeatable): '<address or account>=<kas>'", collectOption, [])
+    .option("--terminate", "End the covenant: no continuation (its policy decides whether it may); its value goes to the --pay outputs and the fee", false)
+    .option("--args <file>", 'The leader entry\'s arguments other than its next states (filled from --next): JSON list of {kind, value} and {"kind":"signature","account":"<name>"}')
+    .option("--delegate-args <file>", "A delegate input's entry arguments, same form, one file per delegate in input order (repeatable; default: none)", collectOption, [])
+    .option("--funder <account>", "Pay the fee from this account's coins (local key); the covenant keeps its value")
+    .option("--fee <sompi>", "Fee in sompi, with a continuation that takes the rest or with --funder: at least the node's floor (the floor when omitted). Otherwise the fee is what the outputs leave of the covenant's value")
+    .option("--max-fee <sompi>", "The plan's fee limit (default: the fee it pays; a fee the outputs leave is refused above the larger of 0.1 KAS and the node's floor unless this is given)")
+    .option("--lock-time-daa <n>", LOCK_TIME_DAA_HELP)
+    .option("--lock-time-ms <t>", LOCK_TIME_MS_HELP)
+    .option("--compute-budget <n>", "Compute budget of each covenant input, or 'estimate' (rusty-kaspa's upper bound); default: the certified budget of its entry, else that estimate")
+    .option("--constructor-args <file>", "Constructor arguments the contract was compiled with (default: proven from its initial State)")
+    .option("--contract <name>", "Contract, when the artifact has several")
+    .option("--network <network>", SILVER_NETWORK_HELP)
+    .option("--url <url>", SILVER_URL_HELP)
+    .option("--wait", "Wait until every continuation is confirmed with the covenant id (termination: the first output)", false)
+    .option("--timeout <seconds>", "Confirmation timeout", "120")
+    .option("--password-env <env>", PASSWORD_ENV_HELP)
+    .option("--password-stdin", PASSWORD_STDIN_HELP, false)
+    .option("--json", "Output as JSON", false)
+    .action(async (file: string, opts: any) => {
+      // mainnet (any spelling or alias) refused here, before any record is read (compileNetwork)
+      const target = await silverTarget(opts);
+      // CLTV: the typed lock time, refused (LOCK_TIME_INVALID) before any record, key or node
+      const lockTime = await lockTimeOptions(opts);
+      const core = await import("@hardkas/core");
+      const { proposeComputeBudget } = await import("@hardkas/tx-builder");
+      const S = await schemas();
+      const compileRecord = await readRecord(file, S.SilverCompileV1);
+      assertCompiledForCanonical(compileRecord, file, target.network);
+      const artifact = await loadCompiled(compileRecord);
+      const { name, contract } = core.getSilContract(artifact, opts.contract);
+      const covenantId = covenantIdOption(opts.covenant);
+      const policy = String(opts.policy);
+      const leaderEntry = contract.cov_decl_to_abi?.[policy];
+      if (typeof leaderEntry !== "string") {
+        fail("COVENANT_POLICY_NOT_FOUND", `'${name}' declares no covenant policy '${policy}' (it declares ${Object.keys(contract.cov_decl_to_abi ?? {}).join(", ") || "none"})`, HardkasExitCode.USAGE_ERROR);
+      }
+      const inputs = (opts.input as string[]).map((spec) => {
+        const at = spec.indexOf("=");
+        return { outpoint: outpointOption(at < 0 ? spec : spec.slice(0, at), "--input"), stateFile: at < 0 ? undefined : spec.slice(at + 1) };
+      });
+      if (inputs.length === 0) fail("SILVER_OPTION_INVALID", "give the covenant's inputs: --input <txid:index> (the leader first), repeatable", HardkasExitCode.USAGE_ERROR);
+      const seen = new Set(inputs.map((i) => `${i.outpoint.transactionId}:${i.outpoint.index}`));
+      if (seen.size !== inputs.length) fail("SILVER_OPTION_INVALID", "an outpoint is given twice as --input", HardkasExitCode.USAGE_ERROR);
+      const delegateEntry = contract.delegate_entry_abi;
+      if (inputs.length > 1 && typeof delegateEntry !== "string") {
+        fail("COVENANT_LINEAGE_INVALID", `'${name}' has no delegate entry (policy '${policy}' is not a cov binding): its transition spends one input`, HardkasExitCode.USAGE_ERROR);
+      }
+      if ((opts.delegateArgs as string[]).length > inputs.length - 1) {
+        fail("SILVER_OPTION_INVALID", `${(opts.delegateArgs as string[]).length} --delegate-args for ${inputs.length - 1} delegate input(s)`, HardkasExitCode.USAGE_ERROR);
+      }
+      const nexts = (opts.next as string[]).map((spec) => {
+        const [left, right] = splitAtLastEquals(spec);
+        return { stateFile: left, amount: right === undefined || right === "rest" ? ("rest" as const) : parseKas(right) };
+      });
+      if (opts.terminate && nexts.length > 0) fail("SILVER_OPTION_INVALID", "--terminate ends the covenant: it takes no --next", HardkasExitCode.USAGE_ERROR);
+      if (!opts.terminate && nexts.length === 0) {
+        fail("SILVER_OPTION_INVALID", "give the continuations (--next <state-file>[=<kas>], repeatable), or --terminate to end the covenant", HardkasExitCode.USAGE_ERROR);
+      }
+      const rests = nexts.filter((n) => n.amount === "rest").length;
+      if (rests > 1) fail("SILVER_OPTION_INVALID", "one --next at most takes the rest (give the others a value: --next <state-file>=<kas>)", HardkasExitCode.USAGE_ERROR);
+      if (rests === 1 && opts.funder) fail("SILVER_OPTION_INVALID", "with --funder the covenant keeps its value: give every --next a value (--next <state-file>=<kas>)", HardkasExitCode.USAGE_ERROR);
+      const pays = (opts.pay as string[]).map((spec) => {
+        const [who, kas] = splitAtLastEquals(spec);
+        if (kas === undefined || who === "") fail("SILVER_OPTION_INVALID", `--pay '${spec}' is not '<address or account>=<kas>'`, HardkasExitCode.USAGE_ERROR);
+        return { who, amountSompi: parseKas(kas!) };
+      });
+      const fee = integerOption(opts.fee, "--fee");
+      const maxFee = integerOption(opts.maxFee, "--max-fee");
+      if (fee !== undefined && rests === 0 && !opts.funder) {
+        fail(
+          "SILVER_OPTION_INVALID",
+          "--fee applies when a continuation takes the rest or --funder pays; otherwise the fee is what the outputs leave of the covenant's value (--max-fee bounds it)",
+          HardkasExitCode.USAGE_ERROR
+        );
+      }
+      const budget = budgetOption(opts.computeBudget, true);
+      const states = await Promise.all(nexts.map((n) => stateFromFile(n.stateFile, "--next")));
+      const givenStates = await Promise.all(inputs.map((i) => (i.stateFile !== undefined ? stateFromFile(i.stateFile, "--input") : Promise.resolve(undefined))));
+      const workspaceRoot = await assertCanonicalWorkspace(target);
+      const constructorArgs = await engineConstructorArgs(compileRecord, name, opts.constructorArgs);
+      // every key this transaction signs with, resolved now, before the node (SILVER-KEYS-1); one password prompt at most
+      const keys: KeySource = { ...keySource(opts), network: target.network };
+      const leader = await advanceEntryArgs(opts.args, contract.entries[leaderEntry!]!.params, states, keys, `the leader entry '${leaderEntry}'`);
+      const delegates: Array<Awaited<ReturnType<typeof advanceEntryArgs>>> = [];
+      for (let d = 1; d < inputs.length; d++) {
+        delegates.push(await advanceEntryArgs((opts.delegateArgs as string[])[d - 1], contract.entries[delegateEntry!]!.params, states, keys, `the delegate entry '${delegateEntry}' (input ${d})`));
+      }
+      const funder = opts.funder ? await accountKey(opts.funder, keys, target.network) : undefined;
+      const payments: Array<{ address: string; amountSompi: bigint }> = [];
+      for (const p of pays) payments.push({ address: await accountAddress(p.who, target.network), amountSompi: p.amountSompi });
+      const accounts = [...leader.accounts, ...delegates.flatMap((d) => d.accounts), ...(funder ? [{ names: [String(opts.funder)], ...funder }] : [])];
+      const templateHash = Buffer.from(contract.compiled.template_hash).toString("hex");
+      const { identity, rpc } = await silverNode(target);
+      try {
+        const r = await withEngine(
+          workspaceRoot,
+          rpc,
+          [compileRecord],
+          accounts,
+          async (engine, ctx) => {
+            const ref = { compileRecord: engineRecordRef(compileRecord, file, workspaceRoot), contract: name, constructorArgs };
+            // an input's state: the one given, else the one this workspace's records declare for that output, checked against
+            // its address (the P2SH commits to the script holding it)
+            let lineage: any;
+            const stateOf = async (i: number) => {
+              if (givenStates[i] !== undefined) return givenStates[i];
+              lineage ??= await ctx.sdk.covenants.lineage(covenantId, { node: false, facts: ctx.facts, compileRecords: ctx.compileRecords });
+              const key = `${inputs[i]!.outpoint.transactionId}:${inputs[i]!.outpoint.index}`;
+              const t = (lineage.tip as any[]).find((x) => x.outpoint === key);
+              if (!t || t.stateCheck?.status !== "address-commits" || !t.stateCheck.state) {
+                fail(
+                  "SILVER_COVENANT_INPUT_STATE_UNKNOWN",
+                  `${key} is not an output of covenant ${covenantId} whose state this workspace's records declare${t?.stateCheck?.detail ? ` (${t.stateCheck.detail})` : ""}: give it, --input ${key}=<state-file>`,
+                  HardkasExitCode.USAGE_ERROR
+                );
+              }
+              return t.stateCheck.state;
+            };
+            const planInputs: any[] = [];
+            for (let i = 0; i < inputs.length; i++) {
+              const entry = i === 0 ? leaderEntry! : delegateEntry!;
+              const computeBudget = budget ?? proposeComputeBudget({ kind: "covenant", templateHash, entry })?.budget ?? "estimate";
+              planInputs.push({ outpoint: inputs[i]!.outpoint, contract: { ...ref, entry, policy, args: i === 0 ? leader.args : delegates[i - 1]!.args, state: await stateOf(i) }, computeBudget });
+            }
+            let plan: any;
+            try {
+              plan = await ctx.sdk.covenants.planTransition(
+                {
+                  covenantId,
+                  inputs: planInputs,
+                  continuations: nexts.map((n, k) => ({ amountSompi: n.amount, state: states[k]! })),
+                  ...(payments.length > 0 ? { payments } : {}),
+                  ...(funder ? { funder: funder.address } : {}),
+                  ...(fee !== undefined ? { feeSompi: fee } : {}),
+                  ...(maxFee !== undefined ? { maxFeeSompi: maxFee } : {}),
+                  ...(lockTime !== undefined ? { lockTime: lockTime as any } : {})
+                },
+                engineSignOptions(ctx)
+              );
+            } catch (e: any) {
+              if (e?.code === "V1_FEE_INPUTS_INSUFFICIENT") fail("SILVER_INSUFFICIENT_FUNDS", `${funder?.address} cannot pay this transaction: ${String(e?.message ?? e).replace("V1_FEE_INPUTS_INSUFFICIENT: ", "")}`);
+              rethrowLockTimeRefusal(e);
+              throw e;
+            }
+            const s = await ctx.sdk.covenants.sign(plan, engineSignOptions(ctx));
+            let txId: string;
+            try {
+              txId = await engine.sendSilverEngineTransaction(ctx.sdk, s.signed, "covenant advance", engineSignOptions(ctx));
+            } catch (e) {
+              rethrowLockTimeRefusal(e);
+              throw e;
+            }
+            return { plan, txId, warnings: s.warnings, planPath: await storePathOf(ctx.sdk, plan), signedPath: await storePathOf(ctx.sdk, s.signed) };
+          },
+          target
+        );
+        const outs = (r.plan.outputs as any[]).map((o, index) => ({ ...o, index }));
+        const continuations = outs.filter((o) => o.covenant);
+        const confirmed = new Map<number, any>();
+        if (opts.wait) {
+          for (const o of continuations.length > 0 ? continuations : outs.slice(0, 1)) {
+            const u = await waitForUtxo(rpc, o.address, { transactionId: r.txId, index: o.index }, Number(opts.timeout));
+            if (o.covenant && u.covenantId !== covenantId) fail("SILVER_COVENANT_LINEAGE_BROKEN", `output ${o.index} carries ${u.covenantId ?? "no covenant id"}, expected ${covenantId}`);
+            confirmed.set(o.index, u);
+          }
+        }
+        const summary = jsonSafe({
+          schema: "hardkas.silverCovenantAdvance.v1",
+          networkId: target.network,
+          contract: name,
+          covenantId,
+          policy,
+          txId: r.txId,
+          status: opts.wait ? "confirmed" : "submitted",
+          terminated: continuations.length === 0,
+          feeSompi: r.plan.estimatedFeeSompi,
+          inputs: (r.plan.inputs as any[]).map((i, k) => ({
+            outpoint: `${i.outpoint.transactionId}:${i.outpoint.index}`,
+            role: i.kind !== "covenant" ? "fee" : k === 0 ? "leader" : "delegate",
+            address: i.address,
+            amountSompi: i.amountSompi,
+            ...(i.kind === "covenant" ? { entry: i.contract.entry, computeBudget: i.computeBudget } : {})
+          })),
+          continuations: continuations.map((o, k) => ({
+            outpoint: `${r.txId}:${o.index}`,
+            address: o.address,
+            amountSompi: o.amountSompi,
+            state: states[k],
+            ...(confirmed.get(o.index) ? { confirmedAtBlockDaaScore: confirmed.get(o.index).blockDaaScore } : {})
+          })),
+          payments: outs.filter((o) => !o.covenant).map((o) => ({ outpoint: `${r.txId}:${o.index}`, address: o.address, amountSompi: o.amountSompi, role: o.role })),
+          warnings: r.warnings,
+          plan: relativePath(r.planPath),
+          signed: relativePath(r.signedPath),
+          node: nodeRecordOf(identity)
+        });
+        if (opts.json) return out().writeJson(summary);
+        out().writeLine(`${pc.green(summary.terminated ? "Covenant ended" : "Covenant advanced")} ${name}.${policy} ${covenantId}`);
+        out().writeLine(`  tx ${r.txId} (${summary.status}), ${inputs.length} input(s) -> ${continuations.length} continuation(s), fee ${summary.feeSompi} sompi`);
+        for (const c of summary.continuations) out().writeLine(`  ${c.outpoint} ${c.amountSompi} sompi at ${c.address}`);
+        for (const w of r.warnings) out().writeLine(pc.yellow(`  warning: ${w}`));
+      } finally {
+        await rpc.close?.();
+      }
     });
 
   // ---------------------------------------------------------------- engine (F1.10)

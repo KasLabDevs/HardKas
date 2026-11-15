@@ -8,6 +8,7 @@
  */
 
 import { V1_MASS_PARAMS } from "./v1-mass.js";
+import { assertLockTimeEnforceable, planLockTimeValue, type PlanLockTime } from "./lock-time.js";
 
 /** How an input is unlocked: a P2PK key, a SilverScript contract entry (P2SH), or a covenant's generated entry. */
 export type V1InputKind = "p2pk" | "p2sh" | "covenant";
@@ -155,6 +156,8 @@ export interface V1PlanBody {
   readonly nextState?: readonly V1NextState[] | undefined;
   /** A v0 field; a v1 plan commits a budget per input instead (both at once is invalid). */
   readonly computeBudget?: string | undefined;
+  /** CLTV · the typed absolute lock time ({ daaScore } | { timestampMs }); absent = 0 (lock-time.ts). */
+  readonly lockTime?: PlanLockTime | undefined;
 }
 
 export function v1PlanError(code: string, reason: string, detail?: Record<string, unknown>): Error {
@@ -292,6 +295,9 @@ export function assertV1PlanShape(plan: Record<string, any>): { feeSompi: bigint
   if (plan.computeBudget !== undefined) throw invalid("a v1 plan commits a compute budget per input, not one for the whole plan");
   if (plan.change !== undefined) throw invalid("a v1 plan lists its change as an output with role \"change\"");
   if (plan.payload !== undefined && (typeof plan.payload !== "string" || !HEX.test(plan.payload))) throw invalid("payload is not lowercase hex");
+  // CLTV · a typed lock time, of the right kind for its value (LOCK_TIME_INVALID), never void (LOCK_TIME_VOID_SEQUENCE)
+  const lockTime = planLockTimeValue(plan);
+  assertLockTimeEnforceable(lockTime, inputs.map((i) => (isObject(i) && typeof i.sequence === "string" && /^\d{1,20}$/.test(i.sequence) ? BigInt(i.sequence) : undefined)));
 
   const seen = new Set<string>();
   let totalIn = 0n;

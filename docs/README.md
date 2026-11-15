@@ -88,6 +88,7 @@ Installing HardKAS and getting a first artifact on disk.
 Other start pages:
 
 [Installation](./start/installation.md) ·
+[Browser wallets (experimental)](./start/browser-wallets.md) ·
 [Install and Init](./start/install-and-init.md) ·
 [Quickstart](./start/quickstart.md) ·
 [Quickstart (CLI)](./start/quickstart-cli.md) ·

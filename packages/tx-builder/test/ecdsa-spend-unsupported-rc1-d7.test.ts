@@ -9,6 +9,8 @@ vi.setConfig({ testTimeout: 60_000 });
 // signs Schnorr only, so such a plan could never be signed. Before: the payment and the consolidation were planned
 // (the UTXOs read, the mass priced as Schnorr) and the failure came later, untyped, at the signer. Now:
 // ECDSA_SPEND_NOT_SUPPORTED before any UTXO is read. Paying TO an ECDSA address is unchanged (V-04, real node).
+// ECDSA spends (later): a payment from an ECDSA address is planned on a real network and signed with ECDSA by the
+// accounts signer (cltv-ecdsa-node.simnet); consolidations and the simulator keep the refusal.
 // The address version is read from the bech32 payload's first byte (no checksum check here: the node does that).
 // -----------------------------------------------------------------------------
 
@@ -42,12 +44,17 @@ describe("RC1 · D7 · address scheme of a spend", () => {
     expect(() => assertSpendableAddressScheme(ecdsa, "the sender")).toThrow(/ECDSA_SPEND_NOT_SUPPORTED/);
   });
 
-  it("D7-P1 a payment FROM an ECDSA address: ECDSA_SPEND_NOT_SUPPORTED before any UTXO is read (it used to be planned)", async () => {
+  it("D7-P1 CHANGED by ECDSA spends: a payment FROM an ECDSA address is planned on a real network (old: ECDSA_SPEND_NOT_SUPPORTED); the simulator still refuses it before any UTXO is read", async () => {
+    const ecdsaScript = String(k.payToAddressScript(ecdsa).script);
     const getUtxos = vi.fn(async () => [
-      { outpoint: { transactionId: "d".repeat(64), index: 0 }, address: ecdsa, amountSompi: 500_000_000n, scriptPublicKey: "21" + "02" + "11".repeat(32) + "ab", blockDaaScore: 0n, isCoinbase: false }
+      { outpoint: { transactionId: "d".repeat(64), index: 0 }, address: ecdsa, amountSompi: 500_000_000n, scriptPublicKey: "0000" + ecdsaScript, blockDaaScore: 0n, isCoinbase: false }
     ]);
     const service = new TxPlanService({ getUtxos } as any);
-    const err: any = await service.planTransactionUpstream({ fromAddress: ecdsa, toAddress: schnorr, amountSompi: 100_000_000n, networkId: "simnet" }).catch((e) => e);
+    const planned = await service.planTransactionUpstream({ fromAddress: ecdsa, toAddress: schnorr, amountSompi: 100_000_000n, networkId: "simnet" });
+    expect(planned.plan.inputs.map((i) => i.address)).toEqual([ecdsa]);
+    expect(planned.plan.change?.address).toBe(ecdsa);
+    getUtxos.mockClear();
+    const err: any = await service.planTransactionSynthetic({ fromAddress: ecdsa, toAddress: schnorr, amountSompi: 100_000_000n, networkId: "simnet" }).catch((e) => e);
     expect(err?.code).toBe("ECDSA_SPEND_NOT_SUPPORTED");
     expect(String(err?.message)).toContain(ecdsa);
     expect(getUtxos).not.toHaveBeenCalled();

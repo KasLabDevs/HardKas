@@ -12,7 +12,9 @@ import { KeystoreManager } from "./keystore.js";
 import { DEV_ACCOUNTS_PASSWORD } from "./dev-accounts.js";
 import { parseWasmTxToRpc } from "./internal/wasm-rpc-serialization.js";
 import { createBalancedTransaction, toWasmScriptPublicKey } from "./wasm-transaction.js";
-import { ecdsaSpendNotSupported, isEcdsaP2pkScript, kaspaAddressVersion } from "@hardkas/tx-builder";
+import { accountKeyScheme, addressOfKeyByScheme } from "./account-key-scheme.js";
+import { isEcdsaInputSigner } from "./authorizers.js";
+import { assertLockTimeEnforceable, ecdsaSpendNotSupported, isEcdsaP2pkScript, kaspaAddressVersion, planLockTimeValue } from "@hardkas/tx-builder";
 
 export interface KaspaWasmSignerOptions {
   account?: HardkasKaspaAccount;
@@ -125,18 +127,37 @@ export class KaspaWasmPrivateKeySigner implements HardkasTxPlanSigner {
       allowMainnet: this.options.allowMainnet
     });
 
-    // 2a. RC1 · D7: what this signer does not make, refused before any key is resolved — a lock time other than 0 (every
-    // transaction it builds has lock time 0; it used to sign 0 whatever the plan said) and a signature for an ECDSA P2PK
-    // input (it signs Schnorr only). An ECDSA input with no authorizer of the caller's is refused here (it used to fail
-    // untyped, MISSING_INPUT_AUTHORIZER); one with an authorizer of the caller's is refused below unless that authorizer
-    // hands its own unlocking script (a signature-script authorization, as for a P2SH input without a contract): with a
-    // signing authorizer it used to put a Schnorr signature on the ECDSA input.
-    assertPlanLockTimeZero(plan);
+    // 2a. CLTV · the lock time the plan authorizes (typed; absent = 0, as before), refused before any key is resolved when
+    // it is not a valid typed value (LOCK_TIME_INVALID) or an input it signs has the maximum sequence, which would void it
+    // (LOCK_TIME_VOID_SEQUENCE). Every input is signed at sequence 0 (or the one the plan states), never the maximum, so
+    // the lock is enforced by consensus; the lock time is written into the transaction, covered by its id and its sighash.
+    // (RC1 · D7 refused every lock time other than 0: LOCK_TIME_NOT_SUPPORTED.)
+    const planLockTime = planLockTimeValue(plan);
+    assertLockTimeEnforceable(
+      planLockTime,
+      (plan.inputs || (plan as any).selectedUtxos || []).map((u: any) => (u?.sequence !== undefined ? BigInt(u.sequence) : undefined))
+    );
+    // ECDSA spends · each input's scheme is decided by its UTXO's script (`21 <33-byte key> ab` is ECDSA P2PK), never by
+    // an address string (only an input that states no script falls back to its address's version). An ECDSA input is
+    // signed with ECDSA by an ECDSA account whose address it is (or by a caller's ECDSA authorizer, or takes the caller's
+    // own unlocking script); a key of the other scheme is refused before any key is read (INPUT_KEY_SCHEME_MISMATCH). A
+    // v1 transaction keeps ECDSA inputs out (ECDSA_SPEND_NOT_SUPPORTED: no node evidence for them). RC1 · D7 refused
+    // every ECDSA input.
+    const signingAccount = this.options.account;
+    const accountScheme = signingAccount ? accountKeyScheme(signingAccount as any) : undefined;
     const ecdsaInputs = new Set<number>();
     (plan.inputs || (plan as any).selectedUtxos || []).forEach((u: any, i: number) => {
-      if (kaspaAddressVersion(u?.address) === 1 || isEcdsaP2pkScript(u?.scriptPublicKey)) {
+      const byScript = isEcdsaP2pkScript(u?.scriptPublicKey);
+      if (byScript || (u?.scriptPublicKey === undefined && kaspaAddressVersion(u?.address) === 1)) {
         ecdsaInputs.add(i);
-        if (!input.authorizers?.[i]) throw ecdsaSpendNotSupported(`input ${i}`, u?.address);
+        if (plan.txVersion === 1) throw ecdsaSpendNotSupported(`input ${i} of a v1 transaction`, u?.address);
+        if (!input.authorizers?.[i] && accountScheme !== "ecdsa") {
+          throw schemeMismatch(
+            `input ${i} is an ECDSA P2PK input${u?.address ? ` (${u.address})` : ""} and ${signingAccount ? `the signing account '${signingAccount.name}' has a Schnorr key` : "no signing account was given"}: ` +
+              "sign it with the ECDSA account that owns it (accounts real generate|import --ecdsa). Nothing was signed.",
+            i
+          );
+        }
       }
     });
 
@@ -157,15 +178,19 @@ export class KaspaWasmPrivateKeySigner implements HardkasTxPlanSigner {
         // SILVER-KEYS-1: the shared key-resolution order (`hardkas silver` resolves keys through it too)
         const pkValue = await resolveAccountPrivateKey(account as any, { networkId: plan.networkId, keystorePassword: this.options.keystorePassword });
 
-        const expectedAddress = (new sdk.PrivateKey(pkValue) as any).toKeypair().toAddress(getNetworkPrefix(plan.networkId || "simnet")).toString();
-        const { PrivateKeyAuthorizer } = await import("./authorizers.js");
+        // ECDSA spends · the account's address under its own scheme; it signs the inputs of that scheme at that address
+        const ecdsaAccount = accountScheme === "ecdsa";
+        const expectedAddress = ecdsaAccount
+          ? addressOfKeyByScheme(sdk, pkValue, getNetworkPrefix(plan.networkId || "simnet"), "ecdsa")
+          : (new sdk.PrivateKey(pkValue) as any).toKeypair().toAddress(getNetworkPrefix(plan.networkId || "simnet")).toString();
+        const { PrivateKeyAuthorizer, EcdsaPrivateKeyAuthorizer } = await import("./authorizers.js");
         const sourceInputs = plan.inputs || (plan as any).selectedUtxos || [];
-        
+
         for (let i = 0; i < numInputs; i++) {
             if (!authorizers[i]) {
                 const inputAddress = (sourceInputs[i] as any)?.address;
-                if (inputAddress === expectedAddress) {
-                    authorizers[i] = new PrivateKeyAuthorizer(account.name, pkValue);
+                if (inputAddress === expectedAddress && ecdsaInputs.has(i) === ecdsaAccount) {
+                    authorizers[i] = ecdsaAccount ? new EcdsaPrivateKeyAuthorizer(account.name, pkValue) : new PrivateKeyAuthorizer(account.name, pkValue);
                 }
             }
         }
@@ -294,11 +319,16 @@ export class KaspaWasmPrivateKeySigner implements HardkasTxPlanSigner {
           const stated = statedSequences[i];
           if (stated !== undefined) inputs[i].sequence = stated;
         }
-        // V1-TXID-1: the version, compute budgets, sig-op counts and stated sequences set above are covered by the
-        // transaction's id, which kaspa-wasm recomputes only on finalize(): without it the txId declared below would be
+        // CLTV · the plan's lock time (0 when it states none: the transaction as before)
+        if (planLockTime !== 0n) unsignedTx.lockTime = planLockTime;
+        // V1-TXID-1: the version, compute budgets, sig-op counts, stated sequences and lock time set above are covered by
+        // the transaction's id, which kaspa-wasm recomputes only on finalize(): without it the txId declared below would be
         // the id of the transaction as built (version 0), not of the one signed and serialized. (RC1 · D1: the storage
         // mass is not covered by the id, in v0 or v1 — measured with the official kaspa-wasm 2.1.0; it is committed.)
-        if (isV1 || plan.computeBudget !== undefined || hasStatedSequence) unsignedTx.finalize();
+        if (isV1 || plan.computeBudget !== undefined || hasStatedSequence || planLockTime !== 0n) unsignedTx.finalize();
+        if (BigInt(unsignedTx.lockTime ?? 0n) !== planLockTime) {
+          throw Object.assign(new Error(`LOCK_TIME_NOT_APPLIED: the SDK did not keep the plan's lock time ${planLockTime} on the transaction`), { code: "LOCK_TIME_NOT_APPLIED" });
+        }
         return unsignedTx;
       };
 
@@ -332,8 +362,16 @@ export class KaspaWasmPrivateKeySigner implements HardkasTxPlanSigner {
         let sigScript: string | undefined;
 
         if (p2shWithoutContract(i) && authorization.kind !== "signature-script") throw p2shUnlockUnavailable(i);
-        // RC1 · D7: an ECDSA input takes only the caller's own unlocking script; this signer never signs one (Schnorr only)
-        if (ecdsaInputs.has(i) && authorization.kind !== "signature-script") throw ecdsaSpendNotSupported(`input ${i}`, (sourceInputs[i] as any)?.address);
+        // ECDSA spends · an ECDSA input is signed by an ECDSA signer (or takes the caller's own unlocking script), never with
+        // Schnorr (RC1 · D7: it used to be signed with Schnorr); an ECDSA signer signs nothing else
+        if (authorization.kind === "wasm-signer" && ecdsaInputs.has(i) !== isEcdsaInputSigner(authorization)) {
+          throw schemeMismatch(
+            ecdsaInputs.has(i)
+              ? `input ${i} is an ECDSA P2PK input and its authorizer signs Schnorr: it would carry a signature the node can only reject. Nothing was signed.`
+              : `input ${i} is not an ECDSA P2PK input and its authorizer signs ECDSA. Nothing was signed.`,
+            i
+          );
+        }
 
         if (authorization.kind === "signature-script") {
           sigScript = authorization.signatureScript;
@@ -379,14 +417,14 @@ export class KaspaWasmPrivateKeySigner implements HardkasTxPlanSigner {
         }
       };
     } catch (error: any) {
-      // RC1 · D7: the typed refusal of an ECDSA signature goes out as it is (it names no key material)
-      if (error?.code === "ECDSA_SPEND_NOT_SUPPORTED") throw error;
+      // RC1 · D7 / ECDSA spends: the typed refusals of a scheme go out as they are (they name no key material)
+      if (["ECDSA_SPEND_NOT_SUPPORTED", "INPUT_KEY_SCHEME_MISMATCH", "PRIVATE_KEY_DOES_NOT_CONTROL_INPUT", "UTXO_ENTRY_MISSING"].includes(error?.code)) throw error;
       // Never log the private key
       const wrapped = new Error(
         `Kaspa WASM signing failed: ${error instanceof Error ? error.stack || error.message : JSON.stringify(error, Object.getOwnPropertyNames(error))}`
       );
       // a typed refusal keeps its code through the wrapper
-      if (error?.code === "V1_P2SH_UNLOCK_UNAVAILABLE") (wrapped as any).code = error.code;
+      if (error?.code === "V1_P2SH_UNLOCK_UNAVAILABLE" || error?.code === "LOCK_TIME_NOT_APPLIED") (wrapped as any).code = error.code;
       throw wrapped;
     }
   }
@@ -394,9 +432,13 @@ export class KaspaWasmPrivateKeySigner implements HardkasTxPlanSigner {
 
 const budgetError = (code: string, message: string) => Object.assign(new Error(`${code}: ${message}`), { code });
 
+/** ECDSA spends · the typed refusal of a key or signer of the other scheme than the input's (no key material named). */
+const schemeMismatch = (message: string, input: number) => Object.assign(new Error(`INPUT_KEY_SCHEME_MISMATCH: ${message}`), { code: "INPUT_KEY_SCHEME_MISMATCH", input });
+
 /**
- * RC1 · D7: HardKAS builds every transaction with lock time 0 (no CLTV in this release). A plan stating another lock
- * time — or one that is not an integer — is refused (LOCK_TIME_NOT_SUPPORTED); an absent or explicit 0 is what is signed.
+ * RC1 · D7: refuses a plan stating a lock time other than 0 (LOCK_TIME_NOT_SUPPORTED); an absent or explicit 0 passes.
+ * @deprecated CLTV: the signer no longer calls it — it signs the typed lock time a plan authorizes (tx-builder
+ * `planLockTimeValue`). Kept, unchanged, for callers that require lock time 0.
  */
 export function assertPlanLockTimeZero(plan: unknown): void {
   const stated = (plan as { lockTime?: unknown } | null | undefined)?.lockTime;

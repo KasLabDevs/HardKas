@@ -59,7 +59,8 @@ function hk(name: string, args: string[]) {
 }
 
 describe("RC1 · D7 · the CLI does not plan lock times or ECDSA spends, and says so before connecting", () => {
-  it("tx plan --lock-time: the option does not exist (every plan is lock time 0): UNKNOWN_OPTION, exit 2, nothing contacted", () => {
+  // CLTV: the lock-time options are --lock-time-daa / --lock-time-ms (cltv-ecdsa-cli.test.ts); a bare --lock-time still does not exist
+  it("tx plan --lock-time: the option does not exist (a lock is typed: --lock-time-daa / --lock-time-ms): UNKNOWN_OPTION, exit 2, nothing contacted", () => {
     const bob = String(new k.PrivateKey("6666".padStart(64, "0")).toPublicKey().toAddress("simnet").toString());
     const r = hk("lock-time", ["tx", "plan", "--from", bob, "--to", bob, "--amount", "1", "--lock-time", "5", "--json"]);
     expect(r.status, r.brief).toBe(2);
@@ -67,14 +68,15 @@ describe("RC1 · D7 · the CLI does not plan lock times or ECDSA spends, and say
     expect(r.dialled, r.brief).toEqual([]);
   });
 
-  it("tx plan --from <an ECDSA address>: ECDSA_SPEND_NOT_SUPPORTED, exit 1, nothing contacted", () => {
+  // CHANGED by ECDSA spends: old ECDSA_SPEND_NOT_SUPPORTED with nothing contacted; new: a payment from an ECDSA address is
+  // planned against the node (here a closed port: the plan reaches it and fails there, never refused as ECDSA)
+  it("tx plan --from <an ECDSA address>: planned against the node (no ECDSA refusal); the closed node is the failure", () => {
     const pub = new k.PrivateKey("7777".padStart(64, "0")).toPublicKey();
     const ecdsa = String(pub.toAddressECDSA("simnet").toString());
     const schnorr = String(pub.toAddress("simnet").toString());
     const r = hk("ecdsa-from", ["tx", "plan", "--from", ecdsa, "--to", schnorr, "--amount", "1", "--json"]);
-    expect(r.status, r.brief).toBe(1);
-    expect(r.json, r.brief).toMatchObject({ ok: false, code: "ECDSA_SPEND_NOT_SUPPORTED" });
-    expect(String(r.json?.message), r.brief).toContain(ecdsa);
-    expect(r.dialled, r.brief).toEqual([]);
+    expect(r.status, r.brief).not.toBe(0);
+    expect(r.json?.code, r.brief).not.toBe("ECDSA_SPEND_NOT_SUPPORTED");
+    expect(r.dialled.length, r.brief).toBeGreaterThan(0);
   });
 });
