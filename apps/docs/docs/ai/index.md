@@ -16,8 +16,7 @@ HardKAS is a local-first development framework, transaction planner/signer, Silv
 
 ## Versions & Pinned Toolchain
 
-- **Repository development version:** `0.13.0-rc.3`
-- **Published on npm (`latest` / `next`):** `0.13.0-rc.2` (use `npx @hardkas/cli@0.13.0-rc.2` or `npx @hardkas/cli@latest` when installing from npm outside the monorepo)
+- **Repository development version:** `0.13.0-rc.3` (may be ahead of npm `latest`; check `npm view @hardkas/cli dist-tags` and use `npx @hardkas/cli@latest` when installing from npm outside the monorepo)
 - **Localnet node (`--profile toccata-v2`):** `rusty-kaspad` `v2.1.0` (container `hardkas-kaspad-toccata-v2`, JSON wRPC port `18210`; custom Docker setups may publish another port such as `26510`)
 - **SilverScript compiler:** `silverc` `v1.0.0` (installed via `hardkas toolchain install silverc`)
 - **Node.js requirement:** `24.22.1`
@@ -30,7 +29,7 @@ HardKAS is a local-first development framework, transaction planner/signer, Silv
 | SilverScript P2SH (`silver compile`, `verify`, `deploy`, `spend`) | Verified on `simnet` | Compiles `.sil` with pinned `silverc v1.0.0`, deploys and spends v0 P2SH contracts. |
 | Toccata 1:1 Covenants (`silver covenant genesis`, `transition`, `inspect`) | Verified on `simnet` | Real v1 transactions on `rusty-kaspad v2.1.0` with `covenant_id` lineage checks. |
 | Artifact & Receipt Verification (`artifact inspect`, `artifact verify`, `tx receipt`) | Verified | Integrity check works offline on all networks; network & consensus checks query a real node of the artifact's network. |
-| `silver covenant start\|advance` (1:N, N:M), `kcc20`, `silver test --on-node`, `zk toccata spend`, `testnet-10` | **Experimental** | Explicitly opt-in or experimental; do not present as production-ready. |
+| `silver covenant start\|advance` (1:N, N:M), `kcc20`, `silver test --on-node`, `zk toccata spend`, `testnet-10` | **Experimental** | Explicitly opt-in or experimental; do not present them as stable. |
 | `silver test`, `silver debug`, `silver preflight` (local runner) | **Unverified (`SCRIPT_VM`)** | Requires `--allow-unverified-runner` with a local build; **never** independent consensus proof. Use `--on-node` or real node spends for consensus checks. |
 | `mainnet` (reads, signing, broadcast) | **Blocked by policy** | Refused before any network connection (`MAINNET_CONNECTION_DISABLED`, `MAINNET_SIGNING_DISABLED`, `MAINNET_BROADCAST_DISABLED`). |
 | `vProgs`, trustless bridges, `@hardkas/l2`, `@hardkas/pskt-native` | **Not supported / Not published** | Only offline artifact inspection for vProgs; do not invent bridge or L2 commands. |

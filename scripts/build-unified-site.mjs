@@ -227,7 +227,7 @@ const llmsTxt = `# HardKAS — Developer Framework & Transaction Simulator for K
 
 ## Core Truth & Boundaries
 - Kaspa L1 is a Proof-of-Work UTXO BlockDAG running Kaspa Script (NOT an EVM, no Solidity on L1).
-- Versions: npm \`latest\` is \`0.13.0-rc.2\`; repository development tree is \`0.13.0-rc.3\`.
+- Versions: repository development tree is \`0.13.0-rc.3\` (may be ahead of npm \`latest\`; check \`npm view @hardkas/cli dist-tags\`).
 - Managed Docker simnet (\`--profile toccata-v2\`) runs \`rusty-kaspad\` \`v2.1.0\` (container \`hardkas-kaspad-toccata-v2\`, JSON wRPC \`ws://127.0.0.1:18210\`).
 - Mainnet is blocked by policy (no reads, signing, or broadcast).
 - \`simulated\` and local \`silver test\` (\`SCRIPT_VM\`) are NOT independent consensus proof; use \`simnet\` for real-node verification.

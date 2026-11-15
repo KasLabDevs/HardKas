@@ -67,6 +67,22 @@ import { registerExtensionRefusals } from "./extensions/refusal.js";
 import { KNOWN_EXTENSIONS } from "./extensions/api.js";
 
 /**
+ * AGENT-QUICK-RECIPES-1 · the root help's opening block: the shortest proven route for the common tasks, so a developer or
+ * an agent finds the command without reading the docs first. Every command here ran end to end on a simnet node
+ * (tx send --wait: TX-SEND-WAIT-1; accounts consolidate: the agent benchmark's consolidation runs).
+ */
+export const QUICK_RECIPES_HELP = [
+  "Quick recipes (simnet). Node not at ws://127.0.0.1:18210? Add --url ws://<host>:18210 to tx send and accounts consolidate.",
+  "  Send KAS and wait until it is confirmed (2 commands; PK and PW are environment variables you set):",
+  "    hardkas accounts real import --name payer --address <kaspasim:...> --network simnet --private-key-env PK --password-env PW",
+  "    hardkas tx send --from payer --to <kaspasim:...> --amount 10 --network simnet --password-env PW --yes --wait --json",
+  "  Consolidate an account's UTXOs into one:",
+  "    hardkas accounts consolidate payer --network simnet --target-utxos 1 --execute --yes --password-env PW --json",
+  "  SilverScript covenants: hardkas silver covenant --help    Agent docs: https://hardkas.dev/llms.txt",
+  ""
+].join("\n");
+
+/**
  * Builds the HardKAS Commander program tree.
  * Separated from execution to allow safe documentation generation and testing.
  *
@@ -84,6 +100,9 @@ export function buildHardkasProgram(options?: {
     .name("hardkas")
     .description("HardKAS: Kaspa-native developer operating environment")
     .version(HARDKAS_VERSION)
+    // AGENT-QUICK-RECIPES-1: the first thing `hardkas --help` prints (before Usage, so a truncated read still sees it),
+    // root help only. Only commands proven end to end on a simnet node; the full recipes are in the agent docs.
+    .addHelpText("before", QUICK_RECIPES_HELP)
     .showHelpAfterError(true)
     .showSuggestionAfterError(true)
     // AUX-08: excess positional arguments are a usage error for every command
