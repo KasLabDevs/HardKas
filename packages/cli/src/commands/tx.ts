@@ -3,6 +3,8 @@ import { Command } from "commander";
 import { errorCodeOf, handleError, UI } from "../ui.js";
 import { bigIntReplacer } from "@hardkas/artifacts";
 import { nodeRpcUrl } from "@hardkas/core";
+import { DEFAULT_HARDKAS_CONFIG } from "@hardkas/config";
+import { HardkasCliError, HardkasExitCode } from "../cli-errors.js";
 import { runTxProfile } from "../runners/tx-profile-runner.js";
 import { runTxPlan } from "../runners/tx-plan-runner.js";
 import { runTxSign } from "../runners/tx-sign-runner.js";
@@ -28,6 +30,65 @@ export const LOCK_TIME_MS_HELP =
   "Absolute lock time as milliseconds since the epoch (at or above 500000000000): valid only once the node's past median time is above it; `tx send` refuses to broadcast it earlier. Not with --lock-time-daa; not on the simulator";
 export const CONFIRM_DISTANT_LOCK_HELP =
   "Plan a lock time more than about a day past the node's position (864000 DAA, or 86400000 ms); refused without it (LOCK_TIME_DISTANT_UNCONFIRMED)";
+
+/**
+ * `tx plan --url`: the local defaults the endpoint resolver applies when the network declares no rpcUrl — the canonical
+ * localnet for simnet, and devnet's own default (DEFAULT_HARDKAS_CONFIG.networks.devnet.rpcUrl, the one definition the
+ * resolver reads), never a copy of either.
+ */
+const DEVNET_DEFAULT_RPC_URL = (DEFAULT_HARDKAS_CONFIG.networks as Record<string, { rpcUrl?: unknown }> | undefined)?.devnet?.rpcUrl;
+export const TX_PLAN_URL_HELP =
+  `Node wRPC URL (default: the network's rpcUrl in hardkas.config.ts; without one, ${nodeRpcUrl()} for simnet` +
+  (typeof DEVNET_DEFAULT_RPC_URL === "string" ? ` and ${DEVNET_DEFAULT_RPC_URL} for devnet)` : ")");
+
+/** R4-T · `tx batch --one-transaction`. */
+export const TX_BATCH_ONE_TRANSACTION_HELP =
+  "Pay every payment of the file in ONE transaction: one payer, one output per payment (in the file's order), one change output, one fee, one submission. Refused before anything is planned, signed or sent when the file has payments from more than one payer (TX_BATCH_MULTIPLE_PAYERS), a payment without from, to or amount (TX_BATCH_PAYMENT_INVALID), or more recipients than fit in one standard transaction (TOO_MANY_OUTPUTS, which says how many fit). Without it, each payment is its own transaction";
+
+/** R4-T · `tx plan --to`: one recipient, or several in one transaction as repeated <recipient>=<kas>. */
+export const TX_PLAN_TO_HELP =
+  "Recipient address or account name (default: bob). Repeat it as --to <recipient>=<kas> (no --amount) to pay several recipients in one transaction: one output each, in the order given, one change output and one fee";
+
+/**
+ * R4-T · the recipients `tx plan --to` names: one recipient (`--to <r>`, with `--amount` or its default), or several in
+ * one transaction (`--to <r>=<kas>` repeated, without `--amount`). Every mixed or ambiguous form is TX_PLAN_USAGE, decided
+ * before anything is planned: plain `--to` given twice (it used to keep the last one silently), pairs mixed with plain
+ * values, pairs with `--amount` or a positional recipient, a pair that is not exactly one `<recipient>=<kas>`, and a
+ * value that is also the name of an account of the workspace's config (account names of `accounts real` and Kaspa
+ * addresses cannot contain `=`; a config account's name could).
+ */
+export function txPlanRecipientsOf(args: {
+  to: readonly string[] | undefined;
+  amount: string | undefined;
+  positionalTo: string | undefined;
+  configAccounts: Record<string, unknown> | undefined;
+}): { kind: "one"; to: string | undefined } | { kind: "several"; outputs: Array<{ to: string; amount: string }> } {
+  const values = args.to ?? [];
+  const usage = (why: string): never => {
+    throw new HardkasCliError("TX_PLAN_USAGE", `${why} Nothing was planned.`, { exitCode: HardkasExitCode.USAGE_ERROR });
+  };
+  const pairs = values.filter((v) => v.includes("="));
+  if (pairs.length === 0) {
+    if (values.length > 1) {
+      usage(`--to was given ${values.length} times without amounts: give each recipient as --to <recipient>=<kas> (several recipients in one transaction, no --amount), or one --to with --amount.`);
+    }
+    return { kind: "one", to: values[0] };
+  }
+  if (pairs.length !== values.length) usage("every --to takes the form <recipient>=<kas> when one of them does (several recipients in one transaction).");
+  if (args.amount !== undefined) usage("--amount cannot be combined with --to <recipient>=<kas>: each recipient carries its own amount.");
+  if (args.positionalTo !== undefined) usage("a positional recipient cannot be combined with --to <recipient>=<kas>: name every recipient with --to.");
+  const outputs = pairs.map((value) => {
+    const parts = value.split("=");
+    if (parts.length !== 2 || parts[0]!.trim() === "" || parts[1]!.trim() === "") {
+      usage(`--to ${JSON.stringify(value)} is not <recipient>=<kas> (one recipient, one '=', one amount in KAS).`);
+    }
+    if (args.configAccounts && Object.prototype.hasOwnProperty.call(args.configAccounts, value)) {
+      usage(`--to ${JSON.stringify(value)} is both an account of hardkas.config.ts and a <recipient>=<kas> pair: rename the account to pay it.`);
+    }
+    return { to: parts[0]!.trim(), amount: parts[1]!.trim() };
+  });
+  return { kind: "several", outputs };
+}
 
 async function declineUnconfirmedSend(args: {
   json: boolean;
@@ -191,9 +252,14 @@ export function registerTxCommands(program: Command) {
     });
 
   tx.command("batch")
-    .description(`Process a batch of transactions sequentially ${UI.maturity("stable")}`)
+    .description(`Process a batch of payments: one transaction per payment, sent in order, or all of them in one transaction (--one-transaction) ${UI.maturity("stable")}`)
     .requiredOption("--file <path>", "Path to JSON file containing batch payments")
     .option("--network <name>", "Network name")
+    .option(
+      "--one-transaction",
+      TX_BATCH_ONE_TRANSACTION_HELP,
+      false
+    )
     .option("--workspace <path>", "Override workspace root directory")
     .option("--password-env <env>", "Read the keystore password of the batch's encrypted payers from this environment variable (read once, before the first payment)")
     .option("--password-stdin", "Read the keystore password of the batch's encrypted payers from stdin (read once, before the first payment)", false)
@@ -214,7 +280,8 @@ export function registerTxCommands(program: Command) {
     .description(`Build a transaction plan artifact ${UI.maturity("stable")}`)
     .option("--target <name>", "Named execution target from hardkas.config.ts")
     .option("--from <accountOrAddress>", "Sender account name or address (default: alice)")
-    .option("--to <address>", "Recipient address or account name (default: bob)")
+    // R4-T: repeatable (each value collected, in order); txPlanRecipientsOf decides the form
+    .option("--to <address>", TX_PLAN_TO_HELP, (value: string, previous: string[] | undefined) => [...(previous ?? []), value])
     .option("--amount <kas>", "Amount in KAS, up to 8 decimals (default: 1)")
     .option("--network <name>", "simulated, simnet, devnet, testnet-10, testnet-12 or mainnet (default: the config's default target)")
     .option("--fee-rate <sompiPerMass>", "Whole sompi per gram of mass, at least 1 (default: 1 in the simulator, 100 on real networks; not a live estimate)")
@@ -224,7 +291,7 @@ export function registerTxCommands(program: Command) {
     .option("--lock-time-ms <t>", LOCK_TIME_MS_HELP)
     .option("--confirm-distant-lock-time", CONFIRM_DISTANT_LOCK_HELP, false)
     .option("--provider <type>", "Provider mode (auto, rpc, simulated)", "auto")
-    .option("--url <url>", `Node wRPC URL (default: the network's rpcUrl in hardkas.config.ts; without one, ${nodeRpcUrl()} for simnet and devnet)`)
+    .option("--url <url>", TX_PLAN_URL_HELP)
     .option("--out <path>", "Save plan as artifact JSON")
     .option("--save <path>", "Alias for --out (Save plan as artifact JSON)")
     .option("--workflow-id <id>", "Optional deterministic workflow ID override")
@@ -255,9 +322,11 @@ export function registerTxCommands(program: Command) {
           if (options.json) UI.setJsonMode(true);
           // CLI-CONTRACT-2A: a value that was given but is empty (or blank) is refused before anything is planned; only an
           // omitted option takes its documented default (alice, bob, 1 KAS). `||` used to turn "" into that default silently.
+          // R4-T: --to is collected as a list (repeatable); a blank one is empty like any other
+          const toValues: string[] | undefined = Array.isArray(options.to) ? options.to : typeof options.to === "string" ? [options.to] : undefined;
           const given: Array<[string, unknown]> = [
             ["--from", options.from ?? positionalFrom],
-            ["--to", options.to ?? positionalTo],
+            ["--to", toValues?.find((v) => v.trim() === "") ?? toValues?.[0] ?? positionalTo],
             ["--amount", options.amount]
           ];
           const empty = given.filter(([, v]) => typeof v === "string" && v.trim() === "").map(([flag]) => flag);
@@ -278,11 +347,19 @@ export function registerTxCommands(program: Command) {
           // WORKSPACE-AUTHORITY-1 (WA-I0): the config, the simulator state and the store are the invocation's one root's
           const workspaceRoot = invocationWorkspaceRoot();
           const loaded = await loadHardkasConfig({ workspaceRoot });
+          // R4-T: one recipient (as before), or several in one transaction (--to <recipient>=<kas>, repeated)
+          const recipients = txPlanRecipientsOf({
+            to: toValues,
+            amount: options.amount,
+            positionalTo,
+            configAccounts: (loaded.config as { accounts?: Record<string, unknown> }).accounts
+          });
           const artifact = await runTxPlan({
             ...(options.target ? { targetName: options.target } : {}),
             from: options.from ?? positionalFrom ?? "alice",
-            to: options.to ?? positionalTo ?? "bob",
-            amount: options.amount ?? "1",
+            ...(recipients.kind === "several"
+              ? { outputs: recipients.outputs }
+              : { to: recipients.to ?? positionalTo ?? "bob", amount: options.amount ?? "1" }),
             ...(options.network ? { networkId: options.network } : {}),
             provider: options.provider || "auto",
             // TX-FEE-GUARD-1: a given value is always validated (an empty one too), never dropped
@@ -344,6 +421,14 @@ export function registerTxCommands(program: Command) {
             UI.writeJson(artifact);
           } else {
             getOutput().writeLine(formatTxPlanArtifact(artifact));
+            // R4-T: a plan paying several recipients lists every one (To and Amount above name the first)
+            if (recipients.kind === "several" && artifact.outputs.length > 1) {
+              const { formatSompiToKas } = await import("@hardkas/core");
+              getOutput().writeLine(`\nRecipients (${artifact.outputs.length}, one transaction; To and Amount above are the first):`);
+              artifact.outputs.forEach((o: any, i: number) =>
+                getOutput().writeLine(`  ${i + 1}. ${o.address}  ${formatSompiToKas(BigInt(o.amountSompi))} KAS`)
+              );
+            }
             if (outPath) getOutput().writeLine(`\nArtifact saved to: ${outPath}`);
             // Demo-ready · E21: say where the plan was persisted (the path actually written),
             // so `tx sign` can be given it without searching .hardkas/artifacts/.
@@ -565,6 +650,11 @@ export function registerTxCommands(program: Command) {
           getOutput().writeLine(`From:         ${raw.from.address}`);
           getOutput().writeLine(`To:           ${raw.to.address}`);
           getOutput().writeLine(`Amount:       ${raw.amountSompi} sompi`);
+          // R4-T: a plan paying several recipients (To and Amount name the first)
+          if (Array.isArray(raw.outputs) && raw.outputs.length > 1) {
+            getOutput().writeLine(`Recipients:   ${raw.outputs.length} in one transaction`);
+            raw.outputs.forEach((o: any, i: number) => getOutput().writeLine(`  ${i + 1}. ${o.address}  ${o.amountSompi} sompi`));
+          }
         } else {
           getOutput().writeLine(`Status:       ${raw.status.toUpperCase()}`);
           getOutput().writeLine(`Signed ID:    ${raw.signedId}`);

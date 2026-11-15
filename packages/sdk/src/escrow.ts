@@ -35,7 +35,9 @@ import {
   createLineageTransition,
   createTxPlanArtifact,
   expectedScriptPublicKeyHex,
-  submitOutcomeOf
+  recomputeMass,
+  submitOutcomeOf,
+  verifyFeeSemantics
 } from "@hardkas/artifacts";
 import type { Hardkas } from "./index.js";
 import { assertSdkMayConnect } from "./mainnet-lockdown.js";
@@ -1385,28 +1387,40 @@ export class HardkasEscrow {
     const total = outputs.reduce((s, o) => s + o.amountSompi, 0n);
     const ceiling = record.config.feeBudgetSompi ? BigInt(record.config.feeBudgetSompi) : ESCROW_DEFAULT_FEE_CEILING_SOMPI;
     const escrowAddress = record.p2shState.address;
-    const plan = createTxPlanArtifact({
-      networkId: network as any,
-      mode: this.sdk.execution.mode as any,
-      from: { input: escrowAddress, address: escrowAddress },
-      to: { input: outputs[0]!.address, address: outputs[0]!.address },
-      amountSompi: total,
-      plan: {
-        inputs: [
-          {
-            outpoint: { transactionId: String(draft.input.outpoint.transactionId), index: Number(draft.input.outpoint.index) },
-            amountSompi: BigInt(draft.input.amountSompi),
-            address: escrowAddress,
-            scriptPublicKey: `0000${String(draft.input.scriptPublicKey.script)}`
-          }
-        ],
-        outputs,
-        estimatedFeeSompi: BigInt(draft.feeSompi),
-        estimatedMass: BigInt(draft.mass ?? 0)
-      } as any,
-      ctx: systemRuntimeContext,
-      maxFeeSompi: ceiling
-    });
+    const planWithMass = (estimatedMass: bigint) =>
+      createTxPlanArtifact({
+        networkId: network as any,
+        mode: this.sdk.execution.mode as any,
+        from: { input: escrowAddress, address: escrowAddress },
+        to: { input: outputs[0]!.address, address: outputs[0]!.address },
+        amountSompi: total,
+        plan: {
+          inputs: [
+            {
+              outpoint: { transactionId: String(draft.input.outpoint.transactionId), index: Number(draft.input.outpoint.index) },
+              amountSompi: BigInt(draft.input.amountSompi),
+              address: escrowAddress,
+              scriptPublicKey: `0000${String(draft.input.scriptPublicKey.script)}`
+            }
+          ],
+          outputs,
+          estimatedFeeSompi: BigInt(draft.feeSompi),
+          estimatedMass
+        } as any,
+        ctx: systemRuntimeContext,
+        maxFeeSompi: ceiling
+      });
+    // A v0 plan's mass is the SDK's figure for the plan's own unsigned transaction: the send verifies it strictly
+    // (verifyFeeSemantics recomputes it) and the SDK does not know the contract's unlock. The plan used to state the
+    // draft's real mass, so a release whose compute mass outweighs its storage mass (one large output: 10 KAS to the
+    // seller) was refused at send ("Mass mismatch", ECONOMIC_VIOLATION) and could never go out. The real signed shape was
+    // priced against the node's minimum relay fee when the draft was prepared, and the send derives the fee it records
+    // from the signed transaction itself.
+    const plan = planWithMass(recomputeMass(planWithMass(BigInt(draft.mass ?? 0)) as any));
+    const audit = verifyFeeSemantics(plan);
+    if (!audit.ok) {
+      throw new HardkasError("ESCROW_RELEASE_UNPRICED", `the send's economic check refuses this release's plan (${audit.issues.join("; ")}). Nothing was sent.`);
+    }
     const storedPlan: any = (await this.sdk.artifacts.write(plan as any)).artifact ?? plan;
     const signed: any = {
       schema: HardkasSchemas.SignedTx,

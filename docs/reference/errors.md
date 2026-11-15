@@ -91,6 +91,18 @@ The CLI commands that make a key or a lock refuse mainnet with `MAINNET_SIGNING_
 **Cause:** ECDSA accounts and inputs. `INPUT_KEY_SCHEME_MISMATCH`: the key or signer of an input is of the other scheme than its UTXO script (a Schnorr key on an ECDSA input, or the reverse). `ACCOUNT_KEY_SCHEME_MISMATCH`: an account's recorded key scheme and its address disagree; at import, `--address` is the key's address under the other scheme. `ACCOUNT_KEY_SCHEME_INVALID`: a scheme other than `schnorr` or `ecdsa`. `UTXO_ENTRY_MISSING`: an ECDSA signer got an input without its UTXO entry. `PRIVATE_KEY_DOES_NOT_CONTROL_INPUT` is also raised for an ECDSA key that is not the one the input's script commits to. Nothing is signed.
 **Solution:** Import the key with `--ecdsa` when its address is the ECDSA one, and spend each input with its own scheme's key.
 
+### `TOO_MANY_OUTPUTS`
+**Cause:** A payment to several recipients in one transaction (`sdk.tx.plan({ outputs })`, `tx plan --to <recipient>=<kas>` repeated, `tx batch --one-transaction`) has more outputs than the transaction planner (the pinned kaspa-wasm Generator) puts in one standard transaction beside its change output; the outputs, the change and the payload must leave room for the inputs. The message, and `outputsThatFit` / `requestedOutputs` on the SDK error, say how many of the first recipients fit, counted by the same Generator: about 193 ordinary (P2PK) recipients, fewer to P2SH addresses. Nothing is planned, signed or sent.
+**Solution:** Pay the others in another transaction, or run `tx batch` without `--one-transaction` (one transaction per payment).
+
+### `TX_PLAN_RECIPIENTS_CONFLICT`, `TX_PLAN_RECIPIENTS_INVALID`
+**Cause:** `sdk.tx.plan` takes one recipient (`to` and `amount`) or several in one transaction (`outputs: [{ to, amount }, …]`). `TX_PLAN_RECIPIENTS_CONFLICT`: both forms were given. `TX_PLAN_RECIPIENTS_INVALID`: neither form; or `outputs` is not a non-empty list of `{ to, amount }`; or a recipient has no account or address, an amount that is not a string (KAS), a bigint (sompi) or a number (KAS), an amount of 0 or less, or `"all"` (a consolidation pays one destination: `{ to, amount: "all" }`). Nothing is read or planned.
+**Solution:** Give one of the two forms.
+
+### `TX_BATCH_MULTIPLE_PAYERS`, `TX_BATCH_PAYMENT_INVALID`, `TX_BATCH_EMPTY`
+**Cause:** `tx batch --one-transaction` pays the whole file in one transaction, so it has one payer and every payment must be complete. `TX_BATCH_MULTIPLE_PAYERS`: the file pays from more than one payer (compared by the address each `from` resolves to). `TX_BATCH_PAYMENT_INVALID`: a payment has no `from`, `to` or `amount` (the message names its index); without the flag such a payment is skipped and reported, as before. `TX_BATCH_EMPTY`: the file has no payments. Nothing is planned, signed or sent (exit 2).
+**Solution:** Split the file per payer, complete the payment, or run the batch without `--one-transaction` (one transaction per payment).
+
 ### `ALREADY_SUBMITTED`
 **Cause:** `tx send` found that this payment was already sent: a submission recorded here (`recorded: true`), or positive evidence at the node with no local record (`recorded: false`: in its mempool, in this workspace's stored looks, or an output of the txId listed with the amount and script it pays). Nothing is sent again; `state` and `evidence` say what was seen.
 **Solution:** Nothing to fix. Follow the transaction with `hardkas tx wait <txId>` or `hardkas tx status <txId>`.
@@ -371,6 +383,17 @@ Nothing is read or written.
 - `V1_P2SH_UNLOCK_MISMATCH`: the unlock given for a P2SH input that is not a SilverScript contract (a ZK lock) is not push-only, or its redeem script does not hash to the input's script.
 **Solution:** Build the lock with `zk toccata build-scripts`, fund exactly what it asks for, and spend it with the same receipt.
 
+### `SILVER_TEST_NOT_REPRODUCIBLE`, `SILVER_TEST_INCONCLUSIVE`, `SILVER_TEST_FAILED`, `SILVER_TEST_FUNDING_FAILED`, `SILVER_TEST_FUNDER_REQUIRED`, `SILVER_TEST_OPTION_CONFLICT`, `SILVER_TEST_OPTION_NEEDS_ON_NODE`, `SILVER_TEST_NETWORK_INVALID`
+**Cause:** `hardkas silver test --on-node` runs each case of a test file as the real transaction it describes, on a Kaspa node (simnet by default; mainnet refused first, `SILVERSCRIPT_MAINNET_NOT_ENABLED`; a public testnet only with the payments' opt-in), and records the node's verdict in `hardkas.silverNodeTest.v1`.
+- `SILVER_TEST_NOT_REPRODUCIBLE` (exit 1): the run ended with cases no real transaction reproduces. Each is in the record with its own code and reason (`RUNNER_DEFAULT_SCENARIO`, `COVENANT_CONTEXT`, `MULTIPLE_INPUTS`, `FOREIGN_INPUT_SCRIPT`, `FABRICATED_OUTPOINT`, `SCENARIO_SIGNATURE`, `ARGUMENT_UNREADABLE`, `NO_OUTPUTS`, `OUTPUT_WITHOUT_ADDRESS`, `TX_VERSION_UNSUPPORTED`, `VALUE_OUT_OF_RANGE`, `HARDKAS_REFUSED` with the refusal's code, `SEQUENCE_LOCK_NOT_REACHED`). They have no node verdict and never count as passed.
+- `SILVER_TEST_INCONCLUSIVE` (exit 1): the node answered, but not about the case: a spend expected to pass was accepted and not seen in a chain block within `--timeout` (no miner?), the node refused a spend for its coin, or it refused an expected failure for a reason outside the contract's script (fee, storage mass, lock time, sequence lock, version). No verdict either way.
+- `SILVER_TEST_FAILED` (exit 1): with `--on-node`, a case the node judged against its expectation (accepted when it expected a failure, refused when it expected a pass). It outranks the two codes above.
+- `SILVER_TEST_FUNDING_FAILED` (exit 1): the payment that funds a case's coin at the contract's P2SH was not accepted, or its plan did not pay the case's `utxo_value` there. The run stops without verdicts; coins already funded stay at the contract's address.
+- `SILVER_TEST_FUNDER_REQUIRED` (exit 2): name the account that funds the coins with `--from <account>`.
+- `SILVER_TEST_OPTION_CONFLICT` (exit 2): `--on-node` with `--runner` or `--allow-unverified-runner`; the node mode runs no case on the runner. `SILVER_TEST_OPTION_NEEDS_ON_NODE` (exit 2): `--network`, `--url`, `--from` or `--timeout` without `--on-node`; the runner mode runs no transaction on any node.
+- `SILVER_TEST_NETWORK_INVALID`: the network has no address for the contract's P2SH lock.
+**Solution:** Restate a not reproducible case as a transaction a node can see (one input at the contract, outputs to addresses, signatures named as `{"signature":"<account>"}`), or run it on the SilverScript runner (without `--on-node`), whose verdict is `SCRIPT_VM` only. For an inconclusive case, run a miner or raise `--timeout`, and check the fee and the coin.
+
 ### `WATCH_ADDRESS_INVALID`, `WATCH_NODE_NETWORK_MISMATCH`, `WATCH_ADDRESS_NETWORK_MISMATCH`, `WATCH_OPTION_INVALID`
 **Cause:** `hardkas watch <address>` / `watchAddress`: the address is not a Kaspa address; the node serves another network than the one asked for; the address belongs to another network than the node's; `--timeout` or `--until` is not a positive integer in range. Nothing is tracked. Mainnet is refused before connecting.
 **Solution:** Watch an address of the node's own network.
@@ -382,6 +405,7 @@ Nothing is read or written.
 - `ESCROW_REQUEST_INVALID`: a release request file is not a `hardkas.escrow.releaseRequest.v1` with terms and a funding outpoint. `ESCROW_REQUEST_MISMATCH`: the request does not do what its escrow's terms say (the contract recompiled and the draft prepared again do not match it). Nothing is signed.
 - `ESCROW_FUNDING_NOT_UNSPENT`: before a release is built, the node must list the escrow's funding unspent with the recorded amount and lock. It does not when the funding is not accepted yet (run `escrow reconcile`, then release), or another release already spent it. A release is deterministic and HardKAS sends one submission per txId, so an early refusal could never be retried.
 - `ESCROW_DESTINATION_NOT_ADDRESS`: the release pays a script that is no standard address of the network.
+- `ESCROW_RELEASE_UNPRICED`: the send's economic check refuses the release's plan. Nothing is sent or recorded. Internal guard: HardKAS checks the plan before it records the release.
 - For SDK callers, the dev server's uncoded HTTP refusals now carry codes (the HTTP bodies are unchanged): `ESCROW_NOT_FUNDED`, `ESCROW_NOT_PREPARED`, `ESCROW_NOT_READY`, `ESCROW_ROLE_NOT_REQUIRED`, `ESCROW_POLICY_CHANGED`, `ESCROW_BRANCH_UNKNOWN`.
 **Solution:** Follow the order create → fund → (reconcile) → prepare → sign (each required role) → release → reconcile, on the escrow's own network.
 

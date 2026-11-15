@@ -391,7 +391,9 @@ async function txFlow(input: TxFlowInput, opened: { sdk?: { close(): Promise<voi
         ...(input.keystorePassword !== undefined ? { keystorePassword: input.keystorePassword } : {}),
         ...(input.passwordEnv ? { passwordEnv: input.passwordEnv } : {}),
         ...(input.passwordStdin ? { passwordStdin: true } : {}),
-        ...(input.json ? { json: true } : {})
+        ...(input.json ? { json: true } : {}),
+        // TX-SEND-URL-1: the sign step asks the same node as the plan and send steps (it used the workspace's endpoint)
+        ...(url ? { url } : {})
       });
 
       flowResult.steps.sign = { status: "ok", artifact: signedArtifact };

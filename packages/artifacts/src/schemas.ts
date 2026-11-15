@@ -1206,12 +1206,112 @@ export const SilverVmTestV1Schema = BaseArtifactSchema.omit({ mode: true }).exte
         runnerStatus: z.string().nullable(),
         exitCode: z.number().int(),
         signedArgs: z.number().int().nonnegative(),
-        outputSha256: Hex64
+        outputSha256: Hex64,
+        // whose verdict this is: the runner's script engine (records since `silver test --on-node` exists; absent before)
+        verdictLevel: z.literal("SCRIPT_VM").optional(),
+        runnerTrust: z.enum(["VERIFIED", "UNVERIFIED"]).optional()
       })
     )
     .min(1),
-  summary: z.object({ total: z.number().int().positive(), passed: z.number().int().nonnegative(), failed: z.number().int().nonnegative() }),
+  summary: z.object({
+    total: z.number().int().positive(),
+    passed: z.number().int().nonnegative(),
+    failed: z.number().int().nonnegative(),
+    level: z.literal("SCRIPT_VM").optional(),
+    casesAtLevel: z.number().int().nonnegative().optional()
+  }),
   status: z.enum(["PASS", "FAIL"])
+});
+
+// `hardkas silver test --on-node`: each runner test case HardKAS can reproduce, run as the real transaction it describes
+// (its own coin at the contract's P2SH, then the real v0 spend or a v1 spend through the SDK's engine), sent through
+// HardKAS's send machinery and judged by the node. A verdict is the node's (CONSENSUS_SIMNET on simnet), with the txid;
+// a case no real transaction reproduces is NOT_REPRODUCIBLE, without a verdict, and never counts as passed.
+const SilverNodeTestOutcomeSchema = z.enum(["PASS", "FAIL", "INCONCLUSIVE", "NOT_REPRODUCIBLE"]);
+const SilverNodeTestLevelSchema = z.enum(["CONSENSUS_SIMNET", "CONSENSUS_NODE"]);
+export const SilverNodeTestV1Schema = BaseArtifactSchema.extend({
+  schema: z.literal(HardkasSchemas.SilverNodeTestV1),
+  mode: z.enum(["localnet", "rpc"]),
+  networkId: SilverRecordNetworkIdSchema,
+  evidence: z.literal("node-verdicts"),
+  scope: z.string(),
+  compileRecord: SilverRecordRefSchema,
+  contract: z.string(),
+  address: z.string(),
+  lockingScript: SilverScriptPublicKeySchema,
+  testFile: z.object({ path: z.string(), sha256: Hex64 }),
+  funder: z.string(),
+  node: SilverNodeRefSchema.optional(),
+  results: z
+    .array(
+      z
+        .object({
+          name: z.string(),
+          function: z.string(),
+          expect: z.enum(["pass", "fail"]),
+          outcome: SilverNodeTestOutcomeSchema,
+          verdictLevel: SilverNodeTestLevelSchema.nullable(),
+          nodeVerdict: z.enum(["ACCEPTED", "REJECTED"]).nullable(),
+          txVersion: z.union([z.literal(0), z.literal(1)]).optional(),
+          txId: Hex64.optional(),
+          coin: z.object({ outpoint: SilverOutpointSchema, valueSompi: z.string().regex(/^\d+$/), fundingTxId: Hex64 }).optional(),
+          effect: z.enum(["SPENT_IN_CHAIN", "NOT_OBSERVED"]).optional(),
+          nodeReason: z.string().optional(),
+          nodeReasonCode: z.string().optional(),
+          notReproducible: z.object({ code: z.string(), reason: z.string(), hardkasCode: z.string().optional() }).optional(),
+          inconclusive: z.string().optional(),
+          notes: z.array(z.string()).optional()
+        })
+        .superRefine((r, ctx) => {
+          // a PASS or FAIL is a node verdict: it names the level and what the node said; anything else has no verdict
+          const judged = r.outcome === "PASS" || r.outcome === "FAIL";
+          if (judged && (r.verdictLevel === null || r.nodeVerdict === null)) {
+            ctx.addIssue({ code: "custom", path: ["verdictLevel"], message: "a PASS or FAIL needs the node's verdict and its level" });
+          }
+          if (r.outcome === "NOT_REPRODUCIBLE" && (r.verdictLevel !== null || r.notReproducible === undefined)) {
+            ctx.addIssue({ code: "custom", path: ["notReproducible"], message: "a NOT_REPRODUCIBLE case has no verdict level and says why" });
+          }
+          if (r.nodeVerdict !== null && r.txId === undefined) {
+            ctx.addIssue({ code: "custom", path: ["txId"], message: "a node verdict names the transaction it is about" });
+          }
+        })
+    )
+    .min(1),
+  summary: z.object({
+    total: z.number().int().positive(),
+    passed: z.number().int().nonnegative(),
+    failed: z.number().int().nonnegative(),
+    inconclusive: z.number().int().nonnegative(),
+    notReproducible: z.number().int().nonnegative(),
+    level: SilverNodeTestLevelSchema,
+    casesAtLevel: z.number().int().nonnegative()
+  }),
+  status: z.enum(["PASS", "FAIL", "INCOMPLETE"])
+}).superRefine((v, ctx) => {
+  // the summary and the status are the results' own counts: a record cannot claim more passes than it has verdicts
+  const count = (o: string) => v.results.filter((r) => r.outcome === o).length;
+  const s = v.summary;
+  if (
+    s.total !== v.results.length ||
+    s.passed !== count("PASS") ||
+    s.failed !== count("FAIL") ||
+    s.inconclusive !== count("INCONCLUSIVE") ||
+    s.notReproducible !== count("NOT_REPRODUCIBLE")
+  ) {
+    ctx.addIssue({ code: "custom", path: ["summary"], message: "the summary does not count the results" });
+  }
+  const expected = s.failed > 0 ? "FAIL" : s.inconclusive + s.notReproducible > 0 ? "INCOMPLETE" : "PASS";
+  if (v.status !== expected) ctx.addIssue({ code: "custom", path: ["status"], message: `status ${v.status} does not follow from the results (${expected})` });
+  if (s.level === "CONSENSUS_SIMNET" && v.networkId !== "simnet") {
+    ctx.addIssue({ code: "custom", path: ["summary", "level"], message: "CONSENSUS_SIMNET is the level of a simnet node only" });
+  }
+  v.results.forEach((r, i) => {
+    if (r.verdictLevel !== null && r.verdictLevel !== s.level) {
+      ctx.addIssue({ code: "custom", path: ["results", i, "verdictLevel"], message: `a verdict of this run is at the run's level (${s.level})` });
+    }
+  });
+  const atLevel = v.results.filter((r) => r.verdictLevel === s.level && (r.outcome === "PASS" || r.outcome === "FAIL")).length;
+  if (s.casesAtLevel !== atLevel) ctx.addIssue({ code: "custom", path: ["summary", "casesAtLevel"], message: "the summary does not count the cases at its level" });
 });
 
 export const ProgrammabilityClaimsSchema = z.object({

@@ -215,7 +215,26 @@ limits:
   while a real v0 `silver spend` declares 1 to n. A runner pass therefore says
   nothing about the declared count or the node's standardness rules. The
   `@hardkas/testing` covenant matchers require `CONSENSUS_SIMNET` by default and
-  answer "NOT VERIFIED" below it;
+  answer "NOT VERIFIED" below it. A local runner build cannot be checked against
+  the commit CI builds from: the binary does not name its source commit, its
+  `toolchain.json` is written by whoever built it, and no reproducible build of
+  that commit exists to compare with;
+- `silver test --on-node` asks a node instead of the runner: each case HardKAS
+  can reproduce becomes the transaction it describes (its own coin at the
+  contract's P2SH, then the real v0 spend, or v1 through the SDK's engine), sent
+  through HardKAS's send machinery, and the record carries the node's verdict
+  (`CONSENSUS_SIMNET` on simnet) and the txid. These cases are not reproducible
+  and have no verdict: a case without `tx` (the runner's default scenario),
+  covenant entries and covenant fields, several inputs, an input at a stated
+  outpoint or under another script, a literal `sig` (it signs the runner's
+  scenario; name the account with `{"signature":"<account>"}`), an output without
+  an address, and any case HardKAS's builder or send machinery refuses before the
+  broadcast (a fee below the node's minimum or above the fee limit, a lock time
+  not reached; on v1 also a signer whose key is not the one the contract checks,
+  `SIGNER_SLOT_KEY_MISMATCH`). An expected failure that the node refuses for a
+  reason outside the script (fee, storage mass, lock time, sequence lock) has no
+  verdict (`SILVER_TEST_INCONCLUSIVE`). A verdict is one node's mempool and chain
+  at one moment, and each reproducible case spends its own funded coin;
 - `silver spend` does not read the redeem script for time locks or signature
   operations. The input's sequence is `--sequence` (default 0) and the declared
   signature operations are `--sig-op-count` (default: the number of signature

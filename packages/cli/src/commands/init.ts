@@ -169,9 +169,12 @@ export default defineConfig({
             // Consumer-authored accounts and the cross-world protection remain
             // fully authoritative — this only stops the SCAFFOLD from
             // pre-declaring conflicting entries in fresh workspaces.
-            const template = `import { defineHardkasConfig } from "@hardkas/sdk";
-
-export default defineHardkasConfig({
+            // INIT-CONFIG-NO-IMPORT-1 (as config-scaffold.ts): the config imports nothing, so it loads before
+            // `npm install` and under a global CLI. It imported `@hardkas/sdk`, which the CLI's own commands then could not
+            // load in a fresh workspace (`Cannot find module '@hardkas/sdk'`).
+            const template = `// HardKAS configuration. It imports nothing, so it loads before any dependency is installed.
+// For editor types, wrap the object with defineHardkasConfig from "@hardkas/sdk" once it is installed.
+export default {
   // HardKAS v${HARDKAS_VERSION} Configuration
   execution: {
     default: "simulator",
@@ -211,7 +214,7 @@ export default defineHardkasConfig({
       description: "Local Docker kaspad on simnet — requires hardkas node start"
     }
   }
-});
+};
 `;
 
             writeFileAtomicSync(configFile, template, { encoding: "utf-8" });

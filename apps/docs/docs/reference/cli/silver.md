@@ -166,7 +166,7 @@ title: hardkas silver
 
 ### Synopsis (Generated)
 
-**Purpose:** Run a compiled contract's tests on the SilverScript runner (cli-debugger) experimental (script engine on scenario transactions; not transaction validity). Exit codes: 0 every test passed; 1 a test failed (SILVER_TEST_FAILED) or the runner gave no verdict (SILVER_RUNNER_FAILED, _START_FAILED, _CHANGED, _TIMEOUT, _OUTPUT_UNRECOGNIZED, _PROTOCOL_ERROR or _INTERNAL_ERROR); 2 usage; 3 runner refused by the trust policy (SILVER_RUNNER_UNVERIFIED); 4 tampered compile record
+**Purpose:** Run a compiled contract's tests on the SilverScript runner (cli-debugger) experimental (script engine on scenario transactions, verdict level SCRIPT_VM; not transaction validity), or with --on-node on a Kaspa node (each case's real transaction, verdict level CONSENSUS_SIMNET on simnet; a case no real transaction reproduces is NOT_REPRODUCIBLE, never a pass). Exit codes: 0 every test passed; 1 a test failed (SILVER_TEST_FAILED) or the runner gave no verdict (SILVER_RUNNER_FAILED, _START_FAILED, _CHANGED, _TIMEOUT, _OUTPUT_UNRECOGNIZED, _PROTOCOL_ERROR or _INTERNAL_ERROR), with --on-node a case without a node verdict (SILVER_TEST_INCONCLUSIVE, SILVER_TEST_NOT_REPRODUCIBLE) or a run the node setup or a send stopped (SILVER_TEST_FUNDING_FAILED, SILVER_SUBMIT_NOT_SENT, SILVER_SUBMIT_OUTCOME_UNKNOWN, SILVER_CONFIRMATION_TIMEOUT); 2 usage; 3 runner refused by the trust policy (SILVER_RUNNER_UNVERIFIED), or a network refused by policy; 4 tampered compile record
 
 #### Arguments
 
@@ -179,7 +179,12 @@ title: hardkas silver
 - `--contract &lt;name&gt;`: Contract, when the artifact has several
 - `--runner &lt;path&gt;`: SilverScript runner (cli-debugger) binary (default: $HARDKAS_SILVER_RUNNER, else &lt;HARDKAS_HOME&gt;/toolchains/cli-debugger/1.0.0)
 - `--allow-unverified-runner` (Default: `false`): Run a SilverScript runner (cli-debugger) that is not verified against a trusted reference. Upstream publishes no runner binary, so today every runner is an UNVERIFIED local build: without this flag none is executed. Its verdicts are labelled UNVERIFIED, never official
-- `--out &lt;file&gt;`: Record path (default .hardkas/artifacts/silver-vm/)
+- `--on-node` (Default: `false`): Judge every case on a Kaspa node instead of the SilverScript runner: each case HardKAS can reproduce gets its own coin of the case's utxo_value at the contract's P2SH (paid from --from), then the real spend the case describes (entry, arguments, signatures of the named accounts, outputs, sequence, lock time; transaction v0, or v1 through the SDK's engine when the case's tx.version is 1 or absent), sent through HardKAS's send machinery. The node's answer is the verdict (CONSENSUS_SIMNET on simnet), next to the expected one; a case no real transaction reproduces is reported NOT_REPRODUCIBLE, never a pass. Needs a workspace that runs the network as a kaspa-l1 node
+- `--network &lt;network&gt;`: With --on-node: the network (default: the workspace's, else simnet). mainnet is refused; testnet-&lt;n&gt; needs experimental + network.allowPublic in the config
+- `--url &lt;url&gt;`: With --on-node: the node wRPC (JSON) endpoint (default: the one the workspace declares for the network; simnet: the canonical localnet)
+- `--from &lt;account&gt;`: With --on-node: the account that funds one coin per reproducible case at the contract's P2SH (local key)
+- `--timeout &lt;seconds&gt;`: With --on-node: seconds to wait for each funding coin, each relative lock and each accepted spend to show in the node's UTXO index (default 120)
+- `--out &lt;file&gt;`: Record path (default .hardkas/artifacts/silver-vm/; with --on-node .hardkas/artifacts/silver/)
 - `--password-env &lt;env&gt;`: Read the keystore password of the encrypted account(s) this command signs with from this environment variable (development accounts need none)
 - `--password-stdin` (Default: `false`): Read the keystore password of the encrypted account(s) this command signs with from stdin
 - `--json` (Default: `false`): Output as JSON

@@ -6,7 +6,7 @@ When a HardKAS command fails, do not guess. Follow the causal chain to isolate t
 
 ```bash
 $ hardkas tx send tx.json
-[ERROR] CONNECTION_REFUSED: Could not connect to 127.0.0.1:16110
+[ERROR] CONNECTION_REFUSED: Could not connect to 127.0.0.1:18210
 ```
 
 **Likely Boundary:** RPC Node / Localnet

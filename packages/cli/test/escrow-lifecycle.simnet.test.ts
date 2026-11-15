@@ -9,7 +9,8 @@
 //   A · EscrowFull, mutualRelease (buyer + seller), 1 KAS, default 50/50, funding and release waited for;
 //   B · EscrowFull, releaseToSeller (seller + arbiter: the arbiter branch), 0.1 KAS at the default fee budget, funding
 //       and release confirmed through `escrow reconcile`, the two signatures in two request files;
-//   C · EscrowSplit, executeSplit (buyer + arbiter), 0.6 / 0.4 KAS, the buyer signing in the record.
+//   C · EscrowSplit, executeSplit (buyer + arbiter), 0.6 / 0.4 KAS, the buyer signing in the record;
+//   D · EscrowFull, releaseToSeller, 5 KAS to one output: a release whose compute mass is its mass.
 // Level variables (simnet only): HARDKAS_HOME with the pinned kaspa-wasm and silverc; optionally the harness's own.
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { spawn } from "node:child_process";
@@ -284,6 +285,31 @@ describe("ESCROW-LIFECYCLE-1 · hardkas escrow against a real rusty-kaspad (simn
     expect(released.state, JSON.stringify(released)).toBe("RELEASED");
     expect(await paid(released.txId, addr.buyer!)).toEqual([[0, "60000000"]]);
     expect(await paid(released.txId, addr.seller!)).toEqual([[1, "40000000"]]);
+  });
+
+  it("D · EscrowFull releaseToSeller of 5 KAS to one output (compute mass outweighs storage mass): sent once, accepted, the node pays the seller", async () => {
+    // A release whose compute mass is its mass (one large output) used to be refused by the send's economic check
+    // before anything was sent ("Mass mismatch"): its plan stated the draft's real P2SH mass, the check recomputes the
+    // SDK's figure. A, B and C have small outputs, whose storage mass is the mass either way.
+    const created = ok(await hk("D-create", ["escrow", "create", "--buyer", "buyer", "--seller", addr.seller!, "--arbiter", addr.arbiter!, "--amount", "5", "--json"], ws.creator));
+    const id = String(created.id);
+    expect(created.fundingSompi).toBe("502000000");
+    ok(await withMiner(() => hk("D-fund", ["escrow", "fund", id, "--from", "buyer", "--password-env", PW_ENV, "--wait", "--timeout", "180", "--json"], ws.creator)));
+    const prepared = ok(await hk("D-prepare", ["escrow", "prepare", id, "--branch", "releaseToSeller", "--out", "D.request.json", "--json"], ws.creator));
+    expect(prepared.request.outputs).toEqual([expect.objectContaining({ address: addr.seller, amountSompi: "500000000" })]);
+    const forSeller = handOver(path.join(ws.creator, "D.request.json"), ws.seller, "D.request.json");
+    const forArbiter = handOver(path.join(ws.creator, "D.request.json"), ws.arbiter, "D.request.json");
+    ok(await hk("D-sign-seller", ["escrow", "sign", forSeller, "--role", "seller", "--account", "seller", "--password-env", PW_ENV, "--json"], ws.seller));
+    ok(await hk("D-sign-arbiter", ["escrow", "sign", forArbiter, "--role", "arbiter", "--account", "arbiter", "--password-env", PW_ENV, "--json"], ws.arbiter));
+    const sent0 = submits();
+    const released = ok(
+      await withMiner(() =>
+        hk("D-release", ["escrow", "release", id, "--signatures", path.join(ws.seller, forSeller), path.join(ws.arbiter, forArbiter), "--wait", "--timeout", "180", "--json"], ws.creator)
+      )
+    );
+    expect({ status: released.status, state: released.state }, JSON.stringify(released)).toEqual({ status: "confirmed", state: "RELEASED" });
+    expect(submits() - sent0, "one submitTransaction for the release").toBe(1);
+    expect(await paid(released.txId, addr.seller!)).toEqual([[0, "500000000"]]);
   });
 
   it("every connection any command made went to the harness node through the counting relay; nothing else was attempted", () => {

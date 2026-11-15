@@ -261,10 +261,11 @@ workspace did not record is seen only by its effect.
 
 ## What is not covered
 
-- **Covenant shapes other than 1:1** (1:N fan-out, N:M, termination) and the
-  KCC-20 example transfer: built by the SDK's v1 engine only (`hardkas.covenants`,
-  `hardkas silver engine`), proven on a real simnet node by the repository's
-  node suite, and not available as `silver covenant` commands
+- **Covenant shapes other than 1:1** (1:N fan-out, N:M, termination) and
+  KCC-20 tokens are experimental and not covered by this guide: they are built by
+  the SDK's v1 engine (`hardkas.covenants`, `hardkas silver engine`) and, from the
+  CLI, by `silver covenant start|advance` and `kcc20 deploy|transfer|balance`;
+  proven on a real simnet node by the repository's node suites
   ([Covenants status](../status/covenants-status.md)).
 - **What a policy computes** (a `require`, conservation of amounts): HardKAS
   does not evaluate it before sending; the node does, and refuses a violation.
@@ -272,6 +273,9 @@ workspace did not record is seen only by its effect.
   SilverScript runner (`cli-debugger`), which upstream does not publish as a
   binary. A local build is labelled UNVERIFIED and runs only with
   `--allow-unverified-runner`; its verdicts are never a node's acceptance.
+  `silver test --on-node` (experimental) asks a node instead: each case it can
+  reproduce runs as the real transaction it describes, and the record carries
+  the node's verdict and txid; a case it cannot reproduce has no verdict.
 - **Testnet-10 and mainnet**: not evidenced for these commands; mainnet is
   refused.
 

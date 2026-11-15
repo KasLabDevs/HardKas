@@ -5751,7 +5751,7 @@ hardkas silver spend [options] <deploy-record>
 
 ## hardkas silver test
 
-Run a compiled contract's tests on the SilverScript runner (cli-debugger) experimental (script engine on scenario transactions; not transaction validity). Exit codes: 0 every test passed; 1 a test failed (SILVER_TEST_FAILED) or the runner gave no verdict (SILVER_RUNNER_FAILED, _START_FAILED, _CHANGED, _TIMEOUT, _OUTPUT_UNRECOGNIZED, _PROTOCOL_ERROR or _INTERNAL_ERROR); 2 usage; 3 runner refused by the trust policy (SILVER_RUNNER_UNVERIFIED); 4 tampered compile record
+Run a compiled contract's tests on the SilverScript runner (cli-debugger) experimental (script engine on scenario transactions, verdict level SCRIPT_VM; not transaction validity), or with --on-node on a Kaspa node (each case's real transaction, verdict level CONSENSUS_SIMNET on simnet; a case no real transaction reproduces is NOT_REPRODUCIBLE, never a pass). Exit codes: 0 every test passed; 1 a test failed (SILVER_TEST_FAILED) or the runner gave no verdict (SILVER_RUNNER_FAILED, _START_FAILED, _CHANGED, _TIMEOUT, _OUTPUT_UNRECOGNIZED, _PROTOCOL_ERROR or _INTERNAL_ERROR), with --on-node a case without a node verdict (SILVER_TEST_INCONCLUSIVE, SILVER_TEST_NOT_REPRODUCIBLE) or a run the node setup or a send stopped (SILVER_TEST_FUNDING_FAILED, SILVER_SUBMIT_NOT_SENT, SILVER_SUBMIT_OUTCOME_UNKNOWN, SILVER_CONFIRMATION_TIMEOUT); 2 usage; 3 runner refused by the trust policy (SILVER_RUNNER_UNVERIFIED), or a network refused by policy; 4 tampered compile record
 
 ### Usage
 
@@ -5768,7 +5768,12 @@ hardkas silver test [options] <record>
 | `--contract <name>` | Contract, when the artifact has several |  |
 | `--runner <path>` | SilverScript runner (cli-debugger) binary (default: $HARDKAS_SILVER_RUNNER, else <HARDKAS_HOME>/toolchains/cli-debugger/1.0.0) |  |
 | `--allow-unverified-runner` | Run a SilverScript runner (cli-debugger) that is not verified against a trusted reference. Upstream publishes no runner binary, so today every runner is an UNVERIFIED local build: without this flag none is executed. Its verdicts are labelled UNVERIFIED, never official | false |
-| `--out <file>` | Record path (default .hardkas/artifacts/silver-vm/) |  |
+| `--on-node` | Judge every case on a Kaspa node instead of the SilverScript runner: each case HardKAS can reproduce gets its own coin of the case's utxo_value at the contract's P2SH (paid from --from), then the real spend the case describes (entry, arguments, signatures of the named accounts, outputs, sequence, lock time; transaction v0, or v1 through the SDK's engine when the case's tx.version is 1 or absent), sent through HardKAS's send machinery. The node's answer is the verdict (CONSENSUS_SIMNET on simnet), next to the expected one; a case no real transaction reproduces is reported NOT_REPRODUCIBLE, never a pass. Needs a workspace that runs the network as a kaspa-l1 node | false |
+| `--network <network>` | With --on-node: the network (default: the workspace's, else simnet). mainnet is refused; testnet-<n> needs experimental + network.allowPublic in the config |  |
+| `--url <url>` | With --on-node: the node wRPC (JSON) endpoint (default: the one the workspace declares for the network; simnet: the canonical localnet) |  |
+| `--from <account>` | With --on-node: the account that funds one coin per reproducible case at the contract's P2SH (local key) |  |
+| `--timeout <seconds>` | With --on-node: seconds to wait for each funding coin, each relative lock and each accepted spend to show in the node's UTXO index (default 120) |  |
+| `--out <file>` | Record path (default .hardkas/artifacts/silver-vm/; with --on-node .hardkas/artifacts/silver/) |  |
 | `--password-env <env>` | Read the keystore password of the encrypted account(s) this command signs with from this environment variable (development accounts need none) |  |
 | `--password-stdin` | Read the keystore password of the encrypted account(s) this command signs with from stdin | false |
 | `--json` | Output as JSON | false |
@@ -6305,7 +6310,7 @@ No arguments.
 
 ## hardkas tx batch
 
-Process a batch of transactions sequentially stable
+Process a batch of payments: one transaction per payment, sent in order, or all of them in one transaction (--one-transaction) stable
 
 ### Usage
 
@@ -6319,6 +6324,7 @@ hardkas tx batch [options]
 | :--- | :--- | :--- |
 | `--file <path>` | Path to JSON file containing batch payments |  |
 | `--network <name>` | Network name |  |
+| `--one-transaction` | Pay every payment of the file in ONE transaction: one payer, one output per payment (in the file's order), one change output, one fee, one submission. Refused before anything is planned, signed or sent when the file has payments from more than one payer (TX_BATCH_MULTIPLE_PAYERS), a payment without from, to or amount (TX_BATCH_PAYMENT_INVALID), or more recipients than fit in one standard transaction (TOO_MANY_OUTPUTS, which says how many fit). Without it, each payment is its own transaction | false |
 | `--workspace <path>` | Override workspace root directory |  |
 | `--password-env <env>` | Read the keystore password of the batch's encrypted payers from this environment variable (read once, before the first payment) |  |
 | `--password-stdin` | Read the keystore password of the batch's encrypted payers from stdin (read once, before the first payment) | false |
@@ -6369,7 +6375,7 @@ hardkas tx plan [options] [from] [to]
 | :--- | :--- | :--- |
 | `--target <name>` | Named execution target from hardkas.config.ts |  |
 | `--from <accountOrAddress>` | Sender account name or address (default: alice) |  |
-| `--to <address>` | Recipient address or account name (default: bob) |  |
+| `--to <address>` | Recipient address or account name (default: bob). Repeat it as --to <recipient>=<kas> (no --amount) to pay several recipients in one transaction: one output each, in the order given, one change output and one fee |  |
 | `--amount <kas>` | Amount in KAS, up to 8 decimals (default: 1) |  |
 | `--network <name>` | simulated, simnet, devnet, testnet-10, testnet-12 or mainnet (default: the config's default target) |  |
 | `--fee-rate <sompiPerMass>` | Whole sompi per gram of mass, at least 1 (default: 1 in the simulator, 100 on real networks; not a live estimate) |  |
@@ -6379,7 +6385,7 @@ hardkas tx plan [options] [from] [to]
 | `--lock-time-ms <t>` | Absolute lock time as milliseconds since the epoch (at or above 500000000000): valid only once the node's past median time is above it; `tx send` refuses to broadcast it earlier. Not with --lock-time-daa; not on the simulator |  |
 | `--confirm-distant-lock-time` | Plan a lock time more than about a day past the node's position (864000 DAA, or 86400000 ms); refused without it (LOCK_TIME_DISTANT_UNCONFIRMED) | false |
 | `--provider <type>` | Provider mode (auto, rpc, simulated) | auto |
-| `--url <url>` | Node wRPC URL (default: the network's rpcUrl in hardkas.config.ts; without one, ws://127.0.0.1:18210 for simnet and devnet) |  |
+| `--url <url>` | Node wRPC URL (default: the network's rpcUrl in hardkas.config.ts; without one, ws://127.0.0.1:18210 for simnet and ws://127.0.0.1:18610 for devnet) |  |
 | `--out <path>` | Save plan as artifact JSON |  |
 | `--save <path>` | Alias for --out (Save plan as artifact JSON) |  |
 | `--workflow-id <id>` | Optional deterministic workflow ID override |  |

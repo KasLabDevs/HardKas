@@ -65,7 +65,7 @@ export default defineConfig({
     },
     localnet: {
       type: 'localnet',
-      rpcUrl: 'ws://127.0.0.1:17110',
+      rpcUrl: 'ws://127.0.0.1:18210',
     },
     testnet10: {
       type: 'rpc',

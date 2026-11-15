@@ -101,6 +101,13 @@ export async function runTxBatch(options: any) {
   }
 
   const loaded = await loadHardkasConfig({ cwd: workspace });
+  // MAINNET TOTAL LOCKDOWN: the mainnet refusal comes first, with or without --one-transaction, before the file is
+  // read, any payer is resolved or any keystore is opened (MAINNET_BROADCAST_DISABLED). Without this, a batch on
+  // mainnet unlocked an encrypted payer's keystore before its plan step refused mainnet.
+  {
+    const { refuseMainnetBroadcast } = await import("../mainnet-guard.js");
+    refuseMainnetBroadcast(loaded.config as any, [network], options.oneTransaction ? "tx batch --one-transaction" : "tx batch");
+  }
   const filePath = path.resolve(workspace || process.cwd(), file);
 
   let payments: any[];
@@ -124,6 +131,10 @@ export async function runTxBatch(options: any) {
     throw new Error(
       `Failed to read or parse batch file ${file}: ${e instanceof Error ? ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) : String(e)}`
     );
+  }
+
+  if (options.oneTransaction) {
+    return runOneTransactionBatch({ payments, config: loaded.config, workspaceRoot: workspace || process.cwd(), network, json, passwordEnv, passwordStdin });
   }
 
   const keystorePassword = await batchKeystorePassword({
@@ -242,5 +253,149 @@ export async function runTxBatch(options: any) {
     throw new HardkasCliError("TX_BATCH_FAILED", `${failCount} of ${payments.length} batch payment(s) failed`, {
       exitCode: HardkasExitCode.RUNTIME_FAILURE
     });
+  }
+}
+
+/**
+ * R4-T · the payer of each payment, resolved as the planner resolves it (the workspace's execution target for the batch's
+ * network): address → the spellings the file uses for it. A network or a payer that does not resolve is refused here,
+ * typed, before anything is planned (one transaction pays all of the file or none of it).
+ */
+async function batchPayers(payments: any[], config: HardkasConfig, workspaceRoot: string, network: string): Promise<Map<string, Set<string>>> {
+  const { resolveWorkspaceExecution } = await import("@hardkas/config");
+  const { resolveHardkasAccount } = await import("@hardkas/accounts");
+  const resolvedConfig: any = { ...config, cwd: workspaceRoot };
+  const execution = resolveWorkspaceExecution({ config: resolvedConfig, network }).execution;
+  const payers = new Map<string, Set<string>>();
+  for (const payment of payments) {
+    const account: any = resolveHardkasAccount({ nameOrAddress: String(payment.from), config: resolvedConfig, executionTarget: execution });
+    const address = String(account?.address ?? payment.from);
+    payers.set(address, (payers.get(address) ?? new Set<string>()).add(String(payment.from)));
+  }
+  return payers;
+}
+
+/**
+ * R4-T · `tx batch --one-transaction`: every payment of the file in ONE transaction — one payer, one payment output per
+ * payment in the file's order (output i pays payment i), one change output and one fee — planned, signed and sent by the
+ * runners of `tx plan`, `tx sign` and `tx send` (the SDK's send machinery: one submission recorded). Refused before
+ * anything is planned, signed or sent: mainnet (MAINNET_BROADCAST_DISABLED, in runTxBatch before the file is read), an
+ * empty file (TX_BATCH_EMPTY), a payment without from/to/amount (TX_BATCH_PAYMENT_INVALID), payments from more than one
+ * payer (TX_BATCH_MULTIPLE_PAYERS: a transaction has one payer), and, by the planner, more recipients than fit in one
+ * standard transaction (TOO_MANY_OUTPUTS, which names how many fit). A failed step fails the whole batch: no payment of
+ * it was made unless the send step ran (the JSON says which step failed and whether the node rejected the transaction).
+ */
+async function runOneTransactionBatch(args: {
+  payments: any[];
+  config: HardkasConfig;
+  workspaceRoot: string;
+  network: string;
+  json?: boolean | undefined;
+  passwordEnv?: string | undefined;
+  passwordStdin?: boolean | undefined;
+}): Promise<void> {
+  const { payments, config, workspaceRoot, network, json } = args;
+  const usage = (code: string, message: string): never => {
+    throw new HardkasCliError(code, `--one-transaction: ${message} Nothing was planned, signed or sent.`, { exitCode: HardkasExitCode.USAGE_ERROR });
+  };
+  if (payments.length === 0) usage("TX_BATCH_EMPTY", "the batch file has no payments.");
+  const invalid = payments.map((p, i) => (!p?.from || !p?.to || !p?.amount ? i : -1)).filter((i) => i >= 0);
+  if (invalid.length > 0) {
+    usage(
+      "TX_BATCH_PAYMENT_INVALID",
+      `the payment(s) at index ${invalid.join(", ")} (0-based, as in \`results\`) miss from, to or amount, and one transaction pays all of the file or none of it.`
+    );
+  }
+  const payers = await batchPayers(payments, config, workspaceRoot, network);
+  if (payers.size > 1) {
+    const named = [...payers.entries()].map(([address, names]) => `${[...names].join(" / ")}${names.has(address) ? "" : ` (${address})`}`).join(", ");
+    usage(
+      "TX_BATCH_MULTIPLE_PAYERS",
+      `the batch pays from ${payers.size} payers (${named}), and one transaction has one payer. Split the file per payer, or run it without --one-transaction (one transaction per payment).`
+    );
+  }
+
+  const keystorePassword = await batchKeystorePassword({ ...args, payments });
+  const from = String(payments[0].from);
+  const outputs = payments.map((p) => ({ to: String(p.to), amount: p.amount.toString() }));
+  if (!json) {
+    getOutput().writeLine(`Paying ${payments.length} payment(s) from ${from} in one transaction on ${network}...`);
+    outputs.forEach((o, i) => getOutput().writeLine(`  [${i + 1}/${payments.length}] -> ${o.to} (${o.amount} KAS)`));
+  }
+
+  const { runTxPlan } = await import("./tx-plan-runner.js");
+  const { runTxSign } = await import("./tx-sign-runner.js");
+  const { runTxSend } = await import("./tx-send-runner.js");
+  let step: "plan" | "sign" | "send" = "plan";
+  let plan: any;
+  let sent: Awaited<ReturnType<typeof runTxSend>> | undefined;
+  let failure: unknown;
+  try {
+    plan = await runTxPlan({ from, outputs, networkId: network, feeRate: "1", provider: "auto", config, workspaceRoot });
+    step = "sign";
+    const signed = await runTxSign({
+      planArtifact: plan,
+      config,
+      workspaceRoot,
+      ...(keystorePassword !== undefined ? { keystorePassword } : {}),
+      ...(json ? { json: true } : {})
+    });
+    step = "send";
+    sent = await runTxSend({ signedArtifact: signed, config, workspaceRoot });
+  } catch (e) {
+    failure = e;
+  }
+
+  const txId = sent?.txId;
+  const ok = failure === undefined && sent?.accepted === true;
+  const errorCode = failure !== undefined && typeof (failure as any)?.code === "string" ? ((failure as any).code as string) : undefined;
+  const errorMessage = failure !== undefined ? (failure instanceof Error ? failure.message : String(failure)) : undefined;
+  const notAccepted =
+    sent?.accepted === false ? (sendOutcomeLabel(sent.receipt, false) === "unknown" ? { sendOutcomeUnknown: true } : { sendRejected: true }) : {};
+  const results = payments.map((p, i) => ({
+    index: i,
+    ok,
+    to: String(p.to),
+    ...(plan?.outputs?.[i] ? { address: plan.outputs[i].address, amountSompi: plan.outputs[i].amountSompi, outputIndex: i } : {}),
+    ...(txId ? { txId } : {})
+  }));
+
+  if (json) {
+    UI.writeJson({
+      ok,
+      oneTransaction: true,
+      batchSize: payments.length,
+      successCount: ok ? payments.length : 0,
+      failCount: ok ? 0 : payments.length,
+      ...(txId ? { txId } : {}),
+      ...(plan ? { planArtifactId: plan.contentHash, feeSompi: plan.estimatedFeeSompi } : {}),
+      ...(failure !== undefined ? { failedStep: step, [`${step}Error`]: errorMessage, ...(errorCode ? { code: errorCode } : {}) } : {}),
+      ...notAccepted,
+      results
+    });
+  } else if (ok) {
+    getOutput().writeLine(`  ✓ Success: transaction ${txId} pays ${payments.length} recipient(s)`);
+    getOutput().writeLine(`\nBatch processing complete.`);
+    getOutput().writeLine(`Successful: ${payments.length}`);
+    getOutput().writeLine(`Failed:     0`);
+  } else {
+    getOutput().writeLine(
+      failure !== undefined
+        ? `  ✗ Failed at the ${step} step${errorCode ? ` (${errorCode})` : ""}: ${errorMessage}`
+        : `  ✗ Failed: the node did not accept transaction ${txId} (${sendOutcomeLabel(sent?.receipt, false)})`
+    );
+  }
+  if (!ok) {
+    const outcomeUnknown = (notAccepted as { sendOutcomeUnknown?: boolean }).sendOutcomeUnknown === true;
+    const message =
+      failure !== undefined
+        ? `the one transaction of the batch failed at its ${step} step (${errorCode ? `${errorCode}: ` : ""}${errorMessage}); ` +
+          (step === "send"
+            ? "the send step did not complete: check what the node holds (hardkas tx status) before paying again."
+            : `nothing was sent: none of the ${payments.length} payment(s) was made.`)
+        : outcomeUnknown
+          ? `the outcome of the one transaction of the batch (${txId}) is unknown (the submit call failed without an answer): check hardkas tx status ${txId} before paying again.`
+          : `the node rejected the one transaction of the batch (${txId}): none of the ${payments.length} payment(s) was made.`;
+    throw new HardkasCliError(errorCode ?? "TX_BATCH_FAILED", message, { exitCode: HardkasExitCode.RUNTIME_FAILURE });
   }
 }

@@ -304,4 +304,37 @@ describe("ESCROW-LIFECYCLE-1 · sdk.escrow, two workspaces", () => {
       (creator as any).rpc = previous;
     }
   });
+
+  it("S-5 a release whose compute mass outweighs its storage mass (10 KAS to one output) passes sdk.tx.send's economic check and is sent once", async () => {
+    // With small outputs the storage mass (KIP-9) is the transaction's mass whatever its unlock is, so the plan's mass and
+    // the SDK's recomputation of it agree. With one large output the compute mass is the mass: the contract's unlock made
+    // the draft's real figure larger than the SDK's P2PK-shaped recomputation, and the send refused the plan
+    // (ECONOMIC_VIOLATION "Mass mismatch"), so such a release could never be sent.
+    const node = fakeEscrowNode();
+    node.acceptOnSubmit = true;
+    const previous = creator.rpc;
+    (creator as any).rpc = client(node);
+    try {
+      const record = await creator.escrow.create(terms({ mode: "full", principal: "1000000000" }));
+      recordFunding(record.id, 1_002_000_000n);
+      const request = await creator.escrow.prepare(record.id, { branch: "releaseToSeller" });
+      expect(request.outputs.map((o) => o.amountSompi)).toEqual(["1000000000"]);
+      const signers: Record<string, () => Promise<unknown>> = {
+        buyer: () => creator.escrow.sign(record.id, { role: "buyer", account: "alice" }),
+        seller: async () => creator.escrow.addSignatures(record.id, (await signer.escrow.signRequest(request, { role: "seller", account: "bob" })).request),
+        arbiter: async () => creator.escrow.addSignatures(record.id, (await signer.escrow.signRequest(request, { role: "arbiter", account: "carol" })).request)
+      };
+      for (const role of request.requiredSigners) await signers[role]!();
+      const rec = await creator.escrow.status(record.id);
+      expect(rec.state).toBe("READY_TO_RELEASE");
+      node.utxos.push({ outpoint: { transactionId: rec.funding.transactionId!, index: 0 }, address: rec.p2shState.address, amount: 1_002_000_000n, spk: `0000${rec.p2shState.lockingScriptHex}`, daa: 1000n });
+      const sent = await outcome(creator.escrow.release(record.id));
+      expect(sent.ok ? "SENT" : sent.code, sent.ok ? "" : sent.message).toBe("SENT");
+      expect(node.submitted).toHaveLength(1);
+      expect(decoy.connections).toBe(0);
+    } finally {
+      await (creator.rpc as any).close?.().catch?.(() => {});
+      (creator as any).rpc = previous;
+    }
+  });
 });

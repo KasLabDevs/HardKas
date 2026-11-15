@@ -24,12 +24,13 @@ title: hardkas tx
 
 ### Synopsis (Generated)
 
-**Purpose:** Process a batch of transactions sequentially stable
+**Purpose:** Process a batch of payments: one transaction per payment, sent in order, or all of them in one transaction (--one-transaction) stable
 
 #### Options
 
 - `--file &lt;path&gt;`: Path to JSON file containing batch payments
 - `--network &lt;name&gt;`: Network name
+- `--one-transaction` (Default: `false`): Pay every payment of the file in ONE transaction: one payer, one output per payment (in the file's order), one change output, one fee, one submission. Refused before anything is planned, signed or sent when the file has payments from more than one payer (TX_BATCH_MULTIPLE_PAYERS), a payment without from, to or amount (TX_BATCH_PAYMENT_INVALID), or more recipients than fit in one standard transaction (TOO_MANY_OUTPUTS, which says how many fit). Without it, each payment is its own transaction
 - `--workspace &lt;path&gt;`: Override workspace root directory
 - `--password-env &lt;env&gt;`: Read the keystore password of the batch's encrypted payers from this environment variable (read once, before the first payment)
 - `--password-stdin` (Default: `false`): Read the keystore password of the batch's encrypted payers from stdin (read once, before the first payment)
@@ -52,7 +53,7 @@ title: hardkas tx
 
 - `--target &lt;name&gt;`: Named execution target from hardkas.config.ts
 - `--from &lt;accountOrAddress&gt;`: Sender account name or address (default: alice)
-- `--to &lt;address&gt;`: Recipient address or account name (default: bob)
+- `--to &lt;address&gt;`: Recipient address or account name (default: bob). Repeat it as --to &lt;recipient&gt;=&lt;kas&gt; (no --amount) to pay several recipients in one transaction: one output each, in the order given, one change output and one fee
 - `--amount &lt;kas&gt;`: Amount in KAS, up to 8 decimals (default: 1)
 - `--network &lt;name&gt;`: simulated, simnet, devnet, testnet-10, testnet-12 or mainnet (default: the config's default target)
 - `--fee-rate &lt;sompiPerMass&gt;`: Whole sompi per gram of mass, at least 1 (default: 1 in the simulator, 100 on real networks; not a live estimate)
@@ -62,7 +63,7 @@ title: hardkas tx
 - `--lock-time-ms &lt;t&gt;`: Absolute lock time as milliseconds since the epoch (at or above 500000000000): valid only once the node's past median time is above it; `tx send` refuses to broadcast it earlier. Not with --lock-time-daa; not on the simulator
 - `--confirm-distant-lock-time` (Default: `false`): Plan a lock time more than about a day past the node's position (864000 DAA, or 86400000 ms); refused without it (LOCK_TIME_DISTANT_UNCONFIRMED)
 - `--provider &lt;type&gt;` (Default: `auto`): Provider mode (auto, rpc, simulated)
-- `--url &lt;url&gt;`: Node wRPC URL (default: the network's rpcUrl in hardkas.config.ts; without one, ws://127.0.0.1:18210 for simnet and devnet)
+- `--url &lt;url&gt;`: Node wRPC URL (default: the network's rpcUrl in hardkas.config.ts; without one, ws://127.0.0.1:18210 for simnet and ws://127.0.0.1:18610 for devnet)
 - `--out &lt;path&gt;`: Save plan as artifact JSON
 - `--save &lt;path&gt;`: Alias for --out (Save plan as artifact JSON)
 - `--workflow-id &lt;id&gt;`: Optional deterministic workflow ID override

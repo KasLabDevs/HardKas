@@ -94,6 +94,8 @@ export const HardkasSchemas = {
   SilverCovenantV1: "hardkas.silverCovenant.v1",
   /** The official SilverScript runner's verdicts on scenario transactions (contract execution, never node evidence). */
   SilverVmTestV1: "hardkas.silverVmTest.v1",
+  /** R4-S · `silver test --on-node`: a node's verdicts on the real transactions the runner's test cases describe. */
+  SilverNodeTestV1: "hardkas.silverNodeTest.v1",
   SilverCorpusV1: "hardkas.silverCorpus.v1",
   SilverCorpusCaseV1: "hardkas.silverCorpusCase.v1",
   SilverCorpusVerifyV1: "hardkas.silverCorpusVerify.v1",

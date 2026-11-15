@@ -10,6 +10,15 @@ import { assertNodeKind, stripBom, summarizeNodeIdentity } from "@hardkas/core";
 // INT9-A (review M-3): `localnet` only for a record the managed localnet evidenced; a node proven by its endpoint is `rpc`
 import { recordModeOf } from "../runners/l1-node-target.js";
 import { ALLOW_UNVERIFIED_RUNNER_HELP, exactValuesText, readExactJson, readExactTestsJson, readExactValuesJson, registerSilverDevFrameworkCommands } from "./silver-dev-framework.js";
+// R4-S · `silver test --on-node`: its help texts and mode checks (the run itself is imported when asked for)
+import {
+  SILVER_TEST_FROM_HELP,
+  SILVER_TEST_NETWORK_HELP,
+  SILVER_TEST_ON_NODE_HELP,
+  SILVER_TEST_TIMEOUT_HELP,
+  SILVER_TEST_URL_HELP,
+  assertSilverTestModeOptions
+} from "../runners/silver-test-node-runner.js";
 
 /**
  * `hardkas silver` — SilverScript v1 through upstream authorities only.
@@ -1119,19 +1128,32 @@ export function registerSilverCommand(program: Command) {
   silver
     .command("test <record>")
     .description(
-      `Run a compiled contract's tests on the SilverScript runner (cli-debugger) ${UI.maturity("experimental")} (script engine on scenario transactions; not transaction validity). ` +
-        "Exit codes: 0 every test passed; 1 a test failed (SILVER_TEST_FAILED) or the runner gave no verdict (SILVER_RUNNER_FAILED, _START_FAILED, _CHANGED, _TIMEOUT, _OUTPUT_UNRECOGNIZED, _PROTOCOL_ERROR or _INTERNAL_ERROR); 2 usage; 3 runner refused by the trust policy (SILVER_RUNNER_UNVERIFIED); 4 tampered compile record"
+      `Run a compiled contract's tests on the SilverScript runner (cli-debugger) ${UI.maturity("experimental")} (script engine on scenario transactions, verdict level SCRIPT_VM; not transaction validity), or with --on-node on a Kaspa node (each case's real transaction, verdict level CONSENSUS_SIMNET on simnet; a case no real transaction reproduces is NOT_REPRODUCIBLE, never a pass). ` +
+        "Exit codes: 0 every test passed; 1 a test failed (SILVER_TEST_FAILED) or the runner gave no verdict (SILVER_RUNNER_FAILED, _START_FAILED, _CHANGED, _TIMEOUT, _OUTPUT_UNRECOGNIZED, _PROTOCOL_ERROR or _INTERNAL_ERROR), with --on-node a case without a node verdict (SILVER_TEST_INCONCLUSIVE, SILVER_TEST_NOT_REPRODUCIBLE) or a run the node setup or a send stopped (SILVER_TEST_FUNDING_FAILED, SILVER_SUBMIT_NOT_SENT, SILVER_SUBMIT_OUTCOME_UNKNOWN, SILVER_CONFIRMATION_TIMEOUT); 2 usage; 3 runner refused by the trust policy (SILVER_RUNNER_UNVERIFIED), or a network refused by policy; 4 tampered compile record"
     )
     .requiredOption("--tests <file>", 'Runner test file (.test.json); a sig argument may be {"signature":"<account>"}')
     .option("--args <file>", "The constructor arguments the record was compiled with")
     .option("--contract <name>", "Contract, when the artifact has several")
     .option("--runner <path>", "SilverScript runner (cli-debugger) binary (default: $HARDKAS_SILVER_RUNNER, else <HARDKAS_HOME>/toolchains/cli-debugger/1.0.0)")
     .option("--allow-unverified-runner", ALLOW_UNVERIFIED_RUNNER_HELP, false)
-    .option("--out <file>", "Record path (default .hardkas/artifacts/silver-vm/)")
+    // R4-S · the node mode (packages/cli/src/runners/silver-test-node-runner.ts)
+    .option("--on-node", SILVER_TEST_ON_NODE_HELP, false)
+    .option("--network <network>", SILVER_TEST_NETWORK_HELP)
+    .option("--url <url>", SILVER_TEST_URL_HELP)
+    .option("--from <account>", SILVER_TEST_FROM_HELP)
+    .option("--timeout <seconds>", SILVER_TEST_TIMEOUT_HELP)
+    .option("--out <file>", "Record path (default .hardkas/artifacts/silver-vm/; with --on-node .hardkas/artifacts/silver/)")
     .option("--password-env <env>", PASSWORD_ENV_HELP)
     .option("--password-stdin", PASSWORD_STDIN_HELP, false)
     .option("--json", "Output as JSON", false)
     .action(async (file: string, opts: any) => {
+      // R4-S: mainnet refused first (any spelling or alias), then the mode's options, then the node mode on its own path
+      await refuseSilverMainnetFirst(opts.network);
+      assertSilverTestModeOptions(opts);
+      if (opts.onNode) {
+        const { runSilverTestOnNode } = await import("../runners/silver-test-node-runner.js");
+        return runSilverTestOnNode(file, opts, silverOnChainKit);
+      }
       const keys = keySource(opts);
       const core = await import("@hardkas/core");
       const { HARDKAS_VERSION } = await import("@hardkas/artifacts");
@@ -1227,9 +1249,13 @@ export function registerSilverCommand(program: Command) {
             runnerStatus: r.runnerStatus,
             exitCode: r.exitCode,
             signedArgs: r.signedArgs.length,
-            outputSha256: sha256(`${r.stdout}\u0000${r.stderr}`)
+            outputSha256: sha256(`${r.stdout}\u0000${r.stderr}`),
+            // R4-S: whose verdict this is — the runner's (SCRIPT_VM), with its trust; never a node's
+            verdictLevel: "SCRIPT_VM" as const,
+            runnerTrust
           })),
-          summary: { total: results.length, passed: results.length - failed, failed },
+          // R4-S: the level every verdict of this run reached (a runner run: SCRIPT_VM for every case)
+          summary: { total: results.length, passed: results.length - failed, failed, level: "SCRIPT_VM" as const, casesAtLevel: results.length },
           status: failed === 0 ? "PASS" : "FAIL"
         },
         "silverVmTest",
@@ -1242,7 +1268,7 @@ export function registerSilverCommand(program: Command) {
           `  ${r.outcome === "PASS" ? pc.green("PASS") : pc.red("FAIL")}  ${r.name}${r.runnerStatus === "PASS (expected failure)" ? pc.dim("  (expected failure)") : ""}`,
           ...(r.outcome === "FAIL" ? r.stderr.trim().split(/\r?\n/).filter(Boolean).map((l) => pc.dim(`        ${l}`)) : [])
         ]),
-        `${results.length} tests: ${results.length - failed} passed, ${failed} failed ${pc.dim("· contract execution only: not transaction validity, not node evidence")}`
+        `${results.length} tests: ${results.length - failed} passed, ${failed} failed ${pc.dim(`· level SCRIPT_VM (${verified ? "VERIFIED" : "UNVERIFIED"} runner) for ${results.length} of ${results.length} cases · contract execution only: not transaction validity, not node evidence (--on-node asks a node)`)}`
       ];
       print(opts.json, record, recordPath, lines);
       if (failed > 0) fail("SILVER_TEST_FAILED", `${failed} of ${results.length} tests failed on the SilverScript runner`);

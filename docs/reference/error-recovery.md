@@ -16,7 +16,7 @@ Example:
 hardkas tx send testnet-signed.json \
   --network mainnet \
   --provider rpc \
-  --url ws://mainnet-node.example:16110
+  --url ws://mainnet-node.example:18110
 ```
 
 Resolution:

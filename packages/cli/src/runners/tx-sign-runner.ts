@@ -22,6 +22,12 @@ export interface TxSignRunnerInput {
   keystorePassword?: string;
   /** Machine-readable output: never prompts. */
   json?: boolean;
+  /**
+   * TX-SEND-URL-1: the node the caller's `--url` names (the `tx send` shortcut, whose plan and send steps use it too). The
+   * covenant-input check before signing asks this node instead of the workspace's endpoint. Only from the caller: never
+   * read from the plan, whose recorded rpcUrl a hand-written plan could point at another node.
+   */
+  url?: string;
 }
 
 /** Whether signing as `account` needs its owner's keystore password: an encrypted real account (development accounts need none). */
@@ -139,6 +145,24 @@ export async function runTxSign(input: TxSignRunnerInput): Promise<SignedTxArtif
   // plan's own.
   const sdk = await Hardkas.open({ cwd: workspaceRoot || process.cwd(), signer, network: executionTarget.network });
 
+  // TX-SEND-URL-1: with an explicit --url, the node asked about the inputs is that one, through the shared endpoint
+  // authority (as `tx send` and `accounts consolidate` do). The client is this runner's: it is closed below.
+  let urlClient: { close(): Promise<void> } | undefined;
+  try {
+    if (input.url && executionTarget.mode !== "simulator") {
+      const { resolveNodeEndpoint } = await import("@hardkas/config");
+      const { JsonWrpcKaspaClient } = await import("@hardkas/kaspa-rpc");
+      const rpcUrl = resolveNodeEndpoint({ config: sdk.config.config, networkId: String(executionTarget.network), explicitUrl: input.url }).url;
+      // NODE-NETWORK-IDENTITY-1: the inputs are checked only on a node that says it serves the plan's network
+      const client = new JsonWrpcKaspaClient({ rpcUrl, expectedNetworkId: String(executionTarget.network) });
+      urlClient = client;
+      (sdk as any).rpc = client;
+    }
+  } catch (e) {
+    await sdk.close();
+    throw e;
+  }
+
   try {
     const signedArtifact = await sdk.tx.sign(planArtifact as any, accountName, {
       ...(append !== undefined ? { append } : {}),
@@ -150,6 +174,7 @@ export async function runTxSign(input: TxSignRunnerInput): Promise<SignedTxArtif
     return signedArtifact;
   } finally {
     // RESOURCE-LIFECYCLE-1 (RL-I1/RL-I3): the SDK opened above is released here; the signer handed to it is not its own.
+    if (urlClient) await urlClient.close().catch(() => {});
     await sdk.close();
   }
 }

@@ -62,8 +62,17 @@ export class UpstreamPlannerError extends Error {
 export interface TxPlanRunnerInput {
   targetName?: string;
   from: string;
-  to: string;
-  amount: string;
+  /** The recipient (one-recipient form); required unless `outputs` is given, never together with it. */
+  to?: string;
+  /** Amount in KAS (one-recipient form); required unless `outputs` is given, never together with it. */
+  amount?: string;
+  /**
+   * R4-T · several recipients paid by ONE transaction (`tx batch --one-transaction`, `tx plan --to <r>=<kas> …`): one
+   * payment output per entry, in this order, then one change output and one fee. Exactly one of `to` + `amount` and
+   * `outputs` (TX_PLAN_RECIPIENTS_CONFLICT; an empty list TX_PLAN_RECIPIENTS_INVALID). One entry plans exactly what
+   * `to` + `amount` plans. The plan's `to` and `amountSompi` name the first recipient; `outputs` records every one.
+   */
+  outputs?: ReadonlyArray<{ readonly to: string; readonly amount: string }>;
   networkId?: string;
   feeRate?: string;
   /** TX-FEE-GUARD-1: total fee limit in sompi (--max-fee); recorded in the plan and enforced again at sign and send. */
@@ -135,14 +144,43 @@ const isInsufficientFunds = (e: unknown): boolean =>
   (e as any)?.code === "INSUFFICIENT_FUNDS_UPSTREAM" || /insufficient funds/i.test(e instanceof Error ? e.message : String(e));
 
 /**
+ * R4-T · the recipients of a plan given as `outputs`, checked for their form: never with `to`/`amount`
+ * (TX_PLAN_RECIPIENTS_CONFLICT), a non-empty list of { to, amount } strings (TX_PLAN_RECIPIENTS_INVALID). Undefined for
+ * the one-recipient form, planned exactly as before. Pure.
+ */
+function cliRecipientsOf(input: TxPlanRunnerInput): Array<{ to: string; amount: string }> | undefined {
+  if (input.outputs === undefined) return undefined;
+  if (input.to !== undefined || input.amount !== undefined) {
+    throw new HardkasError(
+      "TX_PLAN_RECIPIENTS_CONFLICT",
+      "a plan names its recipient either as to + amount or as a list of recipients (several in one transaction), not both. Nothing was planned."
+    );
+  }
+  if (!Array.isArray(input.outputs) || input.outputs.length === 0) {
+    throw new HardkasError("TX_PLAN_RECIPIENTS_INVALID", "the list of recipients is empty: a plan pays at least one. Nothing was planned.");
+  }
+  return input.outputs.map((r, i) => {
+    if (typeof r?.to !== "string" || r.to.trim() === "" || typeof r?.amount !== "string" || r.amount.trim() === "") {
+      throw new HardkasError("TX_PLAN_RECIPIENTS_INVALID", `recipient ${i + 1} needs a recipient (account or address) and an amount in KAS. Nothing was planned.`);
+    }
+    return { to: r.to, amount: r.amount };
+  });
+}
+
+/**
  * Reusable logic for transaction planning.
  */
 export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifact> {
+  // R4-T · several recipients (`outputs`): exactly one of the two forms, decided before anything connects; a single entry
+  // IS the one-recipient form (the same plan, byte for byte)
+  const recipients = cliRecipientsOf(input);
+  if (recipients !== undefined && recipients.length === 1) {
+    const { outputs: _single, ...rest } = input;
+    return runTxPlan({ ...rest, to: recipients[0]!.to, amount: recipients[0]!.amount });
+  }
   const {
     targetName,
     from,
-    to,
-    amount,
     networkId,
     feeRate,
     config,
@@ -151,9 +189,22 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
     workflowId,
     assumptionLevel
   } = input;
+  const to = recipients ? recipients[0]!.to : (input.to as string);
+  const amount = recipients ? recipients[0]!.amount : (input.amount as string);
 
   const resolvedConfig = workspaceRoot ? { ...config, cwd: workspaceRoot } : config;
   const amountSompi = parseKasToSompi(amount);
+  // R4-T: every recipient's amount (KAS, the rules of --amount), above 0 (the first is the plan's `amountSompi`)
+  const recipientAmounts = recipients?.map((r, i) => {
+    const sompi = parseKasToSompi(r.amount);
+    if (sompi <= 0n) {
+      throw new HardkasError(
+        "TX_PLAN_RECIPIENTS_INVALID",
+        `recipient ${i + 1} (${r.to}): the amount must be above 0 KAS (Kaspa value-transfer outputs require amount > 0). Nothing was planned.`
+      );
+    }
+    return sompi;
+  });
   // TX-FEE-GUARD-1: a fee rate is a positive integer (INVALID_FEE_RATE), a fee limit a positive integer of sompi
   // (INVALID_MAX_FEE); both are decided before anything connects
   const feeRateSompiPerMass = feeRate !== undefined ? parseFeeRate(feeRate, "--fee-rate") : undefined;
@@ -198,6 +249,21 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
 
   const fromAddress = fromAccount.address as string;
   const toAddress = toAccount.address as string;
+  // R4-T: every other recipient is resolved and checked like `to`; they go to the planner as its payment outputs, in the
+  // order given (one-recipient form: none)
+  const recipientOutputs = recipients?.map((r, i) => {
+    let address = toAddress;
+    if (i > 0) {
+      const account = resolveHardkasAccount({ nameOrAddress: r.to, config: resolvedConfig, executionTarget: execution });
+      assertAccountCompatible(account, execution);
+      if (!account.address) {
+        throw new HardkasError("TX_PLAN_RECIPIENTS_INVALID", `recipient ${i + 1} ('${r.to}') resolves to an account without an address. Nothing was planned.`);
+      }
+      address = account.address as string;
+    }
+    return { address, amountSompi: recipientAmounts![i]! };
+  });
+  const outputsRequest = recipientOutputs ? { outputs: recipientOutputs } : {};
   // ECDSA spends: a payment from an ECDSA account is planned on a node network (the signer signs it with ECDSA); the
   // simulator keeps refusing one, before anything connects (below). RC1 · D7 refused every spend from an ECDSA address.
 
@@ -311,7 +377,8 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
       amountSompi,
       feeRate: actualFeeRate,
       networkId: resolvedNetwork,
-      ...(simulatorChange ? { changeAddress: simulatorChange } : {})
+      ...(simulatorChange ? { changeAddress: simulatorChange } : {}),
+      ...outputsRequest
     });
 
     mode = "simulator";
@@ -485,7 +552,8 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
             feeRate: actualFeeRate,
             networkId: resolvedNetwork,
             ...(excludedOutpoints.size > 0 ? { excludeOutpoints: excludedOutpoints } : {}),
-            ...(changeAddressResolved ? { changeAddress: changeAddressResolved } : {})
+            ...(changeAddressResolved ? { changeAddress: changeAddressResolved } : {}),
+            ...outputsRequest
           });
         } catch (plannerError: unknown) {
           // TX-BATCH-1: short of funds while the index still lists what earlier payments of this run spent: read

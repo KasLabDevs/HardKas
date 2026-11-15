@@ -51,6 +51,8 @@ export { PAYMENT_PREFLIGHT_GUARANTEE_ECDSA } from "./payment-preflight.js";
 // RC1 · D3: tx.send's synced-node rule (NODE_NOT_SYNCED) and its explicit local escape (allowUnsyncedNode)
 export { unsyncedSendAllowedOn, type SendNodeSyncOptions } from "./send-node-sync.js";
 export type { SendTxOptions } from "./tx.js";
+// R4-T · one recipient of tx.plan({ outputs }): several recipients paid by one transaction
+export type { TxPlanRecipient } from "./tx.js";
 // R3-C · browser wallets (KasWare, Kastle, Kaspire) sign, HardKAS builds, verifies, assembles, sends and records. The
 // browser half (wallets/index.ts) is also exported by the browser-safe entry @hardkas/sdk/client.
 export {

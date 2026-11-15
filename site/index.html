@@ -1061,7 +1061,7 @@ Account kind = synthetic · target mode = rpc<br/>
 <tr><td>Relative timelock spend</td><td>🟢 REAL_NODE_EVIDENCE</td><td><code>silver spend --sequence</code></td></tr>
 <tr><td>1:1 covenant: genesis and auth-bound transitions (transaction v1)</td><td>🟢 REAL_NODE_EVIDENCE</td><td><code>silver covenant genesis</code> · <code>silver covenant transition</code></td></tr>
 <tr><td>General covenant support</td><td>⚪ NOT_CLAIMED</td><td>—</td></tr>
-<tr><td>Contract tests on the official SilverScript runner (script engine only, not transaction validity)</td><td>🟡 EXPERIMENTAL</td><td><code>silver test</code></td></tr>
+<tr><td>Contract tests on the official SilverScript runner (script engine only, not transaction validity), or with <code>--on-node</code> as real transactions judged by a Kaspa node</td><td>🟡 EXPERIMENTAL</td><td><code>silver test</code></td></tr>
 <tr><td>Transaction v1</td><td>🟡 PARTIAL: built only by the covenant commands; <code>tx plan</code> builds v0</td><td>—</td></tr>
 <tr><td>Compute budget</td><td>🟡 PARTIAL: set by hand with an explicit fee; no estimator exists</td><td><code>--compute-budget</code> · <code>--fee</code></td></tr>
 <tr><td>Fee estimation</td><td>🟡 PARTIAL: automatic for standard payments (Generator); explicit for v1</td><td><code>tx plan</code></td></tr>
@@ -2143,7 +2143,7 @@ hardkas chaos replay --run-seed 42">
 </tr>
 <tr>
 <td><code>--to &lt;address&gt;</code></td>
-<td>Recipient: Kaspa address or account name (default bob)</td>
+<td>Recipient: Kaspa address or account name (default bob). Repeat it as <code>--to &lt;recipient&gt;=&lt;kas&gt;</code>, without <code>--amount</code>, to pay several recipients in one transaction</td>
 </tr>
 <tr>
 <td><code>--amount &lt;kas&gt;</code></td>
@@ -2163,7 +2163,7 @@ hardkas chaos replay --run-seed 42">
 </tr>
 <tr>
 <td><code>--url &lt;url&gt;</code></td>
-<td>Node wRPC endpoint (default ws://127.0.0.1:18210 for simnet and devnet)</td>
+<td>Node wRPC endpoint (default ws://127.0.0.1:18210 for simnet, ws://127.0.0.1:18610 for devnet)</td>
 </tr>
 <tr>
 <td><code>--out &lt;path&gt;</code></td>
@@ -2449,7 +2449,7 @@ hardkas chaos replay --run-seed 42">
 </table>
 </div>
 <div class="command">
-<code>hardkas silver test &lt;record&gt; --tests &lt;file&gt;</code><span>Experimental: run a compiled contract's tests on the official SilverScript runner (script engine on scenario transactions, not transaction validity).</span>
+<code>hardkas silver test &lt;record&gt; --tests &lt;file&gt;</code><span>Experimental: run a compiled contract's tests on the official SilverScript runner (script engine on scenario transactions, not transaction validity), or with <code>--on-node</code> each case as the real transaction it describes, judged by a Kaspa node.</span>
 <table class="flags">
 <tr>
 <td><code>&lt;record&gt;</code></td>

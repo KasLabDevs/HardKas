@@ -243,6 +243,19 @@ const llmsTxt = `# HardKAS — Developer Framework & Transaction Simulator for K
 - CLI Command Reference: https://hardkas.dev/docs/reference/cli
 - SDK Core Reference: https://hardkas.dev/docs/reference/sdk/core/
 
+## Fast path: send KAS on a simnet node (three commands)
+Use it when you already have a funded private key and a running node.
+- If the node is not the HardKAS localnet (ws://127.0.0.1:18210), first put its URL in hardkas.config.mjs:
+  export default { networks: { simnet: { kind: "kaspa-node", network: "simnet", rpcUrl: "ws://<host>:18210" } } };
+- tx send plans, signs and sends in one step, and prints the Tx ID.
+\`\`\`bash
+export PK=<private key hex>; export PW=<any keystore password>
+hardkas accounts real import --name payer --address <kaspasim:sender> --network simnet --private-key-env PK --password-env PW
+hardkas tx send --from payer --to <kaspasim:recipient> --amount 10 --network simnet --password-env PW --yes
+hardkas tx wait <txId> --until confirmed --network simnet
+\`\`\`
+Use the four-step flow (tx plan, artifact inspect, tx sign, tx send) instead when the plan must be reviewed before signing.
+
 ## Verified CLI Quickstart
 \`\`\`bash
 npx @hardkas/cli init my-app

@@ -255,7 +255,8 @@ node scripts/gate-hermetic.mjs --home <a HARDKAS_HOME with kaspa-wasm installed>
 ```
 
 That run gives the gate a private HARDKAS_HOME, makes Docker unreachable, refuses every non-loopback connection and,
-by default, also refuses loopback connections to the canonical Kaspa wRPC ports 16210, 17210, 18210 and 18211. A
+by default, also refuses loopback connections to the managed localnet's ports 16210 (gRPC), 17210 (Borsh wRPC) and
+18210 (JSON wRPC), and to 18211, a port some suites fall back to. A
 kaspad or simulator that happens to run on the machine therefore cannot change the verdict. `--deny-ports a,b` replaces
 that list. `--allow-local-node-ports` turns it off for diagnosis only, and a run made that way is not the release gate.
 Node-dependent suites run at their own levels (`vitest.simnet.config.ts`, `vitest.silverc.config.ts`), never inside

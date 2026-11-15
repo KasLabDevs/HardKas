@@ -225,6 +225,57 @@ function warnAmountNumberIsKas(): void {
   }
 }
 
+/**
+ * R4-T · one recipient of a payment to several recipients in ONE transaction (`tx.plan({ outputs })`). `to` is an account
+ * name, an address or an account, as `tx.plan`'s `to`; `amount` follows the units of `tx.plan`'s `amount` (a string is
+ * KAS, a bigint is sompi, a number is KAS with a one-time warning), except that "all" (a consolidation) is not a recipient.
+ */
+export interface TxPlanRecipient {
+  to: string | HardkasAccount;
+  amount: string | number | bigint;
+}
+
+/**
+ * R4-T · the recipients `tx.plan` was given as `outputs`, checked for their form (exactly one of `to` + `amount` and
+ * `outputs`; a non-empty array of { to, amount }; no "all"); `undefined` for the one-recipient form (`to` + `amount`),
+ * which is planned exactly as before. Pure: decided before anything is resolved or read.
+ */
+function recipientsOf(options: { to?: unknown; amount?: unknown; outputs?: unknown }): TxPlanRecipient[] | undefined {
+  if (options.outputs === undefined) {
+    // `to` and `amount` became optional in the type when `outputs` was added: a call with neither form is refused typed
+    // here, before anything is resolved or read, instead of failing later on an undefined recipient or amount
+    if (options.to === undefined || options.to === null || options.amount === undefined || options.amount === null) {
+      throw new HardkasError(
+        "TX_PLAN_RECIPIENTS_INVALID",
+        "tx.plan needs a recipient: `to` and `amount` (one recipient) or `outputs` (several recipients in one transaction). Nothing was planned."
+      );
+    }
+    return undefined;
+  }
+  if (options.to !== undefined || options.amount !== undefined) {
+    throw new HardkasError(
+      "TX_PLAN_RECIPIENTS_CONFLICT",
+      "tx.plan takes either `to` and `amount` (one recipient) or `outputs` (several recipients in one transaction), not both. Nothing was planned."
+    );
+  }
+  const invalid = (why: string): never => {
+    throw new HardkasError("TX_PLAN_RECIPIENTS_INVALID", `tx.plan outputs: ${why}. Nothing was planned.`);
+  };
+  if (!Array.isArray(options.outputs) || options.outputs.length === 0) invalid("expected a non-empty array of { to, amount }");
+  return (options.outputs as unknown[]).map((r, i) => {
+    const entry = r as { to?: unknown; amount?: unknown } | null;
+    if (typeof entry !== "object" || entry === null) return invalid(`outputs[${i}] is not { to, amount }`);
+    const to = entry.to;
+    if (!((typeof to === "string" && to.trim() !== "") || (typeof to === "object" && to !== null))) invalid(`outputs[${i}].to is not an account name, an address or an account`);
+    const amount = entry.amount;
+    if (typeof amount !== "string" && typeof amount !== "number" && typeof amount !== "bigint") invalid(`outputs[${i}].amount is not a string (KAS), a bigint (sompi) or a number (KAS)`);
+    if (typeof amount === "string" && amount.trim().toLowerCase() === "all") {
+      invalid(`outputs[${i}].amount is "all": a consolidation pays one destination (tx.plan({ to, amount: "all" })), never one of several recipients`);
+    }
+    return { to: to as string | HardkasAccount, amount: amount as string | number | bigint };
+  });
+}
+
 /** The version a signed payload declares (0 when it says none or cannot be read). */
 function payloadVersionOf(rawTransaction: unknown): number {
   let tx: any = rawTransaction;
@@ -742,18 +793,31 @@ export class HardkasTx {
   }
 
   /**
-   * Plans a transaction.
+   * Plans a transaction: one recipient (`to` + `amount`), or several recipients in ONE transaction (`outputs`; R4-T).
    */
   async plan(options: {
     from: string | HardkasAccount;
-    to: string | HardkasAccount;
+    /** The recipient (one-recipient form). Required unless `outputs` is given; never together with it. */
+    to?: string | HardkasAccount;
     /**
      * L1-11 · units: a `string` is KAS ("1.5"; "all" consolidates), a `bigint` is SOMPI (150_000_000n), and a `number`
      * is KAS (1.5) — unlike `parseKasToSompi(number)` of @hardkas/core, which reads a number as sompi. A number is
      * ambiguous across the two APIs and loses precision past 2^53: pass a string (KAS) or a bigint (sompi). Passing a
      * number emits a one-time process warning (HARDKAS_AMOUNT_NUMBER_IS_KAS).
+     * Required unless `outputs` is given; never together with it.
      */
-    amount: string | number | bigint;
+    amount?: string | number | bigint;
+    /**
+     * R4-T · several recipients paid by ONE transaction: one payment output per entry, in this order, then one change
+     * output and one fee — the alternative to `to` + `amount` (exactly one of the two forms: TX_PLAN_RECIPIENTS_CONFLICT;
+     * a malformed list, a non-positive amount or "all": TX_PLAN_RECIPIENTS_INVALID). Each `amount` has the units of
+     * `amount`. One entry plans exactly what `to` + `amount` plans (the same plan, byte for byte). The plan records every
+     * output in `outputs`; its `to` and `amountSompi` name the FIRST recipient. Every guard of a payment applies (fee
+     * limit, fee rate bound, lock time, mainnet, covenant UTXOs never spent, CHANGE_BELOW_STANDARD_OUTPUT), and more
+     * recipients than fit in one standard transaction are refused before anything is signed (TOO_MANY_OUTPUTS, which
+     * names how many fit). `tx.sign` and `tx.send` check every output against the plan (SIGNED_PLAN_MISMATCH).
+     */
+    outputs?: readonly TxPlanRecipient[];
     /**
      * Sompi per gram. Default: the node's fee estimate for "normal" priority (bounded, FEE_RATE_ABOVE_BOUND above
      * `networks[<net>].maxFeeRate`, default 10,000), never below the relay minimum; at the minimum the plan pays the relay
@@ -790,6 +854,13 @@ export class HardkasTx {
     // CLTV · the lock time asked for, typed and checked against Kaspa's threshold before anything is read
     // (LOCK_TIME_INVALID); absent or a bare 0 is none (RC1 · D7 refused every other one: LOCK_TIME_NOT_SUPPORTED)
     const lockTimeRequest = parseLockTimeRequest((options as { lockTime?: unknown }).lockTime, "tx.plan lockTime");
+    // R4-T · several recipients (`outputs`), checked for their form before anything is resolved or read; undefined for
+    // the one-recipient form, planned exactly as before. A single entry IS the one-recipient form (the same plan).
+    const recipients = recipientsOf(options);
+    if (recipients !== undefined && recipients.length === 1) {
+      const { outputs: _single, ...rest } = options;
+      return this.plan({ ...rest, to: recipients[0]!.to, amount: recipients[0]!.amount });
+    }
     // MAINNET TOTAL LOCKDOWN: a plan on mainnet needs mainnet chain state (UTXOs, DAA score, fee estimate) — a mainnet
     // read: refused before anything is resolved or read (the instance's network and a `networkProfile` alike)
     assertSdkMayConnect(this.sdk, "sdk.tx.plan", options.networkProfile);
@@ -801,17 +872,27 @@ export class HardkasTx {
       typeof options.from === "string"
         ? await this.sdk.accounts.resolve(options.from, world)
         : options.from;
-    const toAccount =
-      typeof options.to === "string"
-        ? await this.sdk.accounts.resolve(options.to, world)
-        : options.to;
+    // R4-T: every recipient is resolved, checked and validated as the one recipient is (in the order given)
+    const toAccounts: HardkasAccount[] = [];
+    for (const recipient of recipients ?? [{ to: options.to as string | HardkasAccount }]) {
+      toAccounts.push(
+        typeof recipient.to === "string"
+          ? await this.sdk.accounts.resolve(recipient.to, world)
+          : recipient.to
+      );
+    }
+    const toAccount = toAccounts[0]!;
     assertAccountCompatible(fromAccount, world);
-    assertAccountCompatible(toAccount, world);
+    for (const account of toAccounts) assertAccountCompatible(account, world);
 
     if (!fromAccount.address)
       throw new Error(`From account ${fromAccount.name} has no address.`);
-    if (!toAccount.address)
-      throw new Error(`To account ${toAccount.name} has no address.`);
+    for (const account of toAccounts) {
+      if (!account.address)
+        throw new Error(`To account ${account.name} has no address.`);
+    }
+    // the (first) recipient's address, checked just above
+    const toAddress = toAccount.address as string;
     const activeNetwork = options.networkProfile || (this.sdk.network as string);
     // the world of this plan: the resolved execution target's mode when planning on this instance's network (the
     // authority; a `{ mode: "simulator", network: "simnet" }` target is the simulator whatever the label says), else
@@ -836,19 +917,31 @@ export class HardkasTx {
       return this.createConsolidationPlan({
          account: fromAccount,
          selectedUtxos: res.data,
-         destination: toAccount.address,
+         destination: toAddress,
          network: activeNetwork,
          ...(options.feeRate !== undefined ? { feeRate: options.feeRate } : {}),
          ...(planMaxFeeSompi !== undefined ? { maxFeeSompi: planMaxFeeSompi } : {})
       });
     }
 
-    const amountSompi =
-      typeof options.amount === "string"
-        ? parseKasToSompi(options.amount)
-        : typeof options.amount === "number"
-          ? (warnAmountNumberIsKas(), parseKasToSompi(options.amount.toString()))
-          : options.amount;
+    const toSompi = (amount: string | number | bigint | undefined) =>
+      typeof amount === "string"
+        ? parseKasToSompi(amount)
+        : typeof amount === "number"
+          ? (warnAmountNumberIsKas(), parseKasToSompi(amount.toString()))
+          : amount;
+    // R4-T: every recipient's amount, in sompi, positive (the first is the plan's `amountSompi`)
+    const recipientAmounts: bigint[] | undefined = recipients?.map((recipient, i) => {
+      const sompi = toSompi(recipient.amount);
+      if (typeof sompi !== "bigint" || sompi <= 0n) {
+        throw new HardkasError(
+          "TX_PLAN_RECIPIENTS_INVALID",
+          `tx.plan outputs[${i}].amount must be above 0 (Kaspa value-transfer outputs require amount > 0). Nothing was planned.`
+        );
+      }
+      return sompi;
+    });
+    const amountSompi = recipientAmounts ? recipientAmounts[0]! : (toSompi(options.amount) as bigint);
 
     if (amountSompi === 0n) {
       throw new Error(
@@ -856,7 +949,7 @@ export class HardkasTx {
       );
     }
 
-    
+
     const allowMainnet =
       (this.sdk.config.config.networks?.mainnet as any)?.allowMainnet === true;
 
@@ -867,12 +960,18 @@ export class HardkasTx {
     const addressNetwork =
       simulatedWorld && networkTypeOf(declaredForAddresses) === undefined && !isSimnetNetworkId(declaredForAddresses) ? "simulated" : declaredForAddresses;
     validateAddressNetwork(fromAccount.address, addressNetwork, allowMainnet, { simulated: simulatedWorld });
-    validateAddressNetwork(toAccount.address, addressNetwork, allowMainnet, { simulated: simulatedWorld });
+    for (const account of toAccounts) {
+      validateAddressNetwork(account.address as string, addressNetwork, allowMainnet, { simulated: simulatedWorld });
+    }
     if (options.changeAddress) {
       validateAddressNetwork(options.changeAddress, addressNetwork, allowMainnet, { simulated: simulatedWorld });
     }
     // AUD-28: validated above; forwarded to whichever planner runs (never dropped).
     const changeRequest = options.changeAddress ? { changeAddress: options.changeAddress } : {};
+    // R4-T: several recipients go to the planner as its payment outputs, in the order given (one-recipient form: none)
+    const outputsRequest = recipientAmounts
+      ? { outputs: toAccounts.map((account, i) => ({ address: account.address as string, amountSompi: recipientAmounts[i]! })) }
+      : {};
 
     // Wave 2(c) · AUD-19: the mempool observation the real-network snapshot was
     // filtered against, recorded in the plan (observer-local evidence).
@@ -984,20 +1083,22 @@ export class HardkasTx {
     if (isSimulatedForPlan) {
       result = await planService.planTransactionSynthetic({
         fromAddress: fromAccount.address,
-        toAddress: toAccount.address,
+        toAddress,
         amountSompi,
         feeRate,
         networkId: activeNetwork,
-        ...changeRequest
+        ...changeRequest,
+        ...outputsRequest
       });
     } else {
       result = await planService.planTransactionUpstream({
         fromAddress: fromAccount.address,
-        toAddress: toAccount.address,
+        toAddress,
         amountSompi,
         feeRate,
         networkId: activeNetwork,
-        ...changeRequest
+        ...changeRequest,
+        ...outputsRequest
       });
     }
 
@@ -1037,8 +1138,8 @@ export class HardkasTx {
         accountName: fromAccount.name
       },
       to: {
-        input: toAccount.name || toAccount.address,
-        address: toAccount.address
+        input: toAccount.name || toAddress,
+        address: toAddress
       },
       amountSompi,
       plan: builderPlan,
