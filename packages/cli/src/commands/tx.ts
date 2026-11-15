@@ -676,7 +676,7 @@ export function registerTxCommands(program: Command) {
           }
           const loaded = await loadHardkasConfig({ workspaceRoot });
 
-          // MAINNET TOTAL LOCKDOWN (RC2 oracle D2a/D2b, O5): a send on mainnet is MAINNET_BROADCAST_DISABLED, decided FIRST —
+          // MAINNET TOTAL LOCKDOWN (lockdown oracle D2a/D2b, O5): a send on mainnet is MAINNET_BROADCAST_DISABLED, decided FIRST —
           // before the artifact is validated, the confirmation asked, a name resolved (EXECUTION_NETWORK_MISMATCH) or the
           // public-network gate reached (PUBLIC_NETWORK_BLOCKED), and in the shortcut mode before its plan step (it was
           // TX_SEND_FAILED wrapping the plan's refusal). Any spelling, an alias that declares one, a --target on it, the

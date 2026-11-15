@@ -164,7 +164,7 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
 
   const { resolveWorkspaceExecution, resolveProvider } = await import("@hardkas/config");
   const { assertAccountCompatible, resolveHardkasAccount } = await import("@hardkas/accounts");
-  // MAINNET TOTAL LOCKDOWN (RC2 oracle D2b): mainnet first, before the name is resolved as a HardKAS network — every
+  // MAINNET TOTAL LOCKDOWN (lockdown oracle D2b): mainnet first, before the name is resolved as a HardKAS network — every
   // spelling (`kaspa`, `mainnet-1`, `kaspa-mainnet`…), an alias that declares one, a target on it, or the workspace's
   // own network when none is named — so it is never UNKNOWN_NETWORK
   const { refuseMainnetConnection, targetNetworkOf } = await import("../mainnet-guard.js");

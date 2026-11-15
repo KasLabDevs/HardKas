@@ -11,7 +11,7 @@ export * from './snapshot/index.js';
 export type { WalletOutpoint, WalletWatchUtxo, WalletWatchEvent, WalletWatchListener, WalletWatchHandle } from './watch.js';
 export { watchAddress, type AddressWatchEvent, type AddressWatchListener, type AddressWatchHandle, type WalletWatchMaturityEvent, type UtxoWatchEngineOptions } from './watch.js';
 export * from './fee-estimator.js';
-// A3 (rc2 audit): the credential redaction every HardKAS error text applies to a node endpoint, for the packages built on
+// A3 (audit 2026-11-13): the credential redaction every HardKAS error text applies to a node endpoint, for the packages built on
 // the toolkit that do not depend on @hardkas/core themselves (plugin-rpc-backend, sync-daemon).
 export { redactUrlCredentials, redactUrlCredentialsInText } from '@hardkas/core';
 export * from './query-api.js';

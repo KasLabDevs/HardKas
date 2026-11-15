@@ -458,7 +458,7 @@ export class WalletToolkit {
      * `hardkas.tx.plan`. Throws WALLET_TOOLKIT_METHOD_UNSUPPORTED.
      */
     public async planSend(opts: { to: string; amount: bigint; priority?: FeePriority; feeRate?: bigint }): Promise<any> {
-        // E-03 (rc2 audit): it used to resolve to `{ message: "This is a stub…" }`, an object that is not a plan
+        // E-03 (audit 2026-11-13): it used to resolve to `{ message: "This is a stub…" }`, an object that is not a plan
         throw new HardkasError(
             "WALLET_TOOLKIT_METHOD_UNSUPPORTED",
             "WalletToolkit.planSend() is not supported: it never planned anything. Use wallet.estimateFee({ to, amount }) " +
@@ -472,7 +472,7 @@ export class WalletToolkit {
      * `hardkas.tx.send` on network "simulated"). Throws WALLET_TOOLKIT_METHOD_UNSUPPORTED.
      */
     public async sendSimulated(opts: { to: string; amount: bigint; priority?: FeePriority; feeRate?: bigint }): Promise<string> {
-        // E-03 (rc2 audit): it used to return `sim_tx_<timestamp>`, a string shaped like a transaction id, for nothing
+        // E-03 (audit 2026-11-13): it used to return `sim_tx_<timestamp>`, a string shaped like a transaction id, for nothing
         throw new HardkasError(
             "WALLET_TOOLKIT_METHOD_UNSUPPORTED",
             "WalletToolkit.sendSimulated() is not supported: it never planned, signed or sent anything (it returned an " +

@@ -4,7 +4,7 @@ import type { AddressInfo } from "node:net";
 import { checkKaspaRpcHealth, waitForKaspaRpcReady } from "../src/health";
 
 // -----------------------------------------------------------------------------
-// MAINNET TOTAL LOCKDOWN · RC2 oracle O7. `checkKaspaRpcHealth` had no network parameter: a caller that knew the URL was
+// MAINNET TOTAL LOCKDOWN · lockdown oracle O7. `checkKaspaRpcHealth` had no network parameter: a caller that knew the URL was
 // mainnet could not avoid the identity exchange (one connection, getServerInfo). With `expectedNetworkId` a mainnet
 // network (any spelling) is refused before any connection, and `waitForKaspaRpcReady` returns that refusal at once
 // instead of polling to `maxWaitMs` (waiting cannot change a refusal). The "node" is a loopback socket that counts

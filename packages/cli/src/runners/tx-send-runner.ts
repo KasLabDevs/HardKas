@@ -49,7 +49,7 @@ export interface TxSendRunnerResult {
 export async function runTxSend(input: TxSendRunnerInput): Promise<TxSendRunnerResult> {
   const { targetName, signedArtifact, network, config, url } = input;
 
-  // MAINNET TOTAL LOCKDOWN (RC2 oracle D2): the broadcast refusal first, for every caller of this runner — before the
+  // MAINNET TOTAL LOCKDOWN (lockdown oracle D2): the broadcast refusal first, for every caller of this runner — before the
   // artifact's target is resolved, a --network compared (EXECUTION_NETWORK_MISMATCH) or the SDK opened
   // (PUBLIC_NETWORK_BLOCKED)
   {

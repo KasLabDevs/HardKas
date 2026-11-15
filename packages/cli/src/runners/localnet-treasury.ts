@@ -65,8 +65,8 @@ const DEFAULT_TREASURY_TIMEOUT_MS = 300_000;
 /**
  * The treasury's pending journal, relative to HARDKAS_HOME (`$HARDKAS_HOME`, else `~/.hardkas`). The managed localnet and
  * its treasury are one per machine, so the journal is too: a journal per workspace (or per current directory) let
- * `localnet seed` in one folder re-pay a recipient whose payment `fund --treasury` in another had left unknown (rc2
- * re-audit F1).
+ * `localnet seed` in one folder re-pay a recipient whose payment `fund --treasury` in another had left unknown
+ * (re-audit 2026-11-14, F1).
  */
 export const LOCALNET_TREASURY_PENDING_FILE = path.join("localnet", "treasury-pending.json");
 
@@ -385,7 +385,7 @@ function selectMinimalUtxos(utxos: readonly Utxo[], targetSompi: bigint, count: 
 }
 
 /**
- * B2 (rc2 audit), found by the real-Generator test: when the largest-first inputs cover the payment almost exactly (all
+ * B2 (audit 2026-11-13), found by the real-Generator test: when the largest-first inputs cover the payment almost exactly (all
  * but the last one leave a remainder of roughly 0.0003 to 0.006 KAS over it), the pinned Generator stops one input early
  * and refuses its own dust change ("Storage mass exceeds maximum" → CHANGE_BELOW_STANDARD_OUTPUT), however many
  * candidates it is given (it only consumes the prefix it needs). Measured: six 50 KAS + 30,000 sompi UTXOs for 250 KAS

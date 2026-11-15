@@ -29,7 +29,7 @@ Verify the installation:
 ```bash
 hardkas --version
 ```
-This reports the installed version. A build of this candidate reports `0.13.0-rc.2`.
+This reports the installed version. A build of this candidate reports `0.13.0-rc.3`.
 
 ## Create a New Project
 

@@ -5,7 +5,7 @@ import path from "node:path";
 import { KASPAD_REFERENCE_IMAGE, isPinnedImageReference } from "@hardkas/core";
 import { runDeployInit, DEPLOY_INIT_FILES } from "../src/commands/deploy.js";
 
-// A2 (rc2 audit) · `hardkas deploy init` overwrote the developer's Dockerfile, docker-compose.yml, .env.example and
+// A2 (audit 2026-11-13) · `hardkas deploy init` overwrote the developer's Dockerfile, docker-compose.yml, .env.example and
 // PRODUCTION_CHECKLIST.md without checking, printing "Created", and recommended HARDKAS_KASPAD_IMAGE=kaspanet/kaspad:latest,
 // a floating tag every HardKAS node path refuses (NODE_IMAGE_DIGEST_REQUIRED). Now an existing target is refused before
 // anything is written (DEPLOY_INIT_FILE_EXISTS, exit 2) unless --force, and the image is the pinned reference image.

@@ -4,11 +4,11 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-// RC2 · P: a release tarball carries only what its entry points reach. The CLI tarball of the RC rehearsal carried
+// release check P: a release tarball carries only what its entry points reach. The CLI tarball of the RC rehearsal carried
 // 539 KB of chunks of an older build that nothing imported (turbo restored its cache over a dirty dist/), and the audit
 // did not look for unreferenced files. Here scripts/check-release-tarballs.mjs flags every unreferenced file
 // (UNREFERENCED_FILE), follows every reference form a build emits, and accepts the resources the manifest declares, on
-// tarballs built in memory as pnpm pack writes them. The real tarballs are audited by running the script (rc2 evidence P).
+// tarballs built in memory as pnpm pack writes them. The real tarballs are audited by running the script (release evidence P).
 // The release build and its stamp: release-build-clean.test.ts.
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
@@ -71,7 +71,7 @@ const findings = (tgz: Buffer) => auditTarball(tgz, opts).findings as string[];
 const unreferenced = (tgz: Buffer) => findings(tgz).filter((f) => f.startsWith("UNREFERENCED_FILE"));
 const D_TS = "export declare const x = 1;\n";
 
-describe("RC2 · P · UNREFERENCED_FILE in scripts/check-release-tarballs.mjs", () => {
+describe("release check P · UNREFERENCED_FILE in scripts/check-release-tarballs.mjs", () => {
   it("flags a leftover chunk of an older build that nothing imports, and not the chunk the entry imports", () => {
     const stale = "export const old = 'HardKAS never contacts a mainnet node';\n".repeat(10);
     const tgz = pkgTar({

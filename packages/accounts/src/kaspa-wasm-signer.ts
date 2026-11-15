@@ -65,7 +65,7 @@ export async function resolveAccountPrivateKey(
   let pkValue = account.privateKeyEnv ? process.env[account.privateKeyEnv] : undefined;
 
   if (!pkValue && account.privateKey) {
-    // A6 (rc2 audit): every mainnet spelling (`mainnet-<n>`, `kaspa`, `kaspa-mainnet`, any case), not the literal string
+    // A6 (audit 2026-11-13): every mainnet spelling (`mainnet-<n>`, `kaspa`, `kaspa-mainnet`, any case), not the literal string
     // "mainnet" only: this refusal must still hold the day the signing lockdown (which runs first today) is lifted
     if (isMainnetNetworkId(options.networkId)) {
       throw new Error(

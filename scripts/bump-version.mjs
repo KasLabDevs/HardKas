@@ -2,7 +2,7 @@
 //
 //   node scripts/bump-version.mjs <old-version> <new-version> [--dry-run]
 //
-// rc2 audit E-09: the versions used to be two constants in this file (a no-op until someone edited both, and the
+// audit 2026-11-13 E-09: the versions used to be two constants in this file (a no-op until someone edited both, and the
 // script rewrote itself), and the replace ran over every file, the history included. Now:
 //   - both versions are arguments, each a semver version (x.y.z or x.y.z-pre), and they must differ;
 //   - a version is replaced only where it stands alone: "1.2.3-beta.1" does not match inside "1.2.3-beta.10" or

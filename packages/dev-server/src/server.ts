@@ -152,7 +152,7 @@ export function createDevServer(config: DevServerConfig) {
   );
 
   // 3. Bearer Token Authentication Middleware
-  // A8 (rc2 audit): the token in the query string (`?token=`, which an EventSource needs: it cannot send headers) is
+  // A8 (audit 2026-11-13): the token in the query string (`?token=`, which an EventSource needs: it cannot send headers) is
   // accepted on GET/HEAD requests only; a mutating request carries it in `Authorization: Bearer`, so it never ends in a
   // shell history or a proxy log through a POST URL. The comparison is constant-time (crypto.timingSafeEqual over
   // fixed-length digests); it was a plain `!==`.

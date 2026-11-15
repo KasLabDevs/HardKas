@@ -1,5 +1,5 @@
 /**
- * rc2 audit E-10: the local torture bucket ran the CLI from `../../cli/dist/index.js` beside @hardkas/testing, a path
+ * audit 2026-11-13 E-10: the local torture bucket ran the CLI from `../../cli/dist/index.js` beside @hardkas/testing, a path
  * only a flat node_modules has; under pnpm's isolated layout `hardkas torture` failed its first case (INIT_FAILED).
  * `torture matrix` and `torture replay` now pass the CLI's own entry to every case (`cliEntry`), resolved by the
  * package's own name (`@hardkas/cli/bin`, Node's self-reference), which holds under any layout. The buckets are
@@ -35,7 +35,7 @@ function tmp(prefix: string) {
   return d;
 }
 
-describe("rc2 audit E-10 · resolveOwnCliEntry", () => {
+describe("audit 2026-11-13 E-10 · resolveOwnCliEntry", () => {
   afterEach(() => {
     for (const r of roots.splice(0)) fs.rmSync(r, { recursive: true, force: true });
   });
@@ -67,7 +67,7 @@ describe("rc2 audit E-10 · resolveOwnCliEntry", () => {
   });
 });
 
-describe("rc2 audit E-10 · torture passes the CLI's own entry to every case", () => {
+describe("audit 2026-11-13 E-10 · torture passes the CLI's own entry to every case", () => {
   let project: string;
   let startedIn: string;
   beforeEach(() => {

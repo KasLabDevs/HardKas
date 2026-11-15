@@ -386,7 +386,7 @@ export async function runLocalnetFund(opts: LocalnetFundOptions): Promise<void> 
       if (e?.code !== "LOCALNET_FUND_MATURITY_TIMEOUT") failed = e;
     }
     if (failed !== undefined) {
-      // rc2 re-audit F5: a failure keeps its own error (the settle wait that followed could replace it with
+      // re-audit 2026-11-14 F5: a failure keeps its own error (the settle wait that followed could replace it with
       // UTXO_SET_NOT_STABLE; with no result to measure there is nothing to settle for) and leaves no stopped chain
       // behind: the recipient's miner is stopped and the liveness miner restarted unless --stop-miner.
       if (!opts.keepMiner) {
@@ -527,7 +527,7 @@ export async function waitForMatureFunding(
 }
 
 /**
- * B1 (rc2 audit): how long the chain may take to settle when the caller has no time of its own left, or names none. A
+ * B1 (audit 2026-11-13): how long the chain may take to settle when the caller has no time of its own left, or names none. A
  * settle normally takes a few seconds once the miner is stopped; this only bounds the case where it never happens.
  */
 export const DEFAULT_DAG_SETTLE_TIMEOUT_MS = 60_000;
@@ -547,7 +547,7 @@ async function dagSettleTimeout(timeoutMs: number, last: VirtualFingerprint | nu
 
 /**
  * Waits until the virtual DAG reports the same state on `stablePolls` consecutive polls (with a virtual DAA score above
- * 0). B1 (rc2 audit): bounded by `timeoutMs` (default DEFAULT_DAG_SETTLE_TIMEOUT_MS); past it, LOCALNET_DAG_SETTLE_TIMEOUT.
+ * 0). B1 (audit 2026-11-13): bounded by `timeoutMs` (default DEFAULT_DAG_SETTLE_TIMEOUT_MS); past it, LOCALNET_DAG_SETTLE_TIMEOUT.
  * It used to loop forever on a chain that never settles (a miner still running) or never started (virtual DAA 0).
  */
 export async function waitForVirtualDagSettle(
@@ -586,7 +586,7 @@ async function waitForFundingSpendability(
     minSpendableSompi?: bigint;
     stablePolls?: number;
     pollIntervalMs?: number;
-    /** B1 (rc2 audit): the whole wait is bounded (default DEFAULT_DAG_SETTLE_TIMEOUT_MS); it used to have no deadline. */
+    /** B1 (audit 2026-11-13): the whole wait is bounded (default DEFAULT_DAG_SETTLE_TIMEOUT_MS); it used to have no deadline. */
     timeoutMs?: number;
   }
 ): Promise<{ virtualFingerprint: VirtualFingerprint; spendableSompi: bigint }> {
@@ -670,7 +670,7 @@ export async function runLocalnetFork(opts: {
   UI.header(`HardKAS Localnet Fork`);
 
   const { config } = await loadHardkasConfig();
-  // MAINNET TOTAL LOCKDOWN (RC2 oracle D2b): mainnet first — every spelling and an alias that declares one — before the
+  // MAINNET TOTAL LOCKDOWN (lockdown oracle D2b): mainnet first — every spelling and an alias that declares one — before the
   // name is resolved as a HardKAS network ("Unknown HardKAS network")
   const { refuseMainnetConnection } = await import("../mainnet-guard.js");
   refuseMainnetConnection(config as any, [opts.network], "localnet fork");
@@ -835,7 +835,7 @@ export async function restartToccataMiner(address: string) {
 }
 
 /**
- * B1 (rc2 audit): verified like the node's stop (stopToccataContainerVerified): a miner Docker cannot stop, or one still
+ * B1 (audit 2026-11-13): verified like the node's stop (stopToccataContainerVerified): a miner Docker cannot stop, or one still
  * up after `docker stop`, is LOCALNET_STOP_FAILED (Docker unreachable: LOCALNET_DOCKER_UNAVAILABLE). A miner that does
  * not exist is stopped. Every error used to be swallowed, so a miner still running made the settle that follows wait forever.
  */

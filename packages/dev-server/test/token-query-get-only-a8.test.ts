@@ -4,7 +4,7 @@ import { describe, it, expect, vi, afterEach } from "vitest";
 import crypto from "node:crypto";
 import { createDevServer } from "../src/server.js";
 
-// A8 (rc2 audit) · the dev-server session token was accepted as `?token=` on every /api route, mutating ones included
+// A8 (audit 2026-11-13) · the dev-server session token was accepted as `?token=` on every /api route, mutating ones included
 // (so it could end in shell history and proxy logs through a POST URL), and compared with `!==`. Now `?token=` is
 // accepted on GET/HEAD only (what an EventSource needs) and the comparison is crypto.timingSafeEqual.
 

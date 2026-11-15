@@ -14,7 +14,7 @@ export interface RpcHealthCheckOptions {
    */
   readonly protocol?: "wrpc" | "http" | undefined;
   /**
-   * MAINNET TOTAL LOCKDOWN (RC2 oracle O7): the network the caller uses the node as, when it knows it. A mainnet network
+   * MAINNET TOTAL LOCKDOWN (lockdown oracle O7): the network the caller uses the node as, when it knows it. A mainnet network
    * (any spelling) is refused before any connection (`ready: false`, the error MAINNET_CONNECTION_DISABLED); another
    * one is the transport's identity check (NODE-NETWORK-IDENTITY-1). Without it, the node is still asked its identity
    * once and refused when it answers mainnet.

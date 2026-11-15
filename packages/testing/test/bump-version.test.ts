@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-// rc2 audit E-09: scripts/bump-version.mjs held both versions as constants (a no-op until both were edited; it
+// audit 2026-11-13 E-09: scripts/bump-version.mjs held both versions as constants (a no-op until both were edited; it
 // rewrote itself) and replaced the old version in every .json/.ts/.mjs/.md file, release notes and evidence included.
 // It now takes both versions as arguments, replaces a version only where it stands alone, and never rewrites history:
 // CHANGELOG.md, docs/release/, docs/community/ and docs/internal/.
@@ -14,7 +14,7 @@ const bump = await import(pathToFileURL(path.join(ROOT, "scripts", "bump-version
 const OLD = "9.9.9-test.1";
 const NEW = "9.9.9-test.2";
 
-describe("rc2 audit E-09 · scripts/bump-version.mjs", () => {
+describe("audit 2026-11-13 E-09 · scripts/bump-version.mjs", () => {
   const roots: string[] = [];
   afterEach(() => {
     for (const r of roots.splice(0)) fs.rmSync(r, { recursive: true, force: true });

@@ -54,7 +54,7 @@ export class IndexerToolkit implements SnapshotParticipant {
 
     public async watch(address: string | string[], handler?: WatchHandler): Promise<void> {
         const addresses = Array.isArray(address) ? address : [address];
-        // rc2 audit (E-03): this used to poll a placeholder source (`source: {}`) every second forever: nothing was
+        // audit 2026-11-13 (E-03): this used to poll a placeholder source (`source: {}`) every second forever: nothing was
         // ever watched, and the timer kept the process alive. Without a backend that can list UTXOs there is nothing
         // to poll, so no timer is started and the caller is told once.
         const backend = this.backend;
@@ -131,7 +131,7 @@ export class IndexerToolkit implements SnapshotParticipant {
     }
 
     /**
-     * Indexes a HardKAS artifact under its content hash. E-03 (rc2 audit): the artifact must carry a real content hash
+     * Indexes a HardKAS artifact under its content hash. E-03 (audit 2026-11-13): the artifact must carry a real content hash
      * that its content verifies (`checkArtifactIdentity`); anything else is refused (INDEXER_ARTIFACT_IDENTITY_INVALID)
      * and nothing is indexed. It used to index any object under `artifact.id || 'mock_hash'` with the invented path
      * `/mock/path/<id>.json`. `options.filePath` is where the artifact is stored, when the caller knows it (else empty);

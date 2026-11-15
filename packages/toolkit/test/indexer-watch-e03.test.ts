@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { IndexerToolkit } from "../src/indexer.js";
 
-// rc2 audit (E-03): IndexerToolkit.watch() polled a placeholder source (`source: {}`) every second forever, watching
+// audit 2026-11-13 (E-03): IndexerToolkit.watch() polled a placeholder source (`source: {}`) every second forever, watching
 // nothing and keeping the process alive. Without a backend that lists UTXOs it now starts no timer and warns once;
 // with one, it polls that backend and reports each new UTXO once.
 describe("E-03 · IndexerToolkit.watch watches something or says it does not", () => {

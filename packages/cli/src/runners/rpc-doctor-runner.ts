@@ -10,7 +10,7 @@ export interface RpcDoctorOptions {
 }
 
 /**
- * A5 (rc2 audit): the EVM chain ids that are always mainnet. It MIRRORS `KNOWN_MAINNET_CHAIN_IDS` of @hardkas/l2
+ * A5 (audit 2026-11-13): the EVM chain ids that are always mainnet. It MIRRORS `KNOWN_MAINNET_CHAIN_IDS` of @hardkas/l2
  * (packages/l2/src/network-guard.ts: 1 = Ethereum mainnet, 38833 = Igra mainnet), which the CLI cannot import (the L2
  * package is not a CLI dependency in this release). Keep the two lists equal.
  */
@@ -166,7 +166,7 @@ async function checkHttpJsonRpcEndpoint(url: string): Promise<LayeredHealthResul
     const latencyMs = Date.now() - start;
     if (res.ok) {
       const data = (await res.json()) as Record<string, unknown>;
-      // A5 (rc2 audit): an EVM mainnet answered its identity (eth_chainId) and nothing else is asked; it is reported as
+      // A5 (audit 2026-11-13): an EVM mainnet answered its identity (eth_chainId) and nothing else is asked; it is reported as
       // refused, never as "ready"
       const chainId = typeof data.result === "string" && /^0x[0-9a-fA-F]+$/.test(data.result) ? Number.parseInt(data.result, 16) : undefined;
       if (chainId !== undefined && L2_MAINNET_CHAIN_IDS.has(chainId)) {
@@ -208,7 +208,7 @@ export interface RpcDoctorResult {
 }
 
 /**
- * Probes each endpoint and prints its report; returns every endpoint's result. D-09 (rc2 audit): the caller decides the
+ * Probes each endpoint and prints its report; returns every endpoint's result. D-09 (audit 2026-11-13): the caller decides the
  * exit code from them (`hardkas rpc doctor` exits 1 when any endpoint is not ready; it used to exit 0 in every case).
  */
 export async function runRpcDoctor(options: RpcDoctorOptions): Promise<RpcDoctorResult[]> {
@@ -249,7 +249,7 @@ export async function runRpcDoctor(options: RpcDoctorOptions): Promise<RpcDoctor
     }
 
     let result: LayeredHealthResult;
-    // A5 (rc2 audit): an endpoint the config declares as a mainnet (by name, by its network, its environment or its
+    // A5 (audit 2026-11-13): an endpoint the config declares as a mainnet (by name, by its network, its environment or its
     // chain id) is refused before any TCP or HTTP contact
     if (found && configDeclaresMainnet(found[0], found[1])) {
       result = mainnetRefused(url, "nothing");

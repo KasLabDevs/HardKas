@@ -6,7 +6,7 @@ import { JsonWrpcKaspaClient } from "@hardkas/kaspa-rpc";
 
 const execFileAsync = util.promisify(execFile);
 
-/** A7 (rc2 audit): the most blocks one `POST /mine` asks for. */
+/** A7 (audit 2026-11-13): the most blocks one `POST /mine` asks for. */
 export const MAX_MINE_BLOCKS = 100;
 /** A7: how `POST /mine` waits for the chain to advance. Exported so tests can shorten it; not part of the HTTP surface. */
 export const simnetMineTiming = { pollMs: 250, perBlockMs: 500, graceMs: 5_000, maxWaitMs: 60_000 };
@@ -29,7 +29,7 @@ simnetRoutes.post("/mine", async (c) => {
       return c.json({ ok: false, error: "Mining endpoint is strictly restricted to local loopback" }, 403);
     }
     
-    // A7 (rc2 audit): `blocks` is a bounded positive integer (it was parseInt'ed unchecked: NaN mined for 0 ms, and
+    // A7 (audit 2026-11-13): `blocks` is a bounded positive integer (it was parseInt'ed unchecked: NaN mined for 0 ms, and
     // blocks=100000000 held the request and the miner container for months), refused before anything runs
     const rawBlocks = c.req.query("blocks") ?? "10";
     const blocks = /^\d{1,6}$/.test(rawBlocks) ? Number(rawBlocks) : NaN;

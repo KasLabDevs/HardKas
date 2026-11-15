@@ -9,7 +9,7 @@ import http from 'http';
 async function main() {
     console.log("Starting App 1: Merchant Backend (PostgreSQL)");
 
-    // A11 (rc2 audit): no built-in database password (it defaulted to postgres://hardkas:hardkaspassword@…): the
+    // A11 (audit 2026-11-13): no built-in database password (it defaulted to postgres://hardkas:hardkaspassword@…): the
     // connection string is the operator's, from DATABASE_URL, or the app does not start
     const databaseUrl = process.env.DATABASE_URL;
     if (!databaseUrl || databaseUrl.trim() === '') {
@@ -32,7 +32,7 @@ async function main() {
         }
     });
 
-    // A11 (rc2 audit): loopback only, like everything else in the repository (it listened on every interface, so /health
+    // A11 (audit 2026-11-13): loopback only, like everything else in the repository (it listened on every interface, so /health
     // and /metrics were served to the LAN)
     const PORT = Number(process.env.PORT || 3000);
     const HOST = '127.0.0.1';

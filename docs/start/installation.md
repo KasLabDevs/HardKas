@@ -110,8 +110,8 @@ travels with your lockfile. Name the version: until this release is tagged
 (`0.13.0-rc.1`). Do not use the `rc` dist-tag: it still points to the 0.12 line.
 
 ```bash
-npm install --save-dev @hardkas/cli@0.13.0-rc.2
-npm install @hardkas/sdk@0.13.0-rc.2
+npm install --save-dev @hardkas/cli@0.13.0-rc.3
+npm install @hardkas/sdk@0.13.0-rc.3
 ```
 
 In a TypeScript project, also install the Node.js type definitions. The
@@ -138,8 +138,8 @@ at run time. You can leave it unapproved (or approve it: it is the official
 
 `npm audit` may report advisories in the dependency tree: `@hono/node-server`
 used by the local dev-server (GHSA-rmxm-3fg6-px4f, in a feature HardKAS does not
-use) and, after the test step below, `vitest` 2. (`zod` moved to 4.6.7 after
-0.13.0-rc.2, which fixes GHSA-mrhx-c7xc-m3w5.) Keep HardKAS to local development
+use) and, after the test step below, `vitest` 2. (`zod` is 4.6.7 since
+0.13.0-rc.3, which fixes GHSA-mrhx-c7xc-m3w5.) Keep HardKAS to local development
 networks, as the rest of this guide does.
 
 ### Installing the CLI globally
@@ -147,7 +147,7 @@ networks, as the rest of this guide does.
 A global install gives you a bare `hardkas` command:
 
 ```bash
-npm install --global @hardkas/cli@0.13.0-rc.2
+npm install --global @hardkas/cli@0.13.0-rc.3
 ```
 
 This is convenient for exploration, but a globally installed CLI can drift from
@@ -174,7 +174,7 @@ already created it, so `init` adds no test script or test dependencies, and its
 "npm test" hint does not apply yet. To run the example test:
 
 ```bash
-npm install --save-dev @hardkas/testing@0.13.0-rc.2 vitest@^2
+npm install --save-dev @hardkas/testing@0.13.0-rc.3 vitest@^2
 npm pkg set scripts.test="vitest run"
 npm test
 ```

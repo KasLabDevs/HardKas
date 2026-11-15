@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// rc2 audit B4 (c): `localnet seed --timeout abc` became NaN (parseInt): the treasury transaction was broadcast, the
+// audit 2026-11-13 B4 (c): `localnet seed --timeout abc` became NaN (parseInt): the treasury transaction was broadcast, the
 // confirmation loop never ran, and the command reported a timeout at once with the miner stopped. --timeout is now a
 // positive whole number of milliseconds, and the seed amount (and a treasury transfer) a positive KAS amount, refused as
 // usage errors (exit 2) before any runner is called. The runners are doubles here: nothing is contacted.

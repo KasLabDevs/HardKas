@@ -1,4 +1,6 @@
-## [Unreleased]
+## [0.13.0-rc.3] - 2026-11-15 - Release candidate
+
+- Synchronize the coordinated package versions, runtime identity, scaffolds and current documentation to `0.13.0-rc.3` ([release notes](docs/release/0.13.0-rc.3-notes.md)).
 
 Capabilities the SDK had and the CLI did not, and capabilities neither had. Every one is proven end to end on an isolated rusty-kaspad 2.1.0 node (simnet), refuses mainnet before any key is read or any connection is opened, and reaches a public testnet only behind the payments opt-in.
 

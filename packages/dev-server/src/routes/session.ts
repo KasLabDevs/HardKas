@@ -33,7 +33,7 @@ sessionRoutes.get("/list", (c) => {
 });
 
 /**
- * A7 (rc2 audit): what a session operation that is not implemented answers. `/start`, `/snapshot`, `/time-travel`,
+ * A7 (audit 2026-11-13): what a session operation that is not implemented answers. `/start`, `/snapshot`, `/time-travel`,
  * `/export` and `/import` used to answer `ok: true` with invented ids ("sess_<now>", "snap_<now>", "view_<now>",
  * `exported: true, content: {}`, `imported: true`) although nothing was created, stored, exported or imported. They now
  * say so: HTTP 501, `ok: false`, SESSION_OPERATION_UNSUPPORTED, `data.status: "unsupported"` (as `/replay` does).

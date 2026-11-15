@@ -11,7 +11,7 @@ import { startDecoy, attemptsIn, type Decoy } from "./helpers/mainnet-decoy.js";
 vi.setConfig({ testTimeout: 180_000, hookTimeout: 180_000 });
 
 // -----------------------------------------------------------------------------
-// MAINNET TOTAL LOCKDOWN · RC2 oracle D1 and D2 (2026-11-09). Every mainnet refusal is the lockdown's own typed code in
+// MAINNET TOTAL LOCKDOWN · lockdown oracle D1 and D2 (2026-11-09). Every mainnet refusal is the lockdown's own typed code in
 // the command's JSON ENVELOPE (`code` at the top level — never a text inside another error's message), decided FIRST:
 // before a network name is resolved as a HardKAS network and before the public-network gate. Order (@hardkas/core
 // mainnet-policy): a signature MAINNET_SIGNING_DISABLED, a send MAINNET_BROADCAST_DISABLED, anything else that would

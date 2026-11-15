@@ -5,7 +5,7 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-// rc2 audit E-01, E-02, E-09: `node scripts/check-release-tarballs.mjs --pack` packs only a commit's files.
+// audit 2026-11-13 E-01, E-02, E-09: `node scripts/check-release-tarballs.mjs --pack` packs only a commit's files.
 //   - E-01: a git-ignored event log under packages/cli/templates/ was packed (npm ignores .gitignore when `files` names
 //     the directory) and the audit passed it: every packed entry outside dist/ must now be a file git tracks, and
 //     .jsonl/.log/.csv entries are scanned for private paths and tokens;
@@ -70,7 +70,7 @@ function cliLike(extra: Record<string, string> = {}) {
 const findings = (tgz: Buffer) =>
   t.auditTarball(tgz, { releaseVersion: VERSION, published: new Set(["@hardkas/fixture"]), mitText: MIT }).findings as string[];
 
-describe("rc2 audit E-01 · every packed entry outside dist/ is a file git tracks", () => {
+describe("audit 2026-11-13 E-01 · every packed entry outside dist/ is a file git tracks", () => {
   const entries = [
     "package.json",
     "README.md",
@@ -115,7 +115,7 @@ describe("rc2 audit E-01 · every packed entry outside dist/ is a file git track
   });
 });
 
-describe("rc2 audit E-02 · --pack refuses a release build that is not a commit's", () => {
+describe("audit 2026-11-13 E-02 · --pack refuses a release build that is not a commit's", () => {
   const clean = { available: true, head: HEAD, changes: [] as string[], tracked: new Set<string>(), untracked: new Set<string>() };
   const stamp = { kind: t.RELEASE_BUILD_KIND, version: VERSION, gitHead: HEAD, gitDirty: false, packages: {} };
   const verify = (s: unknown, g: unknown, allowDirty = false) => t.verifyReleaseProvenance(s, g, { allowDirty }) as string[];
@@ -195,7 +195,7 @@ describe("rc2 audit E-02 · --pack refuses a release build that is not a commit'
   });
 });
 
-describe("rc2 audit E-09 · --pack's output folder may hold only tarballs", () => {
+describe("audit 2026-11-13 E-09 · --pack's output folder may hold only tarballs", () => {
   const roots: string[] = [];
   afterEach(() => {
     for (const r of roots.splice(0)) fs.rmSync(r, { recursive: true, force: true });

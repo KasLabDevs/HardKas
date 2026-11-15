@@ -25,7 +25,7 @@ describe("Account Hardening & Security Guards", () => {
     if (fs.existsSync(keystoreDir))
       fs.rmSync(keystoreDir, { recursive: true, force: true });
     process.env.HARDKAS_TEST_PW = "test-password";
-    // rc2 audit A9: import refuses a key that is not a valid secp256k1 secret (this test used 64 zeros) and an --address
+    // audit 2026-11-13 A9: import refuses a key that is not a valid secp256k1 secret (this test used 64 zeros) and an --address
     // that is not the key's own (it used a made-up one); a valid key and the testnet address it controls are used
     process.env.HARDKAS_TEST_PK = "01".repeat(32);
     const k: any = await loadKaspaWasm();

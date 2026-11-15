@@ -656,7 +656,7 @@ async function waitOn(input: TxWaitRunnerInput, sdk: any, network: string): Prom
       // STAGE-B-2 · C3: the node cannot serve the chain from the explicit --since (unknown or pruned); waiting cannot
       // change that, and the observer recorded nothing — end now with its typed refusal
       if (e?.code === "OBSERVE_SINCE_UNAVAILABLE") throw e;
-      // MAINNET TOTAL LOCKDOWN (RC2 oracle D1): a mainnet refusal is a decision, never a transient failure — waiting
+      // MAINNET TOTAL LOCKDOWN (lockdown oracle D1): a mainnet refusal is a decision, never a transient failure — waiting
       // cannot change it, so the wait ends now with its typed code (it polled until --timeout and ended TX_WAIT_TIMEOUT,
       // the code only inside that message). E.g. a node declared as another network that answered mainnet.
       if (/^MAINNET_(CONNECTION|SIGNING|BROADCAST)_DISABLED$/.test(String(e?.code ?? ""))) throw e;

@@ -149,7 +149,7 @@ jobs:
       - name: Artifact schema registry (check-artifact-registry)
         run: node scripts/check-artifact-registry.mjs
 
-  # rc2 audit E-08: the lint and the static security checks, which ran only in the local gauntlet
+  # audit 2026-11-13 E-08: the lint and the static security checks, which ran only in the local gauntlet
   # (scripts/run-full-gauntlet.mjs). All offline: eslint (and `tsc --noEmit` where a package's lint is that), the dev
   # server's CORS/Host/token/CSRF/redaction probes against `hardkas sandbox` on a free 127.0.0.1 port (no node, no
   # network), and two source scans. One step per gate, so a red one names itself. check-typescript-hygiene.mjs is not
@@ -205,7 +205,7 @@ jobs:
   # RC1 · R3: the release tarballs, packed as a publish packs them, before anything is published (nothing is published
   # here and no token exists in CI): first an offline audit of every tarball, then a consumer project that installs
   # the tarballs (their third-party dependencies from npmjs) and runs the CLI and the SDK from them.
-  # RC2 · P: they are packed from the release build (`pnpm release:build`: every published dist/ deleted, then built
+  # release check P: they are packed from the release build (`pnpm release:build`: every published dist/ deleted, then built
   # with turbo --force, so no cached output is restored over older files), and the audit refuses any other dist/ and
   # flags every file the entry points do not reach (UNREFERENCED_FILE).
   release-tarballs:

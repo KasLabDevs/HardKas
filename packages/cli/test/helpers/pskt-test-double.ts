@@ -53,7 +53,7 @@ export class TestFakeAdapter implements PsktRuntimeAdapter {
   }
 
   /**
-   * A1 (rc2 audit): the exported payload is a PSKB bundle (the native wire format: base64 of "PSKB" + hex of the bundle
+   * A1 (audit 2026-11-13): the exported payload is a PSKB bundle (the native wire format: base64 of "PSKB" + hex of the bundle
    * JSON) whose inputs are the plan's, so `pskt sign` can read each input's outpoint and UTXO script and ask the
    * signer's node about it, as it does for a real PSKT.
    */

@@ -12,7 +12,7 @@ import {
 export const DEPLOY_INIT_FILES = ["docker-compose.yml", "Dockerfile", ".env.example", "PRODUCTION_CHECKLIST.md"] as const;
 
 /**
- * `hardkas deploy init`: writes the deployment profile into `cwd`. A2 (rc2 audit): it used to overwrite a developer's
+ * `hardkas deploy init`: writes the deployment profile into `cwd`. A2 (audit 2026-11-13): it used to overwrite a developer's
  * existing `Dockerfile`, `docker-compose.yml`, `.env.example` and `PRODUCTION_CHECKLIST.md` without asking, and named the
  * floating `kaspanet/kaspad:latest` image that every HardKAS node path refuses (NODE_IMAGE_DIGEST_REQUIRED). Now any
  * existing target is refused, before anything is written (DEPLOY_INIT_FILE_EXISTS), unless `force`; the image is the

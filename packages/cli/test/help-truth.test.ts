@@ -79,7 +79,7 @@ describe("--help says what the CLI does", () => {
     expect(command("kaspa wallet create").description()).toMatch(/nothing is saved/);
     expect(command("localnet fork").description()).toMatch(/current UTXOs/);
     expect(option("localnet fork", "--at-daa-score").description).toMatch(/label/);
-    // rc2 audit B9: `fund --amount` says what each mode does (--treasury transfers exactly that amount), and the Treasury
+    // audit 2026-11-13 B9: `fund --amount` says what each mode does (--treasury transfers exactly that amount), and the Treasury
     // is named for what it is: a public key by design, shared by every HardKAS localnet, used on simnet only
     expect(option("localnet fund", "--amount").description).toMatch(/without --treasury, mine .*with --treasury, transfer exactly this amount/);
     expect(option("localnet fund", "--treasury").description).toMatch(/Transfer exactly --amount KAS.*several.*public by design.*simnet only/);

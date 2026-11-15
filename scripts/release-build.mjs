@@ -1,4 +1,4 @@
-// RC2 · P: the build a release is packed from. `pnpm release:build` (node scripts/release-build.mjs):
+// release check P: the build a release is packed from. `pnpm release:build` (node scripts/release-build.mjs):
 //
 //   1. deletes the `dist/` of every published package (packages/*, not `private`), so nothing an older build left there
 //      survives (it refuses if git tracks a file under one of them);
@@ -12,7 +12,7 @@
 // file for file, and its inputs are unchanged. Nothing is packed, installed or published here.
 //
 // The stamp also records the commit (`gitHead`) and whether the tree had uncommitted changes (`gitDirty`). A build of a
-// dirty tree still succeeds (local checks use it), but says so, and `--pack` refuses it (rc2 audit E-02) unless it is
+// dirty tree still succeeds (local checks use it), but says so, and `--pack` refuses it (audit 2026-11-13 E-02) unless it is
 // given `--allow-dirty`, which marks its tarballs as not for publishing.
 //
 // Exit 0: built and stamped. Exit 1: a refusal or a failed build (no stamp is left behind). Exit 2: usage.

@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/escrow",
-  "version": "0.13.0-rc.2",
+  "version": "0.13.0-rc.3",
   "description": "HardKAS escrow records and rescue drafts (typed createEscrow, resolution and signers)",
   "type": "module",
   "main": "./dist/index.js",

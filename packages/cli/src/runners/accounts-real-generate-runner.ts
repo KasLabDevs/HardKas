@@ -48,7 +48,7 @@ export async function runAccountsRealGenerate(
   );
   const count = options.count || 1;
 
-  // AUD-20: a mainnet key is never written in plaintext; refused before anything is generated. A6 (rc2 audit): every
+  // AUD-20: a mainnet key is never written in plaintext; refused before anything is generated. A6 (audit 2026-11-13): every
   // mainnet spelling and every config alias that declares mainnet, not the literal "mainnet" only, so the refusal still
   // holds the day the signing lockdown above (which answers first today) is lifted.
   const { isMainnetNetworkId, declaredNetworkIdOf } = await import("@hardkas/core");

@@ -201,7 +201,7 @@ const l2 = await import("@hardkas/l2");
 await outcome("l2.profile", () => new l2.EvmJsonRpcClient({ url: HTTP, profile: "igra-mainnet" }).getChainId());
 await outcome("l2.chainId", () => new l2.EvmJsonRpcClient({ url: HTTP, expectedChainId: 38833 }).getChainId());
 await outcome("l2.write", async () => l2.assertL2WriteAllowed({ chainId: 38833, allowMainnet: true, operation: "mll write" }));
-// RC2 oracle O7: the health check takes the network it uses the node as; a mainnet one is refused before connecting,
+// lockdown oracle O7: the health check takes the network it uses the node as; a mainnet one is refused before connecting,
 // and the readiness wait returns that refusal at once
 await outcome("health expected mainnet", () => rpcMod.checkKaspaRpcHealth({ url: URL, expectedNetworkId: "mainnet", timeoutMs: 2000 }));
 await outcome("health expected kaspa (http)", () => rpcMod.checkKaspaRpcHealth({ url: HTTP, expectedNetworkId: "kaspa", timeoutMs: 2000 }));
@@ -244,7 +244,7 @@ const evm = new l2.EvmJsonRpcClient({ url: HTTP });
 await outcome("l2 unbound eth_chainId", () => evm.getChainId());
 await outcome("l2 unbound, again", () => evm.callRpc("eth_blockNumber", []));
 await asTn.close(); await raw.close();
-// RC2 oracle O6: the SDK's fee estimate on that node is the refusal, never the relay minimum as if it were unreachable
+// lockdown oracle O6: the SDK's fee estimate on that node is the refusal, never the relay minimum as if it were unreachable
 let sdkTn;
 await outcome("sdk testnet-10 open", async () => { sdkTn = await sdkMod.Hardkas.open({ cwd: process.cwd(), network: "testnet-10", policy: { allowPublic: true } }); return { network: sdkTn.network }; });
 if (sdkTn) {

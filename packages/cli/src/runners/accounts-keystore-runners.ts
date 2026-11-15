@@ -51,7 +51,7 @@ async function importNetworkOf(address: string, explicit: string | undefined, wo
 }
 
 /**
- * A9 (rc2 audit): refuses (ACCOUNT_ADDRESS_KEY_MISMATCH) an imported address that is not the key's own (Schnorr P2PK)
+ * A9 (audit 2026-11-13): refuses (ACCOUNT_ADDRESS_KEY_MISMATCH) an imported address that is not the key's own (Schnorr P2PK)
  * address on the address's network; INVALID_PRIVATE_KEY_MATERIAL for a key that is not one. A simulator identity
  * (`kaspa:sim_…`) is no key's address by construction (the simulator signs nothing with it) and is left as it was.
  */
@@ -265,7 +265,7 @@ export async function runAccountsKeystoreImport(options: {
     throw new Error("Private key is required for import.");
   }
 
-  // A9 (rc2 audit): the address is the one the key controls, before any password is read or anything is written. It was
+  // A9 (audit 2026-11-13): the address is the one the key controls, before any password is read or anything is written. It was
   // whatever --address said, sealed into the keystore's authenticated metadata unchecked, so a mistyped address was
   // imported "successfully" and signing failed later (MISSING_INPUT_AUTHORIZER), after it may have been funded.
   // ECDSA spends: --ecdsa names the key's ECDSA P2PK address (an ECDSA address without it is ACCOUNT_KEY_SCHEME_MISMATCH)

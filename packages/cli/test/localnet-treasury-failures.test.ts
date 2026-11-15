@@ -12,7 +12,7 @@ import {
 } from "../src/runners/localnet-treasury.js";
 import { FakeLocalnet, KAS, fixtureAddress } from "./localnet-treasury-fake-node.js";
 
-// rc2 audit B4 + A10: the failure paths of the treasury distribution, with the real Generator and signer and a stand-in
+// audit 2026-11-13 B4 + A10: the failure paths of the treasury distribution, with the real Generator and signer and a stand-in
 // node (localnet-treasury-fake-node.ts).
 //  - B4: a failure restores the liveness miner unless --stop-miner, and names what was already broadcast and funded.
 //  - A10: a broadcast is classified as tx.send classifies it — the node's refusal is a rejection, an answer saying it

@@ -1,4 +1,4 @@
-// ZK crypto review after RC2 (crypto-review-plan H1, H2) at the CLI: `hardkas zk toccata verify-scripts` run as a user
+// ZK crypto review (crypto-review-plan H1, H2) at the CLI: `hardkas zk toccata verify-scripts` run as a user
 // runs it (the built CLI, one process per command). The scripts come from `zk toccata build-scripts` for the official
 // RISC Zero vector, whose proof-only lock a real rusty-kaspad v2.1.0 accepted a spend of
 // (fixtures/toccata-v2/zk/r0-groth16-official/evidence.json), and are then edited byte by byte.

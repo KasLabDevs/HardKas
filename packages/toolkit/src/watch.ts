@@ -165,7 +165,7 @@ export class UtxoWatchEngine {
             }
             this.networkId = String(networkId);
             const address = await this.getAddress();
-            // A4 (rc2 audit): every reconnection of this client is identified again before the context re-reads the address
+            // A4 (audit 2026-11-13): every reconnection of this client is identified again before the context re-reads the address
             // from it (the transport's rule, session.ts): a node behind the URL that now names mainnet or another network
             // stops the watch, and nothing it answers is reported
             const handle = await this.within(

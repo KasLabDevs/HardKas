@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { calculateDynamicFeeRate } from "../src/fee-estimator.js";
 
 /*
- * MAINNET TOTAL LOCKDOWN · RC2 oracle O6. A node used as testnet-10 that answers mainnet to its identity question is
+ * MAINNET TOTAL LOCKDOWN · lockdown oracle O6. A node used as testnet-10 that answers mainnet to its identity question is
  * refused by the transport (MAINNET_CONNECTION_DISABLED). The fee estimator caught every failure of getFeeEstimate as
  * "no estimate" and returned the relay minimum (evidence "heuristic", source "network-minimum", ok), so `sdk.fees.estimate`
  * answered a fee for a mainnet node. A mainnet refusal is now the answer: it is rethrown, typed. Any other failure keeps

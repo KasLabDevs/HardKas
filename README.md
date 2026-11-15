@@ -47,7 +47,7 @@ Requirements: **Node.js 24.22.1** exactly (the version HardKAS is built, tested 
 
 ```bash
 # Initialize a new HardKAS workspace with deterministic accounts
-npx @hardkas/cli@0.13.0-rc.2 init my-kaspa-app
+npx @hardkas/cli@0.13.0-rc.3 init my-kaspa-app
 cd my-kaspa-app
 # init writes a package.json that pins @hardkas/cli; install it so `npx hardkas` runs the project's copy
 npm install
@@ -108,7 +108,7 @@ The entire lifecycle of Kaspa UTXOs—from genesis injection to final signature 
 
 ## The Execution Contract
 
-HardKAS `0.13.0-rc.2` uses the strictly partitioned Execution Contract.
+HardKAS `0.13.0-rc.3` uses the strictly partitioned Execution Contract.
 The Execution Contract is a tuple of `(mode, domain, network)` that unambiguously identifies the context in which an artifact was created, an execution target is connected, or an account exists.
 
 - **`mode`**: The environment topology (`simulator`, `localnet`, `rpc`, `l2-rpc`)
@@ -136,7 +136,7 @@ Common targets:
 
 ## Local-First Status
 
-HardKAS `0.13.0-rc.2` is local-first deterministic transaction infrastructure
+HardKAS `0.13.0-rc.3` is local-first deterministic transaction infrastructure
 for Kaspa/Toccata development.
 
 Current baseline, verified by the release checks:
@@ -155,7 +155,7 @@ Current baseline, verified by the release checks:
 
 ### Toccata v2 Alpha Baseline
 
-The `0.13.0-rc.2` release line includes a normalized Toccata v2 localnet flow:
+The `0.13.0-rc.3` release line includes a normalized Toccata v2 localnet flow:
 
 - Docker `rusty-kaspad` v2.1.0 localnet (pinned by digest) funding with a compatible miner companion (`kaspanet/cpuminer`).
 - Standard transaction lifecycle against the local node.
@@ -174,20 +174,20 @@ Official release claims:
 - `vmConsensusEquivalence`: `NOT_CLAIMED`
 - `mainnet`: `BLOCKED_BY_POLICY`
 
-### 0.13.0-rc.2 SDK Parity
+### 0.13.0-rc.3 SDK Parity
 
-`0.13.0-rc.2` includes high-level
+`0.13.0-rc.3` includes high-level
 SDK surfaces for capabilities, localnet status/start/fund, corpus verification,
 and Silver planning/simulation/compare flows without changing the release
 claims above. It enforces strict separation of execution environments across Artifact lineage.
 
 SDK real Silver RPC/Docker execution remains explicitly unsupported in
-`0.13.0-rc.2` via `SDK_SILVER_REAL_LIFECYCLE_UNSUPPORTED`; the real
+`0.13.0-rc.3` via `SDK_SILVER_REAL_LIFECYCLE_UNSUPPORTED`; the real
 lifecycle verified by the release checks remains CLI/localnet bounded.
 
-### 0.13.0-rc.2 Programmability Builder Surface
+### 0.13.0-rc.3 Programmability Builder Surface
 
-`0.13.0-rc.2` also includes a local-only builder surface for SilverScript,
+`0.13.0-rc.3` also includes a local-only builder surface for SilverScript,
 ZK corpus fixtures, and vProgs artifact inspection. This is a programmability
 surface, not a protocol/runtime claim.
 

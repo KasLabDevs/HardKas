@@ -3,7 +3,7 @@ import { covenantIdOf } from "@hardkas/tx-builder";
 import { decodeNativePsktBundle } from "./native-sign-preflight.js";
 
 /*
- * A1 (rc2 audit) · a Kaspa signature does not commit to a network, and a PSKT session is a document a counterparty hands
+ * A1 (audit 2026-11-13) · a Kaspa signature does not commit to a network, and a PSKT session is a document a counterparty hands
  * over: its `networkId` is only what that party wrote. A session labelled "testnet-10" whose PSKT spends a mainnet UTXO
  * of the signer's key passed every check, and the signature it produced was valid on mainnet. So, before any adapter
  * signs anything:

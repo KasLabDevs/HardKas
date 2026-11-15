@@ -7,7 +7,7 @@ import {
   type LogEntry
 } from "../src/index.js";
 
-// PKG-1 (rc2 audit, area E): @hardkas/observability is published (a dependency of kaspa-rpc, jobs and toolkit) and had
+// PKG-1 (audit 2026-11-13, area E): @hardkas/observability is published (a dependency of kaspa-rpc, jobs and toolkit) and had
 // no test. These pin what it does: the logger's level filter and entry shape, the metric registry, the Prometheus text
 // format and the health snapshot.
 

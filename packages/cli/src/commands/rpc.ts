@@ -94,7 +94,7 @@ export function registerRpcCommands(program: Command) {
       const { runRpcDoctor } = await import("../runners/rpc-doctor-runner.js");
       try {
         const results = await runRpcDoctor(options);
-        // D-09 (rc2 audit): a diagnostic scripts can trust — exit 1 when any endpoint asked for is not ready (it exited 0
+        // D-09 (audit 2026-11-13): a diagnostic scripts can trust — exit 1 when any endpoint asked for is not ready (it exited 0
         // even when every endpoint failed). The report above is unchanged.
         const notReady = results.filter((r) => r.health.status !== "ready");
         if (notReady.length > 0) {

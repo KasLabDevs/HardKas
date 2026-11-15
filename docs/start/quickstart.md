@@ -9,8 +9,8 @@ candidate's packages to be published to npm. For the previous published release,
 see the [rc.1 install instructions](../release/0.13.0-rc.1-notes.md#install).
 
 ```bash
-npm install @hardkas/sdk@0.13.0-rc.2
-npm install -D @hardkas/cli@0.13.0-rc.2
+npm install @hardkas/sdk@0.13.0-rc.3
+npm install -D @hardkas/cli@0.13.0-rc.3
 ```
 
 ## 2. Initialize The Workspace

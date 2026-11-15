@@ -74,7 +74,7 @@ async function compileNetwork(explicit: string | undefined): Promise<string> {
     if (n === undefined || n === "simulated") n = NETWORK;
   }
   // MAINNET TOTAL LOCKDOWN: every mainnet spelling (kaspa, mainnet-1, kaspa-mainnet, any case), before any record, key or
-  // node is touched — compile included. RC2 oracle D2c: an explicit name that is a config alias declaring mainnet
+  // node is touched — compile included. lockdown oracle D2c: an explicit name that is a config alias declaring mainnet
   // (`--network prod`) is the same refusal, never SILVER_NETWORK_NOT_SUPPORTED
   const { isMainnetNetworkId, declaredNetworkIdOf } = await import("@hardkas/core");
   let declared: string | undefined;
