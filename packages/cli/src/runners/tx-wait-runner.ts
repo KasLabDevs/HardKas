@@ -73,6 +73,11 @@ export interface TxWaitRunnerInput {
    * TX_WAIT_DEFAULT_LOOKBACK; 0 never walks; at most TX_WAIT_MAX_LOOKBACK.
    */
   lookback?: number;
+  /**
+   * TX-WAIT-URL-1 (`--url`): the node that observes, instead of the network's configured endpoint (as `tx send --url`).
+   * The observations record that node as their observer. Ignored for a simulator txId (there is no node to ask).
+   */
+  url?: string;
   workspaceRoot?: string;
   /** Test injection: an opened SDK whose RPC is scripted. */
   sdk?: any;
@@ -466,11 +471,28 @@ export async function runTxWait(input: TxWaitRunnerInput): Promise<TxWaitRunnerR
       // refused here, MAINNET_CONNECTION_DISABLED, before any name is resolved and before the first look
       await openSdkForTx(input.txId, workspaceRoot, input.network, { requireSyncedNode: true, observe: true });
   const { sdk, network } = opened;
+  // TX-WAIT-URL-1: with --url the looks ask that node, through the shared endpoint authority, and only once it says it
+  // serves the wait's network and is synced (as the configured client would). The client is this runner's: closed below.
+  let urlClient: { close(): Promise<void> } | undefined;
+  if (input.url !== undefined && !input.sdk && !SYNTHETIC_TXID.test(input.txId)) {
+    try {
+      const { resolveNodeEndpoint } = await import("@hardkas/config");
+      const { JsonWrpcKaspaClient } = await import("@hardkas/kaspa-rpc");
+      const rpcUrl = resolveNodeEndpoint({ config: sdk.config.config, networkId: network, explicitUrl: input.url }).url;
+      const client = new JsonWrpcKaspaClient({ rpcUrl, expectedNetworkId: network, requireSynced: true });
+      urlClient = client;
+      sdk.rpc = client;
+    } catch (e) {
+      await sdk.close();
+      throw e;
+    }
+  }
   // RESOURCE-LIFECYCLE-1: an SDK opened here is released here, whatever the wait ends with (RL-I1/RL-I3); an injected
   // one is its caller's (RL-I2).
   try {
     return await waitOn(input, sdk, network);
   } finally {
+    if (urlClient) await urlClient.close().catch(() => {});
     if (!input.sdk) await sdk.close();
   }
 }

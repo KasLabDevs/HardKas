@@ -203,6 +203,78 @@ async function networkSendState(txId: string | undefined, network: string): Prom
   }
 }
 
+/** TX-SEND-WAIT-1 · what `tx send --wait` waited for: the summary in the send's output, or why it ended without it. */
+type SendWait =
+  | { ok: true; until: "confirmed"; state: string; confirmations?: unknown; looks: number; elapsedMs: number; utxoView?: unknown; headline: string; utxoRow?: string }
+  | { ok: false; code: string; message: string }
+  | { ok: true; skipped: string };
+
+/**
+ * TX-SEND-WAIT-1 · `tx send --wait`: after the node accepted the send, the same wait as `hardkas tx wait <txId> --until
+ * confirmed` (the state derived from the node's observations, then the node's UTXO view), on the node the send used
+ * (--url, else the network's configured one). A wait that ends without CONFIRMED is returned, not thrown: the send's
+ * output still says the transaction was submitted, and the command then fails with TX_SEND_WAIT_FAILED.
+ */
+async function waitAfterSend(args: { txId: string | undefined; network: string; simulated: boolean; url?: string; timeout?: string; json: boolean }): Promise<SendWait> {
+  if (args.simulated) return { ok: true, skipped: "a simulator send is applied at once: there is no network to wait for" };
+  if (!args.txId || !/^[0-9a-f]{64}$/.test(args.txId)) return { ok: false, code: "TX_SEND_WAIT_NO_TXID", message: "the node returned no txId to wait for" };
+  const { parseWaitSeconds, runTxWait, utxoViewRow } = await import("../runners/tx-wait-runner.js");
+  const { stateHeadline } = await import("../runners/tx-status-runner.js");
+  try {
+    const r = await runTxWait({
+      txId: args.txId,
+      until: "confirmed",
+      timeoutMs: (parseWaitSeconds(args.timeout ?? "60") ?? 60) * 1000,
+      intervalMs: 2000,
+      network: args.network,
+      ...(args.url ? { url: args.url } : {}),
+      workspaceRoot: invocationWorkspaceRoot(),
+      onUpdate: (line) => {
+        if (!args.json) UI.logHuman(`  • ${line}`);
+      }
+    });
+    return {
+      ok: true,
+      until: "confirmed",
+      state: String(r.derived.status),
+      ...(r.derived.confirmations ? { confirmations: r.derived.confirmations } : {}),
+      looks: r.looks,
+      elapsedMs: r.elapsedMs,
+      ...(r.utxoView ? { utxoView: r.utxoView, utxoRow: utxoViewRow(r.utxoView) } : {}),
+      headline: stateHeadline(r.derived)
+    };
+  } catch (e: unknown) {
+    return { ok: false, code: errorCodeOf(e) ?? "TX_WAIT_FAILED", message: e instanceof Error ? e.message : String(e) };
+  }
+}
+
+/** TX-SEND-WAIT-1 · the wait in the JSON envelope (the human rows carry the same). */
+function sendWaitJson(w: SendWait | undefined): Record<string, unknown> {
+  if (!w) return {};
+  if ("skipped" in w) return { wait: { skipped: w.skipped } };
+  if (!w.ok) return { wait: { ok: false, code: w.code, message: w.message } };
+  return { wait: { ok: true, until: w.until, state: w.state, ...(w.confirmations ? { confirmations: w.confirmations } : {}), looks: w.looks, elapsedMs: w.elapsedMs, ...(w.utxoView ? { utxoView: w.utxoView } : {}) } };
+}
+
+/** TX-SEND-WAIT-1 · the wait's rows in the human output. */
+function sendWaitRows(w: SendWait | undefined): Record<string, string> {
+  if (!w) return {};
+  if ("skipped" in w) return { Wait: `not needed: ${w.skipped}` };
+  if (!w.ok) return { Wait: `did not reach CONFIRMED (${w.code}: ${w.message})` };
+  return { Wait: `Reached CONFIRMED: ${w.headline}`, ...(w.utxoRow ? { "UTXO View": w.utxoRow } : {}) };
+}
+
+/** TX-SEND-WAIT-1 · a send whose wait ended without CONFIRMED fails after its output: the tx was still submitted. */
+function throwIfSendWaitFailed(w: SendWait | undefined, txId: string | undefined): void {
+  if (!w || "skipped" in w || w.ok) return;
+  throw new HardkasCliError(
+    "TX_SEND_WAIT_FAILED",
+    `The transaction ${txId ?? "(no txId)"} was submitted, but --wait did not reach CONFIRMED (${w.code}: ${w.message}). ` +
+      `Check it with: hardkas tx wait ${txId ?? "<txId>"} --until confirmed`,
+    { exitCode: HardkasExitCode.RUNTIME_FAILURE }
+  );
+}
+
 /**
  * PAYMENT-PREFLIGHT-1 · what a submission says its send checked before the broadcast (a row of the human output): a
  * payment's opt-in preflight verified the signatures too; a v1 send's check (F1.6) leaves them to the node.
@@ -703,6 +775,12 @@ export function registerTxCommands(program: Command) {
     .option("--provider <type>", "Provider mode (auto, rpc, simulated; signed-artifact mode only)", "auto")
     .option("--url <url>", "RPC URL (optional override)")
     .option(
+      "--wait",
+      "After the node accepts the send, wait until the transaction is CONFIRMED, as `hardkas tx wait <txId>`, on the same node (--url, else the network's configured one). Not reaching it in time is TX_SEND_WAIT_FAILED (exit 1): the transaction was still submitted",
+      false
+    )
+    .option("--wait-timeout <seconds>", "With --wait: how long to wait, in seconds or with a unit (500ms, 60s, 2m) (default: 60)")
+    .option(
       "--yes",
       "Confirm broadcast. Required unless the network is simulated or simnet (in shortcut mode, unless --network simulated or simnet is given): without it the send is refused (NOT EXECUTED, exit 3) and nothing is written",
       false
@@ -738,6 +816,8 @@ export function registerTxCommands(program: Command) {
           passwordStdin: boolean;
           provider: string;
           url?: string;
+          wait: boolean;
+          waitTimeout?: string;
           yes: boolean;
           waitLock: boolean;
           lockTimeout: string;
@@ -749,6 +829,21 @@ export function registerTxCommands(program: Command) {
       ) => {
         try {
           if (options.json) UI.setJsonMode(true);
+          // TX-SEND-WAIT-1: the wait's options are checked before anything is planned, signed or sent (never ignored)
+          if (options.waitTimeout !== undefined) {
+            const { HardkasCliError, HardkasExitCode } = await import("../cli-errors.js");
+            const { parseWaitSeconds } = await import("../runners/tx-wait-runner.js");
+            if (!options.wait) {
+              throw new HardkasCliError("TX_SEND_USAGE", "--wait-timeout applies with --wait. Nothing was sent or recorded.", { exitCode: HardkasExitCode.USAGE_ERROR });
+            }
+            if (parseWaitSeconds(options.waitTimeout) === undefined) {
+              throw new HardkasCliError(
+                "TX_SEND_USAGE",
+                `--wait-timeout is a non-negative number of seconds, optionally with a unit (500ms, 60s, 2m), got '${String(options.waitTimeout).slice(0, 40)}'. Nothing was sent or recorded.`,
+                { exitCode: HardkasExitCode.USAGE_ERROR }
+              );
+            }
+          }
           // ARTIFACT-MUTATION-UNITS (phase 2B): no command-level hold of the store; each store write takes it through the
           // gate. The command used to hold it across planner RPC calls, password prompts and the broadcast.
           const { loadHardkasConfig } = await import("@hardkas/config");
@@ -930,10 +1025,24 @@ export function registerTxCommands(program: Command) {
               tracking && !tracking.recorded
                 ? `DEPLOYMENT_TRACK_FAILED: the transaction was broadcast, but the deployment record '${tracking.label}' was not written (${tracking.code}: ${tracking.message}). Re-run: ${tracking.retry}`
                 : null;
+            // TX-SEND-WAIT-1: --wait, once the node accepted the send, on the node it was sent to
+            const sendWait =
+              options.wait && result.accepted
+                ? await waitAfterSend({
+                    txId: result.txId,
+                    network: String(result.networkName),
+                    simulated: result.networkName === "simulated" || result.rpcUrl === "simulated://local",
+                    ...(options.url ? { url: options.url } : {}),
+                    ...(options.waitTimeout !== undefined ? { timeout: options.waitTimeout } : {}),
+                    json: options.json
+                  })
+                : undefined;
+            const sendWaitFailed = sendWait !== undefined && !("skipped" in sendWait) && !sendWait.ok;
 
             if (options.json) {
               UI.writeJson({
-                ok: result.accepted,
+                ok: result.accepted && !sendWaitFailed,
+                ...sendWaitJson(sendWait),
                 // AUX-11: one of three unambiguous outcomes (submitted | rejected | not_executed); EVENT-LEDGER-2 final
                 // closeout: `unknown` for a submit call that failed without an answer (never reported as rejected).
                 // TX-SEND-IDEMPOTENT-1/-2: already submitted from this workspace and held by the node — not broadcast
@@ -942,6 +1051,8 @@ export function registerTxCommands(program: Command) {
                 ...(result.alreadySubmitted
                   ? { code: "ALREADY_SUBMITTED", alreadySubmitted: true, recorded: true, ...(result.state ? { state: result.state } : {}) }
                   : {}),
+                // TX-SEND-WAIT-1: the command's failure code, as the other failures of `tx send` carry theirs
+                ...(sendWaitFailed ? { code: "TX_SEND_WAIT_FAILED" } : {}),
                 // INT9 · I-2: the pre-broadcast node check that let this broadcast go ahead (NOT_OBSERVED / UNKNOWN)
                 ...(result.nodeCheck ? { nodeCheck: result.nodeCheck } : {}),
                 data: {
@@ -1002,13 +1113,14 @@ export function registerTxCommands(program: Command) {
                     ? "none: the recorded submission (Artifact ID) stands"
                     : result.receiptPath || ".hardkas/artifacts/...",
                   Projection: "SQLite query-store (indexed while the dev-server runs)",
-                  ...networkRows
+                  ...networkRows,
+                  ...sendWaitRows(sendWait)
                 },
                 [
                   ...nextStepsAfterSend({ receipt: result.receipt, txId: result.txId }),
                   ...(!isSimulated && txIdShown ? [`hardkas tx status ${txIdShown}`] : [])
                 ],
-                !isSimulated && !result.accepted ? "fail" : "ok"
+                (!isSimulated && !result.accepted) || sendWaitFailed ? "fail" : "ok"
               );
               if (tracking?.recorded) {
                 UI.success(`Tracked deployment: ${tracking.label} (${result.networkName})`);
@@ -1022,6 +1134,7 @@ export function registerTxCommands(program: Command) {
               const failure = notAcceptedFailure(result.receipt, result.txId);
               throw new HardkasCliError(failure.code, failure.message, { exitCode: 1 });
             }
+            throwIfSendWaitFailed(sendWait, result.txId);
           } else if (options.from && options.to && options.amount) {
             // AUX-11: the confirmation policy of `tx send` — required unless the network is
             // the simulator or a local simnet. Once it is satisfied the flow is told so
@@ -1137,10 +1250,27 @@ export function registerTxCommands(program: Command) {
               });
             }
             const flowAccepted = flowSend.artifact?.accepted !== false;
+            // TX-SEND-WAIT-1: --wait, once the node accepted the send, on the node the flow used
+            const flowWaitTxId = flowSend.artifact?.txId;
+            const sendWait =
+              options.wait && flowAccepted
+                ? await waitAfterSend({
+                    txId: flowWaitTxId,
+                    network: String(result.networkId),
+                    simulated: flowSend.artifact?.rpcUrl === "simulated://local" || String(result.networkId) === "simulated",
+                    ...(options.url ? { url: options.url } : {}),
+                    ...(options.waitTimeout !== undefined ? { timeout: options.waitTimeout } : {}),
+                    json: options.json
+                  })
+                : undefined;
+            const sendWaitFailed = sendWait !== undefined && !("skipped" in sendWait) && !sendWait.ok;
             if (options.json) {
               const sendResult = result.steps.send;
               UI.writeJson({
-                ok: flowAccepted,
+                ok: flowAccepted && !sendWaitFailed,
+                // TX-SEND-WAIT-1: the command's failure code, as the other failures of `tx send` carry theirs
+                ...(sendWaitFailed ? { code: "TX_SEND_WAIT_FAILED" } : {}),
+                ...sendWaitJson(sendWait),
                 // AUX-11: one of three unambiguous outcomes (submitted | rejected | not_executed); EVENT-LEDGER-2 final
                 // closeout: `unknown` for a submit call that failed without an answer (never reported as rejected).
                 outcome: sendOutcomeLabel(sendResult?.artifact?.receipt, flowAccepted),
@@ -1205,7 +1335,8 @@ export function registerTxCommands(program: Command) {
                   "Artifact Written":
                     sendResult?.artifact?.receiptPath || ".hardkas/artifacts/...",
                   Projection: "SQLite query-store (indexed while the dev-server runs)",
-                  ...networkRows
+                  ...networkRows,
+                  ...sendWaitRows(sendWait)
                 },
                 [
                   ...nextStepsAfterSend({ receipt: sendResult?.artifact?.receipt, txId: sendResult?.artifact?.txId }),
@@ -1213,7 +1344,7 @@ export function registerTxCommands(program: Command) {
                   "hardkas dev last --replay",
                   "hardkas status"
                 ],
-                !isSimulated && !flowAccepted ? "fail" : "ok"
+                (!isSimulated && !flowAccepted) || sendWaitFailed ? "fail" : "ok"
               );
             }
             if (!flowAccepted) {
@@ -1221,6 +1352,7 @@ export function registerTxCommands(program: Command) {
               const failure = notAcceptedFailure(flowSend?.artifact?.receipt, flowSend?.artifact?.txId);
               throw new HardkasCliError(failure.code, failure.message, { exitCode: 1 });
             }
+            throwIfSendWaitFailed(sendWait, flowWaitTxId);
           } else {
             // CLI-RUNTIME-CONTRACT-1: a usage error with its code and exit code (was an untyped "Command failed").
             const { HardkasCliError, HardkasExitCode } = await import("../cli-errors.js");
@@ -1260,6 +1392,7 @@ export function registerTxCommands(program: Command) {
     .option("--timeout <seconds>", "Timeout in seconds", "60")
     .option("--interval <seconds>", "Seconds between observations", "2")
     .option("-n, --network <network>", "Network whose configured node observes (default: the network of the recorded submission)")
+    .option("--url <url>", "Node wRPC URL that observes, instead of the network's configured one (as tx send --url)")
     .option(
       "--since <chainBlockHash>",
       "Scan the node's virtual chain from this chain block (64 hex; it must precede the tx's acceptance) on the first look — for a tx sent outside this workspace"
@@ -1274,7 +1407,7 @@ export function registerTxCommands(program: Command) {
       "With --address: chain blocks the wait may walk back from the node's sink (getBlock, selected parent) to find a tx accepted before it started (default 1000, at most 10000, 0 = never); the acceptance is the node's own virtual-chain answer from there. Given explicitly, the wait starts at the sink even when this workspace stored looks at the txId"
     )
     .option("--json", "Output as JSON", false)
-    .action(async (txId: string, options: { until: string; timeout: string; interval: string; network?: string; since?: string; address?: string[]; lookback?: string; json: boolean }) => {
+    .action(async (txId: string, options: { until: string; timeout: string; interval: string; network?: string; url?: string; since?: string; address?: string[]; lookback?: string; json: boolean }) => {
       if (options.json) UI.setJsonMode(true);
       const { HardkasCliError, HardkasExitCode } = await import("../cli-errors.js");
       if (options.until !== "accepted" && options.until !== "confirmed") {
@@ -1354,6 +1487,7 @@ export function registerTxCommands(program: Command) {
         timeoutMs: timeoutSeconds * 1000,
         intervalMs: Math.max(0.2, intervalSeconds) * 1000,
         ...(options.network ? { network: options.network } : {}),
+        ...(options.url ? { url: options.url } : {}),
         ...(options.since !== undefined ? { since: options.since } : {}),
         ...(options.address !== undefined ? { addresses: options.address } : {}),
         ...(lookback !== undefined ? { lookback } : {}),

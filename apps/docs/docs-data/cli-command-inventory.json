@@ -444,6 +444,15 @@
         "description": "RPC URL (optional override)"
       },
       {
+        "flags": "--wait",
+        "description": "After the node accepts the send, wait until the transaction is CONFIRMED, as `hardkas tx wait <txId>`, on the same node (--url, else the network's configured one). Not reaching it in time is TX_SEND_WAIT_FAILED (exit 1): the transaction was still submitted",
+        "defaultValue": false
+      },
+      {
+        "flags": "--wait-timeout <seconds>",
+        "description": "With --wait: how long to wait, in seconds or with a unit (500ms, 60s, 2m) (default: 60)"
+      },
+      {
         "flags": "--yes",
         "description": "Confirm broadcast. Required unless the network is simulated or simnet (in shortcut mode, unless --network simulated or simnet is given): without it the send is refused (NOT EXECUTED, exit 3) and nothing is written",
         "defaultValue": false
@@ -532,6 +541,10 @@
       {
         "flags": "-n, --network <network>",
         "description": "Network whose configured node observes (default: the network of the recorded submission)"
+      },
+      {
+        "flags": "--url <url>",
+        "description": "Node wRPC URL that observes, instead of the network's configured one (as tx send --url)"
       },
       {
         "flags": "--since <chainBlockHash>",

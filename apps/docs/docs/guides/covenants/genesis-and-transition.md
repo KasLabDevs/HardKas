@@ -9,11 +9,13 @@ This guide demonstrates how to orchestrate a 1:1 auth-bound Toccata covenant usi
 The Genesis step binds a new UTXO to a freshly derived `covenant_id`.
 
 ```bash
-hardkas silver covenant genesis compile_record.json \
+hardkas silver covenant genesis contracts/counter.compile.json \
   --from alice \
-  --amount 5000 \
-  --compute-budget 50000 \
-  --fee 20000000 \
+  --amount 10 \
+  --compute-budget 10 \
+  --fee 1000000 \
+  --network simnet \
+  --password-env HARDKAS_PASSWORD \
   --wait
 ```
 
@@ -30,10 +32,20 @@ hardkas silver covenant genesis compile_record.json \
 To advance the covenant's state, you must spend the Genesis UTXO and create a Successor UTXO, satisfying the SilverScript policy constraints.
 
 ```bash
-hardkas silver covenant transition genesis_record.json \
-  --policy "increment" \
-  --constructor-args args.json
+hardkas silver covenant transition .hardkas/artifacts/silver/silverCovenant-<genesisId>.json \
+  --policy bump \
+  --constructor-args contracts/counter.args.json \
+  --state-map contracts/counter.state-map.json \
+  --next-state contracts/counter.next-state.json \
+  --args contracts/bump.args.json \
+  --compute-budget 0 \
+  --emit-args contracts/counter.next-args.json \
+  --network simnet \
+  --password-env HARDKAS_PASSWORD \
+  --wait
 ```
+
+For the complete runnable example (including negative consensus testing and `silver covenant inspect`), see [Canonical AI Workflows](../../ai/workflows.md#3-perform-valid-and-invalid-covenant-transitions-against-a-real-node) and `docs/start/silverscript-covenants.md`.
 
 **What HardKAS does:**
 1. Resolves the current state of the covenant from the `genesis_record.json`.

@@ -45,9 +45,11 @@ Requirements: **Node.js 24.22.1** exactly (the version HardKAS is built, tested 
 
 ### 1. Initialize a Workspace
 
+> **Release note:** `@hardkas/cli` `0.13.0-rc.2` is currently published on npm (`latest`/`next`); `0.13.0-rc.3` is the current repository development tree. Use `@latest` (or `@0.13.0-rc.2`) when installing from npm, or `pnpm hardkas` inside this monorepo.
+
 ```bash
 # Initialize a new HardKAS workspace with deterministic accounts
-npx @hardkas/cli@0.13.0-rc.3 init my-kaspa-app
+npx @hardkas/cli@latest init my-kaspa-app
 cd my-kaspa-app
 # init writes a package.json that pins @hardkas/cli; install it so `npx hardkas` runs the project's copy
 npm install
@@ -77,6 +79,15 @@ npx hardkas localnet fund alice --profile toccata-v2
 
 To run a node of your own instead (your container, your ports) and take one payment, a SilverScript contract and a
 covenant all the way to `artifact verify`, follow [Build on your own simnet](docs/start/build-on-simnet.md).
+
+## Build on Kaspa with AI
+
+If you are using **Claude Code**, **Cursor**, or another AI coding agent:
+
+- **Short navigation map:** [hardkas.dev/llms.txt](https://hardkas.dev/llms.txt)
+- **Full AI reference & verified CLI/SDK recipes:** [hardkas.dev/llms-full.txt](https://hardkas.dev/llms-full.txt)
+- **AI documentation section:** [Build on Kaspa with AI](apps/docs/docs/ai/index.md) ([workflows](apps/docs/docs/ai/workflows.md), [troubleshooting](apps/docs/docs/ai/troubleshooting.md), [Claude Code & Cursor](apps/docs/docs/ai/claude-code-and-cursor.md))
+- **Rule of thumb:** Prefer HardKAS CLI/SDK over custom `kaspa-wasm` boilerplate, run `hardkas doctor --json` first, and validate consensus behavior on `simnet` (never `simulated` or local `SCRIPT_VM` alone).
 
 ### 4. Local Dev Server & Visual IDE
 

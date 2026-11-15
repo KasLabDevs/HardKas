@@ -6478,6 +6478,8 @@ hardkas tx send [options] [signedPath]
 | `--password-stdin` | Shortcut mode: read the sender's keystore password (an encrypted account) from stdin | false |
 | `--provider <type>` | Provider mode (auto, rpc, simulated; signed-artifact mode only) | auto |
 | `--url <url>` | RPC URL (optional override) |  |
+| `--wait` | After the node accepts the send, wait until the transaction is CONFIRMED, as `hardkas tx wait <txId>`, on the same node (--url, else the network's configured one). Not reaching it in time is TX_SEND_WAIT_FAILED (exit 1): the transaction was still submitted | false |
+| `--wait-timeout <seconds>` | With --wait: how long to wait, in seconds or with a unit (500ms, 60s, 2m) (default: 60) |  |
 | `--yes` | Confirm broadcast. Required unless the network is simulated or simnet (in shortcut mode, unless --network simulated or simnet is given): without it the send is refused (NOT EXECUTED, exit 3) and nothing is written | false |
 | `--wait-lock` | No effect, kept for compatibility: the command takes no lock of its own, and each store write waits for the store (up to 30 s) | false |
 | `--lock-timeout <ms>` | No effect, kept for compatibility (see --wait-lock) | 30000 |
@@ -6600,6 +6602,7 @@ hardkas tx wait [options] <txId>
 | `--timeout <seconds>` | Timeout in seconds | 60 |
 | `--interval <seconds>` | Seconds between observations | 2 |
 | `-n, --network <network>` | Network whose configured node observes (default: the network of the recorded submission) |  |
+| `--url <url>` | Node wRPC URL that observes, instead of the network's configured one (as tx send --url) |  |
 | `--since <chainBlockHash>` | Scan the node's virtual chain from this chain block (64 hex; it must precede the tx's acceptance) on the first look — for a tx sent outside this workspace |  |
 | `--address <address>` | An address the tx pays (repeatable), for a tx sent outside this workspace with no --since: the scan starts at the node's sink when the wait starts; an output of the tx listed there before that point makes the wait walk back along the node's selected chain (--lookback) and scan from there, else it ends (TX_WAIT_ACCEPTED_BEFORE_CURSOR); the UTXO view is checked there |  |
 | `--lookback <chainBlocks>` | With --address: chain blocks the wait may walk back from the node's sink (getBlock, selected parent) to find a tx accepted before it started (default 1000, at most 10000, 0 = never); the acceptance is the node's own virtual-chain answer from there. Given explicitly, the wait starts at the sink even when this workspace stored looks at the txId |  |

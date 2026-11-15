@@ -219,7 +219,7 @@ Sitemap: https://hardkas.dev/sitemap.xml
 fs.writeFileSync(path.join(DIST_SITE, "robots.txt"), robotsTxt, "utf8");
 console.log("  ✓ Generated dist/site/robots.txt");
 
-// Unified llms.txt
+// Unified llms.txt (navigation map) + llms-full.txt (compiled from canonical AI docs)
 const llmsTxt = `# HardKAS — Developer Framework & Transaction Simulator for Kaspa L1
 
 > HardKAS is an open-source, local-first development framework, transaction simulator, and visual IDE for Kaspa L1.
@@ -227,48 +227,82 @@ const llmsTxt = `# HardKAS — Developer Framework & Transaction Simulator for K
 
 ## Core Truth & Boundaries
 - Kaspa L1 is a Proof-of-Work UTXO BlockDAG running Kaspa Script (NOT an EVM, no Solidity on L1).
-- HardKAS provides deterministic in-memory transaction simulation, managed Docker simnet (rusty-kaspad v2.0.0), and cryptographic JSON artifacts (TxPlan, SignedTx, TxReceipt).
-- Every transaction plan, signed payload, and receipt can be replayed and verified offline.
+- Versions: npm \`latest\` is \`0.13.0-rc.2\`; repository development tree is \`0.13.0-rc.3\`.
+- Managed Docker simnet (\`--profile toccata-v2\`) runs \`rusty-kaspad\` \`v2.1.0\` (container \`hardkas-kaspad-toccata-v2\`, JSON wRPC \`ws://127.0.0.1:18210\`).
+- Mainnet is blocked by policy (no reads, signing, or broadcast).
+- \`simulated\` and local \`silver test\` (\`SCRIPT_VM\`) are NOT independent consensus proof; use \`simnet\` for real-node verification.
+- Prefer HardKAS CLI/SDK over custom \`kaspa-wasm\` scripts for payments, keystores, SilverScript, and artifact verification.
+
+## Token-Saving Reading Rule for Agents
+- For a standard KAS payment on \`simnet\`, use the **Fast Path** below directly — do **not** read \`llms-full.txt\` (23 KB) and do **not** run \`doctor\`/\`silver doctor\` first.
+- Only read a specific recipe anchor or \`https://hardkas.dev/llms-full.txt\` when you need SilverScript, Toccata covenants, artifact verification, or error codes:
+  - Send KAS: https://hardkas.dev/docs/ai/workflows#1-send-kas-on-simnet-and-confirm-the-transaction
+  - SilverScript P2SH: https://hardkas.dev/docs/ai/workflows#2-compile-and-execute-silverscript-p2sh-workflows
+  - Covenants (valid & invalid): https://hardkas.dev/docs/ai/workflows#3-perform-valid-and-invalid-covenant-transitions-against-a-real-node
+  - Verify receipts: https://hardkas.dev/docs/ai/workflows#4-verify-transaction-receipts-and-execution-artifacts
+  - Diagnose node/UTXOs: https://hardkas.dev/docs/ai/workflows#5-diagnose-node-rpc-account-and-utxo-problems
+  - CLI vs SDK: https://hardkas.dev/docs/ai/workflows#6-select-the-appropriate-hardkas-cli-or-sdk-workflow
+  - Full AI Reference (all above combined): https://hardkas.dev/llms-full.txt
+
+## Fast Path: Send KAS on Simnet (2 commands, no config file needed)
+- Omit \`--url\` if using the default HardKAS localnet (\`ws://127.0.0.1:18210\`). \`--wait\` waits until \`CONFIRMED\` on the same node (default \`--wait-timeout 60\`; on timeout it exits \`1\` with \`code: TX_SEND_WAIT_FAILED\` and \`outcome: submitted\`).
+\`\`\`bash
+export HARDKAS_PASSWORD='choose-a-simnet-password'
+hardkas accounts real import --name payer --address <kaspasim:sender> --network simnet --private-key-env PK --password-env HARDKAS_PASSWORD && \\
+hardkas tx send --from payer --to <kaspasim:recipient> --amount 10 --network simnet --url ws://<host>:18210 --password-env HARDKAS_PASSWORD --yes --wait --json
+\`\`\`
 
 ## Canonical Web Endpoints
 - Homepage: https://hardkas.dev/
 - HardKAS IDE: https://hardkas.dev/ide/
 - Documentation Base: https://hardkas.dev/docs/
+- Build on Kaspa with AI: https://hardkas.dev/docs/ai/
+- Canonical AI Workflows (6 tasks): https://hardkas.dev/docs/ai/workflows
+- AI Troubleshooting & Error Codes: https://hardkas.dev/docs/ai/troubleshooting
+- Claude Code & Cursor Guide: https://hardkas.dev/docs/ai/claude-code-and-cursor
 - 5-Minute Quickstart: https://hardkas.dev/docs/getting-started/quickstart
-- Installation Guide: https://hardkas.dev/docs/getting-started/installation
-- The Execution Contract: https://hardkas.dev/docs/concepts/execution-contract
-- Deterministic Replay: https://hardkas.dev/docs/concepts/replay
-- Toccata & Covenants: https://hardkas.dev/docs/concepts/toccata/covenants
-- SilverScript Tooling: https://hardkas.dev/docs/concepts/silverscript/what-is-silverscript
 - CLI Command Reference: https://hardkas.dev/docs/reference/cli
 - SDK Core Reference: https://hardkas.dev/docs/reference/sdk/core/
 
-## Fast path: send KAS on a simnet node (three commands)
-Use it when you already have a funded private key and a running node.
-- If the node is not the HardKAS localnet (ws://127.0.0.1:18210), first put its URL in hardkas.config.mjs:
-  export default { networks: { simnet: { kind: "kaspa-node", network: "simnet", rpcUrl: "ws://<host>:18210" } } };
-- tx send plans, signs and sends in one step, and prints the Tx ID.
+## First Checks (for SilverScript, Covenants, or Debugging)
 \`\`\`bash
-export PK=<private key hex>; export PW=<any keystore password>
-hardkas accounts real import --name payer --address <kaspasim:sender> --network simnet --private-key-env PK --password-env PW
-hardkas tx send --from payer --to <kaspasim:recipient> --amount 10 --network simnet --password-env PW --yes
-hardkas tx wait <txId> --until confirmed --network simnet
-\`\`\`
-Use the four-step flow (tx plan, artifact inspect, tx sign, tx send) instead when the plan must be reviewed before signing.
-
-## Verified CLI Quickstart
-\`\`\`bash
-npx @hardkas/cli init my-app
-cd my-app
-hardkas tx plan --from alice --to bob --amount 10 --network simulated --out tx-plan.json
-hardkas artifact verify tx-plan.json --strict
-hardkas tx sign tx-plan.json --account alice --out tx-signed.json
-hardkas tx send tx-signed.json --network simulated --yes
-hardkas replay verify <receipt-id>
+hardkas doctor --json
+hardkas silver doctor --network simnet --json
 \`\`\`
 `;
 
 fs.writeFileSync(path.join(DIST_SITE, "llms.txt"), llmsTxt, "utf8");
 console.log("  ✓ Generated dist/site/llms.txt");
+
+// Generate llms-full.txt from the single canonical source in apps/docs/docs/ai/
+function stripFrontmatter(md) {
+  if (!md.startsWith("---")) return md.trim();
+  const end = md.indexOf("\n---", 3);
+  return end === -1 ? md.trim() : md.slice(end + 4).trim();
+}
+
+const aiDocFiles = [
+  "index.md",
+  "workflows.md",
+  "troubleshooting.md",
+  "claude-code-and-cursor.md",
+];
+const aiSections = aiDocFiles
+  .map((file) => {
+    const fullPath = path.join(ROOT, "apps", "docs", "docs", "ai", file);
+    return fs.existsSync(fullPath) ? stripFrontmatter(fs.readFileSync(fullPath, "utf8")) : null;
+  })
+  .filter(Boolean);
+
+const llmsFullTxt = [
+  llmsTxt.trim(),
+  "",
+  "---",
+  "",
+  ...aiSections.flatMap((section) => [section, "", "---", ""]),
+].join("\n");
+
+fs.writeFileSync(path.join(DIST_SITE, "llms-full.txt"), llmsFullTxt, "utf8");
+console.log("  ✓ Generated dist/site/llms-full.txt");
 
 console.log("\n✔ Unified Web Distribution successfully built at: dist/site/");
