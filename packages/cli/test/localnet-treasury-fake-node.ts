@@ -1,4 +1,4 @@
-// A minimal stand-in for a simnet node, for the treasury tests (rc2 audit B2/B4/A10/B6): only the transport is fake.
+// A minimal stand-in for a simnet node, for the treasury tests (audit 2026-11-13 B2/B4/A10/B6): only the transport is fake.
 // It keeps a UTXO set in the shape the real JsonWrpcKaspaClient returns (scriptPublicKey "<2-byte version><script>"
 // hex, bigint amounts and DAA scores, isCoinbase), checks a submitted transaction's inputs (they exist, are not spent in
 // its mempool, coinbases are mature) and its value (inputs >= outputs), answers like rusty-kaspa ("Rejected transaction

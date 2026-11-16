@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 
-// A3 (rc2 audit) · `WalletToolkit.watch()` on a node that does not answer within 30 s threw
+// A3 (audit 2026-11-13) · `WalletToolkit.watch()` on a node that does not answer within 30 s threw
 // `WALLET_WATCH_NODE_UNREACHABLE … at ${rpcUrl}` with the full endpoint (user:password@, ?api_key=…). Now the endpoint is
 // redacted. kaspa-wasm's RpcClient is a stand-in whose connect never completes; the 30 s bound runs on fake timers.
 

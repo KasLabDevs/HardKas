@@ -17,7 +17,10 @@ import type { Utxo, TxPlan } from "./index.js";
  * - a transaction above the storage-mass limit (KIP-9) because of a small change
  *   output → CHANGE_BELOW_STANDARD_OUTPUT, or of a small payment output →
  *   OUTPUT_BELOW_STANDARD_AMOUNT. The Generator only turns dust change into fee;
- *   any larger remainder stays the sender's, so the plan is refused instead.
+ *   any larger remainder stays the sender's, so the plan is refused instead;
+ * - R4-T · a payment to several recipients whose outputs the Generator refuses as
+ *   too heavy for one standard transaction → TOO_MANY_OUTPUTS, naming how many of
+ *   them fit (counted by the Generator itself, see `TooManyOutputsError`).
  */
 
 export class GeneratorPlanError extends Error {
@@ -149,25 +152,36 @@ export async function planWithGenerator(request: GeneratorPlanRequest): Promise<
     };
   });
 
-  const txs: any[] = [];
   const priorityRate = generatorFeeRate(request.feeRate);
-  try {
+  // One Generator run over these candidates for the given payment outputs (all of them, or a prefix when R4-T counts how
+  // many fit, which needs only its first transaction): the same settings every time.
+  const generate = async (outputs: GeneratorPlanRequest["outputs"], firstOnly = false): Promise<any[]> => {
+    const built: any[] = [];
     for await (const pt of buildTransactions({
       networkId,
       entries,
       changeAddress: addressFor(request.changeAddress),
       // A payment needs a priority fee (even 0); a sweep takes neither outputs nor a priority fee.
-      ...(request.outputs.length > 0
-        ? { outputs: request.outputs.map((o) => ({ address: addressFor(o.address), amount: o.amountSompi })), priorityFee: 0n }
+      ...(outputs.length > 0
+        ? { outputs: outputs.map((o) => ({ address: addressFor(o.address), amount: o.amountSompi })), priorityFee: 0n }
         : {}),
       // FEE-POLICY-1 (CA-TX-03): a rate at or below the relay minimum is "the minimum", which the Generator charges on the
       // compute mass when given no rate; only a priority rate above it is handed over (priced as the mempool ranks it)
       ...(priorityRate !== undefined ? { feeRate: priorityRate } : {}),
       ...(request.payload ? { payload: request.payload } : {})
     })) {
-      txs.push(pt);
+      built.push(pt);
+      if (firstOnly) break;
     }
+    return built;
+  };
+  let txs: any[];
+  try {
+    txs = await generate(request.outputs);
   } catch (e: unknown) {
+    // R4-T: a payment to several recipients whose outputs the Generator refuses as too heavy for one standard transaction
+    // is refused with how many of them fit, counted by the same Generator (no mass formula of HardKAS's own)
+    if (request.outputs.length > 1 && outputsTooHeavy(e)) throw await tooManyOutputs(e, request, generate);
     throw refusal(e, request);
   }
 
@@ -181,7 +195,10 @@ export async function planWithGenerator(request: GeneratorPlanRequest): Promise<
         "HardKAS plans one transaction at a time; " +
         (request.outputs.length === 0
           ? "consolidate these UTXOs in smaller batches."
-          : "consolidate the UTXOs first (hardkas accounts consolidate), then plan again.")
+          : request.outputs.length > 1
+            ? // R4-T: the inputs share the transaction's mass with the payment outputs
+              `consolidate the UTXOs first (hardkas accounts consolidate), or pay fewer of these ${request.outputs.length} recipients in one transaction, then plan again.`
+            : "consolidate the UTXOs first (hardkas accounts consolidate), then plan again.")
     );
   }
 
@@ -252,6 +269,16 @@ function refusal(e: unknown, request: GeneratorPlanRequest): Error {
           `transaction mass). Adjust the amount, or send the whole balance.${upstream}`
       );
     }
+    if (request.outputs.length > 1) {
+      // R4-T: with several payment outputs the storage mass (KIP-9) adds up over all of them, so no single amount is "the"
+      // one that is too small
+      return new GeneratorPlanError(
+        "OUTPUT_BELOW_STANDARD_AMOUNT",
+        `the ${request.outputs.length} payment outputs (the smallest ${smallest} sompi) are too small together for a standard ` +
+          "transaction from these UTXOs (storage mass above the maximum standard transaction mass; it grows with every small " +
+          `output). Pay larger amounts, or fewer recipients in one transaction.${upstream}`
+      );
+    }
     return new GeneratorPlanError(
       "OUTPUT_BELOW_STANDARD_AMOUNT",
       `the amount ${smallest} sompi is too small for a standard output from these UTXOs (storage mass above the maximum ` +
@@ -259,6 +286,72 @@ function refusal(e: unknown, request: GeneratorPlanRequest): Error {
     );
   }
   return e instanceof Error ? e : new Error(message);
+}
+
+/**
+ * R4-T · the pinned Generator's refusal of payment outputs too heavy for one standard transaction (kaspa-wasm
+ * `GeneratorTransactionOutputsAreTooHeavy`: "Transaction outputs exceed the maximum allowed mass"). It is decided on the
+ * outputs, the change output and the payload alone, before any input is selected, so the inputs keep room in the
+ * transaction. A wallet rule of the Generator (the planner HardKAS uses), not a node relay rule.
+ */
+const OUTPUTS_TOO_HEAVY = /outputs exceed the maximum allowed mass/i;
+function outputsTooHeavy(e: unknown): boolean {
+  return OUTPUTS_TOO_HEAVY.test(e instanceof Error ? e.message : String(e));
+}
+
+/**
+ * R4-T · TOO_MANY_OUTPUTS: a payment to several recipients that does not fit in one standard transaction, refused before
+ * anything is signed, with how many of its outputs fit. `outputsThatFit` is the largest count of the payment's FIRST
+ * outputs (in the order given) whose transaction the same Generator does not refuse as too heavy, over the same
+ * candidates, change address, fee rate and payload: the Generator's own rule, counted by asking it, never a mass formula
+ * of HardKAS's own. A count that fits can still be refused for another reason (funds, storage mass), with its own code.
+ */
+export class TooManyOutputsError extends GeneratorPlanError {
+  constructor(
+    public readonly requestedOutputs: number,
+    public readonly outputsThatFit: number,
+    upstreamMessage: string
+  ) {
+    super(
+      "TOO_MANY_OUTPUTS",
+      `this payment has ${requestedOutputs} recipient outputs, and at most ${outputsThatFit} of them (the first ${outputsThatFit}, in ` +
+        "the order given) fit in one standard transaction (maximum standard transaction mass) with its change output, " +
+        "leaving room for the inputs. Pay the others in another transaction (`hardkas tx batch` without --one-transaction pays " +
+        `each payment in its own transaction). Nothing was planned. (Generator: ${upstreamMessage})`
+    );
+    this.name = "TooManyOutputsError";
+  }
+
+  /** The counts, for renderers that print an error's metadata. */
+  get metadata(): { requestedOutputs: number; outputsThatFit: number } {
+    return { requestedOutputs: this.requestedOutputs, outputsThatFit: this.outputsThatFit };
+  }
+}
+
+async function tooManyOutputs(
+  e: unknown,
+  request: GeneratorPlanRequest,
+  generate: (outputs: GeneratorPlanRequest["outputs"], firstOnly?: boolean) => Promise<any[]>
+): Promise<TooManyOutputsError> {
+  // the first `n` outputs are refused as too heavy (any other outcome: they fit the Generator's output rule); the
+  // Generator decides that before its first transaction, so one is enough
+  const heavy = async (n: number): Promise<boolean> => {
+    try {
+      await generate(request.outputs.slice(0, n), true);
+      return false;
+    } catch (inner: unknown) {
+      return outputsTooHeavy(inner);
+    }
+  };
+  // lo fits (0 trivially), hi is refused (all of them were): bisection over the prefix length
+  let lo = 0;
+  let hi = request.outputs.length;
+  while (hi - lo > 1) {
+    const mid = lo + Math.floor((hi - lo) / 2);
+    if (await heavy(mid)) hi = mid;
+    else lo = mid;
+  }
+  return new TooManyOutputsError(request.outputs.length, lo, e instanceof Error ? e.message : String(e));
 }
 
 /** A single-transaction payment plan in HardKAS's TxPlan shape. */

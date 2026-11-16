@@ -82,3 +82,147 @@ title: hardkas escrow
 
 ---
 
+## `hardkas escrow create`
+
+### Synopsis (Generated)
+
+**Purpose:** Create a v2 escrow (EscrowFull with --amount, EscrowSplit with --buyer-amount and --seller-amount), compiled by the pinned silverc for the network, and record it in this workspace. Nothing is sent
+
+#### Options
+
+- `--buyer &lt;party&gt;`: The buyer: an account of this workspace, a Schnorr address of the network, or a 32-byte x-only public key (hex)
+- `--seller &lt;party&gt;`: The seller (account, address or x-only public key)
+- `--arbiter &lt;party&gt;`: The arbiter (account, address or x-only public key)
+- `--buyer-destination &lt;address|spk&gt;`: Where refunds pay (default: the buyer's own address): an address of the network, or a script public key in hex without the version
+- `--seller-destination &lt;address|spk&gt;`: Where releases pay (default: the seller's own address)
+- `--amount &lt;kas&gt;`: EscrowFull: the principal every branch pays (KAS)
+- `--buyer-amount &lt;kas&gt;`: EscrowSplit: the buyer's allocation (KAS), with --seller-amount
+- `--seller-amount &lt;kas&gt;`: EscrowSplit: the seller's allocation (KAS), with --buyer-amount
+- `--fee-budget &lt;sompi&gt;`: The fee of every release, added to the funding (sompi; default 2000000 = 0.02 KAS; at least the node's minimum relay fee of a release, checked before funding)
+- `--nonce &lt;hex&gt;`: 32-byte nonce that makes the escrow's address unique (default: random)
+- `--network &lt;network&gt;`: Network (default: the escrow's own, else the workspace's, else simnet). mainnet is refused; testnet-&lt;n&gt; needs experimental + network.allowPublic in the config
+- `--json` (Default: `false`): Output as JSON
+
+---
+
+## `hardkas escrow fund`
+
+### Synopsis (Generated)
+
+**Purpose:** Fund an escrow from the buyer's account: one payment of its funding amount (principal + fee budget) to its address, planned, signed and sent by HardKAS's payment path. Refused before anything is signed if any release could not pay the node's minimum relay fee
+
+#### Arguments
+
+- `&lt;id&gt;` (Required): 
+
+#### Options
+
+- `--from &lt;account&gt;`: The buyer's account of this workspace (its key must be the escrow's buyer key)
+- `--network &lt;network&gt;`: Network (default: the escrow's own, else the workspace's, else simnet). mainnet is refused; testnet-&lt;n&gt; needs experimental + network.allowPublic in the config
+- `--url &lt;url&gt;`: Node wRPC (JSON) endpoint (default: the one the workspace declares for the network; simnet: the canonical localnet). The canonical localnet is proven by container and image digest; any other node by what it reports (network, version, synced)
+- `--wait` (Default: `false`): Wait until a chain block accepts the funding
+- `--timeout &lt;seconds&gt;` (Default: `120`): With --wait: how long to wait
+- `--password-env &lt;env&gt;`: Read the keystore password of the encrypted account this command signs with from this environment variable (development accounts need none)
+- `--password-stdin` (Default: `false`): Read the keystore password of the encrypted account this command signs with from stdin
+- `--json` (Default: `false`): Output as JSON
+
+---
+
+## `hardkas escrow status`
+
+### Synopsis (Generated)
+
+**Purpose:** Show an escrow recorded in this workspace: its state, funding, prepared release, signatures and release (no node is contacted)
+
+#### Arguments
+
+- `&lt;id&gt;` (Required): 
+
+#### Options
+
+- `--json` (Default: `false`): Output as JSON
+
+---
+
+## `hardkas escrow prepare`
+
+### Synopsis (Generated)
+
+**Purpose:** Prepare the release of one branch over the recorded funding and write the release request each required signer signs (in this workspace, or in their own with `escrow sign &lt;file&gt;`)
+
+#### Arguments
+
+- `&lt;id&gt;` (Required): 
+
+#### Options
+
+- `--branch &lt;branch&gt;`: EscrowFull: mutualRelease, refundBuyer, releaseToSeller; EscrowSplit: executeSplit, fullRefund, fullRelease, mutualRelease
+- `--buyer-share &lt;kas&gt;`: mutualRelease: what the buyer receives (KAS), with --seller-share; together the principal (default: the contract's default allocation)
+- `--seller-share &lt;kas&gt;`: mutualRelease: what the seller receives (KAS), with --buyer-share
+- `--out &lt;file&gt;`: The release request file (default escrow-&lt;id&gt;-&lt;branch&gt;.request.json)
+- `--network &lt;network&gt;`: Network (default: the escrow's own, else the workspace's, else simnet). mainnet is refused; testnet-&lt;n&gt; needs experimental + network.allowPublic in the config
+- `--json` (Default: `false`): Output as JSON
+
+---
+
+## `hardkas escrow sign`
+
+### Synopsis (Generated)
+
+**Purpose:** Sign an escrow's prepared release as one role: an escrow id of this workspace (the signature goes into its record), or a release request file, checked first against the escrow's own terms (the contract recompiled, the draft prepared again) and signed here, in the signer's own workspace
+
+#### Arguments
+
+- `&lt;id-or-request&gt;` (Required): 
+
+#### Options
+
+- `--role &lt;role&gt;`: buyer, seller or arbiter: a role the prepared branch requires
+- `--account &lt;account&gt;`: The account of this workspace that signs (its key must be the escrow's key for the role)
+- `--out &lt;file&gt;`: With a request file: where the signed request is written (default: the request file itself)
+- `--network &lt;network&gt;`: Network (default: the escrow's own, else the workspace's, else simnet). mainnet is refused; testnet-&lt;n&gt; needs experimental + network.allowPublic in the config
+- `--password-env &lt;env&gt;`: Read the keystore password of the encrypted account this command signs with from this environment variable (development accounts need none)
+- `--password-stdin` (Default: `false`): Read the keystore password of the encrypted account this command signs with from stdin
+- `--json` (Default: `false`): Output as JSON
+
+---
+
+## `hardkas escrow release`
+
+### Synopsis (Generated)
+
+**Purpose:** Send an escrow's prepared release once every required role signed: each signature verified (BIP340) before anything is sent, then one send through HardKAS's send machinery. An unknown outcome is recorded and never sent again before reconcile
+
+#### Arguments
+
+- `&lt;id&gt;` (Required): 
+
+#### Options
+
+- `--signatures &lt;files...&gt;`: Signed release request files to take the signatures from (each checked against this escrow's prepared release)
+- `--network &lt;network&gt;`: Network (default: the escrow's own, else the workspace's, else simnet). mainnet is refused; testnet-&lt;n&gt; needs experimental + network.allowPublic in the config
+- `--url &lt;url&gt;`: Node wRPC (JSON) endpoint (default: the one the workspace declares for the network; simnet: the canonical localnet). The canonical localnet is proven by container and image digest; any other node by what it reports (network, version, synced)
+- `--wait` (Default: `false`): Wait until a chain block accepts the release (RELEASED)
+- `--timeout &lt;seconds&gt;` (Default: `120`): With --wait: how long to wait
+- `--json` (Default: `false`): Output as JSON
+
+---
+
+## `hardkas escrow reconcile`
+
+### Synopsis (Generated)
+
+**Purpose:** Look at the node once for an escrow's pending funding and release (its mempool, then its chain) and record what it shows: accepted by a chain block → confirmed (FUNDED / RELEASED)
+
+#### Arguments
+
+- `&lt;id&gt;` (Required): 
+
+#### Options
+
+- `--network &lt;network&gt;`: Network (default: the escrow's own, else the workspace's, else simnet). mainnet is refused; testnet-&lt;n&gt; needs experimental + network.allowPublic in the config
+- `--url &lt;url&gt;`: Node wRPC (JSON) endpoint (default: the one the workspace declares for the network; simnet: the canonical localnet). The canonical localnet is proven by container and image digest; any other node by what it reports (network, version, synced)
+- `--json` (Default: `false`): Output as JSON
+
+---
+

@@ -61,6 +61,7 @@ export const IDENTITY_CATEGORIES: Readonly<Record<string, IdentityCategory>> = O
   // --- NETWORK: consensus-side identifiers, 1:N with artifacts ---
   txId: "NETWORK",
   deployTxId: "NETWORK",
+  fundingTxId: "NETWORK", // silverNodeTest: the transaction that funded a case's coin at the contract's P2SH
   winnerTxId: "NETWORK",
   loserTxIds: "NETWORK",
   branchId: "NETWORK", // DAG branch designator inside dagContext
@@ -70,6 +71,7 @@ export const IDENTITY_CATEGORIES: Readonly<Record<string, IdentityCategory>> = O
   unsignedTransactionId: "NETWORK",
   blockHash: "NETWORK",
   acceptingBlockHash: "NETWORK",
+  removedAcceptingBlockHash: "NETWORK", // TxObservationFindingSchema: the accepting block a reorg removed
   sinkHash: "NETWORK", // observation point: the virtual's selected parent (Wave 2(a))
   pruningPointHash: "NETWORK", // observation point: the observer's pruning point (Wave 2(a))
   acceptedTxIds: "NETWORK",

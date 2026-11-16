@@ -14,3 +14,4 @@ export { DagQueryAdapter } from "./adapters/dag-adapter.js";
 export { EventsQueryAdapter } from "./adapters/events-adapter.js";
 export { TxQueryAdapter } from "./adapters/tx-adapter.js";
 export * from "./payment-tracker.js";
+export * from "./address-history.js";

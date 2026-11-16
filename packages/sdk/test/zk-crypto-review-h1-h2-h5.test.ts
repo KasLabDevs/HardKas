@@ -1,4 +1,4 @@
-// ZK crypto review after RC2 (crypto-review-plan H1, H2, H3, H5). Regression tests, red before the fixes:
+// ZK crypto review (crypto-review-plan H1, H2, H3, H5). Regression tests, red before the fixes:
 //   H1 · verifyR0Groth16Scripts trusted any verifying key / control root / control id in the redeem script;
 //   H2 · consensusEnforced was inferred from the PRESENCE of introspection opcodes, and the change output was never read;
 //   H3 · a comment and the official fixture's README said the crate kaspa-txscript-zk-sdk does not exist (it does, 2.1.0);

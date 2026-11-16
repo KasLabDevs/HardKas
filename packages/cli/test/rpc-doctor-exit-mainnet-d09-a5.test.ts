@@ -10,9 +10,9 @@ import { startFakeNode, type FakeNode } from "./helpers/int9-a-fake-node.js";
 
 vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
 
-// D-09 (rc2 audit) · `hardkas rpc doctor --endpoints ws://127.0.0.1:1` printed ❌ and exited 0: scripts could not trust
+// D-09 (audit 2026-11-13) · `hardkas rpc doctor --endpoints ws://127.0.0.1:1` printed ❌ and exited 0: scripts could not trust
 // it. Now it exits 1 (RPC_DOCTOR_NOT_READY) when any endpoint asked for is not ready; the report is unchanged.
-// A5 (rc2 audit) · it probed an EVM endpoint with a raw eth_chainId and printed "ready" for a mainnet chain. Now a chain
+// A5 (audit 2026-11-13) · it probed an EVM endpoint with a raw eth_chainId and printed "ready" for a mainnet chain. Now a chain
 // id that is always mainnet (1, 38833: @hardkas/l2's KNOWN_MAINNET_CHAIN_IDS) is refused after that one identity answer,
 // and an endpoint the config declares as a mainnet is refused before any contact. Loopback fakes only.
 

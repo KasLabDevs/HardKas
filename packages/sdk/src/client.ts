@@ -243,3 +243,6 @@ export function createHardkasClient(options: HardkasClientOptions = {}) {
     }
   };
 }
+
+// R3-C · the browser wallet signer, browser-safe like this entry (its own curated list): KasWare / Kastle / Kaspire
+export * from "./wallets/index.js";

@@ -18,7 +18,8 @@ const WORD = "[a-z]{3,8}";
 /** 12 to 24 lower-case words on one line: the shape of a BIP39 phrase (only looked for under a phrase-bearing name). */
 const PHRASE = `(?:${WORD}[ \\t]+){11,23}${WORD}`;
 const KEY_FIELD = "privateKey(?:Hex|Wif)?|secretKey|secret";
-const PHRASE_FIELD = "mnemonic|seedPhrase|seed";
+// WALLET-HD-1: also a recovery phrase under the names an HD wallet tool writes (kaspa-wasm's Mnemonic.toJSON is `phrase`)
+const PHRASE_FIELD = "mnemonic|seedPhrase|seed|recoveryPhrase|mnemonicPhrase|phrase";
 
 export type SecretKind = "private key" | "mnemonic" | "extended private key";
 

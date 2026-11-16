@@ -104,12 +104,12 @@ export function classifyNodeRejection(message: string): NodeRejection {
         code,
         retriable: false,
         ...(lock ? { lockRequired: required!, lockDeclared: lock[2]! } : {}),
-        // HardKAS signs lock time 0 (LOCK_TIME_NOT_SUPPORTED otherwise), so on its own spends this is the relative lock
+        // the script's lock compares a field of the transaction: the input's sequence (CSV) or its lock time (CLTV)
         hint:
-          "the redeem script's time lock (CheckSequenceVerify or CheckLockTimeVerify) is above the transaction's own field. HardKAS " +
-          "signs lock time 0, so on a HardKAS spend it is a relative lock (CheckSequenceVerify) and the field is the input's " +
-          `sequence: declare it${required !== undefined ? ` at least ${required}` : ""} (silver spend --sequence). This transaction ` +
-          "never passes, at any time: build a new one."
+          "the redeem script's time lock is above the transaction's own field: for CheckSequenceVerify (`this.age`) the input's " +
+          `sequence (silver spend --sequence${required !== undefined ? ` at least ${required}` : ""}); for CheckLockTimeVerify ` +
+          `(\`tx.daa\` / \`tx.time\`) the transaction's lock time (silver spend --lock-time-daa | --lock-time-ms${required !== undefined ? ` at least ${required}` : ""}). ` +
+          "This transaction never passes, at any time: build a new one."
       };
     }
     if (code === "STORAGE_MASS_ABOVE_LIMIT") {

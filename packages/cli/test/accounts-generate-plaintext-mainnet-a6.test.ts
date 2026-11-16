@@ -3,7 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-// A6 (rc2 audit) · `accounts real generate --unsafe-plaintext` refused a plaintext mainnet key only for the literal
+// A6 (audit 2026-11-13) · `accounts real generate --unsafe-plaintext` refused a plaintext mainnet key only for the literal
 // network "mainnet". Invisible today (the signing lockdown answers first), it would have stored a plaintext mainnet key
 // for `kaspa-mainnet`, `mainnet-1` or a config alias declaring mainnet the day the lockdown is lifted. This test lifts the
 // FIRST line (refuseMainnetSigning is a no-op here) to show the SECOND one now holds for every spelling and alias.

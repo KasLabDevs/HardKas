@@ -79,7 +79,7 @@ describe("--help says what the CLI does", () => {
     expect(command("kaspa wallet create").description()).toMatch(/nothing is saved/);
     expect(command("localnet fork").description()).toMatch(/current UTXOs/);
     expect(option("localnet fork", "--at-daa-score").description).toMatch(/label/);
-    // rc2 audit B9: `fund --amount` says what each mode does (--treasury transfers exactly that amount), and the Treasury
+    // audit 2026-11-13 B9: `fund --amount` says what each mode does (--treasury transfers exactly that amount), and the Treasury
     // is named for what it is: a public key by design, shared by every HardKAS localnet, used on simnet only
     expect(option("localnet fund", "--amount").description).toMatch(/without --treasury, mine .*with --treasury, transfer exactly this amount/);
     expect(option("localnet fund", "--treasury").description).toMatch(/Transfer exactly --amount KAS.*several.*public by design.*simnet only/);
@@ -95,7 +95,17 @@ describe("--help says what the CLI does", () => {
     expect(option("simulator start", "--automine").description).toMatch(/on by default/);
     expect(option("tx send", "--yes").description).toMatch(/simulated or simnet/);
     expect(option("tx plan", "--from").description).toMatch(/default: alice/);
+    // R4-T: several recipients in one transaction (tx batch --one-transaction, repeated tx plan --to <r>=<kas>)
+    expect(option("tx batch", "--one-transaction").description).toMatch(/ONE transaction.*TX_BATCH_MULTIPLE_PAYERS.*TOO_MANY_OUTPUTS.*Without it, each payment is its own transaction/);
+    expect(option("tx plan", "--to").description).toMatch(/default: bob.*--to <recipient>=<kas> \(no --amount\).*one transaction/);
+    // R4-T (coordinator): the devnet local default is devnet's own endpoint, not the simnet one
+    expect(option("tx plan", "--url").description).toMatch(/ws:\/\/127\.0\.0\.1:18210 for simnet and ws:\/\/127\.0\.0\.1:18610 for devnet/);
     expect(option("repair", "--force").description).toMatch(/only reports/);
+    // R4-S: `silver test` says whose verdict it gives (the runner's SCRIPT_VM, or a node's with --on-node) and that a case
+    // no real transaction reproduces is never a pass; the node-only options say they need --on-node
+    expect(command("silver test").description()).toMatch(/SCRIPT_VM.*--on-node.*CONSENSUS_SIMNET.*NOT_REPRODUCIBLE, never a pass/);
+    expect(option("silver test", "--on-node").description).toMatch(/real spend the case describes.*NOT_REPRODUCIBLE, never a pass/);
+    for (const long of ["--network", "--url", "--from", "--timeout"]) expect(option("silver test", long).description, long).toMatch(/^With --on-node/);
   });
 
   it("SIM-18 · every simulator subcommand carries the simulator's maturity (experimental), fund and account create included", () => {

@@ -38,7 +38,7 @@ function createTortureRunDir(): string {
 }
 
 /**
- * rc2 audit E-10: the CLI's own entry (`@hardkas/cli/bin`, its dist/index.js), passed to the buckets that run the CLI
+ * audit 2026-11-13 E-10: the CLI's own entry (`@hardkas/cli/bin`, its dist/index.js), passed to the buckets that run the CLI
  * (`cliEntry`). Resolved by the package's own name from this module (Node's self-reference through `exports`), so it
  * holds under any node_modules layout, pnpm's isolated one included, where @hardkas/testing cannot see @hardkas/cli.
  * undefined when it cannot be resolved (no build): the bucket then looks for the CLI itself and fails typed.

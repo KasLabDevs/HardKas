@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/pskt-native-win32-x64-msvc",
-  "version": "0.13.0-rc.2",
+  "version": "0.13.0-rc.3",
   "cpu": [
     "x64"
   ],

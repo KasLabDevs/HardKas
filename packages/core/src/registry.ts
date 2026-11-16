@@ -51,6 +51,8 @@ export const HardkasSchemas = {
   LocalnetSeedV1: "hardkas.localnetSeed.v1",
   RealAccountStoreV1: "hardkas.realAccountStore.v1",
   EncryptedKeystoreV2: "hardkas.encryptedKeystore.v2",
+  /** WALLET-HD-1: an HD wallet file, `.hardkas/wallets/<walletId>.json` (encrypted recovery phrase + authenticated public header). */
+  EncryptedWalletKeystoreV1: "hardkas.encryptedWalletKeystore.v1",
   NodeStatusV1: "hardkas.nodeStatus.v1",
 
   // --- Deployment ---
@@ -92,6 +94,8 @@ export const HardkasSchemas = {
   SilverCovenantV1: "hardkas.silverCovenant.v1",
   /** The official SilverScript runner's verdicts on scenario transactions (contract execution, never node evidence). */
   SilverVmTestV1: "hardkas.silverVmTest.v1",
+  /** R4-S · `silver test --on-node`: a node's verdicts on the real transactions the runner's test cases describe. */
+  SilverNodeTestV1: "hardkas.silverNodeTest.v1",
   SilverCorpusV1: "hardkas.silverCorpus.v1",
   SilverCorpusCaseV1: "hardkas.silverCorpusCase.v1",
   SilverCorpusVerifyV1: "hardkas.silverCorpusVerify.v1",
@@ -179,9 +183,17 @@ export const HardkasSchemas = {
   NetworkIdentityV1: "hardkas.networkIdentity.v1",
   /** INT9-A · `artifact verify` against a node: integrity, network observation and consensus confirmation levels. */
   ArtifactNetworkVerificationV1: "hardkas.artifactNetworkVerification.v1",
+  /** R3-D · an address's history over a bounded window of a node's selected chain (`hardkas history`, sdk readAddressHistoryOnNode): a result, never persisted. */
+  AddressHistoryV1: "hardkas.addressHistory.v1",
+  /** A sign request HardKAS hands a page for a browser wallet (`@hardkas/sdk/client`; the browser-safe module keeps its own copy of the string). */
+  WalletSignRequestV1: "hardkas.walletSignRequest.v1",
   PendingSpendsV1: "hardkas.pendingSpends.v1",
   PsktV1: "hardkas.pskt.v1",
   EscrowRescueV1: "hardkas.escrow.rescue.v1",
+  /** An escrow's lifecycle record in a workspace (sdk.escrow, `hardkas escrow`): mutable state, not a content-addressed artifact. */
+  EscrowRecordV1: "hardkas.escrow.record.v1",
+  /** A prepared escrow release handed to each signer (`hardkas escrow prepare`): the draft, the escrow's terms, the signatures so far. */
+  EscrowReleaseRequestV1: "hardkas.escrow.releaseRequest.v1",
   ToolchainInstallV1: "hardkas.toolchain.install.v1",
   ExtensionDoctorV1: "hardkas.extensionDoctor.v1",
   TxStatusPolicyDefault: "hardkas.txStatusPolicy.default",
@@ -197,6 +209,13 @@ export const HardkasSchemas = {
   SilverDoctorV1: "hardkas.silverDoctor.v1",
   SilverVerifyV1: "hardkas.silverVerify.v1",
   SilverCovenantInspectV1: "hardkas.silverCovenantInspect.v1",
+  /** `silver covenant start` / `advance` --json output (a covenant with several outputs; 1:N, N:M, termination). */
+  SilverCovenantStartV1: "hardkas.silverCovenantStart.v1",
+  SilverCovenantAdvanceV1: "hardkas.silverCovenantAdvance.v1",
+  /** `kcc20 deploy|transfer|balance` --json output (the transactions' artifacts are the v1 engine's usual plan/signed/submission). */
+  Kcc20DeployV1: "hardkas.kcc20Deploy.v1",
+  Kcc20TransferV1: "hardkas.kcc20Transfer.v1",
+  Kcc20BalanceV1: "hardkas.kcc20Balance.v1",
   SilverEnginePlanV1: "hardkas.silverEnginePlan.v1",
   SilverEngineSignV1: "hardkas.silverEngineSign.v1",
   SilverEngineDraftV1: "hardkas.silverEngineDraft.v1",

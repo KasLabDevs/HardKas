@@ -24,12 +24,13 @@ title: hardkas tx
 
 ### Synopsis (Generated)
 
-**Purpose:** Process a batch of transactions sequentially stable
+**Purpose:** Process a batch of payments: one transaction per payment, sent in order, or all of them in one transaction (--one-transaction) stable
 
 #### Options
 
 - `--file &lt;path&gt;`: Path to JSON file containing batch payments
 - `--network &lt;name&gt;`: Network name
+- `--one-transaction` (Default: `false`): Pay every payment of the file in ONE transaction: one payer, one output per payment (in the file's order), one change output, one fee, one submission. Refused before anything is planned, signed or sent when the file has payments from more than one payer (TX_BATCH_MULTIPLE_PAYERS), a payment without from, to or amount (TX_BATCH_PAYMENT_INVALID), or more recipients than fit in one standard transaction (TOO_MANY_OUTPUTS, which says how many fit). Without it, each payment is its own transaction
 - `--workspace &lt;path&gt;`: Override workspace root directory
 - `--password-env &lt;env&gt;`: Read the keystore password of the batch's encrypted payers from this environment variable (read once, before the first payment)
 - `--password-stdin` (Default: `false`): Read the keystore password of the batch's encrypted payers from stdin (read once, before the first payment)
@@ -52,14 +53,17 @@ title: hardkas tx
 
 - `--target &lt;name&gt;`: Named execution target from hardkas.config.ts
 - `--from &lt;accountOrAddress&gt;`: Sender account name or address (default: alice)
-- `--to &lt;address&gt;`: Recipient address or account name (default: bob)
+- `--to &lt;address&gt;`: Recipient address or account name (default: bob). Repeat it as --to &lt;recipient&gt;=&lt;kas&gt; (no --amount) to pay several recipients in one transaction: one output each, in the order given, one change output and one fee
 - `--amount &lt;kas&gt;`: Amount in KAS, up to 8 decimals (default: 1)
 - `--network &lt;name&gt;`: simulated, simnet, devnet, testnet-10, testnet-12 or mainnet (default: the config's default target)
 - `--fee-rate &lt;sompiPerMass&gt;`: Whole sompi per gram of mass, at least 1 (default: 1 in the simulator, 100 on real networks; not a live estimate)
 - `--max-fee &lt;sompi&gt;`: Total fee limit in sompi: the plan is refused (FEE_EXCEEDS_MAX) above it, and the limit is recorded in the plan and enforced again at sign and send. The workspace's networks[&lt;net&gt;].maxFeeSompi also applies; the lower one wins. No limit by default
 - `--change &lt;accountOrAddress&gt;`: Change destination (account name or address); default: the sender
+- `--lock-time-daa &lt;n&gt;`: Absolute lock time as a DAA score (below 500000000000): the transaction is valid only once the node's virtual DAA score is above it; `tx send` refuses to broadcast it earlier (LOCK_TIME_NOT_REACHED, nothing sent). Not with --lock-time-ms; not on the simulator
+- `--lock-time-ms &lt;t&gt;`: Absolute lock time as milliseconds since the epoch (at or above 500000000000): valid only once the node's past median time is above it; `tx send` refuses to broadcast it earlier. Not with --lock-time-daa; not on the simulator
+- `--confirm-distant-lock-time` (Default: `false`): Plan a lock time more than about a day past the node's position (864000 DAA, or 86400000 ms); refused without it (LOCK_TIME_DISTANT_UNCONFIRMED)
 - `--provider &lt;type&gt;` (Default: `auto`): Provider mode (auto, rpc, simulated)
-- `--url &lt;url&gt;`: Node wRPC URL (default: the network's rpcUrl in hardkas.config.ts; without one, ws://127.0.0.1:18210 for simnet and devnet)
+- `--url &lt;url&gt;`: Node wRPC URL (default: the network's rpcUrl in hardkas.config.ts; without one, ws://127.0.0.1:18210 for simnet and ws://127.0.0.1:18610 for devnet)
 - `--out &lt;path&gt;`: Save plan as artifact JSON
 - `--save &lt;path&gt;`: Alias for --out (Save plan as artifact JSON)
 - `--workflow-id &lt;id&gt;`: Optional deterministic workflow ID override
@@ -144,6 +148,8 @@ title: hardkas tx
 - `--no-observe`: Derive from the evidence already in the workspace; take no new observation
 - `-n, --network &lt;network&gt;`: Network whose configured node observes (default: the network of the recorded submission)
 - `--since &lt;chainBlockHash&gt;`: Scan the node's virtual chain from this chain block (64 hex; it must precede the tx's acceptance) — for a tx sent outside this workspace
+- `--address &lt;address&gt;`: Locate the transaction first through the history of an address it pays or spends from (a bounded window of the node's selected chain: from --since, else the last --lookback chain blocks); found, the new look scans from the chain block before its acceptance (also when its outputs were spent since)
+- `--lookback &lt;chainBlocks&gt;`: With --address and no --since: the history's window, in chain blocks back from the node's sink (default 1000, at most 100000)
 - `--json` (Default: `false`): Output as JSON
 
 ---
@@ -166,10 +172,15 @@ title: hardkas tx
 - `--amount &lt;kas&gt;`: Amount in KAS (shortcut mode)
 - `--network &lt;name&gt;`: Network name
 - `--fee-rate &lt;sompiPerMass&gt;`: Fee rate in sompi per mass (shortcut mode)
+- `--lock-time-daa &lt;n&gt;`: Shortcut mode: Absolute lock time as a DAA score (below 500000000000): the transaction is valid only once the node's virtual DAA score is above it; `tx send` refuses to broadcast it earlier (LOCK_TIME_NOT_REACHED, nothing sent). Not with --lock-time-ms; not on the simulator
+- `--lock-time-ms &lt;t&gt;`: Shortcut mode: Absolute lock time as milliseconds since the epoch (at or above 500000000000): valid only once the node's past median time is above it; `tx send` refuses to broadcast it earlier. Not with --lock-time-daa; not on the simulator
+- `--confirm-distant-lock-time` (Default: `false`): Shortcut mode: Plan a lock time more than about a day past the node's position (864000 DAA, or 86400000 ms); refused without it (LOCK_TIME_DISTANT_UNCONFIRMED)
 - `--password-env &lt;env&gt;`: Shortcut mode: read the sender's keystore password (an encrypted account) from this environment variable
 - `--password-stdin` (Default: `false`): Shortcut mode: read the sender's keystore password (an encrypted account) from stdin
 - `--provider &lt;type&gt;` (Default: `auto`): Provider mode (auto, rpc, simulated; signed-artifact mode only)
 - `--url &lt;url&gt;`: RPC URL (optional override)
+- `--wait` (Default: `false`): After the node accepts the send, wait until the transaction is CONFIRMED, as `hardkas tx wait &lt;txId&gt;`, on the same node (--url, else the network's configured one). Not reaching it in time is TX_SEND_WAIT_FAILED (exit 1): the transaction was still submitted
+- `--wait-timeout &lt;seconds&gt;`: With --wait: how long to wait, in seconds or with a unit (500ms, 60s, 2m) (default: 60)
 - `--yes` (Default: `false`): Confirm broadcast. Required unless the network is simulated or simnet (in shortcut mode, unless --network simulated or simnet is given): without it the send is refused (NOT EXECUTED, exit 3) and nothing is written
 - `--wait-lock` (Default: `false`): No effect, kept for compatibility: the command takes no lock of its own, and each store write waits for the store (up to 30 s)
 - `--lock-timeout &lt;ms&gt;` (Default: `30000`): No effect, kept for compatibility (see --wait-lock)
@@ -229,6 +240,7 @@ title: hardkas tx
 - `--timeout &lt;seconds&gt;` (Default: `60`): Timeout in seconds
 - `--interval &lt;seconds&gt;` (Default: `2`): Seconds between observations
 - `-n, --network &lt;network&gt;`: Network whose configured node observes (default: the network of the recorded submission)
+- `--url &lt;url&gt;`: Node wRPC URL that observes, instead of the network's configured one (as tx send --url)
 - `--since &lt;chainBlockHash&gt;`: Scan the node's virtual chain from this chain block (64 hex; it must precede the tx's acceptance) on the first look — for a tx sent outside this workspace
 - `--address &lt;address&gt;`: An address the tx pays (repeatable), for a tx sent outside this workspace with no --since: the scan starts at the node's sink when the wait starts; an output of the tx listed there before that point makes the wait walk back along the node's selected chain (--lookback) and scan from there, else it ends (TX_WAIT_ACCEPTED_BEFORE_CURSOR); the UTXO view is checked there
 - `--lookback &lt;chainBlocks&gt;`: With --address: chain blocks the wait may walk back from the node's sink (getBlock, selected parent) to find a tx accepted before it started (default 1000, at most 10000, 0 = never); the acceptance is the node's own virtual-chain answer from there. Given explicitly, the wait starts at the sink even when this workspace stored looks at the txId

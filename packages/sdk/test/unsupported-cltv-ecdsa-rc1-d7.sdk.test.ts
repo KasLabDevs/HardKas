@@ -94,11 +94,13 @@ describe("RC1 · D7 · lock times and ECDSA spends through the SDK's public API"
     fs.rmSync(ws, { recursive: true, force: true });
   });
 
-  it("D7-S1 tx.plan({ lockTime }) other than 0: LOCK_TIME_NOT_SUPPORTED before anything is read (it was ignored)", async () => {
+  it("D7-S1 tx.plan({ lockTime }) as a bare value other than 0: refused before anything is read (it was ignored)", async () => {
+    // CHANGED by CLTV: old LOCK_TIME_NOT_SUPPORTED ("lock time 0"); new LOCK_TIME_INVALID — a lock time is a typed value
+    // ({ daaScore } | { timestampMs }, cltv-lock-time.sdk.test.ts), never a bare number
     for (const lockTime of [5, 5n, "1700000000000"]) {
       const err: any = await sdk.tx.plan({ from: account(FROM), to: account(TO), amount: "1", lockTime } as any).catch((e) => e);
-      expect(err?.code, String(lockTime)).toBe("LOCK_TIME_NOT_SUPPORTED");
-      expect(String(err?.message)).toMatch(/lock time 0/);
+      expect(err?.code, String(lockTime)).toBe("LOCK_TIME_INVALID");
+      expect(String(err?.message)).toMatch(/typed value/);
     }
     expect(getUtxos, "nothing read").not.toHaveBeenCalled();
     // an explicit 0 is what every plan is
@@ -106,12 +108,19 @@ describe("RC1 · D7 · lock times and ECDSA spends through the SDK's public API"
     expect(plan.inputs.length).toBeGreaterThan(0);
   });
 
-  it("D7-S2 tx.plan FROM an ECDSA address: ECDSA_SPEND_NOT_SUPPORTED, the node is not asked (it was planned)", async () => {
+  it("D7-S2 CHANGED by ECDSA spends: tx.plan FROM an ECDSA address is planned on a node network (old: ECDSA_SPEND_NOT_SUPPORTED); a consolidation of one is still refused before the node is asked", async () => {
     const k: any = loadManagedKaspaWasmSync();
     const ecdsa = String(new k.PrivateKey("5555".padStart(64, "0")).toPublicKey().toAddressECDSA("simnet").toString());
-    const err: any = await sdk.tx.plan({ from: account(ecdsa), to: account(TO), amount: "1" }).catch((e) => e);
-    expect(err?.code).toBe("ECDSA_SPEND_NOT_SUPPORTED");
+    const consolidation: any = await sdk.tx.plan({ from: account(ecdsa), to: account(TO), amount: "all" }).catch((e) => e);
+    expect(consolidation?.code).toBe("ECDSA_SPEND_NOT_SUPPORTED");
     expect(getUtxos).not.toHaveBeenCalled();
+    getUtxos.mockImplementation((async (address: string) =>
+      address === ecdsa
+        ? [{ outpoint: { transactionId: "e".repeat(64), index: 0 }, address: ecdsa, amountSompi: 1_000_000_000n, scriptPublicKey: script(ecdsa), blockDaaScore: 1000n, isCoinbase: false }]
+        : UTXOS.map((u) => ({ ...u }))) as any);
+    const fromEcdsa: any = await sdk.tx.plan({ from: account(ecdsa), to: account(TO), amount: "1" });
+    expect(fromEcdsa.inputs.map((i: any) => i.address)).toEqual([ecdsa]);
+    expect(fromEcdsa.change?.address).toBe(ecdsa);
     // paying TO it is supported
     const plan: any = await sdk.tx.plan({ from: account(FROM), to: account(ecdsa), amount: "1" });
     expect(plan.outputs[0].address).toBe(ecdsa);

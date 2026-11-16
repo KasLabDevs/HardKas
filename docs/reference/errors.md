@@ -69,12 +69,39 @@ The CLI commands that make a key or a lock refuse mainnet with `MAINNET_SIGNING_
 **Solution:** Use a synced node. The option is for controlled local networks only.
 
 ### `LOCK_TIME_NOT_SUPPORTED`
-**Cause:** A lock time other than 0 was asked of `tx.plan`, or a plan given to the signer states one. HardKAS builds and signs every transaction with lock time 0 in this release (no absolute time locks, CLTV). Nothing is planned or signed.
-**Solution:** Drop the lock time. Design for a later cycle: `docs/proposals/cltv-and-ecdsa-spends.md`.
+**Cause:** A lock time was asked where HardKAS still builds with lock time 0: on the simulator (its lock-time rule is its own and unverified) and in consolidations (`amount: "all"`). Absolute lock times are supported elsewhere (see `LOCK_TIME_INVALID`). Nothing is planned or signed.
+**Solution:** Use a Kaspa node network, or a payment instead of a consolidation.
+
+### `LOCK_TIME_INVALID`, `LOCK_TIME_NOT_REACHED`, `LOCK_TIME_UNVERIFIABLE`, `LOCK_TIME_VOID_SEQUENCE`, `LOCK_TIME_DISTANT_UNCONFIRMED`, `LOCK_TIME_OPTION_SHORTCUT_ONLY`, `LOCK_TIME_NOT_APPLIED`
+**Cause:** Absolute lock times (CLTV): `tx.plan({ lockTime: { daaScore } | { timestampMs } })`, `hardkas tx plan` and `hardkas tx send` with `--lock-time-daa` or `--lock-time-ms`, SilverScript spends with a lock time. A plan records its lock time, the signer writes it with inputs at sequence 0 so that it is enforced, and a signed lock time must equal the one its plan authorizes (`SIGNED_PLAN_MISMATCH`).
+- `LOCK_TIME_INVALID`: not a typed value (a bare number, both or neither kind, a DAA score at or above 500,000,000,000, which Kaspa reads as a time, a time below it, 0, not a u64), or both CLI options. Nothing is read, planned or signed.
+- `LOCK_TIME_NOT_REACHED`: the send preflight: the node has not passed the lock yet (a DAA-score lock needs the virtual DAA score strictly above it, a time lock the past median time strictly above it; equal is not final). The node would refuse it, and that refusal would be the transaction's one recorded submission, so nothing is sent or recorded: the same signed transaction can be sent once the lock is reached. Metadata: `lockTime`, `kind`, `reference`, `remaining`.
+- `LOCK_TIME_UNVERIFIABLE`: the node did not report the DAA score or median time the lock is compared with. Nothing is sent.
+- `LOCK_TIME_VOID_SEQUENCE`: a lock time with an input at the maximum sequence, which makes the input final and the lock void. Nothing is signed.
+- `LOCK_TIME_DISTANT_UNCONFIRMED`: CLI: the lock is more than about a day past the node's position (864,000 DAA at 10 DAA per second, or 86,400,000 ms), or its distance cannot be measured. A DAA score taken for a time, or computed at another network's rate, locks the funds far longer than meant. Nothing is planned.
+- `LOCK_TIME_OPTION_SHORTCUT_ONLY`: `tx send <signed>` with a lock-time option: a signed transaction carries its plan's lock time.
+- `LOCK_TIME_NOT_APPLIED`: internal guard: kaspa-wasm did not keep the plan's lock time.
+**Solution:** Give one typed lock time on a Kaspa node network, keep the inputs' sequence below the maximum, and send once the node passes it. For a distant lock, check the value, then pass `--confirm-distant-lock-time`.
 
 ### `ECDSA_SPEND_NOT_SUPPORTED`
-**Cause:** A spend from an ECDSA P2PK address (version 1, script `21 <33-byte key> ab`): HardKAS signs Schnorr P2PK spends only, so it refuses to plan it (`tx.plan`, `hardkas tx plan`, consolidations) or to sign an input of that kind, before any UTXO is read or any key is used. Paying to an ECDSA address is supported; an unlocking script the caller makes itself (a signature-script authorization) is used as given.
-**Solution:** Spend from a Schnorr address. Design for a later cycle: `docs/proposals/cltv-and-ecdsa-spends.md`.
+**Cause:** A spend from an ECDSA P2PK address (version 1, script `21 <33-byte key> ab`) where HardKAS still signs Schnorr only: on the simulator, in consolidations and in v1 transactions. Payments from ECDSA accounts are supported (`accounts real generate|import --ecdsa`). Nothing is planned or signed.
+**Solution:** Pay with a v0 payment from the ECDSA account, or spend from a Schnorr address.
+
+### `INPUT_KEY_SCHEME_MISMATCH`, `ACCOUNT_KEY_SCHEME_MISMATCH`, `ACCOUNT_KEY_SCHEME_INVALID`, `UTXO_ENTRY_MISSING`
+**Cause:** ECDSA accounts and inputs. `INPUT_KEY_SCHEME_MISMATCH`: the key or signer of an input is of the other scheme than its UTXO script (a Schnorr key on an ECDSA input, or the reverse). `ACCOUNT_KEY_SCHEME_MISMATCH`: an account's recorded key scheme and its address disagree; at import, `--address` is the key's address under the other scheme. `ACCOUNT_KEY_SCHEME_INVALID`: a scheme other than `schnorr` or `ecdsa`. `UTXO_ENTRY_MISSING`: an ECDSA signer got an input without its UTXO entry. `PRIVATE_KEY_DOES_NOT_CONTROL_INPUT` is also raised for an ECDSA key that is not the one the input's script commits to. Nothing is signed.
+**Solution:** Import the key with `--ecdsa` when its address is the ECDSA one, and spend each input with its own scheme's key.
+
+### `TOO_MANY_OUTPUTS`
+**Cause:** A payment to several recipients in one transaction (`sdk.tx.plan({ outputs })`, `tx plan --to <recipient>=<kas>` repeated, `tx batch --one-transaction`) has more outputs than the transaction planner (the pinned kaspa-wasm Generator) puts in one standard transaction beside its change output; the outputs, the change and the payload must leave room for the inputs. The message, and `outputsThatFit` / `requestedOutputs` on the SDK error, say how many of the first recipients fit, counted by the same Generator: about 193 ordinary (P2PK) recipients, fewer to P2SH addresses. Nothing is planned, signed or sent.
+**Solution:** Pay the others in another transaction, or run `tx batch` without `--one-transaction` (one transaction per payment).
+
+### `TX_PLAN_RECIPIENTS_CONFLICT`, `TX_PLAN_RECIPIENTS_INVALID`
+**Cause:** `sdk.tx.plan` takes one recipient (`to` and `amount`) or several in one transaction (`outputs: [{ to, amount }, …]`). `TX_PLAN_RECIPIENTS_CONFLICT`: both forms were given. `TX_PLAN_RECIPIENTS_INVALID`: neither form; or `outputs` is not a non-empty list of `{ to, amount }`; or a recipient has no account or address, an amount that is not a string (KAS), a bigint (sompi) or a number (KAS), an amount of 0 or less, or `"all"` (a consolidation pays one destination: `{ to, amount: "all" }`). Nothing is read or planned.
+**Solution:** Give one of the two forms.
+
+### `TX_BATCH_MULTIPLE_PAYERS`, `TX_BATCH_PAYMENT_INVALID`, `TX_BATCH_EMPTY`
+**Cause:** `tx batch --one-transaction` pays the whole file in one transaction, so it has one payer and every payment must be complete. `TX_BATCH_MULTIPLE_PAYERS`: the file pays from more than one payer (compared by the address each `from` resolves to). `TX_BATCH_PAYMENT_INVALID`: a payment has no `from`, `to` or `amount` (the message names its index); without the flag such a payment is skipped and reported, as before. `TX_BATCH_EMPTY`: the file has no payments. Nothing is planned, signed or sent (exit 2).
+**Solution:** Split the file per payer, complete the payment, or run the batch without `--one-transaction` (one transaction per payment).
 
 ### `ALREADY_SUBMITTED`
 **Cause:** `tx send` found that this payment was already sent: a submission recorded here (`recorded: true`), or positive evidence at the node with no local record (`recorded: false`: in its mempool, in this workspace's stored looks, or an output of the txId listed with the amount and script it pays). Nothing is sent again; `state` and `evidence` say what was seen.
@@ -220,10 +247,14 @@ The same code (or `OUTPUT_BELOW_STANDARD_AMOUNT`, when the script output itself 
 
 ### Node rejection classes `SCRIPT_LOCK_UNSATISFIED`, `STORAGE_MASS_ABOVE_LIMIT`
 **Cause:** How HardKAS classifies a node's refusal (`classifyNodeRejection` in `@hardkas/artifacts`, the `rejection.code` of a send result, and a `[CODE: hint]` suffix on `SILVER_REJECTED_BY_NODE`).
-- `SCRIPT_LOCK_UNSATISFIED`: the redeem script's own time-lock check (CheckSequenceVerify or CheckLockTimeVerify; node text "Unsatisfied lock time: locktime requirement not satisfied -- 500 > 0") failed against a field of the transaction. HardKAS signs lock time 0, so for a HardKAS spend it is the input's sequence. Waiting never helps: the same transaction never passes. It was classified `LOCK_TIME_REJECTED`, which now means only the finality refusal "transaction input #N is not finalized". Carries `lockRequired` and `lockDeclared` when the text has them.
+- `SCRIPT_LOCK_UNSATISFIED`: the redeem script's own time-lock check (CheckSequenceVerify or CheckLockTimeVerify; node text "Unsatisfied lock time: locktime requirement not satisfied -- 500 > 0") failed against a field of the transaction. For CheckSequenceVerify it is the input's sequence; for CheckLockTimeVerify, the transaction's lock time. Waiting never helps: the same transaction never passes. It was classified `LOCK_TIME_REJECTED`, which now means only the finality refusal "transaction input #N is not finalized". Carries `lockRequired` and `lockDeclared` when the text has them.
 - `STORAGE_MASS_ABOVE_LIMIT`: "transaction storage mass of N is larger than max allowed size of 500000". The storage mass (KIP-9, about 10¹² divided by each output's amount, so a small output dominates) is above the node's limit. Carries `storageMass` and `storageMassLimit`.
 
-**Solution:** `SCRIPT_LOCK_UNSATISFIED`: build the spend again with the sequence the lock needs (`silver spend --sequence`, at least the first number of the text). `STORAGE_MASS_ABOVE_LIMIT`: raise the smallest output or merge it into another, and build a new transaction.
+**Solution:** `SCRIPT_LOCK_UNSATISFIED`: build the spend again with the field the lock needs, at least the first number of the text: `silver spend --sequence` for a relative lock, `--lock-time-daa` or `--lock-time-ms` for an absolute one.
+
+### `LOCK_TIME_KIND_MISMATCH`, `LOCK_TIME_BELOW_ENTRY_REQUIREMENT`
+**Cause:** HardKAS reads a SilverScript entry's top-level `require(tx.daa >= x)` / `require(tx.time >= t)` (and a covenant leader's policy) before planning or signing (`sdk.covenants.planContractSpend`, `planTransition`, `hardkas silver spend`). `LOCK_TIME_KIND_MISMATCH`: the entry needs a DAA-score lock and the spend gives a time, or the reverse (lock time 0 counts as a DAA score); silverc compiles the kind into the script and the node refuses a mismatch whatever the time. `LOCK_TIME_BELOW_ENTRY_REQUIREMENT`: the entry's x is known (a literal, or a constructor or entry argument HardKAS has; on transaction v0 the constructor values are not known) and the lock time is below it. Nothing is planned or signed. Exit code 2. Conditional, looped or helper statements and delegate entries are not read: the node judges them.
+**Solution:** Give a lock time of the kind the entry checks (`--lock-time-daa` or `--lock-time-ms`), at least x. `STORAGE_MASS_ABOVE_LIMIT`: raise the smallest output or merge it into another, and build a new transaction.
 
 ### `NETWORK_ADDRESS_MISMATCH` (SilverScript spends)
 **Cause:** `hardkas silver spend --to` (`buildSilverSweep`), a spend draft output given by address (`prepareSilverSpend`) or `hardkas escrow rescue-v1 prepare --to` names an address of another network (for example `kaspatest:` on simnet). The value would go to the same key's script on the spend's network while the record named a foreign address. Nothing is signed or written. The rescue checks it after the node has proved its identity, so the mainnet and identity refusals come first (exit 2). See also [error recovery](./error-recovery.md#network_address_mismatch).
@@ -276,7 +307,7 @@ Nothing is signed.
 **Solution:** Usually a node that keeps the connection open and stops answering. Restart the watch or the node.
 
 ### `WALLET_HISTORY_UNSUPPORTED`, `WALLET_QUERY_PROVIDER_UNAVAILABLE`
-**Cause:** `WalletToolkit.history()`. `WALLET_HISTORY_UNSUPPORTED`: the wallet reads through a node only (`options.rpc`, no `options.provider`). A Kaspa node keeps no address history, so there is none to return (it used to answer an empty one). `WALLET_QUERY_PROVIDER_UNAVAILABLE`: the wallet's query provider failed; `history()` used to return the provider's failed result as if it were the history.
+**Cause:** `WalletToolkit.history()`. A wallet that reads through a node (`options.rpc`) gets the address's history over a bounded window of the node's chain (see `ADDRESS_HISTORY_*`). `WALLET_HISTORY_UNSUPPORTED` remains when no window can be bounded (no `since` given and the node cannot bound one), and for `historyPage()` on a wallet with a query provider, which has no window to report. A Kaspa node keeps no address history of its own. `WALLET_QUERY_PROVIDER_UNAVAILABLE`: the wallet's query provider failed; `history()` used to return the provider's failed result as if it were the history.
 **Solution:** Give the wallet a query provider that keeps history (`options.provider`, for example an indexer), or use `watch()` for live activity.
 
 ### `WALLET_WATCH_NODE_NETWORK_CHANGED`
@@ -338,3 +369,85 @@ Nothing is read or written.
 - `LOCALNET_TREASURY_INCOMPLETE`: a treasury run failed after it broadcast something. The message lists what was broadcast and which accounts were funded, and the liveness miner is restarted unless `--stop-miner` was asked. Failures that have their own code keep it and carry the same lists.
 - `LOCALNET_TREASURY_TRANSFER_UNPLANNABLE`: one payment does not fit in one standard transaction and is too small to split further (parts are at least 1 KAS). Larger payments are split over several transactions.
 **Solution:** Check the listed accounts before running again; `--only-empty` skips the funded ones.
+
+### `ZK_SPEND_*`, `ZK_OBSERVE_TXID_INVALID`, `ZK_FACT_INVALID`, `V1_P2SH_UNLOCK_MISMATCH`
+**Cause:** `hardkas zk toccata spend` / `spendR0Groth16Lock` (SDK, also `sdk.experimental.zk.toccata.spend`) spends a RISC Zero Groth16 lock through HardKAS's send (a plan, the signed transaction, the ZK fact and one submission per txId, recorded); `zk toccata observe` looks at the spend. Nothing is sent when one of these is raised, except where it says so.
+- `ZK_SPEND_NODE_REQUIRED`: the SDK instance runs the simulator, or the workspace has no Kaspa node for the network.
+- `ZK_SPEND_NETWORK_UNSUPPORTED`: a ZK lock is spent or observed on simnet or testnet-10 only (mainnet is refused before anything, like every path).
+- `ZK_SPEND_LOCK_REFUSED`: the lock is not one HardKAS spends: `verify-scripts` refuses it, its P2SH script is not the hash of its redeem script, or the receipt does not rebuild it. `ZK_SPEND_SCRIPTS_MISMATCH` / `ZK_SPEND_SCRIPTS_INVALID`: the `--scripts` record is not the one the receipt and its parameters build, or not a readable successful record. `ZK_SPEND_LOCK_REQUIRED` / `ZK_SPEND_LOCK_OPTIONS_CONFLICT`: give the lock as `--scripts` or as `--image-id`/`--journal-hash`, one of them.
+- `ZK_SPEND_DESTINATION_REQUIRED`: a proof-only lock needs `--to`. `ZK_SPEND_UTXO_INVALID` / `ZK_SPEND_UTXO_NOT_FOUND`: the UTXO is malformed, or the node does not list it unspent at the lock's address.
+- `ZK_SPEND_BUILD_REFUSED`: the ZK builder refused the spend; `metadata.issues` lists its codes. `ZK_SPEND_TXID_MISMATCH`, `ZK_SPEND_UNLOCK_UNAVAILABLE`: internal consistency checks.
+- `ZK_SPEND_CONFIRMATION_REQUIRED` (exit 3): off simnet without `--yes`; nothing is read, built or sent.
+- `ZK_SPEND_REJECTED_BY_NODE`: the node refused it; it is recorded and never sent again. `ZK_SPEND_OUTCOME_UNKNOWN`: no answer named the transaction; it may be held by the node; observe it. `ZK_SPEND_WAIT_TIMEOUT`: with `--wait`, not seen accepted in time; not sent again.
+- `ZK_OBSERVE_TXID_INVALID` / `ZK_FACT_INVALID`: the txId is not 64 hex characters, or `--fact` is not a verified ZK fact of that txId.
+- `V1_P2SH_UNLOCK_MISMATCH`: the unlock given for a P2SH input that is not a SilverScript contract (a ZK lock) is not push-only, or its redeem script does not hash to the input's script.
+**Solution:** Build the lock with `zk toccata build-scripts`, fund exactly what it asks for, and spend it with the same receipt.
+
+### `SILVER_TEST_NOT_REPRODUCIBLE`, `SILVER_TEST_INCONCLUSIVE`, `SILVER_TEST_FAILED`, `SILVER_TEST_FUNDING_FAILED`, `SILVER_TEST_FUNDER_REQUIRED`, `SILVER_TEST_OPTION_CONFLICT`, `SILVER_TEST_OPTION_NEEDS_ON_NODE`, `SILVER_TEST_NETWORK_INVALID`
+**Cause:** `hardkas silver test --on-node` runs each case of a test file as the real transaction it describes, on a Kaspa node (simnet by default; mainnet refused first, `SILVERSCRIPT_MAINNET_NOT_ENABLED`; a public testnet only with the payments' opt-in), and records the node's verdict in `hardkas.silverNodeTest.v1`.
+- `SILVER_TEST_NOT_REPRODUCIBLE` (exit 1): the run ended with cases no real transaction reproduces. Each is in the record with its own code and reason (`RUNNER_DEFAULT_SCENARIO`, `COVENANT_CONTEXT`, `MULTIPLE_INPUTS`, `FOREIGN_INPUT_SCRIPT`, `FABRICATED_OUTPOINT`, `SCENARIO_SIGNATURE`, `ARGUMENT_UNREADABLE`, `NO_OUTPUTS`, `OUTPUT_WITHOUT_ADDRESS`, `TX_VERSION_UNSUPPORTED`, `VALUE_OUT_OF_RANGE`, `HARDKAS_REFUSED` with the refusal's code, `SEQUENCE_LOCK_NOT_REACHED`). They have no node verdict and never count as passed.
+- `SILVER_TEST_INCONCLUSIVE` (exit 1): the node answered, but not about the case: a spend expected to pass was accepted and not seen in a chain block within `--timeout` (no miner?), the node refused a spend for its coin, or it refused an expected failure for a reason outside the contract's script (fee, storage mass, lock time, sequence lock, version). No verdict either way.
+- `SILVER_TEST_FAILED` (exit 1): with `--on-node`, a case the node judged against its expectation (accepted when it expected a failure, refused when it expected a pass). It outranks the two codes above.
+- `SILVER_TEST_FUNDING_FAILED` (exit 1): the payment that funds a case's coin at the contract's P2SH was not accepted, or its plan did not pay the case's `utxo_value` there. The run stops without verdicts; coins already funded stay at the contract's address.
+- `SILVER_TEST_FUNDER_REQUIRED` (exit 2): name the account that funds the coins with `--from <account>`.
+- `SILVER_TEST_OPTION_CONFLICT` (exit 2): `--on-node` with `--runner` or `--allow-unverified-runner`; the node mode runs no case on the runner. `SILVER_TEST_OPTION_NEEDS_ON_NODE` (exit 2): `--network`, `--url`, `--from` or `--timeout` without `--on-node`; the runner mode runs no transaction on any node.
+- `SILVER_TEST_NETWORK_INVALID`: the network has no address for the contract's P2SH lock.
+**Solution:** Restate a not reproducible case as a transaction a node can see (one input at the contract, outputs to addresses, signatures named as `{"signature":"<account>"}`), or run it on the SilverScript runner (without `--on-node`), whose verdict is `SCRIPT_VM` only. For an inconclusive case, run a miner or raise `--timeout`, and check the fee and the coin.
+
+### `WATCH_ADDRESS_INVALID`, `WATCH_NODE_NETWORK_MISMATCH`, `WATCH_ADDRESS_NETWORK_MISMATCH`, `WATCH_OPTION_INVALID`
+**Cause:** `hardkas watch <address>` / `watchAddress`: the address is not a Kaspa address; the node serves another network than the one asked for; the address belongs to another network than the node's; `--timeout` or `--until` is not a positive integer in range. Nothing is tracked. Mainnet is refused before connecting.
+**Solution:** Watch an address of the node's own network.
+
+### `ESCROW_NOT_FOUND`, `ESCROW_RECORD_INVALID`, `ESCROW_NETWORK_MISMATCH`, `ESCROW_NETWORK_NOT_SUPPORTED`, `ESCROW_REQUEST_INVALID`, `ESCROW_REQUEST_MISMATCH`, `ESCROW_FUNDING_NOT_UNSPENT`, `ESCROW_DESTINATION_NOT_ADDRESS`
+**Cause:** `sdk.escrow` and the `hardkas escrow` lifecycle commands (`create`, `fund`, `status`, `prepare`, `sign`, `release`, `reconcile`) run a v2 escrow's lifecycle in a workspace (records in `.hardkas/escrows/`), with the dev server's rules.
+- `ESCROW_NOT_FOUND`: no escrow with that id in this workspace. `ESCROW_RECORD_INVALID`: a record file is not the record of the id it is named after.
+- `ESCROW_NETWORK_MISMATCH`: the record or the release request is for another network. `ESCROW_NETWORK_NOT_SUPPORTED`: the workspace runs the simulator for that network; escrows run on a Kaspa node.
+- `ESCROW_REQUEST_INVALID`: a release request file is not a `hardkas.escrow.releaseRequest.v1` with terms and a funding outpoint. `ESCROW_REQUEST_MISMATCH`: the request does not do what its escrow's terms say (the contract recompiled and the draft prepared again do not match it). Nothing is signed.
+- `ESCROW_FUNDING_NOT_UNSPENT`: before a release is built, the node must list the escrow's funding unspent with the recorded amount and lock. It does not when the funding is not accepted yet (run `escrow reconcile`, then release), or another release already spent it. A release is deterministic and HardKAS sends one submission per txId, so an early refusal could never be retried.
+- `ESCROW_DESTINATION_NOT_ADDRESS`: the release pays a script that is no standard address of the network.
+- `ESCROW_RELEASE_UNPRICED`: the send's economic check refuses the release's plan. Nothing is sent or recorded. Internal guard: HardKAS checks the plan before it records the release.
+- For SDK callers, the dev server's uncoded HTTP refusals now carry codes (the HTTP bodies are unchanged): `ESCROW_NOT_FUNDED`, `ESCROW_NOT_PREPARED`, `ESCROW_NOT_READY`, `ESCROW_ROLE_NOT_REQUIRED`, `ESCROW_POLICY_CHANGED`, `ESCROW_BRANCH_UNKNOWN`.
+**Solution:** Follow the order create → fund → (reconcile) → prepare → sign (each required role) → release → reconcile, on the escrow's own network.
+
+### `SILVER_COVENANT_INPUT_STATE_UNKNOWN`
+**Cause:** `silver covenant advance`: an `--input` outpoint whose state this workspace's records of the covenant do not declare, or whose declared state does not commit to the output's address. Nothing is planned or signed. Exit code 2.
+**Solution:** Give its state explicitly: `--input <txid:index>=<state-file>`.
+
+### `KCC20_PROGRAM_INVALID`, `KCC20_HOLDER_INVALID`, `KCC20_INPUT_NOT_HELD`, `KCC20_INSUFFICIENT_TOKENS`, `KCC20_SIGNER_NOT_OWNER`, `KCC20_OWNER_SCHEME_UNSUPPORTED`, `KCC20_PLAN_UNSTABLE`
+**Cause:** `sdk.kcc20` and `hardkas kcc20 deploy`, `hardkas kcc20 transfer` and `hardkas kcc20 balance` (experimental, on the v1 engine).
+- `KCC20_PROGRAM_INVALID`: the contract is not a KCC-20 program as its KCC-20 artifact describes one (entries and KCC-1 dispatch tags, state fields, no covenant declarations of its own).
+- `KCC20_HOLDER_INVALID`: an owner that is not an account, a Schnorr P2PK address or a 32-byte x-only key; a deploy without holders. Exit code 2.
+- `KCC20_INPUT_NOT_HELD`: a transfer input that is not a live token output of the covenant (recorded here, listed unspent by the node, its state verified). Exit code 2.
+- `KCC20_INSUFFICIENT_TOKENS`: the sender's live token outputs do not cover the transfer.
+- `KCC20_SIGNER_NOT_OWNER`: the signing account is not the input's owner; checked before any private key is asked for. Exit code 2.
+- `KCC20_OWNER_SCHEME_UNSUPPORTED`: an owner scheme the SDK does not sign (`p2pkh-ecdsa`, `p2sh`, `covenant-id`). Exit code 2.
+- `KCC20_PLAN_UNSTABLE`: the plan with the owners' signatures is not the transaction they signed (the node's inputs or the fee changed between the two plannings). Nothing is sent; plan again.
+- A transfer the KCC-20 rules reject is `KCC20_TRANSFER_REJECTED` (`metadata.rule` names the rule), before any key is read.
+**Solution:** Transfer from the token outputs this workspace recorded, as their owner.
+
+### `HD_WALLET_*`, `KEYSTORE_PASSWORD_TOO_SHORT`
+**Cause:** HD wallets (`HdWalletManager` in `@hardkas/accounts`, `HardkasHdWallets` in the SDK, the `hardkas wallet hd` commands): a BIP39 recovery phrase and Kaspa's BIP32 derivation, encrypted in `.hardkas/wallets/`. No secret word, key or passphrase is ever printed in a message.
+- Creating or importing: `HD_WALLET_NETWORK_UNKNOWN` (not a Kaspa network id; the simulator is refused), `HD_WALLET_MNEMONIC_INVALID` (not a valid English phrase of 12 or 24 words; the message names the word count only), `HD_WALLET_WORD_COUNT_UNSUPPORTED`, `HD_WALLET_LABEL_INVALID` (1–64 letters, digits, `_`, `-`), `HD_WALLET_LABEL_EXISTS`, `KEYSTORE_PASSWORD_TOO_SHORT` (at least 8 characters), `HD_WALLET_XPUB_INVALID` (a watch-only key must be an account-level kpub/ktub, not a master key), `HD_WALLET_MNEMONIC_REQUIRED` and `HD_WALLET_STDIN_CONFLICT` (CLI: give the phrase with `--mnemonic-env` or `--mnemonic-stdin`; only one secret can come from stdin).
+- Opening: `HD_WALLET_NOT_FOUND`, `HD_WALLET_AMBIGUOUS` (name it by its id), `HD_WALLET_KEYSTORE_INVALID` (not a valid `hardkas.encryptedWalletKeystore.v1`), `HD_WALLET_UNLOCK_FAILED` (wrong password, or the authenticated header or the ciphertext was edited: AES-GCM cannot tell which; nothing was decrypted), `HD_WALLET_PASSPHRASE_REQUIRED`, `HD_WALLET_PASSPHRASE_MISMATCH` (the passphrase does not derive the wallet's recorded account keys), `HD_WALLET_KEYRING_DISPOSED`.
+- Using: `HD_WALLET_WATCH_ONLY` (no phrase: it cannot sign, send, reveal or change password), `HD_WALLET_ACCOUNT_NOT_FOUND`, `HD_WALLET_INDEX_INVALID`, `HD_WALLET_GAP_LIMIT_INVALID` (1–1000), `HD_WALLET_AMOUNT_INVALID`, `HD_WALLET_RECIPIENT_INVALID`, `HD_WALLET_SIMULATOR_UNSUPPORTED` and `HD_WALLET_NETWORK_MISMATCH` (an HD wallet is scanned and spent on its own node network only), `HD_WALLET_EXTERNAL_SIGNER_CONFLICT` (the SDK instance has an external signer that would sign instead of the wallet), `HD_WALLET_INPUT_NOT_OWNED` (a defensive check: an input the wallet did not derive; nothing is signed), `HD_WALLET_REVEAL_CONFIRMATION_REQUIRED` (`wallet hd reveal` prints the phrase only with `--yes`).
+**Solution:** Back up the phrase with `wallet hd reveal --yes` right after creating a wallet; recover it with `wallet hd import`.
+
+### `ADDRESS_HISTORY_*`, `ARTIFACT_VERIFY_ADDRESS_INVALID`
+**Cause:** `hardkas history <address>`, `readAddressHistoryOnNode` (SDK), `WalletToolkit.history()`, and `artifact verify|tx status --address`. A node keeps no address history, so HardKAS reads a bounded window of the node's selected chain. Mainnet is refused before connecting.
+- `ADDRESS_HISTORY_USAGE`: an invalid option (address, network, `--since`, `--lookback`, `--max-blocks`, `--limit`, timeout, cursor), or a raw `--url` whose network cannot be told. Nothing is read.
+- `ADDRESS_HISTORY_REQUIRES_NODE`: the simulator has no chain to read. `ADDRESS_HISTORY_NETWORK_MISMATCH`: the address, or the network the node serves, is not the one asked for.
+- `ADDRESS_HISTORY_NODE_UNSUPPORTED`: the node cannot bound or serve a window (no sink or pruning point, or no `getVirtualChainFromBlockV2` at high verbosity). `ADDRESS_HISTORY_SINCE_UNAVAILABLE`: the start block is unknown or pruned on this node.
+- `ADDRESS_HISTORY_CHAIN_ANSWER_INCOHERENT`: a chain answer whose blocks and acceptance data disagree; rejected whole.
+- `ADDRESS_HISTORY_READ_FAILED` / `ADDRESS_HISTORY_TIMEOUT`: the first read failed, or the deadline passed before the window's start was known. Once reading, a failure or the deadline ends the window early and the result says so (`stoppedBy`).
+- `ARTIFACT_VERIFY_ADDRESS_INVALID`: `--address` is not an address of the artifact's network, or `--lookback` is out of range or given without `--address`. Nothing is contacted.
+- An unreadable workspace config is `HARDKAS_CONFIG_ERROR` before any connection: `hardkas history` never falls back to another node.
+**Solution:** Give a window that starts at or after the node's pruning point (a chain block or a DAA score), on the address's own network.
+
+### `WALLET_*` (browser wallets)
+**Cause:** The browser wallet signer (`@hardkas/sdk/client`, `@hardkas/sdk`): KasWare, Kastle or Kaspire signs what HardKAS planned, and HardKAS checks what comes back. Nothing is signed or sent when one of these is raised. Mainnet is refused (`MAINNET_SIGNING_DISABLED`) before any wallet or node is contacted.
+- Connecting: `WALLET_NOT_FOUND` (the extension is not injected in the page), `WALLET_METHOD_UNAVAILABLE` (it lacks a method HardKAS uses; the message lists the ones it has), `WALLET_REQUEST_REJECTED` (a declined popup or a locked wallet), `WALLET_NETWORK_MISMATCH` (the wallet is on another network than the transaction), `WALLET_NETWORK_UNKNOWN` (a network HardKAS cannot read as one Kaspa L1 network: it never guesses), `WALLET_ACCOUNT_CHANGED` (the active account changed: the session is dropped and a signature that came back meanwhile is not used), `WALLET_ADDRESS_UNSUPPORTED` (not a Schnorr P2PK address).
+- Requests: `WALLET_SIGN_REQUEST_INVALID` (not a HardKAS sign request, or a plan a wallet cannot sign), `WALLET_REQUEST_MISMATCH` (the request is not the one HardKAS builds now for that plan and address), `WALLET_INPUT_NOT_OWNED` (an input that is not an output of the wallet's address), `WALLET_COVENANT_SIGNING_UNSUPPORTED` (a contract request to Kastle, which could not sign those inputs).
+- What came back: `WALLET_SIGNED_PAYLOAD_UNREADABLE` (not a transaction HardKAS can read), `WALLET_SIGNED_TRANSACTION_CHANGED` (another transaction than the one sent; the message names the field), `WALLET_SIGNATURE_MISSING` (an input asked for came back without `41 <64-byte signature> 01`), `WALLET_SIGNATURE_INVALID` (well formed but not a valid SIGHASH_ALL signature by the address's key over HardKAS's transaction).
+- Messages: `WALLET_MESSAGE_SIGNATURE_UNREADABLE` (none of the shapes HardKAS verifies: 128 hex characters, 88 base64 characters of a 64-byte signature, `{ address, signature }`), `WALLET_MESSAGE_ADDRESS_MISMATCH`, `WALLET_MESSAGE_SIGNATURE_INVALID` (does not verify with kaspa-wasm against the expected address).
+- `WALLET_PROBE_LOOPBACK_ONLY`: the dev server's wallet probe answers loopback only.
+**Solution:** Unlock the wallet, put it on the transaction's network, keep the same account during the request, and let HardKAS plan the transaction it asks the wallet to sign.

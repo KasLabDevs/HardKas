@@ -58,7 +58,7 @@ describe("R0 · CLI lifecycle: exit status set, natural close", () => {
       usage: cli(["verify", "--json"], empty),
       runtime: cli(["artifact", "verify", "no-such-file.json", "--json"], ws),
       // a non-simulated network without --yes (the confirmation policy). Not mainnet any more: under the MAINNET TOTAL
-      // LOCKDOWN (RC2 oracle D2) the mainnet refusal comes first, MAINNET_BROADCAST_DISABLED, pinned with its envelope
+      // LOCKDOWN (lockdown oracle D2) the mainnet refusal comes first, MAINNET_BROADCAST_DISABLED, pinned with its envelope
       // code in mainnet-lockdown-codes.test.ts
       policy: cli(["tx", "send", "--from", "alice", "--to", "bob", "--amount", "1", "--network", "testnet-10", "--json"], ws),
       swallowed: cli(["dev", "accounts", "reveal", "nobody-here"], ws)

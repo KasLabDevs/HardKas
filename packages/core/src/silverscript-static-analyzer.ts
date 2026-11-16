@@ -435,7 +435,7 @@ export async function analyzeSilverScriptSecurity(params: {
           "The spender chooses the lock time. With every input's sequence at the maximum the node does not enforce it, so a spend can state the lock time the script asks for and be mined at once: the time condition does not hold.",
         reproductionCondition: "Spend through this entry before the intended time, with the lock time set to the required value and every input's sequence at 0xffffffffffffffff.",
         mitigation: "Use `require(tx.daa >= x);` or `require(tx.time >= t);` for an absolute lock (CheckLockTimeVerify), `require(this.ageDaa >= n);` for a relative one (CheckSequenceVerify).",
-        limitations: "Does not apply if the lock time is read for something other than a time condition. HardKAS itself builds and signs lock time 0 only."
+        limitations: "Does not apply if the lock time is read for something other than a time condition. HardKAS builds a lock time only when the spend asks for one (`--lock-time-daa`, `--lock-time-ms`)."
       });
     }
 

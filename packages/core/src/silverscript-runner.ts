@@ -6,8 +6,9 @@ import os from "node:os";
 import path from "node:path";
 import { loadManagedKaspaWasmSync } from "./kaspa-wasm.js";
 import { SILVERSCRIPT_RELEASE, getHardkasHome } from "./toolchains.js";
-import { getSilContract, silContractBytecodeHex, type SilAbiArtifact, type SilArtifactValue } from "./silverscript.js";
+import { getSilContract, silContractBytecodeHex, type SilAbiArtifact, type SilArtifactValue, type SilTypeArtifact } from "./silverscript.js";
 import { silverP2shLock, silverSigFromInputSignature } from "./silverscript-abi.js";
+import { silStructsOf, type SilStructs } from "./silverscript-state.js";
 
 /**
  * SilverScript contract tests on the official SilverScript runner
@@ -823,4 +824,356 @@ export async function runSilverVmTests(run: SilverVmTestRun): Promise<SilverVmTe
     staged?.cleanup();
     if (work) await fs.rm(work, { recursive: true, force: true }).catch(() => {});
   }
+}
+
+// ---------------------------------------------------------------------------
+// R4-S · the same tests as real transactions on a node (`hardkas silver test --on-node`)
+// ---------------------------------------------------------------------------
+
+/**
+ * Why a test case cannot be sent to a node as the real spend it describes. Such a case is reported NOT_REPRODUCIBLE with
+ * its code and reason, never as a pass. planSilverNodeTests decides the first ones from the test file; the command adds
+ * HARDKAS_REFUSED (HardKAS's builder or send machinery refused the transaction before any broadcast: a fee below the
+ * node's minimum relay fee, a mass above its limit, an argument the ABI encoder refuses, a lock time the node has not
+ * reached…) and SEQUENCE_LOCK_NOT_REACHED (the funded coin did not reach the relative lock's age in time).
+ */
+export const SILVER_NODE_TEST_NOT_REPRODUCIBLE_CODES = [
+  "RUNNER_DEFAULT_SCENARIO",
+  "NOT_A_CONTRACT_ENTRY",
+  "COVENANT_CONTEXT",
+  "MULTIPLE_INPUTS",
+  "FOREIGN_INPUT_SCRIPT",
+  "FABRICATED_OUTPOINT",
+  "SCENARIO_SIGNATURE",
+  "ARGUMENT_UNREADABLE",
+  "NO_OUTPUTS",
+  "OUTPUT_WITHOUT_ADDRESS",
+  "TX_VERSION_UNSUPPORTED",
+  "VALUE_OUT_OF_RANGE",
+  "HARDKAS_REFUSED",
+  "SEQUENCE_LOCK_NOT_REACHED"
+] as const;
+export type SilverNodeTestNotReproducibleCode = (typeof SILVER_NODE_TEST_NOT_REPRODUCIBLE_CODES)[number];
+
+/** An entry argument of the real spend: a value, or a `sig` the named local account signs over that very transaction. */
+export type SilverNodeTestArg = SilArtifactValue | { readonly kind: "signer"; readonly signer: string };
+
+/** An output of the real spend, as the case states it: its value, its script (version 0) and that script's address. */
+export interface SilverNodeTestOutput {
+  readonly amountSompi: bigint;
+  readonly scriptPublicKey: { readonly version: number; readonly script: string };
+  readonly address: string;
+}
+
+interface SilverNodeTestCaseBase {
+  readonly name: string;
+  readonly function: string;
+  readonly expect: "pass" | "fail";
+}
+
+/** A case HardKAS can send as a real spend: one coin of `utxoValueSompi` at the contract's P2SH, spent through `function`. */
+export interface SilverNodeReproducibleCase extends SilverNodeTestCaseBase {
+  readonly reproducible: true;
+  /** 0: the certified v0 spend; 1: the SDK's v1 engine. The case's tx.version (1 when it states none, as the runner). */
+  readonly txVersion: 0 | 1;
+  readonly args: readonly SilverNodeTestArg[];
+  /** The accounts named by `{"signature": "<account>"}` arguments, each once, in order. */
+  readonly signers: readonly string[];
+  readonly utxoValueSompi: bigint;
+  readonly sequence: bigint;
+  /** v0: the input's declared signature operations (the case's, else the signature arguments, at least 1). */
+  readonly sigOpCount: number;
+  /** The transaction's absolute lock time (u64); 0 = none. */
+  readonly lockTime: bigint;
+  readonly outputs: readonly SilverNodeTestOutput[];
+  /** Where the real spend differs from the runner's scenario without changing what the case states. */
+  readonly notes: readonly string[];
+}
+
+export interface SilverNodeUnreproducibleCase extends SilverNodeTestCaseBase {
+  readonly reproducible: false;
+  readonly code: SilverNodeTestNotReproducibleCode;
+  readonly reason: string;
+}
+
+export type SilverNodeTestCase = SilverNodeReproducibleCase | SilverNodeUnreproducibleCase;
+
+export interface SilverNodeTestPlan {
+  readonly contract: string;
+  /** The contract's P2SH lock (version 0) and its address on the request's network: where every coin is funded. */
+  readonly lockingScript: { readonly version: number; readonly script: string };
+  readonly address: string;
+  readonly cases: readonly SilverNodeTestCase[];
+}
+
+export interface SilverNodeTestRequest {
+  readonly artifact: SilAbiArtifact;
+  readonly contractName?: string | undefined;
+  /** The parsed test file, in the runner's `.test.json` form (the same file `silver test` runs on the runner). */
+  readonly tests: unknown;
+  /** The network the addresses are for. */
+  readonly networkId: string;
+}
+
+class NotReproducible extends Error {
+  constructor(readonly code: SilverNodeTestNotReproducibleCode, readonly reason: string) {
+    super(reason);
+  }
+}
+
+const notReproducible = (code: SilverNodeTestNotReproducibleCode, reason: string): never => {
+  throw new NotReproducible(code, reason);
+};
+
+/** A number the test file states, exactly; undefined when it is not an integer (a fraction, an exponent, text). */
+function exactIntegerOrUndefined(v: unknown): bigint | undefined {
+  if (typeof v === "number") return Number.isSafeInteger(v) ? BigInt(v) : undefined;
+  if (typeof v === "bigint") return v;
+  if (isRawJson(v)) return PLAIN_INTEGER.test(v.rawJSON) ? BigInt(v.rawJSON) : undefined;
+  return undefined;
+}
+
+/** A u64 field of the scenario (amounts, sequence, lock time), or VALUE_OUT_OF_RANGE. */
+function scenarioU64(where: string, v: unknown, min = 0n): bigint {
+  const n = exactIntegerOrUndefined(v);
+  if (n === undefined || n < min || n > RUNNER_U64_MAX) {
+    return notReproducible("VALUE_OUT_OF_RANGE", `${where} is ${isRawJson(v) ? v.rawJSON : String(v)}: a transaction field of a node is an integer from ${min} to ${RUNNER_U64_MAX}`);
+  }
+  return n;
+}
+
+const RUNNER_JSON_INEXACT = Symbol("inexact JSON number");
+
+/** A top-level argument the runner reads as JSON ('[' or '{'): every number kept by its literal, never a double. */
+function runnerJsonOf(text: string, where: string): unknown {
+  const rawJSON = (JSON as unknown as { rawJSON?: (text: string) => unknown }).rawJSON;
+  try {
+    return JSON.parse(text, (_key: string, value: unknown, context?: { source?: string }) => {
+      if (typeof value !== "number") return value;
+      const source = context?.source;
+      if (typeof source !== "string" || !PLAIN_INTEGER.test(source)) return { [RUNNER_JSON_INEXACT]: source ?? String(value) };
+      if (Number.isSafeInteger(value)) return value;
+      return typeof rawJSON === "function" ? rawJSON(source) : { [RUNNER_JSON_INEXACT]: source };
+    });
+  } catch {
+    return notReproducible("ARGUMENT_UNREADABLE", `${where}: not JSON, as the runner reads an argument starting with '[' or '{'`);
+  }
+}
+
+/** `0x`-prefixed even-length hex, as the runner's test files write byte strings; undefined otherwise. */
+function hexBytesOf(v: unknown): number[] | undefined {
+  if (typeof v !== "string" || !/^0x(?:[0-9a-fA-F]{2})*$/.test(v)) return undefined;
+  return [...Buffer.from(v.slice(2), "hex")];
+}
+
+/**
+ * A test-file argument as the value the real spend's unlock pushes, read by the entry's ABI type the way the runner reads
+ * it (debugger-session args.rs): at the top level a string (ints as decimal digits, bytes as 0x hex, bools true/false,
+ * trimmed) or JSON for an array or a struct; inside an array or a struct an int is an exact JSON integer and a byte a
+ * JSON number. Anything HardKAS cannot read that way is ARGUMENT_UNREADABLE: the node would test another value.
+ */
+function nodeArgValue(type: SilTypeArtifact, raw: unknown, where: string, structs: SilStructs, nested: boolean): SilArtifactValue {
+  const unreadable = (what: string): never => notReproducible("ARGUMENT_UNREADABLE", `${where}: ${what}`);
+  const text = typeof raw === "string" ? (nested ? raw : raw.trim()) : undefined;
+  const jsonOf = (): unknown => (!nested && text !== undefined && /^[[{]/.test(text) ? runnerJsonOf(text, where) : raw);
+  switch (type.kind) {
+    case "int":
+    case "temporal": {
+      const n = exactIntegerOrUndefined(raw) ?? (!nested && text !== undefined && PLAIN_INTEGER.test(text) ? BigInt(text) : undefined);
+      return n === undefined ? unreadable(`not an int as the runner reads it (${nested ? "an exact JSON integer" : "its decimal digits"})`) : { kind: "int", value: n };
+    }
+    case "bool":
+      if (typeof raw === "boolean") return { kind: "bool", value: raw };
+      if (!nested && (text === "true" || text === "false")) return { kind: "bool", value: text === "true" };
+      return unreadable("not true or false");
+    case "byte": {
+      if (typeof raw === "number" && Number.isInteger(raw) && raw >= 0 && raw <= 255) return { kind: "byte", value: raw };
+      const b = hexBytesOf(text);
+      return b !== undefined && b.length === 1 ? { kind: "byte", value: b[0]! } : unreadable("not a byte (0xNN)");
+    }
+    case "bytes":
+    case "pubkey":
+    case "datasig":
+    case "fixed_bytes": {
+      const b = hexBytesOf(text);
+      return b === undefined ? unreadable("not a 0x-prefixed hex byte string") : { kind: "bytes", value: b };
+    }
+    case "sig":
+      return notReproducible(
+        "SCENARIO_SIGNATURE",
+        `${where}: a literal sig signs one transaction (the runner's scenario), not the real spend; name the account that signs with {"signature":"<account>"}`
+      );
+    case "string":
+      return text === undefined ? unreadable("not a string") : { kind: "text", value: text };
+    case "struct": {
+      const o = jsonOf();
+      const fields = structs.byName(type.name);
+      if (!fields) return unreadable(`the contract has no struct '${type.name}'`);
+      if (!isObject(o)) return unreadable(`not a ${type.name} object`);
+      const keys = Object.keys(o);
+      if (keys.length !== fields.length || !fields.every((f) => keys.includes(f.name))) {
+        return unreadable(`a ${type.name} has the fields ${fields.map((f) => f.name).join(", ")}; the case gives ${keys.join(", ") || "none"}`);
+      }
+      return { kind: "object", value: Object.fromEntries(fields.map((f) => [f.name, nodeArgValue(f.type, o[f.name], `${where}.${f.name}`, structs, true)])) };
+    }
+    case "fixed_array":
+    case "dynamic_array": {
+      const a = jsonOf();
+      if (!Array.isArray(a)) return unreadable("not a JSON array");
+      if (type.kind === "fixed_array" && a.length !== type.len) return unreadable(`expected ${type.len} items, the case gives ${a.length}`);
+      return { kind: "array", value: a.map((x, i) => nodeArgValue(type.item, x, `${where}[${i}]`, structs, true)) };
+    }
+    default:
+      return unreadable(`HardKAS does not read the type '${(type as { kind?: string }).kind}'`);
+  }
+}
+
+/** The address of a version-0 script on `network`, or undefined when it is no standard Kaspa address (P2PK, P2PK ECDSA, P2SH). */
+function standardAddressOf(k: any, script: string, network: string): string | undefined {
+  try {
+    const a = k.addressFromScriptPublicKey(new k.ScriptPublicKey(0, script), network);
+    const s = a ? String(a.toString()) : "";
+    return s.includes(":") ? s : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * R4-S · the real spend each runner test case describes, for `hardkas silver test --on-node`: one coin of the case's
+ * `utxo_value` locked to the contract's P2SH, spent through the case's entry with its arguments (`{"signature":
+ * "<account>"}` signed by that account over the real transaction), outputs, sequence and lock time, as a transaction of
+ * the case's version (1 when it states none, as the runner). The test file is checked by the same rules as
+ * prepareSilverVmTests (same usage errors). A case whose scenario no node transaction can reproduce is
+ * NOT_REPRODUCIBLE with its code and reason (SILVER_NODE_TEST_NOT_REPRODUCIBLE_CODES): no tx (the runner's default
+ * scenario), a covenant entry or covenant fields, several inputs, an input locked to another script or at a stated
+ * outpoint, a literal sig (it signs the runner's scenario, not the real spend), an argument HardKAS cannot read as the
+ * runner does, no outputs or an output whose script has no address, a version other than 0 or 1, a value outside its
+ * range. Pure: nothing is read, signed or sent.
+ */
+export function planSilverNodeTests(request: SilverNodeTestRequest): SilverNodeTestPlan {
+  const contractNames = Object.keys(request.artifact.contracts);
+  if (contractNames.length !== 1) {
+    throw runnerError("SILVER_TEST_CONTRACT_AMBIGUOUS", `the runner tests single-contract sources; this artifact has ${contractNames.join(", ")}`);
+  }
+  const { name: contractName, contract } = getSilContract(request.artifact, request.contractName);
+  const file = request.tests;
+  if (!isObject(file)) invalidFile("test file", "not a JSON object");
+  onlyKeys("test file", file, FILE_KEYS);
+  if (!Array.isArray(file.tests) || file.tests.length === 0) invalidFile("test file", "tests is not a non-empty list");
+
+  const k = loadManagedKaspaWasmSync();
+  const lock = silverP2shLock(silContractBytecodeHex(contract));
+  const lockHex = lock.script.toLowerCase();
+  const address = standardAddressOf(k, lockHex, request.networkId);
+  if (address === undefined) throw runnerError("SILVER_TEST_NETWORK_INVALID", `'${request.networkId}' has no address for the contract's P2SH lock`);
+  const structs = silStructsOf(request.artifact, contract);
+  const covenantEntries = new Set<string>([
+    ...Object.keys(contract.cov_decl_to_abi ?? {}),
+    ...Object.values(contract.cov_decl_to_abi ?? {}),
+    ...(contract.delegate_entry_abi !== undefined ? [contract.delegate_entry_abi] : [])
+  ]);
+  const names = new Set<string>();
+  const cases: SilverNodeTestCase[] = [];
+
+  for (let i = 0; i < file.tests.length; i++) {
+    const where = `tests[${i}]`;
+    const t = checkTest(where, file.tests[i], names);
+    const base = { name: String(t.name), function: String(t.function), expect: t.expect as "pass" | "fail" };
+    const args: unknown[] = [...(t.args ?? [])];
+    const slots = args.flatMap((a, j) => (isSignatureSlot(a) ? [j] : []));
+    // an own entry only ("constructor" or "__proto__" name no entry)
+    const entry = Object.prototype.hasOwnProperty.call(contract.entries, t.function) ? contract.entries[t.function] : undefined;
+    // the test file's own errors first, exactly as prepareSilverVmTests reports them
+    if (slots.length > 0) {
+      if (!entry) {
+        throw runnerError("SILVER_TEST_SIGNATURE_UNSUPPORTED", `${where}: '${t.function}' is not an entry of ${contractName}; HardKAS signs arguments of plain entries only`);
+      }
+      for (const j of slots) {
+        const kind = entry.params[j]?.type.kind;
+        if (kind !== "sig") throw runnerError("SILVER_TEST_SIGNATURE_SLOT_INVALID", `${where}.args[${j}]: ${t.function} takes ${kind ?? "no argument"} there, not a sig`);
+      }
+    }
+    try {
+      if (covenantEntries.has(t.function)) {
+        notReproducible("COVENANT_CONTEXT", `'${t.function}' is a covenant entry: its transaction carries a covenant id and state, which this mode does not build (silver covenant genesis | transition do)`);
+      }
+      if (!entry) notReproducible("NOT_A_CONTRACT_ENTRY", `'${t.function}' is not an entry of ${contractName} (entries: ${Object.keys(contract.entries).join(", ")}): no unlock of the contract calls it`);
+      if (entry!.params.some((p) => (p.type.kind === "struct" && p.type.name === "State") || ((p.type.kind === "dynamic_array" || p.type.kind === "fixed_array") && p.type.item.kind === "struct" && p.type.item.name === "State"))) {
+        notReproducible("COVENANT_CONTEXT", `'${t.function}' takes a State: its transaction carries covenant state, which this mode does not build`);
+      }
+      const tx = t.tx as Record<string, any> | undefined;
+      if (tx === undefined) {
+        notReproducible(
+          "RUNNER_DEFAULT_SCENARIO",
+          "no tx: the runner's default scenario (a 5000-sompi coin paying 5000 sompi back to the contract, no fee, version 1) is no transaction a node accepts; state the tx (utxo_value, outputs, version)"
+        );
+      }
+      const notes: string[] = [];
+      const versionRaw = tx!.version ?? 1;
+      const version = exactIntegerOrUndefined(versionRaw);
+      if (version !== 0n && version !== 1n) {
+        notReproducible("TX_VERSION_UNSUPPORTED", `tx.version ${isRawJson(versionRaw) ? versionRaw.rawJSON : String(versionRaw)}: a node takes transaction version 0 or 1`);
+      }
+      if (tx!.version === undefined) notes.push("tx.version not stated: 1, as the runner reads it (the SDK's v1 engine)");
+      if (tx!.inputs.length !== 1) {
+        notReproducible("MULTIPLE_INPUTS", `the scenario has ${tx!.inputs.length} inputs: the runner executes only the active one, a node every input, and the case gives no unlock for the others`);
+      }
+      const input = tx!.inputs[0] as Record<string, any>;
+      for (const field of ["covenant_id", "state", "constructor_args"]) {
+        if (input[field] !== undefined) notReproducible("COVENANT_CONTEXT", `${where}.tx.inputs[0].${field}: a covenant context only the runner materializes`);
+      }
+      if (input.utxo_script_hex !== undefined && hexOf(`${where}.tx.inputs[0].utxo_script_hex`, input.utxo_script_hex) !== lockHex) {
+        notReproducible("FOREIGN_INPUT_SCRIPT", `${where}.tx.inputs[0] is locked to another script than ${contractName}'s P2SH: the coin under test is the contract's`);
+      }
+      if (input.prev_txid !== undefined || (input.prev_index !== undefined && exactIntegerOrUndefined(input.prev_index) !== 0n)) {
+        notReproducible("FABRICATED_OUTPOINT", `${where}.tx.inputs[0] states its outpoint: a node spends only a coin that exists, and the coin HardKAS funds is a new outpoint (index 0)`);
+      }
+      const utxoValueSompi = scenarioU64(`${where}.tx.inputs[0].utxo_value`, input.utxo_value, 1n);
+      const sequence = scenarioU64(`${where}.tx.inputs[0].sequence`, input.sequence ?? 0);
+      const lockTime = scenarioU64(`${where}.tx.lock_time`, tx!.lock_time ?? 0);
+      let sigOpCount = Math.max(1, slots.length);
+      if (input.sig_op_count !== undefined) {
+        const declared = exactIntegerOrUndefined(input.sig_op_count);
+        if (declared === undefined || declared < 0n || declared > 255n) notReproducible("VALUE_OUT_OF_RANGE", `${where}.tx.inputs[0].sig_op_count is not a u8`);
+        if (version === 0n) sigOpCount = Number(declared);
+        else notes.push(`sig_op_count ${declared} not used: a v1 input commits a compute budget (the engine's: certified, else estimated)`);
+      } else if (version === 0n) {
+        notes.push(`sig_op_count not stated: ${sigOpCount} declared (the signature arguments, at least 1, as silver spend declares); the runner declares 100`);
+      }
+      const outputsRaw = tx!.outputs as Record<string, any>[];
+      if (outputsRaw.length === 0) notReproducible("NO_OUTPUTS", "the scenario has no outputs: its whole input would be the fee, and HardKAS sends a spend that pays someone");
+      const outputs = outputsRaw.map((o, j) => {
+        const w = `${where}.tx.outputs[${j}]`;
+        for (const field of ["covenant_id", "authorizing_input", "state", "constructor_args"]) {
+          if (o[field] !== undefined) notReproducible("COVENANT_CONTEXT", `${w}.${field}: a covenant output only the runner materializes`);
+        }
+        const amountSompi = scenarioU64(`${w}.value`, o.value);
+        const script =
+          o.script_hex !== undefined
+            ? hexOf(`${w}.script_hex`, o.script_hex)
+            : o.p2pk_pubkey !== undefined
+              ? String(new k.ScriptBuilder().addData(hexOf(`${w}.p2pk_pubkey`, o.p2pk_pubkey)).addOp(k.Opcodes.OpCheckSig).drain()).toLowerCase()
+              : lockHex;
+        const outAddress = standardAddressOf(k, script, request.networkId);
+        if (outAddress === undefined) {
+          notReproducible("OUTPUT_WITHOUT_ADDRESS", `${w} pays script ${script.slice(0, 80)}, which has no Kaspa address: HardKAS's send machinery checks every output by its address`);
+        }
+        return { amountSompi, scriptPublicKey: { version: 0, script }, address: outAddress! };
+      });
+      const params = entry!.params;
+      if (args.length !== params.length) {
+        notReproducible("ARGUMENT_UNREADABLE", `${t.function} takes ${params.length} argument(s) (${params.map((p) => p.name).join(", ") || "none"}); the case gives ${args.length}`);
+      }
+      const values: SilverNodeTestArg[] = params.map((p, j) =>
+        isSignatureSlot(args[j]) ? { kind: "signer" as const, signer: (args[j] as { signature: string }).signature } : nodeArgValue(p.type, args[j], `${where}.args[${j}] (${p.name})`, structs, false)
+      );
+      const signers = [...new Set(slots.map((j) => (args[j] as { signature: string }).signature))];
+      cases.push({ ...base, reproducible: true, txVersion: version === 0n ? 0 : 1, args: values, signers, utxoValueSompi, sequence, sigOpCount, lockTime, outputs, notes });
+    } catch (e) {
+      if (!(e instanceof NotReproducible)) throw e;
+      cases.push({ ...base, reproducible: false, code: e.code, reason: e.reason });
+    }
+  }
+  return { contract: contractName, lockingScript: { version: lock.version, script: lockHex }, address, cases };
 }

@@ -8,29 +8,33 @@ import * as artifacts from "../../src/index.js";
 
 const IDENTIFIER_KEY = /(Id|Hash|Ids|Hashes)$|^id$|^txId$|^path$|Path$|Paths$|^digest$|Digest$/;
 
-/** Walks a Zod object schema and yields dotted paths of every key (arrays descend into their element). */
+/**
+ * Walks a Zod object schema and yields dotted paths of every key (arrays descend into their element). zod 4: the
+ * definition is `_zod.def`, its kind `def.type`; a refinement is a check on the schema itself (no wrapper to unwrap).
+ */
 function* keysOf(schema: any, prefix = "", seen = new Set<any>()): Generator<string> {
-  const def = schema?._def;
+  const def = schema?._zod?.def;
   if (!def) return;
-  const type = def.typeName;
-  if (type === "ZodObject") {
-    const shape = typeof def.shape === "function" ? def.shape() : def.shape;
-    for (const [key, child] of Object.entries(shape)) {
+  const type = def.type;
+  if (type === "object") {
+    for (const [key, child] of Object.entries(def.shape)) {
       const p = prefix ? `${prefix}.${key}` : key;
       yield p;
       yield* keysOf(child, p, seen);
     }
-  } else if (type === "ZodArray") {
-    yield* keysOf(def.type, `${prefix}[]`, seen);
-  } else if (type === "ZodOptional" || type === "ZodNullable" || type === "ZodDefault") {
+  } else if (type === "array") {
+    yield* keysOf(def.element, `${prefix}[]`, seen);
+  } else if (type === "optional" || type === "nullable" || type === "default" || type === "prefault") {
     yield* keysOf(def.innerType, prefix, seen);
-  } else if (type === "ZodUnion") {
+  } else if (type === "union") {
+    // plain and discriminated unions alike (zod 3's walker never entered a discriminated one; zod 4 does, and that found
+    // TxObservationFindingSchema's `removedAcceptingBlockHash`, now registered)
     for (const opt of def.options) yield* keysOf(opt, prefix, seen);
-  } else if (type === "ZodRecord") {
+  } else if (type === "record") {
     yield* keysOf(def.valueType, `${prefix}.*`, seen);
-  } else if (type === "ZodEffects") {
-    yield* keysOf(def.schema, prefix, seen);
-  } else if (type === "ZodLazy") {
+  } else if (type === "pipe") {
+    yield* keysOf(def.in, prefix, seen);
+  } else if (type === "lazy") {
     if (seen.has(def)) return;
     seen.add(def);
     yield* keysOf(def.getter(), prefix, seen);
@@ -50,9 +54,15 @@ describe("Wave 1.3 · IC-7.1 identity categories registry", () => {
   });
 
   it("every identifier-shaped field declared by an exported Zod schema is registered", () => {
+    // the walker reads the schemas' own structure: it must reach nested, array, optional, union and lazy keys, or the
+    // check below would pass on nothing
+    const walked = (s: unknown) => [...keysOf(s)];
+    expect(walked(schemas.TxPlanSchema)).toEqual(expect.arrayContaining(["inputs[].outpoint.transactionId", "change.address", "genesisCovenantGroups[].contract.compileRecord.contentHash", "nextState[].successor.state", "inputs[].contract.constructorArgs[].kind"]));
+    expect(walked(schemas.TxSubmissionSchema)).toEqual(expect.arrayContaining(["submitPoint.sinkHash", "covenantSpends[].covenantId"]));
+    expect(walked(schemas.SilverDeployV1Schema)).toEqual(expect.arrayContaining(["node.imageDigest", "compileRecord.artifactSha256"]));
     const missing = new Set<string>();
     for (const [name, value] of Object.entries(schemas)) {
-      if (!(value as any)?._def) continue;
+      if (!(value as any)?._zod) continue;
       for (const p of keysOf(value)) {
         const leaf = p.split(".").pop()!.replace(/\[\]$/, "");
         if (!IDENTIFIER_KEY.test(leaf)) continue;

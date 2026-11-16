@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 
-// A3 (rc2 audit) · a balance/UTXO read on a node without a UTXO index threw `RPC Node at ${options.url} …` with the full
+// A3 (audit 2026-11-13) · a balance/UTXO read on a node without a UTXO index threw `RPC Node at ${options.url} …` with the full
 // endpoint, so `user:password@` and `?api_key=…` reached application logs. Now the endpoint (and the node's own message)
 // is redacted as everywhere else. The HTTP client is a stand-in that fails like a node without a UTXO index.
 

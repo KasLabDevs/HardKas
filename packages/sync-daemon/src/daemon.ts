@@ -193,7 +193,7 @@ export class SyncDaemon {
                 span.end();
 
             } catch (err: any) {
-                // A3 (rc2 audit): a backend's error can carry its endpoint; the log never keeps its credentials
+                // A3 (audit 2026-11-13): a backend's error can carry its endpoint; the log never keeps its credentials
                 const message = redactUrlCredentialsInText(String(err?.message ?? err));
                 logger.error('SyncDaemon error', { error: message });
                 span.fail(new Error(message));

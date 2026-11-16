@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-// A7 (rc2 audit) · dev-server routes answered success for work they did not do: POST /api/session/start, /snapshot,
+// A7 (audit 2026-11-13) · dev-server routes answered success for work they did not do: POST /api/session/start, /snapshot,
 // /time-travel, /import and GET /export returned `ok: true` with invented ids, `exported: true, content: {}`,
 // `imported: true`; POST /api/simnet/mine?blocks=N ran the miner N x 500 ms (unbounded; NaN = 0 ms) and answered
 // "mined" without reading the chain. Now the session routes say unsupported (501), `blocks` is a bounded integer and the

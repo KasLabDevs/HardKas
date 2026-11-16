@@ -7,7 +7,7 @@ import { livenessMinerRewardAddress } from "../src/runners/localnet-runners.js";
 
 vi.setConfig({ testTimeout: 900_000, hookTimeout: 300_000 });
 
-// rc2 audit B2 (b): the treasury distribution against a real rusty-kaspad v2.1.0 simnet (the harness's own isolated
+// audit 2026-11-13 B2 (b): the treasury distribution against a real rusty-kaspad v2.1.0 simnet (the harness's own isolated
 // node, never the canonical localnet). Everything is real but the block producer, which mines with the harness's
 // getBlockTemplate + submitBlock instead of the canonical miner container: the deterministic treasury is mined to until
 // its coinbases mature (simnet maturity 1000 DAA), the real Generator plans one 1 -> 3 transaction, the real signer

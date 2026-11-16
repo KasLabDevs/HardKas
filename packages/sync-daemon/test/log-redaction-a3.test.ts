@@ -5,7 +5,7 @@ import path from "node:path";
 import { logger } from "@hardkas/observability";
 import { SyncDaemon } from "../src/daemon.js";
 
-// A3 (rc2 audit) · the sync daemon logged `err.message` of whatever its backend threw, so an endpoint with credentials
+// A3 (audit 2026-11-13) · the sync daemon logged `err.message` of whatever its backend threw, so an endpoint with credentials
 // in it (user:password@, ?api_key=…) went into the application log. Now every logged error text is redacted.
 
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), "hk-sync-a3-"));

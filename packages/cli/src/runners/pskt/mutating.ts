@@ -75,7 +75,7 @@ export interface PsktSigner {
 }
 
 /**
- * A1 (rc2 audit): the signer's OWN network and node, never the session file's label (a signature does not commit to a
+ * A1 (audit 2026-11-13): the signer's OWN network and node, never the session file's label (a signature does not commit to a
  * network). The network is `--network`, else the workspace's (its execution default's, else `defaultNetwork`) when a
  * workspace config file exists; none is PSKT_SIGNER_NETWORK_REQUIRED. Mainnet is refused. Its node is the one the shared
  * endpoint authority gives (the declared `rpcUrl`, or a local network's default); a network without one (the simulator,

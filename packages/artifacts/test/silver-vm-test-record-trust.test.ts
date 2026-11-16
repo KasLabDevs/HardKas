@@ -14,7 +14,7 @@ const H = "ab".repeat(32);
 function record(evidence: string, trust?: string) {
   const r: any = {
     schema: "hardkas.silverVmTest.v1",
-    hardkasVersion: "0.13.0-rc.2",
+    hardkasVersion: "0.13.0-rc.3",
     version: "1.0.0-alpha",
     hashVersion: CURRENT_HASH_VERSION,
     createdAt: "2026-10-31T00:00:00.000Z",
@@ -62,5 +62,17 @@ describe("F3 · silverVmTest records: official only with a VERIFIED runner", () 
   });
   it("R4 an official record without runner.trust (written before the policy) is refused", () => {
     expect(codes(record("official-vm-scenario"))).toContain("ARTIFACT_SCHEMA_INVALID@runner.trust");
+  });
+  it("R5 a record that names its verdict level (SCRIPT_VM, the runner's trust) verifies; another level is refused", () => {
+    const r = record("unverified-vm-scenario", "UNVERIFIED");
+    r.results[0].verdictLevel = "SCRIPT_VM";
+    r.results[0].runnerTrust = "UNVERIFIED";
+    r.summary.level = "SCRIPT_VM";
+    r.summary.casesAtLevel = 1;
+    r.contentHash = calculateContentHash(r, CURRENT_HASH_VERSION);
+    expect(codes(r)).toEqual([]);
+    r.summary.level = "CONSENSUS_SIMNET";
+    r.contentHash = calculateContentHash(r, CURRENT_HASH_VERSION);
+    expect(codes(r)).toContain("ARTIFACT_SCHEMA_INVALID@summary.level");
   });
 });

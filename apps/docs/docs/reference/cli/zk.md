@@ -187,3 +187,54 @@ title: hardkas zk
 
 ---
 
+## `hardkas zk toccata spend`
+
+### Synopsis (Generated)
+
+**Purpose:** Spend a RISC Zero Groth16 lock through HardKAS's send (the SDK's spendR0Groth16Lock): the lock is rebuilt from the receipt and its record (--scripts) or its parameters and checked as verify-scripts checks it; the plan, the signed transaction, the ZK fact and the submission are recorded in the workspace (one submission per txId); the node must prove its network and say it is synced. mainnet is refused; testnet-10 needs experimental + network.allowPublic
+
+#### Options
+
+- `--receipt &lt;pathOrHex&gt;`: Path to receipt file (.hex) or raw receipt hex string (the lock's proof)
+- `--utxo &lt;txid:index&gt;`: The lock's UTXO to spend (its amount is read from the node)
+- `--scripts &lt;file&gt;`: The lock's record: the JSON 'zk toccata build-scripts --json' printed (its parameters are used; its scripts must be the ones the receipt rebuilds)
+- `--image-id &lt;hex&gt;`: Without --scripts: the lock's 32-byte hex Image ID
+- `--journal-hash &lt;hex&gt;`: Without --scripts: the lock's 32-byte hex Journal Hash
+- `--mode &lt;mode&gt;`: Without --scripts: the lock's binding mode, 'proof-only' (default) or 'proof-and-output-bound'
+- `--payout-address &lt;address&gt;`: Without --scripts, proof-and-output-bound: the lock's bound payout address
+- `--payout-amount &lt;sompi&gt;`: Without --scripts, proof-and-output-bound: the lock's bound payout amount in sompi
+- `--change-address &lt;address&gt;`: Without --scripts, proof-and-output-bound: the lock's bound change address
+- `--change-amount &lt;sompi&gt;`: Without --scripts, proof-and-output-bound: the lock's bound change amount in sompi
+- `--max-fee &lt;sompi&gt;`: Without --scripts, proof-and-output-bound: the lock's fee cap (default 50000000)
+- `--to &lt;address&gt;`: proof-only: where the UTXO minus the fee goes (required); proof-and-output-bound: the bound payout (default; another address is refused)
+- `--fee &lt;sompi&gt;`: proof-only: the fee in sompi (default: the recommended fee for the measured spend); proof-and-output-bound: implied by the lock (a different one is refused)
+- `--compute-budget &lt;n&gt;`: The input's compute budget (default 1600; at least what the verifier needs)
+- `--ack-image-id-only-lock` (Default: `false`): testnet-10, proof-only: acknowledge that the lock binds only the image id (whoever sees the proof in the mempool can redirect the spend)
+- `--network &lt;name&gt;`: Network: simnet or testnet-10 (default: the workspace's, else simnet). mainnet is refused; testnet-10 needs experimental + network.allowPublic in the config
+- `--url &lt;url&gt;`: Node wRPC (JSON) endpoint (default: the one the workspace declares for the network; simnet: the canonical localnet)
+- `--yes` (Default: `false`): Confirm the broadcast. Required unless the network is simnet: without it the spend is refused (NOT EXECUTED, exit 3) and nothing is written
+- `--wait` (Default: `false`): After the send, wait until the node accepts the spend (observed, as 'tx wait --until accepted')
+- `--timeout &lt;seconds&gt;` (Default: `120`): With --wait: how long to wait (integer seconds, 1..3600)
+- `--json` (Default: `false`): Output as JSON
+
+---
+
+## `hardkas zk toccata observe`
+
+### Synopsis (Generated)
+
+**Purpose:** One look at a ZK spend through the node (as 'tx status' looks: the observation is recorded) and its ZK operation status, from the ZK fact 'zk toccata spend' recorded (or --fact). mainnet is refused
+
+#### Arguments
+
+- `&lt;txId&gt;` (Required): 
+
+#### Options
+
+- `--fact &lt;file&gt;`: The ZK fact (hardkas.zkVerificationFact.v1) of the spend, when the workspace does not hold it
+- `--network &lt;name&gt;`: Network: simnet or testnet-10 (default: the workspace's, else simnet). mainnet is refused; testnet-10 needs experimental + network.allowPublic in the config
+- `--url &lt;url&gt;`: Node wRPC (JSON) endpoint (default: the one the workspace declares for the network; simnet: the canonical localnet)
+- `--json` (Default: `false`): Output as JSON
+
+---
+

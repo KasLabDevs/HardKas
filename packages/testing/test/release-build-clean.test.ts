@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-// RC2 · P: a release is packed only from a clean build. The CLI tarball of the RC rehearsal carried 539 KB of chunks of
+// release check P: a release is packed only from a clean build. The CLI tarball of the RC rehearsal carried 539 KB of chunks of
 // an older build: turbo's cache hit restored its files over a dist/ that still held them. Here:
 //   - `node scripts/check-release-tarballs.mjs --pack` refuses a dist/ that is not exactly what scripts/release-build.mjs
 //     wrote (its stamp: every dist file's sha256 and a hash of the build inputs), checked in a temporary workspace;
@@ -15,7 +15,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../.
 const tarballs = await import(pathToFileURL(path.join(ROOT, "scripts", "check-release-tarballs.mjs")).href);
 const VERSION = "9.9.9-test.1";
 
-describe("RC2 · P · check-release-tarballs --pack packs only the release build's dist/", () => {
+describe("release check P · check-release-tarballs --pack packs only the release build's dist/", () => {
   // loaded here, not at the top, so the build-script checks below still run when this module cannot load
   const loadReleaseBuild = () => import(pathToFileURL(path.join(ROOT, "scripts", "release-build.mjs")).href);
   let releaseBuild: Awaited<ReturnType<typeof loadReleaseBuild>>;
@@ -115,7 +115,7 @@ describe("RC2 · P · check-release-tarballs --pack packs only the release build
   });
 });
 
-describe("RC2 · P · every published package's build deletes its own output first", () => {
+describe("release check P · every published package's build deletes its own output first", () => {
   const packagesDir = path.join(ROOT, "packages");
   const published = fs
     .readdirSync(packagesDir)

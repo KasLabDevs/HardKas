@@ -17,7 +17,8 @@ _See: [examples/02-basic-transfer](../../examples/02-basic-transfer) and the
 
 ### Payroll Automation
 
-Deterministic batch payments from one treasury to several recipients without reusing a UTXO (`hardkas tx batch`).
+Deterministic batch payments from one treasury to several recipients without reusing a UTXO (`hardkas tx batch`), one
+transaction per payment, or all of them in one transaction with one fee (`hardkas tx batch --one-transaction`).
 _See: the `tx batch` entry of the [CLI reference](../reference/cli.md)._
 
 ### DAO Multisig Flow

@@ -49,7 +49,7 @@ export function verifyNodeIdentity(options: { expected?: NodeIdentityExpectation
 }
 
 /**
- * MAINNET TOTAL LOCKDOWN (RC2 oracle O4): a probe whose node answered mainnet (the transport refused it after that one
+ * MAINNET TOTAL LOCKDOWN (lockdown oracle O4): a probe whose node answered mainnet (the transport refused it after that one
  * identity answer) fails with THAT code, MAINNET_CONNECTION_DISABLED, never the generic NODE_IDENTITY_UNVERIFIED with
  * the mainnet refusal buried in its text.
  */

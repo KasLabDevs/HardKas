@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { resolveAccountPrivateKey } from "../src/kaspa-wasm-signer.js";
 
-// A6 (rc2 audit) · the "no plaintext key on mainnet" refusal compared the literal string "mainnet": a plan for
+// A6 (audit 2026-11-13) · the "no plaintext key on mainnet" refusal compared the literal string "mainnet": a plan for
 // `mainnet-1`, `kaspa-mainnet`, `kaspa` or `Mainnet` would have used a plaintext key the day the signing lockdown (which
 // runs first today) is lifted. Now every spelling the lockdown itself treats as mainnet is refused.
 

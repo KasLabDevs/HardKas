@@ -60,6 +60,11 @@ export function registerArtifactCommands(program: Command) {
     .option("--since <blockHash>", "Virtual-chain cursor for the network check: a chain block before the transaction's acceptance (default: the artifact's own submit point, else the node's pruning point)")
     .option("--min-confirmations <n>", "Blue-score depth for CONSENSUS_CONFIRMED (default: the HardKAS product policy, 100)")
     .option("--require <level>", "Level the verification must reach to succeed: integrity (default), network or consensus")
+    .option(
+      "--address <address>",
+      "Network check: locate the transaction through the history of an address it pays or spends from (a bounded window of the node's selected chain, from --since or the last --lookback chain blocks): found, its acceptance is looked at from the chain block before it, also when its outputs were spent since; not found, the result names the window read"
+    )
+    .option("--lookback <chainBlocks>", "With --address and no --since: the history's window, in chain blocks back from the node's sink (default 1000, at most 100000)")
     .option("--workspace <path>", "Override workspace root directory")
     .action(async (targetPath: string, options: any) => {
       try {

@@ -1,94 +1,43 @@
 import { Hono } from "hono";
-import {
-  createEscrow,
-  escrowResolution,
-  escrowSigners,
-  ESCROW_FULL_BRANCHES,
-  ESCROW_SPLIT_BRANCHES,
-  type EscrowBranch,
-  type EscrowConfig,
-  type EscrowState,
-  type EscrowArtifact,
-  type EscrowCompileProvenance
-} from "@hardkas/escrow";
+import { createEscrow, type EscrowConfig } from "@hardkas/escrow";
 import crypto from "node:crypto";
 import { JsonWrpcKaspaClient, type OfficialRpcFactory } from "@hardkas/kaspa-rpc";
 import { nodeRpcUrl } from "@hardkas/core";
+import {
+  ESCROW_CHAIN_ACCEPTED,
+  applyEscrowFundingFinding,
+  applyEscrowPreparedRelease,
+  applyEscrowReleaseFinding,
+  checkEscrowRelease,
+  escrowAddressRefusal,
+  escrowFundingCheck,
+  escrowFundingRefusal,
+  escrowRefusalBody,
+  escrowSignCheck,
+  escrowSignatureOf,
+  newEscrowRecord,
+  prepareEscrowRelease,
+  recordEscrowSignature,
+  toEscrowContractUtxo,
+  type EscrowRefusal
+} from "@hardkas/sdk";
 import { AtomicJournalEscrowStore } from "../store/atomic-journal.js";
 import { autoSignRefusal, serverAllowsDevAutoSign } from "./dev-autosign.js";
 
-export type EscrowDomainState =
-  | "CREATED"
-  | "FUNDED"
-  | "PARTIALLY_SIGNED"
-  | "READY_TO_RELEASE"
-  | "RELEASED";
+/*
+ * ESCROW-LIFECYCLE-1 · the rules of the escrow lifecycle (what a funding pays and the G3 check of its releases, one
+ * funding per escrow, a release's fee ceiling and the node's floor, who signs which branch, the policy and outputs
+ * hashes, BIP340 verification of every signature before a release is sent, what a node's answer moves a record to) live
+ * in @hardkas/sdk (escrow.ts), shared with `sdk.escrow` and `hardkas escrow`. These routes call them and keep what is
+ * theirs: the HTTP surface (same status codes and bodies: escrowRefusalBody), this journal, the canonical localnet
+ * client, the dev-account signer lookup and the server's autosign decision.
+ */
 
-type ResolutionBranch = EscrowBranch;
-
-// Who receives what per branch. The arbiter branches are fixed by the contract;
-// mutualRelease leaves the destination to the signers and this app pays the buyer.
-const resolutionPolicy: Record<string, { requiredSigners: string[]; recipient: string; amountKey: string }> = {
-  mutualRelease: { requiredSigners: ["buyer", "seller"], recipient: "buyer", amountKey: "refundAmount" },
-  refundBuyer: { requiredSigners: ["buyer", "arbiter"], recipient: "buyer", amountKey: "refundAmount" },
-  releaseToSeller: { requiredSigners: ["seller", "arbiter"], recipient: "seller", amountKey: "releaseAmount" }
-};
+export type { EscrowDomainState, EscrowRecord } from "@hardkas/sdk";
 
 // CANONICAL-RPC-URL: the canonical localnet endpoint comes from @hardkas/core, never a copy.
 const RPC_URL = nodeRpcUrl();
 const NETWORK_ID = "simnet";
-
-export interface EscrowRecord {
-  id: string;
-  config: EscrowConfig;
-  state: EscrowDomainState;
-  artifact: EscrowArtifact;
-  p2shState: EscrowState;
-  provenance: EscrowCompileProvenance;
-
-  funding: {
-    /**
-     * "broadcast" = accepted by the node mempool; "confirmed" only after observing it in the chain;
-     * "verification_timeout" = sent, outcome not known yet (ESCROW-SAFETY-2: never funded again before reconcile).
-     */
-    status: "none" | "broadcast" | "confirmed" | "failed" | "verification_timeout";
-    transactionId?: string | undefined;
-    outputIndex?: number | undefined;
-    amountSompi?: string | undefined;
-    feeSompi?: string | undefined;
-    utxoEntry?: any;
-    /** ESCROW-SAFETY-2: the chain block the node's virtual chain ended at before it was sent (where reconcile looks from). */
-    observeFrom?: string | undefined;
-  };
-
-  preparedRelease?: {
-    branch: string;
-    /** hardkas.silver.spendDraft.v1: the one transaction every signer signs. */
-    draft: any;
-    args: { kind: "signer"; signer: string }[];
-    expectedOutputsHash: string;
-    policyHash: string;
-  };
-
-  /** 65-byte sig values (hex), by role. */
-  signatures: {
-    buyer?: string;
-    seller?: string;
-    arbiter?: string;
-  };
-
-  release?: {
-    transactionId: string;
-    fundingOutpoint: string;
-    expectedOutputsHash: string;
-    actualOutputsHash: string;
-    /** Undefined when it cannot be derived from recorded amounts. */
-    feeSompi?: string | undefined;
-    status: "broadcast" | "confirmed" | "failed" | "verification_timeout";
-    /** ESCROW-SAFETY-2: the chain block the node's virtual chain ended at before it was sent. */
-    observeFrom?: string | undefined;
-  } | undefined;
-}
 
 /** Persistent, atomic journal-backed store; compatible with Map<string, EscrowRecord>. */
 export const memoryStore = new AtomicJournalEscrowStore();
@@ -96,7 +45,8 @@ export const escrowStore = memoryStore;
 
 export const escrowRoutes = new Hono();
 
-const outputsHash = (outputs: unknown) => crypto.createHash("sha256").update(JSON.stringify(outputs)).digest("hex");
+/** A shared-rule refusal as these routes always answered it. */
+const refused = (c: any, r: EscrowRefusal) => c.json(escrowRefusalBody(r), r.status);
 
 /*
  * ESCROW-SAFETY-2 · the protections HardKAS's own sends have, reused here:
@@ -175,9 +125,6 @@ async function submitOnce(rpc: JsonWrpcKaspaClient, rpcTransaction: any, expecte
   }
 }
 
-/** Findings of the SDK's observer that mean a chain block of this node accepted the transaction. */
-const CHAIN_ACCEPTED = new Set(["chain_accepted", "finality_reached"]);
-
 /** One look at the node about `txId` (the SDK's observer: its mempool, then its virtual chain from `since`). */
 async function observeOnce(rpc: JsonWrpcKaspaClient, txId: string, since: string | undefined): Promise<{ finding: string; error?: string }> {
   try {
@@ -193,107 +140,6 @@ async function observeOnce(rpc: JsonWrpcKaspaClient, txId: string, since: string
   } catch (e) {
     return { finding: "unobservable", error: messageOf(e) };
   }
-}
-
-/**
- * Whether every signer the branch requires signed this spend: each signature valid (BIP340, SIGHASH_ALL) for the
- * finalized transaction, as the client sends it, and the recorded funding output, by the key the escrow names for that
- * role. The reason it is not, otherwise.
- */
-async function invalidReleaseSignature(record: EscrowRecord, requiredSigners: readonly string[], finalized: { rpcTransaction: any; txId: string }): Promise<string | undefined> {
-  const { officialTransactionWithUtxos } = await import("@hardkas/kaspa-rpc");
-  const { kaspaSighashInputsFromWasm, verifyKaspaInputSignature } = await import("@hardkas/core");
-  const input = record.preparedRelease!.draft.input;
-  const script = { version: Number(input.scriptPublicKey.version), script: String(input.scriptPublicKey.script).toLowerCase() };
-  const amount = BigInt(input.amountSompi);
-  let tx: ReturnType<typeof kaspaSighashInputsFromWasm>["tx"];
-  try {
-    const built = officialTransactionWithUtxos(finalized.rpcTransaction, [{ amount, scriptPublicKey: script.version.toString(16).padStart(4, "0") + script.script }]);
-    if (built.id !== String(finalized.txId).toLowerCase()) return `the finalized spend rebuilds to ${built.id}, not ${finalized.txId}`;
-    tx = kaspaSighashInputsFromWasm(built.serialized).tx;
-  } catch (e) {
-    return `the finalized spend cannot be rebuilt to check its signatures (${messageOf(e)})`;
-  }
-  for (const role of requiredSigners) {
-    const signature = String((record.signatures as Record<string, string | undefined>)[role] ?? "").toLowerCase();
-    const publicKey = String((record.config as any)[role]?.publicKeyHex ?? "").toLowerCase();
-    if (!verifyKaspaInputSignature({ tx, inputIndex: 0, utxo: { amount, scriptPublicKey: script }, publicKey, signature })) {
-      return `the ${role}'s signature is not valid for this spend (BIP340, SIGHASH_ALL) by the ${role}'s key`;
-    }
-  }
-  return undefined;
-}
-
-/** A node UTXO entry as the SilverScript spend builders take it. */
-function toContractUtxo(entry: any) {
-  const u = entry.utxoEntry ?? entry;
-  const spk = u.scriptPublicKey;
-  const scriptPublicKey =
-    spk && typeof spk === "object"
-      ? { version: Number(spk.version ?? 0), script: String(spk.scriptPublicKey ?? spk.script ?? "") }
-      : { version: parseInt(String(spk).slice(0, 4), 16) || 0, script: String(spk).slice(4) };
-  return {
-    outpoint: { transactionId: entry.outpoint.transactionId, index: Number(entry.outpoint.index) },
-    amountSompi: BigInt(u.amount),
-    scriptPublicKey,
-    blockDaaScore: BigInt(u.blockDaaScore ?? 0),
-    isCoinbase: !!u.isCoinbase
-  };
-}
-
-/**
- * G3 · before an escrow is funded, each branch of its contract, with the outputs this server prepares for it (the
- * default resolution), is drafted against the funding it would receive (prepareSilverSpend, offline: the node's
- * minimum relay fee and mass limits). The contract pins the outputs, so the fee of every release is what the funding
- * adds to them (the fee budget): below the node's minimum, the escrow could never be released by its one input, and it
- * is not funded. A branch whose default outputs are above the node's storage-mass limit (a small allocation) is only a
- * warning: another split or another branch still releases the escrow. Legacy v1 escrows (no budget) are not checked.
- */
-async function releaseFeeCheck(record: EscrowRecord, totalAmount: bigint, mode: "full" | "split"): Promise<{ refusal?: string; warnings: string[] }> {
-  const { prepareSilverSpend } = await import("@hardkas/accounts");
-  const branches = Object.keys(mode === "split" ? ESCROW_SPLIT_BRANCHES : ESCROW_FULL_BRANCHES) as EscrowBranch[];
-  const contractName = record.provenance?.contractName || (mode === "split" ? "EscrowSplit" : "EscrowFull");
-  const warnings: string[] = [];
-  for (const branch of branches) {
-    let resolution: ReturnType<typeof escrowResolution>;
-    try {
-      resolution = escrowResolution(record.config, branch);
-    } catch {
-      continue;
-    }
-    if (!resolution.requiredOutputs || resolution.requiredOutputs.length === 0) continue;
-    try {
-      prepareSilverSpend({
-        artifact: record.artifact,
-        contractName,
-        entry: branch,
-        args: resolution.args,
-        sigOpCount: mode === "split" ? 4 : undefined,
-        utxo: {
-          outpoint: { transactionId: "00".repeat(32), index: 0 },
-          amountSompi: totalAmount,
-          scriptPublicKey: { version: 0, script: record.p2shState.lockingScriptHex },
-          blockDaaScore: 0n,
-          isCoinbase: false
-        },
-        outputs: resolution.requiredOutputs.map((o) => ({ amountSompi: o.amountSompi, scriptPublicKey: o.scriptPublicKey })),
-        networkId: NETWORK_ID
-      });
-    } catch (e: any) {
-      if (e?.code === "FEE_BELOW_NETWORK_MINIMUM") {
-        return {
-          refusal:
-            `ESCROW_FEE_BUDGET_BELOW_MINIMUM: this escrow's release fee is its fee budget (${e.feeSompi} sompi: the contract fixes the outputs, the funding adds the fee), ` +
-            `below the node's minimum relay fee for its ${branch} release (${e.minimumFeeSompi} sompi). Funded, it could not be released. ` +
-            `Create the escrow with feeBudgetSompi of at least ${e.minimumFeeSompi}. Nothing was signed or sent.`,
-          warnings
-        };
-      }
-      if (e?.code === "TX_MASS_ABOVE_STANDARD_LIMIT") warnings.push(`${branch} with its default outputs cannot be released: ${messageOf(e)}`);
-      // anything else (a record whose artifact does not rebuild its lock) is release/prepare's to report
-    }
-  }
-  return { warnings };
 }
 
 /** The local dev account whose x-only Schnorr key (as the v1 escrow takes it) is `xOnlyHex`. */
@@ -317,30 +163,11 @@ escrowRoutes.post("/", async (c) => {
     const result = await createEscrow(config, { networkId: NETWORK_ID });
 
     // Anti-replay / uniqueness guard: check for existing active escrow at same address
-    const duplicate = Array.from(memoryStore.values()).find(
-      (r) => r.p2shState.address === result.state.address && r.state !== "RELEASED"
-    );
-    if (duplicate) {
-      return c.json(
-        {
-          ok: false,
-          error: `ESCROW_ADDRESS_ALREADY_ACTIVE: active escrow ${duplicate.id} already exists for address ${result.state.address}. Escrow nonce ensures uniqueness; do not reuse parameters without nonce.`
-        },
-        409
-      );
-    }
+    const duplicate = escrowAddressRefusal(memoryStore.values(), result.state.address);
+    if (duplicate) return refused(c, duplicate);
 
     const id = crypto.randomUUID();
-    memoryStore.set(id, {
-      id,
-      config: result.effectiveConfig ?? config,
-      state: "CREATED",
-      artifact: result.artifact,
-      p2shState: result.state,
-      provenance: result.provenance,
-      funding: { status: "none" },
-      signatures: {}
-    });
+    memoryStore.set(id, newEscrowRecord(id, result, config));
 
     return c.json({ ok: true, data: { id, p2shAddress: result.state.address, status: "CREATED", provenance: result.provenance } });
   } catch (err: any) {
@@ -358,53 +185,25 @@ escrowRoutes.get("/:id", (c) => {
 escrowRoutes.post("/:id/fund", async (c) => {
   try {
     // the server's own decision on signing for a client (TX-06 / P38), before anything is read, signed or sent
-    const refused = escrowAutoSignRefusal();
-    if (refused) return c.json({ ok: false, code: refused.code, error: `${refused.code}: ${refused.message}` }, 403);
+    const autosign = escrowAutoSignRefusal();
+    if (autosign) return c.json({ ok: false, code: autosign.code, error: `${autosign.code}: ${autosign.message}` }, 403);
     const id = c.req.param("id");
     const record = memoryStore.get(id);
     if (!record) return c.json({ ok: false, error: "Not found" }, 404);
     // ESCROW-SAFETY-2: an escrow is funded once; a funding whose outcome is unknown is reconciled, never followed by another
-    if (record.funding.status !== "none") {
-      return c.json(
-        {
-          ok: false,
-          error:
-            record.funding.status === "verification_timeout"
-              ? `ESCROW_FUNDING_OUTCOME_UNKNOWN: funding ${record.funding.transactionId} was sent and its outcome is not known; reconcile it before funding again. Nothing was sent.`
-              : `ESCROW_ALREADY_FUNDED: this escrow already has a funding (${record.funding.transactionId}, ${record.funding.status}). Nothing was sent.`
-        },
-        409
-      );
-    }
+    const already = escrowFundingRefusal(record);
+    if (already) return refused(c, already);
 
     const buyerAccount = await findDevAccount(record.config.buyer.publicKeyHex);
     if (!buyerAccount) {
       return c.json({ ok: false, error: "ESCROW_BUYER_ACCOUNT_NOT_FOUND: no local account matches the buyer public key" }, 400);
     }
 
-    let totalAmount: bigint;
-    const isLegacy = record.config.version === "v1" || (!record.config.version && !record.config.principal && !record.config.mode && !record.config.feeBudgetSompi);
-    // The default fee budget (the fee of every release: the contract fixes the outputs) is a few times the node's minimum
-    // relay fee of an escrow release (about 300,000–600,000 sompi, 100 sompi/g of its compute mass); releaseFeeCheck
-    // below refuses a budget under that minimum before anything is sent (G3).
-    const splitMode = record.config.mode === "split" || (record.config.buyerAmount !== undefined && record.config.sellerAmount !== undefined);
-    if (isLegacy) {
-      totalAmount = BigInt(record.config.refundAmount ?? 0) + BigInt(record.config.releaseAmount ?? 0);
-    } else if (splitMode) {
-      const bAmt = BigInt(record.config.buyerAmount ?? record.config.refundAmount ?? 0);
-      const sAmt = BigInt(record.config.sellerAmount ?? record.config.releaseAmount ?? 0);
-      const feeBudget = BigInt(record.config.feeBudgetSompi ?? 2_000_000n);
-      totalAmount = bAmt + sAmt + feeBudget;
-    } else {
-      const principal = BigInt(record.config.principal ?? (record.config.refundAmount !== undefined ? record.config.refundAmount : record.config.releaseAmount) ?? 0);
-      const feeBudget = BigInt(record.config.feeBudgetSompi ?? 2_000_000n);
-      totalAmount = principal + feeBudget;
-    }
-    // G3: an escrow whose releases could not pay the node's minimum relay fee is never funded (nothing read, signed or sent)
-    // (the mode as release/prepare reads it)
-    const releaseMode = record.config.mode ?? (record.config.buyerAmount !== undefined && record.config.sellerAmount !== undefined ? "split" : "full");
-    const releases = isLegacy ? { warnings: [] as string[] } : await releaseFeeCheck(record, totalAmount, releaseMode === "split" ? "split" : "full");
-    if (releases.refusal) return c.json({ ok: false, code: "ESCROW_FEE_BUDGET_BELOW_MINIMUM", error: releases.refusal }, 400);
+    // The funding amount (the principal or the two allocations, plus the fee budget), and G3: an escrow whose releases
+    // could not pay the node's minimum relay fee is never funded (nothing read, signed or sent)
+    const releases = escrowFundingCheck(record, NETWORK_ID);
+    const totalAmount = releases.totalAmount;
+    if (releases.refusal) return refused(c, releases.refusal);
 
     const fundingEntry = {
       amount: totalAmount.toString(),
@@ -431,7 +230,7 @@ escrowRoutes.post("/:id/fund", async (c) => {
       if (unspentEntries.length === 0) {
         throw new Error(`Buyer account has no UTXOs a funding may spend (${ordinaryEntries.length} being spent by transactions in the node's mempool).`);
       }
-      const rawUtxos = unspentEntries.map(toContractUtxo);
+      const rawUtxos = unspentEntries.map(toEscrowContractUtxo);
       // Filter immature coinbase UTXOs via upstream network params (M10-D2).
       const dag = await rpc.getBlockDagInfo();
       if (dag.virtualDaaScore === undefined) {
@@ -530,25 +329,12 @@ escrowRoutes.post("/:id/reconcile", async (c) => {
         if (fundingPending) {
           const look = await observeOnce(rpc, record.funding.transactionId!, record.funding.observeFrom);
           looks.funding = look;
-          if (CHAIN_ACCEPTED.has(look.finding)) {
-            record.funding.status = "confirmed";
-          } else if (look.finding === "mempool_entry" && record.funding.status === "verification_timeout") {
-            record.funding.status = "broadcast";
-          }
-          if (record.state === "CREATED" && (record.funding.status === "confirmed" || record.funding.status === "broadcast")) {
-            record.state = "FUNDED";
-          }
+          applyEscrowFundingFinding(record, look.finding);
         }
         if (releasePending) {
-          const release = record.release!;
-          const look = await observeOnce(rpc, release.transactionId, release.observeFrom);
+          const look = await observeOnce(rpc, record.release!.transactionId, record.release!.observeFrom);
           looks.release = look;
-          if (CHAIN_ACCEPTED.has(look.finding)) {
-            release.status = "confirmed";
-            record.state = "RELEASED";
-          } else if (look.finding === "mempool_entry" && release.status === "verification_timeout") {
-            release.status = "broadcast";
-          }
+          applyEscrowReleaseFinding(record, look.finding);
         }
       } finally {
         await rpc.close().catch(() => {});
@@ -568,130 +354,17 @@ escrowRoutes.post("/:id/release/prepare", async (c) => {
   try {
     const id = c.req.param("id");
     const body = await c.req.json().catch(() => ({})) as any;
-    const branch = body?.branch as ResolutionBranch;
+    const branch = body?.branch;
     const mutualSplit = body?.mutualSplit as { buyerSompi: bigint; sellerSompi: bigint } | undefined;
 
     const record = memoryStore.get(id);
-    if (!record || !["FUNDED", "PARTIALLY_SIGNED", "READY_TO_RELEASE"].includes(record.state)) return c.json({ ok: false, error: "Not funded" }, 400);
+    const prepared = prepareEscrowRelease(record, { branch, mutualSplit }, NETWORK_ID);
+    if (!prepared.ok) return refused(c, prepared);
 
-    const fundingUtxo = record.funding.utxoEntry;
-    if (!fundingUtxo || record.funding.transactionId === undefined || record.funding.outputIndex === undefined) {
-      return c.json({ ok: false, error: "ESCROW_FUNDING_UTXO_UNKNOWN: no recorded funding UTXO to spend" }, 409);
-    }
+    applyEscrowPreparedRelease(record!, prepared.preparedRelease);
+    memoryStore.set(id, record!);
 
-    const mode = record.config.mode ?? (record.config.buyerAmount !== undefined && record.config.sellerAmount !== undefined ? "split" : "full");
-    const isLegacy = record.config.version === "v1" || (!record.config.version && !record.config.principal && !record.config.mode && !record.config.feeBudgetSompi);
-
-    const legPolicy = isLegacy ? resolutionPolicy[branch as ResolutionBranch] : undefined;
-    let policy: any;
-    if (legPolicy) {
-      policy = legPolicy;
-    } else {
-      let signers: readonly string[];
-      try {
-        signers = escrowSigners(branch as any, mode);
-      } catch {
-        return c.json({ ok: false, error: "Invalid branch" }, 400);
-      }
-      policy = { requiredSigners: [...signers] };
-    }
-
-    let resolution: ReturnType<typeof escrowResolution>;
-    try {
-      resolution = escrowResolution(
-        record.config,
-        branch,
-        mutualSplit ? { mutualSplit: { buyerSompi: BigInt(mutualSplit.buyerSompi), sellerSompi: BigInt(mutualSplit.sellerSompi) } } : undefined
-      );
-    } catch (e: any) {
-      return c.json({ ok: false, error: e?.message || "Invalid branch" }, 400);
-    }
-
-    let outputs: any[];
-    if (resolution.requiredOutputs && resolution.requiredOutputs.length > 0) {
-      outputs = resolution.requiredOutputs.map((o) => ({
-        amountSompi: o.amountSompi,
-        scriptPublicKey: o.scriptPublicKey
-      }));
-    } else {
-      const targetSpk = (policy.recipient === "buyer" ? record.config.buyerDestinationSpk : record.config.sellerDestinationSpk) ?? "";
-      const rawAmount = policy.amountKey === "refundAmount" ? record.config.refundAmount : record.config.releaseAmount;
-      const amount = BigInt(rawAmount ?? 0);
-      outputs = [{ amountSompi: amount, scriptPublicKey: { version: 0 as const, script: targetSpk } }];
-    }
-
-    // Safety checks on fee: inputs - outputs = miner fee
-    const fundingAmountSompi = BigInt(record.funding.amountSompi ?? fundingUtxo.amount ?? fundingUtxo.amountSompi ?? 0);
-    const totalOutputsSompi = outputs.reduce((sum, out) => sum + BigInt(out.amountSompi ?? out.valueSompi ?? 0), 0n);
-    const effectiveFeeSompi = fundingAmountSompi - totalOutputsSompi;
-
-    // Reject excessive fee: any fee exceeding the explicitly authorized feeBudgetSompi
-    // (or default safe ceiling of 2,500,000 sompi / 0.025 KAS if unconfigured) is strictly refused.
-    // This prevents silent fund inflation or user fund leakage into miner fees. G3: the ceiling is several times the
-    // node's minimum relay fee of an escrow release (about 300,000–600,000 sompi); a budget below that minimum is refused
-    // before funding (releaseFeeCheck) and a fee below it here, with the node's figure (ESCROW_FEE_BELOW_MINIMUM).
-    const authorizedFeeCeilingSompi = record.config.feeBudgetSompi
-      ? BigInt(record.config.feeBudgetSompi)
-      : 2_500_000n;
-
-    if (effectiveFeeSompi > authorizedFeeCeilingSompi) {
-      return c.json(
-        {
-          ok: false,
-          error: `ESCROW_FEE_EXCESSIVE_REFUSED: effective release fee (${effectiveFeeSompi} sompi) exceeds authorized fee budget of ${authorizedFeeCeilingSompi} sompi (${record.config.feeBudgetSompi ? "explicitly budgeted" : "default safe limit"}). Outputs sum ${totalOutputsSompi} sompi from ${fundingAmountSompi} sompi funding.`
-        },
-        400
-      );
-    }
-    // G3: the minimum is the node's relay fee for this very release, measured by prepareSilverSpend below (it used to be a
-    // fixed 10,000 sompi here, and the SDK's storage-inclusive figure in the builder)
-    const belowMinimum = (minimum: string) =>
-      c.json(
-        {
-          ok: false,
-          code: "ESCROW_FEE_BELOW_MINIMUM",
-          error:
-            `ESCROW_FEE_BELOW_MINIMUM: effective release fee (${effectiveFeeSompi} sompi) is below ${minimum}. ` +
-            `Outputs sum ${totalOutputsSompi} sompi from ${fundingAmountSompi} sompi funding.` +
-            (record.config.feeBudgetSompi && !isLegacy ? ` The fee is this escrow's fee budget (feeBudgetSompi ${record.config.feeBudgetSompi}): the contract fixes the outputs.` : "")
-        },
-        400
-      );
-    if (effectiveFeeSompi <= 0n) return belowMinimum("zero: the outputs take the whole funding or more");
-
-    const contractName = record.provenance?.contractName || (isLegacy ? "Escrow" : (mode === "split" ? "EscrowSplit" : "EscrowFull"));
-    const { prepareSilverSpend } = await import("@hardkas/accounts");
-    let draft: any;
-    try {
-      draft = prepareSilverSpend({
-        artifact: record.artifact,
-        contractName,
-        entry: branch,
-        args: resolution.args,
-        sigOpCount: mode === "split" ? 4 : undefined,
-        utxo: toContractUtxo({ outpoint: { transactionId: record.funding.transactionId, index: record.funding.outputIndex }, utxoEntry: fundingUtxo }),
-        outputs,
-        networkId: NETWORK_ID
-      });
-    } catch (e: any) {
-      if (e?.code === "FEE_BELOW_NETWORK_MINIMUM" && typeof e.minimumFeeSompi === "string") {
-        return belowMinimum(`the node's minimum relay fee for this release (${e.minimumFeeSompi} sompi: 100 sompi/g of its compute mass)`);
-      }
-      return c.json({ ok: false, error: `ESCROW_PREPARE_FAILED: ${e?.message || String(e)}` }, 400);
-    }
-
-    record.preparedRelease = {
-      branch,
-      draft,
-      args: resolution.args.map((a) => ({ kind: "signer", signer: a.signer })),
-      expectedOutputsHash: outputsHash(draft.outputs),
-      policyHash: outputsHash(policy)
-    };
-    record.state = "PARTIALLY_SIGNED";
-    record.signatures = {};
-    memoryStore.set(id, record);
-
-    return c.json({ ok: true, data: record.preparedRelease });
+    return c.json({ ok: true, data: record!.preparedRelease });
   } catch (err: any) {
     return c.json({ ok: false, error: err.message }, 500);
   }
@@ -700,55 +373,25 @@ escrowRoutes.post("/:id/release/prepare", async (c) => {
 escrowRoutes.post("/:id/sign", async (c) => {
   try {
     // the server's own decision on signing for a client (TX-06 / P38), before anything is read or signed
-    const refused = escrowAutoSignRefusal();
-    if (refused) return c.json({ ok: false, code: refused.code, error: `${refused.code}: ${refused.message}` }, 403);
+    const autosign = escrowAutoSignRefusal();
+    if (autosign) return c.json({ ok: false, code: autosign.code, error: `${autosign.code}: ${autosign.message}` }, 403);
     const id = c.req.param("id");
     const { role } = await c.req.json();
 
     const record = memoryStore.get(id);
-    if (!record || !record.preparedRelease) return c.json({ ok: false, error: "Not prepared" }, 400);
+    const check = escrowSignCheck(record, role);
+    if (!check.ok) return refused(c, check);
 
-    const mode = record.config.mode ?? (record.config.buyerAmount !== undefined && record.config.sellerAmount !== undefined ? "split" : "full");
-    const isLegacy = record.config.version === "v1" || (!record.config.version && !record.config.principal && !record.config.mode && !record.config.feeBudgetSompi);
-    let policy: { requiredSigners: readonly string[] };
-    const legPolicy = isLegacy ? resolutionPolicy[record.preparedRelease.branch as ResolutionBranch] : undefined;
-    if (legPolicy) {
-      policy = legPolicy;
-    } else {
-      policy = { requiredSigners: escrowSigners(record.preparedRelease.branch as any, mode) };
-    }
-
-    if (!policy.requiredSigners.includes(role)) {
-      return c.json({ ok: false, error: `Role ${role} is not required for branch ${record.preparedRelease.branch}` }, 400);
-    }
-
-    const fundingUtxo = record.funding.utxoEntry;
-    const fundingSpkHex = fundingUtxo?.scriptPublicKey?.scriptPublicKey || fundingUtxo?.scriptPublicKey?.script;
-    if (!fundingUtxo || fundingUtxo.amount === undefined || !fundingSpkHex) {
-      return c.json({ ok: false, error: "ESCROW_FUNDING_UTXO_UNKNOWN: no recorded funding UTXO to sign against" }, 409);
-    }
-
-    const pkHex = (record.config as any)[role]?.publicKeyHex;
-    const account = await findDevAccount(pkHex);
+    const account = await findDevAccount(check.publicKeyHex);
     if (!account) {
       return c.json({ ok: false, error: `ESCROW_SIGNER_NOT_FOUND: no local account matches the ${role} public key` }, 400);
     }
 
-    const { signSilverSpend } = await import("@hardkas/accounts");
-    let sig: string;
-    try {
-      sig = signSilverSpend(record.preparedRelease.draft, account.privateKey);
-    } catch (e: any) {
-      return c.json({ ok: false, error: `ESCROW_SIGNER_FAILED: ${e?.message || String(e)}` }, 400);
-    }
-    (record.signatures as any)[role] = sig;
+    const signed = escrowSignatureOf(record!, account.privateKey);
+    if (!signed.ok) return refused(c, signed);
+    recordEscrowSignature(record!, role, signed.signature, check.policy);
 
-    const allSigned = policy.requiredSigners.every((r) => !!(record.signatures as any)[r]);
-    if (allSigned) {
-      record.state = "READY_TO_RELEASE";
-    }
-
-    memoryStore.set(id, record);
+    memoryStore.set(id, record!);
 
     return c.json({ ok: true });
   } catch (err: any) {
@@ -760,59 +403,10 @@ escrowRoutes.post("/:id/release", async (c) => {
   try {
     const id = c.req.param("id");
     const record = memoryStore.get(id);
-    if (!record) return c.json({ ok: false, error: "Not found" }, 404);
-
-    if (record.state === "RELEASED") {
-      return c.json(
-        {
-          ok: false,
-          error: `ESCROW_ALREADY_RELEASED: escrow ${id} is already released (txid: ${record.release?.transactionId ?? "unknown"}, status: ${record.release?.status ?? "confirmed"}). Nothing was sent.`
-        },
-        409
-      );
-    }
-
-    // ESCROW-SAFETY-2: a release already sent is reconciled, never sent again
-    if (record.release && record.release.status !== "failed") {
-      return c.json(
-        { ok: false, error: `ESCROW_RELEASE_PENDING: release ${record.release.transactionId} was already sent (${record.release.status}); reconcile it instead of sending it again. Nothing was sent.` },
-        409
-      );
-    }
-
-    if (record.state !== "READY_TO_RELEASE") return c.json({ ok: false, error: "Not ready" }, 400);
-
-    const prepared = record.preparedRelease!;
-    const mode = record.config.mode ?? (record.config.buyerAmount !== undefined && record.config.sellerAmount !== undefined ? "split" : "full");
-    const isLegacy = record.config.version === "v1" || (!record.config.version && !record.config.principal && !record.config.mode && !record.config.feeBudgetSompi);
-    let policy: any;
-    const legPolicy = isLegacy ? resolutionPolicy[prepared.branch as ResolutionBranch] : undefined;
-    if (legPolicy) {
-      policy = legPolicy;
-    } else {
-      policy = { requiredSigners: [...escrowSigners(prepared.branch as any, mode)] };
-    }
-
-    if (outputsHash(policy) !== prepared.policyHash) {
-      return c.json({ ok: false, error: "Policy hash mismatch. The node configuration changed since preparation." }, 400);
-    }
-
-    let finalized: { rpcTransaction: any; txId: string };
-    try {
-      const { finalizeSilverSpend } = await import("@hardkas/accounts");
-      finalized = finalizeSilverSpend(prepared.draft, record.artifact, prepared.args, record.signatures as Record<string, string>);
-    } catch (e: any) {
-      return c.json({ ok: false, error: `ESCROW_UNLOCK_FAILED: ${e?.message || String(e)}` }, 400);
-    }
-
-    const actualOutputsHash = outputsHash(prepared.draft.outputs);
-    if (actualOutputsHash !== prepared.expectedOutputsHash) {
-      throw new Error("Outputs were mutated before broadcast!");
-    }
-
-    // ESCROW-SAFETY-2: every required signature verified before anything is sent
-    const invalid = await invalidReleaseSignature(record, policy.requiredSigners, finalized);
-    if (invalid) return c.json({ ok: false, error: `ESCROW_SIGNATURE_INVALID: ${invalid}. Nothing was sent.` }, 400);
+    // not released, nothing sent and unreconciled, ready, the policy unchanged, the outputs prepared, every signature valid
+    const ready = checkEscrowRelease(record, id);
+    if (!ready.ok) return refused(c, ready);
+    const { prepared, finalized, actualOutputsHash } = ready;
 
     let submitTxId: string;
     let isConfirmed = false;
@@ -823,21 +417,21 @@ escrowRoutes.post("/:id/release", async (c) => {
       observeFrom = await sinkOf(rpc);
 
       // Write-ahead pre-commit BEFORE submitOnce
-      record.release = {
+      record!.release = {
         transactionId: finalized.txId,
-        fundingOutpoint: `${record.funding.transactionId}:${record.funding.outputIndex}`,
+        fundingOutpoint: `${record!.funding.transactionId}:${record!.funding.outputIndex}`,
         expectedOutputsHash: prepared.expectedOutputsHash,
         actualOutputsHash,
         feeSompi: prepared.draft.feeSompi,
         status: "verification_timeout",
         ...(observeFrom ? { observeFrom } : {})
       };
-      memoryStore.set(id, record);
+      memoryStore.set(id, record!);
 
       const sent = await submitOnce(rpc, finalized.rpcTransaction, finalized.txId);
       if (sent.outcome === "not-sent" || sent.outcome === "rejected") {
-        delete record.release;
-        memoryStore.set(id, record);
+        delete record!.release;
+        memoryStore.set(id, record!);
         return c.json({ ok: false, error: `ESCROW_RELEASE_FAILED: ${sent.outcome === "not-sent" ? "nothing was sent" : "the node refused it"}: ${sent.message}` }, 502);
       }
       if (sent.outcome === "unknown") {
@@ -853,7 +447,7 @@ escrowRoutes.post("/:id/release", async (c) => {
       submitTxId = sent.txId;
       const startTime = Date.now();
       while (Date.now() - startTime < 10000) {
-        if (CHAIN_ACCEPTED.has((await observeOnce(rpc, submitTxId, observeFrom)).finding)) {
+        if (ESCROW_CHAIN_ACCEPTED.has((await observeOnce(rpc, submitTxId, observeFrom)).finding)) {
           isConfirmed = true;
           break;
         }
@@ -863,9 +457,9 @@ escrowRoutes.post("/:id/release", async (c) => {
       await rpc.close().catch(() => {});
     }
 
-    record.release = {
+    record!.release = {
       transactionId: submitTxId,
-      fundingOutpoint: `${record.funding.transactionId}:${record.funding.outputIndex}`,
+      fundingOutpoint: `${record!.funding.transactionId}:${record!.funding.outputIndex}`,
       expectedOutputsHash: prepared.expectedOutputsHash,
       actualOutputsHash,
       feeSompi: prepared.draft.feeSompi,
@@ -873,10 +467,10 @@ escrowRoutes.post("/:id/release", async (c) => {
       ...(observeFrom ? { observeFrom } : {})
     };
 
-    record.state = isConfirmed ? "RELEASED" : record.state;
-    memoryStore.set(id, record);
+    record!.state = isConfirmed ? "RELEASED" : record!.state;
+    memoryStore.set(id, record!);
 
-    return c.json({ ok: true, data: { spendTxId: submitTxId, status: record.release.status } });
+    return c.json({ ok: true, data: { spendTxId: submitTxId, status: record!.release.status } });
   } catch (err: any) {
     console.error("Release error:", err);
     return c.json({ ok: false, error: err?.message || String(err) }, 500);

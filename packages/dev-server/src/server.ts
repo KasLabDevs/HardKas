@@ -22,6 +22,7 @@ import { streamRoutes } from "./routes/stream.js";
 import { devAccountsRoutes } from "./routes/dev-accounts.js";
 import { escrowRoutes } from "./routes/escrow.js";
 import { simnetRoutes } from "./routes/simnet.js";
+import { walletProbeRoutes } from "./routes/wallet-probe.js";
 
 import path from "node:path";
 import fs from "node:fs";
@@ -151,7 +152,7 @@ export function createDevServer(config: DevServerConfig) {
   );
 
   // 3. Bearer Token Authentication Middleware
-  // A8 (rc2 audit): the token in the query string (`?token=`, which an EventSource needs: it cannot send headers) is
+  // A8 (audit 2026-11-13): the token in the query string (`?token=`, which an EventSource needs: it cannot send headers) is
   // accepted on GET/HEAD requests only; a mutating request carries it in `Authorization: Bearer`, so it never ends in a
   // shell history or a proxy log through a POST URL. The comparison is constant-time (crypto.timingSafeEqual over
   // fixed-length digests); it was a plain `!==`.
@@ -236,6 +237,7 @@ export function createDevServer(config: DevServerConfig) {
   app.route("/api/dev-accounts", devAccountsRoutes);
   app.route("/api/escrows", escrowRoutes);
   app.route("/api/simnet", simnetRoutes);
+  app.route("/", walletProbeRoutes); // R3-C · /wallet-probe (page) and /api/wallet-probe/* (loopback only)
   app.route("/api", devStatusRoutes);
   app.route("/api", observabilityRoutes);
 

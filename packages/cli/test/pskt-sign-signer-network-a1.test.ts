@@ -10,7 +10,7 @@ import { startFakeNode, type FakeNode } from "./helpers/int9-a-fake-node.js";
 
 vi.setConfig({ testTimeout: 120_000, hookTimeout: 120_000 });
 
-// A1 (rc2 audit) · `hardkas pskt sign` read the raw key first and let the session file's own `networkId` decide that
+// A1 (audit 2026-11-13) · `hardkas pskt sign` read the raw key first and let the session file's own `networkId` decide that
 // the signature was not for mainnet: a session labelled testnet-10 spending a mainnet UTXO of the key was signed. Now
 // the signer's network is `--network` or the workspace's (never the session's), it must be the session's, mainnet is
 // refused, and the signer's node must list every input to be signed as unspent, all BEFORE the key file is read; no

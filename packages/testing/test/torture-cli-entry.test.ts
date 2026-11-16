@@ -5,7 +5,7 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { resolveTortureCliEntry } from "../src/torture/local-buckets.js";
 
-// rc2 audit E-10: the local torture bucket found the CLI at `../../cli/dist/index.js` next to @hardkas/testing's
+// audit 2026-11-13 E-10: the local torture bucket found the CLI at `../../cli/dist/index.js` next to @hardkas/testing's
 // bundle. Under pnpm's isolated layout (node_modules/.pnpm/@hardkas+testing@<v>/node_modules/@hardkas/) no cli sits
 // there (@hardkas/testing does not depend on @hardkas/cli), so `hardkas torture` failed its first case with
 // INIT_FAILED. `hardkas torture` now passes its own entry (`cliEntry`); without it the bucket resolves
@@ -39,7 +39,7 @@ function codeOf(fn: () => unknown): string | undefined {
   return undefined;
 }
 
-describe("rc2 audit E-10 · the torture bucket's CLI entry", () => {
+describe("audit 2026-11-13 E-10 · the torture bucket's CLI entry", () => {
   it("under pnpm's isolated layout, without the CLI's entry: a typed CLI_ENTRY_NOT_FOUND, not a failed `node <missing>`", () => {
     const pnpm = "node_modules/.pnpm";
     const w = layout({

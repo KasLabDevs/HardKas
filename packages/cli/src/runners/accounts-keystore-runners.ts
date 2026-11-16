@@ -51,11 +51,11 @@ async function importNetworkOf(address: string, explicit: string | undefined, wo
 }
 
 /**
- * A9 (rc2 audit): refuses (ACCOUNT_ADDRESS_KEY_MISMATCH) an imported address that is not the key's own (Schnorr P2PK)
+ * A9 (audit 2026-11-13): refuses (ACCOUNT_ADDRESS_KEY_MISMATCH) an imported address that is not the key's own (Schnorr P2PK)
  * address on the address's network; INVALID_PRIVATE_KEY_MATERIAL for a key that is not one. A simulator identity
  * (`kaspa:sim_…`) is no key's address by construction (the simulator signs nothing with it) and is left as it was.
  */
-export function assertAddressOfKey(privateKey: string, address: string, network: string | undefined): void {
+export function assertAddressOfKey(privateKey: string, address: string, network: string | undefined, keyScheme: "schnorr" | "ecdsa" = "schnorr"): void {
   if (address.startsWith("kaspa:sim_")) return;
   const prefixNetwork = address.startsWith("kaspasim:")
     ? "simnet"
@@ -75,15 +75,29 @@ export function assertAddressOfKey(privateKey: string, address: string, network:
   if (!/^[0-9a-fA-F]{64}$/.test(privateKey.trim())) throw invalidKey("not 64 hex characters");
   const k: any = loadManagedKaspaWasmSync();
   let derived: string | undefined;
+  let otherScheme: string | undefined;
   try {
-    derived = prefixNetwork ? String(new k.PrivateKey(privateKey.trim()).toPublicKey().toAddress(prefixNetwork).toString()) : undefined;
+    const pub = new k.PrivateKey(privateKey.trim()).toPublicKey();
+    // ECDSA spends: the address the key has under the scheme asked for (--ecdsa: its ECDSA P2PK address), and under the other
+    derived = prefixNetwork ? String((keyScheme === "ecdsa" ? pub.toAddressECDSA(prefixNetwork) : pub.toAddress(prefixNetwork)).toString()) : undefined;
+    otherScheme = prefixNetwork ? String((keyScheme === "ecdsa" ? pub.toAddress(prefixNetwork) : pub.toAddressECDSA(prefixNetwork)).toString()) : undefined;
   } catch (e: any) {
     throw invalidKey(String(e?.message ?? e));
   }
   if (derived === undefined || derived !== address.trim()) {
+    // the key's address under the OTHER scheme: say which flag would match, never import it under the wrong scheme
+    if (otherScheme !== undefined && otherScheme === address.trim()) {
+      throw new HardkasCliError(
+        "ACCOUNT_KEY_SCHEME_MISMATCH",
+        keyScheme === "ecdsa"
+          ? `--address ${address} is this key's Schnorr address, and --ecdsa asks for its ECDSA address (${derived}). Leave out --ecdsa to import the Schnorr account. Nothing was imported.`
+          : `--address ${address} is this key's ECDSA address: import it with --ecdsa (an ECDSA account), so HardKAS signs its inputs with ECDSA. Nothing was imported.`,
+        { exitCode: HardkasExitCode.USAGE_ERROR }
+      );
+    }
     throw new HardkasCliError(
       "ACCOUNT_ADDRESS_KEY_MISMATCH",
-      `--address ${address} is not the address of this key${derived ? ` (on its network the key's address is ${derived})` : ""}: the account could never sign for it. Nothing was imported.`,
+      `--address ${address} is not the address of this key${derived ? ` (on its network the key's ${keyScheme === "ecdsa" ? "ECDSA " : ""}address is ${derived})` : ""}: the account could never sign for it. Nothing was imported.`,
       { exitCode: HardkasExitCode.USAGE_ERROR }
     );
   }
@@ -107,6 +121,8 @@ export async function runAccountsKeystoreImport(options: {
   yes?: boolean;
   json?: boolean;
   workspaceRoot: string;
+  /** ECDSA spends · `--ecdsa`: the address is the key's ECDSA P2PK address; the account records keyScheme "ecdsa". */
+  ecdsa?: boolean;
 }) {
   // ESCALÓN 4 · P36 · MAINNET TOTAL LOCKDOWN: no mainnet key enters the store while mainnet is locked down (Kaspa's
   // sighash does not commit to the network, so it could sign a manipulated plan). Refused with the signing code first,
@@ -249,10 +265,12 @@ export async function runAccountsKeystoreImport(options: {
     throw new Error("Private key is required for import.");
   }
 
-  // A9 (rc2 audit): the address is the one the key controls, before any password is read or anything is written. It was
+  // A9 (audit 2026-11-13): the address is the one the key controls, before any password is read or anything is written. It was
   // whatever --address said, sealed into the keystore's authenticated metadata unchecked, so a mistyped address was
   // imported "successfully" and signing failed later (MISSING_INPUT_AUTHORIZER), after it may have been funded.
-  assertAddressOfKey(finalKey, address, network);
+  // ECDSA spends: --ecdsa names the key's ECDSA P2PK address (an ECDSA address without it is ACCOUNT_KEY_SCHEME_MISMATCH)
+  const keyScheme = options.ecdsa ? ("ecdsa" as const) : ("schnorr" as const);
+  assertAddressOfKey(finalKey, address, network, keyScheme);
 
   let keystoreRef: string | undefined;
 
@@ -274,7 +292,8 @@ export async function runAccountsKeystoreImport(options: {
       {
         address,
         privateKey: finalKey,
-        network: network!
+        network: network!,
+        ...(keyScheme === "ecdsa" ? { keyScheme } : {})
       },
       password,
       {
@@ -303,7 +322,8 @@ export async function runAccountsKeystoreImport(options: {
     ...(network !== undefined && !address.startsWith("kaspa:sim_") ? { network: network as any } : {}),
     ...(options.unsafePlaintext ? { privateKey: finalKey } : {}),
     ...(options.privateKeyEnv ? { privateKeyEnv: options.privateKeyEnv } : {}),
-    ...(keystoreRef ? { keystoreRef } : {})
+    ...(keystoreRef ? { keystoreRef } : {}),
+    ...(keyScheme === "ecdsa" ? { keyScheme } : {})
   });
   await saveRealAccountStore(nextStore, { cwd: options.workspaceRoot });
 

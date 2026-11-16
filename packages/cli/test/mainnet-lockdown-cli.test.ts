@@ -212,11 +212,11 @@ describe("MAINNET TOTAL LOCKDOWN · CLI · a workspace that declares mainnet (wi
     ["rpc compare", (_ws, d) => ["rpc", "compare", "--endpoints", d.url, d.url.replace("127.0.0.1", "localhost"), "--network", "mainnet", "--json"], { code: /MAINNET_CONNECTION_DISABLED/ }],
     ["accounts balance", () => ["accounts", "balance", M1, "--json"], { code: /MAINNET_CONNECTION_DISABLED/ }],
     ["tx plan", () => ["tx", "plan", "alice", "bob", "--amount", "1", "--json"], { code: /MAINNET_CONNECTION_DISABLED/ }],
-    // RC2 oracle D2 (owner: typed, clear, consistent): a mainnet observation is refused like every other mainnet read —
+    // lockdown oracle D2 (owner: typed, clear, consistent): a mainnet observation is refused like every other mainnet read —
     // the envelope's code is MAINNET_CONNECTION_DISABLED and the exit fails (it was exit 0, INSUFFICIENT_EVIDENCE with the
     // refusal only named as the reason); the exact envelope code is pinned in mainnet-lockdown-codes.test.ts
     ["tx status", () => ["tx", "status", TXID, "--json"], { code: /"code": "MAINNET_CONNECTION_DISABLED"/ }],
-    // RC2 oracle D1: the wait ends at once with that code (it polled to --timeout and ended TX_WAIT_TIMEOUT, the refusal
+    // lockdown oracle D1: the wait ends at once with that code (it polled to --timeout and ended TX_WAIT_TIMEOUT, the refusal
     // only inside its message); timing and the exact envelope code are pinned in mainnet-lockdown-codes.test.ts
     ["tx wait", () => ["tx", "wait", TXID, "--timeout", "5", "--json"], { code: /"code": "MAINNET_CONNECTION_DISABLED"/ }],
     ["doctor", () => ["doctor", "--json"], { code: /MAINNET_CONNECTION_DISABLED/, exitZeroOk: true }],

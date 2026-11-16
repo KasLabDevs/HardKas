@@ -26,6 +26,8 @@ export interface AccountsRealGenerateOptions {
   /** Machine-readable output: never prompts. */
   json?: boolean;
   workspaceRoot?: string;
+  /** ECDSA spends · `--ecdsa`: the account's address is its key's ECDSA P2PK address (recorded as keyScheme "ecdsa"). */
+  ecdsa?: boolean;
 }
 
 export async function runAccountsRealGenerate(
@@ -46,7 +48,7 @@ export async function runAccountsRealGenerate(
   );
   const count = options.count || 1;
 
-  // AUD-20: a mainnet key is never written in plaintext; refused before anything is generated. A6 (rc2 audit): every
+  // AUD-20: a mainnet key is never written in plaintext; refused before anything is generated. A6 (audit 2026-11-13): every
   // mainnet spelling and every config alias that declares mainnet, not the literal "mainnet" only, so the refusal still
   // holds the day the signing lockdown above (which answers first today) is lifted.
   const { isMainnetNetworkId, declaredNetworkIdOf } = await import("@hardkas/core");
@@ -113,10 +115,11 @@ export async function runAccountsRealGenerate(
   for (let i = 0; i < count; i++) {
     const name = names[i]!;
 
-    // Attempt generation
-    const generated = await generator.generateAccount(
-      options.networkId ? { networkId: options.networkId } : {}
-    );
+    // Attempt generation (ECDSA spends: --ecdsa gives the key's ECDSA P2PK address)
+    const generated = await generator.generateAccount({
+      ...(options.networkId ? { networkId: options.networkId } : {}),
+      ...(options.ecdsa ? { keyScheme: "ecdsa" as const } : {})
+    });
 
     let keystoreRef: string | undefined;
 
@@ -125,7 +128,8 @@ export async function runAccountsRealGenerate(
         {
           address: generated.address,
           privateKey: generated.privateKey!,
-          network: options.networkId || "simnet"
+          network: options.networkId || "simnet",
+          ...(generated.keyScheme === "ecdsa" ? { keyScheme: "ecdsa" as const } : {})
         },
         password,
         {
@@ -149,7 +153,8 @@ export async function runAccountsRealGenerate(
       ...(options.unsafePlaintext && generated.privateKey
         ? { privateKey: generated.privateKey }
         : {}),
-      ...(keystoreRef ? { keystoreRef } : {})
+      ...(keystoreRef ? { keystoreRef } : {}),
+      ...(generated.keyScheme === "ecdsa" ? { keyScheme: "ecdsa" as const } : {})
     });
 
     generatedAccounts.push(store.accounts[store.accounts.length - 1]!);
@@ -166,7 +171,7 @@ export async function runAccountsRealGenerate(
 
   generatedAccounts.forEach((a) => {
     lines.push(`Name:    ${a.name}`);
-    lines.push(`Address: ${a.address}`);
+    lines.push(`Address: ${a.address}${a.keyScheme === "ecdsa" ? " (ECDSA)" : ""}`);
     lines.push(`Private: yes (masked)`);
     lines.push("");
   });

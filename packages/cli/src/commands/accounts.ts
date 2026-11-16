@@ -6,6 +6,12 @@ import { runAccountsRealGenerate } from "../runners/accounts-real-generate-runne
 import { runAccountsBalance } from "../runners/accounts-balance-runner.js";
 import { runAccountsFund, parseFundAmount } from "../runners/accounts-fund-runner.js";
 
+/** ECDSA spends · the key-scheme options of `accounts real generate|import`. */
+export const ACCOUNT_ECDSA_GENERATE_HELP =
+  "Make ECDSA accounts: the address is the key's ECDSA P2PK address (version 1), recorded with the account and in its keystore's authenticated metadata; HardKAS signs their payments with ECDSA (RFC 6979, low-S). Default: Schnorr";
+export const ACCOUNT_ECDSA_IMPORT_HELP =
+  "The key is imported as an ECDSA account: --address must be its ECDSA P2PK address (an ECDSA address without this flag is refused: ACCOUNT_KEY_SCHEME_MISMATCH). Default: Schnorr";
+
 export function registerAccountsCommands(program: Command) {
   const accountsCmd = program.command("accounts").description("Manage HardKAS accounts");
 
@@ -123,6 +129,7 @@ export function registerAccountsCommands(program: Command) {
       false
     )
     .option("--fixture <name>", "Import deterministic fixture test account")
+    .option("--ecdsa", ACCOUNT_ECDSA_IMPORT_HELP, false)
     .option("--yes", "Skip confirmation for unsafe operations", false)
     .option("--wait-lock", "Wait for workspace lock if held", false)
     .option("--lock-timeout <ms>", "Lock wait timeout in ms", "30000")
@@ -257,6 +264,7 @@ export function registerAccountsCommands(program: Command) {
       "Generate accounts in plaintext (legacy/discouraged)",
       false
     )
+    .option("--ecdsa", ACCOUNT_ECDSA_GENERATE_HELP, false)
     .option("--yes", "Skip confirmation for unsafe operations", false)
     .option("--wait-lock", "Wait for workspace lock if held", false)
     .option("--lock-timeout <ms>", "Lock wait timeout in ms", "30000")
@@ -296,7 +304,8 @@ export function registerAccountsCommands(program: Command) {
                   unsafePlaintext: Boolean(a.privateKey) && !a.keystoreRef,
                   store: ".hardkas/accounts.real.json",
                   ...(a.keystoreRef ? { keystore: a.keystoreRef } : {}),
-                  ...(a.publicKey ? { publicKey: a.publicKey } : {})
+                  ...(a.publicKey ? { publicKey: a.publicKey } : {}),
+                  ...(a.keyScheme ? { keyScheme: a.keyScheme } : {})
                 }))
               );
             } else getOutput().writeLine(result.formatted);

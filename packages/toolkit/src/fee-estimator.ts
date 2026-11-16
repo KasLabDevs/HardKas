@@ -68,7 +68,7 @@ export async function calculateDynamicFeeRate(
             if (typeof client.getFeeEstimate === "function") answer = await client.getFeeEstimate();
             else if (typeof client.getFeeEstimateExperimental === "function") answer = await client.getFeeEstimateExperimental();
         } catch (e: any) {
-            // MAINNET TOTAL LOCKDOWN (RC2 oracle O6): a mainnet refusal (the node answered mainnet to its identity
+            // MAINNET TOTAL LOCKDOWN (lockdown oracle O6): a mainnet refusal (the node answered mainnet to its identity
             // question) is the answer, never "no estimate, the floor applies" — the caller must not plan on it
             if (/^MAINNET_(CONNECTION|SIGNING|BROADCAST)_DISABLED$/.test(String(e?.code ?? ""))) throw e;
             answer = undefined; // unreachable or failing node: no estimate, the floor applies

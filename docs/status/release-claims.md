@@ -105,7 +105,10 @@ They are not part of `pnpm test`. Since 2026-11-09 CI also runs the release and 
 The experimental `hardkas silver test` runs contract tests on the official
 SilverScript runner and is not part of the baseline: its `vm` records are contract
 execution on scenario transactions and never satisfy a compile, deploy, spend,
-verify or certification step. HardKAS no longer has a Silver simulator.
+verify or certification step. With `--on-node` it runs each case it can
+reproduce as a real transaction on a node and records that node's verdict
+(`hardkas.silverNodeTest.v1`); that record is not part of the baseline either.
+HardKAS no longer has a Silver simulator.
 
 ## Known Limitation
 

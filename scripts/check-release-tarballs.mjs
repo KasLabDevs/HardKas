@@ -7,11 +7,11 @@
 //       ranges are rewritten as on publish) into <out>, then audits the tarballs. It packs only from the `dist/` that
 //       `pnpm release:build` (scripts/release-build.mjs) wrote: without that build's stamp, or when a published package's
 //       `dist/` or its build inputs differ from the stamp (a file added, removed or changed since), it packs nothing.
-//       It packs only a committed tree (rc2 audit E-02): it refuses when the stamp says the build ran on a tree with
+//       It packs only a committed tree (audit 2026-11-13 E-02): it refuses when the stamp says the build ran on a tree with
 //       uncommitted changes (`gitDirty` not false), when the stamp's `gitHead` is not `git rev-parse HEAD`, when the
 //       tree has uncommitted changes now, and outside a git checkout. Every packed entry outside `dist/` must be a file
-//       git tracks (rc2 audit E-01: a git-ignored event log under templates/ was packed, and npm ignores .gitignore when
-//       `files` names the directory). <out> may hold only .tgz files (rc2 audit E-09): --pack deletes those first.
+//       git tracks (audit 2026-11-13 E-01: a git-ignored event log under templates/ was packed, and npm ignores .gitignore when
+//       `files` names the directory). <out> may hold only .tgz files (audit 2026-11-13 E-09): --pack deletes those first.
 //       --allow-dirty is for proving uncommitted changes on real tarballs (a scratch clone with a patch applied, as the
 //       packed-consumer checks do) and never for a publish: it excuses uncommitted changes in the stamp and in the tree,
 //       and untracked files that git does not ignore; never a stamp of another commit, an ignored file or a missing git;
@@ -35,7 +35,7 @@
 // The run fails too when the published set is empty or when a package of MUST_BE_PRIVATE (@hardkas/l2, @hardkas/ext-l2,
 // @hardkas/pskt-native and the 8 without a consumer) is not private (or was packed).
 //
-// UNREFERENCED_FILE (RC2 · P). A tarball carries only what its entry points reach. The entry points are the manifest's
+// UNREFERENCED_FILE (release check P). A tarball carries only what its entry points reach. The entry points are the manifest's
 // `main`, `module`, `browser`, `types`/`typings`, `bin`, `exports` and `typesVersions` targets (a subpath pattern such
 // as "./dist/*.js" reaches every file it matches). From each reached JS or declaration file the audit follows its
 // relative specifiers: `import`/`export … from`, `import "…"`, `import()`, `require()`, `require.resolve()`,
@@ -81,7 +81,7 @@ export const MUST_BE_PRIVATE = [
 const INSTALL_SCRIPTS = ["preinstall", "install", "postinstall"];
 const DEP_FIELDS = ["dependencies", "optionalDependencies", "peerDependencies", "devDependencies"];
 const ALWAYS_INCLUDED = /^(package\.json|readme(\.[^/]*)?|license(\.[^/]*)?|licence(\.[^/]*)?|changelog(\.[^/]*)?)$/i;
-// rc2 audit E-01: .jsonl, .log and .csv too (an event log under templates/ carried a user name and home path unseen).
+// audit 2026-11-13 E-01: .jsonl, .log and .csv too (an event log under templates/ carried a user name and home path unseen).
 const TEXT_EXT = /\.(js|mjs|cjs|ts|mts|cts|map|json|jsonl|log|csv|md|txt|yml|yaml|html|css|sh|ps1|cmd|bat|toml|sil|d\.ts)$|(^|\/)[^./]+$/i;
 
 /** Entry names and contents of an npm tarball (gzip + ustar), in memory, without extracting anything to disk. */
@@ -499,7 +499,7 @@ export function verifyReleaseBuild(packages, stamp, { releaseVersion, root = ROO
   return problems;
 }
 
-// ---- what --pack packs must be a commit's files (rc2 audit E-01, E-02, E-09) --------------------------------------
+// ---- what --pack packs must be a commit's files (audit 2026-11-13 E-01, E-02, E-09) --------------------------------------
 
 /** Runs one read-only git command in `root`; never throws. */
 function git(root, args) {
@@ -558,7 +558,7 @@ export function readGitState(root = ROOT) {
 }
 
 /**
- * Why --pack may not pack this tree (rc2 audit E-02): empty when the release build was stamped on a clean tree at the
+ * Why --pack may not pack this tree (audit 2026-11-13 E-02): empty when the release build was stamped on a clean tree at the
  * current HEAD and the tree has no uncommitted change now. `stamp` is readReleaseBuildStamp() (its absence is
  * verifyReleaseBuild's finding); `gitState` is readGitState(). `allowDirty` excuses uncommitted changes only (in the
  * stamp and now), never another commit or a missing git.
@@ -593,7 +593,7 @@ export function verifyReleaseProvenance(stamp, gitState, { allowDirty = false } 
 
 /**
  * The entries of a tarball packed from the package directory `pkgRel` ("packages/cli", relative to the root) that git
- * does not track, outside `dist/` (rc2 audit E-01). `dist/` is the release build's output, held to its stamp instead.
+ * does not track, outside `dist/` (audit 2026-11-13 E-01). `dist/` is the release build's output, held to its stamp instead.
  * `entries` are paths in the package ("templates/x/events.jsonl"); `tracked` is readGitState().tracked. With
  * `untracked` (allowDirty only) a new file git does not ignore is accepted too; an ignored file never is.
  */
@@ -603,7 +603,7 @@ export function untrackedEntries(entries, pkgRel, tracked, untracked = new Set()
 }
 
 /**
- * Why `dir` may not be --pack's output folder (rc2 audit E-09): --pack deletes the .tgz files there before packing,
+ * Why `dir` may not be --pack's output folder (audit 2026-11-13 E-09): --pack deletes the .tgz files there before packing,
  * so the folder must not exist or hold only .tgz files (a folder named by mistake used to be emptied whole).
  */
 export function packDirProblems(dir) {
@@ -670,9 +670,9 @@ async function main() {
   let stamp;
   let gitState;
   if (pack) {
-    // RC2 · P: pack only the release build's output, never a dist/ that a cache restored over older files.
-    // rc2 audit E-02: and only a committed tree: the stamp's commit is HEAD, and neither then nor now uncommitted changes.
-    // rc2 audit E-09: and never into a folder that holds anything but tarballs.
+    // release check P: pack only the release build's output, never a dist/ that a cache restored over older files.
+    // audit 2026-11-13 E-02: and only a committed tree: the stamp's commit is HEAD, and neither then nor now uncommitted changes.
+    // audit 2026-11-13 E-09: and never into a folder that holds anything but tarballs.
     stamp = readReleaseBuildStamp();
     gitState = readGitState();
     const refused = [...packDirProblems(dir), ...verifyReleaseBuild(all, stamp, { releaseVersion }), ...verifyReleaseProvenance(stamp, gitState, { allowDirty })];
@@ -710,7 +710,7 @@ async function main() {
     results.push({ tarball: t, bytes: tgz.length, integrity: tarballIntegrity(tgz), ...r });
     if (r.name) seen.add(r.name);
     if (r.name && MUST_BE_PRIVATE.includes(r.name)) r.findings.push("this package must not be packed for this release");
-    // rc2 audit E-01: with --pack, every entry outside dist/ is a file git tracks (an ignored file never ships).
+    // audit 2026-11-13 E-01: with --pack, every entry outside dist/ is a file git tracks (an ignored file never ships).
     if (gitState?.available && r.name && all.has(r.name) && r.entries) {
       const pkgRel = path.relative(ROOT, all.get(r.name).dir).split(path.sep).join("/");
       for (const e of untrackedEntries(r.entries, pkgRel, gitState.tracked, allowDirty ? gitState.untracked : undefined)) {

@@ -13,7 +13,7 @@ import { loadManagedKaspaWasmSync } from "@hardkas/core";
 // devnet, kaspa → mainnet); a testnet address (kaspatest) names no testnet: --network, or the workspace's testnet-<n>.
 // A network that does not fit the address is refused, and a missing address is a typed usage error; nothing is written.
 
-// A9 (rc2 audit): an import now refuses an address that is not the key's own, so these are the addresses of the key the
+// A9 (audit 2026-11-13): an import now refuses an address that is not the key's own, so these are the addresses of the key the
 // tests import ("11" x 32) (they were fixed strings no key derives: SIM was another key's address, TEST a made-up one).
 const KEY_HEX = "11".repeat(32);
 const wasm: any = loadManagedKaspaWasmSync();

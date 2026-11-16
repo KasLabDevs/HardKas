@@ -1,4 +1,7 @@
 import { HardkasError, loadManagedKaspaWasmSync } from "@hardkas/core";
+// R3-C · the lossless JSON reading, the canonical text and the signature shape, shared with the browser wallet check
+// (wallets/signed-transaction-check.ts): one comparison for every "sent vs returned" check, not a copy
+import { canonicalJson as canon, isSchnorrSignatureHex, parseJsonKeepingNumbers } from "../wallets/canonical-json.js";
 
 /*
  * NOTES-CROSSCHECK §2.3 item 4 (2026-11-14) · `pskt.signSession` recorded whatever the adapter handed back. A signer
@@ -18,36 +21,9 @@ import { HardkasError, loadManagedKaspaWasmSync } from "@hardkas/core";
  */
 
 const MAX_PSKT_PAYLOAD_BYTES = 5 * 1024 * 1024;
-/** Marks a JSON number kept as its literal text by {@link parseJsonKeepingNumbers}. */
-const NUMBER_MARK = "\u0000#";
 
 const refuse = (code: string, message: string, metadata?: Record<string, unknown>) =>
   new HardkasError(code, `${message} The signed payload was not recorded.`, metadata ? { metadata } : undefined);
-
-/** JSON.parse that keeps every number as its literal text (amounts and sequences are u64; a double rounds them). */
-function parseJsonKeepingNumbers(text: string): unknown {
-  let out = "";
-  let i = 0;
-  const n = text.length;
-  while (i < n) {
-    const c = text[i]!;
-    if (c === '"') {
-      let j = i + 1;
-      while (j < n && text[j] !== '"') j += text[j] === "\\" ? 2 : 1;
-      out += text.slice(i, j + 1);
-      i = j + 1;
-    } else if (c === "-" || (c >= "0" && c <= "9")) {
-      let j = i + 1;
-      while (j < n && /[0-9eE.+-]/.test(text[j]!)) j++;
-      out += JSON.stringify(NUMBER_MARK + text.slice(i, j));
-      i = j;
-    } else {
-      out += c;
-      i++;
-    }
-  }
-  return JSON.parse(out);
-}
 
 /** The PSKT bundle of a "pskt-binary-base64" payload (base64 of "PSKB" + hex of the bundle JSON), numbers kept. */
 function bundleOf(payload: unknown, which: "sent" | "returned"): any[] {
@@ -76,27 +52,6 @@ function bundleOf(payload: unknown, which: "sent" | "returned"): any[] {
   return bundle as any[];
 }
 
-/** A canonical text of a value: keys sorted, null and absent alike, hex lower-cased, numbers normalized. */
-function canon(value: unknown): string {
-  if (value === null || value === undefined) return "null";
-  if (typeof value === "string") {
-    if (value.startsWith(NUMBER_MARK)) {
-      const literal = value.slice(NUMBER_MARK.length);
-      return "#" + (/^-?\d+$/.test(literal) ? BigInt(literal).toString() : literal);
-    }
-    return JSON.stringify(/^[0-9a-fA-F]+$/.test(value) ? value.toLowerCase() : value);
-  }
-  if (Array.isArray(value)) return `[${value.map(canon).join(",")}]`;
-  if (typeof value === "object") {
-    const entries = Object.entries(value as Record<string, unknown>)
-      .filter(([, v]) => v !== null && v !== undefined)
-      .map(([k, v]) => [/^[0-9a-fA-F]+$/.test(k) ? k.toLowerCase() : k, v] as const)
-      .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
-    return `{${entries.map(([k, v]) => `${JSON.stringify(k)}:${canon(v)}`).join(",")}}`;
-  }
-  return JSON.stringify(value);
-}
-
 /** Fields of a PSKT input / output that are signing metadata, not transaction content. */
 const INPUT_METADATA = new Set(["partialSigs", "bip32Derivations", "finalScriptSig", "proprietaries", "unknowns"]);
 const OUTPUT_METADATA = new Set(["bip32Derivations", "proprietaries", "unknowns", "redeemScript"]);
@@ -119,8 +74,7 @@ function isSchnorrSignature(value: unknown): boolean {
   if (!value || typeof value !== "object" || Array.isArray(value)) return false;
   const entries = Object.entries(value as Record<string, unknown>);
   if (entries.length !== 1 || entries[0]![0].toLowerCase() !== "schnorr") return false;
-  const hex = entries[0]![1];
-  return typeof hex === "string" && /^[0-9a-fA-F]{128}$/.test(hex) && !/^0+$/.test(hex);
+  return isSchnorrSignatureHex(entries[0]![1]);
 }
 
 /**

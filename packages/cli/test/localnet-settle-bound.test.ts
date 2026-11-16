@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// rc2 audit B1: `localnet seed` / `fund --treasury` could hang forever. The settle after the miner stops had no deadline
+// audit 2026-11-13 B1: `localnet seed` / `fund --treasury` could hang forever. The settle after the miner stops had no deadline
 // (a chain that never moves past the genesis — virtual DAA 0 — or one something keeps mining never "settles"), and
 // stopping the miner swallowed every Docker error, so a miner that did not stop kept the settle from ever finishing.
 // Now the settle is bounded (LOCALNET_DAG_SETTLE_TIMEOUT), the miner's stop is verified (LOCALNET_STOP_FAILED), and a

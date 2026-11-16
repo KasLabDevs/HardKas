@@ -3,6 +3,8 @@ import { Command } from "commander";
 import { errorCodeOf, handleError, UI } from "../ui.js";
 import { bigIntReplacer } from "@hardkas/artifacts";
 import { nodeRpcUrl } from "@hardkas/core";
+import { DEFAULT_HARDKAS_CONFIG } from "@hardkas/config";
+import { HardkasCliError, HardkasExitCode } from "../cli-errors.js";
 import { runTxProfile } from "../runners/tx-profile-runner.js";
 import { runTxPlan } from "../runners/tx-plan-runner.js";
 import { runTxSign } from "../runners/tx-sign-runner.js";
@@ -20,6 +22,73 @@ import { invocationWorkspace, invocationWorkspaceRoot } from "../workspace-root.
  * reads as success to a human or to automation.
  */
 export const TX_SEND_CONFIRMATION_REQUIRED = "TX_SEND_CONFIRMATION_REQUIRED";
+
+/** CLTV · the lock-time options of `tx plan` and `tx send` (shortcut mode). */
+export const LOCK_TIME_DAA_HELP =
+  "Absolute lock time as a DAA score (below 500000000000): the transaction is valid only once the node's virtual DAA score is above it; `tx send` refuses to broadcast it earlier (LOCK_TIME_NOT_REACHED, nothing sent). Not with --lock-time-ms; not on the simulator";
+export const LOCK_TIME_MS_HELP =
+  "Absolute lock time as milliseconds since the epoch (at or above 500000000000): valid only once the node's past median time is above it; `tx send` refuses to broadcast it earlier. Not with --lock-time-daa; not on the simulator";
+export const CONFIRM_DISTANT_LOCK_HELP =
+  "Plan a lock time more than about a day past the node's position (864000 DAA, or 86400000 ms); refused without it (LOCK_TIME_DISTANT_UNCONFIRMED)";
+
+/**
+ * `tx plan --url`: the local defaults the endpoint resolver applies when the network declares no rpcUrl — the canonical
+ * localnet for simnet, and devnet's own default (DEFAULT_HARDKAS_CONFIG.networks.devnet.rpcUrl, the one definition the
+ * resolver reads), never a copy of either.
+ */
+const DEVNET_DEFAULT_RPC_URL = (DEFAULT_HARDKAS_CONFIG.networks as Record<string, { rpcUrl?: unknown }> | undefined)?.devnet?.rpcUrl;
+export const TX_PLAN_URL_HELP =
+  `Node wRPC URL (default: the network's rpcUrl in hardkas.config.ts; without one, ${nodeRpcUrl()} for simnet` +
+  (typeof DEVNET_DEFAULT_RPC_URL === "string" ? ` and ${DEVNET_DEFAULT_RPC_URL} for devnet)` : ")");
+
+/** R4-T · `tx batch --one-transaction`. */
+export const TX_BATCH_ONE_TRANSACTION_HELP =
+  "Pay every payment of the file in ONE transaction: one payer, one output per payment (in the file's order), one change output, one fee, one submission. Refused before anything is planned, signed or sent when the file has payments from more than one payer (TX_BATCH_MULTIPLE_PAYERS), a payment without from, to or amount (TX_BATCH_PAYMENT_INVALID), or more recipients than fit in one standard transaction (TOO_MANY_OUTPUTS, which says how many fit). Without it, each payment is its own transaction";
+
+/** R4-T · `tx plan --to`: one recipient, or several in one transaction as repeated <recipient>=<kas>. */
+export const TX_PLAN_TO_HELP =
+  "Recipient address or account name (default: bob). Repeat it as --to <recipient>=<kas> (no --amount) to pay several recipients in one transaction: one output each, in the order given, one change output and one fee";
+
+/**
+ * R4-T · the recipients `tx plan --to` names: one recipient (`--to <r>`, with `--amount` or its default), or several in
+ * one transaction (`--to <r>=<kas>` repeated, without `--amount`). Every mixed or ambiguous form is TX_PLAN_USAGE, decided
+ * before anything is planned: plain `--to` given twice (it used to keep the last one silently), pairs mixed with plain
+ * values, pairs with `--amount` or a positional recipient, a pair that is not exactly one `<recipient>=<kas>`, and a
+ * value that is also the name of an account of the workspace's config (account names of `accounts real` and Kaspa
+ * addresses cannot contain `=`; a config account's name could).
+ */
+export function txPlanRecipientsOf(args: {
+  to: readonly string[] | undefined;
+  amount: string | undefined;
+  positionalTo: string | undefined;
+  configAccounts: Record<string, unknown> | undefined;
+}): { kind: "one"; to: string | undefined } | { kind: "several"; outputs: Array<{ to: string; amount: string }> } {
+  const values = args.to ?? [];
+  const usage = (why: string): never => {
+    throw new HardkasCliError("TX_PLAN_USAGE", `${why} Nothing was planned.`, { exitCode: HardkasExitCode.USAGE_ERROR });
+  };
+  const pairs = values.filter((v) => v.includes("="));
+  if (pairs.length === 0) {
+    if (values.length > 1) {
+      usage(`--to was given ${values.length} times without amounts: give each recipient as --to <recipient>=<kas> (several recipients in one transaction, no --amount), or one --to with --amount.`);
+    }
+    return { kind: "one", to: values[0] };
+  }
+  if (pairs.length !== values.length) usage("every --to takes the form <recipient>=<kas> when one of them does (several recipients in one transaction).");
+  if (args.amount !== undefined) usage("--amount cannot be combined with --to <recipient>=<kas>: each recipient carries its own amount.");
+  if (args.positionalTo !== undefined) usage("a positional recipient cannot be combined with --to <recipient>=<kas>: name every recipient with --to.");
+  const outputs = pairs.map((value) => {
+    const parts = value.split("=");
+    if (parts.length !== 2 || parts[0]!.trim() === "" || parts[1]!.trim() === "") {
+      usage(`--to ${JSON.stringify(value)} is not <recipient>=<kas> (one recipient, one '=', one amount in KAS).`);
+    }
+    if (args.configAccounts && Object.prototype.hasOwnProperty.call(args.configAccounts, value)) {
+      usage(`--to ${JSON.stringify(value)} is both an account of hardkas.config.ts and a <recipient>=<kas> pair: rename the account to pay it.`);
+    }
+    return { to: parts[0]!.trim(), amount: parts[1]!.trim() };
+  });
+  return { kind: "several", outputs };
+}
 
 async function declineUnconfirmedSend(args: {
   json: boolean;
@@ -134,6 +203,78 @@ async function networkSendState(txId: string | undefined, network: string): Prom
   }
 }
 
+/** TX-SEND-WAIT-1 · what `tx send --wait` waited for: the summary in the send's output, or why it ended without it. */
+type SendWait =
+  | { ok: true; until: "confirmed"; state: string; confirmations?: unknown; looks: number; elapsedMs: number; utxoView?: unknown; headline: string; utxoRow?: string }
+  | { ok: false; code: string; message: string }
+  | { ok: true; skipped: string };
+
+/**
+ * TX-SEND-WAIT-1 · `tx send --wait`: after the node accepted the send, the same wait as `hardkas tx wait <txId> --until
+ * confirmed` (the state derived from the node's observations, then the node's UTXO view), on the node the send used
+ * (--url, else the network's configured one). A wait that ends without CONFIRMED is returned, not thrown: the send's
+ * output still says the transaction was submitted, and the command then fails with TX_SEND_WAIT_FAILED.
+ */
+async function waitAfterSend(args: { txId: string | undefined; network: string; simulated: boolean; url?: string; timeout?: string; json: boolean }): Promise<SendWait> {
+  if (args.simulated) return { ok: true, skipped: "a simulator send is applied at once: there is no network to wait for" };
+  if (!args.txId || !/^[0-9a-f]{64}$/.test(args.txId)) return { ok: false, code: "TX_SEND_WAIT_NO_TXID", message: "the node returned no txId to wait for" };
+  const { parseWaitSeconds, runTxWait, utxoViewRow } = await import("../runners/tx-wait-runner.js");
+  const { stateHeadline } = await import("../runners/tx-status-runner.js");
+  try {
+    const r = await runTxWait({
+      txId: args.txId,
+      until: "confirmed",
+      timeoutMs: (parseWaitSeconds(args.timeout ?? "60") ?? 60) * 1000,
+      intervalMs: 2000,
+      network: args.network,
+      ...(args.url ? { url: args.url } : {}),
+      workspaceRoot: invocationWorkspaceRoot(),
+      onUpdate: (line) => {
+        if (!args.json) UI.logHuman(`  • ${line}`);
+      }
+    });
+    return {
+      ok: true,
+      until: "confirmed",
+      state: String(r.derived.status),
+      ...(r.derived.confirmations ? { confirmations: r.derived.confirmations } : {}),
+      looks: r.looks,
+      elapsedMs: r.elapsedMs,
+      ...(r.utxoView ? { utxoView: r.utxoView, utxoRow: utxoViewRow(r.utxoView) } : {}),
+      headline: stateHeadline(r.derived)
+    };
+  } catch (e: unknown) {
+    return { ok: false, code: errorCodeOf(e) ?? "TX_WAIT_FAILED", message: e instanceof Error ? e.message : String(e) };
+  }
+}
+
+/** TX-SEND-WAIT-1 · the wait in the JSON envelope (the human rows carry the same). */
+function sendWaitJson(w: SendWait | undefined): Record<string, unknown> {
+  if (!w) return {};
+  if ("skipped" in w) return { wait: { skipped: w.skipped } };
+  if (!w.ok) return { wait: { ok: false, code: w.code, message: w.message } };
+  return { wait: { ok: true, until: w.until, state: w.state, ...(w.confirmations ? { confirmations: w.confirmations } : {}), looks: w.looks, elapsedMs: w.elapsedMs, ...(w.utxoView ? { utxoView: w.utxoView } : {}) } };
+}
+
+/** TX-SEND-WAIT-1 · the wait's rows in the human output. */
+function sendWaitRows(w: SendWait | undefined): Record<string, string> {
+  if (!w) return {};
+  if ("skipped" in w) return { Wait: `not needed: ${w.skipped}` };
+  if (!w.ok) return { Wait: `did not reach CONFIRMED (${w.code}: ${w.message})` };
+  return { Wait: `Reached CONFIRMED: ${w.headline}`, ...(w.utxoRow ? { "UTXO View": w.utxoRow } : {}) };
+}
+
+/** TX-SEND-WAIT-1 · a send whose wait ended without CONFIRMED fails after its output: the tx was still submitted. */
+function throwIfSendWaitFailed(w: SendWait | undefined, txId: string | undefined): void {
+  if (!w || "skipped" in w || w.ok) return;
+  throw new HardkasCliError(
+    "TX_SEND_WAIT_FAILED",
+    `The transaction ${txId ?? "(no txId)"} was submitted, but --wait did not reach CONFIRMED (${w.code}: ${w.message}). ` +
+      `Check it with: hardkas tx wait ${txId ?? "<txId>"} --until confirmed`,
+    { exitCode: HardkasExitCode.RUNTIME_FAILURE }
+  );
+}
+
 /**
  * PAYMENT-PREFLIGHT-1 · what a submission says its send checked before the broadcast (a row of the human output): a
  * payment's opt-in preflight verified the signatures too; a v1 send's check (F1.6) leaves them to the node.
@@ -141,11 +282,11 @@ async function networkSendState(txId: string | undefined, network: string): Prom
 async function preflightRow(receipt: unknown): Promise<Record<string, string>> {
   const p: any = (receipt as any)?.preflight;
   if (!p || typeof p.inputs !== "number") return {};
-  const { PAYMENT_PREFLIGHT_GUARANTEE } = await import("@hardkas/sdk");
+  const { PAYMENT_PREFLIGHT_GUARANTEE, PAYMENT_PREFLIGHT_GUARANTEE_ECDSA } = await import("@hardkas/sdk");
   const at = p.observedAtDaaScore ? ` (DAA ${p.observedAtDaaScore})` : "";
   return {
     Preflight:
-      p.guarantee === PAYMENT_PREFLIGHT_GUARANTEE
+      p.guarantee === PAYMENT_PREFLIGHT_GUARANTEE || p.guarantee === PAYMENT_PREFLIGHT_GUARANTEE_ECDSA
         ? `${p.inputs} input(s) checked at the node${at} and their signatures verified against its UTXOs; one node's view, not a consensus validation`
         : `${p.inputs} input(s) checked at the node${at}; the signatures are verified by the node only`
   };
@@ -183,9 +324,14 @@ export function registerTxCommands(program: Command) {
     });
 
   tx.command("batch")
-    .description(`Process a batch of transactions sequentially ${UI.maturity("stable")}`)
+    .description(`Process a batch of payments: one transaction per payment, sent in order, or all of them in one transaction (--one-transaction) ${UI.maturity("stable")}`)
     .requiredOption("--file <path>", "Path to JSON file containing batch payments")
     .option("--network <name>", "Network name")
+    .option(
+      "--one-transaction",
+      TX_BATCH_ONE_TRANSACTION_HELP,
+      false
+    )
     .option("--workspace <path>", "Override workspace root directory")
     .option("--password-env <env>", "Read the keystore password of the batch's encrypted payers from this environment variable (read once, before the first payment)")
     .option("--password-stdin", "Read the keystore password of the batch's encrypted payers from stdin (read once, before the first payment)", false)
@@ -206,14 +352,18 @@ export function registerTxCommands(program: Command) {
     .description(`Build a transaction plan artifact ${UI.maturity("stable")}`)
     .option("--target <name>", "Named execution target from hardkas.config.ts")
     .option("--from <accountOrAddress>", "Sender account name or address (default: alice)")
-    .option("--to <address>", "Recipient address or account name (default: bob)")
+    // R4-T: repeatable (each value collected, in order); txPlanRecipientsOf decides the form
+    .option("--to <address>", TX_PLAN_TO_HELP, (value: string, previous: string[] | undefined) => [...(previous ?? []), value])
     .option("--amount <kas>", "Amount in KAS, up to 8 decimals (default: 1)")
     .option("--network <name>", "simulated, simnet, devnet, testnet-10, testnet-12 or mainnet (default: the config's default target)")
     .option("--fee-rate <sompiPerMass>", "Whole sompi per gram of mass, at least 1 (default: 1 in the simulator, 100 on real networks; not a live estimate)")
     .option("--max-fee <sompi>", "Total fee limit in sompi: the plan is refused (FEE_EXCEEDS_MAX) above it, and the limit is recorded in the plan and enforced again at sign and send. The workspace's networks[<net>].maxFeeSompi also applies; the lower one wins. No limit by default")
     .option("--change <accountOrAddress>", "Change destination (account name or address); default: the sender")
+    .option("--lock-time-daa <n>", LOCK_TIME_DAA_HELP)
+    .option("--lock-time-ms <t>", LOCK_TIME_MS_HELP)
+    .option("--confirm-distant-lock-time", CONFIRM_DISTANT_LOCK_HELP, false)
     .option("--provider <type>", "Provider mode (auto, rpc, simulated)", "auto")
-    .option("--url <url>", `Node wRPC URL (default: the network's rpcUrl in hardkas.config.ts; without one, ${nodeRpcUrl()} for simnet and devnet)`)
+    .option("--url <url>", TX_PLAN_URL_HELP)
     .option("--out <path>", "Save plan as artifact JSON")
     .option("--save <path>", "Alias for --out (Save plan as artifact JSON)")
     .option("--workflow-id <id>", "Optional deterministic workflow ID override")
@@ -244,9 +394,11 @@ export function registerTxCommands(program: Command) {
           if (options.json) UI.setJsonMode(true);
           // CLI-CONTRACT-2A: a value that was given but is empty (or blank) is refused before anything is planned; only an
           // omitted option takes its documented default (alice, bob, 1 KAS). `||` used to turn "" into that default silently.
+          // R4-T: --to is collected as a list (repeatable); a blank one is empty like any other
+          const toValues: string[] | undefined = Array.isArray(options.to) ? options.to : typeof options.to === "string" ? [options.to] : undefined;
           const given: Array<[string, unknown]> = [
             ["--from", options.from ?? positionalFrom],
-            ["--to", options.to ?? positionalTo],
+            ["--to", toValues?.find((v) => v.trim() === "") ?? toValues?.[0] ?? positionalTo],
             ["--amount", options.amount]
           ];
           const empty = given.filter(([, v]) => typeof v === "string" && v.trim() === "").map(([flag]) => flag);
@@ -267,17 +419,29 @@ export function registerTxCommands(program: Command) {
           // WORKSPACE-AUTHORITY-1 (WA-I0): the config, the simulator state and the store are the invocation's one root's
           const workspaceRoot = invocationWorkspaceRoot();
           const loaded = await loadHardkasConfig({ workspaceRoot });
+          // R4-T: one recipient (as before), or several in one transaction (--to <recipient>=<kas>, repeated)
+          const recipients = txPlanRecipientsOf({
+            to: toValues,
+            amount: options.amount,
+            positionalTo,
+            configAccounts: (loaded.config as { accounts?: Record<string, unknown> }).accounts
+          });
           const artifact = await runTxPlan({
             ...(options.target ? { targetName: options.target } : {}),
             from: options.from ?? positionalFrom ?? "alice",
-            to: options.to ?? positionalTo ?? "bob",
-            amount: options.amount ?? "1",
+            ...(recipients.kind === "several"
+              ? { outputs: recipients.outputs }
+              : { to: recipients.to ?? positionalTo ?? "bob", amount: options.amount ?? "1" }),
             ...(options.network ? { networkId: options.network } : {}),
             provider: options.provider || "auto",
             // TX-FEE-GUARD-1: a given value is always validated (an empty one too), never dropped
             ...(options.feeRate !== undefined ? { feeRate: options.feeRate } : {}),
             ...(options.maxFee !== undefined ? { maxFee: options.maxFee } : {}),
             ...(options.change ? { changeAddress: options.change } : {}),
+            // CLTV · a given value is always validated (LOCK_TIME_INVALID), never dropped
+            ...(options.lockTimeDaa !== undefined ? { lockTimeDaa: options.lockTimeDaa } : {}),
+            ...(options.lockTimeMs !== undefined ? { lockTimeMs: options.lockTimeMs } : {}),
+            ...(options.confirmDistantLockTime ? { confirmDistantLockTime: true } : {}),
             config: loaded.config,
             ...(options.workflowId ? { workflowId: options.workflowId } : {}),
             ...(options.assumptionLevel
@@ -329,6 +493,14 @@ export function registerTxCommands(program: Command) {
             UI.writeJson(artifact);
           } else {
             getOutput().writeLine(formatTxPlanArtifact(artifact));
+            // R4-T: a plan paying several recipients lists every one (To and Amount above name the first)
+            if (recipients.kind === "several" && artifact.outputs.length > 1) {
+              const { formatSompiToKas } = await import("@hardkas/core");
+              getOutput().writeLine(`\nRecipients (${artifact.outputs.length}, one transaction; To and Amount above are the first):`);
+              artifact.outputs.forEach((o: any, i: number) =>
+                getOutput().writeLine(`  ${i + 1}. ${o.address}  ${formatSompiToKas(BigInt(o.amountSompi))} KAS`)
+              );
+            }
             if (outPath) getOutput().writeLine(`\nArtifact saved to: ${outPath}`);
             // Demo-ready · E21: say where the plan was persisted (the path actually written),
             // so `tx sign` can be given it without searching .hardkas/artifacts/.
@@ -465,8 +637,13 @@ export function registerTxCommands(program: Command) {
       "--since <chainBlockHash>",
       "Scan the node's virtual chain from this chain block (64 hex; it must precede the tx's acceptance) — for a tx sent outside this workspace"
     )
+    .option(
+      "--address <address>",
+      "Locate the transaction first through the history of an address it pays or spends from (a bounded window of the node's selected chain: from --since, else the last --lookback chain blocks); found, the new look scans from the chain block before its acceptance (also when its outputs were spent since)"
+    )
+    .option("--lookback <chainBlocks>", "With --address and no --since: the history's window, in chain blocks back from the node's sink (default 1000, at most 100000)")
     .option("--json", "Output as JSON", false)
-    .action(async (artifactPath: string, options: { json: boolean; observe: boolean; network?: string; since?: string }) => {
+    .action(async (artifactPath: string, options: { json: boolean; observe: boolean; network?: string; since?: string; address?: string; lookback?: string }) => {
       try {
         if (options.json) UI.setJsonMode(true);
         // Demo-cut step 2 · T-A14b: a txId shows the Q4 derived state (the same
@@ -484,12 +661,27 @@ export function registerTxCommands(program: Command) {
           if (options.observe === false) refuse("--since sets where the new observation scans from; it cannot be combined with --no-observe.");
           if (!NETWORK_TXID.test(artifactPath) || fsMod.existsSync(artifactPath)) refuse("--since applies to a network txId (64 hex), not to a simulator txId or an artifact path.");
         }
+        // R3-D: --address locates the tx through the address's bounded history first; same usage rules as --since
+        if (options.address !== undefined || options.lookback !== undefined) {
+          const { HardkasCliError, HardkasExitCode } = await import("../cli-errors.js");
+          const refuse = (why: string) => {
+            throw new HardkasCliError("TX_STATUS_USAGE", `${why} Nothing was observed.`, { exitCode: HardkasExitCode.USAGE_ERROR });
+          };
+          if (options.address === undefined) refuse("--lookback sets the window of --address; give --address too.");
+          if (options.observe === false) refuse("--address locates the transaction for the new observation; it cannot be combined with --no-observe.");
+          if (!NETWORK_TXID.test(artifactPath) || fsMod.existsSync(artifactPath)) refuse("--address applies to a network txId (64 hex), not to a simulator txId or an artifact path.");
+          if (options.lookback !== undefined && (!/^\d{1,6}$/.test(options.lookback) || Number(options.lookback) < 1 || Number(options.lookback) > 100000)) {
+            refuse(`--lookback must be a number of chain blocks from 1 to 100000, got '${String(options.lookback).slice(0, 40)}'.`);
+          }
+        }
         if (isTxIdentifier(artifactPath) && !fsMod.existsSync(artifactPath)) {
           const r = await runTxStatus({
             txId: artifactPath,
             observe: options.observe !== false,
             ...(options.network ? { network: options.network } : {}),
             ...(options.since !== undefined ? { since: options.since } : {}),
+            ...(options.address !== undefined ? { address: options.address } : {}),
+            ...(options.lookback !== undefined ? { lookback: Number(options.lookback) } : {}),
             workspaceRoot: invocationWorkspaceRoot()
           });
           if (options.json) {
@@ -530,6 +722,11 @@ export function registerTxCommands(program: Command) {
           getOutput().writeLine(`From:         ${raw.from.address}`);
           getOutput().writeLine(`To:           ${raw.to.address}`);
           getOutput().writeLine(`Amount:       ${raw.amountSompi} sompi`);
+          // R4-T: a plan paying several recipients (To and Amount name the first)
+          if (Array.isArray(raw.outputs) && raw.outputs.length > 1) {
+            getOutput().writeLine(`Recipients:   ${raw.outputs.length} in one transaction`);
+            raw.outputs.forEach((o: any, i: number) => getOutput().writeLine(`  ${i + 1}. ${o.address}  ${o.amountSompi} sompi`));
+          }
         } else {
           getOutput().writeLine(`Status:       ${raw.status.toUpperCase()}`);
           getOutput().writeLine(`Signed ID:    ${raw.signedId}`);
@@ -570,10 +767,19 @@ export function registerTxCommands(program: Command) {
     .option("--amount <kas>", "Amount in KAS (shortcut mode)")
     .option("--network <name>", "Network name")
     .option("--fee-rate <sompiPerMass>", "Fee rate in sompi per mass (shortcut mode)")
+    .option("--lock-time-daa <n>", `Shortcut mode: ${LOCK_TIME_DAA_HELP}`)
+    .option("--lock-time-ms <t>", `Shortcut mode: ${LOCK_TIME_MS_HELP}`)
+    .option("--confirm-distant-lock-time", `Shortcut mode: ${CONFIRM_DISTANT_LOCK_HELP}`, false)
     .option("--password-env <env>", "Shortcut mode: read the sender's keystore password (an encrypted account) from this environment variable")
     .option("--password-stdin", "Shortcut mode: read the sender's keystore password (an encrypted account) from stdin", false)
     .option("--provider <type>", "Provider mode (auto, rpc, simulated; signed-artifact mode only)", "auto")
     .option("--url <url>", "RPC URL (optional override)")
+    .option(
+      "--wait",
+      "After the node accepts the send, wait until the transaction is CONFIRMED, as `hardkas tx wait <txId>`, on the same node (--url, else the network's configured one). Not reaching it in time is TX_SEND_WAIT_FAILED (exit 1): the transaction was still submitted",
+      false
+    )
+    .option("--wait-timeout <seconds>", "With --wait: how long to wait, in seconds or with a unit (500ms, 60s, 2m) (default: 60)")
     .option(
       "--yes",
       "Confirm broadcast. Required unless the network is simulated or simnet (in shortcut mode, unless --network simulated or simnet is given): without it the send is refused (NOT EXECUTED, exit 3) and nothing is written",
@@ -603,10 +809,15 @@ export function registerTxCommands(program: Command) {
           amount?: string;
           network?: string;
           feeRate?: string;
+          lockTimeDaa?: string;
+          lockTimeMs?: string;
+          confirmDistantLockTime?: boolean;
           passwordEnv?: string;
           passwordStdin: boolean;
           provider: string;
           url?: string;
+          wait: boolean;
+          waitTimeout?: string;
           yes: boolean;
           waitLock: boolean;
           lockTimeout: string;
@@ -618,6 +829,21 @@ export function registerTxCommands(program: Command) {
       ) => {
         try {
           if (options.json) UI.setJsonMode(true);
+          // TX-SEND-WAIT-1: the wait's options are checked before anything is planned, signed or sent (never ignored)
+          if (options.waitTimeout !== undefined) {
+            const { HardkasCliError, HardkasExitCode } = await import("../cli-errors.js");
+            const { parseWaitSeconds } = await import("../runners/tx-wait-runner.js");
+            if (!options.wait) {
+              throw new HardkasCliError("TX_SEND_USAGE", "--wait-timeout applies with --wait. Nothing was sent or recorded.", { exitCode: HardkasExitCode.USAGE_ERROR });
+            }
+            if (parseWaitSeconds(options.waitTimeout) === undefined) {
+              throw new HardkasCliError(
+                "TX_SEND_USAGE",
+                `--wait-timeout is a non-negative number of seconds, optionally with a unit (500ms, 60s, 2m), got '${String(options.waitTimeout).slice(0, 40)}'. Nothing was sent or recorded.`,
+                { exitCode: HardkasExitCode.USAGE_ERROR }
+              );
+            }
+          }
           // ARTIFACT-MUTATION-UNITS (phase 2B): no command-level hold of the store; each store write takes it through the
           // gate. The command used to hold it across planner RPC calls, password prompts and the broadcast.
           const { loadHardkasConfig } = await import("@hardkas/config");
@@ -635,7 +861,7 @@ export function registerTxCommands(program: Command) {
           }
           const loaded = await loadHardkasConfig({ workspaceRoot });
 
-          // MAINNET TOTAL LOCKDOWN (RC2 oracle D2a/D2b, O5): a send on mainnet is MAINNET_BROADCAST_DISABLED, decided FIRST —
+          // MAINNET TOTAL LOCKDOWN (lockdown oracle D2a/D2b, O5): a send on mainnet is MAINNET_BROADCAST_DISABLED, decided FIRST —
           // before the artifact is validated, the confirmation asked, a name resolved (EXECUTION_NETWORK_MISMATCH) or the
           // public-network gate reached (PUBLIC_NETWORK_BLOCKED), and in the shortcut mode before its plan step (it was
           // TX_SEND_FAILED wrapping the plan's refusal). Any spelling, an alias that declares one, a --target on it, the
@@ -658,6 +884,16 @@ export function registerTxCommands(program: Command) {
             );
           }
           if (signedPath) {
+            // CLTV · a signed transaction already carries its lock time (bound to its plan): the lock-time options plan one
+            // and apply to the shortcut mode only; never silently ignored
+            if (options.lockTimeDaa !== undefined || options.lockTimeMs !== undefined || options.confirmDistantLockTime) {
+              const { HardkasCliError, HardkasExitCode } = await import("../cli-errors.js");
+              throw new HardkasCliError(
+                "LOCK_TIME_OPTION_SHORTCUT_ONLY",
+                "--lock-time-daa, --lock-time-ms and --confirm-distant-lock-time plan a lock time (shortcut mode, or `hardkas tx plan`); a signed transaction carries the lock time of its plan. Nothing was sent or recorded.",
+                { exitCode: HardkasExitCode.USAGE_ERROR }
+              );
+            }
             const { readSignedTxArtifact } = await import("@hardkas/artifacts");
             const signedArtifact = await readSignedTxArtifact(signedPath);
 
@@ -789,10 +1025,24 @@ export function registerTxCommands(program: Command) {
               tracking && !tracking.recorded
                 ? `DEPLOYMENT_TRACK_FAILED: the transaction was broadcast, but the deployment record '${tracking.label}' was not written (${tracking.code}: ${tracking.message}). Re-run: ${tracking.retry}`
                 : null;
+            // TX-SEND-WAIT-1: --wait, once the node accepted the send, on the node it was sent to
+            const sendWait =
+              options.wait && result.accepted
+                ? await waitAfterSend({
+                    txId: result.txId,
+                    network: String(result.networkName),
+                    simulated: result.networkName === "simulated" || result.rpcUrl === "simulated://local",
+                    ...(options.url ? { url: options.url } : {}),
+                    ...(options.waitTimeout !== undefined ? { timeout: options.waitTimeout } : {}),
+                    json: options.json
+                  })
+                : undefined;
+            const sendWaitFailed = sendWait !== undefined && !("skipped" in sendWait) && !sendWait.ok;
 
             if (options.json) {
               UI.writeJson({
-                ok: result.accepted,
+                ok: result.accepted && !sendWaitFailed,
+                ...sendWaitJson(sendWait),
                 // AUX-11: one of three unambiguous outcomes (submitted | rejected | not_executed); EVENT-LEDGER-2 final
                 // closeout: `unknown` for a submit call that failed without an answer (never reported as rejected).
                 // TX-SEND-IDEMPOTENT-1/-2: already submitted from this workspace and held by the node — not broadcast
@@ -801,6 +1051,8 @@ export function registerTxCommands(program: Command) {
                 ...(result.alreadySubmitted
                   ? { code: "ALREADY_SUBMITTED", alreadySubmitted: true, recorded: true, ...(result.state ? { state: result.state } : {}) }
                   : {}),
+                // TX-SEND-WAIT-1: the command's failure code, as the other failures of `tx send` carry theirs
+                ...(sendWaitFailed ? { code: "TX_SEND_WAIT_FAILED" } : {}),
                 // INT9 · I-2: the pre-broadcast node check that let this broadcast go ahead (NOT_OBSERVED / UNKNOWN)
                 ...(result.nodeCheck ? { nodeCheck: result.nodeCheck } : {}),
                 data: {
@@ -861,13 +1113,14 @@ export function registerTxCommands(program: Command) {
                     ? "none: the recorded submission (Artifact ID) stands"
                     : result.receiptPath || ".hardkas/artifacts/...",
                   Projection: "SQLite query-store (indexed while the dev-server runs)",
-                  ...networkRows
+                  ...networkRows,
+                  ...sendWaitRows(sendWait)
                 },
                 [
                   ...nextStepsAfterSend({ receipt: result.receipt, txId: result.txId }),
                   ...(!isSimulated && txIdShown ? [`hardkas tx status ${txIdShown}`] : [])
                 ],
-                !isSimulated && !result.accepted ? "fail" : "ok"
+                (!isSimulated && !result.accepted) || sendWaitFailed ? "fail" : "ok"
               );
               if (tracking?.recorded) {
                 UI.success(`Tracked deployment: ${tracking.label} (${result.networkName})`);
@@ -881,6 +1134,7 @@ export function registerTxCommands(program: Command) {
               const failure = notAcceptedFailure(result.receipt, result.txId);
               throw new HardkasCliError(failure.code, failure.message, { exitCode: 1 });
             }
+            throwIfSendWaitFailed(sendWait, result.txId);
           } else if (options.from && options.to && options.amount) {
             // AUX-11: the confirmation policy of `tx send` — required unless the network is
             // the simulator or a local simnet. Once it is satisfied the flow is told so
@@ -909,6 +1163,9 @@ export function registerTxCommands(program: Command) {
               config: loaded.config,
               ...(options.network ? { network: options.network } : {}),
               ...(options.feeRate ? { feeRate: options.feeRate } : {}),
+              ...(options.lockTimeDaa !== undefined ? { lockTimeDaa: options.lockTimeDaa } : {}),
+              ...(options.lockTimeMs !== undefined ? { lockTimeMs: options.lockTimeMs } : {}),
+              ...(options.confirmDistantLockTime ? { confirmDistantLockTime: true } : {}),
               ...(options.url ? { url: options.url } : {}),
               // TX-SEND-PASSWORD-1: an encrypted sender's keystore password, read by the sign step (never prompted with --json)
               ...(options.passwordEnv ? { passwordEnv: options.passwordEnv } : {}),
@@ -993,10 +1250,27 @@ export function registerTxCommands(program: Command) {
               });
             }
             const flowAccepted = flowSend.artifact?.accepted !== false;
+            // TX-SEND-WAIT-1: --wait, once the node accepted the send, on the node the flow used
+            const flowWaitTxId = flowSend.artifact?.txId;
+            const sendWait =
+              options.wait && flowAccepted
+                ? await waitAfterSend({
+                    txId: flowWaitTxId,
+                    network: String(result.networkId),
+                    simulated: flowSend.artifact?.rpcUrl === "simulated://local" || String(result.networkId) === "simulated",
+                    ...(options.url ? { url: options.url } : {}),
+                    ...(options.waitTimeout !== undefined ? { timeout: options.waitTimeout } : {}),
+                    json: options.json
+                  })
+                : undefined;
+            const sendWaitFailed = sendWait !== undefined && !("skipped" in sendWait) && !sendWait.ok;
             if (options.json) {
               const sendResult = result.steps.send;
               UI.writeJson({
-                ok: flowAccepted,
+                ok: flowAccepted && !sendWaitFailed,
+                // TX-SEND-WAIT-1: the command's failure code, as the other failures of `tx send` carry theirs
+                ...(sendWaitFailed ? { code: "TX_SEND_WAIT_FAILED" } : {}),
+                ...sendWaitJson(sendWait),
                 // AUX-11: one of three unambiguous outcomes (submitted | rejected | not_executed); EVENT-LEDGER-2 final
                 // closeout: `unknown` for a submit call that failed without an answer (never reported as rejected).
                 outcome: sendOutcomeLabel(sendResult?.artifact?.receipt, flowAccepted),
@@ -1061,7 +1335,8 @@ export function registerTxCommands(program: Command) {
                   "Artifact Written":
                     sendResult?.artifact?.receiptPath || ".hardkas/artifacts/...",
                   Projection: "SQLite query-store (indexed while the dev-server runs)",
-                  ...networkRows
+                  ...networkRows,
+                  ...sendWaitRows(sendWait)
                 },
                 [
                   ...nextStepsAfterSend({ receipt: sendResult?.artifact?.receipt, txId: sendResult?.artifact?.txId }),
@@ -1069,7 +1344,7 @@ export function registerTxCommands(program: Command) {
                   "hardkas dev last --replay",
                   "hardkas status"
                 ],
-                !isSimulated && !flowAccepted ? "fail" : "ok"
+                (!isSimulated && !flowAccepted) || sendWaitFailed ? "fail" : "ok"
               );
             }
             if (!flowAccepted) {
@@ -1077,6 +1352,7 @@ export function registerTxCommands(program: Command) {
               const failure = notAcceptedFailure(flowSend?.artifact?.receipt, flowSend?.artifact?.txId);
               throw new HardkasCliError(failure.code, failure.message, { exitCode: 1 });
             }
+            throwIfSendWaitFailed(sendWait, flowWaitTxId);
           } else {
             // CLI-RUNTIME-CONTRACT-1: a usage error with its code and exit code (was an untyped "Command failed").
             const { HardkasCliError, HardkasExitCode } = await import("../cli-errors.js");
@@ -1116,6 +1392,7 @@ export function registerTxCommands(program: Command) {
     .option("--timeout <seconds>", "Timeout in seconds", "60")
     .option("--interval <seconds>", "Seconds between observations", "2")
     .option("-n, --network <network>", "Network whose configured node observes (default: the network of the recorded submission)")
+    .option("--url <url>", "Node wRPC URL that observes, instead of the network's configured one (as tx send --url)")
     .option(
       "--since <chainBlockHash>",
       "Scan the node's virtual chain from this chain block (64 hex; it must precede the tx's acceptance) on the first look — for a tx sent outside this workspace"
@@ -1130,7 +1407,7 @@ export function registerTxCommands(program: Command) {
       "With --address: chain blocks the wait may walk back from the node's sink (getBlock, selected parent) to find a tx accepted before it started (default 1000, at most 10000, 0 = never); the acceptance is the node's own virtual-chain answer from there. Given explicitly, the wait starts at the sink even when this workspace stored looks at the txId"
     )
     .option("--json", "Output as JSON", false)
-    .action(async (txId: string, options: { until: string; timeout: string; interval: string; network?: string; since?: string; address?: string[]; lookback?: string; json: boolean }) => {
+    .action(async (txId: string, options: { until: string; timeout: string; interval: string; network?: string; url?: string; since?: string; address?: string[]; lookback?: string; json: boolean }) => {
       if (options.json) UI.setJsonMode(true);
       const { HardkasCliError, HardkasExitCode } = await import("../cli-errors.js");
       if (options.until !== "accepted" && options.until !== "confirmed") {
@@ -1210,6 +1487,7 @@ export function registerTxCommands(program: Command) {
         timeoutMs: timeoutSeconds * 1000,
         intervalMs: Math.max(0.2, intervalSeconds) * 1000,
         ...(options.network ? { network: options.network } : {}),
+        ...(options.url ? { url: options.url } : {}),
         ...(options.since !== undefined ? { since: options.since } : {}),
         ...(options.address !== undefined ? { addresses: options.address } : {}),
         ...(lookback !== undefined ? { lookback } : {}),

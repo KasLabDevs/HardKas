@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/sdk",
-  "version": "0.13.0-rc.2",
+  "version": "0.13.0-rc.3",
   "type": "module",
   "files": [
     "dist",
@@ -35,6 +35,7 @@
     "@hardkas/artifacts": "workspace:*",
     "@hardkas/config": "workspace:*",
     "@hardkas/core": "workspace:*",
+    "@hardkas/escrow": "workspace:*",
     "@hardkas/kaspa-rpc": "workspace:*",
     "@hardkas/localnet": "workspace:*",
     "@hardkas/node-runner": "workspace:*",

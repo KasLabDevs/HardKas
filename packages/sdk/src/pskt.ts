@@ -398,7 +398,7 @@ export async function extractSession(session: PortableSigningSession): Promise<a
 }
 
 /**
- * A1 (rc2 audit): checks, without any key, that a session may be signed by this caller: the caller's own network
+ * A1 (audit 2026-11-13): checks, without any key, that a session may be signed by this caller: the caller's own network
  * (`context.networkId`) is given, is the session's and is not mainnet, and the caller's node (`context.node`) lists every
  * input to be signed as unspent. Fail closed (PSKT_SIGNER_NETWORK_REQUIRED, PSKT_NETWORK_MISMATCH,
  * PSKT_INPUTS_UNVERIFIED, PSKT_INPUT_NOT_ON_NETWORK). `signSession` runs it; a caller may run it before it reads a key.
@@ -413,7 +413,7 @@ export async function assertSessionSignable(
 }
 
 /**
- * Signs the inputs `request.inputIndexes` of a session. A1 (rc2 audit): `context` is the CALLER's side and is required at
+ * Signs the inputs `request.inputIndexes` of a session. A1 (audit 2026-11-13): `context` is the CALLER's side and is required at
  * runtime: its own network (never the session file's label; a signature does not commit to a network) and its node for
  * that network, which must list every input to be signed as unspent. Without them nothing is signed.
  * What the adapter returns is read before it is recorded (notes cross-check §2.3 item 4): the same transaction as sent

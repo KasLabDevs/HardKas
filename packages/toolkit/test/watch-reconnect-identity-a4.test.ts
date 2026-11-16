@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-// A4 (rc2 audit) · `WalletToolkit.watch` identified its node once; its own kaspa-wasm client resumes by itself (Retry
+// A4 (audit 2026-11-13) · `WalletToolkit.watch` identified its node once; its own kaspa-wasm client resumes by itself (Retry
 // strategy), and the re-snapshot after a reconnect re-read the address from whatever answered behind the URL — a local
 // testnet node replaced by a mainnet one on the same port, a proxy that changed its upstream. Now every reconnection is
 // identified again BEFORE the re-snapshot clears or reads anything (tx-builder's beforeResnapshot hook): a node that names

@@ -5,7 +5,7 @@ import { pskt } from "../../src/index.js";
 import { NativePsktAdapter } from "../../src/pskt/adapters/native.js";
 
 /*
- * A1 (rc2 audit) · `pskt.signSession` decided "not mainnet" from the session file's own `networkId`, with a raw key tied
+ * A1 (audit 2026-11-13) · `pskt.signSession` decided "not mainnet" from the session file's own `networkId`, with a raw key tied
  * to no network: a session labelled testnet-10 whose PSKT spends a mainnet UTXO of the signer's key was signed, and the
  * signature was valid on mainnet. Now the CALLER's network is required and must be the session's, and the caller's node
  * for it must list every input to be signed as unspent; anything else refuses before the native signer is called (fail

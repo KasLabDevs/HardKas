@@ -128,7 +128,7 @@ describe('@hardkas/toolkit V1', () => {
             // But we can verify it registers correctly.
             await idx.watch(['kaspa:store-1', 'kaspa:store-2']); // should also work
         });
-        // E-03 (rc2 audit): ingestArtifact used to index any object under `artifact.id || 'mock_hash'` with an invented
+        // E-03 (audit 2026-11-13): ingestArtifact used to index any object under `artifact.id || 'mock_hash'` with an invented
         // `/mock/path/<id>.json` (this test pinned hash '123'). Now only an artifact whose content hash its content
         // verifies is indexed, under that hash; one without is refused (INDEXER_ARTIFACT_IDENTITY_INVALID).
         it('should ingest a verified artifact under its content hash and find it', async () => {

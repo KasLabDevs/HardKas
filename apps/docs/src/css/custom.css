@@ -5,9 +5,9 @@
    ========================================================================== */
 
 :root {
-  --bg: #0b0d0e;
-  --bg-elev: #121517;
-  --bg-sunk: #08090a;
+  --bg: #1f1f1f;
+  --bg-elev: #252526;
+  --bg-sunk: #181818;
   --line: rgba(255, 255, 255, 0.08);
   --line-strong: rgba(255, 255, 255, 0.15);
   --text: #ecebe7;
@@ -24,7 +24,7 @@
   --danger-tint: rgba(239, 122, 106, 0.09);
   --chip-bg: rgba(255, 255, 255, 0.055);
 
-  --code-bg: #0e1113;
+  --code-bg: #181818;
   --code-edge: rgba(255, 255, 255, 0.07);
   --code-text: #d8dbd5;
   --code-dim: #7a847f;
@@ -190,6 +190,10 @@ a:hover { text-decoration: underline; text-underline-offset: 3px; }
 .navbar__link--active {
   color: var(--text) !important;
   font-weight: 600 !important;
+}
+
+.navbar__link svg[class*="iconExternalLink"] {
+  display: none;
 }
 
 .navbar__items--right {
@@ -648,4 +652,49 @@ main td:first-child {
   div[class*='docsWrapper'] {
     padding: 0 16px;
   }
+}
+
+/* ==========================================================================
+   Unified Footer
+   ========================================================================== */
+.footer.footer--dark {
+  background: var(--bg-sunk);
+  border-top: 1px solid var(--line);
+  color: var(--text-2);
+  padding: 40px 24px 32px;
+}
+
+.footer__title {
+  color: var(--text);
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.footer__link-item {
+  color: var(--text-2);
+  font-size: 0.9rem;
+  line-height: 1.9;
+}
+
+.footer__link-item:hover {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.footer__link-item svg[class*='iconExternalLink'] {
+  display: none;
+}
+
+.footer__bottom {
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+}
+
+.docs-footer-meta {
+  color: var(--muted);
+  font-size: 0.82rem;
 }

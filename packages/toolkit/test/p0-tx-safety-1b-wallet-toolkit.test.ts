@@ -271,7 +271,7 @@ describe("LOTE 1B — WalletToolkit network/mainnet guard (BEFORE)", () => {
   });
 });
 
-// E-03 (rc2 audit): the two deprecated stubs answered success-shaped data for work they never did (DOC-1 pinned a
+// E-03 (audit 2026-11-13): the two deprecated stubs answered success-shaped data for work they never did (DOC-1 pinned a
 // `{ message: "…stub…" }` object, DOC-2 a `sim_tx_<timestamp>` id). Now both throw WALLET_TOOLKIT_METHOD_UNSUPPORTED,
 // naming what to use, and still touch no rpc, signer or state.
 describe("LOTE 1B — deprecated stubs refuse (E-03)", () => {

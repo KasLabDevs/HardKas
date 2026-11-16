@@ -95,6 +95,8 @@ export function createV1TxPlanArtifact(options: CreateV1TxPlanArtifactOptions): 
     ...(b.covenantOutpoints !== undefined && b.covenantOutpoints.length > 0 ? { covenantOutpoints: [...b.covenantOutpoints] } : {}),
     ...(b.nextState !== undefined && b.nextState.length > 0 ? { nextState: copyArg(b.nextState) } : {}),
     ...(b.maxFeeSompi !== undefined ? { maxFeeSompi: b.maxFeeSompi } : {}),
+    // CLTV · the typed lock time (absent = 0, never written: a plan without one keeps its identity)
+    ...(b.lockTime !== undefined ? { lockTime: copyArg(b.lockTime) } : {}),
     rpcUrl: options.rpcUrl ? redactUrlCredentials(options.rpcUrl) : options.rpcUrl,
     lineage: { artifactId: "", sequence: 1 },
     workflowId,

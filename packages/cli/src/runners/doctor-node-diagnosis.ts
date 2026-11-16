@@ -386,7 +386,7 @@ export async function diagnoseNode(opts: DoctorNodeOptions): Promise<DoctorNodeD
 
   // ------------------------------------------------------------------ connectivity
   if (!server) {
-    // MAINNET TOTAL LOCKDOWN (RC2 oracle O8): the node answered its one identity question with mainnet and the transport
+    // MAINNET TOTAL LOCKDOWN (lockdown oracle O8): the node answered its one identity question with mainnet and the transport
     // closed it there — the headline and the identity check are that refusal, never "the identity could not be read"
     const said = probe.error ?? record.problems.join("; ");
     if (core.isMainnetConnectionDisabledError(probe.error) || /MAINNET_CONNECTION_DISABLED/.test(String((said as any)?.message ?? said))) {

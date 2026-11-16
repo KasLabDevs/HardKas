@@ -51,6 +51,7 @@ title: hardkas accounts
 - `--password-env &lt;env&gt;`: Read keystore password from environment variable (safe)
 - `--unsafe-plaintext` (Default: `false`): Store private key in plaintext (legacy/discouraged)
 - `--fixture &lt;name&gt;`: Import deterministic fixture test account
+- `--ecdsa` (Default: `false`): The key is imported as an ECDSA account: --address must be its ECDSA P2PK address (an ECDSA address without this flag is refused: ACCOUNT_KEY_SCHEME_MISMATCH). Default: Schnorr
 - `--yes` (Default: `false`): Skip confirmation for unsafe operations
 - `--wait-lock` (Default: `false`): Wait for workspace lock if held
 - `--lock-timeout &lt;ms&gt;` (Default: `30000`): Lock wait timeout in ms
@@ -127,6 +128,7 @@ title: hardkas accounts
 - `--password-stdin` (Default: `false`): Read keystore password from stdin
 - `--password-env &lt;env&gt;`: Read password from environment variable
 - `--unsafe-plaintext` (Default: `false`): Generate accounts in plaintext (legacy/discouraged)
+- `--ecdsa` (Default: `false`): Make ECDSA accounts: the address is the key's ECDSA P2PK address (version 1), recorded with the account and in its keystore's authenticated metadata; HardKAS signs their payments with ECDSA (RFC 6979, low-S). Default: Schnorr
 - `--yes` (Default: `false`): Skip confirmation for unsafe operations
 - `--wait-lock` (Default: `false`): Wait for workspace lock if held
 - `--lock-timeout &lt;ms&gt;` (Default: `30000`): Lock wait timeout in ms

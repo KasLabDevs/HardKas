@@ -60,6 +60,8 @@ title: hardkas artifact
 - `--since &lt;blockHash&gt;`: Virtual-chain cursor for the network check: a chain block before the transaction's acceptance (default: the artifact's own submit point, else the node's pruning point)
 - `--min-confirmations &lt;n&gt;`: Blue-score depth for CONSENSUS_CONFIRMED (default: the HardKAS product policy, 100)
 - `--require &lt;level&gt;`: Level the verification must reach to succeed: integrity (default), network or consensus
+- `--address &lt;address&gt;`: Network check: locate the transaction through the history of an address it pays or spends from (a bounded window of the node's selected chain, from --since or the last --lookback chain blocks): found, its acceptance is looked at from the chain block before it, also when its outputs were spent since; not found, the result names the window read
+- `--lookback &lt;chainBlocks&gt;`: With --address and no --since: the history's window, in chain blocks back from the node's sink (default 1000, at most 100000)
 - `--workspace &lt;path&gt;`: Override workspace root directory
 
 ---

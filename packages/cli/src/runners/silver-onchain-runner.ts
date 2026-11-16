@@ -201,8 +201,10 @@ export async function silverEngineSpend(
     readonly to: string;
     readonly sequence?: bigint | undefined;
     readonly computeBudget?: number | "estimate" | undefined;
+    /** R3-F · CLTV: the spend's typed absolute lock time (planContractSpend lockTime). */
+    readonly lockTime?: { readonly daaScore: string } | { readonly timestampMs: string } | undefined;
   }
-): Promise<{ txId: string; outputSompi: bigint; feeSompi: bigint; sequence: string; signatureScriptHex: string; computeBudget: number }> {
+): Promise<{ txId: string; outputSompi: bigint; feeSompi: bigint; sequence: string; signatureScriptHex: string; computeBudget: number; lockTime?: string }> {
   const facts = await c.facts.contract(input.contract as any);
   const network = String(c.sdk.network);
   if (addressOfLock(facts.lock, network) !== input.address) {
@@ -216,19 +218,23 @@ export async function silverEngineSpend(
       payments: [],
       sweepTo: input.to,
       computeBudget,
-      ...(input.sequence !== undefined ? { sequence: input.sequence } : {})
+      ...(input.sequence !== undefined ? { sequence: input.sequence } : {}),
+      ...(input.lockTime !== undefined ? { lockTime: input.lockTime } : {})
     },
     signOptions(c)
   );
   const s = await c.sdk.covenants.sign(plan, signOptions(c));
   const txId = await sendSilverEngineTransaction(c.sdk, s.signed, "spend", signOptions(c));
+  // R3-F · the lock time the signed transaction carries (the plan's), as a u64 decimal; absent for lock time 0
+  const planned = plan.lockTime?.daaScore ?? plan.lockTime?.timestampMs;
   return {
     txId,
     outputSompi: BigInt(plan.outputs[0].amountSompi),
     feeSompi: BigInt(plan.estimatedFeeSompi),
     sequence: String(plan.inputs[0].sequence ?? "0"),
     signatureScriptHex: signatureScriptOf(s.signed, 0),
-    computeBudget: Number(plan.inputs[0].computeBudget)
+    computeBudget: Number(plan.inputs[0].computeBudget),
+    ...(planned !== undefined ? { lockTime: String(planned) } : {})
   };
 }
 
@@ -290,6 +296,8 @@ export async function silverEngineTransition(
     readonly expectedSuccessorAddress: string;
     readonly computeBudget?: number | "estimate" | undefined;
     readonly feeSompi?: bigint | undefined;
+    /** CLTV: the transition's absolute lock time, for a policy that requires `tx.daa >= x` / `tx.time >= t`. */
+    readonly lockTime?: { readonly daaScore: string } | { readonly timestampMs: string } | undefined;
   }
 ): Promise<{ txId: string; valueSompi: bigint; feeSompi: bigint; computeBudget: number }> {
   const facts = await c.facts.contract(input.contract as any);
@@ -299,7 +307,8 @@ export async function silverEngineTransition(
       covenantId: input.covenantId,
       inputs: [{ outpoint: input.outpoint, contract: { ...input.contract, entry: input.entry, policy: input.policy, args: input.args }, computeBudget }],
       continuations: [{ amountSompi: "rest", state: input.nextState }],
-      ...(input.feeSompi !== undefined ? { feeSompi: input.feeSompi } : {})
+      ...(input.feeSompi !== undefined ? { feeSompi: input.feeSompi } : {}),
+      ...(input.lockTime !== undefined ? { lockTime: input.lockTime as any } : {})
     },
     signOptions(c)
   );

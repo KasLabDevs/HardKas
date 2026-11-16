@@ -16,7 +16,7 @@ describe("hardkas pskt CLI flow", () => {
   const actualTsx = existsSync(tsxBin) ? tsxBin : "npx tsx";
   // Outside the repository: a run that dies before cleanup must not leave files a commit can pick up.
   let tempDir: string;
-  // A1 (rc2 audit): `pskt sign` signs only for the signer's own network (here the workspace's, simnet) and only inputs
+  // A1 (audit 2026-11-13): `pskt sign` signs only for the signer's own network (here the workspace's, simnet) and only inputs
   // its node lists as unspent; the node is a loopback fake that lists the plan's one input at the key's address. The
   // CLI runs asynchronously so the fake (in this process) can answer it.
   let fake: FakeNode;

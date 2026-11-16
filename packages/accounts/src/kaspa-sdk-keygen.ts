@@ -43,9 +43,12 @@ export class KaspaSdkKeyGenerator implements KaspaKeyGenerator {
 
   async generateAccount(options?: {
     readonly networkId?: "simnet" | "testnet-10" | "mainnet";
+    /** ECDSA spends · "ecdsa": the account's address is the key's ECDSA P2PK address (version 1). Default Schnorr. */
+    readonly keyScheme?: "schnorr" | "ecdsa";
   }): Promise<GeneratedKaspaDevAccount> {
     const sdk = await this.sdkLoader();
     const network = options?.networkId || this.networkId;
+    const ecdsa = options?.keyScheme === "ecdsa";
 
     try {
       if (typeof sdk.PrivateKey === "function") {
@@ -54,7 +57,7 @@ export class KaspaSdkKeyGenerator implements KaspaKeyGenerator {
         const hex = randomBytes.toString("hex");
         const privKey = new sdk.PrivateKey(hex);
         const kp = privKey.toKeypair();
-        const address = kp.toAddress(getNetworkPrefix(network)).toString();
+        const address = ecdsa ? privKey.toPublicKey().toAddressECDSA(getNetworkPrefix(network)).toString() : kp.toAddress(getNetworkPrefix(network)).toString();
         const privateKeyStr = typeof kp.privateKey === "object" ? hex : kp.privateKey;
         const publicKeyStr =
           typeof kp.publicKey === "object" ? kp.publicKey.toString() : kp.publicKey;
@@ -68,7 +71,8 @@ export class KaspaSdkKeyGenerator implements KaspaKeyGenerator {
         return {
           address,
           publicKey: publicKeyStr,
-          privateKey: privateKeyStr
+          privateKey: privateKeyStr,
+          ...(ecdsa ? { keyScheme: "ecdsa" as const } : {})
         };
       }
 

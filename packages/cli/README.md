@@ -10,8 +10,8 @@ Requirements: Node.js 24.22.1 exactly (`engines` pins it; `hardkas doctor` warns
 
 ```bash
 mkdir my-kaspa-app && cd my-kaspa-app
-npx @hardkas/cli@0.13.0-rc.2 init .
-npm install --save-dev @hardkas/cli@0.13.0-rc.2
+npx @hardkas/cli@0.13.0-rc.3 init .
+npm install --save-dev @hardkas/cli@0.13.0-rc.3
 ```
 
 `init` writes a `package.json` (an ES module project, with `@hardkas/sdk` and `@hardkas/testing` pinned to this CLI's version), `hardkas.config.ts`, a first test in `test/payment.test.ts` and a local simulator whose accounts (`alice`, `bob`, …) start with 1000 KAS each. Installing `@hardkas/cli` in the project makes `npx hardkas` run this CLI.

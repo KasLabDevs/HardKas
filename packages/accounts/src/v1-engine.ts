@@ -7,9 +7,10 @@ import {
   type SilArtifactValue
 } from "@hardkas/core";
 import { calculateContentHash, checkArtifactIdentity, createLineageTransition, CURRENT_HASH_VERSION, HARDKAS_VERSION } from "@hardkas/artifacts";
+import { planLockTimeValue } from "@hardkas/tx-builder";
 import { parseWasmTxToRpc } from "./internal/wasm-rpc-serialization.js";
 import { v1ArgToSil, v1ContractFactsAtState, type V1ContractFacts, type V1SuccessorFacts } from "./v1-contract-facts.js";
-import { validateV1Transition, type V1NodeUtxo, type V1ValidationResult } from "./v1-validate.js";
+import { validateV1Transition, type V1NodeUtxo, type V1P2shUnlockSource, type V1ValidationResult } from "./v1-validate.js";
 
 /*
  * F1.3 + F1.5 · the v1 engine: one function turns a v1 plan into a signed transaction with its official txid, and nothing
@@ -45,6 +46,11 @@ export interface V1EngineFacts {
   readonly contract: (ref: { readonly compileRecord: { readonly contentHash: string; readonly artifactSha256: string }; readonly contract: string; readonly constructorArgs: readonly unknown[] }) => Promise<V1ContractFacts>;
   /** Successor facts of a covenant input, from the plan's declared next state (silverc). */
   readonly successor: (plan: Record<string, any>, inputIndex: number, current: V1ContractFacts) => Promise<V1SuccessorFacts>;
+  /**
+   * EXPERIMENTAL · set only by HardKAS's ZK spend (@hardkas/sdk spendR0Groth16Lock), read only by the send check (preflightV1Send):
+   * the unlock of a p2sh input without a contract (V1P2shUnlockSource). The engine never signs such an input.
+   */
+  readonly p2shUnlock?: V1P2shUnlockSource | undefined;
 }
 
 export interface V1KeyResolver {
@@ -111,7 +117,8 @@ export function buildV1WasmTransaction(k: any, plan: Record<string, any>, signat
       scriptPublicKey: k.payToAddressScript(new k.Address(o.address)),
       ...(o.covenant ? { covenant: { authorizingInput: o.covenant.authorizingInput, covenantId: o.covenant.covenantId } } : {})
     })),
-    lockTime: 0n,
+    // CLTV · the plan's typed lock time (0 when it states none: the transaction as before)
+    lockTime: planLockTimeValue(plan),
     subnetworkId: "0000000000000000000000000000000000000000",
     gas: 0n,
     payload: typeof plan.payload === "string" ? plan.payload : ""

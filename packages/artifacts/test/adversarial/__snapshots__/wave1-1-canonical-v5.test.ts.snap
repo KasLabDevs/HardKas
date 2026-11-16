@@ -50,6 +50,8 @@ exports[`Wave 1.1 · v5 canonicalisation authenticates material fields (AUD-11) 
   "SilverDeploySimulationArtifactSchema.hardkasVersion",
   "SilverDeployV1Schema.createdAt",
   "SilverDeployV1Schema.hardkasVersion",
+  "SilverNodeTestV1Schema.createdAt",
+  "SilverNodeTestV1Schema.hardkasVersion",
   "SilverSpendPlanArtifactSchema.createdAt",
   "SilverSpendPlanArtifactSchema.hardkasVersion",
   "SilverSpendReceiptArtifactSchema.createdAt",

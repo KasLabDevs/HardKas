@@ -7,10 +7,10 @@ This document outlines the compatibility between HardKAS transaction abstraction
 | --- | --- | --- |
 | Standard Sends | Fully Supported | Supported via `version: 1` |
 | Fee Estimation | Heuristic | Dynamic Toccata Fee Model |
-| Signatures | HardKAS signs Schnorr P2PK. Paying TO an ECDSA address works; a spend FROM one is refused when planned and when signed (`ECDSA_SPEND_NOT_SUPPORTED`) | Schnorr (P2PK inputs; contract slots by the v1 engine) |
+| Signatures | Schnorr and ECDSA P2PK (`accounts real generate\|import --ecdsa`; mixed inputs; ECDSA signed with RFC 6979, low-S); consolidations stay Schnorr-only | Schnorr (P2PK inputs; contract slots by the v1 engine); ECDSA refused (`ECDSA_SPEND_NOT_SUPPORTED`) |
 | Covenants | Unsupported | Native Support |
 | Storage Mass | Computed by HardKAS (the node's formula) for the plan's mass and fee; the signed transaction **commits 0** (format kept on purpose). The node's mempool sets its own value, equal to HardKAS's, and mines it under the same txid: the id does not cover the field | Committed by the v1 engine (the node's value) |
-| Lock Time | Always 0 (`LOCK_TIME_NOT_SUPPORTED` for another one) | Always 0 |
+| Lock Time | A typed absolute lock time on payments and SilverScript spends (`--lock-time-daa`, `--lock-time-ms`), bound into the plan and sent only once the node passes it; 0 on the simulator and in consolidations | A typed absolute lock time on contract spends and covenant transitions (`planContractSpend`, `planTransition`, `silver spend --tx-version 1`), checked against the entry's `tx.daa` / `tx.time` statements |
 | Compute Budget | Unsupported | Required for V1 |
 
 RC1 · D1 · the v0 storage-mass commitment, measured: a fixture payment's txid, fee and mass are pinned by

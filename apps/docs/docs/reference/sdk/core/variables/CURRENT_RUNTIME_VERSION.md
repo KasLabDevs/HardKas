@@ -6,6 +6,6 @@
 
 # Variable: CURRENT\_RUNTIME\_VERSION
 
-> `const` **CURRENT\_RUNTIME\_VERSION**: `"0.13.0-rc.2"` = `"0.13.0-rc.2"`
+> `const` **CURRENT\_RUNTIME\_VERSION**: `"0.13.0-rc.3"` = `"0.13.0-rc.3"`
 
 Defined in: [packages/core/src/migrations.ts:6](https://github.com/KasLabDevs/HardKas/blob/996453df4467f91767515bd975fbb31b40441849/packages/core/src/migrations.ts#L6)

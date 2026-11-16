@@ -26,7 +26,7 @@ Two different things appear side by side:
 > (`MAINNET_CONNECTION_DISABLED`, `MAINNET_SIGNING_DISABLED`, `MAINNET_BROADCAST_DISABLED`;
 > no flag or setting enables them); mainnet artifacts are verified offline only. **Testnet-10:** only for teams that hold testnet
 > funds, behind an explicit opt-in. Payments, contracts and covenants were exercised there with `0.13.0-rc.1`, and ZK
-> locks with the `0.13.0-rc.2` candidate (see Experimental below); not every command was. **vProgs** is not
+> locks with the release candidate of 2026-11-13 (see Experimental below); not every command was. **vProgs** is not
 > active. **No trustless bridge** exists in HardKAS.
 
 ## Verified against a real node
@@ -34,11 +34,14 @@ Two different things appear side by side:
 | Feature | What Kaspa L1 does | What HardKAS does | Verified on |
 | :-- | :-- | :-- | :-- |
 | Payment (transaction v0): plan, sign, send | validates the spend, its signatures, mass and fee | plans with the official `kaspa-wasm` Generator, signs (Schnorr), records plan, signed transaction and submission | simnet (this guide); devnet (own node) |
+| Payment to several recipients in one transaction | validates the spend, its mass and fee | `sdk.tx.plan({ outputs })`, `tx plan --to <recipient>=<kas>` (repeated), `tx batch --one-transaction`: one output per recipient, one change, one fee, one submission; more than fit in one standard transaction (about 193) refused before signing (`TOO_MANY_OUTPUTS`) | simnet (`tx-batch-one-transaction.simnet`: 3, 20 and 193 recipients) |
 | No double send | refuses a second spend of the same outputs | `tx send` sends a recorded or already-seen transaction no second time (`ALREADY_SUBMITTED`) | simnet |
 | Waiting and status (`tx wait`, `tx status`) | virtual chain, blue score, DAA score | derives `SUBMITTED` … `CONFIRMED` from recorded observations; the 100 blue-score depth is HardKAS's policy | simnet, devnet |
 | `artifact verify` in three levels | — | integrity offline on every network; network and consensus levels from a node of the artifact's own network | simnet, devnet; testnet-10 read-only; mainnet offline only |
 | Coinbase maturity | rewards spendable 1,000 DAA after their block on simnet | planning skips immature outputs (`NO_SPENDABLE_UTXOS`) | simnet (999 refused, 1,000 accepted), devnet |
 | Paying to an ECDSA address | standard ECDSA output script | builds the output | simnet |
+| Spending from an ECDSA address | ECDSA P2PK spend | `accounts real generate\|import --ecdsa`; payments signed with ECDSA (RFC 6979, low-S), mixed with Schnorr inputs; the preflight verifies them | simnet (`cltv-ecdsa-node.simnet`) |
+| Absolute lock time (CLTV) | `lockTime`, `OpCheckLockTimeVerify` | `tx plan\|send --lock-time-daa\|--lock-time-ms`, SilverScript spends with a lock time; refused before the broadcast until the node passes it | simnet (`cltv-ecdsa-node.simnet`) |
 | Relative time lock (input sequence, CSV) | enforces it | `silver spend --sequence` | simnet (`silver.p2sh.relative-timelock.v1`) |
 | SilverScript compile | — | runs the official `silverc` v1.0.0 (pinned by SHA-256), records provenance, reproduces it (`silver verify`) | offline |
 | SilverScript P2SH deploy and spend (transaction v0) | executes the contract script | funds the P2SH output, builds and signs the entry call | simnet (this guide), devnet |
@@ -51,19 +54,20 @@ Two different things appear side by side:
 
 | Feature | Status |
 | :-- | :-- |
-| Covenants 1:N, N:M and termination; the KCC-20 example transfer | Built by the SDK's v1 engine only (no `silver covenant` command); accepted by a real simnet node in the repository's node suite, and every invalid shape the engine refuses the node refused too. Exercised on Testnet-10 with 0.13.0-rc.1 from npm (1:3, 2:1, 2:2 transitions, a time-locked escrow, a KCC-20 transfer; the attack cases were rejected by the node). |
+| Covenants 1:N, N:M and termination; KCC-20 tokens | Built by the SDK's v1 engine, from the CLI with `silver covenant start\|advance` and `kcc20 deploy\|transfer\|balance`; accepted by a real simnet node in the repository's node suite, and every invalid shape the engine refuses the node refused too. Exercised on Testnet-10 with 0.13.0-rc.1 from npm (1:3, 2:1, 2:2 transitions, a time-locked escrow, a KCC-20 transfer; the attack cases were rejected by the node). |
 | Covenant policy logic (a `require`, amount conservation) | Not evaluated by HardKAS before sending: the node decides and refuses a violation. |
 | Testnet-10 transactions | Behind `experimental: true` and `network.allowPublic: true`. Exercised with 0.13.0-rc.1 from npm against a public Testnet-10 node: payments, a batch, a consolidation, a double spend (the second rejected by the node), SilverScript deploy and spend, covenants and the escrow above. Test funds only; the transaction ids are in the [evidence index](../community/rc-0.13.0-rc.1/EVIDENCE_INDEX.md). |
 | The simulated ledger (`network: "simulated"`) | A local UTXO ledger for the development loop (`@hardkas/localnet`, kept in `.hardkas/localnet.json`): synthetic accounts and transaction ids, no node and no script execution. Never network or consensus evidence. It is not `@hardkas/simulator`, the frozen in-memory node behind `hardkas simulator start`, whose known divergences (the UNVERIFIED `WrongMass` rule among them) are in [Limitations](../status/limitations.md#the-simulator-is-an-approximate-model). |
 | ZK: Groth16 math check of local fixtures, RISC Zero inspection | Local and experimental; needs the optional `snarkjs` (GPL-3.0). |
-| ZK: RISC Zero Groth16 locks and spends for Toccata (`OpZkPrecompile`) | Experimental. HardKAS builds the lock and its spend (kaspa-wasm's `ZkScriptBuilder`, `buildR0Groth16Transaction`) and has no command that broadcasts them; the verdict is the node's. In the repository's node suites (rusty-kaspad v2.1.0 in Docker, also in CI on Linux) the node accepted a valid spend (proof-only and proof-and-output-bound) and rejected every tampered one: altered proof or journal, truncated proof, v0 transaction, compute budget or fee too low, wrong payout script or amount, two inputs, an input above the bound. Exercised on Testnet-10 on 2026-11-13 with the 0.13.0-rc.2 candidate and a receipt HardKAS made itself (`fixtures/toccata-v2/zk/r0-groth16-hardkas`): proof-and-output-bound locks funded with test funds and spent to their bound payout, and a second run with the whole node-suite matrix (a proof-only lock and an output-bound lock: 11 invalid spends rejected by the node, 7 transactions confirmed); see the [evidence index](../community/rc-0.13.0-rc.1/EVIDENCE_INDEX.md). Since then that receipt is public too: for a program whose receipts are published (the official vector and HardKAS's own), HardKAS builds no proof-only lock on a public network (anyone could spend it) and builds proof-and-output-bound locks with a warning that anyone can trigger the bound payout. Mainnet is refused. HardKAS claims no on-chain ZK verification of its own. |
+| ZK: RISC Zero Groth16 locks and spends for Toccata (`OpZkPrecompile`) | Experimental. HardKAS builds the lock and its spend (kaspa-wasm's `ZkScriptBuilder`, `buildR0Groth16Transaction`), and `hardkas zk toccata spend` (SDK `spendR0Groth16Lock`) sends the spend through HardKAS's send, recorded like any other send (simnet and testnet-10; the command is proven on simnet, for both receipts and both lock modes; the Testnet-10 runs below predate it and were sent with the RPC client directly); the verdict is the node's. In the repository's node suites (rusty-kaspad v2.1.0 in Docker, also in CI on Linux) the node accepted a valid spend (proof-only and proof-and-output-bound) and rejected every tampered one: altered proof or journal, truncated proof, v0 transaction, compute budget or fee too low, wrong payout script or amount, two inputs, an input above the bound. Exercised on Testnet-10 on 2026-11-13 with that day's release candidate and a receipt HardKAS made itself (`fixtures/toccata-v2/zk/r0-groth16-hardkas`): proof-and-output-bound locks funded with test funds and spent to their bound payout, and a second run with the whole node-suite matrix (a proof-only lock and an output-bound lock: 11 invalid spends rejected by the node, 7 transactions confirmed); see the [evidence index](../community/rc-0.13.0-rc.1/EVIDENCE_INDEX.md). Since then that receipt is public too: for a program whose receipts are published (the official vector and HardKAS's own), HardKAS builds no proof-only lock on a public network (anyone could spend it) and builds proof-and-output-bound locks with a warning that anyone can trigger the bound payout. Mainnet is refused. HardKAS claims no on-chain ZK verification of its own. |
+| SilverScript tests on a node (`silver test --on-node`) | Each case HardKAS can reproduce runs as the real transaction it describes (its own coin at the contract's P2SH, the real v0 spend or v1 through the SDK's engine), sent through HardKAS's send machinery; the record carries the node's verdict (`CONSENSUS_SIMNET` on simnet) and the txid, and a verdict against the expectation fails the run. A case no real transaction reproduces is `NOT_REPRODUCIBLE`, never a pass ([limitations](../status/limitations.md)). Proven on the isolated simnet node through the built CLI (`silver-test-on-node.simnet`: a v0 and a v1 case accepted, two cases the node refused, one not reproducible). |
 | Query store, replay, dev-server and dashboard | Local projections and views of the workspace; replay is for simulated records only. |
 
 ## Not verified
 
 | Feature | Why |
 | :-- | :-- |
-| SilverScript runner (`silver test`, `silver debug`, `silver preflight` at `SCRIPT_VM`) | Upstream publishes no runner binary; a local build is labelled UNVERIFIED and needs `--allow-unverified-runner`. Its verdicts are never a node's acceptance. |
+| SilverScript runner (`silver test`, `silver debug`, `silver preflight` at `SCRIPT_VM`) | Upstream publishes no runner binary; a local build is labelled UNVERIFIED and needs `--allow-unverified-runner`. Its verdicts are never a node's acceptance: each record says so (`verdictLevel: SCRIPT_VM`). For a node's verdict, `silver test --on-node` (Experimental, above). |
 | Linux and macOS | CI runs the hermetic test gate on Linux, Windows and macOS; the node suites run in CI on Linux only, and the manual and Testnet-10 runs were on Windows 11 x64 only. |
 
 ## Not supported
@@ -72,8 +76,8 @@ Two different things appear side by side:
 | :-- | :-- | :-- |
 | Mainnet signing and broadcast | — | refused by policy (`MAINNET_SIGNING_DISABLED`, `MAINNET_BROADCAST_DISABLED`, `SILVERSCRIPT_MAINNET_NOT_ENABLED`), offline signing included |
 | Reading from a mainnet node | serves its state over RPC | refused (`MAINNET_CONNECTION_DISABLED`): no command and no SDK path connects to mainnet, not even to an endpoint you declare; an endpoint declared as another network whose node answers mainnet is closed after that one identity answer. Mainnet artifacts are verified offline only |
-| Absolute lock time (CLTV, `lockTime ≠ 0`) | supports it | never builds one |
-| Spending from an ECDSA address | supports it | the signer is Schnorr-only (paying to one works) |
+| Absolute lock time on the simulator or in consolidations | — | `LOCK_TIME_NOT_SUPPORTED` |
+| ECDSA spends on the simulator, in consolidations or in v1 transactions | — | `ECDSA_SPEND_NOT_SUPPORTED` |
 | Transaction v1 for plain payments | supports it | payments, batches and consolidations stay v0 by design |
 | L2 (Igra) and bridges | — | `@hardkas/l2` and the L2 extension are not published; `@hardkas/bridge-local` is an offline lab, not a bridge |
 | vProgs execution | not active on Kaspa L1 | inspection of vProgs artifacts only |

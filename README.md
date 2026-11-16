@@ -45,9 +45,11 @@ Requirements: **Node.js 24.22.1** exactly (the version HardKAS is built, tested 
 
 ### 1. Initialize a Workspace
 
+> **Release note:** `@hardkas/cli` `0.13.0-rc.2` is currently published on npm (`latest`/`next`); `0.13.0-rc.3` is the current repository development tree. Use `@latest` (or `@0.13.0-rc.2`) when installing from npm, or `pnpm hardkas` inside this monorepo.
+
 ```bash
 # Initialize a new HardKAS workspace with deterministic accounts
-npx @hardkas/cli@0.13.0-rc.2 init my-kaspa-app
+npx @hardkas/cli@latest init my-kaspa-app
 cd my-kaspa-app
 # init writes a package.json that pins @hardkas/cli; install it so `npx hardkas` runs the project's copy
 npm install
@@ -77,6 +79,15 @@ npx hardkas localnet fund alice --profile toccata-v2
 
 To run a node of your own instead (your container, your ports) and take one payment, a SilverScript contract and a
 covenant all the way to `artifact verify`, follow [Build on your own simnet](docs/start/build-on-simnet.md).
+
+## Build on Kaspa with AI
+
+If you are using **Claude Code**, **Cursor**, or another AI coding agent:
+
+- **Short navigation map:** [hardkas.dev/llms.txt](https://hardkas.dev/llms.txt)
+- **Full AI reference & verified CLI/SDK recipes:** [hardkas.dev/llms-full.txt](https://hardkas.dev/llms-full.txt)
+- **AI documentation section:** [Build on Kaspa with AI](apps/docs/docs/ai/index.md) ([workflows](apps/docs/docs/ai/workflows.md), [troubleshooting](apps/docs/docs/ai/troubleshooting.md), [Claude Code & Cursor](apps/docs/docs/ai/claude-code-and-cursor.md))
+- **Rule of thumb:** Prefer HardKAS CLI/SDK over custom `kaspa-wasm` boilerplate, run `hardkas doctor --json` first, and validate consensus behavior on `simnet` (never `simulated` or local `SCRIPT_VM` alone).
 
 ### 4. Local Dev Server & Visual IDE
 
@@ -108,7 +119,7 @@ The entire lifecycle of Kaspa UTXOs—from genesis injection to final signature 
 
 ## The Execution Contract
 
-HardKAS `0.13.0-rc.2` uses the strictly partitioned Execution Contract.
+HardKAS `0.13.0-rc.3` uses the strictly partitioned Execution Contract.
 The Execution Contract is a tuple of `(mode, domain, network)` that unambiguously identifies the context in which an artifact was created, an execution target is connected, or an account exists.
 
 - **`mode`**: The environment topology (`simulator`, `localnet`, `rpc`, `l2-rpc`)
@@ -136,7 +147,7 @@ Common targets:
 
 ## Local-First Status
 
-HardKAS `0.13.0-rc.2` is local-first deterministic transaction infrastructure
+HardKAS `0.13.0-rc.3` is local-first deterministic transaction infrastructure
 for Kaspa/Toccata development.
 
 Current baseline, verified by the release checks:
@@ -155,7 +166,7 @@ Current baseline, verified by the release checks:
 
 ### Toccata v2 Alpha Baseline
 
-The `0.13.0-rc.2` release line includes a normalized Toccata v2 localnet flow:
+The `0.13.0-rc.3` release line includes a normalized Toccata v2 localnet flow:
 
 - Docker `rusty-kaspad` v2.1.0 localnet (pinned by digest) funding with a compatible miner companion (`kaspanet/cpuminer`).
 - Standard transaction lifecycle against the local node.
@@ -174,20 +185,20 @@ Official release claims:
 - `vmConsensusEquivalence`: `NOT_CLAIMED`
 - `mainnet`: `BLOCKED_BY_POLICY`
 
-### 0.13.0-rc.2 SDK Parity
+### 0.13.0-rc.3 SDK Parity
 
-`0.13.0-rc.2` includes high-level
+`0.13.0-rc.3` includes high-level
 SDK surfaces for capabilities, localnet status/start/fund, corpus verification,
 and Silver planning/simulation/compare flows without changing the release
 claims above. It enforces strict separation of execution environments across Artifact lineage.
 
 SDK real Silver RPC/Docker execution remains explicitly unsupported in
-`0.13.0-rc.2` via `SDK_SILVER_REAL_LIFECYCLE_UNSUPPORTED`; the real
+`0.13.0-rc.3` via `SDK_SILVER_REAL_LIFECYCLE_UNSUPPORTED`; the real
 lifecycle verified by the release checks remains CLI/localnet bounded.
 
-### 0.13.0-rc.2 Programmability Builder Surface
+### 0.13.0-rc.3 Programmability Builder Surface
 
-`0.13.0-rc.2` also includes a local-only builder surface for SilverScript,
+`0.13.0-rc.3` also includes a local-only builder surface for SilverScript,
 ZK corpus fixtures, and vProgs artifact inspection. This is a programmability
 surface, not a protocol/runtime claim.
 
@@ -231,7 +242,7 @@ ZK/vProgs lab claims:
 - `ZK_CORPUS_SURFACE_READY`
 - `VPROGS_INSPECT_SURFACE_READY`
 - Groth16 corpus verification is local fixture coherence only.
-- RISC Zero Groth16 receipts are verified locally against the pinned RISC Zero key (`hardkas zk toccata verify-receipt`); HardKAS builds the lock scripts but has no command that broadcasts a ZK spend.
+- RISC Zero Groth16 receipts are verified locally against the pinned RISC Zero key (`hardkas zk toccata verify-receipt`); HardKAS builds the lock scripts, and `hardkas zk toccata spend` sends a lock's spend through HardKAS's own send (recorded, one submission per txId; simnet and testnet-10 only, proven on simnet). The node verifies the proof: HardKAS claims no on-chain ZK verification of its own.
 - vProgs is inspect-only.
 - `ZK_ONCHAIN_VERIFICATION_NOT_CLAIMED`
 - `VPROGS_STABLE_API_NOT_CLAIMED`
@@ -255,7 +266,8 @@ node scripts/gate-hermetic.mjs --home <a HARDKAS_HOME with kaspa-wasm installed>
 ```
 
 That run gives the gate a private HARDKAS_HOME, makes Docker unreachable, refuses every non-loopback connection and,
-by default, also refuses loopback connections to the canonical Kaspa wRPC ports 16210, 17210, 18210 and 18211. A
+by default, also refuses loopback connections to the managed localnet's ports 16210 (gRPC), 17210 (Borsh wRPC) and
+18210 (JSON wRPC), and to 18211, a port some suites fall back to. A
 kaspad or simulator that happens to run on the machine therefore cannot change the verdict. `--deny-ports a,b` replaces
 that list. `--allow-local-node-ports` turns it off for diagnosis only, and a run made that way is not the release gate.
 Node-dependent suites run at their own levels (`vitest.simnet.config.ts`, `vitest.silverc.config.ts`), never inside

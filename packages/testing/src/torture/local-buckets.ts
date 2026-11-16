@@ -18,7 +18,7 @@ export type LocalBucketContext = TortureBucketContext & {
 };
 
 /**
- * rc2 audit E-10: the CLI entry the local bucket runs. It was always `../../cli/dist/index.js` next to this package's
+ * audit 2026-11-13 E-10: the CLI entry the local bucket runs. It was always `../../cli/dist/index.js` next to this package's
  * bundle, which only a flat node_modules (npm) or the monorepo satisfies: under pnpm's isolated layout
  * (node_modules/.pnpm/@hardkas+testing@<v>/node_modules/@hardkas/) there is no cli beside it, since @hardkas/testing
  * does not depend on @hardkas/cli, and the first case failed with INIT_FAILED. Now, in order:

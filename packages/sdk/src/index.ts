@@ -35,6 +35,8 @@ import { HardkasPluginManager } from "./plugin-manager.js";
 import { HardkasIgra } from "./igra.js";
 import { HardkasExperimental } from "./experimental.js";
 import { HardkasCovenants } from "./covenants.js";
+import { HardkasEscrow } from "./escrow.js";
+import { HardkasKcc20 } from "./kcc20.js";
 import { HardkasUtxos } from "./utxos.js";
 import { WalletToolkit, WalletToolkitOptions } from "@hardkas/toolkit";
 import { HardkasNodeApi, FundDevWalletsOptions } from "./node.js";
@@ -44,12 +46,91 @@ export type { FundDevWalletsOptions } from "./node.js";
 export { HardkasAccounts } from "./accounts.js";
 export { HardkasTx } from "./tx.js";
 export { PAYMENT_PREFLIGHT_GUARANTEE, preflightPaymentSend } from "./payment-preflight.js";
+// ECDSA spends: the preflight's guarantee for a send with an ECDSA input
+export { PAYMENT_PREFLIGHT_GUARANTEE_ECDSA } from "./payment-preflight.js";
 // RC1 · D3: tx.send's synced-node rule (NODE_NOT_SYNCED) and its explicit local escape (allowUnsyncedNode)
 export { unsyncedSendAllowedOn, type SendNodeSyncOptions } from "./send-node-sync.js";
 export type { SendTxOptions } from "./tx.js";
+// R4-T · one recipient of tx.plan({ outputs }): several recipients paid by one transaction
+export type { TxPlanRecipient } from "./tx.js";
+// R3-C · browser wallets (KasWare, Kastle, Kaspire) sign, HardKAS builds, verifies, assembles, sends and records. The
+// browser half (wallets/index.ts) is also exported by the browser-safe entry @hardkas/sdk/client.
+export {
+  BROWSER_WALLET_KINDS,
+  WALLET_SIGN_REQUEST_SCHEMA,
+  WalletSignerError,
+  addressNetworkFamily,
+  checkWalletSignedTransaction,
+  connectBrowserWallet,
+  describeBrowserWallet,
+  detectBrowserWallets,
+  isMainnetName,
+  networkFamilyOf,
+  normalizeWalletMessageSignature,
+  verifyWalletMessageSignature,
+  walletNetworkIdOf,
+  type BrowserWalletKind,
+  type BrowserWalletSession,
+  type ConnectBrowserWalletOptions,
+  type KaspaMessageVerifier,
+  type WalletMessageSignature,
+  type WalletMessageSignatureShape,
+  type WalletNetworkFamily,
+  type WalletSignRequest,
+  type WalletSignatureCheck,
+  type WalletSignedMessage,
+  type WalletSignedTransaction
+} from "./wallets/index.js";
+export {
+  completeWalletPayment,
+  prepareWalletPayment,
+  verifyWalletMessage,
+  verifyWalletSignedTransaction,
+  walletPublicKeyOf,
+  type UnsignedWalletTransaction,
+  type WalletPaymentOptions
+} from "./wallets/wallet-payments.js";
+export { silverSpendSignatureFromWallet, silverSpendWalletRequest } from "./wallets/silver-spend-wallet.js";
+// WALLET-HD-1: recoverable BIP39/BIP32 HD wallets (the manager from @hardkas/accounts) and their spending (scan, plan, send)
+export {
+  HardkasHdWallets,
+  HD_WALLET_DEFAULT_GAP_LIMIT,
+  HD_WALLET_MAX_GAP_LIMIT,
+  type HdWalletScan,
+  type HdWalletScanEntry,
+  type HdWalletPayment,
+  type HdWalletPaymentOptions,
+  type HdWalletPlannedInput,
+  type HdWalletSendResult
+} from "./hd-wallet.js";
+export { HdWalletManager, type HdWalletDescriptor, type HdWalletAddress } from "@hardkas/accounts";
 // ESCROW-SAFETY-2 / MULTINODE-READ-1: one look at a node about a txId (mempool, accepting chain block), for callers that
 // hold their own client (the dev-server escrow; one look per node of a read-only set)
 export { observeTxOnce, rpcObserverFor } from "./tx-observer.js";
+// WATCH-CLI-1: the toolkit's UTXO watch for any address (`hardkas watch <address>`)
+export { watchAddress, type AddressWatchEvent, type AddressWatchListener, type AddressWatchHandle, type WalletWatchMaturityEvent, type UtxoWatchEngineOptions } from "@hardkas/toolkit";
+// R3-D · an address's history over a bounded window of a node's selected chain (`hardkas history`), and the lookup of a
+// transaction through it (`tx status --address`, `artifact verify --address`)
+export { readAddressHistoryOnNode, locateTransactionOnNode, type AddressHistorySdk, type SdkAddressHistoryOptions } from "./address-history.js";
+export {
+  readAddressHistory,
+  locateTransactionByAddress,
+  ADDRESS_HISTORY_DEFAULT_LOOKBACK,
+  ADDRESS_HISTORY_MAX_LOOKBACK,
+  ADDRESS_HISTORY_DEFAULT_MAX_CHAIN_BLOCKS,
+  ADDRESS_HISTORY_MAX_CHAIN_BLOCKS,
+  ADDRESS_HISTORY_DEFAULT_LIMIT,
+  ADDRESS_HISTORY_MAX_LIMIT,
+  ADDRESS_HISTORY_DEFAULT_TIMEOUT_MS,
+  ADDRESS_HISTORY_MAX_TIMEOUT_MS,
+  type AddressHistoryOptions,
+  type AddressHistoryResult,
+  type AddressHistoryEntry,
+  type AddressHistoryCoverage,
+  type AddressHistoryWindow,
+  type AddressHistoryAcceptance,
+  type AddressHistoryRpc
+} from "@hardkas/query";
 // INT9-A (I-1): the network and consensus levels of `artifact verify`
 export {
   artifactNetworkSubject,
@@ -62,7 +143,10 @@ export {
   type ArtifactNetworkObservation,
   type ArtifactNetworkLevel,
   type ArtifactConsensusLevel,
-  type ArtifactNetworkReason
+  type ArtifactNetworkReason,
+  // R3-D: the `--address` lookup of `artifact verify`
+  type ArtifactAddressLookup,
+  type ArtifactAddressLookupRequest
 } from "./artifact-network-verify.js";
 export type { ObserveTxOptions, TxObserverRpc, TxObserverRpcRecorder } from "./tx-observer.js";
 export {
@@ -93,6 +177,58 @@ export {
 } from "./covenants.js";
 export type { CovenantHistory, CovenantInspection, CovenantLineage, CovenantLineageOptions, CovenantStateCheck, CovenantStateView } from "./covenants.js";
 export { COVENANT_LINEAGE_SCOPE, collectCovenantTransactions, reconstructCovenantLineage } from "./covenant-lineage.js";
+// R3-F · CLTV: what a contract entry's `require(tx.daa >= x)` / `require(tx.time >= t)` ask of a spend's lock time
+export { assertLockTimeMeetsContractEntry, contractEntryLockTimeRequirements, type ContractEntryLockTimeRequirement } from "./contract-lock-time.js";
+// R3-A3 · KCC-20 tokens on a node through the v1 engine (deploy, transfer, balance)
+export { HardkasKcc20, KCC20_DEFAULT_OUTPUT_SOMPI, KCC20_SDK_SCOPE, kcc20ProgramFacts, kcc20StateOfProgramState } from "./kcc20.js";
+export type {
+  Kcc20Balance,
+  Kcc20DeployOptions,
+  Kcc20Holder,
+  Kcc20Holding,
+  Kcc20Holdings,
+  Kcc20PlannedTransfer,
+  Kcc20Program,
+  Kcc20SignOptions,
+  Kcc20TransferOptions
+} from "./kcc20.js";
+// ESCROW-LIFECYCLE-1: sdk.escrow, and the lifecycle rules the dev server's escrow routes share with it
+export {
+  HardkasEscrow,
+  ESCROW_CHAIN_ACCEPTED,
+  ESCROW_DEFAULT_FEE_BUDGET_SOMPI,
+  ESCROW_DEFAULT_FEE_CEILING_SOMPI,
+  applyEscrowFundingFinding,
+  applyEscrowPreparedRelease,
+  applyEscrowReleaseFinding,
+  checkEscrowRelease,
+  escrowAddressRefusal,
+  escrowFundingAmount,
+  escrowFundingCheck,
+  escrowFundingRefusal,
+  escrowIsLegacy,
+  escrowModeOf,
+  escrowOutputsHash,
+  escrowPolicyOf,
+  escrowRefusalBody,
+  escrowRefusalError,
+  escrowReleaseFeeCheck,
+  escrowSignCheck,
+  escrowSignatureOf,
+  invalidEscrowReleaseSignature,
+  newEscrowRecord,
+  prepareEscrowRelease,
+  recordEscrowSignature,
+  toEscrowContractUtxo,
+  type EscrowDomainState,
+  type EscrowPreparedRelease,
+  type EscrowRecord,
+  type EscrowRefusal,
+  type EscrowReleaseReady,
+  type EscrowReleaseRequest,
+  type EscrowSendResult,
+  type EscrowSignOptions
+} from "./escrow.js";
 export type { CovenantLineageOutput, CovenantLineageSkeleton, CovenantLineageTx } from "./covenant-lineage.js";
 export { HardkasQuery } from "./query.js";
 export { HardkasLocalnet } from "./localnet.js";
@@ -113,6 +249,10 @@ export {
   verifyZkCorpus,
   MAX_ZK_FILE_SIZE,
   buildR0Groth16Plan,
+  spendR0Groth16Lock,
+  assertSpendableZkLock,
+  type ZkSpendParams,
+  type ZkSpendResult,
   observeZkSpendOnce,
   deriveZkOperationStatus,
   createZkVerificationFactArtifact,
@@ -347,6 +487,10 @@ export class Hardkas {
   public readonly experimental: HardkasExperimental;
   public readonly fees: HardkasFees;
   public readonly covenants: HardkasCovenants;
+  /** ESCROW-LIFECYCLE-1: the v2 escrow lifecycle (create, fund, prepare, sign, release, reconcile) on this instance's node. */
+  public readonly escrow: HardkasEscrow;
+  /** R3-A3 · KCC-20 tokens on a node (deploy, transfer, balance) through the v1 engine of `covenants`. */
+  public readonly kcc20: HardkasKcc20;
   public readonly l2: HardkasL2;
   public readonly capabilities: HardkasCapabilitiesApi;
   public readonly replay: HardkasReplay;
@@ -490,6 +634,8 @@ export class Hardkas {
     this.experimental = new HardkasExperimental(this);
     this.fees = new HardkasFees(this);
     this.covenants = new HardkasCovenants(this);
+    this.escrow = new HardkasEscrow(this);
+    this.kcc20 = new HardkasKcc20(this);
     this.l2 = new HardkasL2(this);
     this.capabilities = new HardkasCapabilitiesApi(this);
     this.replay = new HardkasReplay(this);

@@ -13,7 +13,7 @@ import { invocationWorkspaceRoot } from "../workspace-root.js";
 import { HardkasCliError, HardkasExitCode } from "../cli-errors.js";
 
 /**
- * B4 (rc2 audit): `--timeout` is a positive whole number of milliseconds, refused (exit 2) before anything is contacted.
+ * B4 (audit 2026-11-13): `--timeout` is a positive whole number of milliseconds, refused (exit 2) before anything is contacted.
  * It was `parseInt`, so "abc" became NaN: the treasury transaction went out and the wait "timed out" at once.
  */
 export function parseLocalnetTimeoutMs(raw: unknown): number {

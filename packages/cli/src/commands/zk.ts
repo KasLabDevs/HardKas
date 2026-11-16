@@ -1,5 +1,5 @@
 import { Command } from "commander";
-import { assertMainnetTransactionsDisabled } from "@hardkas/core";
+import { assertMainnetTransactionsDisabled, summarizeNodeIdentity } from "@hardkas/core";
 import { getOutput } from "../output.js";
 import { UI } from "../ui.js";
 import { HardkasCliError, HardkasExitCode } from "../cli-errors.js";
@@ -166,7 +166,9 @@ export function registerZkCommands(program: Command) {
 
   const toccata = zk
     .command("toccata")
-    .description("Kaspa Toccata L1 Zero-Knowledge covenant script tools (kaspa-wasm ZkScriptBuilder; builds only, never broadcasts)");
+    .description(
+      "Kaspa Toccata L1 Zero-Knowledge lock tools (kaspa-wasm ZkScriptBuilder): build and verify locks; `spend` sends a lock's spend through HardKAS's send (recorded, one submission per txId) and `observe` looks at it"
+    );
 
   toccata
     .command("rules")
@@ -335,6 +337,401 @@ export function registerZkCommands(program: Command) {
         throw new HardkasCliError("ZK_SCRIPTS_VERIFY_FAILED", "Toccata ZK script verification failed", { exitCode: 1 });
       }
     });
+
+  // ZK-SEND-1 · the spend of a lock through HardKAS's send, and a look at it
+  toccata
+    .command("spend")
+    .description(
+      "Spend a RISC Zero Groth16 lock through HardKAS's send (the SDK's spendR0Groth16Lock): the lock is rebuilt from the receipt and its record (--scripts) or its parameters and checked as verify-scripts checks it; the plan, the signed transaction, the ZK fact and the submission are recorded in the workspace (one submission per txId); the node must prove its network and say it is synced. mainnet is refused; testnet-10 needs experimental + network.allowPublic"
+    )
+    .requiredOption("--receipt <pathOrHex>", "Path to receipt file (.hex) or raw receipt hex string (the lock's proof)")
+    .requiredOption("--utxo <txid:index>", "The lock's UTXO to spend (its amount is read from the node)")
+    .option("--scripts <file>", "The lock's record: the JSON 'zk toccata build-scripts --json' printed (its parameters are used; its scripts must be the ones the receipt rebuilds)")
+    .option("--image-id <hex>", "Without --scripts: the lock's 32-byte hex Image ID")
+    .option("--journal-hash <hex>", "Without --scripts: the lock's 32-byte hex Journal Hash")
+    .option("--mode <mode>", "Without --scripts: the lock's binding mode, 'proof-only' (default) or 'proof-and-output-bound'")
+    .option("--payout-address <address>", "Without --scripts, proof-and-output-bound: the lock's bound payout address")
+    .option("--payout-amount <sompi>", "Without --scripts, proof-and-output-bound: the lock's bound payout amount in sompi")
+    .option("--change-address <address>", "Without --scripts, proof-and-output-bound: the lock's bound change address")
+    .option("--change-amount <sompi>", "Without --scripts, proof-and-output-bound: the lock's bound change amount in sompi")
+    .option("--max-fee <sompi>", "Without --scripts, proof-and-output-bound: the lock's fee cap (default 50000000)")
+    .option("--to <address>", "proof-only: where the UTXO minus the fee goes (required); proof-and-output-bound: the bound payout (default; another address is refused)")
+    .option("--fee <sompi>", "proof-only: the fee in sompi (default: the recommended fee for the measured spend); proof-and-output-bound: implied by the lock (a different one is refused)")
+    .option("--compute-budget <n>", "The input's compute budget (default 1600; at least what the verifier needs)")
+    .option("--ack-image-id-only-lock", "testnet-10, proof-only: acknowledge that the lock binds only the image id (whoever sees the proof in the mempool can redirect the spend)", false)
+    .option("--network <name>", "Network: simnet or testnet-10 (default: the workspace's, else simnet). mainnet is refused; testnet-10 needs experimental + network.allowPublic in the config")
+    .option("--url <url>", "Node wRPC (JSON) endpoint (default: the one the workspace declares for the network; simnet: the canonical localnet)")
+    .option("--yes", "Confirm the broadcast. Required unless the network is simnet: without it the spend is refused (NOT EXECUTED, exit 3) and nothing is written", false)
+    .option("--wait", "After the send, wait until the node accepts the spend (observed, as 'tx wait --until accepted')", false)
+    .option("--timeout <seconds>", "With --wait: how long to wait (integer seconds, 1..3600)", "120")
+    .option("--json", "Output as JSON", false)
+    .action(async (options: ZkSpendCliOptions) => {
+      if (options.json) UI.setJsonMode(true);
+      await runZkSpend(options);
+    });
+
+  toccata
+    .command("observe <txId>")
+    .description(
+      "One look at a ZK spend through the node (as 'tx status' looks: the observation is recorded) and its ZK operation status, from the ZK fact 'zk toccata spend' recorded (or --fact). mainnet is refused"
+    )
+    .option("--fact <file>", "The ZK fact (hardkas.zkVerificationFact.v1) of the spend, when the workspace does not hold it")
+    .option("--network <name>", "Network: simnet or testnet-10 (default: the workspace's, else simnet). mainnet is refused; testnet-10 needs experimental + network.allowPublic in the config")
+    .option("--url <url>", "Node wRPC (JSON) endpoint (default: the one the workspace declares for the network; simnet: the canonical localnet)")
+    .option("--json", "Output as JSON", false)
+    .action(async (txId: string, options: { fact?: string; network?: string; url?: string; json?: boolean }) => {
+      if (options.json) UI.setJsonMode(true);
+      await runZkObserve(txId, options);
+    });
+}
+
+interface ZkSpendCliOptions {
+  receipt: string;
+  utxo: string;
+  scripts?: string;
+  imageId?: string;
+  journalHash?: string;
+  mode?: string;
+  payoutAddress?: string;
+  payoutAmount?: string;
+  changeAddress?: string;
+  changeAmount?: string;
+  maxFee?: string;
+  to?: string;
+  fee?: string;
+  computeBudget?: string;
+  ackImageIdOnlyLock?: boolean;
+  network?: string;
+  url?: string;
+  yes?: boolean;
+  wait?: boolean;
+  timeout?: string;
+  json?: boolean;
+}
+
+const usage = (code: string, message: string) => new HardkasCliError(code, `${message} Nothing was sent.`, { exitCode: HardkasExitCode.USAGE_ERROR });
+
+/**
+ * The network of a ZK spend or look: --network, else the workspace's (a `simulated` workspace's is simnet), else simnet.
+ * Only simnet and testnet-10 (the networks a lock has an address on), each as itself (an alias that declares another
+ * network is refused). Mainnet was refused before this, by name and by what an alias declares.
+ */
+async function zkNodeNetwork(explicit: string | undefined, config: any): Promise<"simnet" | "testnet-10"> {
+  const { workspaceNetworkOf } = await import("../mainnet-guard.js");
+  const { declaredNetworkIdOf } = await import("@hardkas/core");
+  let n = explicit ?? workspaceNetworkOf(config) ?? "simnet";
+  if (explicit === undefined && n === "simulated") n = "simnet";
+  const declared = declaredNetworkIdOf(config, n) ?? n;
+  if ((n !== "simnet" && n !== "testnet-10") || declared !== n) {
+    throw usage("ZK_SPEND_NETWORK_UNSUPPORTED", `A ZK lock is spent and observed on simnet or testnet-10, not on '${n}'${declared !== n ? ` (declared ${declared})` : ""}.`);
+  }
+  return n;
+}
+
+/** A Kaspa outpoint "txid:index". */
+function parseOutpointOption(raw: string): { transactionId: string; index: number } {
+  const m = /^([0-9a-fA-F]{64}):(\d{1,10})$/.exec(String(raw).trim());
+  if (!m || Number(m[2]) > 0xffffffff) throw usage("ZK_SPEND_UTXO_INVALID", `--utxo must be <64-hex txid>:<output index>, got '${raw}'.`);
+  return { transactionId: m[1]!.toLowerCase(), index: Number(m[2]) };
+}
+
+/** The lock's parameters: from its record (--scripts) or from the options; never both. */
+async function zkLockParameters(options: ZkSpendCliOptions): Promise<{ imageId: string; journalHash: string; bindingPolicy?: any; record?: any }> {
+  const given = ["imageId", "journalHash", "mode", "payoutAddress", "payoutAmount", "changeAddress", "changeAmount", "maxFee"].filter((k) => (options as any)[k] !== undefined);
+  if (options.scripts !== undefined) {
+    if (given.length > 0) throw usage("ZK_SPEND_LOCK_OPTIONS_CONFLICT", `--scripts gives the lock's parameters; do not also pass ${given.map((k) => "--" + k.replace(/[A-Z]/g, (c) => "-" + c.toLowerCase())).join(", ")}.`);
+    const fs = await import("node:fs");
+    const { stripBom } = await import("@hardkas/core");
+    let record: any;
+    try {
+      record = JSON.parse(stripBom(fs.readFileSync(options.scripts, "utf8")));
+    } catch (e: any) {
+      throw usage("ZK_SPEND_SCRIPTS_INVALID", `--scripts ${options.scripts} is not a readable JSON record (${e?.code ?? e?.message}).`);
+    }
+    const { HardkasSchemas } = await import("@hardkas/artifacts");
+    if (record?.schema !== HardkasSchemas.ZkToccataScriptsV1 || record?.ok !== true || typeof record.imageId !== "string" || typeof record.journalHash !== "string") {
+      throw usage("ZK_SPEND_SCRIPTS_INVALID", `--scripts ${options.scripts} is not a successful '${HardkasSchemas.ZkToccataScriptsV1}' record (the JSON 'zk toccata build-scripts --json' prints).`);
+    }
+    const p = record.bindingMode === "proof-and-output-bound" ? record.bindingPolicy : undefined;
+    const amount = (v: unknown, what: string) => {
+      try {
+        return BigInt(String(v));
+      } catch {
+        throw usage("ZK_SPEND_SCRIPTS_INVALID", `--scripts: ${what} is not an amount.`);
+      }
+    };
+    const bindingPolicy = p
+      ? {
+          mode: "proof-and-output-bound",
+          payout: { address: String(p.payout?.address), amountSompi: amount(p.payout?.amountSompi, "the payout amount") },
+          ...(p.change ? { change: { address: String(p.change.address), amountSompi: amount(p.change.amountSompi, "the change amount") } } : {}),
+          ...(p.maxFeeSompi !== undefined ? { maxFeeSompi: amount(p.maxFeeSompi, "the fee cap") } : {})
+        }
+      : undefined;
+    return { imageId: record.imageId, journalHash: record.journalHash, ...(bindingPolicy ? { bindingPolicy } : {}), record };
+  }
+  if (!options.imageId || !options.journalHash) throw usage("ZK_SPEND_LOCK_REQUIRED", "Give the lock: --scripts <record>, or --image-id and --journal-hash (and its binding options).");
+  const mode = options.mode ?? "proof-only";
+  if (mode !== "proof-only" && mode !== "proof-and-output-bound") throw usage("ZK_BINDING_MODE_INVALID", `--mode must be 'proof-only' or 'proof-and-output-bound', got '${mode}'.`);
+  if (mode === "proof-only") {
+    if (options.payoutAddress || options.payoutAmount || options.changeAddress || options.changeAmount || options.maxFee) {
+      throw usage("ZK_BINDING_OPTIONS_WITHOUT_MODE", "--payout-*, --change-* and --max-fee describe a lock of --mode proof-and-output-bound.");
+    }
+    return { imageId: options.imageId, journalHash: options.journalHash };
+  }
+  if (!options.payoutAddress || !options.payoutAmount) throw usage("ZK_BINDING_POLICY_INCOMPLETE", "--payout-address and --payout-amount describe a proof-and-output-bound lock.");
+  if ((options.changeAddress === undefined) !== (options.changeAmount === undefined)) throw usage("ZK_BINDING_POLICY_INCOMPLETE", "--change-address and --change-amount go together.");
+  return {
+    imageId: options.imageId,
+    journalHash: options.journalHash,
+    bindingPolicy: {
+      mode: "proof-and-output-bound",
+      payout: { address: options.payoutAddress, amountSompi: parseSompiOption("--payout-amount", options.payoutAmount) },
+      ...(options.changeAddress && options.changeAmount ? { change: { address: options.changeAddress, amountSompi: parseSompiOption("--change-amount", options.changeAmount) } } : {}),
+      ...(options.maxFee !== undefined ? { maxFeeSompi: parseSompiOption("--max-fee", options.maxFee) } : {})
+    }
+  };
+}
+
+/**
+ * The SDK on the spend's network, its client the node that proved its identity: this workspace's kaspa-l1 execution of
+ * that network (by rpc or localnet; never the simulator, which cannot run the precompile). The caller closes it.
+ */
+async function openZkSdk(workspaceRoot: string, rpc: unknown, network: string): Promise<any> {
+  const { Hardkas } = await import("@hardkas/sdk");
+  const sdk = await Hardkas.open({ cwd: workspaceRoot, network, autoBootstrap: true });
+  const e: any = sdk.execution;
+  if ((e?.mode !== "rpc" && e?.mode !== "localnet") || e?.domain !== "kaspa-l1" || sdk.network !== network) {
+    await sdk.close();
+    throw usage("ZK_SPEND_NODE_REQUIRED", `This workspace runs ${network} as ${e?.mode} ${e?.domain} ${e?.network}: a ZK spend needs a kaspa-l1 node execution of ${network} (the simulator cannot run the Groth16 precompile).`);
+  }
+  (sdk as any).rpc = rpc;
+  return sdk;
+}
+
+const jsonSafe = (v: unknown): any => JSON.parse(JSON.stringify(v, (_k, x) => (typeof x === "bigint" ? x.toString() : x)));
+
+async function runZkSpend(options: ZkSpendCliOptions): Promise<void> {
+  const { invocationWorkspaceRoot } = await import("../workspace-root.js");
+  const { refuseMainnetBroadcast, workspaceConfigForGuard } = await import("../mainnet-guard.js");
+  const workspaceRoot = invocationWorkspaceRoot();
+  const config = await workspaceConfigForGuard(workspaceRoot);
+  // MAINNET TOTAL LOCKDOWN: a spend is a broadcast; refused first — before the network is resolved, the confirmation is
+  // asked, the receipt is read or any node is contacted (any spelling, an alias that declares it, the workspace's own)
+  refuseMainnetBroadcast(config, [options.network], "zk toccata spend", options.network === undefined);
+  const network = await zkNodeNetwork(options.network, config);
+  // AUX-11 (tx send's rule): off simnet, nothing happens without --yes
+  if (!options.yes && network !== "simnet") {
+    const message = `NOT EXECUTED: 'zk toccata spend' on ${network} requires explicit confirmation. Nothing was read, built, broadcast or written. To execute, re-run with --yes.`;
+    if (options.json) getOutput().writeJson({ ok: false, command: "zk toccata spend", mode: "cli", outcome: "not_executed", code: "ZK_SPEND_CONFIRMATION_REQUIRED", network, message });
+    throw new HardkasCliError("ZK_SPEND_CONFIRMATION_REQUIRED", message, { exitCode: HardkasExitCode.POLICY_DENIED, context: { network } });
+  }
+  const utxo = parseOutpointOption(options.utxo);
+  const timeoutSeconds = options.timeout === undefined ? 120 : Number(options.timeout);
+  if (!/^\d{1,4}$/.test(String(options.timeout ?? "120")) || timeoutSeconds < 1 || timeoutSeconds > 3600) throw usage("ZK_TIMEOUT_INVALID", `--timeout must be an integer number of seconds in [1, 3600], got '${options.timeout}'.`);
+  const computeBudget = options.computeBudget === undefined ? undefined : /^\d{1,5}$/.test(options.computeBudget) ? Number(options.computeBudget) : NaN;
+  if (computeBudget !== undefined && !(computeBudget <= 65535)) throw usage("ZK_COMPUTE_BUDGET_OUT_OF_RANGE", `--compute-budget must be an integer in [0, 65535], got '${options.computeBudget}'.`);
+  const feeSompi = options.fee === undefined ? undefined : parseSompiOption("--fee", options.fee);
+  // The node target, from the config only (nothing contacted yet): the public-network opt-in and the endpoint authority
+  const { resolveL1NodeTarget, proveL1Node, recordModeOf } = await import("../runners/l1-node-target.js");
+  const target = await resolveL1NodeTarget(network, options.url);
+
+  // The lock, rebuilt by HardKAS from the receipt (a record's scripts are never used as given)
+  const lock = await zkLockParameters(options);
+  const receiptHex = await readReceiptOption(options.receipt);
+  const { buildR0Groth16Scripts, assertSpendableZkLock } = await import("@hardkas/sdk");
+  if (lock.record) {
+    // a record verify-scripts refuses is refused as such, before anything is compared or built
+    try {
+      assertSpendableZkLock({ ...lock.record, ...(lock.bindingPolicy ? { bindingPolicy: lock.bindingPolicy } : {}) });
+    } catch (e: any) {
+      throw new HardkasCliError(String(e?.code ?? "ZK_SPEND_LOCK_REFUSED"), String(e?.message ?? e), { exitCode: HardkasExitCode.RUNTIME_FAILURE });
+    }
+  }
+  const scripts = buildR0Groth16Scripts({
+    imageId: lock.imageId,
+    journalHash: lock.journalHash,
+    receiptHex,
+    ...(lock.bindingPolicy ? { bindingPolicy: lock.bindingPolicy } : {}),
+    ...(network === "testnet-10" ? { addressNetworks: ["testnet-10" as const] } : {}),
+    acknowledgeImageIdOnlyLock: options.ackImageIdOnlyLock === true
+  });
+  if (!scripts.ok) {
+    throw new HardkasCliError("ZK_SPEND_LOCK_REFUSED", `The lock is not rebuilt from this receipt: ${scripts.issues.map((i: any) => `${i.code}: ${i.message}`).join("; ")}. Nothing was sent.`, {
+      exitCode: HardkasExitCode.RUNTIME_FAILURE
+    });
+  }
+  if (lock.record && (String(lock.record.redeemScript).toLowerCase() !== scripts.redeemScript || String(lock.record.sigScript).toLowerCase() !== scripts.sigScript)) {
+    throw new HardkasCliError("ZK_SPEND_SCRIPTS_MISMATCH", `The record's scripts are not the ones this receipt and the record's parameters build: it is not this lock's record. Nothing was sent.`, {
+      exitCode: HardkasExitCode.RUNTIME_FAILURE
+    });
+  }
+
+  // The node: its identity proven (container + digest when managed, its own report otherwise) and synced
+  const { identity, rpc } = await proveL1Node(target, "zk toccata spend");
+  let sdk: any;
+  try {
+    sdk = await openZkSdk(workspaceRoot, rpc, network);
+    const { spendR0Groth16Lock } = await import("@hardkas/sdk");
+    const result = await spendR0Groth16Lock(sdk, {
+      scripts,
+      utxo,
+      ...(options.to !== undefined ? { destinationAddress: options.to } : {}),
+      ...(feeSompi !== undefined ? { feeSompi } : {}),
+      ...(computeBudget !== undefined ? { computeBudget } : {})
+    });
+    const send = result.send;
+    const submission: any = send.submission ?? send.receipt;
+    const { submitOutcomeOf } = await import("@hardkas/artifacts");
+    const outcome = send.alreadySubmitted === true ? "already-submitted" : send.submitted === true ? "submitted" : submitOutcomeOf(submission?.submitResult) === "rejected" ? "rejected" : "unknown";
+    let waited: any;
+    if ((outcome === "submitted" || outcome === "already-submitted") && options.wait) {
+      try {
+        const w = await sdk.tx.waitForAccepted({ txId: result.txId, timeoutMs: timeoutSeconds * 1000 });
+        waited = { status: w.status, acceptingBlockHash: w.acceptingBlockHash, confirmations: w.confirmations, state: w.derived?.status };
+      } catch (e: any) {
+        throw new HardkasCliError(
+          "ZK_SPEND_WAIT_TIMEOUT",
+          `The spend ${result.txId} was submitted (submission ${String(submission?.contentHash)}), but it was not observed accepted within ${timeoutSeconds} s (${String(e?.message ?? e)}). It was not sent again: observe it with 'hardkas zk toccata observe ${result.txId}'.`,
+          { exitCode: HardkasExitCode.RUNTIME_FAILURE }
+        );
+      }
+    }
+    const report = jsonSafe({
+      ok: outcome === "submitted" || outcome === "already-submitted",
+      command: "zk toccata spend",
+      outcome,
+      network,
+      txId: result.txId,
+      bindingMode: result.built.bindingMode,
+      consensusEnforced: result.built.consensusEnforced,
+      spent: { ...utxo, amountSompi: result.plan.inputs?.[0]?.amountSompi },
+      outputs: result.plan.outputs,
+      feeSompi: result.built.feeSompi,
+      computeBudget: result.built.computeBudget,
+      storageMass: result.plan.storageMass,
+      plan: { artifactId: result.plan.contentHash, path: result.planPath },
+      signed: { artifactId: result.signed.contentHash, path: result.signedPath },
+      ...(result.zkFact ? { zkFact: { artifactId: result.zkFact.contentHash, path: result.zkFactPath, offChainVerification: result.zkFact.offChainVerification } } : {}),
+      submission: { artifactId: submission?.contentHash, path: send.receiptPath, submitResult: submission?.submitResult },
+      ...(send.rejection ? { rejection: send.rejection } : {}),
+      ...(waited ? { wait: waited } : {}),
+      node: { rpcUrl: target.rpcUrl, mode: recordModeOf(target), ...summarizeNodeIdentity(identity as any) },
+      warnings: result.built.warnings
+    });
+    if (outcome === "rejected") {
+      if (options.json) getOutput().writeJson(report);
+      throw new HardkasCliError("ZK_SPEND_REJECTED_BY_NODE", `The node rejected the spend ${result.txId}: ${String(submission?.submitResult?.error ?? "rejected")}${send.rejection?.code ? ` (${send.rejection.code})` : ""}. It is recorded and never re-sent.`, {
+        exitCode: HardkasExitCode.RUNTIME_FAILURE
+      });
+    }
+    if (outcome === "unknown") {
+      if (options.json) getOutput().writeJson(report);
+      throw new HardkasCliError(
+        "ZK_SPEND_OUTCOME_UNKNOWN",
+        `The outcome of the spend ${result.txId} is unknown (${String(submission?.submitResult?.error ?? "no answer naming it")}); the node may hold it. It was not re-sent: observe it with 'hardkas zk toccata observe ${result.txId}'.`,
+        { exitCode: HardkasExitCode.RUNTIME_FAILURE }
+      );
+    }
+    if (options.json) {
+      getOutput().writeJson(report);
+      return;
+    }
+    getOutput().writeLine(
+      [
+        `${outcome === "already-submitted" ? "Already submitted (not sent again)" : "Submitted"}: ZK spend ${result.txId} on ${network}`,
+        `  lock ${report.bindingMode}${report.consensusEnforced ? " (outputs bound on-chain)" : " (outputs NOT bound on-chain)"}, spent ${utxo.transactionId}:${utxo.index} (${report.spent.amountSompi} sompi)`,
+        ...report.outputs.map((o: any) => `  pays ${o.amountSompi} sompi to ${o.address}`),
+        `  fee ${report.feeSompi} sompi, compute budget ${report.computeBudget}`,
+        `  submission ${report.submission.artifactId}${waited ? `, accepted by ${waited.acceptingBlockHash}` : ""}`,
+        ...report.warnings.map((w: any) => `  warning: ${w.code} - ${w.message}`),
+        `  next: hardkas zk toccata observe ${result.txId}`
+      ].join("\n")
+    );
+  } finally {
+    if (sdk) await sdk.close();
+    if (rpc) await (rpc as any).close();
+  }
+}
+
+async function runZkObserve(txId: string, options: { fact?: string; network?: string; url?: string; json?: boolean }): Promise<void> {
+  const { invocationWorkspaceRoot } = await import("../workspace-root.js");
+  const { refuseMainnetConnection, workspaceConfigForGuard } = await import("../mainnet-guard.js");
+  const workspaceRoot = invocationWorkspaceRoot();
+  const config = await workspaceConfigForGuard(workspaceRoot);
+  refuseMainnetConnection(config, [options.network], "zk toccata observe", options.network === undefined);
+  const network = await zkNodeNetwork(options.network, config);
+  if (!/^[0-9a-f]{64}$/.test(txId)) throw new HardkasCliError("ZK_OBSERVE_TXID_INVALID", `<txId> must be 64 lowercase hex, got '${txId}'. Nothing was observed.`, { exitCode: HardkasExitCode.USAGE_ERROR });
+  const { HardkasSchemas, checkArtifactIdentity, enumerateWorkspaceArtifactsSync, deriveZkOperationStatus } = await import("@hardkas/artifacts");
+  // the fact: the one given, else the one the workspace holds for this txId (a fact that does not verify is not used)
+  let fact: any;
+  let factSource: string | undefined;
+  const isFactOf = (a: any) => a?.schema === HardkasSchemas.ZkVerificationFactV1 && String(a?.txId).toLowerCase() === txId && checkArtifactIdentity(a).ok;
+  if (options.fact !== undefined) {
+    const fs = await import("node:fs");
+    const { stripBom } = await import("@hardkas/core");
+    try {
+      fact = JSON.parse(stripBom(fs.readFileSync(options.fact, "utf8")));
+    } catch (e: any) {
+      throw new HardkasCliError("ZK_FACT_INVALID", `--fact ${options.fact} is not a readable JSON fact (${e?.code ?? e?.message}). Nothing was observed.`, { exitCode: HardkasExitCode.USAGE_ERROR });
+    }
+    if (!isFactOf(fact)) throw new HardkasCliError("ZK_FACT_INVALID", `--fact ${options.fact} is not a verified ${HardkasSchemas.ZkVerificationFactV1} of transaction ${txId}. Nothing was observed.`, { exitCode: HardkasExitCode.USAGE_ERROR });
+    factSource = options.fact;
+  } else {
+    const found = new Map<string, { artifact: any; path?: string }>();
+    for (const entry of enumerateWorkspaceArtifactsSync(workspaceRoot) as any[]) {
+      if (isFactOf(entry.artifact)) found.set(String(entry.artifact.contentHash), { artifact: entry.artifact, path: entry.path ?? entry.file });
+    }
+    // several facts of one txId (the spend built again: another plan id) do not say which one counts: none is used
+    if (found.size === 1) {
+      const only = [...found.values()][0]!;
+      fact = only.artifact;
+      factSource = only.path ?? "workspace";
+    } else if (found.size > 1) {
+      factSource = `${found.size} facts of this transaction in the workspace (give one with --fact)`;
+    }
+  }
+  const { resolveL1NodeTarget } = await import("../runners/l1-node-target.js");
+  const target = await resolveL1NodeTarget(network, options.url);
+  const { JsonWrpcKaspaClient } = await import("@hardkas/kaspa-rpc");
+  // NODE-NETWORK-IDENTITY-1: only a node that says it serves this network answers the look
+  const rpc = new JsonWrpcKaspaClient({ rpcUrl: target.rpcUrl, expectedNetworkId: network });
+  let sdk: any;
+  try {
+    const { Hardkas } = await import("@hardkas/sdk");
+    sdk = await Hardkas.open({ cwd: workspaceRoot, network });
+    sdk.rpc = rpc;
+    const { observation, observationPath, derived } = await sdk.tx.observe(txId);
+    const zkStatus = fact ? deriveZkOperationStatus({ zkFact: fact, txStatus: derived }) : undefined;
+    const report = jsonSafe({
+      ok: true,
+      command: "zk toccata observe",
+      network,
+      txId,
+      state: derived.status,
+      reasons: derived.reasons,
+      ...(derived.acceptingBlockHash ? { acceptingBlockHash: derived.acceptingBlockHash } : {}),
+      ...(derived.confirmations ? { confirmations: derived.confirmations } : {}),
+      ...(zkStatus ? { zkStatus } : {}),
+      zkFact: fact ? { artifactId: fact.contentHash, source: factSource, offChainVerification: fact.offChainVerification } : factSource ? { artifactId: null, source: factSource } : null,
+      observation: { artifactId: observation.contentHash, path: observationPath }
+    });
+    if (options.json) {
+      getOutput().writeJson(report);
+      return;
+    }
+    getOutput().writeLine(
+      [
+        `ZK spend ${txId} on ${network}: ${derived.status}${derived.acceptingBlockHash ? ` (accepting block ${derived.acceptingBlockHash})` : ""}`,
+        ...(zkStatus ? [`  ZK operation: ${(zkStatus as any).kind ?? JSON.stringify(zkStatus)}`] : ["  no ZK fact of this spend in the workspace (--fact <file> gives one)"]),
+        ...((derived.reasons ?? []) as string[]).map((r) => `  ${r}`),
+        `  observation ${observation.contentHash}`
+      ].join("\n")
+    );
+  } finally {
+    if (sdk) await sdk.close();
+    await rpc.close();
+  }
 }
 
 async function readReceiptOption(raw: string): Promise<string> {

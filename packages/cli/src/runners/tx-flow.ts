@@ -69,6 +69,10 @@ export interface TxFlowInput {
   json?: boolean;
   /** PAYMENT-PREFLIGHT-1 · the send step checks the inputs and signatures against the node before the broadcast. */
   preflight?: boolean;
+  /** CLTV · the plan step's lock time (TxPlanRunnerInput.lockTimeDaa / lockTimeMs / confirmDistantLockTime). */
+  lockTimeDaa?: string;
+  lockTimeMs?: string;
+  confirmDistantLockTime?: boolean;
 }
 
 export interface TxFlowStepResult<T> {
@@ -280,7 +284,10 @@ async function txFlow(input: TxFlowInput, opened: { sdk?: { close(): Promise<voi
       feeRate,
       config,
       ...(url ? { url } : {}),
-      ...(input.spentOutpoints && input.spentOutpoints.size > 0 ? { spentOutpoints: input.spentOutpoints } : {})
+      ...(input.spentOutpoints && input.spentOutpoints.size > 0 ? { spentOutpoints: input.spentOutpoints } : {}),
+      ...(input.lockTimeDaa !== undefined ? { lockTimeDaa: input.lockTimeDaa } : {}),
+      ...(input.lockTimeMs !== undefined ? { lockTimeMs: input.lockTimeMs } : {}),
+      ...(input.confirmDistantLockTime ? { confirmDistantLockTime: true } : {})
     };
     if (workspaceRoot) planInput.workspaceRoot = workspaceRoot;
 
@@ -384,7 +391,9 @@ async function txFlow(input: TxFlowInput, opened: { sdk?: { close(): Promise<voi
         ...(input.keystorePassword !== undefined ? { keystorePassword: input.keystorePassword } : {}),
         ...(input.passwordEnv ? { passwordEnv: input.passwordEnv } : {}),
         ...(input.passwordStdin ? { passwordStdin: true } : {}),
-        ...(input.json ? { json: true } : {})
+        ...(input.json ? { json: true } : {}),
+        // TX-SEND-URL-1: the sign step asks the same node as the plan and send steps (it used the workspace's endpoint)
+        ...(url ? { url } : {})
       });
 
       flowResult.steps.sign = { status: "ok", artifact: signedArtifact };

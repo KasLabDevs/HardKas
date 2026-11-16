@@ -3,7 +3,7 @@ import { getLocalnetTreasuryAccount } from "@hardkas/accounts";
 import { distributeFromTreasury, memoryTreasuryJournal } from "../src/runners/localnet-treasury.js";
 import { FakeLocalnet, KAS, fixtureAddress, scriptHexOf } from "./localnet-treasury-fake-node.js";
 
-// rc2 audit B2 (a): the treasury's money path with nothing of it mocked — the real kaspa-wasm Generator plans, the real
+// audit 2026-11-13 B2 (a): the treasury's money path with nothing of it mocked — the real kaspa-wasm Generator plans, the real
 // signer (signTxPlanArtifact) signs with the deterministic treasury key, the real artifact code carries the transaction —
 // over a realistic treasury UTXO set in the real RPC client's shape. Only the transport (the node) is a stand-in
 // (localnet-treasury-fake-node.ts), which checks inputs, maturity and value, and applies the transaction when it mines.

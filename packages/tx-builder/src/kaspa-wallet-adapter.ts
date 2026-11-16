@@ -177,7 +177,7 @@ export interface CreateUtxoContextInput {
   /** Optional 32-byte hex id for the UtxoContext. If omitted, upstream generates one. */
   readonly id?: string;
   /**
-   * A4 (rc2 audit): runs before every post-reconnect re-snapshot, before the context is cleared or any address is read
+   * A4 (audit 2026-11-13): runs before every post-reconnect re-snapshot, before the context is cleared or any address is read
    * from the node again. It throws to refuse the re-snapshot (e.g. the node behind the URL now serves another network):
    * nothing is read, and the failure goes to `onError` listeners.
    */

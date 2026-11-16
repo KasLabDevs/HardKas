@@ -109,6 +109,14 @@ describe("F3 · silver test applies the runner trust policy", () => {
     expect(r.error?.code, r.brief).not.toBe("SILVER_TEST_FAILED");
   });
 
+  it("T6 (R4-S) every result says whose verdict it is: the runner's (SCRIPT_VM) with its trust, and the summary the level every case reached", async () => {
+    const r = await run([...testArgs("pass.test.json"), "--allow-unverified-runner"]);
+    expect(r.exit, r.brief).toBe(0);
+    expect(r.record?.results?.map((x: any) => [x.verdictLevel, x.runnerTrust]), r.brief).toEqual([["SCRIPT_VM", "UNVERIFIED"], ["SCRIPT_VM", "UNVERIFIED"]]);
+    expect(r.record?.summary, r.brief).toEqual({ total: 2, passed: 2, failed: 0, level: "SCRIPT_VM", casesAtLevel: 2 });
+    expect(r.record?.mode, r.brief).toBe("vm");
+  });
+
   it("T5 control: a genuinely failing test is a failed contract test (SILVER_TEST_FAILED), exit 1", async () => {
     const r = await run([...testArgs("fail.test.json"), "--allow-unverified-runner"]);
     expect(r.exit, r.brief).toBe(1);

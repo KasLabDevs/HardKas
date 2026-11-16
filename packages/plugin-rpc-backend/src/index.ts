@@ -20,7 +20,7 @@ export function kaspaRpcBackendPlugin(options: KaspaRpcBackendOptions): KaspaRpc
     const httpClient = isWs ? null : new KaspaJsonRpcClient({ url: options.url });
     const wsClient = isWs ? new KaspaWrpcClient(options.url) : null;
     const engine = new ResilienceEngine(options.resilience);
-    // A3 (rc2 audit): what an error says of the endpoint, without its credentials (user:password, api_key=…)
+    // A3 (audit 2026-11-13): what an error says of the endpoint, without its credentials (user:password, api_key=…)
     const endpoint = redactUrlCredentials(options.url);
     let isConnected = false;
     let isShuttingDown = false;

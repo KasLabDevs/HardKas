@@ -13,8 +13,13 @@ import { readExactJson } from "./silver-dev-framework.js";
  *
  * KCC-1 and KCC-2 are not token standards: KCC-1 is the covenant ABI (codecs, dispatch tags, templates), KCC-2 the
  * authority-scheme registry. KCC-20 is the fungible-token convention on L1 covenants. None of it is KRC-20 (Kasplex
- * inscriptions read by indexers). These commands encode, decode and check; they sign nothing, send nothing and verify no
- * signature: a token's own covenant program checks signatures and rules on chain.
+ * inscriptions read by indexers). `encode-state`, `decode-state`, `check` and `artifact` encode, decode and check; they
+ * sign nothing, send nothing and verify no signature: a token's own covenant program checks signatures and rules on chain.
+ *
+ * R3-A3 · `kcc20 deploy`, `transfer` and `balance` put a KCC-20 program's tokens on a node through the SDK (sdk.kcc20):
+ * its v1 engine plans, checks, signs and sends every transaction, with the Silver commands' plumbing (network target,
+ * records, keys resolved before any node, node identity). A transfer is checked against the KCC-20 rules (the model
+ * `check` runs) before any key is read. Mainnet is refused first, before anything is read or contacted.
  */
 
 const out = () => getOutput();
@@ -137,7 +142,9 @@ export function registerKccCommands(program: Command) {
   // ------------------------------------------------------------------ kcc20
   const kcc20 = program
     .command("kcc20")
-    .description(`KCC-20 fungible tokens on L1 covenants (kaspanet/kccs, Final), off chain: state codec, transfer checks, program artifacts ${UI.maturity("experimental")}. Not KRC-20`);
+    .description(
+      `KCC-20 fungible tokens on L1 covenants (kaspanet/kccs, Final): off chain, the state codec, transfer checks and program artifacts; on a node, deploy, transfer and balance through the SDK's v1 engine ${UI.maturity("experimental")}. Not KRC-20`
+    );
 
   kcc20
     .command("encode-state <state>")
@@ -258,4 +265,342 @@ export function registerKccCommands(program: Command) {
         out().writeLine(`owner schemes ${config.ownerSchemes.map((s) => `0x${s.toString(16).padStart(2, "0")}`).join(", ")}; max token inputs ${config.maxTokenInputs}, outputs ${config.maxTokenOutputs}`);
       })
     );
+
+  // ------------------------------------------------------------------ kcc20 on a node (R3-A3)
+  const collect = (value: string, previous: string[] = []) => [...previous, value];
+  const NETWORK_HELP = "Network (default: the workspace's, else simnet). mainnet is refused; testnet-<n> needs experimental + network.allowPublic in the config";
+  const URL_HELP =
+    "Node wRPC (JSON) endpoint (default: the one the workspace declares for the network; simnet: the canonical localnet). Only the canonical localnet is proven by container and image digest; any other node by what it reports (network, version, synced)";
+  const PASSWORD_ENV_HELP = "Read the keystore password of the encrypted account(s) this command signs with from this environment variable (development accounts need none)";
+  const PASSWORD_STDIN_HELP = "Read the keystore password of the encrypted account(s) this command signs with from stdin";
+
+  kcc20
+    .command("deploy <record>")
+    .description(
+      "Create a KCC-20 token on a node (transaction v1): a covenant genesis of the token program — its compile record, e.g. the reference KCC20.sil compiled by `hardkas silver compile` — with one token output per initial holder, all one covenant id; planned, checked, signed and sent by the SDK's v1 engine (sdk.kcc20). Mainnet refused (MAINNET_SIGNING_DISABLED) before anything is read; testnet-<n> needs experimental + network.allowPublic"
+    )
+    .requiredOption("--from <account>", "Funding account (local key): pays the token outputs' KAS and the fee, gets the change")
+    .option(
+      "--holder <spec>",
+      "An initial holder, in output order (repeatable): '<owner>=<amount>', the owner an account of this workspace, a P2PK address or a 32-byte x-only public key (hex), owner scheme p2pk-schnorr/v1; the amount an exact integer",
+      collect,
+      []
+    )
+    .option("--kas <kas>", "KAS locked in each token output", "10")
+    .option("--extension-commitment <hex>", "The token's extension commitment (32 bytes, hex; default zero): every output of the token carries it")
+    .option("--artifact <file>", "The program's KCC-20 artifact (kcc20.json: entrypoints, owner schemes, bounds); default: KCC-20's default configuration")
+    .option("--constructor-args <file>", "Constructor arguments the program was compiled with (default: proven from its initial State)")
+    .option("--contract <name>", "Contract, when the artifact has several (default: KCC20)")
+    .option("--fee <sompi>", "Fee in sompi: at least the node's floor for this transaction (the floor when omitted)")
+    .option("--network <network>", NETWORK_HELP)
+    .option("--url <url>", URL_HELP)
+    .option("--wait", "Wait until every token output is confirmed with the covenant id", false)
+    .option("--timeout <seconds>", "Confirmation timeout", "120")
+    .option("--password-env <env>", PASSWORD_ENV_HELP)
+    .option("--password-stdin", PASSWORD_STDIN_HELP, false)
+    .option("--json", "Output as JSON", false)
+    .action(async (file: string, opts: any) => {
+      await refuseMainnetFirst(opts.network, "sign", "kcc20 deploy");
+      const kit = (await import("./silver.js")).silverOnChainKit;
+      const core = await import("@hardkas/core");
+      const target = await kit.silverTarget(opts);
+      const S = await kit.schemas();
+      const record = await kit.readRecord(file, S.SilverCompileV1);
+      kit.assertCompiledForCanonical(record, file, target.network);
+      const artifact = await kit.loadCompiled(record);
+      const { name, contract } = core.getSilContract(artifact, opts.contract ?? (artifact.contracts.KCC20 ? "KCC20" : undefined));
+      // G2: a program above the mempool's signature-operation limit could never be transferred (nothing is funded)
+      await kit.assertSigOpsStandard(name, core.silContractBytecodeHex(contract));
+      const config = opts.artifact ? usage(() => core.kcc20ParseArtifact(readJsonInput(opts.artifact, "artifact"))) : undefined;
+      const holders = ownerAmounts(opts.holder as string[], "--holder");
+      if (holders.length === 0) fail("KCC20_HOLDER_INVALID", "give the initial holders: --holder <owner>=<amount>, repeatable", HardkasExitCode.USAGE_ERROR);
+      const kas = kit.parseKas(String(opts.kas));
+      const fee = kit.integerOption(opts.fee, "--fee");
+      if (opts.extensionCommitment !== undefined && !/^[0-9a-fA-F]{64}$/.test(String(opts.extensionCommitment))) {
+        fail("KCC20_STATE_INVALID", `--extension-commitment '${opts.extensionCommitment}' is not 32 bytes of hex`, HardkasExitCode.USAGE_ERROR);
+      }
+      const workspaceRoot = await kit.assertCanonicalWorkspace(target);
+      const constructorArgs = await kit.engineConstructorArgs(record, name, opts.constructorArgs);
+      const funder = await kit.accountKey(opts.from, { ...kit.keySource(opts), network: target.network }, target.network);
+      const { identity, rpc } = await kit.silverNode(target, "kcc20 deploy");
+      try {
+        const r = await kit.withEngine(
+          workspaceRoot,
+          rpc,
+          [record],
+          [{ names: [opts.from], ...funder }],
+          async (engine, ctx) => {
+            const sign = { ...kit.engineSignOptions(ctx), ...(config ? { config } : {}) };
+            const planned = await kcc20Call(() =>
+              ctx.sdk.kcc20.planDeploy(
+                {
+                  program: { compileRecord: kit.engineRecordRef(record, file, workspaceRoot), contract: name, constructorArgs, ...(config ? { config } : {}) },
+                  holders: holders.map((h) => ({ owner: h.owner, amount: h.amount, kasSompi: kas })),
+                  funder: opts.from,
+                  ...(opts.extensionCommitment !== undefined ? { extensionCommitment: String(opts.extensionCommitment).toLowerCase() } : {}),
+                  ...(fee !== undefined ? { feeSompi: fee } : {})
+                },
+                sign
+              ),
+              opts.from
+            );
+            const s = await ctx.sdk.kcc20.sign(planned.plan, sign);
+            const covenantId = String(JSON.parse(s.signed.signedTransaction.payload)?.outputs?.[0]?.covenant?.covenantId ?? "").toLowerCase();
+            if (!/^[0-9a-f]{64}$/.test(covenantId)) fail("SILVER_COVENANT_ID_MISSING", "the signed genesis binds no covenant id to its first output");
+            const txId = await engine.sendSilverEngineTransaction(ctx.sdk, s.signed, "kcc20 deploy", { facts: ctx.sdk.kcc20.facts(config, sign), compileRecords: ctx.compileRecords });
+            return { plan: planned.plan, states: planned.states, txId, covenantId, planPath: await kit.storePathOf(ctx.sdk, planned.plan), signedPath: await kit.storePathOf(ctx.sdk, s.signed) };
+          },
+          target
+        );
+        const confirmed: any[] = [];
+        if (opts.wait) {
+          for (let k = 0; k < r.states.length; k++) {
+            const u = await kit.waitForUtxo(rpc, r.plan.outputs[k].address, { transactionId: r.txId, index: k }, Number(opts.timeout));
+            if (u.covenantId !== r.covenantId) fail("SILVER_COVENANT_ID_MISMATCH", `the node reports covenant id ${u.covenantId} for token output ${k}, the SDK computed ${r.covenantId}`);
+            confirmed.push(u);
+          }
+        }
+        const summary = kit.jsonSafe({
+          schema: "hardkas.kcc20Deploy.v1",
+          networkId: target.network,
+          contract: name,
+          covenantId: r.covenantId,
+          txId: r.txId,
+          status: opts.wait ? "confirmed" : "submitted",
+          feeSompi: r.plan.estimatedFeeSompi,
+          totalSupply: r.states.reduce((n: bigint, s: any) => n + s.amount, 0n),
+          outputs: r.states.map((s: any, k: number) => ({
+            outpoint: `${r.txId}:${k}`,
+            address: r.plan.outputs[k].address,
+            kasSompi: r.plan.outputs[k].amountSompi,
+            state: stateJson(s),
+            ...(confirmed[k] ? { confirmedAtBlockDaaScore: confirmed[k].blockDaaScore } : {})
+          })),
+          plan: kit.relativePath(r.planPath),
+          signed: kit.relativePath(r.signedPath),
+          node: kit.nodeRecordOf(identity)
+        });
+        if (opts.json) return out().writeJson(summary);
+        out().writeLine(`${pc.green("Token deployed")} ${name} ${r.covenantId}`);
+        out().writeLine(`  tx ${r.txId} (${summary.status}), supply ${summary.totalSupply}, fee ${summary.feeSompi} sompi`);
+        for (const o of summary.outputs) out().writeLine(`  ${o.outpoint} ${o.state.amount} to ${o.state.owner}`);
+      } finally {
+        await rpc.close?.();
+      }
+    });
+
+  kcc20
+    .command("transfer")
+    .description(
+      "Transfer KCC-20 tokens on a node (transaction v1): --from's token outputs (or the --input ones) to the recipients, the change back to --from, through the program's transfer (the leader) and transfer_delegator (the other inputs). Checked against the KCC-20 rules (the model `kcc20 check` runs) before anything is signed, and refused there when they reject it (KCC20_TRANSFER_REJECTED); the owners' signatures go in the witnesses; planned, signed and sent by the SDK's v1 engine (sdk.kcc20); the token's program on the node is the final judge. Mainnet refused (MAINNET_SIGNING_DISABLED) before anything is read"
+    )
+    .requiredOption("--covenant <id>", "The token's covenant id (32 bytes, hex)")
+    .requiredOption("--from <account>", "The holder whose token outputs are spent and who signs them (local key); the change in tokens goes back to it")
+    .option("--to <spec>", "A recipient, in output order (repeatable): '<owner>=<amount>', the owner an account of this workspace, a P2PK address or a 32-byte x-only public key (hex)", collect, [])
+    .option("--input <outpoint>", "Spend this token output 'txid:index' (repeatable, the leader first); default: --from's live outputs, largest first, as few as cover the amounts", collect, [])
+    .option("--funder <account>", "Pay the fee from this account's coins (local key); default: the tokens' KAS (the first new output keeps what the fee leaves)")
+    .option("--artifact <file>", "The program's KCC-20 artifact (kcc20.json); default: KCC-20's default configuration")
+    .option("--fee <sompi>", "Fee in sompi: at least the node's floor for this transaction (the floor when omitted)")
+    .option("--max-fee <sompi>", "The plan's fee limit (default: the fee it pays)")
+    .option("--compute-budget <n>", "Compute budget of each token input, or 'estimate' (the default: rusty-kaspa's upper bound)")
+    .option("--network <network>", NETWORK_HELP)
+    .option("--url <url>", URL_HELP)
+    .option("--wait", "Wait until every new token output is confirmed with the covenant id", false)
+    .option("--timeout <seconds>", "Confirmation timeout", "120")
+    .option("--password-env <env>", PASSWORD_ENV_HELP)
+    .option("--password-stdin", PASSWORD_STDIN_HELP, false)
+    .option("--json", "Output as JSON", false)
+    .action(async (opts: any) => {
+      await refuseMainnetFirst(opts.network, "sign", "kcc20 transfer");
+      const kit = (await import("./silver.js")).silverOnChainKit;
+      const core = await import("@hardkas/core");
+      const target = await kit.silverTarget(opts);
+      const covenantId = kit.covenantIdOption(opts.covenant);
+      const to = ownerAmounts(opts.to as string[], "--to");
+      if (to.length === 0) fail("KCC20_TRANSFER_INVALID", "give the recipients: --to <owner>=<amount>, repeatable", HardkasExitCode.USAGE_ERROR);
+      const inputs = (opts.input as string[]).map((o) => kit.outpointOption(o, "--input"));
+      const config = opts.artifact ? usage(() => core.kcc20ParseArtifact(readJsonInput(opts.artifact, "artifact"))) : undefined;
+      const fee = kit.integerOption(opts.fee, "--fee");
+      const maxFee = kit.integerOption(opts.maxFee, "--max-fee");
+      const budget = kit.budgetOption(opts.computeBudget, true);
+      const workspaceRoot = await kit.assertCanonicalWorkspace(target);
+      // every key this transfer signs with, resolved now, before the node; one password prompt at most
+      const keys = { ...kit.keySource(opts), network: target.network };
+      const owner = await kit.accountKey(opts.from, keys, target.network);
+      const funder = opts.funder ? await kit.accountKey(opts.funder, keys, target.network) : undefined;
+      const { identity, rpc } = await kit.silverNode(target, "kcc20 transfer");
+      try {
+        const r = await kit.withEngine(
+          workspaceRoot,
+          rpc,
+          [],
+          [{ names: [opts.from], ...owner }, ...(funder ? [{ names: [String(opts.funder)], ...funder }] : [])],
+          async (engine, ctx) => {
+            const sign = { ...kit.engineSignOptions(ctx), ...(config ? { config } : {}) };
+            const planned = await kcc20Call(
+              () =>
+                ctx.sdk.kcc20.planTransfer(
+                  {
+                    covenantId,
+                    from: opts.from,
+                    ...(inputs.length > 0 ? { inputs: inputs.map((outpoint) => ({ outpoint })) } : {}),
+                    to: to.map((t) => ({ owner: t.owner, amount: t.amount })),
+                    ...(funder ? { funder: opts.funder } : {}),
+                    ...(fee !== undefined ? { feeSompi: fee } : {}),
+                    ...(maxFee !== undefined ? { maxFeeSompi: maxFee } : {}),
+                    ...(budget !== undefined ? { computeBudget: budget } : {}),
+                    ...(config ? { config } : {})
+                  },
+                  sign
+                ),
+              opts.funder ?? opts.from
+            );
+            const s = await ctx.sdk.kcc20.sign(planned.plan, sign);
+            const txId = await engine.sendSilverEngineTransaction(ctx.sdk, s.signed, "kcc20 transfer", { facts: ctx.sdk.kcc20.facts(config, sign), compileRecords: ctx.compileRecords });
+            return { ...planned, txId, warnings: s.warnings, planPath: await kit.storePathOf(ctx.sdk, planned.plan), signedPath: await kit.storePathOf(ctx.sdk, s.signed) };
+          },
+          target
+        );
+        const confirmed: any[] = [];
+        if (opts.wait) {
+          for (const o of r.outputs) {
+            const u = await kit.waitForUtxo(rpc, o.address, { transactionId: r.txId, index: o.index }, Number(opts.timeout));
+            if (u.covenantId !== covenantId) fail("SILVER_COVENANT_LINEAGE_BROKEN", `token output ${o.index} carries ${u.covenantId ?? "no covenant id"}, expected ${covenantId}`);
+            confirmed.push(u);
+          }
+        }
+        const summary = kit.jsonSafe({
+          schema: "hardkas.kcc20Transfer.v1",
+          networkId: target.network,
+          covenantId,
+          txId: r.txId,
+          status: opts.wait ? "confirmed" : "submitted",
+          feeSompi: r.plan.estimatedFeeSompi,
+          verdict: { verdict: r.verdict.accepted ? "STRUCTURALLY_VALID" : "REJECTED", path: r.verdict.path, reason: r.verdict.reason },
+          inputs: r.inputs.map((i: any) => ({ outpoint: i.outpoint, role: i.role, signer: i.signer, kasSompi: i.kasSompi, state: stateJson(i.state) })),
+          outputs: r.outputs.map((o: any, k: number) => ({
+            outpoint: `${r.txId}:${o.index}`,
+            address: o.address,
+            kasSompi: o.kasSompi,
+            state: stateJson(o.state),
+            ...(confirmed[k] ? { confirmedAtBlockDaaScore: confirmed[k].blockDaaScore } : {})
+          })),
+          warnings: r.warnings,
+          plan: kit.relativePath(r.planPath),
+          signed: kit.relativePath(r.signedPath),
+          node: kit.nodeRecordOf(identity)
+        });
+        if (opts.json) return out().writeJson(summary);
+        out().writeLine(`${pc.green("Tokens transferred")} ${covenantId}`);
+        out().writeLine(`  tx ${r.txId} (${summary.status}), ${r.inputs.length} input(s) -> ${r.outputs.length} output(s), fee ${summary.feeSompi} sompi`);
+        for (const o of summary.outputs) out().writeLine(`  ${o.outpoint} ${o.state.amount} to ${o.state.owner}`);
+      } finally {
+        await rpc.close?.();
+      }
+    });
+
+  kcc20
+    .command("balance [holder]")
+    .description(
+      "KCC-20 balances on a node: the holder's live token outputs (or every holder's), from this workspace's records of the token's covenant, each listed unspent at the node with the covenant id and its state checked against its address. The node has no query by covenant id: an output this workspace did not record is not seen. Mainnet refused (MAINNET_CONNECTION_DISABLED) before anything is read"
+    )
+    .requiredOption("--covenant <id>", "The token's covenant id (32 bytes, hex)")
+    .option("--network <network>", NETWORK_HELP)
+    .option("--url <url>", URL_HELP)
+    .option("--json", "Output as JSON", false)
+    .action(async (holder: string | undefined, opts: any) => {
+      await refuseMainnetFirst(opts.network, "connect", "kcc20 balance");
+      const kit = (await import("./silver.js")).silverOnChainKit;
+      const target = await kit.silverTarget(opts);
+      const covenantId = kit.covenantIdOption(opts.covenant);
+      const workspaceRoot = await kit.assertCanonicalWorkspace(target);
+      const { rpc } = await kit.silverNode(target, "kcc20 balance");
+      try {
+        const r: any = await kit.withEngine(workspaceRoot, rpc, [], [], (_engine, ctx) =>
+          kcc20Call(() => (holder !== undefined ? ctx.sdk.kcc20.balance(covenantId, holder, { facts: ctx.facts }) : ctx.sdk.kcc20.holdings(covenantId, { facts: ctx.facts })))
+        , target);
+        const byOwner = new Map<string, { owner: string; ownerScheme: number; amount: bigint; outputs: number }>();
+        for (const h of r.holdings) {
+          const key = `${h.state.ownerScheme}:${h.state.owner}`;
+          const e = byOwner.get(key) ?? { owner: h.state.owner, ownerScheme: h.state.ownerScheme, amount: 0n, outputs: 0 };
+          e.amount += h.state.amount;
+          e.outputs += 1;
+          byOwner.set(key, e);
+        }
+        const summary = kit.jsonSafe({
+          schema: "hardkas.kcc20Balance.v1",
+          networkId: target.network,
+          covenantId,
+          ...(holder !== undefined ? { holder, publicKey: r.publicKey, amount: r.amount } : { totalSupply: r.holdings.reduce((n: bigint, h: any) => n + h.state.amount, 0n) }),
+          holders: [...byOwner.values()],
+          outputs: r.holdings.map((h: any) => ({ outpoint: h.outpoint, address: h.address, kasSompi: h.kasSompi, state: stateJson(h.state), createdBy: h.createdBy })),
+          findings: r.findings,
+          scope: r.scope
+        });
+        if (opts.json) return out().writeJson(summary);
+        if (holder !== undefined) out().writeLine(`${holder}: ${summary.amount} ${pc.dim(`(${r.holdings.length} output(s), covenant ${covenantId})`)}`);
+        for (const h of summary.holders) out().writeLine(`  ${h.owner} (0x${Number(h.ownerScheme).toString(16).padStart(2, "0")}): ${h.amount} in ${h.outputs} output(s)`);
+        for (const f of r.findings) out().writeLine(pc.yellow(`  - ${f}`));
+        out().writeLine(pc.dim(`  ${r.scope}`));
+      } finally {
+        await rpc.close?.();
+      }
+    });
+}
+
+/** '<owner>=<amount>' specs (split at the last '='; the amount an exact non-negative integer). */
+function ownerAmounts(specs: readonly string[], option: string): Array<{ owner: string; amount: bigint }> {
+  return specs.map((spec) => {
+    const at = spec.lastIndexOf("=");
+    const owner = at < 0 ? "" : spec.slice(0, at).trim();
+    const amount = at < 0 ? "" : spec.slice(at + 1).trim();
+    if (owner === "" || !/^(0|[1-9][0-9]*)$/.test(amount)) {
+      return fail(option === "--holder" ? "KCC20_HOLDER_INVALID" : "KCC20_TRANSFER_INVALID", `${option} '${spec}' is not '<owner>=<amount>' (an exact non-negative integer)`, HardkasExitCode.USAGE_ERROR);
+    }
+    return { owner, amount: BigInt(amount) };
+  });
+}
+
+/**
+ * MAINNET TOTAL LOCKDOWN · the KCC-20 node commands refuse mainnet first — the name asked for, the workspace's network and
+ * what its config entry declares (any spelling or alias) — before any record, key or node: a signing command
+ * MAINNET_SIGNING_DISABLED, a read MAINNET_CONNECTION_DISABLED.
+ */
+async function refuseMainnetFirst(explicit: string | undefined, operation: "sign" | "connect", context: string): Promise<void> {
+  const core = await import("@hardkas/core");
+  const names: unknown[] = [explicit];
+  try {
+    const { loadHardkasConfig } = await import("@hardkas/config");
+    const { config } = await loadHardkasConfig({ workspaceRoot: process.cwd() });
+    const exec: any = (config as any).execution;
+    const target = exec?.default ? exec.targets?.[exec.default] : undefined;
+    const name = explicit ?? (typeof target?.network === "string" ? target.network : (config as any).defaultNetwork);
+    names.push(name, core.declaredNetworkIdOf(config, name));
+  } catch {
+    // no workspace config to read: the name asked for only (the target resolution reports the rest)
+  }
+  try {
+    if (operation === "sign") core.assertMainnetTransactionsDisabled("sign", names, context);
+    else core.assertMainnetConnectionsDisabled(names, context);
+  } catch (e: any) {
+    const code = String(e?.code ?? core.MAINNET_CONNECTION_DISABLED);
+    fail(code, String(e?.message ?? e).replace(`${code}: `, ""), HardkasExitCode.POLICY_DENIED);
+  }
+}
+
+/** The SDK's KCC-20 refusals as the CLI's: a rule the transfer breaks or a missing balance exit 1, anything the caller must fix exit 2. */
+async function kcc20Call<T>(fn: () => Promise<T>, payer?: string): Promise<T> {
+  try {
+    return await fn();
+  } catch (e: any) {
+    if (e instanceof HardkasCliError) throw e;
+    const code = typeof e?.code === "string" ? e.code : undefined;
+    const message = String(e?.message ?? e).replace(code ? `${code}: ` : "", "");
+    if (code === "V1_FEE_INPUTS_INSUFFICIENT") fail("SILVER_INSUFFICIENT_FUNDS", `${payer ?? "the funder"} cannot pay this transaction: ${message}`);
+    if (code !== undefined && /^KCC20_/.test(code)) {
+      const runtime = ["KCC20_TRANSFER_REJECTED", "KCC20_INSUFFICIENT_TOKENS", "KCC20_PLAN_UNSTABLE"].includes(code);
+      fail(code, message, runtime ? HardkasExitCode.RUNTIME_FAILURE : HardkasExitCode.USAGE_ERROR);
+    }
+    throw e;
+  }
 }

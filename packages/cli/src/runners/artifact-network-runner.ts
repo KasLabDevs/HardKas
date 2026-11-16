@@ -15,13 +15,17 @@ export interface ArtifactNetworkCheckOptions {
   readonly url?: string | undefined;
   readonly since?: string | undefined;
   readonly minConfirmations?: string | undefined;
+  /** R3-D: an address the transaction pays or spends from: its history (a bounded chain window) locates the acceptance. */
+  readonly address?: string | undefined;
+  /** R3-D: with `address`, the history's window in chain blocks back from the node's sink (default 1000). */
+  readonly lookback?: string | undefined;
   readonly workspaceRoot: string;
 }
 
 const norm = (u: string) => u.trim().replace(/\/+$/, "").replace("://localhost:", "://127.0.0.1:");
 
-export function networkCheckRequested(opts: { network?: unknown; url?: unknown; since?: unknown; require?: unknown }): boolean {
-  return opts.network !== undefined || opts.url !== undefined || opts.since !== undefined || opts.require === "network" || opts.require === "consensus";
+export function networkCheckRequested(opts: { network?: unknown; url?: unknown; since?: unknown; require?: unknown; address?: unknown }): boolean {
+  return opts.network !== undefined || opts.url !== undefined || opts.since !== undefined || opts.address !== undefined || opts.require === "network" || opts.require === "consensus";
 }
 
 export function parseRequirement(value: unknown): ArtifactVerifyRequirement {
@@ -50,6 +54,14 @@ export async function checkArtifactOnNetwork(artifact: unknown, opts: ArtifactNe
   const policy = await policyOf(opts.minConfirmations);
   if (opts.since !== undefined && !/^[0-9a-f]{64}$/i.test(opts.since)) {
     throw new HardkasCliError("ARTIFACT_VERIFY_SINCE_INVALID", `--since '${opts.since}' is not a block hash (64 hex)`, { exitCode: HardkasExitCode.USAGE_ERROR });
+  }
+  // R3-D: --lookback shapes the --address lookup only
+  if (opts.lookback !== undefined && (opts.address === undefined || !/^\d{1,6}$/.test(opts.lookback) || Number(opts.lookback) < 1 || Number(opts.lookback) > 100_000)) {
+    throw new HardkasCliError(
+      "ARTIFACT_VERIFY_ADDRESS_INVALID",
+      opts.address === undefined ? "--lookback sets the window of the --address lookup: give --address too. Nothing was contacted." : `--lookback must be a whole number of chain blocks from 1 to 100000, got '${opts.lookback}'. Nothing was contacted.`,
+      { exitCode: HardkasExitCode.USAGE_ERROR }
+    );
   }
   const subject = artifactNetworkSubject(artifact);
 
@@ -83,6 +95,14 @@ export async function checkArtifactOnNetwork(artifact: unknown, opts: ArtifactNe
   }
   if (subject.reason) {
     return notCheckedNetworkVerification(subject.reason, `a ${subject.schema || "?"} artifact names no transaction to look for. Nothing was contacted.`, { policy });
+  }
+  // R3-D: the --address of the lookup is an address of the artifact's own network (its prefix), checked before contact
+  if (opts.address !== undefined && !core.addressPrefixMatchesNetwork(opts.address.trim(), network)) {
+    throw new HardkasCliError(
+      "ARTIFACT_VERIFY_ADDRESS_INVALID",
+      `--address '${opts.address.slice(0, 120)}' is not an address of ${network} (its prefix names ${core.addressPrefixNetworkHint(opts.address.trim()) ?? "no Kaspa network"}). Nothing was contacted.`,
+      { exitCode: HardkasExitCode.USAGE_ERROR }
+    );
   }
 
   // The endpoint, by the shared authority (validated); a public network with none chosen: nothing contacted.
@@ -133,7 +153,23 @@ export async function checkArtifactOnNetwork(artifact: unknown, opts: ArtifactNe
   // read-only; the client refuses any connection whose node does not serve this network (NODE-NETWORK-IDENTITY-1)
   const client = new JsonWrpcKaspaClient({ rpcUrl, expectedNetworkId: network, timeoutMs: 15000 });
   try {
-    return await verifyArtifactOnNetwork({ subject, client, node, policy, ...(opts.since !== undefined ? { since: opts.since.toLowerCase() } : {}) });
+    return await verifyArtifactOnNetwork({
+      subject,
+      client,
+      node,
+      policy,
+      ...(opts.since !== undefined ? { since: opts.since.toLowerCase() } : {}),
+      // R3-D: the history window of --address starts at --since when one is given
+      ...(opts.address !== undefined
+        ? {
+            addressLookup: {
+              address: opts.address.trim(),
+              ...(opts.since !== undefined ? { since: opts.since.toLowerCase() } : {}),
+              ...(opts.lookback !== undefined ? { lookback: Number(opts.lookback) } : {})
+            }
+          }
+        : {})
+    });
   } finally {
     await client.close().catch(() => {});
   }

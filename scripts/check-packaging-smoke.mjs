@@ -34,7 +34,7 @@ function run(cmd, cwd = workspaceRoot) {
 }
 
 // `--tarballs <dir>`: install exactly these tarballs (the ones `check-release-tarballs.mjs --pack` audited) instead of
-// packing again, so the consumer smoke runs the bytes that were audited (rc2 audit E-02).
+// packing again, so the consumer smoke runs the bytes that were audited (audit 2026-11-13 E-02).
 const tarballsArg = process.argv.indexOf("--tarballs");
 const auditedTarballsDir = tarballsArg >= 0 ? process.argv[tarballsArg + 1] : undefined;
 if (tarballsArg >= 0 && !auditedTarballsDir) {

@@ -699,5 +699,24 @@ export function kcc20SilverProgramState(artifact: SilAbiArtifact, contractName: 
   return { state: fromRecord(programState), programState, view };
 }
 
+/**
+ * R3 · whether the owner a state names is the x-only public key `publicKey` (32 bytes, hex): p2pk-schnorr/v1 (0x00) is
+ * owned by the key itself, p2pkh-schnorr/v1 (0x01) by its hash (KCC-1 Hash, as the reference program's p2pkh_hash). The
+ * other schemes name no key (an ECDSA key's hash, a script, a covenant): false.
+ */
+export function kcc20OwnerKeyMatches(state: Pick<Kcc20State, "owner" | "ownerScheme">, publicKey: string): boolean {
+  let key: Uint8Array;
+  try {
+    key = kccBytes(publicKey, "publicKey");
+  } catch {
+    return false;
+  }
+  if (key.length !== 32) return false;
+  const owner = String(state.owner).toLowerCase();
+  if (state.ownerScheme === 0x00) return owner === kccHex(key);
+  if (state.ownerScheme === 0x01) return owner === kccHex(kcc1Hash(key));
+  return false;
+}
+
 /** Where this implementation's rules come from. */
 export const KCC20_SOURCE = { ...KCC_SOURCE, document: KCC_SOURCE.documents.kcc20 } as const;

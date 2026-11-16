@@ -12,8 +12,9 @@
 // Usage: node scripts/gate-hermetic.mjs [--home <dir>] [--keep-home] [--deny-ports a,b | --allow-local-node-ports] [-- <vitest args>]
 //   --home <dir>       HARDKAS_HOME to copy (e.g. one where `hardkas toolchain install kaspa-wasm` ran).
 //                      Without it the home is empty and every toolchain-dependent suite fails on purpose.
-//   --deny-ports a,b   Loopback ports to refuse. Default: 16210,17210,18210,18211 (the canonical wRPC ports and
-//                      18211, the port some suites fall back to); an explicit list replaces it.
+//   --deny-ports a,b   Loopback ports to refuse. Default: 16210,17210,18210,18211 (the managed localnet's gRPC,
+//                      Borsh wRPC and JSON wRPC ports, and 18211, the port some suites fall back to); an explicit
+//                      list replaces it.
 //   --allow-local-node-ports  Refuse no loopback port (diagnosis only: a gate run this way is not the release gate).
 import { spawnSync } from "node:child_process";
 import { cpSync, existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";

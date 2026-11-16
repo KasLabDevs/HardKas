@@ -39,12 +39,17 @@ export function isEcdsaP2pkScript(scriptPublicKey: unknown): boolean {
   return bare !== undefined && /^21(02|03)[0-9a-f]{64}ab$/.test(bare);
 }
 
-/** The typed refusal of a spend from an ECDSA address (what spends: "the sender", "input 0"…). */
+/**
+ * The typed refusal of a spend from an ECDSA address where it is still not supported (what spends: "the sender",
+ * "input 0"…). ECDSA spends: a payment from an ECDSA account is planned and signed on a real network; consolidations,
+ * the simulator, v1 transactions, PSKT, multisig and P2SH-wrapped ECDSA keep this refusal.
+ */
 export function ecdsaSpendNotSupported(what: string, address?: string): GeneratorPlanError {
   return new GeneratorPlanError(
     "ECDSA_SPEND_NOT_SUPPORTED",
-    `${what}${address ? ` (${address})` : ""} is an ECDSA P2PK address: HardKAS signs Schnorr P2PK spends only, so it does not ` +
-      `plan or sign a spend from it in this release. Paying TO an ECDSA address is supported. Nothing was planned or signed.`
+    `${what}${address ? ` (${address})` : ""} is an ECDSA P2PK address: HardKAS plans and signs a payment from an ECDSA account ` +
+      `on a node network (simnet, devnet), but not this spend (a consolidation, the simulator or a v1 transaction). Paying TO an ` +
+      `ECDSA address is supported. Nothing was planned or signed.`
   );
 }
 

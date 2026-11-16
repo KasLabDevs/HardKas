@@ -29,8 +29,10 @@ and an initialized workspace ([Install HardKAS](./installation.md#initialize-the
 These are the images HardKAS itself pins (`KASPAD_REFERENCE_IMAGE` and
 `CPUMINER_REFERENCE_IMAGE` in `@hardkas/core`); `npx hardkas doctor` shows the
 node image as `kaspad image`. The names and ports are free choices. Avoid
-16110, 16210, 17110, 17210, 18110, 18210 and 18211: HardKAS's managed localnet
-(`hardkas localnet start`, a separate, fixed setup) uses them.
+16210, 17210 and 18210: HardKAS's managed localnet (`hardkas localnet start`, a
+separate, fixed setup) publishes its gRPC, Borsh wRPC and JSON wRPC there, on
+`127.0.0.1`. Avoid 16110, 17110 and 18110 too: they are the node's own defaults
+(gRPC, Borsh wRPC, JSON wRPC) and another local node may already hold them.
 
 To fetch the images ahead of time (the first `docker run` does it otherwise):
 

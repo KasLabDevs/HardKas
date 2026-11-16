@@ -225,6 +225,57 @@ function warnAmountNumberIsKas(): void {
   }
 }
 
+/**
+ * R4-T · one recipient of a payment to several recipients in ONE transaction (`tx.plan({ outputs })`). `to` is an account
+ * name, an address or an account, as `tx.plan`'s `to`; `amount` follows the units of `tx.plan`'s `amount` (a string is
+ * KAS, a bigint is sompi, a number is KAS with a one-time warning), except that "all" (a consolidation) is not a recipient.
+ */
+export interface TxPlanRecipient {
+  to: string | HardkasAccount;
+  amount: string | number | bigint;
+}
+
+/**
+ * R4-T · the recipients `tx.plan` was given as `outputs`, checked for their form (exactly one of `to` + `amount` and
+ * `outputs`; a non-empty array of { to, amount }; no "all"); `undefined` for the one-recipient form (`to` + `amount`),
+ * which is planned exactly as before. Pure: decided before anything is resolved or read.
+ */
+function recipientsOf(options: { to?: unknown; amount?: unknown; outputs?: unknown }): TxPlanRecipient[] | undefined {
+  if (options.outputs === undefined) {
+    // `to` and `amount` became optional in the type when `outputs` was added: a call with neither form is refused typed
+    // here, before anything is resolved or read, instead of failing later on an undefined recipient or amount
+    if (options.to === undefined || options.to === null || options.amount === undefined || options.amount === null) {
+      throw new HardkasError(
+        "TX_PLAN_RECIPIENTS_INVALID",
+        "tx.plan needs a recipient: `to` and `amount` (one recipient) or `outputs` (several recipients in one transaction). Nothing was planned."
+      );
+    }
+    return undefined;
+  }
+  if (options.to !== undefined || options.amount !== undefined) {
+    throw new HardkasError(
+      "TX_PLAN_RECIPIENTS_CONFLICT",
+      "tx.plan takes either `to` and `amount` (one recipient) or `outputs` (several recipients in one transaction), not both. Nothing was planned."
+    );
+  }
+  const invalid = (why: string): never => {
+    throw new HardkasError("TX_PLAN_RECIPIENTS_INVALID", `tx.plan outputs: ${why}. Nothing was planned.`);
+  };
+  if (!Array.isArray(options.outputs) || options.outputs.length === 0) invalid("expected a non-empty array of { to, amount }");
+  return (options.outputs as unknown[]).map((r, i) => {
+    const entry = r as { to?: unknown; amount?: unknown } | null;
+    if (typeof entry !== "object" || entry === null) return invalid(`outputs[${i}] is not { to, amount }`);
+    const to = entry.to;
+    if (!((typeof to === "string" && to.trim() !== "") || (typeof to === "object" && to !== null))) invalid(`outputs[${i}].to is not an account name, an address or an account`);
+    const amount = entry.amount;
+    if (typeof amount !== "string" && typeof amount !== "number" && typeof amount !== "bigint") invalid(`outputs[${i}].amount is not a string (KAS), a bigint (sompi) or a number (KAS)`);
+    if (typeof amount === "string" && amount.trim().toLowerCase() === "all") {
+      invalid(`outputs[${i}].amount is "all": a consolidation pays one destination (tx.plan({ to, amount: "all" })), never one of several recipients`);
+    }
+    return { to: to as string | HardkasAccount, amount: amount as string | number | bigint };
+  });
+}
+
 /** The version a signed payload declares (0 when it says none or cannot be read). */
 function payloadVersionOf(rawTransaction: unknown): number {
   let tx: any = rawTransaction;
@@ -344,19 +395,28 @@ import {
   planPaysFeeSompi,
   type NetworkId
 } from "@hardkas/core";
-import { TxPlanService, covenantIdOf, feeLimitInForce, assertFeeWithinLimitInForce, assertSpendableAddressScheme, type UtxoProvider } from "@hardkas/tx-builder";
+import {
+  TxPlanService,
+  covenantIdOf,
+  feeLimitInForce,
+  assertFeeWithinLimitInForce,
+  assertSpendableAddressScheme,
+  assertLockTimeReached,
+  lockTimeOfPayload,
+  parseLockTimeRequest,
+  planLockTimeRecord,
+  readLockTimeChainPoint,
+  type LockTimeRequest,
+  type UtxoProvider
+} from "@hardkas/tx-builder";
 import { HardkasSchemas } from "@hardkas/artifacts";
 
-/** RC1 · D7: a lock time other than 0 asked of tx.plan (absolute time locks are not supported in this release). */
-function refuseNonZeroLockTime(stated: unknown): void {
-  if (stated === undefined || stated === null) return;
-  const zero = stated === 0 || stated === 0n || stated === "0";
-  if (zero) return;
-  throw new HardkasError(
-    "LOCK_TIME_NOT_SUPPORTED",
-    `tx.plan was asked for lock time ${JSON.stringify(typeof stated === "bigint" ? stated.toString() : stated)}: HardKAS plans and signs every ` +
-      `transaction with lock time 0 (absolute time locks, CLTV, are not supported in this release). Nothing was planned.`
-  );
+/**
+ * CLTV · where a lock time is still not supported, refused before anything is read (LOCK_TIME_NOT_SUPPORTED): the
+ * simulator (its lock-time rule is its own, UNVERIFIED against a node) and consolidations (`amount: "all"`).
+ */
+function refuseLockTimeHere(where: string, why: string): never {
+  throw new HardkasError("LOCK_TIME_NOT_SUPPORTED", `${where}: ${why}. Nothing was planned.`);
 }
 
 /** An artifact's identity: its declared 64-hex contentHash, or the hash of its body when it declares none. */
@@ -733,18 +793,31 @@ export class HardkasTx {
   }
 
   /**
-   * Plans a transaction.
+   * Plans a transaction: one recipient (`to` + `amount`), or several recipients in ONE transaction (`outputs`; R4-T).
    */
   async plan(options: {
     from: string | HardkasAccount;
-    to: string | HardkasAccount;
+    /** The recipient (one-recipient form). Required unless `outputs` is given; never together with it. */
+    to?: string | HardkasAccount;
     /**
      * L1-11 · units: a `string` is KAS ("1.5"; "all" consolidates), a `bigint` is SOMPI (150_000_000n), and a `number`
      * is KAS (1.5) — unlike `parseKasToSompi(number)` of @hardkas/core, which reads a number as sompi. A number is
      * ambiguous across the two APIs and loses precision past 2^53: pass a string (KAS) or a bigint (sompi). Passing a
      * number emits a one-time process warning (HARDKAS_AMOUNT_NUMBER_IS_KAS).
+     * Required unless `outputs` is given; never together with it.
      */
-    amount: string | number | bigint;
+    amount?: string | number | bigint;
+    /**
+     * R4-T · several recipients paid by ONE transaction: one payment output per entry, in this order, then one change
+     * output and one fee — the alternative to `to` + `amount` (exactly one of the two forms: TX_PLAN_RECIPIENTS_CONFLICT;
+     * a malformed list, a non-positive amount or "all": TX_PLAN_RECIPIENTS_INVALID). Each `amount` has the units of
+     * `amount`. One entry plans exactly what `to` + `amount` plans (the same plan, byte for byte). The plan records every
+     * output in `outputs`; its `to` and `amountSompi` name the FIRST recipient. Every guard of a payment applies (fee
+     * limit, fee rate bound, lock time, mainnet, covenant UTXOs never spent, CHANGE_BELOW_STANDARD_OUTPUT), and more
+     * recipients than fit in one standard transaction are refused before anything is signed (TOO_MANY_OUTPUTS, which
+     * names how many fit). `tx.sign` and `tx.send` check every output against the plan (SIGNED_PLAN_MISMATCH).
+     */
+    outputs?: readonly TxPlanRecipient[];
     /**
      * Sompi per gram. Default: the node's fee estimate for "normal" priority (bounded, FEE_RATE_ABOVE_BOUND above
      * `networks[<net>].maxFeeRate`, default 10,000), never below the relay minimum; at the minimum the plan pays the relay
@@ -764,14 +837,30 @@ export class HardkasTx {
     assumption?: string;
     /** AUD-28: explicit change destination; default = the sender's address. Validated, then forwarded to the planner. */
     changeAddress?: string;
+    /**
+     * CLTV · an absolute lock time, typed: `{ daaScore: bigint }` (a DAA score below 500,000,000,000) or
+     * `{ timestampMs: bigint }` (milliseconds since the epoch, at or above it); never a bare number (LOCK_TIME_INVALID).
+     * The plan records it with the node's virtual DAA score and past median time when it was made; the signer writes it
+     * into the transaction (every input at sequence 0, so consensus enforces it) and `send` refuses to broadcast before
+     * the node has passed it (LOCK_TIME_NOT_REACHED: nothing sent or recorded). Absent: lock time 0, the plan as before.
+     * Not on the simulator nor for `amount: "all"` (LOCK_TIME_NOT_SUPPORTED).
+     */
+    lockTime?: LockTimeRequest;
   }): Promise<TxPlanArtifact> {
     // TX-FEE-GUARD-1: a fee rate, when given, is a positive integer (INVALID_FEE_RATE); a plan limit is a positive
     // integer of sompi (INVALID_MAX_FEE). Decided before anything is read or planned.
     if (options.feeRate !== undefined) parseFeeRate(options.feeRate, "tx.plan feeRate");
     const planMaxFeeSompi = options.maxFeeSompi === undefined ? undefined : parseMaxFeeSompi(options.maxFeeSompi, "tx.plan maxFeeSompi");
-    // RC1 · D7: every plan has lock time 0 (no CLTV in this release). A caller asking for another one is told so; it used
-    // to be ignored silently (a plan with lock time 0 came back).
-    refuseNonZeroLockTime((options as { lockTime?: unknown }).lockTime);
+    // CLTV · the lock time asked for, typed and checked against Kaspa's threshold before anything is read
+    // (LOCK_TIME_INVALID); absent or a bare 0 is none (RC1 · D7 refused every other one: LOCK_TIME_NOT_SUPPORTED)
+    const lockTimeRequest = parseLockTimeRequest((options as { lockTime?: unknown }).lockTime, "tx.plan lockTime");
+    // R4-T · several recipients (`outputs`), checked for their form before anything is resolved or read; undefined for
+    // the one-recipient form, planned exactly as before. A single entry IS the one-recipient form (the same plan).
+    const recipients = recipientsOf(options);
+    if (recipients !== undefined && recipients.length === 1) {
+      const { outputs: _single, ...rest } = options;
+      return this.plan({ ...rest, to: recipients[0]!.to, amount: recipients[0]!.amount });
+    }
     // MAINNET TOTAL LOCKDOWN: a plan on mainnet needs mainnet chain state (UTXOs, DAA score, fee estimate) — a mainnet
     // read: refused before anything is resolved or read (the instance's network and a `networkProfile` alike)
     assertSdkMayConnect(this.sdk, "sdk.tx.plan", options.networkProfile);
@@ -783,20 +872,27 @@ export class HardkasTx {
       typeof options.from === "string"
         ? await this.sdk.accounts.resolve(options.from, world)
         : options.from;
-    const toAccount =
-      typeof options.to === "string"
-        ? await this.sdk.accounts.resolve(options.to, world)
-        : options.to;
+    // R4-T: every recipient is resolved, checked and validated as the one recipient is (in the order given)
+    const toAccounts: HardkasAccount[] = [];
+    for (const recipient of recipients ?? [{ to: options.to as string | HardkasAccount }]) {
+      toAccounts.push(
+        typeof recipient.to === "string"
+          ? await this.sdk.accounts.resolve(recipient.to, world)
+          : recipient.to
+      );
+    }
+    const toAccount = toAccounts[0]!;
     assertAccountCompatible(fromAccount, world);
-    assertAccountCompatible(toAccount, world);
+    for (const account of toAccounts) assertAccountCompatible(account, world);
 
     if (!fromAccount.address)
       throw new Error(`From account ${fromAccount.name} has no address.`);
-    if (!toAccount.address)
-      throw new Error(`To account ${toAccount.name} has no address.`);
-    // RC1 · D7: HardKAS signs Schnorr P2PK spends only — a spend from an ECDSA address is refused before the node is asked
-    assertSpendableAddressScheme(fromAccount.address, `the sender ${fromAccount.name}`);
-
+    for (const account of toAccounts) {
+      if (!account.address)
+        throw new Error(`To account ${account.name} has no address.`);
+    }
+    // the (first) recipient's address, checked just above
+    const toAddress = toAccount.address as string;
     const activeNetwork = options.networkProfile || (this.sdk.network as string);
     // the world of this plan: the resolved execution target's mode when planning on this instance's network (the
     // authority; a `{ mode: "simulator", network: "simnet" }` target is the simulator whatever the label says), else
@@ -805,25 +901,47 @@ export class HardkasTx {
       activeNetwork === (this.sdk.network as string)
         ? this.sdk.execution.mode === "simulator"
         : activeNetwork === "simulated" || this.sdk.config.config.networks?.[activeNetwork]?.kind === "simulated";
+    // ECDSA spends: a payment from an ECDSA account is planned on a node network (the signer signs it with ECDSA); the
+    // simulator and consolidations keep refusing one before the node is asked (ECDSA_SPEND_NOT_SUPPORTED; RC1 · D7
+    // refused every spend from an ECDSA address)
+    if (simulatedWorld || (typeof options.amount === "string" && options.amount.toLowerCase() === "all")) {
+      assertSpendableAddressScheme(fromAccount.address, `the sender ${fromAccount.name}`);
+    }
+    if (lockTimeRequest !== undefined && simulatedWorld) {
+      refuseLockTimeHere("tx.plan lockTime", "the simulator's lock-time rule is its own and UNVERIFIED against a node; plan a lock time against a node (simnet, devnet)");
+    }
 
     if (typeof options.amount === "string" && options.amount.toLowerCase() === "all") {
+      if (lockTimeRequest !== undefined) refuseLockTimeHere("tx.plan lockTime", 'a consolidation (amount "all") is planned with lock time 0 only');
       const res = await this.sdk.query.getSpendableUtxos({ address: fromAccount.address, excludePending: true });
       return this.createConsolidationPlan({
          account: fromAccount,
          selectedUtxos: res.data,
-         destination: toAccount.address,
+         destination: toAddress,
          network: activeNetwork,
          ...(options.feeRate !== undefined ? { feeRate: options.feeRate } : {}),
          ...(planMaxFeeSompi !== undefined ? { maxFeeSompi: planMaxFeeSompi } : {})
       });
     }
 
-    const amountSompi =
-      typeof options.amount === "string"
-        ? parseKasToSompi(options.amount)
-        : typeof options.amount === "number"
-          ? (warnAmountNumberIsKas(), parseKasToSompi(options.amount.toString()))
-          : options.amount;
+    const toSompi = (amount: string | number | bigint | undefined) =>
+      typeof amount === "string"
+        ? parseKasToSompi(amount)
+        : typeof amount === "number"
+          ? (warnAmountNumberIsKas(), parseKasToSompi(amount.toString()))
+          : amount;
+    // R4-T: every recipient's amount, in sompi, positive (the first is the plan's `amountSompi`)
+    const recipientAmounts: bigint[] | undefined = recipients?.map((recipient, i) => {
+      const sompi = toSompi(recipient.amount);
+      if (typeof sompi !== "bigint" || sompi <= 0n) {
+        throw new HardkasError(
+          "TX_PLAN_RECIPIENTS_INVALID",
+          `tx.plan outputs[${i}].amount must be above 0 (Kaspa value-transfer outputs require amount > 0). Nothing was planned.`
+        );
+      }
+      return sompi;
+    });
+    const amountSompi = recipientAmounts ? recipientAmounts[0]! : (toSompi(options.amount) as bigint);
 
     if (amountSompi === 0n) {
       throw new Error(
@@ -831,7 +949,7 @@ export class HardkasTx {
       );
     }
 
-    
+
     const allowMainnet =
       (this.sdk.config.config.networks?.mainnet as any)?.allowMainnet === true;
 
@@ -842,12 +960,18 @@ export class HardkasTx {
     const addressNetwork =
       simulatedWorld && networkTypeOf(declaredForAddresses) === undefined && !isSimnetNetworkId(declaredForAddresses) ? "simulated" : declaredForAddresses;
     validateAddressNetwork(fromAccount.address, addressNetwork, allowMainnet, { simulated: simulatedWorld });
-    validateAddressNetwork(toAccount.address, addressNetwork, allowMainnet, { simulated: simulatedWorld });
+    for (const account of toAccounts) {
+      validateAddressNetwork(account.address as string, addressNetwork, allowMainnet, { simulated: simulatedWorld });
+    }
     if (options.changeAddress) {
       validateAddressNetwork(options.changeAddress, addressNetwork, allowMainnet, { simulated: simulatedWorld });
     }
     // AUD-28: validated above; forwarded to whichever planner runs (never dropped).
     const changeRequest = options.changeAddress ? { changeAddress: options.changeAddress } : {};
+    // R4-T: several recipients go to the planner as its payment outputs, in the order given (one-recipient form: none)
+    const outputsRequest = recipientAmounts
+      ? { outputs: toAccounts.map((account, i) => ({ address: account.address as string, amountSompi: recipientAmounts[i]! })) }
+      : {};
 
     // Wave 2(c) · AUD-19: the mempool observation the real-network snapshot was
     // filtered against, recorded in the plan (observer-local evidence).
@@ -959,20 +1083,22 @@ export class HardkasTx {
     if (isSimulatedForPlan) {
       result = await planService.planTransactionSynthetic({
         fromAddress: fromAccount.address,
-        toAddress: toAccount.address,
+        toAddress,
         amountSompi,
         feeRate,
         networkId: activeNetwork,
-        ...changeRequest
+        ...changeRequest,
+        ...outputsRequest
       });
     } else {
       result = await planService.planTransactionUpstream({
         fromAddress: fromAccount.address,
-        toAddress: toAccount.address,
+        toAddress,
         amountSompi,
         feeRate,
         networkId: activeNetwork,
-        ...changeRequest
+        ...changeRequest,
+        ...outputsRequest
       });
     }
 
@@ -1012,8 +1138,8 @@ export class HardkasTx {
         accountName: fromAccount.name
       },
       to: {
-        input: toAccount.name || toAccount.address,
-        address: toAccount.address
+        input: toAccount.name || toAddress,
+        address: toAddress
       },
       amountSompi,
       plan: builderPlan,
@@ -1069,6 +1195,12 @@ export class HardkasTx {
 
     if (options.assumption) {
       (basePlan as any).assumptionRef = await resolveReference(options.assumption, "assumption");
+    }
+
+    // CLTV · the typed lock time, authenticated with the plan, and where the node was when it was made (its virtual DAA
+    // score and past median time: a lock far off is visible in the plan). Absent: nothing written, the plan as before.
+    if (lockTimeRequest !== undefined) {
+      (basePlan as any).lockTime = planLockTimeRecord(lockTimeRequest, await readLockTimeChainPoint(this.sdk.rpc as any));
     }
 
     // Seal the identity now that references are injected: one pass, root form (D-Q1.d).
@@ -2586,6 +2718,10 @@ export class HardkasTx {
       async () => {
         const recorded = await this.alreadySubmittedReply(expectedTxId);
         if (recorded) return recorded;
+        // CLTV · a transaction whose lock time the node has not passed is refused here, read-only, before the broadcast
+        // (LOCK_TIME_NOT_REACHED / LOCK_TIME_UNVERIFIABLE): nothing is sent or recorded, so the same transaction can be
+        // sent once the lock is reached (one submission per txId). A transaction with lock time 0 reads nothing more.
+        if (!isSimulated) await this.refuseLockTimeNotReached(broadcastable.rawTransaction);
         if (v1) return this.sendV1Locked(broadcast, { ...v1, options: sendOptions });
         // TX-SEND-IDEMPOTENT-2/-3 (INT9 · I-2): nothing recorded here; the node is asked, read-only, for POSITIVE evidence
         // that it already has the payment (mempool, this workspace's stored looks, an output of this txId listed): a
@@ -2595,6 +2731,27 @@ export class HardkasTx {
         return sendOptions.preflight === true ? this.sendPaymentPreflighted(checked, paymentPlan) : this.broadcastOnce(checked);
       }
     );
+  }
+
+  /**
+   * CLTV · the lock-time preflight of a send: with a lock time other than 0 in the payload, the node's virtual DAA score
+   * (or past median time) is read now and the transaction must be final there (rusty-kaspa check_transaction_finality:
+   * lock time strictly below it, or every input at the maximum sequence). Throws LOCK_TIME_NOT_REACHED /
+   * LOCK_TIME_UNVERIFIABLE; nothing is sent or recorded.
+   */
+  private async refuseLockTimeNotReached(rawTransaction: unknown): Promise<void> {
+    const carried = lockTimeOfPayload(rawTransaction);
+    if (!carried || carried.lockTime === 0n) return;
+    const point = await readLockTimeChainPoint(this.sdk.rpc as any);
+    try {
+      assertLockTimeReached({ lockTime: carried.lockTime, sequences: carried.sequences, point });
+    } catch (e: any) {
+      const code = typeof e?.code === "string" ? e.code : "LOCK_TIME_NOT_REACHED";
+      throw new HardkasError(code, `Refusing to broadcast (${code}): ${withoutCode(e)}`, {
+        cause: e,
+        ...(e?.metadata ? { metadata: e.metadata } : {})
+      });
+    }
   }
 
   /**
@@ -3058,8 +3215,8 @@ export class HardkasTx {
           ? `The node refused it only because its time lock was not met yet: to send it now, plan it again with any change that gives a new txId (for example a fee 1 sompi higher), sign and send that one.`
           : scriptLock
             ? `The node refused it because the redeem script's time-lock check failed against the transaction's own field ` +
-              `(for a HardKAS spend, the input's sequence${rejection?.hint ? `; ${rejection.hint}` : ""}). Waiting never helps: build it ` +
-              `again with the sequence the lock needs (silver spend --sequence), which gives a new txId, and send that one.`
+              `(the input's sequence, or the transaction's lock time${rejection?.hint ? `; ${rejection.hint}` : ""}). Waiting never helps: build it ` +
+              `again with the field the lock needs (silver spend --sequence, or --lock-time-daa | --lock-time-ms), which gives a new txId, and send that one.`
           : notHeld
             ? `HardKAS never sends it again on its own. To make this payment now: first check 'hardkas tx status ${txId}' and that the payment ` +
               `did not reach its recipient (if the inputs it spends are no longer unspent, it was accepted or replaced: do not pay again); ` +

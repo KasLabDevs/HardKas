@@ -4,7 +4,7 @@
 > `node_modules`, offline. Do not edit by hand: `pnpm check:licenses` fails when this report was made from
 > another lockfile, and when a published package requires a GPL, AGPL, LGPL or unknown license.
 
-- Lockfile sha256 (LF): `0c1ac103607c3134b93cb35ae04e3fdffcb8db26c6274302b0678f59dfbc1382`
+- Lockfile sha256 (LF): `c875841ed887cf8de2b02068803fc2eacc12ce393fd5dd8e2a505bd7c3e13c06`
 - Published packages: 22 (all MIT). Third-party packages in their production trees: 286.
 - Required: reached through `dependencies` (and required peers). Optional: reached only through
   `optionalDependencies` or optional peers; a consumer gets them only by installing them.
@@ -345,4 +345,4 @@ installing the SDK does not install it, and without it the Groth16 verifier repo
 | `xml-name-validator` | 5.0.0 | Apache-2.0 | 0 | 2 |
 | `xmlchars` | 2.2.0 | MIT | 0 | 2 |
 | `yoctocolors` | 2.2.0 | MIT | 5 | 0 |
-| `zod` | 3.25.76 | MIT | 20 | 0 |
+| `zod` | 4.6.7 | MIT | 20 | 0 |

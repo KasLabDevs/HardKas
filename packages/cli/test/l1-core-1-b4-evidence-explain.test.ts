@@ -32,7 +32,8 @@ describe("evidence explain", () => {
     ({ parent, ws } = simulatedWorkspace("hk-b4-evidence-explain-"));
     const configPath = path.join(ws, "hardkas.config.ts");
     const config = fs.readFileSync(configPath, "utf8");
-    const withTask = config.replace(/export default defineHardkasConfig\(\{\r?\n/, (m) => `${m}${TASK}`);
+    // INIT-CONFIG-NO-IMPORT-1: `init` writes a plain `export default {` (it wrapped it in defineHardkasConfig before)
+    const withTask = config.replace(/export default (?:defineHardkasConfig\()?\{\r?\n/, (m) => `${m}${TASK}`);
     if (withTask === config) throw new Error(`unexpected hardkas.config.ts from init:\n${config}`);
     fs.writeFileSync(configPath, withTask);
 

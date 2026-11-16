@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import type { ZodTypeAny } from "zod";
+import type { ZodType, core as zodCore } from "zod";
 import { HardkasSchemas, SILVER_RUNNER_TRUSTED_REFERENCES } from "@hardkas/core";
 import {
   calculateContentHash,
@@ -48,6 +48,7 @@ import {
   SilverSpendV1Schema,
   SilverCovenantV1Schema,
   SilverVmTestV1Schema,
+  SilverNodeTestV1Schema,
   ZkGroth16ProofSchema,
   ZkGroth16VerificationKeySchema,
   ZkGroth16PublicInputsSchema,
@@ -187,10 +188,18 @@ export type ArtifactVerificationResult = {
  * without an entry has no validator: nothing can say that such an artifact is schema-valid (ESCALÓN 3).
  * Built on first use so that no import order can leave an entry undefined.
  */
-let artifactSchemaRegistry: ReadonlyMap<string, ZodTypeAny> | undefined;
+let artifactSchemaRegistry: ReadonlyMap<string, ZodType> | undefined;
 
-function getArtifactSchemaRegistry(): ReadonlyMap<string, ZodTypeAny> {
-  artifactSchemaRegistry ??= new Map<string, ZodTypeAny>([
+/**
+ * zod 4 · the verifier keeps zod 3's wording for a missing field ("Required"), which `artifact verify`, `tx sign` and
+ * `tx send` print; every other issue keeps zod's own message.
+ */
+const schemaIssueMessages: { error: zodCore.$ZodErrorMap } = {
+  error: (issue) => (issue.code === "invalid_type" && issue.input === undefined ? "Required" : undefined)
+};
+
+function getArtifactSchemaRegistry(): ReadonlyMap<string, ZodType> {
+  artifactSchemaRegistry ??= new Map<string, ZodType>([
     [HardkasSchemas.Snapshot, SnapshotSchema],
     [HardkasSchemas.SnapshotV1, SnapshotSchema],
     [HardkasSchemas.TxPlan, TxPlanSchema],
@@ -219,6 +228,7 @@ function getArtifactSchemaRegistry(): ReadonlyMap<string, ZodTypeAny> {
     [HardkasSchemas.SilverSpendV1, SilverSpendV1Schema],
     [HardkasSchemas.SilverCovenantV1, SilverCovenantV1Schema],
     [HardkasSchemas.SilverVmTestV1, SilverVmTestV1Schema],
+    [HardkasSchemas.SilverNodeTestV1, SilverNodeTestV1Schema],
     [HardkasSchemas.ZkGroth16ProofV1, ZkGroth16ProofSchema],
     [HardkasSchemas.ZkGroth16VerificationKeyV1, ZkGroth16VerificationKeySchema],
     [HardkasSchemas.ZkGroth16PublicInputsV1, ZkGroth16PublicInputsSchema],
@@ -235,7 +245,7 @@ function getArtifactSchemaRegistry(): ReadonlyMap<string, ZodTypeAny> {
 }
 
 /** The registered zod schema for an artifact schema name, or undefined when the registry has none. */
-export function artifactSchemaValidatorFor(schemaName: unknown): ZodTypeAny | undefined {
+export function artifactSchemaValidatorFor(schemaName: unknown): ZodType | undefined {
   return typeof schemaName === "string" ? getArtifactSchemaRegistry().get(schemaName) : undefined;
 }
 
@@ -262,7 +272,7 @@ export function validateArtifactSchema(artifact: unknown): ArtifactSchemaValidat
   if (!schema) {
     return { status: "NOT_VALIDATED", errors: [`no registered schema for ${JSON.stringify(name ?? null)}`] };
   }
-  const parsed = schema.safeParse(artifact);
+  const parsed = schema.safeParse(artifact, schemaIssueMessages);
   if (parsed.success) return { status: "VALID", schema: name as string, errors: [] };
   return {
     status: "INVALID",
@@ -437,7 +447,7 @@ export function verifyArtifactIntegritySync(
     const schema = artifactSchemaValidatorFor(v.schema);
 
     if (schema) {
-      const validation = schema.safeParse(v);
+      const validation = schema.safeParse(v, schemaIssueMessages);
       if (!validation.success) {
         // Pre-existing rule, unchanged by Wave 1.1: hashVersion 1–3 verified in
         // non-strict mode report schema mismatches as warnings. It is NOT widened to

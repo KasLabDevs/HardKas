@@ -178,7 +178,8 @@ limits:
 - only **1:1 auth-bound** covenant transitions are a corpus capability with real-node evidence. 1:N, N:M
   (with a delegate, the signed KCC-20 example included) and termination, built by the SDK's v1 engine, are
   accepted by a real rusty-kaspad on simnet and their invalid variants refused (`covenant-topologies-node.simnet`);
-  they are not a corpus capability, have no testnet-10 evidence, and `silver covenant` stays 1:1;
+  they are not a corpus capability and have no testnet-10 evidence. `silver covenant genesis|transition` stay 1:1;
+  `silver covenant start|advance` reach the other topologies from the CLI;
 - `deploy`, `spend`, `covenant genesis|transition` and `escrow rescue-v1` run on
   the canonical localnet or on any other node that proves its identity by what it
   reports (`--url`, or the one the workspace declares). Apart from its identity,
@@ -197,7 +198,9 @@ limits:
   observed there: `NOT_OBSERVED` with reason `NOT_OBSERVABLE_HERE` and its causes
   (a limitation of that node, never evidence that the transaction does not exist);
   `NOT_FOUND` only when the whole window from a start that precedes any acceptance
-  was read. There is no `--address` lookup of spent outputs;
+  was read. `--address` (with `--lookback`) first looks for the transaction in that address's
+  history over a bounded window of the node's chain, which also finds one whose outputs were
+  spent since; outside that window it stays `NOT_OBSERVABLE_HERE`;
 - `hardkas doctor` diagnoses the workspace's node (or `--url` / `--network`): one
   bounded getServerInfo (`--timeout`, default 8000 ms), never mainnet (refused
   without connecting), a public testnet only with the payments' opt-in, the
@@ -212,7 +215,26 @@ limits:
   while a real v0 `silver spend` declares 1 to n. A runner pass therefore says
   nothing about the declared count or the node's standardness rules. The
   `@hardkas/testing` covenant matchers require `CONSENSUS_SIMNET` by default and
-  answer "NOT VERIFIED" below it;
+  answer "NOT VERIFIED" below it. A local runner build cannot be checked against
+  the commit CI builds from: the binary does not name its source commit, its
+  `toolchain.json` is written by whoever built it, and no reproducible build of
+  that commit exists to compare with;
+- `silver test --on-node` asks a node instead of the runner: each case HardKAS
+  can reproduce becomes the transaction it describes (its own coin at the
+  contract's P2SH, then the real v0 spend, or v1 through the SDK's engine), sent
+  through HardKAS's send machinery, and the record carries the node's verdict
+  (`CONSENSUS_SIMNET` on simnet) and the txid. These cases are not reproducible
+  and have no verdict: a case without `tx` (the runner's default scenario),
+  covenant entries and covenant fields, several inputs, an input at a stated
+  outpoint or under another script, a literal `sig` (it signs the runner's
+  scenario; name the account with `{"signature":"<account>"}`), an output without
+  an address, and any case HardKAS's builder or send machinery refuses before the
+  broadcast (a fee below the node's minimum or above the fee limit, a lock time
+  not reached; on v1 also a signer whose key is not the one the contract checks,
+  `SIGNER_SLOT_KEY_MISMATCH`). An expected failure that the node refuses for a
+  reason outside the script (fee, storage mass, lock time, sequence lock) has no
+  verdict (`SILVER_TEST_INCONCLUSIVE`). A verdict is one node's mempool and chain
+  at one moment, and each reproducible case spends its own funded coin;
 - `silver spend` does not read the redeem script for time locks or signature
   operations. The input's sequence is `--sequence` (default 0) and the declared
   signature operations are `--sig-op-count` (default: the number of signature
@@ -266,6 +288,16 @@ The SilverScript Counter fixture used by the covenant demos
 signature and no value check: anyone can advance it and choose the successor's
 value. `silver audit` says so (`COV-VALUE-001`). It is a demonstration, not a
 pattern to copy.
+
+### ZK spends, address watch, escrow, covenant topologies, KCC-20, HD wallets: their limits
+
+- **ZK spends.** The hook that lets the v1 send check accept a ZK lock's input (`V1EngineFacts.p2shUnlock`) is experimental and set only by the SDK's ZK spend; the v1 engine never signs such an input. `zk toccata spend` rebuilds the lock from the receipt, so the receipt is needed even with `--scripts`. The CLI does not verify the receipt off chain (the fact says `NOT_PERFORMED`); the node verifies the proof. `zk toccata observe` uses the workspace's ZK fact only when exactly one matches the txId; otherwise pass `--fact`. The command is proven on simnet; it has no Testnet-10 run of its own yet.
+- **`hardkas watch`** reports what kaspa-wasm's `UtxoProcessor` reports: a spend of a watched output appears when upstream reports it, and a disconnected interval only as one `resync`.
+- **Escrow lifecycle.** The SDK's records (`.hardkas/escrows/`) and the dev server's journal are separate stores: an escrow created through one is not seen by the other.
+- **Covenants and KCC-20.** A token's outputs are found through this workspace's records of the covenant (a node cannot be asked by covenant id): a transfer made by another workspace is not seen, only its effect. Balances count only outputs the node lists unspent and whose state commits to their address. Owners `p2pk-schnorr` and `p2pkh-schnorr` sign; `p2pkh-ecdsa`, `p2sh` and `covenant-id` owners are not offered (`KCC20_OWNER_SCHEME_UNSUPPORTED`). Minting beyond the genesis (the reference's PublicMint and TokenSeed programs) is not offered: they are not in the pinned checkout. The reference KCC-20 program carries no silverc covenant declaration, so the SDK gives the v1 engine its covenant shape from KCC-20 and its artifact; the engine checks everything else, and the node is the final judge. The unsigned draft plan of each transfer stays in the workspace next to the final plan.
+- **Address history.** A node keeps no address history: `hardkas history` reads a window of the node's selected chain (by default the last 1000 chain blocks, never before its pruning point) and lists what was accepted in it. Nothing before the window's start, after its end, before the pruning point or still in a mempool is covered, and every result says so. One node answer holds a batch of chain blocks with their transactions at high verbosity: on a busy network it can be large, and the WebSocket limit applies. Proven on simnet only.
+- **Browser wallets.** KasWare, Kastle and Kaspire are driven through the interfaces public field notes describe, tested against faithful fakes; no real extension has been run by HardKAS's tests. Until the owner runs the [probe](../start/browser-wallets.md#check-your-wallet-with-the-probe), what each wallet really returns is unverified. A wallet signs for its own Schnorr P2PK address only; Kastle is offered payments, not contract inputs.
+- **HD wallets.** The scan looks at UTXOs only: an address whose outputs were all spent counts as unused for the gap limit (default 20); the wallet's recorded indices extend the scan over every address it handed out. Phrases are 12 or 24 English words. The BIP39 passphrase is used byte for byte, as rusty-kaspa does: with a non-ASCII passphrase, BIP39 tools that normalise it may derive another wallet. Without the password, `list`, `describe` and `balance` read the public header as written (`verified: false`); watch-only wallets are always unverified. The next-index state is not authenticated, by design. A payment is one v0 transaction from one account. `WalletToolkit` has no HD mode.
 
 ### The simulator is an approximate model
 
@@ -321,24 +353,26 @@ Schnorr signatures, coinbase maturity at the exact DAA boundary, relative time l
   the signed txid (`send-sync-v0-mass-rc1.simnet`, `construction-vectors-node.simnet` V-01).
   The v1 engine commits the node's value. Changing the v0 representation needs a new,
   versioned format and the owner's decision; none is proposed for this release;
-- HardKAS builds every transaction with **lock time 0** (no absolute time locks, CLTV, in
-  this release). `tx.plan({ lockTime })` other than 0 is refused (`LOCK_TIME_NOT_SUPPORTED`;
-  it used to be ignored), the CLI has no lock-time option (`UNKNOWN_OPTION`), the signer
-  refuses a plan that states another lock time (`LOCK_TIME_NOT_SUPPORTED`; it signed 0), and
-  a signed payment bound to its plan whose payload carries another lock time is not the
-  plan's transaction (`SIGNED_PLAN_MISMATCH` at send; it was sent). A transaction signed
-  elsewhere and sent with `allowUnplannedSignedTransaction` (`--allow-unplanned`) goes to the
-  node as it is: HardKAS does not evaluate lock times, the node does. NOT TESTED against a
-  node. Design for a later cycle: `docs/proposals/cltv-and-ecdsa-spends.md`;
-- the accounts signer signs **Schnorr P2PK only**. Paying an ECDSA address works (V-04, on
-  a real node). A spend **from** one is refused, typed, before any UTXO is read or any key
-  is used: by the planner (`tx.plan`, `hardkas tx plan`, consolidations) and by the signer
-  (`ECDSA_SPEND_NOT_SUPPORTED`). It used to be planned and then fail untyped at the signer
-  (`MISSING_INPUT_AUTHORIZER`), or, with a signing authorizer supplied, be signed with
-  Schnorr — a transaction the node can only reject. An unlocking script the caller makes
-  itself and hands the signer (a signature-script authorization, as for a P2SH input) is
-  used as given: HardKAS signs nothing for it. NOT TESTED against a node (nothing HardKAS
-  builds reaches one). Same proposal.
+- **absolute lock times (CLTV)** are built for payments (`tx plan|send --lock-time-daa |
+  --lock-time-ms`) and SilverScript spends, and proven on a node (`cltv-ecdsa-node.simnet`):
+  `tx send` refuses a transaction whose lock the node has not passed (`LOCK_TIME_NOT_REACHED`,
+  nothing sent or recorded) and sends the same transaction later. A plan's lock time is bound
+  into it (`SIGNED_PLAN_MISMATCH` for any other). The simulator and consolidations keep lock
+  time 0 (`LOCK_TIME_NOT_SUPPORTED`). Before planning, HardKAS reads an entry's top-level
+  `require(tx.daa >= x)` / `require(tx.time >= t)` and refuses a lock of the other kind or below
+  an x it can read; conditional, looped or helper statements and delegate entries are the
+  node's to judge, and on transaction v0 the constructor values are not known. `silver covenant
+  transition|advance` take the same options (proven on the node through the SDK's
+  `planTransition`). A transaction signed elsewhere and sent with `--allow-unplanned` goes to the
+  node as it is;
+- **ECDSA:** payments from ECDSA accounts are planned, signed (RFC 6979, low-S, with HardKAS's
+  own signer: kaspa-wasm 2.1.0 has none) and verified by the preflight, proven on a node. The
+  simulator, consolidations and v1 transactions stay Schnorr-only (`ECDSA_SPEND_NOT_SUPPORTED`).
+  No external wallet is known to sign ECDSA Kaspa inputs. An input under a key of the other
+  scheme is refused before signing (`INPUT_KEY_SCHEME_MISMATCH`). An unlocking script the
+  caller makes itself and hands the signer (a signature-script authorization, as for a P2SH
+  input) is used as given: HardKAS signs nothing for it. Design and evidence:
+  `docs/proposals/cltv-and-ecdsa-spends.md`.
 
 ### `@hardkas/pskt-native` is on hold
 

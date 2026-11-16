@@ -193,7 +193,37 @@ server.listen(PORT, async () => {
       validate: (body, status) => {
         if (status !== 200) return `Expected HTTP 200, got ${status}`;
         if (!body.includes("https://hardkas.dev/docs/")) return "Missing docs pointer in llms.txt";
-        if (!body.includes("hardkas tx plan")) return "Missing CLI commands in llms.txt";
+        if (!body.includes("https://hardkas.dev/llms-full.txt")) return "Missing llms-full.txt pointer in llms.txt";
+        if (!body.includes("hardkas tx send")) return "Missing CLI fast-path in llms.txt";
+        return null;
+      }
+    },
+    {
+      name: "Unified llms-full.txt",
+      path: "/llms-full.txt",
+      validate: (body, status) => {
+        if (status !== 200) return `Expected HTTP 200, got ${status}`;
+        if (!body.includes("Build on Kaspa with AI")) return "Missing AI docs section in llms-full.txt";
+        if (!body.includes("hardkas tx plan")) return "Missing tx plan workflow in llms-full.txt";
+        if (!body.includes("hardkas silver covenant transition")) return "Missing covenant workflow in llms-full.txt";
+        return null;
+      }
+    },
+    {
+      name: "Build on Kaspa with AI (/docs/ai/)",
+      path: "/docs/ai/",
+      validate: (body, status) => {
+        if (status !== 200) return `Expected HTTP 200, got ${status}`;
+        if (!body.includes("Build on Kaspa with AI")) return "Missing AI landing title";
+        return null;
+      }
+    },
+    {
+      name: "Canonical AI Workflows (/docs/ai/workflows)",
+      path: "/docs/ai/workflows",
+      validate: (body, status) => {
+        if (status !== 200) return `Expected HTTP 200, got ${status}`;
+        if (!body.includes("Canonical AI Workflows")) return "Missing workflows heading";
         return null;
       }
     }
