@@ -26,11 +26,14 @@ function seedWorkspace(cwd: string): void {
   // Minimal workspace scaffolding for SDK simulator lifecycle: hardkas.config.ts
   // + .hardkas dir. Uses only the SDK's own bootstrap semantics so this test
   // never depends on the CLI runner.
+  // DEF1C-COLD-START-1 (2026-11-16): the config imports nothing (as `hardkas init` now writes it). Importing
+  // `@hardkas/sdk` made the config loader transpile the SDK's source on the first load, ~3.5 s on its own, and the
+  // first test of this file timed out (5 s) on CI under the full suite's load. `defineHardkasConfig` is an identity
+  // function, so the config the SDK loads is the same object.
   fs.mkdirSync(path.join(cwd, ".hardkas"), { recursive: true });
   fs.writeFileSync(
     path.join(cwd, "hardkas.config.ts"),
-    `import { defineHardkasConfig } from "@hardkas/sdk";
-export default defineHardkasConfig({
+    `export default ({
   execution: {
     default: "simulator",
     targets: {
