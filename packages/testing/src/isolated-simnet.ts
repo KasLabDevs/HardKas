@@ -22,7 +22,7 @@ import {
 } from "@hardkas/core";
 import { JsonWrpcKaspaClient } from "@hardkas/kaspa-rpc";
 import { buildCovenantGenesis, parseWasmTxToRpc } from "@hardkas/accounts";
-import { calculateUpstreamStorageMass, v1StorageMass, type V1StorageCell } from "@hardkas/tx-builder";
+import { calculateUpstreamStorageMass, excludeImmatureCoinbase, v1StorageMass, type V1StorageCell } from "@hardkas/tx-builder";
 import { SimnetNodeHarness, type SimnetNodeHandle } from "./simnet-node-harness.js";
 import { getHardkasFixtureKey, type HardkasFixtureName } from "./fixture-signer.js";
 import type { CompiledCovenantContract, CovenantUtxoFixture } from "./covenant-testbed.js";
@@ -366,8 +366,20 @@ export async function waitForTransaction(
 }
 
 /**
+ * FUND-SPENDABLE-BY-PLANNER-1: extra DAA blocks mined past the consensus coinbase maturity when funding, so the coinbase
+ * UTXOs clear the planners' rule (maturity + their 10-DAA margin, `excludeImmatureCoinbase` in @hardkas/tx-builder) with
+ * room to spare. The planners' rule itself is what decides spendability below; this only makes reaching it likely.
+ */
+const FUNDING_EXTRA_DAA = 20;
+
+/**
  * Ensures `recipient` (a fixture name or `kaspasim:` address) holds at least one
  * mature, spendable non-covenant UTXO with `>= minAmountSompi`.
+ *
+ * FUND-SPENDABLE-BY-PLANNER-1 (2026-11-16): "spendable" is the HardKAS planners' rule (`excludeImmatureCoinbase`: a
+ * coinbase more than maturity + 10 DAA deep), not the bare consensus maturity. The helper used to hand over a coinbase at
+ * exactly 1000 DAA; a test that planned with it inside the next 10 DAA had it excluded by the planner (a flaky
+ * INSUFFICIENT_FUNDS_UPSTREAM in cltv-ecdsa-node E-2).
  */
 export async function fundTestAccount(
   session: IsolatedSimnetSession,
@@ -378,30 +390,26 @@ export async function fundTestAccount(
     ? recipient
     : resolveFixtureAccount(recipient).address;
 
-  const findMature = async (): Promise<SimnetOnChainUtxo | undefined> => {
+  const findSpendable = async (): Promise<SimnetOnChainUtxo | undefined> => {
     const info = (await session.rpc.getBlockDagInfo()) as any;
     const virtualDaa = BigInt(info.virtualDaaScore ?? 0);
-    const utxos = (await session.rpc.getUtxosByAddress(address)).map(normalizeOnChainUtxo);
-    return utxos.find((u: SimnetOnChainUtxo) => {
-      if (u.covenantId) return false;
-      if (u.amountSompi < minAmountSompi) return false;
-      if (u.isCoinbase) {
-        return virtualDaa >= u.blockDaaScore + SIMNET_CONSENSUS_COINBASE_MATURITY_DAA;
-      }
-      return true;
-    });
+    const utxos = (await session.rpc.getUtxosByAddress(address))
+      .map(normalizeOnChainUtxo)
+      .filter((u: SimnetOnChainUtxo) => !u.covenantId && u.amountSompi >= minAmountSompi);
+    // the planners' own maturity rule decides, so a coin this returns is one they will spend
+    return excludeImmatureCoinbase(utxos, { networkId: "simnet", virtualDaaScore: virtualDaa }).spendable[0];
   };
 
-  const existing = await findMature();
+  const existing = await findSpendable();
   if (existing) return existing;
 
-  // Mine 5 blocks to the target address, then advance DAA by 1000 so the coinbase UTXOs mature.
+  // Mine 5 blocks to the target address, then advance DAA past the coinbase maturity and the planners' margin.
   await mineBlocks(session, 5, address);
-  await mineBlocks(session, Number(SIMNET_CONSENSUS_COINBASE_MATURITY_DAA), session.minerAddress);
+  await mineBlocks(session, Number(SIMNET_CONSENSUS_COINBASE_MATURITY_DAA) + FUNDING_EXTRA_DAA, session.minerAddress);
 
-  const matured = await findMature();
+  const matured = await findSpendable();
   if (!matured) {
-    throw new Error(`SIMNET_FUNDING_FAILED: no mature UTXO >= ${minAmountSompi} found for ${address}`);
+    throw new Error(`SIMNET_FUNDING_FAILED: no UTXO >= ${minAmountSompi} spendable by the HardKAS planners found for ${address}`);
   }
   return matured;
 }
