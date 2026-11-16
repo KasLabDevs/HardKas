@@ -1,4 +1,5 @@
 import { Command } from "commander";
+import { CANONICAL_LOCALNET, nodeRpcUrl } from "@hardkas/core";
 import { registerInitCommands } from "./commands/init.js";
 import { registerCreateCommand } from "./commands/create.js";
 import { registerTxCommands } from "./commands/tx.js";
@@ -72,7 +73,8 @@ import { KNOWN_EXTENSIONS } from "./extensions/api.js";
  * (tx send --wait: TX-SEND-WAIT-1; accounts consolidate: the agent benchmark's consolidation runs).
  */
 export const QUICK_RECIPES_HELP = [
-  "Quick recipes (simnet). Node not at ws://127.0.0.1:18210? Add --url ws://<host>:18210 to tx send and accounts consolidate.",
+  // CANONICAL-RPC-URL: the localnet endpoint from its one source, never a literal
+  `Quick recipes (simnet). Node not at ${nodeRpcUrl()}? Add --url ws://<host>:${CANONICAL_LOCALNET.ports.jsonRpc} to tx send and accounts consolidate.`,
   "  Send KAS and wait until it is confirmed (2 commands; PK and PW are environment variables you set):",
   "    hardkas accounts real import --name payer --address <kaspasim:...> --network simnet --private-key-env PK --password-env PW",
   "    hardkas tx send --from payer --to <kaspasim:...> --amount 10 --network simnet --password-env PW --yes --wait --json",
