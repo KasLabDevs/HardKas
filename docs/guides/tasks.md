@@ -1,3 +1,9 @@
+---
+title: "Custom tasks"
+sidebar_label: "Chapter 6: Custom Tasks"
+description: "Custom HardKAS tasks: typed, auditable scripts that integrate with the evidence framework."
+---
+
 # Chapter 6: Custom Tasks
 
 HardKAS tasks are more than just shell scripts; they are typed, auditable, and seamlessly integrate into the Evidence framework.

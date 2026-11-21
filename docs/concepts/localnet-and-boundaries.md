@@ -1,3 +1,9 @@
+---
+title: "Localnet and network boundaries"
+sidebar_label: "Chapter 8: Localnet and Boundaries"
+description: "The boundaries HardKAS keeps between local experimentation and public networks, so untested contracts and real funds stay apart."
+---
+
 # Chapter 8: Localnet and Boundaries
 
 HardKAS enforces strict boundaries between local experimentation and public network usage to protect developers from deploying untested smart contracts or leaking funds.

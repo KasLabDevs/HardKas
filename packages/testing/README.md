@@ -1,5 +1,7 @@
 # @hardkas/testing
 
+Documentation: [hardkas.dev/docs](https://hardkas.dev/docs/) · Website: [hardkas.dev](https://hardkas.dev)
+
 The `@hardkas/testing` package provides the `scenario` engine to write fully deterministic, artifact-driven tests and scenarios for HardKAS projects using [Vitest](https://vitest.dev/).
 
 ## Your first scenario

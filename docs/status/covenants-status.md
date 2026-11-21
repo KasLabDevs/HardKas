@@ -1,3 +1,8 @@
+---
+title: "Kaspa L1 Covenants Status"
+description: "Where HardKAS stands on Kaspa L1 covenants (KIP-17, KIP-20): what the CLI and SDK support, what they refuse, and what has simnet evidence only."
+---
+
 # Kaspa L1 Covenants Status
 
 This document outlines the current support boundary for Kaspa L1 Covenants (KIP-17/KIP-20) in HardKAS.

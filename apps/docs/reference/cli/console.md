@@ -1,5 +1,7 @@
 ---
-title: hardkas console
+title: "hardkas console command"
+sidebar_label: "hardkas console"
+description: "Reference for the hardkas console command, with its arguments, options and defaults."
 ---
 
 # `hardkas console`

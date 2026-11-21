@@ -157,6 +157,8 @@ export default {
 };
 ```
 
+The whole Testnet-10 path (account, funding, send, browser wallets) is in [Kaspa Testnet-10](testnet-10.md).
+
 Use test funds only. **Mainnet is locked down whatever the config says:** no
 connection, reads included (`MAINNET_CONNECTION_DISABLED`), no signing, no
 broadcast; `allowPublic` does not lift it.

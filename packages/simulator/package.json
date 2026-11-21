@@ -1,6 +1,8 @@
 {
   "name": "@hardkas/simulator",
   "version": "0.13.0-rc.3",
+  "description": "Experimental in-memory Kaspa node for HardKAS local development and fast tests: wRPC and JSON-RPC like rusty-kaspad, mining on demand, snapshots. Not consensus-equivalent.",
+  "keywords": ["hardkas", "kaspa", "kaspa-l1", "blockdag", "utxo", "developer-tools", "simulator", "testing", "wrpc"],
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -51,7 +53,7 @@
   "bugs": {
     "url": "https://github.com/KasLabDevs/HardKas/issues"
   },
-  "homepage": "https://github.com/KasLabDevs/HardKas/tree/main/packages/simulator#readme",
+  "homepage": "https://hardkas.dev/docs/",
   "files": [
     "dist",
     "LICENSE",

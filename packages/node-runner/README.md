@@ -1,5 +1,7 @@
 # @hardkas/node-runner
 
+Documentation: [hardkas.dev/docs](https://hardkas.dev/docs/) · Website: [hardkas.dev](https://hardkas.dev)
+
 A managed kaspad in Docker, pinned by image digest, and the checks of the node's identity.
 
 Part of [HardKAS](https://github.com/KasLabDevs/HardKas), local-first developer tooling for Kaspa L1.

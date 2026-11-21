@@ -2,6 +2,7 @@ import type { Command } from "commander";
 import { UI, handleError } from "../ui.js";
 import { runUp } from "../runners/up-runner.js";
 import { hardkasScaffoldDependencySpec } from "../lib/scaffold-versions.js";
+import { DEFAULT_SCAFFOLD_PACKAGE_NAME, scaffoldPackageName } from "../lib/scaffold-package-name.js";
 import { nodeRpcUrl } from "@hardkas/core";
 // ESCALÓN 2 · P18: the version init writes and prints is the build's own, never a literal in this file
 import { HARDKAS_VERSION } from "@hardkas/artifacts";
@@ -117,7 +118,8 @@ export function registerInitCommands(program: Command) {
             if (!fs.existsSync(pkgFile)) {
               const hardkasVersion = hardkasScaffoldDependencySpec();
               const pkgTemplate = {
-                name: name || "hardkas-project",
+                // the project folder's name as a valid npm name (an absolute or nested path used to be written as is)
+                name: name ? scaffoldPackageName(targetDir) : DEFAULT_SCAFFOLD_PACKAGE_NAME,
                 version: "1.0.0",
                 type: "module",
                 scripts: {

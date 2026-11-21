@@ -1,5 +1,7 @@
 ---
-title: hardkas programmability
+title: "hardkas programmability commands"
+sidebar_label: "hardkas programmability"
+description: "Reference for the hardkas programmability commands (capabilities, audit, inspect, verify, and 2 more), with their arguments, options and defaults."
 ---
 
 # `hardkas programmability`

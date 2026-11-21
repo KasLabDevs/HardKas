@@ -1,5 +1,7 @@
 ---
-title: hardkas silver
+title: "hardkas silver commands"
+sidebar_label: "hardkas silver"
+description: "Reference for the hardkas silver commands (audit, preflight, doctor, compile, inspect, verify, test, and 13 more), with their arguments, options and defaults."
 ---
 
 # `hardkas silver`

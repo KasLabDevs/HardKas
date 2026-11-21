@@ -1,5 +1,7 @@
 ---
-title: hardkas zk
+title: "hardkas zk commands"
+sidebar_label: "hardkas zk"
+description: "Reference for the hardkas zk commands (capabilities, proof inspect, proof verify, proof verify-math, and 7 more), with their arguments, options and defaults."
 ---
 
 # `hardkas zk`

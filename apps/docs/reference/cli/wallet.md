@@ -1,5 +1,7 @@
 ---
-title: hardkas wallet
+title: "hardkas wallet commands"
+sidebar_label: "hardkas wallet"
+description: "Reference for the hardkas wallet commands (hd create, hd import, hd import-watch-only, hd list, and 5 more), with their arguments, options and defaults."
 ---
 
 # `hardkas wallet`

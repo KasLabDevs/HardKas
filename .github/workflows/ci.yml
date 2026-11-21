@@ -85,6 +85,20 @@ jobs:
       - name: Canonical gate
         run: pnpm test
 
+      # AUDIT 2026-11-21 (A5): the hermetic e2e suites (built CLI, simulator, no node) ran in no workflow. The one that
+      # manages a node (node-programmatic) stays in docker-suites.yml, which gives it a disposable engine.
+      - name: Hermetic e2e (built CLI, no node)
+        if: runner.os == 'Linux'
+        run: >-
+          pnpm vitest run --config vitest.e2e.config.ts --no-file-parallelism
+          packages/cli/test/artifact-create.e2e.test.ts
+          packages/cli/test/dev-fixture.e2e.test.ts
+          packages/cli/test/dev-tx-generate.e2e.test.ts
+          packages/cli/test/localnet-account.e2e.test.ts
+          packages/cli/test/simulator-account.e2e.test.ts
+          packages/cli/test/tx-batch.e2e.test.ts
+          packages/cli/test/workflow-create.e2e.test.ts
+
   # INT9 · D5: the release and docs gates, which ran only by hand: the published set and the version freeze, the CLI
   # references (docs/reference/cli.* and the site's generated apps/docs/reference/cli pages) against the command tree,
   # the generated claims, the docs (the `pnpm build` above also builds the docs site, which renders docs/ and fails on a

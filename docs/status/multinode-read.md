@@ -1,3 +1,8 @@
+---
+title: "Reading several nodes (read-only)"
+description: "How HardKAS reads several Kaspa nodes side by side and compares their answers, read-only: it never sends, fails over or re-broadcasts a transaction."
+---
+
 # Reading several nodes (read-only)
 
 HardKAS can read several Kaspa nodes side by side and compare what they answer. The comparison is read-only. It never sends a transaction, never fails a send over to another node and never re-broadcasts one. It is a status prototype (MULTINODE-READ-1): useful for diagnosis, not a basis for deciding what the network accepted.

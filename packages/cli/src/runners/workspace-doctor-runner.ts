@@ -498,7 +498,15 @@ export async function collectWorkspaceDoctorChecks(options: {
   return { checks, status: finalStatus };
 }
 
-/** Prints a workspace-doctor report (JSON, or the human list) and fails with `failureCode` when it failed. */
+/**
+ * Prints a workspace-doctor report (JSON, or the human list) and fails with `failureCode` when it failed.
+ *
+ * JSON: exactly ONE document on stdout. A failed report used to be followed by the CLI's own failure envelope
+ * (`{"ok":false,"code":...}`, written by handleError for the error thrown below), so `--json` stdout held two documents
+ * and did not parse as one. Now a failed report IS the envelope too: the envelope's fields (`ok: false`, `code`,
+ * `message`, `mode`) are written in the same document as the report, and handleError, which writes its envelope only
+ * when no JSON was written yet, adds nothing. The exit code is unchanged (1). A passing report is unchanged.
+ */
 export async function renderWorkspaceDoctorReport(
   result: { checks: WorkspaceDoctorCheck[]; status: WorkspaceDoctorStatus },
   options: { json: boolean; title: string; failureCode: string; failureMessage: string; schema?: string }
@@ -506,7 +514,13 @@ export async function renderWorkspaceDoctorReport(
   if (options.json) {
     const schema = options.schema ?? HardkasSchemas.DevDoctorV1;
     const report = { schema, schemaVersion: schema, status: result.status, checks: result.checks };
-    console.log(JSON.stringify(report, null, 2));
+    if (result.status === "failed") {
+      console.log(JSON.stringify({ ok: false, code: options.failureCode, message: options.failureMessage, mode: "cli", ...report }, null, 2));
+      const { getOutput } = await import("../output.js");
+      getOutput().jsonWritten = true;
+    } else {
+      console.log(JSON.stringify(report, null, 2));
+    }
   } else {
     console.log(pc.bold("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"));
     console.log(pc.bold(`HardKAS • ${options.title}`));

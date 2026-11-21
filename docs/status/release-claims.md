@@ -1,3 +1,8 @@
+---
+title: "Release Claims and Gates"
+description: "The release status values the HardKAS release checks verify, what is explicitly not claimed, and the gates a release must pass."
+---
+
 # Release Claims and Gates
 > **Claims are generated.** The authoritative values live in
 > [claims.generated.md](./claims.generated.md), produced from `packages/sdk` by

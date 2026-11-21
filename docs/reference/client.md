@@ -1,3 +1,8 @@
+---
+title: "Client Reference"
+description: "@hardkas/client, the HTTP client for a running HardKAS dev server, and its React bindings @hardkas/react. Neither is published in this release."
+---
+
 # Client Reference
 
 > **Not published in this release.** `@hardkas/client` and `@hardkas/react` are

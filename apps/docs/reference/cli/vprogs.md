@@ -1,5 +1,7 @@
 ---
-title: hardkas vprogs
+title: "hardkas vprogs commands"
+sidebar_label: "hardkas vprogs"
+description: "Reference for the hardkas vprogs commands (capabilities, status, inspect), with their arguments, options and defaults."
 ---
 
 # `hardkas vprogs`

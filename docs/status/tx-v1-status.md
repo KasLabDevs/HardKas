@@ -1,3 +1,8 @@
+---
+title: "Kaspa L1 Toccata: Transaction V1 Status"
+description: "Where transaction v1 (Toccata) stands in HardKAS: planning, signing and broadcast are implemented and verified on simnet with rusty-kaspad v2.1.0."
+---
+
 # Kaspa L1 Toccata: Transaction V1 Status
 
 > **Updated for `0.13.0-rc.3`:** Transaction V1 planning, signing, and broadcast are **implemented and verified on `simnet`** (`rusty-kaspad` v2.1.0). The earlier dependency block in `kaspa-wasm` has been resolved.

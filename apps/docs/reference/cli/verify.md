@@ -1,5 +1,7 @@
 ---
-title: hardkas verify
+title: "hardkas verify command"
+sidebar_label: "hardkas verify"
+description: "Reference for the hardkas verify command, with its arguments, options and defaults."
 ---
 
 # `hardkas verify`

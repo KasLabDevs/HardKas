@@ -1,5 +1,7 @@
 ---
-title: hardkas simulator
+title: "hardkas simulator commands"
+sidebar_label: "hardkas simulator"
+description: "Reference for the hardkas simulator commands (start, account create, fund), with their arguments, options and defaults."
 ---
 
 # `hardkas simulator`

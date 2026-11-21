@@ -1,5 +1,7 @@
 # `@hardkas/cli`
 
+Documentation: [hardkas.dev/docs](https://hardkas.dev/docs/) · Website: [hardkas.dev](https://hardkas.dev)
+
 The HardKAS command line: create a Kaspa project, plan a transaction, sign it, send it, follow its state and verify the evidence of every step — on a local simulator or against a real `rusty-kaspad` node in Docker.
 
 > **Release scope.** This release supports the Golden Core shown on this page, on the simulator and on a local node you control. It is not qualified for testnet-10 or mainnet. Other commands listed by `hardkas --help` are experimental.

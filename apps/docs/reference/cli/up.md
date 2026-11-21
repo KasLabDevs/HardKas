@@ -1,5 +1,7 @@
 ---
-title: hardkas up
+title: "hardkas up command"
+sidebar_label: "hardkas up"
+description: "Reference for the hardkas up command, with its arguments, options and defaults."
 ---
 
 # `hardkas up`

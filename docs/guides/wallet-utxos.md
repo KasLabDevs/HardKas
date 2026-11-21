@@ -1,3 +1,9 @@
+---
+title: "Wallet UTXO management"
+sidebar_label: "09 - Wallet UTXO Management (Phase 1A)"
+description: "Coin control with the wallet.utxos API of @hardkas/toolkit: measure the UTXO fragmentation of a simnet development wallet and plan around it."
+---
+
 # 09 - Wallet UTXO Management (Phase 1A)
 
 When building professional Wallets, Treasury management tools, or Merchant services on Kaspa, standard send and receive functions are not enough. High-volume systems require granular **Coin Control** to manage fragmentation and optimize fees.

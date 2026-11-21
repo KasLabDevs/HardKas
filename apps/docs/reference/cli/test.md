@@ -1,5 +1,7 @@
 ---
-title: hardkas test
+title: "hardkas test command"
+sidebar_label: "hardkas test"
+description: "Reference for the hardkas test command, with its arguments, options and defaults."
 ---
 
 # `hardkas test`

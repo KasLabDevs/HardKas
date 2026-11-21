@@ -1,5 +1,7 @@
 # `@hardkas/bridge-local`
 
+Documentation: [hardkas.dev/docs](https://hardkas.dev/docs/) · Website: [hardkas.dev](https://hardkas.dev)
+
 Offline helpers for an Igra L2 bridge lab: a bridge entry payload, a prefix-mining simulation over it, and a local plan that carries it. It is **not** a bridge: nothing here moves funds to L2, talks to an L2, or enforces a bridge policy.
 
 > It belongs to the Igra L2 Lab, not to the HardKAS L1 core: the L1 CLI registers no `bridge` command group. What follows is this package's API, not `hardkas` commands.

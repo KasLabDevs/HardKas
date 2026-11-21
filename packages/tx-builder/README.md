@@ -1,5 +1,7 @@
 # @hardkas/tx-builder
 
+Documentation: [hardkas.dev/docs](https://hardkas.dev/docs/) · Website: [hardkas.dev](https://hardkas.dev)
+
 Transaction planning, mass and fee rules, and plan verification.
 
 Part of [HardKAS](https://github.com/KasLabDevs/HardKas), local-first developer tooling for Kaspa L1.

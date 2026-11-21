@@ -1,5 +1,7 @@
 # `@hardkas/query-store`
 
+Documentation: [hardkas.dev/docs](https://hardkas.dev/docs/) · Website: [hardkas.dev](https://hardkas.dev)
+
 The Query Store is a rebuildable SQLite projection of the workspace (`.hardkas/store.db`). It gives the CLI and the dev server fast reads without scanning every artifact file. The artifacts and the event ledger stay the authority; the database can always be deleted and rebuilt.
 
 ## 1. Indexing

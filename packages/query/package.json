@@ -1,6 +1,8 @@
 {
   "name": "@hardkas/query",
   "version": "0.13.0-rc.3",
+  "description": "Queries over the artifacts and query store of a HardKAS workspace (Kaspa L1): artifacts, lineage, replay, DAG, events and transactions.",
+  "keywords": ["hardkas", "kaspa", "kaspa-l1", "blockdag", "utxo", "developer-tools", "query", "lineage"],
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -41,7 +43,7 @@
   "bugs": {
     "url": "https://github.com/KasLabDevs/HardKas/issues"
   },
-  "homepage": "https://github.com/KasLabDevs/HardKas/tree/main/packages/query#readme",
+  "homepage": "https://hardkas.dev/docs/",
   "publishConfig": {
     "access": "public"
   }

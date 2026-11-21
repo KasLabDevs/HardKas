@@ -1,5 +1,7 @@
 ---
-title: hardkas deploy
+title: "hardkas deploy commands"
+sidebar_label: "hardkas deploy"
+description: "Reference for the hardkas deploy commands (init, track, list, inspect, status, history), with their arguments, options and defaults."
 ---
 
 # `hardkas deploy`

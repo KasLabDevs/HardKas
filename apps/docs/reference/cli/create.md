@@ -1,5 +1,7 @@
 ---
-title: hardkas create
+title: "hardkas create command"
+sidebar_label: "hardkas create"
+description: "Reference for the hardkas create command, with its arguments, options and defaults."
 ---
 
 # `hardkas create`

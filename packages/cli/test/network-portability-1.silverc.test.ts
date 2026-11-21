@@ -131,11 +131,13 @@ describe("C7 · a SilverScript compile record names the network it was compiled 
   // than the command's is still refused before any key or node is used; a testnet-10 record in this workspace passes the
   // network checks and stops, typed, at the next one before the node (here: an account the workspace does not have).
   it("NP-7e (B3) deploy runs on its record's network: a record of another network is refused before any key or node; a testnet-10 one is accepted here", async () => {
-    const other = await run("NP-7e-other", ["silver", "deploy", path.relative(wsTn, sim.recordPath), "--from", "alice", "--amount", "1", "--json"], wsTn);
+    // --yes: on testnet-10 an unconfirmed deploy/spend stops first at TX_SEND_CONFIRMATION_REQUIRED (exit 3); with the
+    // confirmation given, the network checks below are what answers
+    const other = await run("NP-7e-other", ["silver", "deploy", path.relative(wsTn, sim.recordPath), "--from", "alice", "--amount", "1", "--yes", "--json"], wsTn);
     expect(other.exit, other.brief).toBe(2);
     expect(other.out).toMatch(/SILVER_NETWORK_NOT_SUPPORTED/);
     expect(other.dialled).toEqual([]);
-    const own = await run("NP-7e", ["silver", "deploy", path.relative(wsTn, tn.recordPath), "--from", "alice", "--amount", "1", "--json"], wsTn);
+    const own = await run("NP-7e", ["silver", "deploy", path.relative(wsTn, tn.recordPath), "--from", "alice", "--amount", "1", "--yes", "--json"], wsTn);
     expect(own.out, own.brief).not.toMatch(/SILVER_NETWORK_NOT_SUPPORTED|UNKNOWN_ERROR/);
     expect(own.out, own.brief).toMatch(/ACCOUNT_NOT_FOUND/);
     expect(own.dialled).toEqual([]);
@@ -173,7 +175,7 @@ describe("C7 · a SilverScript compile record names the network it was compiled 
       const file = `${label}.json`;
       fs.writeFileSync(path.join(wsTn, file), JSON.stringify(seal(deployDraft(networkId)), null, 2));
       fs.writeFileSync(path.join(wsTn, "spend-args.json"), JSON.stringify([{ kind: "signature", account: "alice" }]));
-      const r = await run(`NP-7f-${label}`, ["silver", "spend", file, "--entry", "release", "--to", sim.contracts[0].address, "--args", "spend-args.json", "--json"], wsTn);
+      const r = await run(`NP-7f-${label}`, ["silver", "spend", file, "--entry", "release", "--to", sim.contracts[0].address, "--args", "spend-args.json", "--yes", "--json"], wsTn);
       expect(r.exit, r.brief).toBe(2);
       expect(r.out, label).toMatch(expected);
       expect(r.dialled, label).toEqual([]);

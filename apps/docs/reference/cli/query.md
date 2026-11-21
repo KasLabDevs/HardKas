@@ -1,5 +1,7 @@
 ---
-title: hardkas query
+title: "hardkas query commands"
+sidebar_label: "hardkas query"
+description: "Reference for the hardkas query commands (artifacts list, artifacts inspect, artifacts diff, and 20 more), with their arguments, options and defaults."
 ---
 
 # `hardkas query`

@@ -1,3 +1,9 @@
+---
+title: "Tutorial: wallet app"
+sidebar_label: "Chapter 02: Wallet App"
+description: "Bootstrap a development wallet backend on a local Kaspa simnet with @hardkas/toolkit."
+---
+
 # Chapter 02: Wallet App
 
 The most basic building block on Kaspa is the wallet. HardKAS provides `@hardkas/toolkit` to bootstrap a **development** wallet backend on the local simnet.

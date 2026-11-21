@@ -1,3 +1,9 @@
+---
+title: "Snapshots and time travel"
+sidebar_label: "Chapter 10: Snapshot & Time Travel"
+description: "The HardKAS Snapshot Toolkit: snapshot, restore and reload the local state of a Kaspa scenario (caches, queues, file stores) without copying files."
+---
+
 # Chapter 10: Snapshot & Time Travel
 
 HardKAS is designed to simulate complex Kaspa scenarios locally. When dealing with payments, jobs, and indexing, the runtime manages a living state (caches, queues, and file stores).

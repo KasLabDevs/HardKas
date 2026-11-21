@@ -1,5 +1,7 @@
 ---
-title: hardkas run
+title: "hardkas run command"
+sidebar_label: "hardkas run"
+description: "Reference for the hardkas run command, with its arguments, options and defaults."
 ---
 
 # `hardkas run`

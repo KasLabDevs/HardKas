@@ -1,5 +1,7 @@
 ---
-title: hardkas security
+title: "hardkas security commands"
+sidebar_label: "hardkas security"
+description: "Reference for the hardkas security commands (audit), with their arguments, options and defaults."
 ---
 
 # `hardkas security`

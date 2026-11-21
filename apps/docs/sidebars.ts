@@ -26,6 +26,7 @@ const sidebars: SidebarsConfig = {
         'start/quickstart-simnet',
         'start/silverscript-covenants',
         'start/receipts-and-levels',
+        'start/testnet-10',
         'start/browser-wallets',
         'start/first-scenario',
         'start/what-works',
@@ -123,6 +124,7 @@ const sidebars: SidebarsConfig = {
       label: 'Concepts',
       items: [
         'concepts/why-hardkas',
+        'concepts/hardkas-vs-kaspa-wasm',
         'concepts/transaction-lifecycle',
         'concepts/execution-worlds',
         'concepts/artifact-lifecycle',

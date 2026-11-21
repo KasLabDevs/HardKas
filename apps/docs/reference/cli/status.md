@@ -1,5 +1,7 @@
 ---
-title: hardkas status
+title: "hardkas status command"
+sidebar_label: "hardkas status"
+description: "Reference for the hardkas status command, with its arguments, options and defaults."
 ---
 
 # `hardkas status`

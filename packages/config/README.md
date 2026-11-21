@@ -1,5 +1,7 @@
 # @hardkas/config
 
+Documentation: [hardkas.dev/docs](https://hardkas.dev/docs/) · Website: [hardkas.dev](https://hardkas.dev)
+
 Loading and resolution of `hardkas.config.*` (networks, accounts, targets and endpoints).
 
 Part of [HardKAS](https://github.com/KasLabDevs/HardKas), local-first developer tooling for Kaspa L1.

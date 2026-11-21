@@ -1,5 +1,7 @@
 ---
-title: hardkas dev
+title: "hardkas dev commands"
+sidebar_label: "hardkas dev"
+description: "Reference for the hardkas dev commands (dev, create, init, accounts list, accounts reveal, and 6 more), with their arguments, options and defaults."
 ---
 
 # `hardkas dev`

@@ -29,9 +29,9 @@ describe("KaspaWrpcClient", () => {
       await client.connect(200);
       const result = await client.ping();
       expect(result).toBe(false);
-    } catch {
-      // Connection refused is expected
-      expect(true).toBe(true);
+    } catch (e) {
+      // Only a connection failure is expected here; any other error fails the test (it used to pass on any exception)
+      expect(String((e as Error)?.message ?? e)).toMatch(/connect|refused|timeout|timed out|unable|closed/i);
     } finally {
       client.disconnect();
     }

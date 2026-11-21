@@ -1,5 +1,7 @@
 ---
-title: hardkas telemetry
+title: "hardkas telemetry commands"
+sidebar_label: "hardkas telemetry"
+description: "Reference for the hardkas telemetry commands (inspect, verify, tail), with their arguments, options and defaults."
 ---
 
 # `hardkas telemetry`

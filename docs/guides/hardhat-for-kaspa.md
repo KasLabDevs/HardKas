@@ -1,9 +1,13 @@
 ---
-title: Hardhat for Kaspa
+title: "Hardhat for Kaspa: a guide for Ethereum developers"
+sidebar_label: "Hardhat for Kaspa"
 description: How HardKAS gives Ethereum and Hardhat developers local-first testing, a real local node and verifiable workflows on Kaspa L1.
 ---
 
 # Hardhat for Kaspa: a developer's guide to building on Kaspa L1
+
+HardKAS plays a similar role on Kaspa L1 to Hardhat on Ethereum: a CLI and TypeScript SDK, a local node (a rusty-kaspa
+simnet in Docker) and automated tests. It is not a port of Hardhat and runs no EVM: Kaspa L1 is a UTXO BlockDAG.
 
 If you come from Ethereum, you know **Hardhat**: the local environment for compiling Solidity, running automated tests,
 running a local node (`hardhat node`) and scripting deployments.

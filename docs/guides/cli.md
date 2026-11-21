@@ -1,3 +1,9 @@
+---
+title: "HardKAS CLI guide: Kaspa L1 from the command line"
+sidebar_label: "CLI Guide"
+description: "The hardkas command line: create a project, run a local simnet node, plan, sign and send Kaspa transactions, and verify their artifacts."
+---
+
 # CLI Guide
 
 The HardKAS CLI (`hardkas` or `npx hardkas`) is the main local developer

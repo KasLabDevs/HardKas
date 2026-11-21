@@ -1,5 +1,7 @@
 ---
-title: hardkas lock
+title: "hardkas lock commands"
+sidebar_label: "hardkas lock"
+description: "Reference for the hardkas lock commands (list, status, doctor, clear), with their arguments, options and defaults."
 ---
 
 # `hardkas lock`

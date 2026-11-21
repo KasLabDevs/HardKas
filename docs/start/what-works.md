@@ -6,6 +6,9 @@ url: /capabilities
 
 # What works in this release
 
+In this release HardKAS is verified against a real `rusty-kaspad` node on a local simnet; Testnet-10 is an experimental
+opt-in with test funds, and mainnet is locked.
+
 A plain table for a team deciding what to build on. The authoritative claim
 values are generated from the code in [Release Claims](../status/claims.generated.md);
 this page explains them by feature and says where each one was checked against

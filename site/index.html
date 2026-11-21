@@ -4,22 +4,23 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1" name="viewport"/>
-<title>HardKAS – Kaspa L1 IDE, SilverScript &amp; Covenant Framework</title>
-<meta content="Build, compile, test and debug Kaspa L1 covenants with HardKAS IDE. SilverScript tooling, local simnet, CLI and reproducible transaction artifacts." name="description"/>
+<title>HardKAS – Kaspa L1 development framework: CLI, SDK and simnet</title>
+<meta content="Open-source CLI, TypeScript SDK and IDE for Kaspa L1: local rusty-kaspa simnet, SilverScript and Toccata covenant workflows, verifiable transaction steps." name="description"/>
 <link href="https://hardkas.dev/" rel="canonical"/>
+<link href="/docs/img/favicon.ico" rel="icon"/>
 
 <!-- Open Graph / Social Previews -->
 <meta content="website" property="og:type"/>
 <meta content="HardKAS" property="og:site_name"/>
 <meta content="https://hardkas.dev/" property="og:url"/>
-<meta content="HardKAS – Kaspa L1 IDE, SilverScript &amp; Covenant Framework" property="og:title"/>
-<meta content="Build, compile, test and debug Kaspa L1 covenants with HardKAS IDE. SilverScript tooling, local simnet, CLI and reproducible transaction artifacts." property="og:description"/>
+<meta content="HardKAS – Kaspa L1 development framework: CLI, SDK and simnet" property="og:title"/>
+<meta content="Open-source CLI, TypeScript SDK and IDE for Kaspa L1: local rusty-kaspa simnet, SilverScript and Toccata covenant workflows, verifiable transaction steps." property="og:description"/>
 <meta content="https://hardkas.dev/docs/img/ide/workbench.png" property="og:image"/>
 
 <!-- Twitter / X Cards -->
 <meta content="summary_large_image" name="twitter:card"/>
-<meta content="HardKAS – Kaspa L1 IDE, SilverScript &amp; Covenant Framework" name="twitter:title"/>
-<meta content="Build, compile, test and debug Kaspa L1 covenants with HardKAS IDE. SilverScript tooling, local simnet, CLI and reproducible transaction artifacts." name="twitter:description"/>
+<meta content="HardKAS – Kaspa L1 development framework: CLI, SDK and simnet" name="twitter:title"/>
+<meta content="Open-source CLI, TypeScript SDK and IDE for Kaspa L1: local rusty-kaspa simnet, SilverScript and Toccata covenant workflows, verifiable transaction steps." name="twitter:description"/>
 <meta content="https://hardkas.dev/docs/img/ide/workbench.png" name="twitter:image"/>
 <link href="https://fonts.googleapis.com" rel="preconnect"/>
 <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
@@ -753,23 +754,40 @@ summary:hover { color: var(--accent); }
       "url": "https://hardkas.dev/",
       "name": "HardKAS",
       "alternateName": "HardKAS Documentation",
-      "description": "Local-first development framework, transaction simulator, and visual IDE for Kaspa L1.",
-      "inLanguage": "en-US"
+      "description": "Open-source development framework for Kaspa L1: CLI, TypeScript SDK and IDE.",
+      "inLanguage": "en",
+      "publisher": { "@id": "https://hardkas.dev/#org" }
+    },
+    {
+      "@type": "Organization",
+      "@id": "https://hardkas.dev/#org",
+      "name": "KasLabDevs",
+      "alternateName": "HardKAS maintainers",
+      "url": "https://hardkas.dev/",
+      "logo": "https://hardkas.dev/docs/img/logo.png",
+      "sameAs": [
+        "https://github.com/KasLabDevs",
+        "https://x.com/HardKASOfficial",
+        "https://www.youtube.com/@kaslabdevs",
+        "https://www.npmjs.com/org/hardkas"
+      ]
     },
     {
       "@type": "SoftwareApplication",
       "@id": "https://hardkas.dev/#software",
       "name": "HardKAS",
+      "url": "https://hardkas.dev/",
       "applicationCategory": "DeveloperApplication",
       "operatingSystem": "Linux, macOS, Windows",
       "softwareVersion": "0.13.0-rc.3",
       "license": "https://opensource.org/licenses/MIT",
-      "description": "Local-first development framework, transaction simulator, and visual IDE for Kaspa L1. Plan, sign, simulate, and test native transactions, SilverScript contracts, and covenants with verifiable artifacts.",
-      "author": {
-        "@type": "Organization",
-        "name": "KasLabDevs",
-        "url": "https://github.com/KasLabDevs"
-      }
+      "isAccessibleForFree": true,
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+      "downloadUrl": "https://www.npmjs.com/package/@hardkas/cli",
+      "softwareHelp": "https://hardkas.dev/docs/",
+      "screenshot": "https://hardkas.dev/docs/img/ide/workbench.png",
+      "description": "Open-source development framework for Kaspa L1: plan, sign, send and verify transactions with a CLI and a TypeScript SDK, on a simulated ledger or a local rusty-kaspa simnet node, with SilverScript and Toccata covenant workflows and verifiable artifacts.",
+      "author": { "@id": "https://hardkas.dev/#org" }
     },
     {
       "@type": "SoftwareSourceCode",
@@ -778,7 +796,8 @@ summary:hover { color: var(--accent); }
       "codeRepository": "https://github.com/KasLabDevs/HardKas",
       "programmingLanguage": ["TypeScript", "Rust"],
       "runtimePlatform": "Node.js 24.22.1",
-      "license": "https://opensource.org/licenses/MIT"
+      "license": "https://opensource.org/licenses/MIT",
+      "author": { "@id": "https://hardkas.dev/#org" }
     }
   ]
 }
@@ -803,6 +822,8 @@ summary:hover { color: var(--accent); }
 <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z" fill="currentColor"></path>
 </svg>
 </a>
+<!-- SEO-2026-11-21: hardkas-one-doc.pdf is not in site/, so this button led to the landing page (HTTP 200). Put the PDF
+in site/ (the build copies .pdf files) and remove these comment markers to bring the button back.
 <a aria-label="Download HardKAS One‑Doc" class="github" href="hardkas-one-doc.pdf" rel="noopener" target="_blank" title="Download HardKAS One‑Doc">
 <svg aria-hidden="true" class="github-icon" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewbox="0 0 24 24">
 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -811,6 +832,7 @@ summary:hover { color: var(--accent); }
 <path d="M9.5 14.5 12 17l2.5-2.5"></path>
 </svg>
 </a>
+-->
 </div>
 <button aria-expanded="false" aria-label="Open navigation" class="mobile-nav" type="button">
           ☰
@@ -860,10 +882,10 @@ summary:hover { color: var(--accent); }
 <a class="button primary" href="https://github.com/KasLabDevs/HardKasIDE/releases/latest" rel="noreferrer" target="_blank">Download IDE</a>
 <a class="hero-ide-more" href="/ide/">Explore IDE</a>
 <p class="hero-ide-meta">0.3.0 / Windows, macOS, Linux</p>
-</div><h1>Execution-safe development for Kaspa.</h1>
+</div><h1>Execution-safe development for Kaspa L1.</h1>
 <p class="hero-desc">
-                HardKAS is a local-first developer environment for Kaspa L1, including
-                the <strong>SilverScript and covenant</strong> workflows of the Toccata upgrade.
+                HardKAS is an open-source, local-first development framework for Kaspa L1 — a CLI and a
+                TypeScript SDK — including the <strong>SilverScript and covenant</strong> workflows of the Toccata upgrade.
               </p>
 <div class="note" style="margin-top: 1rem; border: 1px solid var(--accent); padding: 1rem; border-radius: 4px; background: rgba(var(--accent-rgb), 0.1);">
 <strong>HardKAS has separate execution worlds.</strong><br/>
@@ -1037,6 +1059,7 @@ Account kind = synthetic · target mode = rpc<br/>
 <section id="capabilities">
 <h2>Capability Honesty</h2>
 <p>HardKAS states what it claims and what it does not. Its release claims are generated from the code that enforces them (<a href="https://github.com/KasLabDevs/HardKas/blob/main/docs/status/claims.generated.md" rel="noreferrer" target="_blank">claims.generated.md</a>) and use these values:</p>
+<p>By feature, with where each one was checked: <a href="/docs/start/what-works/">What works in this release</a> · <a href="/docs/status/claims.generated/">Release claims</a>.</p>
 <table>
 <thead><tr><th>Status</th><th>Meaning</th></tr></thead>
 <tbody>
@@ -1053,6 +1076,7 @@ Account kind = synthetic · target mode = rpc<br/>
 <h2>SilverScript &amp; covenants (Toccata)</h2>
 <p><strong>What works today on the Toccata upgrade, and what does not.</strong></p>
 <p>Toccata is the Kaspa hard fork, active on mainnet since 30 June 2026, that added transaction v1, covenants and SilverScript. HardKAS drives the official tools (silverc v1.0.0, rusty-kaspa, kaspa-wasm) instead of imitating them. The statuses follow the generated release claims; the proofs run against a local simnet node.</p>
+<p>Guides: <a href="/docs/guides/silverscript-covenants/">SilverScript and Toccata covenants</a> · <a href="/docs/start/silverscript-covenants/">try them on your own simnet</a> · <a href="/docs/guides/testing-kaspa-covenants/">testing Kaspa covenants</a>.</p>
 <table>
 <thead><tr><th>Feature</th><th>Status</th><th>Command</th></tr></thead>
 <tbody>
@@ -1102,6 +1126,7 @@ Account kind = synthetic · target mode = rpc<br/>
 <section id="quickstart">
 <h2>Quickstart</h2>
 <p>A first run in the simulator, with no node and no Docker: create a project, then plan, sign and send a payment and replay it from its artifacts. You need Node.js 24.22.1 (exactly: the version HardKAS pins and tests); <code>hardkas init</code> downloads the pinned kaspa-wasm.</p>
+<p>Full guides: <a href="/docs/start/quickstart/">5-minute quickstart</a> · <a href="/docs/start/simnet-node/">run your own Kaspa simnet node</a> · <a href="/docs/start/first-transaction/">your first transaction</a>.</p>
 <div class="codeblock">
 <div class="codebar">execution-safe workflow <button class="copy" data-copy="hardkas init\nhardkas simulator fund alice --amount 100\nhardkas tx plan --from alice --to bob --amount 10 --network simulated --out tx-plan.json\nhardkas tx sign tx-plan.json --account alice --out tx-signed.json\nhardkas tx send tx-signed.json --network simulated --yes">Copy</button></div>
 <pre><span class="comment"># 0. Create the project and install the pinned kaspa-wasm</span>
@@ -1719,7 +1744,8 @@ hardkas chaos replay --run-seed 42">
             The most used commands, with what each argument accepts. Every card was checked
             against the code of 0.13.0-rc.3. Add <code>--help</code> to any command to list all its
             options. The complete reference, generated from the command tree, is
-            <a href="https://github.com/KasLabDevs/HardKas/blob/main/docs/reference/cli.md" rel="noreferrer" target="_blank">docs/reference/cli.md</a>.
+            <a href="https://github.com/KasLabDevs/HardKas/blob/main/docs/reference/cli.md" rel="noreferrer" target="_blank">docs/reference/cli.md</a>,
+            and command group by command group, the <a href="/docs/reference/cli/">CLI reference</a>.
           </p>
 <div class="accordion">
 <details open="">
@@ -2801,6 +2827,7 @@ hardkas chaos replay --run-seed 42">
 <p>
                   No. Kaspa L1 does not execute EVM smart contracts. EVM execution belongs
                   to Igra/Kasplex L2 architecture. HardKAS preserves this distinction.
+                  Coming from Ethereum? Read <a href="/docs/guides/hardhat-for-kaspa/">Hardhat for Kaspa</a>.
                 </p>
 </div>
 </details>

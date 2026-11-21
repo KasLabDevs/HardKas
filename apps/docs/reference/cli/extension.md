@@ -1,5 +1,7 @@
 ---
-title: hardkas extension
+title: "hardkas extension commands"
+sidebar_label: "hardkas extension"
+description: "Reference for the hardkas extension commands (list, install, remove, doctor), with their arguments, options and defaults."
 ---
 
 # `hardkas extension`

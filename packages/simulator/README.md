@@ -1,5 +1,7 @@
 # @hardkas/simulator
 
+Documentation: [hardkas.dev/docs](https://hardkas.dev/docs/) · Website: [hardkas.dev](https://hardkas.dev)
+
 **Status: EXPERIMENTAL.** An in-memory Kaspa node for local development and fast tests: it starts without Docker,
 answers the wRPC (SerdeJson) and an HTTP JSON-RPC like rusty-kaspad 2.1.0, mines on demand, and takes snapshots.
 It **approximates** the node's rules. It is **not consensus-equivalent** and nothing it accepts or refuses is evidence of

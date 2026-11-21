@@ -1,5 +1,7 @@
 ---
-title: hardkas accounts
+title: "hardkas accounts commands"
+sidebar_label: "hardkas accounts"
+description: "Reference for the hardkas accounts commands (list, real init, real import, real session-open, and 6 more), with their arguments, options and defaults."
 ---
 
 # `hardkas accounts`

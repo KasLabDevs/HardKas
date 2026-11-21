@@ -5,6 +5,9 @@ description: How to build and test native Kaspa L1 applications with HardKAS, wi
 
 # Kaspa L1 Development Framework: architecture and engineering guide
 
+HardKAS is an open-source, local-first development framework for Kaspa L1. This page explains how it is built: the
+simulated ledger, the local rusty-kaspa node and the artifacts it records.
+
 Building applications, payment infrastructure and covenant logic natively on Kaspa Layer 1 differs from both single-chain
 UTXO systems (like Bitcoin) and account-based virtual machines (like Ethereum). Kaspa runs on the **GHOSTDAG BlockDAG**
 (DAGKnight planned), which gives high-throughput parallel blocks and fast confirmations under proof-of-work.

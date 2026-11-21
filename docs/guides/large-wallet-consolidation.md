@@ -1,3 +1,8 @@
+---
+title: "Large Wallet Consolidation"
+description: "Merge the thousands of small coinbase UTXOs a mining account collects with hardkas accounts consolidate, smallest first, skipping immature outputs."
+---
+
 # Large Wallet Consolidation
 
 If your node has mined thousands of blocks to an account, that account holds thousands of small coinbase UTXOs.

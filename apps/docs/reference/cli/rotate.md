@@ -1,5 +1,7 @@
 ---
-title: hardkas rotate
+title: "hardkas rotate command"
+sidebar_label: "hardkas rotate"
+description: "Reference for the hardkas rotate command, with its arguments, options and defaults."
 ---
 
 # `hardkas rotate`

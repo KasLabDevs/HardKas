@@ -1,3 +1,8 @@
+---
+title: "Security Claims Matrix"
+description: "What the artifact checks of HardKAS protect against and what they do not: the canonical hash is integrity, not authentication."
+---
+
 # Security Claims Matrix
 
 HardKAS re-verifies every artifact it is handed. When you pass a JSON payload to `tx.simulate()`, `tx.send()`, `tx.sign()` or `replay.verify()`, the SDK recomputes the canonical hash and compares it with the artifact's own `contentHash`.

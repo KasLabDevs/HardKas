@@ -1,5 +1,7 @@
 ---
-title: hardkas localnet
+title: "hardkas localnet commands"
+sidebar_label: "hardkas localnet"
+description: "Reference for the hardkas localnet commands (start, stop, reset, status, fund, seed, account create, and 4 more), with their arguments, options and defaults."
 ---
 
 # `hardkas localnet`

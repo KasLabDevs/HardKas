@@ -1,3 +1,8 @@
+---
+title: "Artifact Schema Reference"
+description: "The common header of every HardKAS artifact (schema, version, hash version), the fields of txPlan and signedTx, and the levels of artifact verify."
+---
+
 # Artifact Schema Reference
 
 Every artifact shares a common header:

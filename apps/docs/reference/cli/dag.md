@@ -1,5 +1,7 @@
 ---
-title: hardkas dag
+title: "hardkas dag commands"
+sidebar_label: "hardkas dag"
+description: "Reference for the hardkas dag commands (status, simulate-reorg), with their arguments, options and defaults."
 ---
 
 # `hardkas dag`

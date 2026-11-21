@@ -1,5 +1,7 @@
 # `@hardkas/artifacts`
 
+Documentation: [hardkas.dev/docs](https://hardkas.dev/docs/) · Website: [hardkas.dev](https://hardkas.dev)
+
 The artifacts package is the persistence and verification layer for HardKas transaction plans, signed transactions, receipts, snapshots, and related local records.
 
 ## 1. Deterministic Hashing

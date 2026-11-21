@@ -1,5 +1,7 @@
 ---
-title: hardkas workflow
+title: "hardkas workflow commands"
+sidebar_label: "hardkas workflow"
+description: "Reference for the hardkas workflow commands (run, inspect, diff), with their arguments, options and defaults."
 ---
 
 # `hardkas workflow`

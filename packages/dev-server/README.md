@@ -1,5 +1,7 @@
 # @hardkas/dev-server
 
+Documentation: [hardkas.dev/docs](https://hardkas.dev/docs/) · Website: [hardkas.dev](https://hardkas.dev)
+
 The local dev-server HTTP/SSE API behind `hardkas sandbox`.
 
 Part of [HardKAS](https://github.com/KasLabDevs/HardKas), local-first developer tooling for Kaspa L1.

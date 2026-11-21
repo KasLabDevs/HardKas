@@ -1,5 +1,7 @@
 ---
-title: hardkas init
+title: "hardkas init command"
+sidebar_label: "hardkas init"
+description: "Reference for the hardkas init command, with its arguments, options and defaults."
 ---
 
 # `hardkas init`

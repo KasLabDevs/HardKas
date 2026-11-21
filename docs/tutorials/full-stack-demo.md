@@ -1,3 +1,9 @@
+---
+title: "Tutorial: full-stack demo"
+sidebar_label: "Chapter 08: Full Stack Demo"
+description: "The full-stack Kaspa demo that closes the HardKAS builder book, based on Lab 09.5."
+---
+
 # Chapter 08: Full Stack Demo
 
 The culmination of the Builder Book is the Full Stack Demo (based on Lab 09.5).

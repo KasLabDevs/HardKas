@@ -1,3 +1,9 @@
+---
+title: "Plugins"
+sidebar_label: "Chapter 7: Plugins"
+description: "Extend HardKAS with plugins that add custom tasks or define hooks that observe or block transactions."
+---
+
 # Chapter 7: Plugins
 
 HardKAS allows extending its capabilities securely through Plugins. A Plugin can add custom Tasks or define Hooks that observe or block transactions.

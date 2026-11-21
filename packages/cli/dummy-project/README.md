@@ -1,10 +1,10 @@
 # dummy-project
 
-Built with [HardKAS](https://github.com/KasLabDevs/HardKas) — Kaspa developer toolkit.
+Built with [HardKAS](https://hardkas.dev) — the open-source development framework for Kaspa L1.
 
 ## HardKAS Concepts
 
-HardKAS is a deterministic developer operating environment. Before writing code, it's essential to understand the 5 core concepts of the runtime:
+HardKAS records every step of a Kaspa transaction as a file you can check. Before writing code, it's essential to understand the 5 core concepts of the runtime:
 
 - **Artifact**: The absolute source of truth. An immutable JSON file representing an intent, plan, receipt, or trace, written to `.hardkas/artifacts/`.
 - **Projection**: Derived state. HardKAS indexes artifacts into a SQLite query-store for fast queries and dev-server reads, but SQLite is _never_ the authority.

@@ -1,5 +1,7 @@
 ---
-title: hardkas repair
+title: "hardkas repair command"
+sidebar_label: "hardkas repair"
+description: "Reference for the hardkas repair command, with its arguments, options and defaults."
 ---
 
 # `hardkas repair`

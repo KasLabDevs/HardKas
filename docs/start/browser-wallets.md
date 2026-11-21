@@ -1,3 +1,9 @@
+---
+title: "Kaspa browser wallets: KasWare, Kastle and Kaspire (experimental)"
+sidebar_label: "Browser wallets (experimental)"
+description: "How HardKAS plans a transaction that a KasWare, Kastle or Kaspire wallet signs, what it checks afterwards, and the probe page to test your wallet."
+---
+
 # Browser wallets (experimental)
 
 HardKAS never holds a browser user's key. The wallet signs; HardKAS plans the transaction, checks what the wallet returns, assembles the final unlock of contract inputs, sends it through its own send route and records it. A wallet never broadcasts for HardKAS.

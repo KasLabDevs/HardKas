@@ -1,16 +1,36 @@
 ---
 title: FAQ
-description: Short answers about what HardKAS runs on, mainnet and testnet, evidence and replay, where files live, L2 and bridges, and using it from AI agents.
+description: Short answers about what HardKAS is, what it runs on, mainnet and testnet, SilverScript, evidence and replay, L2 and bridges, and AI agents.
 ---
 
 # FAQ
 
 ## What is HardKAS?
 
-A local-first development environment for Kaspa L1 transactions: a CLI
+An open-source, local-first development framework for Kaspa L1: a CLI
 (`@hardkas/cli`) and a TypeScript SDK (`@hardkas/sdk`) that plan, sign, send,
-observe and verify transactions, and record each step as an artifact you can
-check. See the [documentation home](../README.md).
+observe and verify transactions and SilverScript contracts, and record each step
+as an artifact you can check. See the [documentation home](../README.md).
+
+## Is HardKAS an official Kaspa project?
+
+No. HardKAS is an independent open-source community project (MIT), maintained by
+the KasLabDevs GitHub account. It drives the official tools — `rusty-kaspa`,
+`kaspa-wasm` and `silverc` — instead of reimplementing them.
+
+## How is HardKAS different from using kaspa-wasm directly?
+
+`kaspa-wasm` is the official SDK, and HardKAS builds on it. HardKAS adds what a
+development loop needs around it: a project layout, a managed local simnet node,
+development accounts and an encrypted keystore, guards that refuse the wrong
+network, and a checkable artifact for every step. For a production wallet, a
+browser app or mainnet, use `kaspa-wasm` directly
+([HardKAS vs kaspa-wasm or your own test harness](../concepts/hardkas-vs-kaspa-wasm.md)).
+
+## Is there a Hardhat for Kaspa?
+
+HardKAS covers similar ground for Kaspa L1 — a local node, tests and scripted
+transactions — without an EVM. See [Hardhat for Kaspa](../guides/hardhat-for-kaspa.md).
 
 ## Do I need Docker or a Kaspa node?
 
@@ -23,6 +43,12 @@ your own ([Run your own simnet node](../start/simnet-node.md)).
 
 Node.js 24.22.1 exactly. `hardkas doctor` passes on it, warns on another 24.x
 and fails on any other major line ([Install HardKAS](../start/installation.md)).
+
+## Which operating systems are supported?
+
+CI runs the hermetic tests on Linux, Windows and macOS. The node suites run in CI
+on Linux only, and the manual and Testnet-10 runs were on Windows 11 x64
+([What works in this release](../start/what-works.md)).
 
 ## Can I use HardKAS on mainnet?
 
@@ -37,7 +63,8 @@ it. `hardkas artifact verify` checks a mainnet artifact offline only.
 Yes, experimentally, if you hold testnet funds. The config needs
 `experimental: true` and `network: { allowPublic: true }`, and a node endpoint
 you choose: HardKAS never picks a public node for you
-([Configuration](../start/configuration.md#a-public-testnet)).
+([Configuration](../start/configuration.md#a-public-testnet); step by step:
+[Kaspa Testnet-10](../start/testnet-10.md)).
 
 ## Is a simulated result evidence?
 
@@ -99,6 +126,15 @@ Yes. It runs the pinned SilverScript compiler (`silverc` v1.0.0), and P2SH deplo
 and spend and 1:1 covenant transitions (transaction v1, Toccata) were verified
 against a real simnet node. 1:N, N:M and termination are experimental
 ([SilverScript and covenants](../start/silverscript-covenants.md)).
+
+## How do I test a Kaspa SilverScript contract locally?
+
+Start a local node with `hardkas localnet start --toccata`, compile the contract
+with `hardkas silver compile`, then deploy and spend it on simnet with
+`hardkas silver deploy` and `hardkas silver spend`
+([SilverScript and covenants on your simnet](../start/silverscript-covenants.md),
+[Testing Kaspa covenants](../guides/testing-kaspa-covenants.md)). `silver test`
+is experimental.
 
 ## What about ZK and vProgs?
 

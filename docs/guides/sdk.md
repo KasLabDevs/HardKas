@@ -1,6 +1,14 @@
+---
+title: "HardKAS SDK: a TypeScript SDK for Kaspa L1"
+sidebar_label: "SDK Guide"
+description: "Use @hardkas/sdk to plan, sign, send and verify Kaspa L1 transactions from TypeScript, on the simulated ledger or your own simnet node."
+---
+
 # SDK Guide
 
-The `@hardkas/sdk` package is the programmatic interface to a HardKAS workspace.
+`@hardkas/sdk` is a TypeScript SDK for Kaspa L1 built on the official `kaspa-wasm`: it plans, signs, sends and verifies
+transactions from code, on the simulated ledger or a simnet node, and records each step as an artifact. It is the
+programmatic interface to a HardKAS workspace.
 
 ## Create A Local SDK
 

@@ -1,5 +1,6 @@
 ---
-title: "Quickstart: a real transaction on your simnet"
+title: "Quickstart: a real Kaspa transaction on your own simnet"
+sidebar_label: "Quickstart: a real transaction on your simnet"
 description: From an empty project to a confirmed, verified payment on your own rusty-kaspad simnet node, with the CLI and then with the SDK.
 ---
 

@@ -1,5 +1,7 @@
 ---
-title: hardkas chaos
+title: "hardkas chaos commands"
+sidebar_label: "hardkas chaos"
+description: "Reference for the hardkas chaos commands (chaos, replay), with their arguments, options and defaults."
 ---
 
 # `hardkas chaos`

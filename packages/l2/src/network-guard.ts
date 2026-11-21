@@ -7,10 +7,15 @@ import {
 } from "./profiles.js";
 
 /**
- * Chain IDs that are always treated as mainnet, whatever the profile is called.
- * 1 = Ethereum mainnet, 38833 = Igra mainnet.
+ * Chain IDs that are always treated as mainnet, whatever the profile is called or declares.
+ * 1 = Ethereum, 38833 = Igra mainnet; and the widely used EVM mainnets (AUDIT 2026-11-21 · A3: the list was only the
+ * first two, so a user network on any other value-bearing chain was writable): 10 Optimism, 56 BNB Chain, 100 Gnosis,
+ * 137 Polygon, 250 Fantom, 324 zkSync Era, 8453 Base, 42161 Arbitrum One, 43114 Avalanche C, 59144 Linea, 534352 Scroll.
+ * A deny-list is never complete: a network of UNDECLARED environment is also refused off loopback (assertL2WriteAllowed).
  */
-export const KNOWN_MAINNET_CHAIN_IDS: ReadonlySet<number> = new Set([1, 38833]);
+export const KNOWN_MAINNET_CHAIN_IDS: ReadonlySet<number> = new Set([
+  1, 38833, 10, 56, 100, 137, 250, 324, 8453, 42161, 43114, 59144, 534352
+]);
 
 /**
  * A network is mainnet if its chain ID is a known mainnet, if the profile says so, or if a
@@ -75,6 +80,19 @@ export function assertL2WriteAllowed(input: L2WriteGuardInput): void {
         ". Mainnet is locked down in HardKAS (no signature, no broadcast, no connection); allowMainnet / --allow-mainnet " +
         "have no effect. Use a local or test network.",
       { chainId, profile: profile?.name, allowMainnetIgnored: input.allowMainnet === true }
+    );
+  }
+
+  // AUDIT 2026-11-21 · A3: a network whose environment nobody declared ("unknown": a user network without `environment`)
+  // is written to only on loopback. Off loopback HardKAS cannot tell a testnet from a value-bearing chain that is not in
+  // KNOWN_MAINNET_CHAIN_IDS, so it refuses until the user declares `environment: "testnet"` (their statement, recorded).
+  if (profile?.environment === "unknown" && typeof profile.rpcUrl === "string" && !isLoopbackUrl(profile.rpcUrl)) {
+    throw new L2SafetyError(
+      "L2_ENVIRONMENT_UNDECLARED",
+      `${input.operation} refused: network '${profile.name}' (chain ID ${chainId}) declares no environment and its RPC ` +
+        "endpoint is not loopback, so it cannot be told apart from a mainnet. Declare `environment: \"testnet\"` (or " +
+        "\"local\" for a loopback node) on that network in hardkas.config. Nothing was signed or sent.",
+      { chainId, profile: profile.name }
     );
   }
 }

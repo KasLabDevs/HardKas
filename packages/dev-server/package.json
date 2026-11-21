@@ -1,6 +1,8 @@
 {
   "name": "@hardkas/dev-server",
   "version": "0.13.0-rc.3",
+  "description": "The local HTTP/SSE dev-server API of HardKAS (Kaspa L1), behind hardkas sandbox.",
+  "keywords": ["hardkas", "kaspa", "kaspa-l1", "blockdag", "utxo", "developer-tools", "dev-server", "sse"],
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -54,7 +56,7 @@
   "bugs": {
     "url": "https://github.com/KasLabDevs/HardKas/issues"
   },
-  "homepage": "https://github.com/KasLabDevs/HardKas/tree/main/packages/dev-server#readme",
+  "homepage": "https://hardkas.dev/docs/",
   "publishConfig": {
     "access": "public"
   }

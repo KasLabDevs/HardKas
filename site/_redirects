@@ -5,3 +5,6 @@
 /how-to/*           /docs/how-to/:splat           301
 /tutorials/*        /docs/tutorials/:splat        301
 /reference/*        /docs/reference/:splat        301
+/testing/*          /docs/testing/:splat          301
+/docs/reference/sdk/core   /docs/reference/sdk/generated/  301
+/docs/reference/sdk/core/* /docs/reference/sdk/generated/  301

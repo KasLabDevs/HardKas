@@ -1,3 +1,9 @@
+---
+title: "Correct vs Incorrect Execution Flows"
+sidebar_label: "Correct Vs Incorrect Execution Flows"
+description: "The explicit states a HardKAS transaction moves through (plan, sign, then simulate or send) and the flows that skip or reorder them."
+---
+
 # Correct Vs Incorrect Execution Flows
 
 HardKas transactions move through a small number of explicit states. The local-first happy path is simple: plan, sign, then simulate/send.

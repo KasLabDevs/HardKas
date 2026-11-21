@@ -16,12 +16,9 @@ describe("Fault Injection Testing", () => {
     await fs.rm(workspaceDir, { recursive: true, force: true }).catch(() => {});
   });
 
-  test("Missing canonical artifact raises error during projection", async () => {
-    // Simulate that events.jsonl claims artifact exists, but it doesn't.
-    // This is a known fatal error, handled downstream, but we can mock the expectation.
-    // The runtime contract says: Missing canonical artifacts referenced in event ledger is fatal.
-    expect(true).toBe(true);
-  });
+  // AUDIT 2026-11-21 (M5): two placeholders that asserted `expect(true).toBe(true)` under the titles "Missing canonical
+  // artifact raises error during projection" and "Permission denied (EACCES) is fatal and fails fast" were removed: they
+  // tested nothing and ran in CI as a fault-injection gate. Neither behavior is covered by this file.
 
   test("Corrupt lock file (stale lock) is automatically recovered", async () => {
     const lockPath = path.join(workspaceDir, ".hardkas", "append.lock");
@@ -41,16 +38,4 @@ describe("Fault Injection Testing", () => {
     expect(exists).toContain("recover");
   });
 
-  test("Permission denied (EACCES) is fatal and fails fast", async () => {
-    const protectedDir = path.join(workspaceDir, "protected");
-    await fs.mkdir(protectedDir);
-
-    // In windows, chmod is tricky, we can simulate by opening a file exclusively or checking platform
-    // Assuming a generic error thrown by AppendCoordinator
-    const eventsPath = path.join(protectedDir, "events.jsonl");
-
-    // For cross-platform test reliability, we can mock fsync to throw EACCES
-    // Wait, let's just make it a generic test placeholder that proves the failure isn't silent
-    expect(true).toBe(true);
-  });
 });

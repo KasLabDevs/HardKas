@@ -1,5 +1,7 @@
 ---
-title: hardkas ci
+title: "hardkas ci commands"
+sidebar_label: "hardkas ci"
+description: "Reference for the hardkas ci commands (verify), with their arguments, options and defaults."
 ---
 
 # `hardkas ci`

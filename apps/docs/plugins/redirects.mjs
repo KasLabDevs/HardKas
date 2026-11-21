@@ -1,4 +1,5 @@
 // BETA-FIX W4 · old hardkas.dev/docs URLs keep working after the pages moved into the repository's docs/.
+// SEO-2026-11-21: redirect targets end in "/" (the site's trailing-slash form).
 // apps/docs/redirects.json holds every published URL of the hand-written pages before the move ("legacy", from the
 // sitemap of 20-nov-2026) and the map of moved pages ("redirects"). After the build this plugin:
 //   - fails when a legacy URL is neither a page nor redirected, when a redirect points at no page, or when a page is
@@ -51,7 +52,11 @@ export default function redirectsPlugin(_context, options) {
       const site = (siteConfig.url ?? "").replace(/\/+$/, "");
       const lines = [];
       for (const [f, to] of [...from.entries()].sort(([a], [b]) => a.localeCompare(b))) {
-        const target = `${base}${to.replace(/^\//, "")}`;
+        // The site uses trailing slashes (docusaurus.config.ts `trailingSlash: true`, as Cloudflare Pages serves
+        // every page): the target ends in "/" so the 301 lands on the final URL without a second redirect.
+        const [toPath, toHash] = to.split("#");
+        const toRel = toPath.replace(/^\/+|\/+$/g, "");
+        const target = `${base}${toRel ? `${toRel}/` : ""}${toHash ? `#${toHash}` : ""}`;
         const old = `${base}${f.replace(/^\//, "")}`;
         lines.push(`${old} ${target} 301`, `${old}/ ${target} 301`);
         const page = path.join(outDir, ...f.split("/").filter(Boolean), "index.html");

@@ -1,5 +1,6 @@
 ---
-title: 5-Minute Quickstart
+title: "Quickstart: your first Kaspa transaction in 5 minutes"
+sidebar_label: "5-Minute Quickstart"
 description: Plan, sign and send a first transaction on the simulated ledger with the CLI and the SDK, then check its evidence, with no node and no Docker.
 ---
 

@@ -1,5 +1,7 @@
 ---
-title: hardkas history
+title: "hardkas history command"
+sidebar_label: "hardkas history"
+description: "Reference for the hardkas history command, with its arguments, options and defaults."
 ---
 
 # `hardkas history`

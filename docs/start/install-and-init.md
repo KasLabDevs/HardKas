@@ -1,3 +1,9 @@
+---
+title: "Create a project with hardkas init"
+sidebar_label: "Chapter 2: Install and Init"
+description: "What hardkas init scaffolds in a Kaspa project: hardkas.config.ts, package.json, vitest.config.ts, a first test and funded simulated accounts."
+---
+
 # Chapter 2: Install and Init
 
 To start a new project with HardKAS, you use the `init` command. In the current directory it scaffolds `hardkas.config.ts`, a `package.json` (when none exists), `vitest.config.ts`, `.gitignore`, `test/payment.test.ts` and the `.hardkas/` workspace with five funded simulated accounts.

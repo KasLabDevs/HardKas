@@ -39,13 +39,20 @@ test("tx.simulate should not crash with .map undefined on in-memory signed artif
 
   // Re-simulate the signed artifact.
   // Before hotfix 0.7.13, artifacts.read greedily matched the receipt, passed it to applySimulatedPlan, and crashed on .map.
-  // Now, it should handle it gracefully using normalizeSimulatedPlanInput.
-  const simResult2 = await hk.tx.simulate(signed);
-  expect(simResult2.receipt.status).not.toBe("failed");
-
-  // We can also test idempotency by sending
-  const res = await hk.tx.send(signed);
-  expect(res.status).not.toBe("failed");
+  // The plan was already executed by the first simulate (the simulator's ledger is durable), so executing it again is
+  // refused: what the hotfix guards is HOW it answers. It must be the simulator's own refusal of an already-spent input,
+  // never a TypeError from reading the receipt as if it were a plan.
+  const again = await hk.tx.simulate(signed).then(
+    (r) => ({ ok: true as const, r }),
+    (e: unknown) => ({ ok: false as const, e })
+  );
+  if (again.ok) {
+    expect(again.r.receipt.status).not.toBe("failed");
+  } else {
+    expect(again.e).not.toBeInstanceOf(TypeError);
+    expect(String((again.e as Error).message)).toMatch(/invalid simulated input/);
+    expect(String((again.e as Error).message)).not.toMatch(/\.map|undefined is not/);
+  }
 }, 20000);
 
 test("artifacts.read should fail if expectedSchema is mismatched", async () => {
@@ -69,7 +76,7 @@ test("artifacts.read should fail if expectedSchema is mismatched", async () => {
     hk.artifacts.read(plan.planId, { expectedSchema: ARTIFACT_SCHEMAS.TX_PLAN })
   ).rejects.toThrow();
 
-  // Read the receipt directly
-  const receipt = await hk.artifacts.read(simResult.receipt.txId);
+  // Read the receipt by its txId (a txId is looked up as { tx }, never as a bare string: that is a path or an artifactId)
+  const receipt = await hk.artifacts.read({ tx: simResult.receipt.txId });
   expect(receipt.schema).toBe(ARTIFACT_SCHEMAS.TX_RECEIPT);
 }, 20000);

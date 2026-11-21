@@ -1,6 +1,8 @@
 {
   "name": "@hardkas/artifacts",
   "version": "0.13.0-rc.3",
+  "description": "Persistence and verification of HardKAS artifacts for Kaspa L1: content-hashed transaction plans, signed transactions, receipts and their lineage.",
+  "keywords": ["hardkas", "kaspa", "kaspa-l1", "blockdag", "utxo", "developer-tools", "artifacts", "evidence", "content-hash"],
   "type": "module",
   "license": "MIT",
   "author": "Javier Rodriguez",
@@ -9,7 +11,7 @@
     "url": "git+https://github.com/KasLabDevs/HardKas.git",
     "directory": "packages/artifacts"
   },
-  "homepage": "https://github.com/KasLabDevs/HardKas/tree/main/packages/artifacts#readme",
+  "homepage": "https://hardkas.dev/docs/",
   "bugs": {
     "url": "https://github.com/KasLabDevs/HardKas/issues"
   },

@@ -1,5 +1,7 @@
 ---
-title: hardkas kcc
+title: "hardkas kcc commands"
+sidebar_label: "hardkas kcc"
+description: "Reference for the hardkas kcc commands (dispatch, template-hash), with their arguments, options and defaults."
 ---
 
 # `hardkas kcc`

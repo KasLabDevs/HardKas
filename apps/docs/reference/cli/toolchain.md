@@ -1,5 +1,7 @@
 ---
-title: hardkas toolchain
+title: "hardkas toolchain commands"
+sidebar_label: "hardkas toolchain"
+description: "Reference for the hardkas toolchain commands (install, status), with their arguments, options and defaults."
 ---
 
 # `hardkas toolchain`

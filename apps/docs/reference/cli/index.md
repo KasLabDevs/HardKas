@@ -1,5 +1,6 @@
 ---
 title: CLI Reference
+description: "Every hardkas command, generated from the CLI's command tree: what it does, its arguments, options and defaults, by command group."
 sidebar_position: 1
 ---
 

@@ -69,6 +69,38 @@ function sanitizeMdx(str: string | undefined): string {
   return str.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\{/g, "&#123;").replace(/\}/g, "&#125;");
 }
 
+/** A YAML double-quoted scalar (JSON's escapes are valid YAML). */
+function yamlString(s: string): string {
+  return JSON.stringify(s);
+}
+
+/**
+ * SEO-2026-11-21: the meta description of a command group's page. It names the group's commands, as many as fit in
+ * the 160 characters search engines show (scripts/check-site-map.mjs uses the same limit).
+ */
+function isSingleCommand(group: string, commands: InventoryEntry[]): boolean {
+  return commands.length === 1 && commands[0]!.commandPath === `hardkas ${group}`;
+}
+
+function groupDescription(group: string, commands: InventoryEntry[]): string {
+  if (isSingleCommand(group, commands)) return `Reference for the hardkas ${group} command, with its arguments, options and defaults.`;
+  const names = [...new Set(commands.map((c) => c.commandPath.split(" ").slice(2).join(" ") || group))];
+  const head = `Reference for the hardkas ${group} commands`;
+  const tail = ", with their arguments, options and defaults.";
+  let list = "";
+  for (const [i, name] of names.entries()) {
+    const more = names.length - i - 1;
+    const next = list ? `${list}, ${name}` : name;
+    const suffix = more > 0 ? `, and ${more} more` : "";
+    if (`${head} (${next}${suffix})${tail}`.length > 160) {
+      list = list ? `${list}, and ${names.length - i} more` : "";
+      break;
+    }
+    list = next;
+  }
+  return list ? `${head} (${list})${tail}` : `${head}${tail}`;
+}
+
 /** file name (in docs/reference/cli) -> content. */
 export function renderCliReference(inventory: InventoryEntry[], cliSemantics: Semantics): Map<string, string> {
   const files = new Map<string, string>();
@@ -83,6 +115,7 @@ export function renderCliReference(inventory: InventoryEntry[], cliSemantics: Se
     "index.md",
     `---
 title: CLI Reference
+description: ${yamlString("Every hardkas command, generated from the CLI's command tree: what it does, its arguments, options and defaults, by command group.")}
 sidebar_position: 1
 ---
 
@@ -123,7 +156,9 @@ Commands that mutate your local workspace, broadcast to a network, or expose sen
 
   for (const [group, commands] of Object.entries(groups)) {
     let md = `---
-title: hardkas ${group}
+title: ${yamlString(`hardkas ${group} ${isSingleCommand(group, commands) ? "command" : "commands"}`)}
+sidebar_label: ${yamlString(`hardkas ${group}`)}
+description: ${yamlString(groupDescription(group, commands))}
 ---
 
 # \`hardkas ${group}\`

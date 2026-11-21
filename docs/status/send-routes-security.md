@@ -1,3 +1,9 @@
+---
+title: "Send routes and their checks before a broadcast"
+sidebar_label: "Send routes: what each one checks before a broadcast"
+description: "Every public HardKAS route that ends in a node's submitTransaction, side by side, and what each one checks before the broadcast."
+---
+
 # Send routes: what each one checks before a broadcast
 
 HardKAS has several public ways to put a transaction on a Kaspa L1 network. They do not all check the same things before the broadcast. This page lists every route that ends in a node's `submitTransaction`, side by side.

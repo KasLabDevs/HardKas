@@ -1,5 +1,7 @@
 ---
-title: hardkas watch
+title: "hardkas watch command"
+sidebar_label: "hardkas watch"
+description: "Reference for the hardkas watch command, with its arguments, options and defaults."
 ---
 
 # `hardkas watch`

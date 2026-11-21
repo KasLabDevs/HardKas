@@ -1,3 +1,8 @@
+---
+title: "Building Apps on HardKAS"
+description: "Integration patterns for building Kaspa apps on HardKAS, what the repository contains for each today, and where real-node verification is listed."
+---
+
 # Building Apps on HardKAS
 
 An earlier SDK integration gauntlet exercised the integration patterns below. Their example applications were removed when

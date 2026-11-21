@@ -1,5 +1,7 @@
 ---
-title: hardkas tx
+title: "hardkas tx commands"
+sidebar_label: "hardkas tx"
+description: "Reference for the hardkas tx commands (profile, batch, plan, sign, status, send, receipt, wait, verify, compare), with their arguments, options and defaults."
 ---
 
 # `hardkas tx`

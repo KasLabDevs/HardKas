@@ -1,5 +1,7 @@
 ---
-title: hardkas verify-semantics
+title: "hardkas verify-semantics command"
+sidebar_label: "hardkas verify-semantics"
+description: "Reference for the hardkas verify-semantics command, with its arguments, options and defaults."
 ---
 
 # `hardkas verify-semantics`

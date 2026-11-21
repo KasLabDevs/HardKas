@@ -5,7 +5,7 @@ description: Canonical AI-agent guide for HardKAS — capabilities, CLI vs SDK r
 
 # Build on Kaspa with AI
 
-HardKAS is a local-first development framework, transaction planner/signer, SilverScript toolchain wrapper, and artifact verifier for **Kaspa L1**.
+HardKAS is an open-source, local-first development framework for **Kaspa L1**: a CLI and a TypeScript SDK to plan, send and verify transactions and SilverScript contracts on your own simnet node. For an agent it is a transaction planner/signer, a SilverScript toolchain wrapper and an artifact verifier.
 
 > [!IMPORTANT]
 > **Kaspa L1 is a Proof-of-Work UTXO BlockDAG, NOT an EVM.**

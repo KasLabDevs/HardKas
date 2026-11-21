@@ -1,5 +1,6 @@
 ---
-title: SilverScript and covenants on your simnet
+title: "Kaspa SilverScript contracts and covenants on a local simnet"
+sidebar_label: "SilverScript and covenants on your simnet"
 description: Compile a SilverScript contract with the pinned silverc, deploy and spend it, then create a Toccata covenant and advance it, on your own simnet node.
 ---
 

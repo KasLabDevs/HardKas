@@ -1,3 +1,8 @@
+---
+title: "Programmability surface"
+description: "The SilverScript, ZK corpus, RISC0 and vProgs inspection surfaces HardKAS exposes to app builders through the CLI and SDK, and their status names."
+---
+
 # HardKAS 0.13.0-rc.3 Programmability Builder Surface
 
 HardKAS 0.13.0-rc.3 exposes a local-first programmability surface for app builders:

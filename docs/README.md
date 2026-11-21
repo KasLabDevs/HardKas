@@ -1,12 +1,13 @@
 ---
-title: HardKAS documentation
+title: "Kaspa L1 developer documentation"
 description: Install HardKAS, run a first Kaspa L1 transaction on the simulated ledger or your own simnet node, and find the guides, concepts and reference.
 ---
 
 # HardKAS documentation
 
-HardKAS is a local-first development environment for Kaspa L1 transactions. It
-plans, signs, sends, observes and verifies transactions as files you can check
+HardKAS is an open-source, local-first development framework for Kaspa L1: a CLI and
+a TypeScript SDK to plan, send and verify transactions and SilverScript contracts on
+your own simnet node. It plans, signs, sends, observes and verifies transactions as files you can check
 afterwards (artifacts), on a simulated ledger, on a `rusty-kaspad` simnet node of
 your own, or on testnet-10 behind an explicit opt-in.
 
@@ -77,6 +78,7 @@ The claim values of this release are generated from the code:
   [Reading receipts and verification levels](./start/receipts-and-levels.md) →
   [What works in this release](./start/what-works.md) →
   [Common errors and recovery](./start/common-errors.md).
+- [Kaspa Testnet-10 (experimental)](./start/testnet-10.md): the opt-in, an account, funding and a send on the public testnet.
 - [Browser wallets (experimental)](./start/browser-wallets.md).
 - The book chapters: [Install and init](./start/install-and-init.md) and [Your first scenario](./start/first-scenario.md).
 
@@ -94,6 +96,7 @@ The claim values of this release are generated from the code:
 
 ## Concepts
 
+- [HardKAS vs kaspa-wasm or your own test harness](./concepts/hardkas-vs-kaspa-wasm.md): when HardKAS saves work, and when not
 - [Transaction lifecycle](./concepts/transaction-lifecycle.md)
 - [Execution worlds](./concepts/execution-worlds.md)
 - [Artifact lifecycle](./concepts/artifact-lifecycle.md): identity, lineage and what evidence proves

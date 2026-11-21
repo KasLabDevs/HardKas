@@ -1,9 +1,12 @@
 ---
-title: SilverScript and Toccata covenants
+title: "Kaspa SilverScript smart contracts and Toccata covenants"
 description: What SilverScript and the Toccata upgrade add to Kaspa L1, and what HardKAS does with them, from compiling a contract to covenants and ZK locks.
 ---
 
 # SilverScript and Toccata covenants
+
+With HardKAS you compile Kaspa SilverScript contracts with the official `silverc` v1.0.0, deploy and spend them, and
+create and advance 1:1 Toccata covenants on your own simnet node.
 
 Toccata, active on Kaspa mainnet since June 30, 2026 (DAA score 474,165,565), extends Kaspa's UTXO validation with
 covenants, transaction v1, compute budgets and a ZK verification opcode. SilverScript is the high-level language for

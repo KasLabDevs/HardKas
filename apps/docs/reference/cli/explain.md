@@ -1,5 +1,7 @@
 ---
-title: hardkas explain
+title: "hardkas explain command"
+sidebar_label: "hardkas explain"
+description: "Reference for the hardkas explain command, with its arguments, options and defaults."
 ---
 
 # `hardkas explain`

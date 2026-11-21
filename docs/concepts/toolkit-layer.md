@@ -1,3 +1,9 @@
+---
+title: "The toolkit layer"
+sidebar_label: "Chapter 05: Toolkit Layer"
+description: "@hardkas/toolkit: simple facades over the wallet manager, domain store and artifact index that the backend of a Kaspa app needs."
+---
+
 # Chapter 05: Toolkit Layer
 
 The `@hardkas/toolkit` package is the culmination of building real applications. It hides complex infrastructure (`WalletManagerImpl` from `@hardkas/accounts`, `DomainStoreJson` from `@hardkas/query-store`, `ArtifactIndexStoreJson` from `@hardkas/artifacts`) behind simple facades.

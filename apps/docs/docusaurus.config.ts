@@ -26,13 +26,36 @@ const DOCS_PLUGIN = require.resolve('@docusaurus/plugin-content-docs', {
   paths: [require.resolve('@docusaurus/preset-classic')],
 });
 
+// SEO-2026-11-21 · the one short description used everywhere (landing, docs, README, GitHub, npm, llms.txt).
+const SHORT_DESCRIPTION = 'Open-source development framework for Kaspa L1: CLI, TypeScript SDK and IDE.';
+
 const config: Config = {
   title: 'HardKAS',
-  tagline: 'Kaspa L1 Development Framework & IDE',
+  tagline: SHORT_DESCRIPTION,
   favicon: 'img/favicon.ico',
   url: 'https://hardkas.dev',
   baseUrl: BASE_URL,
+  // Cloudflare Pages serves every page at its trailing-slash URL (/docs/x → 308 → /docs/x/): canonical links, the
+  // sitemap and internal links use that same form, so no indexed URL redirects.
+  trailingSlash: true,
   onBrokenLinks: 'throw',
+  // Every docs page points at the same software entity as the landing page (site/index.html, @id #software).
+  headTags: [
+    {
+      tagName: 'script',
+      attributes: {type: 'application/ld+json'},
+      innerHTML: JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'SoftwareApplication',
+        '@id': 'https://hardkas.dev/#software',
+        name: 'HardKAS',
+        url: 'https://hardkas.dev/',
+        applicationCategory: 'DeveloperApplication',
+        description: SHORT_DESCRIPTION,
+        sameAs: ['https://github.com/KasLabDevs/HardKas', 'https://www.npmjs.com/package/@hardkas/cli'],
+      }),
+    },
+  ],
   // docs/ is CommonMark written for GitHub: .md pages are parsed as Markdown, not MDX.
   markdown: {
     format: 'detect',
@@ -93,10 +116,18 @@ const config: Config = {
         theme: {
           customCss: './src/css/custom.css',
         },
+        // The ~1,100 generated TypeDoc pages stay published and linked, but out of the sitemap: there they were 87 % of
+        // the URLs, all with the same description, and diluted the crawl of the hand-written pages. The SDK index
+        // (/docs/reference/sdk/generated/) stays in it.
+        sitemap: {
+          ignorePatterns: ['/docs/reference/sdk/generated/*/**'],
+        },
       } satisfies Preset.Options,
     ],
   ],
   themeConfig: {
+    // Social card (og:image / twitter:image) of every docs page: the same IDE screenshot the landing page uses.
+    image: 'img/ide/workbench.png',
     colorMode: {
       defaultMode: 'dark',
       disableSwitch: false,
@@ -105,7 +136,7 @@ const config: Config = {
     navbar: {
       title: '',
       logo: {
-        alt: 'HardKas — Kaspa Developer Toolkit',
+        alt: 'HardKAS — Kaspa L1 development framework',
         src: 'img/logo.png',
         srcDark: 'img/logo.png',
         height: 26,
@@ -158,7 +189,7 @@ const config: Config = {
           ],
         },
       ],
-      copyright: `<div class="docs-footer-meta">HardKAS 0.13.0-rc.3 · MIT License · Local-first Kaspa developer tooling</div>`,
+      copyright: `<div class="docs-footer-meta">HardKAS 0.13.0-rc.3 · MIT License · Open-source development framework for Kaspa L1</div>`,
     },
     prism: { theme: prismThemes.github, darkTheme: prismThemes.dracula },
   } satisfies Preset.ThemeConfig,

@@ -1,6 +1,8 @@
 {
   "name": "@hardkas/node-runner",
   "version": "0.13.0-rc.3",
+  "description": "A managed rusty-kaspa node in Docker for HardKAS, pinned by image digest, with checks of the node's identity.",
+  "keywords": ["hardkas", "kaspa", "kaspa-l1", "blockdag", "utxo", "developer-tools", "rusty-kaspa", "docker", "simnet", "node"],
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -29,7 +31,7 @@
   "bugs": {
     "url": "https://github.com/KasLabDevs/HardKas/issues"
   },
-  "homepage": "https://github.com/KasLabDevs/HardKas/tree/main/packages/node-runner#readme",
+  "homepage": "https://hardkas.dev/docs/",
   "files": [
     "dist",
     "LICENSE",

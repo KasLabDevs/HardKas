@@ -1,3 +1,8 @@
+---
+title: "Your First HardKAS Test"
+description: "Write and run a first scenario-driven HardKAS test for Kaspa with Vitest, then turn its run into an evidence file you can verify."
+---
+
 # Your First HardKAS Test
 
 Testing is a first-class citizen in the HardKAS framework. HardKAS brings a scenario-driven testing engine powered by Vitest, tailored for the Kaspa network.

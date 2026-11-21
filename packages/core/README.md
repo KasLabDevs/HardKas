@@ -1,5 +1,7 @@
 # `@hardkas/core`
 
+Documentation: [hardkas.dev/docs](https://hardkas.dev/docs/) · Website: [hardkas.dev](https://hardkas.dev)
+
 The Core package provides the foundational safety rails, filesystem abstractions, and atomic persistence primitives for the entire HardKAS ecosystem.
 
 ## 1. Atomic Writes (`writeFileAtomic`)

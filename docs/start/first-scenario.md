@@ -1,3 +1,9 @@
+---
+title: "Your first test scenario"
+sidebar_label: "Chapter 3: Your First Scenario"
+description: "Write test scenarios that verify Kaspa logic with the scenario-driven Vitest integration of HardKAS."
+---
+
 # Chapter 3: Your First Scenario
 
 HardKAS brings scenario-driven testing via a custom Vitest integration.

@@ -1,5 +1,7 @@
 ---
-title: hardkas sandbox
+title: "hardkas sandbox command"
+sidebar_label: "hardkas sandbox"
+description: "Reference for the hardkas sandbox command, with its arguments, options and defaults."
 ---
 
 # `hardkas sandbox`

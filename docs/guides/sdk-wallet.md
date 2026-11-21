@@ -1,3 +1,8 @@
+---
+title: "SDK Wallet Guide"
+description: "Plan, sign and simulate a Kaspa payment from code with @hardkas/sdk, and the package entry points you can import."
+---
+
 # SDK Wallet Guide
 
 The `@hardkas/sdk` provides programmatic access.

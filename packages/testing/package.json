@@ -1,6 +1,8 @@
 {
   "name": "@hardkas/testing",
   "version": "0.13.0-rc.3",
+  "description": "Scenario testing for Kaspa L1 with Vitest: deterministic, artifact-driven tests for HardKAS projects.",
+  "keywords": ["hardkas", "kaspa", "kaspa-l1", "blockdag", "utxo", "developer-tools", "testing", "vitest", "simnet"],
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -83,7 +85,7 @@
   "bugs": {
     "url": "https://github.com/KasLabDevs/HardKas/issues"
   },
-  "homepage": "https://github.com/KasLabDevs/HardKas/tree/main/packages/testing#readme",
+  "homepage": "https://hardkas.dev/docs/",
   "files": [
     "dist",
     "LICENSE",

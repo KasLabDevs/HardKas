@@ -1,5 +1,7 @@
 ---
-title: hardkas inspect
+title: "hardkas inspect command"
+sidebar_label: "hardkas inspect"
+description: "Reference for the hardkas inspect command, with its arguments, options and defaults."
 ---
 
 # `hardkas inspect`

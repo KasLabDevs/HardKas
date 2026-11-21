@@ -1,5 +1,7 @@
 ---
-title: hardkas kaspa
+title: "hardkas kaspa commands"
+sidebar_label: "hardkas kaspa"
+description: "Reference for the hardkas kaspa commands (wallet create, wallet list, wallet address, wallet balance, and 2 more), with their arguments, options and defaults."
 ---
 
 # `hardkas kaspa`

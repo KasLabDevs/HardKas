@@ -1,6 +1,8 @@
 {
   "name": "@hardkas/toolkit",
   "version": "0.13.0-rc.3",
+  "description": "A backend kit for Kaspa L1 apps on HardKAS: wallets, payments, UTXO reservations, an indexer, jobs and fee estimation.",
+  "keywords": ["hardkas", "kaspa", "kaspa-l1", "blockdag", "utxo", "developer-tools", "payments", "wallet", "indexer", "jobs"],
   "license": "MIT",
   "private": false,
   "type": "module",
@@ -48,7 +50,7 @@
   "bugs": {
     "url": "https://github.com/KasLabDevs/HardKas/issues"
   },
-  "homepage": "https://github.com/KasLabDevs/HardKas/tree/main/packages/toolkit#readme",
+  "homepage": "https://hardkas.dev/docs/",
   "publishConfig": {
     "access": "public"
   }

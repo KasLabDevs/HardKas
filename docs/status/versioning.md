@@ -1,3 +1,8 @@
+---
+title: "Version Guarantees"
+description: "Which HardKAS boundaries are stable, preview or experimental in this alpha, which packages are published, and how to tell them apart."
+---
+
 # Version Guarantees
 > **Claims are generated.** The authoritative values live in
 > [claims.generated.md](./claims.generated.md), produced from `packages/sdk` by

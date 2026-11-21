@@ -1,5 +1,7 @@
 ---
-title: hardkas artifact
+title: "hardkas artifact commands"
+sidebar_label: "hardkas artifact"
+description: "Reference for the hardkas artifact commands (create, inspect, verify, migrate, explain, lineage), with their arguments, options and defaults."
 ---
 
 # `hardkas artifact`

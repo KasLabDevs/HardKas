@@ -1,5 +1,7 @@
 ---
-title: hardkas escrow
+title: "hardkas escrow commands"
+sidebar_label: "hardkas escrow"
+description: "Reference for the hardkas escrow commands (rescue-v1 prepare, rescue-v1 sign, rescue-v1 inspect, and 8 more), with their arguments, options and defaults."
 ---
 
 # `hardkas escrow`

@@ -1,5 +1,7 @@
 ---
-title: hardkas config
+title: "hardkas config commands"
+sidebar_label: "hardkas config"
+description: "Reference for the hardkas config commands (show, networks, init, repair), with their arguments, options and defaults."
 ---
 
 # `hardkas config`

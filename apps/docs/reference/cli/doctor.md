@@ -1,5 +1,7 @@
 ---
-title: hardkas doctor
+title: "hardkas doctor command"
+sidebar_label: "hardkas doctor"
+description: "Reference for the hardkas doctor command, with its arguments, options and defaults."
 ---
 
 # `hardkas doctor`

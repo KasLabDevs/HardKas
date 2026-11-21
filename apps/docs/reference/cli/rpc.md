@@ -1,5 +1,7 @@
 ---
-title: hardkas rpc
+title: "hardkas rpc commands"
+sidebar_label: "hardkas rpc"
+description: "Reference for the hardkas rpc commands (info, health, doctor, compare, dag, utxos, mempool), with their arguments, options and defaults."
 ---
 
 # `hardkas rpc`

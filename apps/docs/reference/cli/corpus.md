@@ -1,5 +1,7 @@
 ---
-title: hardkas corpus
+title: "hardkas corpus commands"
+sidebar_label: "hardkas corpus"
+description: "Reference for the hardkas corpus commands (verify), with their arguments, options and defaults."
 ---
 
 # `hardkas corpus`

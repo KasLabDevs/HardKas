@@ -1,5 +1,7 @@
 ---
-title: hardkas why
+title: "hardkas why command"
+sidebar_label: "hardkas why"
+description: "Reference for the hardkas why command, with its arguments, options and defaults."
 ---
 
 # `hardkas why`

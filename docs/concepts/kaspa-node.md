@@ -1,3 +1,8 @@
+---
+title: "Kaspa Node Integration"
+description: "How HardKAS works with a rusty-kaspad node: running it on simnet for development, and the coinbase maturity window of a local simnet."
+---
+
 # Kaspa Node Integration
 
 HardKAS is designed to interface with `rusty-kaspad`.

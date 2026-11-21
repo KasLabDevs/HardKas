@@ -1,5 +1,7 @@
 ---
-title: hardkas kcc20
+title: "hardkas kcc20 commands"
+sidebar_label: "hardkas kcc20"
+description: "Reference for the hardkas kcc20 commands (encode-state, decode-state, check, artifact, deploy, and 2 more), with their arguments, options and defaults."
 ---
 
 # `hardkas kcc20`

@@ -1,5 +1,7 @@
 ---
-title: hardkas rebuild
+title: "hardkas rebuild command"
+sidebar_label: "hardkas rebuild"
+description: "Reference for the hardkas rebuild command, with its arguments, options and defaults."
 ---
 
 # `hardkas rebuild`

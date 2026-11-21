@@ -1,5 +1,6 @@
 ---
-title: Run your own simnet node
+title: "Run a local Kaspa simnet node (rusty-kaspad in Docker)"
+sidebar_label: "Run your own simnet node"
 description: Run rusty-kaspad v2.1.0 and a CPU miner in Docker, by hand or as the managed localnet, point your workspace at it, stop it, or start over.
 url: /localnet
 ---

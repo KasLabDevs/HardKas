@@ -116,7 +116,8 @@ server.listen(PORT, async () => {
       path: "/docs/getting-started/quickstart",
       validate: (body, status) => {
         if (status !== 200) return `Expected the HTTP 200 redirect page, got ${status}`;
-        if (!body.includes('url=/docs/start/quickstart"')) return "Missing the redirect to /docs/start/quickstart";
+        // SEO-2026-11-21: redirect targets end in "/" (trailingSlash: true), so the 301 lands on the final URL
+        if (!body.includes('url=/docs/start/quickstart/"')) return "Missing the redirect to /docs/start/quickstart/";
         return null;
       }
     },
@@ -126,8 +127,10 @@ server.listen(PORT, async () => {
       validate: (body, status) => {
         if (status !== 200) return `Expected HTTP 200, got ${status}`;
         if (!body.includes("/ide               /ide/")) return "Missing the landing page's own redirects";
-        if (!body.includes("/docs/getting-started/quickstart /docs/start/quickstart 301")) return "Missing the docs redirects";
-        if (!body.includes("/docs/concepts/execution-contract /docs/concepts/execution-worlds 301")) return "Missing a merged page's redirect";
+        if (!body.includes("/docs/getting-started/quickstart /docs/start/quickstart/ 301")) return "Missing the docs redirects";
+        if (!body.includes("/docs/concepts/execution-contract /docs/concepts/execution-worlds/ 301")) return "Missing a merged page's redirect";
+        if (!body.includes("/docs/concepts/pskt/what-is-pskt /docs/concepts/pskt/ 301")) return "Missing a redirect of a page published before 21-nov";
+        if (!body.includes("/docs/reference/sdk/core/* /docs/reference/sdk/generated/  301")) return "Missing the redirect of the old core SDK reference";
         return null;
       }
     },
@@ -206,8 +209,12 @@ server.listen(PORT, async () => {
         if (status !== 200) return `Expected HTTP 200, got ${status}`;
         if (!body.includes("<loc>https://hardkas.dev/</loc>")) return "Missing root apex in sitemap";
         if (!body.includes("<loc>https://hardkas.dev/docs/</loc>")) return "Missing /docs/ in sitemap";
-        if (!body.includes("<loc>https://hardkas.dev/docs/start/quickstart</loc>")) return "Missing quickstart in sitemap";
-        if (body.includes("/docs/getting-started/quickstart<")) return "A moved page's old URL is in the sitemap";
+        // SEO-2026-11-21: sitemap URLs use the trailing-slash form Cloudflare Pages serves, and leave out the TypeDoc pages
+        if (!body.includes("<loc>https://hardkas.dev/docs/start/quickstart/</loc>")) return "Missing quickstart in sitemap";
+        if (/\/docs\/getting-started\/quickstart\/?</.test(body)) return "A moved page's old URL is in the sitemap";
+        if (/<loc>https:\/\/hardkas\.dev\/docs\/[^<]*[^/]<\/loc>/.test(body)) return "A docs URL without its trailing slash is in the sitemap";
+        if (!body.includes("<loc>https://hardkas.dev/docs/reference/sdk/generated/</loc>")) return "Missing the SDK reference index in sitemap";
+        if (body.includes("/docs/reference/sdk/generated/sdk/")) return "TypeDoc member pages are in the sitemap";
         return null;
       }
     },
@@ -229,6 +236,36 @@ server.listen(PORT, async () => {
         if (!body.includes("https://hardkas.dev/docs/")) return "Missing docs pointer in llms.txt";
         if (!body.includes("https://hardkas.dev/llms-full.txt")) return "Missing llms-full.txt pointer in llms.txt";
         if (!body.includes("hardkas tx send")) return "Missing CLI fast-path in llms.txt";
+        if (!body.includes("https://hardkas.dev/docs/start/what-works/")) return "Missing the what-works page in llms.txt";
+        if (!body.includes("https://hardkas.dev/md/")) return "Missing the Markdown copies in llms.txt";
+        return null;
+      }
+    },
+    {
+      // SEO-2026-11-21: a top-level 404 page, so Cloudflare Pages answers unknown URLs with 404, not the landing page
+      name: "Top-level 404 page (/404.html)",
+      path: "/404.html",
+      validate: (body, status) => {
+        if (status !== 200) return `Expected the file to exist (HTTP 200 here), got ${status}`;
+        if (!body.includes("__docusaurus")) return "The 404 page is not the docs 404 page";
+        return null;
+      }
+    },
+    {
+      name: "Markdown copy of a page (/md/start/quickstart.md)",
+      path: "/md/start/quickstart.md",
+      validate: (body, status) => {
+        if (status !== 200) return `Expected HTTP 200, got ${status}`;
+        if (!body.includes("hardkas tx plan")) return "Missing the quickstart's commands";
+        return null;
+      }
+    },
+    {
+      name: "Markdown copies are noindex (/_headers)",
+      path: "/_headers",
+      validate: (body, status) => {
+        if (status !== 200) return `Expected HTTP 200, got ${status}`;
+        if (!body.includes("/md/*") || !body.includes("X-Robots-Tag: noindex")) return "Missing the noindex header for /md/*";
         return null;
       }
     },

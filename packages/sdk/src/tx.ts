@@ -163,6 +163,31 @@ function endpointAuthority(rpc: unknown, explicit: string | undefined, operation
   return own;
 }
 
+/**
+ * AUDIT 2026-11-21 · A2 (TX-PLAN-HEADER-1) · a v0 payment plan's header against its body. The header (`to.address`,
+ * `amountSompi`) is what people and tools read; the outputs are what gets signed. With payment outputs present, their
+ * sum must be `amountSompi` and `to.address` must be one of them. A plan with no payment outputs (a sweep or a
+ * consolidation, whose value leaves as change) and every other schema are not this check's.
+ */
+export function refusePlanHeaderMismatch(plan: any): void {
+  if (plan?.schema !== HardkasSchemas.TxPlan) return;
+  const outputs: any[] = Array.isArray(plan.outputs) ? plan.outputs : [];
+  if (outputs.length === 0) return;
+  if (!outputs.every((o) => /^\d+$/.test(String(o?.amountSompi))) || !/^\d+$/.test(String(plan.amountSompi))) return;
+  const paid = outputs.reduce((s, o) => s + BigInt(o.amountSompi), 0n);
+  const declared = BigInt(plan.amountSompi);
+  const to = typeof plan.to?.address === "string" ? plan.to.address : undefined;
+  const problems: string[] = [];
+  if (paid !== declared) problems.push(`it declares ${declared} sompi and its outputs pay ${paid}`);
+  if (to !== undefined && !outputs.some((o) => o?.address === to)) problems.push(`it declares the recipient ${to} and no output pays that address`);
+  if (problems.length === 0) return;
+  throw new HardkasError(
+    "TX_PLAN_HEADER_MISMATCH",
+    `Refusing to sign: this plan's header and outputs disagree (${problems.join("; ")}). What a plan shows must be what ` +
+      `it signs; this one was edited or built by a tool that does not keep them together. Plan it again. Nothing was signed.`
+  );
+}
+
 /** Options of `tx.send` given as an object (the string form is the endpoint alone). */
 export interface SendTxOptions {
   /** The endpoint to send to: it must be this instance's client's (ENDPOINT-AUTHORITY-1). */
@@ -1451,6 +1476,11 @@ export class HardkasTx {
         assertFeeWithinLimitInForce(paid !== undefined && declared !== undefined ? (paid > declared ? paid : declared) : (paid ?? declared)!, limit, "sign", planNetwork);
       }
     }
+
+    // AUDIT 2026-11-21 · A2 (TX-PLAN-HEADER-1): what a plan says it pays (`to`, `amountSompi`: what `tx sign`, `artifact
+    // inspect` and a reviewer read) must be what its outputs pay (what is signed). contentHash is unkeyed, so a rewritten
+    // plan re-hashes cleanly; one whose header and outputs disagree would show one payment and sign another.
+    refusePlanHeaderMismatch(plan);
 
     // COVENANT-UTXO-PAYMENT-FILTER-1B (F1.0-bis): before any signer is asked (an external one too), any account is
     // resolved or key opened, and anything is written, a plan that spends a covenant's UTXO is refused: on what the plan

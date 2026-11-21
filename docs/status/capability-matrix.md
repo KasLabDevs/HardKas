@@ -1,3 +1,8 @@
+---
+title: "Capability Matrix"
+description: "What the HardKAS release checks verify, capability by capability: the repository's own verification, not a third-party certification."
+---
+
 # Capability Matrix
 
 What the release checks verify, by capability. This is the repository's own verification, not a third-party certification.

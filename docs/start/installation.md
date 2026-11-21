@@ -1,5 +1,6 @@
 ---
-title: Install HardKAS
+title: "Install HardKAS: CLI and SDK for Kaspa L1"
+sidebar_label: "Install HardKAS"
 description: Prerequisites, which HardKAS packages you need, the optional peers and toolchains, and how to confirm the install worked.
 ---
 

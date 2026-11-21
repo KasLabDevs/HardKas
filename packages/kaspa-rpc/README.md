@@ -1,5 +1,7 @@
 # @hardkas/kaspa-rpc
 
+Documentation: [hardkas.dev/docs](https://hardkas.dev/docs/) · Website: [hardkas.dev](https://hardkas.dev)
+
 The wRPC client HardKAS uses to talk to a Kaspa node (kaspad).
 
 Part of [HardKAS](https://github.com/KasLabDevs/HardKas), local-first developer tooling for Kaspa L1.

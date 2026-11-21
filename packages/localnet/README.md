@@ -1,5 +1,7 @@
 # @hardkas/localnet
 
+Documentation: [hardkas.dev/docs](https://hardkas.dev/docs/) · Website: [hardkas.dev](https://hardkas.dev)
+
 The local network state of a workspace: the simulated chain in `.hardkas/localnet.json`, its accounts, receipts, traces and snapshots.
 
 Part of [HardKAS](https://github.com/KasLabDevs/HardKas), local-first developer tooling for Kaspa L1.

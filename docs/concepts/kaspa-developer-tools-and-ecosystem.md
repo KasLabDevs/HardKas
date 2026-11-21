@@ -5,6 +5,10 @@ description: A directory of Kaspa developer tools, from the rusty-kaspa node and
 
 # Kaspa developer tools and ecosystem: a technical guide
 
+This page lists the main developer tools for Kaspa L1 — the rusty-kaspa node, the kaspa-wasm SDK, the SilverScript
+compiler, IDEs, frameworks and explorers — and where HardKAS fits. HardKAS is an independent community project, not an
+official Kaspa tool.
+
 Building software on Kaspa means working with a high-throughput, parallel **proof-of-work BlockDAG**. Kaspa differs from
 linear blockchains: sub-second block intervals, GHOSTDAG consensus (DAGKnight planned), and a UTXO-based transaction
 model.

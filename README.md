@@ -1,6 +1,7 @@
 # HardKAS
 
-> **Kaspa L1 Development Framework, Transaction Simulator & Developer Platform**
+> **Open-source development framework for Kaspa L1: CLI, TypeScript SDK and IDE.**
+> Website: [hardkas.dev](https://hardkas.dev) · Docs: [hardkas.dev/docs](https://hardkas.dev/docs/)
 
 [![npm](https://img.shields.io/npm/v/@hardkas/cli?label=npm%20%40hardkas%2Fcli)](https://www.npmjs.com/package/@hardkas/cli)
 [![License: MIT](https://img.shields.io/badge/License-MIT-teal.svg)](LICENSE)
@@ -8,7 +9,7 @@
 [![CI](https://github.com/KasLabDevs/HardKas/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/KasLabDevs/HardKas/actions/workflows/ci.yml)
 [![Release Status](https://img.shields.io/badge/status-hardened--alpha-amber.svg)](docs/status/claims.generated.md)
 
-HardKAS is an open-source, local-first development framework, transaction simulator, and development environment for building and testing applications on **Kaspa L1**.
+HardKAS is an open-source, local-first development framework for **Kaspa L1**: a CLI and a TypeScript SDK to plan, send and verify transactions and SilverScript contracts on your own simnet node. It is an independent community project, not an official Kaspa tool.
 
 Inspired by the developer ergonomics of Ethereum tooling like **Hardhat** and **Foundry**, HardKAS provides:
 

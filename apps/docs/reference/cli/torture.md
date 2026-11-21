@@ -1,5 +1,7 @@
 ---
-title: hardkas torture
+title: "hardkas torture commands"
+sidebar_label: "hardkas torture"
+description: "Reference for the hardkas torture commands (matrix, replay), with their arguments, options and defaults."
 ---
 
 # `hardkas torture`

@@ -1,3 +1,9 @@
+---
+title: "Artifacts and evidence"
+sidebar_label: "Chapter 4: Artifacts and Evidence"
+description: "How HardKAS packages the deterministic outputs of a scenario into verifiable evidence packages (.hke.json)."
+---
+
 # Chapter 4: Artifacts and Evidence
 
 HardKAS goes beyond simple test execution by packaging the deterministic outputs of a scenario into verifiable evidence packages (`.hke.json`).

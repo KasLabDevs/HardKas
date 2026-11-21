@@ -53,4 +53,33 @@ describe("CLI dev namespace", () => {
     expect(parsed.checks).toBeInstanceOf(Array);
     expect(parsed.checks.some((c: any) => /L2|Igra|EVM/.test(c.name))).toBe(false);
   });
+
+  // DOCTOR-JSON-ONE-DOCUMENT: a FAILED report is printed once, as the report and the failure envelope in one document,
+  // and marks the output as written so the CLI's error handler adds no second envelope; it still fails (exit 1).
+  it("doctor workspace --json on failure: one document that is the report and the envelope; then the typed failure", async () => {
+    const { getOutput } = await import("../src/output.js");
+    const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+    getOutput().jsonWritten = false;
+    const failed = { checks: [{ name: "Section", status: "error" as const, message: "broken", code: "ARTIFACT_INVALID" }], status: "failed" as const };
+    await expect(
+      renderWorkspaceDoctorReport(failed, {
+        json: true,
+        title: "Workspace Doctor",
+        failureCode: "WORKSPACE_DOCTOR_FAILED",
+        failureMessage: "Workspace doctor checks failed."
+      })
+    ).rejects.toMatchObject({ code: "WORKSPACE_DOCTOR_FAILED", exitCode: 1 });
+    expect(logSpy).toHaveBeenCalledTimes(1);
+    expect(JSON.parse(logSpy.mock.calls[0][0])).toMatchObject({
+      ok: false,
+      code: "WORKSPACE_DOCTOR_FAILED",
+      message: "Workspace doctor checks failed.",
+      schema: "hardkas.devDoctor.v1",
+      status: "failed",
+      checks: [{ code: "ARTIFACT_INVALID" }]
+    });
+    expect(getOutput().jsonWritten).toBe(true);
+    getOutput().jsonWritten = false;
+    logSpy.mockRestore();
+  });
 });

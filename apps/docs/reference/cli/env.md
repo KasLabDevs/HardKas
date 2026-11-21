@@ -1,5 +1,7 @@
 ---
-title: hardkas env
+title: "hardkas env commands"
+sidebar_label: "hardkas env"
+description: "Reference for the hardkas env commands (check), with their arguments, options and defaults."
 ---
 
 # `hardkas env`

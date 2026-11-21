@@ -2,13 +2,15 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { ProjectionStoreJson } from '../src/projection-store.js';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import * as os from 'node:os';
 import { randomUUID } from 'node:crypto';
 
 describe('ProjectionStoreJson', () => {
     let testDirPath: string;
 
     beforeEach(() => {
-        testDirPath = path.join(process.cwd(), `test-projections-${randomUUID()}`);
+        // under the OS temp dir: a test never writes into the repository root
+        testDirPath = path.join(os.tmpdir(), `hk-test-projections-${randomUUID()}`);
     });
 
     afterEach(() => {
@@ -40,7 +42,7 @@ describe('ProjectionStoreJson', () => {
         store.set('a', 1);
         store.set('b', 2);
         
-        const snap = store.snapshot();
+        const snap = store.getAll();
         expect(snap.a).toBe(1);
         expect(snap.b).toBe(2);
     });

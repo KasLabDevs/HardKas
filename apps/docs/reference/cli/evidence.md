@@ -1,5 +1,7 @@
 ---
-title: hardkas evidence
+title: "hardkas evidence commands"
+sidebar_label: "hardkas evidence"
+description: "Reference for the hardkas evidence commands (pack, verify, explain), with their arguments, options and defaults."
 ---
 
 # `hardkas evidence`

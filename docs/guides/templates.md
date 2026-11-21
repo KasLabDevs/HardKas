@@ -1,3 +1,9 @@
+---
+title: "Project templates"
+sidebar_label: "Chapter 5: Templates"
+description: "The templates bundled with HardKAS, and how hardkas create scaffolds a Kaspa application from one into a new folder."
+---
+
 # Chapter 5: Templates
 
 HardKAS comes with bundled templates to accelerate your Kaspa projects.

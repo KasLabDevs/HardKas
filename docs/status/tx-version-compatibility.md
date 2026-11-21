@@ -1,3 +1,8 @@
+---
+title: "Transaction Version Compatibility"
+description: "How HardKAS transaction abstractions map to Kaspa's transaction versions, v0 and Toccata's v1."
+---
+
 # Transaction Version Compatibility
 This document outlines the compatibility between HardKAS transaction abstractions and Kaspa's transaction versions.
 

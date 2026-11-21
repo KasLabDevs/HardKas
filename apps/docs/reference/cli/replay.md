@@ -1,5 +1,7 @@
 ---
-title: hardkas replay
+title: "hardkas replay commands"
+sidebar_label: "hardkas replay"
+description: "Reference for the hardkas replay commands (verify, diff), with their arguments, options and defaults."
 ---
 
 # `hardkas replay`

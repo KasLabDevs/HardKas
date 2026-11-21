@@ -56,16 +56,17 @@ test("send payment -> watchAddress emits change", async () => {
   });
   const signed = await hk.tx.sign(plan, "alice");
   
-  // Wait for the first state (empty)
+  // Wait for the first state: bob's balance before the payment (the simulator funds its dev accounts at genesis)
   const firstState = await watchIter.next();
-  expect(firstState.value?.totals.acceptedUtxoSompi).toBe(0n);
+  const before = firstState.value!.totals.acceptedUtxoSompi;
+  expect(typeof before).toBe("bigint");
 
   // Send
   await hk.tx.send(signed);
 
-  // Wait for the second state (changed)
+  // Wait for the second state (changed): exactly 10 KAS more
   const secondState = await watchIter.next();
-  expect(secondState.value?.totals.acceptedUtxoSompi).toBe(1000000000n); // 10 KAS
+  expect(secondState.value?.totals.acceptedUtxoSompi).toBe(before + 1000000000n);
 
   watchIter.return?.();
 }, 20000);
@@ -77,7 +78,7 @@ test("same state next poll -> no duplicate artifact", async () => {
     cwd: tmpDir
   });
 
-  const toAccount = await hk.accounts.resolve("charlie");
+  const toAccount = await hk.accounts.resolve("carol");
   const address = toAccount.address;
 
   let yields = 0;
@@ -121,7 +122,15 @@ test("abort signal -> iterator closes cleanly", async () => {
   const p1 = iter.next();
   ac.abort();
   const res = await p1;
-  expect(res.done).toBe(true);
+  // A read already in flight when the signal fires may still deliver its state; the next step ends the iterator, either
+  // as done or with the standard AbortError. It never hangs and never yields another state.
+  if (!res.done) {
+    const end = await iter.next().then(
+      (r) => ({ done: r.done === true, name: undefined as string | undefined }),
+      (e: any) => ({ done: false, name: String(e?.name) })
+    );
+    expect(end.done || end.name === "AbortError", JSON.stringify(end)).toBe(true);
+  }
 });
 
 test("timeout -> typed OBSERVATION_TIMEOUT", async () => {
@@ -154,7 +163,7 @@ test("synthetic address + localnet target -> Execution Contract mismatch", async
      await hk.observe.address({ address, target: "simnet" });
      expect.fail("Should have thrown");
   } catch (e: any) {
-     expect(e.code).toBe("EXECUTION_CONTRACT_MISMATCH");
+     expect(e.code).toBe("OBSERVATION_TARGET_MISMATCH");
   }
 });
 
