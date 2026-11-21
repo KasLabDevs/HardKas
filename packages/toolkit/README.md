@@ -15,7 +15,9 @@ npm install @hardkas/toolkit
 ## What it contains
 
 - `WalletToolkit`, `PaymentToolkit` and `IndexerToolkit`.
-- Invoice and job stores, UTXO helpers and a fee estimator.
+- The job queue that was `@hardkas/jobs`: `JobRunner`, the `JobStore` interface and its file store `JobStoreJson`,
+  `RetryPolicy`, `JobCheckpoint`, `BatchCursor` and `ProgressReporter`, with `JobsToolkit` on top of them.
+- An invoice store, UTXO helpers, `watchAddress` and a fee estimator.
 - A query API over the query store.
 
 It carries no SilverScript compiler: SilverScript lives in `@hardkas/core` and `hardkas silver`.

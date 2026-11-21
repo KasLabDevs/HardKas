@@ -130,7 +130,8 @@ vi.mock("execa", () => ({
 vi.mock("@hardkas/node-runner", () => ({
   requireNodeIdentity: vi.fn(async () => ({ verified: true, problems: [] })),
   verifyNodeIdentity: vi.fn(async () => ({ verified: true, problems: [] })),
-  DockerKaspadRunner: class {}
+  DockerKaspadRunner: class {},
+  DOCKER_PROBE_TIMEOUT_MS: 20_000
 }));
 vi.mock("@hardkas/config", async (orig) => ({ ...(await orig<any>()), loadHardkasConfig: vi.fn(async () => ({ config: {} })) }));
 vi.mock("@hardkas/accounts", async (orig) => ({

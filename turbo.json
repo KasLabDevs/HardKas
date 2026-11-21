@@ -11,6 +11,11 @@
     "typecheck": {
       "dependsOn": ["^build"]
     },
+    "@hardkas/docs#build": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/docs/**", "!$TURBO_ROOT$/docs/internal/**"],
+      "outputs": ["build/**"]
+    },
     "@hardkas/simulator#typecheck": {
       "dependsOn": ["^build", "@hardkas/testing#build"]
     },

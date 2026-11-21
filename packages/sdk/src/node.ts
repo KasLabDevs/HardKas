@@ -1,6 +1,7 @@
 import { Hardkas } from "./index.js";
 import { HardkasError, getCoinbaseMaturity, CPUMINER_REFERENCE_IMAGE, CANONICAL_LOCALNET, isMainnetNetworkId, declaredNetworkIdOf } from "@hardkas/core";
 import { assertSdkMayConnect } from "./mainnet-lockdown.js";
+import { describeWaitError, isWaitDecisiveError } from "./waiters.js";
 import { DockerKaspadRunner, KaspadNodeStatus, minerContainerNameFor, requireNodeIdentity } from "@hardkas/node-runner";
 
 export interface HardkasNodeStartOptions {
@@ -190,6 +191,8 @@ export class HardkasNodeApi {
     const start = Date.now();
     let funded = false;
     let lastCoinbaseMaturity: bigint = 0n;
+    // RPC-RESPONSE-TOO-LARGE-1: the last read failure the wait tolerated, named in MINING_TIMEOUT (it was dropped)
+    let lastReadError: string | undefined;
 
     const { filterMatureUtxos, isCovenantUtxo } = await import("@hardkas/tx-builder");
 
@@ -222,8 +225,13 @@ export class HardkasNodeApi {
           funded = true;
           break;
         }
-      } catch {
+        lastReadError = undefined;
+      } catch (e: unknown) {
+        // RPC-RESPONSE-TOO-LARGE-1: a failure waiting cannot change (the address's UTXO list is too large to read, a
+        // mainnet refusal) ends the wait with its own code; it polled until a misleading MINING_TIMEOUT
+        if (isWaitDecisiveError(e)) throw e;
         // RPC might not be ready yet
+        lastReadError = describeWaitError(e).text;
       }
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
@@ -231,7 +239,8 @@ export class HardkasNodeApi {
     if (!funded) {
       throw new Error(
         `MINING_TIMEOUT: Failed to fund dev wallets within ${Math.round(timeoutMs / 1000)} seconds. ` +
-        `Coinbase maturity requires ${lastCoinbaseMaturity} DAA blocks. Miner may need more time.`
+        `Coinbase maturity requires ${lastCoinbaseMaturity} DAA blocks. Miner may need more time.` +
+        (lastReadError ? ` Last read error: ${lastReadError}` : "")
       );
     }
   }

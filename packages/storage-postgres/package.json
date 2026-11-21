@@ -14,7 +14,6 @@
   },
   "dependencies": {
     "postgres": "^3.4.4",
-    "@hardkas/jobs": "workspace:*",
     "@hardkas/toolkit": "workspace:*"
   },
   "devDependencies": {

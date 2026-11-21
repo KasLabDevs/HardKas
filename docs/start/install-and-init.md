@@ -1,14 +1,27 @@
 # Chapter 2: Install and Init
 
-To start a new project with HardKAS, you use the `init` command. It will scaffold a default `hardkas.config.ts`, a `package.json`, and set up the `tests` directory.
+To start a new project with HardKAS, you use the `init` command. In the current directory it scaffolds `hardkas.config.ts`, a `package.json` (when none exists), `vitest.config.ts`, `.gitignore`, `test/payment.test.ts` and the `.hardkas/` workspace with five funded simulated accounts.
 
-```bash execute
-hardkas init my-project
+These chapters use a global `hardkas` ([Installing the CLI globally](./installation.md#installing-the-cli-globally)); with a per-project install, prefix each command with `npx`. Create a folder for the project and run every command of the chapter from inside it:
+
+```bash
+mkdir my-project
+cd my-project
 ```
 
-Once the project is initialized, you can inspect the created configuration. Note that `init` creates a `hardkas.config.ts` if none exists.
+```bash execute
+hardkas init
+```
+
+(`hardkas init my-project` does the same in a new `my-project` folder.) Once the project is initialized, you can inspect the configuration it wrote:
 
 ```bash execute
-cd my-project
 hardkas config show
+```
+
+Then install the dependencies the generated `package.json` declares (the SDK, the CLI, `@hardkas/testing` and Vitest) and run the generated test:
+
+```bash
+npm install
+npm test
 ```

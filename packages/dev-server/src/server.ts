@@ -28,7 +28,7 @@ import path from "node:path";
 import fs from "node:fs";
 
 import open from "open";
-import { loadSessionStoreWithDiagnostics } from "@hardkas/sessions";
+import { loadSessionStoreWithDiagnostics } from "@hardkas/core";
 import { HARDKAS_VERSION } from "@hardkas/artifacts";
 
 import { startHardkasWatcher, stopHardkasWatcher } from "./watcher.js";
@@ -254,7 +254,9 @@ export function createDevServer(config: DevServerConfig) {
         overview: "/api/overview",
         query: "/api/query",
         stream: "/api/stream",
-        health: "/api/dashboard-health"
+        health: "/api/dashboard-health",
+        // R3-C · the browser wallet probe page (loopback only; its API is /api/wallet-probe/*)
+        walletProbe: "/wallet-probe"
       }
     })
   );

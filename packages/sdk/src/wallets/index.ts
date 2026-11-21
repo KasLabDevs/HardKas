@@ -10,9 +10,11 @@ export {
   connectBrowserWallet,
   describeBrowserWallet,
   detectBrowserWallets,
+  walletSignCallOf,
   type BrowserWalletKind,
   type BrowserWalletSession,
   type ConnectBrowserWalletOptions,
+  type WalletSignCall,
   type WalletSignRequest,
   type WalletSignedMessage,
   type WalletSignedTransaction

@@ -21,11 +21,11 @@ hardkas tx send signed.json --network simulated --yes
 SDK example:
 
 ```typescript
+// sdk = await Hardkas.open({ network: "simulated" }): the instance, not the plan, picks the network
 const plan = await sdk.tx.plan({
   from: "alice",
   to: "bob",
-  amount: "1",
-  network: "simulated"
+  amount: "1"
 });
 
 const signed = await sdk.tx.sign(plan, { account: "alice" });
@@ -43,7 +43,7 @@ hardkas artifact inspect plan.json
 hardkas artifact verify plan.json --strict
 ```
 
-The signer authorizes exactly what the plan says. If the destination or amount has been changed, verification should fail before a key signs.
+The signer authorizes exactly what the plan says. If the destination or amount has been changed, the plan no longer hashes to its content hash: verification fails and `tx sign` refuses it (`ARTIFACT_HASH_MISMATCH`) before a key signs.
 
 ## Incorrect: Mixing Networks
 
@@ -55,7 +55,7 @@ Example:
 hardkas tx send signed.json --network mainnet --provider rpc --url ws://...
 ```
 
-If `signed.json` was created for `simulated`, `simnet`, or `testnet-10`, the network context no longer matches. HardKas should abort before submitting to RPC. (With `--network mainnet` it aborts in any case: mainnet is locked down, `MAINNET_BROADCAST_DISABLED` / `MAINNET_CONNECTION_DISABLED`, before anything connects.)
+If `signed.json` was created for `simulated`, `simnet`, or `testnet-10`, the network context no longer matches. HardKas aborts before submitting to RPC (`EXECUTION_NETWORK_MISMATCH`). (With `--network mainnet` it aborts in any case: mainnet is locked down, `MAINNET_BROADCAST_DISABLED` / `MAINNET_CONNECTION_DISABLED`, before anything connects.)
 
 ## Incorrect: Using The Wrong Provider
 

@@ -12,18 +12,27 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
-const DIST_SITE = path.join(ROOT, "dist", "site");
+// BETA-FIX W4: `--out <dir>` assembles somewhere else than dist/site (the deployed folder), and `--no-docs-build` reuses
+// the last apps/docs/build, so the assembly can be checked (scripts/test-unified-site.mjs --dir <dir>) without touching
+// what is deployed. Without flags nothing changes.
+const outAt = process.argv.indexOf("--out");
+const DIST_SITE = outAt > -1 && process.argv[outAt + 1] ? path.resolve(process.argv[outAt + 1]) : path.join(ROOT, "dist", "site");
 const SITE_SRC = path.join(ROOT, "site");
 const DOCS_BUILD = path.join(ROOT, "apps", "docs", "build");
 
 console.log("=== Building HardKAS Unified Web Distribution ===");
 
 // 1. Build Docusaurus docs
-console.log("\n[1/5] Building Docusaurus documentation (@hardkas/docs)...");
-execSync("pnpm --filter @hardkas/docs build", {
-  cwd: ROOT,
-  stdio: "inherit"
-});
+if (process.argv.includes("--no-docs-build")) {
+  console.log("\n[1/5] Reusing the last Docusaurus build (apps/docs/build)...");
+  if (!fs.existsSync(path.join(DOCS_BUILD, "index.html"))) throw new Error("apps/docs/build has no build: run without --no-docs-build");
+} else {
+  console.log("\n[1/5] Building Docusaurus documentation (@hardkas/docs)...");
+  execSync("pnpm --filter @hardkas/docs build", {
+    cwd: ROOT,
+    stdio: "inherit"
+  });
+}
 
 // 2. Prepare dist/site directory
 console.log("\n[2/5] Preparing clean distribution directory (dist/site)...");
@@ -63,6 +72,18 @@ function copyDirRecursive(src, dest) {
 
 copyDirRecursive(DOCS_BUILD, distDocs);
 
+// BETA-FIX W4: the docs build writes its redirects (old /docs/ URLs of pages that moved into the repository's docs/,
+// apps/docs/redirects.json) to its own _redirects. Cloudflare reads _redirects only at the root of the deployed
+// directory, so they are appended to the landing page's root _redirects instead of staying under /docs/.
+const docsRedirects = path.join(distDocs, "_redirects");
+if (fs.existsSync(docsRedirects)) {
+  const rootRedirects = path.join(DIST_SITE, "_redirects");
+  const head = fs.existsSync(rootRedirects) ? fs.readFileSync(rootRedirects, "utf8").replace(/\s*$/, "\n") : "";
+  fs.writeFileSync(rootRedirects, head + fs.readFileSync(docsRedirects, "utf8"));
+  fs.rmSync(docsRedirects);
+  console.log("  Appended the docs redirects to dist/site/_redirects");
+}
+
 // Copy standalone /ide/ landing page if present
 const ideSrc = path.join(SITE_SRC, "ide");
 if (fs.existsSync(ideSrc)) {
@@ -77,15 +98,16 @@ const today = new Date().toISOString().split("T")[0];
 const isValidDate = (d) => typeof d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(d) && d <= today;
 
 /**
- * Index last commit dates (%cs = YYYY-MM-DD) for all tracked files under site/ and apps/docs/docs/
- * in a single git invocation. If git is unavailable, returns an empty map so <lastmod> is omitted.
+ * Index last commit dates (%cs = YYYY-MM-DD) for all tracked files under site/, docs/ (the hand-written pages the
+ * docs site renders) and apps/docs/reference/ (the generated references) in a single git invocation. If git is
+ * unavailable, returns an empty map so <lastmod> is omitted.
  */
 function buildGitLastModifiedMap() {
   const map = new Map();
   try {
     const out = execFileSync(
       "git",
-      ["log", "--name-only", "--format=DATE:%cs", "--", "site/", "apps/docs/docs/"],
+      ["log", "--name-only", "--format=DATE:%cs", "--", "site/", "docs/", "apps/docs/reference/"],
       { cwd: ROOT, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 }
     );
     let currentDate = null;
@@ -118,15 +140,17 @@ function resolveDocSourceDate(url) {
   const prefix = "https://hardkas.dev/docs";
   if (!url.startsWith(prefix)) return null;
   const rel = url.slice(prefix.length).replace(/^\/+|\/+$/g, "");
+  // the generated references live in apps/docs/reference/{cli,sdk}; every other page is docs/<path>
+  const base = /^reference\/(cli|sdk)(\/|$)/.test(rel) ? "apps/docs" : "docs";
   const candidates = rel
     ? [
-        `apps/docs/docs/${rel}.md`,
-        `apps/docs/docs/${rel}.mdx`,
-        `apps/docs/docs/${rel}/index.md`,
-        `apps/docs/docs/${rel}/index.mdx`,
-        `apps/docs/docs/${rel}/README.md`
+        `${base}/${rel}.md`,
+        `${base}/${rel}.mdx`,
+        `${base}/${rel}/index.md`,
+        `${base}/${rel}/index.mdx`,
+        `${base}/${rel}/README.md`
       ]
-    : ["apps/docs/docs/index.md", "apps/docs/docs/index.mdx", "apps/docs/docs/README.md"];
+    : ["docs/README.md"];
   for (const c of candidates) {
     const d = gitLastModified(c);
     if (d) return d;
@@ -260,9 +284,11 @@ hardkas tx send --from payer --to <kaspasim:recipient> --amount 10 --network sim
 - Canonical AI Workflows (6 tasks): https://hardkas.dev/docs/ai/workflows
 - AI Troubleshooting & Error Codes: https://hardkas.dev/docs/ai/troubleshooting
 - Claude Code & Cursor Guide: https://hardkas.dev/docs/ai/claude-code-and-cursor
-- 5-Minute Quickstart: https://hardkas.dev/docs/getting-started/quickstart
+- 5-Minute Quickstart: https://hardkas.dev/docs/start/quickstart
+- Build on your own simnet: https://hardkas.dev/docs/start/build-on-simnet
+- Errors reference: https://hardkas.dev/docs/reference/errors
 - CLI Command Reference: https://hardkas.dev/docs/reference/cli
-- SDK Core Reference: https://hardkas.dev/docs/reference/sdk/core/
+- SDK Reference: https://hardkas.dev/docs/reference/sdk/generated/
 
 ## First Checks (for SilverScript, Covenants, or Debugging)
 \`\`\`bash
@@ -274,7 +300,8 @@ hardkas silver doctor --network simnet --json
 fs.writeFileSync(path.join(DIST_SITE, "llms.txt"), llmsTxt, "utf8");
 console.log("  ✓ Generated dist/site/llms.txt");
 
-// Generate llms-full.txt from the single canonical source in apps/docs/docs/ai/
+// Generate llms-full.txt from the single canonical source in docs/ai/ (BETA-FIX W4: the pages moved there from
+// apps/docs/docs/ai/; their URLs did not change)
 function stripFrontmatter(md) {
   if (!md.startsWith("---")) return md.trim();
   const end = md.indexOf("\n---", 3);
@@ -289,7 +316,7 @@ const aiDocFiles = [
 ];
 const aiSections = aiDocFiles
   .map((file) => {
-    const fullPath = path.join(ROOT, "apps", "docs", "docs", "ai", file);
+    const fullPath = path.join(ROOT, "docs", "ai", file);
     return fs.existsSync(fullPath) ? stripFrontmatter(fs.readFileSync(fullPath, "utf8")) : null;
   })
   .filter(Boolean);

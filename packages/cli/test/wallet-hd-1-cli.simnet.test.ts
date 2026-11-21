@@ -119,7 +119,9 @@ describe("WALLET-HD-1 · hardkas wallet hd on a real rusty-kaspad (simnet)", () 
 
     const after = json((await cli(["wallet", "hd", "balance", "cli1", "--password-env", "HK_HD1_PW", "--json"])).stdout);
     expect(after.verified).toBe(true);
-    expect(after.used.map((u: any) => `${u.chain}/${u.index}`)).toEqual(["change/0"]);
+    // BETA-FIX W2: the emptied receive addresses stay listed, zero balance (the local index handed them out)
+    expect(after.used.map((u: any) => `${u.chain}/${u.index}/${u.balanceSompi}`)).toEqual(["receive/0/0", "receive/1/0", `change/0/${String(sent.change.amountSompi)}`]);
+    expect(after.used.map((u: any) => u.handedOut)).toEqual([true, true, true]);
     expect(after.totalSompi).toBe(String(sent.change.amountSompi));
     expect(after.nextChange).toBe(1);
   });

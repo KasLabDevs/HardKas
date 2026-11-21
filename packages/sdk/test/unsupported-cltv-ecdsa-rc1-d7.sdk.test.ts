@@ -33,6 +33,11 @@ vi.setConfig({ testTimeout: 60_000 });
 // -----------------------------------------------------------------------------
 
 const LOOPBACK = "ws://127.0.0.1:16110";
+// D-02: the signed artifacts below are dated SIGNED_AT, and a send refuses a signed transaction (or plan) older than 30
+// days (STALE_ARTIFACT_REFUSED), so the suite runs on a controlled clock that same day (only Date is controlled; timers
+// are real), as tx-send-idempotent-1 does. On the wall clock it would turn red from 2026-12-09 with no product defect.
+const SIGNED_AT = "2026-11-09T00:00:00.000Z";
+const NOW = Date.parse("2026-11-09T12:00:00.000Z");
 const FROM = "kaspasim:qpumuen7l8wthtz45p3ftn58pvrs9xlumvkuu2xet8egzkcklqtes65ue9mw6";
 const TO = "kaspasim:qrrqglu5g8kh6mfsg4qxa9wq0nv9cauwfwxw70984wkqnw2uwz0w27rvnw0sc";
 const script = (address: string) => expectedScriptPublicKeyHex(address)!;
@@ -49,7 +54,7 @@ function signedFromPlan(plan: any, payload: string, txId: string): any {
     hardkasVersion: HARDKAS_VERSION,
     version: ARTIFACT_VERSION,
     hashVersion: CURRENT_HASH_VERSION,
-    createdAt: "2026-11-09T00:00:00.000Z",
+    createdAt: SIGNED_AT,
     status: "signed",
     sourcePlanId: plan.planId,
     networkId: plan.networkId,
@@ -75,6 +80,7 @@ describe("RC1 · D7 · lock times and ECDSA spends through the SDK's public API"
   let submit: ReturnType<typeof vi.spyOn>;
 
   beforeEach(async () => {
+    vi.useFakeTimers({ toFake: ["Date"], now: NOW });
     ws = fs.mkdtempSync(path.join(os.tmpdir(), "hk-rc1-d7-"));
     fs.mkdirSync(path.join(ws, ".hardkas"));
     sdk = await Hardkas.create({ cwd: ws, autoBootstrap: true, network: "simnet" });
@@ -90,6 +96,7 @@ describe("RC1 · D7 · lock times and ECDSA spends through the SDK's public API"
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     vi.restoreAllMocks();
     fs.rmSync(ws, { recursive: true, force: true });
   });

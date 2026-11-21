@@ -75,7 +75,7 @@ const extension: HardkasExtension = {
       id: "l2.node",
       async run(ctx) {
         const { anvilStateDir, loopbackChainId, ANVIL_CHAIN_ID, DEFAULT_ANVIL_PORT } = await import("./node/anvil.js");
-        const { getManagedProcessStatus, isLoopbackPortFree } = await import("@hardkas/node-orchestrator");
+        const { getManagedProcessStatus, isLoopbackPortFree } = await import("@hardkas/node-runner");
         const st = await getManagedProcessStatus({ stateDir: anvilStateDir(ctx.workspaceRoot) });
         const port = st.record?.port ?? DEFAULT_ANVIL_PORT;
         if (st.state === "running") {

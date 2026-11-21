@@ -590,7 +590,7 @@ export function registerSilverDevFrameworkCommands(silver: Command) {
 
   // ---------------------------------------------------------------- debug (Fase 2 / Fase 6)
   silver
-    .command("debug <source-or-record>")
+    .command("debug <source-or-record>", { hidden: true })
     .description(
       "Execute a covenant transition on the SilverScript runner (cli-debugger: a local build, no official binary exists) after the structural v1 validation, and emit source-mapped step traces, variable state and three verdicts (structural, SCRIPT_VM, global). " +
         `Exit codes: 0 APPROVED (or any rejection with --allow-failure); 1 rejected (SILVER_DEBUG_STRUCTURAL_REJECTED, SILVER_DEBUG_CONTRACT_REJECTED) or a runner that gave no verdict (${RUNNER_FAILURE_CODES}); 2 usage; 3 runner refused by the trust policy (SILVER_RUNNER_UNVERIFIED); 4 tampered compile record`
@@ -801,7 +801,7 @@ export function registerSilverDevFrameworkCommands(silver: Command) {
 
   // ---------------------------------------------------------------- fuzz (Fase 3 / Fase 6)
   silver
-    .command("fuzz <source-or-record>")
+    .command("fuzz <source-or-record>", { hidden: true })
     .description(
       "Run bidirectional property-based fuzzing over a counter covenant transition: SCRIPT_VM checks the counter rule (accepted iff delta > 0 and next = previous + delta) on the SilverScript runner; SYNTHETIC checks the structural compute-budget bounds. " +
         `Exit codes: 0 FUZZ PASS; 1 counterexample (SILVER_FUZZ_FAILED), too few samples of one direction (SILVER_FUZZ_INSUFFICIENT_COVERAGE), a sample without a VM verdict (SILVER_FUZZ_NO_VM_EVIDENCE), a testbed error (SILVER_FUZZ_EVALUATION_ERROR), a runner that gave no verdict (${RUNNER_FAILURE_CODES}) or one that changed during the run (SILVER_RUNNER_CHANGED); ` +

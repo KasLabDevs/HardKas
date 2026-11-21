@@ -1,4 +1,4 @@
-import type { JobStore, JobRecord } from '@hardkas/jobs';
+import type { JobStore, JobRecord } from '@hardkas/toolkit';
 import postgres from 'postgres';
 
 export class JobStorePostgres implements JobStore {

@@ -100,7 +100,7 @@ HardKAS relies on the authoritative Kaspa network for state validation and confl
 
 ## 5. Boundary
 
-The SDK should be used from Node.js. Browser applications should talk to the dev server over HTTP, not import `@hardkas/sdk` directly. (The browser client `@hardkas/client` is a workspace package of the HardKAS monorepo: it is not published in this release.)
+The SDK should be used from Node.js. Browser applications should not import `@hardkas/sdk` directly: they import `@hardkas/sdk/client`, which has the dev-server HTTP client (`createHardkasClient`) and the browser-wallet connectors, and holds no keys. (The older browser client `@hardkas/client` is a workspace package of the HardKAS monorepo: it is not published in this release.)
 
 ## 6. Experimental ZK (Groth16 / RISC Zero / Toccata)
 
@@ -159,3 +159,16 @@ BSD or ISC.
   `npm install snarkjs@0.7.6`. snarkjs is loaded only by those functions, in a child process.
 - Anyone who installs `snarkjs`, or redistributes an application that bundles it, must review the
   GPL-3.0 obligations; this notice is not legal advice.
+
+## 8. Escrow
+
+`sdk.escrow` runs the SilverScript escrow lifecycle on this instance's node: `create`, `fund`, `prepare`, sign
+(`signRequest`, `addSignatures`), `release` and `reconcile`, the same module as the `hardkas escrow` commands and the
+dev server's escrow routes. Funding and release go through `sdk.tx.send`; every required signature is verified
+(BIP340) before a release is sent. It runs on a Kaspa node network, never the simulator
+(`ESCROW_NETWORK_NOT_SUPPORTED`); the evidence is simnet only, and mainnet is refused.
+
+The escrow records and contracts that were `@hardkas/escrow` are exported by `@hardkas/sdk` now: `createEscrow`,
+`escrowTermsOf`, `escrowResolution`, `escrowSigners`, the contract sources (`ESCROW_FULL_SOURCE`,
+`ESCROW_SPLIT_SOURCE`, `ESCROW_V1_SOURCE`) with their names and branches, and the types (`EscrowConfig`,
+`EscrowRecord`, `EscrowError`, …).

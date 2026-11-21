@@ -42,6 +42,8 @@ console.log(`Estimated future fee savings: ${plan.estimatedSavings}`);
 
 *Note: In Phase 1A, the `consolidate()` method purely returns a `ConsolidationPlan` for preview and logging purposes. It does not execute the transaction or broadcast it to the network.*
 
+*The toolkit's `estimatedFee` and `estimatedSavings` are placeholders, not mass-based fees: the fee is a flat 1000 sompi per input and per output, and the savings compare it with spending each input alone. The real fee comes from the planner (`hardkas tx plan`, `sdk.tx.plan`) or `hardkas accounts consolidate`.*
+
 ## Granular Transaction Planning (Phase 1B)
 
 Beyond general consolidation, the UTXO Toolkit allows for explicit control over UTXO management without mutating the wallet state. All of these methods return a structured `Plan` (e.g., `SplitPlan`, `MergePlan`, `SweepPlan`) that describes exactly what the transaction will do.
@@ -95,7 +97,7 @@ Methods like `splitPlan`, `mergePlan`, and `sweepPlan` will never broadcast a tr
 
 ## Coin Control Persistence (Phase 1C)
 
-Effective treasury management requires locking specific UTXOs so they aren't accidentally spent by automated planners. HardKAS introduces **Coin Control State**, a local persistence layer stored in `.hardkas/utxo-control.json`.
+Effective treasury management requires locking specific UTXOs so they aren't accidentally spent by automated planners. HardKAS introduces **Coin Control State**, a local persistence layer stored next to the wallet store: the store's path with `.json` replaced by `-utxo-control.json`, or `default-utxo-control.json` in the current directory when the wallet has no `storePath`.
 
 ### Freezing UTXOs
 

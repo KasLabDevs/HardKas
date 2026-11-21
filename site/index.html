@@ -902,7 +902,7 @@ summary:hover { color: var(--accent); }
 <pre><span class="cmd">hardkas</span> localnet start <span class="flag">--toccata</span>
 <span class="cmd">hardkas</span> accounts real generate <span class="flag">--name</span> miner <span class="flag">--unsafe-plaintext</span> <span class="flag">--yes</span>
 <span class="cmd">hardkas</span> accounts real generate <span class="flag">--name</span> ana <span class="flag">--unsafe-plaintext</span> <span class="flag">--yes</span>
-<span class="cmd">hardkas</span> localnet fund miner <span class="flag">--keep-miner</span>
+<span class="cmd">hardkas</span> localnet fund miner
 <span class="cmd">hardkas</span> tx plan <span class="flag">--from</span> miner <span class="flag">--to</span> ana <span class="flag">--amount</span> 10 <span class="flag">--network</span> simnet <span class="flag">--out</span> plan.json
 <span class="cmd">hardkas</span> tx sign plan.json <span class="flag">--account</span> miner <span class="flag">--out</span> signed.json
 <span class="cmd">hardkas</span> tx send signed.json <span class="flag">--network</span> simnet <span class="flag">--yes</span>
@@ -1061,10 +1061,10 @@ Account kind = synthetic · target mode = rpc<br/>
 <tr><td>Relative timelock spend</td><td>🟢 REAL_NODE_EVIDENCE</td><td><code>silver spend --sequence</code></td></tr>
 <tr><td>1:1 covenant: genesis and auth-bound transitions (transaction v1)</td><td>🟢 REAL_NODE_EVIDENCE</td><td><code>silver covenant genesis</code> · <code>silver covenant transition</code></td></tr>
 <tr><td>General covenant support</td><td>⚪ NOT_CLAIMED</td><td>—</td></tr>
-<tr><td>Contract tests on the official SilverScript runner (script engine only, not transaction validity), or with <code>--on-node</code> as real transactions judged by a Kaspa node</td><td>🟡 EXPERIMENTAL</td><td><code>silver test</code></td></tr>
-<tr><td>Transaction v1</td><td>🟡 PARTIAL: built only by the covenant commands; <code>tx plan</code> builds v0</td><td>—</td></tr>
-<tr><td>Compute budget</td><td>🟡 PARTIAL: set by hand with an explicit fee; no estimator exists</td><td><code>--compute-budget</code> · <code>--fee</code></td></tr>
-<tr><td>Fee estimation</td><td>🟡 PARTIAL: automatic for standard payments (Generator); explicit for v1</td><td><code>tx plan</code></td></tr>
+<tr><td>Contract tests on a locally built SilverScript runner (cli-debugger; UNVERIFIED, since upstream publishes no runner binary; script engine only, not transaction validity), or with <code>--on-node</code> as real transactions judged by a Kaspa node</td><td>🟡 EXPERIMENTAL</td><td><code>silver test</code></td></tr>
+<tr><td>Transaction v1</td><td>🟡 PARTIAL: built by the covenant commands, <code>silver engine</code>, <code>silver deploy|spend --tx-version 1</code> and the <code>kcc20</code> commands; <code>tx plan</code> builds v0</td><td>—</td></tr>
+<tr><td>Compute budget</td><td>🟡 PARTIAL: certified defaults per entry, or <code>--compute-budget estimate</code> (rusty-kaspa's upper bound); the fee defaults to the node's floor</td><td><code>--compute-budget</code> · <code>--fee</code></td></tr>
+<tr><td>Fee estimation</td><td>🟡 PARTIAL: automatic for standard payments (Generator; the node's fee estimate on real networks); v1 commands default to the node's fee floor</td><td><code>tx plan</code></td></tr>
 <tr><td>Lane metadata</td><td>⚪ NOT_CLAIMED: schema field only, planning ignores it</td><td>—</td></tr>
 <tr><td>PSKT (partially signed transactions)</td><td>🟡 EXPERIMENTAL: no operation available from the CLI by default</td><td>—</td></tr>
 <tr><td>Transaction tracing</td><td>🟡 PARTIAL: traces are written; the <code>tx trace</code> command is disabled</td><td>—</td></tr>
@@ -1075,7 +1075,7 @@ Account kind = synthetic · target mode = rpc<br/>
 </section>
 <section id="architecture">
 <h2>Architecture</h2>
-<p>HardKAS is organised in dependency levels: a lower level never depends on a higher one. This is a convention; no tooling enforces it yet. Only the main packages are shown (the repository has 35).</p>
+<p>HardKAS is organised in dependency levels: a lower level never depends on a higher one. This is a convention; no tooling enforces it yet. Only the main packages are shown (the repository has 31).</p>
 <div class="diagram">
 <div class="box">
 <h3>Level 0 (Foundations)</h3>
@@ -1194,7 +1194,7 @@ Account kind = synthetic · target mode = rpc<br/>
 </section>
 <section id="examples">
 <h2>Examples &amp; Builder Labs</h2>
-<p><em>Real commands with their real output, captured on 0.12.0-rc.29 in a fresh simulator project after the Quickstart.</em></p>
+<p><em>Real commands with their real output, captured in a fresh simulator project after the Quickstart.</em></p>
 <p>The repository also has reference apps built with HardKAS (wallet backends, a checkout, a local indexer); they are outside the core product.</p>
 <div class="accordion">
 <details open="">
@@ -1942,7 +1942,7 @@ hardkas chaos replay --run-seed 42">
 </tr>
 <tr>
 <td><code>--network &lt;name&gt;</code></td>
-<td><code>simulated</code> or <code>local</code> read the simulator; simnet, devnet or testnet-10 ask a node on 127.0.0.1 (default simnet, even in a simulator project); mainnet is never contacted (<code>MAINNET_CONNECTION_DISABLED</code>)</td>
+<td><code>simulated</code> or <code>local</code> read the simulator; simnet, devnet or testnet-10 ask a node on 127.0.0.1 (default: the workspace's default target); mainnet is never contacted (<code>MAINNET_CONNECTION_DISABLED</code>)</td>
 </tr>
 <tr>
 <td><code>--url &lt;url&gt;</code></td>
@@ -1963,7 +1963,7 @@ hardkas chaos replay --run-seed 42">
 <table class="flags">
 <tr>
 <td><code>--force</code></td>
-<td>Replace an existing index (keystore files stay on disk)</td>
+<td>Replace the store after backing it up; a store that holds accounts also needs <code>--discard-accounts</code></td>
 </tr>
 </table>
 </div>
@@ -2075,7 +2075,7 @@ hardkas chaos replay --run-seed 42">
 </table>
 </div>
 <div class="command">
-<code>hardkas localnet fund &lt;identifier&gt; --amount 1000</code><span>Mine to an account on the local node until its mature balance grows by the amount, then stop the miner. With <code>--treasury</code>, transfer exactly that amount from the localnet treasury instead.</span>
+<code>hardkas localnet fund &lt;identifier&gt; --amount 1000</code><span>Mine to an account on the local node until its mature balance grows by the amount; the localnet then keeps producing blocks (<code>--stop-miner</code> leaves it stopped). With <code>--treasury</code>, transfer exactly that amount from the localnet treasury instead.</span>
 <table class="flags">
 <tr>
 <td><code>&lt;identifier&gt;</code></td>
@@ -2091,7 +2091,11 @@ hardkas chaos replay --run-seed 42">
 </tr>
 <tr>
 <td><code>--keep-miner</code></td>
-<td>Leave the miner running; a missed target is reported as pending instead of failing</td>
+<td>Keep mining directly to the funded account after funding</td>
+</tr>
+<tr>
+<td><code>--stop-miner</code></td>
+<td>Stop the miner after funding instead of leaving the chain active</td>
 </tr>
 </table>
 </div>
@@ -2155,7 +2159,7 @@ hardkas chaos replay --run-seed 42">
 </tr>
 <tr>
 <td><code>--fee-rate &lt;sompiPerMass&gt;</code></td>
-<td>Whole sompi per gram of mass (default 1 in the simulator, 100 on real networks: the network minimum, not a live estimate)</td>
+<td>Whole sompi per gram of mass, at least 1 (default 1 in the simulator; on real networks the node's live fee estimate, bounded by maxFeeRate)</td>
 </tr>
 <tr>
 <td><code>--change &lt;accountOrAddress&gt;</code></td>
@@ -2197,7 +2201,7 @@ hardkas chaos replay --run-seed 42">
 </table>
 </div>
 <div class="command">
-<code>hardkas tx send &lt;signedPath&gt;</code><span>Send a signed artifact: simulated in the simulator, broadcast to its recorded network otherwise. Mainnet broadcast is always blocked.</span>
+<code>hardkas tx send &lt;signedPath&gt;</code><span>Send a signed artifact: simulated in the simulator, broadcast to its recorded network otherwise. Mainnet broadcast is always blocked. With <code>--wait</code>, it then waits for CONFIRMED on the same node, as <code>tx wait</code> does.</span>
 <table class="flags">
 <tr>
 <td><code>&lt;signedPath&gt;</code></td>
@@ -2263,7 +2267,7 @@ hardkas chaos replay --run-seed 42">
 </tr>
 <tr>
 <td><code>-n, --network &lt;network&gt;</code></td>
-<td>Network whose node observes (default: the one recorded at submission)</td>
+<td>Network whose node observes (default: the one recorded at submission); <code>--url</code> names another node, as in <code>tx send</code></td>
 </tr>
 </table>
 </div>
@@ -2325,7 +2329,7 @@ hardkas chaos replay --run-seed 42">
 </table>
 </div>
 <div class="command">
-<code>hardkas silver deploy &lt;record&gt; --from &lt;account&gt; --amount &lt;kas&gt;</code><span>Fund the contract's P2SH output on the canonical simnet localnet.</span>
+<code>hardkas silver deploy &lt;record&gt; --from &lt;account&gt; --amount &lt;kas&gt;</code><span>Fund the contract's P2SH output on a Kaspa node (the canonical localnet by default).</span>
 <table class="flags">
 <tr>
 <td><code>&lt;record&gt;</code></td>
@@ -2345,7 +2349,7 @@ hardkas chaos replay --run-seed 42">
 </tr>
 <tr>
 <td><code>--network &lt;network&gt;</code></td>
-<td>Only <code>simnet</code> (default); mainnet is refused</td>
+<td>The workspace's, else <code>simnet</code>; <code>testnet-&lt;n&gt;</code> needs experimental + <code>network.allowPublic</code>; mainnet is refused</td>
 </tr>
 <tr>
 <td><code>--wait</code></td>
@@ -2383,7 +2387,7 @@ hardkas chaos replay --run-seed 42">
 </table>
 </div>
 <div class="command">
-<code>hardkas silver covenant genesis &lt;record&gt; --from &lt;account&gt; --amount &lt;kas&gt; --compute-budget &lt;n&gt;</code><span>Create a 1:1 covenant: a new output bound to the covenant id that the Kaspa SDK derives (transaction v1).</span>
+<code>hardkas silver covenant genesis &lt;record&gt; --from &lt;account&gt; --amount &lt;kas&gt;</code><span>Create a 1:1 covenant: a new output bound to the covenant id that the Kaspa SDK derives (transaction v1).</span>
 <table class="flags">
 <tr>
 <td><code>&lt;record&gt;</code></td>
@@ -2399,11 +2403,11 @@ hardkas chaos replay --run-seed 42">
 </tr>
 <tr>
 <td><code>--compute-budget &lt;n&gt;</code></td>
-<td>Compute budget of the funding input; set it explicitly, no estimator exists</td>
+<td>Compute budget of the funding inputs; optional, default the certified P2PK budget</td>
 </tr>
 <tr>
 <td><code>--fee &lt;sompi&gt;</code></td>
-<td>Explicit fee in sompi; required when the compute budget is above 0</td>
+<td>Fee in sompi, at least the node's floor for this transaction; optional, default that floor</td>
 </tr>
 <tr>
 <td><code>--wait</code></td>
@@ -2412,7 +2416,7 @@ hardkas chaos replay --run-seed 42">
 </table>
 </div>
 <div class="command">
-<code>hardkas silver covenant transition &lt;covenant-record&gt; --policy &lt;name&gt; --constructor-args &lt;file&gt; --state-map &lt;json&gt; --next-state &lt;file&gt; --compute-budget &lt;n&gt;</code><span>Advance a 1:1 auth-bound covenant: silverc compiles the successor state and the covenant id stays the same.</span>
+<code>hardkas silver covenant transition &lt;covenant-record&gt; --policy &lt;name&gt; --constructor-args &lt;file&gt; --state-map &lt;json&gt; --next-state &lt;file&gt;</code><span>Advance a 1:1 auth-bound covenant: silverc compiles the successor state and the covenant id stays the same.</span>
 <table class="flags">
 <tr>
 <td><code>&lt;covenant-record&gt;</code></td>
@@ -2436,11 +2440,11 @@ hardkas chaos replay --run-seed 42">
 </tr>
 <tr>
 <td><code>--compute-budget &lt;n&gt;</code></td>
-<td>Compute budget of the covenant input; explicit</td>
+<td>Compute budget of the covenant input, or <code>estimate</code> (rusty-kaspa's upper bound); optional, default the certified budget of this entry, else that estimate</td>
 </tr>
 <tr>
 <td><code>--fee &lt;sompi&gt;</code></td>
-<td>Explicit fee; required when the compute budget is above 0</td>
+<td>Fee in sompi, paid from the covenant's value, at least the node's floor; optional, default that floor</td>
 </tr>
 <tr>
 <td><code>--emit-args &lt;file&gt;</code></td>
@@ -2449,7 +2453,7 @@ hardkas chaos replay --run-seed 42">
 </table>
 </div>
 <div class="command">
-<code>hardkas silver test &lt;record&gt; --tests &lt;file&gt;</code><span>Experimental: run a compiled contract's tests on the official SilverScript runner (script engine on scenario transactions, not transaction validity), or with <code>--on-node</code> each case as the real transaction it describes, judged by a Kaspa node.</span>
+<code>hardkas silver test &lt;record&gt; --tests &lt;file&gt;</code><span>Experimental: run a compiled contract's tests on a locally built SilverScript runner (cli-debugger; UNVERIFIED, since upstream publishes no runner binary; script engine on scenario transactions, not transaction validity), or with <code>--on-node</code> each case as the real transaction it describes, judged by a Kaspa node.</span>
 <table class="flags">
 <tr>
 <td><code>&lt;record&gt;</code></td>
@@ -2526,7 +2530,7 @@ hardkas chaos replay --run-seed 42">
 <table class="flags">
 <tr>
 <td><code>--backend &lt;type&gt;</code></td>
-<td><code>sqlite</code> builds the index; <code>filesystem</code> (the default) indexes nothing</td>
+<td><code>sqlite</code> (the default) builds .hardkas/store.db; <code>filesystem</code> keeps no index and is refused (<code>QUERY_STORE_REBUILD_UNSUPPORTED</code>)</td>
 </tr>
 </table>
 </div>
@@ -2657,11 +2661,11 @@ hardkas chaos replay --run-seed 42">
 </div>
 </details>
 </div>
-<p>Not listed: <code>capabilities</code> (hidden; it prints a fixed list that contradicts the release claims), <code>kaspa wallet create</code> (it prints a private key and saves nothing; use <code>accounts real generate</code>), <code>kaspa wallet send</code> (it cannot reach a node with the default config; use <code>tx plan</code>, <code>tx sign</code> and <code>tx send</code>) and <code>query artifacts inspect</code> (it reports contradictory results).</p>
+<p>Not listed: <code>capabilities</code> (hidden, internal/experimental), <code>kaspa wallet create</code> (it saves nothing; use <code>accounts real generate</code>), <code>kaspa wallet send</code> (it cannot reach a node with the default config; use <code>tx plan</code>, <code>tx sign</code> and <code>tx send</code>) and <code>query artifacts inspect</code> (it reports contradictory results).</p>
 </section>
 <section id="packages">
 <h2>Package map</h2>
-<p>The main packages (the repository has 35):</p>
+<p>The main packages (the repository has 31):</p>
 <table>
 <thead>
 <tr>
@@ -2684,7 +2688,7 @@ hardkas chaos replay --run-seed 42">
 </tr>
 <tr>
 <td><code>@hardkas/core</code></td>
-<td>Shared types, errors, the execution guard and workspace locks.</td>
+<td>Shared types, errors, the execution guard, workspace locks and sessions.</td>
 </tr>
 <tr>
 <td><code>@hardkas/config</code></td>
@@ -2735,8 +2739,8 @@ hardkas chaos replay --run-seed 42">
 <td>Wallet adapter boundary and local wallet connection helpers. Workspace only: not published in this release.</td>
 </tr>
 <tr>
-<td><code>@hardkas/sessions</code> · <code>@hardkas/bridge-local</code></td>
-<td>Experimental or unregistered surfaces (sessions, bridge). Moving the bridge code to Labs is planned.</td>
+<td><code>@hardkas/bridge-local</code></td>
+<td>Experimental, unregistered bridge surface. Moving the bridge code to Labs is planned.</td>
 </tr>
 <tr>
 <td><code>@hardkas/l2</code> · <code>@hardkas/ext-l2</code></td>

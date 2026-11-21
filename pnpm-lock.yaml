@@ -957,9 +957,6 @@ importers:
       '@hardkas/core':
         specifier: workspace:*
         version: link:../../../../packages/core
-      '@hardkas/jobs':
-        specifier: workspace:*
-        version: link:../../../../packages/jobs
       '@hardkas/localnet':
         specifier: workspace:*
         version: link:../../../../packages/localnet
@@ -1114,9 +1111,6 @@ importers:
       '@hardkas/core':
         specifier: workspace:*
         version: link:../core
-      '@hardkas/sessions':
-        specifier: workspace:*
-        version: link:../sessions
       '@hardkas/tx-builder':
         specifier: workspace:*
         version: link:../tx-builder
@@ -1139,9 +1133,6 @@ importers:
       '@hardkas/artifacts':
         specifier: workspace:*
         version: link:../artifacts
-      '@hardkas/bridge-local':
-        specifier: workspace:*
-        version: link:../bridge-local
       '@hardkas/config':
         specifier: workspace:*
         version: link:../config
@@ -1151,18 +1142,12 @@ importers:
       '@hardkas/dev-server':
         specifier: workspace:*
         version: link:../dev-server
-      '@hardkas/escrow':
-        specifier: workspace:*
-        version: link:../escrow
       '@hardkas/kaspa-rpc':
         specifier: workspace:*
         version: link:../kaspa-rpc
       '@hardkas/localnet':
         specifier: workspace:*
         version: link:../localnet
-      '@hardkas/node-orchestrator':
-        specifier: workspace:*
-        version: link:../node-orchestrator
       '@hardkas/node-runner':
         specifier: workspace:*
         version: link:../node-runner
@@ -1178,9 +1163,6 @@ importers:
       '@hardkas/sdk':
         specifier: workspace:*
         version: link:../sdk
-      '@hardkas/sessions':
-        specifier: workspace:*
-        version: link:../sessions
       '@hardkas/simulator':
         specifier: workspace:*
         version: link:../simulator
@@ -1208,9 +1190,6 @@ importers:
       tsx:
         specifier: ^4.19.2
         version: 4.23.7
-      zod:
-        specifier: ^4.6.7
-        version: 4.6.7
     devDependencies:
       tsup:
         specifier: ^8.3.5
@@ -1292,9 +1271,6 @@ importers:
       '@hardkas/core':
         specifier: workspace:*
         version: link:../core
-      '@hardkas/escrow':
-        specifier: workspace:*
-        version: link:../escrow
       '@hardkas/kaspa-rpc':
         specifier: workspace:*
         version: link:../kaspa-rpc
@@ -1310,9 +1286,6 @@ importers:
       '@hardkas/sdk':
         specifier: workspace:*
         version: link:../sdk
-      '@hardkas/sessions':
-        specifier: workspace:*
-        version: link:../sessions
       '@hardkas/tx-builder':
         specifier: workspace:*
         version: link:../tx-builder
@@ -1339,25 +1312,6 @@ importers:
         specifier: ^2.1.8
         version: 2.1.9(@types/node@26.1.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(lightningcss@1.32.0)(terser@5.51.2)
 
-  packages/escrow:
-    dependencies:
-      '@hardkas/core':
-        specifier: workspace:*
-        version: link:../core
-      zod:
-        specifier: ^4.6.7
-        version: 4.6.7
-    devDependencies:
-      tsup:
-        specifier: ^8.3.5
-        version: 8.5.1(jiti@2.7.0)(postcss@8.5.25)(tsx@4.23.7)(typescript@5.9.3)(yaml@2.9.0)
-      typescript:
-        specifier: ^5.7.2
-        version: 5.9.3
-      vitest:
-        specifier: ^2.1.8
-        version: 2.1.9(@types/node@26.1.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(lightningcss@1.32.0)(terser@5.51.2)
-
   packages/ext-l2:
     dependencies:
       '@hardkas/accounts':
@@ -1375,9 +1329,9 @@ importers:
       '@hardkas/l2':
         specifier: workspace:*
         version: link:../l2
-      '@hardkas/node-orchestrator':
+      '@hardkas/node-runner':
         specifier: workspace:*
-        version: link:../node-orchestrator
+        version: link:../node-runner
       '@hardkas/query-store':
         specifier: workspace:*
         version: link:../query-store
@@ -1406,22 +1360,6 @@ importers:
       vitest:
         specifier: ^2.1.8
         version: 2.1.9(@types/node@26.1.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(lightningcss@1.32.0)(terser@5.51.2)
-
-  packages/jobs:
-    dependencies:
-      '@hardkas/observability':
-        specifier: workspace:*
-        version: link:../observability
-    devDependencies:
-      '@types/node':
-        specifier: ^20.12.7
-        version: 20.19.43
-      typescript:
-        specifier: ^5.6.3
-        version: 5.9.3
-      vitest:
-        specifier: ^2.1.2
-        version: 2.1.9(@types/node@20.19.43)(jsdom@29.1.1(@noble/hashes@2.2.0))(lightningcss@1.32.0)(terser@5.51.2)
 
   packages/kaspa-rpc:
     dependencies:
@@ -1488,22 +1426,6 @@ importers:
       fast-check:
         specifier: ^4.8.0
         version: 4.9.0
-      tsup:
-        specifier: ^8.3.5
-        version: 8.5.1(jiti@2.7.0)(postcss@8.5.25)(tsx@4.23.7)(typescript@5.9.3)(yaml@2.9.0)
-      typescript:
-        specifier: ^5.7.2
-        version: 5.9.3
-      vitest:
-        specifier: ^2.1.8
-        version: 2.1.9(@types/node@26.1.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(lightningcss@1.32.0)(terser@5.51.2)
-
-  packages/node-orchestrator:
-    dependencies:
-      '@hardkas/core':
-        specifier: workspace:*
-        version: link:../core
-    devDependencies:
       tsup:
         specifier: ^8.3.5
         version: 8.5.1(jiti@2.7.0)(postcss@8.5.25)(tsx@4.23.7)(typescript@5.9.3)(yaml@2.9.0)
@@ -1702,9 +1624,6 @@ importers:
       '@hardkas/core':
         specifier: workspace:*
         version: link:../core
-      '@hardkas/escrow':
-        specifier: workspace:*
-        version: link:../escrow
       '@hardkas/kaspa-rpc':
         specifier: workspace:*
         version: link:../kaspa-rpc
@@ -1720,9 +1639,6 @@ importers:
       '@hardkas/query-store':
         specifier: workspace:*
         version: link:../query-store
-      '@hardkas/simulator':
-        specifier: workspace:*
-        version: link:../simulator
       '@hardkas/toolkit':
         specifier: workspace:*
         version: link:../toolkit
@@ -1748,22 +1664,6 @@ importers:
       vitest:
         specifier: ^2.1.8
         version: 2.1.9(@types/node@20.19.43)(jsdom@29.1.1(@noble/hashes@2.2.0))(lightningcss@1.32.0)(terser@5.51.2)
-
-  packages/sessions:
-    dependencies:
-      '@hardkas/core':
-        specifier: workspace:*
-        version: link:../core
-    devDependencies:
-      tsup:
-        specifier: ^8.3.5
-        version: 8.5.1(jiti@2.7.0)(postcss@8.5.25)(tsx@4.23.7)(typescript@5.9.3)(yaml@2.9.0)
-      typescript:
-        specifier: ^5.7.2
-        version: 5.9.3
-      vitest:
-        specifier: ^2.1.8
-        version: 2.1.9(@types/node@26.1.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(lightningcss@1.32.0)(terser@5.51.2)
 
   packages/simulator:
     dependencies:
@@ -1826,9 +1726,6 @@ importers:
 
   packages/storage-postgres:
     dependencies:
-      '@hardkas/jobs':
-        specifier: workspace:*
-        version: link:../jobs
       '@hardkas/toolkit':
         specifier: workspace:*
         version: link:../toolkit
@@ -1848,9 +1745,6 @@ importers:
 
   packages/storage-sqlite:
     dependencies:
-      '@hardkas/jobs':
-        specifier: workspace:*
-        version: link:../jobs
       '@hardkas/toolkit':
         specifier: workspace:*
         version: link:../toolkit
@@ -1946,9 +1840,6 @@ importers:
       '@hardkas/core':
         specifier: workspace:*
         version: link:../core
-      '@hardkas/jobs':
-        specifier: workspace:*
-        version: link:../jobs
       '@hardkas/kaspa-rpc':
         specifier: workspace:*
         version: link:../kaspa-rpc

@@ -14,7 +14,7 @@ export function registerPsktCommands(program: Command) {
   // adapter maps none, the native one is never registered), so every command that would create or change a session
   // refuses with a typed code; `capabilities`, `inspect` and `verify` only read what exists.
   const pskt = program
-    .command("pskt")
+    .command("pskt", { hidden: true })
     .description(
       "Portable Signing Sessions (PSKT): unavailable in this build. No adapter implements PSKT operations, so export, import, sign, merge, finalize and extract refuse"
     );

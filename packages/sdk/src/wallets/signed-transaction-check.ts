@@ -2,7 +2,7 @@ import { NUMBER_MARK, canonicalJson, isSchnorrSignatureHex, parseJsonKeepingNumb
 import { walletRefusal } from "./errors.js";
 
 /*
- * R3-C · what a browser wallet returned from `signPskt`, checked against the unsigned transaction HardKAS sent it
+ * R3-C · what a browser wallet returned from `signPskt` (Kastle: `signTx`), checked against the unsigned transaction HardKAS sent it
  * (NOTES-CROSSCHECK §2.3 items 2–4). BROWSER-SAFE: no Node import. This is the structural half of the check, the one a
  * page can run; the cryptographic half (each signature valid for the expected key over HardKAS's own signature hash)
  * runs where HardKAS assembles and sends (wallet-payments.ts, covenants.ts), and repeats this one first.

@@ -9,6 +9,7 @@ import {
   Hardkas,
   WALLET_SIGN_REQUEST_SCHEMA,
   completeWalletPayment,
+  connectBrowserWallet,
   prepareWalletPayment,
   silverSpendSignatureFromWallet,
   silverSpendWalletRequest,
@@ -34,10 +35,10 @@ beforeAll(() => {
   k = loadManagedKaspaWasmSync();
 });
 
-/** A two-input v0 payment from key A's simnet address, unsigned, as kaspa-wasm builds it. */
-function unsigned(outputValue = 900_000_000n) {
+/** A two-input v0 payment from key A's simnet (or `network`) address, unsigned, as kaspa-wasm builds it. */
+function unsigned(outputValue = 900_000_000n, network = "simnet") {
   const a = new k.PrivateKey(KEY_A);
-  const address = a.toPublicKey().toAddress("simnet");
+  const address = a.toPublicKey().toAddress(network);
   const spk = k.payToAddressScript(address);
   const input = (n: number) => ({
     previousOutpoint: { transactionId: String(n).repeat(64), index: n },
@@ -124,6 +125,65 @@ describe("R3-C · every wallet signature is verified against the expected key ov
     const changed = JSON.parse(walletSign(u.json, KEY_A, [0, 1]));
     changed.outputs[0].value = "1";
     expect(code(() => verifyWalletSignedTransaction({ request: requestFor(u), returned: JSON.stringify(changed), sighash: u.sighash }))).toBe("WALLET_SIGNED_TRANSACTION_CHANGED");
+  });
+
+  it("BETA-FIX W1 · Kastle's own signTx path (re-serialized by kaspa-wasm): signed with the address's key, accepted; with another key, WALLET_SIGNATURE_INVALID", async () => {
+    /**
+     * window.kastle as forbole/kastle 2.63.2 (commit 2aba91b6) signs: a class instance; signTx(networkId, txJson, scripts)
+     * deserializes the JSON with kaspa-wasm (lib/kaspa-compat.ts: a missing computeBudget patched to 0), signs each script
+     * option's input with createInputSignature, SighashType.All for "All" (lib/wallet/sign-script.ts), and answers the WHOLE
+     * transaction re-serialized (serializeToSafeJSON; components/screens/browser-api/kaspa/sign-tx/SignTx.tsx).
+     */
+    const fakeKastle = (address: string, key: string) => {
+      const calls: Array<{ method: string; args: unknown[] }> = [];
+      class KastleBrowserAPI {
+        receiveMessageWithTimeout<T>(method: string, args: unknown[], answer: () => T): Promise<T> {
+          calls.push({ method, args });
+          return Promise.resolve().then(answer);
+        }
+        connect() {
+          return this.receiveMessageWithTimeout("connect", [], () => true);
+        }
+        getAccount() {
+          return this.receiveMessageWithTimeout("getAccount", [], () => ({ address, publicKey: String(new k.PrivateKey(key).toPublicKey().toString()) }));
+        }
+        getNetwork() {
+          return this.receiveMessageWithTimeout("getNetwork", [], () => "testnet-10");
+        }
+        on() {
+          return this;
+        }
+        removeListener() {
+          return this;
+        }
+        signTx(networkId: string, txJson: string, scripts?: Array<{ inputIndex: number; signType?: string }>) {
+          return this.receiveMessageWithTimeout("signTx", [networkId, txJson, scripts], () => {
+            const patched = JSON.parse(txJson);
+            patched.inputs = patched.inputs.map((i: any) => (i.computeBudget === undefined ? { ...i, computeBudget: 0 } : i));
+            const tx = k.Transaction.deserializeFromSafeJSON(JSON.stringify(patched));
+            const inputs = tx.inputs;
+            for (const o of scripts ?? []) {
+              if ((o.signType ?? "All") !== "All") throw new Error(`this fake signs "All" only, not ${o.signType}`);
+              inputs[o.inputIndex].signatureScript = String(k.createInputSignature(tx, o.inputIndex, new k.PrivateKey(key), k.SighashType.All));
+            }
+            return String(tx.serializeToSafeJSON());
+          });
+        }
+      }
+      return { window: { kastle: new KastleBrowserAPI() }, calls };
+    };
+    const u = unsigned(900_000_000n, "testnet-10");
+    const request: WalletSignRequest = { ...requestFor(u), networkId: "testnet-10" };
+    const own = fakeKastle(u.address, KEY_A);
+    const back = await (await connectBrowserWallet("kastle", { networkId: "testnet-10", window: own.window })).signTransaction(request);
+    expect(own.calls.find((c) => c.method === "signTx")!.args.slice(0, 1)).toEqual(["testnet-10"]);
+    expect(typeof back.returned).toBe("string");
+    const check = verifyWalletSignedTransaction({ request, returned: back.returned, sighash: u.sighash });
+    expect(Object.keys(check.signatures)).toEqual(["0", "1"]);
+    expect(check.signatures[0]).toMatch(/^[0-9a-f]{128}01$/);
+    const thief = fakeKastle(u.address, KEY_B);
+    const forged = await (await connectBrowserWallet("kastle", { networkId: "testnet-10", window: thief.window })).signTransaction(request);
+    expect(code(() => verifyWalletSignedTransaction({ request, returned: forged.returned, sighash: u.sighash }))).toBe("WALLET_SIGNATURE_INVALID");
   });
 
   it("only a Schnorr P2PK address names the key a wallet signs with", () => {

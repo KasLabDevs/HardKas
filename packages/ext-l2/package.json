@@ -41,7 +41,7 @@
     "@hardkas/config": "workspace:*",
     "@hardkas/core": "workspace:*",
     "@hardkas/l2": "workspace:*",
-    "@hardkas/node-orchestrator": "workspace:*",
+    "@hardkas/node-runner": "workspace:*",
     "@hardkas/query-store": "workspace:*",
     "@hardkas/sdk": "workspace:*",
     "picocolors": "^1.1.1",

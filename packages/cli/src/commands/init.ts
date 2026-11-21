@@ -211,7 +211,7 @@ export default {
       kind: "kaspa-node",
       network: "simnet",
       rpcUrl: "${nodeRpcUrl()}",
-      description: "Local Docker kaspad on simnet — requires hardkas node start"
+      description: "Local Docker kaspad on simnet — requires hardkas localnet start --toccata"
     }
   }
 };

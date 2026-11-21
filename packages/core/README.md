@@ -2,38 +2,29 @@
 
 The Core package provides the foundational safety rails, filesystem abstractions, and atomic persistence primitives for the entire HardKAS ecosystem.
 
-## 1. Atomic Persistence Variants
+## 1. Atomic Writes (`writeFileAtomic`)
 
-All state mutation in HardKAS relies on strict atomic persistence to prevent corruption during unexpected crashes or power loss. The standard flow follows the `temp + rename + fsync` pattern.
+Workspace files are written with the `temp + fsync + rename` pattern, so a crash leaves either the old file or the new one.
 
-### Flow: Standard Atomic Write
+### Flow: Atomic Write
 
-1. Data is written to a temporary file (`.hardkas/tmp/<uuid>.json`).
-2. `fs.fsyncSync()` is called on the temporary file to flush buffers to disk.
-3. The temporary file is atomically renamed over the target file (e.g., `state.json`).
-4. `fs.fsyncSync()` is called on the **parent directory** (`.hardkas/`) to ensure the directory entry is durably linked.
+1. The data is written to a temporary file beside the target (`.tmp.<name>.<uuid>` in the same directory).
+2. `fs.fsyncSync()` is called on the temporary file.
+3. The temporary file is renamed over the target. On Windows the rename is retried a few times on `EPERM` or `EBUSY` (an antivirus or a reader holding the file).
+4. Only with `fsyncParent: true`, and never on Windows, the parent directory is `fsync`ed too. That step is best effort: a failure is ignored silently.
+5. The temporary file is removed in every case. Any failure is `IO_ERROR`.
 
-### Variant: Fallback Write
+## 2. Workspace Locks (`acquireLock`, `withLock`)
 
-If the filesystem does not support directory `fsync` (e.g., certain Windows/WSL configurations), the engine catches `EINVAL` or `EISDIR` and gracefully degrades to a standard atomic rename without the parent directory flush, logging a warning to the telemetry stream.
+A lock is a file `.hardkas/locks/<name>.lock`, created with `fs.openSync(path, "wx")` (exclusive) and holding a `hardkas.lock.v1` record (`name`, `pid`, `command`, `cwd`, `hostname`, `createdAt`). Locks are taken in one fixed order (`LOCK_ORDER`) to avoid deadlocks, and an acquisition inside a call chain that already holds the lock joins it.
 
-## 2. Workspace Lock Mechanisms
+### Variant: The Lock Already Exists
 
-To prevent concurrent modifications to the developer workspace, `@hardkas/core` uses a conservative file-based locking strategy (`.hardkas/locks/<domain>.lock`).
+- **Held by a live process** (its pid runs on this host, or the record names another host): without `wait` the call fails at once with `LOCK_HELD`. With `wait` it polls every 250 ms (`pollMs`) for up to `timeoutMs` (default 30 s), then fails with `LOCK_TIMEOUT`. A lock whose holder may be alive is never broken.
+- **Held by a dead process on this host:** removed at once and the acquisition retried, logged as a `STALE_LOCK_RECOVERY` anomaly. If it cannot be removed, or is stale again after that one recovery, the call fails with `STALE_LOCK`.
+- **Unreadable or empty** (a crash between creating the file and writing the record): younger than 2 s it is taken as still being created, and waited for; older, it is removed once (`STALE_LOCK_RECOVERY`), else `LOCK_METADATA_INVALID`.
 
-### Flow: Lock Acquisition
-
-1. Process attempts to create a lock file using `fs.openSync(path, 'wx')` (exclusive write).
-2. If successful, the process PID and timestamp are written.
-3. If `EEXIST` is thrown, the process enters a **spin-wait loop** with exponential backoff (up to 30 seconds).
-
-### Variant: Stale Lock Detection & Recovery (LockHell Defense)
-
-If a lock cannot be acquired after 30 seconds, the engine checks if the holding process is still alive.
-
-- **Dead Process:** If `process.kill(pid, 0)` fails (indicating the PID no longer exists), the lock is deemed **stale**. The engine atomically overrides the lock and logs a `STALE_LOCK_RECOVERY` telemetry event.
-- **Live Process:** If the PID is active, HardKAS strictly aborts with `HARDKAS_LOCK_CONTENTION`. It will _never_ violently break a lock held by a live process.
-- **Zero-Byte Locks:** If a system crash occurs precisely when the `wx` descriptor is created but before the PID is written (a TOCTOU scenario), HardKAS considers any 0-byte lock older than 10 seconds as implicitly stale.
+`hardkas lock list`, `hardkas lock doctor` and `hardkas lock clear <name> --if-dead` read and clear these files.
 
 ## 3. AppendCoordinator (Event Ledger)
 
@@ -101,3 +92,12 @@ If the chaos engine (or a crash) leaves a partial JSON object at the tail of `ev
 (EVENT-EMISSION-1). Every artifact HardKAS writes is announced through `emitArtifactWritten`, the one boundary that
 builds the `artifact.written` envelope (identity = content hash; correlation = the artifact's own `workflowId`, or the
 documented `wf_unknown_standalone` marker when it has none — never a derived or invented one).
+
+## 4. Session Store
+
+`@hardkas/core` also holds the workspace's L1/L2 session records (formerly `@hardkas/sessions`): `.hardkas/sessions.json`
+(`SESSION_FILE`), read with `loadSessionStore`, `loadSessionStoreStrict` (throws on an invalid store) or
+`loadSessionStoreWithDiagnostics`, written atomically by `saveSessionStore`, and changed under the workspace lock by
+`createSession` and `setActiveSession`; `getActiveSession` returns the active one. A record is a `HardkasSession`
+(`hardkas.session.v1`: an L1 wallet, an L2 account, a bridge mode). The dev server and the Igra L2 lab use them; the
+`hardkas session` command is hidden.

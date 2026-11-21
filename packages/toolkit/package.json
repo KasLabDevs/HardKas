@@ -27,7 +27,6 @@
     "@hardkas/accounts": "workspace:*",
     "@hardkas/artifacts": "workspace:*",
     "@hardkas/core": "workspace:*",
-    "@hardkas/jobs": "workspace:*",
     "@hardkas/observability": "workspace:*",
     "@hardkas/kaspa-rpc": "workspace:*",
     "@hardkas/query": "workspace:*",

@@ -14,7 +14,7 @@ export default defineHardkasConfig({
       kind: "kaspa-node",
       network: "simnet",
       rpcUrl: "ws://127.0.0.1:18210",
-      description: "Local Docker kaspad on simnet — requires hardkas node start"
+      description: "Local Docker kaspad on simnet — requires hardkas localnet start --toccata"
     },
     "testnet-12": {
       kind: "kaspa-node",

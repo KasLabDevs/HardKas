@@ -45,7 +45,7 @@ Requirements: **Node.js 24.22.1** exactly (the version HardKAS is built, tested 
 
 ### 1. Initialize a Workspace
 
-> **Release note:** `@hardkas/cli` `0.13.0-rc.2` is currently published on npm (`latest`/`next`); `0.13.0-rc.3` is the current repository development tree. Use `@latest` (or `@0.13.0-rc.2`) when installing from npm, or `pnpm hardkas` inside this monorepo.
+> **Release note:** `@hardkas/cli` `0.13.0-rc.3` is published on npm (`latest`/`next`). The `develop` tree is ahead of it: it publishes 18 packages, where rc.3 has 22 (`@hardkas/escrow` is now in `@hardkas/sdk`, `@hardkas/jobs` in `@hardkas/toolkit`, `@hardkas/node-orchestrator` in `@hardkas/node-runner` and `@hardkas/sessions` in `@hardkas/core`). Use `@latest` (or `@0.13.0-rc.3`) when installing from npm, or `pnpm hardkas` inside this monorepo.
 
 ```bash
 # Initialize a new HardKAS workspace with deterministic accounts
@@ -86,7 +86,7 @@ If you are using **Claude Code**, **Cursor**, or another AI coding agent:
 
 - **Short navigation map:** [hardkas.dev/llms.txt](https://hardkas.dev/llms.txt)
 - **Full AI reference & verified CLI/SDK recipes:** [hardkas.dev/llms-full.txt](https://hardkas.dev/llms-full.txt)
-- **AI documentation section:** [Build on Kaspa with AI](apps/docs/docs/ai/index.md) ([workflows](apps/docs/docs/ai/workflows.md), [troubleshooting](apps/docs/docs/ai/troubleshooting.md), [Claude Code & Cursor](apps/docs/docs/ai/claude-code-and-cursor.md))
+- **AI documentation section:** [Build on Kaspa with AI](docs/ai/index.md) ([workflows](docs/ai/workflows.md), [troubleshooting](docs/ai/troubleshooting.md), [Claude Code & Cursor](docs/ai/claude-code-and-cursor.md))
 - **Rule of thumb:** Prefer HardKAS CLI/SDK over custom `kaspa-wasm` boilerplate, run `hardkas doctor --json` first, and validate consensus behavior on `simnet` (never `simulated` or local `SCRIPT_VM` alone).
 
 ### 4. Local Dev Server & Visual IDE
@@ -157,7 +157,6 @@ Current baseline, verified by the release checks:
 - Real local funding by mining with the upstream `kaspanet/cpuminer` image in `localnet`.
 - Standard transaction lifecycle against the local node.
 - SilverScript through the official silverc v1.0.0: P2SH deploy/spend and 1:1 auth-bound covenants on the local node.
-- Artifact-coherence simulation.
 - Machine-verifiable golden corpus.
 - Release gauntlet through `pnpm gauntlet:toccata`.
 - mainnet is blocked: nothing in HardKAS signs, sends or connects to mainnet in this release line.
@@ -170,13 +169,11 @@ The `0.13.0-rc.3` release line includes a normalized Toccata v2 localnet flow:
 
 - Docker `rusty-kaspad` v2.1.0 localnet (pinned by digest) funding with a compatible miner companion (`kaspanet/cpuminer`).
 - Standard transaction lifecycle against the local node.
-- Real Silver OP_TRUE deploy and spend receipts.
-- Silver simulator artifact-coherence comparison.
-- Machine-verifiable OP_TRUE and failure golden corpus in the Toccata gauntlet.
+- SilverScript compile, P2SH deploy/spend and a 1:1 covenant transition on the local node, each capability reported
+  on its own by the Toccata gauntlet (simulated steps do not count).
+- Machine-verifiable golden corpus (`fixtures/toccata-v2/silver`), recompiled and re-derived offline by the gauntlet.
 
-The default simulator comparison reports `SILVERSCRIPT_SIMULATION_MATCH` in
-`artifact-coherence` mode while explicitly retaining
-`PARTIAL_VM_SIMULATION`. Full Kaspa VM or consensus equivalence is not claimed.
+Full Kaspa VM or consensus equivalence is not claimed.
 
 Official release claims:
 
@@ -188,13 +185,11 @@ Official release claims:
 ### 0.13.0-rc.3 SDK Parity
 
 `0.13.0-rc.3` includes high-level
-SDK surfaces for capabilities, localnet status/start/fund, corpus verification,
-and Silver planning/simulation/compare flows without changing the release
-claims above. It enforces strict separation of execution environments across Artifact lineage.
+SDK surfaces for capabilities, localnet status/start/fund, and SilverScript compile and corpus verification,
+without changing the release claims above. It enforces strict separation of execution environments across Artifact lineage.
 
-SDK real Silver RPC/Docker execution remains explicitly unsupported in
-`0.13.0-rc.3` via `SDK_SILVER_REAL_LIFECYCLE_UNSUPPORTED`; the real
-lifecycle verified by the release checks remains CLI/localnet bounded.
+The SDK plans, signs and sends SilverScript deploys, spends and covenant transitions on a node through
+`sdk.covenants` (transaction v1); `sdk.experimental.silver` compiles, reproduces and derives P2SH addresses (simnet).
 
 ### 0.13.0-rc.3 Programmability Builder Surface
 
@@ -208,9 +203,9 @@ Programmability surfaces:
 - `hardkas programmability corpus verify fixtures/toccata-v2 --json`
 - `hardkas programmability inspect <path> --kind silver|zk|vprog --json`
 - `hardkas programmability app plan --kind full-lab --json`
-- `await hardkas.programmability.capabilities()`
-- `await hardkas.programmability.corpus.verify({ path })`
-- `await hardkas.programmability.inspect({ kind, path })`
+- `await sdk.experimental.programmability.capabilities()`
+- `await sdk.experimental.programmability.corpus.verify({ path })`
+- `await sdk.experimental.programmability.inspect({ kind, path })`
 
 ZK corpus surfaces:
 
@@ -218,19 +213,19 @@ ZK corpus surfaces:
 - `hardkas zk proof inspect <path> --json`
 - `hardkas zk proof verify-local <path> --json`
 - `hardkas zk corpus verify fixtures/toccata-v2/zk --json`
-- `await hardkas.zk.capabilities()`
-- `await hardkas.zk.proof.inspect(path)`
-- `await hardkas.zk.proof.verifyLocal(path)`
-- `await hardkas.zk.corpus.verify(path)`
+- `await sdk.experimental.zk.capabilities()`
+- `await sdk.experimental.zk.proof.inspect(path)`
+- `await sdk.experimental.zk.proof.verifyLocal(path)`
+- `await sdk.experimental.zk.corpus.verify(path)`
 
 vProgs inspect surfaces:
 
 - `hardkas vprogs capabilities --json`
 - `hardkas vprogs status --json`
 - `hardkas vprogs inspect <artifact> --json`
-- `await hardkas.vprogs.capabilities()`
-- `await hardkas.vprogs.status()`
-- `await hardkas.vprogs.inspect(path)`
+- `await sdk.experimental.vprogs.capabilities()`
+- `await sdk.experimental.vprogs.status()`
+- `await sdk.experimental.vprogs.inspect(path)`
 
 SilverScript v1 (`hardkas silver`): the official silverc v1.0.0 and the Kaspa SDK,
 with real-node evidence per capability in `fixtures/toccata-v2/silver` — P2SH
@@ -239,8 +234,7 @@ transition. General covenant support is not claimed.
 
 ZK/vProgs lab claims:
 
-- `ZK_CORPUS_SURFACE_READY`
-- `VPROGS_INSPECT_SURFACE_READY`
+- `ZK_CORPUS_SURFACE_READY` and `VPROGS_INSPECT_SURFACE_READY` (local inspection surfaces only; no runtime or on-chain claim)
 - Groth16 corpus verification is local fixture coherence only.
 - RISC Zero Groth16 receipts are verified locally against the pinned RISC Zero key (`hardkas zk toccata verify-receipt`); HardKAS builds the lock scripts, and `hardkas zk toccata spend` sends a lock's spend through HardKAS's own send (recorded, one submission per txId; simnet and testnet-10 only, proven on simnet). The node verifies the proof: HardKAS claims no on-chain ZK verification of its own.
 - vProgs is inspect-only.
@@ -275,8 +269,9 @@ this gate.
 
 ## Stable and experimental features
 
-Each CLI command states its maturity at the end of its `--help` description: `stable`, `preview`, `alpha`,
-`experimental`, `research` or `internal`. Only `stable` commands are covered by the release scope. On the SDK, the
+Most CLI commands state their maturity at the end of their `--help` description: `stable`, `beta`, `preview`,
+`alpha`, `experimental`, `research` or `internal`; an unlabelled command is not stable. Only `stable` commands are
+covered by the release scope. On the SDK, the
 surfaces under `sdk.experimental.*` carry no stability promise. `hardkas capabilities --json` prints a warning that it
 is internal/experimental. The levels, and what each one promises, are described in
 [docs/status/versioning.md](docs/status/versioning.md), and the known gaps in
@@ -307,13 +302,11 @@ hardkas corpus verify fixtures/toccata-v2/silver --json
 ```typescript
 import { Hardkas } from "@hardkas/sdk";
 
-const sdk = await Hardkas.create({
-  execution: { mode: "simulator", domain: "kaspa-l1", network: "simulated" },
-  autoBootstrap: true
-});
+// Runs on the simulator; without `network` (or `target`) the workspace's default execution target decides.
+const sdk = await Hardkas.create({ network: "simulated", autoBootstrap: true });
 
-const plan = await sdk.tx.plan({ from: "alice", to: "bob", amount: "10" });
-const signed = await sdk.tx.sign(plan, "alice");
+const plan = await sdk.tx.plan({ from: "alice", to: "bob", amount: "10" }); // a string amount is KAS
+const signed = await sdk.tx.sign(plan, { account: "alice" });
 const { receipt } = await sdk.tx.simulate(signed);
 
 // Replay is addressed by the receipt's artifact id (its contentHash), not by its txId.
@@ -346,14 +339,7 @@ hardkas localnet account create treasury
 hardkas localnet fund treasury
 ```
 
-### Node Primitive (Bare Node)
-Low-level primitive for running the Kaspa node binary. It provides a bare `rusty-kaspad` with no funding orchestration, no account lifecycle, and no miner management.
-
-```bash
-hardkas node start
-```
-
-For the explicit artifact boundary:
+### Explicit artifact boundary
 
 ```bash
 hardkas tx plan --from alice --to bob --amount 10 --network simulated --out tx-plan.json

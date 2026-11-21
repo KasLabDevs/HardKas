@@ -21,7 +21,6 @@
     "@hardkas/artifacts": "workspace:*",
     "@hardkas/config": "workspace:*",
     "@hardkas/core": "workspace:*",
-    "@hardkas/sessions": "workspace:*",
     "@hardkas/tx-builder": "workspace:*"
   },
   "devDependencies": {

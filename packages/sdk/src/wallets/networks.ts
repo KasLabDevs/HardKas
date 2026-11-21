@@ -1,10 +1,11 @@
 /*
  * R3-C · the networks a browser wallet names, read as HardKAS network ids. BROWSER-SAFE: no Node import.
  *
- * A wallet says its network in its own words — KasWare `getNetwork()` ("kaspa_mainnet", "kaspa_testnet_10", …), Kastle the
- * id it was connected with, Kaspire nothing but its address prefix (NOTES-CROSSCHECK §2.3 item 6, UNVERIFIED against the
- * extensions). Anything HardKAS cannot read as one Kaspa L1 network is refused (WALLET_NETWORK_UNKNOWN): a KasWare on the
- * IGRA L2 has a Kaspa-looking address that does not say so, and a guess would sign for another chain.
+ * A wallet says its network in its own words — `getNetwork()`: KasWare "kaspa_testnet_10" (and "kaspa_mainnet", …),
+ * Kaspire and Kastle "testnet-10" (read from the real extensions on 21-nov-2026); without it, Kastle the id it was
+ * connected with and Kaspire nothing but its address prefix. Anything HardKAS cannot read as one Kaspa L1 network is
+ * refused (WALLET_NETWORK_UNKNOWN): a KasWare on the IGRA L2 has a Kaspa-looking address that does not say so, and a guess
+ * would sign for another chain.
  */
 
 export type WalletNetworkFamily = "mainnet" | "testnet" | "simnet" | "devnet";

@@ -10,19 +10,35 @@ import { normalizeWalletMessageSignature, type WalletMessageSignature } from "./
  * the key it expects over its own signature hash, assembles the final unlock of contract inputs, sends and records.
  * BROWSER-SAFE: no Node import, no Node global; it touches only the `window.<wallet>` object the extension injects.
  *
- * The wallets' interfaces come from third-party field notes (NOTES-CROSSCHECK §2.3), UNVERIFIED against the real
- * extensions until the owner runs the probe page (dev server, /wallet-probe):
- *  - `signPskt` takes ONE object — KasWare `{ txJsonString, options: { signInputs: [{ index, sighashType: 1 }] } }`,
- *    Kaspire the same plus `sender`; the two-argument form crashes inside KasWare. Contract inputs ask for
- *    `options.autoFinalized: false` (the wallet returns the bare `41 <64-byte signature> 01`; HardKAS assembles the unlock).
+ * What each wallet is asked, and what was verified against the REAL extensions on Testnet-10 on 21-nov-2026 with the probe
+ * page (dev server, /wallet-probe): KasWare 0.11.6, Kaspire and Kastle.
+ *  - KasWare and Kaspire: `signPskt` takes ONE object — KasWare `{ txJsonString, options: { signInputs: [{ index,
+ *    sighashType: 1 }] } }`, Kaspire the same plus `sender`; the two-argument form crashes inside KasWare. VERIFIED for a
+ *    payment on both: the signatures checked here and by HardKAS (every one against the address's key), KasWare's sent and
+ *    accepted. Contract inputs ask for `options.autoFinalized: false` (the wallet returns the bare `41 <64-byte signature>
+ *    01`; HardKAS assembles the unlock); a contract spend was not part of the 21-nov run.
+ *  - Kastle has no signPskt (VERIFIED: its methods live on the prototype of a class instance). HardKAS calls its own
+ *    `signTx(networkId, txJson, scripts)` — forbole/kastle 2.63.2 (commit 2aba91b6, api/browser.ts) — with the session's
+ *    network, the same JSON and one `{ inputIndex, signType: "All" }` per input HardKAS chose; Kastle answers the signed
+ *    transaction's safe JSON (a string), checked like the others. STILL UNVERIFIED against the extension until the probe
+ *    is run again with Kastle. Per its source: signTx refuses any transaction that is not version 0 unless it decodes as a
+ *    KCC-20 transfer of its own pieces (api/background/handlers/kaspa/signTx.ts), so a version-1 payment and every contract
+ *    request are refused here before Kastle is asked; when HardKAS's options leave inputs unsigned, Kastle signs every
+ *    other input its key owns too (lib/wallet/sign-script.ts), which the check below refuses as a change; a Ledger account
+ *    refuses sign-only requests.
  *  - `txJsonString` is the SDK's safe JSON of the unsigned transaction HardKAS built, never hand-rolled.
  *  - before every signature request the wallet's active address and network are read again and must be the session's;
  *    `accountsChanged` (payload an array or `{ address }`) or `networkChanged` to anything else drops the session.
- *  - KasWare says its network (`getNetwork`), Kastle takes it in `connect`, Kaspire says it only by its address prefix
- *    (which cannot tell one testnet from another). A network HardKAS cannot read as Kaspa L1 is refused, mainnet always.
+ *  - the network: each wallet's own `getNetwork()` when it offers one — KasWare "kaspa_testnet_10" (and "" before it is
+ *    connected, so it is read after the accounts), Kaspire and Kastle "testnet-10" (VERIFIED). A wallet that offers it is
+ *    held to it: an answer HardKAS cannot read as Kaspa L1 is refused, another network is refused, mainnet always. Without
+ *    it, Kaspire is read by its address prefix (which cannot tell one testnet from another) and Kastle by the id it was
+ *    connected with (Kastle 2.63.2's connect() takes no network: only getNetwork() says it). KasWare must offer it.
  *  - Kaspire rejects at once when locked; the extension is looked up when asked (on a click), not only at page load.
- *  - Kastle could not sign covenant inputs: a contract request to it is refused before it is asked.
- *  - A wallet never broadcasts for HardKAS: no send / push / broadcast method of a wallet is ever called.
+ *  - signMessage (one argument) VERIFIED on all three: KasWare and Kastle answer 128 hex characters, Kaspire `{ address,
+ *    publicKey, signedMessage, signature }`.
+ *  - A wallet never broadcasts for HardKAS: no send / push / broadcast method of a wallet is ever called (Kastle's
+ *    signAndBroadcastTx and sendKaspa included).
  */
 
 export type BrowserWalletKind = "kasware" | "kastle" | "kaspire";
@@ -116,12 +132,21 @@ const mainnetRefusal = (where: string) =>
     `${where}: mainnet signing is disabled in this HardKAS release (every path refuses it, a browser wallet's included). Nothing was asked of the wallet.`
   );
 
-const rejected = (kind: BrowserWalletKind, what: string, e: unknown) =>
-  walletRefusal(
-    "WALLET_REQUEST_REJECTED",
-    `${kind} refused ${what}: ${String((e as any)?.message ?? e).slice(0, 300)} (a locked wallet or a declined popup refuses at once). Nothing was signed.`,
-    { kind }
-  );
+/**
+ * forbole/kastle 2.63.2 (api/background/background-service.ts): a request handler that rejects with anything but an
+ * Error reaches the page as "Unknown error". Its sign popup rejects with strings ("User denied" on Cancel, "Failed to
+ * sign transaction: …") and its timeout with an object, so Kastle's answer cannot say which one happened (TN10, 21-nov).
+ */
+const KASTLE_OPAQUE_ERROR = "Unknown error";
+
+const rejected = (kind: BrowserWalletKind, what: string, e: unknown) => {
+  const said = String((e as any)?.message ?? e).slice(0, 300);
+  const why =
+    kind === "kastle" && said === KASTLE_OPAQUE_ERROR
+      ? "Kastle answers this same text when its popup is declined, when its popup fails to sign and when its request expires: it does not say which"
+      : "a locked wallet or a declined popup refuses at once";
+  return walletRefusal("WALLET_REQUEST_REJECTED", `${kind} refused ${what}: ${said} (${why}). Nothing was signed.`, { kind });
+};
 
 function providerOf(kind: BrowserWalletKind, win: unknown): Provider | undefined {
   const w = (win ?? globalThis) as Record<string, unknown>;
@@ -134,15 +159,60 @@ export function detectBrowserWallets(win?: unknown): BrowserWalletKind[] {
   return BROWSER_WALLET_KINDS.filter((k) => providerOf(k, win) !== undefined);
 }
 
-/** The method names a wallet's injected object offers (what the probe page shows, to compare with the notes). */
-export function describeBrowserWallet(kind: BrowserWalletKind, win?: unknown): string[] | undefined {
-  const p = providerOf(kind, win);
-  if (!p) return undefined;
+/** The method names an injected object offers, its prototype chain's included (Kastle's are all on its class's prototype). */
+function methodNamesOf(p: Provider): string[] {
   const names = new Set<string>();
   for (let o: any = p; o && o !== Object.prototype; o = Object.getPrototypeOf(o)) {
-    for (const n of Object.getOwnPropertyNames(o)) if (n !== "constructor" && typeof (p as any)[n] === "function") names.add(n);
+    for (const n of Object.getOwnPropertyNames(o)) {
+      if (n === "constructor") continue;
+      try {
+        if (typeof (p as any)[n] === "function") names.add(n);
+      } catch {
+        /* a property that throws when read is no method */
+      }
+    }
   }
   return [...names].sort();
+}
+
+/** The method names a wallet's injected object offers (what the probe page shows). */
+export function describeBrowserWallet(kind: BrowserWalletKind, win?: unknown): string[] | undefined {
+  const p = providerOf(kind, win);
+  return p ? methodNamesOf(p) : undefined;
+}
+
+/** How HardKAS asks a wallet to sign a request: the method and its arguments, exactly as the session passes them. */
+export interface WalletSignCall {
+  readonly method: "signPskt" | "signTx";
+  readonly args: readonly unknown[];
+}
+
+/**
+ * The call a session makes to have `request` signed by `kind` at `address` (see the header): KasWare and Kaspire
+ * `signPskt` with ONE object (Kaspire's with `sender`), Kastle `signTx(networkId, txJson, scripts)`. Nothing is checked
+ * here (the session checks before it calls); the probe page shows it.
+ */
+export function walletSignCallOf(kind: BrowserWalletKind, request: WalletSignRequest, address: string): WalletSignCall {
+  const indexes = request.signInputs.map((i) => i.index);
+  if (kind === "kastle") {
+    return { method: "signTx", args: [walletNetworkIdOf(request.networkId) ?? request.networkId, request.txJsonString, indexes.map((inputIndex) => ({ inputIndex, signType: "All" }))] };
+  }
+  const arg: Record<string, unknown> = {
+    txJsonString: request.txJsonString,
+    options: { signInputs: indexes.map((index) => ({ index, sighashType: 1 })), ...(request.autoFinalized === false ? { autoFinalized: false } : {}) }
+  };
+  if (kind === "kaspire") arg.sender = address;
+  // ONE argument, always: the two-argument form crashes inside KasWare
+  return { method: "signPskt", args: [arg] };
+}
+
+/** Kastle's own test (api/background/handlers/kaspa/utils.ts isCovenantTxJson): only a parseable version-0 transaction is not a covenant one. */
+function isVersionZeroTxJson(txJson: string): boolean {
+  try {
+    return JSON.parse(txJson)?.version === 0;
+  } catch {
+    return false;
+  }
 }
 
 /** The first address of an accounts answer or event payload (an array, `{ address }`, or a string). */
@@ -159,31 +229,47 @@ async function call<T>(kind: BrowserWalletKind, what: string, f: () => Promise<T
   }
 }
 
-/** The wallet's active address (and network, where it says one), read without a popup where the wallet allows. */
-async function readState(kind: BrowserWalletKind, p: Provider, connected: boolean): Promise<{ address: string | undefined; network: unknown }> {
+/** What a read of the wallet gives: its active address and, when it offers getNetwork(), its own network answer. */
+interface WalletState {
+  readonly address: string | undefined;
+  readonly network: unknown;
+  /** The wallet offers getNetwork() and was asked: it is then held to its answer. */
+  readonly saysNetwork: boolean;
+}
+
+/**
+ * The wallet's active address and, where it says one (getNetwork), its network, read without a popup where the wallet
+ * allows. KasWare must offer getNetwork; Kaspire and Kastle are asked when they offer it (both did on 21-nov-2026).
+ */
+async function readState(kind: BrowserWalletKind, p: Provider, connected: boolean): Promise<WalletState> {
+  let address: string | undefined;
   if (kind === "kastle") {
     if (typeof p.getAccount !== "function") throw unavailable(kind, "getAccount", p);
-    const account = await call(kind, "to give its account", () => p.getAccount());
-    return { address: addressIn(account), network: undefined };
+    address = addressIn(await call(kind, "to give its account", () => p.getAccount()));
+  } else {
+    const accountsMethod = connected ? "getAccounts" : "requestAccounts";
+    if (typeof p[accountsMethod] !== "function") throw unavailable(kind, accountsMethod, p);
+    address = addressIn(await call(kind, connected ? "to give its active account" : "the connection", () => p[accountsMethod]()));
   }
-  const accountsMethod = connected ? "getAccounts" : "requestAccounts";
-  if (typeof p[accountsMethod] !== "function") throw unavailable(kind, accountsMethod, p);
-  const accounts = await call(kind, connected ? "to give its active account" : "the connection", () => p[accountsMethod]());
-  if (kind === "kaspire") return { address: addressIn(accounts), network: undefined };
-  if (typeof p.getNetwork !== "function") throw unavailable(kind, "getNetwork", p);
+  // read after the accounts: KasWare answers "" before it is connected
+  if (typeof p.getNetwork !== "function") {
+    if (kind === "kasware") throw unavailable(kind, "getNetwork", p);
+    return { address, network: undefined, saysNetwork: false };
+  }
   const network = await call(kind, "to give its network", () => p.getNetwork());
-  return { address: addressIn(accounts), network };
+  return { address, network, saysNetwork: true };
 }
 
 const unavailable = (kind: BrowserWalletKind, method: string, p: Provider) =>
   walletRefusal(
     "WALLET_METHOD_UNAVAILABLE",
-    `${kind} offers no ${method}() (its object has: ${Object.keys(p).filter((n) => typeof p[n] === "function").join(", ") || "no method"}). HardKAS cannot use it as described in its notes. Nothing was signed.`,
+    `${kind} offers no ${method}() (its object has: ${methodNamesOf(p).join(", ") || "no method"}). HardKAS cannot ask it this way. Nothing was signed.`,
     { kind, method }
   );
 
 /** The session's network from the wallet's state, refused when it is mainnet, unknown, or not the one expected. */
-function settleNetwork(kind: BrowserWalletKind, address: string, network: unknown, expected: string): "wallet" | "connect" | "address-prefix" {
+function settleNetwork(kind: BrowserWalletKind, address: string, state: WalletState, expected: string): BrowserWalletSession["networkEvidence"] {
+  const { network } = state;
   const family = addressNetworkFamily(address);
   if (family === "mainnet" || isMainnetName(network)) throw mainnetRefusal(`${kind} is on mainnet (${String(network ?? address)})`);
   if (family === undefined) {
@@ -193,7 +279,8 @@ function settleNetwork(kind: BrowserWalletKind, address: string, network: unknow
   if (family !== expectedFamily) {
     throw walletRefusal("WALLET_NETWORK_MISMATCH", `${kind}'s active address ${address} is a ${family} address; the transaction is for ${expected}. Nothing was signed.`, { kind, address, expected });
   }
-  if (kind === "kasware") {
+  // a wallet that says its network is held to it (KasWare always; Kaspire and Kastle when they offer getNetwork)
+  if (state.saysNetwork) {
     const id = walletNetworkIdOf(network);
     if (id === undefined) {
       throw walletRefusal(
@@ -207,6 +294,7 @@ function settleNetwork(kind: BrowserWalletKind, address: string, network: unknow
     }
     return "wallet";
   }
+  // no getNetwork: Kastle by the id it was connected with, Kaspire by its address prefix only
   return kind === "kastle" ? "connect" : "address-prefix";
 }
 
@@ -232,7 +320,7 @@ export async function connectBrowserWallet(kind: BrowserWalletKind, options: Con
   const first = await readState(kind, p, false);
   if (!first.address) throw walletRefusal("WALLET_REQUEST_REJECTED", `${kind} gave no active account (locked, or the connection was declined). Nothing was signed.`, { kind });
   const address = first.address;
-  const networkEvidence = settleNetwork(kind, address, first.network, expected);
+  const networkEvidence = settleNetwork(kind, address, first, expected);
   let statedPublicKey: string | undefined;
   if (kind === "kastle") {
     try {
@@ -303,7 +391,7 @@ export async function connectBrowserWallet(kind: BrowserWalletKind, options: Con
       throw accountChanged(`the active account is ${now.address ?? "none (locked?)"}, not the session's ${address}`);
     }
     try {
-      settleNetwork(kind, now.address, now.network, expected);
+      settleNetwork(kind, now.address, now, expected);
     } catch (e) {
       drop(`the wallet's network is no longer ${expected}`);
       throw e;
@@ -337,19 +425,21 @@ export async function connectBrowserWallet(kind: BrowserWalletKind, options: Con
       if (request.signInputs.some((i) => !Number.isInteger(i?.index) || i.index < 0 || i.sighashType !== 1)) {
         throw walletRefusal("WALLET_SIGN_REQUEST_INVALID", "every input to sign is a non-negative index with sighashType 1 (SIGHASH_ALL). Nothing was asked of the wallet.");
       }
-      if (request.purpose === "contract" && kind === "kastle") {
-        throw walletRefusal("WALLET_COVENANT_SIGNING_UNSUPPORTED", "Kastle could not sign contract or covenant inputs (field notes): HardKAS does not ask it. Use KasWare. Nothing was asked of the wallet.", { kind });
+      if (kind === "kastle" && (request.purpose === "contract" || !isVersionZeroTxJson(request.txJsonString))) {
+        // forbole/kastle api/background/handlers/kaspa/signTx.ts: a transaction that is not version 0 is a covenant one to
+        // Kastle, refused unless it decodes as a KCC-20 transfer of the wallet's own pieces (a HardKAS draft never does)
+        throw walletRefusal(
+          "WALLET_COVENANT_SIGNING_UNSUPPORTED",
+          `Kastle's signTx refuses ${request.purpose === "contract" ? "contract and covenant inputs" : "a transaction that is not version 0"} unless it is a KCC-20 transfer of its own pieces: HardKAS does not ask it. Plan a version-0 payment (the default), or use KasWare. Nothing was asked of the wallet.`,
+          { kind }
+        );
       }
-      if (typeof p.signPskt !== "function") throw unavailable(kind, "signPskt", p);
+      const signCall = walletSignCallOf(kind, { ...request, networkId: expected }, address);
+      if (typeof p[signCall.method] !== "function") throw unavailable(kind, signCall.method, p);
       await refresh();
       const signInputs = request.signInputs.map((i) => ({ index: i.index, sighashType: 1 as const }));
-      const arg: Record<string, unknown> = {
-        txJsonString: request.txJsonString,
-        options: { signInputs, ...(request.autoFinalized === false ? { autoFinalized: false } : {}) }
-      };
-      if (kind === "kaspire") arg.sender = address;
-      // ONE argument, always: the two-argument form crashes inside KasWare
-      const returned = await call(kind, "to sign", () => p.signPskt(arg));
+      // called on the wallet's object (Kastle's methods use `this`); only signPskt or signTx, never a broadcast method
+      const returned = await call(kind, "to sign", () => p[signCall.method](...signCall.args));
       // the account may have changed while the popup was open: nothing it returned is used then
       if (!active) throw accountChanged(droppedReason ?? "the session was dropped while the wallet was signing");
       await refresh();

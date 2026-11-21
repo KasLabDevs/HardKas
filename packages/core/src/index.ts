@@ -189,4 +189,5 @@ export * from "./pskt-errors.js";
 
 export * from "./utxo-errors.js";
 export * from "./utxo-utils.js";
+export * from "./sessions/index.js";
 

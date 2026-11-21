@@ -6,6 +6,7 @@ The `@hardkas/testing` package provides the `scenario` engine to write fully det
 
 Writing a scenario is just like writing a normal Vitest test, but using the `scenario` bridge. The engine automatically provisions a fully configured `HardkasEnvironment` (`hk`) for your test, complete with funded simulated accounts and artifact tracing.
 
+<!-- doc-example: skip the published declaration of @hardkas/testing/scenarios types scenario as any, so strict tsc cannot type hk (a packages/testing typing gap, not a docs error) -->
 ```typescript
 import { scenario, expect } from "@hardkas/testing/scenarios";
 

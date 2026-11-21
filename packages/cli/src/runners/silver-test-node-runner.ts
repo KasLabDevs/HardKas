@@ -12,8 +12,8 @@ import type { silverOnChainKit } from "../commands/silver.js";
 /**
  * R4-S · `hardkas silver test <record> --tests <file> --on-node`: the runner's test cases as the REAL transactions they
  * describe, judged by a node. For every case @hardkas/core planSilverNodeTests decides whether its scenario is a
- * transaction a node can see; each one that is gets its own coin of the case's utxo_value at the contract's P2SH (a
- * payment of the SDK's payment path from --from), then the spend through the case's entry, arguments (a `{"signature":
+ * transaction a node can see; each one that is gets its own coin of the case's utxo_value at the contract's P2SH (one
+ * output per case of ONE payment of the SDK's payment path from --from), then the spend through the case's entry, arguments (a `{"signature":
  * "<account>"}` signed by that account over the real transaction), outputs, sequence and lock time: transaction v0 (the
  * certified multi-party spend of @hardkas/accounts, wrapped in a plan of this workspace) or v1 (the SDK's engine). Every
  * transaction goes out through sdk.tx.send (node identity, synced node, the plan check and fee limit, one submission per
@@ -55,16 +55,20 @@ export const SILVER_TEST_NETWORK_HELP =
   "With --on-node: the network (default: the workspace's, else simnet). mainnet is refused; testnet-<n> needs experimental + network.allowPublic in the config";
 export const SILVER_TEST_URL_HELP =
   "With --on-node: the node wRPC (JSON) endpoint (default: the one the workspace declares for the network; simnet: the canonical localnet)";
-export const SILVER_TEST_FROM_HELP = "With --on-node: the account that funds one coin per reproducible case at the contract's P2SH (local key)";
+export const SILVER_TEST_FROM_HELP =
+  "With --on-node: the account that funds one coin per reproducible case at the contract's P2SH, all in ONE funding transaction (one output per case; local key)";
 export const SILVER_TEST_TIMEOUT_HELP =
   "With --on-node: seconds to wait for each funding coin, each relative lock and each accepted spend to show in the node's UTXO index (default 120)";
+export const SILVER_TEST_YES_HELP =
+  "With --on-node: confirm the broadcasts (the funding and each case's spend). Required unless the network is simnet: without it the run is refused (NOT EXECUTED, exit 3, TX_SEND_CONFIRMATION_REQUIRED) and nothing is sent or written";
 
 /** Options only the node mode takes: refused without --on-node (they would have no effect). */
 export const SILVER_TEST_NODE_ONLY_OPTIONS = [
   ["network", "--network"],
   ["url", "--url"],
   ["from", "--from"],
-  ["timeout", "--timeout"]
+  ["timeout", "--timeout"],
+  ["yes", "--yes"]
 ] as const;
 
 /** Usage checks of `silver test` that come before anything is read: the node-only options need --on-node, and the reverse. */
@@ -194,6 +198,17 @@ export async function runSilverTestOnNode(file: string, opts: any, kit: Kit): Pr
   assertSilverTestModeOptions(opts);
   const timeoutSec = timeoutOption(opts.timeout);
   const target = await kit.silverTarget({ network: opts.network, url: opts.url });
+  // BETA-FIX W2 · AUX-11 (tx send's rule): off simnet nothing is read, funded or sent without --yes
+  {
+    const { requireBroadcastConfirmation } = await import("../broadcast-confirmation.js");
+    requireBroadcastConfirmation({
+      command: "silver test --on-node",
+      network: target.network,
+      yes: opts.yes === true,
+      json: opts.json === true,
+      nothingDone: "Nothing was read, funded, signed, broadcast or written; no key was read and no node was contacted."
+    });
+  }
   if (typeof opts.from !== "string" || opts.from.trim() === "") {
     fail("SILVER_TEST_FUNDER_REQUIRED", "--on-node funds one coin per reproducible case at the contract's P2SH: name the funding account with --from <account>", HardkasExitCode.USAGE_ERROR);
   }
@@ -318,19 +333,58 @@ export async function runSilverTestOnNode(file: string, opts: any, kit: Kit): Pr
       throw e;
     }
     try {
-      // 1 · one coin per case: a payment of the SDK's payment path to the contract's P2SH
-      for (const r of runnable) {
-        const value: bigint = r.c.utxoValueSompi;
-        const p: any = await sdk.tx.plan({ from: String(opts.from), to: plan.address, amount: value });
-        const index = (p.outputs ?? []).findIndex((o: any) => o?.address === plan.address && BigInt(o?.amountSompi ?? -1) === value);
-        if (index < 0) fail("SILVER_TEST_FUNDING_FAILED", `${r.run.name}: the payment plan does not pay ${value} sompi to ${plan.address}. Nothing was signed or sent.`);
-        const signed: any = await sdk.tx.sign(p, { account: String(opts.from), ...(keys.password !== undefined ? { keystorePassword: keys.password } : {}) });
-        const fundingTxId = String(signed.txId).toLowerCase();
-        const sent = await sendForVerdict(() => sdk.tx.send(signed), fundingTxId, `${r.run.name}: funding`);
-        if (sent.kind !== "accepted") {
-          fail("SILVER_TEST_FUNDING_FAILED", `${r.run.name}: the funding of its coin was ${sent.kind === "rejected" ? "refused by the node" : "refused before the broadcast"}: ${short(sent.message)}`);
-        }
-        r.run.coin = { outpoint: { transactionId: fundingTxId, index }, valueSompi: value.toString(), fundingTxId };
+      // 1 · one coin per case, ALL in ONE funding transaction: the SDK's multi-output payment (`tx.plan({ outputs })`: one
+      // output per case, in case order, to the contract's P2SH; one change output, one fee, the fee limit and every other
+      // payment guard), signed and sent once; case i's coin is (fundingTxId, i). BETA-FIX W2: one funding planned per case
+      // right after the previous broadcast reused the input that broadcast had spent (a node's UTXO index lags its
+      // mempool; on Testnet-10 the funder's one UTXO was planned twice: COVENANT_UTXO_UNVERIFIED, the run stopped).
+      //   BETA-FIX (TN10 rehearsal, 21-nov): several small coins in one transaction can exceed the standard storage mass
+      //   (KIP-9: it grows with every small output) where each alone fits — 0.5 + 0.2 + 0.2 + 0.5 TKAS were refused as
+      //   OUTPUT_BELOW_STANDARD_AMOUNT. Then the cases are funded in smaller groups (halved until each plans), and a group
+      //   is planned only after the node's UTXO index lists the previous group's funding (its coin listed: its inputs gone,
+      //   its change there), so no group reuses an input another just spent.
+      {
+        const tooBigForOneTx = (e: unknown) => /OUTPUT_BELOW_STANDARD_AMOUNT|TOO_MANY_OUTPUTS|storage mass|\bmass\b/i.test(`${(e as any)?.code ?? ""} ${(e as any)?.message ?? ""}`);
+        let previousFunding: { transactionId: string; index: number } | undefined;
+        const fundGroup = async (group: typeof runnable): Promise<void> => {
+          const values: bigint[] = group.map((r) => r.c.utxoValueSompi as bigint);
+          if (previousFunding) {
+            await kit.waitForUtxo(rpc, plan.address, previousFunding, timeoutSec);
+            previousFunding = undefined;
+          }
+          let p: any;
+          try {
+            p = await sdk.tx.plan({ from: String(opts.from), outputs: values.map((amount) => ({ to: plan.address, amount })) });
+          } catch (e) {
+            if (group.length > 1 && tooBigForOneTx(e)) {
+              const half = Math.ceil(group.length / 2);
+              await fundGroup(group.slice(0, half));
+              await fundGroup(group.slice(half));
+              return;
+            }
+            throw e;
+          }
+          const outputs: any[] = p.outputs ?? [];
+          const misplaced = values.findIndex((value, i) => outputs[i]?.address !== plan.address || BigInt(outputs[i]?.amountSompi ?? -1) !== value);
+          if (misplaced >= 0) {
+            fail(
+              "SILVER_TEST_FUNDING_FAILED",
+              `${group[misplaced]!.run.name}: the funding plan's output ${misplaced} does not pay ${values[misplaced]} sompi to ${plan.address}. Nothing was signed or sent.`
+            );
+          }
+          const signed: any = await sdk.tx.sign(p, { account: String(opts.from), ...(keys.password !== undefined ? { keystorePassword: keys.password } : {}) });
+          const fundingTxId = String(signed.txId).toLowerCase();
+          const label = group.length === 1 ? `${group[0]!.run.name}: funding` : `the funding of ${group.length} cases (${group.map((r) => r.run.name).join(", ")})`;
+          const sent = await sendForVerdict(() => sdk.tx.send(signed), fundingTxId, label);
+          if (sent.kind !== "accepted") {
+            fail("SILVER_TEST_FUNDING_FAILED", `${label}: the funding transaction was ${sent.kind === "rejected" ? "refused by the node" : "refused before the broadcast"}: ${short(sent.message)}`);
+          }
+          group.forEach((r, index) => {
+            r.run.coin = { outpoint: { transactionId: fundingTxId, index }, valueSompi: values[index]!.toString(), fundingTxId };
+          });
+          previousFunding = { transactionId: fundingTxId, index: 0 };
+        };
+        await fundGroup(runnable);
       }
       // 2 · each coin as the node lists it (accepted by a chain block)
       const coins = new Map<CaseRun, any>();

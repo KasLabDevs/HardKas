@@ -20,6 +20,7 @@
 
 import { createHash, randomBytes } from "node:crypto";
 import * as fs from "node:fs";
+import * as os from "node:os";
 import * as path from "node:path";
 
 export type SendOutcome = "accepted" | "rejected" | "unknown" | "executed";
@@ -36,7 +37,8 @@ export const SEND_GUARD_LOG = path.join(".hardkas", "dev-server", "send-guard.v1
  * not create it. Another live process (or another guard in this process) gets no broadcasting send. A lock whose pid is
  * no longer running is STALE and is NOT taken over automatically: removing it safely would need a compare-and-delete
  * that the file system does not offer portably (a second recoverer could delete the first one's fresh lock), so sends
- * are refused until a controlled recovery (`recoverStaleSendGuardLock`) archives it, keeping it as evidence. The owner
+ * are refused until a controlled recovery (`hardkas dev recover-lock --pid <pid>`, i.e. `recoverStaleSendGuardLock`,
+ * exported by the package) archives it, keeping it as evidence. The owner
  * re-reads the lock before every broadcast and stops sending if it no longer names it. A pid that cannot be checked
  * counts as alive (fail closed).
  */
@@ -191,8 +193,9 @@ class SendGuard {
       this.ownerStale = held.pid;
       this.ownerConflict =
         `the send-guard lock ${this.lockFile} names pid ${held.pid}, which is no longer running (stale). It is not removed ` +
-        `automatically: stop every dev server on this workspace, then recover it under control ` +
-        `(recoverStaleSendGuardLock(root, { pid: ${held.pid} }) archives it as evidence) and start one dev server`;
+        `automatically: stop every dev server on this workspace, then recover it under control: run ` +
+        `\`hardkas dev recover-lock --pid ${held.pid}\` in this workspace (it archives the lock as evidence; from code, ` +
+        `recoverStaleSendGuardLock(root, { pid: ${held.pid} }) of @hardkas/dev-server) and start one dev server`;
     }
     return false;
   }
@@ -504,18 +507,35 @@ function releaseAllHeld(): void {
   for (const [file, nonce] of [...heldLocks]) releaseHeld(file, nonce);
 }
 
+/**
+ * The shutdown signals that release this process's locks: Ctrl+C (SIGINT), termination (SIGTERM, POSIX), the console
+ * window closed (SIGHUP, Windows included) and, on Windows only, Ctrl+Break (SIGBREAK). A process ended by
+ * TerminateProcess (Stop-Process, Task Manager, a parent's kill) or SIGKILL runs no handler: its lock stays, stale, until
+ * `hardkas dev recover-lock --pid <pid>` archives it.
+ */
+const RELEASE_SIGNALS: readonly NodeJS.Signals[] = (["SIGINT", "SIGTERM", "SIGHUP", "SIGBREAK"] as const).filter(
+  (sig) => (os.constants.signals as Record<string, number | undefined>)[sig] !== undefined
+);
+
 function holdLock(file: string, nonce: string): void {
   heldLocks.set(file, nonce);
   if (releaseRegistered) return;
   releaseRegistered = true;
   process.once("exit", releaseAllHeld);
-  // Ctrl+C / termination end the process without "exit": release first, then let the signal do what it would have done
-  for (const sig of ["SIGINT", "SIGTERM", "SIGHUP"] as const) {
-    if (process.listenerCount(sig) > 0) continue; // the application handles it (and exits through "exit")
+  // A signal ends the process without "exit" — when nothing handles it, and also when the application's own handler ends
+  // it by re-raising the signal (the CLI's dev-server runner does, after its teardown). So the locks are released on the
+  // signal itself, whoever else listens. Only when nobody else listens is the signal's default restored (the process ends).
+  for (const sig of RELEASE_SIGNALS) {
     const onSignal = () => {
       releaseAllHeld();
+      if (process.listenerCount(sig) > 1) return; // the application decides what the signal does
       process.removeListener(sig, onSignal);
-      if (process.listenerCount(sig) === 0) process.kill(process.pid, sig);
+      try {
+        process.kill(process.pid, sig);
+      } catch {
+        // Windows cannot raise SIGHUP or SIGBREAK (ENOSYS): end as the signal would have
+        process.exit(128 + ((os.constants.signals as Record<string, number | undefined>)[sig] ?? 0));
+      }
     };
     process.on(sig, onSignal);
   }
@@ -525,20 +545,25 @@ function holdLock(file: string, nonce: string): void {
  * LOCK-RACE-1 · controlled recovery of a STALE lock, by an operator who has stopped every dev server on the workspace.
  * Archives (renames) the lock to `send-guard.v1.lock.stale-<pid>-<time>` — evidence is never deleted — only when it
  * names `pid` and that process is not running. The log is untouched: unknown outcomes the dead owner left stay blocking.
+ * The CLI's `hardkas dev recover-lock --pid <pid>` calls it. Its refusals carry a `code`: SEND_GUARD_LOCK_UNREADABLE (no
+ * lock, or one that is not JSON), SEND_GUARD_LOCK_PID_MISMATCH (it names another pid), SEND_GUARD_LOCK_OWNER_ALIVE.
  */
-export function recoverStaleSendGuardLock(root: string, opts: { pid: number }): { archived: string } {
+export function recoverStaleSendGuardLock(root: string, opts: { pid: number }): { archived: string; lock: string } {
   const lockFile = path.join(canonicalRoot(root), SEND_GUARD_LOCK);
+  const refusal = (code: string, message: string) => Object.assign(new Error(`recoverStaleSendGuardLock: ${message}; nothing was changed.`), { code });
   const held = readLockFile(lockFile);
-  if (held === undefined) throw new Error(`recoverStaleSendGuardLock: ${lockFile} cannot be read; nothing was changed.`);
+  if (held === undefined) {
+    throw refusal("SEND_GUARD_LOCK_UNREADABLE", fs.existsSync(lockFile) ? `${lockFile} cannot be read` : `${lockFile} does not exist (there is no lock to recover)`);
+  }
   if (held.pid !== opts.pid) {
-    throw new Error(`recoverStaleSendGuardLock: ${lockFile} names pid ${String(held.pid)}, not ${opts.pid}; nothing was changed.`);
+    throw refusal("SEND_GUARD_LOCK_PID_MISMATCH", `${lockFile} names pid ${String(held.pid)}, not ${opts.pid}`);
   }
   if (isRunning(opts.pid)) {
-    throw new Error(`recoverStaleSendGuardLock: pid ${opts.pid} is alive (running): it owns the guard; nothing was changed.`);
+    throw refusal("SEND_GUARD_LOCK_OWNER_ALIVE", `pid ${opts.pid} is alive (running): it owns the guard`);
   }
   const archived = `${lockFile}.stale-${opts.pid}-${new Date().toISOString().replace(/[:.]/g, "-")}`;
   fs.renameSync(lockFile, archived);
-  return { archived };
+  return { archived, lock: lockFile };
 }
 
 function isRunning(pid: number): boolean {

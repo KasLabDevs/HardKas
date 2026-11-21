@@ -8,7 +8,8 @@ It integrates:
 - `IndexerToolkit` for tracking balances and artifacts.
 - `JobsToolkit` for running background reconciliation tasks.
 
-To see it in action, run:
+To scaffold it as a new project in `my-app` (`create` takes the template, then the destination):
 ```bash
-npx hardkas create my-app --template full-stack-demo
+npx hardkas create full-stack-demo my-app
 ```
+To inspect the full showcase apps in this repository, see `labs/showcase-suite/`.

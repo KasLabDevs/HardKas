@@ -50,9 +50,18 @@ function errorText(e: unknown): string {
   return [err?.shortMessage, err?.message, err?.stderr].filter((s) => typeof s === "string").join("\n");
 }
 
+/**
+ * DOCKER-PROBE-TIMEOUT-1: the longest a read-only Docker check (`docker info`, `docker version`, `docker inspect`) may
+ * take. A Docker that does not answer within it is unavailable. A hung Docker Desktop (or one of its CLI plugins) made
+ * `hardkas doctor` and the node commands wait forever. Operations (`docker run`, `docker logs -f`) keep no limit.
+ */
+export const DOCKER_PROBE_TIMEOUT_MS = 20_000;
+
 /** Docker itself (the CLI or its daemon) cannot be used — not a container that merely does not exist. */
 export function isDockerUnavailableError(e: unknown): boolean {
   if ((e as any)?.code === "ENOENT") return true;
+  // a check that did not answer within DOCKER_PROBE_TIMEOUT_MS (execa marks it timedOut)
+  if ((e as any)?.timedOut === true) return true;
   return /ENOENT|is not recognized as an internal or external command|cannot find the file specified|error during connect|Cannot connect to the Docker daemon|docker daemon is not running|Is the docker daemon running|pipe\/docker_engine|connection refused|actively refused/i.test(
     errorText(e)
   );
@@ -131,9 +140,9 @@ export class DockerKaspadRunner {
   }
 
   /** Runs a docker command; a Docker that cannot be used is the typed DOCKER_UNAVAILABLE, anything else is the original error. */
-  private async docker(args: string[]): Promise<{ stdout: string }> {
+  private async docker(args: string[], options?: { timeout: number }): Promise<{ stdout: string }> {
     try {
-      const r = await execa("docker", args);
+      const r = options ? await execa("docker", args, options) : await execa("docker", args);
       return { stdout: typeof r?.stdout === "string" ? r.stdout : "" };
     } catch (e: unknown) {
       if (isDockerUnavailableError(e)) {
@@ -171,7 +180,7 @@ export class DockerKaspadRunner {
     }
 
     try {
-      await execa("docker", ["version"]);
+      await execa("docker", ["version"], { timeout: DOCKER_PROBE_TIMEOUT_MS });
     } catch (e: any) {
       if (this.options.allowSimulatedFallback) {
         console.warn(
@@ -435,7 +444,9 @@ export class DockerKaspadRunner {
 
     let inspect: { stdout: string };
     try {
-      inspect = await this.docker(["inspect", "--format", "{{.State.Status}}", this.options.containerName]);
+      inspect = await this.docker(["inspect", "--format", "{{.State.Status}}", this.options.containerName], {
+        timeout: DOCKER_PROBE_TIMEOUT_MS
+      });
     } catch (e) {
       // CLI-RUNTIME-CONTRACT-1: only a container that does not exist is "not-found"; a Docker that
       // cannot be asked (DOCKER_UNAVAILABLE), or any other real failure, is an error.

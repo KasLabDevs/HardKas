@@ -50,6 +50,45 @@ npx hardkas tx receipt <txId> --json
 (An excerpt: the real record also holds the execution target, the lineage and
 its content hash.)
 
+## Identifiers
+
+An artifact carries several identifiers. They are not interchangeable:
+
+| Identifier | What it is |
+| :-- | :-- |
+| `contentHash` | SHA-256 over the artifact's canonical content. A few operational fields (such as `createdAt` and `hardkasVersion`) are left out, so the same content always gives the same hash. `artifact verify` and `hardkas verify` recompute it. |
+| `artifactId` | The artifact's identity in HardKAS: **it is its `contentHash`**. The same content gives the same id. `explain`, `why`, `artifact inspect` and `replay verify` accept it (64 hex) or a file path. |
+| `lineage.parentArtifactId` | The `artifactId` of the step before: a signed transaction names its plan, a receipt or submission names what was executed. Editing any file of the chain breaks it. |
+| `planId`, `signedId` | Short labels derived from the hash (`plan-` or `signed-` and its first 16 hex characters). `explain --plan` and `--signed` resolve them, checked against the hash; `artifact verify` reports a label that does not derive from it (`LABEL_MISMATCH`). |
+| `txId` | The transaction's own id, fixed when it is signed. On the simulated ledger it is synthetic (`synthetic-<hash>`). It is not an artifact locator: `hardkas explain --tx <txId>` resolves the submission recorded for it. |
+
+## The records of a simulated run
+
+The [Quickstart](./quickstart.md) runs on the simulated ledger. Its chain of
+records is plan → signed → receipt:
+
+| Record | Schema | Written by | Says |
+| :-- | :-- | :-- | :-- |
+| plan | `hardkas.txPlan` | `tx plan` | inputs taken from the ledger's synthetic outputs, outputs, fee, mass |
+| signed | `hardkas.signedTx` | `tx sign` | a synthetic authorization of that plan by its sender (no Kaspa signature) |
+| `.hardkas/artifacts/receipts/txReceipt-<id>.json` | `hardkas.txReceipt` | `tx send` | the ledger applied the transaction: the ledger's state hashes before and after, the synthetic `txId` |
+
+Its state is always `SYNTHETIC_EXECUTED`, and its network level is
+`NOT_CHECKED [SIMULATED_ARTIFACT]`: no node was involved.
+
+```bash
+npx hardkas verify
+npx hardkas replay verify <receipt path or artifactId>
+```
+
+- `hardkas verify` recomputes every artifact's hash under `.hardkas/artifacts/`
+  and checks each lineage link. It proves the workspace's records are intact. It
+  performs no replay and no consensus check.
+- `hardkas replay verify` replays the simulated run from its receipt and checks
+  that it gives the same result. A node send records a `TxSubmission`, not a
+  `TxReceipt`, and the replay refuses it (`REPLAY_MODE_UNSUPPORTED`): HardKAS
+  cannot rebuild a node's past state.
+
 ## Transaction states
 
 `tx status <txId>` and `tx wait <txId>` derive one of these from the records:

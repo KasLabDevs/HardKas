@@ -8,7 +8,7 @@ description: The errors a team meets on the simnet path, with their real codes, 
 Every error below was produced on purpose while testing
 [Build on your own simnet](./build-on-simnet.md), against a real `rusty-kaspad`
 v2.1.0 simnet node. More codes, with their causes and fixes, are in
-[Errors](../reference/errors.md) and [Error Recovery](../reference/error-recovery.md). Those pages
+[Errors](../reference/errors.md). That page
 cover the common codes, not every one: every error carries its stable `code` and a message
 that says what was refused and what was not done.
 
@@ -30,6 +30,21 @@ Nothing answers at the endpoint.
 runs (`docker ps`), that the port in `hardkas.config.ts` (`networks.simnet.rpcUrl`)
 or `--url` is the one you published, and that the node was started with
 `--rpclisten-json` ([Run your own simnet node](./simnet-node.md#2-start-the-node)).
+
+### `RPC_RESPONSE_TOO_LARGE`
+
+The node answered, but its answer is larger than the 100 MiB HardKAS reads in one
+RPC message. In practice: one address with more than about 277,000 UTXOs, for
+example the account a miner kept paying (`localnet fund --keep-miner`):
+
+```text
+{ "ok": false, "code": "RPC_RESPONSE_TOO_LARGE", "message": "RPC_RESPONSE_TOO_LARGE: the answer of the node at ws://127.0.0.1:18210 to getUtxosByAddresses is larger than 100 MiB, the most HardKAS reads in one RPC message (for one address's UTXOs: about 277,000 of them), so it was refused unread. The node is fine and nothing changed on it; asking again gets the same answer, so HardKAS does not retry. …" }
+```
+
+The node is not down, so do not restart it. `npx hardkas accounts balance <name> --network simnet --json`
+still reports the total (with `utxoCount: null`). Pay from another account, or
+start the localnet over with `npx hardkas localnet reset`. The limit is explained in
+[Limitations](../status/limitations.md#one-addresss-utxo-list-at-most-about-277000-utxos).
 
 ### `NODE_NOT_SYNCED`
 
@@ -77,7 +92,7 @@ outputs already, so a positive balance alone does not mean you can spend.
 The spendable outputs do not cover the amount plus the fee. Send less, or fund
 the account. A very fragmented account can also need more inputs than one
 transaction holds (`MULTI_TRANSACTION_PLAN_REQUIRED`): consolidate first
-([Error Recovery](../reference/error-recovery.md#multi_transaction_plan_required)).
+([Errors](../reference/errors.md#multi_transaction_plan_required)).
 
 ## Sending
 

@@ -16,7 +16,7 @@ export function registerL2NodeCommands(l2: Command): void {
     .option("--json", "Output as JSON", false)
     .action(async (options: { port: string; accounts: string; json: boolean }) => {
       const { anvilSpec, parsePort, parseAccounts, ANVIL_CHAIN_ID } = await import("../node/anvil.js");
-      const { startManagedProcess } = await import("@hardkas/node-orchestrator");
+      const { startManagedProcess } = await import("@hardkas/node-runner");
       const port = parsePort(options.port);
       const spec = await anvilSpec(invocationWorkspaceRoot(), { port, accounts: parseAccounts(options.accounts) });
       const { record } = await startManagedProcess(spec);
@@ -36,7 +36,7 @@ export function registerL2NodeCommands(l2: Command): void {
     .option("--json", "Output as JSON", false)
     .action(async (options: { json: boolean }) => {
       const { anvilStateDir, loopbackChainId, ANVIL_CHAIN_ID } = await import("../node/anvil.js");
-      const { getManagedProcessStatus } = await import("@hardkas/node-orchestrator");
+      const { getManagedProcessStatus } = await import("@hardkas/node-runner");
       const st = await getManagedProcessStatus({ stateDir: anvilStateDir(invocationWorkspaceRoot()) });
       const port = st.record?.port;
       const chainId = st.state === "running" && port !== undefined ? await loopbackChainId(port) : undefined;
@@ -56,7 +56,7 @@ export function registerL2NodeCommands(l2: Command): void {
     .option("--tail <n>", "Only the last n lines")
     .action(async (options: { tail?: string }) => {
       const { anvilStateDir, ANVIL_PROCESS_ID } = await import("../node/anvil.js");
-      const { readManagedProcessLog } = await import("@hardkas/node-orchestrator");
+      const { readManagedProcessLog } = await import("@hardkas/node-runner");
       const tail = options.tail !== undefined ? Number(options.tail) : undefined;
       const text = await readManagedProcessLog({ id: ANVIL_PROCESS_ID, stateDir: anvilStateDir(invocationWorkspaceRoot()) }, tail !== undefined && Number.isInteger(tail) && tail > 0 ? { tail } : {});
       getOutput().write(text.endsWith("\n") || text === "" ? text : `${text}\n`);
@@ -68,7 +68,7 @@ export function registerL2NodeCommands(l2: Command): void {
     .option("--json", "Output as JSON", false)
     .action(async (options: { json: boolean }) => {
       const { anvilStateDir, ANVIL_PROCESS_ID, isHardkasAnvilArgs } = await import("../node/anvil.js");
-      const { stopManagedProcess, getManagedProcessStatus } = await import("@hardkas/node-orchestrator");
+      const { stopManagedProcess, getManagedProcessStatus } = await import("@hardkas/node-runner");
       const stateDir = anvilStateDir(invocationWorkspaceRoot());
       // F-03: before anything is signalled, the running process must look like the Anvil HardKAS starts (its REAL
       // command line: 127.0.0.1 only, chain 31337); a record pointing at another anvil is refused and nothing is killed.

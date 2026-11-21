@@ -33,7 +33,7 @@ If you want to contribute to the core or run examples from source:
 
    ```bash
    git clone https://github.com/KasLabDevs/HardKas.git
-   cd Hardkas
+   cd HardKas
    ```
 
 2. **Install & Build**

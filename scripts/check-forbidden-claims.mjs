@@ -12,10 +12,12 @@ const pathsToCheck = [
   'artifacts',
   'test-gauntlet',
   // The most public surfaces (audit D-08): the repository README, the changelog, the landing page and the docs site.
+  // BETA-FIX W4: the site renders docs/ (scanned above); apps/docs keeps its generated references and static files.
   'README.md',
   'CHANGELOG.md',
   'site',
-  path.join('apps', 'docs', 'docs')
+  path.join('apps', 'docs', 'reference'),
+  path.join('apps', 'docs', 'static')
 ];
 
 // Git-ignored local records (audits, dossiers) are not public and quote claims to discuss them.

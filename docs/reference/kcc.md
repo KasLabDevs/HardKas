@@ -21,8 +21,11 @@ KCC-20 balances are covenant UTXOs whose rules the token's covenant program enfo
 
 - **API** (`@hardkas/core`): `kcc1*` (ABI), `kcc2*` (authority schemes), `kcc20*` (tokens), and SilverScript interop
   (`kcc1SilverDispatchTags`, `kcc20SilverStateLayout`, `kcc20SilverProgramState`).
+- **SDK** (`@hardkas/sdk`, experimental): `sdk.kcc20` deploys, transfers and reads KCC-20 tokens on a node, as
+  transaction v1 through the SDK's v1 engine.
 - **CLI**: `hardkas kcc dispatch`, `hardkas kcc template-hash`, `hardkas kcc20 encode-state`, `decode-state`, `check`,
-  `artifact` (see the [CLI reference](./cli.md)).
+  `artifact` (off chain), and `hardkas kcc20 deploy`, `transfer`, `balance` (on a node, experimental) (see the
+  [CLI reference](./cli.md)).
 - **Example**: `examples/11-kcc20-token`.
 
 ## How it is checked
@@ -36,7 +39,16 @@ KCC-20 balances are covenant UTXOs whose rules the token's covenant program enfo
 
 Script-engine verdicts are contract execution only, not transaction validity. The node level covers the cases listed
 above on simnet; not testnet or mainnet, and not the p2pkh-ecdsa/v1 owner scheme (kaspa-wasm 2.1.0 has no ECDSA input
-signer). The transactions of the node tests are assembled by the tests: HardKAS has no KCC-20 transaction builder.
+signer). HardKAS builds KCC-20 transactions with `sdk.kcc20` and `hardkas kcc20 deploy`, `hardkas kcc20 transfer` and `hardkas kcc20 balance`
+(experimental, v1 engine, simnet only: `packages/cli/test/kcc20-token-cli.simnet.test.ts` deploys, transfers with a
+leader and a delegator, and reads balances back from the node; a transfer the KCC-20 rules reject is refused before
+anything is signed). The reference-program node tests above assemble their own transactions.
+
+A transfer's network fee is paid by the sender's side, never by a recipient's output. Without `--funder`, the sender's
+token change output pays it (it keeps what the fee leaves of its KAS); without token change, the sender's own KAS coins
+pay it. `--funder <account>` makes that account's coins pay instead, and every output keeps its KAS. When no sender-side
+source can pay, the transfer is refused before anything is signed (`KCC20_FEE_SOURCE_REQUIRED`: name a funder). The SDK
+records who paid in the planned transfer's `feeSource` (`kcc20TransferFeeSource`).
 
 ## Conformance matrix
 

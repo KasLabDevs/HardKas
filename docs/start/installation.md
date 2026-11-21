@@ -9,9 +9,8 @@ HardKAS is published to npm as a set of scoped packages. This page covers the
 prerequisites, which packages you actually need, what HardKAS downloads on first
 use, and how to confirm the install worked.
 
-The versioned commands below apply once the candidate's packages are published
-to npm. The previous published version is documented in the
-[rc.1 release notes](../release/0.13.0-rc.1-notes.md).
+The versioned commands below install `0.13.0-rc.3` from npm. Earlier
+candidates have their own [release notes](../release/0.13.0-rc.2-notes.md).
 
 If you would rather see a transaction first and read afterwards, go to the
 [Quickstart](./quickstart.md) (simulated, no node) or, for a real transaction on
@@ -55,8 +54,12 @@ node --version
 
 ## Choose your packages
 
-A release publishes 22 packages; the full list, and why each one is published, is
+A release publishes 18 packages; the full list, and why each one is published, is
 in [Versioning: published packages](../status/versioning.md#published-packages).
+Four packages that earlier candidates published on their own are now part of
+others: `@hardkas/escrow` of `@hardkas/sdk`, `@hardkas/jobs` of
+`@hardkas/toolkit`, `@hardkas/sessions` of `@hardkas/core` and
+`@hardkas/node-orchestrator` of `@hardkas/node-runner`.
 Install only what your project uses. Most projects start with the CLI and the
 SDK, which pull in the rest of what they need.
 
@@ -70,7 +73,8 @@ The browser never imports the Node SDK directly — that boundary is deliberate
 and is listed in the [Capability Matrix](../status/capability-matrix.md).
 
 Not published in this release, so not installable from npm: `@hardkas/l2`,
-`@hardkas/ext-l2` (the L2 extension), `@hardkas/pskt-native`, and the eight
+`@hardkas/ext-l2` (the L2 extension), `@hardkas/pskt-native`, the internal
+`@hardkas/storage-sqlite` and `@hardkas/testnet-qualification`, and the eight
 packages no published package depends on: `@hardkas/client` and
 `@hardkas/react` (the browser HTTP client and its React bindings),
 `@hardkas/wallet-adapter`, `@hardkas/simulator-adapters`,
@@ -105,9 +109,9 @@ npm pkg set type=module
 ```
 
 Add the CLI as a development dependency so the version is pinned per project and
-travels with your lockfile. Name the version: until this release is tagged
-`latest` on npm, a bare `npm install @hardkas/cli` installs the previous one
-(`0.13.0-rc.1`). Do not use the `rc` dist-tag: it still points to the 0.12 line.
+travels with your lockfile. Name the version: a bare `npm install @hardkas/cli`
+installs whatever npm's `latest` tag points to, which can be an earlier
+candidate. Do not use the `rc` dist-tag: it still points to the 0.12 line.
 
 ```bash
 npm install --save-dev @hardkas/cli@0.13.0-rc.3
@@ -138,8 +142,8 @@ at run time. You can leave it unapproved (or approve it: it is the official
 
 `npm audit` may report advisories in the dependency tree: `@hono/node-server`
 used by the local dev-server (GHSA-rmxm-3fg6-px4f, in a feature HardKAS does not
-use) and, after the test step below, `vitest` 2. (`zod` is 4.6.7 since
-0.13.0-rc.3, which fixes GHSA-mrhx-c7xc-m3w5.) Keep HardKAS to local development
+use) and, after the test step below, `vitest` 2. (`zod` is 4.6.7, which fixes
+GHSA-mrhx-c7xc-m3w5.) Keep HardKAS to local development
 networks, as the rest of this guide does.
 
 ### Installing the CLI globally
@@ -160,9 +164,13 @@ reproducibility is the point of HardKAS — prefer the per-project install above
 npx hardkas init .
 ```
 
+(`hardkas init my-project` does the same in a new `my-project` folder.)
+
 `init` writes `hardkas.config.ts` (default target: the simulator; a `simnet`
-network is declared too), `.hardkas/` with five funded simulated accounts,
-`.gitignore`, `vitest.config.ts` and an example test. It also installs the Kaspa
+network is declared too, see [Configuration](./configuration.md)), `.hardkas/`
+with five simulated accounts (`alice` … `erin`, 1000 KAS each in
+`.hardkas/localnet.json`), `.gitignore`, `vitest.config.ts` and an example test
+(`test/payment.test.ts`). It also installs the Kaspa
 WASM SDK this release pins (`kaspa-wasm` 2.1.0, from the official rusty-kaspa
 release, about 12 MB installed) into `~/.hardkas/toolchains/` and checks it against its
 pinned SHA-256; planning and signing use it. If that step fails, `init` stops

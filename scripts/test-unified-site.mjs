@@ -15,7 +15,9 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
-const DIST_SITE = path.join(ROOT, "dist", "site");
+// BETA-FIX W4: `--dir <dir>` checks an assembly made with `build-unified-site.mjs --out <dir>`.
+const dirAt = process.argv.indexOf("--dir");
+const DIST_SITE = dirAt > -1 && process.argv[dirAt + 1] ? path.resolve(process.argv[dirAt + 1]) : path.join(ROOT, "dist", "site");
 
 if (!fs.existsSync(DIST_SITE)) {
   console.error("❌ dist/site does not exist. Run 'pnpm site:build' first.");
@@ -91,8 +93,9 @@ server.listen(PORT, async () => {
       }
     },
     {
-      name: "Deep Docs Route: Quickstart (/docs/getting-started/quickstart)",
-      path: "/docs/getting-started/quickstart",
+      // BETA-FIX W4: the site renders the repository's docs/; the quickstart is docs/start/quickstart.md
+      name: "Deep Docs Route: Quickstart (/docs/start/quickstart)",
+      path: "/docs/start/quickstart",
       validate: (body, status) => {
         if (status !== 200) return `Expected HTTP 200, got ${status}`;
         if (!body.includes("hardkas tx plan")) return "Missing verified CLI quickstart command";
@@ -100,20 +103,50 @@ server.listen(PORT, async () => {
       }
     },
     {
-      name: "Deep Docs Route: Concepts (/docs/concepts/execution-contract)",
-      path: "/docs/concepts/execution-contract",
+      name: "Deep Docs Route: Concepts (/docs/concepts/execution-worlds)",
+      path: "/docs/concepts/execution-worlds",
       validate: (body, status) => {
         if (status !== 200) return `Expected HTTP 200, got ${status}`;
-        if (!body.includes("ExecutionContract") && !body.includes("ExecutionTarget")) return "Missing execution contract terms";
+        if (!body.includes("ExecutionTarget")) return "Missing execution contract terms";
         return null;
       }
     },
     {
-      name: "Deep Docs Route: SDK Reference (/docs/reference/sdk/core/)",
-      path: "/docs/reference/sdk/core/",
+      name: "Moved page: old URL redirects (/docs/getting-started/quickstart)",
+      path: "/docs/getting-started/quickstart",
+      validate: (body, status) => {
+        if (status !== 200) return `Expected the HTTP 200 redirect page, got ${status}`;
+        if (!body.includes('url=/docs/start/quickstart"')) return "Missing the redirect to /docs/start/quickstart";
+        return null;
+      }
+    },
+    {
+      name: "Cloudflare redirects at the root (/_redirects)",
+      path: "/_redirects",
       validate: (body, status) => {
         if (status !== 200) return `Expected HTTP 200, got ${status}`;
-        if (!body.includes("@hardkas/core") && !body.includes("TypeDoc")) return "Missing TypeDoc SDK markers";
+        if (!body.includes("/ide               /ide/")) return "Missing the landing page's own redirects";
+        if (!body.includes("/docs/getting-started/quickstart /docs/start/quickstart 301")) return "Missing the docs redirects";
+        if (!body.includes("/docs/concepts/execution-contract /docs/concepts/execution-worlds 301")) return "Missing a merged page's redirect";
+        return null;
+      }
+    },
+    {
+      name: "Generated CLI reference (/docs/reference/cli/tx)",
+      path: "/docs/reference/cli/tx",
+      validate: (body, status) => {
+        if (status !== 200) return `Expected HTTP 200, got ${status}`;
+        if (!body.includes("hardkas tx plan")) return "Missing the tx plan command";
+        return null;
+      }
+    },
+    {
+      // the generated TypeDoc reference (apps/docs/typedoc.json); the old hand-kept core set documented a core that no longer exists
+      name: "Deep Docs Route: SDK Reference (/docs/reference/sdk/generated/)",
+      path: "/docs/reference/sdk/generated/",
+      validate: (body, status) => {
+        if (status !== 200) return `Expected HTTP 200, got ${status}`;
+        if (!body.includes("HardKAS SDK")) return "Missing TypeDoc SDK markers";
         return null;
       }
     },
@@ -152,7 +185,7 @@ server.listen(PORT, async () => {
       validate: (body, status) => {
         if (status !== 200) return `Expected HTTP 200, got ${status}`;
         if (!body.includes("SilverScript IDE")) return "Missing title/H1";
-        if (!body.includes("silverc v1.0.0") && !body.includes("September 9, 2026")) return "Missing SilverScript v1.0.0 release date";
+        if (!body.includes("9 September 2026")) return "Missing SilverScript v1.0.0 release date";
         return null;
       }
     },
@@ -162,7 +195,7 @@ server.listen(PORT, async () => {
       validate: (body, status) => {
         if (status !== 200) return `Expected HTTP 200, got ${status}`;
         if (!body.includes("Testing Kaspa Covenants with HardKAS")) return "Missing title/H1";
-        if (!body.includes("Evidence Package")) return "Missing evidence package references";
+        if (!body.includes("artifact verify")) return "Missing evidence references (artifact verify)";
         return null;
       }
     },
@@ -173,7 +206,8 @@ server.listen(PORT, async () => {
         if (status !== 200) return `Expected HTTP 200, got ${status}`;
         if (!body.includes("<loc>https://hardkas.dev/</loc>")) return "Missing root apex in sitemap";
         if (!body.includes("<loc>https://hardkas.dev/docs/</loc>")) return "Missing /docs/ in sitemap";
-        if (!body.includes("<loc>https://hardkas.dev/docs/getting-started/quickstart</loc>")) return "Missing quickstart in sitemap";
+        if (!body.includes("<loc>https://hardkas.dev/docs/start/quickstart</loc>")) return "Missing quickstart in sitemap";
+        if (body.includes("/docs/getting-started/quickstart<")) return "A moved page's old URL is in the sitemap";
         return null;
       }
     },

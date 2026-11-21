@@ -1,4 +1,4 @@
-import { JobRunner, JobStoreJson, JobHandler, JobRecord, JobStore } from '@hardkas/jobs';
+import { JobRunner, JobStoreJson, JobHandler, JobRecord, JobStore } from './jobs/index.js';
 import { SnapshotParticipant, SnapshotState } from './snapshot/types.js';
 
 export interface JobsToolkitOptions {

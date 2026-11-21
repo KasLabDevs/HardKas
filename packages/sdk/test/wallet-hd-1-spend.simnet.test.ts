@@ -152,7 +152,9 @@ describe("WALLET-HD-1 · an HD wallet receives on two addresses, spends from bot
     // the change index is recorded as used: the next payment changes to a fresh address
     expect(hd.manager.describe("hd1").accounts[0]).toMatchObject({ nextReceive: 2, nextChange: 1 });
     const after = await hd.scan("hd1", { password: PW });
-    expect(after.used.map((u) => `${u.chain}/${u.index}`)).toEqual(["change/0"]);
+    // BETA-FIX W2: every handed-out address stays listed (the emptied receive addresses with zero balance)
+    expect(after.used.map((u) => `${u.chain}/${u.index}/${u.balanceSompi > 0n ? "funded" : "empty"}`)).toEqual(["receive/0/empty", "receive/1/empty", "change/0/funded"]);
+    expect(after.used.filter((u) => u.utxoCount > 0).map((u) => `${u.chain}/${u.index}`)).toEqual(["change/0"]);
     expect(after.totalSompi).toBe(out.change.amountSompi);
     Object.assign(S, { change0, changeSompi: out.change.amountSompi, phrase: await hd.manager.revealMnemonic("hd1", { password: PW }) });
   });
@@ -184,7 +186,9 @@ describe("WALLET-HD-1 · an HD wallet receives on two addresses, spends from bot
     expect(sum(await utxosAt(out.change.address))).toBe(changeSompi - KAS / 2n - fee);
     // the original wallet (other workspace) sees the same chain state
     const original = await S.hd.scan("hd1", { password: PW });
-    expect(original.used.map((u: any) => `${u.chain}/${u.index}`)).toEqual(["change/1"]);
+    // BETA-FIX W2: hd1's own index handed out receive 0..1 and change 0 (all emptied now); change 1 is found by the scan
+    expect(original.used.map((u: any) => `${u.chain}/${u.index}/${u.handedOut ? "index" : "scan"}`)).toEqual(["receive/0/index", "receive/1/index", "change/0/index", "change/1/scan"]);
+    expect(original.used.filter((u: any) => u.utxoCount > 0).map((u: any) => `${u.chain}/${u.index}`)).toEqual(["change/1"]);
     expect(original.totalSompi).toBe(changeSompi - KAS / 2n - fee);
   });
 

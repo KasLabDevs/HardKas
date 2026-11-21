@@ -7,7 +7,6 @@ const outputDir = path.join(__dirname, '..');
 const PACKAGE_CATEGORIES: Record<string, string> = {
     '@hardkas/accounts': 'Public runtime',
     '@hardkas/core': 'Public runtime',
-    '@hardkas/jobs': 'Public runtime',
     '@hardkas/kaspa-rpc': 'Public runtime',
     '@hardkas/l2': 'Public runtime',
     '@hardkas/observability': 'Public runtime',
@@ -27,7 +26,6 @@ const PACKAGE_CATEGORIES: Record<string, string> = {
     '@hardkas/cli': 'Public tooling',
     '@hardkas/dev-server': 'Public tooling',
     '@hardkas/localnet': 'Public tooling',
-    '@hardkas/node-orchestrator': 'Public tooling',
     '@hardkas/node-runner': 'Public tooling',
     '@hardkas/plugin-rpc-backend': 'Public tooling',
     '@hardkas/simulator': 'Public tooling',
@@ -35,7 +33,6 @@ const PACKAGE_CATEGORIES: Record<string, string> = {
 
     '@hardkas/client': 'Internal/support',
     '@hardkas/config': 'Internal/support',
-    '@hardkas/sessions': 'Internal/support',
     '@hardkas/testing': 'Internal/support',
 
     '@hardkas/sdk': 'Deprecated/experimental'

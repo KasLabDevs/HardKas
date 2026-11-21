@@ -3,17 +3,27 @@
 HardKAS brings scenario-driven testing via a custom Vitest integration.
 You can write test scenarios that verify Kaspa logic.
 
-Let's initialize a project and write a simple test:
+Create a project folder, initialize it, and run every command of the chapter from inside it:
 
-```bash execute
-hardkas init test-project
-cd test-project
+```bash
+mkdir first-scenario
+cd first-scenario
 ```
 
-We can create a test scenario using `cat << 'EOF'`:
+```bash execute
+hardkas init
+```
+
+`init` writes `test/payment.test.ts` and a `package.json` that declares Vitest and `@hardkas/testing`. Install them:
+
+```bash
+npm install
+```
+
+Now write a test of your own in `test/`:
 
 ```bash execute
-cat << 'EOF' > test-project/tests/hello.test.ts
+cat << 'EOF' > test/hello.test.ts
 import { describe, it, expect } from "vitest";
 
 describe("First Scenario", () => {
@@ -24,9 +34,10 @@ describe("First Scenario", () => {
 EOF
 ```
 
-Now run the test!
+Run it:
 
 ```bash execute
-cd test-project
-hardkas test
+hardkas test test/hello.test.ts
 ```
+
+`hardkas test` without a file runs every test under `test/`, the generated payment scenario included.

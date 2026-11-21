@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { getActiveSession } from "@hardkas/sessions";
+import { getActiveSession } from "@hardkas/core";
 
 export const kaswareRoutes = new Hono();
 

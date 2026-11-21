@@ -689,6 +689,8 @@ export { assertBroadcastNodeSynced, unsyncedBroadcastAllowedOn, type BroadcastNo
 export { canonicalRpcEndpoint, sameRpcEndpoint, rpcEndpointOf } from "./endpoint.js";
 // The transport: the official kaspa-wasm RpcClient, and the factory seam tests use to stand in for it.
 export { officialRpcFactory, toWrpcUrl, type OfficialRpcClientLike, type OfficialRpcFactory } from "./upstream/session.js";
+// RPC-RESPONSE-TOO-LARGE-1: the largest node answer HardKAS reads in one RPC message (100 MiB)
+export { SDK_WEBSOCKET_MAX_PAYLOAD_BYTES } from "./upstream/node-websocket-compat.js";
 export * from "./provider.js";
 export * from "./resilience.js";
 export * from "./wrpc-client.js";

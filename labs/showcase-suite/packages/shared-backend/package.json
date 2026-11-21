@@ -11,7 +11,6 @@
     "@hardkas/artifacts": "workspace:*",
     "@hardkas/storage-sqlite": "workspace:*",
     "@hardkas/query-store": "workspace:*",
-    "@hardkas/jobs": "workspace:*",
     "@hardkas/localnet": "workspace:*"
   }
 }

@@ -13,6 +13,7 @@ import { runTxFlow } from "../runners/tx-flow.js";
 import { runTxReceipt } from "../runners/tx-receipt-runner.js";
 import { HardkasSchemas } from "@hardkas/artifacts";
 import { invocationWorkspace, invocationWorkspaceRoot } from "../workspace-root.js";
+import { TX_SEND_CONFIRMATION_REQUIRED, broadcastYesHelp, declineUnconfirmedBroadcast } from "../broadcast-confirmation.js";
 
 /**
  * Wave 2(e) · AUX-11 — `tx send` ends in exactly one of three unambiguous outcomes:
@@ -21,7 +22,7 @@ import { invocationWorkspace, invocationWorkspaceRoot } from "../workspace-root.
  * broadcast or written, and the result is an explicit refusal — never a dry-run that
  * reads as success to a human or to automation.
  */
-export const TX_SEND_CONFIRMATION_REQUIRED = "TX_SEND_CONFIRMATION_REQUIRED";
+export { TX_SEND_CONFIRMATION_REQUIRED };
 
 /** CLTV · the lock-time options of `tx plan` and `tx send` (shortcut mode). */
 export const LOCK_TIME_DAA_HELP =
@@ -95,27 +96,8 @@ async function declineUnconfirmedSend(args: {
   network: string;
   retry: string;
 }): Promise<never> {
-  const { HardkasCliError, HardkasExitCode } = await import("../cli-errors.js");
-  const message =
-    `NOT EXECUTED: 'tx send' on ${args.network} requires explicit confirmation. ` +
-    `Nothing was planned, signed, broadcast or written. To execute, re-run with --yes.`;
-  if (args.json) {
-    UI.writeJson({
-      ok: false,
-      command: "tx send",
-      mode: "cli",
-      outcome: "not_executed",
-      code: TX_SEND_CONFIRMATION_REQUIRED,
-      network: args.network,
-      message,
-      nextSteps: [args.retry]
-    });
-  }
-  throw new HardkasCliError(TX_SEND_CONFIRMATION_REQUIRED, message, {
-    exitCode: HardkasExitCode.POLICY_DENIED,
-    suggestion: args.retry,
-    context: { network: args.network }
-  });
+  // BETA-FIX W2: the one AUX-11 refusal, shared with every other broadcasting command (same code, envelope and exit)
+  return declineUnconfirmedBroadcast({ command: "tx send", network: args.network, json: args.json, retry: args.retry });
 }
 
 /**
@@ -335,6 +317,7 @@ export function registerTxCommands(program: Command) {
     .option("--workspace <path>", "Override workspace root directory")
     .option("--password-env <env>", "Read the keystore password of the batch's encrypted payers from this environment variable (read once, before the first payment)")
     .option("--password-stdin", "Read the keystore password of the batch's encrypted payers from stdin (read once, before the first payment)", false)
+    .option("--yes", broadcastYesHelp("the batch (every payment of it)"), false)
     .option("--json", "Output as JSON", false)
     .action(async (options: any) => {
       try {
@@ -356,7 +339,7 @@ export function registerTxCommands(program: Command) {
     .option("--to <address>", TX_PLAN_TO_HELP, (value: string, previous: string[] | undefined) => [...(previous ?? []), value])
     .option("--amount <kas>", "Amount in KAS, up to 8 decimals (default: 1)")
     .option("--network <name>", "simulated, simnet, devnet, testnet-10, testnet-12 or mainnet (default: the config's default target)")
-    .option("--fee-rate <sompiPerMass>", "Whole sompi per gram of mass, at least 1 (default: 1 in the simulator, 100 on real networks; not a live estimate)")
+    .option("--fee-rate <sompiPerMass>", "Whole sompi per gram of mass, at least 1 (default: 1 in the simulator, live node getFeeEstimate on real networks bounded by maxFeeRate)")
     .option("--max-fee <sompi>", "Total fee limit in sompi: the plan is refused (FEE_EXCEEDS_MAX) above it, and the limit is recorded in the plan and enforced again at sign and send. The workspace's networks[<net>].maxFeeSompi also applies; the lower one wins. No limit by default")
     .option("--change <accountOrAddress>", "Change destination (account name or address); default: the sender")
     .option("--lock-time-daa <n>", LOCK_TIME_DAA_HELP)
@@ -782,7 +765,7 @@ export function registerTxCommands(program: Command) {
     .option("--wait-timeout <seconds>", "With --wait: how long to wait, in seconds or with a unit (500ms, 60s, 2m) (default: 60)")
     .option(
       "--yes",
-      "Confirm broadcast. Required unless the network is simulated or simnet (in shortcut mode, unless --network simulated or simnet is given): without it the send is refused (NOT EXECUTED, exit 3) and nothing is written",
+      "Confirm broadcast. Required unless the network is simulated or simnet (in shortcut mode, unless --network simulated or simnet is given): without it the send is refused (NOT EXECUTED, exit 3, TX_SEND_CONFIRMATION_REQUIRED) and nothing is written",
       false
     )
     .option("--wait-lock", "No effect, kept for compatibility: the command takes no lock of its own, and each store write waits for the store (up to 30 s)", false)
@@ -896,6 +879,13 @@ export function registerTxCommands(program: Command) {
             }
             const { readSignedTxArtifact } = await import("@hardkas/artifacts");
             const signedArtifact = await readSignedTxArtifact(signedPath);
+            const { assertMainnetTransactionsDisabled, assertMainnetInteractiveConfirmation } = await import("@hardkas/core");
+            assertMainnetTransactionsDisabled("broadcast", [signedArtifact.networkId, options.network], "tx send");
+            assertMainnetInteractiveConfirmation(
+              [signedArtifact.networkId, options.network],
+              { yes: options.yes, isTTY: Boolean(process.stdin.isTTY) },
+              "tx send"
+            );
 
             if (
               !options.yes &&
@@ -1142,6 +1132,14 @@ export function registerTxCommands(program: Command) {
             // would have nothing to report as a broadcast.
             const confirmationExempt =
               options.network === "simulated" || options.network === "simnet";
+            const effectiveNet = options.network ?? loaded.config.defaultNetwork;
+            const { assertMainnetTransactionsDisabled, assertMainnetInteractiveConfirmation } = await import("@hardkas/core");
+            assertMainnetTransactionsDisabled("broadcast", [effectiveNet], "tx send");
+            assertMainnetInteractiveConfirmation(
+              [effectiveNet],
+              { yes: options.yes, isTTY: Boolean(process.stdin.isTTY) },
+              "tx send"
+            );
             if (!options.yes && !confirmationExempt) {
               await declineUnconfirmedSend({
                 json: options.json,

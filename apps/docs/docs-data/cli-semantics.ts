@@ -26,8 +26,8 @@ export const cliSemantics: Record<string, CliCommandSemantics> = {
     plannerPath: "The kaspa-wasm Generator on every path: a real node (`KASPA_WASM_GENERATOR`) and the simulator (`SYNTHETIC_SIMULATOR`, over its identities).",
     evidenceMeaning: "Proves that a geometrically valid, fee-paying transaction was possible using available UTXOs at a specific virtualDaaScore.",
     limitations: ["A payment that needs more than one transaction is refused (`MULTI_TRANSACTION_PLAN_REQUIRED`): consolidate the UTXOs first."],
-    relatedConcepts: ["/concepts/transactions/planning.md", "/concepts/transactions/utxos.md"],
-    relatedGuides: ["/guides/transactions/create-a-transaction.md"]
+    relatedConcepts: ["/concepts/transaction-lifecycle.md", "/guides/transactions/fees-and-mass.md"],
+    relatedGuides: ["/guides/transactions/plan-sign-send.md"]
   },
   "hardkas tx sign": {
     commandPath: "hardkas tx sign",
@@ -38,21 +38,21 @@ export const cliSemantics: Record<string, CliCommandSemantics> = {
     acceptedIdentifiers: ["filepath", "canonical artifactId"],
     sideEffects: ["Cryptographic signing operations"],
     evidenceMeaning: "Proves authorization. Cryptographically asserts that the holder of the private keys approved the exact geometric bounds in the plan.",
-    relatedConcepts: ["/concepts/transactions/signing.md"],
-    relatedGuides: ["/guides/transactions/sign-a-transaction.md"]
+    relatedConcepts: ["/concepts/security-model.md"],
+    relatedGuides: ["/guides/transactions/plan-sign-send.md"]
   },
   "hardkas tx send": {
     commandPath: "hardkas tx send",
     environments: ["Simulator", "Localnet", "RPC"],
     reads: ["SignedTxArtifact"],
-    writes: ["TxReceiptArtifact json file"],
-    artifactsProduced: ["TxReceiptArtifact"],
+    writes: ["The simulator: a TxReceipt json file. A node send: a TxSubmission json file (`hardkas.txSubmission.v1`). Both under .hardkas/artifacts/receipts/"],
+    artifactsProduced: ["TxReceipt (simulator)", "TxSubmission (node send)"],
     acceptedIdentifiers: ["filepath", "canonical artifactId"],
     sideEffects: ["Submits transaction to network mempool or mutates local simulator state."],
-    evidenceMeaning: "Proves submission acceptance by the target environment (mempool inclusion or simulator mutation). DOES NOT prove finality.",
+    evidenceMeaning: "Proves submission acceptance by the target environment (mempool inclusion or simulator mutation). DOES NOT prove finality. With `--wait`, the command also waits until the transaction is CONFIRMED on the same node.",
     limitations: ["The printed next steps name the receipt's canonical artifactId (`hardkas explain <artifactId>`); the txId is reported as `txId` and is looked up with `--tx`."],
-    relatedConcepts: ["/concepts/transactions/submission.md"],
-    relatedGuides: ["/guides/transactions/submit-a-transaction.md"]
+    relatedConcepts: ["/concepts/transaction-lifecycle.md"],
+    relatedGuides: ["/guides/transactions/plan-sign-send.md"]
   },
   "hardkas tx trace": {
     commandPath: "hardkas tx trace",
@@ -72,8 +72,8 @@ export const cliSemantics: Record<string, CliCommandSemantics> = {
       "A [path] outside the workspace is refused (ARTIFACT_PATH_OUTSIDE_WORKSPACE); excess positional arguments are a usage error.",
       "No consensus replay is performed; the former deep-validation flag was removed because it performed no check."
     ],
-    relatedConcepts: ["/concepts/evidence.md"],
-    relatedGuides: ["/how-to/verify-evidence.md"]
+    relatedConcepts: ["/concepts/artifact-lifecycle.md"],
+    relatedGuides: ["/guides/artifact-auditing.md"]
   },
   "hardkas explain": {
     commandPath: "hardkas explain",
@@ -85,7 +85,7 @@ export const cliSemantics: Record<string, CliCommandSemantics> = {
     sideEffects: [],
     evidenceMeaning: "Produces a human-readable trace of the artifact's lineage and assertions.",
     limitations: ["A bare label, txId or workflowId is refused with NAMESPACE_REQUIRED; name its namespace flag. The `--tx` namespace returns the submission receipt, never the signed transaction."],
-    relatedGuides: ["/how-to/verify-evidence.md"]
+    relatedGuides: ["/guides/artifact-auditing.md"]
   },
   "hardkas why": {
     commandPath: "hardkas why",
@@ -123,26 +123,26 @@ export const cliSemantics: Record<string, CliCommandSemantics> = {
     environments: ["Local (kaspa-wasm ZkScriptBuilder); simnet address always, testnet-10/mainnet only on request"],
     reads: ["RISC Zero Groth16 receipt (file or hex)"],
     evidenceMeaning:
-      "Scripts built and parsed, and the receipt's claim matches (imageId, journalHash). Nothing is signed or broadcast; on-chain acceptance is shown only by the simnet suites.",
+      "Scripts built and parsed, and the receipt's claim matches (imageId, journalHash). This command signs and broadcasts nothing: `hardkas zk toccata spend` sends a lock's spend through HardKAS's send, the node verifies the proof, and HardKAS claims no on-chain verification of its own.",
     limitations: [
       "proof-only (default) is IMAGE_ID_ONLY: any holder of a valid receipt of the program spends every UTXO at the address, to any outputs, on any network (replay and front-running by design).",
       "proof-and-output-bound is IMAGE_ID_AND_OUTPUTS: output count, payout/change script public key and amount by introspection, exactly one input, and an input of at most the bound outputs plus --max-fee. Fund it with requiredFundingSompi.",
       "Neither mode binds the spent outpoint (circular: the funding transaction's id commits to the P2SH; refused as ZK_UTXO_BINDING_UNSATISFIABLE) or the journal (supplied by the unlocking script; the HKZ1 layout is an off-chain convention)."
     ],
-    relatedConcepts: ["/concepts/toccata/zk-and-sequencing.md"],
+    relatedConcepts: ["/guides/silverscript-covenants/zk-and-sequencing.md"],
     relatedGuides: ["/guides/zk-l1-verification-and-settlement.md"]
   },
   "hardkas zk toccata verify-scripts": {
     commandPath: "hardkas zk toccata verify-scripts",
     environments: ["Local (kaspa-wasm ZkScriptBuilder, to rebuild the lock); no node is contacted"],
-    reads: ["Redeem and signature scripts (hex)"],
+    reads: ["Redeem and signature scripts (hex), or the scripts record `zk toccata build-scripts --json` printed (--scripts <record>)"],
     evidenceMeaning:
-      "The lock uses the pinned RISC Zero verifying key, control root and control id, and its redeem script is byte-identical to the one build-scripts makes for the parameters it carries. consensusEnforced: true only for such an output-bound lock. The scripts are not executed; on-chain acceptance is shown only by the simnet suites.",
+      "The lock uses the pinned RISC Zero verifying key, control root and control id, and its redeem script is byte-identical to the one build-scripts makes for the parameters it carries. consensusEnforced: true only for such an output-bound lock. The scripts are not executed here; a node runs them only when a spend is sent (`hardkas zk toccata spend`).",
     limitations: [
       "A lock HardKAS cannot rebuild byte for byte (another builder, other opcodes, another encoding) is ZK_REDEEM_SCRIPT_NOT_CANONICAL: no claim is made about it, even when it may be sound.",
       "Expected outputs asked of a lock that binds none (proof-only) are ZK_EXPECTED_BINDING_NOT_ENFORCED, never satisfied vacuously."
     ],
-    relatedConcepts: ["/concepts/toccata/zk-and-sequencing.md"],
+    relatedConcepts: ["/guides/silverscript-covenants/zk-and-sequencing.md"],
     relatedGuides: ["/guides/zk-l1-verification-and-settlement.md"]
   }
 };

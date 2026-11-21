@@ -18,6 +18,9 @@
 // TX-WAIT-CHAINED-SPEND-1: an output spent since by a later transaction (a batch's next payment
 // spending this one's change) is never listed again, so the view also reflects the transaction
 // once an output of it is listed and none of its inputs is (see waitForUtxoView).
+// RPC-RESPONSE-TOO-LARGE-1: an address whose UTXO list is too large to read (RPC_RESPONSE_TOO_LARGE, more than about
+// 277,000 UTXOs) is read once, left out of the view (`tooLargeToRead`) and never fails the wait on its own: with nothing
+// readable left the view is "not checked: too large to read" and the state is the chain observations'.
 
 import { isConfirmed, type DerivedTxStatus } from "@hardkas/artifacts";
 import { SYNTHETIC_TXID, openSdkForTx, stateHeadline } from "./tx-status-runner.js";
@@ -48,6 +51,13 @@ export interface TxWaitUtxoView {
    * proves: no spend of this transaction's outputs is observed (the address may never have been paid by it).
    */
   indexPastAcceptance?: { address: string; outpoint: string; blockDaaScore: string; acceptingDaaScore: string };
+  /**
+   * RPC-RESPONSE-TOO-LARGE-1: addresses whose UTXO list the node cannot hand over in one message HardKAS reads (more than
+   * about 277,000 UTXOs; RPC_RESPONSE_TOO_LARGE). Read once, never again in the wait, and not checked: the view is checked
+   * on the other addresses only, and when nothing else is left to check it is `checked: false` (reason: too large) and the
+   * state is the chain observations' alone.
+   */
+  tooLargeToRead?: string[];
   looks: number;
 }
 
@@ -177,9 +187,42 @@ async function walkBackBelow(sdk: any, from: string, below: bigint, limit: numbe
 
 const outpointKey = (o: { transactionId: string; index: number | string }) => `${o.transactionId}:${Number(o.index)}`;
 
+const isTooLargeToRead = (e: unknown): boolean => (e as { code?: unknown } | null | undefined)?.code === "RPC_RESPONSE_TOO_LARGE";
+
+/**
+ * RPC-RESPONSE-TOO-LARGE-1: the UTXO list of each address not yet known to be too large to read; an address whose list
+ * is refused for its size (RPC_RESPONSE_TOO_LARGE) joins `tooLarge` and is never asked for again in this wait (each ask
+ * makes the node build the whole answer once more). Any other failure is thrown, as before.
+ */
+async function readViews(sdk: any, addresses: Iterable<string>, tooLarge: Set<string>): Promise<Map<string, any[]>> {
+  const views = new Map<string, any[]>();
+  for (const a of new Set(addresses)) {
+    if (tooLarge.has(a)) continue;
+    try {
+      views.set(a, (await sdk.rpc.getUtxosByAddress(a)) ?? []);
+    } catch (e: unknown) {
+      if (!isTooLargeToRead(e)) throw e;
+      tooLarge.add(a);
+    }
+  }
+  return views;
+}
+
+/** RPC-RESPONSE-TOO-LARGE-1: why `addresses` were not checked (the words of the `UTXO View` row and the JSON reason). */
+function tooLargeReason(addresses: readonly string[]): string {
+  return (
+    `too large to read: the node's UTXO list of ${addresses.join(", ")} is larger than the 100 MiB HardKAS reads in one RPC message ` +
+    `(more than about 277,000 UTXOs; RPC_RESPONSE_TOO_LARGE), so it was not checked`
+  );
+}
+
 /**
  * Waits, bounded by `deadline`, until the node's UTXO view reflects `txId` for the plan the
  * workspace recorded for it. Always takes at least one look. RPC errors count as "not yet".
+ * RPC-RESPONSE-TOO-LARGE-1: an address whose UTXO list is too large to read is left out of the check (`tooLargeToRead`):
+ * with the sender left out, an output of the tx listed at a readable address it pays shows the view applied it (the
+ * index applies its inputs and outputs in one diff, as for `--address`); with nothing readable left, the view is not
+ * checked and the state is the chain observations'.
  */
 async function waitForUtxoView(args: {
   sdk: any;
@@ -192,6 +235,8 @@ async function waitForUtxoView(args: {
   addresses?: string[];
   /** TX-WAIT-ADDRESS-SPENT-1: the chain block the observations say accepted the tx (for the `--address` view). */
   acceptingBlockHash?: string;
+  /** RPC-RESPONSE-TOO-LARGE-1: addresses this wait already found too large to read (shared by every read of the wait). */
+  tooLarge: Set<string>;
 }): Promise<TxWaitUtxoView> {
   const { sdk, txId } = args;
   let plan: any;
@@ -224,30 +269,63 @@ async function waitForUtxoView(args: {
   let missing = addresses;
   let still = spent;
   let lastError: string | undefined;
+  const tooLarge = args.tooLarge;
+  const involved = [...new Set([...addresses, ...(sender ? [sender] : [])])];
+  const notRead = () => involved.filter((a) => tooLarge.has(a));
   for (;;) {
     looks++;
     try {
-      const views = new Map<string, any[]>();
-      for (const a of new Set([...addresses, ...(sender ? [sender] : [])])) views.set(a, (await sdk.rpc.getUtxosByAddress(a)) ?? []);
-      missing = addresses.filter((a) => !(views.get(a) ?? []).some((u: any) => u?.outpoint?.transactionId === txId));
-      const listed = new Set((sender ? views.get(sender) ?? [] : []).map((u: any) => outpointKey(u.outpoint)));
-      still = spent.filter((k) => listed.has(k));
-      lastError = undefined;
-      // TX-WAIT-CHAINED-SPEND-1: kaspad's UTXO index applies a transaction's spent inputs and its new outputs in one
-      // diff, so a view that lists an output of the tx and none of its inputs has applied it, and an output it does not
-      // list was spent since (a later payment spending this one's change, a recipient spending what it received). A view
-      // that lists no output of the tx proves nothing (lagging, empty or rebuilding): the wait goes on, as it does while
-      // an input is still listed.
-      if (still.length === 0 && (missing.length === 0 || missing.length < addresses.length)) {
-        return {
-          checked: true,
-          converged: true,
-          addresses,
-          missingOutputsFor: [],
-          inputsStillListed: [],
-          ...(missing.length > 0 ? { outputsNoLongerListed: missing } : {}),
-          looks
-        };
+      const views = await readViews(sdk, involved, tooLarge);
+      const skipped = notRead();
+      if (skipped.length > 0) {
+        // RPC-RESPONSE-TOO-LARGE-1: checked where it can be read; nothing readable left → not checked (chain state only)
+        const readable = addresses.filter((a) => !tooLarge.has(a));
+        const senderReadable = sender !== undefined && !tooLarge.has(sender);
+        if (readable.length === 0 && !senderReadable) {
+          return { checked: false, converged: false, reason: tooLargeReason(skipped), addresses, missingOutputsFor: [], inputsStillListed: [], tooLargeToRead: skipped, looks };
+        }
+        missing = readable.filter((a) => !(views.get(a) ?? []).some((u: any) => u?.outpoint?.transactionId === txId));
+        const listed = new Set((senderReadable ? views.get(sender!) ?? [] : []).map((u: any) => outpointKey(u.outpoint)));
+        still = senderReadable ? spent.filter((k) => listed.has(k)) : [];
+        lastError = undefined;
+        const outputListed = missing.length < readable.length;
+        // with the sender readable, the rule below; without it, one listed output shows the index applied the tx
+        if (senderReadable ? still.length === 0 && (readable.length === 0 || outputListed) : outputListed) {
+          return {
+            checked: true,
+            converged: true,
+            reason:
+              `${senderReadable ? "the inputs it spent are no longer listed for the sender" : "an output of it is listed at an address it pays; the inputs it spent were not checked"}; ` +
+              tooLargeReason(skipped),
+            addresses,
+            missingOutputsFor: [],
+            inputsStillListed: [],
+            ...(missing.length > 0 ? { outputsNoLongerListed: missing } : {}),
+            tooLargeToRead: skipped,
+            looks
+          };
+        }
+      } else {
+        missing = addresses.filter((a) => !(views.get(a) ?? []).some((u: any) => u?.outpoint?.transactionId === txId));
+        const listed = new Set((sender ? views.get(sender) ?? [] : []).map((u: any) => outpointKey(u.outpoint)));
+        still = spent.filter((k) => listed.has(k));
+        lastError = undefined;
+        // TX-WAIT-CHAINED-SPEND-1: kaspad's UTXO index applies a transaction's spent inputs and its new outputs in one
+        // diff, so a view that lists an output of the tx and none of its inputs has applied it, and an output it does not
+        // list was spent since (a later payment spending this one's change, a recipient spending what it received). A view
+        // that lists no output of the tx proves nothing (lagging, empty or rebuilding): the wait goes on, as it does while
+        // an input is still listed.
+        if (still.length === 0 && (missing.length === 0 || missing.length < addresses.length)) {
+          return {
+            checked: true,
+            converged: true,
+            addresses,
+            missingOutputsFor: [],
+            inputsStillListed: [],
+            ...(missing.length > 0 ? { outputsNoLongerListed: missing } : {}),
+            looks
+          };
+        }
       }
     } catch (e: any) {
       lastError = `${e?.code ? `[${e.code}] ` : ""}${e?.message ?? String(e)}`;
@@ -255,13 +333,16 @@ async function waitForUtxoView(args: {
     if (args.now() >= args.deadline) break;
     await args.sleep(args.intervalMs);
   }
+  const skipped = notRead();
+  const reasons = [lastError ? `the UTXO view could not be read: ${lastError}` : undefined, skipped.length > 0 ? tooLargeReason(skipped) : undefined].filter(Boolean);
   return {
     checked: true,
     converged: false,
-    ...(lastError ? { reason: `the UTXO view could not be read: ${lastError}` } : {}),
+    ...(reasons.length > 0 ? { reason: reasons.join("; ") } : {}),
     addresses,
     missingOutputsFor: missing,
     inputsStillListed: still,
+    ...(skipped.length > 0 ? { tooLargeToRead: skipped } : {}),
     looks
   };
 }
@@ -286,6 +367,8 @@ async function waitForExternalUtxoView(args: {
   now: () => number;
   addresses: string[];
   acceptingBlockHash?: string;
+  /** RPC-RESPONSE-TOO-LARGE-1: see waitForUtxoView. */
+  tooLarge: Set<string>;
 }): Promise<TxWaitUtxoView> {
   const addresses = [...new Set(args.addresses)];
   const reason = "no plan for this transaction in the workspace: only its outputs at the --address addresses are checked (the inputs it spent are unknown here)";
@@ -294,13 +377,21 @@ async function waitForExternalUtxoView(args: {
   let looks = 0;
   let missing = addresses;
   let lastError: string | undefined;
+  const tooLarge = args.tooLarge;
+  const notRead = () => addresses.filter((a) => tooLarge.has(a));
   for (;;) {
     looks++;
     try {
       const listedAt: string[] = [];
       let past: TxWaitUtxoView["indexPastAcceptance"];
+      const views = await readViews(args.sdk, addresses, tooLarge);
+      // RPC-RESPONSE-TOO-LARGE-1: every --address too large to read → nothing to check (the state is the chain's alone)
+      if (notRead().length === addresses.length) {
+        return { checked: false, converged: false, reason: tooLargeReason(notRead()), inputsUnknown: true, addresses, missingOutputsFor: [], inputsStillListed: [], tooLargeToRead: notRead(), looks };
+      }
       for (const a of addresses) {
-        const rows: any[] = (await args.sdk.rpc.getUtxosByAddress(a)) ?? [];
+        const rows = views.get(a);
+        if (rows === undefined) continue;
         if (rows.some((u: any) => u?.outpoint?.transactionId === args.txId)) listedAt.push(a);
         if (!past && acceptedDaa !== undefined) {
           for (const u of rows) {
@@ -313,19 +404,21 @@ async function waitForExternalUtxoView(args: {
           }
         }
       }
-      missing = addresses.filter((a) => !listedAt.includes(a));
+      missing = addresses.filter((a) => !listedAt.includes(a) && !tooLarge.has(a));
       lastError = undefined;
       if (listedAt.length > 0 || past) {
+        const skipped = notRead();
         return {
           checked: true,
           converged: true,
-          reason,
+          reason: skipped.length > 0 ? `${reason}; ${tooLargeReason(skipped)}` : reason,
           inputsUnknown: true,
           addresses,
           missingOutputsFor: [],
           inputsStillListed: [],
           ...(missing.length > 0 ? { outputsNoLongerListed: missing } : {}),
           ...(listedAt.length === 0 && past ? { indexPastAcceptance: past } : {}),
+          ...(skipped.length > 0 ? { tooLargeToRead: skipped } : {}),
           looks
         };
       }
@@ -340,14 +433,18 @@ async function waitForExternalUtxoView(args: {
     `no output of it is listed at the --address addresses, and nothing accepted at or after its accepting chain block is listed there either` +
     `${acceptedDaa !== undefined ? ` (DAA score ${acceptedDaa})` : " (its accepting block's DAA score could not be read)"}: ` +
     `the node's index may trail, or its outputs there were spent since by a transaction that pays elsewhere`;
+  const skipped = notRead();
   return {
     checked: true,
     converged: false,
-    reason: lastError ? `${reason}; the UTXO view could not be read: ${lastError}` : `${reason}; ${unproven}`,
+    reason:
+      (lastError ? `${reason}; the UTXO view could not be read: ${lastError}` : `${reason}; ${unproven}`) +
+      (skipped.length > 0 ? `; ${tooLargeReason(skipped)}` : ""),
     inputsUnknown: true,
     addresses,
     missingOutputsFor: missing,
     inputsStillListed: [],
+    ...(skipped.length > 0 ? { tooLargeToRead: skipped } : {}),
     looks
   };
 }
@@ -392,10 +489,17 @@ async function headerDaaOf(sdk: any, hash: string): Promise<{ daaScore?: string 
 }
 
 /** INT9 · C3: the outputs of `txId` the node lists at `addresses`, with the DAA score each was accepted at. */
-async function listedOutputsOf(sdk: any, txId: string, addresses: string[]): Promise<Array<{ outpoint: string; address: string; blockDaaScore?: bigint }>> {
+async function listedOutputsOf(
+  sdk: any,
+  txId: string,
+  addresses: string[],
+  tooLarge: Set<string>
+): Promise<Array<{ outpoint: string; address: string; blockDaaScore?: bigint }>> {
   const found: Array<{ outpoint: string; address: string; blockDaaScore?: bigint }> = [];
-  for (const a of [...new Set(addresses)]) {
-    for (const u of ((await sdk.rpc.getUtxosByAddress(a)) ?? []) as any[]) {
+  // RPC-RESPONSE-TOO-LARGE-1: an address too large to read is read once per wait, never on every look
+  const views = await readViews(sdk, addresses, tooLarge);
+  for (const [a, rows] of views) {
+    for (const u of rows as any[]) {
       if (u?.outpoint?.transactionId !== txId) continue;
       const daa = u?.blockDaaScore ?? u?.utxoEntry?.blockDaaScore;
       found.push({ outpoint: `${txId}:${Number(u.outpoint.index)}`, address: a, ...(daa !== undefined && daa !== null ? { blockDaaScore: BigInt(daa) } : {}) });
@@ -407,6 +511,10 @@ async function listedOutputsOf(sdk: any, txId: string, addresses: string[]): Pro
 /** The `UTXO View` row of `tx wait`'s human output (a view, not a state). */
 export function utxoViewRow(view: TxWaitUtxoView): string {
   if (!view.checked) return `not checked: ${view.reason}`;
+  // RPC-RESPONSE-TOO-LARGE-1: what was checked, and which addresses were not (too large to read)
+  if (view.converged && view.tooLargeToRead && view.tooLargeToRead.length > 0) {
+    return `reflects this transaction where it could be read: ${view.reason} (${view.looks} look(s))`;
+  }
   const spentSince = view.outputsNoLongerListed ?? [];
   if (view.inputsUnknown && view.indexPastAcceptance) {
     const p = view.indexPastAcceptance;
@@ -536,6 +644,8 @@ async function waitOn(input: TxWaitRunnerInput, sdk: any, network: string): Prom
   let lookbackLookPending = false;
   let cursor: TxWaitCursor | undefined;
   let needCursor = false;
+  // RPC-RESPONSE-TOO-LARGE-1: addresses whose UTXO list this wait found too large to read (each is read once)
+  const tooLarge = new Set<string>();
   if (addresses.length > 0) {
     if (since !== undefined) cursor = { hash: since, origin: "since", ...(await headerDaaOf(sdk, since)) };
     else {
@@ -570,7 +680,8 @@ async function waitOn(input: TxWaitRunnerInput, sdk: any, network: string): Prom
           sleep,
           now,
           ...(addresses.length > 0 ? { addresses } : {}),
-          ...(reached.acceptingBlockHash ? { acceptingBlockHash: reached.acceptingBlockHash } : {})
+          ...(reached.acceptingBlockHash ? { acceptingBlockHash: reached.acceptingBlockHash } : {}),
+          tooLarge
         });
         if (utxoView.checked && !utxoView.converged) {
           const gaps = [
@@ -614,7 +725,7 @@ async function waitOn(input: TxWaitRunnerInput, sdk: any, network: string): Prom
       lookbackLookPending = false;
       // INT9 · C3: not accepted in the window scanned so far — is its acceptance behind the cursor?
       if (cursor?.daaScore !== undefined && !acceptedNow) {
-        const listed = await listedOutputsOf(sdk, input.txId, addresses).catch(() => []);
+        const listed = await listedOutputsOf(sdk, input.txId, addresses, tooLarge).catch(() => []);
         const behind = listed.find((o) => o.blockDaaScore !== undefined && o.blockDaaScore <= BigInt(cursor!.daaScore!));
         if (behind) {
           const outputDaa = behind.blockDaaScore!;

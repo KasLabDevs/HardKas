@@ -86,20 +86,6 @@
     <priority>0.8</priority>
   </url>
 
-  <!-- PSKT (Partially Signed Kaspa Transactions) -->
-  <url>
-    <loc>https://hardkas.dev/concepts/pskt/what-is-pskt</loc>
-    <lastmod>2026-10-28</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://hardkas.dev/concepts/pskt/lifecycle</loc>
-    <lastmod>2026-10-28</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-
   <!-- CLI Reference & Tutorials -->
   <url>
     <loc>https://hardkas.dev/reference/cli</loc>

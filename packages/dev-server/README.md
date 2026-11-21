@@ -17,6 +17,11 @@ npm install @hardkas/dev-server
 - `createDevServer`: the server, its routes and its event stream.
 - A session token generated at start (or taken from `HARDKAS_DEV_TOKEN`).
 - A file watcher and an atomic journal store.
+- `recoverStaleSendGuardLock(root, { pid })`: archives the send-guard lock a dev server left when its process was ended without running its handlers (on Windows, Stop-Process or Task Manager), kept as evidence. The CLI runs it as `hardkas dev recover-lock --pid <pid>`.
+
+## Amounts in the HTTP API
+
+`amountSompi` is in sompi (1 KAS = 100,000,000 sompi) on `POST /api/tx/plan`, `POST /api/tx/send` and `POST /api/wallet-probe/payment` alike. Send it as a string of decimal digits (`"150000000"`), or as a JSON number up to 2^53 - 1. A larger JSON number, a fraction, a negative or any other string is refused with `BAD_REQUEST`: JSON parsing has already rounded such a number, so it is never planned. (Before this release `/api/tx/plan` read the field as KAS.)
 
 ## Status
 

@@ -155,7 +155,7 @@ beforeAll(async () => {
   // workspace's alice (buyer), bob (seller) and carol (arbiter), a buyer and a seller destination that are not the
   // rescue target, refund 6 KAS and release 4 KAS (not half the UTXO). Compiled here by `silver compile`, so the lock
   // is the pinned silverc's own, independently of `prepare`.
-  const { ESCROW_V1_SOURCE, ESCROW_V1_CONTRACT_NAME } = await import("@hardkas/escrow");
+  const { ESCROW_V1_SOURCE, ESCROW_V1_CONTRACT_NAME } = await import("@hardkas/sdk");
   const { loadManagedKaspaWasmSync } = await import("@hardkas/core");
   const { listDevAccountsSync, getOrCreateDevAccount } = await import("@hardkas/accounts");
   const k: any = loadManagedKaspaWasmSync();

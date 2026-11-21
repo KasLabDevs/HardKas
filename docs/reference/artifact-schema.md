@@ -20,7 +20,7 @@ Every artifact shares a common header:
 - `to.address`: Destination address.
 
 ## `signedTx` Specifics
-- `sourcePlanId`: Hash of the parent `txPlan`.
+- `sourcePlanId`: The parent plan's `planId` (for example `plan-e260046f110236f6`); the plan's hash is `lineage.parentArtifactId`.
 - `signedTransaction.payload`: The raw hex string to be broadcast to the node.
 
 ## Verification levels (`hardkas artifact verify`)

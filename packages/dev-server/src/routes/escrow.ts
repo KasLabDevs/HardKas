@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { createEscrow, type EscrowConfig } from "@hardkas/escrow";
+import { createEscrow, type EscrowConfig } from "@hardkas/sdk";
 import crypto from "node:crypto";
 import { JsonWrpcKaspaClient, type OfficialRpcFactory } from "@hardkas/kaspa-rpc";
 import { nodeRpcUrl } from "@hardkas/core";

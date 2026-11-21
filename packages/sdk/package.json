@@ -35,13 +35,11 @@
     "@hardkas/artifacts": "workspace:*",
     "@hardkas/config": "workspace:*",
     "@hardkas/core": "workspace:*",
-    "@hardkas/escrow": "workspace:*",
     "@hardkas/kaspa-rpc": "workspace:*",
     "@hardkas/localnet": "workspace:*",
     "@hardkas/node-runner": "workspace:*",
     "@hardkas/query": "workspace:*",
     "@hardkas/query-store": "workspace:*",
-    "@hardkas/simulator": "workspace:*",
     "@hardkas/toolkit": "workspace:*",
     "@hardkas/tx-builder": "workspace:*"
   },

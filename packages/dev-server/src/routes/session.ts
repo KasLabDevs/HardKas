@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { loadSessionStoreWithDiagnostics } from "@hardkas/sessions";
+import { loadSessionStoreWithDiagnostics } from "@hardkas/core";
 
 export const sessionRoutes = new Hono();
 

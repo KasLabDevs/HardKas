@@ -74,27 +74,23 @@ it fails when a published package requires a GPL, AGPL, LGPL or unknown license.
 | `@hardkas/cli` | The `hardkas` command. Entry point. |
 | `@hardkas/sdk` | The TypeScript API. Entry point. |
 | `@hardkas/testing` | Scenario runner and matchers for project tests; a dependency of the CLI. |
-| `@hardkas/core` | Types, errors, network rules and node identity. Every other package needs it. |
+| `@hardkas/core` | Types, errors, network rules, node identity, and session stores. Every other package needs it. |
 | `@hardkas/config` | `hardkas.config.*` loading and target resolution; a dependency of the CLI and the SDK. |
 | `@hardkas/tx-builder` | Planning, mass and fee rules; a dependency of the CLI and the SDK. |
 | `@hardkas/artifacts` | Artifact schemas, hashing and verification; a dependency of the CLI and the SDK. |
 | `@hardkas/accounts` | Accounts, keystores and signing guards; a dependency of the CLI and the SDK. |
 | `@hardkas/kaspa-rpc` | wRPC client for kaspad; a dependency of the CLI and the SDK. |
-| `@hardkas/node-runner` | Managed kaspad (Docker) and its identity checks; a dependency of the CLI and the SDK. |
+| `@hardkas/node-runner` | Managed kaspad (Docker) and its identity checks; a dependency of the CLI and the SDK. It also holds the identity-checked native process manager (formerly `@hardkas/node-orchestrator`), used only by the unpublished l2 extension. |
 | `@hardkas/localnet` | Localnet state and control; a dependency of the CLI and the SDK. |
-| `@hardkas/simulator` | In-memory simulated network (experimental); a dependency of the CLI and the SDK. |
+| `@hardkas/simulator` | In-memory simulated network (experimental, frozen; an approximate model, not consensus-equivalent); a dependency of the CLI (`hardkas simulator start`), `@hardkas/localnet` and `@hardkas/testing`. The SDK reaches it only through `@hardkas/localnet`. |
 | `@hardkas/query-store` | SQLite projection of the workspace; a dependency of the CLI and the SDK. |
 | `@hardkas/query` | Queries over the store and the artifacts; a dependency of the CLI and the SDK. |
-| `@hardkas/toolkit` | Backend kit (reservations, RPC resilience, jobs); a dependency of the SDK. |
-| `@hardkas/jobs` | Job queue; a dependency of `@hardkas/toolkit`. |
+| `@hardkas/toolkit` | Backend kit (reservations, RPC resilience, job queue); a dependency of the SDK. |
 | `@hardkas/observability` | Logging and metrics; a dependency of the CLI, `@hardkas/kaspa-rpc` and `@hardkas/toolkit`. |
 | `@hardkas/dev-server` | The local dev-server API (`hardkas sandbox`); a dependency of the CLI. |
-| `@hardkas/sessions` | Session records; a dependency of the CLI and the dev server. |
-| `@hardkas/escrow` | Escrow records and rescue drafts; a dependency of the CLI and the dev server. |
-| `@hardkas/bridge-local` | Offline L1 to L2 bridge lab (no production bridge); a dependency of the CLI and the dev server. |
-| `@hardkas/node-orchestrator` | Multi-node topologies; a dependency of the CLI. |
+| `@hardkas/bridge-local` | Offline L1 to L2 bridge lab (no production bridge); a dependency of the dev server (its bridge route). |
 
-That is 22 packages.
+That is 18 packages (with `@hardkas/sdk` absorbing `@hardkas/escrow`, `@hardkas/core` absorbing `@hardkas/sessions`, `@hardkas/toolkit` absorbing `@hardkas/jobs`, and `@hardkas/node-runner` absorbing `@hardkas/node-orchestrator`). The published `0.13.0-rc.3` still has 22: these 18 and the four folded since.
 
 `@hardkas/sdk` declares `snarkjs` (GPL-3.0) as an optional peer dependency:
 installing the SDK does not install it, and the Groth16 verifier reports

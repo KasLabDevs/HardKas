@@ -17,8 +17,10 @@ import {
   SILVER_TEST_ON_NODE_HELP,
   SILVER_TEST_TIMEOUT_HELP,
   SILVER_TEST_URL_HELP,
+  SILVER_TEST_YES_HELP,
   assertSilverTestModeOptions
 } from "../runners/silver-test-node-runner.js";
+import { broadcastYesHelp, requireBroadcastConfirmation } from "../broadcast-confirmation.js";
 
 /**
  * `hardkas silver` — SilverScript v1 through upstream authorities only.
@@ -58,6 +60,21 @@ const out = () => getOutput();
 const fail = (code: string, message: string, exitCode = HardkasExitCode.RUNTIME_FAILURE): never => {
   throw new HardkasCliError(code, message, { exitCode });
 };
+
+/**
+ * BETA-FIX W2 · AUX-11 (tx send's rule) for every Silver command that sends a transaction (deploy, spend, covenant
+ * genesis | transition | start | advance, test --on-node): off simnet, nothing is read, signed or sent without --yes —
+ * decided right after the network is (mainnet refused before, as ever).
+ */
+function silverBroadcastConfirmation(command: string, network: string, opts: { yes?: boolean; json?: boolean }): void {
+  requireBroadcastConfirmation({
+    command,
+    network,
+    yes: opts.yes === true,
+    json: opts.json === true,
+    nothingDone: "Nothing was read, signed, broadcast or written; no key was read and no node was contacted."
+  });
+}
 
 /**
  * HARDKAS-NETWORK-PORTABILITY-1 (C7): the network a compile record is for. Compilation itself does not depend on the
@@ -1142,6 +1159,7 @@ export function registerSilverCommand(program: Command) {
     .option("--url <url>", SILVER_TEST_URL_HELP)
     .option("--from <account>", SILVER_TEST_FROM_HELP)
     .option("--timeout <seconds>", SILVER_TEST_TIMEOUT_HELP)
+    .option("--yes", SILVER_TEST_YES_HELP)
     .option("--out <file>", "Record path (default .hardkas/artifacts/silver-vm/; with --on-node .hardkas/artifacts/silver/)")
     .option("--password-env <env>", PASSWORD_ENV_HELP)
     .option("--password-stdin", PASSWORD_STDIN_HELP, false)
@@ -1288,9 +1306,11 @@ export function registerSilverCommand(program: Command) {
     .option("--timeout <seconds>", "Confirmation timeout", "120")
     .option("--password-env <env>", PASSWORD_ENV_HELP)
     .option("--password-stdin", PASSWORD_STDIN_HELP, false)
+    .option("--yes", broadcastYesHelp("the deploy"), false)
     .option("--json", "Output as JSON", false)
     .action(async (file: string, opts: any) => {
       const target = await silverTarget(opts);
+      silverBroadcastConfirmation("silver deploy", target.network, opts);
       const txVersion = txVersionOption(opts.txVersion);
       const core = await import("@hardkas/core");
       const { HARDKAS_VERSION } = await import("@hardkas/artifacts");
@@ -1380,9 +1400,12 @@ export function registerSilverCommand(program: Command) {
     .option("--timeout <seconds>", "Confirmation timeout", "120")
     .option("--password-env <env>", PASSWORD_ENV_HELP)
     .option("--password-stdin", PASSWORD_STDIN_HELP, false)
+    .option("--yes", broadcastYesHelp("the spend"), false)
     .option("--json", "Output as JSON", false)
     .action(async (file: string, opts: any) => {
       await refuseSilverMainnetFirst(opts.network);
+      // BETA-FIX W2: an explicit network is confirmed before the record is read; the record's own network, after
+      if (opts.network !== undefined) silverBroadcastConfirmation("silver spend", await compileNetwork(opts.network), opts);
       const txVersion = txVersionOption(opts.txVersion);
       // R3-F · CLTV: the typed lock time (LOCK_TIME_INVALID before any record, key or node)
       const lockTime = await lockTimeOptions(opts);
@@ -1393,6 +1416,7 @@ export function registerSilverCommand(program: Command) {
       const compileRecord = await readReferencedRecord(deploy.compileRecord, S.SilverCompileV1, "the compile record");
       // L1-CORE-1 B3: the spend runs on the deploy record's network (or the one asked for, which must be it)
       const target = await silverTarget({ network: opts.network ?? deploy?.networkId, url: opts.url });
+      silverBroadcastConfirmation("silver spend", target.network, opts);
       assertOnChainRecordForCanonical(deploy, compileRecord, file, target.network);
       const keys: KeySource = { ...keySource(opts), network: target.network };
       const artifact = await loadCompiled(compileRecord);
@@ -1604,9 +1628,11 @@ export function registerSilverCommand(program: Command) {
     .option("--timeout <seconds>", "Confirmation timeout", "120")
     .option("--password-env <env>", PASSWORD_ENV_HELP)
     .option("--password-stdin", PASSWORD_STDIN_HELP, false)
+    .option("--yes", broadcastYesHelp("the genesis"), false)
     .option("--json", "Output as JSON", false)
     .action(async (file: string, opts: any) => {
       const target = await silverTarget(opts);
+      silverBroadcastConfirmation("silver covenant genesis", target.network, opts);
       const core = await import("@hardkas/core");
       const { HARDKAS_VERSION } = await import("@hardkas/artifacts");
       const S = await schemas();
@@ -1700,9 +1726,12 @@ export function registerSilverCommand(program: Command) {
     .option("--timeout <seconds>", "Confirmation timeout", "120")
     .option("--password-env <env>", PASSWORD_ENV_HELP)
     .option("--password-stdin", PASSWORD_STDIN_HELP, false)
+    .option("--yes", broadcastYesHelp("the transition"), false)
     .option("--json", "Output as JSON", false)
     .action(async (file: string, opts: any) => {
       await refuseSilverMainnetFirst(opts.network);
+      // BETA-FIX W2: an explicit network is confirmed before the record is read; the record's own network, after
+      if (opts.network !== undefined) silverBroadcastConfirmation("silver covenant transition", await compileNetwork(opts.network), opts);
       // CLTV: the typed lock time, refused (LOCK_TIME_INVALID) before any record, key or node
       const lockTime = await lockTimeOptions(opts);
       const core = await import("@hardkas/core");
@@ -1713,6 +1742,7 @@ export function registerSilverCommand(program: Command) {
       const compileRecord = await readReferencedRecord(prev.compileRecord, S.SilverCompileV1, "the compile record");
       // L1-CORE-1 B3: the transition runs on the covenant record's network (or the one asked for, which must be it)
       const target = await silverTarget({ network: opts.network ?? prev?.networkId, url: opts.url });
+      silverBroadcastConfirmation("silver covenant transition", target.network, opts);
       assertOnChainRecordForCanonical(prev, compileRecord, file, target.network);
       const ctor = await argsFromFile(opts.constructorArgs, "--constructor-args");
       if (sha256(ctor.canonical) !== compileRecord.provenance.constructorArgsSha256) {
@@ -1916,10 +1946,12 @@ export function registerSilverCommand(program: Command) {
     .option("--timeout <seconds>", "Confirmation timeout", "120")
     .option("--password-env <env>", PASSWORD_ENV_HELP)
     .option("--password-stdin", PASSWORD_STDIN_HELP, false)
+    .option("--yes", broadcastYesHelp("the covenant's creation"), false)
     .option("--json", "Output as JSON", false)
     .action(async (file: string, opts: any) => {
       // mainnet (any spelling or alias) refused here, before any record is read (compileNetwork)
       const target = await silverTarget(opts);
+      silverBroadcastConfirmation("silver covenant start", target.network, opts);
       const core = await import("@hardkas/core");
       const S = await schemas();
       const compileRecord = await readRecord(file, S.SilverCompileV1);
@@ -2052,10 +2084,12 @@ export function registerSilverCommand(program: Command) {
     .option("--timeout <seconds>", "Confirmation timeout", "120")
     .option("--password-env <env>", PASSWORD_ENV_HELP)
     .option("--password-stdin", PASSWORD_STDIN_HELP, false)
+    .option("--yes", broadcastYesHelp("the transition"), false)
     .option("--json", "Output as JSON", false)
     .action(async (file: string, opts: any) => {
       // mainnet (any spelling or alias) refused here, before any record is read (compileNetwork)
       const target = await silverTarget(opts);
+      silverBroadcastConfirmation("silver covenant advance", target.network, opts);
       // CLTV: the typed lock time, refused (LOCK_TIME_INVALID) before any record, key or node
       const lockTime = await lockTimeOptions(opts);
       const core = await import("@hardkas/core");

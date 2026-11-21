@@ -404,7 +404,8 @@ describe("H3 · the upstream crate kaspa-txscript-zk-sdk exists (2.1.0); no text
     const files = [
       path.join(ROOT, "packages", "sdk", "src", "zk", "toccata.ts"),
       path.join(R0, "README.md"),
-      path.join(ROOT, "apps", "docs", "docs", "reference", "sdk", "generated", "sdk", "src", "variables", "KASPA_WASM_ZK_BUILDER_CLAIM.md")
+      // BETA-FIX W4: the generated SDK reference moved from apps/docs/docs/reference/sdk to apps/docs/reference/sdk
+      path.join(ROOT, "apps", "docs", "reference", "sdk", "generated", "sdk", "src", "variables", "KASPA_WASM_ZK_BUILDER_CLAIM.md")
     ];
     for (const f of files) {
       const text = fs.readFileSync(f, "utf8").replace(/\s+/g, " ");

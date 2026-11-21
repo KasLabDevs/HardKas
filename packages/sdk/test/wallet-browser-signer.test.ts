@@ -13,10 +13,13 @@ import {
 } from "../src/wallets/index.js";
 
 // -----------------------------------------------------------------------------
-// R3-C · the browser wallet signer against FAITHFUL FAKES of window.kasware / window.kastle / window.kaspire, built from
-// the shapes of the third-party field notes (NOTES-CROSSCHECK §2.3) — one test per trap. The fakes are not the
-// extensions: the live behaviour is UNVERIFIED until the owner runs the probe page. No kaspa-wasm, no network: the
-// structural half of the check (the cryptographic half is wallet-signatures.test.ts and the simnet test).
+// R3-C · the browser wallet signer against FAITHFUL FAKES of window.kasware / window.kastle / window.kaspire — one test
+// per trap. The fakes model what the probe page read from the REAL extensions on Testnet-10 on 21-nov-2026 (KasWare
+// 0.11.6, Kaspire, Kastle): KasWare's getNetwork "kaspa_testnet_10"; Kaspire's getNetwork "testnet-10" and its signMessage
+// object { address, publicKey, signedMessage, signature }; Kastle a class instance (every method on its prototype, none
+// own) with getNetwork "testnet-10", no signPskt, and signTx(networkId, txJson, scripts) as forbole/kastle's source has it
+// (api/browser.ts, lib/wallet/sign-script.ts). The fakes are not the extensions. No kaspa-wasm, no network: the structural
+// half of the check (the cryptographic half is wallet-signatures.test.ts and the simnet test).
 // -----------------------------------------------------------------------------
 
 const TESTNET_ADDR = "kaspatest:qr0lr4ml9fn3chekrqmjdkergxl93l4wrk3dankcgvjq776s9wn9jjqzg2g6";
@@ -84,8 +87,10 @@ interface FakeOptions {
   duringSign?: (fake: Fake) => void;
   /** Returns the transaction as an object (with numbers), not a string. */
   asObject?: boolean;
-  /** What signMessage answers (default per the notes: KasWare 0.11 128 hex, Kaspire { address, signature }). */
+  /** What signMessage answers (default as the real ones did: 128 hex; Kaspire { address, publicKey, signedMessage, signature }). */
   messageAnswer?: (message: string, address: string) => unknown;
+  /** Methods this extension lacks (an older build): they are not on the object, nor on its prototype. */
+  without?: readonly string[];
 }
 
 interface Fake {
@@ -96,15 +101,15 @@ interface Fake {
 }
 
 /**
- * A fake extension object as the notes describe it. signPskt crashes like KasWare on the two-argument form ("Cannot read
- * properties of undefined (reading 'length')"); Kaspire rejects at once when locked and wants `sender`; Kastle takes the
- * network in connect() and answers getAccount(). Broadcast methods exist, and are recorded, so a test can show that they
- * are never called.
+ * A fake extension object as the real ones behave. signPskt crashes like KasWare on the two-argument form ("Cannot read
+ * properties of undefined (reading 'length')"); Kaspire rejects at once when locked, wants `sender` and says its network;
+ * Kastle is a class instance (fakeKastle). Broadcast methods exist, and are recorded, so a test can show that they are
+ * never called.
  */
 function fakeWallet(kind: BrowserWalletKind, o: FakeOptions = {}): Fake {
   const calls: Fake["calls"] = [];
   const handlers = new Map<string, Set<(p: unknown) => void>>();
-  const state = { address: o.address ?? TESTNET_ADDR, network: o.network ?? "kaspa_testnet_10", locked: o.locked ?? false };
+  const state = { address: o.address ?? TESTNET_ADDR, network: o.network ?? (kind === "kasware" ? "kaspa_testnet_10" : "testnet-10"), locked: o.locked ?? false };
   const fake: Fake = {
     provider: {},
     calls,
@@ -117,6 +122,10 @@ function fakeWallet(kind: BrowserWalletKind, o: FakeOptions = {}): Fake {
   const lockedGuard = () => {
     if (state.locked) throw Object.assign(new Error("Wallet is locked"), { code: 4100 });
   };
+  if (kind === "kastle") {
+    (fake as any).provider = fakeKastle(fake, o, handlers, record, lockedGuard);
+    return fake;
+  }
   const p: Record<string, any> = {
     on: (event: string, h: (p: unknown) => void) => {
       record("on", [event]);
@@ -148,27 +157,128 @@ function fakeWallet(kind: BrowserWalletKind, o: FakeOptions = {}): Fake {
       lockedGuard();
       o.duringSign?.(fake);
       const sig = "cd".repeat(64);
-      return o.messageAnswer ? o.messageAnswer(String(args[0]), state.address) : kind === "kaspire" ? { address: state.address, signature: sig } : sig;
+      if (o.messageAnswer) return o.messageAnswer(String(args[0]), state.address);
+      // Kaspire (21-nov-2026): { address, publicKey, signedMessage, signature }
+      return kind === "kaspire" ? { address: state.address, publicKey: "02" + "df".repeat(32), signedMessage: String(args[0]), signature: sig } : sig;
     },
     sendKaspa: async (...a: unknown[]) => record("sendKaspa", a),
     pushTx: async (...a: unknown[]) => record("pushTx", a),
     signAndBroadcastTx: async (...a: unknown[]) => record("signAndBroadcastTx", a)
   };
-  if (kind === "kastle") {
-    p.connect = async (...a: unknown[]) => (record("connect", a), lockedGuard(), true);
-    p.getAccount = async () => (record("getAccount", []), lockedGuard(), { address: state.address, publicKey: "02" + "df".repeat(32) });
-  } else {
-    p.requestAccounts = async () => (record("requestAccounts", []), lockedGuard(), [state.address]);
-    p.getAccounts = async () => (record("getAccounts", []), lockedGuard(), [state.address]);
-    if (kind === "kasware") p.getNetwork = async () => (record("getNetwork", []), state.network);
-  }
+  p.requestAccounts = async () => (record("requestAccounts", []), lockedGuard(), [state.address]);
+  p.getAccounts = async () => (record("getAccounts", []), lockedGuard(), [state.address]);
+  // KasWare "kaspa_testnet_10", Kaspire "testnet-10" (both answered getNetwork on 21-nov-2026)
+  p.getNetwork = async () => (record("getNetwork", []), state.network);
+  for (const m of o.without ?? []) delete p[m];
   (fake as any).provider = p;
   return fake;
 }
 
+/**
+ * window.kastle as forbole/kastle builds it (api/browser.ts, class KastleBrowserAPI): an instance whose methods are all on
+ * its prototype and go through `this` (a method called detached from the object throws, as the real one does); its own
+ * fields are no methods. connect() takes no network (whatever it is passed); getNetwork() says the extension's network;
+ * there is no signPskt. signTx(networkId, txJson, scripts) answers the signed transaction's safe JSON (a string):
+ *  - a transaction that is not version 0 is refused unless it decodes as a KCC-20 transfer (signTx.ts, covenant-guard.ts);
+ *  - each script option { inputIndex, signType } signs that input ("All" = SIGHASH_ALL, 0x01); an input that already
+ *    carries a signature script is refused (lib/wallet/sign-script.ts);
+ *  - when that leaves the transaction not fully signed, signTransaction(tx, [key]) signs EVERY input the key owns.
+ */
+function fakeKastle(
+  fake: Fake,
+  o: FakeOptions,
+  handlers: Map<string, Set<(p: unknown) => void>>,
+  record: (method: string, args: unknown[]) => void,
+  lockedGuard: () => void
+): Record<string, any> {
+  const { state } = fake;
+  const sighashByte: Record<string, string> = { All: "01", None: "02", Single: "03", AllAnyOneCanPay: "81", NoneAnyOneCanPay: "82", SingleAnyOneCanPay: "83" };
+  const signTx = (args: unknown[]) => {
+    const [networkId, txJson, scripts] = args as [unknown, unknown, any[] | undefined];
+    if (args.length > 3 || (networkId !== undefined && typeof networkId !== "string") || typeof txJson !== "string") throw new Error("Invalid transaction data");
+    lockedGuard();
+    let version: unknown;
+    try {
+      version = JSON.parse(txJson).version;
+    } catch {
+      version = undefined;
+    }
+    if (version !== 0) throw new Error("COVENANT_TX_UNDECODABLE");
+    const tx = JSON.parse(txJson);
+    const options = (scripts ?? []).filter((x) => x != null);
+    for (const opt of options) {
+      const type = opt.signType ?? "All";
+      if (!(type in sighashByte) || type.startsWith("None")) throw new Error(`signTx: signType "${type}" refused`);
+      if (tx.inputs[opt.inputIndex]?.signatureScript) throw new Error(`signTx: input ${opt.inputIndex} already carries a signatureScript`);
+      tx.inputs[opt.inputIndex].signatureScript = o.script ? o.script(opt.inputIndex) : `41${SIG}${sighashByte[type]}`;
+    }
+    if (!tx.inputs.every((i: any) => i.signatureScript)) {
+      for (const input of tx.inputs) if (input.utxo?.address === state.address) input.signatureScript = `41${SIG}01`;
+      for (const opt of options) tx.inputs[opt.inputIndex].signatureScript = o.script ? o.script(opt.inputIndex) : `41${SIG}${sighashByte[opt.signType ?? "All"]}`;
+    }
+    o.mutate?.(tx);
+    o.duringSign?.(fake);
+    return JSON.stringify(tx);
+  };
+  class KastleBrowserAPI {
+    readonly ethereum = {};
+    readonly _eventListeners = handlers;
+    receiveMessageWithTimeout<T>(method: string, args: unknown[], answer: () => T): Promise<T> {
+      record(method, args);
+      return Promise.resolve().then(answer);
+    }
+    connect(...a: unknown[]) {
+      return this.receiveMessageWithTimeout("connect", a, () => (lockedGuard(), true));
+    }
+    disconnect() {
+      return this.receiveMessageWithTimeout("disconnect", [], () => undefined);
+    }
+    getAccount() {
+      return this.receiveMessageWithTimeout("getAccount", [], () => (lockedGuard(), { address: state.address, publicKey: "02" + "df".repeat(32) }));
+    }
+    getNetwork() {
+      return this.receiveMessageWithTimeout("getNetwork", [], () => state.network);
+    }
+    signTx(...a: unknown[]) {
+      return this.receiveMessageWithTimeout("signTx", a, () => signTx(a));
+    }
+    signMessage(...a: unknown[]) {
+      return this.receiveMessageWithTimeout("signMessage", a, () => {
+        lockedGuard();
+        o.duringSign?.(fake);
+        return o.messageAnswer ? o.messageAnswer(String(a[0]), state.address) : "cd".repeat(64);
+      });
+    }
+    signAndBroadcastTx(...a: unknown[]) {
+      return this.receiveMessageWithTimeout("signAndBroadcastTx", a, () => "ff".repeat(32));
+    }
+    sendKaspa(...a: unknown[]) {
+      return this.receiveMessageWithTimeout("sendKaspa", a, () => "ff".repeat(32));
+    }
+    switchNetwork(...a: unknown[]) {
+      return this.receiveMessageWithTimeout("switchNetwork", a, () => String(a[0]));
+    }
+    on(event: string, h: (p: unknown) => void) {
+      record("on", [event]);
+      if (!this._eventListeners.has(event)) this._eventListeners.set(event, new Set());
+      this._eventListeners.get(event)!.add(h);
+      return this;
+    }
+    removeListener(event: string, h: (p: unknown) => void) {
+      record("removeListener", [event]);
+      this._eventListeners.get(event)?.delete(h);
+      return this;
+    }
+  }
+  const p: any = new KastleBrowserAPI();
+  // an older build without a method: shadowed on the instance (the prototype is the class's)
+  for (const m of o.without ?? []) Object.defineProperty(p, m, { value: undefined, enumerable: false });
+  return p;
+}
+
 const win = (kind: BrowserWalletKind, fake: Fake) => ({ [kind]: fake.provider });
 const settle = (p: Promise<unknown>) => p.then((v) => ({ code: "RESOLVED", value: v as any }), (e: any) => ({ code: String(e?.code ?? "UNCODED"), message: String(e?.message ?? e), value: undefined as any }));
-const signCalls = (f: Fake) => f.calls.filter((c) => c.method === "signPskt");
+const signCalls = (f: Fake) => f.calls.filter((c) => c.method === "signPskt" || c.method === "signTx");
 const BROADCASTS = ["sendKaspa", "pushTx", "signAndBroadcastTx"];
 
 describe("R3-C · detection on the click, not only at load", () => {
@@ -212,22 +322,142 @@ describe("R3-C · KasWare: one object to signPskt, exactly the inputs HardKAS ch
     expect(signCalls(f)[0]!.args[0]).toEqual({ txJsonString: TX_JSON, options: { signInputs: [{ index: 1, sighashType: 1 }], autoFinalized: false } });
   });
 
-  it("Kaspire gets the same object plus `sender`; its network is its address prefix", async () => {
+  it("Kaspire gets the same object plus `sender`; its network is its own getNetwork() answer; an older Kaspire without it is read by its address prefix", async () => {
     const f = fakeWallet("kaspire");
     const s = await connectBrowserWallet("kaspire", { networkId: "testnet-10", window: win("kaspire", f) });
-    expect(s.networkEvidence).toBe("address-prefix");
+    expect(s.networkEvidence).toBe("wallet");
     await s.signTransaction(request());
     expect((signCalls(f)[0]!.args[0] as any).sender).toBe(TESTNET_ADDR);
+    const old = fakeWallet("kaspire", { without: ["getNetwork"] });
+    expect((await connectBrowserWallet("kaspire", { networkId: "testnet-10", window: win("kaspire", old) })).networkEvidence).toBe("address-prefix");
   });
 
-  it("Kastle takes the network in connect(); a contract request is refused before Kastle is asked (it could not sign covenant inputs)", async () => {
+  it("Kastle: a contract request is refused before Kastle is asked (its signTx refuses a version-1 transaction it cannot decode as KCC-20)", async () => {
     const f = fakeWallet("kastle");
     const s = await connectBrowserWallet("kastle", { networkId: "testnet-10", window: win("kastle", f) });
     expect(f.calls.find((c) => c.method === "connect")!.args).toEqual(["testnet-10"]);
-    expect(s.networkEvidence).toBe("connect");
     const r = await settle(s.signTransaction(request({ purpose: "contract", autoFinalized: false })));
     expect(r.code).toBe("WALLET_COVENANT_SIGNING_UNSUPPORTED");
     expect(signCalls(f)).toEqual([]);
+  });
+});
+
+describe("BETA-FIX W1 · Kastle signs a payment with its real signTx(networkId, txJson, scripts), never a broadcast method", () => {
+  it("connects, re-reads, calls signTx with THREE arguments: the session's network, HardKAS's JSON, one 'All' option per asked input; its string answer is checked", async () => {
+    const f = fakeWallet("kastle");
+    expect(Object.keys(f.provider).filter((n) => typeof f.provider[n] === "function"), "the real Kastle has no own method").toEqual([]);
+    expect(f.provider.signPskt).toBeUndefined();
+    const s = await connectBrowserWallet("kastle", { networkId: "testnet-10", window: win("kastle", f) });
+    const out = await s.signTransaction(request());
+    const [c] = signCalls(f);
+    expect(c!.method).toBe("signTx");
+    expect(c!.args).toEqual([
+      "testnet-10",
+      TX_JSON,
+      [
+        { inputIndex: 0, signType: "All" },
+        { inputIndex: 1, signType: "All" }
+      ]
+    ]);
+    expect(typeof out.returned).toBe("string");
+    expect(out.check.signatures).toEqual({ 0: `${SIG}01`, 1: `${SIG}01` });
+    // the account and network were read again right before and right after the signature
+    const methods = f.calls.map((x) => x.method);
+    const at = methods.indexOf("signTx");
+    expect(methods.slice(0, at)).toEqual(expect.arrayContaining(["getAccount", "getNetwork"]));
+    expect(methods.slice(at + 1)).toEqual(expect.arrayContaining(["getAccount", "getNetwork"]));
+    expect(f.calls.filter((x) => BROADCASTS.includes(x.method)), "a wallet never broadcasts for HardKAS").toEqual([]);
+  });
+
+  it("what Kastle returns is held to the same check: its fallback signature on an input HardKAS did not ask for, a changed output, a non-ALL sighash", async () => {
+    const sign = async (o: FakeOptions, req = request()) => {
+      const f = fakeWallet("kastle", o);
+      const s = await connectBrowserWallet("kastle", { networkId: "testnet-10", window: win("kastle", f) });
+      return settle(s.signTransaction(req));
+    };
+    // asked for input 0 only: Kastle's fallback signs input 1 too (its key owns it) — that is a change, refused
+    const fallback = await sign({}, request({ signInputs: [{ index: 0, sighashType: 1 }] }));
+    expect([fallback.code, /input 1/.test(fallback.message)]).toEqual(["WALLET_SIGNED_TRANSACTION_CHANGED", true]);
+    expect((await sign({ mutate: (tx) => (tx.outputs[0].value = "1") })).code).toBe("WALLET_SIGNED_TRANSACTION_CHANGED");
+    expect((await sign({ script: () => `41${SIG}81` })).code).toBe("WALLET_SIGNATURE_MISSING");
+  });
+
+  it("Kastle's opaque 'Unknown error' (TN10, 21-nov) is said to cover a declined popup, a failed signature and an expired request alike; other wallets keep the usual hint", async () => {
+    // forbole/kastle api/background/background-service.ts: a handler that rejects with anything but an Error — its popup's
+    // "User denied" (Cancel), "Failed to sign transaction: …", or its TIMEOUT object — reaches the page as "Unknown error"
+    const opaque = { duringSign: () => { throw new Error("Unknown error"); } };
+    const f = fakeWallet("kastle", opaque);
+    const s = await connectBrowserWallet("kastle", { networkId: "testnet-10", window: win("kastle", f) });
+    const r = await settle(s.signTransaction(request()));
+    expect(r.code).toBe("WALLET_REQUEST_REJECTED");
+    expect(r.message).toMatch(/kastle refused .*: Unknown error \(Kastle answers this same text when its popup is declined, when its popup fails to sign and when its request expires/);
+    expect(r.message).not.toMatch(/a locked wallet or a declined popup refuses at once/);
+    expect(r.message).toMatch(/Nothing was signed\.$/);
+    // a Kastle refusal that says what happened keeps the usual hint, and so does another wallet's "Unknown error"
+    const said = await settle((await connectBrowserWallet("kastle", { networkId: "testnet-10", window: win("kastle", fakeWallet("kastle", { duringSign: () => { throw new Error("User denied"); } })) })).signTransaction(request()));
+    expect(said.message).toMatch(/User denied \(a locked wallet or a declined popup refuses at once\)/);
+    const kw = await settle((await connectBrowserWallet("kasware", { networkId: "testnet-10", window: win("kasware", fakeWallet("kasware", opaque)) })).signTransaction(request()));
+    expect(kw.message).toMatch(/Unknown error \(a locked wallet or a declined popup refuses at once\)/);
+  });
+
+  it("a version-1 payment is refused before Kastle is asked (its signTx treats every non-version-0 transaction as a covenant one)", async () => {
+    const f = fakeWallet("kastle");
+    const s = await connectBrowserWallet("kastle", { networkId: "testnet-10", window: win("kastle", f) });
+    const v1 = JSON.stringify({ ...unsignedTx(), version: 1 });
+    const r = await settle(s.signTransaction(request({ txJsonString: v1 })));
+    expect(r.code).toBe("WALLET_COVENANT_SIGNING_UNSUPPORTED");
+    expect(signCalls(f)).toEqual([]);
+  });
+
+  it("an older Kastle without signTx: WALLET_METHOD_UNAVAILABLE naming the methods on its PROTOTYPE (not 'no method')", async () => {
+    const f = fakeWallet("kastle", { without: ["signTx"] });
+    const s = await connectBrowserWallet("kastle", { networkId: "testnet-10", window: win("kastle", f) });
+    const r = await settle(s.signTransaction(request()));
+    expect(r.code).toBe("WALLET_METHOD_UNAVAILABLE");
+    expect(r.message).toMatch(/kastle offers no signTx\(\)/);
+    expect(r.message).toMatch(/getAccount, getNetwork/);
+    expect(r.message).toMatch(/signAndBroadcastTx/);
+    expect(r.message).not.toMatch(/no method\)/);
+    expect(describeBrowserWallet("kastle", win("kastle", fakeWallet("kastle")))).toEqual(expect.arrayContaining(["connect", "getAccount", "getNetwork", "signMessage", "signTx"]));
+  });
+});
+
+describe("BETA-FIX W1 · Kaspire's and Kastle's own getNetwork() is the network evidence; mismatch and mainnet refused", () => {
+  it("Kaspire saying testnet-11, mainnet, or a network HardKAS cannot read: refused at connect", async () => {
+    const at = async (network: string) => (await settle(connectBrowserWallet("kaspire", { networkId: "testnet-10", window: win("kaspire", fakeWallet("kaspire", { network })) }))).code;
+    expect(await at("testnet-11")).toBe("WALLET_NETWORK_MISMATCH");
+    expect(await at("mainnet")).toBe("MAINNET_SIGNING_DISABLED");
+    expect(await at("igra-testnet")).toBe("WALLET_NETWORK_UNKNOWN");
+    expect(await at("testnet-10")).toBe("RESOLVED");
+  });
+
+  it("Kaspire's network changed after connect (no event): the re-read before the request refuses it, signPskt is never called", async () => {
+    const f = fakeWallet("kaspire");
+    const s = await connectBrowserWallet("kaspire", { networkId: "testnet-10", window: win("kaspire", f) });
+    f.state.network = "testnet-11";
+    expect((await settle(s.signTransaction(request()))).code).toBe("WALLET_NETWORK_MISMATCH");
+    expect(signCalls(f)).toEqual([]);
+    expect(s.active).toBe(false);
+  });
+
+  it("Kastle: connect() took the session's network but getNetwork() says another, or mainnet: refused; an older Kastle without getNetwork keeps the 'connect' evidence", async () => {
+    const at = async (network: string) => (await settle(connectBrowserWallet("kastle", { networkId: "testnet-10", window: win("kastle", fakeWallet("kastle", { network })) }))).code;
+    expect(await at("testnet-11")).toBe("WALLET_NETWORK_MISMATCH");
+    expect(await at("mainnet")).toBe("MAINNET_SIGNING_DISABLED");
+    expect(await at("igra-testnet")).toBe("WALLET_NETWORK_UNKNOWN");
+    const s = await connectBrowserWallet("kastle", { networkId: "testnet-10", window: win("kastle", fakeWallet("kastle")) });
+    expect(s.networkEvidence).toBe("wallet");
+    const old = await connectBrowserWallet("kastle", { networkId: "testnet-10", window: win("kastle", fakeWallet("kastle", { without: ["getNetwork"] })) });
+    expect(old.networkEvidence).toBe("connect");
+  });
+
+  it("Kastle switched network after connect (no event): refused before signTx, the session dropped", async () => {
+    const f = fakeWallet("kastle");
+    const s = await connectBrowserWallet("kastle", { networkId: "testnet-10", window: win("kastle", f) });
+    f.state.network = "mainnet";
+    expect((await settle(s.signTransaction(request()))).code).toBe("MAINNET_SIGNING_DISABLED");
+    expect(signCalls(f)).toEqual([]);
+    expect(s.active).toBe(false);
   });
 });
 

@@ -180,10 +180,11 @@ export { COVENANT_LINEAGE_SCOPE, collectCovenantTransactions, reconstructCovenan
 // R3-F · CLTV: what a contract entry's `require(tx.daa >= x)` / `require(tx.time >= t)` ask of a spend's lock time
 export { assertLockTimeMeetsContractEntry, contractEntryLockTimeRequirements, type ContractEntryLockTimeRequirement } from "./contract-lock-time.js";
 // R3-A3 · KCC-20 tokens on a node through the v1 engine (deploy, transfer, balance)
-export { HardkasKcc20, KCC20_DEFAULT_OUTPUT_SOMPI, KCC20_SDK_SCOPE, kcc20ProgramFacts, kcc20StateOfProgramState } from "./kcc20.js";
+export { HardkasKcc20, KCC20_DEFAULT_OUTPUT_SOMPI, KCC20_SDK_SCOPE, kcc20ProgramFacts, kcc20StateOfProgramState, kcc20TransferFeeSource } from "./kcc20.js";
 export type {
   Kcc20Balance,
   Kcc20DeployOptions,
+  Kcc20FeeSource,
   Kcc20Holder,
   Kcc20Holding,
   Kcc20Holdings,
@@ -192,6 +193,7 @@ export type {
   Kcc20SignOptions,
   Kcc20TransferOptions
 } from "./kcc20.js";
+export * from "./escrow-core/index.js";
 // ESCROW-LIFECYCLE-1: sdk.escrow, and the lifecycle rules the dev server's escrow routes share with it
 export {
   HardkasEscrow,

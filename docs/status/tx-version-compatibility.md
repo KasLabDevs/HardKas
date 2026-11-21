@@ -56,7 +56,8 @@ export interface TxBuildRequest {
 }
 ```
 
+The interface above is abridged (it also has `payloadBytes`, `virtualDaaScore`, `coinbaseMaturity`, `networkId`,
+`feeOverrideSompi` and more: `packages/tx-builder/src/index.ts`).
+
 ## Fee Policy
-- `"legacy"`: Forces V0 heuristic mass calculation.
-- `"toccata"`: Forces V1 Toccata fee model estimation (uses `computeBudget`, `storageMass`).
-- `"auto"`: Selects `toccata` if `version >= 1` or if the connected RPC node signals Toccata capabilities.
+`feePolicy` is declared but read by nothing: the three values change nothing in the plan or its fee.

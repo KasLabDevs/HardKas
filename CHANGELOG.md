@@ -1,3 +1,18 @@
+## [Unreleased]
+
+### Changed
+- **Fewer published packages (22 → 18):** `@hardkas/escrow` is part of `@hardkas/sdk` (`createEscrow`, `escrowResolution`, `ESCROW_SOURCE`… are exported by the SDK), `@hardkas/jobs` of `@hardkas/toolkit` (`JobRunner`, `JobStoreJson`…), `@hardkas/sessions` of `@hardkas/core`, and `@hardkas/node-orchestrator` of `@hardkas/node-runner`. The code is the same; import it from its new package. The four old packages get no new version; their earlier versions stay on npm.
+- **`hardkas node` and `hardkas pskt` are hidden:** `node` is deprecated in favour of `hardkas localnet`; every `pskt` operation is unavailable in this build. Both still run when called.
+- **The `full-stack-demo` template** no longer declares `@hardkas/jobs` (it never imported it).
+- **Dependencies nobody imported are gone:** `@hardkas/cli` no longer declares `@hardkas/bridge-local` or `zod`, and `@hardkas/sdk` no longer declares `@hardkas/simulator`. The native PSKT addon's platform manifest is marked private, so it cannot be published by accident.
+
+### Security
+- **Mainnet, a permanent rule** (independent of the mainnet lockdown, which still refuses first): `tx send` never sends a mainnet transaction with `--yes` or from a non-interactive terminal (`MAINNET_CONFIRMATION_REQUIRED`). `@hardkas/core` exports it as `assertMainnetInteractiveConfirmation`, and the existing refusal of plaintext mainnet keys as `assertMainnetNoPlaintext` (`PLAINTEXT_MAINNET_FORBIDDEN`).
+
+### Fixed
+- **The documentation** was checked line by line against the code: pages that said a shipped feature was missing or blocked, examples that did not compile or run as written, package READMEs (shown on npm) that described code that does not exist, and pages of the documentation site that showed an "Unknown capability" box.
+- **`hardkas doctor` no longer waits forever on a Docker that does not answer.** Its `docker info`, and the read-only checks of the node runner and of `localnet` (`docker version`, `docker inspect`), now give up after 20 s (`DOCKER_PROBE_TIMEOUT_MS`, exported by `@hardkas/node-runner`). A Docker that did not answer is reported as unreachable (`DOCKER_UNREACHABLE`, or `DOCKER_UNAVAILABLE` from the runner), and the doctor says it did not answer. Operations such as `docker run` keep no limit.
+
 ## [0.13.0-rc.3] - 2026-11-15 - Release candidate
 
 - Synchronize the coordinated package versions, runtime identity, scaffolds and current documentation to `0.13.0-rc.3` ([release notes](docs/release/0.13.0-rc.3-notes.md)).

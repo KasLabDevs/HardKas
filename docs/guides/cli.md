@@ -1,8 +1,8 @@
 # CLI Guide
 
 The HardKAS CLI (`hardkas` or `npx hardkas`) is the main local developer
-interface. The generated command reference currently exposes 197 commands, but
-the happy path is intentionally small.
+interface. The generated [command reference](../reference/cli.md) lists every
+command, but the happy path is intentionally small.
 
 ## 1. Local Transaction Lifecycle
 
@@ -27,11 +27,13 @@ hardkas tx send tx-signed.json --network simulated --yes
 ```bash
 hardkas accounts list
 hardkas accounts balance alice --network simulated
-hardkas accounts fund alice --amount 1000
+hardkas simulator fund alice --amount 1000
 ```
 
-`accounts fund` is for development networks. Do not use HardKAS as a production
-mainnet wallet.
+`simulator fund` adds synthetic UTXOs on the simulated ledger. On simnet, fund a
+real account with `hardkas localnet fund <account>` (mined, or with `--treasury`
+from the localnet Treasury). `accounts fund` is deprecated. Mainnet is locked
+down: HardKAS is not a mainnet wallet.
 
 ## 3. Artifacts
 
@@ -42,32 +44,39 @@ hardkas artifact lineage tx-signed.json
 hardkas artifact explain tx-signed.json
 ```
 
-Artifacts are the audit boundary between planning, signing, sending, replay, and
-dashboard visibility.
+Artifacts are the audit boundary between planning, signing, sending and replay. An artifact's id is its
+`contentHash`; [Artifact Auditing](./artifact-auditing.md) covers `verify`, `explain` and `why`.
 
 ## 4. Query Store
 
+The query store is a rebuildable SQLite projection (`.hardkas/store.db`). No
+transaction command creates it: build it first, then index new artifacts with
+`sync`.
+
 ```bash
+hardkas query store rebuild
 hardkas query store sync
 hardkas query store doctor
 hardkas query artifacts list
 hardkas query lineage chain <artifact_id>
 ```
 
-The query store is a rebuildable SQLite projection. If it drifts, rebuild it
-from canonical filesystem artifacts.
-
-```bash
-hardkas query store rebuild
-```
+If it drifts, rebuild it from the canonical filesystem artifacts with
+`hardkas query store rebuild` again. Every query command and filter is in the
+[Query Store guide](./query-store.md).
 
 ## 5. Replay And Diagnostics
 
 ```bash
-hardkas replay verify
+hardkas replay verify <receipt>
 hardkas verify
 hardkas doctor
 ```
 
+`replay verify` needs a simulated receipt: its artifact id, or a path such as
+`.hardkas/artifacts/receipts/txReceipt-<id>.json`. A real-node send records a
+`TxSubmission`, not a receipt, and is not replayed.
+
 Use `verify` for workspace-level integrity and `artifact verify --strict`
-for a specific artifact or directory.
+for a specific artifact or directory; neither replays anything
+([Replay Verification](./replay-verification.md), [Debugging](./debugging.md)).

@@ -15,7 +15,9 @@ import { HardkasSchemas } from "@hardkas/artifacts";
 // "stopped" / "not found" that was not observed. With --json the result is one envelope on stdout.
 
 export function registerNodeCommands(program: Command) {
-  const nodeCmd = program.command("node").description("Kaspa node management (Docker)");
+  const nodeCmd = program
+    .command("node", { hidden: true })
+    .description("Legacy Docker node management (deprecated: prefer `hardkas localnet`)");
 
   nodeCmd
     .command("start")

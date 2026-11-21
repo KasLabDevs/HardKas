@@ -4,8 +4,8 @@
 > `node_modules`, offline. Do not edit by hand: `pnpm check:licenses` fails when this report was made from
 > another lockfile, and when a published package requires a GPL, AGPL, LGPL or unknown license.
 
-- Lockfile sha256 (LF): `c875841ed887cf8de2b02068803fc2eacc12ce393fd5dd8e2a505bd7c3e13c06`
-- Published packages: 22 (all MIT). Third-party packages in their production trees: 286.
+- Lockfile sha256 (LF): `a1f074e37ffed006d8882aa77aa4372dd4a5b389edbe5b599e69514d78b5c3d7`
+- Published packages: 18 (all MIT). Third-party packages in their production trees: 286.
 - Required: reached through `dependencies` (and required peers). Optional: reached only through
   `optionalDependencies` or optional peers; a consumer gets them only by installing them.
 - A package that is optional and not installed on the machine that wrote this report (a platform binary) has
@@ -40,17 +40,13 @@ installing the SDK does not install it, and without it the Groth16 verifier repo
 | `@hardkas/config` | MIT | 5 | 2 | 0 |
 | `@hardkas/core` | MIT | 4 | 2 | 0 |
 | `@hardkas/dev-server` | MIT | 62 | 37 | 9 |
-| `@hardkas/escrow` | MIT | 4 | 2 | 0 |
-| `@hardkas/jobs` | MIT | 0 | 0 | 0 |
 | `@hardkas/kaspa-rpc` | MIT | 5 | 2 | 0 |
 | `@hardkas/localnet` | MIT | 5 | 2 | 0 |
-| `@hardkas/node-orchestrator` | MIT | 4 | 2 | 0 |
 | `@hardkas/node-runner` | MIT | 28 | 2 | 0 |
 | `@hardkas/observability` | MIT | 0 | 0 | 0 |
 | `@hardkas/query` | MIT | 4 | 2 | 0 |
 | `@hardkas/query-store` | MIT | 4 | 2 | 0 |
 | `@hardkas/sdk` | MIT | 34 | 36 | 9 |
-| `@hardkas/sessions` | MIT | 4 | 2 | 0 |
 | `@hardkas/simulator` | MIT | 5 | 2 | 0 |
 | `@hardkas/testing` | MIT | 36 | 188 | 9 |
 | `@hardkas/toolkit` | MIT | 11 | 2 | 0 |
@@ -130,9 +126,9 @@ installing the SDK does not install it, and without it the Groth16 verifier repo
 | `@jridgewell/sourcemap-codec` | 1.5.5 | MIT | 0 | 2 |
 | `@jridgewell/trace-mapping` | 0.3.31 | MIT | 0 | 2 |
 | `@napi-rs/lzma-linux-x64-gnu` | 1.5.1 | (not read) | 0 | 2 |
-| `@noble/curves` | 1.9.1 | MIT | 20 | 0 |
-| `@noble/hashes` | 1.8.0 | MIT | 20 | 0 |
-| `@noble/hashes` | 2.2.0 | MIT | 20 | 0 |
+| `@noble/curves` | 1.9.1 | MIT | 17 | 0 |
+| `@noble/hashes` | 1.8.0 | MIT | 17 | 0 |
+| `@noble/hashes` | 2.2.0 | MIT | 17 | 0 |
 | `@rollup/rollup-android-arm-eabi` | 4.62.4 | (not read) | 0 | 2 |
 | `@rollup/rollup-android-arm64` | 4.62.4 | (not read) | 0 | 2 |
 | `@rollup/rollup-darwin-arm64` | 4.62.4 | (not read) | 0 | 2 |
@@ -161,7 +157,7 @@ installing the SDK does not install it, and without it the Groth16 verifier repo
 | `@sec-ant/readable-stream` | 0.4.1 | MIT | 5 | 0 |
 | `@sindresorhus/merge-streams` | 4.0.0 | MIT | 5 | 0 |
 | `@types/estree` | 1.0.9 | MIT | 0 | 2 |
-| `@types/node` | 22.20.1 | MIT | 0 | 20 |
+| `@types/node` | 22.20.1 | MIT | 0 | 17 |
 | `@types/node` | 26.1.2 | MIT | 0 | 2 |
 | `@vitest/expect` | 2.1.9 | MIT | 0 | 2 |
 | `@vitest/mocker` | 2.1.9 | MIT | 0 | 2 |
@@ -323,7 +319,7 @@ installing the SDK does not install it, and without it the Groth16 verifier repo
 | `tryer` | 1.0.1 | MIT | 0 | 4 |
 | `tsx` | 4.23.7 | MIT | 1 | 0 |
 | `underscore` | 1.13.8 | MIT | 0 | 4 |
-| `undici-types` | 6.21.0 | MIT | 0 | 20 |
+| `undici-types` | 6.21.0 | MIT | 0 | 17 |
 | `undici-types` | 8.3.0 | MIT | 0 | 2 |
 | `undici` | 7.30.2 | MIT | 0 | 2 |
 | `unicorn-magic` | 0.3.0 | MIT | 5 | 0 |
@@ -345,4 +341,4 @@ installing the SDK does not install it, and without it the Groth16 verifier repo
 | `xml-name-validator` | 5.0.0 | Apache-2.0 | 0 | 2 |
 | `xmlchars` | 2.2.0 | MIT | 0 | 2 |
 | `yoctocolors` | 2.2.0 | MIT | 5 | 0 |
-| `zod` | 4.6.7 | MIT | 20 | 0 |
+| `zod` | 4.6.7 | MIT | 17 | 0 |

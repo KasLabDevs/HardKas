@@ -184,3 +184,59 @@ export function assertMainnetConnectionsDisabled(networkIds: ReadonlyArray<unkno
   if (!seen.some(isMainnetNetworkId)) return;
   throw mainnetConnectionDisabledError(context, { networks: [...new Set(seen)] });
 }
+
+/** Permanent guard: mainnet transactions must never accept `--yes` or non-interactive execution. */
+export const MAINNET_CONFIRMATION_REQUIRED = "MAINNET_CONFIRMATION_REQUIRED" as const;
+
+/**
+ * Permanent mainnet safety rule (not tied to MAINNET_TRANSACTIONS_ENABLED): even if mainnet transactions are enabled
+ * in a future release, non-interactive execution (`--yes` or non-TTY stdin) is refused on mainnet so AI agents or
+ * unattended scripts cannot sign or broadcast real funds without explicit human confirmation.
+ * Call after `assertMainnetTransactionsDisabled` so the lockdown refusal stays first while mainnet is disabled.
+ */
+export function assertMainnetInteractiveConfirmation(
+  networkIds: ReadonlyArray<unknown>,
+  opts: { yes?: boolean; isTTY?: boolean },
+  context?: string
+): void {
+  const seen = networkIds.filter((n): n is string => typeof n === "string" && n.trim() !== "");
+  if (!seen.some(isMainnetNetworkId)) return;
+  if (opts.yes === true) {
+    throw new HardkasError(
+      MAINNET_CONFIRMATION_REQUIRED,
+      `Non-interactive confirmation (--yes) is forbidden on mainnet${context ? ` (${context})` : ""}: ` +
+        `mainnet transactions require explicit interactive human confirmation.`,
+      { metadata: { networks: [...new Set(seen)], reason: "yes_flag" } }
+    );
+  }
+  if (opts.isTTY === false) {
+    throw new HardkasError(
+      MAINNET_CONFIRMATION_REQUIRED,
+      `Non-interactive stdin (no TTY) is forbidden on mainnet${context ? ` (${context})` : ""}: ` +
+        `mainnet transactions require an interactive terminal confirmation.`,
+      { metadata: { networks: [...new Set(seen)], reason: "non_tty" } }
+    );
+  }
+}
+
+/** Permanent guard: plaintext private keys are never allowed on mainnet. */
+export const PLAINTEXT_MAINNET_FORBIDDEN = "PLAINTEXT_MAINNET_FORBIDDEN" as const;
+
+/**
+ * Permanent mainnet safety rule (not tied to MAINNET_TRANSACTIONS_ENABLED): `--unsafe-plaintext` is never permitted
+ * for mainnet accounts. Call after `assertMainnetTransactionsDisabled` while the lockdown holds.
+ */
+export function assertMainnetNoPlaintext(
+  networkIds: ReadonlyArray<unknown>,
+  unsafePlaintext: boolean,
+  context?: string
+): void {
+  if (!unsafePlaintext) return;
+  const seen = networkIds.filter((n): n is string => typeof n === "string" && n.trim() !== "");
+  if (!seen.some(isMainnetNetworkId)) return;
+  throw new HardkasError(
+    PLAINTEXT_MAINNET_FORBIDDEN,
+    `Plaintext keys (--unsafe-plaintext) are forbidden on mainnet${context ? ` (${context})` : ""}.`,
+    { metadata: { networks: [...new Set(seen)] } }
+  );
+}

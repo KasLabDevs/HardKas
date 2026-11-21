@@ -47,20 +47,16 @@
   "dependencies": {
     "@hardkas/accounts": "workspace:*",
     "@hardkas/artifacts": "workspace:*",
-    "@hardkas/bridge-local": "workspace:*",
     "@hardkas/config": "workspace:*",
     "@hardkas/core": "workspace:*",
     "@hardkas/dev-server": "workspace:*",
-    "@hardkas/escrow": "workspace:*",
     "@hardkas/kaspa-rpc": "workspace:*",
     "@hardkas/localnet": "workspace:*",
-    "@hardkas/node-orchestrator": "workspace:*",
     "@hardkas/node-runner": "workspace:*",
     "@hardkas/observability": "workspace:*",
     "@hardkas/query": "workspace:*",
     "@hardkas/query-store": "workspace:*",
     "@hardkas/sdk": "workspace:*",
-    "@hardkas/sessions": "workspace:*",
     "@hardkas/simulator": "workspace:*",
     "@hardkas/testing": "workspace:*",
     "@hardkas/tx-builder": "workspace:*",
@@ -70,7 +66,6 @@
 
     "fflate": "^0.8.3",
     "picocolors": "^1.1.1",
-    "zod": "^4.6.7",
     "tsx": "^4.19.2"
   },
   "devDependencies": {

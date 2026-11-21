@@ -17,10 +17,11 @@ import {
   RpcConnectionError,
   RpcError,
   RpcNotFoundError,
+  RpcResponseTooLargeError,
   RpcTimeoutError
 } from "../errors.js";
 import { toOfficialTransaction, toWire, u64FieldsToBigint } from "./wire.js";
-import { useWsWebSocketForSdk } from "./node-websocket-compat.js";
+import { oversizedReplyMark, oversizedReplySince, useWsWebSocketForSdk } from "./node-websocket-compat.js";
 import { canonicalNetworkId, decideBroadcastIdentity, namedNetwork } from "../broadcast-identity.js";
 
 /** MAINNET-PERIMETER-1: the official methods that put a transaction on the network. */
@@ -102,7 +103,9 @@ export function nodeMessage(raw: string): string {
   return m ? m[1]! : raw;
 }
 
-const NOT_CONNECTED = /WebSocket is not connected|Unable to connect|not connected/i;
+// RPC-RESPONSE-TOO-LARGE-1: "WebSocket disconnected" is the official client's word for a connection that went away
+// with a request pending (workflow-rpc's Disconnect); it used to fall through to a codeless, retriable RpcError.
+const NOT_CONNECTED = /WebSocket is not connected|Unable to connect|not connected|WebSocket disconnected/i;
 
 function withTimeout<T>(promise: Promise<T>, ms: number, onTimeout: () => Error): Promise<T> {
   let timer: ReturnType<typeof setTimeout> | undefined;
@@ -481,6 +484,8 @@ export class OfficialRpcSession {
       }
     }
     let wire: unknown;
+    // RPC-RESPONSE-TOO-LARGE-1: what the socket refused for its size from now on decides how a disconnect is typed
+    const oversizedMark = oversizedReplyMark();
     try {
       const result = await withTimeout(
         Promise.resolve(fn.call(client, request)),
@@ -495,6 +500,13 @@ export class OfficialRpcSession {
       }
       if (e instanceof RpcError) throw e;
       const raw = messageOf(e);
+      // RPC-RESPONSE-TOO-LARGE-1: the connection went away because the socket refused an answer on it for its size
+      // (close 1009). Typed, never retried; the dead client is dropped (the official client would reconnect by itself)
+      // and the next call opens a new connection.
+      if (oversizedReplySince(oversizedMark, this.url)) {
+        await this.drop(client);
+        throw new RpcResponseTooLargeError({ method: name, endpoint: redactUrlCredentials(this.url) });
+      }
       if (NOT_CONNECTED.test(raw)) {
         // Drop the dead client (the next call opens a new one) and release what it still holds.
         if (this.client === client) this.client = null;

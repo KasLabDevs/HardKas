@@ -1,11 +1,13 @@
-// INT9 · D4: the CLI pages of apps/docs (docs/reference/cli/*.md) and their inventory (docs-data/cli-command-inventory.json)
+// INT9 · D4: the CLI pages of apps/docs (reference/cli/*.md) and their inventory (docs-data/cli-command-inventory.json)
 // come from the Commander tree of packages/cli/src, as docs/reference/cli.md does (pnpm docs:generate-cli). This one
 // script both writes them and checks them, so no gate can pass while they drift:
 //   pnpm docs:generate-apps-cli   (tsx apps/docs/scripts/cli-reference.mts --write)
 //   pnpm docs:check-apps-cli      (tsx apps/docs/scripts/cli-reference.mts --check)
 // It replaces apps/docs/scripts/extract-cli.ts + build-cli-reference.ts and packages/cli/scripts/extract-cli.ts, which
-// were run by hand and nothing checked. The output format is theirs, unchanged. Every .md file of docs/reference/cli is
+// were run by hand and nothing checked. The output format is theirs, unchanged. Every .md file of reference/cli is
 // generated: one the tree no longer produces is stale (removed by --write, reported by --check).
+// BETA-FIX W4: the pages moved from apps/docs/docs/reference/cli to apps/docs/reference/cli (their own docs instance,
+// served at /docs/reference/cli/ as before); apps/docs holds no hand-written page any more.
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -13,7 +15,7 @@ import type { Command } from "commander";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(here, "../../..");
-const DOCS_DIR = path.resolve(here, "../docs/reference/cli");
+const DOCS_DIR = path.resolve(here, "../reference/cli");
 const INVENTORY = path.resolve(here, "../docs-data/cli-command-inventory.json");
 
 interface InventoryEntry {
@@ -86,7 +88,10 @@ sidebar_position: 1
 
 # HardKAS CLI Reference
 
-Welcome to the definitive structural and semantic reference for the HardKAS command-line interface.
+These pages are generated from the Commander command tree of \`packages/cli\` by \`pnpm docs:generate-apps-cli\`, and
+\`pnpm docs:check-apps-cli\` fails when one no longer matches it: nothing here is written by hand. Hidden commands
+(internal, unavailable or disabled ones) are not listed. The same reference on one page is
+[docs/reference/cli.md](https://github.com/KasLabDevs/HardKas/blob/develop/docs/reference/cli.md) in the repository.
 
 ## Map of the CLI
 
@@ -106,9 +111,10 @@ Every command page is divided into two distinct boundaries to prevent drift:
 ### Artifact Handles (Identity Contract)
 When a command accepts an artifact identifier (e.g. \`hardkas explain <artifact>\`), you must provide either:
 1. An explicit **filepath** (e.g., \`./.hardkas/artifacts/plans/my-plan.json\`)
-2. The exact canonical **artifactId** (a 64-character hex string)
+2. The exact canonical **artifactId** (a 64-character hex string: an artifact's artifactId is its contentHash)
 
-Do **not** use the network \`txId\` as a generic locator. It will fail.
+A network \`txId\` is not an artifact handle: a bare txId is refused (\`NAMESPACE_REQUIRED\`). Name it with the
+command's own option instead, for example \`hardkas explain --tx <txId>\`.
 
 ### Side Effect Notation
 Commands that mutate your local workspace, broadcast to a network, or expose sensitive material (like private keys) are explicitly marked in the **Side Effects** semantic block. If a command does not have this block, it is considered a read-only operation.

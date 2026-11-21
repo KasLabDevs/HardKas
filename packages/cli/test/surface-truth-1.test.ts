@@ -511,7 +511,8 @@ describe("SURFACE-TRUTH-1 · BEFORE · what the CLI claims about itself and its 
   // ───────────────────────────── ST-D · published reference ─────────────────────────────
   describe("ST-D · docs", () => {
     it("the CLI reference that says it is generated from the command tree names only registered commands and options", () => {
-      const file = path.join(repoRoot, "apps", "docs", "docs", "reference", "cli.md");
+      // BETA-FIX W4: the hand-written apps/docs page is gone; the generated index of the site's CLI reference says it.
+      const file = path.join(repoRoot, "apps", "docs", "reference", "cli", "index.md");
       const text = fs.readFileSync(file, "utf8");
       if (!/generated from the Commander command tree/i.test(text)) return;
       const refs = [

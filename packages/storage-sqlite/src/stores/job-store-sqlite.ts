@@ -1,5 +1,5 @@
 // no static import
-import type { JobStore, JobRecord } from '@hardkas/jobs';
+import type { JobStore, JobRecord } from '@hardkas/toolkit';
 
 export class JobStoreSqlite implements JobStore {
     constructor(private db: any) {}

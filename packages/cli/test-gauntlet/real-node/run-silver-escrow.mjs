@@ -1,6 +1,6 @@
 // Escrow (SilverScript v1, P2SH) end to end on the canonical localnet.
 //
-//   @hardkas/escrow createEscrow (managed silverc) -> P2SH funding (SDK fee)
+//   createEscrow from @hardkas/sdk (managed silverc) -> P2SH funding (SDK fee)
 //   -> refundBuyer: one draft, signed separately by buyer and arbiter
 //   -> finalized through the canonical ABI -> rusty-kaspad accepts
 //
@@ -13,8 +13,8 @@ import path from "node:path";
 import { loadManagedKaspaWasmSync } from "@hardkas/core";
 import { requireNodeIdentity } from "@hardkas/node-runner";
 import { buildScriptFunding, finalizeSilverSpend, prepareSilverSpend, signSilverSpend } from "@hardkas/accounts";
-// The CLI does not depend on @hardkas/escrow; load the workspace package's build.
-const { createEscrow, escrowResolution, ESCROW_SOURCE } = await import(new URL("../../../escrow/dist/index.js", import.meta.url).href);
+// The escrow compiler and its resolution live in @hardkas/sdk (it absorbed @hardkas/escrow), a dependency of the CLI.
+import { createEscrow, escrowResolution, ESCROW_SOURCE } from "@hardkas/sdk";
 import {
   FIXTURE_ADDRESS,
   FIXTURE_KEY,

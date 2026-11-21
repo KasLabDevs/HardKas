@@ -22,6 +22,21 @@ export interface AccountsConsolidateOptions {
 }
 
 export async function runAccountsConsolidate(options: AccountsConsolidateOptions) {
+  // BETA-FIX W2 · AUX-11: executing needs --yes (on every network, as this command always required), refused with tx
+  // send's code and envelope BEFORE the SDK is opened, any node is read, any password asked or anything planned (it used
+  // to be a plain error after the node's UTXOs were read). Mainnet is refused before that (MAINNET_BROADCAST_DISABLED).
+  if (options.execute && !options.yes) {
+    const { refuseMainnetBroadcast, workspaceConfigForGuard, workspaceNetworkOf } = await import("../mainnet-guard.js");
+    const config = await workspaceConfigForGuard(process.cwd());
+    refuseMainnetBroadcast(config, [options.network], "accounts consolidate", options.network === undefined);
+    const { declineUnconfirmedBroadcast } = await import("../broadcast-confirmation.js");
+    declineUnconfirmedBroadcast({
+      command: "accounts consolidate",
+      network: String(options.network ?? (config as any)?.defaultNetwork ?? workspaceNetworkOf(config) ?? "simnet"),
+      json: options.json,
+      nothingDone: "Nothing was read, planned, signed, broadcast or written (--execute broadcasts: without --yes it is refused, on every network)."
+    });
+  }
   // WORKSPACE-AUTHORITY-2 (closeout): the SDK instance is opened on the network the command works on — an instance is
   // never re-pointed by a per-call option, so `--network` decides at open (as `tx send` does), else the workspace's
   // execution contract.
@@ -244,11 +259,7 @@ async function consolidate(options: AccountsConsolidateOptions, sdk: Hardkas, cr
     return;
   }
 
-  if (options.execute && !options.yes) {
-    throw new Error("Execution requires the --yes flag to confirm broadcast.");
-  }
-
-  // Execution
+  // Execution (an unconfirmed --execute was refused before anything was read: see the top of this function)
   const receipts: string[] = [];
 
   for (let i = 0; i < batches.length; i++) {
