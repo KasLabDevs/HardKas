@@ -10,6 +10,16 @@
 - **Mainnet, a permanent rule** (independent of the mainnet lockdown, which still refuses first): `tx send` never sends a mainnet transaction with `--yes` or from a non-interactive terminal (`MAINNET_CONFIRMATION_REQUIRED`). `@hardkas/core` exports it as `assertMainnetInteractiveConfirmation`, and the existing refusal of plaintext mainnet keys as `assertMainnetNoPlaintext` (`PLAINTEXT_MAINNET_FORBIDDEN`).
 
 ### Fixed
+- **`scripts/bump-version.mjs` is safe for a final version (x.y.z).** A final version such as `1.0.0` is also the version of
+  other things the repository cites (the pinned `silverc` v1.0.0, artifact and keystore formats, project templates,
+  third-party packages). The script now rewrites only HardKAS's own references to it: workspace manifests, `@hardkas/*`
+  specs, `hardkasVersion`, `HARDKAS_*VERSION`, and "HardKAS x.y.z" in prose. It lists every other occurrence it leaves,
+  for review. A pre-release version (`-beta.N`, `-rc.N`) is still replaced everywhere it stands alone.
+  - A version followed by a pre-release or build suffix (`1.0.0-alpha`, `release/<version>-notes`) is no longer
+    rewritten as if it were the same version; the second case broke the docs sidebar.
+  - The script no longer walks into other checkouts (`.worktrees/`, `.claude/worktrees/`), hidden tool folders or
+    build output.
+  - A dry run of 1.0.0 → 1.0.1 over the repository changes 1 file instead of 3,403.
 - **The documentation** was checked line by line against the code: pages that said a shipped feature was missing or blocked, examples that did not compile or run as written, package READMEs (shown on npm) that described code that does not exist, and pages of the documentation site that showed an "Unknown capability" box.
 - **`hardkas doctor` no longer waits forever on a Docker that does not answer.** Its `docker info`, and the read-only checks of the node runner and of `localnet` (`docker version`, `docker inspect`), now give up after 20 s (`DOCKER_PROBE_TIMEOUT_MS`, exported by `@hardkas/node-runner`). A Docker that did not answer is reported as unreachable (`DOCKER_UNREACHABLE`, or `DOCKER_UNAVAILABLE` from the runner), and the doctor says it did not answer. Operations such as `docker run` keep no limit.
 

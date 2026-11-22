@@ -229,7 +229,12 @@ export class HardkasLocalnet {
         ["inspect", "--format", "{{.State.Status}}|{{.Config.Image}}|{{.Name}}", name],
         {
           encoding: "utf8",
-          stdio: "pipe"
+          stdio: "pipe",
+          // AUDIT 2026-11-21 (DOCKER-PROBE-TIMEOUT-SDK): a Docker engine that does not answer left this synchronous call
+          // blocked forever (the whole process with it). The same 20 s limit as the CLI's probes
+          // (DOCKER_PROBE_TIMEOUT_MS, @hardkas/node-runner); past it the miner is reported not found, as on any error.
+          timeout: 20_000,
+          windowsHide: true
         }
       );
       const [status, detectedImage, rawName] = stdout.trim().split("|");
