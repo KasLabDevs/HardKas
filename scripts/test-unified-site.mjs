@@ -131,6 +131,11 @@ server.listen(PORT, async () => {
         if (!body.includes("/docs/concepts/execution-contract /docs/concepts/execution-worlds/ 301")) return "Missing a merged page's redirect";
         if (!body.includes("/docs/concepts/pskt/what-is-pskt /docs/concepts/pskt/ 301")) return "Missing a redirect of a page published before 21-nov";
         if (!body.includes("/docs/reference/sdk/core/* /docs/reference/sdk/generated/  301")) return "Missing the redirect of the old core SDK reference";
+        // SEO-2026-11-22: Cloudflare counts every rule after the first dynamic one as dynamic and applies 100 of them
+        const rules = body.split(/\r?\n/).filter((l) => l.trim() && !l.trim().startsWith("#"));
+        const firstDynamic = rules.findIndex((l) => /[*:]/.test(l.trim().split(/\s+/)[0]));
+        if (firstDynamic > -1 && rules.slice(firstDynamic).some((l) => !/[*:]/.test(l.trim().split(/\s+/)[0]))) return "A static rule comes after a dynamic one";
+        if (firstDynamic > -1 && rules.length - firstDynamic > 100) return "More than 100 rules from the first dynamic one on";
         return null;
       }
     },

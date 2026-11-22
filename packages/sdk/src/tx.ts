@@ -165,8 +165,8 @@ function endpointAuthority(rpc: unknown, explicit: string | undefined, operation
 
 /**
  * AUDIT 2026-11-21 · A2 (TX-PLAN-HEADER-1) · a v0 payment plan's header against its body. The header (`to.address`,
- * `amountSompi`) is what people and tools read; the outputs are what gets signed. With payment outputs present, their
- * sum must be `amountSompi` and `to.address` must be one of them. A plan with no payment outputs (a sweep or a
+ * `amountSompi`) is what people and tools read; the outputs are what gets signed. With payment outputs present, the
+ * first one must pay `to.address` exactly `amountSompi`. A plan with no payment outputs (a sweep or a
  * consolidation, whose value leaves as change) and every other schema are not this check's.
  */
 export function refusePlanHeaderMismatch(plan: any): void {
@@ -174,12 +174,14 @@ export function refusePlanHeaderMismatch(plan: any): void {
   const outputs: any[] = Array.isArray(plan.outputs) ? plan.outputs : [];
   if (outputs.length === 0) return;
   if (!outputs.every((o) => /^\d+$/.test(String(o?.amountSompi))) || !/^\d+$/.test(String(plan.amountSompi))) return;
-  const paid = outputs.reduce((s, o) => s + BigInt(o.amountSompi), 0n);
   const declared = BigInt(plan.amountSompi);
   const to = typeof plan.to?.address === "string" ? plan.to.address : undefined;
+  // The header names the FIRST payment output: the only one of a one-recipient plan, the first of a payment to several
+  // recipients (R4-T, `tx.plan({ outputs })`), whose other outputs `tx sign` lists one by one.
+  const first = outputs[0];
   const problems: string[] = [];
-  if (paid !== declared) problems.push(`it declares ${declared} sompi and its outputs pay ${paid}`);
-  if (to !== undefined && !outputs.some((o) => o?.address === to)) problems.push(`it declares the recipient ${to} and no output pays that address`);
+  if (BigInt(first.amountSompi) !== declared) problems.push(`it declares ${declared} sompi and its first output pays ${first.amountSompi}`);
+  if (to !== undefined && first?.address !== to) problems.push(`it declares the recipient ${to} and its first output pays ${String(first?.address)}`);
   if (problems.length === 0) return;
   throw new HardkasError(
     "TX_PLAN_HEADER_MISMATCH",
