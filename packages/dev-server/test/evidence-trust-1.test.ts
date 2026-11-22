@@ -33,7 +33,8 @@ describe("EVIDENCE-TRUST-1 · the dev server never prints its session token", ()
   });
 
   it("a request authenticated with ?token= does not print the token", async () => {
-    const r = await logged("/api/health?token=<token>");
+    // M3: the query token authenticates on the stream route only
+    const r = await logged("/api/artifacts/stream?token=<token>");
     expect(r.status, "precondition: the query token authenticates").toBe(200);
     const leaks = r.lines.filter((l) => l.includes(r.token)).map((l) => l.replace(r.token, `<${r.token.length}-char session token>`));
     expect(leaks, leaks.join(" | ")).toEqual([]);

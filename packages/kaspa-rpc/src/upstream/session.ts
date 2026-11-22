@@ -1,4 +1,4 @@
-import {
+﻿import {
   loadManagedKaspaWasmSync,
   redactUrlCredentials,
   redactUrlCredentialsInText,
@@ -27,7 +27,7 @@ import { canonicalNetworkId, decideBroadcastIdentity, namedNetwork } from "../br
 /** MAINNET-PERIMETER-1: the official methods that put a transaction on the network. */
 const BROADCAST_METHODS: ReadonlySet<string> = new Set(["submitTransaction", "submitTransactionReplacement"]);
 
-/** RPC-SUBMIT-SAFETY-1: whether a HardKAS method name (any spelling: `submitTransactionRequest`…) is a broadcast. */
+/** RPC-SUBMIT-SAFETY-1: whether a HardKAS method name (any spelling: `submitTransactionRequest`â€¦) is a broadcast. */
 export function isBroadcastMethod(method: string): boolean {
   return BROADCAST_METHODS.has(officialMethodName(method));
 }
@@ -62,7 +62,7 @@ export const officialRpcFactory: OfficialRpcFactory = (url) => {
 /**
  * wRPC endpoints are WebSocket URLs: http(s):// maps to ws(s)://, a bare host:port gets ws://. ENDPOINT-VALIDATION-1:
  * a malformed endpoint is refused here (NETWORK_ENDPOINT_INVALID), so no client is ever created for it and nothing
- * connects — it used to become `ws://<text>`.
+ * connects â€” it used to become `ws://<text>`.
  */
 export function toWrpcUrl(url: string): string {
   assertValidNodeEndpoint(url, "Kaspa RPC endpoint");
@@ -97,7 +97,7 @@ function messageOf(e: unknown): string {
   return e instanceof Error ? e.message : String(e);
 }
 
-/** The node's own text from an official remote error ("RPC Server (remote error) -> code:0 message:`…` data:None"). */
+/** The node's own text from an official remote error ("RPC Server (remote error) -> code:0 message:`â€¦` data:None"). */
 export function nodeMessage(raw: string): string {
   const m = /message:`([\s\S]*?)`/.exec(raw);
   return m ? m[1]! : raw;
@@ -140,13 +140,13 @@ export function rpcClientClosedError(url: string): RpcError {
 }
 
 /*
- * MAINNET TOTAL LOCKDOWN (@hardkas/core mainnet-policy) · the transport's share of the common layer. Every HardKAS
+ * MAINNET TOTAL LOCKDOWN (@hardkas/core mainnet-policy) Â· the transport's share of the common layer. Every HardKAS
  * client of a Kaspa node (JsonWrpcKaspaClient, KaspaWrpcClient, KaspaJsonRpcClient, the health checks, the SDK's own,
  * one a caller builds directly) goes through this session, so:
- *  1. a session whose caller uses the node AS a mainnet network refuses before an official client is even created —
+ *  1. a session whose caller uses the node AS a mainnet network refuses before an official client is even created â€”
  *     zero connections (MAINNET_CONNECTION_DISABLED);
  *  2. every connection the session opens (the first and each one the official client resumes on by itself) asks the
- *     node ONE question before anything else — getServerInfo — also when the caller expects no network; a node that
+ *     node ONE question before anything else â€” getServerInfo â€” also when the caller expects no network; a node that
  *     answers mainnet is released and refused (MAINNET_CONNECTION_DISABLED), whatever the caller expected, and nothing
  *     else is asked of it. That single identity exchange is the unavoidable limit when an endpoint is declared as
  *     another network (or given raw): only the node can say what it serves;
@@ -222,7 +222,7 @@ export class OfficialRpcSession {
 
   /** The connected official client; connects on first use and again after the node went away. */
   async connected(): Promise<OfficialRpcClientLike> {
-    // MAINNET TOTAL LOCKDOWN (1): used as a mainnet network → refused before any official client exists (0 connections)
+    // MAINNET TOTAL LOCKDOWN (1): used as a mainnet network â†’ refused before any official client exists (0 connections)
     if (!MAINNET_CONNECTIONS_ENABLED && isMainnetNetworkId(this.expectedNetworkId)) {
       throw mainnetConnectionError(redactUrlCredentials(this.url), { expected: this.expectedNetworkId });
     }
@@ -233,7 +233,7 @@ export class OfficialRpcSession {
       if (this.verifiedClient === this.client) return this.client;
       // the official client resumed on a new connection by itself (the node went away and something answers again
       // behind the URL): that connection is verified like any other before it is used (MAINNET TOTAL LOCKDOWN (2):
-      // also when the caller expects no network — the node's identity is asked again)
+      // also when the caller expects no network â€” the node's identity is asked again)
       if (!this.verifying) {
         const verifying: Promise<OfficialRpcClientLike> = this.reverify(this.client).finally(() => {
           if (this.verifying === verifying) this.verifying = null;
@@ -268,7 +268,7 @@ export class OfficialRpcSession {
       if (e instanceof RpcConnectionError) throw e;
       throw new RpcConnectionError(redacted(`Cannot connect to Kaspa RPC at ${this.url}. Is kaspad running with --rpclisten-json? (${messageOf(e)})`));
     }
-    // NODE-NETWORK-IDENTITY-1 / MAINNET TOTAL LOCKDOWN (2): every connection is identified before it is handed out —
+    // NODE-NETWORK-IDENTITY-1 / MAINNET TOTAL LOCKDOWN (2): every connection is identified before it is handed out â€”
     // against the expected network when there is one, and never mainnet in any case
     try {
       // registered before the question: a drop while it is asked is not lost
@@ -346,7 +346,12 @@ export class OfficialRpcSession {
     let info: any;
     try {
       const fn = client["getServerInfo"];
-      if (typeof fn !== "function") throw new Error("the client offers no getServerInfo");
+      if (typeof fn !== "function") {
+        // a client object with no getServerInfo is a test seam (the official client always has it): without an expected
+        // network there is nothing to contrast, as before; with one, it is UNKNOWN below
+        if (expected === undefined) return;
+        throw new Error("the client offers no getServerInfo");
+      }
       info = toWire(
         await withTimeout(
           Promise.resolve(fn.call(client, {})),
@@ -360,14 +365,15 @@ export class OfficialRpcSession {
       if (NOT_CONNECTED.test(raw)) {
         throw new RpcConnectionError(redacted(`Connection to Kaspa RPC at ${endpoint} was lost while its network was being verified: ${raw}`));
       }
-      if (expected === undefined) return;
+      // AUDIT 2026-11-21 Â· M4: fails closed with or without an expected network â€” a node that does not say which network it
+      // serves could be mainnet, and mainnet is not reachable at all
       throw new NodeNetworkIdentityError(
         "NODE_NETWORK_UNKNOWN",
         redacted(
           `The node at ${endpoint} did not say which network it serves (getServerInfo failed: ${nodeMessage(raw)}); ` +
-            `HardKAS expected ${expected} and uses nothing from it.`
+            `${expected !== undefined ? `HardKAS expected ${expected} and ` : "HardKAS "}uses nothing from it.`
         ),
-        { expected, endpoint }
+        { expected: expected ?? "a non-mainnet network", endpoint }
       );
     }
     const observed = info?.networkId;
@@ -376,12 +382,11 @@ export class OfficialRpcSession {
       throw mainnetConnectionError(endpoint, { expected, observed });
     }
     if (typeof observed !== "string" || observed.trim() === "" || observed === "undefined") {
-      if (expected === undefined) return;
       throw new NodeNetworkIdentityError(
         "NODE_NETWORK_UNKNOWN",
         `The node at ${endpoint} did not say which network it serves (getServerInfo has no networkId); ` +
-          `HardKAS expected ${expected} and uses nothing from it.`,
-        { expected, endpoint }
+          `${expected !== undefined ? `HardKAS expected ${expected} and ` : "HardKAS "}uses nothing from it.`,
+        { expected: expected ?? "a non-mainnet network", endpoint }
       );
     }
     if (expected === undefined) return;
@@ -443,7 +448,7 @@ export class OfficialRpcSession {
   /** One RPC call by HardKAS method name; the result is plain JSON data in the node's wire shape. */
   async request<T = unknown>(method: string, params?: unknown, timeoutMs: number = this.timeoutMs): Promise<T> {
     const name = officialMethodName(method);
-    // TX-SEND-BLOCKED-OUTCOME-1: for a submission, everything up to handing the request to the transport is local — a
+    // TX-SEND-BLOCKED-OUTCOME-1: for a submission, everything up to handing the request to the transport is local â€” a
     // failure there means the transaction certainly never left this process, which is not the same as a lost answer.
     const isSubmit = name === "submitTransaction";
     const notSent = (stage: string, e: unknown) =>

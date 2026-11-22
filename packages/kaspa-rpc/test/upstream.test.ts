@@ -198,12 +198,12 @@ describe("upstream session: connection, errors and timeouts", () => {
       getServerInfo: () => {
         calls++;
         if (calls === 1) throw new Error("RPC Server (remote error) -> WebSocket -> WebSocket is not connected");
-        return { serverVersion: "2.1.0" };
+        return { networkId: "simnet", serverVersion: "2.1.0" };
       }
     });
     const session = new OfficialRpcSession("ws://127.0.0.1:18210", 1000, rpc.factory);
     await expect(session.request("getServerInfo")).rejects.toBeInstanceOf(RpcConnectionError);
-    expect(await session.request("getServerInfo")).toEqual({ serverVersion: "2.1.0" });
+    expect(await session.request("getServerInfo")).toEqual({ networkId: "simnet", serverVersion: "2.1.0" });
     expect(rpc.urls).toHaveLength(2);
   });
 

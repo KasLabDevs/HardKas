@@ -54,8 +54,8 @@ describe("RPC Resilience Refined (P1.2)", () => {
 
       // Node B is working
       const rpcB = fakeOfficialRpc({
-        getInfo: () => ({ serverVersion: "working" }),
-        getServerInfo: () => ({ serverVersion: "working" }),
+        getInfo: () => ({ networkId: "simnet", serverVersion: "working" }),
+        getServerInfo: () => ({ networkId: "simnet", serverVersion: "working" }),
         getBlockDagInfo: () => ({})
       });
       const clientB = new KaspaJsonRpcClient({

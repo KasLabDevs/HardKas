@@ -75,13 +75,24 @@ export async function runDevServer(options: {
       host = "0.0.0.0";
     }
 
-    const server = createDevServer({
-      port,
-      host,
-      unsafeExternal: options.unsafeExternal,
-      unsafeNoAuth: options.unsafeNoAuth ?? false,
-      open: options.open
-    });
+    let server: ReturnType<typeof createDevServer>;
+    try {
+      server = createDevServer({
+        port,
+        host,
+        unsafeExternal: options.unsafeExternal,
+        unsafeNoAuth: options.unsafeNoAuth ?? false,
+        open: options.open
+      });
+    } catch (e: any) {
+      // DEV-SERVER-LOCAL-1: a host that is not this machine without --unsafe-external, or a weak HARDKAS_DEV_TOKEN, is a
+      // usage error with its code (nothing was started or written)
+      if (e?.name === "DevServerConfigError" && typeof e.code === "string") {
+        const { HardkasCliError, HardkasExitCode } = await import("../cli-errors.js");
+        throw new HardkasCliError(e.code, String(e.message).replace(/^[A-Z_]+: /, "") + " Nothing was started.", { exitCode: HardkasExitCode.USAGE_ERROR });
+      }
+      throw e;
+    }
 
     const serverObj = server as Record<string, unknown>;
     const token = typeof serverObj.token === "string" ? serverObj.token : undefined;

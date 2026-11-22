@@ -151,6 +151,9 @@ export async function runAccountsBalance(
     // NETWORK_ENDPOINT_REQUIRED before any connection
     const rpcUrl = resolveNodeEndpoint({ config: loadedConfig.config, networkId: network, explicitUrl: provider.endpoint }).url;
 
+    // M4: the address is judged by its prefix before any connection
+    (await import("./address-network-guard.js")).assertAddressReadable(address, network, "accounts balance");
+
     // NODE-NETWORK-IDENTITY-1: a balance is read only from a node that says it serves the queried network
     const client = new JsonWrpcKaspaClient({ rpcUrl, expectedNetworkId: network });
 
