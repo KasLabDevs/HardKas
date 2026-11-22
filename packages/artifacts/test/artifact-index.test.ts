@@ -51,6 +51,6 @@ describe('ArtifactIndexStoreJson', () => {
         
         const strictMatch = store.find({ schema: "A", to: "2026-06-01T23:59:59Z" });
         expect(strictMatch.length).toBe(1);
-        expect(strictMatch[0].hash).toBe("h1");
+        expect(strictMatch[0]?.hash).toBe("h1");
     });
 });

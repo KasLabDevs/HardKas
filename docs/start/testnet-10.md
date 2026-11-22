@@ -38,7 +38,7 @@ hardkas accounts real generate --name tn-payer --network testnet-10 --password-e
 ```
 
 The key is encrypted in `.hardkas/keystore/`. To use a key you already have, import it with
-`hardkas accounts real import ... --network testnet-10`; a `kaspatest:` address needs that flag
+`hardkas accounts real import --network testnet-10` (with the options of the command); a `kaspatest:` address needs that flag
 ([Accounts](../guides/accounts.md)). A mainnet network or address is refused.
 
 ## 3. Fund it

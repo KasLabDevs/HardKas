@@ -237,7 +237,9 @@ function main() {
     for (const raw of `${run.stdout}\n${run.stderr}`.split(/\r?\n/)) {
       const line = raw.trimEnd();
       if (!line) continue;
-      const m = /^(example-\d+\.\w+)\((\d+),(\d+)\): (error|warning) (TS\d+): (.*)$/.exec(line);
+      // tsc may print the file with a directory in front: on macOS the OS temp dir is a symlink (/var -> /private/var), so
+      // it is shown relative to the real cwd (../../../var/folders/.../example-001.ts); the basename is what identifies it
+      const m = /^(?:.*[\\/])?(example-\d+\.\w+)\((\d+),(\d+)\): (error|warning) (TS\d+): (.*)$/.exec(line);
       const block = m && byTemp.get(m[1]);
       if (block) {
         failedBlocks.add(block);

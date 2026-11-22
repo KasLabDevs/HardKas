@@ -246,7 +246,9 @@ describe.skipIf(SKIP_REF)("R3-A3 · `hardkas kcc20 deploy | transfer | balance` 
       const held = await sdk.kcc20.balance(covenantId, xonly.carol!);
       const carol640 = held.holdings.find((h) => h.state.amount === 640n)!;
       expect(carol640, big(held.holdings)).toBeDefined();
-      const refused = await sdk.kcc20.planTransfer({ covenantId, inputs: [{ outpoint: op(carol640.outpoint), signer: "carol" }], to: [{ owner: xonly.bob!, amount: 600n }] }, { keys: resolver }).then(
+      // `funder`: since BETA-FIX W2 a transfer with no sender (`from`) and no token change must name who pays the fee, or it
+      // stops first at KCC20_FEE_SOURCE_REQUIRED; this test is about the conservation rule, which is checked next
+      const refused = await sdk.kcc20.planTransfer({ covenantId, inputs: [{ outpoint: op(carol640.outpoint), signer: "carol" }], to: [{ owner: xonly.bob!, amount: 600n }], funder: "carol" }, { keys: resolver }).then(
         () => undefined,
         (e: any) => e
       );
