@@ -4,7 +4,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import * as os from "node:os";
 
-describe.skip("[known gap: TxPlan with policy refs fails the integrity check -> evidence core] Network-Agnostic Artifact Layer: Integration", () => {
+describe("Network-Agnostic Artifact Layer: Integration", () => {
   let sdk: Hardkas;
   let workspaceRoot: string;
 
@@ -18,9 +18,13 @@ describe.skip("[known gap: TxPlan with policy refs fails the integrity check -> 
     const accTo = await sdk.accounts.resolve("bob");
 
     // Create a mock policy
+    const { calculateContentHash, CURRENT_HASH_VERSION, HARDKAS_VERSION } =
+      await import("@hardkas/artifacts");
     const policy = {
       schema: "hardkas.policy.v1",
-      hardkasVersion: "0.13.0-rc.3",
+      hardkasVersion: HARDKAS_VERSION,
+      // the producer writes the hash version before hashing; the artifact writer refuses an artifact without it
+      hashVersion: CURRENT_HASH_VERSION,
       version: "1.0.0-alpha",
       networkId: "simnet",
       mode: "simulator",
@@ -29,8 +33,6 @@ describe.skip("[known gap: TxPlan with policy refs fails the integrity check -> 
       rules: []
     };
 
-    const { calculateContentHash, CURRENT_HASH_VERSION } =
-      await import("@hardkas/artifacts");
     (policy as any).contentHash = calculateContentHash(policy, CURRENT_HASH_VERSION);
 
     // Save policy with a logical alias
@@ -38,15 +40,20 @@ describe.skip("[known gap: TxPlan with policy refs fails the integrity check -> 
       fileName: "company-default.json"
     });
 
-    // Create a plan referencing the logical alias
+    // IC-5'.6: references are authenticated artifactIds. A label ("company-default") is refused (NAMESPACE_REQUIRED),
+    // there is no raw fallback ...
+    await expect(
+      sdk.tx.plan({ from: accFrom, to: accTo, amount: 50_000_000n, policy: "company-default" })
+    ).rejects.toMatchObject({ code: "NAMESPACE_REQUIRED" });
+
+    // ... and the path of the stored policy resolves to its immutable contentHash
     const plan = await sdk.tx.plan({
       from: accFrom,
       to: accTo,
-      amount: 10,
-      policy: "company-default" // Logical alias
+      amount: 50_000_000n,
+      policy: absolutePath
     });
-
-    // Verify it was resolved to the immutable contentHash
     expect((plan as any).policyRef).toBe(contentHash);
+    expect((plan as any).policyRefs).toEqual([contentHash]);
   });
 });

@@ -7,7 +7,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-teal.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/node-24.22.1-emerald.svg)](docs/start/installation.md)
 [![CI](https://github.com/KasLabDevs/HardKas/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/KasLabDevs/HardKas/actions/workflows/ci.yml)
-[![Release Status](https://img.shields.io/badge/status-hardened--alpha-amber.svg)](docs/status/claims.generated.md)
+[![Release Status](https://img.shields.io/badge/status-stable-brightgreen.svg)](docs/status/claims.generated.md)
 
 HardKAS is an open-source, local-first development framework for **Kaspa L1**: a CLI and a TypeScript SDK to plan, send and verify transactions and SilverScript contracts on your own simnet node. It is an independent community project, not an official Kaspa tool.
 
@@ -46,7 +46,7 @@ Requirements: **Node.js 24.22.1** exactly (the version HardKAS is built, tested 
 
 ### 1. Initialize a Workspace
 
-> **Release note:** `@hardkas/cli` `0.13.0-rc.3` is published on npm (`latest`/`next`). The `develop` tree is ahead of it: it publishes 18 packages, where rc.3 has 22 (`@hardkas/escrow` is now in `@hardkas/sdk`, `@hardkas/jobs` in `@hardkas/toolkit`, `@hardkas/node-orchestrator` in `@hardkas/node-runner` and `@hardkas/sessions` in `@hardkas/core`). Use `@latest` (or `@0.13.0-rc.3`) when installing from npm, or `pnpm hardkas` inside this monorepo.
+> **Release note:** `1.0.0` is the first stable release (see [Version Guarantees](docs/status/versioning.md)). It publishes 18 packages, where the last candidate, `0.13.0-rc.3`, had 22 (`@hardkas/escrow` is now in `@hardkas/sdk`, `@hardkas/jobs` in `@hardkas/toolkit`, `@hardkas/node-orchestrator` in `@hardkas/node-runner` and `@hardkas/sessions` in `@hardkas/core`). Use `@latest` (or `@1.0.0`) when installing from npm, or `pnpm hardkas` inside this monorepo.
 
 ```bash
 # Initialize a new HardKAS workspace with deterministic accounts
@@ -120,7 +120,7 @@ The entire lifecycle of Kaspa UTXOs—from genesis injection to final signature 
 
 ## The Execution Contract
 
-HardKAS `0.13.0-rc.3` uses the strictly partitioned Execution Contract.
+HardKAS `1.0.0` uses the strictly partitioned Execution Contract.
 The Execution Contract is a tuple of `(mode, domain, network)` that unambiguously identifies the context in which an artifact was created, an execution target is connected, or an account exists.
 
 - **`mode`**: The environment topology (`simulator`, `localnet`, `rpc`, `l2-rpc`)
@@ -148,7 +148,7 @@ Common targets:
 
 ## Local-First Status
 
-HardKAS `0.13.0-rc.3` is local-first deterministic transaction infrastructure
+HardKAS `1.0.0` is local-first deterministic transaction infrastructure
 for Kaspa/Toccata development.
 
 Current baseline, verified by the release checks:
@@ -164,9 +164,9 @@ Current baseline, verified by the release checks:
 - HardKAS is not a wallet, custody system, consensus layer, or production mainnet
   signing environment.
 
-### Toccata v2 Alpha Baseline
+### Toccata v2 Localnet Baseline
 
-The `0.13.0-rc.3` release line includes a normalized Toccata v2 localnet flow:
+The `1.0` release line includes a normalized Toccata v2 localnet flow:
 
 - Docker `rusty-kaspad` v2.1.0 localnet (pinned by digest) funding with a compatible miner companion (`kaspanet/cpuminer`).
 - Standard transaction lifecycle against the local node.
@@ -183,18 +183,18 @@ Official release claims:
 - `vmConsensusEquivalence`: `NOT_CLAIMED`
 - `mainnet`: `BLOCKED_BY_POLICY`
 
-### 0.13.0-rc.3 SDK Parity
+### SDK Parity
 
-`0.13.0-rc.3` includes high-level
+`1.0.0` includes high-level
 SDK surfaces for capabilities, localnet status/start/fund, and SilverScript compile and corpus verification,
 without changing the release claims above. It enforces strict separation of execution environments across Artifact lineage.
 
 The SDK plans, signs and sends SilverScript deploys, spends and covenant transitions on a node through
 `sdk.covenants` (transaction v1); `sdk.experimental.silver` compiles, reproduces and derives P2SH addresses (simnet).
 
-### 0.13.0-rc.3 Programmability Builder Surface
+### Programmability Builder Surface
 
-`0.13.0-rc.3` also includes a local-only builder surface for SilverScript,
+`1.0.0` also includes a local-only builder surface for SilverScript,
 ZK corpus fixtures, and vProgs artifact inspection. This is a programmability
 surface, not a protocol/runtime claim.
 
@@ -381,7 +381,7 @@ source of truth.
 - Planning and signing isolation.
 - Rebuildable projections from committed artifacts.
 - Toccata v2 localnet baseline guarded by `pnpm gauntlet:toccata`.
-- Mainnet signing, broadcast and connections blocked in this alpha release.
+- Mainnet signing, broadcast and connections blocked in this release.
 
 ## What HardKAS Is Not
 

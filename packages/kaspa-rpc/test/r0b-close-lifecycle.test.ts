@@ -140,7 +140,8 @@ describe("RESOURCE-LIFECYCLE-1 · a process that closed its client ends by itsel
   let script: string;
 
   beforeAll(async () => {
-    node = await startFakeWrpcNode();
+    // the node names its network: a node that does not is refused (NODE_NETWORK_UNKNOWN), and these cases are about the lifecycle
+    node = await startFakeWrpcNode({ networkId: "simnet" });
     dir = fs.mkdtempSync(path.join(os.tmpdir(), "hk-r0b-rpc-"));
     script = path.join(dir, "case.mjs");
     fs.writeFileSync(

@@ -102,7 +102,7 @@ describe("Multisig Adversarial Suite", () => {
     );
   });
 
-  it.skip("[known gap: replay verify fails on a signed multisig -> evidence core] Case 5: Should pass replay verify on signed multisig", async () => {
+  it("Case 5: Should pass replay verify on signed multisig", async () => {
     // Replay verify reads plan and receipt from the artifact directory.
     // Let's create a simulated transaction workflow and verify it.
     const alice = await sdk.accounts.resolve("alice");
@@ -120,19 +120,13 @@ describe("Multisig Adversarial Suite", () => {
     });
     const sig2 = await sdk.tx.sign(sig1, "bob", { append: true });
 
-    // Simulate the transaction to generate a receipt offline
-    const simResult = await sdk.tx.simulate(sig2, { persist: false });
+    // Simulate the transaction: the receipt is persisted with its lineage (plan -> signed multisig -> receipt)
+    await sdk.artifacts.write(sig2);
+    const simResult = await sdk.tx.simulate(sig2);
     expect(simResult.receipt).toBeDefined();
 
-    // Write named files so replay verification can resolve them
-    fs.writeFileSync(path.join(tmpDir, "tx-plan.json"), JSON.stringify(plan, null, 2));
-    fs.writeFileSync(
-      path.join(tmpDir, "tx-receipt.json"),
-      JSON.stringify(simResult.receipt, null, 2)
-    );
-
-    // Verify replay consistency of the signed transaction sequence
-    const verifyResult = await sdk.replay.verify({ path: "tx-plan.json" });
+    // Verify replay consistency from the receipt, as the store resolves it: an authenticated artifactId, never a label
+    const verifyResult = await sdk.replay.verify({ path: String(simResult.receipt.contentHash) });
     if (!verifyResult.passed) {
       console.log("verifyResult:", JSON.stringify(verifyResult, null, 2));
     }

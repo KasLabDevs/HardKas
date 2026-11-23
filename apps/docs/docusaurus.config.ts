@@ -189,7 +189,7 @@ const config: Config = {
           ],
         },
       ],
-      copyright: `<div class="docs-footer-meta">HardKAS 0.13.0-rc.3 · MIT License · Open-source development framework for Kaspa L1</div>`,
+      copyright: `<div class="docs-footer-meta">HardKAS 1.0.0 · MIT License · Open-source development framework for Kaspa L1</div>`,
     },
     prism: { theme: prismThemes.github, darkTheme: prismThemes.dracula },
   } satisfies Preset.ThemeConfig,

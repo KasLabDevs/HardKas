@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/kaspa-rpc",
-  "version": "0.13.0-rc.3",
+  "version": "1.0.0",
   "description": "The wRPC client HardKAS uses to talk to a Kaspa node (rusty-kaspad), built on the official Kaspa SDK.",
   "keywords": ["hardkas", "kaspa", "kaspa-l1", "blockdag", "utxo", "developer-tools", "rpc", "wrpc", "rusty-kaspa"],
   "type": "module",

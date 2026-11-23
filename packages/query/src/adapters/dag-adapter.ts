@@ -7,9 +7,9 @@
  * IMPORTANT: All results carry dagModel: "deterministic-light-model".
  * This is NOT GHOSTDAG consensus. It is a developer debugging tool.
  *
- * Source of truth: .hardkas/state.json → dag field. No HardKAS command writes that file (the simulated ledger keeps
- * its own DAG in .hardkas/localnet.json, with no transactions in it); without it every op refuses with
- * DAG_DATA_UNAVAILABLE (ESCALÓN 2 · P8) instead of answering an empty, successful result.
+ * Source of truth: the `dag` field of .hardkas/localnet.json (the simulated ledger's own DAG, the one `dag status`
+ * shows), else the legacy .hardkas/state.json. Without a DAG every op refuses with DAG_DATA_UNAVAILABLE
+ * (ESCALÓN 2 · P8) instead of answering an empty, successful result.
  */
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -360,14 +360,27 @@ export class DagQueryAdapter implements QueryAdapter {
     return path.join(this.rootDir, ".hardkas", "state.json");
   }
 
-  private async loadDag(): Promise<SimDag | null> {
+  /** The simulated ledger's own file: where `dag simulate-reorg` and the simulator keep their DAG. */
+  private localnetPath(): string {
+    return path.join(this.rootDir, ".hardkas", "localnet.json");
+  }
+
+  private async dagOf(file: string): Promise<SimDag | null> {
     try {
-      const content = await fs.readFile(this.statePath(), "utf-8");
-      const state = JSON.parse(content);
-      return state.dag ?? null;
+      const state = JSON.parse(await fs.readFile(file, "utf-8"));
+      const dag = state?.dag;
+      return dag && typeof dag === "object" && dag.blocks && typeof dag.blocks === "object" ? (dag as SimDag) : null;
     } catch {
       return null;
     }
+  }
+
+  /**
+   * The DAG of the simulated ledger (`.hardkas/localnet.json`, the one `dag status` shows), else the legacy
+   * `.hardkas/state.json`. Without either: null, and every op refuses (DAG_DATA_UNAVAILABLE).
+   */
+  private async loadDag(): Promise<SimDag | null> {
+    return (await this.dagOf(this.localnetPath())) ?? (await this.dagOf(this.statePath()));
   }
 
   /** ESCALÓN 2 · P8: the DAG an op answers from; without one, DAG_DATA_UNAVAILABLE, never an empty "all clear". */

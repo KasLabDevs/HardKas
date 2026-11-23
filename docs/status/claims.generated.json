@@ -1,6 +1,6 @@
 {
-  "version": "0.13.0-rc.3",
-  "maturity": "hardened-alpha",
+  "version": "1.0.0",
+  "maturity": "stable",
   "proofVersion": "repro-v0",
   "hashVersion": 5,
   "releaseStatus": "LOCAL_FIRST_DEVELOPER_RUNTIME_HARDENED",

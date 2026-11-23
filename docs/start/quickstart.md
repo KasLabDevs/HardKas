@@ -23,8 +23,8 @@ Install the SDK and CLI in your project. Name the version, as below: a bare
 ([Install HardKAS](./installation.md) has the details).
 
 ```bash
-npm install @hardkas/sdk@0.13.0-rc.3
-npm install -D @hardkas/cli@0.13.0-rc.3
+npm install @hardkas/sdk@1.0.0
+npm install -D @hardkas/cli@1.0.0
 ```
 
 ## 2. Initialize The Workspace

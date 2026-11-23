@@ -3577,7 +3577,7 @@ No arguments.
 
 ## hardkas query dag
 
-Query a light-model DAG (NOT GHOSTDAG) read from .hardkas/state.json, which no HardKAS command writes; without it each query fails with DAG_DATA_UNAVAILABLE (exit 1) instead of answering without data research
+Query the simulated ledger's light-model DAG (NOT GHOSTDAG) read from .hardkas/localnet.json, else .hardkas/state.json; without a DAG each query fails with DAG_DATA_UNAVAILABLE (exit 1) instead of answering without data research
 
 ### Usage
 
@@ -6186,7 +6186,7 @@ hardkas up [options]
 
 | Flag | Description | Default |
 | :--- | :--- | :--- |
-| `--json` | No effect: up prints human output only | false |
+| `--json` | Print one JSON document (the dev server: status, url, token) instead of human output | false |
 
 ### Arguments
 

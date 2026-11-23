@@ -15,7 +15,7 @@ HardKAS is an open-source, local-first development framework for **Kaspa L1**: a
 
 ## Versions & Pinned Toolchain
 
-- **Repository development version:** `0.13.0-rc.3` (may be ahead of npm `latest`; check `npm view @hardkas/cli dist-tags` and use `npx @hardkas/cli@latest` when installing from npm outside the monorepo)
+- **Repository development version:** `1.0.0` (may be ahead of npm `latest`; check `npm view @hardkas/cli dist-tags` and use `npx @hardkas/cli@latest` when installing from npm outside the monorepo)
 - **Localnet node (`--profile toccata-v2`):** `rusty-kaspad` `v2.1.0` (container `hardkas-kaspad-toccata-v2`, JSON wRPC port `18210`; custom Docker setups may publish another port such as `26510`)
 - **SilverScript compiler:** `silverc` `v1.0.0` (installed via `hardkas toolchain install silverc`)
 - **Node.js requirement:** `24.22.1`

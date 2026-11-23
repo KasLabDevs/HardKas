@@ -137,7 +137,7 @@ describe("up", () => {
     expect(fs.readdirSync(dir).filter((f) => f.endsWith(".json")).sort()).toEqual(DEV_ACCOUNTS.map((n) => `${n}.json`).sort());
   });
 
-  it.skip("[known gap: up ignores --json -> L1-CORE-1-B4] up --json prints one JSON document describing the runtime it started", async () => {
+  it("up --json prints one JSON document describing the runtime it started", async () => {
     const run = await runUp(ws, "up-json", ["--json"]);
     expect(run.served?.status).toBe(200);
     const docs = jsonDocs(run.stdout);

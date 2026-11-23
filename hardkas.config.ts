@@ -1,7 +1,7 @@
 import { defineHardkasConfig } from "@hardkas/config";
 
 export default defineHardkasConfig({
-  // HardKAS v0.13.0-rc.3 Configuration
+  // HardKAS v1.0.0 Configuration
   defaultNetwork: "simulated",
 
   networks: {

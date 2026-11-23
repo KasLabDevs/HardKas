@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/cli",
-  "version": "0.13.0-rc.3",
+  "version": "1.0.0",
   "description": "HardKAS CLI for Kaspa L1: create a project, run a local rusty-kaspa simnet, plan, sign and send transactions, compile SilverScript and verify every step.",
   "keywords": ["hardkas", "kaspa", "kaspa-l1", "blockdag", "utxo", "developer-tools", "cli", "silverscript", "covenants", "toccata", "simnet", "localnet", "testnet", "rusty-kaspa", "kaspa-wasm"],
   "type": "module",

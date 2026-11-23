@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/query-store",
-  "version": "0.13.0-rc.3",
+  "version": "1.0.0",
   "description": "A rebuildable SQLite projection of a HardKAS workspace (.hardkas/store.db) for fast reads; the artifacts stay the authority.",
   "keywords": ["hardkas", "kaspa", "kaspa-l1", "blockdag", "utxo", "developer-tools", "sqlite", "query"],
   "type": "module",

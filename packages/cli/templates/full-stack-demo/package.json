@@ -1,6 +1,6 @@
 {
   "name": "full-stack-demo",
-  "version": "0.13.0-rc.3",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",

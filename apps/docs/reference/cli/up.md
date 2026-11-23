@@ -14,7 +14,7 @@ description: "Reference for the hardkas up command, with its arguments, options 
 
 #### Options
 
-- `--json` (Default: `false`): No effect: up prints human output only
+- `--json` (Default: `false`): Print one JSON document (the dev server: status, url, token) instead of human output
 
 ---
 

@@ -10,7 +10,7 @@ What the release checks verify, by capability. This is the repository's own veri
 > [claims.generated.md](./claims.generated.md), produced from `packages/sdk` by
 > `pnpm docs:generate-claims`. Anything restated below is prose, not the source.
 
-This matrix describes the capabilities HardKas should prove before a release is treated as stable. For 0.13.0-rc.3, the priority is the local-first development loop.
+This matrix describes the capabilities HardKas should prove before a release is treated as stable. For 1.0.0, the priority is the local-first development loop.
 
 ## Local Transaction Lifecycle
 
@@ -78,10 +78,7 @@ Status: supporting release gate
 Coverage:
 
 - The dashboard reads the dev-server API instead of inventing state.
-- `@hardkas/client` remains browser-safe and talks HTTP to the dev server.
-- `@hardkas/react` provides React bindings over `@hardkas/client`.
-- Both are workspace packages only: they are not published in this release
-  ([Versioning: not published](./versioning.md#not-published)).
+- Browser code talks HTTP to the dev server through `@hardkas/sdk/client`, which holds no keys.
 - The browser does not import the Node SDK directly.
 
 ## Real Simnet RPC
@@ -124,6 +121,6 @@ Claims:
 
 ## Mainnet
 
-Status: out of scope for the 0.13.0-rc.3 happy path
+Status: out of scope for the 1.0.0 happy path
 
 Any future mainnet certification must be separate from local simulation and simnet tests. It needs stronger UX guards, signing policy, documentation, and operational review.

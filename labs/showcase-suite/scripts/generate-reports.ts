@@ -13,7 +13,6 @@ const PACKAGE_CATEGORIES: Record<string, string> = {
     '@hardkas/plugin-local-indexer': 'Public runtime',
     '@hardkas/query': 'Public runtime',
     '@hardkas/query-store': 'Public runtime',
-    '@hardkas/react': 'Public runtime',
     '@hardkas/storage-postgres': 'Public runtime',
     '@hardkas/storage-sqlite': 'Public runtime',
     '@hardkas/sync-daemon': 'Public runtime',
@@ -29,9 +28,7 @@ const PACKAGE_CATEGORIES: Record<string, string> = {
     '@hardkas/node-runner': 'Public tooling',
     '@hardkas/plugin-rpc-backend': 'Public tooling',
     '@hardkas/simulator': 'Public tooling',
-    '@hardkas/simulator-adapters': 'Public tooling',
 
-    '@hardkas/client': 'Internal/support',
     '@hardkas/config': 'Internal/support',
     '@hardkas/testing': 'Internal/support',
 

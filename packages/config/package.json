@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/config",
-  "version": "0.13.0-rc.3",
+  "version": "1.0.0",
   "description": "Loading and resolution of hardkas.config.* for HardKAS (Kaspa L1): networks, accounts, execution targets and endpoints.",
   "keywords": ["hardkas", "kaspa", "kaspa-l1", "blockdag", "utxo", "developer-tools", "config"],
   "type": "module",

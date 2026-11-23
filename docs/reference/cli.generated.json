@@ -4812,7 +4812,7 @@
           "path": "hardkas query dag",
           "name": "dag",
           "aliases": [],
-          "description": "Query a light-model DAG (NOT GHOSTDAG) read from .hardkas/state.json, which no HardKAS command writes; without it each query fails with DAG_DATA_UNAVAILABLE (exit 1) instead of answering without data research",
+          "description": "Query the simulated ledger's light-model DAG (NOT GHOSTDAG) read from .hardkas/localnet.json, else .hardkas/state.json; without a DAG each query fails with DAG_DATA_UNAVAILABLE (exit 1) instead of answering without data research",
           "usage": "hardkas query dag [options] [command]",
           "arguments": [],
           "options": [],
@@ -8775,7 +8775,7 @@
       "options": [
         {
           "flags": "--json",
-          "description": "No effect: up prints human output only",
+          "description": "Print one JSON document (the dev server: status, url, token) instead of human output",
           "default": false,
           "required": false,
           "mandatory": false

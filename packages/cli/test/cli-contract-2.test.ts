@@ -26,6 +26,9 @@ const SCAFFOLD_TARGETS =
   'targets: { simulator: { mode: "simulator", domain: "kaspa-l1", network: "simulated" }, localnet: { mode: "localnet", domain: "kaspa-l1", network: "simnet" } }';
 const scaffold = `export default { execution: { default: "simulator", ${SCAFFOLD_TARGETS} }, network: { allowPublic: false } };\n`;
 const localnetDefault = `export default { execution: { default: "localnet", ${SCAFFOLD_TARGETS} }, network: { allowPublic: false } };\n`;
+// the node the B cases talk to is declared at a port nothing listens on (127.0.0.1:1), so the answer never depends on a
+// localnet that happens to run on the canonical port of the machine
+const localnetDeadNode = `export default { execution: { default: "localnet", ${SCAFFOLD_TARGETS} }, networks: { simnet: { kind: "kaspa-node", network: "simnet", rpcUrl: "ws://127.0.0.1:1" } }, network: { allowPublic: false } };\n`;
 const DOCKER_DOWN = { DOCKER_HOST: "tcp://127.0.0.1:1" };
 
 type Run = { status: number | null; signal: NodeJS.Signals | null; stdout: string; stderr: string; all: string; docs: any[] };
@@ -171,7 +174,7 @@ describe("CLI-CONTRACT-2 · B · one unreachable node, one typed code", () => {
   let ws: string;
   const UNTYPED = /^UNKNOWN(_ERROR)?$/;
   beforeEach(() => {
-    ws = makeWs("hk-cc2-node-", localnetDefault);
+    ws = makeWs("hk-cc2-node-", localnetDeadNode);
   });
   afterEach(() => rmWs(ws));
 

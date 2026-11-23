@@ -1,6 +1,6 @@
 ---
 title: "Version Guarantees"
-description: "Which HardKAS boundaries are stable, preview or experimental in this alpha, which packages are published, and how to tell them apart."
+description: "Which HardKAS boundaries are stable, preview or experimental in 1.0, which packages are published, and how to tell them apart."
 ---
 
 # Version Guarantees
@@ -8,15 +8,17 @@ description: "Which HardKAS boundaries are stable, preview or experimental in th
 > [claims.generated.md](./claims.generated.md), produced from `packages/sdk` by
 > `pnpm docs:generate-claims`. Anything restated below is prose, not the source.
 
-HardKAS is currently in the `0.13.0-rc.3` release cycle.
+HardKAS `1.0.0` is the first stable release: stable for local-first development
+workflows (the boundaries under [Stable](#stable)). From here they follow semantic
+versioning: a change to one of them needs a major version. What is listed under
+Preview and Experimental, and every command whose `--help` does not end in
+`stable`, may still change in a minor release. Mainnet is not a limitation of this
+version: it is blocked by policy, and no flag, option or configuration enables it.
+Stable does not mean ready for production custody.
 
-The project is stable enough for local development workflows, but it is still an
-alpha. APIs, command names, and advanced integrations may change while the
-local-first product surface is tightened.
+## Stable
 
-## Stable In This Alpha
-
-These boundaries should change only with intentional release notes:
+These boundaries change only with a major version:
 
 - **Artifact identity:** content-addressed transaction plans, signed payloads,
   receipts, traces, and workflow artifacts.
@@ -49,7 +51,7 @@ These systems exist and are useful, but are still being hardened:
 These surfaces may change quickly:
 
 - Mainnet-related signing flags and RPC paths. Mainnet is blocked by policy for
-  the 0.13.0-rc.3 release claim.
+  the 1.0.0 release claim.
 - L2, bridge, MetaMask, KasWare, and sandbox integrations.
 - Chaos, torture, and certification tooling.
 - SilverScript/Toccata behavior beyond the verified localnet baseline (covenant
@@ -60,7 +62,7 @@ These surfaces may change quickly:
 - `@hardkas/pskt-native`, which is on hold, carries no guarantee at all and is
   not published.
 
-Mainnet is not part of the 0.13.0-rc.3 happy path.
+Mainnet is not part of the 1.0.0 happy path.
 
 ## Published packages
 
@@ -114,16 +116,14 @@ These manifests are `private: true`:
 | `@hardkas/storage-sqlite` | Internal. |
 | `@hardkas/testnet-qualification` | Internal qualification tooling. |
 | `@hardkas/docs` | The documentation site (`apps/docs`). |
-| `@hardkas/client` | No consumer (surface audit, 2026-11-09): no published package depends on it, and it cannot send the dev server's access token, which `/api/*` requires. Its only workspace user is `@hardkas/react`. |
-| `@hardkas/react` | No consumer: nothing in the workspace imports it. It builds on `@hardkas/client`, which is not published either. |
 | `@hardkas/wallet-adapter` | No consumer: the showcase apps declare it, but nothing in the workspace imports it. |
-| `@hardkas/simulator-adapters` | No consumer: nothing in the workspace imports it. |
 | `@hardkas/plugin-local-indexer` | No consumer outside the showcase lab (`explorer-live`); no published package depends on it. |
 | `@hardkas/plugin-rpc-backend` | No consumer outside the merchant backend reference app and the testnet runner lab; no published package depends on it. |
 | `@hardkas/sync-daemon` | No consumer outside the merchant backend reference app and the exchange backend, treasury and testnet runner labs; no published package depends on it. |
 | `@hardkas/storage-postgres` | No consumer outside the merchant backend reference app; no published package depends on it. |
 
-This release publishes no version of the last eight: they are `private`
+`@hardkas/client`, `@hardkas/react` and `@hardkas/simulator-adapters` (no consumer, surface audit 2026-11-09) were
+removed from the workspace after this release's audit. This release publishes no version of the last five: they are `private`
 workspace packages, and the labs, reference apps and showcase apps of the
 monorepo keep using them through the workspace. Whether the versions an earlier
 release put on npm get deprecated is the owner's decision (`npm deprecate`).

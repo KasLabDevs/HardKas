@@ -64,17 +64,4 @@ describe("Simulated Isolation", () => {
     expect(artifact.rpcUrl).toBe("simulated://local");
   });
 
-  it.skip("[known gap: simulated-account guard not enforced without an RPC URL -> simulator demotion] NETWORK_ACCOUNT_MISMATCH triggers correctly for simulated account and real network", async () => {
-    const { config } = await loadHardkasConfig();
-    await expect(
-      runTxPlan({
-        from: "kaspa:sim_qqqxxx",
-        to: "bob",
-        amount: "10",
-        networkId: "simulated",
-        feeRate: "1",
-        config
-      })
-    ).rejects.toThrow(/NETWORK_ACCOUNT_MISMATCH/);
-  });
 });

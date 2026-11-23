@@ -30,7 +30,7 @@ describe("hardkas capabilities", () => {
     const parsed = JSON.parse(result.stdout);
 
     expect(parsed.version).toBeDefined();
-    expect(parsed.maturity).toBe("hardened-alpha");
+    expect(parsed.maturity).toBe("stable");
     expect(parsed.capabilities.artifacts).toBe(true);
     expect(parsed.capabilities.consensusValidation).toBe(false);
     // SURFACE-TRUTH-1B (ST-A): silverScript is derived from this environment (the managed silverc resolving, as

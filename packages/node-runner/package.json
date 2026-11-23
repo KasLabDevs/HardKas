@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/node-runner",
-  "version": "0.13.0-rc.3",
+  "version": "1.0.0",
   "description": "A managed rusty-kaspa node in Docker for HardKAS, pinned by image digest, with checks of the node's identity.",
   "keywords": ["hardkas", "kaspa", "kaspa-l1", "blockdag", "utxo", "developer-tools", "rusty-kaspa", "docker", "simnet", "node"],
   "type": "module",

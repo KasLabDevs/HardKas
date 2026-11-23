@@ -159,7 +159,6 @@ const sidebars: SidebarsConfig = {
         'reference/errors',
         'reference/artifact-schema',
         'reference/kcc',
-        'reference/client',
         'status/claims.generated',
         'status/send-routes-security',
         'status/security-claims',
@@ -183,7 +182,7 @@ const sidebars: SidebarsConfig = {
         {
           type: 'category',
           label: 'Release notes',
-          items: ['release/0.13.0-rc.3-notes', 'release/0.13.0-rc.2-notes', 'release/0.13.0-rc.1-notes'],
+          items: ['release/1.0.0-notes', 'release/0.13.0-rc.3-notes', 'release/0.13.0-rc.2-notes', 'release/0.13.0-rc.1-notes'],
         },
         {
           type: 'category',

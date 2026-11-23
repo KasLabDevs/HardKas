@@ -102,8 +102,7 @@ HardKAS relies on the authoritative Kaspa network for state validation and confl
 
 ## 5. Boundary
 
-The SDK should be used from Node.js. Browser applications should not import `@hardkas/sdk` directly: they import `@hardkas/sdk/client`, which has the dev-server HTTP client (`createHardkasClient`) and the browser-wallet connectors, and holds no keys. (The older browser client `@hardkas/client` is a workspace package of the HardKAS monorepo: it is not published in this release.)
-
+The SDK should be used from Node.js. Browser applications should not import `@hardkas/sdk` directly: they import `@hardkas/sdk/client`, which has the dev-server HTTP client (`createHardkasClient`) and the browser-wallet connectors, and holds no keys.
 ## 6. Experimental ZK (Groth16 / RISC Zero / Toccata)
 
 - `verifyZkProofMath` / `verifyGroth16Math`: snarkjs pairing check over BN254. The result is

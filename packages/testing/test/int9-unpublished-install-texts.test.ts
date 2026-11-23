@@ -15,10 +15,7 @@ import { fileURLToPath } from "node:url";
 const UNPUBLISHED_OWN = [
   "l2",
   "ext-l2",
-  "client",
-  "react",
   "wallet-adapter",
-  "simulator-adapters",
   "plugin-local-indexer",
   "plugin-rpc-backend",
   "sync-daemon",

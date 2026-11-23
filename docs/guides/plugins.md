@@ -22,7 +22,7 @@ hardkas init
 The config below imports `@hardkas/config` and `@hardkas/core`. Install them, at the version of your CLI:
 
 ```bash
-npm install @hardkas/config@0.13.0-rc.3 @hardkas/core@0.13.0-rc.3
+npm install @hardkas/config@1.0.0 @hardkas/core@1.0.0
 ```
 
 Let's define an inline plugin in `hardkas.config.ts` (this replaces the file `init` wrote):
@@ -35,7 +35,7 @@ import { task, types, HardkasPlugin } from "@hardkas/core";
 const myPlugin: HardkasPlugin = {
   name: "MyCustomPlugin",
   version: "1.0.0",
-  hardkasVersion: "0.13.0-rc.3",
+  hardkasVersion: "1.0.0",
   hooks: {
     onBeforeTxSign: async (ctx) => {
       console.log(`Plugin intercepting sign for account: ${ctx.account}`);

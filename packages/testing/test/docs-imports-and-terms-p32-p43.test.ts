@@ -17,7 +17,7 @@ import { fileURLToPath } from "node:url";
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 const read = (rel: string) => fs.readFileSync(path.join(ROOT, rel), "utf8");
 
-const P32_PAGES = ["docs/reference/client.md", "docs/start/installation.md", "docs/guides/sdk-wallet.md", "docs/concepts/correct-vs-incorrect-flows.md"];
+const P32_PAGES = ["docs/start/installation.md", "docs/guides/sdk-wallet.md", "docs/concepts/correct-vs-incorrect-flows.md"];
 
 /** Names a package's built declaration for `subpath` exports (`export { a, type B, c as d }` and `export declare ...`). */
 function exportedNames(pkg: string, subpath: string): Set<string> {
@@ -64,12 +64,6 @@ describe("P32 · docs import only what the packages export", () => {
       expect(md, page).not.toMatch(/from\s*["']@hardkas\/[^"']+\/dist\//);
       expect(md, page).not.toMatch(/@hardkas\/sdk\/dist\//);
     }
-  });
-
-  it("client.md imports something from each package it documents, and the provider from @hardkas/react", () => {
-    const imports = namedImports(read("docs/reference/client.md"));
-    expect(imports).toContainEqual({ names: ["createClient"], spec: "@hardkas/client" });
-    expect(imports).toContainEqual({ names: ["HardKASProvider"], spec: "@hardkas/react" });
   });
 
   it("tx.simulate is read as { receipt } where the pages call it", () => {

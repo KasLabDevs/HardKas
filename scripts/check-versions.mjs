@@ -113,8 +113,49 @@ for (const workspace of workspaces) {
 // 2. Version freeze
 // ---------------------------------------------------------------------------
 const versionShape = /^(\d+)\.(\d+)\.(\d+)-([A-Za-z]+)\.(\d+)$/.exec(expectedVersion);
-if (!versionShape) {
-  console.log(`\nVersion freeze: root version ${expectedVersion} is not a numbered pre-release; freeze scan limited to manifests.`);
+// A stable root (X.Y.Z): the product's own version literals (`hardkasVersion`, HARDKAS_VERSION, HARDKAS_RUNTIME_VERSION)
+// in package sources and scripts must equal it, and no file may carry such a literal NEWER than it. Only these
+// contexts are scanned: a bare `1.0.5` in a document is as likely a dependency's version as ours.
+const stableShape = /^(\d+)\.(\d+)\.(\d+)$/.exec(expectedVersion);
+if (!versionShape && !stableShape) {
+  console.log(`\nVersion freeze: root version ${expectedVersion} is neither a numbered pre-release nor a stable X.Y.Z; freeze scan limited to manifests.`);
+}
+if (stableShape) {
+  const cmp = (a, b) => a[0] - b[0] || a[1] - b[1] || a[2] - b[2];
+  const root3 = stableShape.slice(1, 4).map(Number);
+  const own = /(?:hardkasVersion|HARDKAS_(?:RUNTIME_)?VERSION)["'`]?\s*[:=]\s*["'`](\d+)\.(\d+)\.(\d+)(?:-[0-9A-Za-z.]+)?["'`]/g;
+  const SKIP = new Set(["node_modules", "dist", "dist-release", "coverage", "target", "build"]);
+  let scanned = 0;
+  const walkStable = (dir) => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      if (entry.isDirectory()) {
+        if (SKIP.has(entry.name) || (entry.name.startsWith(".") && entry.name !== ".github")) continue;
+        if (path.relative(rootDir, path.join(dir, entry.name)) === path.join("docs", "internal")) continue;
+        walkStable(path.join(dir, entry.name));
+      } else if (/\.(ts|tsx|js|mjs|cjs|json|md|yml|yaml|html)$/.test(entry.name)) {
+        const file = path.join(dir, entry.name);
+        const rel = path.relative(rootDir, file).split(path.sep).join("/");
+        // the tests and fixtures name historical versions on purpose
+        if (/(^|\/)(test|tests|fixtures)\//.test(rel) || /\.(test|spec)\./.test(rel)) continue;
+        let text;
+        try {
+          text = readFileSync(file, "utf8");
+        } catch {
+          continue;
+        }
+        scanned++;
+        const isCode = /^packages\/[^/]+\/src\//.test(rel) || rel.startsWith("scripts/");
+        for (const m of text.matchAll(own)) {
+          const found = [Number(m[1]), Number(m[2]), Number(m[3])];
+          const c = cmp(found, root3);
+          if (c > 0) fail(`${rel}: version literal "${found.join(".")}" is newer than the root version ${expectedVersion}`);
+          else if (c < 0 && isCode) fail(`${rel}: version literal "${found.join(".")}" must be ${expectedVersion}`);
+        }
+      }
+    }
+  };
+  walkStable(rootDir);
+  console.log(`\nVersion freeze (stable ${expectedVersion}): the product's own version literals are not newer than the root, and the package sources carry exactly it (${scanned} files scanned).`);
 }
 const [, major, minor, patch, tag, currentNumber] = versionShape ?? [];
 const line = versionShape ? `${major}.${minor}.${patch}` : null;

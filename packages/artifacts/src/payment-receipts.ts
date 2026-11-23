@@ -44,7 +44,7 @@ export function createPaymentReceipt(request: PaymentReceiptCreateRequest): Paym
 
   return {
     schema: HardkasSchemas.PaymentReceiptV1,
-    hardkasVersion: "0.13.0-rc.3",
+    hardkasVersion: "1.0.0",
     version: "v1",
     networkId: asNetworkId(request.networkId ?? "simnet") as unknown as NetworkId,
     mode: "simulator",

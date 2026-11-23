@@ -32,7 +32,7 @@ The [HardKAS IDE](https://github.com/KasLabDevs/HardKasIDE) is a separate deskto
 
 ```bash
 mkdir kaspa-covenants-lab && cd kaspa-covenants-lab
-npx @hardkas/cli@0.13.0-rc.3 init .
+npx @hardkas/cli@1.0.0 init .
 npm install
 npx hardkas toolchain install silverc
 npx hardkas localnet start --toccata --seed

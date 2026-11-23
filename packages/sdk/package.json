@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/sdk",
-  "version": "0.13.0-rc.3",
+  "version": "1.0.0",
   "description": "TypeScript SDK for Kaspa L1 apps and tests: plan, sign, send and verify transactions on a simulated ledger or a simnet node, built on the official kaspa-wasm.",
   "keywords": ["hardkas", "kaspa", "kaspa-l1", "blockdag", "utxo", "developer-tools", "sdk", "typescript", "silverscript", "covenants", "toccata", "kaspa-wasm", "wallet", "simnet"],
   "type": "module",

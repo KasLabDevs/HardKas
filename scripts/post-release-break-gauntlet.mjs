@@ -262,7 +262,7 @@ console.log(JSON.stringify({ app: ${JSON.stringify(appName)}, ok: true, sdkNetwo
 const { calculateContentHash } = await import(${JSON.stringify(pathToFileURL(artifactsDist).href)});
 const artifact = {
   schema: HardkasSchemas.PostReleaseProbe,
-  hardkasVersion: "0.13.0-rc.3",
+  hardkasVersion: "1.0.0",
   hashVersion: 4,
   networkId: "simulated",
   amountSompi: "1"

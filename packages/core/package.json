@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/core",
-  "version": "0.13.0-rc.3",
+  "version": "1.0.0",
   "description": "Core of HardKAS, the Kaspa L1 development framework: shared types and errors, the execution guard, workspace locks and atomic persistence.",
   "keywords": ["hardkas", "kaspa", "kaspa-l1", "blockdag", "utxo", "developer-tools", "core"],
   "type": "module",

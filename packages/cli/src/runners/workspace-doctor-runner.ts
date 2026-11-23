@@ -455,7 +455,7 @@ export async function collectWorkspaceDoctorChecks(options: {
       // No Browser Node Imports
       try {
         const grepNodeFs = execSync(
-          "git grep -E 'from \"node:(fs|path|crypto)\"' packages/sdk/src/client.ts packages/react/src || true",
+          "git grep -E 'from \"node:(fs|path|crypto)\"' packages/sdk/src/client.ts || true",
           { cwd: config.cwd }
         ).toString();
         if (grepNodeFs) {
@@ -465,7 +465,7 @@ export async function collectWorkspaceDoctorChecks(options: {
             message: "Found node: imports in browser-safe packages",
             code: "BROWSER_NODE_POLYFILLS",
             suggestion:
-              "Configure your bundler to exclude node: imports or use @hardkas/react."
+              "Configure your bundler to exclude node: imports."
           });
           finalStatus = "failed";
         } else {

@@ -35,11 +35,13 @@ const cliPath = path.resolve(workspaceRoot, "packages", "cli", "dist", "index.js
 // M-03 (2026-11-07): `dev-server start` is not a registered CLI command (packages/cli/src/commands/dev-server.ts was never
 // added to the program, and was removed as dead code in P27), so the script used to fail on "unknown command" and probe whatever else held its port. The CLI
 // entry point that serves the dev-server API on a chosen port is `hardkas sandbox --port --host`.
+// the dev server refuses a HARDKAS_DEV_TOKEN shorter than 32 characters (DEV-SERVER-LOCAL-1)
+const AUDIT_TOKEN = "static-audit-token-0123456789abcdef0123456789abcdef";
 const serverProc = spawn(process.execPath, [cliPath, "sandbox", "--port", PORT.toString(), "--host", "127.0.0.1"], {
   cwd: tmpDir,
   stdio: ["ignore", "pipe", "pipe"],
   shell: false,
-  env: { ...process.env, HARDKAS_DEV_TOKEN: "static-audit-token-123" }
+  env: { ...process.env, HARDKAS_DEV_TOKEN: AUDIT_TOKEN }
 });
 
 let serverOutput = "";
@@ -160,7 +162,7 @@ async function runAudit() {
       method: "POST",
       headers: { 
         "Host": "127.0.0.1:" + PORT,
-        "Authorization": "Bearer static-audit-token-123"
+        "Authorization": "Bearer " + AUDIT_TOKEN + ""
       }
     });
     assertCondition("CSRF Mutation X-Header requirement", mutRes.status === 403, "Expected 403 missing X-Hardkas-Request, got " + mutRes.status);
@@ -169,7 +171,7 @@ async function runAudit() {
     const secretRes = await fetchInternal("/api/dev-accounts", {
       headers: {
         "Host": "127.0.0.1:" + PORT,
-        "Authorization": "Bearer static-audit-token-123"
+        "Authorization": "Bearer " + AUDIT_TOKEN + ""
       }
     });
     assertCondition("Dev Accounts API access", secretRes.status === 200, "Expected 200, got " + secretRes.status);

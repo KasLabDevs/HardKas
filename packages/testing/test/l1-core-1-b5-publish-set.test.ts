@@ -79,10 +79,7 @@ describe("L1-CORE-1 B5 · the published set", () => {
 
   it("the 8 packages without a consumer are private, listed as not published, and still workspace packages", () => {
     const eight = [
-      "@hardkas/client",
-      "@hardkas/react",
       "@hardkas/wallet-adapter",
-      "@hardkas/simulator-adapters",
       "@hardkas/plugin-local-indexer",
       "@hardkas/plugin-rpc-backend",
       "@hardkas/sync-daemon",

@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/bridge-local",
-  "version": "0.13.0-rc.3",
+  "version": "1.0.0",
   "description": "Offline Igra L2 bridge-lab helpers for HardKAS (payload encoding, a prefix-mining simulation). Not a bridge: it moves no funds and talks to no L2.",
   "keywords": ["hardkas", "kaspa", "kaspa-l1", "blockdag", "utxo", "developer-tools", "igra", "l2", "bridge-lab"],
   "type": "module",

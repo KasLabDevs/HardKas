@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/dev-server",
-  "version": "0.13.0-rc.3",
+  "version": "1.0.0",
   "description": "The local HTTP/SSE dev-server API of HardKAS (Kaspa L1), behind hardkas sandbox.",
   "keywords": ["hardkas", "kaspa", "kaspa-l1", "blockdag", "utxo", "developer-tools", "dev-server", "sse"],
   "type": "module",

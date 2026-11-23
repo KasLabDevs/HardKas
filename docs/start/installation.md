@@ -10,8 +10,8 @@ HardKAS is published to npm as a set of scoped packages. This page covers the
 prerequisites, which packages you actually need, what HardKAS downloads on first
 use, and how to confirm the install worked.
 
-The versioned commands below install `0.13.0-rc.3` from npm. Earlier
-candidates have their own [release notes](../release/0.13.0-rc.2-notes.md).
+The versioned commands below install `1.0.0` from npm. The last candidate,
+`0.13.0-rc.3`, has its own [release notes](../release/0.13.0-rc.3-notes.md).
 
 If you would rather see a transaction first and read afterwards, go to the
 [Quickstart](./quickstart.md) (simulated, no node) or, for a real transaction on
@@ -33,11 +33,12 @@ a node of your own, [Build on your own simnet](./build-on-simnet.md).
 | Docker | Any recent Docker Engine or Docker Desktop | Only for a real local node ([Run your own simnet node](./simnet-node.md)). The simulated loop needs no Docker. |
 | Network access on first use | GitHub release downloads | `hardkas init` installs the pinned Kaspa WASM SDK; `hardkas toolchain install silverc` installs the SilverScript compiler. Both are checked against pinned SHA-256 digests. |
 
-Operating systems: this release candidate was exercised end to end (install,
+Operating systems: the last release candidate was exercised end to end (install,
 simnet node, payment, SilverScript and covenants) on **Windows 11 x64**. Linux and
 macOS are expected to work, since HardKAS is Node.js plus the official release
 assets of kaspa-wasm and silverc for those platforms, but they were **not
-verified** for this release.
+verified** end to end by hand. The canonical test gate runs on Windows, Linux and
+macOS in CI.
 
 Check your Node version before installing:
 
@@ -75,10 +76,8 @@ and is listed in the [Capability Matrix](../status/capability-matrix.md).
 
 Not published in this release, so not installable from npm: `@hardkas/l2`,
 `@hardkas/ext-l2` (the L2 extension), `@hardkas/pskt-native`, the internal
-`@hardkas/storage-sqlite` and `@hardkas/testnet-qualification`, and the eight
-packages no published package depends on: `@hardkas/client` and
-`@hardkas/react` (the browser HTTP client and its React bindings),
-`@hardkas/wallet-adapter`, `@hardkas/simulator-adapters`,
+`@hardkas/storage-sqlite` and `@hardkas/testnet-qualification`, and the five
+packages no published package depends on: `@hardkas/wallet-adapter`,
 `@hardkas/plugin-local-indexer`, `@hardkas/plugin-rpc-backend`,
 `@hardkas/sync-daemon` and `@hardkas/storage-postgres`
 ([why](../status/versioning.md#not-published)).
@@ -115,8 +114,8 @@ installs whatever npm's `latest` tag points to, which can be an earlier
 candidate. Do not use the `rc` dist-tag: it still points to the 0.12 line.
 
 ```bash
-npm install --save-dev @hardkas/cli@0.13.0-rc.3
-npm install @hardkas/sdk@0.13.0-rc.3
+npm install --save-dev @hardkas/cli@1.0.0
+npm install @hardkas/sdk@1.0.0
 ```
 
 In a TypeScript project, also install the Node.js type definitions. The
@@ -152,7 +151,7 @@ networks, as the rest of this guide does.
 A global install gives you a bare `hardkas` command:
 
 ```bash
-npm install --global @hardkas/cli@0.13.0-rc.3
+npm install --global @hardkas/cli@1.0.0
 ```
 
 This is convenient for exploration, but a globally installed CLI can drift from
@@ -183,7 +182,7 @@ already created it, so `init` adds no test script or test dependencies, and its
 "npm test" hint does not apply yet. To run the example test:
 
 ```bash
-npm install --save-dev @hardkas/testing@0.13.0-rc.3 vitest@^2
+npm install --save-dev @hardkas/testing@1.0.0 vitest@^2
 npm pkg set scripts.test="vitest run"
 npm test
 ```

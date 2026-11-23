@@ -55,7 +55,7 @@ describe("query dag · anomalies | conflicts | displaced | history | sink-path",
     expect(e).toMatchObject({ ok: false, command: "query dag history", code: "DAG_DATA_UNAVAILABLE", status: "NO_DATA" });
   });
 
-  it.skip("[known gap: query dag reads .hardkas/state.json, the simulator keeps its DAG in .hardkas/localnet.json -> L1-CORE-1-B4] after `dag simulate-reorg`, sink-path and history answer from the DAG that `dag status` shows", () => {
+  it("after `dag simulate-reorg`, sink-path and history answer from the DAG that `dag status` shows", () => {
     const reorg = cli(["dag", "simulate-reorg", "--depth", "1"], ws);
     expect(reorg.status, reorg.all.slice(0, 600)).toBe(0);
     const dag = JSON.parse(fs.readFileSync(path.join(ws, ".hardkas", "localnet.json"), "utf8")).dag;

@@ -22,7 +22,7 @@ npm install @hardkas/localnet
 
 ## Status
 
-Snapshots, fork and replay are preview. HardKAS is an alpha: APIs may change between releases. [Versioning](https://github.com/KasLabDevs/HardKas/blob/main/docs/status/versioning.md) says what is stable, preview and experimental.
+Snapshots, fork and replay are preview. From 1.0 the boundaries listed as stable follow semantic versioning; preview and experimental surfaces may change between minor releases. [Versioning](https://github.com/KasLabDevs/HardKas/blob/main/docs/status/versioning.md) says what is stable, preview and experimental.
 
 ## License
 

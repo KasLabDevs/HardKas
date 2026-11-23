@@ -59,7 +59,7 @@
     "options": [
       {
         "flags": "--json",
-        "description": "No effect: up prints human output only",
+        "description": "Print one JSON document (the dev server: status, url, token) instead of human output",
         "defaultValue": false
       }
     ],

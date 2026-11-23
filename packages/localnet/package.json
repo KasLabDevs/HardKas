@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/localnet",
-  "version": "0.13.0-rc.3",
+  "version": "1.0.0",
   "description": "State of the simulated local chain of a HardKAS workspace (Kaspa L1): accounts, receipts, traces and snapshots in .hardkas/localnet.json.",
   "keywords": ["hardkas", "kaspa", "kaspa-l1", "blockdag", "utxo", "developer-tools", "localnet", "simulator"],
   "type": "module",

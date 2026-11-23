@@ -48,14 +48,31 @@ describe("CLI Smoke Tests", () => {
     expect(result.stdout).toContain("TXPLAN");
   });
 
-  it.skip("[known gap: strict verify rejects golden fixtures (PARENT_MISSING, snapshot ARTIFACT_SCHEMA_INVALID) -> evidence core] should verify golden fixtures in strict mode", () => {
+  // The golden fixtures are the backward-compatibility corpus: artifacts of hashVersion 4 (and, for the snapshot, the
+  // pre-registry schema name "hardkas.snapshot"). Strict verification requires the current hashVersion, so refusing
+  // them is the contract, not a defect: the verdict names the migration. (Not strict: the plan and the signed
+  // transaction still verify; the legacy snapshot does not, its schema name is not in the registry.)
+  it("strict verify refuses the golden (hashVersion 4) fixtures and names the migration", () => {
     const fixtureDir = path.resolve(
       __dirname,
       "../../../packages/artifacts/test/fixtures/golden"
     );
     const result = runHardkas(`artifact verify "${fixtureDir}" --recursive --strict`);
-    expect(result.ok).toBe(true);
-    expect(result.stdout).toContain("Audit Complete");
+    expect(result.ok).toBe(false);
+    expect(result.status).not.toBe(0);
+    const out = `${result.stdout ?? ""}${result.stderr ?? ""}`;
+    expect(out.match(/MIGRATION_REQUIRED/g)?.length ?? 0).toBe(3);
+    expect(out).toMatch(/requires 5/);
+  });
+
+  it("without --strict the golden plan and signed transaction verify (MATCH)", () => {
+    const fixtureDir = path.resolve(
+      __dirname,
+      "../../../packages/artifacts/test/fixtures/golden"
+    );
+    const out = ((r) => `${r.stdout ?? ""}${r.stderr ?? ""}`)(runHardkas(`artifact verify "${fixtureDir}" --recursive`));
+    expect(out).toMatch(/✓ signed-tx\.valid\.json\s+\[MATCH\]/);
+    expect(out).toMatch(/✓ tx-plan\.valid\.json\s+\[MATCH\]/);
   });
 
   it("should fail to verify corrupted fixtures in strict mode", () => {

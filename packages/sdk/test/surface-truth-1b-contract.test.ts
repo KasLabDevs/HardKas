@@ -55,7 +55,8 @@ describe("SURFACE-TRUTH-1B · contract · SDK capabilities and v1 signing", () =
       expect(caps.capabilities.covenants).toBe(false);
       expect(check.nodeSupportsCovenants).toBe(false);
       expect(check.status).not.toBe("READY");
-      expect(caps.reasons?.covenants).toMatch(/canonical node did not prove its identity/);
+      // the canonical node answered nothing identifiable, or a node runs there that does not say it is synced
+      expect(caps.reasons?.covenants).toMatch(/canonical node (did not prove its identity|is not synced)/);
     }
     // L2 is a Lab, not the L1 core
     expect({ l2Profiles: caps.capabilities.l2Profiles, l2BridgeAssumptions: caps.capabilities.l2BridgeAssumptions }).toEqual({

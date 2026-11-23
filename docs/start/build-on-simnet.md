@@ -55,7 +55,7 @@ minutes; nothing it produces is network evidence.
 
 ## Tested as written
 
-Every command on these pages was run as written for this release candidate: on
+Every command on these pages was run as written for the last release candidate (`0.13.0-rc.3`): on
 Windows 11 x64 with Node.js 24.22.1 and Docker 29.4.2, in a project outside the
 HardKAS repository, with the packages installed from this release's tarballs,
 against an own `rusty-kaspad` v2.1.0 simnet node. The outputs shown are excerpts

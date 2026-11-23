@@ -347,7 +347,7 @@ scenario("payment flow", async ({ hk }) => {
     .description(
       `Boot or validate the HardKAS developer runtime environment ${UI.maturity("stable")}`
     )
-    .option("--json", "No effect: up prints human output only", false)
+    .option("--json", "Print one JSON document (the dev server: status, url, token) instead of human output", false)
     .action(async () => {
       // CLI-RUNTIME-CONTRACT-1: the runner's own error (and its code) reaches the top-level renderer
       // unchanged; the former `throw new Error("Bootstrap failed")` destroyed it.

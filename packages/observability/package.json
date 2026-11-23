@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/observability",
-  "version": "0.13.0-rc.3",
+  "version": "1.0.0",
   "license": "MIT",
   "description": "Logging, metrics and tracing for HardKAS packages (Kaspa L1 development framework), with no runtime dependencies.",
   "keywords": ["hardkas", "kaspa", "kaspa-l1", "blockdag", "utxo", "developer-tools", "logging", "metrics", "tracing"],

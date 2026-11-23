@@ -39,7 +39,6 @@ describe("--help says what the CLI does", () => {
       ["chaos", "--profile"],
       ["test", "--watch"],
       ["node logs", "--follow"],
-      ["up", "--json"],
       ["tx plan", "--wait-lock"],
       ["tx sign", "--lock-timeout"],
       ["tx send", "--wait-lock"],

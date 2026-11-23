@@ -408,22 +408,14 @@ every gate).
 
 ### Skipped tests that hide known gaps
 
-The canonical gate keeps 11 tests skipped with a `[known gap: …]` label. Each one
-documents a defect that is known and not fixed yet. They are listed here so that
-none of them reads as a silent pass. `node scripts/check-known-gaps.mjs` fails
+The canonical gate keeps no test skipped with a `[known gap: …]` label (the last one, the `localnet fund` race, is
+covered at its own level by `packages/cli/test/localnet-treasury.simnet.test.ts` and `cli-lifecycle.simnet.test.ts`, on a
+real isolated simnet node). A skipped test with that label documents a defect that is known and not fixed yet; each one
+is listed here so that none of them reads as a silent pass. `node scripts/check-known-gaps.mjs` fails
 when a label in a test file is missing from this table.
 
 | Known gap (label text) | Ticket | Test |
 | :-- | :-- | :-- |
-| simulated-account guard not enforced without an RPC URL | simulator demotion | `packages/cli/test/tx-simulated.test.ts`, `packages/cli/test/simulated-isolation.test.ts` |
-| strict verify rejects golden fixtures (PARENT_MISSING, snapshot ARTIFACT_SCHEMA_INVALID) | evidence core | `packages/cli/test/smoke.test.ts` |
-| needs a 'localnet' execution target in hardkas.config.ts | M2-B | `packages/cli/test/localnet-fund-race.test.ts` (whole suite) |
-| fee model diverges from node | M4 upstream mass/fees | `packages/sdk/test/fees.test.ts` (2 tests) |
-| TxPlan with policy refs fails the integrity check | evidence core | `packages/sdk/test/integration.test.ts` (whole suite) |
-| replay verify fails on a signed multisig | evidence core | `packages/sdk/test/multisig-adversarial.test.ts` |
-| Hardkas.open connects to the public RPC before the test can inject one | — | `packages/sdk/test/audit-hardening.test.ts` |
-| query dag reads .hardkas/state.json, the simulator keeps its DAG in .hardkas/localnet.json | L1-CORE-1-B4 (simulator, frozen) | `packages/cli/test/l1-core-1-b4-query.test.ts` |
-| up ignores --json | L1-CORE-1-B4 (needs a design: the dev server's JSON output prints its token) | `packages/cli/test/l1-core-1-b4-up-dev-accounts.test.ts` |
 
 ### Test levels: what the canonical gate does not run
 

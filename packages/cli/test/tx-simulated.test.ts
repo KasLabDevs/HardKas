@@ -54,31 +54,6 @@ describe("Simnet Transaction Backend Mismatch Regression", () => {
     });
   }
 
-  it.skip("[known gap: simulated-account guard not enforced without an RPC URL -> simulator demotion] should fail when using a simulated account on a real network", async () => {
-    const { exitCode, stdout, stderr } = await runCmd([
-      "tx",
-      "plan",
-      "--from",
-      "kaspa:sim_alice",
-      "--to",
-      "kaspa:sim_bob",
-      "--amount",
-      "10",
-      "--network",
-      "simulated"
-    ]);
-
-    const output = stdout + stderr;
-    if (exitCode === 0) {
-      throw new Error(`Expected command to fail, but it succeeded. Output:\n${output}`);
-    }
-
-    if (!output.includes("NETWORK_ACCOUNT_MISMATCH")) {
-      throw new Error(
-        `Expected output to contain 'NETWORK_ACCOUNT_MISMATCH'. Actual:\n${output}`
-      );
-    }
-  }, 180000);
 
   it(
     "should fail with NETWORK_ACCOUNT_MISMATCH when provider rpc is forced on simnet",

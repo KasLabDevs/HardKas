@@ -12,7 +12,7 @@ Part of [HardKAS](https://github.com/KasLabDevs/HardKas), local-first developer 
 npm install @hardkas/dev-server
 ```
 
-`@hardkas/cli` depends on it. Web apps talk to it over HTTP. (`@hardkas/client` and `@hardkas/react`, the monorepo's browser client and its React bindings, are not published in this release.)
+`@hardkas/cli` depends on it. Web apps talk to it over HTTP. Browser code reaches it through `@hardkas/sdk/client`.
 
 ## What it contains
 
@@ -27,7 +27,7 @@ npm install @hardkas/dev-server
 
 ## Status
 
-Preview (dev-server HTTP workflow endpoints). HardKAS is an alpha: APIs may change between releases. [Versioning](https://github.com/KasLabDevs/HardKas/blob/main/docs/status/versioning.md) says what is stable, preview and experimental.
+Preview (dev-server HTTP workflow endpoints). From 1.0 the boundaries listed as stable follow semantic versioning; preview and experimental surfaces may change between minor releases. [Versioning](https://github.com/KasLabDevs/HardKas/blob/main/docs/status/versioning.md) says what is stable, preview and experimental.
 
 ## License
 

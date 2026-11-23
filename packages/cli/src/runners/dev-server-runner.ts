@@ -192,6 +192,12 @@ export async function runDevServer(options: {
       }
     } // Closes else block
 
+    // `--json`: stdout carries the one document above and nothing else; the server's banner, the watcher's and the
+    // access log's lines (console.log in @hardkas/dev-server) go to stderr from here on
+    if (options.json) {
+      console.log = (...args: unknown[]) => console.error(...args);
+    }
+
     const nodeServer = server.start();
 
     if (options.preventTeardown) {

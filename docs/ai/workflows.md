@@ -183,7 +183,7 @@ Use the **CLI** when orchestrating environments, keystores, or SilverScript tool
 
 | Task | Use CLI | Use SDK (`@hardkas/sdk`) | Notes |
 | :--- | :--- | :--- | :--- |
-| Start/stop/fund Docker localnet (`--profile toccata-v2`) | `hardkas localnet start` / `stop` / `fund` | **Not supported in 0.13.0-rc.3** | SDK explicitly throws directing you to the CLI. |
+| Start/stop/fund Docker localnet (`--profile toccata-v2`) | `hardkas localnet start` / `stop` / `fund` | **Not supported in 1.0.0** | SDK explicitly throws directing you to the CLI. |
 | Install `silverc` / `kaspa-wasm` | `hardkas toolchain install` | No | CLI-managed with SHA-256 verification. |
 | Payments & batching in app logic | `hardkas tx plan` / `sign` / `send` / `wait` | `sdk.tx.plan`, `sign`, `send`, `waitForConfirmations` | Both use the `kaspa-wasm` Generator and emit artifacts. |
 | Capability discovery before execution | `hardkas doctor --json`, `hardkas silver doctor --json` | `sdk.capabilities.get()` | Always check capabilities first. |
