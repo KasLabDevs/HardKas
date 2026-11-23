@@ -4,7 +4,7 @@
 > `node_modules`, offline. Do not edit by hand: `pnpm check:licenses` fails when this report was made from
 > another lockfile, and when a published package requires a GPL, AGPL, LGPL or unknown license.
 
-- Lockfile sha256 (LF): `a1f074e37ffed006d8882aa77aa4372dd4a5b389edbe5b599e69514d78b5c3d7`
+- Lockfile sha256 (LF): `d098962be15041f707b3706a8a1398e52e277a32a8d55db7df71e76d226cd883`
 - Published packages: 18 (all MIT). Third-party packages in their production trees: 286.
 - Required: reached through `dependencies` (and required peers). Optional: reached only through
   `optionalDependencies` or optional peers; a consumer gets them only by installing them.
