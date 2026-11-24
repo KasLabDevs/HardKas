@@ -241,6 +241,7 @@ async function verifyAdapterCapabilities(session: PortableSigningSession, adapte
 }
 
 export async function createSession(plan: import("@hardkas/artifacts").TxPlanArtifact, adapterId?: string): Promise<PortableSigningSession> {
+  assertMainnetTransactionsDisabled("sign", [plan?.networkId, (plan as any)?.execution?.network], "pskt.createSession");
   const adapter = adapterId ? adapterRegistry.get(adapterId) : adapterRegistry.getDefault();
   const caps = await adapter.probe();
   const capabilitiesHash = computeCapabilitiesHash(caps);
@@ -301,6 +302,11 @@ export async function exportSession(plan: import("@hardkas/artifacts").TxPlanArt
 
 export async function mergeSessions(sessions: PortableSigningSession[]): Promise<PortableSigningSession> {
   if (sessions.length === 0) throw new Error("No sessions provided");
+  assertMainnetTransactionsDisabled(
+    "sign",
+    sessions.flatMap((s) => [s?.networkId, (s as any)?.execution?.network]),
+    "pskt.mergeSessions"
+  );
   const baseSession = sessions[0];
   if (!baseSession) throw new Error("No sessions provided");
   const adapter = adapterRegistry.get(baseSession.runtimeBinding.adapterId);
@@ -322,6 +328,7 @@ export async function mergeSessions(sessions: PortableSigningSession[]): Promise
 }
 
 export async function finalizeSession(session: PortableSigningSession): Promise<PortableSigningSession> {
+  assertMainnetTransactionsDisabled("sign", [session?.networkId, (session as any)?.execution?.network], "pskt.finalizeSession");
   const adapter = adapterRegistry.get(session.runtimeBinding.adapterId);
   await verifyAdapterCapabilities(session, adapter);
 
@@ -343,6 +350,7 @@ export async function migrateRuntime(
   session: PortableSigningSession, 
   options: { targetAdapterId: string }
 ): Promise<PortableSigningSession> {
+  assertMainnetTransactionsDisabled("sign", [session?.networkId, (session as any)?.execution?.network], "pskt.migrateRuntime");
   const targetAdapter = adapterRegistry.get(options.targetAdapterId);
   const targetCaps = await targetAdapter.probe();
   const currentAdapter = adapterRegistry.get(session.runtimeBinding.adapterId);
@@ -391,6 +399,7 @@ export async function migrateRuntime(
 }
 
 export async function extractSession(session: PortableSigningSession): Promise<any> {
+  assertMainnetTransactionsDisabled("sign", [session?.networkId, (session as any)?.execution?.network], "pskt.extractSession");
   const adapter = adapterRegistry.get(session.runtimeBinding.adapterId);
   await verifyAdapterCapabilities(session, adapter);
 

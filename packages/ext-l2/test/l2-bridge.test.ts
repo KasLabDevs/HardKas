@@ -4,6 +4,7 @@ import {
   runL2BridgeAssumptions
 } from "../src/runners/l2-bridge-runners.js";
 import * as l2 from "@hardkas/l2";
+import { CURRENT_RUNTIME_VERSION } from "@hardkas/core";
 
 vi.mock("@hardkas/l2", async (importOriginal) => {
   const actual = (await importOriginal()) as any;
@@ -16,7 +17,7 @@ vi.mock("@hardkas/l2", async (importOriginal) => {
 describe("L2 Bridge CLI Runners", () => {
   const mockAssumptions = {
     schema: "hardkas.l2BridgeAssumptions.v1",
-    hardkasVersion: "0.13.0-rc.3",
+    hardkasVersion: CURRENT_RUNTIME_VERSION,
     l2Network: "igra",
     bridgePhase: "pre-zk",
     trustlessExit: false,
@@ -67,7 +68,7 @@ describe("L2 Bridge CLI Runners", () => {
 
       const json = consoleSpy.mock.calls[0][0];
       const parsed = JSON.parse(json);
-      expect(parsed.hardkasVersion).toBe("0.13.0-rc.3");
+      expect(parsed.hardkasVersion).toBe(CURRENT_RUNTIME_VERSION);
       expect(parsed.l2Network).toBe("igra-galleon");
     });
 

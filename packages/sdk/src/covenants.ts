@@ -930,6 +930,11 @@ export class HardkasCovenants {
 
   /** F1.9 · signs `account`'s slots (its key checked against each slot; each signature verified before the draft keeps it). The key is read after the draft is checked. */
   async signDraft(draft: V1TxDraft, plan: any, account: string, options: Pick<CovenantSignOptions, "keys" | "keystorePassword"> = {}): Promise<V1TxDraft> {
+    assertMainnetTransactionsDisabled(
+      "sign",
+      [draft?.networkId, plan?.networkId, plan?.execution?.network, this.sdk?.config ? this.networkId() : undefined],
+      "covenants.signDraft"
+    );
     this.checkDraft(draft, plan, account);
     const keys = options.keys ?? this.accountKeys(options.keystorePassword);
     return signV1Draft({ draft, plan, account, privateKey: await keys.privateKeyOf(account) });

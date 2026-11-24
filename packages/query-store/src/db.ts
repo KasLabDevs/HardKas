@@ -61,15 +61,20 @@ export class HardkasStore {
       this.db = new DatabaseSync(this.dbPath, { readOnly: options.readOnly });
       this.db.exec("PRAGMA foreign_keys = ON;");
 
-      // Core SQLite tuning
-      this.db.exec("PRAGMA journal_mode = WAL;");
-      this.db.exec("PRAGMA synchronous = NORMAL;");
+      if (!options.readOnly) {
+        // Core SQLite tuning (write mode only; read-only connections must not attempt WAL mode transitions)
+        this.db.exec("PRAGMA journal_mode = WAL;");
+        this.db.exec("PRAGMA synchronous = NORMAL;");
+      }
       this.db.exec("PRAGMA busy_timeout = 15000;"); // Prevent EBUSY crash in high concurrency
     } catch (err: any) {
+      try {
+        this.db?.close();
+      } catch {}
       this.db = null;
       throw new HardkasError(
-        `Failed to open query projection: ${((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err))}`,
-        "PROJECTION_BUSY"
+        "PROJECTION_BUSY",
+        `Failed to open query projection: ${err instanceof Error ? err.message : String(err)}`
       );
     }
 

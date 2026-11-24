@@ -45,7 +45,7 @@ class HardkasLogger implements Logger {
     if (options.component !== undefined) this.componentName = options.component;
     this.baseContext = options.baseContext || {};
     this.sink = options.sink || ((entry) => {
-      const output = JSON.stringify(entry);
+      const output = JSON.stringify(entry, (_key, value) => (typeof value === "bigint" ? value.toString() : value));
       if (entry.level === "error") {
         console.error(output);
       } else if (entry.level === "warn") {

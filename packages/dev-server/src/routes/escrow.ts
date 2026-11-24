@@ -182,12 +182,34 @@ escrowRoutes.get("/:id", (c) => {
   return c.json({ ok: true, data: { ...record, artifact: undefined } });
 });
 
+const escrowLocks = new Map<string, Promise<void>>();
+
+async function withEscrowLock<T>(id: string, fn: () => Promise<T>): Promise<T> {
+  const previous = escrowLocks.get(id) ?? Promise.resolve();
+  let release!: () => void;
+  const current = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const tail = previous.then(() => current, () => current);
+  escrowLocks.set(id, tail);
+  await previous;
+  try {
+    return await fn();
+  } finally {
+    release();
+    if (escrowLocks.get(id) === tail) {
+      escrowLocks.delete(id);
+    }
+  }
+}
+
 escrowRoutes.post("/:id/fund", async (c) => {
   try {
     // the server's own decision on signing for a client (TX-06 / P38), before anything is read, signed or sent
     const autosign = escrowAutoSignRefusal();
     if (autosign) return c.json({ ok: false, code: autosign.code, error: `${autosign.code}: ${autosign.message}` }, 403);
     const id = c.req.param("id");
+    return await withEscrowLock(id, async () => {
     const record = memoryStore.get(id);
     if (!record) return c.json({ ok: false, error: "Not found" }, 404);
     // ESCROW-SAFETY-2: an escrow is funded once; a funding whose outcome is unknown is reconciled, never followed by another
@@ -308,6 +330,7 @@ escrowRoutes.post("/:id/fund", async (c) => {
     memoryStore.set(id, record);
 
     return c.json({ ok: true, data: { txId: funded.txId, status: record.funding.status, ...(releases.warnings.length > 0 ? { warnings: releases.warnings } : {}) } });
+    });
   } catch (err: any) {
     console.error("Fund error:", err);
     return c.json({ ok: false, error: err.message }, 500);
@@ -317,6 +340,7 @@ escrowRoutes.post("/:id/fund", async (c) => {
 escrowRoutes.post("/:id/reconcile", async (c) => {
   try {
     const id = c.req.param("id");
+    return await withEscrowLock(id, async () => {
     const record = memoryStore.get(id);
     if (!record) return c.json({ ok: false, error: "Not found" }, 404);
 
@@ -344,6 +368,7 @@ escrowRoutes.post("/:id/reconcile", async (c) => {
     memoryStore.set(id, record);
 
     return c.json({ ok: true, data: record, observations: looks });
+    });
   } catch (err: any) {
     console.error("Reconcile error:", err);
     return c.json({ ok: false, error: err?.message || String(err) }, 500);
@@ -357,6 +382,7 @@ escrowRoutes.post("/:id/release/prepare", async (c) => {
     const branch = body?.branch;
     const mutualSplit = body?.mutualSplit as { buyerSompi: bigint; sellerSompi: bigint } | undefined;
 
+    return await withEscrowLock(id, async () => {
     const record = memoryStore.get(id);
     const prepared = prepareEscrowRelease(record, { branch, mutualSplit }, NETWORK_ID);
     if (!prepared.ok) return refused(c, prepared);
@@ -365,6 +391,7 @@ escrowRoutes.post("/:id/release/prepare", async (c) => {
     memoryStore.set(id, record!);
 
     return c.json({ ok: true, data: record!.preparedRelease });
+    });
   } catch (err: any) {
     return c.json({ ok: false, error: err.message }, 500);
   }
@@ -378,6 +405,7 @@ escrowRoutes.post("/:id/sign", async (c) => {
     const id = c.req.param("id");
     const { role } = await c.req.json();
 
+    return await withEscrowLock(id, async () => {
     const record = memoryStore.get(id);
     const check = escrowSignCheck(record, role);
     if (!check.ok) return refused(c, check);
@@ -394,6 +422,7 @@ escrowRoutes.post("/:id/sign", async (c) => {
     memoryStore.set(id, record!);
 
     return c.json({ ok: true });
+    });
   } catch (err: any) {
     return c.json({ ok: false, error: err.message }, 500);
   }
@@ -402,6 +431,7 @@ escrowRoutes.post("/:id/sign", async (c) => {
 escrowRoutes.post("/:id/release", async (c) => {
   try {
     const id = c.req.param("id");
+    return await withEscrowLock(id, async () => {
     const record = memoryStore.get(id);
     // not released, nothing sent and unreconciled, ready, the policy unchanged, the outputs prepared, every signature valid
     const ready = checkEscrowRelease(record, id);
@@ -471,6 +501,7 @@ escrowRoutes.post("/:id/release", async (c) => {
     memoryStore.set(id, record!);
 
     return c.json({ ok: true, data: { spendTxId: submitTxId, status: record!.release.status } });
+    });
   } catch (err: any) {
     console.error("Release error:", err);
     return c.json({ ok: false, error: err?.message || String(err) }, 500);

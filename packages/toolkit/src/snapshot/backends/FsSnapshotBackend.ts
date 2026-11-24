@@ -4,6 +4,19 @@ import path from "path";
 import crypto from "crypto";
 import { snapshotReplacer, snapshotReviver } from "../serialization.js";
 
+function safeChildPath(rootDir: string, segment: string, label: string): string {
+    if (!segment || segment === "." || segment === ".." || segment.includes("/") || segment.includes("\\") || segment.includes("\0")) {
+        throw new Error(`Invalid ${label} name (path traversal blocked): ${JSON.stringify(segment)}`);
+    }
+    const resolvedRoot = path.resolve(rootDir);
+    const resolvedTarget = path.resolve(resolvedRoot, segment);
+    const rel = path.relative(resolvedRoot, resolvedTarget);
+    if (!rel || rel === "." || rel === ".." || rel.startsWith("..") || path.isAbsolute(rel) || rel !== segment || path.dirname(resolvedTarget) !== resolvedRoot) {
+        throw new Error(`Invalid ${label} name (path traversal blocked): ${JSON.stringify(segment)}`);
+    }
+    return resolvedTarget;
+}
+
 export class FsSnapshotBackend implements SnapshotBackend {
     private baseDir: string;
 
@@ -12,7 +25,10 @@ export class FsSnapshotBackend implements SnapshotBackend {
     }
 
     async save(id: string, name: string, state: Record<string, SnapshotState>): Promise<SnapshotManifest> {
-        const snapshotDir = path.join(this.baseDir, id);
+        const snapshotDir = safeChildPath(this.baseDir, id, "snapshot id");
+        for (const pId of Object.keys(state)) {
+            safeChildPath(snapshotDir, `${pId}.json`, "participant");
+        }
         await fs.ensureDir(snapshotDir);
 
         const stateHashes: Record<string, string> = {};
@@ -22,7 +38,7 @@ export class FsSnapshotBackend implements SnapshotBackend {
         for (const [pId, pState] of Object.entries(state)) {
             const data = JSON.stringify(pState, snapshotReplacer, 2);
             stateHashes[pId] = crypto.createHash("sha256").update(data).digest("hex");
-            await fs.writeFile(path.join(snapshotDir, `${pId}.json`), data);
+            await fs.writeFile(safeChildPath(snapshotDir, `${pId}.json`, "participant"), data);
         }
 
         const manifest: SnapshotManifest = {
@@ -48,7 +64,7 @@ export class FsSnapshotBackend implements SnapshotBackend {
     }
 
     async load(id: string): Promise<{ manifest: SnapshotManifest; state: Record<string, SnapshotState> }> {
-        const snapshotDir = path.join(this.baseDir, id);
+        const snapshotDir = safeChildPath(this.baseDir, id, "snapshot id");
         if (!await fs.pathExists(snapshotDir)) {
             throw new Error(`Snapshot ${id} not found in filesystem backend at ${snapshotDir}`);
         }
@@ -58,7 +74,7 @@ export class FsSnapshotBackend implements SnapshotBackend {
 
         const state: Record<string, SnapshotState> = {};
         for (const pId of manifest.participants) {
-            const stateData = await fs.readFile(path.join(snapshotDir, `${pId}.json`), "utf8");
+            const stateData = await fs.readFile(safeChildPath(snapshotDir, `${pId}.json`, "participant"), "utf8");
             state[pId] = JSON.parse(stateData, snapshotReviver);
         }
 
@@ -87,7 +103,7 @@ export class FsSnapshotBackend implements SnapshotBackend {
     }
 
     async delete(id: string): Promise<void> {
-        const snapshotDir = path.join(this.baseDir, id);
+        const snapshotDir = safeChildPath(this.baseDir, id, "snapshot id");
         if (await fs.pathExists(snapshotDir)) {
             await fs.remove(snapshotDir);
         }

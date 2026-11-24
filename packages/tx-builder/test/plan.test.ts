@@ -51,4 +51,36 @@ describe("tx-builder plan", () => {
     expect(plan.change?.amountSompi).toBe(expectedChange);
     expect(plan.change?.address).toBe("kaspa:sim_alice");
   });
+
+  it("refuses to burn non-dust surplus into fee when change overflows standard mass and adds another UTXO when available", () => {
+    const alice = "kaspasim:qr0lr4ml9fn3chekrqmjdkergxl93l4wrk3dankcgvjq776s9wn9jeadh9sjw";
+    const bob = "kaspasim:qzgh3e6qqe6jfevf0dc652uszm0lnhvhzmasga5lka4kcl5udget5065p52eh";
+    // 1 KAS input paying 0.95 KAS leaves ~0.048 KAS change, which overflows KIP-9 storage mass as a single small change output.
+    expect(() =>
+      buildPaymentPlan({
+        coinbaseMaturity: 100n,
+        fromAddress: alice,
+        outputs: [{ address: bob, amountSompi: 95_000_000n }],
+        availableUtxos: [createMockUtxo({ address: alice, amountSompi: 100_000_000n, index: 0 })],
+        feeRateSompiPerMass: 100n,
+        networkId: "simnet"
+      })
+    ).toThrow(/change|fee|mass/i);
+
+    // With a second 1 KAS UTXO available, combining avoids burning 0.05 KAS and produces a valid change output.
+    const multi = buildPaymentPlan({
+      coinbaseMaturity: 100n,
+      fromAddress: alice,
+      outputs: [{ address: bob, amountSompi: 95_000_000n }],
+      availableUtxos: [
+        createMockUtxo({ address: alice, amountSompi: 100_000_000n, index: 0 }),
+        createMockUtxo({ address: alice, amountSompi: 100_000_000n, index: 1 })
+      ],
+      feeRateSompiPerMass: 100n,
+      networkId: "simnet"
+    });
+    expect(multi.inputs).toHaveLength(2);
+    expect(multi.change).toBeDefined();
+    expect(multi.estimatedFeeSompi).toBeLessThan(1_000_000n);
+  });
 });

@@ -96,4 +96,18 @@ describe('SnapshotToolkit (Time Travel)', () => {
         expect(manifest.participants).toContain('jobs');
         expect(manifest.stateHashes).toHaveProperty('jobs');
     });
+
+    it('rejects path traversal in snapshot id and participant keys', async () => {
+        const { FsSnapshotBackend } = await import('../src/snapshot/backends/FsSnapshotBackend.js');
+        const snapshotsSubDir = path.join(testDir, 'snapshots-sub');
+        await fs.ensureDir(snapshotsSubDir);
+        const backend = new FsSnapshotBackend(snapshotsSubDir);
+        const outsideMarker = path.join(testDir, '.outside-marker-do-not-touch');
+        await fs.ensureDir(outsideMarker);
+        await expect(backend.save('../.outside-marker-do-not-touch', 'evil', { jobs: {} })).rejects.toThrow(/traversal|invalid/i);
+        await expect(backend.load('../.outside-marker-do-not-touch')).rejects.toThrow(/traversal|invalid/i);
+        await expect(backend.delete('../.outside-marker-do-not-touch')).rejects.toThrow(/traversal|invalid/i);
+        expect(await fs.pathExists(outsideMarker)).toBe(true);
+        await expect(backend.save('valid-snap', 'ok', { '../escaped': {} })).rejects.toThrow(/traversal|invalid/i);
+    });
 });

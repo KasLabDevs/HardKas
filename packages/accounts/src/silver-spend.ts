@@ -500,6 +500,7 @@ export function finalizeSilverSpend(
   signatures: Readonly<Record<string, string>>
 ): { readonly rpcTransaction: any; readonly txId: string; readonly signatureScriptHex: string } {
   if (draft?.schema !== SILVER_SPEND_DRAFT_SCHEMA) throw spendError("SILVER_SPEND_DRAFT_INVALID", "not a SilverScript spend draft");
+  assertMainnetTransactionsDisabled("sign", [draft.networkId], "finalizeSilverSpend");
   const k = loadManagedKaspaWasmSync();
   const lock = silverP2shLock(silContractBytecodeHex(getSilContract(artifact, draft.contractName).contract));
   if (lock.script !== draft.input.scriptPublicKey.script) throw spendError("SILVER_SPEND_LOCK_MISMATCH", "the artifact is not the contract the draft spends");

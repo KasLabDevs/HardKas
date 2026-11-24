@@ -299,8 +299,13 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
     }
     // RPC-SUBMIT-SAFETY-1: an answer that names no transaction (or another one) is not an accepted submission
     const mapped = mapKaspaSubmitTransactionResult(response);
-    if (mapped.accepted !== false) acceptedTxIdOf(response, expected);
-    return mapped;
+    if (mapped.accepted === false) return mapped;
+    const acceptedTxId = acceptedTxIdOf(response, expected);
+    return {
+      ...mapped,
+      transactionId: mapped.transactionId ?? acceptedTxId,
+      accepted: mapped.accepted ?? true
+    };
   }
 
   async getMempoolEntry(txId: string): Promise<MempoolEntry | null> {
@@ -573,10 +578,11 @@ export function mapKaspaSubmitTransactionResult(result: any): KaspaSubmitTransac
   if (!result) return { raw: result };
 
   const txId = typeof result === "string" ? result : (result.transactionId || result.transaction_id || result.txId || result.tx_id);
+  const rawAccepted = result.accepted ?? result.isAccepted ?? result.success;
 
   return {
     transactionId: txId,
-    accepted: result.accepted !== undefined ? result.accepted : (result.isAccepted || result.success || true),
+    ...(rawAccepted !== undefined && rawAccepted !== null ? { accepted: Boolean(rawAccepted) } : {}),
     raw: result
   };
 }

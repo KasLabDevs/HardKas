@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { mapKaspaAddressBalance, mapKaspaRpcUtxos } from "../src";
+import { mapKaspaAddressBalance, mapKaspaRpcUtxos, mapKaspaSubmitTransactionResult } from "../src";
 
 describe("RPC mappers", () => {
   describe("mapKaspaAddressBalance", () => {
@@ -67,6 +67,16 @@ describe("RPC mappers", () => {
       };
       const utxos = mapKaspaRpcUtxos(raw, "addr3");
       expect(utxos[0].amountSompi).toBe(300n);
+    });
+  });
+
+  describe("mapKaspaSubmitTransactionResult", () => {
+    it("respects explicit false in isAccepted/success and does not synthesize accepted:true", () => {
+      const txId = "a".repeat(64);
+      expect(mapKaspaSubmitTransactionResult({ transactionId: txId, isAccepted: false }).accepted).toBe(false);
+      expect(mapKaspaSubmitTransactionResult({ transactionId: txId, success: false }).accepted).toBe(false);
+      expect(mapKaspaSubmitTransactionResult({ transactionId: txId }).accepted).toBeUndefined();
+      expect(mapKaspaSubmitTransactionResult({ transactionId: txId, isAccepted: true }).accepted).toBe(true);
     });
   });
 });

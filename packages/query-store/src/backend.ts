@@ -157,8 +157,8 @@ export class SqliteQueryBackend implements QueryBackend {
 
     // Force SQLite to flush WAL entries to visibility for this read connection
     try {
-      db.pragma("wal_checkpoint(PASSIVE)");
-    } catch (e) {}
+      db.exec("PRAGMA wal_checkpoint(PASSIVE);");
+    } catch {}
 
     let query = "SELECT * FROM artifacts WHERE 1=1";
     const params: any[] = [];

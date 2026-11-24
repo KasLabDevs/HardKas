@@ -236,4 +236,12 @@ describe("RPC-SUBMIT-SAFETY-1 · JsonWrpcKaspaClient (the SDK's default transpor
     expect(r).toMatchObject({ transactionId: TXID, accepted: true });
     expect(n.received).toHaveLength(1);
   });
+
+  it("an answer with isAccepted:false or success:false preserves accepted:false", async () => {
+    for (const payload of [{ transactionId: TXID, isAccepted: false }, { transactionId: TXID, success: false }]) {
+      const rpc = fakeOfficialRpc({ ...identified, submitTransaction: () => payload });
+      const r = await new JsonWrpcKaspaClient({ rpcUrl: url, rpcFactory: rpc.factory }).submitTransaction(tx(TXID) as any);
+      expect(r.accepted).toBe(false);
+    }
+  });
 });

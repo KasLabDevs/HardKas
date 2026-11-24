@@ -149,6 +149,11 @@ export async function prepareV1Draft(input: {
  * must be the one each slot is checked against (SIGNER_SLOT_KEY_MISMATCH, nothing signed otherwise).
  */
 export function signV1Draft(input: { readonly draft: V1TxDraft; readonly plan: Record<string, any>; readonly account: string; readonly privateKey: string }): V1TxDraft {
+  assertMainnetTransactionsDisabled(
+    "sign",
+    [input.draft?.networkId, input.plan?.networkId, input.plan?.execution?.network],
+    "signV1Draft"
+  );
   checkDraft(input.draft, input.plan);
   const k = loadManagedKaspaWasmSync();
   const mine = input.draft.slots.filter((s) => s.signer === input.account);

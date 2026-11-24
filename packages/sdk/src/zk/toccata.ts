@@ -1560,11 +1560,17 @@ export function buildR0Groth16Plan(params: BuildR0Groth16TxParams): TxPlanArtifa
   if (feeSompi <= 0n) {
     throw new Error(`ZK_INSUFFICIENT_INPUT_AMOUNT: UTXO ${params.utxo.amountSompi} sompi does not cover the bound outputs and a fee`);
   }
+  if (params.utxo.amountSompi <= feeSompi) {
+    throw new Error(`ZK_INSUFFICIENT_INPUT_AMOUNT: UTXO ${params.utxo.amountSompi} sompi must exceed fee ${feeSompi} sompi`);
+  }
   if (feeSompi > maxFeeSompi) {
     throw new Error(`ZK_FEE_ABOVE_CAP: fee ${feeSompi} sompi exceeds the cap ${maxFeeSompi} (raise feeOptions.maxFeeSompi explicitly)`);
   }
   const spkHex = `${Number(params.scripts.p2shScriptPublicKey.version).toString(16).padStart(4, "0")}${params.scripts.p2shScriptPublicKey.script}`;
   const outputs = r0SpendOutputs(params, feeSompi);
+  if (outputs.some((o) => o.amountSompi <= 0n)) {
+    throw new Error(`ZK_INSUFFICIENT_INPUT_AMOUNT: UTXO ${params.utxo.amountSompi} sompi is insufficient to fund positive outputs after fee ${feeSompi} sompi`);
+  }
   const payment = outputs[0]!;
   // ZK-SEND-1 · the plan is the transaction HardKAS sends (sdk.zk.toccata.spend through sdk.tx.send), so it states what the
   // send check recomputes: the node's storage mass (KIP-9, the value a block requires; it was "0"), and every output as
@@ -1699,7 +1705,7 @@ export function buildR0Groth16Transaction(params: BuildR0Groth16TxParams): R0Gro
   // C-7 · whether this lock binds the outputs is read from its redeem script, never from the scripts object's label.
   const outputsEnforced = r0LockEnforcesBoundOutputs(params.scripts, bindingMode, bindingPolicy);
   if (bindingMode === "proof-and-output-bound" && !outputsEnforced) {
-    warnings.push({
+    issues.push({
       code: "ZK_BINDING_LABEL_NOT_ENFORCED",
       message:
         "The scripts object says proof-and-output-bound, but its redeem script is not a canonical output-bound lock over the pinned verifier for that policy (verifyR0Groth16Scripts): " +

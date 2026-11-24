@@ -97,6 +97,24 @@ describe("L2-EXT · extension install (C2)", () => {
     expect(readTarballManifest(makeTgz({ "package.json": manifest() })).name).toBe("@hardkas/ext-l2");
   });
 
+  it("rejects non-octal or out-of-bounds tar entry sizes explicitly in readTarballManifest", () => {
+    const header = Buffer.alloc(512, 0);
+    Buffer.from("package/package.json").copy(header, 0);
+    // Non-octal digits '8'/'9' in size field [124..136]
+    Buffer.from("00000000888\0").copy(header, 124);
+    header[156] = "0".charCodeAt(0);
+    const badOctal = zlib.gzipSync(Buffer.concat([header, Buffer.alloc(1024, 0)]));
+    expect(() => readTarballManifest(badOctal)).toThrow(/Malformed tar entry size/);
+
+    // Out-of-bounds octal size exceeding tar buffer
+    const oobHeader = Buffer.alloc(512, 0);
+    Buffer.from("package/package.json").copy(oobHeader, 0);
+    Buffer.from("00000077777\0").copy(oobHeader, 124);
+    oobHeader[156] = "0".charCodeAt(0);
+    const oob = zlib.gzipSync(Buffer.concat([oobHeader, Buffer.alloc(1024, 0)]));
+    expect(() => readTarballManifest(oob)).toThrow(/Out-of-bounds tar entry size/);
+  });
+
   it("a tarball without --sha256 is refused (usage)", () => {
     const file = tgz("nosha", manifest());
     expect(() => vetExtensionTarball(file, undefined, KNOWN, HARDKAS_VERSION)).toThrow(expect.objectContaining({ code: "EXTENSION_SHA256_REQUIRED", exitCode: 2 }));
